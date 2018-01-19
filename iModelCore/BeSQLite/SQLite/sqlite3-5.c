@@ -26,6 +26,7 @@ SQLITE_PRIVATE void sqlite3DeleteTriggerStep(sqlite3 *db, TriggerStep *pTriggerS
     sqlite3ExprListDelete(db, pTmp->pExprList);
     sqlite3SelectDelete(db, pTmp->pSelect);
     sqlite3IdListDelete(db, pTmp->pIdList);
+    sqlite3DbFree(db, pTmp->zSpan);
 
     sqlite3DbFree(db, pTmp);
   }
@@ -341,13 +342,29 @@ triggerfinish_cleanup:
 }
 
 /*
+** Duplicate a range of text from an SQL statement, then convert all
+** whitespace characters into ordinary space characters.
+*/
+static char *triggerSpanDup(sqlite3 *db, const char *zStart, const char *zEnd){
+  char *z = sqlite3DbSpanDup(db, zStart, zEnd);
+  int i;
+  if( z ) for(i=0; z[i]; i++) if( sqlite3Isspace(z[i]) ) z[i] = ' ';
+  return z;
+}    
+
+/*
 ** Turn a SELECT statement (that the pSelect parameter points to) into
 ** a trigger step.  Return a pointer to a TriggerStep structure.
 **
 ** The parser calls this routine when it finds a SELECT statement in
 ** body of a TRIGGER.  
 */
-SQLITE_PRIVATE TriggerStep *sqlite3TriggerSelectStep(sqlite3 *db, Select *pSelect){
+SQLITE_PRIVATE TriggerStep *sqlite3TriggerSelectStep(
+  sqlite3 *db,                /* Database connection */
+  Select *pSelect,            /* The SELECT statement */
+  const char *zStart,         /* Start of SQL text */
+  const char *zEnd            /* End of SQL text */
+){
   TriggerStep *pTriggerStep = sqlite3DbMallocZero(db, sizeof(TriggerStep));
   if( pTriggerStep==0 ) {
     sqlite3SelectDelete(db, pSelect);
@@ -356,6 +373,7 @@ SQLITE_PRIVATE TriggerStep *sqlite3TriggerSelectStep(sqlite3 *db, Select *pSelec
   pTriggerStep->op = TK_SELECT;
   pTriggerStep->pSelect = pSelect;
   pTriggerStep->orconf = OE_Default;
+  pTriggerStep->zSpan = triggerSpanDup(db, zStart, zEnd);
   return pTriggerStep;
 }
 
@@ -368,7 +386,9 @@ SQLITE_PRIVATE TriggerStep *sqlite3TriggerSelectStep(sqlite3 *db, Select *pSelec
 static TriggerStep *triggerStepAllocate(
   sqlite3 *db,                /* Database connection */
   u8 op,                      /* Trigger opcode */
-  Token *pName                /* The target name */
+  Token *pName,               /* The target name */
+  const char *zStart,         /* Start of SQL text */
+  const char *zEnd            /* End of SQL text */
 ){
   TriggerStep *pTriggerStep;
 
@@ -379,6 +399,7 @@ static TriggerStep *triggerStepAllocate(
     sqlite3Dequote(z);
     pTriggerStep->zTarget = z;
     pTriggerStep->op = op;
+    pTriggerStep->zSpan = triggerSpanDup(db, zStart, zEnd);
   }
   return pTriggerStep;
 }
@@ -395,13 +416,15 @@ SQLITE_PRIVATE TriggerStep *sqlite3TriggerInsertStep(
   Token *pTableName,  /* Name of the table into which we insert */
   IdList *pColumn,    /* List of columns in pTableName to insert into */
   Select *pSelect,    /* A SELECT statement that supplies values */
-  u8 orconf           /* The conflict algorithm (OE_Abort, OE_Replace, etc.) */
+  u8 orconf,          /* The conflict algorithm (OE_Abort, OE_Replace, etc.) */
+  const char *zStart, /* Start of SQL text */
+  const char *zEnd    /* End of SQL text */
 ){
   TriggerStep *pTriggerStep;
 
   assert(pSelect != 0 || db->mallocFailed);
 
-  pTriggerStep = triggerStepAllocate(db, TK_INSERT, pTableName);
+  pTriggerStep = triggerStepAllocate(db, TK_INSERT, pTableName, zStart, zEnd);
   if( pTriggerStep ){
     pTriggerStep->pSelect = sqlite3SelectDup(db, pSelect, EXPRDUP_REDUCE);
     pTriggerStep->pIdList = pColumn;
@@ -424,11 +447,13 @@ SQLITE_PRIVATE TriggerStep *sqlite3TriggerUpdateStep(
   Token *pTableName,   /* Name of the table to be updated */
   ExprList *pEList,    /* The SET clause: list of column and new values */
   Expr *pWhere,        /* The WHERE clause */
-  u8 orconf            /* The conflict algorithm. (OE_Abort, OE_Ignore, etc) */
+  u8 orconf,           /* The conflict algorithm. (OE_Abort, OE_Ignore, etc) */
+  const char *zStart,  /* Start of SQL text */
+  const char *zEnd     /* End of SQL text */
 ){
   TriggerStep *pTriggerStep;
 
-  pTriggerStep = triggerStepAllocate(db, TK_UPDATE, pTableName);
+  pTriggerStep = triggerStepAllocate(db, TK_UPDATE, pTableName, zStart, zEnd);
   if( pTriggerStep ){
     pTriggerStep->pExprList = sqlite3ExprListDup(db, pEList, EXPRDUP_REDUCE);
     pTriggerStep->pWhere = sqlite3ExprDup(db, pWhere, EXPRDUP_REDUCE);
@@ -447,11 +472,13 @@ SQLITE_PRIVATE TriggerStep *sqlite3TriggerUpdateStep(
 SQLITE_PRIVATE TriggerStep *sqlite3TriggerDeleteStep(
   sqlite3 *db,            /* Database connection */
   Token *pTableName,      /* The table from which rows are deleted */
-  Expr *pWhere            /* The WHERE clause */
+  Expr *pWhere,           /* The WHERE clause */
+  const char *zStart,     /* Start of SQL text */
+  const char *zEnd        /* End of SQL text */
 ){
   TriggerStep *pTriggerStep;
 
-  pTriggerStep = triggerStepAllocate(db, TK_DELETE, pTableName);
+  pTriggerStep = triggerStepAllocate(db, TK_DELETE, pTableName, zStart, zEnd);
   if( pTriggerStep ){
     pTriggerStep->pWhere = sqlite3ExprDup(db, pWhere, EXPRDUP_REDUCE);
     pTriggerStep->orconf = OE_Default;
@@ -706,13 +733,21 @@ static int codeTriggerProgram(
     pParse->eOrconf = (orconf==OE_Default)?pStep->orconf:(u8)orconf;
     assert( pParse->okConstFactor==0 );
 
+#ifndef SQLITE_OMIT_TRACE
+    if( pStep->zSpan ){
+      sqlite3VdbeAddOp4(v, OP_Trace, 0x7fffffff, 1, 0,
+                        sqlite3MPrintf(db, "-- %s", pStep->zSpan),
+                        P4_DYNAMIC);
+    }
+#endif
+
     switch( pStep->op ){
       case TK_UPDATE: {
         sqlite3Update(pParse, 
           targetSrcList(pParse, pStep),
           sqlite3ExprListDup(db, pStep->pExprList, 0), 
           sqlite3ExprDup(db, pStep->pWhere, 0), 
-          pParse->eOrconf
+          pParse->eOrconf, 0, 0
         );
         break;
       }
@@ -728,7 +763,7 @@ static int codeTriggerProgram(
       case TK_DELETE: {
         sqlite3DeleteFrom(pParse, 
           targetSrcList(pParse, pStep),
-          sqlite3ExprDup(db, pStep->pWhere, 0)
+          sqlite3ExprDup(db, pStep->pWhere, 0), 0, 0
         );
         break;
       }
@@ -846,9 +881,11 @@ static TriggerPrg *codeRowTrigger(
       pTab->zName
     ));
 #ifndef SQLITE_OMIT_TRACE
-    sqlite3VdbeChangeP4(v, -1, 
-      sqlite3MPrintf(db, "-- TRIGGER %s", pTrigger->zName), P4_DYNAMIC
-    );
+    if( pTrigger->zName ){
+      sqlite3VdbeChangeP4(v, -1, 
+        sqlite3MPrintf(db, "-- TRIGGER %s", pTrigger->zName), P4_DYNAMIC
+      );
+    }
 #endif
 
     /* If one was specified, code the WHEN clause. If it evaluates to false
@@ -876,7 +913,7 @@ static TriggerPrg *codeRowTrigger(
     VdbeComment((v, "End: %s.%s", pTrigger->zName, onErrorText(orconf)));
 
     transferParseError(pParse, pSubParse);
-    if( db->mallocFailed==0 ){
+    if( db->mallocFailed==0 && pParse->nErr==0 ){
       pProgram->aOp = sqlite3VdbeTakeOpArray(v, &pProgram->nOp, &pTop->nMaxArg);
     }
     pProgram->nMem = pSubParse->nMem;
@@ -1195,7 +1232,9 @@ SQLITE_PRIVATE void sqlite3Update(
   SrcList *pTabList,     /* The table in which we should change things */
   ExprList *pChanges,    /* Things to be changed */
   Expr *pWhere,          /* The WHERE clause.  May be null */
-  int onError            /* How to handle constraint errors */
+  int onError,           /* How to handle constraint errors */
+  ExprList *pOrderBy,    /* ORDER BY clause. May be null */
+  Expr *pLimit           /* LIMIT clause. May be null */
 ){
   int i, j;              /* Loop counters */
   Table *pTab;           /* The table to be updated */
@@ -1278,6 +1317,16 @@ SQLITE_PRIVATE void sqlite3Update(
 #ifdef SQLITE_OMIT_VIEW
 # undef isView
 # define isView 0
+#endif
+
+#ifdef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
+  if( !isView ){
+    pWhere = sqlite3LimitWhere(
+        pParse, pTabList, pWhere, pOrderBy, pLimit, "UPDATE"
+    );
+    pOrderBy = 0;
+    pLimit = 0;
+  }
 #endif
 
   if( sqlite3ViewGetColumnNames(pParse, pTab) ){
@@ -1448,7 +1497,11 @@ SQLITE_PRIVATE void sqlite3Update(
   */
 #if !defined(SQLITE_OMIT_VIEW) && !defined(SQLITE_OMIT_TRIGGER)
   if( isView ){
-    sqlite3MaterializeView(pParse, pTab, pWhere, iDataCur);
+    sqlite3MaterializeView(pParse, pTab, 
+        pWhere, pOrderBy, pLimit, iDataCur
+    );
+    pOrderBy = 0;
+    pLimit = 0;
   }
 #endif
 
@@ -1832,6 +1885,10 @@ update_cleanup:
   sqlite3SrcListDelete(db, pTabList);
   sqlite3ExprListDelete(db, pChanges);
   sqlite3ExprDelete(db, pWhere);
+#if defined(SQLITE_ENABLE_UPDATE_DELETE_LIMIT) 
+  sqlite3ExprListDelete(db, pOrderBy);
+  sqlite3ExprDelete(db, pLimit);
+#endif
   return;
 }
 /* Make sure "isView" and other macros defined above are undefined. Otherwise
@@ -1891,7 +1948,7 @@ static void updateVirtualTable(
   int bOnePass;                   /* True to use onepass strategy */
   int addr;                       /* Address of OP_OpenEphemeral */
 
-  /* Allocate nArg registers to martial the arguments to VUpdate. Then
+  /* Allocate nArg registers in which to gather the arguments for VUpdate. Then
   ** create and open the ephemeral table in which the records created from
   ** these arguments will be temporarily stored. */
   assert( v );
@@ -1912,6 +1969,7 @@ static void updateVirtualTable(
       sqlite3ExprCode(pParse, pChanges->a[aXRef[i]].pExpr, regArg+2+i);
     }else{
       sqlite3VdbeAddOp3(v, OP_VColumn, iCsr, i, regArg+2+i);
+      sqlite3VdbeChangeP5(v, 1); /* Enable sqlite3_vtab_nochange() */
     }
   }
   if( HasRowid(pTab) ){
@@ -1946,6 +2004,11 @@ static void updateVirtualTable(
     /* Create a record from the argument register contents and insert it into
     ** the ephemeral table. */
     sqlite3VdbeAddOp3(v, OP_MakeRecord, regArg, nArg, regRec);
+#ifdef SQLITE_DEBUG
+    /* Signal an assert() within OP_MakeRecord that it is allowed to
+    ** accept no-change records with serial_type 10 */
+    sqlite3VdbeChangeP5(v, OPFLAG_NOCHNG_MAGIC);
+#endif
     sqlite3VdbeAddOp2(v, OP_NewRowid, ephemTab, regRowid);
     sqlite3VdbeAddOp3(v, OP_Insert, ephemTab, regRec, regRowid);
   }
@@ -4296,7 +4359,7 @@ SQLITE_PRIVATE int sqlite3WhereExplainOneScan(
 ){
   int ret = 0;
 #if !defined(SQLITE_DEBUG) && !defined(SQLITE_ENABLE_STMT_SCANSTATUS)
-  if( pParse->explain==2 )
+  if( sqlite3ParseToplevel(pParse)->explain==2 )
 #endif
   {
     struct SrcList_item *pItem = &pTabList->a[pLevel->iFrom];
@@ -4462,8 +4525,8 @@ SQLITE_PRIVATE void sqlite3WhereAddScanStatus(
 */
 static void disableTerm(WhereLevel *pLevel, WhereTerm *pTerm){
   int nLoop = 0;
-  while( ALWAYS(pTerm!=0)
-      && (pTerm->wtFlags & TERM_CODED)==0
+  assert( pTerm!=0 );
+  while( (pTerm->wtFlags & TERM_CODED)==0
       && (pLevel->iLeftJoin==0 || ExprHasProperty(pTerm->pExpr, EP_FromJoin))
       && (pLevel->notReady & pTerm->prereqAll)==0
   ){
@@ -4474,6 +4537,7 @@ static void disableTerm(WhereLevel *pLevel, WhereTerm *pTerm){
     }
     if( pTerm->iParent<0 ) break;
     pTerm = &pTerm->pWC->a[pTerm->iParent];
+    assert( pTerm!=0 );
     pTerm->nChild--;
     if( pTerm->nChild!=0 ) break;
     nLoop++;
@@ -4544,6 +4608,102 @@ static void updateRangeAffinityStr(
   }
 }
 
+
+/*
+** pX is an expression of the form:  (vector) IN (SELECT ...)
+** In other words, it is a vector IN operator with a SELECT clause on the
+** LHS.  But not all terms in the vector are indexable and the terms might
+** not be in the correct order for indexing.
+**
+** This routine makes a copy of the input pX expression and then adjusts
+** the vector on the LHS with corresponding changes to the SELECT so that
+** the vector contains only index terms and those terms are in the correct
+** order.  The modified IN expression is returned.  The caller is responsible
+** for deleting the returned expression.
+**
+** Example:
+**
+**    CREATE TABLE t1(a,b,c,d,e,f);
+**    CREATE INDEX t1x1 ON t1(e,c);
+**    SELECT * FROM t1 WHERE (a,b,c,d,e) IN (SELECT v,w,x,y,z FROM t2)
+**                           \_______________________________________/
+**                                     The pX expression
+**
+** Since only columns e and c can be used with the index, in that order,
+** the modified IN expression that is returned will be:
+**
+**        (e,c) IN (SELECT z,x FROM t2)
+**
+** The reduced pX is different from the original (obviously) and thus is
+** only used for indexing, to improve performance.  The original unaltered
+** IN expression must also be run on each output row for correctness.
+*/
+static Expr *removeUnindexableInClauseTerms(
+  Parse *pParse,        /* The parsing context */
+  int iEq,              /* Look at loop terms starting here */
+  WhereLoop *pLoop,     /* The current loop */
+  Expr *pX              /* The IN expression to be reduced */
+){
+  sqlite3 *db = pParse->db;
+  Expr *pNew = sqlite3ExprDup(db, pX, 0);
+  if( db->mallocFailed==0 ){
+    ExprList *pOrigRhs = pNew->x.pSelect->pEList;  /* Original unmodified RHS */
+    ExprList *pOrigLhs = pNew->pLeft->x.pList;     /* Original unmodified LHS */
+    ExprList *pRhs = 0;         /* New RHS after modifications */
+    ExprList *pLhs = 0;         /* New LHS after mods */
+    int i;                      /* Loop counter */
+    Select *pSelect;            /* Pointer to the SELECT on the RHS */
+
+    for(i=iEq; i<pLoop->nLTerm; i++){
+      if( pLoop->aLTerm[i]->pExpr==pX ){
+        int iField = pLoop->aLTerm[i]->iField - 1;
+        assert( pOrigRhs->a[iField].pExpr!=0 );
+        pRhs = sqlite3ExprListAppend(pParse, pRhs, pOrigRhs->a[iField].pExpr);
+        pOrigRhs->a[iField].pExpr = 0;
+        assert( pOrigLhs->a[iField].pExpr!=0 );
+        pLhs = sqlite3ExprListAppend(pParse, pLhs, pOrigLhs->a[iField].pExpr);
+        pOrigLhs->a[iField].pExpr = 0;
+      }
+    }
+    sqlite3ExprListDelete(db, pOrigRhs);
+    sqlite3ExprListDelete(db, pOrigLhs);
+    pNew->pLeft->x.pList = pLhs;
+    pNew->x.pSelect->pEList = pRhs;
+    if( pLhs && pLhs->nExpr==1 ){
+      /* Take care here not to generate a TK_VECTOR containing only a
+      ** single value. Since the parser never creates such a vector, some
+      ** of the subroutines do not handle this case.  */
+      Expr *p = pLhs->a[0].pExpr;
+      pLhs->a[0].pExpr = 0;
+      sqlite3ExprDelete(db, pNew->pLeft);
+      pNew->pLeft = p;
+    }
+    pSelect = pNew->x.pSelect;
+    if( pSelect->pOrderBy ){
+      /* If the SELECT statement has an ORDER BY clause, zero the 
+      ** iOrderByCol variables. These are set to non-zero when an 
+      ** ORDER BY term exactly matches one of the terms of the 
+      ** result-set. Since the result-set of the SELECT statement may
+      ** have been modified or reordered, these variables are no longer 
+      ** set correctly.  Since setting them is just an optimization, 
+      ** it's easiest just to zero them here.  */
+      ExprList *pOrderBy = pSelect->pOrderBy;
+      for(i=0; i<pOrderBy->nExpr; i++){
+        pOrderBy->a[i].u.x.iOrderByCol = 0;
+      }
+    }
+
+#if 0
+    printf("For indexing, change the IN expr:\n");
+    sqlite3TreeViewExpr(0, pX, 0);
+    printf("Into:\n");
+    sqlite3TreeViewExpr(0, pNew, 0);
+#endif
+  }
+  return pNew;
+}
+
+
 /*
 ** Generate code for a single equality term of the WHERE clause.  An equality
 ** term can be either X=expr or X IN (...).   pTerm is the term to be 
@@ -4606,68 +4766,23 @@ static int codeEqualityTerm(
       }
     }
     for(i=iEq;i<pLoop->nLTerm; i++){
-      if( ALWAYS(pLoop->aLTerm[i]) && pLoop->aLTerm[i]->pExpr==pX ) nEq++;
+      assert( pLoop->aLTerm[i]!=0 );
+      if( pLoop->aLTerm[i]->pExpr==pX ) nEq++;
     }
 
     if( (pX->flags & EP_xIsSelect)==0 || pX->x.pSelect->pEList->nExpr==1 ){
       eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0, 0);
     }else{
-      Select *pSelect = pX->x.pSelect;
       sqlite3 *db = pParse->db;
-      u16 savedDbOptFlags = db->dbOptFlags;
-      ExprList *pOrigRhs = pSelect->pEList;
-      ExprList *pOrigLhs = pX->pLeft->x.pList;
-      ExprList *pRhs = 0;         /* New Select.pEList for RHS */
-      ExprList *pLhs = 0;         /* New pX->pLeft vector */
+      pX = removeUnindexableInClauseTerms(pParse, iEq, pLoop, pX);
 
-      for(i=iEq;i<pLoop->nLTerm; i++){
-        if( pLoop->aLTerm[i]->pExpr==pX ){
-          int iField = pLoop->aLTerm[i]->iField - 1;
-          Expr *pNewRhs = sqlite3ExprDup(db, pOrigRhs->a[iField].pExpr, 0);
-          Expr *pNewLhs = sqlite3ExprDup(db, pOrigLhs->a[iField].pExpr, 0);
-
-          pRhs = sqlite3ExprListAppend(pParse, pRhs, pNewRhs);
-          pLhs = sqlite3ExprListAppend(pParse, pLhs, pNewLhs);
-        }
-      }
       if( !db->mallocFailed ){
-        Expr *pLeft = pX->pLeft;
-
-        if( pSelect->pOrderBy ){
-          /* If the SELECT statement has an ORDER BY clause, zero the 
-          ** iOrderByCol variables. These are set to non-zero when an 
-          ** ORDER BY term exactly matches one of the terms of the 
-          ** result-set. Since the result-set of the SELECT statement may
-          ** have been modified or reordered, these variables are no longer 
-          ** set correctly.  Since setting them is just an optimization, 
-          ** it's easiest just to zero them here.  */
-          ExprList *pOrderBy = pSelect->pOrderBy;
-          for(i=0; i<pOrderBy->nExpr; i++){
-            pOrderBy->a[i].u.x.iOrderByCol = 0;
-          }
-        }
-
-        /* Take care here not to generate a TK_VECTOR containing only a
-        ** single value. Since the parser never creates such a vector, some
-        ** of the subroutines do not handle this case.  */
-        if( pLhs->nExpr==1 ){
-          pX->pLeft = pLhs->a[0].pExpr;
-        }else{
-          pLeft->x.pList = pLhs;
-          aiMap = (int*)sqlite3DbMallocZero(pParse->db, sizeof(int) * nEq);
-          testcase( aiMap==0 );
-        }
-        pSelect->pEList = pRhs;
-        db->dbOptFlags |= SQLITE_QueryFlattener;
+        aiMap = (int*)sqlite3DbMallocZero(pParse->db, sizeof(int)*nEq);
         eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0, aiMap);
-        db->dbOptFlags = savedDbOptFlags;
-        testcase( aiMap!=0 && aiMap[0]!=0 );
-        pSelect->pEList = pOrigRhs;
-        pLeft->x.pList = pOrigLhs;
-        pX->pLeft = pLeft;
+        pTerm->pExpr->iTable = pX->iTable;
       }
-      sqlite3ExprListDelete(pParse->db, pLhs);
-      sqlite3ExprListDelete(pParse->db, pRhs);
+      sqlite3ExprDelete(db, pX);
+      pX = pTerm->pExpr;
     }
 
     if( eType==IN_INDEX_INDEX_DESC ){
@@ -5806,6 +5921,7 @@ SQLITE_PRIVATE Bitmask sqlite3WhereCodeOneLoopStart(
       }
     }else if( bStopAtNull ){
       sqlite3VdbeAddOp2(v, OP_Null, 0, regBase+nEq);
+      sqlite3ExprCacheRemove(pParse, regBase+nEq, 1);
       endEq = 0;
       nConstraint++;
     }
@@ -7306,7 +7422,7 @@ static void exprAnalyze(
   int op;                          /* Top-level operator.  pExpr->op */
   Parse *pParse = pWInfo->pParse;  /* Parsing context */
   sqlite3 *db = pParse->db;        /* Database connection */
-  unsigned char eOp2;              /* op2 value for LIKE/REGEXP/GLOB */
+  unsigned char eOp2 = 0;          /* op2 value for LIKE/REGEXP/GLOB */
   int nLeft;                       /* Number of elements on left side vector */
 
   if( db->mallocFailed ){
@@ -7550,7 +7666,7 @@ static void exprAnalyze(
   ** to do anything with MATCH functions.
   */
   if( pWC->op==TK_AND ){
-    Expr *pRight, *pLeft;
+    Expr *pRight = 0, *pLeft = 0;
     int res = isAuxiliaryVtabOperator(pExpr, &eOp2, &pLeft, &pRight);
     while( res-- > 0 ){
       int idxNew;
@@ -7873,6 +7989,21 @@ SQLITE_PRIVATE void sqlite3WhereTabFuncArgs(
 */
 /* #include "sqliteInt.h" */
 /* #include "whereInt.h" */
+
+/*
+** Extra information appended to the end of sqlite3_index_info but not
+** visible to the xBestIndex function, at least not directly.  The
+** sqlite3_vtab_collation() interface knows how to reach it, however.
+**
+** This object is not an API and can be changed from one release to the
+** next.  As long as allocateIndexInfo() and sqlite3_vtab_collation()
+** agree on the structure, all will be well.
+*/
+typedef struct HiddenIndexInfo HiddenIndexInfo;
+struct HiddenIndexInfo {
+  WhereClause *pWC;   /* The Where clause being analyzed */
+  Parse *pParse;      /* The parsing context */
+};
 
 /* Forward declaration of methods */
 static int whereLoopResize(sqlite3*, WhereLoop*, int);
@@ -8696,11 +8827,11 @@ end_auto_index_create:
 ** by passing the pointer returned by this function to sqlite3_free().
 */
 static sqlite3_index_info *allocateIndexInfo(
-  Parse *pParse,
-  WhereClause *pWC,
+  Parse *pParse,                  /* The parsing context */
+  WhereClause *pWC,               /* The WHERE clause being analyzed */
   Bitmask mUnusable,              /* Ignore terms with these prereqs */
-  struct SrcList_item *pSrc,
-  ExprList *pOrderBy,
+  struct SrcList_item *pSrc,      /* The FROM clause term that is the vtab */
+  ExprList *pOrderBy,             /* The ORDER BY clause */
   u16 *pmNoOmit                   /* Mask of terms not to omit */
 ){
   int i, j;
@@ -8708,6 +8839,7 @@ static sqlite3_index_info *allocateIndexInfo(
   struct sqlite3_index_constraint *pIdxCons;
   struct sqlite3_index_orderby *pIdxOrderBy;
   struct sqlite3_index_constraint_usage *pUsage;
+  struct HiddenIndexInfo *pHidden;
   WhereTerm *pTerm;
   int nOrderBy;
   sqlite3_index_info *pIdxInfo;
@@ -8749,7 +8881,7 @@ static sqlite3_index_info *allocateIndexInfo(
   */
   pIdxInfo = sqlite3DbMallocZero(pParse->db, sizeof(*pIdxInfo)
                            + (sizeof(*pIdxCons) + sizeof(*pUsage))*nTerm
-                           + sizeof(*pIdxOrderBy)*nOrderBy );
+                           + sizeof(*pIdxOrderBy)*nOrderBy + sizeof(*pHidden) );
   if( pIdxInfo==0 ){
     sqlite3ErrorMsg(pParse, "out of memory");
     return 0;
@@ -8760,7 +8892,8 @@ static sqlite3_index_info *allocateIndexInfo(
   ** changing them.  We have to do some funky casting in order to
   ** initialize those fields.
   */
-  pIdxCons = (struct sqlite3_index_constraint*)&pIdxInfo[1];
+  pHidden = (struct HiddenIndexInfo*)&pIdxInfo[1];
+  pIdxCons = (struct sqlite3_index_constraint*)&pHidden[1];
   pIdxOrderBy = (struct sqlite3_index_orderby*)&pIdxCons[nTerm];
   pUsage = (struct sqlite3_index_constraint_usage*)&pIdxOrderBy[nOrderBy];
   *(int*)&pIdxInfo->nConstraint = nTerm;
@@ -8770,6 +8903,8 @@ static sqlite3_index_info *allocateIndexInfo(
   *(struct sqlite3_index_constraint_usage**)&pIdxInfo->aConstraintUsage =
                                                                    pUsage;
 
+  pHidden->pWC = pWC;
+  pHidden->pParse = pParse;
   for(i=j=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
     u16 op;
     if( pTerm->leftCursor != pSrc->iCursor ) continue;
@@ -9718,22 +9853,21 @@ static void whereLoopDelete(sqlite3 *db, WhereLoop *p){
 ** Free a WhereInfo structure
 */
 static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
-  if( ALWAYS(pWInfo) ){
-    int i;
-    for(i=0; i<pWInfo->nLevel; i++){
-      WhereLevel *pLevel = &pWInfo->a[i];
-      if( pLevel->pWLoop && (pLevel->pWLoop->wsFlags & WHERE_IN_ABLE) ){
-        sqlite3DbFree(db, pLevel->u.in.aInLoop);
-      }
+  int i;
+  assert( pWInfo!=0 );
+  for(i=0; i<pWInfo->nLevel; i++){
+    WhereLevel *pLevel = &pWInfo->a[i];
+    if( pLevel->pWLoop && (pLevel->pWLoop->wsFlags & WHERE_IN_ABLE) ){
+      sqlite3DbFree(db, pLevel->u.in.aInLoop);
     }
-    sqlite3WhereClauseClear(&pWInfo->sWC);
-    while( pWInfo->pLoops ){
-      WhereLoop *p = pWInfo->pLoops;
-      pWInfo->pLoops = p->pNextLoop;
-      whereLoopDelete(db, p);
-    }
-    sqlite3DbFreeNN(db, pWInfo);
   }
+  sqlite3WhereClauseClear(&pWInfo->sWC);
+  while( pWInfo->pLoops ){
+    WhereLoop *p = pWInfo->pLoops;
+    pWInfo->pLoops = p->pNextLoop;
+    whereLoopDelete(db, p);
+  }
+  sqlite3DbFreeNN(db, pWInfo);
 }
 
 /*
@@ -10316,7 +10450,7 @@ static int whereLoopAddBtreeIndex(
       pNew->wsFlags |= WHERE_COLUMN_EQ;
       assert( saved_nEq==pNew->u.btree.nEq );
       if( iCol==XN_ROWID 
-       || (iCol>0 && nInMul==0 && saved_nEq==pProbe->nKeyCol-1)
+       || (iCol>=0 && nInMul==0 && saved_nEq==pProbe->nKeyCol-1)
       ){
         if( iCol>=0 && pProbe->uniqNotNull==0 ){
           pNew->wsFlags |= WHERE_UNQ_WANTED;
@@ -10725,14 +10859,17 @@ static int whereLoopAddBtree(
   }
 #endif /* SQLITE_OMIT_AUTOMATIC_INDEX */
 
-  /* Loop over all indices
-  */
-  for(; rc==SQLITE_OK && pProbe; pProbe=pProbe->pNext, iSortIdx++){
+  /* Loop over all indices. If there was an INDEXED BY clause, then only 
+  ** consider index pProbe.  */
+  for(; rc==SQLITE_OK && pProbe; 
+      pProbe=(pSrc->pIBIndex ? 0 : pProbe->pNext), iSortIdx++
+  ){
     if( pProbe->pPartIdxWhere!=0
      && !whereUsablePartialIndex(pSrc->iCursor, pWC, pProbe->pPartIdxWhere) ){
       testcase( pNew->iTab!=pSrc->iCursor );  /* See ticket [98d973b8f5] */
       continue;  /* Partial index inappropriate for this query */
     }
+    if( pProbe->bNoQuery ) continue;
     rSize = pProbe->aiRowLogEst[0];
     pNew->u.btree.nEq = 0;
     pNew->u.btree.nBtm = 0;
@@ -10837,10 +10974,6 @@ static int whereLoopAddBtree(
     pBuilder->nRecValid = 0;
     pBuilder->pRec = 0;
 #endif
-
-    /* If there was an INDEXED BY clause, then only that one index is
-    ** considered. */
-    if( pSrc->pIBIndex ) break;
   }
   return rc;
 }
@@ -10995,6 +11128,27 @@ static int whereLoopAddVirtualOne(
   return rc;
 }
 
+/*
+** If this function is invoked from within an xBestIndex() callback, it
+** returns a pointer to a buffer containing the name of the collation
+** sequence associated with element iCons of the sqlite3_index_info.aConstraint
+** array. Or, if iCons is out of range or there is no active xBestIndex
+** call, return NULL.
+*/
+SQLITE_API const char *sqlite3_vtab_collation(sqlite3_index_info *pIdxInfo, int iCons){
+  HiddenIndexInfo *pHidden = (HiddenIndexInfo*)&pIdxInfo[1];
+  const char *zRet = 0;
+  if( iCons>=0 && iCons<pIdxInfo->nConstraint ){
+    CollSeq *pC = 0;
+    int iTerm = pIdxInfo->aConstraint[iCons].iTermOffset;
+    Expr *pX = pHidden->pWC->a[iTerm].pExpr;
+    if( pX->pLeft ){
+      pC = sqlite3BinaryCompareCollSeq(pHidden->pParse, pX->pLeft, pX->pRight);
+    }
+    zRet = (pC ? pC->zName : "BINARY");
+  }
+  return zRet;
+}
 
 /*
 ** Add all WhereLoop objects for a table of the join identified by
@@ -12535,35 +12689,80 @@ SQLITE_PRIVATE WhereInfo *sqlite3WhereBegin(
     }
   }
 #endif
-  /* Attempt to omit tables from the join that do not effect the result */
+
+  /* Attempt to omit tables from the join that do not affect the result.
+  ** For a table to not affect the result, the following must be true:
+  **
+  **   1) The query must not be an aggregate.
+  **   2) The table must be the RHS of a LEFT JOIN.
+  **   3) Either the query must be DISTINCT, or else the ON or USING clause
+  **      must contain a constraint that limits the scan of the table to 
+  **      at most a single row.
+  **   4) The table must not be referenced by any part of the query apart
+  **      from its own USING or ON clause.
+  **
+  ** For example, given:
+  **
+  **     CREATE TABLE t1(ipk INTEGER PRIMARY KEY, v1);
+  **     CREATE TABLE t2(ipk INTEGER PRIMARY KEY, v2);
+  **     CREATE TABLE t3(ipk INTEGER PRIMARY KEY, v3);
+  **
+  ** then table t2 can be omitted from the following:
+  **
+  **     SELECT v1, v3 FROM t1 
+  **       LEFT JOIN t2 USING (t1.ipk=t2.ipk)
+  **       LEFT JOIN t3 USING (t1.ipk=t3.ipk)
+  **
+  ** or from:
+  **
+  **     SELECT DISTINCT v1, v3 FROM t1 
+  **       LEFT JOIN t2
+  **       LEFT JOIN t3 USING (t1.ipk=t3.ipk)
+  */
+  notReady = ~(Bitmask)0;
   if( pWInfo->nLevel>=2
-   && pResultSet!=0
+   && pResultSet!=0               /* guarantees condition (1) above */
    && OptimizationEnabled(db, SQLITE_OmitNoopJoin)
   ){
+    int i;
     Bitmask tabUsed = sqlite3WhereExprListUsage(pMaskSet, pResultSet);
     if( sWLB.pOrderBy ){
       tabUsed |= sqlite3WhereExprListUsage(pMaskSet, sWLB.pOrderBy);
     }
-    while( pWInfo->nLevel>=2 ){
+    for(i=pWInfo->nLevel-1; i>=1; i--){
       WhereTerm *pTerm, *pEnd;
-      pLoop = pWInfo->a[pWInfo->nLevel-1].pWLoop;
-      if( (pWInfo->pTabList->a[pLoop->iTab].fg.jointype & JT_LEFT)==0 ) break;
+      struct SrcList_item *pItem;
+      pLoop = pWInfo->a[i].pWLoop;
+      pItem = &pWInfo->pTabList->a[pLoop->iTab];
+      if( (pItem->fg.jointype & JT_LEFT)==0 ) continue;
       if( (wctrlFlags & WHERE_WANT_DISTINCT)==0
        && (pLoop->wsFlags & WHERE_ONEROW)==0
       ){
-        break;
+        continue;
       }
-      if( (tabUsed & pLoop->maskSelf)!=0 ) break;
+      if( (tabUsed & pLoop->maskSelf)!=0 ) continue;
       pEnd = sWLB.pWC->a + sWLB.pWC->nTerm;
       for(pTerm=sWLB.pWC->a; pTerm<pEnd; pTerm++){
-        if( (pTerm->prereqAll & pLoop->maskSelf)!=0
-         && !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
-        ){
-          break;
+        if( (pTerm->prereqAll & pLoop->maskSelf)!=0 ){
+          if( !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
+           || pTerm->pExpr->iRightJoinTable!=pItem->iCursor
+          ){
+            break;
+          }
         }
       }
-      if( pTerm<pEnd ) break;
+      if( pTerm<pEnd ) continue;
       WHERETRACE(0xffff, ("-> drop loop %c not used\n", pLoop->cId));
+      notReady &= ~pLoop->maskSelf;
+      for(pTerm=sWLB.pWC->a; pTerm<pEnd; pTerm++){
+        if( (pTerm->prereqAll & pLoop->maskSelf)!=0 ){
+          pTerm->wtFlags |= TERM_CODED;
+        }
+      }
+      if( i!=pWInfo->nLevel-1 ){
+        int nByte = (pWInfo->nLevel-1-i) * sizeof(WhereLevel);
+        memmove(&pWInfo->a[i], &pWInfo->a[i+1], nByte);
+      }
       pWInfo->nLevel--;
       nTabList--;
     }
@@ -12573,15 +12772,32 @@ SQLITE_PRIVATE WhereInfo *sqlite3WhereBegin(
 
   /* If the caller is an UPDATE or DELETE statement that is requesting
   ** to use a one-pass algorithm, determine if this is appropriate.
+  **
+  ** A one-pass approach can be used if the caller has requested one
+  ** and either (a) the scan visits at most one row or (b) each
+  ** of the following are true:
+  **
+  **   * the caller has indicated that a one-pass approach can be used
+  **     with multiple rows (by setting WHERE_ONEPASS_MULTIROW), and
+  **   * the table is not a virtual table, and
+  **   * either the scan does not use the OR optimization or the caller
+  **     is a DELETE operation (WHERE_DUPLICATES_OK is only specified
+  **     for DELETE).
+  **
+  ** The last qualification is because an UPDATE statement uses
+  ** WhereInfo.aiCurOnePass[1] to determine whether or not it really can
+  ** use a one-pass approach, and this is not set accurately for scans
+  ** that use the OR optimization.
   */
   assert( (wctrlFlags & WHERE_ONEPASS_DESIRED)==0 || pWInfo->nLevel==1 );
   if( (wctrlFlags & WHERE_ONEPASS_DESIRED)!=0 ){
     int wsFlags = pWInfo->a[0].pWLoop->wsFlags;
     int bOnerow = (wsFlags & WHERE_ONEROW)!=0;
-    if( bOnerow
-     || ((wctrlFlags & WHERE_ONEPASS_MULTIROW)!=0
-           && 0==(wsFlags & WHERE_VIRTUALTABLE))
-    ){
+    if( bOnerow || (
+        0!=(wctrlFlags & WHERE_ONEPASS_MULTIROW)
+     && 0==(wsFlags & WHERE_VIRTUALTABLE)
+     && (0==(wsFlags & WHERE_MULTI_OR) || (wctrlFlags & WHERE_DUPLICATES_OK))
+    )){
       pWInfo->eOnePass = bOnerow ? ONEPASS_SINGLE : ONEPASS_MULTI;
       if( HasRowid(pTabList->a[0].pTab) && (wsFlags & WHERE_IDX_ONLY) ){
         if( wctrlFlags & WHERE_ONEPASS_MULTIROW ){
@@ -12718,7 +12934,6 @@ SQLITE_PRIVATE WhereInfo *sqlite3WhereBegin(
   ** loop below generates code for a single nested loop of the VM
   ** program.
   */
-  notReady = ~(Bitmask)0;
   for(ii=0; ii<nTabList; ii++){
     int addrExplain;
     int wsFlags;
@@ -12782,6 +12997,7 @@ SQLITE_PRIVATE void sqlite3WhereEnd(WhereInfo *pWInfo){
       Index *pIdx;
       int n;
       if( pWInfo->eDistinct==WHERE_DISTINCT_ORDERED
+       && i==pWInfo->nLevel-1  /* Ticket [ef9318757b152e3] 2017-10-21 */
        && (pLoop->wsFlags & WHERE_INDEXED)!=0
        && (pIdx = pLoop->u.btree.pIndex)->hasStat1
        && (n = pLoop->u.btree.nIdxCol)>0
@@ -12848,7 +13064,8 @@ SQLITE_PRIVATE void sqlite3WhereEnd(WhereInfo *pWInfo){
       addr = sqlite3VdbeAddOp1(v, OP_IfPos, pLevel->iLeftJoin); VdbeCoverage(v);
       assert( (ws & WHERE_IDX_ONLY)==0 || (ws & WHERE_INDEXED)!=0 );
       if( (ws & WHERE_IDX_ONLY)==0 ){
-        sqlite3VdbeAddOp1(v, OP_NullRow, pTabList->a[i].iCursor);
+        assert( pLevel->iTabCur==pTabList->a[pLevel->iFrom].iCursor );
+        sqlite3VdbeAddOp1(v, OP_NullRow, pLevel->iTabCur);
       }
       if( (ws & WHERE_INDEXED) 
        || ((ws & WHERE_MULTI_OR) && pLevel->u.pCovidx) 
@@ -12917,7 +13134,11 @@ SQLITE_PRIVATE void sqlite3WhereEnd(WhereInfo *pWInfo){
       pOp = sqlite3VdbeGetOp(v, k);
       for(; k<last; k++, pOp++){
         if( pOp->p1!=pLevel->iTabCur ) continue;
-        if( pOp->opcode==OP_Column ){
+        if( pOp->opcode==OP_Column
+#ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
+         || pOp->opcode==OP_Offset
+#endif
+        ){
           int x = pOp->p2;
           assert( pIdx->pTable==pTab );
           if( !HasRowid(pTab) ){
@@ -13017,15 +13238,6 @@ SQLITE_PRIVATE void sqlite3WhereEnd(WhereInfo *pWInfo){
 #define YYMALLOCARGTYPE  u64
 
 /*
-** An instance of this structure holds information about the
-** LIMIT clause of a SELECT statement.
-*/
-struct LimitVal {
-  Expr *pLimit;    /* The LIMIT expression.  NULL if there is no limit */
-  Expr *pOffset;   /* The OFFSET expression.  NULL if there is none */
-};
-
-/*
 ** An instance of the following structure describes the event of a
 ** TRIGGER.  "a" is the event type, one of TK_UPDATE, TK_INSERT,
 ** TK_DELETE, or TK_INSTEAD.  If the event is of the form
@@ -13068,20 +13280,12 @@ static void disableLookaside(Parse *pParse){
     }
   }
 
-  /* This is a utility routine used to set the ExprSpan.zStart and
-  ** ExprSpan.zEnd values of pOut so that the span covers the complete
-  ** range of text beginning with pStart and going to the end of pEnd.
-  */
-  static void spanSet(ExprSpan *pOut, Token *pStart, Token *pEnd){
-    pOut->zStart = pStart->z;
-    pOut->zEnd = &pEnd->z[pEnd->n];
-  }
 
   /* Construct a new Expr object from a single identifier.  Use the
   ** new Expr to populate pOut.  Set the span of pOut to be the identifier
   ** that created the expression.
   */
-  static void spanExpr(ExprSpan *pOut, Parse *pParse, int op, Token t){
+  static Expr *tokenExpr(Parse *pParse, int op, Token t){
     Expr *p = sqlite3DbMallocRawNN(pParse->db, sizeof(Expr)+t.n+1);
     if( p ){
       memset(p, 0, sizeof(Expr));
@@ -13099,44 +13303,8 @@ static void disableLookaside(Parse *pParse){
       p->nHeight = 1;
 #endif  
     }
-    pOut->pExpr = p;
-    pOut->zStart = t.z;
-    pOut->zEnd = &t.z[t.n];
+    return p;
   }
-
-  /* This routine constructs a binary expression node out of two ExprSpan
-  ** objects and uses the result to populate a new ExprSpan object.
-  */
-  static void spanBinaryExpr(
-    Parse *pParse,      /* The parsing context.  Errors accumulate here */
-    int op,             /* The binary operation */
-    ExprSpan *pLeft,    /* The left operand, and output */
-    ExprSpan *pRight    /* The right operand */
-  ){
-    pLeft->pExpr = sqlite3PExpr(pParse, op, pLeft->pExpr, pRight->pExpr);
-    pLeft->zEnd = pRight->zEnd;
-  }
-
-  /* If doNot is true, then add a TK_NOT Expr-node wrapper around the
-  ** outside of *ppExpr.
-  */
-  static void exprNot(Parse *pParse, int doNot, ExprSpan *pSpan){
-    if( doNot ){
-      pSpan->pExpr = sqlite3PExpr(pParse, TK_NOT, pSpan->pExpr, 0);
-    }
-  }
-
-  /* Construct an expression node for a unary postfix operator
-  */
-  static void spanUnaryPostfix(
-    Parse *pParse,         /* Parsing context to record errors */
-    int op,                /* The operator */
-    ExprSpan *pOperand,    /* The operand, and output */
-    Token *pPostOp         /* The operand token for setting the span */
-  ){
-    pOperand->pExpr = sqlite3PExpr(pParse, op, pOperand->pExpr, 0);
-    pOperand->zEnd = &pPostOp->z[pPostOp->n];
-  }                           
 
   /* A routine to convert a binary TK_IS or TK_ISNOT expression into a
   ** unary TK_ISNULL or TK_NOTNULL expression. */
@@ -13147,20 +13315,6 @@ static void disableLookaside(Parse *pParse){
       sqlite3ExprDelete(db, pA->pRight);
       pA->pRight = 0;
     }
-  }
-
-  /* Construct an expression node for a unary prefix operator
-  */
-  static void spanUnaryPrefix(
-    ExprSpan *pOut,        /* Write the new expression node here */
-    Parse *pParse,         /* Parsing context to record errors */
-    int op,                /* The operator */
-    ExprSpan *pOperand,    /* The operand */
-    Token *pPreOp         /* The operand token for setting the span */
-  ){
-    pOut->zStart = pPreOp->z;
-    pOut->pExpr = sqlite3PExpr(pParse, op, pOperand->pExpr, 0);
-    pOut->zEnd = pOperand->zEnd;
   }
 
   /* Add a single new term to an ExprList that is used to store a
@@ -13231,39 +13385,39 @@ static void disableLookaside(Parse *pParse){
 **                       defined, then do no error processing.
 **    YYNSTATE           the combined number of states.
 **    YYNRULE            the number of rules in the grammar
+**    YYNTOKEN           Number of terminal symbols
 **    YY_MAX_SHIFT       Maximum value for shift actions
 **    YY_MIN_SHIFTREDUCE Minimum value for shift-reduce actions
 **    YY_MAX_SHIFTREDUCE Maximum value for shift-reduce actions
-**    YY_MIN_REDUCE      Minimum value for reduce actions
-**    YY_MAX_REDUCE      Maximum value for reduce actions
 **    YY_ERROR_ACTION    The yy_action[] code for syntax error
 **    YY_ACCEPT_ACTION   The yy_action[] code for accept
 **    YY_NO_ACTION       The yy_action[] code for no-op
+**    YY_MIN_REDUCE      Minimum value for reduce actions
+**    YY_MAX_REDUCE      Maximum value for reduce actions
 */
 #ifndef INTERFACE
 # define INTERFACE 1
 #endif
 /************* Begin control #defines *****************************************/
 #define YYCODETYPE unsigned char
-#define YYNOCODE 252
+#define YYNOCODE 253
 #define YYACTIONTYPE unsigned short int
 #define YYWILDCARD 83
 #define sqlite3ParserTOKENTYPE Token
 typedef union {
   int yyinit;
   sqlite3ParserTOKENTYPE yy0;
-  Expr* yy72;
-  TriggerStep* yy145;
-  ExprList* yy148;
-  SrcList* yy185;
-  ExprSpan yy190;
-  int yy194;
-  Select* yy243;
-  IdList* yy254;
-  With* yy285;
-  struct TrigEvent yy332;
-  struct LimitVal yy354;
-  struct {int value; int mask;} yy497;
+  int yy4;
+  struct TrigEvent yy90;
+  TriggerStep* yy203;
+  struct {int value; int mask;} yy215;
+  SrcList* yy259;
+  Expr* yy314;
+  ExprList* yy322;
+  const char* yy336;
+  IdList* yy384;
+  Select* yy387;
+  With* yy451;
 } YYMINORTYPE;
 #ifndef YYSTACKDEPTH
 #define YYSTACKDEPTH 100
@@ -13273,16 +13427,17 @@ typedef union {
 #define sqlite3ParserARG_FETCH Parse *pParse = yypParser->pParse
 #define sqlite3ParserARG_STORE yypParser->pParse = pParse
 #define YYFALLBACK 1
-#define YYNSTATE             455
-#define YYNRULE              329
-#define YY_MAX_SHIFT         454
-#define YY_MIN_SHIFTREDUCE   664
-#define YY_MAX_SHIFTREDUCE   992
-#define YY_MIN_REDUCE        993
-#define YY_MAX_REDUCE        1321
-#define YY_ERROR_ACTION      1322
-#define YY_ACCEPT_ACTION     1323
-#define YY_NO_ACTION         1324
+#define YYNSTATE             466
+#define YYNRULE              330
+#define YYNTOKEN             143
+#define YY_MAX_SHIFT         465
+#define YY_MIN_SHIFTREDUCE   675
+#define YY_MAX_SHIFTREDUCE   1004
+#define YY_ERROR_ACTION      1005
+#define YY_ACCEPT_ACTION     1006
+#define YY_NO_ACTION         1007
+#define YY_MIN_REDUCE        1008
+#define YY_MAX_REDUCE        1337
 /************* End control #defines *******************************************/
 
 /* Define the yytestcase() macro to be a no-op if is not already defined
@@ -13312,9 +13467,6 @@ typedef union {
 **   N between YY_MIN_SHIFTREDUCE       Shift to an arbitrary state then
 **     and YY_MAX_SHIFTREDUCE           reduce by rule N-YY_MIN_SHIFTREDUCE.
 **
-**   N between YY_MIN_REDUCE            Reduce by rule N-YY_MIN_REDUCE
-**     and YY_MAX_REDUCE
-**
 **   N == YY_ERROR_ACTION               A syntax error has occurred.
 **
 **   N == YY_ACCEPT_ACTION              The parser accepts its input.
@@ -13322,25 +13474,22 @@ typedef union {
 **   N == YY_NO_ACTION                  No such action.  Denotes unused
 **                                      slots in the yy_action[] table.
 **
+**   N between YY_MIN_REDUCE            Reduce by rule N-YY_MIN_REDUCE
+**     and YY_MAX_REDUCE
+**
 ** The action table is constructed as a single large table named yy_action[].
 ** Given state S and lookahead X, the action is computed as either:
 **
 **    (A)   N = yy_action[ yy_shift_ofst[S] + X ]
 **    (B)   N = yy_default[S]
 **
-** The (A) formula is preferred.  The B formula is used instead if:
-**    (1)  The yy_shift_ofst[S]+X value is out of range, or
-**    (2)  yy_lookahead[yy_shift_ofst[S]+X] is not equal to X, or
-**    (3)  yy_shift_ofst[S] equal YY_SHIFT_USE_DFLT.
-** (Implementation note: YY_SHIFT_USE_DFLT is chosen so that
-** YY_SHIFT_USE_DFLT+X will be out of range for all possible lookaheads X.
-** Hence only tests (1) and (2) need to be evaluated.)
+** The (A) formula is preferred.  The B formula is used instead if
+** yy_lookahead[yy_shift_ofst[S]+X] is not equal to X.
 **
 ** The formulas above are for computing the action when the lookahead is
 ** a terminal symbol.  If the lookahead is a non-terminal (as occurs after
 ** a reduce action) then the yy_reduce_ofst[] array is used in place of
-** the yy_shift_ofst[] array and YY_REDUCE_USE_DFLT is used in place of
-** YY_SHIFT_USE_DFLT.
+** the yy_shift_ofst[] array.
 **
 ** The following are the tables generated in this section:
 **
@@ -13354,463 +13503,474 @@ typedef union {
 **  yy_default[]       Default action for each state.
 **
 *********** Begin parsing tables **********************************************/
-#define YY_ACTTAB_COUNT (1566)
+#define YY_ACTTAB_COUNT (1541)
 static const YYACTIONTYPE yy_action[] = {
- /*     0 */   324, 1323,  155,  155,    2,  203,   94,   94,   94,   93,
- /*    10 */   350,   98,   98,   98,   98,   91,   95,   95,   94,   94,
- /*    20 */    94,   93,  350,  268,   99,  100,   90,  971,  971,  847,
- /*    30 */   850,  839,  839,   97,   97,   98,   98,   98,   98,  350,
- /*    40 */   969,   96,   96,   96,   96,   95,   95,   94,   94,   94,
- /*    50 */    93,  350,  950,   96,   96,   96,   96,   95,   95,   94,
- /*    60 */    94,   94,   93,  350,  250,   96,   96,   96,   96,   95,
- /*    70 */    95,   94,   94,   94,   93,  350,  224,  224,  969,  132,
- /*    80 */   888,  348,  347,  415,  172,  324, 1286,  449,  414,  950,
- /*    90 */   951,  952,  808,  977, 1032,  950,  300,  786,  428,  132,
- /*   100 */   975,  362,  976,    9,    9,  787,  132,   52,   52,   99,
- /*   110 */   100,   90,  971,  971,  847,  850,  839,  839,   97,   97,
- /*   120 */    98,   98,   98,   98,  372,  978,  241,  978,  262,  369,
- /*   130 */   261,  120,  950,  951,  952,  194,   58,  324,  401,  398,
- /*   140 */   397,  808,  427,  429,   75,  808, 1260, 1260,  132,  396,
- /*   150 */    96,   96,   96,   96,   95,   95,   94,   94,   94,   93,
- /*   160 */   350,   99,  100,   90,  971,  971,  847,  850,  839,  839,
- /*   170 */    97,   97,   98,   98,   98,   98,  786,  262,  369,  261,
- /*   180 */   826,  262,  364,  251,  787, 1084,  101, 1114,   72,  324,
- /*   190 */   227, 1113,  242,  411,  442,  819,   92,   89,  178,  818,
- /*   200 */  1022,  268,   96,   96,   96,   96,   95,   95,   94,   94,
- /*   210 */    94,   93,  350,   99,  100,   90,  971,  971,  847,  850,
- /*   220 */   839,  839,   97,   97,   98,   98,   98,   98,  449,  372,
- /*   230 */   818,  818,  820,   92,   89,  178,   60,   92,   89,  178,
- /*   240 */  1025,  324,  357,  930, 1316,  300,   61, 1316,   52,   52,
- /*   250 */   836,  836,  848,  851,   96,   96,   96,   96,   95,   95,
- /*   260 */    94,   94,   94,   93,  350,   99,  100,   90,  971,  971,
- /*   270 */   847,  850,  839,  839,   97,   97,   98,   98,   98,   98,
- /*   280 */    92,   89,  178,  427,  412,  198,  930, 1317,  454,  995,
- /*   290 */  1317,  355, 1024,  324,  243,  231,  114,  277,  348,  347,
- /*   300 */  1242,  950,  416, 1071,  928,  840,   96,   96,   96,   96,
- /*   310 */    95,   95,   94,   94,   94,   93,  350,   99,  100,   90,
- /*   320 */   971,  971,  847,  850,  839,  839,   97,   97,   98,   98,
- /*   330 */    98,   98,  449,  328,  449,  120,   23,  256,  950,  951,
- /*   340 */   952,  968,  978,  438,  978,  324,  329,  928,  954,  701,
- /*   350 */   200,  175,   52,   52,   52,   52,  939,  353,   96,   96,
- /*   360 */    96,   96,   95,   95,   94,   94,   94,   93,  350,   99,
- /*   370 */   100,   90,  971,  971,  847,  850,  839,  839,   97,   97,
- /*   380 */    98,   98,   98,   98,  354,  449,  954,  427,  417,  427,
- /*   390 */   426, 1290,   92,   89,  178,  268,  253,  324,  255, 1058,
- /*   400 */  1037,  694,   93,  350,  383,   52,   52,  380, 1058,  374,
- /*   410 */    96,   96,   96,   96,   95,   95,   94,   94,   94,   93,
- /*   420 */   350,   99,  100,   90,  971,  971,  847,  850,  839,  839,
- /*   430 */    97,   97,   98,   98,   98,   98,  228,  449,  167,  449,
- /*   440 */   427,  407,  157,  446,  446,  446,  349,  349,  349,  324,
- /*   450 */   310,  316,  991,  827,  320,  242,  411,   51,   51,   36,
- /*   460 */    36,  254,   96,   96,   96,   96,   95,   95,   94,   94,
- /*   470 */    94,   93,  350,   99,  100,   90,  971,  971,  847,  850,
- /*   480 */   839,  839,   97,   97,   98,   98,   98,   98,  194,  316,
- /*   490 */   929,  401,  398,  397,  224,  224, 1265,  939,  353, 1318,
- /*   500 */   317,  324,  396, 1063, 1063,  813,  414, 1061, 1061,  950,
- /*   510 */   299,  448,  992,  268,   96,   96,   96,   96,   95,   95,
- /*   520 */    94,   94,   94,   93,  350,   99,  100,   90,  971,  971,
- /*   530 */   847,  850,  839,  839,   97,   97,   98,   98,   98,   98,
- /*   540 */   757, 1041,  449,  893,  893,  386,  950,  951,  952,  410,
- /*   550 */   992,  747,  747,  324,  229,  268,  221,  296,  268,  771,
- /*   560 */   890,  378,   52,   52,  890,  421,   96,   96,   96,   96,
- /*   570 */    95,   95,   94,   94,   94,   93,  350,   99,  100,   90,
- /*   580 */   971,  971,  847,  850,  839,  839,   97,   97,   98,   98,
- /*   590 */    98,   98,  103,  449,  275,  384, 1241,  343,  157, 1207,
- /*   600 */   909,  669,  670,  671,  176,  197,  196,  195,  324,  298,
- /*   610 */   319, 1266,    2,   37,   37,  910, 1134, 1040,   96,   96,
- /*   620 */    96,   96,   95,   95,   94,   94,   94,   93,  350,  697,
- /*   630 */   911,  177,   99,  100,   90,  971,  971,  847,  850,  839,
- /*   640 */   839,   97,   97,   98,   98,   98,   98,  230,  146,  120,
- /*   650 */   735, 1235,  826,  270, 1141,  273, 1141,  771,  171,  170,
- /*   660 */   736, 1141,   82,  324,   80,  268,  697,  819,  158,  268,
- /*   670 */   378,  818,   78,   96,   96,   96,   96,   95,   95,   94,
- /*   680 */    94,   94,   93,  350,  120,  950,  393,   99,  100,   90,
- /*   690 */   971,  971,  847,  850,  839,  839,   97,   97,   98,   98,
- /*   700 */    98,   98,  818,  818,  820, 1141, 1070,  370,  331,  133,
- /*   710 */  1066, 1141, 1250,  198,  268,  324, 1016,  330,  245,  333,
- /*   720 */    24,  334,  950,  951,  952,  368,  335,   81,   96,   96,
- /*   730 */    96,   96,   95,   95,   94,   94,   94,   93,  350,   99,
- /*   740 */   100,   90,  971,  971,  847,  850,  839,  839,   97,   97,
- /*   750 */    98,   98,   98,   98,  132,  267,  260,  445,  330,  223,
- /*   760 */   175, 1289,  925,  752,  724,  318, 1073,  324,  751,  246,
- /*   770 */   385,  301,  301,  378,  329,  361,  344,  414, 1233,  280,
- /*   780 */    96,   96,   96,   96,   95,   95,   94,   94,   94,   93,
- /*   790 */   350,   99,   88,   90,  971,  971,  847,  850,  839,  839,
- /*   800 */    97,   97,   98,   98,   98,   98,  337,  346,  721,  722,
- /*   810 */   449,  120,  118,  887,  162,  887,  810,  371,  324,  202,
- /*   820 */   202,  373,  249,  263,  202,  394,   74,  704,  208, 1069,
- /*   830 */    12,   12,   96,   96,   96,   96,   95,   95,   94,   94,
- /*   840 */    94,   93,  350,  100,   90,  971,  971,  847,  850,  839,
- /*   850 */   839,   97,   97,   98,   98,   98,   98,  449,  771,  232,
- /*   860 */   449,  278,  120,  286,   74,  704,  714,  713,  324,  342,
- /*   870 */   749,  877, 1209,   77,  285, 1255,  780,   52,   52,  202,
- /*   880 */    27,   27,  418,   96,   96,   96,   96,   95,   95,   94,
- /*   890 */    94,   94,   93,  350,   90,  971,  971,  847,  850,  839,
- /*   900 */   839,   97,   97,   98,   98,   98,   98,   86,  444,  877,
- /*   910 */     3, 1193,  422, 1013,  873,  435,  886,  208,  886,  689,
- /*   920 */  1091,  257,  116,  822,  447, 1230,  117, 1229,   86,  444,
- /*   930 */   177,    3,  381,   96,   96,   96,   96,   95,   95,   94,
- /*   940 */    94,   94,   93,  350,  339,  447,  120,  351,  120,  212,
- /*   950 */   169,  287,  404,  282,  403,  199,  771,  950,  433,  419,
- /*   960 */   439,  822,  280,  691, 1039,  264,  269,  132,  351,  153,
- /*   970 */   826,  376,   74,  272,  274,  276,   83,   84, 1054,  433,
- /*   980 */   147, 1038,  443,   85,  351,  451,  450,  281,  132,  818,
- /*   990 */    25,  826,  449,  120,  950,  951,  952,   83,   84,   86,
- /*  1000 */   444,  691,    3,  408,   85,  351,  451,  450,  449,    5,
- /*  1010 */   818,  203,   32,   32, 1107,  120,  447,  950,  225, 1140,
- /*  1020 */   818,  818,  820,  821,   19,  203,  226,  950,   38,   38,
- /*  1030 */  1087,  314,  314,  313,  215,  311,  120,  449,  678,  351,
- /*  1040 */   237,  818,  818,  820,  821,   19,  969,  409,  377,    1,
- /*  1050 */   433,  180,  706,  248,  950,  951,  952,   10,   10,  449,
- /*  1060 */   969,  247,  826, 1098,  950,  951,  952,  430,   83,   84,
- /*  1070 */   756,  336,  950,   20,  431,   85,  351,  451,  450,   10,
- /*  1080 */    10,  818,   86,  444,  969,    3,  950,  449,  302,  303,
- /*  1090 */   182,  950, 1146,  338, 1021, 1015, 1004,  183,  969,  447,
- /*  1100 */   132,  181,   76,  444,   21,    3,  449,   10,   10,  950,
- /*  1110 */   951,  952,  818,  818,  820,  821,   19,  715, 1279,  447,
- /*  1120 */   389,  233,  351,  950,  951,  952,   10,   10,  950,  951,
- /*  1130 */   952, 1003,  218,  433, 1005,  325, 1273,  773,  289,  291,
- /*  1140 */   424,  293,  351,    7,  159,  826,  363,  402,  315,  360,
- /*  1150 */  1129,   83,   84,  433, 1232,  716,  772,  259,   85,  351,
- /*  1160 */   451,  450,  358,  375,  818,  826,  360,  359,  399, 1211,
- /*  1170 */   157,   83,   84,  681,   98,   98,   98,   98,   85,  351,
- /*  1180 */   451,  450,  323,  252,  818,  295, 1211, 1213, 1235,  173,
- /*  1190 */  1037,  284,  434,  340, 1204,  818,  818,  820,  821,   19,
- /*  1200 */   308,  234,  449,  234,   96,   96,   96,   96,   95,   95,
- /*  1210 */    94,   94,   94,   93,  350,  818,  818,  820,  821,   19,
- /*  1220 */   909,  120,   39,   39, 1203,  449,  168,  360,  449, 1276,
- /*  1230 */   367,  449,  135,  449,  986,  910,  449, 1249,  449, 1247,
- /*  1240 */   449,  205,  983,  449,  370,   40,   40, 1211,   41,   41,
- /*  1250 */   911,   42,   42,   28,   28,  870,   29,   29,   31,   31,
- /*  1260 */    43,   43,  379,   44,   44,  449,   59,  449,  332,  449,
- /*  1270 */   432,   62,  144,  156,  449,  130,  449,   72,  449,  137,
- /*  1280 */   449,  365,  449,  392,  139,   45,   45,   11,   11,   46,
- /*  1290 */    46,  140, 1200,  449,  105,  105,   47,   47,   48,   48,
- /*  1300 */    33,   33,   49,   49, 1126,  449,  141,  366,  449,  185,
- /*  1310 */   142,  449, 1234,   50,   50,  449,  160,  449,  148,  449,
- /*  1320 */  1136,  382,  449,   67,  449,   34,   34,  449,  122,  122,
- /*  1330 */   449,  123,  123,  449, 1198,  124,  124,   56,   56,   35,
- /*  1340 */    35,  449,  106,  106,   53,   53,  449,  107,  107,  449,
- /*  1350 */   108,  108,  449,  104,  104,  449,  406,  449,  388,  449,
- /*  1360 */   189,  121,  121,  449,  190,  449,  119,  119,  449,  112,
- /*  1370 */   112,  449,  111,  111, 1218,  109,  109,  110,  110,   55,
- /*  1380 */    55,  266,  752,   57,   57,   54,   54,  751,   26,   26,
- /*  1390 */  1099,   30,   30,  219,  154,  390,  271,  191,  321, 1006,
- /*  1400 */   192,  405, 1057, 1056, 1055,  341, 1048,  706, 1047, 1029,
- /*  1410 */   322,  420, 1028,   71, 1095,  283,  288, 1027, 1288,  204,
- /*  1420 */     6,  297,   79, 1184,  437, 1096, 1094,  290,  345,  292,
- /*  1430 */   441, 1093,  294,  102,  425,   73,  423,  213, 1012,   22,
- /*  1440 */   452,  945,  214, 1077,  216,  217,  238,  453,  306,  304,
- /*  1450 */   307,  239,  240, 1001,  305,  125,  996,  126,  115,  235,
- /*  1460 */   127,  665,  352,  166,  244,  179,  356,  113,  885,  883,
- /*  1470 */   806,  136,  128,  738,  326,  138,  327,  258,  184,  899,
- /*  1480 */   143,  129,  145,   63,   64,   65,   66,  902,  186,  187,
- /*  1490 */   898,    8,   13,  188,  134,  265,  891,  202,  980,  387,
- /*  1500 */   150,  149,  680,  161,  391,  193,  285,  279,  395,  151,
- /*  1510 */    68,  717,   14,   15,  400,   69,   16,  131,  236,  825,
- /*  1520 */   824,  853,  746,  750,    4,   70,  174,  413,  220,  222,
- /*  1530 */   152,  779,  774,   77,  868,   74,  854,  201,   17,  852,
- /*  1540 */   908,  206,  907,  207,   18,  857,  934,  163,  436,  210,
- /*  1550 */   935,  164,  209,  165,  440,  856,  823,  312,  690,   87,
- /*  1560 */   211,  309, 1281,  940,  995, 1280,
+ /*     0 */  1006,  156,  156,    2, 1302,   90,   87,  179,   90,   87,
+ /*    10 */   179,  460, 1048,  460,  465, 1010,  460,  333, 1130,  335,
+ /*    20 */   246,  330,  112,  303,  439, 1258,  304,  419, 1129, 1087,
+ /*    30 */    72,  798,   50,   50,   50,   50,  331,   30,   30,  799,
+ /*    40 */   951,  364,  371,   97,   98,   88,  983,  983,  859,  862,
+ /*    50 */   851,  851,   95,   95,   96,   96,   96,   96,  120,  371,
+ /*    60 */   370,  120,  348,   22,   90,   87,  179,  438,  423,  438,
+ /*    70 */   440,  335,  420,  385,   90,   87,  179,  116,   73,  163,
+ /*    80 */   848,  848,  860,  863,   94,   94,   94,   94,   93,   93,
+ /*    90 */    92,   92,   92,   91,  361,   97,   98,   88,  983,  983,
+ /*   100 */   859,  862,  851,  851,   95,   95,   96,   96,   96,   96,
+ /*   110 */   718,  365,  339,   93,   93,   92,   92,   92,   91,  361,
+ /*   120 */    99,  371,  453,  335,   94,   94,   94,   94,   93,   93,
+ /*   130 */    92,   92,   92,   91,  361,  852,   94,   94,   94,   94,
+ /*   140 */    93,   93,   92,   92,   92,   91,  361,   97,   98,   88,
+ /*   150 */   983,  983,  859,  862,  851,  851,   95,   95,   96,   96,
+ /*   160 */    96,   96,   92,   92,   92,   91,  361,  838,  132,  195,
+ /*   170 */    58,  244,  412,  409,  408,  335,  457,  457,  457,  304,
+ /*   180 */    59,  332,  831,  407,  394,  962,  830,  391,   94,   94,
+ /*   190 */    94,   94,   93,   93,   92,   92,   92,   91,  361,   97,
+ /*   200 */    98,   88,  983,  983,  859,  862,  851,  851,   95,   95,
+ /*   210 */    96,   96,   96,   96,  426,  357,  460,  830,  830,  832,
+ /*   220 */    91,  361,  962,  963,  964,  195,  459,  335,  412,  409,
+ /*   230 */   408,  280,  361,  820,  132,   11,   11,   50,   50,  407,
+ /*   240 */    94,   94,   94,   94,   93,   93,   92,   92,   92,   91,
+ /*   250 */   361,   97,   98,   88,  983,  983,  859,  862,  851,  851,
+ /*   260 */    95,   95,   96,   96,   96,   96,  460,  221,  460,  264,
+ /*   270 */   375,  254,  438,  428, 1276, 1276,  383, 1074, 1053,  335,
+ /*   280 */   245,  422,  299,  713,  271,  271, 1074,   50,   50,   50,
+ /*   290 */    50,  962,   94,   94,   94,   94,   93,   93,   92,   92,
+ /*   300 */    92,   91,  361,   97,   98,   88,  983,  983,  859,  862,
+ /*   310 */   851,  851,   95,   95,   96,   96,   96,   96,   90,   87,
+ /*   320 */   179, 1306,  438,  437,  438,  418,  368,  253,  962,  963,
+ /*   330 */   964,  335,  360,  360,  360,  706,  359,  358,  324,  962,
+ /*   340 */  1281,  951,  364,  230,   94,   94,   94,   94,   93,   93,
+ /*   350 */    92,   92,   92,   91,  361,   97,   98,   88,  983,  983,
+ /*   360 */   859,  862,  851,  851,   95,   95,   96,   96,   96,   96,
+ /*   370 */   769,  460,  120,  226,  226,  366,  962,  963,  964, 1089,
+ /*   380 */   990,  900,  990,  335, 1057,  425,  421,  839,  759,  759,
+ /*   390 */   425,  427,   50,   50,  432,  381,   94,   94,   94,   94,
+ /*   400 */    93,   93,   92,   92,   92,   91,  361,   97,   98,   88,
+ /*   410 */   983,  983,  859,  862,  851,  851,   95,   95,   96,   96,
+ /*   420 */    96,   96,  460,  259,  460,  120,  117,  354,  942, 1332,
+ /*   430 */   942, 1333, 1332,  278, 1333,  335,  680,  681,  682,  825,
+ /*   440 */   201,  176,  303,   50,   50,   49,   49,  404,   94,   94,
+ /*   450 */    94,   94,   93,   93,   92,   92,   92,   91,  361,   97,
+ /*   460 */    98,   88,  983,  983,  859,  862,  851,  851,   95,   95,
+ /*   470 */    96,   96,   96,   96,  199,  460,  380,  265,  433,  380,
+ /*   480 */   265,  383,  256,  158,  258,  319, 1003,  335,  155,  940,
+ /*   490 */   177,  940,  273,  379,  276,  322,   34,   34,  302,  962,
+ /*   500 */    94,   94,   94,   94,   93,   93,   92,   92,   92,   91,
+ /*   510 */   361,   97,   98,   88,  983,  983,  859,  862,  851,  851,
+ /*   520 */    95,   95,   96,   96,   96,   96,  905,  905,  397,  460,
+ /*   530 */   301,  158,  101,  319,  941,  340,  962,  963,  964,  313,
+ /*   540 */   283,  449,  335,  327,  146, 1266, 1004,  257,  234,  248,
+ /*   550 */    35,   35,   94,   94,   94,   94,   93,   93,   92,   92,
+ /*   560 */    92,   91,  361,  709,  785, 1227,   97,   98,   88,  983,
+ /*   570 */   983,  859,  862,  851,  851,   95,   95,   96,   96,   96,
+ /*   580 */    96,  962, 1227, 1229,  245,  422,  838,  198,  197,  196,
+ /*   590 */  1079, 1079, 1077, 1077, 1004, 1334,  320,  335,  172,  171,
+ /*   600 */   709,  831,  159,  271,  271,  830,   76,   94,   94,   94,
+ /*   610 */    94,   93,   93,   92,   92,   92,   91,  361,  962,  963,
+ /*   620 */   964,   97,   98,   88,  983,  983,  859,  862,  851,  851,
+ /*   630 */    95,   95,   96,   96,   96,   96,  830,  830,  832, 1157,
+ /*   640 */  1157,  199, 1157,  173, 1227,  231,  232, 1282,    2,  335,
+ /*   650 */   271,  764,  271,  820,  271,  271,  763,  389,  389,  389,
+ /*   660 */   132,   79,   94,   94,   94,   94,   93,   93,   92,   92,
+ /*   670 */    92,   91,  361,   97,   98,   88,  983,  983,  859,  862,
+ /*   680 */   851,  851,   95,   95,   96,   96,   96,   96,  460,  264,
+ /*   690 */   223,  460, 1257,  783, 1223, 1157, 1086, 1082,   80,  271,
+ /*   700 */    78,  335,  340, 1031,  341,  344,  345,  902,  346,   10,
+ /*   710 */    10,  902,   25,   25,   94,   94,   94,   94,   93,   93,
+ /*   720 */    92,   92,   92,   91,  361,   97,   86,   88,  983,  983,
+ /*   730 */   859,  862,  851,  851,   95,   95,   96,   96,   96,   96,
+ /*   740 */  1157,  270,  395,  117,  233,  263,  235,   70,  456,  341,
+ /*   750 */   225,  176,  335, 1305,  342,  133,  736,  966,  980,  249,
+ /*   760 */  1150,  396,  325, 1085, 1028,  178,   94,   94,   94,   94,
+ /*   770 */    93,   93,   92,   92,   92,   91,  361,   98,   88,  983,
+ /*   780 */   983,  859,  862,  851,  851,   95,   95,   96,   96,   96,
+ /*   790 */    96,  783,  783,  132,  120,  966,  120,  120,  120,  798,
+ /*   800 */   252,  937,  335,  353,  321,  429,  355,  799,  822,  692,
+ /*   810 */   390,  203,  446,  450,  372,  716,  454,   94,   94,   94,
+ /*   820 */    94,   93,   93,   92,   92,   92,   91,  361,   88,  983,
+ /*   830 */   983,  859,  862,  851,  851,   95,   95,   96,   96,   96,
+ /*   840 */    96,   84,  455, 1225,    3, 1209,  120,  120,  382,  387,
+ /*   850 */   120,  203, 1271,  716,  384,  168,  266,  203,  458,   72,
+ /*   860 */   260, 1246,   84,  455,  178,    3,  378,   94,   94,   94,
+ /*   870 */    94,   93,   93,   92,   92,   92,   91,  361,  350,  458,
+ /*   880 */  1245,  362,  430,  213,  228,  290,  415,  285,  414,  200,
+ /*   890 */   783,  882,  444,  726,  725,  405,  283,  921,  209,  921,
+ /*   900 */   281,  132,  362,   72,  838,  289,  147,  733,  734,  392,
+ /*   910 */    81,   82,  922,  444,  922,  267,  288,   83,  362,  462,
+ /*   920 */   461,  272,  132,  830,   23,  838,  388,  923, 1216,  923,
+ /*   930 */  1056,   81,   82,   84,  455,  899,    3,  899,   83,  362,
+ /*   940 */   462,  461,  761,  962,  830,   75,    1,  443,  275,  747,
+ /*   950 */   458,    5,  962,  204,  830,  830,  832,  833,   18,  748,
+ /*   960 */   229,  962,  277,   19,  153,  317,  317,  316,  216,  314,
+ /*   970 */   279,  460,  689,  362, 1055,  830,  830,  832,  833,   18,
+ /*   980 */   962,  963,  964,  962,  444,  181,  460,  251,  981,  962,
+ /*   990 */   963,  964,    8,    8,   20,  250,  838, 1070,  962,  963,
+ /*  1000 */   964,  417,   81,   82,  768,  204,  347,   36,   36,   83,
+ /*  1010 */   362,  462,  461, 1054,  284,  830,   84,  455, 1123,    3,
+ /*  1020 */   962,  963,  964,  460,  183,  962,  981,  764,  889, 1107,
+ /*  1030 */   460,  184,  763,  458,  132,  182,   74,  455,  460,    3,
+ /*  1040 */   981,  898,  834,  898,    8,    8,  830,  830,  832,  833,
+ /*  1050 */    18,    8,    8,  458,  219, 1156,  362, 1103,  349,    8,
+ /*  1060 */     8,  240,  962,  963,  964,  236,  889,  444,  792,  336,
+ /*  1070 */   158,  203,  885,  435,  700,  209,  362,  114,  981,  838,
+ /*  1080 */   834,  227,  334, 1114,  441,   81,   82,  444,  442,  305,
+ /*  1090 */   784,  306,   83,  362,  462,  461,  369, 1162,  830,  838,
+ /*  1100 */   460, 1037,  237, 1030,  237,   81,   82,    7,   96,   96,
+ /*  1110 */    96,   96,   83,  362,  462,  461, 1019, 1018,  830, 1020,
+ /*  1120 */  1289,   37,   37,  400,   96,   96,   96,   96,   89,  830,
+ /*  1130 */   830,  832,  833,   18, 1100,  318,  962,  292,   94,   94,
+ /*  1140 */    94,   94,   93,   93,   92,   92,   92,   91,  361,  830,
+ /*  1150 */   830,  832,  833,   18,   94,   94,   94,   94,   93,   93,
+ /*  1160 */    92,   92,   92,   91,  361,  359,  358,  226,  226,  727,
+ /*  1170 */   294,  296,  460,  962,  963,  964,  460,  989,  160,  425,
+ /*  1180 */   170, 1295,  262,  460,  987,  374,  988,  386, 1145,  255,
+ /*  1190 */   326,  460,  373,   38,   38,  410,  174,   39,   39,  413,
+ /*  1200 */   460,  287,  460, 1053,   40,   40,  298,  728, 1220,  990,
+ /*  1210 */   445,  990,   26,   26, 1219,  460,  311,  460,  169, 1292,
+ /*  1220 */   460,   27,   27,   29,   29,  998,  460,  206,  135,  995,
+ /*  1230 */  1265, 1263,  460,   57,   60,  460,   41,   41,   42,   42,
+ /*  1240 */   460,   43,   43,  460,  343,  351,  460,    9,    9,  460,
+ /*  1250 */   144,  460,  130,   44,   44,  460,  103,  103,  460,  137,
+ /*  1260 */    70,   45,   45,  460,   46,   46,  460,   31,   31, 1142,
+ /*  1270 */    47,   47,   48,   48,  460,  376,   32,   32,  460,  122,
+ /*  1280 */   122,  460,  157,  460,  123,  123,  139,  124,  124,  460,
+ /*  1290 */   186,  460,  377,  460,  115,   54,   54,  460,  403,   33,
+ /*  1300 */    33,  460,  104,  104,   51,   51,  460,  161,  460,  140,
+ /*  1310 */   105,  105,  106,  106,  102,  102,  460,  141,  121,  121,
+ /*  1320 */   460,  142,  119,  119,  190,  460, 1152,  110,  110,  109,
+ /*  1330 */   109,  702,  460,  148,  393,   65,  460,  107,  107,  460,
+ /*  1340 */   323,  108,  108,  399,  460, 1234,   53,   53, 1214,  269,
+ /*  1350 */   154,  416, 1115,   55,   55,  220,  401,   52,   52,  191,
+ /*  1360 */    24,   24,  274,  192,  193,   28,   28, 1021,  328,  702,
+ /*  1370 */  1073,  352, 1072,  718, 1071,  431, 1111, 1064,  329, 1045,
+ /*  1380 */    69,  205,    6,  291, 1044,  286, 1112, 1043, 1304, 1110,
+ /*  1390 */   293,  300,  295,  297, 1063, 1200, 1109,   77,  241,  448,
+ /*  1400 */   356,  452,  436,  100,  214,   71,  434, 1027, 1093,   21,
+ /*  1410 */   463,  242,  243,  957,  215,  217,  218,  464,  309,  307,
+ /*  1420 */   308,  310, 1016,  125, 1250, 1251, 1011, 1249,  126,  127,
+ /*  1430 */  1248,  113,  676,  337,  238,  338,  134,  363,  167, 1041,
+ /*  1440 */  1040,   56,  247,  367,  180,  897,  111,  895,  136, 1038,
+ /*  1450 */   818,  128,  138,  750,  261,  911,  185,  143,  145,   61,
+ /*  1460 */    62,   63,   64,  129,  914,  187,  188,  910,  118,   12,
+ /*  1470 */   189,  903,  268,  992,  203,  162,  398,  150,  149,  691,
+ /*  1480 */   402,  288,  194,  406,  151,  411,   66,   13,  729,  239,
+ /*  1490 */   282,   14,   67,  131,  837,  836,  865,  758,   15,    4,
+ /*  1500 */    68,  762,  175,  222,  224,  424,  152,  869,  791,  202,
+ /*  1510 */   786,   75,   72,  880,  866,  864,   16,   17,  920,  207,
+ /*  1520 */   919,  208,  447,  946,  164,  211,  947,  210,  165,  451,
+ /*  1530 */   868,  166,  315,  835,  701,   85,  212, 1297,  312,  952,
+ /*  1540 */  1296,
 };
 static const YYCODETYPE yy_lookahead[] = {
- /*     0 */    19,  144,  145,  146,  147,   24,   90,   91,   92,   93,
- /*    10 */    94,   54,   55,   56,   57,   58,   88,   89,   90,   91,
- /*    20 */    92,   93,   94,  152,   43,   44,   45,   46,   47,   48,
- /*    30 */    49,   50,   51,   52,   53,   54,   55,   56,   57,   94,
- /*    40 */    59,   84,   85,   86,   87,   88,   89,   90,   91,   92,
- /*    50 */    93,   94,   59,   84,   85,   86,   87,   88,   89,   90,
- /*    60 */    91,   92,   93,   94,  193,   84,   85,   86,   87,   88,
- /*    70 */    89,   90,   91,   92,   93,   94,  194,  195,   97,   79,
- /*    80 */    11,   88,   89,  152,   26,   19,  171,  152,  206,   96,
- /*    90 */    97,   98,   72,  100,  179,   59,  152,   31,  163,   79,
- /*   100 */   107,  219,  109,  172,  173,   39,   79,  172,  173,   43,
- /*   110 */    44,   45,   46,   47,   48,   49,   50,   51,   52,   53,
- /*   120 */    54,   55,   56,   57,  152,  132,  199,  134,  108,  109,
- /*   130 */   110,  196,   96,   97,   98,   99,  209,   19,  102,  103,
- /*   140 */   104,   72,  207,  208,   26,   72,  119,  120,   79,  113,
- /*   150 */    84,   85,   86,   87,   88,   89,   90,   91,   92,   93,
- /*   160 */    94,   43,   44,   45,   46,   47,   48,   49,   50,   51,
- /*   170 */    52,   53,   54,   55,   56,   57,   31,  108,  109,  110,
- /*   180 */    82,  108,  109,  110,   39,  210,   68,  175,  130,   19,
- /*   190 */   218,  175,  119,  120,  250,   97,  221,  222,  223,  101,
- /*   200 */   172,  152,   84,   85,   86,   87,   88,   89,   90,   91,
- /*   210 */    92,   93,   94,   43,   44,   45,   46,   47,   48,   49,
- /*   220 */    50,   51,   52,   53,   54,   55,   56,   57,  152,  152,
- /*   230 */   132,  133,  134,  221,  222,  223,   66,  221,  222,  223,
- /*   240 */   172,   19,  193,   22,   23,  152,   24,   26,  172,  173,
- /*   250 */    46,   47,   48,   49,   84,   85,   86,   87,   88,   89,
- /*   260 */    90,   91,   92,   93,   94,   43,   44,   45,   46,   47,
- /*   270 */    48,   49,   50,   51,   52,   53,   54,   55,   56,   57,
- /*   280 */   221,  222,  223,  207,  208,   46,   22,   23,  148,  149,
- /*   290 */    26,  242,  172,   19,  154,  218,  156,   23,   88,   89,
- /*   300 */   241,   59,  163,  163,   83,  101,   84,   85,   86,   87,
- /*   310 */    88,   89,   90,   91,   92,   93,   94,   43,   44,   45,
- /*   320 */    46,   47,   48,   49,   50,   51,   52,   53,   54,   55,
- /*   330 */    56,   57,  152,  157,  152,  196,  196,   16,   96,   97,
- /*   340 */    98,   26,  132,  250,  134,   19,  107,   83,   59,   23,
- /*   350 */   211,  212,  172,  173,  172,  173,    1,    2,   84,   85,
- /*   360 */    86,   87,   88,   89,   90,   91,   92,   93,   94,   43,
- /*   370 */    44,   45,   46,   47,   48,   49,   50,   51,   52,   53,
- /*   380 */    54,   55,   56,   57,  244,  152,   97,  207,  208,  207,
- /*   390 */   208,  185,  221,  222,  223,  152,   75,   19,   77,  179,
- /*   400 */   180,   23,   93,   94,  228,  172,  173,  231,  188,  152,
- /*   410 */    84,   85,   86,   87,   88,   89,   90,   91,   92,   93,
- /*   420 */    94,   43,   44,   45,   46,   47,   48,   49,   50,   51,
- /*   430 */    52,   53,   54,   55,   56,   57,  193,  152,  123,  152,
- /*   440 */   207,  208,  152,  168,  169,  170,  168,  169,  170,   19,
- /*   450 */   160,   22,   23,   23,  164,  119,  120,  172,  173,  172,
- /*   460 */   173,  140,   84,   85,   86,   87,   88,   89,   90,   91,
- /*   470 */    92,   93,   94,   43,   44,   45,   46,   47,   48,   49,
- /*   480 */    50,   51,   52,   53,   54,   55,   56,   57,   99,   22,
- /*   490 */    23,  102,  103,  104,  194,  195,    0,    1,    2,  247,
- /*   500 */   248,   19,  113,  190,  191,   23,  206,  190,  191,   59,
- /*   510 */   225,  152,   83,  152,   84,   85,   86,   87,   88,   89,
- /*   520 */    90,   91,   92,   93,   94,   43,   44,   45,   46,   47,
- /*   530 */    48,   49,   50,   51,   52,   53,   54,   55,   56,   57,
- /*   540 */    90,  181,  152,  108,  109,  110,   96,   97,   98,  115,
- /*   550 */    83,  117,  118,   19,  193,  152,   23,  152,  152,   26,
- /*   560 */    29,  152,  172,  173,   33,  152,   84,   85,   86,   87,
- /*   570 */    88,   89,   90,   91,   92,   93,   94,   43,   44,   45,
- /*   580 */    46,   47,   48,   49,   50,   51,   52,   53,   54,   55,
- /*   590 */    56,   57,   22,  152,   16,   64,  193,  207,  152,  193,
- /*   600 */    12,    7,    8,    9,  152,  108,  109,  110,   19,  152,
- /*   610 */   164,  146,  147,  172,  173,   27,  163,  181,   84,   85,
- /*   620 */    86,   87,   88,   89,   90,   91,   92,   93,   94,   59,
- /*   630 */    42,   98,   43,   44,   45,   46,   47,   48,   49,   50,
- /*   640 */    51,   52,   53,   54,   55,   56,   57,  238,   22,  196,
- /*   650 */    62,  163,   82,   75,  152,   77,  152,  124,   88,   89,
- /*   660 */    72,  152,  137,   19,  139,  152,   96,   97,   24,  152,
- /*   670 */   152,  101,  138,   84,   85,   86,   87,   88,   89,   90,
- /*   680 */    91,   92,   93,   94,  196,   59,   19,   43,   44,   45,
- /*   690 */    46,   47,   48,   49,   50,   51,   52,   53,   54,   55,
- /*   700 */    56,   57,  132,  133,  134,  152,  193,  219,  245,  246,
- /*   710 */   193,  152,  152,   46,  152,   19,  166,  167,  152,  217,
- /*   720 */   232,  217,   96,   97,   98,  237,  217,  138,   84,   85,
- /*   730 */    86,   87,   88,   89,   90,   91,   92,   93,   94,   43,
- /*   740 */    44,   45,   46,   47,   48,   49,   50,   51,   52,   53,
- /*   750 */    54,   55,   56,   57,   79,  193,  238,  166,  167,  211,
- /*   760 */   212,   23,   23,  116,   26,   26,  195,   19,  121,  152,
- /*   770 */   217,  152,  152,  152,  107,  100,  217,  206,  163,  112,
- /*   780 */    84,   85,   86,   87,   88,   89,   90,   91,   92,   93,
- /*   790 */    94,   43,   44,   45,   46,   47,   48,   49,   50,   51,
- /*   800 */    52,   53,   54,   55,   56,   57,  187,  187,    7,    8,
- /*   810 */   152,  196,   22,  132,   24,  134,   23,   23,   19,   26,
- /*   820 */    26,   23,  152,   23,   26,   23,   26,   59,   26,  163,
- /*   830 */   172,  173,   84,   85,   86,   87,   88,   89,   90,   91,
- /*   840 */    92,   93,   94,   44,   45,   46,   47,   48,   49,   50,
- /*   850 */    51,   52,   53,   54,   55,   56,   57,  152,   26,  238,
- /*   860 */   152,   23,  196,  101,   26,   97,  100,  101,   19,   19,
- /*   870 */    23,   59,  152,   26,  112,  152,   23,  172,  173,   26,
- /*   880 */   172,  173,   19,   84,   85,   86,   87,   88,   89,   90,
- /*   890 */    91,   92,   93,   94,   45,   46,   47,   48,   49,   50,
- /*   900 */    51,   52,   53,   54,   55,   56,   57,   19,   20,   97,
- /*   910 */    22,   23,  207,  163,   23,  163,  132,   26,  134,   23,
- /*   920 */   213,  152,   26,   59,   36,  152,   22,  152,   19,   20,
- /*   930 */    98,   22,  152,   84,   85,   86,   87,   88,   89,   90,
- /*   940 */    91,   92,   93,   94,   94,   36,  196,   59,  196,   99,
- /*   950 */   100,  101,  102,  103,  104,  105,  124,   59,   70,   96,
- /*   960 */   163,   97,  112,   59,  181,  152,  152,   79,   59,   71,
- /*   970 */    82,   19,   26,  152,  152,  152,   88,   89,  152,   70,
- /*   980 */    22,  152,  163,   95,   96,   97,   98,  152,   79,  101,
- /*   990 */    22,   82,  152,  196,   96,   97,   98,   88,   89,   19,
- /*  1000 */    20,   97,   22,  163,   95,   96,   97,   98,  152,   22,
- /*  1010 */   101,   24,  172,  173,  152,  196,   36,   59,   22,  152,
- /*  1020 */   132,  133,  134,  135,  136,   24,    5,   59,  172,  173,
- /*  1030 */   152,   10,   11,   12,   13,   14,  196,  152,   17,   59,
- /*  1040 */   210,  132,  133,  134,  135,  136,   59,  207,   96,   22,
- /*  1050 */    70,   30,  106,   32,   96,   97,   98,  172,  173,  152,
- /*  1060 */    59,   40,   82,  152,   96,   97,   98,  152,   88,   89,
- /*  1070 */    90,  186,   59,   22,  191,   95,   96,   97,   98,  172,
- /*  1080 */   173,  101,   19,   20,   97,   22,   59,  152,  152,  152,
- /*  1090 */    69,   59,  152,  186,  152,  152,  152,   76,   97,   36,
- /*  1100 */    79,   80,   19,   20,   53,   22,  152,  172,  173,   96,
- /*  1110 */    97,   98,  132,  133,  134,  135,  136,   35,  122,   36,
- /*  1120 */   234,  186,   59,   96,   97,   98,  172,  173,   96,   97,
- /*  1130 */    98,  152,  233,   70,  152,  114,  152,  124,  210,  210,
- /*  1140 */   186,  210,   59,  198,  197,   82,  214,   65,  150,  152,
- /*  1150 */   201,   88,   89,   70,  201,   73,  124,  239,   95,   96,
- /*  1160 */    97,   98,  141,  239,  101,   82,  169,  170,  176,  152,
- /*  1170 */   152,   88,   89,   21,   54,   55,   56,   57,   95,   96,
- /*  1180 */    97,   98,  164,  214,  101,  214,  169,  170,  163,  184,
- /*  1190 */   180,  175,  227,  111,  175,  132,  133,  134,  135,  136,
- /*  1200 */   200,  183,  152,  185,   84,   85,   86,   87,   88,   89,
- /*  1210 */    90,   91,   92,   93,   94,  132,  133,  134,  135,  136,
- /*  1220 */    12,  196,  172,  173,  175,  152,  198,  230,  152,  155,
- /*  1230 */    78,  152,  243,  152,   60,   27,  152,  159,  152,  159,
- /*  1240 */   152,  122,   38,  152,  219,  172,  173,  230,  172,  173,
- /*  1250 */    42,  172,  173,  172,  173,  103,  172,  173,  172,  173,
- /*  1260 */   172,  173,  237,  172,  173,  152,  240,  152,  159,  152,
- /*  1270 */    62,  240,   22,  220,  152,   43,  152,  130,  152,  189,
- /*  1280 */   152,   18,  152,   18,  192,  172,  173,  172,  173,  172,
- /*  1290 */   173,  192,  140,  152,  172,  173,  172,  173,  172,  173,
- /*  1300 */   172,  173,  172,  173,  201,  152,  192,  159,  152,  158,
- /*  1310 */   192,  152,  201,  172,  173,  152,  220,  152,  189,  152,
- /*  1320 */   189,  159,  152,  137,  152,  172,  173,  152,  172,  173,
- /*  1330 */   152,  172,  173,  152,  201,  172,  173,  172,  173,  172,
- /*  1340 */   173,  152,  172,  173,  172,  173,  152,  172,  173,  152,
- /*  1350 */   172,  173,  152,  172,  173,  152,   90,  152,   61,  152,
- /*  1360 */   158,  172,  173,  152,  158,  152,  172,  173,  152,  172,
- /*  1370 */   173,  152,  172,  173,  236,  172,  173,  172,  173,  172,
- /*  1380 */   173,  235,  116,  172,  173,  172,  173,  121,  172,  173,
- /*  1390 */   159,  172,  173,  159,   22,  177,  159,  158,  177,  159,
- /*  1400 */   158,  107,  174,  174,  174,   63,  182,  106,  182,  174,
- /*  1410 */   177,  125,  176,  107,  216,  174,  215,  174,  174,  159,
- /*  1420 */    22,  159,  137,  224,  177,  216,  216,  215,   94,  215,
- /*  1430 */   177,  216,  215,  129,  126,  128,  127,   25,  162,   26,
- /*  1440 */   161,   13,  153,  205,  153,    6,  226,  151,  202,  204,
- /*  1450 */   201,  229,  229,  151,  203,  165,  151,  165,  178,  178,
- /*  1460 */   165,    4,    3,   22,  142,   15,   81,   16,   23,   23,
- /*  1470 */   120,  131,  111,   20,  249,  123,  249,   16,  125,    1,
- /*  1480 */   123,  111,  131,   53,   53,   53,   53,   96,   34,  122,
- /*  1490 */     1,    5,   22,  107,  246,  140,   67,   26,   74,   41,
- /*  1500 */   107,   67,   20,   24,   19,  105,  112,   23,   66,   22,
- /*  1510 */    22,   28,   22,   22,   66,   22,   22,   37,   66,   23,
- /*  1520 */    23,   23,  116,   23,   22,   26,  122,   26,   23,   23,
- /*  1530 */    22,   96,  124,   26,   23,   26,   23,   34,   34,   23,
- /*  1540 */    23,   26,   23,   22,   34,   11,   23,   22,   24,  122,
- /*  1550 */    23,   22,   26,   22,   24,   23,   23,   15,   23,   22,
- /*  1560 */   122,   23,  122,    1,  251,  122,
+ /*     0 */   144,  145,  146,  147,  172,  222,  223,  224,  222,  223,
+ /*    10 */   224,  152,  180,  152,  148,  149,  152,  173,  176,   19,
+ /*    20 */   154,  173,  156,  152,  163,  242,  152,  163,  176,  163,
+ /*    30 */    26,   31,  173,  174,  173,  174,  173,  173,  174,   39,
+ /*    40 */     1,    2,  152,   43,   44,   45,   46,   47,   48,   49,
+ /*    50 */    50,   51,   52,   53,   54,   55,   56,   57,  197,  169,
+ /*    60 */   170,  197,  188,  197,  222,  223,  224,  208,  209,  208,
+ /*    70 */   209,   19,  208,  152,  222,  223,  224,   22,   26,   24,
+ /*    80 */    46,   47,   48,   49,   84,   85,   86,   87,   88,   89,
+ /*    90 */    90,   91,   92,   93,   94,   43,   44,   45,   46,   47,
+ /*   100 */    48,   49,   50,   51,   52,   53,   54,   55,   56,   57,
+ /*   110 */   106,  245,  157,   88,   89,   90,   91,   92,   93,   94,
+ /*   120 */    68,  231,  251,   19,   84,   85,   86,   87,   88,   89,
+ /*   130 */    90,   91,   92,   93,   94,  101,   84,   85,   86,   87,
+ /*   140 */    88,   89,   90,   91,   92,   93,   94,   43,   44,   45,
+ /*   150 */    46,   47,   48,   49,   50,   51,   52,   53,   54,   55,
+ /*   160 */    56,   57,   90,   91,   92,   93,   94,   82,   79,   99,
+ /*   170 */    66,  200,  102,  103,  104,   19,  168,  169,  170,  152,
+ /*   180 */    24,  210,   97,  113,  229,   59,  101,  232,   84,   85,
+ /*   190 */    86,   87,   88,   89,   90,   91,   92,   93,   94,   43,
+ /*   200 */    44,   45,   46,   47,   48,   49,   50,   51,   52,   53,
+ /*   210 */    54,   55,   56,   57,  152,  188,  152,  132,  133,  134,
+ /*   220 */    93,   94,   96,   97,   98,   99,  152,   19,  102,  103,
+ /*   230 */   104,   23,   94,   72,   79,  173,  174,  173,  174,  113,
+ /*   240 */    84,   85,   86,   87,   88,   89,   90,   91,   92,   93,
+ /*   250 */    94,   43,   44,   45,   46,   47,   48,   49,   50,   51,
+ /*   260 */    52,   53,   54,   55,   56,   57,  152,  171,  152,  108,
+ /*   270 */   109,  110,  208,  209,  119,  120,  152,  180,  181,   19,
+ /*   280 */   119,  120,  152,   23,  152,  152,  189,  173,  174,  173,
+ /*   290 */   174,   59,   84,   85,   86,   87,   88,   89,   90,   91,
+ /*   300 */    92,   93,   94,   43,   44,   45,   46,   47,   48,   49,
+ /*   310 */    50,   51,   52,   53,   54,   55,   56,   57,  222,  223,
+ /*   320 */   224,  186,  208,  209,  208,  209,  194,  194,   96,   97,
+ /*   330 */    98,   19,  168,  169,  170,   23,   88,   89,  163,   59,
+ /*   340 */     0,    1,    2,  219,   84,   85,   86,   87,   88,   89,
+ /*   350 */    90,   91,   92,   93,   94,   43,   44,   45,   46,   47,
+ /*   360 */    48,   49,   50,   51,   52,   53,   54,   55,   56,   57,
+ /*   370 */    90,  152,  197,  195,  196,  243,   96,   97,   98,  196,
+ /*   380 */   132,   11,  134,   19,  182,  207,  115,   23,  117,  118,
+ /*   390 */   207,  163,  173,  174,  152,  220,   84,   85,   86,   87,
+ /*   400 */    88,   89,   90,   91,   92,   93,   94,   43,   44,   45,
+ /*   410 */    46,   47,   48,   49,   50,   51,   52,   53,   54,   55,
+ /*   420 */    56,   57,  152,   16,  152,  197,  171,  208,   22,   23,
+ /*   430 */    22,   23,   26,   16,   26,   19,    7,    8,    9,   23,
+ /*   440 */   212,  213,  152,  173,  174,  173,  174,   19,   84,   85,
+ /*   450 */    86,   87,   88,   89,   90,   91,   92,   93,   94,   43,
+ /*   460 */    44,   45,   46,   47,   48,   49,   50,   51,   52,   53,
+ /*   470 */    54,   55,   56,   57,   46,  152,  109,  110,  208,  109,
+ /*   480 */   110,  152,   75,  152,   77,   22,   23,   19,  233,   83,
+ /*   490 */   152,   83,   75,  238,   77,  164,  173,  174,  226,   59,
+ /*   500 */    84,   85,   86,   87,   88,   89,   90,   91,   92,   93,
+ /*   510 */    94,   43,   44,   45,   46,   47,   48,   49,   50,   51,
+ /*   520 */    52,   53,   54,   55,   56,   57,  108,  109,  110,  152,
+ /*   530 */   152,  152,   22,   22,   23,  107,   96,   97,   98,  160,
+ /*   540 */   112,  251,   19,  164,   22,  152,   83,  140,  219,  152,
+ /*   550 */   173,  174,   84,   85,   86,   87,   88,   89,   90,   91,
+ /*   560 */    92,   93,   94,   59,  124,  152,   43,   44,   45,   46,
+ /*   570 */    47,   48,   49,   50,   51,   52,   53,   54,   55,   56,
+ /*   580 */    57,   59,  169,  170,  119,  120,   82,  108,  109,  110,
+ /*   590 */   191,  192,  191,  192,   83,  248,  249,   19,   88,   89,
+ /*   600 */    96,   97,   24,  152,  152,  101,  138,   84,   85,   86,
+ /*   610 */    87,   88,   89,   90,   91,   92,   93,   94,   96,   97,
+ /*   620 */    98,   43,   44,   45,   46,   47,   48,   49,   50,   51,
+ /*   630 */    52,   53,   54,   55,   56,   57,  132,  133,  134,  152,
+ /*   640 */   152,   46,  152,   26,  231,  194,  194,  146,  147,   19,
+ /*   650 */   152,  116,  152,   72,  152,  152,  121,  152,  152,  152,
+ /*   660 */    79,  138,   84,   85,   86,   87,   88,   89,   90,   91,
+ /*   670 */    92,   93,   94,   43,   44,   45,   46,   47,   48,   49,
+ /*   680 */    50,   51,   52,   53,   54,   55,   56,   57,  152,  108,
+ /*   690 */    23,  152,  194,   26,  194,  152,  194,  194,  137,  152,
+ /*   700 */   139,   19,  107,  166,  167,  218,  218,   29,  218,  173,
+ /*   710 */   174,   33,  173,  174,   84,   85,   86,   87,   88,   89,
+ /*   720 */    90,   91,   92,   93,   94,   43,   44,   45,   46,   47,
+ /*   730 */    48,   49,   50,   51,   52,   53,   54,   55,   56,   57,
+ /*   740 */   152,  194,   64,  171,  239,  239,  239,  130,  166,  167,
+ /*   750 */   212,  213,   19,   23,  246,  247,   26,   59,   26,  152,
+ /*   760 */   163,  218,  163,  163,  163,   98,   84,   85,   86,   87,
+ /*   770 */    88,   89,   90,   91,   92,   93,   94,   44,   45,   46,
+ /*   780 */    47,   48,   49,   50,   51,   52,   53,   54,   55,   56,
+ /*   790 */    57,  124,   26,   79,  197,   97,  197,  197,  197,   31,
+ /*   800 */   152,   23,   19,   19,   26,   19,  218,   39,   23,   21,
+ /*   810 */   238,   26,  163,  163,  100,   59,  163,   84,   85,   86,
+ /*   820 */    87,   88,   89,   90,   91,   92,   93,   94,   45,   46,
+ /*   830 */    47,   48,   49,   50,   51,   52,   53,   54,   55,   56,
+ /*   840 */    57,   19,   20,  152,   22,   23,  197,  197,   23,   19,
+ /*   850 */   197,   26,  152,   97,   23,  123,   23,   26,   36,   26,
+ /*   860 */   152,  152,   19,   20,   98,   22,   78,   84,   85,   86,
+ /*   870 */    87,   88,   89,   90,   91,   92,   93,   94,   94,   36,
+ /*   880 */   152,   59,   96,   99,  100,  101,  102,  103,  104,  105,
+ /*   890 */   124,  103,   70,  100,  101,   23,  112,   12,   26,   12,
+ /*   900 */    23,   79,   59,   26,   82,  101,   22,    7,    8,  152,
+ /*   910 */    88,   89,   27,   70,   27,  152,  112,   95,   96,   97,
+ /*   920 */    98,  152,   79,  101,   22,   82,   96,   42,  140,   42,
+ /*   930 */   182,   88,   89,   19,   20,  132,   22,  134,   95,   96,
+ /*   940 */    97,   98,   23,   59,  101,   26,   22,   62,  152,   62,
+ /*   950 */    36,   22,   59,   24,  132,  133,  134,  135,  136,   72,
+ /*   960 */     5,   59,  152,   22,   71,   10,   11,   12,   13,   14,
+ /*   970 */   152,  152,   17,   59,  182,  132,  133,  134,  135,  136,
+ /*   980 */    96,   97,   98,   59,   70,   30,  152,   32,   59,   96,
+ /*   990 */    97,   98,  173,  174,   53,   40,   82,  152,   96,   97,
+ /*  1000 */    98,   90,   88,   89,   90,   24,  187,  173,  174,   95,
+ /*  1010 */    96,   97,   98,  152,  152,  101,   19,   20,  152,   22,
+ /*  1020 */    96,   97,   98,  152,   69,   59,   97,  116,   59,  214,
+ /*  1030 */   152,   76,  121,   36,   79,   80,   19,   20,  152,   22,
+ /*  1040 */    59,  132,   59,  134,  173,  174,  132,  133,  134,  135,
+ /*  1050 */   136,  173,  174,   36,  234,  152,   59,  152,  187,  173,
+ /*  1060 */   174,  211,   96,   97,   98,  187,   97,   70,   23,  114,
+ /*  1070 */   152,   26,   23,  187,   23,   26,   59,   26,   97,   82,
+ /*  1080 */    97,   22,  164,  152,  152,   88,   89,   70,  192,  152,
+ /*  1090 */   124,  152,   95,   96,   97,   98,  141,  152,  101,   82,
+ /*  1100 */   152,  152,  184,  152,  186,   88,   89,  199,   54,   55,
+ /*  1110 */    56,   57,   95,   96,   97,   98,  152,  152,  101,  152,
+ /*  1120 */   152,  173,  174,  235,   54,   55,   56,   57,   58,  132,
+ /*  1130 */   133,  134,  135,  136,  211,  150,   59,  211,   84,   85,
+ /*  1140 */    86,   87,   88,   89,   90,   91,   92,   93,   94,  132,
+ /*  1150 */   133,  134,  135,  136,   84,   85,   86,   87,   88,   89,
+ /*  1160 */    90,   91,   92,   93,   94,   88,   89,  195,  196,   35,
+ /*  1170 */   211,  211,  152,   96,   97,   98,  152,  100,  198,  207,
+ /*  1180 */   171,  122,  240,  152,  107,  215,  109,  240,  202,  215,
+ /*  1190 */   202,  152,  220,  173,  174,  177,  185,  173,  174,   65,
+ /*  1200 */   152,  176,  152,  181,  173,  174,  215,   73,  176,  132,
+ /*  1210 */   228,  134,  173,  174,  176,  152,  201,  152,  199,  155,
+ /*  1220 */   152,  173,  174,  173,  174,   60,  152,  122,  244,   38,
+ /*  1230 */   159,  159,  152,  241,  241,  152,  173,  174,  173,  174,
+ /*  1240 */   152,  173,  174,  152,  159,  111,  152,  173,  174,  152,
+ /*  1250 */    22,  152,   43,  173,  174,  152,  173,  174,  152,  190,
+ /*  1260 */   130,  173,  174,  152,  173,  174,  152,  173,  174,  202,
+ /*  1270 */   173,  174,  173,  174,  152,   18,  173,  174,  152,  173,
+ /*  1280 */   174,  152,  221,  152,  173,  174,  193,  173,  174,  152,
+ /*  1290 */   158,  152,  159,  152,   22,  173,  174,  152,   18,  173,
+ /*  1300 */   174,  152,  173,  174,  173,  174,  152,  221,  152,  193,
+ /*  1310 */   173,  174,  173,  174,  173,  174,  152,  193,  173,  174,
+ /*  1320 */   152,  193,  173,  174,  158,  152,  190,  173,  174,  173,
+ /*  1330 */   174,   59,  152,  190,  159,  137,  152,  173,  174,  152,
+ /*  1340 */   202,  173,  174,   61,  152,  237,  173,  174,  202,  236,
+ /*  1350 */    22,  107,  159,  173,  174,  159,  178,  173,  174,  158,
+ /*  1360 */   173,  174,  159,  158,  158,  173,  174,  159,  178,   97,
+ /*  1370 */   175,   63,  175,  106,  175,  125,  217,  183,  178,  175,
+ /*  1380 */   107,  159,   22,  216,  177,  175,  217,  175,  175,  217,
+ /*  1390 */   216,  159,  216,  216,  183,  225,  217,  137,  227,  178,
+ /*  1400 */    94,  178,  126,  129,   25,  128,  127,  162,  206,   26,
+ /*  1410 */   161,  230,  230,   13,  153,  153,    6,  151,  203,  205,
+ /*  1420 */   204,  202,  151,  165,  171,  171,  151,  171,  165,  165,
+ /*  1430 */   171,  179,    4,  250,  179,  250,  247,    3,   22,  171,
+ /*  1440 */   171,  171,  142,   81,   15,   23,   16,   23,  131,  171,
+ /*  1450 */   120,  111,  123,   20,   16,    1,  125,  123,  131,   53,
+ /*  1460 */    53,   53,   53,  111,   96,   34,  122,    1,    5,   22,
+ /*  1470 */   107,   67,  140,   74,   26,   24,   41,  107,   67,   20,
+ /*  1480 */    19,  112,  105,   66,   22,   66,   22,   22,   28,   66,
+ /*  1490 */    23,   22,   22,   37,   23,   23,   23,  116,   22,   22,
+ /*  1500 */    26,   23,  122,   23,   23,   26,   22,   11,   96,   34,
+ /*  1510 */   124,   26,   26,   23,   23,   23,   34,   34,   23,   26,
+ /*  1520 */    23,   22,   24,   23,   22,  122,   23,   26,   22,   24,
+ /*  1530 */    23,   22,   15,   23,   23,   22,  122,  122,   23,    1,
+ /*  1540 */   122,  252,  252,  252,  252,  252,  252,  252,  252,  252,
+ /*  1550 */   252,  252,  252,  252,  252,  252,  252,  252,  252,  252,
+ /*  1560 */   252,  252,  252,  252,  252,  252,  252,  252,  252,  252,
+ /*  1570 */   252,  252,  252,  252,  252,  252,  252,  252,  252,  252,
+ /*  1580 */   252,  252,  252,  252,  252,  252,  252,  252,  252,  252,
+ /*  1590 */   252,  252,  252,  252,  252,  252,  252,  252,  252,  252,
+ /*  1600 */   252,  252,  252,  252,  252,  252,  252,  252,  252,  252,
+ /*  1610 */   252,  252,  252,  252,  252,  252,  252,  252,  252,  252,
+ /*  1620 */   252,  252,  252,  252,  252,  252,  252,  252,  252,  252,
+ /*  1630 */   252,  252,  252,  252,  252,  252,  252,  252,  252,  252,
+ /*  1640 */   252,  252,  252,  252,  252,  252,  252,  252,  252,  252,
+ /*  1650 */   252,  252,  252,  252,  252,  252,  252,  252,  252,  252,
+ /*  1660 */   252,  252,  252,  252,  252,  252,  252,  252,  252,  252,
+ /*  1670 */   252,  252,  252,  252,  252,  252,  252,  252,  252,  252,
+ /*  1680 */   252,  252,  252,  252,
 };
-#define YY_SHIFT_USE_DFLT (1566)
-#define YY_SHIFT_COUNT    (454)
-#define YY_SHIFT_MIN      (-84)
-#define YY_SHIFT_MAX      (1562)
-static const short yy_shift_ofst[] = {
- /*     0 */   355,  888, 1021,  909, 1063, 1063, 1063, 1063,   20,  -19,
- /*    10 */    66,   66,  170, 1063, 1063, 1063, 1063, 1063, 1063, 1063,
- /*    20 */    -7,   -7,   36,   73,   69,   27,  118,  222,  274,  326,
- /*    30 */   378,  430,  482,  534,  589,  644,  696,  696,  696,  696,
- /*    40 */   696,  696,  696,  696,  696,  696,  696,  696,  696,  696,
- /*    50 */   696,  696,  696,  748,  696,  799,  849,  849,  980, 1063,
- /*    60 */  1063, 1063, 1063, 1063, 1063, 1063, 1063, 1063, 1063, 1063,
- /*    70 */  1063, 1063, 1063, 1063, 1063, 1063, 1063, 1063, 1063, 1063,
- /*    80 */  1063, 1063, 1063, 1063, 1063, 1063, 1063, 1063, 1063, 1063,
- /*    90 */  1083, 1063, 1063, 1063, 1063, 1063, 1063, 1063, 1063, 1063,
- /*   100 */  1063, 1063, 1063, 1063,  -43, 1120, 1120, 1120, 1120, 1120,
- /*   110 */   -31,  -72,  -84,  242, 1152,  667,  210,  210,  242,  309,
- /*   120 */   336,  -55, 1566, 1566, 1566,  850,  850,  850,  626,  626,
- /*   130 */   588,  588,  898,  221,  264,  242,  242,  242,  242,  242,
- /*   140 */   242,  242,  242,  242,  242,  242,  242,  242,  242,  242,
- /*   150 */   242,  242,  242,  242,  242,  496,  675,  289,  289,  336,
- /*   160 */     0,    0,    0,    0,    0,    0, 1566, 1566, 1566,  570,
- /*   170 */    98,   98,  958,  389,  450,  968, 1013, 1032, 1027,  242,
- /*   180 */   242,  242,  242,  242,  242,  242,  242,  242,  242,  242,
- /*   190 */   242,  242,  242,  242,  242, 1082, 1082, 1082,  242,  242,
- /*   200 */   533,  242,  242,  242,  987,  242,  242, 1208,  242,  242,
- /*   210 */   242,  242,  242,  242,  242,  242,  242,  242,  435,  531,
- /*   220 */  1001, 1001, 1001,  832,  434, 1266,  594,   58,  863,  863,
- /*   230 */   952,   58,  952,  946,  738,  239,  145,  863,  525,  145,
- /*   240 */   145,  315,  647,  790, 1174, 1119, 1119, 1204, 1204, 1119,
- /*   250 */  1250, 1232, 1147, 1263, 1263, 1263, 1263, 1119, 1265, 1147,
- /*   260 */  1250, 1232, 1232, 1147, 1119, 1265, 1186, 1297, 1119, 1119,
- /*   270 */  1265, 1372, 1119, 1265, 1119, 1265, 1372, 1294, 1294, 1294,
- /*   280 */  1342, 1372, 1294, 1301, 1294, 1342, 1294, 1294, 1286, 1306,
- /*   290 */  1286, 1306, 1286, 1306, 1286, 1306, 1119, 1398, 1119, 1285,
- /*   300 */  1372, 1334, 1334, 1372, 1304, 1308, 1307, 1309, 1147, 1412,
- /*   310 */  1413, 1428, 1428, 1439, 1439, 1439, 1566, 1566, 1566, 1566,
- /*   320 */  1566, 1566, 1566, 1566,  204,  321,  429,  467,  578,  497,
- /*   330 */   904,  739, 1051,  793,  794,  798,  800,  802,  838,  768,
- /*   340 */   766,  801,  762,  847,  853,  812,  891,  681,  784,  896,
- /*   350 */   864,  996, 1457, 1459, 1441, 1322, 1450, 1385, 1451, 1445,
- /*   360 */  1446, 1350, 1340, 1361, 1352, 1453, 1353, 1461, 1478, 1357,
- /*   370 */  1351, 1430, 1431, 1432, 1433, 1370, 1391, 1454, 1367, 1489,
- /*   380 */  1486, 1470, 1386, 1355, 1429, 1471, 1434, 1424, 1458, 1393,
- /*   390 */  1479, 1482, 1485, 1394, 1400, 1487, 1442, 1488, 1490, 1484,
- /*   400 */  1491, 1448, 1483, 1493, 1452, 1480, 1496, 1497, 1498, 1499,
- /*   410 */  1406, 1494, 1500, 1502, 1501, 1404, 1505, 1506, 1435, 1503,
- /*   420 */  1508, 1408, 1507, 1504, 1509, 1510, 1511, 1507, 1513, 1516,
- /*   430 */  1517, 1515, 1519, 1521, 1534, 1523, 1525, 1524, 1526, 1527,
- /*   440 */  1529, 1530, 1526, 1532, 1531, 1533, 1535, 1537, 1427, 1438,
- /*   450 */  1440, 1443, 1538, 1542, 1562,
+#define YY_SHIFT_COUNT    (465)
+#define YY_SHIFT_MIN      (0)
+#define YY_SHIFT_MAX      (1538)
+static const unsigned short int yy_shift_ofst[] = {
+ /*     0 */    39,  822,  955,  843,  997,  997,  997,  997,    0,    0,
+ /*    10 */   104,  630,  997,  997,  997,  997,  997,  997,  997, 1077,
+ /*    20 */  1077,  126,  161,  155,   52,  156,  208,  260,  312,  364,
+ /*    30 */   416,  468,  523,  578,  630,  630,  630,  630,  630,  630,
+ /*    40 */   630,  630,  630,  630,  630,  630,  630,  630,  630,  630,
+ /*    50 */   630,  682,  630,  733,  783,  783,  914,  997,  997,  997,
+ /*    60 */   997,  997,  997,  997,  997,  997,  997,  997,  997,  997,
+ /*    70 */   997,  997,  997,  997,  997,  997,  997,  997,  997,  997,
+ /*    80 */   997,  997,  997,  997,  997,  997,  997,  997, 1017,  997,
+ /*    90 */   997,  997,  997,  997,  997,  997,  997,  997,  997,  997,
+ /*   100 */   997,  997, 1070, 1054, 1054, 1054, 1054, 1054,   40,   25,
+ /*   110 */    72,  232,  788,  428,  248,  248,  232,  581,  367,  127,
+ /*   120 */   465,  138, 1541, 1541, 1541,  784,  784,  784,  522,  522,
+ /*   130 */   887,  887,  893,  406,  408,  232,  232,  232,  232,  232,
+ /*   140 */   232,  232,  232,  232,  232,  232,  232,  232,  232,  232,
+ /*   150 */   232,  232,  232,  232,  232,  370,  340,  714,  698,  698,
+ /*   160 */   465,   89,   89,   89,   89,   89,   89, 1541, 1541, 1541,
+ /*   170 */   504,   85,   85,  884,   70,  280,  902,  440,  966,  924,
+ /*   180 */   232,  232,  232,  232,  232,  232,  232,  232,  232,  232,
+ /*   190 */   232,  232,  232,  232,  232,  232, 1134, 1134, 1134,  232,
+ /*   200 */   232,  667,  232,  232,  232,  929,  232,  232,  885,  232,
+ /*   210 */   232,  232,  232,  232,  232,  232,  232,  232,  232,  418,
+ /*   220 */   678,  981,  981,  981,  981,  766,  271,  911,  510,  429,
+ /*   230 */   617,  786,  786,  830,  617,  830,    4,  730,  595,  768,
+ /*   240 */   786,  561,  768,  768,  732,  535,   55, 1165, 1105, 1105,
+ /*   250 */  1191, 1191, 1105, 1228, 1209, 1130, 1257, 1257, 1257, 1257,
+ /*   260 */  1105, 1280, 1130, 1228, 1209, 1209, 1130, 1105, 1280, 1198,
+ /*   270 */  1282, 1105, 1105, 1280, 1328, 1105, 1280, 1105, 1280, 1328,
+ /*   280 */  1244, 1244, 1244, 1308, 1328, 1244, 1267, 1244, 1308, 1244,
+ /*   290 */  1244, 1250, 1273, 1250, 1273, 1250, 1273, 1250, 1273, 1105,
+ /*   300 */  1360, 1105, 1260, 1328, 1306, 1306, 1328, 1274, 1276, 1277,
+ /*   310 */  1279, 1130, 1379, 1383, 1400, 1400, 1410, 1410, 1410, 1541,
+ /*   320 */  1541, 1541, 1541, 1541, 1541, 1541, 1541, 1541, 1541, 1541,
+ /*   330 */  1541, 1541, 1541, 1541, 1541,   34,  407,  463,  511,  417,
+ /*   340 */   479, 1272,  778,  941,  785,  825,  831,  833,  872,  877,
+ /*   350 */   756,  793,  900,  804,  919, 1045,  969, 1049,  803,  909,
+ /*   360 */  1051,  983, 1059, 1428, 1434, 1416, 1300, 1429, 1362, 1430,
+ /*   370 */  1422, 1424, 1330, 1317, 1340, 1329, 1433, 1331, 1438, 1454,
+ /*   380 */  1334, 1327, 1406, 1407, 1408, 1409, 1352, 1368, 1431, 1344,
+ /*   390 */  1466, 1463, 1447, 1363, 1332, 1404, 1448, 1411, 1399, 1435,
+ /*   400 */  1370, 1451, 1459, 1461, 1369, 1377, 1462, 1417, 1464, 1465,
+ /*   410 */  1467, 1469, 1419, 1460, 1470, 1423, 1456, 1471, 1472, 1473,
+ /*   420 */  1474, 1381, 1476, 1478, 1477, 1479, 1380, 1480, 1481, 1412,
+ /*   430 */  1475, 1484, 1386, 1485, 1482, 1486, 1483, 1490, 1485, 1491,
+ /*   440 */  1492, 1495, 1493, 1497, 1499, 1496, 1500, 1502, 1498, 1501,
+ /*   450 */  1503, 1506, 1505, 1501, 1507, 1509, 1510, 1511, 1513, 1403,
+ /*   460 */  1414, 1415, 1418, 1515, 1517, 1538,
 };
-#define YY_REDUCE_USE_DFLT (-144)
-#define YY_REDUCE_COUNT (323)
-#define YY_REDUCE_MIN   (-143)
-#define YY_REDUCE_MAX   (1305)
+#define YY_REDUCE_COUNT (334)
+#define YY_REDUCE_MIN   (-217)
+#define YY_REDUCE_MAX   (1278)
 static const short yy_reduce_ofst[] = {
- /*     0 */  -143,  -65,  140,  840,   76,  180,  182,  233,  488,  -25,
- /*    10 */    12,   16,   59,  885,  907,  935,  390,  705,  954,  285,
- /*    20 */   997, 1017, 1018, -118, 1025,  139,  171,  171,  171,  171,
- /*    30 */   171,  171,  171,  171,  171,  171,  171,  171,  171,  171,
- /*    40 */   171,  171,  171,  171,  171,  171,  171,  171,  171,  171,
- /*    50 */   171,  171,  171,  171,  171,  171,  171,  171,  -69,  287,
- /*    60 */   441,  658,  708,  856, 1050, 1073, 1076, 1079, 1081, 1084,
- /*    70 */  1086, 1088, 1091, 1113, 1115, 1117, 1122, 1124, 1126, 1128,
- /*    80 */  1130, 1141, 1153, 1156, 1159, 1163, 1165, 1167, 1170, 1172,
- /*    90 */  1175, 1178, 1181, 1189, 1194, 1197, 1200, 1203, 1205, 1207,
- /*   100 */  1211, 1213, 1216, 1219,  171,  171,  171,  171,  171,  171,
- /*   110 */   171,  171,  171,   49,  176,  220,  275,  278,  290,  171,
- /*   120 */   300,  171,  171,  171,  171,  -85,  -85,  -85,  -28,   77,
- /*   130 */   313,  317,  -56,  252,  252,  446, -129,  243,  361,  403,
- /*   140 */   406,  513,  517,  409,  502,  518,  504,  509,  621,  553,
- /*   150 */   562,  619,  559,   93,  620,  465,  453,  550,  591,  571,
- /*   160 */   615,  666,  750,  752,  797,  819,  463,  548,  -73,   28,
- /*   170 */    68,  120,  257,  206,  359,  405,  413,  452,  457,  560,
- /*   180 */   566,  617,  670,  720,  723,  769,  773,  775,  780,  813,
- /*   190 */   814,  821,  822,  823,  826,  360,  436,  783,  829,  835,
- /*   200 */   707,  862,  867,  878,  830,  911,  915,  883,  936,  937,
- /*   210 */   940,  359,  942,  943,  944,  979,  982,  984,  886,  899,
- /*   220 */   928,  929,  931,  707,  947,  945,  998,  949,  932,  969,
- /*   230 */   918,  953,  924,  992, 1005, 1010, 1016,  971,  965, 1019,
- /*   240 */  1049, 1000, 1028, 1074,  989, 1078, 1080, 1026, 1031, 1109,
- /*   250 */  1053, 1090, 1103, 1092, 1099, 1114, 1118, 1148, 1151, 1111,
- /*   260 */  1096, 1129, 1131, 1133, 1162, 1202, 1138, 1146, 1231, 1234,
- /*   270 */  1206, 1218, 1237, 1239, 1240, 1242, 1221, 1228, 1229, 1230,
- /*   280 */  1224, 1233, 1235, 1236, 1241, 1226, 1243, 1244, 1198, 1201,
- /*   290 */  1209, 1212, 1210, 1214, 1215, 1217, 1260, 1199, 1262, 1220,
- /*   300 */  1247, 1222, 1223, 1253, 1238, 1245, 1251, 1246, 1249, 1276,
- /*   310 */  1279, 1289, 1291, 1296, 1302, 1305, 1225, 1227, 1248, 1290,
- /*   320 */  1292, 1280, 1281, 1295,
+ /*     0 */  -144, -139, -134, -136, -141,   64,  114,  116, -158, -148,
+ /*    10 */  -217,   96,  819,  871,  878,  219,  270,  886,  272, -110,
+ /*    20 */   413,  918,  972,  228, -214, -214, -214, -214, -214, -214,
+ /*    30 */  -214, -214, -214, -214, -214, -214, -214, -214, -214, -214,
+ /*    40 */  -214, -214, -214, -214, -214, -214, -214, -214, -214, -214,
+ /*    50 */  -214, -214, -214, -214, -214, -214,   62,  323,  377,  536,
+ /*    60 */   539,  834,  948, 1020, 1024, 1031, 1039, 1048, 1050, 1063,
+ /*    70 */  1065, 1068, 1074, 1080, 1083, 1088, 1091, 1094, 1097, 1099,
+ /*    80 */  1103, 1106, 1111, 1114, 1122, 1126, 1129, 1131, 1137, 1139,
+ /*    90 */  1141, 1145, 1149, 1154, 1156, 1164, 1168, 1173, 1180, 1184,
+ /*   100 */  1187, 1192, -214, -214, -214, -214, -214, -214, -214, -214,
+ /*   110 */  -214,  132,  -45,   97,    8,  164,  379,  175,  255, -214,
+ /*   120 */   178, -214, -214, -214, -214, -168, -168, -168,  124,  329,
+ /*   130 */   399,  401, -129,  347,  347,  331,  133,  451,  452,  498,
+ /*   140 */   500,  502,  503,  505,  487,  506,  488,  490,  507,  543,
+ /*   150 */   547, -126,  588,  290,   27,  572,  501,  597,  537,  582,
+ /*   160 */   183,  599,  600,  601,  649,  650,  653,  508,  538,  -29,
+ /*   170 */  -156, -152, -137,  -79,  135,   74,  130,  242,  338,  378,
+ /*   180 */   393,  397,  607,  648,  691,  700,  708,  709,  728,  757,
+ /*   190 */   763,  769,  796,  810,  818,  845,  202,  748,  792,  861,
+ /*   200 */   862,  815,  866,  903,  905,  850,  931,  932,  896,  937,
+ /*   210 */   939,  945,   74,  949,  951,  964,  965,  967,  968,  888,
+ /*   220 */   820,  923,  926,  959,  960,  815,  980,  908, 1009,  985,
+ /*   230 */   986,  970,  974,  942,  988,  947, 1018, 1011, 1022, 1025,
+ /*   240 */   991,  982, 1032, 1038, 1015, 1019, 1064,  984, 1071, 1072,
+ /*   250 */   992,  993, 1085, 1061, 1069, 1067, 1093, 1116, 1124, 1128,
+ /*   260 */  1133, 1132, 1138, 1086, 1136, 1143, 1146, 1175, 1166, 1108,
+ /*   270 */  1113, 1193, 1196, 1201, 1178, 1203, 1205, 1208, 1206, 1190,
+ /*   280 */  1195, 1197, 1199, 1194, 1200, 1204, 1207, 1210, 1211, 1212,
+ /*   290 */  1213, 1159, 1167, 1169, 1174, 1172, 1176, 1179, 1177, 1222,
+ /*   300 */  1170, 1232, 1171, 1221, 1181, 1182, 1223, 1202, 1214, 1216,
+ /*   310 */  1215, 1219, 1245, 1249, 1261, 1262, 1266, 1271, 1275, 1183,
+ /*   320 */  1185, 1189, 1258, 1253, 1254, 1256, 1259, 1263, 1252, 1255,
+ /*   330 */  1268, 1269, 1270, 1278, 1264,
 };
 static const YYACTIONTYPE yy_default[] = {
- /*     0 */  1270, 1260, 1260, 1260, 1193, 1193, 1193, 1193, 1260, 1088,
- /*    10 */  1117, 1117, 1244, 1322, 1322, 1322, 1322, 1322, 1322, 1192,
- /*    20 */  1322, 1322, 1322, 1322, 1260, 1092, 1123, 1322, 1322, 1322,
- /*    30 */  1322, 1194, 1195, 1322, 1322, 1322, 1243, 1245, 1133, 1132,
- /*    40 */  1131, 1130, 1226, 1104, 1128, 1121, 1125, 1194, 1188, 1189,
- /*    50 */  1187, 1191, 1195, 1322, 1124, 1158, 1172, 1157, 1322, 1322,
- /*    60 */  1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322,
- /*    70 */  1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322,
- /*    80 */  1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322,
- /*    90 */  1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322,
- /*   100 */  1322, 1322, 1322, 1322, 1166, 1171, 1178, 1170, 1167, 1160,
- /*   110 */  1159, 1161, 1162, 1322, 1011, 1059, 1322, 1322, 1322, 1163,
- /*   120 */  1322, 1164, 1175, 1174, 1173, 1251, 1278, 1277, 1322, 1322,
- /*   130 */  1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322,
- /*   140 */  1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322,
- /*   150 */  1322, 1322, 1322, 1322, 1322, 1270, 1260, 1017, 1017, 1322,
- /*   160 */  1260, 1260, 1260, 1260, 1260, 1260, 1256, 1092, 1083, 1322,
- /*   170 */  1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322,
- /*   180 */  1248, 1246, 1322, 1208, 1322, 1322, 1322, 1322, 1322, 1322,
- /*   190 */  1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322,
- /*   200 */  1322, 1322, 1322, 1322, 1088, 1322, 1322, 1322, 1322, 1322,
- /*   210 */  1322, 1322, 1322, 1322, 1322, 1322, 1322, 1272, 1322, 1221,
- /*   220 */  1088, 1088, 1088, 1090, 1072, 1082,  997, 1127, 1106, 1106,
- /*   230 */  1311, 1127, 1311, 1034, 1292, 1031, 1117, 1106, 1190, 1117,
- /*   240 */  1117, 1089, 1082, 1322, 1314, 1097, 1097, 1313, 1313, 1097,
- /*   250 */  1138, 1062, 1127, 1068, 1068, 1068, 1068, 1097, 1008, 1127,
- /*   260 */  1138, 1062, 1062, 1127, 1097, 1008, 1225, 1308, 1097, 1097,
- /*   270 */  1008, 1201, 1097, 1008, 1097, 1008, 1201, 1060, 1060, 1060,
- /*   280 */  1049, 1201, 1060, 1034, 1060, 1049, 1060, 1060, 1110, 1105,
- /*   290 */  1110, 1105, 1110, 1105, 1110, 1105, 1097, 1196, 1097, 1322,
- /*   300 */  1201, 1205, 1205, 1201, 1122, 1111, 1120, 1118, 1127, 1014,
- /*   310 */  1052, 1275, 1275, 1271, 1271, 1271, 1319, 1319, 1256, 1287,
- /*   320 */  1287, 1036, 1036, 1287, 1322, 1322, 1322, 1322, 1322, 1322,
- /*   330 */  1282, 1322, 1210, 1322, 1322, 1322, 1322, 1322, 1322, 1322,
- /*   340 */  1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322,
- /*   350 */  1322, 1143, 1322,  993, 1253, 1322, 1322, 1252, 1322, 1322,
- /*   360 */  1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322,
- /*   370 */  1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322, 1310, 1322,
- /*   380 */  1322, 1322, 1322, 1322, 1322, 1224, 1223, 1322, 1322, 1322,
- /*   390 */  1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322,
- /*   400 */  1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322,
- /*   410 */  1074, 1322, 1322, 1322, 1296, 1322, 1322, 1322, 1322, 1322,
- /*   420 */  1322, 1322, 1119, 1322, 1112, 1322, 1322, 1301, 1322, 1322,
- /*   430 */  1322, 1322, 1322, 1322, 1322, 1322, 1322, 1322, 1262, 1322,
- /*   440 */  1322, 1322, 1261, 1322, 1322, 1322, 1322, 1322, 1145, 1322,
- /*   450 */  1144, 1148, 1322, 1002, 1322,
+ /*     0 */  1286, 1276, 1276, 1276, 1209, 1209, 1209, 1209, 1133, 1133,
+ /*    10 */  1260, 1036, 1005, 1005, 1005, 1005, 1005, 1005, 1208, 1005,
+ /*    20 */  1005, 1005, 1005, 1108, 1139, 1005, 1005, 1005, 1005, 1210,
+ /*    30 */  1211, 1005, 1005, 1005, 1259, 1261, 1149, 1148, 1147, 1146,
+ /*    40 */  1242, 1120, 1144, 1137, 1141, 1210, 1204, 1205, 1203, 1207,
+ /*    50 */  1211, 1005, 1140, 1174, 1188, 1173, 1005, 1005, 1005, 1005,
+ /*    60 */  1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005,
+ /*    70 */  1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005,
+ /*    80 */  1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005,
+ /*    90 */  1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005,
+ /*   100 */  1005, 1005, 1182, 1187, 1194, 1186, 1183, 1176, 1175, 1177,
+ /*   110 */  1178, 1005, 1026, 1075, 1005, 1005, 1005, 1276, 1036, 1179,
+ /*   120 */  1005, 1180, 1191, 1190, 1189, 1267, 1294, 1293, 1005, 1005,
+ /*   130 */  1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005,
+ /*   140 */  1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005,
+ /*   150 */  1005, 1005, 1005, 1005, 1005, 1036, 1286, 1276, 1032, 1032,
+ /*   160 */  1005, 1276, 1276, 1276, 1276, 1276, 1276, 1272, 1108, 1099,
+ /*   170 */  1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005,
+ /*   180 */  1005, 1264, 1262, 1005, 1224, 1005, 1005, 1005, 1005, 1005,
+ /*   190 */  1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005,
+ /*   200 */  1005, 1005, 1005, 1005, 1005, 1104, 1005, 1005, 1005, 1005,
+ /*   210 */  1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005, 1288, 1005,
+ /*   220 */  1237, 1104, 1104, 1104, 1104, 1106, 1088, 1098, 1036, 1012,
+ /*   230 */  1143, 1122, 1122, 1327, 1143, 1327, 1050, 1308, 1047, 1133,
+ /*   240 */  1122, 1206, 1133, 1133, 1105, 1098, 1005, 1330, 1113, 1113,
+ /*   250 */  1329, 1329, 1113, 1154, 1078, 1143, 1084, 1084, 1084, 1084,
+ /*   260 */  1113, 1023, 1143, 1154, 1078, 1078, 1143, 1113, 1023, 1241,
+ /*   270 */  1324, 1113, 1113, 1023, 1217, 1113, 1023, 1113, 1023, 1217,
+ /*   280 */  1076, 1076, 1076, 1065, 1217, 1076, 1050, 1076, 1065, 1076,
+ /*   290 */  1076, 1126, 1121, 1126, 1121, 1126, 1121, 1126, 1121, 1113,
+ /*   300 */  1212, 1113, 1005, 1217, 1221, 1221, 1217, 1138, 1127, 1136,
+ /*   310 */  1134, 1143, 1029, 1068, 1291, 1291, 1287, 1287, 1287, 1335,
+ /*   320 */  1335, 1272, 1303, 1036, 1036, 1036, 1036, 1303, 1052, 1052,
+ /*   330 */  1036, 1036, 1036, 1036, 1303, 1005, 1005, 1005, 1005, 1005,
+ /*   340 */  1005, 1298, 1005, 1226, 1005, 1005, 1005, 1005, 1005, 1005,
+ /*   350 */  1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005,
+ /*   360 */  1005, 1005, 1159, 1005, 1008, 1269, 1005, 1005, 1268, 1005,
+ /*   370 */  1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005,
+ /*   380 */  1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005, 1326,
+ /*   390 */  1005, 1005, 1005, 1005, 1005, 1005, 1240, 1239, 1005, 1005,
+ /*   400 */  1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005,
+ /*   410 */  1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005,
+ /*   420 */  1005, 1090, 1005, 1005, 1005, 1312, 1005, 1005, 1005, 1005,
+ /*   430 */  1005, 1005, 1005, 1135, 1005, 1128, 1005, 1005, 1317, 1005,
+ /*   440 */  1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005, 1005, 1278,
+ /*   450 */  1005, 1005, 1005, 1277, 1005, 1005, 1005, 1005, 1005, 1161,
+ /*   460 */  1005, 1160, 1164, 1005, 1017, 1005,
 };
 /********** End of lemon-generated parsing tables *****************************/
 
@@ -13995,75 +14155,264 @@ SQLITE_PRIVATE void sqlite3ParserTrace(FILE *TraceFILE, char *zTracePrompt){
 }
 #endif /* NDEBUG */
 
-#ifndef NDEBUG
+#if defined(YYCOVERAGE) || !defined(NDEBUG)
 /* For tracing shifts, the names of all terminals and nonterminals
 ** are required.  The following table supplies these names */
 static const char *const yyTokenName[] = { 
-  "$",             "SEMI",          "EXPLAIN",       "QUERY",       
-  "PLAN",          "BEGIN",         "TRANSACTION",   "DEFERRED",    
-  "IMMEDIATE",     "EXCLUSIVE",     "COMMIT",        "END",         
-  "ROLLBACK",      "SAVEPOINT",     "RELEASE",       "TO",          
-  "TABLE",         "CREATE",        "IF",            "NOT",         
-  "EXISTS",        "TEMP",          "LP",            "RP",          
-  "AS",            "WITHOUT",       "COMMA",         "ABORT",       
-  "ACTION",        "AFTER",         "ANALYZE",       "ASC",         
-  "ATTACH",        "BEFORE",        "BY",            "CASCADE",     
-  "CAST",          "CONFLICT",      "DATABASE",      "DESC",        
-  "DETACH",        "EACH",          "FAIL",          "OR",          
-  "AND",           "IS",            "MATCH",         "LIKE_KW",     
-  "BETWEEN",       "IN",            "ISNULL",        "NOTNULL",     
-  "NE",            "EQ",            "GT",            "LE",          
-  "LT",            "GE",            "ESCAPE",        "ID",          
-  "COLUMNKW",      "FOR",           "IGNORE",        "INITIALLY",   
-  "INSTEAD",       "NO",            "KEY",           "OF",          
-  "OFFSET",        "PRAGMA",        "RAISE",         "RECURSIVE",   
-  "REPLACE",       "RESTRICT",      "ROW",           "TRIGGER",     
-  "VACUUM",        "VIEW",          "VIRTUAL",       "WITH",        
-  "REINDEX",       "RENAME",        "CTIME_KW",      "ANY",         
-  "BITAND",        "BITOR",         "LSHIFT",        "RSHIFT",      
-  "PLUS",          "MINUS",         "STAR",          "SLASH",       
-  "REM",           "CONCAT",        "COLLATE",       "BITNOT",      
-  "INDEXED",       "STRING",        "JOIN_KW",       "CONSTRAINT",  
-  "DEFAULT",       "NULL",          "PRIMARY",       "UNIQUE",      
-  "CHECK",         "REFERENCES",    "AUTOINCR",      "ON",          
-  "INSERT",        "DELETE",        "UPDATE",        "SET",         
-  "DEFERRABLE",    "FOREIGN",       "DROP",          "UNION",       
-  "ALL",           "EXCEPT",        "INTERSECT",     "SELECT",      
-  "VALUES",        "DISTINCT",      "DOT",           "FROM",        
-  "JOIN",          "USING",         "ORDER",         "GROUP",       
-  "HAVING",        "LIMIT",         "WHERE",         "INTO",        
-  "FLOAT",         "BLOB",          "INTEGER",       "VARIABLE",    
-  "CASE",          "WHEN",          "THEN",          "ELSE",        
-  "INDEX",         "ALTER",         "ADD",           "error",       
-  "input",         "cmdlist",       "ecmd",          "explain",     
-  "cmdx",          "cmd",           "transtype",     "trans_opt",   
-  "nm",            "savepoint_opt",  "create_table",  "create_table_args",
-  "createkw",      "temp",          "ifnotexists",   "dbnm",        
-  "columnlist",    "conslist_opt",  "table_options",  "select",      
-  "columnname",    "carglist",      "typetoken",     "typename",    
-  "signed",        "plus_num",      "minus_num",     "ccons",       
-  "term",          "expr",          "onconf",        "sortorder",   
-  "autoinc",       "eidlist_opt",   "refargs",       "defer_subclause",
-  "refarg",        "refact",        "init_deferred_pred_opt",  "conslist",    
-  "tconscomma",    "tcons",         "sortlist",      "eidlist",     
-  "defer_subclause_opt",  "orconf",        "resolvetype",   "raisetype",   
-  "ifexists",      "fullname",      "selectnowith",  "oneselect",   
-  "with",          "multiselect_op",  "distinct",      "selcollist",  
-  "from",          "where_opt",     "groupby_opt",   "having_opt",  
-  "orderby_opt",   "limit_opt",     "values",        "nexprlist",   
-  "exprlist",      "sclp",          "as",            "seltablist",  
-  "stl_prefix",    "joinop",        "indexed_opt",   "on_opt",      
-  "using_opt",     "idlist",        "setlist",       "insert_cmd",  
-  "idlist_opt",    "likeop",        "between_op",    "in_op",       
-  "paren_exprlist",  "case_operand",  "case_exprlist",  "case_else",   
-  "uniqueflag",    "collate",       "nmnum",         "trigger_decl",
-  "trigger_cmd_list",  "trigger_time",  "trigger_event",  "foreach_clause",
-  "when_clause",   "trigger_cmd",   "trnm",          "tridxby",     
-  "database_kw_opt",  "key_opt",       "add_column_fullname",  "kwcolumn_opt",
-  "create_vtab",   "vtabarglist",   "vtabarg",       "vtabargtoken",
-  "lp",            "anylist",       "wqlist",      
+  /*    0 */ "$",
+  /*    1 */ "SEMI",
+  /*    2 */ "EXPLAIN",
+  /*    3 */ "QUERY",
+  /*    4 */ "PLAN",
+  /*    5 */ "BEGIN",
+  /*    6 */ "TRANSACTION",
+  /*    7 */ "DEFERRED",
+  /*    8 */ "IMMEDIATE",
+  /*    9 */ "EXCLUSIVE",
+  /*   10 */ "COMMIT",
+  /*   11 */ "END",
+  /*   12 */ "ROLLBACK",
+  /*   13 */ "SAVEPOINT",
+  /*   14 */ "RELEASE",
+  /*   15 */ "TO",
+  /*   16 */ "TABLE",
+  /*   17 */ "CREATE",
+  /*   18 */ "IF",
+  /*   19 */ "NOT",
+  /*   20 */ "EXISTS",
+  /*   21 */ "TEMP",
+  /*   22 */ "LP",
+  /*   23 */ "RP",
+  /*   24 */ "AS",
+  /*   25 */ "WITHOUT",
+  /*   26 */ "COMMA",
+  /*   27 */ "ABORT",
+  /*   28 */ "ACTION",
+  /*   29 */ "AFTER",
+  /*   30 */ "ANALYZE",
+  /*   31 */ "ASC",
+  /*   32 */ "ATTACH",
+  /*   33 */ "BEFORE",
+  /*   34 */ "BY",
+  /*   35 */ "CASCADE",
+  /*   36 */ "CAST",
+  /*   37 */ "CONFLICT",
+  /*   38 */ "DATABASE",
+  /*   39 */ "DESC",
+  /*   40 */ "DETACH",
+  /*   41 */ "EACH",
+  /*   42 */ "FAIL",
+  /*   43 */ "OR",
+  /*   44 */ "AND",
+  /*   45 */ "IS",
+  /*   46 */ "MATCH",
+  /*   47 */ "LIKE_KW",
+  /*   48 */ "BETWEEN",
+  /*   49 */ "IN",
+  /*   50 */ "ISNULL",
+  /*   51 */ "NOTNULL",
+  /*   52 */ "NE",
+  /*   53 */ "EQ",
+  /*   54 */ "GT",
+  /*   55 */ "LE",
+  /*   56 */ "LT",
+  /*   57 */ "GE",
+  /*   58 */ "ESCAPE",
+  /*   59 */ "ID",
+  /*   60 */ "COLUMNKW",
+  /*   61 */ "FOR",
+  /*   62 */ "IGNORE",
+  /*   63 */ "INITIALLY",
+  /*   64 */ "INSTEAD",
+  /*   65 */ "NO",
+  /*   66 */ "KEY",
+  /*   67 */ "OF",
+  /*   68 */ "OFFSET",
+  /*   69 */ "PRAGMA",
+  /*   70 */ "RAISE",
+  /*   71 */ "RECURSIVE",
+  /*   72 */ "REPLACE",
+  /*   73 */ "RESTRICT",
+  /*   74 */ "ROW",
+  /*   75 */ "TRIGGER",
+  /*   76 */ "VACUUM",
+  /*   77 */ "VIEW",
+  /*   78 */ "VIRTUAL",
+  /*   79 */ "WITH",
+  /*   80 */ "REINDEX",
+  /*   81 */ "RENAME",
+  /*   82 */ "CTIME_KW",
+  /*   83 */ "ANY",
+  /*   84 */ "BITAND",
+  /*   85 */ "BITOR",
+  /*   86 */ "LSHIFT",
+  /*   87 */ "RSHIFT",
+  /*   88 */ "PLUS",
+  /*   89 */ "MINUS",
+  /*   90 */ "STAR",
+  /*   91 */ "SLASH",
+  /*   92 */ "REM",
+  /*   93 */ "CONCAT",
+  /*   94 */ "COLLATE",
+  /*   95 */ "BITNOT",
+  /*   96 */ "INDEXED",
+  /*   97 */ "STRING",
+  /*   98 */ "JOIN_KW",
+  /*   99 */ "CONSTRAINT",
+  /*  100 */ "DEFAULT",
+  /*  101 */ "NULL",
+  /*  102 */ "PRIMARY",
+  /*  103 */ "UNIQUE",
+  /*  104 */ "CHECK",
+  /*  105 */ "REFERENCES",
+  /*  106 */ "AUTOINCR",
+  /*  107 */ "ON",
+  /*  108 */ "INSERT",
+  /*  109 */ "DELETE",
+  /*  110 */ "UPDATE",
+  /*  111 */ "SET",
+  /*  112 */ "DEFERRABLE",
+  /*  113 */ "FOREIGN",
+  /*  114 */ "DROP",
+  /*  115 */ "UNION",
+  /*  116 */ "ALL",
+  /*  117 */ "EXCEPT",
+  /*  118 */ "INTERSECT",
+  /*  119 */ "SELECT",
+  /*  120 */ "VALUES",
+  /*  121 */ "DISTINCT",
+  /*  122 */ "DOT",
+  /*  123 */ "FROM",
+  /*  124 */ "JOIN",
+  /*  125 */ "USING",
+  /*  126 */ "ORDER",
+  /*  127 */ "GROUP",
+  /*  128 */ "HAVING",
+  /*  129 */ "LIMIT",
+  /*  130 */ "WHERE",
+  /*  131 */ "INTO",
+  /*  132 */ "FLOAT",
+  /*  133 */ "BLOB",
+  /*  134 */ "INTEGER",
+  /*  135 */ "VARIABLE",
+  /*  136 */ "CASE",
+  /*  137 */ "WHEN",
+  /*  138 */ "THEN",
+  /*  139 */ "ELSE",
+  /*  140 */ "INDEX",
+  /*  141 */ "ALTER",
+  /*  142 */ "ADD",
+  /*  143 */ "error",
+  /*  144 */ "input",
+  /*  145 */ "cmdlist",
+  /*  146 */ "ecmd",
+  /*  147 */ "explain",
+  /*  148 */ "cmdx",
+  /*  149 */ "cmd",
+  /*  150 */ "transtype",
+  /*  151 */ "trans_opt",
+  /*  152 */ "nm",
+  /*  153 */ "savepoint_opt",
+  /*  154 */ "create_table",
+  /*  155 */ "create_table_args",
+  /*  156 */ "createkw",
+  /*  157 */ "temp",
+  /*  158 */ "ifnotexists",
+  /*  159 */ "dbnm",
+  /*  160 */ "columnlist",
+  /*  161 */ "conslist_opt",
+  /*  162 */ "table_options",
+  /*  163 */ "select",
+  /*  164 */ "columnname",
+  /*  165 */ "carglist",
+  /*  166 */ "typetoken",
+  /*  167 */ "typename",
+  /*  168 */ "signed",
+  /*  169 */ "plus_num",
+  /*  170 */ "minus_num",
+  /*  171 */ "scanpt",
+  /*  172 */ "ccons",
+  /*  173 */ "term",
+  /*  174 */ "expr",
+  /*  175 */ "onconf",
+  /*  176 */ "sortorder",
+  /*  177 */ "autoinc",
+  /*  178 */ "eidlist_opt",
+  /*  179 */ "refargs",
+  /*  180 */ "defer_subclause",
+  /*  181 */ "refarg",
+  /*  182 */ "refact",
+  /*  183 */ "init_deferred_pred_opt",
+  /*  184 */ "conslist",
+  /*  185 */ "tconscomma",
+  /*  186 */ "tcons",
+  /*  187 */ "sortlist",
+  /*  188 */ "eidlist",
+  /*  189 */ "defer_subclause_opt",
+  /*  190 */ "orconf",
+  /*  191 */ "resolvetype",
+  /*  192 */ "raisetype",
+  /*  193 */ "ifexists",
+  /*  194 */ "fullname",
+  /*  195 */ "selectnowith",
+  /*  196 */ "oneselect",
+  /*  197 */ "with",
+  /*  198 */ "multiselect_op",
+  /*  199 */ "distinct",
+  /*  200 */ "selcollist",
+  /*  201 */ "from",
+  /*  202 */ "where_opt",
+  /*  203 */ "groupby_opt",
+  /*  204 */ "having_opt",
+  /*  205 */ "orderby_opt",
+  /*  206 */ "limit_opt",
+  /*  207 */ "values",
+  /*  208 */ "nexprlist",
+  /*  209 */ "exprlist",
+  /*  210 */ "sclp",
+  /*  211 */ "as",
+  /*  212 */ "seltablist",
+  /*  213 */ "stl_prefix",
+  /*  214 */ "joinop",
+  /*  215 */ "indexed_opt",
+  /*  216 */ "on_opt",
+  /*  217 */ "using_opt",
+  /*  218 */ "idlist",
+  /*  219 */ "setlist",
+  /*  220 */ "insert_cmd",
+  /*  221 */ "idlist_opt",
+  /*  222 */ "likeop",
+  /*  223 */ "between_op",
+  /*  224 */ "in_op",
+  /*  225 */ "paren_exprlist",
+  /*  226 */ "case_operand",
+  /*  227 */ "case_exprlist",
+  /*  228 */ "case_else",
+  /*  229 */ "uniqueflag",
+  /*  230 */ "collate",
+  /*  231 */ "nmnum",
+  /*  232 */ "trigger_decl",
+  /*  233 */ "trigger_cmd_list",
+  /*  234 */ "trigger_time",
+  /*  235 */ "trigger_event",
+  /*  236 */ "foreach_clause",
+  /*  237 */ "when_clause",
+  /*  238 */ "trigger_cmd",
+  /*  239 */ "trnm",
+  /*  240 */ "tridxby",
+  /*  241 */ "database_kw_opt",
+  /*  242 */ "key_opt",
+  /*  243 */ "add_column_fullname",
+  /*  244 */ "kwcolumn_opt",
+  /*  245 */ "create_vtab",
+  /*  246 */ "vtabarglist",
+  /*  247 */ "vtabarg",
+  /*  248 */ "vtabargtoken",
+  /*  249 */ "lp",
+  /*  250 */ "anylist",
+  /*  251 */ "wqlist",
 };
-#endif /* NDEBUG */
+#endif /* defined(YYCOVERAGE) || !defined(NDEBUG) */
 
 #ifndef NDEBUG
 /* For tracing reduce actions, the names of all rules are required.
@@ -14097,307 +14446,308 @@ static const char *const yyRuleName[] = {
  /*  25 */ "typetoken ::= typename LP signed RP",
  /*  26 */ "typetoken ::= typename LP signed COMMA signed RP",
  /*  27 */ "typename ::= typename ID|STRING",
- /*  28 */ "ccons ::= CONSTRAINT nm",
- /*  29 */ "ccons ::= DEFAULT term",
- /*  30 */ "ccons ::= DEFAULT LP expr RP",
- /*  31 */ "ccons ::= DEFAULT PLUS term",
- /*  32 */ "ccons ::= DEFAULT MINUS term",
- /*  33 */ "ccons ::= DEFAULT ID|INDEXED",
- /*  34 */ "ccons ::= NOT NULL onconf",
- /*  35 */ "ccons ::= PRIMARY KEY sortorder onconf autoinc",
- /*  36 */ "ccons ::= UNIQUE onconf",
- /*  37 */ "ccons ::= CHECK LP expr RP",
- /*  38 */ "ccons ::= REFERENCES nm eidlist_opt refargs",
- /*  39 */ "ccons ::= defer_subclause",
- /*  40 */ "ccons ::= COLLATE ID|STRING",
- /*  41 */ "autoinc ::=",
- /*  42 */ "autoinc ::= AUTOINCR",
- /*  43 */ "refargs ::=",
- /*  44 */ "refargs ::= refargs refarg",
- /*  45 */ "refarg ::= MATCH nm",
- /*  46 */ "refarg ::= ON INSERT refact",
- /*  47 */ "refarg ::= ON DELETE refact",
- /*  48 */ "refarg ::= ON UPDATE refact",
- /*  49 */ "refact ::= SET NULL",
- /*  50 */ "refact ::= SET DEFAULT",
- /*  51 */ "refact ::= CASCADE",
- /*  52 */ "refact ::= RESTRICT",
- /*  53 */ "refact ::= NO ACTION",
- /*  54 */ "defer_subclause ::= NOT DEFERRABLE init_deferred_pred_opt",
- /*  55 */ "defer_subclause ::= DEFERRABLE init_deferred_pred_opt",
- /*  56 */ "init_deferred_pred_opt ::=",
- /*  57 */ "init_deferred_pred_opt ::= INITIALLY DEFERRED",
- /*  58 */ "init_deferred_pred_opt ::= INITIALLY IMMEDIATE",
- /*  59 */ "conslist_opt ::=",
- /*  60 */ "tconscomma ::= COMMA",
- /*  61 */ "tcons ::= CONSTRAINT nm",
- /*  62 */ "tcons ::= PRIMARY KEY LP sortlist autoinc RP onconf",
- /*  63 */ "tcons ::= UNIQUE LP sortlist RP onconf",
- /*  64 */ "tcons ::= CHECK LP expr RP onconf",
- /*  65 */ "tcons ::= FOREIGN KEY LP eidlist RP REFERENCES nm eidlist_opt refargs defer_subclause_opt",
- /*  66 */ "defer_subclause_opt ::=",
- /*  67 */ "onconf ::=",
- /*  68 */ "onconf ::= ON CONFLICT resolvetype",
- /*  69 */ "orconf ::=",
- /*  70 */ "orconf ::= OR resolvetype",
- /*  71 */ "resolvetype ::= IGNORE",
- /*  72 */ "resolvetype ::= REPLACE",
- /*  73 */ "cmd ::= DROP TABLE ifexists fullname",
- /*  74 */ "ifexists ::= IF EXISTS",
- /*  75 */ "ifexists ::=",
- /*  76 */ "cmd ::= createkw temp VIEW ifnotexists nm dbnm eidlist_opt AS select",
- /*  77 */ "cmd ::= DROP VIEW ifexists fullname",
- /*  78 */ "cmd ::= select",
- /*  79 */ "select ::= with selectnowith",
- /*  80 */ "selectnowith ::= selectnowith multiselect_op oneselect",
- /*  81 */ "multiselect_op ::= UNION",
- /*  82 */ "multiselect_op ::= UNION ALL",
- /*  83 */ "multiselect_op ::= EXCEPT|INTERSECT",
- /*  84 */ "oneselect ::= SELECT distinct selcollist from where_opt groupby_opt having_opt orderby_opt limit_opt",
- /*  85 */ "values ::= VALUES LP nexprlist RP",
- /*  86 */ "values ::= values COMMA LP exprlist RP",
- /*  87 */ "distinct ::= DISTINCT",
- /*  88 */ "distinct ::= ALL",
- /*  89 */ "distinct ::=",
- /*  90 */ "sclp ::=",
- /*  91 */ "selcollist ::= sclp expr as",
- /*  92 */ "selcollist ::= sclp STAR",
- /*  93 */ "selcollist ::= sclp nm DOT STAR",
- /*  94 */ "as ::= AS nm",
- /*  95 */ "as ::=",
- /*  96 */ "from ::=",
- /*  97 */ "from ::= FROM seltablist",
- /*  98 */ "stl_prefix ::= seltablist joinop",
- /*  99 */ "stl_prefix ::=",
- /* 100 */ "seltablist ::= stl_prefix nm dbnm as indexed_opt on_opt using_opt",
- /* 101 */ "seltablist ::= stl_prefix nm dbnm LP exprlist RP as on_opt using_opt",
- /* 102 */ "seltablist ::= stl_prefix LP select RP as on_opt using_opt",
- /* 103 */ "seltablist ::= stl_prefix LP seltablist RP as on_opt using_opt",
- /* 104 */ "dbnm ::=",
- /* 105 */ "dbnm ::= DOT nm",
- /* 106 */ "fullname ::= nm dbnm",
- /* 107 */ "joinop ::= COMMA|JOIN",
- /* 108 */ "joinop ::= JOIN_KW JOIN",
- /* 109 */ "joinop ::= JOIN_KW nm JOIN",
- /* 110 */ "joinop ::= JOIN_KW nm nm JOIN",
- /* 111 */ "on_opt ::= ON expr",
- /* 112 */ "on_opt ::=",
- /* 113 */ "indexed_opt ::=",
- /* 114 */ "indexed_opt ::= INDEXED BY nm",
- /* 115 */ "indexed_opt ::= NOT INDEXED",
- /* 116 */ "using_opt ::= USING LP idlist RP",
- /* 117 */ "using_opt ::=",
- /* 118 */ "orderby_opt ::=",
- /* 119 */ "orderby_opt ::= ORDER BY sortlist",
- /* 120 */ "sortlist ::= sortlist COMMA expr sortorder",
- /* 121 */ "sortlist ::= expr sortorder",
- /* 122 */ "sortorder ::= ASC",
- /* 123 */ "sortorder ::= DESC",
- /* 124 */ "sortorder ::=",
- /* 125 */ "groupby_opt ::=",
- /* 126 */ "groupby_opt ::= GROUP BY nexprlist",
- /* 127 */ "having_opt ::=",
- /* 128 */ "having_opt ::= HAVING expr",
- /* 129 */ "limit_opt ::=",
- /* 130 */ "limit_opt ::= LIMIT expr",
- /* 131 */ "limit_opt ::= LIMIT expr OFFSET expr",
- /* 132 */ "limit_opt ::= LIMIT expr COMMA expr",
- /* 133 */ "cmd ::= with DELETE FROM fullname indexed_opt where_opt",
- /* 134 */ "where_opt ::=",
- /* 135 */ "where_opt ::= WHERE expr",
- /* 136 */ "cmd ::= with UPDATE orconf fullname indexed_opt SET setlist where_opt",
- /* 137 */ "setlist ::= setlist COMMA nm EQ expr",
- /* 138 */ "setlist ::= setlist COMMA LP idlist RP EQ expr",
- /* 139 */ "setlist ::= nm EQ expr",
- /* 140 */ "setlist ::= LP idlist RP EQ expr",
- /* 141 */ "cmd ::= with insert_cmd INTO fullname idlist_opt select",
- /* 142 */ "cmd ::= with insert_cmd INTO fullname idlist_opt DEFAULT VALUES",
- /* 143 */ "insert_cmd ::= INSERT orconf",
- /* 144 */ "insert_cmd ::= REPLACE",
- /* 145 */ "idlist_opt ::=",
- /* 146 */ "idlist_opt ::= LP idlist RP",
- /* 147 */ "idlist ::= idlist COMMA nm",
- /* 148 */ "idlist ::= nm",
- /* 149 */ "expr ::= LP expr RP",
- /* 150 */ "expr ::= ID|INDEXED",
- /* 151 */ "expr ::= JOIN_KW",
- /* 152 */ "expr ::= nm DOT nm",
- /* 153 */ "expr ::= nm DOT nm DOT nm",
- /* 154 */ "term ::= NULL|FLOAT|BLOB",
- /* 155 */ "term ::= STRING",
- /* 156 */ "term ::= INTEGER",
- /* 157 */ "expr ::= VARIABLE",
- /* 158 */ "expr ::= expr COLLATE ID|STRING",
- /* 159 */ "expr ::= CAST LP expr AS typetoken RP",
- /* 160 */ "expr ::= ID|INDEXED LP distinct exprlist RP",
- /* 161 */ "expr ::= ID|INDEXED LP STAR RP",
- /* 162 */ "term ::= CTIME_KW",
- /* 163 */ "expr ::= LP nexprlist COMMA expr RP",
- /* 164 */ "expr ::= expr AND expr",
- /* 165 */ "expr ::= expr OR expr",
- /* 166 */ "expr ::= expr LT|GT|GE|LE expr",
- /* 167 */ "expr ::= expr EQ|NE expr",
- /* 168 */ "expr ::= expr BITAND|BITOR|LSHIFT|RSHIFT expr",
- /* 169 */ "expr ::= expr PLUS|MINUS expr",
- /* 170 */ "expr ::= expr STAR|SLASH|REM expr",
- /* 171 */ "expr ::= expr CONCAT expr",
- /* 172 */ "likeop ::= NOT LIKE_KW|MATCH",
- /* 173 */ "expr ::= expr likeop expr",
- /* 174 */ "expr ::= expr likeop expr ESCAPE expr",
- /* 175 */ "expr ::= expr ISNULL|NOTNULL",
- /* 176 */ "expr ::= expr NOT NULL",
- /* 177 */ "expr ::= expr IS expr",
- /* 178 */ "expr ::= expr IS NOT expr",
- /* 179 */ "expr ::= NOT expr",
- /* 180 */ "expr ::= BITNOT expr",
- /* 181 */ "expr ::= MINUS expr",
- /* 182 */ "expr ::= PLUS expr",
- /* 183 */ "between_op ::= BETWEEN",
- /* 184 */ "between_op ::= NOT BETWEEN",
- /* 185 */ "expr ::= expr between_op expr AND expr",
- /* 186 */ "in_op ::= IN",
- /* 187 */ "in_op ::= NOT IN",
- /* 188 */ "expr ::= expr in_op LP exprlist RP",
- /* 189 */ "expr ::= LP select RP",
- /* 190 */ "expr ::= expr in_op LP select RP",
- /* 191 */ "expr ::= expr in_op nm dbnm paren_exprlist",
- /* 192 */ "expr ::= EXISTS LP select RP",
- /* 193 */ "expr ::= CASE case_operand case_exprlist case_else END",
- /* 194 */ "case_exprlist ::= case_exprlist WHEN expr THEN expr",
- /* 195 */ "case_exprlist ::= WHEN expr THEN expr",
- /* 196 */ "case_else ::= ELSE expr",
- /* 197 */ "case_else ::=",
- /* 198 */ "case_operand ::= expr",
- /* 199 */ "case_operand ::=",
- /* 200 */ "exprlist ::=",
- /* 201 */ "nexprlist ::= nexprlist COMMA expr",
- /* 202 */ "nexprlist ::= expr",
- /* 203 */ "paren_exprlist ::=",
- /* 204 */ "paren_exprlist ::= LP exprlist RP",
- /* 205 */ "cmd ::= createkw uniqueflag INDEX ifnotexists nm dbnm ON nm LP sortlist RP where_opt",
- /* 206 */ "uniqueflag ::= UNIQUE",
- /* 207 */ "uniqueflag ::=",
- /* 208 */ "eidlist_opt ::=",
- /* 209 */ "eidlist_opt ::= LP eidlist RP",
- /* 210 */ "eidlist ::= eidlist COMMA nm collate sortorder",
- /* 211 */ "eidlist ::= nm collate sortorder",
- /* 212 */ "collate ::=",
- /* 213 */ "collate ::= COLLATE ID|STRING",
- /* 214 */ "cmd ::= DROP INDEX ifexists fullname",
- /* 215 */ "cmd ::= VACUUM",
- /* 216 */ "cmd ::= VACUUM nm",
- /* 217 */ "cmd ::= PRAGMA nm dbnm",
- /* 218 */ "cmd ::= PRAGMA nm dbnm EQ nmnum",
- /* 219 */ "cmd ::= PRAGMA nm dbnm LP nmnum RP",
- /* 220 */ "cmd ::= PRAGMA nm dbnm EQ minus_num",
- /* 221 */ "cmd ::= PRAGMA nm dbnm LP minus_num RP",
- /* 222 */ "plus_num ::= PLUS INTEGER|FLOAT",
- /* 223 */ "minus_num ::= MINUS INTEGER|FLOAT",
- /* 224 */ "cmd ::= createkw trigger_decl BEGIN trigger_cmd_list END",
- /* 225 */ "trigger_decl ::= temp TRIGGER ifnotexists nm dbnm trigger_time trigger_event ON fullname foreach_clause when_clause",
- /* 226 */ "trigger_time ::= BEFORE|AFTER",
- /* 227 */ "trigger_time ::= INSTEAD OF",
- /* 228 */ "trigger_time ::=",
- /* 229 */ "trigger_event ::= DELETE|INSERT",
- /* 230 */ "trigger_event ::= UPDATE",
- /* 231 */ "trigger_event ::= UPDATE OF idlist",
- /* 232 */ "when_clause ::=",
- /* 233 */ "when_clause ::= WHEN expr",
- /* 234 */ "trigger_cmd_list ::= trigger_cmd_list trigger_cmd SEMI",
- /* 235 */ "trigger_cmd_list ::= trigger_cmd SEMI",
- /* 236 */ "trnm ::= nm DOT nm",
- /* 237 */ "tridxby ::= INDEXED BY nm",
- /* 238 */ "tridxby ::= NOT INDEXED",
- /* 239 */ "trigger_cmd ::= UPDATE orconf trnm tridxby SET setlist where_opt",
- /* 240 */ "trigger_cmd ::= insert_cmd INTO trnm idlist_opt select",
- /* 241 */ "trigger_cmd ::= DELETE FROM trnm tridxby where_opt",
- /* 242 */ "trigger_cmd ::= select",
- /* 243 */ "expr ::= RAISE LP IGNORE RP",
- /* 244 */ "expr ::= RAISE LP raisetype COMMA nm RP",
- /* 245 */ "raisetype ::= ROLLBACK",
- /* 246 */ "raisetype ::= ABORT",
- /* 247 */ "raisetype ::= FAIL",
- /* 248 */ "cmd ::= DROP TRIGGER ifexists fullname",
- /* 249 */ "cmd ::= ATTACH database_kw_opt expr AS expr key_opt",
- /* 250 */ "cmd ::= DETACH database_kw_opt expr",
- /* 251 */ "key_opt ::=",
- /* 252 */ "key_opt ::= KEY expr",
- /* 253 */ "cmd ::= REINDEX",
- /* 254 */ "cmd ::= REINDEX nm dbnm",
- /* 255 */ "cmd ::= ANALYZE",
- /* 256 */ "cmd ::= ANALYZE nm dbnm",
- /* 257 */ "cmd ::= ALTER TABLE fullname RENAME TO nm",
- /* 258 */ "cmd ::= ALTER TABLE add_column_fullname ADD kwcolumn_opt columnname carglist",
- /* 259 */ "add_column_fullname ::= fullname",
- /* 260 */ "cmd ::= create_vtab",
- /* 261 */ "cmd ::= create_vtab LP vtabarglist RP",
- /* 262 */ "create_vtab ::= createkw VIRTUAL TABLE ifnotexists nm dbnm USING nm",
- /* 263 */ "vtabarg ::=",
- /* 264 */ "vtabargtoken ::= ANY",
- /* 265 */ "vtabargtoken ::= lp anylist RP",
- /* 266 */ "lp ::= LP",
- /* 267 */ "with ::=",
- /* 268 */ "with ::= WITH wqlist",
- /* 269 */ "with ::= WITH RECURSIVE wqlist",
- /* 270 */ "wqlist ::= nm eidlist_opt AS LP select RP",
- /* 271 */ "wqlist ::= wqlist COMMA nm eidlist_opt AS LP select RP",
- /* 272 */ "input ::= cmdlist",
- /* 273 */ "cmdlist ::= cmdlist ecmd",
- /* 274 */ "cmdlist ::= ecmd",
- /* 275 */ "ecmd ::= SEMI",
- /* 276 */ "ecmd ::= explain cmdx SEMI",
- /* 277 */ "explain ::=",
- /* 278 */ "trans_opt ::=",
- /* 279 */ "trans_opt ::= TRANSACTION",
- /* 280 */ "trans_opt ::= TRANSACTION nm",
- /* 281 */ "savepoint_opt ::= SAVEPOINT",
- /* 282 */ "savepoint_opt ::=",
- /* 283 */ "cmd ::= create_table create_table_args",
- /* 284 */ "columnlist ::= columnlist COMMA columnname carglist",
- /* 285 */ "columnlist ::= columnname carglist",
- /* 286 */ "nm ::= ID|INDEXED",
- /* 287 */ "nm ::= STRING",
- /* 288 */ "nm ::= JOIN_KW",
- /* 289 */ "typetoken ::= typename",
- /* 290 */ "typename ::= ID|STRING",
- /* 291 */ "signed ::= plus_num",
- /* 292 */ "signed ::= minus_num",
- /* 293 */ "carglist ::= carglist ccons",
- /* 294 */ "carglist ::=",
- /* 295 */ "ccons ::= NULL onconf",
- /* 296 */ "conslist_opt ::= COMMA conslist",
- /* 297 */ "conslist ::= conslist tconscomma tcons",
- /* 298 */ "conslist ::= tcons",
- /* 299 */ "tconscomma ::=",
- /* 300 */ "defer_subclause_opt ::= defer_subclause",
- /* 301 */ "resolvetype ::= raisetype",
- /* 302 */ "selectnowith ::= oneselect",
- /* 303 */ "oneselect ::= values",
- /* 304 */ "sclp ::= selcollist COMMA",
- /* 305 */ "as ::= ID|STRING",
- /* 306 */ "expr ::= term",
- /* 307 */ "likeop ::= LIKE_KW|MATCH",
- /* 308 */ "exprlist ::= nexprlist",
- /* 309 */ "nmnum ::= plus_num",
- /* 310 */ "nmnum ::= nm",
- /* 311 */ "nmnum ::= ON",
- /* 312 */ "nmnum ::= DELETE",
- /* 313 */ "nmnum ::= DEFAULT",
- /* 314 */ "plus_num ::= INTEGER|FLOAT",
- /* 315 */ "foreach_clause ::=",
- /* 316 */ "foreach_clause ::= FOR EACH ROW",
- /* 317 */ "trnm ::= nm",
- /* 318 */ "tridxby ::=",
- /* 319 */ "database_kw_opt ::= DATABASE",
- /* 320 */ "database_kw_opt ::=",
- /* 321 */ "kwcolumn_opt ::=",
- /* 322 */ "kwcolumn_opt ::= COLUMNKW",
- /* 323 */ "vtabarglist ::= vtabarg",
- /* 324 */ "vtabarglist ::= vtabarglist COMMA vtabarg",
- /* 325 */ "vtabarg ::= vtabarg vtabargtoken",
- /* 326 */ "anylist ::=",
- /* 327 */ "anylist ::= anylist LP anylist RP",
- /* 328 */ "anylist ::= anylist ANY",
+ /*  28 */ "scanpt ::=",
+ /*  29 */ "ccons ::= CONSTRAINT nm",
+ /*  30 */ "ccons ::= DEFAULT scanpt term scanpt",
+ /*  31 */ "ccons ::= DEFAULT LP expr RP",
+ /*  32 */ "ccons ::= DEFAULT PLUS term scanpt",
+ /*  33 */ "ccons ::= DEFAULT MINUS term scanpt",
+ /*  34 */ "ccons ::= DEFAULT scanpt ID|INDEXED",
+ /*  35 */ "ccons ::= NOT NULL onconf",
+ /*  36 */ "ccons ::= PRIMARY KEY sortorder onconf autoinc",
+ /*  37 */ "ccons ::= UNIQUE onconf",
+ /*  38 */ "ccons ::= CHECK LP expr RP",
+ /*  39 */ "ccons ::= REFERENCES nm eidlist_opt refargs",
+ /*  40 */ "ccons ::= defer_subclause",
+ /*  41 */ "ccons ::= COLLATE ID|STRING",
+ /*  42 */ "autoinc ::=",
+ /*  43 */ "autoinc ::= AUTOINCR",
+ /*  44 */ "refargs ::=",
+ /*  45 */ "refargs ::= refargs refarg",
+ /*  46 */ "refarg ::= MATCH nm",
+ /*  47 */ "refarg ::= ON INSERT refact",
+ /*  48 */ "refarg ::= ON DELETE refact",
+ /*  49 */ "refarg ::= ON UPDATE refact",
+ /*  50 */ "refact ::= SET NULL",
+ /*  51 */ "refact ::= SET DEFAULT",
+ /*  52 */ "refact ::= CASCADE",
+ /*  53 */ "refact ::= RESTRICT",
+ /*  54 */ "refact ::= NO ACTION",
+ /*  55 */ "defer_subclause ::= NOT DEFERRABLE init_deferred_pred_opt",
+ /*  56 */ "defer_subclause ::= DEFERRABLE init_deferred_pred_opt",
+ /*  57 */ "init_deferred_pred_opt ::=",
+ /*  58 */ "init_deferred_pred_opt ::= INITIALLY DEFERRED",
+ /*  59 */ "init_deferred_pred_opt ::= INITIALLY IMMEDIATE",
+ /*  60 */ "conslist_opt ::=",
+ /*  61 */ "tconscomma ::= COMMA",
+ /*  62 */ "tcons ::= CONSTRAINT nm",
+ /*  63 */ "tcons ::= PRIMARY KEY LP sortlist autoinc RP onconf",
+ /*  64 */ "tcons ::= UNIQUE LP sortlist RP onconf",
+ /*  65 */ "tcons ::= CHECK LP expr RP onconf",
+ /*  66 */ "tcons ::= FOREIGN KEY LP eidlist RP REFERENCES nm eidlist_opt refargs defer_subclause_opt",
+ /*  67 */ "defer_subclause_opt ::=",
+ /*  68 */ "onconf ::=",
+ /*  69 */ "onconf ::= ON CONFLICT resolvetype",
+ /*  70 */ "orconf ::=",
+ /*  71 */ "orconf ::= OR resolvetype",
+ /*  72 */ "resolvetype ::= IGNORE",
+ /*  73 */ "resolvetype ::= REPLACE",
+ /*  74 */ "cmd ::= DROP TABLE ifexists fullname",
+ /*  75 */ "ifexists ::= IF EXISTS",
+ /*  76 */ "ifexists ::=",
+ /*  77 */ "cmd ::= createkw temp VIEW ifnotexists nm dbnm eidlist_opt AS select",
+ /*  78 */ "cmd ::= DROP VIEW ifexists fullname",
+ /*  79 */ "cmd ::= select",
+ /*  80 */ "select ::= with selectnowith",
+ /*  81 */ "selectnowith ::= selectnowith multiselect_op oneselect",
+ /*  82 */ "multiselect_op ::= UNION",
+ /*  83 */ "multiselect_op ::= UNION ALL",
+ /*  84 */ "multiselect_op ::= EXCEPT|INTERSECT",
+ /*  85 */ "oneselect ::= SELECT distinct selcollist from where_opt groupby_opt having_opt orderby_opt limit_opt",
+ /*  86 */ "values ::= VALUES LP nexprlist RP",
+ /*  87 */ "values ::= values COMMA LP exprlist RP",
+ /*  88 */ "distinct ::= DISTINCT",
+ /*  89 */ "distinct ::= ALL",
+ /*  90 */ "distinct ::=",
+ /*  91 */ "sclp ::=",
+ /*  92 */ "selcollist ::= sclp scanpt expr scanpt as",
+ /*  93 */ "selcollist ::= sclp scanpt STAR",
+ /*  94 */ "selcollist ::= sclp scanpt nm DOT STAR",
+ /*  95 */ "as ::= AS nm",
+ /*  96 */ "as ::=",
+ /*  97 */ "from ::=",
+ /*  98 */ "from ::= FROM seltablist",
+ /*  99 */ "stl_prefix ::= seltablist joinop",
+ /* 100 */ "stl_prefix ::=",
+ /* 101 */ "seltablist ::= stl_prefix nm dbnm as indexed_opt on_opt using_opt",
+ /* 102 */ "seltablist ::= stl_prefix nm dbnm LP exprlist RP as on_opt using_opt",
+ /* 103 */ "seltablist ::= stl_prefix LP select RP as on_opt using_opt",
+ /* 104 */ "seltablist ::= stl_prefix LP seltablist RP as on_opt using_opt",
+ /* 105 */ "dbnm ::=",
+ /* 106 */ "dbnm ::= DOT nm",
+ /* 107 */ "fullname ::= nm dbnm",
+ /* 108 */ "joinop ::= COMMA|JOIN",
+ /* 109 */ "joinop ::= JOIN_KW JOIN",
+ /* 110 */ "joinop ::= JOIN_KW nm JOIN",
+ /* 111 */ "joinop ::= JOIN_KW nm nm JOIN",
+ /* 112 */ "on_opt ::= ON expr",
+ /* 113 */ "on_opt ::=",
+ /* 114 */ "indexed_opt ::=",
+ /* 115 */ "indexed_opt ::= INDEXED BY nm",
+ /* 116 */ "indexed_opt ::= NOT INDEXED",
+ /* 117 */ "using_opt ::= USING LP idlist RP",
+ /* 118 */ "using_opt ::=",
+ /* 119 */ "orderby_opt ::=",
+ /* 120 */ "orderby_opt ::= ORDER BY sortlist",
+ /* 121 */ "sortlist ::= sortlist COMMA expr sortorder",
+ /* 122 */ "sortlist ::= expr sortorder",
+ /* 123 */ "sortorder ::= ASC",
+ /* 124 */ "sortorder ::= DESC",
+ /* 125 */ "sortorder ::=",
+ /* 126 */ "groupby_opt ::=",
+ /* 127 */ "groupby_opt ::= GROUP BY nexprlist",
+ /* 128 */ "having_opt ::=",
+ /* 129 */ "having_opt ::= HAVING expr",
+ /* 130 */ "limit_opt ::=",
+ /* 131 */ "limit_opt ::= LIMIT expr",
+ /* 132 */ "limit_opt ::= LIMIT expr OFFSET expr",
+ /* 133 */ "limit_opt ::= LIMIT expr COMMA expr",
+ /* 134 */ "cmd ::= with DELETE FROM fullname indexed_opt where_opt",
+ /* 135 */ "where_opt ::=",
+ /* 136 */ "where_opt ::= WHERE expr",
+ /* 137 */ "cmd ::= with UPDATE orconf fullname indexed_opt SET setlist where_opt",
+ /* 138 */ "setlist ::= setlist COMMA nm EQ expr",
+ /* 139 */ "setlist ::= setlist COMMA LP idlist RP EQ expr",
+ /* 140 */ "setlist ::= nm EQ expr",
+ /* 141 */ "setlist ::= LP idlist RP EQ expr",
+ /* 142 */ "cmd ::= with insert_cmd INTO fullname idlist_opt select",
+ /* 143 */ "cmd ::= with insert_cmd INTO fullname idlist_opt DEFAULT VALUES",
+ /* 144 */ "insert_cmd ::= INSERT orconf",
+ /* 145 */ "insert_cmd ::= REPLACE",
+ /* 146 */ "idlist_opt ::=",
+ /* 147 */ "idlist_opt ::= LP idlist RP",
+ /* 148 */ "idlist ::= idlist COMMA nm",
+ /* 149 */ "idlist ::= nm",
+ /* 150 */ "expr ::= LP expr RP",
+ /* 151 */ "expr ::= ID|INDEXED",
+ /* 152 */ "expr ::= JOIN_KW",
+ /* 153 */ "expr ::= nm DOT nm",
+ /* 154 */ "expr ::= nm DOT nm DOT nm",
+ /* 155 */ "term ::= NULL|FLOAT|BLOB",
+ /* 156 */ "term ::= STRING",
+ /* 157 */ "term ::= INTEGER",
+ /* 158 */ "expr ::= VARIABLE",
+ /* 159 */ "expr ::= expr COLLATE ID|STRING",
+ /* 160 */ "expr ::= CAST LP expr AS typetoken RP",
+ /* 161 */ "expr ::= ID|INDEXED LP distinct exprlist RP",
+ /* 162 */ "expr ::= ID|INDEXED LP STAR RP",
+ /* 163 */ "term ::= CTIME_KW",
+ /* 164 */ "expr ::= LP nexprlist COMMA expr RP",
+ /* 165 */ "expr ::= expr AND expr",
+ /* 166 */ "expr ::= expr OR expr",
+ /* 167 */ "expr ::= expr LT|GT|GE|LE expr",
+ /* 168 */ "expr ::= expr EQ|NE expr",
+ /* 169 */ "expr ::= expr BITAND|BITOR|LSHIFT|RSHIFT expr",
+ /* 170 */ "expr ::= expr PLUS|MINUS expr",
+ /* 171 */ "expr ::= expr STAR|SLASH|REM expr",
+ /* 172 */ "expr ::= expr CONCAT expr",
+ /* 173 */ "likeop ::= NOT LIKE_KW|MATCH",
+ /* 174 */ "expr ::= expr likeop expr",
+ /* 175 */ "expr ::= expr likeop expr ESCAPE expr",
+ /* 176 */ "expr ::= expr ISNULL|NOTNULL",
+ /* 177 */ "expr ::= expr NOT NULL",
+ /* 178 */ "expr ::= expr IS expr",
+ /* 179 */ "expr ::= expr IS NOT expr",
+ /* 180 */ "expr ::= NOT expr",
+ /* 181 */ "expr ::= BITNOT expr",
+ /* 182 */ "expr ::= MINUS expr",
+ /* 183 */ "expr ::= PLUS expr",
+ /* 184 */ "between_op ::= BETWEEN",
+ /* 185 */ "between_op ::= NOT BETWEEN",
+ /* 186 */ "expr ::= expr between_op expr AND expr",
+ /* 187 */ "in_op ::= IN",
+ /* 188 */ "in_op ::= NOT IN",
+ /* 189 */ "expr ::= expr in_op LP exprlist RP",
+ /* 190 */ "expr ::= LP select RP",
+ /* 191 */ "expr ::= expr in_op LP select RP",
+ /* 192 */ "expr ::= expr in_op nm dbnm paren_exprlist",
+ /* 193 */ "expr ::= EXISTS LP select RP",
+ /* 194 */ "expr ::= CASE case_operand case_exprlist case_else END",
+ /* 195 */ "case_exprlist ::= case_exprlist WHEN expr THEN expr",
+ /* 196 */ "case_exprlist ::= WHEN expr THEN expr",
+ /* 197 */ "case_else ::= ELSE expr",
+ /* 198 */ "case_else ::=",
+ /* 199 */ "case_operand ::= expr",
+ /* 200 */ "case_operand ::=",
+ /* 201 */ "exprlist ::=",
+ /* 202 */ "nexprlist ::= nexprlist COMMA expr",
+ /* 203 */ "nexprlist ::= expr",
+ /* 204 */ "paren_exprlist ::=",
+ /* 205 */ "paren_exprlist ::= LP exprlist RP",
+ /* 206 */ "cmd ::= createkw uniqueflag INDEX ifnotexists nm dbnm ON nm LP sortlist RP where_opt",
+ /* 207 */ "uniqueflag ::= UNIQUE",
+ /* 208 */ "uniqueflag ::=",
+ /* 209 */ "eidlist_opt ::=",
+ /* 210 */ "eidlist_opt ::= LP eidlist RP",
+ /* 211 */ "eidlist ::= eidlist COMMA nm collate sortorder",
+ /* 212 */ "eidlist ::= nm collate sortorder",
+ /* 213 */ "collate ::=",
+ /* 214 */ "collate ::= COLLATE ID|STRING",
+ /* 215 */ "cmd ::= DROP INDEX ifexists fullname",
+ /* 216 */ "cmd ::= VACUUM",
+ /* 217 */ "cmd ::= VACUUM nm",
+ /* 218 */ "cmd ::= PRAGMA nm dbnm",
+ /* 219 */ "cmd ::= PRAGMA nm dbnm EQ nmnum",
+ /* 220 */ "cmd ::= PRAGMA nm dbnm LP nmnum RP",
+ /* 221 */ "cmd ::= PRAGMA nm dbnm EQ minus_num",
+ /* 222 */ "cmd ::= PRAGMA nm dbnm LP minus_num RP",
+ /* 223 */ "plus_num ::= PLUS INTEGER|FLOAT",
+ /* 224 */ "minus_num ::= MINUS INTEGER|FLOAT",
+ /* 225 */ "cmd ::= createkw trigger_decl BEGIN trigger_cmd_list END",
+ /* 226 */ "trigger_decl ::= temp TRIGGER ifnotexists nm dbnm trigger_time trigger_event ON fullname foreach_clause when_clause",
+ /* 227 */ "trigger_time ::= BEFORE|AFTER",
+ /* 228 */ "trigger_time ::= INSTEAD OF",
+ /* 229 */ "trigger_time ::=",
+ /* 230 */ "trigger_event ::= DELETE|INSERT",
+ /* 231 */ "trigger_event ::= UPDATE",
+ /* 232 */ "trigger_event ::= UPDATE OF idlist",
+ /* 233 */ "when_clause ::=",
+ /* 234 */ "when_clause ::= WHEN expr",
+ /* 235 */ "trigger_cmd_list ::= trigger_cmd_list trigger_cmd SEMI",
+ /* 236 */ "trigger_cmd_list ::= trigger_cmd SEMI",
+ /* 237 */ "trnm ::= nm DOT nm",
+ /* 238 */ "tridxby ::= INDEXED BY nm",
+ /* 239 */ "tridxby ::= NOT INDEXED",
+ /* 240 */ "trigger_cmd ::= UPDATE orconf trnm tridxby SET setlist where_opt scanpt",
+ /* 241 */ "trigger_cmd ::= scanpt insert_cmd INTO trnm idlist_opt select scanpt",
+ /* 242 */ "trigger_cmd ::= DELETE FROM trnm tridxby where_opt scanpt",
+ /* 243 */ "trigger_cmd ::= scanpt select scanpt",
+ /* 244 */ "expr ::= RAISE LP IGNORE RP",
+ /* 245 */ "expr ::= RAISE LP raisetype COMMA nm RP",
+ /* 246 */ "raisetype ::= ROLLBACK",
+ /* 247 */ "raisetype ::= ABORT",
+ /* 248 */ "raisetype ::= FAIL",
+ /* 249 */ "cmd ::= DROP TRIGGER ifexists fullname",
+ /* 250 */ "cmd ::= ATTACH database_kw_opt expr AS expr key_opt",
+ /* 251 */ "cmd ::= DETACH database_kw_opt expr",
+ /* 252 */ "key_opt ::=",
+ /* 253 */ "key_opt ::= KEY expr",
+ /* 254 */ "cmd ::= REINDEX",
+ /* 255 */ "cmd ::= REINDEX nm dbnm",
+ /* 256 */ "cmd ::= ANALYZE",
+ /* 257 */ "cmd ::= ANALYZE nm dbnm",
+ /* 258 */ "cmd ::= ALTER TABLE fullname RENAME TO nm",
+ /* 259 */ "cmd ::= ALTER TABLE add_column_fullname ADD kwcolumn_opt columnname carglist",
+ /* 260 */ "add_column_fullname ::= fullname",
+ /* 261 */ "cmd ::= create_vtab",
+ /* 262 */ "cmd ::= create_vtab LP vtabarglist RP",
+ /* 263 */ "create_vtab ::= createkw VIRTUAL TABLE ifnotexists nm dbnm USING nm",
+ /* 264 */ "vtabarg ::=",
+ /* 265 */ "vtabargtoken ::= ANY",
+ /* 266 */ "vtabargtoken ::= lp anylist RP",
+ /* 267 */ "lp ::= LP",
+ /* 268 */ "with ::=",
+ /* 269 */ "with ::= WITH wqlist",
+ /* 270 */ "with ::= WITH RECURSIVE wqlist",
+ /* 271 */ "wqlist ::= nm eidlist_opt AS LP select RP",
+ /* 272 */ "wqlist ::= wqlist COMMA nm eidlist_opt AS LP select RP",
+ /* 273 */ "input ::= cmdlist",
+ /* 274 */ "cmdlist ::= cmdlist ecmd",
+ /* 275 */ "cmdlist ::= ecmd",
+ /* 276 */ "ecmd ::= SEMI",
+ /* 277 */ "ecmd ::= explain cmdx SEMI",
+ /* 278 */ "explain ::=",
+ /* 279 */ "trans_opt ::=",
+ /* 280 */ "trans_opt ::= TRANSACTION",
+ /* 281 */ "trans_opt ::= TRANSACTION nm",
+ /* 282 */ "savepoint_opt ::= SAVEPOINT",
+ /* 283 */ "savepoint_opt ::=",
+ /* 284 */ "cmd ::= create_table create_table_args",
+ /* 285 */ "columnlist ::= columnlist COMMA columnname carglist",
+ /* 286 */ "columnlist ::= columnname carglist",
+ /* 287 */ "nm ::= ID|INDEXED",
+ /* 288 */ "nm ::= STRING",
+ /* 289 */ "nm ::= JOIN_KW",
+ /* 290 */ "typetoken ::= typename",
+ /* 291 */ "typename ::= ID|STRING",
+ /* 292 */ "signed ::= plus_num",
+ /* 293 */ "signed ::= minus_num",
+ /* 294 */ "carglist ::= carglist ccons",
+ /* 295 */ "carglist ::=",
+ /* 296 */ "ccons ::= NULL onconf",
+ /* 297 */ "conslist_opt ::= COMMA conslist",
+ /* 298 */ "conslist ::= conslist tconscomma tcons",
+ /* 299 */ "conslist ::= tcons",
+ /* 300 */ "tconscomma ::=",
+ /* 301 */ "defer_subclause_opt ::= defer_subclause",
+ /* 302 */ "resolvetype ::= raisetype",
+ /* 303 */ "selectnowith ::= oneselect",
+ /* 304 */ "oneselect ::= values",
+ /* 305 */ "sclp ::= selcollist COMMA",
+ /* 306 */ "as ::= ID|STRING",
+ /* 307 */ "expr ::= term",
+ /* 308 */ "likeop ::= LIKE_KW|MATCH",
+ /* 309 */ "exprlist ::= nexprlist",
+ /* 310 */ "nmnum ::= plus_num",
+ /* 311 */ "nmnum ::= nm",
+ /* 312 */ "nmnum ::= ON",
+ /* 313 */ "nmnum ::= DELETE",
+ /* 314 */ "nmnum ::= DEFAULT",
+ /* 315 */ "plus_num ::= INTEGER|FLOAT",
+ /* 316 */ "foreach_clause ::=",
+ /* 317 */ "foreach_clause ::= FOR EACH ROW",
+ /* 318 */ "trnm ::= nm",
+ /* 319 */ "tridxby ::=",
+ /* 320 */ "database_kw_opt ::= DATABASE",
+ /* 321 */ "database_kw_opt ::=",
+ /* 322 */ "kwcolumn_opt ::=",
+ /* 323 */ "kwcolumn_opt ::= COLUMNKW",
+ /* 324 */ "vtabarglist ::= vtabarg",
+ /* 325 */ "vtabarglist ::= vtabarglist COMMA vtabarg",
+ /* 326 */ "vtabarg ::= vtabarg vtabargtoken",
+ /* 327 */ "anylist ::=",
+ /* 328 */ "anylist ::= anylist LP anylist RP",
+ /* 329 */ "anylist ::= anylist ANY",
 };
 #endif /* NDEBUG */
 
@@ -14519,76 +14869,72 @@ static void yy_destructor(
     */
 /********* Begin destructor definitions ***************************************/
     case 163: /* select */
-    case 194: /* selectnowith */
-    case 195: /* oneselect */
-    case 206: /* values */
+    case 195: /* selectnowith */
+    case 196: /* oneselect */
+    case 207: /* values */
 {
-sqlite3SelectDelete(pParse->db, (yypminor->yy243));
+sqlite3SelectDelete(pParse->db, (yypminor->yy387));
 }
       break;
-    case 172: /* term */
-    case 173: /* expr */
+    case 173: /* term */
+    case 174: /* expr */
+    case 202: /* where_opt */
+    case 204: /* having_opt */
+    case 216: /* on_opt */
+    case 226: /* case_operand */
+    case 228: /* case_else */
+    case 237: /* when_clause */
+    case 242: /* key_opt */
 {
-sqlite3ExprDelete(pParse->db, (yypminor->yy190).pExpr);
+sqlite3ExprDelete(pParse->db, (yypminor->yy314));
 }
       break;
-    case 177: /* eidlist_opt */
-    case 186: /* sortlist */
-    case 187: /* eidlist */
-    case 199: /* selcollist */
-    case 202: /* groupby_opt */
-    case 204: /* orderby_opt */
-    case 207: /* nexprlist */
-    case 208: /* exprlist */
-    case 209: /* sclp */
-    case 218: /* setlist */
-    case 224: /* paren_exprlist */
-    case 226: /* case_exprlist */
+    case 178: /* eidlist_opt */
+    case 187: /* sortlist */
+    case 188: /* eidlist */
+    case 200: /* selcollist */
+    case 203: /* groupby_opt */
+    case 205: /* orderby_opt */
+    case 208: /* nexprlist */
+    case 209: /* exprlist */
+    case 210: /* sclp */
+    case 219: /* setlist */
+    case 225: /* paren_exprlist */
+    case 227: /* case_exprlist */
 {
-sqlite3ExprListDelete(pParse->db, (yypminor->yy148));
+sqlite3ExprListDelete(pParse->db, (yypminor->yy322));
 }
       break;
-    case 193: /* fullname */
-    case 200: /* from */
-    case 211: /* seltablist */
-    case 212: /* stl_prefix */
+    case 194: /* fullname */
+    case 201: /* from */
+    case 212: /* seltablist */
+    case 213: /* stl_prefix */
 {
-sqlite3SrcListDelete(pParse->db, (yypminor->yy185));
+sqlite3SrcListDelete(pParse->db, (yypminor->yy259));
 }
       break;
-    case 196: /* with */
-    case 250: /* wqlist */
+    case 197: /* with */
+    case 251: /* wqlist */
 {
-sqlite3WithDelete(pParse->db, (yypminor->yy285));
+sqlite3WithDelete(pParse->db, (yypminor->yy451));
 }
       break;
-    case 201: /* where_opt */
-    case 203: /* having_opt */
-    case 215: /* on_opt */
-    case 225: /* case_operand */
-    case 227: /* case_else */
-    case 236: /* when_clause */
-    case 241: /* key_opt */
+    case 217: /* using_opt */
+    case 218: /* idlist */
+    case 221: /* idlist_opt */
 {
-sqlite3ExprDelete(pParse->db, (yypminor->yy72));
+sqlite3IdListDelete(pParse->db, (yypminor->yy384));
 }
       break;
-    case 216: /* using_opt */
-    case 217: /* idlist */
-    case 220: /* idlist_opt */
+    case 233: /* trigger_cmd_list */
+    case 238: /* trigger_cmd */
 {
-sqlite3IdListDelete(pParse->db, (yypminor->yy254));
+sqlite3DeleteTriggerStep(pParse->db, (yypminor->yy203));
 }
       break;
-    case 232: /* trigger_cmd_list */
-    case 237: /* trigger_cmd */
+    case 235: /* trigger_event */
 {
-sqlite3DeleteTriggerStep(pParse->db, (yypminor->yy145));
-}
-      break;
-    case 234: /* trigger_event */
-{
-sqlite3IdListDelete(pParse->db, (yypminor->yy332).b);
+sqlite3IdListDelete(pParse->db, (yypminor->yy90).b);
 }
       break;
 /********* End destructor definitions *****************************************/
@@ -14659,6 +15005,43 @@ SQLITE_PRIVATE int sqlite3ParserStackPeak(void *p){
 }
 #endif
 
+/* This array of booleans keeps track of the parser statement
+** coverage.  The element yycoverage[X][Y] is set when the parser
+** is in state X and has a lookahead token Y.  In a well-tested
+** systems, every element of this matrix should end up being set.
+*/
+#if defined(YYCOVERAGE)
+static unsigned char yycoverage[YYNSTATE][YYNTOKEN];
+#endif
+
+/*
+** Write into out a description of every state/lookahead combination that
+**
+**   (1)  has not been used by the parser, and
+**   (2)  is not a syntax error.
+**
+** Return the number of missed state/lookahead combinations.
+*/
+#if defined(YYCOVERAGE)
+SQLITE_PRIVATE int sqlite3ParserCoverage(FILE *out){
+  int stateno, iLookAhead, i;
+  int nMissed = 0;
+  for(stateno=0; stateno<YYNSTATE; stateno++){
+    i = yy_shift_ofst[stateno];
+    for(iLookAhead=0; iLookAhead<YYNTOKEN; iLookAhead++){
+      if( yy_lookahead[i+iLookAhead]!=iLookAhead ) continue;
+      if( yycoverage[stateno][iLookAhead]==0 ) nMissed++;
+      if( out ){
+        fprintf(out,"State %d lookahead %s %s\n", stateno,
+                yyTokenName[iLookAhead],
+                yycoverage[stateno][iLookAhead] ? "ok" : "missed");
+      }
+    }
+  }
+  return nMissed;
+}
+#endif
+
 /*
 ** Find the appropriate action for a parser given the terminal
 ** look-ahead token iLookAhead.
@@ -14670,13 +15053,18 @@ static unsigned int yy_find_shift_action(
   int i;
   int stateno = pParser->yytos->stateno;
  
-  if( stateno>=YY_MIN_REDUCE ) return stateno;
+  if( stateno>YY_MAX_SHIFT ) return stateno;
   assert( stateno <= YY_SHIFT_COUNT );
+#if defined(YYCOVERAGE)
+  yycoverage[stateno][iLookAhead] = 1;
+#endif
   do{
     i = yy_shift_ofst[stateno];
+    assert( i>=0 && i+YYNTOKEN<=sizeof(yy_lookahead)/sizeof(yy_lookahead[0]) );
     assert( iLookAhead!=YYNOCODE );
+    assert( iLookAhead < YYNTOKEN );
     i += iLookAhead;
-    if( i<0 || i>=YY_ACTTAB_COUNT || yy_lookahead[i]!=iLookAhead ){
+    if( yy_lookahead[i]!=iLookAhead ){
 #ifdef YYFALLBACK
       YYCODETYPE iFallback;            /* Fallback token */
       if( iLookAhead<sizeof(yyFallback)/sizeof(yyFallback[0])
@@ -14739,7 +15127,6 @@ static int yy_find_reduce_action(
   assert( stateno<=YY_REDUCE_COUNT );
 #endif
   i = yy_reduce_ofst[stateno];
-  assert( i!=YY_REDUCE_USE_DFLT );
   assert( iLookAhead!=YYNOCODE );
   i += iLookAhead;
 #ifdef YYERRORSYMBOL
@@ -14777,20 +15164,21 @@ static void yyStackOverflow(yyParser *yypParser){
 ** Print tracing information for a SHIFT action
 */
 #ifndef NDEBUG
-static void yyTraceShift(yyParser *yypParser, int yyNewState){
+static void yyTraceShift(yyParser *yypParser, int yyNewState, const char *zTag){
   if( yyTraceFILE ){
     if( yyNewState<YYNSTATE ){
-      fprintf(yyTraceFILE,"%sShift '%s', go to state %d\n",
-         yyTracePrompt,yyTokenName[yypParser->yytos->major],
+      fprintf(yyTraceFILE,"%s%s '%s', go to state %d\n",
+         yyTracePrompt, zTag, yyTokenName[yypParser->yytos->major],
          yyNewState);
     }else{
-      fprintf(yyTraceFILE,"%sShift '%s'\n",
-         yyTracePrompt,yyTokenName[yypParser->yytos->major]);
+      fprintf(yyTraceFILE,"%s%s '%s', pending reduce %d\n",
+         yyTracePrompt, zTag, yyTokenName[yypParser->yytos->major],
+         yyNewState - YY_MIN_REDUCE);
     }
   }
 }
 #else
-# define yyTraceShift(X,Y)
+# define yyTraceShift(X,Y,Z)
 #endif
 
 /*
@@ -14832,7 +15220,7 @@ static void yy_shift(
   yytos->stateno = (YYACTIONTYPE)yyNewState;
   yytos->major = (YYCODETYPE)yyMajor;
   yytos->minor.yy0 = yyMinor;
-  yyTraceShift(yypParser, yyNewState);
+  yyTraceShift(yypParser, yyNewState, "Shift");
 }
 
 /* The following table contains information about every rule that
@@ -14842,335 +15230,336 @@ static const struct {
   YYCODETYPE lhs;       /* Symbol on the left-hand side of the rule */
   signed char nrhs;     /* Negative of the number of RHS symbols in the rule */
 } yyRuleInfo[] = {
-  { 147, -1 },
-  { 147, -3 },
-  { 148, -1 },
-  { 149, -3 },
-  { 150, 0 },
-  { 150, -1 },
-  { 150, -1 },
-  { 150, -1 },
-  { 149, -2 },
-  { 149, -2 },
-  { 149, -2 },
-  { 149, -3 },
-  { 149, -5 },
-  { 154, -6 },
-  { 156, -1 },
-  { 158, 0 },
-  { 158, -3 },
-  { 157, -1 },
-  { 157, 0 },
-  { 155, -5 },
-  { 155, -2 },
-  { 162, 0 },
-  { 162, -2 },
-  { 164, -2 },
-  { 166, 0 },
-  { 166, -4 },
-  { 166, -6 },
-  { 167, -2 },
-  { 171, -2 },
-  { 171, -2 },
-  { 171, -4 },
-  { 171, -3 },
-  { 171, -3 },
-  { 171, -2 },
-  { 171, -3 },
-  { 171, -5 },
-  { 171, -2 },
-  { 171, -4 },
-  { 171, -4 },
-  { 171, -1 },
-  { 171, -2 },
-  { 176, 0 },
-  { 176, -1 },
-  { 178, 0 },
-  { 178, -2 },
-  { 180, -2 },
-  { 180, -3 },
-  { 180, -3 },
-  { 180, -3 },
-  { 181, -2 },
-  { 181, -2 },
-  { 181, -1 },
-  { 181, -1 },
-  { 181, -2 },
-  { 179, -3 },
-  { 179, -2 },
-  { 182, 0 },
-  { 182, -2 },
-  { 182, -2 },
-  { 161, 0 },
-  { 184, -1 },
-  { 185, -2 },
-  { 185, -7 },
-  { 185, -5 },
-  { 185, -5 },
-  { 185, -10 },
-  { 188, 0 },
-  { 174, 0 },
-  { 174, -3 },
-  { 189, 0 },
-  { 189, -2 },
-  { 190, -1 },
-  { 190, -1 },
-  { 149, -4 },
-  { 192, -2 },
-  { 192, 0 },
-  { 149, -9 },
-  { 149, -4 },
-  { 149, -1 },
-  { 163, -2 },
-  { 194, -3 },
-  { 197, -1 },
-  { 197, -2 },
-  { 197, -1 },
-  { 195, -9 },
-  { 206, -4 },
-  { 206, -5 },
-  { 198, -1 },
-  { 198, -1 },
-  { 198, 0 },
-  { 209, 0 },
-  { 199, -3 },
-  { 199, -2 },
-  { 199, -4 },
-  { 210, -2 },
-  { 210, 0 },
-  { 200, 0 },
-  { 200, -2 },
-  { 212, -2 },
-  { 212, 0 },
-  { 211, -7 },
-  { 211, -9 },
-  { 211, -7 },
-  { 211, -7 },
-  { 159, 0 },
-  { 159, -2 },
-  { 193, -2 },
-  { 213, -1 },
-  { 213, -2 },
-  { 213, -3 },
-  { 213, -4 },
-  { 215, -2 },
-  { 215, 0 },
-  { 214, 0 },
-  { 214, -3 },
-  { 214, -2 },
-  { 216, -4 },
-  { 216, 0 },
-  { 204, 0 },
-  { 204, -3 },
-  { 186, -4 },
-  { 186, -2 },
-  { 175, -1 },
-  { 175, -1 },
-  { 175, 0 },
-  { 202, 0 },
-  { 202, -3 },
-  { 203, 0 },
-  { 203, -2 },
-  { 205, 0 },
-  { 205, -2 },
-  { 205, -4 },
-  { 205, -4 },
-  { 149, -6 },
-  { 201, 0 },
-  { 201, -2 },
-  { 149, -8 },
-  { 218, -5 },
-  { 218, -7 },
-  { 218, -3 },
-  { 218, -5 },
-  { 149, -6 },
-  { 149, -7 },
-  { 219, -2 },
-  { 219, -1 },
-  { 220, 0 },
-  { 220, -3 },
-  { 217, -3 },
-  { 217, -1 },
-  { 173, -3 },
-  { 173, -1 },
-  { 173, -1 },
-  { 173, -3 },
-  { 173, -5 },
-  { 172, -1 },
-  { 172, -1 },
-  { 172, -1 },
-  { 173, -1 },
-  { 173, -3 },
-  { 173, -6 },
-  { 173, -5 },
-  { 173, -4 },
-  { 172, -1 },
-  { 173, -5 },
-  { 173, -3 },
-  { 173, -3 },
-  { 173, -3 },
-  { 173, -3 },
-  { 173, -3 },
-  { 173, -3 },
-  { 173, -3 },
-  { 173, -3 },
-  { 221, -2 },
-  { 173, -3 },
-  { 173, -5 },
-  { 173, -2 },
-  { 173, -3 },
-  { 173, -3 },
-  { 173, -4 },
-  { 173, -2 },
-  { 173, -2 },
-  { 173, -2 },
-  { 173, -2 },
-  { 222, -1 },
-  { 222, -2 },
-  { 173, -5 },
-  { 223, -1 },
-  { 223, -2 },
-  { 173, -5 },
-  { 173, -3 },
-  { 173, -5 },
-  { 173, -5 },
-  { 173, -4 },
-  { 173, -5 },
-  { 226, -5 },
-  { 226, -4 },
-  { 227, -2 },
-  { 227, 0 },
-  { 225, -1 },
-  { 225, 0 },
-  { 208, 0 },
-  { 207, -3 },
-  { 207, -1 },
-  { 224, 0 },
-  { 224, -3 },
-  { 149, -12 },
-  { 228, -1 },
-  { 228, 0 },
-  { 177, 0 },
-  { 177, -3 },
-  { 187, -5 },
-  { 187, -3 },
-  { 229, 0 },
-  { 229, -2 },
-  { 149, -4 },
-  { 149, -1 },
-  { 149, -2 },
-  { 149, -3 },
-  { 149, -5 },
-  { 149, -6 },
-  { 149, -5 },
-  { 149, -6 },
-  { 169, -2 },
-  { 170, -2 },
-  { 149, -5 },
-  { 231, -11 },
-  { 233, -1 },
-  { 233, -2 },
-  { 233, 0 },
-  { 234, -1 },
-  { 234, -1 },
-  { 234, -3 },
-  { 236, 0 },
-  { 236, -2 },
-  { 232, -3 },
-  { 232, -2 },
-  { 238, -3 },
-  { 239, -3 },
-  { 239, -2 },
-  { 237, -7 },
-  { 237, -5 },
-  { 237, -5 },
-  { 237, -1 },
-  { 173, -4 },
-  { 173, -6 },
-  { 191, -1 },
-  { 191, -1 },
-  { 191, -1 },
-  { 149, -4 },
-  { 149, -6 },
-  { 149, -3 },
-  { 241, 0 },
-  { 241, -2 },
-  { 149, -1 },
-  { 149, -3 },
-  { 149, -1 },
-  { 149, -3 },
-  { 149, -6 },
-  { 149, -7 },
-  { 242, -1 },
-  { 149, -1 },
-  { 149, -4 },
-  { 244, -8 },
-  { 246, 0 },
-  { 247, -1 },
-  { 247, -3 },
-  { 248, -1 },
-  { 196, 0 },
-  { 196, -2 },
-  { 196, -3 },
-  { 250, -6 },
-  { 250, -8 },
-  { 144, -1 },
-  { 145, -2 },
-  { 145, -1 },
-  { 146, -1 },
-  { 146, -3 },
-  { 147, 0 },
-  { 151, 0 },
-  { 151, -1 },
-  { 151, -2 },
-  { 153, -1 },
-  { 153, 0 },
-  { 149, -2 },
-  { 160, -4 },
-  { 160, -2 },
-  { 152, -1 },
-  { 152, -1 },
-  { 152, -1 },
-  { 166, -1 },
-  { 167, -1 },
-  { 168, -1 },
-  { 168, -1 },
-  { 165, -2 },
-  { 165, 0 },
-  { 171, -2 },
-  { 161, -2 },
-  { 183, -3 },
-  { 183, -1 },
-  { 184, 0 },
-  { 188, -1 },
-  { 190, -1 },
-  { 194, -1 },
-  { 195, -1 },
-  { 209, -2 },
-  { 210, -1 },
-  { 173, -1 },
-  { 221, -1 },
-  { 208, -1 },
-  { 230, -1 },
-  { 230, -1 },
-  { 230, -1 },
-  { 230, -1 },
-  { 230, -1 },
-  { 169, -1 },
-  { 235, 0 },
-  { 235, -3 },
-  { 238, -1 },
-  { 239, 0 },
-  { 240, -1 },
-  { 240, 0 },
-  { 243, 0 },
-  { 243, -1 },
-  { 245, -1 },
-  { 245, -3 },
-  { 246, -2 },
-  { 249, 0 },
-  { 249, -4 },
-  { 249, -2 },
+  {  147,   -1 }, /* (0) explain ::= EXPLAIN */
+  {  147,   -3 }, /* (1) explain ::= EXPLAIN QUERY PLAN */
+  {  148,   -1 }, /* (2) cmdx ::= cmd */
+  {  149,   -3 }, /* (3) cmd ::= BEGIN transtype trans_opt */
+  {  150,    0 }, /* (4) transtype ::= */
+  {  150,   -1 }, /* (5) transtype ::= DEFERRED */
+  {  150,   -1 }, /* (6) transtype ::= IMMEDIATE */
+  {  150,   -1 }, /* (7) transtype ::= EXCLUSIVE */
+  {  149,   -2 }, /* (8) cmd ::= COMMIT|END trans_opt */
+  {  149,   -2 }, /* (9) cmd ::= ROLLBACK trans_opt */
+  {  149,   -2 }, /* (10) cmd ::= SAVEPOINT nm */
+  {  149,   -3 }, /* (11) cmd ::= RELEASE savepoint_opt nm */
+  {  149,   -5 }, /* (12) cmd ::= ROLLBACK trans_opt TO savepoint_opt nm */
+  {  154,   -6 }, /* (13) create_table ::= createkw temp TABLE ifnotexists nm dbnm */
+  {  156,   -1 }, /* (14) createkw ::= CREATE */
+  {  158,    0 }, /* (15) ifnotexists ::= */
+  {  158,   -3 }, /* (16) ifnotexists ::= IF NOT EXISTS */
+  {  157,   -1 }, /* (17) temp ::= TEMP */
+  {  157,    0 }, /* (18) temp ::= */
+  {  155,   -5 }, /* (19) create_table_args ::= LP columnlist conslist_opt RP table_options */
+  {  155,   -2 }, /* (20) create_table_args ::= AS select */
+  {  162,    0 }, /* (21) table_options ::= */
+  {  162,   -2 }, /* (22) table_options ::= WITHOUT nm */
+  {  164,   -2 }, /* (23) columnname ::= nm typetoken */
+  {  166,    0 }, /* (24) typetoken ::= */
+  {  166,   -4 }, /* (25) typetoken ::= typename LP signed RP */
+  {  166,   -6 }, /* (26) typetoken ::= typename LP signed COMMA signed RP */
+  {  167,   -2 }, /* (27) typename ::= typename ID|STRING */
+  {  171,    0 }, /* (28) scanpt ::= */
+  {  172,   -2 }, /* (29) ccons ::= CONSTRAINT nm */
+  {  172,   -4 }, /* (30) ccons ::= DEFAULT scanpt term scanpt */
+  {  172,   -4 }, /* (31) ccons ::= DEFAULT LP expr RP */
+  {  172,   -4 }, /* (32) ccons ::= DEFAULT PLUS term scanpt */
+  {  172,   -4 }, /* (33) ccons ::= DEFAULT MINUS term scanpt */
+  {  172,   -3 }, /* (34) ccons ::= DEFAULT scanpt ID|INDEXED */
+  {  172,   -3 }, /* (35) ccons ::= NOT NULL onconf */
+  {  172,   -5 }, /* (36) ccons ::= PRIMARY KEY sortorder onconf autoinc */
+  {  172,   -2 }, /* (37) ccons ::= UNIQUE onconf */
+  {  172,   -4 }, /* (38) ccons ::= CHECK LP expr RP */
+  {  172,   -4 }, /* (39) ccons ::= REFERENCES nm eidlist_opt refargs */
+  {  172,   -1 }, /* (40) ccons ::= defer_subclause */
+  {  172,   -2 }, /* (41) ccons ::= COLLATE ID|STRING */
+  {  177,    0 }, /* (42) autoinc ::= */
+  {  177,   -1 }, /* (43) autoinc ::= AUTOINCR */
+  {  179,    0 }, /* (44) refargs ::= */
+  {  179,   -2 }, /* (45) refargs ::= refargs refarg */
+  {  181,   -2 }, /* (46) refarg ::= MATCH nm */
+  {  181,   -3 }, /* (47) refarg ::= ON INSERT refact */
+  {  181,   -3 }, /* (48) refarg ::= ON DELETE refact */
+  {  181,   -3 }, /* (49) refarg ::= ON UPDATE refact */
+  {  182,   -2 }, /* (50) refact ::= SET NULL */
+  {  182,   -2 }, /* (51) refact ::= SET DEFAULT */
+  {  182,   -1 }, /* (52) refact ::= CASCADE */
+  {  182,   -1 }, /* (53) refact ::= RESTRICT */
+  {  182,   -2 }, /* (54) refact ::= NO ACTION */
+  {  180,   -3 }, /* (55) defer_subclause ::= NOT DEFERRABLE init_deferred_pred_opt */
+  {  180,   -2 }, /* (56) defer_subclause ::= DEFERRABLE init_deferred_pred_opt */
+  {  183,    0 }, /* (57) init_deferred_pred_opt ::= */
+  {  183,   -2 }, /* (58) init_deferred_pred_opt ::= INITIALLY DEFERRED */
+  {  183,   -2 }, /* (59) init_deferred_pred_opt ::= INITIALLY IMMEDIATE */
+  {  161,    0 }, /* (60) conslist_opt ::= */
+  {  185,   -1 }, /* (61) tconscomma ::= COMMA */
+  {  186,   -2 }, /* (62) tcons ::= CONSTRAINT nm */
+  {  186,   -7 }, /* (63) tcons ::= PRIMARY KEY LP sortlist autoinc RP onconf */
+  {  186,   -5 }, /* (64) tcons ::= UNIQUE LP sortlist RP onconf */
+  {  186,   -5 }, /* (65) tcons ::= CHECK LP expr RP onconf */
+  {  186,  -10 }, /* (66) tcons ::= FOREIGN KEY LP eidlist RP REFERENCES nm eidlist_opt refargs defer_subclause_opt */
+  {  189,    0 }, /* (67) defer_subclause_opt ::= */
+  {  175,    0 }, /* (68) onconf ::= */
+  {  175,   -3 }, /* (69) onconf ::= ON CONFLICT resolvetype */
+  {  190,    0 }, /* (70) orconf ::= */
+  {  190,   -2 }, /* (71) orconf ::= OR resolvetype */
+  {  191,   -1 }, /* (72) resolvetype ::= IGNORE */
+  {  191,   -1 }, /* (73) resolvetype ::= REPLACE */
+  {  149,   -4 }, /* (74) cmd ::= DROP TABLE ifexists fullname */
+  {  193,   -2 }, /* (75) ifexists ::= IF EXISTS */
+  {  193,    0 }, /* (76) ifexists ::= */
+  {  149,   -9 }, /* (77) cmd ::= createkw temp VIEW ifnotexists nm dbnm eidlist_opt AS select */
+  {  149,   -4 }, /* (78) cmd ::= DROP VIEW ifexists fullname */
+  {  149,   -1 }, /* (79) cmd ::= select */
+  {  163,   -2 }, /* (80) select ::= with selectnowith */
+  {  195,   -3 }, /* (81) selectnowith ::= selectnowith multiselect_op oneselect */
+  {  198,   -1 }, /* (82) multiselect_op ::= UNION */
+  {  198,   -2 }, /* (83) multiselect_op ::= UNION ALL */
+  {  198,   -1 }, /* (84) multiselect_op ::= EXCEPT|INTERSECT */
+  {  196,   -9 }, /* (85) oneselect ::= SELECT distinct selcollist from where_opt groupby_opt having_opt orderby_opt limit_opt */
+  {  207,   -4 }, /* (86) values ::= VALUES LP nexprlist RP */
+  {  207,   -5 }, /* (87) values ::= values COMMA LP exprlist RP */
+  {  199,   -1 }, /* (88) distinct ::= DISTINCT */
+  {  199,   -1 }, /* (89) distinct ::= ALL */
+  {  199,    0 }, /* (90) distinct ::= */
+  {  210,    0 }, /* (91) sclp ::= */
+  {  200,   -5 }, /* (92) selcollist ::= sclp scanpt expr scanpt as */
+  {  200,   -3 }, /* (93) selcollist ::= sclp scanpt STAR */
+  {  200,   -5 }, /* (94) selcollist ::= sclp scanpt nm DOT STAR */
+  {  211,   -2 }, /* (95) as ::= AS nm */
+  {  211,    0 }, /* (96) as ::= */
+  {  201,    0 }, /* (97) from ::= */
+  {  201,   -2 }, /* (98) from ::= FROM seltablist */
+  {  213,   -2 }, /* (99) stl_prefix ::= seltablist joinop */
+  {  213,    0 }, /* (100) stl_prefix ::= */
+  {  212,   -7 }, /* (101) seltablist ::= stl_prefix nm dbnm as indexed_opt on_opt using_opt */
+  {  212,   -9 }, /* (102) seltablist ::= stl_prefix nm dbnm LP exprlist RP as on_opt using_opt */
+  {  212,   -7 }, /* (103) seltablist ::= stl_prefix LP select RP as on_opt using_opt */
+  {  212,   -7 }, /* (104) seltablist ::= stl_prefix LP seltablist RP as on_opt using_opt */
+  {  159,    0 }, /* (105) dbnm ::= */
+  {  159,   -2 }, /* (106) dbnm ::= DOT nm */
+  {  194,   -2 }, /* (107) fullname ::= nm dbnm */
+  {  214,   -1 }, /* (108) joinop ::= COMMA|JOIN */
+  {  214,   -2 }, /* (109) joinop ::= JOIN_KW JOIN */
+  {  214,   -3 }, /* (110) joinop ::= JOIN_KW nm JOIN */
+  {  214,   -4 }, /* (111) joinop ::= JOIN_KW nm nm JOIN */
+  {  216,   -2 }, /* (112) on_opt ::= ON expr */
+  {  216,    0 }, /* (113) on_opt ::= */
+  {  215,    0 }, /* (114) indexed_opt ::= */
+  {  215,   -3 }, /* (115) indexed_opt ::= INDEXED BY nm */
+  {  215,   -2 }, /* (116) indexed_opt ::= NOT INDEXED */
+  {  217,   -4 }, /* (117) using_opt ::= USING LP idlist RP */
+  {  217,    0 }, /* (118) using_opt ::= */
+  {  205,    0 }, /* (119) orderby_opt ::= */
+  {  205,   -3 }, /* (120) orderby_opt ::= ORDER BY sortlist */
+  {  187,   -4 }, /* (121) sortlist ::= sortlist COMMA expr sortorder */
+  {  187,   -2 }, /* (122) sortlist ::= expr sortorder */
+  {  176,   -1 }, /* (123) sortorder ::= ASC */
+  {  176,   -1 }, /* (124) sortorder ::= DESC */
+  {  176,    0 }, /* (125) sortorder ::= */
+  {  203,    0 }, /* (126) groupby_opt ::= */
+  {  203,   -3 }, /* (127) groupby_opt ::= GROUP BY nexprlist */
+  {  204,    0 }, /* (128) having_opt ::= */
+  {  204,   -2 }, /* (129) having_opt ::= HAVING expr */
+  {  206,    0 }, /* (130) limit_opt ::= */
+  {  206,   -2 }, /* (131) limit_opt ::= LIMIT expr */
+  {  206,   -4 }, /* (132) limit_opt ::= LIMIT expr OFFSET expr */
+  {  206,   -4 }, /* (133) limit_opt ::= LIMIT expr COMMA expr */
+  {  149,   -6 }, /* (134) cmd ::= with DELETE FROM fullname indexed_opt where_opt */
+  {  202,    0 }, /* (135) where_opt ::= */
+  {  202,   -2 }, /* (136) where_opt ::= WHERE expr */
+  {  149,   -8 }, /* (137) cmd ::= with UPDATE orconf fullname indexed_opt SET setlist where_opt */
+  {  219,   -5 }, /* (138) setlist ::= setlist COMMA nm EQ expr */
+  {  219,   -7 }, /* (139) setlist ::= setlist COMMA LP idlist RP EQ expr */
+  {  219,   -3 }, /* (140) setlist ::= nm EQ expr */
+  {  219,   -5 }, /* (141) setlist ::= LP idlist RP EQ expr */
+  {  149,   -6 }, /* (142) cmd ::= with insert_cmd INTO fullname idlist_opt select */
+  {  149,   -7 }, /* (143) cmd ::= with insert_cmd INTO fullname idlist_opt DEFAULT VALUES */
+  {  220,   -2 }, /* (144) insert_cmd ::= INSERT orconf */
+  {  220,   -1 }, /* (145) insert_cmd ::= REPLACE */
+  {  221,    0 }, /* (146) idlist_opt ::= */
+  {  221,   -3 }, /* (147) idlist_opt ::= LP idlist RP */
+  {  218,   -3 }, /* (148) idlist ::= idlist COMMA nm */
+  {  218,   -1 }, /* (149) idlist ::= nm */
+  {  174,   -3 }, /* (150) expr ::= LP expr RP */
+  {  174,   -1 }, /* (151) expr ::= ID|INDEXED */
+  {  174,   -1 }, /* (152) expr ::= JOIN_KW */
+  {  174,   -3 }, /* (153) expr ::= nm DOT nm */
+  {  174,   -5 }, /* (154) expr ::= nm DOT nm DOT nm */
+  {  173,   -1 }, /* (155) term ::= NULL|FLOAT|BLOB */
+  {  173,   -1 }, /* (156) term ::= STRING */
+  {  173,   -1 }, /* (157) term ::= INTEGER */
+  {  174,   -1 }, /* (158) expr ::= VARIABLE */
+  {  174,   -3 }, /* (159) expr ::= expr COLLATE ID|STRING */
+  {  174,   -6 }, /* (160) expr ::= CAST LP expr AS typetoken RP */
+  {  174,   -5 }, /* (161) expr ::= ID|INDEXED LP distinct exprlist RP */
+  {  174,   -4 }, /* (162) expr ::= ID|INDEXED LP STAR RP */
+  {  173,   -1 }, /* (163) term ::= CTIME_KW */
+  {  174,   -5 }, /* (164) expr ::= LP nexprlist COMMA expr RP */
+  {  174,   -3 }, /* (165) expr ::= expr AND expr */
+  {  174,   -3 }, /* (166) expr ::= expr OR expr */
+  {  174,   -3 }, /* (167) expr ::= expr LT|GT|GE|LE expr */
+  {  174,   -3 }, /* (168) expr ::= expr EQ|NE expr */
+  {  174,   -3 }, /* (169) expr ::= expr BITAND|BITOR|LSHIFT|RSHIFT expr */
+  {  174,   -3 }, /* (170) expr ::= expr PLUS|MINUS expr */
+  {  174,   -3 }, /* (171) expr ::= expr STAR|SLASH|REM expr */
+  {  174,   -3 }, /* (172) expr ::= expr CONCAT expr */
+  {  222,   -2 }, /* (173) likeop ::= NOT LIKE_KW|MATCH */
+  {  174,   -3 }, /* (174) expr ::= expr likeop expr */
+  {  174,   -5 }, /* (175) expr ::= expr likeop expr ESCAPE expr */
+  {  174,   -2 }, /* (176) expr ::= expr ISNULL|NOTNULL */
+  {  174,   -3 }, /* (177) expr ::= expr NOT NULL */
+  {  174,   -3 }, /* (178) expr ::= expr IS expr */
+  {  174,   -4 }, /* (179) expr ::= expr IS NOT expr */
+  {  174,   -2 }, /* (180) expr ::= NOT expr */
+  {  174,   -2 }, /* (181) expr ::= BITNOT expr */
+  {  174,   -2 }, /* (182) expr ::= MINUS expr */
+  {  174,   -2 }, /* (183) expr ::= PLUS expr */
+  {  223,   -1 }, /* (184) between_op ::= BETWEEN */
+  {  223,   -2 }, /* (185) between_op ::= NOT BETWEEN */
+  {  174,   -5 }, /* (186) expr ::= expr between_op expr AND expr */
+  {  224,   -1 }, /* (187) in_op ::= IN */
+  {  224,   -2 }, /* (188) in_op ::= NOT IN */
+  {  174,   -5 }, /* (189) expr ::= expr in_op LP exprlist RP */
+  {  174,   -3 }, /* (190) expr ::= LP select RP */
+  {  174,   -5 }, /* (191) expr ::= expr in_op LP select RP */
+  {  174,   -5 }, /* (192) expr ::= expr in_op nm dbnm paren_exprlist */
+  {  174,   -4 }, /* (193) expr ::= EXISTS LP select RP */
+  {  174,   -5 }, /* (194) expr ::= CASE case_operand case_exprlist case_else END */
+  {  227,   -5 }, /* (195) case_exprlist ::= case_exprlist WHEN expr THEN expr */
+  {  227,   -4 }, /* (196) case_exprlist ::= WHEN expr THEN expr */
+  {  228,   -2 }, /* (197) case_else ::= ELSE expr */
+  {  228,    0 }, /* (198) case_else ::= */
+  {  226,   -1 }, /* (199) case_operand ::= expr */
+  {  226,    0 }, /* (200) case_operand ::= */
+  {  209,    0 }, /* (201) exprlist ::= */
+  {  208,   -3 }, /* (202) nexprlist ::= nexprlist COMMA expr */
+  {  208,   -1 }, /* (203) nexprlist ::= expr */
+  {  225,    0 }, /* (204) paren_exprlist ::= */
+  {  225,   -3 }, /* (205) paren_exprlist ::= LP exprlist RP */
+  {  149,  -12 }, /* (206) cmd ::= createkw uniqueflag INDEX ifnotexists nm dbnm ON nm LP sortlist RP where_opt */
+  {  229,   -1 }, /* (207) uniqueflag ::= UNIQUE */
+  {  229,    0 }, /* (208) uniqueflag ::= */
+  {  178,    0 }, /* (209) eidlist_opt ::= */
+  {  178,   -3 }, /* (210) eidlist_opt ::= LP eidlist RP */
+  {  188,   -5 }, /* (211) eidlist ::= eidlist COMMA nm collate sortorder */
+  {  188,   -3 }, /* (212) eidlist ::= nm collate sortorder */
+  {  230,    0 }, /* (213) collate ::= */
+  {  230,   -2 }, /* (214) collate ::= COLLATE ID|STRING */
+  {  149,   -4 }, /* (215) cmd ::= DROP INDEX ifexists fullname */
+  {  149,   -1 }, /* (216) cmd ::= VACUUM */
+  {  149,   -2 }, /* (217) cmd ::= VACUUM nm */
+  {  149,   -3 }, /* (218) cmd ::= PRAGMA nm dbnm */
+  {  149,   -5 }, /* (219) cmd ::= PRAGMA nm dbnm EQ nmnum */
+  {  149,   -6 }, /* (220) cmd ::= PRAGMA nm dbnm LP nmnum RP */
+  {  149,   -5 }, /* (221) cmd ::= PRAGMA nm dbnm EQ minus_num */
+  {  149,   -6 }, /* (222) cmd ::= PRAGMA nm dbnm LP minus_num RP */
+  {  169,   -2 }, /* (223) plus_num ::= PLUS INTEGER|FLOAT */
+  {  170,   -2 }, /* (224) minus_num ::= MINUS INTEGER|FLOAT */
+  {  149,   -5 }, /* (225) cmd ::= createkw trigger_decl BEGIN trigger_cmd_list END */
+  {  232,  -11 }, /* (226) trigger_decl ::= temp TRIGGER ifnotexists nm dbnm trigger_time trigger_event ON fullname foreach_clause when_clause */
+  {  234,   -1 }, /* (227) trigger_time ::= BEFORE|AFTER */
+  {  234,   -2 }, /* (228) trigger_time ::= INSTEAD OF */
+  {  234,    0 }, /* (229) trigger_time ::= */
+  {  235,   -1 }, /* (230) trigger_event ::= DELETE|INSERT */
+  {  235,   -1 }, /* (231) trigger_event ::= UPDATE */
+  {  235,   -3 }, /* (232) trigger_event ::= UPDATE OF idlist */
+  {  237,    0 }, /* (233) when_clause ::= */
+  {  237,   -2 }, /* (234) when_clause ::= WHEN expr */
+  {  233,   -3 }, /* (235) trigger_cmd_list ::= trigger_cmd_list trigger_cmd SEMI */
+  {  233,   -2 }, /* (236) trigger_cmd_list ::= trigger_cmd SEMI */
+  {  239,   -3 }, /* (237) trnm ::= nm DOT nm */
+  {  240,   -3 }, /* (238) tridxby ::= INDEXED BY nm */
+  {  240,   -2 }, /* (239) tridxby ::= NOT INDEXED */
+  {  238,   -8 }, /* (240) trigger_cmd ::= UPDATE orconf trnm tridxby SET setlist where_opt scanpt */
+  {  238,   -7 }, /* (241) trigger_cmd ::= scanpt insert_cmd INTO trnm idlist_opt select scanpt */
+  {  238,   -6 }, /* (242) trigger_cmd ::= DELETE FROM trnm tridxby where_opt scanpt */
+  {  238,   -3 }, /* (243) trigger_cmd ::= scanpt select scanpt */
+  {  174,   -4 }, /* (244) expr ::= RAISE LP IGNORE RP */
+  {  174,   -6 }, /* (245) expr ::= RAISE LP raisetype COMMA nm RP */
+  {  192,   -1 }, /* (246) raisetype ::= ROLLBACK */
+  {  192,   -1 }, /* (247) raisetype ::= ABORT */
+  {  192,   -1 }, /* (248) raisetype ::= FAIL */
+  {  149,   -4 }, /* (249) cmd ::= DROP TRIGGER ifexists fullname */
+  {  149,   -6 }, /* (250) cmd ::= ATTACH database_kw_opt expr AS expr key_opt */
+  {  149,   -3 }, /* (251) cmd ::= DETACH database_kw_opt expr */
+  {  242,    0 }, /* (252) key_opt ::= */
+  {  242,   -2 }, /* (253) key_opt ::= KEY expr */
+  {  149,   -1 }, /* (254) cmd ::= REINDEX */
+  {  149,   -3 }, /* (255) cmd ::= REINDEX nm dbnm */
+  {  149,   -1 }, /* (256) cmd ::= ANALYZE */
+  {  149,   -3 }, /* (257) cmd ::= ANALYZE nm dbnm */
+  {  149,   -6 }, /* (258) cmd ::= ALTER TABLE fullname RENAME TO nm */
+  {  149,   -7 }, /* (259) cmd ::= ALTER TABLE add_column_fullname ADD kwcolumn_opt columnname carglist */
+  {  243,   -1 }, /* (260) add_column_fullname ::= fullname */
+  {  149,   -1 }, /* (261) cmd ::= create_vtab */
+  {  149,   -4 }, /* (262) cmd ::= create_vtab LP vtabarglist RP */
+  {  245,   -8 }, /* (263) create_vtab ::= createkw VIRTUAL TABLE ifnotexists nm dbnm USING nm */
+  {  247,    0 }, /* (264) vtabarg ::= */
+  {  248,   -1 }, /* (265) vtabargtoken ::= ANY */
+  {  248,   -3 }, /* (266) vtabargtoken ::= lp anylist RP */
+  {  249,   -1 }, /* (267) lp ::= LP */
+  {  197,    0 }, /* (268) with ::= */
+  {  197,   -2 }, /* (269) with ::= WITH wqlist */
+  {  197,   -3 }, /* (270) with ::= WITH RECURSIVE wqlist */
+  {  251,   -6 }, /* (271) wqlist ::= nm eidlist_opt AS LP select RP */
+  {  251,   -8 }, /* (272) wqlist ::= wqlist COMMA nm eidlist_opt AS LP select RP */
+  {  144,   -1 }, /* (273) input ::= cmdlist */
+  {  145,   -2 }, /* (274) cmdlist ::= cmdlist ecmd */
+  {  145,   -1 }, /* (275) cmdlist ::= ecmd */
+  {  146,   -1 }, /* (276) ecmd ::= SEMI */
+  {  146,   -3 }, /* (277) ecmd ::= explain cmdx SEMI */
+  {  147,    0 }, /* (278) explain ::= */
+  {  151,    0 }, /* (279) trans_opt ::= */
+  {  151,   -1 }, /* (280) trans_opt ::= TRANSACTION */
+  {  151,   -2 }, /* (281) trans_opt ::= TRANSACTION nm */
+  {  153,   -1 }, /* (282) savepoint_opt ::= SAVEPOINT */
+  {  153,    0 }, /* (283) savepoint_opt ::= */
+  {  149,   -2 }, /* (284) cmd ::= create_table create_table_args */
+  {  160,   -4 }, /* (285) columnlist ::= columnlist COMMA columnname carglist */
+  {  160,   -2 }, /* (286) columnlist ::= columnname carglist */
+  {  152,   -1 }, /* (287) nm ::= ID|INDEXED */
+  {  152,   -1 }, /* (288) nm ::= STRING */
+  {  152,   -1 }, /* (289) nm ::= JOIN_KW */
+  {  166,   -1 }, /* (290) typetoken ::= typename */
+  {  167,   -1 }, /* (291) typename ::= ID|STRING */
+  {  168,   -1 }, /* (292) signed ::= plus_num */
+  {  168,   -1 }, /* (293) signed ::= minus_num */
+  {  165,   -2 }, /* (294) carglist ::= carglist ccons */
+  {  165,    0 }, /* (295) carglist ::= */
+  {  172,   -2 }, /* (296) ccons ::= NULL onconf */
+  {  161,   -2 }, /* (297) conslist_opt ::= COMMA conslist */
+  {  184,   -3 }, /* (298) conslist ::= conslist tconscomma tcons */
+  {  184,   -1 }, /* (299) conslist ::= tcons */
+  {  185,    0 }, /* (300) tconscomma ::= */
+  {  189,   -1 }, /* (301) defer_subclause_opt ::= defer_subclause */
+  {  191,   -1 }, /* (302) resolvetype ::= raisetype */
+  {  195,   -1 }, /* (303) selectnowith ::= oneselect */
+  {  196,   -1 }, /* (304) oneselect ::= values */
+  {  210,   -2 }, /* (305) sclp ::= selcollist COMMA */
+  {  211,   -1 }, /* (306) as ::= ID|STRING */
+  {  174,   -1 }, /* (307) expr ::= term */
+  {  222,   -1 }, /* (308) likeop ::= LIKE_KW|MATCH */
+  {  209,   -1 }, /* (309) exprlist ::= nexprlist */
+  {  231,   -1 }, /* (310) nmnum ::= plus_num */
+  {  231,   -1 }, /* (311) nmnum ::= nm */
+  {  231,   -1 }, /* (312) nmnum ::= ON */
+  {  231,   -1 }, /* (313) nmnum ::= DELETE */
+  {  231,   -1 }, /* (314) nmnum ::= DEFAULT */
+  {  169,   -1 }, /* (315) plus_num ::= INTEGER|FLOAT */
+  {  236,    0 }, /* (316) foreach_clause ::= */
+  {  236,   -3 }, /* (317) foreach_clause ::= FOR EACH ROW */
+  {  239,   -1 }, /* (318) trnm ::= nm */
+  {  240,    0 }, /* (319) tridxby ::= */
+  {  241,   -1 }, /* (320) database_kw_opt ::= DATABASE */
+  {  241,    0 }, /* (321) database_kw_opt ::= */
+  {  244,    0 }, /* (322) kwcolumn_opt ::= */
+  {  244,   -1 }, /* (323) kwcolumn_opt ::= COLUMNKW */
+  {  246,   -1 }, /* (324) vtabarglist ::= vtabarg */
+  {  246,   -3 }, /* (325) vtabarglist ::= vtabarglist COMMA vtabarg */
+  {  247,   -2 }, /* (326) vtabarg ::= vtabarg vtabargtoken */
+  {  250,    0 }, /* (327) anylist ::= */
+  {  250,   -4 }, /* (328) anylist ::= anylist LP anylist RP */
+  {  250,   -2 }, /* (329) anylist ::= anylist ANY */
 };
 
 static void yy_accept(yyParser*);  /* Forward Declaration */
@@ -15178,10 +15567,18 @@ static void yy_accept(yyParser*);  /* Forward Declaration */
 /*
 ** Perform a reduce action and the shift that must immediately
 ** follow the reduce.
+**
+** The yyLookahead and yyLookaheadToken parameters provide reduce actions
+** access to the lookahead token (if any).  The yyLookahead will be YYNOCODE
+** if the lookahead token has already been consumed.  As this procedure is
+** only called from one place, optimizing compilers will in-line it, which
+** means that the extra parameters have no performance impact.
 */
 static void yy_reduce(
   yyParser *yypParser,         /* The parser */
-  unsigned int yyruleno        /* Number of the rule by which to reduce */
+  unsigned int yyruleno,       /* Number of the rule by which to reduce */
+  int yyLookahead,             /* Lookahead token, or YYNOCODE if none */
+  sqlite3ParserTOKENTYPE yyLookaheadToken  /* Value of the lookahead token */
 ){
   int yygoto;                     /* The next state */
   int yyact;                      /* The next action */
@@ -15192,8 +15589,14 @@ static void yy_reduce(
 #ifndef NDEBUG
   if( yyTraceFILE && yyruleno<(int)(sizeof(yyRuleName)/sizeof(yyRuleName[0])) ){
     yysize = yyRuleInfo[yyruleno].nrhs;
-    fprintf(yyTraceFILE, "%sReduce [%s], go to state %d.\n", yyTracePrompt,
-      yyRuleName[yyruleno], yymsp[yysize].stateno);
+    if( yysize ){
+      fprintf(yyTraceFILE, "%sReduce %d [%s], go to state %d.\n",
+        yyTracePrompt,
+        yyruleno, yyRuleName[yyruleno], yymsp[yysize].stateno);
+    }else{
+      fprintf(yyTraceFILE, "%sReduce %d [%s].\n",
+        yyTracePrompt, yyruleno, yyRuleName[yyruleno]);
+    }
   }
 #endif /* NDEBUG */
 
@@ -15244,15 +15647,15 @@ static void yy_reduce(
 { sqlite3FinishCoding(pParse); }
         break;
       case 3: /* cmd ::= BEGIN transtype trans_opt */
-{sqlite3BeginTransaction(pParse, yymsp[-1].minor.yy194);}
+{sqlite3BeginTransaction(pParse, yymsp[-1].minor.yy4);}
         break;
       case 4: /* transtype ::= */
-{yymsp[1].minor.yy194 = TK_DEFERRED;}
+{yymsp[1].minor.yy4 = TK_DEFERRED;}
         break;
       case 5: /* transtype ::= DEFERRED */
       case 6: /* transtype ::= IMMEDIATE */ yytestcase(yyruleno==6);
       case 7: /* transtype ::= EXCLUSIVE */ yytestcase(yyruleno==7);
-{yymsp[0].minor.yy194 = yymsp[0].major; /*A-overwrites-X*/}
+{yymsp[0].minor.yy4 = yymsp[0].major; /*A-overwrites-X*/}
         break;
       case 8: /* cmd ::= COMMIT|END trans_opt */
       case 9: /* cmd ::= ROLLBACK trans_opt */ yytestcase(yyruleno==9);
@@ -15275,7 +15678,7 @@ static void yy_reduce(
         break;
       case 13: /* create_table ::= createkw temp TABLE ifnotexists nm dbnm */
 {
-   sqlite3StartTable(pParse,&yymsp[-1].minor.yy0,&yymsp[0].minor.yy0,yymsp[-4].minor.yy194,0,0,yymsp[-2].minor.yy194);
+   sqlite3StartTable(pParse,&yymsp[-1].minor.yy0,&yymsp[0].minor.yy0,yymsp[-4].minor.yy4,0,0,yymsp[-2].minor.yy4);
 }
         break;
       case 14: /* createkw ::= CREATE */
@@ -15284,38 +15687,38 @@ static void yy_reduce(
       case 15: /* ifnotexists ::= */
       case 18: /* temp ::= */ yytestcase(yyruleno==18);
       case 21: /* table_options ::= */ yytestcase(yyruleno==21);
-      case 41: /* autoinc ::= */ yytestcase(yyruleno==41);
-      case 56: /* init_deferred_pred_opt ::= */ yytestcase(yyruleno==56);
-      case 66: /* defer_subclause_opt ::= */ yytestcase(yyruleno==66);
-      case 75: /* ifexists ::= */ yytestcase(yyruleno==75);
-      case 89: /* distinct ::= */ yytestcase(yyruleno==89);
-      case 212: /* collate ::= */ yytestcase(yyruleno==212);
-{yymsp[1].minor.yy194 = 0;}
+      case 42: /* autoinc ::= */ yytestcase(yyruleno==42);
+      case 57: /* init_deferred_pred_opt ::= */ yytestcase(yyruleno==57);
+      case 67: /* defer_subclause_opt ::= */ yytestcase(yyruleno==67);
+      case 76: /* ifexists ::= */ yytestcase(yyruleno==76);
+      case 90: /* distinct ::= */ yytestcase(yyruleno==90);
+      case 213: /* collate ::= */ yytestcase(yyruleno==213);
+{yymsp[1].minor.yy4 = 0;}
         break;
       case 16: /* ifnotexists ::= IF NOT EXISTS */
-{yymsp[-2].minor.yy194 = 1;}
+{yymsp[-2].minor.yy4 = 1;}
         break;
       case 17: /* temp ::= TEMP */
-      case 42: /* autoinc ::= AUTOINCR */ yytestcase(yyruleno==42);
-{yymsp[0].minor.yy194 = 1;}
+      case 43: /* autoinc ::= AUTOINCR */ yytestcase(yyruleno==43);
+{yymsp[0].minor.yy4 = 1;}
         break;
       case 19: /* create_table_args ::= LP columnlist conslist_opt RP table_options */
 {
-  sqlite3EndTable(pParse,&yymsp[-2].minor.yy0,&yymsp[-1].minor.yy0,yymsp[0].minor.yy194,0);
+  sqlite3EndTable(pParse,&yymsp[-2].minor.yy0,&yymsp[-1].minor.yy0,yymsp[0].minor.yy4,0);
 }
         break;
       case 20: /* create_table_args ::= AS select */
 {
-  sqlite3EndTable(pParse,0,0,0,yymsp[0].minor.yy243);
-  sqlite3SelectDelete(pParse->db, yymsp[0].minor.yy243);
+  sqlite3EndTable(pParse,0,0,0,yymsp[0].minor.yy387);
+  sqlite3SelectDelete(pParse->db, yymsp[0].minor.yy387);
 }
         break;
       case 22: /* table_options ::= WITHOUT nm */
 {
   if( yymsp[0].minor.yy0.n==5 && sqlite3_strnicmp(yymsp[0].minor.yy0.z,"rowid",5)==0 ){
-    yymsp[-1].minor.yy194 = TF_WithoutRowid | TF_NoVisibleRowid;
+    yymsp[-1].minor.yy4 = TF_WithoutRowid | TF_NoVisibleRowid;
   }else{
-    yymsp[-1].minor.yy194 = 0;
+    yymsp[-1].minor.yy4 = 0;
     sqlite3ErrorMsg(pParse, "unknown table option: %.*s", yymsp[0].minor.yy0.n, yymsp[0].minor.yy0.z);
   }
 }
@@ -15324,8 +15727,8 @@ static void yy_reduce(
 {sqlite3AddColumn(pParse,&yymsp[-1].minor.yy0,&yymsp[0].minor.yy0);}
         break;
       case 24: /* typetoken ::= */
-      case 59: /* conslist_opt ::= */ yytestcase(yyruleno==59);
-      case 95: /* as ::= */ yytestcase(yyruleno==95);
+      case 60: /* conslist_opt ::= */ yytestcase(yyruleno==60);
+      case 96: /* as ::= */ yytestcase(yyruleno==96);
 {yymsp[1].minor.yy0.n = 0; yymsp[1].minor.yy0.z = 0;}
         break;
       case 25: /* typetoken ::= typename LP signed RP */
@@ -15341,210 +15744,214 @@ static void yy_reduce(
       case 27: /* typename ::= typename ID|STRING */
 {yymsp[-1].minor.yy0.n=yymsp[0].minor.yy0.n+(int)(yymsp[0].minor.yy0.z-yymsp[-1].minor.yy0.z);}
         break;
-      case 28: /* ccons ::= CONSTRAINT nm */
-      case 61: /* tcons ::= CONSTRAINT nm */ yytestcase(yyruleno==61);
+      case 28: /* scanpt ::= */
+{
+  assert( yyLookahead!=YYNOCODE );
+  yymsp[1].minor.yy336 = yyLookaheadToken.z;
+}
+        break;
+      case 29: /* ccons ::= CONSTRAINT nm */
+      case 62: /* tcons ::= CONSTRAINT nm */ yytestcase(yyruleno==62);
 {pParse->constraintName = yymsp[0].minor.yy0;}
         break;
-      case 29: /* ccons ::= DEFAULT term */
-      case 31: /* ccons ::= DEFAULT PLUS term */ yytestcase(yyruleno==31);
-{sqlite3AddDefaultValue(pParse,&yymsp[0].minor.yy190);}
+      case 30: /* ccons ::= DEFAULT scanpt term scanpt */
+{sqlite3AddDefaultValue(pParse,yymsp[-1].minor.yy314,yymsp[-2].minor.yy336,yymsp[0].minor.yy336);}
         break;
-      case 30: /* ccons ::= DEFAULT LP expr RP */
-{sqlite3AddDefaultValue(pParse,&yymsp[-1].minor.yy190);}
+      case 31: /* ccons ::= DEFAULT LP expr RP */
+{sqlite3AddDefaultValue(pParse,yymsp[-1].minor.yy314,yymsp[-2].minor.yy0.z+1,yymsp[0].minor.yy0.z);}
         break;
-      case 32: /* ccons ::= DEFAULT MINUS term */
+      case 32: /* ccons ::= DEFAULT PLUS term scanpt */
+{sqlite3AddDefaultValue(pParse,yymsp[-1].minor.yy314,yymsp[-2].minor.yy0.z,yymsp[0].minor.yy336);}
+        break;
+      case 33: /* ccons ::= DEFAULT MINUS term scanpt */
 {
-  ExprSpan v;
-  v.pExpr = sqlite3PExpr(pParse, TK_UMINUS, yymsp[0].minor.yy190.pExpr, 0);
-  v.zStart = yymsp[-1].minor.yy0.z;
-  v.zEnd = yymsp[0].minor.yy190.zEnd;
-  sqlite3AddDefaultValue(pParse,&v);
+  Expr *p = sqlite3PExpr(pParse, TK_UMINUS, yymsp[-1].minor.yy314, 0);
+  sqlite3AddDefaultValue(pParse,p,yymsp[-2].minor.yy0.z,yymsp[0].minor.yy336);
 }
         break;
-      case 33: /* ccons ::= DEFAULT ID|INDEXED */
+      case 34: /* ccons ::= DEFAULT scanpt ID|INDEXED */
 {
-  ExprSpan v;
-  spanExpr(&v, pParse, TK_STRING, yymsp[0].minor.yy0);
-  sqlite3AddDefaultValue(pParse,&v);
+  Expr *p = tokenExpr(pParse, TK_STRING, yymsp[0].minor.yy0);
+  sqlite3AddDefaultValue(pParse,p,yymsp[0].minor.yy0.z,yymsp[0].minor.yy0.z+yymsp[0].minor.yy0.n);
 }
         break;
-      case 34: /* ccons ::= NOT NULL onconf */
-{sqlite3AddNotNull(pParse, yymsp[0].minor.yy194);}
+      case 35: /* ccons ::= NOT NULL onconf */
+{sqlite3AddNotNull(pParse, yymsp[0].minor.yy4);}
         break;
-      case 35: /* ccons ::= PRIMARY KEY sortorder onconf autoinc */
-{sqlite3AddPrimaryKey(pParse,0,yymsp[-1].minor.yy194,yymsp[0].minor.yy194,yymsp[-2].minor.yy194);}
+      case 36: /* ccons ::= PRIMARY KEY sortorder onconf autoinc */
+{sqlite3AddPrimaryKey(pParse,0,yymsp[-1].minor.yy4,yymsp[0].minor.yy4,yymsp[-2].minor.yy4);}
         break;
-      case 36: /* ccons ::= UNIQUE onconf */
-{sqlite3CreateIndex(pParse,0,0,0,0,yymsp[0].minor.yy194,0,0,0,0,
+      case 37: /* ccons ::= UNIQUE onconf */
+{sqlite3CreateIndex(pParse,0,0,0,0,yymsp[0].minor.yy4,0,0,0,0,
                                    SQLITE_IDXTYPE_UNIQUE);}
         break;
-      case 37: /* ccons ::= CHECK LP expr RP */
-{sqlite3AddCheckConstraint(pParse,yymsp[-1].minor.yy190.pExpr);}
+      case 38: /* ccons ::= CHECK LP expr RP */
+{sqlite3AddCheckConstraint(pParse,yymsp[-1].minor.yy314);}
         break;
-      case 38: /* ccons ::= REFERENCES nm eidlist_opt refargs */
-{sqlite3CreateForeignKey(pParse,0,&yymsp[-2].minor.yy0,yymsp[-1].minor.yy148,yymsp[0].minor.yy194);}
+      case 39: /* ccons ::= REFERENCES nm eidlist_opt refargs */
+{sqlite3CreateForeignKey(pParse,0,&yymsp[-2].minor.yy0,yymsp[-1].minor.yy322,yymsp[0].minor.yy4);}
         break;
-      case 39: /* ccons ::= defer_subclause */
-{sqlite3DeferForeignKey(pParse,yymsp[0].minor.yy194);}
+      case 40: /* ccons ::= defer_subclause */
+{sqlite3DeferForeignKey(pParse,yymsp[0].minor.yy4);}
         break;
-      case 40: /* ccons ::= COLLATE ID|STRING */
+      case 41: /* ccons ::= COLLATE ID|STRING */
 {sqlite3AddCollateType(pParse, &yymsp[0].minor.yy0);}
         break;
-      case 43: /* refargs ::= */
-{ yymsp[1].minor.yy194 = OE_None*0x0101; /* EV: R-19803-45884 */}
+      case 44: /* refargs ::= */
+{ yymsp[1].minor.yy4 = OE_None*0x0101; /* EV: R-19803-45884 */}
         break;
-      case 44: /* refargs ::= refargs refarg */
-{ yymsp[-1].minor.yy194 = (yymsp[-1].minor.yy194 & ~yymsp[0].minor.yy497.mask) | yymsp[0].minor.yy497.value; }
+      case 45: /* refargs ::= refargs refarg */
+{ yymsp[-1].minor.yy4 = (yymsp[-1].minor.yy4 & ~yymsp[0].minor.yy215.mask) | yymsp[0].minor.yy215.value; }
         break;
-      case 45: /* refarg ::= MATCH nm */
-{ yymsp[-1].minor.yy497.value = 0;     yymsp[-1].minor.yy497.mask = 0x000000; }
+      case 46: /* refarg ::= MATCH nm */
+{ yymsp[-1].minor.yy215.value = 0;     yymsp[-1].minor.yy215.mask = 0x000000; }
         break;
-      case 46: /* refarg ::= ON INSERT refact */
-{ yymsp[-2].minor.yy497.value = 0;     yymsp[-2].minor.yy497.mask = 0x000000; }
+      case 47: /* refarg ::= ON INSERT refact */
+{ yymsp[-2].minor.yy215.value = 0;     yymsp[-2].minor.yy215.mask = 0x000000; }
         break;
-      case 47: /* refarg ::= ON DELETE refact */
-{ yymsp[-2].minor.yy497.value = yymsp[0].minor.yy194;     yymsp[-2].minor.yy497.mask = 0x0000ff; }
+      case 48: /* refarg ::= ON DELETE refact */
+{ yymsp[-2].minor.yy215.value = yymsp[0].minor.yy4;     yymsp[-2].minor.yy215.mask = 0x0000ff; }
         break;
-      case 48: /* refarg ::= ON UPDATE refact */
-{ yymsp[-2].minor.yy497.value = yymsp[0].minor.yy194<<8;  yymsp[-2].minor.yy497.mask = 0x00ff00; }
+      case 49: /* refarg ::= ON UPDATE refact */
+{ yymsp[-2].minor.yy215.value = yymsp[0].minor.yy4<<8;  yymsp[-2].minor.yy215.mask = 0x00ff00; }
         break;
-      case 49: /* refact ::= SET NULL */
-{ yymsp[-1].minor.yy194 = OE_SetNull;  /* EV: R-33326-45252 */}
+      case 50: /* refact ::= SET NULL */
+{ yymsp[-1].minor.yy4 = OE_SetNull;  /* EV: R-33326-45252 */}
         break;
-      case 50: /* refact ::= SET DEFAULT */
-{ yymsp[-1].minor.yy194 = OE_SetDflt;  /* EV: R-33326-45252 */}
+      case 51: /* refact ::= SET DEFAULT */
+{ yymsp[-1].minor.yy4 = OE_SetDflt;  /* EV: R-33326-45252 */}
         break;
-      case 51: /* refact ::= CASCADE */
-{ yymsp[0].minor.yy194 = OE_Cascade;  /* EV: R-33326-45252 */}
+      case 52: /* refact ::= CASCADE */
+{ yymsp[0].minor.yy4 = OE_Cascade;  /* EV: R-33326-45252 */}
         break;
-      case 52: /* refact ::= RESTRICT */
-{ yymsp[0].minor.yy194 = OE_Restrict; /* EV: R-33326-45252 */}
+      case 53: /* refact ::= RESTRICT */
+{ yymsp[0].minor.yy4 = OE_Restrict; /* EV: R-33326-45252 */}
         break;
-      case 53: /* refact ::= NO ACTION */
-{ yymsp[-1].minor.yy194 = OE_None;     /* EV: R-33326-45252 */}
+      case 54: /* refact ::= NO ACTION */
+{ yymsp[-1].minor.yy4 = OE_None;     /* EV: R-33326-45252 */}
         break;
-      case 54: /* defer_subclause ::= NOT DEFERRABLE init_deferred_pred_opt */
-{yymsp[-2].minor.yy194 = 0;}
+      case 55: /* defer_subclause ::= NOT DEFERRABLE init_deferred_pred_opt */
+{yymsp[-2].minor.yy4 = 0;}
         break;
-      case 55: /* defer_subclause ::= DEFERRABLE init_deferred_pred_opt */
-      case 70: /* orconf ::= OR resolvetype */ yytestcase(yyruleno==70);
-      case 143: /* insert_cmd ::= INSERT orconf */ yytestcase(yyruleno==143);
-{yymsp[-1].minor.yy194 = yymsp[0].minor.yy194;}
+      case 56: /* defer_subclause ::= DEFERRABLE init_deferred_pred_opt */
+      case 71: /* orconf ::= OR resolvetype */ yytestcase(yyruleno==71);
+      case 144: /* insert_cmd ::= INSERT orconf */ yytestcase(yyruleno==144);
+{yymsp[-1].minor.yy4 = yymsp[0].minor.yy4;}
         break;
-      case 57: /* init_deferred_pred_opt ::= INITIALLY DEFERRED */
-      case 74: /* ifexists ::= IF EXISTS */ yytestcase(yyruleno==74);
-      case 184: /* between_op ::= NOT BETWEEN */ yytestcase(yyruleno==184);
-      case 187: /* in_op ::= NOT IN */ yytestcase(yyruleno==187);
-      case 213: /* collate ::= COLLATE ID|STRING */ yytestcase(yyruleno==213);
-{yymsp[-1].minor.yy194 = 1;}
+      case 58: /* init_deferred_pred_opt ::= INITIALLY DEFERRED */
+      case 75: /* ifexists ::= IF EXISTS */ yytestcase(yyruleno==75);
+      case 185: /* between_op ::= NOT BETWEEN */ yytestcase(yyruleno==185);
+      case 188: /* in_op ::= NOT IN */ yytestcase(yyruleno==188);
+      case 214: /* collate ::= COLLATE ID|STRING */ yytestcase(yyruleno==214);
+{yymsp[-1].minor.yy4 = 1;}
         break;
-      case 58: /* init_deferred_pred_opt ::= INITIALLY IMMEDIATE */
-{yymsp[-1].minor.yy194 = 0;}
+      case 59: /* init_deferred_pred_opt ::= INITIALLY IMMEDIATE */
+{yymsp[-1].minor.yy4 = 0;}
         break;
-      case 60: /* tconscomma ::= COMMA */
+      case 61: /* tconscomma ::= COMMA */
 {pParse->constraintName.n = 0;}
         break;
-      case 62: /* tcons ::= PRIMARY KEY LP sortlist autoinc RP onconf */
-{sqlite3AddPrimaryKey(pParse,yymsp[-3].minor.yy148,yymsp[0].minor.yy194,yymsp[-2].minor.yy194,0);}
+      case 63: /* tcons ::= PRIMARY KEY LP sortlist autoinc RP onconf */
+{sqlite3AddPrimaryKey(pParse,yymsp[-3].minor.yy322,yymsp[0].minor.yy4,yymsp[-2].minor.yy4,0);}
         break;
-      case 63: /* tcons ::= UNIQUE LP sortlist RP onconf */
-{sqlite3CreateIndex(pParse,0,0,0,yymsp[-2].minor.yy148,yymsp[0].minor.yy194,0,0,0,0,
+      case 64: /* tcons ::= UNIQUE LP sortlist RP onconf */
+{sqlite3CreateIndex(pParse,0,0,0,yymsp[-2].minor.yy322,yymsp[0].minor.yy4,0,0,0,0,
                                        SQLITE_IDXTYPE_UNIQUE);}
         break;
-      case 64: /* tcons ::= CHECK LP expr RP onconf */
-{sqlite3AddCheckConstraint(pParse,yymsp[-2].minor.yy190.pExpr);}
+      case 65: /* tcons ::= CHECK LP expr RP onconf */
+{sqlite3AddCheckConstraint(pParse,yymsp[-2].minor.yy314);}
         break;
-      case 65: /* tcons ::= FOREIGN KEY LP eidlist RP REFERENCES nm eidlist_opt refargs defer_subclause_opt */
+      case 66: /* tcons ::= FOREIGN KEY LP eidlist RP REFERENCES nm eidlist_opt refargs defer_subclause_opt */
 {
-    sqlite3CreateForeignKey(pParse, yymsp[-6].minor.yy148, &yymsp[-3].minor.yy0, yymsp[-2].minor.yy148, yymsp[-1].minor.yy194);
-    sqlite3DeferForeignKey(pParse, yymsp[0].minor.yy194);
+    sqlite3CreateForeignKey(pParse, yymsp[-6].minor.yy322, &yymsp[-3].minor.yy0, yymsp[-2].minor.yy322, yymsp[-1].minor.yy4);
+    sqlite3DeferForeignKey(pParse, yymsp[0].minor.yy4);
 }
         break;
-      case 67: /* onconf ::= */
-      case 69: /* orconf ::= */ yytestcase(yyruleno==69);
-{yymsp[1].minor.yy194 = OE_Default;}
+      case 68: /* onconf ::= */
+      case 70: /* orconf ::= */ yytestcase(yyruleno==70);
+{yymsp[1].minor.yy4 = OE_Default;}
         break;
-      case 68: /* onconf ::= ON CONFLICT resolvetype */
-{yymsp[-2].minor.yy194 = yymsp[0].minor.yy194;}
+      case 69: /* onconf ::= ON CONFLICT resolvetype */
+{yymsp[-2].minor.yy4 = yymsp[0].minor.yy4;}
         break;
-      case 71: /* resolvetype ::= IGNORE */
-{yymsp[0].minor.yy194 = OE_Ignore;}
+      case 72: /* resolvetype ::= IGNORE */
+{yymsp[0].minor.yy4 = OE_Ignore;}
         break;
-      case 72: /* resolvetype ::= REPLACE */
-      case 144: /* insert_cmd ::= REPLACE */ yytestcase(yyruleno==144);
-{yymsp[0].minor.yy194 = OE_Replace;}
+      case 73: /* resolvetype ::= REPLACE */
+      case 145: /* insert_cmd ::= REPLACE */ yytestcase(yyruleno==145);
+{yymsp[0].minor.yy4 = OE_Replace;}
         break;
-      case 73: /* cmd ::= DROP TABLE ifexists fullname */
+      case 74: /* cmd ::= DROP TABLE ifexists fullname */
 {
-  sqlite3DropTable(pParse, yymsp[0].minor.yy185, 0, yymsp[-1].minor.yy194);
+  sqlite3DropTable(pParse, yymsp[0].minor.yy259, 0, yymsp[-1].minor.yy4);
 }
         break;
-      case 76: /* cmd ::= createkw temp VIEW ifnotexists nm dbnm eidlist_opt AS select */
+      case 77: /* cmd ::= createkw temp VIEW ifnotexists nm dbnm eidlist_opt AS select */
 {
-  sqlite3CreateView(pParse, &yymsp[-8].minor.yy0, &yymsp[-4].minor.yy0, &yymsp[-3].minor.yy0, yymsp[-2].minor.yy148, yymsp[0].minor.yy243, yymsp[-7].minor.yy194, yymsp[-5].minor.yy194);
+  sqlite3CreateView(pParse, &yymsp[-8].minor.yy0, &yymsp[-4].minor.yy0, &yymsp[-3].minor.yy0, yymsp[-2].minor.yy322, yymsp[0].minor.yy387, yymsp[-7].minor.yy4, yymsp[-5].minor.yy4);
 }
         break;
-      case 77: /* cmd ::= DROP VIEW ifexists fullname */
+      case 78: /* cmd ::= DROP VIEW ifexists fullname */
 {
-  sqlite3DropTable(pParse, yymsp[0].minor.yy185, 1, yymsp[-1].minor.yy194);
+  sqlite3DropTable(pParse, yymsp[0].minor.yy259, 1, yymsp[-1].minor.yy4);
 }
         break;
-      case 78: /* cmd ::= select */
+      case 79: /* cmd ::= select */
 {
   SelectDest dest = {SRT_Output, 0, 0, 0, 0, 0};
-  sqlite3Select(pParse, yymsp[0].minor.yy243, &dest);
-  sqlite3SelectDelete(pParse->db, yymsp[0].minor.yy243);
+  sqlite3Select(pParse, yymsp[0].minor.yy387, &dest);
+  sqlite3SelectDelete(pParse->db, yymsp[0].minor.yy387);
 }
         break;
-      case 79: /* select ::= with selectnowith */
+      case 80: /* select ::= with selectnowith */
 {
-  Select *p = yymsp[0].minor.yy243;
+  Select *p = yymsp[0].minor.yy387;
   if( p ){
-    p->pWith = yymsp[-1].minor.yy285;
+    p->pWith = yymsp[-1].minor.yy451;
     parserDoubleLinkSelect(pParse, p);
   }else{
-    sqlite3WithDelete(pParse->db, yymsp[-1].minor.yy285);
+    sqlite3WithDelete(pParse->db, yymsp[-1].minor.yy451);
   }
-  yymsp[-1].minor.yy243 = p; /*A-overwrites-W*/
+  yymsp[-1].minor.yy387 = p; /*A-overwrites-W*/
 }
         break;
-      case 80: /* selectnowith ::= selectnowith multiselect_op oneselect */
+      case 81: /* selectnowith ::= selectnowith multiselect_op oneselect */
 {
-  Select *pRhs = yymsp[0].minor.yy243;
-  Select *pLhs = yymsp[-2].minor.yy243;
+  Select *pRhs = yymsp[0].minor.yy387;
+  Select *pLhs = yymsp[-2].minor.yy387;
   if( pRhs && pRhs->pPrior ){
     SrcList *pFrom;
     Token x;
     x.n = 0;
     parserDoubleLinkSelect(pParse, pRhs);
     pFrom = sqlite3SrcListAppendFromTerm(pParse,0,0,0,&x,pRhs,0,0);
-    pRhs = sqlite3SelectNew(pParse,0,pFrom,0,0,0,0,0,0,0);
+    pRhs = sqlite3SelectNew(pParse,0,pFrom,0,0,0,0,0,0);
   }
   if( pRhs ){
-    pRhs->op = (u8)yymsp[-1].minor.yy194;
+    pRhs->op = (u8)yymsp[-1].minor.yy4;
     pRhs->pPrior = pLhs;
     if( ALWAYS(pLhs) ) pLhs->selFlags &= ~SF_MultiValue;
     pRhs->selFlags &= ~SF_MultiValue;
-    if( yymsp[-1].minor.yy194!=TK_ALL ) pParse->hasCompound = 1;
+    if( yymsp[-1].minor.yy4!=TK_ALL ) pParse->hasCompound = 1;
   }else{
     sqlite3SelectDelete(pParse->db, pLhs);
   }
-  yymsp[-2].minor.yy243 = pRhs;
+  yymsp[-2].minor.yy387 = pRhs;
 }
         break;
-      case 81: /* multiselect_op ::= UNION */
-      case 83: /* multiselect_op ::= EXCEPT|INTERSECT */ yytestcase(yyruleno==83);
-{yymsp[0].minor.yy194 = yymsp[0].major; /*A-overwrites-OP*/}
+      case 82: /* multiselect_op ::= UNION */
+      case 84: /* multiselect_op ::= EXCEPT|INTERSECT */ yytestcase(yyruleno==84);
+{yymsp[0].minor.yy4 = yymsp[0].major; /*A-overwrites-OP*/}
         break;
-      case 82: /* multiselect_op ::= UNION ALL */
-{yymsp[-1].minor.yy194 = TK_ALL;}
+      case 83: /* multiselect_op ::= UNION ALL */
+{yymsp[-1].minor.yy4 = TK_ALL;}
         break;
-      case 84: /* oneselect ::= SELECT distinct selcollist from where_opt groupby_opt having_opt orderby_opt limit_opt */
+      case 85: /* oneselect ::= SELECT distinct selcollist from where_opt groupby_opt having_opt orderby_opt limit_opt */
 {
 #if SELECTTRACE_ENABLED
   Token s = yymsp[-8].minor.yy0; /*A-overwrites-S*/
 #endif
-  yymsp[-8].minor.yy243 = sqlite3SelectNew(pParse,yymsp[-6].minor.yy148,yymsp[-5].minor.yy185,yymsp[-4].minor.yy72,yymsp[-3].minor.yy148,yymsp[-2].minor.yy72,yymsp[-1].minor.yy148,yymsp[-7].minor.yy194,yymsp[0].minor.yy354.pLimit,yymsp[0].minor.yy354.pOffset);
+  yymsp[-8].minor.yy387 = sqlite3SelectNew(pParse,yymsp[-6].minor.yy322,yymsp[-5].minor.yy259,yymsp[-4].minor.yy314,yymsp[-3].minor.yy322,yymsp[-2].minor.yy314,yymsp[-1].minor.yy322,yymsp[-7].minor.yy4,yymsp[0].minor.yy314);
 #if SELECTTRACE_ENABLED
   /* Populate the Select.zSelName[] string that is used to help with
   ** query planner debugging, to differentiate between multiple Select
@@ -15555,483 +15962,468 @@ static void yy_reduce(
   ** comment to be the zSelName value.  Otherwise, the label is #N where
   ** is an integer that is incremented with each SELECT statement seen.
   */
-  if( yymsp[-8].minor.yy243!=0 ){
+  if( yymsp[-8].minor.yy387!=0 ){
     const char *z = s.z+6;
     int i;
-    sqlite3_snprintf(sizeof(yymsp[-8].minor.yy243->zSelName), yymsp[-8].minor.yy243->zSelName, "#%d",
+    sqlite3_snprintf(sizeof(yymsp[-8].minor.yy387->zSelName), yymsp[-8].minor.yy387->zSelName, "#%d",
                      ++pParse->nSelect);
     while( z[0]==' ' ) z++;
     if( z[0]=='/' && z[1]=='*' ){
       z += 2;
       while( z[0]==' ' ) z++;
       for(i=0; sqlite3Isalnum(z[i]); i++){}
-      sqlite3_snprintf(sizeof(yymsp[-8].minor.yy243->zSelName), yymsp[-8].minor.yy243->zSelName, "%.*s", i, z);
+      sqlite3_snprintf(sizeof(yymsp[-8].minor.yy387->zSelName), yymsp[-8].minor.yy387->zSelName, "%.*s", i, z);
     }
   }
 #endif /* SELECTRACE_ENABLED */
 }
         break;
-      case 85: /* values ::= VALUES LP nexprlist RP */
+      case 86: /* values ::= VALUES LP nexprlist RP */
 {
-  yymsp[-3].minor.yy243 = sqlite3SelectNew(pParse,yymsp[-1].minor.yy148,0,0,0,0,0,SF_Values,0,0);
+  yymsp[-3].minor.yy387 = sqlite3SelectNew(pParse,yymsp[-1].minor.yy322,0,0,0,0,0,SF_Values,0);
 }
         break;
-      case 86: /* values ::= values COMMA LP exprlist RP */
+      case 87: /* values ::= values COMMA LP exprlist RP */
 {
-  Select *pRight, *pLeft = yymsp[-4].minor.yy243;
-  pRight = sqlite3SelectNew(pParse,yymsp[-1].minor.yy148,0,0,0,0,0,SF_Values|SF_MultiValue,0,0);
+  Select *pRight, *pLeft = yymsp[-4].minor.yy387;
+  pRight = sqlite3SelectNew(pParse,yymsp[-1].minor.yy322,0,0,0,0,0,SF_Values|SF_MultiValue,0);
   if( ALWAYS(pLeft) ) pLeft->selFlags &= ~SF_MultiValue;
   if( pRight ){
     pRight->op = TK_ALL;
     pRight->pPrior = pLeft;
-    yymsp[-4].minor.yy243 = pRight;
+    yymsp[-4].minor.yy387 = pRight;
   }else{
-    yymsp[-4].minor.yy243 = pLeft;
+    yymsp[-4].minor.yy387 = pLeft;
   }
 }
         break;
-      case 87: /* distinct ::= DISTINCT */
-{yymsp[0].minor.yy194 = SF_Distinct;}
+      case 88: /* distinct ::= DISTINCT */
+{yymsp[0].minor.yy4 = SF_Distinct;}
         break;
-      case 88: /* distinct ::= ALL */
-{yymsp[0].minor.yy194 = SF_All;}
+      case 89: /* distinct ::= ALL */
+{yymsp[0].minor.yy4 = SF_All;}
         break;
-      case 90: /* sclp ::= */
-      case 118: /* orderby_opt ::= */ yytestcase(yyruleno==118);
-      case 125: /* groupby_opt ::= */ yytestcase(yyruleno==125);
-      case 200: /* exprlist ::= */ yytestcase(yyruleno==200);
-      case 203: /* paren_exprlist ::= */ yytestcase(yyruleno==203);
-      case 208: /* eidlist_opt ::= */ yytestcase(yyruleno==208);
-{yymsp[1].minor.yy148 = 0;}
+      case 91: /* sclp ::= */
+      case 119: /* orderby_opt ::= */ yytestcase(yyruleno==119);
+      case 126: /* groupby_opt ::= */ yytestcase(yyruleno==126);
+      case 201: /* exprlist ::= */ yytestcase(yyruleno==201);
+      case 204: /* paren_exprlist ::= */ yytestcase(yyruleno==204);
+      case 209: /* eidlist_opt ::= */ yytestcase(yyruleno==209);
+{yymsp[1].minor.yy322 = 0;}
         break;
-      case 91: /* selcollist ::= sclp expr as */
+      case 92: /* selcollist ::= sclp scanpt expr scanpt as */
 {
-   yymsp[-2].minor.yy148 = sqlite3ExprListAppend(pParse, yymsp[-2].minor.yy148, yymsp[-1].minor.yy190.pExpr);
-   if( yymsp[0].minor.yy0.n>0 ) sqlite3ExprListSetName(pParse, yymsp[-2].minor.yy148, &yymsp[0].minor.yy0, 1);
-   sqlite3ExprListSetSpan(pParse,yymsp[-2].minor.yy148,&yymsp[-1].minor.yy190);
+   yymsp[-4].minor.yy322 = sqlite3ExprListAppend(pParse, yymsp[-4].minor.yy322, yymsp[-2].minor.yy314);
+   if( yymsp[0].minor.yy0.n>0 ) sqlite3ExprListSetName(pParse, yymsp[-4].minor.yy322, &yymsp[0].minor.yy0, 1);
+   sqlite3ExprListSetSpan(pParse,yymsp[-4].minor.yy322,yymsp[-3].minor.yy336,yymsp[-1].minor.yy336);
 }
         break;
-      case 92: /* selcollist ::= sclp STAR */
+      case 93: /* selcollist ::= sclp scanpt STAR */
 {
   Expr *p = sqlite3Expr(pParse->db, TK_ASTERISK, 0);
-  yymsp[-1].minor.yy148 = sqlite3ExprListAppend(pParse, yymsp[-1].minor.yy148, p);
+  yymsp[-2].minor.yy322 = sqlite3ExprListAppend(pParse, yymsp[-2].minor.yy322, p);
 }
         break;
-      case 93: /* selcollist ::= sclp nm DOT STAR */
+      case 94: /* selcollist ::= sclp scanpt nm DOT STAR */
 {
   Expr *pRight = sqlite3PExpr(pParse, TK_ASTERISK, 0, 0);
   Expr *pLeft = sqlite3ExprAlloc(pParse->db, TK_ID, &yymsp[-2].minor.yy0, 1);
   Expr *pDot = sqlite3PExpr(pParse, TK_DOT, pLeft, pRight);
-  yymsp[-3].minor.yy148 = sqlite3ExprListAppend(pParse,yymsp[-3].minor.yy148, pDot);
+  yymsp[-4].minor.yy322 = sqlite3ExprListAppend(pParse,yymsp[-4].minor.yy322, pDot);
 }
         break;
-      case 94: /* as ::= AS nm */
-      case 105: /* dbnm ::= DOT nm */ yytestcase(yyruleno==105);
-      case 222: /* plus_num ::= PLUS INTEGER|FLOAT */ yytestcase(yyruleno==222);
-      case 223: /* minus_num ::= MINUS INTEGER|FLOAT */ yytestcase(yyruleno==223);
+      case 95: /* as ::= AS nm */
+      case 106: /* dbnm ::= DOT nm */ yytestcase(yyruleno==106);
+      case 223: /* plus_num ::= PLUS INTEGER|FLOAT */ yytestcase(yyruleno==223);
+      case 224: /* minus_num ::= MINUS INTEGER|FLOAT */ yytestcase(yyruleno==224);
 {yymsp[-1].minor.yy0 = yymsp[0].minor.yy0;}
         break;
-      case 96: /* from ::= */
-{yymsp[1].minor.yy185 = sqlite3DbMallocZero(pParse->db, sizeof(*yymsp[1].minor.yy185));}
+      case 97: /* from ::= */
+{yymsp[1].minor.yy259 = sqlite3DbMallocZero(pParse->db, sizeof(*yymsp[1].minor.yy259));}
         break;
-      case 97: /* from ::= FROM seltablist */
+      case 98: /* from ::= FROM seltablist */
 {
-  yymsp[-1].minor.yy185 = yymsp[0].minor.yy185;
-  sqlite3SrcListShiftJoinType(yymsp[-1].minor.yy185);
+  yymsp[-1].minor.yy259 = yymsp[0].minor.yy259;
+  sqlite3SrcListShiftJoinType(yymsp[-1].minor.yy259);
 }
         break;
-      case 98: /* stl_prefix ::= seltablist joinop */
+      case 99: /* stl_prefix ::= seltablist joinop */
 {
-   if( ALWAYS(yymsp[-1].minor.yy185 && yymsp[-1].minor.yy185->nSrc>0) ) yymsp[-1].minor.yy185->a[yymsp[-1].minor.yy185->nSrc-1].fg.jointype = (u8)yymsp[0].minor.yy194;
+   if( ALWAYS(yymsp[-1].minor.yy259 && yymsp[-1].minor.yy259->nSrc>0) ) yymsp[-1].minor.yy259->a[yymsp[-1].minor.yy259->nSrc-1].fg.jointype = (u8)yymsp[0].minor.yy4;
 }
         break;
-      case 99: /* stl_prefix ::= */
-{yymsp[1].minor.yy185 = 0;}
+      case 100: /* stl_prefix ::= */
+{yymsp[1].minor.yy259 = 0;}
         break;
-      case 100: /* seltablist ::= stl_prefix nm dbnm as indexed_opt on_opt using_opt */
+      case 101: /* seltablist ::= stl_prefix nm dbnm as indexed_opt on_opt using_opt */
 {
-  yymsp[-6].minor.yy185 = sqlite3SrcListAppendFromTerm(pParse,yymsp[-6].minor.yy185,&yymsp[-5].minor.yy0,&yymsp[-4].minor.yy0,&yymsp[-3].minor.yy0,0,yymsp[-1].minor.yy72,yymsp[0].minor.yy254);
-  sqlite3SrcListIndexedBy(pParse, yymsp[-6].minor.yy185, &yymsp[-2].minor.yy0);
+  yymsp[-6].minor.yy259 = sqlite3SrcListAppendFromTerm(pParse,yymsp[-6].minor.yy259,&yymsp[-5].minor.yy0,&yymsp[-4].minor.yy0,&yymsp[-3].minor.yy0,0,yymsp[-1].minor.yy314,yymsp[0].minor.yy384);
+  sqlite3SrcListIndexedBy(pParse, yymsp[-6].minor.yy259, &yymsp[-2].minor.yy0);
 }
         break;
-      case 101: /* seltablist ::= stl_prefix nm dbnm LP exprlist RP as on_opt using_opt */
+      case 102: /* seltablist ::= stl_prefix nm dbnm LP exprlist RP as on_opt using_opt */
 {
-  yymsp[-8].minor.yy185 = sqlite3SrcListAppendFromTerm(pParse,yymsp[-8].minor.yy185,&yymsp[-7].minor.yy0,&yymsp[-6].minor.yy0,&yymsp[-2].minor.yy0,0,yymsp[-1].minor.yy72,yymsp[0].minor.yy254);
-  sqlite3SrcListFuncArgs(pParse, yymsp[-8].minor.yy185, yymsp[-4].minor.yy148);
+  yymsp[-8].minor.yy259 = sqlite3SrcListAppendFromTerm(pParse,yymsp[-8].minor.yy259,&yymsp[-7].minor.yy0,&yymsp[-6].minor.yy0,&yymsp[-2].minor.yy0,0,yymsp[-1].minor.yy314,yymsp[0].minor.yy384);
+  sqlite3SrcListFuncArgs(pParse, yymsp[-8].minor.yy259, yymsp[-4].minor.yy322);
 }
         break;
-      case 102: /* seltablist ::= stl_prefix LP select RP as on_opt using_opt */
+      case 103: /* seltablist ::= stl_prefix LP select RP as on_opt using_opt */
 {
-    yymsp[-6].minor.yy185 = sqlite3SrcListAppendFromTerm(pParse,yymsp[-6].minor.yy185,0,0,&yymsp[-2].minor.yy0,yymsp[-4].minor.yy243,yymsp[-1].minor.yy72,yymsp[0].minor.yy254);
+    yymsp[-6].minor.yy259 = sqlite3SrcListAppendFromTerm(pParse,yymsp[-6].minor.yy259,0,0,&yymsp[-2].minor.yy0,yymsp[-4].minor.yy387,yymsp[-1].minor.yy314,yymsp[0].minor.yy384);
   }
         break;
-      case 103: /* seltablist ::= stl_prefix LP seltablist RP as on_opt using_opt */
+      case 104: /* seltablist ::= stl_prefix LP seltablist RP as on_opt using_opt */
 {
-    if( yymsp[-6].minor.yy185==0 && yymsp[-2].minor.yy0.n==0 && yymsp[-1].minor.yy72==0 && yymsp[0].minor.yy254==0 ){
-      yymsp[-6].minor.yy185 = yymsp[-4].minor.yy185;
-    }else if( yymsp[-4].minor.yy185->nSrc==1 ){
-      yymsp[-6].minor.yy185 = sqlite3SrcListAppendFromTerm(pParse,yymsp[-6].minor.yy185,0,0,&yymsp[-2].minor.yy0,0,yymsp[-1].minor.yy72,yymsp[0].minor.yy254);
-      if( yymsp[-6].minor.yy185 ){
-        struct SrcList_item *pNew = &yymsp[-6].minor.yy185->a[yymsp[-6].minor.yy185->nSrc-1];
-        struct SrcList_item *pOld = yymsp[-4].minor.yy185->a;
+    if( yymsp[-6].minor.yy259==0 && yymsp[-2].minor.yy0.n==0 && yymsp[-1].minor.yy314==0 && yymsp[0].minor.yy384==0 ){
+      yymsp[-6].minor.yy259 = yymsp[-4].minor.yy259;
+    }else if( yymsp[-4].minor.yy259->nSrc==1 ){
+      yymsp[-6].minor.yy259 = sqlite3SrcListAppendFromTerm(pParse,yymsp[-6].minor.yy259,0,0,&yymsp[-2].minor.yy0,0,yymsp[-1].minor.yy314,yymsp[0].minor.yy384);
+      if( yymsp[-6].minor.yy259 ){
+        struct SrcList_item *pNew = &yymsp[-6].minor.yy259->a[yymsp[-6].minor.yy259->nSrc-1];
+        struct SrcList_item *pOld = yymsp[-4].minor.yy259->a;
         pNew->zName = pOld->zName;
         pNew->zDatabase = pOld->zDatabase;
         pNew->pSelect = pOld->pSelect;
         pOld->zName = pOld->zDatabase = 0;
         pOld->pSelect = 0;
       }
-      sqlite3SrcListDelete(pParse->db, yymsp[-4].minor.yy185);
+      sqlite3SrcListDelete(pParse->db, yymsp[-4].minor.yy259);
     }else{
       Select *pSubquery;
-      sqlite3SrcListShiftJoinType(yymsp[-4].minor.yy185);
-      pSubquery = sqlite3SelectNew(pParse,0,yymsp[-4].minor.yy185,0,0,0,0,SF_NestedFrom,0,0);
-      yymsp[-6].minor.yy185 = sqlite3SrcListAppendFromTerm(pParse,yymsp[-6].minor.yy185,0,0,&yymsp[-2].minor.yy0,pSubquery,yymsp[-1].minor.yy72,yymsp[0].minor.yy254);
+      sqlite3SrcListShiftJoinType(yymsp[-4].minor.yy259);
+      pSubquery = sqlite3SelectNew(pParse,0,yymsp[-4].minor.yy259,0,0,0,0,SF_NestedFrom,0);
+      yymsp[-6].minor.yy259 = sqlite3SrcListAppendFromTerm(pParse,yymsp[-6].minor.yy259,0,0,&yymsp[-2].minor.yy0,pSubquery,yymsp[-1].minor.yy314,yymsp[0].minor.yy384);
     }
   }
         break;
-      case 104: /* dbnm ::= */
-      case 113: /* indexed_opt ::= */ yytestcase(yyruleno==113);
+      case 105: /* dbnm ::= */
+      case 114: /* indexed_opt ::= */ yytestcase(yyruleno==114);
 {yymsp[1].minor.yy0.z=0; yymsp[1].minor.yy0.n=0;}
         break;
-      case 106: /* fullname ::= nm dbnm */
-{yymsp[-1].minor.yy185 = sqlite3SrcListAppend(pParse->db,0,&yymsp[-1].minor.yy0,&yymsp[0].minor.yy0); /*A-overwrites-X*/}
+      case 107: /* fullname ::= nm dbnm */
+{yymsp[-1].minor.yy259 = sqlite3SrcListAppend(pParse->db,0,&yymsp[-1].minor.yy0,&yymsp[0].minor.yy0); /*A-overwrites-X*/}
         break;
-      case 107: /* joinop ::= COMMA|JOIN */
-{ yymsp[0].minor.yy194 = JT_INNER; }
+      case 108: /* joinop ::= COMMA|JOIN */
+{ yymsp[0].minor.yy4 = JT_INNER; }
         break;
-      case 108: /* joinop ::= JOIN_KW JOIN */
-{yymsp[-1].minor.yy194 = sqlite3JoinType(pParse,&yymsp[-1].minor.yy0,0,0);  /*X-overwrites-A*/}
+      case 109: /* joinop ::= JOIN_KW JOIN */
+{yymsp[-1].minor.yy4 = sqlite3JoinType(pParse,&yymsp[-1].minor.yy0,0,0);  /*X-overwrites-A*/}
         break;
-      case 109: /* joinop ::= JOIN_KW nm JOIN */
-{yymsp[-2].minor.yy194 = sqlite3JoinType(pParse,&yymsp[-2].minor.yy0,&yymsp[-1].minor.yy0,0); /*X-overwrites-A*/}
+      case 110: /* joinop ::= JOIN_KW nm JOIN */
+{yymsp[-2].minor.yy4 = sqlite3JoinType(pParse,&yymsp[-2].minor.yy0,&yymsp[-1].minor.yy0,0); /*X-overwrites-A*/}
         break;
-      case 110: /* joinop ::= JOIN_KW nm nm JOIN */
-{yymsp[-3].minor.yy194 = sqlite3JoinType(pParse,&yymsp[-3].minor.yy0,&yymsp[-2].minor.yy0,&yymsp[-1].minor.yy0);/*X-overwrites-A*/}
+      case 111: /* joinop ::= JOIN_KW nm nm JOIN */
+{yymsp[-3].minor.yy4 = sqlite3JoinType(pParse,&yymsp[-3].minor.yy0,&yymsp[-2].minor.yy0,&yymsp[-1].minor.yy0);/*X-overwrites-A*/}
         break;
-      case 111: /* on_opt ::= ON expr */
-      case 128: /* having_opt ::= HAVING expr */ yytestcase(yyruleno==128);
-      case 135: /* where_opt ::= WHERE expr */ yytestcase(yyruleno==135);
-      case 196: /* case_else ::= ELSE expr */ yytestcase(yyruleno==196);
-{yymsp[-1].minor.yy72 = yymsp[0].minor.yy190.pExpr;}
+      case 112: /* on_opt ::= ON expr */
+      case 129: /* having_opt ::= HAVING expr */ yytestcase(yyruleno==129);
+      case 136: /* where_opt ::= WHERE expr */ yytestcase(yyruleno==136);
+      case 197: /* case_else ::= ELSE expr */ yytestcase(yyruleno==197);
+{yymsp[-1].minor.yy314 = yymsp[0].minor.yy314;}
         break;
-      case 112: /* on_opt ::= */
-      case 127: /* having_opt ::= */ yytestcase(yyruleno==127);
-      case 134: /* where_opt ::= */ yytestcase(yyruleno==134);
-      case 197: /* case_else ::= */ yytestcase(yyruleno==197);
-      case 199: /* case_operand ::= */ yytestcase(yyruleno==199);
-{yymsp[1].minor.yy72 = 0;}
+      case 113: /* on_opt ::= */
+      case 128: /* having_opt ::= */ yytestcase(yyruleno==128);
+      case 130: /* limit_opt ::= */ yytestcase(yyruleno==130);
+      case 135: /* where_opt ::= */ yytestcase(yyruleno==135);
+      case 198: /* case_else ::= */ yytestcase(yyruleno==198);
+      case 200: /* case_operand ::= */ yytestcase(yyruleno==200);
+{yymsp[1].minor.yy314 = 0;}
         break;
-      case 114: /* indexed_opt ::= INDEXED BY nm */
+      case 115: /* indexed_opt ::= INDEXED BY nm */
 {yymsp[-2].minor.yy0 = yymsp[0].minor.yy0;}
         break;
-      case 115: /* indexed_opt ::= NOT INDEXED */
+      case 116: /* indexed_opt ::= NOT INDEXED */
 {yymsp[-1].minor.yy0.z=0; yymsp[-1].minor.yy0.n=1;}
         break;
-      case 116: /* using_opt ::= USING LP idlist RP */
-{yymsp[-3].minor.yy254 = yymsp[-1].minor.yy254;}
+      case 117: /* using_opt ::= USING LP idlist RP */
+{yymsp[-3].minor.yy384 = yymsp[-1].minor.yy384;}
         break;
-      case 117: /* using_opt ::= */
-      case 145: /* idlist_opt ::= */ yytestcase(yyruleno==145);
-{yymsp[1].minor.yy254 = 0;}
+      case 118: /* using_opt ::= */
+      case 146: /* idlist_opt ::= */ yytestcase(yyruleno==146);
+{yymsp[1].minor.yy384 = 0;}
         break;
-      case 119: /* orderby_opt ::= ORDER BY sortlist */
-      case 126: /* groupby_opt ::= GROUP BY nexprlist */ yytestcase(yyruleno==126);
-{yymsp[-2].minor.yy148 = yymsp[0].minor.yy148;}
+      case 120: /* orderby_opt ::= ORDER BY sortlist */
+      case 127: /* groupby_opt ::= GROUP BY nexprlist */ yytestcase(yyruleno==127);
+{yymsp[-2].minor.yy322 = yymsp[0].minor.yy322;}
         break;
-      case 120: /* sortlist ::= sortlist COMMA expr sortorder */
+      case 121: /* sortlist ::= sortlist COMMA expr sortorder */
 {
-  yymsp[-3].minor.yy148 = sqlite3ExprListAppend(pParse,yymsp[-3].minor.yy148,yymsp[-1].minor.yy190.pExpr);
-  sqlite3ExprListSetSortOrder(yymsp[-3].minor.yy148,yymsp[0].minor.yy194);
+  yymsp[-3].minor.yy322 = sqlite3ExprListAppend(pParse,yymsp[-3].minor.yy322,yymsp[-1].minor.yy314);
+  sqlite3ExprListSetSortOrder(yymsp[-3].minor.yy322,yymsp[0].minor.yy4);
 }
         break;
-      case 121: /* sortlist ::= expr sortorder */
+      case 122: /* sortlist ::= expr sortorder */
 {
-  yymsp[-1].minor.yy148 = sqlite3ExprListAppend(pParse,0,yymsp[-1].minor.yy190.pExpr); /*A-overwrites-Y*/
-  sqlite3ExprListSetSortOrder(yymsp[-1].minor.yy148,yymsp[0].minor.yy194);
+  yymsp[-1].minor.yy322 = sqlite3ExprListAppend(pParse,0,yymsp[-1].minor.yy314); /*A-overwrites-Y*/
+  sqlite3ExprListSetSortOrder(yymsp[-1].minor.yy322,yymsp[0].minor.yy4);
 }
         break;
-      case 122: /* sortorder ::= ASC */
-{yymsp[0].minor.yy194 = SQLITE_SO_ASC;}
+      case 123: /* sortorder ::= ASC */
+{yymsp[0].minor.yy4 = SQLITE_SO_ASC;}
         break;
-      case 123: /* sortorder ::= DESC */
-{yymsp[0].minor.yy194 = SQLITE_SO_DESC;}
+      case 124: /* sortorder ::= DESC */
+{yymsp[0].minor.yy4 = SQLITE_SO_DESC;}
         break;
-      case 124: /* sortorder ::= */
-{yymsp[1].minor.yy194 = SQLITE_SO_UNDEFINED;}
+      case 125: /* sortorder ::= */
+{yymsp[1].minor.yy4 = SQLITE_SO_UNDEFINED;}
         break;
-      case 129: /* limit_opt ::= */
-{yymsp[1].minor.yy354.pLimit = 0; yymsp[1].minor.yy354.pOffset = 0;}
+      case 131: /* limit_opt ::= LIMIT expr */
+{yymsp[-1].minor.yy314 = sqlite3PExpr(pParse,TK_LIMIT,yymsp[0].minor.yy314,0);}
         break;
-      case 130: /* limit_opt ::= LIMIT expr */
-{yymsp[-1].minor.yy354.pLimit = yymsp[0].minor.yy190.pExpr; yymsp[-1].minor.yy354.pOffset = 0;}
+      case 132: /* limit_opt ::= LIMIT expr OFFSET expr */
+{yymsp[-3].minor.yy314 = sqlite3PExpr(pParse,TK_LIMIT,yymsp[-2].minor.yy314,yymsp[0].minor.yy314);}
         break;
-      case 131: /* limit_opt ::= LIMIT expr OFFSET expr */
-{yymsp[-3].minor.yy354.pLimit = yymsp[-2].minor.yy190.pExpr; yymsp[-3].minor.yy354.pOffset = yymsp[0].minor.yy190.pExpr;}
+      case 133: /* limit_opt ::= LIMIT expr COMMA expr */
+{yymsp[-3].minor.yy314 = sqlite3PExpr(pParse,TK_LIMIT,yymsp[0].minor.yy314,yymsp[-2].minor.yy314);}
         break;
-      case 132: /* limit_opt ::= LIMIT expr COMMA expr */
-{yymsp[-3].minor.yy354.pOffset = yymsp[-2].minor.yy190.pExpr; yymsp[-3].minor.yy354.pLimit = yymsp[0].minor.yy190.pExpr;}
-        break;
-      case 133: /* cmd ::= with DELETE FROM fullname indexed_opt where_opt */
+      case 134: /* cmd ::= with DELETE FROM fullname indexed_opt where_opt */
 {
-  sqlite3WithPush(pParse, yymsp[-5].minor.yy285, 1);
-  sqlite3SrcListIndexedBy(pParse, yymsp[-2].minor.yy185, &yymsp[-1].minor.yy0);
-  sqlite3DeleteFrom(pParse,yymsp[-2].minor.yy185,yymsp[0].minor.yy72);
+  sqlite3WithPush(pParse, yymsp[-5].minor.yy451, 1);
+  sqlite3SrcListIndexedBy(pParse, yymsp[-2].minor.yy259, &yymsp[-1].minor.yy0);
+  sqlite3DeleteFrom(pParse,yymsp[-2].minor.yy259,yymsp[0].minor.yy314,0,0);
 }
         break;
-      case 136: /* cmd ::= with UPDATE orconf fullname indexed_opt SET setlist where_opt */
+      case 137: /* cmd ::= with UPDATE orconf fullname indexed_opt SET setlist where_opt */
 {
-  sqlite3WithPush(pParse, yymsp[-7].minor.yy285, 1);
-  sqlite3SrcListIndexedBy(pParse, yymsp[-4].minor.yy185, &yymsp[-3].minor.yy0);
-  sqlite3ExprListCheckLength(pParse,yymsp[-1].minor.yy148,"set list"); 
-  sqlite3Update(pParse,yymsp[-4].minor.yy185,yymsp[-1].minor.yy148,yymsp[0].minor.yy72,yymsp[-5].minor.yy194);
+  sqlite3WithPush(pParse, yymsp[-7].minor.yy451, 1);
+  sqlite3SrcListIndexedBy(pParse, yymsp[-4].minor.yy259, &yymsp[-3].minor.yy0);
+  sqlite3ExprListCheckLength(pParse,yymsp[-1].minor.yy322,"set list"); 
+  sqlite3Update(pParse,yymsp[-4].minor.yy259,yymsp[-1].minor.yy322,yymsp[0].minor.yy314,yymsp[-5].minor.yy4,0,0);
 }
         break;
-      case 137: /* setlist ::= setlist COMMA nm EQ expr */
+      case 138: /* setlist ::= setlist COMMA nm EQ expr */
 {
-  yymsp[-4].minor.yy148 = sqlite3ExprListAppend(pParse, yymsp[-4].minor.yy148, yymsp[0].minor.yy190.pExpr);
-  sqlite3ExprListSetName(pParse, yymsp[-4].minor.yy148, &yymsp[-2].minor.yy0, 1);
+  yymsp[-4].minor.yy322 = sqlite3ExprListAppend(pParse, yymsp[-4].minor.yy322, yymsp[0].minor.yy314);
+  sqlite3ExprListSetName(pParse, yymsp[-4].minor.yy322, &yymsp[-2].minor.yy0, 1);
 }
         break;
-      case 138: /* setlist ::= setlist COMMA LP idlist RP EQ expr */
+      case 139: /* setlist ::= setlist COMMA LP idlist RP EQ expr */
 {
-  yymsp[-6].minor.yy148 = sqlite3ExprListAppendVector(pParse, yymsp[-6].minor.yy148, yymsp[-3].minor.yy254, yymsp[0].minor.yy190.pExpr);
+  yymsp[-6].minor.yy322 = sqlite3ExprListAppendVector(pParse, yymsp[-6].minor.yy322, yymsp[-3].minor.yy384, yymsp[0].minor.yy314);
 }
         break;
-      case 139: /* setlist ::= nm EQ expr */
+      case 140: /* setlist ::= nm EQ expr */
 {
-  yylhsminor.yy148 = sqlite3ExprListAppend(pParse, 0, yymsp[0].minor.yy190.pExpr);
-  sqlite3ExprListSetName(pParse, yylhsminor.yy148, &yymsp[-2].minor.yy0, 1);
+  yylhsminor.yy322 = sqlite3ExprListAppend(pParse, 0, yymsp[0].minor.yy314);
+  sqlite3ExprListSetName(pParse, yylhsminor.yy322, &yymsp[-2].minor.yy0, 1);
 }
-  yymsp[-2].minor.yy148 = yylhsminor.yy148;
+  yymsp[-2].minor.yy322 = yylhsminor.yy322;
         break;
-      case 140: /* setlist ::= LP idlist RP EQ expr */
+      case 141: /* setlist ::= LP idlist RP EQ expr */
 {
-  yymsp[-4].minor.yy148 = sqlite3ExprListAppendVector(pParse, 0, yymsp[-3].minor.yy254, yymsp[0].minor.yy190.pExpr);
-}
-        break;
-      case 141: /* cmd ::= with insert_cmd INTO fullname idlist_opt select */
-{
-  sqlite3WithPush(pParse, yymsp[-5].minor.yy285, 1);
-  sqlite3Insert(pParse, yymsp[-2].minor.yy185, yymsp[0].minor.yy243, yymsp[-1].minor.yy254, yymsp[-4].minor.yy194);
+  yymsp[-4].minor.yy322 = sqlite3ExprListAppendVector(pParse, 0, yymsp[-3].minor.yy384, yymsp[0].minor.yy314);
 }
         break;
-      case 142: /* cmd ::= with insert_cmd INTO fullname idlist_opt DEFAULT VALUES */
+      case 142: /* cmd ::= with insert_cmd INTO fullname idlist_opt select */
 {
-  sqlite3WithPush(pParse, yymsp[-6].minor.yy285, 1);
-  sqlite3Insert(pParse, yymsp[-3].minor.yy185, 0, yymsp[-2].minor.yy254, yymsp[-5].minor.yy194);
+  sqlite3WithPush(pParse, yymsp[-5].minor.yy451, 1);
+  sqlite3Insert(pParse, yymsp[-2].minor.yy259, yymsp[0].minor.yy387, yymsp[-1].minor.yy384, yymsp[-4].minor.yy4);
 }
         break;
-      case 146: /* idlist_opt ::= LP idlist RP */
-{yymsp[-2].minor.yy254 = yymsp[-1].minor.yy254;}
+      case 143: /* cmd ::= with insert_cmd INTO fullname idlist_opt DEFAULT VALUES */
+{
+  sqlite3WithPush(pParse, yymsp[-6].minor.yy451, 1);
+  sqlite3Insert(pParse, yymsp[-3].minor.yy259, 0, yymsp[-2].minor.yy384, yymsp[-5].minor.yy4);
+}
         break;
-      case 147: /* idlist ::= idlist COMMA nm */
-{yymsp[-2].minor.yy254 = sqlite3IdListAppend(pParse->db,yymsp[-2].minor.yy254,&yymsp[0].minor.yy0);}
+      case 147: /* idlist_opt ::= LP idlist RP */
+{yymsp[-2].minor.yy384 = yymsp[-1].minor.yy384;}
         break;
-      case 148: /* idlist ::= nm */
-{yymsp[0].minor.yy254 = sqlite3IdListAppend(pParse->db,0,&yymsp[0].minor.yy0); /*A-overwrites-Y*/}
+      case 148: /* idlist ::= idlist COMMA nm */
+{yymsp[-2].minor.yy384 = sqlite3IdListAppend(pParse->db,yymsp[-2].minor.yy384,&yymsp[0].minor.yy0);}
         break;
-      case 149: /* expr ::= LP expr RP */
-{spanSet(&yymsp[-2].minor.yy190,&yymsp[-2].minor.yy0,&yymsp[0].minor.yy0); /*A-overwrites-B*/  yymsp[-2].minor.yy190.pExpr = yymsp[-1].minor.yy190.pExpr;}
+      case 149: /* idlist ::= nm */
+{yymsp[0].minor.yy384 = sqlite3IdListAppend(pParse->db,0,&yymsp[0].minor.yy0); /*A-overwrites-Y*/}
         break;
-      case 150: /* expr ::= ID|INDEXED */
-      case 151: /* expr ::= JOIN_KW */ yytestcase(yyruleno==151);
-{spanExpr(&yymsp[0].minor.yy190,pParse,TK_ID,yymsp[0].minor.yy0); /*A-overwrites-X*/}
+      case 150: /* expr ::= LP expr RP */
+{yymsp[-2].minor.yy314 = yymsp[-1].minor.yy314;}
         break;
-      case 152: /* expr ::= nm DOT nm */
+      case 151: /* expr ::= ID|INDEXED */
+      case 152: /* expr ::= JOIN_KW */ yytestcase(yyruleno==152);
+{yymsp[0].minor.yy314=tokenExpr(pParse,TK_ID,yymsp[0].minor.yy0); /*A-overwrites-X*/}
+        break;
+      case 153: /* expr ::= nm DOT nm */
 {
   Expr *temp1 = sqlite3ExprAlloc(pParse->db, TK_ID, &yymsp[-2].minor.yy0, 1);
   Expr *temp2 = sqlite3ExprAlloc(pParse->db, TK_ID, &yymsp[0].minor.yy0, 1);
-  spanSet(&yymsp[-2].minor.yy190,&yymsp[-2].minor.yy0,&yymsp[0].minor.yy0); /*A-overwrites-X*/
-  yymsp[-2].minor.yy190.pExpr = sqlite3PExpr(pParse, TK_DOT, temp1, temp2);
+  yylhsminor.yy314 = sqlite3PExpr(pParse, TK_DOT, temp1, temp2);
 }
+  yymsp[-2].minor.yy314 = yylhsminor.yy314;
         break;
-      case 153: /* expr ::= nm DOT nm DOT nm */
+      case 154: /* expr ::= nm DOT nm DOT nm */
 {
   Expr *temp1 = sqlite3ExprAlloc(pParse->db, TK_ID, &yymsp[-4].minor.yy0, 1);
   Expr *temp2 = sqlite3ExprAlloc(pParse->db, TK_ID, &yymsp[-2].minor.yy0, 1);
   Expr *temp3 = sqlite3ExprAlloc(pParse->db, TK_ID, &yymsp[0].minor.yy0, 1);
   Expr *temp4 = sqlite3PExpr(pParse, TK_DOT, temp2, temp3);
-  spanSet(&yymsp[-4].minor.yy190,&yymsp[-4].minor.yy0,&yymsp[0].minor.yy0); /*A-overwrites-X*/
-  yymsp[-4].minor.yy190.pExpr = sqlite3PExpr(pParse, TK_DOT, temp1, temp4);
+  yylhsminor.yy314 = sqlite3PExpr(pParse, TK_DOT, temp1, temp4);
 }
+  yymsp[-4].minor.yy314 = yylhsminor.yy314;
         break;
-      case 154: /* term ::= NULL|FLOAT|BLOB */
-      case 155: /* term ::= STRING */ yytestcase(yyruleno==155);
-{spanExpr(&yymsp[0].minor.yy190,pParse,yymsp[0].major,yymsp[0].minor.yy0); /*A-overwrites-X*/}
+      case 155: /* term ::= NULL|FLOAT|BLOB */
+      case 156: /* term ::= STRING */ yytestcase(yyruleno==156);
+{yymsp[0].minor.yy314=tokenExpr(pParse,yymsp[0].major,yymsp[0].minor.yy0); /*A-overwrites-X*/}
         break;
-      case 156: /* term ::= INTEGER */
+      case 157: /* term ::= INTEGER */
 {
-  yylhsminor.yy190.pExpr = sqlite3ExprAlloc(pParse->db, TK_INTEGER, &yymsp[0].minor.yy0, 1);
-  yylhsminor.yy190.zStart = yymsp[0].minor.yy0.z;
-  yylhsminor.yy190.zEnd = yymsp[0].minor.yy0.z + yymsp[0].minor.yy0.n;
+  yylhsminor.yy314 = sqlite3ExprAlloc(pParse->db, TK_INTEGER, &yymsp[0].minor.yy0, 1);
 }
-  yymsp[0].minor.yy190 = yylhsminor.yy190;
+  yymsp[0].minor.yy314 = yylhsminor.yy314;
         break;
-      case 157: /* expr ::= VARIABLE */
+      case 158: /* expr ::= VARIABLE */
 {
   if( !(yymsp[0].minor.yy0.z[0]=='#' && sqlite3Isdigit(yymsp[0].minor.yy0.z[1])) ){
     u32 n = yymsp[0].minor.yy0.n;
-    spanExpr(&yymsp[0].minor.yy190, pParse, TK_VARIABLE, yymsp[0].minor.yy0);
-    sqlite3ExprAssignVarNumber(pParse, yymsp[0].minor.yy190.pExpr, n);
+    yymsp[0].minor.yy314 = tokenExpr(pParse, TK_VARIABLE, yymsp[0].minor.yy0);
+    sqlite3ExprAssignVarNumber(pParse, yymsp[0].minor.yy314, n);
   }else{
     /* When doing a nested parse, one can include terms in an expression
     ** that look like this:   #1 #2 ...  These terms refer to registers
     ** in the virtual machine.  #N is the N-th register. */
     Token t = yymsp[0].minor.yy0; /*A-overwrites-X*/
     assert( t.n>=2 );
-    spanSet(&yymsp[0].minor.yy190, &t, &t);
     if( pParse->nested==0 ){
       sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", &t);
-      yymsp[0].minor.yy190.pExpr = 0;
+      yymsp[0].minor.yy314 = 0;
     }else{
-      yymsp[0].minor.yy190.pExpr = sqlite3PExpr(pParse, TK_REGISTER, 0, 0);
-      if( yymsp[0].minor.yy190.pExpr ) sqlite3GetInt32(&t.z[1], &yymsp[0].minor.yy190.pExpr->iTable);
+      yymsp[0].minor.yy314 = sqlite3PExpr(pParse, TK_REGISTER, 0, 0);
+      if( yymsp[0].minor.yy314 ) sqlite3GetInt32(&t.z[1], &yymsp[0].minor.yy314->iTable);
     }
   }
 }
         break;
-      case 158: /* expr ::= expr COLLATE ID|STRING */
+      case 159: /* expr ::= expr COLLATE ID|STRING */
 {
-  yymsp[-2].minor.yy190.pExpr = sqlite3ExprAddCollateToken(pParse, yymsp[-2].minor.yy190.pExpr, &yymsp[0].minor.yy0, 1);
-  yymsp[-2].minor.yy190.zEnd = &yymsp[0].minor.yy0.z[yymsp[0].minor.yy0.n];
+  yymsp[-2].minor.yy314 = sqlite3ExprAddCollateToken(pParse, yymsp[-2].minor.yy314, &yymsp[0].minor.yy0, 1);
 }
         break;
-      case 159: /* expr ::= CAST LP expr AS typetoken RP */
+      case 160: /* expr ::= CAST LP expr AS typetoken RP */
 {
-  spanSet(&yymsp[-5].minor.yy190,&yymsp[-5].minor.yy0,&yymsp[0].minor.yy0); /*A-overwrites-X*/
-  yymsp[-5].minor.yy190.pExpr = sqlite3ExprAlloc(pParse->db, TK_CAST, &yymsp[-1].minor.yy0, 1);
-  sqlite3ExprAttachSubtrees(pParse->db, yymsp[-5].minor.yy190.pExpr, yymsp[-3].minor.yy190.pExpr, 0);
+  yymsp[-5].minor.yy314 = sqlite3ExprAlloc(pParse->db, TK_CAST, &yymsp[-1].minor.yy0, 1);
+  sqlite3ExprAttachSubtrees(pParse->db, yymsp[-5].minor.yy314, yymsp[-3].minor.yy314, 0);
 }
         break;
-      case 160: /* expr ::= ID|INDEXED LP distinct exprlist RP */
+      case 161: /* expr ::= ID|INDEXED LP distinct exprlist RP */
 {
-  if( yymsp[-1].minor.yy148 && yymsp[-1].minor.yy148->nExpr>pParse->db->aLimit[SQLITE_LIMIT_FUNCTION_ARG] ){
+  if( yymsp[-1].minor.yy322 && yymsp[-1].minor.yy322->nExpr>pParse->db->aLimit[SQLITE_LIMIT_FUNCTION_ARG] ){
     sqlite3ErrorMsg(pParse, "too many arguments on function %T", &yymsp[-4].minor.yy0);
   }
-  yylhsminor.yy190.pExpr = sqlite3ExprFunction(pParse, yymsp[-1].minor.yy148, &yymsp[-4].minor.yy0);
-  spanSet(&yylhsminor.yy190,&yymsp[-4].minor.yy0,&yymsp[0].minor.yy0);
-  if( yymsp[-2].minor.yy194==SF_Distinct && yylhsminor.yy190.pExpr ){
-    yylhsminor.yy190.pExpr->flags |= EP_Distinct;
+  yylhsminor.yy314 = sqlite3ExprFunction(pParse, yymsp[-1].minor.yy322, &yymsp[-4].minor.yy0);
+  if( yymsp[-2].minor.yy4==SF_Distinct && yylhsminor.yy314 ){
+    yylhsminor.yy314->flags |= EP_Distinct;
   }
 }
-  yymsp[-4].minor.yy190 = yylhsminor.yy190;
+  yymsp[-4].minor.yy314 = yylhsminor.yy314;
         break;
-      case 161: /* expr ::= ID|INDEXED LP STAR RP */
+      case 162: /* expr ::= ID|INDEXED LP STAR RP */
 {
-  yylhsminor.yy190.pExpr = sqlite3ExprFunction(pParse, 0, &yymsp[-3].minor.yy0);
-  spanSet(&yylhsminor.yy190,&yymsp[-3].minor.yy0,&yymsp[0].minor.yy0);
+  yylhsminor.yy314 = sqlite3ExprFunction(pParse, 0, &yymsp[-3].minor.yy0);
 }
-  yymsp[-3].minor.yy190 = yylhsminor.yy190;
+  yymsp[-3].minor.yy314 = yylhsminor.yy314;
         break;
-      case 162: /* term ::= CTIME_KW */
+      case 163: /* term ::= CTIME_KW */
 {
-  yylhsminor.yy190.pExpr = sqlite3ExprFunction(pParse, 0, &yymsp[0].minor.yy0);
-  spanSet(&yylhsminor.yy190, &yymsp[0].minor.yy0, &yymsp[0].minor.yy0);
+  yylhsminor.yy314 = sqlite3ExprFunction(pParse, 0, &yymsp[0].minor.yy0);
 }
-  yymsp[0].minor.yy190 = yylhsminor.yy190;
+  yymsp[0].minor.yy314 = yylhsminor.yy314;
         break;
-      case 163: /* expr ::= LP nexprlist COMMA expr RP */
+      case 164: /* expr ::= LP nexprlist COMMA expr RP */
 {
-  ExprList *pList = sqlite3ExprListAppend(pParse, yymsp[-3].minor.yy148, yymsp[-1].minor.yy190.pExpr);
-  yylhsminor.yy190.pExpr = sqlite3PExpr(pParse, TK_VECTOR, 0, 0);
-  if( yylhsminor.yy190.pExpr ){
-    yylhsminor.yy190.pExpr->x.pList = pList;
-    spanSet(&yylhsminor.yy190, &yymsp[-4].minor.yy0, &yymsp[0].minor.yy0);
+  ExprList *pList = sqlite3ExprListAppend(pParse, yymsp[-3].minor.yy322, yymsp[-1].minor.yy314);
+  yymsp[-4].minor.yy314 = sqlite3PExpr(pParse, TK_VECTOR, 0, 0);
+  if( yymsp[-4].minor.yy314 ){
+    yymsp[-4].minor.yy314->x.pList = pList;
   }else{
     sqlite3ExprListDelete(pParse->db, pList);
   }
 }
-  yymsp[-4].minor.yy190 = yylhsminor.yy190;
         break;
-      case 164: /* expr ::= expr AND expr */
-      case 165: /* expr ::= expr OR expr */ yytestcase(yyruleno==165);
-      case 166: /* expr ::= expr LT|GT|GE|LE expr */ yytestcase(yyruleno==166);
-      case 167: /* expr ::= expr EQ|NE expr */ yytestcase(yyruleno==167);
-      case 168: /* expr ::= expr BITAND|BITOR|LSHIFT|RSHIFT expr */ yytestcase(yyruleno==168);
-      case 169: /* expr ::= expr PLUS|MINUS expr */ yytestcase(yyruleno==169);
-      case 170: /* expr ::= expr STAR|SLASH|REM expr */ yytestcase(yyruleno==170);
-      case 171: /* expr ::= expr CONCAT expr */ yytestcase(yyruleno==171);
-{spanBinaryExpr(pParse,yymsp[-1].major,&yymsp[-2].minor.yy190,&yymsp[0].minor.yy190);}
+      case 165: /* expr ::= expr AND expr */
+      case 166: /* expr ::= expr OR expr */ yytestcase(yyruleno==166);
+      case 167: /* expr ::= expr LT|GT|GE|LE expr */ yytestcase(yyruleno==167);
+      case 168: /* expr ::= expr EQ|NE expr */ yytestcase(yyruleno==168);
+      case 169: /* expr ::= expr BITAND|BITOR|LSHIFT|RSHIFT expr */ yytestcase(yyruleno==169);
+      case 170: /* expr ::= expr PLUS|MINUS expr */ yytestcase(yyruleno==170);
+      case 171: /* expr ::= expr STAR|SLASH|REM expr */ yytestcase(yyruleno==171);
+      case 172: /* expr ::= expr CONCAT expr */ yytestcase(yyruleno==172);
+{yymsp[-2].minor.yy314=sqlite3PExpr(pParse,yymsp[-1].major,yymsp[-2].minor.yy314,yymsp[0].minor.yy314);}
         break;
-      case 172: /* likeop ::= NOT LIKE_KW|MATCH */
+      case 173: /* likeop ::= NOT LIKE_KW|MATCH */
 {yymsp[-1].minor.yy0=yymsp[0].minor.yy0; yymsp[-1].minor.yy0.n|=0x80000000; /*yymsp[-1].minor.yy0-overwrite-yymsp[0].minor.yy0*/}
         break;
-      case 173: /* expr ::= expr likeop expr */
+      case 174: /* expr ::= expr likeop expr */
 {
   ExprList *pList;
   int bNot = yymsp[-1].minor.yy0.n & 0x80000000;
   yymsp[-1].minor.yy0.n &= 0x7fffffff;
-  pList = sqlite3ExprListAppend(pParse,0, yymsp[0].minor.yy190.pExpr);
-  pList = sqlite3ExprListAppend(pParse,pList, yymsp[-2].minor.yy190.pExpr);
-  yymsp[-2].minor.yy190.pExpr = sqlite3ExprFunction(pParse, pList, &yymsp[-1].minor.yy0);
-  exprNot(pParse, bNot, &yymsp[-2].minor.yy190);
-  yymsp[-2].minor.yy190.zEnd = yymsp[0].minor.yy190.zEnd;
-  if( yymsp[-2].minor.yy190.pExpr ) yymsp[-2].minor.yy190.pExpr->flags |= EP_InfixFunc;
+  pList = sqlite3ExprListAppend(pParse,0, yymsp[0].minor.yy314);
+  pList = sqlite3ExprListAppend(pParse,pList, yymsp[-2].minor.yy314);
+  yymsp[-2].minor.yy314 = sqlite3ExprFunction(pParse, pList, &yymsp[-1].minor.yy0);
+  if( bNot ) yymsp[-2].minor.yy314 = sqlite3PExpr(pParse, TK_NOT, yymsp[-2].minor.yy314, 0);
+  if( yymsp[-2].minor.yy314 ) yymsp[-2].minor.yy314->flags |= EP_InfixFunc;
 }
         break;
-      case 174: /* expr ::= expr likeop expr ESCAPE expr */
+      case 175: /* expr ::= expr likeop expr ESCAPE expr */
 {
   ExprList *pList;
   int bNot = yymsp[-3].minor.yy0.n & 0x80000000;
   yymsp[-3].minor.yy0.n &= 0x7fffffff;
-  pList = sqlite3ExprListAppend(pParse,0, yymsp[-2].minor.yy190.pExpr);
-  pList = sqlite3ExprListAppend(pParse,pList, yymsp[-4].minor.yy190.pExpr);
-  pList = sqlite3ExprListAppend(pParse,pList, yymsp[0].minor.yy190.pExpr);
-  yymsp[-4].minor.yy190.pExpr = sqlite3ExprFunction(pParse, pList, &yymsp[-3].minor.yy0);
-  exprNot(pParse, bNot, &yymsp[-4].minor.yy190);
-  yymsp[-4].minor.yy190.zEnd = yymsp[0].minor.yy190.zEnd;
-  if( yymsp[-4].minor.yy190.pExpr ) yymsp[-4].minor.yy190.pExpr->flags |= EP_InfixFunc;
+  pList = sqlite3ExprListAppend(pParse,0, yymsp[-2].minor.yy314);
+  pList = sqlite3ExprListAppend(pParse,pList, yymsp[-4].minor.yy314);
+  pList = sqlite3ExprListAppend(pParse,pList, yymsp[0].minor.yy314);
+  yymsp[-4].minor.yy314 = sqlite3ExprFunction(pParse, pList, &yymsp[-3].minor.yy0);
+  if( bNot ) yymsp[-4].minor.yy314 = sqlite3PExpr(pParse, TK_NOT, yymsp[-4].minor.yy314, 0);
+  if( yymsp[-4].minor.yy314 ) yymsp[-4].minor.yy314->flags |= EP_InfixFunc;
 }
         break;
-      case 175: /* expr ::= expr ISNULL|NOTNULL */
-{spanUnaryPostfix(pParse,yymsp[0].major,&yymsp[-1].minor.yy190,&yymsp[0].minor.yy0);}
+      case 176: /* expr ::= expr ISNULL|NOTNULL */
+{yymsp[-1].minor.yy314 = sqlite3PExpr(pParse,yymsp[0].major,yymsp[-1].minor.yy314,0);}
         break;
-      case 176: /* expr ::= expr NOT NULL */
-{spanUnaryPostfix(pParse,TK_NOTNULL,&yymsp[-2].minor.yy190,&yymsp[0].minor.yy0);}
+      case 177: /* expr ::= expr NOT NULL */
+{yymsp[-2].minor.yy314 = sqlite3PExpr(pParse,TK_NOTNULL,yymsp[-2].minor.yy314,0);}
         break;
-      case 177: /* expr ::= expr IS expr */
+      case 178: /* expr ::= expr IS expr */
 {
-  spanBinaryExpr(pParse,TK_IS,&yymsp[-2].minor.yy190,&yymsp[0].minor.yy190);
-  binaryToUnaryIfNull(pParse, yymsp[0].minor.yy190.pExpr, yymsp[-2].minor.yy190.pExpr, TK_ISNULL);
+  yymsp[-2].minor.yy314 = sqlite3PExpr(pParse,TK_IS,yymsp[-2].minor.yy314,yymsp[0].minor.yy314);
+  binaryToUnaryIfNull(pParse, yymsp[0].minor.yy314, yymsp[-2].minor.yy314, TK_ISNULL);
 }
         break;
-      case 178: /* expr ::= expr IS NOT expr */
+      case 179: /* expr ::= expr IS NOT expr */
 {
-  spanBinaryExpr(pParse,TK_ISNOT,&yymsp[-3].minor.yy190,&yymsp[0].minor.yy190);
-  binaryToUnaryIfNull(pParse, yymsp[0].minor.yy190.pExpr, yymsp[-3].minor.yy190.pExpr, TK_NOTNULL);
+  yymsp[-3].minor.yy314 = sqlite3PExpr(pParse,TK_ISNOT,yymsp[-3].minor.yy314,yymsp[0].minor.yy314);
+  binaryToUnaryIfNull(pParse, yymsp[0].minor.yy314, yymsp[-3].minor.yy314, TK_NOTNULL);
 }
         break;
-      case 179: /* expr ::= NOT expr */
-      case 180: /* expr ::= BITNOT expr */ yytestcase(yyruleno==180);
-{spanUnaryPrefix(&yymsp[-1].minor.yy190,pParse,yymsp[-1].major,&yymsp[0].minor.yy190,&yymsp[-1].minor.yy0);/*A-overwrites-B*/}
+      case 180: /* expr ::= NOT expr */
+      case 181: /* expr ::= BITNOT expr */ yytestcase(yyruleno==181);
+{yymsp[-1].minor.yy314 = sqlite3PExpr(pParse, yymsp[-1].major, yymsp[0].minor.yy314, 0);/*A-overwrites-B*/}
         break;
-      case 181: /* expr ::= MINUS expr */
-{spanUnaryPrefix(&yymsp[-1].minor.yy190,pParse,TK_UMINUS,&yymsp[0].minor.yy190,&yymsp[-1].minor.yy0);/*A-overwrites-B*/}
+      case 182: /* expr ::= MINUS expr */
+{yymsp[-1].minor.yy314 = sqlite3PExpr(pParse, TK_UMINUS, yymsp[0].minor.yy314, 0);}
         break;
-      case 182: /* expr ::= PLUS expr */
-{spanUnaryPrefix(&yymsp[-1].minor.yy190,pParse,TK_UPLUS,&yymsp[0].minor.yy190,&yymsp[-1].minor.yy0);/*A-overwrites-B*/}
+      case 183: /* expr ::= PLUS expr */
+{yymsp[-1].minor.yy314 = sqlite3PExpr(pParse, TK_UPLUS, yymsp[0].minor.yy314, 0);}
         break;
-      case 183: /* between_op ::= BETWEEN */
-      case 186: /* in_op ::= IN */ yytestcase(yyruleno==186);
-{yymsp[0].minor.yy194 = 0;}
+      case 184: /* between_op ::= BETWEEN */
+      case 187: /* in_op ::= IN */ yytestcase(yyruleno==187);
+{yymsp[0].minor.yy4 = 0;}
         break;
-      case 185: /* expr ::= expr between_op expr AND expr */
+      case 186: /* expr ::= expr between_op expr AND expr */
 {
-  ExprList *pList = sqlite3ExprListAppend(pParse,0, yymsp[-2].minor.yy190.pExpr);
-  pList = sqlite3ExprListAppend(pParse,pList, yymsp[0].minor.yy190.pExpr);
-  yymsp[-4].minor.yy190.pExpr = sqlite3PExpr(pParse, TK_BETWEEN, yymsp[-4].minor.yy190.pExpr, 0);
-  if( yymsp[-4].minor.yy190.pExpr ){
-    yymsp[-4].minor.yy190.pExpr->x.pList = pList;
+  ExprList *pList = sqlite3ExprListAppend(pParse,0, yymsp[-2].minor.yy314);
+  pList = sqlite3ExprListAppend(pParse,pList, yymsp[0].minor.yy314);
+  yymsp[-4].minor.yy314 = sqlite3PExpr(pParse, TK_BETWEEN, yymsp[-4].minor.yy314, 0);
+  if( yymsp[-4].minor.yy314 ){
+    yymsp[-4].minor.yy314->x.pList = pList;
   }else{
     sqlite3ExprListDelete(pParse->db, pList);
   } 
-  exprNot(pParse, yymsp[-3].minor.yy194, &yymsp[-4].minor.yy190);
-  yymsp[-4].minor.yy190.zEnd = yymsp[0].minor.yy190.zEnd;
+  if( yymsp[-3].minor.yy4 ) yymsp[-4].minor.yy314 = sqlite3PExpr(pParse, TK_NOT, yymsp[-4].minor.yy314, 0);
 }
         break;
-      case 188: /* expr ::= expr in_op LP exprlist RP */
+      case 189: /* expr ::= expr in_op LP exprlist RP */
 {
-    if( yymsp[-1].minor.yy148==0 ){
+    if( yymsp[-1].minor.yy322==0 ){
       /* Expressions of the form
       **
       **      expr1 IN ()
@@ -16040,9 +16432,9 @@ static void yy_reduce(
       ** simplify to constants 0 (false) and 1 (true), respectively,
       ** regardless of the value of expr1.
       */
-      sqlite3ExprDelete(pParse->db, yymsp[-4].minor.yy190.pExpr);
-      yymsp[-4].minor.yy190.pExpr = sqlite3ExprAlloc(pParse->db, TK_INTEGER,&sqlite3IntTokens[yymsp[-3].minor.yy194],1);
-    }else if( yymsp[-1].minor.yy148->nExpr==1 ){
+      sqlite3ExprDelete(pParse->db, yymsp[-4].minor.yy314);
+      yymsp[-4].minor.yy314 = sqlite3ExprAlloc(pParse->db, TK_INTEGER,&sqlite3IntTokens[yymsp[-3].minor.yy4],1);
+    }else if( yymsp[-1].minor.yy322->nExpr==1 ){
       /* Expressions of the form:
       **
       **      expr1 IN (?1)
@@ -16059,201 +16451,195 @@ static void yy_reduce(
       ** affinity or the collating sequence to use for comparison.  Otherwise,
       ** the semantics would be subtly different from IN or NOT IN.
       */
-      Expr *pRHS = yymsp[-1].minor.yy148->a[0].pExpr;
-      yymsp[-1].minor.yy148->a[0].pExpr = 0;
-      sqlite3ExprListDelete(pParse->db, yymsp[-1].minor.yy148);
+      Expr *pRHS = yymsp[-1].minor.yy322->a[0].pExpr;
+      yymsp[-1].minor.yy322->a[0].pExpr = 0;
+      sqlite3ExprListDelete(pParse->db, yymsp[-1].minor.yy322);
       /* pRHS cannot be NULL because a malloc error would have been detected
       ** before now and control would have never reached this point */
       if( ALWAYS(pRHS) ){
         pRHS->flags &= ~EP_Collate;
         pRHS->flags |= EP_Generic;
       }
-      yymsp[-4].minor.yy190.pExpr = sqlite3PExpr(pParse, yymsp[-3].minor.yy194 ? TK_NE : TK_EQ, yymsp[-4].minor.yy190.pExpr, pRHS);
+      yymsp[-4].minor.yy314 = sqlite3PExpr(pParse, yymsp[-3].minor.yy4 ? TK_NE : TK_EQ, yymsp[-4].minor.yy314, pRHS);
     }else{
-      yymsp[-4].minor.yy190.pExpr = sqlite3PExpr(pParse, TK_IN, yymsp[-4].minor.yy190.pExpr, 0);
-      if( yymsp[-4].minor.yy190.pExpr ){
-        yymsp[-4].minor.yy190.pExpr->x.pList = yymsp[-1].minor.yy148;
-        sqlite3ExprSetHeightAndFlags(pParse, yymsp[-4].minor.yy190.pExpr);
+      yymsp[-4].minor.yy314 = sqlite3PExpr(pParse, TK_IN, yymsp[-4].minor.yy314, 0);
+      if( yymsp[-4].minor.yy314 ){
+        yymsp[-4].minor.yy314->x.pList = yymsp[-1].minor.yy322;
+        sqlite3ExprSetHeightAndFlags(pParse, yymsp[-4].minor.yy314);
       }else{
-        sqlite3ExprListDelete(pParse->db, yymsp[-1].minor.yy148);
+        sqlite3ExprListDelete(pParse->db, yymsp[-1].minor.yy322);
       }
-      exprNot(pParse, yymsp[-3].minor.yy194, &yymsp[-4].minor.yy190);
+      if( yymsp[-3].minor.yy4 ) yymsp[-4].minor.yy314 = sqlite3PExpr(pParse, TK_NOT, yymsp[-4].minor.yy314, 0);
     }
-    yymsp[-4].minor.yy190.zEnd = &yymsp[0].minor.yy0.z[yymsp[0].minor.yy0.n];
   }
         break;
-      case 189: /* expr ::= LP select RP */
+      case 190: /* expr ::= LP select RP */
 {
-    spanSet(&yymsp[-2].minor.yy190,&yymsp[-2].minor.yy0,&yymsp[0].minor.yy0); /*A-overwrites-B*/
-    yymsp[-2].minor.yy190.pExpr = sqlite3PExpr(pParse, TK_SELECT, 0, 0);
-    sqlite3PExprAddSelect(pParse, yymsp[-2].minor.yy190.pExpr, yymsp[-1].minor.yy243);
+    yymsp[-2].minor.yy314 = sqlite3PExpr(pParse, TK_SELECT, 0, 0);
+    sqlite3PExprAddSelect(pParse, yymsp[-2].minor.yy314, yymsp[-1].minor.yy387);
   }
         break;
-      case 190: /* expr ::= expr in_op LP select RP */
+      case 191: /* expr ::= expr in_op LP select RP */
 {
-    yymsp[-4].minor.yy190.pExpr = sqlite3PExpr(pParse, TK_IN, yymsp[-4].minor.yy190.pExpr, 0);
-    sqlite3PExprAddSelect(pParse, yymsp[-4].minor.yy190.pExpr, yymsp[-1].minor.yy243);
-    exprNot(pParse, yymsp[-3].minor.yy194, &yymsp[-4].minor.yy190);
-    yymsp[-4].minor.yy190.zEnd = &yymsp[0].minor.yy0.z[yymsp[0].minor.yy0.n];
+    yymsp[-4].minor.yy314 = sqlite3PExpr(pParse, TK_IN, yymsp[-4].minor.yy314, 0);
+    sqlite3PExprAddSelect(pParse, yymsp[-4].minor.yy314, yymsp[-1].minor.yy387);
+    if( yymsp[-3].minor.yy4 ) yymsp[-4].minor.yy314 = sqlite3PExpr(pParse, TK_NOT, yymsp[-4].minor.yy314, 0);
   }
         break;
-      case 191: /* expr ::= expr in_op nm dbnm paren_exprlist */
+      case 192: /* expr ::= expr in_op nm dbnm paren_exprlist */
 {
     SrcList *pSrc = sqlite3SrcListAppend(pParse->db, 0,&yymsp[-2].minor.yy0,&yymsp[-1].minor.yy0);
-    Select *pSelect = sqlite3SelectNew(pParse, 0,pSrc,0,0,0,0,0,0,0);
-    if( yymsp[0].minor.yy148 )  sqlite3SrcListFuncArgs(pParse, pSelect ? pSrc : 0, yymsp[0].minor.yy148);
-    yymsp[-4].minor.yy190.pExpr = sqlite3PExpr(pParse, TK_IN, yymsp[-4].minor.yy190.pExpr, 0);
-    sqlite3PExprAddSelect(pParse, yymsp[-4].minor.yy190.pExpr, pSelect);
-    exprNot(pParse, yymsp[-3].minor.yy194, &yymsp[-4].minor.yy190);
-    yymsp[-4].minor.yy190.zEnd = yymsp[-1].minor.yy0.z ? &yymsp[-1].minor.yy0.z[yymsp[-1].minor.yy0.n] : &yymsp[-2].minor.yy0.z[yymsp[-2].minor.yy0.n];
+    Select *pSelect = sqlite3SelectNew(pParse, 0,pSrc,0,0,0,0,0,0);
+    if( yymsp[0].minor.yy322 )  sqlite3SrcListFuncArgs(pParse, pSelect ? pSrc : 0, yymsp[0].minor.yy322);
+    yymsp[-4].minor.yy314 = sqlite3PExpr(pParse, TK_IN, yymsp[-4].minor.yy314, 0);
+    sqlite3PExprAddSelect(pParse, yymsp[-4].minor.yy314, pSelect);
+    if( yymsp[-3].minor.yy4 ) yymsp[-4].minor.yy314 = sqlite3PExpr(pParse, TK_NOT, yymsp[-4].minor.yy314, 0);
   }
         break;
-      case 192: /* expr ::= EXISTS LP select RP */
+      case 193: /* expr ::= EXISTS LP select RP */
 {
     Expr *p;
-    spanSet(&yymsp[-3].minor.yy190,&yymsp[-3].minor.yy0,&yymsp[0].minor.yy0); /*A-overwrites-B*/
-    p = yymsp[-3].minor.yy190.pExpr = sqlite3PExpr(pParse, TK_EXISTS, 0, 0);
-    sqlite3PExprAddSelect(pParse, p, yymsp[-1].minor.yy243);
+    p = yymsp[-3].minor.yy314 = sqlite3PExpr(pParse, TK_EXISTS, 0, 0);
+    sqlite3PExprAddSelect(pParse, p, yymsp[-1].minor.yy387);
   }
         break;
-      case 193: /* expr ::= CASE case_operand case_exprlist case_else END */
+      case 194: /* expr ::= CASE case_operand case_exprlist case_else END */
 {
-  spanSet(&yymsp[-4].minor.yy190,&yymsp[-4].minor.yy0,&yymsp[0].minor.yy0);  /*A-overwrites-C*/
-  yymsp[-4].minor.yy190.pExpr = sqlite3PExpr(pParse, TK_CASE, yymsp[-3].minor.yy72, 0);
-  if( yymsp[-4].minor.yy190.pExpr ){
-    yymsp[-4].minor.yy190.pExpr->x.pList = yymsp[-1].minor.yy72 ? sqlite3ExprListAppend(pParse,yymsp[-2].minor.yy148,yymsp[-1].minor.yy72) : yymsp[-2].minor.yy148;
-    sqlite3ExprSetHeightAndFlags(pParse, yymsp[-4].minor.yy190.pExpr);
+  yymsp[-4].minor.yy314 = sqlite3PExpr(pParse, TK_CASE, yymsp[-3].minor.yy314, 0);
+  if( yymsp[-4].minor.yy314 ){
+    yymsp[-4].minor.yy314->x.pList = yymsp[-1].minor.yy314 ? sqlite3ExprListAppend(pParse,yymsp[-2].minor.yy322,yymsp[-1].minor.yy314) : yymsp[-2].minor.yy322;
+    sqlite3ExprSetHeightAndFlags(pParse, yymsp[-4].minor.yy314);
   }else{
-    sqlite3ExprListDelete(pParse->db, yymsp[-2].minor.yy148);
-    sqlite3ExprDelete(pParse->db, yymsp[-1].minor.yy72);
+    sqlite3ExprListDelete(pParse->db, yymsp[-2].minor.yy322);
+    sqlite3ExprDelete(pParse->db, yymsp[-1].minor.yy314);
   }
 }
         break;
-      case 194: /* case_exprlist ::= case_exprlist WHEN expr THEN expr */
+      case 195: /* case_exprlist ::= case_exprlist WHEN expr THEN expr */
 {
-  yymsp[-4].minor.yy148 = sqlite3ExprListAppend(pParse,yymsp[-4].minor.yy148, yymsp[-2].minor.yy190.pExpr);
-  yymsp[-4].minor.yy148 = sqlite3ExprListAppend(pParse,yymsp[-4].minor.yy148, yymsp[0].minor.yy190.pExpr);
+  yymsp[-4].minor.yy322 = sqlite3ExprListAppend(pParse,yymsp[-4].minor.yy322, yymsp[-2].minor.yy314);
+  yymsp[-4].minor.yy322 = sqlite3ExprListAppend(pParse,yymsp[-4].minor.yy322, yymsp[0].minor.yy314);
 }
         break;
-      case 195: /* case_exprlist ::= WHEN expr THEN expr */
+      case 196: /* case_exprlist ::= WHEN expr THEN expr */
 {
-  yymsp[-3].minor.yy148 = sqlite3ExprListAppend(pParse,0, yymsp[-2].minor.yy190.pExpr);
-  yymsp[-3].minor.yy148 = sqlite3ExprListAppend(pParse,yymsp[-3].minor.yy148, yymsp[0].minor.yy190.pExpr);
+  yymsp[-3].minor.yy322 = sqlite3ExprListAppend(pParse,0, yymsp[-2].minor.yy314);
+  yymsp[-3].minor.yy322 = sqlite3ExprListAppend(pParse,yymsp[-3].minor.yy322, yymsp[0].minor.yy314);
 }
         break;
-      case 198: /* case_operand ::= expr */
-{yymsp[0].minor.yy72 = yymsp[0].minor.yy190.pExpr; /*A-overwrites-X*/}
+      case 199: /* case_operand ::= expr */
+{yymsp[0].minor.yy314 = yymsp[0].minor.yy314; /*A-overwrites-X*/}
         break;
-      case 201: /* nexprlist ::= nexprlist COMMA expr */
-{yymsp[-2].minor.yy148 = sqlite3ExprListAppend(pParse,yymsp[-2].minor.yy148,yymsp[0].minor.yy190.pExpr);}
+      case 202: /* nexprlist ::= nexprlist COMMA expr */
+{yymsp[-2].minor.yy322 = sqlite3ExprListAppend(pParse,yymsp[-2].minor.yy322,yymsp[0].minor.yy314);}
         break;
-      case 202: /* nexprlist ::= expr */
-{yymsp[0].minor.yy148 = sqlite3ExprListAppend(pParse,0,yymsp[0].minor.yy190.pExpr); /*A-overwrites-Y*/}
+      case 203: /* nexprlist ::= expr */
+{yymsp[0].minor.yy322 = sqlite3ExprListAppend(pParse,0,yymsp[0].minor.yy314); /*A-overwrites-Y*/}
         break;
-      case 204: /* paren_exprlist ::= LP exprlist RP */
-      case 209: /* eidlist_opt ::= LP eidlist RP */ yytestcase(yyruleno==209);
-{yymsp[-2].minor.yy148 = yymsp[-1].minor.yy148;}
+      case 205: /* paren_exprlist ::= LP exprlist RP */
+      case 210: /* eidlist_opt ::= LP eidlist RP */ yytestcase(yyruleno==210);
+{yymsp[-2].minor.yy322 = yymsp[-1].minor.yy322;}
         break;
-      case 205: /* cmd ::= createkw uniqueflag INDEX ifnotexists nm dbnm ON nm LP sortlist RP where_opt */
+      case 206: /* cmd ::= createkw uniqueflag INDEX ifnotexists nm dbnm ON nm LP sortlist RP where_opt */
 {
   sqlite3CreateIndex(pParse, &yymsp[-7].minor.yy0, &yymsp[-6].minor.yy0, 
-                     sqlite3SrcListAppend(pParse->db,0,&yymsp[-4].minor.yy0,0), yymsp[-2].minor.yy148, yymsp[-10].minor.yy194,
-                      &yymsp[-11].minor.yy0, yymsp[0].minor.yy72, SQLITE_SO_ASC, yymsp[-8].minor.yy194, SQLITE_IDXTYPE_APPDEF);
+                     sqlite3SrcListAppend(pParse->db,0,&yymsp[-4].minor.yy0,0), yymsp[-2].minor.yy322, yymsp[-10].minor.yy4,
+                      &yymsp[-11].minor.yy0, yymsp[0].minor.yy314, SQLITE_SO_ASC, yymsp[-8].minor.yy4, SQLITE_IDXTYPE_APPDEF);
 }
         break;
-      case 206: /* uniqueflag ::= UNIQUE */
-      case 246: /* raisetype ::= ABORT */ yytestcase(yyruleno==246);
-{yymsp[0].minor.yy194 = OE_Abort;}
+      case 207: /* uniqueflag ::= UNIQUE */
+      case 247: /* raisetype ::= ABORT */ yytestcase(yyruleno==247);
+{yymsp[0].minor.yy4 = OE_Abort;}
         break;
-      case 207: /* uniqueflag ::= */
-{yymsp[1].minor.yy194 = OE_None;}
+      case 208: /* uniqueflag ::= */
+{yymsp[1].minor.yy4 = OE_None;}
         break;
-      case 210: /* eidlist ::= eidlist COMMA nm collate sortorder */
+      case 211: /* eidlist ::= eidlist COMMA nm collate sortorder */
 {
-  yymsp[-4].minor.yy148 = parserAddExprIdListTerm(pParse, yymsp[-4].minor.yy148, &yymsp[-2].minor.yy0, yymsp[-1].minor.yy194, yymsp[0].minor.yy194);
+  yymsp[-4].minor.yy322 = parserAddExprIdListTerm(pParse, yymsp[-4].minor.yy322, &yymsp[-2].minor.yy0, yymsp[-1].minor.yy4, yymsp[0].minor.yy4);
 }
         break;
-      case 211: /* eidlist ::= nm collate sortorder */
+      case 212: /* eidlist ::= nm collate sortorder */
 {
-  yymsp[-2].minor.yy148 = parserAddExprIdListTerm(pParse, 0, &yymsp[-2].minor.yy0, yymsp[-1].minor.yy194, yymsp[0].minor.yy194); /*A-overwrites-Y*/
+  yymsp[-2].minor.yy322 = parserAddExprIdListTerm(pParse, 0, &yymsp[-2].minor.yy0, yymsp[-1].minor.yy4, yymsp[0].minor.yy4); /*A-overwrites-Y*/
 }
         break;
-      case 214: /* cmd ::= DROP INDEX ifexists fullname */
-{sqlite3DropIndex(pParse, yymsp[0].minor.yy185, yymsp[-1].minor.yy194);}
+      case 215: /* cmd ::= DROP INDEX ifexists fullname */
+{sqlite3DropIndex(pParse, yymsp[0].minor.yy259, yymsp[-1].minor.yy4);}
         break;
-      case 215: /* cmd ::= VACUUM */
+      case 216: /* cmd ::= VACUUM */
 {sqlite3Vacuum(pParse,0);}
         break;
-      case 216: /* cmd ::= VACUUM nm */
+      case 217: /* cmd ::= VACUUM nm */
 {sqlite3Vacuum(pParse,&yymsp[0].minor.yy0);}
         break;
-      case 217: /* cmd ::= PRAGMA nm dbnm */
+      case 218: /* cmd ::= PRAGMA nm dbnm */
 {sqlite3Pragma(pParse,&yymsp[-1].minor.yy0,&yymsp[0].minor.yy0,0,0);}
         break;
-      case 218: /* cmd ::= PRAGMA nm dbnm EQ nmnum */
+      case 219: /* cmd ::= PRAGMA nm dbnm EQ nmnum */
 {sqlite3Pragma(pParse,&yymsp[-3].minor.yy0,&yymsp[-2].minor.yy0,&yymsp[0].minor.yy0,0);}
         break;
-      case 219: /* cmd ::= PRAGMA nm dbnm LP nmnum RP */
+      case 220: /* cmd ::= PRAGMA nm dbnm LP nmnum RP */
 {sqlite3Pragma(pParse,&yymsp[-4].minor.yy0,&yymsp[-3].minor.yy0,&yymsp[-1].minor.yy0,0);}
         break;
-      case 220: /* cmd ::= PRAGMA nm dbnm EQ minus_num */
+      case 221: /* cmd ::= PRAGMA nm dbnm EQ minus_num */
 {sqlite3Pragma(pParse,&yymsp[-3].minor.yy0,&yymsp[-2].minor.yy0,&yymsp[0].minor.yy0,1);}
         break;
-      case 221: /* cmd ::= PRAGMA nm dbnm LP minus_num RP */
+      case 222: /* cmd ::= PRAGMA nm dbnm LP minus_num RP */
 {sqlite3Pragma(pParse,&yymsp[-4].minor.yy0,&yymsp[-3].minor.yy0,&yymsp[-1].minor.yy0,1);}
         break;
-      case 224: /* cmd ::= createkw trigger_decl BEGIN trigger_cmd_list END */
+      case 225: /* cmd ::= createkw trigger_decl BEGIN trigger_cmd_list END */
 {
   Token all;
   all.z = yymsp[-3].minor.yy0.z;
   all.n = (int)(yymsp[0].minor.yy0.z - yymsp[-3].minor.yy0.z) + yymsp[0].minor.yy0.n;
-  sqlite3FinishTrigger(pParse, yymsp[-1].minor.yy145, &all);
+  sqlite3FinishTrigger(pParse, yymsp[-1].minor.yy203, &all);
 }
         break;
-      case 225: /* trigger_decl ::= temp TRIGGER ifnotexists nm dbnm trigger_time trigger_event ON fullname foreach_clause when_clause */
+      case 226: /* trigger_decl ::= temp TRIGGER ifnotexists nm dbnm trigger_time trigger_event ON fullname foreach_clause when_clause */
 {
-  sqlite3BeginTrigger(pParse, &yymsp[-7].minor.yy0, &yymsp[-6].minor.yy0, yymsp[-5].minor.yy194, yymsp[-4].minor.yy332.a, yymsp[-4].minor.yy332.b, yymsp[-2].minor.yy185, yymsp[0].minor.yy72, yymsp[-10].minor.yy194, yymsp[-8].minor.yy194);
+  sqlite3BeginTrigger(pParse, &yymsp[-7].minor.yy0, &yymsp[-6].minor.yy0, yymsp[-5].minor.yy4, yymsp[-4].minor.yy90.a, yymsp[-4].minor.yy90.b, yymsp[-2].minor.yy259, yymsp[0].minor.yy314, yymsp[-10].minor.yy4, yymsp[-8].minor.yy4);
   yymsp[-10].minor.yy0 = (yymsp[-6].minor.yy0.n==0?yymsp[-7].minor.yy0:yymsp[-6].minor.yy0); /*A-overwrites-T*/
 }
         break;
-      case 226: /* trigger_time ::= BEFORE|AFTER */
-{ yymsp[0].minor.yy194 = yymsp[0].major; /*A-overwrites-X*/ }
+      case 227: /* trigger_time ::= BEFORE|AFTER */
+{ yymsp[0].minor.yy4 = yymsp[0].major; /*A-overwrites-X*/ }
         break;
-      case 227: /* trigger_time ::= INSTEAD OF */
-{ yymsp[-1].minor.yy194 = TK_INSTEAD;}
+      case 228: /* trigger_time ::= INSTEAD OF */
+{ yymsp[-1].minor.yy4 = TK_INSTEAD;}
         break;
-      case 228: /* trigger_time ::= */
-{ yymsp[1].minor.yy194 = TK_BEFORE; }
+      case 229: /* trigger_time ::= */
+{ yymsp[1].minor.yy4 = TK_BEFORE; }
         break;
-      case 229: /* trigger_event ::= DELETE|INSERT */
-      case 230: /* trigger_event ::= UPDATE */ yytestcase(yyruleno==230);
-{yymsp[0].minor.yy332.a = yymsp[0].major; /*A-overwrites-X*/ yymsp[0].minor.yy332.b = 0;}
+      case 230: /* trigger_event ::= DELETE|INSERT */
+      case 231: /* trigger_event ::= UPDATE */ yytestcase(yyruleno==231);
+{yymsp[0].minor.yy90.a = yymsp[0].major; /*A-overwrites-X*/ yymsp[0].minor.yy90.b = 0;}
         break;
-      case 231: /* trigger_event ::= UPDATE OF idlist */
-{yymsp[-2].minor.yy332.a = TK_UPDATE; yymsp[-2].minor.yy332.b = yymsp[0].minor.yy254;}
+      case 232: /* trigger_event ::= UPDATE OF idlist */
+{yymsp[-2].minor.yy90.a = TK_UPDATE; yymsp[-2].minor.yy90.b = yymsp[0].minor.yy384;}
         break;
-      case 232: /* when_clause ::= */
-      case 251: /* key_opt ::= */ yytestcase(yyruleno==251);
-{ yymsp[1].minor.yy72 = 0; }
+      case 233: /* when_clause ::= */
+      case 252: /* key_opt ::= */ yytestcase(yyruleno==252);
+{ yymsp[1].minor.yy314 = 0; }
         break;
-      case 233: /* when_clause ::= WHEN expr */
-      case 252: /* key_opt ::= KEY expr */ yytestcase(yyruleno==252);
-{ yymsp[-1].minor.yy72 = yymsp[0].minor.yy190.pExpr; }
+      case 234: /* when_clause ::= WHEN expr */
+      case 253: /* key_opt ::= KEY expr */ yytestcase(yyruleno==253);
+{ yymsp[-1].minor.yy314 = yymsp[0].minor.yy314; }
         break;
-      case 234: /* trigger_cmd_list ::= trigger_cmd_list trigger_cmd SEMI */
+      case 235: /* trigger_cmd_list ::= trigger_cmd_list trigger_cmd SEMI */
 {
-  assert( yymsp[-2].minor.yy145!=0 );
-  yymsp[-2].minor.yy145->pLast->pNext = yymsp[-1].minor.yy145;
-  yymsp[-2].minor.yy145->pLast = yymsp[-1].minor.yy145;
+  assert( yymsp[-2].minor.yy203!=0 );
+  yymsp[-2].minor.yy203->pLast->pNext = yymsp[-1].minor.yy203;
+  yymsp[-2].minor.yy203->pLast = yymsp[-1].minor.yy203;
 }
         break;
-      case 235: /* trigger_cmd_list ::= trigger_cmd SEMI */
+      case 236: /* trigger_cmd_list ::= trigger_cmd SEMI */
 { 
-  assert( yymsp[-1].minor.yy145!=0 );
-  yymsp[-1].minor.yy145->pLast = yymsp[-1].minor.yy145;
+  assert( yymsp[-1].minor.yy203!=0 );
+  yymsp[-1].minor.yy203->pLast = yymsp[-1].minor.yy203;
 }
         break;
-      case 236: /* trnm ::= nm DOT nm */
+      case 237: /* trnm ::= nm DOT nm */
 {
   yymsp[-2].minor.yy0 = yymsp[0].minor.yy0;
   sqlite3ErrorMsg(pParse, 
@@ -16261,196 +16647,198 @@ static void yy_reduce(
         "statements within triggers");
 }
         break;
-      case 237: /* tridxby ::= INDEXED BY nm */
+      case 238: /* tridxby ::= INDEXED BY nm */
 {
   sqlite3ErrorMsg(pParse,
         "the INDEXED BY clause is not allowed on UPDATE or DELETE statements "
         "within triggers");
 }
         break;
-      case 238: /* tridxby ::= NOT INDEXED */
+      case 239: /* tridxby ::= NOT INDEXED */
 {
   sqlite3ErrorMsg(pParse,
         "the NOT INDEXED clause is not allowed on UPDATE or DELETE statements "
         "within triggers");
 }
         break;
-      case 239: /* trigger_cmd ::= UPDATE orconf trnm tridxby SET setlist where_opt */
-{yymsp[-6].minor.yy145 = sqlite3TriggerUpdateStep(pParse->db, &yymsp[-4].minor.yy0, yymsp[-1].minor.yy148, yymsp[0].minor.yy72, yymsp[-5].minor.yy194);}
+      case 240: /* trigger_cmd ::= UPDATE orconf trnm tridxby SET setlist where_opt scanpt */
+{yylhsminor.yy203 = sqlite3TriggerUpdateStep(pParse->db, &yymsp[-5].minor.yy0, yymsp[-2].minor.yy322, yymsp[-1].minor.yy314, yymsp[-6].minor.yy4, yymsp[-7].minor.yy0.z, yymsp[0].minor.yy336);}
+  yymsp[-7].minor.yy203 = yylhsminor.yy203;
         break;
-      case 240: /* trigger_cmd ::= insert_cmd INTO trnm idlist_opt select */
-{yymsp[-4].minor.yy145 = sqlite3TriggerInsertStep(pParse->db, &yymsp[-2].minor.yy0, yymsp[-1].minor.yy254, yymsp[0].minor.yy243, yymsp[-4].minor.yy194);/*A-overwrites-R*/}
+      case 241: /* trigger_cmd ::= scanpt insert_cmd INTO trnm idlist_opt select scanpt */
+{yylhsminor.yy203 = sqlite3TriggerInsertStep(pParse->db,&yymsp[-3].minor.yy0,yymsp[-2].minor.yy384,yymsp[-1].minor.yy387,yymsp[-5].minor.yy4,yymsp[-6].minor.yy336,yymsp[0].minor.yy336);/*yylhsminor.yy203-overwrites-yymsp[-5].minor.yy4*/}
+  yymsp[-6].minor.yy203 = yylhsminor.yy203;
         break;
-      case 241: /* trigger_cmd ::= DELETE FROM trnm tridxby where_opt */
-{yymsp[-4].minor.yy145 = sqlite3TriggerDeleteStep(pParse->db, &yymsp[-2].minor.yy0, yymsp[0].minor.yy72);}
+      case 242: /* trigger_cmd ::= DELETE FROM trnm tridxby where_opt scanpt */
+{yylhsminor.yy203 = sqlite3TriggerDeleteStep(pParse->db, &yymsp[-3].minor.yy0, yymsp[-1].minor.yy314, yymsp[-5].minor.yy0.z, yymsp[0].minor.yy336);}
+  yymsp[-5].minor.yy203 = yylhsminor.yy203;
         break;
-      case 242: /* trigger_cmd ::= select */
-{yymsp[0].minor.yy145 = sqlite3TriggerSelectStep(pParse->db, yymsp[0].minor.yy243); /*A-overwrites-X*/}
+      case 243: /* trigger_cmd ::= scanpt select scanpt */
+{yylhsminor.yy203 = sqlite3TriggerSelectStep(pParse->db, yymsp[-1].minor.yy387, yymsp[-2].minor.yy336, yymsp[0].minor.yy336); /*yylhsminor.yy203-overwrites-yymsp[-1].minor.yy387*/}
+  yymsp[-2].minor.yy203 = yylhsminor.yy203;
         break;
-      case 243: /* expr ::= RAISE LP IGNORE RP */
+      case 244: /* expr ::= RAISE LP IGNORE RP */
 {
-  spanSet(&yymsp[-3].minor.yy190,&yymsp[-3].minor.yy0,&yymsp[0].minor.yy0);  /*A-overwrites-X*/
-  yymsp[-3].minor.yy190.pExpr = sqlite3PExpr(pParse, TK_RAISE, 0, 0); 
-  if( yymsp[-3].minor.yy190.pExpr ){
-    yymsp[-3].minor.yy190.pExpr->affinity = OE_Ignore;
+  yymsp[-3].minor.yy314 = sqlite3PExpr(pParse, TK_RAISE, 0, 0); 
+  if( yymsp[-3].minor.yy314 ){
+    yymsp[-3].minor.yy314->affinity = OE_Ignore;
   }
 }
         break;
-      case 244: /* expr ::= RAISE LP raisetype COMMA nm RP */
+      case 245: /* expr ::= RAISE LP raisetype COMMA nm RP */
 {
-  spanSet(&yymsp[-5].minor.yy190,&yymsp[-5].minor.yy0,&yymsp[0].minor.yy0);  /*A-overwrites-X*/
-  yymsp[-5].minor.yy190.pExpr = sqlite3ExprAlloc(pParse->db, TK_RAISE, &yymsp[-1].minor.yy0, 1); 
-  if( yymsp[-5].minor.yy190.pExpr ) {
-    yymsp[-5].minor.yy190.pExpr->affinity = (char)yymsp[-3].minor.yy194;
+  yymsp[-5].minor.yy314 = sqlite3ExprAlloc(pParse->db, TK_RAISE, &yymsp[-1].minor.yy0, 1); 
+  if( yymsp[-5].minor.yy314 ) {
+    yymsp[-5].minor.yy314->affinity = (char)yymsp[-3].minor.yy4;
   }
 }
         break;
-      case 245: /* raisetype ::= ROLLBACK */
-{yymsp[0].minor.yy194 = OE_Rollback;}
+      case 246: /* raisetype ::= ROLLBACK */
+{yymsp[0].minor.yy4 = OE_Rollback;}
         break;
-      case 247: /* raisetype ::= FAIL */
-{yymsp[0].minor.yy194 = OE_Fail;}
+      case 248: /* raisetype ::= FAIL */
+{yymsp[0].minor.yy4 = OE_Fail;}
         break;
-      case 248: /* cmd ::= DROP TRIGGER ifexists fullname */
+      case 249: /* cmd ::= DROP TRIGGER ifexists fullname */
 {
-  sqlite3DropTrigger(pParse,yymsp[0].minor.yy185,yymsp[-1].minor.yy194);
+  sqlite3DropTrigger(pParse,yymsp[0].minor.yy259,yymsp[-1].minor.yy4);
 }
         break;
-      case 249: /* cmd ::= ATTACH database_kw_opt expr AS expr key_opt */
+      case 250: /* cmd ::= ATTACH database_kw_opt expr AS expr key_opt */
 {
-  sqlite3Attach(pParse, yymsp[-3].minor.yy190.pExpr, yymsp[-1].minor.yy190.pExpr, yymsp[0].minor.yy72);
+  sqlite3Attach(pParse, yymsp[-3].minor.yy314, yymsp[-1].minor.yy314, yymsp[0].minor.yy314);
 }
         break;
-      case 250: /* cmd ::= DETACH database_kw_opt expr */
+      case 251: /* cmd ::= DETACH database_kw_opt expr */
 {
-  sqlite3Detach(pParse, yymsp[0].minor.yy190.pExpr);
+  sqlite3Detach(pParse, yymsp[0].minor.yy314);
 }
         break;
-      case 253: /* cmd ::= REINDEX */
+      case 254: /* cmd ::= REINDEX */
 {sqlite3Reindex(pParse, 0, 0);}
         break;
-      case 254: /* cmd ::= REINDEX nm dbnm */
+      case 255: /* cmd ::= REINDEX nm dbnm */
 {sqlite3Reindex(pParse, &yymsp[-1].minor.yy0, &yymsp[0].minor.yy0);}
         break;
-      case 255: /* cmd ::= ANALYZE */
+      case 256: /* cmd ::= ANALYZE */
 {sqlite3Analyze(pParse, 0, 0);}
         break;
-      case 256: /* cmd ::= ANALYZE nm dbnm */
+      case 257: /* cmd ::= ANALYZE nm dbnm */
 {sqlite3Analyze(pParse, &yymsp[-1].minor.yy0, &yymsp[0].minor.yy0);}
         break;
-      case 257: /* cmd ::= ALTER TABLE fullname RENAME TO nm */
+      case 258: /* cmd ::= ALTER TABLE fullname RENAME TO nm */
 {
-  sqlite3AlterRenameTable(pParse,yymsp[-3].minor.yy185,&yymsp[0].minor.yy0);
+  sqlite3AlterRenameTable(pParse,yymsp[-3].minor.yy259,&yymsp[0].minor.yy0);
 }
         break;
-      case 258: /* cmd ::= ALTER TABLE add_column_fullname ADD kwcolumn_opt columnname carglist */
+      case 259: /* cmd ::= ALTER TABLE add_column_fullname ADD kwcolumn_opt columnname carglist */
 {
   yymsp[-1].minor.yy0.n = (int)(pParse->sLastToken.z-yymsp[-1].minor.yy0.z) + pParse->sLastToken.n;
   sqlite3AlterFinishAddColumn(pParse, &yymsp[-1].minor.yy0);
 }
         break;
-      case 259: /* add_column_fullname ::= fullname */
+      case 260: /* add_column_fullname ::= fullname */
 {
   disableLookaside(pParse);
-  sqlite3AlterBeginAddColumn(pParse, yymsp[0].minor.yy185);
+  sqlite3AlterBeginAddColumn(pParse, yymsp[0].minor.yy259);
 }
         break;
-      case 260: /* cmd ::= create_vtab */
+      case 261: /* cmd ::= create_vtab */
 {sqlite3VtabFinishParse(pParse,0);}
         break;
-      case 261: /* cmd ::= create_vtab LP vtabarglist RP */
+      case 262: /* cmd ::= create_vtab LP vtabarglist RP */
 {sqlite3VtabFinishParse(pParse,&yymsp[0].minor.yy0);}
         break;
-      case 262: /* create_vtab ::= createkw VIRTUAL TABLE ifnotexists nm dbnm USING nm */
+      case 263: /* create_vtab ::= createkw VIRTUAL TABLE ifnotexists nm dbnm USING nm */
 {
-    sqlite3VtabBeginParse(pParse, &yymsp[-3].minor.yy0, &yymsp[-2].minor.yy0, &yymsp[0].minor.yy0, yymsp[-4].minor.yy194);
+    sqlite3VtabBeginParse(pParse, &yymsp[-3].minor.yy0, &yymsp[-2].minor.yy0, &yymsp[0].minor.yy0, yymsp[-4].minor.yy4);
 }
         break;
-      case 263: /* vtabarg ::= */
+      case 264: /* vtabarg ::= */
 {sqlite3VtabArgInit(pParse);}
         break;
-      case 264: /* vtabargtoken ::= ANY */
-      case 265: /* vtabargtoken ::= lp anylist RP */ yytestcase(yyruleno==265);
-      case 266: /* lp ::= LP */ yytestcase(yyruleno==266);
+      case 265: /* vtabargtoken ::= ANY */
+      case 266: /* vtabargtoken ::= lp anylist RP */ yytestcase(yyruleno==266);
+      case 267: /* lp ::= LP */ yytestcase(yyruleno==267);
 {sqlite3VtabArgExtend(pParse,&yymsp[0].minor.yy0);}
         break;
-      case 267: /* with ::= */
-{yymsp[1].minor.yy285 = 0;}
+      case 268: /* with ::= */
+{yymsp[1].minor.yy451 = 0;}
         break;
-      case 268: /* with ::= WITH wqlist */
-{ yymsp[-1].minor.yy285 = yymsp[0].minor.yy285; }
+      case 269: /* with ::= WITH wqlist */
+{ yymsp[-1].minor.yy451 = yymsp[0].minor.yy451; }
         break;
-      case 269: /* with ::= WITH RECURSIVE wqlist */
-{ yymsp[-2].minor.yy285 = yymsp[0].minor.yy285; }
+      case 270: /* with ::= WITH RECURSIVE wqlist */
+{ yymsp[-2].minor.yy451 = yymsp[0].minor.yy451; }
         break;
-      case 270: /* wqlist ::= nm eidlist_opt AS LP select RP */
+      case 271: /* wqlist ::= nm eidlist_opt AS LP select RP */
 {
-  yymsp[-5].minor.yy285 = sqlite3WithAdd(pParse, 0, &yymsp[-5].minor.yy0, yymsp[-4].minor.yy148, yymsp[-1].minor.yy243); /*A-overwrites-X*/
+  yymsp[-5].minor.yy451 = sqlite3WithAdd(pParse, 0, &yymsp[-5].minor.yy0, yymsp[-4].minor.yy322, yymsp[-1].minor.yy387); /*A-overwrites-X*/
 }
         break;
-      case 271: /* wqlist ::= wqlist COMMA nm eidlist_opt AS LP select RP */
+      case 272: /* wqlist ::= wqlist COMMA nm eidlist_opt AS LP select RP */
 {
-  yymsp[-7].minor.yy285 = sqlite3WithAdd(pParse, yymsp[-7].minor.yy285, &yymsp[-5].minor.yy0, yymsp[-4].minor.yy148, yymsp[-1].minor.yy243);
+  yymsp[-7].minor.yy451 = sqlite3WithAdd(pParse, yymsp[-7].minor.yy451, &yymsp[-5].minor.yy0, yymsp[-4].minor.yy322, yymsp[-1].minor.yy387);
 }
         break;
       default:
-      /* (272) input ::= cmdlist */ yytestcase(yyruleno==272);
-      /* (273) cmdlist ::= cmdlist ecmd */ yytestcase(yyruleno==273);
-      /* (274) cmdlist ::= ecmd (OPTIMIZED OUT) */ assert(yyruleno!=274);
-      /* (275) ecmd ::= SEMI */ yytestcase(yyruleno==275);
-      /* (276) ecmd ::= explain cmdx SEMI */ yytestcase(yyruleno==276);
-      /* (277) explain ::= */ yytestcase(yyruleno==277);
-      /* (278) trans_opt ::= */ yytestcase(yyruleno==278);
-      /* (279) trans_opt ::= TRANSACTION */ yytestcase(yyruleno==279);
-      /* (280) trans_opt ::= TRANSACTION nm */ yytestcase(yyruleno==280);
-      /* (281) savepoint_opt ::= SAVEPOINT */ yytestcase(yyruleno==281);
-      /* (282) savepoint_opt ::= */ yytestcase(yyruleno==282);
-      /* (283) cmd ::= create_table create_table_args */ yytestcase(yyruleno==283);
-      /* (284) columnlist ::= columnlist COMMA columnname carglist */ yytestcase(yyruleno==284);
-      /* (285) columnlist ::= columnname carglist */ yytestcase(yyruleno==285);
-      /* (286) nm ::= ID|INDEXED */ yytestcase(yyruleno==286);
-      /* (287) nm ::= STRING */ yytestcase(yyruleno==287);
-      /* (288) nm ::= JOIN_KW */ yytestcase(yyruleno==288);
-      /* (289) typetoken ::= typename */ yytestcase(yyruleno==289);
-      /* (290) typename ::= ID|STRING */ yytestcase(yyruleno==290);
-      /* (291) signed ::= plus_num (OPTIMIZED OUT) */ assert(yyruleno!=291);
-      /* (292) signed ::= minus_num (OPTIMIZED OUT) */ assert(yyruleno!=292);
-      /* (293) carglist ::= carglist ccons */ yytestcase(yyruleno==293);
-      /* (294) carglist ::= */ yytestcase(yyruleno==294);
-      /* (295) ccons ::= NULL onconf */ yytestcase(yyruleno==295);
-      /* (296) conslist_opt ::= COMMA conslist */ yytestcase(yyruleno==296);
-      /* (297) conslist ::= conslist tconscomma tcons */ yytestcase(yyruleno==297);
-      /* (298) conslist ::= tcons (OPTIMIZED OUT) */ assert(yyruleno!=298);
-      /* (299) tconscomma ::= */ yytestcase(yyruleno==299);
-      /* (300) defer_subclause_opt ::= defer_subclause (OPTIMIZED OUT) */ assert(yyruleno!=300);
-      /* (301) resolvetype ::= raisetype (OPTIMIZED OUT) */ assert(yyruleno!=301);
-      /* (302) selectnowith ::= oneselect (OPTIMIZED OUT) */ assert(yyruleno!=302);
-      /* (303) oneselect ::= values */ yytestcase(yyruleno==303);
-      /* (304) sclp ::= selcollist COMMA */ yytestcase(yyruleno==304);
-      /* (305) as ::= ID|STRING */ yytestcase(yyruleno==305);
-      /* (306) expr ::= term (OPTIMIZED OUT) */ assert(yyruleno!=306);
-      /* (307) likeop ::= LIKE_KW|MATCH */ yytestcase(yyruleno==307);
-      /* (308) exprlist ::= nexprlist */ yytestcase(yyruleno==308);
-      /* (309) nmnum ::= plus_num (OPTIMIZED OUT) */ assert(yyruleno!=309);
-      /* (310) nmnum ::= nm (OPTIMIZED OUT) */ assert(yyruleno!=310);
-      /* (311) nmnum ::= ON */ yytestcase(yyruleno==311);
-      /* (312) nmnum ::= DELETE */ yytestcase(yyruleno==312);
-      /* (313) nmnum ::= DEFAULT */ yytestcase(yyruleno==313);
-      /* (314) plus_num ::= INTEGER|FLOAT */ yytestcase(yyruleno==314);
-      /* (315) foreach_clause ::= */ yytestcase(yyruleno==315);
-      /* (316) foreach_clause ::= FOR EACH ROW */ yytestcase(yyruleno==316);
-      /* (317) trnm ::= nm */ yytestcase(yyruleno==317);
-      /* (318) tridxby ::= */ yytestcase(yyruleno==318);
-      /* (319) database_kw_opt ::= DATABASE */ yytestcase(yyruleno==319);
-      /* (320) database_kw_opt ::= */ yytestcase(yyruleno==320);
-      /* (321) kwcolumn_opt ::= */ yytestcase(yyruleno==321);
-      /* (322) kwcolumn_opt ::= COLUMNKW */ yytestcase(yyruleno==322);
-      /* (323) vtabarglist ::= vtabarg */ yytestcase(yyruleno==323);
-      /* (324) vtabarglist ::= vtabarglist COMMA vtabarg */ yytestcase(yyruleno==324);
-      /* (325) vtabarg ::= vtabarg vtabargtoken */ yytestcase(yyruleno==325);
-      /* (326) anylist ::= */ yytestcase(yyruleno==326);
-      /* (327) anylist ::= anylist LP anylist RP */ yytestcase(yyruleno==327);
-      /* (328) anylist ::= anylist ANY */ yytestcase(yyruleno==328);
+      /* (273) input ::= cmdlist */ yytestcase(yyruleno==273);
+      /* (274) cmdlist ::= cmdlist ecmd */ yytestcase(yyruleno==274);
+      /* (275) cmdlist ::= ecmd (OPTIMIZED OUT) */ assert(yyruleno!=275);
+      /* (276) ecmd ::= SEMI */ yytestcase(yyruleno==276);
+      /* (277) ecmd ::= explain cmdx SEMI */ yytestcase(yyruleno==277);
+      /* (278) explain ::= */ yytestcase(yyruleno==278);
+      /* (279) trans_opt ::= */ yytestcase(yyruleno==279);
+      /* (280) trans_opt ::= TRANSACTION */ yytestcase(yyruleno==280);
+      /* (281) trans_opt ::= TRANSACTION nm */ yytestcase(yyruleno==281);
+      /* (282) savepoint_opt ::= SAVEPOINT */ yytestcase(yyruleno==282);
+      /* (283) savepoint_opt ::= */ yytestcase(yyruleno==283);
+      /* (284) cmd ::= create_table create_table_args */ yytestcase(yyruleno==284);
+      /* (285) columnlist ::= columnlist COMMA columnname carglist */ yytestcase(yyruleno==285);
+      /* (286) columnlist ::= columnname carglist */ yytestcase(yyruleno==286);
+      /* (287) nm ::= ID|INDEXED */ yytestcase(yyruleno==287);
+      /* (288) nm ::= STRING */ yytestcase(yyruleno==288);
+      /* (289) nm ::= JOIN_KW */ yytestcase(yyruleno==289);
+      /* (290) typetoken ::= typename */ yytestcase(yyruleno==290);
+      /* (291) typename ::= ID|STRING */ yytestcase(yyruleno==291);
+      /* (292) signed ::= plus_num (OPTIMIZED OUT) */ assert(yyruleno!=292);
+      /* (293) signed ::= minus_num (OPTIMIZED OUT) */ assert(yyruleno!=293);
+      /* (294) carglist ::= carglist ccons */ yytestcase(yyruleno==294);
+      /* (295) carglist ::= */ yytestcase(yyruleno==295);
+      /* (296) ccons ::= NULL onconf */ yytestcase(yyruleno==296);
+      /* (297) conslist_opt ::= COMMA conslist */ yytestcase(yyruleno==297);
+      /* (298) conslist ::= conslist tconscomma tcons */ yytestcase(yyruleno==298);
+      /* (299) conslist ::= tcons (OPTIMIZED OUT) */ assert(yyruleno!=299);
+      /* (300) tconscomma ::= */ yytestcase(yyruleno==300);
+      /* (301) defer_subclause_opt ::= defer_subclause (OPTIMIZED OUT) */ assert(yyruleno!=301);
+      /* (302) resolvetype ::= raisetype (OPTIMIZED OUT) */ assert(yyruleno!=302);
+      /* (303) selectnowith ::= oneselect (OPTIMIZED OUT) */ assert(yyruleno!=303);
+      /* (304) oneselect ::= values */ yytestcase(yyruleno==304);
+      /* (305) sclp ::= selcollist COMMA */ yytestcase(yyruleno==305);
+      /* (306) as ::= ID|STRING */ yytestcase(yyruleno==306);
+      /* (307) expr ::= term (OPTIMIZED OUT) */ assert(yyruleno!=307);
+      /* (308) likeop ::= LIKE_KW|MATCH */ yytestcase(yyruleno==308);
+      /* (309) exprlist ::= nexprlist */ yytestcase(yyruleno==309);
+      /* (310) nmnum ::= plus_num (OPTIMIZED OUT) */ assert(yyruleno!=310);
+      /* (311) nmnum ::= nm (OPTIMIZED OUT) */ assert(yyruleno!=311);
+      /* (312) nmnum ::= ON */ yytestcase(yyruleno==312);
+      /* (313) nmnum ::= DELETE */ yytestcase(yyruleno==313);
+      /* (314) nmnum ::= DEFAULT */ yytestcase(yyruleno==314);
+      /* (315) plus_num ::= INTEGER|FLOAT */ yytestcase(yyruleno==315);
+      /* (316) foreach_clause ::= */ yytestcase(yyruleno==316);
+      /* (317) foreach_clause ::= FOR EACH ROW */ yytestcase(yyruleno==317);
+      /* (318) trnm ::= nm */ yytestcase(yyruleno==318);
+      /* (319) tridxby ::= */ yytestcase(yyruleno==319);
+      /* (320) database_kw_opt ::= DATABASE */ yytestcase(yyruleno==320);
+      /* (321) database_kw_opt ::= */ yytestcase(yyruleno==321);
+      /* (322) kwcolumn_opt ::= */ yytestcase(yyruleno==322);
+      /* (323) kwcolumn_opt ::= COLUMNKW */ yytestcase(yyruleno==323);
+      /* (324) vtabarglist ::= vtabarg */ yytestcase(yyruleno==324);
+      /* (325) vtabarglist ::= vtabarglist COMMA vtabarg */ yytestcase(yyruleno==325);
+      /* (326) vtabarg ::= vtabarg vtabargtoken */ yytestcase(yyruleno==326);
+      /* (327) anylist ::= */ yytestcase(yyruleno==327);
+      /* (328) anylist ::= anylist LP anylist RP */ yytestcase(yyruleno==328);
+      /* (329) anylist ::= anylist ANY */ yytestcase(yyruleno==329);
         break;
 /********** End reduce actions ************************************************/
   };
@@ -16466,16 +16854,11 @@ static void yy_reduce(
   /* It is not possible for a REDUCE to be followed by an error */
   assert( yyact!=YY_ERROR_ACTION );
 
-  if( yyact==YY_ACCEPT_ACTION ){
-    yypParser->yytos += yysize;
-    yy_accept(yypParser);
-  }else{
-    yymsp += yysize+1;
-    yypParser->yytos = yymsp;
-    yymsp->stateno = (YYACTIONTYPE)yyact;
-    yymsp->major = (YYCODETYPE)yygoto;
-    yyTraceShift(yypParser, yyact);
-  }
+  yymsp += yysize+1;
+  yypParser->yytos = yymsp;
+  yymsp->stateno = (YYACTIONTYPE)yyact;
+  yymsp->major = (YYCODETYPE)yygoto;
+  yyTraceShift(yypParser, yyact, "... then shift");
 }
 
 /*
@@ -16513,8 +16896,11 @@ static void yy_syntax_error(
 /************ Begin %syntax_error code ****************************************/
 
   UNUSED_PARAMETER(yymajor);  /* Silence some compiler warnings */
-  assert( TOKEN.z[0] );  /* The tokenizer always gives us a token */
-  sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", &TOKEN);
+  if( TOKEN.z[0] ){
+    sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", &TOKEN);
+  }else{
+    sqlite3ErrorMsg(pParse, "incomplete input");
+  }
 /************ End %syntax_error code ******************************************/
   sqlite3ParserARG_STORE; /* Suppress warning about unused %extra_argument variable */
 }
@@ -16586,20 +16972,31 @@ SQLITE_PRIVATE void sqlite3Parser(
 
 #ifndef NDEBUG
   if( yyTraceFILE ){
-    fprintf(yyTraceFILE,"%sInput '%s'\n",yyTracePrompt,yyTokenName[yymajor]);
+    int stateno = yypParser->yytos->stateno;
+    if( stateno < YY_MIN_REDUCE ){
+      fprintf(yyTraceFILE,"%sInput '%s' in state %d\n",
+              yyTracePrompt,yyTokenName[yymajor],stateno);
+    }else{
+      fprintf(yyTraceFILE,"%sInput '%s' with pending reduce %d\n",
+              yyTracePrompt,yyTokenName[yymajor],stateno-YY_MIN_REDUCE);
+    }
   }
 #endif
 
   do{
     yyact = yy_find_shift_action(yypParser,(YYCODETYPE)yymajor);
-    if( yyact <= YY_MAX_SHIFTREDUCE ){
+    if( yyact >= YY_MIN_REDUCE ){
+      yy_reduce(yypParser,yyact-YY_MIN_REDUCE,yymajor,yyminor);
+    }else if( yyact <= YY_MAX_SHIFTREDUCE ){
       yy_shift(yypParser,yyact,yymajor,yyminor);
 #ifndef YYNOERRORRECOVERY
       yypParser->yyerrcnt--;
 #endif
       yymajor = YYNOCODE;
-    }else if( yyact <= YY_MAX_REDUCE ){
-      yy_reduce(yypParser,yyact-YY_MIN_REDUCE);
+    }else if( yyact==YY_ACCEPT_ACTION ){
+      yypParser->yytos--;
+      yy_accept(yypParser);
+      return;
     }else{
       assert( yyact == YY_ERROR_ACTION );
       yyminorunion.yy0 = yyminor;
@@ -17548,7 +17945,7 @@ SQLITE_PRIVATE int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzEr
       }else{
         tokenType = TK_SEMI;
       }
-      zSql -= n;
+      n = 0;
     }
     if( tokenType>=TK_SPACE ){
       assert( tokenType==TK_SPACE || tokenType==TK_ILLEGAL );
@@ -18016,7 +18413,7 @@ SQLITE_PRIVATE int sqlite3RtreeInit(sqlite3 *db);
 /************** End of rtree.h ***********************************************/
 /************** Continuing where we left off in main.c ***********************/
 #endif
-#ifdef SQLITE_ENABLE_ICU
+#if defined(SQLITE_ENABLE_ICU) || defined(SQLITE_ENABLE_ICU_COLLATIONS)
 /************** Include sqliteicu.h in the middle of main.c ******************/
 /************** Begin file sqliteicu.h ***************************************/
 /*
@@ -18078,7 +18475,7 @@ SQLITE_API const char *sqlite3_libversion(void){ return sqlite3_version; }
 ** an edited copy of the amalgamation, then the last four characters of
 ** the hash might be different from SQLITE_SOURCE_ID.
 */
-SQLITE_API const char *sqlite3_sourceid(void){ return SQLITE_SOURCE_ID; }
+ SQLITE_API const char *sqlite3_sourceid(void){ return SQLITE_SOURCE_ID; } 
 
 /* IMPLEMENTATION-OF: R-35210-63508 The sqlite3_libversion_number() function
 ** returns an integer equal to SQLITE_VERSION_NUMBER.
@@ -18842,6 +19239,7 @@ SQLITE_API int sqlite3_db_config(sqlite3 *db, int op, ...){
         { SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION, SQLITE_LoadExtension  },
         { SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE,      SQLITE_NoCkptOnClose  },
         { SQLITE_DBCONFIG_ENABLE_QPSG,           SQLITE_EnableQPSG     },
+        { SQLITE_DBCONFIG_TRIGGER_EQP,           SQLITE_TriggerEQP     },
       };
       unsigned int i;
       rc = SQLITE_ERROR; /* IMP: R-42790-23372 */
@@ -19339,9 +19737,10 @@ SQLITE_PRIVATE const char *sqlite3ErrName(int rc){
       case SQLITE_NOMEM:              zName = "SQLITE_NOMEM";             break;
       case SQLITE_READONLY:           zName = "SQLITE_READONLY";          break;
       case SQLITE_READONLY_RECOVERY:  zName = "SQLITE_READONLY_RECOVERY"; break;
-      case SQLITE_READONLY_CANTLOCK:  zName = "SQLITE_READONLY_CANTLOCK"; break;
+      case SQLITE_READONLY_CANTINIT:  zName = "SQLITE_READONLY_CANTINIT"; break;
       case SQLITE_READONLY_ROLLBACK:  zName = "SQLITE_READONLY_ROLLBACK"; break;
       case SQLITE_READONLY_DBMOVED:   zName = "SQLITE_READONLY_DBMOVED";  break;
+      case SQLITE_READONLY_DIRECTORY: zName = "SQLITE_READONLY_DIRECTORY";break;
       case SQLITE_INTERRUPT:          zName = "SQLITE_INTERRUPT";         break;
       case SQLITE_IOERR:              zName = "SQLITE_IOERR";             break;
       case SQLITE_IOERR_READ:         zName = "SQLITE_IOERR_READ";        break;
@@ -20847,6 +21246,7 @@ static int openDatabase(
   }else{
     isThreadsafe = sqlite3GlobalConfig.bFullMutex;
   }
+
   if( flags & SQLITE_OPEN_PRIVATECACHE ){
     flags &= ~SQLITE_OPEN_SHAREDCACHE;
   }else if( sqlite3GlobalConfig.sharedCacheEnabled ){
@@ -20879,12 +21279,19 @@ static int openDatabase(
   /* Allocate the sqlite data structure */
   db = sqlite3MallocZero( sizeof(sqlite3) );
   if( db==0 ) goto opendb_out;
-  if( isThreadsafe ){
+  if( isThreadsafe 
+#ifdef SQLITE_ENABLE_MULTITHREADED_CHECKS
+   || sqlite3GlobalConfig.bCoreMutex
+#endif
+  ){
     db->mutex = sqlite3MutexAlloc(SQLITE_MUTEX_RECURSIVE);
     if( db->mutex==0 ){
       sqlite3_free(db);
       db = 0;
       goto opendb_out;
+    }
+    if( isThreadsafe==0 ){
+      sqlite3MutexWarnOnContention(db->mutex);
     }
   }
   sqlite3_mutex_enter(db->mutex);
@@ -21067,7 +21474,7 @@ static int openDatabase(
   }
 #endif
 
-#ifdef SQLITE_ENABLE_ICU
+#if defined(SQLITE_ENABLE_ICU) || defined(SQLITE_ENABLE_ICU_COLLATIONS)
   if( !db->mallocFailed && rc==SQLITE_OK ){
     rc = sqlite3IcuInit(db);
   }
@@ -21369,37 +21776,37 @@ SQLITE_API int sqlite3_get_autocommit(sqlite3 *db){
 **   2.  Invoke sqlite3_log() to provide the source code location where
 **       a low-level error is first detected.
 */
-static int reportError(int iErr, int lineno, const char *zType){
+SQLITE_PRIVATE int sqlite3ReportError(int iErr, int lineno, const char *zType){
   sqlite3_log(iErr, "%s at line %d of [%.10s]",
               zType, lineno, 20+sqlite3_sourceid());
   return iErr;
 }
 SQLITE_PRIVATE int sqlite3CorruptError(int lineno){
   testcase( sqlite3GlobalConfig.xLog!=0 );
-  return reportError(SQLITE_CORRUPT, lineno, "database corruption");
+  return sqlite3ReportError(SQLITE_CORRUPT, lineno, "database corruption");
 }
 SQLITE_PRIVATE int sqlite3MisuseError(int lineno){
   testcase( sqlite3GlobalConfig.xLog!=0 );
-  return reportError(SQLITE_MISUSE, lineno, "misuse");
+  return sqlite3ReportError(SQLITE_MISUSE, lineno, "misuse");
 }
 SQLITE_PRIVATE int sqlite3CantopenError(int lineno){
   testcase( sqlite3GlobalConfig.xLog!=0 );
-  return reportError(SQLITE_CANTOPEN, lineno, "cannot open file");
+  return sqlite3ReportError(SQLITE_CANTOPEN, lineno, "cannot open file");
 }
 #ifdef SQLITE_DEBUG
 SQLITE_PRIVATE int sqlite3CorruptPgnoError(int lineno, Pgno pgno){
   char zMsg[100];
   sqlite3_snprintf(sizeof(zMsg), zMsg, "database corruption page %d", pgno);
   testcase( sqlite3GlobalConfig.xLog!=0 );
-  return reportError(SQLITE_CORRUPT, lineno, zMsg);
+  return sqlite3ReportError(SQLITE_CORRUPT, lineno, zMsg);
 }
 SQLITE_PRIVATE int sqlite3NomemError(int lineno){
   testcase( sqlite3GlobalConfig.xLog!=0 );
-  return reportError(SQLITE_NOMEM, lineno, "OOM");
+  return sqlite3ReportError(SQLITE_NOMEM, lineno, "OOM");
 }
 SQLITE_PRIVATE int sqlite3IoerrnomemError(int lineno){
   testcase( sqlite3GlobalConfig.xLog!=0 );
-  return reportError(SQLITE_IOERR_NOMEM, lineno, "I/O OOM error");
+  return sqlite3ReportError(SQLITE_IOERR_NOMEM, lineno, "I/O OOM error");
 }
 #endif
 
@@ -21927,6 +22334,22 @@ SQLITE_API int sqlite3_test_control(int op, ...){
       sqlite3_mutex_leave(db->mutex);
       break;
     }
+
+#if defined(YYCOVERAGE)
+    /*  sqlite3_test_control(SQLITE_TESTCTRL_PARSER_COVERAGE, FILE *out)
+    **
+    ** This test control (only available when SQLite is compiled with
+    ** -DYYCOVERAGE) writes a report onto "out" that shows all
+    ** state/lookahead combinations in the parser state machine
+    ** which are never exercised.  If any state is missed, make the
+    ** return code SQLITE_ERROR.
+    */
+    case SQLITE_TESTCTRL_PARSER_COVERAGE: {
+      FILE *out = va_arg(ap, FILE*);
+      if( sqlite3ParserCoverage(out) ) rc = SQLITE_ERROR;
+      break;
+    }
+#endif /* defined(YYCOVERAGE) */
   }
   va_end(ap);
 #endif /* SQLITE_UNTESTABLE */

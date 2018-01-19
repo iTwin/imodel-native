@@ -9580,7 +9580,7 @@ struct RtreeSearchPoint {
 ** The smallest possible node-size is (512-64)==448 bytes. And the largest
 ** supported cell size is 48 bytes (8 byte rowid + ten 4 byte coordinates).
 ** Therefore all non-root nodes must contain at least 3 entries. Since 
-** 2^40 is greater than 2^64, an r-tree structure always has a depth of
+** 3^40 is greater than 2^64, an r-tree structure always has a depth of
 ** 40 or less.
 */
 #define RTREE_MAX_DEPTH 40
@@ -11392,7 +11392,7 @@ static int ChooseLeaf(
 ){
   int rc;
   int ii;
-  RtreeNode *pNode;
+  RtreeNode *pNode = 0;
   rc = nodeAcquire(pRtree, 1, 0, &pNode);
 
   for(ii=0; rc==SQLITE_OK && ii<(pRtree->iDepth-iHeight); ii++){
@@ -12267,7 +12267,7 @@ static int rtreeDeleteRowid(Rtree *pRtree, sqlite3_int64 iDelete){
   */
   if( rc==SQLITE_OK && pRtree->iDepth>0 && NCELL(pRoot)==1 ){
     int rc2;
-    RtreeNode *pChild;
+    RtreeNode *pChild = 0;
     i64 iChild = nodeGetRowid(pRtree, pRoot, 0);
     rc = nodeAcquire(pRtree, iChild, pRoot, &pChild);
     if( rc==SQLITE_OK ){
@@ -12980,6 +12980,463 @@ static void rtreedepth(sqlite3_context *ctx, int nArg, sqlite3_value **apArg){
 }
 
 /*
+** Context object passed between the various routines that make up the
+** implementation of integrity-check function rtreecheck().
+*/
+typedef struct RtreeCheck RtreeCheck;
+struct RtreeCheck {
+  sqlite3 *db;                    /* Database handle */
+  const char *zDb;                /* Database containing rtree table */
+  const char *zTab;               /* Name of rtree table */
+  int bInt;                       /* True for rtree_i32 table */
+  int nDim;                       /* Number of dimensions for this rtree tbl */
+  sqlite3_stmt *pGetNode;         /* Statement used to retrieve nodes */
+  sqlite3_stmt *aCheckMapping[2]; /* Statements to query %_parent/%_rowid */
+  int nLeaf;                      /* Number of leaf cells in table */
+  int nNonLeaf;                   /* Number of non-leaf cells in table */
+  int rc;                         /* Return code */
+  char *zReport;                  /* Message to report */
+  int nErr;                       /* Number of lines in zReport */
+};
+
+#define RTREE_CHECK_MAX_ERROR 100
+
+/*
+** Reset SQL statement pStmt. If the sqlite3_reset() call returns an error,
+** and RtreeCheck.rc==SQLITE_OK, set RtreeCheck.rc to the error code.
+*/
+static void rtreeCheckReset(RtreeCheck *pCheck, sqlite3_stmt *pStmt){
+  int rc = sqlite3_reset(pStmt);
+  if( pCheck->rc==SQLITE_OK ) pCheck->rc = rc;
+}
+
+/*
+** The second and subsequent arguments to this function are a format string
+** and printf style arguments. This function formats the string and attempts
+** to compile it as an SQL statement.
+**
+** If successful, a pointer to the new SQL statement is returned. Otherwise,
+** NULL is returned and an error code left in RtreeCheck.rc.
+*/
+static sqlite3_stmt *rtreeCheckPrepare(
+  RtreeCheck *pCheck,             /* RtreeCheck object */
+  const char *zFmt, ...           /* Format string and trailing args */
+){
+  va_list ap;
+  char *z;
+  sqlite3_stmt *pRet = 0;
+
+  va_start(ap, zFmt);
+  z = sqlite3_vmprintf(zFmt, ap);
+
+  if( pCheck->rc==SQLITE_OK ){
+    if( z==0 ){
+      pCheck->rc = SQLITE_NOMEM;
+    }else{
+      pCheck->rc = sqlite3_prepare_v2(pCheck->db, z, -1, &pRet, 0);
+    }
+  }
+
+  sqlite3_free(z);
+  va_end(ap);
+  return pRet;
+}
+
+/*
+** The second and subsequent arguments to this function are a printf()
+** style format string and arguments. This function formats the string and
+** appends it to the report being accumuated in pCheck.
+*/
+static void rtreeCheckAppendMsg(RtreeCheck *pCheck, const char *zFmt, ...){
+  va_list ap;
+  va_start(ap, zFmt);
+  if( pCheck->rc==SQLITE_OK && pCheck->nErr<RTREE_CHECK_MAX_ERROR ){
+    char *z = sqlite3_vmprintf(zFmt, ap);
+    if( z==0 ){
+      pCheck->rc = SQLITE_NOMEM;
+    }else{
+      pCheck->zReport = sqlite3_mprintf("%z%s%z", 
+          pCheck->zReport, (pCheck->zReport ? "\n" : ""), z
+      );
+      if( pCheck->zReport==0 ){
+        pCheck->rc = SQLITE_NOMEM;
+      }
+    }
+    pCheck->nErr++;
+  }
+  va_end(ap);
+}
+
+/*
+** This function is a no-op if there is already an error code stored
+** in the RtreeCheck object indicated by the first argument. NULL is
+** returned in this case.
+**
+** Otherwise, the contents of rtree table node iNode are loaded from
+** the database and copied into a buffer obtained from sqlite3_malloc().
+** If no error occurs, a pointer to the buffer is returned and (*pnNode)
+** is set to the size of the buffer in bytes.
+**
+** Or, if an error does occur, NULL is returned and an error code left
+** in the RtreeCheck object. The final value of *pnNode is undefined in
+** this case.
+*/
+static u8 *rtreeCheckGetNode(RtreeCheck *pCheck, i64 iNode, int *pnNode){
+  u8 *pRet = 0;                   /* Return value */
+
+  assert( pCheck->rc==SQLITE_OK );
+  if( pCheck->pGetNode==0 ){
+    pCheck->pGetNode = rtreeCheckPrepare(pCheck,
+        "SELECT data FROM %Q.'%q_node' WHERE nodeno=?", 
+        pCheck->zDb, pCheck->zTab
+    );
+  }
+
+  if( pCheck->rc==SQLITE_OK ){
+    sqlite3_bind_int64(pCheck->pGetNode, 1, iNode);
+    if( sqlite3_step(pCheck->pGetNode)==SQLITE_ROW ){
+      int nNode = sqlite3_column_bytes(pCheck->pGetNode, 0);
+      const u8 *pNode = (const u8*)sqlite3_column_blob(pCheck->pGetNode, 0);
+      pRet = sqlite3_malloc(nNode);
+      if( pRet==0 ){
+        pCheck->rc = SQLITE_NOMEM;
+      }else{
+        memcpy(pRet, pNode, nNode);
+        *pnNode = nNode;
+      }
+    }
+    rtreeCheckReset(pCheck, pCheck->pGetNode);
+    if( pCheck->rc==SQLITE_OK && pRet==0 ){
+      rtreeCheckAppendMsg(pCheck, "Node %lld missing from database", iNode);
+    }
+  }
+
+  return pRet;
+}
+
+/*
+** This function is used to check that the %_parent (if bLeaf==0) or %_rowid
+** (if bLeaf==1) table contains a specified entry. The schemas of the
+** two tables are:
+**
+**   CREATE TABLE %_parent(nodeno INTEGER PRIMARY KEY, parentnode INTEGER)
+**   CREATE TABLE %_rowid(rowid INTEGER PRIMARY KEY, nodeno INTEGER)
+**
+** In both cases, this function checks that there exists an entry with
+** IPK value iKey and the second column set to iVal.
+**
+*/
+static void rtreeCheckMapping(
+  RtreeCheck *pCheck,             /* RtreeCheck object */
+  int bLeaf,                      /* True for a leaf cell, false for interior */
+  i64 iKey,                       /* Key for mapping */
+  i64 iVal                        /* Expected value for mapping */
+){
+  int rc;
+  sqlite3_stmt *pStmt;
+  const char *azSql[2] = {
+    "SELECT parentnode FROM %Q.'%q_parent' WHERE nodeno=?",
+    "SELECT nodeno FROM %Q.'%q_rowid' WHERE rowid=?"
+  };
+
+  assert( bLeaf==0 || bLeaf==1 );
+  if( pCheck->aCheckMapping[bLeaf]==0 ){
+    pCheck->aCheckMapping[bLeaf] = rtreeCheckPrepare(pCheck,
+        azSql[bLeaf], pCheck->zDb, pCheck->zTab
+    );
+  }
+  if( pCheck->rc!=SQLITE_OK ) return;
+
+  pStmt = pCheck->aCheckMapping[bLeaf];
+  sqlite3_bind_int64(pStmt, 1, iKey);
+  rc = sqlite3_step(pStmt);
+  if( rc==SQLITE_DONE ){
+    rtreeCheckAppendMsg(pCheck, "Mapping (%lld -> %lld) missing from %s table",
+        iKey, iVal, (bLeaf ? "%_rowid" : "%_parent")
+    );
+  }else if( rc==SQLITE_ROW ){
+    i64 ii = sqlite3_column_int64(pStmt, 0);
+    if( ii!=iVal ){
+      rtreeCheckAppendMsg(pCheck, 
+          "Found (%lld -> %lld) in %s table, expected (%lld -> %lld)",
+          iKey, ii, (bLeaf ? "%_rowid" : "%_parent"), iKey, iVal
+      );
+    }
+  }
+  rtreeCheckReset(pCheck, pStmt);
+}
+
+/*
+** Argument pCell points to an array of coordinates stored on an rtree page.
+** This function checks that the coordinates are internally consistent (no
+** x1>x2 conditions) and adds an error message to the RtreeCheck object
+** if they are not.
+**
+** Additionally, if pParent is not NULL, then it is assumed to point to
+** the array of coordinates on the parent page that bound the page 
+** containing pCell. In this case it is also verified that the two
+** sets of coordinates are mutually consistent and an error message added
+** to the RtreeCheck object if they are not.
+*/
+static void rtreeCheckCellCoord(
+  RtreeCheck *pCheck, 
+  i64 iNode,                      /* Node id to use in error messages */
+  int iCell,                      /* Cell number to use in error messages */
+  u8 *pCell,                      /* Pointer to cell coordinates */
+  u8 *pParent                     /* Pointer to parent coordinates */
+){
+  RtreeCoord c1, c2;
+  RtreeCoord p1, p2;
+  int i;
+
+  for(i=0; i<pCheck->nDim; i++){
+    readCoord(&pCell[4*2*i], &c1);
+    readCoord(&pCell[4*(2*i + 1)], &c2);
+
+    /* printf("%e, %e\n", c1.u.f, c2.u.f); */
+    if( pCheck->bInt ? c1.i>c2.i : c1.f>c2.f ){
+      rtreeCheckAppendMsg(pCheck, 
+          "Dimension %d of cell %d on node %lld is corrupt", i, iCell, iNode
+      );
+    }
+
+    if( pParent ){
+      readCoord(&pParent[4*2*i], &p1);
+      readCoord(&pParent[4*(2*i + 1)], &p2);
+
+      if( (pCheck->bInt ? c1.i<p1.i : c1.f<p1.f) 
+       || (pCheck->bInt ? c2.i>p2.i : c2.f>p2.f)
+      ){
+        rtreeCheckAppendMsg(pCheck, 
+            "Dimension %d of cell %d on node %lld is corrupt relative to parent"
+            , i, iCell, iNode
+        );
+      }
+    }
+  }
+}
+
+/*
+** Run rtreecheck() checks on node iNode, which is at depth iDepth within
+** the r-tree structure. Argument aParent points to the array of coordinates
+** that bound node iNode on the parent node.
+**
+** If any problems are discovered, an error message is appended to the
+** report accumulated in the RtreeCheck object.
+*/
+static void rtreeCheckNode(
+  RtreeCheck *pCheck,
+  int iDepth,                     /* Depth of iNode (0==leaf) */
+  u8 *aParent,                    /* Buffer containing parent coords */
+  i64 iNode                       /* Node to check */
+){
+  u8 *aNode = 0;
+  int nNode = 0;
+
+  assert( iNode==1 || aParent!=0 );
+  assert( pCheck->nDim>0 );
+
+  aNode = rtreeCheckGetNode(pCheck, iNode, &nNode);
+  if( aNode ){
+    if( nNode<4 ){
+      rtreeCheckAppendMsg(pCheck, 
+          "Node %lld is too small (%d bytes)", iNode, nNode
+      );
+    }else{
+      int nCell;                  /* Number of cells on page */
+      int i;                      /* Used to iterate through cells */
+      if( aParent==0 ){
+        iDepth = readInt16(aNode);
+        if( iDepth>RTREE_MAX_DEPTH ){
+          rtreeCheckAppendMsg(pCheck, "Rtree depth out of range (%d)", iDepth);
+          sqlite3_free(aNode);
+          return;
+        }
+      }
+      nCell = readInt16(&aNode[2]);
+      if( (4 + nCell*(8 + pCheck->nDim*2*4))>nNode ){
+        rtreeCheckAppendMsg(pCheck, 
+            "Node %lld is too small for cell count of %d (%d bytes)", 
+            iNode, nCell, nNode
+        );
+      }else{
+        for(i=0; i<nCell; i++){
+          u8 *pCell = &aNode[4 + i*(8 + pCheck->nDim*2*4)];
+          i64 iVal = readInt64(pCell);
+          rtreeCheckCellCoord(pCheck, iNode, i, &pCell[8], aParent);
+
+          if( iDepth>0 ){
+            rtreeCheckMapping(pCheck, 0, iVal, iNode);
+            rtreeCheckNode(pCheck, iDepth-1, &pCell[8], iVal);
+            pCheck->nNonLeaf++;
+          }else{
+            rtreeCheckMapping(pCheck, 1, iVal, iNode);
+            pCheck->nLeaf++;
+          }
+        }
+      }
+    }
+    sqlite3_free(aNode);
+  }
+}
+
+/*
+** The second argument to this function must be either "_rowid" or
+** "_parent". This function checks that the number of entries in the
+** %_rowid or %_parent table is exactly nExpect. If not, it adds
+** an error message to the report in the RtreeCheck object indicated
+** by the first argument.
+*/
+static void rtreeCheckCount(RtreeCheck *pCheck, const char *zTbl, i64 nExpect){
+  if( pCheck->rc==SQLITE_OK ){
+    sqlite3_stmt *pCount;
+    pCount = rtreeCheckPrepare(pCheck, "SELECT count(*) FROM %Q.'%q%s'",
+        pCheck->zDb, pCheck->zTab, zTbl
+    );
+    if( pCount ){
+      if( sqlite3_step(pCount)==SQLITE_ROW ){
+        i64 nActual = sqlite3_column_int64(pCount, 0);
+        if( nActual!=nExpect ){
+          rtreeCheckAppendMsg(pCheck, "Wrong number of entries in %%%s table"
+              " - expected %lld, actual %lld" , zTbl, nExpect, nActual
+          );
+        }
+      }
+      pCheck->rc = sqlite3_finalize(pCount);
+    }
+  }
+}
+
+/*
+** This function does the bulk of the work for the rtree integrity-check.
+** It is called by rtreecheck(), which is the SQL function implementation.
+*/
+static int rtreeCheckTable(
+  sqlite3 *db,                    /* Database handle to access db through */
+  const char *zDb,                /* Name of db ("main", "temp" etc.) */
+  const char *zTab,               /* Name of rtree table to check */
+  char **pzReport                 /* OUT: sqlite3_malloc'd report text */
+){
+  RtreeCheck check;               /* Common context for various routines */
+  sqlite3_stmt *pStmt = 0;        /* Used to find column count of rtree table */
+  int bEnd = 0;                   /* True if transaction should be closed */
+
+  /* Initialize the context object */
+  memset(&check, 0, sizeof(check));
+  check.db = db;
+  check.zDb = zDb;
+  check.zTab = zTab;
+
+  /* If there is not already an open transaction, open one now. This is
+  ** to ensure that the queries run as part of this integrity-check operate
+  ** on a consistent snapshot.  */
+  if( sqlite3_get_autocommit(db) ){
+    check.rc = sqlite3_exec(db, "BEGIN", 0, 0, 0);
+    bEnd = 1;
+  }
+
+  /* Find number of dimensions in the rtree table. */
+  pStmt = rtreeCheckPrepare(&check, "SELECT * FROM %Q.%Q", zDb, zTab);
+  if( pStmt ){
+    int rc;
+    check.nDim = (sqlite3_column_count(pStmt) - 1) / 2;
+    if( check.nDim<1 ){
+      rtreeCheckAppendMsg(&check, "Schema corrupt or not an rtree");
+    }else if( SQLITE_ROW==sqlite3_step(pStmt) ){
+      check.bInt = (sqlite3_column_type(pStmt, 1)==SQLITE_INTEGER);
+    }
+    rc = sqlite3_finalize(pStmt);
+    if( rc!=SQLITE_CORRUPT ) check.rc = rc;
+  }
+
+  /* Do the actual integrity-check */
+  if( check.nDim>=1 ){
+    if( check.rc==SQLITE_OK ){
+      rtreeCheckNode(&check, 0, 0, 1);
+    }
+    rtreeCheckCount(&check, "_rowid", check.nLeaf);
+    rtreeCheckCount(&check, "_parent", check.nNonLeaf);
+  }
+
+  /* Finalize SQL statements used by the integrity-check */
+  sqlite3_finalize(check.pGetNode);
+  sqlite3_finalize(check.aCheckMapping[0]);
+  sqlite3_finalize(check.aCheckMapping[1]);
+
+  /* If one was opened, close the transaction */
+  if( bEnd ){
+    int rc = sqlite3_exec(db, "END", 0, 0, 0);
+    if( check.rc==SQLITE_OK ) check.rc = rc;
+  }
+  *pzReport = check.zReport;
+  return check.rc;
+}
+
+/*
+** Usage:
+**
+**   rtreecheck(<rtree-table>);
+**   rtreecheck(<database>, <rtree-table>);
+**
+** Invoking this SQL function runs an integrity-check on the named rtree
+** table. The integrity-check verifies the following:
+**
+**   1. For each cell in the r-tree structure (%_node table), that:
+**
+**       a) for each dimension, (coord1 <= coord2).
+**
+**       b) unless the cell is on the root node, that the cell is bounded
+**          by the parent cell on the parent node.
+**
+**       c) for leaf nodes, that there is an entry in the %_rowid 
+**          table corresponding to the cell's rowid value that 
+**          points to the correct node.
+**
+**       d) for cells on non-leaf nodes, that there is an entry in the 
+**          %_parent table mapping from the cell's child node to the
+**          node that it resides on.
+**
+**   2. That there are the same number of entries in the %_rowid table
+**      as there are leaf cells in the r-tree structure, and that there
+**      is a leaf cell that corresponds to each entry in the %_rowid table.
+**
+**   3. That there are the same number of entries in the %_parent table
+**      as there are non-leaf cells in the r-tree structure, and that 
+**      there is a non-leaf cell that corresponds to each entry in the 
+**      %_parent table.
+*/
+static void rtreecheck(
+  sqlite3_context *ctx, 
+  int nArg, 
+  sqlite3_value **apArg
+){
+  if( nArg!=1 && nArg!=2 ){
+    sqlite3_result_error(ctx, 
+        "wrong number of arguments to function rtreecheck()", -1
+    );
+  }else{
+    int rc;
+    char *zReport = 0;
+    const char *zDb = (const char*)sqlite3_value_text(apArg[0]);
+    const char *zTab;
+    if( nArg==1 ){
+      zTab = zDb;
+      zDb = "main";
+    }else{
+      zTab = (const char*)sqlite3_value_text(apArg[1]);
+    }
+    rc = rtreeCheckTable(sqlite3_context_db_handle(ctx), zDb, zTab, &zReport);
+    if( rc==SQLITE_OK ){
+      sqlite3_result_text(ctx, zReport ? zReport : "ok", -1, SQLITE_TRANSIENT);
+    }else{
+      sqlite3_result_error_code(ctx, rc);
+    }
+    sqlite3_free(zReport);
+  }
+}
+
+
+/*
 ** Register the r-tree module with database handle db. This creates the
 ** virtual table module "rtree" and the debugging/analysis scalar 
 ** function "rtreenode".
@@ -12991,6 +13448,9 @@ SQLITE_PRIVATE int sqlite3RtreeInit(sqlite3 *db){
   rc = sqlite3_create_function(db, "rtreenode", 2, utf8, 0, rtreenode, 0, 0);
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_function(db, "rtreedepth", 1, utf8, 0,rtreedepth, 0, 0);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "rtreecheck", -1, utf8, 0,rtreecheck, 0,0);
   }
   if( rc==SQLITE_OK ){
 #ifdef SQLITE_RTREE_INT_ONLY
@@ -13178,7 +13638,9 @@ SQLITE_API int sqlite3_rtree_init(
 **     provide case-independent matching.
 */
 
-#if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_ICU)
+#if !defined(SQLITE_CORE)                  \
+ || defined(SQLITE_ENABLE_ICU)             \
+ || defined(SQLITE_ENABLE_ICU_COLLATIONS)
 
 /* Include ICU headers */
 #include <unicode/utypes.h>
@@ -13194,6 +13656,26 @@ SQLITE_API int sqlite3_rtree_init(
 #else
 /*   #include "sqlite3.h" */
 #endif
+
+/*
+** This function is called when an ICU function called from within
+** the implementation of an SQL scalar function returns an error.
+**
+** The scalar function context passed as the first argument is 
+** loaded with an error message based on the following two args.
+*/
+static void icuFunctionError(
+  sqlite3_context *pCtx,       /* SQLite scalar function context */
+  const char *zName,           /* Name of ICU function that failed */
+  UErrorCode e                 /* Error code returned by ICU function */
+){
+  char zBuf[128];
+  sqlite3_snprintf(128, zBuf, "ICU error: %s(): %s", zName, u_errorName(e));
+  zBuf[127] = '\0';
+  sqlite3_result_error(pCtx, zBuf, -1);
+}
+
+#if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_ICU)
 
 /*
 ** Maximum length (in bytes) of the pattern in a LIKE or GLOB
@@ -13375,24 +13857,6 @@ static void icuLikeFunc(
 }
 
 /*
-** This function is called when an ICU function called from within
-** the implementation of an SQL scalar function returns an error.
-**
-** The scalar function context passed as the first argument is 
-** loaded with an error message based on the following two args.
-*/
-static void icuFunctionError(
-  sqlite3_context *pCtx,       /* SQLite scalar function context */
-  const char *zName,           /* Name of ICU function that failed */
-  UErrorCode e                 /* Error code returned by ICU function */
-){
-  char zBuf[128];
-  sqlite3_snprintf(128, zBuf, "ICU error: %s(): %s", zName, u_errorName(e));
-  zBuf[127] = '\0';
-  sqlite3_result_error(pCtx, zBuf, -1);
-}
-
-/*
 ** Function to delete compiled regexp objects. Registered as
 ** a destructor function with sqlite3_set_auxdata().
 */
@@ -13557,6 +14021,8 @@ static void icuCaseFunc16(sqlite3_context *p, int nArg, sqlite3_value **apArg){
   assert( 0 );     /* Unreachable */
 }
 
+#endif /* !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_ICU) */
+
 /*
 ** Collation sequence destructor function. The pCtx argument points to
 ** a UCollator structure previously allocated using ucol_open().
@@ -13651,6 +14117,7 @@ SQLITE_PRIVATE int sqlite3IcuInit(sqlite3 *db){
     void (*xFunc)(sqlite3_context*,int,sqlite3_value**);
   } scalars[] = {
     {"icu_load_collation",  2, SQLITE_UTF8,                1, icuLoadCollation},
+#if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_ICU)
     {"regexp", 2, SQLITE_ANY|SQLITE_DETERMINISTIC,         0, icuRegexpFunc},
     {"lower",  1, SQLITE_UTF16|SQLITE_DETERMINISTIC,       0, icuCaseFunc16},
     {"lower",  2, SQLITE_UTF16|SQLITE_DETERMINISTIC,       0, icuCaseFunc16},
@@ -13662,10 +14129,10 @@ SQLITE_PRIVATE int sqlite3IcuInit(sqlite3 *db){
     {"upper",  2, SQLITE_UTF8|SQLITE_DETERMINISTIC,        1, icuCaseFunc16},
     {"like",   2, SQLITE_UTF8|SQLITE_DETERMINISTIC,        0, icuLikeFunc},
     {"like",   3, SQLITE_UTF8|SQLITE_DETERMINISTIC,        0, icuLikeFunc},
+#endif /* !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_ICU) */
   };
   int rc = SQLITE_OK;
   int i;
-
   
   for(i=0; rc==SQLITE_OK && i<(int)(sizeof(scalars)/sizeof(scalars[0])); i++){
     const struct IcuScalar *p = &scalars[i];
@@ -20196,16 +20663,23 @@ struct DbpageCursor {
   sqlite3_vtab_cursor base;       /* Base class.  Must be first */
   int pgno;                       /* Current page number */
   int mxPgno;                     /* Last page to visit on this scan */
+  Pager *pPager;                  /* Pager being read/written */
+  DbPage *pPage1;                 /* Page 1 of the database */
+  int iDb;                        /* Index of database to analyze */
+  int szPage;                     /* Size of each page in bytes */
 };
 
 struct DbpageTable {
   sqlite3_vtab base;              /* Base class.  Must be first */
   sqlite3 *db;                    /* The database */
-  Pager *pPager;                  /* Pager being read/written */
-  int iDb;                        /* Index of database to analyze */
-  int szPage;                     /* Size of each page in bytes */
-  int nPage;                      /* Number of pages in the file */
 };
+
+/* Columns */
+#define DBPAGE_COLUMN_PGNO    0
+#define DBPAGE_COLUMN_DATA    1
+#define DBPAGE_COLUMN_SCHEMA  2
+
+
 
 /*
 ** Connect to or create a dbpagevfs virtual table.
@@ -20219,19 +20693,7 @@ static int dbpageConnect(
 ){
   DbpageTable *pTab = 0;
   int rc = SQLITE_OK;
-  int iDb;
 
-  if( argc>=4 ){
-    Token nm;
-    sqlite3TokenInit(&nm, (char*)argv[3]);
-    iDb = sqlite3FindDb(db, &nm);
-    if( iDb<0 ){
-      *pzErr = sqlite3_mprintf("no such schema: %s", argv[3]);
-      return SQLITE_ERROR;
-    }
-  }else{
-    iDb = 0;
-  }
   rc = sqlite3_declare_vtab(db, 
           "CREATE TABLE x(pgno INTEGER PRIMARY KEY, data BLOB, schema HIDDEN)");
   if( rc==SQLITE_OK ){
@@ -20241,11 +20703,8 @@ static int dbpageConnect(
 
   assert( rc==SQLITE_OK || pTab==0 );
   if( rc==SQLITE_OK ){
-    Btree *pBt = db->aDb[iDb].pBt;
     memset(pTab, 0, sizeof(DbpageTable));
     pTab->db = db;
-    pTab->iDb = iDb;
-    pTab->pPager = pBt ? sqlite3BtreePager(pBt) : 0;
   }
 
   *ppVtab = (sqlite3_vtab*)pTab;
@@ -20263,24 +20722,55 @@ static int dbpageDisconnect(sqlite3_vtab *pVtab){
 /*
 ** idxNum:
 **
-**     0     full table scan
-**     1     pgno=?1
+**     0     schema=main, full table scan
+**     1     schema=main, pgno=?1
+**     2     schema=?1, full table scan
+**     3     schema=?1, pgno=?2
 */
 static int dbpageBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   int i;
-  pIdxInfo->estimatedCost = 1.0e6;  /* Initial cost estimate */
+  int iPlan = 0;
+
+  /* If there is a schema= constraint, it must be honored.  Report a
+  ** ridiculously large estimated cost if the schema= constraint is
+  ** unavailable
+  */
+  for(i=0; i<pIdxInfo->nConstraint; i++){
+    struct sqlite3_index_constraint *p = &pIdxInfo->aConstraint[i];
+    if( p->iColumn!=DBPAGE_COLUMN_SCHEMA ) continue;
+    if( p->op!=SQLITE_INDEX_CONSTRAINT_EQ ) continue;
+    if( !p->usable ){
+      /* No solution.  Use the default SQLITE_BIG_DBL cost */
+      pIdxInfo->estimatedRows = 0x7fffffff;
+      return SQLITE_OK;
+    }
+    iPlan = 2;
+    pIdxInfo->aConstraintUsage[i].argvIndex = 1;
+    pIdxInfo->aConstraintUsage[i].omit = 1;
+    break;
+  }
+
+  /* If we reach this point, it means that either there is no schema=
+  ** constraint (in which case we use the "main" schema) or else the
+  ** schema constraint was accepted.  Lower the estimated cost accordingly
+  */
+  pIdxInfo->estimatedCost = 1.0e6;
+
+  /* Check for constraints against pgno */
   for(i=0; i<pIdxInfo->nConstraint; i++){
     struct sqlite3_index_constraint *p = &pIdxInfo->aConstraint[i];
     if( p->usable && p->iColumn<=0 && p->op==SQLITE_INDEX_CONSTRAINT_EQ ){
       pIdxInfo->estimatedRows = 1;
       pIdxInfo->idxFlags = SQLITE_INDEX_SCAN_UNIQUE;
       pIdxInfo->estimatedCost = 1.0;
-      pIdxInfo->idxNum = 1;
-      pIdxInfo->aConstraintUsage[i].argvIndex = 1;
+      pIdxInfo->aConstraintUsage[i].argvIndex = iPlan ? 2 : 1;
       pIdxInfo->aConstraintUsage[i].omit = 1;
+      iPlan |= 1;
       break;
     }
   }
+  pIdxInfo->idxNum = iPlan;
+
   if( pIdxInfo->nOrderBy>=1
    && pIdxInfo->aOrderBy[0].iColumn<=0
    && pIdxInfo->aOrderBy[0].desc==0
@@ -20314,6 +20804,7 @@ static int dbpageOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
 */
 static int dbpageClose(sqlite3_vtab_cursor *pCursor){
   DbpageCursor *pCsr = (DbpageCursor *)pCursor;
+  if( pCsr->pPage1 ) sqlite3PagerUnrefPageOne(pCsr->pPage1);
   sqlite3_free(pCsr);
   return SQLITE_OK;
 }
@@ -20333,6 +20824,16 @@ static int dbpageEof(sqlite3_vtab_cursor *pCursor){
   return pCsr->pgno > pCsr->mxPgno;
 }
 
+/*
+** idxNum:
+**
+**     0     schema=main, full table scan
+**     1     schema=main, pgno=?1
+**     2     schema=?1, full table scan
+**     3     schema=?1, pgno=?2
+**
+** idxStr is not used
+*/
 static int dbpageFilter(
   sqlite3_vtab_cursor *pCursor, 
   int idxNum, const char *idxStr,
@@ -20340,23 +20841,42 @@ static int dbpageFilter(
 ){
   DbpageCursor *pCsr = (DbpageCursor *)pCursor;
   DbpageTable *pTab = (DbpageTable *)pCursor->pVtab;
-  int rc = SQLITE_OK;
-  Btree *pBt = pTab->db->aDb[pTab->iDb].pBt;
+  int rc;
+  sqlite3 *db = pTab->db;
+  Btree *pBt;
 
-  pTab->szPage = sqlite3BtreeGetPageSize(pBt);
-  pTab->nPage = sqlite3BtreeLastPage(pBt);
-  if( idxNum==1 ){
-    pCsr->pgno = sqlite3_value_int(argv[0]);
-    if( pCsr->pgno<1 || pCsr->pgno>pTab->nPage ){
+  /* Default setting is no rows of result */
+  pCsr->pgno = 1; 
+  pCsr->mxPgno = 0;
+
+  if( idxNum & 2 ){
+    const char *zSchema;
+    assert( argc>=1 );
+    zSchema = (const char*)sqlite3_value_text(argv[0]);
+    pCsr->iDb = sqlite3FindDbName(db, zSchema);
+    if( pCsr->iDb<0 ) return SQLITE_OK;
+  }else{
+    pCsr->iDb = 0;
+  }
+  pBt = db->aDb[pCsr->iDb].pBt;
+  if( pBt==0 ) return SQLITE_OK;
+  pCsr->pPager = sqlite3BtreePager(pBt);
+  pCsr->szPage = sqlite3BtreeGetPageSize(pBt);
+  pCsr->mxPgno = sqlite3BtreeLastPage(pBt);
+  if( idxNum & 1 ){
+    assert( argc>(idxNum>>1) );
+    pCsr->pgno = sqlite3_value_int(argv[idxNum>>1]);
+    if( pCsr->pgno<1 || pCsr->pgno>pCsr->mxPgno ){
       pCsr->pgno = 1;
       pCsr->mxPgno = 0;
     }else{
       pCsr->mxPgno = pCsr->pgno;
     }
   }else{
-    pCsr->pgno = 1;
-    pCsr->mxPgno = pTab->nPage;
+    assert( pCsr->pgno==1 );
   }
+  if( pCsr->pPage1 ) sqlite3PagerUnrefPageOne(pCsr->pPage1);
+  rc = sqlite3PagerGet(pCsr->pPager, 1, &pCsr->pPage1, 0);
   return rc;
 }
 
@@ -20366,7 +20886,6 @@ static int dbpageColumn(
   int i
 ){
   DbpageCursor *pCsr = (DbpageCursor *)pCursor;
-  DbpageTable *pTab = (DbpageTable *)pCursor->pVtab;
   int rc = SQLITE_OK;
   switch( i ){
     case 0: {           /* pgno */
@@ -20375,9 +20894,9 @@ static int dbpageColumn(
     }
     case 1: {           /* data */
       DbPage *pDbPage = 0;
-      rc = sqlite3PagerGet(pTab->pPager, pCsr->pgno, (DbPage**)&pDbPage, 0);
+      rc = sqlite3PagerGet(pCsr->pPager, pCsr->pgno, (DbPage**)&pDbPage, 0);
       if( rc==SQLITE_OK ){
-        sqlite3_result_blob(ctx, sqlite3PagerGetData(pDbPage), pTab->szPage,
+        sqlite3_result_blob(ctx, sqlite3PagerGetData(pDbPage), pCsr->szPage,
                             SQLITE_TRANSIENT);
       }
       sqlite3PagerUnref(pDbPage);
@@ -20385,7 +20904,7 @@ static int dbpageColumn(
     }
     default: {          /* schema */
       sqlite3 *db = sqlite3_context_db_handle(ctx);
-      sqlite3_result_text(ctx, db->aDb[pTab->iDb].zDbSName, -1, SQLITE_STATIC);
+      sqlite3_result_text(ctx, db->aDb[pCsr->iDb].zDbSName, -1, SQLITE_STATIC);
       break;
     }
   }
@@ -20405,37 +20924,51 @@ static int dbpageUpdate(
   sqlite_int64 *pRowid
 ){
   DbpageTable *pTab = (DbpageTable *)pVtab;
-  int pgno;
+  Pgno pgno;
   DbPage *pDbPage = 0;
   int rc = SQLITE_OK;
   char *zErr = 0;
+  const char *zSchema;
+  int iDb;
+  Btree *pBt;
+  Pager *pPager;
+  int szPage;
 
   if( argc==1 ){
     zErr = "cannot delete";
     goto update_fail;
   }
   pgno = sqlite3_value_int(argv[0]);
-  if( pgno<1 || pgno>pTab->nPage ){
-    zErr = "bad page number";
-    goto update_fail;
-  }
-  if( sqlite3_value_int(argv[1])!=pgno ){
+  if( (Pgno)sqlite3_value_int(argv[1])!=pgno ){
     zErr = "cannot insert";
     goto update_fail;
   }
+  zSchema = (const char*)sqlite3_value_text(argv[4]);
+  iDb = zSchema ? sqlite3FindDbName(pTab->db, zSchema) : -1;
+  if( iDb<0 ){
+    zErr = "no such schema";
+    goto update_fail;
+  }
+  pBt = pTab->db->aDb[iDb].pBt;
+  if( pgno<1 || pBt==0 || pgno>(int)sqlite3BtreeLastPage(pBt) ){
+    zErr = "bad page number";
+    goto update_fail;
+  }
+  szPage = sqlite3BtreeGetPageSize(pBt);
   if( sqlite3_value_type(argv[3])!=SQLITE_BLOB 
-   || sqlite3_value_bytes(argv[3])!=pTab->szPage 
+   || sqlite3_value_bytes(argv[3])!=szPage
   ){
     zErr = "bad page value";
     goto update_fail;
   }
-  rc = sqlite3PagerGet(pTab->pPager, pgno, (DbPage**)&pDbPage, 0);
+  pPager = sqlite3BtreePager(pBt);
+  rc = sqlite3PagerGet(pPager, pgno, (DbPage**)&pDbPage, 0);
   if( rc==SQLITE_OK ){
     rc = sqlite3PagerWrite(pDbPage);
     if( rc==SQLITE_OK ){
       memcpy(sqlite3PagerGetData(pDbPage),
              sqlite3_value_blob(argv[3]),
-             pTab->szPage);
+             szPage);
     }
   }
   sqlite3PagerUnref(pDbPage);
@@ -20446,6 +20979,22 @@ update_fail:
   pVtab->zErrMsg = sqlite3_mprintf("%s", zErr);
   return SQLITE_ERROR;
 }
+
+/* Since we do not know in advance which database files will be
+** written by the sqlite_dbpage virtual table, start a write transaction
+** on them all.
+*/
+static int dbpageBegin(sqlite3_vtab *pVtab){
+  DbpageTable *pTab = (DbpageTable *)pVtab;
+  sqlite3 *db = pTab->db;
+  int i;
+  for(i=0; i<db->nDb; i++){
+    Btree *pBt = db->aDb[i].pBt;
+    if( pBt ) sqlite3BtreeBeginTrans(pBt, 1);
+  }
+  return SQLITE_OK;
+}
+
 
 /*
 ** Invoke this routine to register the "dbpage" virtual table module
@@ -20466,7 +21015,7 @@ SQLITE_PRIVATE int sqlite3DbpageRegister(sqlite3 *db){
     dbpageColumn,                 /* xColumn - read data */
     dbpageRowid,                  /* xRowid - read data */
     dbpageUpdate,                 /* xUpdate */
-    0,                            /* xBegin */
+    dbpageBegin,                  /* xBegin */
     0,                            /* xSync */
     0,                            /* xCommit */
     0,                            /* xRollback */
@@ -21380,9 +21929,7 @@ static int sessionGrowHash(int bPatchset, SessionTable *pTab){
 
 /*
 ** This function queries the database for the names of the columns of table
-** zThis, in schema zDb. It is expected that the table has nCol columns. If
-** not, SQLITE_SCHEMA is returned and none of the output variables are
-** populated.
+** zThis, in schema zDb.
 **
 ** Otherwise, if they are not NULL, variable *pnCol is set to the number
 ** of columns in the database table and variable *pzTab is set to point to a
@@ -21403,9 +21950,7 @@ static int sessionGrowHash(int bPatchset, SessionTable *pTab){
 **     *pabPK  = {1, 0, 0, 1}
 **
 ** All returned buffers are part of the same single allocation, which must
-** be freed using sqlite3_free() by the caller. If pazCol was not NULL, then
-** pointer *pazCol should be freed to release all memory. Otherwise, pointer
-** *pabPK. It is illegal for both pazCol and pabPK to be NULL.
+** be freed using sqlite3_free() by the caller
 */
 static int sessionTableInfo(
   sqlite3 *db,                    /* Database connection */
@@ -21430,7 +21975,23 @@ static int sessionTableInfo(
   assert( pazCol && pabPK );
 
   nThis = sqlite3Strlen30(zThis);
-  zPragma = sqlite3_mprintf("PRAGMA '%q'.table_info('%q')", zDb, zThis);
+  if( nThis==12 && 0==sqlite3_stricmp("sqlite_stat1", zThis) ){
+    rc = sqlite3_table_column_metadata(db, zDb, zThis, 0, 0, 0, 0, 0, 0);
+    if( rc==SQLITE_OK ){
+      /* For sqlite_stat1, pretend that (tbl,idx) is the PRIMARY KEY. */
+      zPragma = sqlite3_mprintf(
+          "SELECT 0, 'tbl',  '', 0, '', 1     UNION ALL "
+          "SELECT 1, 'idx',  '', 0, '', 2     UNION ALL "
+          "SELECT 2, 'stat', '', 0, '', 0"
+      );
+    }else if( rc==SQLITE_ERROR ){
+      zPragma = sqlite3_mprintf("");
+    }else{
+      return rc;
+    }
+  }else{
+    zPragma = sqlite3_mprintf("PRAGMA '%q'.table_info('%q')", zDb, zThis);
+  }
   if( !zPragma ) return SQLITE_NOMEM;
 
   rc = sqlite3_prepare_v2(db, zPragma, -1, &pStmt, 0);
@@ -21987,7 +22548,6 @@ SQLITE_API int sqlite3session_diff(
             if( abPK[i] ) bHasPk = 1;
           }
         }
-
       }
       sqlite3_free((char*)azCol);
       if( bMismatch ){
