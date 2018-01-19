@@ -6,8 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#define _StructuralDomainUtilities_included_
-//#include "PublicAPI\StructuralCommonDefinitions.h"
 #include "StructuralDomainApi.h"
 #include <Json/Json.h>
 

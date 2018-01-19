@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/StructuralDomainTestFixture.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StructuralDomainTestFixture.h"
@@ -10,6 +10,9 @@
 #include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
 #include <DgnPlatform/UnitTests/ScopedDgnHost.h>
 #include <StructuralDomain/StructuralDomainApi.h>
+#include <FormsDomain/FormsDomainApi.h>
+#include <ProfilesDomain/ProfilesDomainApi.h>
+
 
 using namespace BeSQLite;
 using namespace Dgn;
@@ -104,6 +107,9 @@ void StructuralDomainTestFixture::SetUp_CreateNewDgnDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void StructuralDomainTestFixture::SetUp()
     {
+    //registration order is important. Forms must be registered before Structural, otherwise 'schema already loaded' error
+    Profiles::ProfilesDomainUtilities::RegisterDomainHandlers();
+    Forms::FormsDomainUtilities::RegisterDomainHandlers();
     StructuralDomainUtilities::RegisterDomainHandlers();
     }
 
@@ -137,9 +143,6 @@ void StructuralDomainTestFixture::TearDownTestCase()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbPtr StructuralDomainTestFixture::CreateDgnDb()
     {
-    // TODO: doesn't work
-    StructuralDomainUtilities::RegisterDomainHandlers();
-
     BeFileName tmpDir;
     BeTest::GetHost().GetTempDir(tmpDir);
 

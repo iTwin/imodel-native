@@ -8,6 +8,5 @@
 #pragma once
 
 //__PUBLISH_SECTION_START__
-//#include "StructuralCommonApi.h"
 #include "StructuralPhysicalApi.h"
 #include "StructuralDomainUtilities.h"

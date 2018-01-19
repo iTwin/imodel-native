@@ -13,7 +13,7 @@ HANDLER_DEFINE_MEMBERS(WallHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Arturas.Mizaras             08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-WallPtr Wall::Create(Structural::StructuralPhysicalModelCPtr model)
+WallPtr Wall::Create(Dgn::PhysicalModelCPtr model)
     {
     Dgn::DgnModelId modelId = model.get()->GetModelId();
 

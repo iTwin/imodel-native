@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "StructuralDomainTestFixture.h"
 #include <StructuralDomain/StructuralDomainApi.h>
+#include <FormsDomain/FormsDomainApi.h>
 #include <FormsDomain/FormsDomainDefinitions.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <BeSQLite/BeSQLite.h>
@@ -14,6 +15,12 @@
 #include <Bentley/BeAssert.h>
 #include <FormsDomain/Form.h>
 #include <FormsDomain/StraightExtrusion.h>
+#include <FormsDomain/CurvedExtrusion.h>
+#include <FormsDomain/CurvedProfiledExtrusion.h>
+#include <FormsDomain/StraightProfiledExtrusion.h>
+#include <ProfilesDomain\ConstantProfile.h>
+#include <ProfilesDomain/ProfilesDomainApi.h>
+#include <DgnPlatform/DgnCoreAPI.h>
 
 
 #define MODEL_TEST_NAME              "SampleModel"
@@ -33,10 +40,13 @@ TEST_F(StructuralDomainTestFixture, EnsureDomainsAreRegistered)
     ASSERT_TRUE(db.IsValid());
 
     // //This should create a DGN db with building domain.
-    Structural::StructuralDomainUtilities::RegisterDomainHandlers();
+    //Structural::StructuralDomainUtilities::RegisterDomainHandlers();
 
     DgnDomainCP structuralPhysical = db->Domains().FindDomain(Structural::StructuralPhysicalDomain::GetDomain().GetDomainName());
     ASSERT_TRUE(NULL != structuralPhysical);
+
+    DgnDomainCP formDomain = db->Domains().FindDomain(Forms::FormsDomain::GetDomain().GetDomainName());
+    ASSERT_TRUE(NULL != formDomain);
     }
 
 BE_JSON_NAME(StructuralDomain)
@@ -339,28 +349,6 @@ TEST_F(StructuralDomainTestFixture, ColumnClassTests)
     ASSERT_TRUE(queriedElement.IsValid());
     }
 
-/*#define CURVEMEMBER_CODE_VALUE       "CURVEMEMBER-001"
-
-TEST_F(StructuralDomainTestFixture, CurveMemberClassTests)
-    {
-    DgnDbPtr db = OpenDgnDb();
-    ASSERT_TRUE(db.IsValid());
-
-    Structural::StructuralPhysicalModelCPtr physicalModel = Structural::StructuralDomainUtilities::GetStructuralPhysicalModel(MODEL_TEST_NAME, *db);
-    ASSERT_TRUE(physicalModel.IsValid());
-
-    Dgn::PhysicalElementPtr physicalElement = Structural::StructuralDomainUtilities::CreatePhysicalElement(BENTLEY_STRUCTURAL_PHYSICAL_SCHEMA_NAME, STRUCTURAL_PHYSICAL_CLASS_CurveMember, *physicalModel);
-    ASSERT_TRUE(physicalElement.IsValid());
-    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, *physicalModel, CURVEMEMBER_CODE_VALUE);
-    ASSERT_TRUE(Dgn::DgnDbStatus::Success == physicalElement->SetCode(code));
-
-    Dgn::DgnDbStatus status;
-    Dgn::DgnElementCPtr element = physicalElement->Insert(&status);
-    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
-
-    Dgn::PhysicalElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::PhysicalElement>(*physicalModel, CURVEMEMBER_CODE_VALUE);
-    ASSERT_TRUE(queriedElement.IsValid());
-    }*/
 
 #define FOUNDATIONMEMBER_CODE_VALUE       "FOUNDATIONMEMBER-001"
 
@@ -403,6 +391,23 @@ TEST_F(StructuralDomainTestFixture, SlabClassTests)
     Dgn::DgnDbStatus status;
     Dgn::DgnElementCPtr element = physicalElement->Insert(&status);
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    /*Dgn::DgnCode code2 = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, *physicalModel, "StraightExtrusionTests__1");
+
+    WallPtr pw = Wall::Create(physicalModel);
+    status = pw->SetCode(code2);
+
+    pw->Insert(&status);*/
+
+
+/*    BeSQLite::EC::ECInstanceKey key;
+    BeSQLite::DbResult sqliteStatus = StructuralDomainUtilities::InsertLinkTableRelationship(key, *db, BENTLEY_STRUCTURAL_PHYSICAL_SCHEMA_NAME, "PimpaRel", physicalElement->GetECInstanceKey(), pw->GetECInstanceKey());
+    ASSERT_TRUE(BeSQLite::DbResult::BE_SQLITE_ERROR != sqliteStatus);
+
+
+    ECN::ECRelationshipClassCP bClass = db->Schemas().GetClass(BENTLEY_STRUCTURAL_PHYSICAL_SCHEMA_NAME, "PimpaRel")->GetRelationshipClassCP();
+    status = physicalElement->SetPropertyValue("Pimpa.Id", ECN::ECValue(pw->GetElementId(), bClass));*/
+
 
     Dgn::PhysicalElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::PhysicalElement>(*physicalModel, SLAB_CODE_VALUE);
     ASSERT_TRUE(queriedElement.IsValid());
@@ -490,28 +495,6 @@ TEST_F(StructuralDomainTestFixture, StructuralMemberFootingClassTests)
     //so test finished for now
     }
 
-/*#define SURFACEMEMBER_CODE_VALUE       "SURFACEMEMBER-001"
-
-TEST_F(StructuralDomainTestFixture, SurfaceMemberClassTests)
-    {
-    DgnDbPtr db = OpenDgnDb();
-    ASSERT_TRUE(db.IsValid());
-
-    Structural::StructuralPhysicalModelCPtr physicalModel = Structural::StructuralDomainUtilities::GetStructuralPhysicalModel(MODEL_TEST_NAME, *db);
-    ASSERT_TRUE(physicalModel.IsValid());
-
-    Dgn::PhysicalElementPtr physicalElement = Structural::StructuralDomainUtilities::CreatePhysicalElement(BENTLEY_STRUCTURAL_PHYSICAL_SCHEMA_NAME, STRUCTURAL_PHYSICAL_CLASS_SurfaceMember, *physicalModel);
-    ASSERT_TRUE(physicalElement.IsValid());
-    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, *physicalModel, SURFACEMEMBER_CODE_VALUE);
-    ASSERT_TRUE(Dgn::DgnDbStatus::Success == physicalElement->SetCode(code));
-
-    Dgn::DgnDbStatus status;
-    Dgn::DgnElementCPtr element = physicalElement->Insert(&status);
-    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
-
-    Dgn::PhysicalElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::PhysicalElement>(*physicalModel, SURFACEMEMBER_CODE_VALUE);
-    ASSERT_TRUE(queriedElement.IsValid());
-    }*/
 
 #define STRUCTURALSUBTRACTION_CODE_VALUE       "STRUCTURALSUBTRACTION-001"
 TEST_F(StructuralDomainTestFixture, StructuralSubtractionClassTests)
@@ -569,7 +552,7 @@ TEST_F(StructuralDomainTestFixture, StructuralAdditionClassTests)
     ASSERT_TRUE(queriedElement.IsValid());
     }
 
-TEST_F(StructuralDomainTestFixture, FormClassTests)
+TEST_F(StructuralDomainTestFixture, StraightExtrusionTests)
     {
     DgnDbPtr db = OpenDgnDb();
     ASSERT_TRUE(db.IsValid());
@@ -578,23 +561,132 @@ TEST_F(StructuralDomainTestFixture, FormClassTests)
     ASSERT_TRUE(physicalModel.IsValid());
 
     Dgn::DgnDbStatus status;
-    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, *physicalModel, "FormClassTests");
+    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, *physicalModel, "StraightExtrusionTests");
 
     WallPtr pw = Wall::Create(physicalModel);
     status = pw->SetCode(code);
 
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
 
-   // Forms::FormPtr formAspect = Forms::Form::Create();
-   // Forms::Form::SetAspect(*pw, *formAspect); //set aspect to wall
-
     Forms::StraightExtrusionPtr se = Forms::StraightExtrusion::Create();
-    Forms::Form::SetAspect(*pw, *se); //set aspect to wall
 
-    //se->SetLength(45.00);
+    status = se->SetPropertyValue("Length", ECN::ECValue(0.58));
+    ASSERT_TRUE(Dgn::DgnDbStatus::NotEnabled == status);
+
+    Forms::StraightExtrusion::SetAspect(*pw, *se); //set aspect to wall
+
+    se->SetLength(78.0);
+
+    IGeometryPtr geom = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)));
+    se->SetShape(geom);
+
     pw->Insert(&status);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
 
-    //double dbLength = se->GetLength();
+    Forms::StraightExtrusionP se2 = Forms::StraightExtrusion::GetAspectP(*pw);
+    double b = se2->GetLength();
+
+    ASSERT_TRUE(se->GetLength() ==  se2->GetLength());
+
+    DgnElement::UniqueAspect* aspect = DgnElement::UniqueAspect::GetAspectP(*pw, *(se->GetECClass(*db)));
+    ECN::ECValue assValue;
+    status = aspect->GetPropertyValue(assValue, "Length");
+    ASSERT_TRUE(Dgn::DgnDbStatus::NotEnabled == status);
+    }
+
+TEST_F(StructuralDomainTestFixture, CurvedExtrusionTests)
+    {
+    DgnDbPtr db = OpenDgnDb();
+    ASSERT_TRUE(db.IsValid());
+
+    Structural::StructuralPhysicalModelCPtr physicalModel = Structural::StructuralDomainUtilities::GetStructuralPhysicalModel(MODEL_TEST_NAME, *db);
+    ASSERT_TRUE(physicalModel.IsValid());
+
+    Dgn::DgnDbStatus status;
+    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, *physicalModel, "CurvedExtrusionTests");
+
+    WallPtr pw = Wall::Create(physicalModel);
+    status = pw->SetCode(code);
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    Forms::CurvedExtrusionPtr ce = Forms::CurvedExtrusion::Create();
+
+    IGeometryPtr geom1 = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)));
+    IGeometryPtr geom2 = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(0.0, 1.0, 0.0, 1.0, 1.0, 1.0)));
+    IGeometryPtr geom3 = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(0.0, 0.0, 1.0, 1.0, 1.0, 1.0)));
+
+    Forms::CurvedExtrusion::SetAspect(*pw, *ce); //set aspect to wall
+
+    ce->SetStartShape(geom1);
+    ce->SetEndShape(geom2);
+    ce->SetCurve(geom3);
+
+    pw->Insert(&status);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    Forms::CurvedExtrusionP ce2 = Forms::CurvedExtrusion::GetAspectP(*pw);
+    IGeometryPtr geomCurve = ce2->GetCurve();
+
+    ASSERT_TRUE(geomCurve->IsSameStructureAndGeometry(*ce->GetCurve()));
+
+    DgnElement::UniqueAspect* aspect = DgnElement::UniqueAspect::GetAspectP(*pw, *(ce->GetECClass(*db)));
+    ECN::ECValue assValue;
+    status = aspect->GetPropertyValue(assValue, "Curve");
+    ASSERT_TRUE(Dgn::DgnDbStatus::NotEnabled == status);
+    }
+
+TEST_F(StructuralDomainTestFixture, StraightProfileExtrusionTests)
+    {
+    DgnDbPtr db = OpenDgnDb();
+    ASSERT_TRUE(db.IsValid());
+
+    Structural::StructuralPhysicalModelCPtr physicalModel = Structural::StructuralDomainUtilities::GetStructuralPhysicalModel(MODEL_TEST_NAME, *db);
+    ASSERT_TRUE(physicalModel.IsValid());
+
+    Dgn::DgnDbStatus status;
+    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, *physicalModel, "StraightProfiledExtrusionTests");
+
+    WallPtr pw = Wall::Create(physicalModel);
+    status = pw->SetCode(code);
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+
+    Dgn::DgnCode code2 = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, *physicalModel, "StraightProfiledExtrusionTests 2");
+
+    WallPtr pw2 = Wall::Create(physicalModel);
+    status = pw2->SetCode(code2);
+    pw2->Insert(&status);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    //create constant profile
+
+    Profiles::ProfileDefinitionModelCPtr profilesModel = Profiles::ProfilesDomainUtilities::CreateProfilesModel(MODEL_TEST_NAME, *db, nullptr);
+    ASSERT_TRUE(profilesModel.IsValid());
+
+    Dgn::DgnCode codeConstProfile = Dgn::CodeSpec::CreateCode(BENTLEY_PROFILES_AUTHORITY, *profilesModel, "ConstProfile");
+
+    Profiles::ConstantProfilePtr constantProfile = Profiles::ConstantProfile::Create(profilesModel);
+    ASSERT_TRUE(constantProfile.IsValid());
+    constantProfile->SetCode(codeConstProfile);
+
+   
+    Dgn::DgnElementCPtr persistentElement = constantProfile->Insert(&status);
+    ASSERT_TRUE(persistentElement.IsValid());
+
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    Forms::StraightProfiledExtrusionPtr se = Forms::StraightProfiledExtrusion::Create();
+
+    status = se->SetPropertyValue("Length", ECN::ECValue(0.58));
+    ASSERT_TRUE(Dgn::DgnDbStatus::NotEnabled == status);
+    se->SetLength(78.0);
+    se->SetProfile(*constantProfile);
+    Forms::StraightProfiledExtrusion::SetAspect(*pw, *se); //set aspect to wall
+
+    pw->Insert(&status);
 
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
     }
@@ -646,6 +738,7 @@ TEST_F(StructuralDomainTestFixture, StructuralMemberRefersToStructuralSubtractio
 
     sqliteStatus = StructuralDomainUtilities::InsertLinkTableRelationship(key, *db, BENTLEY_STRUCTURAL_PHYSICAL_SCHEMA_NAME, "StructuralMemberRefersToStructuralSubtraction", pstructMember2->GetECInstanceKey(), psub2->GetECInstanceKey());
     ASSERT_TRUE(BeSQLite::DbResult::BE_SQLITE_ERROR != sqliteStatus);
+
     }
 
 TEST_F(StructuralDomainTestFixture, StructuralMemberOwnsStructuralAdditionTest)
@@ -743,25 +836,62 @@ TEST_F(StructuralDomainTestFixture, PileMixinTest)
     ASSERT_TRUE(pile->IsCurveMember());
     ASSERT_FALSE(pile->IsSurfaceMember());
 
-
-    /*ECN::ECPropertyIterable props = pile->GetElementClass()->GetProperties();
-
-    for (auto i = props.begin(); i != props.end(); ++i)
-        {
-        ECN::ECPropertyP pr = *i;
-
-        long a = 15;
-        }
-
-
-    int test = 45;
-    status = pile->SetPropertyValue("www", test);*/
-
-
     pile->Insert(&status);
-
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
 
     Dgn::PhysicalElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::PhysicalElement>(*physicalModel, PILE_CODE_VALUE2);
     ASSERT_TRUE(queriedElement.IsValid());
+    }
+
+TEST_F(StructuralDomainTestFixture, CurvedProfileExtrusionTests)
+    {
+    DgnDbPtr db = OpenDgnDb();
+    ASSERT_TRUE(db.IsValid());
+
+    Structural::StructuralPhysicalModelCPtr physicalModel = Structural::StructuralDomainUtilities::GetStructuralPhysicalModel(MODEL_TEST_NAME, *db);
+    ASSERT_TRUE(physicalModel.IsValid());
+
+    Dgn::DgnDbStatus status;
+    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, *physicalModel, "CurvedProfileExtrusionTests");
+
+    WallPtr pw = Wall::Create(physicalModel);
+    status = pw->SetCode(code);
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    Profiles::ProfileDefinitionModelCPtr profilesModel = Profiles::ProfilesDomainUtilities::GetProfilesModel(MODEL_TEST_NAME, *db, nullptr);
+    ASSERT_TRUE(profilesModel.IsValid());
+
+    Dgn::DgnCode codeConstProfile1 = Dgn::CodeSpec::CreateCode(BENTLEY_PROFILES_AUTHORITY, *profilesModel, "CurvedProfileExtrusionTests_ConstProfile_1");
+    Dgn::DgnCode codeConstProfile2 = Dgn::CodeSpec::CreateCode(BENTLEY_PROFILES_AUTHORITY, *profilesModel, "CurvedProfileExtrusionTests_ConstProfile_2");
+
+    Profiles::ConstantProfilePtr constantProfile1 = Profiles::ConstantProfile::Create(profilesModel);
+    ASSERT_TRUE(constantProfile1.IsValid());
+    constantProfile1->SetCode(codeConstProfile1);
+    Dgn::DgnElementCPtr persistentElement1 = constantProfile1->Insert(&status);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+    ASSERT_TRUE(persistentElement1.IsValid());
+
+    Profiles::ConstantProfilePtr constantProfile2 = Profiles::ConstantProfile::Create(profilesModel);
+    ASSERT_TRUE(constantProfile2.IsValid());
+    constantProfile2->SetCode(codeConstProfile2);
+    Dgn::DgnElementCPtr persistentElement2 = constantProfile2->Insert(&status);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+    ASSERT_TRUE(persistentElement2.IsValid());
+
+
+    Forms::CurvedProfiledExtrusionPtr se = Forms::CurvedProfiledExtrusion::Create();
+    se->SetStartProfile(*constantProfile1);
+    se->SetEndProfile(*constantProfile2);
+    IGeometryPtr geom1 = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)));
+    se->SetCurve(geom1);
+
+    Forms::CurvedProfiledExtrusion::SetAspect(*pw, *se); //set aspect to wall
+
+    pw->Insert(&status);
+
+    Forms::CurvedProfiledExtrusionP se2 = Forms::CurvedProfiledExtrusion::GetAspectP(*pw);
+
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
     }
