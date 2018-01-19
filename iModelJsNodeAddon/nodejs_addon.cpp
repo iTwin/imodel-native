@@ -1408,4 +1408,4 @@ Napi::FunctionReference IModelJsAddon::AddonDgnDb::s_constructor;
 Napi::FunctionReference IModelJsAddon::AddonECPresentationManager::s_constructor;
 Napi::FunctionReference IModelJsAddon::AddonECDb::s_constructor;
 
-NODE_API_MODULE(IModelJsAddon, iModelJsAddonRegisterModule)
+NODE_API_MODULE(at_bentley_imodeljs_nodeaddon, iModelJsAddonRegisterModule)
