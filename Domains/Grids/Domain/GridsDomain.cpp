@@ -137,7 +137,6 @@ double* pTransparency
 //---------------------------------------------------------------------------------------
 void GridsDomain::InsertDomainAuthorities (DgnDbR db) const
     {
-    InsertCodeSpec (db, GRIDS_AUTHORITY_SurfaceSet);
     InsertCodeSpec (db, GRIDS_AUTHORITY_Grid);
     InsertCodeSpec (db, GRIDS_AUTHORITY_GridCurve);
     }
@@ -147,10 +146,6 @@ void GridsDomain::InsertDomainAuthorities (DgnDbR db) const
 //---------------------------------------------------------------------------------------
 void GridsDomain::EnsureDomainAuthoritiesExist (Dgn::DgnDbR db)
     {
-    if (!db.CodeSpecs ().QueryCodeSpecId (GRIDS_AUTHORITY_SurfaceSet).IsValid ())
-        {
-        InsertCodeSpec (db, GRIDS_AUTHORITY_SurfaceSet);
-        }
     if (!db.CodeSpecs ().QueryCodeSpecId (GRIDS_AUTHORITY_Grid).IsValid ())
         {
         InsertCodeSpec (db, GRIDS_AUTHORITY_Grid);
@@ -190,12 +185,9 @@ void GridsDomain::_OnSchemaImported(DgnDbR db) const
     tmpColorDef.SetAlpha (0xaa);
 
     InsertCategory (db, GRIDS_CATEGORY_CODE_Uncategorized, &tmpColorDef, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-    InsertCategory (db, GRIDS_CATEGORY_CODE_DrivingSurface, &tmpColorDef, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
     tmpColorDef = Dgn::ColorDef::DarkBlue ();
     tmpColorDef.SetAlpha (0xaa);
     InsertCategory (db, GRIDS_CATEGORY_CODE_GridSurface, &tmpColorDef, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-    tmpColorDef = Dgn::ColorDef::DarkGrey ();
-    InsertCategory (db, GRIDS_CATEGORY_CODE_IntersectionCurve, &tmpColorDef, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
     tmpColorDef = Dgn::ColorDef::Green ();
     DgnStyleId gridlineStyleId = getGridlineStyleId (db);
     InsertCategory (db, GRIDS_CATEGORY_CODE_GridCurve, &tmpColorDef, NULL, NULL, &bTRUE, &bTRUE, NULL, &gridlineStyleId, NULL, NULL, NULL);
@@ -221,11 +213,11 @@ bool GridsDomain::EnsureDomainCategoriesExist (Dgn::DgnDbR db)
     bool bTRUE = true;
     bool bFALSE = false;
 
-    if (!(queryCategoryId (db, GRIDS_CATEGORY_CODE_DrivingSurface).IsValid ()))
+    if (!(queryCategoryId (db, GRIDS_CATEGORY_CODE_GridCurve).IsValid ()))
         {
-        tmpColorDef = Dgn::ColorDef::DarkGrey ();
+        tmpColorDef = Dgn::ColorDef::Green();
         tmpColorDef.SetAlpha (0xaa);
-        if (BSISUCCESS == InsertCategory (db, GRIDS_CATEGORY_CODE_DrivingSurface, &tmpColorDef, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
+        if (BSISUCCESS == InsertCategory (db, GRIDS_CATEGORY_CODE_GridCurve, &tmpColorDef, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
             {
             itemInserted = true;
             }
