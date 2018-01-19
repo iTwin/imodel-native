@@ -186,7 +186,7 @@ BENTLEYDTM_EXPORT bool IntersectRay(bvector<DTMRayIntersection>& hitsOnDTM, DVec
 //! @param[out] slope           Slope on the point. Can be null.
 //! @param[out] aspect          Aspect on the point. Can be null.
 //! @param[out] triangle        Triangle around the point. Can be null.
-//! @param[out] drapeType       Type of draping. Can be null. (should be declared as an DTMEnum !!!).
+//! @param[out] drapedType      Type of draping. Can be null. (should be declared as an DTMEnum !!!).
 //! @param[in]  point           The point to drape.
 //! @param[in]  directionOfVector           Direction of vector.
 //! @param[in]  slopeOfVector           Slope of vector.
@@ -245,13 +245,13 @@ virtual DTMStatusInt _TraceCatchmentForPoint (DTMDrainageFeaturePtr& ret, DPoint
 //! Gets the DescentTrace.
 //! @param[out] ret          The Descent Trace.
 //! @param[in]  pt           The start point.
-//! @param[in]  maxpondDepth The Maximum pond depth.
+//! @param[in]  minDepth	 The minimum depth.
 //! @return DTM status.
 BENTLEYDTM_EXPORT DTMStatusInt GetDescentTrace (DTMDrainageFeaturePtr& ret, DPoint3dCR pt, double minDepth);
 //! Gets the AscentTrace.
 //! @param[out] ret          The Ascent Trace.
 //! @param[in]  pt           The start point.
-//! @param[in]  maxpondDepth The Maximum pond depth.
+//! @param[in]  minDepth	 The minimum depth.
 //! @return DTM status.
 BENTLEYDTM_EXPORT DTMStatusInt GetAscentTrace (DTMDrainageFeaturePtr& ret, DPoint3dCR pt, double minDepth);
 //! Gets the Trace Catchment.
@@ -277,8 +277,9 @@ virtual DTMStatusInt _ContourAtPoint (DTMPointArray& ret, DPoint3dCR pt,double c
 /*__PUBLISH_SECTION_START__*/
 public:
 //! Gets the Contour from a point.
-//! @param[out] ret           The Contour Points.
-//! @param[in]  pt            The contour point.
+//! @param[out] ret             The Contour Points.
+//! @param[in]  pt              The contour point.
+//! @param[in]  contourInterval The interval gap between contours.
 //! @param[in]  smoothOption  The smooth option.
 //! @param[in]  smoothFactor  The smooth factor.
 //! @param[in]  smoothDensity The smooth Density.
@@ -286,8 +287,9 @@ public:
 //! @return DTM status.
 BENTLEYDTM_EXPORT DTMStatusInt ContourAtPoint (DTMPointArray& ret, DPoint3dCR pt,double contourInterval, DTMContourSmoothing smoothOption, double smoothFactor, int smoothDensity, const DTMFenceParams& fence);
 //! Gets the Contour from a point.
-//! @param[out] ret           The Contour Points.
-//! @param[in]  pt            The contour point.
+//! @param[out] ret             The Contour Points.
+//! @param[in]  pt              The contour point.
+//! @param[in]  contourInterval The interval gap between contours.
 //! @param[in]  smoothOption  The smooth option.
 //! @param[in]  smoothFactor  The smooth factor.
 //! @param[in]  smoothDensity The smooth Density.
@@ -412,7 +414,7 @@ BENTLEYDTM_EXPORT DTMStatusInt CalculateSlopeArea(double& flatArea, double& slop
 //__PUBLISH_SECTION_START__
 
 //! Gets a Transformed copy of the DTM.
-//! @param[out] transformedDTM The transformed DTM.
+//! @param[out] transformedDtm The transformed DTM.
 //! @param[in] transformation  The transformation to apply.
 //! @return error status.
 BENTLEYDTM_EXPORT DTMStatusInt GetTransformDTM (DTMPtr& transformedDtm, TransformCR transformation);
@@ -423,7 +425,8 @@ BENTLEYDTM_EXPORT DTMStatusInt GetTransformDTM (DTMPtr& transformedDtm, Transfor
 BENTLEYDTM_EXPORT bool GetTransformation (TransformR transformation);
 
 //! Save this DTM to a geopak tin file.
-//! @param[in] geopak tin file name.
+//! @param[in] fileNameP The geopak tin file name.
+//! @param[in] transformation Optional transformation applied to the data.
 //! @return true if save operation succeed.
 BENTLEYDTM_EXPORT DTMStatusInt ExportToGeopakTinFile(WCharCP fileNameP, TransformCP transformation = nullptr);
 
