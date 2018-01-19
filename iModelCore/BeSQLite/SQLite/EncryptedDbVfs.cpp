@@ -30,11 +30,11 @@ enum class FileHeaderSizeOf : uint32_t
 enum class FileHeaderOffset : uint32_t
 {
     FormatSignature = 0,
-    KeySource = FileHeaderSizeOf::FormatSignature,
-    EncryptionAlgorithm = KeySource + (uint32_t) FileHeaderSizeOf::KeySource,
-    ReservedFlags = EncryptionAlgorithm + (uint32_t) FileHeaderSizeOf::EncryptionAlgorithm,
-    ExtraDataSize = ReservedFlags + (uint32_t) FileHeaderSizeOf::ReservedFlags,
-    ExtraData = ExtraDataSize + (uint32_t) FileHeaderSizeOf::ExtraDataSize,
+    KeySource = static_cast<uint32_t>(FileHeaderSizeOf::FormatSignature),
+    EncryptionAlgorithm = KeySource + static_cast<uint32_t>(FileHeaderSizeOf::KeySource),
+    ReservedFlags = EncryptionAlgorithm + static_cast<uint32_t>(FileHeaderSizeOf::EncryptionAlgorithm),
+    ExtraDataSize = ReservedFlags + static_cast<uint32_t>(FileHeaderSizeOf::ReservedFlags),
+    ExtraData = ExtraDataSize + static_cast<uint32_t>(FileHeaderSizeOf::ExtraDataSize),
 };
 
 //=======================================================================================
@@ -373,7 +373,7 @@ bool Db::IsEncryptedDb(BeFileNameCR dbFileName)
     if (BeFileStatus::Success != fileStatus)
         return false;
 
-    Utf8Char formatSignature[FileHeaderSizeOf::FormatSignature];
+    Utf8Char formatSignature[static_cast<uint32_t>(FileHeaderSizeOf::FormatSignature)];
     uint32_t bytesRead;
     fileStatus = dbFile.Read(&formatSignature, &bytesRead, sizeof(formatSignature));
     if ((BeFileStatus::Success != fileStatus) || (bytesRead < sizeof(ENCRYPTED_BESQLITE_FORMAT_SIGNATURE)))
@@ -422,7 +422,7 @@ DbResult Db::EncryptDb(BeFileNameCR originalFileName, EncryptionParams const& pa
         return rc;
         }
 
-    Utf8Char formatSignature[FileHeaderSizeOf::FormatSignature];
+    Utf8Char formatSignature[static_cast<uint32_t>(FileHeaderSizeOf::FormatSignature)];
     memset(formatSignature, 0, sizeof(formatSignature));
     strcpy(formatSignature, ENCRYPTED_BESQLITE_FORMAT_SIGNATURE);
     uint32_t bytesWritten = 0;
