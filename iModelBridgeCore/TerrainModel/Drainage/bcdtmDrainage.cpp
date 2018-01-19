@@ -761,4 +761,37 @@ DTMPondResult DtmPondDesignCriteria::CreatePond(BENTLEY_NAMESPACE_NAME::TerrainM
 
     }
 
+DTMPondResult DtmPondDesignCriteria::CreatePond(double *outPondElevationP, double *outPondVolumeP, BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr& dtm)
+	{
+	dtm = TerrainModel::BcDTM::Create();
+
+	if (bcdtmDrainage_designPondToATargetVolumeOrElevationDtmObject(
+		dtm->GetTinHandle(),
+		result,
+		outPondElevationP,
+		outPondVolumeP,
+		points.data(),
+		(long)points.size(),
+		designMethod,
+		pondTarget,
+		target,
+		target,
+		sideSlope,
+		freeBoard,
+		isBerm,
+		bermSlope,
+		bermWidth,
+		isCrown,
+		crownWidth,
+		cornerStrokeTolerance,
+		isBermFillOnly,
+		fillTinP == nullptr ? nullptr : fillTinP->GetTinHandle(),
+		fillSlope) != DTM_SUCCESS)
+		{
+		dtm = nullptr;
+		return DTMPondResult::UnknownError;
+		}
+	return result;
+
+	}
 END_BENTLEY_TERRAINMODEL_NAMESPACE

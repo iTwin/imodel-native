@@ -8,6 +8,7 @@
 #pragma once
 #include <algorithm>
 #include <stack>
+#include <TerrainModel\Core\DTMIterators.h>
 
 BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 
@@ -154,13 +155,20 @@ class DTMLineCache : bvector<DTMLine>
 
         int  StoreLineInCache(double X1, double Y1, double Z1, double X2, double Y2, double Z2)
             {
-
             DTMLine newLine;
             newLine.point1 = DPoint3d::From(X1, Y1, Z1);
             newLine.point2 = DPoint3d::From(X2, Y2, Z2);
             push_back(newLine);
             return DTM_SUCCESS;
+            }
 
+        int  StoreLineInCache(DPoint3dCR pt1, DPoint3dCR pt2)
+            {
+            DTMLine newLine;
+            newLine.point1 = pt1;
+            newLine.point2 = pt2;
+            push_back(newLine);
+            return DTM_SUCCESS;
             }
 
         void  ClearCache(void)
@@ -179,13 +187,37 @@ class DTMLineCache : bvector<DTMLine>
             DTMFeatureType      dtmFeatureType,
             DTMUserTag          dtmUserTag,
             DTMFeatureId        dtmFeatureID,
+            bool                joinFeatures,
             void *              userP
         )
             {
             int ret = DTM_SUCCESS;
             if (!empty())
                 {
-                ret = delegateP(dtmFeatureType, dtmUserTag, dtmFeatureID, (DPoint3d *)data(), (long)size(), userP);
+                if (joinFeatures)
+                    {
+                    BcDTMPtr dtm = BcDTM::Create();
+                    for (auto&& line : *this)
+                        {
+                        DTMFeatureId fId;
+                        dtm->AddLinearFeature(DTMFeatureType::Breakline, &line.point1, 2, &fId);
+                        }
+                    int numFeatures, joinedFeatures;
+                    dtm->JoinFeatures(DTMFeatureType::Breakline, &numFeatures, &joinedFeatures, 0);
+
+                    DTMFeatureEnumerator featureEnum(*dtm);
+                    
+                    bvector<DPoint3d> points;
+                    for (auto&& feature : featureEnum)
+                        {
+                        feature.GetFeaturePoints(points);
+                        if (delegateP(dtmFeatureType, dtmUserTag, dtmFeatureID, points.data(), points.size(), userP))
+                            return DTM_ERROR;
+
+                        }
+                    }
+                else
+                    ret = delegateP(dtmFeatureType, dtmUserTag, dtmFeatureID, (DPoint3d *)data(), (long)size() * 2, userP);
                 clear();
                 }
             return ret;

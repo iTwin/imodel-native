@@ -7717,7 +7717,7 @@ int bcdtmObject_fixTrianglesWhichCrossDtmObject(BC_DTM_OBJ *dtmP, long startPnt,
             startPnt = P1 = P2;
             if (P1 != lastPnt) if (bcdtmTin_getSwapTriangleDtmObject (dtmP, P1, lastPnt, &P2, &P3, &P4))
                 goto errexit;
-            if (P2 == dtmP->nullPnt) goto cleanup;
+            if (P2 == dtmP->nullPnt || P3 == dtmP->nullPnt || P4 == dtmP->nullPnt) goto cleanup;
             }
         else
             {
@@ -7745,7 +7745,7 @@ int bcdtmObject_fixTrianglesWhichCrossDtmObject(BC_DTM_OBJ *dtmP, long startPnt,
             if (P2 == dtmP->nullPnt) goto cleanup;
             }
         else
-            {          
+            {
             if (sd1 > 0)
                 {
                 P1 = P2; P2 = P4;
@@ -7971,7 +7971,7 @@ int bcdtmObject_tryAndAddTriangleFeatureLongestSideDtmObject(BC_DTM_OBJ *dtmP)
 //=======================================================================================
 BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
 (
-    BC_DTM_OBJ *dtmP //  Pointer To DTM Object
+    BC_DTM_OBJ *dtmP    //  Pointer To DTM Object
 )
     {
     BC_DTM_OBJ *tempDtmP = nullptr;
@@ -7983,6 +7983,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
     BC_DTM_FEATURE *dtmFeatureP;
     long numTrgPts;
     bvector<long> failedFeatures;
+    bvector<long> deletedFeatures;
 
     // Log Arguments
     if (dbg)
@@ -8057,11 +8058,10 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
         int side = bcdtmMath_sideOf(trgPtsP->x, trgPtsP->y, (trgPtsP + 1)->x, (trgPtsP + 1)->y, (trgPtsP + 2)->x, (trgPtsP + 2)->y);
         if (side == 0)
             {
-            bcdtmWrite_message (1, 0, 0, "Colinear STM Triangle");
-            goto errexit;
-            }
+            deletedFeatures.push_back(dtmFeature);
 
-        if (side > 0)
+            }
+        else if (side > 0)
             {
             if (dtmFeatureP->dtmFeatureState == DTMFeatureState::OffsetsArray)
                 {
@@ -8118,11 +8118,19 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
     dtmP->ppTol /= 100;
     dtmP->plTol /= 100;
 
+    for (auto dtmFeature : deletedFeatures)
+        {
+        dtmFeatureP = ftableAddrP(dtmP, dtmFeature);
+        bcdtmInsert_removeDtmFeatureFromDtmObject(dtmP, dtmFeature);
+        }
+
     //bcdtmObject_tryAndAddTriangleFeatureLongestSideDtmObject(dtmP);
     for (dtmFeature = 0; dtmFeature < dtmP->numFeatures; ++dtmFeature)
         {
-        if (bcdtmObject_tryAndAddTriangleFeatureDtmObject(dtmP, dtmFeature) != DTM_SUCCESS)
-            failedFeatures.push_back(dtmFeature);
+        dtmFeatureP = ftableAddrP(dtmP, dtmFeature);
+        if (dtmFeatureP->dtmFeatureState != DTMFeatureState::Deleted)
+            if (bcdtmObject_tryAndAddTriangleFeatureDtmObject(dtmP, dtmFeature) != DTM_SUCCESS)
+                failedFeatures.push_back(dtmFeature);
         }
 
     int method = 0;
@@ -8229,7 +8237,9 @@ errexit:
     goto cleanup;
     }
 
-
+//=======================================================================================
+// @bsimethod                                    Daryl.Holmwood                 11/2016
+//=======================================================================================
 BENTLEYDTM_EXPORT DTMStatusInt bcdtmObject_storeTrianglesInDtmObject(BC_DTM_OBJ* dtmP, DTMFeatureType dtmFeatureType, DPoint3dCP points, int numPoints, int* pointIndex, int numTriangles)
     {
     long firstPointIndex = dtmP->numPoints;

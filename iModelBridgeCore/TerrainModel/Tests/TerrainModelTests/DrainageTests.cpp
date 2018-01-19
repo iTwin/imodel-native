@@ -125,6 +125,7 @@ void DoPondTest(BcDTMR iDtm, bool analysePonds = false)
 //    int ret = DTM_SUCCESS;
     int dbg = DTM_TRACE_VALUE (1);
     long startTime = bcdtmClock ();
+    BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr dtmPtr;
     BC_DTM_OBJ *dtmP = NULL;
 //    BC_DTM_OBJ* depressionDtmP = NULL;
 //    BC_DTM_OBJ *traceDtmP = NULL;
@@ -146,7 +147,9 @@ void DoPondTest(BcDTMR iDtm, bool analysePonds = false)
     DTMDrainageTables *drainageTablesP = NULL;
 //    DTMFeatureCallback callBackFunction = (DTMFeatureCallback)bcdtmDrainage_callBackFunction;
 
-    if (bcdtmObject_createDtmObject (&dtmP)) goto errexit;
+    dtmPtr = BcDTM::Create();
+    if (dtmPtr.IsNull()) goto errexit;
+    dtmP = dtmPtr->GetTinHandle();
     //           BcDTMDrainage::CreateDrainageTables(ibcDtm.get(), drainageTablesP) ;
     bcdtmWrite_message (0, 0, 0, "Determing Ponds");
     if (BcDTMDrainage::DeterminePonds (&iDtm, drainageTablesP, (DTMFeatureCallback)bcdtmDrainage_callBackFunction, dtmP) == DTM_SUCCESS)

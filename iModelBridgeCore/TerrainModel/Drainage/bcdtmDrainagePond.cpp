@@ -2271,6 +2271,7 @@ int bcdtmDrainage_determineZeroSlopeSumpLinePondsDtmObject
 cleanup:
     if( zeroSlopeSumpLinesP != nullptr ) { free(zeroSlopeSumpLinesP) ; zeroSlopeSumpLinesP = nullptr ; }
     if (polygonP != nullptr) bcdtmPolygon_deletePolygonObject(&polygonP);
+    if (sumpLinesP != nullptr) { free(sumpLinesP); sumpLinesP = nullptr; }
 
     // Normal Exit
 
@@ -8041,6 +8042,8 @@ int bcdtmDrainage_polygoniseZeroSlopeTrianglesDtmObject
 
                                         if (bcdtmList_copyTptrListToPointListDtmObject(dtmP, sp, &pointListP, &numPointList)) goto errexit;
                                         pointList = new DTMPointList(pointListP, numPointList);
+                                        free(pointListP);
+                                        pointListP = nullptr;
                                         zeroSlopePolygon = new DTMZeroSlopePolygon(direction, *pointList);
                                         zeroSlopePolygons.push_back(*zeroSlopePolygon);
                                         delete pointList;
@@ -9827,6 +9830,7 @@ static int bcdtmDrainage_designPondToATargetVolumeDtmObject
 cleanup :
     if( sideSlopeTableP != nullptr ) free(sideSlopeTableP) ;
     if( pondObjectsPP   != nullptr ) { free(pondObjectsPP) ; pondObjectsPP = nullptr ; }
+	if (joinUserTagsP != nullptr) { free(joinUserTagsP); joinUserTagsP = nullptr; }
     if( pondSideSlopesP != nullptr ) bcdtmObject_destroyDtmObject(&pondSideSlopesP) ;
     if( pondDataP != nullptr ) bcdtmObject_destroyDtmObject(&pondDataP) ;
     if( pondTinP  != nullptr ) bcdtmObject_destroyDtmObject(&pondTinP) ;

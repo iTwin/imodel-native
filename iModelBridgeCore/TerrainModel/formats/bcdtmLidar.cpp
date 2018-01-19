@@ -2,7 +2,7 @@
 |
 |     $Source: formats/bcdtmLidar.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TerrainModel/Formats/Formats.h"
@@ -333,10 +333,12 @@ struct LasVLR
 
 #ifdef BUILDTMFORDGNDB
 #define GEOTIFFKEYSLISTCONST const
+#define GEOCOORDINATESNAMESPACE GeoCoordinates::
 #else
 #define GEOTIFFKEYSLISTCONST
+#define GEOCOORDINATESNAMESPACE
 #endif
-struct GeoTiffKeysList : GeoCoordinates::IGeoTiffKeysList
+struct GeoTiffKeysList : GEOCOORDINATESNAMESPACE IGeoTiffKeysList
     {
     struct sGeoKeys
         {
@@ -361,7 +363,7 @@ struct GeoTiffKeysList : GeoCoordinates::IGeoTiffKeysList
 
         for (int i = 0; i < keys->wNumberOfKeys; i++)
             {
-            GeoCoordinates::IGeoTiffKeysList::GeoKeyItem item;
+            GEOCOORDINATESNAMESPACE IGeoTiffKeysList::GeoKeyItem item;
             item.KeyID = keys->pKey[i].wKeyID;
             if (keys->pKey[i].wTIFFTagLocation == 0)
                 {
@@ -386,9 +388,9 @@ struct GeoTiffKeysList : GeoCoordinates::IGeoTiffKeysList
         m_index = 0;
         }
 
-    bvector<GeoCoordinates::IGeoTiffKeysList::GeoKeyItem> m_keys;
+    bvector<GEOCOORDINATESNAMESPACE IGeoTiffKeysList::GeoKeyItem> m_keys;
     mutable int m_index;
-    virtual bool            GetFirstKey (GeoCoordinates::IGeoTiffKeysList::GeoKeyItem* po_Key) GEOTIFFKEYSLISTCONST
+    virtual bool            GetFirstKey (GeoKeyItem* po_Key) GEOTIFFKEYSLISTCONST
         {
         m_index = 0;
         return GetNextKey (po_Key);

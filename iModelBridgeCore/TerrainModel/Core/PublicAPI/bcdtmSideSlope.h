@@ -2,10 +2,11 @@
 |
 |     $Source: Core/PublicAPI/bcdtmSideSlope.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+//__BENTLEY_INTERNAL_ONLY__
 
 BENTLEYDTM_EXPORT int bcdtmSideSlope_createSideSlopesForSideSlopeTableDtmObject (DTM_SIDE_SLOPE_TABLE **SideSlopeTable, long *SideSlopeTableSize, long SideSlopeDirection, DTM_SLOPE_TABLE *SlopeTable, long SlopeTableSize, long CornerOption, long StrokeCorners, double CornerStrokeTolerance, double Pptol, DPoint3d *ParallelEdgePts, long NumParallelEdgePts, DTMUserTag UserRadialTag, DTMUserTag UserElementTag, BC_DTM_OBJ* **DataObjects, long *NumberOfDataObjects);
 int bcdtmSideSlope_copySideSlopeElementPointsToPointArray(DTM_SIDE_SLOPE_TABLE *sideSlopeTableP,long sideSlopeTableSize,DPoint3d **elemPtsPP,long *numElemPtsP) ;

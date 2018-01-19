@@ -2,10 +2,11 @@
 |
 |     $Source: Core/PublicAPI/bcDTMClass.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
+//__BENTLEY_INTERNAL_ONLY__
 //__PUBLISH_SECTION_START__
 #ifndef __bcDTMClassH__
 #define __bcDTMClassH__

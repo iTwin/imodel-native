@@ -199,7 +199,8 @@ static int aecDTM_saveOpen
         else
             return ( sts = DTM_M_OPFILF );
   }
-  else if ( fwrite ( buf, sizeof(buf), 1, *handlePP ) != 1 )
+  //buf size needs to be 3. However, it is declared as 4 because of security issues.
+  else if ( fwrite ( buf, 3, 1, *handlePP ) != 1 )
     sts = DTM_M_WRFILF;
   else if ( fwrite ( &version, sizeof(unsigned long), 1, *handlePP ) != 1 )
     sts = DTM_M_WRFILF;

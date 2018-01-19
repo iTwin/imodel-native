@@ -626,7 +626,7 @@ static int bcdtmTinVolume_prismoidalVolumeArea (double elevation, double X1, dou
         cutP = cutAreaP * height;
         return(DTM_SUCCESS);
         }
-    if (elevation >= Zmax)
+    else if (elevation >= Zmax)
         {
         height = elevation - (Z1 + Z2 + Z3) / 3.0;
         fillAreaP = bcdtmMath_coordinateTriangleArea (X1, Y1, X2, Y2, X3, Y3);
@@ -644,27 +644,6 @@ static int bcdtmTinVolume_prismoidalVolumeArea (double elevation, double X1, dou
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmTinVolume_prismToFlatPlaneDtmObject (BC_DTM_OBJ *dtmP, long P1, long P2, long P3, double elevation, double &cutP, double &fillP, double &cutAreaP, double &fillAreaP)
-/*
-** This Function Calculates the Volume Of A Prism Othogonal With A Flat Plane
-*/
-    {
-    double X1, Y1, Z1, X2, Y2, Z2, X3, Y3, Z3;
-    /*
-    ** Initialise varaibles
-    */
-    X1 = pointAddrP (dtmP, P1)->x; Y1 = pointAddrP (dtmP, P1)->y; Z1 = pointAddrP (dtmP, P1)->z;
-    X2 = pointAddrP (dtmP, P2)->x; Y2 = pointAddrP (dtmP, P2)->y; Z2 = pointAddrP (dtmP, P2)->z;
-    X3 = pointAddrP (dtmP, P3)->x; Y3 = pointAddrP (dtmP, P3)->y; Z3 = pointAddrP (dtmP, P3)->z;
-
-    return bcdtmTinVolume_prismToFlatPlane (elevation, X1, Y1, Z1, X2, Y2, Z2, X3, Y3, Z3, cutP, fillP, cutAreaP, fillAreaP);
-    }
-
-/*-------------------------------------------------------------------+
-|                                                                    |
-|                                                                    |
-|                                                                    |
-+-------------------------------------------------------------------*/
 int bcdtmTinVolume_prismToFlatPlane (double elevation, double X1, double Y1, double Z1, double X2, double Y2, double Z2, double X3, double Y3, double Z3, double *cutP, double *fillP, double *areaP)
     {
     double cutArea = 0, fillArea = 0;
@@ -672,6 +651,27 @@ int bcdtmTinVolume_prismToFlatPlane (double elevation, double X1, double Y1, dou
     *areaP = cutArea + fillArea;
     return status;
     }
+
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+int bcdtmTinVolume_prismToFlatPlaneDtmObject (BC_DTM_OBJ *dtmP, long P1, long P2, long P3, double elevation, double &cutP, double &fillP, double &cutAreaP, double &fillAreaP)
+/*
+** This Function Calculates the Volume Of A Prism Othogonal With A Flat Plane
+*/
+    {
+    /*
+    ** Initialise varaibles
+    */
+    const auto pt1 = pointAddrP(dtmP, P1);
+    const auto pt2 = pointAddrP(dtmP, P2);
+    const auto pt3 = pointAddrP(dtmP, P3);
+
+    return bcdtmTinVolume_prismToFlatPlane (elevation, pt1->x, pt1->y, pt1->z, pt2->x, pt2->y, pt2->z, pt3->x, pt3->y, pt3->z, cutP, fillP, cutAreaP, fillAreaP);
+    }
+
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |

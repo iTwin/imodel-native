@@ -23,6 +23,7 @@ int bcdtmDrainage_getTriangleEdgeFlowDirectionDtmObject
  int               trgPoint1,                  // ==> Triangle Point1 
  int               trgPoint2,                  // ==> Triangle Point2 
  int               trgPoint3,                  // ==> Triangle Point3 
+ bool              testForVoid,                // ==> Test for Void.
  bool&             voidTriangle,               // <== True If A Void Triangle , False If Not A Void Triangle  
  int&              flowDirection               // <== Flow Direction
 )
@@ -35,7 +36,7 @@ int bcdtmDrainage_getTriangleEdgeFlowDirectionDtmObject
 //
    {
     int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0);
-    bool voidTrg ;
+    bool voidTrg =false;
     bool trgFound=false ;
 
     // Log Parameters
@@ -94,7 +95,7 @@ int bcdtmDrainage_getTriangleEdgeFlowDirectionDtmObject
       {
        if( dbg ) bcdtmWrite_message(0,0,0,"Calculating Flow Direction On The Fly") ;
        voidTriangle = false ;
-       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,trgPoint1,trgPoint3,trgPoint2,voidTrg) ) goto errexit ;
+       if( testForVoid && bcdtmList_testForVoidTriangleDtmObject(dtmP,trgPoint1,trgPoint3,trgPoint2,voidTrg) ) goto errexit ;
        if( voidTrg ) voidTriangle = true ;
        flowDirection = bcdtmDrainage_getTriangleFlowDirectionDtmObject(dtmP,trgPoint1,trgPoint2,trgPoint3) ;
       } 
@@ -116,6 +117,20 @@ int bcdtmDrainage_getTriangleEdgeFlowDirectionDtmObject
     if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
     goto cleanup ; 
 }
+
+int bcdtmDrainage_getTriangleEdgeFlowDirectionDtmObject
+(
+    BC_DTM_OBJ        *dtmP,                      // ==> Pointer To DTM Object 
+    DTMDrainageTables *drainageTablesP,           // ==> Pointer To Drainage Tables
+    int               trgPoint1,                  // ==> Triangle Point1 
+    int               trgPoint2,                  // ==> Triangle Point2 
+    int               trgPoint3,                  // ==> Triangle Point3 
+    bool&             voidTriangle,               // <== True If A Void Triangle , False If Not A Void Triangle  
+    int&              flowDirection               // <== Flow Direction
+)
+    {
+       return bcdtmDrainage_getTriangleEdgeFlowDirectionDtmObject(dtmP, drainageTablesP, trgPoint1, trgPoint2, trgPoint3, true, voidTriangle, flowDirection);
+    }
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -128,6 +143,7 @@ int bcdtmDrainage_getTriangleSlopeAndSlopeAnglesDtmObject
  int               trgPoint1,                  // ==> Triangle Point1 
  int               trgPoint2,                  // ==> Triangle Point2 
  int               trgPoint3,                  // ==> Triangle Point3 
+ bool              testForVoid,                // ==> TestForVoid.
  bool&             voidTriangle,               // <== Void Triangle  
  double&           slope,                      // <== Triangle Slope
  double&           descentAngle,               // <== Triangle Descent Angle
@@ -142,7 +158,7 @@ int bcdtmDrainage_getTriangleSlopeAndSlopeAnglesDtmObject
 //
    {
     int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0);
-    bool   voidTrg ;
+    bool   voidTrg = false;
     double trgSlope,trgAscentAngle,trgDescentAngle ;
     bool trgFound=false ;
 
@@ -201,7 +217,7 @@ int bcdtmDrainage_getTriangleSlopeAndSlopeAnglesDtmObject
     else 
       {
        voidTriangle = false ;
-       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,trgPoint1,trgPoint2,trgPoint3,voidTrg) ) goto errexit ;
+       if( testForVoid && bcdtmList_testForVoidTriangleDtmObject(dtmP,trgPoint1,trgPoint2,trgPoint3,voidTrg) ) goto errexit ;
        if( voidTrg ) voidTriangle = true ;
        if( bcdtmDrainage_getTriangleDescentAndAscentAnglesDtmObject(dtmP,trgPoint1,trgPoint2,trgPoint3,&trgDescentAngle,&trgAscentAngle,&trgSlope) ) goto errexit ;
        slope        = trgSlope ;
@@ -237,6 +253,26 @@ int bcdtmDrainage_getTriangleSlopeAndSlopeAnglesDtmObject
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
+int bcdtmDrainage_getTriangleSlopeAndSlopeAnglesDtmObject
+(
+    BC_DTM_OBJ        *dtmP,                      // ==> Pointer To DTM Object 
+    DTMDrainageTables *drainageTablesP,           // ==> Pointer To Drainage Tables
+    int               trgPoint1,                  // ==> Triangle Point1 
+    int               trgPoint2,                  // ==> Triangle Point2 
+    int               trgPoint3,                  // ==> Triangle Point3 
+    bool&             voidTriangle,               // <== Void Triangle  
+    double&           slope,                      // <== Triangle Slope
+    double&           descentAngle,               // <== Triangle Descent Angle
+    double&           ascentAngle                 // <== Triangle Ascent Angle
+)
+    {
+    return bcdtmDrainage_getTriangleSlopeAndSlopeAnglesDtmObject(dtmP, drainageTablesP, trgPoint1, trgPoint2, trgPoint3, true, voidTriangle, slope, descentAngle, ascentAngle);
+    }
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
 int bcdtmDrainage_calculateIntersectOfRadialWithTinLineDtmObject
 (
  BC_DTM_OBJ *dtmP,      /* ==> Pointer To Tin Object                                        */
@@ -263,29 +299,31 @@ int bcdtmDrainage_calculateIntersectOfRadialWithTinLineDtmObject
 /*
 ** Calculate Intersection Of Radial <(sRadX,sRadY),(eRadX,eRadY)> With Tin Line <dtmPnt1,dtmPnt2>
 */
- bcdtmMath_normalIntersectCordLines(sRadX,sRadY,eRadX,eRadY,pointAddrP(dtmP,dtmPnt1)->x,pointAddrP(dtmP,dtmPnt1)->y,pointAddrP(dtmP,dtmPnt2)->x,pointAddrP(dtmP,dtmPnt2)->y,xP,yP) ;
- dx = pointAddrP(dtmP,dtmPnt2)->x - pointAddrP(dtmP,dtmPnt1)->x ;
- dy = pointAddrP(dtmP,dtmPnt2)->y - pointAddrP(dtmP,dtmPnt1)->y ;
- dz = pointAddrP(dtmP,dtmPnt2)->z - pointAddrP(dtmP,dtmPnt1)->z ;
- if( fabs(dx) >= fabs(dy) ) *zP = pointAddrP(dtmP,dtmPnt1)->z +  dz * (*xP - pointAddrP(dtmP,dtmPnt1)->x) / dx ;
- else                       *zP = pointAddrP(dtmP,dtmPnt1)->z +  dz * (*yP - pointAddrP(dtmP,dtmPnt1)->y) / dy ;
+ const auto dtmPnt1Pt = pointAddrP(dtmP, dtmPnt1);
+ const auto dtmPnt2Pt = pointAddrP(dtmP, dtmPnt2);
+ bcdtmMath_normalIntersectCordLines(sRadX,sRadY,eRadX,eRadY,dtmPnt1Pt->x,dtmPnt1Pt->y,dtmPnt2Pt->x,dtmPnt2Pt->y,xP,yP) ;
+ dx = dtmPnt2Pt->x - dtmPnt1Pt->x ;
+ dy = dtmPnt2Pt->y - dtmPnt1Pt->y ;
+ dz = dtmPnt2Pt->z - dtmPnt1Pt->z ;
+ if( fabs(dx) >= fabs(dy) ) *zP = dtmPnt1Pt->z +  dz * (*xP - dtmPnt1Pt->x) / dx ;
+ else                       *zP = dtmPnt1Pt->z +  dz * (*yP - dtmPnt1Pt->y) / dy ;
 /*
 ** Check For Closeness To Tin Points
 */
- d1 = bcdtmMath_distance(*xP,*yP,pointAddrP(dtmP,dtmPnt1)->x,pointAddrP(dtmP,dtmPnt1)->y) ;
- d2 = bcdtmMath_distance(*xP,*yP,pointAddrP(dtmP,dtmPnt2)->x,pointAddrP(dtmP,dtmPnt2)->y) ;
- if     ( d1 <= d2 && d1 < dtmP->mppTol )
+ d1 = bcdtmMath_distanceSquared(*xP,*yP,dtmPnt1Pt->x,dtmPnt1Pt->y) ;
+ d2 = bcdtmMath_distanceSquared(*xP,*yP,dtmPnt2Pt->x,dtmPnt2Pt->y) ;
+ if     ( d1 <= d2 && d1 < (dtmP->mppTol *dtmP->mppTol))
    {
-    *xP = pointAddrP(dtmP,dtmPnt1)->x ;
-    *yP = pointAddrP(dtmP,dtmPnt1)->y ;
-    *zP = pointAddrP(dtmP,dtmPnt1)->z ;
+    *xP = dtmPnt1Pt->x ;
+    *yP = dtmPnt1Pt->y ;
+    *zP = dtmPnt1Pt->z ;
     *intPntP = dtmPnt1 ;
    }
- else if( d2 <  d1 && d2 < dtmP->mppTol )
+ else if( d2 <  d1 && d2 < (dtmP->mppTol * dtmP->mppTol))
    {
-    *xP = pointAddrP(dtmP,dtmPnt2)->x ;
-    *yP = pointAddrP(dtmP,dtmPnt2)->y ;
-    *zP = pointAddrP(dtmP,dtmPnt2)->z ;
+    *xP = dtmPnt2Pt->x ;
+    *yP = dtmPnt2Pt->y ;
+    *zP = dtmPnt2Pt->z ;
     *intPntP = dtmPnt2 ;
    }
 /*

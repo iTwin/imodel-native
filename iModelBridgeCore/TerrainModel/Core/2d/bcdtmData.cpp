@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmData.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -316,8 +316,10 @@ BENTLEYDTM_EXPORT int bcdtmData_deleteAllOccurrencesOfDtmFeatureTypeDtmObject
     long   pnt1,pnt2,point,dtmFeature,numPoints,firstPoint,lastPoint,lastCount=0 ;
     BC_DTM_FEATURE  *dtmFeatureP ;
     DPoint3d *pointP,*numPointsP ;
-    unsigned char   *delP,*delPointsP=NULL ;
-    long   *ofsP,*offsCountP=NULL ;
+    unsigned char   *delPointsP=nullptr;
+    bvector<unsigned char> delPoints;
+    long   *ofsP, *offsCountP = nullptr;
+    bvector<long> offsCount;
 
     // Log Entry Parameters
 
@@ -408,16 +410,13 @@ BENTLEYDTM_EXPORT int bcdtmData_deleteAllOccurrencesOfDtmFeatureTypeDtmObject
 
             //     Allocate Memory For Deleted Point Flags
 
-            delPointsP = ( unsigned char * ) malloc( ( dtmP->numPoints / 8 + 1 ) * sizeof( char )) ;
-            if( delPointsP == NULL )
+            delPoints.resize(dtmP->numPoints / 8 + 1, 255);
+            delPointsP = delPoints.data();
+            if( delPointsP == nullptr )
                 {
                 bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
                 goto errexit ;
                 }
-
-            //     Initialise Flags
-
-            for( delP = delPointsP ; delP < delPointsP + ( dtmP->numPoints / 8 + 1) ; ++delP ) *delP = ( unsigned char ) 255 ;
 
             //     Scan Features And Mark Delete Points
 
@@ -441,7 +440,8 @@ BENTLEYDTM_EXPORT int bcdtmData_deleteAllOccurrencesOfDtmFeatureTypeDtmObject
 
             //     Allocate Memory For Offset Counts
 
-            offsCountP = ( long * ) malloc( dtmP->numPoints * sizeof(long)) ;
+            offsCount.resize(dtmP->numPoints, 0) ;
+            offsCountP = offsCount.data();
             if( offsCountP == NULL )
                 {
                 bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
@@ -521,7 +521,6 @@ BENTLEYDTM_EXPORT int bcdtmData_deleteAllOccurrencesOfDtmFeatureTypeDtmObject
     ** Clean Up
     */
 cleanup :
-    if( delPointsP != NULL ) free(delPointsP) ;
     /*
     ** Job Completed
     */
@@ -4946,51 +4945,51 @@ BENTLEYDTM_Public int bcdtmData_getDtmFeatureTypeFromDtmFeatureTypeName (char *d
     /*
     ** Assign Type From Name
     */
-    if     ( strcmp(dtmFeatureTypeName,"DTMFeatureType::RandomSpots") == 0 )   *dtmFeatureTypeP = DTMFeatureType::RandomSpots ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::GroupSpots") == 0 )    *dtmFeatureTypeP = DTMFeatureType::GroupSpots ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::DatPoint") == 0 )     *dtmFeatureTypeP = DTMFeatureType::DatPoint  ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::TinPoint") == 0 )     *dtmFeatureTypeP = DTMFeatureType::TinPoint  ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::TinLine") == 0 )      *dtmFeatureTypeP = DTMFeatureType::TinLine   ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::Breakline") == 0 )    *dtmFeatureTypeP = DTMFeatureType::Breakline ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::SoftBreakline") == 0 )    *dtmFeatureTypeP = DTMFeatureType::SoftBreakline ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::DrapeLine") == 0 )    *dtmFeatureTypeP = DTMFeatureType::DrapeLine ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::GraphicBreak") == 0 ) *dtmFeatureTypeP = DTMFeatureType::GraphicBreak ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::ContourLine") == 0 )  *dtmFeatureTypeP = DTMFeatureType::ContourLine ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::Void") == 0 )          *dtmFeatureTypeP = DTMFeatureType::Void   ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::VoidLine") == 0 )     *dtmFeatureTypeP = DTMFeatureType::VoidLine ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::Island") == 0 )        *dtmFeatureTypeP = DTMFeatureType::Island   ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::Hole") == 0 )          *dtmFeatureTypeP = DTMFeatureType::Hole  ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::HoleLine") == 0 )     *dtmFeatureTypeP = DTMFeatureType::HoleLine    ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::BreakVoid") == 0 )    *dtmFeatureTypeP = DTMFeatureType::BreakVoid;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::DrapeVoid") == 0 )    *dtmFeatureTypeP = DTMFeatureType::DrapeVoid ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::Hull") == 0 )          *dtmFeatureTypeP = DTMFeatureType::Hull   ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::HullLine") == 0 )     *dtmFeatureTypeP = DTMFeatureType::HullLine ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::Triangle") == 0 )      *dtmFeatureTypeP = DTMFeatureType::Triangle  ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::TriangleEdge") == 0 ) *dtmFeatureTypeP = DTMFeatureType::TriangleEdge  ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::Lattice") == 0 )       *dtmFeatureTypeP = DTMFeatureType::Lattice   ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::LatticeEdge") == 0 )  *dtmFeatureTypeP = DTMFeatureType::LatticeEdge ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::LatticeXLine") == 0 ) *dtmFeatureTypeP = DTMFeatureType::LatticeXLine ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::LatticeYLine") == 0 ) *dtmFeatureTypeP = DTMFeatureType::LatticeYLine ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::LatticePoint") == 0 ) *dtmFeatureTypeP = DTMFeatureType::LatticePoint ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::Contour") == 0 )      *dtmFeatureTypeP = DTMFeatureType::Contour   ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::ZeroSlopeLine")== 0) *dtmFeatureTypeP = DTMFeatureType::ZeroSlopeLine   ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::ISOLine") == 0 )      *dtmFeatureTypeP = DTMFeatureType::ISOLine  ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::ISOCell") == 0 )      *dtmFeatureTypeP = DTMFeatureType::ISOCell  ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::Theme") == 0 )         *dtmFeatureTypeP = DTMFeatureType::Theme   ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::SlopeToe") == 0 )     *dtmFeatureTypeP = DTMFeatureType::SlopeToe ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::LowPoint") == 0 )     *dtmFeatureTypeP = DTMFeatureType::LowPoint  ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::HighPoint") == 0 )    *dtmFeatureTypeP = DTMFeatureType::HighPoint  ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::SumpLine") == 0 )     *dtmFeatureTypeP = DTMFeatureType::SumpLine   ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::RidgeLine") == 0 )    *dtmFeatureTypeP = DTMFeatureType::RidgeLine   ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::DescentTrace") == 0 ) *dtmFeatureTypeP = DTMFeatureType::DescentTrace ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::AscentTrace") == 0 )  *dtmFeatureTypeP = DTMFeatureType::AscentTrace ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::Catchment") == 0 )     *dtmFeatureTypeP = DTMFeatureType::Catchment  ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::LowPointPond") == 0 )*dtmFeatureTypeP = DTMFeatureType::LowPointPond ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::VisibleLine") == 0 )  *dtmFeatureTypeP = DTMFeatureType::VisibleLine ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::InvisibleLine") == 0 )*dtmFeatureTypeP = DTMFeatureType::InvisibleLine ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::SlopeLine") == 0 )    *dtmFeatureTypeP = DTMFeatureType::SlopeLine  ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::Polygon") == 0 )       *dtmFeatureTypeP = DTMFeatureType::Polygon     ;
-    else if( strcmp(dtmFeatureTypeName,"DTMFeatureType::GradeSlope") == 0 )   *dtmFeatureTypeP = DTMFeatureType::GradeSlope  ;
+    if     ( strcmp(dtmFeatureTypeName,"RandomSpots") == 0 )   *dtmFeatureTypeP = DTMFeatureType::RandomSpots ;
+    else if( strcmp(dtmFeatureTypeName,"GroupSpots") == 0 )    *dtmFeatureTypeP = DTMFeatureType::GroupSpots ;
+    else if( strcmp(dtmFeatureTypeName,"DatPoint") == 0 )     *dtmFeatureTypeP = DTMFeatureType::DatPoint  ;
+    else if( strcmp(dtmFeatureTypeName,"TinPoint") == 0 )     *dtmFeatureTypeP = DTMFeatureType::TinPoint  ;
+    else if( strcmp(dtmFeatureTypeName,"TinLine") == 0 )      *dtmFeatureTypeP = DTMFeatureType::TinLine   ;
+    else if( strcmp(dtmFeatureTypeName,"Breakline") == 0 )    *dtmFeatureTypeP = DTMFeatureType::Breakline ;
+    else if( strcmp(dtmFeatureTypeName,"SoftBreakline") == 0 )    *dtmFeatureTypeP = DTMFeatureType::SoftBreakline ;
+    else if( strcmp(dtmFeatureTypeName,"DrapeLine") == 0 )    *dtmFeatureTypeP = DTMFeatureType::DrapeLine ;
+    else if( strcmp(dtmFeatureTypeName,"GraphicBreak") == 0 ) *dtmFeatureTypeP = DTMFeatureType::GraphicBreak ;
+    else if( strcmp(dtmFeatureTypeName,"ContourLine") == 0 )  *dtmFeatureTypeP = DTMFeatureType::ContourLine ;
+    else if( strcmp(dtmFeatureTypeName,"Void") == 0 )          *dtmFeatureTypeP = DTMFeatureType::Void   ;
+    else if( strcmp(dtmFeatureTypeName,"VoidLine") == 0 )     *dtmFeatureTypeP = DTMFeatureType::VoidLine ;
+    else if( strcmp(dtmFeatureTypeName,"Island") == 0 )        *dtmFeatureTypeP = DTMFeatureType::Island   ;
+    else if( strcmp(dtmFeatureTypeName,"Hole") == 0 )          *dtmFeatureTypeP = DTMFeatureType::Hole  ;
+    else if( strcmp(dtmFeatureTypeName,"HoleLine") == 0 )     *dtmFeatureTypeP = DTMFeatureType::HoleLine    ;
+    else if( strcmp(dtmFeatureTypeName,"BreakVoid") == 0 )    *dtmFeatureTypeP = DTMFeatureType::BreakVoid;
+    else if( strcmp(dtmFeatureTypeName,"DrapeVoid") == 0 )    *dtmFeatureTypeP = DTMFeatureType::DrapeVoid ;
+    else if( strcmp(dtmFeatureTypeName,"Hull") == 0 )          *dtmFeatureTypeP = DTMFeatureType::Hull   ;
+    else if( strcmp(dtmFeatureTypeName,"HullLine") == 0 )     *dtmFeatureTypeP = DTMFeatureType::HullLine ;
+    else if( strcmp(dtmFeatureTypeName,"Triangle") == 0 )      *dtmFeatureTypeP = DTMFeatureType::Triangle  ;
+    else if( strcmp(dtmFeatureTypeName,"TriangleEdge") == 0 ) *dtmFeatureTypeP = DTMFeatureType::TriangleEdge  ;
+    else if( strcmp(dtmFeatureTypeName,"Lattice") == 0 )       *dtmFeatureTypeP = DTMFeatureType::Lattice   ;
+    else if( strcmp(dtmFeatureTypeName,"LatticeEdge") == 0 )  *dtmFeatureTypeP = DTMFeatureType::LatticeEdge ;
+    else if( strcmp(dtmFeatureTypeName,"LatticeXLine") == 0 ) *dtmFeatureTypeP = DTMFeatureType::LatticeXLine ;
+    else if( strcmp(dtmFeatureTypeName,"LatticeYLine") == 0 ) *dtmFeatureTypeP = DTMFeatureType::LatticeYLine ;
+    else if( strcmp(dtmFeatureTypeName,"LatticePoint") == 0 ) *dtmFeatureTypeP = DTMFeatureType::LatticePoint ;
+    else if( strcmp(dtmFeatureTypeName,"Contour") == 0 )      *dtmFeatureTypeP = DTMFeatureType::Contour   ;
+    else if( strcmp(dtmFeatureTypeName,"ZeroSlopeLine")== 0) *dtmFeatureTypeP = DTMFeatureType::ZeroSlopeLine   ;
+    else if( strcmp(dtmFeatureTypeName,"ISOLine") == 0 )      *dtmFeatureTypeP = DTMFeatureType::ISOLine  ;
+    else if( strcmp(dtmFeatureTypeName,"ISOCell") == 0 )      *dtmFeatureTypeP = DTMFeatureType::ISOCell  ;
+    else if( strcmp(dtmFeatureTypeName,"Theme") == 0 )         *dtmFeatureTypeP = DTMFeatureType::Theme   ;
+    else if( strcmp(dtmFeatureTypeName,"SlopeToe") == 0 )     *dtmFeatureTypeP = DTMFeatureType::SlopeToe ;
+    else if( strcmp(dtmFeatureTypeName,"LowPoint") == 0 )     *dtmFeatureTypeP = DTMFeatureType::LowPoint  ;
+    else if( strcmp(dtmFeatureTypeName,"HighPoint") == 0 )    *dtmFeatureTypeP = DTMFeatureType::HighPoint  ;
+    else if( strcmp(dtmFeatureTypeName,"SumpLine") == 0 )     *dtmFeatureTypeP = DTMFeatureType::SumpLine   ;
+    else if( strcmp(dtmFeatureTypeName,"RidgeLine") == 0 )    *dtmFeatureTypeP = DTMFeatureType::RidgeLine   ;
+    else if( strcmp(dtmFeatureTypeName,"DescentTrace") == 0 ) *dtmFeatureTypeP = DTMFeatureType::DescentTrace ;
+    else if( strcmp(dtmFeatureTypeName,"AscentTrace") == 0 )  *dtmFeatureTypeP = DTMFeatureType::AscentTrace ;
+    else if( strcmp(dtmFeatureTypeName,"Catchment") == 0 )     *dtmFeatureTypeP = DTMFeatureType::Catchment  ;
+    else if( strcmp(dtmFeatureTypeName,"LowPointPond") == 0 )*dtmFeatureTypeP = DTMFeatureType::LowPointPond ;
+    else if( strcmp(dtmFeatureTypeName,"VisibleLine") == 0 )  *dtmFeatureTypeP = DTMFeatureType::VisibleLine ;
+    else if( strcmp(dtmFeatureTypeName,"InvisibleLine") == 0 )*dtmFeatureTypeP = DTMFeatureType::InvisibleLine ;
+    else if( strcmp(dtmFeatureTypeName,"SlopeLine") == 0 )    *dtmFeatureTypeP = DTMFeatureType::SlopeLine  ;
+    else if( strcmp(dtmFeatureTypeName,"Polygon") == 0 )       *dtmFeatureTypeP = DTMFeatureType::Polygon     ;
+    else if( strcmp(dtmFeatureTypeName,"GradeSlope") == 0 )   *dtmFeatureTypeP = DTMFeatureType::GradeSlope  ;
     /*
     ** Set Return Value
     */

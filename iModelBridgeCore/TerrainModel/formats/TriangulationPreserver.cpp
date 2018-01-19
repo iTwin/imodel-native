@@ -2,7 +2,7 @@
 |
 |     $Source: formats/TriangulationPreserver.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <TerrainModel/Formats/Formats.h>
@@ -15,6 +15,9 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 const double MAXAREAFORVOIDORISLANDS = 0.001;
 
+//=======================================================================================
+// @bsimethod                                            Daryl.Holmwood      10/2017
+//=======================================================================================
 TriangulationPreserver::TriangulationPreserver (BcDTMR dtm) : m_dtm (&dtm), m_dtmObj (nullptr), m_stmDtm (nullptr)
     {
     m_useGraphicBreaks = true;
@@ -25,12 +28,18 @@ TriangulationPreserver::TriangulationPreserver (BcDTMR dtm) : m_dtm (&dtm), m_dt
     m_numPointsUsed = 0;
     }
 
+//=======================================================================================
+// @bsimethod                                            Daryl.Holmwood      10/2017
+//=======================================================================================
 void TriangulationPreserver::Initialize ()
     {
     if (m_stmDtm.IsNull ())
         m_stmDtm = BcDTM::Create ();
     }
 
+//=======================================================================================
+// @bsimethod                                            Daryl.Holmwood      10/2017
+//=======================================================================================
 void TriangulationPreserver::AddPoints (DPoint3dCP pts, int numPoints, int firstId)
     {
     if ((int)m_ptIdTolocalId.size () < firstId + numPoints)
@@ -47,11 +56,17 @@ void TriangulationPreserver::AddPoints (DPoint3dCP pts, int numPoints, int first
     m_pointUsed.resize(m_pts.size());
     }
 
+//=======================================================================================
+// @bsimethod                                            Daryl.Holmwood      10/2017
+//=======================================================================================
 void TriangulationPreserver::AddPoint (DPoint3dCR pt, int ptId)
     {
     AddPoints (&pt, 1, ptId);
     }
 
+//=======================================================================================
+// @bsimethod                                            Daryl.Holmwood      10/2017
+//=======================================================================================
 void TriangulationPreserver::AddTriangle (int* ptNums, int numPoints)
     {
     Initialize ();
@@ -59,8 +74,23 @@ void TriangulationPreserver::AddTriangle (int* ptNums, int numPoints)
         return;
 
     DPoint3d pts[3];
-    pts[0] = m_pts[GetLocalId (ptNums[0])];
+    int num = GetLocalId(ptNums[0]);
+    BeAssert(-1 != num);
+    if (-1 == num)
+        return;
+
+    pts[0] = m_pts[num];
+
+    num = GetLocalId(ptNums[1]);
+    BeAssert(-1 != num);
+    if (-1 == num)
+        return;
     pts[1] = m_pts[GetLocalId (ptNums[1])];
+
+    num = GetLocalId(ptNums[2]);
+    BeAssert(-1 != num);
+    if (-1 == num)
+        return;
     pts[2] = m_pts[GetLocalId (ptNums[2])];
 
     int side = bcdtmMath_sideOf(pts[0].x, pts[0].y, pts[1].x, pts[1].y, pts[2].x, pts[2].y);
@@ -104,6 +134,161 @@ void TriangulationPreserver::AddTriangle (int* ptNums, int numPoints)
         }
     }
 
+
+//=======================================================================================
+// @bsistruct                                            Daryl.Holmwood      10/2017
+//=======================================================================================
+struct DuplicateFeatureChecker
+    {
+    //=======================================================================================
+    // @bsistruct                                            Daryl.Holmwood      10/2017
+    //=======================================================================================
+    struct DuplicateFeatureCheckerFeature
+        {
+        //=======================================================================================
+        // @bsistruct                                            Daryl.Holmwood      10/2017
+        //=======================================================================================
+        struct Feature
+            {
+            private:
+                DRange3d m_range;
+                bvector<DPoint3d> m_pts;
+
+                //=======================================================================================
+                // @bsimethod                                            Daryl.Holmwood      10/2017
+                //=======================================================================================
+                void FixLineString(bvector<DPoint3d>& featurePts)
+                    {
+                    size_t leftmost = -1;
+                    size_t index = 0;
+
+                    DTMDirection direction;
+                    double area;
+                    if (bcdtmMath_getPolygonDirectionP3D(featurePts.data(), (long)featurePts.size(), &direction, &area) != DTM_SUCCESS)
+                        return;
+
+                    if (direction == DTMDirection::AntiClockwise)
+                        std::reverse(featurePts.begin(), featurePts.end() - 1);
+
+                    for (DPoint3d& pt : featurePts)
+                        {
+                        if (leftmost == -1)
+                            leftmost = index;
+                        else if (pt.x < featurePts[leftmost].x)
+                            leftmost = index;
+                        else if (pt.x == featurePts[leftmost].x && pt.y < featurePts[leftmost].y)
+                            leftmost = index;
+                        index++;
+                        }
+
+                    if (leftmost == 0)
+                        return;
+                    bvector<DPoint3d> newPts;
+
+                    newPts.insert(newPts.begin(), featurePts.begin() + leftmost, featurePts.end() - 1);
+                    newPts.insert(newPts.end(), featurePts.begin(), featurePts.begin() + (leftmost - 1));
+                    featurePts.swap(newPts);
+                    }
+            public:
+                //=======================================================================================
+                // @bsimethod                                            Daryl.Holmwood      10/2017
+                //=======================================================================================
+                Feature(bvector<DPoint3d>& pts) : m_pts(pts)
+                    {
+                    FixLineString(m_pts);
+                    m_range.InitFrom(m_pts);
+                    }
+
+                //=======================================================================================
+                // @bsimethod                                            Daryl.Holmwood      10/2017
+                //=======================================================================================
+                bool IsEqual(const Feature& testFeature) const
+                    {
+                    if (m_range.IsEqual(testFeature.m_range, 0.001) &&
+                        DPoint3d::AlmostEqual(m_pts, testFeature.m_pts, 0.001))
+                        return true;
+                    return false;
+                    }
+            };
+        bvector<Feature> m_features;
+
+        //=======================================================================================
+        // @bsimethod                                            Daryl.Holmwood      10/2017
+        //=======================================================================================
+        void Initialize(DTMFeatureType featureType, BcDTMCR dtm)
+            {
+            DTMFeatureEnumerator features(dtm);
+            features.ExcludeAllFeatures();
+            features.IncludeFeature(featureType);
+            bvector<DPoint3d> pts;
+
+            for (const auto& feature : features)
+                {
+                feature.GetFeaturePoints(pts);
+                m_features.push_back(Feature(pts));
+                }
+            }
+
+        //=======================================================================================
+        // @bsimethod                                            Daryl.Holmwood      10/2017
+        //=======================================================================================
+        bool IsDuplicate(bvector<DPoint3d>& featurePts) const
+            {
+            Feature testFeature(featurePts);
+
+            for (auto& feature : m_features)
+                {
+                if (feature.IsEqual(testFeature))
+                    return true;
+                }
+            return false;
+            }
+        };
+    bmap<DTMFeatureType, DuplicateFeatureCheckerFeature> m_featureTypes;
+    BcDTMCR m_dtm;
+
+private:
+    //=======================================================================================
+    // @bsimethod                                            Daryl.Holmwood      10/2017
+    //=======================================================================================
+    bool DoesFeatureExistInternal( DTMFeatureType featureType, bvector<DPoint3d>& featurePts)
+        {
+        if (m_featureTypes.find(featureType) == m_featureTypes.end())
+            m_featureTypes[featureType].Initialize(featureType, m_dtm);
+
+        return m_featureTypes[featureType].IsDuplicate(featurePts);
+        }
+public:
+    //=======================================================================================
+    // @bsimethod                                            Daryl.Holmwood      10/2017
+    //=======================================================================================
+    DuplicateFeatureChecker(BcDTMCR dtm) : m_dtm(dtm)
+        { }
+
+    //=======================================================================================
+    // @bsimethod                                            Daryl.Holmwood      10/2017
+    //=======================================================================================
+    bool DoesFeatureExist(DTMFeatureType featureType, bvector<DPoint3d>& featurePts)
+        {
+        if (DoesFeatureExistInternal(featureType, featurePts))
+            return true;
+
+        if (featureType == DTMFeatureType::Void && DoesFeatureExistInternal(DTMFeatureType::DrapeVoid, featurePts))
+            return true;
+
+        if (featureType == DTMFeatureType::Void && DoesFeatureExistInternal(DTMFeatureType::Hole, featurePts))
+            return true;
+
+        if (featureType == DTMFeatureType::Void && DoesFeatureExistInternal(DTMFeatureType::BreakVoid, featurePts))
+            return true;
+
+        return false;
+        }
+    };
+
+//=======================================================================================
+// @bsimethod                                            Daryl.Holmwood      10/2017
+//=======================================================================================
 BcDTMPtr TriangulationPreserver::Finish ()
     {
     if (m_stmDtm.IsNull ())
@@ -146,6 +331,7 @@ BcDTMPtr TriangulationPreserver::Finish ()
     if (m_dtm->GetPointCount() == 0)
         return m_stmDtm;
 
+    DuplicateFeatureChecker duplicateFeatureChecker(*m_dtm);
     // Add the void features to the TM.
     DTMFeatureEnumerator features (*m_stmDtm);
     bvector<DPoint3d> pts;
@@ -168,10 +354,13 @@ BcDTMPtr TriangulationPreserver::Finish ()
         double area;
         if (bcdtmMath_getPolygonDirectionP3D (pts.data(), (long)pts.size (), &direction, &area) != DTM_SUCCESS)
             continue;
+
         if (area < MAXAREAFORVOIDORISLANDS)
             continue;
 
-        m_dtm->AddLinearFeature (feature.FeatureType (), pts.data (), (int)pts.size (), &id);
+
+        if(!duplicateFeatureChecker.DoesFeatureExist(feature.FeatureType (), pts))
+            m_dtm->AddLinearFeature (feature.FeatureType (), pts.data (), (int)pts.size (), &id);
         }
 
     DTMPointArray boundary;
@@ -180,6 +369,31 @@ BcDTMPtr TriangulationPreserver::Finish ()
     if (!boundary.empty ())
         {
         DTMFeatureId id;
+        BcDTMPtr boundaryFixerDtm = BcDTM::Create();
+
+        boundaryFixerDtm->AddLinearFeature (DTMFeatureType::Breakline, boundary.data (), (int)boundary.size (), &id);
+        DTMFeatureEnumerator voidFeatures (*m_dtm);
+        voidFeatures.ExcludeAllFeatures();
+        voidFeatures.IncludeFeature(DTMFeatureType::Void);
+        voidFeatures.IncludeFeature(DTMFeatureType::DrapeVoid);
+        voidFeatures.IncludeFeature(DTMFeatureType::BreakVoid);
+        voidFeatures.IncludeFeature(DTMFeatureType::Hull);
+        voidFeatures.IncludeFeature(DTMFeatureType::Island);
+        voidFeatures.IncludeFeature(DTMFeatureType::Hole);
+
+        bvector<DPoint3d> pts;
+        // Add the Voids/Holes/Islands.
+        for (const auto& feature : voidFeatures)
+            {
+            DTMFeatureId id;
+            feature.GetFeaturePoints (pts);
+            boundaryFixerDtm->AddLinearFeature(DTMFeatureType::Breakline, pts.data(), (int)pts.size(), &id);
+            }
+        boundaryFixerDtm->Triangulate();
+        boundaryFixerDtm->RemoveNoneFeatureHullLines();
+
+        boundaryFixerDtm->GetBoundary (boundary);
+        m_dtm->RemoveHull();
         m_dtm->AddLinearFeature (DTMFeatureType::Hull, boundary.data (), (int)boundary.size (), &id);
         }
 
@@ -298,6 +512,9 @@ BcDTMPtr TriangulationPreserver::Finish ()
     return m_dtm;
     }
 
+//=======================================================================================
+// @bsimethod                                            Daryl.Holmwood      10/2017
+//=======================================================================================
 void TriangulationPreserver::MatchEdges()
     {
     bmap<uint64_t, bool> edgeMap;
@@ -377,6 +594,9 @@ void TriangulationPreserver::MatchEdges()
 
     }
 
+//=======================================================================================
+// @bsimethod                                            Daryl.Holmwood      10/2017
+//=======================================================================================
 void TriangulationPreserver::CheckTriangle (long* ptNums, int numPts)
     {
     int firstPt = ptNums[numPts - 1];

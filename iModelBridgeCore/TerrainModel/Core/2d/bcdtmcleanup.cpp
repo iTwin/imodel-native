@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmcleanup.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <TerrainModel\Core\bcDTMBaseDef.h>
@@ -114,7 +114,7 @@ BENTLEYDTM_Private int bcdtmCleanUp_resolvePolygonalHolesFeatureTypeDtmObject (B
 
         // This feature was part of an invalid combination so just add this as is to the DTM.
         if( bcdtmList_copyDtmFeaturePointsToPointArrayDtmObject (dtmP, usedFeatureIndexes [i], &featurePtsP, &numFeaturePts)) goto errexit ;
-        if (!featurePtsP[0].IsEqual(featurePtsP[numFeaturePts - 1]))
+        if (numFeaturePts == 0 || !featurePtsP[0].IsEqual(featurePtsP[numFeaturePts - 1]))
             {
             isValid = false;
             break;
