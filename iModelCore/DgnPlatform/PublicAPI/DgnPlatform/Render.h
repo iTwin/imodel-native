@@ -537,7 +537,7 @@ struct HDRImage
     uint32_t        m_height = 0;
     bvector<float>  m_image;
 
-    //! Create an HDRImage from a (Radiance) HDR data..
+    //! Create an HDRImage from a (Radiance) HDR data.
     //! @param[in] srcData the HDR data
     //! @param[in] srcLen the number of bytes of HDR data
     DGNPLATFORM_EXPORT static Image FromHDR(uint8_t const* srcData, uint32_t srcLen);

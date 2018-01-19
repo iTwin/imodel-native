@@ -109,7 +109,6 @@ private:
     DgnGeometryClass    m_class = DgnGeometryClass::Primary;
     bool                m_ignoreLighting = false; // always true for text and linear geometry; true for meshes only if normals not desired
     bool                m_hasRegionOutline = false;
-    bool                m_neverFilled = false;
 
     virtual uint32_t _GetExcessiveRefCountThreshold() const override { return 0x7fffffff; }
 
@@ -120,21 +119,20 @@ private:
     static DisplayParams ForText(GraphicParamsCR gf, GeometryParamsCP geom);
     static DisplayParams ForType(Type type, GraphicParamsCR gf, GeometryParamsCP geom, bool filled, DgnDbR db, System& sys);
 
-    DGNPLATFORM_EXPORT DisplayParams(Type type, DgnCategoryId catId, DgnSubCategoryId subCatId, GradientSymbCP gradient, RenderMaterialId matId, ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels linePixels, FillFlags fillFlags, DgnGeometryClass geomClass, bool ignoreLights, DgnDbR dgnDb, System& renderSys);
     DisplayParams(DisplayParamsCR rhs) = default;
     DisplayParams(ColorDef lineColor, DgnCategoryId catId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass) { InitText(lineColor, catId, subCatId, geomClass); }
     DisplayParams(ColorDef lineColor, uint32_t width, LinePixels px, DgnCategoryId cat, DgnSubCategoryId sub, DgnGeometryClass gc)
         { InitLinear(lineColor, width, px, cat, sub, gc); }
     DisplayParams(ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels px, MaterialP mat, GradientSymbCP grad, TextureMappingCP tx,
-        FillFlags ff, DgnCategoryId cat, DgnSubCategoryId sub, DgnGeometryClass gc, bool neverFilled)
-        { InitMesh(lineColor, fillColor, width, px, mat, grad, tx, ff, cat, sub, gc, neverFilled); }
+        FillFlags ff, DgnCategoryId cat, DgnSubCategoryId sub, DgnGeometryClass gc)
+        { InitMesh(lineColor, fillColor, width, px, mat, grad, tx, ff, cat, sub, gc); }
 
     bool ComputeHasRegionOutline() const;
 
     void InitGeomParams(DgnCategoryId, DgnSubCategoryId, DgnGeometryClass);
     void InitText(ColorDef lineColor, DgnCategoryId, DgnSubCategoryId, DgnGeometryClass);
     void InitLinear(ColorDef lineColor, uint32_t width, LinePixels, DgnCategoryId, DgnSubCategoryId, DgnGeometryClass);
-    void InitMesh(ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels, MaterialP, GradientSymbCP, TextureMappingCP, FillFlags, DgnCategoryId, DgnSubCategoryId, DgnGeometryClass, bool neverFilled);
+    void InitMesh(ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels, MaterialP, GradientSymbCP, TextureMappingCP, FillFlags, DgnCategoryId, DgnSubCategoryId, DgnGeometryClass);
 public:
     Type GetType() const { return m_type; }
     ColorDef GetFillColorDef() const { return m_fillColor; }
@@ -160,7 +158,6 @@ public:
     bool HasBlankingFill() const { return FillFlags::Blanking == (GetFillFlags() & FillFlags::Blanking); }
     bool NeverRegionOutline() const { return HasBlankingFill() || (m_gradient.IsValid() && !m_gradient->GetIsOutlined()); }
     bool HasRegionOutline() const;
-    bool IsNeverFilled() const { return m_neverFilled; }
 
     enum class ComparePurpose
     {
@@ -175,7 +172,9 @@ public:
     static DisplayParamsCPtr CreateForLinear(GraphicParamsCR gf, GeometryParamsCP geom) { return ForLinear(gf, geom).Clone(); }
     static DisplayParamsCPtr CreateForText(GraphicParamsCR gf, GeometryParamsCP geom) { return ForText(gf, geom).Clone(); }
     static DisplayParamsCPtr CreateForGeomPartInstance(DisplayParamsCR partParams, DisplayParamsCR instanceParams);
-    static DisplayParamsCPtr Create(Type type, DgnCategoryId catId, DgnSubCategoryId subCatId, GradientSymbCP gradient, RenderMaterialId matId, ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels linePixels, FillFlags fillFlags, DgnGeometryClass geomClass, bool ignoreLights, DgnDbR dgnDb, System& renderSys);
+    static DisplayParamsCPtr Create(Type type, DgnCategoryId catId, DgnSubCategoryId subCatId, GradientSymbCP gradient, RenderMaterialId matId, ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels linePixels, FillFlags fillFlags, DgnGeometryClass geomClass, bool ignoreLights, DgnDbR dgnDb, System& renderSys, TextureMappingCR texMap);
+
+    DisplayParamsCPtr CloneForRasterText(TextureR raster) const;
 
     DGNPLATFORM_EXPORT Utf8String ToDebugString() const; //!< @private
 };

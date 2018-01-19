@@ -1050,7 +1050,7 @@ GraphicBuilder::CreateParams::CreateParams(DgnDbR db, TransformCR tf, DgnViewpor
 +---------------+---------------+---------------+---------------+---------------+------*/
 Material::CreateParams::CreateParams(MaterialKeyCR key, RenderingAssetCR asset, DgnDbR db, SystemCR sys, TextureP pTexture) : m_key(key)
     {
-#define DEBUG_JSON_CONTENT   
+// #define DEBUG_JSON_CONTENT   
 #if defined(DEBUG_JSON_CONTENT)
     Utf8String string = Json::FastWriter().write(asset);
     UNUSED_VARIABLE(string);
