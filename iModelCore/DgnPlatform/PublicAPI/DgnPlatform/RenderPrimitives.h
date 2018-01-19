@@ -120,7 +120,6 @@ private:
     static DisplayParams ForText(GraphicParamsCR gf, GeometryParamsCP geom);
     static DisplayParams ForType(Type type, GraphicParamsCR gf, GeometryParamsCP geom, bool filled, DgnDbR db, System& sys);
 
-    DGNPLATFORM_EXPORT DisplayParams(Type type, DgnCategoryId catId, DgnSubCategoryId subCatId, GradientSymbCP gradient, RenderMaterialId matId, ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels linePixels, FillFlags fillFlags, DgnGeometryClass geomClass, bool ignoreLights, DgnDbR dgnDb, System& renderSys);
     DisplayParams(DisplayParamsCR rhs) = default;
     DisplayParams(ColorDef lineColor, DgnCategoryId catId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass) { InitText(lineColor, catId, subCatId, geomClass); }
     DisplayParams(ColorDef lineColor, uint32_t width, LinePixels px, DgnCategoryId cat, DgnSubCategoryId sub, DgnGeometryClass gc)
@@ -175,7 +174,7 @@ public:
     static DisplayParamsCPtr CreateForLinear(GraphicParamsCR gf, GeometryParamsCP geom) { return ForLinear(gf, geom).Clone(); }
     static DisplayParamsCPtr CreateForText(GraphicParamsCR gf, GeometryParamsCP geom) { return ForText(gf, geom).Clone(); }
     static DisplayParamsCPtr CreateForGeomPartInstance(DisplayParamsCR partParams, DisplayParamsCR instanceParams);
-    static DisplayParamsCPtr Create(Type type, DgnCategoryId catId, DgnSubCategoryId subCatId, GradientSymbCP gradient, RenderMaterialId matId, ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels linePixels, FillFlags fillFlags, DgnGeometryClass geomClass, bool ignoreLights, DgnDbR dgnDb, System& renderSys);
+    static DisplayParamsCPtr Create(Type type, DgnCategoryId catId, DgnSubCategoryId subCatId, GradientSymbCP gradient, RenderMaterialId matId, ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels linePixels, FillFlags fillFlags, DgnGeometryClass geomClass, bool ignoreLights, DgnDbR dgnDb, System& renderSys, TextureMappingCR texMap);
 
     DGNPLATFORM_EXPORT Utf8String ToDebugString() const; //!< @private
 };

@@ -3089,7 +3089,7 @@ Triangle  TriangleList::GetTriangle(size_t index) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-DisplayParamsCPtr DisplayParams::Create(Type type, DgnCategoryId catId, DgnSubCategoryId subCatId, GradientSymbCP gradient, RenderMaterialId materialId, ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels linePixels, FillFlags fillFlags, DgnGeometryClass geomClass, bool ignoreLights, DgnDbR dgnDb, System& renderSys)
+DisplayParamsCPtr DisplayParams::Create(Type type, DgnCategoryId catId, DgnSubCategoryId subCatId, GradientSymbCP gradient, RenderMaterialId materialId, ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels linePixels, FillFlags fillFlags, DgnGeometryClass geomClass, bool ignoreLights, DgnDbR dgnDb, System& renderSys, TextureMappingCR texMap)
     {
     switch (type)
         {
@@ -3097,15 +3097,20 @@ DisplayParamsCPtr DisplayParams::Create(Type type, DgnCategoryId catId, DgnSubCa
             {
             MaterialPtr mat;
             TextureMapping tex;
-            TextureMappingP pTex = nullptr;
+            TextureMappingCP pTex = nullptr;
             if (materialId.IsValid())
                 {
+                // NB: For now, we will never have a persistent material with a non-persistent texture (so ignore texMap arg)
                 mat = renderSys._GetMaterial(materialId, dgnDb);
                 }
             else if (nullptr != gradient)
                 {
                 tex = TextureMapping(*renderSys._GetTexture(*gradient, dgnDb));
                 pTex = &tex;
+                }
+            else if (texMap.IsValid())
+                {
+                pTex = &texMap;
                 }
 
             return new DisplayParams(lineColor, fillColor, width, linePixels, mat.get(), gradient, pTex, fillFlags, catId, subCatId, geomClass, false);
