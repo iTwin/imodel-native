@@ -530,14 +530,11 @@ TextureMapping GltfReader::GetTextureMapping(Utf8CP name, Json::Value const& par
         if (!m_bufferViews.isMember(bvId))
             return TextureMapping();
 
-        auto format = static_cast<ImageSource::Format>(texJson["format"].asUInt());
-        // unused - auto width = texJson["width"].asUInt();
-        // unused - auto height = texJson["height"].asUInt();
-
         auto const& bvJson = m_bufferViews[bvId];
         uint32_t byteLength = bvJson["byteLength"].asUInt();
         void const* pData = m_binaryData + bvJson["byteOffset"].asUInt();
 
+        auto format = static_cast<ImageSource::Format>(texJson["format"].asUInt());
         ImageSource img(format, ByteStream(static_cast<uint8_t const*>(pData), byteLength));
         Texture::CreateParams createParams(key);
         tex = m_renderSystem._CreateTexture(img, Image::BottomUp::No, m_model.GetDgnDb(), createParams);
