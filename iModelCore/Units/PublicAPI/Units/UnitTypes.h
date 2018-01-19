@@ -170,6 +170,7 @@ public:
     UNITS_EXPORT Utf8CP GetLabel() const;
     UNITS_EXPORT Utf8CP GetDescription() const;
 
+    bool IsSI() const { return m_system.Equals("SI"); }
     bool IsRegistered()    const;
     bool IsConstant() const { return m_isConstant; }
     Utf8CP GetUnitSystem() const { return m_system.c_str(); }
@@ -257,6 +258,7 @@ public:
     bool HasUnits() const { return m_units.size() > 0; }
     bool HasSynonyms() const { return m_altNames.size() > 0; }
     bvector<UnitCP> const GetUnits() const { return m_units; }
+    UnitCP GetSIUnit() const { auto it = std::find_if(m_units.begin(), m_units.end(), [](UnitCP unit) { return unit->IsSI(); });  return m_units.end() == it ? nullptr : *it; }
 
     UNITS_EXPORT bool IsCompatible(UnitCR unit) const;
     bool Equals(PhenomenonCR comparePhenomenon) const {return GetPhenomenonId() == comparePhenomenon.GetPhenomenonId();}
