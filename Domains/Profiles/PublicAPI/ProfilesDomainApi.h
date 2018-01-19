@@ -4,5 +4,6 @@
 
 #include "ProfilesDomainDefinitions.h"
 #include "ProfilesDomain.h"
+#include "ProfilesDomainUtilities.h"
 
 /*#include "Form.h"*/
