@@ -31,7 +31,7 @@ public:
         };
 
 private:
-    void ConvertAlignments(Bentley::Cif::GeometryModel::SDK::GeometricModel const&, Dgn::DgnDbSync::DgnV8::ConverterLibrary& converterLib, Params& params);
+    void ConvertAlignments(Bentley::Cif::GeometryModel::SDK::GeometricModel const&, Params& params);
     void ConvertCorridors(Bentley::Cif::GeometryModel::SDK::GeometricModel const&, Dgn::DgnDbSync::DgnV8::ConverterLibrary& converterLib, Params& params);
 
 public:
@@ -52,8 +52,19 @@ public:
 
 struct ConvertORDElementXDomain : Dgn::DgnDbSync::DgnV8::XDomain
 {
+private:
+    ORDConverter::Params& m_params;
+    ORDV8Converter& m_converter;
+    bvector<bpair<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::Alignment>, Dgn::DgnElementPtr>> m_alignments;
+    bvector<bpair<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::Corridor>, Dgn::DgnElementPtr>> m_corridors;
+
 protected:
-    virtual Result _PreConvertElement(DgnV8EhCR, Dgn::DgnDbSync::DgnV8::Converter&, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const&) override;
+    virtual void _ProcessResults(Dgn::DgnDbSync::DgnV8::ElementConversionResults&, DgnV8EhCR, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const&, Dgn::DgnDbSync::DgnV8::Converter&) override;
+
+public:
+    ConvertORDElementXDomain(ORDV8Converter& converter, ORDConverter::Params& params);
+
+    void CreateRoadRailElements();
 }; // ConvertORDElementXDomain
 
 END_ORDBRIDGE_NAMESPACE

@@ -24,7 +24,7 @@ private:
     BentleyStatus CreateSyncInfoIfNecessary();
 
     Dgn::DgnDbSync::DgnV8::RootModelConverter::RootModelSpatialParams m_params;
-    std::unique_ptr<Dgn::DgnDbSync::DgnV8::RootModelConverter> m_converter;
+    std::unique_ptr<ORDV8Converter> m_converter;
 
 protected:
     Dgn::CategorySelectorPtr CreateSpatialCategorySelector(Dgn::DefinitionModelR);
@@ -51,6 +51,7 @@ public:
     virtual Dgn::SubjectCPtr _InitializeJob() override;
     virtual Dgn::SubjectCPtr _FindJob() override;
     virtual void _OnDocumentDeleted(Utf8StringCR documentId, Dgn::iModelBridgeSyncInfoFile::ROWID documentSyncId) override;
+    virtual void _DeleteSyncInfo() override;
 
     virtual BentleyStatus _MakeSchemaChanges() override;
     virtual BentleyStatus _OnOpenBim(Dgn::DgnDbR db) override;

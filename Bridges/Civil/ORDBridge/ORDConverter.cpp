@@ -146,10 +146,10 @@ struct ORDAlignmentsConverter: RefCountedBase
     }; // CifProfileSourceItem
 
 private:
-    Dgn::DgnDbSync::DgnV8::ConverterLibrary& m_converterLib;
     AlignmentBim::AlignmentModelPtr m_bimAlignmentModelPtr;
 
 private:
+    ORDAlignmentsConverter(SubjectCR jobSubject);
     ORDAlignmentsConverter(DgnDbSync::DgnV8::ConverterLibrary& converterLib);
 
     BentleyStatus Marshal(CurveVectorPtr& bimCurveVector, Bentley::CurveVectorCR v8CurveVector);
@@ -167,22 +167,21 @@ private:
     BentleyStatus ConvertProfiles(AlignmentCR cifAlignment, AlignmentBim::AlignmentCR alignment, ORDConverter::Params& params);
 
 public:
-    static ORDAlignmentsConverterPtr Create(DgnDbSync::DgnV8::ConverterLibrary& converterLib)
+    static ORDAlignmentsConverterPtr Create(SubjectCR jobSubject)
         {
-        return new ORDAlignmentsConverter(converterLib);
+        return new ORDAlignmentsConverter(jobSubject);
         }
 
     AlignmentBim::AlignmentModelR GetAlignmentModel() const { return *m_bimAlignmentModelPtr; }
-    BentleyStatus ConvertAlignment(AlignmentCR cifAlignment, ORDConverter::Params& params);
+    DgnElementId ConvertAlignment(AlignmentCR cifAlignment, ORDConverter::Params& params);
 }; // ORDAlignmentsConverter
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      05/2017
+* @bsimethod                                    Diego.Diaz                      01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ORDAlignmentsConverter::ORDAlignmentsConverter(DgnDbSync::DgnV8::ConverterLibrary& converterLib):
-    m_converterLib(converterLib)
+ORDAlignmentsConverter::ORDAlignmentsConverter(SubjectCR jobSubject)
     {
-    m_bimAlignmentModelPtr = AlignmentBim::AlignmentModel::Query(m_converterLib.GetJobSubject(), ORDBRIDGE_AlignmentModelName);    
+    m_bimAlignmentModelPtr = AlignmentBim::AlignmentModel::Query(jobSubject, ORDBRIDGE_AlignmentModelName);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -512,7 +511,7 @@ BentleyStatus ORDAlignmentsConverter::ConvertProfiles(AlignmentCR cifAlignment, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ORDAlignmentsConverter::ConvertAlignment(AlignmentCR cifAlignment, ORDConverter::Params& params)
+DgnElementId ORDAlignmentsConverter::ConvertAlignment(AlignmentCR cifAlignment, ORDConverter::Params& params)
     {
     CifAlignmentSourceItem sourceItem(cifAlignment);
 
@@ -523,7 +522,7 @@ BentleyStatus ORDAlignmentsConverter::ConvertAlignment(AlignmentCR cifAlignment,
     if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::New == change.GetChangeType())
         {
         if (BentleyStatus::SUCCESS != CreateNewBimAlignment(cifAlignment, *params.changeDetectorP, change, alignmentCPtr))
-            return BentleyStatus::ERROR;
+            return DgnElementId();
         }
     else if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Unchanged == change.GetChangeType())
         {
@@ -532,13 +531,15 @@ BentleyStatus ORDAlignmentsConverter::ConvertAlignment(AlignmentCR cifAlignment,
     else if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Changed == change.GetChangeType())
         {
         if (BentleyStatus::SUCCESS != UpdateBimAlignment(cifAlignment, *params.changeDetectorP, change))
-            return BentleyStatus::ERROR;
+            return DgnElementId();
         }
 
     if (alignmentCPtr.IsNull())
         alignmentCPtr = AlignmentBim::Alignment::Get(params.changeDetectorP->GetDgnDb(), change.GetSyncInfoRecord().GetDgnElementId());
 
-    return ConvertProfiles(cifAlignment, *alignmentCPtr, params);
+    ConvertProfiles(cifAlignment, *alignmentCPtr, params);
+
+    return alignmentCPtr->GetElementId();
     }
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ORDCorridorsConverter)
@@ -569,11 +570,11 @@ struct ORDCorridorsConverter: RefCountedBase
 
 private:
     Transform m_unitsScaleTransform;
-    Dgn::DgnDbSync::DgnV8::ConverterLibrary& m_converterLib;
+    Dgn::DgnDbSync::DgnV8::Converter& m_converter;
     Dgn::PhysicalModelPtr m_bimPhysicalModelPtr;
 
 private:
-    ORDCorridorsConverter(DgnDbSync::DgnV8::ConverterLibrary& converterLib, TransformCR unitsScaleTransform);
+    ORDCorridorsConverter(DgnDbSync::DgnV8::Converter& converterLib, TransformCR unitsScaleTransform);
 
     BentleyStatus Marshal(PolyfaceHeaderPtr& bimMesh, Bentley::PolyfaceHeaderCR v8Mesh);
     BentleyStatus CreateNewRoadway(CorridorCR cifCorridor,
@@ -583,22 +584,22 @@ private:
     BentleyStatus AssignRoadwayGeomStream(CorridorCR cifCorridor, RoadRailBim::RoadwayR roadway);
 
 public:
-    static ORDCorridorsConverterPtr Create(DgnDbSync::DgnV8::ConverterLibrary& converterLib, TransformCR unitsScaleTransform)
+    static ORDCorridorsConverterPtr Create(DgnDbSync::DgnV8::Converter& converter, TransformCR unitsScaleTransform)
         {
-        return new ORDCorridorsConverter(converterLib, unitsScaleTransform);
+        return new ORDCorridorsConverter(converter, unitsScaleTransform);
         }
 
     Dgn::PhysicalModelR GetPhysicalModel() const { return *m_bimPhysicalModelPtr; }
-    BentleyStatus ConvertCorridor(CorridorCR cifCorridor, ORDConverter::Params& params);
+    DgnElementId ConvertCorridor(CorridorCR cifCorridor, ORDConverter::Params& params);
 }; // ORDCorridorsConverter
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-ORDCorridorsConverter::ORDCorridorsConverter(DgnDbSync::DgnV8::ConverterLibrary& converterLib, TransformCR unitsScaleTransform):
-    m_converterLib(converterLib), m_unitsScaleTransform(unitsScaleTransform)
+ORDCorridorsConverter::ORDCorridorsConverter(DgnDbSync::DgnV8::Converter& converter, TransformCR unitsScaleTransform):
+    m_converter(converter), m_unitsScaleTransform(unitsScaleTransform)
     {
-    m_bimPhysicalModelPtr = RoadRailBim::RoadRailPhysicalDomain::QueryPhysicalModel(m_converterLib.GetJobSubject(), ORDBRIDGE_PhysicalModelName);
+    m_bimPhysicalModelPtr = RoadRailBim::RoadRailPhysicalDomain::QueryPhysicalModel(m_converter.GetJobSubject(), ORDBRIDGE_PhysicalModelName);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -643,7 +644,7 @@ BentleyStatus ORDCorridorsConverter::AssignRoadwayGeomStream(CorridorCR cifCorri
 
                 if (auto pMaterial = v8DispParams.GetMaterial())
                     {
-                    geomParams.SetMaterialId(m_converterLib.GetRemappedMaterial(pMaterial));
+                    geomParams.SetMaterialId(m_converter.GetRemappedMaterial(pMaterial));
                     if (!geomBuilderPtr->Append(geomParams, GeometryBuilder::CoordSystem::World))
                         return BentleyStatus::ERROR;
                     }
@@ -735,7 +736,7 @@ BentleyStatus ORDCorridorsConverter::UpdateRoadway(CorridorCR cifCorridor,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ORDCorridorsConverter::ConvertCorridor(CorridorCR cifCorridor, ORDConverter::Params& params)
+DgnElementId ORDCorridorsConverter::ConvertCorridor(CorridorCR cifCorridor, ORDConverter::Params& params)
     {
     CifCorridorSourceItem sourceItem(cifCorridor);
 
@@ -744,22 +745,25 @@ BentleyStatus ORDCorridorsConverter::ConvertCorridor(CorridorCR cifCorridor, ORD
     if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Unchanged == change.GetChangeType())
         {
         params.changeDetectorP->_OnElementSeen(change.GetSyncInfoRecord().GetDgnElementId());
-        return BentleyStatus::SUCCESS;
+        }
+    else if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::New == change.GetChangeType())
+        {
+        if (BentleyStatus::SUCCESS != CreateNewRoadway(cifCorridor, *params.changeDetectorP, params.fileScopeId, change))
+            return DgnElementId();
+        }
+    else if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Changed == change.GetChangeType())
+        {
+        if (BentleyStatus::SUCCESS != UpdateRoadway(cifCorridor, *params.changeDetectorP, change))
+            return DgnElementId();
         }
 
-    if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::New == change.GetChangeType())
-        return CreateNewRoadway(cifCorridor, *params.changeDetectorP, params.fileScopeId, change);
-
-    if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Changed == change.GetChangeType())
-        return UpdateRoadway(cifCorridor, *params.changeDetectorP, change);
-
-    return BentleyStatus::ERROR;
+    return change.GetSyncInfoRecord().GetDgnElementId();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ORDConverter::ConvertAlignments(GeometryModel::SDK::GeometricModel const& geomModel, DgnDbSync::DgnV8::ConverterLibrary& converterLib, Params& params)
+void ORDConverter::ConvertAlignments(GeometryModel::SDK::GeometricModel const& geomModel, Params& params)
     {    
     ORDAlignmentsConverterPtr alignmentsConvPtr;
 
@@ -771,7 +775,7 @@ void ORDConverter::ConvertAlignments(GeometryModel::SDK::GeometricModel const& g
             continue;
 
         if (alignmentsConvPtr.IsNull())
-            alignmentsConvPtr = ORDAlignmentsConverter::Create(converterLib);
+            alignmentsConvPtr = ORDAlignmentsConverter::Create(*params.subjectCPtr);
 
         alignmentsConvPtr->ConvertAlignment(*cifAlignmentPtr, params);
         }
@@ -914,7 +918,7 @@ void ORDConverter::ConvertORDData(Params& params)
                     dgnFileSet.insert(currentDgnFileP);
                     }
 
-                ConvertAlignments(*geomModelPtr, converterLib, params);                
+                ConvertAlignments(*geomModelPtr, params);                
                 }
             }
 
@@ -950,48 +954,13 @@ void ORDConverter::ConvertORDData(Params& params)
         }
     }
 
-/*void ORDConverter::ConvertORDData(Params& params)
-    {
-    DgnDbSync::DgnV8::RootModelConverter::RootModelSpatialParams converterLibraryParams;
-
-    BentleyApi::BeFileName configFileName = params.iModelBridgeParamsCP->GetAssetsDir();
-    configFileName.AppendToPath(L"ImportConfig.xml");
-
-    converterLibraryParams.SetConfigFile(configFileName);
-    converterLibraryParams.SetWantThumbnails(true);
-
-    ORDV8Converter converter(converterLibraryParams);
-    converterLibraryParams.SetAssetsDir(params.iModelBridgeParamsCP->GetAssetsDir());
-    converterLibraryParams.SetBridgeRegSubKey(params.iModelBridgeParamsCP->GetBridgeRegSubKey());
-    converterLibraryParams.SetInputFileName(params.iModelBridgeParamsCP->GetInputFileName());
-    converter.SetWantDebugCodes(true);
-    converter.SetDgnDb(params.subjectCPtr->GetDgnDb());
-    converter.SetIsUpdating(false);
-
-    if (BSISUCCESS != DgnDbSync::DgnV8::SyncInfo::CreateEmptyFile(DgnDbSync::DgnV8::SyncInfo::GetDbFileName(params.iModelBridgeParamsCP->GetBriefcaseName()))) // Bootstrap the V8 converter by pairing an empty syncinfo file with the briefcase
-        return;
-
-    converter.AttachSyncInfo();
-    if (DgnFileStatus::DGNFILE_STATUS_Success != converter.InitRootModel())
-        return;
-
-    if (BentleyStatus::SUCCESS != converter.MakeSchemaChanges())
-        return;
-
-    //ASSERT_FALSE(converter.WasAborted());
-    converter.InitializeJob();
-    converter.Process();
-
-    params.subjectCPtr->GetDgnDb().SaveChanges();
-    }*/
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ORDV8Converter::_ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model)
     {
-    /*if (fullSchemaName.Contains("Bentley_Civil") || fullSchemaName.StartsWith("Civil."))
-        return false;*/
+    if (fullSchemaName.Contains("Bentley_Civil") || fullSchemaName.StartsWith("Civil."))
+        return false;
 
     return true;
     }
@@ -1007,21 +976,69 @@ DgnModelId ORDV8Converter::_MapModelIntoProject(DgnV8ModelR v8Model, Utf8CP newN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbSync::DgnV8::XDomain::Result ConvertORDElementXDomain::_PreConvertElement(DgnV8EhCR v8el, DgnDbSync::DgnV8::Converter& conv, DgnDbSync::DgnV8::ResolvedModelMapping const& v8mm)
+ConvertORDElementXDomain::ConvertORDElementXDomain(ORDV8Converter& converter, ORDConverter::Params& params): m_params(params), m_converter(converter)
     {
-    /*auto cifAlignmentPtr = Alignment::CreateFromElement(v8el);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConvertORDElementXDomain::_ProcessResults(DgnDbSync::DgnV8::ElementConversionResults& elRes, DgnV8EhCR v8el, DgnDbSync::DgnV8::ResolvedModelMapping const&, DgnDbSync::DgnV8::Converter&)
+    {
+    auto cifAlignmentPtr = Alignment::CreateFromElementHandle(v8el);
     if (cifAlignmentPtr.IsValid())
         {
-        return Result::SkipElement;
+        m_alignments.push_back({ cifAlignmentPtr, elRes.m_element });
+        }
+    else
+        {
+        auto cifCorridorPtr = Corridor::CreateFromElementHandle(v8el);
+        if (cifCorridorPtr.IsValid())
+            m_corridors.push_back({ cifCorridorPtr, elRes.m_element });
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConvertORDElementXDomain::CreateRoadRailElements()
+    {
+    if (!m_alignments.empty())
+        {
+        auto alignmentsConverterPtr = ORDAlignmentsConverter::Create(*m_params.subjectCPtr);
+        for (auto& alignmentEntry : m_alignments)
+            {
+            alignmentsConverterPtr->ConvertAlignment(*alignmentEntry.first, m_params);
+            }
         }
 
-    auto cifCorridorPtr = Corridor::CreateFromElementHandle(v8el);
-    if (cifCorridorPtr.IsValid())
+    if (!m_corridors.empty())
         {
-        return Result::SkipElement;
-        }*/
+        Bentley::DgnPlatform::ModelId modelIdForConverter = 0;
+        ORDCorridorsConverterPtr corridorsConverterPtr;
 
-    return Result::Proceed;
+        for (auto& corridorEntry : m_corridors)
+            {
+            if (corridorsConverterPtr.IsNull() || modelIdForConverter != corridorEntry.first->GetDgnModelP()->GetModelId())
+                {
+                corridorsConverterPtr = ORDCorridorsConverter::Create(m_converter, m_converter.ComputeUnitsScaleTransform(*corridorEntry.first->GetDgnModelP()));
+                modelIdForConverter = corridorEntry.first->GetDgnModelP()->GetModelId();
+                }
+
+            corridorsConverterPtr->ConvertCorridor(*corridorEntry.first, m_params);
+            }
+        }
+
+    auto alignmentModelPtr = AlignmentBim::AlignmentModel::Query(*m_params.subjectCPtr, ORDBRIDGE_AlignmentModelName);
+    auto horizontalAlignmentModelId = AlignmentBim::HorizontalAlignmentModel::QueryBreakDownModelId(*alignmentModelPtr);
+    auto horizAlignmentModelCPtr = AlignmentBim::HorizontalAlignmentModel::Get(m_params.subjectCPtr->GetDgnDb(), horizontalAlignmentModelId);
+    auto physicalModelPtr = RoadRailBim::RoadRailPhysicalDomain::QueryPhysicalModel(*m_params.subjectCPtr, ORDBRIDGE_PhysicalModelName);
+
+    updateProjectExtents(*horizAlignmentModelCPtr, m_params, false);
+    updateProjectExtents(*physicalModelPtr, m_params, true);
+
+    if (m_params.isCreatingNewDgnDb)
+        RoadRailBim::RoadRailPhysicalDomain::SetUpDefaultViews(*m_params.subjectCPtr, ORDBRIDGE_AlignmentModelName, ORDBRIDGE_PhysicalModelName);
     }
 
 END_ORDBRIDGE_NAMESPACE

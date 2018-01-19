@@ -216,15 +216,6 @@ SubjectCPtr ORDBridge::_InitializeJob()
 //---------------------------------------------------------------------------------------
 BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     {
-#ifdef USE_ROOTMODEL
-    ConvertORDElementXDomain convertORDXDomain;
-    Dgn::DgnDbSync::DgnV8::XDomain::Register(convertORDXDomain);
-
-    m_converter->Process();
-
-    Dgn::DgnDbSync::DgnV8::XDomain::UnRegister(convertORDXDomain);
-    return m_converter->WasAborted() ? BSIERROR : BSISUCCESS;
-#else
     auto changeDetectorPtr = GetSyncInfo().GetChangeDetectorFor(*this);
 
     // IMODELBRIDGE REQUIREMENT: Keep information about the source document up to date.
@@ -233,6 +224,17 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
 
     ORDConverter::Params params(_GetParams(), jobSubject, *changeDetectorPtr, fileScopeId);
 
+#ifdef USE_ROOTMODEL
+    ConvertORDElementXDomain convertORDXDomain(*m_converter, params);
+    Dgn::DgnDbSync::DgnV8::XDomain::Register(convertORDXDomain);
+
+    m_converter->Process();
+
+    convertORDXDomain.CreateRoadRailElements();
+
+    Dgn::DgnDbSync::DgnV8::XDomain::UnRegister(convertORDXDomain);
+    return m_converter->WasAborted() ? BSIERROR : BSISUCCESS;
+#else
     // IMODELBRIDGE REQUIREMENT: Note job transform and react when it changes
     //Transform _old, _new;
     //params.spatialDataTransformHasChanged = DetectSpatialDataTransformChange(_new, _old, *changeDetectorPtr, fileScopeId, "JobTrans", "JobTrans");
@@ -308,10 +310,11 @@ BentleyStatus ORDBridge::_OnOpenBim(DgnDbR db)
     m_converter.reset(new ORDV8Converter(m_params));
     m_converter->SetDgnDb(db);
     CreateSyncInfoIfNecessary();
-    return m_converter->AttachSyncInfo();
-#else
-    return T_Super::_OnOpenBim(db);
+    if (BentleyStatus::SUCCESS != m_converter->AttachSyncInfo())
+        return BentleyStatus::ERROR;
 #endif
+
+    return T_Super::_OnOpenBim(db);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -335,6 +338,20 @@ BentleyStatus ORDBridge::_DetectDeletedDocuments()
 #else
     return BSISUCCESS;
 #endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carl.Hinkle                      01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ORDBridge::_DeleteSyncInfo()
+    {
+    T_Super::_DeleteSyncInfo();
+
+    BeFileName briefcaseName = _GetParams().GetBriefcaseName();
+    briefcaseName = briefcaseName.AppendExtension(L"syncinfo");
+    if (!briefcaseName.DoesPathExist())
+        return;
+    briefcaseName.BeDeleteFile();    
     }
 
 END_ORDBRIDGE_NAMESPACE
