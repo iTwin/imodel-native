@@ -2118,6 +2118,10 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::DoAnalyze(DgnV8Api::ElementHan
         if (found != s_dgnV8DeliveredSchemas.end())
             continue;
 
+        auto skipped = std::find_if(m_skippedSchemas.begin(), m_skippedSchemas.end(), [v8SchemaName] (Utf8StringCR dgnv8) ->bool { return BeStringUtilities::StricmpAscii(v8SchemaName.c_str(), dgnv8.c_str()) == 0; });
+        if (skipped != m_skippedSchemas.end())
+            continue;
+
         // We fabricate the DgnV8 Tag Set Definition schema at runtime during conversion; never allow instances of that schema to be considered primary.
         if (isPrimary && ecClass.m_schemaName.Equals(Converter::GetV8TagSetDefinitionSchemaName()))
             isPrimary = false;
@@ -2495,7 +2499,10 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::RetrieveV8ECSchemas(DgnV8Model
 
         Utf8String fullName(schemaKey.GetFullSchemaName().c_str());
         if (!m_converter._ShouldImportSchema(fullName, v8Model))
+            {
+            m_skippedSchemas.push_back(Utf8String(schemaKey.GetName().c_str()));
             continue;
+            }
 
         Bentley::Utf8String schemaName(schemaKey.GetName());
 
