@@ -451,7 +451,7 @@ DisplayParams DisplayParams::ForLinear(GraphicParamsCR gf, GeometryParamsCP geom
 * @bsimethod                                                    Paul.Connelly   01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayParams::InitMesh(ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels pixels, MaterialP mat, GradientSymbCP grad, TextureMappingCP tex,
-    FillFlags fillFlags, DgnCategoryId catId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass, bool neverFilled)
+    FillFlags fillFlags, DgnCategoryId catId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass)
     {
     InitGeomParams(catId, subCatId, geomClass);
     m_type = Type::Mesh;
@@ -462,7 +462,6 @@ void DisplayParams::InitMesh(ColorDef lineColor, ColorDef fillColor, uint32_t wi
     m_gradient = grad;
     m_width = width;
     m_linePixels = pixels;
-    m_neverFilled = neverFilled;
     m_hasRegionOutline = ComputeHasRegionOutline();
     
     if (nullptr == mat && nullptr != tex)
@@ -481,7 +480,6 @@ DisplayParams DisplayParams::ForMesh(GraphicParamsCR gf, GeometryParamsCP geom, 
     DgnSubCategoryId subCatId;
     DgnGeometryClass geomClass = DgnGeometryClass::Primary;
     FillFlags fillFlags = filled ? FillFlags::ByView : FillFlags::None;
-    bool neverFilled = false;
     if (gf.IsBlankingRegion())
         fillFlags |= FillFlags::Blanking;
 
@@ -497,15 +495,8 @@ DisplayParams DisplayParams::ForMesh(GraphicParamsCR gf, GeometryParamsCP geom, 
         if (nullptr != geom->GetPatternParams())
             fillFlags |= FillFlags::Behind;
 
-#if defined(WIP_TFS_807359)
-        // TFS#807359: FillDisplay::Never for planar regions...
-        if (!filled && FillDisplay::Never == geom->GetFillDisplay())
-            neverFilled = true;
-#endif
-
         if (filled)
             {
-            BeAssert(!neverFilled);
             if (FillDisplay::Always == geom->GetFillDisplay())
                 {
                 fillFlags |= FillFlags::Always;
@@ -526,7 +517,7 @@ DisplayParams DisplayParams::ForMesh(GraphicParamsCR gf, GeometryParamsCP geom, 
         pTex = &tex;
         }
 
-    return DisplayParams(gf.GetLineColor(), gf.GetFillColor(), gf.GetWidth(), static_cast<LinePixels>(gf.GetLinePixels()), gf.GetMaterial(), grad, pTex, fillFlags, catId, subCatId, geomClass, neverFilled);
+    return DisplayParams(gf.GetLineColor(), gf.GetFillColor(), gf.GetWidth(), static_cast<LinePixels>(gf.GetLinePixels()), gf.GetMaterial(), grad, pTex, fillFlags, catId, subCatId, geomClass);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -560,9 +551,7 @@ DisplayParamsCPtr DisplayParams::CreateForGeomPartInstance(DisplayParamsCR part,
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DisplayParams::ComputeHasRegionOutline() const
     {
-    if (m_neverFilled)
-        return true;
-    else if (m_gradient.IsValid())
+    if (m_gradient.IsValid())
         return m_gradient->GetIsOutlined();
     else
         return !NeverRegionOutline() && m_fillColor != m_lineColor;
@@ -629,7 +618,6 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
     TEST_LESS_THAN(GetLinePixels());
     TEST_LESS_THAN(GetFillFlags());
     TEST_LESS_THAN(HasRegionOutline());
-    TEST_LESS_THAN(IsNeverFilled());
     TEST_LESS_THAN(GetTextureMapping().GetTexture()); // ###TODO: Care about whether params match?
 
     if (ComparePurpose::Merge == purpose)
@@ -670,7 +658,6 @@ bool DisplayParams::IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose) const
     TEST_EQUAL(GetLinePixels());
     TEST_EQUAL(GetFillFlags());
     TEST_EQUAL(HasRegionOutline());
-    TEST_EQUAL(IsNeverFilled());
     TEST_EQUAL(GetTextureMapping().GetTexture()); // ###TODO: Care about whether params match?
 
     if (ComparePurpose::Merge == purpose)
@@ -1537,7 +1524,7 @@ PolyfaceList PrimitiveGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, ViewC
 
     CurveVectorPtr      curveVector = m_geometry->GetAsCurveVector();
 
-    if (curveVector.IsValid() && (!curveVector->IsAnyRegionType() || GetDisplayParams().IsNeverFilled())) // Non region or unfilled planar regions....)
+    if (curveVector.IsValid() && !curveVector->IsAnyRegionType()) // Non region or unfilled planar regions....)
         return PolyfaceList();
 
     IPolyfaceConstructionPtr polyfaceBuilder = IPolyfaceConstruction::Create(facetOptions);
@@ -2346,7 +2333,7 @@ bool PolylineArgs::Init(MeshCR mesh)
     m_is2d = mesh.Is2d();
     m_isPlanar = mesh.IsPlanar();
     m_disjoint = Mesh::PrimitiveType::Point == mesh.GetType();
-    m_isEdge = mesh.GetDisplayParams().HasRegionOutline() && !mesh.GetDisplayParams().IsNeverFilled();
+    m_isEdge = mesh.GetDisplayParams().HasRegionOutline();
 
     m_polylines.reserve(mesh.Polylines().size());
 
@@ -3113,7 +3100,7 @@ DisplayParamsCPtr DisplayParams::Create(Type type, DgnCategoryId catId, DgnSubCa
                 pTex = &texMap;
                 }
 
-            return new DisplayParams(lineColor, fillColor, width, linePixels, mat.get(), gradient, pTex, fillFlags, catId, subCatId, geomClass, false);
+            return new DisplayParams(lineColor, fillColor, width, linePixels, mat.get(), gradient, pTex, fillFlags, catId, subCatId, geomClass);
             }
         case Type::Linear:
             {
