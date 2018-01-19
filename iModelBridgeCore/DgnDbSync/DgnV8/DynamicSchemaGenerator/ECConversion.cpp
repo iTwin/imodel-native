@@ -2205,10 +2205,17 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConvertToBisBasedECSchemas()
     if (BisClassConverter::FinalizeConversion(context) != BentleyApi::SUCCESS)
         return BentleyApi::BSIERROR;
 
+    BisClassConverter::ECClassRemovalContext removeContext(context);
     for (BECN::ECRelationshipClassP relationshipClass : relationshipClasses)
         {
-        if (BisClassConverter::ConvertECRelationshipClass(context, *relationshipClass, m_syncReadContext.get()) != BentleyApi::SUCCESS)
+        if (BisClassConverter::ConvertECRelationshipClass(removeContext, *relationshipClass, m_syncReadContext.get()) != BentleyApi::SUCCESS)
             return BentleyApi::BSIERROR;
+        }
+
+    for (BECN::ECClassP droppedClass : removeContext.GetClasses())
+        {
+        if (BECN::ECObjectsStatus::Success != droppedClass->GetSchemaR().DeleteClass(*droppedClass))
+            return BSIERROR;
         }
 
     for (bpair<Utf8String, BECN::ECSchemaP> const& kvpair : context.GetSchemas())

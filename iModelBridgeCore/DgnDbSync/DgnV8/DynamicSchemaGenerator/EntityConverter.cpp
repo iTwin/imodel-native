@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/DynamicSchemaGenerator/EntityConverter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -604,10 +604,11 @@ BentleyStatus BisClassConverter::DoConvertECClass(SchemaConversionContext& conte
 // @bsimethod                                                 Krischan.Eberle     04/2015
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus BisClassConverter::ConvertECRelationshipClass(SchemaConversionContext& context, ECN::ECRelationshipClassR inputClass, ECN::ECSchemaReadContextP syncContext)
+BentleyStatus BisClassConverter::ConvertECRelationshipClass(ECClassRemovalContext& removeContext, ECN::ECRelationshipClassR inputClass, ECN::ECSchemaReadContextP syncContext)
     {
     RemoveDuplicateClassMapCustomAttributes(inputClass);
 
+    SchemaConversionContext& context = removeContext.SchemaContext();
     ProcessConstraints(inputClass, context.GetDefaultConstraintClass(), context);
 
     bool ignoreBisBase = false;
@@ -706,28 +707,60 @@ BentleyStatus BisClassConverter::ConvertECRelationshipClass(SchemaConversionCont
             {
             if (inputClass.GetTarget().GetMultiplicity().IsUpperLimitUnbounded() || (inputClass.GetTarget().GetMultiplicity().GetUpperLimit() == 1 && inputClass.GetStrengthDirection() == ECRelatedInstanceDirection::Forward))
                 {
+                bvector<ECEntityClassP> toRemove;
                 for (ECClassCP constraintClass : inputClass.GetTarget().GetConstraintClasses())
                     {
                     ECEntityClassP target = const_cast<ECEntityClassP>(constraintClass->GetEntityClassCP());
                     NavigationECPropertyP navProp = nullptr;
-                    target->CreateNavigationProperty(navProp, inputClass.GetName(), inputClass, ECRelatedInstanceDirection::Backward, false);
+                    if (ECObjectsStatus::Success != target->CreateNavigationProperty(navProp, inputClass.GetName(), inputClass, ECRelatedInstanceDirection::Backward, false))
+                        toRemove.push_back(target);
                     }
+                for (ECEntityClassP constraintClass : toRemove)
+                    inputClass.GetTarget().RemoveClass(*constraintClass);
+                if (inputClass.GetTarget().GetConstraintClasses().size() == 0)
+                    removeContext.AddClassToRemove(inputClass);
                 }
             }
         else if (inputClass.GetTarget().GetMultiplicity().GetUpperLimit() == 1)
             {
             if (inputClass.GetSource().GetMultiplicity().IsUpperLimitUnbounded() || (inputClass.GetSource().GetMultiplicity().GetUpperLimit() == 1 && inputClass.GetStrengthDirection() == ECRelatedInstanceDirection::Backward))
                 {
+                bvector<ECEntityClassP> toRemove;
                 for (ECClassCP constraintClass : inputClass.GetSource().GetConstraintClasses())
                     {
                     ECEntityClassP source = const_cast<ECEntityClassP>(constraintClass->GetEntityClassCP());
                     NavigationECPropertyP navProp = nullptr;
-                    source->CreateNavigationProperty(navProp, inputClass.GetName(), inputClass, ECRelatedInstanceDirection::Forward, false);
+                    if (ECObjectsStatus::Success != source->CreateNavigationProperty(navProp, inputClass.GetName(), inputClass, ECRelatedInstanceDirection::Forward, false))
+                        toRemove.push_back(source);
                     }
+                for (ECEntityClassP constraintClass : toRemove)
+                    inputClass.GetSource().RemoveClass(*constraintClass);
+                if (inputClass.GetSource().GetConstraintClasses().size() == 0)
+                    removeContext.AddClassToRemove(inputClass);
                 }
             }
+        else
+            {
+            inputClass.GetSource().SetMultiplicity(BECN::RelationshipMultiplicity::OneOne());
+            inputClass.GetTarget().SetMultiplicity(BECN::RelationshipMultiplicity::OneMany());
+            bvector<ECEntityClassP> toRemove;
+            for (ECClassCP constraintClass : inputClass.GetTarget().GetConstraintClasses())
+                {
+                ECEntityClassP target = const_cast<ECEntityClassP>(constraintClass->GetEntityClassCP());
+                NavigationECPropertyP navProp = nullptr;
+                if (ECObjectsStatus::Success != target->CreateNavigationProperty(navProp, inputClass.GetName(), inputClass, ECRelatedInstanceDirection::Backward, false))
+                    toRemove.push_back(target);
+                }
+            for (ECEntityClassP constraintClass : toRemove)
+                inputClass.GetTarget().RemoveClass(*constraintClass);
+            if (inputClass.GetTarget().GetConstraintClasses().size() == 0)
+                removeContext.AddClassToRemove(inputClass);
+            }
+        }
 
-        // In this case, the relationship cannot have any properties on it.
+    // if the relationship class is a link table, it cannot have any properties on it
+    if (inputClass.GetBaseClasses().size() == 0 || inputClass.Is(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsMultiAspects))
+        {
         bvector<Utf8CP> propertyNames;
         for (BECN::ECPropertyP prop : inputClass.GetProperties(false))
             propertyNames.push_back(prop->GetName().c_str());
@@ -740,7 +773,7 @@ BentleyStatus BisClassConverter::ConvertECRelationshipClass(SchemaConversionCont
         {
         BECN::ECRelationshipClassP relClass = childClass->GetRelationshipClassP();
         ECClassName childClassName(*childClass);
-        if (BSISUCCESS != ConvertECRelationshipClass(context, *relClass, syncContext))
+        if (BSISUCCESS != ConvertECRelationshipClass(removeContext, *relClass, syncContext))
             return BSIERROR;
         }
     return BSISUCCESS;
@@ -848,6 +881,25 @@ void BisClassConverter::ConvertECRelationshipConstraint(BECN::ECRelationshipCons
                 }
             }
         }
+
+    // It is possible that a constraint can have multiple classes, one of which got turned into an aspect.  This makes for an incompatible constraint.  Need to remove the conflicting type.
+    bool haveFirstType = false;
+    bool firstIsElement = true;
+    bvector<ECClassCP> constraintsToRemove;
+    for (auto constraintClass : constraint.GetConstraintClasses())
+        {
+        if (!haveFirstType)
+            {
+            haveFirstType = true;
+            firstIsElement = constraintClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_Element);
+            continue;
+            }
+        if (firstIsElement != constraintClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_Element))
+            constraintsToRemove.push_back(constraintClass);
+        }
+
+    for (ECClassCP ecClass : constraintsToRemove)
+        constraint.RemoveClass(*ecClass->GetEntityClassCP());
 
     IECInstancePtr dropConstraintCA = constraint.GetCustomAttribute("DropConstraints");
     if (dropConstraintCA.IsValid())
@@ -1369,8 +1421,18 @@ BECN::ECRelationshipClassCP BisClassConverter::SchemaConversionContext::GetDomai
         }
 
     ECClassCP abstractConstraint = inputClass.GetTarget().GetAbstractConstraint();
-    if (nullptr == abstractConstraint || abstractConstraint->Is(GetDefaultConstraintClass()) || 
-		(abstractConstraint->IsEntityClass() && abstractConstraint->GetEntityClassCP()->IsMixin()))
+    if (nullptr == abstractConstraint)
+        {
+        if (inputClass.GetTarget().GetConstraintClasses().size() > 0)
+            {
+            if (inputClass.GetTarget().GetConstraintClasses()[0]->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_Element))
+                return m_domainRelationshipBaseClass;
+            else
+                return m_aspectRelationshipBaseClass;
+            }
+        return m_domainRelationshipBaseClass;
+        }
+    else if (abstractConstraint->Is(GetDefaultConstraintClass()) || (abstractConstraint->IsEntityClass() && abstractConstraint->GetEntityClassCP()->IsMixin()))
         return m_domainRelationshipBaseClass;
     return m_aspectRelationshipBaseClass;
     }
