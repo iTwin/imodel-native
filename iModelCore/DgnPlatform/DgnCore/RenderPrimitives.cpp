@@ -211,11 +211,13 @@ private:
     private:
         Strokes::PointLists m_strokes;
         PolyfaceHeaderPtr   m_polyface;
+        PolyfaceHeaderPtr   m_rasterPolyface;
     public:
         Geom() = default;
 
         Strokes::PointLists GetStrokes() const { return m_strokes; }
         PolyfaceHeaderPtr GetPolyface() const { return m_polyface.IsValid() ? m_polyface->Clone() : nullptr; }
+        PolyfaceHeaderPtr GetRasterPolyface() const { return m_rasterPolyface.IsValid() ? m_rasterPolyface->Clone() : nullptr; }
         bool IsValid() const { return m_polyface.IsValid() || !m_strokes.empty(); }
         void Invalidate() { m_polyface = nullptr; m_strokes.clear(); }
         void InitStrokes(CurveVectorCR curves, IFacetOptionsR facetOptions)
@@ -229,6 +231,9 @@ private:
             builder->AddRegion(curves);
             m_polyface = builder->GetClientMeshPtr();
             }
+        bool IsValidRaster() const { return m_rasterPolyface.IsValid(); }
+        void InvalidateRaster() { m_rasterPolyface = nullptr; }
+        void InitRasterPolyface(CurveVectorCR curves, IFacetOptionsR facetOptions);
     };
 
     static double s_tolerances[kTolerance_COUNT];
@@ -238,19 +243,64 @@ private:
     //=======================================================================================
     struct Glyph
     {
+        struct Raster
+        {
+            Image       m_image;
+            Utf8String  m_name;
+            TexturePtr  m_texture;
+
+            Raster() { } // for bmap...
+            Raster(DgnGlyphCR glyph, DgnFontCR font)
+                {
+                m_name.Sprintf("%s-%u", font.GetName().c_str(), glyph.GetId());
+
+                DgnGlyph::RasterStatus status = glyph.GetRaster(m_image);
+                if (DgnGlyph::RasterStatus::Success != status)
+                    DEBUG_PRINTF("Error %u retrieving raster", status);
+
+                UNUSED_VARIABLE(status);
+                }
+
+            bool IsValid() const { return m_texture.IsValid() || m_image.IsValid(); }
+            TexturePtr GetTexture(SystemR system, DgnDbR db)
+                {
+                if (m_texture.IsNull() && m_image.IsValid())
+                    {
+                    TextureKey key(m_name);
+                    m_texture = system._FindTexture(key, db);
+                    if (m_texture.IsNull())
+                        m_texture = system._CreateTexture(m_image, db, Texture::CreateParams(key));
+
+                    m_image.Invalidate();
+                    BeAssert(m_texture.IsValid());
+                    }
+
+                return m_texture;
+                }
+        };
+
+    struct RasterPolyface
+    {
+        PolyfaceHeaderPtr   m_polyface;
+        TexturePtr          m_texture;
+
+        bool IsValid() const { return m_polyface.IsValid() && m_texture.IsValid(); }
+    };
+
     private:
         using Tolerance = GlyphCache::Tolerance;
 
         CurveVectorPtr      m_curves;
+        Raster              m_raster;
         Geom                m_geom[kTolerance_COUNT];
         double              m_smallestTolerance;
         bool                m_isCurved;
         bool                m_isStrokes;
 
-        template<typename T, typename U> void GetGeometry(IFacetOptionsR, T createGeom, U acceptGeom);
+        template<typename T, typename U> void GetGeometry(IFacetOptionsR, bool requestRaster, T createGeom, U acceptGeom);
     public:
         Glyph() = default; // for bmap...
-        Glyph(DgnGlyphCR glyph)
+        Glyph(DgnGlyphCR glyph, DgnFontCR font) : m_raster(glyph, font)
             {
             bool unusedArg;
             if ((m_curves = glyph.GetCurveVector(unusedArg)).IsValid())
@@ -266,12 +316,13 @@ private:
         bool IsValid() const { return m_curves.IsValid(); }
         bool IsStrokes() const { return m_isStrokes; }
         bool IsCurved() const { return m_isCurved; }
+        bool HasRaster() const { return m_raster.IsValid(); }
 
         Strokes::PointLists GetStrokes(IFacetOptionsR facetOptions)
             {
             BeAssert(IsStrokes());
             Strokes::PointLists strokes;
-            GetGeometry(facetOptions,
+            GetGeometry(facetOptions, false,
                     [&](Geom& geom) { geom.InitStrokes(*m_curves, facetOptions); },
                     [&](Geom& geom) { strokes = geom.GetStrokes(); });
             return strokes;
@@ -280,9 +331,18 @@ private:
             {
             BeAssert(!IsStrokes());
             PolyfaceHeaderPtr polyface;
-            GetGeometry(facetOptions,
+            GetGeometry(facetOptions, false,
                     [&](Geom& geom) { geom.InitPolyface(*m_curves, facetOptions); },
                     [&](Geom& geom) { polyface = geom.GetPolyface(); });
+            return polyface;
+            }
+        RasterPolyface GetRasterPolyface(IFacetOptionsR facetOptions, SystemR system, DgnDbR db)
+            {
+            BeAssert(!IsStrokes()); // ###TODO: support rasterizing strokes (stick text)
+            RasterPolyface polyface;
+            GetGeometry(facetOptions, true,
+                    [&](Geom& geom) { geom.InitRasterPolyface(*m_curves, facetOptions); },
+                    [&](Geom& geom) { polyface.m_polyface = geom.GetRasterPolyface(); polyface.m_texture = m_raster.GetTexture(system, db); });
             return polyface;
             }
 
@@ -326,29 +386,29 @@ private:
 
     static IFacetOptionsPtr CreateFacetOptions(double tolerance);
 
-    Glyph* FindOrInsert(DgnGlyphCR);
-    void GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, TextStringGeometry const& text, double tolerance);
-    static void GetTextGeometry(StrokesList* strokes, PolyfaceList* polyfaces, TextStringGeometry const& text, double tolerance)
+    Glyph* FindOrInsert(DgnGlyphCR, DgnFontCR font);
+    void GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, TextStringGeometry const& text, double tolerance, ViewContextR context);
+    static void GetTextGeometry(StrokesList* strokes, PolyfaceList* polyfaces, TextStringGeometry const& text, double tolerance, ViewContextR context)
         {
         // Because we need the font mutex in order to operate on the glyphs, also use it to protect our internal data.
         BeMutexHolder lock(DgnFonts::GetMutex());
-        Get(text.GetDb()).GetGeometry(strokes, polyfaces, text, tolerance);
+        Get(text.GetDb()).GetGeometry(strokes, polyfaces, text, tolerance, context);
         }
 public:
-    static void GetGeometry(StrokesList& strokes, PolyfaceList& polyfaces, TextStringGeometry const& text, double tolerance)
+    static void GetGeometry(StrokesList& strokes, PolyfaceList& polyfaces, TextStringGeometry const& text, double tolerance, ViewContextR context)
         {
-        return GetTextGeometry(&strokes, &polyfaces, text, tolerance);
+        return GetTextGeometry(&strokes, &polyfaces, text, tolerance, context);
         }
-    static PolyfaceList GetPolyfaces(TextStringGeometry const& text, double tolerance)
+    static PolyfaceList GetPolyfaces(TextStringGeometry const& text, double tolerance, ViewContextR context)
         {
         PolyfaceList polyfaces;
-        GetTextGeometry(nullptr, &polyfaces, text, tolerance);
+        GetTextGeometry(nullptr, &polyfaces, text, tolerance, context);
         return polyfaces;
         }
-    static StrokesList GetStrokes(TextStringGeometry const& text, double tolerance)
+    static StrokesList GetStrokes(TextStringGeometry const& text, double tolerance, ViewContextR context)
         {
         StrokesList strokes;
-        GetTextGeometry(&strokes, nullptr, text, tolerance);
+        GetTextGeometry(&strokes, nullptr, text, tolerance, context);
         return strokes;
         }
 };
@@ -571,6 +631,22 @@ bool DisplayParams::HasRegionOutline() const
 DisplayParamsCPtr DisplayParams::Clone() const
     {
     return new DisplayParams(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DisplayParamsCPtr DisplayParams::CloneForRasterText(TextureR texture) const
+    {
+    BeAssert(Type::Text == GetType());
+    auto clone = new DisplayParams(*this);
+
+    TextureMapping::Trans2x3 tf(0.0, 1.0, 0.0, 1.0, 0.0, 0.0);
+    TextureMapping::Params params;
+    params.SetWeight(0.0);
+    params.SetTransform(&tf);
+    clone->m_textureMapping = TextureMapping(texture, params);
+    return clone;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2034,7 +2110,7 @@ bool TextStringGeometry::DoGlyphBoxes (IFacetOptionsR facetOptions)
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolyfaceList TextStringGeometry::_GetPolyfaces(IFacetOptionsR facetOptionsIn, ViewContextR context)
     {
-    return GlyphCache::GetPolyfaces(*this, facetOptionsIn.GetChordTolerance());
+    return GlyphCache::GetPolyfaces(*this, facetOptionsIn.GetChordTolerance(), context);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2042,7 +2118,7 @@ PolyfaceList TextStringGeometry::_GetPolyfaces(IFacetOptionsR facetOptionsIn, Vi
 +---------------+---------------+---------------+---------------+---------------+------*/
 StrokesList TextStringGeometry::_GetStrokes (IFacetOptionsR facetOptions, ViewContextR context)
     {
-    return GlyphCache::GetStrokes(*this, facetOptions.GetChordTolerance());
+    return GlyphCache::GetStrokes(*this, facetOptions.GetChordTolerance(), context);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2076,9 +2152,41 @@ IFacetOptionsPtr GlyphCache::CreateFacetOptions(double chordTolerance)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void GlyphCache::Geom::InitRasterPolyface(CurveVectorCR curves, IFacetOptionsR facetOptionsIn)
+    {
+    DRange3d range;
+    if (!curves.GetRange(range))
+        {
+        BeAssert(false);
+        return;
+        }
+
+    DPoint3d ll = range.low;
+    DPoint3d ul = DPoint3d::From(range.low.x, range.high.y);
+    DPoint3d ur = range.high;
+    DPoint3d lr = DPoint3d::From(range.high.x, range.low.y);
+
+    bvector<DPoint3d> quadPts;
+    quadPts.push_back(ll);
+    quadPts.push_back(ul);
+    quadPts.push_back(ur);
+    quadPts.push_back(lr);
+
+    IFacetOptionsPtr facetOptions = facetOptionsIn.Clone();
+    facetOptions->SetParamsRequired(true);
+
+    IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create(*facetOptions);
+    //builder->AddPolygon(quadPts); // linker error???  unimplemented API!
+    builder->AddTriangulation(quadPts); // use instead...
+    m_rasterPolyface = builder->GetClientMeshPtr();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, TextStringGeometry const& geom, double chordTolerance)
+void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, TextStringGeometry const& geom, double chordTolerance, ViewContextR context)
     {
     TextStringCR textString = geom.GetText();
     DgnGlyphCP const* glyphs = textString.GetGlyphs();
@@ -2098,7 +2206,7 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
     for (size_t i = 0; i < textString.GetNumGlyphs(); i++)
         {
         auto textGlyph = glyphs[i];
-        Glyph* glyph = nullptr != textGlyph ? FindOrInsert(*textGlyph) : nullptr;
+        Glyph* glyph = nullptr != textGlyph ? FindOrInsert(*textGlyph, textString.GetStyle().GetFont()) : nullptr;
         if (nullptr == glyph || !glyph->IsValid())
             continue;
         else if ((glyph->IsStrokes() && nullptr == strokes) || (!glyph->IsStrokes() && nullptr == polyfaces))
@@ -2123,11 +2231,20 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
             }
         else
             {
+// #define TEST_RASTER_GLYPHS
+            DisplayParamsCPtr displayParams(&geom.GetDisplayParams());
+#if !defined(TEST_RASTER_GLYPHS)
             PolyfaceHeaderPtr polyface = glyph->GetPolyface(*facetOptions);
+#else
+            Glyph::RasterPolyface raster = glyph->GetRasterPolyface(*facetOptions, *context.GetRenderSystem(), context.GetDgnDb());
+            PolyfaceHeaderPtr polyface = raster.m_polyface;
+            if (raster.IsValid())
+                displayParams = displayParams->CloneForRasterText(*raster.m_texture);
+#endif
             if (polyface.IsValid() && polyface->HasFacets())
                 {
                 polyface->Transform(glyphTransform);
-                polyfaces->push_back(Polyface(geom.GetDisplayParams(), *polyface, false, true));
+                polyfaces->push_back(Polyface(*displayParams, *polyface, false, true));
                 }
             }
         }
@@ -2136,11 +2253,11 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-GlyphCache::Glyph* GlyphCache::FindOrInsert(DgnGlyphCR glyph)
+GlyphCache::Glyph* GlyphCache::FindOrInsert(DgnGlyphCR glyph, DgnFontCR font)
     {
     auto iter = m_map.find(&glyph);
     if (m_map.end() == iter)
-        iter = m_map.Insert(&glyph, Glyph(glyph)).first;
+        iter = m_map.Insert(&glyph, Glyph(glyph, font)).first;
 
     return &iter->second;
     }
@@ -2148,7 +2265,7 @@ GlyphCache::Glyph* GlyphCache::FindOrInsert(DgnGlyphCR glyph)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T, typename U> void GlyphCache::Glyph::GetGeometry(IFacetOptionsR facetOptions, T createGeom, U acceptGeom)
+template<typename T, typename U> void GlyphCache::Glyph::GetGeometry(IFacetOptionsR facetOptions, bool requestRaster, T createGeom, U acceptGeom)
     {
     BeAssert(IsValid());
     Tolerance tol = GetTolerance(facetOptions.GetChordTolerance());
@@ -2156,14 +2273,18 @@ template<typename T, typename U> void GlyphCache::Glyph::GetGeometry(IFacetOptio
     double chordTolerance = GetChordTolerance(tol, facetOptions.GetChordTolerance());
     if (kTolerance_Smallest == tol && chordTolerance < m_smallestTolerance)
         {
-        geom.Invalidate();
+        if (requestRaster)
+            geom.InvalidateRaster(); // this should never be necessary...tolerance does not affect textured quad.
+        else
+            geom.Invalidate();
+
         m_smallestTolerance = chordTolerance;
         }
 
-    if (!geom.IsValid())
+    if ((!geom.IsValid() && !requestRaster) || (!geom.IsValidRaster() && requestRaster))
         createGeom(geom);
 
-    if (geom.IsValid())
+    if ((geom.IsValid() && !requestRaster) || (geom.IsValidRaster() && requestRaster))
         acceptGeom(geom);
     }
 

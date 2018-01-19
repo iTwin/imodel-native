@@ -174,6 +174,8 @@ public:
     static DisplayParamsCPtr CreateForGeomPartInstance(DisplayParamsCR partParams, DisplayParamsCR instanceParams);
     static DisplayParamsCPtr Create(Type type, DgnCategoryId catId, DgnSubCategoryId subCatId, GradientSymbCP gradient, RenderMaterialId matId, ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels linePixels, FillFlags fillFlags, DgnGeometryClass geomClass, bool ignoreLights, DgnDbR dgnDb, System& renderSys, TextureMappingCR texMap);
 
+    DisplayParamsCPtr CloneForRasterText(TextureR raster) const;
+
     DGNPLATFORM_EXPORT Utf8String ToDebugString() const; //!< @private
 };
 
