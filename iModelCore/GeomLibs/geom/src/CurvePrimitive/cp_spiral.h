@@ -654,6 +654,101 @@ ICurvePrimitivePtr &primitiveB
     return false;
     }
 
+// Carry out spiral construction (see main method) with confirmed good curvatures
+ICurvePrimitivePtr CreatePseudoSpiralCurvatureLengthCurvature_go
+(
+int typeCode,               //!< [in] transition type.  This method is intended to work with "cubic" approximations (New South Wales, Australian etc)
+TransformCR frame,          //!< [in] placement frame.  The constructed spiral will start at the origin of this frame and be directed along the x axis.
+double curvatureA,          //!< [in] radiusA (signed) radius (or 0 for line) at start.
+double lengthAB,            //!< [in] length of spiral between radiusA and radiusB.
+double curvatureB,           //!< [in] radiusB (signed) radius (or 0 for line) at end.
+bool reverseInterval
+)
+    {
+
+    ICurvePrimitivePtr result;
+    // extrapolate to inflection, assuming clothoid (linear) curvature function
+    //   (curvatureB - curvatureA) / lengthAB = curvatureB / length0B
+    double length0B = curvatureB * lengthAB / (curvatureB - curvatureA);
+    // double length0A = length0B - lengthAB;
+    double fractionA = curvatureA / curvatureB;
+    double fractionB = 1.0;
+    // create a complete spiral (from inflection to curvatureB)
+    auto referenceSpiral = ICurvePrimitive::CreateSpiralBearingCurvatureLengthCurvature (typeCode, 0.0, 0.0, length0B, curvatureB,
+            Transform::FromIdentity (), 0.0, 1.0);
+    if (referenceSpiral != nullptr)
+        {
+        auto frameAtA = referenceSpiral->FractionToFrenetFrame (reverseInterval ? fractionB : fractionA);
+        if (frameAtA.IsValid ())
+            {
+            static double s_scaleY = 1.0;
+            static double s_scaleZ = -1.0;
+            if (reverseInterval)
+                frameAtA.Value ().ScaleMatrixColumns (-1.0, s_scaleY, s_scaleZ);
+            auto inverseA = frameAtA.Value ().ValidatedInverse ();
+
+            if (inverseA.IsValid ())
+                {
+                double fractionAOut = reverseInterval ? fractionB : fractionA;
+                double fractionBOut = reverseInterval ? fractionA : fractionB;
+                result = ICurvePrimitive::CreateSpiralBearingCurvatureLengthCurvature (typeCode, 0.0, 0.0, length0B, curvatureB,
+                    frame * inverseA,
+                    fractionAOut, fractionBOut);
+                }
+            }
+        }
+    return result;
+    }
+
+//! Construct a spiral with start radius, spiral length, and end radius.
+//! This is a special construction for "cubic" approximations.
+//! The constructed spiral is a fractional subset of another spiral that includes its inflection point (which may be outside
+//! the active fractional subset).
+ICurvePrimitivePtr ICurvePrimitive::CreatePseudoSpiralRadiusLengthRadius
+(
+int typeCode,               //!< [in] transition type.  This method is intended to work with "cubic" approximations (New South Wales, Australian etc)
+TransformCR frame,          //!< [in] placement frame.  The constructed spiral will start at the origin of this frame and be directed along the x axis.
+double radiusA,             //!< [in] radiusA (signed) radius (or 0 for line) at start.
+double lengthAB,            //!< [in] length of spiral between radiusA and radiusB.
+double radiusB              //!< [in] radiusB (signed) radius (or 0 for line) at end.
+)
+    {
+    double a = DoubleOps::SmallMetricDistance ();
+    if (fabs (radiusA) < a)
+        radiusA = 0.0;
+    if (fabs (radiusB) < a)
+        radiusB = 0.0;
+
+    if (fabs (lengthAB) < a)
+        return nullptr;
+
+    if (radiusA == 0.0 && radiusB == 0.0)
+        {
+        return ICurvePrimitive::CreateLine (
+            DSegment3d::From (frame * DPoint3d::From (0,0,0), frame * DPoint3d::From (lengthAB, 0, 0)));
+        }
+
+    if (DoubleOps::AlmostEqual (radiusA, radiusB))
+        {
+        // Create a circular arc ...
+        double theta = lengthAB / radiusA;      // if radiusA is negative, all the vector and angle signs coordinate to move in positive x direction !!!
+        DEllipse3d arc = DEllipse3d::From (
+                    0, radiusA, 0,
+                    0, -radiusA, 0,
+                    radiusA, 0, 0,
+                    0, theta);
+        frame.Multiply (arc);
+        return ICurvePrimitive::CreateArc (arc);
+        }
+
+    double curvatureA = DoubleOps::ValidatedDivideDistance (1.0, radiusA);
+    double curvatureB = DoubleOps::ValidatedDivideDistance (1.0, radiusB);
+    if (fabs (curvatureB) > fabs (curvatureA))
+        return CreatePseudoSpiralCurvatureLengthCurvature_go (typeCode, frame, curvatureA, lengthAB, curvatureB, false);
+    else
+        return CreatePseudoSpiralCurvatureLengthCurvature_go (typeCode, frame, curvatureB, lengthAB, curvatureA, true);
+    }
+ 
 CurveVectorPtr CurveVector::CreateSpiralLineToLineShift
 (
 int transitionType,

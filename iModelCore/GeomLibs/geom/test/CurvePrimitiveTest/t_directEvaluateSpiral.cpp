@@ -75,7 +75,7 @@ TEST(PseudoSpiral,Serialize)
         }
     }
 
-ICurvePrimitivePtr ConstructSpiralRadiusRadiusLength (int typeCode, double radiusA, double radiusB, double lengthAB)
+ICurvePrimitivePtr ConstructSpiralRadiusRadiusLength (int typeCode, Angle bearingA, double radiusA, double radiusB, double lengthAB)
     {
     double curvatureA = DoubleOps::ValidatedDivideDistance (1.0, radiusA);
     double curvatureB = DoubleOps::ValidatedDivideDistance (1.0, radiusB);
@@ -83,12 +83,31 @@ ICurvePrimitivePtr ConstructSpiralRadiusRadiusLength (int typeCode, double radiu
     // extrapolate to inflection, assuming clothoid (linear) curvature function
     //   (curvatureB - curvatureA) / lengthAB = curvatureB / length0B
     double length0B = curvatureB * lengthAB / (curvatureB - curvatureA);
+    double length0A = length0B - lengthAB;
     double fractionA = curvatureA / curvatureB;
     double fractionB = 1.0;
-    auto referenceSpiral = DSpiral2dBase::Create (typeCode);
+    auto referenceSpiralA = DSpiral2dBase::Create (typeCode);
+    auto referenceSpiral = dynamic_cast <DSpiral2dDirectEvaluation *>(referenceSpiralA);
+    if (referenceSpiral == nullptr)
+        return nullptr;
     double bearing0 = 0.0;
     double curvature0 = 0.0;
-    referenceSpiral->SetBearingCurvatureLengthCurvature (bearing0, curvature0, length0B, curvatureB);
+    referenceSpiral->SetBearingCurvatureLengthCurvature (0.0, curvature0, length0B, curvatureB);
+    DPoint2d uvA;
+    DVec2d   duvA;
+    referenceSpiral->EvaluateAtDistance (length0A, uvA, &duvA, nullptr, nullptr);
+    DVec3d unitTangentA =  DVec3d::From (uvA.x, uvA.y, 0.0).ValidatedNormalize ();
+    DVec3d unitPerpA = DVec3d::From (-unitTangentA.y, unitTangentA.x);
+    auto frameAtA = Transform::FromOriginAndVectors (DPoint3d::From (uvA), unitTangentA, unitPerpA, DVec3d::UnitZ ());
+    auto inverseA = frameAtA.ValidatedInverse ();
+    if (!inverseA.IsValid ())
+        return nullptr;
+    if (bearingA.Radians () != 0.0)
+        {
+        auto rotation = Transform::FromMatrixAndFixedPoint (RotMatrix::FromAxisAndRotationAngle (2, bearingA.Radians ()), DPoint3d::FromZero ());
+        inverseA = rotation * inverseA;
+        }
+
     GEOMAPI_PRINTF ("RRL Spiral type %d\n", typeCode);
     for (double curvatureTarget : { curvatureA, curvatureB})
         {
@@ -100,7 +119,8 @@ ICurvePrimitivePtr ConstructSpiralRadiusRadiusLength (int typeCode, double radiu
         GEOMAPI_PRINTF(" (f %g) (s %g) (r %g (er %g)) (q %g)\n",
                         f, s, radiusF, radiusF - radiusTarget, referenceSpiral->DistanceToLocalAngle (s));
         }
-    auto fullSpiral = ICurvePrimitive::CreateSpiralBearingCurvatureLengthCurvature (typeCode, 0.0, 0.0, length0B, curvatureB, Transform::FromIdentity (),
+
+    auto fullSpiral = ICurvePrimitive::CreateSpiralBearingCurvatureLengthCurvature (typeCode, 0.0, 0.0, length0B, curvatureB, inverseA,
             fractionA, fractionB);
     return fullSpiral;
     }
@@ -112,19 +132,73 @@ TEST(Spiral,TwoRadiusConstruction)
     int typeCode = DSpiral2dBase::TransitionType_NewSouthWales;
     double yShiftB = 45.0;
     double yShiftA = 5.0;
-    for (double fraction : {0.0, 0.25, 0.5, 0.75})
+    for (double bearing0Degrees : {0.0, 10.0})
         {
-        double curvatureB = DoubleOps::ValidatedDivideDistance (1.0, radiusB);
-        double curvatureA = fraction * curvatureB;
-        double radiusA = DoubleOps::ValidatedDivideDistance (1.0, curvatureA);
-        double lengthAB = (1.0 - fraction) * length0B;
-        auto spiral0B = ConstructSpiralRadiusRadiusLength (typeCode, 0.0, radiusB,
-                lengthAB * curvatureB / (curvatureB- curvatureA));
-        auto spiralAB = ConstructSpiralRadiusRadiusLength (typeCode, radiusA, radiusB, lengthAB);
-        Check::SaveTransformed (*spiralAB);
-        Check::Shift (0, yShiftA, 0);
-        Check::SaveTransformed (*spiral0B);
-        Check::Shift (0, yShiftB, 0);
+        SaveAndRestoreCheckTransform shifter (2.0 * length0B, 0,0);
+        for (double fraction : {0.0, 0.25, 0.5, 0.75})
+            {
+            double curvatureB = DoubleOps::ValidatedDivideDistance (1.0, radiusB);
+            double curvatureA = fraction * curvatureB;
+            double radiusA = DoubleOps::ValidatedDivideDistance (1.0, curvatureA);
+            double lengthAB = (1.0 - fraction) * length0B;
+            auto spiral0B = ConstructSpiralRadiusRadiusLength (typeCode, Angle::FromDegrees (bearing0Degrees),
+                    0.0, radiusB,
+                    lengthAB * curvatureB / (curvatureB- curvatureA));
+            // auto spiralAB = ConstructSpiralRadiusRadiusLength (typeCode, Angle::FromDegrees (bearing0Degrees), radiusA, radiusB, lengthAB);
+            auto placement = Transform::FromMatrixAndFixedPoint (RotMatrix::FromAxisAndRotationAngle (2, Angle::DegreesToRadians (bearing0Degrees)), DPoint3d::From (0, yShiftA, 0));
+            auto spiralAB = ICurvePrimitive::CreatePseudoSpiralRadiusLengthRadius (typeCode, placement, radiusA, lengthAB, radiusB);
+            Check::SaveTransformed (*spiral0B);
+            Check::SaveTransformed (*spiralAB);
+            }
         }
     Check::ClearGeometry ("Spiral.TwoRadiusConstruction");
+    }
+
+void ShowFrame (TransformCR frame, double ax, double ay)
+    {
+    auto origin = frame * DPoint3d::From (0,0,0);
+    auto xPoint = frame * DPoint3d::From (ax,0,0);
+    auto yPoint = frame * DPoint3d::From (0,ay,0);
+    Check::SaveTransformed (bvector<DPoint3d> {yPoint, origin, xPoint});
+    }
+
+Transform HeadsUpFrameOnCurve (ICurvePrimitiveCR curve, double fraction)
+    {
+    auto frame = curve.FractionToFrenetFrame (fraction);
+    if (frame.Value ().form3d[2][2] < 0.0)
+        frame.Value ().ScaleMatrixColumns (1.0, -1.0, -1.0);     // flip from "right handed with negative Z" to "right handed with positive Z" -- preserve X direction
+    return frame.Value ();
+    }
+TEST(Spiral,FrenetFrameConstruction)
+    {
+    int typeCode = DSpiral2dBase::TransitionType_NewSouthWales;
+    double radiusA = 200.0;
+    double turnDegrees = 90.0;
+    double lengthAB = 25.0;
+    double lengthArc0 = 50.0;
+    double gridStep = 5.0 * lengthArc0;
+    for (double radiusA : {200.0, 100.0, 0.0, -100.0, -200.0})
+        {
+        SaveAndRestoreCheckTransform shifter (0.0, gridStep, 0);
+        for (double radiusB : {200.0, 100.0, 0.0, -100.0, -200.0})
+            {
+            SaveAndRestoreCheckTransform shifter (gridStep, 0, 0);
+            // a subtle way to allow both line and arc as entry ...
+            auto curve0 = ICurvePrimitive::CreatePseudoSpiralRadiusLengthRadius (typeCode, Transform::FromIdentity (), radiusA, lengthArc0, radiusA);
+            auto frame0 = HeadsUpFrameOnCurve (*curve0, 1.0);
+            ShowFrame (frame0, 2, 1);
+            Check::SaveTransformed (*curve0);
+            auto spiralAB = ICurvePrimitive::CreatePseudoSpiralRadiusLengthRadius (typeCode, frame0, radiusA, lengthAB, radiusB);
+            if (spiralAB.IsValid ())
+                {
+                auto frame1 = HeadsUpFrameOnCurve (*spiralAB, 1.0);
+                ShowFrame (frame1, 2, 1);
+                    // frame1 has radius1 sign built in .. use positive radius
+                auto curve1 = ICurvePrimitive::CreatePseudoSpiralRadiusLengthRadius (typeCode, frame1, radiusB, lengthArc0, radiusB);
+                Check::SaveTransformed (*spiralAB);
+                Check::SaveTransformed (*curve1);
+                }
+            }
+        }
+    Check::ClearGeometry ("Spiral.FrenetFrameConstruction");
     }
