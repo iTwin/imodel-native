@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/BeSQLiteDb_Test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BeSQLitePublishedTests.h"
@@ -21,10 +21,9 @@ struct BeSQLiteDbTests : public ::testing::Test
         Db              m_db;
         DbResult        m_result;
 
-        static DbResult SetupDb(Db& db, WCharCP dbName);
+        static DbResult SetupDb(Db& db, WCharCP dbName, BeGuidCR dbGuid=BeGuid(), Db::CreateParams const& createParams=Db::CreateParams());
         void SetupDb(WCharCP dbName);
         static BeFileName getDbFilePath(WCharCP dbName);
-
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -43,7 +42,7 @@ BeFileName BeSQLiteDbTests::getDbFilePath(WCharCP dbName)
 // Creating a new Db for the test
 // @bsimethod                                    Krischan.Eberle                   12/12
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult BeSQLiteDbTests::SetupDb(Db& db, WCharCP dbName)
+DbResult BeSQLiteDbTests::SetupDb(Db& db, WCharCP dbName, BeGuidCR dbGuid, Db::CreateParams const& createParams)
     {
     BeFileName temporaryDir;
     BeTest::GetHost().GetOutputRoot(temporaryDir);
@@ -52,7 +51,7 @@ DbResult BeSQLiteDbTests::SetupDb(Db& db, WCharCP dbName)
     BeFileName dbFullName = getDbFilePath(dbName);
     if (BeFileName::DoesPathExist(dbFullName))
         BeFileName::BeDeleteFile(dbFullName);
-    DbResult result = db.CreateNewDb(dbFullName.GetNameUtf8().c_str());
+    DbResult result = db.CreateNewDb(dbFullName.GetNameUtf8().c_str(), dbGuid, createParams);
     EXPECT_EQ (BE_SQLITE_OK, result) << "Db Creation failed";
     return result;
     }
@@ -103,6 +102,139 @@ TEST_F(BeSQLiteDbTests, OpenDb)
     EXPECT_TRUE (m_db.IsDbOpen());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* Create an encrypted Db and then test opening it.
+* @bsimethod                                    Shaun.Sewall                    01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BeSQLiteDbTests, CreateEncryptedDb)
+    {
+    // Verify that we can create an encrypted database
+    Db db;
+    WCharCP dbName = L"createEncrypted.db";
+    uint64_t encryptionKey = 0x1234567890abcdef;
+    Db::CreateParams createParams;
+    createParams.GetEncryptionParamsR().SetKey(&encryptionKey, static_cast<uint32_t>(sizeof(encryptionKey)));
+    DbResult result = SetupDb(db, dbName, BeGuid(), createParams);
+    BeFileName dbFileName(db.GetDbFileName(), BentleyCharEncoding::Utf8);
+    ASSERT_EQ(BE_SQLITE_OK, result) << "Db Creation failed";
+    ASSERT_FALSE(db.IsReadonly());
+    ASSERT_TRUE(db.IsDbOpen());
+    db.CloseDb();
+    ASSERT_FALSE(db.IsDbOpen());
+    ASSERT_TRUE(Db::IsEncryptedDb(dbFileName)) << "Expect ENCRYPTED_BESQLITE_FORMAT_SIGNATURE in file";
+
+    // Opening an encrypted database without supplying the key should fail
+    Db::OpenParams openParams(Db::OpenMode::Readonly);
+    result = db.OpenBeSQLiteDb(getDbFilePath(dbName), openParams);
+    ASSERT_EQ(BE_SQLITE_NOTADB, result) << "Expect OpenBeSQLiteDb to fail because encryption key was not provided";
+    ASSERT_FALSE(db.IsDbOpen());
+
+    // Opening an encrypted database with the key should succeed
+    openParams.GetEncryptionParamsR().SetKey(&encryptionKey, static_cast<uint32_t>(sizeof(encryptionKey)));
+    result = db.OpenBeSQLiteDb(getDbFilePath(dbName), openParams);
+    ASSERT_EQ(BE_SQLITE_OK, result) << "Expect OpenBeSQLiteDb to succeed because encryption key was provided";
+    ASSERT_TRUE(db.IsDbOpen());
+    db.CloseDb();
+    ASSERT_FALSE(db.IsDbOpen());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BeSQLiteDbTests, EncryptDb)
+    {
+    // Create an unencrypted database
+    Db db;
+    WCharCP dbName = L"encrypt.db";
+    SetupDb(db, dbName);
+    ASSERT_TRUE(db.IsDbOpen());
+    BeFileName dbFileName(db.GetDbFileName(), BentleyCharEncoding::Utf8);
+    db.CloseDb();
+    ASSERT_FALSE(db.IsDbOpen());
+    ASSERT_FALSE(Db::IsEncryptedDb(dbFileName)) << "Should not have ENCRYPTED_BESQLITE_FORMAT_SIGNATURE in file";
+
+    DbResult result = Db::EncryptDb(dbFileName, Db::EncryptionParams());
+    ASSERT_EQ(BE_SQLITE_MISUSE, result) << "Expect failure because invalid key was passed";
+
+    uint64_t encryptionKey = 0x1234567890abcdef;
+    result = Db::EncryptDb(dbFileName, Db::EncryptionParams(&encryptionKey, static_cast<uint32_t>(sizeof(encryptionKey))));
+    ASSERT_EQ(BE_SQLITE_OK, result);
+    ASSERT_TRUE(Db::IsEncryptedDb(dbFileName)) << "Expect ENCRYPTED_BESQLITE_FORMAT_SIGNATURE in file";
+
+    Db::OpenParams openParams(Db::OpenMode::Readonly);
+    openParams.GetEncryptionParamsR().SetKey(&encryptionKey, static_cast<uint32_t>(sizeof(encryptionKey)));
+    result = db.OpenBeSQLiteDb(dbFileName, openParams);
+    ASSERT_EQ(BE_SQLITE_OK, result) << "Expect OpenBeSQLiteDb to succeed because encryption key was provided";
+    ASSERT_TRUE(db.IsDbOpen());
+    db.CloseDb();
+
+    encryptionKey = 0x111222333444;
+    result = Db::EncryptDb(dbFileName, Db::EncryptionParams(&encryptionKey, static_cast<uint32_t>(sizeof(encryptionKey))));
+    ASSERT_EQ(BE_SQLITE_MISUSE, result) << "Expect failure because database is already encrypted";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BeSQLiteDbTests, EncryptDbWithExtra)
+    {
+    // Create an unencrypted database
+    Db db;
+    WCharCP dbName = L"encryptWithExtra.db";
+    SetupDb(db, dbName);
+    ASSERT_TRUE(db.IsDbOpen());
+    BeFileName dbFileName(db.GetDbFileName(), BentleyCharEncoding::Utf8);
+    db.CloseDb();
+    ASSERT_FALSE(db.IsDbOpen());
+    ASSERT_FALSE(Db::IsEncryptedDb(dbFileName)) << "Should not have ENCRYPTED_BESQLITE_FORMAT_SIGNATURE in file";
+
+    uint64_t encryptionKey = 0x1234567890abcdef;
+    Json::Value extraData("This is extra data");
+    Db::EncryptionParams encryptionParams(&encryptionKey, static_cast<uint32_t>(sizeof(encryptionKey)), EncryptionKeySource::NotSpecified, Json::FastWriter::ToString(extraData));
+    DbResult result = Db::EncryptDb(dbFileName, encryptionParams);
+    ASSERT_EQ(BE_SQLITE_OK, result);
+    ASSERT_TRUE(Db::IsEncryptedDb(dbFileName)) << "Expect ENCRYPTED_BESQLITE_FORMAT_SIGNATURE in file";
+
+    Db::OpenParams openParams(Db::OpenMode::Readonly);
+    openParams.GetEncryptionParamsR().SetKey(&encryptionKey, static_cast<uint32_t>(sizeof(encryptionKey)));
+    result = db.OpenBeSQLiteDb(dbFileName, openParams);
+    ASSERT_EQ(BE_SQLITE_OK, result) << "Expect OpenBeSQLiteDb to succeed because encryption key was provided";
+    ASSERT_TRUE(db.IsDbOpen());
+    db.CloseDb();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BeSQLiteDbTests, PasswordProtectDb)
+    {
+    // Create an unencrypted database
+    Db db;
+    WCharCP dbName = L"password.db";
+    SetupDb(db, dbName);
+    ASSERT_TRUE(db.IsDbOpen());
+    BeFileName dbFileName(db.GetDbFileName(), BentleyCharEncoding::Utf8);
+    db.CloseDb();
+    ASSERT_FALSE(db.IsDbOpen());
+    ASSERT_FALSE(Db::IsEncryptedDb(dbFileName)) << "Should not have ENCRYPTED_BESQLITE_FORMAT_SIGNATURE in file";
+
+    Utf8CP password = "password";
+    DbResult result = Db::PasswordProtectDb(dbFileName, password);
+    ASSERT_EQ(BE_SQLITE_OK, result);
+    ASSERT_TRUE(Db::IsEncryptedDb(dbFileName)) << "Expect ENCRYPTED_BESQLITE_FORMAT_SIGNATURE in file";
+
+    Db::OpenParams openParams(Db::OpenMode::Readonly);
+    openParams.GetEncryptionParamsR().SetPassword("wrongPassword");
+    result = db.OpenBeSQLiteDb(getDbFilePath(dbName), openParams);
+    ASSERT_EQ(BE_SQLITE_NOTADB, result) << "Expect OpenBeSQLiteDb to fail because wrong password was passed";
+    ASSERT_FALSE(db.IsDbOpen());
+
+    openParams.GetEncryptionParamsR().SetPassword(password);
+    result = db.OpenBeSQLiteDb(dbFileName, openParams);
+    ASSERT_EQ(BE_SQLITE_OK, result) << "Expect OpenBeSQLiteDb to succeed because password was properly provided";
+    ASSERT_TRUE(db.IsDbOpen());
+    db.CloseDb();
+    }
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/14

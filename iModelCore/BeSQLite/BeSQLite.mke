@@ -2,7 +2,7 @@
 #
 #     $Source: BeSQLite.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 GCC_DEFAULT_VISIBILITY              = default
@@ -42,6 +42,7 @@ cDefs + -DSQLITE_OMIT_AUTHORIZATION
 cDefs + -DSQLITE_OMIT_PROGRESS_CALLBACK
 cDefs + -DSQLITE_OMIT_COMPLETE
 cDefs + -DSQLITE_OMIT_WAL
+cDefs + -DSQLITE_HAS_CODEC=1
 
 baseDir                 = $(_MakeFilePath)
 SQLiteDir               = $(baseDir)SQLite/
@@ -67,7 +68,7 @@ $(o)ChangeSet$(oext)     : $(baseDir)ChangeSet.cpp $(baseDir)/PublicAPI/BeSQLite
 
 $(o)BeSQLiteProfileManager$(oext) : $(baseDir)BeSQLiteProfileManager.cpp $(baseDir)/BeSQLiteProfileManager.h  $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h ${MultiCompileDepends}
 
-$(o)DownloadVfs$(oext)  : $(SQLiteDir)DownloadVfs.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h $(baseDir)/PublicAPI/BeSQLite/DownloadAdmin.h ${MultiCompileDepends}
+$(o)EncryptedDbVfs$(oext) : $(SQLiteDir)EncryptedDbVfs.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h ${MultiCompileDepends}
 
 $(o)L10N$(oext)         : $(baseDir)L10N.cpp $(baseDir)/PublicAPI/BeSQLite/L10N.h ${MultiCompileDepends}
 
@@ -84,7 +85,7 @@ CCompFpOpts=precise
 %include $(SrcRoot)bsicommon/sharedmki/PushThirdPartyIgnores.mki
 
 $(o)SQLite$(oext): $(SQLiteDir)sqlite3-all.c $(SQLiteDir)sqlite3-1.c $(SQLiteDir)sqlite3-2.c $(SQLiteDir)sqlite3-3.c $(SQLiteDir)sqlite3-4.c \
-            $(SQLiteDir)sqlite3-5.c $(SQLiteDir)sqlite3-6.c $(SQLiteDir)sqlite3-7.c $(SQLiteDir)closure.c 
+            $(SQLiteDir)sqlite3-5.c $(SQLiteDir)sqlite3-6.c $(SQLiteDir)sqlite3-7.c $(SQLiteDir)zipvfs.c $(SQLiteDir)closure.c $(SQLiteDir)see-aes128-ofb.c
 
 %include $(SrcRoot)bsicommon/sharedmki/PopThirdPartyIgnores.mki
 

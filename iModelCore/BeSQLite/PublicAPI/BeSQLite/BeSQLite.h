@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeSQLite/BeSQLite.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -503,6 +503,15 @@ enum class DbValueType : int
     TextVal     = 3,
     BlobVal     = 4,
     NullVal     = 5,
+};
+
+//=======================================================================================
+// @bsiclass                                                    Shaun.Sewall    01/18
+//=======================================================================================
+enum class EncryptionKeySource : uint32_t
+{
+    NotSpecified = 0,
+    Password = 1,
 };
 
 //=======================================================================================
@@ -2129,6 +2138,34 @@ public:
     enum class OpenMode {Readonly = 1<<0, ReadWrite = 1<<1, Create = ReadWrite|(1<<2), SharedCache = 1<<17, };
 
     //=======================================================================================
+    //! Parameters for encrypting a Db.
+    // @bsiclass                                                    Shaun.Sewall    01/18
+    //=======================================================================================
+    struct EncryptionParams
+    {
+        const void* m_key = nullptr;
+        uint32_t m_keySize = 0;
+        EncryptionKeySource m_keySource = EncryptionKeySource::NotSpecified;
+        uint32_t m_encryptionAlgorithm = 0;
+        uint32_t m_reservedFlags = 0;
+        Utf8String m_extraData;
+
+        EncryptionParams() {}
+        EncryptionParams(const void* key, uint32_t keySize, EncryptionKeySource keySource=EncryptionKeySource::NotSpecified, Utf8StringCR extraData = "") : m_key(key), m_keySize(keySize), m_keySource(keySource), m_extraData(extraData) {}
+
+        void SetKey(const void* key, uint32_t keySize, EncryptionKeySource keySource=EncryptionKeySource::NotSpecified) {m_key=key; m_keySize=keySize; m_keySource=keySource;}
+        bool HasKey() const {return (nullptr != m_key);}
+        const void* GetKey() const {return m_key;}
+        uint32_t GetKeySize() const {return HasPassword() ? -1 : m_keySize;}
+
+        void SetPassword(Utf8CP password) {m_key=password; m_keySize=-1; m_keySource=EncryptionKeySource::Password;}
+        bool HasPassword() const {return HasKey() && (EncryptionKeySource::Password == m_keySource);}
+
+        bool HasExtraData() const {return !m_extraData.empty();}
+        uint32_t GetExtraDataSize() const {return static_cast<uint32_t>(m_extraData.length());}
+    };
+
+    //=======================================================================================
     //! Parameters for controlling aspects of the opening of a Db.
     // @bsiclass                                                    Keith.Bentley   11/10
     //=======================================================================================
@@ -2139,6 +2176,7 @@ public:
         mutable bool  m_forProfileUpgrade = false;
         bool          m_rawSQLite = false;
         BusyRetry*    m_busyRetry = nullptr;
+        EncryptionParams m_encryption;
 
         BE_SQLITE_EXPORT virtual bool _ReopenForProfileUpgrade(Db&) const;
 
@@ -2177,6 +2215,11 @@ public:
         //!                  The default is to not attempt retries. Note, many BeSQLite applications (e.g. Bim) rely on a single non-shared connection
         //!                  to the database and do not permit sharing.
         void SetBusyRetry(BusyRetry* retry) { m_busyRetry = retry; }
+
+        //! Get a read-only reference to the encryption parameters
+        EncryptionParams const& GetEncryptionParams() const {return m_encryption;}
+        //! Get a writable reference to the encryption parameters
+        EncryptionParams& GetEncryptionParamsR() {return m_encryption;}
     };
 
     //=======================================================================================
@@ -2853,6 +2896,16 @@ public:
     //! @return BE_SQLITE_OK if property was successfully saved, or a non-zero error status if the expiration date is invalid, is not UTC, or could not be saved to the database.
     //! @see QueryExpirationDate, IsExpired
     BE_SQLITE_EXPORT DbResult SaveExpirationDate(DateTime const& expirationDate);
+
+    //! Returns true if the specified file is recognized as an encrypted BeSQLite database.
+    BE_SQLITE_EXPORT static bool IsEncryptedDb(BeFileNameCR dbFileName);
+
+    //! Encrypt the specified database (which must be unencrypted) using the specified key.
+    //! @note This requires that every page of the database file be read, then encrypted, then written out again. Consequently, this can take a long time on a larger database.
+    BE_SQLITE_EXPORT static DbResult EncryptDb(BeFileNameCR dbFileName, EncryptionParams const&);
+
+    //! Password-protect the specified database (which must be unencrypted) using the specified password.
+    BE_SQLITE_EXPORT static DbResult PasswordProtectDb(BeFileNameCR dbFileName, Utf8CP password);
 };
 
 //=======================================================================================
@@ -3011,9 +3064,9 @@ public:
 };
 
 #define SQLITE_FORMAT_SIGNATURE     "SQLite format 3"
-#define DOWNLOAD_FORMAT_SIGNATURE   "Download SQLite"
 #define SQLZLIB_FORMAT_SIGNATURE    "ZV-zlib"
 #define SQLSNAPPY_FORMAT_SIGNATURE  "ZV-snappy"
+#define ENCRYPTED_BESQLITE_FORMAT_SIGNATURE "Encrypted BeSQLite"
 
 #define BEDB_PROPSPEC_NAMESPACE "be_Db"
 #define BEDB_PROPSPEC_EMBEDBLOB_NAME "EmbdBlob"

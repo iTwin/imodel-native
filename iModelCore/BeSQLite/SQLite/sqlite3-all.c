@@ -77,6 +77,7 @@
 #include "sqlite3-7.c"
 #include "zipvfs.c"
 #include "closure.c"
+#include "see-aes128-ofb.c"
 
 #if defined (SQLITE_ENABLE_SQLLOG)
 #include "test_sqllog.c"
