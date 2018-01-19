@@ -94,6 +94,7 @@ struct FormattingTestFixture
         static void VerifyQuantity(Utf8CP input, Utf8CP unitName, Utf8CP formatName, double magnitude, Utf8CP qtyUnitName);
         static void ShowPhenomenon(BEU::PhenomenonCP phenP, bvector<BEU::PhenomenonCP>& undefPhenomena);
         static void ShowKnownPhenomena();
+        static void ShowSynonyms();
         //static void LoadUnitSynonymsTest();
     };
 

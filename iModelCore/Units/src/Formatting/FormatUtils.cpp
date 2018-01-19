@@ -46,15 +46,16 @@ UIList UIUtils::GetAvailableFractionalPercisions()
     {
     UIList fracPercisionList;
 
-    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Whole,     UNITSL10N_GETSTRING(FractionalPrecision_Whole).c_str()));
-    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Half,      UNITSL10N_GETSTRING(FractionalPrecision_Half).c_str()));
-    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Quarter,   UNITSL10N_GETSTRING(FractionalPrecision_Quarter).c_str()));
-    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Eighth,    UNITSL10N_GETSTRING(FractionalPrecision_Eighth).c_str()));
-    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Sixteenth, UNITSL10N_GETSTRING(FractionalPrecision_Sixteenth).c_str()));
-    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Over_32,   UNITSL10N_GETSTRING(FractionalPrecision_Over_32).c_str()));
-    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Over_64,   UNITSL10N_GETSTRING(FractionalPrecision_Over_64).c_str()));
-    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Over_128,  UNITSL10N_GETSTRING(FractionalPrecision_Over_128).c_str()));
-    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Over_256,  UNITSL10N_GETSTRING(FractionalPrecision_Over_256).c_str()));
+    // See Utils::FractionalPrecisionByDenominator
+    fracPercisionList.AddListEntry(UIListEntry(1,    UNITSL10N_GETSTRING(FractionalPrecision_Whole).c_str()));
+    fracPercisionList.AddListEntry(UIListEntry(2,    UNITSL10N_GETSTRING(FractionalPrecision_Half).c_str()));
+    fracPercisionList.AddListEntry(UIListEntry(4,    UNITSL10N_GETSTRING(FractionalPrecision_Quarter).c_str()));
+    fracPercisionList.AddListEntry(UIListEntry(8,    UNITSL10N_GETSTRING(FractionalPrecision_Eighth).c_str()));
+    fracPercisionList.AddListEntry(UIListEntry(16,   UNITSL10N_GETSTRING(FractionalPrecision_Sixteenth).c_str()));
+    fracPercisionList.AddListEntry(UIListEntry(32,   UNITSL10N_GETSTRING(FractionalPrecision_Over_32).c_str()));
+    fracPercisionList.AddListEntry(UIListEntry(64,   UNITSL10N_GETSTRING(FractionalPrecision_Over_64).c_str()));
+    fracPercisionList.AddListEntry(UIListEntry(128,  UNITSL10N_GETSTRING(FractionalPrecision_Over_128).c_str()));
+    fracPercisionList.AddListEntry(UIListEntry(256,  UNITSL10N_GETSTRING(FractionalPrecision_Over_256).c_str()));
     return fracPercisionList;
     }
 
@@ -150,6 +151,33 @@ UIList UIUtils::GetAvailableTraits()
    // TraitsBitToJson(jTraits, json_FractionDash(), FormatTraits::FractionDash, &ref, verbose);
 
     return traits;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bill.Steinbock                  01/2018
+//---------------------------------------------------------------------------------------
+Json::Value UIUtils::GetAvailableUnitLabels(Utf8CP unitName)
+    {
+    if (Utf8String::IsNullOrEmpty(unitName))
+        return Json::Value(Json::nullValue);
+
+    BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnit(unitName);
+    if (nullptr == unit)
+        return Json::Value(Json::nullValue);
+
+    Json::Value labels(Json::arrayValue);
+    labels.append(unit->GetLabel());
+
+    bvector<Utf8CP> synonyms;
+    if (unit->GetSynonymList(synonyms) > 0)
+        {
+        for (size_t i = 0; i < synonyms.size(); i++)
+            {
+            labels.append(synonyms[i]);
+            }
+        }
+
+    return labels;
     }
 
 //===================================================

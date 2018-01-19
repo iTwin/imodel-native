@@ -129,21 +129,21 @@ enum class FieldAlignment
     };
 
 enum class ShowSignOption
-    {
-    NoSign = 0,
-    OnlyNegative = 1,
-    SignAlways = 2,
-    NegativeParentheses = 3
+    { 
+    NoSign = 0,              //indicates that sign should not be used at all (like absolute value) 
+    OnlyNegative = 1,        // indicates that only "-" will be used for negative numbers
+    SignAlways = 2,          // indicates that sign symbol should explicitly shown
+    NegativeParentheses = 3  // indicates that negative numbers shoul be enclosed in parenthesis
     };
 
 enum class PresentationType
     {
     Decimal = 1,
     Fractional = 2,
-    Scientific = 3,      // scientific with 1 digit before the decimal point
-    ScientificNorm = 4,   // normalized scientific when Mantissa is < 1
-    Stop100 = 5,       // special format for stations 100 feet
-    Stop1000 = 6       // special format for stations 1000 meters
+    Scientific = 3,      // scientific with 1 digit presenting the integer part
+    ScientificNorm = 4,  // normalized scientific when Mantissa is < 1
+    Stop100 = 5,         // special format for stations 100 feet
+    Stop1000 = 6         // special format for stations 1000 meters
     };
 
 enum class FormatTraits : int
@@ -158,7 +158,7 @@ enum class FormatTraits : int
     Use1000Separator = 0x40,  // indicates that thousands in the integer part of the number should be separated by a special char (. or,)
     ApplyRounding = 0x80,     // indicates that the rounding factor should be used
     FractionDash = 0x100,      // some people prefer to insert dash between integer and fraction: 3-1/4 rather than 3 1/4
-    UseFractSymbol = 0x200,    // indicates that a limited set of fractional values can be presented by a single glyph(1/2, 3/4...etc)
+    UseFractSymbol = 0x200,    // indicates that a limited set of fractional values can be presented by a single glyph (1/2, 3/4... etc)
     AppendUnitName = 0x400     // indicates that the numeric expression can be followed by the unit name
     };
 
@@ -192,13 +192,13 @@ enum class FractionalPrecision
     {
     Whole = 0,       //!< Ex. 30
     Half = 1,        //!< Ex. 30 1/2
-    Quarter = 2,      //!< Ex. 30 1/4
+    Quarter = 2,     //!< Ex. 30 1/4
     Eighth = 3,      //!< Ex. 30 1/8
-    Sixteenth = 4,      //!< Ex. 30 1/16
-    Over_32 = 5,      //!< Ex. 30 1/32
-    Over_64 = 6,      //!< Ex. 30 1/64
-    Over_128 = 7,      //!< Ex. 30 1/128
-    Over_256 = 8,      //!< Ex. 30 1/256
+    Sixteenth = 4,   //!< Ex. 30 1/16
+    Over_32 = 5,     //!< Ex. 30 1/32
+    Over_64 = 6,     //!< Ex. 30 1/64
+    Over_128 = 7,    //!< Ex. 30 1/128
+    Over_256 = 8,    //!< Ex. 30 1/256
     };
 
 enum class ParameterCategory

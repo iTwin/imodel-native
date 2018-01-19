@@ -186,6 +186,7 @@ public:
     //! Returns true if the input units belong to the same phenomenon, false if not or one or both are null.
     UNITS_EXPORT static bool AreCompatible(UnitCP unitA, UnitCP unitB);
     UNITS_EXPORT void AddSynonym(Utf8CP synonym) const;
+    UNITS_EXPORT size_t GetSynonymList(bvector<Utf8CP>& synonyms) const;
     };
 
 struct UnitSynonymMap

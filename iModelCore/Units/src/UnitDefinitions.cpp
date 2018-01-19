@@ -28,16 +28,16 @@ void AddLengths(UnitRegistry& reg)
     un = reg.AddUnit(LENGTH, USCUSTOM, "IN", "MM", 25.4); // Exact, http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
     un->AddSynonym("\"");
     un->AddSynonym("INCH");
-    un->AddSynonym(u8"\xD0\xB4\xD1\x8E\xD0\xB9\xD0\xBC");  // дюйм
-    un->AddSynonym(u8"\xD0\xB4\xD1\x8E\xD0\xB9\xD0\xBC\xD0\xBE");  // дюйма
-    un->AddSynonym(u8"\xD0\xB4\xD1\x8E\xD0\xB9\xD0\xBC\xD0\xBE\xD0\xB2"); // дюймов
+    un->AddSynonym("\xD0\xB4\xD1\x8E\xD0\xB9\xD0\xBC");  // дюйм
+    un->AddSynonym("\xD0\xB4\xD1\x8E\xD0\xB9\xD0\xBC\xD0\xB0");  // дюйма
+    un->AddSynonym("\xD0\xB4\xD1\x8E\xD0\xB9\xD0\xBC\xD0\xBE\xD0\xB2"); // дюймов
     un = reg.AddUnit(LENGTH, USCUSTOM, "FT", "IN", 12.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 2, Page C-4
     un->AddSynonym("\'");
     un->AddSynonym("feet");
     un->AddSynonym("foot");
-    un->AddSynonym(u8"\xD1\x84\xD1\x83\xD1\x82");  // фут
-    un->AddSynonym(u8"\xD1\x84\xD1\x83\xD1\x82\xD0\xBE"); // фута
-    un->AddSynonym(u8"\xD1\x84\xD1\x83\xD1\x82\xD0\xBE\xD0\xB2");  // футов
+    un->AddSynonym("\xD1\x84\xD1\x83\xD1\x82");  // фут
+    un->AddSynonym("\xD1\x84\xD1\x83\xD1\x82\xD0\xB0"); // фута
+    un->AddSynonym("\xD1\x84\xD1\x83\xD1\x82\xD0\xBE\xD0\xB2");  // футов
 
     reg.AddUnit(LENGTH, USCUSTOM, "YRD", "FT", 3.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 2, Page C-4
     reg.AddUnit(LENGTH, USCUSTOM, "CHAIN", "FT", 66.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-8
@@ -112,9 +112,9 @@ void AddTime(UnitRegistry& reg)
 
 void AddTemperature(UnitRegistry& reg)
     {
-    reg.AddUnit(TEMPERATURE, METRIC, "CELSIUS", "K", 1.0, 273.15)->AddSynonym(u8"\xC2\xB0\x43");
-    reg.AddUnit(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "CELSIUS", 5.0 / 9.0, -32)->AddSynonym(u8"\xC2\xB0\x46");
-    reg.AddUnit(TEMPERATURE, USCUSTOM, "RANKINE", "K", 5.0 / 9.0)->AddSynonym(u8"\xC2\xB0\x52");
+    reg.AddUnit(TEMPERATURE, METRIC, "CELSIUS", "K", 1.0, 273.15)->AddSynonym("\xC2\xB0\x43");
+    reg.AddUnit(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "CELSIUS", 5.0 / 9.0, -32)->AddSynonym("\xC2\xB0\x46");
+    reg.AddUnit(TEMPERATURE, USCUSTOM, "RANKINE", "K", 5.0 / 9.0)->AddSynonym("\xC2\xB0\x52");
     //reg.AddUnit(TEMPERATURE, USCUSTOM, "ROMER", "CELSIUS", 40.0 / 21.0, -7.5);
     }
 
@@ -208,8 +208,8 @@ void AddPlaneAngle(UnitRegistry& reg)
     UnitCP un;
     un = reg.AddUnit(ANGLE, METRIC, "ARC_DEG", "[PI]*RAD", 1.0 / 180.0);
     un->AddSynonym("^");
-    un->AddSynonym(u8"\xC2\xB0");
-    un->AddSynonym(u8"\xB0");
+    un->AddSynonym("\xC2\xB0");
+    //un->AddSynonym("\xB0");
 
     un = reg.AddUnit(ANGLE, METRIC, "ARC_MINUTE", "ARC_DEG", 1.0 / 60.0);
     un->AddSynonym("'");
@@ -895,7 +895,7 @@ void UnitRegistry::AddDefaultUnits()
     reg.AddUnitForBasePhenomenon("KG", BasePhenomena::Mass);
     reg.AddUnitForBasePhenomenon("S", BasePhenomena::Time)->AddSynonym("SEC");
     un = reg.AddUnitForBasePhenomenon("K", BasePhenomena::Temperature);
-    un->AddSynonym(u8"\xC2\xB0\x4B");
+    un->AddSynonym("\xC2\xB0\x4B");
     un->AddSynonym("KELVIN");
     reg.AddUnitForBasePhenomenon("DELTA_KELVIN", BasePhenomena::TemperatureChange);
 

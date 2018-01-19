@@ -174,6 +174,7 @@ struct UIUtils
     UNITS_EXPORT static UIList GetAvailableThousandSeparators();
     UNITS_EXPORT static UIList GetAvailableUnitLabelSeparators();
     UNITS_EXPORT static UIList GetAvailableTraits();
+    UNITS_EXPORT static Json::Value GetAvailableUnitLabels(Utf8CP unitName);
     };
 
 struct FactorPower
