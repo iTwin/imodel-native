@@ -2,7 +2,7 @@
 |
 |     $Source: Core/PublicAPI/IDTM.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -349,7 +349,7 @@ typedef std::function<bool()> DTMCancelProcessCallback;
 struct IDTM abstract : IRefCounted
 {
 //__PUBLISH_SECTION_END__
-//__PUBLISH_CLASS_VIRTUAL__
+
 protected:
 virtual int64_t _GetPointCount () = 0;
 virtual IDTMDraping* _GetDTMDraping () = 0;
