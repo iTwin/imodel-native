@@ -937,7 +937,7 @@ static DisplayParamsCPtr displayParamsFromJson(Json::Value const& materialValue,
 
     TextureMapping texMap;
     if (materialValue.isMember("texture"))
-        texMap = reader.GetTextureMapping(materialValue["texture"].asCString(), materialValue["texture"]["params"]);
+        texMap = reader.GetTextureMapping(materialValue["texture"]["name"].asCString(), materialValue["texture"]["params"]);
 
     return  DisplayParams::Create((DisplayParams::Type) materialValue["type"].asUInt(),
                                   DgnCategoryId(materialValue["categoryId"].asUInt64()),

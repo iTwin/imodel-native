@@ -175,7 +175,7 @@ BentleyStatus AddNamedTexture(TextureMappingCR mapping, Json::Value& matJson)
         for (uint32_t j = 0; j < 3; j++)
             paramsJson["transform"][i][j] = params.m_textureMat2x3.m_val[i][j];
 
-    matJson["texture"] = name;
+    matJson["texture"]["name"] = name;
     return SUCCESS;
     }
 
