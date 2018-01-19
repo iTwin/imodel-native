@@ -44,15 +44,16 @@
     <ClCompile Include="StraightProfiledExtrusion.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="PublicAPI\FormsDomain\CurvedExtrusion.h" />
-    <ClInclude Include="PublicAPI\FormsDomain\CurvedProfiledExtrusion.h" />
-    <ClInclude Include="PublicAPI\FormsDomain\Form.h" />
-    <ClInclude Include="PublicAPI\FormsDomain\FormsDomain.h" />
-    <ClInclude Include="PublicAPI\FormsDomain\FormsDomainApi.h" />
-    <ClInclude Include="PublicAPI\FormsDomain\FormsDomainDefinitions.h" />
+    <ClInclude Include="PublicAPI\CurvedExtrusion.h" />
+    <ClInclude Include="PublicAPI\CurvedProfiledExtrusion.h" />
+    <ClInclude Include="PublicAPI\Form.h" />
+    <ClInclude Include="PublicAPI\FormsDomain.h" />
+    <ClInclude Include="PublicAPI\FormsDomainApi.h" />
+    <ClInclude Include="PublicAPI\FormsDomainDefinitions.h" />
+    <ClInclude Include="PublicAPI\FormsDomainUtilities.h" />
     <ClInclude Include="PublicAPI\FormsDomain\FormsDomainUtilities.h" />
-    <ClInclude Include="PublicAPI\FormsDomain\StraightExtrusion.h" />
-    <ClInclude Include="PublicAPI\FormsDomain\StraightProfiledExtrusion.h" />
+    <ClInclude Include="PublicAPI\StraightExtrusion.h" />
+    <ClInclude Include="PublicAPI\StraightProfiledExtrusion.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{604CA524-E3A2-430C-8E6B-094AB73539C9}</ProjectGuid>

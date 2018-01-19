@@ -13,16 +13,24 @@ struct EXPORT_VTABLE_ATTRIBUTE StraightProfiledExtrusion : Form
 
     friend struct StraightProfiledExtrusionHandler;
 protected:
-    StraightProfiledExtrusion() {};
+    StraightProfiledExtrusion();
 public:
     FORMS_DOMAIN_EXPORT static StraightProfiledExtrusionPtr Create() { return new StraightProfiledExtrusion(); };
+    FORMS_DOMAIN_EXPORT static StraightProfiledExtrusionCP GetAspect(Dgn::DgnElementCR);
+    FORMS_DOMAIN_EXPORT static StraightProfiledExtrusionP GetAspectP(Dgn::DgnElementR);
+    FORMS_DOMAIN_EXPORT static ECN::ECClassCP GetECClass(Dgn::DgnDbR);
 
 private:
     BE_PROP_NAME(Length)
+private:
+    double m_Length;
+    ProfileId m_profileId;
 public:
-    void SetLength(double length) { SetPropertyValue(prop_Length(), ECN::ECValue(length)); };
-    EXPORT_VTABLE_ATTRIBUTE double GetLength();
-
+    FORMS_DOMAIN_EXPORT void SetLength(double length);
+    double GetLength() const { return m_Length; };
+    ProfileId GetProfileId() const { return m_profileId; }
+    void SetProfileId(ProfileId profileId) { m_profileId = profileId; }
+    FORMS_DOMAIN_EXPORT void SetProfile(Dgn::DgnElementCR profile);
 protected:
     EXPORT_VTABLE_ATTRIBUTE Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR) override;
     EXPORT_VTABLE_ATTRIBUTE Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR, BeSQLite::EC::ECCrudWriteToken const*) override;

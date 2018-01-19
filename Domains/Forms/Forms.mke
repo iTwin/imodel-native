@@ -2,7 +2,7 @@
 #
 #     $Source: Forms.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
@@ -63,15 +63,6 @@ $(o)FormsDomain$(oext) : $(FormsBase)FormsDomain.cpp \
 
 $(o)Form$(oext) : $(FormsBase)Form.cpp \
     ${MultiCompileDepends} \
-    $(FormsBasePublicAPI)Form.h \
-    $(FormsBasePublicAPI)FormsDomain.h \
-    $(FormsBasePublicAPI)FormsDomainApi.h \
-    $(FormsBasePublicAPI)FormsDomainUtilities.h \
-    $(FormsBasePublicAPI)FormsDomainDefinitions.h
-
-$(o)ProfiledExtrusion$(oext) : $(FormsBase)ProfiledExtrusion.cpp \
-    ${MultiCompileDepends} \
-    $(FormsBasePublicAPI)ProfiledExtrusion.h \
     $(FormsBasePublicAPI)Form.h \
     $(FormsBasePublicAPI)FormsDomain.h \
     $(FormsBasePublicAPI)FormsDomainApi.h \

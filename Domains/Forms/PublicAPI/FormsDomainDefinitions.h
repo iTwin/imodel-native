@@ -1,8 +1,11 @@
 #pragma once
+#ifndef _formsdomaindefinitions_included_
+#define _formsdomaindefinitions_included_
 
 //__PUBLISH_SECTION_START__
 #include <Bentley/Bentley.h>
 #include <Bentley/WString.h>
+#include <BeSQLite\BeSQLite.h>
 #include <ECDb/ECDbTypes.h>
 #include <ECDb/ECDbApi.h>
 #include <ECObjects/ECSchema.h>
@@ -12,9 +15,9 @@
 
 
 #ifdef __FORMS_DOMAIN_BUILD__
-#define FORMS_DOMAIN_EXPORT EXPORT_ATTRIBUTE
+    #define FORMS_DOMAIN_EXPORT EXPORT_ATTRIBUTE
 #else
-#define FORMS_DOMAIN_EXPORT IMPORT_ATTRIBUTE
+    #define FORMS_DOMAIN_EXPORT IMPORT_ATTRIBUTE
 #endif
 
 
@@ -44,12 +47,24 @@
 //-----------------------------------------------------------------------------------------
 // ECClass names (combine with ARCHITECTURAL_PHYSICAL_SCHEMA macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
-#define FORMS_CLASS_FormAspect                    "Form"
-#define FORMS_CLASS_ProfiledExtrusion             "ProfiledExtrusion"
-#define FORMS_CLASS_CurvedExtrusion               "CurvedExtrusion"
-#define FORMS_CLASS_StraightExtrusion             "StraightExtrusion"
-#define FORMS_CLASS_CurvedProfiledExtrusion       "CurvedProfiledExtrusion"
-#define FORMS_CLASS_StraightProfiledExtrusion     "StraightProfiledExtrusion"
+#define FORMS_CLASS_FormAspect                              "Form"
+#define FORMS_CLASS_ProfiledExtrusion                       "ProfiledExtrusion"
+#define FORMS_CLASS_CurvedExtrusion                         "CurvedExtrusion"
+#define FORMS_CLASS_StraightExtrusion                       "StraightExtrusion"
+#define FORMS_CLASS_CurvedProfiledExtrusion                 "CurvedProfiledExtrusion"
+#define FORMS_CLASS_StraightProfiledExtrusion               "StraightProfiledExtrusion"
+
+#define FORMS_CLASS_StraightProfiledExtrusionHasProfile     "StraightProfiledExtrusionHasProfile"
+#define FORMS_CLASS_CurvedProfiledExtrusionHasStartProfile  "CurvedProfiledExtrusionHasStartProfile"
+#define FORMS_CLASS_CurvedProfiledExtrusionHasEndProfile    "CurvedProfiledExtrusionHasEndProfile"
+
+BEBRIEFCASEBASED_ID_SUBCLASS(ProfileId, Dgn::DgnElementId)
+BEBRIEFCASEBASED_ID_SUBCLASS(StartProfileId, Dgn::DgnElementId)
+BEBRIEFCASEBASED_ID_SUBCLASS(EndProfileId, Dgn::DgnElementId)
+
+typedef BeSQLite::IdSet<ProfileId> ProfileIdSet;               //!< IdSet with ClassificationId members.
+typedef BeSQLite::IdSet<StartProfileId> StartProfileIdSet;     //!< IdSet with StartProfileId members.
+typedef BeSQLite::IdSet<EndProfileId> EndProfileIdSet;         //!< IdSet with EndProfileId members.
 
 //-----------------------------------------------------------------------------------------
 // All R, CR, P, CP, Ptr, CPtr declarations
@@ -60,3 +75,5 @@ FORMS_POINTER_TYPEDEFS(CurvedExtrusion)
 FORMS_POINTER_TYPEDEFS(StraightExtrusion)
 FORMS_POINTER_TYPEDEFS(CurvedProfiledExtrusion)
 FORMS_POINTER_TYPEDEFS(StraightProfiledExtrusion)
+
+#endif

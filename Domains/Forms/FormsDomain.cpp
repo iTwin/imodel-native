@@ -1,4 +1,10 @@
 #include "FormsDomain\FormsDomain.h"
+#include "PublicAPI\Form.h"
+#include "PublicAPI\StraightExtrusion.h"
+#include "PublicAPI\CurvedProfiledExtrusion.h"
+#include "PublicAPI\StraightProfiledExtrusion.h"
+#include "PublicAPI\CurvedExtrusion.h"
+
 
 BEGIN_BENTLEY_FORMS_NAMESPACE
 
@@ -9,7 +15,11 @@ DOMAIN_DEFINE_MEMBERS(FormsDomain)
 //---------------------------------------------------------------------------------------
 FormsDomain::FormsDomain() : DgnDomain(BENTLEY_FORMS_SCHEMA_NAME, "Bentley Forms Domain", 1)
     {
-    //RegisterHandler(FormHandler::GetHandler());
+    RegisterHandler(FormHandler::GetHandler());
+    RegisterHandler(StraightExtrusionHandler::GetHandler());
+    RegisterHandler(CurvedExtrusionHandler::GetHandler());
+    RegisterHandler(StraightProfiledExtrusionHandler::GetHandler());
+    RegisterHandler(CurvedProfiledExtrusionHandler::GetHandler());
     }
 
 //---------------------------------------------------------------------------------------

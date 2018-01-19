@@ -31,6 +31,9 @@
     <None Include="FormsCompileOptions.mki">
       <Filter>Mke</Filter>
     </None>
+    <None Include="ClassDiagram.cd" />
+    <None Include="ClassDiagram1.cd" />
+    <None Include="ClassDiagram2.cd" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="FormsDomain.Partfile.xml">
@@ -47,7 +50,6 @@
     <ClCompile Include="FormsDomain.cpp" />
     <ClCompile Include="Form.cpp" />
     <ClCompile Include="CurvedExtrusion.cpp" />
-    <ClCompile Include="ProfiledExtrusion.cpp" />
     <ClCompile Include="StraightExtrusion.cpp" />
     <ClCompile Include="CurvedProfiledExtrusion.cpp" />
     <ClCompile Include="StraightProfiledExtrusion.cpp" />
@@ -56,29 +58,31 @@
     <ClInclude Include="PublicAPI\FormsDomain\FormsDomainUtilities.h">
       <Filter>Utils</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\FormsDomain\FormsDomainApi.h">
+    <ClInclude Include="PublicAPI\CurvedExtrusion.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\FormsDomain\FormsDomainDefinitions.h">
+    <ClInclude Include="PublicAPI\CurvedProfiledExtrusion.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\FormsDomain\FormsDomain.h" />
-    <ClInclude Include="PublicAPI\FormsDomain\Form.h">
+    <ClInclude Include="PublicAPI\Form.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\FormsDomain\CurvedExtrusion.h">
+    <ClInclude Include="PublicAPI\FormsDomain.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\FormsDomain\StraightExtrusion.h">
+    <ClInclude Include="PublicAPI\FormsDomainApi.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\FormsDomain\ProfiledExtrusion.h">
+    <ClInclude Include="PublicAPI\FormsDomainDefinitions.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\FormsDomain\CurvedProfiledExtrusion.h">
+    <ClInclude Include="PublicAPI\FormsDomainUtilities.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\FormsDomain\StraightProfiledExtrusion.h">
+    <ClInclude Include="PublicAPI\StraightExtrusion.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\StraightProfiledExtrusion.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
   </ItemGroup>

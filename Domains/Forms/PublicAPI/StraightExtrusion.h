@@ -13,18 +13,25 @@ struct EXPORT_VTABLE_ATTRIBUTE StraightExtrusion : Form
 
     friend struct  StraightExtrusionHandler;
 protected:
-    StraightExtrusion() {};
+    StraightExtrusion();
 public:
     FORMS_DOMAIN_EXPORT static StraightExtrusionPtr Create() { return new StraightExtrusion(); };
-
+    FORMS_DOMAIN_EXPORT static StraightExtrusionCP GetAspect(Dgn::DgnElementCR);
+    FORMS_DOMAIN_EXPORT static StraightExtrusionP GetAspectP(Dgn::DgnElementR);
+    FORMS_DOMAIN_EXPORT static ECN::ECClassCP GetECClass(Dgn::DgnDbR);
 private:
     BE_PROP_NAME(Length)
     BE_PROP_NAME(Shape)
+private:
+    double m_Length;
+    IGeometryPtr m_Shape;
 public:
-    void SetLength(double length) { SetPropertyValue(prop_Length(), ECN::ECValue(length)); };
-    void SetShape(IGeometryPtr shape) { ECN::ECValue shapeGeometry; shapeGeometry.SetIGeometry(*shape); SetPropertyValue(prop_Shape(), shapeGeometry); };
-    FORMS_DOMAIN_EXPORT double GetLength();
-
+    FORMS_DOMAIN_EXPORT void SetLength(double length);
+    FORMS_DOMAIN_EXPORT void SetShape(IGeometryPtr shape);
+    
+    double GetLength() const { return m_Length; };
+    const IGeometryPtr GetShape() const { return m_Shape; };
+    
 protected:
     EXPORT_VTABLE_ATTRIBUTE Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR) override;
     EXPORT_VTABLE_ATTRIBUTE Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR, BeSQLite::EC::ECCrudWriteToken const*) override;
@@ -35,7 +42,6 @@ protected:
 struct EXPORT_VTABLE_ATTRIBUTE StraightExtrusionHandler : FormHandler
     {
     DOMAINHANDLER_DECLARE_MEMBERS(FORMS_CLASS_StraightExtrusion, StraightExtrusionHandler, FormHandler, FORMS_DOMAIN_EXPORT)
-
 protected:
     RefCountedPtr<Dgn::DgnElement::Aspect> _CreateInstance() override { return new StraightExtrusion(); };
     };

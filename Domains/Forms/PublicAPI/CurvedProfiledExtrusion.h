@@ -14,14 +14,27 @@ struct EXPORT_VTABLE_ATTRIBUTE CurvedProfiledExtrusion : Form
 
         friend struct  CurvedProfiledExtrusionHandler;
     protected:
-        CurvedProfiledExtrusion() {};
+        CurvedProfiledExtrusion();
     public:
         FORMS_DOMAIN_EXPORT static CurvedProfiledExtrusionPtr Create() { return new CurvedProfiledExtrusion(); };
+        FORMS_DOMAIN_EXPORT static CurvedProfiledExtrusionCP GetAspect(Dgn::DgnElementCR);
+        FORMS_DOMAIN_EXPORT static CurvedProfiledExtrusionP GetAspectP(Dgn::DgnElementR);
+        FORMS_DOMAIN_EXPORT static ECN::ECClassCP GetECClass(Dgn::DgnDbR);
     private:
         BE_PROP_NAME(Curve)
+    private:
+        IGeometryPtr m_Curve;
+        StartProfileId m_startProfileId;
+        EndProfileId m_endProfileId;
     public:
-        void SetCurve(IGeometryPtr shape) { ECN::ECValue curveGeometry; curveGeometry.SetIGeometry(*shape); SetPropertyValue(prop_Curve(), curveGeometry); };
-
+        FORMS_DOMAIN_EXPORT void SetCurve(IGeometryPtr curve);
+        const IGeometryPtr GetCurve() const { return m_Curve; };
+        StartProfileId GetStartProfileId() const { return m_startProfileId; }
+        void SetStartProfileId(StartProfileId profileId) { m_startProfileId = profileId; }
+        EndProfileId GetEndProfileId() const { return m_endProfileId; }
+        void SetEndProfileId(EndProfileId profileId) { m_endProfileId = profileId; }
+        FORMS_DOMAIN_EXPORT void SetStartProfile(Dgn::DgnElementCR profile);
+        FORMS_DOMAIN_EXPORT void SetEndProfile(Dgn::DgnElementCR profile);
     protected:
         EXPORT_VTABLE_ATTRIBUTE Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR) override;
         EXPORT_VTABLE_ATTRIBUTE Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR, BeSQLite::EC::ECCrudWriteToken const*) override;
