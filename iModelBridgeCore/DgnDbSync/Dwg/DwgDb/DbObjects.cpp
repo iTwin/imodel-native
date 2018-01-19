@@ -382,9 +382,27 @@ DwgString       DwgDbVisualStyle::GetName () const
     T_Super::name (name);
     return  name;
     }
+DwgGiVisualStyle::RenderType    DwgDbVisualStyle::GetType () const { return static_cast<DwgGiVisualStyle::RenderType>(T_Super::type()); }
+DwgString       DwgDbVisualStyle::GetDescription () const { return T_Super::description(); }
+bool            DwgDbVisualStyle::GetTraitFlag (DwgGiVisualStyleProperties::Property prop, DwgDbUInt32 flags) const { return T_Super::traitFlag(CASTFROMDwgGiVisProp(prop), flags); }
 
-DwgDbVisualStyleType    DwgDbVisualStyle::GetType () const { return static_cast<DwgDbVisualStyleType>(T_Super::type()); }
-DwgString               DwgDbVisualStyle::GetDescription () const { return T_Super::description(); }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgGiVariantCR  DwgDbVisualStyle::GetTrait (DwgGiVisualStyleProperties::Property prop, DwgGiVisualStyleOperations::Operation* op) const
+    {
+#ifdef DWGTOOLKIT_OpenDwg
+    static DwgGiVariant s_variantCopy(false);
+    OdGiVariantPtr  odVar = T_Super::trait (CASTFROMDwgGiVisProp(prop), CASTFROMDwgGiVisOpP(op));
+    if (odVar.isNull())
+        BeAssert (false && "OdGiVariantPtr nullptr!");
+    else
+        s_variantCopy = *static_cast<DwgGiVariantP>(odVar.get());
+    return  s_variantCopy;
+#elif DWGTOOLKIT_RealDwg
+    return static_cast<DwgGiVariantCR>(T_Super::trait(CASTFROMDwgGiVisProp(prop), CASTFROMDwgGiVisOpP(op)));
+#endif
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          10/15
