@@ -1298,7 +1298,7 @@ void FormattingTestFixture::ShowSynonyms()
             for (size_t i = 0; i < synonyms.size(); i++)
                 {
                 wsyn = WString(synonyms[i], true);
-                LOG.infov(L"%02d %ls", i+1, wsyn.c_str());
+                LOG.infov(L"%02d %ls", i + 1, wsyn.c_str());
                 }
             }
         }
