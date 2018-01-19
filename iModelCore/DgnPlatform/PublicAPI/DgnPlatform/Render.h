@@ -143,7 +143,8 @@ public:
     void SetShowSourceLights(bool val) {m_sourceLights = val;}
     bool ShowCameraLights() const {return m_cameraLights;}
     void SetShowCameraLights(bool val) {m_cameraLights = val;}
-    bool ShowSolarLight() const {return m_solarLight;}
+    bool ShowSolarLight
+    () const {return m_solarLight;}
     void SetShowSolarLight(bool val) {m_solarLight = val;}
     bool ShowShadows() const {return m_shadows;}
     void SetShowShadows(bool val) {m_shadows = val;}
@@ -524,6 +525,44 @@ public:
     //! @param[in] bottomUp If Yes, the image is flipped vertically (top-to-bottom) in the new ImageSource.
     //! @note If the image is invalid, or if the compression fails, IsValid() will return false on the new ImageSource.
     DGNPLATFORM_EXPORT explicit ImageSource(ImageCR image, Format format, int quality=100, Image::BottomUp bottomUp=Image::BottomUp::No);
+};
+
+//=======================================================================================
+//! An uncompressed high definition image in Rgb (3 floats pixel) 
+// @bsiclass                                                    Ray.Bentley     01/2018
+//=======================================================================================
+struct HDRImage
+{
+    uint32_t        m_width = 0;
+    uint32_t        m_height = 0;
+    bvector<float>  m_image;
+
+    //! Create an HDRImage from a (Radiance) HDR data..
+    //! @param[in] srcData the HDR data
+    //! @param[in] srcLen the number of bytes of HDR data
+    DGNPLATFORM_EXPORT static Image FromHDR(uint8_t const* srcData, uint32_t srcLen);
+
+    bool IsValid() const {return 0!=m_width && 0!=m_height && 0 != m_image.size();} //!< @return true if this image holds valid data
+}; 
+
+//=======================================================================================
+// ! A rendering environment including background and seperate HDR images for reflection, 
+// ! diffuse and specular lighting.
+// @bsiclass                                            Ray.Bentley         01/2018
+//=======================================================================================
+struct  Environment
+{
+    enum class Mapping : uint32_t { Spherical, Cylindrical, Angular, Rectangular };
+
+    struct Map { Mapping m_mapping; Image m_image; };
+    struct HDRMap { Mapping m_mapping; HDRImage m_image; };
+
+    HDRMap              m_diffuse;              // Diffuse lighting.
+    bvector<HDRMap>     m_specularLODs;;
+    Render::Image       m_background;
+
+    DGNPLATFORM_EXPORT static Environment FromSmartIBL (BeFileNameCR fileName); 
+
 };
 
 //=======================================================================================
