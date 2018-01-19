@@ -358,59 +358,60 @@ RenderMode      DwgHelper::GetRenderModeFromVisualStyle (DwgDbVisualStyleCR visu
     {
     switch (visualStyle.GetType())
         {
-        case DwgDbVisualStyleType::ShadesOfGray:
-        case DwgDbVisualStyleType::Shaded:
-        case DwgDbVisualStyleType::Flat:
+        case DwgGiVisualStyle::RenderType::ShadesOfGray:
+        case DwgGiVisualStyle::RenderType::Shaded:
+        case DwgGiVisualStyle::RenderType::Flat:
             return RenderMode::SmoothShade;
 
-        case DwgDbVisualStyleType::FaceOnly:
-        case DwgDbVisualStyleType::ShadedWithEdges:
-        case DwgDbVisualStyleType::FlatWithEdges:
-        case DwgDbVisualStyleType::Conceptual:
+        case DwgGiVisualStyle::RenderType::FaceOnly:
+        case DwgGiVisualStyle::RenderType::ShadedWithEdges:
+        case DwgGiVisualStyle::RenderType::FlatWithEdges:
+        case DwgGiVisualStyle::RenderType::Conceptual:
             return RenderMode::SolidFill;
 
-        case DwgDbVisualStyleType::Gouraud:
-        case DwgDbVisualStyleType::GouraudWithEdges:
+        case DwgGiVisualStyle::RenderType::Gouraud:
+        case DwgGiVisualStyle::RenderType::GouraudWithEdges:
             return RenderMode::SmoothShade;
 
-        case DwgDbVisualStyleType::Sketchy:
-        case DwgDbVisualStyleType::Hidden:
+        case DwgGiVisualStyle::RenderType::Sketchy:
+        case DwgGiVisualStyle::RenderType::Hidden:
             return RenderMode::HiddenLine;
 
-        case DwgDbVisualStyleType::Realistic:
+        case DwgGiVisualStyle::RenderType::Realistic:
             return RenderMode::SmoothShade;
 
-        case DwgDbVisualStyleType::Custom:
+        case DwgGiVisualStyle::RenderType::Custom:
             {
-            // WIP  - custom rendering
-            /*
-            DwgDbVisualStyleType::Operation  op;
-            DwgGiVariant                 faceLight = visualStyle.GetTrait (DwgDbVisualStyleTypeProperties::FaceLightingModel, &op);
-            if ((DwgDbVisualStyleTypeOperations::Set == op || DwgDbVisualStyleTypeOperations::Set == op) && faceLight.type() == DwgGiVariant::Int)
+            // custom rendering - check face lighting model
+            DwgGiVisualStyleOperations::Operation   op;
+            DwgGiVariantCR  faceModel = visualStyle.GetTrait (DwgGiVisualStyleProperties::Property::FaceLightingModel, &op);
+            if (DwgGiVisualStyleOperations::Operation::Set == op && DwgGiVariant::Integer == faceModel.GetType())
                 {
-                DwgDbVisualStyleTypeProperties::FaceLightingModel rendering = faceLight.asEnum ();
+                DwgGiVisualStyleProperties::FaceLightingModel rendering = faceModel.AsEnum ();
                 switch (rendering)
                     {
-                    case DwgDbVisualStyleTypeProperties::Invisible:     return  RenderMode::HiddenLine;
-                    case DwgDbVisualStyleTypeProperties::Constant:      return  RenderMode::SmoothShade;
-                    case DwgDbVisualStyleTypeProperties::Phong:         return  RenderMode::SmoothShade;
-                    case DwgDbVisualStyleTypeProperties::Gooch:         return  RenderMode::SolidFill;
-                    case DwgDbVisualStyleTypeProperties::Zebra:         return  RenderMode::SmoothShade;
+                    case DwgGiVisualStyleProperties::FaceLightingModel::Constant:
+                        return RenderMode::SolidFill;
+
+                    case DwgGiVisualStyleProperties::FaceLightingModel::Phong:
+                    case DwgGiVisualStyleProperties::FaceLightingModel::Gooch:
+                    case DwgGiVisualStyleProperties::FaceLightingModel::Zebra:
+                    default:
+                        return RenderMode::SmoothShade;
                     }
                 }
-            */
             return  RenderMode::Wireframe;
             }
 
-        case DwgDbVisualStyleType::Dim:
-        case DwgDbVisualStyleType::Brighten:
-        case DwgDbVisualStyleType::Thicken:
-        case DwgDbVisualStyleType::LinePattern:
-        case DwgDbVisualStyleType::FacePattern:
-        case DwgDbVisualStyleType::ColorChange:
-        case DwgDbVisualStyleType::Basic:
-        case DwgDbVisualStyleType::Wireframe2d:
-        case DwgDbVisualStyleType::Wireframe3d:
+        case DwgGiVisualStyle::RenderType::Dim:
+        case DwgGiVisualStyle::RenderType::Brighten:
+        case DwgGiVisualStyle::RenderType::Thicken:
+        case DwgGiVisualStyle::RenderType::LinePattern:
+        case DwgGiVisualStyle::RenderType::FacePattern:
+        case DwgGiVisualStyle::RenderType::ColorChange:
+        case DwgGiVisualStyle::RenderType::Basic:
+        case DwgGiVisualStyle::RenderType::Wireframe2d:
+        case DwgGiVisualStyle::RenderType::Wireframe3d:
             return  RenderMode::Wireframe;
         }
 
@@ -426,15 +427,123 @@ BentleyStatus   DwgHelper::UpdateViewFlagsFromVisualStyle (ViewFlags& viewFlags,
     if (visualStyle.IsNull())
         return  BSIERROR;
 
+    // set render mode
     viewFlags.SetRenderMode (DwgHelper::GetRenderModeFromVisualStyle(*visualStyle.get()));
     
-    // WIP - fine tune these parameters....
-    viewFlags.SetShowSourceLights (false);
-    viewFlags.SetShowCameraLights (false);
-    viewFlags.SetShowSolarLight (false);
+    DwgGiVariant    var(false);
+    DwgGiVisualStyleOperations::Operation   op(DwgGiVisualStyleOperations::Operation::InvalidOperation);
+
+    // set visible edges
     viewFlags.SetShowVisibleEdges (false);
+
+    var = visualStyle->GetTrait (DwgGiVisualStyleProperties::Property::EdgeModel, &op);
+    if (DwgGiVisualStyleOperations::Operation::Set == op && DwgGiVariant::Integer == var.GetType())
+        {
+        DwgGiVisualStyleProperties::EdgeModel visibleEdges = var.AsEnum ();
+        switch (visibleEdges)
+            {
+            case DwgGiVisualStyleProperties::EdgeModel::NoEdges:
+                viewFlags.SetShowVisibleEdges (false);
+                break;
+            case DwgGiVisualStyleProperties::EdgeModel::Isolines:
+            case DwgGiVisualStyleProperties::EdgeModel::FacetEdges:
+            default:
+                viewFlags.SetShowVisibleEdges (true);
+
+                var = visualStyle->GetTrait (DwgGiVisualStyleProperties::Property::EdgeColor, &op);
+                if (DwgGiVisualStyleOperations::Operation::Set == op && DwgGiVariant::Color == var.GetType())
+                    {
+                    DwgCmColor  color = var.AsColor ();
+                    // WIP - set color for visible edges?
+                    }
+                break;
+            }
+        }
+
+    // set hidden edges
     viewFlags.SetShowHiddenEdges (false);
+
+    var = visualStyle->GetTrait (DwgGiVisualStyleProperties::Property::EdgeStyles, &op);
+    if (DwgGiVisualStyleOperations::Operation::Set == op && DwgGiVariant::Integer == var.GetType())
+        {
+        DwgGiVisualStyleProperties::EdgeStyles  edgeStyles = var.AsEnum ();
+        switch (edgeStyles)
+            {
+            case DwgGiVisualStyleProperties::EdgeStyles::NoEdgeStyle:
+                viewFlags.SetShowHiddenEdges (false);
+                break;
+            case DwgGiVisualStyleProperties::EdgeStyles::VisibleFlag:
+            case DwgGiVisualStyleProperties::EdgeStyles::SilhouetteFlag:
+            case DwgGiVisualStyleProperties::EdgeStyles::ObscuredFlag:
+            case DwgGiVisualStyleProperties::EdgeStyles::IntersectionFlag:
+            default:
+                viewFlags.SetShowHiddenEdges (true);
+                break;
+            }
+
+        if (viewFlags.ShowHiddenEdges())
+            {
+            var = visualStyle->GetTrait (DwgGiVisualStyleProperties::Property::EdgeObscuredColor, &op);
+            if (DwgGiVisualStyleOperations::Operation::Set == op && DwgGiVariant::Color == var.GetType())
+                {
+                DwgCmColor  color = var.AsColor ();
+                // WIP - set color for hidden edges?
+                }
+            var = visualStyle->GetTrait (DwgGiVisualStyleProperties::Property::EdgeObscuredLinePattern, &op);
+            if (DwgGiVisualStyleOperations::Operation::Set == op && DwgGiVariant::Integer == var.GetType())
+                {
+                DwgGiVisualStyleProperties::EdgeLinePattern linePattern = var.AsEnum ();
+                // WIP - set linestyle for hidden edges?
+                }
+            }
+        }
+
+    // set shadows
     viewFlags.SetShowShadows (false);
+
+    var = visualStyle->GetTrait (DwgGiVisualStyleProperties::Property::DisplayShadowType, &op);
+    if (DwgGiVisualStyleOperations::Operation::Set == op && DwgGiVariant::Integer == var.GetType())
+        {
+        DwgGiVisualStyleProperties::DisplayShadowType shadows = var.AsEnum ();
+        switch (shadows)
+            {
+            case DwgGiVisualStyleProperties::DisplayShadowType::None:
+                viewFlags.SetShowShadows (false);
+                break;
+            case DwgGiVisualStyleProperties::DisplayShadowType::GroundPlane:
+            case DwgGiVisualStyleProperties::DisplayShadowType::Full:
+            case DwgGiVisualStyleProperties::DisplayShadowType::FullAndGround:
+            default:
+                viewFlags.SetShowShadows (true);
+                break;
+            }
+        }
+
+    // set materials, lights, etc
+    viewFlags.SetShowSourceLights (true);
+    viewFlags.SetShowMaterials (true);
+    viewFlags.SetShowTextures (true);
+
+    var = visualStyle->GetTrait (DwgGiVisualStyleProperties::Property::DisplayStyles, &op);
+    if (DwgGiVisualStyleOperations::Operation::Set == op && DwgGiVariant::Integer == var.GetType())
+        {
+        uint32_t    styleFlags = var.AsULong ();
+        if (DwgGiVisualStyleProperties::DisplayStyles::NoDisplayStyle == static_cast<DwgGiVisualStyleProperties::DisplayStyles>(styleFlags))
+            {
+            viewFlags.SetShowSourceLights (false);
+            viewFlags.SetShowMaterials (false);
+            viewFlags.SetShowTextures (false);
+            }
+        else
+            {
+            if ((static_cast<uint32_t>(DwgGiVisualStyleProperties::DisplayStyles::LightingFlag) & styleFlags) != 0)
+                viewFlags.SetShowSourceLights (true);
+            if ((static_cast<uint32_t>(DwgGiVisualStyleProperties::DisplayStyles::MaterialsFlag) & styleFlags) != 0)
+                viewFlags.SetShowMaterials (true);
+            if ((static_cast<uint32_t>(DwgGiVisualStyleProperties::DisplayStyles::TexturesFlag) & styleFlags) != 0)
+                viewFlags.SetShowTextures (true);
+            }
+        }
 
     return  BSISUCCESS;
     }
@@ -455,9 +564,6 @@ void            DwgHelper::SetViewFlags (ViewFlags& viewFlags, bool grid, bool a
     viewFlags.SetShowFill (viewFlags.ShowPatterns() == dwg.GetFILLMODE());  // ACAD fill mode controls both fill & pattern
     viewFlags.SetShowGrid (grid);
     viewFlags.SetShowAcsTriad (acs);
-    //viewFlags.m_bgImage = background;
-    viewFlags.SetShowTextures (true);
-    viewFlags.SetShowMaterials (true);
     viewFlags.SetShowClipVolume (false);
     }
 

@@ -500,42 +500,6 @@ enum class DwgDbPlotStyleNameType
     ById                        = 3,
     };
 
-enum class DwgDbVisualStyleType
-    {
-    Flat,               // Flat shaded visual style.
-    FlatWithEdges,      // Flat shaded visual style with edges displayed.
-    Gouraud,            // Gouraud shaded visual style. 
-    GouraudWithEdges,   // Gouraud shaded visual style with edges displayed.
-    Wireframe2d,        // 2D wireframe visual style (using 2D graphics system). 
-    Wireframe3d,        // 3D wireframe visual style (using 3D graphics system).
-    Hidden,             // Hidden visual style.
-    Basic,              // Basic visual style (default).
-    Realistic,          // Phong shaded visual style.
-    Conceptual,         // Custom, user defined visual visual style. 
-    Custom,             // Custom, user defined visual visual style. 
-    Dim,                // Visual style used for a dimming effect.
-    Brighten,           // Visual style used for a brightening effect.
-    Thicken,            // Visual style used for a thickening effect.
-    LinePattern,        // Visual style used to apply a line pattern.
-    FacePattern,        // Visual style used to apply a face pattern.
-    ColorChange,        // Visual style used to apply a change of color.
-    FaceOnly,           // Visual style with only face properties. All non-face properties are set to inherit.
-    EdgeOnly,           // Visual stle with edge properties only. All non-edge properties are set to inherit.
-    DisplayOnly,        // Visual style with display properties only. All non-display properties are set to inherit.
-    JitterOff,          // Edge style override visual style with jitter edges off. All other properties are set to inherit.
-    OverhangOff,        // Edge style override visual style with overhang edges off. All other properties are set to inherit.
-    EdgeColorOff,       // Edge style override visual style with edge color off. All other properties are set to inherit.
-    ShadesOfGray,       // Shades of gray visual style.
-    Sketchy,            // Sketchy visual style. 
-    XRay,               // Xray visual style. 
-    ShadedWithEdges,    // Shade visual style with edges displayed.
-    Shaded,             // Shaded visual style.
-    ByViewport,         // Visual style by viewport.
-    ByLayer,            // Visual style by layer.
-    ByBlock,            // Visual style by block.
-    EmptyStyle          // Visual style with all properties set to inherit. This effectively creates an empty style upon which a custom visual style can be built.
-    };
-
 enum class DwgFilerType
     {
     FileFiler,

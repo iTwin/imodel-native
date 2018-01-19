@@ -3139,6 +3139,7 @@ struct CveConverter : DgnV8Api::IElementGraphicsProcessor
     virtual bool _ProcessAsBody(bool isCurved) const override {return false;}
     virtual bool _ProcessAsFacets(bool isPolyface) const override {return false;}
 
+    virtual bool        _WantClipping () const {return false;}
     virtual Bentley::IFacetOptionsP _GetFacetOptionsP() override { return nullptr;}
     virtual Bentley::BentleyStatus _ProcessSolidPrimitive(Bentley::ISolidPrimitiveCR) override { return Bentley::BSIERROR;}
     virtual Bentley::BentleyStatus _ProcessSurface(Bentley::MSBsplineSurfaceCR) override {  return Bentley::BSIERROR; }
