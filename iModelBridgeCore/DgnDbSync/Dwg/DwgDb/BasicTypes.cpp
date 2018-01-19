@@ -56,6 +56,7 @@ bool        DwgCmColor::IsByACI () const        { return T_Super::isByACI(); }
 bool        DwgCmColor::IsByColor () const      { return T_Super::isByColor(); }
 bool        DwgCmColor::IsForeground () const   { return T_Super::isForeground(); }
 bool        DwgCmColor::IsNone () const         { return T_Super::isNone(); }
+DwgCmColor::DwgCmColor (DwgCmEntityColorCR ec)  { T_Super::setColor(ec.color()); }
 DwgCmColor::~DwgCmColor ()                      { ; }
 DwgCmEntityColor DwgCmColor::GetEntityColor () const { return static_cast<DwgCmEntityColor>(T_Super::entityColor()); }
 DwgCmEntityColor::Method DwgCmColor::GetColorMethod () const { return static_cast<DwgCmEntityColor::Method>(T_Super::colorMethod()); }
