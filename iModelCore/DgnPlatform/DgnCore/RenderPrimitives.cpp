@@ -254,11 +254,11 @@ private:
                 {
                 m_name.Sprintf("%s-%u", font.GetName().c_str(), glyph.GetId());
 
-                DgnGlyph::RasterStatus status = glyph.GetRaster(m_image);
-                if (DgnGlyph::RasterStatus::Success != status)
-                    DEBUG_PRINTF("Error %u retrieving raster", status);
+                /*DgnGlyph::RasterStatus status = */ glyph.GetRaster(m_image);
+                //if (DgnGlyph::RasterStatus::Success != status)
+                //    DEBUG_PRINTF("Error %u retrieving raster", status);
 
-                UNUSED_VARIABLE(status);
+                //UNUSED_VARIABLE(status);
                 }
 
             bool IsValid() const { return m_texture.IsValid() || m_image.IsValid(); }
@@ -641,7 +641,7 @@ DisplayParamsCPtr DisplayParams::CloneForRasterText(TextureR texture) const
     BeAssert(Type::Text == GetType());
     auto clone = new DisplayParams(*this);
 
-    TextureMapping::Trans2x3 tf(0.0, 1.0, 0.0, 1.0, 0.0, 0.0);
+    TextureMapping::Trans2x3 tf(0.0, 1.0, 0.0, -1.0, 0.0, 0.0);
     TextureMapping::Params params;
     params.SetWeight(0.0);
     params.SetTransform(&tf);
