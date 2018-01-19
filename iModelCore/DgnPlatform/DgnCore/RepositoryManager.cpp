@@ -203,8 +203,6 @@ protected:
     bool _IsBulkOperation() const override {return 0 != m_inBulkUpdate;}
     Response _EndBulkOperation() override;
 
-    bool _InBulkOperationWithPendingRequests() override {return _IsBulkOperation() && !m_req.IsEmpty();}
-
     void _ExtractRequestFromBulkOperation(Request& reqOut, bool locks, bool codes) override 
         {
         auto control = GetDgnDb().GetConcurrencyControl();
@@ -2545,10 +2543,7 @@ RepositoryStatus BulkUpdateBriefcaseManager::_OnFinishRevision(DgnRevision const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BulkUpdateBriefcaseManager::_OnCommit(TxnManager& mgr)
     {
-    if (!mgr.GetDgnDb().GetOptimisticConcurrencyControl())
-        {
-        BeAssert (!m_inBulkUpdate && "somebody called SaveChanges while in a NESTED bulk op");
-        }
+    BeAssert (!m_inBulkUpdate && "somebody called SaveChanges while in a NESTED bulk op");
     T_Super::_OnCommit(mgr);
     }
 
