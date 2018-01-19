@@ -531,8 +531,8 @@ TextureMapping GltfReader::GetTextureMapping(Utf8CP name, Json::Value const& par
             return TextureMapping();
 
         auto format = static_cast<ImageSource::Format>(texJson["format"].asUInt());
-        auto width = texJson["width"].asUInt();
-        auto height = texJson["height"].asUInt();
+        // unused - auto width = texJson["width"].asUInt();
+        // unused - auto height = texJson["height"].asUInt();
 
         auto const& bvJson = m_bufferViews[bvId];
         uint32_t byteLength = bvJson["byteLength"].asUInt();
