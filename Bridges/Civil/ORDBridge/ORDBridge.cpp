@@ -34,10 +34,6 @@ BentleyStatus ORDBridge::_Initialize(int argc, WCharCP argv[])
     if (_GetParams().GetBridgeRegSubKey().empty())
         _GetParams().SetBridgeRegSubKey(GetRegistrySubKey());
 
-#ifdef USE_ROOTMODEL
-    m_params.SetConsiderNormal2dModelsSpatial(true);
-#endif
-
     // The call to iModelBridge::_Initialize is the time to register domains.
     DgnDomains::RegisterDomain(LinearReferencingDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
     DgnDomains::RegisterDomain(AlignmentBim::RoadRailAlignmentDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
@@ -179,7 +175,20 @@ SubjectCPtr ORDBridge::_InitializeJob()
         BeAssert(DgnDbSync::DgnV8::RootModelConverter::ImportJobCreateStatus::FailedExistingRoot != status); // If the root was previously converted, then we should be doing an update!
         }
 
-    return (DgnDbSync::DgnV8::RootModelConverter::ImportJobCreateStatus::Success == status) ? &m_converter->GetImportJob().GetSubject() : nullptr;
+    if (DgnDbSync::DgnV8::RootModelConverter::ImportJobCreateStatus::Success == status)
+        {
+        auto& subjectCR = m_converter->GetImportJob().GetSubject();
+
+        AlignmentBim::RoadRailAlignmentDomain::GetDomain().SetUpModelHierarchy(subjectCR, ORDBRIDGE_AlignmentModelName);
+        RoadRailBim::RoadRailPhysicalDomain::GetDomain().SetUpModelHierarchy(subjectCR, ORDBRIDGE_PhysicalModelName);
+
+        // IMODELBRIDGE REQUIREMENT: Relate this model to the source document
+        auto physicalModelPtr = RoadRailBim::RoadRailPhysicalDomain::QueryPhysicalModel(subjectCR, ORDBRIDGE_PhysicalModelName);
+        //TODO: InsertElementHasLinksRelationship(GetDgnDbR(), physicalModelPtr->GetModeledElementId(), repositoryLinkId);
+        return &subjectCR;
+        }
+    else
+        return nullptr;
 #else
     Utf8String jobName(ComputeJobSubjectName());
 
@@ -208,7 +217,12 @@ SubjectCPtr ORDBridge::_InitializeJob()
 BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     {
 #ifdef USE_ROOTMODEL
+    ConvertORDElementXDomain convertORDXDomain;
+    Dgn::DgnDbSync::DgnV8::XDomain::Register(convertORDXDomain);
+
     m_converter->Process();
+
+    Dgn::DgnDbSync::DgnV8::XDomain::UnRegister(convertORDXDomain);
     return m_converter->WasAborted() ? BSIERROR : BSISUCCESS;
 #else
     auto changeDetectorPtr = GetSyncInfo().GetChangeDetectorFor(*this);

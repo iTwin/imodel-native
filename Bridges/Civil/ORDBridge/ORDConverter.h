@@ -50,10 +50,10 @@ public:
         {}
 }; // ORDV8Converter
 
-struct ConvertORDElementExtension : Dgn::DgnDbSync::DgnV8::ConvertToDgnDbElementExtension
-    {
-    static void Register();
+struct ConvertORDElementXDomain : Dgn::DgnDbSync::DgnV8::XDomain
+{
+protected:
     virtual Result _PreConvertElement(DgnV8EhCR, Dgn::DgnDbSync::DgnV8::Converter&, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const&) override;
-    };
+}; // ConvertORDElementXDomain
 
 END_ORDBRIDGE_NAMESPACE

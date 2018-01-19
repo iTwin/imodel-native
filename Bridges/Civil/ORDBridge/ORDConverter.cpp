@@ -990,8 +990,8 @@ void ORDConverter::ConvertORDData(Params& params)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ORDV8Converter::_ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model)
     {
-    if (fullSchemaName.Contains("Civil"))
-        return false;
+    /*if (fullSchemaName.Contains("Bentley_Civil") || fullSchemaName.StartsWith("Civil."))
+        return false;*/
 
     return true;
     }
@@ -1007,18 +1007,21 @@ DgnModelId ORDV8Converter::_MapModelIntoProject(DgnV8ModelR v8Model, Utf8CP newN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConvertORDElementExtension::Register()
+DgnDbSync::DgnV8::XDomain::Result ConvertORDElementXDomain::_PreConvertElement(DgnV8EhCR v8el, DgnDbSync::DgnV8::Converter& conv, DgnDbSync::DgnV8::ResolvedModelMapping const& v8mm)
     {
-    ConvertORDElementExtension* instance = new ConvertORDElementExtension();
-    RegisterExtension(DgnV8Api::TagElementHandler::GetInstance(), *instance);
-    }
+    /*auto cifAlignmentPtr = Alignment::CreateFromElement(v8el);
+    if (cifAlignmentPtr.IsValid())
+        {
+        return Result::SkipElement;
+        }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      01/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-ConvertORDElementExtension::Result ConvertORDElementExtension::_PreConvertElement(DgnV8EhCR v8el, DgnDbSync::DgnV8::Converter& converter, DgnDbSync::DgnV8::ResolvedModelMapping const& v8mm)
-    {
-    return Result::SkipElement;
+    auto cifCorridorPtr = Corridor::CreateFromElementHandle(v8el);
+    if (cifCorridorPtr.IsValid())
+        {
+        return Result::SkipElement;
+        }*/
+
+    return Result::Proceed;
     }
 
 END_ORDBRIDGE_NAMESPACE
