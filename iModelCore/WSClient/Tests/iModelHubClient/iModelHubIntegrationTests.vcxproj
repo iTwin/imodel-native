@@ -10,6 +10,77 @@
       <Platform>Win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Helpers\BaseMockHttpHandlerTest.cpp" />
+    <ClCompile Include="Helpers\CodesHelpers.cpp" />
+    <ClCompile Include="Helpers\DgnPlatformHelpers.cpp" />
+    <ClCompile Include="Helpers\iModelHubHelpers.cpp" />
+    <ClCompile Include="Helpers\iModelHubHost.cpp" />
+    <ClCompile Include="Helpers\IntegrationTestsSettings.cpp" />
+    <ClCompile Include="Helpers\LocksHelpers.cpp" />
+    <ClCompile Include="Helpers\MockHttpHandler.cpp" />
+    <ClCompile Include="Helpers\PerformanceTestsSettings.cpp" />
+    <ClCompile Include="Helpers\SchemaVersionTestDomain.cpp" />
+    <ClCompile Include="Helpers\StubLocalState.cpp" />
+    <ClCompile Include="Helpers\StubResponses.cpp" />
+    <ClCompile Include="Helpers\TestsProgressCallback.cpp" />
+    <ClCompile Include="Helpers\WSClientBaseTest.cpp" />
+    <ClCompile Include="Integration\BriefcasePullTests.cpp" />
+    <ClCompile Include="Integration\BriefcaseSchemaChangesTests.cpp" />
+    <ClCompile Include="Integration\BriefcaseTests.cpp" />
+    <ClCompile Include="Integration\ChangeSetsTests.cpp" />
+    <ClCompile Include="Integration\CodesLocksTests.cpp" />
+    <ClCompile Include="Integration\CodesTests.cpp" />
+    <ClCompile Include="Integration\EventParserTests.cpp" />
+    <ClCompile Include="Integration\EventsTests.cpp" />
+    <ClCompile Include="Integration\FailureTests.cpp" />
+    <ClCompile Include="Integration\FakeServerTests.cpp" />
+    <ClCompile Include="Integration\iModelTests.cpp" />
+    <ClCompile Include="Integration\iModelTestsBase.cpp" />
+    <ClCompile Include="Integration\IntegrationTestsBase.cpp" />
+    <ClCompile Include="Integration\LocksTests.cpp" />
+    <ClCompile Include="Integration\LRPJobBackdoorAPI.cpp" />
+    <ClCompile Include="Integration\LRPTests.cpp" />
+    <ClCompile Include="Integration\MultiProgressCallbackHandlerTests.cpp" />
+    <ClCompile Include="Integration\PerformanceTests.cpp" />
+    <ClCompile Include="Integration\PushRetryTests.cpp" />
+    <ClCompile Include="Integration\RetryTests.cpp" />
+    <ClCompile Include="Integration\SchemaLockTests.cpp" />
+    <ClCompile Include="Integration\SchemaVersionTests.cpp" />
+    <ClCompile Include="Integration\SeedFileTests.cpp" />
+    <ClCompile Include="Integration\StatisticsTests.cpp" />
+    <ClCompile Include="Integration\UserInfoTests.cpp" />
+    <ClCompile Include="Integration\VersionsTests.cpp" />
+    <ClCompile Include="Integration\WebsiteSeedFileTests.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Helpers\BaseMockHttpHandlerTest.h" />
+    <ClInclude Include="Helpers\CodesHelpers.h" />
+    <ClInclude Include="Helpers\DgnPlatformHelpers.h" />
+    <ClInclude Include="Helpers\iModelHubHelpers.h" />
+    <ClInclude Include="Helpers\iModelHubHost.h" />
+    <ClInclude Include="Helpers\IntegrationTestsSettings.h" />
+    <ClInclude Include="Helpers\LocksHelpers.h" />
+    <ClInclude Include="Helpers\MockHttpHandler.h" />
+    <ClInclude Include="Helpers\PerformanceTestsSettings.h" />
+    <ClInclude Include="Helpers\SchemaVersionTestDomain.h" />
+    <ClInclude Include="Helpers\StubLocalState.h" />
+    <ClInclude Include="Helpers\StubResponses.h" />
+    <ClInclude Include="Helpers\TestAppPathProvider.h" />
+    <ClInclude Include="Helpers\TestsProgressCallback.h" />
+    <ClInclude Include="Helpers\WSClientBaseTest.h" />
+    <ClInclude Include="Integration\EventParserTests.h" />
+    <ClInclude Include="Integration\Helpers.h" />
+    <ClInclude Include="Integration\iModelTestsBase.h" />
+    <ClInclude Include="Integration\IntegrationTestsBase.h" />
+    <ClInclude Include="Integration\LRPJobBackdoorAPI.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Integration\IntegrationTests.json" />
+    <None Include="Integration\IntegrationTestsIms.json" />
+    <None Include="Integration\PerformanceTests.json" />
+    <None Include="Integration\performanceTestsMaximums.json" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{25BD2CDA-5D17-4106-AB63-C9D41E469DD9}</ProjectGuid>
     <RootNamespace>iModelHubIntegrationTests</RootNamespace>
@@ -68,54 +139,6 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClInclude Include="BackDoor\PublicAPI\BackDoor\WebServices\iModelHub\BackDoor.h" />
-    <ClInclude Include="BackDoor\PublicAPI\BackDoor\WebServices\iModelHub\iModelHubTests.h" />
-    <ClInclude Include="IMHSClientExe\IMHSClientExe.h" />
-    <ClInclude Include="Integration\EventParserTests.h" />
-    <ClInclude Include="Integration\FakeServer.h" />
-    <ClInclude Include="Integration\IntegrationTestsBase.h" />
-    <ClInclude Include="Integration\IntegrationTestsHelper.h" />
-    <ClInclude Include="Integration\MockHttpHandler.h" />
-    <ClInclude Include="Integration\MockIMHubHttpHandler.h" />
-    <ClInclude Include="Integration\PerformanceTestsHelper.h" />
-    <ClInclude Include="Integration\LRPJobBackdoorAPI.h" />
-    <ClInclude Include="Integration\RequestHandler.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="BackDoor\ScopedDgnDbServerHost.cpp" />
-    <ClCompile Include="IMHSClientExe\IMHSClientExe.cpp" />
-    <ClCompile Include="Integration\Briefcase_Tests.cpp" />
-    <ClCompile Include="Integration\Client_Tests.cpp" />
-    <ClCompile Include="Integration\Domain_Tests.cpp" />
-    <ClCompile Include="Integration\EventParserTests.cpp" />
-    <ClCompile Include="Integration\Events_Tests.cpp" />
-    <ClCompile Include="Integration\Failure_Tests.cpp" />
-    <ClCompile Include="Integration\FakeServer.cpp" />
-    <ClCompile Include="Integration\FakeServerTests.cpp" />
-    <ClCompile Include="Integration\LRP_Tests.cpp" />
-    <ClCompile Include="Integration\MockIMHubHttpHandler.cpp" />
-    <ClCompile Include="Integration\MultiProgressCallbackHandlerTests.cpp" />
-    <ClCompile Include="Integration\Performance_Tests.cpp" />
-    <ClCompile Include="Integration\iModelManager_Tests.cpp" />
-    <ClCompile Include="Integration\WebsiteSeedFile_Tests.cpp" />
-    <ClCompile Include="Integration\RequestHandler.cpp" />
-    <ClCompile Include="Integration\Retry_Tests.cpp" />
-    <ClCompile Include="Integration\IntegrationTestsBase.cpp" />
-    <ClCompile Include="Integration\IntegrationTestsHelper.cpp" />
-    <ClCompile Include="Integration\MockHttpHandler.cpp" />
-    <ClCompile Include="Integration\PerformanceTestHelper.cpp" />
-    <ClCompile Include="Integration\Statistics_Tests.cpp" />
-    <ClCompile Include="Integration\UserInfo_Tests.cpp" />
-    <ClCompile Include="Integration\LRPJobBackdoorAPI.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="BuildTests.mke" />
-    <None Include="Prewire.mke" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="ignore_list.txt" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
