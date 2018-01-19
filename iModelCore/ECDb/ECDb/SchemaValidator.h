@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/SchemaValidator.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -28,7 +28,7 @@ struct SchemaValidator final
 
         public:
             ValidBaseClassesRule() {}
-            bool Validate(SchemaImportContext const&, IssueReporter const&, ECN::ECSchemaCR, ECN::ECClassCR) const;
+            bool Validate(SchemaImportContext const&, IIssueReporter const&, ECN::ECSchemaCR, ECN::ECClassCR) const;
             };
 
         //=======================================================================================
@@ -41,11 +41,11 @@ struct SchemaValidator final
                 ValidRelationshipRule(ValidRelationshipRule const&) = delete;
                 ValidRelationshipRule& operator=(ValidRelationshipRule const&) = delete;
 
-                bool ValidateConstraint(IssueReporter const&, ECN::ECRelationshipClassCR, ECN::ECRelationshipEnd, ECN::ECRelationshipConstraintCR) const;
+                bool ValidateConstraint(IIssueReporter const&, ECN::ECRelationshipClassCR, ECN::ECRelationshipEnd, ECN::ECRelationshipConstraintCR) const;
 
             public:
                 ValidRelationshipRule() {}
-                bool Validate(IssueReporter const&, ECN::ECSchemaCR, ECN::ECClassCR) const;
+                bool Validate(IIssueReporter const&, ECN::ECSchemaCR, ECN::ECClassCR) const;
             };
 
         //=======================================================================================
@@ -58,12 +58,12 @@ struct SchemaValidator final
                 ValidPropertyRule(ValidPropertyRule const&) = delete;
                 ValidPropertyRule& operator=(ValidPropertyRule const&) = delete;
 
-                bool ValidatePropertyName(IssueReporter const&, ECN::ECClassCR, ECN::ECPropertyCR) const;
-                bool ValidatePropertyStructType(IssueReporter const&, ECN::ECStructClassCR, ECN::ECPropertyCR) const;
+                bool ValidatePropertyName(IIssueReporter const&, ECN::ECClassCR, ECN::ECPropertyCR) const;
+                bool ValidatePropertyStructType(IIssueReporter const&, ECN::ECStructClassCR, ECN::ECPropertyCR) const;
 
             public:
                 ValidPropertyRule() {}
-                bool Validate(IssueReporter const&,ECN::ECClassCR, ECN::ECPropertyCR) const;
+                bool Validate(IIssueReporter const&,ECN::ECClassCR, ECN::ECPropertyCR) const;
             };
 
         
@@ -71,7 +71,7 @@ struct SchemaValidator final
         ~SchemaValidator();
 
     public:
-        static bool ValidateSchemas(SchemaImportContext&, IssueReporter const&, bvector<ECN::ECSchemaCP> const&);
+        static bool ValidateSchemas(SchemaImportContext&, IIssueReporter const&, bvector<ECN::ECSchemaCP> const&);
     };
 
 

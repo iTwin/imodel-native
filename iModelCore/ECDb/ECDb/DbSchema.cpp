@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/DbSchema.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -705,7 +705,7 @@ BentleyStatus DbSchema::PersistIndexDef(DbIndex const& index) const
 
     if (BE_SQLITE_DONE != stmt->Step())
         {
-        m_schemaManager.Issues().Report("Failed to persist definition for index %s on table %s: %s",
+        m_schemaManager.Issues().ReportV("Failed to persist definition for index %s on table %s: %s",
                                          index.GetName().c_str(), index.GetTable().GetName().c_str(), m_schemaManager.GetECDb().GetLastError().c_str());
         return ERROR;
         }
@@ -733,7 +733,7 @@ BentleyStatus DbSchema::PersistIndexDef(DbIndex const& index) const
 
         if (BE_SQLITE_DONE != indexColStmt->Step())
             {
-            m_schemaManager.Issues().Report("Failed to persist definition for index %s on table %s. Could not persist index column information for column %s: %s.",
+            m_schemaManager.Issues().ReportV("Failed to persist definition for index %s on table %s. Could not persist index column information for column %s: %s.",
                        index.GetName().c_str(), index.GetTable().GetName().c_str(), col->GetName().c_str(), m_schemaManager.GetECDb().GetLastError().c_str());
             return ERROR;
             }

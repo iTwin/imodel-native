@@ -56,7 +56,7 @@ bool ChangeManager::IsChangeCacheAttachedAndValid(ECDbCR ecdb, bool logError)
         return true;
 
     if (logError)
-        ecdb.GetImpl().Issues().Report("Attached file is a Change cache file with a mismatching version. Expected cache file version: %s. Actual version: %d.%d.%d",
+        ecdb.GetImpl().Issues().ReportV("Attached file is a Change cache file with a mismatching version. Expected cache file version: %s. Actual version: %d.%d.%d",
                                          s_expectedCacheVersion->ToString().c_str(), versionDigit1, versionDigit2, versionDigit3);
 
     return false;
@@ -72,7 +72,7 @@ bool ChangeManager::IsChangeCacheValid(ECDbCR cacheECDb, bool logError)
     if (ECSqlStatus::Success != stmt.Prepare(cacheECDb, "SELECT VersionMajor,VersionWrite,VersionMinor FROM meta.ECSchemaDef WHERE Name='" ECSCHEMA_ECDbChange "'", false))
         {
         if (logError)
-            cacheECDb.GetImpl().Issues().Report("Invalid Change cache file '%s' : File is not an ECDb file.", cacheECDb.GetDbFileName());
+            cacheECDb.GetImpl().Issues().ReportV("Invalid Change cache file '%s' : File is not an ECDb file.", cacheECDb.GetDbFileName());
 
         return false; //if file is not attached or not an ECDb file
         }
@@ -81,7 +81,7 @@ bool ChangeManager::IsChangeCacheValid(ECDbCR cacheECDb, bool logError)
         {
         //it is an ECDb file but not a change cache (because it doesn't have the change ECSchema)
         if (logError)
-            cacheECDb.GetImpl().Issues().Report("Invalid Change cache file '%s'.", cacheECDb.GetDbFileName());
+            cacheECDb.GetImpl().Issues().ReportV("Invalid Change cache file '%s'.", cacheECDb.GetDbFileName());
 
         return false;
         }
@@ -94,7 +94,7 @@ bool ChangeManager::IsChangeCacheValid(ECDbCR cacheECDb, bool logError)
         return true;
 
     if (logError)
-        cacheECDb.GetImpl().Issues().Report("Invalid Change cache file '%s' : Mismatching versions. Expected cache file version: %s. Actual version: %d.%d.%d",
+        cacheECDb.GetImpl().Issues().ReportV("Invalid Change cache file '%s' : Mismatching versions. Expected cache file version: %s. Actual version: %d.%d.%d",
                                             cacheECDb.GetDbFileName(), s_expectedCacheVersion->ToString().c_str(), versionDigit1, versionDigit2, versionDigit3);
 
     return false;
@@ -143,7 +143,7 @@ DbResult ChangeManager::AttachChangeCacheFile(BeFileNameCR cacheFilePath, bool c
     DbResult r = m_ecdb.AttachDb(cacheFilePath.GetNameUtf8().c_str(), TABLESPACE_ECChange);
     if (BE_SQLITE_OK != r)
         {
-        m_ecdb.GetImpl().Issues().Report("Failed to attach Change cache file '%s': %s", cacheFilePath.GetNameUtf8().c_str(), m_ecdb.GetLastError().c_str());
+        m_ecdb.GetImpl().Issues().ReportV("Failed to attach Change cache file '%s': %s", cacheFilePath.GetNameUtf8().c_str(), m_ecdb.GetLastError().c_str());
         return r;
         }
 
@@ -160,7 +160,7 @@ DbResult ChangeManager::CreateChangeCacheFile(ECDbR cacheDb, BeFileNameCR cacheP
     {
     if (cachePath.DoesPathExist())
         {
-        m_ecdb.GetImpl().Issues().Report("Failed to create Change cache file '%s'. The file already exists.", cachePath.GetNameUtf8().c_str());
+        m_ecdb.GetImpl().Issues().ReportV("Failed to create Change cache file '%s'. The file already exists.", cachePath.GetNameUtf8().c_str());
         return BE_SQLITE_ERROR;
         }
 
@@ -168,7 +168,7 @@ DbResult ChangeManager::CreateChangeCacheFile(ECDbR cacheDb, BeFileNameCR cacheP
     DbResult r = cacheDb.CreateNewDb(cachePath);
     if (BE_SQLITE_OK != r)
         {
-        m_ecdb.GetImpl().Issues().Report("Failed to create new Change cache file '%s': %s", cachePath.GetNameUtf8().c_str(), Db::InterpretDbResult(r));
+        m_ecdb.GetImpl().Issues().ReportV("Failed to create new Change cache file '%s': %s", cachePath.GetNameUtf8().c_str(), Db::InterpretDbResult(r));
         return r;
         }
 
@@ -184,13 +184,13 @@ DbResult ChangeManager::CreateChangeCacheFile(ECDbR cacheDb, BeFileNameCR cacheP
     ECN::SchemaKey schemaKey(ECSCHEMA_ECDbChange, 1, 0, 0);
     if (context->LocateSchema(schemaKey, ECN::SchemaMatchType::LatestWriteCompatible) == nullptr)
         {
-        m_ecdb.GetImpl().Issues().Report("Failed to create new Change cache file '%s': Could not locate ECSchema " ECSCHEMA_ECDbChange, cachePath.GetNameUtf8().c_str());
+        m_ecdb.GetImpl().Issues().ReportV("Failed to create new Change cache file '%s': Could not locate ECSchema " ECSCHEMA_ECDbChange, cachePath.GetNameUtf8().c_str());
         return BE_SQLITE_ERROR;
         }
 
     if (SUCCESS != cacheDb.Schemas().ImportSchemas(context->GetCache().GetSchemas(), cacheDb.GetImpl().GetSettingsManager().GetSchemaImportToken()))
         {
-        m_ecdb.GetImpl().Issues().Report("Failed to create new Change cache file '%s': Could not import ECSchema " ECSCHEMA_ECDbChange, cachePath.GetNameUtf8().c_str());
+        m_ecdb.GetImpl().Issues().ReportV("Failed to create new Change cache file '%s': Could not import ECSchema " ECSCHEMA_ECDbChange, cachePath.GetNameUtf8().c_str());
         cacheDb.AbandonChanges();
         return BE_SQLITE_ERROR;
         }
@@ -198,7 +198,7 @@ DbResult ChangeManager::CreateChangeCacheFile(ECDbR cacheDb, BeFileNameCR cacheP
     r = AddMetadataToChangeCacheFile(cacheDb, m_ecdb);
     if (BE_SQLITE_OK != r)
         {
-        m_ecdb.GetImpl().Issues().Report("Failed to create new Change cache file '%s'. Could not add metadata to the file: %s", cachePath.GetNameUtf8().c_str(), cacheDb.GetLastError().c_str());
+        m_ecdb.GetImpl().Issues().ReportV("Failed to create new Change cache file '%s'. Could not add metadata to the file: %s", cachePath.GetNameUtf8().c_str(), cacheDb.GetLastError().c_str());
         cacheDb.AbandonChanges();
         return r;
         }
@@ -206,7 +206,7 @@ DbResult ChangeManager::CreateChangeCacheFile(ECDbR cacheDb, BeFileNameCR cacheP
     r = cacheDb.SaveChanges();
     if (BE_SQLITE_OK != r)
         {
-        m_ecdb.GetImpl().Issues().Report("Failed to create new Change cache file '%s'. Could not commit changes: %s", cachePath.GetNameUtf8().c_str(), cacheDb.GetLastError().c_str());
+        m_ecdb.GetImpl().Issues().ReportV("Failed to create new Change cache file '%s'. Could not commit changes: %s", cachePath.GetNameUtf8().c_str(), cacheDb.GetLastError().c_str());
         return r;
         }
 
