@@ -152,7 +152,7 @@ public:
 //! @param[out] slope           Slope on the point. Can be null.
 //! @param[out] aspect          Aspect on the point. Can be null.
 //! @param[out] triangle        Triangle around the point. Can be null.
-//! @param[out] drapeType       Type of draping. Can be null. (should be declared as an DTMEnum !!!).
+//! @param[out] drapedType       Type of draping. Can be null. (should be declared as an DTMEnum !!!).
 //! @param[in]  point           The point to drape.
 //! @return DTM status.
 BENTLEYDTM_EXPORT DTMStatusInt DrapePoint (double* elevation, double* slope, double* aspect, DPoint3d triangle[3], int& drapedType, DPoint3dCR point);
