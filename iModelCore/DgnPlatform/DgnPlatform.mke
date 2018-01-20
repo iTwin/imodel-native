@@ -276,6 +276,8 @@ $(CoreObjs)DgnShxFontData$(oext) :                  $(DgnCoreDir)DgnShxFontData.
 
 $(CoreObjs)Sprites$(oext) :                         $(DgnCoreDir)Sprites.cpp ${MultiCompileDepends}
 
+$(CoreObjs)HDRImage$(oext) :                        $(DgnCoreDir)HDRImage.cpp ${MultiCompileDepends}
+
 $(CoreObjs)ImageSource$(oext) :                     $(DgnCoreDir)ImageSource.cpp ${MultiCompileDepends}
 
 $(CoreObjs)ImageResize$(oext) :                     $(DgnCoreDir)ImageResize.cpp ${MultiCompileDepends}

@@ -533,10 +533,12 @@ public:
 //=======================================================================================
 struct HDRImage
 {
+protected:
     uint32_t        m_width = 0;
     uint32_t        m_height = 0;
     bvector<float>  m_image;
 
+public:
     //! Create an HDRImage from a (Radiance) HDR data.
     //! @param[in] srcData the HDR data
     //! @param[in] srcLen the number of bytes of HDR data
@@ -552,10 +554,10 @@ struct HDRImage
 //=======================================================================================
 struct  Environment
 {
-    enum class Mapping : uint32_t { Spherical, Cylindrical, Angular, Rectangular };
+    enum class Mapping : uint32_t { Spherical, Cylindrical, Angular, Rectangular, Invalid };
 
-    struct Map { Mapping m_mapping; Image m_image; DPoint2d m_offset; };
-    struct HDRMap { Mapping m_mapping; HDRImage m_image; DPoint2d m_offset; double m_gamma; };
+    struct Map { Mapping m_mapping = Mapping::Invalid; Image m_image; DPoint2d m_offset = DPoint2d::FromZero(); };
+    struct HDRMap { Mapping m_mapping = Mapping::Invalid; HDRImage m_image; DPoint2d m_offset = DPoint2d::FromZero(); double m_gamma = 0.0; };
 
     HDRMap              m_diffuse;              // Diffuse lighting.
     HDRMap              m_reflection;
