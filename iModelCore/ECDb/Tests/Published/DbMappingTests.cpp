@@ -14,7 +14,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 
 struct DbMappingTestFixture : ECDbTestFixture {};
 
-
+#if 0
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Affan.Khan                          05/17
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -110,22 +110,22 @@ TEST_F(DbMappingTestFixture, CreateALargeFile)
         };
 
     const std::vector<Utf8CP>tasks = {
-        "select * from ts.a2m l, ts.b2m r where l.i1=r.i1",
-        "select * from ts.a2m l, ts.b2m r where l.i1=r.i2",
-        "select * from ts.a2m l, ts.b2m r where l.i1=r.i3",
-        "select * from ts.a2m l, ts.b2m r where l.i1=r.i4",
-        "select * from ts.a2m l, ts.b2m r where l.i2=r.i1",
-        "select * from ts.a2m l, ts.b2m r where l.i2=r.i2",
-        "select * from ts.a2m l, ts.b2m r where l.i2=r.i3",
-        "select * from ts.a2m l, ts.b2m r where l.i2=r.i4",
-        "select * from ts.a2m l, ts.b2m r where l.i3=r.i1",
-        "select * from ts.a2m l, ts.b2m r where l.i3=r.i2",
-        "select * from ts.a2m l, ts.b2m r where l.i3=r.i3",
-        "select * from ts.a2m l, ts.b2m r where l.i3=r.i4",
-        "select * from ts.a2m l, ts.b2m r where l.i4=r.i1",
-        "select * from ts.a2m l, ts.b2m r where l.i4=r.i2",
-        "select * from ts.a2m l, ts.b2m r where l.i4=r.i3",
-        "select * from ts.a2m l, ts.b2m r where l.i4=r.i4",
+        "select * from ts.a2m l, ts.b2m r where l.i1=r.i1 order by l.f1, r.f2, l.f3, r.f4",
+        "select * from ts.a2m l, ts.b2m r where l.i1=r.i2 order by l.f1, r.f2, l.f3, r.f4",
+        "select * from ts.a2m l, ts.b2m r where l.i1=r.i3 order by l.f1, r.f2, l.f3, r.f4",
+        "select * from ts.a2m l, ts.b2m r where l.i1=r.i4 order by l.f1, r.f2, l.f3, r.f4",
+        "select * from ts.a2m l, ts.b2m r where l.i2=r.i1 order by l.f1, r.f2, l.f3, r.f4",
+        "select * from ts.a2m l, ts.b2m r where l.i2=r.i2 order by l.f1, r.f2, l.f3, r.f4",
+        "select * from ts.a2m l, ts.b2m r where l.i2=r.i3 order by l.f1, r.f2, l.f3, r.f4",
+        "select * from ts.a2m l, ts.b2m r where l.i2=r.i4 order by l.f1, r.f2, l.f3, r.f4",
+        "select * from ts.a2m l, ts.b2m r where l.i3=r.i1 order by l.f1, r.f2, l.f3, r.f4",
+        "select * from ts.a2m l, ts.b2m r where l.i3=r.i2 order by l.f1, r.f2, l.f3, r.f4",
+        "select * from ts.a2m l, ts.b2m r where l.i3=r.i3 order by l.f1, r.f2, l.f3, r.f4",
+        "select * from ts.a2m l, ts.b2m r where l.i3=r.i4 order by l.f1, r.f2, l.f3, r.f4",
+        "select * from ts.a2m l, ts.b2m r where l.i4=r.i1 order by l.f1, r.f2, l.f3, r.f4",
+        "select * from ts.a2m l, ts.b2m r where l.i4=r.i2 order by l.f1, r.f2, l.f3, r.f4",
+        "select * from ts.a2m l, ts.b2m r where l.i4=r.i3 order by l.f1, r.f2, l.f3, r.f4",
+        "select * from ts.a2m l, ts.b2m r where l.i4=r.i4 order by l.f1, r.f2, l.f3, r.f4",
         };
 
     std::function<void(BeFileName)> singleThread = [&taskFunc,&tasks] (BeFileName ecdbFile)
@@ -134,9 +134,8 @@ TEST_F(DbMappingTestFixture, CreateALargeFile)
         ECDb ecdb;
         ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbFile, Db::OpenParams(Db::OpenMode::Readonly)));
         for (Utf8CP task_sql : tasks)
-            {
             taskFunc(&ecdb, nullptr, task_sql);
-            }
+ 
         timer.Stop();
         printf("SingleConnection/SingleThread : [task_count=%zd] [hardware_concurrency=%d] [time: %.4f sec]\n", tasks.size(), std::thread::hardware_concurrency(), timer.GetElapsedSeconds());
         };
@@ -148,10 +147,8 @@ TEST_F(DbMappingTestFixture, CreateALargeFile)
         ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbFile, Db::OpenParams(Db::OpenMode::Readonly)));
         std::vector<std::thread> threads;
         for (Utf8CP task_sql : tasks)
-            {
             threads.push_back( std::thread(taskFunc, &ecdb, nullptr, task_sql));
-            }
-
+ 
         for (std::thread& thread : threads)
             thread.join();
 
@@ -172,7 +169,6 @@ TEST_F(DbMappingTestFixture, CreateALargeFile)
             auto itorCon = connections.insert(connections.end(), std::unique_ptr<Db>(new Db()));
             Db& threadCon = *(*itorCon);
             ASSERT_EQ(BE_SQLITE_OK, threadCon.OpenBeSQLiteDb(ecdbFile, Db::OpenParams(Db::OpenMode::Readonly)));
-
             threads.push_back(std::thread(taskFunc, &ecdb, &threadCon, task_sql));
             }
 
@@ -184,11 +180,12 @@ TEST_F(DbMappingTestFixture, CreateALargeFile)
         };
 
 
-    multiThread2(existingFile);
-    multiThread(existingFile);
     singleThread(existingFile);
+    multiThread(existingFile);
+    multiThread2(existingFile);
 
     }
+#endif
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Affan.Khan                          05/17
 //+---------------+---------------+---------------+---------------+---------------+------
