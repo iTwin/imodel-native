@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/CustomAttributeUnitsConversionTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -83,6 +83,25 @@ struct UnitInstanceConversionTest : ECTestFixture
     mutable TestUnitResolver m_testUnitResolver;
     };
 
+void verifyReferencedSchemas(ECSchemaR convertedSchema, bvector<Utf8String> expectedReferenceFullNames)
+    {
+    EXPECT_EQ(expectedReferenceFullNames.size(), convertedSchema.GetReferencedSchemas().size());
+
+    for (auto const& schemaReference : convertedSchema.GetReferencedSchemas())
+        {
+        Utf8String refSchemaFullName = schemaReference.first.GetFullSchemaName();
+        auto it = std::find(expectedReferenceFullNames.begin(), expectedReferenceFullNames.end(), refSchemaFullName);
+        EXPECT_NE(expectedReferenceFullNames.end(), it) << "Found unexpected schema reference: " << refSchemaFullName.c_str();
+        if (expectedReferenceFullNames.end() != it)
+            expectedReferenceFullNames.erase(it);
+        }
+    if (0 != expectedReferenceFullNames.size())
+        {
+        Utf8String referencesNotFound = BeStringUtilities::Join(expectedReferenceFullNames, ", ");
+        EXPECT_EQ(0, expectedReferenceFullNames.size()) << "Did not find expected reference schemas: " << referencesNotFound.c_str();
+        }
+    }
+
 void validateUnitsInConvertedSchema(ECSchemaR convertedSchema, ECSchemaR originalSchema)
     {
     for (const auto& ecClass : originalSchema.GetClasses())
@@ -96,10 +115,22 @@ void validateUnitsInConvertedSchema(ECSchemaR convertedSchema, ECSchemaR origina
                 ECPropertyP convertedProp = convertedClass->GetPropertyP(ecProp->GetName().c_str());
                 KindOfQuantityCP koq = convertedProp->GetKindOfQuantity();
                 ASSERT_NE(nullptr, koq) << "Could not find KOQ for property " << ecClass->GetName().c_str() << ":" << ecProp->GetName().c_str();
-                Units::UnitCP convertedUnit = Units::UnitRegistry::Instance().LookupUnitUsingOldName(originalUnit.GetName());
-                if (nullptr == convertedUnit) // If null it may be a dummy unit added during conversion ... 
-                    convertedUnit = Units::UnitRegistry::Instance().LookupUnit(originalUnit.GetName());
-                ASSERT_NE(nullptr, convertedUnit) << "Could not find converted unit for old unit " << originalUnit.GetName();
+                Units::UnitCP originalUnitInNewSystem = Units::UnitRegistry::Instance().LookupUnitUsingOldName(originalUnit.GetName());
+                ASSERT_NE(nullptr, originalUnitInNewSystem) << "Could not find converted unit for old unit " << originalUnit.GetName();
+
+                bool unitShouldBeConvertedToSI = !originalUnitInNewSystem->IsSI();
+                Units::UnitCP convertedUnit = unitShouldBeConvertedToSI ? originalUnitInNewSystem->GetPhenomenon()->GetSIUnit() : originalUnitInNewSystem;
+                ASSERT_NE(nullptr, convertedUnit) << "Could not find SI unit for original unit " << originalUnitInNewSystem->GetName();
+
+                if (unitShouldBeConvertedToSI)
+                    {
+                    auto oldUnitCA = convertedProp->GetCustomAttribute("ECv3ConversionAttributes", "OldPersistenceUnit");
+                    ASSERT_TRUE(oldUnitCA.IsValid()) << convertedClass->GetName().c_str() << "." << convertedProp->GetName().c_str() 
+                                                        << " the unit should have been converted to SI so expected the OldPersistenceUnit CA to be applied to the property";
+                    ECValue oldName;
+                    ASSERT_EQ(ECObjectsStatus::Success, oldUnitCA->GetValue(oldName, "Name"));
+                    ASSERT_STREQ(originalUnit.GetName(), oldName.GetUtf8CP()) << "Old unit name not persisted correctly";
+                    }
 
                 EXPECT_EQ(0, strcmp(convertedUnit->GetName(), koq->GetPersistenceUnit().GetUnit()->GetName())) 
                     << "Converted unit not correct for " << convertedProp->GetName().c_str() << " Expected: " << convertedUnit->GetName() << " Actual: " << koq->GetPersistenceUnit().GetUnit()->GetName();
@@ -143,7 +174,9 @@ TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecification_OnArrayPr
 
     ASSERT_TRUE(ECSchemaConverter::Convert(*schema)) << "Failed to convert schema";
     validateUnitsInConvertedSchema(*schema, *originalSchema);
-    ASSERT_EQ(0, schema->GetReferencedSchemas().size()) << "Expected no schema references after conversion because the only reference in the original schema was the Unit_Attributes schema";
+    bvector<Utf8String> expectedRefSchemas;
+    expectedRefSchemas.push_back("ECv3ConversionAttributes.01.00.00");
+    verifyReferencedSchemas(*schema, expectedRefSchemas);
     }
 
 //---------------------------------------------------------------------------------------
@@ -177,7 +210,9 @@ TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecification_OnlyOnPro
 
     ASSERT_TRUE(ECSchemaConverter::Convert(*schema)) << "Failed to convert schema";
     validateUnitsInConvertedSchema(*schema, *originalSchema);
-    ASSERT_EQ(0, schema->GetReferencedSchemas().size()) << "Expected no schema references after conversion because the only reference in the original schema was the Unit_Attributes schema";
+    bvector<Utf8String> expectedRefSchemas;
+    expectedRefSchemas.push_back("ECv3ConversionAttributes.01.00.00");
+    verifyReferencedSchemas(*schema, expectedRefSchemas);
     }
 
 //---------------------------------------------------------------------------------------
@@ -235,7 +270,9 @@ TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecifications)
     ECSchemaPtr originalSchema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlFile(originalSchema, testSchemaPath.c_str(), *context2));
     validateUnitsInConvertedSchema(*schema, *originalSchema);
-    ASSERT_EQ(0, schema->GetReferencedSchemas().size()) << "Expected no schema references after conversion because the only reference in the original schema was the Unit_Attributes schema";
+    bvector<Utf8String> expectedRefSchemas;
+    expectedRefSchemas.push_back("ECv3ConversionAttributes.01.00.00");
+    verifyReferencedSchemas(*schema, expectedRefSchemas);
     }
 
 //---------------------------------------------------------------------------------------
@@ -469,19 +506,23 @@ TEST_F(UnitSpecificationConversionTest, SameKOQMultiplePersistenceUnits)
     ASSERT_TRUE(schema.IsValid());
 
     ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Failed to convert schema";
-    ASSERT_STREQ("DM", schema->GetClassCP("Pipe")->GetPropertyP("Length")->GetKindOfQuantity()->GetPersistenceUnit().GetUnit()->GetName());
-    ASSERT_FALSE(schema->GetClassCP("Pipe")->GetPropertyP("Length")->GetCustomAttributeLocal("ECv3ConversionAttributes", "OldPersistenceUnit").IsValid());
-    ASSERT_STREQ("DM", schema->GetClassCP("SpecialPipe")->GetPropertyP("Length")->GetKindOfQuantity()->GetPersistenceUnit().GetUnit()->GetName());
-    ASSERT_STREQ("FT", schema->GetClassCP("SpecialPipe")->GetPropertyP("Length")->GetKindOfQuantity()->GetDefaultPresentationUnit().GetUnit()->GetName());
-    ASSERT_TRUE(schema->GetClassCP("SpecialPipe")->GetPropertyP("Length")->GetCustomAttributeLocal("ECv3ConversionAttributes", "OldPersistenceUnit").IsValid());
-    ASSERT_STREQ("FT", schema->GetClassCP("SpecialPipe")->GetPropertyP("AnotherLength")->GetKindOfQuantity()->GetPersistenceUnit().GetUnit()->GetName());
-    ASSERT_FALSE(schema->GetClassCP("SpecialPipe")->GetPropertyP("AnotherLength")->GetCustomAttributeLocal("ECv3ConversionAttributes", "OldPersistenceUnit").IsValid());
-    ASSERT_STREQ("FT", schema->GetClassCP("SpecialPipe")->GetPropertyP("YetAnotherLength")->GetKindOfQuantity()->GetPersistenceUnit().GetUnit()->GetName());
-    ASSERT_FALSE(schema->GetClassCP("SpecialPipe")->GetPropertyP("YetAnotherLength")->GetCustomAttributeLocal("ECv3ConversionAttributes", "OldPersistenceUnit").IsValid());
-    ASSERT_NE(nullptr, schema->GetKindOfQuantityCP("LENGTH"));
-    ASSERT_NE(nullptr, schema->GetKindOfQuantityCP("LENGTH_SpecialPipe"));
-    ASSERT_NE(nullptr, schema->GetKindOfQuantityCP("LENGTH_SPecialPipe_Length"));
-    ASSERT_EQ(3, schema->GetKindOfQuantityCount());
+    EXPECT_STREQ("M", schema->GetClassCP("Pipe")->GetPropertyP("Length")->GetKindOfQuantity()->GetPersistenceUnit().GetUnit()->GetName());
+    EXPECT_STREQ("DM", schema->GetClassCP("Pipe")->GetPropertyP("Length")->GetKindOfQuantity()->GetDefaultPresentationUnit().GetUnit()->GetName());
+    EXPECT_STREQ("LENGTH", schema->GetClassCP("Pipe")->GetPropertyP("Length")->GetKindOfQuantity()->GetName().c_str());
+    EXPECT_TRUE(schema->GetClassCP("Pipe")->GetPropertyP("Length")->GetCustomAttributeLocal("ECv3ConversionAttributes", "OldPersistenceUnit").IsValid());
+    EXPECT_STREQ("M", schema->GetClassCP("SpecialPipe")->GetPropertyP("Length")->GetKindOfQuantity()->GetPersistenceUnit().GetUnit()->GetName());
+    EXPECT_STREQ("FT", schema->GetClassCP("SpecialPipe")->GetPropertyP("Length")->GetKindOfQuantity()->GetDefaultPresentationUnit().GetUnit()->GetName());
+    EXPECT_STREQ("LENGTH_SpecialPipe", schema->GetClassCP("SpecialPipe")->GetPropertyP("Length")->GetKindOfQuantity()->GetName().c_str());
+    EXPECT_TRUE(schema->GetClassCP("SpecialPipe")->GetPropertyP("Length")->GetCustomAttributeLocal("ECv3ConversionAttributes", "OldPersistenceUnit").IsValid());
+    EXPECT_STREQ("M", schema->GetClassCP("SpecialPipe")->GetPropertyP("AnotherLength")->GetKindOfQuantity()->GetPersistenceUnit().GetUnit()->GetName());
+    EXPECT_STREQ("FT", schema->GetClassCP("SpecialPipe")->GetPropertyP("AnotherLength")->GetKindOfQuantity()->GetDefaultPresentationUnit().GetUnit()->GetName());
+    EXPECT_STREQ("LENGTH_SpecialPipe", schema->GetClassCP("SpecialPipe")->GetPropertyP("AnotherLength")->GetKindOfQuantity()->GetName().c_str());
+    EXPECT_TRUE(schema->GetClassCP("SpecialPipe")->GetPropertyP("AnotherLength")->GetCustomAttributeLocal("ECv3ConversionAttributes", "OldPersistenceUnit").IsValid());
+    EXPECT_STREQ("M", schema->GetClassCP("SpecialPipe")->GetPropertyP("YetAnotherLength")->GetKindOfQuantity()->GetPersistenceUnit().GetUnit()->GetName());
+    EXPECT_STREQ("FT", schema->GetClassCP("SpecialPipe")->GetPropertyP("YetAnotherLength")->GetKindOfQuantity()->GetDefaultPresentationUnit().GetUnit()->GetName());
+    EXPECT_STREQ("LENGTH_SpecialPipe", schema->GetClassCP("SpecialPipe")->GetPropertyP("YetAnotherLength")->GetKindOfQuantity()->GetName().c_str());
+    EXPECT_TRUE(schema->GetClassCP("SpecialPipe")->GetPropertyP("YetAnotherLength")->GetCustomAttributeLocal("ECv3ConversionAttributes", "OldPersistenceUnit").IsValid());
+    EXPECT_EQ(2, schema->GetKindOfQuantityCount());
     }
 
 //---------------------------------------------------------------------------------------
@@ -720,6 +761,83 @@ TEST_F(UnitsCustomAttributesConversionTests, TestInternalCustomAttributes)
     SerializeAndCheck(m_schema, testCustomAttributes);
     }
 
+
+//---------------------------------------------------------------------------------------//
+//* @bsimethod                                Colin.Kerr                       07/2017
+//+---------------+---------------+---------------+---------------+---------------+------//
+TEST_F(UnitsCustomAttributesConversionTests, OldUnitsWithKoqNameConflicts)
+    {
+    Utf8String schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="OldUnits" version="01.00" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
+        <ECClass typeName="TestClass" isDomainClass="True">
+            <ECProperty propertyName="Length" typeName="double">
+                <ECCustomAttributes>
+                    <UnitSpecification xmlns="Unit_Attributes.01.00">
+                        <KindOfQuantityName>LENGTH</KindOfQuantityName>
+                        <DimensionName>L</DimensionName>
+                        <UnitName>FOOT</UnitName>
+                        <AllowableUnits />
+                    </UnitSpecification>
+                </ECCustomAttributes>
+            </ECProperty>
+        </ECClass>
+        <ECClass typeName="LENGTH" isDomainClass="True" />
+    </ECSchema>)xml";
+
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *schemaContext)) << "Failed to load schema with old unit";
+    ECSchemaPtr originalSchema;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CopySchema(originalSchema)) << "Failed to copy schema";
+
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema)) << "Failed to convert schema";
+    validateUnitsInConvertedSchema(*schema, *originalSchema);
+    bvector<Utf8String> expectedRefSchemas;
+    expectedRefSchemas.push_back("ECv3ConversionAttributes.01.00.00");
+    verifyReferencedSchemas(*schema, expectedRefSchemas);
+    }
+
+//---------------------------------------------------------------------------------------//
+//* @bsimethod                                Colin.Kerr                       05/2017
+//+---------------+---------------+---------------+---------------+---------------+------//
+// Test that references are properly removed when there is no schema level 'UnitSpecifications' CA, only property level ones
+TEST_F(UnitsCustomAttributesConversionTests, SchemaWithIsUnitSystemSchema_Attribute)
+    {
+    Utf8String schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="OldUnits" version="01.00" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
+        <IsUnitSystemSchema xmlns="Unit_Attributes.01.00" />
+        <Mixed_UnitSystem xmlns="Unit_Attributes.01.00" />
+        <SI_UnitSystem xmlns="Unit_Attributes.01.00" />
+        <US_UnitSystem xmlns="Unit_Attributes.01.00" />
+        <ECClass typeName="TestClass" isDomainClass="True">
+            <ECProperty propertyName="Length" typeName="double">
+                <ECCustomAttributes>
+                    <UnitSpecification xmlns="Unit_Attributes.01.00">
+                        <KindOfQuantityName>LENGTH</KindOfQuantityName>
+                        <DimensionName>L</DimensionName>
+                        <UnitName>FOOT</UnitName>
+                        <AllowableUnits />
+                    </UnitSpecification>
+                </ECCustomAttributes>
+            </ECProperty>
+        </ECClass>
+    </ECSchema>)xml";
+
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *schemaContext)) << "Failed to load schema with old unit";
+    ECSchemaPtr originalSchema;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CopySchema(originalSchema)) << "Failed to copy schema";
+
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema)) << "Failed to convert schema";
+    validateUnitsInConvertedSchema(*schema, *originalSchema);
+    bvector<Utf8String> expectedRefSchemas;
+    expectedRefSchemas.push_back("ECv3ConversionAttributes.01.00.00");
+    verifyReferencedSchemas(*schema, expectedRefSchemas);
+    }
+
 //=======================================================================================
 //! UnitInstanceConversionTest
 //=======================================================================================
@@ -798,9 +916,10 @@ TEST_F(UnitInstanceConversionTest, BasicTest)
     InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
     ASSERT_EQ(InstanceReadStatus::Success, readStat);
 
-    ECValue length;
-    testInstance->GetValue(length, "Length");
-    EXPECT_EQ(50*3.048, length.GetDouble());
+    Units::Quantity lengthQ;
+    ASSERT_EQ(ECObjectsStatus::Success, testInstance->GetQuantity(lengthQ, "Length"));
+    EXPECT_STREQ("M", lengthQ.GetUnitName());
+    EXPECT_EQ(50, lengthQ.ConvertTo(Units::UnitRegistry::Instance().LookupUnit("FT")).GetMagnitude());
     }
     {
     Utf8CP instanceXml = R"xml(

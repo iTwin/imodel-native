@@ -999,8 +999,22 @@ ECObjectsStatus createNewKindOfQuantity(ECSchemaR schema, KindOfQuantityP& newKO
     ECObjectsStatus status = schema.CreateKindOfQuantity(newKOQ, newKoqName);
     if (ECObjectsStatus::Success != status)
         {
-        LOG.warningv("Failed to create new KindOfQuantity in schema %s with name %s.", schema.GetFullSchemaName().c_str(), newKoqName);
+        Utf8String fullName = schema.GetFullSchemaName();
+        LOG.warningv("Failed to create new KindOfQuantity in schema %s with name %s.", fullName.c_str(), newKoqName);
         return status;
+        }
+
+    Units::UnitCP originalUnit = newUnit;
+    if (!newUnit->IsSI())
+        {
+        newUnit = newUnit->GetPhenomenon()->GetSIUnit();
+        if (nullptr == newUnit)
+            {
+            Utf8String fullName = schema.GetFullSchemaName();
+            LOG.warningv("Failed to resolve SI unit for %s while converting KOQ %s in schema %s", originalUnit->GetName(), newKoqName, fullName.c_str());
+            return ECObjectsStatus::Error;
+            }
+        persistenceUnitChanged = true;
         }
 
     if (kindOfQuantityHasMatchingPersitenceUnit(baseKOQ, newUnit))
@@ -1018,25 +1032,9 @@ ECObjectsStatus createNewKindOfQuantity(ECSchemaR schema, KindOfQuantityP& newKO
     if (nullptr != newDisplayUnit)
         newKOQ->AddPresentationUnit(Formatting::FormatUnitSet("DefaultRealU", newDisplayUnit->GetName()));
     else if (persistenceUnitChanged)
-        newKOQ->AddPresentationUnit(Formatting::FormatUnitSet("DefaultRealU", newUnit->GetName()));
+        newKOQ->AddPresentationUnit(Formatting::FormatUnitSet("DefaultRealU", originalUnit->GetName()));
 
     return ECObjectsStatus::Success;
-    }
-
-bool kindOfQuantityIsAcceptable(KindOfQuantityCP newKOQ, KindOfQuantityCP baseKOQ, Units::UnitCP newUnit, Units::UnitCP newDisplayUnit, bool& persistenceUnitChanged)
-    {
-    persistenceUnitChanged = false;
-    if (!kindOfQuantityHasMatchingPersitenceUnit(baseKOQ, newKOQ->GetPersistenceUnit().GetUnit()))
-        return false;
-    
-    persistenceUnitChanged = !kindOfQuantityHasMatchingPersitenceUnit(newKOQ, newUnit);
-    if (nullptr == baseKOQ && persistenceUnitChanged)
-        {
-        persistenceUnitChanged = false;
-        return false;
-        }
-
-    return kindOfQuantityHasMatchingPresentationUnit(newKOQ, newDisplayUnit, newUnit);
     }
 
 bool baseAndNewUnitAreIncompatible(KindOfQuantityCP baseKOQ, Units::UnitCP newUnit)
@@ -1044,6 +1042,23 @@ bool baseAndNewUnitAreIncompatible(KindOfQuantityCP baseKOQ, Units::UnitCP newUn
     if (nullptr == baseKOQ)
         return false;
     return !Units::Unit::AreCompatible(baseKOQ->GetPersistenceUnit().GetUnit(), newUnit);
+    }
+
+bool kindOfQuantityIsAcceptable(KindOfQuantityCP newKOQ, KindOfQuantityCP baseKOQ, Units::UnitCP newUnit, Units::UnitCP newDisplayUnit, bool& persistenceUnitChanged)
+    {
+    if (!kindOfQuantityHasMatchingPersitenceUnit(baseKOQ, newKOQ->GetPersistenceUnit().GetUnit()))
+        return false;
+
+    if (!newUnit->IsSI() && !baseAndNewUnitAreIncompatible(newKOQ, newUnit))
+        {
+        persistenceUnitChanged = true;
+        return kindOfQuantityHasMatchingPresentationUnit(newKOQ, newDisplayUnit, newUnit);
+        }
+
+    if (!kindOfQuantityHasMatchingPersitenceUnit(newKOQ, newUnit))
+        return false;
+
+    return kindOfQuantityHasMatchingPresentationUnit(newKOQ, newDisplayUnit, newUnit);
     }
 
 ECObjectsStatus obtainKindOfQuantity(ECSchemaR schema, ECPropertyP prop, KindOfQuantityP& newKOQ, IECInstanceR unitSpecCA, Units::UnitCP newUnit, Units::UnitCP newDisplayUnit, bool& persistenceUnitChanged, Utf8CP newKoqName)
