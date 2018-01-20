@@ -540,7 +540,7 @@ struct HDRImage
     //! Create an HDRImage from a (Radiance) HDR data.
     //! @param[in] srcData the HDR data
     //! @param[in] srcLen the number of bytes of HDR data
-    DGNPLATFORM_EXPORT static Image FromHDR(uint8_t const* srcData, uint32_t srcLen);
+    DGNPLATFORM_EXPORT static HDRImage FromHDR(uint8_t const* srcData, uint32_t srcLen);
 
     bool IsValid() const {return 0!=m_width && 0!=m_height && 0 != m_image.size();} //!< @return true if this image holds valid data
 }; 
@@ -554,12 +554,16 @@ struct  Environment
 {
     enum class Mapping : uint32_t { Spherical, Cylindrical, Angular, Rectangular };
 
-    struct Map { Mapping m_mapping; Image m_image; };
-    struct HDRMap { Mapping m_mapping; HDRImage m_image; };
+    struct Map { Mapping m_mapping; Image m_image; DPoint2d m_offset; };
+    struct HDRMap { Mapping m_mapping; HDRImage m_image; DPoint2d m_offset; double m_gamma; };
 
     HDRMap              m_diffuse;              // Diffuse lighting.
+    HDRMap              m_reflection;
     bvector<HDRMap>     m_specularLODs;;
     Render::Image       m_background;
+
+    HDRMap const& GetDiffuse() const { return m_diffuse; }
+    void SetDiffuse(HDRMap&& diffuse) { m_diffuse = std::move(diffuse); }
 
     DGNPLATFORM_EXPORT static Environment FromSmartIBL (BeFileNameCR fileName); 
 

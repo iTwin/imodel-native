@@ -9,30 +9,148 @@
 
 #include <zlib/zip/unzip.h>
 
-
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+HDRImage HDRImage::FromHDR(uint8_t const* srcData, uint32_t srcLen)
+    {
+    return HDRImage();
+    }
 
 //=======================================================================================
 // @bsiclass                                            Ray.Bentley         01/2018
 //=======================================================================================
 struct SmartIblFile
 {
-    unzFile     m_zipFile = nullptr;
+    unzFile         m_zipFile = nullptr;
+    Utf8String      m_iblPath;
+    ByteStream      m_iblStream;
 
     ~SmartIblFile() { if (nullptr != m_zipFile) unzClose (m_zipFile); }
-
+                      
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   Open(BeFileNameCR fileName)
     {
-    ByteStream      iblStream;
 
     if (nullptr == (m_zipFile = unzOpen64 (Utf8String(fileName.c_str()).c_str())) ||
         SUCCESS != FindIBL () ||
-        SUCCESS != ReadCurrentFile(iblStream))
+        SUCCESS != ReadCurrentFile(m_iblStream))
         return ERROR;
-    
+
     return SUCCESS;
+    }
+
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ReadEnvironmentFile(Environment::HDRMap& map)
+    {
+    Utf8String      evFileName;
+    ByteStream      evFileBytes;
+
+    if (SUCCESS != FindString(evFileName, "EVfile = ") ||
+        SUCCESS != LocateFile (evFileName) ||
+        SUCCESS != ReadCurrentFile(evFileBytes))
+        return ERROR;
+
+    map.m_image = HDRImage::FromHDR(evFileBytes.GetData(), evFileBytes.GetSize());
+
+    if (!map.m_image .IsValid())
+        return ERROR;
+
+    int             iblMapping;
+
+    ReadValue(map.m_gamma,    "EVgamma = ", 1.0);
+    ReadValue(map.m_offset.x, "EVu = ", 0.0);
+    ReadValue(map.m_offset.y, "EVb = ", 0.0);
+    ReadValue(iblMapping,     "EVmap = ", 0); 
+
+    map.m_mapping = ConvertIblMapping(iblMapping);
+    return SUCCESS;
+    }
+
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Environment::Mapping    ConvertIblMapping(int iblMapping)
+    {
+    switch (iblMapping)
+        {
+        default:
+            BeAssert(false && "Invalid ibl mapping");
+            // fall through...
+        case 1:
+            return Environment::Mapping::Spherical;
+
+        case 2:
+            return Environment::Mapping::Cylindrical;
+
+        case 3:
+            return Environment::Mapping::Angular;
+
+        case 4:
+            return Environment::Mapping::Rectangular;
+        
+        }
+    }
+
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   LocateFile(Utf8StringCR fileName)
+    {
+    return  UNZ_OK == unzLocateFile(m_zipFile, (m_iblPath + fileName).c_str(), 2) ? SUCCESS : ERROR;
+    }
+
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   ReadValue(double& value, Utf8CP label, double defaultValue)
+    {
+    Utf8String      valueString;
+
+    if (SUCCESS != FindString(valueString, label) || 1 != std::sscanf(valueString.c_str(), "%lf", &value))
+        {
+        value = defaultValue;
+        return ERROR;
+        }
+    return SUCCESS;
+    }
+
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   ReadValue(int& value, Utf8CP label, int defaultValue)
+    {
+    Utf8String      valueString;
+
+    if (SUCCESS != FindString(valueString, label) || 1 != std::sscanf(valueString.c_str(), "%d", &value))
+        {
+        value = defaultValue;
+        return ERROR;
+        }
+    return SUCCESS;
+    }
+
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   FindString(Utf8StringR string, Utf8CP label)
+    {
+    Utf8CP   pStart, pEnd, pStream = reinterpret_cast<Utf8CP>(m_iblStream.data());
+
+    if (nullptr == (pStart = std::strstr (pStream, label)) ||
+        nullptr == (pEnd = std::strchr (pStart, '\n')))
+        return ERROR;
+
+    pStart += std::strlen(label);
+
+    string = Utf8String(pStart, pEnd - pStart);
+
+    string.Trim("\"");      // Remove quotes.
+    return SUCCESS;    
     }
 
 /*-----------------------------------------------------------------------------------**//**
@@ -70,7 +188,14 @@ BentleyStatus FindIBL ()
 
         Utf8String      nameString(zipName);
         if (nameString.EndsWith(".ibl"))
+            {
+            size_t      separatorPosition;
+
+            if (std::string::npos != (separatorPosition = nameString.find_last_of('/', nameString.size())))
+                m_iblPath = nameString.substr(0, separatorPosition + 1);
+
             return SUCCESS;
+            }
         }
     return ERROR;
     }
@@ -90,6 +215,11 @@ Environment Environment::FromSmartIBL (BeFileNameCR fileName)
 
     if (SUCCESS != iblFile.Open(fileName))
         return environment;
+
+    HDRMap  diffuse;
+
+    if (SUCCESS == iblFile.ReadEnvironmentFile(diffuse))
+        environment.SetDiffuse(std::move(diffuse));
 
     return environment;
     }
