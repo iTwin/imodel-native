@@ -77,7 +77,7 @@ BentleyStatus ChangeSummaryExtractor::Extract(Context& ctx, ECInstanceId summary
         ECInstanceId primaryInstanceId = rowEntry.GetPrimaryInstanceId();
         if (primaryClass == nullptr || !primaryInstanceId.IsValid())
             {
-            ctx.Issues().Report("Could not determine the primary instance corresponding to a change to table %s", rowEntry.GetTableName().c_str());
+            ctx.Issues().ReportV("Could not determine the primary instance corresponding to a change to table %s", rowEntry.GetTableName().c_str());
             BeAssert(false && "Could not determine the primary instance corresponding to a change.");
             return ERROR;
             }
@@ -125,7 +125,7 @@ BentleyStatus ChangeSummaryExtractor::ExtractRelInstance(Context& ctx, ECInstanc
     ClassMap const* classMap = ctx.GetPrimaryFileSchemaManager().GetClassMap(*primaryClass);
     if (classMap == nullptr)
         {
-        ctx.Issues().Report("Failed to extract change summary. The changed relationship class '%s' is not in the main ECDb, but in an attached file, which is not supported.",
+        ctx.Issues().ReportV("Failed to extract change summary. The changed relationship class '%s' is not in the main ECDb, but in an attached file, which is not supported.",
                             primaryClass->GetFullName());
         return ERROR;
         }
@@ -798,7 +798,7 @@ ChangeSummaryExtractor::Context::~Context()
         {
         if (BE_SQLITE_OK != changeCache.SaveChanges())
             {
-            Issues().Report("Failed to extract ChangeSummaries from change set: Could not commit changes to ChangeSummary cache file '%s'.", changeCache.GetDbFileName());
+            Issues().ReportV("Failed to extract ChangeSummaries from change set: Could not commit changes to ChangeSummary cache file '%s'.", changeCache.GetDbFileName());
             BeAssert(false);
             }
         }
@@ -813,7 +813,7 @@ ChangeSummaryExtractor::Context::~Context()
         {
         if (BE_SQLITE_OK != m_primaryECDb.AttachDb(m_attachedChangeCachePath.c_str(), TABLESPACE_ECChange))
             {
-            Issues().Report("Failed to extract ChangeSummaries from change set: Could not re-attach ChangeSummary cache file '%s' to '%s'.",
+            Issues().ReportV("Failed to extract ChangeSummaries from change set: Could not re-attach ChangeSummary cache file '%s' to '%s'.",
                             m_attachedChangeCachePath.c_str(), m_primaryECDb.GetDbFileName());
             BeAssert(false);
             }
@@ -847,7 +847,7 @@ DbResult ChangeSummaryExtractor::Context::Initialize()
         {
         if (!ChangeManager::IsChangeCacheAttachedAndValid(m_primaryECDb, true))
             {
-            Issues().Report("Failed to extract ChangeSummaries from change set: Change cache file attached to '%s' is no valid change cache file.", m_primaryECDb.GetDbFileName());
+            Issues().ReportV("Failed to extract ChangeSummaries from change set: Change cache file attached to '%s' is no valid change cache file.", m_primaryECDb.GetDbFileName());
             return BE_SQLITE_ERROR;
             }
 
@@ -862,7 +862,7 @@ DbResult ChangeSummaryExtractor::Context::Initialize()
         DbResult r = GetPrimaryECDb().DetachDb(TABLESPACE_ECChange);
         if (BE_SQLITE_OK != r)
             {
-            Issues().Report("Failed to extract ChangeSummaries from change set: Could not detach ChangeSummary cache file  from '%s': %s", GetPrimaryECDb().GetDbFileName(), GetPrimaryECDb().GetLastError().c_str());
+            Issues().ReportV("Failed to extract ChangeSummaries from change set: Could not detach ChangeSummary cache file  from '%s': %s", GetPrimaryECDb().GetDbFileName(), GetPrimaryECDb().GetLastError().c_str());
             return r;
             }
         }

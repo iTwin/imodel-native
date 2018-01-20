@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/PropertyNameExp.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -297,13 +297,13 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
 
     if (classMatches.empty() && propNameClassRefExpMatches.empty())
         {
-        ctx.Issues().Report("ECProperty expression '%s' does not match with any of the ECClasses in the ECSQL statement.", m_propertyPath.ToString().c_str());
+        ctx.Issues().ReportV("ECProperty expression '%s' does not match with any of the ECClasses in the ECSQL statement.", m_propertyPath.ToString().c_str());
         return ERROR;
         }
 
     if (classMatches.size() > 1)
         {
-        ctx.Issues().Report("ECProperty expression '%s' in ECSQL statement is ambiguous.", m_propertyPath.ToString().c_str());
+        ctx.Issues().ReportV("ECProperty expression '%s' in ECSQL statement is ambiguous.", m_propertyPath.ToString().c_str());
         return ERROR;
         }
 
@@ -341,7 +341,7 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
         {
         if (propNameClassRefExpMatches.size() > 1)
             {
-            ctx.Issues().Report("ECProperty expression '%s' in ECSQL statement is ambiguous. Class alias might be missing.", m_propertyPath.ToString().c_str());
+            ctx.Issues().ReportV("ECProperty expression '%s' in ECSQL statement is ambiguous. Class alias might be missing.", m_propertyPath.ToString().c_str());
             return ERROR;
             }
 

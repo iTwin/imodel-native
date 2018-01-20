@@ -139,7 +139,7 @@ ECSqlStatus SingleECSqlPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
 
     if (nativeSqlStat != BE_SQLITE_OK)
         {
-        ctx.Issues().Report("Preparing the ECSQL '%s' failed. Underlying SQLite statement failed to prepare: %s %s [SQL: %s]", GetECSql(),
+        ctx.Issues().ReportV("Preparing the ECSQL '%s' failed. Underlying SQLite statement failed to prepare: %s %s [SQL: %s]", GetECSql(),
                                                         ECDb::InterpretDbResult(nativeSqlStat), m_ecdb.GetLastError().c_str(), nativeSql.c_str());
 
         //even if this is a SQLite error, we want this to be an InvalidECSql error as the reason usually
@@ -767,7 +767,7 @@ DbResult ECSqlInsertPreparedStatement::StepForEndTableRelationship(ECInstanceKey
         //this can with inserting an end table relationship, as the INSERT really is an update. The SQLite update has a where exp
         //which checks that the FK of the row to be update is NULL. Therefore if the update doesn't affect anything it most likely
         //means that this ECSQL attempts to overwrite the FK which is not supported.
-        GetECDb().GetImpl().Issues().Report("Could not insert the ECRelationship (%s). Either the source or target constraint's " ECDBSYS_PROP_ECInstanceId " does not exist or the source or target constraint's cardinality is violated.", GetECSql());
+        GetECDb().GetImpl().Issues().ReportV("Could not insert the ECRelationship (%s). Either the source or target constraint's " ECDBSYS_PROP_ECInstanceId " does not exist or the source or target constraint's cardinality is violated.", GetECSql());
         return BE_SQLITE_CONSTRAINT_UNIQUE;
         }
 
@@ -892,7 +892,7 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
     SystemPropertyExpIndexMap const& specialTokenExpIndexMap = prepareInfo.GetAssignmentListExp().GetSpecialTokenExpIndexMap();
     if (specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::ECInstanceId()) || specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::ECClassId()))
         {
-        ctx.Issues().Report("Failed to prepare ECSQL '%s'. " ECDBSYS_PROP_ECInstanceId " or " ECDBSYS_PROP_ECClassId " are not allowed in SET clause of ECSQL UPDATE statement. ECDb does not support to modify those.",
+        ctx.Issues().ReportV("Failed to prepare ECSQL '%s'. " ECDBSYS_PROP_ECInstanceId " or " ECDBSYS_PROP_ECClassId " are not allowed in SET clause of ECSQL UPDATE statement. ECDb does not support to modify those.",
                                                         prepareInfo.GetExp().ToECSql().c_str());
         return ECSqlStatus::InvalidECSql;
         }
@@ -904,7 +904,7 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
             specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::TargetECInstanceId()) ||
             specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::TargetECClassId()))
             {
-            ctx.Issues().Report("Failed to prepare ECSQL '%s'. " ECDBSYS_PROP_SourceECInstanceId ", " ECDBSYS_PROP_SourceECClassId ", " ECDBSYS_PROP_TargetECInstanceId
+            ctx.Issues().ReportV("Failed to prepare ECSQL '%s'. " ECDBSYS_PROP_SourceECInstanceId ", " ECDBSYS_PROP_SourceECClassId ", " ECDBSYS_PROP_TargetECInstanceId
                                                             ", or " ECDBSYS_PROP_TargetECClassId " are not allowed in the SET clause of ECSQL UPDATE statement. "
                                                             "ECDb does not support to modify those as they are keys of the relationship. Instead delete the relationship and insert the desired new one.",
                                                             prepareInfo.GetExp().ToECSql().c_str());
@@ -944,7 +944,7 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
 
             if (getTablesVisitor.GetTables().find(&table) == getTablesVisitor.GetTables().end())
                 {
-                ctx.Issues().Report("Failed to prepare ECSQL '%s'. The expression '%s' in the SET clause refers to different tables. This is not yet supported.",
+                ctx.Issues().ReportV("Failed to prepare ECSQL '%s'. The expression '%s' in the SET clause refers to different tables. This is not yet supported.",
                                                                 prepareInfo.GetExp().ToECSql().c_str(), assignmentExp.ToECSql().c_str());
                 return ECSqlStatus::InvalidECSql;
                 }
@@ -1251,7 +1251,7 @@ ECSqlStatus ECSqlUpdatePreparedStatement::CheckForReadonlyProperties(PrepareInfo
 
             if (prop.IsReadOnlyFlagSet() && prop.GetIsReadOnly() && !prop.IsCalculated())
                 {
-                prepareInfo.GetContext().Issues().Report("The ECProperty '%s' is read-only. Read-only ECProperties cannot be modified by an ECSQL UPDATE statement. %s",
+                prepareInfo.GetContext().Issues().ReportV("The ECProperty '%s' is read-only. Read-only ECProperties cannot be modified by an ECSQL UPDATE statement. %s",
                                                                        prop.GetName().c_str(), prepareInfo.GetExp().ToECSql().c_str());
                 return ECSqlStatus::InvalidECSql;
                 }
