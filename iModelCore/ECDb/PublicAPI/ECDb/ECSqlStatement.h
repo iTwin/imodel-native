@@ -76,6 +76,17 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! @return ECSqlStatus::Success or error codes
         ECDB_EXPORT ECSqlStatus Prepare(ECDb const& ecdb, Utf8CP ecsql, ECCrudWriteToken const* token, bool logErrors = true);
 
+        //! Prepares the statement with the specified readonly ECSQL for multithreading senario.
+        //! @param[in] ecdb ECDb context
+        //! @param[in] ecsql ECSQL
+        //! @param[in] secondaryConn A readonly BeSQLite connection to same ecdb as provided in first parameter. ECSQL statement would 
+        //! back its sqlite statement using this connection instead of default connection. 
+        //! This is usefull for multi-threading scenario to improve query performance.
+        //! @param[in] logErrors true: Prepare errors will be logged. false: Prepare errors will not be logged
+        //! @return ECSqlStatus::Success or error codes
+        ECDB_EXPORT ECSqlStatus Prepare(ECDb const& ecdb, Utf8CP ecsql, DbCR secondaryConn, bool logErrors = true);
+
+
         //! Indicates whether this statement is already prepared or not.
         //! @return true, if it is prepared. false otherwise
         ECDB_EXPORT bool IsPrepared() const;

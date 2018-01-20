@@ -485,7 +485,7 @@ BentleyStatus TableSpaceSchemaManager::TryGetClassMap(ClassMap*& classMap, Class
         return ERROR;
         }
     {
-    BeMutexHolder(GetECDb().GetImpl().GetMutex());
+    BeMutexHolder ecdbMutex(GetECDb().GetImpl().GetMutex());
     classMap = nullptr;
     auto it = m_classMapDictionary.find(ecClass.GetId());
     if (m_classMapDictionary.end() != it)
@@ -495,8 +495,8 @@ BentleyStatus TableSpaceSchemaManager::TryGetClassMap(ClassMap*& classMap, Class
         }
     }
 
-    BeSqliteDbMutexHolder(const_cast<ECDb&>(GetECDb()));
-    BeMutexHolder(GetECDb().GetImpl().GetMutex());
+    BeSqliteDbMutexHolder dbMutex(const_cast<ECDb&>(GetECDb()));
+    BeMutexHolder ecdbMutex(GetECDb().GetImpl().GetMutex());
     auto it = m_classMapDictionary.find(ecClass.GetId());
     if (m_classMapDictionary.end() != it)
         {

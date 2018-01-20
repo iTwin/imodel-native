@@ -1933,7 +1933,7 @@ BentleyStatus SchemaReader::Context::Postprocess(SchemaReader const& reader) con
 //+---------------+---------------+---------------+---------------+---------------+--------
 void SchemaReader::ReaderCache::Clear() const
     {
-    BeMutexHolder(m_ecdb.GetImpl().GetMutex());
+    BeMutexHolder lock(m_ecdb.GetImpl().GetMutex());
     m_classIdCache.clear();
     m_enumCache.clear();
     m_koqCache.clear();

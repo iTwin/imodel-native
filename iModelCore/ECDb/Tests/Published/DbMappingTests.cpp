@@ -6,12 +6,189 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
-
+#include <random>
+#include <thread>
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 struct DbMappingTestFixture : ECDbTestFixture {};
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                          05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, CreateALargeFile)
+    {
+    BeFileName existingFile(L"C:\\Temp\\largeECDb.ecdb");
+    if (!existingFile.DoesPathExist())
+        {
+        ASSERT_EQ(SUCCESS, SetupECDb("largeECDb.ecdb", SchemaItem(
+            "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
+            "  <ECEntityClass typeName='BaseClass'  modifier='none'>"
+            "      <ECProperty propertyName='i1' typeName='int' />"
+            "      <ECProperty propertyName='i2' typeName='int' />"
+            "      <ECProperty propertyName='i3' typeName='int' />"
+            "      <ECProperty propertyName='i4' typeName='int' />"
+            "      <ECProperty propertyName='f1' typeName='double' />"
+            "      <ECProperty propertyName='f2' typeName='double' />"
+            "      <ECProperty propertyName='f3' typeName='double' />"
+            "      <ECProperty propertyName='f4' typeName='double' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='a2m'  modifier='none'>"
+            "       <BaseClass>BaseClass</BaseClass>"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='b2m'  modifier='none'>"
+            "       <BaseClass>BaseClass</BaseClass>"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='c2m'  modifier='none'>"
+            "       <BaseClass>BaseClass</BaseClass>"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='d2m'  modifier='none'>"
+            "       <BaseClass>BaseClass</BaseClass>"
+            "  </ECEntityClass>"
+            "</ECSchema>")));
+
+        std::function<void(ECDbR, Utf8CP, std::mt19937&, int)> fillData = [] (ECDbR ecdb, Utf8CP className, std::mt19937& mt, int rows)
+            {
+            std::uniform_real_distribution<float> reald(-10000.0, 10000.0);
+            std::uniform_int_distribution<int> intd(std::numeric_limits<int>().min(), std::numeric_limits<int>().max());
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, SqlPrintfString("INSERT INTO %s(i1,i2,i3,i4,f1,f2,f3,f4) values(?,?,?,?,?,?,?,?)", className)));
+            while (rows-- > 0)
+                {
+                stmt.Reset();
+                stmt.ClearBindings();
+                stmt.BindInt(1, intd(mt));
+                stmt.BindInt(2, intd(mt));
+                stmt.BindInt(3, intd(mt));
+                stmt.BindInt(4, intd(mt));
+                stmt.BindDouble(5, reald(mt));
+                stmt.BindDouble(6, reald(mt));
+                stmt.BindDouble(7, reald(mt));
+                stmt.BindDouble(8, reald(mt));
+                ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+                }
+
+            ecdb.SaveChanges();
+            };
+
+        std::random_device rd;
+        std::mt19937 mt(rd());
+        const int million = 1000000; //1 million
+
+        fillData(m_ecdb, "ts.a2m", mt, 2 * million);
+        fillData(m_ecdb, "ts.b2m", mt, 2 * million);
+        fillData(m_ecdb, "ts.c2m", mt, 2 * million);
+        fillData(m_ecdb, "ts.d2m", mt, 2 * million);
+        
+        BeFileName out(m_ecdb.GetDbFileName(), true);
+        m_ecdb.CloseDb();
+        BeFileName::BeCopyFile(out, existingFile);
+        }
+
+
+
+    std::function<void(ECDb*, Db*, Utf8CP)> taskFunc = [] (ECDb* conn, Db* db, Utf8CP sql)
+        {
+        printf("Starting thread %I32x task = %s\n", (int) BeThreadUtilities::GetCurrentThreadId(), sql);
+        StopWatch timer(true);
+        ECSqlStatement stmt;
+        if (db)
+            stmt.Prepare(*conn, sql, *db);
+        else
+            stmt.Prepare(*conn, sql);
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            i++;
+            }
+
+        timer.Stop();
+        printf("Completed thread %I32x [rows=%d] [timer=%f.4 sec]\n", (int) BeThreadUtilities::GetCurrentThreadId(), i, timer.GetElapsedSeconds());
+        };
+
+    const std::vector<Utf8CP>tasks = {
+        "select * from ts.a2m l, ts.b2m r where l.i1=r.i1",
+        "select * from ts.a2m l, ts.b2m r where l.i1=r.i2",
+        "select * from ts.a2m l, ts.b2m r where l.i1=r.i3",
+        "select * from ts.a2m l, ts.b2m r where l.i1=r.i4",
+        "select * from ts.a2m l, ts.b2m r where l.i2=r.i1",
+        "select * from ts.a2m l, ts.b2m r where l.i2=r.i2",
+        "select * from ts.a2m l, ts.b2m r where l.i2=r.i3",
+        "select * from ts.a2m l, ts.b2m r where l.i2=r.i4",
+        "select * from ts.a2m l, ts.b2m r where l.i3=r.i1",
+        "select * from ts.a2m l, ts.b2m r where l.i3=r.i2",
+        "select * from ts.a2m l, ts.b2m r where l.i3=r.i3",
+        "select * from ts.a2m l, ts.b2m r where l.i3=r.i4",
+        "select * from ts.a2m l, ts.b2m r where l.i4=r.i1",
+        "select * from ts.a2m l, ts.b2m r where l.i4=r.i2",
+        "select * from ts.a2m l, ts.b2m r where l.i4=r.i3",
+        "select * from ts.a2m l, ts.b2m r where l.i4=r.i4",
+        };
+
+    std::function<void(BeFileName)> singleThread = [&taskFunc,&tasks] (BeFileName ecdbFile)
+        {
+        StopWatch timer(true);
+        ECDb ecdb;
+        ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbFile, Db::OpenParams(Db::OpenMode::Readonly)));
+        for (Utf8CP task_sql : tasks)
+            {
+            taskFunc(&ecdb, nullptr, task_sql);
+            }
+        timer.Stop();
+        printf("SingleConnection/SingleThread : [task_count=%zd] [hardware_concurrency=%d] [time: %.4f sec]\n", tasks.size(), std::thread::hardware_concurrency(), timer.GetElapsedSeconds());
+        };
+
+    std::function<void(BeFileName)> multiThread = [&taskFunc, &tasks] (BeFileName ecdbFile)
+        {
+        StopWatch timer(true);
+        ECDb ecdb;
+        ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbFile, Db::OpenParams(Db::OpenMode::Readonly)));
+        std::vector<std::thread> threads;
+        for (Utf8CP task_sql : tasks)
+            {
+            threads.push_back( std::thread(taskFunc, &ecdb, nullptr, task_sql));
+            }
+
+        for (std::thread& thread : threads)
+            thread.join();
+
+        timer.Stop();
+        printf("SingleConnection/MultiThread  : [task_count=%zd] [hardware_concurrency=%d] [time: %.4f sec]\n", tasks.size(), std::thread::hardware_concurrency(), timer.GetElapsedSeconds());
+        };
+
+
+    std::function<void(BeFileName)> multiThread2 = [&taskFunc, &tasks] (BeFileName ecdbFile)
+        {
+        StopWatch timer(true);
+        ECDb ecdb;
+        ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbFile, Db::OpenParams(Db::OpenMode::Readonly)));
+        std::vector<std::thread> threads;
+        std::vector<std::unique_ptr<Db>> connections;
+        for (Utf8CP task_sql : tasks)
+            {
+            auto itorCon = connections.insert(connections.end(), std::unique_ptr<Db>(new Db()));
+            Db& threadCon = *(*itorCon);
+            ASSERT_EQ(BE_SQLITE_OK, threadCon.OpenBeSQLiteDb(ecdbFile, Db::OpenParams(Db::OpenMode::Readonly)));
+
+            threads.push_back(std::thread(taskFunc, &ecdb, &threadCon, task_sql));
+            }
+
+        for (std::thread& thread : threads)
+            thread.join();
+
+        timer.Stop();
+        printf("ManyConnection/MultiThread  : [task_count=%zd] [hardware_concurrency=%d] [time: %.4f sec]\n", tasks.size(), std::thread::hardware_concurrency(), timer.GetElapsedSeconds());
+        };
+
+
+    multiThread2(existingFile);
+    multiThread(existingFile);
+    singleThread(existingFile);
+
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Affan.Khan                          05/17
 //+---------------+---------------+---------------+---------------+---------------+------
