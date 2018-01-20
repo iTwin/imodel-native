@@ -2494,6 +2494,14 @@ static void printLog(void *pArg, int iErrCode, Utf8CP zMsg)
 #endif
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Affan.Khan                     12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult Db::_VerifyProfileVersion(OpenParams const& params) 
+    { 
+    return BeSQLiteProfileManager::UpgradeProfile(*this, params);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::DoOpenDb(Utf8CP dbName, OpenParams const& params)
@@ -2779,14 +2787,6 @@ DbResult Db::CheckProfileVersion(bool& fileIsAutoUpgradable, ProfileVersion cons
         LOG.debugv("File's %s profile (%s) is up-to-date.", profileName, actualProfileVersion.ToString().c_str());
 
     return BE_SQLITE_OK;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                    Krischan.Eberle                   11/14
-//+---------------+---------------+---------------+---------------+---------------+------
-DbResult Db::UpgradeBeSQLiteProfile()
-    {
-    return BeSQLiteProfileManager::UpgradeProfile(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4163,9 +4163,6 @@ static DbResult addEmbedFile(Db& db, Utf8CP name, Utf8CP type, Utf8CP descriptio
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeBriefcaseBasedId DbEmbeddedFileTable::GetNextEmbedFileId() const
     {
-    if (BE_SQLITE_OK != BeSQLiteProfileManager::UpgradeProfile(m_db))
-        return BeBriefcaseBasedId();
-
     BeAssert(m_db.TableExists(BEDB_TABLE_EmbeddedFile));
     return BeBriefcaseBasedId(m_db, BEDB_TABLE_EmbeddedFile, "Id");
     }

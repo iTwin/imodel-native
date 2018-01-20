@@ -36,7 +36,7 @@ private:
         //! is not up-to-date).
         //! @param[in] db BeSQLite file handle to upgrade
         //! @return BE_SQLITE_OK if successful. Error code otherwise.
-        static DbResult UpgradeProfile(DbR db);
+        static DbResult UpgradeProfile(DbR db, Db::OpenParams const& params);
 
         //! Reads the version of the BeSQLite profile of the given BeSQLite file
         //! @return BE_SQLITE_OK in case of success or error code if the SQLite database is no

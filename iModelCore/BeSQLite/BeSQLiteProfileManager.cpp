@@ -23,12 +23,12 @@ BEGIN_BENTLEY_SQLITE_NAMESPACE
 // @bsimethod                                Krischan.Eberle                10/2014
 //---------------+---------------+---------------+---------------+---------------+------
 //static
-DbResult BeSQLiteProfileManager::UpgradeProfile(DbR db)
+DbResult BeSQLiteProfileManager::UpgradeProfile(DbR db, Db::OpenParams const& openParams)
     {
-    if (db.IsReadonly())
+    if (!db.GetDefaultTransaction()->IsActive())
         {
-        LOG.errorv("Upgrade of " PROFILENAME " profile of file '%s' failed. File must be opened in readwrite mode.", db.GetDbFileName());
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        BeAssert(false && "Programmer Error. ECDb expects that BeSqlite::OpenBeSQliteDb keeps the default transaction active when it is called to upgrade its profile.");
+        return BE_SQLITE_ERROR_NoTxnActive;
         }
 
     ProfileVersion actualProfileVersion(0, 0, 0, 0);
@@ -48,6 +48,14 @@ DbResult BeSQLiteProfileManager::UpgradeProfile(DbR db)
 
     LOG.infov("Version of file's " PROFILENAME " profile is too old. Upgrading '%s' now...", db.GetDbFileName());
 
+    //if ECDb file is readonly, reopen it in read-write mode
+    if (!openParams._ReopenForProfileUpgrade(db))
+        {
+        LOG.error("Upgrade of file's " PROFILENAME " profile failed because file could not be re-opened in read-write mode.");
+        return BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite;
+        }
+
+    BeAssert(!db.IsReadonly());
     //Call upgrader sequence and let upgraders incrementally upgrade the profile
     //to the latest state
     std::vector<std::unique_ptr<BeSQLiteProfileUpgrader>> upgraders;
@@ -64,7 +72,6 @@ DbResult BeSQLiteProfileManager::UpgradeProfile(DbR db)
 
     //after upgrade procedure set new profile version in BeSQLite file
     stat = AssignProfileVersion(db);
-
     if (stat != BE_SQLITE_OK)
         {
         LOG.errorv("Upgrade of " PROFILENAME " profile of file '%s' failed. Could not assign new profile version. %s",

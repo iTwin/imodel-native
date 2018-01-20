@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/BeSQLiteDb_Test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BeSQLitePublishedTests.h"
@@ -1077,9 +1077,7 @@ TEST_F (BeSQLiteDbTests, SaveCreationDate)
         result=true;
     }
     EXPECT_TRUE (result);
-
-    EXPECT_EQ (BE_SQLITE_OK, m_db.UpgradeBeSQLiteProfile ());
-
+        
     m_db.CloseDb ();
 }
 

@@ -2336,7 +2336,7 @@ protected:
     //!
     //! @param[in] params Open parameters
     //! @return Code indicating success or error.
-    virtual DbResult _VerifyProfileVersion(OpenParams const& params) {return BE_SQLITE_OK;}
+    BE_SQLITE_EXPORT virtual DbResult _VerifyProfileVersion(OpenParams const& params);
 
     virtual DbResult _OnDbAttached(Utf8CP filename, Utf8CP dbAlias) const { return BE_SQLITE_OK; }
     virtual DbResult _OnDbDetached(Utf8CP dbAlias) const { return BE_SQLITE_OK; }
@@ -2830,12 +2830,6 @@ public:
     //!             BE_SQLITE_Error_ProfileTooNew if file's profile is too new to be opened by this API.
     //!             BE_SQLITE_Error_ProfileTooNewForReadWrite if file's profile is too new to be opened read-write, i.e. @p openModeIsReadonly is false
     BE_SQLITE_EXPORT static DbResult CheckProfileVersion(bool& fileIsAutoUpgradable, ProfileVersion const& expectedProfileVersion, ProfileVersion const& actualProfileVersion, ProfileVersion const& minimumUpgradableProfileVersion, bool openModeIsReadonly, Utf8CP profileName);
-
-    //! Upgrades this file's BeSQLite profile.
-    //! @remarks Unlike the other profiles a BeSQLite profile is never upgraded implicitly. ECDb calls this as it needs
-    //! to make sure the profile is up-to-date.
-    //! @return BE_SQLITE_OK in case of success, error codes otherwise
-    BE_SQLITE_EXPORT DbResult UpgradeBeSQLiteProfile();
 
     //! Check if the Db is at or beyond its expiration date.
     //! @see QueryExpirationDate, CreateParams::SetExpirationDate
