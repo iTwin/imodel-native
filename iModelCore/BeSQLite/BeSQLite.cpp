@@ -23,7 +23,6 @@
 #include <Bentley/bvector.h>
 #include <Bentley/bmap.h>
 #include <string>
-#include <BeSQLite/DownloadAdmin.h>
 #include "BeSQLiteProfileManager.h"
 #include <prg.h>
 
@@ -37,6 +36,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 
 static Utf8CP loadZlibVfs();
 static Utf8CP loadSnappyVfs();
+Utf8CP loadEncryptedDbVfs();
 
 #if !defined (NDEBUG)
 extern "C" int checkNoActiveStatements(SqlDbP db);
@@ -1686,20 +1686,23 @@ DbResult Db::CreateNewDb(Utf8CP dbName, BeGuid dbGuid, CreateParams const& param
         return BE_SQLITE_CANTOPEN;
 #endif
 
+    Utf8CP vfs = 0;
     OpenMode openMode = OpenMode::Create;
     if (dbName && (0 != strcmp(dbName, BEDB_MemoryDb)))
         {
-        WString dbNameW(dbName, BentleyCharEncoding::Utf8); // string conversion
-        if (BeFileName::DoesPathExist(dbNameW.c_str()))
+        BeFileName dbFileName(dbName, BentleyCharEncoding::Utf8);
+        if (dbFileName.DoesPathExist())
             {
             if (params.m_failIfDbExists)
                 return BE_SQLITE_ERROR_FileExists;
 
             openMode = OpenMode::ReadWrite;
             }
+
+        if (params.GetEncryptionParams().HasKey())
+            vfs = loadEncryptedDbVfs();
         }
 
-    Utf8CP vfs = 0;
     switch (params.m_compressedDb)
         {
         case CreateParams::CompressDb_Zlib:
@@ -1712,6 +1715,10 @@ DbResult Db::CreateNewDb(Utf8CP dbName, BeGuid dbGuid, CreateParams const& param
 
     SqlDbP sqlDb;
     DbResult rc = (DbResult) sqlite3_open_v2(dbName, &sqlDb, (int) openMode, vfs);
+    if (BE_SQLITE_OK != rc)
+        return  rc;
+        
+    rc = (DbResult) sqlite3_key(sqlDb, params.GetEncryptionParams().GetKey(), params.GetEncryptionParams().GetKeySize());
     if (BE_SQLITE_OK != rc)
         return  rc;
 
@@ -2436,14 +2443,10 @@ static DbResult isValidDbFile(Utf8CP filename, Utf8CP& vfs)
     tester.Close();
 
     DbResult result = BE_SQLITE_NOTADB;
+    bool doFileSizeCheck = true;
     Utf8CP ident = (Utf8CP)header;
     if (0 == strcmp(ident, SQLITE_FORMAT_SIGNATURE))
         result = BE_SQLITE_OK;
-    else if (nullptr != BeSQLiteLib::GetDownloadAdmin() && (0 == strcmp(ident, DOWNLOAD_FORMAT_SIGNATURE)))
-        {
-        vfs = BeSQLiteLib::GetDownloadAdmin()->GetVfs();
-        result = BE_SQLITE_OK;
-        }
     else if (0 == strcmp(ident, SQLZLIB_FORMAT_SIGNATURE))
         {
         vfs = loadZlibVfs();
@@ -2454,20 +2457,29 @@ static DbResult isValidDbFile(Utf8CP filename, Utf8CP& vfs)
         vfs = loadSnappyVfs();
         result = BE_SQLITE_OK;
         }
+    else if (0 == strcmp(ident, ENCRYPTED_BESQLITE_FORMAT_SIGNATURE))
+        {
+        vfs = loadEncryptedDbVfs();
+        doFileSizeCheck = false; // this VFS lays out the file differently
+        result = BE_SQLITE_OK;
+        }
 
     if (BE_SQLITE_OK != result)
         return result;
 
-    //  Extract big endian values
-    uint32_t pageSize = (header[DBFILE_PAGESIZE_OFFSET+0] << 8) + header[DBFILE_PAGESIZE_OFFSET+1];
-    uint64_t pageCount = (header[DBFILE_PAGECOUNT_OFFSET+0] << 24) + (header[DBFILE_PAGECOUNT_OFFSET+1] << 16) + (header[DBFILE_PAGECOUNT_OFFSET+2] << 8) + header[DBFILE_PAGECOUNT_OFFSET+3];
-    uint64_t requiredMin = pageSize*pageCount;
-    uint64_t filesize;
-    BeFileName::GetFileSize(filesize, filenameW.c_str());
-    if (filesize<requiredMin)
+    if (doFileSizeCheck)
         {
-        LOG.errorv("isValidDbFile: file %s is truncated", filename);
-        return BE_SQLITE_CORRUPT_VTAB;
+        //  Extract big endian values
+        uint32_t pageSize = (header[DBFILE_PAGESIZE_OFFSET+0] << 8) + header[DBFILE_PAGESIZE_OFFSET+1];
+        uint64_t pageCount = (header[DBFILE_PAGECOUNT_OFFSET+0] << 24) + (header[DBFILE_PAGECOUNT_OFFSET+1] << 16) + (header[DBFILE_PAGECOUNT_OFFSET+2] << 8) + header[DBFILE_PAGECOUNT_OFFSET+3];
+        uint64_t requiredMin = pageSize*pageCount;
+        uint64_t filesize;
+        BeFileName::GetFileSize(filesize, filenameW.c_str());
+        if (filesize<requiredMin)
+            {
+            LOG.errorv("isValidDbFile: file %s is truncated", filename);
+            return BE_SQLITE_CORRUPT_VTAB;
+            }
         }
 
     return BE_SQLITE_OK;
@@ -2516,6 +2528,10 @@ DbResult Db::DoOpenDb(Utf8CP dbName, OpenParams const& params)
 
     SqlDbP sqlDb;
     rc = (DbResult) sqlite3_open_v2(dbName, &sqlDb, (int) params.m_openMode, vfs);
+    if (BE_SQLITE_OK != rc)
+        return  rc;
+
+    rc = (DbResult) sqlite3_key(sqlDb, params.GetEncryptionParams().GetKey(), params.GetEncryptionParams().GetKeySize());
     if (BE_SQLITE_OK != rc)
         return  rc;
 
@@ -4714,10 +4730,6 @@ static Utf8CP loadSnappyVfs()
 
     return s_vfsSnappy;
     }
-
-static IDownloadAdmin* s_downloadAdmin = nullptr;
-void BeSQLiteLib::SetDownloadAdmin(IDownloadAdmin& dlAdmin) {if (nullptr == s_downloadAdmin) s_downloadAdmin = &dlAdmin;}
-IDownloadAdmin* BeSQLiteLib::GetDownloadAdmin() {return s_downloadAdmin;}
 
 /*---------------------------------------------------------------------------------**//**
 * implementation of SQL "InVirtualSet" function. Returns 1 if the value is contained in the set.
