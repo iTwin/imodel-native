@@ -425,6 +425,28 @@ ChangeSet::ConflictResolution ApplyRevisionChangeSet::_OnConflict(ChangeSet::Con
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    01/2018
+//---------------------------------------------------------------------------------------
+Utf8CP GetConflictCauseDescription(ChangeSet::ConflictCause cause)
+    {
+    switch (cause)
+        {
+        case ChangeSet::ConflictCause::Data:
+            return "Data (PRIMARY KEY found, but data was changed)";
+        case ChangeSet::ConflictCause::NotFound:
+            return "Not Found (PRIMARY KEY)";
+        case ChangeSet::ConflictCause::Conflict:
+            return "Conflict (Causes duplicate PRIMARY KEY)";
+        case ChangeSet::ConflictCause::Constraint:
+            return "Constraint (Causes UNIQUE, CHECK or NOT NULL constraint violation)";
+        case ChangeSet::ConflictCause::ForeignKey:
+            return "ForeignKey (Causes FOREIGN KEY constraint violation)";
+        default:
+            return "Unknown";
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
 // static
@@ -437,26 +459,42 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
     BeAssert(result == BE_SQLITE_OK);
     UNUSED_VARIABLE(result);
 
+    if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
+        {
+        LOG.infov("------------------------------------------------------------------");
+        LOG.infov("Conflict detected - Cause: %s", GetConflictCauseDescription(cause));
+        iter.Dump(dgndb, false, 1);
+        }
+
     if (cause == ChangeSet::ConflictCause::NotFound)
         {
+        /*
+        * Note: If ConflictCause = NotFound, the primary key was not found, and returning ConflictResolution::Replace is
+        * not an option at all - this will cause a BE_SQLITE_MISUSE error.
+        */
         if (opcode == DbOpcode::Delete)
-            return ChangeSet::ConflictResolution::Skip; // This is caused by propagate delete on a foreign key. It is not a problem.
+            {
+            // Caused by CASCADE DELETE on a foreign key, and is usually not a problem. 
+            LOG.infov("Conflict resolved by keeping the existing entry and skipping the change");
+            return ChangeSet::ConflictResolution::Skip;
+            }
 
-        BeAssert(false && "Ensure IDs are not reused - this may result in update of a record that has been previously deleted"); 
-            // Note: Cannot return ConflictResolution::Replace since that will cause BE_SQLITE_MISUSE error
+        
+        if (opcode == DbOpcode::Update && 0 == ::strncmp(tableName, "ec_", 3))
+            {
+            // Caused by a ON DELETE SET NULL constraint on a foreign key - this is known to happen with "ec_" tables, but needs investigation if it happens otherwise        
+            LOG.infov("Conflict resolved by keeping the existing entry and skipping the change");
+            return ChangeSet::ConflictResolution::Skip;
+            }
+
+        LOG.infov("Aborted conflict resolution");
+        return ChangeSet::ConflictResolution::Abort; 
         }
 
     auto control = dgndb.GetOptimisticConcurrencyControl();
     if (nullptr != control)
         {
         return control->_OnConflict(dgndb, cause, iter);
-        }
-
-    if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
-        {
-        LOG.infov("Conflict detected - incoming revision %s:", indirect ? "skipped" : "replaced");
-        BeAssert(tableName != nullptr);
-        iter.Dump(dgndb, false, 1);
         }
 
     /*
@@ -479,8 +517,9 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
      *      - Only one user can make a direct change at one time, and the next user has to pull those changes before getting a
      *        lock to the same element
      *
-     * + Also see comments in TxnManager::MergeRevision()
+     * + Also see comments in TxnManager::MergeDataChangesInRevision()
      */
+    LOG.infov("Conflicting resolved by replacing the existing entry with the change");
     return ChangeSet::ConflictResolution::Replace;
     }
 
@@ -1500,27 +1539,72 @@ RevisionStatus RevisionManager::DoReinstateRevision(DgnRevisionCR revision)
 //---------------------------------------------------------------------------------------
 void OptimisticConcurrencyControlBase::_ConfigureBriefcaseManager(IBriefcaseManager& b)
     {
-    b.StartBulkOperation(); // always run in bulk operation mode!
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Sam.Wilson                         01/2018
 //---------------------------------------------------------------------------------------
-void OptimisticConcurrencyControlBase::_OnProcessRequest(IBriefcaseManager& b, IBriefcaseManager::Request& req, IBriefcaseManager::RequestPurpose)
+void OptimisticConcurrencyControlBase::_OnProcessRequest(IBriefcaseManager::Request& req, IBriefcaseManager&, IBriefcaseManager::RequestPurpose)
     {
-    // In optimistic concurrency, we don't acquire locks. Instead, we report them.
-    std::swap(m_locks, req.Locks().GetLockSet());
+    std::swap(m_locksTemp, req.Locks().GetLockSet()); // prepare to steal the locks
+
+    BeAssert(req.Locks().GetLockSet().empty());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Sam.Wilson                         01/2018
 //---------------------------------------------------------------------------------------
-void OptimisticConcurrencyControlBase::_OnProcessedRequest(IBriefcaseManager& b, IBriefcaseManager::Request& req, IBriefcaseManager::RequestPurpose, IBriefcaseManager::Response& response)
+void OptimisticConcurrencyControlBase::_OnProcessedRequest(IBriefcaseManager::Request& req, IBriefcaseManager&, IBriefcaseManager::RequestPurpose, IBriefcaseManager::Response& response)
     {
     if (response.Result() != RepositoryStatus::Success)
-        std::swap(m_locks, req.Locks().GetLockSet());
+        {
+        std::swap(m_locksTemp, req.Locks().GetLockSet()); // restore the locks that we stole
+        }
+    else
+        {
+        m_locks.insert(m_locksTemp.begin(), m_locksTemp.end()); // take ownership of the locks, so that we can report them to the caller (just for information purposes)
+        m_locksTemp.clear();
+        }
+    
+    BeAssert(m_locksTemp.empty());
+    }
 
-    b.StartBulkOperation(); // always remain in bulk operation mode!
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                         01/2018
+//---------------------------------------------------------------------------------------
+void OptimisticConcurrencyControlBase::_OnExtractRequest(IBriefcaseManager::Request& req, IBriefcaseManager&)
+    {
+    BeAssert(m_locksTemp.empty());
+    
+    // In optimistic concurrency, we don't acquire locks. Instead, we report them.
+    auto& rlocks = req.Locks().GetLockSet();
+    m_locks.insert(rlocks.begin(), rlocks.end());   // steal the locks
+    rlocks.clear();
+
+    BeAssert(req.Locks().GetLockSet().empty());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                         01/2018
+//---------------------------------------------------------------------------------------
+void OptimisticConcurrencyControlBase::_OnExtractedRequest(IBriefcaseManager::Request&, IBriefcaseManager&)
+    {
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                         01/2018
+//---------------------------------------------------------------------------------------
+void OptimisticConcurrencyControlBase::_OnQueryHeld(DgnLockSet& locks, DgnCodeSet&, IBriefcaseManager&)
+    {
+    m_locks.insert(locks.begin(), locks.end()); // steal the locks
+    locks.clear();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                         01/2018
+//---------------------------------------------------------------------------------------
+void OptimisticConcurrencyControlBase::_OnQueriedHeld(DgnLockSet&, DgnCodeSet&, IBriefcaseManager&)
+    {
     }
 
 //---------------------------------------------------------------------------------------

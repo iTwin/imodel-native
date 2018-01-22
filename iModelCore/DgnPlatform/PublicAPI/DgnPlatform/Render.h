@@ -21,10 +21,6 @@
     struct HDC__;
 #endif
 
-// For EAP use only simple hard coded default lighting.
-#define SIMPLE_DEFAULT_LIGHTS
-// #define IMAGE_BASED_LIGHTING      // WIP
-
 BEGIN_BENTLEY_RENDER_NAMESPACE
 
 //=======================================================================================
@@ -147,7 +143,8 @@ public:
     void SetShowSourceLights(bool val) {m_sourceLights = val;}
     bool ShowCameraLights() const {return m_cameraLights;}
     void SetShowCameraLights(bool val) {m_cameraLights = val;}
-    bool ShowSolarLight() const {return m_solarLight;}
+    bool ShowSolarLight
+    () const {return m_solarLight;}
     void SetShowSolarLight(bool val) {m_solarLight = val;}
     bool ShowShadows() const {return m_shadows;}
     void SetShowShadows(bool val) {m_shadows = val;}
@@ -531,21 +528,141 @@ public:
 };
 
 //=======================================================================================
+//! An uncompressed high definition image in Rgb (3 floats pixel) 
+// @bsiclass                                                    Ray.Bentley     01/2018
+//=======================================================================================
+struct HDRImage
+{
+    uint32_t        m_width = 0;
+    uint32_t        m_height = 0;
+    bvector<float>  m_image;
+
+    //! Create an HDRImage from a (Radiance) HDR data.
+    //! @param[in] srcData the HDR data
+    //! @param[in] srcLen the number of bytes of HDR data
+    DGNPLATFORM_EXPORT static Image FromHDR(uint8_t const* srcData, uint32_t srcLen);
+
+    bool IsValid() const {return 0!=m_width && 0!=m_height && 0 != m_image.size();} //!< @return true if this image holds valid data
+}; 
+
+//=======================================================================================
+// ! A rendering environment including background and seperate HDR images for reflection, 
+// ! diffuse and specular lighting.
+// @bsiclass                                            Ray.Bentley         01/2018
+//=======================================================================================
+struct  Environment
+{
+    enum class Mapping : uint32_t { Spherical, Cylindrical, Angular, Rectangular };
+
+    struct Map { Mapping m_mapping; Image m_image; };
+    struct HDRMap { Mapping m_mapping; HDRImage m_image; };
+
+    HDRMap              m_diffuse;              // Diffuse lighting.
+    bvector<HDRMap>     m_specularLODs;;
+    Render::Image       m_background;
+
+    DGNPLATFORM_EXPORT static Environment FromSmartIBL (BeFileNameCR fileName); 
+
+};
+
+//=======================================================================================
+//! Identifies a texture or material.
+//! A persistent resource is identified by its element ID within the DgnDb.
+//! A named resource is identified by a string ID which is unique among all such resources
+//! associated with a given DgnDb.
+//! A resource with a valid name can be constructed once and then looked up again later by
+//! name.
+//! An unnamed resource is created for one-time use and cannot be looked up again for reuse.
+// @bsistruct                                                   Paul.Connelly   01/18
+//=======================================================================================
+template<typename T_Id> struct ResourceKey
+{
+private:
+    T_Id        m_id;
+    Utf8String  m_name;
+public:
+    explicit ResourceKey(T_Id id=T_Id()) : m_id(id) { }
+    explicit ResourceKey(Utf8StringCR name) : m_name(name) { }
+    ResourceKey(ResourceKey const&) = default;
+    ResourceKey& operator=(ResourceKey const&) = default;
+
+    bool IsPersistent() const { return m_id.IsValid(); }
+    bool IsNamed() const { return !m_name.empty(); }
+    bool IsValid() const { return IsPersistent() || IsNamed(); }
+
+    T_Id GetId() const { BeAssert(IsPersistent()); return m_id; }
+    Utf8StringCR GetName() const { BeAssert(IsNamed()); return m_name; }
+
+    bool operator!=(ResourceKey const& rhs) const { return !(*this == rhs); }
+    bool operator==(ResourceKey const& rhs) const
+        {
+        if (IsPersistent())
+            return rhs.IsPersistent() && GetId() == rhs.GetId();
+        else if (IsNamed())
+            return rhs.IsNamed() && GetName().Equals(rhs.GetName());
+        else
+            return false;
+        }
+
+    bool operator<(ResourceKey const& rhs) const
+        {
+        BeAssert(IsValid());
+        if (IsPersistent())
+            return rhs.IsPersistent() ? GetId() < rhs.GetId() : true;
+        else if (IsNamed())
+            return rhs.IsNamed() ? GetName().CompareTo(rhs.GetName()) < 0 : !rhs.IsPersistent();
+        else
+            return false;
+        }
+
+    //! @private
+    Utf8String ToDebugString() const
+        {
+        if (IsNamed())
+            return GetName();
+        else if (IsPersistent())
+            return GetId().ToHexStr();
+        else
+            return "<unnamed>";
+        }
+};
+
+using TextureKey = ResourceKey<DgnTextureId>;
+using MaterialKey = ResourceKey<RenderMaterialId>;
+
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(TextureKey);
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(MaterialKey);
+
+//=======================================================================================
 //! A Texture for rendering
 // @bsiclass                                                    Keith.Bentley   09/15
 //=======================================================================================
 struct Texture : RefCounted<NonCopyableClass>
 {
-protected:
-    uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
-public:
     struct CreateParams
     {
-        bool m_isTileSection = false;
+        TextureKey m_key;
         int m_pitch = 0;
+        bool m_isTileSection = false;
+
+        TextureKeyCR GetKey() const { return m_key; }
+
         void SetIsTileSection() {m_isTileSection=true;}
         void SetPitch(int val) {m_pitch=val;}
+
+        explicit CreateParams(TextureKeyCR key=TextureKey()) : m_key(key) { }
     };
+protected:
+    TextureKey m_key;
+
+    uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
+
+    explicit Texture(CreateParams const& params) : m_key(params.m_key) { }
+public:
+    TextureKeyCR GetKey() const { return m_key; }
+
+    // Named textures should preserve their image data so it can be obtained later.
+    virtual ImageSource GetImageSource() const { BeAssert(false); return ImageSource(); }
 };
 
 //=======================================================================================
@@ -612,8 +729,22 @@ public:
 //=======================================================================================
 struct Material : RefCounted<NonCopyableClass>
 {
+    // QVision defaults...
+    struct Defaults
+    {
+        // From DgnViewMaterial.cpp...(QVision defaults)
+        static constexpr double ExponentMultiplier() { return 15.0; }
+        static constexpr double Finish() { return 0.9; }
+        static constexpr double Specular() { return 0.4; }
+        static constexpr double Diffuse() { return 0.6; }
+        static constexpr double Reflect() { return 0.0; }
+        static constexpr double SpecularExponent() { return Finish() * ExponentMultiplier(); }
+    };
+
     struct CreateParams
     {
+        using Defaults = Material::Defaults;
+
         struct MatColor
         {
             bool m_valid = false;
@@ -626,18 +757,25 @@ struct Material : RefCounted<NonCopyableClass>
         MatColor m_diffuseColor;
         MatColor m_specularColor;
         MatColor m_emissiveColor;
-        double m_diffuse = 0.6;                        // QVision default...
-        double m_specular = 0.4;                       // QVision default...
-        double m_specularExponent = (0.9 * 15.0);      // QVision default...
-        double m_reflect = 0.0;
+        MatColor m_reflectColor;
+        TextureMapping m_textureMapping;
+        MaterialKey m_key;
+        double m_diffuse = Defaults::Diffuse();
+        double m_specular = Defaults::Specular();
+        double m_specularExponent = Defaults::SpecularExponent();
+        double m_reflect = Defaults::Reflect();
         double m_transparency = 0.0;
         double m_refract = 1.0;
         double m_ambient = .3;
         bool   m_shadows = true;
 
+        explicit CreateParams(MaterialKeyCR key=MaterialKey()) : m_key(key) { }
+        DGNPLATFORM_EXPORT CreateParams(MaterialKeyCR key, RenderingAssetCR, DgnDbR, SystemCR, TextureP texture=nullptr);
+                                           
         void SetDiffuseColor(ColorDef val) {m_diffuseColor = val;} //<! Set the surface color for fill or diffuse illumination
         void SetSpecularColor(ColorDef val) {m_specularColor = val;} //<! Set the surface color for specular illumination
         void SetEmissiveColor(ColorDef val) {m_emissiveColor = val;} //<!  Set the surface emissive color
+        void SetReflectColor(ColorDef val) {m_reflectColor = val;} //<!  Set the surface reflectance color
         void SetDiffuse(double val) {m_diffuse = val;} //<! Set surface diffuse reflectivity
         void SetAmbient(double val) {m_ambient = val;} //<! Set surface ambient reflectivity
         void SetSpecularExponent(double val) {m_specularExponent = val;} //<! Set surface shininess (range 0 to 128)
@@ -646,20 +784,21 @@ struct Material : RefCounted<NonCopyableClass>
         void SetSpecular(double val) {m_specular = val;} //<! Set surface specular reflectivity
         void SetRefract(double val) {m_refract = val;} //<! Set index of refraction
         void SetShadows(bool val) {m_shadows = val;} //! If false, do not cast shadows
+        void MapTexture(TextureMappingCR mapping) {m_textureMapping=mapping;}
+        void MapTexture(TextureCR texture, TextureMapping::Params const& params) {MapTexture(TextureMapping(texture, params));}
     };
 
 protected:
     TextureMapping  m_textureMapping;
+    MaterialKey     m_key;
 
-    //! Override to perform additional logic when texture mapping is set, if necessary.
-    virtual void _MapTexture() { }
     uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
-public:
-    //! Map a texture to this material
-    void MapTexture(TextureMappingCR mapping) {m_textureMapping=mapping; _MapTexture();}
 
+    explicit Material(CreateParams const& params) : m_textureMapping(params.m_textureMapping), m_key(params.m_key) { }
+public:
     bool HasTextureMapping() const {return m_textureMapping.IsValid();}
     TextureMappingCR GetTextureMapping() const {return m_textureMapping;}
+    MaterialKeyCR GetKey() const {return m_key;}
 };
 
 //=======================================================================================
@@ -3018,11 +3157,15 @@ struct System
     //! Create an offscreen render target.
     virtual Render::TargetPtr _CreateOffscreenTarget(Render::Device& device, double tileSizeModifier) = 0;
 
+    //! Find a previously-created Material by key. Returns null if no such material exists.
+    virtual MaterialPtr _FindMaterial(MaterialKeyCR key, DgnDbR db) const = 0;
+
     //! Get or create a material from a material element, by id
-    virtual MaterialPtr _GetMaterial(RenderMaterialId, DgnDbR) const = 0;
+    //! The default implementation uses _FindMaterial() and calls _CreateMaterial() if not found.
+    DGNPLATFORM_EXPORT virtual MaterialPtr _GetMaterial(RenderMaterialId, DgnDbR) const;
 
     //! Create a Material from parameters
-    virtual MaterialPtr _CreateMaterial(Material::CreateParams const&) const = 0;
+    virtual MaterialPtr _CreateMaterial(Material::CreateParams const&, DgnDbR) const = 0;
 
     virtual GraphicBuilderPtr _CreateGraphic(GraphicBuilder::CreateParams const& params) const = 0;
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency, DgnDbR db) const = 0;
@@ -3059,19 +3202,23 @@ struct System
     //! Create a Graphic consisting of batched Features.
     virtual GraphicPtr _CreateBatch(GraphicR graphic, FeatureTable&& features) const = 0;
 
+    //! Find a previously-created Texture by key. Returns null if no such texture exists.
+    virtual TexturePtr _FindTexture(TextureKeyCR key, DgnDbR db) const = 0;
+
     //! Get or create a Texture from a DgnTexture element. Note that there is a cache of textures stored on a DgnDb, so this may return a pointer to a previously-created texture.
+    //! The default implementation uses _FindTexture() and calls _CreateTexture() if not found.
     //! @param[in] textureId the DgnElementId of the texture element
     //! @param[in] db the DgnDb for textureId
-    virtual TexturePtr _GetTexture(DgnTextureId textureId, DgnDbR db) const = 0;
+    DGNPLATFORM_EXPORT virtual TexturePtr _GetTexture(DgnTextureId textureId, DgnDbR db) const;
 
     //! Get or create a Texture from a GradientSymb. Note that there is a cache of textures stored on a DgnDb, so this may return a pointer to a previously-created texture.
     virtual TexturePtr _GetTexture(GradientSymbCR gradient, DgnDbR db) const = 0;
 
     //! Create a new Texture from an Image.
-    virtual TexturePtr _CreateTexture(ImageCR image, Texture::CreateParams const& params=Texture::CreateParams()) const = 0;
+    virtual TexturePtr _CreateTexture(ImageCR image, DgnDbR db, Texture::CreateParams const& params=Texture::CreateParams()) const = 0;
 
     //! Create a new Texture from an ImageSource.
-    virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::BottomUp bottomUp, Texture::CreateParams const& params=Texture::CreateParams()) const = 0;
+    virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::BottomUp bottomUp, DgnDbR db, Texture::CreateParams const& params=Texture::CreateParams()) const = 0;
 
     //! Create a Texture from a graphic.
     virtual TexturePtr _CreateGeometryTexture(GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const = 0;
@@ -3247,8 +3394,8 @@ public:
     GraphicPtr CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency, DgnDbR db) {return m_system._CreateSprite(sprite, location, xVec, transparency, db);}
     MaterialPtr GetMaterial(RenderMaterialId id, DgnDbR dgndb) const {return m_system._GetMaterial(id, dgndb);}
     TexturePtr GetTexture(DgnTextureId id, DgnDbR dgndb) const {return m_system._GetTexture(id, dgndb);}
-    TexturePtr CreateTexture(ImageCR image) const {return m_system._CreateTexture(image);}
-    TexturePtr CreateTexture(ImageSourceCR source, Image::BottomUp bottomUp=Image::BottomUp::No) const {return m_system._CreateTexture(source, bottomUp);}
+    TexturePtr CreateTexture(ImageCR image, DgnDbR db) const {return m_system._CreateTexture(image, db);}
+    TexturePtr CreateTexture(ImageSourceCR source, DgnDbR db, Image::BottomUp bottomUp=Image::BottomUp::No) const {return m_system._CreateTexture(source, bottomUp, db);}
     TexturePtr CreateGeometryTexture(Render::GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const {return m_system._CreateGeometryTexture(graphic, range, useGeometryColors, forAreaPattern);}
     LightPtr CreateLight(Lighting::Parameters const& params, DVec3dCP direction=nullptr, DPoint3dCP location=nullptr) {return m_system._CreateLight(params, direction, location);}
     SystemR GetSystem() {return m_system;}

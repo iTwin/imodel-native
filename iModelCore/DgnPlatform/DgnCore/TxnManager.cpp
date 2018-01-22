@@ -762,7 +762,7 @@ RevisionStatus TxnManager::MergeDataChangesInRevision(DgnRevisionCR revision, Re
          *   and local briefcases - if there are NO local changes, we simply accept the incoming revision's
          *   changes, and don't bother running the dependency handlers (even if the are actually available).
          *
-         * Also see comments in RevisionChangesFileReader::_OnConflict()
+         * Also see comments in RevisionChangesFileReader::ConflictHandler()
          */
 
         OnBeginValidate();

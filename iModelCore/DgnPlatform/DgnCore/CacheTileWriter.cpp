@@ -3,7 +3,7 @@
 
 |     $Source: DgnCore/CacheTileWriter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -112,9 +112,10 @@ BentleyStatus  CreateMaterialJson(Json::Value& matJson, MeshCR mesh,  DisplayPar
     if (displayParams.GetSubCategoryId().IsValid())
         matJson["subCategoryId"] = displayParams.GetSubCategoryId().GetValue();
 
-
-    if (displayParams.GetMaterialId().IsValid())
-        matJson["materialId"] = displayParams.GetMaterialId().GetValue();
+    // ###TODO: Support non-persistent materials if/when necessary...
+    auto material = displayParams.GetMaterial();
+    if (nullptr != material && material->GetKey().IsPersistent())
+        matJson["materialId"] = material->GetKey().GetId().GetValue();
 
     matJson["class"] = (uint16_t) displayParams.GetClass();
     matJson["ignoreLighting"] = displayParams.IgnoresLighting();
@@ -131,6 +132,50 @@ BentleyStatus  CreateMaterialJson(Json::Value& matJson, MeshCR mesh,  DisplayPar
     if (nullptr != displayParams.GetGradient())
         matJson["gradient"] = displayParams.GetGradient()->ToJson();
 
+    TextureCP texture = displayParams.GetTextureMapping().GetTexture();
+    if (nullptr != texture && texture->GetKey().IsNamed() && SUCCESS != AddNamedTexture(displayParams.GetTextureMapping(), matJson))
+        return ERROR;
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus AddNamedTexture(TextureMappingCR mapping, Json::Value& matJson)
+    {
+    // NB: I am specifically not using the same representation we use for textures in Cesium tiles because
+    // it includes much extra data and indirection which we don't need; and doesn't include some of
+    // the mapping params we need.
+    BeAssert(mapping.IsValid());
+    TextureCR texture = *mapping.GetTexture();
+    Utf8StringCR name = texture.GetKey().GetName();
+    if (!m_json.isMember("namedTextures") || !m_json["namedTextures"].isMember(name))
+        {
+        ImageSource img = texture.GetImageSource();
+        if (!img.IsValid())
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        AddBufferView(name.c_str(), img.GetByteStream());
+
+        Json::Value& json = m_json["namedTextures"][name];
+        json["format"] = static_cast<uint32_t>(img.GetFormat());
+        json["bufferView"] = name;
+        }
+
+    auto const& params = mapping.GetParams();
+    Json::Value& paramsJson = matJson["texture"]["params"];
+    paramsJson["mode"] = static_cast<uint32_t>(params.m_mapMode);
+    paramsJson["weight"] = params.m_textureWeight;
+    paramsJson["worldMapping"] = params.m_worldMapping;
+    for (uint32_t i = 0; i < 2; i++)
+        for (uint32_t j = 0; j < 3; j++)
+            paramsJson["transform"][i][j] = params.m_textureMat2x3.m_val[i][j];
+
+    matJson["texture"]["name"] = name;
     return SUCCESS;
     }
 

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/TileReader.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -115,6 +115,7 @@ struct GltfReader
     Json::Value         m_bufferViews;
     Json::Value         m_textures;
     Json::Value         m_images;
+    Json::Value         m_namedTextures;
     uint8_t const*      m_binaryData;
     Render::System&     m_renderSystem;
 
@@ -132,7 +133,7 @@ struct GltfReader
         // ###TODO: Create DisplayParams from GLTF Material...
         return Render::Primitives::DisplayParams::Create(Render::Primitives::DisplayParams::Type::Mesh, DgnCategoryId(), DgnSubCategoryId(),
                 nullptr, RenderMaterialId(), ColorDef::White(), ColorDef::White(), 0, Render::LinePixels::Solid, Render::FillFlags::ByView,
-                Render::DgnGeometryClass::Primary, false, m_model.GetDgnDb(), m_renderSystem);
+                Render::DgnGeometryClass::Primary, false, m_model.GetDgnDb(), m_renderSystem, TextureMapping());
         }
 
     virtual BentleyStatus _ReadFeatures(bvector<uint32_t>& featureIndices, Json::Value const& primitiveValue);
@@ -161,6 +162,7 @@ struct GltfReader
     Render::ImageSource GetTextureImageSource(Utf8CP textureName);
     Render::Image GetImage(Utf8CP imageName);
     Render::Image GetTextureImage(Utf8CP textureName);
+    Render::TextureMapping GetTextureMapping(Utf8CP textureName, Json::Value const& paramsJson);
 
     void ReadColors(bvector<uint16_t>& colors, Json::Value const& primitiveValue);
     BentleyStatus ReadColorTable(Render::Primitives::ColorTableR colorTable, Json::Value const& primitiveValue);

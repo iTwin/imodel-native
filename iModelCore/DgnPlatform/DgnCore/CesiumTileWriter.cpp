@@ -3,7 +3,7 @@
 
 |     $Source: DgnCore/CesiumTileWriter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -334,10 +334,12 @@ struct RenderSystem : Render::System
 
     RenderSystem(GeometricModelR model) : m_writer(m_streamBuffer, model), m_range(DRange3d::NullRange()), m_featureTable(model.GetModelId(), s_maxFeatures)  { }
 
+    MaterialPtr _FindMaterial(MaterialKeyCR, DgnDbR) const override { return nullptr; }
     virtual MaterialPtr _GetMaterial(RenderMaterialId, DgnDbR) const override { return nullptr; }
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency, DgnDbR db) const override { BeAssert(false); return nullptr; }
     virtual GraphicPtr _CreateBranch(GraphicBranch&& branch, DgnDbR dgndb, TransformCR transform, ClipVectorCP clips) const override { BeAssert(false); return nullptr; }
     virtual GraphicPtr _CreateViewlet(GraphicBranch& branch, PlanCR, ViewletPosition const&) const override { BeAssert(false); return nullptr; };
+    TexturePtr _FindTexture(TextureKeyCR, DgnDbR) const override { return nullptr; }
     virtual TexturePtr _GetTexture(DgnTextureId textureId, DgnDbR db) const override { return nullptr; }
 
     virtual TexturePtr _CreateGeometryTexture(GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const override { BeAssert(false); return nullptr; }
@@ -352,8 +354,8 @@ struct RenderSystem : Render::System
     virtual uint32_t   _GetMaxFeaturesPerBatch() const override { return s_maxFeatures; }
 
     virtual TexturePtr _GetTexture(GradientSymbCR gradient, DgnDbR db) const override {return nullptr; }
-    virtual TexturePtr _CreateTexture(ImageCR image, Render::Texture::CreateParams const& params) const override {return new TileTexture(image, params);}
-    virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::BottomUp bottomUp, Texture::CreateParams const& params) const override { BeAssert(false); return nullptr; }
+    virtual TexturePtr _CreateTexture(ImageCR image, DgnDbR, Render::Texture::CreateParams const& params) const override {return new TileTexture(image, params);}
+    virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::BottomUp bottomUp, DgnDbR, Texture::CreateParams const& params) const override { BeAssert(false); return nullptr; }
     virtual GraphicPtr _CreateIndexedPolylines(IndexedPolylineArgsCR args, DgnDbR dgndb) const override  { return nullptr; }
     virtual GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb)  const override {return nullptr; }
     virtual GraphicBuilderPtr _CreateGraphic(GraphicBuilder::CreateParams const& params) const override { return nullptr; }
@@ -370,7 +372,7 @@ virtual GraphicPtr _CreateBatch(GraphicR graphic, FeatureTable&& featureTable) c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual MaterialPtr _CreateMaterial(Material::CreateParams const&) const override
+virtual MaterialPtr _CreateMaterial(Material::CreateParams const&, DgnDbR) const override
     {
     return nullptr;
     }

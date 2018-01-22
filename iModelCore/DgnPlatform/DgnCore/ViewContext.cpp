@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ViewContext.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -1634,7 +1634,7 @@ Render::TexturePtr ViewContext::_CreateTexture(Render::ImageCR image) const
     Render::TexturePtr tx;
     auto sys = GetRenderSystem();
     if (nullptr != sys)
-        tx = sys->_CreateTexture(image);
+        tx = sys->_CreateTexture(image, GetDgnDb());
 
     return tx;
     }
@@ -1647,7 +1647,7 @@ Render::TexturePtr ViewContext::_CreateTexture(Render::ImageSourceCR source, Ren
     Render::TexturePtr tx;
     auto sys = GetRenderSystem();
     if (nullptr != sys)
-        tx = sys->_CreateTexture(source, bottomUp);
+        tx = sys->_CreateTexture(source, bottomUp, GetDgnDb());
 
     return tx;
     }
