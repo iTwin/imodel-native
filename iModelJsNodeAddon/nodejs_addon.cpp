@@ -1653,8 +1653,8 @@ struct AddonECPresentationManager : Napi::ObjectWrap<AddonECPresentationManager>
         // ***
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "NodeAddonECPresentationManager", {
-          InstanceMethod("handleRequest", &HandleRequest),
-          InstanceMethod("setupRulesetDirectories", &SetupRulesetDirectories)
+          InstanceMethod("handleRequest", &AddonECPresentationManager::HandleRequest),
+          InstanceMethod("setupRulesetDirectories", &AddonECPresentationManager::SetupRulesetDirectories)
         });
 
         exports.Set("NodeAddonECPresentationManager", t);
