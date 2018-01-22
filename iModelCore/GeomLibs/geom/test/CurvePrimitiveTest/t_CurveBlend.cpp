@@ -1181,7 +1181,7 @@ double taperB              //!< [in] taper distance along vectorB
         Check::Print (chain, "SymmetricTaper");
         }
     }
-
+#if !defined(BENTLEYCONFIG_OS_APPLE_MACOS)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1204,7 +1204,7 @@ TEST(CurveCurve,TaperFilletTaper)
                         ));
     testCurveCurveTaperFilletTaper (*arcA, *arcB, 0.3, 0.3, 0.1, 1.5, 1.0, 0.2, 1.0);
     }
-
+#endif // !defined(BENTLEYCONFIG_OS_APPLE_MACOS)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1302,7 +1302,7 @@ bool  setExtendedPath = false   // false forces new logic to use tangent extensi
             }
         }
     }
-
+#if !defined(BENTLEYCONFIG_OS_APPLE_MACOS)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1328,7 +1328,8 @@ TEST(CurveCurve,TaperFilletTaperBad)
                     );
     Check::ClearGeometry ("CurveCurve.TaperFilletTaperBad");
     }
-
+#endif //!defined(BENTLEYCONFIG_OS_APPLE_MACOS)
+#if !defined(BENTLEYCONFIG_OS_APPLE_MACOS)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1375,6 +1376,7 @@ TEST(CurveCurve,TaperFilletTaperOutOfBounds)
         }
     Check::ClearGeometry ("CurveCurve.TaperFilletTaperOutOfBounds");
     }
+#endif //!defined(BENTLEYCONFIG_OS_APPLE_MACOS)
 
 bool testCurveCurveConstructMultiRadiusBlend
 (
@@ -1536,7 +1538,6 @@ TEST(CurveVectorWithDistanceIndex,XYLength2)
     Check::Near (xyz1.x, b,"xy spiral length");
     Check::PopTolerance ();
     }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1597,11 +1598,12 @@ TEST(CurveCurve,TaperFilletTaperOnCurveVectorWithDistanceIndex_ConceptStationExa
             }
         }
     }
-#endif
+#endif //#ifdef DoConceptstationExample_bcurveLooksTooTileted
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if !defined(BENTLEYCONFIG_OS_APPLE_MACOS)
 TEST(CurveCurve,TaperFilletTaperOnCurveVectorWithDistanceIndex)
     {
     double ax = 10.0;
@@ -1668,6 +1670,7 @@ TEST(CurveCurve,TaperFilletTaperOnCurveVectorWithDistanceIndex)
             }
         }
     }
+#endif //!defined(BENTLEYCONFIG_OS_APPLE_MACOS)
  bool ReadAsString (char const *filenameChar, Utf8String &string)
     {
 
