@@ -1671,6 +1671,14 @@ bool iModelBridgeFwk::_IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* br
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeFwk::_AssignFileToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey)
+    {
+    return GetRegistry()._AssignFileToBridge(fn, bridgeRegSubKey);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeFwk::_GetDocumentProperties(iModelBridgeDocumentProperties& props, BeFileNameCR fn)

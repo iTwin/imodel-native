@@ -87,6 +87,13 @@ void            RegisterDwgDbObjectExtensions (bool beforeValidation)
 #ifdef DWGTOOLKIT_OpenDwg
 
     DwgResBuf::rxInit ();
+    DwgDbSun::rxInit ();
+    DwgDbSkyBackground::rxInit ();
+    DwgDbGradientBackground::rxInit ();
+    DwgDbGroundPlaneBackground::rxInit ();
+    DwgDbIBLBackground::rxInit ();
+    DwgDbImageBackground::rxInit ();
+    DwgDbSolidBackground::rxInit ();
 
     // register private DwgGi class extensions
     RegisterDwgGiExtensions ();
@@ -187,6 +194,13 @@ void            UnRegisterDwgDbObjectExtensions ()
 
     DwgDbPointCloudEx::rxUninit ();
     DwgDbLight::rxUninit ();
+    DwgDbSun::rxUninit ();
+    DwgDbSkyBackground::rxUninit ();
+    DwgDbGradientBackground::rxUninit ();
+    DwgDbGroundPlaneBackground::rxUninit ();
+    DwgDbIBLBackground::rxUninit ();
+    DwgDbImageBackground::rxUninit ();
+    DwgDbSolidBackground::rxUninit ();
 
     // Un-register private DwgGi class extensions
     UnRegisterDwgGiExtensions ();

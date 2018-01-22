@@ -979,6 +979,10 @@ public:
 
     bool SkipECContent() const {return m_skipECContent;}
 
+    //! Allows a bridge to determine whether a particular schema should be imported or not
+    virtual bool _ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model) { return true; }
+    //! @}
+
     //! This returns false if the V8 file should not be converted by the bridge.
     DGNDBSYNC_EXPORT bool IsFileAssignedToBridge(DgnV8FileCR v8File) const;
 
@@ -2666,6 +2670,7 @@ struct ConvertToDgnDbElementExtension : DgnV8Api::Handler::Extension
     virtual void _ImportSchema(DgnDbR) {} /* extension may import schemas. NB: call db.BriefcaseManager().LockSchemas() before calling db.ImportSchemas */
     virtual bool _IgnorePublicChildren() {return false;} // When true, don't create an assembly for a V8 cell with public children unless there are category changes.
     virtual bool _DisablePostInstancing() {return false;} // When true, don't try to detect identical geometry and create GeometryParts from non-instanced V8 geometry.
+    virtual void _UpdateResourceDefinitions (iModelBridge::IDocumentPropertiesAccessor& accessor) {}
 };
 
 //=======================================================================================
