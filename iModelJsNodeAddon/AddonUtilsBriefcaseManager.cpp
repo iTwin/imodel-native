@@ -8,6 +8,54 @@
 #include "AddonUtils.h"
 
 /*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+struct MasterBriefcaseManager : IBriefcaseManager
+{
+private:
+    MasterBriefcaseManager(DgnDbR db) : IBriefcaseManager(db) { }
+
+    Response _ProcessRequest(Request& req, RequestPurpose purpose) override { return Response(purpose, req.Options(), RepositoryStatus::Success); }
+    RepositoryStatus _Demote(DgnLockSet&, DgnCodeSet const&) override { return RepositoryStatus::Success; }
+    RepositoryStatus _Relinquish(Resources) override { return RepositoryStatus::Success; }
+    RepositoryStatus _ReserveCode(DgnCodeCR) override { return RepositoryStatus::Success; }
+    RepositoryStatus _QueryLockLevel(LockLevel& level, LockableId lockId) override { level = LockLevel::Exclusive; return RepositoryStatus::Success; }
+    IOwnedLocksIteratorPtr _GetOwnedLocks(FastQuery fast) override { return nullptr; }
+    RepositoryStatus _OnFinishRevision(DgnRevision const&) override { return RepositoryStatus::Success; }
+    RepositoryStatus _RefreshFromRepository() override { return RepositoryStatus::Success; }
+    void _OnElementInserted(DgnElementId) override { }
+    void _OnModelInserted(DgnModelId) override { }
+    void _StartBulkOperation() override {}
+    bool _IsBulkOperation() const override {return false;}
+    Response _EndBulkOperation() override {return Response(RequestPurpose::Acquire, ResponseOptions::None, RepositoryStatus::Success);}
+
+    RepositoryStatus _QueryLockLevels(DgnLockSet& levels, LockableIdSet& lockIds) override
+        {
+        for (auto const& id : lockIds)
+            levels.insert(DgnLock(id, LockLevel::Exclusive));
+
+        return RepositoryStatus::Success;
+        }
+    bool _AreResourcesHeld(DgnLockSet&, DgnCodeSet&, RepositoryStatus* status) override 
+        {
+        if (nullptr != status)
+            *status = RepositoryStatus::Success;
+        return true;
+        }
+    RepositoryStatus _QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes) override
+        {
+        auto bcId = GetDgnDb().GetBriefcaseId();
+        for (auto const& code : codes)
+            states.insert(DgnCodeInfo(code)).first->SetReserved(bcId);
+        return RepositoryStatus::Success;
+        }
+    RepositoryStatus _PrepareForElementOperation(Request&, DgnElementCR, BeSQLite::DbOpcode) override { return RepositoryStatus::Success; }
+    RepositoryStatus _PrepareForModelOperation(Request&, DgnModelCR, BeSQLite::DbOpcode) override { return RepositoryStatus::Success; }
+public:
+    static IBriefcaseManagerPtr Create(DgnDbR db) { return new MasterBriefcaseManager(db); }
+};
+
+/*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Sam.Wilson      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct AddonBriefcaseManager : IBriefcaseManager, TxnMonitor
@@ -319,9 +367,15 @@ struct AddonRepositoryAdmin : DgnPlatformLib::Host::RepositoryAdmin
 
     IBriefcaseManagerPtr _CreateBriefcaseManager(DgnDbR db) const override
         {
-        auto bc = new AddonBriefcaseManager(db);
-        if (nullptr != db.GetConcurrencyControl())
-            db.GetConcurrencyControl()->_ConfigureBriefcaseManager(*bc);
+        IBriefcaseManagerPtr bc;
+        if (db.IsMasterCopy() || db.IsStandaloneBriefcase())
+            bc = MasterBriefcaseManager::Create(db);
+        else
+            {
+            bc = new AddonBriefcaseManager(db);
+            if (nullptr != db.GetConcurrencyControl())
+                db.GetConcurrencyControl()->_ConfigureBriefcaseManager(*bc);
+            }
         return bc;
         }
     };
