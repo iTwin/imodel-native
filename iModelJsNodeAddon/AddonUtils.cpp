@@ -59,7 +59,7 @@ private:
     BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override
         {
         BeFileName sqlang(GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
-        sqlang.AppendToPath(L"sqlang/DgnPlatform_en.sqlang.db3");
+        sqlang.AppendToPath(L"sqlang/iModelJsNodeAddon_en.sqlang.db3");
         return BeSQLite::L10N::SqlangFiles(sqlang);
         }
 

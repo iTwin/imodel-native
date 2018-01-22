@@ -55,22 +55,26 @@
       
   -->
 
-  <Part Name="iModelJsNodeAddonLib-Mobile" BentleyBuildMakeFile="addon.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=iModelJs -dBUILD_AS_IMODELJS_LIBRARY=1" >
-    <!-- Get the node-addon-api implementation from iModelJs, not from node! -->
-    <SubPart PartName="iModelJs" PartFile="iModelJs" Repository="iModelJs"/>
+  <Part Name="iModelJsNodeAddonLib-Mobile" BentleyBuildMakeFile="addon.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=iModelJs -dBUILD_FOR_IMODELJS_MOBILE=1" >
+    <!-- Get the node-addon-api (declaration) from iModelJs, not from node! -->
+    <SubPart PartName="node-addon-api" PartFile="iModelJs" Repository="iModelJs"/>
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
+    <SubPart PartName="iModelJsNodeAddonSqlang"/>
     <Bindings>
-        <Libs>Delivery/$(libprefix)imodeljs-addon-iModelJs$(libext)</Libs>
-        <Assemblies>Delivery/$(shlibprefix)imodeljs-addon-iModelJs$(shlibext)</Assemblies>
+        <Directory SourceName="Delivery/imodeljs-addon-iModelJs-objs" SubPartDirectory="imodeljs-addon-objs" />
+        <Files SubPartDirectory="imodeljs-addon-build-tools">
+            Delivery/addon_input_libs.mki
+        </Files>
         <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
-        Delivery/PresentationRules/*.xml
-      </Files>
+            Delivery/PresentationRules/*.xml
+        </Files>
     </Bindings>
   </Part>
   
   <Part Name="iModelJsNodeAddonLib-Windows" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="addon.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=node-addon-api" >
     <SubPart PartName="node-addon-api" Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
+    <SubPart PartName="iModelJsNodeAddonSqlang"/>
     <Bindings>
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="n_8_9">
         Delivery/iModelJsNodeAddon/node-addon-api/imodeljs.node
@@ -85,6 +89,7 @@
   <Part Name="iModelJsNodeAddonLibElectron-Windows" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="addon.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=electron-addon-api" >
     <SubPart PartName="electron-addon-api" Repository="Thirdparty-node-addon-api" PartFile="node-addon-api" />
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
+    <SubPart PartName="iModelJsNodeAddonSqlang"/>
     <Bindings>
       <!-- The ProductSubDirectory name determines the name of subdirectory created by makeImodelJsAddonPackages.mke, and that must match the version of electron node that is running. -->
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="e_1_6_11">
@@ -99,6 +104,7 @@
   <Part Name="iModelJsNodeAddonLib-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" BentleyBuildMakeFile="addon.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=node-addon-api" >
     <SubPart PartName="node-addon-api" Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
+    <SubPart PartName="iModelJsNodeAddonSqlang"/>
     <Bindings>
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="n_8_9">
         Delivery/iModelJsNodeAddon/node-addon-api/imodeljs.node
@@ -112,6 +118,7 @@
   <Part Name="iModelJsNodeAddonLib-Darwin" OnlyPlatforms="MacOSX64" ExcludeLibType="Dynamic" BentleyBuildMakeFile="addon.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=node-addon-api" >
     <SubPart PartName="node-addon-api" Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
+    <SubPart PartName="iModelJsNodeAddonSqlang"/>
     <Bindings>
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="n_8_9">
         Delivery/iModelJsNodeAddon/node-addon-api/imodeljs.node
@@ -122,10 +129,16 @@
     </Bindings>
   </Part>
 
+  <Part Name="iModelJsNodeAddonSqlang" BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke" BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/iModelJsNodeAddon/iModelJsNodeAddon_en.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
+    <SubPart PartName="iModelJsNodeAddonLibCommon" />
+    <Bindings>
+      <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/sqlang/iModelJsNodeAddon_en.sqlang.db3</Files>
+    </Bindings>
+  </Part>
+
 <!-- This part builds our node native code addon -->
   <Part Name="iModelJsNodeAddonLibCommon">
     <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-    <SubPart PartName="DgnPlatformSqlang" Repository="DgnPlatform" PartFile="DgnPlatform"/>
     <SubPart PartName="ECPresentation" PartFile="ECPresentation" Repository="ECPresentation"/>
     <SubPart PartName="ECObjectsNative"     PartFile="ECObjects"    Repository="ecobjects" />
     <SubPart PartName="RapidJson" PartFile="Libsrc-Nugets" Repository="bsicommon"/>

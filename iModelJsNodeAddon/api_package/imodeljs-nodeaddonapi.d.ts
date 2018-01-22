@@ -457,4 +457,9 @@ declare class NodeAddonECPresentationManager {
      * @return Serialized JSON response
      */
     handleRequest(db: NodeAddonDgnDb, options: string): string;
+    /**
+     * Sets up a ruleset locater that looks for rulesets in the specified directories
+     * @param directories Ruleset locations
+     */
+    setupRulesetDirectories(directories: string[]): void;
 }
