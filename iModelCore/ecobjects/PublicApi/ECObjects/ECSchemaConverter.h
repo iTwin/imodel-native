@@ -43,6 +43,7 @@ struct CustomECSchemaConverter : RefCountedBase, NonCopyableClass
 private:
 
     bool m_convertedOK = true;
+    bool m_removeLegacyStandardCustomAttributes = false;
     bmap<Utf8String, IECCustomAttributeConverterPtr> m_converterMap;
     bvector<Utf8String> m_schemaReferencesToRemove;
 
@@ -114,6 +115,11 @@ public:
     //! @remarks If the property has multiple inheritance, the first class in the rootClasses vector will be the root class
     //! that would be found if you traversed the base property of the input ecProperty.
     ECOBJECTS_EXPORT static void FindRootBaseClasses(ECPropertyP ecProperty, bvector<ECClassP>& rootClasses);
+
+    //! Turns removal of standard custom attributes from the EC2 standard schemas on and off.  Defaults to false.
+    void SetRemoveLegacyStandardCustomAttributes(bool removeLegacy) { m_removeLegacyStandardCustomAttributes = removeLegacy; }
+    //! Gets flag which determines if standard custom attributes from the EC2 standard standard schemas are removed.  Defaults to false.
+    bool GetRemoveLegacyStandardCustomAttributes() { return m_removeLegacyStandardCustomAttributes; }
 
     static Utf8String GetQualifiedClassName(Utf8StringCR schemaName, Utf8StringCR className) { return schemaName + ":" + className; }
     };

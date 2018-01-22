@@ -264,6 +264,7 @@ CustomECSchemaConverterP ECSchemaConverter::GetSingleton()
     if (nullptr == ECSchemaConverterSingleton)
         {
         ECSchemaConverterSingleton = new CustomECSchemaConverter();
+        ECSchemaConverterSingleton->SetRemoveLegacyStandardCustomAttributes(true);
 
         IECCustomAttributeConverterPtr scConv = new StandardValuesConverter();
         ECSchemaConverterSingleton->AddConverter(BECA_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE, scConv);
@@ -433,7 +434,7 @@ void CustomECSchemaConverter::ProcessCustomAttributeInstance(ECCustomAttributeIn
             else    
                 LOG.debugv("Succeeded [%s Converter][Container %s]. ", fullName, containerName.c_str());
             }
-        else if (IsCustomAttributeFromOldStandardSchemas(*attr))
+        else if (GetRemoveLegacyStandardCustomAttributes() && IsCustomAttributeFromOldStandardSchemas(*attr))
             {
             if (container.IsDefinedLocal(attr->GetClass()))
                 m_convertedOK = container.RemoveCustomAttribute(attr->GetClass());
