@@ -2,13 +2,12 @@
 |
 |     $Source: Tests/iModelHubClient/Integration/LRPJobBackdoorAPI.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
-#include "iModelHubTests.h"
-#include "WebServices/iModelHub/Common.h"
+#include "Helpers.h"
+#include <WebServices/iModelHub/Common.h>
 #include <WebServices/Client/WSRepositoryClient.h>
 
 namespace BackdoorAPISchema

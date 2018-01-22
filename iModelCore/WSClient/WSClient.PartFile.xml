@@ -256,10 +256,30 @@
         </Bindings>
     </Part>
 
-    <Part Name="iModelHubIntegrationTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/iModelHubClient/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Integration -dUsePublishedApi">
+    <Part Name="iModelHubIntegrationTestsHelpers" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/iModelHubClient/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Helpers">
         <SubPart PartName="iModelHubClient-Library"/>
-        <SubPart PartName="iModelHubBackdoorForIntegrationTests"/>
-        <SubPart PartName="IMHSClientExe"/>
+        <SubPart PartName="iModelHubClient-PublicAPI"/>
+        <SubPart PartName="iModelHubPrewireForIntegrationTests" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="iModelHub/Helpers" SourceName="Delivery/iModelHubNativeTests/Objects/Helpers"/>
+        </Bindings>
+    </Part>
+  
+    <Part Name="iModelHubFakeServer" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/iModelHubClient/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=FakeServer">
+        <SubPart PartName="iModelHubClient-Library"/>
+        <SubPart PartName="iModelHubClient-PublicAPI"/>
+        <SubPart PartName="iModelHubPrewireForIntegrationTests" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="iModelHub/FakeServer" SourceName="Delivery/iModelHubNativeTests/Objects/FakeServer"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="iModelHubIntegrationTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/iModelHubClient/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Integration -dUsePublishedApi">
+        <SubPart PartName="iModelHubIntegrationTestsHelpers"/>
+        <SubPart PartName="iModelHubFakeServer"/>
+        <SubPart PartName="IMHSClientExe"/> 
         <SubPart PartName="DgnPlatformSqlang" PartFile="DgnPlatform" Repository="DgnPlatform" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="iModelHubNativeTests/Integration" SourceName="Delivery/iModelHubNativeTests/Objects/Integration"/>
