@@ -385,7 +385,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
     struct AddonAppData : Db::AppData 
         {
         AddonDgnDb& m_addonDb;
-private:
+
         static Key const& GetKey()
             {
             static Key s_key;
@@ -455,7 +455,6 @@ private:
         return appdata? &appdata->m_addonDb: nullptr;
         }
 
-    DgnDbR GetDgnDb() {return *m_dgndb;}
 
     //  Check if val is really a AddonDgnDb peer object
     static bool InstanceOf(Napi::Value val)
@@ -466,6 +465,8 @@ private:
         Napi::HandleScope scope(val.Env());
         return val.As<Napi::Object>().InstanceOf(s_constructor.Value());
         }
+
+    DgnDbR GetDgnDb() {return *m_dgndb;}
 
     void SetupPresentationManager()
         {
@@ -1761,7 +1762,7 @@ static Napi::Object iModelJsAddonRegisterModule(Napi::Env env, Napi::Object expo
     IModelJsAddon::AddonDgnDb::Init(env, exports);
     IModelJsAddon::AddonECDb::Init(env, exports);
     IModelJsAddon::AddonECSqlStatement::Init(env, exports);
-    Init(env, exports);
+    IModelJsAddon::AddonECSqlBinder::Init(env, exports);
     IModelJsAddon::AddonBriefcaseManagerResourcesRequest::Init(env, exports);
     IModelJsAddon::AddonECPresentationManager::Init(env, exports);
 
@@ -1775,7 +1776,7 @@ static Napi::Object iModelJsAddonRegisterModule(Napi::Env env, Napi::Object expo
 
 Napi::FunctionReference IModelJsAddon::AddonBriefcaseManagerResourcesRequest::s_constructor;
 Napi::FunctionReference IModelJsAddon::AddonECSqlStatement::s_constructor;
-Napi::FunctionReference s_constructor;
+Napi::FunctionReference IModelJsAddon::AddonECSqlBinder::s_constructor;
 Napi::FunctionReference IModelJsAddon::AddonDgnDb::s_constructor;
 Napi::FunctionReference IModelJsAddon::AddonECPresentationManager::s_constructor;
 Napi::FunctionReference IModelJsAddon::AddonECDb::s_constructor;

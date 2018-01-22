@@ -32,7 +32,7 @@ struct AddonBriefcaseManager : IBriefcaseManager, TxnMonitor
 
         auto control = GetDgnDb().GetConcurrencyControl();
         if (nullptr != control)
-            control->_OnProcessRequest(*this, req, purpose);
+            control->_OnProcessRequest(req, *this, purpose);
 
         IBriefcaseManager::Response resp(purpose, req.Options(), RepositoryStatus::Success);
 
@@ -51,7 +51,7 @@ struct AddonBriefcaseManager : IBriefcaseManager, TxnMonitor
             }
 
         if (nullptr != control)
-            control->_OnProcessedRequest(*this, req, purpose, resp);
+            control->_OnProcessedRequest(req, *this, purpose, resp);
 
         return resp;
         }
@@ -161,14 +161,14 @@ struct AddonBriefcaseManager : IBriefcaseManager, TxnMonitor
         {
         auto control = GetDgnDb().GetConcurrencyControl();
         if (nullptr != control)
-            control->_OnQueryHeld(*this, locks, codes);
+            control->_OnQueryHeld(locks, codes, *this);
 
         // TODO: this query would have to be forwarded to TypeScript
         if (status)
             *status = RepositoryStatus::Success;
 
         if (nullptr != control)
-            control->_OnQueriedHeld(*this, locks, codes);
+            control->_OnQueriedHeld(locks, codes, *this);
 
         return true;
         }
@@ -236,7 +236,7 @@ struct AddonBriefcaseManager : IBriefcaseManager, TxnMonitor
         {
         auto control = GetDgnDb().GetConcurrencyControl();
         if (nullptr != control)
-            control->_OnExtractRequest(*this, m_req);
+            control->_OnExtractRequest(m_req, *this);
 
         if (codes)
             {
@@ -254,7 +254,7 @@ struct AddonBriefcaseManager : IBriefcaseManager, TxnMonitor
         // reqOut.SetOptions(m_req.Options());
 
         if (nullptr != control)
-            control->_OnExtractedRequest(*this, m_req);
+            control->_OnExtractedRequest(m_req, *this);
         }
 
     void AccumulateRequests(Request const& req)
