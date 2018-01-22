@@ -184,13 +184,127 @@ DbResult AddonUtils::OpenDgnDb(DgnDbPtr& db, BeFileNameCR fileOrPathname, DgnDb:
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 01/18
+//---------------------------------------------------------------------------------------
+DbResult AddonUtils::ReadChangeSets(bvector<DgnRevisionPtr>& revisionPtrs, bool& containsSchemaChanges, DgnDbR dgndb, JsonValueCR changeSetTokens)
+    {
+    revisionPtrs.clear();
+    containsSchemaChanges = false;
+    PRECONDITION(!changeSetTokens.isNull() && changeSetTokens.isArray(), BE_SQLITE_ERROR);
+
+    Utf8String dbGuid = dgndb.GetDbGuid().ToString();
+    for (uint32_t ii = 0; ii < changeSetTokens.size(); ii++)
+        {
+        JsonValueCR changeSetToken = changeSetTokens[ii];
+        PRECONDITION(changeSetToken.isMember("id") && changeSetToken.isMember("pathname"), BE_SQLITE_ERROR);
+
+        if (!containsSchemaChanges)
+            containsSchemaChanges = changeSetToken.isMember("containsSchemaChanges") && changeSetToken["containsSchemaChanges"].asBool();
+
+        Utf8String id = changeSetToken["id"].asString();
+        Utf8String parentId = (ii > 0) ? changeSetTokens[ii - 1]["id"].asString() : dgndb.Revisions().GetParentRevisionId();
+
+        RevisionStatus revStatus;
+        DgnRevisionPtr revision = DgnRevision::Create(&revStatus, id, parentId, dbGuid);
+        if (!EXPECTED_CONDITION(revStatus == RevisionStatus::Success))
+            return BE_SQLITE_ERROR;
+        BeAssert(revision.IsValid());
+
+        BeFileName changeSetPathname(changeSetToken["pathname"].asCString(), true);
+        PRECONDITION(changeSetPathname.DoesPathExist(), BE_SQLITE_ERROR);
+
+        revision->SetRevisionChangesFile(changeSetPathname);
+        revisionPtrs.push_back(revision);
+        }
+
+    return BE_SQLITE_OK;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 01/18
+//---------------------------------------------------------------------------------------
+DbResult AddonUtils::ProcessSchemaChangeSets(DgnDbPtr& dgndb, bvector<DgnRevisionCP> const& revisions, RevisionProcessOption processOption)
+    {
+    PRECONDITION(!dgndb->IsDbOpen() && "Expected briefcase to be closed when merging schema changes", BE_SQLITE_ERROR);
+        
+    DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(revisions, processOption));
+    DbResult result;
+    dgndb = DgnDb::OpenDgnDb(&result, dgndb->GetFileName(), openParams);
+    POSTCONDITION(result == BE_SQLITE_OK, result);
+
+    dgndb->CloseDb();
+    return BE_SQLITE_OK;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 01/18
+//---------------------------------------------------------------------------------------
+DbResult AddonUtils::ProcessDataChangeSets(DgnDbR dgndb, bvector<DgnRevisionCP> const& revisions, RevisionProcessOption processOption)
+    {
+    PRECONDITION(dgndb.IsDbOpen() && "Expected briefcase to be open when merging only data changes", BE_SQLITE_ERROR);
+
+    RevisionStatus status = dgndb.Revisions().ProcessRevisions(revisions, processOption);
+    POSTCONDITION(status == RevisionStatus::Success, BE_SQLITE_ERROR);
+
+    return BE_SQLITE_OK;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 01/18
+//---------------------------------------------------------------------------------------
+DbResult AddonUtils::ProcessChangeSets(DgnDbPtr& dgndb, JsonValueCR changeSetTokens, RevisionProcessOption processOption)
+    {
+    bvector<DgnRevisionPtr> revisionPtrs;
+    bool containsSchemaChanges;
+    DbResult result = ReadChangeSets(revisionPtrs, containsSchemaChanges, *dgndb, changeSetTokens);
+    if (BE_SQLITE_OK != result)
+        return result;
+
+    bvector<DgnRevisionCP> revisions;
+    for (uint32_t ii = 0; ii < revisionPtrs.size(); ii++)
+        revisions.push_back(revisionPtrs[ii].get());
+
+    return containsSchemaChanges ? ProcessSchemaChangeSets(dgndb, revisions, processOption) : ProcessDataChangeSets(*dgndb, revisions, processOption);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 01/18
+//---------------------------------------------------------------------------------------
+DbResult AddonUtils::StartCreateChangeSet(JsonValueR changeSetInfo, DgnDbR dgndb)
+    {
+    RevisionManagerR revisions = dgndb.Revisions();
+
+    if (revisions.IsCreatingRevision())
+        revisions.AbandonCreateRevision();
+
+    DgnRevisionPtr revision = revisions.StartCreateRevision(); // todo: better error reporting
+    if (revision.IsNull())
+        return BE_SQLITE_ERROR;
+
+    changeSetInfo = Json::objectValue;
+    changeSetInfo["id"] = revision->GetId().c_str();
+    changeSetInfo["parentId"] = revision->GetParentId().c_str();
+    changeSetInfo["pathname"] = Utf8String(revision->GetRevisionChangesFile()).c_str();
+    changeSetInfo["containsSchemaChanges"] = revision->ContainsSchemaChanges(dgndb) ? 1 : 0;
+    return BE_SQLITE_OK;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 01/18
+//---------------------------------------------------------------------------------------
+DbResult AddonUtils::FinishCreateChangeSet(DgnDbR dgndb)
+    {
+    RevisionStatus status = dgndb.Revisions().FinishCreateRevision();
+    return (status == RevisionStatus::Success) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 09/17
 //---------------------------------------------------------------------------------------
-DbResult AddonUtils::OpenBriefcase(DgnDbPtr& outDb, JsonValueCR briefcaseToken, JsonValueCR changeSetTokens, SchemaUpgradeOptions::RevisionUpgradeOptions revisionUpgradeOptions)
+DbResult AddonUtils::SetupBriefcase(DgnDbPtr& outDb, JsonValueCR briefcaseToken)
     {
     PRECONDITION(!briefcaseToken.isNull() && briefcaseToken.isObject(), BE_SQLITE_ERROR);
     PRECONDITION(briefcaseToken.isMember("pathname") && briefcaseToken.isMember("briefcaseId") && briefcaseToken.isMember("openMode"), BE_SQLITE_ERROR);
-    PRECONDITION(!changeSetTokens.isNull() && changeSetTokens.isArray(), BE_SQLITE_ERROR);
 
     BeFileName briefcasePathname(briefcaseToken["pathname"].asCString(), true);
     int briefcaseId = briefcaseToken["briefcaseId"].asInt();
@@ -212,47 +326,6 @@ DbResult AddonUtils::OpenBriefcase(DgnDbPtr& outDb, JsonValueCR briefcaseToken, 
         if (!EXPECTED_CONDITION(result == BE_SQLITE_OK && "Couldn't setup the briefcase id"))
             return BE_SQLITE_ERROR;
         }
-
-    if (changeSetTokens.size() == 0)
-        {
-        outDb = db;
-        return result;
-        }
-
-    /** Setup the revisions */
-    Utf8String dbGuid = db->GetDbGuid().ToString();
-    bvector<DgnRevisionPtr> revisionPtrs;
-    bvector<DgnRevisionCP> revisions;
-    for (uint32_t ii = 0; ii < changeSetTokens.size(); ii++)
-        {
-        JsonValueCR changeSetToken = changeSetTokens[ii];
-        PRECONDITION(changeSetToken.isMember("id") && changeSetToken.isMember("pathname"), BE_SQLITE_ERROR);
-
-        Utf8String id = changeSetToken["id"].asString();
-        Utf8String parentId = (ii > 0) ? changeSetTokens[ii - 1]["id"].asString() : db->Revisions().GetParentRevisionId();
-
-        RevisionStatus revStatus;
-        DgnRevisionPtr revision = DgnRevision::Create(&revStatus, id, parentId, dbGuid);
-        if (!EXPECTED_CONDITION(revStatus == RevisionStatus::Success))
-            return result;
-        BeAssert(revision.IsValid());
-
-        BeFileName changeSetPathname(changeSetToken["pathname"].asCString(), true);
-        PRECONDITION(changeSetPathname.DoesPathExist(), BE_SQLITE_ERROR);
-
-        revision->SetRevisionChangesFile(changeSetPathname);
-        revisionPtrs.push_back(revision);
-        revisions.push_back(revision.get());
-        }
-
-    /** Reopen the Db merging in the revisions (need to reopen to accommodate potential schema changes) */
-    db->CloseDb();
-    db = nullptr;
-
-    openParams.GetSchemaUpgradeOptionsR().SetUpgradeFromRevisions(revisions, revisionUpgradeOptions);
-    db = DgnDb::OpenDgnDb(&result, briefcasePathname, openParams);
-    if (!EXPECTED_CONDITION(result == BE_SQLITE_OK))
-        return result;
 
     if (db.IsValid())
         db->AddIssueListener(s_listener);
