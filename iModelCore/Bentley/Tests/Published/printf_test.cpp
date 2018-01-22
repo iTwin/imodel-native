@@ -162,6 +162,7 @@ EXPECT_TRUE( strcmp (buf, "abc") == 0 );
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if !defined(BENTLEYCONFIG_OS_APPLE_MACOS)
 TEST(printf_test, Numbers)
 {
   char buf[8];
@@ -2928,6 +2929,7 @@ TEST(printf_test, Numbers)
   }
 #endif // defined (WIP_NOT_IMPLEMENTED)
 }
+#endif // !defined(BENTLEYCONFIG_OS_APPLE_MACOS)
 
 #if defined (NOT_YET)
 //---------------------------------------------------------------------------------------
