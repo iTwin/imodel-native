@@ -50,6 +50,8 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 #define BRRA_KOQ_STATION        "STATION"
 #define BRRA_KOQ_LENGTH         "LENGTH"
 #define BRRA_KOQ_AREA           "AREA"
+#define BRRA_KOQ_ANGLE          "ANGLE"
+#define BRRA_KOQ_BEARING        "BEARING"
 
 
 //-----------------------------------------------------------------------------------------
