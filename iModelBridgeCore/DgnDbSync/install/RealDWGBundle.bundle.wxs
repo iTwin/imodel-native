@@ -76,7 +76,7 @@
       </wbb:UISequences>
 
         <?ifdef BBinstallerBuildTypeRelease?>
-        <Variable Name="InstallDirectory" Value="[ProgramFiles64Folder]Bentley\IModelBridgeForRealDwg\" Persisted="yes" Type="string"/>
+        <Variable Name="InstallDirectory" Value="[ProgramFiles64Folder]Bentley\DwgBridge\" Persisted="yes" Type="string"/>
         <?else?>
         <Variable Name="InstallDirectory" Value="[ProgramFiles64Folder]Bentley\$(var.bbVarProductShortName)-$(var.INSTALLER_PRODUCT_VERSION)\" Persisted="yes" Type="string"/>
         <?endif?>
