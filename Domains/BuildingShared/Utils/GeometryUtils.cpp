@@ -2410,6 +2410,28 @@ bvector<DPoint3d> GeometryUtils::GetCurveVectorPoints
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool GeometryUtils::IsSameSingleLoopGeometry
+(
+    ICurvePrimitiveCR geom1, 
+    ICurvePrimitiveCR geom2, 
+    double tolerance
+)
+    {
+    DPoint3d start1, end1, start2, end2;
+    geom1.GetStartEnd(start1, end1);
+    geom2.GetStartEnd(start2, end2);
+
+    if (!start1.AlmostEqual(end1) || !start2.AlmostEqual(end2))
+        return false;
+    
+    return IsSameSingleLoopGeometry(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, geom1.Clone()),
+                                    *CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, geom2.Clone()),
+                                    tolerance);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                11/2017
 //---------------+---------------+---------------+---------------+---------------+------
 bool GeometryUtils::IsSameSingleLoopGeometry

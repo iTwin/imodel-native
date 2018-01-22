@@ -378,6 +378,9 @@ public:
     //! @return                   Returns points of a curve vector. If it is a UnionRegion or a ParityRegion it returns points of a first contained CurveVector.
     BUILDINGSHAREDUTILS_EXPORT static bvector<DPoint3d> GetCurveVectorPoints(CurveVectorCPtr curveVectorPtr, double maxEdgeLength = DEFAULT_MAX_EDGE_LENGTH, bool keepSectorArea = false);
     
+    //! Checks if given closed ICurvePrimitives have same geometry (within tolerance). They are rotated to have the same start point before comparing
+    BUILDINGSHAREDUTILS_EXPORT static bool IsSameSingleLoopGeometry(ICurvePrimitiveCR geom1, ICurvePrimitiveCR geom2, double tolerance = DoubleOps::SmallMetricDistance());
+
     //! Checks if given CurveVectors have the same geometry (within tolerance). They are rotated to have the same start point before comparing.
     BUILDINGSHAREDUTILS_EXPORT static bool IsSameSingleLoopGeometry(CurveVectorCR geom1, CurveVectorCR geom2, double tolerace = DoubleOps::SmallMetricDistance());
 
