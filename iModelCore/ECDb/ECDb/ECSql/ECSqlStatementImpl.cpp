@@ -21,9 +21,41 @@ NativeLogging::ILogger* ECSqlStatement::Impl::s_prepareDiagnosticsLogger = nullp
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        03/17
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Utf8CP ecsql, ECCrudWriteToken const* writeToken, bool logErrors)
+ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Utf8CP ecsql, ECCrudWriteToken const* writeToken, bool logErrors, DbCP readonlyConn)
     {
     ScopedIssueReporter issues(ecdb, logErrors);
+    //Is it the same connection
+    if (readonlyConn)
+        {
+        if (readonlyConn == &ecdb)
+            readonlyConn = nullptr;
+        else
+            {
+            if (!readonlyConn->IsDbOpen())
+                {
+                issues.Report("'readonlyConn' parameter poin to a connection that is not open");
+                return ECSqlStatus::Error;
+                }
+
+            if (!readonlyConn->IsReadonly())
+                {
+                issues.Report("'readonlyConn' parameter must point to a readonly db connection");
+                return ECSqlStatus::Error;
+                }
+
+            if (readonlyConn->GetDbGuid() != ecdb.GetDbGuid())
+                {
+                issues.Report("'readonlyConn' parameter must point to a db that has same DbGuid as ecdb provided");
+                return ECSqlStatus::Error;
+                }
+
+            if (BeStringUtilities::Stricmp(readonlyConn->GetDbFileName(), ecdb.GetDbFileName()) != 0)
+                {
+                issues.Report("'readonlyConn' parameter must point to a db file on disk as the ecdb");
+                return ECSqlStatus::Error;
+                }            
+            }
+        }
 
     if (IsPrepared())
         {
@@ -59,7 +91,7 @@ ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Utf8CP ecsql, ECCrudWrite
         return ECSqlStatus::Error;
         }
 
-    ECSqlPrepareContext ctx(preparedStatement, issues);
+    ECSqlPrepareContext ctx(preparedStatement, issues, readonlyConn);
     ECSqlStatus stat = preparedStatement.Prepare(ctx, *exp, ecsql);
     if (!stat.IsSuccess())
         Finalize();

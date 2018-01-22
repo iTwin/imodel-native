@@ -130,7 +130,13 @@ ECSqlStatus SingleECSqlPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         }
 
     //don't let BeSQLite log and assert on error (therefore use TryPrepare instead of Prepare)
-    DbResult nativeSqlStat = m_sqliteStatement.TryPrepare(m_ecdb, nativeSql.c_str());
+    DbResult nativeSqlStat;
+ 
+    if (DbCP conn = ctx.GetSecondaryConnection())
+        nativeSqlStat = m_sqliteStatement.TryPrepare(*conn, nativeSql.c_str());
+    else
+        nativeSqlStat = m_sqliteStatement.TryPrepare(m_ecdb, nativeSql.c_str());
+
     if (nativeSqlStat != BE_SQLITE_OK)
         {
         ctx.Issues().ReportV("Preparing the ECSQL '%s' failed. Underlying SQLite statement failed to prepare: %s %s [SQL: %s]", GetECSql(),
@@ -1264,6 +1270,7 @@ ECSqlStatus ECSqlUpdatePreparedStatement::CheckForReadonlyProperties(PrepareInfo
 ECSqlStatus ECSqlDeletePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp const& exp)
     {
     BeAssert(PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(exp.GetAs<DeleteStatementExp>().GetClassNameExp()->GetInfo().GetMap(), m_type, exp.GetAs<DeleteStatementExp>().GetClassNameExp()->IsPolymorphic())).IsSupported() && "Should have been caught at parse time");
+
     //WIP this will probably not be enough
     return SingleECSqlPreparedStatement::_Prepare(ctx, exp);
     }
