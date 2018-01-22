@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/SchemaValidator.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -15,7 +15,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                 Krischan.Eberle                    05/2014
 //---------------------------------------------------------------------------------------
 //static
-bool SchemaValidator::ValidateSchemas(SchemaImportContext& ctx, IssueReporter const& issueReporter, bvector<ECN::ECSchemaCP> const& schemas)
+bool SchemaValidator::ValidateSchemas(SchemaImportContext& ctx, IIssueReporter const& issueReporter, bvector<ECN::ECSchemaCP> const& schemas)
     {
     PERFLOG_START("ECDb", "Schema Validation");
     bool valid = true;
@@ -58,7 +58,7 @@ bool SchemaValidator::ValidateSchemas(SchemaImportContext& ctx, IssueReporter co
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-bool SchemaValidator::ValidBaseClassesRule::Validate(SchemaImportContext const& ctx, IssueReporter const& issueReporter, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const
+bool SchemaValidator::ValidBaseClassesRule::Validate(SchemaImportContext const& ctx, IIssueReporter const& issueReporter, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const
     {
     ECBaseClassesList const& baseClasses = ecClass.GetBaseClasses();
     if (baseClasses.empty())
@@ -78,7 +78,7 @@ bool SchemaValidator::ValidBaseClassesRule::Validate(SchemaImportContext const& 
                 continue; 
                 }
 
-            issueReporter.Report("ECClass '%s' has invalid base class: An abstract class must not have a non-abstract base class.",
+            issueReporter.ReportV("ECClass '%s' has invalid base class: An abstract class must not have a non-abstract base class.",
                               ecClass.GetFullName());
             return false;
             }
@@ -100,7 +100,7 @@ bool SchemaValidator::ValidBaseClassesRule::Validate(SchemaImportContext const& 
                 continue;
                 }
 
-            issueReporter.Report("ECClass '%s' has multiple base classes. Multi-inheritance is not supported. Use mixins instead.",
+            issueReporter.ReportV("ECClass '%s' has multiple base classes. Multi-inheritance is not supported. Use mixins instead.",
                           ecClass.GetFullName());
             return false;
             }
@@ -116,7 +116,7 @@ bool SchemaValidator::ValidBaseClassesRule::Validate(SchemaImportContext const& 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-bool SchemaValidator::ValidRelationshipRule::Validate(IssueReporter const& issueReporter, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const
+bool SchemaValidator::ValidRelationshipRule::Validate(IIssueReporter const& issueReporter, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const
     {
     ECRelationshipClassCP relClass = ecClass.GetRelationshipClassCP();
     if (relClass == nullptr)
@@ -128,14 +128,14 @@ bool SchemaValidator::ValidRelationshipRule::Validate(IssueReporter const& issue
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-bool SchemaValidator::ValidRelationshipRule::ValidateConstraint(IssueReporter const& issueReporter, ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipEnd constraintEnd, ECN::ECRelationshipConstraintCR constraint) const
+bool SchemaValidator::ValidRelationshipRule::ValidateConstraint(IIssueReporter const& issueReporter, ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipEnd constraintEnd, ECN::ECRelationshipConstraintCR constraint) const
     {
     ECRelationshipConstraintClassList const& constraintClasses = constraint.GetConstraintClasses();
     const size_t constraintClassCount = constraintClasses.size();
     //we cannot yet enforce one class per constraint.
     if (constraintClassCount == 0)
         {
-        issueReporter.Report("The relationship class '%'s is not abstract and therefore constraints must be defined. The %s constraint is empty though.", 
+        issueReporter.ReportV("The relationship class '%'s is not abstract and therefore constraints must be defined. The %s constraint is empty though.",
                              relClass.GetFullName(), constraintEnd == ECRelationshipEnd_Source ? "source" : "target");
         return false;
         }
@@ -146,13 +146,13 @@ bool SchemaValidator::ValidRelationshipRule::ValidateConstraint(IssueReporter co
         {
         if (constraintClass->GetSchema().IsStandardSchema() && constraintClass->GetName().EqualsIAscii("AnyClass"))
             {
-            issueReporter.Report("The relationship class '%s' uses the AnyClass constraint. AnyClass is not supported.", relClass.GetFullName());
+            issueReporter.ReportV("The relationship class '%s' uses the AnyClass constraint. AnyClass is not supported.", relClass.GetFullName());
             valid = false;
             }
 
         if (duplicateConstraintClasses.find(constraintClass) != duplicateConstraintClasses.end())
             {
-            issueReporter.Report(" The relationship class '%s' defines class '%s' more than once in the %s constraint. This is not supported.", 
+            issueReporter.ReportV(" The relationship class '%s' defines class '%s' more than once in the %s constraint. This is not supported.",
                                  relClass.GetFullName(), constraintClass->GetFullName(), constraintEnd == ECRelationshipEnd_Source ? "source" : "target");
             valid = false;
             }
@@ -169,7 +169,7 @@ bool SchemaValidator::ValidRelationshipRule::ValidateConstraint(IssueReporter co
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-bool SchemaValidator::ValidPropertyRule::Validate(IssueReporter const& issueReporter, ECN::ECClassCR ecClass, ECN::ECPropertyCR prop) const
+bool SchemaValidator::ValidPropertyRule::Validate(IIssueReporter const& issueReporter, ECN::ECClassCR ecClass, ECN::ECPropertyCR prop) const
     {
     bool isValid = true;
     if (!ValidatePropertyName(issueReporter, ecClass, prop))
@@ -186,7 +186,7 @@ bool SchemaValidator::ValidPropertyRule::Validate(IssueReporter const& issueRepo
         NavigationECPropertyCP navProp = prop.GetAsNavigationProperty();
         if (navProp->GetRelationshipClass()->HasBaseClasses())
             {
-            issueReporter.Report("Invalid navigation property in ECClass '%s': The navigation property '%s' references the relationship class '%s' which has a base class. Navigation properties must always reference the root relationship class though.", 
+            issueReporter.ReportV("Invalid navigation property in ECClass '%s': The navigation property '%s' references the relationship class '%s' which has a base class. Navigation properties must always reference the root relationship class though.",
                                  ecClass.GetFullName(), navProp->GetName().c_str(), navProp->GetRelationshipClass()->GetFullName());
             isValid = false;
             }
@@ -198,7 +198,7 @@ bool SchemaValidator::ValidPropertyRule::Validate(IssueReporter const& issueRepo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-bool SchemaValidator::ValidPropertyRule::ValidatePropertyName(IssueReporter const& issueReporter, ECN::ECClassCR ecClass, ECN::ECPropertyCR prop) const
+bool SchemaValidator::ValidPropertyRule::ValidatePropertyName(IIssueReporter const& issueReporter, ECN::ECClassCR ecClass, ECN::ECPropertyCR prop) const
     {
     Utf8StringCR propName = prop.GetName();
 
@@ -228,7 +228,7 @@ bool SchemaValidator::ValidPropertyRule::ValidatePropertyName(IssueReporter cons
 
     if (isCollision)
         {
-        issueReporter.Report("Invalid property in ECClass '%s': The property '%s' has a name of an ECSQL system property which is not allowed.", ecClass.GetFullName(), propName.c_str());
+        issueReporter.ReportV("Invalid property in ECClass '%s': The property '%s' has a name of an ECSQL system property which is not allowed.", ecClass.GetFullName(), propName.c_str());
         return false;
         }
 
@@ -238,7 +238,7 @@ bool SchemaValidator::ValidPropertyRule::ValidatePropertyName(IssueReporter cons
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-bool SchemaValidator::ValidPropertyRule::ValidatePropertyStructType(IssueReporter const& issueReporter, ECN::ECStructClassCR owningStruct, ECN::ECPropertyCR prop) const
+bool SchemaValidator::ValidPropertyRule::ValidatePropertyStructType(IIssueReporter const& issueReporter, ECN::ECStructClassCR owningStruct, ECN::ECPropertyCR prop) const
     {
     ECStructClassCP structType = nullptr;
     if (prop.GetIsStruct())
@@ -255,7 +255,7 @@ bool SchemaValidator::ValidPropertyRule::ValidatePropertyStructType(IssueReporte
 
     if (structType->Is(&owningStruct))
         {
-        issueReporter.Report("Invalid cyclic struct reference: ECStructClass '%s' contains the property '%s' which is of the same type or a derived type than this ECStructClass.",
+        issueReporter.ReportV("Invalid cyclic struct reference: ECStructClass '%s' contains the property '%s' which is of the same type or a derived type than this ECStructClass.",
                              owningStruct.GetFullName(), prop.GetName().c_str());
         return false;
         }

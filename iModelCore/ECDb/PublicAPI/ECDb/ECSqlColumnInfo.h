@@ -191,6 +191,39 @@ typedef ECSqlPropertyPath const& ECSqlPropertyPathCR;
 //+===============+===============+===============+===============+===============+======
 struct ECSqlColumnInfo final
     {
+    //! Represents the ECClass of the top-level ECProperty backing this column.
+    //! @remarks When nesting into a struct or array this method still always returns the ECClass
+    //! from the top-level property, i.e. it is an ECClass from the FROM or JOIN clause. 
+    //! It does not return the ECClass of ECSqlColumnInfo::GetProperty.
+    //! @e Example
+    //! For the ECSQL <c>SELECT Address FROM myschema.Company</c> where Address is a property of the ECStruct @c Location,
+    //! GetRootClass of the first column returns the ECN::ECClass 'Company' and not the ECStruct type 'Location'.
+    struct RootClass final
+        {
+        private:
+            ECN::ECClassCP m_class = nullptr;
+            Utf8String m_tableSpace;
+            Utf8String m_alias;
+
+        public:
+#if !defined (DOCUMENTATION_GENERATOR)
+            RootClass();
+            RootClass(ECN::ECClassCR ecClass, Utf8CP tableSpace, Utf8CP alias = nullptr);
+#endif
+            bool IsValid() const { return m_class != nullptr; };
+            //! Gets the ECClass of the top-level ECProperty backing this column.
+            //! @return Column's ECClass reference
+            ECN::ECClassCR GetClass() const { BeAssert(IsValid()); return *m_class; }
+            //! Gets the table space in which this root class is persisted.
+            //! @remarks for classes in the primary file the table space is MAIN. For classes in attached
+            //! files, the table space is the name by which the file was attached (see BentleyApi::BeSQLite::Db::AttachDb)
+            //! For generated properties the table space is empty
+            Utf8StringCR GetTableSpace() const { BeAssert(IsValid()); return m_tableSpace; }
+            //! Gets the class alias of the root class to which the column refers to.
+            //! @return Alias of root class the column refers to or nullptr if no class alias was specified in the select clause
+            Utf8StringCR GetAlias() const { BeAssert(IsValid()); return m_alias; }
+
+        };
     private:
         ECN::ECTypeDescriptor m_dataType;
         DateTime::Info m_dateTimeInfo;
@@ -199,19 +232,12 @@ struct ECSqlColumnInfo final
         bool m_isSystemProperty = false;
         bool m_isGeneratedProperty = false;
         ECSqlPropertyPath m_propertyPath;
-        ECN::ECClassCP m_rootClass = nullptr;
-        Utf8String m_rootClassAlias;
-
-        ECSqlColumnInfo(ECN::ECTypeDescriptor const&, DateTime::Info const&, ECN::ECStructClassCP, ECN::ECPropertyCP, bool isSystemProperty, bool isGeneratedProperty, ECSqlPropertyPath const&, ECN::ECClassCR rootClass, Utf8CP rootClassAlias);
-
-        static ECN::ECTypeDescriptor DetermineDataType(DateTime::Info&, ECN::ECStructClassCP&, ECN::ECPropertyCR);
+        RootClass m_rootClass;
 
     public:
 #if !defined (DOCUMENTATION_GENERATOR)
         ECSqlColumnInfo();
-        static ECSqlColumnInfo CreateTopLevel(bool isSystemProperty, bool isGeneratedProperty, ECSqlPropertyPath const&, ECN::ECClassCR rootClass, Utf8CP rootClassAlias);
-        static ECSqlColumnInfo CreateChild(ECSqlColumnInfo const& parent, ECN::ECPropertyCR childProperty, bool isSystemProperty);
-        static ECSqlColumnInfo CreateForArrayElement(ECSqlColumnInfo const& parent, int arrayIndex);
+        ECSqlColumnInfo(ECN::ECTypeDescriptor const&, DateTime::Info const&, ECN::ECStructClassCP, ECN::ECPropertyCP, bool isSystemProperty, bool isGeneratedProperty, ECSqlPropertyPath const&, RootClass const&);
 #endif
 
         ~ECSqlColumnInfo() {}
@@ -220,7 +246,7 @@ struct ECSqlColumnInfo final
         //!Invalid ECSqlColumnInfos can be returned for invalid calls to retrieve an ECSqlColumnInfo.
         //!@see ECSqlStatement::GetColumnInfo
         //!@return true or false
-        bool IsValid() const { return m_rootClass != nullptr; }
+        bool IsValid() const { return m_rootClass.IsValid(); }
 
         //! Gets the data type of the column represented by this info object.
         //! @return Column data type
@@ -275,12 +301,7 @@ struct ECSqlColumnInfo final
         //! For the ECSQL <c>SELECT Address FROM myschema.Company</c> where Address is a property of the ECStruct @c Location,
         //! GetRootClass of the first column returns the ECN::ECClass 'Company' and not the ECStruct type 'Location'.
         //! @return Column's ECClass reference
-        ECN::ECClassCR GetRootClass() const { BeAssert(IsValid() && "Must not call GetRootClass if IsValid is false"); return *m_rootClass; }
-
-        //! Gets the class alias of the root class to which the column refers to.
-        //! @return Alias of root class the column refers to or nullptr if no class alias was specified in the select clause
-        //! @see GetRootClass
-        Utf8CP GetRootClassAlias() const { BeAssert(IsValid()); return m_rootClassAlias.c_str(); }
+        RootClass const& GetRootClass() const { BeAssert(IsValid() && "Must not call GetRootClass if IsValid is false"); return m_rootClass; }
     };
 
 typedef ECSqlColumnInfo const& ECSqlColumnInfoCR;

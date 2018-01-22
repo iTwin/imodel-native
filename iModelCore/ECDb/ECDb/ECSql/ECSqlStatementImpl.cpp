@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlStatementImpl.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -21,17 +21,51 @@ NativeLogging::ILogger* ECSqlStatement::Impl::s_prepareDiagnosticsLogger = nullp
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        03/17
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Utf8CP ecsql, ECCrudWriteToken const* writeToken)
+ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Utf8CP ecsql, ECCrudWriteToken const* writeToken, bool logErrors, DbCP readonlyConn)
     {
+    ScopedIssueReporter issues(ecdb, logErrors);
+    //Is it the same connection
+    if (readonlyConn)
+        {
+        if (readonlyConn == &ecdb)
+            readonlyConn = nullptr;
+        else
+            {
+            if (!readonlyConn->IsDbOpen())
+                {
+                issues.Report("'readonlyConn' parameter poin to a connection that is not open");
+                return ECSqlStatus::Error;
+                }
+
+            if (!readonlyConn->IsReadonly())
+                {
+                issues.Report("'readonlyConn' parameter must point to a readonly db connection");
+                return ECSqlStatus::Error;
+                }
+
+            if (readonlyConn->GetDbGuid() != ecdb.GetDbGuid())
+                {
+                issues.Report("'readonlyConn' parameter must point to a db that has same DbGuid as ecdb provided");
+                return ECSqlStatus::Error;
+                }
+
+            if (BeStringUtilities::Stricmp(readonlyConn->GetDbFileName(), ecdb.GetDbFileName()) != 0)
+                {
+                issues.Report("'readonlyConn' parameter must point to a db file on disk as the ecdb");
+                return ECSqlStatus::Error;
+                }            
+            }
+        }
+
     if (IsPrepared())
         {
-        LOG.error("ECSQL statement has already been prepared.");
+        issues.Report("ECSQL statement has already been prepared.");
         return ECSqlStatus::Error;
         }
 
     if (Utf8String::IsNullOrEmpty(ecsql))
         {
-        LOG.error("ECSQL string is empty.");
+        issues.Report("ECSQL string is empty.");
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -39,7 +73,7 @@ ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Utf8CP ecsql, ECCrudWrite
 
     //Step 1: parse the ECSQL
     ECSqlParser parser;
-    std::unique_ptr<Exp> exp = parser.Parse(ecdb, ecsql);
+    std::unique_ptr<Exp> exp = parser.Parse(ecdb, ecsql, issues);
     if (exp == nullptr)
         {
         Finalize();
@@ -52,12 +86,12 @@ ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Utf8CP ecsql, ECCrudWrite
     Policy policy = PolicyManager::GetPolicy(ECCrudPermissionPolicyAssertion(ecdb, preparedStatement.GetType() != ECSqlType::Select, writeToken));
     if (!policy.IsSupported())
         {
-        ecdb.GetImpl().Issues().Report(policy.GetNotSupportedMessage().c_str());
+        issues.Report(policy.GetNotSupportedMessage().c_str());
         Finalize();
         return ECSqlStatus::Error;
         }
 
-    ECSqlPrepareContext ctx(preparedStatement);
+    ECSqlPrepareContext ctx(preparedStatement, issues, readonlyConn);
     ECSqlStatus stat = preparedStatement.Prepare(ctx, *exp, ecsql);
     if (!stat.IsSuccess())
         Finalize();

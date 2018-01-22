@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlFieldFactory.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -20,8 +20,8 @@ struct ECSqlFieldFactory final
     {
     private:
         //static class
-        ECSqlFieldFactory();
-        ~ECSqlFieldFactory();
+        ECSqlFieldFactory() = delete;
+        ~ECSqlFieldFactory() = delete;
 
         static ECSqlStatus CreatePrimitiveField(std::unique_ptr<ECSqlField>&, int& sqlColumnIndex, ECSqlPrepareContext&, ECSqlColumnInfo const&, ECN::PrimitiveType);
         static ECSqlStatus CreateStructField(std::unique_ptr<ECSqlField>&, int& sqlColumnIndex, ECSqlPrepareContext&, ECSqlColumnInfo const&, ECN::ECStructClassCR);
@@ -30,14 +30,18 @@ struct ECSqlFieldFactory final
         static ECSqlStatus CreateStructMemberFields(std::unique_ptr<ECSqlField>&, int& sqlColumnIndex, ECSqlPrepareContext&, ECN::ECStructClassCR, ECSqlColumnInfo const&);
         static ECSqlStatus CreateChildField(std::unique_ptr<ECSqlField>& childField, ECSqlPrepareContext&, int& sqlColumnIndex, ECSqlColumnInfo const& parentFieldColumnInfo, ECN::ECPropertyCR childProperty);
 
-        static ECSqlColumnInfo CreateECSqlColumnInfoFromPropertyNameExp(ECSqlPrepareContext const&, PropertyNameExp const&);
-        static ECSqlColumnInfo CreateECSqlColumnInfoFromGeneratedProperty(ECSqlPrepareContext const&, ECN::ECPropertyCR generatedProperty);
+        static ECSqlColumnInfo CreateColumnInfoFromPropertyNameExp(ECSqlPrepareContext const&, PropertyNameExp const&);
+        static ECSqlColumnInfo CreateColumnInfoFromGeneratedProperty(ECSqlPrepareContext const&, ECN::ECPropertyCR generatedProperty);
+        static ECSqlColumnInfo CreateTopLevelColumnInfo(IIssueReporter const&, bool isSystemProperty, bool isGeneratedProperty, ECSqlPropertyPath const&, ECSqlColumnInfo::RootClass const&);
+        static ECN::ECTypeDescriptor DetermineDataType(DateTime::Info&, ECN::ECStructClassCP&, IIssueReporter const&, ECN::ECPropertyCR);
 
         static ECSqlSelectPreparedStatement& GetPreparedStatement(ECSqlPrepareContext&);
 
     public:
         static ECSqlStatus CreateField(ECSqlPrepareContext&, DerivedPropertyExp const* derivedProperty, int startColumnIndex);
 
+        static ECSqlColumnInfo CreateChildColumnInfo(IIssueReporter const&, ECSqlColumnInfo const& parent, ECN::ECPropertyCR childProperty, bool isSystemProperty);
+        static ECSqlColumnInfo CreateColumnInfoForArrayElement(ECSqlColumnInfo const& parent, int arrayIndex);
 
     };
 

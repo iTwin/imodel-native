@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/MapStrategy.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -56,8 +56,8 @@ struct TablePerHierarchyInfo final
         Nullable<uint32_t> m_maxSharedColumnsBeforeOverflow;
         JoinedTableInfo m_joinedTableInfo = JoinedTableInfo::None;
 
-        BentleyStatus DetermineSharedColumnsInfo(ShareColumnsCustomAttribute const&, MapStrategyExtendedInfo const* baseMapStrategy, ECN::ECClassCR, IssueReporter const&);
-        BentleyStatus DetermineJoinedTableInfo(bool hasJoinedTablePerDirectSubclassOption, MapStrategyExtendedInfo const* baseMapStrategy, ECN::ECClassCR, IssueReporter const&);
+        BentleyStatus DetermineSharedColumnsInfo(ShareColumnsCustomAttribute const&, MapStrategyExtendedInfo const* baseMapStrategy, ECN::ECClassCR, IIssueReporter const&);
+        BentleyStatus DetermineJoinedTableInfo(bool hasJoinedTablePerDirectSubclassOption, MapStrategyExtendedInfo const* baseMapStrategy, ECN::ECClassCR, IIssueReporter const&);
 
     public:
         TablePerHierarchyInfo() {}
@@ -65,7 +65,7 @@ struct TablePerHierarchyInfo final
             : m_isValid(true), m_shareColumnsMode(shareColumnsMode), m_maxSharedColumnsBeforeOverflow(maxSharedColumnsBeforeOverflow), m_joinedTableInfo(joinedTableInfo)
             {}
 
-        BentleyStatus Initialize(ShareColumnsCustomAttribute const&, MapStrategyExtendedInfo const* baseMapStrategy, bool hasJoinedTablePerDirectSubclassOption, ECN::ECClassCR, IssueReporter const&);
+        BentleyStatus Initialize(ShareColumnsCustomAttribute const&, MapStrategyExtendedInfo const* baseMapStrategy, bool hasJoinedTablePerDirectSubclassOption, ECN::ECClassCR, IIssueReporter const&);
 
         //!@return true if the respective MapStrategy is TablePerHierarchy
         bool IsValid() const { return m_isValid; }
