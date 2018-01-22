@@ -2,9 +2,10 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  *--------------------------------------------------------------------------------------------*/
 import { IModelStatus, StatusCodeWithMessage, RepositoryStatus } from "@bentley/bentleyjs-core/lib/BentleyError";
-import { BentleyStatus } from "@bentley/bentleyjs-core/lib/Bentley";
+import { BentleyStatus, ChangeSetProcessOption } from "@bentley/bentleyjs-core/lib/Bentley";
 import { DbResult, DbOpcode } from "@bentley/bentleyjs-core/lib/BeSQLite";
 import { OpenMode } from "@bentley/bentleyjs-core/lib/BeSQLite";
+import { IDisposable } from "@bentley/bentleyjs-core/lib/Disposable";
 
 /* The signature of a callback that takes two arguments, the first being the error that describes a failed outcome and the second being the data
 returned in a successful outcome. */
@@ -183,6 +184,23 @@ declare class NodeAddonDgnDb {
   /** Register a NodeAddonRepositoryManager. This is called indirectly as a side-effect of the app calling saveChanges or briefcaseManagerEndBulkOperation. */
   setRepositoryManager(mgr: NodeAddonRepositoryManager): void;
 
+
+  /**
+   * Process change sets
+   * @param cachePath Path to the root of the disk cache
+   */
+  processChangeSets(changeSets: string, processOptions: ChangeSetProcessOption): DbResult;
+
+  /**
+   * Start creating a new change set with local changes
+   */
+  startCreateChangeSet(): ErrorStatusOrResult<DbResult, string>;
+
+  /**
+   * Start creating a new change set with local changes
+   */
+  finishCreateChangeSet(): DbResult;
+
   /** Creates an EC change cache for this iModel (but does not attach it). 
    * @param changeCacheFile The created change cache ECDb file
    * @param changeCachePath The full path to the EC change cache file in the local file system
@@ -230,12 +248,10 @@ declare class NodeAddonDgnDb {
   setDbGuid(guid: string): DbResult;
 
   /**
-   * TBD
-   * @param briefcaseToken TBD
-   * @param changeSetTokens TBD
-   * @param revisionUpgradeOptions TBD
+   * Sets up a briefcase
+   * @param briefcaseToken Token identifying a briefcase
    */
-  openBriefcase(briefcaseToken: string, changeSetTokens: string, revisionUpgradeOptions?:number): DbResult;
+  setupBriefcase(briefcaseToken: string): DbResult;
 
   /** 
    * Save any pending changes to this iModel.  
@@ -447,7 +463,7 @@ declare class NodeAddonDgnDb {
 }
 
 /* The NodeAddonECDb class that is projected by the iModelJs node addon. */
-declare class NodeAddonECDb {
+declare class NodeAddonECDb implements IDisposable {
     constructor();
      /**
      * Create a new ECDb.
@@ -495,7 +511,7 @@ declare class NodeAddonECDb {
 }
 
 /* The NodeAddonECSqlStatement class that is projected by the iModelJs node addon. */
-declare class NodeAddonECSqlStatement {
+declare class NodeAddonECSqlStatement implements IDisposable {
     constructor();
 
     /**
@@ -514,12 +530,19 @@ declare class NodeAddonECSqlStatement {
     /** Dispose of the native ECSqlStatement object - call this when finished stepping a statement, but only if the statement is not shared. */
     dispose(): void;
 
+    /**
+     * Gets a binder for the specified parameter. It can be used to bind any type of values to the parameter.
+     * @param param Index (1-based) or name (without leading colon) of the parameter.
+     * @return Binder for the specified parameter
+     */
+    getBinder(param: number | string): NodeAddonECSqlBinder;
+
     /** Clear the bindings of this statement. See bindValues.
      * @return non-zero error status in case of failure.
      */
     clearBindings(): DbResult;
 
-    /**
+    /** @deprecated Use getBinder instead
      * Bind one or more values to placeholders in this ECSql statement.
      * @param valuesJson The values to bind in stringified JSON format. The values must be an array if the placeholders are positional, or an any object with properties if the placeholders are named.
      * @return Zero status in case of success. Non-zero error status in case of failure. The error's message property will contain additional information.
@@ -531,12 +554,100 @@ declare class NodeAddonECSqlStatement {
     */
     step(): DbResult;
 
+    /** Step this INSERT statement and returns the status along with the ECInstanceId of the newly inserted row.
+     * @return BE_SQLITE_DONE if the insert was successful. Another non-zero error status if step failed because of an error.
+    */
+    stepForInsert(): { status: DbResult, id: string };
+
     /**
      * Get the current row, which the most recent step reached.
      * @return The current row in JSON stringified format.
      */
     getRow(): string;
 
+}
+
+/* The NodeAddonECSqlBinder class that is projected by the iModelJs node addon. */
+declare class NodeAddonECSqlBinder implements IDisposable {
+    constructor();
+
+    /** Dispose of the NodeAddonECSqlBinder object */
+    dispose(): void;
+
+    /** Binds null to the parameter represented by this binder
+     * @return non-zero error status in case of failure.
+     */
+    bindNull(): DbResult;
+
+    /** Binds a BLOB, formatted as Base64 string, to the parameter represented by this binder
+     * @return non-zero error status in case of failure.
+     */
+    bindBlob(base64String: string): DbResult;
+
+    /** Binds a Boolean to the parameter represented by this binder
+     * @return non-zero error status in case of failure.
+     */
+    bindBoolean(val: boolean): DbResult;
+
+    /** Binds a DateTime, formatted as ISO string, to the parameter represented by this binder
+     * @return non-zero error status in case of failure.
+     */
+    bindDateTime(isoString: string): DbResult;
+
+    /** Binds a double to the parameter represented by this binder
+     * @return non-zero error status in case of failure.
+     */
+    bindDouble(val: number): DbResult;
+
+    /** Binds an Id, formatted as hexadecimal string, to the parameter represented by this binder
+     * @return non-zero error status in case of failure.
+     */
+    bindId(hexStr: string): DbResult;
+
+    /** Binds an int to the parameter represented by this binder
+     * @return non-zero error status in case of failure.
+     */
+    bindInt(val: number): DbResult;
+
+    /** Binds an Int64 to the parameter represented by this binder.
+     * @param val Int64 value, either as number or as decimal or hexadecimal string
+     * @return non-zero error status in case of failure.
+     */
+    bindInt64(val: string | number): DbResult;
+
+    /** Binds a Point2d to the parameter represented by this binder.
+     * @return non-zero error status in case of failure.
+     */
+    bindPoint2d(x: number, y: number): DbResult;
+
+    /** Binds a Point3d to the parameter represented by this binder.
+     * @return non-zero error status in case of failure.
+     */
+    bindPoint3d(x: number, y: number, z: number): DbResult;
+
+    /** Binds a string to the parameter represented by this binder.
+     * @return non-zero error status in case of failure.
+     */
+    bindString(val: string): DbResult;
+
+    /** Binds a Navigation property value to the parameter represented by this binder.
+     * @param navIdHexStr Id of the related instance represented by the navigation property (formatted as hexadecimal string)
+     * @param relClassName Name of the relationship class of the navigation property (can be undefined if it is not mandatory)
+     * @param relClassTableSpace In case the relationship of the navigation property is persisted in an attached ECDb file, specify the table space.
+                                 If undefined, ECDb will first look in the primary file and then in the attached ones.
+     * @return non-zero error status in case of failure.
+     */
+    bindNavigation(navIdHexStr: string, relClassName?: string, relClassTableSpace?: string): DbResult;
+
+     /** Gets a binder for the specified member of a struct parameter
+     * @return Struct member binder.
+     */
+    bindMember(memberName: string): NodeAddonECSqlBinder;
+
+     /** Adds a new array element to the array parameter and returns the binder for the new array element
+     * @return Binder for the new array element.
+     */
+    addArrayElement(): NodeAddonECSqlBinder;
 }
 
 /* The NodeAddonECPresentationManager class that is projected by the iModelJs node addon. */
