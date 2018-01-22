@@ -1048,6 +1048,8 @@ public:
             Napi::TypeError::New(Env(), "Invalid second arg for NodeAddonECSqlBinder constructor. ECDb must not be nullptr").ThrowAsJavaScriptException();
         }
 
+    ~NodeAddonECSqlBinder() {}
+
     static bool InstanceOf(Napi::Value val)
         {
         if (!val.IsObject())
@@ -1091,7 +1093,7 @@ public:
         s_constructor.SuppressDestruct();
         }
 
-    static Napi::Object Construct(Napi::Env const& env, IECSqlBinder& binder, ECDbCR ecdb)
+    static Napi::Object New(Napi::Env const& env, IECSqlBinder& binder, ECDbCR ecdb)
         { 
         return s_constructor.New({Napi::External<IECSqlBinder>::New(env, &binder), Napi::External<ECDb>::New(env, const_cast<ECDb*>(&ecdb))});
         }
@@ -1263,7 +1265,7 @@ public:
         {
         REQUIRE_ARGUMENT_STRING(0, memberName);
         IECSqlBinder& memberBinder = GetBinder()[memberName.c_str()];
-        return Construct(info.Env(), memberBinder, *m_ecdb);
+        return New(info.Env(), memberBinder, *m_ecdb);
         }
 
     Napi::Value AddArrayElement(const Napi::CallbackInfo& info)
@@ -1272,7 +1274,7 @@ public:
             Napi::TypeError::New(info.Env(), "AddArrayElement must not have arguments").ThrowAsJavaScriptException();
 
         IECSqlBinder& elementBinder = GetBinder().AddArrayElement();
-        return Construct(info.Env(), elementBinder, *m_ecdb);
+        return New(info.Env(), elementBinder, *m_ecdb);
         }
     };
 
@@ -1306,6 +1308,7 @@ public:
           InstanceMethod("getBinder", &NodeAddonECSqlStatement::GetBinder),
           InstanceMethod("bindValues", &NodeAddonECSqlStatement::BindValues),
           InstanceMethod("step", &NodeAddonECSqlStatement::Step),
+          InstanceMethod("stepForInsert", &NodeAddonECSqlStatement::StepForInsert),
           InstanceMethod("getRow", &NodeAddonECSqlStatement::GetRow),
         });
 
@@ -1403,10 +1406,11 @@ public:
             paramIndex = m_stmt->GetParameterIndex(paramArg.ToString().Utf8Value().c_str());
 
         IECSqlBinder& binder = m_stmt->GetBinder(paramIndex);
-        return NodeAddonECSqlBinder::Construct(info.Env(), binder, *m_stmt->GetECDb());
+        return NodeAddonECSqlBinder::New(info.Env(), binder, *m_stmt->GetECDb());
         }
 
-   Napi::Value BindValues(const Napi::CallbackInfo& info)
+    //! @deprecated Use NodeAddonECSqlStatement::GetBinder instead
+    Napi::Value BindValues(const Napi::CallbackInfo& info)
        {
        MUST_HAVE_M_STMT;
        REQUIRE_ARGUMENT_STRING(0, valuesStr);
@@ -1425,8 +1429,22 @@ public:
     Napi::Value Step(const Napi::CallbackInfo& info)
         {
         MUST_HAVE_M_STMT;
-        auto status = m_stmt->Step();
+        const DbResult status = m_stmt->Step();
         return Napi::Number::New(Env(), (int)status);
+        }
+
+    Napi::Value StepForInsert(const Napi::CallbackInfo& info)
+        {
+        MUST_HAVE_M_STMT;
+        ECInstanceKey key;
+        const DbResult status = m_stmt->Step(key);
+
+        Napi::Object ret = Napi::Object::New(Env());
+        ret.Set(Napi::String::New(Env(), "status"), Napi::Number::New(Env(), (int) status));
+        if (BE_SQLITE_DONE == status)
+            ret.Set(Napi::String::New(Env(), "id"), Napi::String::New(Env(), key.GetInstanceId().ToHexStr().c_str()));
+
+        return ret;
         }
 
     Napi::Value GetRow(const Napi::CallbackInfo& info)

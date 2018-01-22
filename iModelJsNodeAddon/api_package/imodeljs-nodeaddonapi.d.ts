@@ -409,6 +409,11 @@ declare class NodeAddonECSqlStatement implements IDisposable {
     /** Dispose of the native ECSqlStatement object - call this when finished stepping a statement, but only if the statement is not shared. */
     dispose(): void;
 
+    /**
+     * Gets a binder for the specified parameter. It can be used to bind any type of values to the parameter.
+     * @param param Index (1-based) or name (without leading colon) of the parameter.
+     * @return Binder for the specified parameter
+     */
     getBinder(param: number | string): NodeAddonECSqlBinder;
 
     /** Clear the bindings of this statement. See bindValues.
@@ -416,7 +421,7 @@ declare class NodeAddonECSqlStatement implements IDisposable {
      */
     clearBindings(): DbResult;
 
-    /**
+    /** @deprecated Use getBinder instead
      * Bind one or more values to placeholders in this ECSql statement.
      * @param valuesJson The values to bind in stringified JSON format. The values must be an array if the placeholders are positional, or an any object with properties if the placeholders are named.
      * @return Zero status in case of success. Non-zero error status in case of failure. The error's message property will contain additional information.
@@ -427,6 +432,11 @@ declare class NodeAddonECSqlStatement implements IDisposable {
      * @return BE_SQLITE_ROW if the step moved to a new row. BE_SQLITE_DONE if the step failed because there is no next row. Another non-zero error status if step failed because of an error.
     */
     step(): DbResult;
+
+    /** Step this INSERT statement and returns the status along with the ECInstanceId of the newly inserted row.
+     * @return BE_SQLITE_DONE if the insert was successful. Another non-zero error status if step failed because of an error.
+    */
+    stepForInsert(): { status: DbResult, id: string };
 
     /**
      * Get the current row, which the most recent step reached.

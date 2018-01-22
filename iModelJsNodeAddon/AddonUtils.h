@@ -37,6 +37,7 @@ struct AddonUtils
     static BeSQLite::EC::ECInstanceId GetInstanceIdFromInstance(BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
     static void InitLogging();
 
+    //! @deprecated Use NodeAddonECSqlStatement::GetBinder instead
     struct JsonBinder
     {
       private:
