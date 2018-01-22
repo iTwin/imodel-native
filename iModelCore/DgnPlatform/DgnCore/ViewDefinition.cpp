@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ViewDefinition.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -1351,6 +1351,16 @@ Render::SceneLightsPtr DisplayStyle3d::CreateSceneLights(Render::TargetR target)
 
 
     lights->m_fstop = GetSceneBrightness();
+
+    if (IsSkyBoxEnabled())
+        {
+        LoadSkyBoxMaterial (target.GetSystem());
+
+        if (m_skyboxMaterial.IsValid() && m_skyboxMaterial->HasTextureMapping())
+            lights->m_environmentMap = const_cast<Render::TextureP> (m_skyboxMaterial->GetTextureMapping().GetTexture());
+        }
+
+
     return lights;
     }
 

@@ -374,7 +374,7 @@ $(o)ECUtils$(oext) :                                $(DgnCoreDir)ECUtils.cpp $(D
 
 $(o)RenderMaterial$(oext) :                         $(DgnCoreDir)RenderMaterial.cpp $(DgnPlatformAPISrc)RenderMaterial.h ${MultiCompileDepends}
 
-$(o)RenderEnvironment$(oext) :                      $(DgnCoreDir)RenderEnvironment.cpp ${MultiCompileDepends}
+$(o)SmartIBL$(oext) :                      $(DgnCoreDir)SmartIBL.cpp ${MultiCompileDepends}
 
 $(o)DgnProvenance$(oext) :                          $(DgnCoreDir)DgnProvenance.cpp $(DgnPlatformAPISrc)DgnProvenance.h ${MultiCompileDepends}
 

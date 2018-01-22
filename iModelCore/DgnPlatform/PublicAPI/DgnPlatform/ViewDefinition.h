@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ViewDefinition.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -200,6 +200,7 @@ public:
 
 protected:
     EnvironmentDisplay m_environment;
+    mutable Render::MaterialPtr m_skyboxMaterial;
 
     DGNPLATFORM_EXPORT void _OnLoadedJsonProperties() override;
     DGNPLATFORM_EXPORT void _OnSaveJsonProperties() override;
@@ -256,7 +257,14 @@ public:
     void SetEnvironmentDisplay(EnvironmentDisplay const& val) {m_environment = val;}
     /** @} */
 
+    void LoadSkyBoxMaterial(Render::SystemCR system);
+    Render::MaterialP   GetSkyBoxMaterial() { return m_skyboxMaterial.get(); }
+
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DisplayStyle3d));}//!< @private
+
+#ifdef WIP_IBL
+    DGNPLATFORM_EXPORT Render::EnvironmentPtr CreateEnvironment(Render::TargetR);
+#endif
 };
 
 //=======================================================================================

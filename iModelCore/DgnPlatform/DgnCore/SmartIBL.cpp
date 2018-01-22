@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnCore/RenderEnvironment.cpp $
+|     $Source: DgnCore/SmartIBL.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -24,7 +24,6 @@ struct SmartIblFile
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   Open(BeFileNameCR fileName)
     {
-
     if (nullptr == (m_zipFile = unzOpen64 (Utf8String(fileName.c_str()).c_str())) ||
         SUCCESS != FindIBL () ||
         SUCCESS != ReadCurrentFile(m_iblStream))
@@ -36,7 +35,7 @@ BentleyStatus   Open(BeFileNameCR fileName)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ReadEnvironmentFile(Environment::HDRMap& map)
+ImageLight::HDRMapPtr   ReadEnvironmentMap()
     {
     Utf8String      evFileName;
     ByteStream      evFileBytes;
@@ -44,28 +43,30 @@ BentleyStatus ReadEnvironmentFile(Environment::HDRMap& map)
     if (SUCCESS != FindString(evFileName, "EVfile = ") ||
         SUCCESS != LocateFile (evFileName) ||
         SUCCESS != ReadCurrentFile(evFileBytes))
-        return ERROR;
+        return nullptr;
 
-    map.m_image = HDRImage::FromHDR(evFileBytes.GetData(), evFileBytes.GetSize());
 
-    if (!map.m_image .IsValid())
-        return ERROR;
+    HDRImage  image  = HDRImage::FromHDR(evFileBytes.GetData(), evFileBytes.GetSize());
+
+    if (!image.IsValid())
+        return nullptr;
 
     int             iblMapping;
+    double          gamma;
+    DPoint2d        offset;
 
-    ReadValue(map.m_gamma,    "EVgamma = ", 1.0);
-    ReadValue(map.m_offset.x, "EVu = ", 0.0);
-    ReadValue(map.m_offset.y, "EVb = ", 0.0);
-    ReadValue(iblMapping,     "EVmap = ", 0); 
+    ReadValue(gamma,        "EVgamma = ", 1.0);
+    ReadValue(offset.x,     "EVu = ", 0.0);
+    ReadValue(offset.y,     "EVb = ", 0.0);
+    ReadValue(iblMapping,   "EVmap = ", 0); 
 
-    map.m_mapping = ConvertIblMapping(iblMapping);
-    return SUCCESS;
+    return new ImageLight::HDRMap(std::move(image), ConvertIblMapping(iblMapping), offset, gamma, false);
     }
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-Environment::Mapping    ConvertIblMapping(int iblMapping)
+ImageLight::Mapping    ConvertIblMapping(int iblMapping)
     {
     switch (iblMapping)
         {
@@ -73,16 +74,16 @@ Environment::Mapping    ConvertIblMapping(int iblMapping)
             BeAssert(false && "Invalid ibl mapping");
             // fall through...
         case 1:
-            return Environment::Mapping::Spherical;
+            return ImageLight::Mapping::Spherical;
 
         case 2:
-            return Environment::Mapping::Cylindrical;
+            return ImageLight::Mapping::Cylindrical;
 
         case 3:
-            return Environment::Mapping::Angular;
+            return ImageLight::Mapping::Angular;
 
         case 4:
-            return Environment::Mapping::Rectangular;
+            return ImageLight::Mapping::Rectangular;
         
         }
     }
@@ -195,26 +196,19 @@ BentleyStatus FindIBL ()
 };  // SmartIblFile
 
 
-
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-Environment Environment::FromSmartIBL (BeFileNameCR fileName)
+ImageLight::HDRMapPtr ImageLight::DiffuseFromSmartIBL (BeFileNameCR fileName)
     {
-    Environment         environment;
     SmartIblFile        iblFile;
+    HDRMap              map;
 
     if (SUCCESS != iblFile.Open(fileName))
-        return environment;
-
-    HDRMap  diffuse;
-
-    if (SUCCESS == iblFile.ReadEnvironmentFile(diffuse))
-        environment.SetDiffuse(std::move(diffuse));
-
-    return environment;
+        return nullptr;
+        
+    return iblFile.ReadEnvironmentMap();
     }
-
 
 
     

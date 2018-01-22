@@ -20,33 +20,6 @@ struct RGBE
     uint8_t     m_exponent;
     };
 
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                 
-+---------------+---------------+---------------+---------------+---------------+------*/
-static float convertComponent(int expo, int val)
-    {
-    if( expo == -128 ) return 0.0;
-    float v = val / 256.0f;
-    float d = (float) pow(2.0f, expo);
-    return v * d;
-    }
-
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                 
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void convertScanline (float* out, RGBE *scanline, uint32_t length)
-    {
-    while (length-- > 0) 
-        {
-	int expo = scanline[0].m_exponent - 128;
-
-        out[0] = convertComponent(expo, scanline[0].m_r);
-	out[1] = convertComponent(expo, scanline[0].m_g);
-	out[2] = convertComponent(expo, scanline[0].m_b);
-	out += 3;
-	scanline++;
-	}
-    }
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                 
@@ -201,30 +174,62 @@ HDRImage HDRImage::FromHDR(uint8_t const* pData, uint32_t srcLen)
         return HDRImage();;
         }
     HDRImage    image;
-
+    image.m_format = Image::Format::Rgba;       // Not really... alpha == exponent.
     image.m_width  = (firstDimension == 'X') ? firstValue : secondValue;
     image.m_height = (firstDimension == 'Y') ? firstValue : secondValue; 
 
-    size_t  rowLength = image.m_width * 3;
-    image.m_image.resize(rowLength * image.m_height);
-                                                                                                                                                                                                                                                                                                       
+    size_t      rowBytes = 4 * image.m_width;
+    image.m_image.resize(rowBytes * image.m_height);
 
-    bvector<RGBE>   scanline(image.m_width);
-
-    uint8_t const* srcData = reinterpret_cast<uint8_t const*> (srcCharData);
-    uint8_t const* srcEnd  = pData + srcLen;
+    uint8_t const*  srcData = reinterpret_cast<uint8_t const*> (srcCharData);
+    uint8_t const*  srcEnd  = pData + srcLen;
 
     for (uint32_t i=0; i < image.m_height; i++)
         {
-        if (SUCCESS != loadHDRScanline (scanline.data(), srcData, srcEnd, image.m_width))
+        if (SUCCESS != loadHDRScanline ((RGBE*) (image.m_image.data() + i * rowBytes), srcData, srcEnd, image.m_width))
             {
             BeAssert(false && "Scanline error");
             return HDRImage();
             }
-        convertScanline (image.m_image.data() + i * rowLength, scanline.data(), image.m_width);
         }
 
     return image;
     }
 
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<float> HDRImage::Decode() const
+    { 
+    bvector<float>  decoded;
+
+    if (!IsValid())
+        {
+        BeAssert(false);
+        return decoded;
+        }
+    size_t      nPixels = m_width * m_height;
+    uint8_t     const*  in = m_image.data();
+    float*      out = decoded.data();
+
+    for (size_t i=0; i<nPixels; i++, in+=4, out+=3)
+        {
+        if (0 == in[3])
+            {
+            out[0] = out[1] = out[2] = 0.0;
+            }
+        else
+            {
+            int     exponent = in[3] - 128;   
+            float   d = (float) pow(2.0f, exponent) / 256.0f;
+
+            out[0] = in[0] * d;
+            out[1] = in[1] * d;
+            out[2] = in[2] * d;
+            }
+        }
+
+    
+    return decoded;
+    }
     
