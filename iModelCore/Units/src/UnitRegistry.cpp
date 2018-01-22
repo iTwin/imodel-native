@@ -2,7 +2,7 @@
 |
 |     $Source: src/UnitRegistry.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -157,30 +157,15 @@ void UnitRegistry::AddDefaultSystems ()
     {
     AddSystem (SI);
     AddSystem (CGS);
-    //AddSystem (METRIC);
+    AddSystem (METRIC);
     AddSystem (IMPERIAL);
-    //AddSystem (PHYSICS);
-    AddSystem (CHEMISTRY);
-    //AddSystem (THERMODYNAMICS);
-    //AddSystem (ASTRONOMY);
     AddSystem (MARITIME);
     AddSystem (USSURVEY);
-    AddSystem (TYPOGRAPHY);
-    AddSystem (POSTSCRIPT);
-    AddSystem (TEXT);
     AddSystem (INDUSTRIAL);
-    AddSystem (PHARMACEUTICAL);
-    AddSystem (AGRICULTURE);
     AddSystem (INTERNATIONAL);
     AddSystem (USCUSTOM);
-    AddSystem (BRITISH);
-    AddSystem (JAPANESE);
-    //AddSystem (HISTORICAL);
     AddSystem (STATISTICS);
-    //AddSystem (BENTLEY);
-    AddSystem (CUSTOMARY);
     AddSystem (FINANCE);
-    AddSystem (CONSTANT);
     }
 
 //---------------------------------------------------------------------------------------//
