@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/SolidKernel.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -707,6 +707,14 @@ struct Modify
     //! @param[in] backDistance The offset distance in the opposite direction of the sheet body face normal.
     //! @return SUCCESS if thicken could be completed.
     DGNPLATFORM_EXPORT static BentleyStatus ThickenSheet(IBRepEntityR target, double frontDistance, double backDistance);
+
+    //! Perform the intersection operation on 2 sheet bodies
+    //! @param[out] vectorOut the result of the operation
+    //! @param[in] sheet1 the 1st sheet body to intersect
+    //! @param[in] sheet2 the 2nd sheet body to intersect
+    //! @return SUCCESS if intersection operation was completed.
+    //! @note: A successful boolean subtract can produce no geometry, check target.IsValid().
+    DGNPLATFORM_EXPORT static BentleyStatus IntersectSheetFaces(CurveVectorPtr& vectorOut, IBRepEntityR sheet1, IBRepEntityR sheet2);
 
     //! Modify the specified edges of the given body by changing them into faces having the requested blending surface geometry.
     //! @param[in,out] target The target body to blend.

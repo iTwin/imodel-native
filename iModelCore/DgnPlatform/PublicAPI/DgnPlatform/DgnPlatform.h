@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnPlatform.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -513,6 +513,7 @@ struct BoundingBox3d : DRange3d
     explicit BoundingBox3d(DRange2dCR range2d) {DRange3d::InitFrom(&range2d.low, 2, 0.0);}
     bool IsValid() const {return !IsEmpty();}
     void ToJson(JsonValueR value) const {JsonUtils::DRange3dToJson(value, *this);}
+	void FromJson(JsonValueCR value) { JsonUtils::DRange3dFromJson(*this, value); }
 };
 
 //=======================================================================================

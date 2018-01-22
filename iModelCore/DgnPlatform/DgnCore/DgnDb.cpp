@@ -106,18 +106,6 @@ DgnDb::~DgnDb()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDb::DestroyBriefcaseManager() 
-    {
-    if (m_briefcaseManager.IsValid())
-        {
-        m_briefcaseManager->OnDgnDbDestroyed();
-        m_briefcaseManager = nullptr;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDb::_OnDbClose() 
@@ -303,6 +291,35 @@ IBriefcaseManagerR DgnDb::BriefcaseManager()
         }
 
     return *m_briefcaseManager;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnDb::DestroyBriefcaseManager() 
+    {
+    if (m_briefcaseManager.IsValid())
+        {
+        m_briefcaseManager->OnDgnDbDestroyed();
+        m_briefcaseManager = nullptr;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DgnDb::SetConcurrencyControl(IConcurrencyControl* control)
+    {
+    // TBD: assert main thread
+
+    if (Txns().HasChanges())
+        return BSIERROR;
+
+    m_concurrencyControl = control;
+
+    DestroyBriefcaseManager();
+    return BSISUCCESS;
     }
 
 //--------------------------------------------------------------------------------------

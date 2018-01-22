@@ -195,6 +195,7 @@ protected:
     DgnCodeSpecs m_codeSpecs;
     TxnManagerPtr m_txnManager;
     IBriefcaseManagerPtr m_briefcaseManager;
+    RefCountedPtr<IConcurrencyControl> m_concurrencyControl;
     DgnSearchableText m_searchableText;
     mutable std::unique_ptr<RevisionManager> m_revisionManager;
     mutable BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
@@ -205,6 +206,7 @@ protected:
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnDbOpening() override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnDbOpened(BeSQLite::Db::OpenParams const& params) override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnBriefcaseIdAssigned(BeSQLite::BeBriefcaseId newBriefcaseId) override;
+    DGNPLATFORM_EXPORT void DestroyBriefcaseManager();
 
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
     void _OnAfterSchemaImport() const override;
@@ -295,7 +297,10 @@ public:
     DGNPLATFORM_EXPORT IBriefcaseManager& BriefcaseManager(); //!< Manages this briefcase's held locks and codes
 
     //! @private
-    DGNPLATFORM_EXPORT void DestroyBriefcaseManager();
+    DGNPLATFORM_EXPORT BentleyStatus SetConcurrencyControl(IConcurrencyControl*);
+
+    IConcurrencyControl* GetConcurrencyControl() const {return m_concurrencyControl.get();}
+    IOptimisticConcurrencyControl* GetOptimisticConcurrencyControl() const {auto c = m_concurrencyControl.get(); return c? c->_AsIOptimisticConcurrencyControl(): nullptr; }
 
     //! Imports EC Schemas into the DgnDb
     //! @param[in] schemas Schemas to be imported. 

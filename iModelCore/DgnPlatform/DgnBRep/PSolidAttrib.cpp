@@ -216,10 +216,10 @@ bool            PSolidAttrib::HasHiddenFace (PK_BODY_t entity)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus PSolidAttrib::GetHiddenBodyEdges (bset<PK_EDGE_t>& edges, PK_BODY_t body)
     {
-    int         edgeCount = 0;
     edges.clear();
 #if !defined(DGN_BREP_IGNORE_HIDDEN_ATTRIBS)
     PK_EDGE_t*  pEdgeTagArray = NULL;
+    int         edgeCount = 0;
 
     if (SUCCESS != PK_BODY_ask_edges (body, &edgeCount, &pEdgeTagArray))
         return ERROR;
@@ -238,10 +238,10 @@ BentleyStatus PSolidAttrib::GetHiddenBodyEdges (bset<PK_EDGE_t>& edges, PK_BODY_
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus PSolidAttrib::GetHiddenBodyFaces (bset<PK_FACE_t>& faces, PK_BODY_t body)
     {
-    int         faceCount = 0;
     faces.clear ();
 #if !defined(DGN_BREP_IGNORE_HIDDEN_ATTRIBS)
     PK_FACE_t*  pFaceTagArray = NULL;
+    int         faceCount = 0;
 
     if (SUCCESS != PK_BODY_ask_faces (body, &faceCount, &pFaceTagArray))
         return ERROR;
