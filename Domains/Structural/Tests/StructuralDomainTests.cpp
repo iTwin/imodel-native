@@ -895,3 +895,54 @@ TEST_F(StructuralDomainTestFixture, CurvedProfileExtrusionTests)
 
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
     }
+
+TEST_F(StructuralDomainTestFixture, EnsureCanContainAnyPhysicalElement)
+    {
+    Utf8CP schemaXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<ECSchema schemaName = \"TestSchema\" alias = \"tt\" version = \"01.00.00\" xmlns = \"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
+        "    <ECSchemaReference name = \"BisCore\" version = \"01.00\" alias = \"bis\" />"
+        "    <ECEntityClass typeName = \"TestElement\">"
+        "        <BaseClass>bis:PhysicalElement</BaseClass>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+
+    DgnDbPtr db = OpenDgnDb();
+    ASSERT_TRUE(db.IsValid());
+
+    ECN::ECSchemaReadContextPtr schemaContext = ECN::ECSchemaReadContext::CreateContext();
+    schemaContext->AddSchemaLocater(db->GetSchemaLocater());
+
+    ECN::ECSchemaPtr schema;
+    ECN::SchemaReadStatus status = ECN::ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext);
+
+    ASSERT_TRUE(ECN::SchemaReadStatus::Success == status);
+
+    Dgn::SchemaStatus dgnSchemaStatus = db->ImportSchemas(schemaContext->GetCache().GetSchemas());
+
+    ASSERT_TRUE(SchemaStatus::Success == dgnSchemaStatus);
+
+    Structural::StructuralPhysicalModelCPtr physicalModel = Structural::StructuralDomainUtilities::GetStructuralPhysicalModel(MODEL_TEST_NAME, *db);
+    ASSERT_TRUE(physicalModel.IsValid());
+
+    Dgn::PhysicalElementPtr physicalElement = Structural::StructuralDomainUtilities::CreatePhysicalElement("TestSchema", "TestElement", *physicalModel);
+    ASSERT_TRUE(physicalElement.IsValid());
+
+    Dgn::CodeSpecPtr codeSpec = Dgn::CodeSpec::Create(*db, "TestSchema", Dgn::CodeScopeSpec::CreateModelScope());
+
+    if (codeSpec.IsValid())
+        {
+        codeSpec->Insert();
+        }
+
+    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode("TestSchema", *physicalModel, "testPhysicalElement");
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == physicalElement->SetCode(code));
+
+    Dgn::DgnDbStatus dbStatus;
+    physicalElement->Insert(&dbStatus);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == dbStatus);
+
+    DgnElementId id = db->Elements().QueryElementIdByCode(code);
+    ASSERT_TRUE(id.IsValid());
+    }
+
+
