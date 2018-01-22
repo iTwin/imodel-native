@@ -965,6 +965,9 @@ private:
     size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_geometry); }
     T_TileStrokes _GetStrokes (IFacetOptionsR facetOptions) override;
 
+    static PolyfaceHeaderPtr FixPolyface(PolyfaceHeaderR, IFacetOptionsR);
+    static void AddNormals(PolyfaceHeaderR, IFacetOptionsR);
+    static void AddParams(PolyfaceHeaderR, IFacetOptionsR);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
@@ -1321,6 +1324,75 @@ TileGeometryPtr TileGeometry::Create(TileGeomPartR part, TransformCR transform, 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+PolyfaceHeaderPtr PrimitiveTileGeometry::FixPolyface(PolyfaceHeaderR geom, IFacetOptionsR facetOptions)
+    {
+    // Avoid IPolyfaceConstruction if possible...AddPolyface_matched() does a ton of expensive remapping which is unnecessary for our use case.
+    // (Plus we can avoid cloning the input if caller owns it)
+    PolyfaceHeaderPtr polyface(&geom);
+    size_t maxPerFace;
+    if (geom.GetNumFacet(maxPerFace) > 0 && (int)maxPerFace > facetOptions.GetMaxPerFace())
+        {
+        IPolyfaceConstructionPtr builder = PolyfaceConstruction::New(facetOptions);
+        builder->AddPolyface(geom);
+        polyface = &builder->GetClientMeshR();
+        }
+    else
+        {
+        bool addNormals = facetOptions.GetNormalsRequired() && 0 == geom.GetNormalCount(),
+             addParams = facetOptions.GetParamsRequired() && 0 == geom.GetParamCount(),
+             addFaceData = addParams && 0 == geom.GetFaceCount();
+
+        if (addNormals)
+            AddNormals(*polyface, facetOptions);
+
+        if (addParams)
+            AddParams(*polyface, facetOptions);
+
+        if (addFaceData)
+            polyface->BuildPerFaceFaceData();
+
+        if (!geom.HasConvexFacets() && facetOptions.GetConvexFacetsRequired())
+            polyface->Triangulate(3);
+        }
+
+    return polyface;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveTileGeometry::AddNormals(PolyfaceHeaderR polyface, IFacetOptionsR facetOptions)
+    {
+    static double s_defaultCreaseRadians = Angle::DegreesToRadians(45.0);
+    static double s_defaultConeRadians = Angle::DegreesToRadians(90.0);
+    polyface.BuildApproximateNormals(s_defaultCreaseRadians, s_defaultConeRadians, facetOptions.GetHideSmoothEdgesWhenGeneratingNormals());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveTileGeometry::AddParams(PolyfaceHeaderR polyface, IFacetOptionsR facetOptions)
+    {
+    LocalCoordinateSelect selector;
+    switch (facetOptions.GetParamMode())
+        {
+        case FACET_PARAM_01BothAxes:
+            selector = LOCAL_COORDINATE_SCALE_01RangeBothAxes;
+            break;
+        case FACET_PARAM_01LargerAxis:
+            selector = LOCAL_COORDINATE_SCALE_01RangeLargerAxis;
+            break;
+        default:
+            selector = LOCAL_COORDINATE_SCALE_UnitAxesAtLowerLeft;
+            break;
+        }
+
+    polyface.BuildPerFaceParameters(selector);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGeometry::T_TilePolyfaces PrimitiveTileGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
@@ -1331,6 +1403,8 @@ TileGeometry::T_TilePolyfaces PrimitiveTileGeometry::_GetPolyfaces(IFacetOptions
         {
         if (!HasTexture())
             polyface->ClearParameters(false);
+
+        polyface = FixPolyface(*polyface, facetOptions);
 
         BeAssertOnce(GetTransform().IsIdentity()); // Polyfaces are transformed during collection.
         return TileGeometry::T_TilePolyfaces (1, TileGeometry::TilePolyface (GetDisplayParams(), *polyface));
@@ -2065,9 +2139,7 @@ private:
     bool                        m_surfacesOnly;
     GeomPartMap                 m_geomParts;
     SolidPrimitivePartMap       m_solidPrimitiveParts;
-    TileDisplayParamsCPtr       m_polyfaceCacheDisplay;
-    IPolyfaceConstructionPtr    m_polyfaceCache;
-    ITileCollectionFilterCP      m_filter;
+    ITileCollectionFilterCP     m_filter;
 
     void PushGeometry(TileGeometryR geom);
     void AddElementGeometry(TileGeometryR geom);
@@ -2097,6 +2169,12 @@ private:
         return zDepth * ratio;
         }
 
+    IncompatiblePolyfacePreference _GetIncompatiblePolyfacePreference(PolyfaceQueryCR, SimplifyGraphic&) const override
+        {
+        // We'll fix it up if necessary in PrimitiveTileGeometry::FixPolyface() - otherwise Brien uses IPolyfaceConstruction which is slow and eats memory.
+        return IncompatiblePolyfacePreference::Original;
+        }
+
     UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const override { return UnhandledPreference::Facet; }
     UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&)     const override { return UnhandledPreference::Facet; }
     UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&)     const override { return UnhandledPreference::Facet; }
@@ -2121,7 +2199,6 @@ public:
 
     void AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartCR geomPart, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams, ViewContextR viewContext);
     bool IsGeomPartContained (Render::GraphicBuilderR graphic, DgnGeometryPartCR geomPart, TransformCR subToGraphic) const;
-    void FlushPolyfaceCache();
     virtual bool _DoLineStyleStroke(Render::LineStyleSymbCR lineStyleSymb, IFacetOptionsPtr&, SimplifyGraphic&) const override {double maxWidth = lineStyleSymb.GetStyleWidth(); return (0.0 == maxWidth || maxWidth > m_minLineStyleWidth);}
 
     DgnDbR GetDgnDb() const { return m_dgndb; }
@@ -2214,8 +2291,6 @@ void TileGeometryProcessor::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeo
 
     if (foundPart == m_geomParts.end())
         {
-        FlushPolyfaceCache();
-
         Transform                       inverseLocalToWorld;
         AutoRestore<Transform>          saveTransform (&m_transformFromDgn, Transform::FromIdentity());
         GeometryStreamIO::Collection    collection(geomPart.GetGeometryStream().GetData(), geomPart.GetGeometryStream().GetSize());
@@ -2227,7 +2302,6 @@ void TileGeometryProcessor::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeo
         
         m_curElemGeometries.clear();
         collection.Draw(*partBuilder, viewContext, geomParams, false, &geomPart);
-        FlushPolyfaceCache();
 
         m_geomParts.Insert (geomPart.GetId(), tileGeomPart = TileGeomPart::Create(geomPart.GetBoundingBox(), m_curElemGeometries));
         m_curElemGeometries = saveCurrGeometries;
@@ -2357,8 +2431,8 @@ void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId el
             {
             m_curElemId = elemId;
             context.VisitElement(elemId, false);
-            FlushPolyfaceCache();
             }
+
         PushCurrentGeometry();
         if (!haveCached)
             m_cache.AddCachedGeometry(elemId, std::move(m_curElemGeometries));
@@ -2495,36 +2569,12 @@ bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool fill
     clone->Transform(Transform::FromProduct(m_transformFromDgn, gf.GetLocalToWorldTransform()));
 
     TileDisplayParamsCR displayParams = m_displayParamsCache.Get(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), m_is2d);
-
-    if (m_polyfaceCache.IsNull() || !displayParams.IsStrictlyEqualTo(*m_polyfaceCacheDisplay))
-        {
-        FlushPolyfaceCache();
-        m_polyfaceCache = IPolyfaceConstruction::Create(m_facetOptions);
-        m_polyfaceCacheDisplay = &displayParams;
-        }
-
-    m_polyfaceCache->Add(*clone);
+    DRange3d range = clone->PointRange();
+    IGeometryPtr geom = IGeometry::Create(clone);
+    AddElementGeometry(*TileGeometry::Create(*geom, Transform::FromIdentity(), range, m_curElemId, displayParams, false, false, m_dgndb));
  
     return true;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TileGeometryProcessor::FlushPolyfaceCache ()
-    {
-    if (m_polyfaceCache.IsValid())
-        {
-        DRange3d range = m_polyfaceCache->GetClientMeshR().PointRange();
-
-        IGeometryPtr geom = IGeometry::Create(m_polyfaceCache->GetClientMeshPtr());
-        AddElementGeometry(*TileGeometry::Create(*geom, Transform::FromIdentity(), range, m_curElemId, *m_polyfaceCacheDisplay, false, false, m_dgndb));
-
-        m_polyfaceCache = nullptr;
-        m_polyfaceCacheDisplay = nullptr;
-        }
-    }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
