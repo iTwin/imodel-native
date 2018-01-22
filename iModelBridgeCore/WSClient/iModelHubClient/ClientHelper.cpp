@@ -2,7 +2,7 @@
 |
 |     $Source: iModelHubClient/ClientHelper.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <WebServices/iModelHub/Client/ClientHelper.h>
@@ -19,12 +19,12 @@ BeMutex ClientHelper::s_mutex{};
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Karolis.Dziedzelis              04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClientHelper* ClientHelper::Initialize(ClientInfoPtr clientInfo, IJsonLocalState * ls)
+ClientHelper* ClientHelper::Initialize(ClientInfoPtr clientInfo, IJsonLocalState * ls, IHttpHandlerPtr customHandler)
     {
     BeMutexHolder lock(s_mutex);
     if (nullptr == s_instance)
         {
-        s_instance = new ClientHelper(clientInfo, ls);
+        s_instance = new ClientHelper(clientInfo, ls, customHandler);
         AsyncTasksManager::RegisterOnCompletedListener([]
             {
             if (nullptr != s_instance)
@@ -40,6 +40,8 @@ ClientHelper* ClientHelper::Initialize(ClientInfoPtr clientInfo, IJsonLocalState
         s_instance->m_clientInfo = clientInfo;
         if (nullptr != ls)
             s_instance->m_localState = ls;
+        if (nullptr != customHandler)
+            s_instance->m_customHandler = customHandler;
         }
     return s_instance;
     }
@@ -60,7 +62,7 @@ ClientPtr ClientHelper::SignInWithCredentials(AsyncError* errorOut, Credentials 
     {
     Tasks::AsyncError ALLOW_NULL_OUTPUT(error, errorOut);
 
-    m_signinMgr = ConnectSignInManager::Create(m_clientInfo, nullptr, m_localState);
+    m_signinMgr = ConnectSignInManager::Create(m_clientInfo, m_customHandler, m_localState);
     auto signInResult = ExecuteAsync(m_signinMgr->SignInWithCredentials(credentials));
     if (!signInResult->IsSuccess())
         {
@@ -78,7 +80,7 @@ ClientPtr ClientHelper::SignInWithToken(AsyncError* errorOut, SamlTokenPtr token
     {
     Tasks::AsyncError ALLOW_NULL_OUTPUT(error, errorOut);
 
-    m_signinMgr = ConnectSignInManager::Create(m_clientInfo, nullptr, m_localState);
+    m_signinMgr = ConnectSignInManager::Create(m_clientInfo, m_customHandler, m_localState);
     auto signInResult = ExecuteAsync(m_signinMgr->SignInWithToken(token));
     if (!signInResult->IsSuccess())
         {

@@ -2,7 +2,7 @@
 #
 #     $Source: Tests/iModelHubClient/IMHSClientExe/IMHSClient.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 %include mdl.mki
@@ -22,7 +22,9 @@ MultiCompileDepends = $(_MakeFileSpec)
 
 %include $(SrcRoot)bsicommon/sharedmki/BeTestSelectHarness.mki
 
-$(o)IntegrationTestsHelper.obj: $(baseDir)../Integration/IntegrationTestsHelper.cpp $(baseDir)../Integration/IntegrationTestsHelper.h $(DgnV8Depends) ${MultiCompileDepends}
+$(o)IntegrationTestsSettings.obj: $(baseDir)../Helpers/IntegrationTestsSettings.cpp $(baseDir)../Helpers/IntegrationTestsSettings.h $(DgnV8Depends) ${MultiCompileDepends}
+
+$(o)DgnPlatformHelpers.obj: $(baseDir)../Helpers/DgnPlatformHelpers.cpp $(baseDir)../Helpers/DgnPlatformHelpers.h $(DgnV8Depends) ${MultiCompileDepends}
 
 $(o)IMHSClientExe.obj: $(baseDir)IMHSClientExe.cpp $(baseDir)IMHSClientExe.h $(DgnV8Depends) ${MultiCompileDepends}
 

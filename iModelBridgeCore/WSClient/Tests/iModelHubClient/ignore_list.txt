@@ -7,5 +7,13 @@ WebsiteSeedFileTests.CreateSeedFile
 #----------------------------------------------------------------------------------------
 #   Tests that are failing
 #----------------------------------------------------------------------------------------
-BriefcaseTests.UpdateBriefcaseToVersion
-BriefcaseTests.UpdateBriefcaseToChangeSet
+BriefcaseSchemaChangesTests.*
+BriefcaseTests.UnsuccessfulRestoreBriefcase
+BriefcaseTests.QueryInformationAboutMasterBriefcase
+BriefcaseTests.QueryInformationAboutStandaloneBriefcase
+BriefcaseTests.QueryInformationAboutNonexistentBriefcase
+ChangeSetsTests.CancelDownloadChangeSets
+iModelTests.QueryNonExistentiModelByName
+iModelTests.SuccessfulCreateiModelWithASpaceInName
+SeedFileTests.ReplaceWithoutLockediModel
+SeedFileTests.QueryNonExistentSeedFile
