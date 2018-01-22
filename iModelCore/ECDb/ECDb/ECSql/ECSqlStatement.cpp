@@ -68,7 +68,8 @@ ECSqlStatus ECSqlStatement::Prepare(ECDbCR ecdb, Utf8CP ecsql, ECCrudWriteToken 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      06/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlStatement::Prepare(ECDb const& ecdb, Utf8CP ecsql, DbCR readonlyDb, bool logErrors ) { return m_pimpl->Prepare(ecdb, ecsql, nullptr, logErrors, &readonlyDb); }
+ECSqlStatus ECSqlStatement::Prepare(ECDb const& ecdb, Utf8CP ecsql, DbCR readonlyDb ) { return m_pimpl->Prepare(ecdb, ecsql, nullptr, true, &readonlyDb); }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      06/2013
 //---------------------------------------------------------------------------------------
