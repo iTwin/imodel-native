@@ -53,9 +53,9 @@ Dgn::DgnDbStatus CurvedProfiledExtrusion::_LoadProperties(Dgn::DgnElementCR elem
     ECN::ECClassId relStartPofileId;
     ECN::ECClassId relEndPofileId;
 
-    SetStartProfileId(statement->GetValueNavigation<StartProfileId>(1, &relStartPofileId));
-    SetEndProfileId(statement->GetValueNavigation<EndProfileId>(2, &relEndPofileId));
-    SetCurve(statement->GetValueGeometry(3));
+    SetStartProfileId(statement->GetValueNavigation<StartProfileId>(0, &relStartPofileId));
+    SetEndProfileId(statement->GetValueNavigation<EndProfileId>(1, &relEndPofileId));
+    SetCurve(statement->GetValueGeometry(2));
 
     return Dgn::DgnDbStatus::Success;
     }
