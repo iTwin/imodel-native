@@ -2,7 +2,7 @@
 |
 |     $Source: Utils/BuildingUtils.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -173,10 +173,8 @@ CategorySelectorPtr  BuildingUtils::CreateDefaultCategorySelector (DgnDbR db)
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_AllocatedVolume));
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_ConflictVolume));
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_Story));
-    categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_SpatialZone));
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_Space));
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_Building));
-    categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_BoundedPlane));
 
     CategorySelector catSel (db.GetDictionaryModel (), DEFAULT_BUILDING_CATEGORY_SELECTOR_NAME);
     catSel.SetCategories (categories);
@@ -335,7 +333,6 @@ CategorySelectorPtr  BuildingUtils::CreateFloorViewCategorySelector (DgnDbR db)
     DgnCategoryIdSet categories;
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_ConflictVolume));
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_Story));
-    categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_SpatialZone));
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_Space));
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_OpeningLocation));
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_EgressPath));
