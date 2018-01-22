@@ -105,12 +105,12 @@ struct BriefcaseTests: public IntegrationTestsBase
         return PushPendingChanges(briefcase);
         }
 
-    BriefcasePtr ReOpenBriefcaseWithSchemaUpgrade (DgnDbR dgnDb, ChangeSetsInfoResult changeSets, SchemaUpgradeOptions::RevisionUpgradeOptions revisionUpgradeOptions)
+    BriefcasePtr ReOpenBriefcaseWithSchemaUpgrade (DgnDbR dgnDb, ChangeSetsInfoResult changeSets, RevisionProcessOption processOption)
         {
         auto changeSetsToMerge = m_imodelConnection->DownloadChangeSets(changeSets.GetValue())->GetResult();
         dgnDb.CloseDb();
         DbResult result;
-        auto briefcaseResult = m_client->OpenBriefcase(m_client->OpenWithSchemaUpgrade(&result, dgnDb.GetFileName(), changeSetsToMerge.GetValue(), revisionUpgradeOptions))->GetResult();
+        auto briefcaseResult = m_client->OpenBriefcase(m_client->OpenWithSchemaUpgrade(&result, dgnDb.GetFileName(), changeSetsToMerge.GetValue(), processOption))->GetResult();
         EXPECT_EQ(DbResult::BE_SQLITE_OK, result);
         EXPECT_SUCCESS(briefcaseResult);
         return  briefcaseResult.GetValue();
@@ -825,7 +825,7 @@ TEST_F(BriefcaseTests, UpdateBriefcaseToVersion)
     //merge to version4 with reopen
     auto versionManager = m_imodelConnection->GetVersionsManager();
     changeSetsResult = versionManager.GetChangeSetsBetweenVersionAndChangeSet(version4ChangeSet6->GetId(), briefcase->GetLastChangeSetPulled())->GetResult();
-    briefcase = ReOpenBriefcaseWithSchemaUpgrade (briefcase->GetDgnDb(), changeSetsResult, SchemaUpgradeOptions::RevisionUpgradeOptions::Merge);
+    briefcase = ReOpenBriefcaseWithSchemaUpgrade (briefcase->GetDgnDb(), changeSetsResult, RevisionProcessOption::Merge);
     EXPECT_EQ(version4ChangeSet6->GetChangeSetId(), briefcase->GetLastChangeSetPulled());
 
     //reverse to version2
@@ -851,7 +851,7 @@ TEST_F(BriefcaseTests, UpdateBriefcaseToVersion)
 
     //merge to version4 with reopen
     changeSetsResult = versionManager.GetChangeSetsBetweenVersionAndChangeSet(version4ChangeSet6->GetId(), briefcase->GetLastChangeSetPulled())->GetResult();
-    briefcase = ReOpenBriefcaseWithSchemaUpgrade (briefcase->GetDgnDb(), changeSetsResult, SchemaUpgradeOptions::RevisionUpgradeOptions::Merge);
+    briefcase = ReOpenBriefcaseWithSchemaUpgrade (briefcase->GetDgnDb(), changeSetsResult, RevisionProcessOption::Merge);
     EXPECT_EQ(version4ChangeSet6->GetChangeSetId(), briefcase->GetLastChangeSetPulled());
 
     //reverse to version1 should fail
@@ -861,7 +861,7 @@ TEST_F(BriefcaseTests, UpdateBriefcaseToVersion)
 
     //reverse to version1 with reopen
     changeSetsResult = versionManager.GetChangeSetsBetweenVersionAndChangeSet(version1ChangeSet2->GetId(), briefcase->GetLastChangeSetPulled())->GetResult();
-    briefcase = ReOpenBriefcaseWithSchemaUpgrade (briefcase->GetDgnDb(), changeSetsResult, SchemaUpgradeOptions::RevisionUpgradeOptions::Reverse);
+    briefcase = ReOpenBriefcaseWithSchemaUpgrade (briefcase->GetDgnDb(), changeSetsResult, RevisionProcessOption::Reverse);
     EXPECT_EQ(version1ChangeSet2->GetChangeSetId(), briefcase->GetLastChangeSetPulled());
     EXPECT_EQ(version4ChangeSet6->GetChangeSetId(), briefcase->GetDgnDb().Revisions().GetParentRevisionId());
 
@@ -872,7 +872,7 @@ TEST_F(BriefcaseTests, UpdateBriefcaseToVersion)
 
     //reinstate to version2 with reopen
     changeSetsResult = versionManager.GetChangeSetsBetweenVersionAndChangeSet(version2ChangeSet4SC->GetId(), briefcase->GetLastChangeSetPulled())->GetResult();
-    briefcase = ReOpenBriefcaseWithSchemaUpgrade (briefcase->GetDgnDb(), changeSetsResult, SchemaUpgradeOptions::RevisionUpgradeOptions::Reinstate);
+    briefcase = ReOpenBriefcaseWithSchemaUpgrade (briefcase->GetDgnDb(), changeSetsResult, RevisionProcessOption::Reinstate);
     EXPECT_EQ(version2ChangeSet4SC->GetChangeSetId(), briefcase->GetLastChangeSetPulled());
     EXPECT_EQ(version4ChangeSet6->GetChangeSetId(), briefcase->GetDgnDb().Revisions().GetParentRevisionId());
 
@@ -888,7 +888,7 @@ TEST_F(BriefcaseTests, UpdateBriefcaseToVersion)
 
     //reinstate+merge to version5 with reopen
     changeSetsResult = versionManager.GetChangeSetsBetweenVersionAndChangeSet(version5ChangeSet8SC->GetId(), briefcase->GetLastChangeSetPulled())->GetResult();
-    briefcase = ReOpenBriefcaseWithSchemaUpgrade (briefcase->GetDgnDb(), changeSetsResult, SchemaUpgradeOptions::RevisionUpgradeOptions::Reinstate);
+    briefcase = ReOpenBriefcaseWithSchemaUpgrade (briefcase->GetDgnDb(), changeSetsResult, RevisionProcessOption::Reinstate);
     EXPECT_EQ(changeSetId8, briefcase->GetLastChangeSetPulled());
     EXPECT_EQ(changeSetId8, briefcase->GetDgnDb().Revisions().GetParentRevisionId());
     }
@@ -940,7 +940,7 @@ TEST_F(BriefcaseTests, UpdateBriefcaseToChangeSet)
 
     //merge to ChangeSet4 with reopen
     changeSetsResult = m_imodelConnection->GetChangeSetsBetween(changeSet6, briefcase->GetLastChangeSetPulled())->GetResult();
-    briefcase = ReOpenBriefcaseWithSchemaUpgrade (briefcase->GetDgnDb(), changeSetsResult, SchemaUpgradeOptions::RevisionUpgradeOptions::Merge);
+    briefcase = ReOpenBriefcaseWithSchemaUpgrade (briefcase->GetDgnDb(), changeSetsResult, RevisionProcessOption::Merge);
     EXPECT_EQ(changeSet6, briefcase->GetLastChangeSetPulled());
 
     //reverse to ChangeSet2
@@ -965,7 +965,7 @@ TEST_F(BriefcaseTests, UpdateBriefcaseToChangeSet)
 
     //merge to ChangeSet4 with reopen
     changeSetsResult = m_imodelConnection->GetChangeSetsBetween(changeSet6, briefcase->GetLastChangeSetPulled())->GetResult();
-    briefcase = ReOpenBriefcaseWithSchemaUpgrade (briefcase->GetDgnDb(), changeSetsResult, SchemaUpgradeOptions::RevisionUpgradeOptions::Merge);
+    briefcase = ReOpenBriefcaseWithSchemaUpgrade (briefcase->GetDgnDb(), changeSetsResult, RevisionProcessOption::Merge);
     EXPECT_EQ(changeSet6, briefcase->GetLastChangeSetPulled());
 
     //reverse to ChangeSet1 should fail
@@ -975,7 +975,7 @@ TEST_F(BriefcaseTests, UpdateBriefcaseToChangeSet)
 
     //reverse to ChangeSet1 with reopen
     changeSetsResult = m_imodelConnection->GetChangeSetsBetween(changeSet2, briefcase->GetLastChangeSetPulled())->GetResult();
-    briefcase = ReOpenBriefcaseWithSchemaUpgrade (briefcase->GetDgnDb(), changeSetsResult, SchemaUpgradeOptions::RevisionUpgradeOptions::Reverse);
+    briefcase = ReOpenBriefcaseWithSchemaUpgrade (briefcase->GetDgnDb(), changeSetsResult, RevisionProcessOption::Reverse);
     EXPECT_EQ(changeSet2, briefcase->GetLastChangeSetPulled());
     EXPECT_EQ(changeSet6, briefcase->GetDgnDb().Revisions().GetParentRevisionId());
 
@@ -986,7 +986,7 @@ TEST_F(BriefcaseTests, UpdateBriefcaseToChangeSet)
 
     //reinstate to ChangeSet2 with reopen
     changeSetsResult = m_imodelConnection->GetChangeSetsBetween(changeSet4, briefcase->GetLastChangeSetPulled())->GetResult();
-    briefcase = ReOpenBriefcaseWithSchemaUpgrade (briefcase->GetDgnDb(), changeSetsResult, SchemaUpgradeOptions::RevisionUpgradeOptions::Reinstate);
+    briefcase = ReOpenBriefcaseWithSchemaUpgrade (briefcase->GetDgnDb(), changeSetsResult, RevisionProcessOption::Reinstate);
     EXPECT_EQ(changeSet4, briefcase->GetLastChangeSetPulled());
     EXPECT_EQ(changeSet6, briefcase->GetDgnDb().Revisions().GetParentRevisionId());
 
@@ -1002,7 +1002,7 @@ TEST_F(BriefcaseTests, UpdateBriefcaseToChangeSet)
 
     //reinstate+merge to ChangeSet5 with reopen
     changeSetsResult = m_imodelConnection->GetChangeSetsBetween(changeSetId8, briefcase->GetLastChangeSetPulled())->GetResult();
-    briefcase = ReOpenBriefcaseWithSchemaUpgrade (briefcase->GetDgnDb(), changeSetsResult, SchemaUpgradeOptions::RevisionUpgradeOptions::Reinstate);
+    briefcase = ReOpenBriefcaseWithSchemaUpgrade (briefcase->GetDgnDb(), changeSetsResult, RevisionProcessOption::Reinstate);
     EXPECT_EQ(changeSetId8, briefcase->GetLastChangeSetPulled());
     EXPECT_EQ(changeSetId8, briefcase->GetDgnDb().Revisions().GetParentRevisionId());
     }
