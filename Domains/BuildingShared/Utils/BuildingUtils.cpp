@@ -30,7 +30,6 @@
 #define BUILDING_SPACEPLANNING_CATEGORY_CODE_SpatialZone                  "SpatialZone"
 #define BUILDING_SPACEPLANNING_CATEGORY_CODE_Space                        "Space"
 #define BUILDING_SPACEPLANNING_SUBCATEGORY_CODE_SpatialElementLabels      "Labels"
-#define BUILDING_SPACEPLANNING_CATEGORY_CODE_ProjectDefinition            "ProjectDefinition"
 #define BUILDING_SPACEPLANNING_CATEGORY_CODE_ConflictVolume               "ConflictVolume"
 #define BUILDING_SPACEPLANNING_CATEGORY_CODE_PlanarShape                  "PlanarShape"
 #define BUILDING_SPACEPLANNING_CATEGORY_CODE_Site                         "Site"
