@@ -31,6 +31,12 @@ struct AddonUtils
     BE_JSON_NAME(globalOrigin)
     BE_JSON_NAME(ecefTrans)
 
+private:
+    static BeSQLite::DbResult ReadChangeSets(bvector<DgnRevisionPtr>& revisionPtrs, bool& containsSchemaChanges, DgnDbR dgndb, JsonValueCR changeSetTokens);
+    static BeSQLite::DbResult ProcessSchemaChangeSets(DgnDbPtr& dgndb, bvector<DgnRevisionCP> const& revisions, RevisionProcessOption processOption);
+    static BeSQLite::DbResult ProcessDataChangeSets(DgnDbR dgndb, bvector<DgnRevisionCP> const& revisions, RevisionProcessOption processOption);
+
+public:
     static void GetRowAsJson(Json::Value &json, BeSQLite::EC::ECSqlStatement &);
     static void GetECValuesCollectionAsJson(Json::Value &json, ECN::ECValuesCollectionCR);
     static ECN::ECClassCP GetClassFromInstance(BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
@@ -62,7 +68,7 @@ struct AddonUtils
 
     static void Initialize(BeFileNameCR, T_AssertHandler assertHandler);
     static BeSQLite::DbResult OpenDgnDb(DgnDbPtr &, BeFileNameCR dbname, DgnDb::OpenMode mode);
-    static BeSQLite::DbResult OpenBriefcase(DgnDbPtr &db, JsonValueCR briefcaseToken, JsonValueCR changeSetTokens, SchemaUpgradeOptions::RevisionUpgradeOptions revisionUpgradeOptions);
+    static BeSQLite::DbResult SetupBriefcase(DgnDbPtr &db, JsonValueCR briefcaseToken);
     static void CloseDgnDb(DgnDbR dgndb);
     static DgnDbStatus GetECClassMetaData(JsonValueR results, DgnDbR db, Utf8CP schema, Utf8CP ecclass);
     static DgnDbStatus GetElement(JsonValueR results, DgnDbR db, Json::Value const &inOpts);
@@ -85,6 +91,11 @@ struct AddonUtils
     static BeSQLite::DbResult ImportSchemaDgnDb(DgnDbR dgndb, BeFileNameCR pathname);
     static Utf8StringCR GetLastECDbIssue();
     static BeSQLite::DbResult GetCachedBriefcaseInfos(JsonValueR jsonBriefcaseInfos, BeFileNameCR cachePath);
+    
+    static BeSQLite::DbResult ProcessChangeSets(DgnDbPtr& dgndb, JsonValueCR jsonChangeSetTokens, RevisionProcessOption processOption);
+    static BeSQLite::DbResult StartCreateChangeSet(JsonValueR changeSetInfo, DgnDbR dgndb);
+    static BeSQLite::DbResult FinishCreateChangeSet(DgnDbR dgndb);
+
     static void GetIModelProps(JsonValueR, DgnDbCR dgndb);
     static DgnPlatformLib::Host::RepositoryAdmin& GetRepositoryAdmin();
     static RepositoryStatus BuildBriefcaseManagerResourcesRequestToInsertElement(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR elemProps);

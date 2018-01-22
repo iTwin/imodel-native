@@ -2,7 +2,7 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  *--------------------------------------------------------------------------------------------*/
 import { IModelStatus, StatusCodeWithMessage, RepositoryStatus } from "@bentley/bentleyjs-core/lib/BentleyError";
-import { BentleyStatus } from "@bentley/bentleyjs-core/lib/Bentley";
+import { BentleyStatus, ChangeSetProcessOption } from "@bentley/bentleyjs-core/lib/Bentley";
 import { DbResult, DbOpcode } from "@bentley/bentleyjs-core/lib/BeSQLite";
 import { OpenMode } from "@bentley/bentleyjs-core/lib/BeSQLite";
 import { IDisposable } from "@bentley/bentleyjs-core/lib/Disposable";
@@ -102,6 +102,22 @@ declare class NodeAddonDgnDb {
   /** Close this iModel. */
   closeDgnDb(): void;
 
+  /**
+   * Process change sets
+   * @param cachePath Path to the root of the disk cache
+   */
+  processChangeSets(changeSets: string, processOptions: ChangeSetProcessOption): DbResult;
+
+  /**
+   * Start creating a new change set with local changes
+   */
+  startCreateChangeSet(): ErrorStatusOrResult<DbResult, string>;
+
+  /**
+   * Start creating a new change set with local changes
+   */
+  finishCreateChangeSet(): DbResult;
+
   /** Creates an EC change cache for this iModel (but does not attach it). 
    * @param changeCacheFile The created change cache ECDb file
    * @param changeCachePath The full path to the EC change cache file in the local file system
@@ -149,12 +165,10 @@ declare class NodeAddonDgnDb {
   setDbGuid(guid: string): DbResult;
 
   /**
-   * TBD
-   * @param briefcaseToken TBD
-   * @param changeSetTokens TBD
-   * @param revisionUpgradeOptions TBD
+   * Sets up a briefcase
+   * @param briefcaseToken Token identifying a briefcase
    */
-  openBriefcase(briefcaseToken: string, changeSetTokens: string, revisionUpgradeOptions?:number): DbResult;
+  setupBriefcase(briefcaseToken: string): DbResult;
 
   /** 
    * Save any pending changes to this iModel.  

@@ -474,21 +474,51 @@ public:
         return CreateBentleyReturnObject(status, Napi::String::New(Env(), modelJson.ToString().c_str()));
         }
 
-    Napi::Value OpenBriefcase(const Napi::CallbackInfo& info)
+    // Sets up a briefcase and opens it
+    Napi::Value SetupBriefcase(const Napi::CallbackInfo& info)
         {
         REQUIRE_ARGUMENT_STRING(0, briefcaseToken);
-        REQUIRE_ARGUMENT_STRING(1, changeSetTokens);
-        OPTIONAL_ARGUMENT_INTEGER(2, revisionUpgradeOptions, (int)SchemaUpgradeOptions::RevisionUpgradeOptions::Merge);        
         RETURN_IF_HAD_EXCEPTION
 
         Json::Value jsonBriefcaseToken = Json::Value::From(briefcaseToken);
-        Json::Value jsonChangeSetTokens = Json::Value::From(changeSetTokens);
-
-        DbResult result = AddonUtils::OpenBriefcase(m_dgndb, jsonBriefcaseToken, jsonChangeSetTokens, (SchemaUpgradeOptions::RevisionUpgradeOptions)revisionUpgradeOptions);
+        
+        DbResult result = AddonUtils::SetupBriefcase(m_dgndb, jsonBriefcaseToken);
+        Napi::Object ret;
         if (BE_SQLITE_OK == result)
             SetupPresentationManager();
 
         return Napi::Number::New(Env(), (int)result);
+        }
+
+    Napi::Value ProcessChangeSets(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, changeSetTokens);
+        REQUIRE_ARGUMENT_INTEGER(1, processOptions);
+        RETURN_IF_HAD_EXCEPTION
+
+        Json::Value jsonChangeSetTokens = Json::Value::From(changeSetTokens);
+
+        DbResult result = AddonUtils::ProcessChangeSets(m_dgndb, jsonChangeSetTokens, (RevisionProcessOption) processOptions);
+        return Napi::Number::New(Env(), (int) result);
+        }
+
+    Napi::Value StartCreateChangeSet(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        RETURN_IF_HAD_EXCEPTION
+
+        Json::Value changeSetInfo;
+        DbResult result = AddonUtils::StartCreateChangeSet(changeSetInfo, *m_dgndb);
+        return CreateBentleyReturnObject(result, Napi::String::New(Env(), changeSetInfo.ToString().c_str()));
+        }
+
+    Napi::Value FinishCreateChangeSet(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        RETURN_IF_HAD_EXCEPTION
+
+        DbResult result = AddonUtils::FinishCreateChangeSet(*m_dgndb);
+        return Napi::Number::New(Env(), (int) result);
         }
 
     Napi::Value GetCachedBriefcaseInfos(const Napi::CallbackInfo& info)
@@ -950,6 +980,9 @@ public:
         Napi::Function t = DefineClass(env, "NodeAddonDgnDb", {
             InstanceMethod("openDgnDb", &NodeAddonDgnDb::OpenDgnDb),
             InstanceMethod("closeDgnDb", &NodeAddonDgnDb::CloseDgnDb),
+            InstanceMethod("processChangeSets", &NodeAddonDgnDb::ProcessChangeSets),
+            InstanceMethod("startCreateChangeSet", &NodeAddonDgnDb::StartCreateChangeSet),
+            InstanceMethod("finishCreateChangeSet", &NodeAddonDgnDb::FinishCreateChangeSet),
             InstanceMethod("createChangeCache", &NodeAddonDgnDb::CreateChangeCache),
             InstanceMethod("attachChangeCache", &NodeAddonDgnDb::AttachChangeCache),
             InstanceMethod("isChangeCacheAttached", &NodeAddonDgnDb::IsChangeCacheAttached),
@@ -959,7 +992,7 @@ public:
             InstanceMethod("getParentChangeSetId", &NodeAddonDgnDb::GetParentChangeSetId),
             InstanceMethod("getDbGuid", &NodeAddonDgnDb::GetDbGuid),
             InstanceMethod("setDbGuid", &NodeAddonDgnDb::SetDbGuid),
-            InstanceMethod("openBriefcase", &NodeAddonDgnDb::OpenBriefcase),
+            InstanceMethod("setupBriefcase", &NodeAddonDgnDb::SetupBriefcase),
             InstanceMethod("saveChanges", &NodeAddonDgnDb::SaveChanges),
             InstanceMethod("importSchema", &NodeAddonDgnDb::ImportSchema),
             InstanceMethod("getElement", &NodeAddonDgnDb::GetElement),
