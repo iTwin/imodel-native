@@ -1559,7 +1559,7 @@ public:
             paramIndex = m_stmt->GetParameterIndex(paramArg.ToString().Utf8Value().c_str());
 
         IECSqlBinder& binder = m_stmt->GetBinder(paramIndex);
-        return New(info.Env(), binder, *m_stmt->GetECDb());
+        return AddonECSqlBinder::New(info.Env(), binder, *m_stmt->GetECDb());
         }
 
     //! @deprecated Use AddonECSqlStatement::GetBinder instead
