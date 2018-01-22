@@ -262,7 +262,7 @@ struct AddonECDb : Napi::ObjectWrap<AddonECDb>
             // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
             // ***
             Napi::HandleScope scope(env);
-            Napi::Function t = DefineClass(env, "NodeAddonECDb", {
+            Napi::Function t = DefineClass(env, "AddonECDb", {
             InstanceMethod("createDb", &AddonECDb::CreateDb),
             InstanceMethod("openDb", &AddonECDb::OpenDb),
             InstanceMethod("closeDb", &AddonECDb::CloseDb),
@@ -273,7 +273,7 @@ struct AddonECDb : Napi::ObjectWrap<AddonECDb>
             InstanceMethod("isOpen", &AddonECDb::IsOpen)
             });
 
-            exports.Set("NodeAddonECDb", t);
+            exports.Set("AddonECDb", t);
 
             s_constructor = Napi::Persistent(t);
             // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
@@ -342,13 +342,13 @@ struct AddonBriefcaseManagerResourcesRequest : Napi::ObjectWrap<AddonBriefcaseMa
         // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
         // ***
         Napi::HandleScope scope(env);
-        Napi::Function t = DefineClass(env, "NodeAddonBriefcaseManagerResourcesRequest", {
+        Napi::Function t = DefineClass(env, "AddonBriefcaseManagerResourcesRequest", {
           InstanceMethod("reset", &AddonBriefcaseManagerResourcesRequest::Reset),
           InstanceMethod("isEmpty", &AddonBriefcaseManagerResourcesRequest::IsEmpty),
           InstanceMethod("toJSON", &AddonBriefcaseManagerResourcesRequest::ToJSON),
         });
 
-        exports.Set("NodeAddonBriefcaseManagerResourcesRequest", t);
+        exports.Set("AddonBriefcaseManagerResourcesRequest", t);
 
         s_constructor = Napi::Persistent(t);
         // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
@@ -1094,7 +1094,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
         // ***
         Napi::HandleScope scope(env);
-        Napi::Function t = DefineClass(env, "NodeAddonDgnDb", {
+        Napi::Function t = DefineClass(env, "AddonDgnDb", {
             InstanceMethod("openDgnDb", &AddonDgnDb::OpenDgnDb),
             InstanceMethod("closeDgnDb", &AddonDgnDb::CloseDgnDb),
             InstanceMethod("processChangeSets", &AddonDgnDb::ProcessChangeSets),
@@ -1148,7 +1148,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
 
         });
 
-        exports.Set("NodeAddonDgnDb", t);
+        exports.Set("AddonDgnDb", t);
 
         s_constructor = Napi::Persistent(t);
         // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
@@ -1220,7 +1220,7 @@ public:
         // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
         // ***
         Napi::HandleScope scope(env);
-        Napi::Function t = DefineClass(env, "NodeAddonECSqlBinder", {
+        Napi::Function t = DefineClass(env, "AddonECSqlBinder", {
         InstanceMethod("dispose", &AddonECSqlBinder::Dispose),
         InstanceMethod("bindNull", &AddonECSqlBinder::BindNull),
         InstanceMethod("bindBlob", &AddonECSqlBinder::BindBlob),
@@ -1238,7 +1238,7 @@ public:
         InstanceMethod("addArrayElement", &AddonECSqlBinder::AddArrayElement)
         });
 
-        exports.Set("NodeAddonECSqlBinder", t);
+        exports.Set("AddonECSqlBinder", t);
 
         s_constructor = Napi::Persistent(t);
         // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
@@ -1454,7 +1454,7 @@ public:
         // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
         // ***
         Napi::HandleScope scope(env);
-        Napi::Function t = DefineClass(env, "NodeAddonECSqlStatement", {
+        Napi::Function t = DefineClass(env, "AddonECSqlStatement", {
           InstanceMethod("prepare", &AddonECSqlStatement::Prepare),
           InstanceMethod("reset", &AddonECSqlStatement::Reset),
           InstanceMethod("dispose", &AddonECSqlStatement::Dispose),
@@ -1466,7 +1466,7 @@ public:
           InstanceMethod("getRow", &AddonECSqlStatement::GetRow),
         });
 
-        exports.Set("NodeAddonECSqlStatement", t);
+        exports.Set("AddonECSqlStatement", t);
 
         s_constructor = Napi::Persistent(t);
         // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
@@ -1652,12 +1652,12 @@ struct AddonECPresentationManager : Napi::ObjectWrap<AddonECPresentationManager>
         // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
         // ***
         Napi::HandleScope scope(env);
-        Napi::Function t = DefineClass(env, "NodeAddonECPresentationManager", {
+        Napi::Function t = DefineClass(env, "AddonECPresentationManager", {
           InstanceMethod("handleRequest", &AddonECPresentationManager::HandleRequest),
           InstanceMethod("setupRulesetDirectories", &AddonECPresentationManager::SetupRulesetDirectories)
         });
 
-        exports.Set("NodeAddonECPresentationManager", t);
+        exports.Set("AddonECPresentationManager", t);
 
         s_constructor = Napi::Persistent(t);
         // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor

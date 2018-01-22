@@ -9,7 +9,7 @@ import { IDisposable } from "@bentley/bentleyjs-core/lib/Disposable";
 
 /* The signature of a callback that takes two arguments, the first being the error that describes a failed outcome and the second being the data
 returned in a successful outcome. */
-interface IModelJsNodeAddonCallback<ERROR_TYPE, SUCCESS_TYPE> {
+interface IModelJsAddonCallback<ERROR_TYPE, SUCCESS_TYPE> {
   /**
    * The signature of a callback.
    * @param error A description of th error, in case of failure.
@@ -19,7 +19,7 @@ interface IModelJsNodeAddonCallback<ERROR_TYPE, SUCCESS_TYPE> {
 }
 
 /* The signature of a callback that expects a single argument, a status code. */
-interface IModelJsNodeAddonStatusOnlyCallback<STATUS_TYPE> {
+interface IModelJsAddonStatusOnlyCallback<STATUS_TYPE> {
   /**
    * The signature of a callback.
    * @param error A description of th error, in case of failure.
@@ -41,7 +41,7 @@ interface ErrorStatusOrResult<ErrorCodeType, ResultType> {
 /**
  * A request to send on to iModelHub.
  */
-declare class NodeAddonBriefcaseManagerResourcesRequest {
+declare class AddonBriefcaseManagerResourcesRequest {
 
     /**
      * Forget the requests.
@@ -56,7 +56,7 @@ declare class NodeAddonBriefcaseManagerResourcesRequest {
 }
 
 /** How to handle a conflict 
-export const enum NodeAddonBriefcaseManagerOnConflict {
+export const enum AddonBriefcaseManagerOnConflict {
     // Reject the incoming change
     RejectIncomingChange = 0,
     // Accept the incoming change
@@ -68,16 +68,16 @@ export const enum NodeAddonBriefcaseManagerOnConflict {
  * The scenario is that the caller has made some changes to the *local* briefcase. Now, the caller is attempting to
  * merge in changes from iModelHub. The properties of this policy specify how to handle the *incoming* changes from iModelHub.
  */
-export interface NodeAddonBriefcaseManagerOnConflictPolicy {
+export interface AddonBriefcaseManagerOnConflictPolicy {
     /** What to do with the incoming change in the case where the same entity was updated locally and also would be updated by the incoming change. */
-    updateVsUpdate: /*NodeAddonBriefcaseManagerOnConflict*/number;
+    updateVsUpdate: /*AddonBriefcaseManagerOnConflict*/number;
     /** What to do with the incoming change in the case where an entity was updated locally and would be deleted by the incoming change. */
-    updateVsDelete: /*NodeAddonBriefcaseManagerOnConflict*/number;
+    updateVsDelete: /*AddonBriefcaseManagerOnConflict*/number;
     /** What to do with the incoming change in the case where an entity was deleted locally and would be updated by the incoming change. */
-    deleteVsUpdate: /*NodeAddonBriefcaseManagerOnConflict*/number;
+    deleteVsUpdate: /*AddonBriefcaseManagerOnConflict*/number;
 }
 
-export interface NodeAddonHeldResources {
+export interface AddonHeldResources {
     /** The outcome of the query */
     status: RepositoryStatus;
     /** The set of locks tracked by the repository and held by the briefcase */
@@ -91,7 +91,7 @@ export interface NodeAddonHeldResources {
 }
 
 /*
-export enum NodeAddonRepositoryManagerResponseOptions {
+export enum AddonRepositoryManagerResponseOptions {
     None = 0, // No special options
     LockState = 1 << 0, // If a request to acquire locks is denied, the response will include the current lock state of each denied lock
     CodeState = 1 << 1, // Include DgnCodeState for any codes for which the request was denied
@@ -100,7 +100,7 @@ export enum NodeAddonRepositoryManagerResponseOptions {
     All = 0xff, // Include all options
 }
 
-export enum NodeAddonRepositoryManagerRequestPurpose {
+export enum AddonRepositoryManagerRequestPurpose {
     Acquire,    // Attempted to acquire locks/codes
     Query,      // Queried server for availability of locks/codes
     FastQuery,  // Queried local cache for availability of locks/codes. Response may not include full ownership details for denied request.
@@ -108,13 +108,13 @@ export enum NodeAddonRepositoryManagerRequestPurpose {
 */
 
 /* Must match JSON format expected by native code. */
-export interface NodeAddonRepositoryManagerResponse {
+export interface AddonRepositoryManagerResponse {
     /** The outcome of the operation */
     Status: RepositoryStatus;
     /** The purpose of the request */
-    Purpose: number; // NodeAddonRepositoryManagerRequestPurpose;
+    Purpose: number; // AddonRepositoryManagerRequestPurpose;
     /** The options for customizing the response to this request */
-    Options: number; // NodeAddonRepositoryManagerResponseOptions;
+    Options: number; // AddonRepositoryManagerResponseOptions;
     /** The states of any locks which could *not* be acquired, if ResponseOptions::LockState was specified */
     LockStates: string;
     /** The states of any codes which could *not* be reserved, if ResponseOptions::CodeState was specified */
@@ -125,25 +125,25 @@ export interface NodeAddonRepositoryManagerResponse {
   * Specifies a set of locks the briefcase wishes to acquire and/or a set of codes to be reserved.
   * Must match JSON format expected by native code.
   */
-export interface NodeAddonRepositoryManagerRequest {
+export interface AddonRepositoryManagerRequest {
     /** The locks to be acquired */
     Locks: string; // DgnLockSet in JSON format
     /** The codes to be reserved */
     Codes: string; // CodeSet in JSON format
     /** The options for customizing the response to this request */
-    Options: number; // NodeAddonRepositoryManagerResponseOptions;
+    Options: number; // AddonRepositoryManagerResponseOptions;
 }
 
 /** The interface to be implemented by a TypeScript class that functions as a RepositoryManager that native code can call on to process requests. */
-export interface NodeAddonRepositoryManager {
+export interface AddonRepositoryManager {
     /**
      * Process a request.
-     * @param req The request. This will be a NodeAddonRepositoryManagerRequest object in JSON.stringified format.
+     * @param req The request. This will be a AddonRepositoryManagerRequest object in JSON.stringified format.
      * @param db The DgnDb
      * @param queryOnly Is the request only to query the locks and codes? Otherwise, the request is to acquire them.
      * @return The server's response.
      */
-    processRequest(req: string /*NodeAddonRepositoryManagerRequest*/, db: NodeAddonDgnDb, queryOnly: boolean): NodeAddonRepositoryManagerResponse;
+    processRequest(req: string /*AddonRepositoryManagerRequest*/, db: AddonDgnDb, queryOnly: boolean): AddonRepositoryManagerResponse;
 
     /**
      * Retrieves the set of resources held by a briefcase as recorded in the repository
@@ -152,13 +152,13 @@ export interface NodeAddonRepositoryManager {
      * held for elements/models created locally by this briefcase and not yet committed to the repository
      * @return the locks and codes that are held, plus a list of locks and codes that are unavailable.
      */
-    queryHeldResources(db: NodeAddonDgnDb): NodeAddonHeldResources;
+    queryHeldResources(db: AddonDgnDb): AddonHeldResources;
 }
 
 /**
- * The NodeAddonDgnDb class that is projected by the iModelJs node addon. 
+ * The AddonDgnDb class that is projected by the iModelJs node addon. 
  */
-declare class NodeAddonDgnDb {
+declare class AddonDgnDb {
   constructor();
 
   /**
@@ -181,8 +181,8 @@ declare class NodeAddonDgnDb {
   /** Close this iModel. */
   closeDgnDb(): void;
 
-  /** Register a NodeAddonRepositoryManager. This is called indirectly as a side-effect of the app calling saveChanges or briefcaseManagerEndBulkOperation. */
-  setRepositoryManager(mgr: NodeAddonRepositoryManager): void;
+  /** Register a AddonRepositoryManager. This is called indirectly as a side-effect of the app calling saveChanges or briefcaseManagerEndBulkOperation. */
+  setRepositoryManager(mgr: AddonRepositoryManager): void;
 
 
   /**
@@ -206,7 +206,7 @@ declare class NodeAddonDgnDb {
    * @param changeCachePath The full path to the EC change cache file in the local file system
    * @return non-zero error status if operation failed.
   */
-  createChangeCache(changeCacheFile: NodeAddonECDb, changeCachePath: string) : DbResult;
+  createChangeCache(changeCacheFile: AddonECDb, changeCachePath: string) : DbResult;
 
   /** Attaches an EC change cache file to this iModel. 
    * @param changeCachePath The full path to the EC change cache file in the local file system
@@ -224,7 +224,7 @@ declare class NodeAddonDgnDb {
    * @param changesetFilePath The full path to the SQLite changeset file in the local file system
    * @return The ChangeSummary ECInstanceId as hex string or error codes in case of failure
   */
-  extractChangeSummary(changeCacheFile: NodeAddonECDb, changesetFilePath: string): ErrorStatusOrResult<DbResult, string>;
+  extractChangeSummary(changeCacheFile: AddonECDb, changesetFilePath: string): ErrorStatusOrResult<DbResult, string>;
   
   /**
    * Set the briefcase Id of this iModel.
@@ -391,7 +391,7 @@ declare class NodeAddonDgnDb {
     * @param elemId The ID of an existing element or the {modelid, code} properties that specify a new element.
     * @param opcode The operation that will be performed on the element.
     */  
-    buildBriefcaseManagerResourcesRequestForElement(req: NodeAddonBriefcaseManagerResourcesRequest, elemId: string, opcode: DbOpcode): RepositoryStatus;
+    buildBriefcaseManagerResourcesRequestForElement(req: AddonBriefcaseManagerResourcesRequest, elemId: string, opcode: DbOpcode): RepositoryStatus;
 
     /**
     * Add the lock, code, and other resource request that would be needed in order to carry out the specified operation.
@@ -399,7 +399,7 @@ declare class NodeAddonDgnDb {
     * @param modelId The ID of a model
     * @param opcode The operation that will be performed on the model.
     */
-    buildBriefcaseManagerResourcesRequestForModel(req: NodeAddonBriefcaseManagerResourcesRequest, modelId: string, opcode: DbOpcode): RepositoryStatus;
+    buildBriefcaseManagerResourcesRequestForModel(req: AddonBriefcaseManagerResourcesRequest, modelId: string, opcode: DbOpcode): RepositoryStatus;
 
     /**
     * Add the resource request that would be needed in order to carry out the specified operation.
@@ -407,7 +407,7 @@ declare class NodeAddonDgnDb {
     * @param relKey Identifies a LinkTableRelationship: {classFullName, id}
     * @param opcode The operation that will be performed on the LinkTableRelationships.
     */
-    buildBriefcaseManagerResourcesRequestForLinkTableRelationship(req: NodeAddonBriefcaseManagerResourcesRequest, relKey: string, opcode: DbOpcode): RepositoryStatus;
+    buildBriefcaseManagerResourcesRequestForLinkTableRelationship(req: AddonBriefcaseManagerResourcesRequest, relKey: string, opcode: DbOpcode): RepositoryStatus;
 
     /**
      * Extract requests from the current bulk operation and append them to reqOut
@@ -415,7 +415,7 @@ declare class NodeAddonDgnDb {
      * @param locks Extract lock requests?
      * @param codes Extract Code requests?
      */
-    extractBulkResourcesRequest(req: NodeAddonBriefcaseManagerResourcesRequest, locks: boolean, codes: boolean): void;
+    extractBulkResourcesRequest(req: AddonBriefcaseManagerResourcesRequest, locks: boolean, codes: boolean): void;
 
     /**
      * Extract requests from reqIn and append them to reqOut
@@ -424,14 +424,14 @@ declare class NodeAddonDgnDb {
      * @param locks Extract lock requests?
      * @param codes Extract Code requests?
      */
-    extractBriefcaseManagerResourcesRequest(reqOut: NodeAddonBriefcaseManagerResourcesRequest, reqIn: NodeAddonBriefcaseManagerResourcesRequest, locks: boolean, codes: boolean): void;
+    extractBriefcaseManagerResourcesRequest(reqOut: AddonBriefcaseManagerResourcesRequest, reqIn: AddonBriefcaseManagerResourcesRequest, locks: boolean, codes: boolean): void;
 
     /**
      * Append reqIn to reqOut
      * @param reqOut The request to be augmented
      * @param reqIn The request to read
      */
-    appendBriefcaseManagerResourcesRequest(reqOut: NodeAddonBriefcaseManagerResourcesRequest, reqIn: NodeAddonBriefcaseManagerResourcesRequest): void;
+    appendBriefcaseManagerResourcesRequest(reqOut: AddonBriefcaseManagerResourcesRequest, reqIn: AddonBriefcaseManagerResourcesRequest): void;
 
     /** Start bulk update mode. Valid only with the pessimistic concurrency control policy */
     briefcaseManagerStartBulkOperation(): RepositoryStatus;
@@ -451,7 +451,7 @@ declare class NodeAddonDgnDb {
      * @param policy The policy to used
      * @return non-zero if the policy could not be set
      */
-    setBriefcaseManagerOptimisticConcurrencyControlPolicy(conflictPolicy: NodeAddonBriefcaseManagerOnConflictPolicy): RepositoryStatus;
+    setBriefcaseManagerOptimisticConcurrencyControlPolicy(conflictPolicy: AddonBriefcaseManagerOnConflictPolicy): RepositoryStatus;
     
   /**
    * Execute a test known to exist using the id recognized by the addon's test execution handler
@@ -462,8 +462,8 @@ declare class NodeAddonDgnDb {
 
 }
 
-/* The NodeAddonECDb class that is projected by the iModelJs node addon. */
-declare class NodeAddonECDb implements IDisposable {
+/* The AddonECDb class that is projected by the iModelJs node addon. */
+declare class AddonECDb implements IDisposable {
     constructor();
      /**
      * Create a new ECDb.
@@ -510,8 +510,8 @@ declare class NodeAddonECDb implements IDisposable {
     importSchema(schemaPathName:string): DbResult;    
 }
 
-/* The NodeAddonECSqlStatement class that is projected by the iModelJs node addon. */
-declare class NodeAddonECSqlStatement implements IDisposable {
+/* The AddonECSqlStatement class that is projected by the iModelJs node addon. */
+declare class AddonECSqlStatement implements IDisposable {
     constructor();
 
     /**
@@ -520,7 +520,7 @@ declare class NodeAddonECSqlStatement implements IDisposable {
      * @param ecSql The statement to prepare
      * @return Zero status in case of success. Non-zero error status in case of failure. The error's message property will contain additional information.
      */
-    prepare(db: NodeAddonDgnDb | NodeAddonECDb, ecSql: string): StatusCodeWithMessage<DbResult>;
+    prepare(db: AddonDgnDb | AddonECDb, ecSql: string): StatusCodeWithMessage<DbResult>;
 
     /** Reset the statement to just before the first row.
      * @return non-zero error status in case of failure.
@@ -535,7 +535,7 @@ declare class NodeAddonECSqlStatement implements IDisposable {
      * @param param Index (1-based) or name (without leading colon) of the parameter.
      * @return Binder for the specified parameter
      */
-    getBinder(param: number | string): NodeAddonECSqlBinder;
+    getBinder(param: number | string): AddonECSqlBinder;
 
     /** Clear the bindings of this statement. See bindValues.
      * @return non-zero error status in case of failure.
@@ -567,11 +567,11 @@ declare class NodeAddonECSqlStatement implements IDisposable {
 
 }
 
-/* The NodeAddonECSqlBinder class that is projected by the iModelJs node addon. */
-declare class NodeAddonECSqlBinder implements IDisposable {
+/* The AddonECSqlBinder class that is projected by the iModelJs node addon. */
+declare class AddonECSqlBinder implements IDisposable {
     constructor();
 
-    /** Dispose of the NodeAddonECSqlBinder object */
+    /** Dispose of the AddonECSqlBinder object */
     dispose(): void;
 
     /** Binds null to the parameter represented by this binder
@@ -642,16 +642,16 @@ declare class NodeAddonECSqlBinder implements IDisposable {
      /** Gets a binder for the specified member of a struct parameter
      * @return Struct member binder.
      */
-    bindMember(memberName: string): NodeAddonECSqlBinder;
+    bindMember(memberName: string): AddonECSqlBinder;
 
      /** Adds a new array element to the array parameter and returns the binder for the new array element
      * @return Binder for the new array element.
      */
-    addArrayElement(): NodeAddonECSqlBinder;
+    addArrayElement(): AddonECSqlBinder;
 }
 
-/* The NodeAddonECPresentationManager class that is projected by the iModelJs node addon. */
-declare class NodeAddonECPresentationManager {
+/* The AddonECPresentationManager class that is projected by the iModelJs node addon. */
+declare class AddonECPresentationManager {
     constructor();
     /**
      * Handles an ECPresentation manager request
@@ -659,7 +659,7 @@ declare class NodeAddonECPresentationManager {
      * @param options Serialized JSON object that contains parameters for the request
      * @return Serialized JSON response
      */
-    handleRequest(db: NodeAddonDgnDb, options: string): string;
+    handleRequest(db: AddonDgnDb, options: string): string;
     /**
      * Sets up a ruleset locater that looks for rulesets in the specified directories
      * @param directories Ruleset locations
