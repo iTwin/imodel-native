@@ -316,7 +316,7 @@ Json::Value TestUtils::DeserializeGeometryStream(Utf8String params) {
 	// Set up collection iterator
 	BeSQLite::DbResult status;
 	BeFileName dbName("myDb");
-	CreateDgnDbParams dgndbParams;
+	CreateDgnDbParams dgndbParams("DeserializeGeometryStream");
 	DgnDbPtr db = DgnDb::CreateDgnDb(&status, dbName, dgndbParams);
 	GeometryCollection collection(arrayBuff, *db);
 
