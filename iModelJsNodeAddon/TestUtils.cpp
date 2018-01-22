@@ -424,7 +424,7 @@ Json::Value TestUtils::BuildKnownGeometryStream(Utf8String params) {
 	// Set up the GeometryBuilder
 	BeSQLite::DbResult status;
 	BeFileName dbName("testDb");
-	CreateDgnDbParams dgndbParams;
+	CreateDgnDbParams dgndbParams("BuildKnownGeometryStream");
 	DgnDbPtr db = DgnDb::CreateDgnDb(&status, dbName, dgndbParams);
 	GeometryBuilder builder = *GeometryBuilder::CreateGeometryPart(*db, true);
 
