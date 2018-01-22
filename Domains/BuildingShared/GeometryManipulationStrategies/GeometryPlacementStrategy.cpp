@@ -153,6 +153,7 @@ bool GeometryPlacementStrategy::_CanAcceptMorePoints() const
         return _GetManipulationStrategy().TryGetProperty(key, value); \
         }
 
+GMS_PROPERTY_OVERRIDE_IMPL(bool)
 GMS_PROPERTY_OVERRIDE_IMPL(int)
 GMS_PROPERTY_OVERRIDE_IMPL(double)
 GMS_PROPERTY_OVERRIDE_IMPL(DVec3d)

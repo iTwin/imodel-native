@@ -103,6 +103,8 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ChangeDefaultPlacementStrategy(LinePlacementStrategyType newPlacementStrategyType);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ChangeDefaultPlacementStrategy(ArcPlacementStrategyType newPlacementStrategyType);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ChangeDefaultPlacementStrategy(LineStringPlacementStrategyType newPlacementStrategyType);
+
+        DPlane3dCR GetWorkingPlane() const { return m_workingPlane; }
     };
 
 END_BUILDING_SHARED_NAMESPACE

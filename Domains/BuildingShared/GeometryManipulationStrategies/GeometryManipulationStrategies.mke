@@ -73,6 +73,14 @@ $(o)ElementManipulationStrategy$(oext) : $(_MakeFilePath)ElementManipulationStra
 
 $(o)LineStringMetesAndBoundsPlacementStrategy$(oext) : $(_MakeFilePath)LineStringMetesAndBoundsPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/LineStringMetesAndBoundsPlacementStrategy.h
 
+$(o)SolidPrimitiveManipulationStrategy$(oext) : $(_MakeFilePath)SolidPrimitiveManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/SolidPrimitiveManipulationStrategy.h
+
+$(o)ExtrusionManipulationStrategy$(oext) : $(_MakeFilePath)ExtrusionManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ExtrusionManipulationStrategy.h
+
+$(o)SolidPrimitivePlacementStrategy$(oext) : $(_MakeFilePath)SolidPrimitivePlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/SolidPrimitivePlacementStrategy.h
+
+$(o)ExtrusionPlacementStrategy$(oext) : $(_MakeFilePath)ExtrusionPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ExtrusionPlacementStrategy.h
+
 
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)

@@ -53,6 +53,7 @@ struct GeometryManipulationStrategyBase : RefCountedBase
     protected:
         virtual void _OnPropertySet(Utf8CP key) {}
 
+        GMS_V_SET_TRYGET_PROPERTY_TYPE(bool)
         GMS_V_SET_TRYGET_PROPERTY_TYPE(int)
         GMS_V_SET_TRYGET_PROPERTY_TYPE(double)
         GMS_V_SET_TRYGET_PROPERTY_TYPE(DVec3d)
@@ -73,6 +74,7 @@ struct GeometryManipulationStrategyBase : RefCountedBase
         virtual bool _CanAcceptMorePoints() const = 0;
 
     public:
+        GMS_SET_TRYGET_PROPERTY_TYPE(bool)
         GMS_SET_TRYGET_PROPERTY_TYPE(int)
         GMS_SET_TRYGET_PROPERTY_TYPE(double)
         GMS_SET_TRYGET_PROPERTY_TYPE(DVec3d)
