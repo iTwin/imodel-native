@@ -1285,7 +1285,8 @@ BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV
                 GroupInformationElementCPtr group = elementTable.Get<GroupInformationElement>(m_parentId);
                 if (group.IsValid()/* && !ElementGroupsMembers::HasMember(*group, *child)*/)
                     {
-                    if (DgnDbStatus::Success != ElementGroupsMembers::Insert(*group, *child, 0))
+                    DgnDbStatus status;
+                    if (DgnDbStatus::BadRequest == (status = ElementGroupsMembers::Insert(*group, *child, 0)))
                         {
                         Utf8String error;
                         error.Sprintf("Failed to add child element %s to group %" PRIu64 "", Converter::IssueReporter::FmtElement(memberEh).c_str(), m_parentId.GetValue());
