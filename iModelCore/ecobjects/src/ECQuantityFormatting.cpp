@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECQuantityFormatting.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -278,15 +278,15 @@ Utf8String ECQuantityFormatting::FormatPersistedValue(double dval, KindOfQuantit
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bill.Steinbock                  11/2017
 //---------------------------------------------------------------------------------------
-BEU::Quantity ECQuantityFormatting::CreateQuantity(Utf8CP input, size_t start, double* persist, KindOfQuantityCP koq, BEU::UnitCR presentationUnit, Formatting::FormatProblemCode* probCode)
+BEU::Quantity ECQuantityFormatting::CreateQuantity(Utf8CP input, size_t start, double* persist, KindOfQuantityCP koq, Formatting::FormatUnitSetR presentationFUS, Formatting::FormatProblemCode* probCode)
     {
     Formatting::FormatUnitSetCR persistFUS = koq->GetPersistenceUnit();
     BEU::UnitCP persUnit = persistFUS.GetUnit();
-    Formatting::FormatParsingSet fps = Formatting::FormatParsingSet(input, start, &presentationUnit);
+    Formatting::FormatParsingSet fps = Formatting::FormatParsingSet(input, start, presentationFUS.GetUnit());
     Formatting::FormatProblemCode locCode;
     if (nullptr == probCode) probCode = &locCode;
     *probCode = Formatting::FormatProblemCode::NoProblems;
-    BEU::Quantity qty = fps.GetQuantity(probCode);
+    BEU::Quantity qty = fps.GetQuantity(probCode, &presentationFUS);
     if (*probCode == Formatting::FormatProblemCode::NoProblems)
         {
         if (nullptr != persist)
