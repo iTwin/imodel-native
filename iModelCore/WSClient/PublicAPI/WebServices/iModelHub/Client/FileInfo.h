@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/iModelHub/Client/FileInfo.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,7 +21,8 @@ enum class InitializationState
     Scheduled,
     UnknownFailure,
     OutdatedFile,
-    IncorrectFileId
+    IncorrectFileId,
+    CodeTooLong
     };
 
 //=======================================================================================
