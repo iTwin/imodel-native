@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnDb.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -178,7 +178,7 @@ private:
     void ClearECSqlCache() const { m_ecsqlCache.Empty(); }
 
     BeSQLite::DbResult InitializeSchemas(BeSQLite::Db::OpenParams const& params);
-    BeSQLite::DbResult ProcessSchemaRevisions(BeSQLite::Db::OpenParams const& params);
+    BeSQLite::DbResult ProcessRevisions(BeSQLite::Db::OpenParams const& params);
 
 protected:
     friend struct Txns;

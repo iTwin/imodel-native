@@ -1489,4 +1489,57 @@ RevisionStatus RevisionManager::DoReinstateRevision(DgnRevisionCR revision)
     return txnMgr.ApplyRevision(revision, false /*=invert*/);
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/17
+//--------------------------------------------------------------------------------------
+RevisionStatus RevisionManager::DoProcessRevisions(bvector<DgnRevisionCP> const& revisions, RevisionProcessOption processOptions)
+    {
+    RevisionStatus status;
+    switch (processOptions)
+        {
+        case RevisionProcessOption::Merge:
+            for (DgnRevisionCP revision : revisions)
+                {
+                status = DoMergeRevision(*revision);
+                if (RevisionStatus::Success != status)
+                    return status;
+                }
+            break;
+        case RevisionProcessOption::Reverse:
+            for (DgnRevisionCP revision : revisions)
+                {
+                status = DoReverseRevision(*revision);
+                if (RevisionStatus::Success != status)
+                    return status;
+                }
+            break;
+        case RevisionProcessOption::Reinstate:
+            for (DgnRevisionCP revision : revisions)
+                {
+                status = DoReinstateRevision(*revision);
+                if (RevisionStatus::Success != status)
+                    return status;
+                }
+            break;
+        default:
+            BeAssert(false && "Invalid revision upgrade option");
+        }
+
+    return RevisionStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    12/2017
+//---------------------------------------------------------------------------------------
+RevisionStatus RevisionManager::ProcessRevisions(bvector<DgnRevisionCP> const& revisions, RevisionProcessOption processOptions)
+    {
+    for (DgnRevisionCP revision : revisions)
+        {
+        if (!EXPECTED_CONDITION(!revision->ContainsSchemaChanges(m_dgndb)) && "Cannot process a revision containing schema changes when the DgnDb is already open. Close the DgnDb and reopen with the upgrade schema options set to the revision.")
+            return RevisionStatus::ProcessSchemaChangesOnOpen;
+        }
+        
+    return DoProcessRevisions(revisions, processOptions);
+    }
+
 END_BENTLEY_DGNPLATFORM_NAMESPACE
