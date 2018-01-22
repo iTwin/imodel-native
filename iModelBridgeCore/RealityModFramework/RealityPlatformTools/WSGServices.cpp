@@ -2,10 +2,13 @@
 |
 |     $Source: RealityPlatformTools/WSGServices.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
+#if defined (BENTLEYCONFIG_OS_WINDOWS)
+#include <Windows.h>
+#endif
 #include <iostream>
 
 #include <Bentley/Bentley.h>

@@ -6,14 +6,14 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "../RealityPlatform/SimpleWSGBase.cpp"
+#include "../RealityPlatformTools/SimpleWSGBase.cpp"
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
-Utf8String WSGRequestManager::MakeBuddiCall()
+Utf8String WSGRequestManager::MakeBuddiCall(WString serviceName)
     {
     return "NO CONNECTIONCLIENT";
     }

@@ -2,14 +2,14 @@
 #
 #     $Source: RealityPlatformToolsComplete/RealityPlatformTools.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
 
 appName         = RealityPlatformTools
 baseDir         = $(SrcRoot)RealityModFramework/RealityPlatformTools/
-deskDir         = $(_MakeFilePath)
+childDir        = $(_MakeFilePath)
 
 %include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
 
@@ -52,15 +52,15 @@ $(o)md5$(oext) : $(baseDir)md5.cpp $(PublicApiDir)md5.h ${MultiCompileDepends}
 
 $(o)RealityConversionTools$(oext) : $(baseDir)RealityConversionTools.cpp $(PublicApiDir)RealityConversionTools.h ${MultiCompileDepends}
 
-$(o)RealityDataDownload$(oext) : $(deskDir)RealityDataDownload.cpp $(PublicApiDir)RealityDataDownload.h ${MultiCompileDepends}
+$(o)RealityDataDownload$(oext) : $(childDir)RealityDataDownload.cpp $(PublicApiDir)RealityDataDownload.h ${MultiCompileDepends}
 
-$(o)WSGServices$(oext) : $(deskDir)WSGServices.cpp $(PublicApiDir)WSGServices.h ${MultiCompileDepends}
+$(o)WSGServices$(oext) : $(childDir)WSGServices.cpp $(PublicApiDir)WSGServices.h ${MultiCompileDepends}
 
-$(o)RealityDataService$(oext) : $(deskDir)RealityDataService.cpp $(PublicApiDir)RealityDataService.h ${MultiCompileDepends}
+$(o)RealityDataService$(oext) : $(childDir)RealityDataService.cpp $(PublicApiDir)RealityDataService.h ${MultiCompileDepends}
 
-$(o)GeoCoordinationService$(oext) : $(deskDir)GeoCoordinationService.cpp $(PublicApiDir)GeoCoordinationService.h ${MultiCompileDepends}
+$(o)GeoCoordinationService$(oext) : $(childDir)GeoCoordinationService.cpp $(PublicApiDir)GeoCoordinationService.h ${MultiCompileDepends}
 
-$(o)SimpleWSGBase$(oext) : $(deskDir)SimpleWSGBase.cpp $(PublicApiDir)SimpleWSGBase.h ${MultiCompileDepends}
+$(o)SimpleWSGBase$(oext) : $(childDir)SimpleWSGBase.cpp $(PublicApiDir)SimpleWSGBase.h ${MultiCompileDepends}
 
 $(o)SimpleRDSApi$(oext) : $(baseDir)SimpleRDSApi.cpp $(PublicApiDir)SimpleRDSApi.h ${MultiCompileDepends}
 

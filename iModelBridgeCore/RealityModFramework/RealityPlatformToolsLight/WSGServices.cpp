@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatformToolsLight/WSGServices.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -10,7 +10,7 @@
 
 #include <Bentley/Bentley.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
-#include "../RealityPlatform/WSGServices.cpp"
+#include "../RealityPlatformTools/WSGServices.cpp"
 #include <RealityPlatform/RealityPlatformAPI.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
@@ -41,13 +41,15 @@ RequestStatus RawServerResponse::ValidateJSONResponse(Json::Value& instances, Ut
 //-------------------------------------------------------------------------------------
 void* RequestConstructor::PrepareRequestBase(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file) const
     {
+    return nullptr;
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                02/2017
 //-------------------------------------------------------------------------------------
 void* WSGRequest::PrepareRequest(const WSGURL& wsgRequest, RawServerResponse& responseObject, bool verifyPeer, BeFile* file) const
-    {    
+    {
+    return nullptr;
     }
 
 //-------------------------------------------------------------------------------------
@@ -55,8 +57,8 @@ void* WSGRequest::PrepareRequest(const WSGURL& wsgRequest, RawServerResponse& re
 //-------------------------------------------------------------------------------------
 void WSGRequest::_PerformRequest(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry) const
     {
-    if(m_toolCallback)
-        return m_toolCallback(wsgRequest, response, verifyPeer, file, retry);
+    if(m_requestCallback)
+        return m_requestCallback(wsgRequest, response, verifyPeer, file);
     }
 
 //-------------------------------------------------------------------------------------

@@ -236,31 +236,6 @@ END_BENTLEY_REALITYPLATFORM_NAMESPACE
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
-static size_t DownloadWriteCallback(void *buffer, size_t size, size_t nmemb, void *pClient)
-    {
-    if (NULL == pClient)
-        return 0;
-
-    RealityDataFileDownload *fileDown = (RealityDataFileDownload *)pClient;
-    if (!(fileDown->GetFileStream().IsOpen()))
-        {
-        if (fileDown->GetFileStream().Open(fileDown->GetFilename().c_str(), BeFileAccess::Write) != BeFileStatus::Success)
-            return 0;   // failure, can't open file to write
-        }
-    fileDown->iAppend += nmemb;
-    uint32_t byteWritten;
-    if (fileDown->GetFileStream().Write(&byteWritten, buffer, (uint32_t)(size*nmemb)) != BeFileStatus::Success)
-        byteWritten = 0;
-
-    return byteWritten;
-    }
-
-static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
-    {
-    ((Utf8String*)userp)->append((char*)contents, size * nmemb);
-    return size * nmemb;
-    }
-
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================

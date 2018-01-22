@@ -50,9 +50,6 @@ void RealityDataServiceTransfer::SetupRequestforFile(RealityDataUrl* request, bo
     else
         return; //unexpected request
 
-    RealityDataFileUpload* fileUpload = dynamic_cast<RealityDataFileUpload*>(request);
-    RealityDataFileDownload* fileDownload = dynamic_cast<RealityDataFileDownload*>(request);
-
     RawServerResponse& rawResponse = fileTransfer->GetResponse();
     rawResponse.clear();
     rawResponse.toolCode = ServerType::Azure;

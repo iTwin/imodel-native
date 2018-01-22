@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatformToolsLight/GeoCoordinationService.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -20,14 +20,6 @@ void GeoCoordinationService::Request(const DownloadReportUploadRequest& request,
     if (status != BeFileStatus::Success)
         {
         s_errorCallback("DownloadReport File not found", rawResponse);
-        return;
-        }
-
-    auto curl = WSGRequest::GetInstance().PrepareRequest(request, rawResponse, GeoCoordinationService::GetVerifyPeer(), &fileStream);
-
-    if (rawResponse.toolCode == CURLcode::CURLE_FAILED_INIT)
-        {
-        s_errorCallback("Curl init failed for DownloadReportUploadRequest", rawResponse);
         return;
         }
 
