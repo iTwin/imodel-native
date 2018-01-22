@@ -2,6 +2,9 @@
 
 #include <Bentley/BeTest.h>
 #include <ORDBridge/ORDBridgeApi.h>
+#include <LinearReferencing/LinearReferencingApi.h>
+#include <RoadRailAlignment/RoadRailAlignmentApi.h>
+#include <RoadRailPhysical/RoadRailPhysicalApi.h>
 
 struct ORDBridgeTestsHostImpl;
 

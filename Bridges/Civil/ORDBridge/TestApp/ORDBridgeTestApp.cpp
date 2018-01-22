@@ -2,7 +2,7 @@
 |
 |     $Source: ORDBridge/TestApp/ORDBridgeTestApp.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
@@ -12,7 +12,6 @@
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_DGN
-USING_NAMESPACE_BENTLEY_ORDBRIDGE
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
@@ -21,7 +20,7 @@ static int runBridge(int argc, WCharCP argv[])
     {
     iModelBridgeSacAdapter::InitCrt(false);
 
-    auto* iModelBridgeP = iModelBridge_getInstance(ORDBridge::GetRegistrySubKey());
+    auto* iModelBridgeP = iModelBridge_getInstance(iModelBridge_getRegistrySubKey());
 
     iModelBridgeSacAdapter::Params saparams;
     if (BentleyStatus::SUCCESS != iModelBridgeSacAdapter::ParseCommandLine(*iModelBridgeP, saparams, argc, argv))

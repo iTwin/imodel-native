@@ -19,9 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ORDBridge.h" />
     <ClInclude Include="ORDBridgeInternal.h" />
     <ClInclude Include="ORDConverter.h" />
-    <ClInclude Include="PublicAPI\ORDBridge\ORDBridge.h" />
     <ClInclude Include="PublicAPI\ORDBridge\ORDBridgeApi.h" />
   </ItemGroup>
   <ItemGroup>

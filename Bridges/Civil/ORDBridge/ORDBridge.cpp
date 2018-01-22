@@ -2,12 +2,15 @@
 |
 |     $Source: ORDBridge/ORDBridge.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ORDBridgeInternal.h"
 #include <windows.h>
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
+
+#define LOG (*NativeLogging::LoggingManager::GetLogger(L"ORDBridge"))
+//#define USE_ROOTMODEL 1
 
 BEGIN_ORDBRIDGE_NAMESPACE
 
@@ -28,8 +31,6 @@ iModelBridge::CmdLineArgStatus ORDBridge::_ParseCommandLineArg(int iArg, int arg
 //---------------------------------------------------------------------------------------
 BentleyStatus ORDBridge::_Initialize(int argc, WCharCP argv[])
     {
-    AppendCifSdkToDllSearchPath(_GetParams().GetLibraryDir());
-
     if (_GetParams().GetBridgeRegSubKey().empty())
         _GetParams().SetBridgeRegSubKey(GetRegistrySubKey());
 
@@ -45,6 +46,7 @@ BentleyStatus ORDBridge::_Initialize(int argc, WCharCP argv[])
         }
 
     DgnDbSync::DgnV8::Converter::Initialize(_GetParams().GetLibraryDir(), _GetParams().GetAssetsDir(), BeFileName(L"DgnV8"), nullptr, false, argc, argv);
+    AppendCifSdkToDllSearchPath(_GetParams().GetLibraryDir());
 
     // Initialize Cif SDK
     DgnPlatformCivilLib::InitializeWithDefaultHost();
@@ -58,6 +60,25 @@ BentleyStatus ORDBridge::_Initialize(int argc, WCharCP argv[])
 //---------------------------------------------------------------------------------------
 BentleyStatus ORDBridge::_OpenSource()
     {
+#ifdef USE_ROOTMODEL
+    auto initStat = m_converter->InitRootModel();
+    if (DgnV8Api::DGNFILE_STATUS_Success != initStat)
+        {
+        switch (initStat)
+            {
+            case DgnV8Api::DGNOPEN_STATUS_FileNotFound:
+                LOG.fatalv(L"%ls - file not found", _GetParams().GetInputFileName().GetName());
+                fwprintf(stderr, L"%ls - file not found\n", _GetParams().GetInputFileName().GetName());
+                break;
+
+            default:
+                m_converter->ReportDgnV8FileOpenError(initStat, _GetParams().GetInputFileName().c_str());
+                LOG.fatalv(L"%ls - cannot find or load root model. See %ls-issues for more information.", _GetParams().GetInputFileName().GetName(), _GetParams().GetBriefcaseName().GetName());
+            }
+
+        return BentleyStatus::ERROR;
+        }
+#endif
     return BentleyStatus::SUCCESS;
     }
 
@@ -120,8 +141,13 @@ Utf8String ORDBridge::ComputeJobSubjectName()
 //---------------------------------------------------------------------------------------
 SubjectCPtr ORDBridge::_FindJob()
     {
+#ifdef USE_ROOTMODEL
+    auto status = m_converter->FindJob();
+    return (DgnDbSync::DgnV8::RootModelConverter::ImportJobLoadStatus::Success == status) ? &m_converter->GetImportJob().GetSubject() : nullptr;
+#else
     Utf8String jobName(ComputeJobSubjectName());
     return QueryJobSubject(GetDgnDbR(), jobName.c_str());
+#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -129,6 +155,41 @@ SubjectCPtr ORDBridge::_FindJob()
 //---------------------------------------------------------------------------------------
 SubjectCPtr ORDBridge::_InitializeJob()
     {
+#ifdef USE_ROOTMODEL
+    BeAssert(m_converter->IsFileAssignedToBridge(*m_converter->GetRootV8File()) && "The bridge assigned to the root file/model must be the bridge that creates the root subject");
+
+    auto status = m_converter->InitializeJob();
+
+    //  Make sure that we really should be converting this model as our root
+    if (DgnDbSync::DgnV8::RootModelConverter::ImportJobCreateStatus::Success != status)
+        {
+        if (DgnDbSync::DgnV8::RootModelConverter::ImportJobCreateStatus::FailedExistingNonRootModel == status)
+            {
+            // This model was converted by some other job and not as its root.
+            // This is probably a user error. If we were to use this as a root, we could end up creating duplicates of it and its references, possibly
+            //  using different transforms. That would probably only cause confusion.
+            LOG.fatalv(L"%ls - error - the selected root model [%ls] was previously converted, not as a root but as a reference attachment.", _GetParams().GetBriefcaseName().GetName(), m_converter->GetRootModelP()->GetModelName());
+            return nullptr;
+            }
+
+        BeAssert(DgnDbSync::DgnV8::RootModelConverter::ImportJobCreateStatus::FailedExistingRoot != status); // If the root was previously converted, then we should be doing an update!
+        }
+
+    if (DgnDbSync::DgnV8::RootModelConverter::ImportJobCreateStatus::Success == status)
+        {
+        auto& subjectCR = m_converter->GetImportJob().GetSubject();
+
+        AlignmentBim::RoadRailAlignmentDomain::GetDomain().SetUpModelHierarchy(subjectCR, ORDBRIDGE_AlignmentModelName);
+        RoadRailBim::RoadRailPhysicalDomain::GetDomain().SetUpModelHierarchy(subjectCR, ORDBRIDGE_PhysicalModelName);
+
+        // IMODELBRIDGE REQUIREMENT: Relate this model to the source document
+        auto physicalModelPtr = RoadRailBim::RoadRailPhysicalDomain::QueryPhysicalModel(subjectCR, ORDBRIDGE_PhysicalModelName);
+        //TODO: InsertElementHasLinksRelationship(GetDgnDbR(), physicalModelPtr->GetModeledElementId(), repositoryLinkId);
+        return &subjectCR;
+        }
+    else
+        return nullptr;
+#else
     Utf8String jobName(ComputeJobSubjectName());
 
     SubjectCPtr jobSubject = CreateAndInsertJobSubject(GetDgnDbR(), jobName.c_str());
@@ -147,6 +208,7 @@ SubjectCPtr ORDBridge::_InitializeJob()
     InsertElementHasLinksRelationship(GetDgnDbR(), physicalModelPtr->GetModeledElementId(), repositoryLinkId);
 
     return jobSubject;
+#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -162,15 +224,28 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
 
     ORDConverter::Params params(_GetParams(), jobSubject, *changeDetectorPtr, fileScopeId);
 
+#ifdef USE_ROOTMODEL
+    ConvertORDElementXDomain convertORDXDomain(*m_converter, params);
+    Dgn::DgnDbSync::DgnV8::XDomain::Register(convertORDXDomain);
+
+    m_converter->Process();
+
+    convertORDXDomain.CreateRoadRailElements();
+
+    Dgn::DgnDbSync::DgnV8::XDomain::UnRegister(convertORDXDomain);
+    return m_converter->WasAborted() ? BSIERROR : BSISUCCESS;
+#else
     // IMODELBRIDGE REQUIREMENT: Note job transform and react when it changes
-    Transform _old, _new;
-    params.spatialDataTransformHasChanged = DetectSpatialDataTransformChange(_new, _old, *changeDetectorPtr, fileScopeId, "JobTrans", "JobTrans");
+    //Transform _old, _new;
+    //params.spatialDataTransformHasChanged = DetectSpatialDataTransformChange(_new, _old, *changeDetectorPtr, fileScopeId, "JobTrans", "JobTrans");
+    //TODO: Commented out the two lines above because iModelBridgeBase retrieves Subject via local m_params rather than using the overriden _GetParams.
     params.isCreatingNewDgnDb = IsCreatingNewDgnDb();
 
     ORDConverter converter;
     converter.ConvertORDData(params);
 
     return BentleyStatus::SUCCESS;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -196,19 +271,95 @@ void ORDBridge::_OnDocumentDeleted(Utf8StringCR documentId, Dgn::iModelBridgeSyn
     // TODO
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bentley.Systems
-//---------------------------------------------------------------------------------------
-extern "C" iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeName)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ORDBridge::_MakeSchemaChanges()
     {
-    BeAssert(0 == BeStringUtilities::Wcsicmp(bridgeName, ORDBridge::GetRegistrySubKey()));
-    return new ORDBridge();
+#ifdef USE_ROOTMODEL
+    auto status = m_converter->MakeSchemaChanges();
+    return ((BSISUCCESS != status) || m_converter->WasAborted()) ? BSIERROR : BSISUCCESS;
+#else
+    return BSISUCCESS;
+#endif
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ORDBridge::CreateSyncInfoIfNecessary()
+    {
+    //  If I am creating a new local file or if I just acquired a briefcase for an existing repository, then I will have to bootstrap syncinfo.
+    if (!DgnDbSync::DgnV8::SyncInfo::GetDbFileName(_GetParams().GetBriefcaseName()).DoesPathExist())
+        {
+        if (BSISUCCESS != DgnDbSync::DgnV8::SyncInfo::CreateEmptyFile(DgnDbSync::DgnV8::SyncInfo::GetDbFileName(_GetParams().GetBriefcaseName()))) // Bootstrap the V8 converter by pairing an empty syncinfo file with the briefcase
+            return BSIERROR;
+        }
+
+    BeAssert(DgnDbSync::DgnV8::SyncInfo::GetDbFileName(_GetParams().GetBriefcaseName()).DoesPathExist());
+
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ORDBridge::_OnOpenBim(DgnDbR db)
+    {
+#ifdef USE_ROOTMODEL
+    m_converter.reset(new ORDV8Converter(m_params));
+    m_converter->SetDgnDb(db);
+    CreateSyncInfoIfNecessary();
+    if (BentleyStatus::SUCCESS != m_converter->AttachSyncInfo())
+        return BentleyStatus::ERROR;
+#endif
+
+    return T_Super::_OnOpenBim(db);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ORDBridge::_OnCloseBim(BentleyStatus)
+    {
+#ifdef USE_ROOTMODEL
+    m_converter.reset(nullptr); // this also has the side effect of closing the source files
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ORDBridge::_DetectDeletedDocuments()
+    {
+#ifdef USE_ROOTMODEL
+    m_converter->_DetectDeletedDocuments();
+    return m_converter->WasAborted() ? BSIERROR : BSISUCCESS;
+#else
+    return BSISUCCESS;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carl.Hinkle                      01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ORDBridge::_DeleteSyncInfo()
+    {
+    T_Super::_DeleteSyncInfo();
+
+    BeFileName briefcaseName = _GetParams().GetBriefcaseName();
+    briefcaseName = briefcaseName.AppendExtension(L"syncinfo");
+    if (!briefcaseName.DoesPathExist())
+        return;
+    briefcaseName.BeDeleteFile();    
+    }
+
+END_ORDBRIDGE_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-extern "C" BentleyStatus iModelBridge_releaseInstance(iModelBridge* bridge)
+extern "C" BentleyStatus iModelBridge_releaseInstance(BentleyApi::Dgn::iModelBridge* bridge)
     {
     #if defined (BENTLEYCONFIG_PARASOLID)
     if (PSolidKernelManager::IsSessionStarted())
@@ -219,4 +370,23 @@ extern "C" BentleyStatus iModelBridge_releaseInstance(iModelBridge* bridge)
     return SUCCESS;
     }
 
-END_ORDBRIDGE_NAMESPACE
+USING_NAMESPACE_BENTLEY_ORDBRIDGE
+
+bool DummyClass::DummyMethod() { return true; }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+extern "C" BentleyApi::Dgn::iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeName)
+    {
+    BeAssert(0 == BentleyApi::BeStringUtilities::Wcsicmp(bridgeName, ORDBridge::GetRegistrySubKey()));
+    return new ORDBridge();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+extern "C" wchar_t const* iModelBridge_getRegistrySubKey()
+    {
+    return ORDBridge::GetRegistrySubKey();
+    }

@@ -24,10 +24,10 @@
     <ClInclude Include="ORDBridgeInternal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\ORDBridge\ORDBridge.h">
-      <Filter>Header Files\PublicAPI</Filter>
-    </ClInclude>
     <ClInclude Include="ORDConverter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ORDBridge.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

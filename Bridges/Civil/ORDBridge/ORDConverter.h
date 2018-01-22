@@ -2,7 +2,7 @@
 |
 |     $Source: ORDBridge/ORDConverter.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -31,11 +31,40 @@ public:
         };
 
 private:
-    void ConvertAlignments(Bentley::Cif::GeometryModel::SDK::GeometricModel const&, Dgn::DgnDbSync::DgnV8::ConverterLibrary& converterLib, Params& params);
+    void ConvertAlignments(Bentley::Cif::GeometryModel::SDK::GeometricModel const&, Params& params);
     void ConvertCorridors(Bentley::Cif::GeometryModel::SDK::GeometricModel const&, Dgn::DgnDbSync::DgnV8::ConverterLibrary& converterLib, Params& params);
 
 public:
     void ConvertORDData(Params& params);
 }; // ORDConverter
+
+struct ORDV8Converter : Dgn::DgnDbSync::DgnV8::RootModelConverter
+{
+protected:
+    virtual bool _ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model) override;
+    virtual Dgn::DgnModelId _MapModelIntoProject(DgnV8ModelR v8Model, Utf8CP, DgnV8Api::DgnAttachment const* attachment) override;
+
+public:
+    ORDV8Converter(Dgn::DgnDbSync::DgnV8::RootModelConverter::RootModelSpatialParams& params) : 
+        Dgn::DgnDbSync::DgnV8::RootModelConverter(params)
+        {}
+}; // ORDV8Converter
+
+struct ConvertORDElementXDomain : Dgn::DgnDbSync::DgnV8::XDomain
+{
+private:
+    ORDConverter::Params& m_params;
+    ORDV8Converter& m_converter;
+    bvector<bpair<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::Alignment>, Dgn::DgnElementPtr>> m_alignments;
+    bvector<bpair<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::Corridor>, Dgn::DgnElementPtr>> m_corridors;
+
+protected:
+    virtual void _ProcessResults(Dgn::DgnDbSync::DgnV8::ElementConversionResults&, DgnV8EhCR, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const&, Dgn::DgnDbSync::DgnV8::Converter&) override;
+
+public:
+    ConvertORDElementXDomain(ORDV8Converter& converter, ORDConverter::Params& params);
+
+    void CreateRoadRailElements();
+}; // ConvertORDElementXDomain
 
 END_ORDBRIDGE_NAMESPACE
