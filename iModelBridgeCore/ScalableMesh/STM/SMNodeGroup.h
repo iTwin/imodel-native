@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/SMNodeGroup.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -191,6 +191,28 @@ public:
             }
         }
 
+
+template<typename Function, typename PredicateFunc>
+SMNodeDistributor(Function function
+	, PredicateFunc can_run_function
+	, unsigned int concurrency = std::thread::hardware_concurrency()
+	//, unsigned int concurrency = 2
+	, typename Queue::size_type max_items_per_thread = 5000
+)
+	: capacity{ concurrency * max_items_per_thread }
+{
+	if (!concurrency)
+		throw std::invalid_argument("Concurrency must be non-zero");
+	if (!max_items_per_thread)
+		throw std::invalid_argument("Max items per thread must be non-zero");
+
+	for (unsigned int count{ 0 }; count < concurrency; count += 1)
+	{
+		m_threads.emplace_back(static_cast<void (SMNodeDistributor::*)(Function, PredicateFunc)>
+			(&SMNodeDistributor::Consume), this, function, can_run_function);
+	}
+}
+
     //    SMNodeDistributor(SMNodeDistributor &&) = default;
     //    SMNodeDistributor &operator=(SMNodeDistributor &&) = delete;
 
@@ -252,8 +274,10 @@ public:
         {
         std::unique_lock<std::mutex> lock(*this);
         bool areThreadsFinished = false;
-        while (!wait_for(lock, 1000ms, function))
+        while (!wait_for(lock, 1000ms, function) || !areThreadsFinished)
             {
+			if (function()) //allow a yield after progress finishes, to leave time for all threads to return
+				wait_for(lock, 1000ms);
             for (auto state : m_threadStates)
                 {
                 if (!(areThreadsFinished = state.second == ThreadState::IDLE))
@@ -332,7 +356,7 @@ private:
 //                    }
 //#endif
                 m_threadStates[std::this_thread::get_id()] = ThreadState::IDLE;
-
+				notify_all();
                     wait(lock);
 //#ifdef DEBUG_GROUPS
 //                    {
@@ -343,6 +367,58 @@ private:
                 }
             }
         }
+
+	template <typename Function, typename PredicateFunc>
+	void Consume(Function process, PredicateFunc is_process_ready)
+	{
+		std::unique_lock<std::mutex> lock(*this);
+		while (true) {
+			if (!Queue::empty()) {
+				assert(lock.owns_lock());
+				Type item{ std::move(Queue::front()) };
+				Queue::pop();
+				notify_one();
+				m_threadStates[std::this_thread::get_id()] = ThreadState::WORKING;
+				lock.unlock();
+				if (is_process_ready(item))
+				{
+					process(item);
+					lock.lock();
+				}
+				else
+				{
+					lock.lock();
+					Queue::push(std::move(item));
+				}
+			}
+			else if (m_done) {
+				//#ifdef DEBUG_GROUPS
+				//                    {
+				//                    std::lock_guard<mutex> clk(s_consoleMutex);
+				//                    std::cout << "[" << std::this_thread::get_id() << "] Finished work" << std::endl;
+				//                    }
+				//#endif
+				break;
+			}
+			else {
+				//#ifdef DEBUG_GROUPS
+				//                    {
+				//                    std::lock_guard<mutex> clk(s_consoleMutex);
+				//                    std::cout << "[" << std::this_thread::get_id() << "] Waiting for work" << std::endl;
+				//                    }
+				//#endif
+				m_threadStates[std::this_thread::get_id()] = ThreadState::IDLE;
+
+				wait(lock);
+				//#ifdef DEBUG_GROUPS
+				//                    {
+				//                    std::lock_guard<mutex> clk(s_consoleMutex);
+				//                    std::cout << "[" << std::this_thread::get_id() << "] Going to perform work; size of queue = " << Queue::size() << std::endl;
+				//                    }
+				//#endif
+			}
+		}
+	}
 
     void SpawnThreads()
         {
