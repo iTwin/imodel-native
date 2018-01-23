@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlPreparedStatement.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -181,7 +181,7 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
             private:
                 std::vector<IECSqlBinder*> m_binders;
                 std::map<ECN::ECPropertyId, std::unique_ptr<ProxyECSqlBinder>> m_structMemberProxyBindersById;
-                std::map<Utf8CP, std::unique_ptr<ProxyECSqlBinder>, CompareIUtf8Ascii> m_structMemberProxyBindersByName;
+                std::map<Utf8String, std::unique_ptr<ProxyECSqlBinder>, CompareIUtf8Ascii> m_structMemberProxyBindersByName;
                 std::unique_ptr<ProxyECSqlBinder> m_arrayElementProxyBinder;
 
                 ECSqlStatus _BindNull() override;
