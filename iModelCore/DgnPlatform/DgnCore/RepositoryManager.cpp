@@ -2543,10 +2543,7 @@ RepositoryStatus BulkUpdateBriefcaseManager::_OnFinishRevision(DgnRevision const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BulkUpdateBriefcaseManager::_OnCommit(TxnManager& mgr)
     {
-    if (!mgr.GetDgnDb().GetOptimisticConcurrencyControl())
-        {
-        BeAssert (!m_inBulkUpdate && "somebody called SaveChanges while in a NESTED bulk op");
-        }
+    BeAssert (!m_inBulkUpdate && "somebody called SaveChanges while in a NESTED bulk op");
     T_Super::_OnCommit(mgr);
     }
 

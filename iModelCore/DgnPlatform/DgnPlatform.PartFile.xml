@@ -44,10 +44,10 @@
     <Part Name="PsolidShim_iOSArm64" OnlyPlatforms="iOSARM64" WipPartEnable="ParasolidIos">
         <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_30_1_168_iOSArm64"/>
     </Part>
-    <Part Name="PsolidShim_LinuxX64" OnlyPlatforms="LinuxX64" WipPartEnable="ParasolidLinux">
+    <Part Name="PsolidShim_LinuxX64" OnlyPlatforms="LinuxX64">
         <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_30_1_168_LinuxX64"/>
     </Part>
-    <Part Name="PsolidShim_MacOSx64" OnlyPlatforms="MacOSx64" WipPartEnable="ParasolidMacOS">
+    <Part Name="PsolidShim_MacOSx64" OnlyPlatforms="MacOSx64">
         <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_30_1_168_MacOSx64"/>
     </Part>
     <Part Name="PsolidShim_x64" OnlyPlatforms="x64">
@@ -81,6 +81,7 @@
         <SubPart PartName="BeJavaScript"        PartFile="BePortableUi" Repository="BePortableUi"/>
         <SubPart PartName="nodejs"            PartFile="nodejs"       Repository="Thirdparty-nodejs" />
         <SubPart PartName="typescript"          PartFile="typescript"   Repository="Thirdparty-typescript" />
+        <SubPart LibType="Static" PartName="Compress" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
 
       <!--
             Barry: For full geocoordinate capabilities, the datum conversion files are required to allow you to convert from whatever datum the GCS uses to WGS84. If our publishing code (which will have access to the datum shift files) was always able to convert from a non-WGS84-based GCS to a WGS84-based GCS as it publishes DgnDb’s, we would not need those files. I do not know whether that is always possible, perhaps Alain Robert could comment.
@@ -572,6 +573,9 @@
       <SubPart PartName="RunToyTileCreator-MacOS" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" LibType="Static"/>
       <SubPart PartName="RunToyTileCreator-Windows" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" LibType="Dynamic"/>
       -->
+
+      <!-- Required by imodeljsnodeaddon, the primary consumer of this part. -->
+      <SubPart PartName="ECPresentation" PartFile="ECPresentation" Repository="ECPresentation" LibType="Static"/>
     </Part>
 
     <Part Name="NoView-Gtest-RunAggregator-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" >

@@ -151,8 +151,8 @@ static_assert((int)RepositoryStatus::ServerUnavailable == REPOSITORY_ERROR_BASE 
 enum class RevisionStatus : int
     {
     Success = SUCCESS, //!< Success
-    ApplyError, //!< Error applying a revision when reversing or reinstating it
-    ChangeTrackingNotEnabled = REVISION_ERROR_BASE + 1, //!< Change tracking has not been enabled. The Revision API mandates this.
+    ApplyError = REVISION_ERROR_BASE + 1, //!< Error applying a revision when reversing or reinstating it
+    ChangeTrackingNotEnabled, //!< Change tracking has not been enabled. The Revision API mandates this.
     CorruptedChangeStream, //!< Contents of the change stream are corrupted and does not match the Revision
     FileNotFound, //!< File containing the changes to the revision is not found
     FileWriteError, //!< Error writing the contents of the revision to the backing change stream file
@@ -171,8 +171,9 @@ enum class RevisionStatus : int
     SQLiteError, //!< Error performing a SQLite operation on the Db
     WrongDgnDb, //!< Revision originated in a different Db
     CouldNotOpenDgnDb, //!< Could not open the DgnDb to merge revision
-    MergeSchemaChangesOnOpen, //! Cannot merge changes in a previously opened DgnDb. Do the operation when the file is opened. 
-    ReverseOrReinstateSchemaChangesOnOpen, //! Cannot reverse or reinstate changes in a previously opened DgnDb. Do the operation when the file is opened. 
+    MergeSchemaChangesOnOpen, //! Cannot merge changes in in an open DgnDb. Close the DgnDb, and process the operation when it is opened.
+    ReverseOrReinstateSchemaChangesOnOpen, //! Cannot reverse or reinstate schema changes in an open DgnDb. Close the DgnDb, and process the operation when it is opened.
+    ProcessSchemaChangesOnOpen, //! Cannot process changes schema changes in an open DgnDb. Close the DgnDb, and process the operation when it is opened.
     CannotMergeIntoReadonly, //! Cannot merge changes into a Readonly DgnDb.
     CannotMergeIntoMaster, //! Cannot merge changes into a Master DgnDb.
     CannotMergeIntoReversed, //! Cannot merge changes into a DgnDb that has reversed revisions.
