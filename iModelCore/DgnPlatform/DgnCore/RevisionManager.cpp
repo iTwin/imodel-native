@@ -425,6 +425,28 @@ ChangeSet::ConflictResolution ApplyRevisionChangeSet::_OnConflict(ChangeSet::Con
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    01/2018
+//---------------------------------------------------------------------------------------
+Utf8CP GetConflictCauseDescription(ChangeSet::ConflictCause cause)
+    {
+    switch (cause)
+        {
+        case ChangeSet::ConflictCause::Data:
+            return "Data (PRIMARY KEY found, but data was changed)";
+        case ChangeSet::ConflictCause::NotFound:
+            return "Not Found (PRIMARY KEY)";
+        case ChangeSet::ConflictCause::Conflict:
+            return "Conflict (Causes duplicate PRIMARY KEY)";
+        case ChangeSet::ConflictCause::Constraint:
+            return "Constraint (Causes UNIQUE, CHECK or NOT NULL constraint violation)";
+        case ChangeSet::ConflictCause::ForeignKey:
+            return "ForeignKey (Causes FOREIGN KEY constraint violation)";
+        default:
+            return "Unknown";
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
 // static
@@ -437,26 +459,42 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
     BeAssert(result == BE_SQLITE_OK);
     UNUSED_VARIABLE(result);
 
+    if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
+        {
+        LOG.infov("------------------------------------------------------------------");
+        LOG.infov("Conflict detected - Cause: %s", GetConflictCauseDescription(cause));
+        iter.Dump(dgndb, false, 1);
+        }
+
     if (cause == ChangeSet::ConflictCause::NotFound)
         {
+        /*
+        * Note: If ConflictCause = NotFound, the primary key was not found, and returning ConflictResolution::Replace is
+        * not an option at all - this will cause a BE_SQLITE_MISUSE error.
+        */
         if (opcode == DbOpcode::Delete)
-            return ChangeSet::ConflictResolution::Skip; // This is caused by propagate delete on a foreign key. It is not a problem.
+            {
+            // Caused by CASCADE DELETE on a foreign key, and is usually not a problem. 
+            LOG.infov("Conflict resolved by keeping the existing entry and skipping the change");
+            return ChangeSet::ConflictResolution::Skip;
+            }
 
-        BeAssert(false && "Ensure IDs are not reused - this may result in update of a record that has been previously deleted"); 
-            // Note: Cannot return ConflictResolution::Replace since that will cause BE_SQLITE_MISUSE error
+        
+        if (opcode == DbOpcode::Update && 0 == ::strncmp(tableName, "ec_", 3))
+            {
+            // Caused by a ON DELETE SET NULL constraint on a foreign key - this is known to happen with "ec_" tables, but needs investigation if it happens otherwise        
+            LOG.infov("Conflict resolved by keeping the existing entry and skipping the change");
+            return ChangeSet::ConflictResolution::Skip;
+            }
+
+        LOG.infov("Aborted conflict resolution");
+        return ChangeSet::ConflictResolution::Abort; 
         }
 
     auto control = dgndb.GetOptimisticConcurrencyControl();
     if (nullptr != control)
         {
         return control->_OnConflict(dgndb, cause, iter);
-        }
-
-    if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
-        {
-        LOG.infov("Conflict detected - incoming revision %s:", indirect ? "skipped" : "replaced");
-        BeAssert(tableName != nullptr);
-        iter.Dump(dgndb, false, 1);
         }
 
     /*
@@ -479,8 +517,9 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
      *      - Only one user can make a direct change at one time, and the next user has to pull those changes before getting a
      *        lock to the same element
      *
-     * + Also see comments in TxnManager::MergeRevision()
+     * + Also see comments in TxnManager::MergeDataChangesInRevision()
      */
+    LOG.infov("Conflicting resolved by replacing the existing entry with the change");
     return ChangeSet::ConflictResolution::Replace;
     }
 
@@ -1690,6 +1729,59 @@ BeSQLite::ChangeSet::ConflictResolution OptimisticConcurrencyControl::_OnConflic
 OptimisticConcurrencyControl::OptimisticConcurrencyControl(Policy policy)
     {
     m_policy = policy;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/17
+//--------------------------------------------------------------------------------------
+RevisionStatus RevisionManager::DoProcessRevisions(bvector<DgnRevisionCP> const& revisions, RevisionProcessOption processOptions)
+    {
+    RevisionStatus status;
+    switch (processOptions)
+        {
+        case RevisionProcessOption::Merge:
+            for (DgnRevisionCP revision : revisions)
+                {
+                status = DoMergeRevision(*revision);
+                if (RevisionStatus::Success != status)
+                    return status;
+                }
+            break;
+        case RevisionProcessOption::Reverse:
+            for (DgnRevisionCP revision : revisions)
+                {
+                status = DoReverseRevision(*revision);
+                if (RevisionStatus::Success != status)
+                    return status;
+                }
+            break;
+        case RevisionProcessOption::Reinstate:
+            for (DgnRevisionCP revision : revisions)
+                {
+                status = DoReinstateRevision(*revision);
+                if (RevisionStatus::Success != status)
+                    return status;
+                }
+            break;
+        default:
+            BeAssert(false && "Invalid revision upgrade option");
+        }
+
+    return RevisionStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    12/2017
+//---------------------------------------------------------------------------------------
+RevisionStatus RevisionManager::ProcessRevisions(bvector<DgnRevisionCP> const& revisions, RevisionProcessOption processOptions)
+    {
+    for (DgnRevisionCP revision : revisions)
+        {
+        if (!EXPECTED_CONDITION(!revision->ContainsSchemaChanges(m_dgndb)) && "Cannot process a revision containing schema changes when the DgnDb is already open. Close the DgnDb and reopen with the upgrade schema options set to the revision.")
+            return RevisionStatus::ProcessSchemaChangesOnOpen;
+        }
+        
+    return DoProcessRevisions(revisions, processOptions);
     }
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
