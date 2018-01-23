@@ -92,9 +92,6 @@ public:
     void                      InvalidateRaster() override;
 
     //:> Overriden from HRARaster
-    void    CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions) override;
-
-    void    CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster) override;
 
     virtual void    Clear() override;
     virtual void    Clear(const HRAClearOptions& pi_rOptions) override;
@@ -177,9 +174,6 @@ public:
     bool NotifyPaletteChanged (const HMGMessage& pi_rMessage);
 
 protected:
-
-    virtual void _Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const override;
-
     virtual ImagePPStatus _CopyFrom(HRARaster& srcRaster, HRACopyFromOptions const& options) override;
 
     virtual ImagePPStatus _BuildCopyToContext(ImageTransformNodeR imageNode, HRACopyToOptionsCR options) override;

@@ -663,8 +663,6 @@ $(o)HGFLuvColorSpace$(oext) : $(ippGraDir)hgf/src/HGFLuvColorSpace.cpp $(ippAllI
 
 $(o)HGFLUVCube$(oext) : $(ippGraDir)hgf/src/HGFLUVCube.cpp $(ippAllInc)HGFLUVCube.h ${MultiCompileDepends}
 
-$(o)HGFMappedSurface$(oext) : $(ippGraDir)hgf/src/HGFMappedSurface.cpp $(ippAllInc)HGFMappedSurface.h ${MultiCompileDepends}
-
 $(o)HGFMessages$(oext) : $(ippGraDir)hgf/src/HGFMessages.cpp $(ippAllInc)HGFMessages.h ${MultiCompileDepends}
 
 $(o)HGFRaster$(oext) : $(ippGraDir)hgf/src/HGFRaster.cpp $(ippAllInc)HGFRaster.h ${MultiCompileDepends}
@@ -803,8 +801,6 @@ $(o)HRACopyToOptions$(oext) : $(ippGraDir)hra/src/HRACopyToOptions.cpp $(ippGraP
 
 $(o)HRADEMRaster$(oext) : $(ippGraDir)hra/src/HRADEMRaster.cpp $(ippAllInc)HRADEMRaster.h $(ippGraPrivateAPISrc)ImageCommon.h ${MultiCompileDepends}
 
-$(o)HRADrawOptions$(oext) : $(ippGraDir)hra/src/HRADrawOptions.cpp $(ippAllInc)HRADrawOptions.h ${MultiCompileDepends}
-
 $(o)HRADrawProgressIndicator$(oext) : $(ippGraDir)hra/src/HRADrawProgressIndicator.cpp $(ippAllInc)HRADrawProgressIndicator.h ${MultiCompileDepends}
 
 $(o)HRAEditor$(oext) : $(ippGraDir)hra/src/HRAEditor.cpp $(ippAllInc)HRAEditor.h ${MultiCompileDepends}
@@ -918,8 +914,6 @@ $(o)HRAUnlimitedResolutionRaster$(oext) : $(ippGraDir)hra/src/HRAUnlimitedResolu
 $(o)HRAUnlimitedResolutionRasterIterator$(oext) : $(ippGraDir)hra/src/HRAUnlimitedResolutionRasterIterator.cpp $(ippAllInc)HRAUnlimitedResolutionRasterIterator.h ${MultiCompileDepends}
 
 $(o)HRAUpdateSubResProgressIndicator$(oext) : $(ippGraDir)hra/src/HRAUpdateSubResProgressIndicator.cpp $(ippAllInc)HRAUpdateSubResProgressIndicator.h ${MultiCompileDepends}
-
-$(o)HRAWarper$(oext) : $(ippGraDir)hra/src/HRAWarper.cpp $(ippAllInc)HRAWarper.h ${MultiCompileDepends}
 
 $(o)HRSObjectStore$(oext) : $(ippGraDir)hrs/src/HRSObjectStore.cpp $(ippAllInc)HRSObjectStore.h ${MultiCompileDepends}
 

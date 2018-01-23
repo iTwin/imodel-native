@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRACachedHistogramRaster.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -102,15 +102,6 @@ HRARaster* HRACachedHistogramRaster::Clone (HPMObjectStore* pi_pStore,
 HPMPersistentObject* HRACachedHistogramRaster::Clone () const
     {
     return new HRACachedHistogramRaster(*this);
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// Draw
-//-----------------------------------------------------------------------------
-void HRACachedHistogramRaster::_Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const
-    {
-    GetSource()->Draw(pio_destSurface, pi_Options);
     }
 
 /** -----------------------------------------------------------------------------

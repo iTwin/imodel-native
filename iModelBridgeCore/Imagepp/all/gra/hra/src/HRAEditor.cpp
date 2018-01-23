@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
@@ -534,7 +534,7 @@ void HRAEditor::ClearRun(HUINTX       pi_StartPosX,
     m_pEditor->ClearRun(pi_StartPosX, pi_StartPosY, pi_PixelCount, pi_pValue, pi_pTransaction);
     }
 
-
+//WIP_LEGACY_COPYFROM remove me
 //-----------------------------------------------------------------------------
 // public
 // GetScanlines. Retrieve the scanlines object used by the editor.

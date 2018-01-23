@@ -25,17 +25,17 @@
 #include <ImagePP/all/h/HRADrawProgressIndicator.h>
 #include <ImagePP/all/h/HRAUpdateSubResProgressIndicator.h>
 #include <ImagePP/all/h/HRABitmap.h>
-#include <ImagePP/all/h/HRADrawOptions.h>
 #include <ImagePP/all/h/HRAClearOptions.h>
 #include <ImagePP/all/h/HRAMessages.h>
 #include <ImagePP/all/h/HRPQuantizedPalette.h>
-#include <ImagePP/all/h/HGFMappedSurface.h>
 #include <ImagePP/all/h/HGSRegion.h>
 #include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>
 #include <ImagePP/all/h/HRATransaction.h>
-#include <ImagePP/all/h/HRABlitter.h>
 #include <ImagePPInternal/gra/HRAImageNode.h>
 #include <ImagePPInternal/gra/HRACopyToOptions.h>
+#include <ImagePP/all/h/HRACopyFromOptions.h>
+#include <ImagePP/all/h/HRASurface.h>
+#include <ImagePP/all/h/HRABlitter.h>
 
 HPM_REGISTER_CLASS(HRAPyramidRaster, HRAStoredRaster)
 
@@ -2067,16 +2067,6 @@ void HRAPyramidRaster::SetSubImageNotComputed (SubImageDescription*  pi_pSubImag
         }
     }
 
-void HRAPyramidRaster::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions)
-    {
-    HRAStoredRaster::CopyFromLegacy(pi_pSrcRaster, pi_rOptions);
-    }
-
-void HRAPyramidRaster::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster)
-    {
-    CopyFromLegacy(pi_pSrcRaster, HRACopyFromLegacyOptions());
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Mathieu.Marchand  06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2173,79 +2163,6 @@ ImagePPStatus HRAPyramidRaster::_BuildCopyToContext(ImageTransformNodeR imageNod
     imageNode.GetSourceNodeP()->SetScaleFactorFromMain(m_pSubImageList.pData[resolutionIndex].m_ScaleFromMainX, m_pSubImageList.pData[resolutionIndex].m_ScaleFromMainY);
 
     return status;
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// Draw
-//-----------------------------------------------------------------------------
-void HRAPyramidRaster::_Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const
-    {
-    HRADrawOptions Options(pi_Options);
-
-    int32_t resolutionIndex = 0;
-    
-    // Do you have sub-resolution and the image is not a binary image
-    //completely loaded in memory (optimization)
-    if ((m_pSubImageList.BufSize > 1) && (m_UseOnlyFirstRes == false))
-        {
-        // find the best resolution for the surface
-        double Resolution = FindTheBestResolution(pio_destSurface.GetCoordSys(), Options.GetReplacingCoordSys());
-
-        // if the resolution is bigger than the first one use the first one
-        if (HDOUBLE_GREATER_OR_EQUAL_EPSILON(Resolution, m_pSubImageList.pData[0].m_PhysicalImageResolution))
-            {
-            resolutionIndex = 0;
-            }
-        else
-            {
-            // find at what index is that resolution
-            resolutionIndex  = (uint16_t)m_pSubImageList.BufSize - 1;   // last res of the pyramid
-            bool   ResFound = false;
-            for (uint16_t Res = 0; (!ResFound) && (Res < m_pSubImageList.BufSize - 1); Res++)
-                {
-                // if the res is between the current res and the next, use that res
-                if (HDOUBLE_SMALLER_OR_EQUAL_EPSILON(Resolution, m_pSubImageList.pData[Res].m_PhysicalImageResolution) &&
-                    HDOUBLE_GREATER_EPSILON(Resolution, m_pSubImageList.pData[Res + 1].m_PhysicalImageResolution))
-                    {
-                    resolutionIndex = Res;
-                    ResFound = true;
-                    }
-                }
-            }
-        }
-    else
-        resolutionIndex = 0;
-
-    if (resolutionIndex > 0)
-        {
-        HFCPtr<HGSSurfaceDescriptor> pDstDescriptor(pio_destSurface.GetSurfaceDescriptor());
-        HVEShape SurfaceExtent(0.0, 0.0, pDstDescriptor->GetWidth(), pDstDescriptor->GetHeight(), pio_destSurface.GetSurfaceCoordSys());
-
-        // Set the stroking tolerance for the shape
-        // Set a quarter of a pixel tolerance
-        double CenterX = pDstDescriptor->GetWidth() / 2.0;
-        double CenterY = pDstDescriptor->GetHeight() / 2.0;
-        HFCPtr<HGFTolerance> pTol = new HGFTolerance (CenterX - DEFAULT_PIXEL_TOLERANCE,
-                                                        CenterY - DEFAULT_PIXEL_TOLERANCE,
-                                                        CenterX + DEFAULT_PIXEL_TOLERANCE,
-                                                        CenterY + DEFAULT_PIXEL_TOLERANCE,
-                                                        pio_destSurface.GetSurfaceCoordSys());
-
-        SurfaceExtent.SetStrokeTolerance(pTol);
-
-        if (Options.GetReplacingCoordSys() != 0)
-            {
-            SurfaceExtent.ChangeCoordSys(Options.GetReplacingCoordSys());
-            SurfaceExtent.SetCoordSys(GetCoordSys());
-            }
-
-        HGF2DExtent Extent(SurfaceExtent.GetExtent());
-        ((HRAPyramidRaster*)this)->UpdateSubResolution(resolutionIndex, &Extent);
-        }
-
-    // Draw the selected resolution
-    m_pSubImageList.pData[resolutionIndex].m_pSubImage->Draw(pio_destSurface, pi_Options);
     }
 
 //-----------------------------------------------------------------------------

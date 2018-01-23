@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAPixelTypeReplacer.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -18,12 +18,10 @@
 #include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
 #include <ImagePP/all/h/HRAHistogramOptions.h>
 #include <ImagePP/all/h/HRARepPalParms.h>
-#include <ImagePP/all/h/HRADrawOptions.h>
 #include <ImagePP/all/h/HRAMessages.h>
 #include <ImagePP/all/h/HRPMessages.h>
 #include <ImagePPInternal/gra/HRACopyToOptions.h>
-
-
+#include <ImagePP/all/h/HRACopyFromOptions.h>
 
 HPM_REGISTER_CLASS(HRAPixelTypeReplacer, HRAImageView)
 
@@ -267,22 +265,6 @@ bool HRAPixelTypeReplacer::ContainsPixelsWithChannel(
     return (m_pPixelType->GetChannelOrg().GetChannelIndex(pi_Role, pi_Id) != HRPChannelType::FREE);
     }
 
-//-----------------------------------------------------------------------------
-// public
-// Draw
-//-----------------------------------------------------------------------------
-void HRAPixelTypeReplacer::_Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const
-    {
-    HRADrawOptions Options(pi_Options);
-
-    // set the replacing pixel type in the options if there is no already defined
-    if(Options.GetReplacingPixelType() == 0)
-        Options.SetReplacingPixelType(m_pPixelType);
-
-    GetSource()->Draw(pio_destSurface, Options);
-    }
-
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Mathieu.Marchand  04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -306,31 +288,4 @@ ImagePPStatus HRAPixelTypeReplacer::_BuildCopyToContext(ImageTransformNodeR imag
     newOptions.SetReplacingPixelType(GetPixelType());
 
     return GetSource()->BuildCopyToContext(imageNode, newOptions);
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// CopyFromLegacy
-//-----------------------------------------------------------------------------
-void HRAPixelTypeReplacer::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions)
-    {
-    HRACopyFromLegacyOptions Options(pi_rOptions);
-
-    // set the replacing pixel type in the options if there is no already defined
-    if(pi_rOptions.GetDestReplacingPixelType() == 0)
-        Options.SetDestReplacingPixelType(m_pPixelType);
-
-    T_Super::CopyFromLegacy(pi_pSrcRaster, Options);
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// CopyFromLegacy
-//-----------------------------------------------------------------------------
-void HRAPixelTypeReplacer::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster)
-    {
-    HRACopyFromLegacyOptions Options;
-    Options.SetDestReplacingPixelType(m_pPixelType);
-
-    T_Super::CopyFromLegacy(pi_pSrcRaster, Options);
     }

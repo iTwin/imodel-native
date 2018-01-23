@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIMFilteredImage.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HIMFilteredImage
@@ -66,13 +66,9 @@ public:
     IMAGEPP_EXPORT void            SetFilter(const HFCPtr<HRPFilter>& pi_rpFilter);
 
 protected:
-    virtual void _Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const override;
-
     virtual ImagePPStatus _BuildCopyToContext(ImageTransformNodeR imageNode, HRACopyToOptionsCR options) override;
 
 private:
-
-    void            HandleBorderCases(HRASurface& pio_destSurface, const HRPPixelNeighbourhood& pi_rNeighborhood) const;
 
     HFCPtr<HRPPixelType>  m_pPixelType;
     HFCPtr<HRPFilter>     m_pFilter;

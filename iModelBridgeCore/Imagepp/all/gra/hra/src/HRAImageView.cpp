@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAImageView.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #include <ImageppInternal.h>
@@ -71,24 +71,6 @@ bool HRAImageView::ContainsPixelsWithChannel(HRPChannelType::ChannelRole pi_Role
                                               Byte                      pi_Id) const
     {
     return m_pSource->ContainsPixelsWithChannel(pi_Role, pi_Id);
-    }
-
-/** -----------------------------------------------------------------------------
-    Apply the copy on our source raster.
-    -----------------------------------------------------------------------------
-*/
-void HRAImageView::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster)
-    {
-    m_pSource->CopyFromLegacy(pi_pSrcRaster);
-    }
-
-/** -----------------------------------------------------------------------------
-    Apply the copy on our source raster.
-    -----------------------------------------------------------------------------
-*/
-void HRAImageView::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions)
-    {
-    m_pSource->CopyFromLegacy(pi_pSrcRaster, pi_rOptions);
     }
 
 /*---------------------------------------------------------------------------------**//**

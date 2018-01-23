@@ -146,7 +146,7 @@
     </Part>
 
     <Part Name="ImagePP-Tested">
-        <SubPart PartName="RunGtest" />
+        <!--SubPart PartName="RunGtest" /-->
         <SubProduct ProductName="AndroidJUnit-ImagePP-TestCollection"/>
         <SubProduct ProductName="iOSXCTest-ImagePP-TestCollection"/>
         <SubProduct ProductName="WinRTCppUnitTest-ImagePP-TestCollection"/>

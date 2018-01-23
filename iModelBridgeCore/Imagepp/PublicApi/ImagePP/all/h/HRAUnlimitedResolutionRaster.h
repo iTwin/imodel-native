@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAUnlimitedResolutionRaster.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -95,12 +95,6 @@ public:
     virtual void                    Clear() override;
     virtual void                    Clear(const HRAClearOptions& pi_rOptions) override;
 
-
-    // CopyFrom methods
-    void                    CopyFromLegacy(const HFCPtr<HRARaster>& pi_rpSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions) override;
-    void                    CopyFromLegacy(const HFCPtr<HRARaster>& pi_rpSrcRaster) override;
-
-
     // LookAhead Methods
     bool                   HasLookAhead() const override;
     void                 SetLookAhead(const HVEShape& pi_rShape,
@@ -115,8 +109,6 @@ public:
 
 
 protected:
-
-    virtual void _Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const override;
 
     //! Editing of unlimited is not supported.
     virtual ImageSinkNodePtr _GetSinkNode(ImagePPStatus& status, HVEShape const& sinkShape, HFCPtr<HRPPixelType>& pReplacingPixelType) override;

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRABitmapRLE.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -10,7 +10,6 @@
 #include "HRABitmapBase.h"
 
 BEGIN_IMAGEPP_NAMESPACE
-class HRADrawOptions;
 class HRABitmapEditor;
 class HCDPacketRLE;
 class HGSSurfaceDescriptor;
@@ -104,8 +103,6 @@ protected:
     HRABitmapRLE   (const HRABitmapRLE& pi_rObj);
 
     virtual      ~HRABitmapRLE  ();
-
-    virtual void _Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const override;
 
     virtual ImagePPStatus _BuildCopyToContext(ImageTransformNodeR imageNode, HRACopyToOptionsCR options) override;
 

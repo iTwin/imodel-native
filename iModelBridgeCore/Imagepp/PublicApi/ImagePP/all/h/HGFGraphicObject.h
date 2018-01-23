@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFGraphicObject.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGFGraphicObject
@@ -20,8 +20,6 @@
 #include "HPMPersistentObject.h"
 
 BEGIN_IMAGEPP_NAMESPACE
-
-class HGFMappedSurface;
 
 /** -----------------------------------------------------------------------------
     @version 1.0

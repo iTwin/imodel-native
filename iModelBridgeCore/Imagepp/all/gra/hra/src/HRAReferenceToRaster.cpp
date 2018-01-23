@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAReferenceToRaster.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HRAReferenceToRaster
@@ -20,7 +20,6 @@
 #include <ImagePP/all/h/HGF2DTranslation.h>
 #include <ImagePP/all/h/HGF2DSimilitude.h>
 #include <ImagePP/all/h/HGF2DStretch.h>
-#include <ImagePP/all/h/HRADrawOptions.h>
 #include <ImagePP/all/h/HRAHistogramOptions.h>
 #include <ImagePP/all/h/HRARepPalParms.h>
 #include <ImagePP/all/h/HRAClearOptions.h>
@@ -29,9 +28,7 @@
 #include <ImagePP/all/h/HRAMessages.h>
 #include <ImagePPInternal/gra/HRAImageNode.h>
 #include <ImagePPInternal/gra/HRACopyToOptions.h>
-
-
-
+#include <ImagePP/all/h/HRACopyFromOptions.h>
 
 HPM_REGISTER_CLASS(HRAReferenceToRaster, HRARaster)
 
@@ -288,62 +285,6 @@ ImagePPStatus HRAReferenceToRaster::_CopyFrom(HRARaster& srcRaster, HRACopyFromO
     // But don't propagate ContentChanged, since our source (to whom we are
     // registered) will call it when it has finished its CopyFrom().
     }
-
-//-----------------------------------------------------------------------------
-// public
-// CopyFromLegacy
-//-----------------------------------------------------------------------------
-void HRAReferenceToRaster::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions)
-    {
-    HPRECONDITION(m_pSource != 0);
-
-    HVEShape NewDestShape(GetShape());  // Always in reference's CS.
-
-    // Take intersection of reference's shape and specified one
-    const HVEShape* pShape = pi_rOptions.GetDestShape();
-
-    if(pShape != 0)
-        {
-        NewDestShape.Intersect(*pShape);
-        }
-
-    // Set shape to the source's coordinate system
-    NewDestShape.SetCoordSys(m_pSource->GetCoordSys());
-
-    // Extract the transformation we're applying to our source (T1)
-    HFCPtr<HGF2DTransfoModel> pRefTransfo(m_pSource->GetCoordSys()->GetTransfoModelTo(GetCoordSys()));
-
-    // Calculate the transformation between our CS and the CS
-    // the object to copy uses. (T2)
-    HFCPtr<HGF2DTransfoModel> pCurrentToRef(pi_pSrcRaster->GetCoordSys()->GetTransfoModelTo(GetCoordSys()));
-
-    // Create the CS by composing everything correctly :)
-    // T2 o T1 o -T2
-    HFCPtr<HGF2DTransfoModel> pToApply(pCurrentToRef->ComposeInverseWithDirectOf(*pRefTransfo)->ComposeInverseWithInverseOf(*pCurrentToRef));
-    HFCPtr<HGF2DCoordSys> pCSToApply(new HGF2DCoordSys(*pToApply, pi_pSrcRaster->GetCoordSys()));
-
-    HFCPtr<HRARaster> pRefToSrcRaster(new HRAReferenceToRaster(pi_pSrcRaster, pCSToApply));
-
-    HRACopyFromLegacyOptions NewCopyFromOptions(pi_rOptions);
-    NewCopyFromOptions.SetDestShape(&NewDestShape);
-
-    // Use source's CopyFrom, with new calculated shape
-    m_pSource->CopyFromLegacy(pRefToSrcRaster, NewCopyFromOptions);
-
-    // Our content has changed...
-    // But don't propagate ContentChanged, since our source (to whom we are
-    // registered) will call it when it has finished its CopyFrom().
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// CopyFrom
-//-----------------------------------------------------------------------------
-void HRAReferenceToRaster::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster)
-    {
-    CopyFromLegacy(pi_pSrcRaster, HRACopyFromLegacyOptions());
-    }
-
 
 //-----------------------------------------------------------------------------
 // public
@@ -824,33 +765,6 @@ void HRAReferenceToRaster::PrintState(ostream& po_rOutput) const
 void HRAReferenceToRaster::RecalculateEffectiveShape()
     {
     m_EffectiveShapeDirty = true;
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// Draw
-//-----------------------------------------------------------------------------
-void HRAReferenceToRaster::_Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const
-    {
-    HRADrawOptions Options(pi_Options);
-
-    // if there is no replacing coordsys, set ours
-    if(Options.GetReplacingCoordSys() == 0)
-        Options.SetReplacingCoordSys(GetCoordSys());
-
-    // Take a copy of the shape and transform it to the source's position
-    HFCPtr<HVEShape> pRegionToDraw;
-    if (Options.GetShape() != 0)
-        pRegionToDraw = new HVEShape(*Options.GetShape());
-    else
-        pRegionToDraw = new HVEShape(*GetEffectiveShape());
-
-    pRegionToDraw->ChangeCoordSys(GetCoordSys());
-    pRegionToDraw->SetCoordSys(m_pSource->GetCoordSys());
-
-    Options.SetShape(pRegionToDraw);
-
-    m_pSource->Draw(pio_destSurface, Options);
     }
 
 /** -----------------------------------------------------------------------------

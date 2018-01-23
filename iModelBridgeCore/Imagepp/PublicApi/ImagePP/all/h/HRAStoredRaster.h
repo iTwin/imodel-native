@@ -62,10 +62,6 @@ public:
 
     // Inherited from HRARaster
 
-    void                    CopyFromLegacy(const HFCPtr<HRARaster>&   pi_pSrcRaster, const HRACopyFromLegacyOptions&  pi_rOptions) override;
-
-    void                    CopyFromLegacy(const HFCPtr<HRARaster>&   pi_pSrcRaster) override;
-
     HGF2DExtent             GetAveragePixelSize () const override;
     void                    GetPixelSizeRange(HGF2DExtent& po_rMinimum,
                                                       HGF2DExtent& po_rMaximum) const override;

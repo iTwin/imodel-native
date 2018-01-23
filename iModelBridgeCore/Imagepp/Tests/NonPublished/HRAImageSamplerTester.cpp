@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/HRAImageSamplerTester.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -697,31 +697,7 @@ class HRAImageSamplerRleTester : public ::testing::TestWithParam<std::tr1::tuple
         return m_pSource.get();
         }
 
-#ifdef OLD_SURFACE
-//         HRASampleRleSurface* pSamplerRleSurface = dynamic_cast<HRASampleRleSurface*>(&surfIn);
-//         if(pSamplerRleSurface != NULL)
-//             {
-//             HFCPtr<HGSMemoryRLESurfaceDescriptor> pSrc = CreateMemoryRLESurface(pSamplerRleSurface->GetSampleR());
-// 
-//             HRANearestSamplerRLE1Line legacySampler(*pSrc, HGF2DRectangle(0,0,1,1), scaling, 0.0);
-// 
-//             size_t outPitch;
-//             byte const* pOutData = pImageOutWarp->GetBufferCP()->GetDataCP(outPitch);
-// 
-//             for(UInt32 line=0; line < pImageOutWarp->GetHeight(); ++line)
-//                 {
-//                 double xOut, yOut;
-//                 pSampler->GetTransfoModel().ConvertDirect(offsetOut + 0.5, line + offsetOut + 0.5, &xOut, &yOut);
-//                 xOut -= offsetIn;
-//                 yOut -= offsetIn;
-// 
-//                 legacySampler.GetPixels(xOut, yOut, pImageOutWarp->GetWidth(), (void*)(pOutData + line*outPitch));
-//                 // Assume equal to original but we should count.
-//                 pImageOutWarp->GetBufferRleP()->SetLineDataSize(line, pImageOutStretch->GetBufferRleCP()->GetLineDataSize(line));
-//                 }
-//             }
-//         else
-#endif            
+        
     SamplerTestBufferAllocator m_allocator;
     HRAImageSamplePtr m_pSource;
     };

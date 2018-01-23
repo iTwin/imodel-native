@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRABitmapBase.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -10,7 +10,6 @@
 #include "HRAStoredRaster.h"
 
 BEGIN_IMAGEPP_NAMESPACE
-class HRADrawOptions;
 class HRABitmapEditor;
 class HGSSurfaceDescriptor;
 class HCDCodec;
@@ -109,14 +108,6 @@ protected:
 
     virtual HFCPtr<HGSSurfaceDescriptor> CreateSurfaceDescriptor(const HFCPtr<HRPPixelType>* pi_ppReplacingPixelType,
                                                                  HFCPtr<HRPPixelType>* po_ppOutputPixelType) const=0;
-
-    void StretchWithHGS(HGFMappedSurface&                pio_destSurface,
-                        HRADrawOptions const&            pi_pOptions,
-                        const HFCPtr<HGF2DTransfoModel>& pi_rpTransfoModel) const;
-
-    void WarpWithHGS(HGFMappedSurface&                pio_destSurface,
-                     HRADrawOptions const&            pi_pOptions,
-                     const HFCPtr<HGF2DTransfoModel>& pi_rpTransfoModel) const;
 
     uint32_t       m_BitsAlignment;
     HUINTX          m_XPosInRaster;

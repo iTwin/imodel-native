@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRABitmap.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -10,7 +10,6 @@
 #include "HRABitmapBase.h"
 
 BEGIN_IMAGEPP_NAMESPACE
-class HRADrawOptions;
 class HRABitmapEditor;
 class HRAClearOptions;
 class HGSSurfaceDescriptor;
@@ -100,8 +99,6 @@ public:
     virtual HRABitmap*   _AsHRABitmapP() override;
 
 protected:
-
-    virtual void _Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const override;
 
     virtual ImageSinkNodePtr _GetSinkNode(ImagePPStatus& status, HVEShape const& sinkShape, HFCPtr<HRPPixelType>& pReplacingPixelType) override;
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFOGCServiceEditor.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes the resolution editor interface
@@ -124,12 +124,7 @@ private:
 
     static size_t                   s_UncompressedInvalidTileBitmapSize;
     static size_t                   s_CompressedInvalidTileBitmapSize;
-    //if the picture is in gray scale.
-    static size_t                   s_GrayUncompressedInvalidTileBitmapSize;
-    static size_t                   s_GrayCompressedInvalidTileBitmapSize;
-    static size_t                   s_Gray16UncompressedInvalidTileBitmapSize;
     static Byte                    s_CompressedInvalidTileBitmap[];
-    static Byte                    s_GrayCompressedInvalidTileBitmap[];
     HFCPtr<HCDPacket>               m_pInvalidTileBitmap;
 
     // Methods Disabled

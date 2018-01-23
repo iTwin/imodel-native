@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAUnlimitedResolutionRaster.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -18,7 +18,6 @@
 #include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>
 #include <ImagePP/all/h/HRPPixelTypeV24B8G8R8.h>
 #include <ImagePP/all/h/HRABitmap.h>
-#include <ImagePP/all/h/HRADrawOptions.h>
 #include <ImagePP/all/h/HRADrawProgressIndicator.h>
 #include <ImagePP/all/h/HRAHistogramOptions.h>
 #include <ImagePP/all/h/HRARepPalParms.h>
@@ -30,15 +29,11 @@
 #include <ImagePP/all/h/HRAMessages.h>
 #include <ImagePP/all/h/HRAClearOptions.h>
 #include <ImagePP/all/h/HRSObjectStore.h>
-#include <ImagePP/all/h/HGFMappedSurface.h>
 #include <ImagePP/all/h/HMDContext.h>
 #include <ImagePPInternal/gra/HRAImageNode.h>
 #include <ImagePPInternal/gra/HRACopyToOptions.h>
 
-
-
 HPM_REGISTER_CLASS(HRAUnlimitedResolutionRaster, HRAStoredRaster)
-
 
 HMG_BEGIN_DUPLEX_MESSAGE_MAP(HRAUnlimitedResolutionRaster, HRAStoredRaster, HMG_NO_NEED_COHERENCE_SECURITY)
 HMG_REGISTER_MESSAGE(HRAUnlimitedResolutionRaster, HRAContentChangedMsg, NotifyContentChanged)
@@ -569,41 +564,6 @@ bool HRAUnlimitedResolutionRaster::NotifyGeometryChanged(const HMGMessage& pi_rM
     {
     // Stop Message...
     return false;
-    }
-
-
-
-//-----------------------------------------------------------------------------
-// public
-// CopyFromLegacy
-//-----------------------------------------------------------------------------
-void HRAUnlimitedResolutionRaster::CopyFromLegacy(const HFCPtr<HRARaster>&    pi_pSrcRaster, const HRACopyFromLegacyOptions&   pi_rOptions)
-    {
-
-    HRAStoredRaster::CopyFromLegacy(pi_pSrcRaster, pi_rOptions);
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// CopyFromLegacy
-//-----------------------------------------------------------------------------
-void HRAUnlimitedResolutionRaster::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster)
-    {
-    CopyFromLegacy(pi_pSrcRaster, HRACopyFromLegacyOptions());
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// Draw
-//-----------------------------------------------------------------------------
-void HRAUnlimitedResolutionRaster::_Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const
-    {
-    // find the best resolution for the surface
-    double Resolution = FindTheBestResolution(pio_destSurface.GetCoordSys(), pi_Options.GetReplacingCoordSys());
-    (const_cast<HRAUnlimitedResolutionRaster*>(this))->ChangeResolution(Resolution);
-    
-    // Draw the selected resolution
-    m_pCurrentResolutionRaster->Draw(pio_destSurface, pi_Options);
     }
 
 //:>-----------------------------------------------------------------------------

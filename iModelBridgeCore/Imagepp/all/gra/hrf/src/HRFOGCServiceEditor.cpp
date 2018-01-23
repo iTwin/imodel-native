@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFOGCServiceEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFOGCServiceEditor
@@ -34,14 +34,12 @@
 #include <ImagePP/all/h/HMDLayerInfoWMS.h>
 #include <ImagePP/all/h/HMDVolatileLayers.h>
 
-#include <ImagePP/all/h/HRABlitter.h>
-#include <ImagePP/all/h/HRASurface.h>
-#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>
-
 #include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>
 #include <ImagePP/all/h/HRPPixelTypeV16Gray16.h>
 #include <ImagePP/all/h/HRPPixelConverter.h>
 #include <ImagePPInternal/HttpConnection.h>
+#include <ImagePPInternal/gra/ImageAllocator.h>
+
 
 #define OGC_RASTERFILE          static_cast<HRFOGCService*>(GetRasterFile().GetPtr())
 #define NB_BLOCK_READER_THREAD  4
@@ -550,9 +548,7 @@ void OGCBlockQuery::InvalidateTiles(uint64_t pi_MinX,
                                         uint64_t pi_MaxX,
                                         uint64_t pi_MaxY)
     {
-    HPRECONDITION(HRFOGCServiceEditor::s_UncompressedInvalidTileBitmapSize       == m_editor.m_pResolutionDescriptor->GetBlockSizeInBytes() ||
-                  HRFOGCServiceEditor::s_GrayUncompressedInvalidTileBitmapSize   == m_editor.m_pResolutionDescriptor->GetBlockSizeInBytes() ||
-                  HRFOGCServiceEditor::s_Gray16UncompressedInvalidTileBitmapSize == m_editor.m_pResolutionDescriptor->GetBlockSizeInBytes());
+    HPRECONDITION(HRFOGCServiceEditor::s_UncompressedInvalidTileBitmapSize == m_editor.m_pResolutionDescriptor->GetBlockSizeInBytes());
 
     size_t BlockSizeInBytes = m_editor.m_pResolutionDescriptor->GetBlockSizeInBytes();
     HFCPtr<HCDPacket> pInvalidBlockData(new HCDPacket(new HCDCodecIdentity(),
@@ -576,43 +572,27 @@ void OGCBlockQuery::InvalidateTiles(uint64_t pi_MinX,
             Scale = (double)m_editor.m_pResolutionDescriptor->GetBlockWidth() / (double)m_editor.m_pResolutionDescriptor->GetWidth();
         else
             Scale = (double)m_editor.m_pResolutionDescriptor->GetBlockHeight() / (double)m_editor.m_pResolutionDescriptor->GetHeight();
+        
+        HRAImageSurfacePtr pMissingTileSurface = HRAPacketSurface::Create(
+            m_editor.m_pResolutionDescriptor->GetBlockWidth(), m_editor.m_pResolutionDescriptor->GetBlockHeight(),
+            m_editor.m_pResolutionDescriptor->GetPixelType(), pInvalidBlockData, m_editor.m_pResolutionDescriptor->GetBytesPerBlockWidth());
 
-        HFCPtr<HCDPacket> pStretchedInvalidBlockData(new HCDPacket(new HCDCodecIdentity(),
-                                                                   new Byte[BlockSizeInBytes],
-                                                                   BlockSizeInBytes,
-                                                                   BlockSizeInBytes));
-        pStretchedInvalidBlockData->SetBufferOwnership(true);
+        HFCPtr<HGF2DTransfoModel> pStretchModel(new HGF2DStretch(HGF2DDisplacement(0.0, 0.0),Scale, Scale));
+        unique_ptr<HRAImageSampler> pSampler(HRAImageSampler::CreateBilinear(pStretchModel, pMissingTileSurface->GetPixelType()));
 
-        // Stretch settings
-        // Source
-        HFCPtr<HGSSurfaceDescriptor> pSrcDescriptor(new HGSMemorySurfaceDescriptor(m_editor.m_pResolutionDescriptor->GetBlockWidth(),
-                                                                                   m_editor.m_pResolutionDescriptor->GetBlockHeight(),
-                                                                                   m_editor.m_pResolutionDescriptor->GetPixelType(),
-                                                                                   pInvalidBlockData,
-                                                                                   HGF_UPPER_LEFT_HORIZONTAL,
-                                                                                   m_editor.m_pResolutionDescriptor->GetBytesPerBlockWidth()));
+        SystemAllocator allocator;
+        ImagePPStatus status;
+        HRAImageSamplePtr pOutMissingTile = pSampler->ComputeSample(status, pMissingTileSurface->GetWidth(), pMissingTileSurface->GetHeight(), PixelOffset(0, 0), *pMissingTileSurface, PixelOffset(0,0), allocator);
+        if (ImagePPStatus::IMAGEPP_STATUS_Success == status)
+            {
+            size_t pitch;
+            const Byte* pInBuffer = pOutMissingTile->GetBufferCP()->GetDataCP(pitch);
+            size_t lineWidthBytes = m_editor.m_pResolutionDescriptor->GetBytesPerBlockWidth();
+            BeAssert(pInvalidBlockData->GetBufferSize() == pOutMissingTile->GetHeight()*lineWidthBytes);
 
-        // Destination
-        HFCPtr<HGSSurfaceDescriptor> pDstDescriptor(new HGSMemorySurfaceDescriptor(m_editor.m_pResolutionDescriptor->GetBlockWidth(),
-                                                                                   m_editor.m_pResolutionDescriptor->GetBlockHeight(),
-                                                                                   m_editor.m_pResolutionDescriptor->GetPixelType(),
-                                                                                   pStretchedInvalidBlockData,
-                                                                                   HGF_UPPER_LEFT_HORIZONTAL,
-                                                                                   m_editor.m_pResolutionDescriptor->GetBytesPerBlockWidth()));
-
-
-        // Init the surface
-        HRASurface destSurface(pDstDescriptor);
-
-        HRABlitter blitter(destSurface);
-
-        HRASurface srcSurface(pSrcDescriptor);
-
-        HFCPtr<HGF2DTransfoModel> pBlitModel(new HGF2DStretch(HGF2DDisplacement(), Scale, Scale));
-
-        blitter.BlitFrom(srcSurface, *pBlitModel);
-
-        pInvalidBlockData = pStretchedInvalidBlockData;
+            for (uint32_t line = 0; line < pOutMissingTile->GetHeight(); ++line)
+                memcpy(pInvalidBlockData->GetBufferAddress() + line * lineWidthBytes, pInBuffer + line * pitch, lineWidthBytes);
+            }     
         }
 
     // notify all tiles generated by this request    
@@ -813,10 +793,6 @@ bool OGCBlockQuery::UncompressBuffer(HFCPtr<HFCBuffer>&         pi_rpBuffer,
 
 size_t HRFOGCServiceEditor::s_UncompressedInvalidTileBitmapSize = 262144;  // 256 * 256 * 4
 size_t HRFOGCServiceEditor::s_CompressedInvalidTileBitmapSize = 10850;
-
-size_t HRFOGCServiceEditor::s_GrayUncompressedInvalidTileBitmapSize = 65536; //256 * 256* 1
-size_t HRFOGCServiceEditor::s_Gray16UncompressedInvalidTileBitmapSize = 131072; //256*256*2
-size_t HRFOGCServiceEditor::s_GrayCompressedInvalidTileBitmapSize = 10850;
 
 // compressed data of the 24 bits bitmap used when the OGC server send an error
 Byte HRFOGCServiceEditor::s_CompressedInvalidTileBitmap[] = {

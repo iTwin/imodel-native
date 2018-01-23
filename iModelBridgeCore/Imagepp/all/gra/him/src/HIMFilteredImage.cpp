@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/him/src/HIMFilteredImage.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -20,15 +20,12 @@
 #include <ImagePP/all/h/HIMFilteredImage.h>
 #include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
 #include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <ImagePP/all/h/HRADrawOptions.h>
 #include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>
-#include <ImagePP/all/h/HRABlitter.h>
 #include <ImagePP/all/h/HFCException.h>
 #include <ImagePP/all/h/HRPTypeAdaptFilter.h>
 #include <ImagePP/all/h/HFCGrid.h>
 #include <ImagePP/all/h/HGF2DTranslation.h>
 #include <ImagePP/all/h/HRPComplexFilter.h>
-#include <ImagePP/all/h/HGFMappedSurface.h>
 #include <ImagePP/all/h/HRAEditor.h>
 #include <ImagePP/all/h/HRPFilter.h>
 #include <ImagePP/all/h/HRAStoredRaster.h>
@@ -38,6 +35,7 @@
 #include <ImagePP/all/h/HGSRegion.h>
 #include <ImagePP/all/h/HRATransaction.h>
 #include <ImagePPInternal/gra/HRACopyToOptions.h>
+#include <ImagePP/all/h/HRASurface.h>
 
 //&&MM temp: to review when removing s_AddHRPFilterToPipeline
 #include <ImagePP/all/h/HPMPool.h>
@@ -695,219 +693,4 @@ ImagePPStatus HIMFilteredImage::_BuildCopyToContext(ImageTransformNodeR imageNod
     return GetSource()->BuildCopyToContext(imageNode, newOptions);
     }
 
-//-----------------------------------------------------------------------------
-// Draw
-//-----------------------------------------------------------------------------
-void HIMFilteredImage::_Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const
-    {
-    bool DrawDone = false;
 
-    HRADrawOptions Options(pi_Options);
-    Options.SetTransaction(0);  // record only when we draw into pio_destSurface
-
-    HVEShape RegionToDraw(Options.GetShape() != 0 ? *Options.GetShape() : HRARaster::GetShape());
-    RegionToDraw.ChangeCoordSys(GetCoordSys());
-    if (Options.GetReplacingCoordSys() != 0)
-        RegionToDraw.SetCoordSys(Options.GetReplacingCoordSys());
-
-    const HFCPtr<HGSRegion>& pClipRegion(pio_destSurface.GetRegion());
-    if (pClipRegion != 0)
-        {
-        // Intersect it with the destination
-        HFCPtr<HVEShape> pSurfaceShape(pClipRegion->GetShape());
-        RegionToDraw.Intersect(*pSurfaceShape);
-        }
-    else
-        {
-        // Create a rectangular clip region to stay
-        // inside the destination surface.
-        HVEShape DestSurfaceShape(0.0, 0.0, pio_destSurface.GetSurfaceDescriptor()->GetWidth(), pio_destSurface.GetSurfaceDescriptor()->GetHeight(), pio_destSurface.GetSurfaceCoordSys());
-        RegionToDraw.Intersect(DestSurfaceShape);
-        }
-
-    if (!RegionToDraw.IsEmpty())
-        {
-        const HRPPixelNeighbourhood& Neighborhood = m_pFilter->GetNeighbourhood();
-
-        // In order for our HandleBorderCases method to work, we must create a temporary surface that is not bigger than the source.
-        HVEShape RegionToDrawInSurfaceCS(RegionToDraw);
-        RegionToDrawInSurfaceCS.ChangeCoordSys(pio_destSurface.GetSurfaceCoordSys());
-        HGF2DExtent SurfaceExtent(RegionToDrawInSurfaceCS.GetExtent());
-        HFCGrid     SurfaceGrid(SurfaceExtent.GetOrigin().GetX(), SurfaceExtent.GetOrigin().GetY(), SurfaceExtent.GetCorner().GetX(), SurfaceExtent.GetCorner().GetY());
-
-        // Create temp surface with neighborhood.
-        HFCPtr<HGSSurfaceDescriptor> pRenderedDescriptor(new HGSMemorySurfaceDescriptor((uint32_t)SurfaceGrid.GetWidth() + Neighborhood.GetWidth() - 1,
-                                                                                        (uint32_t)SurfaceGrid.GetHeight() + Neighborhood.GetHeight() - 1,
-                                                                                        GetPixelType(),
-                                                                                        (((uint32_t)SurfaceGrid.GetWidth() + Neighborhood.GetWidth() - 1) * GetPixelType()->CountPixelRawDataBits() + 7) / 8));
-
-        try
-            {
-            // place the surface and scale it so it maps the same space as the original destination surface.
-            HGFMappedSurface mappedRenderedSurface(pRenderedDescriptor, pio_destSurface.GetSurfaceCoordSys());
-            
-            mappedRenderedSurface.Translate(HGF2DDisplacement((double)SurfaceGrid.GetXMin(), (double)SurfaceGrid.GetYMin()));
-
-            if (!Neighborhood.IsUnity())
-                mappedRenderedSurface.Translate(HGF2DDisplacement(- ((double)Neighborhood.GetXOrigin()), - ((double)Neighborhood.GetYOrigin())));
-
-            // Clear the temp. surface using our pixeltype default raw data.
-            // Editor must be destroyed to finalize edition.
-                {
-                HRAEditor editor(mappedRenderedSurface);
-                editor.Clear(GetPixelType()->GetDefaultRawData());
-                }
-
-            // Compose the filters together. We don't compose filters that use a neighborhood.
-            HFCPtr<HRARaster> pSource(GetSource());
-            HFCPtr<HRPFilter> pFilter(GetFilter());
-            if (pFilter->GetNeighbourhood().IsUnity())
-                {
-                while (pSource->IsCompatibleWith(HIMFilteredImage::CLASS_ID) &&
-                        ((HFCPtr<HIMFilteredImage>&)pSource)->GetFilter()->GetNeighbourhood().IsUnity())
-                    {
-                    pFilter = ((HFCPtr<HIMFilteredImage>&)pSource)->GetFilter()->ComposeWith(pFilter);
-                    pSource = ((HFCPtr<HIMFilteredImage>&)pSource)->GetSource();
-                    }
-                }
-
-            HRADrawOptions  tempSurfaceOptions(Options);
-            tempSurfaceOptions.SetAlphaBlend(false);  // Don't want alpha blend at this stage, we want to extract original pixels from the source.
-
-            HVEShape TileShape(0.0, 0.0, mappedRenderedSurface.GetSurfaceDescriptor()->GetWidth(), mappedRenderedSurface.GetSurfaceDescriptor()->GetHeight(), mappedRenderedSurface.GetSurfaceCoordSys());
-            TileShape.Differentiate(*pSource->GetEffectiveShape());
-            if (!TileShape.IsEmpty() && !Neighborhood.IsUnity())
-                {
-                // The temp. surface won't be filled completely. Since we do not know what has been filled
-                // we assume that top, bottom, left and right neighborhood are not filled.
-
-                // 1- We fill our temp surface without neighborhood.
-                HFCPtr<HVEShape> pFillShape(new HVEShape(Neighborhood.GetXOrigin(),
-                                                            Neighborhood.GetYOrigin(),
-                                                            Neighborhood.GetXOrigin() + (uint32_t)SurfaceGrid.GetWidth(),
-                                                            Neighborhood.GetYOrigin() + (uint32_t)SurfaceGrid.GetHeight(),
-                                                            mappedRenderedSurface.GetSurfaceCoordSys()));
-                pFillShape->Intersect(*pSource->GetEffectiveShape());
-                tempSurfaceOptions.SetShape(pFillShape);
-                pSource->Draw(mappedRenderedSurface, tempSurfaceOptions);
-
-                // 2- From the filled surface we duplicate top, bottom, left and right to initialize the neighborhood pixels.
-                HandleBorderCases(mappedRenderedSurface, Neighborhood);
-
-                // 3- We redraw our temp surface but with neighborhood only so it fills what is available from the source.
-                HFCPtr<HVEShape> pSurfaceShape(new HVEShape(0.0, 0.0, mappedRenderedSurface.GetSurfaceDescriptor()->GetWidth(), mappedRenderedSurface.GetSurfaceDescriptor()->GetHeight(), mappedRenderedSurface.GetSurfaceCoordSys()));
-                pSurfaceShape->Intersect(*pSource->GetEffectiveShape());
-                pSurfaceShape->Differentiate(*pFillShape);
-                tempSurfaceOptions.SetShape(pSurfaceShape);
-                pSource->Draw(mappedRenderedSurface, tempSurfaceOptions);
-                }
-            else
-                {
-                // Fill the temp. surface with our source. Don't clip...
-                tempSurfaceOptions.SetShape(0);
-                pSource->Draw(mappedRenderedSurface, tempSurfaceOptions);
-                }
-
-            // Draw temp. surface in destination. This is where the filter really gets applied.
-            HFCPtr<HGSRegion> pOldClipRegion(pio_destSurface.GetRegion());
-            pio_destSurface.SetRegion(new HGSRegion(new HVEShape(RegionToDraw), pio_destSurface.GetSurfaceCoordSys()));
-
-            HRABlitter blitter(pio_destSurface);
-            if(Options.ApplyAlphaBlend())
-                blitter.SetAlphaBlend(true);
-
-            if (Options.ApplyGridShape())
-                blitter.SetGridMode(true);
-
-            blitter.SetFilter(pFilter);
-
-            HFCPtr<HGF2DTransfoModel> pTransfoModel(new HGF2DTranslation(HGF2DDisplacement(((double)(-SurfaceGrid.GetXMin() + Neighborhood.GetXOrigin())),
-                                                                                            ((double)(-SurfaceGrid.GetYMin() + Neighborhood.GetYOrigin())))));
-
-            // We're assuming
-            // 1. Surfaces are compatible, since the super surface is the result of a CreateCompatibleSurface
-            //    on the destination.
-            // 2. The model is a stretch, since we only asked a scale between the two surfaces.
-            blitter.BlitFrom(mappedRenderedSurface, *pTransfoModel, pi_Options.GetTransaction());
-            
-            pio_destSurface.SetRegion(pOldClipRegion);
-
-            DrawDone = true;
-            }
-        catch(HFCOutOfMemoryException&)
-            {
-            // We will fall through in the standard case
-            }
-        }
-
-    // Standard draw code, one image at a time, bottom up
-    if (!DrawDone)
-        {
-        HWARNING(0, "HIMFilteredImage::Draw out of memory. Filter will not be applied.");
-
-        GetSource()->Draw(pio_destSurface, pi_Options);
-        }
-    }
-
-//-----------------------------------------------------------------------------
-// Duplicate outer data when the needed region (the surface) has not been
-// completely filled with source data.
-//-----------------------------------------------------------------------------
-void HIMFilteredImage::HandleBorderCases(HRASurface& pio_destSurface, const HRPPixelNeighbourhood& pi_rNeighborhood) const
-    {
-    HRAEditor editor(pio_destSurface);
-    
-    uint32_t SurfaceWidth = pio_destSurface.GetSurfaceDescriptor()->GetWidth();
-    uint32_t SurfaceHeight = pio_destSurface.GetSurfaceDescriptor()->GetHeight();
-    uint32_t SurfaceWidthWithoutNeighborhood = SurfaceWidth - (pi_rNeighborhood.GetWidth() - 1);
-    uint32_t SurfaceHeightWithoutNeighborhood = SurfaceHeight - (pi_rNeighborhood.GetHeight() - 1);
-
-    uint32_t NeighborhoodLeft = pi_rNeighborhood.GetXOrigin();
-    uint32_t NeighborhoodRight = pi_rNeighborhood.GetWidth() - pi_rNeighborhood.GetXOrigin() - 1;
-    uint32_t NeighborhoodBottom = pi_rNeighborhood.GetHeight() - pi_rNeighborhood.GetYOrigin() - 1;
-
-    if (pi_rNeighborhood.GetHeight() > 1)
-        {
-        void* pSrcLine = 0;
-
-        // Fill top
-        for (uint32_t Line = 0 ; Line < pi_rNeighborhood.GetYOrigin() ; ++Line)
-            {
-            if(pSrcLine == 0)
-                pSrcLine = editor.GetRun(pi_rNeighborhood.GetXOrigin(), pi_rNeighborhood.GetYOrigin(), SurfaceWidthWithoutNeighborhood);
-
-            editor.SetRun(pi_rNeighborhood.GetXOrigin(), Line, SurfaceWidthWithoutNeighborhood, pSrcLine);
-            }
-
-        pSrcLine = 0;
-
-        // Fill bottom
-        for (uint32_t Line = SurfaceHeight - NeighborhoodBottom ; Line < SurfaceHeight ; ++Line)
-            {
-            if(pSrcLine == 0)
-                pSrcLine = editor.GetRun(pi_rNeighborhood.GetXOrigin(), pi_rNeighborhood.GetYOrigin() + SurfaceHeightWithoutNeighborhood-1, SurfaceWidthWithoutNeighborhood);
-
-            editor.SetRun(pi_rNeighborhood.GetXOrigin(), Line, SurfaceWidthWithoutNeighborhood, pSrcLine);
-            }
-        }
-
-    if (pi_rNeighborhood.GetWidth() > 1)
-        {
-        for (uint32_t Line = 0 ; Line < SurfaceHeight ; ++Line)
-            {
-            // Fill left side
-            if(NeighborhoodLeft > 0)
-                {
-                void* pLeftPixelValue = editor.GetPixel(pi_rNeighborhood.GetXOrigin(), Line);
-                editor.ClearRun(0, Line, NeighborhoodLeft, pLeftPixelValue);
-                }
-
-            // Fill right side
-            if(NeighborhoodRight > 0)
-                {
-                void* pRightPixelValue = editor.GetPixel(pi_rNeighborhood.GetXOrigin() + SurfaceWidthWithoutNeighborhood-1, Line);
-                editor.ClearRun(pi_rNeighborhood.GetXOrigin() + SurfaceWidthWithoutNeighborhood,Line, NeighborhoodRight, pRightPixelValue);
-                }
-            }
-        }
-    }

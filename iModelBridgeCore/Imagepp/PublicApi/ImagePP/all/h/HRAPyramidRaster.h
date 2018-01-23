@@ -144,12 +144,7 @@ public:
 
     virtual void    Clear() override;
     virtual void    Clear(const HRAClearOptions& pi_rOptions) override;
-
-    // CopyFrom methods
-    void    CopyFromLegacy   (const HFCPtr<HRARaster>& pi_rpSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions) override;
-    void    CopyFromLegacy   (const HFCPtr<HRARaster>& pi_rpSrcRaster) override;
-
-
+  
     void    SetContext(const HFCPtr<HMDContext>& pi_rpContext) override;
 
     void    InvalidateRaster() override;
@@ -187,8 +182,7 @@ public:
     IMAGEPP_EXPORT void            SaveAndFlushAllTiles();
 
 protected:
-    virtual void _Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const override;
-
+  
     ImagePPStatus _BuildCopyToContext(ImageTransformNodeR imageNode, HRACopyToOptionsCR options) override;
 
     uint16_t EvaluateResolution(double Resolution) const;

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/him/src/HIMBufferedImage.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -19,13 +19,11 @@
 #include <ImagePP/all/h/HGF2DTranslation.h>
 #include <ImagePP/all/h/HGF2DIdentity.h>
 #include <ImagePP/all/h/HFCMonitor.h>
-#include <ImagePP/all/h/HGFMappedSurface.h>
 #include <ImagePP/all/h/HRADrawProgressIndicator.h>
 #include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
 #include <ImagePP/all/h/HGSTypes.h>
 #include <ImagePP/all/h/HGSRegion.h>
 #include <ImagePP/all/h/HRACopyFromOptions.h>
-#include <ImagePP/all/h/HRADrawOptions.h>
 #include <ImagePP/all/h/HRAClearOptions.h>
 
 #include <ImagePP/all/h/HRABitmap.h>
@@ -586,24 +584,6 @@ void HIMBufferedImage::SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi
     Initialize();
     }
 
-
-//-----------------------------------------------------------------------------
-// public
-// CopyFromLegacy
-//-----------------------------------------------------------------------------
-void HIMBufferedImage::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions)
-    {
-    m_pSource->CopyFromLegacy(pi_pSrcRaster, pi_rOptions);
-    }
-
-//-----------------------------------------------------------------------------
-// CopyFromLegacy
-//-----------------------------------------------------------------------------
-void HIMBufferedImage::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster)
-    {
-    m_pSource->CopyFromLegacy(pi_pSrcRaster);
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Mathieu.Marchand  04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -865,7 +845,7 @@ const HFCPtr<HRARaster> HIMBufferedImage::GetTile(uint64_t pi_ID) const
             {
             pRaster->Clear();
 
-            HRACopyFromLegacyOptions CopyFromOptions(true);
+            HRACopyFromOptions CopyFromOptions(true);
             if(m_UseDithering)
                 {
                 // HChk MR
@@ -887,7 +867,7 @@ const HFCPtr<HRARaster> HIMBufferedImage::GetTile(uint64_t pi_ID) const
 
             HFCMonitor TileMonitor(pTile);
 
-            pRaster->CopyFromLegacy(m_pSource, CopyFromOptions);    //WIP_LEGACY_COPYFROM
+            pRaster->CopyFrom(*m_pSource, CopyFromOptions);
 
             // Now the tile is valid
             pTile->SetValidState(true);
@@ -949,8 +929,10 @@ const HFCPtr<HRARaster> HIMBufferedImage::GetTile(uint64_t pi_ID) const
             pRaster->Clear();
 
             // Fill it with data
-            HRACopyFromLegacyOptions CopyFromOptions(true);
-            CopyFromOptions.SetMaxResolutionStretchingFactor(m_MaxSourceResolutionStretchingFactor);
+            HRACopyFromOptions CopyFromOptions(true);
+            // CopyFromOptions.SetMaxResolutionStretchingFactor(m_MaxSourceResolutionStretchingFactor);
+            BeAssert(!"WIP_LEGACY_COPYFROM: SetMaxResolutionStretchingFactor");
+
             if(m_UseDithering)
                 {
                 // HChk MR
@@ -981,7 +963,7 @@ const HFCPtr<HRARaster> HIMBufferedImage::GetTile(uint64_t pi_ID) const
             TileMapMonitor.ReleaseKey();
 
 
-            pRaster->CopyFromLegacy(m_pSource, CopyFromOptions);    //WIP_LEGACY_COPYFROM
+            pRaster->CopyFrom(*m_pSource, CopyFromOptions);   
 
             // Apply the shape on the tile. Done after the copy because the
             // Previous CopyFrom does not need it. The copy will be made with
@@ -1092,42 +1074,6 @@ HIMBufferedImage::CreateEditor   (const HVEShape& pi_rShape,
 HRARasterEditor* HIMBufferedImage::CreateEditorUnShaped (HFCAccessMode pi_Mode)
     {
     return 0;
-    }
-
-//-----------------------------------------------------------------------------
-// Draw the buffered image
-//-----------------------------------------------------------------------------
-void HIMBufferedImage::_Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const
-    {
-    HFCPtr<HVEShape> pClipShape;
-    const HFCPtr<HGSRegion>& pClipRegion(pio_destSurface.GetRegion());
-    if (pClipRegion != 0)
-        pClipShape = pClipRegion->GetShape();
-    else
-        pClipShape = new HVEShape(pio_destSurface.GetExtent());
-
-    // Get list of tiles that we're gonna draw. GetTileIDPoolFor will
-    // intersect the requested region with our effective shape...
-    HAutoPtr<HIMBufImgTileIDSet> pIDSet(GetTileIDPoolFor(*pClipShape));
-
-    // Pass all tiles
-    HIMBufImgTileIDSet::iterator IDSetIterator = pIDSet->begin();
-    while (IDSetIterator != pIDSet->end() && HRADrawProgressIndicator::GetInstance()->ContinueIteration())
-        {
-        try
-            {
-            const HFCPtr<HRARaster> pTile(GetTile(*IDSetIterator));
-            if (pTile != 0)
-                {
-                pTile->Draw(pio_destSurface, pi_Options);
-                }
-		}
-        catch(HGFmzGCoordException&)
-		{
-		
-		}
-        ++IDSetIterator;
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**

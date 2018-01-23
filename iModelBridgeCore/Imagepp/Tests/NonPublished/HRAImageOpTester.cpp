@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/HRAImageOpTester.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #include "../imagepptestpch.h"
@@ -671,7 +671,6 @@ bool BufferAllocator::VerifyBuffer(HRAImageSamplePtr& prImageSample, HFCPtr<HRPP
     return true;
     }
 
-#define USE_COPYFROM2 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Mathieu.Marchand  04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -780,14 +779,9 @@ TEST_P(ImageOpTest, ConvolutionAlignmentTest)
     HFCPtr<HRABitmap> pDestBitmap = (HRABitmap*)pSrcBitmap->Clone();
     pDestBitmap->Clear();
 
-#ifdef USE_COPYFROM2
     HRACopyFromOptions opts;
     pDestBitmap->CopyFrom(*pFilteredRaster, opts);
-#else
-    HRACopyFromLegacyOptions opts;
-    pDestBitmap->CopyFromLegacy(pFilteredRaster.GetPtr(), opts);
-#endif
-
+    
     uint32_t errPosX, errPosY;
     uint32_t expectedValue, actualValue;
     if(!ValidateResult(errPosX, errPosY, expectedValue, actualValue, *pDestBitmap))

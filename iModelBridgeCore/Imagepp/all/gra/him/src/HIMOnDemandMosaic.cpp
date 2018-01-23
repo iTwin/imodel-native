@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/him/src/HIMOnDemandMosaic.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -21,10 +21,8 @@
 #include <ImagePP/all/h/HGF2DStretch.h>
 #include <ImagePP/all/h/HGF2DTranslation.h>
 #include <ImagePP/all/h/HGFHMRStdWorldCluster.h>
-#include <ImagePP/all/h/HGFMappedSurface.h>
 #include <ImagePP/all/h/HGSSurfaceDescriptor.h>
 
-#include <ImagePP/all/h/HRADrawOptions.h>
 #include <ImagePP/all/h/HRAHistogramOptions.h>
 #include <ImagePP/all/h/HRAReferenceToRaster.h>
 #include <ImagePP/all/h/HRARepPalParms.h>
@@ -47,6 +45,7 @@
 #include <ImagePP/all/h/HVE2DUniverse.h>
 #include <ImagePP/all/h/HGSRegion.h>
 #include <ImagePPInternal/gra/HRACopyToOptions.h>
+#include <ImagePP/all/h/HRACopyFromOptions.h>
 
 #include <ImagePP/all/h/HUTImportFromRasterExportToFile.h>
 
@@ -311,50 +310,6 @@ ImagePPStatus HIMOnDemandMosaic::_CopyFrom(HRARaster& srcRaster, HRACopyFromOpti
     composed of many images, the copy will be made in these images.
     ---------------------------------------------------------------------------
 */
-void HIMOnDemandMosaic::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions)
-    {
-    // Take the mosaic's effective shape
-    HFCPtr<HVEShape> pDestShape(new HVEShape(*GetEffectiveShape()));
-
-    // Intersect with source's effective shape
-    pDestShape->Intersect(*pi_pSrcRaster->GetEffectiveShape());
-
-    // Intersect with specified "copy from" shape if necessary
-    if (pi_rOptions.GetDestShape() != 0)
-        pDestShape->Intersect(*(pi_rOptions.GetDestShape()));
-
-    if (!pDestShape->IsEmpty())
-        {
-        // Gather all images
-        HAutoPtr< IndexType::IndexableList > pObjects(m_pIndex->GetIndex1()->QueryIndexables(HIDXSearchCriteria()));
-        IndexType::IndexableList::const_iterator Itr(pObjects->begin());
-        while (Itr != pObjects->end())
-            {
-            // Compute clip shape for the source
-            HVEShape VisibleShape(*pDestShape);
-            VisibleShape.Intersect(*m_pIndex->GetIndex1()->GetVisibleSurfaceOf(*Itr));
-            HRACopyFromLegacyOptions ThisSourceOptions(pi_rOptions);
-            ThisSourceOptions.SetDestShape(&VisibleShape);
-
-            HFCPtr<HRARaster> pRaster = GetRaster((*Itr)->GetObject());
-
-            // Copy in this source
-            if (pRaster != 0)
-                {
-                pRaster->CopyFromLegacy(pi_pSrcRaster, ThisSourceOptions);
-                }
-
-            ++Itr;
-            }
-        }
-    }
-
-
-/** ---------------------------------------------------------------------------
-    Copy data from the specified source into the mosaic. Sicne the mosaic is
-    composed of many images, the copy will be made in these images.
-    ---------------------------------------------------------------------------
-*/
 HFCPtr<HRARaster> HIMOnDemandMosaic::GetRaster(const HFCPtr<HRAOnDemandRaster>& pi_rpOnDemandRaster) const
     {
     OpenRaster             Raster;
@@ -400,18 +355,6 @@ HFCPtr<HRARaster> HIMOnDemandMosaic::GetRaster(const HFCPtr<HRAOnDemandRaster>& 
 
     return Raster.m_pRaster;
     }
-
-
-/** ---------------------------------------------------------------------------
-    Copy data from the specified source into the mosaic. Sicne the mosaic is
-    composed of many images, the copy will be made in these images.
-    ---------------------------------------------------------------------------
-*/
-void HIMOnDemandMosaic::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster)
-    {
-    CopyFromLegacy(pi_pSrcRaster, HRACopyFromLegacyOptions());
-    }
-
 
 //---------------------------------------------------------------------------
 // Clear
@@ -2426,165 +2369,6 @@ void HIMOnDemandMosaic::RecalculateEffectiveShape ()
     {
     m_pEffectiveShape  = 0;
     m_pEffectiveExtent = 0;
-    }
-
-/** ---------------------------------------------------------------------------
-    Draw the mosaic
-    ---------------------------------------------------------------------------*/
-
-void HIMOnDemandMosaic::_Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const
-    {
-    bool                  DrawDone     = false;
-    HRADrawOptions        Options(pi_Options);
-    HFCPtr<HGF2DCoordSys> pReplacingCS(Options.GetReplacingCoordSys());
-    HVEShape              RegionToDraw(Options.GetShape() != 0 ? *Options.GetShape() : HRARaster::GetShape());
-    double                SubResPyramidRes = DBL_MAX;
-
-    //TR 300554 - Temporary fix activation.
-    Options.SetDataDimensionFix(true);
-
-    HFCPtr<HGSRegion> pClipRegion(pio_destSurface.GetRegion());
-
-    if (pClipRegion != 0)
-        {
-        // Intersect it with the destination
-        HFCPtr<HVEShape> pSurfaceShape(pClipRegion->GetShape());
-
-        if (Options.GetReplacingCoordSys())
-            {
-            pSurfaceShape->ChangeCoordSys(Options.GetReplacingCoordSys());
-            pSurfaceShape->SetCoordSys(GetCoordSys());
-            }
-
-        RegionToDraw.Intersect(*pSurfaceShape);
-        }
-    else
-        {
-        // Create a rectangular clip region to stay
-        // inside the destination surface.
-        HVEShape DestSurfaceShape(0.0, 0.0, pio_destSurface.GetSurfaceDescriptor()->GetWidth(), pio_destSurface.GetSurfaceDescriptor()->GetHeight(), pio_destSurface.GetSurfaceCoordSys());
-
-        // Set the stroking tolerance for the surface's shape
-        // Set a quarter of a pixel tolerance
-        double CenterX = pio_destSurface.GetSurfaceDescriptor()->GetWidth() / 2.0;
-        double CenterY = pio_destSurface.GetSurfaceDescriptor()->GetHeight() / 2.0;
-        HFCPtr<HGFTolerance> pTol = new HGFTolerance (CenterX - DEFAULT_PIXEL_TOLERANCE,
-                                                      CenterY - DEFAULT_PIXEL_TOLERANCE,
-                                                      CenterX + DEFAULT_PIXEL_TOLERANCE,
-                                                      CenterY + DEFAULT_PIXEL_TOLERANCE,
-                                                      pio_destSurface.GetSurfaceCoordSys());
-
-        if (Options.GetReplacingCoordSys())
-            {
-            DestSurfaceShape.ChangeCoordSys(Options.GetReplacingCoordSys());
-            DestSurfaceShape.SetCoordSys(GetCoordSys());
-            }
-
-        RegionToDraw.Intersect(DestSurfaceShape);
-        }
-
-
-    if (m_pSubRes != 0)
-        {
-        HASSERT(IsDataChangingWithResolution() == false);
-
-        SubResPyramidRes = ((HFCPtr<HRAPyramidRaster>&)m_pSubRes->GetSource())->FindTheBestResolution(pio_destSurface.GetCoordSys(),
-                                                                                                      pReplacingCS);
-
-        // If the resolution is equal or smaller than the cached sub resolution, use the cached
-        // sub-resolution to draw.
-        if (HDOUBLE_SMALLER_OR_EQUAL_EPSILON(SubResPyramidRes, 1.0))
-            {
-            // Calculate the needed visible part of this image
-            HFCPtr<HVEShape> pVisibleShape(new HVEShape(RegionToDraw));
-            pVisibleShape->Intersect(*m_pSubRes->GetEffectiveShape());
-
-            if (pReplacingCS != 0)
-                {
-                // Adapt replacing CS so that it works on the current image.
-
-                // Extract the transformation we're applying to our source (T1)
-                HFCPtr<HGF2DTransfoModel> pRefTransfo(pReplacingCS->GetTransfoModelTo(GetCoordSys()));
-
-                // Calculate the transformation between our source's CS and the CS
-                // the object to return uses. (T2)
-                HFCPtr<HGF2DTransfoModel> pCurrentToSource(m_pSubRes->GetCoordSys()->GetTransfoModelTo(GetCoordSys()));
-
-                // Create the CS by composing everything correctly :)
-                // T2 o T1 o -T2
-                HFCPtr<HGF2DTransfoModel> pToApply(pCurrentToSource->ComposeInverseWithDirectOf(*pRefTransfo)->ComposeInverseWithInverseOf(*pCurrentToSource));
-                HFCPtr<HGF2DCoordSys> pCSToApply = new HGF2DCoordSys(*pToApply, m_pSubRes->GetCoordSys());
-
-                Options.SetReplacingCoordSys(pCSToApply);
-                }
-
-            Options.SetShape(pVisibleShape);
-            m_pSubRes->Draw(pio_destSurface, Options);
-            DrawDone = true;
-            }
-        }
-    
-    // Standard draw code, one image at a time, bottom up
-    if (!DrawDone)
-        {
-        // Take a copy of the shape to avoid modifying the original shape
-        HVEShape RegionToDrawInCs(RegionToDraw);
-        RegionToDrawInCs.ChangeCoordSys(GetCoordSys());
-
-        HAutoPtr< IndexType::IndexableList > pObjects(m_pIndex->QueryIndexables(
-                                                          HIDXSearchCriteria(m_pIndex->GetIndex2(), new HGFSpatialCriteria(RegionToDrawInCs.GetExtent())), true));
-        IndexType::IndexableList::const_iterator Itr(pObjects->begin());
-
-        HFCPtr<HRARaster> pRaster;
-
-        while (Itr != pObjects->end())
-            {
-            // Calculate the needed visible part of this image
-            HFCPtr<HVEShape> pVisibleShape(new HVEShape(RegionToDraw));
-
-            if (pVisibleShape->GetExtent().DoTheyOverlap((*Itr)->GetObject()->GetExtent()) == true)
-                {
-                pVisibleShape->Intersect(*m_pIndex->GetIndex1()->GetVisibleSurfaceOf(*Itr));
-
-                // Send part to the image, if there is one...
-                if (!pVisibleShape->IsEmpty())
-                    {
-                    pRaster = GetRaster((*Itr)->GetObject());
-
-                    if (pRaster == 0)
-                        {
-                        Itr++;
-                        continue;
-                        }
-
-                    if (pReplacingCS != 0)
-                        {
-                        // Adapt replacing CS so that it works on the current image.
-
-                        // Extract the transformation we're applying to our source (T1)
-                        HFCPtr<HGF2DTransfoModel> pRefTransfo(pReplacingCS->GetTransfoModelTo(GetCoordSys()));
-
-                        // Calculate the transformation between our source's CS and the CS
-                        // the object to return uses. (T2)
-                        HFCPtr<HGF2DTransfoModel> pCurrentToSource(pRaster->GetCoordSys()->GetTransfoModelTo(GetCoordSys()));
-
-                        // Create the CS by composing everything correctly :)
-                        // T2 o T1 o -T2
-                        HFCPtr<HGF2DTransfoModel> pToApply(pCurrentToSource->ComposeInverseWithDirectOf(*pRefTransfo)->ComposeInverseWithInverseOf(*pCurrentToSource));
-                        HFCPtr<HGF2DCoordSys> pCSToApply = new HGF2DCoordSys(*pToApply, pRaster->GetCoordSys());
-
-                        Options.SetReplacingCoordSys(pCSToApply);
-                        }
-
-                    Options.SetShape(pVisibleShape);
-                    pRaster->Draw(pio_destSurface, Options);
-                    }
-                }
-
-            // Proceed to the next element
-            ++Itr;
-            }
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**

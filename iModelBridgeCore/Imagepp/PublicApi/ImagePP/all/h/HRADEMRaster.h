@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRADEMRaster.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRADEMRaster
@@ -62,17 +62,8 @@ protected:
 
     virtual ImagePPStatus _BuildCopyToContext(ImageTransformNodeR imageNode, HRACopyToOptionsCR options) override;
 
-    virtual void _Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const override;
-
-
 private:
-    HFCPtr<HGSMemorySurfaceDescriptor>  ApplyFilter(HFCPtr<HGSMemorySurfaceDescriptor> pSourceSurfaceDesc, HFCPtr<HGF2DTransfoModel> pi_pSourceTransfo) const;
-
-    void HandleBorderCases(HRASurface& pio_destSurface, const HRPPixelNeighbourhood& pi_rNeighborhood) const;
-
-    HFCPtr<HGF2DTransfoModel>           ComputeSourceToDestinationTransfo(const HFCPtr<HGF2DCoordSys>& pi_rPhysicalCoordSys,
-                                                                          const HFCPtr<HGF2DCoordSys>  pi_pNewLogicalCoordSys) const;
-
+  
     HRAImageOpPtr           m_pFilterOp;
     HFCPtr<HRPDEMFilter>    m_pFilter;
     HFCPtr<HRAStoredRaster> m_pSourceStoredRaster;

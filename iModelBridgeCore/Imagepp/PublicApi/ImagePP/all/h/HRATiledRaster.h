@@ -259,9 +259,6 @@ protected:
     HFCPtr<HRABitmapBase> m_pBitmapModel;
 
     // Methods
-
-    virtual void _Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const override;
-
     // From HGFGraphicObject
     void    SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_rOldCoordSys) override;
 

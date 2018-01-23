@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/him/src/HIMSeamlessMosaic.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -18,7 +18,6 @@
 #include <ImagePP/all/h/HRAHistogramOptions.h>
 #include <ImagePP/all/h/HRABitmap.h>
 #include <ImagePP/all/h/HRARasterIterator.h>
-#include <ImagePP/all/h/HRACopyFromLegacyOptions.h>
 #include <ImagePP/all/h/HRAMessages.h>
 
 #include <ImagePP/all/h/HGF2DTranslation.h>
@@ -195,28 +194,6 @@ HIMSeamlessMosaic& HIMSeamlessMosaic::operator=(const HIMSeamlessMosaic& pi_rObj
 
     return *this;
     }
-
-
-/** ---------------------------------------------------------------------------
-    CopyFromLegacy. This method is currently not supported.
-    ---------------------------------------------------------------------------
-*/
-void HIMSeamlessMosaic::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions)
-    {
-    HASSERT(false);
-
-    }
-
-
-/** ---------------------------------------------------------------------------
-    CopyFromLegacy. This method is currently not supported.
-    ---------------------------------------------------------------------------
-*/
-void HIMSeamlessMosaic::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster)
-    {
-    CopyFromLegacy(pi_pSrcRaster, HRACopyFromLegacyOptions());
-    }
-
 
 /** ---------------------------------------------------------------------------
     Notification for palette change

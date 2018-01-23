@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAStoredRaster.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -28,7 +28,6 @@
 #include <ImagePP/all/h/HGFMessages.h>
 #include <ImagePP/all/h/HRARepPalParms.h>
 #include <ImagePP/all/h/HRAHistogramOptions.h>
-#include <ImagePP/all/h/HRADrawOptions.h>
 #include <ImagePP/all/h/HRADrawProgressIndicator.h>
 #include <ImagePP/all/h/HRABitmapBase.h>
 #include <ImagePP/all/h/HRATransaction.h>
@@ -38,12 +37,12 @@
 #include <ImagePP/all/h/HRABitmapEditor.h>
 #include <ImagePP/all/h/HRSObjectStore.h>
 #include <ImagePP/all/h/HMDContext.h>
-#include <ImagePP/all/h/HGFMappedSurface.h>
 #include <ImagePP/all/h/HVE2DRectangle.h>
 #include <ImagePP/all/h/HGSSurfaceDescriptor.h>
 #include <ImagePPInternal/gra/HRACopyToOptions.h>
 #include <ImagePPInternal/gra/ImageAllocator.h>
 #include <ImagePPInternal/gra/HRAImageNode.h>
+#include <ImagePP/all/h/HRACopyFromOptions.h>
 
 HPM_REGISTER_ABSTRACT_CLASS(HRAStoredRaster, HRARaster)
 
@@ -640,76 +639,6 @@ ImagePPStatus HRAStoredRaster::_CopyFrom(HRARaster& srcRaster, HRACopyFromOption
     status = pSinkNode->Execute(allocatorRefPtr->GetAllocator());
 
     return status;
-    }
-
-
-//-----------------------------------------------------------------------------
-// public
-// CopyFromLegacy
-//-----------------------------------------------------------------------------
-void HRAStoredRaster::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions)
-    {
-    HRADrawOptions Options(pi_rOptions);
-    Options.SetTransaction(GetCurrentTransaction());
-
-    // Prepare the region we'll copy.
-    //
-    HFCPtr<HVEShape> pTotalCopyShape(new HVEShape(*GetEffectiveShape()));
-    if (pi_rOptions.GetDestShape())
-        pTotalCopyShape->Intersect(*pi_rOptions.GetDestShape());
-
-    if (pi_rOptions.ApplySourceClipping())
-        pTotalCopyShape->Intersect(*pi_pSrcRaster->GetEffectiveShape());
-
-    Options.SetShape(pTotalCopyShape);
-
-    if (!pTotalCopyShape->IsEmpty())
-        {
-
-        HAutoPtr<HRARasterIterator> pDstIterator(CreateIterator (HRAIteratorOptions(pTotalCopyShape,
-                                                                                    GetPhysicalCoordSys(),
-                                                                                    false)));
-
-        // parse the rasters in the destination
-        HFCPtr<HRARaster> pDstRaster;
-        while (((pDstRaster = (*pDstIterator)()) != 0) && HRADrawProgressIndicator::GetInstance()->ContinueIteration())
-            {
-            HASSERT(pDstRaster->IsCompatibleWith(HRABitmapBase::CLASS_ID));
-            HFCPtr<HRABitmapBase> pBitmap = (HFCPtr<HRABitmapBase>&)pDstRaster;
-
-            // get the surface descriptor for this raster.
-            HFCPtr<HGSSurfaceDescriptor> pDescriptor;
-            if(pi_rOptions.GetDestReplacingPixelType() != 0)
-                {
-                HFCPtr<HRPPixelType> PixelReplace(pi_rOptions.GetDestReplacingPixelType());
-                pDescriptor = pBitmap->GetSurfaceDescriptor(&PixelReplace);
-                }
-            else
-                pDescriptor = pBitmap->GetSurfaceDescriptor();
-
-            // create a surface for the destination
-            HGFMappedSurface desSurface(pDescriptor, pBitmap->GetPhysicalCoordSys());
-
-            pi_pSrcRaster->Draw(desSurface, Options);
-
-            // Notify the bitmap of its change
-            pBitmap->Updated(Options.GetShape().GetPtr());
-
-            pDstIterator->Next();
-            }
-        }
-
-    // invalidate the representative palette cache
-    InvalidateRepPalCache();
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// CopyFromLegacy
-//-----------------------------------------------------------------------------
-void HRAStoredRaster::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster)
-    {
-    CopyFromLegacy(pi_pSrcRaster, HRACopyFromLegacyOptions());
     }
 
 //-----------------------------------------------------------------------------

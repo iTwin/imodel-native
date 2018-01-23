@@ -13,8 +13,6 @@
 #include <ImagePP/all/h/HRARasterIterator.h>
 #include <ImagePP/all/h/HGF2DCoordSys.h>
 #include <ImagePP/all/h/HRARepPalParms.h>
-#include <ImagePP/all/h/HGFMappedSurface.h>
-#include <ImagePP/all/h/HRADrawOptions.h>
 #include <ImagePP/all/h/HFCException.h>
 #include <ImagePP/all/h/HRADrawProgressIndicator.h>
 #include <ImagePP/all/h/HRAHistogramOptions.h>
@@ -241,16 +239,6 @@ void HRARaster::PrintState(ostream& po_rOutput) const
             << endl;
 
 #endif
-    }
-
-
-//-----------------------------------------------------------------------------
-// public
-// Draw
-//-----------------------------------------------------------------------------
-void HRARaster::Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const
-    {
-    _Draw(pio_destSurface, pi_Options);
     }
 
 //-----------------------------------------------------------------------------

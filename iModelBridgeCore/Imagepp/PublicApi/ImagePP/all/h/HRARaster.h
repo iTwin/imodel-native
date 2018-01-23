@@ -28,8 +28,6 @@ class HRPHistogram;
 class HRAHistogramOptions;
 class HRAClearOptions;
 class HMDContext;
-class HRADrawOptions;
-class HRACopyFromLegacyOptions;
 class HRPPixelType;
 class HRPPixelPalette;
 class HVEShape;
@@ -67,10 +65,6 @@ public:
     virtual HGF2DExtent       GetExtentInCs(HFCPtr<HGF2DCoordSys> pi_pCoordSys) const;
 
     // Other methods
-
-    virtual void    CopyFromLegacy    (const HFCPtr<HRARaster>& pi_pSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions) = 0;
-
-    virtual void    CopyFromLegacy    (const HFCPtr<HRARaster>& pi_pSrcRaster) = 0;
 
     virtual void    Clear() = 0;
     virtual void    Clear(const HRAClearOptions& pi_rOptions) = 0;
@@ -225,8 +219,6 @@ public:
 
     bool   IsOpaque() const override;
     
-    void Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const;
-
     // This method must be Private, but HRSObjectStore must use it, to load
     // a Raster form a file.
     void            InitializeHistogram(const HRPHistogram&     pi_rHistogram,
@@ -273,8 +265,6 @@ protected:
         HRARepPalParms* pio_pRepPalParms);
 
     void            SetHistogram(const HRAHistogramOptions* pi_pHistogram);
-
-    virtual void _Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const = 0;
 
 private:
 

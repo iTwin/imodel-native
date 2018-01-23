@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIMBufferedImage.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HIMBufferedImage
@@ -196,10 +196,6 @@ public:
                           const HGF2DLocation& pi_rOrigin) override;
 
     // Overriden from HRARaster
-    void    CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions) override;
-
-    void    CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster) override;
-
     virtual void    Clear() override;
     virtual void    Clear(const HRAClearOptions& pi_rOptions) override;
 
@@ -299,8 +295,6 @@ public:
     IMAGEPP_EXPORT void            PrepareRegion(const HVEShape& pi_rRegion);
 
 protected:
-
-    virtual void _Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const override;
 
     virtual ImagePPStatus _CopyFrom(HRARaster& srcRaster, HRACopyFromOptions const& options) override;
 

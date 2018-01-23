@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRABitmap.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class: HRABitmap
@@ -25,12 +25,10 @@
 #include <ImagePP/all/h/HRARasterEditor.h>
 #include <ImagePP/all/h/HCDCodecIdentity.h>
 #include <ImagePP/all/h/HRAMessages.h>
-#include <ImagePP/all/h/HRADrawOptions.h>
 #include <ImagePP/all/h/HRAClearOptions.h>
 #include <ImagePP/all/h/HPMPool.h>
 #include <ImagePP/all/h/HGSRegion.h>
 #include <ImagePP/all/h/HFCGrid.h>
-#include <ImagePP/all/h/HGFMappedSurface.h>
 #include <ImagePP/all/h/HGSMemoryBaseSurfaceDescriptor.h>
 #include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>
 #include <ImagePP/all/h/HRAEditor.h>
@@ -958,175 +956,6 @@ const HFCPtr<HCDPacket>& HRABitmap::GetPacket() const
         }
 
     return m_pPacket;
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// Draw
-//-----------------------------------------------------------------------------
-void HRABitmap::_Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const
-    {
-    // If the Raster is empty, skip it
-    if (IsEmpty())
-        return;
-
-    HRADrawOptions Options(pi_Options);
-
-    // set the effective coordsys
-    if (Options.GetReplacingCoordSys() == 0)
-        // case when there is no replacing coordsys
-        Options.SetReplacingCoordSys(GetCoordSys());
-
-    // get the destination descriptor
-    HFCPtr<HGSSurfaceDescriptor> pDstDescriptor(pio_destSurface.GetSurfaceDescriptor());
-
-    //
-    // Compute the effective clip shape, and give it
-    // to the destination surface.
-    //
-    HFCPtr<HVEShape> pClipShape;
-    if (Options.GetShape() != 0)
-        pClipShape = new HVEShape(*Options.GetShape());
-    else
-        pClipShape = new HVEShape(*GetEffectiveShape());
-
-    pClipShape->ChangeCoordSys(GetCoordSys());
-    pClipShape->SetCoordSys(Options.GetReplacingCoordSys());
-    pClipShape->ChangeCoordSys(pio_destSurface.GetSurfaceCoordSys());
-
-    // store the old clip region
-    HFCPtr<HGSRegion> pOldClipRegion(pio_destSurface.GetRegion());
-
-    if (pOldClipRegion != 0)
-        {
-        // construct a shape from the clip region
-        HFCPtr<HVEShape> pSurfaceShape(pOldClipRegion->GetShape());
-
-        // if yes, intersect it with the destination
-        pClipShape->Intersect(*pSurfaceShape);
-        }
-    else
-        {
-        // Create a rectangular clip region to stay
-        // inside the destination surface.
-        HVEShape DestSurfaceShape(0.0, 0.0, pDstDescriptor->GetWidth(), pDstDescriptor->GetHeight(), pio_destSurface.GetSurfaceCoordSys());
-        HFCPtr<HGFTolerance> pTol (new HGFTolerance(GetSurfaceDescriptor()->GetWidth() / 2.0 - DEFAULT_PIXEL_TOLERANCE,
-                                                    GetSurfaceDescriptor()->GetHeight() / 2.0 - DEFAULT_PIXEL_TOLERANCE,
-                                                    GetSurfaceDescriptor()->GetWidth() / 2.0 + DEFAULT_PIXEL_TOLERANCE,
-                                                    GetSurfaceDescriptor()->GetHeight() / 2.0 + DEFAULT_PIXEL_TOLERANCE,
-                                                    DestSurfaceShape.GetCoordSys()));
-
-        DestSurfaceShape.SetStrokeTolerance(pTol);
-
-        pClipShape->Intersect(DestSurfaceShape);
-        }
-
-    if ((m_pPacket->GetCodec() != 0) &&
-        m_pPacket->GetCodec()->IsCompatibleWith(HCDCodecImage::CLASS_ID))
-        {
-        // SOMETIMES. THE SOURCE COMPRESSED DATA IS INCOMPLETE!, WE MUST CLIP
-        HFCPtr<HCDCodecImage> pCodecImage;
-        pCodecImage = (HFCPtr<HCDCodecImage>&)m_pPacket->GetCodec();
-
-        uint64_t WidthPixels;
-        uint64_t HeightPixels;
-        GetSize(&WidthPixels, &HeightPixels);
-
-        if (pCodecImage->GetHeight() < HeightPixels)
-            {
-            HFCPtr<HVEShape> pShape(new HVEShape(0, 0, static_cast<double>(pCodecImage->GetWidth()), static_cast<double>(pCodecImage->GetHeight()),  GetPhysicalCoordSys()));
-            pShape->ChangeCoordSys(GetCoordSys());
-            pShape->SetCoordSys(Options.GetReplacingCoordSys());
-            pShape->ChangeCoordSys(pio_destSurface.GetSurfaceCoordSys());
-
-            pClipShape->Intersect(*pShape);
-            }
-        }
-
-    if (!pClipShape->IsEmpty())
-        {
-        // test if this is a simple rectangle covering the entire surface
-        bool Clip = true;
-        if(pClipShape->GetShapePtr()->GetClassID() == HVE2DRectangle::CLASS_ID)
-            {
-            HGF2DExtent Extent(pClipShape->GetShapePtr()->GetExtent());
-
-            // if yes, do not clip
-            if(Extent.GetWidth() >= pDstDescriptor->GetWidth() && Extent.GetHeight() >= pDstDescriptor->GetHeight())
-                Clip = false;
-            }
-        if(Clip)
-            {
-            HFCPtr<HGSRegion> pTheRegion(new HGSRegion(pClipShape, pClipShape->GetCoordSys()));
-            pio_destSurface.SetRegion(pTheRegion);
-            }
-
-        //
-        // Verify / modify certain options
-        //
-
-        // set the effective pixel type
-        bool ReplacingPixelType;
-        HFCPtr<HRPPixelType> pEffectivePixelType;
-        if (Options.GetReplacingPixelType() != 0)
-            {
-            pEffectivePixelType = Options.GetReplacingPixelType();
-            ReplacingPixelType = true;
-            }
-        else
-            {
-            pEffectivePixelType = GetPixelType();
-            ReplacingPixelType = false;
-            }
-
-        if (ReplacingPixelType)
-            Options.SetReplacingPixelType(pEffectivePixelType);
-
-        // set the effective alpha blend
-        if (Options.ApplyAlphaBlend() &&
-            pEffectivePixelType->GetChannelOrg().GetChannelIndex(HRPChannelType::ALPHA, 0) == HRPChannelType::FREE)
-            {
-            Options.SetAlphaBlend(false);
-            }
-
-        //
-        // Do the pixel copy, using the appropriate tool
-        //
-
-        // Model Physical --> Physical
-        // Get the model between model Physical Destination CoordSys to
-        //                             Physical Source CoordSys
-        // get the transfo model between the low level and high level
-        HFCPtr<HGF2DTransfoModel> pTransfoModel = pio_destSurface.GetSurfaceCoordSys()->GetTransfoModelTo (Options.GetReplacingCoordSys());
-        pTransfoModel = pTransfoModel->ComposeInverseWithInverseOf(*GetTransfoModel());
-
-        bool CanStretch = pTransfoModel->IsStretchable(HGLOBAL_EPSILON);
-        if (CanStretch)
-            {
-            // Extract stretching parameters
-            double StretchX;
-            double StretchY;
-            HGF2DDisplacement Translation;
-            pTransfoModel->GetStretchParams(&StretchX,
-                                            &StretchY,
-                                            &Translation);
-
-            // create a real stretch model
-            pTransfoModel = new HGF2DStretch(Translation,
-                                                StretchX,
-                                                StretchY);
-
-            }
-
-        if (CanStretch)
-            StretchWithHGS(pio_destSurface, Options, pTransfoModel);
-        else
-            WarpWithHGS(pio_destSurface, Options, pTransfoModel);
-
-        // set the old clip region back
-        if (Clip)
-            pio_destSurface.SetRegion(pOldClipRegion);
-        }
     }
 
 //-----------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/him/src/HIMStripAdapter.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -29,8 +29,6 @@
 #include <ImagePP/all/h/HRPPixelTypeV1GrayWhite1.h>
 #include <ImagePP/all/h/HRPPixelTypeV8Gray8.h>
 #include <ImagePP/all/h/HRPPixelTypeV8GrayWhite8.h>
-#include <ImagePP/all/h/HRADrawOptions.h>
-#include <ImagePP/all/h/HGFMappedSurface.h>
 #include <ImagePP/all/h/HVEShape.h>
 #include <ImagePP/all/h/HGSRegion.h>
 #include <ImagePP/all/h/HGSSurfaceDescriptor.h>
@@ -376,70 +374,6 @@ uint32_t HIMStripAdapter::SetBackgroundColor (const HFCPtr<HRPPixelType>& pio_pP
 bool HIMStripAdapter::IsStoredRaster () const
     {
     return (true);
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// Draw
-//-----------------------------------------------------------------------------
-void HIMStripAdapter::_Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const
-    {
-    HRADrawOptions Options(pi_Options);
-
-    HFCPtr<HVEShape> pRegionToDraw;
-    if (Options.GetShape() != 0)
-        pRegionToDraw = new HVEShape(*Options.GetShape());
-    else
-        pRegionToDraw = new HVEShape(*GetEffectiveShape());
-    pRegionToDraw->ChangeCoordSys(GetCoordSys());
-
-    // set the effective coordsys
-    if (Options.GetReplacingCoordSys() == 0)
-        Options.SetReplacingCoordSys(GetCoordSys());
-
-    // test if there is a clip region in the destination
-    HFCPtr<HGSRegion> pClipRegion(pio_destSurface.GetRegion());
-    if (pClipRegion != 0)
-        {
-        // if yes, intersect it with the destination
-        HFCPtr<HVEShape> pSurfaceShape(pClipRegion->GetShape());
-
-        pSurfaceShape->ChangeCoordSys(Options.GetReplacingCoordSys());
-        pSurfaceShape->SetCoordSys(GetCoordSys());
-
-        pRegionToDraw->Intersect(*pSurfaceShape);
-        }
-    else
-        {
-        // Create a rectangular clip region to stay
-        // inside the destination surface.
-        HVEShape DestSurfaceShape(0.0, 0.0, pio_destSurface.GetSurfaceDescriptor()->GetWidth(), pio_destSurface.GetSurfaceDescriptor()->GetHeight(), pio_destSurface.GetSurfaceCoordSys());
-        DestSurfaceShape.ChangeCoordSys(Options.GetReplacingCoordSys());
-        DestSurfaceShape.SetCoordSys(GetCoordSys());
-
-        pRegionToDraw->Intersect(DestSurfaceShape);
-        }
-
-
-    HAutoPtr<HRARasterIterator> pIterator(CreateIterator(HRAIteratorOptions(pRegionToDraw, pio_destSurface.GetSurfaceCoordSys())));
-    HASSERT(pIterator != 0);
-
-    if (pIterator != 0)
-        {
-        HFCPtr<HRARaster> pCurrentStrip = (*pIterator)();
-        while (pCurrentStrip != 0)
-            {
-            HRADrawOptions Options2(pi_Options);
-
-            HFCPtr<HVEShape> pClip(new HVEShape(*pRegionToDraw));
-            pClip->Intersect(*pCurrentStrip->GetEffectiveShape());
-            Options2.SetShape(pClip);
-
-            pCurrentStrip->Draw(pio_destSurface, Options2);
-
-            pCurrentStrip = pIterator->Next();
-            }
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**

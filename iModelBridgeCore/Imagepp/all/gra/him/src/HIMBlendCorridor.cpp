@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/him/src/HIMBlendCorridor.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -360,53 +360,6 @@ HRARasterIterator* HIMBlendCorridor::CreateIterator (const HRAIteratorOptions& p
     {
     return new HIMBlendCorridorIterator(HFCPtr<HIMBlendCorridor>((HIMBlendCorridor*)this), pi_rOptions);
     }
-
-
-/** ---------------------------------------------------------------------------
-    Notification for content changed
-    ---------------------------------------------------------------------------
-*/
-/*bool HIMBlendCorridor::NotifyContentChanged(HMGMessage& pi_rMessage)
-{
-    // create a new shape
-    HVEShape Shape((((HRAContentChangedMsg&)pi_rMessage).GetShape()).GetExtent());
-
-    // create a new msg with that shape
-    HRAContentChangedMsg Msg(Shape);
-
-    // call the parent method with the new msg
-    HRAImageView::NotifyContentChanged(Msg);
-
-    // notify the raster that the content has changed
-    Propagate(HRAContentChangedMsg(Msg));
-
-    // do not propagate anymore the msg with the old shape
-    return false;
-
-    return true;
-}
-*/
-
-
-/** ---------------------------------------------------------------------------
-    CopyFromLegacy. Do it on the sources
-    ---------------------------------------------------------------------------
-*/
-void HIMBlendCorridor::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster,
-                                const HRACopyFromLegacyOptions& pi_rOptions)
-    {
-    }
-
-
-/** ---------------------------------------------------------------------------
-    CopyFromLegacy
-    ---------------------------------------------------------------------------
-*/
-void HIMBlendCorridor::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster)
-    {
-    CopyFromLegacy(pi_pSrcRaster, HRACopyFromLegacyOptions());
-    }
-
 
 /** ---------------------------------------------------------------------------
 Clear
