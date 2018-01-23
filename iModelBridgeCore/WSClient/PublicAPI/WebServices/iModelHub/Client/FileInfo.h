@@ -21,7 +21,6 @@ enum class InitializationState
     Scheduled,
     UnknownFailure,
     OutdatedFile,
-    IncorrectFileId,
     CodeTooLong
     };
 

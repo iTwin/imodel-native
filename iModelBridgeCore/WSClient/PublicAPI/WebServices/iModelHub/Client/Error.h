@@ -62,7 +62,6 @@ public:
         //Long Running Processes Errors
         FileIsNotYetInitialized = 100,
         FileIsOutdated,
-        FileHasDifferentId,
         FileCodeTooLong,
         FileInitializationFailed,
 

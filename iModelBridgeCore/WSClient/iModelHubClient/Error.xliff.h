@@ -33,7 +33,6 @@ BENTLEY_TRANSLATABLE_STRINGS_START(ErrorL10N, iModelHubError)
     //Initialization errors
     L10N_STRING(MESSAGE_FileIsNotYetInitialized)           // =="File is not yet initialized."==
     L10N_STRING(MESSAGE_FileIsOutdated)                    // =="File could not be initialized. File is too old."==
-    L10N_STRING(MESSAGE_FileHasDifferentId)                // =="File could not be initialized. File has different id than expected."==
     L10N_STRING(MESSAGE_FileCodeTooLong)                   // =="File could not be initialized. File has one or more codes exceeding the maximum code length limit."==
     L10N_STRING(MESSAGE_FileInitializationFailed)          // =="File could not be initialized. Unexpected error has occured."==
 
