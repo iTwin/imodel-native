@@ -60,10 +60,8 @@ struct TileContext;
 // Uncomment this to enable that (ideally after having addressed the symbology issue noted above)
 // #define SHARE_GEOMETRY_PARTS
 
-// #define DISABLE_CLIPPING
-
 // Uncomment to record and output statistics on # of cached tiles, time spent reading them, etc
-#define TILECACHE_DEBUG
+// #define TILECACHE_DEBUG
 
 // Uncomment to compare geometry read from tile cache data to that produced by LoadGeometryFromModel() and assert if unequal.
 // See TFS#772315 in which portions of geometry do not appear in tiles read from cache, but do appear if we disable the cache
@@ -2115,12 +2113,6 @@ void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId el
 
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); /**/)
         {
-#if defined(DISABLE_CLIPPING)
-        if (!GetTileRange().IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
-            continue;
-#else
-        BeAssert(GetTileRange().IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))));
-#endif
         anyContributed = true;
         builder.AddFromPolyfaceVisitor(*visitor, displayParams.GetTextureMapping(), db, featureFromParams(elemId, displayParams), doVertexCluster, hasTexture, fillColor, nullptr != polyface.GetNormalCP());
         m_contentRange.Extend(visitor->Point());
