@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/src/IDtmProvider.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -66,7 +66,7 @@ struct Triangle
 
         bool IsPointOnPlaneInside(DPoint3d pointOnPlane, bool strictlyInside) const;
 
-        DPoint3d const& GetPoint(short index) const      { BeAssert(index>=0 && index < 3); return m_point[index]; }
+        DPoint3d const& GetPoint(short index) const      { if (index>=0 && index < 3) return m_point[index]; assert(!"Bad index"); return m_point[0];}
         DPlane3d   GetPlane() const                 { return m_plane; }
         DRange3d   GetDRange3d() const              { return m_range; }
     private:
