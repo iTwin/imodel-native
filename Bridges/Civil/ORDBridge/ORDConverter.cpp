@@ -588,7 +588,8 @@ private:
 
     BentleyStatus Marshal(PolyfaceHeaderPtr& bimMesh, Bentley::PolyfaceHeaderCR v8Mesh);
     BentleyStatus CreateNewRoadway(CorridorCR cifCorridor,
-        iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ROWID fileScopeId, iModelBridgeSyncInfoFile::ChangeDetector::Results const& change);
+        iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ROWID fileScopeId, iModelBridgeSyncInfoFile::ChangeDetector::Results const& change,
+        RoadRailBim::RoadwayCPtr& bimRoadwayCPtr);
     BentleyStatus UpdateRoadway(CorridorCR cifCorridor,
         iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ChangeDetector::Results const& change);
     BentleyStatus AssignRoadwayGeomStream(CorridorCR cifCorridor, RoadRailBim::RoadwayR roadway);
@@ -677,7 +678,7 @@ BentleyStatus ORDCorridorsConverter::CreateNewRoadway(
     CorridorCR cifCorridor, 
     iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, 
     iModelBridgeSyncInfoFile::ROWID fileScopeId,
-    iModelBridgeSyncInfoFile::ChangeDetector::Results const& change)
+    iModelBridgeSyncInfoFile::ChangeDetector::Results const& change, RoadRailBim::RoadwayCPtr& bimRoadwayCPtr)
     {
     auto roadwayPtr = RoadRailBim::Roadway::Create(*m_bimPhysicalModelPtr);
 
@@ -721,6 +722,8 @@ BentleyStatus ORDCorridorsConverter::CreateNewRoadway(
         bimMainAlignmentPtr->Update();
         }
 
+    bimRoadwayCPtr = RoadRailBim::Roadway::Get(roadwayPtr->GetDgnDb(), roadwayPtr->GetElementId());
+
     return BentleyStatus::SUCCESS;
     }
 
@@ -750,6 +753,8 @@ DgnElementId ORDCorridorsConverter::ConvertCorridor(CorridorCR cifCorridor, ORDC
     {
     CifCorridorSourceItem sourceItem(cifCorridor);
 
+    RoadRailBim::RoadwayCPtr bimRoadwayCPtr;
+
     // only convert a Corridor if it is new or has changed in the source
     auto change = params.changeDetectorP->_DetectChange(params.fileScopeId, sourceItem.Kind(), sourceItem, nullptr, params.spatialDataTransformHasChanged);
     if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Unchanged == change.GetChangeType())
@@ -758,7 +763,7 @@ DgnElementId ORDCorridorsConverter::ConvertCorridor(CorridorCR cifCorridor, ORDC
         }
     else if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::New == change.GetChangeType())
         {
-        if (BentleyStatus::SUCCESS != CreateNewRoadway(cifCorridor, *params.changeDetectorP, params.fileScopeId, change))
+        if (BentleyStatus::SUCCESS != CreateNewRoadway(cifCorridor, *params.changeDetectorP, params.fileScopeId, change, bimRoadwayCPtr))
             return DgnElementId();
         }
     else if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Changed == change.GetChangeType())
@@ -767,7 +772,10 @@ DgnElementId ORDCorridorsConverter::ConvertCorridor(CorridorCR cifCorridor, ORDC
             return DgnElementId();
         }
 
-    return change.GetSyncInfoRecord().GetDgnElementId();
+    if (bimRoadwayCPtr.IsNull())
+        bimRoadwayCPtr = RoadRailBim::Roadway::Get(params.changeDetectorP->GetDgnDb(), change.GetSyncInfoRecord().GetDgnElementId());
+
+    return bimRoadwayCPtr->GetElementId();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -973,14 +981,6 @@ bool ORDV8Converter::_ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8Model
         return false;
 
     return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      01/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelId ORDV8Converter::_MapModelIntoProject(DgnV8ModelR v8Model, Utf8CP newName, DgnV8Api::DgnAttachment const* attachment)
-    {
-    return RootModelConverter::_MapModelIntoProject(v8Model, newName, attachment);
     }
 
 /*---------------------------------------------------------------------------------**//**

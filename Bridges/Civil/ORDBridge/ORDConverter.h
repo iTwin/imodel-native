@@ -42,7 +42,6 @@ struct ORDV8Converter : Dgn::DgnDbSync::DgnV8::RootModelConverter
 {
 protected:
     virtual bool _ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model) override;
-    virtual Dgn::DgnModelId _MapModelIntoProject(DgnV8ModelR v8Model, Utf8CP, DgnV8Api::DgnAttachment const* attachment) override;
 
 public:
     ORDV8Converter(Dgn::DgnDbSync::DgnV8::RootModelConverter::RootModelSpatialParams& params) : 
