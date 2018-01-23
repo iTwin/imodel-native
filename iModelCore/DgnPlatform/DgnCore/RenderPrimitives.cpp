@@ -1159,6 +1159,9 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
     bool const*     visitorVisibility = visitor.GetVisibleCP();
     size_t          nTriangles = points.size() - 2;
     
+    if (requireNormals && visitor.Normal().size() < points.size())
+        return; // TFS#790263: Degenerate triangle - no normals.
+
     // The face represented by this visitor should be convex (we request that in facet options) - so we do a simple fan triangulation.
     for (size_t iTriangle =0; iTriangle < nTriangles; iTriangle++)
         {
@@ -1190,9 +1193,6 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
             if (SUCCESS == textureMapParams.ComputeUVParams (computedParams, visitor))
                 params = computedParams;
             }
-
-        if (requireNormals && visitor.Normal().size() < points.size())
-            continue; // TFS#790263: Degenerate triangle - no normals.
 
         for (size_t i = 0; i < 3; i++)
             {

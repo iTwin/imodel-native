@@ -723,11 +723,14 @@ bool TileMeshBuilder::GetMaterial(RenderMaterialId materialId, DgnDbR dgnDb)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, RenderMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool doVertexCluster, bool includeParams, uint32_t fillColor)
+void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, RenderMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool doVertexCluster, bool includeParams, uint32_t fillColor, bool requireNormals)
     {
     auto const&         points = visitor.Point();
     bool const*         visitorVisibility = visitor.GetVisibleCP();
     size_t              nTriangles = points.size() - 2;
+
+    if (requireNormals && visitor.Normal().size() < points.size())
+        return; // TFS#790263: Degenerate triangle - ignore
 
     doVertexCluster=false;
     for (size_t iTriangle =0; iTriangle< nTriangles; iTriangle++)
@@ -763,11 +766,10 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, RenderMaterialId mat
                 }
             }
                 
-        bool haveNormals = !visitor.Normal().empty();
         for (size_t i = 0; i < 3; i++)
             {
             size_t index = (0 == i) ? 0 : iTriangle + i; 
-            VertexKey vertex(points.at(index), haveNormals ? &visitor.Normal().at(index) : nullptr, !includeParams || params.empty() ? nullptr : &params.at(index), attributes, fillColor);
+            VertexKey vertex(points.at(index), requireNormals ? &visitor.Normal().at(index) : nullptr, !includeParams || params.empty() ? nullptr : &params.at(index), attributes, fillColor);
             newTriangle.m_indices[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
             }
 
@@ -801,7 +803,7 @@ void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureAttrib
 void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, RenderMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool includeParams, uint32_t fillColor)
     {
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); )
-        AddTriangle(*visitor, materialId, dgnDb, attributes, false, includeParams, fillColor);
+        AddTriangle(*visitor, materialId, dgnDb, attributes, false, includeParams, fillColor, nullptr != polyface.GetNormalCP());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1753,7 +1755,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
         }
     else if (nullptr != generateMeshTiles)
         {
-        return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]()
+        return folly::via(&BeFolly::ThreadPool::GetCpuPool(), [=]()
             {
             auto status = pCollector->_BeginProcessModel(*modelPtr);
             TileNodePtr root;
@@ -1773,7 +1775,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
         {
         BeFileName          dataDirectory;
 
-        return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]()
+        return folly::via(&BeFolly::ThreadPool::GetCpuPool(), [=]()
             {
             return pCollector->_BeginProcessModel(*modelPtr);
             })
@@ -1822,7 +1824,7 @@ TileGenerator::FutureGenerateTileResult TileGenerator::GenerateElementTiles(ITil
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::FutureStatus TileGenerator::PopulateCache(ElementTileContext context)
     {
-    return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]                                                         
+    return folly::via(&BeFolly::ThreadPool::GetCpuPool(), [=]                                                         
         {
         return context.m_cache->Populate(GetDgnDb(), *context.m_model);
         });
@@ -1864,7 +1866,7 @@ TileGenerator::FutureGenerateTileResult TileGenerator::GenerateTileset(TileGener
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::FutureGenerateTileResult TileGenerator::ProcessParentTile (ElementTileNodePtr parent, ElementTileContext context)
     {
-    return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]()
+    return folly::via(&BeFolly::ThreadPool::GetCpuPool(), [=]()
         {
     #if defined (BENTLEYCONFIG_PARASOLID) 
         PSolidThreadUtil::WorkerThreadOuterMark     psolidWorkerThreadOuterMark;
@@ -3081,7 +3083,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
 
                 for (auto& outputPolyface : clipOutput.m_output)
                     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*outputPolyface); visitor->AdvanceToNextFace(); /**/)
-                        meshBuilder->AddTriangle (*visitor, displayParams->GetRenderMaterialId(), db, attributes, doVertexCluster, hasTexture, hasTexture ? 0 : displayParams->GetColor());
+                        meshBuilder->AddTriangle (*visitor, displayParams->GetRenderMaterialId(), db, attributes, doVertexCluster, hasTexture, hasTexture ? 0 : displayParams->GetColor(), nullptr != outputPolyface->GetNormalCP());
                 }
             }
 

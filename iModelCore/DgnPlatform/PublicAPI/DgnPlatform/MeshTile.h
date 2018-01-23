@@ -567,7 +567,7 @@ private:
 public:
     static TileMeshBuilderPtr Create(TileDisplayParamsCR params, TransformCR transformFromDgn, double tolerance, double areaTolerance, FeatureAttributesMapR attr) { return new TileMeshBuilder(params, transformFromDgn, tolerance, areaTolerance, attr); }
 
-    DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, RenderMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attr, bool doVertexClustering, bool includeParams, uint32_t color);
+    DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, RenderMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attr, bool doVertexClustering, bool includeParams, uint32_t color, bool requireNormals);
     DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureAttributesCR attr, bool doVertexClustering, uint32_t color);
     DGNPLATFORM_EXPORT void AddPolyface(PolyfaceQueryCR polyface, RenderMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attr, bool includeParams, uint32_t color);
 
@@ -777,7 +777,7 @@ struct TileElementEntry
     bool operator<(TileElementEntry const& rhs) const
         {
         if (m_sizeSq != rhs.m_sizeSq)
-            return m_sizeSq < rhs.m_sizeSq;
+            return m_sizeSq > rhs.m_sizeSq;
         else
             return m_id < rhs.m_id;
         }
