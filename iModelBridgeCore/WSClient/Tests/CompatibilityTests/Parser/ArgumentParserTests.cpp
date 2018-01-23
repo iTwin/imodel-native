@@ -2,11 +2,11 @@
 |
 |     $Source: Tests/CompatibilityTests/Parser/ArgumentParserTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
-//#define COMPILE_TESTS
+#define COMPILE_TESTS
 #ifdef DEBUG
 #define COMPILE_TESTS
 #endif
