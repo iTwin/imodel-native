@@ -3228,7 +3228,11 @@ DisplayParamsCPtr DisplayParams::Create(Type type, DgnCategoryId catId, DgnSubCa
             return new DisplayParams(lineColor, width, linePixels, catId, subCatId, geomClass);
             }
         case Type::Text:
-            return new DisplayParams(lineColor, catId, subCatId, geomClass);
+            {
+            auto params = new DisplayParams(lineColor, catId, subCatId, geomClass);
+            params->m_textureMapping = texMap;
+            return params;
+            }
         default:
             BeAssert(false);
             return nullptr;
