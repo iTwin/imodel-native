@@ -119,6 +119,7 @@
     <ClInclude Include="..\PublicApi\ECObjects\StandardCustomAttributeHelper.h" />
     <ClInclude Include="..\PublicApi\ECObjects\SupplementalSchema.h" />
     <ClInclude Include="..\PublicApi\ECObjects\SystemSymbolProvider.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\VirtualCollectionIterator.h" />
     <ClInclude Include="..\PublicApi\ECUnits\ECUnitsClassLocater.h" />
     <ClInclude Include="..\PublicApi\ECUnits\Units.h" />
     <ClInclude Include="DateTimeInfoAccessor.h" />
