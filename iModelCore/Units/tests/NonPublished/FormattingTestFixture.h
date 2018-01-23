@@ -10,7 +10,7 @@
 #include <windows.h>
 #include <iostream>
 #endif
-#include "UnitsTests.h"
+#include "../UnitsTestsPch.h"
 #include <Formatting/FormattingApi.h>
 #include <BeSQLite/L10N.h>
 using namespace BentleyApi::Formatting;

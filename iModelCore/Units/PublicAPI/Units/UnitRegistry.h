@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Units/UnitRegistry.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -30,7 +30,7 @@ private:
     bmap<Utf8String, Utf8String> m_oldNameNewNameMapping;
     bmap<Utf8String, Utf8String> m_newNameOldNameMapping;
 
-    UnitRegistry();
+    UnitRegistry() {}
     UnitRegistry(const UnitRegistry& rhs) = delete;
     UnitRegistry & operator= (const UnitRegistry& rhs) = delete;
 

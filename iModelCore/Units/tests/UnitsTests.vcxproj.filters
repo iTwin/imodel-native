@@ -8,6 +8,15 @@
     <Filter Include="NonPublished">
       <UniqueIdentifier>{a4f1ee3f-cfa3-4e60-bdfb-e6226f8781a4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Performance">
+      <UniqueIdentifier>{47b049d3-ec94-4a7c-87d8-3b064bd7a292}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Published">
+      <UniqueIdentifier>{51eb4f6a-0622-45a5-9c01-ad0c33c5dff1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="TestFixture">
+      <UniqueIdentifier>{27a0fec8-23b9-4007-adaa-e636913c9b6e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="ConversionData\complex.csv">
@@ -27,37 +36,42 @@
     <Text Include="ignore_list.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="NonPublished\QuantityTestFixture.cpp">
-      <Filter>NonPublished</Filter>
-    </ClCompile>
-    <ClCompile Include="NonPublished\QuantityTests.cpp">
-      <Filter>NonPublished</Filter>
-    </ClCompile>
-    <ClCompile Include="NonPublished\UnitsTestFixture.cpp">
-      <Filter>NonPublished</Filter>
-    </ClCompile>
-    <ClCompile Include="NonPublished\UnitsTests.cpp">
-      <Filter>NonPublished</Filter>
-    </ClCompile>
     <ClCompile Include="NonPublished\formatting_test.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
     <ClCompile Include="NonPublished\FormattingTestFixture.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
+    <ClCompile Include="Performance\UnitsPerformanceTests.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="TestFixture\UnitsTestFixture.cpp">
+      <Filter>TestFixture</Filter>
+    </ClCompile>
+    <ClCompile Include="TestFixture\QuantityTestFixture.cpp">
+      <Filter>TestFixture</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\QuantityTests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\UnitsTests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="TestFixture\UnitsTestFixture.cpp">
+      <Filter>TestFixture</Filter>
+    </ClCompile>
+    <ClCompile Include="TestFixture\UnitsTestFixture.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="NonPublished\QuantityTestFixture.h">
-      <Filter>NonPublished</Filter>
-    </ClInclude>
-    <ClInclude Include="NonPublished\UnitsTestFixture.h">
-      <Filter>NonPublished</Filter>
-    </ClInclude>
-    <ClInclude Include="NonPublished\UnitsTests.h">
-      <Filter>NonPublished</Filter>
-    </ClInclude>
     <ClInclude Include="NonPublished\FormattingTestFixture.h">
       <Filter>NonPublished</Filter>
     </ClInclude>
+    <ClInclude Include="TestFixture\UnitsTestFixture.h">
+      <Filter>TestFixture</Filter>
+    </ClInclude>
+    <ClInclude Include="TestFixture\QuantityTestFixture.h">
+      <Filter>TestFixture</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\UnitsTests.h" />
   </ItemGroup>
 </Project>

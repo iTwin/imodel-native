@@ -25,7 +25,7 @@ void AddLengths(UnitRegistry& reg)
     reg.AddUnit(LENGTH, USCUSTOM, "MICROINCH", "[MICRO]*IN");
     reg.AddUnit(LENGTH, USCUSTOM, "MILLIFOOT", "[MILLI]*FT");
 
-    un = reg.AddUnit(LENGTH, USCUSTOM, "IN", "MM", 25.4); // Exact, http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
+    un = reg.AddUnit(LENGTH, USCUSTOM, "IN", "MM", 25.4); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix B. Section 3.1, Page B-10
     un->AddSynonym("\"");
     un->AddSynonym("INCH");
     un->AddSynonym("\xD0\xB4\xD1\x8E\xD0\xB9\xD0\xBC");  // дюйм

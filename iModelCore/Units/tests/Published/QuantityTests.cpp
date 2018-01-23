@@ -1,11 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: tests/NonPublished/QuantityTests.cpp $
+|  $Source: tests/Published/QuantityTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "QuantityTestFixture.h"
+#include "../UnitsTestsPch.h"
+#include "../TestFixture/QuantityTestFixture.h"
 
 BEGIN_UNITS_UNITTESTS_NAMESPACE
 
