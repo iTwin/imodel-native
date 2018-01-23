@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 #include <folly/BeFolly.h>
-#include <DgnPlatform/RangeIndex.h>
 #if defined (BENTLEYCONFIG_PARASOLID) 
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #endif
@@ -116,47 +115,86 @@ TileGenerationCache::~TileGenerationCache()
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   11/16
 //=======================================================================================
-struct RangeAccumulator : RangeIndex::Traverser
+struct RangeAccumulator
 {
+private:
+    void AddElement(DRange3dCR range, DgnElementId elemId, bool is2d)
+        {
+        TileElementEntry entry(range, elemId, is2d);
+        if (entry.m_sizeSq > 0.0)
+            {
+            m_range.Extend(range);
+            m_elements.insert(entry);
+            }
+        }
+
+    void Accumulate3d()
+        {
+        auto stmt = m_model.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId,Origin,Yaw,Pitch,Roll,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " WHERE Model.Id=?");
+        stmt->BindId(1, m_model.GetModelId());
+        while (BE_SQLITE_ROW == stmt->Step())
+            {
+            if (stmt->IsValueNull(1)) // has no placement
+                continue;
+
+            double yaw   = stmt->GetValueDouble(2);
+            double pitch = stmt->GetValueDouble(3);
+            double roll  = stmt->GetValueDouble(4);
+
+            DPoint3d low = stmt->GetValuePoint3d(5);
+            DPoint3d high = stmt->GetValuePoint3d(6);
+
+            Placement3d placement(stmt->GetValuePoint3d(1),
+                                  YawPitchRollAngles(Angle::FromDegrees(yaw), Angle::FromDegrees(pitch), Angle::FromDegrees(roll)),
+                                  ElementAlignedBox3d(low.x, low.y, low.z, high.x, high.y, high.z));
+
+            AddElement(placement.CalculateRange(), stmt->GetValueId<DgnElementId>(0), false);
+            }
+        }
+
+    void Accumulate2d()
+        {
+        auto stmt = m_model.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId,Origin,Rotation,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement2d) " WHERE Model.Id=?");
+        stmt->BindId(1, m_model.GetModelId());
+        while (BE_SQLITE_ROW == stmt->Step())
+            {
+            if (stmt->IsValueNull(1)) // has no placement
+                continue;
+
+            DPoint2d low  = stmt->GetValuePoint2d(3);
+            DPoint2d high = stmt->GetValuePoint2d(4);
+
+            Placement2d placement(stmt->GetValuePoint2d(1),
+                                  AngleInDegrees::FromDegrees(stmt->GetValueDouble(2)),
+                                  ElementAlignedBox2d(low.x, low.y, high.x, high.y));
+
+            AddElement(placement.CalculateRange(), stmt->GetValueId<DgnElementId>(0), true);
+            }
+
+        if (!m_range.IsNull())
+            {
+            m_range.low.z = -s_half2dDepthRange*2;  // times 2 so we don't stick geometry right on the boundary...
+            m_range.high.z = s_half2dDepthRange*2;
+            }
+        }
+public:
     TileElementSet& m_elements;
     DRange3dR       m_range;
-    bool            m_is2d;
+    GeometricModel& m_model;
 
-    RangeAccumulator(DRange3dR range, bool is2d, TileElementSet& elements) : m_elements(elements), m_range(range), m_is2d(is2d)
+    RangeAccumulator(DRange3dR range, GeometricModel& model, TileElementSet& elements) : m_elements(elements), m_range(range), m_model(model)
         {
         m_range = DRange3d::NullRange();
         }
 
-    bool _AbortOnWriteRequest() const override { return true; }
-    RangeIndex::Traverser::Accept _CheckRangeTreeNode(RangeIndex::FBoxCR, bool) const override { return RangeIndex::Traverser::Accept::Yes; }
-    Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override
+    TileGeneratorStatus Accumulate()
         {
-        auto range = entry.m_range.ToRange3d();
-        TileElementEntry elemEntry(range, entry.m_id, m_is2d);
-        if (elemEntry.m_sizeSq > 0.0)
-            {
-            m_range.Extend(range);
-            m_elements.insert(elemEntry);
-            }
+        if (m_model.Is2dModel())
+            Accumulate2d();
+        else
+            Accumulate3d();
 
-        return Stop::No;
-        }
-
-    TileGeneratorStatus Accumulate(RangeIndex::Tree& tree)
-        {
-        if (Stop::Yes == tree.Traverse(*this))
-            return TileGeneratorStatus::Aborted;
-        else if (m_range.IsNull())
-            return TileGeneratorStatus::NoGeometry;
-
-        if (m_is2d)
-            {
-            BeAssert(m_range.low.z == m_range.high.z == 0.0);
-            m_range.low.z = -s_half2dDepthRange*2;  // times 2 so we don't stick geometry right on the boundary...
-            m_range.high.z = s_half2dDepthRange*2;
-            }
-
-        return TileGeneratorStatus::Success;
+        return m_elements.empty() ? TileGeneratorStatus::NoGeometry : TileGeneratorStatus::Success;
         }
 };
 
@@ -167,11 +205,11 @@ TileGeneratorStatus TileGenerationCache::Populate(DgnDbR db, DgnModelR model)
     {
     m_model = &model;
     auto geomModel = model.ToGeometricModelP();
-    if (nullptr == geomModel || DgnDbStatus::Success != geomModel->FillRangeIndex())
+    if (nullptr == geomModel)
         return TileGeneratorStatus::NoGeometry;
 
-    RangeAccumulator accum(m_range, model.Is2dModel(), m_elements);
-    return accum.Accumulate(*geomModel->GetRangeIndex());
+    RangeAccumulator accum(m_range, *geomModel, m_elements);
+    return accum.Accumulate();
     }
 
 /*---------------------------------------------------------------------------------**//**

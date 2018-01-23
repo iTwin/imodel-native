@@ -15,6 +15,7 @@
 #include "DgnTexture.h"
 #include "DgnMaterial.h"
 #include "SolidKernel.h"
+#include "RangeIndex.h"
 #include <map> // NB: Because bmap doesn't support move semantics...
 #include <folly/futures/Future.h>
 
