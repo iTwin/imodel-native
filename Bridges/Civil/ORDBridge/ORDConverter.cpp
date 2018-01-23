@@ -10,6 +10,8 @@
 
 BEGIN_ORDBRIDGE_NAMESPACE
 
+//#define TARGET_2DMODEL
+
 struct ConsensusSourceItem : iModelBridgeSyncInfoFile::ISourceItem
 {
 protected:
@@ -101,7 +103,7 @@ struct ORDAlignmentsConverter: RefCountedBase
 
     protected:
         Utf8String _GetHash() override
-            {          
+            {
             auto alignmentCP = dynamic_cast<AlignmentCP>(m_entity);
             auto horizCurveVectorPtr = alignmentCP->GetGeometry();
 
@@ -159,9 +161,9 @@ private:
         AlignmentBim::VerticalAlignmentCPtr& verticalAlignment);
     BentleyStatus CreateNewBimAlignment(AlignmentCR cifAlignment, 
         iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ChangeDetector::Results const& change, 
-        AlignmentBim::AlignmentCPtr& bimAlignment);
+        AlignmentBim::AlignmentCPtr& bimAlignment, DgnCategoryId targetCategoryId);
     BentleyStatus UpdateBimAlignment(AlignmentCR cifAlignment,
-        iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ChangeDetector::Results const& change);
+        iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ChangeDetector::Results const& change, DgnCategoryId targetCategoryId);
     BentleyStatus UpdateBimVerticalAlignment(ProfileCR,
         iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ChangeDetector::Results const& change);
     BentleyStatus ConvertProfiles(AlignmentCR cifAlignment, AlignmentBim::AlignmentCR alignment, ORDConverter::Params& params);
@@ -173,7 +175,7 @@ public:
         }
 
     AlignmentBim::AlignmentModelR GetAlignmentModel() const { return *m_bimAlignmentModelPtr; }
-    DgnElementId ConvertAlignment(AlignmentCR cifAlignment, ORDConverter::Params& params);
+    DgnElementId ConvertAlignment(AlignmentCR cifAlignment, ORDConverter::Params& params, DgnCategoryId targetCategory = DgnCategoryId());
 }; // ORDAlignmentsConverter
 
 /*---------------------------------------------------------------------------------**//**
@@ -214,7 +216,7 @@ BentleyStatus ORDAlignmentsConverter::MarshalVertical(CurveVectorPtr& bimCurveVe
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlignment, 
     iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ChangeDetector::Results const& change,
-    AlignmentBim::AlignmentCPtr& bimAlignment)
+    AlignmentBim::AlignmentCPtr& bimAlignment, DgnCategoryId targetCategoryId)
     {
     auto linearGeomPtr = cifAlignment.GetLinearGeometry();
     if (linearGeomPtr.IsNull())
@@ -275,6 +277,8 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
 
     // Create Alignment
     auto bimAlignmentPtr = AlignmentBim::Alignment::Create(*m_bimAlignmentModelPtr);
+    if (targetCategoryId.IsValid())
+        bimAlignmentPtr->SetCategoryId(targetCategoryId);
     
     if (bimCode.IsValid())
         bimAlignmentPtr->SetCode(bimCode);
@@ -322,6 +326,9 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
 
     // Create Horizontal Alignment
     auto bimHorizAlignmPtr = AlignmentBim::HorizontalAlignment::Create(*bimAlignmentPtr, *bimHorizGeometryPtr);
+    if (targetCategoryId.IsValid())
+        bimHorizAlignmPtr->SetCategoryId(targetCategoryId);
+
     if (bimCode.IsValid())
         bimHorizAlignmPtr->SetCode(AlignmentBim::RoadRailAlignmentDomain::CreateCode(*bimHorizAlignmPtr->GetModel(), bimCode.GetValueUtf8()));
 
@@ -416,13 +423,16 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimVerticalAlignment(ProfileCR ci
 * @bsimethod                                    Diego.Diaz                      06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ORDAlignmentsConverter::UpdateBimAlignment(AlignmentCR cifAlignment,
-    iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ChangeDetector::Results const& change)
+    iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ChangeDetector::Results const& change, DgnCategoryId targetCategoryId)
     {
     auto horizGeometryPtr = cifAlignment.GetGeometry();
 
     auto alignmentCPtr = AlignmentBim::Alignment::Get(changeDetector.GetDgnDb(), change.GetSyncInfoRecord().GetDgnElementId());
     AlignmentBim::HorizontalAlignmentPtr horizAlignmentPtr = 
         dynamic_cast<AlignmentBim::HorizontalAlignmentP>(alignmentCPtr->QueryHorizontal()->CopyForEdit().get());
+
+    if (targetCategoryId.IsValid())
+        horizAlignmentPtr->SetCategoryId(targetCategoryId);
 
     CurveVectorPtr bimHorizGeometryPtr;
     if (BentleyStatus::SUCCESS != Marshal(bimHorizGeometryPtr, *horizGeometryPtr))
@@ -511,7 +521,7 @@ BentleyStatus ORDAlignmentsConverter::ConvertProfiles(AlignmentCR cifAlignment, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId ORDAlignmentsConverter::ConvertAlignment(AlignmentCR cifAlignment, ORDConverter::Params& params)
+DgnElementId ORDAlignmentsConverter::ConvertAlignment(AlignmentCR cifAlignment, ORDConverter::Params& params, DgnCategoryId targetCategoryId)
     {
     CifAlignmentSourceItem sourceItem(cifAlignment);
 
@@ -521,7 +531,7 @@ DgnElementId ORDAlignmentsConverter::ConvertAlignment(AlignmentCR cifAlignment, 
     AlignmentBim::AlignmentCPtr alignmentCPtr;
     if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::New == change.GetChangeType())
         {
-        if (BentleyStatus::SUCCESS != CreateNewBimAlignment(cifAlignment, *params.changeDetectorP, change, alignmentCPtr))
+        if (BentleyStatus::SUCCESS != CreateNewBimAlignment(cifAlignment, *params.changeDetectorP, change, alignmentCPtr, targetCategoryId))
             return DgnElementId();
         }
     else if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Unchanged == change.GetChangeType())
@@ -530,7 +540,7 @@ DgnElementId ORDAlignmentsConverter::ConvertAlignment(AlignmentCR cifAlignment, 
         }
     else if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Changed == change.GetChangeType())
         {
-        if (BentleyStatus::SUCCESS != UpdateBimAlignment(cifAlignment, *params.changeDetectorP, change))
+        if (BentleyStatus::SUCCESS != UpdateBimAlignment(cifAlignment, *params.changeDetectorP, change, targetCategoryId))
             return DgnElementId();
         }
 
@@ -978,6 +988,49 @@ DgnModelId ORDV8Converter::_MapModelIntoProject(DgnV8ModelR v8Model, Utf8CP newN
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConvertORDElementXDomain::ConvertORDElementXDomain(ORDV8Converter& converter, ORDConverter::Params& params): m_params(params), m_converter(converter)
     {
+    m_spatialLocationClassId = converter.GetDgnDb().Schemas().GetClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_SpatialLocation);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ConvertORDElementXDomain::Result ConvertORDElementXDomain::_PreConvertElement(DgnV8EhCR v8el, Dgn::DgnDbSync::DgnV8::Converter&, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const& v8mm)
+    {
+#ifndef TARGET_2DMODEL
+    if (m_elementsSeen.end() != m_elementsSeen.find(v8el.GetElementId()))
+        return Result::SkipElement;
+
+    m_elementsSeen.insert(v8el.GetElementId());
+#endif
+
+    auto cifAlignmentPtr = Alignment::CreateFromElementHandle(v8el);
+    if (!cifAlignmentPtr.IsValid())
+        {
+        auto cifCorridorPtr = Corridor::CreateFromElementHandle(v8el);
+        if (cifCorridorPtr.IsValid())
+            m_corridorsMap.insert({ v8el.GetElementId(),{ cifCorridorPtr, DgnElementPtr() } });
+
+        return Result::Proceed;
+        }
+
+    if (!cifAlignmentPtr->IsFinalElement())
+        return Result::SkipElement;
+
+    m_alignmentsMap.insert({ v8el.GetElementId(),{ cifAlignmentPtr, DgnElementPtr() } });
+    return Result::Proceed;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConvertORDElementXDomain::_DetermineElementParams(DgnClassId& classId, DgnCode& code, DgnCategoryId& categoryId, DgnV8EhCR v8el, DgnDbSync::DgnV8::Converter& converter, ECObjectsV8::IECInstance const* primaryV8Instance, DgnDbSync::DgnV8::ResolvedModelMapping const& v8mm)
+    {
+    if (!m_spatialLocationClassId.IsValid())
+        return;
+
+    auto alignmentIter = m_alignmentsMap.find(v8el.GetElementId());
+    if (alignmentIter != m_alignmentsMap.end())
+        classId = m_spatialLocationClassId;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -985,17 +1038,33 @@ ConvertORDElementXDomain::ConvertORDElementXDomain(ORDV8Converter& converter, OR
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConvertORDElementXDomain::_ProcessResults(DgnDbSync::DgnV8::ElementConversionResults& elRes, DgnV8EhCR v8el, DgnDbSync::DgnV8::ResolvedModelMapping const&, DgnDbSync::DgnV8::Converter&)
     {
-    auto cifAlignmentPtr = Alignment::CreateFromElementHandle(v8el);
-    if (cifAlignmentPtr.IsValid())
+    auto alignmentIter = m_alignmentsMap.find(v8el.GetElementId());
+    if (alignmentIter != m_alignmentsMap.end())
         {
-        m_alignments.push_back({ cifAlignmentPtr, elRes.m_element });
+        alignmentIter->second.second = DgnElementPtr(elRes.m_element.get());
         }
     else
         {
-        auto cifCorridorPtr = Corridor::CreateFromElementHandle(v8el);
-        if (cifCorridorPtr.IsValid())
-            m_corridors.push_back({ cifCorridorPtr, elRes.m_element });
+        auto corridorIter = m_corridorsMap.find(v8el.GetElementId());
+        if (corridorIter != m_corridorsMap.end())
+            {
+            corridorIter->second.second = DgnElementPtr(elRes.m_element.get());
+            }
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCategoryId convertToSpatialCategory(DrawingCategoryCR drawingCategory, DgnDbR dgnDb)
+    {
+    auto domainCategoryModelPtr = RoadRailAlignment::AlignmentCategoryModel::GetDomainModel(dgnDb);
+    SpatialCategory spatialCategory(*domainCategoryModelPtr, drawingCategory.GetCategoryName());
+
+    auto drawingSubCategoryCPtr = DgnSubCategory::Get(dgnDb, drawingCategory.GetDefaultSubCategoryId());
+
+    spatialCategory.Insert(drawingSubCategoryCPtr->GetAppearance());
+    return spatialCategory.GetCategoryId();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1003,31 +1072,70 @@ void ConvertORDElementXDomain::_ProcessResults(DgnDbSync::DgnV8::ElementConversi
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConvertORDElementXDomain::CreateRoadRailElements()
     {
-    if (!m_alignments.empty())
+#ifdef TARGET_2DMODEL
+    bmap<DgnCategoryId, DgnCategoryId> drawingToSpatialCategoryMap;
+#endif
+
+    bset<DgnCategoryId> categoryIdMap;
+    if (!m_alignmentsMap.empty())
         {
         auto alignmentsConverterPtr = ORDAlignmentsConverter::Create(*m_params.subjectCPtr);
-        for (auto& alignmentEntry : m_alignments)
+        for (auto& alignmentEntry : m_alignmentsMap)
             {
-            alignmentsConverterPtr->ConvertAlignment(*alignmentEntry.first, m_params);
+            DgnCategoryId categoryId;
+            if (alignmentEntry.second.second->ToGeometrySource3d())
+                categoryId = alignmentEntry.second.second->ToGeometrySource3d()->GetCategoryId();
+            else
+                {
+#ifdef TARGET_2DMODEL
+                categoryId = alignmentEntry.second.second->ToGeometrySource2d()->GetCategoryId();
+                auto categoryMapIter = drawingToSpatialCategoryMap.find(categoryId);
+                if (drawingToSpatialCategoryMap.end() == categoryMapIter)
+                    {
+                    DgnCategoryId drawingCategoryId = categoryId;
+                    categoryId = convertToSpatialCategory(*DrawingCategory::Get(m_params.subjectCPtr->GetDgnDb(), drawingCategoryId), m_params.subjectCPtr->GetDgnDb());
+                    drawingToSpatialCategoryMap.insert({ drawingCategoryId, categoryId });
+                    }
+                else
+                    categoryId = categoryMapIter->second;
+#else
+                BeAssert(false);
+#endif
+                }
+
+            if (categoryIdMap.end() == categoryIdMap.find(categoryId))
+                categoryIdMap.insert(categoryId);
+
+            auto bimAlignmentId = alignmentsConverterPtr->ConvertAlignment(*alignmentEntry.second.first, m_params, categoryId);
+            auto bimAlignmentCPtr = RoadRailAlignment::Alignment::Get(m_params.subjectCPtr->GetDgnDb(), bimAlignmentId);
+            if (bimAlignmentCPtr.IsValid())
+                RoadRailAlignment::Alignment::AddRepresentedBy(*bimAlignmentCPtr, *alignmentEntry.second.second);
             }
         }
 
-    if (!m_corridors.empty())
+    m_alignmentsMap.clear();
+
+    if (!m_corridorsMap.empty())
         {
         Bentley::DgnPlatform::ModelId modelIdForConverter = 0;
         ORDCorridorsConverterPtr corridorsConverterPtr;
 
-        for (auto& corridorEntry : m_corridors)
+        for (auto& corridorEntry : m_corridorsMap)
             {
-            if (corridorsConverterPtr.IsNull() || modelIdForConverter != corridorEntry.first->GetDgnModelP()->GetModelId())
+            if (corridorsConverterPtr.IsNull() || modelIdForConverter != corridorEntry.second.first->GetDgnModelP()->GetModelId())
                 {
-                corridorsConverterPtr = ORDCorridorsConverter::Create(m_converter, m_converter.ComputeUnitsScaleTransform(*corridorEntry.first->GetDgnModelP()));
-                modelIdForConverter = corridorEntry.first->GetDgnModelP()->GetModelId();
+                corridorsConverterPtr = ORDCorridorsConverter::Create(m_converter, m_converter.ComputeUnitsScaleTransform(*corridorEntry.second.first->GetDgnModelP()));
+                modelIdForConverter = corridorEntry.second.first->GetDgnModelP()->GetModelId();
                 }
 
-            corridorsConverterPtr->ConvertCorridor(*corridorEntry.first, m_params);
+            auto bimRoadwayId = corridorsConverterPtr->ConvertCorridor(*corridorEntry.second.first, m_params);
+            auto pathwayElmCPtr = RoadRailPhysical::PathwayElement::Get(m_params.subjectCPtr->GetDgnDb(), bimRoadwayId);
+            if (pathwayElmCPtr.IsValid())
+                RoadRailPhysical::PathwayElement::AddRepresentedBy(*pathwayElmCPtr, *corridorEntry.second.second);
             }
         }
+
+    m_corridorsMap.clear();
 
     auto alignmentModelPtr = AlignmentBim::AlignmentModel::Query(*m_params.subjectCPtr, ORDBRIDGE_AlignmentModelName);
     auto horizontalAlignmentModelId = AlignmentBim::HorizontalAlignmentModel::QueryBreakDownModelId(*alignmentModelPtr);
@@ -1038,7 +1146,13 @@ void ConvertORDElementXDomain::CreateRoadRailElements()
     updateProjectExtents(*physicalModelPtr, m_params, true);
 
     if (m_params.isCreatingNewDgnDb)
-        RoadRailBim::RoadRailPhysicalDomain::SetUpDefaultViews(*m_params.subjectCPtr, ORDBRIDGE_AlignmentModelName, ORDBRIDGE_PhysicalModelName);
+        {
+        bvector<DgnCategoryId> additionalCategories;
+        for (auto categoryId : categoryIdMap)
+            additionalCategories.push_back(categoryId);
+
+        RoadRailBim::RoadRailPhysicalDomain::SetUpDefaultViews(*m_params.subjectCPtr, ORDBRIDGE_AlignmentModelName, ORDBRIDGE_PhysicalModelName, &additionalCategories);
+        }
     }
 
 END_ORDBRIDGE_NAMESPACE

@@ -55,10 +55,14 @@ struct ConvertORDElementXDomain : Dgn::DgnDbSync::DgnV8::XDomain
 private:
     ORDConverter::Params& m_params;
     ORDV8Converter& m_converter;
-    bvector<bpair<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::Alignment>, Dgn::DgnElementPtr>> m_alignments;
-    bvector<bpair<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::Corridor>, Dgn::DgnElementPtr>> m_corridors;
+    Dgn::DgnClassId m_spatialLocationClassId;
+    bset<Bentley::DgnPlatform::ElementId> m_elementsSeen;
+    bmap<Bentley::DgnPlatform::ElementId, bpair<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::Alignment>, Dgn::DgnElementPtr>> m_alignmentsMap;
+    bmap<Bentley::DgnPlatform::ElementId, bpair<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::Corridor>, Dgn::DgnElementPtr>> m_corridorsMap;
 
 protected:
+    virtual void _DetermineElementParams(Dgn::DgnClassId&, Dgn::DgnCode&, Dgn::DgnCategoryId&, DgnV8EhCR, Dgn::DgnDbSync::DgnV8::Converter&, ECObjectsV8::IECInstance const* primaryV8Instance, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const&) override;
+    virtual Result _PreConvertElement(DgnV8EhCR, Dgn::DgnDbSync::DgnV8::Converter&, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const&) override;
     virtual void _ProcessResults(Dgn::DgnDbSync::DgnV8::ElementConversionResults&, DgnV8EhCR, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const&, Dgn::DgnDbSync::DgnV8::Converter&) override;
 
 public:

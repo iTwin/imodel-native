@@ -10,7 +10,8 @@
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 
 #define LOG (*NativeLogging::LoggingManager::GetLogger(L"ORDBridge"))
-//#define USE_ROOTMODEL 1
+#define USE_ROOTMODEL
+//#define TARGET_2DMODEL
 
 BEGIN_ORDBRIDGE_NAMESPACE
 
@@ -51,6 +52,10 @@ BentleyStatus ORDBridge::_Initialize(int argc, WCharCP argv[])
     // Initialize Cif SDK
     DgnPlatformCivilLib::InitializeWithDefaultHost();
     GeometryModelDgnECDataBinder::GetInstance().Initialize();
+
+#ifndef TARGET_2DMODEL
+    m_params.SetConsiderNormal2dModelsSpatial(true);
+#endif
 
     return BentleyStatus::SUCCESS;
     }
@@ -184,7 +189,7 @@ SubjectCPtr ORDBridge::_InitializeJob()
 
         // IMODELBRIDGE REQUIREMENT: Relate this model to the source document
         auto physicalModelPtr = RoadRailBim::RoadRailPhysicalDomain::QueryPhysicalModel(subjectCR, ORDBRIDGE_PhysicalModelName);
-        //TODO: InsertElementHasLinksRelationship(GetDgnDbR(), physicalModelPtr->GetModeledElementId(), repositoryLinkId);
+        InsertElementHasLinksRelationship(GetDgnDbR(), physicalModelPtr->GetModeledElementId(), m_converter->GetRepositoryLinkFromAppData(*m_converter->GetRootV8File()));
         return &subjectCR;
         }
     else
@@ -222,7 +227,11 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     iModelBridgeSyncInfoFile::ConversionResults docLink = RecordDocument(*changeDetectorPtr, _GetParams().GetInputFileName());
     auto fileScopeId = docLink.m_syncInfoRecord.GetROWID();
 
+    // IMODELBRIDGE REQUIREMENT: Note job transform and react when it changes
     ORDConverter::Params params(_GetParams(), jobSubject, *changeDetectorPtr, fileScopeId);
+    Transform _old, _new;
+    params.spatialDataTransformHasChanged = DetectSpatialDataTransformChange(_new, _old, *changeDetectorPtr, fileScopeId, "JobTrans", "JobTrans");
+    params.isCreatingNewDgnDb = IsCreatingNewDgnDb();
 
 #ifdef USE_ROOTMODEL
     ConvertORDElementXDomain convertORDXDomain(*m_converter, params);
@@ -235,12 +244,6 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     Dgn::DgnDbSync::DgnV8::XDomain::UnRegister(convertORDXDomain);
     return m_converter->WasAborted() ? BSIERROR : BSISUCCESS;
 #else
-    // IMODELBRIDGE REQUIREMENT: Note job transform and react when it changes
-    //Transform _old, _new;
-    //params.spatialDataTransformHasChanged = DetectSpatialDataTransformChange(_new, _old, *changeDetectorPtr, fileScopeId, "JobTrans", "JobTrans");
-    //TODO: Commented out the two lines above because iModelBridgeBase retrieves Subject via local m_params rather than using the overriden _GetParams.
-    params.isCreatingNewDgnDb = IsCreatingNewDgnDb();
-
     ORDConverter converter;
     converter.ConvertORDData(params);
 
