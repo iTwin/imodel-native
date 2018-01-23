@@ -201,7 +201,6 @@ Utf8StringCR Error::GetDefaultMessage(Error::Id id)
 
         map[Id::FileIsNotYetInitialized] = ErrorLocalizedString(MESSAGE_FileIsNotYetInitialized);
         map[Id::FileIsOutdated] = ErrorLocalizedString(MESSAGE_FileIsOutdated);
-        map[Id::FileHasDifferentId] = ErrorLocalizedString(MESSAGE_FileHasDifferentId);
         map[Id::FileCodeTooLong] = ErrorLocalizedString(MESSAGE_FileCodeTooLong);
         map[Id::FileInitializationFailed] = ErrorLocalizedString(MESSAGE_FileInitializationFailed);
 

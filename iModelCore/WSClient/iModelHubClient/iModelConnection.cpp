@@ -2276,10 +2276,6 @@ void iModelConnection::WaitForInitializedBIMFile(BeGuid fileGuid, FileResultPtr 
                 LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File is outdated");
                 finalResult->SetError({Error::Id::FileIsOutdated});
                 break;
-            case InitializationState::IncorrectFileId:
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File has different id");
-                finalResult->SetError({Error::Id::FileHasDifferentId});
-                break;
             case InitializationState::CodeTooLong:
                 LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Code too long");
                 finalResult->SetError({Error::Id::FileCodeTooLong});
