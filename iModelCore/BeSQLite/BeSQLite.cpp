@@ -1764,19 +1764,19 @@ DbResult Db::CreateNewDb(Utf8CP dbName, BeGuid dbGuid, CreateParams const& param
         rc = BeSQLiteProfileManager::AssignProfileVersion(*this);
         if (rc != BE_SQLITE_OK)
             return rc;
+       
+        //we create sqlite_stat1 so it could be tracked later on.
+        rc = ExecuteSql("analyze;");
+        if (BE_SQLITE_OK != rc)
+            return  rc;
+
+        //make sure its empty we just want sqlite to add the tables 
+        rc = ExecuteSql("delete from sqlite_stat1;");
+        if (BE_SQLITE_OK != rc)
+            return  rc;
         }
 
     rc = _OnDbCreated(params);
-    if (BE_SQLITE_OK != rc)
-        return  rc;
-
-    //we create sqlite_stat1 so it could be tracked later on.
-    rc = ExecuteSql("analyze;");
-    if (BE_SQLITE_OK != rc)
-        return  rc;
-
-    //make sure its empty we just want sqlite to add the tables 
-    rc = ExecuteSql("delete from sqlite_stat1;");
     if (BE_SQLITE_OK != rc)
         return  rc;
 
