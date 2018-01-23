@@ -269,9 +269,6 @@ DgnDbStatus RoadRailPhysicalDomain::SetUpDefaultViews(SubjectCR subject, Utf8CP 
     {
     auto& dgnDb = subject.GetDgnDb();
 
-    auto alignmentModelPtr =
-        AlignmentModel::Query(subject, (alignmentPartitionName) ? alignmentPartitionName : RoadRailAlignmentDomain::GetDefaultPartitionName());
-    auto horizAlignmentModelId = HorizontalAlignmentModel::QueryBreakDownModelId(*alignmentModelPtr);
     auto physicalModelPtr = RoadRailPhysicalDomain::QueryPhysicalModel(subject, (physicalPartitionName) ? physicalPartitionName :
         RoadRailPhysicalDomain::GetDefaultPhysicalPartitionName());
 
@@ -280,7 +277,6 @@ DgnDbStatus RoadRailPhysicalDomain::SetUpDefaultViews(SubjectCR subject, Utf8CP 
     auto displayStyle3dPtr = getDisplayStyle3d(dgnDb.GetDictionaryModel());
     auto spatialCategorySelectorPtr = getSpatialCategorySelector(dgnDb.GetDictionaryModel(), additionalCategoriesForSelector);
     auto model3dSelectorPtr = getModelSelector(dgnDb.GetDictionaryModel(), subjectName.GetUtf8());
-    model3dSelectorPtr->AddModel(horizAlignmentModelId);
     model3dSelectorPtr->AddModel(physicalModelPtr->GetModelId());
 
     auto& view3dName = subjectName;
