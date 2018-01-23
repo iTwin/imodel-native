@@ -219,6 +219,7 @@ public:
     DEFINE_T_SUPER (DWGROOT_SUPER_CONSTRUCTOR(CmColor))
     DWGROOTCLASS_ADD_CONSTRUCTORS (CmColor)
 
+    DWGDB_EXPORT DwgCmColor (DwgCmEntityColorCR entityColor);
     DWGDB_EXPORT ~DwgCmColor ();
 
     //! @return An interger with the high byte to be the color method, and the low bytes to be RGB values.

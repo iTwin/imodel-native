@@ -8,6 +8,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 #include    <DgnDbSync/Dwg/DwgDb/DwgDbCommon.h>
+#include    <DgnDbSync/Dwg/DwgDb/DwgGiObjects.h>
 
 #ifdef DWGTOOLKIT_OpenDwg
 #include    <Teigha/Drawing/Include/DbObjectId.h>
@@ -453,7 +454,16 @@ public:
 
     DWGDB_EXPORT DwgString              GetName () const;
     DWGDB_EXPORT DwgString              GetDescription () const;
-    DWGDB_EXPORT DwgDbVisualStyleType   GetType () const;
+    DWGDB_EXPORT DwgGiVisualStyle::RenderType   GetType () const;
+    //! Gets a property of the visual style.  
+    //! @param prop A DwgGiVisualStyleProperties::Property to get from the visual style.
+    //! @param op A DwgGiVisualStyleOperations::Operation to get currently in effect for this property. If nullptr, nothing is returned.
+    //! @return The DwgGiVariant value of the property if successful; otherwise, an AcGiVariant of type DwgGiVariant::Undefined.
+    DWGDB_EXPORT DwgGiVariantCR     GetTrait (DwgGiVisualStyleProperties::Property prop, DwgGiVisualStyleOperations::Operation* op = nullptr) const;
+    //! Gets a property flag from the visual style, for properties which are bitfield enums.
+    //! @param prop A bitfield enum DwgGiVisualStyleProperties::Property to get from the visual style.
+    //! @param flags A bitfield flag enum property to get from the visual style.
+    DWGDB_EXPORT bool               GetTraitFlag (DwgGiVisualStyleProperties::Property prop, DwgDbUInt32 flags) const;
     };  // DwgDbVisualStyle
 DWGDB_DEFINE_OBJECTPTR (VisualStyle)
 

@@ -358,7 +358,8 @@ void            ViewportFactory::ComputeSpatialDisplayStyle (DisplayStyle3dR dis
     DwgHelper::UpdateViewFlagsFromVisualStyle (viewFlags, m_visualStyleId);
 
     // only when default lighting is turned off, the source lights become effective:
-    viewFlags.SetShowSourceLights (!m_isDefaultLightingOn);
+    if (m_isDefaultLightingOn)
+        viewFlags.SetShowSourceLights (false);
 
     displayStyle.SetViewFlags (viewFlags);
 

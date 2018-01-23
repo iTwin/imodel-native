@@ -15,7 +15,7 @@
         <WixVariable Id="WixMbaPrereqLicenseUrl" Value="Nothing.rtf" />
         
         <Chain ParallelCache="yes">
-            <MsiPackage Id="PowerProductPackage" SourceFile="$(var.PowerProductPath)$(var.bbVarProductShortName)$(var.bbVarProductTargetPlatform).msi"  Compressed="yes"  Visible="no" EnableFeatureSelection="yes" ForcePerMachine="yes" Description="iModelBridge for Autodesk(R) DWG(TM)">
+            <MsiPackage Id="PowerProductPackage" SourceFile="$(var.PowerProductPath)$(var.bbVarProductShortName)$(var.bbVarProductTargetPlatform).msi"  Compressed="yes"  Visible="no" EnableFeatureSelection="yes" ForcePerMachine="yes" Description="iModelBridge For DWG">
                 <MsiProperty Name="INSTALLDIR" Value="[InstallDirectory]"/>
                 <MsiProperty Name="PACKAGE_HOMEROOT" Value="[ConfigurationDirectory]"/>
                 <MsiProperty Name="FROMLAUNCHSETUP" Value="1"/>
@@ -58,7 +58,7 @@
         </wbb:Pages>
 
         <!--<wbb:UISequences>
-            <wbb:UISequence Action="Install">InstallDirectorySelectionPage,WelcomeDialogInstallPage,WelcomeDialogInstallPage,FeatureConfigPage</wbb:UISequence>
+            <wbb:UISequence Action="Install">InstallDirectorySelectionPage,WelcomeDialogInstallPage,FeatureConfigPage</wbb:UISequence>
             <wbb:UISequence Action="Layout">InstallDirectorySelectionPage,DeploymentImageSettingsPage,FeatureConfigPage</wbb:UISequence>
             <wbb:UISequence Action="Modify">FeatureConfigPage</wbb:UISequence>
             <wbb:UISequence Action="Repair">RepairSelectionPage</wbb:UISequence>
@@ -66,14 +66,14 @@
             <wbb:UISequence Action="Maintenance">MaintenancePage,FeatureConfigPage,RepairSelectionPage,UninstallVerificationPage</wbb:UISequence>
         </wbb:UISequences>-->
 
-      <wbb:UISequences>
-        <wbb:UISequence Action="Install">CompanionProductSelectionPage,CompanionProductInstallDirSelectionPage</wbb:UISequence>
-        <wbb:UISequence Action="Layout">CompanionProductSelectionPage,CompanionProductInstallDirSelectionPage,DeploymentImageSettingsPage</wbb:UISequence>
-        <wbb:UISequence Action="Modify">CompanionProductSelectionPage</wbb:UISequence>
-        <wbb:UISequence Action="Repair">RepairSelectionPage</wbb:UISequence>
-        <wbb:UISequence Action="Uninstall">UninstallVerificationPage</wbb:UISequence>
-        <wbb:UISequence Action="Maintenance">MaintenancePage,CompanionProductSelectionPage,CompanionProductFeatureSelectionPage,RepairSelectionPage,UninstallVerificationPage</wbb:UISequence>
-      </wbb:UISequences>
+        <wbb:UISequences>
+          <wbb:UISequence Action="Install">CompanionProductSelectionPage,CompanionProductInstallDirSelectionPage</wbb:UISequence>
+          <wbb:UISequence Action="Layout">CompanionProductSelectionPage,CompanionProductInstallDirSelectionPage,DeploymentImageSettingsPage</wbb:UISequence>
+          <wbb:UISequence Action="Modify">CompanionProductSelectionPage</wbb:UISequence>
+          <wbb:UISequence Action="Repair">RepairSelectionPage</wbb:UISequence>
+          <wbb:UISequence Action="Uninstall">UninstallVerificationPage</wbb:UISequence>
+          <wbb:UISequence Action="Maintenance">MaintenancePage,CompanionProductSelectionPage,CompanionProductFeatureSelectionPage,RepairSelectionPage,UninstallVerificationPage</wbb:UISequence>
+        </wbb:UISequences>
 
         <?ifdef BBinstallerBuildTypeRelease?>
         <Variable Name="InstallDirectory" Value="[ProgramFiles64Folder]Bentley\DwgBridge\" Persisted="yes" Type="string"/>

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/iModelBridge/iModelBridge.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -447,6 +447,13 @@ struct iModelBridge
         //! @param[in] docGuid  The document's GUID in its home DCS
         //! @return non-zero error status if the GUID is not in the table of registered documents.
         virtual BentleyStatus _GetDocumentPropertiesByGuid(iModelBridgeDocumentProperties& props, BeFileNameR localFilePath, BeSQLite::BeGuid const& docGuid) = 0;
+
+        //! Assign a new file to the Bridge Registry database. This is for tracking files which might exist outside the Document Management system but still is critical
+        //! in succesfully converting data inside a file.
+        //! @param fn   The name of the file that is to be converted
+        //! @param bridgeRegSubKey The registry subkey that identifies the bridge
+        //! @return non-zero error status if assignment of this file to the registry database failed.
+        virtual BentleyStatus _AssignFileToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) = 0;
         };
 
     //! Parameters that are common to all bridges.
