@@ -70,15 +70,15 @@ public:
     // Primary methods
 
     HRAPyramidRaster ();
-    IMAGEPP_EXPORT /*IppImaging_Needs*/  HRAPyramidRaster (HFCPtr<HRATiledRaster>& pi_pRasterModel,
-                                                  uint64_t                pi_WidthPixels,
-                                                  uint64_t                pi_HeightPixels,
-                                                  SubImageDescription*     pi_pSubImageDesc,
-                                                  uint16_t          pi_NumberOfSubImage,
-                                                  HPMObjectStore*          pi_pStore=0,
-                                                  HPMPool*                 pi_pLog=0,
-                                                  HFCPtr<HRATiledRaster>  pi_pMainImageRasterModel = 0,
-                                                  bool                    pi_DisableTileStatus = false);   // Optimization if Raster ReadOnly
+    HRAPyramidRaster (HFCPtr<HRATiledRaster>& pi_pRasterModel,
+                      uint64_t                pi_WidthPixels,
+                      uint64_t                pi_HeightPixels,
+                      SubImageDescription*    pi_pSubImageDesc,
+                      uint16_t                pi_NumberOfSubImage,
+                      HPMObjectStore*         pi_pStore=0,
+                      HPMPool*                pi_pLog=0,
+                      HFCPtr<HRATiledRaster>  pi_pMainImageRasterModel = 0,
+                      bool                    pi_DisableTileStatus = false);   // Optimization if Raster ReadOnly
 
 
     HRAPyramidRaster(const HRAPyramidRaster& pi_rObj);
@@ -181,7 +181,7 @@ public:
 
     // STx: Think of MultiResRaster for the future
     // GetSubImage should be private.
-    IMAGEPP_EXPORT /*IppImaging_Needs*/ void            EnableSubImageComputing(bool pi_Enable);
+    void            EnableSubImageComputing(bool pi_Enable);
     HFCPtr<HRATiledRaster> GetSubImage (uint16_t pi_Index) const;
 
     IMAGEPP_EXPORT void            SaveAndFlushAllTiles();

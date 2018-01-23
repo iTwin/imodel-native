@@ -2,7 +2,7 @@
 #
 #     $Source: all/imagepp.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 BUILD_NO_STACK_CHECK        = 1
@@ -1190,9 +1190,6 @@ $(o)HRFMapBoxFile$(oext) : $(ippGraDir)hrf/src/HRFMapBoxFile.cpp $(ippAllInc)HRF
 $(o)HRFWbmpFile$(oext) : $(ippGraDir)hrf/src/HRFWbmpFile.cpp $(ippAllInc)HRFWbmpFile.h ${MultiCompileDepends}
 
 $(o)HRFWbmpLineEditor$(oext) : $(ippGraDir)hrf/src/HRFWbmpLineEditor.cpp $(ippAllInc)HRFWbmpLineEditor.h ${MultiCompileDepends}
-
-# Disabled &&MM cleanup?
-#$(o)HRFWCSFile$(oext) : $(ippGraDir)hrf/src/HRFWCSFile.cpp $(ippAllInc)HRFWCSFile.h ${MultiCompileDepends}
 
 # need CURL for winrt
 %if $(TARGET_PLATFORM)!="WinRT"

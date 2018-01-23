@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAStoredRaster.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -91,7 +91,7 @@ public:
 
     //&&Backlog review the 2 SetTransfoModel. One is virtual and the other is not. Do we need to override both? look for HRAStoredRaster::SetTransfoModel calls.
     virtual void                    SetTransfoModel     (const HGF2DTransfoModel& pi_rModelCSp_CSl);
-    IMAGEPP_EXPORT /*IppImaging_Needs*/void SetTransfoModel     (const HGF2DTransfoModel& pi_rModelCSp_CSl,
+    void SetTransfoModel     (const HGF2DTransfoModel& pi_rModelCSp_CSl,
                                                          const HFCPtr<HGF2DCoordSys>& pi_rpLogicalCoordSys);
 
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/ExceptionTester.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -52,55 +52,6 @@ TEST_F (ExceptionTester, HFCGetMessageTest)
     HFCErrorCode errCode;
     HFCErrorCodeException _HFCErrorCodeException(errCode);
     EXPECT_SUBSTR(L"An error code triggered an exception", _HFCErrorCodeException.GetExceptionMessage().c_str());
-}
-
-TEST_F (ExceptionTester, HRFGetMessageTest)
-{
-    HRFInternetImagingConnectionException _HRFInternetImagingConnectionException(L"Filename", HRFInternetImagingConnectionException::CONNECTION_LOST);
-    EXPECT_SUBSTR(L"An Internet connection exception occurred (error type : 1)", _HRFInternetImagingConnectionException.GetExceptionMessage().c_str());
-    EXPECT_EQ(HRFInternetImagingConnectionException::CONNECTION_LOST, _HRFInternetImagingConnectionException.GetErrorType());
-
-    HRFInternetImagingServerException _HRFInternetImagingServerException(L"FileName",0,0,L"Object", L"Message");
-    EXPECT_SUBSTR(L"A server exception occurred (class : 0, number : 0, object : Object, message : Message)", _HRFInternetImagingServerException.GetExceptionMessage().c_str());
-    EXPECT_EQ(0, _HRFInternetImagingServerException.GetClass());
-    EXPECT_EQ(0, _HRFInternetImagingServerException.GetNumber());
-    EXPECT_SUBSTR(L"Message", _HRFInternetImagingServerException.GetMessageText().c_str());
-    EXPECT_SUBSTR(L"Object", _HRFInternetImagingServerException.GetExceptionObject().c_str());
-
-    HRFIIInvalidDataFormatException _HRFIIInvalidDataFormatException(L"Message", HRFIIHandlerException::TRANSFORM);
-    EXPECT_SUBSTR(L"Invalid IIP data format (handler : 0)", _HRFIIInvalidDataFormatException.GetExceptionMessage().c_str());
-    EXPECT_EQ(HRFIIHandlerException::TRANSFORM, _HRFIIInvalidDataFormatException.GetHandlerID());
-    
-    HRFBadPageNumberException _HRFBadPageNumberException(L"FileName" );
-    EXPECT_SUBSTR(L"The page number is invalid", _HRFBadPageNumberException.GetExceptionMessage().c_str());
-   
-    HRFInvalidParamValueException _HRFInvalidParamValueException(L"FileName", L"ParamName");
-    EXPECT_SUBSTR(L"The value of the following parameter is invalid : ParamName", _HRFInvalidParamValueException.GetExceptionMessage().c_str());
-    EXPECT_STREQ(L"ParamName", _HRFInvalidParamValueException.GetParameterName().c_str());
-
-    HRFCannotOpenChildFileException _HRFCannotOpenChildFileException(L"ParentFileName", L"ChildFileName");
-    EXPECT_SUBSTR(L"Cannot open the following child file : ChildFileName", _HRFCannotOpenChildFileException.GetExceptionMessage().c_str());
-    EXPECT_STREQ(L"ChildFileName", _HRFCannotOpenChildFileException.GetChildFileName().c_str());
-    
-    HRFChildFileParameterException _HRFChildFileParameterException(L"ParentFileName", L"ChildFileName" , L"ParamName");
-    EXPECT_SUBSTR(L"The following parameter is invalid : (child file : ChildFileName, parameter : ParamName)", _HRFChildFileParameterException.GetExceptionMessage().c_str());
-    EXPECT_STREQ(L"ParamName", _HRFChildFileParameterException.GetParameterName().c_str());
-
-    HRFTiffErrorException _HRFTiffErrorException(L"Hello", *(new HTIFFError()));
-    EXPECT_SUBSTR(L"The following error occurred in the TIFF library : HTIFF(0000) - unknown error", _HRFTiffErrorException.GetExceptionMessage().c_str());
-    
-    HRFInvalidNewFileDimensionException _HRFInvalidNewFileDimensionException(L"FileName", 100,100);
-    EXPECT_SUBSTR(L"The image cannot be exported to the selected file format because its size is too large (width limit : 100, height limit : 100)", _HRFInvalidNewFileDimensionException.GetExceptionMessage().c_str());
-    EXPECT_EQ(100, _HRFInvalidNewFileDimensionException.GetWidthLimit());
-    EXPECT_EQ(100, _HRFInvalidNewFileDimensionException.GetHeightLimit());
-
-    HRFOracleException _HRFOracleException(L"FileName", L"OriginalErrorMsg");
-    EXPECT_SUBSTR(L"An error occurred while using the Oracle database (Error code: ?, Error message: OriginalErrorMsg)", _HRFOracleException.GetExceptionMessage().c_str());
-    EXPECT_SUBSTR(L"OriginalErrorMsg", _HRFOracleException.GetOriginalErrorMsg().c_str());
-    EXPECT_EQ(-1, _HRFOracleException.GetErrorCode());
-
-    HRFIITileNotFoundException _HRFIITileNotFoundException(L"Message");
-    EXPECT_SUBSTR(L"Cannot find the pool space for the received tile over IIP", _HRFIITileNotFoundException.GetExceptionMessage().c_str());
 }
 
 TEST_F (ExceptionTester, HPAGetMessageTest)

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFFileFormats.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -167,9 +167,6 @@
     #include "HRFVirtualEarthFile.h"
     #include "HRFWMSFile.h"
     #include <ImagePP/all/h/HRFWebFile.h>
-    // Disable image server for now. It requires windows headers and We are not using it on DgnDb
-    //#include <ImagePP/IppImaging/HRFInternetImagingFile.h>
-    //HOST_REGISTER_FILEFORMAT(HRFInternetImagingFileCreator)
 
     #if defined(BENTLEY_WIN32) 
         #define HOST_REGISTER_Remote_FILEFORMAT \

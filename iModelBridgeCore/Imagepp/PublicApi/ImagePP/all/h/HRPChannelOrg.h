@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPChannelOrg.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRPChannelOrg
@@ -46,7 +46,7 @@ public:
     const HRPChannelType*
     operator[](uint32_t pi_Index) const;
 
-    IMAGEPP_EXPORT /*IppImaging_Needs*/ bool    operator==(const HRPChannelOrg& pi_rChannelOrg) const;
+    bool    operator==(const HRPChannelOrg& pi_rChannelOrg) const;
     bool           operator!=(const HRPChannelOrg& pi_rChannelOrg) const;
     uint32_t        GetChannelIndex(HRPChannelType::ChannelRole pi_Role,
                                     uint16_t pi_Id) const;

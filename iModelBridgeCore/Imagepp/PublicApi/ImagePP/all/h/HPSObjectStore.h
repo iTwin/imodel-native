@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPSObjectStore.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HPSObjectStore
@@ -54,8 +54,8 @@ public:
     
     // Added methods
 
-        IMAGEPP_EXPORT /*IppImaging_Needs*/ HFCPtr<HGF2DWorldCluster> GetWorldCluster() const; 
-        IMAGEPP_EXPORT /*IppImaging_Needs*/ HGF2DWorldIdentificator   GetWorldID() const;
+        HFCPtr<HGF2DWorldCluster> GetWorldCluster() const; 
+        HGF2DWorldIdentificator   GetWorldID() const;
         IMAGEPP_EXPORT uint32_t          CountPages() const;
         IMAGEPP_EXPORT const PageStatementNode* GetPageStatementNode(HPMObjectID pi_PageID) const;
 

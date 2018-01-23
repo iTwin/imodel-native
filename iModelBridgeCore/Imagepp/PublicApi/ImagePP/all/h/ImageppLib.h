@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ImagePP/all/h/ImageppLib.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -414,41 +414,6 @@ public:
             }
         tempPath = m_localDirPath;
         return BSISUCCESS;
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * HIP-small file caching settings
-    * Threshold size to cache locally
-    * @bsimethod                                                            05/2012
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual size_t _GetInternetImagingHIPSmallFileThreshold() const   
-        {
-        return 0;
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                                            05/2012
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual BentleyStatus _GetInternetImagingHIPSmallFileLocation(BeFileName& tempFileName) const   
-        {
-        return _GetDefaultTempDirectory(tempFileName);
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                                            05/2012
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual void _GetInternetImagingReconnectionSettings(uint32_t& retries, uint32_t& delay) const   
-        {
-        retries = 0;
-        delay   = 0;
-        }
-    /*---------------------------------------------------------------------------------**//**
-    // Time out to use when attempting to connect to a server
-    * @bsimethod                                                            05/2012
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual uint32_t _GetInternetImagingConnectionTimeOut() const   
-        {
-        return 30000;
         }
 
     /*---------------------------------------------------------------------------------**//**

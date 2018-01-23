@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/h/ImagePPClassId.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -218,7 +218,7 @@ enum ImagePPClassId
     HFCURLId_CommonInternet	                    =	1301,
     HFCURLId_File	                            =	1302,
     HFCURLId_HTTP	                            =	1303,
-    HFCURLId_InternetImagingSocket	            =	1304,
+    //HFCURLId_InternetImagingSocket	            =	1304,
     HRFURLInternetImagingHTTPId	                =	1305,
     HCDCodecId_LZW	                            =	1306,
     HCDCodecId_ECW	                            =	1307,
@@ -374,7 +374,7 @@ enum ImagePPClassId
     HFCAuthenticationId_Oracle	                =	1550,
     HFCAuthenticationId_PDF	                    =	1551,
     HFCAuthenticationId_Proxy	                =	1553,
-    HRFInternetImagingRasterFileCacheId	        =	1554,
+    //HRFInternetImagingRasterFileCacheId	        =	1554,
     HRFCacheControllerId_Base	                =	1555,
     HRPFilterId_Map16	                        =	1560,
     HRPFilterId_CustomMap16	                    =	1561,

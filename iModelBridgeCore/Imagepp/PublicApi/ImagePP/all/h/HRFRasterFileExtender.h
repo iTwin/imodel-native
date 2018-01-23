@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFRasterFileExtender.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -24,33 +24,33 @@ public:
     // Class ID for this class.
     HDECLARE_CLASS_ID(HRFRasterFileId_Extender, HRFRasterFile)
 
-    IMAGEPP_EXPORT /*IppImaging_Needs*/ virtual ~HRFRasterFileExtender();
+    virtual ~HRFRasterFileExtender();
 
     // Returns the file exlusive key
-    IMAGEPP_EXPORT /*IppImaging_Needs*/ HFCExclusiveKey& GetKey() const override;
+    HFCExclusiveKey& GetKey() const override;
 
-    IMAGEPP_EXPORT /*IppImaging_Needs*/ virtual HFCPtr<HRFRasterFile>& GetOriginalFile() const;
-    IMAGEPP_EXPORT /*IppImaging_Needs*/ virtual HFCPtr<HRFRasterFile>  GetExtendedFile() const;
+    virtual HFCPtr<HRFRasterFile>& GetOriginalFile() const;
+    virtual HFCPtr<HRFRasterFile>  GetExtendedFile() const;
 
-    IMAGEPP_EXPORT /*IppImaging_Needs*/ virtual bool IsCacheExtender() const;
+    virtual bool IsCacheExtender() const;
 
-    IMAGEPP_EXPORT /*IppImaging_Needs*/ void Save() override;
+    void Save() override;
 
-    IMAGEPP_EXPORT /*IppImaging_Needs*/ HFCPtr<HMDContext>  GetContext(uint32_t pi_PageIndex) const override;
+    HFCPtr<HMDContext>  GetContext(uint32_t pi_PageIndex) const override;
 
-    IMAGEPP_EXPORT /*IppImaging_Needs*/ void                SetContext(uint32_t           pi_PageIndex,
-                                               const HFCPtr<HMDContext>& pi_rpContext) override;
+    void                SetContext(uint32_t           pi_PageIndex,
+           const HFCPtr<HMDContext>& pi_rpContext) override;
 
-    IMAGEPP_EXPORT /*IppImaging_Needs*/ bool IsOriginalRasterDataStorage() const override;
+    bool IsOriginalRasterDataStorage() const override;
 
-    IMAGEPP_EXPORT /*IppImaging_Needs*/ void CancelCreate() override;
+    void CancelCreate() override;
 
 protected:
     // Raster File
     HFCPtr<HRFRasterFile>   m_pOriginalFile;
 
     // Constructor
-    IMAGEPP_EXPORT /*IppImaging_Needs*/ HRFRasterFileExtender(const HFCPtr<HRFRasterFile>&  pi_rpOriginal);
+    HRFRasterFileExtender(const HFCPtr<HRFRasterFile>&  pi_rpOriginal);
 
 private:
     // Disabled methods

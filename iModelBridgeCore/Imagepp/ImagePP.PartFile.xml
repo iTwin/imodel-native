@@ -124,18 +124,6 @@
         </Bindings>
     </Part>
 
-  
-    <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
-    <Part Name="IppImagingDll" BentleyBuildMakeFile="IppImaging/IppImaging.mke" ApiNumber="B02" OnlyPlatforms="x86,x64">
-        <SubPart PartName="ImagePPDll" />       
-        <Bindings>
-            <!-- For now, we build imaging client but we do not implicitly deliver it. -->
-            <Libs>Delivery/$(shlibprefix)IppImaging$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)IppImaging$(ApiNumber)$(shlibext)</Assemblies>
-        </Bindings>
-    </Part>
-
-    <!-- All ImagePP dlls -->
     <Part Name="ImagePP">
         <SubPart PartName="ImagePP-NonAndroid" />
         <SubPart PartName="ImagePP-Android" />
@@ -143,7 +131,6 @@
 
     <Part Name="ImagePP-NonAndroid" ExcludePlatforms="Android*">
         <SubPart PartName="ImagePPDll"/>
-        <SubPart PartName="IppImagingDll" />
     </Part>
 
     <Part Name="ImagePP-Android" OnlyPlatforms="Android*">

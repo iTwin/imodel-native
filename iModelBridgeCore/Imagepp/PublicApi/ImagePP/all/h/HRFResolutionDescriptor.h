@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFResolutionDescriptor.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFResolutionDescriptor
@@ -117,9 +117,9 @@ public:
                                                                      uint64_t*   po_pTilePosX,
                                                                      uint64_t*   po_pTilePosY) const;
 
-    IMAGEPP_EXPORT /*IppImaging_Needs*/ bool                HasBlocksDataFlag () const;
-    IMAGEPP_EXPORT /*IppImaging_Needs*/ const HRFDataFlag*  GetBlocksDataFlag () const;
-    IMAGEPP_EXPORT /*IppImaging_Needs*/ bool                SetBlocksDataFlag (const HRFDataFlag* pi_pBlocksDataFlag);
+    bool                HasBlocksDataFlag () const;
+    const HRFDataFlag*  GetBlocksDataFlag () const;
+    bool                SetBlocksDataFlag (const HRFDataFlag* pi_pBlocksDataFlag);
 
     IMAGEPP_EXPORT HRFDataFlag                      GetBlockDataFlag       (uint64_t   pi_Index) const;
     IMAGEPP_EXPORT void                             SetBlockDataFlag       (uint64_t   pi_Index,

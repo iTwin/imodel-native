@@ -122,7 +122,7 @@ public:
         bool                        IsDiscartable() const;
 
 
-        IMAGEPP_EXPORT /*IppImaging_Needs*/ HFCPtr<HRABitmapBase>&    GetTile();
+        HFCPtr<HRABitmapBase>&    GetTile();
 
 //        virtual byte*               AllocMemory(size_t pi_MemorySize) override;
 //        virtual void                FreeMemory(byte* pi_MemPtr, size_t pi_MemorySize) override;
@@ -163,7 +163,7 @@ public:
     // Primary methods
 
     HRATiledRaster ();
-    IMAGEPP_EXPORT /*IppImaging_Needs*/ HRATiledRaster (const HFCPtr<HRABitmapBase>&  pi_pRasterModel,
+    HRATiledRaster (const HFCPtr<HRABitmapBase>&  pi_pRasterModel,
                                                 uint64_t                        pi_TileSizeX,
                                                 uint64_t                        pi_TileSizeY,
                                                 uint64_t                        pi_WidthPixels,
@@ -207,7 +207,7 @@ public:
     const HFCPtr<HRATile> GetTileByIndex(uint64_t pi_Index, bool pi_NotInPool = false) const;
 
     // (Used by the HRSObjectStore)
-    IMAGEPP_EXPORT /*IppImaging_Needs*/ const HFCPtr<HRATile> GetTile(uint64_t pi_PosX, uint64_t pi_PosY) const;
+    const HFCPtr<HRATile> GetTile(uint64_t pi_PosX, uint64_t pi_PosY) const;
 
     uint16_t GetRepresentativePalette(
         HRARepPalParms* pio_pRepPalParms) override;
