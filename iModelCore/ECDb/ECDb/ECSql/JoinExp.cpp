@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/JoinExp.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -145,7 +145,7 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContext& 
 
     if (toEP.GetLocation() == ClassLocation::NotResolved)
         {
-        ctx.Issues().Report("'%s' class is not related to by the relationship '%s'", toECClass.GetFullName(), relationshipClass->GetFullName());
+        ctx.Issues().ReportV("'%s' class is not related to by the relationship '%s'", toECClass.GetFullName(), relationshipClass->GetFullName());
         return ERROR;
         }
 
@@ -183,13 +183,13 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContext& 
 
     if (fromClassExistsInSourceList.empty() && fromClassExistsInTargetList.empty())
         {
-        ctx.Issues().Report("No ECClass in the FROM and JOIN clauses matches the ends of the relationship '%s'.", relationshipClass->GetFullName());
+        ctx.Issues().ReportV("No ECClass in the FROM and JOIN clauses matches the ends of the relationship '%s'.", relationshipClass->GetFullName());
         return ERROR;
         }
 
     if (fromClassExistsInSourceList.size() > 1 || fromClassExistsInTargetList.size() > 1)
         {
-        ctx.Issues().Report("Multiple classes in the FROM and JOIN clauses match an end of the relationship '%s'.", relationshipClass->GetFullName());
+        ctx.Issues().ReportV("Multiple classes in the FROM and JOIN clauses match an end of the relationship '%s'.", relationshipClass->GetFullName());
         return ERROR;
         }
 
@@ -197,7 +197,7 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContext& 
         {
         if (fromClassExistsInSourceList.begin()->first != fromClassExistsInTargetList.begin()->first)
             {
-            ctx.Issues().Report("Multiple classes in the FROM and JOIN clauses match an end of the relationship '%s'.", relationshipClass->GetFullName());
+            ctx.Issues().ReportV("Multiple classes in the FROM and JOIN clauses match an end of the relationship '%s'.", relationshipClass->GetFullName());
             return ERROR;
             }
         }
@@ -246,13 +246,13 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContext& 
 
     if (fromEP.GetLocation() == ClassLocation::NotResolved || fromEP.GetClassNameRef() == nullptr)
         {
-        ctx.Issues().Report("Could not find class on one of the ends of relationship %s", relationshipClass->GetFullName());
+        ctx.Issues().ReportV("Could not find class on one of the ends of relationship %s", relationshipClass->GetFullName());
         return ERROR;
         }
 
     if (toEP.GetLocation() == ClassLocation::NotResolved || toEP.GetClassNameRef() == nullptr)
         {
-        ctx.Issues().Report("Could not find class on one of the ends of relationship %s", relationshipClass->GetFullName());
+        ctx.Issues().ReportV("Could not find class on one of the ends of relationship %s", relationshipClass->GetFullName());
         return ERROR;
         }
 

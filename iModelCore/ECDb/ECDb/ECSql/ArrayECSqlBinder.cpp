@@ -3,7 +3,7 @@
 |
 |     $Source: ECDb/ECSql/ArrayECSqlBinder.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -446,7 +446,7 @@ ECSqlStatus ArrayECSqlBinder::JsonValueBinder::FailIfTypeMismatch(ECN::Primitive
 
     if (boundType != m_typeInfo.GetPrimitiveType())
         {
-        LOG.errorv("Type mismatch. %s values can only be bound to %s parameter values.", ExpHelper::ToString(boundType));
+        LOG.errorv("Type mismatch. %s values cannot be bound to %s parameter values.", ExpHelper::ToString(boundType), ExpHelper::ToString(m_typeInfo.GetPrimitiveType()));
         return ECSqlStatus::Error;
         }
 

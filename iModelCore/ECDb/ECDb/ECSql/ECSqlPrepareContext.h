@@ -115,20 +115,20 @@ struct ECSqlPrepareContext final
         ExpScopeStack m_scopes;
         SelectClauseInfo m_selectionOptions;
         int m_nextSystemSqlParameterNameSuffix = 0;
-
+        DbCP m_secondaryConn;
         //not copyable
         ECSqlPrepareContext(ECSqlPrepareContext const&) = delete;
         ECSqlPrepareContext& operator=(ECSqlPrepareContext const&) = delete;
 
     public:
-        ECSqlPrepareContext(IECSqlPreparedStatement&, ScopedIssueReporter const&);
+        ECSqlPrepareContext(IECSqlPreparedStatement&, ScopedIssueReporter const&, DbCP);
         void Reset(SingleECSqlPreparedStatement&);
 
         ECDbCR GetECDb() const { return m_ecdb; }
         ScopedIssueReporter const& Issues() const { return m_issues; }
         SelectClauseInfo const& GetSelectionOptions() const { return m_selectionOptions; }
         SelectClauseInfo& GetSelectionOptionsR() { return m_selectionOptions; }
-
+        DbCP GetSecondaryConnection() const { return m_secondaryConn; }
         SingleECSqlPreparedStatement& GetPreparedStatement() const { BeAssert(m_singlePreparedStatement != nullptr); return *m_singlePreparedStatement; }
         template <class TECSqlPreparedStatement>
         TECSqlPreparedStatement& GetPreparedStatement() const

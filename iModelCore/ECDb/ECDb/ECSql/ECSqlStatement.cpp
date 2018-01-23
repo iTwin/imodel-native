@@ -63,7 +63,12 @@ void ECSqlStatement::Finalize() { m_pimpl->Finalize(); }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      06/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlStatement::Prepare(ECDbCR ecdb, Utf8CP ecsql, ECCrudWriteToken const* token, bool logErrors) { return m_pimpl->Prepare(ecdb, ecsql, token, logErrors); }
+ECSqlStatus ECSqlStatement::Prepare(ECDbCR ecdb, Utf8CP ecsql, ECCrudWriteToken const* token, bool logErrors) { return m_pimpl->Prepare(ecdb, ecsql, token, logErrors, nullptr); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Affan.Khan      06/2013
+//---------------------------------------------------------------------------------------
+ECSqlStatus ECSqlStatement::Prepare(ECDb const& ecdb, Utf8CP ecsql, DbCR readonlyDb ) { return m_pimpl->Prepare(ecdb, ecsql, nullptr, true, &readonlyDb); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      06/2013

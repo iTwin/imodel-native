@@ -307,13 +307,13 @@ BentleyStatus ECSqlSelectPreparer::ValidateSelectClauseItems(ECSqlPrepareContext
         ECSqlTypeInfo const& rhsTypeInfo = rhsDerivedPropExp->GetExpression()->GetTypeInfo();
         if (!lhsTypeInfo.CanCompare(rhsTypeInfo))
             {
-            ctx.Issues().Report("Type of expression %s in LHS of UNION/EXCEPT/INTERSECT is not same as respective expression %s in RHS.", lhsDerivedPropExp->ToECSql().c_str(), rhsDerivedPropExp->ToECSql().c_str());
+            ctx.Issues().ReportV("Type of expression %s in LHS of UNION/EXCEPT/INTERSECT is not same as respective expression %s in RHS.", lhsDerivedPropExp->ToECSql().c_str(), rhsDerivedPropExp->ToECSql().c_str());
             return ERROR;
             }
 
         if (lhsTypeInfo.IsNull() && (rhsTypeInfo.IsPoint() || !rhsTypeInfo.IsPrimitive()))
             {
-            ctx.Issues().Report("NULL in LHS of UNION/EXCEPT/INTERSECT is ambiguous if its RHS counterpart is not of a primitive type (excluding Point2d and Point3d).", lhsDerivedPropExp->ToECSql().c_str(), rhsDerivedPropExp->ToECSql().c_str());
+            ctx.Issues().Report("NULL in LHS of UNION/EXCEPT/INTERSECT is ambiguous if its RHS counterpart is not of a primitive type (excluding Point2d and Point3d).");
             return ERROR;
             }
         }

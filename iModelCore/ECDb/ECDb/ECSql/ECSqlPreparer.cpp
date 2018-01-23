@@ -19,6 +19,15 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& context, Exp const& exp)
     {
     ECSqlStatus status = ECSqlStatus::Error;
+    if (context.GetSecondaryConnection())
+        {
+        if (Exp::Type::Select != exp.GetType())
+            {
+            context.Issues().Report("Only SELECT queries can be executed against a secondary connection.");
+            return ECSqlStatus::Error;
+            }
+        }
+
     switch (exp.GetType())
         {
             case Exp::Type::Select:
@@ -336,7 +345,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp(NativeSqlBuilder::List& nativeSqlSn
 
     if (!exp.GetTypeInfo().IsPrimitive())
         {
-        ctx.Issues().Report("Invalid ECSQL expression '%s': Only primitive types are supported as CAST target type",
+        ctx.Issues().ReportV("Invalid ECSQL expression '%s': Only primitive types are supported as CAST target type",
                                                                exp.ToECSql().c_str());
         return ECSqlStatus::InvalidECSql;
         }
@@ -492,7 +501,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
     Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, currentScopeECSqlType, exp.IsPolymorphic()));
     if (!policy.IsSupported())
         {
-        ctx.Issues().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
+        ctx.Issues().ReportV("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -1097,7 +1106,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
                 {
                 if (direction != JoinDirection::Forward)
                     {
-                    ctx.Issues().Report("Invalid join direction BACKWARD in %s. Either specify FORWARD or omit the direction as the direction can be unambiguously implied in this ECSQL.", exp.ToString().c_str());
+                    ctx.Issues().ReportV("Invalid join direction BACKWARD in %s. Either specify FORWARD or omit the direction as the direction can be unambiguously implied in this ECSQL.", exp.ToString().c_str());
                     return ECSqlStatus::InvalidECSql;
                     }
                 }
@@ -1111,7 +1120,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
                 {
                 if (direction != JoinDirection::Backward)
                     {
-                    ctx.Issues().Report("Invalid join direction FORWARD in %s. Either specify BACKWARD or omit the direction as the direction can be unambiguously implied in this ECSQL.", exp.ToString().c_str());
+                    ctx.Issues().ReportV("Invalid join direction FORWARD in %s. Either specify BACKWARD or omit the direction as the direction can be unambiguously implied in this ECSQL.", exp.ToString().c_str());
                     return ECSqlStatus::InvalidECSql;
                     }
                 }
@@ -1339,7 +1348,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionArgList(NativeSqlBuilder::List& arg
 
         if (nativeSqlArgumentList.size() != 1)
             {
-            ctx.Issues().Report("Failed to prepare function expression '%s': Functions in ECSQL can only accept primitive scalar arguments (i.e. excluding Point2d/Point3d).", functionCallExp.ToECSql().c_str());
+            ctx.Issues().ReportV("Failed to prepare function expression '%s': Functions in ECSQL can only accept primitive scalar arguments (i.e. excluding Point2d/Point3d).", functionCallExp.ToECSql().c_str());
             return ECSqlStatus::InvalidECSql;
             }
 

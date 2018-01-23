@@ -519,7 +519,7 @@ BentleyStatus SchemaPersistenceHelper::SerializeKoqPresentationUnits(Utf8StringR
         {
         if (presUnit.HasProblem())
             {
-            ecdb.GetImpl().Issues().Report("Failed to import KindOfQuantity '%s'. One of its presentation units is invalid: %s.", koq.GetFullName().c_str(), presUnit.GetProblemDescription().c_str());
+            ecdb.GetImpl().Issues().ReportV("Failed to import KindOfQuantity '%s'. One of its presentation units is invalid: %s.", koq.GetFullName().c_str(), presUnit.GetProblemDescription().c_str());
             return ERROR;
             }
 

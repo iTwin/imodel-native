@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/MapStrategy.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -40,7 +40,7 @@ Utf8CP MapStrategyExtendedInfo::ToString(MapStrategy strategy)
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle              08/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus TablePerHierarchyInfo::Initialize(ShareColumnsCustomAttribute const& shareColumnsCA, MapStrategyExtendedInfo const* baseMapStrategy, bool hasJoinedTablePerDirectSubclassOption, ECClassCR ecClass, IssueReporter const& issues)
+BentleyStatus TablePerHierarchyInfo::Initialize(ShareColumnsCustomAttribute const& shareColumnsCA, MapStrategyExtendedInfo const* baseMapStrategy, bool hasJoinedTablePerDirectSubclassOption, ECClassCR ecClass, IIssueReporter const& issues)
     {
     if (SUCCESS != DetermineSharedColumnsInfo(shareColumnsCA, baseMapStrategy, ecClass, issues))
         return ERROR;
@@ -50,7 +50,7 @@ BentleyStatus TablePerHierarchyInfo::Initialize(ShareColumnsCustomAttribute cons
 
     if (m_joinedTableInfo == JoinedTableInfo::ParentOfJoinedTable && m_shareColumnsMode == ShareColumnsMode::Yes)
         {
-        issues.Report("Failed to map ECClass %s. It defines the JoinedTablePerDirectSubclass custom attribute, although it or its base class already enabled column sharing.",
+        issues.ReportV("Failed to map ECClass %s. It defines the JoinedTablePerDirectSubclass custom attribute, although it or its base class already enabled column sharing.",
                       ecClass.GetFullName());
         return ERROR;
         }
@@ -62,7 +62,7 @@ BentleyStatus TablePerHierarchyInfo::Initialize(ShareColumnsCustomAttribute cons
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle              08/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumnsCustomAttribute const& shareColumnsCA, MapStrategyExtendedInfo const* baseMapStrategy, ECClassCR ecClass, IssueReporter const& issues)
+BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumnsCustomAttribute const& shareColumnsCA, MapStrategyExtendedInfo const* baseMapStrategy, ECClassCR ecClass, IIssueReporter const& issues)
     {
     m_shareColumnsMode = ShareColumnsMode::No; //default
     //first check whether column sharing is inherited from base class.
@@ -70,7 +70,7 @@ BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumnsCust
         {
         if (shareColumnsCA.IsValid())
             {
-            issues.Report("Failed to map ECClass %s. It defines the ShareColumns custom attribute, although one of its base classes has defined it already.",
+            issues.ReportV("Failed to map ECClass %s. It defines the ShareColumns custom attribute, although one of its base classes has defined it already.",
                           ecClass.GetFullName());
 
             return ERROR;
@@ -97,7 +97,7 @@ BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumnsCust
 
         if (SUCCESS != shareColumnsCA.TryGetMaxSharedColumnsBeforeOverflow(m_maxSharedColumnsBeforeOverflow))
             {
-            issues.Report("Failed to map ECClass %s. It has the ShareColumns custom attribute with an invalid value for 'MaxSharedColumnsBeforeOverflow'. Either provide a non-negative value or omit the property.",
+            issues.ReportV("Failed to map ECClass %s. It has the ShareColumns custom attribute with an invalid value for 'MaxSharedColumnsBeforeOverflow'. Either provide a non-negative value or omit the property.",
                                   ecClass.GetFullName());
             return ERROR;
             }
@@ -109,13 +109,13 @@ BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumnsCust
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle              08/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus TablePerHierarchyInfo::DetermineJoinedTableInfo(bool hasJoinedTablePerDirectSubclassOption, MapStrategyExtendedInfo const* baseMapStrategy, ECClassCR ecClass, IssueReporter const& issues)
+BentleyStatus TablePerHierarchyInfo::DetermineJoinedTableInfo(bool hasJoinedTablePerDirectSubclassOption, MapStrategyExtendedInfo const* baseMapStrategy, ECClassCR ecClass, IIssueReporter const& issues)
     {
     if (baseMapStrategy != nullptr && baseMapStrategy->GetTphInfo().GetJoinedTableInfo() != JoinedTableInfo::None)
         {
         if (hasJoinedTablePerDirectSubclassOption)
             {
-            issues.Report("Failed to map ECClass %s. It defines the JoinedTablePerDirectSubclass custom attribute, although one of its base classes has defined it already.",
+            issues.ReportV("Failed to map ECClass %s. It defines the JoinedTablePerDirectSubclass custom attribute, although one of its base classes has defined it already.",
                           ecClass.GetFullName());
 
             return ERROR;

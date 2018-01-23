@@ -323,7 +323,7 @@ ECTypeDescriptor ECSqlFieldFactory::DetermineDataType(DateTime::Info& dateTimeIn
             {
             if (ECObjectsStatus::Success != CoreCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, ecProperty))
                 {
-                issues.Report("Could not read DateTimeInfo custom attribute from the primitive ECProperty %s:%s.",
+                issues.ReportV("Could not read DateTimeInfo custom attribute from the primitive ECProperty %s:%s.",
                            ecProperty.GetClass().GetFullName(), ecProperty.GetName().c_str());
                 }
             }
@@ -344,7 +344,7 @@ ECTypeDescriptor ECSqlFieldFactory::DetermineDataType(DateTime::Info& dateTimeIn
             {
             if (ECObjectsStatus::Success != CoreCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, ecProperty))
                 {
-                issues.Report("Could not read DateTimeInfo custom attribute from the primitive array ECProperty %s:%s.",
+                issues.ReportV("Could not read DateTimeInfo custom attribute from the primitive array ECProperty %s:%s.",
                            ecProperty.GetClass().GetFullName(), ecProperty.GetName().c_str());
                 }
             }

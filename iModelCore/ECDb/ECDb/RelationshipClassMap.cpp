@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/RelationshipClassMap.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -883,7 +883,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
 
     if (sourceTables.empty() || targetTables.empty())
         {
-        Issues().Report("Failed to map ECRelationshipClass '%s'. Source or target constraint classes are abstract without subclasses. Consider applying the MapStrategy 'TablePerHierarchy' to the abstract constraint class.",
+        Issues().ReportV("Failed to map ECRelationshipClass '%s'. Source or target constraint classes are abstract without subclasses. Consider applying the MapStrategy 'TablePerHierarchy' to the abstract constraint class.",
                         GetClass().GetFullName());
         return ClassMappingStatus::Error;
         }
@@ -900,7 +900,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
         else
             constraintStr = "target constraint is";
 
-        Issues().Report("Failed to map ECRelationshipClass '%s'. It is mapped to a link table, but the %s mapped to more than one table, which is not supported for link tables.",
+        Issues().ReportV("Failed to map ECRelationshipClass '%s'. It is mapped to a link table, but the %s mapped to more than one table, which is not supported for link tables.",
                         GetClass().GetFullName(), constraintStr);
 
         return ClassMappingStatus::Error;
@@ -1069,7 +1069,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(Schem
     Utf8String columnName = DetermineConstraintECInstanceIdColumnName(ca, ECRelationshipEnd_Source);
     if (columnName.empty() || GetPrimaryTable().FindColumn(columnName.c_str()) != nullptr && !GetMapStrategy().IsTablePerHierarchy() && GetMapStrategy().GetStrategy() != MapStrategy::ExistingTable)
         {
-        ctx.Issues().Report("Failed to map ECRelationshipClass '%s': Table '%s' already contains " ECDBSYS_PROP_SourceECInstanceId " column named '%s'.",
+        ctx.Issues().ReportV("Failed to map ECRelationshipClass '%s': Table '%s' already contains " ECDBSYS_PROP_SourceECInstanceId " column named '%s'.",
                    GetClass().GetFullName(), GetPrimaryTable().GetName().c_str(), columnName.c_str());
         return ClassMappingStatus::Error;
         }
