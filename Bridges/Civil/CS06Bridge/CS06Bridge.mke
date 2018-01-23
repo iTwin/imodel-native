@@ -51,7 +51,15 @@ $(o)CS06Bridge$(oext) : $(_MakeFilePath)CS06Bridge.cpp ${MultiCompileDepends} $(
 
 $(o)MarshalHelper$(oext) : $(_MakeFilePath)MarshalHelper.cpp ${MultiCompileDepends}
 
-$(o)ChangeDetectorFacade$(oext) : $(_MakeFilePath)ChangeDetectorFacade.cpp ${MultiCompileDepends} $(_MakeFilePath)ChangeDetectorFacade.h $(TeleporterApiDir)IChangeDetector.h
+$(o)ChangeDetectorFacade$(oext) : $(_MakeFilePath)ChangeDetectorFacade.cpp ${MultiCompileDepends} $(_MakeFilePath)ChangeDetectorFacade.h $(TeleporterApiDir)IChangeDetector.h $(_MakeFilePath)SourceIdentityFacade.h $(_MakeFilePath)SourceStateFacade.h $(_MakeFilePath)RecordFacade.h $(_MakeFilePath)SourceItemProxy.h
+
+$(o)SourceIdentityFacade$(oext) : $(_MakeFilePath)SourceIdentityFacade.cpp ${MultiCompileDepends} $(_MakeFilePath)SourceIdentityFacade.h $(TeleporterApiDir)ISourceIdentity.h
+
+$(o)SourceStateFacade$(oext) : $(_MakeFilePath)SourceStateFacade.cpp ${MultiCompileDepends} $(_MakeFilePath)SourceStateFacade.h $(TeleporterApiDir)ISourceState.h
+
+$(o)RecordFacade$(oext) : $(_MakeFilePath)RecordFacade.cpp ${MultiCompileDepends} $(_MakeFilePath)RecordFacade.h $(TeleporterApiDir)IRecord.h $(TeleporterApiDir)ISourceIdentity.h $(TeleporterApiDir)ISourceState.h $(_MakeFilePath)SourceIdentityFacade.h $(_MakeFilePath)SourceStateFacade.h
+
+$(o)SourceItemProxy$(oext) : $(_MakeFilePath)SourceItemProxy.cpp ${MultiCompileDepends} $(_MakeFilePath)SourceItemProxy.h $(TeleporterApiDir)ISourceItem.h
 
 %include MultiCppCompileGo.mki
 

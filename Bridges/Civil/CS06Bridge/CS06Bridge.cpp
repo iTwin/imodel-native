@@ -123,7 +123,7 @@ SubjectCPtr CS06Bridge::_InitializeJob()
     RoadRailBim::RoadRailPhysicalDomain::GetDomain().SetUpModelHierarchy(*jobSubject, CS06BRIDGE_PhysicalModelName);
 
     auto physicalModelPtr = RoadRailBim::RoadRailPhysicalDomain::QueryPhysicalModel(*jobSubject, CS06BRIDGE_PhysicalModelName);
-    InsertPartitionOriginatesFromRepositoryRelationship(GetDgnDbR(), physicalModelPtr->GetModeledElementId(), repositoryLinkId);
+    InsertElementHasLinksRelationship(GetDgnDbR(), physicalModelPtr->GetModeledElementId(), repositoryLinkId);
 
     return jobSubject;
     }
