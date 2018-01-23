@@ -2,7 +2,7 @@
 |
 |     $Source: Pathway.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "RoadRailPhysicalInternal.h"
@@ -18,6 +18,23 @@ HANDLER_DEFINE_MEMBERS(RoadwayHandler)
 DgnDbStatus PathwayElement::SetMainAlignment(AlignmentCP alignment)
     {
     return SetPropertyValue("MainAlignment", (alignment) ? alignment->GetElementId() : DgnElementId(), Alignment::QueryClassId(GetDgnDb()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus PathwayElement::AddRepresentedBy(PathwayElementCR pathway, DgnElementCR representedBy)
+    {
+    if (!representedBy.GetElementId().IsValid())
+        return DgnDbStatus::BadElement;
+
+    ECInstanceKey insKey;
+    if (DbResult::BE_SQLITE_OK != pathway.GetDgnDb().InsertLinkTableRelationship(insKey,
+        *pathway.GetDgnDb().Schemas().GetClass(BRRP_SCHEMA_NAME, BRRP_REL_ElementRepresentsPathway)->GetRelationshipClassCP(),
+        ECInstanceId(representedBy.GetElementId().GetValue()), ECInstanceId(pathway.GetElementId().GetValue())))
+        return DgnDbStatus::BadElement;
+
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

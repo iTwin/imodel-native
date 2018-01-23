@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/RoadRailPhysical/Pathway.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -39,6 +39,8 @@ public:
     Dgn::DgnElementId GetMainAlignmentId() const { return GetPropertyValueId<Dgn::DgnElementId>("MainAlignment"); }
     RoadRailAlignment::AlignmentCPtr GetMainAlignment() const { return RoadRailAlignment::Alignment::Get(GetDgnDb(), GetMainAlignmentId()); }
     ROADRAILPHYSICAL_EXPORT Dgn::DgnDbStatus SetMainAlignment(RoadRailAlignment::AlignmentCP alignment);
+
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus AddRepresentedBy(PathwayElementCR pathway, Dgn::DgnElementCR representedBy);
 }; // PathwayElement
 
 //=======================================================================================

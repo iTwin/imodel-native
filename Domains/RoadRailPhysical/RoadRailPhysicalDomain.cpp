@@ -2,7 +2,7 @@
 |
 |     $Source: RoadRailPhysicalDomain.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "RoadRailPhysicalInternal.h"
@@ -115,7 +115,7 @@ void RoadRailPhysicalDomain::_OnSchemaImported(DgnDbR dgndb) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   BentleySystems
 //---------------------------------------------------------------------------------------
-CategorySelectorPtr getSpatialCategorySelector(DefinitionModelR model)
+CategorySelectorPtr getSpatialCategorySelector(DefinitionModelR model, bvector<DgnCategoryId> const* additionalCategories)
     {
     Utf8String selectorName = "Default Spatial Road/Rail Categories";
     auto selectorId = model.GetDgnDb().Elements().QueryElementIdByCode(CategorySelector::CreateCode(model, selectorName));
@@ -126,6 +126,13 @@ CategorySelectorPtr getSpatialCategorySelector(DefinitionModelR model)
     selectorPtr = new CategorySelector(model, selectorName);
     selectorPtr->AddCategory(AlignmentCategory::Get(model.GetDgnDb()));
     selectorPtr->AddCategory(RoadRailCategory::GetRoad(model.GetDgnDb()));
+
+    if (additionalCategories)
+        {
+        for (auto categoryId : *additionalCategories)
+            selectorPtr->AddCategory(categoryId);
+        }
+
     return selectorPtr;
     }
 
@@ -258,7 +265,7 @@ BentleyStatus create2dView(DefinitionModelR model, Utf8CP viewName,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus RoadRailPhysicalDomain::SetUpDefaultViews(SubjectCR subject, Utf8CP alignmentPartitionName, Utf8CP physicalPartitionName)
+DgnDbStatus RoadRailPhysicalDomain::SetUpDefaultViews(SubjectCR subject, Utf8CP alignmentPartitionName, Utf8CP physicalPartitionName, bvector<DgnCategoryId> const* additionalCategoriesForSelector)
     {
     auto& dgnDb = subject.GetDgnDb();
 
@@ -271,7 +278,7 @@ DgnDbStatus RoadRailPhysicalDomain::SetUpDefaultViews(SubjectCR subject, Utf8CP 
     auto& subjectName = subject.GetCode().GetValue();
 
     auto displayStyle3dPtr = getDisplayStyle3d(dgnDb.GetDictionaryModel());
-    auto spatialCategorySelectorPtr = getSpatialCategorySelector(dgnDb.GetDictionaryModel());
+    auto spatialCategorySelectorPtr = getSpatialCategorySelector(dgnDb.GetDictionaryModel(), additionalCategoriesForSelector);
     auto model3dSelectorPtr = getModelSelector(dgnDb.GetDictionaryModel(), subjectName.GetUtf8());
     model3dSelectorPtr->AddModel(horizAlignmentModelId);
     model3dSelectorPtr->AddModel(physicalModelPtr->GetModelId());

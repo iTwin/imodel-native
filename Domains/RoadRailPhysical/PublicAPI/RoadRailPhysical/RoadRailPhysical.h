@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/RoadRailPhysical/RoadRailPhysical.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -61,6 +61,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
 
 // Relationships
+#define BRRP_REL_ElementRepresentsPathway                           "ElementRepresentsPathway"
 #define BRRP_REL_PathwayRefersToMainAlignment                       "PathwayRefersToMainAlignment"
 
 

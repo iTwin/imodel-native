@@ -40,4 +40,13 @@
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
+    <ECRelationshipClass typeName="ElementRepresentsPathway" strength="referencing" modifier="Sealed">
+        <BaseClass>rralign:ElementRepresentsElement</BaseClass>
+        <Source multiplicity="(0..1)" roleLabel="represents" polymorphic="true">
+            <Class class="bis:Element"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is represented by" polymorphic="true">
+            <Class class="PathwayElement"/>
+        </Target>
+    </ECRelationshipClass>
 </ECSchema>
