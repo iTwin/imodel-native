@@ -46,14 +46,22 @@ DbResult BeSQLiteProfileManager::UpgradeProfile(DbR db, Db::OpenParams const& op
     if (!profileNeedsUpgrade)
         return stat;
 
+    //! Note we have no major change os it sfine to skip upgrade if file was open as readonly
+    if (db.IsReadonly())
+        {
+        LOG.infov("Version of file's " PROFILENAME " profile is too old. Upgrading '%s' needed but skipping upgrade as file has been open as readonly.", db.GetDbFileName());
+        return BE_SQLITE_OK;
+        }
+
     LOG.infov("Version of file's " PROFILENAME " profile is too old. Upgrading '%s' now...", db.GetDbFileName());
 
-    //if ECDb file is readonly, reopen it in read-write mode
-    if (!openParams._ReopenForProfileUpgrade(db))
-        {
-        LOG.error("Upgrade of file's " PROFILENAME " profile failed because file could not be re-opened in read-write mode.");
-        return BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite;
-        }
+    //We have no major change so no need to reopen file and try to upgrade it.
+    ////if ECDb file is readonly, reopen it in read-write mode
+    //if (!openParams._ReopenForProfileUpgrade(db))
+    //    {
+    //    LOG.error("Upgrade of file's " PROFILENAME " profile failed because file could not be re-opened in read-write mode.");
+    //    return BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite;
+    //    }
 
     BeAssert(!db.IsReadonly());
     //Call upgrader sequence and let upgraders incrementally upgrade the profile
