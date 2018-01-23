@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Core/SchemaManager.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -205,15 +205,14 @@ BentleyStatus SchemaManager::LoadSchemas
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SchemaManager::FixLegacySchema(ECSchema& schema, ECSchemaReadContextR context)
     {
-    // Workaround older schema errors with ECDbMap.01.00 references:
-    // ECSchema Upgrade failed. ECSchema ECDbMap.02.00.00: Decreasing 'VersionRead' of an ECSchema is not supported.
-    if (SUCCESS != RemoveReferences(schema, SchemaKey("ECDbMap", 1, 0)) ||
-        SUCCESS != RemoveReferences(schema, SchemaKey("ECDbMap", 1, 1)))
+    // Convert ECDbMap.01.00 to ECDbMap.02.00 attributes
+    CustomECSchemaConverterPtr schemaConverter = CustomECSchemaConverter::Create();
+    IECCustomAttributeConverterPtr classMapConverter = new ECDbClassMapConverter(context);
+    schemaConverter->AddConverter(ECDbClassMapConverter::GetSchemaName(), ECDbClassMapConverter::GetClassName(), classMapConverter);
+    if (!schemaConverter->Convert(schema))
         {
-        LOG.errorv(
-            "Failed to remove deprecated schema reference from '%s'.",
-            schema.GetFullSchemaName().c_str());
-        BeAssert(false);
+        LOG.errorv("Failed to convert schema '%s'.", schema.GetFullSchemaName().c_str());
+        return ERROR;
         }
 
     Utf8String versionStr = SchemaKey::FormatLegacySchemaVersion(schema.GetVersionRead(), schema.GetVersionMinor());
