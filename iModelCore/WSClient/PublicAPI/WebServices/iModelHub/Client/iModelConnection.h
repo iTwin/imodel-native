@@ -634,6 +634,10 @@ public:
     IMODELHUBCLIENT_EXPORT BriefcasesInfoTaskPtr QueryBriefcasesInfo(bvector<BeSQLite::BeBriefcaseId>& briefcasesIds, 
                                                                      ICancellationTokenPtr cancellationToken = nullptr) const;
 
+    //! Returns all codes and locks.
+    //! @param[in] cancellationToken
+    IMODELHUBCLIENT_EXPORT CodeLockSetTaskPtr QueryAllCodesLocks(ICancellationTokenPtr cancellationToken = nullptr) const;
+
     //! Returns all codes and locks by ids.
     //! @param[in] codes
     //! @param[in] locks
@@ -656,6 +660,10 @@ public:
     IMODELHUBCLIENT_EXPORT CodeLockSetTaskPtr QueryCodesLocks(BeSQLite::BeBriefcaseId const briefcaseId, 
                                                               ICancellationTokenPtr cancellationToken = nullptr) const;
     
+    //! Returns all codes.
+    //! @param[in] cancellationToken
+    IMODELHUBCLIENT_EXPORT CodeInfoSetTaskPtr QueryAllCodes(ICancellationTokenPtr cancellationToken = nullptr) const;
+
     //! Returns all codes by ids.
     //! @param[in] codes
     //! @param[in] cancellationToken
@@ -677,6 +685,10 @@ public:
                                                                       ICancellationTokenPtr cancellationToken = nullptr) const;
 
     
+    //! Returns all locks.
+    //! @param[in] cancellationToken
+    IMODELHUBCLIENT_EXPORT LockInfoSetTaskPtr QueryAllLocks(ICancellationTokenPtr cancellationToken = nullptr) const;
+
     //! Returns all locks by ids.
     //! @param[in] locks
     //! @param[in] cancellationToken
