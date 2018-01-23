@@ -1352,6 +1352,39 @@ Render::SceneLightsPtr DisplayStyle3d::CreateSceneLights(Render::TargetR target)
 
     lights->m_fstop = GetSceneBrightness();
 
+#define IBL_TESTING
+#ifdef IBL_TESTING
+    BeFileName      testSmartIbl(L"D:\\SmartIBL\\Arches_E_PineTree.zip");
+
+    if (!m_diffuseLightTexture.IsValid())
+        {
+        auto    diffuseMap = ImageLight::DiffuseFromSmartIBL(testSmartIbl);
+
+        if (diffuseMap.IsValid())
+            {
+            Texture::CreateParams createParams;
+
+            createParams.SetIsRGBE();
+            m_diffuseLightTexture = target.GetSystem()._CreateTexture(diffuseMap->GetImage(), GetDgnDb(), createParams);
+            }
+        }
+    if (!m_reflectionTexture.IsValid())
+        {
+        auto    reflectionMap = ImageLight::ReflectionFromSmartIBL(testSmartIbl);
+
+        if (reflectionMap.IsValid())
+            {
+            Texture::CreateParams createParams;
+
+            createParams.SetIsRGBE();
+            m_reflectionTexture = target.GetSystem()._CreateTexture(reflectionMap->GetImage(), GetDgnDb(), createParams);
+            }
+        }
+
+    lights->m_diffuseImage = m_diffuseLightTexture.get();
+    lights->m_environmentMap = m_reflectionTexture.get();
+        
+#else
     if (IsSkyBoxEnabled())
         {
         LoadSkyBoxMaterial (target.GetSystem());
@@ -1359,6 +1392,7 @@ Render::SceneLightsPtr DisplayStyle3d::CreateSceneLights(Render::TargetR target)
         if (m_skyboxMaterial.IsValid() && m_skyboxMaterial->HasTextureMapping())
             lights->m_environmentMap = const_cast<Render::TextureP> (m_skyboxMaterial->GetTextureMapping().GetTexture());
         }
+#endif
 
 
     return lights;

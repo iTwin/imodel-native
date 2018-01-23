@@ -201,6 +201,8 @@ public:
 protected:
     EnvironmentDisplay m_environment;
     mutable Render::MaterialPtr m_skyboxMaterial;
+    mutable Render::TexturePtr m_diffuseLightTexture;
+    mutable Render::TexturePtr m_reflectionTexture;
 
     DGNPLATFORM_EXPORT void _OnLoadedJsonProperties() override;
     DGNPLATFORM_EXPORT void _OnSaveJsonProperties() override;

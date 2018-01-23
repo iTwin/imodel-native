@@ -138,7 +138,7 @@ static BentleyStatus   parseValue(uint32_t& value, char& sign, char& dimension, 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-HDRImage HDRImage::FromHDR(uint8_t const* pData, uint32_t srcLen)
+HDRImage HDRImage::FromHDR(uint8_t const* pData, uint32_t srcLen, Encoding encoding)
     {  
     char const*     srcCharData = reinterpret_cast<char const*> (pData);
     char const*     srcCharEnd = srcCharData + srcLen;
@@ -174,6 +174,7 @@ HDRImage HDRImage::FromHDR(uint8_t const* pData, uint32_t srcLen)
         return HDRImage();;
         }
     HDRImage    image;
+    image.m_encoding = Encoding::RGBE;
     image.m_format = Image::Format::Rgba;       // Not really... alpha == exponent.
     image.m_width  = (firstDimension == 'X') ? firstValue : secondValue;
     image.m_height = (firstDimension == 'Y') ? firstValue : secondValue; 
@@ -192,6 +193,8 @@ HDRImage HDRImage::FromHDR(uint8_t const* pData, uint32_t srcLen)
             return HDRImage();
             }
         }
+    if (Encoding::RGBE != encoding)
+        image.Encode(encoding);
 
     return image;
     }
@@ -199,9 +202,40 @@ HDRImage HDRImage::FromHDR(uint8_t const* pData, uint32_t srcLen)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+void HDRImage::Encode(Encoding encoding) 
+    {
+    if (encoding == m_encoding)
+        return;     // Nothing to do...
+
+    if (Encoding::RGBM != encoding)
+        {
+        BeAssert(false && "encoding not implemented");
+        return;
+        }
+    for (uint8_t *imageData = m_image.data(), *imageDataEnd = imageData + m_width * m_height * 4; imageData < imageDataEnd; imageData += 4)
+        {
+        constexpr   float s_maxScale = 5.0;
+        int         exponent = imageData[3] - 128;  
+
+        float   d = (float) pow(2.0f, exponent) / 256.0f;
+        uint8_t maxByte = std::max (imageData[0], std::max(imageData[1], imageData[2]));
+        float   maxValue = std::min (s_maxScale, d * maxByte);
+        float   multiplier = maxValue / s_maxScale;
+        float   scale = 255.0 * d / (s_maxScale * maxValue);
+
+        imageData[0] = (uint8_t) (std::min (255.0f, scale * (float) imageData[0]));
+        imageData[1] = (uint8_t) (std::min (255.0f, scale * (float) imageData[1]));
+        imageData[2] = (uint8_t) (std::min (255.0f, scale * (float) imageData[2]));
+        imageData[3] = (int8_t) (255.0 * multiplier);
+        }
+    }
+
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 bvector<float> HDRImage::Decode() const
     { 
-    bvector<float>  decoded;
+    bvector<float>  decoded;        // Not current used/tested.
 
     if (!IsValid())
         {
@@ -209,6 +243,8 @@ bvector<float> HDRImage::Decode() const
         return decoded;
         }
     size_t      nPixels = m_width * m_height;
+
+    decoded.resize(nPixels*3);
     uint8_t     const*  in = m_image.data();
     float*      out = decoded.data();
 

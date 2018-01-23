@@ -528,17 +528,24 @@ public:
 };
 
 //=======================================================================================
-//! An uncompressed high definition image in RgbE  
+//! An uncompressed high definition image in either RGBE or RGBM  
 // @bsiclass                                                    Ray.Bentley     01/2018
 //=======================================================================================
 struct HDRImage : Image
 {
+    enum class Encoding : uint32_t {RGBE = 0, RGBM = 1};
+
+private:
+    Encoding        m_encoding;
+
 public:
     //! Create an HDRImage from a (Radiance) HDR data.
     //! @param[in] srcData the HDR data
     //! @param[in] srcLen the number of bytes of HDR data
-    DGNPLATFORM_EXPORT static HDRImage FromHDR(uint8_t const* srcData, uint32_t srcLen);
+    //! @param[in] encoding the encoding (either RGBM or RGBE)
+    DGNPLATFORM_EXPORT static HDRImage FromHDR(uint8_t const* srcData, uint32_t srcLen, Encoding = Encoding::RGBM);
     bvector<float> Decode () const;
+    void Encode(Encoding encoding); 
 }; 
 
 //=======================================================================================
@@ -620,11 +627,13 @@ struct Texture : RefCounted<NonCopyableClass>
         TextureKey m_key;
         int m_pitch = 0;
         bool m_isTileSection = false;
+        bool m_isRGBE = false;;      // HDR stored with exponenet
 
         TextureKeyCR GetKey() const { return m_key; }
 
         void SetIsTileSection() {m_isTileSection=true;}
         void SetPitch(int val) {m_pitch=val;}
+        void SetIsRGBE() { m_isRGBE = true; }
 
         explicit CreateParams(TextureKeyCR key=TextureKey()) : m_key(key) { }
     };
@@ -2656,6 +2665,7 @@ struct ImageLight
         DPoint2d        m_offset = DPoint2d::FromZero(); 
         double          m_gamma = 0.0;
         bool IsValid() { return m_image.IsValid(); }
+        T_Image const&  GetImage() { return m_image; }
         };
 
     typedef struct T_Map<Image>             Map;
@@ -2666,7 +2676,8 @@ struct ImageLight
     DEFINE_REF_COUNTED_PTR(HDRMap)
     DEFINE_REF_COUNTED_PTR(HDRMultiMap)
 
-    HDRMapPtr ImageLight::DiffuseFromSmartIBL (BeFileNameCR fileName);
+    static HDRMapPtr DiffuseFromSmartIBL (BeFileNameCR fileName, HDRImage::Encoding encoding = HDRImage::Encoding::RGBM);
+    static HDRMapPtr ReflectionFromSmartIBL (BeFileNameCR fileName, HDRImage::Encoding encoding = HDRImage::Encoding::RGBM);
 
 };
 
@@ -2680,9 +2691,8 @@ struct SceneLights : RefCounted<NonCopyableClass>
     double                      m_fstop = 0.0; //!< must be between -3 and +3
     bvector<LightPtr>           m_list;
 
-    Render::TextureP            m_environmentMap;       // WIP.
-    ImageLight::HDRMapPtr       m_diffuseImage;
-    ImageLight::HDRMultiMapPtr  m_specularImage;
+    Render::TextureP            m_environmentMap;       // Reflections
+    Render::TextureP            m_diffuseImage;
 
     void AddLight(LightPtr light) {if (light.IsValid()) m_list.push_back(light);}
     bool IsEmpty() const {return m_list.empty();}

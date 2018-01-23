@@ -35,18 +35,25 @@ BentleyStatus   Open(BeFileNameCR fileName)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ImageLight::HDRMapPtr   ReadEnvironmentMap()
-    {
-    Utf8String      evFileName;
-    ByteStream      evFileBytes;
+ImageLight::HDRMapPtr   ReadEnvironmentMap(HDRImage::Encoding encoding)    { return ReadHDRMap ("EV", encoding);  }
+ImageLight::HDRMapPtr   ReadReflectionMap(HDRImage::Encoding encoding)    { return ReadHDRMap ("REF", encoding);  }
 
-    if (SUCCESS != FindString(evFileName, "EVfile = ") ||
-        SUCCESS != LocateFile (evFileName) ||
-        SUCCESS != ReadCurrentFile(evFileBytes))
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ImageLight::HDRMapPtr   ReadHDRMap (Utf8CP prefix, HDRImage::Encoding encoding)
+    {
+    Utf8String      fileName, preString(prefix);
+    ByteStream      fileBytes;
+
+
+    if (SUCCESS != FindString(fileName, (preString + "file = ").c_str()) ||
+        SUCCESS != LocateFile (fileName) ||
+        SUCCESS != ReadCurrentFile(fileBytes))
         return nullptr;
 
 
-    HDRImage  image  = HDRImage::FromHDR(evFileBytes.GetData(), evFileBytes.GetSize());
+    HDRImage  image  = HDRImage::FromHDR(fileBytes.GetData(), fileBytes.GetSize(), encoding);
 
     if (!image.IsValid())
         return nullptr;
@@ -55,10 +62,10 @@ ImageLight::HDRMapPtr   ReadEnvironmentMap()
     double          gamma;
     DPoint2d        offset;
 
-    ReadValue(gamma,        "EVgamma = ", 1.0);
-    ReadValue(offset.x,     "EVu = ", 0.0);
-    ReadValue(offset.y,     "EVb = ", 0.0);
-    ReadValue(iblMapping,   "EVmap = ", 0); 
+    ReadValue(gamma,        (preString +"gamma = ").c_str(), 1.0);
+    ReadValue(offset.x,     (preString +"u = ").c_str(), 0.0);
+    ReadValue(offset.y,     (preString +"b = ").c_str(), 0.0);
+    ReadValue(iblMapping,   (preString +"map = ").c_str(), 0); 
 
     return new ImageLight::HDRMap(std::move(image), ConvertIblMapping(iblMapping), offset, gamma, false);
     }
@@ -153,11 +160,11 @@ BentleyStatus   ReadCurrentFile(ByteStream& byteStream)
     if (UNZ_OK != unzOpenCurrentFile(m_zipFile))
         return ERROR;
 
-    uint8_t     buffer[4096];
-    int         nRead;
+    bvector<uint8_t>    buffer(1024 * 128);
+    int                 nRead;
 
-    while (0 != (nRead = unzReadCurrentFile(m_zipFile, buffer, sizeof(buffer))))
-        byteStream.Append(buffer, nRead);
+    while (0 != (nRead = unzReadCurrentFile(m_zipFile, buffer.data(), buffer.size())))
+        byteStream.Append(buffer.data(), nRead);
 
     unzCloseCurrentFile(m_zipFile);
     return SUCCESS;
@@ -199,7 +206,7 @@ BentleyStatus FindIBL ()
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ImageLight::HDRMapPtr ImageLight::DiffuseFromSmartIBL (BeFileNameCR fileName)
+ImageLight::HDRMapPtr ImageLight::DiffuseFromSmartIBL (BeFileNameCR fileName, HDRImage::Encoding encoding)
     {
     SmartIblFile        iblFile;
     HDRMap              map;
@@ -207,8 +214,23 @@ ImageLight::HDRMapPtr ImageLight::DiffuseFromSmartIBL (BeFileNameCR fileName)
     if (SUCCESS != iblFile.Open(fileName))
         return nullptr;
         
-    return iblFile.ReadEnvironmentMap();
+    return iblFile.ReadEnvironmentMap(encoding);
     }
+
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ImageLight::HDRMapPtr ImageLight::ReflectionFromSmartIBL (BeFileNameCR fileName, HDRImage::Encoding encoding)
+    {
+    SmartIblFile        iblFile;
+    HDRMap              map;
+
+    if (SUCCESS != iblFile.Open(fileName))
+        return nullptr;
+        
+    return iblFile.ReadReflectionMap(encoding);
+    }
+
 
 
     
