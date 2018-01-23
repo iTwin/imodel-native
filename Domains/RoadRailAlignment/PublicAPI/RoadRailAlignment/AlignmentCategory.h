@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/RoadRailAlignment/AlignmentCategory.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -67,7 +67,7 @@ public:
 
     static void SetUp(Dgn::DgnDbR);
     static Dgn::DgnModelId GetDomainModelId(Dgn::DgnDbR);
-    static AlignmentCategoryModelPtr GetDomainModel(Dgn::DgnDbR);
+    ROADRAILALIGNMENT_EXPORT static AlignmentCategoryModelPtr GetDomainModel(Dgn::DgnDbR);
     static Utf8CP GetDomainPartitionName() { return "Alignment Domain Categories"; }
 }; // AlignmentCategoryModel
 

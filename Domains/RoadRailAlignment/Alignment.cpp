@@ -2,7 +2,7 @@
 |
 |     $Source: Alignment.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "RoadRailAlignmentInternal.h"
@@ -33,6 +33,30 @@ AlignmentPtr Alignment::Create(AlignmentModelCR model)
     retVal->SetStartValue(0.0);
     retVal->SetStartStation(0.0);
     return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+AlignmentCPtr Alignment::GetAssociated(DgnElementCR element)
+    {
+    if (auto alignmentCP = dynamic_cast<AlignmentCP>(&element))
+        return alignmentCP;
+
+    if (auto horizAlignmentCP = dynamic_cast<HorizontalAlignmentCP>(&element))
+        return horizAlignmentCP->QueryAlignment();
+
+    if (auto vertAlignmentCP = dynamic_cast<VerticalAlignmentCP>(&element))
+        return &vertAlignmentCP->GetAlignment();
+
+    auto stmtPtr = element.GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BRRA_SCHEMA(BRRA_REL_ElementRepresentsAlignment) " WHERE SourceECInstanceId=?;");
+    BeAssert(stmtPtr.IsValid());
+
+    stmtPtr->BindId(1, element.GetElementId());
+    if (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
+        return Alignment::Get(element.GetDgnDb(), stmtPtr->GetValueId<DgnElementId>(0));
+
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -249,6 +273,23 @@ DgnDbStatus Alignment::SetMainVertical(AlignmentCR alignment, VerticalAlignmentC
     if (DbResult::BE_SQLITE_OK != alignment.GetDgnDb().InsertLinkTableRelationship(insKey,
         *alignment.GetDgnDb().Schemas().GetClass(BRRA_SCHEMA_NAME, BRRA_REL_AlignmentRefersToMainVertical)->GetRelationshipClassCP(),
         ECInstanceId(alignment.GetElementId().GetValue()), ECInstanceId(vertical.GetElementId().GetValue())))
+        return DgnDbStatus::BadElement;
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Alignment::AddRepresentedBy(AlignmentCR alignment, DgnElementCR representedBy)
+    {
+    if (!representedBy.GetElementId().IsValid())
+        return DgnDbStatus::BadElement;
+
+    ECInstanceKey insKey;
+    if (DbResult::BE_SQLITE_OK != alignment.GetDgnDb().InsertLinkTableRelationship(insKey,
+        *alignment.GetDgnDb().Schemas().GetClass(BRRA_SCHEMA_NAME, BRRA_REL_ElementRepresentsAlignment)->GetRelationshipClassCP(),
+        ECInstanceId(representedBy.GetElementId().GetValue()), ECInstanceId(alignment.GetElementId().GetValue())))
         return DgnDbStatus::BadElement;
 
     return DgnDbStatus::Success;

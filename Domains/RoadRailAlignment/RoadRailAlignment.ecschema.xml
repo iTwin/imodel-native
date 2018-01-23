@@ -135,4 +135,22 @@
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
+    <ECRelationshipClass typeName="ElementRepresentsElement" strength="referencing" modifier="Abstract">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
+        <Source multiplicity="(0..*)" roleLabel="represents" polymorphic="true">
+            <Class class="bis:Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is represented by" polymorphic="true">
+            <Class class="bis:SpatialElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ElementRepresentsAlignment" strength="referencing" modifier="Sealed">
+        <BaseClass>ElementRepresentsElement</BaseClass>
+        <Source multiplicity="(0..1)" roleLabel="represents" polymorphic="true">
+            <Class class="bis:Element"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is represented by" polymorphic="false">
+            <Class class="Alignment"/>
+        </Target>
+    </ECRelationshipClass>
 </ECSchema>
