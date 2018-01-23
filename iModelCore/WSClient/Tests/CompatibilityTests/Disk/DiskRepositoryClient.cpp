@@ -101,7 +101,7 @@ m_schemasDir(schemasDir)
         if (path.IsDirectory())
             continue;
 
-        if (!path.GetExtension().EqualsI(L"xml"))
+        if (!path.GetFileNameAndExtension().ContainsI(L".ecschema.xml"))
             continue;
 
         SchemaKey key;
@@ -181,7 +181,9 @@ ICancellationTokenPtr ct
         instances.Add({"MetaSchema", "ECSchemaDef", fullName}, {
                 {"Name", key.m_schemaName},
                 {"VersionMajor", key.m_versionRead},
-                {"VersionMinor", key.m_versionMinor}});
+                {"VersionMinor", key.m_versionMinor},
+                {"VersionWrite", key.m_versionWrite}
+            });
         }
 
     // No ETag because WSG tries to parse it if sent
