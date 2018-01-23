@@ -904,7 +904,7 @@ public:
     Params& _GetParams() override {return m_params;}
 
     //! Look up the job Subject element
-    SubjectCPtr GetJobSubject() const {return m_db->Elements().Get<Subject>(m_params.GetJobSubjectId());}
+    SubjectCPtr GetJobSubject() const {return m_db->Elements().Get<Subject>(const_cast<iModelBridgeBase*>(this)->_GetParams().GetJobSubjectId());}
 
     //! Return the job's spatial data transform
     Transform GetSpatialDataTransform() {return iModelBridge::GetSpatialDataTransform(*GetJobSubject());}
