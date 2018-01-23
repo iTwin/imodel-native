@@ -1158,6 +1158,9 @@ struct SkipSchemaImportTests : public ConverterTestBaseFixture
         }
     };
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            01/2018
+//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SkipSchemaImportTests, WithInstances)
     {
     LineUpFiles(L"SkipSchema.ibim", L"Test3d.dgn", false);

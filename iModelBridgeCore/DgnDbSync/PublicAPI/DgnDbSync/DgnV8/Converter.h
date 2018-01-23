@@ -2831,6 +2831,7 @@ struct ConvertV8Lights : ConvertToDgnDbElementExtension
     void _ProcessResults(ElementConversionResults&, DgnV8EhCR, ResolvedModelMapping const&, Converter&) override;
     bool _IgnorePublicChildren() override {return true;}
     bool _DisablePostInstancing() override {return true;}
+    BisConversionRule _DetermineBisConversionRule(DgnV8EhCR v8eh, DgnDbR dgndb, BisConversionTargetModelInfoCR) override;
 };
 
 //=======================================================================================
