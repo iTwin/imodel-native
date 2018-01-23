@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/MeshTile.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #define CLASSIFICATION_WIP
@@ -851,7 +851,7 @@ protected:
         : m_dgnRange(range), m_depth(depth), m_siblingIndex(siblingIndex), m_tolerance(tolerance), m_parent(parent), m_transformFromDgn(transformFromDgn), m_publishedRange(DRange3d::NullRange()), m_model(&model), m_isEmpty(true) { }
 
     virtual PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR dgndb, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool doSurfacesOnly=false, bool doInstancing=true, ITileGenerationFilterCP filter = nullptr) const = 0;
-    virtual TileGeneratorStatus _CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold, ITileCollectionFilterCP filter) { return TileGeneratorStatus::Success; }
+    virtual TileGeneratorStatus _CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool* leafThresholdExceeded, double leafTolerance, double tileTolerance, bool surfacesOnly, size_t leafCountThreshold, ITileCollectionFilterCP filter) { return TileGeneratorStatus::Success; }
     virtual void _ClearGeometry() { }
     virtual WString _GetFileExtension() const = 0;
 
@@ -894,7 +894,7 @@ public:
     uint32_t GetAttributesIndex(FeatureAttributesCR attr) { return GetAttributes().GetIndex(attr); }
     uint32_t GetAttributesIndex(TileGeometryCR geometry) { return GetAttributes().GetIndex(geometry.GetAttributes()); }
 
-    TileGeneratorStatus  CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold, ITileCollectionFilterCP filter = nullptr) { return _CollectGeometry(cache, db, leafThresholdExceeded, tolerance, surfacesOnly, leafCountThreshold, filter); }
+    TileGeneratorStatus  CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool* leafThresholdExceeded, double leafTolerance, double tileTolerance, bool surfacesOnly, size_t leafCountThreshold, ITileCollectionFilterCP filter = nullptr) { return _CollectGeometry(cache, db, leafThresholdExceeded, leafTolerance, tileTolerance, surfacesOnly, leafCountThreshold, filter); }
     void  ClearGeometry() { _ClearGeometry(); }
     WString GetFileExtension() const { return _GetFileExtension(); }
     PublishableTileGeometry GeneratePublishableGeometry(DgnDbR dgndb, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool doSurfacesOnly=false, bool doInstancing=true, ITileGenerationFilterCP filter = nullptr) const
@@ -934,7 +934,7 @@ protected:
 
 
     DGNPLATFORM_EXPORT PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR, TileGeometry::NormalMode, bool surfacesOnly, bool doInstancing, ITileGenerationFilterCP filter) const override;
-    TileGeneratorStatus _CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold, ITileCollectionFilterCP) override;
+    TileGeneratorStatus _CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool* leafThresholdExceeded, double leafTolerance, double tileTolerance, bool surfacesOnly, size_t leafCountThreshold, ITileCollectionFilterCP) override;
     void _ClearGeometry() override { m_geometries.clear(); }
     WString _GetFileExtension() const override { return m_containsParts ? L"cmpt" : L"b3dm"; }
 
