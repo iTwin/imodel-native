@@ -693,7 +693,7 @@ bool EvaluateAtDistance
     DVec2dP d3XY   //!< [out] third derivative wrt distance
     ) const override;
 //! Evaluate at distance a spiral in standard orientation -- zero curvature at origin.
-static bool DSpiral2dAustralian::EvaluateAtDistanceInStandardOrientation
+static bool EvaluateAtDistanceInStandardOrientation
     (
     double s,           //!< [in] distance for evaluation
     double length,      //! [in] strictly nonzero length along spiral.

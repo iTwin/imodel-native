@@ -493,7 +493,7 @@ SaveAndRestoreCheckTransform ()
     m_finalShift.Zero ();
     m_baseTransform = Check::GetTransform ();
     }
-SaveAndRestoreCheckTransform (double dxFinal, double dyFinal, double dzFinal)
+SaveAndRestoreCheckTransform (double dxFinal, double dyFinal, double dzFinal = 0.0)
     {
     m_finalShift.Init (dxFinal, dyFinal, dzFinal);
     m_baseTransform = Check::GetTransform ();

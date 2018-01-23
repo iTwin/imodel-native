@@ -588,13 +588,17 @@ ICurvePrimitivePtr &primitiveB  //!< [in]  second spiral
 );
 
 //! Construct a spiral with start radius, spiral length, and end radius.
-//! This is a special construction for "cubic" approximations.
-//! The constructed spiral is a fractional subset of another spiral that includes its inflection point (which may be outside
-//! the active fractional subset).
-GEOMDLLIMPEXP static ICurvePrimitivePtr CreatePseudoSpiralRadiusLengthRadius
+//!<ul>
+//!<li> The spiral is paralllel to the xy plane.
+//!<li> This is a special construction for "cubic" approximations.
+//!<li> The constructed spiral is a fractional subset of another spiral that includes its inflection point (which may be outside
+//!           the active fractional subset).
+//!</ul>
+GEOMDLLIMPEXP static ICurvePrimitivePtr CreatePseudoSpiralPointBearingRadiusLengthRadius
 (
 int typeCode,               //!< [in] transition type.  This method is intended to work with "cubic" approximations (New South Wales, Australian etc)
-TransformCR frame,          //!< [in] placement frame.  The constructed spiral will start at the origin of this frame and be directed along the x axis.
+DPoint3dCR startPoint,      //!< [in] start point of spiral.
+double startRadians,        //!< [in] start bearing angle in xy plane.
 double radiusA,             //!< [in] (signed) radius (or 0 for line) at start.
 double lengthAB,            //!< [in] length of spiral between radiusA and radiusB.
 double radiusB              //!< [in] (signed) radius (or 0 for line) at end.

@@ -2,7 +2,7 @@
 |
 |  $Source: geom/test/PolyfaceTest/t_rangeTree.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "testHarness.h"
@@ -389,7 +389,191 @@ TEST(PolyfaceOffset,OpenMesh2)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(PolyfaceOffset,CrinklePointA)
+    {
+    static double s_zScale = 1.0;
+    PolyfaceHeader::OffsetOptions offsetOptions;
 
+    auto options = IFacetOptions::Create ();
+
+    // central point and 4 outer points of 20x20 square around the origin
+    bvector<DPoint3d> points
+        {
+        DPoint3d::From (0,0,0),
+        DPoint3d::From (10,-10,0),
+        DPoint3d::From (10,10,0),
+        DPoint3d::From (-10,10,0),
+        DPoint3d::From (-10,-10,0),
+        };
+    // create variations with shifted z at fringe points.
+    for (auto shift : bvector<DVec3d> {
+            DVec3d::From (0,0,0),
+            DVec3d::From (1,0,0),
+            DVec3d::From(1,1,0),
+            DVec3d::From (1,0,-1),
+            DVec3d::From (1,0,1),
+            DVec3d::From (2,0,2),
+            DVec3d::From (4,-1,4)
+            })
+        {
+        IPolyfaceConstructionPtr meshBuilder = IPolyfaceConstruction::Create (*options);
+        SaveAndRestoreCheckTransform shifter (40,0,0);
+        DPoint3d point1 = points[1];  point1.z += s_zScale * shift.x;
+        DPoint3d point2 = points[2];  point2.z += s_zScale * shift.y;
+        DPoint3d point3 = points[3];  point3.z += s_zScale * shift.z;
+        meshBuilder->AddTriangulation (bvector<DPoint3d> {points[0],point1, point2});
+        meshBuilder->AddTriangulation (bvector<DPoint3d> {points[0],point2, point3});
+        meshBuilder->AddTriangulation (bvector<DPoint3d> {points[0],point3, points[4]});
+        meshBuilder->AddTriangulation (bvector<DPoint3d> {points[0],points[4], point1});
+        auto mesh0 = meshBuilder->GetClientMeshPtr ();
+        Check::SaveTransformed (*mesh0);
+
+        auto mesh1 = mesh0->ComputeOffset (offsetOptions, 1.0, -0.25);
+        if (mesh1.IsValid ())
+            {
+            Check::Shift (0,30,0);
+            Check::SaveTransformed (*mesh1);
+            }
+        }
+    Check::ClearGeometry ("PolyfaceOffset.CrinklePointA");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(PolyfaceOffset,CrinklePointB)
+    {
+    static double s_zScale = 1.0;
+    PolyfaceHeader::OffsetOptions offsetOptions;
+
+    auto options = IFacetOptions::Create ();
+    double positiveOffset = 2.0;
+    for (double centerOffset : {0.0, 2.0, -2.0})
+        {
+        SaveAndRestoreCheckTransform shifter (0, 400, 0);
+        for (uint32_t totalEdgePoint : {5, 9, 11, 13})
+            {
+            SaveAndRestoreCheckTransform shifter (200, 0);
+            double radians = Angle::TwoPi () / totalEdgePoint;
+            double aX = 10.0;
+            double aY = 8.0;
+            DPoint3d origin = DPoint3d::From (0,0,centerOffset);
+            // create variations with shifted z at fringe points.
+            double aZ = 3.0;
+            for (double phaseFactor : {3.5, 6.2})
+                {
+                SaveAndRestoreCheckTransform shifter (0, 30, 0);
+                bvector<DPoint3d> edgePoint;
+
+                // make point coordinates around an ellipse, with z varying on a (faster) sine wave
+                for (size_t i = 0; i < totalEdgePoint; i++)
+                    {
+                    double theta = i * radians;
+                    double beta = phaseFactor * radians * i;
+                    edgePoint.push_back (DPoint3d::From (aX * cos(theta), aY * sin (theta), aZ * sin (beta)));
+                    }
+                DPoint3d edgePoint0 = edgePoint[0];
+                edgePoint.push_back (edgePoint0);     // replicate for simple indexing
+                // Make meshes with various leading subsets of the egde points.
+                for (size_t numEdgePoint : bvector<size_t>{totalEdgePoint, 3, 4, 6, 7})
+                    {
+                    if (numEdgePoint <= totalEdgePoint)
+                        {
+                        SaveAndRestoreCheckTransform shifter (25,0,0);
+                        bvector<DPoint3d> vertexPolygon;
+                        IPolyfaceConstructionPtr meshBuilder = IPolyfaceConstruction::Create (*options);
+                        for (size_t i = 0; i < numEdgePoint; i++)
+                            {
+                            meshBuilder->AddTriangulation (bvector<DPoint3d> {origin, edgePoint[i], edgePoint[i+1]});
+                            auto unitNormal = DVec3d::FromNormalizedCrossProductToPoints(origin, edgePoint[i], edgePoint[i+1]);
+                            vertexPolygon.push_back (origin + unitNormal * positiveOffset);
+                            }
+                        for (auto xyz : vertexPolygon)
+                            Check::SaveTransformed (DSegment3d::From (origin, DPoint3d::FromInterpolate (origin, 0.8, xyz)));
+                        auto v0 = vertexPolygon[0];
+                        vertexPolygon.push_back (v0);
+                        Check::SaveTransformed (vertexPolygon);
+                        auto mesh0 = meshBuilder->GetClientMeshPtr ();
+                        Check::SaveTransformed (*mesh0);
+
+                        auto mesh1 = mesh0->ComputeOffset (offsetOptions, positiveOffset, -0.25, true, false, false);
+                        if (mesh1.IsValid ())
+                            {
+                            Check::Shift (0,0,15);
+                            Check::SaveTransformed (*mesh0);
+                            Check::SaveTransformed (*mesh1);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    Check::ClearGeometry ("PolyfaceOffset.CrinklePointB");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(PolyfaceOffset,CrinklePointC)
+    {
+    static double s_zScale = 1.0;
+    PolyfaceHeader::OffsetOptions offsetOptions;
+
+    auto options = IFacetOptions::Create ();
+    double positiveOffset = 2.0;
+    for (double centerZ : {0.0, 1.0, -1.0})
+        {
+        SaveAndRestoreCheckTransform shifter (0, 50, 0);
+        for (uint32_t numEdgePoint : {3, 4, 7})
+            {
+            SaveAndRestoreCheckTransform shifter (100, 0);
+            double radians = Angle::TwoPi () / numEdgePoint;
+            double aX = 10.0;
+            double aY = 10.0;
+            DPoint3d origin = DPoint3d::From (0,0,centerZ);
+            // create variations with shifted z at fringe points.
+            double aZ = 3.0;
+            bvector<DPoint3d> edgePoint;
+
+            // make point coordinates around an ellipse, with z varying on a (faster) sine wave
+            for (size_t i = 0; i < numEdgePoint; i++)
+                {
+                double theta = i * radians;
+                edgePoint.push_back (DPoint3d::From (aX * cos(theta), aY * sin (theta), 0.0));
+                }
+            DPoint3d edgePoint0 = edgePoint[0];
+            edgePoint.push_back (edgePoint0);     // replicate for simple indexing
+            bvector<DPoint3d> vertexPolygon;
+            IPolyfaceConstructionPtr meshBuilder = IPolyfaceConstruction::Create (*options);
+            for (size_t i = 0; i < numEdgePoint; i++)
+                {
+                bvector<DPoint3d> triangle {origin, edgePoint[i], edgePoint[i+1]};
+                auto unitNormal = DVec3d::FromNormalizedCrossProductToPoints(origin, edgePoint[i], edgePoint[i+1]);
+                meshBuilder->AddTriangulation (triangle);
+                bvector<DPoint3d> offsetTriangle = triangle;
+                offsetTriangle.push_back (triangle.front ());
+                for (auto i = 0; i < offsetTriangle.size (); i++)
+                    offsetTriangle[i] = offsetTriangle[i] + positiveOffset * unitNormal;
+                Check::SaveTransformed (offsetTriangle);
+                }
+            auto mesh0 = meshBuilder->GetClientMeshPtr ();
+            Check::SaveTransformed (*mesh0);
+
+            auto mesh1 = mesh0->ComputeOffset (offsetOptions, positiveOffset, -0.25, true, false, false);
+            if (mesh1.IsValid ())
+                {
+
+                Check::Shift (3.0 * aX, 0, 0);
+                Check::SaveTransformed (*mesh0);
+                Check::SaveTransformed (*mesh1);
+                }
+            }
+        }
+    Check::ClearGeometry ("PolyfaceOffset.CrinklePointC");
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17

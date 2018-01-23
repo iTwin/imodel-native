@@ -392,6 +392,14 @@ double maxStrokeLength
 
     double beta0 = spiral.DistanceToGlobalAngle (distance0);
     double beta1 = spiral.DistanceToGlobalAngle (distance1);
+
+    double kurvature0 = spiral.DistanceToCurvature (distance0);
+    double kurvature1 = spiral.DistanceToCurvature (distance1);
+    double dbeta = fabs (beta1 - beta0);
+    if (kurvature0 * kurvature1 < 0.0)
+        {
+        dbeta = DoubleOps::Max (dbeta, spiral.mLength * (fabs (kurvature0) + fabs (kurvature1)) * 0.5);
+        }
     if (maxRadians <= 0.0)
         maxRadians = DSpiral2dBase::DefaultStrokeAngle ();
     else if (maxRadians > sMaxRadians)
@@ -399,7 +407,7 @@ double maxStrokeLength
     //double lengthScale = sqrt (fabs (spiral.mC));
     //double maxLengthStep = sMaxLengthStepFactor * lengthScale;
 
-    int numInterval = (int) (0.9999999999 + fabs (beta1 - beta0) / maxRadians);
+    int numInterval = (int) (0.9999999999 + dbeta / maxRadians);
 
     int numIntervalByDistance = maxStrokeLength > 0 ? (int)(0.9999999999 + fabs (distance1 - distance0) / maxStrokeLength) : numInterval;
     if (numIntervalByDistance > numInterval)
