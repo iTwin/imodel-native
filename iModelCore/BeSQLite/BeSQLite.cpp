@@ -2973,6 +2973,7 @@ Utf8CP Db::InterpretDbResult(DbResult result)
         case BE_SQLITE_NOTADB:              return "BE_SQLITE_NOTADB";
         case BE_SQLITE_ROW:                 return "BE_SQLITE_ROW";
         case BE_SQLITE_DONE:                return "BE_SQLITE_DONE";
+
         case BE_SQLITE_IOERR_READ:          return "BE_SQLITE_IOERR_READ";
         case BE_SQLITE_IOERR_SHORT_READ:    return "BE_SQLITE_IOERR_SHORT_READ";
         case BE_SQLITE_IOERR_WRITE:         return "BE_SQLITE_IOERR_WRITE";
@@ -2993,17 +2994,38 @@ Utf8CP Db::InterpretDbResult(DbResult result)
         case BE_SQLITE_IOERR_SHMOPEN:       return "BE_SQLITE_IOERR_SHMOPEN";
         case BE_SQLITE_IOERR_SHMSIZE:       return "BE_SQLITE_IOERR_SHMSIZE";
         case BE_SQLITE_IOERR_SHMLOCK:       return "BE_SQLITE_IOERR_SHMLOCK";
+        case BE_SQLITE_IOERR_SHMMAP:        return "BE_SQLITE_IOERR_SHMMAP";
+        case BE_SQLITE_IOERR_SEEK:          return "BE_SQLITE_IOERR_SEEK";
+        case BE_SQLITE_IOERR_DELETE_NOENT:  return "BE_SQLITE_IOERR_DELETE_NOENT";
+
+        case BE_SQLITE_ERROR_FileExists:    return "BE_SQLITE_ERROR_FileExists";
+        case BE_SQLITE_ERROR_AlreadyOpen:   return "BE_SQLITE_ERROR_AlreadyOpen";
+        case BE_SQLITE_ERROR_NoPropertyTable:return "BE_SQLITE_ERROR_NoPropertyTable";
+        case BE_SQLITE_ERROR_FileNotFound:   return "BE_SQLITE_ERROR_FileNotFound";
+        case BE_SQLITE_ERROR_NoTxnActive:    return "BE_SQLITE_ERROR_NoTxnActive";
+        case BE_SQLITE_ERROR_BadDbProfile:                           return "BE_SQLITE_ERROR_BadDbProfile";
+        case BE_SQLITE_ERROR_InvalidProfileVersion:                  return "BE_SQLITE_ERROR_InvalidProfileVersion";
+        case BE_SQLITE_ERROR_ProfileUpgradeFailed:                   return "BE_SQLITE_ERROR_ProfileUpgradeFailed";
+        case BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite: return "BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite";
+        case BE_SQLITE_ERROR_ProfileTooOld:                          return "BE_SQLITE_ERROR_ProfileTooOld";
+        case BE_SQLITE_ERROR_ProfileTooNewForReadWrite:              return "BE_SQLITE_ERROR_ProfileTooNewForReadWrite";
+        case BE_SQLITE_ERROR_ProfileTooNew:                          return "BE_SQLITE_ERROR_ProfileTooNew";
+        case BE_SQLITE_ERROR_ChangeTrackError:                       return "BE_SQLITE_ERROR_ChangeTrackError";
+        case BE_SQLITE_ERROR_InvalidRevisionVersion: return "BE_SQLITE_ERROR_ChangeTrackError";
+        case BE_SQLITE_ERROR_SchemaUpgradeRequired:  return "BE_SQLITE_ERROR_ChangeTrackError";
+        case BE_SQLITE_ERROR_SchemaTooNew:           return "BE_SQLITE_ERROR_ChangeTrackError";
+        case BE_SQLITE_ERROR_SchemaTooOld:           return "BE_SQLITE_ERROR_ChangeTrackError";
+        case BE_SQLITE_ERROR_SchemaLockFailed:       return "BE_SQLITE_ERROR_ChangeTrackError";
+        case BE_SQLITE_ERROR_SchemaUpgradeFailed:    return "BE_SQLITE_ERROR_ChangeTrackError";
+        case BE_SQLITE_ERROR_SchemaImportFailed:     return "BE_SQLITE_ERROR_ChangeTrackError";
+        case BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes: return "BE_SQLITE_ERROR_ChangeTrackError";
+
         case BE_SQLITE_LOCKED_SHAREDCACHE:  return "BE_SQLITE_LOCKED_SHAREDCACHE";
         case BE_SQLITE_BUSY_RECOVERY:       return "BE_SQLITE_BUSY_RECOVERY";
         case BE_SQLITE_CANTOPEN_NOTEMPDIR:  return "BE_SQLITE_CANTOPEN_NOTEMPDIR";
         case BE_SQLITE_CANTOPEN_ISDIR:      return "BE_SQLITE_CANTOPEN_ISDIR";
         case BE_SQLITE_CANTOPEN_FULLPATH:   return "BE_SQLITE_CANTOPEN_FULLPATH";
         case BE_SQLITE_CORRUPT_VTAB:        return "BE_SQLITE_CORRUPT_VTAB";
-        case BE_SQLITE_ERROR_FileExists:    return "BE_SQLITE_ERROR_FileExists";
-        case BE_SQLITE_ERROR_AlreadyOpen:   return "BE_SQLITE_ERROR_AlreadyOpen";
-        case BE_SQLITE_ERROR_NoPropertyTable:return "BE_SQLITE_ERROR_NoPropertyTable";
-        case BE_SQLITE_ERROR_FileNotFound:   return "BE_SQLITE_ERROR_FileNotFound";
-        case BE_SQLITE_ERROR_NoTxnActive:    return "BE_SQLITE_ERROR_NoTxnActive";
         case BE_SQLITE_READONLY_RECOVERY:    return "BE_SQLITE_READONLY_RECOVERY";
         case BE_SQLITE_READONLY_CANTLOCK:    return "BE_SQLITE_READONLY_CANTLOCK";
         case BE_SQLITE_READONLY_ROLLBACK:    return "BE_SQLITE_READONLY_ROLLBACK";
@@ -3017,14 +3039,6 @@ Utf8CP Db::InterpretDbResult(DbResult result)
         case BE_SQLITE_CONSTRAINT_TRIGGER:    return "BE_SQLITE_CONSTRAINT_TRIGGER";
         case BE_SQLITE_CONSTRAINT_UNIQUE:     return "BE_SQLITE_CONSTRAINT_UNIQUE";
         case BE_SQLITE_CONSTRAINT_VTAB:       return "BE_SQLITE_CONSTRAINT_VTAB";
-        case BE_SQLITE_ERROR_BadDbProfile:                           return "BE_SQLITE_ERROR_BadDbProfile";
-        case BE_SQLITE_ERROR_InvalidProfileVersion:                  return "BE_SQLITE_ERROR_InvalidProfileVersion";
-        case BE_SQLITE_ERROR_ProfileUpgradeFailed:                   return "BE_SQLITE_ERROR_ProfileUpgradeFailed";
-        case BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite: return "BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite";
-        case BE_SQLITE_ERROR_ProfileTooOld:                          return "BE_SQLITE_ERROR_ProfileTooOld";
-        case BE_SQLITE_ERROR_ProfileTooNewForReadWrite:              return "BE_SQLITE_ERROR_ProfileTooNewForReadWrite";
-        case BE_SQLITE_ERROR_ProfileTooNew:                          return "BE_SQLITE_ERROR_ProfileTooNew";
-        case BE_SQLITE_ERROR_ChangeTrackError:                       return "BE_SQLITE_ERROR_ChangeTrackError";
         }
 
     return "<unkown result code>";
