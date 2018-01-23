@@ -1060,7 +1060,7 @@ public:
     DgnElementId WriteRepositoryLink(DgnV8FileR file);
 
     //! Look in the in-memory cache for the RepositoryLink that represents this file in the BIM
-    DgnElementId GetRepositoryLinkFromAppData(DgnV8FileCR file);
+    DGNDBSYNC_EXPORT DgnElementId GetRepositoryLinkFromAppData(DgnV8FileCR file);
 
     void SetRepositoryLinkInAppData(DgnV8FileCR file, DgnElementId rlinkId);
 
