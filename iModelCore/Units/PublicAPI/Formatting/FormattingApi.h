@@ -297,7 +297,7 @@ public:
         m_fractPrecision(other.m_fractPrecision), m_decimalSeparator(other.m_decimalSeparator),
         m_thousandsSeparator(other.m_thousandsSeparator), m_barType(other.m_barType), m_uomSeparator(other.m_uomSeparator),
         m_statSeparator(other.m_statSeparator), m_minWidth(other.m_minWidth) {}
-    UNITS_EXPORT NumericFormatSpec(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision);
+    UNITS_EXPORT NumericFormatSpec(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision, Utf8CP uomSeparator=nullptr);
     UNITS_EXPORT NumericFormatSpec(Json::Value jval);
     UNITS_EXPORT NumericFormatSpec(Utf8CP jsonString);
     UNITS_EXPORT NumericFormatSpec& operator=(const NumericFormatSpec& other);
@@ -679,6 +679,7 @@ public:
         Utf8CP GetAlias() const { return m_alias.c_str(); }
         UNITS_EXPORT bool HasName(Utf8CP name) const;
         UNITS_EXPORT bool HasAlias(Utf8CP name) const;
+        UNITS_EXPORT void SetSuppressUnitLabel();
         
         Utf8CP GetName() const { return m_name.c_str(); };
         Utf8CP GetDescription() const { return m_description.c_str(); };

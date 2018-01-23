@@ -2,7 +2,7 @@
 |
 |     $Source: src/Formatting/Formatting.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitsPCH.h>
@@ -69,6 +69,7 @@ void NumericFormatSpec::DefaultInit(size_t precision)
     m_statSeparator = '+';
     m_minWidth = 0;
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //----------------------------------------------------------------------------------------
@@ -150,13 +151,14 @@ bool NumericFormatSpec::AcceptableDifference(double dval1, double dval2, double 
     return (fabs(maxDiff) > fabs(dval1 - dval2));
     }
 
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //----------------------------------------------------------------------------------------
-NumericFormatSpec::NumericFormatSpec(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision)
+NumericFormatSpec::NumericFormatSpec(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision, Utf8CP uomSeparator)
     {
     Init(presType, signOpt, formatTraits, precision);   
+    if (uomSeparator)
+        SetUomSeparator(uomSeparator);
     }
 
 //----------------------------------------------------------------------------------------
@@ -300,6 +302,7 @@ void NumericFormatSpec::SetPrecisionByValue(int prec)
 //        temp &= ~static_cast<int>(FormatTraits::AppendUnitName);
 //    m_formatTraits = static_cast<FormatTraits>(temp);
 //    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //---------------------------------------------------------------------------------------

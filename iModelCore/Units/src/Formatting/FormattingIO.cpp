@@ -44,6 +44,11 @@ size_t StdFormatSet::StdInit()
     AddFormat("Real4U", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 4), "real4u");
     AddFormat("Real6U", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 6), "real6u");
 
+    AddFormat("Real2UT", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 2, FormatConstant::EmptyString()), "real2ut");
+    AddFormat("Real3UT", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 3, FormatConstant::EmptyString()), "real3ut");
+    AddFormat("Real4UT", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 4, FormatConstant::EmptyString()), "real4ut");
+    AddFormat("Real6UT", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 6, FormatConstant::EmptyString()), "real6ut");
+
     NumericFormatSpec stop = new NumericFormatSpec(PresentationType::Stop100, ShowSignOption::OnlyNegative, traitsU, 2);
     AddFormat("Stop100-2u", stop, "stop100-2u");
     stop = new NumericFormatSpec(PresentationType::Stop100, ShowSignOption::OnlyNegative, traitsU, 2);
