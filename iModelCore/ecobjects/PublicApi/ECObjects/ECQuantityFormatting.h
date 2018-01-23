@@ -53,7 +53,7 @@ struct ECQuantityFormatting
     ECOBJECTS_EXPORT static Json::Value FormatQuantityJson(BEU::QuantityCR qty, BEF::FormatUnitGroupCP fug, size_t indx, bool useAlias = true);
     ECOBJECTS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, size_t start, double* persist = nullptr, BEF::FormatUnitGroupCP fug = nullptr, size_t indx = 0, Formatting::FormatProblemCode* prob = nullptr);
 
-    ECOBJECTS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, size_t start, double* persist, KindOfQuantityCP koq, BEU::UnitCR presentationUnit, Formatting::FormatProblemCode* probCode);
+    ECOBJECTS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, size_t start, double* persist, KindOfQuantityCP koq, Formatting::FormatUnitSetR presentationFUS, Formatting::FormatProblemCode* probCode);
     ECOBJECTS_EXPORT static Utf8String FormatQuantity(BEU::QuantityCR qty, KindOfQuantityCP koq, BEU::UnitCR presentationUnit, BEF::NamedFormatSpecCR formatSpec, ECQuantityFormattingStatus* formatStatus, BEF::NumericFormatSpecCP defFormat = nullptr);
     ECOBJECTS_EXPORT static Utf8String FormatPersistedValue(double dval, KindOfQuantityCP koq, BEU::UnitCR presentationUnit, BEF::NamedFormatSpecCR formatSpec, ECQuantityFormattingStatus* status, BEF::NumericFormatSpecCP defFormat = nullptr);
     };

@@ -3393,4 +3393,35 @@ TEST_F(ECDbMappingConversionTests, ClassMap_NotMapped)
     validateClassMapConvertedCorrectly(schemaXmlCanNotConvert0, false, "");
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Colin.Kerr                  01/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardCustomAttributeConversionTests, RemovingStandardCustomAttributesIsDisabledByDefaultInCustomConverter)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="1.13" prefix="bsca"/>
+                <ECClass typeName="C" isDomainClass="true">
+                    <ECProperty propertyName="AppStartDate" typeName="dateTime" displayLabel="Application Start Date">
+                        <ECCustomAttributes>
+                            <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.13">
+                                <DateTimeKind>Utc</DateTimeKind>
+                            </DateTimeInfo>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                </ECClass>
+            </ECSchema>
+        )xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+
+    auto converter = CustomECSchemaConverter::Create();
+    ASSERT_EQ(true, converter->Convert(*schema, true));
+    EXPECT_EQ(1, schema->GetReferencedSchemas().size());
+    EXPECT_TRUE(schema->GetClassP("C")->GetPropertyP("AppStartDate")->GetCustomAttribute("DateTimeInfo").IsValid()) << "DateTimeInfo CA should not have been removed";
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE
