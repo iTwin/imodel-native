@@ -2,7 +2,7 @@
 |
 |     $Source: Configuration/UrlProvider.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -64,6 +64,14 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectProjectUrl(
 
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgGlobal(
     "Mobile.ConnectWsgGlobal",
+    "https://dev-wsg20-eus.cloudapp.net",
+    "https://qa-connect-wsg20.bentley.com",
+    "https://connect-wsg20.bentley.com",
+    &s_urlRegistry
+    );
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectedContext(
+    "CONNECTEDContextService.URL",
     "https://dev-wsg20-eus.cloudapp.net",
     "https://qa-connect-wsg20.bentley.com",
     "https://connect-wsg20.bentley.com",
@@ -179,6 +187,14 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectXmpp(
     "dev-xmppcollab-eus.cloudapp.net",
     "qa-connect-xmppcollab.bentley.com",
     "xmppcollab-eus.cloudapp.net",
+    &s_urlRegistry
+    );
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::RecommendationServiceUrl(
+    "RecommendationService.URL",
+    "https://dev-recommendation-eus.cloudapp.net",
+    "https://qa-connect-recommendation.bentley.com",
+    "https://connect-recommendation.bentley.com",
     &s_urlRegistry
     );
 
