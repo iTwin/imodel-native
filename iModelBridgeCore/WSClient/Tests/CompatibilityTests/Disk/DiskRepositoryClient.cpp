@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/CompatibilityTests/Disk/DiskRepositoryClient.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -29,7 +29,7 @@ bool Sha1Calc(const bvector<Byte>& input, unsigned char *binaryHash, unsigned in
     EVP_MD_CTX *mdctx;
     if ((mdctx = EVP_MD_CTX_create()) == NULL)
         return false;
-
+    
     if (!EVP_DigestInit_ex(mdctx, EVP_sha1(), NULL))
         return false;
 
@@ -40,7 +40,6 @@ bool Sha1Calc(const bvector<Byte>& input, unsigned char *binaryHash, unsigned in
         return false;
 
     EVP_MD_CTX_free(mdctx);
-    EVP_MD_CTX_destroy(mdctx);
     return true;
     }
 
@@ -127,7 +126,7 @@ ICancellationTokenPtr ct
 ) const
     {
     SchemaKey key;
-    SchemaKey::ParseSchemaFullName(key, Utf8String (objectId.remoteId.c_str(), true).c_str());
+    SchemaKey::ParseSchemaFullName(key, objectId.remoteId.c_str());
 
     auto it = m_schemaPaths.find(key);
     if (it == m_schemaPaths.end())
@@ -178,11 +177,10 @@ ICancellationTokenPtr ct
     for (auto pair : m_schemaPaths)
         {
         auto key = pair.first;
-        Utf8String name(key.m_schemaName);
-        Utf8PrintfString fullName("%s.%d.%d", name.c_str(), key.m_versionRead, key.m_versionMinor);
+        Utf8String fullName = key.GetFullSchemaName();
         instances.Add({"MetaSchema", "ECSchemaDef", fullName}, {
-                {"Name", name},
-                {"VersionRead", key.m_versionRead},
+                {"Name", key.m_schemaName},
+                {"VersionMajor", key.m_versionRead},
                 {"VersionMinor", key.m_versionMinor}});
         }
 
