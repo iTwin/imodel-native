@@ -7,10 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 
 #define COMPILE_TESTS
-#ifdef DEBUG
-#define COMPILE_TESTS
-#endif
-
 #ifdef COMPILE_TESTS
 
 #include "ArgumentParser.h"
