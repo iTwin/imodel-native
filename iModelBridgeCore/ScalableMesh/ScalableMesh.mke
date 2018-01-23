@@ -2,7 +2,7 @@
 #
 #  $Source: ScalableMesh.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
      
@@ -491,7 +491,7 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)$(TerrainModelFormatsLib) \
     $(ContextSubpartsLibs)wastorage.lib \
     $(ContextSubpartsLibs)BeCurl.lib \
-    $(ContextSubpartsLibs)RealityPlatform.lib \
+    $(ContextSubpartsLibs)RealityPlatformTools.lib \
     $(ContextSubpartsLibs)ConnectClientWrapperNative.VC120.lib
 
 #    $(DgnPlatformV8LibDir)Bentley.lib \

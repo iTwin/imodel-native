@@ -2,7 +2,7 @@
 |
 |     $Source: STM/ScalableMeshLib.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -21,6 +21,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 #include <ImagePP/all/h/HFCCallbacks.h>
 #include <ImagePP/all/h/HFCCallbackRegistry.h>
 #include <ImagePP/all/h/ImageppLib.h>
+#include <curl/curl.h>
 
 #ifdef VANCOUVER_API
 #include    <CCApi\CCPublic.h>
@@ -156,7 +157,7 @@ CURLcode RequestHttp(Utf8StringCR url, Utf8StringCP writeString, FILE* fp, Utf8S
         curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, postFields.length());
         }
 
-    CurlConstructor curlConstructor;
+    RequestConstructor curlConstructor;
 
     headers = curl_slist_append(headers, curlConstructor.GetToken().c_str());
 
