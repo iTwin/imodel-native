@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECObjectsAPI.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -50,6 +50,7 @@ capture this information.
 #include <ECObjects/ECEnabler.h>
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/ECSchema.h>
+#include <ECObjects/ECName.h>
 #include <ECObjects/SchemaResourceKeyHelper.h>
 #include <ECObjects/ECSchemaConverter.h>
 #include <ECObjects/ECSchemaValidator.h>

@@ -55,7 +55,7 @@
     <ClCompile Include="DateTimeInfoAccessor.cpp" />
     <ClCompile Include="DesignByContract.cpp" />
     <ClCompile Include="ECClass.cpp" />
-    <ClCompile Include="ECcontext.cpp" />
+    <ClCompile Include="ECContext.cpp" />
     <ClCompile Include="ECCustomAttribute.cpp" />
     <ClCompile Include="ECDBuffer.cpp" />
     <ClCompile Include="ECEnabler.cpp" />
@@ -103,6 +103,7 @@
     <ClInclude Include="..\PublicApi\ECObjects\ECExpressions.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECInstance.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECJsonUtilities.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECName.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECObjects.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECObjectsAPI.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECObjectsAPIOverview.h" />
@@ -133,7 +134,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\mki\ECObjects.mki" />
-    <None Include="ecobjects.mke" />
+    <None Include="ECObjects.mke" />
     <None Include="ECObjectsCompileOpts.mki" />
   </ItemGroup>
   <ItemGroup>

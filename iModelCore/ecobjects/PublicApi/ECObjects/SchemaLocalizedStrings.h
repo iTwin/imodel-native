@@ -42,8 +42,8 @@ public:
     ECOBJECTS_EXPORT Utf8StringCR GetSchemaDisplayLabel(ECSchemaCP ecSchema, Utf8StringCR invariantDisplayLabel) const;
     ECOBJECTS_EXPORT Utf8StringCR GetSchemaDescription(ECSchemaCP ecSchema, Utf8StringCR invariantDescription) const;
     ECOBJECTS_EXPORT Utf8StringCR GetClassDisplayLabel(ECClassCP ecClass, Utf8StringCR invariantDisplayLabel) const;
-    ECOBJECTS_EXPORT Utf8StringCR GetEnumerationDisplayLabel(ECEnumerationCR ecEnumeration, Utf8StringCR invariantDisplayLabel) const;
     ECOBJECTS_EXPORT Utf8StringCR GetClassDescription(ECClassCP ecClass, Utf8StringCR invariantDescription) const;
+    ECOBJECTS_EXPORT Utf8StringCR GetEnumerationDisplayLabel(ECEnumerationCR ecEnumeration, Utf8StringCR invariantDisplayLabel) const;
     ECOBJECTS_EXPORT Utf8StringCR GetEnumerationDescription(ECEnumerationCR ecEnumeration, Utf8StringCR invariantDescription) const;
     ECOBJECTS_EXPORT Utf8StringCR GetEnumeratorDisplayLabel(ECEnumeratorCR ecEnumerator, Utf8StringCR invariantDisplayLabel) const;
     ECOBJECTS_EXPORT Utf8StringCR GetEnumeratorDescription(ECEnumeratorCR ecEnumerator, Utf8StringCR invariantDescription) const;
@@ -53,6 +53,7 @@ public:
     ECOBJECTS_EXPORT Utf8StringCR GetPropertyCategoryDescription(PropertyCategoryCR propertyCategory, Utf8StringCR invariantDescription) const;
     ECOBJECTS_EXPORT Utf8StringCR GetPropertyDisplayLabel(ECPropertyCP ecProperty, Utf8StringCR invariantDisplayLabel) const;
     ECOBJECTS_EXPORT Utf8StringCR GetPropertyDescription(ECPropertyCP ecProperty, Utf8StringCR invariantDescription) const;
+
     ECOBJECTS_EXPORT Utf8StringCR GetRelationshipSourceRoleLabel(ECRelationshipClassCP relClass, Utf8StringCR invariantRoleLabel) const;
     ECOBJECTS_EXPORT Utf8StringCR GetRelationshipTargetRoleLabel(ECRelationshipClassCP relClass, Utf8StringCR invariantRoleLabel) const;
 

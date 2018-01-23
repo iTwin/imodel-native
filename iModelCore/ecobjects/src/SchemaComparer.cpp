@@ -29,7 +29,7 @@ BentleyStatus Binary::Resize(size_t len)
 
     if (len == m_len)
         return SUCCESS;
-    if (m_buff = realloc(m_buff, len))
+    if ((m_buff = realloc(m_buff, len)))
         {
         m_len = len;
         return SUCCESS;

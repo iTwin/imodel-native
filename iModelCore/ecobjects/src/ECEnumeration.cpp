@@ -16,25 +16,6 @@ static  bool        s_noAssert = false;
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECEnumeration::ECEnumeration(ECSchemaCR schema)
-    : m_schema(schema), m_primitiveType(PrimitiveType::PRIMITIVETYPE_Integer), m_isStrict(true), m_enumeratorList(), m_enumeratorIterable(m_enumeratorList)
-    {
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------+---------------+---------------+---------------+---------------+-------
-ECEnumeration::~ECEnumeration()
-    {
-    for (ECEnumerator* entry : m_enumeratorList)
-        delete entry;
-
-    m_enumeratorList.clear();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------+---------------+---------------+---------------+---------------+-------
 void ECEnumeration::SetDisplayLabel(Utf8CP displayLabel) {m_validatedName.SetDisplayLabel(displayLabel);}
 Utf8StringCR ECEnumeration::GetDescription() const {return GetSchema().GetLocalizedStrings().GetEnumerationDescription(*this, GetInvariantDescription());}
 Utf8String ECEnumeration::GetTypeName() const {return SchemaParseUtils::PrimitiveTypeToString(m_primitiveType);}
@@ -552,6 +533,14 @@ Utf8StringCR ECEnumerator::GetDescription() const
     return GetEnumeration().GetSchema().GetLocalizedStrings().GetEnumeratorDescription(*this, GetInvariantDescription());
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+bool ECEnumerator::IsInteger() const
+    {
+    return m_enum.GetType() == PrimitiveType::PRIMITIVETYPE_Integer;
+    }
+
 /*--------------------------------------------------------------------------------------/
 * @bsimethod                                    Robert.Schili                  12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -565,6 +554,14 @@ ECObjectsStatus ECEnumerator::SetInteger(int32_t integer)
 
     m_intValue = integer;
     return ECObjectsStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+bool ECEnumerator::IsString() const
+    {
+    return m_enum.GetType() == PrimitiveType::PRIMITIVETYPE_String;
     }
 
 /*--------------------------------------------------------------------------------------/

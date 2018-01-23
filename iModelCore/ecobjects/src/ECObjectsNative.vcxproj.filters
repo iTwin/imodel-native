@@ -75,7 +75,7 @@
     <ClCompile Include="CalculatedProperty.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ECcontext.cpp">
+    <ClCompile Include="ECContext.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ECDBuffer.cpp">
@@ -263,14 +263,19 @@
     <ClInclude Include="..\PrivateApi\ECObjects\SchemaParseUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-
     <ClInclude Include="..\PublicApi\ECObjects\VirtualCollectionIterator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\ECName.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ecobjects.mke" />
+    <None Include="ECObjects.mke" />
     <None Include="ECObjectsCompileOpts.mki" />
     <None Include="..\mki\ECObjects.mki" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="..\ECObjects.PartFile.xml" />
   </ItemGroup>
 </Project>

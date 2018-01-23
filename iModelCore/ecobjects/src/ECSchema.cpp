@@ -32,10 +32,10 @@ static bool ClassNameComparer(ECClassP class1, ECClassP class2)
     {
     // We should never have a NULL ECClass here.
     // However we will pretend a NULL ECClass is always less than a non-NULL ECClass
-    BeAssert(NULL != class1 && NULL != class2);
-    if (NULL == class1)
-        return NULL != class2;      // class 1 < class2 if class2 non-null, equal otherwise
-    else if (NULL == class2)
+    BeAssert(nullptr != class1 && nullptr != class2);
+    if (nullptr == class1)
+        return nullptr != class2;      // class 1 < class2 if class2 non-null, equal otherwise
+    else if (nullptr == class2)
         return false;               // class1 > class2
 
     int comparison = class1->GetName().CompareTo(class2->GetName());
@@ -224,14 +224,6 @@ void ECValidatedName::SetDisplayLabel(Utf8CP label)
         m_displayLabel = label;
         }
     }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchema::ECSchema ():m_classContainer(m_classMap), m_enumerationContainer(m_enumerationMap), m_isSupplemented(false),
-    m_hasExplicitDisplayLabel(false), m_immutable(false), m_kindOfQuantityContainer(m_kindOfQuantityMap), 
-    m_propertyCategoryContainer(m_propertyCategoryMap)
-    {};
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
@@ -561,12 +553,23 @@ Utf8CP ECSchema::GetECVersionString(ECVersion ecVersion)
     return nullptr;
     }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSchema::Validate()
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+// static
+Utf8CP ECSchema::SchemaElementTypeToString(ECSchemaElementType elementType)
     {
-    return Validate(false);
+    switch (elementType)
+        {
+        case ECSchemaElementType::ECEnumeration:
+            return ECJSON_ENUMERATION_ELEMENT;
+        case ECSchemaElementType::KindOfQuantity:
+            return KIND_OF_QUANTITY_ELEMENT;
+        case ECSchemaElementType::PropertyCategory:
+            return PROPERTY_CATEGORY_ELEMENT;
+        }
+
+    return EMPTY_STRING;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -641,56 +644,6 @@ bool ECSchema::Validate(bool resolveIssues)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECClassP ECSchema::GetClassP (Utf8CP name)
-    {
-    ClassMap::const_iterator  classIterator;
-    classIterator = m_classMap.find (name);
-
-    if ( classIterator != m_classMap.end() )
-        return classIterator->second;
-    else
-        return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECEnumerationP ECSchema::GetEnumerationP(Utf8CP name)
-    {
-    EnumerationMap::const_iterator iterator = m_enumerationMap.find(name);
-    if (iterator != m_enumerationMap.end())
-        return iterator->second;
-    else
-        return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-KindOfQuantityP ECSchema::GetKindOfQuantityP(Utf8CP name)
-    {
-    KindOfQuantityMap::const_iterator iterator = m_kindOfQuantityMap.find(name);
-    if (iterator != m_kindOfQuantityMap.end())
-        return iterator->second;
-    else
-        return nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    06/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-PropertyCategoryP ECSchema::GetPropertyCategoryP(Utf8CP name)
-    {
-    auto iterator = m_propertyCategoryMap.find(name);
-    if (iterator != m_propertyCategoryMap.end())
-        return iterator->second;
-    else
-        return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECSchema::DebugDump()const
@@ -702,70 +655,6 @@ void ECSchema::DebugDump()const
         ECClassCP ecClass = entry.second;
         printf("    ECClass: 0x%" PRIx64 ", %s\n", (uint64_t)ecClass, ecClass->GetName().c_str());
         }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::DeleteClass (ECClassR ecClass)
-    {
-    ClassMap::iterator iter = m_classMap.find (ecClass.GetName().c_str());
-    if (iter == m_classMap.end() || iter->second != &ecClass)
-        return ECObjectsStatus::ClassNotFound;
-
-    m_classMap.erase (iter);
-
-    m_serializationOrder.RemoveElement(ecClass.GetName().c_str());
-
-    delete &ecClass;
-    return ECObjectsStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Robert.Schili   05/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::DeleteEnumeration (ECEnumerationR ecEnumeration)
-    {
-    EnumerationMap::iterator iter = m_enumerationMap.find (ecEnumeration.GetName().c_str());
-    if (iter == m_enumerationMap.end() || iter->second != &ecEnumeration)
-        return ECObjectsStatus::EnumerationNotFound;
-
-    m_enumerationMap.erase (iter);
-
-    m_serializationOrder.RemoveElement(ecEnumeration.GetName().c_str());
-
-    delete &ecEnumeration;
-    return ECObjectsStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Robert.Schili   05/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::DeleteKindOfQuantity (KindOfQuantityR kindOfQuantity)
-    {
-    KindOfQuantityMap::iterator iter = m_kindOfQuantityMap.find (kindOfQuantity.GetName().c_str());
-    if (iter == m_kindOfQuantityMap.end() || iter->second != &kindOfQuantity)
-        return ECObjectsStatus::Error;
-
-    m_kindOfQuantityMap.erase (iter);
-
-    delete &kindOfQuantity;
-    return ECObjectsStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    06/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::DeletePropertyCategory (PropertyCategoryR propertyCategory)
-    {
-    PropertyCategoryMap::iterator iter = m_propertyCategoryMap.find (propertyCategory.GetName().c_str());
-    if (iter == m_propertyCategoryMap.end() || iter->second != &propertyCategory)
-        return ECObjectsStatus::Error;
-
-    m_propertyCategoryMap.erase (iter);
-
-    delete &propertyCategory;
-    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -799,7 +688,6 @@ void ECSchema::FindUniqueClassName(Utf8StringR newName, Utf8CP originalName)
     newName = testName;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -823,7 +711,7 @@ ECObjectsStatus ECSchema::AddClass(ECClassP pClass, bool resolveConflicts)
         return AddClass(pClass, resolveConflicts);
         }
 
-    if (m_classMap.insert(bpair<Utf8CP, ECClassP>(pClass->GetName().c_str(), pClass)).second == false)
+    if (false == m_classMap.insert(bpair<Utf8CP, ECClassP>(pClass->GetName().c_str(), pClass)).second)
         {
         LOG.errorv("There was a problem adding class '%s' to the schema",
                    pClass->GetName().c_str());
@@ -832,9 +720,7 @@ ECObjectsStatus ECSchema::AddClass(ECClassP pClass, bool resolveConflicts)
         }
 
     if (m_serializationOrder.GetPreserveElementOrder())
-        {
         m_serializationOrder.AddElement(pClass->GetName().c_str(), ECSchemaElementType::ECClass);
-        }
 
     //DebugDump(); wprintf(L"\n");
     return ECObjectsStatus::Success;
@@ -970,7 +856,7 @@ ECObjectsStatus ECSchema::CreateCustomAttributeClass (ECCustomAttributeClassP& p
     if (ECObjectsStatus::Success != status)
         {
         delete pClass;
-        pClass = NULL;
+        pClass = nullptr;
         return status;
         }
 
@@ -990,31 +876,20 @@ ECObjectsStatus ECSchema::CreateRelationshipClass (ECRelationshipClassP& pClass,
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
-    EnumerationMap::const_iterator  enumerationIterator;
-    enumerationIterator = m_enumerationMap.find(name.c_str());
-    if (enumerationIterator != m_enumerationMap.end())
-        {
-        LOG.errorv("Cannot create class '%s' because an enumeration with that name already exists in the schema", name.c_str());
-        return ECObjectsStatus::NamedItemAlreadyExists;
-        }
-
     pClass = new ECRelationshipClass(*this, verify);
     ECObjectsStatus status = pClass->SetName (name);
     if (ECObjectsStatus::Success != status)
         {
         delete pClass;
-        pClass = NULL;
+        pClass = nullptr;
         return status;
         }
 
-    bpair < ClassMap::iterator, bool > resultPair;
-    resultPair = m_classMap.insert (bpair<Utf8CP, ECClassP> (pClass->GetName().c_str(), pClass));
-    if (resultPair.second == false)
+    if (ECObjectsStatus::Success != (status = AddClass(pClass)))
         {
         delete pClass;
-        pClass = NULL;
-        LOG.errorv("Cannot create relationship class '%s' because it already exists in the schema", name.c_str());
-        return ECObjectsStatus::NamedItemAlreadyExists;
+        pClass = nullptr;
+        return status;
         }
 
     return ECObjectsStatus::Success;
@@ -1082,7 +957,7 @@ ECObjectsStatus ECSchema::CreateEnumeration(ECEnumerationP & ecEnumeration, Utf8
         return status;
         }
 
-    status = AddEnumeration(ecEnumeration);
+    status = AddSchemaChildToMap<ECEnumeration, EnumerationMap>(ecEnumeration, &m_enumerationMap, ECSchemaElementType::ECEnumeration);
     if (ECObjectsStatus::Success != status)
         {
         delete ecEnumeration;
@@ -1090,85 +965,6 @@ ECObjectsStatus ECSchema::CreateEnumeration(ECEnumerationP & ecEnumeration, Utf8
         }
 
     return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSchema::NamedElementExists(Utf8CP name)
-    {
-    if (m_classMap.find(name) != m_classMap.end())
-        return true;
-
-    if (m_enumerationMap.find(name) != m_enumerationMap.end())
-        return true;
-
-    if (m_kindOfQuantityMap.find(name) != m_kindOfQuantityMap.end())
-        return true;
-
-    return m_propertyCategoryMap.find(name) != m_propertyCategoryMap.end();
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::AddEnumeration(ECEnumerationP pEnumeration)
-    {
-    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
-
-    if(NamedElementExists(pEnumeration->GetName().c_str()))
-        {
-        LOG.errorv("Cannot create enumeration '%s' because a named element the same identifier already exists in the schema",
-                   pEnumeration->GetName().c_str());
-
-        return ECObjectsStatus::NamedItemAlreadyExists;
-        }
-
-    if (m_enumerationMap.insert(bpair<Utf8CP, ECEnumerationP>(pEnumeration->GetName().c_str(), pEnumeration)).second == false)
-        {
-        LOG.errorv("There was a problem adding enumeration '%s' to the schema",
-                   pEnumeration->GetName().c_str());
-
-        return ECObjectsStatus::Error;
-        }
-
-    if (m_serializationOrder.GetPreserveElementOrder())
-        {
-        m_serializationOrder.AddElement(pEnumeration->GetName().c_str(), ECSchemaElementType::ECEnumeration);
-        }
-
-    return ECObjectsStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::AddKindOfQuantity(KindOfQuantityP valueToAdd)
-    {
-    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
-
-    if(NamedElementExists(valueToAdd->GetName().c_str()))
-        {
-        LOG.errorv("Cannot create kind of quantity '%s' because a named element the same identifier already exists in the schema",
-                   valueToAdd->GetName().c_str());
-
-        return ECObjectsStatus::NamedItemAlreadyExists;
-        }
-
-    if (m_kindOfQuantityMap.insert(bpair<Utf8CP, KindOfQuantityP>(valueToAdd->GetName().c_str(), valueToAdd)).second == false)
-        {
-        LOG.errorv("There was a problem adding kind of quantity '%s' to the schema",
-                   valueToAdd->GetName().c_str());
-
-        return ECObjectsStatus::Error;
-        }
-
-    if (m_serializationOrder.GetPreserveElementOrder())
-        {
-        m_serializationOrder.AddElement(valueToAdd->GetName().c_str(), ECSchemaElementType::KindOfQuantity);
-        }
-
-    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1181,7 +977,7 @@ ECObjectsStatus ECSchema::CreateKindOfQuantity(KindOfQuantityP& kindOfQuantity, 
     kindOfQuantity = new KindOfQuantity(*this);
     kindOfQuantity->SetName(name);
 
-    auto status = AddKindOfQuantity(kindOfQuantity);
+    auto status = AddSchemaChildToMap<KindOfQuantity, KindOfQuantityMap>(kindOfQuantity, &m_kindOfQuantityMap, ECSchemaElementType::KindOfQuantity);
     if (ECObjectsStatus::Success != status)
         {
         delete kindOfQuantity;
@@ -1194,35 +990,6 @@ ECObjectsStatus ECSchema::CreateKindOfQuantity(KindOfQuantityP& kindOfQuantity, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    06/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::AddPropertyCategory(PropertyCategoryP propCategoryToAdd)
-    {
-    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
-
-    if(NamedElementExists(propCategoryToAdd->GetName().c_str()))
-        {
-        LOG.errorv("Cannot create property category '%s' because a named element the same identifier already exists in the schema",
-                    propCategoryToAdd->GetName().c_str());
-
-        return ECObjectsStatus::NamedItemAlreadyExists;
-        }
-
-    if (m_propertyCategoryMap.insert(bpair<Utf8CP, PropertyCategoryP>(propCategoryToAdd->GetName().c_str(), propCategoryToAdd)).second == false)
-        {
-        LOG.errorv("There was a problem adding property category '%s' to the schema",
-                    propCategoryToAdd->GetName().c_str());
-
-        return ECObjectsStatus::Error;
-        }
-
-    if (m_serializationOrder.GetPreserveElementOrder())
-        m_serializationOrder.AddElement(propCategoryToAdd->GetName().c_str(), ECSchemaElementType::PropertyCategory);
-
-    return ECObjectsStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    06/2017
-//---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECSchema::CreatePropertyCategory(PropertyCategoryP& propertyCategory, Utf8CP name)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
@@ -1230,7 +997,7 @@ ECObjectsStatus ECSchema::CreatePropertyCategory(PropertyCategoryP& propertyCate
     propertyCategory = new PropertyCategory(*this);
     propertyCategory->SetName(name);
 
-    auto status = AddPropertyCategory(propertyCategory);
+    auto status = AddSchemaChildToMap<PropertyCategory, PropertyCategoryMap>(propertyCategory, &m_propertyCategoryMap, ECSchemaElementType::PropertyCategory);
     if (ECObjectsStatus::Success != status)
         {
         delete propertyCategory;
@@ -1238,6 +1005,50 @@ ECObjectsStatus ECSchema::CreatePropertyCategory(PropertyCategoryP& propertyCate
         }
 
     return status;
+    }
+
+template<typename T, typename T_MAP>
+ECObjectsStatus ECSchema::AddSchemaChildToMap(T* child, T_MAP* map, ECSchemaElementType childType)
+    {
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
+
+    if(NamedElementExists(child->GetName().c_str()))
+        {
+        NativeLogging::LoggingManager::GetLogger(L"ECObjectsNative")->errorv("Cannot create %s '%s' because a named element with the same identifier already exists in the schema", ECSchema::SchemaElementTypeToString(childType), child->GetName().c_str());
+        return ECObjectsStatus::NamedItemAlreadyExists;
+        }
+
+    if (false == map->insert(bpair<Utf8CP, T*>(child->GetName().c_str(), child)).second)
+        {
+        NativeLogging::LoggingManager::GetLogger(L"ECObjectsNative")->errorv("There was a problem adding %s '%s' to the schema", ECSchema::SchemaElementTypeToString(childType), child->GetName().c_str());
+        return ECObjectsStatus::Error;
+        }
+
+    if (m_serializationOrder.GetPreserveElementOrder())
+        m_serializationOrder.AddElement(child->GetName().c_str(), childType);
+    return ECObjectsStatus::Success;
+    }
+
+template<typename T> ECObjectsStatus ECSchema::AddSchemaChild(T* child, ECSchemaElementType childType) {;}
+template<> ECObjectsStatus ECSchema::AddSchemaChild<ECEnumeration>(ECEnumerationP child, ECSchemaElementType childType) { return AddSchemaChildToMap<ECEnumeration, EnumerationMap>(child, &m_enumerationMap, childType); }
+template<> ECObjectsStatus ECSchema::AddSchemaChild<PropertyCategory>(PropertyCategoryP child, ECSchemaElementType childType) { return AddSchemaChildToMap<PropertyCategory, PropertyCategoryMap>(child, &m_propertyCategoryMap, childType); }
+template<> ECObjectsStatus ECSchema::AddSchemaChild<KindOfQuantity>(KindOfQuantityP child, ECSchemaElementType childType) { return AddSchemaChildToMap<KindOfQuantity, KindOfQuantityMap>(child, &m_kindOfQuantityMap, childType); }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//--------------------------------------------------------------------------------------
+bool ECSchema::NamedElementExists(Utf8CP name)
+    {
+    if (m_classMap.find(name) != m_classMap.end())
+        return true;
+
+    if (m_enumerationMap.find(name) != m_enumerationMap.end())
+        return true;
+
+    if (m_kindOfQuantityMap.find(name) != m_kindOfQuantityMap.end())
+        return true;
+
+    return m_propertyCategoryMap.find(name) != m_propertyCategoryMap.end();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1304,14 +1115,6 @@ ECObjectsStatus ECSchema::CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR sche
         }
 
     return ECObjectsStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass)
-    {
-    return CopyClass(targetClass, sourceClass, sourceClass.GetName());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1597,7 +1400,7 @@ ECObjectsStatus ECSchema::ResolveAlias(ECSchemaCR schema, Utf8StringR alias) con
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR alias)
     {
-    ECSchemaReadContext context (NULL, false, false);
+    ECSchemaReadContext context(nullptr, false, false);
     return AddReferencedSchema(refSchema, alias, context);
     }
 
@@ -2611,15 +2414,6 @@ void ECSchema::FindAllSchemasInGraph(bvector<ECN::ECSchemaCP>& allSchemas, bool 
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Affan.Khan      12/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaId ECSchema::GetId() const
-    {
-    BeAssert (m_ecSchemaId.IsValid());
-    return m_ecSchemaId;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaCP ECSchema::FindSchema(SchemaKeyCR schemaKey, SchemaMatchType matchType) const
@@ -2654,29 +2448,6 @@ DEFINE_KEY_METHOD(IStandaloneEnablerLocater)
 /////////////////////////////////////////////////////////////////////////////////////////
 // ECSchemaCache
 /////////////////////////////////////////////////////////////////////////////////////////
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  01/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCache::~ECSchemaCache()
-    {
-    m_schemas.clear();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Casey.Mullen                  06/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-int ECSchemaCache::GetCount() const
-    {
-    return (int)m_schemas.size();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   06/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-IECSchemaLocater& ECSchemaCache::GetSchemaLocater()
-    {
-    return *this;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
@@ -2741,22 +2512,6 @@ ECObjectsStatus ECSchemaCache::DropAllReferencesOfSchema(ECSchemaR schema)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Casey.Mullen                  06/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchemaCache::Clear()
-    {
-    m_schemas.clear();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  03/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaP ECSchemaCache::GetSchema(SchemaKeyCR key) const
-    {
-    return GetSchema(key, SchemaMatchType::Identical);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaP ECSchemaCache::GetSchema(SchemaKeyCR key, SchemaMatchType matchType) const
@@ -2783,22 +2538,6 @@ ECSchemaP ECSchemaCache::GetSchema(SchemaKeyCR key, SchemaMatchType matchType) c
     return iter->second.get();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  01/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaPtr ECSchemaCache::_LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext)
-    {
-    return GetSchema(key, matchType);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  01/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCachePtr ECSchemaCache::Create()
-    {
-    return new ECSchemaCache;
-    }
-
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                09/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -2806,9 +2545,7 @@ bvector<ECSchemaCP> ECSchemaCache::GetSchemas() const
     {
     bvector<ECSchemaCP> schemas;
     for (bpair<SchemaKey, ECSchemaPtr> const& kvPair : m_schemas)
-        {
         schemas.push_back(kvPair.second.get());
-        }
 
     return schemas;
     }
@@ -2821,9 +2558,7 @@ size_t ECSchemaCache::GetSchemas(bvector<ECSchemaP>& schemas) const
     schemas.clear();
 
     for (bpair<SchemaKey, ECSchemaPtr> const& kvPair : m_schemas)
-        {
         schemas.push_back(kvPair.second.get());
-        }
 
     return schemas.size();
     }
@@ -2847,35 +2582,12 @@ void ECSchemaCache::GetSupplementalSchemasFor(Utf8CP schemaName, bvector<ECSchem
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchemaElementsOrder::AddElement(Utf8CP name, ECSchemaElementType type)
-    {
-    m_elementVector.push_back(make_bpair<Utf8String, ECSchemaElementType>(name, type));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchemaElementsOrder::RemoveElement(Utf8CP elementName)
-    {
-    for (auto iterator = m_elementVector.begin(); iterator != m_elementVector.end(); ++iterator)
-        {
-        if (iterator->first == elementName)
-            {
-            m_elementVector.erase(iterator);
-            return;
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 void ECSchemaElementsOrder::CreateAlphabeticalOrder(ECSchemaCR ecSchema)
     {
     m_elementVector.clear();
     for (ECEnumerationCP pEnum : ecSchema.GetEnumerations())
         {
-        if (NULL == pEnum)
+        if (nullptr == pEnum)
             {
             BeAssert(false);
             continue;
@@ -2888,7 +2600,7 @@ void ECSchemaElementsOrder::CreateAlphabeticalOrder(ECSchemaCR ecSchema)
     // sort the classes by name so the order in which they are written is predictable.
     for (ECClassP pClass : ecSchema.GetClasses())
         {
-        if (NULL == pClass)
+        if (nullptr == pClass)
             {
             BeAssert(false);
             continue;
@@ -2900,9 +2612,7 @@ void ECSchemaElementsOrder::CreateAlphabeticalOrder(ECSchemaCR ecSchema)
     sortedClasses.sort(ClassNameComparer);
 
     for (ECClassP pClass : sortedClasses)
-        {
         AddElement(pClass->GetName().c_str(), ECSchemaElementType::ECClass);
-        }
 
     for (auto pKindOfQuantity : ecSchema.GetKindOfQuantities())
         {
@@ -2926,12 +2636,6 @@ void ECSchemaElementsOrder::CreateAlphabeticalOrder(ECSchemaCR ecSchema)
             AddElement(pPropertyCategory->GetName().c_str(), ECSchemaElementType::PropertyCategory);
         }
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   06/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-IECCustomAttributeContainer& ECSchema::GetCustomAttributeContainer() { return *this; }
-IECCustomAttributeContainer const& ECSchema::GetCustomAttributeContainer() const { return *this; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
@@ -3142,7 +2846,7 @@ struct ECClassFinder
             return false;
 
         m_class = val.GetClassP(m_key.m_className.c_str());
-        return NULL != m_class;
+        return nullptr != m_class;
         }
 
     bool operator () (ECSchemaPtr const& val)
@@ -3165,11 +2869,11 @@ struct ECClassFinder
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassP SchemaMapExact::FindClassP (ECN::SchemaNameClassNamePair const& classNamePair) const
     {
-    ECClassP classInstance = NULL;
+    ECClassP classInstance = nullptr;
     ECClassFinder classFinder(classNamePair, classInstance);
 
     SchemaMapExact::const_iterator iter = std::find_if (begin(), end(), classFinder);
-    return iter == end() ? NULL : classInstance;
+    return iter == end() ? nullptr : classInstance;
     }
 
  /*---------------------------------------------------------------------------------**//**
@@ -3390,29 +3094,6 @@ bool QualifiedECAccessor::FromAccessString (ECEnablerCR enabler, Utf8CP accessSt
         return false;
     }
 
-///*---------------------------------------------------------------------------------**//**
-//* @bsimethod                                    Ramanujam.Raman                 12/2012
-//+---------------+---------------+---------------+---------------+---------------+------*/
-//void IECClassLocater::RegisterClassLocater (IECClassLocaterR classLocater) 
-//    {
-//    s_registeredClassLocater = IECClassLocaterPtr (&classLocater);
-//    }
-//
-///*---------------------------------------------------------------------------------**//**
-//* @bsimethod                                    Sam.Wilson                      03/2013
-//+---------------+---------------+---------------+---------------+---------------+------*/
-//void IECClassLocater::UnRegisterClassLocater ()
-//    {
-//    s_registeredClassLocater = nullptr;
-//    }
-//
-///*---------------------------------------------------------------------------------**//**
-//* @bsimethod                                    Ramanujam.Raman                 12/2012
-//+---------------+---------------+---------------+---------------+---------------+------*/
-//IECClassLocaterP IECClassLocater::GetRegisteredClassLocater() 
-//    {
-//    return s_registeredClassLocater.get();
-//    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/

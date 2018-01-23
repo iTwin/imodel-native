@@ -43,7 +43,7 @@ Utf8String PropertyCategory::GetQualifiedName(ECSchemaCR primarySchema) const
     Utf8StringCR name = GetName();
     if (!EXPECTED_CONDITION (ECObjectsStatus::Success == primarySchema.ResolveAlias (GetSchema(), alias)))
         {
-        LOG.warningv ("warning: Cannot qualify an PropertyCategory name with an alias unless the schema containing the PropertyCategry is referenced by the primary schema."
+        LOG.warningv ("warning: Cannot qualify a PropertyCategory name with an alias unless the schema containing the PropertyCategry is referenced by the primary schema."
             "The name will remain unqualified.\n  Primary ECSchema: %s\n  PropertyCategory: %s\n ECSchema containing PropertyCategory: %s", primarySchema.GetName().c_str(), name.c_str(), GetSchema().GetName().c_str());
         return name;
         }
