@@ -644,6 +644,7 @@ struct Texture : RefCounted<NonCopyableClass>
         TextureKey m_key;
         int m_pitch = 0;
         bool m_isTileSection = false;
+        bool m_isGlyph = false;
 
         TextureKeyCR GetKey() const { return m_key; }
 
