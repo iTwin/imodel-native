@@ -1356,7 +1356,7 @@ static BentleyStatus setPropertyFromJson(ElementECPropertyAccessor& propAccessor
         ECClassId relationshipClassId;
         if (jsonProp.isObject())
             {
-            id.FromString(jsonProp["id"].asCString());
+            id = BeInt64Id::FromString(jsonProp["id"].asCString());
             bvector<Utf8String> classNameParts;
             BeStringUtilities::Split(jsonProp["relClass"].asCString(), ":", classNameParts);
             relationshipClassId = propAccessor.GetElement().GetDgnDb().Schemas().GetClassId(classNameParts[0], classNameParts[1]);
