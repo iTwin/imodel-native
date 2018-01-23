@@ -3011,14 +3011,14 @@ Utf8CP Db::InterpretDbResult(DbResult result)
         case BE_SQLITE_ERROR_ProfileTooNewForReadWrite:              return "BE_SQLITE_ERROR_ProfileTooNewForReadWrite";
         case BE_SQLITE_ERROR_ProfileTooNew:                          return "BE_SQLITE_ERROR_ProfileTooNew";
         case BE_SQLITE_ERROR_ChangeTrackError:                       return "BE_SQLITE_ERROR_ChangeTrackError";
-        case BE_SQLITE_ERROR_InvalidRevisionVersion: return "BE_SQLITE_ERROR_ChangeTrackError";
-        case BE_SQLITE_ERROR_SchemaUpgradeRequired:  return "BE_SQLITE_ERROR_ChangeTrackError";
-        case BE_SQLITE_ERROR_SchemaTooNew:           return "BE_SQLITE_ERROR_ChangeTrackError";
-        case BE_SQLITE_ERROR_SchemaTooOld:           return "BE_SQLITE_ERROR_ChangeTrackError";
+        case BE_SQLITE_ERROR_InvalidRevisionVersion: return "BE_SQLITE_ERROR_InvalidRevisionVersion";
+        case BE_SQLITE_ERROR_SchemaUpgradeRequired:  return "BE_SQLITE_ERROR_SchemaUpgradeRequired";
+        case BE_SQLITE_ERROR_SchemaTooNew:           return "BE_SQLITE_ERROR_SchemaTooNew";
+        case BE_SQLITE_ERROR_SchemaTooOld:           return "BE_SQLITE_ERROR_SchemaTooOld";
         case BE_SQLITE_ERROR_SchemaLockFailed:       return "BE_SQLITE_ERROR_ChangeTrackError";
-        case BE_SQLITE_ERROR_SchemaUpgradeFailed:    return "BE_SQLITE_ERROR_ChangeTrackError";
-        case BE_SQLITE_ERROR_SchemaImportFailed:     return "BE_SQLITE_ERROR_ChangeTrackError";
-        case BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes: return "BE_SQLITE_ERROR_ChangeTrackError";
+        case BE_SQLITE_ERROR_SchemaUpgradeFailed:    return "BE_SQLITE_ERROR_SchemaUpgradeFailed";
+        case BE_SQLITE_ERROR_SchemaImportFailed:     return "BE_SQLITE_ERROR_SchemaImportFailed";
+        case BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes: return "BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes";
 
         case BE_SQLITE_LOCKED_SHAREDCACHE:  return "BE_SQLITE_LOCKED_SHAREDCACHE";
         case BE_SQLITE_BUSY_RECOVERY:       return "BE_SQLITE_BUSY_RECOVERY";
