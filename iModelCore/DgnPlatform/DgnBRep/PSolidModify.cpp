@@ -2,7 +2,7 @@
 |
 |     $Source: DgnBRep/PSolidModify.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -220,6 +220,9 @@ BentleyStatus PSolidUtil::DoBoolean(IBRepEntityPtr& targetEntity, IBRepEntityPtr
         }
 
     PK_MARK_delete(markTag);
+
+    if (SUCCESS == status && targetEntity.IsValid())
+        PSolidUtil::UpdateFaceAttachments(*targetEntity); // NOTE: Loses face attachments from tool bodies, this sufficies for pull/push cut operation...keeping tool attachments probably not worth the trouble...
 
     return status;
     }

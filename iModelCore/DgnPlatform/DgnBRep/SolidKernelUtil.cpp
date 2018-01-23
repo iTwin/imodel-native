@@ -1319,6 +1319,121 @@ BentleyStatus BRepUtil::MassProperties(IBRepEntityCR entity, double* amount, dou
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   Brien.Bastings  01/2018
+//---------------------------------------------------------------------------------------
+BentleyStatus BRepUtil::UpdateFaceMaterialAttachments(IBRepEntityR target, bvector<ISubEntityPtr>& faces, Render::GeometryParamsCP baseParams, Render::GeometryParamsCP faceParams)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    IFaceMaterialAttachmentsP attachments = target.GetFaceMaterialAttachmentsP();
+
+    if (nullptr == attachments)
+        {
+        if (nullptr == faceParams || faces.empty())
+            return SUCCESS; // Caller isn't adding face attachments...and there aren't any currently, return SUCCESS...
+
+        if (nullptr == baseParams || !target.InitFaceMaterialAttachments(baseParams))
+            return ERROR; // Caller wants to update face attachments but didn't supply a valid baseParams which is required for a target that doesn't currently have face attachments...
+
+        if (nullptr == (attachments = target.GetFaceMaterialAttachmentsP()))
+            return ERROR;
+        }
+
+    if (nullptr == baseParams && faces.empty())
+        return (target.InitFaceMaterialAttachments(nullptr) ? SUCCESS : ERROR); // Caller wants to remove all existing face attachments...
+
+    T_FaceToSubElemIdMap& faceToSubElemIdMap = attachments->_GetFaceToSubElemIdMapR();
+    T_FaceAttachmentsVec& faceAttachmentsVec = attachments->_GetFaceAttachmentsVecR();
+    size_t attachmentIndex = 0;
+
+    if (nullptr != faceParams) // Adding/Updating face attachments, see if this symbology is already present...
+        {
+        T_FaceAttachmentsVec::iterator foundAttachment = std::find(faceAttachmentsVec.begin(), faceAttachmentsVec.end(), *faceParams);
+
+        if (foundAttachment == faceAttachmentsVec.end())
+            {
+            faceAttachmentsVec.push_back(*faceParams);
+            attachmentIndex = faceAttachmentsVec.size()-1;
+            }
+        else
+            {
+            attachmentIndex = std::distance(faceAttachmentsVec.begin(), foundAttachment);
+            }
+        }
+
+    for (ISubEntityPtr subEntity : faces)
+        {
+        uint32_t faceIdentifier = FaceAttachment::GetFaceIdentifierFromSubEntity(*subEntity);
+        T_FaceToSubElemIdMap::const_iterator found = faceToSubElemIdMap.find(faceIdentifier);
+
+        if (found == faceToSubElemIdMap.end())
+            continue; // ERROR - Face not represented in map...
+
+        faceToSubElemIdMap[faceIdentifier] = make_bpair(found->second.first, attachmentIndex);
+        }
+
+    bool haveNonBaseAssignment = false; // See if all face assignments have been removed...
+
+    for (T_FaceToSubElemIdMap::const_iterator curr = faceToSubElemIdMap.begin(); curr != faceToSubElemIdMap.end(); ++curr)
+        {
+        if (0 == curr->second.second)
+            continue;
+
+        haveNonBaseAssignment = true;
+        break;
+        }
+
+    if (!haveNonBaseAssignment)
+        return (target.InitFaceMaterialAttachments(nullptr) ? SUCCESS : ERROR); // No face assignments remain to anything other than the base symbology, remove face attachments...
+
+    if (faceAttachmentsVec.size() > 2) // Cull attachment symbology that is no longer used by any face...
+        {
+        bvector<bool>   usedIndices;
+        bvector<size_t> newIndices;
+
+        usedIndices.insert(usedIndices.begin(), faceAttachmentsVec.size(), false);
+        newIndices.insert(newIndices.begin(), faceAttachmentsVec.size(), 0);
+
+        for (T_FaceToSubElemIdMap::const_iterator curr = faceToSubElemIdMap.begin(); curr != faceToSubElemIdMap.end(); ++curr)
+            {
+            if (curr->second.second < faceAttachmentsVec.size())
+                usedIndices.at(curr->second.second) = true;
+            }
+
+        bool    unusedAssignment = false;
+        size_t  newIndex = 0;
+
+        for (size_t i = 0; i < usedIndices.size(); ++i)
+            {
+            if (usedIndices.at(i))
+                newIndices[i] = newIndex++;
+            else if (i > 0)
+                unusedAssignment = true;
+            }
+
+        if (unusedAssignment)
+            {
+            T_FaceAttachmentsVec cleanAttachments;
+
+            for (size_t i = 0; i < usedIndices.size(); ++i)
+                {
+                if (i == 0 || usedIndices.at(i))
+                    cleanAttachments.push_back(faceAttachmentsVec.at(i));
+                }
+
+            faceAttachmentsVec = cleanAttachments;
+
+            for (T_FaceToSubElemIdMap::iterator curr = faceToSubElemIdMap.begin(); curr != faceToSubElemIdMap.end(); ++curr)
+                curr->second.second = (curr->second.second >= newIndices.size() ? 0 : newIndices.at(curr->second.second));
+            }
+        }
+
+    return SUCCESS;
+#else
+    return ERROR;
+#endif
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Brien.Bastings  11/2016
 //---------------------------------------------------------------------------------------
 uint32_t BRepUtil::TopologyID::AssignNewTopologyIds(IBRepEntityR entity, uint32_t nodeId)
@@ -2114,7 +2229,7 @@ RefCountedPtr<IRefCounted> BRepUtil::Modify::CreateRollbackMark()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Jonas.Valiunas  01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Modify::IntersectSheetFaces(CurveVectorPtr& vectorOut, IBRepEntityR sheet1, IBRepEntityR sheet2)
+BentleyStatus BRepUtil::Modify::IntersectSheetFaces(CurveVectorPtr& vectorOut, IBRepEntityCR sheet1, IBRepEntityCR sheet2)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
     if (IBRepEntity::EntityType::Sheet != sheet1.GetEntityType())
@@ -2128,8 +2243,8 @@ BentleyStatus BRepUtil::Modify::IntersectSheetFaces(CurveVectorPtr& vectorOut, I
     Transform   toolTransform;
     toolTransform.InitProduct(invTargetTransform, sheet2.GetEntityTransform());
     IBRepEntityPtr sheet2Clone = sheet2.Clone();
-    PK_ENTITY_t sheet2Tag = PSolidUtil::GetEntityTagForModify(*sheet2Clone);
-    PK_ENTITY_t sheet1Tag = PSolidUtil::GetEntityTagForModify(sheet1);
+    PK_ENTITY_t sheet2Tag = PSolidUtil::GetEntityTag(*sheet2Clone);
+    PK_ENTITY_t sheet1Tag = PSolidUtil::GetEntityTag(sheet1);
     PSolidUtil::TransformBody(sheet2Tag, toolTransform);
     
     if (PK_ENTITY_null == sheet1Tag || PK_ENTITY_null == sheet2Tag)
@@ -2789,6 +2904,9 @@ BentleyStatus BRepUtil::Modify::BlendEdges(IBRepEntityR targetEntity, bvector<IS
 
     PK_MARK_delete(markTag);
 
+    if (SUCCESS == status)
+        PSolidUtil::UpdateFaceAttachments(targetEntity);
+
     return status;
 #else
     return ERROR;
@@ -3049,6 +3167,9 @@ BentleyStatus BRepUtil::Modify::ChamferEdges (IBRepEntityR targetEntity, bvector
         PK_MARK_goto(markTag);
 
     PK_MARK_delete(markTag);
+
+    if (SUCCESS == status)
+        PSolidUtil::UpdateFaceAttachments(targetEntity);
 
     return status;
 #else
@@ -3317,6 +3438,9 @@ BentleyStatus BRepUtil::Modify::OffsetFaces(IBRepEntityR targetEntity, bvector<I
         PK_MARK_goto(markTag);
 
     PK_MARK_delete(markTag);
+
+    if (SUCCESS == status)
+        PSolidUtil::UpdateFaceAttachments(targetEntity);
 
     return status;
 #else
@@ -3786,6 +3910,9 @@ BentleyStatus BRepUtil::Modify::TransformFaces(IBRepEntityR targetEntity, bvecto
         PK_MARK_goto(markTag);
 
     PK_MARK_delete(markTag);
+
+    if (SUCCESS == status)
+        PSolidUtil::UpdateFaceAttachments(targetEntity);
 
     return status;
 #else

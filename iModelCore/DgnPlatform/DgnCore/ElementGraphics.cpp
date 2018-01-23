@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ElementGraphics.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -610,18 +610,11 @@ void WireframeGeomUtil::Draw(IBRepEntityCR entity, Render::GraphicBuilderR graph
             T_FaceAttachmentsVec const& faceAttachmentsVec = attachments->_GetFaceAttachmentsVec();
             T_FaceToSubElemIdMap::const_iterator found = faceToSubElemIdMap.find(faceTag);
 
-            if (found == faceToSubElemIdMap.end())
-                {
-                BeAssert(false); // ERROR - Face not represented in map...
-                }
-            else
-                {
-                FaceAttachment faceAttachment = faceAttachmentsVec.at(found->second.second);
-                Render::GraphicParamsCP graphicParams = faceAttachment.GetGraphicParams();
+            FaceAttachment faceAttachment = faceAttachmentsVec.at(found == faceToSubElemIdMap.end() ? 0 : found->second.second); // If face not represented in map, use base symbology...
+            Render::GraphicParamsCP graphicParams = faceAttachment.GetGraphicParams();
 
-                if (nullptr != graphicParams)
-                    graphic.ActivateGraphicParams(*graphicParams, nullptr); // Activate the pre-resolved face symbology...
-                }
+            if (nullptr != graphicParams)
+                graphic.ActivateGraphicParams(*graphicParams, nullptr); // Activate the pre-resolved face symbology...
             }
 
         curve->TransformInPlace(entity.GetEntityTransform());
