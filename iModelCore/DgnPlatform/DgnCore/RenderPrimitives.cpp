@@ -2260,7 +2260,7 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
             }
         else
             {
-// #define TEST_RASTER_GLYPHS
+#define TEST_RASTER_GLYPHS
             DisplayParamsCPtr displayParams(&geom.GetDisplayParams());
 #if !defined(TEST_RASTER_GLYPHS)
             PolyfaceHeaderPtr polyface = glyph->GetPolyface(*facetOptions);

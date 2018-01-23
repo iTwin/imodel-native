@@ -537,6 +537,7 @@ TextureMapping GltfReader::GetTextureMapping(Utf8CP name, Json::Value const& par
         auto format = static_cast<ImageSource::Format>(texJson["format"].asUInt());
         ImageSource img(format, ByteStream(static_cast<uint8_t const*>(pData), byteLength));
         Texture::CreateParams createParams(key);
+        createParams.m_isGlyph = texJson["isGlyph"].asBool();
         tex = m_renderSystem._CreateTexture(img, Image::BottomUp::No, m_model.GetDgnDb(), createParams);
         if (tex.IsNull())
             return TextureMapping();

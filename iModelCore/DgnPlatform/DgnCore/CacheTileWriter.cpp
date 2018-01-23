@@ -164,6 +164,7 @@ BentleyStatus AddNamedTexture(TextureMappingCR mapping, Json::Value& matJson)
         Json::Value& json = m_json["namedTextures"][name];
         json["format"] = static_cast<uint32_t>(img.GetFormat());
         json["bufferView"] = name;
+        json["isGlyph"] = texture.IsGlyph();
         }
 
     auto const& params = mapping.GetParams();
