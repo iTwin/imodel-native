@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Configuration/UrlProvider.h $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -126,6 +126,7 @@ struct UrlProvider
             WSCLIENT_EXPORT static const UrlDescriptor ConnectXmpp;
             WSCLIENT_EXPORT static const UrlDescriptor ImsActiveSTSHelperService;
             WSCLIENT_EXPORT static const UrlDescriptor ImsPassiveAuthUrl;
+            WSCLIENT_EXPORT static const UrlDescriptor iModelBridgeConfiguration;
             };
     };
 

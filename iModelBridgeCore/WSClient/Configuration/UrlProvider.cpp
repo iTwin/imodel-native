@@ -2,7 +2,7 @@
 |
 |     $Source: Configuration/UrlProvider.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -257,6 +257,14 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ImsPassiveAuthUrl(
     "https://qa-ims.bentley.com/SignIn/K",
     "https://qa-ims.bentley.com/SignIn/K",
     "https://ims.bentley.com/Account/LoginK",
+    &s_urlRegistry
+    );
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::iModelBridgeConfiguration(
+    "iModelBridgeConfiguration",
+    "https://dev-connect-iModelBridgeConfiguration.bentley.com",
+    "https://qa-connect-iModelBridgeConfiguration.bentley.com",
+    "https://connect-iModelBridgeConfiguration.bentley.com",
     &s_urlRegistry
     );
 
