@@ -118,16 +118,27 @@ TileGenerationCache::~TileGenerationCache()
 //=======================================================================================
 struct RangeAccumulator : RangeIndex::Traverser
 {
+    TileElementSet& m_elements;
     DRange3dR       m_range;
     bool            m_is2d;
 
-    RangeAccumulator(DRange3dR range, bool is2d) : m_range(range), m_is2d(is2d) { m_range = DRange3d::NullRange(); }
+    RangeAccumulator(DRange3dR range, bool is2d, TileElementSet& elements) : m_elements(elements), m_range(range), m_is2d(is2d)
+        {
+        m_range = DRange3d::NullRange();
+        }
 
     bool _AbortOnWriteRequest() const override { return true; }
     RangeIndex::Traverser::Accept _CheckRangeTreeNode(RangeIndex::FBoxCR, bool) const override { return RangeIndex::Traverser::Accept::Yes; }
     Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override
         {
-        m_range.Extend(entry.m_range.ToRange3d());
+        auto range = entry.m_range.ToRange3d();
+        TileElementEntry elemEntry(range, entry.m_id, m_is2d);
+        if (elemEntry.m_sizeSq > 0.0)
+            {
+            m_range.Extend(range);
+            m_elements.insert(elemEntry);
+            }
+
         return Stop::No;
         }
 
@@ -159,7 +170,7 @@ TileGeneratorStatus TileGenerationCache::Populate(DgnDbR db, DgnModelR model)
     if (nullptr == geomModel || DgnDbStatus::Success != geomModel->FillRangeIndex())
         return TileGeneratorStatus::NoGeometry;
 
-    RangeAccumulator accum(m_range, model.Is2dModel());
+    RangeAccumulator accum(m_range, model.Is2dModel(), m_elements);
     return accum.Accumulate(*geomModel->GetRangeIndex());
     }
 
@@ -2660,39 +2671,32 @@ bool TileGeometryProcessor::_ProcessTextString(TextStringCR textString, Simplify
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   11/16
 //=======================================================================================
-struct GeometryCollector : RangeIndex::Traverser
+struct GeometryCollector
 {
+    TileElementSet const&   m_elements;
     TileGeometryProcessor&  m_processor;
     ViewContextR            m_context;
     RangeIndex::FBox        m_range;
 
-    GeometryCollector(DRange3dCR range, TileGeometryProcessor& proc, ViewContextR context)
-        : m_range(range), m_processor(proc), m_context(context) { }
-
-    RangeIndex::Traverser::Accept _CheckRangeTreeNode(RangeIndex::FBoxCR box, bool is3d) const override
-        {
-        return box.IntersectsWith(m_range) ? RangeIndex::Traverser::Accept::Yes : RangeIndex::Traverser::Accept::No;
-        }
-
-    Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override
-        {
-        if (entry.m_range.IntersectsWith(m_range))
-            {
-            auto entryRange = entry.m_range.ToRange3d();
-            if (!m_processor.LeafThresholdExceeded() || !m_processor.BelowMinRange(entryRange))
-                m_processor.ProcessElement(m_context, entry.m_id, entryRange);
-            }
-
-        return Stop::No;
-        }
+    GeometryCollector(DRange3dCR range, TileGeometryProcessor& proc, ViewContextR context, TileElementSet const& elements)
+        : m_elements(elements), m_range(range), m_processor(proc), m_context(context) { }
 
     TileGeneratorStatus Collect()
         {
-        auto model = m_processor.GetCache().GetModel().ToGeometricModelP();
-        if (nullptr == model || DgnDbStatus::Success != model->FillRangeIndex())
-            return TileGeneratorStatus::NoGeometry;
+        for (auto const& entry : m_elements)
+            {
+            if (entry.m_range.IntersectsWith(m_range))
+                {
+                DRange3d range = entry.m_range.ToRange3d();
+                bool belowMinRange = m_processor.BelowMinRange(range);
+                if (belowMinRange && m_processor.LeafThresholdExceeded())
+                    break;
 
-        return Stop::Yes == model->GetRangeIndex()->Traverse(*this) ? TileGeneratorStatus::Aborted : TileGeneratorStatus::Success;
+                m_processor.ProcessElement(m_context, entry.m_id, range);
+                }
+            }
+
+        return TileGeneratorStatus::Success;
         }
 };
          
@@ -2701,7 +2705,7 @@ struct GeometryCollector : RangeIndex::Traverser
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGeneratorStatus TileGeometryProcessor::OutputGraphics(ViewContextR context)
     {
-    GeometryCollector collector(m_range, *this, context);
+    GeometryCollector collector(m_range, *this, context, m_cache.GetElements());
 
     auto status = collector.Collect();
     if (TileGeneratorStatus::Aborted == status)

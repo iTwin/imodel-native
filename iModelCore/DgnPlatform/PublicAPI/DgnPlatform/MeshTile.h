@@ -759,6 +759,32 @@ struct ITileCollectionFilter
 };
 
 //=======================================================================================
+// @bsistruct                                                   Paul.Connelly   01/18
+//=======================================================================================
+struct TileElementEntry
+{
+    using Range = RangeIndex::FBox;
+
+    Range           m_range;
+    DgnElementId    m_id;
+    double          m_sizeSq;
+
+    TileElementEntry() = default;
+    TileElementEntry(DRange3dCR range, DgnElementId id, bool is2d)
+        : m_range(range), m_id(id), m_sizeSq(is2d ? range.low.DistanceSquaredXY(range.high) : range.low.DistanceSquared(range.high)) { }
+
+    bool operator<(TileElementEntry const& rhs) const
+        {
+        if (m_sizeSq != rhs.m_sizeSq)
+            return m_sizeSq < rhs.m_sizeSq;
+        else
+            return m_id < rhs.m_id;
+        }
+};
+
+using TileElementSet = bset<TileElementEntry>;
+
+//=======================================================================================
 //! Caches information used during tile generation.
 // @bsistruct                                                   Paul.Connelly   09/16
 //=======================================================================================
@@ -782,6 +808,7 @@ private:
     mutable BeMutex                 m_mutex;    // for geometry cache
     mutable BeSQLite::BeDbMutex     m_dbMutex;  // for multi-threaded access to database
     DgnModelPtr                     m_model;
+    TileElementSet                  m_elements;
     Options                         m_options;
 
     friend struct TileGenerator; // Invokes Populate() from ctor
@@ -804,6 +831,8 @@ public:
     void AddCachedGeometry(DgnElementId elementId, TileGeometryList&& geometry) const;
 
     BeSQLite::BeDbMutex& GetDbMutex() const { return m_dbMutex; }
+
+    TileElementSet const& GetElements() const { return m_elements; }
 };
 
 //=======================================================================================
