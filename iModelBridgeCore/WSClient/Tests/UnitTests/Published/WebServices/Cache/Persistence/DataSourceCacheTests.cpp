@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Persistence/DataSourceCacheTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -276,6 +276,72 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaWithMajorVersionChangeButNoShar
     ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema1}));
     ASSERT_TRUE(nullptr != cache->GetAdapter().GetECSchema("UpdateSchema"));
     EXPECT_EQ(ERROR, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema2}));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, UpdateSchemas_ECDbMap0100SchemaAsReference_SuccessAndCAsConvertedToECDbMap0200)
+    {
+    auto cache = GetTestCache();
+
+    auto schema = ParseSchema(
+        R"xml(<ECSchema schemaName="UpdateSchema" nameSpacePrefix="US" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap"/>
+            <ECClass typeName="TestClass" >
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.01.00">
+                        <MapStrategy>
+                            <Strategy>SharedTable</Strategy>
+                            <AppliesToSubclasses>True</AppliesToSubclasses>
+                        </MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="A" typeName="string" />
+                <ECProperty propertyName="B" typeName="string" />
+            </ECClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema}));
+    auto ecClass = cache->GetAdapter().GetECClass("UpdateSchema", "TestClass");
+    ASSERT_TRUE(nullptr != ecClass);
+    auto ca = ecClass->GetCustomAttribute("ClassMap");
+    ASSERT_TRUE(ca.IsValid());
+    ECValue value;
+    ca->GetValue(value, "MapStrategy");
+    EXPECT_STREQ("TablePerHierarchy", value.GetUtf8CP());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                      01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, UpdateSchemas_LegacySchemaUsedAsReference_SuccessKeepsLegacyReferences)
+    {
+    auto cache = GetTestCache();
+
+    auto schema = ParseSchema(
+        R"xml(<ECSchema schemaName="UpdateSchema" nameSpacePrefix="US" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.13" prefix="bsca"/>
+            <ECSchemaReference name="EditorCustomAttributes" version="01.00.03" prefix="beca"/>
+            <ECClass typeName="TestClass" >
+                <ECCustomAttributes>
+                    <InstanceLabelSpecification xmlns="Bentley_Standard_CustomAttributes.01.13">
+                        <PropertyName>A</PropertyName>
+                    </InstanceLabelSpecification>
+                    <ClassPriority xmlns="EditorCustomAttributes.01.03">
+                        <Priority>10</Priority>
+                    </ClassPriority>
+                </ECCustomAttributes>
+                <ECProperty propertyName="A" typeName="string" />
+                <ECProperty propertyName="B" typeName="string" />
+            </ECClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema}));
+    auto ecClass = cache->GetAdapter().GetECClass("UpdateSchema", "TestClass");
+    ASSERT_TRUE(nullptr != ecClass);
+    EXPECT_TRUE(ecClass->GetCustomAttribute("InstanceLabelSpecification").IsValid());
+    EXPECT_TRUE(ecClass->GetCustomAttribute("ClassPriority").IsValid());
     }
 
 /*--------------------------------------------------------------------------------------+
