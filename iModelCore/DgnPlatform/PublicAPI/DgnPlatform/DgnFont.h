@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnFont.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -71,7 +71,14 @@ struct DgnGlyph
 {
     typedef uint16_t T_Id; // The only real use of exposing this is for QuickVision. It should in reality be a QVwchar, but replicate here because we're below quickvision.
 
-public:
+    enum class RasterStatus
+    {
+        Success = 0,
+        CannotLoadGlyph = 1,
+        CannotRenderGlyph = 2,
+        NoGetRasterFunc = 3,
+    };
+
     virtual ~DgnGlyph() {}
     virtual T_Id _GetId() const = 0;
     T_Id GetId() const { return _GetId(); }
@@ -85,6 +92,7 @@ public:
     CurveVectorPtr GetCurveVector (bool& isFilled) const;
     virtual bool _IsBlank() const = 0;
     bool IsBlank() const { return _IsBlank(); }
+    RasterStatus GetRaster(Render::ImageR raster) const { return _GetRaster(raster); }
 protected:
     enum class DoFixup
         {
@@ -93,6 +101,8 @@ protected:
         Never,
         };
     virtual DoFixup _DoFixup () const = 0;
+
+    virtual RasterStatus _GetRaster(Render::ImageR) const { return RasterStatus::NoGetRasterFunc; }
 };
 
 //=======================================================================================

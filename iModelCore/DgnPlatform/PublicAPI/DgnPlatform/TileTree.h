@@ -489,6 +489,7 @@ protected:
     BentleyStatus DoReadFromDb();
     BentleyStatus DoSaveToDb();
 
+    virtual uint64_t _GetCreateTime() const { return BeTimeUtilities::GetCurrentTimeAsUnixMillis(); }
 public:
     bool IsCanceledOrAbandoned() const {return (m_loads != nullptr && m_loads->IsCanceled()) || m_tile->IsAbandoned();}
     Dgn::Render::SystemP GetRenderSystem() const { return nullptr == m_renderSys ? m_tile->GetRoot().GetRenderSystemP(): m_renderSys; }

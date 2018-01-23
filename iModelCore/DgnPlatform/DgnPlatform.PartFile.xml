@@ -573,6 +573,9 @@
       <SubPart PartName="RunToyTileCreator-MacOS" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" LibType="Static"/>
       <SubPart PartName="RunToyTileCreator-Windows" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" LibType="Dynamic"/>
       -->
+
+      <!-- Required by imodeljsnodeaddon, the primary consumer of this part. -->
+      <SubPart PartName="ECPresentation" PartFile="ECPresentation" Repository="ECPresentation" LibType="Static"/>
     </Part>
 
     <Part Name="NoView-Gtest-RunAggregator-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" >

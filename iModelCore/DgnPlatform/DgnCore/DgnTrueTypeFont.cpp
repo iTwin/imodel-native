@@ -2,11 +2,12 @@
 |
 |     $Source: DgnCore/DgnTrueTypeFont.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnFontData.h>
+#include <DgnPlatform/Render.h>
 #include <regex>
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -69,7 +70,52 @@ public:
     bool _IsBlank() const override;
     FreeTypeFace GetFace() const { return m_face; }
     DoFixup _DoFixup () const override { return DoFixup::Always; }
+    RasterStatus _GetRaster(Render::ImageR) const override;
 };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Mark.Schlosser  01/2018
+//---------------------------------------------------------------------------------------
+DgnGlyph::RasterStatus DgnTrueTypeGlyph::_GetRaster(Render::ImageR img) const
+    {
+    return m_face.Execute([&](FT_Face ftFace)
+        {
+        static const int s_pixelSize = 64;
+
+        FT_UInt pixelScale = ftFace->units_per_EM;
+        if (FT_Err_Ok != FT_Set_Pixel_Sizes(ftFace, s_pixelSize, 0))
+            return RasterStatus::CannotRenderGlyph;
+
+        if (FT_Err_Ok != FT_Load_Glyph(ftFace, m_glyphIndex, FT_LOAD_DEFAULT))
+            return RasterStatus::CannotLoadGlyph;
+
+        if (FT_Err_Ok != FT_Render_Glyph(ftFace->glyph, FT_RENDER_MODE_NORMAL/*256 gray levels with AA*/))
+            return RasterStatus::CannotRenderGlyph;
+
+        // Produce an image with white pixels and alpha
+        FT_Bitmap* ftBmp = &ftFace->glyph->bitmap;
+        uint32_t outputWidth = ftBmp->width + 2; // 1 pixel empty border around image
+        uint32_t outputHeight = ftBmp->rows + 2;
+        ByteStream bytes(outputWidth * outputHeight * 4); // width is number of pixels in a bitmap row
+        memset(bytes.GetDataP(), 0, bytes.GetSize());
+        for (uint32_t by = 0; by < ftBmp->rows; by++)
+            {
+            for (uint32_t bx = 0; bx < ftBmp->width; bx++)
+                {
+                size_t ftIndex = by * ftBmp->width + bx;
+                size_t bsIndex = (outputHeight - 1 - (by + 1)) * outputWidth * 4 + (bx + 1) * 4; // flip Y for GLES output (could do later)
+                bytes[bsIndex] = bytes[bsIndex+1] = bytes[bsIndex+2] = 0xff;
+                bytes[bsIndex+3] = ftBmp->buffer[ftIndex];
+                }
+            }
+
+        if (FT_Err_Ok != FT_Set_Pixel_Sizes(ftFace, pixelScale, 0))
+            BeAssert(false);
+
+        img = Render::Image(outputWidth, outputHeight, std::move(bytes), Render::Image::Format::Rgba);
+        return RasterStatus::Success;
+        });
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2015

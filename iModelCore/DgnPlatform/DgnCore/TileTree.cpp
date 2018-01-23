@@ -352,7 +352,7 @@ BentleyStatus TileLoader::DoSaveToDb()
     rc = cache->GetDb().GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TileTreeCreateTime " SET Created=? WHERE ROWID=?");
     BeAssert(BE_SQLITE_OK == rc && stmt.IsValid());
 
-    stmt->BindInt64(1, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+    stmt->BindInt64(1, _GetCreateTime());
     stmt->BindInt64(2, rowId);
     if (BE_SQLITE_ROW != stmt->Step())
         {

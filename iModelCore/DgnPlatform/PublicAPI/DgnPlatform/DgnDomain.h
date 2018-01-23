@@ -64,6 +64,18 @@
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
+//! Option to control the processing of the revisions
+// @bsiclass                                                 Ramanujam.Raman   10/15
+//=======================================================================================
+enum class RevisionProcessOption : int
+{
+    None = 0,
+    Merge, //!< Revisions will be merged in
+    Reverse, //!< Revisions will be reversed
+    Reinstate //!< Revisions will be reinstated
+};
+
+//=======================================================================================
 //! Options to upgrade schemas when the DgnDb is opened
 //! @note We upgrade the schemas only when the DgnDb is opened to eliminate the impact 
 //! of the changes to existing caches. 
@@ -80,19 +92,10 @@ enum class DomainUpgradeOptions : int
     UseDefaults //!< Upgrade domain schemas depending on the application's development phase. If the application is in Certified/Beta phase, the setting allows CompatibleOnly upgrades. Otherwise, it will allow IncompatibleAlso. @see DgnPlatformLib::Host::_SupplyDevelopmentPhase(). 
     };
 
-//! Option to control the revision upgrades
-enum class RevisionUpgradeOptions : int
-    {
-    None,
-    Merge, //!< Revisions will be merged in
-    Reverse, //!< Revisions will be reversed
-    Reinstate //!< Revisions will be reinstated
-    };
-
 private:
     DomainUpgradeOptions m_domainUpgradeOptions = DomainUpgradeOptions::ValidateOnly;
-    bvector<DgnRevisionCP> m_upgradeRevisions;
-    RevisionUpgradeOptions m_revisionUpgradeOptions = RevisionUpgradeOptions::None;
+    bvector<DgnRevisionCP> m_revisions;
+    RevisionProcessOption m_revisionProcessOption = RevisionProcessOption::None;
 
 public:
     //! Default constructor
@@ -102,10 +105,10 @@ public:
     SchemaUpgradeOptions(DomainUpgradeOptions domainOptions) { SetUpgradeFromDomains(domainOptions); }
 
     //! Constructor to setup schema upgrades by merging/reversing/reinstating a revision (that may contain schema changes).
-    SchemaUpgradeOptions(DgnRevisionCR revision, RevisionUpgradeOptions revisionOptions = RevisionUpgradeOptions::Merge) { SetUpgradeFromRevision(revision, revisionOptions); }
+    SchemaUpgradeOptions(DgnRevisionCR revision, RevisionProcessOption revisionOptions = RevisionProcessOption::Merge) { SetUpgradeFromRevision(revision, revisionOptions); }
 
     //! Constructor to setup schema upgrades by merging revisions (that may contain schema changes).
-    SchemaUpgradeOptions(bvector<DgnRevisionCP> const& revisions, RevisionUpgradeOptions revisionOptions = RevisionUpgradeOptions::Merge) { SetUpgradeFromRevisions(revisions, revisionOptions); }
+    SchemaUpgradeOptions(bvector<DgnRevisionCP> const& revisions, RevisionProcessOption revisionOptions = RevisionProcessOption::Merge) { SetUpgradeFromRevisions(revisions, revisionOptions); }
 
     //! Setup to upgrade schemas from the registered domains
     void SetUpgradeFromDomains(DomainUpgradeOptions domainOptions = DomainUpgradeOptions::UseDefaults)
@@ -114,28 +117,28 @@ public:
         }
 
     //! Setup Schema upgrades by merging a revision (that may contain schema changes)
-    void SetUpgradeFromRevision(DgnRevisionCR upgradeRevision, RevisionUpgradeOptions revisionOptions = RevisionUpgradeOptions::Merge)
+    void SetUpgradeFromRevision(DgnRevisionCR upgradeRevision, RevisionProcessOption revisionOptions = RevisionProcessOption::Merge)
         {
-        m_upgradeRevisions.clear();
-        m_upgradeRevisions.push_back(&upgradeRevision);
-        m_revisionUpgradeOptions = revisionOptions;
+        m_revisions.clear();
+        m_revisions.push_back(&upgradeRevision);
+        m_revisionProcessOption = revisionOptions;
         }
 
     //! Setup Schema upgrades by merging a revision (that contains schema changes)
-    void SetUpgradeFromRevisions(bvector<DgnRevisionCP> const& upgradeRevisions, RevisionUpgradeOptions revisionOptions = RevisionUpgradeOptions::Merge)
+    void SetUpgradeFromRevisions(bvector<DgnRevisionCP> const& upgradeRevisions, RevisionProcessOption revisionOptions = RevisionProcessOption::Merge)
         {
-        m_upgradeRevisions = upgradeRevisions;
-        m_revisionUpgradeOptions = revisionOptions;
+        m_revisions = upgradeRevisions;
+        m_revisionProcessOption = revisionOptions;
         }
 
     //! Get the option that controls upgrade of schemas in the DgnDb from the domains.
     DomainUpgradeOptions GetDomainUpgradeOptions() const;
 
-    //! Gets the revisions that are to be merged
-    bvector<DgnRevisionCP> const& GetUpgradeRevisions() const { return m_upgradeRevisions; }
+    //! Gets the revisions that are to be processed
+    bvector<DgnRevisionCP> const& GetRevisions() const { return m_revisions; }
 
-    //! Get the option that controls the upgrade of revisions 
-    RevisionUpgradeOptions GetRevisionUpgradeOptions() const { return m_revisionUpgradeOptions;  }
+    //! Get the option that controls the processing of revisions 
+    RevisionProcessOption GetRevisionProcessOption() const { return m_revisionProcessOption;  }
 
     //! Returns true if schemas are to be upgraded from the domains.
     bool AreDomainUpgradesAllowed() const;
@@ -144,8 +147,8 @@ public:
     void Reset()
         {
         m_domainUpgradeOptions = DomainUpgradeOptions::ValidateOnly;
-        m_upgradeRevisions.clear();
-        m_revisionUpgradeOptions = RevisionUpgradeOptions::None;
+        m_revisions.clear();
+        m_revisionProcessOption = RevisionProcessOption::None;
         }
 };
 
