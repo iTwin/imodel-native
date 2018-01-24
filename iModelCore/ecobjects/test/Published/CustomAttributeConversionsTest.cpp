@@ -3266,7 +3266,7 @@ TEST_F(RelationshipConversionTest, BaseClassHasConstraintClasses)
 void validateClassMapConvertedCorrectly(Utf8CP schemaXml, bool expectSuccess, Utf8CP expectedMappingStrategy)
     {
     ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext(true, false);
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
     ASSERT_TRUE(schema.IsValid());
 
@@ -3303,12 +3303,28 @@ void validateClassMapConvertedCorrectly(Utf8CP schemaXml, bool expectSuccess, Ut
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingConversionTests, ClassMap_SharedTableToTablePerHierarchy)
     {
-    Utf8CP schemaXmlCanConvert = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    Utf8CP schemaXmlCanConvert0 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
                 <ECSchemaReference name="ECDbMap" version="1.0" prefix="ecdbmap"/>
                 <ECClass typeName="C" isDomainClass="true">
                     <ECCustomAttributes>
                         <ClassMap xmlns="ECDbMap.01.00">
+                            <MapStrategy>
+                                <Strategy>SharedTable</Strategy>
+                                <AppliesToSubclasses>True</AppliesToSubclasses>
+                            </MapStrategy>
+                        </ClassMap>
+                    </ECCustomAttributes>
+                </ECClass>
+            </ECSchema>
+        )xml";
+
+    Utf8CP schemaXmlCanConvert1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECSchemaReference name="ECDbMap" version="1.1" prefix="ecdbmap"/>
+                <ECClass typeName="C" isDomainClass="true">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.01.01">
                             <MapStrategy>
                                 <Strategy>SharedTable</Strategy>
                                 <AppliesToSubclasses>True</AppliesToSubclasses>
@@ -3350,7 +3366,8 @@ TEST_F(ECDbMappingConversionTests, ClassMap_SharedTableToTablePerHierarchy)
             </ECSchema>
         )xml";
 
-    validateClassMapConvertedCorrectly(schemaXmlCanConvert, true, "TablePerHierarchy");
+    validateClassMapConvertedCorrectly(schemaXmlCanConvert0, true, "TablePerHierarchy");
+    validateClassMapConvertedCorrectly(schemaXmlCanConvert1, true, "TablePerHierarchy");
     validateClassMapConvertedCorrectly(schemaXmlCanNotConvert0, false, "");
     validateClassMapConvertedCorrectly(schemaXmlCanNotConvert1, false, "");
     }
