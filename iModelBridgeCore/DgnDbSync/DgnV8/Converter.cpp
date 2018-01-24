@@ -1040,21 +1040,7 @@ DgnModelId Converter::CreateModelFromV8Model(DgnV8ModelCR v8Model, Utf8CP newNam
     GeometricModelP geometricModel = model->ToGeometricModelP();
     if (geometricModel != nullptr)
         {
-#ifdef NEEDS_WORK_RAMAN
-        // m_rootModelRef is not available so fix for 515560 below is not currently posssible....
-
-        /* Note: We use the V8 root model to set the display info for *all* of the models as a stop 
-         * gap measure (in Q4) to fix TFS#515560: 
-         * Users reported a discrepancy between the units displayed in DgnDb based Navigator and v8i Microstation. 
-         * This is because Microstation uses the display settings in the active model for content displayed from all
-         * other 'reachable' models. 
-         * The longer term fix for this issue is to make these display settings as something that's defined for the 
-         * entire DgnDb/BIM, and not individual models. This is tracked by TFS#634638. 
-         */
-        DgnV8Api::ModelInfo const& v8ModelInfo = m_rootModelRef->GetDgnModelP()->GetModelInfo();
-#else
-        DgnV8Api::ModelInfo const& v8ModelInfo = v8Model.GetModelInfo();
-#endif
+        DgnV8Api::ModelInfo const& v8ModelInfo = _GetModelInfo(v8Model);
         auto& displayInfo = geometricModel->GetFormatterR();
 
         displayInfo.SetUnits(fromV8(v8ModelInfo.GetMasterUnit()), fromV8(v8ModelInfo.GetSubUnit()));
