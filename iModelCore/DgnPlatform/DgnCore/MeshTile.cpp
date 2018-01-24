@@ -2309,8 +2309,12 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_DoLineStyleStroke(Render::LineStyleSymbCR lsSymb, IFacetOptionsPtr& facetOptions, SimplifyGraphic& gf) const
     {
+#if defined(WIP_STROKE_LINE_STYLES)
     facetOptions = GetLineStyleFacetOptions(lsSymb);
     return facetOptions.IsValid();
+#else
+    return false;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
