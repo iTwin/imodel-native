@@ -19,22 +19,9 @@ const Utf8CP SketchGridSurfacePlacementStrategy::prop_Grid = SketchGridSurfaceMa
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-SketchGridSurfacePlacementStrategy::SketchGridSurfacePlacementStrategy
-(
-    BBS::ExtrusionManipulationStrategyR geometryManipulationStrategy
-)
-    : T_Super()
-    , m_manipulationStrategy(_CreateSketchGridSurfaceManipulationStrategy(geometryManipulationStrategy))
-    {
-    BeAssert(m_manipulationStrategy.IsValid() && "Manipulation strategy should be valid");
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas              01/2018
-//---------------+---------------+---------------+---------------+---------------+------
 void SketchGridSurfacePlacementStrategy::OnDynamicOperationEnd()
     {
-    m_manipulationStrategy->OnDynamicOperationEnd();
+    _GetSketchGridSurfaceManipulationStrategyR().OnDynamicOperationEnd();
     }
 
 //--------------------------------------------------------------------------------------
@@ -42,5 +29,5 @@ void SketchGridSurfacePlacementStrategy::OnDynamicOperationEnd()
 //---------------+---------------+---------------+---------------+---------------+------
 Utf8String SketchGridSurfacePlacementStrategy::GetMessage() const
     {
-    return m_manipulationStrategy->GetMessage();
+    return _GetSketchGridSurfaceManipulationStrategy().GetMessage();
     }

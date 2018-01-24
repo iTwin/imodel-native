@@ -17,19 +17,15 @@ namespace BBS = BENTLEY_BUILDING_SHARED_NAMESPACE_NAME;
 struct SketchGridSurfacePlacementStrategy : public BBS::ElementPlacementStrategy
     {
     DEFINE_T_SUPER(BBS::ElementPlacementStrategy)
-
-    private:
-        SketchGridSurfaceManipulationStrategyPtr m_manipulationStrategy;
-
+        
     protected:
-        SketchGridSurfacePlacementStrategy(BBS::ExtrusionManipulationStrategyR geometryManipulationStrategy);
+        virtual BBS::ElementManipulationStrategyCR _GetElementManipulationStrategy() const override { return _GetSketchGridSurfaceManipulationStrategy(); }
+        virtual BBS::ElementManipulationStrategyR _GetElementManipulationStrategyR() override { return _GetSketchGridSurfaceManipulationStrategyR(); }
+        virtual BBS::GeometryManipulationStrategyCR _GetManipulationStrategy() const override { return _GetSketchGridSurfaceManipulationStrategy(); }
+        virtual BBS::GeometryManipulationStrategyR _GetManipulationStrategyR() override { return _GetSketchGridSurfaceManipulationStrategyR(); }
 
-        virtual BBS::ElementManipulationStrategyCR _GetElementManipulationStrategy() const override { return *m_manipulationStrategy; }
-        virtual BBS::ElementManipulationStrategyR _GetElementManipulationStrategyR() override { return *m_manipulationStrategy; }
-        virtual BBS::GeometryManipulationStrategyCR _GetManipulationStrategy() const override { return *m_manipulationStrategy; }
-        virtual BBS::GeometryManipulationStrategyR _GetManipulationStrategyR() override { return *m_manipulationStrategy; }
-
-        virtual SketchGridSurfaceManipulationStrategyPtr _CreateSketchGridSurfaceManipulationStrategy(BBS::ExtrusionManipulationStrategyR geometryManipulationStrategy) = 0;
+        virtual SketchGridSurfaceManipulationStrategyCR _GetSketchGridSurfaceManipulationStrategy() const = 0;
+        virtual SketchGridSurfaceManipulationStrategyR _GetSketchGridSurfaceManipulationStrategyR() = 0;
 
     public:
         GRIDSTRATEGIES_EXPORT void OnDynamicOperationEnd();
