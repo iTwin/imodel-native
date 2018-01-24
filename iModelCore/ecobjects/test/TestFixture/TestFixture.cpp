@@ -3,7 +3,7 @@
 |
 |     $Source: test/TestFixture/TestFixture.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 | Based on http://cplus.about.com/od/howtodothingsi2/a/timing.htm
 |
 +--------------------------------------------------------------------------------------*/
@@ -11,12 +11,38 @@
 #include "../ECObjectsTestPCH.h"
 #include <Bentley/BeTimeUtilities.h>
 #include "TestFixture.h"
+#include <BeSQLite/L10N.h>
 
 USING_NAMESPACE_BENTLEY_LOGGING
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
   
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bill.Steinbock                  01/2018
+//---------------------------------------------------------------------------------------
+void ECTestFixture::SetUp()
+    {
+    BeFileName sqlangFile;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(sqlangFile);
+    sqlangFile.AppendToPath(L"sqlang");
+    sqlangFile.AppendToPath(L"Units_en.sqlang.db3");
+
+    BeFileName temporaryDirectory;
+    BeTest::GetHost().GetTempDir(temporaryDirectory);
+
+    BeSQLite::BeSQLiteLib::Initialize(temporaryDirectory, BeSQLite::BeSQLiteLib::LogErrors::Yes);
+    BeSQLite::L10N::Initialize(BeSQLite::L10N::SqlangFiles(sqlangFile));
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                  Bill Steinbock 12/17
+//----------------------------------------------------------------------------------------
+void ECTestFixture::TearDown()
+    {
+    BeSQLite::L10N::Shutdown();
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                08/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
