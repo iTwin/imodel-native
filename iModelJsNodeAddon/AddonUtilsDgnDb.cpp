@@ -632,12 +632,15 @@ DbResult AddonUtils::GetCachedBriefcaseInfos(JsonValueR jsonBriefcaseInfos, BeFi
                     BeFileName::EmptyAndRemoveDirectory(briefcasePath);
                     continue;
                     }
+                RevisionManagerR revisions = db->Revisions();
 
                 Json::Value jsonBriefcase = Json::objectValue;
                 jsonBriefcase["pathname"] = briefcasePathname.GetNameUtf8();
-                jsonBriefcase["parentChangeSetId"] = db->Revisions().GetParentRevisionId();
+                jsonBriefcase["parentChangeSetId"] = revisions.GetParentRevisionId();
                 jsonBriefcase["briefcaseId"] = db->GetBriefcaseId().GetValue();
                 jsonBriefcase["readOnly"] = isReadonly;
+                if (revisions.HasReversedRevisions())
+                    jsonBriefcase["reversedChangeSetId"] = revisions.GetReversedRevisionId();
 
                 jsonIModelBriefcases.append(jsonBriefcase);
                 }
