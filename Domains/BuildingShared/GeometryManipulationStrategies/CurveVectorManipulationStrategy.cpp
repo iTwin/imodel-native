@@ -11,8 +11,6 @@
 
 USING_NAMESPACE_BUILDING_SHARED
 
-const Utf8CP CurveVectorManipulationStrategy::prop_WorkingPlane = "WorkingPlane";
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
@@ -448,7 +446,7 @@ void CurveVectorManipulationStrategy::_SetProperty
     DPlane3dCR value
 )
     {
-    if (0 == strcmp(key, prop_WorkingPlane))
+    if (0 == strcmp(key, prop_WorkingPlane()))
         {
         m_workingPlane = value;
         }
@@ -466,7 +464,7 @@ BentleyStatus CurveVectorManipulationStrategy::_TryGetProperty
     DPlane3dR value
 ) const
     {
-    if (0 == strcmp(key, prop_WorkingPlane))
+    if (0 == strcmp(key, prop_WorkingPlane()))
         {
         value = m_workingPlane;
         return BentleyStatus::SUCCESS;
@@ -542,6 +540,7 @@ void CurveVectorManipulationStrategy::_ReplaceKeyPoint
         return m_primitiveStrategies.back()->TryGetProperty(key, value); \
         }
 
+GMS_PROPERTY_OVERRIDE_IMPL(bool)
 GMS_PROPERTY_OVERRIDE_IMPL(int)
 GMS_PROPERTY_OVERRIDE_IMPL(double)
 GMS_PROPERTY_OVERRIDE_IMPL(DVec3d)

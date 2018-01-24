@@ -63,7 +63,7 @@ struct EllipseManipulationStrategy : public CurvePrimitiveManipulationStrategy
     public:
         static EllipseManipulationStrategyPtr Create() { return new EllipseManipulationStrategy(); }
 
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static const Utf8CP prop_Normal;
+        static constexpr Utf8CP prop_Normal() { return "Normal"; }
     };
 
 END_BUILDING_SHARED_NAMESPACE

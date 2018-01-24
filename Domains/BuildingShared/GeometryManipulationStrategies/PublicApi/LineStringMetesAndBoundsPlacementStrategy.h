@@ -44,8 +44,8 @@ struct LineStringMetesAndBoundsPlacementStrategy : public LineStringPlacementStr
     public:
         static LineStringMetesAndBoundsPlacementStrategyPtr Create() { return new LineStringMetesAndBoundsPlacementStrategy(); }
 
-        static const Utf8CP prop_WorkingPlane;
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static const Utf8CP prop_MetesAndBounds;
+        static constexpr Utf8CP prop_WorkingPlane() { return "WorkingPlane"; }
+        static constexpr Utf8CP prop_MetesAndBounds() { return "MetesAndBounds"; }
     };
 
 END_BUILDING_SHARED_NAMESPACE

@@ -104,10 +104,10 @@ TEST_F(CurveStrategyTests, LinePointAngleLengthTests)
     ASSERT_EQ(0, strategy->GetKeyPoints().size()) << "Strategy should be created with no initial points";
     
     double length, angle;
-    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Length, length)) << "Initially, length should be accessible";
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Length(), length)) << "Initially, length should be accessible";
     ASSERT_EQ(0, length) << "Initial length should be 0";
     
-    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Angle, angle)) << "Initially, angle should be accessible";
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Angle(), angle)) << "Initially, angle should be accessible";
     ASSERT_EQ(0, angle) << "Initial angle should be 0";
 
     ICurvePrimitivePtr createdCurve = strategy->FinishPrimitive();
@@ -121,8 +121,8 @@ TEST_F(CurveStrategyTests, LinePointAngleLengthTests)
     ICurvePrimitivePtr expected = ICurvePrimitive::CreateLine({ 0, 0, 0 }, { 0, 0, 0 });
     TestUtils::CompareCurves(createdCurve, expected);
 
-    strategy->SetProperty(LinePlacementStrategy::prop_Length, 2.0);
-    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Length, length)) << "Getting length should not fail";
+    strategy->SetProperty(LinePlacementStrategy::prop_Length(), 2.0);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Length(), length)) << "Getting length should not fail";
     ASSERT_DOUBLE_EQ(2.0, length) << "Length is incorrect";
     TestUtils::ComparePoints({ {0, 0, 0},{ 2, 0, 0 } }, strategy->GetKeyPoints());
     
@@ -130,8 +130,8 @@ TEST_F(CurveStrategyTests, LinePointAngleLengthTests)
     expected = ICurvePrimitive::CreateLine({ 0, 0, 0 }, { 2, 0, 0 });
     TestUtils::CompareCurves(createdCurve, expected);
 
-    strategy->SetProperty(LinePlacementStrategy::prop_Angle, msGeomConst_pi / 2);
-    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Angle, angle)) << "Getting angle should not fail";
+    strategy->SetProperty(LinePlacementStrategy::prop_Angle(), msGeomConst_pi / 2);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Angle(), angle)) << "Getting angle should not fail";
     ASSERT_DOUBLE_EQ(msGeomConst_pi / 2, angle) << "Angle is incorrect";
     TestUtils::ComparePoints({ {0, 0, 0}, {0, 2, 0} }, strategy->GetKeyPoints());
 
@@ -149,8 +149,8 @@ TEST_F(CurveStrategyTests, LinePointAngleLengthTests)
     expected = ICurvePrimitive::CreateLine({ 1, 2, 3 }, { 1, 4, 3 });
     TestUtils::CompareCurves(createdCurve, expected);
 
-    strategy->SetProperty(LinePlacementStrategy::prop_Length, 5.0);
-    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Length, length)) << "Getting length should not fail";
+    strategy->SetProperty(LinePlacementStrategy::prop_Length(), 5.0);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Length(), length)) << "Getting length should not fail";
     ASSERT_DOUBLE_EQ(5.0, length) << "Length is incorrect";
     TestUtils::ComparePoints({ { 1, 2, 3 },{ 1, 7, 3 } }, strategy->GetKeyPoints());
 
@@ -158,8 +158,8 @@ TEST_F(CurveStrategyTests, LinePointAngleLengthTests)
     expected = ICurvePrimitive::CreateLine({ 1, 2, 3 }, { 1, 7, 3 });
     TestUtils::CompareCurves(createdCurve, expected);
 
-    strategy->SetProperty(LinePlacementStrategy::prop_Angle, msGeomConst_pi / 4);
-    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Angle, angle)) << "Getting angle should not fail";
+    strategy->SetProperty(LinePlacementStrategy::prop_Angle(), msGeomConst_pi / 4);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Angle(), angle)) << "Getting angle should not fail";
     ASSERT_DOUBLE_EQ(msGeomConst_pi / 4, angle) << "Angle is incorrect";
     TestUtils::ComparePoints({ { 1, 2, 3 },{ 1 + std::sqrt(25.0/2.0), 2 + std::sqrt(25.0/2.0), 3 } }, strategy->GetKeyPoints());
 
@@ -192,7 +192,7 @@ TEST_F(CurveStrategyTests, LinePointsLengthTests)
     ASSERT_EQ(0, strategy->GetKeyPoints().size()) << "Strategy should be created with no initial points";
 
     double length;
-    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Length, length)) << "Initially, length should be accessible";
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Length(), length)) << "Initially, length should be accessible";
     ASSERT_EQ(0, length) << "Initial length should be 0";
 
     ICurvePrimitivePtr createdCurve = strategy->FinishPrimitive();
@@ -211,8 +211,8 @@ TEST_F(CurveStrategyTests, LinePointsLengthTests)
     ICurvePrimitivePtr expected = ICurvePrimitive::CreateLine({ 0, 0, 0 }, { 0, 0, 0 });
     TestUtils::CompareCurves(createdCurve, expected);
 
-    strategy->SetProperty(LinePlacementStrategy::prop_Length, 2.0);
-    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Length, length)) << "Getting length should not fail";
+    strategy->SetProperty(LinePlacementStrategy::prop_Length(), 2.0);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Length(), length)) << "Getting length should not fail";
     ASSERT_DOUBLE_EQ(2.0, length) << "Length is incorrect";
     TestUtils::ComparePoints({ { 0, 0, 0 },{ 2.0 / std::sqrt(14.0), 4.0 / std::sqrt(14.0), 6.0 / std::sqrt(14.0) } }, strategy->GetKeyPoints());
 
@@ -234,8 +234,8 @@ TEST_F(CurveStrategyTests, LinePointsLengthTests)
     expected = ICurvePrimitive::CreateLine({ 1, 2, 3 }, { 1, 4, 3 });
     TestUtils::CompareCurves(createdCurve, expected);
 
-    strategy->SetProperty(LinePlacementStrategy::prop_Length, 5.0);
-    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Length, length)) << "Getting length should not fail";
+    strategy->SetProperty(LinePlacementStrategy::prop_Length(), 5.0);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Length(), length)) << "Getting length should not fail";
     ASSERT_DOUBLE_EQ(5.0, length) << "Length is incorrect";
     TestUtils::ComparePoints({ { 1, 2, 3 },{ 1, 7, 3 } }, strategy->GetKeyPoints());
 
@@ -263,7 +263,7 @@ TEST_F(CurveStrategyTests, LinePointsAngleTests)
 
     double angle;
     
-    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Angle, angle)) << "Initially, angle should be accessible";
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Angle(), angle)) << "Initially, angle should be accessible";
     ASSERT_EQ(0, angle) << "Initial angle should be 0";
 
     ICurvePrimitivePtr createdCurve = strategy->FinishPrimitive();
@@ -283,8 +283,8 @@ TEST_F(CurveStrategyTests, LinePointsAngleTests)
     ICurvePrimitivePtr expected = ICurvePrimitive::CreateLine({ 0, 0, 0 }, { std::sqrt(14.0), 0, 0 });
     TestUtils::CompareCurves(createdCurve, expected);
 
-    strategy->SetProperty(LinePlacementStrategy::prop_Angle, msGeomConst_pi / 2);
-    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Angle, angle)) << "Getting angle should not fail";
+    strategy->SetProperty(LinePlacementStrategy::prop_Angle(), msGeomConst_pi / 2);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Angle(), angle)) << "Getting angle should not fail";
     ASSERT_DOUBLE_EQ(msGeomConst_pi / 2, angle) << "Angle is incorrect";
     TestUtils::ComparePoints({ { 0, 0, 0 },{ 0, std::sqrt(14.0), 0 } }, strategy->GetKeyPoints());
 
@@ -314,8 +314,8 @@ TEST_F(CurveStrategyTests, LinePointsAngleTests)
     expected = ICurvePrimitive::CreateLine({ 1, 2, 3 }, { 1, 2.0 + std::sqrt(2.0), 3 });
     TestUtils::CompareCurves(createdCurve, expected);
 
-    strategy->SetProperty(LinePlacementStrategy::prop_Angle, msGeomConst_pi / 4);
-    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Angle, angle)) << "Getting angle should not fail";
+    strategy->SetProperty(LinePlacementStrategy::prop_Angle(), msGeomConst_pi / 4);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Angle(), angle)) << "Getting angle should not fail";
     ASSERT_DOUBLE_EQ(msGeomConst_pi / 4, angle) << "Angle is incorrect";
     TestUtils::ComparePoints({ { 1, 2, 3 },{ 2, 3, 3 } }, strategy->GetKeyPoints());
 
@@ -433,7 +433,7 @@ TEST_F(CurveStrategyTests, SplineControlPointsStrategyTests)
 
     // Check initial strategy state
     int actualOrder;
-    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(SplineControlPointsPlacementStrategy::prop_Order, actualOrder)) << "Getting order should not fail";
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(SplineControlPointsPlacementStrategy::prop_Order(), actualOrder)) << "Getting order should not fail";
     ASSERT_EQ(order, actualOrder) << "Incorrect strategy order";
 
     ASSERT_EQ(0, strategy->GetKeyPoints().size()) << "Strategy should have no points";
@@ -461,16 +461,16 @@ TEST_F(CurveStrategyTests, SplineControlPointsStrategyTests)
     TestUtils::CompareCurves(expectedCurve, strategy->FinishPrimitive());
 
     order = 4;
-    strategy->SetProperty(SplineControlPointsPlacementStrategy::prop_Order, order);
-    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(SplineControlPointsPlacementStrategy::prop_Order, actualOrder)) << "Getting order should not fail";
+    strategy->SetProperty(SplineControlPointsPlacementStrategy::prop_Order(), order);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(SplineControlPointsPlacementStrategy::prop_Order(), actualOrder)) << "Getting order should not fail";
     ASSERT_EQ(order, actualOrder) << "Incorrect strategy order";
 
     expectedCurve = TestUtils::CreateSpline({ { 0, 0, 0 },{ 1, 0, 0 },{ 0, 1, 0 },{ 2, 5, 6 } }, order);
     TestUtils::CompareCurves(expectedCurve, strategy->FinishPrimitive());
 
     order = 0;
-    strategy->SetProperty(SplineControlPointsPlacementStrategy::prop_Order, order);
-    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(SplineControlPointsPlacementStrategy::prop_Order, actualOrder)) << "Getting order should not fail";
+    strategy->SetProperty(SplineControlPointsPlacementStrategy::prop_Order(), order);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(SplineControlPointsPlacementStrategy::prop_Order(), actualOrder)) << "Getting order should not fail";
     ASSERT_EQ(order, actualOrder) << "Incorrect strategy order";
 
     ASSERT_TRUE(strategy->FinishPrimitive().IsNull()) << "No curve should be created with invalid order";

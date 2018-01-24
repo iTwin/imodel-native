@@ -60,12 +60,12 @@ struct SolidPrimitiveManipulationStrategy : public GeometryManipulationStrategy
         virtual ISolidPrimitivePtr _FinishSolidPrimitive() const = 0;
 
     public:
-        static const Utf8CP prop_BaseComplete;
+        static constexpr Utf8CP prop_BaseComplete() { return "BaseComplete"; }
 
         bool IsBaseComplete() const;
         void SetBaseComplete(bool value);
 
-        ISolidPrimitivePtr FinishSolidPrimitive() const;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ISolidPrimitivePtr FinishSolidPrimitive() const;
     };
 
 END_BUILDING_SHARED_NAMESPACE

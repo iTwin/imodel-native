@@ -9,10 +9,6 @@
 
 USING_NAMESPACE_BUILDING_SHARED
 
-const Utf8CP ExtrusionManipulationStrategy::prop_BaseShapeStrategy = "BaseShapeStrategy";
-const Utf8CP ExtrusionManipulationStrategy::prop_Height = "Height";
-const Utf8CP ExtrusionManipulationStrategy::prop_ContinuousBaseShapePrimitiveComplete = "ContinuousBaseShapePrimitiveComplete";
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
@@ -279,7 +275,7 @@ void ExtrusionManipulationStrategy::_SetProperty
     bool const& value
 )
     {
-    if (0 == strcmp(key, prop_ContinuousBaseShapePrimitiveComplete))
+    if (0 == strcmp(key, prop_ContinuousBaseShapePrimitiveComplete()))
         {
         if (!_IsBaseComplete())
             {
@@ -299,7 +295,7 @@ void ExtrusionManipulationStrategy::_SetProperty
     GeometryManipulationStrategyProperty const& value
 )
     {
-    if (0 == strcmp(key, prop_BaseShapeStrategy))
+    if (0 == strcmp(key, prop_BaseShapeStrategy()))
         {
         BaseShapeStrategyChangeProperty const* bsscp = dynamic_cast<BaseShapeStrategyChangeProperty const*>(&value);
         if (nullptr != bsscp)
@@ -327,7 +323,7 @@ BentleyStatus ExtrusionManipulationStrategy::_TryGetProperty
     double& value
 ) const
     {
-    if (0 == strcmp(key, prop_Height))
+    if (0 == strcmp(key, prop_Height()))
         {
         if (!m_heightSet && !m_dynamicHeightSet)
             return BentleyStatus::ERROR;

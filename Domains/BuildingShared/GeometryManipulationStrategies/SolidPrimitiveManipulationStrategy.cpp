@@ -9,8 +9,6 @@
 
 USING_NAMESPACE_BUILDING_SHARED
 
-const Utf8CP SolidPrimitiveManipulationStrategy::prop_BaseComplete = "BaseComplete";
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
@@ -254,7 +252,7 @@ void SolidPrimitiveManipulationStrategy::_SetProperty
     bool const& value
 )
     {
-    if (0 == strcmp(key, prop_BaseComplete))
+    if (0 == strcmp(key, prop_BaseComplete()))
         {
         _SetBaseComplete(value);
         }
@@ -271,7 +269,7 @@ BentleyStatus SolidPrimitiveManipulationStrategy::_TryGetProperty
     bool& value
 ) const
     {
-    if (0 == strcmp(key, prop_BaseComplete))
+    if (0 == strcmp(key, prop_BaseComplete()))
         {
         value = _IsBaseComplete();
         return BentleyStatus::SUCCESS;

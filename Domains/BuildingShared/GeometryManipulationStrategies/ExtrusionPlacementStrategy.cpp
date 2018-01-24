@@ -9,10 +9,6 @@
 
 USING_NAMESPACE_BUILDING_SHARED
 
-const Utf8CP ExtrusionPlacementStrategy::prop_Height = ExtrusionManipulationStrategy::prop_Height;
-const Utf8CP ExtrusionPlacementStrategy::prop_BaseShapeStrategy = ExtrusionManipulationStrategy::prop_BaseShapeStrategy;
-const Utf8CP ExtrusionPlacementStrategy::prop_ContinuousBaseShapePrimitiveComplete = ExtrusionManipulationStrategy::prop_ContinuousBaseShapePrimitiveComplete;
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------

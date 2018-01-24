@@ -126,17 +126,17 @@ struct ExtrusionManipulationStrategy : public SolidPrimitiveManipulationStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsComplete() const override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _CanAcceptMorePoints() const override;
 
-        virtual ISolidPrimitivePtr _FinishSolidPrimitive() const override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ISolidPrimitivePtr _FinishSolidPrimitive() const override;
 
-        virtual void _SetProperty(Utf8CP key, bool const& value) override;
-        virtual void _SetProperty(Utf8CP key, GeometryManipulationStrategyProperty const& value) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _SetProperty(Utf8CP key, bool const& value) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _SetProperty(Utf8CP key, GeometryManipulationStrategyProperty const& value) override;
 
-        virtual BentleyStatus _TryGetProperty(Utf8CP key, double& value) const override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual BentleyStatus _TryGetProperty(Utf8CP key, double& value) const override;
 
     public:
-        static const Utf8CP prop_BaseShapeStrategy;
-        static const Utf8CP prop_ContinuousBaseShapePrimitiveComplete;
-        static const Utf8CP prop_Height;
+        static constexpr Utf8CP prop_BaseShapeStrategy() { return "BaseShapeStrategy"; }
+        static constexpr Utf8CP prop_ContinuousBaseShapePrimitiveComplete() { return "ContinuousBaseShapePrimitiveComplete"; }
+        static constexpr Utf8CP prop_Height() { return "Height"; }
 
         static ExtrusionManipulationStrategyPtr Create() { return new ExtrusionManipulationStrategy(); }
         static ExtrusionManipulationStrategyPtr Create(CurveVectorManipulationStrategyR baseShapeManipulationStrategy) { return new ExtrusionManipulationStrategy(baseShapeManipulationStrategy); }

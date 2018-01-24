@@ -9,8 +9,6 @@
 
 USING_NAMESPACE_BUILDING_SHARED
 
-const Utf8CP ArcPlacementStrategy::prop_Normal = EllipseManipulationStrategy::prop_Normal;
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------

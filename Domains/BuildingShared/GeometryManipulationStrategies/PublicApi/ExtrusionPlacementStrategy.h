@@ -23,9 +23,9 @@ struct ExtrusionPlacementStrategy : public SolidPrimitivePlacementStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ExtrusionPlacementStrategy();
         
     public:
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static const Utf8CP prop_BaseShapeStrategy;
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static const Utf8CP prop_Height;
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static const Utf8CP prop_ContinuousBaseShapePrimitiveComplete;
+        static constexpr Utf8CP prop_BaseShapeStrategy() { return ExtrusionManipulationStrategy::prop_BaseShapeStrategy(); }
+        static constexpr Utf8CP prop_Height() { return ExtrusionManipulationStrategy::prop_Height(); }
+        static constexpr Utf8CP prop_ContinuousBaseShapePrimitiveComplete() { return ExtrusionManipulationStrategy::prop_ContinuousBaseShapePrimitiveComplete(); }
 
         static ExtrusionPlacementStrategyPtr Create() { return new ExtrusionPlacementStrategy(); }
     };

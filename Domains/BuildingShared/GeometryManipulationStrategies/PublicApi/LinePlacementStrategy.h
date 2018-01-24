@@ -35,8 +35,8 @@ struct LinePlacementStrategy : CurvePrimitivePlacementStrategy
         LineManipulationStrategyR GetLineManipulationStrategyR() { return *m_manipulationStrategy; }
 
     public:
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static const Utf8CP prop_Length;
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static const Utf8CP prop_Angle;
+        static constexpr Utf8CP prop_Length() { return "Length"; }
+        static constexpr Utf8CP prop_Angle() { return "Angle"; }
 
         static LinePlacementStrategyPtr Create(LinePlacementStrategyType strategyType);
         static LinePlacementStrategyPtr Create(LinePlacementStrategyType strategyType, LineManipulationStrategyR manipulationStrategy);
@@ -148,7 +148,7 @@ struct LineMetesAndBoundsPlacementStrategy : public LinePointLengthAnglePlacemen
         virtual BentleyStatus _TryGetProperty(Utf8CP key, GeometryManipulationStrategyProperty& value) const override;
 
     public:
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static const Utf8CP prop_MetesAndBounds;
+        static constexpr Utf8CP prop_MetesAndBounds() { return "MetesAndBounds"; }
 
         static LineMetesAndBoundsPlacementStrategyPtr Create(DPlane3d const& plane) { return new LineMetesAndBoundsPlacementStrategy(plane); }
     };

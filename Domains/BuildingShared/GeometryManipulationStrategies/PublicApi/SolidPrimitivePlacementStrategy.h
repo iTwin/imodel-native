@@ -29,7 +29,7 @@ struct SolidPrimitivePlacementStrategy : public GeometryPlacementStrategy
         virtual GeometryManipulationStrategyR _GetManipulationStrategyR() override { return *m_manipulationStrategy; }
 
     public:
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static const Utf8CP prop_BaseComplete;
+        static constexpr Utf8CP prop_BaseComplete() { return SolidPrimitiveManipulationStrategy::prop_BaseComplete(); }
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ISolidPrimitivePtr FinishSolidPrimitive() const;
     };

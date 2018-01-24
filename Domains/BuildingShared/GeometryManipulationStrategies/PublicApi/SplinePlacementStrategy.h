@@ -45,7 +45,7 @@ struct SplineControlPointsPlacementStrategy : SplinePlacementStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static SplineControlPointsPlacementStrategyPtr Create(int order) { return new SplineControlPointsPlacementStrategy(order); }
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static SplineControlPointsPlacementStrategyPtr Create(SplineControlPointsManipulationStrategyR manipulationStrategy) { return new SplineControlPointsPlacementStrategy(manipulationStrategy); }
 
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static const Utf8CP prop_Order;
+        static constexpr Utf8CP prop_Order() { return "Order"; }
     };
 
 struct SplineThroughPointsPlacementStrategy : SplinePlacementStrategy

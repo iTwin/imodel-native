@@ -145,7 +145,7 @@ TEST_F(CurveVectorPlacementStrategyTests, CreateSplines)
     SplineControlPointsPlacementStrategyPtr currentStrategy = dynamic_cast<SplineControlPointsPlacementStrategy *>(strategy->GetCurrentCurvePrimitivePlacementStrategy().get());
     ASSERT_TRUE(currentStrategy.IsValid()) << "Current strategy should be spline strategy";
 
-    currentStrategy->SetProperty(SplineControlPointsPlacementStrategy::prop_Order, 4);
+    currentStrategy->SetProperty(SplineControlPointsPlacementStrategy::prop_Order(), 4);
     strategy->AddKeyPoint({ 7, 8, 2 });
     strategy->AddKeyPoint({ 4, 2, 3 });
     strategy->AddKeyPoint({ 0, 4, 5 });
@@ -222,7 +222,7 @@ TEST_F(CurveVectorPlacementStrategyTests, CreateLineSplineArc)
     SplineControlPointsPlacementStrategyPtr currentStrategy = dynamic_cast<SplineControlPointsPlacementStrategy *>(strategy->GetCurrentCurvePrimitivePlacementStrategy().get());
     ASSERT_TRUE(currentStrategy.IsValid()) << "Current strategy should be spline strategy";
 
-    currentStrategy->SetProperty(SplineControlPointsPlacementStrategy::prop_Order, 4);
+    currentStrategy->SetProperty(SplineControlPointsPlacementStrategy::prop_Order(), 4);
 
     strategy->AddKeyPoint({ 2, 4, 5 });
     strategy->AddKeyPoint({ 7, 8, 2 });
@@ -516,19 +516,19 @@ TEST_F(CurveVectorPlacementStrategyTests, CreateLineString_MetesAndBounds)
 
     ASSERT_FALSE(sut->Finish().IsValid());
     sut->AddDynamicKeyPoint({-1,0,0});
-    sut->SetProperty(LineStringMetesAndBoundsPlacementStrategy::prop_MetesAndBounds, MetesAndBounds(directions, lengths));
+    sut->SetProperty(LineStringMetesAndBoundsPlacementStrategy::prop_MetesAndBounds(), MetesAndBounds(directions, lengths));
     CurveVectorPtr cv1 = sut->Finish();
     ASSERT_TRUE(cv1.IsValid());
     ASSERT_TRUE(cv1->IsSameStructureAndGeometry(*expectedCV1));
 
     sut->AddDynamicKeyPoint({-1,-1,0});
-    sut->SetProperty(LineStringMetesAndBoundsPlacementStrategy::prop_MetesAndBounds, MetesAndBounds(directions, lengths));
+    sut->SetProperty(LineStringMetesAndBoundsPlacementStrategy::prop_MetesAndBounds(), MetesAndBounds(directions, lengths));
     CurveVectorPtr cv2 = sut->Finish();
     ASSERT_TRUE(cv2.IsValid());
     ASSERT_TRUE(cv2->IsSameStructureAndGeometry(*expectedCV2));
 
     sut->AddKeyPoint({0,0,0});
-    sut->SetProperty(LineStringMetesAndBoundsPlacementStrategy::prop_MetesAndBounds, MetesAndBounds(directions, lengths));
+    sut->SetProperty(LineStringMetesAndBoundsPlacementStrategy::prop_MetesAndBounds(), MetesAndBounds(directions, lengths));
     CurveVectorPtr cvFinal = sut->Finish();
     ASSERT_TRUE(cvFinal.IsValid());
     ASSERT_TRUE(cvFinal->IsSameStructureAndGeometry(*expectedCvFinal));
