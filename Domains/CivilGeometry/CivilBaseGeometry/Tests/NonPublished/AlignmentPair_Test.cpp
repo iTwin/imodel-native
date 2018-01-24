@@ -3309,24 +3309,4 @@ TEST_F(CivilBaseGeometryTests, AlignmentPairTests)
     AlignmentPairEditor_ForceGradeAtStation();
 
     AlignmentMarkerBits_GetSet();
-
-#if 0 //&&AG NEEDSWORK EDITOR
-    AlignmentPairEditor_RoadPVITests();
-
-    AlignmentPairEditor_Create();
-    AlignmentPairEditor_CreateFromSingleCurveVector();
-
-    //! Vertical editing
-    AlignmentPairEditor_IsVerticalValid();
-    AlignmentPairEditor_InsertPVI();
-    AlignmentPairEditor_DeletePVI();
-    AlignmentPairEditor_MovePVI();
-    AlignmentPairEditor_MoveSinglePVIWithK();
-    AlignmentPairEditor_MoveTwoPVIsWithK();
-    AlignmentPairEditor_MoveVerticalTangent();
-    AlignmentPairEditor_MovePVCorPVT();
-    AlignmentPairEditor_VGeometry();
-    AlignmentPairEditor_VGeometryCrestAndSag();
-    AlignmentPairEditor_VGeometryThrough();
-#endif
     }
