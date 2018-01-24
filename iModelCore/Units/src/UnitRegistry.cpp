@@ -2,7 +2,7 @@
 |
 |     $Source: src/UnitRegistry.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -212,6 +212,10 @@ UnitP UnitRegistry::AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP
     auto unit = Unit::Create(systemName, *phenomenon, unitName, m_nextId, definition, baseSymbol, factor, offset, isConstant);
     if (nullptr == unit)
         return nullptr;
+
+    // Add the unit label as a synonym as long as it is not the same as the actual unit name
+    if (!Utf8String::IsNullOrEmpty(unit->GetLabel()) && (0 != strcmp(unit->GetLabel(), unitName)))
+        unit->AddSynonym(unit->GetLabel());
 
     phenomenon->AddUnit(*unit);
 
