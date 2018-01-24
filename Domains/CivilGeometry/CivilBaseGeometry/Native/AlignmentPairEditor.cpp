@@ -2846,7 +2846,7 @@ CurveVectorPtr AlignmentPairEditor::MoveVerticalTangent(DPoint3dCR fromPt, DPoin
 
             // Solve pvis[i - 2] (if applicable)
             if (1 < i && !_SolvePVI(pvis, i - 2))
-                return false;
+                return nullptr;
 
             // this will solve pvis[i - 1], pvis[i], pvis[i + 1] (if applicable)
             VerticalEditResult result = SolveValidateAndBuild(pvis, i, false/*isDelete*/);
