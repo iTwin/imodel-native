@@ -206,6 +206,7 @@ void ElementManipulationStrategy::_Clear()
         return _GetGeometryManipulationStrategy().TryGetProperty(key, value); \
         }
 
+GMS_PROPERTY_OVERRIDE_IMPL(bool)
 GMS_PROPERTY_OVERRIDE_IMPL(int)
 GMS_PROPERTY_OVERRIDE_IMPL(double)
 GMS_PROPERTY_OVERRIDE_IMPL(DVec3d)

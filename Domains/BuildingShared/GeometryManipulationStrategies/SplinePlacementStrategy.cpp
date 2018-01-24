@@ -9,8 +9,6 @@
 
 BEGIN_BUILDING_SHARED_NAMESPACE
 
-const Utf8CP SplineControlPointsPlacementStrategy::prop_Order = "Order";
-
 /////////////////////////////////////////////////////////////////////////////////////////
 // SplineControlPointsPlacementStrategy
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -36,7 +34,7 @@ SplineControlPointsPlacementStrategy::SplineControlPointsPlacementStrategy
 //---------------+---------------+---------------+---------------+---------------+------
 void SplineControlPointsPlacementStrategy::_SetProperty(Utf8CP key, const int & value)
     {
-    if (0 == std::strcmp(key, prop_Order))
+    if (0 == std::strcmp(key, prop_Order()))
         _SetOrder(value);
     }
 
@@ -45,7 +43,7 @@ void SplineControlPointsPlacementStrategy::_SetProperty(Utf8CP key, const int & 
 //---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SplineControlPointsPlacementStrategy::_TryGetProperty(Utf8CP key, int & value) const
     {
-    if (0 == std::strcmp(key, prop_Order))
+    if (0 == std::strcmp(key, prop_Order()))
         value = _GetOrder();
     else
         return BentleyStatus::ERROR;

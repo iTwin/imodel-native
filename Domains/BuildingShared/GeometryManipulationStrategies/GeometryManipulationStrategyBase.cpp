@@ -13,11 +13,16 @@ USING_NAMESPACE_BUILDING_SHARED
 #define SET_PROPERTY_IMPL(value_type) \
     void GeometryManipulationStrategyBase::SetProperty(Utf8CP key, value_type const& value) \
         { \
+        if (nullptr == key) { BeAssert(false && "NULL key"); return; } \
         _SetProperty(key, value); \
         _OnPropertySet(key); \
         }
 #define TRY_GET_PROPERTY_IMPL(value_type) \
-    BentleyStatus GeometryManipulationStrategyBase::TryGetProperty(Utf8CP key, value_type& value) const { return _TryGetProperty(key, value); }
+    BentleyStatus GeometryManipulationStrategyBase::TryGetProperty(Utf8CP key, value_type& value) const \
+    { \
+    if (nullptr == key) { BeAssert(false && "NULL key"); return BentleyStatus::ERROR; } \
+    return _TryGetProperty(key, value); \
+    }
 #define SET_TRYGET_PROPERTY_IMPL(value_type) \
     SET_PROPERTY_IMPL(value_type) \
     TRY_GET_PROPERTY_IMPL(value_type)

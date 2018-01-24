@@ -9,10 +9,6 @@
 
 BEGIN_BUILDING_SHARED_NAMESPACE
 
-const Utf8CP LinePlacementStrategy::prop_Length = "Length";
-const Utf8CP LinePlacementStrategy::prop_Angle = "Angle";
-const Utf8CP LineMetesAndBoundsPlacementStrategy::prop_MetesAndBounds = "MetesAndBounds";
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
@@ -211,9 +207,9 @@ void LinePointLengthAnglePlacementStrategy::_SetWorkingPlane(DPlane3d const & pl
 //---------------+---------------+---------------+---------------+---------------+------
 void LinePointLengthAnglePlacementStrategy::_SetProperty(Utf8CP key, const double & value)
     {
-    if (0 == strcmp(LinePlacementStrategy::prop_Length, key))
+    if (0 == strcmp(LinePlacementStrategy::prop_Length(), key))
         SetLength(value);
-    else if (0 == strcmp(LinePlacementStrategy::prop_Angle, key))
+    else if (0 == strcmp(LinePlacementStrategy::prop_Angle(), key))
         SetAngle(value);
 
     UpdateEndPoint();
@@ -224,9 +220,9 @@ void LinePointLengthAnglePlacementStrategy::_SetProperty(Utf8CP key, const doubl
 //---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus LinePointLengthAnglePlacementStrategy::_TryGetProperty(Utf8CP key, double & value) const
     {
-    if (0 == strcmp(LinePlacementStrategy::prop_Length, key))
+    if (0 == strcmp(LinePlacementStrategy::prop_Length(), key))
         value = GetLength();
-    else if (0 == strcmp(LinePlacementStrategy::prop_Angle, key))
+    else if (0 == strcmp(LinePlacementStrategy::prop_Angle(), key))
         value = GetAngle();
     else
         return BentleyStatus::ERROR;
@@ -374,7 +370,7 @@ BentleyStatus LinePointsLengthPlacementStrategy::AdjustEndPoint()
 //---------------+---------------+---------------+---------------+---------------+------
 void LinePointsLengthPlacementStrategy::_SetProperty(Utf8CP key, const double & value)
     {
-    if (0 == strcmp(prop_Length, key))
+    if (0 == strcmp(prop_Length(), key))
         SetLength(value);
     
     AdjustEndPoint();
@@ -385,7 +381,7 @@ void LinePointsLengthPlacementStrategy::_SetProperty(Utf8CP key, const double & 
 //---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus LinePointsLengthPlacementStrategy::_TryGetProperty(Utf8CP key, double & value) const
     {
-    if (0 == strcmp(prop_Length, key))
+    if (0 == strcmp(prop_Length(), key))
         value = GetLength();
     else
         return BentleyStatus::ERROR;
@@ -401,7 +397,7 @@ BentleyStatus LinePointsLengthPlacementStrategy::_TryGetProperty(Utf8CP key, dou
 //---------------+---------------+---------------+---------------+---------------+------
 void LinePointsAnglePlacementStrategy::_SetProperty(Utf8CP key, const double & value)
     {
-    if (0 == strcmp(prop_Angle, key))
+    if (0 == strcmp(prop_Angle(), key))
         SetAngle(value);
 
     AdjustEndPoint();
@@ -412,7 +408,7 @@ void LinePointsAnglePlacementStrategy::_SetProperty(Utf8CP key, const double & v
 //---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus LinePointsAnglePlacementStrategy::_TryGetProperty(Utf8CP key, double & value) const
     {
-    if (0 == strcmp(prop_Angle, key))
+    if (0 == strcmp(prop_Angle(), key))
         value = GetAngle();
     else
         return BentleyStatus::ERROR;
@@ -539,7 +535,7 @@ void LineMetesAndBoundsPlacementStrategy::_SetProperty
     GeometryManipulationStrategyProperty const& value
 )
     {
-    if (0 == strcmp(key, LineMetesAndBoundsPlacementStrategy::prop_MetesAndBounds))
+    if (0 == strcmp(key, LineMetesAndBoundsPlacementStrategy::prop_MetesAndBounds()))
         {
         MetesAndBounds const* mab = dynamic_cast<MetesAndBounds const*>(&value);
         if (nullptr != mab && !mab->GetValue().empty())
@@ -548,8 +544,8 @@ void LineMetesAndBoundsPlacementStrategy::_SetProperty
 
             double angle;
             UnitConverter::MeetsAndBoundsStringToDouble(angle, metesAndBounds.first.c_str());
-            T_Super::_SetProperty(LinePlacementStrategy::prop_Angle, angle);
-            T_Super::_SetProperty(LinePlacementStrategy::prop_Length, metesAndBounds.second);
+            T_Super::_SetProperty(LinePlacementStrategy::prop_Angle(), angle);
+            T_Super::_SetProperty(LinePlacementStrategy::prop_Length(), metesAndBounds.second);
             }
         }
 
@@ -565,14 +561,14 @@ BentleyStatus LineMetesAndBoundsPlacementStrategy::_TryGetProperty
     GeometryManipulationStrategyProperty& value
 ) const
     {
-    if (0 == strcmp(key, LineMetesAndBoundsPlacementStrategy::prop_MetesAndBounds))
+    if (0 == strcmp(key, LineMetesAndBoundsPlacementStrategy::prop_MetesAndBounds()))
         {
         double length;
-        if (BentleyStatus::SUCCESS != T_Super::_TryGetProperty(LinePlacementStrategy::prop_Length, length))
+        if (BentleyStatus::SUCCESS != T_Super::_TryGetProperty(LinePlacementStrategy::prop_Length(), length))
             return BentleyStatus::ERROR;
 
         double angle;
-        if (BentleyStatus::SUCCESS != T_Super::_TryGetProperty(LinePlacementStrategy::prop_Angle, angle))
+        if (BentleyStatus::SUCCESS != T_Super::_TryGetProperty(LinePlacementStrategy::prop_Angle(), angle))
             return BentleyStatus::ERROR;
 
         DVec3d direction = DVec3d::From(1, 0, 0);

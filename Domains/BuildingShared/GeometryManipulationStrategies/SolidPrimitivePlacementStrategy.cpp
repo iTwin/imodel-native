@@ -9,8 +9,6 @@
 
 USING_NAMESPACE_BUILDING_SHARED
 
-const Utf8CP SolidPrimitivePlacementStrategy::prop_BaseComplete = SolidPrimitiveManipulationStrategy::prop_BaseComplete;
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------

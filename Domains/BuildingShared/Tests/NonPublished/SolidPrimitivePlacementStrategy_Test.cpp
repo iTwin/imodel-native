@@ -34,11 +34,11 @@ TEST_F(SolidPrimitivePlacementStrategyTests, CreateExtrusion)
     sut->AddKeyPoint({100,0,0});
     sut->AddKeyPoint({100,100,0});
     sut->AddKeyPoint({0,100,0});
-    sut->SetProperty(SolidPrimitivePlacementStrategy::prop_BaseComplete, true);
+    sut->SetProperty(SolidPrimitivePlacementStrategy::prop_BaseComplete(), true);
     
     sut->AddKeyPoint({0,0,100});
     double height;
-    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ExtrusionPlacementStrategy::prop_Height, height));
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ExtrusionPlacementStrategy::prop_Height(), height));
     ASSERT_DOUBLE_EQ(height, 100);
     
     sut->AddKeyPoint({0,50,0});
@@ -68,17 +68,17 @@ TEST_F(SolidPrimitivePlacementStrategyTests, CreateExtrusion_BaseContainsArc)
     sut->AddKeyPoint({300,0,0});
     sut->AddKeyPoint({300,100,0});
     sut->AddKeyPoint({200,100,0});
-    sut->SetProperty(ExtrusionPlacementStrategy::prop_ContinuousBaseShapePrimitiveComplete, true);
-    sut->SetProperty(ExtrusionPlacementStrategy::prop_BaseShapeStrategy, BaseShapeStrategyChangeProperty(DefaultNewGeometryType::Arc));
-    sut->SetProperty(ExtrusionPlacementStrategy::prop_BaseShapeStrategy, BaseShapeStrategyChangeProperty(ArcPlacementStrategyType::StartMidEnd));
+    sut->SetProperty(ExtrusionPlacementStrategy::prop_ContinuousBaseShapePrimitiveComplete(), true);
+    sut->SetProperty(ExtrusionPlacementStrategy::prop_BaseShapeStrategy(), BaseShapeStrategyChangeProperty(DefaultNewGeometryType::Arc));
+    sut->SetProperty(ExtrusionPlacementStrategy::prop_BaseShapeStrategy(), BaseShapeStrategyChangeProperty(ArcPlacementStrategyType::StartMidEnd));
     sut->AddKeyPoint({150,150,0});
     sut->AddKeyPoint({100,100,0});
 
-    sut->SetProperty(SolidPrimitivePlacementStrategy::prop_BaseComplete, true);
+    sut->SetProperty(SolidPrimitivePlacementStrategy::prop_BaseComplete(), true);
 
     sut->AddKeyPoint({0,0,100});
     double height;
-    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ExtrusionPlacementStrategy::prop_Height, height));
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ExtrusionPlacementStrategy::prop_Height(), height));
     ASSERT_DOUBLE_EQ(height, 100);
 
     sut->AddKeyPoint({100,100,100});

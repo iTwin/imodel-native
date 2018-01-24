@@ -46,6 +46,7 @@ struct ElementManipulationStrategy : public GeometryManipulationStrategy
         virtual Dgn::DgnElementPtr _FinishElement(Dgn::DgnModelR model) = 0;
         virtual Dgn::DgnElementPtr _FinishElement() = 0;
 
+        ELEM_PROPERTY_OVERRIDE(bool)
         ELEM_PROPERTY_OVERRIDE(int)
         ELEM_PROPERTY_OVERRIDE(double)
         ELEM_PROPERTY_OVERRIDE(DVec3d)

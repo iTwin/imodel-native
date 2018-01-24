@@ -9,9 +9,6 @@
 
 USING_NAMESPACE_BUILDING_SHARED
 
-const Utf8CP LineStringMetesAndBoundsPlacementStrategy::prop_WorkingPlane = "WorkingPlane";
-const Utf8CP LineStringMetesAndBoundsPlacementStrategy::prop_MetesAndBounds = "MetesAndBounds";
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
@@ -30,7 +27,7 @@ void LineStringMetesAndBoundsPlacementStrategy::_SetProperty
     DPlane3dCR value
 )
     {
-    if (0 == strcmp(key, prop_WorkingPlane))
+    if (0 == strcmp(key, prop_WorkingPlane()))
         {
         m_workingPlane = value;
         }
@@ -47,7 +44,7 @@ BentleyStatus LineStringMetesAndBoundsPlacementStrategy::_TryGetProperty
     DPlane3dR value
 ) const
     {
-    if (0 == strcmp(key, prop_WorkingPlane))
+    if (0 == strcmp(key, prop_WorkingPlane()))
         {
         value = m_workingPlane;
         return BentleyStatus::SUCCESS;
@@ -65,7 +62,7 @@ void LineStringMetesAndBoundsPlacementStrategy::_SetProperty
     GeometryManipulationStrategyProperty const& value
 )
     {
-    if (0 == strcmp(key, prop_MetesAndBounds))
+    if (0 == strcmp(key, prop_MetesAndBounds()))
         {
         MetesAndBounds const* mab = dynamic_cast<MetesAndBounds const*>(&value);
         if (nullptr != mab)
@@ -86,7 +83,7 @@ BentleyStatus LineStringMetesAndBoundsPlacementStrategy::_TryGetProperty
     GeometryManipulationStrategyProperty& value
 ) const
     {
-    if (0 == strcmp(key, prop_MetesAndBounds))
+    if (0 == strcmp(key, prop_MetesAndBounds()))
         {
         value = m_metesAndBounds;
         return BentleyStatus::SUCCESS;
@@ -128,7 +125,7 @@ bvector<DPoint3d> LineStringMetesAndBoundsPlacementStrategy::CalculateKeyPoints(
             continue;
 
         LineMetesAndBoundsPlacementStrategyPtr lineStrategy = LineMetesAndBoundsPlacementStrategy::Create(m_workingPlane);
-        lineStrategy->SetProperty(LineMetesAndBoundsPlacementStrategy::prop_MetesAndBounds, MetesAndBounds(directionLengthPair));
+        lineStrategy->SetProperty(LineMetesAndBoundsPlacementStrategy::prop_MetesAndBounds(), MetesAndBounds(directionLengthPair));
         lineStrategy->AddKeyPoint(newKeyPoints.empty() ? keyPoints.front() : newKeyPoints.back());
 
         bvector<DPoint3d> lineKeyPoints = lineStrategy->GetKeyPoints();
@@ -164,7 +161,7 @@ void LineStringMetesAndBoundsPlacementStrategy::_OnPropertySet
     Utf8CP key
 )
     {
-    if (0 == strcmp(key, prop_MetesAndBounds) && !GetLineStringManipulationStrategy().IsEmpty())
+    if (0 == strcmp(key, prop_MetesAndBounds()) && !GetLineStringManipulationStrategy().IsEmpty())
         {
         DPoint3d start = GetLineStringManipulationStrategy().GetFirstKeyPoint();
 
