@@ -10,8 +10,6 @@
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 
 #define LOG (*NativeLogging::LoggingManager::GetLogger(L"ORDBridge"))
-#define USE_ROOTMODEL
-//#define TARGET_2DMODEL
 
 BEGIN_ORDBRIDGE_NAMESPACE
 
@@ -57,6 +55,12 @@ BentleyStatus ORDBridge::_Initialize(int argc, WCharCP argv[])
     m_params.SetConsiderNormal2dModelsSpatial(true);
 #endif
 
+    m_params.SetWantThumbnails(true);
+
+    BentleyApi::BeFileName configFileName = m_params.GetAssetsDir();
+    configFileName.AppendToPath(L"ImportConfig.xml");
+    m_params.SetConfigFile(configFileName);
+
     return BentleyStatus::SUCCESS;
     }
 
@@ -65,7 +69,6 @@ BentleyStatus ORDBridge::_Initialize(int argc, WCharCP argv[])
 //---------------------------------------------------------------------------------------
 BentleyStatus ORDBridge::_OpenSource()
     {
-#ifdef USE_ROOTMODEL
     auto initStat = m_converter->InitRootModel();
     if (DgnV8Api::DGNFILE_STATUS_Success != initStat)
         {
@@ -83,7 +86,7 @@ BentleyStatus ORDBridge::_OpenSource()
 
         return BentleyStatus::ERROR;
         }
-#endif
+
     return BentleyStatus::SUCCESS;
     }
 
@@ -146,13 +149,8 @@ Utf8String ORDBridge::ComputeJobSubjectName()
 //---------------------------------------------------------------------------------------
 SubjectCPtr ORDBridge::_FindJob()
     {
-#ifdef USE_ROOTMODEL
     auto status = m_converter->FindJob();
     return (DgnDbSync::DgnV8::RootModelConverter::ImportJobLoadStatus::Success == status) ? &m_converter->GetImportJob().GetSubject() : nullptr;
-#else
-    Utf8String jobName(ComputeJobSubjectName());
-    return QueryJobSubject(GetDgnDbR(), jobName.c_str());
-#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -160,7 +158,6 @@ SubjectCPtr ORDBridge::_FindJob()
 //---------------------------------------------------------------------------------------
 SubjectCPtr ORDBridge::_InitializeJob()
     {
-#ifdef USE_ROOTMODEL
     BeAssert(m_converter->IsFileAssignedToBridge(*m_converter->GetRootV8File()) && "The bridge assigned to the root file/model must be the bridge that creates the root subject");
 
     auto status = m_converter->InitializeJob();
@@ -194,26 +191,6 @@ SubjectCPtr ORDBridge::_InitializeJob()
         }
     else
         return nullptr;
-#else
-    Utf8String jobName(ComputeJobSubjectName());
-
-    SubjectCPtr jobSubject = CreateAndInsertJobSubject(GetDgnDbR(), jobName.c_str());
-    if (!jobSubject.IsValid())
-        return nullptr;
-
-    // IMODELBRIDGE REQUIREMENT: Store information about the source document
-    iModelBridgeSyncInfoFile::ConversionResults docLink = RecordDocument(*GetSyncInfo().GetChangeDetectorFor(*this), _GetParams().GetInputFileName());
-    auto repositoryLinkId = docLink.m_element->GetElementId();
-
-    AlignmentBim::RoadRailAlignmentDomain::GetDomain().SetUpModelHierarchy(*jobSubject, ORDBRIDGE_AlignmentModelName);
-    RoadRailBim::RoadRailPhysicalDomain::GetDomain().SetUpModelHierarchy(*jobSubject, ORDBRIDGE_PhysicalModelName);
-
-    // IMODELBRIDGE REQUIREMENT: Relate this model to the source document
-    auto physicalModelPtr = RoadRailBim::RoadRailPhysicalDomain::QueryPhysicalModel(*jobSubject, ORDBRIDGE_PhysicalModelName);
-    InsertElementHasLinksRelationship(GetDgnDbR(), physicalModelPtr->GetModeledElementId(), repositoryLinkId);
-
-    return jobSubject;
-#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -233,7 +210,6 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     params.spatialDataTransformHasChanged = DetectSpatialDataTransformChange(_new, _old, *changeDetectorPtr, fileScopeId, "JobTrans", "JobTrans");
     params.isCreatingNewDgnDb = IsCreatingNewDgnDb();
 
-#ifdef USE_ROOTMODEL
     ConvertORDElementXDomain convertORDXDomain(*m_converter, params);
     Dgn::DgnDbSync::DgnV8::XDomain::Register(convertORDXDomain);
 
@@ -243,12 +219,6 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
 
     Dgn::DgnDbSync::DgnV8::XDomain::UnRegister(convertORDXDomain);
     return m_converter->WasAborted() ? BSIERROR : BSISUCCESS;
-#else
-    ORDConverter converter;
-    converter.ConvertORDData(params);
-
-    return BentleyStatus::SUCCESS;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -279,12 +249,8 @@ void ORDBridge::_OnDocumentDeleted(Utf8StringCR documentId, Dgn::iModelBridgeSyn
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ORDBridge::_MakeSchemaChanges()
     {
-#ifdef USE_ROOTMODEL
     auto status = m_converter->MakeSchemaChanges();
     return ((BSISUCCESS != status) || m_converter->WasAborted()) ? BSIERROR : BSISUCCESS;
-#else
-    return BSISUCCESS;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -309,13 +275,11 @@ BentleyStatus ORDBridge::CreateSyncInfoIfNecessary()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ORDBridge::_OnOpenBim(DgnDbR db)
     {
-#ifdef USE_ROOTMODEL
-    m_converter.reset(new ORDV8Converter(m_params));
+    m_converter.reset(new ORDConverter(m_params));
     m_converter->SetDgnDb(db);
     CreateSyncInfoIfNecessary();
     if (BentleyStatus::SUCCESS != m_converter->AttachSyncInfo())
         return BentleyStatus::ERROR;
-#endif
 
     return T_Super::_OnOpenBim(db);
     }
@@ -325,9 +289,7 @@ BentleyStatus ORDBridge::_OnOpenBim(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ORDBridge::_OnCloseBim(BentleyStatus)
     {
-#ifdef USE_ROOTMODEL
     m_converter.reset(nullptr); // this also has the side effect of closing the source files
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -335,12 +297,8 @@ void ORDBridge::_OnCloseBim(BentleyStatus)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ORDBridge::_DetectDeletedDocuments()
     {
-#ifdef USE_ROOTMODEL
     m_converter->_DetectDeletedDocuments();
     return m_converter->WasAborted() ? BSIERROR : BSISUCCESS;
-#else
-    return BSISUCCESS;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

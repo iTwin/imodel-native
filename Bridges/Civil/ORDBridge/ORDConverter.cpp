@@ -10,8 +10,6 @@
 
 BEGIN_ORDBRIDGE_NAMESPACE
 
-//#define TARGET_2DMODEL
-
 struct ConsensusSourceItem : iModelBridgeSyncInfoFile::ISourceItem
 {
 protected:
@@ -781,51 +779,6 @@ DgnElementId ORDCorridorsConverter::ConvertCorridor(CorridorCR cifCorridor, ORDC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ORDConverter::ConvertAlignments(GeometryModel::SDK::GeometricModel const& geomModel, Params& params)
-    {    
-    ORDAlignmentsConverterPtr alignmentsConvPtr;
-
-    auto alignmentsPtr = geomModel.GetAlignments();
-    while (alignmentsPtr.IsValid() && alignmentsPtr->MoveNext())
-        {
-        auto cifAlignmentPtr = alignmentsPtr->GetCurrent();
-        if (!cifAlignmentPtr->IsFinalElement())
-            continue;
-
-        if (alignmentsConvPtr.IsNull())
-            alignmentsConvPtr = ORDAlignmentsConverter::Create(*params.subjectCPtr);
-
-        alignmentsConvPtr->ConvertAlignment(*cifAlignmentPtr, params);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      06/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ORDConverter::ConvertCorridors(GeometryModel::SDK::GeometricModel const& geomModel, DgnDbSync::DgnV8::ConverterLibrary& converterLib, Params& params)
-    {
-    ORDCorridorsConverterPtr corridorsConvPtr;
-
-    auto corridorsPtr = geomModel.GetCorridors();
-    while (corridorsPtr.IsValid() && corridorsPtr->MoveNext())
-        {
-        auto corridorPtr = corridorsPtr->GetCurrent();
-        if (!corridorPtr.IsValid())
-            continue;
-
-        if (corridorsConvPtr.IsNull())
-            {
-            auto dgnModelP = corridorPtr->GetDgnModelP();
-            corridorsConvPtr = ORDCorridorsConverter::Create(converterLib, converterLib.ComputeUnitsScaleTransform(*dgnModelP));
-            }
-
-        corridorsConvPtr->ConvertCorridor(*corridorPtr, params);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      06/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
 Bentley::DgnModelP loadDgnModel(Bentley::DgnFileR dgnFile, ModelId rootModelId)
     {
     // The Converter's initialization step sets SetProcessingDisabled = true, but
@@ -872,121 +825,9 @@ void updateProjectExtents(SpatialModelCR spatialModel, ORDConverter::Params& par
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ORDConverter::ConvertORDData(Params& params)
-    {
-    DgnDbSync::DgnV8::RootModelConverter::RootModelSpatialParams converterLibraryParams;
-
-    BentleyApi::BeFileName configFileName = params.iModelBridgeParamsCP->GetAssetsDir();
-    configFileName.AppendToPath(L"ImportConfig.xml");
-
-    converterLibraryParams.SetConfigFile(configFileName);
-    converterLibraryParams.SetWantThumbnails(true);
-
-    DgnDbSync::DgnV8::ConverterLibrary converterLib(params.subjectCPtr->GetDgnDb(), converterLibraryParams);
-    converterLib.SetJobSubject(*params.subjectCPtr);
-    converterLib.SetSpatialParentSubject(*params.subjectCPtr);    
-    
-    BeFileName dgnFileName = params.iModelBridgeParamsCP->GetInputFileName();
-
-    DgnV8Api::DgnFileStatus v8Status;
-    auto dgnFilePtr = converterLib.OpenDgnV8File(v8Status, dgnFileName);
-    if (dgnFilePtr.IsNull())
-        return;
-
-    bset<DgnFileP> dgnFileSet;
-    converterLibraryParams.AddDrawingOrSheetFile(dgnFileName);
-    dgnFileSet.insert(dgnFilePtr.get());
-
-    converterLib.SetRootV8File(dgnFilePtr.get());
-    auto rootSpatialModelP = loadDgnModel(*dgnFilePtr, converterLib.GetRootModelId());
-    if (!rootSpatialModelP)
-        return;
-
-    auto rootCIFModelP = loadDgnModel(*dgnFilePtr, dgnFilePtr->GetDefaultModelId());
-    if (!rootCIFModelP)
-        return;
-
-    auto cifConnPtr = ConsensusConnection::Create(*rootCIFModelP);
-    auto cifModelPtr = ConsensusModel::Create(*cifConnPtr);
-    if (cifModelPtr.IsValid())
-        {        
-        converterLib.SetRootModelAndSubject(*rootSpatialModelP, *params.subjectCPtr);
-        converterLib.ConvertModelMaterials(*rootSpatialModelP);
-
-        // Mapping the root-model to the Physical Model on the BIM side.
-        // That assumes the root-model is spatial (3D).
-        converterLib.RecordModelMapping(*rootSpatialModelP,
-            *RoadRailBim::RoadRailPhysicalDomain::GetDomain().QueryPhysicalModel(*params.subjectCPtr, ORDBRIDGE_PhysicalModelName));
-
-        // Making sure all alignments are processed before processing corridors
-        auto geomModelsPtr = cifModelPtr->GetActiveGeometricModels();
-        while (geomModelsPtr.IsValid() && geomModelsPtr->MoveNext())
-            {
-            auto geomModelPtr = geomModelsPtr->GetCurrent();
-            if (geomModelPtr.IsValid())
-                {
-                auto currentDgnFileP = geomModelPtr->GetDgnModelP()->GetDgnFileP();
-                converterLib.ConvertModelMaterials(*geomModelPtr->GetDgnModelP());
-
-                if (dgnFileSet.end() == dgnFileSet.find(currentDgnFileP))
-                    {
-                    converterLibraryParams.AddDrawingOrSheetFile(BeFileName(currentDgnFileP->GetFileName().c_str()));
-                    dgnFileSet.insert(currentDgnFileP);
-                    }
-
-                ConvertAlignments(*geomModelPtr, params);                
-                }
-            }
-
-        if (geomModelsPtr.IsValid())
-            {
-            geomModelsPtr->Reset();
-            while (geomModelsPtr->MoveNext())
-                {
-                auto geomModelPtr = geomModelsPtr->GetCurrent();
-                if (geomModelPtr.IsValid())
-                    ConvertCorridors(*geomModelPtr, converterLib, params);
-                }
-            }
-
-        converterLib.ConvertAllDrawingsAndSheets();
-        converterLib.RemoveUnusedMaterials();
-
-        auto alignmentModelPtr = AlignmentBim::AlignmentModel::Query(*params.subjectCPtr, ORDBRIDGE_AlignmentModelName);
-        auto horizontalAlignmentModelId = AlignmentBim::HorizontalAlignmentModel::QueryBreakDownModelId(*alignmentModelPtr);
-        auto horizAlignmentModelCPtr = AlignmentBim::HorizontalAlignmentModel::Get(params.subjectCPtr->GetDgnDb(), horizontalAlignmentModelId);
-        auto physicalModelPtr = RoadRailBim::RoadRailPhysicalDomain::QueryPhysicalModel(*params.subjectCPtr, ORDBRIDGE_PhysicalModelName);
-
-        updateProjectExtents(*horizAlignmentModelCPtr, params, false);
-        updateProjectExtents(*physicalModelPtr, params, true);
-
-        if (params.isCreatingNewDgnDb)
-            RoadRailBim::RoadRailPhysicalDomain::SetUpDefaultViews(*params.subjectCPtr, ORDBRIDGE_AlignmentModelName, ORDBRIDGE_PhysicalModelName);
-
-        // Infer deletions
-        params.changeDetectorP->DeleteElementsNotSeenInScope(params.fileScopeId);
-
-        converterLib._OnConversionComplete();
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ORDV8Converter::_ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model)
-    {
-    if (fullSchemaName.Contains("Bentley_Civil") || fullSchemaName.StartsWith("Civil."))
-        return false;
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      01/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-ConvertORDElementXDomain::ConvertORDElementXDomain(ORDV8Converter& converter, ORDConverter::Params& params): m_params(params), m_converter(converter)
+ConvertORDElementXDomain::ConvertORDElementXDomain(ORDConverter& converter, ORDConverter::Params& params): m_params(params), m_converter(converter)
     {
     m_spatialLocationClassId = converter.GetDgnDb().Schemas().GetClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_SpatialLocation);
     }

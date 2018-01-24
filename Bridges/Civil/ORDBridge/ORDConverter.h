@@ -13,7 +13,7 @@
 
 BEGIN_ORDBRIDGE_NAMESPACE
 
-struct ORDConverter
+struct ORDConverter : Dgn::DgnDbSync::DgnV8::RootModelConverter
 {
 public:
     struct Params
@@ -30,30 +30,16 @@ public:
         bool isCreatingNewDgnDb;
         };
 
-private:
-    void ConvertAlignments(Bentley::Cif::GeometryModel::SDK::GeometricModel const&, Params& params);
-    void ConvertCorridors(Bentley::Cif::GeometryModel::SDK::GeometricModel const&, Dgn::DgnDbSync::DgnV8::ConverterLibrary& converterLib, Params& params);
-
-public:
-    void ConvertORDData(Params& params);
-}; // ORDConverter
-
-struct ORDV8Converter : Dgn::DgnDbSync::DgnV8::RootModelConverter
-{
-protected:
-    virtual bool _ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model) override;
-
-public:
-    ORDV8Converter(Dgn::DgnDbSync::DgnV8::RootModelConverter::RootModelSpatialParams& params) : 
+    ORDConverter(Dgn::DgnDbSync::DgnV8::RootModelConverter::RootModelSpatialParams& params) : 
         Dgn::DgnDbSync::DgnV8::RootModelConverter(params)
         {}
-}; // ORDV8Converter
+}; // ORDConverter
 
 struct ConvertORDElementXDomain : Dgn::DgnDbSync::DgnV8::XDomain
 {
 private:
     ORDConverter::Params& m_params;
-    ORDV8Converter& m_converter;
+    ORDConverter& m_converter;
     Dgn::DgnClassId m_spatialLocationClassId;
     bset<Bentley::DgnPlatform::ElementId> m_elementsSeen;
     bmap<Bentley::DgnPlatform::ElementId, bpair<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::Alignment>, Dgn::DgnElementPtr>> m_alignmentsMap;
@@ -65,7 +51,7 @@ protected:
     virtual void _ProcessResults(Dgn::DgnDbSync::DgnV8::ElementConversionResults&, DgnV8EhCR, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const&, Dgn::DgnDbSync::DgnV8::Converter&) override;
 
 public:
-    ConvertORDElementXDomain(ORDV8Converter& converter, ORDConverter::Params& params);
+    ConvertORDElementXDomain(ORDConverter& converter, ORDConverter::Params& params);
 
     void CreateRoadRailElements();
 }; // ConvertORDElementXDomain

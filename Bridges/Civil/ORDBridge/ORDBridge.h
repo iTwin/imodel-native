@@ -24,7 +24,7 @@ private:
     BentleyStatus CreateSyncInfoIfNecessary();
 
     Dgn::DgnDbSync::DgnV8::RootModelConverter::RootModelSpatialParams m_params;
-    std::unique_ptr<ORDV8Converter> m_converter;
+    std::unique_ptr<ORDConverter> m_converter;
 
 protected:
     Dgn::CategorySelectorPtr CreateSpatialCategorySelector(Dgn::DefinitionModelR);
