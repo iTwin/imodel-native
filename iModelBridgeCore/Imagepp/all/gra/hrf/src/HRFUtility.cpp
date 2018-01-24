@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFUtility.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -46,15 +46,12 @@
 #include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>
 #include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
 
+#include <ImagePP/all/h/HRABitmap.h>
+#include <ImagePP/all/h/HRABitmapRLE.h>
+#include <ImagePP/all/h/HRACopyFromOptions.h>
+
 #include <ImagePP/all/h/HGF2DStretch.h>
 
-//-----------------------------------------------------------------------------
-// HGS Implementation Includes for thumbnail
-//-----------------------------------------------------------------------------
-#include <ImagePP/all/h/HRABlitter.h>
-#include <ImagePP/all/h/HRAEditor.h>
-#include <ImagePP/all/h/HGSRegion.h>
-#include <ImagePP/all/h/HRASurface.h>
 
 #include <ImagePP/all/h/HCDPacket.h>
 #include <ImagePP/all/h/HCDCodecHMRRLE1.h>
@@ -62,14 +59,7 @@
 #include <ImagePP/all/h/HRPPixelTypeI1R8G8B8RLE.h>
 #include <ImagePP/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>
 #include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
-#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>
-
-#include <ImagePP/all/h/HRFDtedFile.h>
-
 #include <ImagePP/all/h/HUTExportProgressIndicator.h>
-
-
-
 
 //----------------------------------------------------------------------------
 
@@ -134,12 +124,8 @@ static void sfDropShape                 (const HVE2DShape&            pi_rShape,
                                          HArrayAutoPtr<double>&      pio_rpBuffer,
                                          size_t&                      pio_rBufferSize);
 
-static HFCPtr<HGSMemorySurfaceDescriptor> sf1BitBestQualityStretcher (HGSMemorySurfaceDescriptor const& pi_SrcSurfaceDesc, uint32_t pi_PreferedHeight);
 
-static HFCPtr<HGSMemorySurfaceDescriptor> sfBestQualityStretcher(HGSMemorySurfaceDescriptor const& pi_SrcSurfaceDesc, uint32_t pi_PreferedHeight);
-
-
-
+static HFCPtr<HRABitmap> HRFStretcher(HFCPtr<HRFRasterFile>& pi_rpSource, uint32_t pi_Page, uint32_t* pio_pPreferedWidth, uint32_t* pio_pPreferedHeight, bool pi_UseBestQuality);
 
 //-----------------------------------------------------------------------------
 // Currently, we only support one surface composed of holed polygons,
@@ -763,7 +749,7 @@ HFCPtr<HRFRasterFile>  ImagePP::GenericImprove(HFCPtr<HRFRasterFile>       pi_rp
 // HRFStretcher
 // the output is 8-bits alignement
 //----------------------------------------------------------------------------------------
-Byte* ImagePP::HRFStretcher(HFCPtr<HRFRasterFile>& pi_rpSource,
+HFCPtr<HRABitmap> HRFStretcher(HFCPtr<HRFRasterFile>& pi_rpSource,
                      uint32_t               pi_Page,
                      uint32_t*                pio_pPreferedWidth,
                      uint32_t*                pio_pPreferedHeight,
@@ -771,13 +757,12 @@ Byte* ImagePP::HRFStretcher(HFCPtr<HRFRasterFile>& pi_rpSource,
     {
     // Init Source descriptor, editor, and buffer of pixels
     HFCPtr<HRFPageDescriptor>       pPageDescriptor = pi_rpSource->GetPageDescriptor(pi_Page);
-    uint16_t                 Resolution = 0;
-    double                         ResolutionFactor;
     HFCPtr<HRFResolutionDescriptor> pSrcResolutionDescriptor;
     HAutoPtr<HRFResolutionEditor>   pSrcResolutionEditor;
 
     if (pPageDescriptor->IsUnlimitedResolution())
         {
+        double ResolutionFactor;
         pi_UseBestQuality = false;
         if (pPageDescriptor->GetResolutionDescriptor(0)->GetHeight() > pPageDescriptor->GetResolutionDescriptor(0)->GetWidth())
             ResolutionFactor = (double)*pio_pPreferedHeight / (double)pPageDescriptor->GetResolutionDescriptor(0)->GetHeight();
@@ -790,7 +775,7 @@ Byte* ImagePP::HRFStretcher(HFCPtr<HRFRasterFile>& pi_rpSource,
     else
         {
         // Move to the small resolution
-        Resolution = pPageDescriptor->CountResolutions() -1;
+        uint16_t Resolution = pPageDescriptor->CountResolutions() -1;
 
         // Find the resolution number
         if (pi_UseBestQuality)
@@ -817,124 +802,59 @@ Byte* ImagePP::HRFStretcher(HFCPtr<HRFRasterFile>& pi_rpSource,
         pSrcResolutionEditor = pi_rpSource->CreateResolutionEditor(pi_Page, Resolution, HFC_READ_ONLY);
         }
 
-    HFCPtr<HCDPacket>               pSrcPacket;
-
-    pSrcPacket = new HCDPacket(new HCDCodecIdentity(),
-                               new Byte[pSrcResolutionDescriptor->GetBlockSizeInBytes()],
-                               pSrcResolutionDescriptor->GetBlockSizeInBytes(),
-                               pSrcResolutionDescriptor->GetBlockSizeInBytes());
-    pSrcPacket->SetBufferOwnership(true);
 
     // Calc the Height Step incrementation and update destination dimension
-    double PreferedHeightStep;
     if (pSrcResolutionDescriptor->GetWidth() > pSrcResolutionDescriptor->GetHeight())
         {
-        PreferedHeightStep = (double)pSrcResolutionDescriptor->GetWidth() / (double)*pio_pPreferedWidth;
+        double PreferedHeightStep = (double)pSrcResolutionDescriptor->GetWidth() / (double)*pio_pPreferedWidth;
         // Adjust the height with the Aspect ratio
         *pio_pPreferedHeight = (uint32_t)((double)pSrcResolutionDescriptor->GetHeight() / PreferedHeightStep);
         }
     else
         {
-        PreferedHeightStep = (double)pSrcResolutionDescriptor->GetHeight() / (double)*pio_pPreferedHeight;
+        double PreferedHeightStep = (double)pSrcResolutionDescriptor->GetHeight() / (double)*pio_pPreferedHeight;
         // Adjust the width with the Aspect ratio
         *pio_pPreferedWidth = (uint32_t)((double)pSrcResolutionDescriptor->GetWidth() / PreferedHeightStep);
         }
 
-    // Calc the best width and height
-    uint32_t BestWidth  = *pio_pPreferedWidth;
-    uint32_t BestHeight = *pio_pPreferedHeight;
+    HFCPtr<HGF2DCoordSys> pCoordSys = new HGF2DWorld(HGF2DWorld_UNKNOWNWORLD);
+    HFCPtr<HRABitmap> pBitmapSrc = HRABitmap::Create(pSrcResolutionDescriptor->GetBlockWidth(), pSrcResolutionDescriptor->GetBlockHeight(), nullptr, pCoordSys, pSrcResolutionDescriptor->GetPixelType());
 
+    // Calc the best width and height
+    uint32_t DstWidth = *pio_pPreferedWidth;
+    uint32_t DstHeight = *pio_pPreferedHeight;
+      
     if (pi_UseBestQuality)
         {
         do
             {
-            BestWidth  = BestWidth * 2;
-            BestHeight = BestHeight * 2;
+            DstWidth = DstWidth * 2;
+            DstHeight = DstHeight * 2;
             }
-        while (BestHeight < MIN(1024, pSrcResolutionDescriptor->GetHeight()));
-
-        if (pSrcResolutionDescriptor->GetWidth() > pSrcResolutionDescriptor->GetHeight())
-            PreferedHeightStep = (double)pSrcResolutionDescriptor->GetWidth() / (double)BestWidth;
-        else
-            PreferedHeightStep = (double)pSrcResolutionDescriptor->GetHeight() / (double)BestHeight;
+        while (DstHeight < MIN(1024, pSrcResolutionDescriptor->GetHeight()));
         }
 
-    // Init Destination dimensions and buffer of pixels
-    double             HeightStep          = PreferedHeightStep;
-    uint32_t            DstWidth            = BestWidth;
-    uint32_t            DstHeight           = BestHeight;
-    uint32_t            DstBytesPerWidth    = ((pSrcResolutionDescriptor->GetBitsPerPixel() * DstWidth) + 7) /8;
-    uint32_t            PixelsSizeDst       = DstBytesPerWidth * DstHeight;
-    HFCPtr<HCDPacket>   pDstPacket;
-    double             DstBlockWidth;
+    HFCPtr<HRABitmapBase> pBitmapDst;
 
-
-    pDstPacket = new HCDPacket(new HCDCodecIdentity(),      // the packet will be initialized with a clear
-                               new Byte[PixelsSizeDst],
-                               PixelsSizeDst,
-                               PixelsSizeDst);
-
-    if (pSrcResolutionDescriptor->GetBlockWidth() >= pSrcResolutionDescriptor->GetWidth())
-        DstBlockWidth = DstWidth;
+    // Binary rasters are better when resampled with HRABitmapRLE.
+    if (pi_UseBestQuality && pSrcResolutionDescriptor->GetPixelType()->CountPixelRawDataBits() == 1)
+        {
+        if (pSrcResolutionDescriptor->GetPixelType()->IsCompatibleWith(HRPPixelTypeI1R8G8B8::CLASS_ID) ||
+            pSrcResolutionDescriptor->GetPixelType()->IsCompatibleWith(HRPPixelTypeI1R8G8B8A8::CLASS_ID))
+            pBitmapDst = HRABitmapRLE::Create(DstWidth, DstHeight, nullptr, pCoordSys, pSrcResolutionDescriptor->GetPixelType());
+        else
+            pBitmapDst = HRABitmapRLE::Create(DstWidth, DstHeight, nullptr, pCoordSys, new HRPPixelTypeI1R8G8B8());        
+        }
     else
-        DstBlockWidth = (double)pSrcResolutionDescriptor->GetBlockWidth() / HeightStep;
-
-
-    const HFCPtr<HRPPixelType>& rpPixelType = pSrcResolutionDescriptor->GetPixelType();
-
-    // Stretch settings
-    // Source
-    HFCPtr<HGSMemorySurfaceDescriptor> pDescriptorSrc(new HGSMemorySurfaceDescriptor(pSrcResolutionDescriptor->GetBlockWidth(),
-                                                                               pSrcResolutionDescriptor->GetBlockHeight(),
-                                                                               rpPixelType,
-                                                                               pSrcPacket,
-                                                                               HGF_UPPER_LEFT_HORIZONTAL,
-                                                                               pSrcResolutionDescriptor->GetBytesPerBlockWidth()));
-
-    // Destination
-    HFCPtr<HGSMemorySurfaceDescriptor> pDescriptorDst(new HGSMemorySurfaceDescriptor(DstWidth,
-                                                                               DstHeight,
-                                                                               rpPixelType,
-                                                                               pDstPacket,
-                                                                               HGF_UPPER_LEFT_HORIZONTAL,
-                                                                               DstBytesPerWidth));
-
-
-    // Init the surface
-    HRASurface destSurface(pDescriptorDst.GetPtr());
-    HRABlitter blitter(destSurface);
-    HRAEditor editor(destSurface);
-    HRASurface srcSurface(pDescriptorSrc.GetPtr());
-
-
-    // Stretching Generic Algo
-    uint64_t BlockPosX;
-    uint64_t BlockPosY;
-
-    // clear the destination surface
-    editor.Clear(rpPixelType->GetDefaultRawData());
-
-    double aDstExtent[8];
-    HFCPtr<HGSRegion> pRegion;
+        {
+        pBitmapDst = HRABitmap::Create(DstWidth, DstHeight, nullptr, pCoordSys, pSrcResolutionDescriptor->GetPixelType());
+        }
+     
+    pBitmapDst->Clear();
 
     double ScaleX = (double)pSrcResolutionDescriptor->GetWidth() / (double)DstWidth;
     double ScaleY = (double)pSrcResolutionDescriptor->GetHeight() / (double)DstHeight;
-
-    HGF2DStretch StretchModel(HGF2DDisplacement(),
-                              ScaleX,
-                              ScaleY);
-
-    HFCPtr<HGF2DStretch> pBlitModel(new HGF2DStretch(StretchModel));
-
-    double MaxDstX;
-    double MaxDstY;
-    StretchModel.ConvertInverse((double)pSrcResolutionDescriptor->GetWidth(),
-                                (double)pSrcResolutionDescriptor->GetHeight(),
-                                &MaxDstX,
-                                &MaxDstY);
-
-    double SrcPosX;
-    double SrcPosY;
+    HGF2DStretch StretchModel(HGF2DDisplacement(), ScaleX, ScaleY);    
 
     set<uint64_t> NeededBlocks;
 
@@ -944,6 +864,8 @@ Byte* ImagePP::HRFStretcher(HFCPtr<HRFRasterFile>& pi_rpSource,
         {
         for (uint32_t DstPosY=0 ; DstPosY < DstHeight ; DstPosY++)
             {
+            double SrcPosX, SrcPosY;
+
             StretchModel.ConvertDirect(DstPosX + 0.5,
                                        DstPosY + 0.5,
                                        &SrcPosX,
@@ -962,6 +884,7 @@ Byte* ImagePP::HRFStretcher(HFCPtr<HRFRasterFile>& pi_rpSource,
                     LastBlockIndex = BlockIndex; 
                     }
 
+                uint64_t BlockPosX, BlockPosY;
                 pSrcResolutionDescriptor->ComputeBlockPosition(BlockIndex, &BlockPosX, &BlockPosY);
 
                 if (HDOUBLE_EQUAL_EPSILON(SrcPosX, (double)BlockPosX))
@@ -984,327 +907,33 @@ Byte* ImagePP::HRFStretcher(HFCPtr<HRFRasterFile>& pi_rpSource,
     set<uint64_t>::const_iterator Itr(NeededBlocks.begin());
     while (Itr != NeededBlocks.end() && HRFThumbnailProgressIndicator::GetInstance()->ContinueIteration())
         {
-        // Calc the block position
+        uint64_t BlockPosX, BlockPosY;
         pSrcResolutionDescriptor->ComputeBlockPosition(*Itr, &BlockPosX, &BlockPosY);
-        // Read directly the required block
-        pSrcResolutionEditor->ReadBlock(BlockPosX, BlockPosY, pSrcPacket->GetBufferAddress());
+        pSrcResolutionEditor->ReadBlock(BlockPosX, BlockPosY, pBitmapSrc->GetPacket()->GetBufferAddress());
+                        
+        auto blockModel = HGF2DTranslation(HGF2DDisplacement((double)BlockPosX, (double)BlockPosY)).ComposeInverseWithInverseOf(StretchModel);
+        pBitmapSrc->SetTransfoModel(*blockModel);
 
-        pBlitModel = new HGF2DStretch(HGF2DDisplacement(-(double)BlockPosX, -(double)BlockPosY),
-                                      ScaleX,
-                                      ScaleY);
-
-        // Compute source surface shape, in destination system.
-        // To intersect with destination cliping
-        double OriginX;
-        double OriginY;
-        double CornerX;
-        double CornerY;
-        pBlitModel->ConvertInverse(0.0,
-                                   0.0,
-                                   &OriginX,
-                                   &OriginY);
-        pBlitModel->ConvertInverse(srcSurface.GetSurfaceDescriptor()->GetWidth(),
-                                   srcSurface.GetSurfaceDescriptor()->GetHeight(),
-                                   &CornerX,
-                                   &CornerY);
-        if (OriginX > CornerX)
-            {
-            double Temp = OriginX;
-            OriginX = CornerX;
-            CornerX = Temp;
-            }
-        if (OriginY > CornerY)
-            {
-            double Temp = OriginY;
-            OriginY = CornerY;
-            CornerY = Temp;
-            }
-
-        // Stretch the current line
-        aDstExtent[0] = OriginX;
-        aDstExtent[1] = OriginY;
-        aDstExtent[2] = OriginX;
-        aDstExtent[3] = MIN(MIN(CornerY, DstHeight), MaxDstY);
-        aDstExtent[4] = MIN(MIN(CornerX, DstWidth), MaxDstX);
-        aDstExtent[5] = MIN(MIN(CornerY, DstHeight), MaxDstY);
-        aDstExtent[6] = MIN(MIN(CornerX, DstWidth), MaxDstX);
-        aDstExtent[7] = OriginY;
-        pRegion = new HGSRegion(aDstExtent,
-                                8);
-
-        // To support clipping correctly, drop the shape
-        // into a series of points.
-
-        destSurface.SetRegion(pRegion);
-        blitter.BlitFrom(srcSurface, *pBlitModel);
+        HRACopyFromOptions options;
+        pBitmapDst->CopyFrom(*pBitmapSrc, options);
 
         ++Itr;
         }
 
     // Quality Down sampling to the specified size
-    Byte* pOutputData;
     if (pi_UseBestQuality)
         {
-        HFCPtr<HGSMemorySurfaceDescriptor> pOutputSurfaceDesc;
-        if (rpPixelType->CountPixelRawDataBits() == 1)
-            pOutputSurfaceDesc = sf1BitBestQualityStretcher(*pDescriptorDst, *pio_pPreferedHeight);
-        else
-            pOutputSurfaceDesc = sfBestQualityStretcher(*pDescriptorDst, *pio_pPreferedHeight);
-        
-        HFCPtr<HCDPacket> pPacket = pOutputSurfaceDesc->GetPacket();
+        HGF2DStretch scaleDownModel(HGF2DDisplacement(), (double)DstWidth / *pio_pPreferedWidth, (double)DstHeight / *pio_pPreferedHeight);        
+        HFCPtr<HRABitmap> pScaleDownBitmap = HRABitmap::Create(*pio_pPreferedWidth, *pio_pPreferedHeight, &scaleDownModel, pCoordSys, pSrcResolutionDescriptor->GetPixelType());
 
-        // uncompress data
-        if (!pPacket->GetCodec()->IsCompatibleWith(HCDCodecIdentity::CLASS_ID))
-            {
-            size_t DataSize = (pOutputSurfaceDesc->GetWidth() + 7) / 8; // nb bytes per row
-            DataSize *= pOutputSurfaceDesc->GetHeight();
-            HFCPtr<HCDPacket> pUncompressedPacket = new HCDPacket(new HCDCodecIdentity(),
-                                                                  new Byte[DataSize],
-                                                                  DataSize);
+        HRACopyFromOptions options;
+        options.SetResamplingMode(HGSResampling::BILINEAR);
+        pScaleDownBitmap->CopyFrom(*pBitmapDst, options);        
 
-            pPacket->Decompress(pUncompressedPacket);
-
-            pUncompressedPacket->SetBufferOwnership(false);
-            pOutputData = pUncompressedPacket->GetBufferAddress();
-            }
-        else
-            {
-            pPacket->SetBufferOwnership(false);
-            pOutputData = pPacket->GetBufferAddress();
-            }
-        }
-    else
-        pOutputData = pDstPacket->GetBufferAddress();
-
-    return pOutputData;
-    }
-
-
-
-
-//----------------------------------------------------------------------------------------
-// static
-// sf1BitBestQualityStretcher
-// the output is 8-bits alignment
-//----------------------------------------------------------------------------------------
-HFCPtr<HGSMemorySurfaceDescriptor> sf1BitBestQualityStretcher(HGSMemorySurfaceDescriptor const& pi_SrcSurfaceDesc, uint32_t pi_PreferedHeight)
-    {
-    HPRECONDITION(pi_SrcSurfaceDesc.GetPixelType() != 0);
-    HPRECONDITION(pi_SrcSurfaceDesc.GetPixelType()->CountPixelRawDataBits() == 1);
-    HPRECONDITION(pi_SrcSurfaceDesc.GetPacket() != 0);
-    HPRECONDITION(pi_SrcSurfaceDesc.GetPacket()->GetCodec() != 0);
-
-    HFCPtr<HCDPacket> pPacketUp;
-    HFCPtr<HRPPixelType> pPixelType;
-
-    // if the source was not compressed with RLE, compressed it to use OR algo
-    if (!pi_SrcSurfaceDesc.GetPacket()->GetCodec()->IsCompatibleWith(HCDCodecHMRRLE1::CLASS_ID))
-        {
-        HFCPtr<HCDCodec> pCodec(new HCDCodecHMRRLE1(pi_SrcSurfaceDesc.GetWidth(), pi_SrcSurfaceDesc.GetHeight()));
-
-        // the output is 8-bits alignment
-        uint32_t LinePaddingBits = 8 - (pi_SrcSurfaceDesc.GetWidth() % 8);
-        if (LinePaddingBits == 8)
-            LinePaddingBits = 0;
-
-        ((HFCPtr<HCDCodecImage>&)pCodec)->SetLinePaddingBits(LinePaddingBits);
-        ((HFCPtr<HCDCodecHMRRLE1>&)pCodec)->EnableLineIndexesTable(true);
-
-        pPacketUp = new HCDPacket(pCodec, 0, 0, 0);
-        pPacketUp->SetBufferOwnership(true);
-
-        pi_SrcSurfaceDesc.GetPacket()->Compress(pPacketUp);
-
-        HPRECONDITION(pi_SrcSurfaceDesc.GetPixelType()->IsCompatibleWith(HRPPixelTypeI1R8G8B8::CLASS_ID) ||
-                      pi_SrcSurfaceDesc.GetPixelType()->IsCompatibleWith(HRPPixelTypeI1R8G8B8A8::CLASS_ID) ||
-                      pi_SrcSurfaceDesc.GetPixelType()->IsCompatibleWith(HRPPixelTypeV1Gray1::CLASS_ID) ||
-                      pi_SrcSurfaceDesc.GetPixelType()->IsCompatibleWith(HRPPixelTypeV1GrayWhite1::CLASS_ID));
-
-        // change the source pixel type
-        if (pi_SrcSurfaceDesc.GetPixelType()->IsCompatibleWith(HRPPixelTypeI1R8G8B8::CLASS_ID))
-            pPixelType = new HRPPixelTypeI1R8G8B8RLE(pi_SrcSurfaceDesc.GetPixelType()->GetPalette());
-        else if (pi_SrcSurfaceDesc.GetPixelType()->IsCompatibleWith(HRPPixelTypeI1R8G8B8A8::CLASS_ID))
-            pPixelType = new HRPPixelTypeI1R8G8B8A8RLE(pi_SrcSurfaceDesc.GetPixelType()->GetPalette());
-        else if (pi_SrcSurfaceDesc.GetPixelType()->IsCompatibleWith(HRPPixelTypeV1Gray1::CLASS_ID))
-            pPixelType = new HRPPixelTypeI1R8G8B8RLE();
-        else if (pi_SrcSurfaceDesc.GetPixelType()->IsCompatibleWith(HRPPixelTypeV1GrayWhite1::CLASS_ID))
-            pPixelType = new HRPPixelTypeI1R8G8B8RLE();
-
-        }
-    else
-        {
-        pPacketUp  = pi_SrcSurfaceDesc.GetPacket();
-        pPixelType = pi_SrcSurfaceDesc.GetPixelType();
+        return pScaleDownBitmap;
         }
 
-
-    uint32_t            SubWidth  = pi_SrcSurfaceDesc.GetWidth();
-    uint32_t            SubHeight = pi_SrcSurfaceDesc.GetHeight();
-    HFCPtr<HCDPacket>   pPacketDown = new HCDPacket(new HCDCodecHMRRLE1(SubWidth / 2,
-                                                                        SubHeight / 2),
-                                                    0,
-                                                    0,
-                                                    0);
-    pPacketDown->SetBufferOwnership(true);
-
-    ((HFCPtr<HCDCodecHMRRLE1>&)pPacketDown->GetCodec())->EnableLineIndexesTable(true);
-    uint32_t LinePaddingBits = 8 - (SubWidth % 8);
-    if (LinePaddingBits == 8)
-        LinePaddingBits = 0;
-
-    HGF2DStretch StretchModel(HGF2DDisplacement(),
-                              2.0,
-                              2.0);
-
-    HFCPtr<HGSMemorySurfaceDescriptor> pDescriptorUp;
-    HFCPtr<HGSMemorySurfaceDescriptor> pDescriptorDown;
-    do
-        {
-        // Stretch settings
-        // Up
-        pDescriptorUp = new HGSMemorySurfaceDescriptor(SubWidth,
-                                                       SubHeight,
-                                                       pPixelType,
-                                                       pPacketUp,
-                                                       HGF_UPPER_LEFT_HORIZONTAL,
-                                                       0);
-
-        // Stretch settings
-        // Down
-        pDescriptorDown = new HGSMemorySurfaceDescriptor(SubWidth / 2,
-                                                         SubHeight / 2,
-                                                         pPixelType,
-                                                         pPacketDown,
-                                                         HGF_UPPER_LEFT_HORIZONTAL,
-                                                         0);
-
-        // Init the down surface
-        HRASurface downSurface(pDescriptorDown.GetPtr());
-            {   // Editor must be destroyed to complete.
-            HRAEditor editor(downSurface);
-            editor.Clear(pPixelType->GetDefaultRawData());
-            }
-
-        // init the up surface
-        HRASurface UpSurface(pDescriptorUp.GetPtr());
-
-        // Stretch Down to the sub-resolution
-        HRABlitter blitter(downSurface);
-        blitter.SetSamplingMode(HGSResampling::AVERAGE);
-        blitter.BlitFrom(UpSurface, StretchModel);
-
-        // set the new up packet
-        pPacketUp = pPacketDown;
-
-        // set size for down resolution
-        SubWidth  = SubWidth / 2;
-        SubHeight = SubHeight / 2;
-
-        // create a new down packet
-        pPacketDown = new HCDPacket(new HCDCodecHMRRLE1(SubWidth / 2, SubHeight / 2), 0, 0, 0);
-        pPacketDown->SetBufferOwnership(true);
-
-        ((HFCPtr<HCDCodecHMRRLE1>&)pPacketDown->GetCodec())->EnableLineIndexesTable(true);
-        uint32_t LinePaddingBits = 8 - (SubWidth % 8);
-        if (LinePaddingBits == 8)
-            LinePaddingBits = 0;
-
-        ((HFCPtr<HCDCodecHMRRLE1>&)pPacketDown->GetCodec())->SetLinePaddingBits(LinePaddingBits);
-
-        }
-    while (SubHeight > pi_PreferedHeight);
-
-    return pDescriptorDown;
-    }
-
-//----------------------------------------------------------------------------------------
-// static
-// sfBestQualityStretcher
-// the output is 8-bits alignment
-//----------------------------------------------------------------------------------------
-HFCPtr<HGSMemorySurfaceDescriptor> sfBestQualityStretcher(HGSMemorySurfaceDescriptor const& pi_SrcSurfaceDesc, uint32_t pi_PreferedHeight)
-    {
-    HPRECONDITION(pi_SrcSurfaceDesc.GetPixelType() != 0);
-    HPRECONDITION(pi_SrcSurfaceDesc.GetPixelType()->CountPixelRawDataBits() != 1);
-    HPRECONDITION(pi_SrcSurfaceDesc.GetPacket() != 0);
-    HPRECONDITION(pi_SrcSurfaceDesc.GetPacket()->GetCodec() != 0);
-    HPRECONDITION(pi_SrcSurfaceDesc.GetPacket()->GetCodec()->IsCompatibleWith(HCDCodecIdentity::CLASS_ID));
-
-    HFCPtr<HCDPacket> pPacketUp = pi_SrcSurfaceDesc.GetPacket();
-
-    uint32_t                SubWidth  = pi_SrcSurfaceDesc.GetWidth();
-    uint32_t                SubHeight = pi_SrcSurfaceDesc.GetHeight();
-    HFCPtr<HCDPacket>       pPacketDown;
-    HFCPtr<HRPPixelType>    pPixelType(pi_SrcSurfaceDesc.GetPixelType());
-
-    HFCPtr<HGSMemorySurfaceDescriptor> pDescriptorUp;
-    HFCPtr<HGSMemorySurfaceDescriptor> pDescriptorDown;
-
-    uint32_t UpSurfaceBytesPerRow = pi_SrcSurfaceDesc.GetBytesPerRow();
-    uint32_t DownSurfaceBytesPerRow;
-    size_t DataSize;
-
-    HGF2DStretch StretchModel(HGF2DDisplacement(),
-                              2.0,
-                              2.0);
-    do
-        {
-        // Stretch settings
-        // Up
-        pDescriptorUp = new HGSMemorySurfaceDescriptor(SubWidth,
-                                                       SubHeight,
-                                                       pPixelType,
-                                                       pPacketUp,
-                                                       HGF_UPPER_LEFT_HORIZONTAL,
-                                                       UpSurfaceBytesPerRow);
-
-        // Stretch settings
-        // Down
-        // create a new down packet
-        DownSurfaceBytesPerRow = (((SubWidth / 2) * pPixelType->CountPixelRawDataBits()) + 7) / 8;
-        DataSize = DownSurfaceBytesPerRow * (SubHeight / 2);
-        pPacketDown = new HCDPacket(new HCDCodecIdentity(),
-                                    new Byte[DataSize],
-                                    DataSize);
-        pPacketDown->SetBufferOwnership(true);
-        pDescriptorDown = new HGSMemorySurfaceDescriptor(SubWidth / 2,
-                                                         SubHeight / 2,
-                                                         pPixelType,
-                                                         pPacketDown,
-                                                         HGF_UPPER_LEFT_HORIZONTAL,
-                                                         DownSurfaceBytesPerRow);
-
-        // Init the down surface
-        HRASurface downSurface(pDescriptorDown.GetPtr());
-        HRABlitter blitter(downSurface);
-        if (pPixelType->CountValueBits() != 0)
-            blitter.SetSamplingMode(HGSResampling::AVERAGE);
-        else
-            blitter.SetSamplingMode(HGSResampling::NEAREST_NEIGHBOUR);
-        
-            {
-            HRAEditor editor(downSurface);
-            editor.Clear(pPixelType->GetDefaultRawData());
-            }
-
-        // init the up surface
-        HRASurface UpSurface(pDescriptorUp.GetPtr());
-
-        // Stretch Down to the sub-resolution
-        blitter.BlitFrom(UpSurface, StretchModel);
-
-        // set the new up packet
-        pPacketUp = pPacketDown;
-        UpSurfaceBytesPerRow = DownSurfaceBytesPerRow;
-
-        // set size for down resolution
-        SubWidth  = SubWidth / 2;
-        SubHeight = SubHeight / 2;
-
-        }
-    while (SubHeight > pi_PreferedHeight);
-
-    return pDescriptorDown;
+    return pBitmapDst->_AsHRABitmapP();
     }
 
 //-----------------------------------------------------------------------------
@@ -1322,21 +951,18 @@ HFCPtr<HRFThumbnail> ImagePP::HRFThumbnailMaker(HFCPtr<HRFRasterFile>& pi_rpSour
         {
         if (!pi_rpSource->GetPageDescriptor(pi_Page)->HasThumbnail())
             {
-            HArrayAutoPtr<Byte> pPixels;
-            pPixels = HRFStretcher(pi_rpSource, pi_Page, pio_pPreferedWidth, pio_pPreferedHeight, pi_UseBestQuality);
-
-            return new HRFThumbnail(*pio_pPreferedWidth,
-                                    *pio_pPreferedHeight,
-                                    pi_rpSource->GetPageDescriptor(pi_Page)->GetResolutionDescriptor(0)->GetPixelType(),
-                                    pPixels,
-                                    HFC_READ_ONLY,
-                                    false,
-                                    8); // 8-bits alignement
+            HFCPtr<HRABitmap> pPixels = HRFStretcher(pi_rpSource, pi_Page, pio_pPreferedWidth, pio_pPreferedHeight, pi_UseBestQuality);
+            if(pPixels != nullptr)
+                return new HRFThumbnail(*pio_pPreferedWidth, *pio_pPreferedHeight, pPixels->GetPixelType(),
+                                        pPixels->GetPacket()->GetBufferAddress(),
+                                        HFC_READ_ONLY,
+                                        false,
+                                        8); // 8-bits alignement
             }
         else
             return pi_rpSource->GetPageDescriptor(pi_Page)->GetThumbnail();
         }
-    return NULL;
+    return nullptr;
     }
 
 

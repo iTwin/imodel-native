@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFUtility.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // HRFUtility
@@ -20,6 +20,7 @@ class HRFRasterFileCapabilities;
 class HRFThumbnail;
 class HCDCodec;
 class HFCBinStream;
+class HCDPacket;
 END_IMAGEPP_NAMESPACE
 
 //----------------------------------------------------------------------------
@@ -84,15 +85,6 @@ IMAGEPP_EXPORT HFCPtr<HRFThumbnail> HRFThumbnailMaker(HFCPtr<HRFRasterFile>& pi_
                                               uint32_t*                pio_pPreferedWidth,
                                               uint32_t*                pio_pPreferedHeight,
                                               bool                  pi_UseBestQuality);
-
-//-----------------------------------------------------------------------------
-// HRFStretcher
-//-----------------------------------------------------------------------------
-Byte* HRFStretcher(HFCPtr<HRFRasterFile>& pi_rpSource,
-                     uint32_t               pi_Page,
-                     uint32_t*                pio_pPreferedWidth,
-                     uint32_t*                pio_pPreferedHeight,
-                     bool                  pi_UseBestQuality);
 
 //-----------------------------------------------------------------------------
 // IsValidMatrix
