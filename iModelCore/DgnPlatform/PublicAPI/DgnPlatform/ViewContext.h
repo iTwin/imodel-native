@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ViewContext.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -403,12 +403,26 @@ public:
 struct SceneContext : RenderListContext
 {
     DEFINE_T_SUPER(RenderListContext);
-
+protected:
+    SceneContext(DgnViewportR vp, Render::GraphicListR scene, UpdatePlan const& plan, TileTree::TileRequests& requests, DrawPurpose purpose);
+public:
     TileTree::TileRequests& m_requests;
 
-    SceneContext(DgnViewportR vp, Render::GraphicListR scene, UpdatePlan const& plan, TileTree::TileRequests& requests);
+    SceneContext(DgnViewportR vp, Render::GraphicListR scene, UpdatePlan const& plan, TileTree::TileRequests& requests)
+        : SceneContext(vp, scene, plan, requests, DrawPurpose::CreateScene) { }
 
     bool _CheckStop() override;
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   01/18
+//=======================================================================================
+struct ThumbnailContext : SceneContext
+{
+    DEFINE_T_SUPER(SceneContext);
+
+    ThumbnailContext(DgnViewportR vp, Render::GraphicListR scene, UpdatePlan const& plan, TileTree::TileRequests& requests)
+        : SceneContext(vp, scene, plan, requests, DrawPurpose::CaptureThumbnail) { }
 };
 
 //=======================================================================================

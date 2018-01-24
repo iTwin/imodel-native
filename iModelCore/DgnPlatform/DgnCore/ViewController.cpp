@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ViewController.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -968,30 +968,35 @@ ViewController::CloseMe ViewController2d::_OnModelsDeleted(bset<DgnModelId> cons
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TileTree::RootPtr ViewController2d::GetRoot(SceneContextR context)
+    {
+    auto model = GetViewedModel();
+    if (nullptr == model)
+        return nullptr;
+    else
+        return model->GetTileTree(context);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ViewController2d::_CreateScene(SceneContextR context)
     {
-    if (nullptr == m_root)
-        {
-        auto model = GetViewedModel();
-        if (nullptr == model)
-            return ERROR;
-
-        m_root = model->GetTileTree(&context.GetTargetR().GetSystem());
-        if (nullptr == m_root)
-            return ERROR;
-        }
+    auto root = GetRoot(context);
+    if (root.IsNull())
+        return ERROR;
 
     if (context.GetUpdatePlan().WantWait() && context.GetUpdatePlan().GetQuitTime().IsInFuture())
         {
         auto waitFor = context.GetUpdatePlan().GetQuitTime() - BeTimePoint::Now();
-        m_root->SelectTiles(context);
-        m_root->WaitForAllLoadsFor(std::chrono::duration_cast<std::chrono::milliseconds>(waitFor).count());
-        m_root->CancelAllTileLoads();
+        root->SelectTiles(context);
+        root->WaitForAllLoadsFor(std::chrono::duration_cast<std::chrono::milliseconds>(waitFor).count());
+        root->CancelAllTileLoads();
         }
 
-    m_root->DrawInView(context);
+    root->DrawInView(context);
     return SUCCESS;
     }
 
@@ -1020,27 +1025,37 @@ void ViewController::AddAppData(AppData::Key const& key, AppData* obj) const
     obj->_Load(*m_definition);
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TileTree::RootPtr TemplateViewController3d::GetRoot(SceneContextR context)
+    {
+    auto model = GetViewedModel();
+    if (nullptr == model)
+        return nullptr;
+    else
+        return model->GetTileTree(context);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TemplateViewController3d::_CreateScene(SceneContextR context)
     {
-    if (nullptr == m_root)
-        {
-        auto model = GetViewedModel();
-        if (nullptr == model || nullptr == (m_root = model->GetTileTree(&context.GetTargetR().GetSystem())))
-            return ERROR;
-        }
+    auto root = GetRoot(context);
+    if (root.IsNull())
+        return ERROR;
 
     if (context.GetUpdatePlan().WantWait() && context.GetUpdatePlan().GetQuitTime().IsInFuture())
         {
         auto waitFor = context.GetUpdatePlan().GetQuitTime() - BeTimePoint::Now();
-        m_root->SelectTiles(context);
-        m_root->WaitForAllLoadsFor(std::chrono::duration_cast<std::chrono::milliseconds>(waitFor).count());
-        m_root->CancelAllTileLoads();
+        root->SelectTiles(context);
+        root->WaitForAllLoadsFor(std::chrono::duration_cast<std::chrono::milliseconds>(waitFor).count());
+        root->CancelAllTileLoads();
         }
 
-    m_root->DrawInView(context);
+    root->DrawInView(context);
     return SUCCESS;
     }
 

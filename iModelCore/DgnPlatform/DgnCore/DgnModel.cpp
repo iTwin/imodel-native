@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnModel.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -1608,6 +1608,16 @@ AxisAlignedBox3d GeometricModel2d::_QueryModelRange() const
 
     int resultSize = stmt.GetColumnBytes(0); // can be 0 if no elements in model
     return (sizeof(AxisAlignedBox3d) == resultSize) ? *(AxisAlignedBox3d*) stmt.GetValueBlob(0) : AxisAlignedBox3d(); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TileTree::RootPtr GeometricModel::_GetTileTree(ViewContextR context)
+    {
+    // Inheritance situation is awkward here - reality models should all return GetTileTree(context.GetRenderSystem());
+    // ###TODO: If capturing thumbnail, implement to return a TileTree containing a single tile of appropriate range and resolution for this context.
+    return GetTileTree(context.GetRenderSystem());
     }
 
 /*---------------------------------------------------------------------------------**//**
