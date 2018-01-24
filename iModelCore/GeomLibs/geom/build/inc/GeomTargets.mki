@@ -2,7 +2,7 @@
 #
 #     $Source: geom/build/inc/GeomTargets.mki $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 #
@@ -136,7 +136,7 @@ $(OUT_DIR)dellipse4d$(OUT_EXT)      : $(geomSrcStructs)dellipse4d.cpp       $(OT
 
 $(OUT_DIR)smallsetrange1d$(OUT_EXT) : $(geomSrcStructs)smallsetrange1d.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)dspiral2dbase$(OUT_EXT) : $(geomSrcStructs)dspiral2dbase.cpp    $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+$(OUT_DIR)dspiral2dbase$(OUT_EXT) : $(geomSrcStructs)dspiral2dbase.cpp $(geomSrcStructs)directEvaluationSpiral.h   $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)catenary$(OUT_EXT) : $(geomSrcStructs)catenary.cpp    $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 

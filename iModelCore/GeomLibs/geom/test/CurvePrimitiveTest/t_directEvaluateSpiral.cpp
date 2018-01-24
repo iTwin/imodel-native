@@ -32,6 +32,7 @@ TEST(PseudoSpiral,Serialize)
                 DSpiral2dBase::TransitionType_Australian,
                 //DSpiral2dBase::TransitionType_Italian,
                 //DSpiral2dBase::TransitionType_Polish
+                DSpiral2dBase::TransitionType_MXCubic
                 })
         {
         double xShift = -dxShift;
@@ -90,7 +91,6 @@ ICurvePrimitivePtr ConstructSpiralRadiusRadiusLength (int typeCode, Angle bearin
     auto referenceSpiral = dynamic_cast <DSpiral2dDirectEvaluation *>(referenceSpiralA);
     if (referenceSpiral == nullptr)
         return nullptr;
-    double bearing0 = 0.0;
     double curvature0 = 0.0;
     referenceSpiral->SetBearingCurvatureLengthCurvature (0.0, curvature0, length0B, curvatureB);
     DPoint2d uvA;
@@ -248,3 +248,52 @@ TEST(Spiral,MixedRadiusConstructionsB)
     Check::ClearGeometry ("Spiral.MixedRadiusConstructionsB");
     }
 
+TEST(Spiral,ClothoidCosineApproximation)
+    {
+    double R = 1000.0;
+    double L = 100.0;
+    double numSamples = 101;
+    UsageSums positiveSums, negativeSums;
+    UsageSums positiveRoundTripErrors, negativeRoundTripErrors;
+    bvector<double> positiveFailures, negativeFailures;
+    bvector<DPoint3d> xyFromS;
+    for (double i = 0; i < numSamples; i++)
+        {
+        double u = DoubleOps::Interpolate (-L, i / numSamples, L);
+        auto fPositive = ClothoidCosineApproximation::Invert40R2L2Map (1.0, R, L, u);
+        if (fPositive)
+            {
+            positiveSums.Accumulate (ClothoidCosineApproximation::s_evaluationCount);
+            auto g = ClothoidCosineApproximation::Evaluate40R2L2Map (-1.0, R, L, fPositive.Value ());
+            positiveRoundTripErrors.Accumulate (u - g);
+            }
+        else
+            positiveFailures.push_back (u);
+        auto fNegative = ClothoidCosineApproximation::Invert40R2L2Map (-1.0, R, L, u);
+        if (fNegative)
+            {
+            negativeSums.Accumulate (ClothoidCosineApproximation::s_evaluationCount);
+            auto g = ClothoidCosineApproximation::Evaluate40R2L2Map (1.0, R, L, fNegative.Value ());
+            negativeRoundTripErrors.Accumulate (u - g);
+            }
+        else
+            negativeFailures.push_back (u);
+        // Treat u as DISTANCE ALONG SPIRAL ..
+        double xFromS = ClothoidCosineApproximation::Evaluate40R2L2Map (-1.0, R, L, u);
+        double yFromS = u * u * u / (6.0 * R * L);
+        xyFromS.push_back (DPoint3d::From (xFromS, yFromS, 0));
+        }
+    Check::Size (0, positiveFailures.size (), "Iterative failures with positive second term");
+    Check::Size (0, negativeFailures.size (), "Iterative failures with negative second term");
+    static double s_cosineSeriesRelTol = 1.0e-3;
+    Check::LessThanOrEqual (positiveRoundTripErrors.MaxAbs (), s_cosineSeriesRelTol * L, "cosine series axis-curve-axis roundtrip relative error");
+    Check::LessThanOrEqual (negativeRoundTripErrors.MaxAbs (), s_cosineSeriesRelTol * L, "cosine series curve-axis-curve roundtrip relative error");
+    GEOMAPI_PRINTF ("Positive Iterations: (max %g) (mean %g) (roundTrip Error Range %7.1le %7.1le)\n",
+        positiveSums.Max (), positiveSums.Mean (), positiveRoundTripErrors.Min (), positiveRoundTripErrors.Max ()
+        );
+    GEOMAPI_PRINTF ("Negative Iterations: (max %g) (mean %g) (roundTrip Error Range %7.1le %7.1le)\n",
+        negativeSums.Max (), negativeSums.Mean (), negativeRoundTripErrors.Min (), negativeRoundTripErrors.Max ()
+        );
+    Check::SaveTransformed (xyFromS);
+    Check::ClearGeometry ("Spiral.ClothoidCosineApproximation");
+    }
