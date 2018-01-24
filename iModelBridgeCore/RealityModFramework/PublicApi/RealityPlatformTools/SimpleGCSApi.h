@@ -18,6 +18,8 @@ struct GCSRequestManager : public WSGRequestManager
     REALITYDATAPLATFORM_EXPORT static void SimplePackageDownload(bvector<GeoPoint2d> footprint, 
         bvector<RealityDataBase::Classification> classes, SE_selectionFunction pi_func, BeFileName path,
         BeFileName certificatePath = BeFileName(), RealityDataDownload_ProxyCallBack proxyCallback = nullptr);
+
+    REALITYDATAPLATFORM_EXPORT static ConnectedResponse SimpleBingKeyRequest(Utf8StringCR productId, Utf8StringR key, Utf8StringR expirationDate);
 private:
     REALITYDATAPLATFORM_EXPORT static int GCS_progress_func(int index, void *pClient, size_t ByteCurrent, size_t ByteTotal);
     REALITYDATAPLATFORM_EXPORT static void GCS_status_func(int index, void *pClient, int ErrorCode, const char* pMsg);

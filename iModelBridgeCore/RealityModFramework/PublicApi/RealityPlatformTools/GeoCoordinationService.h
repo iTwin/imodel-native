@@ -373,6 +373,28 @@ private:
     DownloadReportUploadRequest(){}
     };
 
+//=====================================================================================
+//! @bsiclass                                 Spencer.Mason                   01/2018
+//! BingKeyRequest
+//! This class represents a request for a Bing Key along with its expirationDate
+//=====================================================================================
+struct BingKeyRequest : public GeoCoordinationServiceRequest
+    {
+public:
+    //! Create a request for spatial entity of the given identifier
+    REALITYDATAPLATFORM_EXPORT BingKeyRequest(Utf8StringCR productId)
+        {
+        m_validRequestString = false;
+        m_id = productId;
+        }
+
+protected:
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
+
+private:
+    BingKeyRequest() { m_requestType = HttpRequestType::GET_Request; }
+    };
+
 //! Callback function to surface request errors.
 //! @param[in] basicMessage Utf8String provided by the specific request
 //! @param[in] rawResponse  the raw server response
@@ -474,6 +496,9 @@ public:
 
     //! Uploads a download report. It is not possible to know if the call worked or not.
     REALITYDATAPLATFORM_EXPORT static void Request(const DownloadReportUploadRequest& request, RawServerResponse& rawResponse);
+
+    //! Fetches a Bing Key.
+    REALITYDATAPLATFORM_EXPORT static void Request(const BingKeyRequest& request, RawServerResponse& rawResponse, Utf8StringR key, Utf8StringR expirationDate);
 
     //! Returns the full WSG JSON returned by the package preparation request
     REALITYDATAPLATFORM_EXPORT static RawServerResponse BasicRequest(const GeoCoordinationServiceRequest* request, Utf8StringCR keyword = "instances");

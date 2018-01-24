@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatformTools/Example/GeoCoordinationServiceExample.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -41,6 +41,14 @@ int main(int argc, char *argv[])
     std::cout << GeoCoordinationService::GetWSGProtocol() << std::endl;
     std::cout << GeoCoordinationService::GetRepoName() << std::endl;
     std::cout << GeoCoordinationService::GetSchemaName() << std::endl << std::endl;
+
+    BingKeyRequest bkRequest = BingKeyRequest("1000");
+    RawServerResponse bkResponse = RawServerResponse();
+    Utf8String bingKey, expirationDate;
+    GeoCoordinationService::Request(bkRequest, bkResponse, bingKey, expirationDate);
+
+    std::cout << bingKey.c_str() << std::endl;
+    std::cout << expirationDate.c_str() << std::endl;
 
     bvector<GeoPoint2d> space = bvector<GeoPoint2d>();
     space.push_back(GeoPoint2d::From(115.73, 49.44));

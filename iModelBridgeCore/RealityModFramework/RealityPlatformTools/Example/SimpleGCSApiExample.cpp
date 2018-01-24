@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatformTools/Example/SimpleGCSApiExample.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -57,6 +57,9 @@ bvector<Utf8String> selectionCallbackFunction(bvector<GeoPoint2d> footprint, Spa
 int main(int argc, char *argv[])
     {
     GCSRequestManager::Setup();
+
+    Utf8String bingKey, expirationDate;
+    GCSRequestManager::SimpleBingKeyRequest("1000", bingKey, expirationDate);
 
     bvector<GeoPoint2d> space = bvector<GeoPoint2d>();
     space.push_back(GeoPoint2d::From(115.73, 49.44));

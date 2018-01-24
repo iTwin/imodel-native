@@ -179,3 +179,16 @@ void GCSRequestManager::SimplePackageDownload(bvector<GeoPoint2d> footprint, bve
 
     reportPath.BeDeleteFile();
     }
+
+ConnectedResponse GCSRequestManager::SimpleBingKeyRequest(Utf8StringCR productId, Utf8StringR key, Utf8StringR expirationDate)
+    {
+    ConnectedResponse response = ConnectedResponse();
+
+    BingKeyRequest bkRequest = BingKeyRequest(productId);
+    RawServerResponse rawResponse = RawServerResponse();
+    GeoCoordinationService::Request(bkRequest, rawResponse, key, expirationDate);
+   
+    response.Clone(rawResponse);
+
+    return response;
+    }

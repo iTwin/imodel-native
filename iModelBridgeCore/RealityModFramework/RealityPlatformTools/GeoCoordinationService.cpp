@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatformTools/GeoCoordinationService.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -211,6 +211,15 @@ void GeoCoordinationServicePagedRequest::SortBy(GeoCoordinationField field, bool
         order.append("+desc");
 
     m_order = order;
+    }
+
+void BingKeyRequest::_PrepareHttpRequestStringAndPayload() const
+    {
+    m_serverName = GeoCoordinationService::GetServerName();
+    WSGURL::_PrepareHttpRequestStringAndPayload();
+    m_httpRequestString.append(Utf8PrintfString("v%s/Repositories/ContextKeyService--Server/ContextKeyServiceSchema/BingApiKey?$filter=productId+eq+%s", GeoCoordinationService::GetWSGProtocol(), m_id));
+    
+    m_requestType = HttpRequestType::GET_Request;
     }
 
 //=====================================================================================
@@ -551,6 +560,26 @@ void GeoCoordinationService::Request(const PreparedPackageRequest& request, BeFi
         }
     else
         rawResponse.status = RequestStatus::OK;
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              03/2017
+//=====================================================================================
+void GeoCoordinationService::Request(const BingKeyRequest& request, RawServerResponse& rawResponse, Utf8StringR key, Utf8StringR expirationDate)
+    {
+    rawResponse = BasicRequest(static_cast<const GeoCoordinationServiceRequest*>(&request));
+
+    Utf8String packageId = "";
+    Json::Value packageInfos(Json::objectValue);
+    Json::Reader::Parse(rawResponse.body, packageInfos);
+
+    if (rawResponse.status == RequestStatus::BADREQ || !packageInfos["instances"][0].isMember("properties") || !packageInfos["instances"][0]["properties"].isMember("key") || !packageInfos["instances"][0]["properties"].isMember("expirationDate"))
+        rawResponse.status = RequestStatus::BADREQ;
+    else
+        {
+        key = packageInfos["instances"][0]["properties"]["key"].asCString();
+        expirationDate = packageInfos["instances"][0]["properties"]["expirationDate"].asCString();
+        }
     }
 
 //=====================================================================================
