@@ -65,7 +65,7 @@ struct SolidPrimitiveManipulationStrategy : public GeometryManipulationStrategy
         bool IsBaseComplete() const;
         void SetBaseComplete(bool value);
 
-        ISolidPrimitivePtr FinishSolidPrimitive() const;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ISolidPrimitivePtr FinishSolidPrimitive() const;
     };
 
 END_BUILDING_SHARED_NAMESPACE
