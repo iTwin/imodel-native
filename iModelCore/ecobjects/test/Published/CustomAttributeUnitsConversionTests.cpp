@@ -616,6 +616,71 @@ TEST_F(UnitSpecificationConversionTest, PersistenceUnitChange_WithPresentationUn
     EXPECT_STREQ("FOOT", oldUnitName.GetUtf8CP());
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Colin.Kerr                 01/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(UnitSpecificationConversionTest, PercentUnitsPassThroughWithoutChangeToSI)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="OldUnits" version="01.00" displayLabel="Old Units test" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
+            <ECClass typeName="Ratios" isDomainClass="True">
+                <ECProperty propertyName="Percent" typeName="double">
+                    <ECCustomAttributes>
+                        <UnitSpecification xmlns="Unit_Attributes.01.00">
+                            <KindOfQuantityName>PERCENTAGES</KindOfQuantityName>
+                            <DimensionName>ONE</DimensionName>
+                            <UnitName>PERCENT_PERCENT</UnitName>
+                            <AllowableUnits />
+                        </UnitSpecification>
+                    </ECCustomAttributes>
+                </ECProperty>
+                <ECProperty propertyName="OtherPercent" typeName="double">
+                    <ECCustomAttributes>
+                        <UnitSpecification xmlns="Unit_Attributes.01.00">
+                            <KindOfQuantityName>OTHER_PERCENTAGES</KindOfQuantityName>
+                            <DimensionName>ONE</DimensionName>
+                            <UnitName>UNITLESS_PERCENT</UnitName>
+                            <AllowableUnits />
+                        </UnitSpecification>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECClass>
+            <ECClass typeName="DerivedRatios" isDomainClass="True">
+                <BaseClass>Ratios</BaseClass>
+                <ECProperty propertyName="Percent" typeName="double">
+                    <ECCustomAttributes>
+                        <UnitSpecification xmlns="Unit_Attributes.01.00">
+                            <KindOfQuantityName>PERCENTAGES</KindOfQuantityName>
+                            <DimensionName>ONE</DimensionName>
+                            <UnitName>UNITLESS_PERCENT</UnitName>
+                            <AllowableUnits />
+                        </UnitSpecification>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
+    ASSERT_EQ(SchemaReadStatus::Success, status);
+    ASSERT_TRUE(schema.IsValid());
+
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Failed to convert schema";
+
+    EXPECT_STREQ("PERCENTAGES", schema->GetClassCP("Ratios")->GetPropertyP("Percent")->GetKindOfQuantity()->GetName().c_str());
+    EXPECT_STREQ("PERCENT", schema->GetClassCP("Ratios")->GetPropertyP("Percent")->GetKindOfQuantity()->GetPersistenceUnit().GetUnit()->GetName());
+    EXPECT_STREQ("OTHER_PERCENTAGES", schema->GetClassCP("Ratios")->GetPropertyP("OtherPercent")->GetKindOfQuantity()->GetName().c_str());
+    EXPECT_STREQ("DECIMAL_PERCENT", schema->GetClassCP("Ratios")->GetPropertyP("OtherPercent")->GetKindOfQuantity()->GetPersistenceUnit().GetUnit()->GetName());
+    EXPECT_STREQ("PERCENTAGES_DerivedRatios", schema->GetClassCP("DerivedRatios")->GetPropertyP("Percent")->GetKindOfQuantity()->GetName().c_str());
+    EXPECT_STREQ("DECIMAL_PERCENT", schema->GetClassCP("DerivedRatios")->GetPropertyP("OtherPercent")->GetKindOfQuantity()->GetPersistenceUnit().GetUnit()->GetName());
+    ASSERT_TRUE(schema->GetClassCP("DerivedRatios")->GetPropertyP("Percent")->GetCustomAttributeLocal("OldPersistenceUnit").IsValid());
+    ECValue oldUnitName;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->GetClassCP("DerivedRatios")->GetPropertyP("Percent")->GetCustomAttributeLocal("OldPersistenceUnit")->GetValue(oldUnitName, "Name"));
+    EXPECT_STREQ("UNITLESS_PERCENT", oldUnitName.GetUtf8CP());
+    }
+
 //=======================================================================================
 //! UnitsCustomAttributesConversionTests
 //=======================================================================================
