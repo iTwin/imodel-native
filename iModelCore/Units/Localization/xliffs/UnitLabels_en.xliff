@@ -3064,7 +3064,383 @@
                     <source xml:space="preserve">Ounces - 1/16 of LBM</source>
                     <note>MASS:OZM</note>
                 </trans-unit>
-
+                <!-- Manually added to fill missing labels -->
+                <trans-unit id="LABEL_cf455db9833707f12088f930a0c28ad7" resname="LABEL_cf455db9833707f12088f930a0c28ad7">
+                    <source xml:space="preserve">mol</source>
+                    <note>MOLE:MOL</note>
+                </trans-unit>
+                <trans-unit id="LABEL_199654653c2797ac9322a8ec9bced125" resname="LABEL_199654653c2797ac9322a8ec9bced125">
+                    <source xml:space="preserve">cd</source>
+                    <note>LUMINOSITY:CD</note>
+                </trans-unit>
+                <trans-unit id="LABEL_3d764d0a83a00a755d59439405e5409f" resname="LABEL_3d764d0a83a00a755d59439405e5409f">
+                    <source xml:space="preserve">sterad</source>
+                    <note>SOLIDANGLE:STERAD</note>
+                </trans-unit>
+                <trans-unit id="LABEL_c63813ab714e6e7b1a0a760bad309548" resname="LABEL_c63813ab714e6e7b1a0a760bad309548">
+                    <source xml:space="preserve">chain</source>
+                    <note>LENGTH:CHAIN</note>
+                </trans-unit>
+                <trans-unit id="LABEL_336301ba54422bec52c7d65fb8311ece" resname="LABEL_336301ba54422bec52c7d65fb8311ece">
+                    <source xml:space="preserve">US_SURVEY_YRD</source>
+                    <note>LENGTH:US_SURVEY_YRD</note>
+                </trans-unit>
+                <trans-unit id="LABEL_fad9b4136f0d5889fc7a166b43782e3a" resname="LABEL_fad9b4136f0d5889fc7a166b43782e3a">
+                    <source xml:space="preserve">US_SURVEY_CHAIN</source>
+                    <note>LENGTH:US_SURVEY_CHAIN</note>
+                </trans-unit>
+                <trans-unit id="LABEL_959a213f2b210d7da71a1ddbc9193c75" resname="LABEL_959a213f2b210d7da71a1ddbc9193c75">
+                    <source xml:space="preserve">NAUT_MILE</source>
+                    <note>LENGTH:NAUT_MILE</note>
+                </trans-unit>
+                <trans-unit id="LABEL_637edc5a8c94bdc179371e6c4b4e4389" resname="LABEL_637edc5a8c94bdc179371e6c4b4e4389">
+                    <source xml:space="preserve">ng</source>
+                    <note>MASS:NG</note>
+                </trans-unit>
+                <trans-unit id="LABEL_5416288b7d93b550a7b24c17acbdd967" resname="LABEL_5416288b7d93b550a7b24c17acbdd967">
+                    <source xml:space="preserve">tonne</source>
+                    <note>MASS:TONNE</note>
+                </trans-unit>
+                <trans-unit id="LABEL_2ffd8d931d4ba6bc3c57d09bdf94b4ca" resname="LABEL_2ffd8d931d4ba6bc3c57d09bdf94b4ca">
+                    <source xml:space="preserve">SLUG</source>
+                    <note>MASS:SLUG</note>
+                </trans-unit>
+                <trans-unit id="LABEL_18e7ffaa76294ba57a629aa1619d791c" resname="LABEL_18e7ffaa76294ba57a629aa1619d791c">
+                    <source xml:space="preserve">kipm</source>
+                    <note>MASS:KIPM</note>
+                </trans-unit>
+                <trans-unit id="LABEL_c7b2248ed768e2d99baa4cb04686da47" resname="LABEL_c7b2248ed768e2d99baa4cb04686da47">
+                    <source xml:space="preserve">week</source>
+                    <note>TIME:WEEK</note>
+                </trans-unit>
+                <trans-unit id="LABEL_527f5c03a9601e427dcdf8e4e80bd7d5" resname="LABEL_527f5c03a9601e427dcdf8e4e80bd7d5">
+                    <source xml:space="preserve">YEAR_SIDEREAL</source>
+                    <note>TIME:YEAR_SIDEREAL</note>
+                </trans-unit>
+                <trans-unit id="LABEL_2696d93fddb47e65bd89414892a4993e" resname="LABEL_2696d93fddb47e65bd89414892a4993e">
+                    <source xml:space="preserve">YEAR_TROPICAL</source>
+                    <note>TIME:YEAR_TROPICAL</note>
+                </trans-unit>
+                <trans-unit id="LABEL_98111f06e4390a4a0a0385d8ba6bea0e" resname="LABEL_98111f06e4390a4a0a0385d8ba6bea0e">
+                    <source xml:space="preserve">MKS</source>
+                    <note>TIME:MKS</note>
+                </trans-unit>
+                <trans-unit id="LABEL_4db35a145a6bc1a5767791947aa8ff94" resname="LABEL_4db35a145a6bc1a5767791947aa8ff94">
+                    <source xml:space="preserve">kmol</source>
+                    <note>MOLE:KMOL</note>
+                </trans-unit>
+                <trans-unit id="LABEL_110f232717afd63b8aca77c90eef7106" resname="LABEL_110f232717afd63b8aca77c90eef7106">
+                    <source xml:space="preserve">lb-mol</source>
+                    <note>MOLE:LB-MOL</note>
+                </trans-unit>
+                <trans-unit id="LABEL_bcbbc58e0184710f999dc3e23e0fe32a" resname="LABEL_bcbbc58e0184710f999dc3e23e0fe32a">
+                    <source xml:space="preserve">m/sec²</source>
+                    <note>ACCELERATION:M/SEC.SQ</note>
+                </trans-unit>
+                <trans-unit id="LABEL_e0dbf454f7ef69f2bdd5218c4dbad873" resname="LABEL_e0dbf454f7ef69f2bdd5218c4dbad873">
+                    <source xml:space="preserve">cm/sec²</source>
+                    <note>ACCELERATION:CM/SEC.SQ</note>
+                </trans-unit>
+                <trans-unit id="LABEL_fb8faee017faad86674216e45e8a89d1" resname="LABEL_fb8faee017faad86674216e45e8a89d1">
+                    <source xml:space="preserve">ft/sec²</source>
+                    <note>ACCELERATION:FT/SEC.SQ</note>
+                </trans-unit>
+                <trans-unit id="LABEL_5f0560789bbf14d549fb3d4fd71edfc4" resname="LABEL_5f0560789bbf14d549fb3d4fd71edfc4">
+                    <source xml:space="preserve">sq.mu</source>
+                    <note>AREA:SQ.MU</note>
+                </trans-unit>
+                <trans-unit id="LABEL_cd2202f16e7471afae8f803402b33adf" resname="LABEL_cd2202f16e7471afae8f803402b33adf">
+                    <source xml:space="preserve">sq.dm</source>
+                    <note>AREA:SQ.DM</note>
+                </trans-unit>
+                <trans-unit id="LABEL_c5192379c7fe3df0b0d9fad32ba085ce" resname="LABEL_c5192379c7fe3df0b0d9fad32ba085ce">
+                    <source xml:space="preserve">ARE</source>
+                    <note>AREA:ARE</note>
+                </trans-unit>
+                <trans-unit id="LABEL_fabdb6561676ea9379a3e30d0abcc0b2" resname="LABEL_fabdb6561676ea9379a3e30d0abcc0b2">
+                    <source xml:space="preserve">sq.chain</source>
+                    <note>AREA:SQ.CHAIN</note>
+                </trans-unit>
+                <trans-unit id="LABEL_f7b7490654b96d4dd3b7939671185da9" resname="LABEL_f7b7490654b96d4dd3b7939671185da9">
+                    <source xml:space="preserve">sq.us_survey_in</source>
+                    <note>AREA:SQ.US_SURVEY_IN</note>
+                </trans-unit>
+                <trans-unit id="LABEL_1a8aa664e437edbf6e3985c2a8790cd0" resname="LABEL_1a8aa664e437edbf6e3985c2a8790cd0">
+                    <source xml:space="preserve">sq.us_survey_ft</source>
+                    <note>AREA:SQ.US_SURVEY_FT</note>
+                </trans-unit>
+                <trans-unit id="LABEL_7e21f8026a9d2262d650b31de22812af" resname="LABEL_7e21f8026a9d2262d650b31de22812af">
+                    <source xml:space="preserve">sq.us_survey_yrd</source>
+                    <note>AREA:SQ.US_SURVEY_YRD</note>
+                </trans-unit>
+                <trans-unit id="LABEL_495697f9159b3d20767e6241bc7104a0" resname="LABEL_495697f9159b3d20767e6241bc7104a0">
+                    <source xml:space="preserve">sq.us_survey_mile</source>
+                    <note>AREA:SQ.US_SURVEY_MILE</note>
+                </trans-unit>
+                <trans-unit id="LABEL_1ad51ea6a228d563e94ec65a6c8a989c" resname="LABEL_1ad51ea6a228d563e94ec65a6c8a989c">
+                    <source xml:space="preserve">sq.us_survey_chain</source>
+                    <note>AREA:SQ.US_SURVEY_CHAIN</note>
+                </trans-unit>
+                <trans-unit id="LABEL_922d57c282e6fdaa5432963d6883cef9" resname="LABEL_922d57c282e6fdaa5432963d6883cef9">
+                    <source xml:space="preserve">us_survey_acre</source>
+                    <note>AREA:US_SURVEY_ACRE</note>
+                </trans-unit>
+                <trans-unit id="LABEL_2efdded5ab0c21f8ff695f8f13c2e852" resname="LABEL_2efdded5ab0c21f8ff695f8f13c2e852">
+                    <source xml:space="preserve">n/cub.ft</source>
+                    <note>FORCE_DENSITY:N/CUB.FT</note>
+                </trans-unit>
+                <trans-unit id="LABEL_77dc904a310a90c26d896bf339e2340e" resname="LABEL_77dc904a310a90c26d896bf339e2340e">
+                    <source xml:space="preserve">milliampere</source>
+                    <note>CURRENT:MILLIAMPERE</note>
+                </trans-unit>
+                <trans-unit id="LABEL_25f94103c1531f7545b30607b608554f" resname="LABEL_25f94103c1531f7545b30607b608554f">
+                    <source xml:space="preserve">microampere</source>
+                    <note>CURRENT:MICROAMPERE</note>
+                </trans-unit>
+                <trans-unit id="LABEL_dd1dde54d1de5649784c6026f88af4fd" resname="LABEL_dd1dde54d1de5649784c6026f88af4fd">
+                    <source xml:space="preserve">coulomb</source>
+                    <note>ELECTRIC_CHARGE:COULOMB</note>
+                </trans-unit>
+                <trans-unit id="LABEL_54fd964919371023e02279845ad6262a" resname="LABEL_54fd964919371023e02279845ad6262a">
+                    <source xml:space="preserve">j/kg</source>
+                    <note>SPECIFIC_ENERGY:J/KG</note>
+                </trans-unit>
+                <trans-unit id="LABEL_6aea7ba4411ed7c99d1cba2b968a01f9" resname="LABEL_6aea7ba4411ed7c99d1cba2b968a01f9">
+                    <source xml:space="preserve">j/(mol*k)</source>
+                    <note>SPECIFIC_HEAT_CAPACITY_MOLAR:J/(MOL*K)</note>
+                </trans-unit>
+                <trans-unit id="LABEL_91a1a1d791b01bd483347573641b70d7" resname="LABEL_91a1a1d791b01bd483347573641b70d7">
+                    <source xml:space="preserve">cub.in/sec</source>
+                    <note>FLOW:CUB.IN/SEC</note>
+                </trans-unit>
+                <trans-unit id="LABEL_10592f3a7280dd4dd4c1a2809f17e80f" resname="LABEL_10592f3a7280dd4dd4c1a2809f17e80f">
+                    <source xml:space="preserve">cub.in/min</source>
+                    <note>FLOW:CUB.IN/MIN</note>
+                </trans-unit>
+                <trans-unit id="LABEL_126ec9f1933a5a5c2fdb6c77cc5b5eba" resname="LABEL_126ec9f1933a5a5c2fdb6c77cc5b5eba">
+                    <source xml:space="preserve">acre_in/day</source>
+                    <note>FLOW:ACRE_IN/DAY</note>
+                </trans-unit>
+                <trans-unit id="LABEL_57f30999fbc50bbba30d13b71c682621" resname="LABEL_57f30999fbc50bbba30d13b71c682621">
+                    <source xml:space="preserve">khz</source>
+                    <note>FREQUENCY:KHZ</note>
+                </trans-unit>
+                <trans-unit id="LABEL_9aa52783522c6721847d7bec93d40351" resname="LABEL_9aa52783522c6721847d7bec93d40351">
+                    <source xml:space="preserve">mhz</source>
+                    <note>FREQUENCY:MHZ</note>
+                </trans-unit>
+                <trans-unit id="LABEL_c781ed24e0c2a6889b7dc14537823ee9" resname="LABEL_c781ed24e0c2a6889b7dc14537823ee9">
+                    <source xml:space="preserve">cub.m/(sq.m*sec)</source>
+                    <note>SURFACE_FLOW_RATE:CUB.M/(SQ.M*SEC)</note>
+                </trans-unit>
+                <trans-unit id="LABEL_524b69afe9c18c8437dce63b4f2bd1f9" resname="LABEL_524b69afe9c18c8437dce63b4f2bd1f9">
+                    <source xml:space="preserve">ozf</source>
+                    <note>FORCE:OZF</note>
+                </trans-unit>
+                <trans-unit id="LABEL_3a37375269fd36ffd4b3a2c653ee8bfc" resname="LABEL_3a37375269fd36ffd4b3a2c653ee8bfc">
+                    <source xml:space="preserve">pdl</source>
+                    <note>FORCE:PDL</note>
+                </trans-unit>
+                <trans-unit id="LABEL_5a05836bd0943469a544a76180be4128" resname="LABEL_5a05836bd0943469a544a76180be4128">
+                    <source xml:space="preserve">KIPF</source>
+                    <note>FORCE:KIPF</note>
+                </trans-unit>
+                <trans-unit id="LABEL_d70e1bfe0f587ec5494110bec42a6d50" resname="LABEL_d70e1bfe0f587ec5494110bec42a6d50">
+                    <source xml:space="preserve">w/sq.m</source>
+                    <note>HEAT_FLUX_DENSITY:W/SQ.M</note>
+                </trans-unit>
+                <trans-unit id="LABEL_61d5ce5dd32fff41de7a238cbbbe9578" resname="LABEL_61d5ce5dd32fff41de7a238cbbbe9578">
+                    <source xml:space="preserve">N_CM</source>
+                    <note>TORQUE:N_CM</note>
+                </trans-unit>
+                <trans-unit id="LABEL_eddd72f0c0383aa1fbf5fb66ce78610e" resname="LABEL_eddd72f0c0383aa1fbf5fb66ce78610e">
+                    <source xml:space="preserve">mol/cub.dm</source>
+                    <note>MOLAR_CONCENTRATION:MOL/CUB.DM</note>
+                </trans-unit>
+                <trans-unit id="LABEL_2022c5314d461b03fada7ad6722640ac" resname="LABEL_2022c5314d461b03fada7ad6722640ac">
+                    <source xml:space="preserve">micromol/cub.dm</source>
+                    <note>MOLAR_CONCENTRATION:MICROMOL/CUB.DM</note>
+                </trans-unit>
+                <trans-unit id="LABEL_3f09075f782fdbfe02ab1879e9318d99" resname="LABEL_3f09075f782fdbfe02ab1879e9318d99">
+                    <source xml:space="preserve">nmol/cub.dm</source>
+                    <note>MOLAR_CONCENTRATION:NMOL/CUB.DM</note>
+                </trans-unit>
+                <trans-unit id="LABEL_92c2a3c41180c5c4d694c79826cda264" resname="LABEL_92c2a3c41180c5c4d694c79826cda264">
+                    <source xml:space="preserve">PICOMOL/CUB.DM</source>
+                    <note>MOLAR_CONCENTRATION:PICOMOL/CUB.DM</note>
+                </trans-unit>
+                <trans-unit id="LABEL_9b8d7a06849b13ec00cb58fc062154ea" resname="LABEL_9b8d7a06849b13ec00cb58fc062154ea">
+                    <source xml:space="preserve">mol/cub.ft</source>
+                    <note>MOLAR_CONCENTRATION:MOL/CUB.FT</note>
+                </trans-unit>
+                <trans-unit id="LABEL_b397a2284c8f915348384eacfc564c8c" resname="LABEL_b397a2284c8f915348384eacfc564c8c">
+                    <source xml:space="preserve">pa_gauge</source>
+                    <note>PRESSURE:PA_GAUGE</note>
+                </trans-unit>
+                <trans-unit id="LABEL_ee3adb6531d9f1ef2d1f2d75dffec924" resname="LABEL_ee3adb6531d9f1ef2d1f2d75dffec924">
+                    <source xml:space="preserve">ksi</source>
+                    <note>PRESSURE:KSI</note>
+                </trans-unit>
+                <trans-unit id="LABEL_8bdf74282e6ad6fc7c66f6a8d82c9f0d" resname="LABEL_8bdf74282e6ad6fc7c66f6a8d82c9f0d">
+                    <source xml:space="preserve">cm/revolution</source>
+                    <note>THREAD_PITCH:CM/REVOLUTION</note>
+                </trans-unit>
+                <trans-unit id="LABEL_f1fc0616acca3e8985fdec88e4958955" resname="LABEL_f1fc0616acca3e8985fdec88e4958955">
+                    <source xml:space="preserve">mm/sec</source>
+                    <note>VELOCITY:MM/SEC</note>
+                </trans-unit>
+                <trans-unit id="LABEL_35889b42512006274ceadb1de433c0b3" resname="LABEL_35889b42512006274ceadb1de433c0b3">
+                    <source xml:space="preserve">km/sec</source>
+                    <note>VELOCITY:KM/SEC</note>
+                </trans-unit>
+                <trans-unit id="LABEL_91a71286ad00bc16f6469461a5324f85" resname="LABEL_91a71286ad00bc16f6469461a5324f85">
+                    <source xml:space="preserve">yrd/sec</source>
+                    <note>VELOCITY:YRD/SEC</note>
+                </trans-unit>
+                <trans-unit id="LABEL_7e0c891e4d6ba268a3e3b8fa9a9f893a" resname="LABEL_7e0c891e4d6ba268a3e3b8fa9a9f893a">
+                    <source xml:space="preserve">poise</source>
+                    <note>DYNAMIC_VISCOSITY:POISE</note>
+                </trans-unit>
+                <trans-unit id="LABEL_0e8cd2b7d5ecec4e8506d393d9aeda19" resname="LABEL_0e8cd2b7d5ecec4e8506d393d9aeda19">
+                    <source xml:space="preserve">lbm/(ft*s)</source>
+                    <note>DYNAMIC_VISCOSITY:LBM/(FT*S)</note>
+                </trans-unit>
+                <trans-unit id="LABEL_0a37e7199ef1d531b1fec6507d6efff5" resname="LABEL_0a37e7199ef1d531b1fec6507d6efff5">
+                    <source xml:space="preserve">cub.mu</source>
+                    <note>VOLUME:CUB.MU</note>
+                </trans-unit>
+                <trans-unit id="LABEL_66b30c156bfce70559ca9103a88c63bf" resname="LABEL_66b30c156bfce70559ca9103a88c63bf">
+                    <source xml:space="preserve">cub.mm</source>
+                    <note>VOLUME:CUB.MM</note>
+                </trans-unit>
+                <trans-unit id="LABEL_f088cf2c314caff44f9d20d4df84f3c6" resname="LABEL_f088cf2c314caff44f9d20d4df84f3c6">
+                    <source xml:space="preserve">cub.dm</source>
+                    <note>VOLUME:CUB.DM</note>
+                </trans-unit>
+                <trans-unit id="LABEL_b515e459b1b7f3d3195f67e362320407" resname="LABEL_b515e459b1b7f3d3195f67e362320407">
+                    <source xml:space="preserve">cub.km</source>
+                    <note>VOLUME:CUB.KM</note>
+                </trans-unit>
+                <trans-unit id="LABEL_72c8366fb7cb1ab6f1b9e6708a216007" resname="LABEL_72c8366fb7cb1ab6f1b9e6708a216007">
+                    <source xml:space="preserve">microlitre</source>
+                    <note>VOLUME:MICROLITRE</note>
+                </trans-unit>
+                <trans-unit id="LABEL_feef675b15582c2df03c9876b3f8dc74" resname="LABEL_feef675b15582c2df03c9876b3f8dc74">
+                    <source xml:space="preserve">cub.mile</source>
+                    <note>VOLUME:CUB.MILE</note>
+                </trans-unit>
+                <trans-unit id="LABEL_85f1d7f11798b8c78893eed98f3674e0" resname="LABEL_85f1d7f11798b8c78893eed98f3674e0">
+                    <source xml:space="preserve">cub.m/cub.m</source>
+                    <note>VOLUME_RATIO:CUB.M/CUB.M</note>
+                </trans-unit>
+                <trans-unit id="LABEL_8390e7fe8e9c7fc5530ebd34e04aaad6" resname="LABEL_8390e7fe8e9c7fc5530ebd34e04aaad6">
+                    <source xml:space="preserve">litre/litre</source>
+                    <note>VOLUME_RATIO:LITRE/LITRE</note>
+                </trans-unit>
+                <trans-unit id="LABEL_1558b38bcf9b6929535cd6587800a911" resname="LABEL_1558b38bcf9b6929535cd6587800a911">
+                    <source xml:space="preserve">PI</source>
+                    <note>ONE:PI</note>
+                </trans-unit>
+                <trans-unit id="LABEL_920a25c967a21801c0d0026c32441ebe" resname="LABEL_920a25c967a21801c0d0026c32441ebe">
+                    <source xml:space="preserve">PI/4</source>
+                    <note>ONE:PI/4</note>
+                </trans-unit>
+                <trans-unit id="LABEL_b335238a1fcd3a7bb59d41a9d8ad9907" resname="LABEL_b335238a1fcd3a7bb59d41a9d8ad9907">
+                    <source xml:space="preserve">PI/2</source>
+                    <note>ONE:PI/2</note>
+                </trans-unit>
+                <trans-unit id="LABEL_0100c26926ac2e1483eebb9d1b56957e" resname="LABEL_0100c26926ac2e1483eebb9d1b56957e">
+                    <source xml:space="preserve">2PI</source>
+                    <note>ONE:2PI</note>
+                </trans-unit>
+                <trans-unit id="LABEL_ce087dd8046ba492ebeacce49aab6df1" resname="LABEL_ce087dd8046ba492ebeacce49aab6df1">
+                    <source xml:space="preserve">360DEG</source>
+                    <note>ANGLE:360DEG</note>
+                </trans-unit>
+                <trans-unit id="LABEL_df78502cd014ee9f2d856d27a82ca2a2" resname="LABEL_df78502cd014ee9f2d856d27a82ca2a2">
+                    <source xml:space="preserve">STD_G</source>
+                    <note>ACCELERATION:STD_G</note>
+                </trans-unit>
+                <trans-unit id="LABEL_0c28dcfccdfa857043545ff0ed4fe6e3" resname="LABEL_0c28dcfccdfa857043545ff0ed4fe6e3">
+                    <source xml:space="preserve">deci</source>
+                    <note>ONE:DECI</note>
+                </trans-unit>
+                <trans-unit id="LABEL_a29e9729213bd4dc800f39674250610c" resname="LABEL_a29e9729213bd4dc800f39674250610c">
+                    <source xml:space="preserve">centi</source>
+                    <note>ONE:CENTI</note>
+                </trans-unit>
+                <trans-unit id="LABEL_ab9871cd9dcb367fd091c39d68e0012c" resname="LABEL_ab9871cd9dcb367fd091c39d68e0012c">
+                    <source xml:space="preserve">milli</source>
+                    <note>ONE:MILLI</note>
+                </trans-unit>
+                <trans-unit id="LABEL_a3b1b8be455a6feea0ba2b1f925d2c0e" resname="LABEL_a3b1b8be455a6feea0ba2b1f925d2c0e">
+                    <source xml:space="preserve">micro</source>
+                    <note>ONE:MICRO</note>
+                </trans-unit>
+                <trans-unit id="LABEL_777fd2812adc8b7ee3ac01dbfd086dbe" resname="LABEL_777fd2812adc8b7ee3ac01dbfd086dbe">
+                    <source xml:space="preserve">nano</source>
+                    <note>ONE:NANO</note>
+                </trans-unit>
+                <trans-unit id="LABEL_ba64e4054588b335014b8eda76f591fc" resname="LABEL_ba64e4054588b335014b8eda76f591fc">
+                    <source xml:space="preserve">pico</source>
+                    <note>ONE:PICO</note>
+                </trans-unit>
+                <trans-unit id="LABEL_cf3dffa380bc73602b4e670ac09ccd4f" resname="LABEL_cf3dffa380bc73602b4e670ac09ccd4f">
+                    <source xml:space="preserve">FEMTO</source>
+                    <note>ONE:FEMTO</note>
+                </trans-unit>
+                <trans-unit id="LABEL_a370cab10acc2f243a8b50e13e45940c" resname="LABEL_a370cab10acc2f243a8b50e13e45940c">
+                    <source xml:space="preserve">ATTO</source>
+                    <note>ONE:ATTO</note>
+                </trans-unit>
+                <trans-unit id="LABEL_a41e705e04c73747fa533799bf1a0347" resname="LABEL_a41e705e04c73747fa533799bf1a0347">
+                    <source xml:space="preserve">ZEPTO</source>
+                    <note>ONE:ZEPTO</note>
+                </trans-unit>
+                <trans-unit id="LABEL_ed9be5aeed4fd147d95bfdc05349a54d" resname="LABEL_ed9be5aeed4fd147d95bfdc05349a54d">
+                    <source xml:space="preserve">YOCTO</source>
+                    <note>ONE:YOCTO</note>
+                </trans-unit>
+                <trans-unit id="LABEL_009531590ed4fe9d6fd4d809d3abf464" resname="LABEL_009531590ed4fe9d6fd4d809d3abf464">
+                    <source xml:space="preserve">deka</source>
+                    <note>ONE:DEKA</note>
+                </trans-unit>
+                <trans-unit id="LABEL_c985f8158b987e3f0b5e6b8cfdb58dd7" resname="LABEL_c985f8158b987e3f0b5e6b8cfdb58dd7">
+                    <source xml:space="preserve">hecto</source>
+                    <note>ONE:HECTO</note>
+                </trans-unit>
+                <trans-unit id="LABEL_ee69644c45976a4d25b076ca57b1cace" resname="LABEL_ee69644c45976a4d25b076ca57b1cace">
+                    <source xml:space="preserve">kilo</source>
+                    <note>ONE:KILO</note>
+                </trans-unit>
+                <trans-unit id="LABEL_a371f9c1c026eb6fe710a5189dc04e5b" resname="LABEL_a371f9c1c026eb6fe710a5189dc04e5b">
+                    <source xml:space="preserve">MEGA</source>
+                    <note>ONE:MEGA</note>
+                </trans-unit>
+                <trans-unit id="LABEL_1d175600f3fe33e31bdc7d04475d74fb" resname="LABEL_1d175600f3fe33e31bdc7d04475d74fb">
+                    <source xml:space="preserve">GIGA</source>
+                    <note>ONE:GIGA</note>
+                </trans-unit>
+                <trans-unit id="LABEL_3f0ff479245ad8447c3f5fef05a398e9" resname="LABEL_3f0ff479245ad8447c3f5fef05a398e9">
+                    <source xml:space="preserve">TERA</source>
+                    <note>ONE:TERA</note>
+                </trans-unit>
+                <trans-unit id="LABEL_8afa23c1a5cfe7ca2762c8cf79389e06" resname="LABEL_8afa23c1a5cfe7ca2762c8cf79389e06">
+                    <source xml:space="preserve">PETA</source>
+                    <note>ONE:PETA</note>
+                </trans-unit>
+                <trans-unit id="LABEL_22126532f3570cbd9446365dedd458de" resname="LABEL_22126532f3570cbd9446365dedd458de">
+                    <source xml:space="preserve">EXA</source>
+                    <note>ONE:EXA</note>
+                </trans-unit>
+                <trans-unit id="LABEL_8e629ea204d3feb6bfa7b1eee06da022" resname="LABEL_8e629ea204d3feb6bfa7b1eee06da022">
+                    <source xml:space="preserve">ZETTA</source>
+                    <note>ONE:ZETTA</note>
+                </trans-unit>
+                <trans-unit id="LABEL_0326238884eb9b8bfb9db9e60d3c9099" resname="LABEL_0326238884eb9b8bfb9db9e60d3c9099">
+                    <source xml:space="preserve">YOTTA</source>
+                    <note>ONE:YOTTA</note>
+                </trans-unit>
             </group>
         </body>
     </file>

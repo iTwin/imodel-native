@@ -132,7 +132,7 @@ Utf8CP Unit::GetLabel() const
 
         if (m_displayLabel.empty())
             {
-            LOG.errorv("Missing localized label for Unit %s", GetName());
+            LOG.errorv("Missing localized label for Unit %s", fullUnitName.c_str());
             m_displayLabel = GetName();
             }
         }
