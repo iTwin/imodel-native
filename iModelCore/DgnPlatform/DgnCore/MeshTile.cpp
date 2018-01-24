@@ -1893,10 +1893,13 @@ TileGenerator::FutureGenerateTileResult TileGenerator::ProcessParentTile (Elemen
             isLeaf = true;
 
         GenerateTileResult result(m_progressMeter._WasAborted() ? TileGeneratorStatus::Aborted : TileGeneratorStatus::Success, tile.GetRoot());
-        if (tile.GetGeometries().empty())
+
+        // If all the geometry was too small for this tile's tolerance, and geometry collected at leaf tolerance exceeded max facet count,
+        // produce an empty parent tile and process children...
+        tile.SetIsEmpty(tile.GetGeometries().empty());
+        if (tile.GetIsEmpty() && isLeaf)
             return result;
 
-        tile.SetIsEmpty(false);
         tile.SetIsLeaf(isLeaf);
 
         if (isLeaf)
@@ -2171,6 +2174,7 @@ private:
 
     IFacetOptionsR              m_leafFacetOptions;
     IFacetOptionsPtr            m_targetFacetOptions;
+    mutable IFacetOptionsPtr    m_lineStyleFacetOptions;
     DgnElementId                m_curElemId;
     TileGenerationCacheCR       m_cache;
     TileDisplayParamsCache      m_displayParamsCache;
@@ -2200,6 +2204,7 @@ private:
 
     IFacetOptionsP _GetFacetOptionsP() override { return &GetFacetOptions(); }
     IFacetOptionsR GetFacetOptions() const { return LeafThresholdExceeded() ? *m_targetFacetOptions : m_leafFacetOptions; }
+    IFacetOptionsP GetLineStyleFacetOptions(LineStyleSymbCR) const;
 
     bool _ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic& gf) override;
     bool _ProcessSolidPrimitive(ISolidPrimitiveCR prim, SimplifyGraphic& gf) override;
@@ -2255,7 +2260,7 @@ public:
 
     void AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartCR geomPart, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams, ViewContextR viewContext);
     bool IsGeomPartContained (Render::GraphicBuilderR graphic, DgnGeometryPartCR geomPart, TransformCR subToGraphic) const;
-    virtual bool _DoLineStyleStroke(Render::LineStyleSymbCR lineStyleSymb, IFacetOptionsPtr&, SimplifyGraphic&) const override {double maxWidth = lineStyleSymb.GetStyleWidth(); return (0.0 == maxWidth || maxWidth > m_minLineStyleWidth);}
+    bool _DoLineStyleStroke(Render::LineStyleSymbCR lineStyleSymb, IFacetOptionsPtr&, SimplifyGraphic&) const override;
 
     DgnDbR GetDgnDb() const { return m_dgndb; }
     TileGenerationCacheCR GetCache() const { return m_cache; }
@@ -2298,6 +2303,45 @@ public:
             }
         }
 };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileGeometryProcessor::_DoLineStyleStroke(Render::LineStyleSymbCR lsSymb, IFacetOptionsPtr& facetOptions, SimplifyGraphic& gf) const
+    {
+    facetOptions = GetLineStyleFacetOptions(lsSymb);
+    return facetOptions.IsValid();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+IFacetOptionsP TileGeometryProcessor::GetLineStyleFacetOptions(LineStyleSymbCR lsSymb) const
+    {
+    if (!lsSymb.GetUseStroker())
+        return nullptr;
+
+    // NB: Initially we collect geometry as if this were a leaf tile.
+    // However large styled curves will quickly cause us to exceed our leaf facet count threshold.
+    // So stroke only if the line width is at least 5 pixels at tile (not leaf) tolerance, or if
+    // we have not yet exceeded the threshold.
+    // GetFacetOptions() returns the options for leaf tolerance if threshold not exceeded; for tile tolerance otherwise.
+    double pixelSize = GetFacetOptions().GetChordTolerance();
+    double maxWidth = lsSymb.GetStyleWidth();
+    constexpr double pixelThreshold = 5.0;
+
+    // ###TODO: width of 0 indicates what?
+    if (0.0 != pixelSize && 0.0 != maxWidth && maxWidth / pixelSize < pixelThreshold)
+        return nullptr;
+
+    if (m_lineStyleFacetOptions.IsNull())
+        {
+        m_lineStyleFacetOptions = IFacetOptions::CreateForCurves();
+        m_lineStyleFacetOptions->SetAngleTolerance(Angle::FromDegrees(5.0).Radians());
+        }
+
+    return m_lineStyleFacetOptions.get();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
