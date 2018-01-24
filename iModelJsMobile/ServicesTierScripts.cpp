@@ -696,11 +696,8 @@ Utf8CP UvHost::RequireScript()
             }
 
             static normalizeId (id) {
-                if (id.indexOf("/./") !== -1)
-                    throw new Error(id + " is not a normalized path. require should have normalized it");
-
-                //while (id.indexOf ("/./") !== -1)
-                //    id = id.replace ("/./", '/');
+                while (id.indexOf ("/./") !== -1)
+                    id = id.replace ("/./", '/');
 
                 return id;
             }
