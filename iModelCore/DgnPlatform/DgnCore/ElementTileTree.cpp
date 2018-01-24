@@ -822,17 +822,24 @@ BentleyStatus Loader::LoadGeometryFromModel(Render::Primitives::GeometryCollecti
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Loader::IsCacheable() const
     {
+    return GetElementTile().IsCacheable();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Tile::IsCacheable() const
+    {
 #if defined(DISABLE_TILE_CACHE)
     // Tile cache is really annoying when debugging tile generation code...
     return false;
 #else
     // Host can specify no caching.
-    if (!T_HOST.GetTileAdmin()._WantCachedTiles(m_tile->GetRoot().GetDgnDb()))
+    if (!T_HOST.GetTileAdmin()._WantCachedTiles(GetRoot().GetDgnDb()))
         return false;
 
     // Don't cache tiles refined for zoom...
-    auto const& tile = GetElementTile();
-    if (tile.HasZoomFactor() && tile.GetZoomFactor() > 1.0)
+    if (HasZoomFactor() && GetZoomFactor() > 1.0)
         return false;
 
     return true;
@@ -2791,5 +2798,105 @@ Render::GraphicPtr TileContext::_StrokeGeometry(GeometrySourceCR source, double 
     {
     Render::GraphicPtr graphic = source.Draw(*this, pixelSize);
     return WasAborted() ? nullptr : graphic;
+    }
+
+//=======================================================================================
+// Created specifically for capturing thumbnails. Has a single tile, whose range matches
+// that of a ViewContext's frustum and whose graphics are faceted to the tolerance
+// exactly appropriate for that frustum.
+// @bsistruct                                                   Paul.Connelly   01/18
+//=======================================================================================
+struct ThumbnailRoot : Root
+{
+    DEFINE_T_SUPER(Root);
+private:
+    ThumbnailRoot(GeometricModelR model, TransformCR transform, Render::SystemR system)
+        : T_Super(model, transform, system) { }
+
+    void _OnAddToRangeIndex(DRange3dCR, DgnElementId) override { }
+    void _OnRemoveFromRangeIndex(DRange3dCR, DgnElementId) override { }
+    void _OnUpdateRangeIndex(DRange3dCR, DRange3dCR, DgnElementId) override { }
+    void _OnProjectExtentsChanged(AxisAlignedBox3dCR) override { }
+
+    void LoadRootTile(DRange3dCR tileRange, GeometricModelR model);
+public:
+    virtual ~ThumbnailRoot() { ClearAllTiles(); }
+
+    static RefCountedPtr<ThumbnailRoot> Create(GeometricModelR model, RenderContextR context);
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   01/18
+//=======================================================================================
+struct ThumbnailTile : Tile
+{
+    DEFINE_T_SUPER(Tile);
+private:
+    bool IsCacheable() const override { return false; }
+
+    TileTree::TilePtr _CreateChild(TileTree::OctTree::TileId) const override { BeAssert(false); return nullptr; }
+    void _Invalidate() override { }
+    bool _IsInvalidated(TileTree::DirtyRangesCR) const override { return false; }
+    void _UpdateRange(DRange3dCR, DRange3dCR) override { }
+
+    ////SelectParent _SelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args) const override
+    ////    {
+    ////    BeAssert(nullptr == GetParent());
+    ////    BeAssert(selected.empty());
+    ////    selected.push_back(this);
+    ////    return SelectParent::No;
+    ////    }
+
+    bool _HasChildren() const override { return false; }
+    ChildTiles const* _GetChildren(bool) const override { return nullptr; }
+    void _ValidateChildren() const override { }
+    Utf8String _GetTileCacheKey() const override { return "NotCacheable!"; }
+public:
+    ThumbnailTile(DRange3dCR range, ThumbnailRoot& root) : T_Super(root, TileTree::OctTree::TileId::RootId(), nullptr, &range, true) { }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+RefCountedPtr<ThumbnailRoot> ThumbnailRoot::Create(GeometricModelR model, RenderContextR context)
+    {
+    BeAssert(DrawPurpose::CaptureThumbnail == context.GetDrawPurpose());
+    BeAssert(nullptr != context.GetRenderSystem());
+
+    if (nullptr == context.GetRenderSystem() || DgnDbStatus::Success != model.FillRangeIndex())
+        return nullptr;
+
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PSolidKernelManager::StartSession();
+
+    if (s_psolidMainThreadMark.IsNull())
+        s_psolidMainThreadMark = new PSolidThreadUtil::MainThreadMark();
+#endif
+
+    DRange3d frustumRange = context.GetViewportR().GetFrustum().ToRange();
+    if (model.Is3dModel())
+        frustumRange.ScaleAboutCenter(frustumRange, s_spatialRangeMultiplier);
+
+    DPoint3d centroid = DPoint3d::FromInterpolate(frustumRange.low, 0.5, frustumRange.high);
+    Transform transform = Transform::From(centroid);
+
+    auto root = new ThumbnailRoot(model, transform, *context.GetRenderSystem());
+
+    Transform rangeTransform;
+    rangeTransform.InverseOf(transform);
+    DRange3d tileRange;
+    rangeTransform.Multiply(tileRange, frustumRange);
+
+    root->m_rootTile = new ThumbnailTile(tileRange, *root);
+
+    return root;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+RootPtr Root::Create(GeometricModelR model, RenderContextR context)
+    {
+    return ThumbnailRoot::Create(model, context).get();
     }
 

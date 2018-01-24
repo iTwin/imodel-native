@@ -137,7 +137,7 @@ struct Root : TileTree::OctTree::Root
         ShowBoundingVolume = 1 << 0,
         ShowContentVolume = 1 << 1,
     };
-private:
+protected:
     struct SolidPrimitivePartMap
     {
         struct Key
@@ -186,6 +186,7 @@ private:
     bool LoadRootTile(DRange3dCR range, GeometricModelR model, bool populate);
 public:
     static RootPtr Create(GeometricModelR model, Render::SystemR system);
+    static RootPtr Create(GeometricModelR model, RenderContextR context);
     virtual ~Root() { ClearAllTiles(); }
 
     DgnModelId GetModelId() const { return m_modelId; }
@@ -220,7 +221,7 @@ struct Tile : TileTree::OctTree::Tile
 {
     DEFINE_T_SUPER(TileTree::OctTree::Tile);
 
-private:
+protected:
     struct DebugGraphics
     {
         Render::GraphicPtr  m_graphic;
@@ -291,6 +292,8 @@ public:
 
     bool _IsPartial() const override { return nullptr != m_generator.get(); }
     void UpdateRange(DRange3dCR parentOld, DRange3dCR parentNew, bool allowShrink);
+
+    virtual bool IsCacheable() const;
 };
 
 END_ELEMENT_TILETREE_NAMESPACE
