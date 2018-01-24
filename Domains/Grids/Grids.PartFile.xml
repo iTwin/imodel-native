@@ -72,6 +72,7 @@
     <Part Name="GridStrategies" BentleyBuildMakeFile="Grids/Strategies/GridStrategies.mke">
         <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
         <SubPart PartName="BuildingUtils" Repository="BuildingShared" PartFile="BuildingShared" />
+        <SubPart PartName="GeometryManipulationStrategies" Repository="BuildingShared" PartFile="BuildingShared" />
         <SubPart PartName="GridElements"/>
         <SubPart PartName="GridsApi"/>
         <Bindings>
