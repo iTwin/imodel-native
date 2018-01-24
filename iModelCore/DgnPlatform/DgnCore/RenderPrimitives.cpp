@@ -259,6 +259,31 @@ private:
                 //    DEBUG_PRINTF("Error %u retrieving raster", status);
 
                 //UNUSED_VARIABLE(status);
+
+#if defined(DEBUG_PRINT_GLYPH_RASTERS)
+                uint32_t imgWidth = m_image.GetWidth();
+                uint32_t imgHeight = m_image.GetHeight();
+                int imgBytesPerPixel = m_image.GetBytesPerPixel();
+                ByteStream const& imgByteStream = m_image.GetByteStream();
+                uint8_t const* imgData = imgByteStream.GetData();
+
+                DEBUG_PRINTF("");
+                DEBUG_PRINTF("Retrieving raster for glyph %d (%dx%d)", glyph.GetId(), imgWidth, imgHeight);
+
+                for (uint32_t y = 0; y < imgHeight; y++)
+                    {
+                    std::string str = "";
+                    for (uint32_t x = 0; x < imgWidth; x++)
+                        {
+                        uint32_t imgNdx = y * imgWidth * imgBytesPerPixel + x * imgBytesPerPixel;
+                        if (imgData[imgNdx + 3] > 0)
+                            str += "X";
+                        else
+                            str += " ";
+                        }
+                    DEBUG_PRINTF("%s", str.c_str());
+                    }
+#endif
                 }
 
             bool IsValid() const { return m_texture.IsValid() || m_image.IsValid(); }
@@ -269,7 +294,11 @@ private:
                     TextureKey key(m_name);
                     m_texture = system._FindTexture(key, db);
                     if (m_texture.IsNull())
-                        m_texture = system._CreateTexture(m_image, db, Texture::CreateParams(key));
+                        {
+                        Texture::CreateParams params(key);
+                        params.m_isGlyph = true;
+                        m_texture = system._CreateTexture(m_image, db, params);
+                        }
 
                     m_image.Invalidate();
                     BeAssert(m_texture.IsValid());
@@ -641,7 +670,7 @@ DisplayParamsCPtr DisplayParams::CloneForRasterText(TextureR texture) const
     BeAssert(Type::Text == GetType());
     auto clone = new DisplayParams(*this);
 
-    TextureMapping::Trans2x3 tf(0.0, 1.0, 0.0, -1.0, 0.0, 0.0);
+    TextureMapping::Trans2x3 tf(0.0, 1.0, 0.0, 1.0, 0.0, 0.0);
     TextureMapping::Params params;
     params.SetWeight(0.0);
     params.SetTransform(&tf);
