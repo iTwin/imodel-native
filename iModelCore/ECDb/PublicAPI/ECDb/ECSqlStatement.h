@@ -474,9 +474,13 @@ struct EXPORT_VTABLE_ATTRIBUTE CachedECSqlStatement final : ECSqlStatement
     private:
         mutable BeAtomic<uint32_t> m_refCount;
         bool m_isInCache;
+        ECDbCR m_ecdb;
+        DbCP m_datasource;
+        ECCrudWriteToken const* m_crudWriteToken;
         ECSqlStatementCache const& m_cache;
 
-        explicit CachedECSqlStatement(ECSqlStatementCache const& cache) : ECSqlStatement(), m_isInCache(true), m_cache(cache) {}
+        explicit CachedECSqlStatement(ECSqlStatementCache const& cache, ECDbCR ecdb, DbCP datasource, ECCrudWriteToken const* crudWriteToken) 
+            : ECSqlStatement(), m_isInCache(true), m_cache(cache), m_ecdb(ecdb), m_datasource(datasource), m_crudWriteToken(crudWriteToken) {}
 
     public:
         DEFINE_BENTLEY_NEW_DELETE_OPERATORS
@@ -524,9 +528,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatementCache final
         ECSqlStatementCache(ECSqlStatementCache const&) = delete;
         ECSqlStatementCache& operator=(ECSqlStatementCache const&) = delete;
 
-        CachedECSqlStatement* FindEntry(Utf8CP ecsql) const; // Requires m_mutex locked
-        void AddStatement(CachedECSqlStatementPtr&, ECDbCR, Utf8CP ecsql) const; // Requires m_mutex locked
-        void GetPreparedStatement(CachedECSqlStatementPtr&, ECDbCR, Utf8CP, ECCrudWriteToken const*) const;
+        CachedECSqlStatement* FindEntry(ECDbCR ecdb, DbCP datasource, ECCrudWriteToken const* crudWriteToken, Utf8CP ecsql) const; // Requires m_mutex locked
+        void AddStatement(CachedECSqlStatementPtr&, ECDbCR, DbCP datasource, ECCrudWriteToken const* token, Utf8CP ecsql) const; // Requires m_mutex locked
+        void GetPreparedStatement(CachedECSqlStatementPtr&, ECDbCR ,DbCP, ECCrudWriteToken const*, Utf8CP ) const;
     public:
         //! Initializes a new ECSqlStatementCache of the specified size.
         //! @param [in] maxSize Maximum number of statements the cache can hold. If a new statement is added
@@ -555,6 +559,16 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatementCache final
         //! If the option is not set, nullptr can be passed for @p token.
         //! @return Prepared and ready-to-use statement or nullptr in case of preparation or other errors
         ECDB_EXPORT CachedECSqlStatementPtr GetPreparedStatement(ECDbCR ecdb, Utf8CP ecsql, ECCrudWriteToken const* token) const;
+
+        //! Gets a cached and prepared statement for the specified ECSQL.
+        //! If there was no statement in the cache for the ECSQL, a new one will be prepared and cached.
+        //! Otherwise an existing ready-to-use statement will be returned, i.e. clients neither need to call 
+        //! ECSqlStatement::Reset nor ECSqlStatement::ClearBindings on it.
+        //! @param [in] schemaManager schemaManager use to parse ECSqlStatement
+        //! @param [in] datasource BeSQLite connection use to execute ECSqlStatement
+        //! @param [in] ecsql ECSQL string for which to return a prepared statement
+        //! @return Prepared and ready-to-use statement or nullptr in case of preparation or other errors
+        ECDB_EXPORT CachedECSqlStatementPtr GetPreparedStatement(SchemaManagerCR schemaManager, DbCR datasource, Utf8CP ecsql) const;
 
         //! Returns whether the cache is currently empty or not.
         //! @return true if cache is empty, false otherwise
