@@ -17,6 +17,7 @@
 #include <DgnPlatform/DgnDb.h>
 #include <DgnPlatform/DgnCategory.h>
 #include <LinearReferencing/LinearReferencingApi.h>
+#include <CivilBaseGeometry/CivilBaseGeometryApi.h>
 
 
 #ifdef __ROADRAILALIGNMENT_BUILD__
@@ -143,11 +144,8 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 //-----------------------------------------------------------------------------------------
 ROADRAILALIGNMENT_TYPEDEFS(Alignment)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentCategoryModel)
-ROADRAILALIGNMENT_TYPEDEFS(AlignmentIntersectionInfo)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentModel)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentModelHandler)
-ROADRAILALIGNMENT_TYPEDEFS(AlignmentPair)
-ROADRAILALIGNMENT_TYPEDEFS(AlignmentPairEditor)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentProfileViewDefinition)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentReferentElement)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentStation)
@@ -157,17 +155,10 @@ ROADRAILALIGNMENT_TYPEDEFS(HorizontalAlignmentsPortion)
 ROADRAILALIGNMENT_TYPEDEFS(HorizontalAlignmentModel)
 ROADRAILALIGNMENT_TYPEDEFS(VerticalAlignment)
 ROADRAILALIGNMENT_TYPEDEFS(VerticalAlignmentModel)
-ROADRAILALIGNMENT_TYPEDEFS(DividedRoadAlignmentPairEditor)
-ROADRAILALIGNMENT_TYPEDEFS(StationRange)
-ROADRAILALIGNMENT_TYPEDEFS(StationRangeEdit)
 
 ROADRAILALIGNMENT_REFCOUNTED_PTR(Alignment)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentCategoryModel)
-ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentIntersection)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentModel)
-ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentPair)
-ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentPairEditor)
-ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentPairIntersection)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentProfileViewDefinition)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentStation)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentStationingTranslator)
@@ -177,125 +168,3 @@ ROADRAILALIGNMENT_REFCOUNTED_PTR(HorizontalAlignmentsPortion)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(HorizontalAlignmentModel)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(VerticalAlignment)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(VerticalAlignmentModel)
-ROADRAILALIGNMENT_REFCOUNTED_PTR(DividedRoadAlignmentPairEditor)
-ROADRAILALIGNMENT_REFCOUNTED_PTR(RoadAlignmentPairEditor)
-
-
-
-BEGIN_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
-
-enum class StationRangeOverlap
-    {
-    NoOverlap = 0,    //! self-explanatory
-    LeftOverlap = 1,    //! rhs starts before and ends inside
-    RightOverlap = 2,    //! rhs starts inside and ends after
-    FullyEncapsulated = 3,    //! rhs starts before and ends after
-    FullyEnvelops = 4     //! rhs starts and ends inside
-    };
-
-//=======================================================================================
-//! A StationRange is a context object carrying the start and end stations
-//! of a section of a RoadRange alignment
-//=======================================================================================
-struct StationRange
-{
-    double startStation;
-    double endStation;
-
-    StationRange() :startStation(NAN), endStation(NAN) {}
-    StationRange(double start, double end) :startStation(start), endStation(end) {}
-
-    bool operator==(StationRangeCR rhs) const { return (startStation == rhs.startStation) && (endStation == rhs.endStation); }
-
-    double Distance() const { return fabs(endStation - startStation); }
-    bool IsValid() const { return (!isnan(startStation) && !isnan(endStation) && startStation <= endStation); }
-
-    bool ContainsInclusive(double val) const { return (val >= startStation && val <= endStation); }
-    bool ContainsExclusive(double val) const { return (val > startStation && val < endStation); }
-
-    void Extend(StationRangeCR rhs)
-        {
-        if (!rhs.IsValid())
-            return;
-
-        // MIN, MAX macros causing problems on iOS.
-        startStation = startStation <= rhs.startStation ? startStation : rhs.startStation;
-        endStation = endStation > rhs.endStation ? endStation : rhs.endStation;
-        }
-
-    //! Calculates the distance to the closest station of the range
-    //! @remarks returns 0.0 if the value is inside the range
-    double DistanceFromRange(double val) const
-        {
-        if (!IsValid())
-            return -1.0;
-
-        if (ContainsInclusive(val))
-            return 0.0;
-
-        if (startStation > val)
-            return fabs(startStation - val);
-
-        if (endStation < val)
-            return fabs(endStation - val);
-
-        BeAssert(0);
-        return 0.0;
-        }
-
-
-    // Return the enumeration as this compares to the stationRange argument 'rhs'
-    StationRangeOverlap Overlaps(StationRangeCR stationRange) const { return Overlaps(*this, stationRange); }
-    static StationRangeOverlap Overlaps(StationRangeCR stationRange1, StationRangeCR stationRange2)
-        {
-        // start is in
-        bool startin = false; bool endin = false;
-        if (stationRange2.startStation >= stationRange1.startStation && stationRange2.startStation <= stationRange1.endStation)
-            startin = true;
-        if (stationRange2.endStation >= stationRange1.startStation && stationRange2.endStation <= stationRange1.endStation)
-            endin = true;
-        if (startin && endin)
-            return StationRangeOverlap::FullyEnvelops;
-        if (startin)
-            return StationRangeOverlap::RightOverlap;
-        if (endin)
-            return StationRangeOverlap::LeftOverlap;
-
-        startin = false; endin = false;
-        if (stationRange1.startStation >= stationRange2.startStation && stationRange1.startStation <= stationRange2.endStation)
-            startin = true;
-        if (stationRange1.endStation >= stationRange2.startStation && stationRange1.endStation <= stationRange2.endStation)
-            endin = true;
-        if (startin && endin)
-            return StationRangeOverlap::FullyEncapsulated;
-        if (startin)
-            return StationRangeOverlap::LeftOverlap;
-        if (endin)
-            return StationRangeOverlap::RightOverlap;
-
-        return StationRangeOverlap::NoOverlap;
-        }
-}; // StationRange
-
-//=======================================================================================
-//! A StationRangeEdit is a context object carrying information about a 
-//! station change in a section of a RoadRange alignment
-//=======================================================================================
-struct StationRangeEdit
-{
-    StationRange preEditRange;
-    StationRange postEditRange;
-
-    StationRangeEdit() {}
-    StationRangeEdit(StationRangeCR stationRange) : preEditRange(stationRange), postEditRange(stationRange) {}
-    StationRangeEdit(StationRangeCR preEdit, StationRangeCR postEdit) : preEditRange(preEdit), postEditRange(postEdit) {}
-
-    double Delta() const { return postEditRange.Distance() - preEditRange.Distance(); }
-    double Ratio() const
-        {
-        if (preEditRange.Distance() == 0.0) return 1.0;
-        return postEditRange.Distance() / preEditRange.Distance();
-        }
-}; // StationRangeEdit
-
-END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/RoadRailAlignment/AlignmentModel.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -44,7 +44,7 @@ public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(AlignmentModel)
     ROADRAILALIGNMENT_EXPORT HorizontalAlignmentsPortionCPtr QueryHorizontalPartition() const;
 
-    ROADRAILALIGNMENT_EXPORT static AlignmentModelPtr Query(Dgn::SubjectCR parentSubject, Utf8CP modelName);
+    ROADRAILALIGNMENT_EXPORT static AlignmentModelPtr Query(Dgn::SubjectCR parentSubject, Utf8CP modelName = nullptr);
     static AlignmentModelPtr Create(CreateParams const& params) { return new AlignmentModel(params); }
     static AlignmentModelCPtr Get(Dgn::DgnDbR db, Dgn::DgnModelId id) { return db.Models().Get< AlignmentModel >(id); }    
 }; // AlignmentModel

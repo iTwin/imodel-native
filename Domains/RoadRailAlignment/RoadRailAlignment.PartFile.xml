@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
 
     <Part Name="RoadRailAlignment" BentleyBuildMakeFile="RoadRailAlignment.mke">
+        <SubPart PartName="CivilBaseGeometry" PartFile="CivilBaseGeometry" Repository="Civil-Geometry"/> <!-- &&AG this is still WIP. Dependency to CivilBaseGeometry -->
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="LinearReferencing"            PartFile="LinearReferencing"         Repository="DgnDomains-LinearReferencing"/>
         <Bindings>

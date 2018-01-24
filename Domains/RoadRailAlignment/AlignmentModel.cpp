@@ -2,12 +2,13 @@
 |
 |     $Source: AlignmentModel.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "RoadRailAlignmentInternal.h"
 #include <RoadRailAlignment/AlignmentModel.h>
 #include <RoadRailAlignment/Alignment.h>
+#include <RoadRailAlignment/RoadRailAlignmentDomain.h>
 
 HANDLER_DEFINE_MEMBERS(AlignmentModelHandler)
 HANDLER_DEFINE_MEMBERS(HorizontalAlignmentModelHandler)
@@ -19,7 +20,7 @@ HANDLER_DEFINE_MEMBERS(VerticalAlignmentModelHandler)
 AlignmentModelPtr AlignmentModel::Query(Dgn::SubjectCR parentSubject, Utf8CP modelName)
     {
     DgnDbR db = parentSubject.GetDgnDb();
-    DgnCode partitionCode = SpatialLocationPartition::CreateCode(parentSubject, modelName);
+    DgnCode partitionCode = SpatialLocationPartition::CreateCode(parentSubject, (modelName) ? modelName : RoadRailAlignmentDomain::GetDefaultPartitionName());
     DgnElementId partitionId = db.Elements().QueryElementIdByCode(partitionCode);
     SpatialLocationPartitionCPtr partition = db.Elements().Get<SpatialLocationPartition>(partitionId);
     if (!partition.IsValid())

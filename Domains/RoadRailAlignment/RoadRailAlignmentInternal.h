@@ -2,7 +2,7 @@
 |
 |     $Source: RoadRailAlignmentInternal.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #ifndef __ROADRAILALIGNMENTINTERNAL_H__
@@ -10,6 +10,7 @@
 
 #include <RoadRailAlignment/RoadRailAlignment.h>
 #include <GeomSerialization/GeomSerializationApi.h>
+#include <CivilBaseGeometry/CivilBaseGeometryApi.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -18,6 +19,7 @@ USING_NAMESPACE_BENTLEY_DGN
 USING_BENTLEY_FORMATTING
 USING_NAMESPACE_BENTLEY_LINEARREFERENCING
 USING_NAMESPACE_BENTLEY_ROADRAILALIGNMENT
+USING_NAMESPACE_BENTLEY_CIVILGEOMETRY
 
 //-----------------------------------------------------------------------------------------
 // Logging macros

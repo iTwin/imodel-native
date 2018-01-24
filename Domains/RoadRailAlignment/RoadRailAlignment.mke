@@ -2,7 +2,7 @@
 #
 #     $Source: RoadRailAlignment.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 %include RoadRailAlignment.Analyzer.mki
@@ -50,23 +50,11 @@ $(o)AlignmentCategory$(oext) : $(_MakeFilePath)AlignmentCategory.cpp ${MultiComp
 
 $(o)AlignmentModel$(oext) : $(_MakeFilePath)AlignmentModel.cpp ${MultiCompileDepends} $(appPublicApi)AlignmentModel.h
 
-$(o)AlignmentPair$(oext) : $(_MakeFilePath)AlignmentPair.cpp ${MultiCompileDepends} $(appPublicApi)AlignmentPair.h
-
-$(o)AlignmentPairEditor$(oext) : $(_MakeFilePath)AlignmentPairEditor.cpp ${MultiCompileDepends} $(appPublicApi)AlignmentPairEditor.h
-
-$(o)AlignmentPairIntersection$(oext) : $(_MakeFilePath)AlignmentPairIntersection.cpp ${MultiCompileDepends} $(appPublicApi)AlignmentPairIntersection.h
-
 $(o)AlignmentProfileViewDefinition$(oext) : $(_MakeFilePath)AlignmentProfileViewDefinition.cpp ${MultiCompileDepends} $(appPublicApi)AlignmentProfileViewDefinition.h
 
 $(o)AlignmentReferent$(oext) : $(_MakeFilePath)AlignmentReferent.cpp ${MultiCompileDepends} $(appPublicApi)AlignmentReferent.h
 
 $(o)AlignmentXSViewDefinition$(oext) : $(_MakeFilePath)AlignmentXSViewDefinition.cpp ${MultiCompileDepends} $(appPublicApi)AlignmentXSViewDefinition.h
-
-$(o)GeometryDebug$(oext) : $(_MakeFilePath)GeometryDebug.cpp ${MultiCompileDepends} $(appPublicApi)GeometryDebug.h
-
-$(o)GeometryHelper$(oext) : $(_MakeFilePath)GeometryHelper.cpp ${MultiCompileDepends} $(appPublicApi)GeometryHelper.h
-
-$(o)RoadAlignmentPairEditor$(oext) : $(_MakeFilePath)RoadAlignmentPairEditor.cpp ${MultiCompileDepends} $(appPublicApi)RoadAlignmentPairEditor.h
 
 $(o)RoadRailAlignmentDomain$(oext) : $(_MakeFilePath)RoadRailAlignmentDomain.cpp ${MultiCompileDepends} $(appPublicApi)RoadRailAlignmentDomain.h
 
@@ -94,6 +82,7 @@ LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libex
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)LinearReferencing$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)CivilBaseGeometry$(libext)
 
 %include $(sharedMki)linkLibrary.mki
 
