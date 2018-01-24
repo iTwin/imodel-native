@@ -11,6 +11,7 @@
 #include <ECDb/ECInstanceId.h>
 #include <ECDb/IECSqlValue.h>
 #include <ECDb/IECSqlBinder.h>
+#include <ECDb/SchemaManager.h>
 #include <list>
 #include <json/json.h>
 
