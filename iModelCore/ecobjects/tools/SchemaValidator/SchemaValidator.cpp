@@ -56,7 +56,8 @@ struct ConversionOptions
 //--------------------------------------------------------------------------------------
 static int ValidateLoadedSchema(ECSchemaReadContextR context, ECSchemaR schema, ConversionOptions options)
     {
-    if (!ECSchemaValidator::Validate(schema))
+    ECSchemaValidator validator;
+    if (!validator.Validate(schema))
         return -1;
 
     if (options.IncludeAll)
@@ -222,6 +223,4 @@ int main(int argc, char** argv)
     s_logger->infov(L"Loading schema '%ls' for  validation", options.InputFile.GetName());
     return ValidateSchema(options);
     }
-
-
 

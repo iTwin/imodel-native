@@ -93,8 +93,6 @@ EC_TYPEDEFS(ECSchemaConverter);
 EC_TYPEDEFS(CustomECSchemaConverter);
 EC_TYPEDEFS(IECCustomAttributeConverter);
 EC_TYPEDEFS(ECSchemaValidator);
-EC_TYPEDEFS(IECSchemaValidator);
-EC_TYPEDEFS(IECClassValidator);
 
 EC_TYPEDEFS (CalculatedPropertySpecification);
 EC_TYPEDEFS (ParserRegex);

@@ -21,9 +21,12 @@ struct SchemaValidatorTests : ECTestFixture
 {
 private:
     ECSchemaPtr m_testBis;
+
 public:
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context;
+    ECSchemaValidator validator;
+
     void InitContextWithSchemaXml(Utf8CP schemaXml)
         {
         context = ECSchemaReadContext::CreateContext();
@@ -62,19 +65,9 @@ Utf8CP newStandardSchemaNames[] =
     "SchemaLocalizationCustomAttributes",
     };
 
-void CheckStandardAsReference(ECSchemaPtr schema, Utf8CP schemaName, ECSchemaReadContextPtr context, bool shouldPassValidation, Utf8CP message)
-    {
-    SchemaKey refKey = SchemaKey(schemaName, 1, 0);
-    ECSchemaPtr refSchema = context->LocateSchema(refKey, SchemaMatchType::LatestWriteCompatible);
-    ASSERT_TRUE(refSchema.IsValid());
-    schema->AddReferencedSchema(*refSchema.get());
-    EXPECT_TRUE(shouldPassValidation == ECSchemaValidator::Validate(*schema)) << message;
-    schema->RemoveReferencedSchema(*refSchema);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Dan.Perlman                          05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                             Dan.Perlman                          05/2017
+//---------------------------------------------------------------------------------------
 TEST_F(SchemaValidatorTests, TestLatestSchemaVersionValidation)
     {
     // Test failure if not latest EC Version schema
@@ -94,7 +87,7 @@ TEST_F(SchemaValidatorTests, TestLatestSchemaVersionValidation)
     InitBisContextWithSchemaXml(schemaXml);
     ASSERT_TRUE(schema.IsValid());
     EXPECT_FALSE(schema->IsECVersion(ECVersion::Latest));
-    EXPECT_FALSE(ECSchemaValidator::Validate(*schema)) << "TestSchema validated successfully even though it is not a valid EC" << ECSchema::GetECVersionString(ECVersion::Latest) << " schema";
+    EXPECT_FALSE(validator.Validate(*schema)) << "TestSchema validated successfully even though it is not a valid EC" << ECSchema::GetECVersionString(ECVersion::Latest) << " schema";
     }
 
     // Test failure to validate schema who ECXML version is not the latest ECXML version.
@@ -120,7 +113,7 @@ TEST_F(SchemaValidatorTests, TestLatestSchemaVersionValidation)
     InitBisContextWithSchemaXml(schemaXml);
     ASSERT_TRUE(schema.IsValid());
     EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
-    EXPECT_FALSE(ECSchemaValidator::Validate(*schema)) << "TestSchema failed to validate successfully even though it is a valid EC" << ECSchema::GetECVersionString(ECVersion::Latest) << " schema due to its xml version not being the latest";
+    EXPECT_FALSE(validator.Validate(*schema)) << "TestSchema failed to validate successfully even though it is a valid EC" << ECSchema::GetECVersionString(ECVersion::Latest) << " schema due to its xml version not being the latest";
     }
     // Test successfully validates latest schema
     {
@@ -146,7 +139,7 @@ TEST_F(SchemaValidatorTests, TestLatestSchemaVersionValidation)
     InitBisContextWithSchemaXml(schemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
     EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
-    EXPECT_TRUE(ECSchemaValidator::Validate(*schema)) << "TestSchema validates successfully as it is a valid EC" << ECSchema::GetECVersionString(ECVersion::Latest) << " schema";
+    EXPECT_TRUE(validator.Validate(*schema)) << "TestSchema validates successfully as it is a valid EC" << ECSchema::GetECVersionString(ECVersion::Latest) << " schema";
     }
 
     // Test uncessful validation of previous version schema
@@ -157,15 +150,25 @@ TEST_F(SchemaValidatorTests, TestLatestSchemaVersionValidation)
     InitBisContextWithSchemaXml(badSchemaXml);
     ASSERT_TRUE(schema.IsValid());
     EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
-    EXPECT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as the schema is not latest version";
+    EXPECT_FALSE(validator.Validate(*schema)) << "Should fail validation as the schema is not latest version";
     }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Dan.Perlman                          05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                             Dan.Perlman                          05/2017
+//---------------------------------------------------------------------------------------
 TEST_F(SchemaValidatorTests, TestSchemaStandardReferences)
     {
+    auto const CheckStandardAsReference = [](ECSchemaPtr schema, Utf8CP schemaName, ECSchemaReadContextPtr context, ECSchemaValidator* const validator, bool shouldPassValidation, Utf8CP message) -> void
+        {
+        SchemaKey refKey = SchemaKey(schemaName, 1, 0);
+        ECSchemaPtr refSchema = context->LocateSchema(refKey, SchemaMatchType::LatestWriteCompatible);
+        ASSERT_TRUE(refSchema.IsValid());
+        schema->AddReferencedSchema(*refSchema.get());
+        EXPECT_TRUE(shouldPassValidation == validator->Validate(*schema)) << message;
+        schema->RemoveReferencedSchema(*refSchema);
+        };
+
     // Test unsuccessful validation of reference to standard schema
     {
     Utf8String schemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -179,9 +182,9 @@ TEST_F(SchemaValidatorTests, TestSchemaStandardReferences)
     ASSERT_TRUE(schema.IsValid());
     EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
     for (auto oldSchemaName : oldStandardSchemaNames)
-        CheckStandardAsReference(schema, oldSchemaName, context, false, "Old standard schemas are used as a reference. Validation should fail.");
+        CheckStandardAsReference(schema, oldSchemaName, context, &validator, false, "Old standard schemas are used as a reference. Validation should fail.");
     for (auto newSchemaName : newStandardSchemaNames)
-        CheckStandardAsReference(schema, newSchemaName, context, true, "New standard schemas are used as a reference. Validation should succeed.");
+        CheckStandardAsReference(schema, newSchemaName, context, &validator, true, "New standard schemas are used as a reference. Validation should succeed.");
 
     // Use an updated ECDbMap schema as a reference
     Utf8String refXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -203,7 +206,7 @@ TEST_F(SchemaValidatorTests, TestSchemaStandardReferences)
     ECSchema::ReadFromXmlString(schema, goodSchemaXml.c_str(), *context);
     ASSERT_TRUE(schema.IsValid());
     EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
-    EXPECT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation as the referenced schema is the latest version of ECDbMap";
+    EXPECT_TRUE(validator.Validate(*schema)) << "Should succeed validation as the referenced schema is the latest version of ECDbMap";
     }
     }
 
@@ -220,7 +223,7 @@ TEST_F(SchemaValidatorTests, TestSchemasWithNameContainingDynamicApplyDynamicSch
     InitContextWithSchemaXml(goodSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
     EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
-    EXPECT_TRUE(ECSchemaValidator::Validate(*schema));
+    EXPECT_TRUE(validator.Validate(*schema));
     }
     // schemaName contains "Dynamic" and schema has the DynamicSchema custom attribute.
     {
@@ -233,7 +236,7 @@ TEST_F(SchemaValidatorTests, TestSchemasWithNameContainingDynamicApplyDynamicSch
     InitContextWithSchemaXml(goodSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
     EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
-    EXPECT_TRUE(ECSchemaValidator::Validate(*schema));
+    EXPECT_TRUE(validator.Validate(*schema));
     }
     // schemaName contains "dynamic" and does not have the DynamicSchema custom attribute.
     {
@@ -243,7 +246,7 @@ TEST_F(SchemaValidatorTests, TestSchemasWithNameContainingDynamicApplyDynamicSch
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
     EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
-    EXPECT_FALSE(ECSchemaValidator::Validate(*schema));
+    EXPECT_FALSE(validator.Validate(*schema));
     }
     // schemaName contains "dYnAmic" and does not have the DynamicSchema custom attribute.
     {
@@ -253,7 +256,7 @@ TEST_F(SchemaValidatorTests, TestSchemasWithNameContainingDynamicApplyDynamicSch
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
     EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
-    EXPECT_FALSE(ECSchemaValidator::Validate(*schema));
+    EXPECT_FALSE(validator.Validate(*schema));
     }
     // schemaName contains "Dynamic" and does not have the DynamicSchema custom attribute.
     {
@@ -263,7 +266,7 @@ TEST_F(SchemaValidatorTests, TestSchemasWithNameContainingDynamicApplyDynamicSch
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
     EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
-    EXPECT_FALSE(ECSchemaValidator::Validate(*schema));
+    EXPECT_FALSE(validator.Validate(*schema));
     }
     // schemaName contains "Dyanamic" as part of the word "Dynamically" and does not have the DynamicSchema custom attribute.
     {
@@ -273,7 +276,7 @@ TEST_F(SchemaValidatorTests, TestSchemasWithNameContainingDynamicApplyDynamicSch
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
     EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
-    EXPECT_FALSE(ECSchemaValidator::Validate(*schema));
+    EXPECT_FALSE(validator.Validate(*schema));
     }
     // schemaName contains "Dyanamic" surrounded by underscores and does not have the DynamicSchema custom attribute.
     {
@@ -283,7 +286,7 @@ TEST_F(SchemaValidatorTests, TestSchemasWithNameContainingDynamicApplyDynamicSch
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
     EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
-    EXPECT_FALSE(ECSchemaValidator::Validate(*schema));
+    EXPECT_FALSE(validator.Validate(*schema));
     }
     }
 
@@ -304,7 +307,7 @@ TEST_F(SchemaValidatorTests, RootEntityClassesMustDeriveFromBisHierarchy)
     InitBisContextWithSchemaXml(goodSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
     EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
-    EXPECT_TRUE(ECSchemaValidator::Validate(*schema));
+    EXPECT_TRUE(validator.Validate(*schema));
     }
     // Entity class "DerivedTestClass" derives from an entity class "BaseTestClass" that derives from a bis element.
     {
@@ -321,7 +324,7 @@ TEST_F(SchemaValidatorTests, RootEntityClassesMustDeriveFromBisHierarchy)
     InitBisContextWithSchemaXml(goodSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
     EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
-    EXPECT_TRUE(ECSchemaValidator::Validate(*schema));
+    EXPECT_TRUE(validator.Validate(*schema));
     }
     // Entity class written as a single tag does not derive from a bis element.
     {
@@ -333,7 +336,7 @@ TEST_F(SchemaValidatorTests, RootEntityClassesMustDeriveFromBisHierarchy)
     InitBisContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
     EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
-    EXPECT_FALSE(ECSchemaValidator::Validate(*schema));
+    EXPECT_FALSE(validator.Validate(*schema));
     }
     // Entity class written with an opening and closing tag does not derive from a bis element.
     {
@@ -345,7 +348,7 @@ TEST_F(SchemaValidatorTests, RootEntityClassesMustDeriveFromBisHierarchy)
     InitBisContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
     EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
-    EXPECT_FALSE(ECSchemaValidator::Validate(*schema));
+    EXPECT_FALSE(validator.Validate(*schema));
     }
     // Entity class is a derived class but does not derive from a bis element.
     {
@@ -367,13 +370,13 @@ TEST_F(SchemaValidatorTests, RootEntityClassesMustDeriveFromBisHierarchy)
     ECSchema::ReadFromXmlString(badSchema, badSchemaXml.c_str(), *context);
     ASSERT_TRUE(badSchema.IsValid());
     EXPECT_TRUE(badSchema->IsECVersion(ECVersion::Latest));
-    EXPECT_FALSE(ECSchemaValidator::Validate(*badSchema));
+    EXPECT_FALSE(validator.Validate(*badSchema));
     }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Dan.Perlman                          04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                             Dan.Perlman                          04/2017
+//---------------------------------------------------------------------------------------
 TEST_F(SchemaValidatorTests, MixinClassMayNotOverrideInheritedProperty)
     {
     // Test that a mixin class may not override an inherited property
@@ -399,14 +402,14 @@ TEST_F(SchemaValidatorTests, MixinClassMayNotOverrideInheritedProperty)
     ASSERT_EQ(ECObjectsStatus::Success, mixin0->CreatePrimitiveProperty(prop, "P1"));
     ASSERT_EQ(ECObjectsStatus::Success, mixin1->AddBaseClass(*mixin0));
 
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Mixin property does not override anything so validation should succeed";
+    ASSERT_TRUE(validator.Validate(*schema)) << "Mixin property does not override anything so validation should succeed";
     ASSERT_EQ(ECObjectsStatus::Success, mixin1->CreatePrimitiveProperty(prop, "P1"));
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Mixin overrides an inherited property so validation should fail";
+    ASSERT_FALSE(validator.Validate(*schema)) << "Mixin overrides an inherited property so validation should fail";
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Dan.Perlman                          06/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                             Dan.Perlman                          06/2017
+//---------------------------------------------------------------------------------------
 TEST_F(SchemaValidatorTests, BisCoreMultiAspectTests)
     {
     // Element Aspect Relationship Tests
@@ -422,7 +425,7 @@ TEST_F(SchemaValidatorTests, BisCoreMultiAspectTests)
         "</ECSchema>";
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "There is no relationship, so validation should fail";
+    ASSERT_FALSE(validator.Validate(*schema)) << "There is no relationship, so validation should fail";
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -455,7 +458,7 @@ TEST_F(SchemaValidatorTests, BisCoreMultiAspectTests)
     
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Missing base class in TestRelationship. Validation should fail.";
+    ASSERT_FALSE(validator.Validate(*schema)) << "Missing base class in TestRelationship. Validation should fail.";
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -488,7 +491,7 @@ TEST_F(SchemaValidatorTests, BisCoreMultiAspectTests)
         "</ECSchema>";
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Target constraint class is ElementMultiAspect, so validation should fail.";
+    ASSERT_FALSE(validator.Validate(*schema)) << "Target constraint class is ElementMultiAspect, so validation should fail.";
     }
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -502,7 +505,7 @@ TEST_F(SchemaValidatorTests, BisCoreMultiAspectTests)
         "</ECSchema>";
     InitContextWithSchemaXml(goodSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "There is no relationship but the modifier is abstract, so validation should succeed";
+    ASSERT_TRUE(validator.Validate(*schema)) << "There is no relationship but the modifier is abstract, so validation should succeed";
     }
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -524,7 +527,7 @@ TEST_F(SchemaValidatorTests, BisCoreMultiAspectTests)
         "</ECSchema>";
     InitBisContextWithSchemaXml(goodSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "This not a bis schema, so validation should succeed as this rule does not apply";
+    ASSERT_TRUE(validator.Validate(*schema)) << "This not a bis schema, so validation should succeed as this rule does not apply";
     }
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -557,7 +560,7 @@ TEST_F(SchemaValidatorTests, BisCoreMultiAspectTests)
         "</ECSchema>";
     InitContextWithSchemaXml(goodSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "BisCore example of a valid multi aspect relationship. Validation should succeed";
+    ASSERT_TRUE(validator.Validate(*schema)) << "BisCore example of a valid multi aspect relationship. Validation should succeed";
     }
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -593,7 +596,7 @@ TEST_F(SchemaValidatorTests, BisCoreMultiAspectTests)
         "</ECSchema>";
     InitContextWithSchemaXml(goodSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Aspect relationship is polymorphic but is supported by MultiAspect, so validation should succeed.";
+    ASSERT_TRUE(validator.Validate(*schema)) << "Aspect relationship is polymorphic but is supported by MultiAspect, so validation should succeed.";
     }
     }
     
@@ -614,7 +617,7 @@ TEST_F(SchemaValidatorTests, BisCoreUniqueAspectTests)
         "</ECSchema>";
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "There is no relationship, so validation should fail";
+    ASSERT_FALSE(validator.Validate(*schema)) << "There is no relationship, so validation should fail";
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -646,7 +649,7 @@ TEST_F(SchemaValidatorTests, BisCoreUniqueAspectTests)
         "</ECSchema>";
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Missing base class in TestRelationship. Validation should fail.";
+    ASSERT_FALSE(validator.Validate(*schema)) << "Missing base class in TestRelationship. Validation should fail.";
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -679,7 +682,7 @@ TEST_F(SchemaValidatorTests, BisCoreUniqueAspectTests)
         "</ECSchema>";
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Target constraint class is ElementUniqueAspect, so validation should fail.";
+    ASSERT_FALSE(validator.Validate(*schema)) << "Target constraint class is ElementUniqueAspect, so validation should fail.";
     }
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -693,7 +696,7 @@ TEST_F(SchemaValidatorTests, BisCoreUniqueAspectTests)
         "</ECSchema>";
     InitContextWithSchemaXml(goodSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "There is no relationship but the modifier is abstract, so validation should succeed";
+    ASSERT_TRUE(validator.Validate(*schema)) << "There is no relationship but the modifier is abstract, so validation should succeed";
     }
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -715,7 +718,7 @@ TEST_F(SchemaValidatorTests, BisCoreUniqueAspectTests)
         "</ECSchema>";
     InitBisContextWithSchemaXml(goodSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "This not a bis schema, so validation should succeed as this rule does not apply";
+    ASSERT_TRUE(validator.Validate(*schema)) << "This not a bis schema, so validation should succeed as this rule does not apply";
     }
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -748,7 +751,7 @@ TEST_F(SchemaValidatorTests, BisCoreUniqueAspectTests)
         "</ECSchema>";
     InitContextWithSchemaXml(goodSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "BisCore example of a valid multi aspect relationship. Validation should succeed";
+    ASSERT_TRUE(validator.Validate(*schema)) << "BisCore example of a valid multi aspect relationship. Validation should succeed";
     }
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -785,13 +788,13 @@ TEST_F(SchemaValidatorTests, BisCoreUniqueAspectTests)
 
     InitContextWithSchemaXml(goodSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "BisCore example of a valid unique aspect relationship. Validation should succeed";
+    ASSERT_TRUE(validator.Validate(*schema)) << "BisCore example of a valid unique aspect relationship. Validation should succeed";
     }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Carole.MacDonald                    07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                             Carole.MacDonald                    07/2017
+//---------------------------------------------------------------------------------------
 TEST_F(SchemaValidatorTests, EntityClassMayNotInheritFromCertainBisClasses)
     {
     // Class may not implement both bis:IParentElement and bis:ISubModeledElement
@@ -804,7 +807,7 @@ TEST_F(SchemaValidatorTests, EntityClassMayNotInheritFromCertainBisClasses)
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     ECSchema::ReadFromXmlString(schema, bisSchemaXml.c_str(), *context);
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "BisCore succeeds validation";
+    ASSERT_TRUE(validator.Validate(*schema)) << "BisCore succeeds validation";
 
     Utf8String badBisElementXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
         "<ECSchema schemaName='BadSchemaThatUsesBis' alias='bis' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
@@ -817,7 +820,7 @@ TEST_F(SchemaValidatorTests, EntityClassMayNotInheritFromCertainBisClasses)
     ECSchemaPtr schema2;
     ECSchema::ReadFromXmlString(schema2, badBisElementXml.c_str(), *context);
     ASSERT_TRUE(schema2.IsValid());
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema2)) << "Schema implements both IParentElement and ISubModeledElement so validation should fail.";
+    ASSERT_FALSE(validator.Validate(*schema2)) << "Schema implements both IParentElement and ISubModeledElement so validation should fail.";
 
     Utf8String goodBisElementXml1 = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
         "<ECSchema schemaName='GoodSchemaThatUsesBis1' alias='bis' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
@@ -829,7 +832,7 @@ TEST_F(SchemaValidatorTests, EntityClassMayNotInheritFromCertainBisClasses)
     ECSchemaPtr schema3;
     ECSchema::ReadFromXmlString(schema3, goodBisElementXml1.c_str(), *context);
     ASSERT_TRUE(schema3.IsValid());
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema3)) << "Schema implements only IParentElement so validation should succeed.";
+    ASSERT_TRUE(validator.Validate(*schema3)) << "Schema implements only IParentElement so validation should succeed.";
 
     Utf8String goodBisElementXml2 = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
         "<ECSchema schemaName='GoodSchemaThatUsesBis2' alias='bis' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
@@ -841,12 +844,12 @@ TEST_F(SchemaValidatorTests, EntityClassMayNotInheritFromCertainBisClasses)
     ECSchemaPtr schema4;
     ECSchema::ReadFromXmlString(schema4, goodBisElementXml2.c_str(), *context);
     ASSERT_TRUE(schema4.IsValid());
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema4)) << "Schema implements only ISubModeledElement so validation should succeed.";
+    ASSERT_TRUE(validator.Validate(*schema4)) << "Schema implements only ISubModeledElement so validation should succeed.";
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Colin.Kerr                             07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                             Colin.Kerr                             07/2017
+//---------------------------------------------------------------------------------------
 TEST_F(SchemaValidatorTests, DoNotAllowPropertiesOfTypeLong)
     {
     {
@@ -859,7 +862,7 @@ TEST_F(SchemaValidatorTests, DoNotAllowPropertiesOfTypeLong)
 
     InitBisContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as the property name ends in 'Id' and the type is 'long'";
+    ASSERT_FALSE(validator.Validate(*schema)) << "Should fail validation as the property name ends in 'Id' and the type is 'long'";
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -884,7 +887,7 @@ TEST_F(SchemaValidatorTests, DoNotAllowPropertiesOfTypeLong)
 
     InitBisContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as the property name ends in 'Id' and the type is 'long'";
+    ASSERT_FALSE(validator.Validate(*schema)) << "Should fail validation as the property name ends in 'Id' and the type is 'long'";
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -897,7 +900,7 @@ TEST_F(SchemaValidatorTests, DoNotAllowPropertiesOfTypeLong)
         "</ECSchema>";
     InitBisContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as the property type is 'long'";
+    ASSERT_FALSE(validator.Validate(*schema)) << "Should fail validation as the property type is 'long'";
     }
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -910,7 +913,7 @@ TEST_F(SchemaValidatorTests, DoNotAllowPropertiesOfTypeLong)
         "</ECSchema>";
     InitBisContextWithSchemaXml(goodSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation as the property name ends in 'Id' but is not type 'long'";
+    ASSERT_TRUE(validator.Validate(*schema)) << "Should succeed validation as the property name ends in 'Id' but is not type 'long'";
     }
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -936,7 +939,7 @@ TEST_F(SchemaValidatorTests, DoNotAllowPropertiesOfTypeLong)
     InitBisContextWithSchemaXml(goodSchemaXml.c_str());
 
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation as the property name ends in 'Id' but is not type 'long'";
+    ASSERT_TRUE(validator.Validate(*schema)) << "Should succeed validation as the property name ends in 'Id' but is not type 'long'";
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -960,7 +963,7 @@ TEST_F(SchemaValidatorTests, DoNotAllowPropertiesOfTypeLong)
         "</ECSchema>";
     InitBisContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as the property type is long";
+    ASSERT_FALSE(validator.Validate(*schema)) << "Should fail validation as the property type is long";
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -972,13 +975,13 @@ TEST_F(SchemaValidatorTests, DoNotAllowPropertiesOfTypeLong)
 
     InitBisContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as a struct property has type long";
+    ASSERT_FALSE(validator.Validate(*schema)) << "Should fail validation as a struct property has type long";
     }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Dan.Perlman                          04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                             Dan.Perlman                          04/2017
+//---------------------------------------------------------------------------------------
 TEST_F(SchemaValidatorTests, EntityClassMayNotInheritPropertyFromMultipleBaseClasses)
     {
     // Test that an entity class may not inherit a property from multiple base classes
@@ -1001,19 +1004,19 @@ TEST_F(SchemaValidatorTests, EntityClassMayNotInheritPropertyFromMultipleBaseCla
     ASSERT_EQ(ECObjectsStatus::Success, baseEntity2->AddBaseClass(*bisEntity));
 
     ASSERT_EQ(ECObjectsStatus::Success, derivedEntity->AddBaseClass(*baseEntity1));
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Entity class and its base classes have no properties yet so validation should succeed";
+    ASSERT_TRUE(validator.Validate(*schema)) << "Entity class and its base classes have no properties yet so validation should succeed";
     ASSERT_EQ(ECObjectsStatus::Success, baseEntity1->CreatePrimitiveProperty(prop, "P1"));
     ASSERT_EQ(ECObjectsStatus::Success, derivedEntity->CreatePrimitiveProperty(prop, "P1"));
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Entity class may inherit a property from just one base class so validation should succeed";
+    ASSERT_TRUE(validator.Validate(*schema)) << "Entity class may inherit a property from just one base class so validation should succeed";
     ASSERT_EQ(ECObjectsStatus::Success, derivedEntity->AddBaseClass(*baseEntity2));
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Entity class may have multiple base classes so validation should succeed";
+    ASSERT_TRUE(validator.Validate(*schema)) << "Entity class may have multiple base classes so validation should succeed";
     ASSERT_EQ(ECObjectsStatus::Success, baseEntity2->CreatePrimitiveProperty(prop, "P1"));
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Entity class may not inherit a property from more than one base class so validation should fail";
+    ASSERT_FALSE(validator.Validate(*schema)) << "Entity class may not inherit a property from more than one base class so validation should fail";
     }
     
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Dan.Perlman                          04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                             Dan.Perlman                          04/2017
+//---------------------------------------------------------------------------------------
 TEST_F(SchemaValidatorTests, EntityClassMayNotOverrideInheritedMixinProperty)
     {
     // Test that an entity class may not override a property inherited from mixin class
@@ -1034,14 +1037,14 @@ TEST_F(SchemaValidatorTests, EntityClassMayNotOverrideInheritedMixinProperty)
     ASSERT_EQ(ECObjectsStatus::Success, mixin->CreatePrimitiveProperty(prop, "P1"));
     ASSERT_EQ(ECObjectsStatus::Success, entity->AddBaseClass(*mixin));
 
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Entity class inherits a property from mixin class so validation should succeed";
+    ASSERT_TRUE(validator.Validate(*schema)) << "Entity class inherits a property from mixin class so validation should succeed";
     ASSERT_EQ(ECObjectsStatus::Success, entity->CreatePrimitiveProperty(prop, "P1"));
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Entity class overrides a property inherited from mixin class so validation should fail";
+    ASSERT_FALSE(validator.Validate(*schema)) << "Entity class overrides a property inherited from mixin class so validation should fail";
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Carole.MacDonald                    07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                             Carole.MacDonald                    07/2017
+//---------------------------------------------------------------------------------------
 TEST_F(SchemaValidatorTests, RelationshipClassConstraintMayNotBeAbstractIfOnlyOneConcreteConstraint)
     {
     {
@@ -1071,7 +1074,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassConstraintMayNotBeAbstractIfOnlyOn
         "</ECSchema>";
     InitBisContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "There is an abstract constraint and only one constraint class in source and target so validation should fail";
+    ASSERT_FALSE(validator.Validate(*schema)) << "There is an abstract constraint and only one constraint class in source and target so validation should fail";
     }
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -1110,13 +1113,13 @@ TEST_F(SchemaValidatorTests, RelationshipClassConstraintMayNotBeAbstractIfOnlyOn
         "</ECSchema>";
     InitBisContextWithSchemaXml(goodSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Abstract constraints are defined locally in source and target so validation should succeed";
+    ASSERT_TRUE(validator.Validate(*schema)) << "Abstract constraints are defined locally in source and target so validation should succeed";
     }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Carole.MacDonald                    07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                             Carole.MacDonald                    07/2017
+//---------------------------------------------------------------------------------------
 TEST_F(SchemaValidatorTests, RelationshipClassMayNotHaveHoldingStrength)
     {
     {
@@ -1137,7 +1140,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassMayNotHaveHoldingStrength)
         "</ECSchema>";
     InitBisContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as strength attribute must not be set to 'holding'";
+    ASSERT_FALSE(validator.Validate(*schema)) << "Should fail validation as strength attribute must not be set to 'holding'";
     }
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -1157,13 +1160,13 @@ TEST_F(SchemaValidatorTests, RelationshipClassMayNotHaveHoldingStrength)
         "</ECSchema>";
     InitBisContextWithSchemaXml(goodSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should pass validation as strength attribute is set to 'embedding'";
+    ASSERT_TRUE(validator.Validate(*schema)) << "Should pass validation as strength attribute is set to 'embedding'";
     }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Carole.MacDonald                    07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                             Carole.MacDonald                    07/2017
+//---------------------------------------------------------------------------------------
 TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
     {
     // Test forward direction
@@ -1186,7 +1189,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
         "</ECSchema>";
     InitBisContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as source multiplicity upper bound is greater than 1 while strength is embedding and forward";
+    ASSERT_FALSE(validator.Validate(*schema)) << "Should fail validation as source multiplicity upper bound is greater than 1 while strength is embedding and forward";
     }
     // Source = 1..*
     {
@@ -1207,7 +1210,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
         "</ECSchema>";
     InitBisContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as source multiplicity upper bound is greater than 1 while strength is embedding and forward";
+    ASSERT_FALSE(validator.Validate(*schema)) << "Should fail validation as source multiplicity upper bound is greater than 1 while strength is embedding and forward";
     }
     // Source = 0..1
     {
@@ -1228,7 +1231,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
         "</ECSchema>";
     InitBisContextWithSchemaXml(goodSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation as source multiplicity upper bound is not greater than 1 while strength is embedding and forward";
+    ASSERT_TRUE(validator.Validate(*schema)) << "Should succeed validation as source multiplicity upper bound is not greater than 1 while strength is embedding and forward";
     }
     // Source = 1..1
     {
@@ -1249,7 +1252,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
         "</ECSchema>";
     InitBisContextWithSchemaXml(goodSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation as source multiplicity upper bound is not greater than 1 while strength is embedding and forward";
+    ASSERT_TRUE(validator.Validate(*schema)) << "Should succeed validation as source multiplicity upper bound is not greater than 1 while strength is embedding and forward";
     }
     // Test backward direction
     // Target = 0..*
@@ -1271,7 +1274,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
         "</ECSchema>";
     InitBisContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as target multiplicity upper bound is greater than 1 while strength is embedding and backward";
+    ASSERT_FALSE(validator.Validate(*schema)) << "Should fail validation as target multiplicity upper bound is greater than 1 while strength is embedding and backward";
     }
     // Target = 1..*
     {
@@ -1292,7 +1295,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
         "</ECSchema>";
     InitBisContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as target multiplicity upper bound is greater than 1 while strength is embedding and backward";
+    ASSERT_FALSE(validator.Validate(*schema)) << "Should fail validation as target multiplicity upper bound is greater than 1 while strength is embedding and backward";
     }
     // Target = 0..1
     {
@@ -1313,7 +1316,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
         "</ECSchema>";
     InitBisContextWithSchemaXml(goodSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation as target multiplicity upper bound is not greater than 1 while strength is embedding and backward";
+    ASSERT_TRUE(validator.Validate(*schema)) << "Should succeed validation as target multiplicity upper bound is not greater than 1 while strength is embedding and backward";
     }
     // Target = 1..1
     {
@@ -1334,7 +1337,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
         "</ECSchema>";
     InitBisContextWithSchemaXml(goodSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation as target multiplicity upper bound is not greater than 1 while strength is embedding and backward";
+    ASSERT_TRUE(validator.Validate(*schema)) << "Should succeed validation as target multiplicity upper bound is not greater than 1 while strength is embedding and backward";
     }
     // No direction given, so forward is assumed
     // Source = 0..*
@@ -1356,7 +1359,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
         "</ECSchema>";
     InitBisContextWithSchemaXml(badSchemaNoDirection.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as direction is assumed to be forward with embedding strength, with multiplicity in source greater than 1";
+    ASSERT_FALSE(validator.Validate(*schema)) << "Should fail validation as direction is assumed to be forward with embedding strength, with multiplicity in source greater than 1";
     }
     // Source = 0..1
     {
@@ -1377,13 +1380,13 @@ TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
         "</ECSchema>";
     InitBisContextWithSchemaXml(goodSchemaNoDirection.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation as direction is assumed to be forward, with multiplicity equal to 1";
+    ASSERT_TRUE(validator.Validate(*schema)) << "Should succeed validation as direction is assumed to be forward, with multiplicity equal to 1";
     }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Carole.MacDonald                    07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                             Carole.MacDonald                    07/2017
+//---------------------------------------------------------------------------------------
 TEST_F(SchemaValidatorTests, EmbeddingRelationshipsShouldNotContainHasInClassName)
     {
     {
@@ -1404,7 +1407,7 @@ TEST_F(SchemaValidatorTests, EmbeddingRelationshipsShouldNotContainHasInClassNam
         "</ECSchema>";
     InitBisContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as relationship is embedding and contains 'Has'";
+    ASSERT_FALSE(validator.Validate(*schema)) << "Should fail validation as relationship is embedding and contains 'Has'";
     }
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -1424,13 +1427,13 @@ TEST_F(SchemaValidatorTests, EmbeddingRelationshipsShouldNotContainHasInClassNam
         "</ECSchema>";
     InitBisContextWithSchemaXml(goodSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation as relationship is 'referncing', not 'embedding'";
+    ASSERT_TRUE(validator.Validate(*schema)) << "Should succeed validation as relationship is 'referncing', not 'embedding'";
     }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Dan.Perlman                          06/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                             Dan.Perlman                          06/2017
+//---------------------------------------------------------------------------------------
 TEST_F(SchemaValidatorTests, KindOfQuantityShouldUseSIPersistenceUnits)
     {
     {
@@ -1444,7 +1447,7 @@ TEST_F(SchemaValidatorTests, KindOfQuantityShouldUseSIPersistenceUnits)
         "</ECSchema>";
     InitBisContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as persistence unit is a UCUSTOM unit, 'IN', not an SI unit";
+    ASSERT_FALSE(validator.Validate(*schema)) << "Should fail validation as persistence unit is a UCUSTOM unit, 'IN', not an SI unit";
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -1457,7 +1460,7 @@ TEST_F(SchemaValidatorTests, KindOfQuantityShouldUseSIPersistenceUnits)
         "</ECSchema>";
     InitBisContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as persistence unit is a USSURVEY unit, 'US_SURVEY_IN', not an SI unit";
+    ASSERT_FALSE(validator.Validate(*schema)) << "Should fail validation as persistence unit is a USSURVEY unit, 'US_SURVEY_IN', not an SI unit";
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -1470,7 +1473,7 @@ TEST_F(SchemaValidatorTests, KindOfQuantityShouldUseSIPersistenceUnits)
         "</ECSchema>";
     InitBisContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as persistence unit is a MARITIME unit, 'NAUT_MILE', not an SI unit";
+    ASSERT_FALSE(validator.Validate(*schema)) << "Should fail validation as persistence unit is a MARITIME unit, 'NAUT_MILE', not an SI unit";
     }
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -1483,7 +1486,7 @@ TEST_F(SchemaValidatorTests, KindOfQuantityShouldUseSIPersistenceUnits)
         "</ECSchema>";
     InitBisContextWithSchemaXml(goodSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation as persistence unit is an SI unit, 'M'";
+    ASSERT_TRUE(validator.Validate(*schema)) << "Should succeed validation as persistence unit is an SI unit, 'M'";
     }
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -1496,7 +1499,7 @@ TEST_F(SchemaValidatorTests, KindOfQuantityShouldUseSIPersistenceUnits)
         "</ECSchema>";
     InitBisContextWithSchemaXml(goodSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as persistence unit is an METRIC unit, 'CM'";
+    ASSERT_FALSE(validator.Validate(*schema)) << "Should fail validation as persistence unit is an METRIC unit, 'CM'";
     }
     }
 
@@ -1522,7 +1525,7 @@ TEST_F(SchemaValidatorTests, PropertyOverridesCannotChangePersistenceUnit)
         "</ECSchema>";
     InitBisContextWithSchemaXml(goodSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation since persistence unit is unchanged";
+    ASSERT_TRUE(validator.Validate(*schema)) << "Should succeed validation since persistence unit is unchanged";
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -1541,7 +1544,7 @@ TEST_F(SchemaValidatorTests, PropertyOverridesCannotChangePersistenceUnit)
         "</ECSchema>";
     InitBisContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as persistence unit is changed";
+    ASSERT_FALSE(validator.Validate(*schema)) << "Should fail validation as persistence unit is changed";
     }
     }
 
@@ -1562,7 +1565,7 @@ TEST_F(SchemaValidatorTests, StructsShouldNotHaveBaseClasses)
         "</ECSchema>";
     InitContextWithSchemaXml(goodSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation since structs do not have base classes";
+    ASSERT_TRUE(validator.Validate(*schema)) << "Should succeed validation since structs do not have base classes";
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -1577,7 +1580,7 @@ TEST_F(SchemaValidatorTests, StructsShouldNotHaveBaseClasses)
         "</ECSchema>";
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation because structs have base classes";
+    ASSERT_FALSE(validator.Validate(*schema)) << "Should fail validation because structs have base classes";
     }
     }
 
@@ -1596,11 +1599,9 @@ TEST_F(SchemaValidatorTests, CustomAttributesShouldNotHaveBaseClasses)
         "        <ECProperty propertyName='Length' typeName='double' />"
         "    </ECCustomAttributeClass>"
         "</ECSchema>";
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchema::ReadFromXmlString(schema, goodSchemaXml.c_str(), *context);
+    InitContextWithSchemaXml(goodSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation since custom attributes do not have base classes";
+    ASSERT_TRUE(validator.Validate(*schema)) << "Should succeed validation since custom attributes do not have base classes";
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -1613,11 +1614,9 @@ TEST_F(SchemaValidatorTests, CustomAttributesShouldNotHaveBaseClasses)
         "        <ECProperty propertyName='Length' typeName='double'/>"
         "    </ECCustomAttributeClass>"
         "</ECSchema>";
-    ECSchemaPtr schema2;
-    ECSchemaReadContextPtr context2 = ECSchemaReadContext::CreateContext();
-    ECSchema::ReadFromXmlString(schema2, badSchemaXml.c_str(), *context2);
-    ASSERT_TRUE(schema2.IsValid());
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema2)) << "Should fail validation because custom attributes have base classes";
+    InitContextWithSchemaXml(badSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_FALSE(validator.Validate(*schema)) << "Should fail validation because custom attributes have base classes";
     }
     }
 
