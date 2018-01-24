@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/cpp/refmethods/reftransform.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -57,6 +57,28 @@ DVec2dCR xVector
         );
     }
 
+//! @description Returns a transformation with
+//!<ul>
+//!<li>translation xyz are the origin
+//!<li>xAxis in direction of bearing radians (parallel to xy plane)
+//!<li>yAxis perpenedicular to xAxis and also parallel to the xy plane.
+//!<li>zAxis is global (0,0,1)
+//!<ul>
+Transform Transform::FromOriginAndBearingXY
+(
+DPoint3dCR origin, 
+double bearingRadians
+)
+    {
+    double x = cos (bearingRadians);
+    double y = sin (bearingRadians);
+    return Transform::FromRowValues
+        (
+        x, -y, 0, origin.x,
+        y,  x, 0, origin.y,
+        0,  0, 1, origin.z
+        );
+    }
 
 #ifndef MinimalRefMethods
 /*-----------------------------------------------------------------*//**

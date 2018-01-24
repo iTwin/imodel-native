@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/FacetOptions.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -758,7 +758,7 @@ bvector<double> &curveLength                              //!< [out] array with 
 GEOMDLLIMPEXP bool Stroke (CurveVectorCR curves, bvector<DPoint3d> &points, size_t &numLoop);
  
 //! Triangulate a space polygon and add to mesh. Disconnect points separate multiple loops.
-GEOMDLLIMPEXP bool AddTriangulation (bvector<DPoint3d> &points);
+GEOMDLLIMPEXP bool AddTriangulation (bvector<DPoint3d> const &points);
 
 //! AddTriangulation on 2 sets of points, optionally reversing each.
 //! edgeChains are created only if enabled by both edgeChainsPermitted and GetEdgeChainsRequired ().
@@ -773,10 +773,10 @@ bool edgeChainsPermitted = false,//!< [in] true to enable chain step
 CurveTopologyId::Type chainType = CurveTopologyId::Type::Unknown //!< [in] chainType
 );
 //! add edge chain(s) for points. (multiple chains if there are disconnects)
-GEOMDLLIMPEXP void AddEdgeChains (CurveTopologyId::Type type, uint32_t chainIndex, bvector <DPoint3d> &points, bool addClosure = false);
+GEOMDLLIMPEXP void AddEdgeChains (CurveTopologyId::Type type, uint32_t chainIndex, bvector <DPoint3d> const &points, bool addClosure = false);
 
 //! add a single edge chain with 0-based indices
-GEOMDLLIMPEXP void AddEdgeChainZeroBased (CurveTopologyId::Type type, uint32_t chainIndex, bvector <size_t> &pointIndices);
+GEOMDLLIMPEXP void AddEdgeChainZeroBased (CurveTopologyId::Type type, uint32_t chainIndex, bvector <size_t> const &pointIndices);
 
 //! Add a polygon
 GEOMDLLIMPEXP bool AddPolygon(bvector<DPoint3d> &points);

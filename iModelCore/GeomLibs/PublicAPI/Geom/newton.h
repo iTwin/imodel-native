@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/newton.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -344,6 +344,61 @@ Function_Bezier_FractionToXY (DPoint3dCP pPoles, int order);
 DECLARE_VIRTUALS_FunctionRToRR (, override)
 };
 
+
+// Utility/Callback struture for the function  f(x) = x + gamma * x^5.
+// which appears in myriad settings when dealing with clothoids.
+// <ul>
+// <li> This is used "in both directions" for clothoid approximations with
+// <li> s = distance along clothoid
+// <li> x = distance along x axis (starting at the inflection)
+// <li> gamma = a constant, typically something like 1/(2 R L)^2.
+// <li> The true series is 
+// <li> x = s - (1/5)(1/2) A s^5 + (1/9) (1/24) A^2 s^9 +  . . .
+// <li> As a (very good) approximation,     x = s - (1/5)(1/2) A s^5
+// <li> If x is known, this class is the iterative function with to solve for s with gamma = -1/(40 R^2 L^2)
+// <li> (NOTE THE negative sign there)
+// <li> A (good) approximation of the inverse is
+// <li>  s = x + (1/5)(1/2) A s^5
+// <li> If s is known, this class is the iterative function to solve for x with gamma = +1/(40 R^2 L^2)
+// <li> (NOTE THE positive sign there)
+// <ul
+struct GEOMDLLIMPEXP ClothoidCosineApproximation : FunctionRToRD
+{
+double m_targetValue;
+double m_gamma;
+//! Publicly available counter of iterative calls.  This is cleared by methods that trigger newton calls.
+static size_t s_evaluationCount;
+//! 
+//! <ul>
+//! <li>Instantiate the clothoid cosine approximation function with caller-supplied coefficient of u^5 term.
+//! <li>This is a low level constructor -- the caller is responsible for incorporating typical R, L and sign into gamma.
+//! </ul>
+ClothoidCosineApproximation (double targetValue, double gamma);
+
+//! Evaluate {f(u) = u + gamma * u^5 - targetValue}
+bool EvaluateRToRD (double u, double &f, double &dfdu) override;
+
+//! @returns Given target value f, return u so {u(1 + alpha * u^4/ (40 R*R*L*L) = f}
+//! <ul>
+//! <li>In use case with {alpha = positive one}, f is distance along spiral and the return value is (approximate) distance along axis.
+//! <li>In use case with (alpha = negative one}, f is distance along axis and the return value is (approximate) distance along spiral.
+//! <li>If curvature (rather than R) is known, call with (alpha * curvature * curvature, 1.0, L, f)
+//! </ul>
+static ValidatedDouble Invert40R2L2Map (double alpha, double R, double L, double f);
+//! @returns {f(u) = u * (1 + alpha * u^4/ (40 R R L L)}
+//! <ul>
+//! <li>In use case with {alpha = positive one}, return value is (approximate) distance along spiral and u is distance along axis.
+//! <li>In use case with (alpha = negative one}, u is distance along spiral and the return value is (approximate) distance along axis.
+//! </ul>
+static double Evaluate40R2L2Map (double alpha, double R, double L, double u);
+
+//! @returns {f(u) = u * (1 + alpha * u^4/ (40 R R L L)}, along with 3 derivatives as return parameters.
+//! <ul>
+//! <li>In use case with {alpha = positive one}, return value is (approximate) distance along spiral and u is distance along axis.
+//! <li>In use case with (alpha = negative one}, u is distance along spiral and the return value is (approximate) distance along axis.
+//! </ul>
+static double Evaluate40R2L2Map (double alpha, double R, double L, double u, double &dfdu, double &d2fdu2, double &d3fdu3);
+};
 
 #endif
 END_BENTLEY_GEOMETRY_NAMESPACE

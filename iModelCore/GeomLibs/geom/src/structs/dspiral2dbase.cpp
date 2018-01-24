@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/dspiral2dbase.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -26,6 +26,10 @@ int DSpiral2dSine::GetTransitionTypeCode () const { return TransitionType_Sine;}
 
 int DSPiral2dWeightedViennese::GetTransitionTypeCode () const { return TransitionType_WeightedViennese;}
 int DSPiral2dViennese::GetTransitionTypeCode () const { return TransitionType_Viennese;}
+int DSpiral2dNewSouthWales::GetTransitionTypeCode () const { return TransitionType_NewSouthWales;}
+int DSpiral2dAustralian::GetTransitionTypeCode () const { return TransitionType_Australian;}
+
+int DSpiral2dMXCubic::GetTransitionTypeCode () const { return TransitionType_MXCubic;}
 
 
 
@@ -50,35 +54,63 @@ DSpiral2dBaseP DSpiral2dBase::Create (int transitionType)
         return new DSpiral2dCosine ();
     if (transitionType == TransitionType_Sine)
         return new DSpiral2dSine ();
+    if (transitionType == TransitionType_NewSouthWales)
+        return new DSpiral2dNewSouthWales ();
+#ifdef CompileCZECH
+    if (transitionType == TransitionType_Czech)
+        return new DSpiral2dCzech ();
+#endif
+    if (transitionType == TransitionType_Australian)
+        return new DSpiral2dAustralian ();
+    if (transitionType == TransitionType_MXCubic)
+        return new DSpiral2dMXCubic ();
     return NULL;
     }
 
+struct SpiralTagName {
+    int type;
+    Utf8CP name;
+    };
+static SpiralTagName s_spiralNames [] =
+    {
+        {DSpiral2dBase::TransitionType_Clothoid, "clothoid"},
+        {DSpiral2dBase::TransitionType_Bloss, "bloss"},
+        {DSpiral2dBase::TransitionType_Biquadratic, "biquadratic"},
+        {DSpiral2dBase::TransitionType_Cosine, "cosine"},
+        {DSpiral2dBase::TransitionType_Sine, "sine"},
+        {DSpiral2dBase::TransitionType_Viennese, "Viennese"},
+        {DSpiral2dBase::TransitionType_WeightedViennese, "WeightedViennese"},
+        {DSpiral2dBase::TransitionType_NewSouthWales, "NewSouthWales"},
+        {DSpiral2dBase::TransitionType_Czech, "Czech"},
+        {DSpiral2dBase::TransitionType_Australian, "Australian"},
+        {DSpiral2dBase::TransitionType_Italian, "Italian"},
+        {DSpiral2dBase::TransitionType_PolishCubic, "PolishCubic"},
+        {DSpiral2dBase::TransitionType_AremaCubic, "AremaCubic"},
+        {DSpiral2dBase::TransitionType_MXCubic, "MXCubic"},
+        {DSpiral2dBase::TransitionType_MXCubicArc, "MXCubicArc"}
+    };
 int DSpiral2dBase::StringToTransitionType (Utf8CP name)
     {
-    if (0 == BeStringUtilities::Stricmp (name, "clothoid"))
-        return TransitionType_Clothoid;
-        
-    if (0 == BeStringUtilities::Stricmp (name, "bloss"))
-        return TransitionType_Bloss;
-
-    if (0 == BeStringUtilities::Stricmp (name, "biquadratic"))
-        return TransitionType_Biquadratic;
-
-    if (0 == BeStringUtilities::Stricmp (name, "cosine"))
-        return TransitionType_Cosine;
-
-    if (0 == BeStringUtilities::Stricmp (name, "sine"))
-        return TransitionType_Sine;
-
-    if (0 == BeStringUtilities::Stricmp (name, "Viennese"))
-        return TransitionType_Viennese;
-
-    if (0 == BeStringUtilities::Stricmp (name, "WeightedViennese"))
-        return TransitionType_WeightedViennese;
-
+    for (auto &entry : s_spiralNames)
+        if (0 == BeStringUtilities::Stricmp (name, entry.name))
+            return entry.type;
     return TransitionType_Unknown;
     }
 
+bool DSpiral2dBase::TransitionTypeToString (int type, Utf8StringR string)
+    {
+    string.clear ();
+    for (auto &entry : s_spiralNames)
+        {
+        if (entry.type == type)
+            {
+            string.assign (entry.name);
+            return true;
+            }
+        }
+    string.assign ("unknown");
+    return false;
+    }
 //! invoke appropriate concrete class constructor ...
 DSpiral2dBaseP DSpiral2dBase::CreateBearingCurvatureBearingCurvature
       (
@@ -364,6 +396,14 @@ double maxStrokeLength
 
     double beta0 = spiral.DistanceToGlobalAngle (distance0);
     double beta1 = spiral.DistanceToGlobalAngle (distance1);
+
+    double kurvature0 = spiral.DistanceToCurvature (distance0);
+    double kurvature1 = spiral.DistanceToCurvature (distance1);
+    double dbeta = fabs (beta1 - beta0);
+    if (kurvature0 * kurvature1 < 0.0)
+        {
+        dbeta = DoubleOps::Max (dbeta, spiral.mLength * (fabs (kurvature0) + fabs (kurvature1)) * 0.5);
+        }
     if (maxRadians <= 0.0)
         maxRadians = DSpiral2dBase::DefaultStrokeAngle ();
     else if (maxRadians > sMaxRadians)
@@ -371,7 +411,7 @@ double maxStrokeLength
     //double lengthScale = sqrt (fabs (spiral.mC));
     //double maxLengthStep = sMaxLengthStepFactor * lengthScale;
 
-    int numInterval = (int) (0.9999999999 + fabs (beta1 - beta0) / maxRadians);
+    int numInterval = (int) (0.9999999999 + dbeta / maxRadians);
 
     int numIntervalByDistance = maxStrokeLength > 0 ? (int)(0.9999999999 + fabs (distance1 - distance0) / maxStrokeLength) : numInterval;
     if (numIntervalByDistance > numInterval)
@@ -1782,4 +1822,9 @@ double DSpiral2dPlacement::MappedSpiralLengthActiveInterval (RotMatrixCR matrix)
     MappedLengthIntegrator integrator (matrix, *this);
     return integrator.IntegrateMappedLengthBetweenPrimaryFractions (fractionA, fractionB);
     }
+
+
 END_BENTLEY_GEOMETRY_NAMESPACE
+
+#include "directEvaluationSpiral.h"
+

@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/CurvePrimitive/cp_spiral.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //#include <bsibasegeomPCH.h>
@@ -117,7 +117,10 @@ void UpdateCurve(double maxStrokeLength)
     s_spiralStrokeCounter.Record (m_strokes.m_xyz.size ());
         double dSpiral = m_placement.spiral->mLength;
         double dStrokes = PolylineOps::Length (m_strokes.m_xyz, false);
-        BeAssert (dStrokes <= fabs (dSpiral));
+        if (m_placement.spiral->GetTransitionTypeCode () < DSpiral2dBase::TransitionType_FirstDirectEvaluate)
+            {
+            BeAssert (dStrokes <= fabs (dSpiral));
+            }
 #endif
 
     }
@@ -651,6 +654,106 @@ ICurvePrimitivePtr &primitiveB
     return false;
     }
 
+// Carry out spiral construction (see main method) with confirmed good curvatures
+ICurvePrimitivePtr CreatePseudoSpiralCurvatureLengthCurvature_go
+(
+int typeCode,               //!< [in] transition type.  This method is intended to work with "cubic" approximations (New South Wales, Australian etc)
+DPoint3dCR startPoint,      //!< [in] start point of spiral.
+double startRadians,        //!< [in] start bearing angle in xy plane.double curvatureA,          //!< [in] radiusA (signed) radius (or 0 for line) at start.
+double curvatureA,          //!< [in] (signed) curvature at start
+double lengthAB,            //!< [in] length of spiral between radiusA and radiusB.
+double curvatureB,          //!< [in] (signed) curvature at end.
+bool reverseInterval
+)
+    {
+
+    ICurvePrimitivePtr result;
+    // extrapolate to inflection, assuming clothoid (linear) curvature function
+    //   (curvatureB - curvatureA) / lengthAB = curvatureB / length0B
+    double length0B = curvatureB * lengthAB / (curvatureB - curvatureA);
+    // double length0A = length0B - lengthAB;
+    double fractionA = curvatureA / curvatureB;
+    double fractionB = 1.0;
+    // create a complete spiral (from inflection to curvatureB)
+    auto referenceSpiral = ICurvePrimitive::CreateSpiralBearingCurvatureLengthCurvature (typeCode, 0.0, 0.0, length0B, curvatureB,
+            Transform::FromIdentity (), 0.0, 1.0);
+    if (referenceSpiral != nullptr)
+        {
+        DPoint3d pointC;
+        DVec3d vectorC;
+        referenceSpiral->FractionToPoint (reverseInterval ? fractionB : fractionA, pointC, vectorC);
+        if (reverseInterval)
+            vectorC.Scale (-1.0);
+        double bearingC = vectorC.AngleXY ();
+        auto frameC = Transform::FromOriginAndBearingXY (pointC, bearingC);
+        auto inverseC = frameC.ValidatedInverse ();
+        auto frameA = Transform::FromOriginAndBearingXY (startPoint, startRadians);
+        if (inverseC.IsValid ())
+            {
+            double fractionAOut = reverseInterval ? fractionB : fractionA;
+            double fractionBOut = reverseInterval ? fractionA : fractionB;
+            result = ICurvePrimitive::CreateSpiralBearingCurvatureLengthCurvature (typeCode, 0.0, 0.0, length0B, curvatureB,
+                frameA * inverseC,
+                fractionAOut, fractionBOut);
+            }
+        }
+    return result;
+    }
+
+//! Construct a spiral with start radius, spiral length, and end radius.
+//! This is a special construction for "cubic" approximations.
+//! The constructed spiral is a fractional subset of another spiral that includes its inflection point (which may be outside
+//! the active fractional subset).
+ICurvePrimitivePtr ICurvePrimitive::CreatePseudoSpiralPointBearingRadiusLengthRadius
+(
+int typeCode,               //!< [in] transition type.  This method is intended to work with "cubic" approximations (New South Wales, Australian etc)
+DPoint3dCR startPoint,             //!< [in] start point of spiral.
+double startRadians,        //!< [in] start bearing angle in xy plane.
+double radiusA,             //!< [in] radiusA (signed) radius (or 0 for line) at start.
+double lengthAB,            //!< [in] length of spiral between radiusA and radiusB.
+double radiusB              //!< [in] radiusB (signed) radius (or 0 for line) at end.
+)
+    {
+    double a = DoubleOps::SmallMetricDistance ();
+    if (fabs (radiusA) < a)
+        radiusA = 0.0;
+    if (fabs (radiusB) < a)
+        radiusB = 0.0;
+
+    if (fabs (lengthAB) < a)
+        return nullptr;
+
+    if (radiusA == 0.0 && radiusB == 0.0)
+        {
+        return ICurvePrimitive::CreateLine (
+            DSegment3d::From (startPoint, startPoint + DVec3d::FromXYAngleAndMagnitude (startRadians, lengthAB)));
+        }
+
+    if (DoubleOps::AlmostEqual (radiusA, radiusB))
+        {
+        // Create a circular arc ...
+        double theta = lengthAB / radiusA;      // if radiusA is negative, all the vector and angle signs coordinate to move in positive x direction !!!
+        DEllipse3d arc = DEllipse3d::FromStartTangentNormalRadiusSweep (
+                    startPoint, 
+                    DVec3d::From (cos (startRadians), sin (startRadians)),
+                    DVec3d::From (0,0,1),
+                    radiusA,
+                    fabs (theta));
+        return ICurvePrimitive::CreateArc (arc);
+        }
+
+    double curvatureA = DoubleOps::ValidatedDivideDistance (1.0, radiusA);
+    double curvatureB = DoubleOps::ValidatedDivideDistance (1.0, radiusB);
+    if (fabs (curvatureB) > fabs (curvatureA) || DoubleOps::AlmostEqual (fabs (radiusA), fabs (radiusB)))
+        return CreatePseudoSpiralCurvatureLengthCurvature_go (typeCode, startPoint, startRadians, curvatureA, lengthAB, curvatureB, false);
+    else
+        {
+        static double signA = -1.0;
+        static double signB = -1.0;
+        return CreatePseudoSpiralCurvatureLengthCurvature_go (typeCode, startPoint, startRadians, signB * curvatureB, lengthAB, signA * curvatureA, true);
+        }
+    }
+ 
 CurveVectorPtr CurveVector::CreateSpiralLineToLineShift
 (
 int transitionType,

@@ -2,14 +2,14 @@
 |
 |     $Source: geom/src/polyface/PolyfaceAddTriangulation.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 #include <Geom/cluster.h>
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
-void IPolyfaceConstruction::AddEdgeChains (CurveTopologyId::Type type, uint32_t chainIndex, bvector <DPoint3d> &points, bool addClosure)
+void IPolyfaceConstruction::AddEdgeChains (CurveTopologyId::Type type, uint32_t chainIndex, bvector <DPoint3d> const &points, bool addClosure)
     {
     bvector<size_t> pointIndex;
     bvector<PolyfaceEdgeChain> &chains = GetClientMeshR().EdgeChain ();
@@ -37,7 +37,7 @@ void IPolyfaceConstruction::AddEdgeChains (CurveTopologyId::Type type, uint32_t 
         }
     }
 
-void IPolyfaceConstruction::AddEdgeChainZeroBased (CurveTopologyId::Type type, uint32_t chainIndex, bvector <size_t> &pointIndices)
+void IPolyfaceConstruction::AddEdgeChainZeroBased (CurveTopologyId::Type type, uint32_t chainIndex, bvector <size_t> const &pointIndices)
     {
     bvector<PolyfaceEdgeChain> &chains = GetClientMeshR().EdgeChain ();
     chains.push_back (PolyfaceEdgeChain (
@@ -48,7 +48,7 @@ void IPolyfaceConstruction::AddEdgeChainZeroBased (CurveTopologyId::Type type, u
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-bool IPolyfaceConstruction::AddTriangulation (bvector <DPoint3d> &inpoints)
+bool IPolyfaceConstruction::AddTriangulation (bvector <DPoint3d> const &inpoints)
     {
     // work with a local duplicate free copy of the points....
     if (inpoints.size () < 3)

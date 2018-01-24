@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/CurvePrimitive.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -585,6 +585,23 @@ DPoint3dCR pointB,      //!< [in] target point for (both) tangencies
 DPoint3dCR pointC,      //!< [in] final target
 ICurvePrimitivePtr &primitiveA, //!< [in] first spiral
 ICurvePrimitivePtr &primitiveB  //!< [in]  second spiral
+);
+
+//! Construct a spiral with start radius, spiral length, and end radius.
+//!<ul>
+//!<li> The spiral is paralllel to the xy plane.
+//!<li> This is a special construction for "cubic" approximations.
+//!<li> The constructed spiral is a fractional subset of another spiral that includes its inflection point (which may be outside
+//!           the active fractional subset).
+//!</ul>
+GEOMDLLIMPEXP static ICurvePrimitivePtr CreatePseudoSpiralPointBearingRadiusLengthRadius
+(
+int typeCode,               //!< [in] transition type.  This method is intended to work with "cubic" approximations (New South Wales, Australian etc)
+DPoint3dCR startPoint,      //!< [in] start point of spiral.
+double startRadians,        //!< [in] start bearing angle in xy plane.
+double radiusA,             //!< [in] (signed) radius (or 0 for line) at start.
+double lengthAB,            //!< [in] length of spiral between radiusA and radiusB.
+double radiusB              //!< [in] (signed) radius (or 0 for line) at end.
 );
 
 //! Allocate and fill a reference to a portion of a parent curve.

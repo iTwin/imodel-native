@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/transform.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -191,9 +191,9 @@ void InitFromRowValues
 //! The axes may be skewed.
 //!
 //! @param [in] origin The origin of transformed coordinates
-//! @param [in] xVector The 100 point of transformed coordinates
-//! @param [in] yVector The 010 point of transformed coordinates
-//! @param [in] zVector The 001 point of transformed coordinates
+//! @param [in] xVector The 100 vector of transformed coordinates
+//! @param [in] yVector The 010 vector of transformed coordinates
+//! @param [in] zVector The 001 vector of transformed coordinates
 //!
 void InitFromOriginAndVectors
 (
@@ -202,6 +202,7 @@ DVec3dCR      xVector,
 DVec3dCR      yVector,
 DVec3dCR      zVector
 );
+
 
 //flex|| origin and vectors in xy plane || || outTransform.InitOrthogonalFromOriginXVectorYVector (origin, xVector, yVector)    ||
 //! @description Returns a transformation with origin, x axis direction, and xy plane
@@ -370,6 +371,19 @@ void InitFromOriginAndVectors  (DPoint2dCR origin, DVec2dCR xVector, DVec2dCR yV
 //! @param [in] yVector 01 point of transformed coordinates
 //!
 static Transform FromOriginAndVectors (DPoint2dCR origin, DVec2dCR xVector, DVec2dCR yVector);
+
+//! @description Returns a transformation with
+//!<ul>
+//!<li>translation xyz are the origin
+//!<li>xAxis in direction of bearing radians (parallel to xy plane)
+//!<li>yAxis perpenedicular to xAxis and also parallel to the xy plane.
+//!<li>zAxis is global (0,0,1)
+//!<ul>
+static Transform FromOriginAndBearingXY
+(
+DPoint3dCR      origin,
+double bearingRadians
+);
 
 //! Returns a transform with given origin and xVector.
 //! The yVector is a CCW perpendicular to the xVector (with the same length)
