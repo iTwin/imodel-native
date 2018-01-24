@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/ConvertLights.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -173,3 +173,13 @@ void ConvertV8Lights::_ProcessResults(ElementConversionResults& results, DgnV8Eh
     light->SetParameters(params);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            01/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BisConversionRule ConvertV8Lights::_DetermineBisConversionRule(DgnV8EhCR v8eh, DgnDbR dgndb, BisConversionTargetModelInfoCR)
+    {
+    DgnV8Api::DisplayHandler* v8DisplayHandler = v8eh.GetDisplayHandler();
+    if (nullptr == v8DisplayHandler)
+        return BisConversionRule::ToDefaultBisBaseClass;
+    return BisConversionRule::ToAspectOnly;
+    }
