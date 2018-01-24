@@ -1,13 +1,13 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: tests/NonPublished/QuantityTestFixture.h $
+|  $Source: tests/TestFixture/QuantityTestFixture.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "UnitsTests.h"
+#include "../UnitsTestsPch.h"
 
 BEGIN_UNITS_UNITTESTS_NAMESPACE
 
@@ -22,13 +22,6 @@ struct QuantityTestFixture : public ::testing::Test
         void QuantityGreaterEqual(QuantityCR q1, QuantityCR q2) const;
         void QuantityLess(QuantityCR q1, QuantityCR q2) const;
         void QuantityLessEqual(QuantityCR q1, QuantityCR q2) const;
-
-    public:
-        QuantityTestFixture() : ::testing::Test() {}
-        virtual ~QuantityTestFixture() {}
-
-        virtual void SetUp() override {}
-        virtual void TearDown() override {}
     };
 
 END_UNITS_UNITTESTS_NAMESPACE

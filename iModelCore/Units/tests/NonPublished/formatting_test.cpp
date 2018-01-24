@@ -21,7 +21,8 @@
 
 //#define FORMAT_DEBUG_PRINT
 
-using namespace BentleyApi::Formatting;
+USING_BENTLEY_FORMATTING
+
 BEGIN_BENTLEY_FORMATTEST_NAMESPACE
 static UnitProxySetCP upx = nullptr;
 static int repc = 0;

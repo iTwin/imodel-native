@@ -2,24 +2,17 @@
 #
 #     $Source: Units.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
 %include $(SrcRoot)Units/mki/Units.mki
-    
+
 baseDir             = $(_MakeFilePath)
 programName         = Units
 srcDir              = $(baseDir)src/
 formatSrcDir        = $(baseDir)src/Formatting/
 formatHeaderDir     = $(baseDir)PublicAPI/Formatting/
-o                   = $(OutBuildDir)Units/
-
-#----------------------------------------------------------------------
-# Create output directories
-#----------------------------------------------------------------------
-always:
-    !~@mkdir $(o)
 
 # include the compile options mki file.
 CompileOptionsMki   = $(baseDir)mki/UnitsCompileOpts.mki
@@ -43,43 +36,40 @@ CPchOpts            = $(UsePrecompiledHeaderOptions)
 # below compilands. The entire set of compilands must be content with
 # uniform treatment for multi-compilation to work.
 #----------------------------------------------------------------------
-MultiCompileDepends = $(_MakeFileSpec) 
+MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-#Units Compilands
-$(o)UnitRegistry$(oext)      :  $(srcDir)UnitRegistry.cpp ${MultiCompileDepends}
+# Units Compilands
+$(o)UnitRegistry$(oext)             : $(srcDir)UnitRegistry.cpp ${MultiCompileDepends}
 
-$(o)UnitTypes$(oext)         :  $(srcDir)UnitTypes.cpp ${MultiCompileDepends}
+$(o)UnitTypes$(oext)                : $(srcDir)UnitTypes.cpp ${MultiCompileDepends}
 
-$(o)SymbolicExpression$(oext)            :  $(srcDir)SymbolicExpression.cpp ${MultiCompileDepends}
+$(o)SymbolicExpression$(oext)       : $(srcDir)SymbolicExpression.cpp ${MultiCompileDepends}
 
-$(o)UnitDefinitions$(oext)   :  $(srcDir)UnitDefinitions.cpp ${MultiCompileDepends}
+$(o)UnitDefinitions$(oext)          : $(srcDir)UnitDefinitions.cpp ${MultiCompileDepends}
 
-$(o)ConstantDefinitions$(oext)      :   $(srcDir)ConstantDefinitions.cpp ${MultiCompileDepends}
+$(o)ConstantDefinitions$(oext)      : $(srcDir)ConstantDefinitions.cpp ${MultiCompileDepends}
 
-$(o)PhenomenonDefinitions$(oext)    :   $(srcDir)PhenomenonDefinitions.cpp ${MultiCompileDepends}
+$(o)PhenomenonDefinitions$(oext)    : $(srcDir)PhenomenonDefinitions.cpp ${MultiCompileDepends}
 
-$(o)Quantity$(oext)                 :   $(srcDir)Quantity.cpp ${MultiCompileDepends}
+$(o)Quantity$(oext)                 : $(srcDir)Quantity.cpp ${MultiCompileDepends}
 
-%message formatSrcDir ($(formatSrcDir))
+# %message formatSrcDir ($(formatSrcDir))
 
 $(o)Formatting$(oext)     : $(formatSrcDir)Formatting.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
 
-$(o)FormattingIO$(oext)     : $(formatSrcDir)FormattingIO.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
+$(o)FormattingIO$(oext)   : $(formatSrcDir)FormattingIO.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
 
 $(o)FormatUtils$(oext)    : $(formatSrcDir)FormatUtils.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
 
 $(o)FormatQuantity$(oext) : $(formatSrcDir)FormatQuantity.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
 
-$(o)FormatParsing$(oext) : $(formatSrcDir)FormatParsing.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
+$(o)FormatParsing$(oext)  : $(formatSrcDir)FormatParsing.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)
 CCPchOpts =
 CPchOpts =
-
-MultiCompileDepends=$(_MakeFileSpec)
-%include MultiCppCompileRule.mki
 
 #----------------------------------------------------------------------
 #   dependencies of the subsystem.
@@ -100,4 +90,3 @@ LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BeJsonCpp$
 LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BeSQLite$(stlibext)
 
 %include $(sharedMki)linkLibrary.mki
-                            

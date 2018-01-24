@@ -10,7 +10,7 @@
 #include <windows.h>
 #include <iostream>
 #endif
-#include "UnitsTests.h"
+#include "../UnitsTestsPch.h"
 #include <Formatting/FormattingApi.h>
 #include <Units/UnitRegistry.h>
 #include <Units/UnitTypes.h>
@@ -19,7 +19,8 @@
 //#include <ECObjects/ECQuantityFormatting.h>
 #include "FormattingTestFixture.h"
 
-using namespace BentleyApi::Formatting;
+USING_BENTLEY_FORMATTING
+
 BEGIN_BENTLEY_FORMATTEST_NAMESPACE
 //#define USE_TEST_FILE
 

@@ -1,13 +1,13 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: tests/NonPublished/UnitsTestFixture.h $
+|  $Source: tests/TestFixture/UnitsTestFixture.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "UnitsTests.h"
+#include "../UnitsTestsPch.h"
 
 BEGIN_UNITS_UNITTESTS_NAMESPACE
 
@@ -17,11 +17,6 @@ BEGIN_UNITS_UNITTESTS_NAMESPACE
 struct UnitsTestFixture : public ::testing::Test
     {
     public:
-        UnitsTestFixture() : ::testing::Test() {}
-        virtual ~UnitsTestFixture() {}
-        virtual void SetUp() override;
-        virtual void TearDown() override {}
-
         static Utf8String GetConversionDataPath(WCharCP dataFile);
         static Utf8String GetOutputDataPath(WCharCP dataFile);
     };
