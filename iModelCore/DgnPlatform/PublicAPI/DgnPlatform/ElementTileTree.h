@@ -243,9 +243,10 @@ protected:
 
     Tile(Root& root, TileTree::OctTree::TileId id, Tile const* parent, DRange3dCP range, bool displayable);
     explicit Tile(Tile const& parent);
+    Tile(Root& root, TileTree::OctTree::TileId id, DRange3dCR range, double minToleranceRatio);
     ~Tile();
 
-    void InitTolerance();
+    void InitTolerance(double minToleranceRatio, bool isLeaf=false);
 
     TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr, Dgn::Render::SystemP renderSys = nullptr) override;
     TileTree::TilePtr _CreateChild(TileTree::OctTree::TileId) const override;

@@ -1623,8 +1623,19 @@ Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRan
     else
         m_range.Extend(*range);
 
-    InitTolerance();
+    InitTolerance(s_minToleranceRatio);
     m_debugId = (octRoot.GetModelId().GetValue() << 32) + (id.m_level << 24) + (id.m_i << 16) + (id.m_j << 8) + id.m_k;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* NB: Constructor used by ThumbnailTile...
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Tile::Tile(Root& root, TileTree::OctTree::TileId id, DRange3dCR range, double minToleranceRatio)
+    : T_Super(root, id, nullptr, true), m_displayable(true)
+    {
+    m_range.Extend(range);
+    InitTolerance(minToleranceRatio, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1637,17 +1648,17 @@ Tile::Tile(Tile const& parent) : T_Super(const_cast<Root&>(parent.GetElementRoot
     BeAssert(parent.HasZoomFactor());
     SetZoomFactor(parent.GetZoomFactor() * 2.0);
 
-    InitTolerance();
+    InitTolerance(s_minToleranceRatio);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Tile::InitTolerance()
+void Tile::InitTolerance(double minToleranceRatio, bool isLeaf)
     {
     double diagDist = GetElementRoot().Is3d() ? m_range.DiagonalDistance() : m_range.DiagonalDistanceXY();
-    m_tolerance = diagDist / (s_minToleranceRatio * m_zoomFactor);
-    m_isLeaf = false;
+    m_tolerance = diagDist / (minToleranceRatio * m_zoomFactor);
+    m_isLeaf = isLeaf;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1668,7 +1679,7 @@ void Tile::_Invalidate()
         m_hasZoomFactor = false;
         m_zoomFactor = 1.0;
 
-        InitTolerance();
+        InitTolerance(s_minToleranceRatio);
 
         if (nullptr != GetParent())
             return;
@@ -1843,7 +1854,7 @@ void Tile::_ValidateChildren() const
                 if (!child->HasZoomFactor())
                     {
                     child->SetZoomFactor(2.0 * GetZoomFactor());
-                    child->InitTolerance();
+                    child->InitTolerance(s_minToleranceRatio);
                     }
 
                 break;
@@ -2852,7 +2863,10 @@ private:
     void _ValidateChildren() const override { }
     Utf8String _GetTileCacheKey() const override { return "NotCacheable!"; }
 public:
-    ThumbnailTile(DRange3dCR range, ThumbnailRoot& root) : T_Super(root, TileTree::OctTree::TileId::RootId(), nullptr, &range, true) { }
+    ThumbnailTile(DRange3dCR range, ThumbnailRoot& root, double minToleranceRatio) : T_Super(root, TileTree::OctTree::TileId::RootId(), range, minToleranceRatio)
+        {
+        //
+        }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -2887,7 +2901,13 @@ RefCountedPtr<ThumbnailRoot> ThumbnailRoot::Create(GeometricModelR model, Render
     DRange3d tileRange;
     rangeTransform.Multiply(tileRange, frustumRange);
 
-    root->m_rootTile = new ThumbnailTile(tileRange, *root);
+    // This tile's size on screen in pixels matches the size of the view rect...
+    BSIRect viewRect = context.GetViewportR().GetViewRect();
+    double width = viewRect.Width();
+    double height = viewRect.Height();
+    double minToleranceRatio = sqrt(width*width + height*height) * 2.0;
+
+    root->m_rootTile = new ThumbnailTile(tileRange, *root, minToleranceRatio);
 
     return root;
     }
