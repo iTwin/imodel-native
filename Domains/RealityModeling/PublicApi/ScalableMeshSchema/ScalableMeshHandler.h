@@ -374,6 +374,7 @@ protected:
     bool _UnregisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) override;
     BentleyStatus _GetSpatialClassifiers(Dgn::ModelSpatialClassifiersR classifiers) const override { classifiers = m_classifiers; return SUCCESS; }
     SCALABLEMESH_SCHEMA_EXPORT Dgn::TileTree::RootPtr _CreateTileTree(Dgn::Render::SystemP) override;
+    Dgn::TileTree::RootPtr _GetTileTree(Dgn::RenderContextR) override;
         virtual BentleyApi::Dgn::DgnDbStatus _OnDelete() override;
     SCALABLEMESH_SCHEMA_EXPORT void _PickTerrainGraphics(Dgn::PickContextR) const override;
     SCALABLEMESH_SCHEMA_EXPORT void _OnFitView(FitContextR context) override;

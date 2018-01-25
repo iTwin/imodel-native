@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/RasterFileHandler.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <RasterInternal.h>
@@ -192,6 +192,14 @@ RasterFileModel::RasterFileModel(CreateParams const& params, DMatrix4dCR sourceT
 RasterFileModel::~RasterFileModel()
     {
     //DEBUG_PRINTF("RasterFileModel Destroyed");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::TileTree::RootPtr RasterFileModel::_GetTileTree(Dgn::RenderContextR context)
+    {
+    return GetTileTree(context.GetRenderSystem());
     }
 
 //----------------------------------------------------------------------------------------

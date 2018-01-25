@@ -2,7 +2,7 @@
 |
 |     $Source: PointCloudSchema/PointCloudHandler.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <PointCloudInternal.h>
@@ -324,5 +324,13 @@ Dgn::TileTree::RootPtr PointCloudModel::_CreateTileTree(Render::SystemP system)
         return PointCloudTileTree::Root::Create(*this, *system);
     else
         return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::TileTree::RootPtr PointCloudModel::_GetTileTree(Dgn::RenderContextR context)
+    {
+    return GetTileTree(context.GetRenderSystem());
     }
 

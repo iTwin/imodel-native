@@ -1823,6 +1823,14 @@ void ScalableMeshModel::SetClip(Dgn::ClipVectorCP clip)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TileTree::RootPtr ScalableMeshModel::_GetTileTree(RenderContextR context)
+    {
+    return GetTileTree(context.GetRenderSystem());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileTree::RootPtr ScalableMeshModel::_CreateTileTree(Render::SystemP system)

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/PointCloud/PointCloudHandler.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -111,6 +111,7 @@ protected:
     void _OnLoadedJsonProperties() override;
     Dgn::AxisAlignedBox3d _QueryModelRange() const override;
     POINTCLOUD_EXPORT Dgn::TileTree::RootPtr _CreateTileTree(Dgn::Render::SystemP) override;
+    Dgn::TileTree::RootPtr _GetTileTree(Dgn::RenderContextR) override;
 
     TileGeneratorStatus _GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile, double leafTolerance, TileGenerator::ITileCollector& collector, ITileGenerationProgressMonitorR progressMeter) override;
 

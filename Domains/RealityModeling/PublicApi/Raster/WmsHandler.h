@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/Raster/WmsHandler.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -91,7 +91,8 @@ protected:
 
     bool _IsParallelToGround() const override { return true; }
 
-    virtual Dgn::TileTree::RootPtr _CreateTileTree(Dgn::Render::SystemP renderSys) override;
+    Dgn::TileTree::RootPtr _CreateTileTree(Dgn::Render::SystemP renderSys) override;
+    Dgn::TileTree::RootPtr _GetTileTree(Dgn::RenderContextR) override;
 
     //! Create a WmsModel object, in preparation for loading it from the DgnDb. Called by MODELHANDLER_DECLARE_MEMBERS. 
     WmsModel(CreateParams const& params);
