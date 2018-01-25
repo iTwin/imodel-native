@@ -2684,12 +2684,8 @@ GraphicPtr TileContext::FinishGraphic(GeometryAccumulatorR accum, TileBuilder& b
 GraphicPtr TileContext::FinishSubGraphic(GeometryAccumulatorR accum, TileSubGraphic& subGf)
     {
     DgnGeometryPartCR input = subGf.GetInput();
-    if (accum.GetGeometries().empty())
-        BeAssert(m_loadContext.WasAborted());
-
-    subGf.SetOutput(*GeomPart::Create(input.GetBoundingBox(), accum.GetGeometries()));
-    if (accum.GetGeometries().empty())
-        BeAssert(m_loadContext.WasAborted());
+    if (!accum.GetGeometries().empty())
+        subGf.SetOutput(*GeomPart::Create(input.GetBoundingBox(), accum.GetGeometries()));
 
     return m_finishedGraphic;
     }
