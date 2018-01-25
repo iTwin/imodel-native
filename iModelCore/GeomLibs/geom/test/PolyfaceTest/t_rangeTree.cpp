@@ -446,7 +446,7 @@ TEST(PolyfaceOffset,CrinklePointA)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceOffset,CrinklePointB)
     {
-    static double s_zScale = 1.0;
+    //static double s_zScale = 1.0;
     PolyfaceHeader::OffsetOptions offsetOptions;
 
     auto options = IFacetOptions::Create ();
@@ -519,7 +519,7 @@ TEST(PolyfaceOffset,CrinklePointB)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceOffset,CrinklePointC)
     {
-    static double s_zScale = 1.0;
+    //static double s_zScale = 1.0;
     PolyfaceHeader::OffsetOptions offsetOptions;
 
     auto options = IFacetOptions::Create ();
@@ -535,7 +535,7 @@ TEST(PolyfaceOffset,CrinklePointC)
             double aY = 10.0;
             DPoint3d origin = DPoint3d::From (0,0,centerZ);
             // create variations with shifted z at fringe points.
-            double aZ = 3.0;
+            //double aZ = 3.0;
             bvector<DPoint3d> edgePoint;
 
             // make point coordinates around an ellipse, with z varying on a (faster) sine wave
