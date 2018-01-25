@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlStatementCache.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -92,38 +92,58 @@ ECSqlStatementCache::ECSqlStatementCache(uint32_t maxSize, Utf8CP name)
 CachedECSqlStatementPtr ECSqlStatementCache::GetPreparedStatement(ECDbCR ecdb, Utf8CP ecsql, ECCrudWriteToken const* token) const
     {
     CachedECSqlStatementPtr stmt;
-    GetPreparedStatement(stmt, ecdb, ecsql, token);
+    GetPreparedStatement(stmt, ecdb, nullptr, token, ecsql);
+    return stmt;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      01/2018
+//---------------------------------------------------------------------------------------
+CachedECSqlStatementPtr ECSqlStatementCache::GetPreparedStatement(SchemaManagerCR schemaManager, DbCR datasource, Utf8CP ecsql) const
+    {
+    CachedECSqlStatementPtr stmt;
+    GetPreparedStatement(stmt, schemaManager.GetDispatcher().Main().GetECDb(), &datasource, nullptr, ecsql);
     return stmt;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSqlStatementCache::GetPreparedStatement(CachedECSqlStatementPtr& stmt, ECDbCR ecdb, Utf8CP ecsql, ECCrudWriteToken const* token) const
+void ECSqlStatementCache::GetPreparedStatement(CachedECSqlStatementPtr& stmt, ECDbCR ecdb, DbCP datasource, ECCrudWriteToken const* token, Utf8CP ecsql) const
     {
     BeMutexHolder _v_v(m_mutex);
 
-    stmt = FindEntry(ecsql);
+    stmt = FindEntry(ecdb, datasource, token, ecsql);
     if (stmt.IsValid())
         return;
 
-    AddStatement(stmt, ecdb, ecsql);
+    AddStatement(stmt, ecdb, datasource, token, ecsql);
 
-    if (ECSqlStatus::Success != stmt->Prepare(ecdb, ecsql, token))
-        stmt = nullptr;
+    if (datasource == nullptr)
+        {
+        if (ECSqlStatus::Success != stmt->Prepare(ecdb, ecsql, token))
+            stmt = nullptr;
+        }
+    else
+        {
+        BeAssert(token == nullptr);
+        if (ECSqlStatus::Success != stmt->Prepare(ecdb.Schemas(), *datasource, ecsql))
+            stmt = nullptr;
+        }
     }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      02/2015
 //---------------------------------------------------------------------------------------
-CachedECSqlStatement* ECSqlStatementCache::FindEntry(Utf8CP ecsql) const
+CachedECSqlStatement* ECSqlStatementCache::FindEntry(ECDbCR ecdb, DbCP datasource, ECCrudWriteToken const* token, Utf8CP ecsql) const
     {
     std::list<CachedECSqlStatementPtr>::iterator foundIt = m_entries.end();
     for (auto it = m_entries.begin(), end = m_entries.end(); it != end; ++it)
         {
         CachedECSqlStatementPtr& stmt = *it;
         //ECSqlStatement::GetECSql returns nullptr if stmt is not prepared, so don't compare ECSQL string if not prepared
-        if (stmt->IsPrepared() && 0 == strcmp(stmt->GetECSql(), ecsql))
+        if (stmt->IsPrepared() && 0 == strcmp(stmt->GetECSql(), ecsql) && &stmt->m_ecdb == &ecdb && stmt->m_datasource == datasource && stmt->m_crudWriteToken == token)
             {
             // if statement > 1, the statement is currently in use, we can't share it
             if (stmt->GetRefCount() <= 1)
@@ -145,7 +165,7 @@ CachedECSqlStatement* ECSqlStatementCache::FindEntry(Utf8CP ecsql) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      02/2015
 //---------------------------------------------------------------------------------------
-void ECSqlStatementCache::AddStatement(CachedECSqlStatementPtr& newEntry, ECDbCR ecdb, Utf8CP ecsql) const
+void ECSqlStatementCache::AddStatement(CachedECSqlStatementPtr& newEntry, ECDbCR ecdb, DbCP datasource, ECCrudWriteToken const* token, Utf8CP ecsql) const
     {
     BeMutexHolder _v_v(m_mutex);
     if (((uint32_t) m_entries.size()) >= m_maxSize) // if cache is full, remove oldest entry
@@ -156,7 +176,7 @@ void ECSqlStatementCache::AddStatement(CachedECSqlStatementPtr& newEntry, ECDbCR
         m_entries.pop_back();
         }
 
-    newEntry = new CachedECSqlStatement(*this);
+    newEntry = new CachedECSqlStatement(*this, ecdb, datasource, token);
     m_entries.push_front(newEntry);
     ECSqlStatementCacheDiagnostics::Log(GetName(), m_maxSize, ECSqlStatementCacheDiagnostics::EventType::AddedToCache, ecsql);
     }

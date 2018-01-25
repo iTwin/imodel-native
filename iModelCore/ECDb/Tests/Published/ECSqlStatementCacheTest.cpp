@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECSqlStatementCacheTest.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -77,6 +77,133 @@ TEST_F(ECSqlStatementCacheTests, BindValuesToSameCachedStatementsMultipleTime)
     cache.Empty();
     ASSERT_EQ(cache.Size(), 0) << "cache size should be 0 after it is cleared";
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                              Affan.Khan                         01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementCacheTests, VerifyCachedStatementIsKeyedCorrectly)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementCacheTest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    BeFileName seedFile(m_ecdb.GetDbFileName(), true);
+
+    Db datasource1, datasource2;
+    ASSERT_EQ(BE_SQLITE_OK, datasource1.OpenBeSQLiteDb(seedFile, Db::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(BE_SQLITE_OK, datasource2.OpenBeSQLiteDb(seedFile, Db::OpenParams(Db::OpenMode::Readonly)));
+
+    ECDbR ecdb1 = m_ecdb;
+    ECDb ecdb2;
+    ASSERT_EQ(BE_SQLITE_OK, ecdb2.OpenBeSQLiteDb(seedFile, Db::OpenParams(Db::OpenMode::Readonly)));
+
+
+    Utf8CP ecSql1 = "SELECT * FROM ecsql.PSA";
+    Utf8CP ecSql2 = "SELECT * FROM ecsql.P";
+
+    ECSqlStatementCache cache(20);
+    CachedECSqlStatementPtr stmt;
+
+    stmt = cache.GetPreparedStatement(ecdb1, ecSql1);
+    ASSERT_TRUE(stmt != nullptr);
+    ASSERT_EQ(cache.Size(), 1);
+   
+    stmt = cache.GetPreparedStatement(ecdb1, ecSql2);
+    ASSERT_TRUE(stmt != nullptr);
+    ASSERT_EQ(cache.Size(), 2);
+
+    stmt = cache.GetPreparedStatement(ecdb2, ecSql1);
+    ASSERT_TRUE(stmt != nullptr);
+    ASSERT_EQ(cache.Size(), 3);
+
+    stmt = cache.GetPreparedStatement(ecdb2, ecSql2);
+    ASSERT_TRUE(stmt != nullptr);
+    ASSERT_EQ(cache.Size(), 4);
+
+    stmt = cache.GetPreparedStatement(ecdb1.Schemas(), datasource1, ecSql1);
+    ASSERT_TRUE(stmt != nullptr);
+    ASSERT_EQ(cache.Size(), 5);
+
+    stmt = cache.GetPreparedStatement(ecdb1.Schemas(), datasource1, ecSql2);
+    ASSERT_TRUE(stmt != nullptr);
+    ASSERT_EQ(cache.Size(), 6);
+
+    stmt = cache.GetPreparedStatement(ecdb1.Schemas(), datasource2, ecSql1);
+    ASSERT_TRUE(stmt != nullptr);
+    ASSERT_EQ(cache.Size(), 7);
+
+    stmt = cache.GetPreparedStatement(ecdb1.Schemas(), datasource2, ecSql2);
+    ASSERT_TRUE(stmt != nullptr);
+    ASSERT_EQ(cache.Size(), 8);
+
+    stmt = cache.GetPreparedStatement(ecdb2.Schemas(), datasource1, ecSql1);
+    ASSERT_TRUE(stmt != nullptr);
+    ASSERT_EQ(cache.Size(), 9);
+
+    stmt = cache.GetPreparedStatement(ecdb2.Schemas(), datasource1, ecSql2);
+    ASSERT_TRUE(stmt != nullptr);
+    ASSERT_EQ(cache.Size(), 10);
+
+    stmt = cache.GetPreparedStatement(ecdb2.Schemas(), datasource2, ecSql1);
+    ASSERT_TRUE(stmt != nullptr);
+    ASSERT_EQ(cache.Size(), 11);
+
+    stmt = cache.GetPreparedStatement(ecdb2.Schemas(), datasource2, ecSql2);
+    ASSERT_TRUE(stmt != nullptr);
+    ASSERT_EQ(cache.Size(), 12);
+
+    //Re run and make sure cache size does not change
+    //--------------------------------------------------------------------
+
+    stmt = cache.GetPreparedStatement(ecdb1, ecSql1);
+    ASSERT_TRUE(stmt != nullptr);
+    ASSERT_EQ(cache.Size(), 12);
+
+    stmt = cache.GetPreparedStatement(ecdb1, ecSql2);
+    ASSERT_TRUE(stmt != nullptr);
+    ASSERT_EQ(cache.Size(), 12);
+
+    stmt = cache.GetPreparedStatement(ecdb2, ecSql1);
+    ASSERT_TRUE(stmt != nullptr);
+    ASSERT_EQ(cache.Size(), 12);
+
+    stmt = cache.GetPreparedStatement(ecdb2, ecSql2);
+    ASSERT_TRUE(stmt != nullptr);
+    ASSERT_EQ(cache.Size(), 12);
+
+    stmt = cache.GetPreparedStatement(ecdb1.Schemas(), datasource1, ecSql1);
+    ASSERT_TRUE(stmt != nullptr);
+    ASSERT_EQ(cache.Size(), 12);
+
+    stmt = cache.GetPreparedStatement(ecdb1.Schemas(), datasource1, ecSql2);
+    ASSERT_TRUE(stmt != nullptr);
+    ASSERT_EQ(cache.Size(), 12);
+
+    stmt = cache.GetPreparedStatement(ecdb1.Schemas(), datasource2, ecSql1);
+    ASSERT_TRUE(stmt != nullptr);
+    ASSERT_EQ(cache.Size(), 12);
+
+    stmt = cache.GetPreparedStatement(ecdb1.Schemas(), datasource2, ecSql2);
+    ASSERT_TRUE(stmt != nullptr);
+    ASSERT_EQ(cache.Size(), 12);
+
+    stmt = cache.GetPreparedStatement(ecdb2.Schemas(), datasource1, ecSql1);
+    ASSERT_TRUE(stmt != nullptr);
+    ASSERT_EQ(cache.Size(), 12);
+
+    stmt = cache.GetPreparedStatement(ecdb2.Schemas(), datasource1, ecSql2);
+    ASSERT_TRUE(stmt != nullptr);
+    ASSERT_EQ(cache.Size(), 12);
+
+    stmt = cache.GetPreparedStatement(ecdb2.Schemas(), datasource2, ecSql1);
+    ASSERT_TRUE(stmt != nullptr);
+    ASSERT_EQ(cache.Size(), 12);
+
+    stmt = cache.GetPreparedStatement(ecdb2.Schemas(), datasource2, ecSql2);
+    ASSERT_TRUE(stmt != nullptr);
+    ASSERT_EQ(cache.Size(), 12);
+
+    cache.Empty();
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                              Muhammad Hassan                         05/15

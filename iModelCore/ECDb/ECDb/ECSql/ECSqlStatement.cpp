@@ -68,7 +68,7 @@ ECSqlStatus ECSqlStatement::Prepare(ECDbCR ecdb, Utf8CP ecsql, ECCrudWriteToken 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      06/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlStatement::Prepare(ECDb const& ecdb, Utf8CP ecsql, DbCR readonlyDb ) { return m_pimpl->Prepare(ecdb, ecsql, nullptr, true, &readonlyDb); }
+ECSqlStatus ECSqlStatement::Prepare(SchemaManagerCR schemaManager, DbCR datasource, Utf8CP ecsql) { return m_pimpl->Prepare(schemaManager.Main().GetECDb(), ecsql, nullptr, true, &datasource); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      06/2013
