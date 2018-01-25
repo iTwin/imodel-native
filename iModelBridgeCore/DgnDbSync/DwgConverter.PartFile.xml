@@ -11,8 +11,8 @@
 <!-- DwgImporterVersion b4 = Bim002, RealDWG2018, RealDWG2017 for AutoPlant, & Teigha4.3.1 -->
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
-
-    <Part Name="DwgConverter" PrgOutputDir="DwgConverter" Sequential="true">
+  
+    <Product Name="DwgConverter" PrgOutputDir="DwgConverter" AddIn="true">
         <!-- DWG importer using OpenDwg -->
         <SubProduct ProductName="OpenDwgImporter" />
         <!-- DWG importer using RealDwg -->
@@ -23,7 +23,7 @@
         <SubProduct ProductName="DwgImporterTests" />
         <!-- Run unit tests -->
         <SubPart PartName="RunDwgImporterTests" />
-    </Part>
+    </Product>
 
     <!-- Bind PublicAPI for DwgConverter into BuildContext/PublicAPI. -->
     <Part Name="PublicAPI" BentleyBuildMakeFile="DgnDbSync.prewire.mke" BMakeOptions="+dPUBLICAPI_Dwg">
