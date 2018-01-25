@@ -2,7 +2,7 @@
 |
 |     $Source: ThreeMxSchema/ThreeMxModel.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ThreeMxInternal.h"
@@ -219,6 +219,13 @@ TileTree::RootPtr ThreeMxModel::_CreateTileTree(Render::SystemP system)
     return scene.get();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TileTree::RootPtr ThreeMxModel::_GetTileTree(RenderContextR context)
+    {
+    return GetTileTree(context.GetRenderSystem());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16

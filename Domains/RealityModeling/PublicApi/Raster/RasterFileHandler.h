@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/Raster/RasterFileHandler.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -78,6 +78,7 @@ protected:
     void _OnSaveJsonProperties() override;
     void _OnLoadedJsonProperties() override;
     Dgn::TileTree::RootPtr _CreateTileTree(Dgn::Render::SystemP renderSys) override;
+    Dgn::TileTree::RootPtr _GetTileTree(Dgn::RenderContextR) override;
 
     bool _IsParallelToGround() const override;
     

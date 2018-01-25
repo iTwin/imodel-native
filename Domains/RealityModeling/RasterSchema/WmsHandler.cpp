@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/WmsHandler.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <RasterInternal.h>
@@ -212,6 +212,14 @@ WmsModel::WmsModel(CreateParams const& params, WmsMap const& wmsMap)
 //----------------------------------------------------------------------------------------
 WmsModel::~WmsModel()
     {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::TileTree::RootPtr WmsModel::_GetTileTree(Dgn::RenderContextR context)
+    {
+    return GetTileTree(context.GetRenderSystem());
     }
 
 //----------------------------------------------------------------------------------------
