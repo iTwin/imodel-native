@@ -271,9 +271,10 @@ Json::Value TestUtils::ViewStateLookAt(Utf8String params) {
 
 Json::Value TestUtils::DeserializeGeometryStream(Utf8String params) {
 	Json::Value props(Json::Value::From(params));
-	if (!props.isMember("geom") || \
-		!props.isMember("bsurfacePts") || !props.isMember("numSurfacePts") || !props["bsurfacePts"].isArray() || \
-		!props.isMember("polyPts") || !props.isMember("numPolyPts") || !props["polyPts"].isArray())
+	if (!props.isMember("geom") ||
+		!props.isMember("bsurfacePts") || !props.isMember("numSurfacePts") || !props["bsurfacePts"].isArray() ||
+		!props.isMember("polyPts") || !props.isMember("numPolyPts") || !props["polyPts"].isArray() || 
+        !props.isMember("outFileName"))
 		return Json::Value();
 
 	// Set up the original geometry to test against de-serialized geometry
@@ -315,7 +316,7 @@ Json::Value TestUtils::DeserializeGeometryStream(Utf8String params) {
 
 	// Set up collection iterator
 	BeSQLite::DbResult status;
-	BeFileName dbName("myDb");
+	BeFileName dbName(props["outFileName"].asCString(), true);
 	CreateDgnDbParams dgndbParams("DeserializeGeometryStream");
 	DgnDbPtr db = DgnDb::CreateDgnDb(&status, dbName, dgndbParams);
 	GeometryCollection collection(arrayBuff, *db);
@@ -387,8 +388,9 @@ Json::Value TestUtils::DeserializeGeometryStream(Utf8String params) {
 
 Json::Value TestUtils::BuildKnownGeometryStream(Utf8String params) {
 	Json::Value props(Json::Value::From(params));
-	if (!props.isMember("bsurfacePts") || !props.isMember("numSurfacePts") || !props["bsurfacePts"].isArray() || \
-		!props.isMember("polyPts") || !props.isMember("numPolyPts") || !props["polyPts"].isArray())
+	if (!props.isMember("bsurfacePts") || !props.isMember("numSurfacePts") || !props["bsurfacePts"].isArray() ||
+		!props.isMember("polyPts") || !props.isMember("numPolyPts") || !props["polyPts"].isArray() || 
+        !props.isMember("outFileName"))
 		return Json::Value();
 
 	// Set up the geometry to insert into the geometry stream
@@ -423,7 +425,7 @@ Json::Value TestUtils::BuildKnownGeometryStream(Utf8String params) {
 
 	// Set up the GeometryBuilder
 	BeSQLite::DbResult status;
-	BeFileName dbName("testDb");
+	BeFileName dbName(props["outFileName"].asCString(), true);
 	CreateDgnDbParams dgndbParams("BuildKnownGeometryStream");
 	DgnDbPtr db = DgnDb::CreateDgnDb(&status, dbName, dgndbParams);
 	GeometryBuilder builder = *GeometryBuilder::CreateGeometryPart(*db, true);
