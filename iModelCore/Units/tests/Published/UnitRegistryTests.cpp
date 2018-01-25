@@ -27,6 +27,11 @@ struct UnitRegistrySingletonTests : UnitsTestFixture
 
 struct UnitRegistryTests : UnitsTestFixture 
 {
+    struct TestUnitSystem : UnitSystem
+    {
+    public:
+        TestUnitSystem(Utf8CP name) : UnitSystem(name) {}
+    };
     struct TestPhenomenon : Phenomenon
     {
     public:
@@ -37,8 +42,8 @@ struct UnitRegistryTests : UnitsTestFixture
     struct TestUnit : Unit
     {
     public:
-        TestUnit(PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant) :
-            Unit("TEST", phenomenon, name, id, definition, baseSymbol, factor, offset, isConstant) { }
+        TestUnit(UnitSystemCR unitSystem, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant) :
+            Unit(unitSystem, phenomenon, name, id, definition, baseSymbol, factor, offset, isConstant) { }
     };
 
     struct TestUnitLocater : IUnitLocater
@@ -46,6 +51,7 @@ struct UnitRegistryTests : UnitsTestFixture
     private:
         bmap<Utf8String, TestUnit*> m_units;
         TestPhenomenon* m_phenomenon;
+        TestUnitSystem* m_unitSystem;
 
         void Populate();
 
@@ -91,12 +97,13 @@ TEST_F(UnitRegistrySingletonTests, AddAndRetrieveConstant)
 //--------------------------------------------------------------------------------------
 void UnitRegistryTests::TestUnitLocater::Populate()
     {
+    m_unitSystem = new TestUnitSystem("Banana");
     m_phenomenon = new TestPhenomenon("TestPhen", "Def", 'D', 0);
 
-    m_units.insert(bpair<Utf8String, TestUnit*>("TestUnit1", new TestUnit(*m_phenomenon, "TestUnit1", 1, "Def1", ' ', 1, 0, false)));
-    m_units.insert(bpair<Utf8String, TestUnit*>("TestUnit2", new TestUnit(*m_phenomenon, "TestUnit2", 2, "Def2", ' ', 1, 0, false)));
-    m_units.insert(bpair<Utf8String, TestUnit*>("TestUnit3", new TestUnit(*m_phenomenon, "TestUnit3", 3, "Def3", ' ', 1, 0, false)));
-    m_units.insert(bpair<Utf8String, TestUnit*>("TestUnit4", new TestUnit(*m_phenomenon, "TestUnit4", 4, "Def4", ' ', 1, 0, false)));
+    m_units.insert(bpair<Utf8String, TestUnit*>("TestUnit1", new TestUnit(*m_unitSystem, *m_phenomenon, "TestUnit1", 1, "Def1", ' ', 1, 0, false)));
+    m_units.insert(bpair<Utf8String, TestUnit*>("TestUnit2", new TestUnit(*m_unitSystem, *m_phenomenon, "TestUnit2", 2, "Def2", ' ', 1, 0, false)));
+    m_units.insert(bpair<Utf8String, TestUnit*>("TestUnit3", new TestUnit(*m_unitSystem, *m_phenomenon, "TestUnit3", 3, "Def3", ' ', 1, 0, false)));
+    m_units.insert(bpair<Utf8String, TestUnit*>("TestUnit4", new TestUnit(*m_unitSystem, *m_phenomenon, "TestUnit4", 4, "Def4", ' ', 1, 0, false)));
     }
 
 //--------------------------------------------------------------------------------------

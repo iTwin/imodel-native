@@ -89,10 +89,22 @@ void UnitRegistry::InsertUnique (Utf8Vector &vec, Utf8String &str)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UnitRegistry::AddSystem (Utf8CP systemName)
+void UnitRegistry::AddSystem (Utf8CP name)
     {
-    auto str = Utf8String(systemName);
-    InsertUnique (m_systems, str);
+    // TODO: use error return enum
+    if (Utf8String::IsNullOrEmpty(name))
+        {
+        LOG.error("Cannot create UnitSystem because name is null");
+        return;
+        }
+    if (NameConflicts(name))
+        {
+        LOG.errorv("Cannot create UnitSystem '%s' because that name is already in use.", name);
+        return;
+        }
+
+    auto unitSystem = UnitSystem::Create(name);
+    m_systems.Insert(unitSystem->GetName(), unitSystem);
     }
 
 Utf8CP GetBasePhenomenonName(Utf8Char baseSymbol)
@@ -189,6 +201,7 @@ void UnitRegistry::AddDefaultSystems ()
     AddSystem (USCUSTOM);
     AddSystem (STATISTICS);
     AddSystem (FINANCE);
+    AddSystem(CONSTANT);
     }
 
 //---------------------------------------------------------------------------------------//
@@ -217,7 +230,14 @@ UnitP UnitRegistry::AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP
         return nullptr;
         }
 
-    auto unit = Unit::Create(systemName, *phenomenon, unitName, m_nextId, definition, baseSymbol, factor, offset, isConstant);
+    UnitSystemCP system = LookupUnitSystem(systemName);
+    if (nullptr == system)
+        {
+        LOG.errorv("Could not find system '%s'", systemName);
+        return nullptr;
+        }
+
+    auto unit = Unit::Create(*system, *phenomenon, unitName, m_nextId, definition, baseSymbol, factor, offset, isConstant);
     if (nullptr == unit)
         return nullptr;
 
@@ -462,6 +482,15 @@ UnitCP UnitRegistry::LookupUnitCI (Utf8CP name) const
     }
 POP_MSVC_IGNORE
 
+UnitSystemCP UnitRegistry::LookupUnitSystem(Utf8CP name) const
+    {
+    auto usIt = m_systems.find(name);
+    if (usIt == m_systems.end())
+        return nullptr;
+
+    return usIt->second;
+    }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                              Chris.Tartamella       02/16
 //--------------------------------------------------------------------------------------
@@ -532,15 +561,6 @@ void UnitRegistry::AllPhenomena(bvector<PhenomenonCP>& allPhenomena) const
     {
     for (auto const& phenomenonAndName : m_phenomena)
         allPhenomena.push_back(phenomenonAndName.second);
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool UnitRegistry::HasSystem (Utf8CP systemName) const
-    {
-    auto iter = find (m_systems.begin(), m_systems.end(), Utf8String(systemName));
-    return iter != m_systems.end();
     }
 
 /*--------------------------------------------------------------------------------**//**
