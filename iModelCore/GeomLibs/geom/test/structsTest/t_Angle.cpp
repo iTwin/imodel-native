@@ -206,7 +206,7 @@ static void DistanceAlongToXYTR (double R, double spiralLength, double pseudoLen
 
     // direct radius of curvature.
     // y = a * xxx
-    double dydx = 3.0 * a * u * u;
+    //double dydx = 3.0 * a * u * u;
     double ddydxdx = 6.0 * a * u;
     double q = 1.0 + ddydxdx * ddydxdx;
     directCurvature = ddydxdx / sqrt (q * q * q);
@@ -434,9 +434,9 @@ TEST(CzechSpiral,NewtonStep)
                 spiral = new CzechCubicSpiral (radius1, spiralLength, pseudoLength);
 
             double distanceStep = spiralLength / edgeCount[i];
-            double curvature1 = 1.0 / radius1;
+            //double curvature1 = 1.0 / radius1;
             double averageRadius = 2.0 * radius1;
-            double averageCircleRadians = spiralLength / averageRadius;
+            //double averageCircleRadians = spiralLength / averageRadius;
             double directCurvature = 0;
             bvector<DPoint3d>xy;
             double xB = 0, yB = 0, tB = 0, rB = 0;
@@ -477,7 +477,7 @@ TEST(CzechSpiral,NewtonStep)
 #endif
     }
 
-
+#ifdef CompileOldNSWTest
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -522,7 +522,7 @@ TEST(PseudoSpiral,NewSouthWales)
         }
     Check::ClearGeometry ("PseudoSpiral.NewSouthWales");
     }
-
+#endif
 void TestAngleConstructors (double radians)
     {
     Angle angle0 = Angle::FromRadians (radians);
