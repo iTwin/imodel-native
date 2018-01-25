@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "UnitsPCH.h"
-#include "StandardNames.h"
 
 using namespace std;
 

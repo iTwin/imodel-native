@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "UnitsPCH.h"
-#include "StandardNames.h"
 
 USING_NAMESPACE_BENTLEY_UNITS
 

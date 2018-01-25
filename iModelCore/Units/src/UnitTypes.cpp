@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "UnitsPCH.h"
-#include "SymbolicExpression.h"
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include "../Localization/xliffs/Units.xliff.h"
 #include <BeSQLite/L10N.h>

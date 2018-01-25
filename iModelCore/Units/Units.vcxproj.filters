@@ -84,16 +84,7 @@
     <ClInclude Include=".\PublicAPI\Units\Quantity.h">
       <Filter>Header Files\Units</Filter>
     </ClInclude>
-    <ClInclude Include=".\src\StandardNames.h">
-      <Filter>Header Files\Units</Filter>
-    </ClInclude>
-    <ClInclude Include="src\SymbolicExpression.h">
-      <Filter>Header Files\Units</Filter>
-    </ClInclude>
     <ClInclude Include=".\PublicAPI\Units\UnitRegistry.h">
-      <Filter>Header Files\Units</Filter>
-    </ClInclude>
-    <ClInclude Include=".\PublicAPI\Units\Units.h">
       <Filter>Header Files\Units</Filter>
     </ClInclude>
     <ClInclude Include=".\src\UnitsNativeLogging.h">
@@ -113,6 +104,15 @@
     </ClInclude>
     <ClInclude Include="PublicAPI\Formatting\FormattingParsing.h">
       <Filter>Header Files\Formatting</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\Units\Units.h">
+      <Filter>Header Files\Units</Filter>
+    </ClInclude>
+    <ClInclude Include="PrivateAPI\Units\StandardNames.h">
+      <Filter>Header Files\Units</Filter>
+    </ClInclude>
+    <ClInclude Include="PrivateAPI\Units\SymbolicExpression.h">
+      <Filter>Header Files\Units</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
