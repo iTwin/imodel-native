@@ -38,19 +38,18 @@ public:
     HPMPersistentObject* Clone() const override;
     virtual HFCPtr<HRARaster> Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const override;
 
-    // Inherited from HRARaster
-    virtual HRARasterEditor*
+    virtual HRABitmapEditor*
                     CreateEditor   (HFCAccessMode pi_Mode) override;
 
-    virtual HRARasterEditor*
+    virtual HRABitmapEditor*
                     CreateEditor   (const HVEShape& pi_rShape,
                                     HFCAccessMode   pi_Mode) override;
 
-    virtual HRARasterEditor*
+    virtual HRABitmapEditor*
                     CreateEditor   (const HGFScanLines& pi_rShape,
                                     HFCAccessMode       pi_Mode) override;
 
-    virtual HRARasterEditor*
+    virtual HRABitmapEditor*
                     CreateEditorUnShaped (HFCAccessMode pi_Mode) override;
 
     virtual uint16_t GetRepresentativePalette(HRARepPalParms* pio_pRepPalParms) override;

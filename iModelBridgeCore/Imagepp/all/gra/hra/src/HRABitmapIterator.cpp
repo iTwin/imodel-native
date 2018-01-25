@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRABitmapIterator.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class: HRABitmapIterator
@@ -32,7 +32,7 @@ HRABitmapIterator::~HRABitmapIterator()
     }
 
 //-----------------------------------------------------------------------------
-// HRABitmapEditor::HRABitmapEditor - Copy constructor
+// HRABitmapIterator::HRABitmapIterator - Copy constructor
 //-----------------------------------------------------------------------------
 HRABitmapIterator::HRABitmapIterator(const HRABitmapIterator& pi_rBitmapIterator)
     : HRARasterIterator (pi_rBitmapIterator),
@@ -41,7 +41,7 @@ HRABitmapIterator::HRABitmapIterator(const HRABitmapIterator& pi_rBitmapIterator
     }
 
 //-----------------------------------------------------------------------------
-// HRABitmapEditor::operator= - Assignment operator
+// HRABitmapIterator::operator= - Assignment operator
 //-----------------------------------------------------------------------------
 HRABitmapIterator& HRABitmapIterator::operator=(const HRABitmapIterator& pi_rBitmapIterator)
     {

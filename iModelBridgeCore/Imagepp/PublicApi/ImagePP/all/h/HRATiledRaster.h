@@ -181,11 +181,6 @@ public:
     HPMPool*                    GetPool();
     // Overriden from HRAStoredRaster
 
-    HRARasterEditor*    CreateEditor(HFCAccessMode pi_Mode) override;
-    HRARasterEditor*    CreateEditor(const HVEShape& pi_rShape,
-                                             HFCAccessMode   pi_Mode) override;
-    HRARasterEditor*    CreateEditorUnShaped (HFCAccessMode pi_Mode) override;
-
     HRARasterIterator*  CreateIterator  (const HRAIteratorOptions& pi_rOptions = HRAIteratorOptions()) const override;
 
     // Special cas

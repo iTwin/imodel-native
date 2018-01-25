@@ -1281,7 +1281,7 @@ void HRAStoredRaster::ApplyTransaction(const HFCPtr<HRATransaction>& pi_rpTransa
         HFCPtr<HRABitmapBase> pLastBitmap;
         HAutoPtr<HGF2DExtent> pLastBitmapExtent;
         HFCPtr<HRARaster> pDstRaster;
-        HAutoPtr<HRARasterEditor> pBitmapEditor;
+        HAutoPtr<HRABitmapEditor> pBitmapEditor;
         HRAEditor* pEditor = NULL;
 
         do
@@ -1344,7 +1344,7 @@ void HRAStoredRaster::ApplyTransaction(const HFCPtr<HRATransaction>& pi_rpTransa
                         pLastBitmapExtent = new HGF2DExtent(pBitmap->GetPhysicalExtent());
                         pLastBitmapExtent->ChangeCoordSys(GetPhysicalCoordSys());
                         pBitmapEditor = pBitmap->CreateEditor(HFC_READ_WRITE);
-                        pEditor = ((HRABitmapEditor*)pBitmapEditor.get())->GetSurfaceEditor();
+                        pEditor = pBitmapEditor->GetSurfaceEditor();
                         }
 
 

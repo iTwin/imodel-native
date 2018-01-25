@@ -949,35 +949,6 @@ HRARasterIterator* HRAUnlimitedResolutionRaster::CreateIterator (const HRAIterat
                                                     FindTheBestResolution(pi_rOptions.GetPhysicalCoordSys()));
     }
 
-
-//-----------------------------------------------------------------------------
-// public
-// Create an editor
-//-----------------------------------------------------------------------------
-HRARasterEditor* HRAUnlimitedResolutionRaster::CreateEditor (HFCAccessMode pi_Mode)
-    {
-    return 0;
-    }
-
-
-//-----------------------------------------------------------------------------
-// public
-// Create a shaped editor
-//-----------------------------------------------------------------------------
-HRARasterEditor* HRAUnlimitedResolutionRaster::CreateEditor (const HVEShape& pi_rShape,
-                                                                    HFCAccessMode  pi_Mode)
-    {
-    return 0;
-    }
-
-
-
-HRARasterEditor* HRAUnlimitedResolutionRaster::CreateEditorUnShaped (HFCAccessMode pi_Mode)
-    {
-    return 0;
-    }
-
-
 //-----------------------------------------------------------------------------
 // public
 // Clone -

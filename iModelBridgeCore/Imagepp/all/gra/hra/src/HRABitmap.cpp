@@ -35,13 +35,13 @@
 #include <ImagePP/all/h/HRPComplexFilter.h>
 #include <ImagePP/all/h/HVE2DRectangle.h>
 #include <ImagePP/all/h/HRATransaction.h>
+#include <ImagePP/all/h/HRASurface.h>
 
 #include <ImagePP/all/h/HRABitmapEditor.h>
 #include <ImagePP/all/h/HGFScanlines.h>
 
 #include <ImagePP/all/h/HCDCodecHMRRLE1.h>
 #include <ImagePP/all/h/HCDPacket.h>
-#include <ImagePP/all/h/HRASurface.h>
 
 #include <ImagePP/all/h/HRPPixelTypeV64R16G16B16A16.h>
 #include <ImagePP/all/h/HRPPixelTypeV64R16G16B16X16.h>
@@ -226,26 +226,26 @@ HRABitmap& HRABitmap::operator=(const HRABitmap& pi_rBitmap)
 //
 // No inline problem with the compilation.
 //-----------------------------------------------------------------------------
-HRARasterEditor* HRABitmap::CreateEditor (HFCAccessMode pi_Mode)
+HRABitmapEditor* HRABitmap::CreateEditor (HFCAccessMode pi_Mode)
     {
-    return (HRARasterEditor*)new HRABitmapEditor(this, pi_Mode);
+    return new HRABitmapEditor(this, pi_Mode);
     }
 
-HRARasterEditor* HRABitmap::CreateEditor (const HVEShape& pi_rShape,
+HRABitmapEditor* HRABitmap::CreateEditor (const HVEShape& pi_rShape,
                                           HFCAccessMode   pi_Mode)
     {
-    return (HRARasterEditor*)new HRABitmapEditor(this, pi_rShape, pi_Mode);
+    return new HRABitmapEditor(this, pi_rShape, pi_Mode);
     }
 
-HRARasterEditor* HRABitmap::CreateEditor (const HGFScanLines& pi_rScanLines,
+HRABitmapEditor* HRABitmap::CreateEditor (const HGFScanLines& pi_rScanLines,
                                           HFCAccessMode       pi_Mode)
     {
-    return (HRARasterEditor*)new HRABitmapEditor(this, pi_rScanLines, pi_Mode);
+    return new HRABitmapEditor(this, pi_rScanLines, pi_Mode);
     }
 
-HRARasterEditor* HRABitmap::CreateEditorUnShaped (HFCAccessMode pi_Mode)
+HRABitmapEditor* HRABitmap::CreateEditorUnShaped (HFCAccessMode pi_Mode)
     {
-    return (HRARasterEditor*)new HRABitmapEditor(this, pi_Mode);
+    return new HRABitmapEditor(this, pi_Mode);
     }
 
 
@@ -279,7 +279,7 @@ void HRABitmap::Clear(const HRAClearOptions& pi_rOptions)
             }
         else if (pi_rOptions.HasScanlines())
             {
-            pEditor = (HRABitmapEditor*)CreateEditor(*pi_rOptions.GetScanlines(), HFC_WRITE_ONLY);
+            pEditor = CreateEditor(*pi_rOptions.GetScanlines(), HFC_WRITE_ONLY);
             }
         else
             {
@@ -294,7 +294,7 @@ void HRABitmap::Clear(const HRAClearOptions& pi_rOptions)
             else
                 pClearShape = pi_rOptions.GetShape();
 
-            pEditor = (HRABitmapEditor*)CreateEditor(*pClearShape, HFC_WRITE_ONLY);
+            pEditor = CreateEditor(*pClearShape, HFC_WRITE_ONLY);
             }
 
         HASSERT(pEditor != 0);
@@ -373,9 +373,9 @@ uint16_t HRABitmap::GetRepresentativePalette(
         HVEShape CurShape(*GetEffectiveShape());
         CurShape.ChangeCoordSys(GetPhysicalCoordSys());
         if (GetPhysicalExtent() == CurShape.GetExtent())
-            pEditor = (HRABitmapEditor*)CreateEditor(HFC_READ_ONLY);
+            pEditor = CreateEditor(HFC_READ_ONLY);
         else
-            pEditor = (HRABitmapEditor*)CreateEditor(CurShape, HFC_READ_ONLY);
+            pEditor = CreateEditor(CurShape, HFC_READ_ONLY);
 
         if(pEditor != 0)
             {
@@ -483,10 +483,10 @@ void HRABitmap::ComputeHistogram(HRAHistogramOptions* pio_pOptions,
                 PhysicalRegion.ChangeCoordSys(GetPhysicalCoordSys());
 
                 if (!PhysicalRegion.IsEmpty())
-                    pEditor = (HRABitmapEditor*)CreateEditor(PhysicalRegion, HFC_READ_ONLY);
+                    pEditor = CreateEditor(PhysicalRegion, HFC_READ_ONLY);
                 }
             else
-                pEditor = (HRABitmapEditor*)CreateEditor(HFC_READ_ONLY);
+                pEditor = CreateEditor(HFC_READ_ONLY);
 
             if (pEditor != 0)
                 {
@@ -1310,10 +1310,10 @@ void HRABitmap::ComputeLightnessHistogram(HRAHistogramOptions* pio_pOptions)
         PhysicalRegion.ChangeCoordSys(GetPhysicalCoordSys());
 
         if (!PhysicalRegion.IsEmpty())
-            pEditor = (HRABitmapEditor*)CreateEditor(PhysicalRegion, HFC_READ_ONLY);
+            pEditor = CreateEditor(PhysicalRegion, HFC_READ_ONLY);
         }
     else
-        pEditor = (HRABitmapEditor*)CreateEditor(HFC_READ_ONLY);
+        pEditor = CreateEditor(HFC_READ_ONLY);
 
     if (pEditor != 0)
         {
@@ -1586,10 +1586,10 @@ void HRABitmap::ComputeGrayscaleHistogram(HRAHistogramOptions* pio_pOptions)
         PhysicalRegion.ChangeCoordSys(GetPhysicalCoordSys());
 
         if (!PhysicalRegion.IsEmpty())
-            pEditor = (HRABitmapEditor*)CreateEditor(PhysicalRegion, HFC_READ_ONLY);
+            pEditor = CreateEditor(PhysicalRegion, HFC_READ_ONLY);
         }
     else
-        pEditor = (HRABitmapEditor*)CreateEditor(HFC_READ_ONLY);
+        pEditor = CreateEditor(HFC_READ_ONLY);
 
     if (pEditor != 0)
         {
@@ -1647,10 +1647,10 @@ void HRABitmap::ComputeRGBHistogram(HRAHistogramOptions* pio_pOptions)
         PhysicalRegion.ChangeCoordSys(GetPhysicalCoordSys());
 
         if (!PhysicalRegion.IsEmpty())
-            pEditor = (HRABitmapEditor*)CreateEditor(PhysicalRegion, HFC_READ_ONLY);
+            pEditor = CreateEditor(PhysicalRegion, HFC_READ_ONLY);
         }
     else
-        pEditor = (HRABitmapEditor*)CreateEditor(HFC_READ_ONLY);
+        pEditor = CreateEditor(HFC_READ_ONLY);
 
     if (pEditor != 0)
         {
@@ -1711,10 +1711,10 @@ void HRABitmap::ComputeRGBAHistogram(HRAHistogramOptions* pio_pOptions)
         PhysicalRegion.ChangeCoordSys(GetPhysicalCoordSys());
 
         if (!PhysicalRegion.IsEmpty())
-            pEditor = (HRABitmapEditor*)CreateEditor(PhysicalRegion, HFC_READ_ONLY);
+            pEditor = CreateEditor(PhysicalRegion, HFC_READ_ONLY);
         }
     else
-        pEditor = (HRABitmapEditor*)CreateEditor(HFC_READ_ONLY);
+        pEditor = CreateEditor(HFC_READ_ONLY);
 
     if (pEditor != 0)
         {

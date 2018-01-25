@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAUnlimitedResolutionRasterIterator.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // ----------------------------------------------------------------------------//
@@ -44,7 +44,7 @@ HRAUnlimitedResolutionRasterIterator::~HRAUnlimitedResolutionRasterIterator()
 
 //-----------------------------------------------------------------------------
 // public
-// HRABitmapEditor - Copy constructor
+// HRAUnlimitedResolutionRasterIterator - Copy constructor
 //-----------------------------------------------------------------------------
 HRAUnlimitedResolutionRasterIterator::HRAUnlimitedResolutionRasterIterator(const HRAUnlimitedResolutionRasterIterator& pi_rIterator)
     : HRARasterIterator (pi_rIterator),

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAPyramidRaster.hpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -24,34 +24,6 @@ inline HRARasterIterator* HRAPyramidRaster::CreateIterator (const HRAIteratorOpt
     return new HRAPyramidRasterIterator (HFCPtr<HRAPyramidRaster>((HRAPyramidRaster*)this),
                                          pi_rOptions,
                                          FindTheBestResolution(pi_rOptions.GetPhysicalCoordSys()));
-    }
-
-
-//-----------------------------------------------------------------------------
-// public
-// Create an editor
-//-----------------------------------------------------------------------------
-inline HRARasterEditor* HRAPyramidRaster::CreateEditor (HFCAccessMode pi_Mode)
-    {
-    return 0;
-    }
-
-
-//-----------------------------------------------------------------------------
-// public
-// Create a shaped editor
-//-----------------------------------------------------------------------------
-inline HRARasterEditor* HRAPyramidRaster::CreateEditor (const HVEShape& pi_rShape,
-                                                        HFCAccessMode  pi_Mode)
-    {
-    return 0;
-    }
-
-
-
-inline HRARasterEditor* HRAPyramidRaster::CreateEditorUnShaped (HFCAccessMode pi_Mode)
-    {
-    return 0;
     }
 
 //-----------------------------------------------------------------------------

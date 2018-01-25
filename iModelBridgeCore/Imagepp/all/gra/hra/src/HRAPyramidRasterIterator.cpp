@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAPyramidRasterIterator.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // ----------------------------------------------------------------------------//
@@ -44,7 +44,6 @@ HRAPyramidRasterIterator::~HRAPyramidRasterIterator()
 
 //-----------------------------------------------------------------------------
 // public
-// HRABitmapEditor - Copy constructor
 //-----------------------------------------------------------------------------
 HRAPyramidRasterIterator::HRAPyramidRasterIterator(const HRAPyramidRasterIterator& pi_rIterator)
     : HRARasterIterator (pi_rIterator),

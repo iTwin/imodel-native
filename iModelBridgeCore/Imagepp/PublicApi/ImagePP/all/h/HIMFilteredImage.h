@@ -14,7 +14,6 @@
 #include "HRAImageView.h"
 
 BEGIN_IMAGEPP_NAMESPACE
-class HRASurface;
 class HRPFilter;
 class HRPPixelNeighbourhood;
 

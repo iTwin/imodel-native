@@ -1399,41 +1399,6 @@ bool HIMMosaic::ContainsPixelsWithChannel(HRPChannelType::ChannelRole pi_Role,
     return ContainsSome;
     }
 
-
-/** ---------------------------------------------------------------------------
-    Create an editor.
-    @return NULL, not implemented.
-    ---------------------------------------------------------------------------
-*/
-HRARasterEditor* HIMMosaic::CreateEditor(HFCAccessMode pi_Mode)
-    {
-    return 0;
-    }
-
-
-/** ---------------------------------------------------------------------------
-    Create a shaped editor
-    @return NULL, not implemented.
-    ---------------------------------------------------------------------------
-*/
-HRARasterEditor* HIMMosaic::CreateEditor(const HVEShape&    pi_rShape,
-                                         HFCAccessMode      pi_Mode)
-    {
-    return 0;
-    }
-
-
-
-/** ---------------------------------------------------------------------------
-    Create an unshaped editor
-    @return NULL, not implemented.
-    ---------------------------------------------------------------------------
-*/
-HRARasterEditor* HIMMosaic::CreateEditorUnShaped (HFCAccessMode pi_Mode)
-    {
-    return 0;
-    }
-
 /** ---------------------------------------------------------------------------
     Check if the mosaic supports the lookahead mechanism.
     @return true if at least one image supports the lookahead.

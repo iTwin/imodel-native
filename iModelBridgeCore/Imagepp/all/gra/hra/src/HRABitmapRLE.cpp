@@ -231,7 +231,7 @@ void HRABitmapRLE::Clear(const HRAClearOptions& pi_rOptions)
             }
         else if (pi_rOptions.HasScanlines())
             {
-            pEditor = (HRABitmapEditor*)CreateEditor(*pi_rOptions.GetScanlines(), HFC_WRITE_ONLY);
+            pEditor = CreateEditor(*pi_rOptions.GetScanlines(), HFC_WRITE_ONLY);
             }
         else
             {
@@ -246,10 +246,10 @@ void HRABitmapRLE::Clear(const HRAClearOptions& pi_rOptions)
                 else
                     pClearShape = pi_rOptions.GetShape();
 
-                pEditor = (HRABitmapEditor*)CreateEditor(*pClearShape, HFC_WRITE_ONLY);
+                pEditor = CreateEditor(*pClearShape, HFC_WRITE_ONLY);
                 }
             else
-                pEditor = (HRABitmapEditor*)CreateEditor(HFC_WRITE_ONLY);
+                pEditor = CreateEditor(HFC_WRITE_ONLY);
             }
 
         HASSERT(pEditor != 0);
@@ -318,24 +318,24 @@ HRABitmapRLE& HRABitmapRLE::operator=(const HRABitmapRLE& pi_rBitmap)
 // public
 // CreateEditor
 //-----------------------------------------------------------------------------
-HRARasterEditor* HRABitmapRLE::CreateEditor (HFCAccessMode pi_Mode)
+HRABitmapEditor* HRABitmapRLE::CreateEditor (HFCAccessMode pi_Mode)
     {
     return new HRABitmapEditor(this, pi_Mode);
     }
 
-HRARasterEditor* HRABitmapRLE::CreateEditor(const HVEShape& pi_rShape,
+HRABitmapEditor* HRABitmapRLE::CreateEditor(const HVEShape& pi_rShape,
                                             HFCAccessMode   pi_Mode)
     {
     return new HRABitmapEditor(this, pi_rShape, pi_Mode);
     }
 
-HRARasterEditor* HRABitmapRLE::CreateEditor(const HGFScanLines& pi_rScanLines,
+HRABitmapEditor* HRABitmapRLE::CreateEditor(const HGFScanLines& pi_rScanLines,
                                             HFCAccessMode       pi_Mode)
     {
     return new HRABitmapEditor(this, pi_rScanLines, pi_Mode);
     }
 
-HRARasterEditor* HRABitmapRLE::CreateEditorUnShaped (HFCAccessMode pi_Mode)
+HRABitmapEditor* HRABitmapRLE::CreateEditorUnShaped (HFCAccessMode pi_Mode)
     {
     return new HRABitmapEditor(this, pi_Mode);
     }

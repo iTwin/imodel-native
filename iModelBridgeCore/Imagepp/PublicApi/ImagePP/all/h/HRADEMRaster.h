@@ -17,9 +17,7 @@ BEGIN_IMAGEPP_NAMESPACE
 
 class HRAStoredRaster;
 class HRAReferenceToStoredRaster;
-class HRASurface;
 class HRPDEMFilter;
-class HGSMemorySurfaceDescriptor;
 class HRPPixelNeighbourhood;
 
 

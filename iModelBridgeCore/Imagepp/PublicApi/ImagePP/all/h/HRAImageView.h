@@ -40,16 +40,6 @@ public:
     virtual void    Clear() override;
     virtual void    Clear(const HRAClearOptions& pi_rOptions) override;
 
-    HRARasterEditor*
-    CreateEditor   (HFCAccessMode pi_Mode) override;
-
-    HRARasterEditor*
-    CreateEditor   (const HVEShape& pi_rShape,
-                    HFCAccessMode   pi_Mode) override;
-
-    HRARasterEditor*
-    CreateEditorUnShaped (HFCAccessMode pi_Mode) override;
-
     HRARasterIterator*
     CreateIterator (const HRAIteratorOptions& pi_rOptions = HRAIteratorOptions()) const override;
 

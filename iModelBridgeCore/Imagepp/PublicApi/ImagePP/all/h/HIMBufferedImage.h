@@ -202,16 +202,6 @@ public:
     HRARasterIterator*
     CreateIterator (const HRAIteratorOptions& pi_rOptions = HRAIteratorOptions()) const override;
 
-    HRARasterEditor*
-    CreateEditor   (HFCAccessMode pi_Mode) override;
-
-    HRARasterEditor*
-    CreateEditor   (const HVEShape& pi_rShape,
-                    HFCAccessMode   pi_Mode) override;
-
-    HRARasterEditor*
-    CreateEditorUnShaped (HFCAccessMode pi_Mode) override;
-
     bool   HasSinglePixelType() const override;
     HFCPtr<HRPPixelType>
     GetPixelType() const override;

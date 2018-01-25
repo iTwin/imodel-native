@@ -128,28 +128,6 @@ void HRAImageView::InvalidateRaster()
     }
 
 /** -----------------------------------------------------------------------------
-    Create the editor on the source.
-    -----------------------------------------------------------------------------
-*/
-HRARasterEditor* HRAImageView::CreateEditor   (HFCAccessMode pi_Mode)
-    {
-    return m_pSource->CreateEditor(pi_Mode);
-    }
-
-HRARasterEditor* HRAImageView::CreateEditor   (const HVEShape& pi_rShape,
-                                               HFCAccessMode   pi_Mode)
-    {
-    return m_pSource->CreateEditor(pi_rShape, pi_Mode);
-    }
-
-
-HRARasterEditor* HRAImageView::CreateEditorUnShaped (HFCAccessMode pi_Mode)
-    {
-    return m_pSource->CreateEditorUnShaped(pi_Mode);
-    }
-
-
-/** -----------------------------------------------------------------------------
     Create an iterator on the source raster.
     -----------------------------------------------------------------------------
 */

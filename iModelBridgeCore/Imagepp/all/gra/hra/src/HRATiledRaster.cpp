@@ -26,12 +26,10 @@
 #include <ImagePP/all/h/HCDPacketRLE.h>
 #include <ImagePP/all/h/HRPPixelConverter.h>
 #include <ImagePP/all/h/HMDContext.h>
-#include <ImagePP/all/h/HGSRegion.h>
 #include <ImagePP/all/h/HFCGrid.h>
-#include <ImagePP/all/h/HRASurface.h>
 #include <ImagePP/all/h/HRATransaction.h>
+#include <ImagePP/all/h/HRASurface.h>
 
-#include <ImagePP/all/h/HRARasterEditor.h>
 #include <ImagePP/all/h/HRABitmapEditor.h>
 #include <ImagePP/all/h/HRAEditor.h>
 
@@ -1705,7 +1703,7 @@ void HRATiledRaster::ClearWithRLEMask(const HRAClearOptions& pi_rOptions)
 
                     pTile = GetTileByIndex(TileIndex)->GetTile();
                     pTile->GetPosInRaster(&TileXPosInRaster, &TileYPosInRaster);
-                    pBitmapEditor = (HRABitmapEditor*)pTile->CreateEditor(HFC_WRITE_ONLY);
+                    pBitmapEditor = pTile->CreateEditor(HFC_WRITE_ONLY);
                     pEditor = pBitmapEditor->GetSurfaceEditor();
                     CurrentTileIndex = TileIndex;
 
@@ -1771,7 +1769,7 @@ void HRATiledRaster::ClearWithRLEMask(const HRAClearOptions& pi_rOptions)
 
                 // get the tile and process it
                 HFCPtr<HRABitmapBase> pTile(GetTileByIndex(TileIndex)->GetTile());
-                pBitmapEditor = (HRABitmapEditor*)pTile->CreateEditor(HFC_WRITE_ONLY);
+                pBitmapEditor = pTile->CreateEditor(HFC_WRITE_ONLY);
                 pEditor = pBitmapEditor->GetSurfaceEditor();
 
                 HUINTX TilePosXInRaster;
@@ -2028,35 +2026,6 @@ HPMPool* HRATiledRaster::GetPool()
 HPMPersistentObject* HRATiledRaster::Clone () const
     {
     return new HRATiledRaster(*this);
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// Create an editor
-//-----------------------------------------------------------------------------
-HRARasterEditor* HRATiledRaster::CreateEditor (HFCAccessMode pi_Mode)
-    {
-    return 0;
-    }
-
-
-//-----------------------------------------------------------------------------
-// public
-// Create a shaped editor
-//-----------------------------------------------------------------------------
-HRARasterEditor* HRATiledRaster::CreateEditor (const HVEShape& pi_rShape, HFCAccessMode pi_Mode)
-    {
-    return 0;
-    }
-
-
-//-----------------------------------------------------------------------------
-// public
-// Create an unshaped editor
-//-----------------------------------------------------------------------------
-HRARasterEditor* HRATiledRaster::CreateEditorUnShaped (HFCAccessMode pi_Mode)
-    {
-    return 0;
     }
 
 //-----------------------------------------------------------------------------

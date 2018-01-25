@@ -777,12 +777,6 @@ $(o)ImageCommon$(oext) : $(ippGraDir)hra/src/ImageCommon.cpp $(ippGraPrivateAPIS
 
 $(o)ImageAllocator$(oext) : $(ippGraDir)hra/src/ImageAllocator.cpp $(ippGraPrivateAPISrc)ImageAllocator.h ${MultiCompileDepends}
 
-$(o)HRAAverageSamplerN8$(oext) : $(ippGraDir)hra/src/HRAAverageSamplerN8.cpp $(ippAllInc)HRAAverageSamplerN8.h ${MultiCompileDepends}
-
-$(o)HRABicubicSamplerN8$(oext) : $(ippGraDir)hra/src/HRABicubicSamplerN8.cpp $(ippAllInc)HRABicubicSamplerN8.h ${MultiCompileDepends}
-
-$(o)HRABilinearSamplerN8$(oext) : $(ippGraDir)hra/src/HRABilinearSamplerN8.cpp $(ippAllInc)HRABilinearSamplerN8.h ${MultiCompileDepends}
-
 $(o)HRABitmap$(oext) : $(ippGraDir)hra/src/HRABitmap.cpp $(ippAllInc)HRABitmap.h $(ippAllInc)HRABitmapBase.h $(ippGraPrivateAPISrc)ImageCommon.h $(HRasterDepends) ${MultiCompileDepends}
 
 $(o)HRABitmapBase$(oext) : $(ippGraDir)hra/src/HRABitmapBase.cpp $(ippAllInc)HRABitmapBase.h $(HRasterDepends) ${MultiCompileDepends}
@@ -792,8 +786,6 @@ $(o)HRABitmapEditor$(oext) : $(ippGraDir)hra/src/HRABitmapEditor.cpp $(ippAllInc
 $(o)HRABitmapIterator$(oext) : $(ippGraDir)hra/src/HRABitmapIterator.cpp $(ippAllInc)HRABitmapIterator.h ${MultiCompileDepends}
 
 $(o)HRABitmapRLE$(oext) : $(ippGraDir)hra/src/HRABitmapRLE.cpp $(ippAllInc)HRABitmapRLE.h $(ippAllInc)HRABitmapBase.h $(ippGraPrivateAPISrc)ImageCommon.h $(HRasterDepends) ${MultiCompileDepends}
-
-$(o)HRABlitter$(oext) : $(ippGraDir)hra/src/HRABlitter.cpp $(ippAllInc)HRABlitter.h ${MultiCompileDepends}
 
 $(o)HRACopyFromOptions$(oext) : $(ippGraDir)hra/src/HRACopyFromOptions.cpp $(ippAllInc)HRACopyFromOptions.h ${MultiCompileDepends}
 
@@ -814,10 +806,6 @@ $(o)HRAEditorRLE1$(oext) : $(ippGraDir)hra/src/HRAEditorRLE1.cpp $(ippAllInc)HRA
 $(o)HRAEditorRLE1Line$(oext) : $(ippGraDir)hra/src/HRAEditorRLE1Line.cpp $(ippAllInc)HRAEditorRLE1Line.h ${MultiCompileDepends}
 
 $(o)HRAGenEditor$(oext) : $(ippGraDir)hra/src/HRAGenEditor.cpp $(ippAllInc)HRAGenEditor.h ${MultiCompileDepends}
-
-$(o)HRAGenericAverageSampler$(oext) : $(ippGraDir)hra/src/HRAGenericAverageSampler.cpp $(ippAllInc)HRAGenericAverageSampler.h ${MultiCompileDepends}
-
-$(o)HRAGenericSampler$(oext) : $(ippGraDir)hra/src/HRAGenericSampler.cpp $(ippAllInc)HRAGenericSampler.h ${MultiCompileDepends}
 
 $(o)HRAHistogramOptions$(oext) : $(ippGraDir)hra/src/HRAHistogramOptions.cpp $(ippAllInc)HRAHistogramOptions.h ${MultiCompileDepends}
 
@@ -857,14 +845,6 @@ $(o)HRAIteratorOptions$(oext) : $(ippGraDir)hra/src/HRAIteratorOptions.cpp $(ipp
 
 $(o)HRAMessages$(oext) : $(ippGraDir)hra/src/HRAMessages.cpp $(ippAllInc)HRAMessages.h ${MultiCompileDepends}
 
-$(o)HRANearestSampler$(oext) : $(ippGraDir)hra/src/HRANearestSampler.cpp $(ippAllInc)HRANearestSampler.h ${MultiCompileDepends}
-
-$(o)HRANearestSamplerN1$(oext) : $(ippGraDir)hra/src/HRANearestSamplerN1.cpp $(ippAllInc)HRANearestSamplerN1.h ${MultiCompileDepends}
-
-$(o)HRANearestSamplerN8$(oext) : $(ippGraDir)hra/src/HRANearestSamplerN8.cpp $(ippAllInc)HRANearestSamplerN8.h ${MultiCompileDepends}
-
-$(o)HRANearestSamplerRLE1$(oext) : $(ippGraDir)hra/src/HRANearestSamplerRLE1.cpp $(ippAllInc)HRANearestSamplerRLE1.h ${MultiCompileDepends}
-
 $(o)HRAOnDemandRaster$(oext) : $(ippGraDir)hra/src/HRAOnDemandRaster.cpp $(ippAllInc)HRAOnDemandRaster.h ${MultiCompileDepends}
 
 $(o)HRAPixelTypeReplacer$(oext) : $(ippGraDir)hra/src/HRAPixelTypeReplacer.cpp $(ippAllInc)HRAPixelTypeReplacer.h ${MultiCompileDepends}
@@ -881,15 +861,11 @@ $(o)HRARasterIterator$(oext) : $(ippGraDir)hra/src/HRARasterIterator.cpp $(ippAl
 
 $(o)HRAReferenceToRaster$(oext) : $(ippGraDir)hra/src/HRAReferenceToRaster.cpp $(HRasterDepends) $(ippAllInc)HRAReferenceToRaster.h $(ippGraPrivateAPISrc)ImageCommon.h ${MultiCompileDepends}
 
-$(o)HRAReferenceToRasterEditor$(oext) : $(ippGraDir)hra/src/HRAReferenceToRasterEditor.cpp $(ippAllInc)HRAReferenceToRasterEditor.h ${MultiCompileDepends}
-
 $(o)HRAReferenceToRasterIterator$(oext) : $(ippGraDir)hra/src/HRAReferenceToRasterIterator.cpp $(ippAllInc)HRAReferenceToRasterIterator.h ${MultiCompileDepends}
 
 $(o)HRAReferenceToStoredRaster$(oext) : $(ippGraDir)hra/src/HRAReferenceToStoredRaster.cpp $(ippAllInc)HRAReferenceToStoredRaster.h ${MultiCompileDepends}
 
 $(o)HRARepPalParms$(oext) : $(ippGraDir)hra/src/HRARepPalParms.cpp $(ippAllInc)HRARepPalParms.h ${MultiCompileDepends}
-
-$(o)HRASampler$(oext) : $(ippGraDir)hra/src/HRASampler.cpp $(ippAllInc)HRASampler.h ${MultiCompileDepends}
 
 $(o)HRASamplingOptions$(oext) : $(ippGraDir)hra/src/HRASamplingOptions.cpp $(ippAllInc)HRASamplingOptions.h ${MultiCompileDepends}
 

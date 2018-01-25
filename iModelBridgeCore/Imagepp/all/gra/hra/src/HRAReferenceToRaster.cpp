@@ -12,7 +12,6 @@
 
 
 #include <ImagePP/all/h/HRAReferenceToRaster.h>
-#include <ImagePP/all/h/HRAReferenceToRasterEditor.h>
 #include <ImagePP/all/h/HRAReferenceToRasterIterator.h>
 #include <ImagePP/all/h/HGF2DCoordSys.h>
 #include <ImagePP/all/h/HRPPixelType.h>
@@ -318,99 +317,6 @@ void HRAReferenceToRaster::Clear(const HRAClearOptions& pi_rOptions)
     else
         m_pSource->Clear(pi_rOptions);
     }
-
-//-----------------------------------------------------------------------------
-// Create an editor
-//-----------------------------------------------------------------------------
-HRARasterEditor* HRAReferenceToRaster::CreateEditor(HFCAccessMode pi_Mode)
-    {
-    HPRECONDITION(m_pSource != 0);
-
-    HRARasterEditor*  pEditor;
-
-    if (m_CoordSysChanged)
-        {
-        // Create a HRAReferenceToRasterEditor
-        pEditor = new HRAReferenceToRasterEditor(HFCPtr<HRAReferenceToRaster>(this), pi_Mode);
-        }
-    else
-        {
-        if (m_ShapeChanged)
-            {
-            HVEShape RefShape(GetShape());  // Always in reference's CS.
-
-            // Set shape to the source's coordinate system
-            RefShape.SetCoordSys(m_pSource->GetCoordSys());
-
-            // Call source's CreateEditor, with reference's shape
-            pEditor = m_pSource->CreateEditor(RefShape, pi_Mode);
-            }
-        else
-            {
-            // We can do without shaping
-            pEditor = m_pSource->CreateEditor(pi_Mode);
-            }
-        }
-
-    return pEditor;
-    }
-
-
-//-----------------------------------------------------------------------------
-// Create a shaped editor
-//-----------------------------------------------------------------------------
-HRARasterEditor* HRAReferenceToRaster::CreateEditor(const HVEShape& pi_rShape,
-                                                    HFCAccessMode   pi_Mode)
-    {
-    HPRECONDITION(m_pSource != 0);
-
-    HRARasterEditor*  pEditor;
-
-    if (m_CoordSysChanged)
-        {
-        // Create a HRAReferenceToRasterEditor
-        pEditor = new HRAReferenceToRasterEditor(
-            HFCPtr<HRAReferenceToRaster>(this),
-            pi_rShape, pi_Mode);
-        }
-    else
-        {
-        HVEShape RefShape(GetShape());  // Always in reference's CS.
-
-        // Take intersection of reference's shape and specified one
-        RefShape.Intersect(pi_rShape);
-
-        // Set shape to the source's coordinate system
-        RefShape.SetCoordSys(m_pSource->GetCoordSys());
-
-        // Call source's CreateEditor, with calculated shape
-        pEditor = m_pSource->CreateEditor(RefShape, pi_Mode);
-        }
-
-    return pEditor;
-    }
-
-
-
-HRARasterEditor* HRAReferenceToRaster::CreateEditorUnShaped (HFCAccessMode pi_Mode)
-    {
-    HPRECONDITION(m_pSource != 0);
-
-    HRARasterEditor*  pEditor;
-
-    if (m_CoordSysChanged)
-        {
-        // Create a HRAReferenceToRasterEditor
-        pEditor = new HRAReferenceToRasterEditor(HFCPtr<HRAReferenceToRaster>(this), pi_Mode);
-        }
-    else
-        {
-        pEditor = m_pSource->CreateEditorUnShaped(pi_Mode);
-        }
-
-    return pEditor;
-    }
-
 
 //-----------------------------------------------------------------------------
 // Notification for shape changed

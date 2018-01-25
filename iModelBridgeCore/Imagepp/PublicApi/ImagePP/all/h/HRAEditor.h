@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAEditor.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRAEditor
@@ -96,17 +96,14 @@ public:
                              const void*        pi_pRun,
                              void*              pi_pTransaction = 0);
 
-
-    //:> Public because HRABlitter needs to access the scanlines.
-    //:> Should not be used otherwise.
-
-    const HGFScanLines* GetScanlines() const;
-
     HRASurface& GetSurface() const;
 
 protected:
 
 private:
+
+
+    const HGFScanLines* GetScanlines() const;
 
     HRASurface& m_surface;
    

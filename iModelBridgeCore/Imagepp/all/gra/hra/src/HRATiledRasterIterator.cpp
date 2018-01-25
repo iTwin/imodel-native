@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRATiledRasterIterator.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // ----------------------------------------------------------------------------//
@@ -61,7 +61,7 @@ HRATiledRasterIterator::~HRATiledRasterIterator()
 
 //-----------------------------------------------------------------------------
 // public
-// HRABitmapEditor - Copy constructor
+// HRATiledRasterIterator - Copy constructor
 //-----------------------------------------------------------------------------
 HRATiledRasterIterator::HRATiledRasterIterator(const HRATiledRasterIterator& pi_rIterator)
     : HRARasterIterator (pi_rIterator),

@@ -20,7 +20,6 @@
 
 BEGIN_IMAGEPP_NAMESPACE
 class HRARasterIterator;
-class HRARasterEditor;
 class HPMObjectStore;
 class HPMPool;
 class HRARepPalParms;
@@ -51,8 +50,6 @@ class HNOVTABLEINIT HRARaster : public HGFRaster
     HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HRARasterId)
 
 public:
-
-    friend class HRARasterEditor;
     friend class HRARasterIterator;
 
     // Primary methods
@@ -68,13 +65,6 @@ public:
 
     virtual void    Clear() = 0;
     virtual void    Clear(const HRAClearOptions& pi_rOptions) = 0;
-
-    virtual HRARasterEditor*     CreateEditor   (HFCAccessMode   pi_Mode)= 0;
-
-    virtual HRARasterEditor*     CreateEditor   (const HVEShape& pi_rShape,
-                                                 HFCAccessMode   pi_Mode) = 0;
-
-    virtual HRARasterEditor*     CreateEditorUnShaped (HFCAccessMode pi_Mode)= 0;
 
     /** -----------------------------------------------------------------------------
         Allocates a new raster iterator that can be used to access the physical rasters

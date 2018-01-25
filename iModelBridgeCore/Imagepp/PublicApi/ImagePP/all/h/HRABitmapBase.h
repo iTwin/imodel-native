@@ -38,28 +38,15 @@ public:
 //         //LOWER_RIGHT_HORIZONTAL ,
 //         };
 
-// already declared in super --     virtual HPMPersistentObject* Clone () const=0;
+    virtual HRABitmapEditor* CreateEditor(HFCAccessMode pi_Mode) = 0;
 
-// already declared in super --     virtual HFCPtr<HRARaster> Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const =0;
+    virtual HRABitmapEditor* CreateEditor(const HVEShape& pi_rShape, HFCAccessMode pi_Mode) = 0;
 
-    // Inherited from HRARaster
-// already declared in super --     virtual HRARasterEditor*    CreateEditor   (HFCAccessMode pi_Mode)=0;
+    virtual HRABitmapEditor* CreateEditor(const HGFScanLines& pi_rShape, HFCAccessMode pi_Mode) = 0;
 
-// already declared in super --     virtual HRARasterEditor*    CreateEditor   (const HVEShape& pi_rShape,
-//                                                 HFCAccessMode   pi_Mode)=0;
-
-    // C++ overriding is by-name, not by-signature.
-    // If this class wants to introduce a new overload, it must explicitly opt-in to its base class's variants.
-    using HRARaster::CreateEditor;
-    virtual HRARasterEditor*    CreateEditor   (const HGFScanLines& pi_rShape,
-                                                HFCAccessMode       pi_Mode)=0;
-
-// already declared in super --     virtual HRARasterEditor*    CreateEditorUnShaped (HFCAccessMode pi_Mode)=0;
+    virtual HRABitmapEditor* CreateEditorUnShaped(HFCAccessMode pi_Mode) = 0;
 
     HRARasterIterator*  CreateIterator  (const HRAIteratorOptions& pi_rOptions = HRAIteratorOptions()) const override;
-
-// already declared in super --     virtual void                ComputeHistogram(HRAHistogramOptions* pio_pHistogramOptions,
-//                                                  bool                pi_ForceRecompute = false)=0;
 
 
     // Special status...
@@ -67,8 +54,6 @@ public:
     // Must call the parent
     virtual void                MakeEmpty()=0;
     virtual bool                IsEmpty() const=0;
-
-// already declared in super --     virtual size_t              GetAdditionalSize() const=0;
 
     // surface descriptor
     virtual HFCPtr<HGSSurfaceDescriptor> GetSurfaceDescriptor(const HFCPtr<HRPPixelType>* pi_ppReplacingPixelType = 0,

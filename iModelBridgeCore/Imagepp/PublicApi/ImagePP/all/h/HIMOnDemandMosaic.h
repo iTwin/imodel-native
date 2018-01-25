@@ -103,11 +103,6 @@ public:
     virtual void    Clear() override;
     virtual void    Clear(const HRAClearOptions& pi_rOptions) override;
 
-    HRARasterEditor*    CreateEditor(HFCAccessMode p_Mode) override;
-    HRARasterEditor*    CreateEditor(const HVEShape& pi_rShape,
-                 HFCAccessMode   pi_Mode) override;
-    HRARasterEditor*    CreateEditorUnShaped (HFCAccessMode pi_Mode) override;
-
     bool                HasSinglePixelType() const override;
     HFCPtr<HRPPixelType> GetPixelType() const override;
 

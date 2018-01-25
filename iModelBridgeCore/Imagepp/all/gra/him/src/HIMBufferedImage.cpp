@@ -1057,25 +1057,6 @@ void HIMBufferedImage::RemoveTile(const HIMBufferedImageTileID& pi_rTileID)
         m_TileMap.erase(MapItr);        // Remove the specified entry from the map
     }
 
-
-// These methods must be implemented for the class to compile.
-// However, there is no need for these on a BufferedImage.
-HRARasterEditor*
-HIMBufferedImage::CreateEditor   (HFCAccessMode pi_Mode)
-    {
-    return 0;
-    }
-HRARasterEditor*
-HIMBufferedImage::CreateEditor   (const HVEShape& pi_rShape,
-                                  HFCAccessMode   pi_Mode)
-    {
-    return 0;
-    }
-HRARasterEditor* HIMBufferedImage::CreateEditorUnShaped (HFCAccessMode pi_Mode)
-    {
-    return 0;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Stephane.Poulin                 07/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
