@@ -827,7 +827,7 @@ void updateProjectExtents(SpatialModelCR spatialModel, ORDConverter::Params& par
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ConvertORDElementXDomain::ConvertORDElementXDomain(ORDConverter& converter, ORDConverter::Params& params): m_params(params), m_converter(converter)
+ConvertORDElementXDomain::ConvertORDElementXDomain(ORDConverter& converter): m_converter(converter)
     {
     m_spatialLocationClassId = converter.GetDgnDb().Schemas().GetClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_SpatialLocation);
     }
@@ -837,19 +837,33 @@ ConvertORDElementXDomain::ConvertORDElementXDomain(ORDConverter& converter, ORDC
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConvertORDElementXDomain::Result ConvertORDElementXDomain::_PreConvertElement(DgnV8EhCR v8el, Dgn::DgnDbSync::DgnV8::Converter&, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const& v8mm)
     {
-#ifndef TARGET_2DMODEL
-    if (m_elementsSeen.end() != m_elementsSeen.find(v8el.GetElementId()))
-        return Result::SkipElement;
+    if (m_elementsSeen.end() != m_elementsSeen.find(v8el.GetElementRef()))
+        return Result::Proceed;
 
-    m_elementsSeen.insert(v8el.GetElementId());
-#endif
+    m_elementsSeen.insert(v8el.GetElementRef());
 
     auto cifAlignmentPtr = Alignment::CreateFromElementHandle(v8el);
+    Bentley::Cif::CorridorPtr cifCorridorPtr;
     if (!cifAlignmentPtr.IsValid())
         {
-        auto cifCorridorPtr = Corridor::CreateFromElementHandle(v8el);
+        auto cifLinearEntity3dPtr = LinearEntity3d::CreateFromElementHandle(v8el);
+        if (cifLinearEntity3dPtr.IsValid())
+            {
+            cifAlignmentPtr = cifLinearEntity3dPtr->GetAlignment();
+            cifCorridorPtr = cifLinearEntity3dPtr->GetCorridor();
+            }
+        }
+
+    if (!cifAlignmentPtr.IsValid())
+        {
+        if (cifCorridorPtr.IsNull())
+            cifCorridorPtr = Corridor::CreateFromElementHandle(v8el);
+
         if (cifCorridorPtr.IsValid())
-            m_corridorsMap.insert({ v8el.GetElementId(),{ cifCorridorPtr, DgnElementPtr() } });
+            {
+            m_corridorV8RefSet.insert(v8el.GetElementRef());
+            m_converter.m_cifCorridors.push_back({ cifCorridorPtr, v8el.GetElementRef() });
+            }
 
         return Result::Proceed;
         }
@@ -857,7 +871,9 @@ ConvertORDElementXDomain::Result ConvertORDElementXDomain::_PreConvertElement(Dg
     if (!cifAlignmentPtr->IsFinalElement())
         return Result::SkipElement;
 
-    m_alignmentsMap.insert({ v8el.GetElementId(),{ cifAlignmentPtr, DgnElementPtr() } });
+    m_alignmentV8RefSet.insert(v8el.GetElementRef());
+    m_converter.m_cifAlignments.push_back({cifAlignmentPtr, v8el.GetElementRef()});
+
     return Result::Proceed;
     }
 
@@ -866,11 +882,11 @@ ConvertORDElementXDomain::Result ConvertORDElementXDomain::_PreConvertElement(Dg
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConvertORDElementXDomain::_DetermineElementParams(DgnClassId& classId, DgnCode& code, DgnCategoryId& categoryId, DgnV8EhCR v8el, DgnDbSync::DgnV8::Converter& converter, ECObjectsV8::IECInstance const* primaryV8Instance, DgnDbSync::DgnV8::ResolvedModelMapping const& v8mm)
     {
-    if (!m_spatialLocationClassId.IsValid())
+    if (!m_spatialLocationClassId.IsValid() || !v8el.GetDgnModelP()->Is3D())
         return;
 
-    auto alignmentIter = m_alignmentsMap.find(v8el.GetElementId());
-    if (alignmentIter != m_alignmentsMap.end())
+    auto alignmentIter = m_alignmentV8RefSet.find(v8el.GetElementRef());
+    if (alignmentIter != m_alignmentV8RefSet.end())
         classId = m_spatialLocationClassId;
     }
 
@@ -879,19 +895,14 @@ void ConvertORDElementXDomain::_DetermineElementParams(DgnClassId& classId, DgnC
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConvertORDElementXDomain::_ProcessResults(DgnDbSync::DgnV8::ElementConversionResults& elRes, DgnV8EhCR v8el, DgnDbSync::DgnV8::ResolvedModelMapping const&, DgnDbSync::DgnV8::Converter&)
     {
-    auto alignmentIter = m_alignmentsMap.find(v8el.GetElementId());
-    if (alignmentIter != m_alignmentsMap.end())
-        {
-        alignmentIter->second.second = DgnElementPtr(elRes.m_element.get());
-        }
-    else
-        {
-        auto corridorIter = m_corridorsMap.find(v8el.GetElementId());
-        if (corridorIter != m_corridorsMap.end())
-            {
-            corridorIter->second.second = DgnElementPtr(elRes.m_element.get());
-            }
-        }
+    if (m_converter.m_v8ToBimElmMap.end() != m_converter.m_v8ToBimElmMap.find(v8el.GetElementRef()))
+        return;
+
+    if (m_alignmentV8RefSet.end() == m_alignmentV8RefSet.find(v8el.GetElementRef()) &&
+        m_corridorV8RefSet.end() == m_corridorV8RefSet.find(v8el.GetElementRef()))
+        return;
+
+    m_converter.m_v8ToBimElmMap.insert({ v8el.GetElementRef(), elRes.m_element.get() });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -911,89 +922,121 @@ DgnCategoryId convertToSpatialCategory(DrawingCategoryCR drawingCategory, DgnDbR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConvertORDElementXDomain::CreateRoadRailElements()
+void ORDConverter::CreateRoadRailElements()
     {
-#ifdef TARGET_2DMODEL
-    bmap<DgnCategoryId, DgnCategoryId> drawingToSpatialCategoryMap;
-#endif
+    //bmap<DgnCategoryId, DgnCategoryId> drawingToSpatialCategoryMap;
 
     bset<DgnCategoryId> categoryIdMap;
-    if (!m_alignmentsMap.empty())
+    if (!m_cifAlignments.empty())
         {
-        auto alignmentsConverterPtr = ORDAlignmentsConverter::Create(*m_params.subjectCPtr);
-        for (auto& alignmentEntry : m_alignmentsMap)
+        std::sort(m_cifAlignments.begin(), m_cifAlignments.end(), [](CifAlignmentV8RefPair const& a, CifAlignmentV8RefPair const& b)
+            { return a.first->GetElementHandle()->GetElementRef() > b.first->GetElementHandle()->GetElementRef(); });
+
+        Bentley::ElementRefP lastAlignmentRefP = nullptr;
+        RoadRailAlignment::AlignmentCPtr bimAlignmentCPtr;
+        auto alignmentsConverterPtr = ORDAlignmentsConverter::Create(GetJobSubject());
+        for (auto& cifAlignmentEntry : m_cifAlignments)
             {
-            DgnCategoryId categoryId;
-            if (alignmentEntry.second.second->ToGeometrySource3d())
-                categoryId = alignmentEntry.second.second->ToGeometrySource3d()->GetCategoryId();
-            else
+            auto& cifAlignmentPtr = cifAlignmentEntry.first;
+            if (lastAlignmentRefP != cifAlignmentPtr->GetElementHandle()->GetElementRef())
                 {
-#ifdef TARGET_2DMODEL
+                auto bimAlignmentId = alignmentsConverterPtr->ConvertAlignment(*cifAlignmentPtr, *m_ordParams);
+                lastAlignmentRefP = cifAlignmentPtr->GetElementHandle()->GetElementRef();
+                bimAlignmentCPtr = RoadRailAlignment::Alignment::Get(GetDgnDb(), bimAlignmentId);
+                }
+
+            if (bimAlignmentCPtr.IsValid())
+                {
+                auto v8Iter = m_v8ToBimElmMap.find(cifAlignmentEntry.second);
+                auto& bimElmPtr = v8Iter->second;
+                RoadRailAlignment::Alignment::AddRepresentedBy(*bimAlignmentCPtr, *bimElmPtr);
+                }
+            }
+
+        /*DgnCategoryId categoryId;
+        if (alignmentEntry.second.second->ToGeometrySource3d())
+            categoryId = alignmentEntry.second.second->ToGeometrySource3d()->GetCategoryId();
+        else
+            {
                 categoryId = alignmentEntry.second.second->ToGeometrySource2d()->GetCategoryId();
                 auto categoryMapIter = drawingToSpatialCategoryMap.find(categoryId);
                 if (drawingToSpatialCategoryMap.end() == categoryMapIter)
                     {
                     DgnCategoryId drawingCategoryId = categoryId;
-                    categoryId = convertToSpatialCategory(*DrawingCategory::Get(m_params.subjectCPtr->GetDgnDb(), drawingCategoryId), m_params.subjectCPtr->GetDgnDb());
+                    categoryId = convertToSpatialCategory(*DrawingCategory::Get(GetDgnDb(), drawingCategoryId), GetDgnDb());
                     drawingToSpatialCategoryMap.insert({ drawingCategoryId, categoryId });
                     }
                 else
                     categoryId = categoryMapIter->second;
-#else
-                BeAssert(false);
-#endif
                 }
 
             if (categoryIdMap.end() == categoryIdMap.find(categoryId))
-                categoryIdMap.insert(categoryId);
-
-            auto bimAlignmentId = alignmentsConverterPtr->ConvertAlignment(*alignmentEntry.second.first, m_params, categoryId);
-            auto bimAlignmentCPtr = RoadRailAlignment::Alignment::Get(m_params.subjectCPtr->GetDgnDb(), bimAlignmentId);
-            if (bimAlignmentCPtr.IsValid())
-                RoadRailAlignment::Alignment::AddRepresentedBy(*bimAlignmentCPtr, *alignmentEntry.second.second);
-            }
+                categoryIdMap.insert(categoryId);*/
         }
 
-    m_alignmentsMap.clear();
-
-    if (!m_corridorsMap.empty())
+    if (!m_cifCorridors.empty())
         {
+        std::sort(m_cifCorridors.begin(), m_cifCorridors.end(), [](CifCorridorV8RefPair const& a, CifCorridorV8RefPair const& b)
+            { return a.first->GetElementHandle()->GetElementRef() > b.first->GetElementHandle()->GetElementRef(); });
+
         Bentley::DgnPlatform::ModelId modelIdForConverter = 0;
         ORDCorridorsConverterPtr corridorsConverterPtr;
 
-        for (auto& corridorEntry : m_corridorsMap)
+        Bentley::ElementRefP lastCorridorRefP = nullptr;
+        RoadRailBim::PathwayElementCPtr pathwayElmCPtr;
+        for (auto& cifCorridorEntry : m_cifCorridors)
             {
-            if (corridorsConverterPtr.IsNull() || modelIdForConverter != corridorEntry.second.first->GetDgnModelP()->GetModelId())
+            auto& cifCorridorPtr = cifCorridorEntry.first;
+            if (corridorsConverterPtr.IsNull() || modelIdForConverter != cifCorridorPtr->GetDgnModelP()->GetModelId())
                 {
-                corridorsConverterPtr = ORDCorridorsConverter::Create(m_converter, m_converter.ComputeUnitsScaleTransform(*corridorEntry.second.first->GetDgnModelP()));
-                modelIdForConverter = corridorEntry.second.first->GetDgnModelP()->GetModelId();
+                corridorsConverterPtr = ORDCorridorsConverter::Create(*this, ComputeUnitsScaleTransform(*cifCorridorEntry.first->GetDgnModelP()));
+                modelIdForConverter = cifCorridorPtr->GetDgnModelP()->GetModelId();
                 }
 
-            auto bimRoadwayId = corridorsConverterPtr->ConvertCorridor(*corridorEntry.second.first, m_params);
-            auto pathwayElmCPtr = RoadRailPhysical::PathwayElement::Get(m_params.subjectCPtr->GetDgnDb(), bimRoadwayId);
+            if (lastCorridorRefP != cifCorridorPtr->GetElementHandle()->GetElementRef())
+                {
+                auto bimRoadwayId = corridorsConverterPtr->ConvertCorridor(*cifCorridorPtr, *m_ordParams);
+                lastCorridorRefP = cifCorridorPtr->GetElementHandle()->GetElementRef();
+                pathwayElmCPtr = RoadRailPhysical::PathwayElement::Get(GetDgnDb(), bimRoadwayId);
+                }
+
             if (pathwayElmCPtr.IsValid())
-                RoadRailPhysical::PathwayElement::AddRepresentedBy(*pathwayElmCPtr, *corridorEntry.second.second);
+                {
+                auto v8Iter = m_v8ToBimElmMap.find(cifCorridorEntry.second);
+                auto& bimElmPtr = v8Iter->second;
+                RoadRailPhysical::PathwayElement::AddRepresentedBy(*pathwayElmCPtr, *bimElmPtr);
+                }
             }
         }
 
-    m_corridorsMap.clear();
-
-    auto alignmentModelPtr = AlignmentBim::AlignmentModel::Query(*m_params.subjectCPtr, ORDBRIDGE_AlignmentModelName);
+    auto alignmentModelPtr = AlignmentBim::AlignmentModel::Query(GetJobSubject(), ORDBRIDGE_AlignmentModelName);
     auto horizontalAlignmentModelId = AlignmentBim::HorizontalAlignmentModel::QueryBreakDownModelId(*alignmentModelPtr);
-    auto horizAlignmentModelCPtr = AlignmentBim::HorizontalAlignmentModel::Get(m_params.subjectCPtr->GetDgnDb(), horizontalAlignmentModelId);
-    auto physicalModelPtr = RoadRailBim::RoadRailPhysicalDomain::QueryPhysicalModel(*m_params.subjectCPtr, ORDBRIDGE_PhysicalModelName);
+    auto horizAlignmentModelCPtr = AlignmentBim::HorizontalAlignmentModel::Get(GetDgnDb(), horizontalAlignmentModelId);
+    auto physicalModelPtr = RoadRailBim::RoadRailPhysicalDomain::QueryPhysicalModel(GetJobSubject(), ORDBRIDGE_PhysicalModelName);
 
-    updateProjectExtents(*horizAlignmentModelCPtr, m_params, false);
-    updateProjectExtents(*physicalModelPtr, m_params, true);
+    updateProjectExtents(*horizAlignmentModelCPtr, *m_ordParams, false);
+    updateProjectExtents(*physicalModelPtr, *m_ordParams, true);
 
-    if (m_params.isCreatingNewDgnDb)
+    if (IsCreatingNewDgnDb())
         {
         bvector<DgnCategoryId> additionalCategories;
         for (auto categoryId : categoryIdMap)
             additionalCategories.push_back(categoryId);
 
-        RoadRailBim::RoadRailPhysicalDomain::SetUpDefaultViews(*m_params.subjectCPtr, ORDBRIDGE_AlignmentModelName, ORDBRIDGE_PhysicalModelName, &additionalCategories);
+        auto viewId = RoadRailBim::RoadRailPhysicalDomain::SetUpDefaultViews(GetJobSubject(), ORDBRIDGE_AlignmentModelName, ORDBRIDGE_PhysicalModelName, &additionalCategories);
+        if (viewId.IsValid())
+            m_defaultViewId = viewId;
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ORDConverter::_OnConversionComplete()
+    {
+    CreateRoadRailElements();
+
+    T_Super::_OnConversionComplete();
     }
 
 END_ORDBRIDGE_NAMESPACE

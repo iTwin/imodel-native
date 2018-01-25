@@ -56,6 +56,4 @@ DGNV8_USING_NAMESPACE_BENTLEY_CIF_GEOMETRYMODEL_SDK
 namespace AlignmentBim = BENTLEY_NAMESPACE_NAME::RoadRailAlignment;
 namespace RoadRailBim = BENTLEY_NAMESPACE_NAME::RoadRailPhysical;
 
-//#define TARGET_2DMODEL
-
 #endif

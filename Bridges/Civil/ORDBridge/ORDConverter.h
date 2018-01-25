@@ -15,6 +15,13 @@ BEGIN_ORDBRIDGE_NAMESPACE
 
 struct ORDConverter : Dgn::DgnDbSync::DgnV8::RootModelConverter
 {
+    DEFINE_T_SUPER(Dgn::DgnDbSync::DgnV8::RootModelConverter)
+
+    friend struct ConvertORDElementXDomain;
+
+protected:
+    virtual void _OnConversionComplete() override;
+
 public:
     struct Params
         {
@@ -30,20 +37,34 @@ public:
         bool isCreatingNewDgnDb;
         };
 
+private:
+    Params* m_ordParams;
+    bmap<Bentley::ElementRefP, Dgn::DgnElementPtr> m_v8ToBimElmMap;
+
+    typedef bpair<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::Alignment>, Bentley::ElementRefP> CifAlignmentV8RefPair;
+    typedef bpair<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::Corridor>, Bentley::ElementRefP> CifCorridorV8RefPair;
+
+    bvector<CifAlignmentV8RefPair> m_cifAlignments;
+    bvector<CifCorridorV8RefPair> m_cifCorridors;
+
+    void CreateRoadRailElements();
+
+public:
     ORDConverter(Dgn::DgnDbSync::DgnV8::RootModelConverter::RootModelSpatialParams& params) : 
         Dgn::DgnDbSync::DgnV8::RootModelConverter(params)
         {}
+
+    void SetORDParams(Params* ordParams) { m_ordParams = ordParams; }
 }; // ORDConverter
 
 struct ConvertORDElementXDomain : Dgn::DgnDbSync::DgnV8::XDomain
 {
 private:
-    ORDConverter::Params& m_params;
     ORDConverter& m_converter;
     Dgn::DgnClassId m_spatialLocationClassId;
-    bset<Bentley::DgnPlatform::ElementId> m_elementsSeen;
-    bmap<Bentley::DgnPlatform::ElementId, bpair<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::Alignment>, Dgn::DgnElementPtr>> m_alignmentsMap;
-    bmap<Bentley::DgnPlatform::ElementId, bpair<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::Corridor>, Dgn::DgnElementPtr>> m_corridorsMap;
+    bset<Bentley::ElementRefP> m_elementsSeen;    
+    bset<Bentley::ElementRefP> m_alignmentV8RefSet;
+    bset<Bentley::ElementRefP> m_corridorV8RefSet;
 
 protected:
     virtual void _DetermineElementParams(Dgn::DgnClassId&, Dgn::DgnCode&, Dgn::DgnCategoryId&, DgnV8EhCR, Dgn::DgnDbSync::DgnV8::Converter&, ECObjectsV8::IECInstance const* primaryV8Instance, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const&) override;
@@ -51,9 +72,7 @@ protected:
     virtual void _ProcessResults(Dgn::DgnDbSync::DgnV8::ElementConversionResults&, DgnV8EhCR, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const&, Dgn::DgnDbSync::DgnV8::Converter&) override;
 
 public:
-    ConvertORDElementXDomain(ORDConverter& converter, ORDConverter::Params& params);
-
-    void CreateRoadRailElements();
+    ConvertORDElementXDomain(ORDConverter& converter);
 }; // ConvertORDElementXDomain
 
 END_ORDBRIDGE_NAMESPACE

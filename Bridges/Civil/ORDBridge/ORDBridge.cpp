@@ -51,9 +51,7 @@ BentleyStatus ORDBridge::_Initialize(int argc, WCharCP argv[])
     DgnPlatformCivilLib::InitializeWithDefaultHost();
     GeometryModelDgnECDataBinder::GetInstance().Initialize();
 
-#ifndef TARGET_2DMODEL
-    m_params.SetConsiderNormal2dModelsSpatial(true);
-#endif
+    //m_params.SetConsiderNormal2dModelsSpatial(true);
 
     m_params.SetWantThumbnails(true);
 
@@ -210,12 +208,11 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     params.spatialDataTransformHasChanged = DetectSpatialDataTransformChange(_new, _old, *changeDetectorPtr, fileScopeId, "JobTrans", "JobTrans");
     params.isCreatingNewDgnDb = IsCreatingNewDgnDb();
 
-    ConvertORDElementXDomain convertORDXDomain(*m_converter, params);
+    m_converter->SetORDParams(&params);
+    ConvertORDElementXDomain convertORDXDomain(*m_converter);
     Dgn::DgnDbSync::DgnV8::XDomain::Register(convertORDXDomain);
 
     m_converter->Process();
-
-    convertORDXDomain.CreateRoadRailElements();
 
     Dgn::DgnDbSync::DgnV8::XDomain::UnRegister(convertORDXDomain);
     return m_converter->WasAborted() ? BSIERROR : BSISUCCESS;
