@@ -534,13 +534,9 @@ void HRAEditor::ClearRun(HUINTX       pi_StartPosX,
     m_pEditor->ClearRun(pi_StartPosX, pi_StartPosY, pi_PixelCount, pi_pValue, pi_pTransaction);
     }
 
-//WIP_LEGACY_COPYFROM remove me
 //-----------------------------------------------------------------------------
 // public
 // GetScanlines. Retrieve the scanlines object used by the editor.
-//
-// Public because HRABlitter needs to access the scanlines.
-// Should not be used otherwise.
 //-----------------------------------------------------------------------------
 const HGFScanLines* HRAEditor::GetScanlines() const
     {

@@ -16,9 +16,6 @@
 #include <ImagePP/all/h/HFCGrid.h>
 #include <ImagePP/all/h/HFCException.h>
 #include <ImagePP/all/h/HGF2DTranslation.h>
-#include <ImagePP/all/h/HGSRegion.h>
-#include <ImagePP/all/h/HRAEditor.h>
-#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>
 #include <ImagePP/all/h/HGF2DIdentity.h>
 #include <ImagePP/all/h/HRAStoredRaster.h>
 #include <ImagePP/all/h/HRAReferenceToStoredRaster.h>
@@ -54,8 +51,6 @@ HRADEMRaster::HRADEMRaster(const HFCPtr<HRAStoredRaster>& pi_pSource,
         m_pFilter(new HRPDEMFilter(*pi_Filter)),        // Must keep our own copy because we "SetFor" for this specific source.
         m_pSourceStoredRaster(pi_pSource)
     {
-    m_pFilter->SetFor(pi_pSource->GetPixelType(), pi_PixelSizeX, pi_PixelSizeY, pi_pOrientationTransfo);
-
     m_pFilterOp = HRAImageOpDEMFilter::CreateDEMFilter(m_pFilter->GetStyle(), m_pFilter->GetUpperRangeValues(), pi_PixelSizeX, pi_PixelSizeY, *pi_pOrientationTransfo);
     ((HRAImageOpDEMFilter*)m_pFilterOp.get())->SetHillShadingSettings(m_pFilter->GetHillShadingSettings());
     ((HRAImageOpDEMFilter*)m_pFilterOp.get())->SetClipToEndValue(m_pFilter->GetClipToEndValues());
@@ -73,7 +68,13 @@ HRADEMRaster::HRADEMRaster(const HFCPtr<HRAReferenceToStoredRaster>& pi_pSource,
     {
     HPRECONDITION(pi_pSource->GetSource()->IsCompatibleWith(HRAStoredRaster::CLASS_ID));
 
-    m_pFilter->SetFor(pi_pSource->GetSource()->GetPixelType(), pi_PixelSizeX, pi_PixelSizeY, pi_pOrientationTransfo);
+    m_pFilterOp = HRAImageOpDEMFilter::CreateDEMFilter(m_pFilter->GetStyle(), m_pFilter->GetUpperRangeValues(), pi_PixelSizeX, pi_PixelSizeY, *pi_pOrientationTransfo);
+    ((HRAImageOpDEMFilter*)m_pFilterOp.get())->SetHillShadingSettings(m_pFilter->GetHillShadingSettings());
+    ((HRAImageOpDEMFilter*)m_pFilterOp.get())->SetClipToEndValue(m_pFilter->GetClipToEndValues());
+    ((HRAImageOpDEMFilter*)m_pFilterOp.get())->SetVerticalExaggeration(m_pFilter->GetVerticalExaggeration());
+    ((HRAImageOpDEMFilter*)m_pFilterOp.get())->SetDefaultRGBA(m_pFilter->GetDefaultColor());
+
+    
     m_pSourceStoredRaster = reinterpret_cast<HFCPtr<HRAStoredRaster>const&>(pi_pSource->GetSource());
     }
 

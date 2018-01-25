@@ -1305,24 +1305,6 @@ $(o)HIMStripProgressIndicator$(oext) : $(ippGraDir)him/src/HIMStripProgressIndic
 
 $(o)HIMTranslucentImageCreator$(oext) : $(ippGraDir)him/src/HIMTranslucentImageCreator.cpp $(ippAllInc)HIMTranslucentImageCreator.h ${MultiCompileDepends}
 
-#--------------------------------------------------------------------------------------------------------------------------------------------
-# not ported yet.
-%if 0
-
-$(o)HRACachedHistogramRaster$(oext) : $(ippGraDir)hra/src/HRACachedHistogramRaster.cpp $(ippAllInc)HRACachedHistogramRaster.h ${MultiCompileDepends}
-
-$(o)HIMBlendCorridor$(oext) : $(ippGraDir)him/src/HIMBlendCorridor.cpp $(ippAllInc)HIMBlendCorridor.h ${MultiCompileDepends}
-
-$(o)HIMBlendCorridorIterator$(oext) : $(ippGraDir)him/src/HIMBlendCorridorIterator.cpp $(ippAllInc)HIMBlendCorridorIterator.h ${MultiCompileDepends}
-
-$(o)HIMColorBalancedImage$(oext) : $(ippGraDir)him/src/HIMColorBalancedImage.cpp $(ippAllInc)HIMColorBalancedImage.h ${MultiCompileDepends}
-
-$(o)HIMColorBalancedImageIterator$(oext) : $(ippGraDir)him/src/HIMColorBalancedImageIterator.cpp $(ippAllInc)HIMColorBalancedImageIterator.h ${MultiCompileDepends}
-
-$(o)HIMSeamlessMosaic$(oext) : $(ippGraDir)him/src/HIMSeamlessMosaic.cpp $(ippAllInc)HIMSeamlessMosaic.h ${MultiCompileDepends}
-
-%endif
-
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
 # After the below include of MultiCppCompileGo.mki $(MultiCompileObjectList) will represent the
 # list of uniform object files created. You may present $(MultiCompileObjectList) to the linker.

@@ -15,7 +15,6 @@
 #include <ImagePP/all/h/HFCExceptionHandler.h>
 #include <ImagePP/all/h/HGF2DStretch.h>
 #include <ImagePP/all/h/HGFTileIDDescriptor.h>
-#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>
 #include <ImagePP/all/h/HRPPixelTypeV24B8G8R8.h>
 #include <ImagePP/all/h/HRABitmap.h>
 #include <ImagePP/all/h/HRADrawProgressIndicator.h>

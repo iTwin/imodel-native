@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPDEMFilter.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -15,8 +15,6 @@ IMAGEPP_REF_COUNTED_PTR(HRAImageOpDEMFilter)
 
 BEGIN_IMAGEPP_NAMESPACE
 class HRPPixelType;
-class HGSMemorySurfaceDescriptor;
-class DEMFilterImplementation;
 class HGF2DTransfoModel;
 class HRPChannelType;
 
@@ -110,18 +108,7 @@ public:
 
     HRPPixelNeighbourhood           GetNeighbourhood() const;
 
-    void                            ProcessPixels(HFCPtr<HGSMemorySurfaceDescriptor>& pi_pDestination, HFCPtr<HGSMemorySurfaceDescriptor>& pi_pSource,
-                                                  double pi_ScaleFactorX, double pi_ScaleFactorY);
-
-    void                            SetFor(HFCPtr<HRPPixelType> const& pi_pPixelType, double pi_PixelSizeX, double pi_PixelSizeY, HFCPtr<HGF2DTransfoModel> pi_pOrientationTransfo);
-
 private:
-
-    template<class T>
-    DEMFilterImplementation*        CreateFilterImplementation(const HRPChannelType* pi_pChannelType, double pi_PixelSizeX, double pi_PixelSizeY) const;
-
-    template<class T>
-    void                            ProcessPixels(HFCPtr<HGSMemorySurfaceDescriptor>& pi_pDestination, HFCPtr<HGSMemorySurfaceDescriptor>& pi_pSource);
 
     // Disabled
     HRPDEMFilter& operator =(const HRPDEMFilter& object);
@@ -134,10 +121,7 @@ private:
 
     bool                   m_ClipToEndValues;
 
-    HAutoPtr<DEMFilterImplementation>    m_pFilterImpl;
-
     HillShadingSettings m_HillShadingSettings;  
-
     };
   
 /*----------------------------------------------------------------------------+

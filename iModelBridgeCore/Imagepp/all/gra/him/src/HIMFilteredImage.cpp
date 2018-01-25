@@ -20,22 +20,18 @@
 #include <ImagePP/all/h/HIMFilteredImage.h>
 #include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
 #include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>
 #include <ImagePP/all/h/HFCException.h>
 #include <ImagePP/all/h/HRPTypeAdaptFilter.h>
 #include <ImagePP/all/h/HFCGrid.h>
 #include <ImagePP/all/h/HGF2DTranslation.h>
 #include <ImagePP/all/h/HRPComplexFilter.h>
-#include <ImagePP/all/h/HRAEditor.h>
 #include <ImagePP/all/h/HRPFilter.h>
 #include <ImagePP/all/h/HRAStoredRaster.h>
 #include <ImagePP/all/h/HRPPixelType.h>
 #include <ImagePP/all/h/HRAImageOp.h>
 #include <ImagePP/all/h/HRABitmap.h>
-#include <ImagePP/all/h/HGSRegion.h>
 #include <ImagePP/all/h/HRATransaction.h>
 #include <ImagePPInternal/gra/HRACopyToOptions.h>
-#include <ImagePP/all/h/HRASurface.h>
 
 //&&MM temp: to review when removing s_AddHRPFilterToPipeline
 #include <ImagePP/all/h/HPMPool.h>
