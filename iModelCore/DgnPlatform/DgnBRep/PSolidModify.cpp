@@ -2,7 +2,7 @@
 |
 |     $Source: DgnBRep/PSolidModify.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -156,6 +156,9 @@ BentleyStatus PSolidUtil::DoBoolean(IBRepEntityPtr& targetEntity, IBRepEntityPtr
 
         if (PK_ENTITY_null == toolEntityTag)
             continue;
+
+        if (nullptr != toolEntities[iTool]->GetFaceMaterialAttachmentsP())
+            PSolidAttrib::DeleteFaceMaterialIndexAttribute(toolEntityTag); // NEEDSWORK: Merge face attachments of tool bodies with target...
 
         Transform   toolTransform;
 

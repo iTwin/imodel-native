@@ -16,18 +16,18 @@ typedef RefCountedPtr<IFaceMaterialAttachments> IFaceMaterialAttachmentsPtr; //!
 
 //=======================================================================================
 //! @private
-//! Facet table per-face material and color inforation.
+//! Facet table per-face material and color information.
 //=======================================================================================
 struct FaceAttachment
 {
 private:
 
-    bool            m_useColor:1;       //!< true - color/transparency does not follow sub-category appearance.
-    bool            m_useMaterial:1;    //!< true - material does not follow sub-category appearance.
-    ColorDef        m_color;
-    double          m_transparency;
-    RenderMaterialId m_material;
-    DPoint2d        m_uv;
+    bool                m_useColor:1;       //!< true - color/transparency does not follow sub-category appearance.
+    bool                m_useMaterial:1;    //!< true - material does not follow sub-category appearance.
+    ColorDef            m_color;
+    double              m_transparency;
+    RenderMaterialId    m_material;
+    DPoint2d            m_uv;
 
     mutable bool m_haveGraphicParams = false;
     mutable Render::GraphicParams m_graphicParams; //!< in memory only, resolved color/transparency/material...
@@ -49,17 +49,11 @@ DGNPLATFORM_EXPORT void CookFaceAttachment(ViewContextR, Render::GeometryParamsC
 //! Represent this FaceAttachment as a GeometryParams. The base GeometryParams is required to supply the information that can't vary by face, like DgnSubCategoryId.
 DGNPLATFORM_EXPORT void ToGeometryParams(Render::GeometryParamsR faceParams, Render::GeometryParamsCR baseParams) const;
 
-//! Returns face identifier for T_FaceToSubElemIdMap pair from face, edge, or vertex sub-entity. The identifier is valid for this IBRepEntity instance in this session only, it is not a persistent identifier.
-DGNPLATFORM_EXPORT static uint32_t GetFaceIdentifierFromSubEntity(ISubEntityCR);
-
 }; // FaceAttachment
 
 //! @private
 typedef bvector<FaceAttachment> T_FaceAttachmentsVec; //!< Unique face attachments - first entry is "base" symbology
-//! @private
-typedef bpair<int32_t, size_t> T_SubElemIdAttachmentIndexPair; //!< subElemid/attachment index pair
-//! @private
-typedef bmap<uint32_t, T_SubElemIdAttachmentIndexPair> T_FaceToSubElemIdMap; //!< Face identifier to subElemId/attachment index pair
+typedef bmap<uint32_t, size_t> T_FaceToAttachmentIndexMap; //!< Face identifier to attachment index map
 
 //=======================================================================================
 //! @private
@@ -68,10 +62,7 @@ typedef bmap<uint32_t, T_SubElemIdAttachmentIndexPair> T_FaceToSubElemIdMap; //!
 struct IFaceMaterialAttachments : public IRefCounted
 {
 virtual T_FaceAttachmentsVec const& _GetFaceAttachmentsVec() const = 0;
-virtual T_FaceToSubElemIdMap const& _GetFaceToSubElemIdMap() const = 0;
-
 virtual T_FaceAttachmentsVec& _GetFaceAttachmentsVecR() = 0;
-virtual T_FaceToSubElemIdMap& _GetFaceToSubElemIdMapR() = 0;
 };
 
 //=======================================================================================
@@ -109,8 +100,6 @@ virtual Transform _GetEntityTransform() const = 0;
 virtual bool _SetEntityTransform(TransformCR) = 0;
 //! @private
 virtual IFaceMaterialAttachmentsCP _GetFaceMaterialAttachments() const = 0;
-//! @private
-virtual bool _InitFaceMaterialAttachments(Render::GeometryParamsCP) = 0;
 //! @private
 virtual IBRepEntityPtr _Clone() const = 0;
 
@@ -155,8 +144,8 @@ bool PostMultiplyEntityTransformInPlace (TransformCR solidTransform) {return _Se
 //! Optional per-face color/material overrides.
 IFaceMaterialAttachmentsCP GetFaceMaterialAttachments() const {return _GetFaceMaterialAttachments();}
 
-//! Initialize per-face color/material using the supplied GeometryParams or clear if nullptr.
-bool InitFaceMaterialAttachments(Render::GeometryParamsCP baseParams) {return _InitFaceMaterialAttachments(baseParams);}
+//! Optional editable per-face color/material overrides.
+IFaceMaterialAttachmentsP GetFaceMaterialAttachmentsP() {return const_cast<IFaceMaterialAttachmentsP> (_GetFaceMaterialAttachments());}
 
 //! Create deep copy of this IBRepEntity.
 IBRepEntityPtr Clone() const {return _Clone();}
@@ -481,6 +470,14 @@ DGNPLATFORM_EXPORT static BentleyStatus ClipBody(bvector<IBRepEntityPtr>& output
 //! @see MeasureGeomCollector.
 DGNPLATFORM_EXPORT static BentleyStatus MassProperties(IBRepEntityCR, double* amount, double* periphery, DPoint3dP centroid, double inertia[3][3], double tolerance);
 
+//! Modify the target solid or sheet body by attaching/removing per-face color/material overrides.
+//! @param[in,out] target The target body to update face material attachments for.
+//! @param[in] faces The array of faces to attach/remove the supplied faceParams to.
+//! @param[in] baseParams GeometryParams to initialize IFaceMaterialAttachmentsP if none currently, clears all attachments if nullptr.
+//! @param[in] faceParams GeometryParams to attach to the supplied faces, clears face attachments if nullptr.
+//! @return SUCCESS is face material attachments are updated.
+DGNPLATFORM_EXPORT static BentleyStatus UpdateFaceMaterialAttachments(IBRepEntityR target, bvector<ISubEntityPtr>& faces, Render::GeometryParamsCP baseParams = nullptr, Render::GeometryParamsCP faceParams = nullptr);
+
 //! Support for the creation of new bodies from other types of geometry.
 struct Create
     {
@@ -714,7 +711,7 @@ struct Modify
     //! @param[in] sheet2 the 2nd sheet body to intersect
     //! @return SUCCESS if intersection operation was completed.
     //! @note: A successful boolean subtract can produce no geometry, check target.IsValid().
-    DGNPLATFORM_EXPORT static BentleyStatus IntersectSheetFaces(CurveVectorPtr& vectorOut, IBRepEntityR sheet1, IBRepEntityR sheet2);
+    DGNPLATFORM_EXPORT static BentleyStatus IntersectSheetFaces(CurveVectorPtr& vectorOut, IBRepEntityCR sheet1, IBRepEntityCR sheet2);
 
     //! Modify the specified edges of the given body by changing them into faces having the requested blending surface geometry.
     //! @param[in,out] target The target body to blend.
