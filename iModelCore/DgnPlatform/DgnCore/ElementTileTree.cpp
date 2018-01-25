@@ -60,10 +60,8 @@ struct TileContext;
 // Uncomment this to enable that (ideally after having addressed the symbology issue noted above)
 // #define SHARE_GEOMETRY_PARTS
 
-// #define DISABLE_CLIPPING
-
 // Uncomment to record and output statistics on # of cached tiles, time spent reading them, etc
-#define TILECACHE_DEBUG
+// #define TILECACHE_DEBUG
 
 // Uncomment to compare geometry read from tile cache data to that produced by LoadGeometryFromModel() and assert if unequal.
 // See TFS#772315 in which portions of geometry do not appear in tiles read from cache, but do appear if we disable the cache
@@ -824,17 +822,24 @@ BentleyStatus Loader::LoadGeometryFromModel(Render::Primitives::GeometryCollecti
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Loader::IsCacheable() const
     {
+    return GetElementTile().IsCacheable();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Tile::IsCacheable() const
+    {
 #if defined(DISABLE_TILE_CACHE)
     // Tile cache is really annoying when debugging tile generation code...
     return false;
 #else
     // Host can specify no caching.
-    if (!T_HOST.GetTileAdmin()._WantCachedTiles(m_tile->GetRoot().GetDgnDb()))
+    if (!T_HOST.GetTileAdmin()._WantCachedTiles(GetRoot().GetDgnDb()))
         return false;
 
     // Don't cache tiles refined for zoom...
-    auto const& tile = GetElementTile();
-    if (tile.HasZoomFactor() && tile.GetZoomFactor() > 1.0)
+    if (HasZoomFactor() && GetZoomFactor() > 1.0)
         return false;
 
     return true;
@@ -1618,8 +1623,19 @@ Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRan
     else
         m_range.Extend(*range);
 
-    InitTolerance();
+    InitTolerance(s_minToleranceRatio);
     m_debugId = (octRoot.GetModelId().GetValue() << 32) + (id.m_level << 24) + (id.m_i << 16) + (id.m_j << 8) + id.m_k;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* NB: Constructor used by ThumbnailTile...
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Tile::Tile(Root& root, TileTree::OctTree::TileId id, DRange3dCR range, double minToleranceRatio)
+    : T_Super(root, id, nullptr, true), m_displayable(true)
+    {
+    m_range.Extend(range);
+    InitTolerance(minToleranceRatio, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1632,17 +1648,17 @@ Tile::Tile(Tile const& parent) : T_Super(const_cast<Root&>(parent.GetElementRoot
     BeAssert(parent.HasZoomFactor());
     SetZoomFactor(parent.GetZoomFactor() * 2.0);
 
-    InitTolerance();
+    InitTolerance(s_minToleranceRatio);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Tile::InitTolerance()
+void Tile::InitTolerance(double minToleranceRatio, bool isLeaf)
     {
     double diagDist = GetElementRoot().Is3d() ? m_range.DiagonalDistance() : m_range.DiagonalDistanceXY();
-    m_tolerance = diagDist / (s_minToleranceRatio * m_zoomFactor);
-    m_isLeaf = false;
+    m_tolerance = diagDist / (minToleranceRatio * m_zoomFactor);
+    m_isLeaf = isLeaf;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1663,7 +1679,7 @@ void Tile::_Invalidate()
         m_hasZoomFactor = false;
         m_zoomFactor = 1.0;
 
-        InitTolerance();
+        InitTolerance(s_minToleranceRatio);
 
         if (nullptr != GetParent())
             return;
@@ -1838,7 +1854,7 @@ void Tile::_ValidateChildren() const
                 if (!child->HasZoomFactor())
                     {
                     child->SetZoomFactor(2.0 * GetZoomFactor());
-                    child->InitTolerance();
+                    child->InitTolerance(s_minToleranceRatio);
                     }
 
                 break;
@@ -2115,12 +2131,6 @@ void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId el
 
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); /**/)
         {
-#if defined(DISABLE_CLIPPING)
-        if (!GetTileRange().IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
-            continue;
-#else
-        BeAssert(GetTileRange().IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))));
-#endif
         anyContributed = true;
         builder.AddFromPolyfaceVisitor(*visitor, displayParams.GetTextureMapping(), db, featureFromParams(elemId, displayParams), doVertexCluster, hasTexture, fillColor, nullptr != polyface.GetNormalCP());
         m_contentRange.Extend(visitor->Point());
@@ -2674,12 +2684,8 @@ GraphicPtr TileContext::FinishGraphic(GeometryAccumulatorR accum, TileBuilder& b
 GraphicPtr TileContext::FinishSubGraphic(GeometryAccumulatorR accum, TileSubGraphic& subGf)
     {
     DgnGeometryPartCR input = subGf.GetInput();
-    if (accum.GetGeometries().empty())
-        BeAssert(m_loadContext.WasAborted());
-
-    subGf.SetOutput(*GeomPart::Create(input.GetBoundingBox(), accum.GetGeometries()));
-    if (accum.GetGeometries().empty())
-        BeAssert(m_loadContext.WasAborted());
+    if (!accum.GetGeometries().empty())
+        subGf.SetOutput(*GeomPart::Create(input.GetBoundingBox(), accum.GetGeometries()));
 
     return m_finishedGraphic;
     }
@@ -2799,5 +2805,124 @@ Render::GraphicPtr TileContext::_StrokeGeometry(GeometrySourceCR source, double 
     {
     Render::GraphicPtr graphic = source.Draw(*this, pixelSize);
     return WasAborted() ? nullptr : graphic;
+    }
+
+//=======================================================================================
+// Created specifically for capturing thumbnails. Has a single tile, whose range matches
+// that of a ViewContext's frustum and whose graphics are faceted to the tolerance
+// exactly appropriate for that frustum.
+// @bsistruct                                                   Paul.Connelly   01/18
+//=======================================================================================
+struct ThumbnailRoot : Root
+{
+    DEFINE_T_SUPER(Root);
+private:
+    ThumbnailRoot(GeometricModelR model, TransformCR transform, Render::SystemR system)
+        : T_Super(model, transform, system) { }
+
+    void _OnAddToRangeIndex(DRange3dCR, DgnElementId) override { }
+    void _OnRemoveFromRangeIndex(DRange3dCR, DgnElementId) override { }
+    void _OnUpdateRangeIndex(DRange3dCR, DRange3dCR, DgnElementId) override { }
+    void _OnProjectExtentsChanged(AxisAlignedBox3dCR) override { }
+
+    void LoadRootTile(DRange3dCR tileRange, GeometricModelR model);
+public:
+    virtual ~ThumbnailRoot() { ClearAllTiles(); }
+
+    static RefCountedPtr<ThumbnailRoot> Create(GeometricModelR model, RenderContextR context);
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   01/18
+//=======================================================================================
+struct ThumbnailTile : Tile
+{
+    DEFINE_T_SUPER(Tile);
+private:
+    bool IsCacheable() const override { return false; }
+
+    TileTree::TilePtr _CreateChild(TileTree::OctTree::TileId) const override { BeAssert(false); return nullptr; }
+    void _Invalidate() override { }
+    bool _IsInvalidated(TileTree::DirtyRangesCR) const override { return false; }
+    void _UpdateRange(DRange3dCR, DRange3dCR) override { }
+
+    bool _HasChildren() const override { return false; }
+    ChildTiles const* _GetChildren(bool) const override { return nullptr; }
+    void _ValidateChildren() const override { }
+    Utf8String _GetTileCacheKey() const override { return "NotCacheable!"; }
+
+    SelectParent _SelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args) const override;
+public:
+    ThumbnailTile(DRange3dCR range, ThumbnailRoot& root, double minToleranceRatio) : T_Super(root, TileTree::OctTree::TileId::RootId(), range, minToleranceRatio)
+        {
+        //
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Tile::SelectParent ThumbnailTile::_SelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args) const
+    {
+    BeAssert(nullptr == GetParent());
+    BeAssert(selected.empty());
+
+    selected.push_back(this);
+
+    if (!IsReady())
+        args.InsertMissing(*this);
+
+    return SelectParent::No;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+RefCountedPtr<ThumbnailRoot> ThumbnailRoot::Create(GeometricModelR model, RenderContextR context)
+    {
+    BeAssert(DrawPurpose::CaptureThumbnail == context.GetDrawPurpose());
+    BeAssert(nullptr != context.GetRenderSystem());
+
+    if (nullptr == context.GetRenderSystem() || DgnDbStatus::Success != model.FillRangeIndex())
+        return nullptr;
+
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PSolidKernelManager::StartSession();
+
+    if (s_psolidMainThreadMark.IsNull())
+        s_psolidMainThreadMark = new PSolidThreadUtil::MainThreadMark();
+#endif
+
+    DRange3d frustumRange = context.GetViewportR().GetFrustum().ToRange();
+    if (model.Is3dModel())
+        frustumRange.ScaleAboutCenter(frustumRange, s_spatialRangeMultiplier);
+
+    DPoint3d centroid = DPoint3d::FromInterpolate(frustumRange.low, 0.5, frustumRange.high);
+    Transform transform = Transform::From(centroid);
+
+    auto root = new ThumbnailRoot(model, transform, *context.GetRenderSystem());
+
+    Transform rangeTransform;
+    rangeTransform.InverseOf(transform);
+    DRange3d tileRange;
+    rangeTransform.Multiply(tileRange, frustumRange);
+
+    // This tile's size on screen in pixels matches the size of the view rect...
+    BSIRect viewRect = context.GetViewportR().GetViewRect();
+    double width = viewRect.Width();
+    double height = viewRect.Height();
+    double minToleranceRatio = sqrt(width*width + height*height) * 2.0;
+
+    root->m_rootTile = new ThumbnailTile(tileRange, *root, minToleranceRatio);
+
+    return root;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+RootPtr Root::Create(GeometricModelR model, RenderContextR context)
+    {
+    return ThumbnailRoot::Create(model, context).get();
     }
 
