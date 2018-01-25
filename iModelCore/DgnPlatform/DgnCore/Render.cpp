@@ -610,16 +610,13 @@ bool Feature::operator<(FeatureCR rhs) const
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 FeatureSymbologyOverrides::FeatureSymbologyOverrides(ViewControllerCR view) : m_alwaysDrawn(view.GetAlwaysDrawn()),
-    m_neverDrawn(view.IsAlwaysDrawnExclusive() ? DgnElementIdSet() : view.GetNeverDrawn())
+    m_neverDrawn(view.GetNeverDrawn())
     {
     DgnDb::VerifyClientThread();
 
     m_alwaysDrawnExclusive = view.IsAlwaysDrawnExclusive();
-    if (!m_alwaysDrawnExclusive)
-        {
-        auto const& undisplayed = view.GetDgnDb().Elements().GetUndisplayedSet();
-        m_neverDrawn.insert(undisplayed.begin(), undisplayed.end());
-        }
+    auto const& undisplayed = view.GetDgnDb().Elements().GetUndisplayedSet();
+    m_neverDrawn.insert(undisplayed.begin(), undisplayed.end());
 
     ViewFlags vf = view.GetViewFlags();
     m_constructions = vf.ShowConstructions();
@@ -748,13 +745,15 @@ OvrGraphicParams FeatureSymbologyOverrides::Appearance::ToOvrGraphicParams() con
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool FeatureSymbologyOverrides::IsFeatureVisible(FeatureCR feat) const
     {
+    // TFS#808986: Navigator puts some elements into both the 'never' and 'always' lists which is weird but
+    // the docs for ViewController::GetNeverDrawn() assert that in that case the 'never' list wins.
     auto elemId = feat.GetElementId();
+    if (elemId.IsValid() && m_neverDrawn.end() != m_neverDrawn.find(elemId))
+        return false;
+
     bool alwaysDrawn = elemId.IsValid() && m_alwaysDrawn.end() != m_alwaysDrawn.find(elemId);
     if (alwaysDrawn || m_alwaysDrawnExclusive)
         return alwaysDrawn;
-
-    if (elemId.IsValid() && m_neverDrawn.end() != m_neverDrawn.find(elemId))
-        return false;
 
     if (feat.GetSubCategoryId().IsValid() && !IsSubCategoryVisible(feat.GetSubCategoryId()))
         return false;
@@ -780,14 +779,12 @@ bool FeatureSymbologyOverrides::GetAppearance(Appearance& app, FeatureCR feat, D
     bool haveElemOverrides = false;
     if (elemId.IsValid())
         {
+        if (m_neverDrawn.end() != m_neverDrawn.find(elemId))
+            return false;
+
         alwaysDrawn = m_alwaysDrawn.end() != m_alwaysDrawn.find(elemId);
-        if (!alwaysDrawn)
-            {
-            if (m_alwaysDrawnExclusive)
+        if (!alwaysDrawn && m_alwaysDrawnExclusive)
                 return false;
-            else if (m_neverDrawn.end() != m_neverDrawn.find(elemId))
-                return false;
-            }
 
         // Element overrides take precedence
         auto elemIter = m_elementOverrides.find(elemId);
