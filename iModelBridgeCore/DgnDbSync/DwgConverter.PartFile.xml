@@ -52,19 +52,16 @@
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="Docs"                LibType="Dynamic"/>
         <SubPart PartName="OpenDwgImportExe" />
-        <!--
         <SubPart PartName="OpenDWGInstallFiles" />
         <SubPart Repository="Miscdev-Eula" PartFile="Eula" PartName="Eula"/>
-        -->
+
         <Directories DirectoryListName="OpenDwgConverterDirList" />
         <Directories DirectoryListName="DwgAppCommonDirList" />
 
-        <!--
         <SubPart PartName="InstallFrameworkBase" PartFile="InstallFramework" Repository="InstallFramework"/>
 
         <InstallerWixFile SourceFile="install\OpenDwgImporter"/>
         <WixBundleFile    SourceFile="install\OpenDWGBundle"/>
-        -->
     </Product>
 
     <Part Name="OpenDWGInstallFiles" BMakeFile="install/OpenDWGinstallerfiles.prewire.mke" >
