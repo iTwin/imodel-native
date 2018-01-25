@@ -56,6 +56,13 @@ AlignmentCPtr Alignment::GetAssociated(DgnElementCR element)
     if (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
         return Alignment::Get(element.GetDgnDb(), stmtPtr->GetValueId<DgnElementId>(0));
 
+    stmtPtr = element.GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_DrawingGraphicRepresentsElement) " WHERE SourceECInstanceId=?;");
+    BeAssert(stmtPtr.IsValid());
+
+    stmtPtr->BindId(1, element.GetElementId());
+    if (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
+        return Alignment::Get(element.GetDgnDb(), stmtPtr->GetValueId<DgnElementId>(0));
+
     return nullptr;
     }
 
@@ -285,10 +292,22 @@ DgnDbStatus Alignment::AddRepresentedBy(AlignmentCR alignment, DgnElementCR repr
     {
     if (!representedBy.GetElementId().IsValid())
         return DgnDbStatus::BadElement;
+    
+    Utf8String schemaName, relClassName;
+    if (representedBy.ToGeometrySource2d())
+        { 
+        schemaName = BIS_ECSCHEMA_NAME;
+        relClassName = BIS_REL_DrawingGraphicRepresentsElement;
+        }
+    else
+        {
+        schemaName = BRRA_SCHEMA_NAME;
+        relClassName = BRRA_REL_ElementRepresentsAlignment;
+        }
 
     ECInstanceKey insKey;
     if (DbResult::BE_SQLITE_OK != alignment.GetDgnDb().InsertLinkTableRelationship(insKey,
-        *alignment.GetDgnDb().Schemas().GetClass(BRRA_SCHEMA_NAME, BRRA_REL_ElementRepresentsAlignment)->GetRelationshipClassCP(),
+        *alignment.GetDgnDb().Schemas().GetClass(schemaName, relClassName)->GetRelationshipClassCP(),
         ECInstanceId(representedBy.GetElementId().GetValue()), ECInstanceId(alignment.GetElementId().GetValue())))
         return DgnDbStatus::BadElement;
 
