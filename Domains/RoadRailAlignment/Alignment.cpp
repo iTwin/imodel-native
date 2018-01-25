@@ -358,7 +358,7 @@ AlignmentPairPtr Alignment::QueryMainPair() const
     if (!stmtPtr->IsValueNull(1))
         vertVectorPtr = stmtPtr->GetValueGeometry(1)->GetAsCurveVector();
 
-    return AlignmentPair::Create(*horizVectorPtr, vertVectorPtr.get());
+    return AlignmentPair::Create(horizVectorPtr.get(), vertVectorPtr.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -366,10 +366,13 @@ AlignmentPairPtr Alignment::QueryMainPair() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 AlignmentCPtr Alignment::InsertWithMainPair(AlignmentPairCR alignmentPair, DgnDbStatus* stat)
     {
+    if (nullptr == alignmentPair.GetHorizontalCurveVector())
+        return nullptr;
+
     auto retVal = Insert(stat);
     if (retVal.IsValid())
         {
-        auto horizAlignmPtr = HorizontalAlignment::Create(*this, alignmentPair.GetHorizontalCurveVector());
+        auto horizAlignmPtr = HorizontalAlignment::Create(*this, *alignmentPair.GetHorizontalCurveVector());
         horizAlignmPtr->GenerateElementGeom();
         if (horizAlignmPtr->Insert(stat).IsNull())
             return nullptr;
@@ -398,14 +401,18 @@ AlignmentCPtr Alignment::InsertWithMainPair(AlignmentPairCR alignmentPair, DgnDb
 +---------------+---------------+---------------+---------------+---------------+------*/
 AlignmentCPtr Alignment::UpdateWithMainPair(AlignmentPairCR alignmentPair, DgnDbStatus* stat)
     {
-    if (!GetElementId().IsValid())
+    if (!GetElementId().IsValid() || nullptr == alignmentPair.GetHorizontalCurveVector())
         return nullptr;
 
     auto retVal = Update(stat);
     if (retVal.IsValid())
         {
         HorizontalAlignmentPtr horizAlignmPtr = dynamic_cast<HorizontalAlignmentP>(QueryHorizontal()->CopyForEdit().get());
-        horizAlignmPtr->SetGeometry(alignmentPair.GetHorizontalCurveVector());
+        horizAlignmPtr->SetGeometry(*alignmentPair.GetHorizontalCurveVector());
+
+        if (DgnDbStatus::Success != horizAlignmPtr->GenerateElementGeom())
+            return nullptr;
+
         if (horizAlignmPtr->Update(stat).IsNull())
             return nullptr;
 
@@ -419,6 +426,10 @@ AlignmentCPtr Alignment::UpdateWithMainPair(AlignmentPairCR alignmentPair, DgnDb
                 {
                 VerticalAlignmentPtr vertAlignmPtr = dynamic_cast<VerticalAlignmentP>(vertAlignmCPtr->CopyForEdit().get());
                 vertAlignmPtr->SetGeometry(*alignmentPair.GetVerticalCurveVector());
+
+                if (DgnDbStatus::Success != vertAlignmPtr->GenerateElementGeom())
+                    return nullptr;
+
                 if (vertAlignmPtr->Update(stat).IsNull())
                     return nullptr;
                 }
@@ -433,6 +444,9 @@ AlignmentCPtr Alignment::UpdateWithMainPair(AlignmentPairCR alignmentPair, DgnDb
                     return nullptr;
 
                 auto verticalAlignmPtr = VerticalAlignment::Create(*verticalModelPtr, *alignmentPair.GetVerticalCurveVector());
+                if (DgnDbStatus::Success != verticalAlignmPtr->GenerateElementGeom())
+                    return nullptr;
+
                 if (verticalAlignmPtr->InsertAsMainVertical(stat).IsNull())
                     return nullptr;
                 }

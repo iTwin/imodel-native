@@ -145,7 +145,7 @@ TEST_F(RoadRailAlignmentTests, AlignmentPairEditorTest)
     DPoint2d pntsVert2d[]{ { 0, 0 },{ 150, 0 } };
     CurveVectorPtr vertAlignVecPtr = CurveVector::CreateLinear(pntsVert2d, 2);
 
-    auto alignPairPtr = AlignmentPairEditor::Create(*horizAlignVecPtr, vertAlignVecPtr.get());
+    auto alignPairPtr = AlignmentPairEditor::Create(horizAlignVecPtr.get(), vertAlignVecPtr.get());
 
     // Create Alignment
     auto alignmentPtr = Alignment::Create(*alignModelPtr);

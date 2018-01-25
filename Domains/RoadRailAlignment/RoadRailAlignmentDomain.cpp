@@ -7,6 +7,11 @@
 +--------------------------------------------------------------------------------------*/
 #include "RoadRailAlignmentInternal.h"
 #include <RoadRailAlignment/RoadRailAlignmentDomain.h>
+#include <RoadRailAlignment/AlignmentCategory.h>
+#include <RoadRailAlignment/Alignment.h>
+#include <RoadRailAlignment/AlignmentReferent.h>
+#include <RoadRailAlignment/AlignmentProfileViewDefinition.h>
+#include <RoadRailAlignment/AlignmentXSViewDefinition.h>
 
 #define DEFAULT_VIEWDEF_ASPECT_RATIO_SKEW 10.0 // For Profile and XS view definitions
 

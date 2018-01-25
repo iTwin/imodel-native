@@ -11,7 +11,6 @@
 #include "RoadRailAlignment.h"
 #include "AlignmentCategory.h"
 #include "AlignmentModel.h"
-#include "AlignmentPair.h"
 
 BEGIN_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 
@@ -59,10 +58,10 @@ public:
     ROADRAILALIGNMENT_EXPORT VerticalAlignmentCPtr QueryMainVertical() const;
     ROADRAILALIGNMENT_EXPORT Dgn::DgnElementIdSet QueryVerticalAlignmentIds() const;
     ROADRAILALIGNMENT_EXPORT Dgn::DgnModelId QueryVerticalAlignmentSubModelId() const;
-    ROADRAILALIGNMENT_EXPORT AlignmentPairPtr QueryMainPair() const;
+    ROADRAILALIGNMENT_EXPORT CivilGeometry::AlignmentPairPtr QueryMainPair() const;
     ROADRAILALIGNMENT_EXPORT bvector<DistanceAlongStationPair> QueryOrderedStations() const;
-    ROADRAILALIGNMENT_EXPORT AlignmentCPtr InsertWithMainPair(AlignmentPairCR alignmentPair, Dgn::DgnDbStatus* stat = nullptr);
-    ROADRAILALIGNMENT_EXPORT AlignmentCPtr UpdateWithMainPair(AlignmentPairCR alignmentPair, Dgn::DgnDbStatus* stat = nullptr);
+    ROADRAILALIGNMENT_EXPORT AlignmentCPtr InsertWithMainPair(CivilGeometry::AlignmentPairCR alignmentPair, Dgn::DgnDbStatus* stat = nullptr);
+    ROADRAILALIGNMENT_EXPORT AlignmentCPtr UpdateWithMainPair(CivilGeometry::AlignmentPairCR alignmentPair, Dgn::DgnDbStatus* stat = nullptr);
 
     double GetStartStation() const { return GetPropertyValueDouble("StartStation"); }
     void SetStartStation(double station) { SetPropertyValue("StartStation", station); }
