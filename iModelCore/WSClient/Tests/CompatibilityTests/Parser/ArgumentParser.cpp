@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/CompatibilityTests/Parser/ArgumentParser.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -72,6 +72,12 @@ std::ostream* err
         if (0 == Utf8String(arg).find("--gtest"))
             continue;
 
+        if (0 == strcmp(arg, "--downloadschemas"))
+            {
+            testDataOut.push_back(TestRepositories());
+            currentRepo = &testDataOut.back().downloadSchemas;
+            continue;
+            }
         if (0 == strcmp(arg, "--createcache"))
             {
             testDataOut.push_back(TestRepositories());
@@ -166,9 +172,20 @@ std::ostream* err
 
     for (auto& testRepo : testDataOut)
         {
-        if (!testRepo.create.IsValid())
+        if (testRepo.upgrade.IsValid() && !testRepo.create.IsValid())
             {
             PrintError(err, "Invalid or missing parameters for --createcache");
+            return -1;
+            }
+        if (testRepo.downloadSchemas.IsValid() && testRepo.create.IsValid() ||
+            testRepo.downloadSchemas.IsValid() && testRepo.upgrade.IsValid())
+            {
+            PrintError(err, "Parse error");
+            return -1;
+            }
+        if (!testRepo.downloadSchemas.IsValid() && !testRepo.create.IsValid() && !testRepo.upgrade.IsValid())
+            {
+            PrintError(err, "Parse error");
             return -1;
             }
         }
@@ -313,16 +330,18 @@ void ArgumentParser::PrintHelp(std::ostream* out)
     *out << "WSClient compatibility test tool version " << BUILD_VERSION << std::endl;
     *out << std::endl;
     *out << "Usage with servers:" << std::endl;
-    *out << "  WSClientCompatibilityTests --createcache   <parameters>" << std::endl;
-    *out << "                            [--upgradecache [<parameters>]" << std::endl;
-    *out << "                            [--createcache   <parameters> ...]" << std::endl;
+    *out << "  WSClientCompatibilityTests --createcache     <parameters>" << std::endl;
+    *out << "                            [--upgradecache   [<parameters>]" << std::endl;
+    *out << "                            [--createcache     <parameters> ...]" << std::endl;
+    *out << "                            [--downloadschemas <parameters>]" << std::endl;
     *out << "  <parameters>: -url URL -r REPOID [-auth:XXX VALUE]]" << std::endl;
     *out << "  <parameters>: -schemas PATH" << std::endl;
     *out << "Usage with schemas:" << std::endl;
     *out << "  WSClientCompatibilityTests --createcache -schemas PATH --upgradecache ..." << std::endl;
     *out << "Tests:" << std::endl;
-    *out << "  --createcache      Run cache creation test" << std::endl;
+    *out << "  --createcache      Run cache creation test." << std::endl;
     *out << "  --upgradecache     Run cache upgrade test. Upgrade will use --createcache test as base. Parameters for upgrade are optional - they default to base ones." << std::endl;
+    *out << "  --downloadschemas  Run schema download test. Schemas will be left in work dir and could be inspected or reused. Will run before any create or upgrade tests." << std::endl;
     *out << "Parameters for server connection:" << std::endl;
     *out << "  -url URL           WSG server URL" << std::endl;
     *out << "  -r REPOID          repository ID" << std::endl;
@@ -343,10 +362,12 @@ void ArgumentParser::PrintHelp(std::ostream* out)
     *out << "  --silent           Disable console logging. This still allows using --gtest_output to get full error messages to output file." << std::endl;
     *out << "  --help             Print this help text" << std::endl;
     *out << "Examples:" << std::endl;
-    *out << R"(  WSClientCompatibilityTests --workdir C:\Tests\ --createcache -url https://foo.com -r Repo -auth:basic John:Jonson)" << std::endl;
+    *out << R"(  WSClientCompatibilityTests --createcache -url https://foo.com -r Repo -auth:basic John:Jonson)" << std::endl;
     *out << std::endl;
-    *out << R"(  WSClientCompatibilityTests --workdir C:\LastKnownGoodSchemas\ --createcache -url https://qa-wsg20-eus.cloudapp.net -r BentleyCONNECT.PersonalPublishing--CONNECT.PersonalPublishing -auth:qa:ims bentleyvilnius@gmail.com:Q!w2e3r4t5)" << std::endl;
-    *out << R"(  WSClientCompatibilityTests --createcache -schemas C:\LastKnownGoodSchemas\ --upgradecache -url https://qa-wsg20-eus.cloudapp.net -r BentleyCONNECT.PersonalPublishing--CONNECT.PersonalPublishing -auth:qa:ims bentleyvilnius@gmail.com:Q!w2e3r4t5)" << std::endl;
+    *out << "Working examples, run in sequence:" << std::endl;
+    *out << R"(  WSClientCompatibilityTests --workdir C:\Temp\CR\ --createcache -url https://qa-wsg20-eus.cloudapp.net -r BentleyCONNECT.PersonalPublishing--CONNECT.PersonalPublishing -auth:qa:ims bentleyvilnius@gmail.com:Q!w2e3r4t5)" << std::endl;
+    *out << R"(  WSClientCompatibilityTests --workdir C:\Temp\DW\ --downloadschemas -url https://qa-wsg20-eus.cloudapp.net -r BentleyCONNECT.PersonalPublishing--CONNECT.PersonalPublishing -auth:qa:ims bentleyvilnius@gmail.com:Q!w2e3r4t5)" << std::endl;
+    *out << R"(  WSClientCompatibilityTests --workdir C:\Temp\UP\ --createcache -schemas C:\Temp\DW\ --upgradecache -url https://qa-wsg20-eus.cloudapp.net -r BentleyCONNECT.PersonalPublishing--CONNECT.PersonalPublishing -auth:qa:ims bentleyvilnius@gmail.com:Q!w2e3r4t5)" << std::endl;
     *out << std::endl;
     *out << std::endl;
     *out << std::endl;
