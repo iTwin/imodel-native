@@ -995,6 +995,11 @@ bool kindOfQuantityHasMatchingPresentationUnit(KindOfQuantityCP koq, Units::Unit
     return Units::Unit::AreEqual(koq->GetDefaultPresentationUnit().GetUnit(), displayUnit);
     }
 
+bool unitIsAcceptable (Units::UnitCP unit)
+    {
+    return unit->IsSI() || 0 == strcmp(unit->GetPhenomenon()->GetName(), "PERCENTAGE");
+    }
+
 ECObjectsStatus createNewKindOfQuantity(ECSchemaR schema, KindOfQuantityP& newKOQ, KindOfQuantityCP baseKOQ, Units::UnitCP newUnit, Units::UnitCP newDisplayUnit, bool& persistenceUnitChanged, Utf8CP newKoqName)
     {
     ECObjectsStatus status = schema.CreateKindOfQuantity(newKOQ, newKoqName);
@@ -1006,7 +1011,7 @@ ECObjectsStatus createNewKindOfQuantity(ECSchemaR schema, KindOfQuantityP& newKO
         }
 
     Units::UnitCP originalUnit = newUnit;
-    if (!newUnit->IsSI())
+    if (!unitIsAcceptable(newUnit)) 
         {
         newUnit = newUnit->GetPhenomenon()->GetSIUnit();
         if (nullptr == newUnit)
@@ -1050,7 +1055,7 @@ bool kindOfQuantityIsAcceptable(KindOfQuantityCP newKOQ, KindOfQuantityCP baseKO
     if (!kindOfQuantityHasMatchingPersitenceUnit(baseKOQ, newKOQ->GetPersistenceUnit().GetUnit()))
         return false;
 
-    if (!newUnit->IsSI() && !baseAndNewUnitAreIncompatible(newKOQ, newUnit))
+    if (!unitIsAcceptable(newUnit) && !baseAndNewUnitAreIncompatible(newKOQ, newUnit))
         {
         persistenceUnitChanged = true;
         return kindOfQuantityHasMatchingPresentationUnit(newKOQ, newDisplayUnit, newUnit);
