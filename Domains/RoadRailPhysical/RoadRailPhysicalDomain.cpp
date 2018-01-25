@@ -199,7 +199,7 @@ DisplayStyle3dPtr getDisplayStyle3d(DefinitionModelR model)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-BentleyStatus create3dView(DefinitionModelR model, Utf8CP viewName,
+DgnViewId create3dView(DefinitionModelR model, Utf8CP viewName,
     CategorySelectorR categorySelector, ModelSelectorR modelSelector, DisplayStyle3dR displayStyle)
     {
     DgnDbR db = model.GetDgnDb();
@@ -216,19 +216,19 @@ BentleyStatus create3dView(DefinitionModelR model, Utf8CP viewName,
         view.LookAtVolume(db.GeoLocation().GetProjectExtents());        
 
         if (!view.Insert().IsValid())
-            return BentleyStatus::ERROR;
+            return viewId;
 
         viewId = view.GetViewId();
         }
 
     if (!viewId.IsValid())
-        return BentleyStatus::ERROR;
+        return viewId;
 
     DgnViewId defaultViewId;
     if (db.QueryProperty(&defaultViewId, sizeof(defaultViewId), DgnViewProperty::DefaultView()) != BeSQLite::DbResult::BE_SQLITE_ROW)
         db.SaveProperty(DgnViewProperty::DefaultView(), &viewId, (uint32_t) sizeof(viewId));
 
-    return BentleyStatus::SUCCESS;
+    return viewId;
     }
 
 //---------------------------------------------------------------------------------------
@@ -265,7 +265,7 @@ BentleyStatus create2dView(DefinitionModelR model, Utf8CP viewName,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus RoadRailPhysicalDomain::SetUpDefaultViews(SubjectCR subject, Utf8CP alignmentPartitionName, Utf8CP physicalPartitionName, bvector<DgnCategoryId> const* additionalCategoriesForSelector)
+DgnViewId RoadRailPhysicalDomain::SetUpDefaultViews(SubjectCR subject, Utf8CP alignmentPartitionName, Utf8CP physicalPartitionName, bvector<DgnCategoryId> const* additionalCategoriesForSelector)
     {
     auto& dgnDb = subject.GetDgnDb();
 
@@ -280,8 +280,6 @@ DgnDbStatus RoadRailPhysicalDomain::SetUpDefaultViews(SubjectCR subject, Utf8CP 
     model3dSelectorPtr->AddModel(physicalModelPtr->GetModelId());
 
     auto& view3dName = subjectName;
-    create3dView(dgnDb.GetDictionaryModel(), view3dName.GetUtf8CP(),
+    return create3dView(dgnDb.GetDictionaryModel(), view3dName.GetUtf8CP(),
         *spatialCategorySelectorPtr, *model3dSelectorPtr, *displayStyle3dPtr);
-
-    return DgnDbStatus::Success;
     }
