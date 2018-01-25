@@ -18,6 +18,7 @@
 #define PKI_ENTITY_ID_ATTRIB_NAME       "BSI_EntityId"
 #define PKI_USERDATA_ATTRIB_NAME        "BSI_UserData"
 #define PKI_HIDDEN_ENTITY_ATTRIB_NAME   "BSI_TriformaAdjacencyAttribute"
+#define PKI_FACE_MATERIAL_ATTRIB_NAME   "BSI_FaceMatIdx"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -121,6 +122,16 @@ struct PSolidAttrib
 {
 DGNPLATFORM_EXPORT static void GetAttrib(int* pNumAttribOut, PK_ATTRIB_t** ppAttribArrayOut, PK_ENTITY_t entityTagIn, char const*pAttribNameIn);
 DGNPLATFORM_EXPORT static void DeleteAttrib(PK_ENTITY_t entityTagIn, char* pAttribNameIn);
+
+DGNPLATFORM_EXPORT static BentleyStatus CreateEntityIdAttributeDef(bool isSessionStart = false);
+DGNPLATFORM_EXPORT static BentleyStatus CreateUserDataAttributeDef(bool isSessionStart = false);
+DGNPLATFORM_EXPORT static BentleyStatus CreateHiddenEntityAttributeDef(bool isSessionStart = false);
+DGNPLATFORM_EXPORT static BentleyStatus CreateFaceMaterialIndexAttributeDef(bool isSessionStart = false);
+
+DGNPLATFORM_EXPORT static BentleyStatus GetFaceMaterialIndexAttribute(int32_t& index, PK_FACE_t entityTag);
+DGNPLATFORM_EXPORT static BentleyStatus SetFaceMaterialIndexAttribute(PK_FACE_t entityTag, int32_t index);
+DGNPLATFORM_EXPORT static void DeleteFaceMaterialIndexAttribute(PK_ENTITY_t entityTag); // <= PK_FACE_t or PK_BODY_t...
+DGNPLATFORM_EXPORT static void PopulateFaceMaterialIndexMap(T_FaceToAttachmentIndexMap& faceToIndexMap, PK_BODY_t entityTag, size_t numAttachments);
 
 DGNPLATFORM_EXPORT static BentleyStatus GetHiddenAttribute(bool& isHidden, PK_ENTITY_t entityTag);
 DGNPLATFORM_EXPORT static BentleyStatus SetHiddenAttribute(PK_ENTITY_t entityTag, bool isHidden);
@@ -270,8 +281,6 @@ DGNPLATFORM_EXPORT static BentleyStatus GetEntityRange(DRange3dR range, PK_TOPOL
 
 DGNPLATFORM_EXPORT static IFaceMaterialAttachmentsPtr CreateNewFaceAttachments(PK_ENTITY_t entityTag, Render::GeometryParamsCR baseParams);
 DGNPLATFORM_EXPORT static void SetFaceAttachments(IBRepEntityR, IFaceMaterialAttachmentsP);
-DGNPLATFORM_EXPORT static void CloneFaceAttachments(IBRepEntityR, IFaceMaterialAttachmentsCP);
-DGNPLATFORM_EXPORT static void UpdateFaceAttachments(IBRepEntityR);
 DGNPLATFORM_EXPORT static PK_FACE_t GetPreferredFaceAttachmentFaceForEdge(PK_EDGE_t edgeTag);
 DGNPLATFORM_EXPORT static PK_FACE_t GetPreferredFaceAttachmentFaceForVertex(PK_VERTEX_t vertexTag);
 

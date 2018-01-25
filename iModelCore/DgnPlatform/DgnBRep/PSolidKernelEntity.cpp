@@ -21,21 +21,13 @@ struct FaceMaterialAttachments : RefCounted <IFaceMaterialAttachments>
 private:
 
 T_FaceAttachmentsVec    m_faceAttachmentsVec;
-T_FaceToSubElemIdMap    m_faceToSubElemIdMap; // I regret not adding an attribute for the index into m_faceAttachmentsVec to the faces. It was necessary to get rid of ascii material name attribute, but another attribute could have been cleaner...
-T_FaceToSubElemIdMap    m_faceToSubElemIdMapPreModify; // Used when body is being modified in dynamics, body is rolled back but face attachments won't be...if this doesn't pan out, we can always add the index attrib and jetison these horrible maps!
 
 public:
 
 FaceMaterialAttachments() {}
 
 T_FaceAttachmentsVec const& _GetFaceAttachmentsVec() const override {return m_faceAttachmentsVec;}
-T_FaceToSubElemIdMap const& _GetFaceToSubElemIdMap() const override {return m_faceToSubElemIdMap;}
-
 T_FaceAttachmentsVec& _GetFaceAttachmentsVecR() override {return m_faceAttachmentsVec;}
-T_FaceToSubElemIdMap& _GetFaceToSubElemIdMapR() override {return m_faceToSubElemIdMap;}
-
-T_FaceToSubElemIdMap const& GetFaceToSubElemIdMapPreModify() const {return m_faceToSubElemIdMapPreModify;}
-T_FaceToSubElemIdMap& GetFaceToSubElemIdMapPreModifyR() {return m_faceToSubElemIdMapPreModify;}
 
 }; // FaceMaterialAttachments
 
@@ -127,28 +119,6 @@ IFaceMaterialAttachmentsCP _GetFaceMaterialAttachments() const override
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   05/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool _InitFaceMaterialAttachments(Render::GeometryParamsCP baseParams) override
-    {
-    if (nullptr == baseParams)
-        {
-        m_faceAttachments = nullptr;
-
-        return true;
-        }
-
-    IFaceMaterialAttachmentsPtr attachments = PSolidUtil::CreateNewFaceAttachments(m_entityTag, *baseParams);
-
-    if (!attachments.IsValid())
-        return false;
-
-    m_faceAttachments = attachments;
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 IBRepEntityPtr _Clone() const override
@@ -163,7 +133,12 @@ IBRepEntityPtr _Clone() const override
     IBRepEntityPtr instance = PSolidKernelEntity::CreateNewEntity(entityTag, m_transform);
 
     if (instance.IsValid() && m_faceAttachments.IsValid())
-        PSolidUtil::CloneFaceAttachments(*instance, m_faceAttachments.get());
+        {
+        FaceMaterialAttachments* cloneAttachments = new FaceMaterialAttachments();
+
+        cloneAttachments->_GetFaceAttachmentsVecR() = m_faceAttachments->_GetFaceAttachmentsVec();
+        PSolidUtil::SetFaceAttachments(*instance, cloneAttachments);
+        }
 
     return instance;
     }
@@ -374,20 +349,14 @@ bool PSolidUtil::SetEntityTag(IBRepEntityR entity, PK_ENTITY_t entityTag)
 +---------------+---------------+---------------+---------------+---------------+------*/
 IFaceMaterialAttachmentsPtr PSolidUtil::CreateNewFaceAttachments(PK_ENTITY_t entityTag, Render::GeometryParamsCR baseParams)
     {
-    int         nFaces;
-    PK_FACE_t*  faces = nullptr;
+    int nFaces = 0;
 
-    if (SUCCESS != PK_BODY_ask_faces(entityTag, &nFaces, &faces))
+    if (SUCCESS != PK_BODY_ask_faces(entityTag, &nFaces, nullptr) || 0 == nFaces)
         return nullptr;
 
     FaceMaterialAttachments* attachments = new FaceMaterialAttachments();
 
     attachments->_GetFaceAttachmentsVecR().push_back(FaceAttachment(baseParams));
-
-    for (int iFace = 0; iFace < nFaces; iFace++)
-        attachments->_GetFaceToSubElemIdMapR()[faces[iFace]] = make_bpair(iFace + 1, 0);
-    
-    PK_MEMORY_free(faces);
 
     return attachments;
     }
@@ -403,131 +372,6 @@ void PSolidUtil::SetFaceAttachments(IBRepEntityR entity, IFaceMaterialAttachment
         return;
     
     psEntity->SetFaceMaterialAttachments(attachments);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PSolidUtil::CloneFaceAttachments(IBRepEntityR entity, IFaceMaterialAttachmentsCP attachments)
-    {
-    if (nullptr == attachments)
-        {
-        PSolidUtil::SetFaceAttachments(entity, nullptr);
-        return;
-        }
-
-    int         nFaces;
-    PK_FACE_t*  faces = nullptr;
-
-    if (SUCCESS != PK_BODY_ask_faces(PSolidUtil::GetEntityTag(entity), &nFaces, &faces))
-        return;
-
-    T_FaceToSubElemIdMap const& faceToSubElemIdMap = attachments->_GetFaceToSubElemIdMap();
-    bmap<int32_t, uint32_t> subElemIdToFaceMap;
-
-    for (T_FaceToSubElemIdMap::const_iterator curr = faceToSubElemIdMap.begin(); curr != faceToSubElemIdMap.end(); ++curr)
-        subElemIdToFaceMap[curr->second.first] = curr->first;
-
-    FaceMaterialAttachments* updatedAttachments = new FaceMaterialAttachments();
-
-    updatedAttachments->_GetFaceAttachmentsVecR() = attachments->_GetFaceAttachmentsVec();
-
-    for (int iFace = 0; iFace < nFaces; iFace++)
-        {
-        size_t attachmentIndex = 0;
-        bmap<int32_t, uint32_t>::const_iterator foundIndex = subElemIdToFaceMap.find(iFace + 1);
-
-        if (foundIndex != subElemIdToFaceMap.end())
-            {
-            T_FaceToSubElemIdMap::const_iterator found = faceToSubElemIdMap.find(foundIndex->second);
-
-            if (found != faceToSubElemIdMap.end())
-                attachmentIndex = found->second.second;
-            }
-
-        updatedAttachments->_GetFaceToSubElemIdMapR()[faces[iFace]] = make_bpair(iFace + 1, attachmentIndex);
-        }
-    
-    PSolidUtil::SetFaceAttachments(entity, updatedAttachments);
-    PK_MEMORY_free(faces);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PSolidUtil::UpdateFaceAttachments(IBRepEntityR entity)
-    {
-    IFaceMaterialAttachmentsCP attachments = entity.GetFaceMaterialAttachments();
-
-    if (nullptr == attachments)
-        return;
-
-    int         nFaces;
-    PK_FACE_t*  faces = nullptr;
-
-    if (SUCCESS != PK_BODY_ask_faces(PSolidUtil::GetEntityTag(entity), &nFaces, &faces))
-        return;
-
-    T_FaceToSubElemIdMap const& faceToSubElemIdMap = attachments->_GetFaceToSubElemIdMap();
-    FaceMaterialAttachments const* oldAttachments = dynamic_cast<FaceMaterialAttachments const*> (attachments);
-    FaceMaterialAttachments* updatedAttachments = new FaceMaterialAttachments();
-
-    updatedAttachments->_GetFaceAttachmentsVecR() = attachments->_GetFaceAttachmentsVec();
-
-    if (nullptr != oldAttachments && !oldAttachments->GetFaceToSubElemIdMapPreModify().empty())
-        updatedAttachments->GetFaceToSubElemIdMapPreModifyR() = oldAttachments->GetFaceToSubElemIdMapPreModify();
-    else
-        updatedAttachments->GetFaceToSubElemIdMapPreModifyR() = faceToSubElemIdMap;
-
-    T_FaceToSubElemIdMap const& faceToSubElemIdMapOld = updatedAttachments->GetFaceToSubElemIdMapPreModify();
-
-    for (int iFace = 0; iFace < nFaces; iFace++)
-        {
-        size_t attachmentIndex = 0;
-        T_FaceToSubElemIdMap::const_iterator found = faceToSubElemIdMap.find(faces[iFace]);
-
-        if (found == faceToSubElemIdMap.end())
-            {
-            T_FaceToSubElemIdMap::const_iterator foundOld = faceToSubElemIdMapOld.find(faces[iFace]);
-
-            if (foundOld != faceToSubElemIdMapOld.end())
-                attachmentIndex = foundOld->second.second;
-
-            FaceId faceId;
-
-            // See if face was split and find material from another face...normally called before resolving duplicate face ids, so highest face id should be used...
-            if (0 == attachmentIndex && SUCCESS == PSolidTopoId::IdFromFace(faceId, faces[iFace], true))
-                {
-                bvector<PK_FACE_t> otherFaces;
-
-                if (SUCCESS == PSolidTopoId::FacesFromId(otherFaces, faceId, PSolidUtil::GetEntityTag(entity)) && otherFaces.size() > 1)
-                    {
-                    for (PK_FACE_t otherFaceTag : otherFaces)
-                        {
-                        if (otherFaceTag == faces[iFace])
-                            continue;
-
-                        found = faceToSubElemIdMap.find(otherFaceTag);
-
-                        if (found == faceToSubElemIdMap.end())
-                            continue;
-
-                        attachmentIndex = found->second.second;
-                        break;
-                        }
-                    }
-                }
-            }
-        else
-            {
-            attachmentIndex = found->second.second;
-            }
-
-        updatedAttachments->_GetFaceToSubElemIdMapR()[faces[iFace]] = make_bpair(iFace + 1, attachmentIndex);
-        }
-    
-    PSolidUtil::SetFaceAttachments(entity, updatedAttachments);
-    PK_MEMORY_free(faces);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -16,7 +16,7 @@ typedef RefCountedPtr<IFaceMaterialAttachments> IFaceMaterialAttachmentsPtr; //!
 
 //=======================================================================================
 //! @private
-//! Facet table per-face material and color inforation.
+//! Facet table per-face material and color information.
 //=======================================================================================
 struct FaceAttachment
 {
@@ -49,17 +49,11 @@ DGNPLATFORM_EXPORT void CookFaceAttachment(ViewContextR, Render::GeometryParamsC
 //! Represent this FaceAttachment as a GeometryParams. The base GeometryParams is required to supply the information that can't vary by face, like DgnSubCategoryId.
 DGNPLATFORM_EXPORT void ToGeometryParams(Render::GeometryParamsR faceParams, Render::GeometryParamsCR baseParams) const;
 
-//! Returns face identifier for T_FaceToSubElemIdMap from face, edge, or vertex sub-entity. The identifier is valid for this IBRepEntity instance in this session only, it is not a persistent identifier.
-DGNPLATFORM_EXPORT static uint32_t GetFaceIdentifierFromSubEntity(ISubEntityCR);
-
 }; // FaceAttachment
 
 //! @private
 typedef bvector<FaceAttachment> T_FaceAttachmentsVec; //!< Unique face attachments - first entry is "base" symbology
-//! @private
-typedef bpair<int32_t, size_t> T_SubElemIdAttachmentIndexPair; //!< subElemid/attachment index pair
-//! @private
-typedef bmap<uint32_t, T_SubElemIdAttachmentIndexPair> T_FaceToSubElemIdMap; //!< Face identifier to subElemId/attachment index pair
+typedef bmap<uint32_t, size_t> T_FaceToAttachmentIndexMap; //!< Face identifier to attachment index map
 
 //=======================================================================================
 //! @private
@@ -68,10 +62,7 @@ typedef bmap<uint32_t, T_SubElemIdAttachmentIndexPair> T_FaceToSubElemIdMap; //!
 struct IFaceMaterialAttachments : public IRefCounted
 {
 virtual T_FaceAttachmentsVec const& _GetFaceAttachmentsVec() const = 0;
-virtual T_FaceToSubElemIdMap const& _GetFaceToSubElemIdMap() const = 0;
-
 virtual T_FaceAttachmentsVec& _GetFaceAttachmentsVecR() = 0;
-virtual T_FaceToSubElemIdMap& _GetFaceToSubElemIdMapR() = 0;
 };
 
 //=======================================================================================
@@ -109,8 +100,6 @@ virtual Transform _GetEntityTransform() const = 0;
 virtual bool _SetEntityTransform(TransformCR) = 0;
 //! @private
 virtual IFaceMaterialAttachmentsCP _GetFaceMaterialAttachments() const = 0;
-//! @private
-virtual bool _InitFaceMaterialAttachments(Render::GeometryParamsCP) = 0;
 //! @private
 virtual IBRepEntityPtr _Clone() const = 0;
 
@@ -157,9 +146,6 @@ IFaceMaterialAttachmentsCP GetFaceMaterialAttachments() const {return _GetFaceMa
 
 //! Optional editable per-face color/material overrides.
 IFaceMaterialAttachmentsP GetFaceMaterialAttachmentsP() {return const_cast<IFaceMaterialAttachmentsP> (_GetFaceMaterialAttachments());}
-
-//! Initialize per-face color/material using the supplied GeometryParams or clear if nullptr.
-bool InitFaceMaterialAttachments(Render::GeometryParamsCP baseParams) {return _InitFaceMaterialAttachments(baseParams);}
 
 //! Create deep copy of this IBRepEntity.
 IBRepEntityPtr Clone() const {return _Clone();}

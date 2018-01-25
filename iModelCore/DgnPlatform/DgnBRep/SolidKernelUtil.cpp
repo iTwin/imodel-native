@@ -171,37 +171,6 @@ void FaceAttachment::CookFaceAttachment(ViewContextR context, GeometryParamsCR b
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t FaceAttachment::GetFaceIdentifierFromSubEntity(ISubEntityCR subEntity)
-    {
-#if defined (BENTLEYCONFIG_PARASOLID) 
-    PK_ENTITY_t entityTag = PSolidSubEntity::GetSubEntityTag(subEntity);
-
-    if (PK_ENTITY_null == entityTag)
-        return 0;
-
-    PK_CLASS_t  entityClass;
-
-    PK_ENTITY_ask_class(entityTag, &entityClass);
-
-    switch (entityClass)
-        {
-        case PK_CLASS_face:
-            return entityTag;
-
-        case PK_CLASS_edge:
-            return PSolidUtil::GetPreferredFaceAttachmentFaceForEdge(entityTag);
-
-        case PK_CLASS_vertex:
-            return PSolidUtil::GetPreferredFaceAttachmentFaceForVertex(entityTag);
-        }
-#endif
-
-    return 0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolyfaceHeaderPtr BRepUtil::FacetEntity(IBRepEntityCR entity, IFacetOptionsR facetOptions)
@@ -1324,6 +1293,8 @@ BentleyStatus BRepUtil::MassProperties(IBRepEntityCR entity, double* amount, dou
 BentleyStatus BRepUtil::UpdateFaceMaterialAttachments(IBRepEntityR target, bvector<ISubEntityPtr>& faces, Render::GeometryParamsCP baseParams, Render::GeometryParamsCP faceParams)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
+
+#if defined (NOT_NOW_FACEMAT)    
     IFaceMaterialAttachmentsP attachments = target.GetFaceMaterialAttachmentsP();
 
     if (nullptr == attachments)
@@ -1426,6 +1397,7 @@ BentleyStatus BRepUtil::UpdateFaceMaterialAttachments(IBRepEntityR target, bvect
                 curr->second.second = (curr->second.second >= newIndices.size() ? 0 : newIndices.at(curr->second.second));
             }
         }
+#endif
 
     return SUCCESS;
 #else
@@ -2904,9 +2876,6 @@ BentleyStatus BRepUtil::Modify::BlendEdges(IBRepEntityR targetEntity, bvector<IS
 
     PK_MARK_delete(markTag);
 
-    if (SUCCESS == status)
-        PSolidUtil::UpdateFaceAttachments(targetEntity);
-
     return status;
 #else
     return ERROR;
@@ -3167,9 +3136,6 @@ BentleyStatus BRepUtil::Modify::ChamferEdges (IBRepEntityR targetEntity, bvector
         PK_MARK_goto(markTag);
 
     PK_MARK_delete(markTag);
-
-    if (SUCCESS == status)
-        PSolidUtil::UpdateFaceAttachments(targetEntity);
 
     return status;
 #else
@@ -3438,9 +3404,6 @@ BentleyStatus BRepUtil::Modify::OffsetFaces(IBRepEntityR targetEntity, bvector<I
         PK_MARK_goto(markTag);
 
     PK_MARK_delete(markTag);
-
-    if (SUCCESS == status)
-        PSolidUtil::UpdateFaceAttachments(targetEntity);
 
     return status;
 #else
@@ -3910,9 +3873,6 @@ BentleyStatus BRepUtil::Modify::TransformFaces(IBRepEntityR targetEntity, bvecto
         PK_MARK_goto(markTag);
 
     PK_MARK_delete(markTag);
-
-    if (SUCCESS == status)
-        PSolidUtil::UpdateFaceAttachments(targetEntity);
 
     return status;
 #else

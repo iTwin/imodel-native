@@ -606,11 +606,13 @@ void WireframeGeomUtil::Draw(IBRepEntityCR entity, Render::GraphicBuilderR graph
 
         if (PK_ENTITY_null != faceTag)
             {
-            T_FaceToSubElemIdMap const& faceToSubElemIdMap = attachments->_GetFaceToSubElemIdMap();
             T_FaceAttachmentsVec const& faceAttachmentsVec = attachments->_GetFaceAttachmentsVec();
-            T_FaceToSubElemIdMap::const_iterator found = faceToSubElemIdMap.find(faceTag);
+            int32_t attachmentIndex = 0;
 
-            FaceAttachment faceAttachment = faceAttachmentsVec.at(found == faceToSubElemIdMap.end() ? 0 : found->second.second); // If face not represented in map, use base symbology...
+            if (SUCCESS != PSolidAttrib::GetFaceMaterialIndexAttribute(attachmentIndex, faceTag) || attachmentIndex < 0 || attachmentIndex >= faceAttachmentsVec.size())
+                attachmentIndex = 0; // If face attrib not present, use base symbology...
+
+            FaceAttachment faceAttachment = faceAttachmentsVec.at((size_t) attachmentIndex); 
             Render::GraphicParamsCP graphicParams = faceAttachment.GetGraphicParams();
 
             if (nullptr != graphicParams)

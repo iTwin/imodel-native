@@ -221,9 +221,6 @@ BentleyStatus PSolidUtil::DoBoolean(IBRepEntityPtr& targetEntity, IBRepEntityPtr
 
     PK_MARK_delete(markTag);
 
-    if (SUCCESS == status && targetEntity.IsValid())
-        PSolidUtil::UpdateFaceAttachments(*targetEntity); // NOTE: Loses face attachments from tool bodies, this sufficies for pull/push cut operation...keeping tool attachments probably not worth the trouble...
-
     return status;
     }
 
