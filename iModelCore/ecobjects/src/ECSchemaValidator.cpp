@@ -555,9 +555,9 @@ ECObjectsStatus ECSchemaValidator::KindOfQuantityValidator(KindOfQuantityCR koq)
         }
 
     // RULE: KindOfQuantity must have an SI unit for its persistence unit.
-    if (0 != strcmp(koq.GetPersistenceUnit().GetUnit()->GetUnitSystem(), "SI"))
+    if (0 != strcmp(koq.GetPersistenceUnit().GetUnit()->GetUnitSystem()->GetName(), "SI"))
         {
-        LOG.errorv("KindOfQuantity has persistence unit of unit system '%s' but must have an SI unit system", koq.GetPersistenceUnit().GetUnit()->GetUnitSystem());
+        LOG.errorv("KindOfQuantity has persistence unit of unit system '%s' but must have an SI unit system", koq.GetPersistenceUnit().GetUnit()->GetUnitSystem()->GetName());
         return ECObjectsStatus::Error;
         }
 
