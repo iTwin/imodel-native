@@ -517,6 +517,16 @@ void UnitRegistry::AddMapping(Utf8CP oldName, Utf8CP newName)
     }
 
 /*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Robert.Schili     01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void UnitRegistry::AddECMapping(Utf8CP name, Utf8CP ecName)
+    {
+    // NOTE: New mappings overwrite previously added mappings
+    m_nameECNameMapping[name] = ecName;
+    m_ecNameNameMapping[ecName] = name;
+    }
+
+/*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Robert.Schili     03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool UnitRegistry::TryGetNewName(Utf8CP oldName, Utf8StringR newName) const
@@ -540,6 +550,36 @@ bool UnitRegistry::TryGetOldName(Utf8CP newName, Utf8StringR oldName) const
     if (p != m_newNameOldNameMapping.end())
         {
         oldName = p->second;
+        return true;
+        }
+
+    return false;
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Robert.Schili     01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool UnitRegistry::TryGetECName(Utf8CP name, Utf8StringR ecName) const
+    {
+    auto p = m_nameECNameMapping.find(name);
+    if (p != m_oldNameNewNameMapping.end())
+        {
+        ecName = p->second;
+        return true;
+        }
+
+    return false;
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Robert.Schili     01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool UnitRegistry::TryGetNameFromECName(Utf8CP ecName, Utf8StringR name) const
+    {
+    auto p = m_ecNameNameMapping.find(ecName);
+    if (p != m_ecNameNameMapping.end())
+        {
+        name = p->second;
         return true;
         }
 
