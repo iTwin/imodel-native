@@ -149,6 +149,8 @@ BentleyStatus PSolidUtil::DoBoolean(IBRepEntityPtr& targetEntity, IBRepEntityPtr
  
     invTargetTransform.InverseOf(targetEntity->GetEntityTransform());
 
+    IFaceMaterialAttachmentsP targetAttachments = targetEntity->GetFaceMaterialAttachmentsP();
+
     // Get tool bodies in coordinates of target...
     for (size_t iTool = 0; iTool < nTools; ++iTool)
         {
@@ -157,8 +159,77 @@ BentleyStatus PSolidUtil::DoBoolean(IBRepEntityPtr& targetEntity, IBRepEntityPtr
         if (PK_ENTITY_null == toolEntityTag)
             continue;
 
-        if (nullptr != toolEntities[iTool]->GetFaceMaterialAttachmentsP())
-            PSolidAttrib::DeleteFaceMaterialIndexAttribute(toolEntityTag); // NEEDSWORK: Merge face attachments of tool bodies with target...
+        IFaceMaterialAttachmentsP toolAttachments = toolEntities[iTool]->GetFaceMaterialAttachmentsP();
+
+        if (nullptr != toolAttachments)
+            {
+            T_FaceAttachmentsVec const& toolFaceAttachmentsVec = toolAttachments->_GetFaceAttachmentsVec();
+
+            if (nullptr == targetAttachments)
+                {
+                Render::GeometryParams baseParams; // Don't care, replaced with tool attachments...
+                IFaceMaterialAttachmentsPtr newAttachments = PSolidUtil::CreateNewFaceAttachments(targetEntityTag, baseParams);
+
+                if (newAttachments.IsValid())
+                    {
+                    newAttachments->_GetFaceAttachmentsVecR() = toolFaceAttachmentsVec;
+                    PSolidUtil::SetFaceAttachments(*targetEntity, newAttachments.get());
+                    targetAttachments = targetEntity->GetFaceMaterialAttachmentsP();
+                    }
+                else
+                    {
+                    PSolidAttrib::DeleteFaceMaterialIndexAttribute(toolEntityTag);
+                    }
+                }
+            else
+                {
+                T_FaceAttachmentsVec& targetFaceAttachmentsVec = targetAttachments->_GetFaceAttachmentsVecR();
+                bvector<size_t> toolToTargetIndex;
+                bool indexRemapRequired = false;
+
+                toolToTargetIndex.insert(toolToTargetIndex.begin(), toolFaceAttachmentsVec.size(), 0);
+
+                for (size_t iToolAttachIdx = 0; iToolAttachIdx < toolFaceAttachmentsVec.size(); ++iToolAttachIdx)
+                    {
+                    FaceAttachment  toolFaceAttachment = toolFaceAttachmentsVec.at(iToolAttachIdx);
+                    size_t          targetAttachIdx = 0;
+
+                    T_FaceAttachmentsVec::iterator foundTargetAttachment = std::find(targetFaceAttachmentsVec.begin(), targetFaceAttachmentsVec.end(), toolFaceAttachment);
+
+                    if (foundTargetAttachment == targetFaceAttachmentsVec.end())
+                        {
+                        targetFaceAttachmentsVec.push_back(toolFaceAttachment);
+                        targetAttachIdx = targetFaceAttachmentsVec.size()-1;
+                        }
+                    else
+                        {
+                        targetAttachIdx = std::distance(targetFaceAttachmentsVec.begin(), foundTargetAttachment);
+                        }
+
+                    toolToTargetIndex[iToolAttachIdx] = targetAttachIdx;
+
+                    if (iToolAttachIdx != targetAttachIdx)
+                        indexRemapRequired = true;
+                    }
+
+                if (indexRemapRequired)
+                    {
+                    T_FaceToAttachmentIndexMap toolFaceToIndexMap;
+                
+                    PSolidAttrib::PopulateFaceMaterialIndexMap(toolFaceToIndexMap, toolEntityTag, targetFaceAttachmentsVec.size());
+
+                    for (T_FaceToAttachmentIndexMap::const_iterator curr = toolFaceToIndexMap.begin(); curr != toolFaceToIndexMap.end(); ++curr)
+                        {
+                        size_t remappedIndex = toolToTargetIndex.at(curr->second);
+
+                        if (remappedIndex == curr->second)
+                            continue;
+
+                        PSolidAttrib::SetFaceMaterialIndexAttribute(curr->first, (int32_t) remappedIndex);
+                        }
+                    }
+                }
+            }
 
         Transform   toolTransform;
 
