@@ -15,12 +15,14 @@ struct UnitRegistrySingletonTests : UnitsTestFixture
     {
     void SetUp() override
         {
+        UnitsTestFixture::SetUp();
         // Set the singleton to nullptr
         UnitRegistry::Clear();
         }
 
     void TearDown() override
         {
+        UnitsTestFixture::TearDown();
         UnitRegistry::Clear();
         }
     };

@@ -17,6 +17,9 @@ BEGIN_UNITS_UNITTESTS_NAMESPACE
 struct UnitsTestFixture : public ::testing::Test
     {
     public:
+        void SetUp() override;
+        void TearDown() override;
+
         using CSVLineProcessor = std::function<void(bvector<Utf8String>&)>;
 
         static Utf8String GetConversionDataPath(WCharCP dataFile);
