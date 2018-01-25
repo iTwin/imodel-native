@@ -222,6 +222,7 @@ protected:
     void ChangeSubCategoryDisplay(DgnSubCategoryId, bool onOff);
     void ToggleAllSubCategories(DgnCategoryId, bool onOff);
 
+    BentleyStatus CreateScene(SceneContextR context);
 public:
     Render::GraphicListPtr UseReadyScene() {BeMutexHolder lock(m_mutex); if (!m_readyScene.IsValid()) return nullptr; std::swap(m_currentScene, m_readyScene); m_readyScene = nullptr; return m_currentScene;}
     BentleyStatus CreateScene(DgnViewportR vp, UpdatePlan const& plan, TileTree::TileRequestsR requests);
@@ -576,6 +577,7 @@ protected:
     SpatialViewControllerCP _ToSpatialView() const override {return this;}
     bool _Allow3dManipulations() const override {return true;}
     DGNPLATFORM_EXPORT BentleyStatus _CreateScene(SceneContextR context) override;
+    BentleyStatus CreateThumbnailScene(SceneContextR context);
 
     //! Construct a new SpatialViewController from a View in the project.
     //! @param[in] definition the view definition
@@ -650,13 +652,12 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController2d : ViewController
     DEFINE_T_SUPER(ViewController);
 
 protected:
-    TileTree::RootP m_root = nullptr;
-
     DGNPLATFORM_EXPORT BentleyStatus _CreateScene(SceneContextR context) override;
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
     DGNPLATFORM_EXPORT CloseMe _OnModelsDeleted(bset<DgnModelId> const& deletedIds, DgnDbR db) override;
     GeometricModelP _GetTargetModel() const override {return GetViewedModel();}
+    TileTree::RootPtr GetRoot(SceneContextR context);
 
     ViewController2d(ViewDefinition2dCR def) : T_Super(def) {}
 
@@ -822,7 +823,6 @@ struct EXPORT_VTABLE_ATTRIBUTE TemplateViewController3d : ViewController3d
 
 private:
     DgnModelId m_viewedModelId;
-    TileTree::RootP m_root = nullptr;
 
 protected:
     TemplateViewController3dCP _ToTemplateView3d() const override final {return this;}
@@ -831,6 +831,7 @@ protected:
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
     DGNPLATFORM_EXPORT BentleyStatus _CreateScene(SceneContextR context) override;
+    TileTree::RootPtr GetRoot(SceneContextR context);
 
 public:
     TemplateViewController3d(TemplateViewDefinition3dCR viewDef) : T_Super(viewDef) {}
