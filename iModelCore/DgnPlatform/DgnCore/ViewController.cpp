@@ -980,10 +980,51 @@ TileTree::RootPtr ViewController2d::GetRoot(SceneContextR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> static BentleyStatus createThumbnailScene(T& viewController, SceneContextR context)
+    {
+    auto model = viewController.GetViewedModel();
+    if (nullptr == model)
+        return ERROR;
+
+    auto root = model->GetTileTree(context);
+    if (root.IsNull())
+        return ERROR;
+
+    uint32_t timeLimitMillis = 0;
+    BeDuration timeLimit;
+    auto const& plan = context.GetUpdatePlan();
+    if (plan.HasQuitTime() && plan.GetQuitTime().IsInFuture())
+        {
+        timeLimit = BeDuration(plan.GetQuitTime() - BeTimePoint::Now());
+        timeLimitMillis = std::chrono::duration_cast<std::chrono::milliseconds>(timeLimit).count();
+        }
+
+    root->SelectTiles(context);
+    context.m_requests.RequestMissing(BeDuration());
+    if (0 != timeLimitMillis)
+        {
+        root->WaitForAllLoadsFor(timeLimitMillis);
+        root->CancelAllTileLoads();
+        }
+    else
+        {
+        root->WaitForAllLoads();
+        }
+
+    root->DrawInView(context);
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ViewController2d::_CreateScene(SceneContextR context)
     {
+    if (DrawPurpose::CaptureThumbnail == context.GetDrawPurpose())
+        return createThumbnailScene(*this, context);
+
     auto root = GetRoot(context);
     if (root.IsNull())
         return ERROR;
@@ -1043,6 +1084,9 @@ TileTree::RootPtr TemplateViewController3d::GetRoot(SceneContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TemplateViewController3d::_CreateScene(SceneContextR context)
     {
+    if (DrawPurpose::CaptureThumbnail == context.GetDrawPurpose())
+        return createThumbnailScene(*this, context);
+
     auto root = GetRoot(context);
     if (root.IsNull())
         return ERROR;

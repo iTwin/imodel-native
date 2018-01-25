@@ -2850,24 +2850,34 @@ private:
     bool _IsInvalidated(TileTree::DirtyRangesCR) const override { return false; }
     void _UpdateRange(DRange3dCR, DRange3dCR) override { }
 
-    ////SelectParent _SelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args) const override
-    ////    {
-    ////    BeAssert(nullptr == GetParent());
-    ////    BeAssert(selected.empty());
-    ////    selected.push_back(this);
-    ////    return SelectParent::No;
-    ////    }
-
     bool _HasChildren() const override { return false; }
     ChildTiles const* _GetChildren(bool) const override { return nullptr; }
     void _ValidateChildren() const override { }
     Utf8String _GetTileCacheKey() const override { return "NotCacheable!"; }
+
+    SelectParent _SelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args) const override;
 public:
     ThumbnailTile(DRange3dCR range, ThumbnailRoot& root, double minToleranceRatio) : T_Super(root, TileTree::OctTree::TileId::RootId(), range, minToleranceRatio)
         {
         //
         }
 };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Tile::SelectParent ThumbnailTile::_SelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args) const
+    {
+    BeAssert(nullptr == GetParent());
+    BeAssert(selected.empty());
+
+    selected.push_back(this);
+
+    if (!IsReady())
+        args.InsertMissing(*this);
+
+    return SelectParent::No;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/18
