@@ -43,12 +43,18 @@ private:
     static UnitRegistry * s_instance;
 
     Utf8Vector m_systems;
+    uint32_t m_nextId = 0;
+
     bmap<Utf8String, PhenomenonP> m_phenomena;
     bmap<Utf8String, UnitP> m_units;
+
     bmap<uint64_t, Conversion> m_conversions;
-    uint32_t m_nextId = 0;
     bmap<Utf8String, Utf8String> m_oldNameNewNameMapping;
     bmap<Utf8String, Utf8String> m_newNameOldNameMapping;
+	// key = unit name, value = ec name
+	bmap<Utf8String, Utf8String> m_nameECNameMapping;
+	// key = ec name, value = unit name
+	bmap<Utf8String, Utf8String> m_ecNameNameMapping;
 
     bvector<IUnitLocaterP> m_locaters;
 
@@ -80,6 +86,7 @@ private:
     void AddConversion(uint64_t index, Conversion& conversion) {m_conversions.Insert(index, conversion);}
 
     void AddMapping(Utf8CP oldName, Utf8CP newName);
+	void AddECMapping(Utf8CP name, Utf8CP ecName);
     bool HasConstant(Utf8CP constantName) const {return nullptr != LookupConstant(constantName);}
 
 public:
@@ -130,10 +137,18 @@ public:
     bool HasUnit(Utf8CP unitName) const {return m_units.end() != m_units.find(unitName);}
 
     //Mapping methods
+	//Gets the "new" unit name from a legacy unit name
     UNITS_EXPORT bool TryGetNewName(Utf8CP oldName, Utf8StringR newName) const;
+	//Gets the legacy unit name for a unit name
     UNITS_EXPORT bool TryGetOldName(Utf8CP newName, Utf8StringR oldName) const;
+
+	//Gets the EC compatible name for a unit name
+	UNITS_EXPORT bool TryGetECName(Utf8CP name, Utf8StringR ecName) const;
+	//Gets the mapped unit name for an EC compatible name
+	UNITS_EXPORT bool TryGetNameFromECName(Utf8CP ecName, Utf8StringR name) const;
+
     UNITS_EXPORT UnitCP LookupUnitUsingOldName(Utf8CP oldName) const;
-    UnitCP GetPlatformLengthUnit() {return LookupUnit("M");}
+    UnitCP GetPlatformLengthUnit() { return LookupUnit("M"); }
     UNITS_EXPORT size_t LoadSynonyms(Json::Value jval) const;
     UNITS_EXPORT PhenomenonCP LoadSynonym(Utf8CP unitName, Utf8CP synonym) const;
     UNITS_EXPORT Json::Value SynonymsToJson() const;
