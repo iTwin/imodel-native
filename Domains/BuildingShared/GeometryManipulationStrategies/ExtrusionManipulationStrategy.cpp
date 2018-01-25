@@ -239,7 +239,7 @@ double ExtrusionManipulationStrategy::GetHeight() const
 DVec3d ExtrusionManipulationStrategy::GetSweepDirection() const
     {
     if (!m_sweepDirectionSet && !m_dynamicSweepDirectionSet)
-        return DVec3d::From(0, 0, 0);
+        return DVec3d::From(0, 0, GetHeight());
 
     return m_dynamicSweepDirectionSet ? m_dynamicSweepDirection : m_sweepDirection;
     }
@@ -329,6 +329,30 @@ BentleyStatus ExtrusionManipulationStrategy::_TryGetProperty
             return BentleyStatus::ERROR;
 
         value = GetHeight();
+        return BentleyStatus::SUCCESS;
+        }
+
+    return T_Super::_TryGetProperty(key, value);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ExtrusionManipulationStrategy::_TryGetProperty
+(
+    Utf8CP key, 
+    bool& value
+) const
+    {
+    if (0 == strcmp(key, prop_IsHeightSet()))
+        {
+        value = m_heightSet || m_dynamicHeightSet;
+        return BentleyStatus::SUCCESS;
+        }
+
+    if (0 == strcmp(key, prop_IsSweepDirectionSet()))
+        {
+        value = m_sweepDirectionSet || m_dynamicHeightSet;
         return BentleyStatus::SUCCESS;
         }
 

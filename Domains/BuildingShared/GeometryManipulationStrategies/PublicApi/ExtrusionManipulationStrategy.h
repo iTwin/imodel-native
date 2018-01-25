@@ -132,11 +132,14 @@ struct ExtrusionManipulationStrategy : public SolidPrimitiveManipulationStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _SetProperty(Utf8CP key, GeometryManipulationStrategyProperty const& value) override;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual BentleyStatus _TryGetProperty(Utf8CP key, double& value) const override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual BentleyStatus _TryGetProperty(Utf8CP key, bool& value) const override;
 
     public:
         static constexpr Utf8CP prop_BaseShapeStrategy() { return "BaseShapeStrategy"; }
         static constexpr Utf8CP prop_ContinuousBaseShapePrimitiveComplete() { return "ContinuousBaseShapePrimitiveComplete"; }
         static constexpr Utf8CP prop_Height() { return "Height"; }
+        static constexpr Utf8CP prop_IsHeightSet() { return "IsHeightSet"; }
+        static constexpr Utf8CP prop_IsSweepDirectionSet() { return "IsSweepDirectionSet"; }
 
         static ExtrusionManipulationStrategyPtr Create() { return new ExtrusionManipulationStrategy(); }
         static ExtrusionManipulationStrategyPtr Create(CurveVectorManipulationStrategyR baseShapeManipulationStrategy) { return new ExtrusionManipulationStrategy(baseShapeManipulationStrategy); }

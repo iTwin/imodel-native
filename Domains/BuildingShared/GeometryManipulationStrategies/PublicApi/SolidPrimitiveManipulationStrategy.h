@@ -62,7 +62,7 @@ struct SolidPrimitiveManipulationStrategy : public GeometryManipulationStrategy
     public:
         static constexpr Utf8CP prop_BaseComplete() { return "BaseComplete"; }
 
-        bool IsBaseComplete() const;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bool IsBaseComplete() const;
         void SetBaseComplete(bool value);
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ISolidPrimitivePtr FinishSolidPrimitive() const;
