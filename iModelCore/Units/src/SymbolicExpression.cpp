@@ -224,7 +224,7 @@ BentleyStatus Expression::ParseDefinition(UnitsSymbolCR owner, int& depth, Utf8C
     ++depth;
     if (Utf8String::IsNullOrEmpty(definition))
         return BentleyStatus::ERROR;
- 
+
     Utf8String definitionString = definition;
     Token currentToken;
     Exponent currentExponent;
@@ -249,13 +249,13 @@ BentleyStatus Expression::ParseDefinition(UnitsSymbolCR owner, int& depth, Utf8C
             currentToken.Clear();
             continue;
             }
- 
+
         if (OpenParen == character)
             {
             inExponent = true;
             continue;
             }
- 
+
         if (CloseParen == character)
             {
             inExponent = false;
@@ -264,19 +264,19 @@ BentleyStatus Expression::ParseDefinition(UnitsSymbolCR owner, int& depth, Utf8C
             currentToken.SetExponent(currentExponent.GetExponent());
             continue;
             }
- 
+
         if (OpenBracket == character)
             continue;
 
         if (CloseBracket == character)
             continue;
- 
+
         if (inExponent)
             currentExponent.AddChar(character);
         else
             currentToken.AddChar(character);
         }
- 
+
     if (currentToken.IsValid())
         {
         HandleToken(owner, depth, expression, definition, currentToken, startingExponent, getSymbolByName);
@@ -307,7 +307,7 @@ bool Expression::Contains(ExpressionSymbolCR symbol) const
     return true;
     }
 
-void Expression::Add(UnitsSymbolCP symbol, int exponent) 
+void Expression::Add(UnitsSymbolCP symbol, int exponent)
     {
     m_symbolExpression.push_back(ExpressionSymbol(symbol, exponent));
     }
@@ -322,7 +322,7 @@ Utf8String ExpressionSymbol::ToString(bool includeFactors) const
     {
     if (!includeFactors)
         return Utf8PrintfString("%s^%d", GetName(), GetExponent());
-    
+
     if (GetSymbol()->HasOffset())
         {
         if (GetSymbol()->GetFactor() == 1.0)

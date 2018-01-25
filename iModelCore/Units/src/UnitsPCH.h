@@ -6,11 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-
-
 #include <Units/Units.h>
 
 #include "../PrivateAPI/Units/SymbolicExpression.h"
 #include "../PrivateAPI/Units/StandardNames.h"
 #include "UnitsNativeLogging.h"
-

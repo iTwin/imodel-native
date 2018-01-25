@@ -144,5 +144,4 @@ TEST_F(UnitRegistryTests, AddUnitLocater)
     EXPECT_EQ(nullptr, registry->LookupPhenomenon("TestPhen"));
     }
 
-
 END_UNITS_UNITTESTS_NAMESPACE

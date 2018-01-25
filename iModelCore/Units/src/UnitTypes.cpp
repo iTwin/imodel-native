@@ -83,7 +83,7 @@ UnitP Unit::Create(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP unitName
     return new Unit(system, phenomenon, unitName, id, definition, baseSymbol, factor, offset, isConstant);
     }
 
-uint32_t Unit::GetPhenomenonId() const { return GetPhenomenon()->GetId(); }
+uint32_t Unit::GetPhenomenonId() const {return GetPhenomenon()->GetId();}
 
 UnitP Unit::Create(UnitCR parentUnit, Utf8CP unitName, uint32_t id)
     {
@@ -97,7 +97,7 @@ UnitP Unit::Create(UnitCR parentUnit, Utf8CP unitName, uint32_t id)
         LOG.errorv("Cannot create inverting unit %s with parent %s because parent is an inverting unit", unitName, parentUnit.GetName());
         return nullptr;
         }
-    
+
     LOG.debugv("Creating inverting unit %s with parent unit %s", unitName, parentUnit.GetName());
     return new Unit(parentUnit, unitName, id);
     }
@@ -270,7 +270,7 @@ bool Unit::GenerateConversion(UnitCR toUnit, Conversion& conversion) const
             LOG.infov("New offset %.17g", conversion.Offset);
             }
         }
-    
+
     return true;
     }
 
@@ -344,9 +344,9 @@ UnitCP Unit::CombineWithUnit(UnitCR rhs, int factor) const
         Expression::Copy(temp, unitExpr);
         Expression::MergeExpressions(u->GetName(), unitExpr, GetName(), expression, -1);
 
-        auto count = std::count_if(unitExpr.begin(), unitExpr.end(), 
+        auto count = std::count_if(unitExpr.begin(), unitExpr.end(),
             [](ExpressionSymbolCR e) { return e.GetExponent() != 0; });
-        
+
         if (count > 1)
             continue;
 
@@ -535,6 +535,7 @@ Json::Value UnitSynonymMap::ToJson()
         }
     return jval;
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
@@ -544,6 +545,7 @@ bool UnitSynonymMap::IsIdentical(UnitSynonymMapCR other)
     if (BeStringUtilities::StricmpAscii(m_synonym.c_str(), other.m_synonym.c_str()) != 0) return false;
     return true;
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
@@ -556,6 +558,7 @@ bool UnitSynonymMap::AreVectorsIdentical(bvector<UnitSynonymMap>& v1, bvector<Un
         }
     return true;
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 09/17
 //----------------------------------------------------------------------------------------
@@ -572,6 +575,7 @@ bvector<UnitSynonymMap> UnitSynonymMap::MakeUnitSynonymVector(Json::Value jval)
         }
     return mapV;
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 09/17
 //----------------------------------------------------------------------------------------
@@ -581,6 +585,7 @@ size_t UnitSynonymMap::AugmentUnitSynonymVector(bvector<UnitSynonymMap>& mapV, U
     mapV.push_back(map);
     return mapV.size();
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 09/17
 //----------------------------------------------------------------------------------------
@@ -625,6 +630,7 @@ UnitCP Phenomenon::FindSynonym(Utf8CP synonym) const
         }
     return nullptr;
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
@@ -648,7 +654,6 @@ UnitCP Phenomenon::LookupUnit(Utf8CP unitName) const
 
     return nullptr;
     }
-
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
@@ -686,6 +691,7 @@ void Phenomenon::AddSynonymMap(UnitSynonymMapCR map) const
     if (nullptr == un)
         m_altNames.push_back(map);
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 09/17
 //----------------------------------------------------------------------------------------
@@ -739,5 +745,3 @@ Utf8CP Phenomenon::GetLabel() const
 
     return m_displayLabel.c_str();
     }
-
-

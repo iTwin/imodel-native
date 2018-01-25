@@ -27,7 +27,6 @@ UnitRegistry& UnitRegistry::Instance()
     return *s_instance;
     }
 
-
 //-------------------------------------------------------------------------------------//
 // @bsimethod                                              Chris.Tartamella     02/16
 //---------------+---------------+---------------+---------------+---------------+------//
@@ -271,7 +270,7 @@ UnitCP UnitRegistry::AddUnitForBasePhenomenon(Utf8CP unitName, Utf8Char baseSymb
         LOG.errorv("Cannot create base unit '%s' because the input base symbol '%c' does not map to a base phenomenon", unitName, baseSymbol);
         return nullptr;
         }
-    
+
     return AddUnitInternal(phenomenonName, SI, unitName, unitName, baseSymbol, 1, 0, false);
     }
 
@@ -324,13 +323,13 @@ UnitCP UnitRegistry::AddInvertingUnit(Utf8CP parentUnitName, Utf8CP unitName)
         LOG.errorv("Cannot create unit %s because it's parent unit %s cannot be found", unitName, parentUnitName);
         return nullptr;
         }
-    
+
     if (NameConflicts(unitName))
         {
         LOG.errorv("Could not create unit '%s' because that name is already in use", unitName);
         return nullptr;
         }
-    
+
     auto unit = Unit::Create(*parentUnit, unitName, m_nextId);
     if (nullptr == unit)
         return nullptr;
@@ -482,6 +481,9 @@ UnitCP UnitRegistry::LookupUnitCI (Utf8CP name) const
     }
 POP_MSVC_IGNORE
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      01/2018
+//--------------------------------------------------------------------------------------
 UnitSystemCP UnitRegistry::LookupUnitSystem(Utf8CP name) const
     {
     auto usIt = m_systems.find(name);
@@ -573,9 +575,9 @@ void UnitRegistry::AddMapping(Utf8CP oldName, Utf8CP newName)
     m_newNameOldNameMapping[newName] = oldName;
     }
 
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Robert.Schili     01/18
-+---------------+---------------+---------------+---------------+---------------+------*/
+//--------------------------------------------------------------------------------------
+// @bsimethod                                              Robert.Schili     01/18
+//--------------------------------------------------------------------------------------
 void UnitRegistry::AddECMapping(Utf8CP name, Utf8CP ecName)
     {
     // NOTE: New mappings overwrite previously added mappings
@@ -613,9 +615,9 @@ bool UnitRegistry::TryGetOldName(Utf8CP newName, Utf8StringR oldName) const
     return false;
     }
 
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Robert.Schili     01/18
-+---------------+---------------+---------------+---------------+---------------+------*/
+//--------------------------------------------------------------------------------------
+// @bsimethod                                              Robert.Schili     01/18
+//--------------------------------------------------------------------------------------
 bool UnitRegistry::TryGetECName(Utf8CP name, Utf8StringR ecName) const
     {
     auto p = m_nameECNameMapping.find(name);
@@ -628,9 +630,9 @@ bool UnitRegistry::TryGetECName(Utf8CP name, Utf8StringR ecName) const
     return false;
     }
 
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Robert.Schili     01/18
-+---------------+---------------+---------------+---------------+---------------+------*/
+//--------------------------------------------------------------------------------------
+// @bsimethod                                              Robert.Schili     01/18
+//--------------------------------------------------------------------------------------
 bool UnitRegistry::TryGetNameFromECName(Utf8CP ecName, Utf8StringR name) const
     {
     auto p = m_ecNameNameMapping.find(ecName);

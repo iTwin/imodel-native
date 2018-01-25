@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Units/Units.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -30,8 +30,6 @@
 #define UNITS_TYPEDEFS(_name_)  \
     BEGIN_BENTLEY_UNITS_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_UNITS_NAMESPACE
 
-
 #include <Units/UnitTypes.h>
 #include <Units/Quantity.h>
 #include <Units/UnitRegistry.h>
-

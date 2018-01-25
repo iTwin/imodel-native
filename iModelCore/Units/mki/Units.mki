@@ -42,6 +42,3 @@ GUnitTestDir            = $(BuildContext)SubParts/google_gtest/
 # Configure includes
 #-----------------------------------------------------------------------
 PublicApiIncludes       + -I$(unitsPublicAPISrc)
-
-
-

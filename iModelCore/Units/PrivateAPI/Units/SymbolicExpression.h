@@ -30,7 +30,7 @@ public:
     void    SetExponent(int exponent) { m_exponent = exponent; }
     Utf8CP  GetName() const { return m_token.c_str(); }
     int     GetExponent() const { return m_exponent; }
-    
+
     void Clear();
     };
 
@@ -44,7 +44,7 @@ struct Expression
     typedef SymbolList::const_iterator const_iterator;
     typedef SymbolList::reverse_iterator reverse_iterator;
     typedef SymbolList::const_reverse_iterator const_reverse_iterator;
-    
+
     friend struct UnitsSymbol;
     friend struct Unit;
     friend struct Phenomenon;
@@ -106,13 +106,13 @@ public:
     ExpressionSymbol(UnitsSymbolCP symbol, int exponent) : m_exponent(exponent) { m_symbol = symbol; }
     ExpressionSymbol(ExpressionSymbol const& swE) : ExpressionSymbol(swE.m_symbol, swE.m_exponent) {};
 
-    Utf8CP GetName() const { return m_symbol->GetName(); }
-    UnitsSymbolCP GetSymbol() const { return m_symbol; }
-    double GetSymbolFactor() const { return m_symbol->GetFactor(); }
-    
-    int GetExponent() const { return m_exponent; }
-    void AddToExponent(int toAdd) { m_exponent += toAdd; }
-    void SetExponent(int exponent) { m_exponent = exponent; }
+    Utf8CP GetName() const {return m_symbol->GetName();}
+    UnitsSymbolCP GetSymbol() const {return m_symbol;}
+    double GetSymbolFactor() const {return m_symbol->GetFactor();}
+
+    int GetExponent() const {return m_exponent;}
+    void AddToExponent(int toAdd) {m_exponent += toAdd;}
+    void SetExponent(int exponent) {m_exponent = exponent;}
     Utf8String ToString(bool includeFactors = true) const;
     };
 
@@ -125,8 +125,8 @@ private:
     Utf8String m_exponentChars;
 
 public:
-    bool IsValid() { return !Utf8String::IsNullOrEmpty(m_exponentChars.c_str()); }
-    void AddChar(Utf8Char character) { m_exponentChars.append(1, character); }
+    bool IsValid() {return !Utf8String::IsNullOrEmpty(m_exponentChars.c_str());}
+    void AddChar(Utf8Char character) {m_exponentChars.append(1, character);}
     int GetExponent();
     };
 

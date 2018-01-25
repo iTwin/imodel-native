@@ -13,7 +13,7 @@ BEGIN_BENTLEY_UNITS_NAMESPACE
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              David Fox-Rabinovitz     12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-    static double absMax(double a, double b)
+static double absMax(double a, double b)
     {
     a = fabs(a);
     b = fabs(b);
@@ -46,7 +46,7 @@ static almost_equal(const T x, const T y, int ulp)
     // the machine epsilon has to be scaled to the magnitude of the values used
     // and multiplied by the desired precision in ULPs (units in the last place)
     return std::abs(x - y) < std::numeric_limits<T>::epsilon() * std::abs(x + y) * ulp
-        // unless the result is subnormal            
+        // unless the result is subnormal
         || std::abs(x - y) < std::numeric_limits<T>::min();
     }
 
@@ -189,12 +189,11 @@ Quantity Quantity::ConvertTo(UnitCP unit) const
 bool Quantity::AlmostEqual (QuantityCR rhs) const
     {
     if (IsNullQuantity() || rhs.IsNullQuantity())
-        {
         return false;
-        }
+
     if (m_unit == rhs.m_unit && almost_equal(m_magnitude, rhs.m_magnitude, m_tolerance))
         return true;
-    
+
     if (m_unit == rhs.m_unit)
         return false;
 
@@ -202,8 +201,7 @@ bool Quantity::AlmostEqual (QuantityCR rhs) const
     if (SUCCESS != ConvertTo(rhs.m_unit, temp))
         return false;
 
-    bool ae = almost_equal(temp, rhs.m_magnitude, m_tolerance);
-    return ae; //almost_equal(temp, rhs.m_magnitude, m_tolerance);
+    return almost_equal(temp, rhs.m_magnitude, m_tolerance);
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -212,9 +210,8 @@ bool Quantity::AlmostEqual (QuantityCR rhs) const
 bool Quantity::IsClose(QuantityCR rhs, double tolerance) const
     {
     if (IsNullQuantity() || rhs.IsNullQuantity() || GetPhenomenon() != rhs.GetPhenomenon())
-        {
         return false;
-        }
+
     double temp;
     if (SUCCESS != ConvertTo(rhs.m_unit, temp))
         return false;
@@ -312,7 +309,7 @@ Quantity Quantity::Add(QuantityCR rhs) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Quantity Quantity::Subtract(QuantityCR rhs) const 
+Quantity Quantity::Subtract(QuantityCR rhs) const
     {
     double convertedValue;
     if (SUCCESS != rhs.ConvertTo(m_unit, convertedValue))
@@ -322,8 +319,11 @@ Quantity Quantity::Subtract(QuantityCR rhs) const
     return  Quantity(newValue, *m_unit);
     }
 
-bool Quantity::IsNullQuantity() const 
-    { 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Chris.Tartamella        02/16
+//---------------------------------------------------------------------------------------
+bool Quantity::IsNullQuantity() const
+    {
     bool stat = (0.0 == m_magnitude && nullptr == m_unit);
     return stat; // (0.0 == m_magnitude && nullptr == m_unit);
     }
