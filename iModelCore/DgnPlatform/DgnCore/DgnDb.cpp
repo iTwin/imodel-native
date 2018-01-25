@@ -491,7 +491,9 @@ DbResult DgnDb::DoOpenDgnDb(BeFileNameCR projectNameIn, OpenParams const& params
     DbResult stat = OpenBeSQLiteDb(fileName, params);
     if (BE_SQLITE_OK != stat)
         {
-        LOG.errorv("Error %s opening [%s]", Db::InterpretDbResult(stat), m_fileName.c_str());
+        // When it comes to schema upgrades, the caller probably does know what he is doing -- at least the iModelBridge framework does -- so this is not necessarily an "error".
+        auto sev = (BE_SQLITE_ERROR_SchemaUpgradeRequired == stat)? NativeLogging::LOG_INFO: NativeLogging::LOG_ERROR;
+        LOG.messagev(sev, "Error %s opening [%s]", Db::InterpretDbResult(stat), m_fileName.c_str());
         }
 
     return stat;
