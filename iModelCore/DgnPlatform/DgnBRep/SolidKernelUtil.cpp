@@ -1293,8 +1293,6 @@ BentleyStatus BRepUtil::MassProperties(IBRepEntityCR entity, double* amount, dou
 BentleyStatus BRepUtil::UpdateFaceMaterialAttachments(IBRepEntityR target, bvector<ISubEntityPtr>& faces, Render::GeometryParamsCP baseParams, Render::GeometryParamsCP faceParams)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
-
-#if defined (NOT_NOW_FACEMAT)    
     IFaceMaterialAttachmentsP attachments = target.GetFaceMaterialAttachmentsP();
 
     if (nullptr == attachments)
@@ -1302,17 +1300,28 @@ BentleyStatus BRepUtil::UpdateFaceMaterialAttachments(IBRepEntityR target, bvect
         if (nullptr == faceParams || faces.empty())
             return SUCCESS; // Caller isn't adding face attachments...and there aren't any currently, return SUCCESS...
 
-        if (nullptr == baseParams || !target.InitFaceMaterialAttachments(baseParams))
+        if (nullptr == baseParams)
             return ERROR; // Caller wants to update face attachments but didn't supply a valid baseParams which is required for a target that doesn't currently have face attachments...
+
+        IFaceMaterialAttachmentsPtr newAttachments = PSolidUtil::CreateNewFaceAttachments(PSolidUtil::GetEntityTag(target), *baseParams);
+
+        if (!newAttachments.IsValid())
+            return ERROR; // Target entity type is invalid for face attachments (i.e. no faces)...
+
+        PSolidUtil::SetFaceAttachments(target, newAttachments.get());
 
         if (nullptr == (attachments = target.GetFaceMaterialAttachmentsP()))
             return ERROR;
         }
 
     if (nullptr == baseParams && faces.empty())
-        return (target.InitFaceMaterialAttachments(nullptr) ? SUCCESS : ERROR); // Caller wants to remove all existing face attachments...
+        {
+        PSolidAttrib::DeleteFaceMaterialIndexAttribute(PSolidUtil::GetEntityTag(target)); // Caller wants to remove all existing face attachments...
+        PSolidUtil::SetFaceAttachments(target, nullptr); // Clear face attachments vector...
 
-    T_FaceToSubElemIdMap& faceToSubElemIdMap = attachments->_GetFaceToSubElemIdMapR();
+        return SUCCESS;
+        }
+
     T_FaceAttachmentsVec& faceAttachmentsVec = attachments->_GetFaceAttachmentsVecR();
     size_t attachmentIndex = 0;
 
@@ -1332,29 +1341,43 @@ BentleyStatus BRepUtil::UpdateFaceMaterialAttachments(IBRepEntityR target, bvect
         }
 
     for (ISubEntityPtr subEntity : faces)
+        PSolidAttrib::SetFaceMaterialIndexAttribute(PSolidSubEntity::GetSubEntityTag(*subEntity), (int32_t) attachmentIndex);
+    
+    T_FaceToAttachmentIndexMap faceToIndexMap;
+    bool haveInvalidAttachment = !PSolidAttrib::PopulateFaceMaterialIndexMap(faceToIndexMap, PSolidUtil::GetEntityTag(target), faceAttachmentsVec.size());
+    bool haveNonBaseAttachment = false; // See if all face assignments have been removed...
+
+    for (T_FaceToAttachmentIndexMap::const_iterator curr = faceToIndexMap.begin(); curr != faceToIndexMap.end(); ++curr)
         {
-        uint32_t faceIdentifier = FaceAttachment::GetFaceIdentifierFromSubEntity(*subEntity);
-        T_FaceToSubElemIdMap::const_iterator found = faceToSubElemIdMap.find(faceIdentifier);
-
-        if (found == faceToSubElemIdMap.end())
-            continue; // ERROR - Face not represented in map...
-
-        faceToSubElemIdMap[faceIdentifier] = make_bpair(found->second.first, attachmentIndex);
-        }
-
-    bool haveNonBaseAssignment = false; // See if all face assignments have been removed...
-
-    for (T_FaceToSubElemIdMap::const_iterator curr = faceToSubElemIdMap.begin(); curr != faceToSubElemIdMap.end(); ++curr)
-        {
-        if (0 == curr->second.second)
+        if (0 == curr->second)
             continue;
 
-        haveNonBaseAssignment = true;
+        haveNonBaseAttachment = true;
         break;
         }
 
-    if (!haveNonBaseAssignment)
-        return (target.InitFaceMaterialAttachments(nullptr) ? SUCCESS : ERROR); // No face assignments remain to anything other than the base symbology, remove face attachments...
+    if (haveInvalidAttachment)
+        {
+        bvector<PK_FACE_t> allFaces;
+
+        if (SUCCESS == PSolidTopo::GetBodyFaces(allFaces, PSolidUtil::GetEntityTag(target)))
+            {
+            for (PK_FACE_t faceTag : allFaces)
+                {
+                int32_t attachmentIndex = 0;
+
+                if (SUCCESS == PSolidAttrib::GetFaceMaterialIndexAttribute(attachmentIndex, faceTag) && (attachmentIndex <= 0 || attachmentIndex >= faceAttachmentsVec.size()))
+                    PSolidAttrib::DeleteFaceMaterialIndexAttribute(faceTag); // Remove invalid attribute index from face...
+                }
+            }
+        }
+
+    if (!haveNonBaseAttachment)
+        {
+        PSolidUtil::SetFaceAttachments(target, nullptr); // No face assignments remain to anything other than the base symbology, clear face attachments vector...
+
+        return SUCCESS;
+        }
 
     if (faceAttachmentsVec.size() > 2) // Cull attachment symbology that is no longer used by any face...
         {
@@ -1364,11 +1387,8 @@ BentleyStatus BRepUtil::UpdateFaceMaterialAttachments(IBRepEntityR target, bvect
         usedIndices.insert(usedIndices.begin(), faceAttachmentsVec.size(), false);
         newIndices.insert(newIndices.begin(), faceAttachmentsVec.size(), 0);
 
-        for (T_FaceToSubElemIdMap::const_iterator curr = faceToSubElemIdMap.begin(); curr != faceToSubElemIdMap.end(); ++curr)
-            {
-            if (curr->second.second < faceAttachmentsVec.size())
-                usedIndices.at(curr->second.second) = true;
-            }
+        for (T_FaceToAttachmentIndexMap::const_iterator curr = faceToIndexMap.begin(); curr != faceToIndexMap.end(); ++curr)
+            usedIndices.at(curr->second) = true;
 
         bool    unusedAssignment = false;
         size_t  newIndex = 0;
@@ -1393,11 +1413,17 @@ BentleyStatus BRepUtil::UpdateFaceMaterialAttachments(IBRepEntityR target, bvect
 
             faceAttachmentsVec = cleanAttachments;
 
-            for (T_FaceToSubElemIdMap::iterator curr = faceToSubElemIdMap.begin(); curr != faceToSubElemIdMap.end(); ++curr)
-                curr->second.second = (curr->second.second >= newIndices.size() ? 0 : newIndices.at(curr->second.second));
+            for (T_FaceToAttachmentIndexMap::const_iterator curr = faceToIndexMap.begin(); curr != faceToIndexMap.end(); ++curr)
+                {
+                size_t remappedIndex = newIndices.at(curr->second);
+
+                if (remappedIndex == curr->second)
+                    continue;
+
+                PSolidAttrib::SetFaceMaterialIndexAttribute(curr->first, (int32_t) remappedIndex);
+                }
             }
         }
-#endif
 
     return SUCCESS;
 #else

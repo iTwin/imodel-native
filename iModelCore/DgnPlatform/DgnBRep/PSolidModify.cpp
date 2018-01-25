@@ -157,6 +157,9 @@ BentleyStatus PSolidUtil::DoBoolean(IBRepEntityPtr& targetEntity, IBRepEntityPtr
         if (PK_ENTITY_null == toolEntityTag)
             continue;
 
+        if (nullptr != toolEntities[iTool]->GetFaceMaterialAttachmentsP())
+            PSolidAttrib::DeleteFaceMaterialIndexAttribute(toolEntityTag); // NEEDSWORK: Merge face attachments of tool bodies with target...
+
         Transform   toolTransform;
 
         toolTransform.InitProduct(invTargetTransform, toolEntities[iTool]->GetEntityTransform());

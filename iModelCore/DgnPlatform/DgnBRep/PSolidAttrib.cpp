@@ -298,8 +298,9 @@ void            PSolidAttrib::DeleteFaceMaterialIndexAttribute(PK_ENTITY_t entit
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PSolidAttrib::PopulateFaceMaterialIndexMap(T_FaceToAttachmentIndexMap& faceToIndexMap, PK_BODY_t entityTag, size_t numAttachments)
+bool PSolidAttrib::PopulateFaceMaterialIndexMap(T_FaceToAttachmentIndexMap& faceToIndexMap, PK_BODY_t entityTag, size_t numAttachments)
     {
+    bool invalidIndexFound = false;
     bvector<PK_FACE_t> faces;
 
     PSolidTopo::GetBodyFaces(faces, entityTag);
@@ -309,11 +310,20 @@ void PSolidAttrib::PopulateFaceMaterialIndexMap(T_FaceToAttachmentIndexMap& face
         {
         int32_t attachmentIndex = 0;
 
-        if (SUCCESS != PSolidAttrib::GetFaceMaterialIndexAttribute(attachmentIndex, faces[i]) || attachmentIndex < 0 || attachmentIndex >= numAttachments)
+        if (SUCCESS != PSolidAttrib::GetFaceMaterialIndexAttribute(attachmentIndex, faces[i]))
+            {
             attachmentIndex = 0;
+            }
+        else if (attachmentIndex <= 0 || attachmentIndex >= numAttachments)
+            {
+            invalidIndexFound = true;
+            attachmentIndex = 0;
+            }
 
         faceToIndexMap[faces[i]] = (size_t) attachmentIndex;
         }
+
+    return !invalidIndexFound;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -131,7 +131,7 @@ DGNPLATFORM_EXPORT static BentleyStatus CreateFaceMaterialIndexAttributeDef(bool
 DGNPLATFORM_EXPORT static BentleyStatus GetFaceMaterialIndexAttribute(int32_t& index, PK_FACE_t entityTag);
 DGNPLATFORM_EXPORT static BentleyStatus SetFaceMaterialIndexAttribute(PK_FACE_t entityTag, int32_t index);
 DGNPLATFORM_EXPORT static void DeleteFaceMaterialIndexAttribute(PK_ENTITY_t entityTag); // <= PK_FACE_t or PK_BODY_t...
-DGNPLATFORM_EXPORT static void PopulateFaceMaterialIndexMap(T_FaceToAttachmentIndexMap& faceToIndexMap, PK_BODY_t entityTag, size_t numAttachments);
+DGNPLATFORM_EXPORT static bool PopulateFaceMaterialIndexMap(T_FaceToAttachmentIndexMap& faceToIndexMap, PK_BODY_t entityTag, size_t numAttachments); // <= Returns false if invalid index was found attached to a face...
 
 DGNPLATFORM_EXPORT static BentleyStatus GetHiddenAttribute(bool& isHidden, PK_ENTITY_t entityTag);
 DGNPLATFORM_EXPORT static BentleyStatus SetHiddenAttribute(PK_ENTITY_t entityTag, bool isHidden);
