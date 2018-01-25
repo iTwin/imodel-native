@@ -42,9 +42,25 @@ friend struct Unit;
 private:
     static UnitRegistry * s_instance;
 
-    Utf8Vector m_systems;
+    //=====================================================================================//
+    // Comparison function that is used within various data structures
+    // for string comparison in STL collections.
+    // @bsistruct
+    //+===============+===============+===============+===============+===============+====//
+    struct less_str
+        {
+        bool operator()(Utf8CP s1, Utf8CP s2) const
+            {
+            if (BeStringUtilities::StricmpAscii(s1, s2) < 0)
+                return true;
+
+            return false;
+            }
+        };
+
     uint32_t m_nextId = 0;
 
+    bmap<Utf8CP, UnitSystemP, less_str> m_systems;
     bmap<Utf8String, PhenomenonP> m_phenomena;
     bmap<Utf8String, UnitP> m_units;
 
@@ -69,7 +85,7 @@ private:
     void AddDefaultMappings();
 
     void InsertUnique(Utf8Vector &vec, Utf8String &str);
-    void AddSystem(Utf8CP systemName);
+    void AddSystem(Utf8CP name);
     void AddPhenomenon(Utf8CP phenomenaName, Utf8CP definition);
     void AddBasePhenomenon(Utf8Char baseSymbol);
     UnitCP AddUnitForBasePhenomenon(Utf8CP unitName, Utf8Char baseSymbol);
@@ -130,9 +146,10 @@ public:
     UNITS_EXPORT UnitCP LookupUnit(Utf8CP name) const;
     UNITS_EXPORT UnitCP LookupConstant(Utf8CP name) const;
     UNITS_EXPORT PhenomenonCP LookupPhenomenon(Utf8CP name) const;
+    UNITS_EXPORT UnitSystemCP LookupUnitSystem(Utf8CP name) const;
         
     // bool Exists methods.
-    UNITS_EXPORT bool HasSystem (Utf8CP systemName) const;
+    UNITS_EXPORT bool HasSystem (Utf8CP systemName) const { return m_systems.end() != m_systems.find(systemName); }
     bool HasPhenomena(Utf8CP phenomenaName) const {return m_phenomena.end() != m_phenomena.find(phenomenaName);}
     bool HasUnit(Utf8CP unitName) const {return m_units.end() != m_units.find(unitName);}
 

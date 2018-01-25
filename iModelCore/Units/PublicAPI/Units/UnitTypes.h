@@ -18,6 +18,7 @@ UNITS_TYPEDEFS(Phenomenon)
 UNITS_TYPEDEFS(Expression)
 UNITS_TYPEDEFS(SpecificAccuracy)
 UNITS_TYPEDEFS(UnitSynonymMap)
+UNITS_TYPEDEFS(UnitSystem)
 
 BEGIN_BENTLEY_UNITS_NAMESPACE
 
@@ -81,6 +82,22 @@ struct Conversion
         }
     };
 
+struct UnitSystem
+    {
+private:
+    Utf8String m_name;
+
+    UnitSystem() = delete;
+
+protected:
+    UnitSystem(Utf8CP name) : m_name(name) {}
+
+public:
+    static UnitSystemP Create(Utf8CP name) { return new UnitSystem(name); }
+
+    Utf8CP GetName() const { return m_name.c_str(); }
+    };
+
 struct UnitsSymbol
     {
 friend struct ExpressionSymbol;
@@ -135,19 +152,20 @@ friend struct Expression;
 friend struct InverseUnit;
 
 private:
-    Utf8String      m_system;
-    // TODO: Should this be a reference because it must be set?
+    // TODO: Should these be a reference because it must be set?
+    UnitSystemCP    m_system;
     PhenomenonCP    m_phenomenon;
+
     UnitCP          m_parent;
     bool            m_isConstant;
     mutable Utf8String m_displayLabel;
     mutable Utf8String m_displayDescription;
 
-    static UnitP Create(Utf8CP sysName, PhenomenonCR phenomenon, Utf8CP unitName, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant);
+    static UnitP Create(UnitSystemCR sysName, PhenomenonCR phenomenon, Utf8CP unitName, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant);
     static UnitP Create(UnitCR parentUnit, Utf8CP unitName, uint32_t id);
 
     Unit(UnitCR parentUnit, Utf8CP name, uint32_t id);
-    Unit() :UnitsSymbol(), m_system(""), m_phenomenon(nullptr), m_parent(nullptr), m_isConstant(true) {}
+    Unit() :UnitsSymbol(), m_system(nullptr), m_phenomenon(nullptr), m_parent(nullptr), m_isConstant(true) {}
     // Lifecycle is managed by the UnitRegistry so we don't allow copies or assignments.
 
     Unit (UnitCR unit) = delete;
@@ -164,7 +182,7 @@ private:
 
 protected:
 
-    UNITS_EXPORT Unit(Utf8CP system, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant);
+    UNITS_EXPORT Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant);
 
 public:
     UNITS_EXPORT Utf8String GetUnitSignature() const;
@@ -173,10 +191,10 @@ public:
     UNITS_EXPORT Utf8CP GetLabel() const;
     UNITS_EXPORT Utf8CP GetDescription() const;
 
-    bool IsSI() const { return m_system.Equals("SI"); }
+    bool IsSI() const { return 0 == strcmp(m_system->GetName(), "SI"); } // TODO: Replace with something better ... SI is a known system
     bool IsRegistered()    const;
     bool IsConstant() const { return m_isConstant; }
-    Utf8CP GetUnitSystem() const { return m_system.c_str(); }
+    UnitSystemCP GetUnitSystem() const { return m_system; }
 
     PhenomenonCP GetPhenomenon()   const { return m_phenomenon; }
 

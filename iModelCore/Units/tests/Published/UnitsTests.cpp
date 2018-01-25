@@ -229,7 +229,7 @@ TEST_F(UnitsTests, PrintOutAllUnitsGroupedByPhenonmenon)
                 continue;
 
             Utf8String parsedExpression = unit->GetParsedUnitExpression();
-            line.Sprintf("%s,%s,%s,%s,%s", unit->GetName(), unit->GetUnitSystem(), unit->GetDefinition(), unit->GetUnitSignature().c_str(), parsedExpression.c_str());
+            line.Sprintf("%s,%s,%s,%s,%s", unit->GetName(), unit->GetUnitSystem()->GetName(), unit->GetDefinition(), unit->GetUnitSignature().c_str(), parsedExpression.c_str());
 
             WriteLine(file, line.c_str());
 
