@@ -8,6 +8,7 @@
 
 #include "ScalableMeshSchemaPCH.h"
 #include <ScalableMesh\ScalableMeshLib.h>
+#include <ScalableMesh\IScalableMeshClippingOptions.h>
 #include <BeSQLite\BeSQLite.h>
 #include <ScalableMeshSchema\ScalableMeshHandler.h>
 #include "ScalableMeshDisplayCacheManager.h"
@@ -18,6 +19,10 @@
 #include <ScalableMesh\ScalableMeshUtilityFunctions.h>
 #include <DgnPlatform\TextString.h>
 #include <DgnPlatform\DgnGeoCoord.h>
+
+
+#define SCALABLEMESH_MODEL_PROP_Clips           "SmModelClips"
+#define SCALABLEMESH_MODEL_PROP_GroundCoverages "SmGroundCoverages"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -123,8 +128,11 @@ BentleyStatus ScalableMeshModel::_ReloadClipMask(const BentleyApi::Dgn::DgnEleme
 
     bvector<uint64_t> clipIds;
     clipIds.push_back(clipMaskElementId.GetValue());
+
+    /*//NEEDS_WORK_MST - Removed
     if (GetProgressiveQueryEngine().IsValid())
         GetProgressiveQueryEngine()->ClearCaching(clipIds, m_smPtr);
+*/
     m_forceRedraw = true;
     return SUCCESS;
     }
@@ -1532,7 +1540,7 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
 
             Render::Texture::CreateParams params;
             params.SetIsTileSection();  // tile section have clamp instead of warp mode for out of bound pixels. That help reduce seams between tiles when magnified.            
-            trimesh.m_texture = renderSys->_CreateTexture(binaryImage, scene.GetDgnDb(), params);
+            trimesh.m_texture = renderSys->_CreateTexture(binaryImage, /*scene.GetDgnDb(),*/ params);            
             }
 #else
 
@@ -1698,6 +1706,9 @@ BentleyStatus Scene::ReadSceneFile()
 //----------------------------------------------------------------------------------------
 IScalableMeshProgressiveQueryEnginePtr ScalableMeshModel::GetProgressiveQueryEngine()
     {
+    //NEEDS_WORK_MST - Removed
+    assert(!"Should not be called");
+
     if (m_progressiveQueryEngine == nullptr)
         {
         m_displayNodesCache = new ScalableMeshDisplayCacheManager();
@@ -1810,6 +1821,22 @@ void ScalableMeshModel::ClearAllDisplayMem()
     m_progressiveQueryEngine = nullptr;
     m_smPtr->RemoveAllDisplayData();    
     RefreshClips();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mathieu.St-Pierre 01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ScalableMeshModel::SetScalableClips(bmap <uint64_t, SMModelClipInfo>& clipInfo)
+    {
+    m_scalableClipDefs = std::move(clipInfo);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mathieu.St-Pierre 01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ScalableMeshModel::SetGroundModelLinks(bvector<bpair<uint64_t, uint64_t>>& linksToGroundModels)
+    {
+    m_linksToGroundModels = std::move(linksToGroundModels);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1941,10 +1968,47 @@ void ScalableMeshModel::_OnFitView(FitContextR context)
     context.ExtendFitRange(rangeWorld, scene->GetLocation());
     }
 
+std::recursive_mutex s_loadModelLock;
+
+void LoadAllScalableMeshModels(DgnDbCR database)
+    {
+    s_loadModelLock.lock();
+    DgnClassId classId(database.Schemas().GetClassId("ScalableMesh", "ScalableMeshModel"));
+    //auto modelList = database.Models().MakeIterator(BIS_SCHEMA("ScalableMesh"));
+    auto modelList = database.Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialModel));
+   
+
+    bvector<DgnModelId> modelsToLoad;
+    for (auto& model : modelList)
+        {
+        if (model.GetClassId() == classId)
+            {
+            modelsToLoad.push_back(model.GetModelId());
+            }
+        }
+    for (auto& id : modelsToLoad)
+        if (!database.Models().FindModel(id).IsValid()) database.Models().GetModel(id);
+
+    s_loadModelLock.unlock();
+    }
+
 void ScalableMeshModel::GetAllScalableMeshes(BentleyApi::Dgn::DgnDbCR dgnDb, bvector<IMeshSpatialModelP>& models)
     {
     DgnClassId classId(dgnDb.Schemas().GetClassId("ScalableMesh", "ScalableMeshModel"));
     BeAssert(classId.IsValid());
+
+    //LoadAllScalableMeshModels(dgnDb);
+/*
+    ModelIterator modelIter(dgnDb.Models().MakeIterator("ScalableMesh"));
+    bvector<DgnModelId> modelIds(modelIter.BuildIdList());
+
+    for (auto& modelId : modelIds)
+        {
+        DgnModelPtr modelPtr(dgnDb.Models().FindModel(modelId));
+        assert(modelPtr.IsValid() && modelPtr->GetClassId() == classId);                    
+        models.push_back(dynamic_cast<IMeshSpatialModelP>(modelPtr.get()));
+        }
+*/
 
     for (auto& model : dgnDb.Models().GetLoadedModels())
         {
@@ -2442,6 +2506,12 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
         {
         SetDisplayTexture(false);
         }
+
+    m_clipProvider = new SMClipProvider(this);    
+
+    ScalableMesh::IScalableMeshClippingOptions& options = m_smPtr->EditClippingOptions();
+    options.SetClipDefinitionsProvider(m_clipProvider);
+    options.SetShouldRegenerateStaleClipFiles(true);
     }
 
 //----------------------------------------------------------------------------------------
@@ -2682,10 +2752,12 @@ void ScalableMeshModel::SetActiveClipSets(bset<uint64_t>& activeClips, bset<uint
     for (auto& clip: previouslyActiveClips)
        clipIds.push_back(clip);
 
+/*//NEEDS_WORK_MST - Removed
     auto tryProgressiveQueryEngine = GetProgressiveQueryEngine();
     if (tryProgressiveQueryEngine.get() == nullptr) return;
     GetProgressiveQueryEngine()->SetActiveClips(clips, m_smPtr);
     GetProgressiveQueryEngine()->ClearCaching(clipIds, m_smPtr);
+*/
     
     m_forceRedraw = true;
     }
@@ -2920,22 +2992,6 @@ bool ScalableMeshModel::HasQueuedTerrainRegions()
     return !m_queuedRegions.empty();
     }
 
-void LoadAllScalableMeshModels(DgnDbCR database)
-    {
-    DgnClassId classId(database.Schemas().GetClassId("ScalableMesh", "ScalableMeshModel"));
-    auto modelList = database.Models().MakeIterator("ScalableMeshModel");
-
-    bvector<DgnModelId> modelsToLoad;
-    for (auto& model : modelList)
-        {
-        if (model.GetClassId() == classId)
-            {
-            modelsToLoad.push_back(model.GetModelId());
-            }
-        }
-    for (auto& id : modelsToLoad)
-        if (!database.Models().FindModel(id).IsValid()) database.Models().GetModel(id);
-    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2017
@@ -3231,6 +3287,16 @@ IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDb& db, Utf8S
     return model.get();
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.St-Pierre 01/2018
+//----------------------------------------------------------------------------------------
+void ScalableMeshModelHandler::_GetClassParams(ECSqlClassParamsR params)
+    {
+    T_Super::_GetClassParams(params);
+    params.Add(SCALABLEMESH_MODEL_PROP_Clips, ECSqlClassParams::StatementType::All);
+    params.Add(SCALABLEMESH_MODEL_PROP_GroundCoverages, ECSqlClassParams::StatementType::All);
+    }
+
 
 void ScalableMeshModel::ActivateTerrainRegion(const BentleyApi::Dgn::DgnElementId& id, ScalableMeshModel* terrainModel)
 {
@@ -3334,6 +3400,156 @@ bool IsUrl(WCharCP filename)
     }
 
 //----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.St-Pierre  01/2018
+//----------------------------------------------------------------------------------------
+void SMModelClipInfo::FromBlob(size_t& currentBlobInd, const uint8_t* pClipData)
+    {    
+    __int64 nbPts;
+    memcpy(&nbPts, &pClipData[currentBlobInd], sizeof(__int64));
+    currentBlobInd += sizeof(__int64);
+         
+    m_shape.resize(nbPts);
+    memcpy(&m_shape[0], &pClipData[currentBlobInd], m_shape.size() * sizeof(DPoint3d));
+    currentBlobInd += (m_shape.size() * sizeof(DPoint3d));
+ 
+    memcpy(&m_type, &pClipData[currentBlobInd], sizeof(m_type));
+    currentBlobInd += sizeof(m_type);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.St-Pierre  01/2018
+//----------------------------------------------------------------------------------------
+void SMModelClipInfo::ToBlob(bvector<uint8_t>& clipData)
+    {        
+    size_t currentBlobInd = clipData.size();    
+    clipData.resize(clipData.size() + sizeof(__int64));
+    __int64 nbPts = (__int64)m_shape.size();
+    memcpy(&clipData[currentBlobInd], &nbPts, sizeof(__int64));
+    
+    currentBlobInd = clipData.size();
+    clipData.resize(clipData.size() + m_shape.size() * sizeof(DPoint3d));
+    memcpy(&clipData[currentBlobInd], &m_shape[0], m_shape.size() * sizeof(DPoint3d));
+
+    currentBlobInd = clipData.size();
+    clipData.resize(clipData.size() + sizeof(m_type));
+    memcpy(&clipData[currentBlobInd], &m_type, sizeof(m_type));
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.St-Pierre  01/2018
+//----------------------------------------------------------------------------------------
+void ScalableMeshModel::_BindWriteParams(BeSQLite::EC::ECSqlStatement& stmt, ForInsert forInsert)
+    {
+    T_Super::_BindWriteParams(stmt, forInsert);
+
+    // Shoud have been added by RasterModelHandler::_GetClassParams() if not make sure the handler is registered.
+    BeAssert(stmt.GetParameterIndex(SCALABLEMESH_MODEL_PROP_Clips) != -1);
+    BeAssert(stmt.GetParameterIndex(SCALABLEMESH_MODEL_PROP_GroundCoverages) != -1);
+
+    bvector<uint8_t> clipData;
+
+    for (auto& clipDef : m_scalableClipDefs)
+        {
+        size_t currentInd = clipData.size();
+        clipData.resize(clipData.size() + sizeof(clipDef.first));
+        memcpy(&clipData[currentInd], &clipDef.first, sizeof(clipDef.first));
+            
+        clipDef.second.ToBlob(clipData);
+        }        
+
+    if (clipData.empty())
+        stmt.BindNull(stmt.GetParameterIndex(SCALABLEMESH_MODEL_PROP_Clips));
+    else
+        stmt.BindBlob(stmt.GetParameterIndex(SCALABLEMESH_MODEL_PROP_Clips), clipData.data(), (int)clipData.size(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+
+
+    //SCALABLEMESH_MODEL_PROP_GroundCoverages
+    bvector<uint8_t> groundCoverageData;
+
+    if (m_linksToGroundModels.size() > 0)
+        {         
+        uint64_t nbModels = m_linksToGroundModels.size();
+        groundCoverageData.resize(groundCoverageData.size() + sizeof(nbModels));
+        memcpy(&groundCoverageData[0], &nbModels, sizeof(nbModels));        
+        
+        size_t size = sizeof(m_linksToGroundModels[0]);
+        groundCoverageData.resize(sizeof(nbModels) + sizeof(uint64_t) * 2 * nbModels);
+        uint64_t* linkDataPtr = (uint64_t*)&groundCoverageData[sizeof(nbModels)];
+
+        for (size_t modelId = 0; modelId < m_linksToGroundModels.size(); modelId++)
+            {            
+            linkDataPtr[modelId * 2] = m_linksToGroundModels[modelId].first;
+            linkDataPtr[modelId * 2 + 1] = m_linksToGroundModels[modelId].second;
+            }
+        }
+
+    if (groundCoverageData.empty())
+        stmt.BindNull(stmt.GetParameterIndex(SCALABLEMESH_MODEL_PROP_GroundCoverages));
+    else
+        stmt.BindBlob(stmt.GetParameterIndex(SCALABLEMESH_MODEL_PROP_GroundCoverages), groundCoverageData.data(), (int)groundCoverageData.size(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.St-Pierre  01/2018
+//----------------------------------------------------------------------------------------
+DgnDbStatus ScalableMeshModel::_ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParamsCR params)
+    {
+    DgnDbStatus status = T_Super::_ReadSelectParams(statement, params);
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    // Shoud have been added by ScalableMeshModel::_GetClassParams() if not make sure the handler is registred.
+    BeAssert(params.GetSelectIndex(SCALABLEMESH_MODEL_PROP_Clips) != -1);
+    BeAssert(params.GetSelectIndex(SCALABLEMESH_MODEL_PROP_GroundCoverages) != -1);
+  
+    int blobSize = 0;
+    void const* pBlob = statement.GetValueBlob(params.GetSelectIndex(SCALABLEMESH_MODEL_PROP_Clips), &blobSize);
+    uint8_t* pBlobData = (uint8_t*)pBlob;
+
+    assert(m_scalableClipDefs.size() == 0);
+
+    if (blobSize > 0)
+        { 
+        size_t currentBlobInd = 0;
+        
+        while (currentBlobInd < blobSize)
+            {
+            uint64_t clipId; ;
+            memcpy(&clipId, &pBlobData[currentBlobInd], sizeof(clipId));
+            currentBlobInd += sizeof(clipId);
+
+            SMModelClipInfo smClipInfo;
+            smClipInfo.FromBlob(currentBlobInd, pBlobData);                        
+            
+            m_scalableClipDefs.insert(bpair<uint64_t, SMModelClipInfo>(clipId, smClipInfo));
+            }        
+        }
+
+    //---------------SCALABLEMESH_MODEL_PROP_GroundCoverages-----------------------
+    blobSize = 0;
+    pBlob = statement.GetValueBlob(params.GetSelectIndex(SCALABLEMESH_MODEL_PROP_GroundCoverages), &blobSize);
+    pBlobData = (uint8_t*)pBlob;
+
+    if (blobSize > 0)
+        {
+        uint64_t nbModels;
+        memcpy(&nbModels, pBlobData, sizeof(uint64_t));
+
+        uint64_t* linkDataPtr = (uint64_t*)&pBlobData[sizeof(uint64_t)];
+
+        m_linksToGroundModels.resize(nbModels);
+
+        for (size_t modelId = 0; modelId < nbModels; modelId++)
+            {
+            m_linksToGroundModels[modelId].first = linkDataPtr[modelId * 2];
+            m_linksToGroundModels[modelId].second = linkDataPtr[modelId * 2 + 1];            
+            }            
+        }
+
+    return DgnDbStatus::Success;
+    }
+
+//----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.St-Pierre  03/2016
 //----------------------------------------------------------------------------------------
 void ScalableMeshModel::_OnLoadedJsonProperties()
@@ -3397,3 +3613,158 @@ DgnDbStatus ScalableMeshModel::_OnDelete()
     }
 HANDLER_DEFINE_MEMBERS(ScalableMeshModelHandler)
 
+
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.St-Pierre  01/2018
+//----------------------------------------------------------------------------------------
+SMClipProvider::SMClipProvider(ScalableMeshModel* smModel)
+    {
+    assert(smModel != nullptr);
+    m_smModel = smModel;    
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.St-Pierre  01/2018
+//----------------------------------------------------------------------------------------
+void SMClipProvider::GetClipPolygon(bvector<DPoint3d>& poly, uint64_t id)
+    {   
+    ScalableMesh::SMNonDestructiveClipType type;
+    return GetClipPolygon(poly, id, type);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.St-Pierre  01/2018
+//----------------------------------------------------------------------------------------
+void SMClipProvider::GetClipPolygon(bvector<DPoint3d>& poly, uint64_t id, ScalableMesh::SMNonDestructiveClipType& type)
+    {
+    auto iterClip = m_smModel->m_scalableClipDefs.find(id);
+
+    if (iterClip != m_smModel->m_scalableClipDefs.end())
+        {
+        type = iterClip->second.m_type;
+        poly.insert(poly.begin(), iterClip->second.m_shape.begin(), iterClip->second.m_shape.end());
+        }
+    }
+
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.St-Pierre  01/2018
+//----------------------------------------------------------------------------------------
+void SMClipProvider::SetClipPolygon(const bvector<DPoint3d>& poly, uint64_t id, ScalableMesh::SMNonDestructiveClipType type)
+    {
+    if (m_smModel->m_scalableClipDefs.count(id) == 0)
+        {        
+        m_smModel->m_scalableClipDefs.insert(make_bpair(id, SMModelClipInfo(poly, type)));
+        }
+    else
+        { 
+        m_smModel->m_scalableClipDefs[id].m_type = type;
+        m_smModel->m_scalableClipDefs[id].m_shape = poly;
+        }
+
+    m_smModel->Update();
+/*
+    SetClipPolygon(poly, id);
+    m_appData->SetClipType(id, type);
+*/
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.St-Pierre  01/2018
+//----------------------------------------------------------------------------------------
+void SMClipProvider::SetClipPolygon(const bvector<DPoint3d>& poly, uint64_t id)
+    {
+    ScalableMesh::SMNonDestructiveClipType type = ScalableMesh::SMNonDestructiveClipType::Mask;
+
+    SetClipPolygon(poly, id, type);   
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.St-Pierre  01/2018
+//----------------------------------------------------------------------------------------
+void SMClipProvider::RemoveClipPolygon(uint64_t id)
+    {
+    m_smModel->m_scalableClipDefs.erase(id);        
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.St-Pierre  01/2018
+//----------------------------------------------------------------------------------------
+void SMClipProvider::RemoveTerrainRegion(uint64_t id)
+    {
+    assert(!"RemoveTerrainRegion not implemented yet.");
+    //m_appData->RemoveTerrainLinkInfo(id);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.St-Pierre  01/2018
+//----------------------------------------------------------------------------------------
+void SMClipProvider::GetTerrainRegion(bvector<DPoint3d>& poly, uint64_t id)
+    {
+    assert(!"GetTerrainRegion not implemented yet.");
+   // m_appData->GetClipInfo(id, poly);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.St-Pierre  01/2018
+//----------------------------------------------------------------------------------------
+void SMClipProvider::SetTerrainRegion(const bvector<DPoint3d>& poly, uint64_t id)
+    {
+    assert(!"SetTerrainRegion not implemented yet.");
+//    m_appData->SetClipInfo(id, poly);
+    }
+
+
+void SMClipProvider::SetTerrainRegionName(const Utf8String& name, uint64_t id)
+    {
+    assert(!"SetTerrainRegionName not implemented yet.");
+    }
+
+void SMClipProvider::GetTerrainRegionName(Utf8String& name, uint64_t id)
+    {
+    assert(!"GetTerrainRegionName not implemented yet.");
+/*
+    bvector<ElementHandle> attachments;
+    ScalableMeshAttachment::FindAttachments(attachments, *m_appData->m_hostEh.GetModelRef(), true);
+    uint64_t elementId = 0;
+    for (auto& part : m_appData->m_linksToModels)
+        {
+        if (part.second == id)
+            {
+            elementId = part.first;
+            break;
+            }
+        }
+    for (auto& attachment : attachments)
+        {
+        if (attachment.GetElementId() == elementId)
+            {
+            ScalableMeshElementAppData* data = ScalableMeshElementAppData::GetOrAddAppData(attachment);
+            if (data != nullptr)
+                {
+                name = data->GetFileName().GetNameUtf8();
+                }
+            }
+        }
+*/
+    }
+
+void SMClipProvider::ListClipIDs(bvector<uint64_t>& ids)
+    {    
+    ids.clear();
+
+    for (auto& def : m_smModel->m_scalableClipDefs)
+        {        
+        ids.push_back(def.first);
+        }
+    }
+
+void SMClipProvider::ListTerrainRegionIDs(bvector<uint64_t>& ids)
+    {    
+    ids.clear();
+    for (auto& part : m_smModel->m_linksToGroundModels)
+        {
+        ids.push_back(part.second);
+        }
+    }

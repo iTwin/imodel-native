@@ -69,8 +69,6 @@
     <None Include="ScalableMeshSchema.prewire.mke" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="ScalableMesh.01.00.ecschema.xml">
-      <Filter>Source Files</Filter>
-    </Xml>
+    <Xml Include="ScalableMesh.ecschema.xml" />
   </ItemGroup>
 </Project>

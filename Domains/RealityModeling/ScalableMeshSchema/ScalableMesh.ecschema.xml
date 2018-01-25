@@ -8,6 +8,8 @@
             <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
         <BaseClass>bis:SpatialModel</BaseClass>
+        <ECProperty propertyName="SmModelClips"      typeName="binary" />
+        <ECProperty propertyName="SmGroundCoverages" typeName="binary" />        
     </ECEntityClass>
 
 </ECSchema>

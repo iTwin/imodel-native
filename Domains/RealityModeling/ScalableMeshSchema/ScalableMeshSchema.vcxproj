@@ -80,7 +80,7 @@ BentleyBuild.py -p ScalableMeshSchema -r DgnDomains-RealityModeling -f RealityMo
     <None Include="ScalableMeshSchema.prewire.mke" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="ScalableMesh.01.00.ecschema.xml" />
+    <Xml Include="ScalableMesh.ecschema.xml" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

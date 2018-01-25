@@ -268,6 +268,63 @@ typedef RefCountedPtr<IScalableMeshLocationProvider> IScalableMeshLocationProvid
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
+struct SMModelClipInfo
+    {    
+
+    SMModelClipInfo(const bvector<DPoint3d>& shape, ScalableMesh::SMNonDestructiveClipType type)
+        {
+        m_shape = shape;
+        m_type = type;
+        }
+
+    SMModelClipInfo()
+        {
+        m_type = SMNonDestructiveClipType::Mask;                
+        }
+
+    void FromBlob(size_t& currentBlobInd, const uint8_t* pClipData);
+
+    void ToBlob(bvector<uint8_t>& clipData);
+
+    bvector<DPoint3d>                      m_shape;
+    ScalableMesh::SMNonDestructiveClipType m_type;
+
+    };
+
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct SMClipProvider : public ScalableMesh::IClipDefinitionDataProvider
+    {
+    private:
+
+        ScalableMeshModel* m_smModel = nullptr;
+
+    public:
+
+        SMClipProvider(ScalableMeshModel* smModel);
+        virtual void GetClipPolygon(bvector<DPoint3d>& poly, uint64_t id);
+        virtual void GetClipPolygon(bvector<DPoint3d>& poly, uint64_t id, ScalableMesh::SMNonDestructiveClipType& type);
+        virtual void SetClipPolygon(const bvector<DPoint3d>& poly, uint64_t id, ScalableMesh::SMNonDestructiveClipType type);
+        virtual void SetClipPolygon(const bvector<DPoint3d>& poly, uint64_t id);
+        virtual void RemoveClipPolygon(uint64_t id);
+
+        virtual void RemoveTerrainRegion(uint64_t id);
+        virtual void GetTerrainRegion(bvector<DPoint3d>& poly, uint64_t id);
+        virtual void SetTerrainRegion(const bvector<DPoint3d>& poly, uint64_t id);
+
+        virtual void ListClipIDs(bvector<uint64_t>& ids);
+        virtual void ListTerrainRegionIDs(bvector<uint64_t>& ids);
+
+        virtual void SetTerrainRegionName(const Utf8String& name, uint64_t id);
+        virtual void GetTerrainRegionName(Utf8String& name, uint64_t id);
+        virtual void RemoveTerrainRegionName(uint64_t id) {};
+    };
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
 struct ScalableMeshModel : IMeshSpatialModel, Dgn::Render::IGetTileTreeForPublishing, Dgn::Render::IGetPublishedTilesetInfo
 {
     DGNMODEL_DECLARE_MEMBERS("ScalableMeshModel", IMeshSpatialModel)
@@ -277,7 +334,12 @@ struct ScalableMeshModel : IMeshSpatialModel, Dgn::Render::IGetTileTreeForPublis
     BE_JSON_NAME(classifiers)
     BE_JSON_NAME(publishing)
 
+
+    friend struct SMClipProvider;
+
 private:
+
+    RefCountedPtr<SMClipProvider> m_clipProvider;
 
 
 public: //MST_TEMP
@@ -305,9 +367,11 @@ public: //MST_TEMP
 	mutable Dgn::ClipVectorCPtr             m_clip;
 	int                                     m_startClipCount;
     ModelSpatialClassifiers                 m_classifiers;
-        bvector<ScalableMeshModel*>             m_terrainParts;
-        bmap<uint64_t, bpair<ClipMode, bool>>   m_currentClips;
-        
+    bvector<ScalableMeshModel*>             m_terrainParts;
+    bmap<uint64_t, bpair<ClipMode, bool>>   m_currentClips;
+
+
+    
         bool  m_subModel;
         ScalableMeshModel* m_parentModel;
         uint64_t m_associatedRegion;
@@ -334,7 +398,7 @@ public: //MST_TEMP
 		bool HasClipBoundary(const bvector<DPoint3d>& clipBoundary, uint64_t clipID);
 
 private:
-		
+		    
     void MakeTileSubTree(Render::TileNodePtr& rootTile, IScalableMeshNodePtr& node, TransformCR transformDbToTile, size_t childIndex=0, Render::TileNode* parent=nullptr);
 
     uint32_t _GetExcessiveRefCountThreshold() const override { return 0x7fffffff; }
@@ -352,7 +416,15 @@ protected:
         void FromJson(Json::Value const&);
     };
 
+    bmap <uint64_t, SMModelClipInfo>   m_scalableClipDefs;
+
+    //bpair<Model id, clip id>
+    bvector<bpair<uint64_t, uint64_t>> m_linksToGroundModels;
+
     Properties      m_properties;
+
+    Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParamsCR params) override;
+    void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
 
     void _OnSaveJsonProperties() override;
     void _OnLoadedJsonProperties() override;
@@ -405,6 +477,10 @@ public:
 		SCALABLEMESH_SCHEMA_EXPORT void CompactExtraFiles();
 		
 	SCALABLEMESH_SCHEMA_EXPORT void SetClip(Dgn::ClipVectorCP clip);
+		
+	SCALABLEMESH_SCHEMA_EXPORT void SetScalableClips(bmap <uint64_t, SMModelClipInfo>& clipInfo);
+
+    SCALABLEMESH_SCHEMA_EXPORT void SetGroundModelLinks(bvector<bpair<uint64_t, uint64_t>>& linksToGroundModels);
 
     //! A DgnDb can have only one terrain.
     SCALABLEMESH_SCHEMA_EXPORT static IMeshSpatialModelP GetTerrainModelP(BentleyApi::Dgn::DgnDbCR dgnDb);
@@ -486,5 +562,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ScalableMeshModelHandler : Dgn::dgn_ModelHandler:
 public :
     //NEEDS_WORK_SM : Currently for testing only
     SCALABLEMESH_SCHEMA_EXPORT static IMeshSpatialModelP AttachTerrainModel(BentleyApi::Dgn::DgnDb& db, Utf8StringCR modelName, BeFileNameCR smFilename, RepositoryLinkCR modeledElement, bool openFile = true, Dgn::ClipVectorCP clip = nullptr, ModelSpatialClassifiersCP classifiers = nullptr);
+
+    virtual void _GetClassParams(Dgn::ECSqlClassParamsR params) override;
 };
 END_BENTLEY_SCALABLEMESH_SCHEMA_NAMESPACE
