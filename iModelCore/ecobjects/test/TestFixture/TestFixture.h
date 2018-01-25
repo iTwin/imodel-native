@@ -2,7 +2,7 @@
 |
 |     $Source: test/TestFixture/TestFixture.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -50,7 +50,9 @@ struct ECTestFixture : ::testing::Test
     {
 protected:
     ECTestFixture();
-    
+    virtual void SetUp() override;
+    virtual void TearDown() override;
+
 public:
     static WString GetTestDataPath(WCharCP fileName);
     static WString GetTempDataPath(WCharCP fileName);
