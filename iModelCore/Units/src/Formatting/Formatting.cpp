@@ -1021,9 +1021,9 @@ Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quan
             case CompositeSpecType::Single: // there is only one value to report
                 majT = fmtP->FormatDouble(dval.GetMajor(), prec, round);
                 // if this composite only defines a single component then use format traits to determine if unit label is shown. This allows
-                // support for SuppressUnitLable options in DgnClientFx.
+                // support for SuppressUnitLable options in DgnClientFx. Also in this single component situation use the define UomSeparator.
                 if (fmtP->IsAppendUnit())
-                    majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel(nullptr).c_str(), spacer);
+                    majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel(nullptr).c_str(), Utils::SubstituteNull(space, fmtP->GetUomSeparator()));
                 break;
 
             case CompositeSpecType::Double:

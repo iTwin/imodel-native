@@ -40,7 +40,6 @@ void FormattingTestFixture::SetUpL10N()
     BeTest::GetHost().GetTempDir(temporaryDirectory);
 
     BeSQLite::BeSQLiteLib::Initialize(temporaryDirectory, BeSQLite::BeSQLiteLib::LogErrors::Yes);
-    BeSQLite::L10N::Shutdown();
     BeSQLite::L10N::Initialize(BeSQLite::L10N::SqlangFiles(sqlangFile));
     }
 

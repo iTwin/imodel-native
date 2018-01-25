@@ -221,6 +221,10 @@ UnitP UnitRegistry::AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP
     if (nullptr == unit)
         return nullptr;
 
+    // Add the unit label as a synonym as long as it is not the same as the actual unit name
+    if (!Utf8String::IsNullOrEmpty(unit->GetLabel()) && (0 != strcmp(unit->GetLabel(), unitName)))
+        unit->AddSynonym(unit->GetLabel());
+
     phenomenon->AddUnit(*unit);
 
     ++m_nextId;

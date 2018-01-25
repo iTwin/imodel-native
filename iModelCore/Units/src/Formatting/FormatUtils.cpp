@@ -166,8 +166,6 @@ Json::Value UIUtils::GetAvailableUnitLabels(Utf8CP unitName)
         return Json::Value(Json::nullValue);
 
     Json::Value labels(Json::arrayValue);
-    labels.append(unit->GetLabel());
-
     bvector<Utf8CP> synonyms;
     if (unit->GetSynonymList(synonyms) > 0)
         {
