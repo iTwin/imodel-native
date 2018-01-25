@@ -8,9 +8,11 @@
 
 #include "UnitsPCH.h"
 
+#include <Bentley/RefCounted.h>
+
 using namespace std;
 
-USING_NAMESPACE_BENTLEY_UNITS
+BEGIN_BENTLEY_UNITS_NAMESPACE
 
 UnitRegistry * UnitRegistry::s_instance = nullptr;
 
@@ -20,15 +22,7 @@ UnitRegistry * UnitRegistry::s_instance = nullptr;
 UnitRegistry& UnitRegistry::Instance()
     {
     if (nullptr == s_instance)
-        {
         s_instance = new UnitRegistry();
-        s_instance->AddDefaultSystems();
-        s_instance->AddDefaultPhenomena();
-        s_instance->AddDefaultUnits();
-        s_instance->AddDefaultConstants();
-        s_instance->AddDefaultMappings();
-        }
-
     return *s_instance;
     }
 
@@ -36,9 +30,45 @@ UnitRegistry& UnitRegistry::Instance()
 //-------------------------------------------------------------------------------------//
 // @bsimethod                                              Chris.Tartamella     02/16
 //---------------+---------------+---------------+---------------+---------------+------//
+// static
 void UnitRegistry::Clear()
     {
     s_instance = nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Caleb.Shafer            01/18
+//---------------------------------------------------------------------------------------
+UnitRegistry::UnitRegistry()
+    {
+    // This is going to change... There shouldn't be as much to initialize.
+    AddDefaultSystems();
+    AddDefaultPhenomena();
+    AddDefaultUnits();
+    AddDefaultConstants();
+    AddDefaultMappings();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Caleb.Shafer            01/18
+//---------------------------------------------------------------------------------------
+UnitRegistryPtr UnitRegistry::Create()
+    {
+    return new UnitRegistry();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Caleb.Shafer            01/18
+//---------------------------------------------------------------------------------------
+void UnitRegistry::RemoveUnitLocater(IUnitLocaterR locater)
+    {
+    for (auto iter = m_locaters.begin(); iter != m_locaters.end();)
+        {
+        if (*iter == &locater)
+            iter = m_locaters.erase(iter);
+        else
+            ++iter;
+        }
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -232,14 +262,6 @@ UnitP UnitRegistry::AddUnitP (Utf8CP phenomName, Utf8CP systemName, Utf8CP unitN
     return AddUnitInternal(phenomName, systemName, unitName, definition, ' ', factor, offset, false);
     }
 
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-UnitCP UnitRegistry::AddUnit (Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double factor, double offset)
-    {
-    return AddUnitP(phenomName, systemName, unitName, definition, factor, offset);
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -361,7 +383,6 @@ BentleyStatus UnitRegistry::AddSynonym(Utf8CP unitName, Utf8CP synonymName)
         }
 
     UnitP unit = LookupUnitP(unitName);
-
     if (nullptr == unit)
         {
         LOG.errorv("Could not create synonym with name '%s' because the unit it is for is null", synonymName);
@@ -390,24 +411,37 @@ BentleyStatus UnitRegistry::AddSynonym(UnitCP unit, Utf8CP synonymName)
     return AddSynonym(unit->GetName(), synonymName);
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                              Chris.Tartamella       02/16
+//--------------------------------------------------------------------------------------
 UnitP UnitRegistry::LookupUnitP(Utf8CP name) const
     {
-    auto nameStr = Utf8String(name);
-    auto val_iter = m_units.find(nameStr);
-    if (val_iter == m_units.end())
-        return nullptr;
+    auto val_iter = m_units.find(name);
+    if (val_iter != m_units.end())
+        return (*val_iter).second;
 
-    return (*val_iter).second;
+    UnitP foundUnit;
+    for (auto locater : m_locaters)
+        {
+        foundUnit = locater->LocateUnitP(name);
+        if (nullptr != foundUnit)
+            return foundUnit;
+        }
+
+    return nullptr;
     }
 
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-UnitCP UnitRegistry::LookupUnit (Utf8CP name) const
+//--------------------------------------------------------------------------------------
+// @bsimethod                                              Chris.Tartamella       02/16
+//--------------------------------------------------------------------------------------
+UnitCP UnitRegistry::LookupUnit(Utf8CP name) const
     {
     return LookupUnitP(name);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              David.Fox-Rabinovitz    02/17
+//---------------------------------------------------------------------------------------
 PUSH_MSVC_IGNORE(6385 6386)
 UnitCP UnitRegistry::LookupUnitCI (Utf8CP name) const
     {
@@ -422,27 +456,48 @@ UnitCP UnitRegistry::LookupUnitCI (Utf8CP name) const
     }
 POP_MSVC_IGNORE
 
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-UnitCP UnitRegistry::LookupConstant (Utf8CP name) const
+//--------------------------------------------------------------------------------------
+// @bsimethod                                              Chris.Tartamella       02/16
+//--------------------------------------------------------------------------------------
+UnitCP UnitRegistry::LookupConstant(Utf8CP name) const
     {
-    auto val_iter = m_units.find(name);
-    if (val_iter == m_units.end())
-        return nullptr;
-
-    return (*val_iter).second;
+    auto constant = LookupUnit(name);
+    if (nullptr == constant)
+        return constant;
+    return constant->IsConstant() ? constant : nullptr;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      02/2016
+//--------------------------------------------------------------------------------------
 PhenomenonP UnitRegistry::LookupPhenomenonP(Utf8CP name) const
     {
     auto val_iter = m_phenomena.find(name);
-    if (val_iter == m_phenomena.end())
-        return nullptr;
+    if (val_iter != m_phenomena.end())
+        return (*val_iter).second;
 
-    return (*val_iter).second;
+    PhenomenonP foundPhen;
+    for (auto locater : m_locaters)
+        {
+        foundPhen = locater->LocatePhenomenonP(name);
+        if (nullptr != foundPhen)
+            return foundPhen;
+        }
+
+    return nullptr;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      02/2016
+//--------------------------------------------------------------------------------------
+PhenomenonCP UnitRegistry::LookupPhenomenon(Utf8CP name) const
+    {
+    return LookupPhenomenonP(name);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      02/2016
+//--------------------------------------------------------------------------------------
 void UnitRegistry::AllUnitNames(bvector<Utf8String>& allUnitNames, bool includeSynonyms) const
     {
     for (auto const& unitAndName : m_units)
@@ -452,6 +507,9 @@ void UnitRegistry::AllUnitNames(bvector<Utf8String>& allUnitNames, bool includeS
         }
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      02/2016
+//--------------------------------------------------------------------------------------
 void UnitRegistry::AllUnits(bvector<UnitCP>& allUnits) const
     {
     for (auto const& unitAndName : m_units)
@@ -461,12 +519,14 @@ void UnitRegistry::AllUnits(bvector<UnitCP>& allUnits) const
         }
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      02/2016
+//--------------------------------------------------------------------------------------
 void UnitRegistry::AllPhenomena(bvector<PhenomenonCP>& allPhenomena) const
     {
     for (auto const& phenomenonAndName : m_phenomena)
         allPhenomena.push_back(phenomenonAndName.second);
     }
-
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
@@ -475,34 +535,6 @@ bool UnitRegistry::HasSystem (Utf8CP systemName) const
     {
     auto iter = find (m_systems.begin(), m_systems.end(), Utf8String(systemName));
     return iter != m_systems.end();
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool UnitRegistry::HasPhenomena (Utf8CP phenomenaName) const
-    {
-    auto iter = m_phenomena.find(phenomenaName);
-    return iter != m_phenomena.end();
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool UnitRegistry::HasUnit (Utf8CP unitName) const
-    {
-    auto nameStr = Utf8String(unitName);
-    auto iter = m_units.find(nameStr);
-    return iter != m_units.end();
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool UnitRegistry::HasConstant (Utf8CP constantName) const
-    {
-    auto constant = LookupConstant (constantName);
-    return nullptr != constant;
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -557,10 +589,10 @@ UnitCP UnitRegistry::LookupUnitUsingOldName(Utf8CP oldName) const
         }
     return nullptr;
     }
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              David Fox-Rabinovitz     09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-
 size_t  UnitRegistry::LoadSynonyms(Json::Value jval) const
     {
     size_t num = 0;
@@ -584,25 +616,30 @@ size_t  UnitRegistry::LoadSynonyms(Json::Value jval) const
     return num;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              David.Fox-Rabinovitz    09/17
+//---------------------------------------------------------------------------------------
 PhenomenonCP UnitRegistry::LoadSynonym(Utf8CP unitName, Utf8CP synonym) const
     {
     if (Utf8String::IsNullOrEmpty(unitName) || Utf8String::IsNullOrEmpty(synonym))
         return nullptr;
-      UnitCP unit = UnitRegistry::Instance().LookupUnitCI(unitName);
-      PhenomenonCP ph = (nullptr == unit)? nullptr : unit->GetPhenomenon();
-      if (nullptr != ph)
-          {
-           UnitCP un = ph->FindSynonym(synonym);
-           if (un == nullptr)  // a new synonym
-               {
+    UnitCP unit = UnitRegistry::Instance().LookupUnitCI(unitName);
+    PhenomenonCP ph = (nullptr == unit)? nullptr : unit->GetPhenomenon();
+    if (nullptr != ph)
+        {
+        UnitCP un = ph->FindSynonym(synonym);
+        if (un == nullptr)  // a new synonym
+            {
 
-               }
-          }
+            }
+        }
 
-      return ph;
+    return ph;
     }
 
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              David.Fox-Rabinovitz    09/17
+//---------------------------------------------------------------------------------------
 Json::Value UnitRegistry::SynonymsToJson() const
     {
     Json::Value jMap;
@@ -614,3 +651,5 @@ Json::Value UnitRegistry::SynonymsToJson() const
         }
     return jMap;
     }
+
+END_BENTLEY_UNITS_NAMESPACE

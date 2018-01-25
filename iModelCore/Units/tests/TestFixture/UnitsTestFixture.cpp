@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "UnitsTestFixture.h"
 
+#include <fstream>
+
 BEGIN_UNITS_UNITTESTS_NAMESPACE
 
 //---------------------------------------------------------------------------------------
@@ -31,4 +33,78 @@ Utf8String UnitsTestFixture::GetOutputDataPath(WCharCP dataFile)
     testData.AppendToPath(dataFile);
     return Utf8String(testData);
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//--------------------------------------------------------------------------------------
+void UnitsTestFixture::WriteLine(BeFile& file, Utf8CP line)
+    {
+    Utf8String finalLine;
+    if (Utf8String::IsNullOrEmpty(line))
+        finalLine.assign("\r\n");
+    else
+        finalLine.Sprintf("%s\r\n", line);
+
+    uint32_t bytesToWrite = static_cast<uint32_t>(finalLine.SizeInBytes() - 1); //not safe, but our line will not exceed 32bits.
+    uint32_t bytesWritten;
+    EXPECT_EQ(file.Write(&bytesWritten, finalLine.c_str(), bytesToWrite), BeFileStatus::Success);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//--------------------------------------------------------------------------------------
+void UnitsTestFixture::WriteToFile(Utf8CP fileName, bvector<bpair<Utf8String, Utf8String>> lines)
+    {
+    BeFile file;
+    EXPECT_EQ(file.Create(fileName, true), BeFileStatus::Success);
+    for (auto line : lines)
+        {
+        Utf8PrintfString formatted("%s,%s", line.first.c_str(), line.second.c_str());
+        WriteLine(file, formatted.c_str());
+        }
+
+    file.Close();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Basanta.Kharel                 12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String UnitsTestFixture::ParseUOM(Utf8CP unitName, bset<Utf8String>& notMapped)
+    {
+    UnitCP uom = LocateUOM(unitName, true);
+    if (nullptr != uom)
+        return uom->GetName();
+
+    notMapped.insert(unitName);
+    return "NULL";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Basanta.Kharel                 12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+UnitCP UnitsTestFixture::LocateUOM(Utf8CP unitName, bool useLegacyNames)
+    {
+    if (useLegacyNames)
+        return UnitRegistry::Instance().LookupUnitUsingOldName(unitName);
+        
+    return UnitRegistry::Instance().LookupUnit(unitName);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Basanta.Kharel                 12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+void UnitsTestFixture::ReadConversionCsvFile(WCharCP file, CSVLineProcessor lineProcessor)
+    {
+    Utf8String path = UnitsTestFixture::GetConversionDataPath(file);
+    std::ifstream ifs(path.begin(), std::ifstream::in);
+    std::string line;
+
+    while (std::getline(ifs, line))
+        {
+        bvector<Utf8String> tokens;
+        BeStringUtilities::Split(line.c_str(), ",", tokens);
+        lineProcessor(tokens);
+        }
+    }
+
 END_UNITS_UNITTESTS_NAMESPACE

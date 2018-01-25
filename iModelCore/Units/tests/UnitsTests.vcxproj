@@ -30,12 +30,13 @@
   <ItemGroup>
     <ClCompile Include="NonPublished\FormattingTestFixture.cpp" />
     <ClCompile Include="NonPublished\formatting_test.cpp" />
+    <ClCompile Include="Published\UnitConversionTests.cpp" />
+    <ClCompile Include="Published\UnitRegistryTests.cpp" />
     <ClCompile Include="TestFixture\QuantityTestFixture.cpp" />
-    <ClCompile Include="TestFixture\UnitsTestFixture.cpp" />
-    <ClCompile Include="TestFixture\UnitsTestFixture.cpp" />
     <ClCompile Include="Published\QuantityTests.cpp" />
     <ClCompile Include="Published\UnitsTests.cpp" />
     <ClCompile Include="Performance\UnitsPerformanceTests.cpp" />
+    <ClCompile Include="TestFixture\UnitsTestFixture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="NonPublished\FormattingTestFixture.h" />

@@ -11,7 +11,6 @@
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <Units/Units.h>
 
-
 UNITS_TYPEDEFS(UnitsSymbol)
 UNITS_TYPEDEFS(Unit)
 UNITS_TYPEDEFS(InverseUnit)
@@ -19,6 +18,7 @@ UNITS_TYPEDEFS(Phenomenon)
 UNITS_TYPEDEFS(Expression)
 UNITS_TYPEDEFS(SpecificAccuracy)
 UNITS_TYPEDEFS(UnitSynonymMap)
+
 BEGIN_BENTLEY_UNITS_NAMESPACE
 
 BE_JSON_NAME(synonymMap)
@@ -108,9 +108,9 @@ private:
 
 protected:
     UNITS_EXPORT UnitsSymbol();
-    UnitsSymbol(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id, double factor, double offset);
+    UNITS_EXPORT UnitsSymbol(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id, double factor, double offset);
     ExpressionCR Evaluate(int depth, std::function<UnitsSymbolCP(Utf8CP)> getSymbolByName) const;
-    virtual ~UnitsSymbol();
+    UNITS_EXPORT virtual ~UnitsSymbol();
       
 public:
     Utf8CP  GetName() const { return m_name.c_str(); }
@@ -127,7 +127,7 @@ public:
 //! A base class for all units.
 // @bsiclass                                                    Chris.Tartamella   02/16
 //=======================================================================================
-struct Unit final : UnitsSymbol
+struct Unit : UnitsSymbol
     {
 DEFINE_T_SUPER(UnitsSymbol)
 friend struct UnitRegistry;
@@ -146,7 +146,6 @@ private:
     static UnitP Create(Utf8CP sysName, PhenomenonCR phenomenon, Utf8CP unitName, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant);
     static UnitP Create(UnitCR parentUnit, Utf8CP unitName, uint32_t id);
 
-    Unit (Utf8CP system, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant);
     Unit(UnitCR parentUnit, Utf8CP name, uint32_t id);
     Unit() :UnitsSymbol(), m_system(""), m_phenomenon(nullptr), m_parent(nullptr), m_isConstant(true) {}
     // Lifecycle is managed by the UnitRegistry so we don't allow copies or assignments.
@@ -156,12 +155,16 @@ private:
 
     ExpressionCR Evaluate() const;
 
-    uint32_t GetPhenomenonId() const override;
+    UNITS_EXPORT uint32_t GetPhenomenonId() const override;
     UnitCP  CombineWithUnit(UnitCR rhs, int factor) const;
     bool    IsInverseUnit() const { return nullptr != m_parent; }
     
     UnitsProblemCode  DoNumericConversion(double& converted, double value, UnitCR toUnit) const;
     bool    GenerateConversion(UnitCR toUnit, Conversion& conversion) const;
+
+protected:
+
+    UNITS_EXPORT Unit(Utf8CP system, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant);
 
 public:
     UNITS_EXPORT Utf8String GetUnitSignature() const;
@@ -230,7 +233,7 @@ public:
     UNITS_EXPORT static bool CompareSynonymMap(UnitSynonymMapCR map1, UnitSynonymMapCR map2);
     };
 
-struct Phenomenon final : UnitsSymbol
+struct Phenomenon : UnitsSymbol
     {
 DEFINE_T_SUPER(UnitsSymbol)
 friend struct Unit;
@@ -243,7 +246,6 @@ private:
     mutable Utf8String m_displayLabel;
 
     void AddUnit(UnitCR unit);
-    Phenomenon(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id) : UnitsSymbol(name, definition, baseSymbol, id, 0.0, 0) {}
     void AddMap(UnitSynonymMapCR map);
     Phenomenon() = delete;
     Phenomenon(PhenomenonCR phenomenon) = delete;
@@ -251,7 +253,10 @@ private:
 
     ExpressionCR Evaluate() const;
 
-    uint32_t GetPhenomenonId() const override { return GetId(); }
+    UNITS_EXPORT uint32_t GetPhenomenonId() const override { return GetId(); }
+
+protected:
+    UNITS_EXPORT Phenomenon(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id) : UnitsSymbol(name, definition, baseSymbol, id, 0.0, 0) {}
 
 public:
     UNITS_EXPORT Utf8String GetPhenomenonSignature() const;

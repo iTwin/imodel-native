@@ -45,9 +45,6 @@
     <ClCompile Include="Performance\UnitsPerformanceTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
-    <ClCompile Include="TestFixture\UnitsTestFixture.cpp">
-      <Filter>TestFixture</Filter>
-    </ClCompile>
     <ClCompile Include="TestFixture\QuantityTestFixture.cpp">
       <Filter>TestFixture</Filter>
     </ClCompile>
@@ -60,7 +57,15 @@
     <ClCompile Include="TestFixture\UnitsTestFixture.cpp">
       <Filter>TestFixture</Filter>
     </ClCompile>
-    <ClCompile Include="TestFixture\UnitsTestFixture.cpp" />
+    <ClCompile Include="Published\UnitRegistryTests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="TestFixture\UnitsTestFixture.cpp">
+      <Filter>TestFixture</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\UnitConversionTests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="NonPublished\FormattingTestFixture.h">
