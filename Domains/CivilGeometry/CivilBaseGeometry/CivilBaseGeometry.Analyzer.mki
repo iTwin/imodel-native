@@ -2,11 +2,11 @@
 #
 #     $Source: CivilBaseGeometry/CivilBaseGeometry.Analyzer.mki $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 
-%if defined (CIVILBASEGEOMETRY_ANALYZE) || (defined(PRG) && !defined(SUBNET_PRG))
+%if defined (CIVIL_ANALYZE) || (defined(PRG) && !defined(SUBNET_PRG))
     ENABLE_COMPILER_ANALYZE = 1
     SECURITY_ONLY_COMPILER_ANALYZE = 1
     %if defined(NOSTRICT)
