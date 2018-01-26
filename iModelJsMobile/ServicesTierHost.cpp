@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "iModelJsInternal.h"
 #include <vector>
+#include <Bentley/BeDirectoryIterator.h>
+#include <Bentley/Desktop/FileSystem.h>
 
 static std::vector<BentleyApi::iModelJs::ServicesTier::Extension::InstallCallback_T> s_extensionsQueue;
 
@@ -20,8 +22,8 @@ static uv_mutex_t* getExtensionsQueueMutex()
 
     if (!s_initialized)
         {
-        auto initialized = uv_mutex_init (&s_mutex);
-        BeAssert (initialized >= 0);
+        auto initialized = uv_mutex_init(&s_mutex);
+        BeAssert(initialized >= 0);
 
         s_initialized = true;
         }
@@ -30,6 +32,177 @@ static uv_mutex_t* getExtensionsQueueMutex()
     }
 
 BEGIN_BENTLEY_IMODELJS_SERVICES_TIER_NAMESPACE
+
+//=======================================================================================
+// Projects the ECSqlStatement class into JS.
+//! @bsiclass
+//=======================================================================================
+struct IModelJsTimer : Napi::ObjectWrap<IModelJsTimer>
+    {
+    private:
+        static Napi::FunctionReference s_constructor;
+        uv_timer_t m_handle;
+        int64_t m_timeout;
+        Napi::FunctionReference m_function;
+
+        static uv_loop_t* GetEventLoop() { return Host::GetInstance().GetEventLoop(); }
+
+    public:
+        IModelJsTimer(const Napi::CallbackInfo& info) : Napi::ObjectWrap<IModelJsTimer>(info)
+            {
+            m_timeout = info[0].ToNumber();
+            m_function = Napi::Persistent(info[1].As<Napi::Function>());
+            uv_timer_init(GetEventLoop(), &m_handle);
+            Ref(); // keep this alive until it fires
+            }
+
+        static void Init(Napi::Env& env, Napi::Object exports)
+            {
+            Napi::HandleScope scope(env);
+            Napi::Function t = DefineClass(env, "IModelJsTimer", {
+              InstanceMethod("start", &IModelJsTimer::Start),
+              InstanceMethod("stop", &IModelJsTimer::Stop),
+            });
+
+            exports.Set("IModelJsTimer", t);
+
+            s_constructor = Napi::Persistent(t);
+            s_constructor.SuppressDestruct();
+            }
+
+        Napi::Value Start(const Napi::CallbackInfo& info)
+            {
+            int err = uv_timer_start(&m_handle, OnTimeout, m_timeout, 0);
+            m_handle.data = this;
+            return Napi::Number::New(Env(), err);
+            }
+
+        Napi::Value Stop(const Napi::CallbackInfo& info)
+            {
+            int err = uv_timer_stop(&m_handle);
+            Unref(); // allow this object to be GC'd
+            Napi::HandleScope handle_scope(Env());
+            return Napi::Number::New(Env(), err);
+            }
+
+        static void OnTimeout(uv_timer_t* handle)
+            {
+            auto wrap = static_cast<IModelJsTimer*>(handle->data);
+            auto env = wrap->Env();
+            if (!env.IsExceptionPending())
+                {
+                Napi::HandleScope handle_scope(env);
+                try {
+                    wrap->m_function({wrap->Value()});
+                    }
+                catch (Napi::Error err)
+                    {
+                    fprintf(stderr, err.Message().c_str());
+                    }
+                }
+            if (0 == uv_timer_get_repeat(handle))
+                {
+                // Note that if there is an exception pending, then it is not safe to call Stop, as that tries to create values.
+                wrap->Unref(); // allow this object to be GC'd
+                }
+            }
+    };
+
+Napi::FunctionReference IModelJsTimer::s_constructor;
+
+//=======================================================================================
+// Projects the ECSqlStatement class into JS.
+//! @bsiclass
+//=======================================================================================
+struct IModelJsFs : Napi::ObjectWrap<IModelJsFs>
+    {
+    IModelJsFs(const Napi::CallbackInfo& info) : Napi::ObjectWrap<IModelJsFs>(info)
+        {}
+
+    static void Init(Napi::Env& env, Napi::Object exports)
+        {
+        Napi::HandleScope scope(env);
+        Napi::Function t = DefineClass(env, "IModelJsFs", {
+          StaticMethod("existsSync", &IModelJsFs::ExistsSync),
+          StaticMethod("unlinkSync", &IModelJsFs::UnlinkSync),
+          StaticMethod("removeSync", &IModelJsFs::UnlinkSync),
+          StaticMethod("mkdirSync", &IModelJsFs::MkdirSync),
+          StaticMethod("statSync", &IModelJsFs::StatSync),
+          StaticMethod("rmdirSync", &IModelJsFs::RmdirSync),
+          StaticMethod("readdirSync", &IModelJsFs::ReaddirSync),
+          StaticMethod("writeFileSync", &IModelJsFs::WriteFileSync),
+          StaticMethod("copySync", &IModelJsFs::CopySync),
+        });
+
+        exports.Set("IModelJsFs", t);
+        }
+
+    static Napi::Value ExistsSync(const Napi::CallbackInfo& info)
+        {
+        BeFileName fn(info[0].ToString().Utf8Value().c_str(), true);
+        return Napi::Boolean::New(info.Env(), fn.DoesPathExist());
+        }
+
+    static Napi::Value UnlinkSync(const Napi::CallbackInfo& info)
+        {
+        BeFileName fn(info[0].ToString().Utf8Value().c_str(), true);
+        return Napi::Number::New(info.Env(), (int)fn.BeDeleteFile());
+        }
+
+    static Napi::Value MkdirSync(const Napi::CallbackInfo& info)
+        {
+        BeFileName fn(info[0].ToString().Utf8Value().c_str(), true);
+        return Napi::Number::New(info.Env(), (int)BeFileName::CreateNewDirectory(fn.c_str()));
+        }
+
+    static Napi::Value RmdirSync(const Napi::CallbackInfo& info)
+        {
+        BeFileName fn(info[0].ToString().Utf8Value().c_str(), true);
+        return Napi::Number::New(info.Env(), (int)BeFileName::EmptyAndRemoveDirectory(fn.c_str()));
+        }
+
+    static Napi::Value WriteFileSync(const Napi::CallbackInfo& info)
+        {
+        auto fp = fopen(info[0].ToString().Utf8Value().c_str(), "w+");
+        int n = fputs(info[1].ToString().Utf8Value().c_str(), fp);
+        fclose(fp);
+        return Napi::Number::New(info.Env(), n);
+        }
+
+    static Napi::Value CopySync(const Napi::CallbackInfo& info)
+        {
+        BeFileName src(info[0].ToString().Utf8Value().c_str(), true);
+        BeFileName dst(info[1].ToString().Utf8Value().c_str(), true);
+        return Napi::Number::New(info.Env(), (int)BeFileName::BeCopyFile(src, dst));
+        }
+
+    static Napi::Value ReaddirSync(const Napi::CallbackInfo& info)
+        {
+        BeFileName topDir(info[0].ToString().Utf8Value().c_str(), true);
+
+        bvector<Utf8String> files;
+        BeFileName entryName;
+        bool        isDir;
+        for (BeDirectoryIterator dirs (topDir); dirs.GetCurrentEntry (entryName, isDir) == SUCCESS; dirs.ToNext())
+            {
+            files.push_back(Utf8String(entryName.c_str()));
+            }
+
+        auto dirs = Napi::TypedArrayOf<Napi::String>::New(info.Env(), files.size());
+        int i=0;
+        for (auto const& fn : files)
+            dirs[i++] = Napi::String::New(info.Env(), fn.c_str());
+
+        return dirs;
+        }
+
+    static Napi::Value StatSync(const Napi::CallbackInfo& info)
+        {
+        Napi::Error::New(info.Env(), "TBD").ThrowAsJavaScriptException();
+        return info.Env().Undefined();
+        }
+
+    };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Steve.Wilson                    7/2017
@@ -44,35 +217,35 @@ Host::ConfigR Host::GetConfig()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Steve.Wilson                    6/17
 //---------------------------------------------------------------------------------------
-void Host::EventLoopCallbackAsyncHandler (uv_async_t* handle)
+void Host::EventLoopCallbackAsyncHandler(uv_async_t* handle)
     {
     auto callback = static_cast<EventLoopCallback_T*>(handle->data);
     (*callback)();
     delete callback;
 
-    uv_close ((uv_handle_t*) handle, &EventLoopAsyncCloseHandler);
+    uv_close((uv_handle_t*)handle, &EventLoopAsyncCloseHandler);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Steve.Wilson                    6/17
 //---------------------------------------------------------------------------------------
-void Host::EventLoopAsyncCloseHandler (uv_handle_t* handle)
+void Host::EventLoopAsyncCloseHandler(uv_handle_t* handle)
     {
-    free (handle);
+    free(handle);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Steve.Wilson                    7/2017
 //---------------------------------------------------------------------------------------
 Host::Host()
-    : m_eventLoop         (nullptr),
-      m_eventLoopThreadId (0),
-      m_jsRuntime         (nullptr),
-      m_ready             (false),
-      m_stopped           (false),
-      m_environment       (nullptr)
+    : m_eventLoop(nullptr),
+    m_eventLoopThreadId(0),
+    m_jsRuntime(nullptr),
+    m_ready(false),
+    m_stopped(false),
+    m_environment(nullptr)
     {
-    BeAssert (s_instance.load() == nullptr);
+    BeAssert(s_instance.load() == nullptr);
 
     s_instance = this;
     m_idler.data = this;
@@ -84,8 +257,8 @@ Host::Host()
 //---------------------------------------------------------------------------------------
 Host::~Host()
     {
-    BeAssert (s_instance == this);
-    BeAssert (m_environment == nullptr);
+    BeAssert(s_instance == this);
+    BeAssert(m_environment == nullptr);
 
     s_instance = nullptr;
     }
@@ -95,7 +268,7 @@ Host::~Host()
 //---------------------------------------------------------------------------------------
 HostR Host::GetInstance()
     {
-    BeAssert (Exists());
+    BeAssert(Exists());
 
     return *s_instance;
     }
@@ -121,7 +294,7 @@ uv_loop_t* Host::GetEventLoop() const
 //---------------------------------------------------------------------------------------
 Js::RuntimeR Host::GetJsRuntime() const
     {
-    BeAssert (IsEventLoopThread());
+    BeAssert(IsEventLoopThread());
 
     return *m_jsRuntime;
     }
@@ -158,10 +331,10 @@ void Host::NotifyStarting()
     m_eventLoopThreadId = BeThreadUtilities::GetCurrentThreadId();
 
     m_eventLoop = SupplyEventLoop();
-    BeAssert (m_eventLoop.load() != nullptr);
+    BeAssert(m_eventLoop.load() != nullptr);
 
     m_jsRuntime = &SupplyJsRuntime();
-    BeAssert (m_jsRuntime != nullptr);
+    BeAssert(m_jsRuntime != nullptr);
 
     StartIdler();
     }
@@ -171,12 +344,12 @@ void Host::NotifyStarting()
 //---------------------------------------------------------------------------------------
 void Host::HandleReady()
     {
-    BeAssert (!IsReady());
+    BeAssert(!IsReady());
 
     auto debugger = GetJsRuntime().GetDebugger();
     if (debugger != nullptr && GetConfig().waitForJsDebugger && !debugger->IsReady())
         return;
-    
+
     m_ready = true;
 
     SetupJsRuntime();
@@ -185,8 +358,9 @@ void Host::HandleReady()
     OnReady();
 
     auto& env = Env();
-    Napi::HandleScope scope (env);
-    try {
+    Napi::HandleScope scope(env);
+    try
+        {
         m_notifyReady.Value().As<Napi::Function>()({});
         }
     catch (Napi::Error err)
@@ -200,7 +374,7 @@ void Host::HandleReady()
 //---------------------------------------------------------------------------------------
 void Host::NotifyStop()
     {
-    BeAssert (IsReady());
+    BeAssert(IsReady());
 
     OnStop();
     StopIdler();
@@ -219,14 +393,15 @@ void Host::HandleIdle()
         HandleReady();
 
     auto& runtime = GetJsRuntime();
-    Napi::HandleScope scope (runtime.Env());
+    Napi::HandleScope scope(runtime.Env());
 
     runtime.NotifyIdle();
     OnIdle();
 
     if (!m_notifyIdle.IsEmpty())
         {
-        try {
+        try
+            {
             m_notifyIdle.Value().As<Napi::Function>() ({});
             }
         catch (Napi::Error err)
@@ -241,11 +416,11 @@ void Host::HandleIdle()
 //---------------------------------------------------------------------------------------
 void Host::StartIdler()
     {
-    auto initializedIdler = uv_idle_init (GetEventLoop(), &m_idler);
-    BeAssert (initializedIdler >= 0);
+    auto initializedIdler = uv_idle_init(GetEventLoop(), &m_idler);
+    BeAssert(initializedIdler >= 0);
 
-    auto startedIdler = uv_idle_start (&m_idler, &IdleHandler);
-    BeAssert (startedIdler >= 0);
+    auto startedIdler = uv_idle_start(&m_idler, &IdleHandler);
+    BeAssert(startedIdler >= 0);
     }
 
 //---------------------------------------------------------------------------------------
@@ -253,10 +428,10 @@ void Host::StartIdler()
 //---------------------------------------------------------------------------------------
 void Host::StopIdler()
     {
-    auto stoppedIdler = uv_idle_stop (&m_idler);
-    BeAssert (stoppedIdler >= 0);
+    auto stoppedIdler = uv_idle_stop(&m_idler);
+    BeAssert(stoppedIdler >= 0);
 
-    uv_close ((uv_handle_t*) &m_idler, nullptr);
+    uv_close((uv_handle_t*)&m_idler, nullptr);
     }
 
 //---------------------------------------------------------------------------------------
@@ -264,8 +439,8 @@ void Host::StopIdler()
 //---------------------------------------------------------------------------------------
 void Host::InitializeEnvironment()
     {
-    BeAssert (m_environment == nullptr);
-    
+    BeAssert(m_environment == nullptr);
+
     m_environment = new Environment;
     }
 
@@ -274,11 +449,25 @@ void Host::InitializeEnvironment()
 //---------------------------------------------------------------------------------------
 void Host::TerminateEnvironment()
     {
-    BeAssert (m_environment != nullptr);
+    BeAssert(m_environment != nullptr);
 
     m_environment->Shutdown();
     delete m_environment;
     m_environment = nullptr;
+    }
+
+//#define TO_UTF8CP(WSTR) Utf8String(WSTR).c_str()
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                     1/2018
+//---------------------------------------------------------------------------------------
+static Utf8String newDir(BeFileNameCR baseDir, WCharCP subDirName)
+    {
+    BeFileName dirName(baseDir);
+    dirName.AppendToPath(subDirName);
+    BeFileName::EmptyAndRemoveDirectory(dirName.c_str());
+    BeFileName::CreateNewDirectory(dirName.c_str());
+    return Utf8String(dirName);
     }
 
 //---------------------------------------------------------------------------------------
@@ -287,16 +476,36 @@ void Host::TerminateEnvironment()
 void Host::SetupJsRuntime()
     {
     auto& runtime = GetJsRuntime();
-	auto& env = Env();
-    Napi::HandleScope scope (env);
+    auto& env = Env();
+    Napi::HandleScope scope(env);
 
-    try {   // must process Napi/JS errors before we destroy the HandleScope
-        auto initScriptEvaluation = runtime.EvaluateScript (InitScript());
-        BeAssert (initScriptEvaluation.status == Js::EvaluateStatus::Success);
+    try
+        {   // must process Napi/JS errors before we destroy the HandleScope
+
+        env.Global().Set("self", env.Global()); // make this platform look like a WebWorker
+
+        // Set up the imodeljs globals
+        auto imodeljs = Napi::Object::New(env);
+                // *** 
+                // *** NEEDS WORK: assets and temp dir must be platform-specific and supplied by native code
+                // *** 
+        BeFileName cwd;
+        Desktop::FileSystem::GetCwd(cwd);
+        imodeljs.Set("packageAssetsDir", Napi::String::New(env, newDir(cwd, L"packageAssetsDir").c_str()));
+        imodeljs.Set("assetsDir", Napi::String::New(env, newDir(cwd, L"assetsDir").c_str()));
+        imodeljs.Set("tempDir", Napi::String::New(env, newDir(cwd, L"tempDir").c_str()));
+
+        env.Global().Set("imodeljs", imodeljs);
+
+        IModelJsTimer::Init(env, env.Global());
+        IModelJsFs::Init(env, env.Global());
+
+        auto initScriptEvaluation = runtime.EvaluateScript(InitScript());
+        BeAssert(initScriptEvaluation.status == Js::EvaluateStatus::Success);
 
         auto initParams = Napi::Object::New(env);
 
-        initParams.Set ("deliverExtension", Napi::Function::New(env, [this](Napi::CallbackInfo const& info) -> Napi::Value
+        initParams.Set("deliverExtension", Napi::Function::New(env, [this](Napi::CallbackInfo const& info) -> Napi::Value
             {
             auto env = info.Env();
 
@@ -307,10 +516,10 @@ void Host::SetupJsRuntime()
             if (!identifierArgument.IsString())
                 return env.Undefined();
 
-            return m_environment->DeliverExtension (Js::Runtime::GetRuntime(info.Env()), identifierArgument.As<Napi::String>().Utf8Value().c_str());
+            return m_environment->DeliverExtension(Js::Runtime::GetRuntime(info.Env()), identifierArgument.As<Napi::String>().Utf8Value().c_str());
             }));
 
-        initParams.Set ("evaluateScript", Napi::Function::New(env, [](Napi::CallbackInfo const& info) -> Napi::Value
+        initParams.Set("evaluateScript", Napi::Function::New(env, [](Napi::CallbackInfo const& info) -> Napi::Value
             {
             auto env = info.Env();
             auto& runtime = Js::Runtime::GetRuntime(env);
@@ -320,41 +529,41 @@ void Host::SetupJsRuntime()
             auto script = JS_CALLBACK_GET_STRING(0);
             auto identifier = JS_CALLBACK_GET_STRING(1);
 
-            auto result = runtime.EvaluateScript (script, identifier);
+            auto result = runtime.EvaluateScript(script, identifier);
             if (result.status == Js::EvaluateStatus::ParseError)
                 Napi::Error::New(env, "Parse Error").ThrowAsJavaScriptException();
             else if (result.status == Js::EvaluateStatus::RuntimeError)
                 Napi::Error::New(env, result.message.c_str()).ThrowAsJavaScriptException();
             else if (result.status == Js::EvaluateStatus::Success)
                 return result.value;
-        
+
             return JS_CALLBACK_UNDEFINED;
             }));
 
-        initParams.Set ("createStringFromUtf8Buffer", Napi::Function::New(env, [](Napi::CallbackInfo const& info) -> Napi::Value
+        initParams.Set("createStringFromUtf8Buffer", Napi::Function::New(env, [](Napi::CallbackInfo const& info) -> Napi::Value
             {
-            JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS (1);
+            JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS(1);
 
-            auto buffer = JS_CALLBACK_GET_ARRAY_BUFFER (0);
-        
-            Utf8String string (static_cast<CharP>(buffer.Data()), buffer.ByteLength());
+            auto buffer = JS_CALLBACK_GET_ARRAY_BUFFER(0);
 
-            return JS_CALLBACK_STRING (string.c_str());
+            Utf8String string(static_cast<CharP>(buffer.Data()), buffer.ByteLength());
+
+            return JS_CALLBACK_STRING(string.c_str());
             }));
 
-        initParams.Set ("require", SupplyJsRequireHandler (env, initParams));
+        initParams.Set("require", SupplyJsRequireHandler(env, initParams));
 
         auto info = Napi::Object::New(env);
-        SupplyJsInfoValues (env, info);
-        initParams.Set ("info", info);
+        SupplyJsInfoValues(env, info);
+        initParams.Set("info", info);
 
-        initScriptEvaluation.value.As<Napi::Function>() ({initParams});
+        initScriptEvaluation.value.As<Napi::Function>() ({ initParams });
 
         m_notifyIdle.Reset(initParams.Get("notifyIdle").As<Napi::Function>());
         m_notifyShutdown.Reset(initParams.Get("notifyShutdown").As<Napi::Function>());
         m_notifyReady.Reset(initParams.Get("notifyReady").As<Napi::Function>());
 
-        env.Global().Set ("console_log", Napi::Function::New(env, [](Napi::CallbackInfo const& info) -> Napi::Value
+        env.Global().Set("console_log", Napi::Function::New(env, [](Napi::CallbackInfo const& info) -> Napi::Value
             {
             JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS(1);
             auto msg = JS_CALLBACK_GET_STRING(0);
@@ -375,10 +584,10 @@ void Host::SetupJsRuntime()
 void Host::TeardownJsRuntime()
     {
     auto& env = Env();
-    Napi::HandleScope scope (env);
+    Napi::HandleScope scope(env);
 
     m_notifyShutdown.Value().As<Napi::Function>() ({});
-    
+
     m_notifyIdle.Reset();
     m_notifyShutdown.Reset();
     m_notifyReady.Reset();
@@ -387,7 +596,7 @@ void Host::TeardownJsRuntime()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Steve.Wilson                    7/2017
 //---------------------------------------------------------------------------------------
-Napi::Function Host::SupplyJsRequireHandler (Napi::Env& env, Napi::Object initParams)
+Napi::Function Host::SupplyJsRequireHandler(Napi::Env& env, Napi::Object initParams)
     {
     return Napi::Function::New(env, [](Napi::CallbackInfo const& info) { return JS_CALLBACK_UNDEFINED; });
     }
@@ -395,16 +604,16 @@ Napi::Function Host::SupplyJsRequireHandler (Napi::Env& env, Napi::Object initPa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Steve.Wilson                    7/2017
 //---------------------------------------------------------------------------------------
-void Host::SupplyJsInfoValues (Napi::Env& env, Napi::Object info)
+void Host::SupplyJsInfoValues(Napi::Env& env, Napi::Object info)
     {
 #ifdef BENTLEYCONFIG_OS_WINDOWS
-    info.Set ("isWindows", Napi::Boolean::New(env, true));
+    info.Set("isWindows", Napi::Boolean::New(env, true));
 #else
-    info.Set ("isWindows", Napi::Boolean::New(env, false));
+    info.Set("isWindows", Napi::Boolean::New(env, false));
 #endif
 
-    info.Set ("argv", Napi::String::New(env, GetSystemArgv().c_str()));
-    info.Set ("cwd", Napi::String::New(env, GetSystemCwd().c_str()));
+    info.Set("argv", Napi::String::New(env, GetSystemArgv().c_str()));
+    info.Set("cwd", Napi::String::New(env, GetSystemCwd().c_str()));
     }
 
 //---------------------------------------------------------------------------------------
@@ -415,10 +624,10 @@ Utf8String Host::GetSystemArgv() const
     Utf8String argv;
 
 #ifdef BENTLEYCONFIG_OS_WINDOWS
-    WString argvW (::GetCommandLineW());
-    argv.Assign (argvW.GetWCharCP());
+    WString argvW(::GetCommandLineW());
+    argv.Assign(argvW.GetWCharCP());
 #else
-    #error WIP
+#error WIP
 #endif
 
     return argv;
@@ -430,22 +639,22 @@ Utf8String Host::GetSystemArgv() const
 Utf8String Host::GetSystemCwd() const
     {
 #ifdef BENTLEYCONFIG_OS_WINDOWS
-    char cwdBuffer [MAX_PATH * 4];
+    char cwdBuffer[MAX_PATH * 4];
 #else
-    char cwdBuffer [PATH_MAX];
+    char cwdBuffer[PATH_MAX];
 #endif
 
-    size_t cwdLength = sizeof (cwdBuffer);
-    auto result = uv_cwd (cwdBuffer, &cwdLength);
-    BeAssert (result >= 0);
+    size_t cwdLength = sizeof(cwdBuffer);
+    auto result = uv_cwd(cwdBuffer, &cwdLength);
+    BeAssert(result >= 0);
 
-    return Utf8String ((result >= 0) ? cwdBuffer : "");
+    return Utf8String((result >= 0) ? cwdBuffer : "");
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Steve.Wilson                    7/2017
 //---------------------------------------------------------------------------------------
-void Host::IdleHandler (uv_idle_t* handle)
+void Host::IdleHandler(uv_idle_t* handle)
     {
     static_cast<HostP>(handle->data)->HandleIdle();
     }
@@ -453,22 +662,22 @@ void Host::IdleHandler (uv_idle_t* handle)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Steve.Wilson                    6/17
 //---------------------------------------------------------------------------------------
-bool Host::PostToEventLoop (EventLoopCallback_T const& callback)
+bool Host::PostToEventLoop(EventLoopCallback_T const& callback)
     {
     if (!IsStopped())
         {
-        uv_async_t* handle = (uv_async_t*) malloc (sizeof (uv_async_t));
+        uv_async_t* handle = (uv_async_t*)malloc(sizeof(uv_async_t));
 
-        auto initializedHandle = uv_async_init (Host::GetInstance().GetEventLoop(), handle, &EventLoopCallbackAsyncHandler);
-        BeAssert (initializedHandle >= 0);
+        auto initializedHandle = uv_async_init(Host::GetInstance().GetEventLoop(), handle, &EventLoopCallbackAsyncHandler);
+        BeAssert(initializedHandle >= 0);
 
         if (initializedHandle >= 0)
             {
-            auto callbackCopy = new EventLoopCallback_T (callback);
+            auto callbackCopy = new EventLoopCallback_T(callback);
             handle->data = callbackCopy;
 
-            auto sent = uv_async_send (handle);
-            BeAssert (sent >= 0);
+            auto sent = uv_async_send(handle);
+            BeAssert(sent >= 0);
 
             if (sent >= 0)
                 return true;
@@ -481,27 +690,27 @@ bool Host::PostToEventLoop (EventLoopCallback_T const& callback)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Steve.Wilson                    6/17
 //---------------------------------------------------------------------------------------
-void Host::DispatchExtensionCallback (Extension::InstallCallback_T const& callback)
+void Host::DispatchExtensionCallback(Extension::InstallCallback_T const& callback)
     {
     auto mutex = getExtensionsQueueMutex();
-        
-    uv_mutex_lock (mutex);
+
+    uv_mutex_lock(mutex);
 
     auto instance = Exists() ? &GetInstance() : nullptr;
 
     if (instance != nullptr && instance->IsReady())
         {
         if (instance->IsEventLoopThread())
-            instance->PerformInstall (callback);
+            instance->PerformInstall(callback);
         else
-            instance->PostToEventLoop ([=]() { GetInstance().PerformInstall (callback); });
+            instance->PostToEventLoop([=]() { GetInstance().PerformInstall(callback); });
         }
     else
         {
-        s_extensionsQueue.push_back (callback);
+        s_extensionsQueue.push_back(callback);
         }
 
-    uv_mutex_unlock (mutex);
+    uv_mutex_unlock(mutex);
     }
 
 //---------------------------------------------------------------------------------------
@@ -510,30 +719,30 @@ void Host::DispatchExtensionCallback (Extension::InstallCallback_T const& callba
 void Host::EmptyExtensionsQueue()
     {
     auto mutex = getExtensionsQueueMutex();
-        
-    uv_mutex_lock (mutex);
-    
+
+    uv_mutex_lock(mutex);
+
     for (auto& cb : s_extensionsQueue)
-        PerformInstall (cb);
+        PerformInstall(cb);
 
     s_extensionsQueue.clear();
 
-    uv_mutex_unlock (mutex);
+    uv_mutex_unlock(mutex);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Steve.Wilson                    7/2017
 //---------------------------------------------------------------------------------------
-void Host::PerformInstall (Extension::InstallCallback_T const& callback)
+void Host::PerformInstall(Extension::InstallCallback_T const& callback)
     {
-    BeAssert (Host::GetInstance().IsEventLoopThread());
+    BeAssert(Host::GetInstance().IsEventLoopThread());
 
     auto extension = callback();
-    BeAssert (extension != nullptr);
+    BeAssert(extension != nullptr);
 
     extension->m_runtime = m_jsRuntime;
 
-    Environment::GetInstance().Install (extension);
+    Environment::GetInstance().Install(extension);
     }
 
 std::atomic<HostP> Host::s_instance;

@@ -95,7 +95,6 @@ private:
         auto evaluateResult = runtime.EvaluateScript (u8R"(
             (function() {
                 let require = bentley.imodeljs.servicesTier.require;
-                debugger;
                 let registryModule = require ("../backend/NodeAddonRegistry");
                 BeAssert (registryModule !== undefined);
                 let registry = registryModule.NodeAddonRegistry;

@@ -146,7 +146,7 @@ void UvHost::EventLoopThreadEntry (void* arg)
 // @bsimethod                                Steve.Wilson                    7/2017
 //---------------------------------------------------------------------------------------
 void UvHost::EventLoopThreadMain()
-    {
+    {   
     auto& config = GetConfig();
 
     m_jsRuntime = new Js::Runtime("iModel.js Services Tier", config.enableJsDebugger, config.jsDebuggerPort);

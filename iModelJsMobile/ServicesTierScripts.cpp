@@ -357,7 +357,29 @@ Utf8CP Utilities::SimpleInitScript()
     {
     return u8R"(
 
-    (function (params) {
+    // mocha thinks that it is running in a browser, and so it expects to have a URL
+    self.location = {};
+
+    // mocha expects the global 'setTimeout' and 'clearTimeout' functions to be defined.
+
+    function setTimeout(func, delay, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10) {
+      var timer = new IModelJsTimer(
+            (delay || 0),
+            function () {
+                func(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10)
+            });
+      timer.start();
+      // Native code keeps the timer object alive until it fires or stop is called.
+      return timer;
+    }
+
+    function clearTimeout(timer) {
+      if (timer) {
+        timer.stop();  // cancels the timer and tells native code to release its reference.
+      }
+    }
+ 
+   (function (params) {
 
         let abtostr = function (buf, start, len) {
             return String.fromCharCode.apply (this, new Uint16Array (buf, start, len));
