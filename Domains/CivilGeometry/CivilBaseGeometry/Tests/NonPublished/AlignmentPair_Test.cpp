@@ -299,39 +299,24 @@ void AlignmentPair_CloneCurveVectors()
     ASSERT_TRUE(vt.IsValid());
     expectEqualCurves(*pair->GetVerticalCurveVector(), *vt);
 
-    // Clone as EnglishFeet
     DPoint3d start, end;
 
-    hz = pair->CloneHorizontalCurveVector(Dgn::StandardUnit::EnglishFeet);
-    ASSERT_TRUE(hz.IsValid());
-    EXPECT_TRUE(hz->GetStartEnd(start, end));
-    EXPECT_EQ_DPOINT3D(DPoint3d::FromZero(), start);
-    EXPECT_EQ_DPOINT3D(DPoint3d::FromScale(DPoint3d::From(100, 0, 0), METERS_TO_ENGLISH_FEET), end);
-
-    vt = pair->CloneVerticalCurveVector(Dgn::StandardUnit::EnglishFeet);
-    ASSERT_TRUE(vt.IsValid());
-    EXPECT_TRUE(vt->GetStartEnd(start, end));
-    EXPECT_EQ_DPOINT3D(DPoint3d::FromScale(DPoint3d::From(0, 0, 800), METERS_TO_ENGLISH_FEET), start);
-    EXPECT_EQ_DPOINT3D(DPoint3d::FromScale(DPoint3d::From(100, 0, 815.0), METERS_TO_ENGLISH_FEET), end);
-    
-    // Clone as EnglishSurveyFeet
-    hz = pair->CloneHorizontalCurveVector(Dgn::StandardUnit::EnglishSurveyFeet);
-    ASSERT_TRUE(hz.IsValid());
-    EXPECT_TRUE(hz->GetStartEnd(start, end));
-    EXPECT_EQ_DPOINT3D(DPoint3d::FromZero(), start);
-    EXPECT_EQ_DPOINT3D(DPoint3d::FromScale(DPoint3d::From(100, 0, 0), METERS_TO_ENGLISH_SURVEY_FEET), end);
-
-    vt = pair->CloneVerticalCurveVector(Dgn::StandardUnit::EnglishSurveyFeet);
-    ASSERT_TRUE(vt.IsValid());
-    EXPECT_TRUE(vt->GetStartEnd(start, end));
-    EXPECT_EQ_DPOINT3D(DPoint3d::FromScale(DPoint3d::From(0, 0, 800), METERS_TO_ENGLISH_SURVEY_FEET), start);
-    EXPECT_EQ_DPOINT3D(DPoint3d::FromScale(DPoint3d::From(100, 0, 815.0), METERS_TO_ENGLISH_SURVEY_FEET), end);
-
-    // Clone unsupported unit
-    hz = pair->CloneHorizontalCurveVector(Dgn::StandardUnit::AngleDegrees);
+    hz = pair->CloneHorizontalCurveVector(0.0);
     EXPECT_FALSE(hz.IsValid());
-    vt = pair->CloneVerticalCurveVector(Dgn::StandardUnit::AngleDegrees);
+    vt = pair->CloneVerticalCurveVector(0.0);
     EXPECT_FALSE(vt.IsValid());
+
+    hz = pair->CloneHorizontalCurveVector(2.54);
+    ASSERT_TRUE(hz.IsValid());
+    EXPECT_TRUE(hz->GetStartEnd(start, end));
+    EXPECT_EQ_DPOINT3D(DPoint3d::FromZero(), start);
+    EXPECT_EQ_DPOINT3D(DPoint3d::FromScale(DPoint3d::From(100, 0, 0), 2.54), end);
+
+    vt = pair->CloneVerticalCurveVector(2.54);
+    ASSERT_TRUE(vt.IsValid());
+    EXPECT_TRUE(vt->GetStartEnd(start, end));
+    EXPECT_EQ_DPOINT3D(DPoint3d::FromScale(DPoint3d::From(0, 0, 800), 2.54), start);
+    EXPECT_EQ_DPOINT3D(DPoint3d::FromScale(DPoint3d::From(100, 0, 815.0), 2.54), end);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2909,40 +2894,6 @@ void AlignmentPairEditor_ForceGradeAtStation()
     EXPECT_TRUE(result.IsValid());
     }
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                           Alexandre.Gagnon                        01/2018
-//---------------------------------------------------------------------------------------
-void AlignmentMarkerBits_GetSet()
-    {
-    ICurvePrimitivePtr prim = ICurvePrimitive::CreateLine(DPoint3d::FromZero(), DPoint3d::FromOne());
-
-    // Make sure the marker bit isn't set initially
-    EXPECT_EQ(false, AlignmentMarkerBits::GetMarkerBit(*prim, AlignmentMarkerBits::Bit::BIT_Vertical_IsParabolaLengthByK));
-    
-
-    // Set the marker bit
-    AlignmentMarkerBits::SetMarkerBit(*prim, AlignmentMarkerBits::Bit::BIT_Vertical_IsParabolaLengthByK, true);
-    EXPECT_EQ(true, AlignmentMarkerBits::GetMarkerBit(*prim, AlignmentMarkerBits::Bit::BIT_Vertical_IsParabolaLengthByK));
-
-    CurveVectorPtr cv = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
-    cv->push_back(prim);
-
-    // Make sure IGeometry keeps the marker bit
-    IGeometryPtr iGeom = IGeometry::Create(cv);
-    EXPECT_EQ(true, AlignmentMarkerBits::GetMarkerBit(*cv->front(), AlignmentMarkerBits::Bit::BIT_Vertical_IsParabolaLengthByK));
-
-    ECN::ECValue ecVal;
-    ecVal.SetIGeometry(*IGeometry::Create(cv));
-
-    // Make sure ECValue keeps the marker bit
-    IGeometryPtr ecGeom = ecVal.GetIGeometry();
-    EXPECT_EQ(true, AlignmentMarkerBits::GetMarkerBit(*ecGeom->GetAsCurveVector()->front(), AlignmentMarkerBits::Bit::BIT_Vertical_IsParabolaLengthByK));
-
-    AlignmentMarkerBits::SetMarkerBit(*prim, AlignmentMarkerBits::Bit::BIT_Vertical_IsParabolaLengthByK, false);
-    EXPECT_FALSE(AlignmentMarkerBits::GetMarkerBit(*prim, AlignmentMarkerBits::BIT_Vertical_IsParabolaLengthByK));
-    }
-
 #if 0
 //---------------------------------------------------------------------------------------
 // @betest                               Colin.Jin                         08/2017
@@ -3324,6 +3275,4 @@ TEST_F(CivilBaseGeometryTests, AlignmentPairTests)
     AlignmentPairEditor_MoveArcPVCorPVT();
     AlignmentPairEditor_UpdateVerticalRadius();
     AlignmentPairEditor_ForceGradeAtStation();
-
-    AlignmentMarkerBits_GetSet();
     }

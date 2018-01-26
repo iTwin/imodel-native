@@ -28,7 +28,7 @@
   <Part Name="CivilBaseGeometryDll" BentleyBuildMakeFile="CivilBaseGeometry/CivilBaseGeometry.mke" Scope="Private">
     <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley" />
     <SubPart PartName="GeomDlls" PartFile="geomlibs" Repository="GeomLibs" />
-    <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+    <SubPart PartName="GeomlibsSerialization" PartFile="geomlibs" Repository="GeomLibs"/>
     <SubPart PartName="PublicAPI"/>
     <Bindings>
       <Libs>Delivery/$(libprefix)CivilBaseGeometry$(libext)</Libs>
