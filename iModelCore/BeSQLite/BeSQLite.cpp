@@ -3513,7 +3513,7 @@ uint32_t CachedStatement::Release()
     // Since statements can be referenced from multiple threads, and since we want to reset the statement 
     // when it is only held by the StatementCache, we need to hold the cache's mutex for the entire scope of this
     // method. However, the reference count member must still be atomic since we don't acquire the mutex for AddRef.
-    BeMutexHolder holder(m_myCache.m_mutex);
+    BeMutexHolder holder(*m_myCache.m_mutex);
 
     bool inCache = m_inCache; // hold this in a local before we decrement the refcount in case another thread deletes us
     uint32_t countWas = m_refCount.DecrementAtomicPost();
@@ -3536,12 +3536,35 @@ uint32_t CachedStatement::Release()
     return countWas-1;
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Afan.Khan                      01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+StatementCache::StatementCache(uint32_t size, BeMutex* inheritedMutex )
+    :m_size(size), m_mutex(inheritedMutex == nullptr ? new BeMutex() : inheritedMutex), m_ownMutex(inheritedMutex == nullptr)
+    {}
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Afan.Khan                      01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+StatementCache::~StatementCache()
+    { 
+    Empty();
+    if (m_ownMutex)
+        {
+        delete m_mutex;
+        }
+
+    m_mutex = nullptr;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 void StatementCache::Empty()
     {
-    BeMutexHolder _v_v(m_mutex);
+    BeMutexHolder _v_v(*m_mutex);
 
     for (auto& entry : m_entries)
         {
@@ -3587,7 +3610,7 @@ StatementCache::Entries::iterator StatementCache::FindEntry(Utf8CP sql) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void StatementCache::AddStatement(CachedStatementPtr& newEntry, Utf8CP sql) const
     {
-    BeMutexHolder _v_v(m_mutex);
+    BeMutexHolder _v_v(*m_mutex);
 
     if (m_entries.size() >= m_size) // if cache is full, remove oldest entry
         {
@@ -3617,7 +3640,7 @@ DbResult StatementCache::GetPreparedStatement(CachedStatementPtr& stmt, DbFile c
 +---------------+---------------+---------------+---------------+---------------+------*/
 void StatementCache::FindStatement(CachedStatementPtr& stmt, Utf8CP sql) const
     {
-    BeMutexHolder _v_v(m_mutex);
+    BeMutexHolder _v_v(*m_mutex);
 
     auto entry = FindEntry(sql);
     if (entry == m_entries.end())

@@ -1282,7 +1282,7 @@ public:
 //! Wraps sqlite3_mprintf. Adds convenience that destructor frees memory.
 // @bsiclass                                                    Keith.Bentley   04/11
 //=======================================================================================
-struct SqlPrintfString
+struct SqlPrintfString final
 {
 private:
     Utf8P m_str;
@@ -1317,7 +1317,7 @@ public:
 //! A convenience class for acquiring and releasing a mutex lock. Lock is acquired on construction and released on destruction.
 // @bsiclass                                                    Keith.Bentley   06/11
 //=======================================================================================
-struct BeDbMutexHolder : NonCopyableClass
+struct BeDbMutexHolder final : NonCopyableClass
 {
     BeDbMutex& m_mutex;
     BeDbMutexHolder(BeDbMutex& mutex) : m_mutex(mutex) {m_mutex.Enter();}
@@ -1328,7 +1328,7 @@ struct BeDbMutexHolder : NonCopyableClass
 //! Holds a mutex to synchronize multi-thread access to data.
 // @bsiclass                                                    Keith.Bentley   06/11
 //=======================================================================================
-struct BeSqliteDbMutex : NonCopyableClass
+struct BeSqliteDbMutex final : NonCopyableClass
 {
 private:
     void*  m_mux;
@@ -1345,7 +1345,7 @@ public:
 //! A convenience class for acquiring and releasing the Db's mutex.
 // @bsiclass                                                    Sam.Wilson      06/17
 //=======================================================================================
-struct BeSqliteDbMutexHolder : NonCopyableClass
+struct BeSqliteDbMutexHolder final : NonCopyableClass
 {
     BeSqliteDbMutex m_mutex;
     BeSqliteDbMutexHolder(Db& db) : m_mutex(db) {m_mutex.Enter();}
@@ -1356,7 +1356,7 @@ struct BeSqliteDbMutexHolder : NonCopyableClass
 //! A reference-counted Statement. Statement is freed when last reference is Released.
 // @bsiclass                                                    Keith.Bentley   06/11
 //=======================================================================================
-struct CachedStatement : Statement
+struct CachedStatement final : Statement
 {
     friend struct StatementCache;
 private:
@@ -1385,12 +1385,14 @@ typedef RefCountedPtr<CachedStatement> CachedStatementPtr;
 //! By default, the cache holds 20 SharedStatements and releases the oldest statement when a new entry is added to a full cache.
 // @bsiclass                                                    Keith.Bentley   06/11
 //=======================================================================================
-struct StatementCache : NonCopyableClass
+struct StatementCache final: NonCopyableClass
 {
     friend struct CachedStatement;
 private:
+
     typedef std::list<CachedStatementPtr> Entries;
-    mutable BeMutex m_mutex;
+    mutable BeMutex* m_mutex;
+    bool m_ownMutex;
     mutable Entries m_entries;
     uint32_t m_size;
     Entries::iterator FindEntry(Utf8CP) const;
@@ -1398,8 +1400,8 @@ private:
     BE_SQLITE_EXPORT void FindStatement(CachedStatementPtr&, Utf8CP) const;
 
 public:
-    StatementCache(uint32_t size) {m_size=size;}
-    ~StatementCache() {Empty();}
+    BE_SQLITE_EXPORT explicit StatementCache(uint32_t size, BeMutex* inheritedMutex = nullptr);
+    BE_SQLITE_EXPORT ~StatementCache();
 
     BE_SQLITE_EXPORT DbResult GetPreparedStatement(CachedStatementPtr&, DbFile const& dbFile, Utf8CP sqlString) const;
     BE_SQLITE_EXPORT void Dump() const;
