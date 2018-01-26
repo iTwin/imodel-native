@@ -2,7 +2,7 @@
 |
 |     $Source: CivilBaseGeometry/Native/PublicAPI/CivilBaseGeometry/AlignmentPair.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -22,11 +22,12 @@ BEGIN_BENTLEY_CIVILGEOMETRY_NAMESPACE
 //=======================================================================================
 struct AlignmentPair : NonCopyableClass, RefCountedBase
 {
-private:
+public:
     static constexpr const double MetersToEnglishFeet = 3.28083989501;
     static constexpr const double MetersToEnglishSurveyFeet = 3.2808333333465;
     static constexpr const double DefaultMaxStrokeLength = 0.03;
 
+private:
     CurveVectorPtr m_horizontalCurveVector;
     CurveVectorPtr m_verticalCurveVector;
 
@@ -144,9 +145,9 @@ public:
     CIVILBASEGEOMETRY_EXPORT AlignmentPairPtr GetPartialAlignment(double startDistanceAlongFromStart, double endDistanceAlongFromStart) const;
 
     //! Returns a deep copy of the Horizontal, optionally converted in a different unit
-    CIVILBASEGEOMETRY_EXPORT CurveVectorPtr CloneHorizontalCurveVector(Dgn::StandardUnit unit = Dgn::StandardUnit::MetricMeters) const;
+    CIVILBASEGEOMETRY_EXPORT CurveVectorPtr CloneHorizontalCurveVector(double scaleFactor = 1.0) const;
     //! Returns a deep copy of the Vertical, optionally converted in a different unit
-    CIVILBASEGEOMETRY_EXPORT CurveVectorPtr CloneVerticalCurveVector(Dgn::StandardUnit unit = Dgn::StandardUnit::MetricMeters) const;
+    CIVILBASEGEOMETRY_EXPORT CurveVectorPtr CloneVerticalCurveVector(double scaleFactor = 1.0) const;
 
     //! Returns the radius of the smallest arc primitive that turns left on the horizontal alignment
     //! @remarks Only circular arcs are taken into account

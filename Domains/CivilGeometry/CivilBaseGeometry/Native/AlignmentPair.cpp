@@ -2,7 +2,7 @@
 |
 |     $Source: CivilBaseGeometry/Native/AlignmentPair.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "CivilBaseGeometryInternal.h"
@@ -493,61 +493,32 @@ CurveVectorPtr AlignmentPair::GetPartialAlignment(CurveVectorType type, double s
     return result;
     }
 
-#if 1 //&&AG needswork
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        11/2017
 //---------------------------------------------------------------------------------------
-CurveVectorPtr AlignmentPair::CloneHorizontalCurveVector(Dgn::StandardUnit unit) const
+CurveVectorPtr AlignmentPair::CloneHorizontalCurveVector(double scaleFactor) const
     {
-    if (!m_horizontalCurveVector.IsValid())
+    if (!m_horizontalCurveVector.IsValid() || 0 >= scaleFactor)
         return nullptr;
 
-    switch (unit)
-        {
-        case Dgn::StandardUnit::MetricMeters:
-            return m_horizontalCurveVector->Clone();
+    if (DoubleOps::AlmostEqual(1.0, scaleFactor))
+        return m_horizontalCurveVector->Clone();
 
-        case Dgn::StandardUnit::EnglishFeet:
-            return GetScaledCurveVector(*m_horizontalCurveVector, MetersToEnglishFeet);
-
-        case Dgn::StandardUnit::EnglishSurveyFeet:
-            return GetScaledCurveVector(*m_horizontalCurveVector, MetersToEnglishSurveyFeet);
-
-        default:
-            {
-            REPLACEMENT_LOG("AlignmentPair::CloneHorizontalCurveVector - unexpected StandardUnit in argument");
-            return nullptr;
-            }
-        }
+    return GetScaledCurveVector(*m_horizontalCurveVector, scaleFactor);
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        11/2017
 //---------------------------------------------------------------------------------------
-CurveVectorPtr AlignmentPair::CloneVerticalCurveVector(Dgn::StandardUnit unit) const
+CurveVectorPtr AlignmentPair::CloneVerticalCurveVector(double scaleFactor) const
     {
-    if (!m_verticalCurveVector.IsValid())
+    if (!m_verticalCurveVector.IsValid() || 0 >= scaleFactor)
         return nullptr;
 
-    switch (unit)
-        {
-        case Dgn::StandardUnit::MetricMeters:
-            return m_verticalCurveVector->Clone();
+    if (DoubleOps::AlmostEqual(1.0, scaleFactor))
+        return m_verticalCurveVector->Clone();
 
-        case Dgn::StandardUnit::EnglishFeet:
-            return GetScaledCurveVector(*m_verticalCurveVector, MetersToEnglishFeet);
-
-        case Dgn::StandardUnit::EnglishSurveyFeet:
-            return GetScaledCurveVector(*m_verticalCurveVector, MetersToEnglishSurveyFeet);
-
-        default:
-            {
-            REPLACEMENT_LOG("AlignmentPair::CloneVerticalCurveVector - unexpected StandardUnit in argument");
-            return nullptr;
-            }
-        }
+    return GetScaledCurveVector(*m_verticalCurveVector, scaleFactor);
     }
-#endif
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ben.Bartholomew                 03/2016

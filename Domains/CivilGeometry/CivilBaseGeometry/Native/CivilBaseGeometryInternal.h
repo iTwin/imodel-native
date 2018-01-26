@@ -2,17 +2,14 @@
 |
 |     $Source: CivilBaseGeometry/Native/CivilBaseGeometryInternal.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #ifndef __CIVILBASEGEOMETRYINTERNAL_H__
 #define __CIVILBASEGEOMETRYINTERNAL_H__
 
 #include <CivilBaseGeometry/CivilBaseGeometry.h>
-#include <Bentley/Bentley.h>
-#include <Geom/GeomApi.h>
 
-USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_CIVILGEOMETRY
 
 #if 0 //&&AG not sure whether we should be logging errors or not at this level

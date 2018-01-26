@@ -2,7 +2,7 @@
 |
 |     $Source: CivilBaseGeometry/Native/GeometryDebug.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "CivilBaseGeometryInternal.h"
@@ -15,9 +15,7 @@
 
 // initialization of debug-mutable class static ..
 int GeometryDebug::s_debug = 0;
-int GeometryDebug::s_currentColorIndex = 0;
-
-bvector<bpair<CurveVectorPtr, Dgn::ColorDef>> GeometryDebug::m_debugCurves;
+bvector<GeometryDebug::CurveEntry> GeometryDebug::s_debugCurves;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Earlin.Lutz                   04/2016
@@ -98,35 +96,42 @@ void GeometryDebug::Announce (bvector<PathLocationDetailPair> const &pathAInterv
 #endif
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void GeometryDebug::AddDebugCurve(CurveVectorP curve, ColorInt colorInt)
+    {
+    s_debugCurves.push_back({ curve, colorInt });
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void GeometryDebug::AddDebugPrimitive(ICurvePrimitiveP prim, ColorInt colorInt)
+    {
+    CurveVectorPtr cv = CurveVector::Create(prim);
+    AddDebugCurve(cv.get(), colorInt);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void GeometryDebug::AddDebugPoints(bvector<DPoint3d> const& points, ColorInt colorInt)
+    {
+    ICurvePrimitivePtr primitive = ICurvePrimitive::CreatePointString(points.begin(), points.size());
+    CurveVectorPtr cv = CurveVector::Create(primitive);
+    AddDebugCurve(cv.get(), colorInt);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void GeometryDebug::AddDebugPoint(DPoint3dCR point, ColorInt colorInt)
+    {
+    bvector<DPoint3d> points {point};
+    AddDebugPoints(points, colorInt);
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sandy.Bugai                      06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryDebug::ClearDebugCurves()
     { 
-    m_debugCurves.clear(); 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sandy.Bugai                      06/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-ColorDef GeometryDebug::RandomColor()
-    { 
-	// Not really 'random', but it's just for debugging so we'll return something that is close enough to a random color
-    ColorDef colors[] = 
-        {
-        ColorDef::Green(),
-        ColorDef::Red(),
-        ColorDef::Yellow(),
-        ColorDef::Blue(),
-        ColorDef::Magenta(),
-        ColorDef::White(),
-        ColorDef::Cyan(),
-        ColorDef::MediumGrey(),
-        ColorDef::DarkRed(),
-        };
-
-    int numColors = sizeof(colors) / sizeof(*colors);
-    int index = s_currentColorIndex % numColors;
-    s_currentColorIndex = ++s_currentColorIndex % numColors;
-    return colors[index];
+    s_debugCurves.clear(); 
     }
