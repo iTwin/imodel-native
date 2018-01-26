@@ -69,9 +69,42 @@ CurveVectorManipulationStrategy::CurveVectorManipulationStrategy()
     {}
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void CurveVectorManipulationStrategy::ConnectStartEnd
+(
+    CurveVectorR cv
+) const
+    {
+    if (cv.empty())
+        return;
+
+    CurveLocationDetail start, end;
+    if (!cv.GetStartEnd(start, end))
+        return;
+    if (!start.point.AlmostEqual(end.point))
+        {
+        ICurvePrimitivePtr lastPrimitive = cv.back();
+        if (lastPrimitive.IsNull())
+            return;
+
+        if (nullptr != lastPrimitive->GetLineStringP())
+            lastPrimitive->GetLineStringP()->push_back(start.point);
+        else
+            {
+            ICurvePrimitivePtr endStart = ICurvePrimitive::CreateLine(end.point, start.point);
+            cv.Add(endStart);
+            }
+        }
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-CurveVectorPtr CurveVectorManipulationStrategy::_Finish() const
+CurveVectorPtr CurveVectorManipulationStrategy::_Finish
+(
+    bool connectEndStart
+) const
     {
     CurveVectorPtr cv = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
     
@@ -87,15 +120,21 @@ CurveVectorPtr CurveVectorManipulationStrategy::_Finish() const
     if (cv->empty())
         return nullptr;
 
+    if (connectEndStart)
+        ConnectStartEnd(*cv);
+
     return cv;
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-CurveVectorPtr CurveVectorManipulationStrategy::Finish() const
+CurveVectorPtr CurveVectorManipulationStrategy::Finish
+(
+    bool connectEndStart
+) const
     {
-    return _Finish();
+    return _Finish(connectEndStart);
     }
 
 //--------------------------------------------------------------------------------------

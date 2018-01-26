@@ -28,6 +28,8 @@ struct ExtrusionPlacementStrategy : public SolidPrimitivePlacementStrategy
         static constexpr Utf8CP prop_ContinuousBaseShapePrimitiveComplete() { return ExtrusionManipulationStrategy::prop_ContinuousBaseShapePrimitiveComplete(); }
 
         static ExtrusionPlacementStrategyPtr Create() { return new ExtrusionPlacementStrategy(); }
+
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ISolidPrimitivePtr FinishExtrusion(bool closedBaseShape = false, bool capped = false) const;
     };
 
 END_BUILDING_SHARED_NAMESPACE

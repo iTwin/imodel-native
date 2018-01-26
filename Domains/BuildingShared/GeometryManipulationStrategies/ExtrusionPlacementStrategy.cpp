@@ -26,3 +26,22 @@ ExtrusionManipulationStrategyPtr ExtrusionPlacementStrategy::CreateDefaultExtrus
     baseShapeManipulationStrategy->ChangeDefaultPlacementStrategy(LineStringPlacementStrategyType::Points);
     return ExtrusionManipulationStrategy::Create(*baseShapeManipulationStrategy);
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ISolidPrimitivePtr ExtrusionPlacementStrategy::FinishExtrusion
+(
+    bool closedBaseShape,
+    bool capped
+) const
+    {
+    ExtrusionManipulationStrategyCP manipulationStrategy = dynamic_cast<ExtrusionManipulationStrategyCP>(&_GetManipulationStrategy());
+    if (nullptr == manipulationStrategy)
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return manipulationStrategy->FinishExtrusion(closedBaseShape, capped);
+    }

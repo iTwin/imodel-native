@@ -249,21 +249,7 @@ DVec3d ExtrusionManipulationStrategy::GetSweepDirection() const
 //---------------+---------------+---------------+---------------+---------------+------
 ISolidPrimitivePtr ExtrusionManipulationStrategy::_FinishSolidPrimitive() const
     {
-    CurveVectorPtr baseShape = m_baseShapeManipulationStrategy->Finish();
-    if (baseShape.IsNull())
-        return nullptr;
-    
-    baseShape->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Outer);
-    if (!baseShape->AreStartEndAlmostEqual())
-        {
-        CurveLocationDetail start, end;
-        baseShape->GetStartEnd(start, end);
-        ICurvePrimitivePtr closingLine = ICurvePrimitive::CreateLine(end.point, start.point);
-        baseShape->Add(closingLine);
-        baseShape->ConsolidateAdjacentPrimitives(true);
-        }
-
-    return ISolidPrimitive::CreateDgnExtrusion(DgnExtrusionDetail(baseShape, GetSweepDirection(), true));
+    return FinishExtrusion();
     }
 
 //--------------------------------------------------------------------------------------
@@ -357,4 +343,20 @@ BentleyStatus ExtrusionManipulationStrategy::_TryGetProperty
         }
 
     return T_Super::_TryGetProperty(key, value);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ISolidPrimitivePtr ExtrusionManipulationStrategy::FinishExtrusion
+(
+    bool closedBaseShape, 
+    bool capped
+) const
+    {
+    CurveVectorPtr baseShape = m_baseShapeManipulationStrategy->Finish(closedBaseShape);
+    if (baseShape.IsNull())
+        return nullptr;
+
+    return ISolidPrimitive::CreateDgnExtrusion(DgnExtrusionDetail(baseShape, GetSweepDirection(), capped));
     }

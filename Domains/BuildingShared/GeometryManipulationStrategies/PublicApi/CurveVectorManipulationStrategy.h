@@ -46,12 +46,13 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
         CurvePrimitivePlacementStrategyPtr GetPlacementStrategy(CurvePrimitiveManipulationStrategyR manipulationStrategy) const;
         CurvePrimitivePlacementStrategyPtr GetStrategyForAppend();
         bool IsLastStrategyReadyForPop() const;
+        void ConnectStartEnd(CurveVectorR cv) const;
 
         friend struct CurveVectorPlacementStrategy;
     protected:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurveVectorManipulationStrategy();
 
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual CurveVectorPtr _Finish() const;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual CurveVectorPtr _Finish(bool connectEndStart) const;
 
         virtual bvector<DPoint3d> _GetKeyPoints() const override;
 
@@ -92,7 +93,7 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
     public:
         static constexpr Utf8CP prop_WorkingPlane() { return "WorkingPlane"; }
 
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurveVectorPtr Finish() const;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurveVectorPtr Finish(bool connectEndStart = false) const;
 
         static CurveVectorManipulationStrategyPtr Create() { return new CurveVectorManipulationStrategy(); }
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static CurveVectorManipulationStrategyPtr Create(CurveVectorCR cv);

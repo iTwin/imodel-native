@@ -26,7 +26,7 @@ TEST_F(SolidPrimitivePlacementStrategyTests, CreateExtrusion)
     SolidPrimitivePlacementStrategyPtr sut = ExtrusionPlacementStrategy::Create();
     ASSERT_TRUE(sut.IsValid());
 
-    ISolidPrimitivePtr expectedSolidPrimitive = ISolidPrimitive::CreateDgnExtrusion(DgnExtrusionDetail(CurveVector::CreateLinear({{0,0,0},{100,0,0},{100,100,0},{0,100,0}}, CurveVector::BOUNDARY_TYPE_Outer),
+    ISolidPrimitivePtr expectedSolidPrimitive = ISolidPrimitive::CreateDgnExtrusion(DgnExtrusionDetail(CurveVector::CreateLinear({{0,0,0},{100,0,0},{100,100,0},{0,100,0}}, CurveVector::BOUNDARY_TYPE_Open),
                                                                                                        DVec3d::FromStartEnd(DPoint3d::From(0,100,0), DPoint3d::From(0,50,100)),
                                                                                                        true));
 
@@ -57,7 +57,7 @@ TEST_F(SolidPrimitivePlacementStrategyTests, CreateExtrusion_BaseContainsArc)
     ASSERT_TRUE(sut.IsValid());
 
     ISolidPrimitivePtr expectedSolidPrimitive = ISolidPrimitive::CreateDgnExtrusion(
-        DgnExtrusionDetail(CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer,
+        DgnExtrusionDetail(CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open,
                                 {ICurvePrimitive::CreateLineString({{100,100,0}, {0,100,0}, {0,0,0},{300,0,0},{300,100,0},{200,100,0}}),
                                  ICurvePrimitive::CreateArc(DEllipse3d::FromPointsOnArc({200,100,0},{150,150,0},{100,100,0}))}),
                            DVec3d::From(0, 0, 100), true));

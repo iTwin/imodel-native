@@ -22,17 +22,23 @@ CurveVectorPlacementStrategy::CurveVectorPlacementStrategy()
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-CurveVectorPtr CurveVectorPlacementStrategy::_Finish() const
+CurveVectorPtr CurveVectorPlacementStrategy::_Finish
+(
+    bool connectEndStart
+) const
     {
-    return m_manipulationStrategy->Finish();
+    return m_manipulationStrategy->Finish(connectEndStart);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-CurveVectorPtr CurveVectorPlacementStrategy::Finish() const
+CurveVectorPtr CurveVectorPlacementStrategy::Finish
+(
+    bool connectEndStart
+) const
     {
-    return _Finish();
+    return _Finish(connectEndStart);
     }
 
 //--------------------------------------------------------------------------------------

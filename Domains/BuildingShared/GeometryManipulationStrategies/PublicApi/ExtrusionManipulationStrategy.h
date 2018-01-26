@@ -143,6 +143,8 @@ struct ExtrusionManipulationStrategy : public SolidPrimitiveManipulationStrategy
 
         static ExtrusionManipulationStrategyPtr Create() { return new ExtrusionManipulationStrategy(); }
         static ExtrusionManipulationStrategyPtr Create(CurveVectorManipulationStrategyR baseShapeManipulationStrategy) { return new ExtrusionManipulationStrategy(baseShapeManipulationStrategy); }
+
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ISolidPrimitivePtr FinishExtrusion(bool closedBaseShape = false, bool capped = true) const;
     };
 
 END_BUILDING_SHARED_NAMESPACE
