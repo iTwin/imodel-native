@@ -116,7 +116,9 @@ void SpatialViewController::_DrawDecorations(DecorateContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d SpatialViewController::_GetViewedExtents(DgnViewportCR vp) const
     {
+    constexpr double s_spatialRangeMultiplier = 1.0001; // Ensure geometry lying smack up against the extents is not excluded by frustum...
     AxisAlignedBox3d box = GetDgnDb().GeoLocation().GetProjectExtents();
+    box.ScaleAboutCenter(box, s_spatialRangeMultiplier);
     box.Extend(GetGroundExtents(vp));
     return box;
     }
