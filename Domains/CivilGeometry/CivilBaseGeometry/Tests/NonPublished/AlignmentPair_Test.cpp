@@ -1271,6 +1271,9 @@ void AlignmentPI_Tests()
 
     AlignmentPI pi;
 
+    AlignmentPI::Arc arcData;
+    AlignmentPI::Spiral spiralData;
+
     // Unitialized PI
     EXPECT_TRUE(nullptr == pi.GetNoCurve());
     EXPECT_TRUE(nullptr == pi.GetNoCurveP());
@@ -1285,6 +1288,9 @@ void AlignmentPI_Tests()
     EXPECT_EQ(AlignmentPI::TYPE_Uninitialized, pi.GetType());
     EXPECT_FALSE(pi.SetPILocation(DPoint3d::FromZero()));
     EXPECT_EQ_DOUBLE(0.0, pi.GetPseudoTangentLength());
+    EXPECT_FALSE(pi.TryGetArcData(arcData));
+    EXPECT_FALSE(pi.TryGetSpiralData(spiralData, true));
+    EXPECT_FALSE(pi.TryGetSpiralData(spiralData, false));
 
     // NoCurve
     pi.InitNoCurve(DPoint3d::From(12, 34, 56));
@@ -1298,6 +1304,9 @@ void AlignmentPI_Tests()
     EXPECT_EQ_DPOINT3D(DPoint3d::From(1, 1, 0), pi.GetPILocation());
 
     EXPECT_EQ_DOUBLE(0.0, pi.GetPseudoTangentLength()); // 0.0
+    EXPECT_FALSE(pi.TryGetArcData(arcData));
+    EXPECT_FALSE(pi.TryGetSpiralData(spiralData, true));
+    EXPECT_FALSE(pi.TryGetSpiralData(spiralData, false));
 
     // Arc
     pi.InitArc(DPoint3d::From(56, 78, 90), 12.3);
@@ -1312,6 +1321,9 @@ void AlignmentPI_Tests()
 
     pi.GetArcP()->arc.startPoint = (DPoint3d::From(-5, 0, 0));
     EXPECT_EQ_DOUBLE(5.0, pi.GetPseudoTangentLength()); // Should be DistanceXY from piPoint to arc startPOint
+    EXPECT_TRUE(pi.TryGetArcData(arcData));
+    EXPECT_FALSE(pi.TryGetSpiralData(spiralData, true));
+    EXPECT_FALSE(pi.TryGetSpiralData(spiralData, false));
 
     // SS
     pi.InitSS(DPoint3d::From(2, 3, 4), 9.81);
@@ -1327,7 +1339,9 @@ void AlignmentPI_Tests()
 
     pi.GetSSP()->spiral1.startPoint = DPoint3d::From(-2, -3, 0);
     EXPECT_EQ_DOUBLE(5.0, pi.GetPseudoTangentLength()); // Should be DistanceXY from overallPI to spiral1 startPoint
-
+    EXPECT_FALSE(pi.TryGetArcData(arcData));
+    EXPECT_TRUE(pi.TryGetSpiralData(spiralData, true));
+    EXPECT_TRUE(pi.TryGetSpiralData(spiralData, false));
 
     // SCS
     pi.InitSCS(DPoint3d::From(3, 4, 5), 1.64, 2.34, 3.67);
@@ -1344,6 +1358,9 @@ void AlignmentPI_Tests()
 
     pi.GetSCSP()->spiral1.startPoint = DPoint3d::From(-4, -3, 0);
     EXPECT_EQ_DOUBLE(5.0, pi.GetPseudoTangentLength()); // Should be DistanceXY from overallPI to spiral1 startPoint
+    EXPECT_TRUE(pi.TryGetArcData(arcData));
+    EXPECT_TRUE(pi.TryGetSpiralData(spiralData, true));
+    EXPECT_TRUE(pi.TryGetSpiralData(spiralData, false));
     }
 
 

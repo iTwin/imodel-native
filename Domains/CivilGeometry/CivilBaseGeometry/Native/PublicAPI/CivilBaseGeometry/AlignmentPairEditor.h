@@ -155,6 +155,12 @@ public:
     // @remarks only used for basic validations. This is not a civil concept.
     CIVILBASEGEOMETRY_EXPORT double GetPseudoTangentLength() const;
 
+    // If this PI defines an arc, returns it
+    CIVILBASEGEOMETRY_EXPORT bool TryGetArcData(AlignmentPI::Arc& arc) const;
+    // If this PI defines a spiral, returns it
+    // @remarks the flag 'isFirstSpiral' is ignored if the PI only defines a single spiral
+    CIVILBASEGEOMETRY_EXPORT bool TryGetSpiralData(AlignmentPI::Spiral& spiral, bool isFirstSpiral) const;
+
     NoCurveInfoCP GetNoCurve() const    { return (TYPE_NoCurve == m_type) ? &m_noCurveInfo : nullptr; }
     NoCurveInfoP GetNoCurveP()          { return (TYPE_NoCurve == m_type) ? &m_noCurveInfo : nullptr; }
     ArcInfoCP GetArc() const            { return (TYPE_Arc == m_type) ? &m_arcInfo : nullptr; }

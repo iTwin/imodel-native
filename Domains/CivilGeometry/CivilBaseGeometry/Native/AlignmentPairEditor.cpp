@@ -247,6 +247,48 @@ double AlignmentPI::GetPseudoTangentLength() const
             }
         }
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        01/2018
+//---------------------------------------------------------------------------------------
+bool AlignmentPI::TryGetArcData(AlignmentPI::Arc& arc) const
+    {
+    switch (m_type)
+        {
+        case TYPE_Arc:
+            {
+            arc = m_arcInfo.arc;
+            return true;
+            }
+        case TYPE_SCS:
+            {
+            arc = m_scsInfo.arc;
+            return true;
+            }
+        default:
+            return false;
+        }
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        01/2018
+//---------------------------------------------------------------------------------------
+bool AlignmentPI::TryGetSpiralData(AlignmentPI::Spiral& spiral, bool isFirstSpiral) const
+    {
+    switch (m_type)
+        {
+        case TYPE_SS:
+            {
+            spiral = isFirstSpiral ? m_ssInfo.spiral1 : m_ssInfo.spiral2;
+            return true;
+            }
+        case TYPE_SCS:
+            {
+            spiral = isFirstSpiral ? m_scsInfo.spiral1 : m_scsInfo.spiral2;
+            return true;
+            }
+        default:
+            return false;
+        }
+    }
 
 
 
