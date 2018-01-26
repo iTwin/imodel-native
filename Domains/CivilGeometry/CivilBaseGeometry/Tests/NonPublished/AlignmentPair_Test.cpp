@@ -1459,7 +1459,26 @@ void AlignmentPVI_Tests()
     }
 
 
+//=======================================================================================
+// AlignmentPVI tests
+//=======================================================================================
+//---------------------------------------------------------------------------------------
+// @betest                              Alexandre.Gagnon                        01/2018
+//---------------------------------------------------------------------------------------
+void AlignmentMarkerBits_Tests()
+    {
+    ICurvePrimitivePtr primitive = ICurvePrimitive::CreateLine(DPoint3d::FromZero(), DPoint3d::FromOne());
+    ASSERT_EQ(false, AlignmentMarkerBits::GetMarkerBit(*primitive, AlignmentMarkerBits::BIT_Vertical_IsParabolaLengthByK));
 
+    AlignmentMarkerBits::SetMarkerBit(*primitive, AlignmentMarkerBits::BIT_Vertical_IsParabolaLengthByK, true);
+    ASSERT_EQ(true, AlignmentMarkerBits::GetMarkerBit(*primitive, AlignmentMarkerBits::BIT_Vertical_IsParabolaLengthByK));
+
+    AlignmentMarkerBits::SetMarkerBit(*primitive, AlignmentMarkerBits::BIT_Vertical_IsParabolaLengthByK, false);
+    ASSERT_EQ(false, AlignmentMarkerBits::GetMarkerBit(*primitive, AlignmentMarkerBits::BIT_Vertical_IsParabolaLengthByK));
+
+    AlignmentMarkerBits::SetMarkerBit(*primitive, AlignmentMarkerBits::BIT_Vertical_IsParabolaLengthByK, true);
+    ASSERT_EQ(true, AlignmentMarkerBits::GetMarkerBit(*primitive, AlignmentMarkerBits::BIT_Vertical_IsParabolaLengthByK));
+    }
 
 //=======================================================================================
 // AlignmentPairEditor tests
@@ -3249,6 +3268,7 @@ TEST_F(CivilBaseGeometryTests, AlignmentPairTests)
 
     AlignmentPI_Tests();
     AlignmentPVI_Tests();
+    AlignmentMarkerBits_Tests();
 
     // AlignmentPairEditor tests
     AlignmentPairEditor_Create_Clone();
