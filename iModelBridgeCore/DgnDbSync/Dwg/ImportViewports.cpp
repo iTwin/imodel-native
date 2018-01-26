@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/ImportViewports.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -39,6 +39,7 @@ ViewportFactory::ViewportFactory (DwgImporter& importer, DwgDbViewportTableRecor
     m_isUcsIconOn = viewportRecord.IsUcsIconEnabled ();
     m_backgroundId = viewportRecord.GetBackground ();
     m_visualStyleId = viewportRecord.GetVisualStyle ();
+    m_sunId = viewportRecord.GetSunId ();
     m_isDefaultLightingOn = viewportRecord.IsDefaultLightingOn ();
     m_brightness = viewportRecord.GetBrightness ();
     m_ambientLightColor = viewportRecord.GetAmbientLightColor ();
@@ -75,6 +76,7 @@ ViewportFactory::ViewportFactory (DwgImporter& importer, DwgDbViewportCR viewpor
     m_isUcsIconOn = viewportEntity.IsUcsIconEnabled ();
     m_backgroundId = viewportEntity.GetBackground ();
     m_visualStyleId = viewportEntity.GetVisualStyle ();
+    m_sunId = viewportEntity.GetSunId ();
     m_customScale = viewportEntity.GetCustomScale ();
     m_backgroundColor = ColorDef::White ();
     m_isDefaultLightingOn = viewportEntity.IsDefaultLightingOn ();
@@ -356,29 +358,213 @@ void            ViewportFactory::ComputeSpatialDisplayStyle (DisplayStyle3dR dis
     DwgHelper::UpdateViewFlagsFromVisualStyle (viewFlags, m_visualStyleId);
 
     // only when default lighting is turned off, the source lights become effective:
-    viewFlags.SetShowSourceLights (!m_isDefaultLightingOn);
+    if (m_isDefaultLightingOn)
+        viewFlags.SetShowSourceLights (false);
 
     displayStyle.SetViewFlags (viewFlags);
 
-    // WIP - import DwgDbBackground to environment display
-    auto&   enviromentDisplay = displayStyle.GetEnvironmentDisplayR ();
-    enviromentDisplay.m_groundPlane.m_enabled = false;
-    enviromentDisplay.m_skybox.m_enabled = false;
+    // set solar, scene lighting and backgrounds
+    this->ComputeEnvironment (displayStyle);
+    }
 
-    displayStyle.SetBackgroundColor (m_backgroundColor);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ViewportFactory::ComputeEnvironment (DisplayStyle3dR displayStyle)
+    {
+    auto&   environmentDisplay = displayStyle.GetEnvironmentDisplayR ();
 
-    // set ambient light
+    // default to no background & no sky
+    environmentDisplay.m_groundPlane.m_enabled = false;
+    environmentDisplay.m_skybox.m_enabled = false;
+
+    ColorDef    ambientColor (m_ambientLightColor.GetRed(), m_ambientLightColor.GetGreen(), m_ambientLightColor.GetBlue());
+    if (m_isDefaultLightingOn)
+        displayStyle.SetBackgroundColor (m_backgroundColor);
+    else
+        displayStyle.SetBackgroundColor (ambientColor);
+    
+    bool    isPhotometric = DwgDbLightingUnits::None != m_importer.GetDwgDb().GetLightingUnits();
+
     Lighting::Parameters    light;
-    if (m_brightness > 0.0)
+    DwgDbSunPtr sun(m_sunId, DwgDbOpenMode::ForRead);
+    if (sun.OpenStatus() == DwgDbStatus::Success)
         {
+        // set solar light
+        light.SetType (Lighting::LightType::Solar);
+
+        RgbFactor   photometricColor = sun->GetSunColorPhotometric (1.0);
+        ColorDef    sunColor = DwgHelper::GetColorDefFromTrueColor (sun->GetSunColor());
+
+        // NEEDSREVIEW: phisically based or calculated?
+        light.SetColor (isPhotometric ? ColorDef(photometricColor.ToIntColor()) : sunColor);
+
+        double  intensity = sun->GetIntensity ();
+        light.SetIntensity (intensity);
+
+        displayStyle.SetSolarLight (light, sun->GetSunDirection());
+
+        if (sun->IsOn())
+            {
+            // turn the solar light on
+            Render::ViewFlags   viewFlags = displayStyle.GetViewFlags ();
+            viewFlags.SetShowSolarLight (true);
+            displayStyle.SetViewFlags (viewFlags);
+            }
+        }
+    else if (m_brightness > 0.0 && ambientColor != ColorDef::Black())
+        {
+        // set scene light
         light.SetType (Lighting::LightType::Ambient);
         light.SetIntensity (m_brightness);
-        light.SetColor (ColorDef(m_ambientLightColor.GetRGB()));
+        light.SetColor (ambientColor);
+
         displayStyle.SetSceneLight (light);
         }
 
     // set scene brightness
-    displayStyle.SetSceneBrightness (m_brightness);
+    if (m_brightness > 0.0)
+        displayStyle.SetSceneBrightness (m_brightness);
+
+    if (!m_backgroundId.IsValid())
+        return;
+    
+    // get sky params from the sun:
+    bool    hasSkyParams = false;
+    DwgGiSkyParameters  skyParams;
+    if (sun.OpenStatus() == DwgDbStatus::Success && sun->GetSkyParameters(skyParams) == DwgDbStatus::Success)
+        hasSkyParams = true;
+
+    // try Image Based Lighting first, as it might use secondary background.
+    DwgDbIBLBackgroundPtr ibl(m_backgroundId, DwgDbOpenMode::ForRead);
+    if (ibl.OpenStatus() == DwgDbStatus::Success)
+        {
+        if (!ibl->IsEnabled())
+            return;
+
+        if (ibl->IsImageDisplayed())
+            {
+            // an image file is used for the IBL background:
+            environmentDisplay.m_skybox.m_enabled = true;
+
+            BeFileName  imageFile(ibl->GetIBLImageName().c_str());
+            if (this->FindEnvironmentImageFile(imageFile))
+                environmentDisplay.m_skybox.m_jpegFile.Assign (imageFile.c_str());
+            return;
+            }
+
+        // fall back to secondary background
+        m_backgroundId = ibl->GetSecondaryBackground ();
+        if (!m_backgroundId.IsValid())
+            return;
+        }
+
+    DwgDbImageBackgroundPtr image(m_backgroundId, DwgDbOpenMode::ForRead);
+    if (image.OpenStatus() == DwgDbStatus::Success)
+        {
+        // an image file is used as background
+        environmentDisplay.m_skybox.m_enabled = true;
+
+        BeFileName  imageFile(image->GetImageFileName().c_str());
+        if (this->FindEnvironmentImageFile(imageFile))
+            environmentDisplay.m_skybox.m_jpegFile.Assign (imageFile.c_str());
+        return;
+        }
+
+    DwgDbGroundPlaneBackgroundPtr   groundPlane(m_backgroundId, DwgDbOpenMode::ForRead);
+    if (groundPlane.OpenStatus() == DwgDbStatus::Success)
+        {
+        // DWG ground plane
+        environmentDisplay.m_skybox.m_enabled = true;
+        environmentDisplay.m_skybox.m_twoColor = true;
+        environmentDisplay.m_skybox.m_zenithColor = DwgHelper::GetColorDefFromTrueColor (groundPlane->GetColorSkyZenith());
+        environmentDisplay.m_skybox.m_nadirColor = DwgHelper::GetColorDefFromTrueColor (groundPlane->GetColorUndergroundHorizon());
+        environmentDisplay.m_skybox.m_groundColor = DwgHelper::GetColorDefFromTrueColor (groundPlane->GetColorGroundPlaneNear());
+        environmentDisplay.m_skybox.m_skyColor = DwgHelper::GetColorDefFromTrueColor (groundPlane->GetColorSkyHorizon());
+        return;
+        }
+
+    DwgDbSkyBackgroundPtr   sky(m_backgroundId, DwgDbOpenMode::ForRead);
+    if (sky.OpenStatus() == DwgDbStatus::Success)
+        {
+        // sky
+        environmentDisplay.m_skybox.m_enabled = true;
+        environmentDisplay.m_skybox.m_twoColor = true;
+
+        static ColorDef s_daytimeHorizon(170, 200, 250,0);
+        static ColorDef s_daytimeTop(40, 130, 250, 0);
+        if (hasSkyParams)
+            {
+            // sun + sky
+            if (sun->GetAltitude() >= skyParams.GetHorizonHeight())
+                {
+                // day colors
+                environmentDisplay.m_skybox.m_zenithColor = s_daytimeTop;
+                environmentDisplay.m_skybox.m_nadirColor = ambientColor;
+                environmentDisplay.m_skybox.m_skyColor = s_daytimeHorizon;
+                }
+            else
+                {
+                // night colors
+                environmentDisplay.m_skybox.m_zenithColor =
+                environmentDisplay.m_skybox.m_nadirColor =
+                environmentDisplay.m_skybox.m_skyColor = DwgHelper::GetColorDefFromTrueColor (skyParams.GetNightColor());
+                }
+            environmentDisplay.m_skybox.m_groundColor = DwgHelper::GetColorDefFromTrueColor (skyParams.GetGroundColor());
+            }
+        else
+            {
+            // no sun
+            environmentDisplay.m_skybox.m_zenithColor = s_daytimeTop;
+            environmentDisplay.m_skybox.m_nadirColor = ambientColor;
+            environmentDisplay.m_skybox.m_skyColor = s_daytimeHorizon;
+            environmentDisplay.m_skybox.m_groundColor = ambientColor;
+            }
+        return;
+        }
+
+    DwgDbSolidBackgroundPtr solid(m_backgroundId, DwgDbOpenMode::ForRead);
+    if (solid.OpenStatus() == DwgDbStatus::Success)
+        {
+        // single solid color
+        environmentDisplay.m_groundPlane.m_enabled = true;
+        environmentDisplay.m_groundPlane.m_aboveColor = 
+        environmentDisplay.m_groundPlane.m_belowColor = DwgHelper::GetColorDefFromTrueColor (solid->GetColorSolid());
+
+        displayStyle.SetBackgroundColor (environmentDisplay.m_groundPlane.m_aboveColor);
+        return;
+        }
+
+    DwgDbGradientBackgroundPtr  gradient(m_backgroundId, DwgDbOpenMode::ForRead);
+    if (gradient.OpenStatus() == DwgDbStatus::Success)
+        {
+        //set top color as background color, middle color for above and bottom color for below:
+        environmentDisplay.m_groundPlane.m_enabled = true;
+
+        environmentDisplay.m_groundPlane.m_aboveColor = DwgHelper::GetColorDefFromTrueColor (gradient->GetColorMiddle());
+        environmentDisplay.m_groundPlane.m_belowColor = DwgHelper::GetColorDefFromTrueColor (gradient->GetColorBottom());
+
+        displayStyle.SetBackgroundColor (DwgHelper::GetColorDefFromTrueColor(gradient->GetColorTop()));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            ViewportFactory::FindEnvironmentImageFile (BeFileNameR filename) const
+    {
+    if (m_importer._FindTextureFile(filename))
+        {
+        // warn about a none-JPEG file
+        if (!filename.GetExtension().EqualsI(L"jpg"))
+            m_importer.ReportIssue (DwgImporter::IssueSeverity::Warning, DwgImporter::IssueCategory::Unsupported(), DwgImporter::Issue::ImageNotAJpeg(), filename.GetNameUtf8().c_str());
+        return  true;
+        }
+    
+    // warn about the missing background file:
+    Utf8PrintfString    context("Background \"%ls\"", filename.c_str());
+    m_importer.ReportIssue (DwgImporter::IssueSeverity::Warning, DwgImporter::IssueCategory::MissingData(), DwgImporter::Issue::FileNotFound(), filename.GetNameUtf8().c_str(), context.c_str());
+    return  false;
     }
 
 /*---------------------------------------------------------------------------------**//**

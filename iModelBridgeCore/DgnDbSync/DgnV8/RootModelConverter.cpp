@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/RootModelConverter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -130,7 +130,13 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
             prop = targetClass->GetPropertyP("Element");
             }
         else
+            {
             prop = targetClass->GetPropertyP(relClass->GetName().c_str());
+            if (nullptr == prop)
+                {
+                prop = GetDgnDb().Schemas().GetClass(sourceInstanceKey.GetClassId())->GetPropertyP(relClass->GetName().c_str());
+                }
+            }
 
         if (nullptr == prop)
             {
@@ -179,12 +185,13 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
         if (targetClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementAspect))
             {
             DgnElementPtr element = m_dgndb->Elements().GetForEdit<DgnElement>(DgnElementId(sourceInstanceKey.GetInstanceId().GetValue()));
+            if (!element.IsValid())
+                continue;
             DgnElement::MultiAspect* aspect = DgnElement::MultiAspect::GetAspectP(*element, *targetClass, targetInstanceKey.GetInstanceId());
             if (nullptr == aspect)
                 {
                 Utf8String errorMsg;
-                errorMsg.Sprintf("Unable to get ElementAspect."
-                                 "and therefore the conversion process should have created a NavigationECProperty on the ECClass."
+                errorMsg.Sprintf("Unable to get ElementAspect from Element."
                                  "Failed to convert ECRelationship '%s' from element %" PRIu64 " in file '%s' "
                                  "(Source: %s|%s (%s:%s) Target %s|%s (%s:%s)). "
                                  "Insertion into target BIM file failed.",
@@ -1012,6 +1019,22 @@ RootModelConverter::RootModelConverter(RootModelSpatialParams& params)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+RootModelConverter::~RootModelConverter()
+    {
+    for (auto file : m_v8Files)
+        {
+        // TFS#803958 - Don't leave stale appdata on the files. That is mainly a problem in the case where a new
+        //              RootModelConverter will be created to process the same set of DgnFiles that were already processed
+        //              (at least partially) earlier in the same session. The second instance of the converter needs to run
+        //              the FindSpatialV8Models logic, which must populate the m_v8Files vector. It won't do that if the
+        //              files all have appdata saying that the converter already knows about them.
+        DiscardV8FileSyncInfoAppData(*file);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RootModelConverter::_ConvertSpatialElements()
@@ -1262,7 +1285,8 @@ BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV
                 GroupInformationElementCPtr group = elementTable.Get<GroupInformationElement>(m_parentId);
                 if (group.IsValid()/* && !ElementGroupsMembers::HasMember(*group, *child)*/)
                     {
-                    if (DgnDbStatus::Success != ElementGroupsMembers::Insert(*group, *child, 0))
+                    DgnDbStatus status;
+                    if (DgnDbStatus::BadRequest == (status = ElementGroupsMembers::Insert(*group, *child, 0)))
                         {
                         Utf8String error;
                         error.Sprintf("Failed to add child element %s to group %" PRIu64 "", Converter::IssueReporter::FmtElement(memberEh).c_str(), m_parentId.GetValue());

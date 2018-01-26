@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbSync/DgnV8/Converter.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -971,11 +971,18 @@ protected:
     DGNDBSYNC_EXPORT Converter(Params const&);
     DGNDBSYNC_EXPORT ~Converter();
 
+    DGNDBSYNC_EXPORT virtual SyncInfo::V8ElementMapping _FindFirstElementMappedTo(DgnV8Api::DisplayPath const& proxyPath, bool tail, IChangeDetector::T_SyncInfoElementFilter* filter = nullptr);
+    virtual DgnV8Api::ModelInfo const& _GetModelInfo(DgnV8ModelCR v8Model) { return v8Model.GetModelInfo(); }
+
 public:
     virtual Params const& _GetParams() const = 0;
     virtual Params& _GetParamsR() = 0;
 
     bool SkipECContent() const {return m_skipECContent;}
+
+    //! Allows a bridge to determine whether a particular schema should be imported or not
+    virtual bool _ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model) { return true; }
+    //! @}
 
     //! This returns false if the V8 file should not be converted by the bridge.
     DGNDBSYNC_EXPORT bool IsFileAssignedToBridge(DgnV8FileCR v8File) const;
@@ -1054,7 +1061,7 @@ public:
     DgnElementId WriteRepositoryLink(DgnV8FileR file);
 
     //! Look in the in-memory cache for the RepositoryLink that represents this file in the BIM
-    DgnElementId GetRepositoryLinkFromAppData(DgnV8FileCR file);
+    DGNDBSYNC_EXPORT DgnElementId GetRepositoryLinkFromAppData(DgnV8FileCR file);
 
     void SetRepositoryLinkInAppData(DgnV8FileCR file, DgnElementId rlinkId);
 
@@ -1063,6 +1070,8 @@ public:
     //! @see _GetV8FileIntoSyncInfo which must be called first, in order for this function to work.
     //! @see GetV8FileSyncInfoId for a short-cut method
     DGNDBSYNC_EXPORT static SyncInfo::V8FileSyncInfoId GetV8FileSyncInfoIdFromAppData(DgnV8FileCR);
+
+    DGNDBSYNC_EXPORT static void DiscardV8FileSyncInfoAppData(DgnV8FileR);
 
     //! Short cut method that first calls GetV8FileSyncInfoIdFromAppData to see if the file's SyncInfoId is already cached. 
     //! If not, this function calls _GetV8FileIntoSyncInfo .
@@ -1707,8 +1716,8 @@ public:
     //! @param v8ElementId Identifies the V8 element to look up
     //! @param filter   Optional. Chooses among existing elements in SyncInfo
     //! @return Mapping information for this element, if found, or an invalid mapping if the element is not found in syncinfo or if the display path is empty or invalid.
-    DGNDBSYNC_EXPORT SyncInfo::V8ElementMapping FindFirstElementMappedTo(DgnV8Api::DisplayPath const& proxyPath, bool tail, 
-                                                                         IChangeDetector::T_SyncInfoElementFilter* filter = nullptr);
+    SyncInfo::V8ElementMapping FindFirstElementMappedTo(DgnV8Api::DisplayPath const& proxyPath, bool tail, IChangeDetector::T_SyncInfoElementFilter* filter = nullptr) 
+        { return _FindFirstElementMappedTo(proxyPath, tail, filter); }
 
     DGNDBSYNC_EXPORT void InitUncategorizedCategory();
     DGNDBSYNC_EXPORT void InitUncategorizedDrawingCategory();
@@ -1965,7 +1974,6 @@ public:
     //! @private
     DGNDBSYNC_EXPORT virtual void _DeleteElement(DgnElementId);
 
-    //! @}
 };
 
 //=======================================================================================
@@ -2171,6 +2179,8 @@ protected:
     void CreateProvenanceTables();
 
     SpatialConverterBase(SpatialParams const& p) : T_Super(p) {}
+
+    DgnV8Api::ModelInfo const& _GetModelInfo(DgnV8ModelCR v8Model) override { return m_rootModelRef->GetDgnModelP()->GetModelInfo(); }
 
 public:
     virtual SpatialParams const& _GetSpatialParams() const = 0;
@@ -2484,6 +2494,7 @@ public:
     static WCharCP GetRegistrySubKey() {return L"DgnV8Bridge";}
 
     DGNDBSYNC_EXPORT explicit RootModelConverter(RootModelSpatialParams&);
+    DGNDBSYNC_EXPORT  ~RootModelConverter();
 
     DGNDBSYNC_EXPORT BentleyStatus MakeSchemaChanges();
 
@@ -2662,6 +2673,7 @@ struct ConvertToDgnDbElementExtension : DgnV8Api::Handler::Extension
     virtual void _ImportSchema(DgnDbR) {} /* extension may import schemas. NB: call db.BriefcaseManager().LockSchemas() before calling db.ImportSchemas */
     virtual bool _IgnorePublicChildren() {return false;} // When true, don't create an assembly for a V8 cell with public children unless there are category changes.
     virtual bool _DisablePostInstancing() {return false;} // When true, don't try to detect identical geometry and create GeometryParts from non-instanced V8 geometry.
+    virtual void _UpdateResourceDefinitions (iModelBridge::IDocumentPropertiesAccessor& accessor) {}
 };
 
 //=======================================================================================
@@ -2822,6 +2834,7 @@ struct ConvertV8Lights : ConvertToDgnDbElementExtension
     void _ProcessResults(ElementConversionResults&, DgnV8EhCR, ResolvedModelMapping const&, Converter&) override;
     bool _IgnorePublicChildren() override {return true;}
     bool _DisablePostInstancing() override {return true;}
+    BisConversionRule _DetermineBisConversionRule(DgnV8EhCR v8eh, DgnDbR dgndb, BisConversionTargetModelInfoCR) override;
 };
 
 //=======================================================================================

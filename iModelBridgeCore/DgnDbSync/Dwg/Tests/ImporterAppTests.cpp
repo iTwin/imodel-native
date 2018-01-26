@@ -122,7 +122,7 @@ TEST_F(ImporterAppTests, Description)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ImporterAppTests, BudweiserBenchmark)
+TEST_F(ImporterAppTests, BudweiserBenchmarks)
     {
     WString fileName = L"budweiser2018.dwg";
     BeFileName inFile;
@@ -137,4 +137,71 @@ TEST_F(ImporterAppTests, BudweiserBenchmark)
 
     EXPECT_PRESENT(outFile.c_str())
     EXPECT_PRESENT(inFile.c_str())
+
+    DgnDbPtr db = OpenExistingDgnDb(outFile);
+    ASSERT_TRUE(db.IsValid());
+
+    // check physical models:
+    size_t  count = 0;
+    DgnModels&  models = db->Models ();
+    for (auto const& entry : models.MakeIterator(BIS_SCHEMA(BIS_CLASS_PhysicalModel)))
+        {
+        auto model = models.GetModel (entry.GetModelId());
+        ASSERT_TRUE(model.IsValid());
+        if (model->GetName().EqualsI("Model"))
+            {
+            size_t  elemCount = model->MakeIterator().BuildIdList<DgnElementId>().size ();
+            // PRG & firebugs do not have RealDWG registries - subtract 7 AEC objects from the total count.
+            EXPECT_GE(elemCount, 2050);
+            }
+        count++;
+        }
+    EXPECT_EQ(1, count);
+
+    // check sheet models
+    count = 0;
+    for (auto const& entry : models.MakeIterator(BIS_SCHEMA(BIS_CLASS_SheetModel)))
+        {
+        auto model = models.GetModel (entry.GetModelId());
+        ASSERT_TRUE(model.IsValid());
+        size_t  elemCount = model->MakeIterator().BuildIdList<DgnElementId>().size ();
+        // at least 1 element in each sheet
+        EXPECT_GT(elemCount, 1);
+        count++;
+        }
+    EXPECT_EQ(5, count);
+
+    // 1 raster model
+    count = models.MakeIterator(RASTER_SCHEMA(RASTER_CLASSNAME_RasterFileModel)).BuildIdSet().size ();
+    EXPECT_EQ(1, count);
+
+    // count views
+    count = ViewDefinition::QueryCount (*db);
+    EXPECT_EQ(39, count);
+    // count spatial categories
+    count = SpatialCategory::MakeIterator(*db).BuildIdSet<DgnCategoryId>().size ();
+    EXPECT_EQ(117, count);
+    // count drawing categories
+    count = DrawingCategory::MakeIterator(*db).BuildIdSet<DgnCategoryId>().size ();
+    EXPECT_EQ(3, count);
+    // 7 fonts, but 1 comes from an AEC object which is not known on PRG or firebug boxes:
+    count = db->Fonts().DbFontMap().MakeIterator().QueryCount ();
+    EXPECT_LE(6, count);
+    // 13 linestyles
+    count = 0;
+    auto& lscache = db->LineStyles().GetCache ();
+    for (auto iter = lscache.begin(); iter != lscache.end(); ++iter)
+        count++;
+    EXPECT_EQ(13, count);
+    // 2 materials
+    count = 0;
+    for (auto const& entry : RenderMaterial::MakeIterator(*db))
+        count++;
+    EXPECT_EQ(2, count);
+
+    // Check benchmark #14: 2 ElementAspects for 2 attributes:
+    count = 0;
+    for (auto entry : db->Elements().MakeAspectIterator(BIS_SCHEMA(BIS_CLASS_ElementMultiAspect)))
+        count++;
+    EXPECT_EQ(2, count);
     }

@@ -76,6 +76,8 @@ $(o)ImportConfig$(oext):  $(baseDir)ImportConfig/ImportConfig.cpp $(DgnV8Depends
 
 $(o)Converter$(oext):  $(baseDir)Converter.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
+$(o)LightWeightConverter$(oext):  $(baseDir)LightWeightConverter.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
 $(o)SheetConverter$(oext):  $(baseDir)SheetConverter.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
 $(o)DrawingConverter$(oext):  $(baseDir)DrawingConverter.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}

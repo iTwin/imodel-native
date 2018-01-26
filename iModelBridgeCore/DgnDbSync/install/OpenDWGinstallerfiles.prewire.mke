@@ -1,0 +1,27 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: install/OpenDWGinstallerfiles.prewire.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+PolicyFile      = $(SrcBsicommon)sharedmki/AssertCommonCompileLinkPolicy.mki
+
+%include mdl.mki
+
+OpenDWGInstallFiles    = $(BuildContext)OpenDWGInstallerFiles/
+                
+#----------------------------------------------------------------------*/
+# Symlink files needed for powerproduct build in BuildContext
+#----------------------------------------------------------------------*/
+always:
+    @CreateSymLinks.py -f"$(OpenDWGInstallFiles)OpenDWGBundle.bundle.wxs=$(_MakeFilePath)OpenDWGBundle.bundle.wxs"
+	@CreateSymLinks.py -f"$(OpenDWGInstallFiles)OpenDwgRegistryFrag.wxs=$(_MakeFilePath)OpenDwgRegistryFrag.wxs"
+
+$(OpenDWGInstallFiles)OpenDWGInstaller.mki : $(_MakeFilePath)OpenDWGInstaller.mki
+    $(LinkFirstDepToFirstTarget)
+
+$(OpenDWGInstallFiles)BundleOpenDWGInstaller.mki : $(_MakeFilePath)BundleOpenDWGInstaller.mki
+    $(LinkFirstDepToFirstTarget)
+

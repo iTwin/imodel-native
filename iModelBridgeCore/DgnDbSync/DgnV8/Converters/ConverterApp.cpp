@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Converters/ConverterApp.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)
@@ -259,6 +259,27 @@ static bool GetV8DgnDllsRelativeDir(BentleyApi::BeFileNameR v8DllsRelativeDir, b
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+struct     ResourceUpdateCaller : public DgnV8Api::IEnumerateAvailableHandlers
+    {
+    iModelBridge::IDocumentPropertiesAccessor& m_accessor;
+
+    ResourceUpdateCaller(iModelBridge::IDocumentPropertiesAccessor& accessor)
+        :m_accessor(accessor)
+        {}
+
+    virtual StatusInt _ProcessHandler(DgnV8Api::Handler& handler)
+        {
+        ConvertToDgnDbElementExtension* extension = ConvertToDgnDbElementExtension::Cast(handler);
+        if (NULL == extension)
+            return SUCCESS;
+        extension->_UpdateResourceDefinitions(m_accessor);
+        return SUCCESS;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ConverterApp::_Initialize(int argc, WCharCP argv[])
@@ -285,6 +306,12 @@ BentleyStatus ConverterApp::_Initialize(int argc, WCharCP argv[])
     // Set dir prefix to be dropped from filenames when coming up with unique but portable filenames in syncinfo
     _GetConverterParams().SetInputRootDir(_GetParams().GetInputFileName().GetDirectoryName());
 
+    iModelBridge::IDocumentPropertiesAccessor* docAccessor = _GetParams().GetDocumentPropertiesAccessor();
+    if (nullptr != docAccessor)
+        {
+        ResourceUpdateCaller rCaller(*docAccessor);
+        DgnV8Api::ElementHandlerManager::EnumerateAvailableHandlers(rCaller);
+        }
     return SUCCESS;
     }
 

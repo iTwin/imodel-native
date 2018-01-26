@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/Fwk/iModelBridgeFwk.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined(_WIN32)
@@ -968,7 +968,6 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
         {
         GetRegistry()._QueryAllFilesAssignedToBridge(params.m_drawingAndSheetFiles, m_jobEnvArgs.m_bridgeRegSubKey.c_str());
         }
-    params.SetDoDetectDeletedModelsAndElements(false); // *** TFS#781198
     if (!m_jobEnvArgs.m_skipAssignmentCheck)
         params.SetDocumentPropertiesAccessor(*this);
     params.SetBridgeRegSubKey(m_jobEnvArgs.m_bridgeRegSubKey);
@@ -1252,6 +1251,7 @@ int iModelBridgeFwk::ProcessSchemaChange()
 
     DbResult dbres;
     bool madeSchemaChanges = false;
+    m_briefcaseDgnDb = nullptr; // close the current connection to the briefcase db before attempting to reopen it!
     m_briefcaseDgnDb = m_bridge->OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges);
     if (!m_briefcaseDgnDb.IsValid())
         {
@@ -1262,6 +1262,40 @@ int iModelBridgeFwk::ProcessSchemaChange()
 
     BeAssert(!madeSchemaChanges && "No further domain schema changes were expected.");
     return 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String   iModelBridgeFwk::GetRevisionComment()
+    {
+    //Revision comment override from command line has the first priority
+    if (!m_jobEnvArgs.m_revisionComment.empty())
+        return m_jobEnvArgs.m_revisionComment;
+
+    bvector<BeFileName> inputFiles;
+    GetRegistry()._QueryAllFilesAssignedToBridge(inputFiles, m_jobEnvArgs.m_bridgeRegSubKey.c_str());
+
+    if (0 == inputFiles.size())
+        return Utf8String();
+
+    Json::Value auditArray;
+    for (BeFileNameCR file : inputFiles)
+        {
+        iModelBridgeDocumentProperties prop;
+        if (SUCCESS != GetRegistry()._GetDocumentProperties(prop, file))
+            continue;
+
+        if (prop.m_changeHistoryJSON.empty())
+            continue;
+
+        Json::Value auditLogs = Json::Value::From(prop.m_changeHistoryJSON);
+        if (auditLogs.isNull())
+            continue;
+
+        auditArray.append(auditLogs);
+        }
+    return auditArray.ToString();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1327,6 +1361,7 @@ int iModelBridgeFwk::UpdateExistingBim()
 
         // Open the briefcase in the normal way, allowing domain schema changes to be pulled in.
         bool madeSchemaChanges = false;
+        m_briefcaseDgnDb = nullptr; // close the current connection to the briefcase db before attempting to reopen it!
         m_briefcaseDgnDb = m_bridge->OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges);
         uint8_t retryopenII = 0;
         while (!m_briefcaseDgnDb.IsValid() && (DbResult::BE_SQLITE_ERROR_SchemaUpgradeFailed == dbres) && (++retryopenII < m_serverArgs.m_maxRetryCount) && DgnDbServerClientUtils::SleepBeforeRetry())
@@ -1441,7 +1476,7 @@ int iModelBridgeFwk::UpdateExistingBim()
 
         GetLogger().infov("bridge:%s iModel:%s - Pushing Data Changeset.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_serverArgs.m_repositoryName.c_str());
 
-        if (BSISUCCESS != Briefcase_PullMergePush(m_jobEnvArgs.m_revisionComment.c_str()))
+        if (BSISUCCESS != Briefcase_PullMergePush(GetRevisionComment().c_str()))
             return RETURN_STATUS_SERVER_ERROR;
         // (Retain shared locks, so that we can re-try our push later.)
 
@@ -1635,6 +1670,14 @@ static DgnRevisionPtr createRevision(DgnDbR db)
 bool iModelBridgeFwk::_IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey)
     {
     return GetRegistry()._IsFileAssignedToBridge(fn, bridgeRegSubKey);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeFwk::_AssignFileToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey)
+    {
+    return GetRegistry()._AssignFileToBridge(fn, bridgeRegSubKey);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -828,7 +828,8 @@ public:
         L10N_STRING(SyncInfoInconsistent)        // =="The syncInfo file [%s] is inconsistent with the project"==
         L10N_STRING(SyncInfoTooNew)              // =="Sync info was created by a later version"==
         L10N_STRING(ViewNoneFound)               // =="No view was found"==
-        L10N_STRING(WrongBriefcaseManager)        // =="You must use the UpdaterBriefcaseManager when updating a briefcase with the converter"==
+        L10N_STRING(ImageNotAJpeg)               // =="Sky box image is not a jpeg file, %s"==
+        L10N_STRING(WrongBriefcaseManager)       // =="You must use the UpdaterBriefcaseManager when updating a briefcase with the converter"==
         L10N_STRING(UpdateDoesNotChangeClass)    // =="Update cannot change the class of an element. Element: %s. Proposed class: %s."==
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
@@ -988,16 +989,22 @@ private:
     static void             RegisterProtocalExtensions ();
 
 protected:
+    //! @name  Miscellaneous
+    //! @{
     DGNDBSYNC_EXPORT virtual void       _BeginImport ();
     DGNDBSYNC_EXPORT virtual void       _FinishImport ();
     virtual void                        _OnFatalError() { m_wasAborted = true; }
     virtual GeometryOptions&            _GetCurrentGeometryOptions () { return m_currentGeometryOptions; }
     DGNDBSYNC_EXPORT virtual bool       _ArePointsValid (DPoint3dCP checkPoints, size_t numPoints, DwgDbEntityCP entity = nullptr);
     BeFileNameCR                        GetRootDwgFileName () const { return m_rootFileName; }
+    DGNDBSYNC_EXPORT bool               ValidateDwgFile (BeFileNameCR dwgdxfName);
+
+    //! @name  Change-Detection
+    //! @{
     DGNDBSYNC_EXPORT  virtual void      _SetChangeDetector (bool updating);
     virtual IDwgChangeDetector&         _GetChangeDetector () { return *m_changeDetector; }
     virtual bool                        _HaveChangeDetector () { return nullptr != m_changeDetector; }
-    DGNDBSYNC_EXPORT bool               ValidateDwgFile (BeFileNameCR dwgdxfName);
+    DGNDBSYNC_EXPORT virtual BentleyStatus _DetectDeletedDocuments();
 
     //! @name The ImportJob
     //! @{
@@ -1019,8 +1026,8 @@ protected:
     bool        IsUpdating () const { return GetOptions().IsUpdating(); }
     bool        IsCreatingNewDgnDb () { return GetOptions().IsCreatingNewDgnDb(); }
 
-    DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportSpaces ();
-    DGNDBSYNC_EXPORT virtual BentleyStatus _DetectDeletedDocuments();
+    //! @name Importing schemas
+    //! @{
     //! An iModelBridge must call this method from _MakeSchemaChanges, to create/update the stored DwgAttributeDefinitions schema.
     DGNDBSYNC_EXPORT BentleyStatus  MakeSchemaChanges ();
     //! Cache a PresentationRule content of a host element which must be seperated from the modelspace as a PhysicalObject and a paperspace as a DrawingGraphic.
@@ -1031,6 +1038,7 @@ protected:
     //! @name  Creating DgnModels for DWG
     //! @{
     // Modelspace and xRef blocks as Physical Models, layout blocks as sheet models
+    DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportSpaces ();
     DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportDwgModels ();
     DGNDBSYNC_EXPORT virtual void       _SetModelUnits (GeometricModel::Formatter& displayInfo, DwgDbBlockTableRecordCR block);
     //! Get a DgnModel from the syncInfo for updating, or create a new DgnModel for importing, from a DWG model/paperspace or an xref (when xrefInsert!=nullptr & xrefDwg!=nullptr)
@@ -1083,6 +1091,8 @@ protected:
     DGNDBSYNC_EXPORT virtual BentleyStatus          _ImportMaterialSection ();
     DGNDBSYNC_EXPORT virtual BentleyStatus          _ImportMaterial (DwgDbMaterialPtr& material, Utf8StringCR paletteName, Utf8StringCR materialName);
     DGNDBSYNC_EXPORT virtual BentleyStatus          _OnUpdateMaterial (DwgSyncInfo::Material const& syncMaterial, DwgDbMaterialPtr& dwgMaterial);
+    //! Search material paths specified in the Config file.  If a match found, replace the file name.
+    DGNDBSYNC_EXPORT virtual bool                   _FindTextureFile (BeFileNameR filename) const;
     DGNDBSYNC_EXPORT bvector<BeFileName> const&     GetMaterialSearchPaths () const { return m_materialSearchPaths; }
 
     //! @name  Importing entities
@@ -1140,6 +1150,19 @@ protected:
     DGNDBSYNC_EXPORT virtual DwgSyncInfo::DwgFileId _AddFileInSyncInfo (DwgDbDatabaseR, StableIdPolicy);
     DGNDBSYNC_EXPORT virtual StableIdPolicy         _GetDwgFileIdPolicy () const;
     DwgSyncInfo::DwgFileId              GetDwgFileId (DwgDbDatabaseR, bool setIfNotExist = true);
+
+    //! @name  Product installations
+    //! @{
+    //! A callback method which can be overriden by a derivitive product to supply a different root registry key of ObjectDBX - required by and valid for RealDWG only.
+    //! @note A product that installs RealDWG differently than the default DwgBridge installer does, must supply the root registry path.
+    //! The default method supplies the root registry in this way:
+    //! 1) If configuration variable REALDWG_REGISTRY_ROOTKEY is set, the full root key path pointed to by it will be returned, with no validation.
+    //! 2) If "HKLM\SOFTWARE\Bentley\ObjectDBX\RealDwgImporter\<ProductCode>\" is installed by the default DwgBridge, its ObjectDBX component registry key will be returned.
+    //! 3) Otherwise, an empty root registry key will be returned in all other cases.
+    //! @return True if an ObjectDBX root registry is found; false otherwise.
+    //! @see IDwgDbHost::_GetRegistryProductRootKey
+    DGNDBSYNC_EXPORT virtual bool       _GetRealDwgRootRegistry (WStringR rootKey) const;
+    //! @}
 
 public:
     //! An app must hold and pass in the reference of a DwgImporter::Options, which may be changed after a DwgImporter is created.

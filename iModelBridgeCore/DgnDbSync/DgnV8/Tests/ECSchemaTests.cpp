@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/ECSchemaTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -1143,5 +1143,73 @@ TEST_F(ECSchemaTests, RemapReservedPropertyNames) // TFS#670031
         ASSERT_TRUE(nullptr == fooClass->GetPropertyP("TargetId"));
         ASSERT_TRUE(nullptr == fooClass->GetPropertyP("TargetECClassId"));
         }
+
+    }
+
+struct SkipSchemaImportTests : public ConverterTestBaseFixture
+    {
+    DEFINE_T_SUPER(ConverterTestBaseFixture);
+
+    bool _ShouldImportSchema(BentleyApi::Utf8StringCR fullSchemaName, DgnV8Api::DgnModel& v8Model) override
+        {
+        if (fullSchemaName.Equals("TestA.01.01"))
+            return true;
+        return false;
+        }
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            01/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SkipSchemaImportTests, WithInstances)
+    {
+    LineUpFiles(L"SkipSchema.ibim", L"Test3d.dgn", false);
+    V8FileEditor v8editor;
+    v8editor.Open(m_v8FileName);
+
+    if (true)
+        {
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestA" nameSpacePrefix="testa" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="Foo" isDomainClass="True">
+                <ECProperty propertyName="Bar" typeName="string" />
+            </ECClass>
+        </ECSchema>)xml";
+
+        ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
+        ECObjectsV8::ECSchemaPtr schema;
+        EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext));
+        EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor.m_file)));
+        }
+
+    if (true)
+        {
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestB" nameSpacePrefix="testa" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="Goo" isDomainClass="True">
+                <ECProperty propertyName="hoo" typeName="string" />
+            </ECClass>
+        </ECSchema>)xml";
+
+        ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
+        ECObjectsV8::ECSchemaPtr schema;
+        EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext));
+        EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor.m_file)));
+        }
+
+    DgnV8Api::ElementId eid;
+    v8editor.AddLine(&eid);
+    DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
+    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
+    EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor.CreateInstanceOnElement(createdDgnECInstance, *((DgnV8Api::ElementHandle*)&eh), v8editor.m_defaultModel, L"TestA", L"Foo"));
+
+    DgnV8Api::ElementId eid2;
+    v8editor.AddLine(&eid2);
+    DgnV8Api::ElementHandle eh2(eid2, v8editor.m_defaultModel);
+    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance2;
+    EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor.CreateInstanceOnElement(createdDgnECInstance2, *((DgnV8Api::ElementHandle*)&eh2), v8editor.m_defaultModel, L"TestB", L"Goo"));
+
+    v8editor.Save();
+    DoConvert(m_dgnDbFileName, m_v8FileName);
 
     }

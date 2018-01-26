@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/ConvertView.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -673,9 +673,50 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::ConvertViewGroup(DgnViewId& firstView, DgnV8Api::ViewGroup& vg, TransformCR trans, ViewFactory& fac)
     {
-    // Root model of each view must be filled. Otherwise, EnsureLevelMaskCoverage will refuse to work!
-    for (int i=0; i<DgnV8Api::MAX_VIEWS; ++i)
-        vg.GetViewInfo(i).GetRootModelP(true);
+    // Find default "selected" view index using similiar logic to UstnViewStateAdmin::_OnViewGroupMadeActive..
+    int  lastViewOpened = -1;
+    byte viewZOrderStack[DgnV8Api::MAX_VIEWS];
+    bool viewOnZStack[DgnV8Api::MAX_VIEWS];
+
+    vg.GetZOrder(viewZOrderStack, _countof(viewZOrderStack));
+    memset(viewOnZStack, 0, sizeof(viewOnZStack));
+
+    for (UInt32 iView = 0; iView < DgnV8Api::MAX_VIEWS; ++iView)
+        {
+        // Root model of each view must be filled. Otherwise, EnsureLevelMaskCoverage will refuse to work!
+        vg.GetViewInfo(iView).GetRootModelP(true);
+
+        if (0 < viewZOrderStack[iView] && viewZOrderStack[iView] <= DgnV8Api::MAX_VIEWS)
+            viewOnZStack[viewZOrderStack[iView]-1] = true;
+        }
+
+    // do this backwards so we get lowered numbered views which display in front...
+    for (Int32 iView = DgnV8Api::MAX_VIEWS-1; iView >= 0; iView--)
+        {
+        if (viewOnZStack[iView])
+            continue;
+
+        if (!vg.GetViewInfo(iView).GetViewFlags().on_off || !vg.GetViewPortInfo(iView).m_wasDefined)
+            continue;
+
+        lastViewOpened = iView;
+        }
+
+    // now process the view z order stacked views...
+    for (UInt32 iView = 0; iView < DgnV8Api::MAX_VIEWS; ++iView)
+        {
+        int viewIndex;
+
+        if (0 == (viewIndex = viewZOrderStack[iView]) || !viewOnZStack[--viewIndex])
+            continue;
+
+        viewOnZStack[viewIndex] = false; // once we have processed a view ignore any repeats for it...
+
+        if (!vg.GetViewInfo(viewIndex).GetViewFlags().on_off || !vg.GetViewPortInfo(viewIndex).m_wasDefined)
+            continue;
+
+        lastViewOpened = viewIndex;
+        }
 
     vg.EnsureLevelMaskCoverage(nullptr, false);
     vg.ResetEffectiveLevelMasks();
@@ -686,7 +727,7 @@ void Converter::ConvertViewGroup(DgnViewId& firstView, DgnV8Api::ViewGroup& vg, 
         Utf8PrintfString defaultName("%s - View %d", Bentley::Utf8String(vg.GetName()).c_str(), i + 1);
         DgnViewId viewId;
         ConvertView(viewId, vg.GetViewInfo(i), defaultName, "", trans, fac);
-        if (!firstView.IsValid())
+        if (!firstView.IsValid() || i == lastViewOpened)
             firstView = viewId;
         }
     }

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbSync/Dwg/DwgDb/DwgDbCommon.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
@@ -200,7 +200,7 @@
 #endif  // DWGTOOLKIT
 
 
-// declare supper constructor of a DwgDbXxxx class
+// declare super constructor of a DwgDbXxxx class
 #define DWGDB_SUPER_CONSTRUCTOR(_classSuffix_)          DWGROOT_SUPER_CONSTRUCTOR(Db##_classSuffix_##)
 
 // declare SmartPtr access methods
@@ -362,6 +362,14 @@ DEFINE_DWGDB_TYPEDEFS (DwgDbSortentsTable)
 DEFINE_DWGDB_TYPEDEFS (DwgDbXrecord)
 DEFINE_DWGDB_TYPEDEFS (DwgDbDwgFiler)
 DEFINE_DWGDB_TYPEDEFS (DwgDbDxfFiler)
+DEFINE_DWGDB_TYPEDEFS (DwgDbSun)
+DEFINE_DWGDB_TYPEDEFS (DwgDbBackground)
+DEFINE_DWGDB_TYPEDEFS (DwgDbGradientBackground)
+DEFINE_DWGDB_TYPEDEFS (DwgDbGroundPlaneBackground)
+DEFINE_DWGDB_TYPEDEFS (DwgDbIBLBackground)
+DEFINE_DWGDB_TYPEDEFS (DwgDbImageBackground)
+DEFINE_DWGDB_TYPEDEFS (DwgDbSkyBackground)
+DEFINE_DWGDB_TYPEDEFS (DwgDbSolidBackground)
 
 
 enum class DwgDbStatus
@@ -378,6 +386,7 @@ enum class DwgDbStatus
     InvalidInput,
     FilerError,
     NotSupported,
+    UrlCacheError,
     };
 #define ToDwgDbStatus(status)   static_cast<DwgDbStatus> (##status)
 
@@ -489,42 +498,6 @@ enum class DwgDbPlotStyleNameType
     ByBlock                     = 1,
     IsDictDefault               = 2,
     ById                        = 3,
-    };
-
-enum class DwgDbVisualStyleType
-    {
-    Flat,               // Flat shaded visual style.
-    FlatWithEdges,      // Flat shaded visual style with edges displayed.
-    Gouraud,            // Gouraud shaded visual style. 
-    GouraudWithEdges,   // Gouraud shaded visual style with edges displayed.
-    Wireframe2d,        // 2D wireframe visual style (using 2D graphics system). 
-    Wireframe3d,        // 3D wireframe visual style (using 3D graphics system).
-    Hidden,             // Hidden visual style.
-    Basic,              // Basic visual style (default).
-    Realistic,          // Phong shaded visual style.
-    Conceptual,         // Custom, user defined visual visual style. 
-    Custom,             // Custom, user defined visual visual style. 
-    Dim,                // Visual style used for a dimming effect.
-    Brighten,           // Visual style used for a brightening effect.
-    Thicken,            // Visual style used for a thickening effect.
-    LinePattern,        // Visual style used to apply a line pattern.
-    FacePattern,        // Visual style used to apply a face pattern.
-    ColorChange,        // Visual style used to apply a change of color.
-    FaceOnly,           // Visual style with only face properties. All non-face properties are set to inherit.
-    EdgeOnly,           // Visual stle with edge properties only. All non-edge properties are set to inherit.
-    DisplayOnly,        // Visual style with display properties only. All non-display properties are set to inherit.
-    JitterOff,          // Edge style override visual style with jitter edges off. All other properties are set to inherit.
-    OverhangOff,        // Edge style override visual style with overhang edges off. All other properties are set to inherit.
-    EdgeColorOff,       // Edge style override visual style with edge color off. All other properties are set to inherit.
-    ShadesOfGray,       // Shades of gray visual style.
-    Sketchy,            // Sketchy visual style. 
-    XRay,               // Xray visual style. 
-    ShadedWithEdges,    // Shade visual style with edges displayed.
-    Shaded,             // Shaded visual style.
-    ByViewport,         // Visual style by viewport.
-    ByLayer,            // Visual style by layer.
-    ByBlock,            // Visual style by block.
-    EmptyStyle          // Visual style with all properties set to inherit. This effectively creates an empty style upon which a custom visual style can be built.
     };
 
 enum class DwgFilerType

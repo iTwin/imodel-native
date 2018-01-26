@@ -123,6 +123,14 @@ struct V8FileSyncInfoIdAppData : DgnV8Api::DgnFileAppData
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::DiscardV8FileSyncInfoAppData(DgnV8FileR file)
+    {
+    file.DropAppData(V8FileSyncInfoIdAppData::GetKey());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 SyncInfo::V8FileSyncInfoId Converter::GetV8FileSyncInfoIdFromAppData(DgnV8FileCR file)
     {
     auto appdata = (V8FileSyncInfoIdAppData*)((DgnV8FileR)file).FindAppData(V8FileSyncInfoIdAppData::GetKey());
@@ -1032,21 +1040,7 @@ DgnModelId Converter::CreateModelFromV8Model(DgnV8ModelCR v8Model, Utf8CP newNam
     GeometricModelP geometricModel = model->ToGeometricModelP();
     if (geometricModel != nullptr)
         {
-#ifdef NEEDS_WORK_RAMAN
-        // m_rootModelRef is not available so fix for 515560 below is not currently posssible....
-
-        /* Note: We use the V8 root model to set the display info for *all* of the models as a stop 
-         * gap measure (in Q4) to fix TFS#515560: 
-         * Users reported a discrepancy between the units displayed in DgnDb based Navigator and v8i Microstation. 
-         * This is because Microstation uses the display settings in the active model for content displayed from all
-         * other 'reachable' models. 
-         * The longer term fix for this issue is to make these display settings as something that's defined for the 
-         * entire DgnDb/BIM, and not individual models. This is tracked by TFS#634638. 
-         */
-        DgnV8Api::ModelInfo const& v8ModelInfo = m_rootModelRef->GetDgnModelP()->GetModelInfo();
-#else
-        DgnV8Api::ModelInfo const& v8ModelInfo = v8Model.GetModelInfo();
-#endif
+        DgnV8Api::ModelInfo const& v8ModelInfo = _GetModelInfo(v8Model);
         auto& displayInfo = geometricModel->GetFormatterR();
 
         displayInfo.SetUnits(fromV8(v8ModelInfo.GetMasterUnit()), fromV8(v8ModelInfo.GetSubUnit()));
@@ -1921,7 +1915,7 @@ BentleyStatus Converter::GetECContentOfElement(V8ElementECContent& content, DgnV
             bool hasSecondary;
             if (!V8ECClassInfo::TryFind(conversionRule, GetDgnDb(), v8ClassName, hasSecondary))
                 {
-                BeAssert(false && "V8ECClassInfo::TryFindV8ClassInfo should find an info for all ECClasses in the v8 file");
+                //BeAssert(false && "V8ECClassInfo::TryFindV8ClassInfo should find an info for all ECClasses in the v8 file");
                 return BentleyApi::ERROR;
                 }
 
@@ -2438,7 +2432,7 @@ DgnDbStatus Converter::InsertResults(ElementConversionResults& results)
         {                                                                                                                           // *** WIP_BIM_BRIDGE -- remove this logic
         Utf8String duplicateMessage;                                                                                                // *** WIP_BIM_BRIDGE -- remove this logic
         duplicateMessage.Sprintf("Duplicate element code '%s' ignored", code.GetValueUtf8().c_str());                                   // *** WIP_BIM_BRIDGE -- remove this logic
-        ReportIssue(IssueSeverity::Warning, IssueCategory::InconsistentData(), Issue::Message(), duplicateMessage.c_str());         // *** WIP_BIM_BRIDGE -- remove this logic
+        ReportIssue(IssueSeverity::Info, IssueCategory::InconsistentData(), Issue::Message(), duplicateMessage.c_str());         // *** WIP_BIM_BRIDGE -- remove this logic
                                                                                                                                     // *** WIP_BIM_BRIDGE -- remove this logic
         DgnDbStatus stat2 = results.m_element->SetCode(DgnCode::CreateEmpty()); // just leave the code null                         // *** WIP_BIM_BRIDGE -- remove this logic
         BeAssert(DgnDbStatus::Success == stat2);                                                                                    // *** WIP_BIM_BRIDGE -- remove this logic
@@ -2953,7 +2947,7 @@ SyncInfo::V8ElementMapping Converter::FindFirstElementMappedTo(DgnV8ModelCR v8Mo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8ElementMapping Converter::FindFirstElementMappedTo(DgnV8Api::DisplayPath const& proxyPath, bool tail, 
+SyncInfo::V8ElementMapping Converter::_FindFirstElementMappedTo(DgnV8Api::DisplayPath const& proxyPath, bool tail, 
                                                                IChangeDetector::T_SyncInfoElementFilter* filter)
     {
     ElementRefP targetEl;

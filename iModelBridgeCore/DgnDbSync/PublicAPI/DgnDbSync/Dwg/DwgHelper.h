@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbSync/Dwg/DwgHelper.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -66,6 +66,8 @@ struct DwgHelper : NonCopyableClass
     DGNDBSYNC_EXPORT static void             ValidateStyleName (Utf8String& out, DwgStringCR in);
     DGNDBSYNC_EXPORT static size_t           ConvertEscapeCodes (TextStringR text, bvector<DSegment3d>* underlines, bvector<DSegment3d>* overlines);
     DGNDBSYNC_EXPORT static ColorDef         GetColorDefFromACI (int16_t acColorIndex);
+    DGNDBSYNC_EXPORT static ColorDef         GetColorDefFromTrueColor (DwgCmEntityColorCR acColor);
+    DGNDBSYNC_EXPORT static ColorDef         GetColorDefFromTrueColor (DwgCmColorCR acColor);
     DGNDBSYNC_EXPORT static void             GetDgnGradientColor (GradientSymbR gradientOut, DwgGiGradientFillCR gradientIn);
     DGNDBSYNC_EXPORT static void             SetGradientFrom (DwgGiGradientFillR gradientOut, DwgDbHatchCR hatchIn);
     DGNDBSYNC_EXPORT static Utf8String       GetAttrdefECClassNameFromBlockName (WCharCP blockName);

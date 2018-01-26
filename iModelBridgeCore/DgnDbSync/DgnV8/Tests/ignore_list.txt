@@ -11,12 +11,6 @@ DataValidationTests.*
 
 ECConversionTests.RelationshipInstance       # WIP UmarH
 
-#TFS 777030:
-RasterTests.Clip_ReprojectedPreserveCurves
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 10/27/2017
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\RasterTests.cpp(851): error: Value of: boundArc->center.AlmostEqual(BentleyApi::DPoint3d::From(-26609.344918304880, 20180.189303782310, 0.00000000000000000))
-    # Actual: false
-    # Expected: true
 
 #TFS 777181:
 RasterTests.RasterReprojected

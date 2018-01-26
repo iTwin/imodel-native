@@ -78,17 +78,16 @@
 #include    <RealDwg/base/textengine.h>
 #include    <RealDwg/base/acgiutil.h>
 
-#ifdef _MSC_VER
-#include    <wininet.h>
-#endif
-
 #endif  // DWGTOOLKIT_
 
 #ifdef _MSC_VER
 #include    <io.h>                  // _wsopen_s, _read, _close
 #include    <fcntl.h>               // modes defs for _wsopen_s
+#include    <wininet.h>             // URL cache
+#include    <Urlmon.h>              // URL download
 #endif
 
+#include    <Bentley/BeFileName.h>
 #include    <Geom/CurveVector.h>
 
 #include    "ToolkitHost.h"

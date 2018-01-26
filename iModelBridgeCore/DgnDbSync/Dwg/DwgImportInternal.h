@@ -10,6 +10,7 @@
 // only include this before including OpenDWG stuff - RealDWG has an MFC dependency:
 #if defined(BENTLEY_WIN32) && defined(DWGTOOLKIT_OpenDwg)
 #include    <Windows.h>                 // LOGFONTW etc
+#include    <Shlwapi.h>                 // PathIsURL
 #endif
 
 #include <Bentley/Bentley.h>
@@ -248,6 +249,7 @@ private:
     DwgDbObjectId       m_clipEntityId;
     DwgDbObjectId       m_backgroundId;
     DwgDbObjectId       m_visualStyleId;
+    DwgDbObjectId       m_sunId;
     double              m_customScale;
     DwgDbObjectCP       m_inputViewport;
     // BIM members
@@ -267,6 +269,8 @@ private:
     void AddSpatialCategories (DgnDbR dgndb, Utf8StringCR viewName);
     void ApplyViewportClipping (SpatialViewDefinitionR dgnView, double frontClip, double backClip);
     bool ComputeClipperTransformation (TransformR toClipper, RotMatrixCR viewRotation);
+    void ComputeEnvironment (DisplayStyle3dR displayStyle);
+    bool FindEnvironmentImageFile (BeFileNameR filename) const;
 
 public:
     // constructor for a modelspace viewport

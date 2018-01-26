@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgDb/GiDrawables.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgDbInternal.h"
@@ -19,6 +19,7 @@ USING_NAMESPACE_DWGDB
 
 #elif DWGTOOLKIT_RealDwg
 
+ACRX_NO_CONS_DEFINE_MEMBERS (DwgGiVariant, AcGiVariant)
 ACRX_NO_CONS_DEFINE_MEMBERS (DwgGiEdgeData, AcGiEdgeData)
 ACRX_NO_CONS_DEFINE_MEMBERS (DwgGiFaceData, AcGiFaceData)
 ACRX_NO_CONS_DEFINE_MEMBERS (DwgGiVertexData, AcGiVertexData)
@@ -57,6 +58,109 @@ ACRX_NO_CONS_DEFINE_MEMBERS (DwgGiLightAttenuation, AcGiLightAttenuation)
 #define StubPOrCObjectId    DWGDB_SDKNAME(OdDbStub*, const AcDbObjectId)
 #define StubPOrCObjectIdR   DWGDB_SDKNAME(OdDbStub*, const AcDbObjectId&)
 
+
+DwgGiVariant::ValueType DwgGiVariant::GetType() const { return static_cast<DwgGiVariant::ValueType>(T_Super::type()); }
+void            DwgGiVariant::Set (bool v) { T_Super::set(v); }
+void            DwgGiVariant::Set (DwgDbInt32 v) { T_Super::set(v); }
+void            DwgGiVariant::Set (double v) { T_Super::set(v); }
+void            DwgGiVariant::Set (WCharCP v) { DWGDB_CALLSDKMETHOD(T_Super::set(reinterpret_cast<const OdChar*>(v)), T_Super::set(v)); } 
+void            DwgGiVariant::Set (DwgCmColorCR v) { DWGDB_CALLSDKMETHOD(T_Super::set(v.GetEntityColor()), T_Super::set(v)); }
+bool            DwgGiVariant::AsBoolean () const { return T_Super::asBoolean(); }
+int             DwgGiVariant::AsInteger () const { return T_Super::asInt(); }
+double          DwgGiVariant::AsDouble () const { return T_Super::asDouble(); }
+DwgString       DwgGiVariant::AsString () const { return static_cast<DwgString>(T_Super::asString()); }
+float           DwgGiVariant::AsFloat ()  const { return T_Super::asFloat(); }
+char            DwgGiVariant::AsChar () const { return T_Super::asChar(); }
+unsigned char   DwgGiVariant::AsUChar () const { return T_Super::asUchar(); }
+short           DwgGiVariant::AsShort () const { return T_Super::asShort(); }
+unsigned short  DwgGiVariant::AsUShort () const { return T_Super::asUshort(); }
+unsigned int    DwgGiVariant::AsUInt () const { return T_Super::asUint(); }
+int32_t         DwgGiVariant::AsLong () const { return T_Super::asLong(); }
+uint32_t        DwgGiVariant::AsULong () const { return T_Super::asUlong(); }
+DwgCmColor      DwgGiVariant::AsColor () const { return static_cast<DwgCmColor>(T_Super::asColor()); }
+DwgGiVariant::EnumValueType   DwgGiVariant::AsEnum () const { return T_Super::asEnum(); }
+DwgGiVariantCP  DwgGiVariant::GetElem (WCharCP key) const { return static_cast<DwgGiVariantCP>(T_Super::getElem(key)); }
+void            DwgGiVariant::SetElem (WCharCP key, DwgGiVariantCR v) { T_Super::setElem(key,v); }
+void            DwgGiVariant::DeleteElem (WCharCP key) { T_Super::deleteElem(key); }
+uint32_t        DwgGiVariant::GetElemCount () const { return T_Super::getElemCount(); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus     DwgGiVariant::GetElem (WCharCP key, DwgGiVariantR v) const
+    {
+#if DWGTOOLKIT_OpenDwg
+    return ToDwgDbStatus(T_Super::getElem(key, v));
+#elif DWGTOOLKIT_RealDwg
+    return T_Super::getElem(key,v) ? DwgDbStatus::Success : DwgDbStatus::UnknownError;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus     DwgGiVariant::GetElemAt (int i, DwgStringR s, DwgGiVariantR v) const
+    { 
+#if DWGTOOLKIT_OpenDwg
+    return  T_Super::getElemAt(i, s, v) ? DwgDbStatus::Success : DwgDbStatus::UnknownError;
+#elif DWGTOOLKIT_RealDwg
+    ACHAR*  acChars = nullptr;
+    Acad::ErrorStatus es = T_Super::getElemAt (i, acChars, v);
+    if (nullptr != acChars)
+        {
+        s.assign (acChars);
+        ::acutDelString (acChars);
+        }
+    return  ToDwgDbStatus(es);
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgGiVariantCP  DwgGiVariant::GetElemAt (int i, DwgStringR s) const
+    { 
+#if DWGTOOLKIT_OpenDwg
+    return  static_cast<DwgGiVariantCP>(T_Super::getElemAt(i, s));
+#elif DWGTOOLKIT_RealDwg
+    ACHAR*  acChars = nullptr;
+    AcGiVariant*    acElem = T_Super::getElemAt(i, acChars);
+    if (nullptr != acChars)
+        {
+        s.assign (acChars);
+        ::acutDelString (acChars);
+        }
+    return  static_cast<DwgGiVariantCP>(acElem);
+#endif
+    }
+DwgGiVariantR   DwgGiVariant::operator = (DWGGI_TypeCR(Variant) v) { T_Super::operator=(v); return *this; }
+bool            DwgGiVariant::operator == (DWGGI_TypeCR(Variant) v) const { return v == *this; }
+DwgGiVariant::DwgGiVariant (bool v) { T_Super::set(v); }
+DwgGiVariant::DwgGiVariant (DwgDbInt32 v) { T_Super::set(v); }
+DwgGiVariant::DwgGiVariant (double v) { T_Super::set(v); }
+DwgGiVariant::DwgGiVariant (DwgCmColorCR v) { DWGDB_CALLSDKMETHOD(T_Super::set(v.GetEntityColor()),T_Super::set(v)); }
+DwgGiVariant::DwgGiVariant (WCharCP v) { DWGDB_CALLSDKMETHOD(T_Super::set(reinterpret_cast<const OdChar*>(v)), T_Super::set(v)); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgGiVariantCR  DwgGiVisualStyle::GetTrait (DwgGiVisualStyleProperties::Property prop, DwgGiVisualStyleOperations::Operation* op) const
+    {
+#if DWGTOOLKIT_OpenDwg
+     static DwgGiVariant s_variantCopy(false);
+     OdGiVariantPtr odVar = m_toolkitVisualStyle.trait (CASTFROMDwgGiVisProp(prop), CASTFROMDwgGiVisOpP(op));
+     if (odVar.isNull())
+        BeAssert (false && "OdGiVisualStyle::trait() returned a nullptr!");
+    else
+        s_variantCopy = *static_cast<DwgGiVariantP>(odVar.get());
+    return  s_variantCopy;
+#elif DWGTOOLKIT_RealDwg
+     return static_cast<DwgGiVariantCR>(m_toolkitVisualStyle.trait(CASTFROMDwgGiVisProp(prop), CASTFROMDwgGiVisOpP(op)));
+#endif    
+    }
+bool            DwgGiVisualStyle::GetTraitFlag (DwgGiVisualStyleProperties::Property prop, DwgDbUInt32 flags) const { return m_toolkitVisualStyle.traitFlag(CASTFROMDwgGiVisProp(prop), flags); }
+DwgGiVisualStyle::RenderType    DwgGiVisualStyle::GetType () const { return static_cast<DwgGiVisualStyle::RenderType>(m_toolkitVisualStyle.type()); }
+DwgGiVisualStyleOperations::Operation   DwgGiVisualStyle::GetOperation (DwgGiVisualStyleProperties::Property prop) const { return CASTTODwgGiVisOp(m_toolkitVisualStyle.operation(CASTFROMDwgGiVisProp(prop))); }
 
 uint8_t const*          DwgGiEdgeData::GetVisibility () const { return T_Super::visibility(); }
 int16_t const*          DwgGiEdgeData::GetColors () const { return reinterpret_cast<int16_t const*>(T_Super::colors()); }
@@ -1891,6 +1995,24 @@ DwgGiShadowParameters::Shape  DwgGiShadowParameters::GetExtendedLightShape() con
 double DwgGiShadowParameters::GetExtendedLightLength() const { return  T_Super::extendedLightLength(); }
 double DwgGiShadowParameters::GetExtendedLightWidth() const { return T_Super::extendedLightWidth(); }
 double DwgGiShadowParameters::GetExtendedLightRadius() const { return T_Super::extendedLightRadius(); }
+
+DwgGiSkyParameters::DwgGiSkyParameters (DWGGI_TypeCR(SkyParameters) in) { m_toolkitImpl = in; }
+bool       DwgGiSkyParameters::HasAerialPerspective() const { return m_toolkitImpl.aerialPerspective(); }
+double     DwgGiSkyParameters::GetDiskIntensity () const { return m_toolkitImpl.diskIntensity(); }
+double     DwgGiSkyParameters::GetDiskScale () const { return m_toolkitImpl.diskScale(); }
+double     DwgGiSkyParameters::GetGlowIntensity () const { return m_toolkitImpl.glowIntensity(); }
+DwgCmEntityColor DwgGiSkyParameters::GetGroundColor () const { return DWGDB_CALLSDKMETHOD(m_toolkitImpl.groundColor(),m_toolkitImpl.groundColor().entityColor()); }
+DwgCmEntityColor DwgGiSkyParameters::GetNightColor () const { return DWGDB_CALLSDKMETHOD(m_toolkitImpl.nightColor(),m_toolkitImpl.nightColor().entityColor()); }
+double     DwgGiSkyParameters::GetHaze () const { return m_toolkitImpl.haze(); }
+double     DwgGiSkyParameters::GetHorizonBlur () const { return m_toolkitImpl.horizonBlur(); }
+double     DwgGiSkyParameters::GetHorizonHeight () const { return m_toolkitImpl.horizonHeight(); }
+bool       DwgGiSkyParameters::HasIllumination () const { return m_toolkitImpl.illumination(); }
+double     DwgGiSkyParameters::GetIntensityFactor () const { return m_toolkitImpl.intensityFactor(); }
+double     DwgGiSkyParameters::GetRedBlueShift () const { return m_toolkitImpl.redBlueShift(); }
+double     DwgGiSkyParameters::GetSaturation () const { return m_toolkitImpl.saturation(); }
+uint16_t   DwgGiSkyParameters::GetSolarDiskSamples () const { return m_toolkitImpl.solarDiskSamples(); }
+DVec3d     DwgGiSkyParameters::GetSunDirection () const { return Util::DVec3dFrom(m_toolkitImpl.sunDirection()); }
+double     DwgGiSkyParameters::GetVisibilityDistance () const { return m_toolkitImpl.visibilityDistance(); }
 
 
 #ifdef DWGTOOLKIT_OpenDwg
