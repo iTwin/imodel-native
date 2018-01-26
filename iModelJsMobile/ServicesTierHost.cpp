@@ -212,20 +212,20 @@ struct IModelJsFs : Napi::ObjectWrap<IModelJsFs>
         BeFileName fn(info[0].ToString().Utf8Value().c_str(), true);
 
         auto stats = Napi::Object::New(env);
-        if (!fn.DoesPathExists())
+        if (!fn.DoesPathExist())
             return env.Undefined();
 
         auto isDir = fn.IsDirectory();
         stats.Set("IsDirectory", Napi::Boolean::New(env, isDir));
         stats.Set("IsFile", Napi::Boolean::New(env, !isDir));
         stats.Set("IsSymbolicLink", Napi::Boolean::New(env, fn.IsSymbolicLink()));
-        stats.Set("IsSocket", Napi::Boolean::False(env));
+        stats.Set("IsSocket", Napi::Boolean::New(env, false));
         time_t ctime, mtime, atime;
         fn.GetFileTime(&ctime, &atime, &mtime);
         stats.Set("birthTimeMs", Napi::Number::New(env, (double)ctime/1000));
         stats.Set("atimeMs", Napi::Number::New(env, (double)atime/1000));
         stats.Set("mtimeMs", Napi::Number::New(env, (double)mtime/1000));
-        return st;
+        return stats;
         }
 
     };
