@@ -2231,48 +2231,21 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
     Transform rot = Transform::From(RotMatrix::From2Vectors(xAxis, yAxis));
     Transform textTransform = Transform::FromProduct(geom.GetTransform(), textString.ComputeTransform());
 
+    DRange2d textRange2d = textString.GetRange();
+    DRange3d textRange = DRange3d::From(textRange2d.low.x, textRange2d.low.y, 0.0, textRange2d.high.x, textRange2d.high.y, 0.0);
+    textTransform.Multiply(textRange, textRange);
+
+    // ###TODO: Account for the 2.0x multiplier on tile tolerance...(s_minToleranceRatio)
+    DPoint3d textRangeCenter = DPoint3d::FromInterpolate(textRange.low, 0.5, textRange.high);
+    double pixelSize = context.GetPixelSizeAtPoint(&textRangeCenter);
+    double meterSize = 0.0 != pixelSize ? 1.0 / pixelSize : 0.0;
+
+    double minAxis = std::min(textRange.XLength(), textRange.YLength());
+    double textSize = minAxis * meterSize;
+    constexpr double s_minToleranceRatioMultiplier = 2.0; // from ElementTileTree.cpp; used to multiply the s_minToleranceRatio
+    bool doTextAsRasterIfPossible = textSize / s_minToleranceRatioMultiplier <= 64.0;
+
     auto facetOptions = CreateFacetOptions(chordTolerance);
-
-//#define WIP_RASTER_GLYPH_TOLERANCING
-#if defined(WIP_RASTER_GLYPH_TOLERANCING)
-    double maxDiagDist = 0.0;
-    for (size_t i = 0; i < textString.GetNumGlyphs(); i++)
-        {
-        auto textGlyph = glyphs[i];
-
-        Glyph* glyph = nullptr != textGlyph ? FindOrInsert(*textGlyph, textString.GetStyle().GetFont()) : nullptr;
-        if (nullptr == glyph || !glyph->IsValid())
-            continue;
-        else if ((glyph->IsStrokes() && nullptr == strokes) || (!glyph->IsStrokes() && nullptr == polyfaces))
-            continue;
-
-        DRange3d glyphRange;
-        glyph->GetRange(glyphRange);
-
-        double diagDist = glyphRange.DiagonalDistanceXY();
-        //DEBUG_PRINTF("diagDist = %f", diagDist);
-        if (diagDist > maxDiagDist)
-            maxDiagDist = diagDist;
-        }
-
-    double maxGlyphPixelLength = maxDiagDist / chordTolerance;
-    bool doTextAsRasterIfPossible = maxGlyphPixelLength <= 64.0;
-    if (maxDiagDist > 0.0)
-        {
-        DEBUG_PRINTF("maxDiagDist = %f", maxDiagDist);
-        DEBUG_PRINTF("chordTolerance = %f", chordTolerance);
-        DEBUG_PRINTF("maxGlyphPixelLength = %f", maxGlyphPixelLength);
-        DEBUG_PRINTF("doTextAsRasterIfPossible = %s", doTextAsRasterIfPossible ? "true" : "false");
-        DEBUG_PRINTF("");
-        }
-#else
-    bool doTextAsRasterIfPossible = false;
-#endif
-
-//#define TEST_FORCE_RASTER_GLYPHS
-#if defined(TEST_FORCE_RASTER_GLYPHS)
-    doTextAsRasterIfPossible = true;
-#endif
 
     for (size_t i = 0; i < textString.GetNumGlyphs(); i++)
         {
