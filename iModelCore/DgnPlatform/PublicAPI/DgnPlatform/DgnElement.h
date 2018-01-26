@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnElement.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -1081,8 +1081,8 @@ public:
         {
         DgnElementId m_id;
         DgnClassId m_relClassId;
-        BE_JSON_NAME(id)
-        BE_JSON_NAME(relClass)
+        BE_JSON_NAME(id)                // NB: The name of this property is defined by the imodeljs JSON wire format. Do not change.
+        BE_JSON_NAME(relClassName)      // NB: The name of this property is defined by the imodeljs JSON wire format. Do not change.
 
         RelatedElement(DgnElementId id=DgnElementId(), DgnClassId relClassId=DgnClassId()) : m_id(id), m_relClassId(relClassId) {}
         bool IsValid() const {return m_id.IsValid();}
