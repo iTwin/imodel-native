@@ -207,26 +207,39 @@ void HDRImage::Encode(Encoding encoding)
     if (encoding == m_encoding)
         return;     // Nothing to do...
 
-    if (Encoding::RGBM != encoding)
-        {
-        BeAssert(false && "encoding not implemented");
-        return;
-        }
-    for (uint8_t *imageData = m_image.data(), *imageDataEnd = imageData + m_width * m_height * 4; imageData < imageDataEnd; imageData += 4)
-        {
-        constexpr   float s_maxScale = 5.0;
-        int         exponent = imageData[3] - 128;  
+    constexpr   float s_maxScale = 5.0;
 
-        float   d = (float) pow(2.0f, exponent) / 256.0f;
-        uint8_t maxByte = std::max (imageData[0], std::max(imageData[1], imageData[2]));
-        float   maxValue = std::min (s_maxScale, d * maxByte);
-        float   multiplier = maxValue / s_maxScale;
-        float   scale = 255.0 * d / (s_maxScale * maxValue);
+    switch (encoding)
+        {
+        default:
+            BeAssert(false && "encoding not implemented");
+            break;;
 
-        imageData[0] = (uint8_t) (std::min (255.0f, scale * (float) imageData[0]));
-        imageData[1] = (uint8_t) (std::min (255.0f, scale * (float) imageData[1]));
-        imageData[2] = (uint8_t) (std::min (255.0f, scale * (float) imageData[2]));
-        imageData[3] = (int8_t) (255.0 * multiplier);
+        case Encoding::RGBM:
+            for (uint8_t *imageData = m_image.data(), *imageDataEnd = imageData + m_width * m_height * 4; imageData < imageDataEnd; imageData += 4)
+                {
+                int         exponent = imageData[3] - 128;  
+                float       scale =  (float) pow(2.0f, exponent);
+
+                imageData[3] = (uint8_t) (.5f + 255.0f * std::min(1.0f, scale / s_maxScale));
+                }
+            break;
+
+        case Encoding::RGBD:
+            for (uint8_t *imageData = m_image.data(), *imageDataEnd = imageData + m_width * m_height * 4; imageData < imageDataEnd; imageData += 4)
+                {
+                int         exponent = imageData[3] - 128;  
+                float       d = (float) pow(2.0f, exponent);
+                float       maxValue = (float) std::max(imageData[0], std::max(imageData[1], imageData[2]));
+                float       maxValue2 = d * maxValue / 255.0;
+
+                imageData[0] = (uint8_t) (.5 + 255.0 * imageData[0] / maxValue);
+                imageData[1] = (uint8_t) (.5 + 255.0 * imageData[1] / maxValue);
+                imageData[2] = (uint8_t) (.5 + 255.0 * imageData[2] / maxValue);
+                imageData[3] = (uint8_t) (.5 + 255.0 * s_maxScale / maxValue2);
+                }
+            break;
+
         }
     }
 

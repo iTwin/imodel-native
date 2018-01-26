@@ -36,7 +36,8 @@ BentleyStatus   Open(BeFileNameCR fileName)
 * @bsimethod                                                    Ray.Bentley     01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 ImageLight::HDRMapPtr   ReadEnvironmentMap(HDRImage::Encoding encoding)    { return ReadHDRMap ("EV", encoding);  }
-ImageLight::HDRMapPtr   ReadReflectionMap(HDRImage::Encoding encoding)    { return ReadHDRMap ("REF", encoding);  }
+ImageLight::HDRMapPtr   ReadReflectionMap(HDRImage::Encoding encoding)     { return ReadHDRMap ("REF", encoding);  }
+ImageLight::MapPtr   ReadBackgroundMap()                                   { return ReadJPEGMap ("BG"); }
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     01/2018
@@ -45,7 +46,6 @@ ImageLight::HDRMapPtr   ReadHDRMap (Utf8CP prefix, HDRImage::Encoding encoding)
     {
     Utf8String      fileName, preString(prefix);
     ByteStream      fileBytes;
-
 
     if (SUCCESS != FindString(fileName, (preString + "file = ").c_str()) ||
         SUCCESS != LocateFile (fileName) ||
@@ -64,10 +64,42 @@ ImageLight::HDRMapPtr   ReadHDRMap (Utf8CP prefix, HDRImage::Encoding encoding)
 
     ReadValue(gamma,        (preString +"gamma = ").c_str(), 1.0);
     ReadValue(offset.x,     (preString +"u = ").c_str(), 0.0);
-    ReadValue(offset.y,     (preString +"b = ").c_str(), 0.0);
+    ReadValue(offset.y,     (preString +"v = ").c_str(), 0.0);
     ReadValue(iblMapping,   (preString +"map = ").c_str(), 0); 
 
     return new ImageLight::HDRMap(std::move(image), ConvertIblMapping(iblMapping), offset, gamma, false);
+    }
+
+
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ImageLight::MapPtr   ReadJPEGMap (Utf8CP prefix)
+    {
+    Utf8String      fileName, preString(prefix);
+    ByteStream      fileBytes;
+
+
+    if (SUCCESS != FindString(fileName, (preString + "file = ").c_str()) ||
+        SUCCESS != LocateFile (fileName) ||
+        SUCCESS != ReadCurrentFile(fileBytes))
+        return nullptr;
+
+    ImageSource     imageSource(ImageSource::Format::Jpeg, std::move(fileBytes));
+    Image           image(imageSource, Image::Format::Rgb);
+
+    if (!image.IsValid())
+        return nullptr;
+
+    int             iblMapping;
+    double          gamma;
+    DPoint2d        offset;
+
+    ReadValue(offset.x,     (preString +"u = ").c_str(), 0.0);
+    ReadValue(offset.y,     (preString +"b = ").c_str(), 0.0);
+    ReadValue(iblMapping,   (preString +"map = ").c_str(), 0); 
+
+    return new ImageLight::Map(std::move(image), ConvertIblMapping(iblMapping), offset, 1.0, false);
     }
 
 /*-----------------------------------------------------------------------------------**//**
@@ -232,5 +264,49 @@ ImageLight::HDRMapPtr ImageLight::ReflectionFromSmartIBL (BeFileNameCR fileName,
     }
 
 
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ImageLight::MapPtr ImageLight::BackgroundFromSmartIBL (BeFileNameCR fileName)
+    {
+    SmartIblFile        iblFile;
+    HDRMap              map;
+
+    if (SUCCESS != iblFile.Open(fileName))
+        return nullptr;
+        
+    return iblFile.ReadBackgroundMap();
+    }
+
+
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   ImageLight::SolarFromSmartIBL(ImageLight::Solar& solar, BeFileNameCR fileName)
+    {
+    SmartIblFile        iblFile;
+
+    if (SUCCESS != iblFile.Open(fileName))
+        return ERROR;
+
+    DVec2d      uv;
+
+    if (SUCCESS != iblFile.ReadValue(uv.x, "SUNu = ", 0.0) ||
+        SUCCESS != iblFile.ReadValue(uv.y, "SUNv = ", 0.0))
+        {
+        return ERROR;
+        }
+
+    iblFile.ReadValue (solar.m_intensity, "SUNmulti = ", 1.0);
+
+    double      theta = msGeomConst_2pi * (.25 - uv.x);
+    double      alpha = msGeomConst_pi * (.5 - uv.y);
+    double      radius = cos(alpha);
+
+    solar.m_direction = DVec3d::From (cos(theta) * radius, sin(theta) * radius, sin(alpha));
+
+    return SUCCESS;
+    }
+    
 
     

@@ -143,8 +143,7 @@ public:
     void SetShowSourceLights(bool val) {m_sourceLights = val;}
     bool ShowCameraLights() const {return m_cameraLights;}
     void SetShowCameraLights(bool val) {m_cameraLights = val;}
-    bool ShowSolarLight
-    () const {return m_solarLight;}
+    bool ShowSolarLight() const {return m_solarLight;}
     void SetShowSolarLight(bool val) {m_solarLight = val;}
     bool ShowShadows() const {return m_shadows;}
     void SetShowShadows(bool val) {m_shadows = val;}
@@ -533,7 +532,7 @@ public:
 //=======================================================================================
 struct HDRImage : Image
 {
-    enum class Encoding : uint32_t {RGBE = 0, RGBM = 1};
+    enum class Encoding : uint32_t {RGBE = 0, RGBM = 1, RGBD = 2};
 
 private:
     Encoding        m_encoding;
@@ -627,7 +626,7 @@ struct Texture : RefCounted<NonCopyableClass>
         TextureKey m_key;
         int m_pitch = 0;
         bool m_isTileSection = false;
-        bool m_isRGBE = false;;      // HDR stored with exponenet
+        bool m_isRGBE = false;;      // HDR stored with exponent (or multiplier).
 
         TextureKeyCR GetKey() const { return m_key; }
 
@@ -2676,8 +2675,18 @@ struct ImageLight
     DEFINE_REF_COUNTED_PTR(HDRMap)
     DEFINE_REF_COUNTED_PTR(HDRMultiMap)
 
+
+    struct Solar    // Some images include a simple solar light...
+        {
+        DVec3d                      m_direction = DVec3d::From(0.0, 0.0, 0.0);
+        ColorDef                    m_color = ColorDef::White();
+        double                      m_intensity = 0.0;
+        };
+
     static HDRMapPtr DiffuseFromSmartIBL (BeFileNameCR fileName, HDRImage::Encoding encoding = HDRImage::Encoding::RGBM);
     static HDRMapPtr ReflectionFromSmartIBL (BeFileNameCR fileName, HDRImage::Encoding encoding = HDRImage::Encoding::RGBM);
+    static MapPtr    BackgroundFromSmartIBL (BeFileNameCR fileName);
+    static BentleyStatus SolarFromSmartIBL(Solar& solar, BeFileNameCR fileName);
 
 };
 
@@ -2688,12 +2697,18 @@ struct ImageLight
 //=======================================================================================
 struct SceneLights : RefCounted<NonCopyableClass>
 {
-    double                      m_fstop = 0.0; //!< must be between -3 and +3
-    bvector<LightPtr>           m_list;
+    double                          m_fstop = 0.0; //!< must be between -3 and +3
+    bvector<LightPtr>               m_list;
 
-    Render::TextureP            m_environmentMap;       // Reflections
-    Render::TextureP            m_diffuseImage;
+    // Image based lighting...
 
+    struct
+        {
+        Render::TexturePtr          m_environmentMap;       // Reflections
+        Render::TexturePtr          m_diffuseImage;
+        ImageLight::Solar           m_solar;
+        } m_imageBased;
+    
     void AddLight(LightPtr light) {if (light.IsValid()) m_list.push_back(light);}
     bool IsEmpty() const {return m_list.empty();}
 
@@ -2732,7 +2747,6 @@ public:
     explicit HiliteSettings(ColorDef color=Defaults::Color(), double visibleRatio=Defaults::VisibleRatio(), double hiddenRatio=Defaults::HiddenRatio(), Silhouette silhouette=Defaults::Width())
         : m_color(color), m_visibleRatio(visibleRatio), m_hiddenRatio(hiddenRatio), m_silhouette(silhouette)
         {
-        Clamp(m_visibleRatio);
         Clamp(m_hiddenRatio);
         }
 
