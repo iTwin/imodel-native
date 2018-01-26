@@ -125,10 +125,9 @@ struct IModelJsFs : Napi::ObjectWrap<IModelJsFs>
         Napi::Function t = DefineClass(env, "IModelJsFs", {
           StaticMethod("existsSync", &IModelJsFs::ExistsSync),
           StaticMethod("unlinkSync", &IModelJsFs::UnlinkSync),
-          StaticMethod("removeSync", &IModelJsFs::UnlinkSync),
+          StaticMethod("removeSync", &IModelJsFs::RemoveSync),
           StaticMethod("mkdirSync", &IModelJsFs::MkdirSync),
           StaticMethod("lstatSync", &IModelJsFs::LStatSync),
-          StaticMethod("removeSync", &IModelJsFs::RemoveSync),
           StaticMethod("rmdirSync", &IModelJsFs::RmdirSync),
           StaticMethod("readdirSync", &IModelJsFs::ReaddirSync),
           StaticMethod("writeFileSync", &IModelJsFs::WriteFileSync),
@@ -487,11 +486,12 @@ void Host::TerminateEnvironment()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Sam.Wilson                     1/2018
 //---------------------------------------------------------------------------------------
-static Utf8String newDir(BeFileNameCR baseDir, WCharCP subDirName)
+static Utf8String newDir(BeFileNameCR baseDir, WCharCP subDirName, bool deleteIfExists)
     {
     BeFileName dirName(baseDir);
     dirName.AppendToPath(subDirName);
-    BeFileName::EmptyAndRemoveDirectory(dirName.c_str());
+    if (deleteIfExists)
+        BeFileName::EmptyAndRemoveDirectory(dirName.c_str());
     BeFileName::CreateNewDirectory(dirName.c_str());
     return Utf8String(dirName);
     }
@@ -517,11 +517,11 @@ void Host::SetupJsRuntime()
         // Define these globals on desktop platforms just for testing purposes ...
         BeFileName cwd;
         Desktop::FileSystem::GetCwd(cwd);
-        knownLocations.Set("packageAssetsDir", Napi::String::New(env, newDir(cwd, L"packageAssetsDir").c_str()));
-        knownLocations.Set("assetsDir", Napi::String::New(env, newDir(cwd, L"assetsDir").c_str()));
-        BeFileName tmpDir;
-        Desktop::FileSystem::BeGetTempPath(tmpDir);
-        knownLocations.Set("tempDir", Napi::String::New(env, newDir(cwd, L"tempDir").c_str()));
+        knownLocations.Set("packageAssetsDir", Napi::String::New(env, newDir(cwd, L"packageAssetsDir", false).c_str()));
+        knownLocations.Set("assetsDir", Napi::String::New(env, newDir(cwd, L"assetsDir", false).c_str()));
+        //BeFileName tmpDir;
+        //Desktop::FileSystem::BeGetTempPath(tmpDir);
+        knownLocations.Set("tempDir", Napi::String::New(env, newDir(cwd, L"tempDir", true).c_str()));
 #else
         #error implement known locations for mobile platforms ...
 #endif
