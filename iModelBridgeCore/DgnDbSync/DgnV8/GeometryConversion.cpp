@@ -1931,6 +1931,12 @@ void ProcessSingleBody(Bentley::ISolidKernelEntityCR entity, Bentley::IFaceMater
         {
         pathEntry.m_attachments = DgnDbApi::PSolidUtil::CreateNewFaceAttachments(DgnV8Api::PSolidUtil::GetEntityTag(*pathEntry.m_brep), pathEntry.m_geomParams);
 
+        if (!pathEntry.m_attachments.IsValid())
+            {
+            pathGeom.AddEntry(pathEntry);
+            return;
+            }
+
         DgnV8Api::T_FaceToSubElemIdMap const& faceToSubElemIdMapV8 = attachments->_GetFaceToSubElemIdMap();
         DgnV8Api::T_FaceAttachmentsMap const& faceAttachmentsMapV8 = attachments->_GetFaceAttachmentsMap();
         int32_t lowestFound = -1;
@@ -1942,13 +1948,16 @@ void ProcessSingleBody(Bentley::ISolidKernelEntityCR entity, Bentley::IFaceMater
                 lowestFound = curr->second;
             }
 
-        DgnDbApi::T_FaceToSubElemIdMap const& faceToSubElemIdMapDb = pathEntry.m_attachments->_GetFaceToSubElemIdMap();
         DgnDbApi::T_FaceAttachmentsVec const& faceAttachmentsVecDb = pathEntry.m_attachments->_GetFaceAttachmentsVec();
-        bmap<int32_t, uint32_t> subElemIdToFaceMapDb;
+        bmap<int32_t, uint32_t> subElemIdToFaceMapDb; // Need fast reverse search, since body has been copied, face tags won't match...
+        bvector<PK_FACE_t> faces;
 
-        // Need fast reverse search, since body has been copied, face tags won't match...
-        for (DgnDbApi::T_FaceToSubElemIdMap::const_iterator curr = faceToSubElemIdMapDb.begin(); curr != faceToSubElemIdMapDb.end(); ++curr)
-            subElemIdToFaceMapDb[curr->second.first] = curr->first;
+        DgnDbApi::PSolidTopo::GetBodyFaces(faces, DgnV8Api::PSolidUtil::GetEntityTag(*pathEntry.m_brep));
+
+        for (int iFace = 0; iFace < (int) faces.size(); iFace++)
+            subElemIdToFaceMapDb[iFace + 1] = faces[iFace]; // subElemId is 1 based face index...
+
+        DgnDbApi::PSolidAttrib::CreateFaceMaterialIndexAttributeDef(); // Create attribute definition if we haven't already, this attribute definition isn't setup by the V8 frustrum...
 
         for (DgnV8Api::T_FaceToSubElemIdMap::const_iterator curr = faceToSubElemIdMapV8.begin(); curr != faceToSubElemIdMapV8.end(); ++curr)
             {
@@ -1981,7 +1990,7 @@ void ProcessSingleBody(Bentley::ISolidKernelEntityCR entity, Bentley::IFaceMater
                 attachmentIndex = std::distance(faceAttachmentsVecDb.begin(), foundAttachmentDb);
                 }
 
-            const_cast<DgnDbApi::T_FaceToSubElemIdMap&>(faceToSubElemIdMapDb)[foundIndexDb->second] = make_bpair(foundIndexDb->first, attachmentIndex);
+            DgnDbApi::PSolidAttrib::SetFaceMaterialIndexAttribute(foundIndexDb->second, attachmentIndex); // Call with 0 will remove an existing attrib...avoid weird roundtrip scenario issues?
             }
 
         if (faceAttachmentsVecDb.size() < 2)
@@ -4146,6 +4155,12 @@ struct V8GraphicsLightWeightCollector : DgnV8Api::IElementGraphicsProcessor
                 {
                 pathEntry.m_attachments = DgnDbApi::PSolidUtil::CreateNewFaceAttachments(DgnV8Api::PSolidUtil::GetEntityTag(*pathEntry.m_brep), pathEntry.m_geomParams);
 
+                if (!pathEntry.m_attachments.IsValid())
+                    {
+                    pathGeom.AddEntry(pathEntry);
+                    return;
+                    }
+
                 DgnV8Api::T_FaceToSubElemIdMap const& faceToSubElemIdMapV8 = attachments->_GetFaceToSubElemIdMap();
                 DgnV8Api::T_FaceAttachmentsMap const& faceAttachmentsMapV8 = attachments->_GetFaceAttachmentsMap();
                 int32_t lowestFound = -1;
@@ -4157,13 +4172,16 @@ struct V8GraphicsLightWeightCollector : DgnV8Api::IElementGraphicsProcessor
                         lowestFound = curr->second;
                     }
 
-                DgnDbApi::T_FaceToSubElemIdMap const& faceToSubElemIdMapDb = pathEntry.m_attachments->_GetFaceToSubElemIdMap();
                 DgnDbApi::T_FaceAttachmentsVec const& faceAttachmentsVecDb = pathEntry.m_attachments->_GetFaceAttachmentsVec();
                 bmap<int32_t, uint32_t> subElemIdToFaceMapDb;
+                bvector<PK_FACE_t> faces;
 
-                // Need fast reverse search, since body has been copied, face tags won't match...
-                for (DgnDbApi::T_FaceToSubElemIdMap::const_iterator curr = faceToSubElemIdMapDb.begin(); curr != faceToSubElemIdMapDb.end(); ++curr)
-                    subElemIdToFaceMapDb[curr->second.first] = curr->first;
+                DgnDbApi::PSolidTopo::GetBodyFaces(faces, DgnV8Api::PSolidUtil::GetEntityTag(*pathEntry.m_brep));
+
+                for (int iFace = 0; iFace < (int) faces.size(); iFace++)
+                    subElemIdToFaceMapDb[iFace + 1] = faces[iFace]; // subElemId is 1 based face index...
+
+                DgnDbApi::PSolidAttrib::CreateFaceMaterialIndexAttributeDef(); // Create attribute definition if we haven't already, this attribute definition isn't setup by the V8 frustrum...
 
                 for (DgnV8Api::T_FaceToSubElemIdMap::const_iterator curr = faceToSubElemIdMapV8.begin(); curr != faceToSubElemIdMapV8.end(); ++curr)
                     {
@@ -4196,7 +4214,7 @@ struct V8GraphicsLightWeightCollector : DgnV8Api::IElementGraphicsProcessor
                         attachmentIndex = std::distance(faceAttachmentsVecDb.begin(), foundAttachmentDb);
                         }
 
-                    const_cast<DgnDbApi::T_FaceToSubElemIdMap&>(faceToSubElemIdMapDb)[foundIndexDb->second] = make_bpair(foundIndexDb->first, attachmentIndex);
+                    DgnDbApi::PSolidAttrib::SetFaceMaterialIndexAttribute(foundIndexDb->second, attachmentIndex); // Call with 0 will remove an existing attrib...avoid weird roundtrip scenario issues?
                     }
 
                 if (faceAttachmentsVecDb.size() < 2)
