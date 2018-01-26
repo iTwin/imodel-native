@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/Sheet.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -409,6 +409,7 @@ Render::GraphicPtr Sheet::Model::CreateBorder(DecorateContextR context, DPoint2d
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Sheet::ViewController::_CreateScene(SceneContextR context)
     {
+#if defined(TODO_ETT_SHEETS)
     if (nullptr == m_root)
         {
         auto model = GetViewedModel();
@@ -491,6 +492,9 @@ BentleyStatus Sheet::ViewController::_CreateScene(SceneContextR context)
         }
 
     return SUCCESS;
+#else
+    return T_Super::_CreateScene(context);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

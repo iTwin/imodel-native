@@ -899,6 +899,14 @@ void WebMercatorModel::_AddTerrainGraphics(TerrainContextR context) const
 #endif
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TileTree::RootPtr WebMercatorModel::_GetTileTree(RenderContextR context)
+    {
+    return GetTileTree(context.GetRenderSystem());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileTree::RootPtr WebMercatorModel::_CreateTileTree(Render::SystemP system)

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnBRep/PSolidKernelEntity.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -21,17 +21,13 @@ struct FaceMaterialAttachments : RefCounted <IFaceMaterialAttachments>
 private:
 
 T_FaceAttachmentsVec    m_faceAttachmentsVec;
-T_FaceToSubElemIdMap    m_faceToSubElemIdMap;
 
 public:
 
 FaceMaterialAttachments() {}
 
 T_FaceAttachmentsVec const& _GetFaceAttachmentsVec() const override {return m_faceAttachmentsVec;}
-T_FaceToSubElemIdMap const& _GetFaceToSubElemIdMap() const override {return m_faceToSubElemIdMap;}
-
 T_FaceAttachmentsVec& _GetFaceAttachmentsVecR() override {return m_faceAttachmentsVec;}
-T_FaceToSubElemIdMap& _GetFaceToSubElemIdMapR() override {return m_faceToSubElemIdMap;}
 
 }; // FaceMaterialAttachments
 
@@ -123,28 +119,6 @@ IFaceMaterialAttachmentsCP _GetFaceMaterialAttachments() const override
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   05/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool _InitFaceMaterialAttachments(Render::GeometryParamsCP baseParams) override
-    {
-    if (nullptr == baseParams)
-        {
-        m_faceAttachments = nullptr;
-
-        return true;
-        }
-
-    IFaceMaterialAttachmentsPtr attachments = PSolidUtil::CreateNewFaceAttachments(m_entityTag, *baseParams);
-
-    if (!attachments.IsValid())
-        return false;
-
-    m_faceAttachments = attachments;
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 IBRepEntityPtr _Clone() const override
@@ -156,7 +130,17 @@ IBRepEntityPtr _Clone() const override
     if (PK_ENTITY_null == entityTag)
         return nullptr;
 
-    return PSolidKernelEntity::CreateNewEntity(entityTag, m_transform);
+    IBRepEntityPtr instance = PSolidKernelEntity::CreateNewEntity(entityTag, m_transform);
+
+    if (instance.IsValid() && m_faceAttachments.IsValid())
+        {
+        FaceMaterialAttachments* cloneAttachments = new FaceMaterialAttachments();
+
+        cloneAttachments->_GetFaceAttachmentsVecR() = m_faceAttachments->_GetFaceAttachmentsVec();
+        PSolidUtil::SetFaceAttachments(*instance, cloneAttachments);
+        }
+
+    return instance;
     }
 
 public:
@@ -289,7 +273,12 @@ IBRepEntityPtr PSolidUtil::CreateNewEntity(PK_ENTITY_t entityTag, TransformCR en
 +---------------+---------------+---------------+---------------+---------------+------*/
 IBRepEntityPtr PSolidUtil::InstanceEntity(IBRepEntityCR entity)
     {
-    return PSolidKernelEntity::CreateNewEntity(PSolidUtil::GetEntityTag(entity), entity.GetEntityTransform(), false);
+    IBRepEntityPtr instance = PSolidKernelEntity::CreateNewEntity(PSolidUtil::GetEntityTag(entity), entity.GetEntityTransform(), false);
+
+    if (instance.IsValid() && nullptr != entity.GetFaceMaterialAttachments())
+        PSolidUtil::SetFaceAttachments(*instance, const_cast<IFaceMaterialAttachmentsP> (entity.GetFaceMaterialAttachments()));
+
+    return instance;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -360,20 +349,14 @@ bool PSolidUtil::SetEntityTag(IBRepEntityR entity, PK_ENTITY_t entityTag)
 +---------------+---------------+---------------+---------------+---------------+------*/
 IFaceMaterialAttachmentsPtr PSolidUtil::CreateNewFaceAttachments(PK_ENTITY_t entityTag, Render::GeometryParamsCR baseParams)
     {
-    int         nFaces;
-    PK_FACE_t*  faces = nullptr;
+    int nFaces = 0;
 
-    if (SUCCESS != PK_BODY_ask_faces(entityTag, &nFaces, &faces))
+    if (SUCCESS != PK_BODY_ask_faces(entityTag, &nFaces, nullptr) || 0 == nFaces)
         return nullptr;
 
     FaceMaterialAttachments* attachments = new FaceMaterialAttachments();
 
     attachments->_GetFaceAttachmentsVecR().push_back(FaceAttachment(baseParams));
-
-    for (int iFace = 0; iFace < nFaces; iFace++)
-        attachments->_GetFaceToSubElemIdMapR()[faces[iFace]] = make_bpair(iFace + 1, 0);
-    
-    PK_MEMORY_free(faces);
 
     return attachments;
     }

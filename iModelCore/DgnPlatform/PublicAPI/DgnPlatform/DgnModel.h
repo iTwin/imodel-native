@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnModel.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -884,6 +884,7 @@ protected:
     DGNPLATFORM_EXPORT void UpdateLastElementModifiedTime();
 
     DGNPLATFORM_EXPORT virtual RefCountedPtr<TileTree::Root> _CreateTileTree(Render::SystemP);
+    DGNPLATFORM_EXPORT virtual RefCountedPtr<TileTree::Root> _GetTileTree(RenderContextR);
     DGNPLATFORM_EXPORT void ReleaseTileTree();
     void _Destroy() override { ReleaseTileTree(); }
     DGNPLATFORM_EXPORT void _PreDestroy() override;
@@ -925,6 +926,7 @@ public:
     Formatter const& GetFormatter() const {return m_displayInfo;}
 
     DGNPLATFORM_EXPORT TileTree::Root* GetTileTree(Render::SystemP system);
+    RefCountedPtr<TileTree::Root> GetTileTree(RenderContextR context) {return _GetTileTree(context);}
 
     //! Returns the time of the most recent modification to any element in this model, in unix milliseconds.
     DGNPLATFORM_EXPORT uint64_t GetLastElementModifiedTime() const;

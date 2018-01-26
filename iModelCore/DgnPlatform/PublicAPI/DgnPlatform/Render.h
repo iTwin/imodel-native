@@ -626,6 +626,7 @@ struct Texture : RefCounted<NonCopyableClass>
         TextureKey m_key;
         int m_pitch = 0;
         bool m_isTileSection = false;
+        bool m_isGlyph = false;
         bool m_isRGBE = false;;      // HDR stored with exponent (or multiplier).
 
         TextureKeyCR GetKey() const { return m_key; }
@@ -638,12 +639,14 @@ struct Texture : RefCounted<NonCopyableClass>
     };
 protected:
     TextureKey m_key;
+    bool m_isGlyph;
 
     uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
 
-    explicit Texture(CreateParams const& params) : m_key(params.m_key) { }
+    explicit Texture(CreateParams const& params) : m_key(params.m_key), m_isGlyph(params.m_isGlyph) { }
 public:
     TextureKeyCR GetKey() const { return m_key; }
+    bool IsGlyph() const { return m_isGlyph; }
 
     // Named textures should preserve their image data so it can be obtained later.
     virtual ImageSource GetImageSource() const { BeAssert(false); return ImageSource(); }

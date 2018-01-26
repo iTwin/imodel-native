@@ -178,7 +178,7 @@ private:
     void ClearECSqlCache() const { m_ecsqlCache.Empty(); }
 
     BeSQLite::DbResult InitializeSchemas(BeSQLite::Db::OpenParams const& params);
-    BeSQLite::DbResult ProcessSchemaRevisions(BeSQLite::Db::OpenParams const& params);
+    BeSQLite::DbResult ProcessRevisions(BeSQLite::Db::OpenParams const& params);
 
 protected:
     friend struct Txns;

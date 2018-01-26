@@ -213,6 +213,7 @@ DGNPLATFORM_TYPEDEFS(RoleElement)
 DGNPLATFORM_TYPEDEFS(RoleModel)
 DGNPLATFORM_TYPEDEFS(ScanCriteria)
 DGNPLATFORM_TYPEDEFS(SceneContext)
+DGNPLATFORM_TYPEDEFS(ThumbnailContext)
 DGNPLATFORM_TYPEDEFS(SectionDrawing)
 DGNPLATFORM_TYPEDEFS(SelectionSetManager)
 DGNPLATFORM_TYPEDEFS(SheetViewDefinition)
@@ -903,6 +904,7 @@ enum class DrawPurpose
     VisibilityCalculation,
     Dynamics,
     Redraw,
+    CaptureThumbnail,
 };
 
 //! Used to communicate the result of handling an event from a GPS.
