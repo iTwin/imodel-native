@@ -228,7 +228,6 @@ CachedStatementPtr ECDb::Impl::GetCachedSqliteStatement(Utf8CP sql) const
         return nullptr;
 
     BeAssert(m_ecdb.GetDbFile() != nullptr);
-
     CachedStatementPtr stmt = nullptr;
     if (BE_SQLITE_OK != m_sqliteStatementCache.GetPreparedStatement(stmt, *m_ecdb.GetDbFile(), sql))
         return nullptr;
