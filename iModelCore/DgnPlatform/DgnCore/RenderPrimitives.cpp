@@ -2235,7 +2235,6 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
     DRange3d textRange = DRange3d::From(textRange2d.low.x, textRange2d.low.y, 0.0, textRange2d.high.x, textRange2d.high.y, 0.0);
     textTransform.Multiply(textRange, textRange);
 
-    // ###TODO: Account for the 2.0x multiplier on tile tolerance...(s_minToleranceRatio)
     DPoint3d textRangeCenter = DPoint3d::FromInterpolate(textRange.low, 0.5, textRange.high);
     double pixelSize = context.GetPixelSizeAtPoint(&textRangeCenter);
     double meterSize = 0.0 != pixelSize ? 1.0 / pixelSize : 0.0;
@@ -2243,7 +2242,8 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
     double minAxis = std::min(textRange.XLength(), textRange.YLength());
     double textSize = minAxis * meterSize;
     constexpr double s_minToleranceRatioMultiplier = 2.0; // from ElementTileTree.cpp; used to multiply the s_minToleranceRatio
-    bool doTextAsRasterIfPossible = textSize / s_minToleranceRatioMultiplier <= 64.0;
+    constexpr double s_texSizeThreshold = 64.0;
+    bool doTextAsRasterIfPossible = textSize / s_minToleranceRatioMultiplier <= s_texSizeThreshold;
 
     auto facetOptions = CreateFacetOptions(chordTolerance);
 
