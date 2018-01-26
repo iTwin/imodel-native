@@ -127,7 +127,8 @@ struct IModelJsFs : Napi::ObjectWrap<IModelJsFs>
           StaticMethod("unlinkSync", &IModelJsFs::UnlinkSync),
           StaticMethod("removeSync", &IModelJsFs::UnlinkSync),
           StaticMethod("mkdirSync", &IModelJsFs::MkdirSync),
-          StaticMethod("statSync", &IModelJsFs::StatSync),
+          StaticMethod("lstatSync", &IModelJsFs::LStatSync),
+          StaticMethod("removeSync", &IModelJsFs::RemoveSync),
           StaticMethod("rmdirSync", &IModelJsFs::RmdirSync),
           StaticMethod("readdirSync", &IModelJsFs::ReaddirSync),
           StaticMethod("writeFileSync", &IModelJsFs::WriteFileSync),
@@ -146,6 +147,14 @@ struct IModelJsFs : Napi::ObjectWrap<IModelJsFs>
     static Napi::Value UnlinkSync(const Napi::CallbackInfo& info)
         {
         BeFileName fn(info[0].ToString().Utf8Value().c_str(), true);
+        return Napi::Number::New(info.Env(), (int)fn.BeDeleteFile());
+        }
+
+    static Napi::Value RemoveSync(const Napi::CallbackInfo& info)
+        {
+        BeFileName fn(info[0].ToString().Utf8Value().c_str(), true);
+        if (fn.IsDirectory())
+            return Napi::Number::New(info.Env(), (int)BeFileName::EmptyAndRemoveDirectory(fn.c_str()));
         return Napi::Number::New(info.Env(), (int)fn.BeDeleteFile());
         }
 
@@ -196,10 +205,27 @@ struct IModelJsFs : Napi::ObjectWrap<IModelJsFs>
         return dirs;
         }
 
-    static Napi::Value StatSync(const Napi::CallbackInfo& info)
+    static Napi::Value LStatSync(const Napi::CallbackInfo& info)
         {
-        Napi::Error::New(info.Env(), "TBD").ThrowAsJavaScriptException();
-        return info.Env().Undefined();
+        auto env = info.Env();
+
+        BeFileName fn(info[0].ToString().Utf8Value().c_str(), true);
+
+        auto stats = Napi::Object::New(env);
+        if (!fn.DoesPathExists())
+            return env.Undefined();
+
+        auto isDir = fn.IsDirectory();
+        stats.Set("IsDirectory", Napi::Boolean::New(env, isDir));
+        stats.Set("IsFile", Napi::Boolean::New(env, !isDir));
+        stats.Set("IsSymbolicLink", Napi::Boolean::New(env, fn.IsSymbolicLink()));
+        stats.Set("IsSocket", Napi::Boolean::False(env));
+        time_t ctime, mtime, atime;
+        fn.GetFileTime(&ctime, &atime, &mtime);
+        stats.Set("birthTimeMs", Napi::Number::New(env, (double)ctime/1000));
+        stats.Set("atimeMs", Napi::Number::New(env, (double)atime/1000));
+        stats.Set("mtimeMs", Napi::Number::New(env, (double)mtime/1000));
+        return st;
         }
 
     };
