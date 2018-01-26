@@ -1039,4 +1039,15 @@ void ORDConverter::_OnConversionComplete()
     T_Super::_OnConversionComplete();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ORDConverter::_ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model)
+    {
+    if (fullSchemaName.Contains("Bentley_Civil") || fullSchemaName.StartsWith("Civil."))
+        return false;
+
+    return true;
+    }
+
 END_ORDBRIDGE_NAMESPACE
