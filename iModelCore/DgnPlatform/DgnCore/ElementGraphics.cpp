@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ElementGraphics.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -606,22 +606,17 @@ void WireframeGeomUtil::Draw(IBRepEntityCR entity, Render::GraphicBuilderR graph
 
         if (PK_ENTITY_null != faceTag)
             {
-            T_FaceToSubElemIdMap const& faceToSubElemIdMap = attachments->_GetFaceToSubElemIdMap();
             T_FaceAttachmentsVec const& faceAttachmentsVec = attachments->_GetFaceAttachmentsVec();
-            T_FaceToSubElemIdMap::const_iterator found = faceToSubElemIdMap.find(faceTag);
+            int32_t attachmentIndex = 0;
 
-            if (found == faceToSubElemIdMap.end())
-                {
-                BeAssert(false); // ERROR - Face not represented in map...
-                }
-            else
-                {
-                FaceAttachment faceAttachment = faceAttachmentsVec.at(found->second.second);
-                Render::GraphicParamsCP graphicParams = faceAttachment.GetGraphicParams();
+            if (SUCCESS != PSolidAttrib::GetFaceMaterialIndexAttribute(attachmentIndex, faceTag) || attachmentIndex < 0 || attachmentIndex >= faceAttachmentsVec.size())
+                attachmentIndex = 0; // If face attrib not present, use base symbology...
 
-                if (nullptr != graphicParams)
-                    graphic.ActivateGraphicParams(*graphicParams, nullptr); // Activate the pre-resolved face symbology...
-                }
+            FaceAttachment faceAttachment = faceAttachmentsVec.at((size_t) attachmentIndex); 
+            Render::GraphicParamsCP graphicParams = faceAttachment.GetGraphicParams();
+
+            if (nullptr != graphicParams)
+                graphic.ActivateGraphicParams(*graphicParams, nullptr); // Activate the pre-resolved face symbology...
             }
 
         curve->TransformInPlace(entity.GetEntityTransform());
