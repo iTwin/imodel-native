@@ -71,6 +71,9 @@ public:
 struct UnitRegistry;
 struct Expression;
 
+//=======================================================================================
+// @bsistruct
+//=======================================================================================
 struct Conversion
 {
     double Factor;
@@ -82,6 +85,9 @@ struct Conversion
         }
 };
 
+//=======================================================================================
+// @bsiclass                                                    Colin.Kerr         01/18
+//=======================================================================================
 struct UnitSystem
 {
 private:
@@ -98,6 +104,9 @@ public:
     Utf8CP GetName() const {return m_name.c_str();}
 };
 
+//=======================================================================================
+// @bsistruct
+//=======================================================================================
 struct UnitsSymbol
 {
 friend struct ExpressionSymbol;
@@ -168,17 +177,17 @@ private:
     Unit() :UnitsSymbol(), m_system(nullptr), m_phenomenon(nullptr), m_parent(nullptr), m_isConstant(true) {}
     // Lifecycle is managed by the UnitRegistry so we don't allow copies or assignments.
 
-    Unit (UnitCR unit) = delete;
+    Unit(UnitCR unit) = delete;
     UnitR operator=(UnitCR unit) = delete;
 
     ExpressionCR Evaluate() const;
 
     UNITS_EXPORT uint32_t GetPhenomenonId() const override;
-    UnitCP  CombineWithUnit(UnitCR rhs, int factor) const;
-    bool    IsInverseUnit() const {return nullptr != m_parent;}
+    UnitCP CombineWithUnit(UnitCR rhs, int factor) const;
+    bool IsInverseUnit() const {return nullptr != m_parent;}
 
-    UnitsProblemCode  DoNumericConversion(double& converted, double value, UnitCR toUnit) const;
-    bool    GenerateConversion(UnitCR toUnit, Conversion& conversion) const;
+    UnitsProblemCode DoNumericConversion(double& converted, double value, UnitCR toUnit) const;
+    bool GenerateConversion(UnitCR toUnit, Conversion& conversion) const;
 
 protected:
     UNITS_EXPORT Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant);
@@ -198,16 +207,20 @@ public:
 
     UnitCP MultiplyUnit (UnitCR rhs) const;
     UnitCP DivideUnit(UnitCR rhs) const;
-    static bool IsNegligible(double dval) {return (1.0e-16 > dval);}
-    //! Returns true if the input units have the same id, false if not or if one or both are null.
-    static bool AreEqual(UnitCP unitA, UnitCP unitB)
-        {return nullptr == unitA || nullptr == unitB ? false : unitA->GetId() == unitB->GetId();}
-    //! Returns true if the input units belong to the same phenomenon, false if not or one or both are null.
-    UNITS_EXPORT static bool AreCompatible(UnitCP unitA, UnitCP unitB);
+
     UNITS_EXPORT void AddSynonym(Utf8CP synonym) const;
     UNITS_EXPORT size_t GetSynonymList(bvector<Utf8CP>& synonyms) const;
+
+    static bool IsNegligible(double dval) {return (1.0e-16 > dval);}
+    //! Returns true if the input units have the same id, false if not or if one or both are null.
+    static bool AreEqual(UnitCP unitA, UnitCP unitB) {return nullptr == unitA || nullptr == unitB ? false : unitA->GetId() == unitB->GetId();}
+    //! Returns true if the input units belong to the same phenomenon, false if not or one or both are null.
+    UNITS_EXPORT static bool AreCompatible(UnitCP unitA, UnitCP unitB);
 };
 
+//=======================================================================================
+// @bsistruct
+//=======================================================================================
 struct UnitSynonymMap
 {
 private:
@@ -249,6 +262,9 @@ public:
     UNITS_EXPORT static bool CompareSynonymMap(UnitSynonymMapCR map1, UnitSynonymMapCR map2);
 };
 
+//=======================================================================================
+// @bsistruct
+//=======================================================================================
 struct Phenomenon : UnitsSymbol
 {
 DEFINE_T_SUPER(UnitsSymbol)

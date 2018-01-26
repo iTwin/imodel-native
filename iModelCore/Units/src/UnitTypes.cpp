@@ -14,8 +14,11 @@
 
 using namespace std;
 
-USING_NAMESPACE_BENTLEY_UNITS
+BEGIN_BENTLEY_UNITS_NAMESPACE
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      03/2016
+//--------------------------------------------------------------------------------------
 UnitsSymbol::UnitsSymbol(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id, double factor, double offset) :
     m_name(name), m_definition(definition), m_baseSymbol(baseSymbol), m_id(id), m_factor(factor), m_offset(offset), m_evaluated(false), 
     m_symbolExpression(new Expression())
@@ -23,6 +26,9 @@ UnitsSymbol::UnitsSymbol(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, ui
     m_dimensionless = strcmp("ONE", m_definition.c_str()) == 0;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      03/2016
+//--------------------------------------------------------------------------------------
 UnitsSymbol::UnitsSymbol() // creates a default - invalid - Symbol
     {
     m_name = nullptr;
@@ -35,12 +41,18 @@ UnitsSymbol::UnitsSymbol() // creates a default - invalid - Symbol
     m_evaluated = false;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      03/2016
+//--------------------------------------------------------------------------------------
 UnitsSymbol::~UnitsSymbol()
     {
     if (nullptr != m_symbolExpression)
         delete m_symbolExpression;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      03/2016
+//--------------------------------------------------------------------------------------
 ExpressionCR UnitsSymbol::Evaluate(int depth, std::function<UnitsSymbolCP(Utf8CP)> getSymbolByName) const
     {
     if (!m_evaluated)
@@ -83,8 +95,9 @@ UnitP Unit::Create(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP unitName
     return new Unit(system, phenomenon, unitName, id, definition, baseSymbol, factor, offset, isConstant);
     }
 
-uint32_t Unit::GetPhenomenonId() const {return GetPhenomenon()->GetId();}
-
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      03/2016
+//--------------------------------------------------------------------------------------
 UnitP Unit::Create(UnitCR parentUnit, Utf8CP unitName, uint32_t id)
     {
     if (parentUnit.HasOffset())
@@ -110,6 +123,17 @@ bool Unit::IsRegistered() const
     return UnitRegistry::Instance().HasUnit(GetName());
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      03/2016
+//--------------------------------------------------------------------------------------
+uint32_t Unit::GetPhenomenonId() const
+    {
+    return GetPhenomenon()->GetId();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      03/2016
+//--------------------------------------------------------------------------------------
 ExpressionCR Unit::Evaluate() const
     {
     if (IsInverseUnit())
@@ -177,6 +201,9 @@ double FastIntegerPower(double a, uint32_t n)
     return product;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      03/2016
+//--------------------------------------------------------------------------------------
 UnitsProblemCode Unit::Convert(double& converted, double value, UnitCP toUnit) const
     {
     if (nullptr == toUnit)
@@ -186,9 +213,8 @@ UnitsProblemCode Unit::Convert(double& converted, double value, UnitCP toUnit) c
         }
 
     if (IsInverseUnit() && toUnit->IsInverseUnit() || !(IsInverseUnit() || toUnit->IsInverseUnit()))
-        {
         return DoNumericConversion(converted, value, *toUnit);
-        }
+
     // TODO: Do better check here
     //if (value == 0.0)
     //    return 0.0;
@@ -215,6 +241,9 @@ UnitsProblemCode Unit::Convert(double& converted, double value, UnitCP toUnit) c
     return prob;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      03/2016
+//--------------------------------------------------------------------------------------
 bool Unit::GenerateConversion(UnitCR toUnit, Conversion& conversion) const
     {
     Expression conversionExpression;
@@ -274,6 +303,9 @@ bool Unit::GenerateConversion(UnitCR toUnit, Conversion& conversion) const
     return true;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      03/2016
+//--------------------------------------------------------------------------------------
 UnitsProblemCode Unit::DoNumericConversion(double& converted, double value, UnitCR toUnit) const
     {
     uint64_t index = GetId();
@@ -299,6 +331,9 @@ UnitsProblemCode Unit::DoNumericConversion(double& converted, double value, Unit
     return UnitsProblemCode::NoProblem;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      03/2016
+//--------------------------------------------------------------------------------------
 Utf8String Unit::GetUnitSignature() const
     {
     Expression phenomenonExpression = Evaluate();
@@ -307,11 +342,17 @@ Utf8String Unit::GetUnitSignature() const
     return baseExpression.ToString(false);
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      03/2016
+//--------------------------------------------------------------------------------------
 Utf8String Unit::GetParsedUnitExpression() const
     {
     return Evaluate().ToString(true);
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      03/2016
+//--------------------------------------------------------------------------------------
 UnitCP Unit::CombineWithUnit(UnitCR rhs, int factor) const
     {
     auto temp = Evaluate();
@@ -357,21 +398,33 @@ UnitCP Unit::CombineWithUnit(UnitCR rhs, int factor) const
     return output;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      03/2016
+//--------------------------------------------------------------------------------------
 UnitCP Unit::MultiplyUnit(UnitCR rhs) const
     {
     return CombineWithUnit(rhs, 1);
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      03/2016
+//--------------------------------------------------------------------------------------
 UnitCP Unit::DivideUnit(UnitCR rhs) const
     {
     return CombineWithUnit(rhs, -1);
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      03/2016
+//--------------------------------------------------------------------------------------
 bool Unit::AreCompatible(UnitCP unitA, UnitCP unitB)
     {
     return nullptr == unitA || nullptr == unitB ? false : Phenomenon::AreEqual(unitA->GetPhenomenon(), unitB->GetPhenomenon());
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/18
+//----------------------------------------------------------------------------------------
 void Unit::AddSynonym(Utf8CP synonym) const
     {
     PhenomenonCP ph = GetPhenomenon();
@@ -380,6 +433,9 @@ void Unit::AddSynonym(Utf8CP synonym) const
         ph->AddSynonym(un, synonym);
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
 size_t Unit::GetSynonymList(bvector<Utf8CP>& synonyms) const
     {
     synonyms.clear();
@@ -394,6 +450,9 @@ size_t Unit::GetSynonymList(bvector<Utf8CP>& synonyms) const
     return synonyms.size();
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      03/2016
+//--------------------------------------------------------------------------------------
 Utf8String Phenomenon::GetPhenomenonSignature() const
     {
     Expression phenomenonExpression = Evaluate();
@@ -402,6 +461,9 @@ Utf8String Phenomenon::GetPhenomenonSignature() const
     return baseExpression.ToString(false);
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      03/2016
+//--------------------------------------------------------------------------------------
 void Phenomenon::AddUnit(UnitCR unit)
     {
     auto it = find_if(m_units.begin(), m_units.end(), [&unit] (UnitCP existingUnit) { return existingUnit->GetId() == unit.GetId(); });
@@ -409,11 +471,17 @@ void Phenomenon::AddUnit(UnitCR unit)
         m_units.push_back(&unit);
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      03/2016
+//--------------------------------------------------------------------------------------
 ExpressionCR Phenomenon::Evaluate() const
     {
     return T_Super::Evaluate(0, [] (Utf8CP phenomenonName) { return UnitRegistry::Instance().LookupPhenomenon(phenomenonName); });
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      03/2016
+//--------------------------------------------------------------------------------------
 bool Phenomenon::IsCompatible(UnitCR unit) const
     {
     return Expression::ShareSignatures(*this, unit);
@@ -429,6 +497,9 @@ bool Phenomenon::IsAngle() const { return m_name.Equals(ANGLE); }
 //
 //===================================================
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
+//----------------------------------------------------------------------------------------
 void UnitSynonymMap::Init(Utf8CP unitName, Utf8CP synonym)
     {
     m_unit = (nullptr == unitName)? nullptr : UnitRegistry::Instance().LookupUnitCI(unitName);
@@ -437,6 +508,7 @@ void UnitSynonymMap::Init(Utf8CP unitName, Utf8CP synonym)
     else
         m_synonym = synonym;
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
@@ -495,6 +567,9 @@ UnitSynonymMap::UnitSynonymMap(Utf8CP unitName, Utf8CP synonym)
 //        }
 //    }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
+//----------------------------------------------------------------------------------------
 void UnitSynonymMap::LoadJson(Json::Value jval)
     {
     m_unit = nullptr;
@@ -517,6 +592,9 @@ void UnitSynonymMap::LoadJson(Json::Value jval)
     Init(unitName.c_str(), synonym.c_str());
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
+//----------------------------------------------------------------------------------------
 UnitSynonymMap::UnitSynonymMap(Json::Value jval)
     {
     LoadJson(jval);
@@ -710,6 +788,9 @@ void Phenomenon::AddSynonymMaps(Json::Value jval) const // this value could be a
         }
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
+//----------------------------------------------------------------------------------------
 Json::Value Phenomenon::SynonymMapToJson() const
     {
     Json::Value jval;
@@ -721,6 +802,9 @@ Json::Value Phenomenon::SynonymMapToJson() const
     return jval;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
+//----------------------------------------------------------------------------------------
 Json::Value Phenomenon::SynonymMapVectorToJson(bvector<UnitSynonymMap> mapV)
     {
     Json::Value jval;
@@ -745,3 +829,5 @@ Utf8CP Phenomenon::GetLabel() const
 
     return m_displayLabel.c_str();
     }
+
+END_BENTLEY_UNITS_NAMESPACE

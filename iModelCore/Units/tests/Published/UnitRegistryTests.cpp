@@ -60,10 +60,12 @@ struct UnitRegistryTests : UnitsTestFixture
     public:
         TestUnitLocater() { Populate(); }
 
-        UnitCP LocateUnit(Utf8CP name) override {return LocateUnitP(name);}
-        UnitP LocateUnitP(Utf8CP name) override;
-        PhenomenonCP LocatePhenomenon(Utf8CP name) override {return LocatePhenomenonP(name);}
-        PhenomenonP LocatePhenomenonP(Utf8CP name) override {return 0 == strcmp(m_phenomenon->GetName(), name) ? m_phenomenon : nullptr;}
+        UnitCP LocateUnit(Utf8CP name) const override {return LocateUnitP(name);}
+        UnitP LocateUnitP(Utf8CP name) const override;
+        PhenomenonCP LocatePhenomenon(Utf8CP name) const override {return LocatePhenomenonP(name);}
+        PhenomenonP LocatePhenomenonP(Utf8CP name) const override {return 0 == strcmp(m_phenomenon->GetName(), name) ? m_phenomenon : nullptr;}
+        UnitSystemCP LocateUnitSystem(Utf8CP name) const override { return LocateUnitSystemP(name); }
+        UnitSystemP LocateUnitSystemP(Utf8CP name) const override {return 0 == strcmp(m_unitSystem->GetName(), name) ? m_unitSystem : nullptr;}
     };
 };
 
@@ -111,7 +113,7 @@ void UnitRegistryTests::TestUnitLocater::Populate()
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    01/2018
 //--------------------------------------------------------------------------------------
-UnitP UnitRegistryTests::TestUnitLocater::LocateUnitP(Utf8CP name)
+UnitP UnitRegistryTests::TestUnitLocater::LocateUnitP(Utf8CP name) const
     {
     auto val_iter = m_units.find(name);
     if (val_iter == m_units.end())
@@ -133,7 +135,7 @@ TEST_F(UnitRegistryTests, AddUnitLocater)
     EXPECT_EQ(nullptr, registry->LookupUnit("TestUnit1"));
     EXPECT_EQ(nullptr, registry->LookupPhenomenon("TestPhen"));
 
-    registry->AddUnitLocater(*locater);
+    registry->AddLocater(*locater);
 
     PhenomenonCP locaterPhen = registry->LookupPhenomenon("TestPhen");
     EXPECT_NE(nullptr, locaterPhen);
@@ -141,7 +143,7 @@ TEST_F(UnitRegistryTests, AddUnitLocater)
     UnitCP locaterUnit = registry->LookupUnit("TestUnit1");
     EXPECT_NE(nullptr, locaterUnit);
 
-    registry->RemoveUnitLocater(*locater);
+    registry->RemoveLocater();
     EXPECT_EQ(nullptr, registry->LookupUnit("TestUnit1"));
     EXPECT_EQ(nullptr, registry->LookupPhenomenon("TestPhen"));
     }

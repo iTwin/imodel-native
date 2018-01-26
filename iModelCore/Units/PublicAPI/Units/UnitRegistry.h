@@ -25,10 +25,12 @@ typedef RefCountedPtr<UnitRegistry> UnitRegistryPtr;
 struct IUnitLocater : NonCopyableClass
 {
 public:
-    virtual UnitCP LocateUnit(Utf8CP name) = 0;
-    virtual UnitP LocateUnitP(Utf8CP name) = 0;
-    virtual PhenomenonCP LocatePhenomenon(Utf8CP name) = 0;
-    virtual PhenomenonP LocatePhenomenonP(Utf8CP name) = 0;
+    virtual UnitCP LocateUnit(Utf8CP name) const = 0;
+    virtual UnitP LocateUnitP(Utf8CP name) const = 0;
+    virtual PhenomenonCP LocatePhenomenon(Utf8CP name) const = 0;
+    virtual PhenomenonP LocatePhenomenonP(Utf8CP name) const = 0;
+    virtual UnitSystemCP LocateUnitSystem(Utf8CP name) const = 0;
+    virtual UnitSystemP LocateUnitSystemP(Utf8CP name) const = 0;
 };
 
 //=======================================================================================
@@ -72,9 +74,9 @@ private:
     // key = ec name, value = unit name
     bmap<Utf8String, Utf8String> m_ecNameNameMapping;
 
-    bvector<IUnitLocaterP> m_locaters;
+    IUnitLocaterP m_locater;
 
-    UnitRegistry();
+    UnitRegistry(IUnitLocaterP locater = nullptr);
     UnitRegistry(const UnitRegistry& rhs) = delete;
     UnitRegistry & operator= (const UnitRegistry& rhs) = delete;
 
@@ -94,6 +96,8 @@ private:
 
     PhenomenonP LookupPhenomenonP(Utf8CP name) const;
     UnitP LookupUnitP(Utf8CP name) const;
+    UnitSystemP LookupUnitSystemP(Utf8CP name) const;
+
     UnitP AddUnitP(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double factor = 1, double offset = 0);
 
     bool NameConflicts(Utf8CP name);
@@ -113,12 +117,13 @@ public:
 
     //! Constructs a registry
     UNITS_EXPORT static UnitRegistryPtr Create();
+    UNITS_EXPORT static UnitRegistryPtr Create(IUnitLocaterP locater);
 
-    //! Adds a unit locater to this registry.
-    UNITS_EXPORT void AddUnitLocater(IUnitLocaterR locater) {m_locaters.push_back(&locater);}
+    //! Adds a unit locater to this registry. If there is an existing locater, it will be overriden.
+    UNITS_EXPORT void AddLocater(IUnitLocaterR locater) {m_locater = &locater;}
 
-    //! Remove a unit locater to this registry.
-    UNITS_EXPORT void RemoveUnitLocater(IUnitLocaterR locater);
+    //! Remove the current locater from this registry.
+    UNITS_EXPORT void RemoveLocater() {m_locater = nullptr;}
 
     //! Populates the provided vector with all Units in the registry
     //! @param[in] allUnits The vector to populate with the units

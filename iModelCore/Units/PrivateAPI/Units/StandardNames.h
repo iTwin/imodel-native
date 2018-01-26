@@ -134,7 +134,7 @@ static Utf8CP const VOLUME_RATIO = "VOLUME_RATIO";
 
 //static Utf8CP const ACTION = "ACTION";
 static Utf8CP const TBD = "TBD";
-
+static Utf8CP const EMPTY_STRING = "";
 
 struct BasePhenomena
 {

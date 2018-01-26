@@ -39,7 +39,7 @@ void UnitRegistry::Clear()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Caleb.Shafer            01/18
 //---------------------------------------------------------------------------------------
-UnitRegistry::UnitRegistry()
+UnitRegistry::UnitRegistry(IUnitLocaterP locater) : m_locater(locater)
     {
     // This is going to change... There shouldn't be as much to initialize.
     AddDefaultSystems();
@@ -55,21 +55,16 @@ UnitRegistry::UnitRegistry()
 // static
 UnitRegistryPtr UnitRegistry::Create()
     {
-    return new UnitRegistry();
+    return Create(nullptr);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Caleb.Shafer            01/18
 //---------------------------------------------------------------------------------------
-void UnitRegistry::RemoveUnitLocater(IUnitLocaterR locater)
+// static
+UnitRegistryPtr UnitRegistry::Create(IUnitLocaterP locater)
     {
-    for (auto iter = m_locaters.begin(); iter != m_locaters.end();)
-        {
-        if (*iter == &locater)
-            iter = m_locaters.erase(iter);
-        else
-            ++iter;
-        }
+    return new UnitRegistry(locater);
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -110,34 +105,34 @@ Utf8CP GetBasePhenomenonName(Utf8Char baseSymbol)
     {
     switch (baseSymbol)
         {
-            case BasePhenomena::Capita:
-                return CAPITA;
-            case BasePhenomena::ElectricCurrent:
-                return CURRENT;
-            case BasePhenomena::Finance:
-                return FINANCE;
-            case BasePhenomena::Length:
-                return LENGTH;
-            case BasePhenomena::Luminosity:
-                return LUMINOSITY;
-            case BasePhenomena::Mass:
-                return MASS;
-            case BasePhenomena::Mole:
-                return MOLE;
-            case BasePhenomena::PlaneAngle:
-                return ANGLE;
-            case BasePhenomena::Ratio:
-                return ONE;
-            case BasePhenomena::SolidAngle:
-                return SOLIDANGLE;
-            case BasePhenomena::Temperature:
-                return TEMPERATURE;
-            case BasePhenomena::TemperatureChange:
-                return TEMPERATURE_CHANGE;
-            case BasePhenomena::Time:
-                return TIME;
-            default:
-                return "";
+        case BasePhenomena::Capita:
+            return CAPITA;
+        case BasePhenomena::ElectricCurrent:
+            return CURRENT;
+        case BasePhenomena::Finance:
+            return FINANCE;
+        case BasePhenomena::Length:
+            return LENGTH;
+        case BasePhenomena::Luminosity:
+            return LUMINOSITY;
+        case BasePhenomena::Mass:
+            return MASS;
+        case BasePhenomena::Mole:
+            return MOLE;
+        case BasePhenomena::PlaneAngle:
+            return ANGLE;
+        case BasePhenomena::Ratio:
+            return ONE;
+        case BasePhenomena::SolidAngle:
+            return SOLIDANGLE;
+        case BasePhenomena::Temperature:
+            return TEMPERATURE;
+        case BasePhenomena::TemperatureChange:
+            return TEMPERATURE_CHANGE;
+        case BasePhenomena::Time:
+            return TIME;
+        default:
+            return EMPTY_STRING;
         }
     }
 //-------------------------------------------------------------------------------------//
@@ -189,17 +184,17 @@ void UnitRegistry::AddPhenomenon (Utf8CP phenomenaName, Utf8CP definition)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UnitRegistry::AddDefaultSystems ()
     {
-    AddSystem (SI);
-    AddSystem (CGS);
-    AddSystem (METRIC);
-    AddSystem (IMPERIAL);
-    AddSystem (MARITIME);
-    AddSystem (USSURVEY);
-    AddSystem (INDUSTRIAL);
-    AddSystem (INTERNATIONAL);
-    AddSystem (USCUSTOM);
-    AddSystem (STATISTICS);
-    AddSystem (FINANCE);
+    AddSystem(SI);
+    AddSystem(CGS);
+    AddSystem(METRIC);
+    AddSystem(IMPERIAL);
+    AddSystem(MARITIME);
+    AddSystem(USSURVEY);
+    AddSystem(INDUSTRIAL);
+    AddSystem(INTERNATIONAL);
+    AddSystem(USCUSTOM);
+    AddSystem(STATISTICS);
+    AddSystem(FINANCE);
     AddSystem(CONSTANT);
     }
 
@@ -444,16 +439,7 @@ UnitP UnitRegistry::LookupUnitP(Utf8CP name) const
     auto val_iter = m_units.find(name);
     if (val_iter != m_units.end())
         return (*val_iter).second;
-
-    UnitP foundUnit;
-    for (auto locater : m_locaters)
-        {
-        foundUnit = locater->LocateUnitP(name);
-        if (nullptr != foundUnit)
-            return foundUnit;
-        }
-
-    return nullptr;
+    return nullptr != m_locater ? m_locater->LocateUnitP(name) : nullptr;
     }
 
 //--------------------------------------------------------------------------------------
@@ -482,18 +468,6 @@ UnitCP UnitRegistry::LookupUnitCI (Utf8CP name) const
 POP_MSVC_IGNORE
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                   Colin.Kerr                      01/2018
-//--------------------------------------------------------------------------------------
-UnitSystemCP UnitRegistry::LookupUnitSystem(Utf8CP name) const
-    {
-    auto usIt = m_systems.find(name);
-    if (usIt == m_systems.end())
-        return nullptr;
-
-    return usIt->second;
-    }
-
-//--------------------------------------------------------------------------------------
 // @bsimethod                                              Chris.Tartamella       02/16
 //--------------------------------------------------------------------------------------
 UnitCP UnitRegistry::LookupConstant(Utf8CP name) const
@@ -512,16 +486,7 @@ PhenomenonP UnitRegistry::LookupPhenomenonP(Utf8CP name) const
     auto val_iter = m_phenomena.find(name);
     if (val_iter != m_phenomena.end())
         return (*val_iter).second;
-
-    PhenomenonP foundPhen;
-    for (auto locater : m_locaters)
-        {
-        foundPhen = locater->LocatePhenomenonP(name);
-        if (nullptr != foundPhen)
-            return foundPhen;
-        }
-
-    return nullptr;
+    return nullptr != m_locater ? m_locater->LocatePhenomenonP(name) : nullptr;
     }
 
 //--------------------------------------------------------------------------------------
@@ -530,6 +495,25 @@ PhenomenonP UnitRegistry::LookupPhenomenonP(Utf8CP name) const
 PhenomenonCP UnitRegistry::LookupPhenomenon(Utf8CP name) const
     {
     return LookupPhenomenonP(name);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      01/2018
+//--------------------------------------------------------------------------------------
+UnitSystemP UnitRegistry::LookupUnitSystemP(Utf8CP name) const
+    {
+    auto usIt = m_systems.find(name);
+    if (usIt != m_systems.end())
+        return (*usIt).second;
+    return nullptr != m_locater ? m_locater->LocateUnitSystemP(name) : nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Caleb.Shafer            01/18
+//---------------------------------------------------------------------------------------
+UnitSystemCP UnitRegistry::LookupUnitSystem(Utf8CP name) const
+    {
+    return LookupUnitSystemP(name);
     }
 
 //--------------------------------------------------------------------------------------
