@@ -136,14 +136,14 @@ void ECSqlStatementCache::GetPreparedStatement(CachedECSqlStatementPtr& stmt, EC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      02/2015
 //---------------------------------------------------------------------------------------
-CachedECSqlStatement* ECSqlStatementCache::FindEntry(ECDbCR ecdb, DbCP datasource, ECCrudWriteToken const* token, Utf8CP ecsql) const
+CachedECSqlStatement* ECSqlStatementCache::FindEntry(ECDbCR ecdb, Db const* datasourceECDb, ECCrudWriteToken const* token, Utf8CP ecsql) const
     {
     std::list<CachedECSqlStatementPtr>::iterator foundIt = m_entries.end();
     for (auto it = m_entries.begin(), end = m_entries.end(); it != end; ++it)
         {
         CachedECSqlStatementPtr& stmt = *it;
         //ECSqlStatement::GetECSql returns nullptr if stmt is not prepared, so don't compare ECSQL string if not prepared
-        if (stmt->IsPrepared() && 0 == strcmp(stmt->GetECSql(), ecsql) && &stmt->m_ecdb == &ecdb && stmt->m_datasource == datasource && stmt->m_crudWriteToken == token)
+        if (stmt->IsPrepared() && 0 == strcmp(stmt->GetECSql(), ecsql) && &stmt->m_ecdb == &ecdb && stmt->m_dataSourceECDb == datasourceECDb && stmt->m_crudWriteToken == token)
             {
             // if statement > 1, the statement is currently in use, we can't share it
             if (stmt->GetRefCount() <= 1)

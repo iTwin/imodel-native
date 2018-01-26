@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/JsonUpdaterTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -243,8 +243,8 @@ TEST_F(JsonUpdaterTests, Options)
         ASSERT_TRUE(options.IsValid()) << ToString(options);
         }
 
-    BeTest::SetFailOnAssert(false);
     {
+    ScopedDisableFailOnAssertion disableFailOnAssertion;
     JsonUpdater::Options invalidOptions = JsonUpdater::Options(JsonUpdater::ReadonlyPropertiesOption::Fail, "ReadonlyPropertiesAreUpdatable");
     ASSERT_FALSE(invalidOptions.IsValid()) << ToString(invalidOptions);
     testOptions.push_back(invalidOptions);
@@ -256,8 +256,6 @@ TEST_F(JsonUpdaterTests, Options)
     invalidOptions = JsonUpdater::Options(JsonUpdater::ReadonlyPropertiesOption::Update, "ReadonlyPropertiesAreUpdatable");
     ASSERT_FALSE(invalidOptions.IsValid()) << ToString(invalidOptions);
     testOptions.push_back(invalidOptions);
-
-    BeTest::SetFailOnAssert(true);
     }
 
     std::vector<Utf8String> testJsons {R"json({"Code" : 2000})json",

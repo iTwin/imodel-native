@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/JsonLibraryTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -22,9 +22,10 @@ TEST(JsonCpp, NaN)
     Json::Value obj1(Json::objectValue);
     Json::Value obj2(Json::objectValue);
 
-    BeTest::SetFailOnAssert(false);
+    {
+    ScopedDisableFailOnAssertion disableFailOnAssertion;
     obj1["nan"] = std::numeric_limits<double>::quiet_NaN();
-    BeTest::SetFailOnAssert(true);
+    }
 
     Utf8String str = Json::FastWriter().write(obj1);
 
@@ -225,12 +226,6 @@ TEST_F(RapidJsonTests, FromRapidJsonTutorialCpp)
     ASSERT_TRUE(0 == strcmp("Milo Yip", document["author"].GetString()));
     }
 
-struct BeAssertIgnoreContext
-    {
-    BeAssertIgnoreContext() { BeTest::SetFailOnAssert(false); }
-    ~BeAssertIgnoreContext() { BeTest::SetFailOnAssert(true); }
-    };
-
 //---------------------------------------------------------------------------------------
 // Demonstrate unfortunate add member behavior
 // @bsitest                                    Shaun.Sewall                     01/14
@@ -240,7 +235,7 @@ TEST_F(RapidJsonTests, AddMemberBehavior)
     rapidjson::Document document;
     document.SetObject();
 
-    BeAssertIgnoreContext ignoreAsserts;
+    ScopedDisableFailOnAssertion disableFailOnAssertion;
 
     // expected: nothing has been added yet
     ASSERT_FALSE(document.HasMember("x"));
@@ -289,7 +284,7 @@ TEST_F(RapidJsonTests, PushBackBehavior)
     rapidjson::Document json(rapidjson::kArrayType);
 
     const int arrayElementVal = 123;
-    BeAssertIgnoreContext ignoreAsserts;
+    ScopedDisableFailOnAssertion disableFailOnAssertion;
 
     //return value is not the inserted array element, but the array itself!
     rapidjson::Value& returnValueOfPushBack = json.PushBack(rapidjson::Value(arrayElementVal).Move(), json.GetAllocator());

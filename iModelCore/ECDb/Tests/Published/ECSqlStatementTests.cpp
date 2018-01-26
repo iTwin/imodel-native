@@ -6093,7 +6093,7 @@ TEST_F(ECSqlStatementTestFixture, ECInstanceIdConversion)
     EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId)) << "InstanceId with negative number '" << instanceId << "' is not expected to be supported by ECInstanceId::FromString";
 
     //now test with invalid instance ids
-    BeTest::SetFailOnAssert(false);
+    ScopedDisableFailOnAssertion disableFailOnAssertion;
 
     instanceId = "0x75BCD15";
     expectedECInstanceId = ECInstanceId(UINT64_C(123456789));
@@ -6109,8 +6109,6 @@ TEST_F(ECSqlStatementTestFixture, ECInstanceIdConversion)
 
     instanceId = "blabla";
     EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId)) << "Non-numeric InstanceId '" << instanceId << "' is not expected to be supported by ECInstanceId::FromString";
-
-    BeTest::SetFailOnAssert(true);
     }
 //---------------------------------------------------------------------------------
 // Verifies correct ECSQL parsing on Android
