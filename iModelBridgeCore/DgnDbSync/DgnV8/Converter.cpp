@@ -1915,8 +1915,7 @@ BentleyStatus Converter::GetECContentOfElement(V8ElementECContent& content, DgnV
             bool hasSecondary;
             if (!V8ECClassInfo::TryFind(conversionRule, GetDgnDb(), v8ClassName, hasSecondary))
                 {
-                //BeAssert(false && "V8ECClassInfo::TryFindV8ClassInfo should find an info for all ECClasses in the v8 file");
-                return BentleyApi::ERROR;
+                continue;
                 }
 
             if (BisConversionRuleHelper::IgnoreInstance(conversionRule))
