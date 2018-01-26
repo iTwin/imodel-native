@@ -290,7 +290,7 @@ DgnDbStatus Alignment::SetMainVertical(AlignmentCR alignment, VerticalAlignmentC
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Alignment::AddRepresentedBy(AlignmentCR alignment, DgnElementCR representedBy)
     {
-    if (!representedBy.GetElementId().IsValid())
+    if (!representedBy.GetElementId().IsValid() || !alignment.GetElementId().IsValid())
         return DgnDbStatus::BadElement;
     
     Utf8String schemaName, relClassName;
