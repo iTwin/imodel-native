@@ -357,6 +357,8 @@ Utf8CP Utilities::SimpleInitScript()
     {
     return u8R"(
 
+    console_log("imodeljsMobile = " + JSON.stringify(self.imodeljsMobile));
+
     // mocha thinks that it is running in a browser, and so it expects to have a URL
     self.location = {};
 

@@ -95,12 +95,9 @@ private:
         auto evaluateResult = runtime.EvaluateScript (u8R"(
             (function() {
                 let require = bentley.imodeljs.servicesTier.require;
-                let registryModule = require ("../backend/NodeAddonRegistry");
-                BeAssert (registryModule !== undefined);
-                let registry = registryModule.NodeAddonRegistry;
-                BeAssert (registry !== undefined);
-                registry.loadAndRegisterStandardAddon();
-            })();
+                let addon = require ("@bentley/imodeljs-nodeaddon");
+                BeAssert (addon !== undefined);
+           })();
         )", "iModelJsServicesTierTests:///Addon.Test1.js");
 
         BeAssert (evaluateResult.status == Js::EvaluateStatus::Success);

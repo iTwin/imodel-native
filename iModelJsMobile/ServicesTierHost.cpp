@@ -484,18 +484,27 @@ void Host::SetupJsRuntime()
 
         env.Global().Set("self", env.Global()); // make this platform look like a WebWorker
 
-        // Set up the imodeljs globals
-        auto imodeljs = Napi::Object::New(env);
-                // *** 
-                // *** NEEDS WORK: assets and temp dir must be platform-specific and supplied by native code
-                // *** 
+        // Set up the knownLocations globals
+        auto knownLocations = Napi::Object::New(env);
+
+#if (defined(BENTLEYCONFIG_OS_WINDOWS) && !defined(BENTLEYCONFIG_OS_WINRT)) || defined(BENTLEYCONFIG_OS_LINUX) || defined(BENTLEYCONFIG_OS_APPLE_MACOS)
+        // Define these globals on desktop platforms just for testing purposes ...
         BeFileName cwd;
         Desktop::FileSystem::GetCwd(cwd);
-        imodeljs.Set("packageAssetsDir", Napi::String::New(env, newDir(cwd, L"packageAssetsDir").c_str()));
-        imodeljs.Set("assetsDir", Napi::String::New(env, newDir(cwd, L"assetsDir").c_str()));
-        imodeljs.Set("tempDir", Napi::String::New(env, newDir(cwd, L"tempDir").c_str()));
+        knownLocations.Set("packageAssetsDir", Napi::String::New(env, newDir(cwd, L"packageAssetsDir").c_str()));
+        knownLocations.Set("assetsDir", Napi::String::New(env, newDir(cwd, L"assetsDir").c_str()));
+        BeFileName tmpDir;
+        Desktop::FileSystem::BeGetTempPath(tmpDir);
+        knownLocations.Set("tempDir", Napi::String::New(env, newDir(cwd, L"tempDir").c_str()));
+#else
+        #error implement known locations for mobile platforms ...
+#endif
 
-        env.Global().Set("imodeljs", imodeljs);
+        auto imodeljsMobile = Napi::Object::New(env);
+
+        imodeljsMobile.Set("knownLocations", knownLocations);
+
+        env.Global().Set("imodeljsMobile", imodeljsMobile);
 
         IModelJsTimer::Init(env, env.Global());
         IModelJsFs::Init(env, env.Global());
