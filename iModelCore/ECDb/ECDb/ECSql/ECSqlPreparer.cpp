@@ -19,13 +19,10 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& context, Exp const& exp)
     {
     ECSqlStatus status = ECSqlStatus::Error;
-    if (context.GetSecondaryConnection())
+    if (&context.GetDataSourceConnection() != &context.GetECDb() && Exp::Type::Select != exp.GetType())
         {
-        if (Exp::Type::Select != exp.GetType())
-            {
-            context.Issues().Report("Only SELECT queries can be executed against a secondary connection.");
-            return ECSqlStatus::Error;
-            }
+        context.Issues().Report("Only SELECT queries can be executed against a separate data source connection.");
+        return ECSqlStatus::Error;
         }
 
     switch (exp.GetType())

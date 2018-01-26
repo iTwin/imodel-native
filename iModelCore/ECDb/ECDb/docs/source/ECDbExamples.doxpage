@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/docs/source/ECDbExamples.doxpage $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -363,6 +363,16 @@
     __PUBLISH_INSERT_FILE__ Overview_ECDb_CustomizeChangeCacheFile.sampleCode
     $SAMPLECODE_END
 
+    @section ECDbCodeSampleExecuteECSqlSelectMultiThreaded Execute an ECSQL Select statement in multiple threads
+
+    This sample shows how to run an ECSQL SELECT statement in a multi-threaded way.
+
+    $SAMPLECODE_BEGIN[Overview_ECDb_ECSqlSelectMultiThreaded,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlSelectMultiThreaded.sampleCode
+    $SAMPLECODE_END
+
+    @see See <a href="files/ecdb/StartupCompany.01.00.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    definition of the ECClasses and ECProperties used in the ECSQL statement.
     @see @ref WorkingWithECDb
 
     */

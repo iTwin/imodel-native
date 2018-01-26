@@ -7553,8 +7553,7 @@ TEST_F(DbMappingTestFixture, CAOnMixins_FailingCases)
 //+---------------+---------------+---------------+---------------+---------------+------
 void AssertECInstanceIdAutoGeneration(ECDbCR ecdb, bool expectedToSucceed, Utf8CP fullyQualifiedTestClass, Utf8CP prop, Utf8CP val)
     {
-    if (!expectedToSucceed)
-        BeTest::SetFailOnAssert(false);
+    ScopedDisableFailOnAssertion disableFailOnAssertion(!expectedToSucceed);
 
     //different ways to let ECDb auto-generated (if allowed)
     {
@@ -7632,8 +7631,6 @@ void AssertECInstanceIdAutoGeneration(ECDbCR ecdb, bool expectedToSucceed, Utf8C
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << "Disable flag does not affect case when ECInstanceId is specified";
     ASSERT_EQ(id.GetValue(), newKey.GetInstanceId().GetValue());
     }
-
-    BeTest::SetFailOnAssert(true);
     }
 
 // @bsimethod                                   Krischan.Eberle                     12/16

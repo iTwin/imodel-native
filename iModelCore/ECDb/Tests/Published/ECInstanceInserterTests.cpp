@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECInstanceInserterTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -758,7 +758,7 @@ TEST_F(ECSqlAdapterTestFixture, CheckClassBeforeOperation)
     jsonInputFile.AppendToPath(L"ECDb");
     jsonInputFile.AppendToPath(L"JsonTestClass.json");
 
-    BeTest::SetFailOnAssert(false);
+    ScopedDisableFailOnAssertion disableFailOnAssertion;
     // Parse JSON value using JsonCpp
     Json::Value jsonInput;
     ASSERT_EQ(SUCCESS, TestUtilities::ReadFile(jsonInput, jsonInputFile));
@@ -768,8 +768,6 @@ TEST_F(ECSqlAdapterTestFixture, CheckClassBeforeOperation)
 
     JsonUpdater jsonUpdater(m_ecdb, *employee, nullptr);
     ASSERT_EQ(BE_SQLITE_ERROR, jsonUpdater.Update(instanceKey.GetInstanceId(), jsonInput));
-
-    BeTest::SetFailOnAssert(true);
     }
 
 END_ECDBUNITTESTS_NAMESPACE
