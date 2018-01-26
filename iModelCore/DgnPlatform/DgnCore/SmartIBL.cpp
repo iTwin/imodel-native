@@ -92,7 +92,6 @@ ImageLight::MapPtr   ReadJPEGMap (Utf8CP prefix)
         return nullptr;
 
     int             iblMapping;
-    double          gamma;
     DPoint2d        offset;
 
     ReadValue(offset.x,     (preString +"u = ").c_str(), 0.0);

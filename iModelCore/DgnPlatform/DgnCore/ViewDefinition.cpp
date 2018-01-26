@@ -1438,7 +1438,7 @@ Render::SceneLightsPtr DisplayStyle3d::CreateSceneLights(Render::TargetR target)
     lights->m_imageBased.m_diffuseImage = m_diffuseLightTexture.get();
     lights->m_imageBased.m_environmentMap = m_reflectionTexture.get();
 
-#else if (ENVIRONMENT_REFLECTIONS)
+#elif defined(ENVIRONMENT_REFLECTIONS)
     if (IsSkyBoxEnabled())
         {
         LoadSkyBoxMaterial (target.GetSystem());

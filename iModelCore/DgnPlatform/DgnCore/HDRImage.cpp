@@ -112,7 +112,6 @@ static bool loadHDRScanline(RGBE* scanline, uint8_t const*& srcData, uint8_t con
 +---------------+---------------+---------------+---------------+---------------+------*/
 static BentleyStatus   parseValue(uint32_t& value, char& sign, char& dimension, char const*& srcData)
     {
-    char const*     pSeparator;
     char            string[1024];
 
     sign = *srcData++;
