@@ -402,6 +402,9 @@
   <data name="ElevationAboveGeoid" xml:space="preserve">
     <value>Elevation Above Geoid</value>
   </data>
+  <data name="EllipsoidScaleFactor" xml:space="preserve">
+    <value>Ellipsoid Scale Factor</value>
+  </data>
   <data name="UTMZone" xml:space="preserve">
     <value>UTM Zone</value>
   </data>
@@ -620,6 +623,9 @@
   </data>
   <data name="GENGRID" xml:space="preserve">
     <value>Grid Shift Files</value>
+  </data>
+  <data name="POLYCN" xml:space="preserve">
+    <value>Polyconic Transformation</value>
   </data>
   <data name="ConvertType" xml:space="preserve">
     <value>Conversion Method</value>

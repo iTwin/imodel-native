@@ -2,7 +2,7 @@
 |
 |   $Source: BaseGeoCoord/BaseManagedGCS.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #pragma  warning(disable:4189) // local variable is initialized but not referenced
@@ -98,9 +98,8 @@ public enum class  GeoDatumToWGS84Method
     ConvertType_ETRF89    =   24,
     ConvertType_GEOCTR    =   25,
     ConvertType_CHENYX    =   26,
-#ifdef GEOCOORD_ENHANCEMENT
     ConvertType_GENGRID   =   27,
-#endif
+   // ConvertType_PLYCN     =   28,
     };
 
 
@@ -1033,6 +1032,7 @@ enum class ProjectionCodeValue
     pcvPlateCarree                                  = BGC::BaseGCS::pcvPlateCarree,
     pcvPopularVisualizationPseudoMercator           = BGC::BaseGCS::pcvPopularVisualizationPseudoMercator,
     pcvObliqueMercatorMinnesota                     = BGC::BaseGCS::pcvObliqueMercatorMinnesota,
+    pcvLambertMichigan                              = BGC::BaseGCS::pcvLambertMichigan,
     };
 
 property ProjectionCodeValue ProjectionCode
@@ -1288,6 +1288,11 @@ property double ElevationAboveGeoid
     {
     double get() {return m_baseGCSPeer->GetElevationAboveGeoid();}
     void set (double value) { m_baseGCSPeer->SetElevationAboveGeoid (value); }
+    }
+property double EllipsoidScaleFactor
+    {
+    double get() {return m_baseGCSPeer->GetEllipsoidScaleFactor();}
+    void set (double value) { m_baseGCSPeer->SetEllipsoidScaleFactor (value); }
     }
 property int    UTMZone
     {
@@ -2811,6 +2816,7 @@ ECUI::ECEnumerablePropertyDescriptor^   propertyDescriptor
 #ifdef GEOCOORD_ENHANCEMENT
                                             BGC::ConvertType_GENGRID,
 #endif
+ //                                           BGC::ConvertType_PLYCN,
                                             };
 
     array<String^>^ convertTypeStrings = {  "NONE",       "MOLO",       "MREG",       "BURS",
@@ -2822,7 +2828,8 @@ ECUI::ECEnumerablePropertyDescriptor^   propertyDescriptor
                                             "ETRF89",     "GEOCTR",     "CHENYX", 
 #ifdef GEOCOORD_ENHANCEMENT
                                             "GENGRID",
-#endif
+#endif 
+                           //                 "POLYCN"
                                             };
     array<bool>^    canUseWhenEditing  = {  false,      true,           false,        true, 
                                             false,      false,          false,        false,
@@ -3003,6 +3010,7 @@ ECL::LightweightClass^      m_krovakClass;
 ECL::LightweightClass^      m_originScaleReductionClass;
 ECL::LightweightClass^      m_minnesotaConicClass;
 ECL::LightweightClass^      m_wisconsinConicClass;
+ECL::LightweightClass^      m_michiganConicClass;
 
 ECL::LightweightClass^      m_transverseMercatorClass;
 ECL::LightweightClass^      m_transverseMercatorWithAffineClass;
@@ -3106,6 +3114,7 @@ enum class Priority
 
     GeoidSeparation         = 7400000,
     ElevationAboveGeoid     = 7390000,
+    EllipsoidScaleFactor    = 7380000,
 
     MinimumLongitude        = 5900000,
     MaximumLongitude        = 5890000,
@@ -3175,6 +3184,7 @@ enum class PropIndex
     UTMZone                 = 32,
     Hemisphere              = 33,
     LocalTransform          = 34,
+    EllipsoidScaleFactor    = 35,
 
     DatumCode               = 40,
     DatumName               = 41,
@@ -3374,6 +3384,8 @@ ECI::IECPropertyValue^  propVal
                 return coordSys->GeoidSeparation;
             case PropIndex::ElevationAboveGeoid:
                 return coordSys->ElevationAboveGeoid;
+            case PropIndex::EllipsoidScaleFactor:
+                return coordSys->EllipsoidScaleFactor;
             case PropIndex::StandardParallel1:
                 return coordSys->StandardParallel1;
             case PropIndex::StandardParallel2:
@@ -3559,6 +3571,9 @@ double                  value
                 break;
             case PropIndex::ElevationAboveGeoid:
                 coordSys->ElevationAboveGeoid = value;
+                break;
+            case PropIndex::EllipsoidScaleFactor:
+                coordSys->EllipsoidScaleFactor = value;
                 break;
             case PropIndex::StandardParallel1:
                 coordSys->StandardParallel1 = value;
@@ -3980,7 +3995,7 @@ property ECL::LightweightClass^     CSBaseClass
                                                   cs_PRJCOD_TRMRKRG,    cs_PRJCOD_WINKL,    cs_PRJCOD_NRTHSRT,  cs_PRJCOD_LMBRTAF,  cs_PRJCOD_HOM1UV,
                                                   cs_PRJCOD_HOM1XY,     cs_PRJCOD_HOM2UV,   cs_PRJCOD_HOM2XY,   cs_PRJCOD_RSKEW,    cs_PRJCOD_RSKEWC,
                                                   cs_PRJCOD_RSKEWO,     cs_PRJCOD_UTMZNBF,  cs_PRJCOD_TRMERBF,  cs_PRJCOD_SYS34_01, cs_PRJCOD_EDCYLE,
-                                                  cs_PRJCOD_PCARREE,    cs_PRJCOD_MRCATPV,  cs_PRJCOD_MNDOTOBL};
+                                                  cs_PRJCOD_PCARREE,    cs_PRJCOD_MRCATPV,  cs_PRJCOD_MNDOTOBL, cs_PRJCOD_LMMICH};
 
             array<String^>^ projectionStrings = { "LL",                 "TM",               "AE",               "MRCAT",
                                                   "AZMED",              "LMTAN",            "PLYCN",            "MODPC",            "AZMEA",
@@ -3997,7 +4012,7 @@ property ECL::LightweightClass^     CSBaseClass
                                                   "TRMRKRG",            "WINKEL",           "NERTH-SRT",        "LMAF",             "HOM1UV",
                                                   "HOM1XY",             "HOM2UV",           "HOM2XY",           "RSKEW",            "RSKEWC",
                                                   "RSKEWO",             "UTMZN-BF",         "TRMER-BF",         "SYSTM34-01",       "EDCYL-E",
-                                                  "PCARREE",            "MRCAT-PV",         "OBL-MNDOT" };
+                                                  "PCARREE",            "MRCAT-PV",         "OBL-MNDOT",        "LM-MICH" };
 
             ecClass->IsReadOnlyDelegate = m_classReadOnlyDelegate;
 
@@ -4521,6 +4536,29 @@ property ECL::LightweightClass^     MinnesotaConicClass
         return m_minnesotaConicClass;
         }
     }
+
+property ECL::LightweightClass^     MichiganConicClass
+    {
+    ECL::LightweightClass^ get ()
+        {
+        if (nullptr == m_michiganConicClass)
+            {
+            ECL::LightweightDoubleType^ doubleType  = CSDoubleType;
+            ECS::IECProperty^       prop;
+
+            ECL::LightweightClass^  ecClass = gcnew ECL::LightweightClass ("MichiganConicClass", ConicClass);
+            prop = AddProperty (ecClass, "EllipsoidScaleFactor",     nullptr,   Priority::EllipsoidScaleFactor,  m_csCategory, PropIndex::EllipsoidScaleFactor,  false, doubleType);
+            ECUI::ECPropertyPane::SetFormatString (prop, "{0:f8}");
+
+
+            ecClass->IsReadOnlyDelegate = m_classReadOnlyDelegate;
+
+            m_michiganConicClass = ecClass;
+            }
+        return m_michiganConicClass;
+        }
+    }
+
 property ECL::LightweightClass^     CentralMeridianClass
     {
     ECL::LightweightClass^ get ()
@@ -5190,6 +5228,7 @@ property ECS::ECSchema^     Schema
             m_schema->AddClass (OriginScaleReductionClass);
             m_schema->AddClass (WisconsinConicClass);
             m_schema->AddClass (MinnesotaConicClass);
+            m_schema->AddClass (MichiganConicClass);
             m_schema->AddClass (CentralMeridianClass);
             m_schema->AddClass (CentralMeridianStandardParallelClass);
             m_schema->AddClass (CentMerScaleRedClass);
@@ -5423,6 +5462,9 @@ ECI::ECInstanceList^   GetCoordinateSystemProperties (BaseGCS^ coordSys)
             instanceList->Add (CentMerScaleRedClass->CreateInstance (coordSys));
             break;
 
+        case cs_PRJCOD_LMMICH:
+            instanceList->Add (MichiganConicClass->CreateInstance (coordSys));
+            break;
 
         default:
             instanceList->Add (ProjectedCSBaseClass->CreateInstance (coordSys));

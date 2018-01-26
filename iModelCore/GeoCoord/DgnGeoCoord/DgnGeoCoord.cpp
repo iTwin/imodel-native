@@ -2,7 +2,7 @@
 |
 |   $Source: DgnGeoCoord/DgnGeoCoord.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include    <DgnPlatform\DgnPlatformApi.h>
@@ -1068,6 +1068,34 @@ Proj_Lmmin          &params
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   10/06
 +---------------+---------------+---------------+---------------+---------------+------*/
+void            LambertConformalConicMichiganToCsDef           // COORDSYS_LMMICH
+(
+CSDefinition        &csDef,
+Proj_Lmmich         &params
+)
+    {
+    // The CSMap documentation doesn't say anything about these parameters. Based on old geocoord code.
+    CSMap::CS_stncp (csDef.prj_knm, CS_LMMICH, DIM (csDef.prj_knm));
+    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef (csDef, params.gcDom);
+
+    csDef.prj_prm1  = params.lat_1;
+    csDef.prj_prm2  = params.lat_2;
+    csDef.prj_prm3  = params.ell_scale;
+    csDef.org_lng   = params.org_lng;
+    csDef.org_lat   = params.org_lat;
+
+    csDef.map_scl   = params.paper_scl;
+    csDef.x_off     = params.x_off;
+    csDef.y_off     = params.y_off;
+    csDef.quad      = (short) params.quad;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Barry.Bentley   10/06
++---------------+---------------+---------------+---------------+---------------+------*/
 void            LambertConformalConicWisconsinToCsDef           // COORDSYS_LMWIS
 (
 CSDefinition        &csDef,
@@ -1872,7 +1900,7 @@ ProjectionParams    &params
             LambertConformalConicMinnesotaToCsDef (csDef, params.lmmin);
             break;
 
-        case COORDSYS_LMWIS:    // Lambert Conformal Conic Projection, Minnesota variation
+        case COORDSYS_LMWIS:    // Lambert Conformal Conic Projection, Wisconsin variation
             LambertConformalConicWisconsinToCsDef (csDef, params.lmwis);
             break;
 
@@ -2007,8 +2035,12 @@ ProjectionParams    &params
             TransverseMercatorToCsDef (csDef, params.trmer, CS_TRMER);
             break;
 
+        case COORDSYS_TRMRS:    // Transverse Mercator Projection
+            TransverseMercatorToCsDef (csDef, params.trmrs, CS_TRMRS);
+            break;
+
         case COORDSYS_TMKRG:    // Transverse Mercator Projection
-            TransverseMercatorToCsDef (csDef, params.trmer, CS_TMKRG);
+            TransverseMercatorToCsDef (csDef, params.tmkrg, CS_TMKRG);
             break;
 
         case COORDSYS_UTMZN:    // Universal Tranverse Mercator Zone Projections
@@ -2054,6 +2086,10 @@ ProjectionParams    &params
 
        case COORDSYS_MNDOTOBL:    // Minnesota DOT Oblique Mercator
             MinnesotaDOTObliqueMercatorToCsDef (csDef, params.mndotobl);
+            break;
+
+       case COORDSYS_LMMICH:    // Lambert Conformal Conic Projection, Michigan variation
+            LambertConformalConicMichiganToCsDef (csDef, params.lmmich);
             break;
 
         default:
@@ -2838,6 +2874,7 @@ const CSDefinition  &csDef
     params.quad         = csDef.quad;
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   10/06
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2857,6 +2894,33 @@ const CSDefinition  &csDef
     params.lat_2        = csDef.prj_prm2;
     params.geoidSep     = csDef.prj_prm3;
     params.geoidElev    = csDef.prj_prm4;
+    params.org_lng      = csDef.org_lng;
+    params.org_lat      = csDef.org_lat;
+
+    params.paper_scl    = csDef.map_scl;
+    params.x_off        = csDef.x_off;
+    params.y_off        = csDef.y_off;
+    params.quad         = csDef.quad;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Alain.Robert   10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void            LambertConformalConicMichiganFromCsDef
+(
+Proj_Lmmich         &params,
+const CSDefinition  &csDef
+)
+    {
+    // The CSMap documentation doesn't say anything about these parameters. Based on old geocoord code.
+    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef (params.gcDom, csDef);
+
+    params.lat_1        = csDef.prj_prm1;
+    params.lat_2        = csDef.prj_prm2;
+    params.ell_scale    = csDef.prj_prm3;
     params.org_lng      = csDef.org_lng;
     params.org_lat      = csDef.org_lat;
 
@@ -3752,8 +3816,12 @@ const CSDefinition  &csDef
             TransverseMercatorFromCsDef (params.trmer, csDef);
             break;
 
-        case COORDSYS_TMKRG:    // Transverse Mercator Projection
-            TransverseMercatorFromCsDef (params.trmer, csDef);
+        case COORDSYS_TRMRS:    // Transverse Mercator Projection Snyder
+            TransverseMercatorFromCsDef (params.trmrs, csDef);
+            break;
+
+        case COORDSYS_TMKRG:    // Transverse Mercator Projection Kruger
+            TransverseMercatorFromCsDef (params.tmkrg, csDef);
             break;
 
         case COORDSYS_UTMZN:    // Universal Tranverse Mercator Zone Projections
@@ -3799,6 +3867,10 @@ const CSDefinition  &csDef
 
         case COORDSYS_MNDOTOBL:
             MinnesotaDOTObliqueMercatorFromCsDef (params.mndotobl, csDef);
+            break;
+
+        case COORDSYS_LMMICH:
+            LambertConformalConicMichiganFromCsDef (params.lmmich, csDef);
             break;
 
         default:

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnGeoCoord/GeoCoordElement.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -1177,6 +1177,32 @@ typedef struct Proj_mrcatpv
     char ell_knm [ELLSZ];
     } Proj_Mrcatpv;
 
+//  COORDSYS_LMMICH
+typedef struct Proj_lmmich
+    {
+    double       org_lng; // Origin longitude of the coordinate system, i.e. where X is zeroi before flase origin is applied.  Refered to
+                          // as the Central Meridian in many projections.
+    double         x_off; // False easting, in the units of the coordinate system.
+    double         y_off; // False northing, in the units of the coordinate system.
+    GCDomain       gcDom;
+    double     paper_scl; // The scale of the map.  E.g. 24000.0 for a 1:24,000 scale map.  This is set to a value other than 1.0 only
+                          // when the coordinate system is to be, for example, inches on the map rather than real world numbers.
+
+    double         lat_1; // Latitude of the first of two standard parallels, the essence of the Lambert Conformal Conic projection.
+    double         lat_2; // Latitude of the second standard parallel, usually the most northerly of the two although this is not really necessary.
+    double       org_lat; // Origin latitude of the coordinate system, i.e. where Y is zero before false origin is applied.
+    double     ell_scale; // Ellipsoid scale
+
+    long            quad; // Quadrant of the cartesian coordinates. Used to handle coordinate systems in which X increases to the left, etc.  The integer
+                          // value indicates the quadrant in which both X and Y are positive.  Zero and one refer to the normal right handed quadrant.
+                          // Quadrants are numbered counterclockwise thereafter.
+    char unit_nm [UNTSZ]; // Name of the linear unit for the cartesian system.
+    char dat_knm [DATSZ]; // Key name of the datum on which this coordinate system is based, else the null string if this coordinate system
+                          // is cartographically referenced rather than geodetically referenced.
+    char ell_knm [ELLSZ]; // Key name of the ellipsoid on which this coordinate system is based, else the null string is this coordinate system is
+                          // geodetically referenced rather than cartographically referenced.
+    } Proj_Lmmich;
+
 typedef union ProjectionParams /* Coordinate System specifics */
     {
     Proj_Alber      alber;  /* COORDSYS_ALBER */
@@ -1238,6 +1264,7 @@ typedef union ProjectionParams /* Coordinate System specifics */
     Proj_Trmaf      trmaf;  /* COORDSYS_TRMAF */
     Proj_Trmer      trmer;  /* COORDSYS_TRMER */
     Proj_Trmer      tmkrg;  /* COORDSYS_TMKRG */
+    Proj_Trmer      trmrs;  /* COORDSYS_TRMRS */
     Proj_Unity      unity;  /* COORDSYS_UNITY */
     Proj_Utmzn      utmzn;  /* COORDSYS_UTMZN */
     Proj_Vdgrn      vdgrn;  /* COORDSYS_VDGRN */
@@ -1247,6 +1274,7 @@ typedef union ProjectionParams /* Coordinate System specifics */
     Proj_Pcarree    pcarree;  /* COORDSYS_PCARREE */
     Proj_Mrcatpv    mrcatpv;  /* COORDSYS_MRCATPV */
     Proj_Mndotobl   mndotobl; /* COORDSYS_MNDOTOBL */
+    Proj_Lmmich     lmmich;   /* COORDSYS_LMMICH */
     double sizer[80];       /* Force a minimum size of the union. */
     } ProjectionParams;
 

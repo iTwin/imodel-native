@@ -2,7 +2,7 @@
 |
 |     $Source: BaseGeoCoord/PublicAPI/BaseGeoCoord.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -667,6 +667,7 @@ enum ProjectionCodeValue
     pcvEquidistantCylindricalEllipsoid              = 67,
     pcvPlateCarree                                  = 68,
     pcvPopularVisualizationPseudoMercator           = 69,
+    pcvLambertMichigan                              = 70,
     pcvHotineObliqueMercator1UV                     = (pcvHotineObliqueMercator * 256) + 1,
     pcvHotineObliqueMercator1XY                     = (pcvHotineObliqueMercator * 256) + 2,
     pcvHotineObliqueMercator2UV                     = (pcvHotineObliqueMercator * 256) + 3,
@@ -1290,6 +1291,21 @@ BASEGEOCOORD_EXPORTED double            GetElevationAboveGeoid() const;
 * @bsimethod                                                    Barry.Bentley   07/06
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED StatusInt         SetElevationAboveGeoid (double value);
+
+/*---------------------------------------------------------------------------------**//**
+* Gets the ellipsoid scale factor, used by Lambert Conformal Conic Michigan variation.
+* @return   The ellipsoid scale factor.
+* @bsimethod                                                    Alain.Robert   2018/01
++---------------+---------------+---------------+---------------+---------------+------*/
+BASEGEOCOORD_EXPORTED double            GetEllipsoidScaleFactor() const;
+
+/*---------------------------------------------------------------------------------**//**
+* Sets the ellisoid scale factor for a Lambert Conformal Conic Michigan variation.
+* The value given must be reasonnably close to 1.0.
+* @return   SUCCESS or error code
+* @bsimethod                                                    Alain.Robert   2018/01
++---------------+---------------+---------------+---------------+---------------+------*/
+BASEGEOCOORD_EXPORTED StatusInt         SetEllipsoidScaleFactor (double value);
 
 /*---------------------------------------------------------------------------------**//**
 * Gets the UTM Zone number (1-60) for the Univeral Transverse Mercator projection.
@@ -3044,6 +3060,7 @@ enum WGS84ConvertCode
     ConvertType_GEOCTR    =   25,
     ConvertType_CHENYX    =   26,
     ConvertType_GENGRID   =   27,      
+   // ConvertType_PLYCN     =   28,   
     ConvertType_MAXVALUE  =   27,       // the maximum allowable value.
     };
 

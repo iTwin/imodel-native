@@ -2,7 +2,7 @@
 |
 |   $Source: BaseGeoCoord/basegeocoord.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #pragma  warning(disable:4242) // toupper returns an int which is stuffed into this char string.  
@@ -13,7 +13,7 @@
 #include    <GeoCoord/BaseGeoCoordApi.h>
 #include    <GeoCoord/gcslibrary.h>
 #include    <assert.h>
-#include    <CSMap/csNameMapperSupport.h>
+#include    <CSMap/CS_nameMapperSupport.h>
 #include    <CSMap/cs_map.h>
 #include    <CSMap/cs_Legacy.h>
 #include    <RmgrTools/Tools/mdlResource.h>
@@ -167,6 +167,11 @@ static  CoordSysData    csDataMap[] =
   { COORDSYS_EDCYLE,    CS_EDCYLE,  BaseGCS::pcvEquidistantCylindricalEllipsoid,            /* cs_PRJCOD_EDCYLE   */ },
   { COORDSYS_PCARREE,   CS_PCARREE, BaseGCS::pcvPlateCarree,                                /* cs_PRJCOD_PCARREE  */ },
   { COORDSYS_MRCATPV,   CS_MRCATPV, BaseGCS::pcvPopularVisualizationPseudoMercator,         /* cs_PRJCOD_MRCATPV  */ },
+  { COORDSYS_MNDOTOBL,  CS_MNDOTOBL,BaseGCS::pcvObliqueMercatorMinnesota,                   /* cs_PRJCOD_MNDOTOBL */ },
+  { COORDSYS_LMMICH,    CS_LMMICH,  BaseGCS::pcvLambertMichigan,                            /* cs_PRJCOD_LMMICH   */ },
+  { COORDSYS_KRVK95,    CS_KRVK95,  BaseGCS::pcvCzechKrovak95,                              /* cs_PRJCOD_KRVK95   */ },
+  { COORDSYS_TRMRS,     CS_TRMRS,   BaseGCS::pcvSnyderTransverseMercator,                   /* cs_PRJCOD_TRMRS    */ },
+
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -8060,6 +8065,41 @@ StatusInt   BaseGCS::SetElevationAboveGeoid (double value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   07/06
 +---------------+---------------+---------------+---------------+---------------+------*/
+double BaseGCS::GetEllipsoidScaleFactor () const
+    {
+    if (NULL == m_csParameters)
+        return 0.0;
+
+    switch (m_csParameters->prj_code)
+        {
+        case cs_PRJCOD_LMMICH:
+            return m_csParameters->csdef.prj_prm3;
+        }
+    return 0.0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Barry.Bentley   07/06
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt   BaseGCS::SetEllipsoidScaleFactor (double value)
+    {
+    if (NULL == m_csParameters)
+        return GEOCOORDERR_InvalidCoordSys;
+
+    switch (m_csParameters->prj_code)
+        {
+        case cs_PRJCOD_LMMICH:
+            m_csParameters->csdef.prj_prm3 = value;
+            return SUCCESS;
+        }
+
+    return GEOCOORDERR_ProjectionDoesntUseParameter;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Barry.Bentley   07/06
++---------------+---------------+---------------+---------------+---------------+------*/
 int BaseGCS::GetUTMZone () const
     {
     if (NULL == m_csParameters)
@@ -8927,6 +8967,12 @@ bool            BaseGCS::IsNAD83 () const
         return true;
     if (0 == strcmpi (m_csParameters->datum.key_nm, "NAD83/2011"))
         return true;
+    if (0 == strcmpi (m_csParameters->datum.key_nm, "NAD83/HARN"))
+        return true;
+    if (0 == strcmpi (m_csParameters->datum.key_nm, "NSRS07"))
+        return true;
+    if (0 == strcmpi (m_csParameters->datum.key_nm, "NSRS11"))
+        return true;
 
     return false;
     }
@@ -9778,7 +9824,7 @@ bool            BaseGCS::Compare (BaseGCSCR compareTo, bool& datumDifferent, boo
         if (mp->prj_code == cs_PRJCOD_END)
             return true;
     
-        if ((cs_PRJCOD_LM2SP == m_csParameters->prj_code) || (cs_PRJCOD_LMBLG == m_csParameters->prj_code) || (cs_PRJCOD_ALBER == m_csParameters->prj_code) || (cs_PRJCOD_EDCNC == m_csParameters->prj_code))
+        if ((cs_PRJCOD_LMMICH == m_csParameters->prj_code) ||(cs_PRJCOD_LM2SP == m_csParameters->prj_code) || (cs_PRJCOD_LMBLG == m_csParameters->prj_code) || (cs_PRJCOD_ALBER == m_csParameters->prj_code) || (cs_PRJCOD_EDCNC == m_csParameters->prj_code))
             {
             // We process Lambert 2SP differently since the order of parallels is irrelevant
             if ((!doubleSame(thisDef.prj_prm1,compareDef.prj_prm1) && !doubleSame(thisDef.prj_prm1,compareDef.prj_prm2)) || 
@@ -14092,6 +14138,9 @@ WStringR       DatumAsASC
             break;
 #endif
 
+        case cs_DTCTYP_PLYNM:
+            DatumAsAscStream << "            USE: POLYNM" << std::endl;
+            break;
 
         default:
             return ERROR;
