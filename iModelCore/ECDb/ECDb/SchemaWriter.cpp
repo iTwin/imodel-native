@@ -843,7 +843,7 @@ BentleyStatus SchemaWriter::InsertSchemaEntry(ECSchemaCR schema)
     {
     BeAssert(!schema.HasId());
 
-    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO main.ec_Schema(Name,DisplayLabel,Description,Alias,VersionDigit1,VersionDigit2,VersionDigit3) VALUES(?,?,?,?,?,?,?)");
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO main.ec_Schema(Name,DisplayLabel,Description,Alias,VersionDigit1,VersionDigit2,VersionDigit3,OriginalECVersionMajor,OriginalECVersionMinor) VALUES(?,?,?,?,?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
@@ -875,6 +875,14 @@ BentleyStatus SchemaWriter::InsertSchemaEntry(ECSchemaCR schema)
 
     //Persist uint32_t as int64 to not lose unsigned-ness
     if (BE_SQLITE_OK != stmt->BindInt64(7, (int64_t) schema.GetVersionMinor()))
+        return ERROR;
+
+    //Persist uint32_t as int64 to not lose unsigned-ness
+    if (BE_SQLITE_OK != stmt->BindInt64(8, (int64_t) schema.GetOriginalECXmlVersionMajor()))
+        return ERROR;
+
+    //Persist uint32_t as int64 to not lose unsigned-ness
+    if (BE_SQLITE_OK != stmt->BindInt64(9, (int64_t) schema.GetOriginalECXmlVersionMinor()))
         return ERROR;
 
     if (BE_SQLITE_DONE != stmt->Step())

@@ -19,6 +19,36 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+--------
 DbResult ProfileUpgrader_4002::_Upgrade(ECDbCR ecdb) const
     {
+    DbResult stat = ecdb.ExecuteDdl("ALTER TABLE " TABLE_Schema " ADD COLUMN OriginalECVersionMajor INTEGER");
+    if (BE_SQLITE_OK != stat)
+        {
+        LOG.errorv("ECDb profile upgrade failed: Could not add column OriginalECVersionMajor to table " TABLE_Schema ": %s.", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    stat = ecdb.ExecuteDdl("ALTER TABLE " TABLE_Schema " ADD COLUMN OriginalECVersionMinor INTEGER");
+    if (BE_SQLITE_OK != stat)
+        {
+        LOG.errorv("ECDb profile upgrade failed: Could not add column OriginalECVersionMinor to table " TABLE_Schema ": %s.", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    LOG.debug("ECDb profile upgrade: Added columns OriginalECVersionMajor and OriginalECVersionMinor to table " TABLE_Schema ".");
+
+    stat = UpgradeECEnums(ecdb);
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    LOG.debug("ECDb profile upgrade: Updated table " TABLE_Enumeration " to EC3.2 format.");
+    return BE_SQLITE_OK;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    01/2018
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+DbResult ProfileUpgrader_4002::UpgradeECEnums(ECDbCR ecdb)
+    {
     bset<ECSchemaId> ecdbSchemas;
     {
     Statement stmt;

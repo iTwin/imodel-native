@@ -212,7 +212,9 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
                                     "Alias TEXT UNIQUE NOT NULL COLLATE NOCASE,"
                                     "VersionDigit1 INTEGER NOT NULL,"
                                     "VersionDigit2 INTEGER NOT NULL,"
-                                    "VersionDigit3 INTEGER NOT NULL)");
+                                    "VersionDigit3 INTEGER NOT NULL,"
+                                    "OriginalECVersionMajor INTEGER,"
+                                    "OriginalECVersionMinor INTEGER)");
     if (BE_SQLITE_OK != stat)
         return stat;
 

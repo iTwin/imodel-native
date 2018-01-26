@@ -35,6 +35,7 @@ struct ProfileUpgrader_4002 final : ProfileUpgrader
     private:
         DbResult _Upgrade(ECDbCR) const override;
 
+        static DbResult UpgradeECEnums(ECDbCR);
         static void UpgradeECDbEnum(bmap<int64_t, Utf8String>& enumMap, int64_t enumId, Utf8CP enumName);
     };
 //=======================================================================================

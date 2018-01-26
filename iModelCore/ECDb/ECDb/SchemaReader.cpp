@@ -1069,12 +1069,12 @@ BentleyStatus SchemaReader::LoadSchemaEntitiesFromDb(SchemaDbEntry* ecSchemaKey,
 BentleyStatus SchemaReader::LoadSchemaFromDb(SchemaDbEntry*& schemaEntry, ECSchemaId ecSchemaId) const
     {
     Utf8CP tableSpace = GetTableSpace().GetName().c_str();
-    CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT S.Name, S.DisplayLabel,S.Description,S.Alias,S.VersionDigit1,S.VersionDigit2,S.VersionDigit3, "
-                                                        "(SELECT COUNT(*) FROM [%s]." TABLE_Class "  C WHERE S.Id = C.SchemaId) + "
-                                                        "(SELECT COUNT(*) FROM [%s]." TABLE_Enumeration " e WHERE S.Id = e.SchemaId) + "
-                                                        "(SELECT COUNT(*) FROM [%s]." TABLE_KindOfQuantity " koq WHERE S.Id = koq.SchemaId) + "
-                                                        "(SELECT COUNT(*) FROM [%s]." TABLE_PropertyCategory " cat WHERE S.Id = cat.SchemaId) "
-                                                        "FROM [%s]." TABLE_Schema " S WHERE S.Id=?", tableSpace, tableSpace, tableSpace, tableSpace, tableSpace).c_str());
+    CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT s.Name, s.DisplayLabel,s.Description,s.Alias,s.VersionDigit1,s.VersionDigit2,s.VersionDigit3,s.OriginalECVersionMajor,s.OriginalECVersionMinor,"
+                                                        "(SELECT COUNT(*) FROM [%s]." TABLE_Class "  c WHERE s.Id = c.SchemaId) + "
+                                                        "(SELECT COUNT(*) FROM [%s]." TABLE_Enumeration " e WHERE s.Id = e.SchemaId) + "
+                                                        "(SELECT COUNT(*) FROM [%s]." TABLE_KindOfQuantity " koq WHERE s.Id = koq.SchemaId) + "
+                                                        "(SELECT COUNT(*) FROM [%s]." TABLE_PropertyCategory " cat WHERE s.Id = cat.SchemaId) "
+                                                        "FROM [%s]." TABLE_Schema " s WHERE s.Id=?", tableSpace, tableSpace, tableSpace, tableSpace, tableSpace).c_str());
     if (stmt == nullptr)
         return ERROR;
 
@@ -1092,11 +1092,21 @@ BentleyStatus SchemaReader::LoadSchemaFromDb(SchemaDbEntry*& schemaEntry, ECSche
     uint32_t versionMajor = (uint32_t) stmt->GetValueInt64(4);
     uint32_t versionWrite = (uint32_t) stmt->GetValueInt64(5);
     uint32_t versionMinor = (uint32_t) stmt->GetValueInt64(6);
-    const int typesInSchema = stmt->GetValueInt(7);
+    Nullable<uint32_t> originalECVersionMajor, originalECVersionMinor;
+    if (!stmt->IsColumnNull(7))
+        originalECVersionMajor = (uint32_t) stmt->GetValueInt64(7);
+
+    if (!stmt->IsColumnNull(8))
+        originalECVersionMinor = (uint32_t) stmt->GetValueInt64(8);
+
+    const int typesInSchema = stmt->GetValueInt(9);
 
     ECSchemaPtr schema = nullptr;
     if (ECSchema::CreateSchema(schema, schemaName, alias, versionMajor, versionWrite, versionMinor) != ECObjectsStatus::Success)
         return ERROR;
+
+    if (originalECVersionMajor != nullptr)
+        schema->SetOriginalECXmlVersion(originalECVersionMajor.Value(), originalECVersionMinor.IsNull() ? 0 : originalECVersionMinor.Value());
 
     schema->SetId(ecSchemaId);
 
