@@ -90,9 +90,9 @@ struct cs_Japan_
 								   file is actually opened. */
 	struct csGridCell_ lngCell;	/* Last longitude cell actually used. */
 	struct csGridCell_ latCell;	/* Last latitude cwll actaully used. */
-	char filePath [MAXPATH];	/* Full path to data source file, used for
-								   reporting purposes. */
+	char filePath [MAXPATH];	/* Full path to data source file. */
 	char fileName [32];			/* File name only, used for error reporting. */
+	char binaryPath [MAXPATH];	/* Full path to binary shadow file. */
 	short maxIterations;
 };
 

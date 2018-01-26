@@ -25,9 +25,18 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Now comes May 21, 2014 
+// The following list, and the order of their listing, has been optimized for
+// the use of pre-compiled headers.  Some of these files are unreferenced in
+// this module, a small price paid for the efficiency affored by pre-compiled
+// headers.
+
 #include "cs_map.h"
+#include "cs_NameMapper.hpp"
+//  cs_NameMapper.hpp includes cs_CsvFileSupport.hpp
+//  cs_NameMapper.hpp includes csNameMapperSupport.hpp
+#include "cs_WktObject.hpp"
 #include "cs_wkt.h"
-#include "csNameMapperSupport.h"
 
 bool EXP_LVL3 CSgetParamNm (char* paramName,size_t paramSize,EcsNameFlavor nmFlavor,int paramCode);
 bool EXP_LVL3 CSAddParamValue (char* wktBufr,size_t bufrSize,EcsNameFlavor nmFlavor,int paramCode,double paramValue,unsigned paramFlags);
@@ -37,8 +46,6 @@ extern "C" double cs_Zero;
 extern "C" double cs_One;
 extern "C" double cs_K90;
 extern "C" double cs_Degree;
-extern "C" double cs_Radian;
-extern "C" int cs_Error;
 extern "C" char csErrnam [];
 extern "C" struct cs_Prjtab_ cs_Prjtab [];
 extern "C" struct cs_Prjprm_ csPrjprm [];
@@ -80,7 +87,7 @@ int EXP_LVL1 CS_cs2WktEx (char *bufr,size_t bufrSize,const char *csKeyName,int f
 			csDefPtr = 0;
 		}
 	}
-	return rtnValue;		
+	return rtnValue;
 }
 
 int EXP_LVL1 CS_cs2Wkt (char *bufr,size_t bufrSize,const char *csKeyName,int flavor)
@@ -100,13 +107,13 @@ int EXP_LVL1 CS_cs2Wkt (char *bufr,size_t bufrSize,const char *csKeyName,int fla
 			if (dtDefPtr != 0)
 			{
 				elDefPtr = CS_eldef (dtDefPtr->ell_knm);
-            }
-            else
-            {
+			}
+			else
+			{
 				elDefPtr = CS_eldef (csDefPtr->elp_knm);
-            }
+			}
 
-		    if (elDefPtr != 0)
+			if (elDefPtr != 0)
 			{
 				rtnValue = CScs2Wkt (bufr,bufrSize,(ErcWktFlavor)flavor,csDefPtr,dtDefPtr,elDefPtr);
 				CS_free (elDefPtr);
@@ -140,7 +147,7 @@ int EXP_LVL3 CScs2WktEx (char *csWktBufr,size_t bufrSize,enum ErcWktFlavor flavo
 	unsigned paramFlags;
 
 	EcsMapSt csMapSt;
-    EcsNameFlavor nmFlavor;
+	EcsNameFlavor nmFlavor;
 
 	double e_sq;
 	double e_rad;
@@ -160,7 +167,7 @@ int EXP_LVL3 CScs2WktEx (char *csWktBufr,size_t bufrSize,enum ErcWktFlavor flavo
 	char baseName [64];
 	char cTemp [128];
 
-    char elpWkt[512];
+	char elpWkt[512];
 	char datmWkt [512];
 	char pmerWkt [512];
 	char geogWkt [512];
@@ -187,7 +194,7 @@ int EXP_LVL3 CScs2WktEx (char *csWktBufr,size_t bufrSize,enum ErcWktFlavor flavo
 		CS_erpt (cs_ISER);
 		goto error;
 	}
-	
+
 	/* Make sure we have a datum pointer. */
 	if (dt_def == NULL)
 	{
@@ -195,31 +202,31 @@ int EXP_LVL3 CScs2WktEx (char *csWktBufr,size_t bufrSize,enum ErcWktFlavor flavo
 		   We use the datum name in the Coordinate System definition to obtain
 		   a definition fomr the dictionary. */
 		if (cs_def->dat_knm [0] != '\0')
-        {
-		    /* We need to free this definition, we stash it in a new pointer variable. */
-		    dtDefPtr = CS_dtdef (cs_def->dat_knm);
-		    if (dtDefPtr == NULL)
-		    {
-			    /* If the coordinate system definition came from the dictionary,
-			       this shouldn't happen.  If the application got the cs_Csdef_
-			       data from somewhere else, it is possible. */
-			    CS_erpt (cs_NO_REFERNCE);
-			    goto error;
-		    }
-		    dt_def = dtDefPtr;
-        }
+		{
+			/* We need to free this definition, we stash it in a new pointer variable. */
+			dtDefPtr = CS_dtdef (cs_def->dat_knm);
+			if (dtDefPtr == NULL)
+			{
+				/* If the coordinate system definition came from the dictionary,
+				   this shouldn't happen.  If the application got the cs_Csdef_
+				   data from somewhere else, it is possible. */
+				CS_erpt (cs_NO_REFERNCE);
+				goto error;
+			}
+			dt_def = dtDefPtr;
+		}
 	}
-	
+
 	if (el_def != 0)
 	{
-        if(dt_def != 0)
-        {
-		    if (CS_stricmp (dt_def->ell_knm,el_def->key_nm))
-		    {
-			    CS_erpt (cs_WKT_INCNSIST);
-			    goto error;
-		    }
-        }
+		if(dt_def != 0)
+		{
+			if (CS_stricmp (dt_def->ell_knm,el_def->key_nm))
+			{
+				CS_erpt (cs_WKT_INCNSIST);
+				goto error;
+			}
+		}
 	}
 
 	/* Locate the projection in the projection table.  We need this for access
@@ -267,7 +274,7 @@ int EXP_LVL3 CScs2WktEx (char *csWktBufr,size_t bufrSize,enum ErcWktFlavor flavo
 	{
 		/* If we are not allowed to switch flavors, we report an error for
 		   these projections. */
-	    if ((flags & cs_WKTFLG_ALLWFLVRSW) == 0)
+		if ((flags & cs_WKTFLG_ALLWFLVRSW) == 0)
 		{
 			CS_stncp (csErrnam,prjPtr->key_nm,MAXPATH);
 			CS_erpt (cs_WKT_PRJSUPRT);
@@ -280,8 +287,8 @@ int EXP_LVL3 CScs2WktEx (char *csWktBufr,size_t bufrSize,enum ErcWktFlavor flavo
 
 		/* Since we have changed the flavor, we return a +1 status value if
 		   requested to signal a flavor switch. */
-	    if ((flags & cs_WKTFLG_SGNFLVRSW) != 0)
-	    {
+		if ((flags & cs_WKTFLG_SGNFLVRSW) != 0)
+		{
 			rtnValue = 1;
 		}
 	}
@@ -336,15 +343,15 @@ int EXP_LVL3 CScs2WktEx (char *csWktBufr,size_t bufrSize,enum ErcWktFlavor flavo
 	if (flavor == wktFlvrOracle)
 	{
 		if (prjPtr->code == cs_PRJCOD_SOTRM  ||
-		    prjPtr->code == cs_PRJCOD_RSKEWC ||
-		    prjPtr->code == cs_PRJCOD_RSKEWO ||
-    		prjPtr->code == cs_PRJCOD_WCCSL  ||
+			prjPtr->code == cs_PRJCOD_RSKEWC ||
+			prjPtr->code == cs_PRJCOD_RSKEWO ||
+			prjPtr->code == cs_PRJCOD_WCCSL  ||
 			prjPtr->code == cs_PRJCOD_WCCST  ||
 			prjPtr->code == cs_PRJCOD_MNDOTL ||
 			prjPtr->code == cs_PRJCOD_MNDOTT ||
 			prjPtr->code == cs_PRJCOD_OSTN97 ||
 			prjPtr->code == cs_PRJCOD_OSTN02 ||
-		    prjPtr->code == cs_PRJCOD_OBQCYL)
+			prjPtr->code == cs_PRJCOD_OBQCYL)
 		{
 			/* If we are not allowed to switch flavors, we report an error for
 			   these projections. */
@@ -374,9 +381,9 @@ int EXP_LVL3 CScs2WktEx (char *csWktBufr,size_t bufrSize,enum ErcWktFlavor flavo
 
 	/* Determine the possibly flavored name of the projection.  If the projection
 	   is the Unity projection, i.e. a GEOGCS, this will not be used.  We populate
-	   the2 projection character array anyway just to be defensive.  Rather have a
+	   the projection character array anyway just to be defensive.  Rather have a
 	   strange projection name rather than a crash. */
-    CS_stncp (projection,"LL",sizeof (projection));
+	CS_stncp (projection,"LL",sizeof (projection));
 	if (prjPtr->code != cs_PRJCOD_UNITY)
 	{
 		csMapSt = csMapNameToNameC (csMapProjectionKeyName,projection,sizeof (projection),nmFlavor,csMapFlvrCsMap,prjPtr->key_nm);
@@ -401,7 +408,6 @@ int EXP_LVL3 CScs2WktEx (char *csWktBufr,size_t bufrSize,enum ErcWktFlavor flavo
 			CS_stncp (csErrnam,prjPtr->key_nm,MAXPATH);
 			CS_erpt (cs_WKT_PRJSUPRT);
 			goto error;
-
 		}
 	}
 	/* Projection name is handled. */
@@ -419,7 +425,7 @@ int EXP_LVL3 CScs2WktEx (char *csWktBufr,size_t bufrSize,enum ErcWktFlavor flavo
 			   there is little in the way of a standard, a DATUM element with a
 			   blank name and a SPHEROID element appears to be the accepted way of
 			   doing this.
-			   
+
 			   If the user has supplied an ellipsoid definition, we use it to
 			   produce the SPHEROID element of the cartographically referenced
 			   DATUM element.  If none was provided, which is legitimate, we
@@ -428,7 +434,7 @@ int EXP_LVL3 CScs2WktEx (char *csWktBufr,size_t bufrSize,enum ErcWktFlavor flavo
 			   we simply use WGS84. */
 			if (el_def != 0)
 			{
-    			status = CSel2WktEx (elpWkt,sizeof (elpWkt),flavor,el_def,flags);
+				status = CSel2WktEx (elpWkt,sizeof (elpWkt),flavor,el_def,flags);
 			}
 			else
 			{
@@ -445,65 +451,65 @@ int EXP_LVL3 CScs2WktEx (char *csWktBufr,size_t bufrSize,enum ErcWktFlavor flavo
 					CS_erpt (cs_NO_REFERNCE);
 					goto error;
 				}
-	    		status = CSel2WktEx (elpWkt,sizeof (elpWkt),flavor,elDefPtr,flags);
-	    		CS_free (elDefPtr);
-	    		elDefPtr = 0;
+				status = CSel2WktEx (elpWkt,sizeof (elpWkt),flavor,elDefPtr,flags);
+				CS_free (elDefPtr);
+				elDefPtr = 0;
 			}
-            if(status == 0)
-            {
-            	sprintf (datmWkt,"DATUM[\"\",%s]",elpWkt);
-            }
-            else
-            {
+			if(status == 0)
+			{
+				sprintf (datmWkt,"DATUM[\"\",%s]",elpWkt);
+			}
+			else
+			{
 				CS_erpt (cs_NO_REFERNCE);
 				goto error;
-            }
+			}
 
-            /* Since there is no datum reference, reset refDtmName to null. */
-            refDtmName [0] = '\0';
+			/* Since there is no datum reference, reset refDtmName to null. */
+			refDtmName [0] = '\0';
 		}
-        else
-        {
+		else
+		{
 			/* No datum pointer provided, but we do have a datum name in the
 			   coordinate system defintiion.  We use that name to get a
 			   definition.  Capture the name of referenced datum which will be
 			   used to locate a base GEOGCS definition for a PROJCS definition. */
-		    CS_stncp (refDtmName,cs_def->dat_knm,sizeof (refDtmName));
+			CS_stncp (refDtmName,cs_def->dat_knm,sizeof (refDtmName));
+			dtDefPtr = CS_dtdef (cs_def->dat_knm);
+			if (dtDefPtr == NULL)
+			{
+				/* If the coordinate system definition came from the dictionary,
+				   this shouldn't happen.  If the application got the cs_Csdef_
+				   data from somewhere else, it is possible. */
+				CS_erpt (cs_NO_REFERNCE);
+				goto error;
+			}
 
-		    dtDefPtr = CS_dtdef (cs_def->dat_knm);
-		    if (dtDefPtr == NULL)
-		    {
-			    /* If the coordinate system definition came from the dictionary,
-			       this shouldn't happen.  If the application got the cs_Csdef_
-			       data from somewhere else, it is possible. */
-			    CS_erpt (cs_NO_REFERNCE);
-			    goto error;
-		    }
-
-		    /* I don't have to locate the ellipsoid, CSdt2WktEx will do that. */
-		    status = CSdt2WktEx (datmWkt,sizeof (datmWkt),geoTranWkt,sizeof (geoTranWkt),flavor,dtDefPtr,0,flags);
-		    CS_free (dtDefPtr);
-		    dtDefPtr = 0;
-        }
+			/* I don't have to locate the ellipsoid, CSdt2WktEx will do that. */
+			status = CSdt2WktEx (datmWkt,sizeof (datmWkt),geoTranWkt,sizeof (geoTranWkt),flavor,dtDefPtr,0,flags);
+			CS_free (dtDefPtr);
+			dtDefPtr = 0;
+		}
 	}
 	else
 	{
-        /* If the user actually supplied a datum definition, and a specific
-           flavor has been specified, the assumption is that it came from a WKT
-           string, and therefore the real WKT name of the definition will be in
-           the 'name' member of the cs_Dtdef_ structure.  We use this name as
-           it will tend to reproduce the original WKT.  Not sure this is
-           necessary any longer; but only has an effect when the user supplies
-           the datum definition pointer. */
-        if ((flags & cs_WKTFLG_MAPNAMES) == 0
-            && (flavor == wktFlvrEsri || flavor == wktFlvrOracle))
-        {
-    		CS_stncp (refDtmName,dt_def->name,sizeof (refDtmName));
-        }
-        else
-        {
-    		CS_stncp (refDtmName,dt_def->key_nm,sizeof (refDtmName));
-        }
+		/* If the user actually supplied a datum definition, and a specific
+		   flavor has been specified, the assumption is that it came from a WKT
+		   string, and therefore the real WKT name of the definition will be in
+		   the 'name' member of the cs_Dtdef_ structure.  We use this name as
+		   it will tend to reproduce the original WKT.  Not sure this is
+		   necessary any longer; but only has an effect when the user supplies
+		   the datum definition pointer. */
+		if ((flags & cs_WKTFLG_MAPNAMES) == 0
+			&& (flavor == wktFlvrEsri || flavor == wktFlvrOracle))
+		{
+			CS_stncp (refDtmName,dt_def->name,sizeof (refDtmName));
+		}
+		else
+		{
+			CS_stncp (refDtmName,dt_def->key_nm,sizeof (refDtmName));
+		}
+
 #ifdef GEOCOORD_ENHANCEMENT
         /* If neither el_def not dt_def is provided, dt_def will be looked up but not el_def
           unfortunately it will be extracted in the call to CSdt2WktEx below but not returned.
@@ -611,8 +617,8 @@ int EXP_LVL3 CScs2WktEx (char *csWktBufr,size_t bufrSize,enum ErcWktFlavor flavo
 	   being applied more than once. */
 	if ((prjPtr->flags & cs_PRJFLG_GEOGR) != 0)
 	{
-        CS_stncp (baseName,cs_def->key_nm,sizeof (baseName));
-    }
+		CS_stncp (baseName,cs_def->key_nm,sizeof (baseName));
+	}
 	else
 	{
 		/* Otherwise, basename is the name of a geographic coordinate system
@@ -621,18 +627,18 @@ int EXP_LVL3 CScs2WktEx (char *csWktBufr,size_t bufrSize,enum ErcWktFlavor flavo
 		   find one, we we need to do some special stuff.
 
 		   Note that this name is not flavored. */
-		CSllCsFromDt (baseName,sizeof baseName,refDtmName);
+		CSllCsFromDt (baseName,sizeof baseName,refDtmName);		//lint !e534   ignoring return value
 
-        if (baseName[0] == '\0')
-        {
+		if (baseName[0] == '\0')
+		{
 			/* Here if a base name could not be located.  This is actually
 			   the normal situation in the case of a cartographically
 			   referenced coordinate system.  In this case, baseName will
 			   actually contain the null string.  Thus, the GEOGCS
 			   will contain a null name.  This appears to be a
 			   legitimate thing to do in this case. */
-    		CS_stncp (baseName,cs_def->dat_knm,sizeof (baseName));
-        }
+			CS_stncp (baseName,cs_def->dat_knm,sizeof (baseName));
+		}
 	}
 
 	/* We will always need the GEOGCS object.  If this is a geographic
@@ -644,8 +650,8 @@ int EXP_LVL3 CScs2WktEx (char *csWktBufr,size_t bufrSize,enum ErcWktFlavor flavo
 	   
 	   First we prepare a default if any of the stuff following it fails. */
 	csMapSt = csMapNameToNameC (csMapAngularUnitKeyName,cTemp,sizeof (cTemp),
-                                                        nmFlavor,
-												        csMapFlvrAutodesk,
+														nmFlavor,
+														csMapFlvrAutodesk,
 														"DEGREE");
 	if (csMapSt != csMapOk)
 	{
@@ -832,7 +838,7 @@ int EXP_LVL3 CScs2WktEx (char *csWktBufr,size_t bufrSize,enum ErcWktFlavor flavo
 		}
 	}
 
-    /* Preparation complete. */
+	/* Preparation complete. */
 	if ((prjPtr->flags & cs_PRJFLG_GEOGR) != 0)
 	{
 		/* If this is a geographic coordinate system, we're done. */
@@ -971,7 +977,7 @@ int EXP_LVL3 CScs2WktEx (char *csWktBufr,size_t bufrSize,enum ErcWktFlavor flavo
 			CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_PRMCOD_CNTMER,cs_def->org_lng,paramFlags);
 			break;
 		case  cs_PRJCOD_MSTRO:
-            // TODO
+			// TODO
 			break;
 		case  cs_PRJCOD_NZLND:
 			CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_WKTCOD_FEAST,cs_def->x_off,paramFlags);
@@ -1315,7 +1321,7 @@ int EXP_LVL3 CScs2WktEx (char *csWktBufr,size_t bufrSize,enum ErcWktFlavor flavo
 			CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_PRMCOD_AFA2,cs_def->prj_prm5,paramFlags);
 			CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_PRMCOD_AFB1,cs_def->prj_prm6,paramFlags);
 			CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_PRMCOD_AFB2,cs_def->prj_prm7,paramFlags);
-            break;
+			break;
 		case  cs_PRJCOD_OBQCYL:
 			CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_PRMCOD_CNTMER,cs_def->org_lng,paramFlags);
 			CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_WKTCOD_ORGLAT,cs_def->org_lat,paramFlags);
@@ -1334,8 +1340,8 @@ int EXP_LVL3 CScs2WktEx (char *csWktBufr,size_t bufrSize,enum ErcWktFlavor flavo
 			CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_PRMCOD_DENRGN,cs_def->prj_prm1,paramFlags);
 			break;
 		case  cs_PRJCOD_OSTN97:
-            /* Noparameters required; it's all hard coded. */
-            break;
+			/* Noparameters required; it's all hard coded. */
+			break;
 		case  cs_PRJCOD_AZEDE:
  			CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_WKTCOD_FEAST,cs_def->x_off,paramFlags);
 			CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_WKTCOD_FNORTH,cs_def->y_off,paramFlags);
@@ -1347,8 +1353,8 @@ int EXP_LVL3 CScs2WktEx (char *csWktBufr,size_t bufrSize,enum ErcWktFlavor flavo
 			CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_PRMCOD_AELEV,cs_def->prj_prm2,paramFlags);
 			break;
 		case  cs_PRJCOD_OSTN02:
-            /* Noparameters required; it's all hard coded. */
-            break;
+			/* Noparameters required; it's all hard coded. */
+			break;
 		case  cs_PRJCOD_SYS34_99:
 			CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_PRMCOD_DENRGN,cs_def->prj_prm1,paramFlags);
 			break;
@@ -1480,27 +1486,27 @@ int EXP_LVL3 CScs2WktEx (char *csWktBufr,size_t bufrSize,enum ErcWktFlavor flavo
 
 		/* Need to determine the name we will assign to this definition.  We
 		   generate a default value which is used if everything else fails. */
-        if ((flags & cs_WKTFLG_MAPNAMES) == 0
-            && (flavor == wktFlvrEsri || flavor == wktFlvrOracle))
-        {
-    		CS_stncp (csysWktName,cs_def->desc_nm,sizeof (csysWktName));
-        }
-        else
-        {
-    		CS_stncp (csysWktName,cs_def->key_nm,sizeof (csysWktName));
-        }
+		if ((flags & cs_WKTFLG_MAPNAMES) == 0
+			&& (flavor == wktFlvrEsri || flavor == wktFlvrOracle))
+		{
+			CS_stncp (csysWktName,cs_def->desc_nm,sizeof (csysWktName));
+		}
+		else
+		{
+			CS_stncp (csysWktName,cs_def->key_nm,sizeof (csysWktName));
+		}
 		if ((flags & cs_WKTFLG_MAPNAMES) != 0)
 		{
-    	    csMapSt = csMapNameToNameC (csMapProjectedCSysKeyName,tmpBufr,
-	                                                              sizeof (tmpBufr),
-	                                                              nmFlavor,
-	                                                              csMapFlvrAutodesk,
-	                                                              cs_def->key_nm);
-	        if (csMapSt == csMapOk)
-	        {
-                CS_stncp (csysWktName,tmpBufr,sizeof (baseName));                
-	        }
-	    }
+			csMapSt = csMapNameToNameC (csMapProjectedCSysKeyName,tmpBufr,
+																  sizeof (tmpBufr),
+																  nmFlavor,
+																  csMapFlvrAutodesk,
+																  cs_def->key_nm);
+			if (csMapSt == csMapOk)
+			{
+				CS_stncp (csysWktName,tmpBufr,sizeof (baseName));
+			}
+		}
 
 		/* Construct the final string. */
 		sprintf (projWkt,"PROJCS[\"%s\",%s,PROJECTION[\"%s\"]%s,%s%s]",csysWktName,geogWkt,projection,parmWkt,unitWkt,prjAxis);
@@ -1510,7 +1516,7 @@ int EXP_LVL3 CScs2WktEx (char *csWktBufr,size_t bufrSize,enum ErcWktFlavor flavo
 	{
 		CS_free (dtDefPtr);
 	}
-	if (elDefPtr != 0)
+	if (elDefPtr != 0)			//lint !e774   boolean always evaluats to false (I don't believe it_
 	{
 		CS_free (elDefPtr);
 	}
@@ -1520,7 +1526,7 @@ error:
 	{
 		CS_free (dtDefPtr);
 	}
-	if (elDefPtr != 0)
+	if (elDefPtr != 0)			//lint !e774   boolean always evaluats to false (I don't believe it_
 	{
 		CS_free (elDefPtr);
 	}

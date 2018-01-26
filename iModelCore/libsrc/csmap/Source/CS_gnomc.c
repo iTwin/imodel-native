@@ -548,7 +548,8 @@ int EXP_LVL9 CSgnomcI (Const struct cs_Gnomc_ *gnomc,double ll [2],Const double 
 			   Both arguments can be zero if x == 0.
 			   But if x == 0, lng = gnomc->org_lng. */
 
-			if (fabs (x) < gnomc->one_mm)
+         // SAFE -- Changed < to > in the following test. Believed typo.
+			if (fabs (x) > gnomc->one_mm)
 			{
 				del_lng = atan2 (x * sin_c,rho * cos_c);
 			}

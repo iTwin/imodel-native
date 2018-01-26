@@ -27,6 +27,8 @@
 
 #include "cs_map.h"
 
+/*lint -esym(613,err_list)  possible use of null pointer, but not really */
+
 static short csMaxIterations = 20;
 static double csCnvrgValue = 1.0E-09;
 static double csErrorValue = 1.0E-06;
@@ -309,30 +311,7 @@ int EXP_LVL9 CSparm7I2 (struct csParm7_ *parm7,double* trgLl,Const double* srcLl
 
 		/* Compute the WGS-84 lat/long for our current guess. */
 		rtnVal = CSparm7F2 (parm7,newLl,guess);
-#ifdef GEOCOORD_ENHANCEMENT
-        // Sometimes when the coordinate is close to the -180/180 frontier the algorithm will not work
-        // and the returned coordinate will be a multiple of 360 degrees, maybe resulting in exceeding the maximum number of 
-        // iterations.
-        // We will contraint the return value to follow the same convention as input
-        if (srcLl[LNG] > 0.0 && newLl[LNG] < 0.0)
-        {
-            // Signs changed but this does not mean it is incorrect if around the prime meridian
-            if (srcLl[LNG] - newLl[LNG] > 180.0)
-            {
-                // The difference is indeed large which may only result from crossing the frontier with sign reversal
-                newLl[LNG] += 360.0;
-            }
-        }
-        else if (srcLl[LNG] < 0.0 && newLl[LNG] > 0.0)
-        {
-            // Signs changed but this does not mean it is incorrect if around the prime meridian
-            if (newLl[LNG] - srcLl[LNG] > 180.0)
-            {
-                // The difference is indeed large which may only result from crossing the frontier with sign reversal
-                newLl[LNG] -= 360.0;
-            }
-        }
-#endif
+
 		if (rtnVal != 0)
 		{
 			/* Oopps!! We must have been given some pretty strange
@@ -340,8 +319,14 @@ int EXP_LVL9 CSparm7I2 (struct csParm7_ *parm7,double* trgLl,Const double* srcLl
 			break;
 		}
 
+		/* Dec 18, 2105: Trac #129.  The following longitude calculation can
+		   be erroneous when the poitn being converted is very close to the
+		   +/- 180 degree crack.  Not much geography there, but this is the
+		   real cause of the defect described in Trac ticket #129.  Latitude
+		   is not a problem.  This fix needs to be added to several other
+		   2D inverses. */
 		/* See how far we are off. */
-		epsilon [LNG] = srcLl [LNG] - newLl [LNG];
+		epsilon [LNG] = CS_lngEpsilon (srcLl [LNG],newLl [LNG]);
 		epsilon [LAT] = srcLl [LAT] - newLl [LAT];
 
 		/* If our guess at the longitude is off by more than

@@ -1,20 +1,159 @@
+#
+# This make file is designed primarily to build the entire target,
+# csmap.lib in this case, from scratch in an "installation" environment.
+# The secondary objective of the design is to minimize the maintenance
+# requirements of achieving the primary objective.  Thus, coding of a
+# comprehensive map of interdependencies between files is deliberately
+# avoided.
+#
+# Thus, one should _NOT_ expect this make file to compile only the
+# specific modules you might have changed in a development/debug
+# environment.  Such may happen, and you may be thankful; but do _NOT_
+# rely on this.  Fortunately, build times on current Linux systems are
+# so small I suspect you will probably never consider the build to
+# be overly inefficient.
+#
+# Note that simply adding files with the appropriate extensions to
+# the appropriate directories, automatically includes them in the
+# make process.  Removing files from specific directories has the same
+# affect.  To achieve this objective, certain files in particular are
+# specifically noted and referenced in this make file and removed from the
+# construction of the library.  Your maintenance/development activities may
+# require you to add a module name to these lists.  At, or about, line 272
+# below, is a convenient place to switch to hard coded module lists if
+# such is desired.
+#
+# This make file was been written with the EXPRESS requirement that it
+# exists in the "CsMapDev/Source" and that directory is the current
+# working directory of the make executable which is processing it; with the
+# original intent being that this makefile would be invoked by a higher
+# level make file which executes something like the following:
+#
+#	$(MAKE) -C./Source -fLibrary.mak
+#
+# All the essential information about the desired build is expected to be
+# passed in environmental variables.
+#
+PRJ_NAME = Library
+TRG_BASE = CsMap
+TRG_EXT = .a
+TRG_NAME = $(TRG_BASE)$(TRG_EXT)
+#
+# Set the following default values using the ?= assignment operator.  This
+# operator causes an assignment only if the variable is not already defined.
+# My current gcc compiler is version 4.7.4, so I set the VERSION argument
+# to 47.
+#
+VERSION ?= 47
+CONFIGURATION ?= Linux
+PROCESSOR ?= x64
+#
+# CSMAP_MAINS is set to a list of source modules known to contain "main"
+# functions, and therefore are inappropriate for inclusion in the library.
+# These names are filtered out before the make process starts.
+#
+CSMAP_MAINS = CsMapDll.c csTestCpp.cpp csConsoleUtilities.cpp CS_COMP.c
+#
+# CSMAP_CINCLUDE is set to a list of 'C' source modules which are
+# "include'd" into other 'C' modules and are not to be compiled on their
+# own.
+#
+CSMAP_CINCLUDE = CSsys34KMS.c
+#
+# CSMAP_STDHDRS is set to a list of source modules which exist primarily for
+# generation of pre-compiled headers when using the Microsoft Visual Studio
+# IDE.  We do not need to consider them for this Linux/Unix/Mac library.
+#
+CSMAP_STDHDRS = CS_stdhdrC.c CS_stdhdrCpp.cpp CStest0.cpp
+#
+# CSMAP_MFC is set to a list of source modules which are part of the MFC
+# portion of the Windows library.  We exclude these from the Linux/Unix
+# build of the library.  There is no MFC equivalent functionality in the
+# Linux build.
+#
+CSMAP_MFC = csBrowser.cpp \
+			csDataDir.cpp \
+			csDualBrowse.cpp \
+			csEdit.cpp \
+			csKeyNm.cpp \
+			CS_mfc.cpp \
+			csTest.cpp \
+			CSwinHlp.cpp \
+			dtEdit.cpp \
+			dtSelect.cpp \
+			elEdit.cpp \
+			elSelect.cpp \
+			gdcEdit.cpp \
+			mgTest.cpp
 
-C_FLG = -c -DGCC_3 -D__CPP__ -Wall -O3 -I../Include
+#
+# The following definitions are instituted to facilitate building multiple
+# versions of the Library. The variables referenced by these definitions
+# are expected to be passed, in the environment, from a parent makefile.  
+#
+OUT_DIR ?= ../lib$(VERSION)/$(CONFIGURATION)
+INT_DIR ?= ../obj$(VERSION)/$(PRJ_NAME)/$(CONFIGURATION)
+SRC_DIR ?= $(MAKEDIR)
 
-CPP_FLG = -c -DGCC_3 -D__CPP__ -Wall -O3 -I../Include
+C_FLG ?= -c -Wall -O2 -I../Include
+CXX_FLG ?= -c -Wall -O2 -I../Include
 
-.cpp.o:
-	$(CXX) $(CPP_FLG) $<
+LCL_C_FLG = $(C_FLG)
+LCL_CXX_FLG = $(CXX_FLG)
+ifeq ($(PROCESSOR),x64)
+	OUT_DIR := $(OUT_DIR)64
+	INT_DIR := $(INT_DIR)64
+	LCL_C_FLG += -m64 -fPIC
+	LCL_CXX_FLG += -m64 -fPIC
+endif
 
-.c.o:
-	$(CC) $(C_FLG) $<
+ifeq ($(PROCESSOR),x86)
+	OUT_DIR := $(OUT_DIR)32
+	INT_DIR := $(INT_DIR)32
+#	LCL_C_FLG += -m32
+#	LCL_CXX_FLG += -m32
+endif
+#
+# The -o option on the compiler is used to get the objects written to the
+# directory specified by the INT_DIR variable. Doing so enables building
+# libraries for different configurations without an implied "clean" of any
+# configuration(s) already built.  I suspect that it also means that the
+# compilations will not be batched and a new instance of the compiler is
+# invoked for each module.  Slows us down a bit, but overall helps preserve
+# sanity when trying to build multiple configurations of the library from a
+# single set of source files, which is a major objective of this makefile.
+#
+$(INT_DIR)/%.o:$(SRC_DIR)%.c
+	$(CC) $(LCL_C_FLG) -o$(INT_DIR)/$(<:.c=.o) $<
 
-CSMAP_LIB_SRC = \
-	csIoUtil.cpp \
-	CS_alber.c \
+$(INT_DIR)/%.o:$(SRC_DIR)%.cpp
+	$(CXX) $(LCL_CXX_FLG) -o$(INT_DIR)/$(<:.cpp=.o) $<
+
+# Note that the following causes all .c and .cpp files in the Source
+# directory to be included in the csmap.lib target. This is often helpful,
+# sometimes painful.  In some cases, the features used may not be available
+# in your make implementation.  So, in case this is undesirable or does not
+# work, a variable which lists all current distribution sources is coded
+# below, with a different name. OsGeo contributors must make sure this
+# listing remains current even though it may not be used in your
+# environment.  Note that modules not intended for the basic library
+# are filtered out.
+# 
+CSMAP_CC_SRC := $(wildcard *.c)
+CSMAP_CC_SRC := $(filter-out $(CSMAP_MAINS),$(CSMAP_CC_SRC))  
+CSMAP_CC_SRC := $(filter-out $(CSMAP_STDHDRS),$(CSMAP_CC_SRC))  
+CSMAP_CC_SRC := $(filter-out $(CSMAP_CINCLUDE),$(CSMAP_CC_SRC))  
+
+CSMAP_CPP_SRC := $(wildcard *.cpp)
+CSMAP_CPP_SRC := $(filter-out $(CSMAP_MAINS),$(CSMAP_CPP_SRC))  
+CSMAP_CPP_SRC := $(filter-out $(CSMAP_STDHDRS),$(CSMAP_CPP_SRC))  
+CSMAP_CPP_SRC := $(filter-out $(CSMAP_MFC),$(CSMAP_CPP_SRC))  
+
+# A hard coded list of the 'C' modules required to exist in the library.
+CSMAP_SRC_CC = 	CS_alber.c \
 	CS_angle.c \
 	CS_ansi.c \
-	CS_ats77New.c \
+	CS_ats77.c \
 	CS_azmea.c \
 	CS_azmed.c \
 	CS_badekas.c \
@@ -28,6 +167,7 @@ CSMAP_LIB_SRC = \
 	CS_csio.c \
 	CS_csprm.c \
 	CS_csWktLoc.c \
+	CS_ctio.c \
 	CS_datum.c \
 	CS_defaults.c \
 	CS_defCmp.c \
@@ -49,10 +189,11 @@ CSMAP_LIB_SRC = \
 	CS_frnch.c \
 	CS_gauss.c \
 	CS_general.c \
+	CS_geocn.c \
 	CS_geoct.c \
 	CS_geoid96.c \
 	CS_geoid99.c \
-	CS_GeoidHeight.c \
+	CS_geoidHeight.c \
 	CS_gissupprt.c \
 	CS_gnomc.c \
 	CS_gpio.c \
@@ -65,11 +206,10 @@ CSMAP_LIB_SRC = \
 	CS_hlApi.c \
 	CS_hmlsn.c \
 	CS_hpApi.c \
-	CS_japanNew.c \
+	CS_japan.c \
 	CS_krovk.c \
 	CS_lmbrt.c \
 	CS_lmtan.c \
-	CS_mfc.cpp \
 	CS_mgrs.c \
 	CS_millr.c \
 	CS_modpc.c \
@@ -114,205 +254,87 @@ CSMAP_LIB_SRC = \
 	CS_units.c \
 	CS_unity.c \
 	CS_vdgrn.c \
-	CS_VertconUS.c \
+	CS_vertconUS.c \
 	CS_vrtcon.c \
-	cs_wellknowntext.cpp \
 	CS_wgs72.c \
 	CS_winkelTripel.c \
 	CS_zones.c \
-	csBrowser.cpp \
-	CScs2Wkt.cpp \
-	cscscomp.c \
-	csCsvFileSupport.cpp \
+	CScscomp.c \
 	CSdata.c \
-	csDataDir.cpp \
 	CSdataDT.c \
 	CSdataPJ.c \
 	CSdataU.c \
 	CSdatumCatalog.c \
 	CSdictDiff.c \
-	CSdt2Wkt.cpp \
 	CSdtcomp.c \
-	csDualBrowse.cpp \
-	csEdit.cpp \
-	CSel2Wkt.cpp \
 	CSelcomp.c \
-	csEpsgStuff.cpp \
-	csEpsgSupport.cpp \
 	CSgeodeticSupport.c \
 	CSgpcomp.c \
 	CSgxcomp.c \
-	csKeyNm.cpp \
-	CSmrcomp.c \
-	csNameMapper.cpp \
-	csNameMapperSupport.cpp \
-	csTest.cpp \
-	CSwinHlp.cpp \
-	CSwktFlavors.c \
-	dtEdit.cpp \
-	dtSelect.cpp \
-	elEdit.cpp \
-	elSelect.cpp \
-	gdcEdit.cpp \
-	mgTest.cpp \
-	rcWellKnownText.cpp \
-	rcWktKonstants.cpp
+	CSwktFlavors.c
+	
 
-CSMAP_LIB_OBJ = \
-	csIoUtil.o \
-	CS_alber.o \
-	CS_angle.o \
-	CS_ansi.o \
-	CS_ats77New.o \
-	CS_azmea.o \
-	CS_azmed.o \
-	CS_badekas.o \
-	CS_bonne.o \
-	CS_bpcnc.o \
-	CS_bursa.o \
-	CS_bynFile.o \
-	CS_category.o \
-	cs_ctio.o \
-	CS_csini.o \
-	CS_csio.o \
-	CS_csprm.o \
-	CS_csWktLoc.o \
-	CS_datum.o \
-	CS_defaults.o \
-	CS_defCmp.o \
-	CS_defCmpEx.o \
-	CS_dtcalc.o \
-	CS_dtio.o \
-	CS_dtmBridge.o \
-	CS_edcnc.o \
-	CS_edcyl.o \
-	CS_egm96.o \
-	CS_ekrt4.o \
-	CS_ekrt6.o \
-	CS_elCalc.o \
-	CS_elio.o \
-	CS_erpt.o \
-	CS_error.o \
-	CS_fips.o \
-	CS_frame.o \
-	CS_frnch.o \
-	CS_gauss.o \
-	CS_general.o \
-	CS_geoct.o \
-	CS_geoid96.o \
-	CS_geoid99.o \
-	CS_GeoidHeight.o \
-	CS_gissupprt.o \
-	CS_gnomc.o \
-	CS_gpio.o \
-	CS_gridi.o \
-	CS_groups.o \
-	CS_guiApi.o \
-	CS_gxIndex.o \
-	CS_gxio.o \
-	CS_gxprm.o \
-	CS_hlApi.o \
-	CS_hmlsn.o \
-	CS_hpApi.o \
-	CS_japanNew.o \
-	CS_krovk.o \
-	CS_lmbrt.o \
-	CS_lmtan.o \
-	CS_mfc.o \
-	CS_mgrs.o \
-	CS_millr.o \
-	CS_modpc.o \
-	CS_molod.o \
-	CS_molwd.o \
-	CS_mrcat.o \
-	CS_mstro.o \
-	CS_mulrg.o \
-	CS_nacyl.o \
-	CS_nadcn.o \
-	CS_nerth.o \
-	CS_ntv1.o \
-	CS_ntv2.o \
-	CS_nullx.o \
-	CS_nzlnd.o \
-	CS_oblqm.o \
-	CS_optional.o \
-	CS_ortho.o \
-	CS_osgm91.o \
-	CS_ost02.o \
-	CS_ost97.o \
-	CS_ostn02.o \
-	CS_ostn97.o \
-	CS_ostro.o \
-	CS_parm3.o \
-	CS_parm4.o \
-	CS_parm6.o \
-	CS_parm7.o \
-	CS_plycn.o \
-	CS_pstro.o \
-	CS_rlsUpdt.o \
-	CS_robin.o \
-	CS_sinus.o \
-	CS_sstro.o \
-	CS_supprt.o \
-	CS_swiss.o \
-	CS_sys34.o \
-	CS_system.o \
-	CS_tacyl.o \
-	CS_trmer.o \
-	CS_trmrs.o \
-	CS_units.o \
-	CS_unity.o \
-	CS_vdgrn.o \
-	CS_VertconUS.o \
-	CS_vrtcon.o \
-	cs_wellknowntext.o \
-	CS_wgs72.o \
-	CS_winkelTripel.o \
-	CS_zones.o \
-	csBrowser.o \
-	CScs2Wkt.o \
-	cscscomp.o \
-	csCsvFileSupport.o \
-	CSdata.o \
-	csDataDir.o \
-	CSdataDT.o \
-	CSdataPJ.o \
-	CSdataU.o \
-	CSdatumCatalog.o \
-	CSdictDiff.o \
-	CSdt2Wkt.o \
-	CSdtcomp.o \
-	csDualBrowse.o \
-	csEdit.o \
-	CSel2Wkt.o \
-	CSelcomp.o \
-	csEpsgStuff.o \
-	csEpsgSupport.o \
-	CSgeodeticSupport.o \
-	CSgpcomp.o \
-	CSgxcomp.o \
-	csKeyNm.o \
-	CSmrcomp.o \
-	csNameMapper.o \
-	csNameMapperSupport.o \
-	csTest.o \
-	CSwinHlp.o \
-	CSwktFlavors.o \
-	dtEdit.o \
-	dtSelect.o \
-	elEdit.o \
-	elSelect.o \
-	gdcEdit.o \
-	mgTest.o \
-	rcWellKnownText.o \
-	rcWktKonstants.o
+# A hard coded list of the 'C++' modules required to exist in the library.
+CSMAP_SRC_CPP = csIoUtil.cpp \
+	CS_wellknowntext.cpp \
+	CS_csvFileSupport.cpp \
+	CScs2Wkt.cpp \
+	CSdt2Wkt.cpp \
+	CSel2Wkt.cpp \
+	CS_epsgStuff.cpp \
+	CS_epsgSupport.cpp \
+	CS_nameMapper.cpp \
+	CS_nameMapperSupport.cpp \
+	CS_wktObject.cpp \
+	CS_wktObjKonstants.cpp
 
-CsMap.a : $(CSMAP_LIB_OBJ)
-	ar rv CsMap.a $?
+# The following combines the two above lists and provides a convenient
+# place in this file to switch between the wildcard generated list and
+# the hard coded lists defined above.
 
-clean:
-	rm -f $(CSMAP_LIB_OBJ)
-	rm -f CsMap.a
+# The following two assignments use the wildcard generated module lists.
+CSMAP_LIB_SRC = $(CSMAP_CC_SRC)
+CSMAP_LIB_SRC += $(CSMAP_CPP_SRC)
 
-rebuild: clean CsMap.a
+# The following two assignments use the hard coded module lists.
+#CSMAP_LIB_SRC = $(CSMAP_SRC_CC)
+#CSMAP_LIB_SRC += $(CSMAP_SRC_CPP)
+
+#
+# From the selected source list, generate an equivalent list of objects
+# with the desired intermediate directory prefix.
+#
+CSMAP_LIB_OBJ := $(patsubst %.c,%.o,$(CSMAP_LIB_SRC))
+CSMAP_LIB_OBJ := $(patsubst %.cpp,%.o,$(CSMAP_LIB_OBJ))
+CSMAP_LIB_OBJ := $(addprefix $(INT_DIR)/,$(CSMAP_LIB_OBJ))
+
+#
+# OK, we should now be able to do some real work.  This is rather
+# simple now.
+#
+$(OUT_DIR)/$(TRG_NAME) : $(CSMAP_LIB_OBJ)
+	ar rv $(OUT_DIR)/$(TRG_NAME) $?
+
+.PHONY : clean
+clean :
+	rm -f $(INT_DIR)/*.o
+	rm -f $(OUT_DIR)/$(TRG_NAME)
+
+rebuild: clean $(OUT_DIR)/$(TRG_NAME)
+
+#
+# The following create the directories in which the results are to be
+# written if they don't already exist.  The -p option on the 'mkdir'
+# command creates all intermediate directories as well; and also inhibits
+# an error condition if they already exist.
+#
+$(CSMAP_LIB_OBJ) : | $(INT_DIR)
+
+$(OUT_DIR)/$(TRG_NAME) : | $(OUT_DIR)
+
+$(INT_DIR) :
+	mkdir -p $(INT_DIR)
+
+$(OUT_DIR) :
+	mkdir -p $(OUT_DIR)
 

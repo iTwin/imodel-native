@@ -32,7 +32,7 @@
    Transformation from the dictionary and then use that definition to
    create a fully initialized cs_GxXform_ structure which can actually
    be used to perform Geodetic Transformations in a generic way. */
-struct cs_GxXform_ *CS_gxloc (Const char* gxDefName, short userDirection)
+struct cs_GxXform_ EXP_LVL5 *CS_gxloc (Const char* gxDefName, short userDirection)
 {
     struct cs_GeodeticTransform_* xfrmDefPtr;
     struct cs_GxXform_* transform;
@@ -52,7 +52,7 @@ struct cs_GxXform_ *CS_gxloc (Const char* gxDefName, short userDirection)
     return transform; //can be NULL
 }
 
-struct cs_GxXform_* EXP_LVL1 CS_gxloc1 (Const struct cs_GeodeticTransform_ *xfrmDefPtr,short userDirection)
+struct cs_GxXform_ EXP_LVL5 *CS_gxloc1 (Const struct cs_GeodeticTransform_ *xfrmDefPtr,short userDirection)
 {
 	extern char csErrnam [];
 	extern struct cs_XfrmTab_ cs_XfrmTab [];
@@ -129,7 +129,7 @@ struct cs_GxXform_* EXP_LVL1 CS_gxloc1 (Const struct cs_GeodeticTransform_ *xfrm
 	CS_stncp (xfrmPtr->source,xfrmDefPtr->source,sizeof (xfrmPtr->source));
 
 	xfrmPtr->methodCode = xfrmDefPtr->methodCode;
-	xfrmPtr->epsgNbr = xfrmDefPtr->epsgCode;
+	xfrmPtr->epsgNbr = (xfrmDefPtr->epsgCode >= 0) ? (unsigned long)xfrmDefPtr->epsgCode : 0UL;		/*lint !e571  suspicious cast */
 	xfrmPtr->epsgVar = xfrmDefPtr->epsgVariation;
 	xfrmPtr->inverseSupported = xfrmDefPtr->inverseSupported;
 	xfrmPtr->maxIterations = xfrmDefPtr->maxIterations;
@@ -161,17 +161,17 @@ struct cs_GxXform_* EXP_LVL1 CS_gxloc1 (Const struct cs_GeodeticTransform_ *xfrm
 	return xfrmPtr;
 
 error:
-	if (xfrmPtr != NULL)
+	if (xfrmPtr != NULL)		/*lint !e774  boolean always evaluates to true */
 	{
 		CS_free (xfrmPtr);
 		xfrmPtr = NULL;
 	}
-	if (srcDtPtr != NULL)
+	if (srcDtPtr != NULL)		/*lint !e774  boolean always evaluates to true */
 	{
 		CS_free (srcDtPtr);
 		srcDtPtr = NULL;
 	}
-	if (trgDtPtr != NULL)
+	if (trgDtPtr != NULL)		/*lint !e774  boolean always evaluates to true */
 	{
 		CS_free (trgDtPtr);
 		trgDtPtr = NULL;
@@ -183,7 +183,7 @@ error:
 }
 
 /* A fallback for strange situations. */
-struct cs_GxXform_*	CS_gxlocDtm (Const struct cs_Datum_ *src_dt,Const struct cs_Datum_ *dst_dt)
+struct cs_GxXform_*	EXP_LVL5 CS_gxlocDtm (Const struct cs_Datum_ *src_dt,Const struct cs_Datum_ *dst_dt)
 {
 	extern double cs_Zero;
 	extern double cs_Three;
@@ -191,7 +191,6 @@ struct cs_GxXform_*	CS_gxlocDtm (Const struct cs_Datum_ *src_dt,Const struct cs_
 	extern double cs_Five;
 	extern double cs_Eight;
 
-	extern short cs_Protect;
 	extern char csErrnam [];
 	extern struct cs_XfrmTab_ cs_XfrmTab [];
 
@@ -374,35 +373,35 @@ error:
 	}
 	return NULL;
 }
-int CS_gxFrwrd3D (struct cs_GxXform_ *xform,double trgLl [3],Const double srcLl [3])
+int EXP_LVL1 CS_gxFrwrd3D (struct cs_GxXform_ *xform,double trgLl [3],Const double srcLl [3])
 {
 	int gxStatus;
 	
 	gxStatus = (*xform->frwrd3D)(&xform->xforms,trgLl,srcLl);
 	return gxStatus;
 }
-int CS_gxFrwrd2D (struct cs_GxXform_ *xform,double trgLl [3],Const double srcLl [3])
+int EXP_LVL1 CS_gxFrwrd2D (struct cs_GxXform_ *xform,double trgLl [3],Const double srcLl [3])
 {
 	int gxStatus;
 	
 	gxStatus = (*xform->frwrd2D)(&xform->xforms,trgLl,srcLl);
 	return gxStatus;
 }
-int CS_gxInvrs3D (struct cs_GxXform_ *xform,double trgLl [3],Const double srcLl [3])
+int EXP_LVL1 CS_gxInvrs3D (struct cs_GxXform_ *xform,double trgLl [3],Const double srcLl [3])
 {
 	int gxStatus;
 	
 	gxStatus = (*xform->invrs3D)(&xform->xforms,trgLl,srcLl);
 	return gxStatus;
 }
-int CS_gxInvrs2D (struct cs_GxXform_ *xform,double trgLl [3],Const double srcLl [3])
+int EXP_LVL1 CS_gxInvrs2D (struct cs_GxXform_ *xform,double trgLl [3],Const double srcLl [3])
 {
 	int gxStatus;
 	
 	gxStatus = (*xform->invrs2D)(&xform->xforms,trgLl,srcLl);
 	return gxStatus;
 }
-int CS_gxchk (Const struct cs_GeodeticTransform_ *gxXform,unsigned short gxChkFlg,int err_list [],int list_sz)
+int EXP_LVL1 CS_gxchk (Const struct cs_GeodeticTransform_ *gxXform,unsigned short gxChkFlg,int err_list [],int list_sz)
 {
 	extern struct cs_XfrmTab_ cs_XfrmTab[];
 	extern char csErrnam [MAXPATH];
@@ -503,7 +502,7 @@ int CS_gxchk (Const struct cs_GeodeticTransform_ *gxXform,unsigned short gxChkFl
 	}
 	return (err_cnt + 1);
 }
-int CS_gxIsNull (struct cs_GxXform_ *xfrmPtr)
+int EXP_LVL1 CS_gxIsNull (struct cs_GxXform_ *xfrmPtr)
 {
 	extern struct cs_XfrmTab_ cs_XfrmTab[];
 
@@ -527,7 +526,7 @@ int CS_gxIsNull (struct cs_GxXform_ *xfrmPtr)
 	}
 	return isNull;
 }
-void CS_gxDisable (struct cs_GxXform_ *xfrmPtr)
+void EXP_LVL1 CS_gxDisable (struct cs_GxXform_ *xfrmPtr)
 {
 	xfrmPtr->isNullXfrm = TRUE;
 }
@@ -583,16 +582,17 @@ int	EXP_LVL1 CS_isGxfrmReentrant (Const struct cs_GxXform_ *gxXform)
 					   worse.
 
 					   So, we simply need to convert the enumerator in the cs_GridFile_
-					   sturcture to the appropriate which exists in the cs_GridFormatTab. */
+					   structure to the appropriate which exists in the cs_GridFormatTab. */
 					switch (fileDefPtr->format) {
-					case gridFrmtNTv1:  tblFormatCode = cs_DTCFRMT_CNTv1; break; 
-					case gridFrmtNTv2:  tblFormatCode = cs_DTCFRMT_CNTv2; break; 
-					case gridFrmtNadcn: tblFormatCode = cs_DTCFRMT_NADCN; break; 
-					case gridFrmtFrnch: tblFormatCode = cs_DTCFRMT_FRNCH; break; 
-					case gridFrmtJapan: tblFormatCode = cs_DTCFRMT_JAPAN; break; 
-					case gridFrmtAts77: tblFormatCode = cs_DTCFRMT_ATS77; break; 
-					case gridFrmtOst97: tblFormatCode = cs_DTCFRMT_OST97; break; 
-					case gridFrmtOst02: tblFormatCode = cs_DTCFRMT_OST02; break; 
+					case gridFrmtNTv1:  tblFormatCode = cs_DTCFRMT_CNTv1; break;
+					case gridFrmtNTv2:  tblFormatCode = cs_DTCFRMT_CNTv2; break;
+					case gridFrmtNadcn: tblFormatCode = cs_DTCFRMT_NADCN; break;
+					case gridFrmtFrnch: tblFormatCode = cs_DTCFRMT_FRNCH; break;
+					case gridFrmtJapan: tblFormatCode = cs_DTCFRMT_JAPAN; break;
+					case gridFrmtAts77: tblFormatCode = cs_DTCFRMT_ATS77; break;
+					case gridFrmtOst97: tblFormatCode = cs_DTCFRMT_OST97; break;
+					case gridFrmtOst02: tblFormatCode = cs_DTCFRMT_OST02; break;
+					case gridFrmtGeocn: tblFormatCode = cs_DTCFRMT_GEOCN; break;
 					case gridFrmtNone:
 					case gridFrmtUnknown:
 					default:

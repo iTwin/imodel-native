@@ -39,7 +39,7 @@
 **	File is positioned past the magic number on the front.
 **********************************************************************/
 
-csFILE * EXP_LVL3 CS_dtopn (Const char *mode)
+csFILE * EXP_LVL5 CS_dtopn (Const char *mode)
 {
 	return CS_dtFileOpen(mode);
 }
@@ -68,7 +68,7 @@ void CS_dtDictCls (csFILE* stream)
 **	int flag;					returns +1 for successful read, 0 for EOF,
 **								-1 for error.
 **********************************************************************/
-int EXP_LVL3 CS_dtrd (csFILE *strm,struct cs_Dtdef_ *dt_def,int *crypt)
+int EXP_LVL5 CS_dtrd (csFILE *strm,struct cs_Dtdef_ *dt_def,int *crypt)
 {
 	return CS_dtRead(strm, dt_def, crypt);
 }
@@ -86,7 +86,7 @@ int EXP_LVL3 CS_dtrd (csFILE *strm,struct cs_Dtdef_ *dt_def,int *crypt)
 **								successfully, else returns TRUE.
 **
 **********************************************************************/
-int EXP_LVL3 CS_dtwr (csFILE *strm,Const struct cs_Dtdef_ *dt_def,int crypt)
+int EXP_LVL5 CS_dtwr (csFILE *strm,Const struct cs_Dtdef_ *dt_def,int crypt)
 {
 	return CS_dtWrite(strm, dt_def, crypt);
 }
@@ -103,7 +103,7 @@ int EXP_LVL3 CS_dtwr (csFILE *strm,Const struct cs_Dtdef_ *dt_def,int crypt)
 **	cs_Dtdef_ structure provided, forcing all lower case
 **	characters to upper case.
 **********************************************************************/
-int EXP_LVL3 CS_dtdel (struct cs_Dtdef_ *dtdef)
+int EXP_LVL5 CS_dtdel (struct cs_Dtdef_ *dtdef)
 {
 	extern char *cs_DtKeyNames;
 	int result = CS_dtDelete(dtdef);
@@ -146,7 +146,7 @@ int EXP_LVL3 CS_dtdel (struct cs_Dtdef_ *dtdef)
 **	provided cs_Dtdef_ structure, changing all lower case
 **	characters to upper case.
 **********************************************************************/
-int EXP_LVL3 CS_dtupd (struct cs_Dtdef_ *dtdef,int crypt)
+int EXP_LVL5 CS_dtupd (struct cs_Dtdef_ *dtdef,int crypt)
 {
 	extern char *cs_DtKeyNames;
 	int updateStatus = CS_dtUpdate(dtdef, crypt);
@@ -242,7 +242,7 @@ struct cs_Dtdef_ * EXP_LVL3 CS_dtdef (Const char *dat_nam)
 	return CS_dtdef2 (dat_nam, NULL);
 }
 
-struct cs_Dtdef_ * EXP_LVL3 CS_dtdef2 (Const char *dat_nam, char* pszDirPath)
+struct cs_Dtdef_ * EXP_LVL5 CS_dtdef2 (Const char *dat_nam, char* pszDirPath)
 {
 	extern char csErrnam [];
 
@@ -276,7 +276,7 @@ struct cs_Dtdef_ * EXP_LVL3 CS_dtdef2 (Const char *dat_nam, char* pszDirPath)
 	return (dtptr);
 
 error:
-	if (dtptr != NULL)
+	if (dtptr != NULL)			/*lint !e774  boolean always evaluates to true */
 	{
 		CS_free (dtptr);
 		dtptr = NULL;
@@ -298,7 +298,7 @@ error:
 **	That is, count will be >= 0 in case of success and a negative value
 **	otherwise in which case [pDefArray] must not be examined by the caller.
 **********************************************************************/
-int CS_dtdefAll (struct cs_Dtdef_ **pDefArray[])
+int EXP_LVL3 CS_dtdefAll (struct cs_Dtdef_ **pDefArray[])
 {
 	return CS_dtDefinitionAll(pDefArray);
 }

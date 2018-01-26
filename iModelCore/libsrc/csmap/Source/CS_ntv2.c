@@ -36,6 +36,8 @@
 
 #include "cs_map.h"
 
+/*lint -esym(613,err_list)  possible use of null pointer; but not really */
+
 long32_t csNTv2BufrSz = 32768L;
 
 int CScntv2Q (struct csGeodeticXfromParmsFile_* fileParms,Const char* dictDir,int err_list [],int list_sz)
@@ -179,6 +181,8 @@ int CScntv2F3 (struct cs_NTv2_ *cntv2,double *ll_trg,Const double *ll_src)
    coverage of the file, and thus fail to converge. */
 int CScntv2I2 (struct cs_NTv2_ *cntv2,double *ll_trg,Const double *ll_src)
 {
+	extern double cs_LlNoise;
+
 	short lng_ok;
 	short lat_ok;
 	int ii;
@@ -187,6 +191,8 @@ int CScntv2I2 (struct cs_NTv2_ *cntv2,double *ll_trg,Const double *ll_src)
 	double guess [3];
 	double epsilon [2];
 	double newResult [3];
+
+	epsilon [0] = epsilon [1] = cntv2->errorValue + cs_LlNoise;
 
 	guess [LNG] = ll_src [LNG];
 	guess [LAT] = ll_src [LAT];
@@ -215,12 +221,19 @@ int CScntv2I2 (struct cs_NTv2_ *cntv2,double *ll_trg,Const double *ll_src)
 			   
 			   If we don't do as written above, the iterative technique fails
 			   to converge and we have a situation where a system error may
-			   be generated and the results may not be reproducable. */
+			   be generated and the results may not be reproducible. */
+			
+			/* Dec 18, 2015: Trac #130.  In the event of a coverage problem on
+			   the forward, status at this point will be csGRIDI_ST_COVERAGE.
+			   Other values indicate problems like a disk I/O) problem. */
 			break;
 		}
 
+		/* Dec 18, 2015; Trac Ticket #129,  The problem described in this
+		  ticket applies to all geocentric 2D inverse functions.  Thus,
+		  the following change. */
 		/* See how far we are off. */
-		epsilon [LNG] = ll_src [LNG] - newResult [LNG];
+		epsilon [LNG] = CS_lngEpsilon (ll_src [LNG],newResult [LNG]);
 		epsilon [LAT] = ll_src [LAT] - newResult [LAT];
 
 		/* If our guess at the longitude is off by more than
@@ -241,13 +254,15 @@ int CScntv2I2 (struct cs_NTv2_ *cntv2,double *ll_trg,Const double *ll_src)
 		if (lng_ok && lat_ok) break;
 	}
 
+	/* Dec 18, 2015: Trac #130. If this inverse has now meandered over the
+	   edge of coverage, status will be csGRIDI_ST_COVERAGE at this point. */
 	if (status == csGRIDI_ST_OK)
 	{
 		/* If we didn't resolve in maxIteration tries, we issue a warning
 		   message.  Casual reading of the NADCON code would lead one to
 		   believe that they do five iterations, but four is all they really
 		   do.  Since this is an inverse, and our clients expect it to produce
-		   what we started with, we do maxIterations iterations, insteadt of the
+		   what we started with, we do maxIterations iterations, instead of the
 		   four that GRIDINT does.  Thus, there is room for a slight discrepancy
 		   between the two programs. */
 		if (ii >= cntv2->maxIterations)
@@ -280,7 +295,12 @@ int CScntv2I2 (struct cs_NTv2_ *cntv2,double *ll_trg,Const double *ll_src)
 		ll_trg [LNG] = ll_src [LNG];
 		ll_trg [LAT] = ll_src [LAT];
 	}
-	return 0;
+
+	/* Dec 18, 2015: Trac Ticket 130.  In the event that the iterative inverse
+	   algorithm meanders outside of the coverage, status will be
+	   csGRIDI_ST_COVERAGE at this point, and we need to return that
+	   information to the calling module. */
+	return status;
 }
 int CScntv2I3 (struct cs_NTv2_ *cntv2,double *ll_trg,Const double *ll_src)
 {
@@ -365,6 +385,7 @@ int CSinitNTv2 (struct cs_NTv2_* thisPtr,Const char *filePath,long32_t bufferSiz
 															  double density)
 {
 	extern double cs_Sec2Deg;
+	extern double cs_K360;
 	extern char cs_DirsepC;
 	extern char csErrnam [];
 
@@ -389,6 +410,8 @@ int CSinitNTv2 (struct cs_NTv2_* thisPtr,Const char *filePath,long32_t bufferSiz
 
 	char ctemp [MAXPATH];
 
+	csFILE* stream = NULL;
+
 	/* Try to prevent a likely crash. */
 	if (thisPtr == NULL)
 	{
@@ -403,7 +426,8 @@ int CSinitNTv2 (struct cs_NTv2_* thisPtr,Const char *filePath,long32_t bufferSiz
 
 	/* Initialize the structure to harmless values. */
 	thisPtr->SubGridDir = NULL;
-	thisPtr->Stream = NULL;
+	thisPtr->fileImage = NULL;
+	thisPtr->fileImageSize = 0;
 	thisPtr->HdrRecCnt = 0;
 	thisPtr->SubCount = 0;
 	thisPtr->RecSize = 16;
@@ -434,17 +458,17 @@ int CSinitNTv2 (struct cs_NTv2_* thisPtr,Const char *filePath,long32_t bufferSiz
 	CS_stncp (thisPtr->FileName,cp,sizeof (thisPtr->FileName));
 
 	/* Open the file. */
-	thisPtr->Stream = CS_fopen (thisPtr->FilePath,_STRM_BINRD);
-	if (thisPtr->Stream == NULL)
+	stream = CS_fopen (thisPtr->FilePath,_STRM_BINRD);
+	if (stream == NULL)
 	{
 		CS_erpt (cs_DTC_FILE);
 		goto error;
 	}
-	setvbuf (thisPtr->Stream,NULL,_IOFBF,(size_t)thisPtr->BufferSize);
+	setvbuf (stream,NULL,_IOFBF,(size_t)thisPtr->BufferSize);
 
 	/* We've got a file.  Read the header. */
-	readCnt = CS_fread (&fileHdr,1,sizeof (fileHdr),thisPtr->Stream);
-	if (CS_ferror (thisPtr->Stream))
+	readCnt = CS_fread (&fileHdr,1,sizeof (fileHdr),stream);
+	if (CS_ferror (stream))
 	{
 		CS_erpt (cs_IOERR);
 		goto error;
@@ -475,7 +499,7 @@ int CSinitNTv2 (struct cs_NTv2_* thisPtr,Const char *filePath,long32_t bufferSiz
 	else if (fileHdr.Australian.titl02 [0] == 'N' &&
 			 fileHdr.Australian.titl02 [1] == 'U')
 	{
-		/* It appears to be an Australian file. */
+		/* It appears to be a legacy Australian file. */
 		thisPtr->IntType = csNTv2TypeAustralia;
 		skipAmount = sizeof (struct csNTv2HdrAu_);
 		CS_bswap (&fileHdr.Australian,cs_BSWP_NTv2HdrAu);
@@ -488,8 +512,8 @@ int CSinitNTv2 (struct cs_NTv2_* thisPtr,Const char *filePath,long32_t bufferSiz
 	}
 
 	/* Reposition the input file as is appropriate due to the
-	   type of file.  A little hoeky, but it should be portable. */
-	seekStat = CS_fseek (thisPtr->Stream,skipAmount,SEEK_SET);
+	   type of file.  A little hokey, but it should be portable. */
+	seekStat = CS_fseek (stream,skipAmount,SEEK_SET);
 	if (seekStat != 0)
 	{
 		CS_erpt (cs_INV_FILE);
@@ -513,7 +537,11 @@ int CSinitNTv2 (struct cs_NTv2_* thisPtr,Const char *filePath,long32_t bufferSiz
 
 	/* Now, we deal with the sub-directories.  THese are very
 	   important. */
+#ifdef GEOCOORD_ENHANCEMENT
+    malcCnt = sizeof(struct csNTv2SubGrid_) * (ulong32_t)thisPtr->SubCount;
+#else
 	malcCnt = sizeof (struct csNTv2SubHdr_) * (ulong32_t)thisPtr->SubCount;
+#endif
 	thisPtr->SubGridDir = (struct csNTv2SubGrid_ *)CS_malc (malcCnt);
 	if (thisPtr->SubGridDir == NULL)
 	{
@@ -528,17 +556,17 @@ int CSinitNTv2 (struct cs_NTv2_* thisPtr,Const char *filePath,long32_t bufferSiz
 		subPtr = &thisPtr->SubGridDir [idx];
 
 		/* Initialize to a boundary which will not match anything. */
-		subPtr->SouthWest [LNG] = 180.0;
-		subPtr->SouthWest [LAT] = 90.0;
-		subPtr->NorthEast [LNG] = -180.0;
-		subPtr->NorthEast [LAT] = -90.0;
+		subPtr->SouthWest [LNG] =  cs_K360;
+		subPtr->SouthWest [LAT] =  cs_K360;
+		subPtr->NorthEast [LNG] = -cs_K360;
+		subPtr->NorthEast [LAT] = -cs_K360;
 
 		/* Remember, these values as extracted from the file itself are
 		   WEST positive. */
-		subPtr->SeReference [LNG] =  180.0;
-		subPtr->SeReference [LAT] =   90.0;
-		subPtr->NwReference [LNG] = -180.0;
-		subPtr->NwReference [LAT] =  -90.0;
+		subPtr->SeReference [LNG] =  cs_K360;
+		subPtr->SeReference [LAT] =  cs_K360;
+		subPtr->NwReference [LNG] = -cs_K360;
+		subPtr->NwReference [LAT] = -cs_K360;
 
 		subPtr->DeltaLng  = 0.0;
 		subPtr->DeltaLat  = 0.0;
@@ -555,6 +583,13 @@ int CSinitNTv2 (struct cs_NTv2_* thisPtr,Const char *filePath,long32_t bufferSiz
 		subPtr->Parent [0] = '\0';
 	}
 
+	/* Prepare for accumulating the east positive extrema for
+	   optimum coverage evaluations. */
+	thisPtr->swExtents [LNG] =  cs_K360;
+	thisPtr->swExtents [LAT] =  cs_K360;
+	thisPtr->neExtents [LNG] = -cs_K360;
+	thisPtr->neExtents [LAT] = -cs_K360;
+
 	/* Once for each sub-grid in the file; read in the header.  At this point,
 	   we just read them in.  Later on, we peruse the array and figure out
 	   who the mamas and the papas are. */
@@ -565,8 +600,8 @@ int CSinitNTv2 (struct cs_NTv2_* thisPtr,Const char *filePath,long32_t bufferSiz
 		readCntRq = sizeof (fileSubHdr);
 		if (thisPtr->IntType == csNTv2TypeAustralia) readCntRq -= 4;
 
-		readCnt = CS_fread (&fileSubHdr,1,readCntRq,thisPtr->Stream);
-		if (CS_ferror (thisPtr->Stream))
+		readCnt = CS_fread (&fileSubHdr,1,readCntRq,stream);
+		if (CS_ferror (stream))
 		{
 			CS_erpt (cs_IOERR);
 			goto error;
@@ -590,11 +625,11 @@ int CSinitNTv2 (struct cs_NTv2_* thisPtr,Const char *filePath,long32_t bufferSiz
 			CS_bswap (&fileSubHdr,cs_BSWP_NTv2SubHdrAU);
 		}
 
-		/* Collect the useful stuff. */		
+		/* Collect the useful stuff. */
 		subPtr = &thisPtr->SubGridDir [idx];
 
 		/* Data for each sub-grid immediately follows the sub-grid header. */
-		subPtr->FirstRecord = CS_ftell (thisPtr->Stream);
+		subPtr->FirstRecord = CS_ftell (stream);
 
 		/* These boundaries are rational east positive boundaries. */
 		subPtr->SouthWest [LNG] = -fileSubHdr.w_long * cs_Sec2Deg;
@@ -615,7 +650,7 @@ int CSinitNTv2 (struct cs_NTv2_* thisPtr,Const char *filePath,long32_t bufferSiz
 
 		/* We do not use Density in the calculations.  It is only used to
 		   select one sub-grid over another in the case of overlap.  Yes,
-		   I know.  The sub-grids at the same level are not suppoded to
+		   I know.  The sub-grids at the same level are not supposed to
 		   overlap; but they do.  Call it job security for you an me. */
 		subPtr->Density = (subPtr->DeltaLat < subPtr->DeltaLng) ? subPtr->DeltaLat : subPtr->DeltaLng;
 
@@ -634,35 +669,68 @@ int CSinitNTv2 (struct cs_NTv2_* thisPtr,Const char *filePath,long32_t bufferSiz
 		   in the double portion of the calculations. */
 		subPtr->RowCount = (unsigned short)(((subPtr->NwReference [LAT] - subPtr->SeReference [LAT]) / subPtr->DeltaLat) + 1.01);
 		subPtr->ElementCount = (unsigned short)(((subPtr->NwReference [LNG] - subPtr->SeReference [LNG]) / subPtr->DeltaLng) + 1.01);
+#ifdef GEOCOORD_ENHANCEMENT
+        subPtr->RowSize = ((unsigned long)subPtr->ElementCount * thisPtr->RecSize);
+#else
 		subPtr->RowSize = (unsigned short)(subPtr->ElementCount * thisPtr->RecSize);
+#endif
 
-		/* Certain sub grids are not cacheable.  In the Canadian file, the region
-		   which is not cacheable is rather small.  We use the csCaNTv2KludgeTable
-		   to handle it.  The one Austrailian sub-grid we've seen is screwed up,
-		   so we disable cacheing (at least for now), for all Australian files.
+		/* Certain sub grids are not cache-able.  In the Canadian file, the region
+		   which is not cache-able is rather small.  We use the csCaNTv2KludgeTable
+		   to handle it.  The one Australian sub-grid we've seen is screwed up,
+		   so we disable caching (at least for now), for all Australian files.
 		   Australian, in this context, means file in the old Australian format,
 		   not necessarily data files covering Australian geography.
 		   
 		   In the case of the Spanish variation, parent grids overlap, and
-		   therefore none of the sub-grids are cacheable. */
-//???? 	subPtr->Cacheable = (short)((thisPtr->IntType == csNTv2TypeCanada) && (thisPtr->SubOverlap == 0));
+		   therefore none of the sub-grids are cache-able.
+
+		   NOTE: with the advent of RFC-2, the grid cache system is essentially
+		   deactivated.  In the Canadian NTv2 file, there were two subgrids 
+		   which did not adhere to the original standard and thus were not
+		   cache-able.  As there is no cache anymore, the cache-able element has
+		   no use and should be removed from the structure.  For now, the value
+		   is simply forced to FALSE in all cases.*/
 		subPtr->Cacheable = FALSE;
 
 		/* Skip over the data records in the file. */
 		skipAmount = subPtr->GridRecCnt * thisPtr->RecSize;
-		seekStat = CS_fseek (thisPtr->Stream,skipAmount,SEEK_CUR);
+		seekStat = CS_fseek (stream,skipAmount,SEEK_CUR);
 		if (seekStat != 0)
 		{
 			CS_erpt (cs_INV_FILE);
 			goto error;
 		}
+
+		/* Accumulate the "whole file" coverage boundaries in East Positive
+		   form. */
+		if (subPtr->SouthWest [LNG] < thisPtr->swExtents [LNG])
+		{
+			thisPtr->swExtents [LNG] = subPtr->SouthWest [LNG];
+		}
+		if (subPtr->SouthWest [LAT] < thisPtr->swExtents [LAT])
+		{
+			thisPtr->swExtents [LAT] = subPtr->SouthWest [LAT];
+		}
+
+		if (subPtr->NorthEast [LNG] > thisPtr->neExtents [LNG])
+		{
+			thisPtr->neExtents [LNG] = subPtr->NorthEast [LNG];
+		}
+		if (subPtr->NorthEast [LAT] > thisPtr->neExtents [LAT])
+		{
+			thisPtr->neExtents [LAT] = subPtr->NorthEast [LAT];
+		}
 	}
 
-	/* Now we figure out who the mammas and the pappas are.  Note, all we have
+	/* Now we figure out who the mamas and the Pappas are.  Note, all we have
 	   to work with are parent names.  Therefore, we have to work bassackwards.
 
 	   End result of all of this, is that each child needs to have the index
-	   of its parent; and each sub-grid that has a child needs to be so marked. */
+	   of its parent; and each sub-grid that has a child needs to be so marked.
+	   Of course, all of this is of no value for files which do not adhere to
+	   the original NTv2 standard.  Most notably, the Spanish file does not
+	   adhere.  */
 	for (idx =  0;idx < thisPtr->SubCount;idx += 1)
 	{
 		kidPtr = &thisPtr->SubGridDir [idx];
@@ -687,13 +755,13 @@ int CSinitNTv2 (struct cs_NTv2_* thisPtr,Const char *filePath,long32_t bufferSiz
 		} 
 	}
 
-	/* To accomodate the Spanish (and perhaps others in the future, we check the
-	   parent grids in the list of sub-grids for overlap.  If overlap exists,
-	   we turn on the SubOverlap flag.  Of course, if this flag is already on,
-	   we have nothing to do.  If we did indeed turn on the SubOverlap flag,
-	   we need to cruise through all the sub-grids and set the Cacheable flag
-	   to false to assure that no data from this file makes it to the grid cell
-	   cache. */
+	/* To accommodate the Spanish (and perhaps others in the future), we check
+	   the parent grids in the list of sub-grids for overlap.  If overlap 
+	   exists, we turn on the SubOverlap flag.  Of course, if this flag is
+	   already on, we have nothing to do.  If we did indeed turn on the
+	   SubOverlap flag, we need to cruise through all the sub-grids and set the
+	   Cache-able flag to false to assure that no data from this file makes it
+	   to the grid cell cache. */
 	if (thisPtr->SubOverlap == 0)
 	{
 		for (parIdx = 0;parIdx < thisPtr->SubCount && thisPtr->SubOverlap == 0;parIdx += 1)
@@ -717,7 +785,7 @@ int CSinitNTv2 (struct cs_NTv2_* thisPtr,Const char *filePath,long32_t bufferSiz
 				overlap |= subPtr->NwReference [LNG] > parPtr->SeReference [LNG] &&
 						   subPtr->NwReference [LAT] > parPtr->SeReference [LAT] &&
 						   subPtr->NwReference [LNG] < parPtr->NwReference [LNG] &&
-						   subPtr->NwReference [LAT] < parPtr->NwReference [LAT];
+						   subPtr->NwReference [LAT] < parPtr->NwReference [LAT];		/*lint !e514  usual use of a boolean; looks just fine */
 				if (overlap)
 				{
 					thisPtr->SubOverlap = TRUE;		/* for testing ease */
@@ -738,19 +806,19 @@ int CSinitNTv2 (struct cs_NTv2_* thisPtr,Const char *filePath,long32_t bufferSiz
 	/* OK, we should be ready to rock and roll.  We close the Stream until
 	   we actually need it.  Often, we get constructed just so there is a
 	   record of the coverage afforded by the file. */
-	if (thisPtr->Stream != NULL)
+	if (stream != NULL)			/*lint !e774  boolean always evaluates to true */
 	{
-		CS_fclose (thisPtr->Stream);
-		thisPtr->Stream = NULL;
+		CS_fclose (stream);
+		stream = NULL;
 	}
 	csErrnam [0] = '\0';
-	return 0;
+	return csGRIDI_ST_OK;
 
 error:
-	if (thisPtr->Stream != NULL)
+	if (stream != NULL)
 	{
-		CS_fclose (thisPtr->Stream);
-		thisPtr->Stream = NULL;
+		CS_fclose (stream);
+		stream = NULL;
 	}
 	if (thisPtr->SubGridDir != NULL)
 	{
@@ -769,7 +837,7 @@ error:
 	if (thisPtr->BufferSize <= 4096) thisPtr->BufferSize = 4096;
 	CSinitNTv2GridCell (&thisPtr->longitudeCell);
 	CSinitNTv2GridCell (&thisPtr->latitudeCell);
-	return -1;
+	return csGRIDI_ST_SYSTEM;
 }
 
 /* Destructor */
@@ -777,7 +845,7 @@ void CSdeleteNTv2 (struct cs_NTv2_* thisPtr)
 {
 	if (thisPtr != NULL)
 	{
-		if (thisPtr->Stream != NULL) CS_fclose (thisPtr->Stream);
+		if (thisPtr->fileImage != NULL) CS_free (thisPtr->fileImage);
 		if (thisPtr->SubGridDir != NULL) CS_free (thisPtr->SubGridDir);
 		CS_free (thisPtr);
 	}
@@ -789,10 +857,9 @@ void CSreleaseNTv2 (struct cs_NTv2_* thisPtr)
 {
 	if (thisPtr != NULL)
 	{
-		if (thisPtr->Stream != NULL)
+		if (thisPtr->fileImage != NULL)
 		{
-			CS_fclose (thisPtr->Stream);
-			thisPtr->Stream = NULL;
+			CS_free(thisPtr->fileImage); thisPtr->fileImage = NULL;
 		}
 	}
 }
@@ -831,7 +898,7 @@ struct csNTv2SubGrid_* CSlocateSubNTv2 (struct cs_NTv2_* thisPtr,Const double so
 	   coverage.  There are two algorithms:  the original one and one invented
 	   to cater to the Spaniards (and maybe some others in the future).
 	   
-	   In the original alghorithm, we search through the top level of parent
+	   In the original algorithm, we search through the top level of parent
 	   grids looking for coverage.  The top level parents are those which have
 	   no parent.  If none is found, there is no coverage.  If we locate a parent
 	   which provides coverage, we examine all children of that parent looking
@@ -898,7 +965,7 @@ struct csNTv2SubGrid_* CSlocateSubNTv2 (struct cs_NTv2_* thisPtr,Const double so
 				idx = cvtPtr->ChildIndex - 1;
 			}
 		}
-	}
+	}			/*lint !e850   loop variable (idx) is modified within the loop body  (PC_Lint lin nbr is off by one) */
 	else
 	{
 		/* The Spanish variation.  We search all subgrids looking for
@@ -935,6 +1002,12 @@ struct csNTv2SubGrid_* CSlocateSubNTv2 (struct cs_NTv2_* thisPtr,Const double so
 }
 
 /* Interpolation Calculator
+	The comment below is stale now that we store the entire grid file in memory,
+	but is interesting nonetheless as it documents unusual properties of NTv2
+	grids.
+
+	====
+
 	Due to a bust in the file format, we do not buffer up grid cells and stuff.
 	There are a couple of sub-grids which overlap other grids in such a way that
 	buffering can cause errors.  So, at least until (if ever) the data file is
@@ -949,6 +1022,7 @@ struct csNTv2SubGrid_* CSlocateSubNTv2 (struct cs_NTv2_* thisPtr,Const double so
 	do, however, use a normal stream buffer of the size specified in the
 	main object.
 */
+/*lint -esym(550,readCnt)   not accessed, but very helpful when debugging */
 int CScalcNTv2 (struct cs_NTv2_* thisPtr,double deltaLL [2],Const double source [2])
 {
 	extern double cs_Zero;				/* 0.0 */
@@ -958,9 +1032,10 @@ int CScalcNTv2 (struct cs_NTv2_* thisPtr,double deltaLL [2],Const double source 
 	short onLimit;
 	unsigned short eleNbr, rowNbr;
 
-	int seekStat;
 	int rtnValue;
 	int swapping;
+
+	csFILE* stream = NULL;
 	size_t readCnt;
 	long32_t filePosition;
 	struct csNTv2SubGrid_ *cvtPtr;
@@ -1013,17 +1088,55 @@ int CScalcNTv2 (struct cs_NTv2_* thisPtr,double deltaLL [2],Const double source 
 		if (fabs (wpLL [LAT] - cvtPtr->NwReference [LAT]) <= cs_LlNoise) onLimit |= 1;
 		if (fabs (wpLL [LNG] - cvtPtr->NwReference [LNG]) <= cs_LlNoise) onLimit |= 2;
 
-		/* Make sure the file is opened.  It can get closed by a release. */
-		if (thisPtr->Stream == NULL)
+		if (thisPtr->fileImage == NULL)
 		{
-			thisPtr->Stream = CS_fopen (thisPtr->FilePath,_STRM_BINRD);
-			if (thisPtr->Stream == NULL)
+			stream = CS_fopen (thisPtr->FilePath,_STRM_BINRD);
+			if (stream == NULL)
 			{
 				CS_stncp (csErrnam,thisPtr->FilePath,MAXPATH);
 				CS_erpt (cs_DTC_FILE);
 				goto error;
 			}
-			setvbuf (thisPtr->Stream,NULL,_IOFBF,(size_t)thisPtr->BufferSize);
+			setvbuf (stream,NULL,_IOFBF,(size_t)thisPtr->BufferSize);
+
+			// Determine the size of the file.
+			if (CS_fseek (stream,0L,SEEK_END))
+			{
+				CS_stncp (csErrnam,thisPtr->FilePath,MAXPATH);
+				CS_erpt (cs_IOERR);
+				goto error;
+			}
+			thisPtr->fileImageSize = CS_ftell (stream);
+			if (thisPtr->fileImageSize < 0L)
+			{
+				CS_stncp (csErrnam,thisPtr->FilePath,MAXPATH);
+				CS_erpt (cs_IOERR);
+				goto error;
+			}
+			if (CS_fseek (stream, 0L, SEEK_SET))
+			{
+				CS_stncp (csErrnam,thisPtr->FilePath,MAXPATH);
+				CS_erpt (cs_IOERR);
+				goto error;
+			}
+
+			// Prepare memory
+			thisPtr->fileImage = (char*)CS_malc((size_t)thisPtr->fileImageSize);
+			if (thisPtr->fileImage == NULL)
+			{
+				CS_erpt (cs_NO_MEM);
+				goto error;
+			}
+
+			// Copy everything into the memory
+			readCnt = CS_fread(thisPtr->fileImage,1,(unsigned int)thisPtr->fileImageSize,stream);
+			if (CS_ferror(stream))
+			{
+				CS_erpt (cs_IOERR);
+				goto error;
+			}
+
+			CS_fclose (stream); stream = NULL;
 		}
 
 		/* Compute onLimit for this point and the selected sub-grid regardless
@@ -1043,7 +1156,11 @@ int CScalcNTv2 (struct cs_NTv2_* thisPtr,double deltaLL [2],Const double source 
 		seCell [LNG] = cvtPtr->SeReference [LNG] + cvtPtr->DeltaLng * (double)eleNbr;
 		seCell [LAT] = cvtPtr->SeReference [LAT] + cvtPtr->DeltaLat * (double)rowNbr;
 		nwCell [LNG] = seCell [LNG] + cvtPtr->DeltaLng;
+#ifdef GEOCOORD_ENHANCEMENT
+		nwCell [LAT] = seCell [LAT] + cvtPtr->DeltaLat;
+#else
 		nwCell [LAT] = seCell [LAT] + cvtPtr->DeltaLng;
+#endif
 
 		/* Build the extent portions of the grid cells. */
 		thisPtr->longitudeCell.seCorner [LNG] = seCell [LNG];
@@ -1071,71 +1188,34 @@ int CScalcNTv2 (struct cs_NTv2_* thisPtr,double deltaLL [2],Const double source 
 			/* The normal case, probably about 99.9999 percent of the time.
 			   Read the data into my record buffer. */
 			filePosition = cvtPtr->FirstRecord + rowNbr * cvtPtr->RowSize + eleNbr * thisPtr->RecSize;
-			seekStat = CS_fseek (thisPtr->Stream,filePosition,SEEK_SET);
-			if (seekStat != 0)
+
+			if ((long32_t)(filePosition + sizeof(southEast) + sizeof(southWest)) > thisPtr->fileImageSize)
 			{
 				CS_erpt (cs_INV_FILE);
 				goto error;
 			}
 
-			/* Read southeast shifts. */
-			readCnt = CS_fread (&southEast,1,sizeof (southEast),thisPtr->Stream);
-			if (CS_ferror (thisPtr->Stream))
-			{
-				CS_erpt (cs_IOERR);
-				goto error;
-			}
-			if (readCnt != sizeof (southEast))
-			{
-				CS_erpt (cs_INV_FILE);
-				goto error;
-			}
-
+			memcpy(&southEast, thisPtr->fileImage + filePosition, sizeof(southEast));
 			/* Read southwest shifts. */
-			readCnt = CS_fread (&southWest,1,sizeof (southWest),thisPtr->Stream);
-			if (CS_ferror (thisPtr->Stream))
-			{
-				CS_erpt (cs_IOERR);
-				goto error;
-			}
-			if (readCnt != sizeof (southWest))
-			{
-				CS_erpt (cs_INV_FILE);
-				goto error;
-			}
+			memcpy(&southWest,
+				   thisPtr->fileImage + filePosition + sizeof(southEast),
+				   sizeof(southWest));
 
 			/* Read northeast shifts. */
 			filePosition += cvtPtr->RowSize;
-			seekStat = CS_fseek (thisPtr->Stream,filePosition,SEEK_SET);
-			if (seekStat != 0)
-			{
-				CS_erpt (cs_INV_FILE);
-				goto error;
-			}
-			readCnt = CS_fread (&northEast,1,sizeof (northEast),thisPtr->Stream);
-			if (CS_ferror (thisPtr->Stream))
-			{
-				CS_erpt (cs_IOERR);
-				goto error;
-			}
-			if (readCnt != sizeof (northEast))
+
+			if ((long32_t)(filePosition + sizeof(northEast) + sizeof(northWest)) > thisPtr->fileImageSize)
 			{
 				CS_erpt (cs_INV_FILE);
 				goto error;
 			}
 
+			memcpy(&northEast, thisPtr->fileImage + filePosition, sizeof(northEast));
+
 			/* Read northwest shifts. */
-			readCnt = CS_fread (&northWest,1,sizeof (northWest),thisPtr->Stream);
-			if (CS_ferror (thisPtr->Stream))
-			{
-				CS_erpt (cs_IOERR);
-				goto error;
-			}
-			if (readCnt != sizeof (northWest))
-			{
-				CS_erpt (cs_INV_FILE);
-				goto error;
-			}
+			memcpy(&northWest,
+				   thisPtr->fileImage + filePosition + sizeof(northEast),
+				   sizeof(northWest));
 
 			/* Swap as necessary. */
 			swapping = CS_bswap (&southEast,cs_BSWP_NTv2Data);
@@ -1160,40 +1240,23 @@ int CScalcNTv2 (struct cs_NTv2_* thisPtr,double deltaLL [2],Const double source 
 		else if (onLimit == 1)
 		{
 			/* Point is on the extreme northern edge of the sub-grid.  This occurs
-			   ocassionally.  In this case, the "northern" boundary of the grid cell
+			   occasionally.  In this case, the "northern" boundary of the grid cell
 			   doesn't exist, and we must manufacture such.  This is called a
 			   virtual cell in the Canadian documentation.  */
 			filePosition = cvtPtr->FirstRecord + rowNbr * cvtPtr->RowSize + eleNbr * thisPtr->RecSize;
-			seekStat = CS_fseek (thisPtr->Stream,filePosition,SEEK_SET);
-			if (seekStat != 0)
+
+			if ((long32_t)(filePosition + sizeof(southEast) + sizeof(southWest)) > thisPtr->fileImageSize)
 			{
 				CS_erpt (cs_INV_FILE);
 				goto error;
 			}
 
-			readCnt = CS_fread (&southEast,1,sizeof (southEast),thisPtr->Stream);
-			if (CS_ferror (thisPtr->Stream))
-			{
-				CS_erpt (cs_IOERR);
-				goto error;
-			}
-			if (readCnt != sizeof (southWest))
-			{
-				CS_erpt (cs_INV_FILE);
-				goto error;
-			}
+			memcpy(&southEast, thisPtr->fileImage + filePosition, sizeof(southEast));
+			/* Read southwest shifts. */
+			memcpy(&southWest,
+				   thisPtr->fileImage + filePosition + sizeof(southEast),
+				   sizeof(southWest));
 
-			readCnt = CS_fread (&southWest,1,sizeof (southWest),thisPtr->Stream);
-			if (CS_ferror (thisPtr->Stream))
-			{
-				CS_erpt (cs_IOERR);
-				goto error;
-			}
-			if (readCnt != sizeof (southEast))
-			{
-				CS_erpt (cs_INV_FILE);
-				goto error;
-			}
 			/* Swap as necessary. */
 			swapping = CS_bswap (&southEast,cs_BSWP_NTv2Data);
 			if (swapping)
@@ -1223,43 +1286,26 @@ int CScalcNTv2 (struct cs_NTv2_* thisPtr,double deltaLL [2],Const double source 
 		{
 			/* Point is on the extreme western edge of the sub-grid. */
 			filePosition = cvtPtr->FirstRecord + rowNbr * cvtPtr->RowSize + eleNbr * thisPtr->RecSize;
-			seekStat = CS_fseek (thisPtr->Stream,filePosition,SEEK_SET);
-			if (seekStat != 0)
+
+			if ((long32_t)(filePosition + sizeof(southEast)) > thisPtr->fileImageSize)
 			{
 				CS_erpt (cs_INV_FILE);
 				goto error;
 			}
-			readCnt = CS_fread (&southEast,1,sizeof (southEast),thisPtr->Stream);
-			if (CS_ferror (thisPtr->Stream))
-			{
-				CS_erpt (cs_IOERR);
-				goto error;
-			}
-			if (readCnt != sizeof (southWest))
-			{
-				CS_erpt (cs_INV_FILE);
-				goto error;
-			}
+
+			memcpy(&southEast, thisPtr->fileImage + filePosition, sizeof(southEast));
+
 			/* Don't read the south west, it ain't there. */
 
 			filePosition += cvtPtr->RowSize;
-			seekStat = CS_fseek (thisPtr->Stream,filePosition,SEEK_SET);
-			if (seekStat != 0)
+
+			if ((long32_t)(filePosition + sizeof(northEast)) > thisPtr->fileImageSize)
 			{
 				CS_erpt (cs_INV_FILE);
 				goto error;
 			}
-			readCnt = CS_fread (&northEast,1,sizeof (northEast),thisPtr->Stream);
-			if (CS_ferror (thisPtr->Stream))
-			{
-				CS_erpt (cs_IOERR);
-				goto error;
-			}
-			if (readCnt != sizeof (northWest))
-			{
-				CS_erpt (cs_INV_FILE);
-				goto error;
-			}
+
+			memcpy(&northEast, thisPtr->fileImage + filePosition, sizeof(northEast));
 			
 			/* Don't read the northwest, it ain't there. */
 			swapping = CS_bswap (&southEast,cs_BSWP_NTv2Data);
@@ -1288,23 +1334,14 @@ int CScalcNTv2 (struct cs_NTv2_* thisPtr,double deltaLL [2],Const double source 
 		{
 			/* Point is actually the northwestern corner of the sub-grid. */
 			filePosition = cvtPtr->FirstRecord + rowNbr * cvtPtr->RowSize + eleNbr * thisPtr->RecSize;
-			seekStat = CS_fseek (thisPtr->Stream,filePosition,SEEK_SET);
-			if (seekStat != 0)
+
+			if ((long32_t)(filePosition + sizeof(southEast)) > thisPtr->fileImageSize)
 			{
 				CS_erpt (cs_INV_FILE);
 				goto error;
 			}
-			readCnt = CS_fread (&southEast,1,sizeof (southWest),thisPtr->Stream);
-			if (CS_ferror (thisPtr->Stream))
-			{
-				CS_erpt (cs_IOERR);
-				goto error;
-			}
-			if (readCnt != sizeof (southWest))
-			{
-				CS_erpt (cs_INV_FILE);
-				goto error;
-			}
+
+			memcpy(&southEast, thisPtr->fileImage + filePosition, sizeof(southEast));
 
 			/* Don't read anything else.  There's nothing there. */
 			CS_bswap (&southEast,cs_BSWP_NTv2Data);
@@ -1349,24 +1386,47 @@ int CScalcNTv2 (struct cs_NTv2_* thisPtr,double deltaLL [2],Const double source 
 	csErrnam [0] = '\0';
 	return rtnValue;
 error:
+	if (stream != NULL)
+	{
+		CS_fclose (stream); stream = NULL;
+	}
 	return csGRIDI_ST_SYSTEM;
 }
+/*lint +esym(550,readCnt) */
 
 /* Test function, used to determine if this object covers the provided point.
    If so, the "grid density" of the conversion is returned as a means of
    selecting one grid object over another. */
 double CStestNTv2 (Const struct cs_NTv2_* thisPtr,Const double location [2])
 {
- 	extern double cs_Zero;
+	extern double cs_Zero;
+
+	double density = cs_Zero;
 
 	struct csNTv2SubGrid_* cvtPtr;
 
-	/* Locate the sub-grid which covers the provided location, if any. */
-	cvtPtr = CSlocateSubNTv2 (thisPtr,location);
-	
+	/* Note, the whole file extents which we use here carry East Positive
+	   longitude; expressly to help make this function perform well.
+
+	   The strange way this is coded is that testing strongly indicated that
+	   the ">=" operator applied to doubles is much more CPU time consuming
+	   that a simple '<' operator.  Thus, the more complex boolean expression
+	   than one might ordinarily expect. */
+	if (!(location [LAT] < thisPtr->swExtents [LAT] ||
+		  location [LAT] > thisPtr->neExtents [LAT] ||
+		  location [LNG] < thisPtr->swExtents [LNG] ||
+		  location [LNG] > thisPtr->neExtents [LNG]))
+	{
+		/* Locate the sub-grid which covers the provided location, if any. */
+		cvtPtr = CSlocateSubNTv2 (thisPtr,location);
+		if (cvtPtr != NULL)
+		{
+			density = cvtPtr->Density;
+		}
+	}
 	/* Return the grid density of the sub-grid covering this point. If no
 	   coverage, return zero. */
-	return (cvtPtr == NULL) ? cs_Zero : cvtPtr->Density;
+	return density;
 }
 /*
 	The following returns a pointer to the file which would be used to
@@ -1412,7 +1472,7 @@ void CSinitNTv2GridCell (struct csNTv2GridCell_* thisPtr)
 	thisPtr->deltaLng = cs_Zero;
 	thisPtr->deltaLat = cs_Zero;
 	thisPtr->density = cs_Zero;
-	
+
 	thisPtr->currentAA = cs_Zero;
 	thisPtr->currentBB = cs_Zero;
 	thisPtr->currentCC = cs_Zero;
@@ -1447,5 +1507,5 @@ double CScalcNTv2GridCell (Const struct csNTv2GridCell_* thisPtr,Const double so
 	   i.e. the units of the data values given for the cell corners.  For the
 	   NTv2 format, these values are always (so far, at least) in seconds of
 	   arc. */
-	return returnValue;	
+	return returnValue;
 }

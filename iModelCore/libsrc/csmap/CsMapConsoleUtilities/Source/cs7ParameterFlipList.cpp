@@ -182,7 +182,6 @@ bool SevenParameterFlipList (std::wostream& listStrm,const wchar_t* dictDir)
 					// code and write it to the output stream.  We use sprintf as a way
 					// to have all elements properly padded for a nice looking table in
 					// C++.
-					unsigned newCrsNameLen;
 					char field1 [64];
 					char field2 [64];
 					char field3 [64];

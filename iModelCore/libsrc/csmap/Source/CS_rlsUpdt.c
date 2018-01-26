@@ -33,7 +33,6 @@
 /* Entire module skipped if this is an Embedded compile for project management
    convenience.  Don't think it likely that we'll need to compile dictionaries
    in the Embedded environment. */
-#if !defined (__WINCE__)
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -317,16 +316,16 @@ int EXP_LVL7 CS_swpal (void (*prog)(Const char *name))
 			
 			if (st == 0)
 			{
-				remove (cs_Dir);
+				remove (cs_Dir);					/*lint !e534   ignoring return value */
 
 				/* We ignore errors at this point.
 				   What would we do anyway??? */
 
-				CS_rename (tmp_name,cs_Dir);
+				CS_rename (tmp_name,cs_Dir);		/*lint !e534   ignoring return value */
 			}
 			else
 			{
-				remove (tmp_name);
+				remove (tmp_name);					/*lint !e534   ignoring return value */
 			}
 		}
 	}
@@ -833,11 +832,11 @@ char * EXP_LVL7 CS_swpfl (Const char org_name [])
 	return (rtn_name);
 
 error:
-	if (inStrm != NULL) CS_fclose (inStrm);		/*lint !e449 */ /* Redundant, but defensively convenient. */		
+	if (inStrm != NULL) CS_fclose (inStrm);
 	if (outStrm != NULL)
 	{
 		CS_fclose (outStrm);
-		remove (out_name);
+		remove (out_name);						/*lint !e534   ignoring return value */
 	}
 	if (bufr != NULL) CS_free (bufr);
 	return (NULL);
@@ -885,7 +884,7 @@ error:
 	this parameter is not used for this projection
 */
 
-/*lint -e773 */
+/*lint -e773    macro parameters not enclosed in parenthesis, possible erroneous expansion */
 #define MASKPRM(prm,code,ii) prm = (CS_prjprm(NULL,code,ii-1)) ? prm : 0.0
 /*lint +e773 */
 
@@ -1147,35 +1146,35 @@ int EXP_LVL3 CS_csrup (Const char *distrb,Const char *bkupnm)
 	}
 
 	/* Clean up. */
-	if (tmpStrm != NULL)		/*lint !e774 */  /* Redundant, but nice to have. */
+	if (tmpStrm != NULL)		/*lint !e774   boolean always evaluates to TRUE */
 	{
-	CS_fclose (tmpStrm);
-	tmpStrm = NULL;
+		CS_fclose (tmpStrm);
+		tmpStrm = NULL;
 	}
-	if (oldStrm != NULL)		/*lint !e774 */  /* Redundant, but nice to have. */
+	if (oldStrm != NULL)		/*lint !e774   boolean always evaluates to TRUE */
 	{
-	CS_fclose (oldStrm);
-	oldStrm = NULL;
+		CS_fclose (oldStrm);
+		oldStrm = NULL;
 	}
-	if (updStrm != NULL)		/*lint !e774 */  /* Redundant, but nice to have. */
+	if (updStrm != NULL)		/*lint !e774   boolean always evaluates to TRUE */
 	{
-	CS_fclose (updStrm);
-	updStrm = NULL;
+		CS_fclose (updStrm);
+		updStrm = NULL;
 	}
 
 	if (bkupnm != NULL && *bkupnm != '\0')
 	{
 		CS_stcpy (cs_DirP,bkupnm);
 		CS_stncp (ctemp,cs_Dir,sizeof (ctemp));
-		remove (ctemp);
+		remove (ctemp);								/*lint !e534  ignoring return value */
 		CS_stcpy (cs_DirP,cs_Csname);
-		CS_rename (cs_Dir,ctemp);
+		CS_rename (cs_Dir,ctemp);					/*lint !e534  ignoring return value */
 		st = CS_rename (tmp_fnm,cs_Dir);
 	}
 	else
 	{
 		CS_stcpy (cs_DirP,cs_Csname);
-		remove (cs_Dir);
+		remove (cs_Dir);							/*lint !e534  ignoring return value */
 		st = CS_rename (tmp_fnm,cs_Dir);
 	}
 	return ((st == 0) ? 0 : -1);
@@ -1186,7 +1185,7 @@ error:
 	if (updStrm != NULL) CS_fclose (updStrm);
 	if (tmp_fnm [0] != '\0')
 	{
-		remove (tmp_fnm);
+		remove (tmp_fnm);						/*lint !e534  ignoring return value */
 	}
 	return -1;
 }
@@ -2284,33 +2283,33 @@ int EXP_LVL3 CS_dtrup (Const char *distrb,Const char *bkupnm)
 	/* Clean up. */
 	if (tmpStrm != NULL)		/*lint !e774 */  /*Redundant, but nice to have. */
 	{
-	CS_fclose (tmpStrm);
-	tmpStrm = NULL;
+		CS_fclose (tmpStrm);
+		tmpStrm = NULL;
 	}
 	if (oldStrm != NULL)
 	{
-	CS_fclose (oldStrm);
-	oldStrm = NULL;
+		CS_fclose (oldStrm);
+		oldStrm = NULL;
 	}
 	if (updStrm != NULL)
 	{
-	CS_fclose (updStrm);
-	updStrm = NULL;
+		CS_fclose (updStrm);
+		updStrm = NULL;
 	}
 
 	if (bkupnm != NULL && *bkupnm != '\0')
 	{
 		CS_stcpy (cs_DirP,bkupnm);
 		CS_stncp (ctemp,cs_Dir,sizeof (ctemp));
-		remove (ctemp);
+		remove (ctemp);					/*lint !e534  ignoring return value */
 		CS_stcpy (cs_DirP,cs_Dtname);
-		CS_rename (cs_Dir,ctemp);
+		CS_rename (cs_Dir,ctemp);					/*lint !e534  ignoring return value */
 		st = CS_rename (tmp_fnm,cs_Dir);
 	}
 	else
 	{
 		CS_stcpy (cs_DirP,cs_Dtname);
-		remove (cs_Dir);
+		remove (cs_Dir);					/*lint !e534  ignoring return value */
 		st = CS_rename (tmp_fnm,cs_Dir);
 	}
 	return ((st == 0) ? 0 : -1);
@@ -2320,7 +2319,7 @@ error:
 	if (updStrm != NULL) CS_fclose (updStrm);
 	if (tmp_fnm [0] != '\0')
 	{
-		remove (tmp_fnm);
+		remove (tmp_fnm);					/*lint !e534  ignoring return value */
 	}
 	return (-1);
 }
@@ -3086,28 +3085,28 @@ int EXP_LVL3 CS_elrup (Const char *distrb,Const char *bkupnm)
 	tmpStrm = NULL;
 	if (oldStrm != NULL)
 	{
-	CS_fclose (oldStrm);
-	oldStrm = NULL;
+		CS_fclose (oldStrm);
+		oldStrm = NULL;
 	}
 	if (updStrm != NULL)
 	{
-	CS_fclose (updStrm);
-	updStrm = NULL;
+		CS_fclose (updStrm);
+		updStrm = NULL;
 	}
 
 	if (bkupnm != NULL && *bkupnm != '\0')
 	{
 		CS_stcpy (cs_DirP,bkupnm);
 		CS_stncp (ctemp,cs_Dir,sizeof (ctemp));
-		remove (ctemp);
+		remove (ctemp);								/*lint !e534  ignoring return value */
 		CS_stcpy (cs_DirP,cs_Elname);
-		CS_rename (cs_Dir,ctemp);
+		CS_rename (cs_Dir,ctemp);					/*lint !e534  ignoring return value */
 		st = CS_rename (tmp_fnm,cs_Dir);
 	}
 	else
 	{
 		CS_stcpy (cs_DirP,cs_Elname);
-		CS_remove (cs_Dir);
+		CS_remove (cs_Dir);							/*lint !e534  ignoring return value */
 		st = CS_rename (tmp_fnm,cs_Dir);
 	}
 	return ((st == 0) ? 0 : -1);
@@ -3118,7 +3117,7 @@ error:
 	if (updStrm != NULL) CS_fclose (updStrm);
 	if (tmp_fnm [0] != '\0')
 	{
-		CS_remove (tmp_fnm);
+		CS_remove (tmp_fnm);					/*lint !e534  ignoring return value */
 	}
 	return (-1);
 }
@@ -3465,4 +3464,3 @@ int CSelrupTo08 (struct csElrup_ *elrup)
 	elrup->level = 7;
 	return (0);
 }
-#endif		// !defined (__WINCE__)

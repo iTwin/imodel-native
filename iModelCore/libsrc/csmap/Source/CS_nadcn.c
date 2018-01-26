@@ -27,6 +27,8 @@
 
 #include "cs_map.h"
 
+/*lint -esym(613,err_list)  possible use of null pointer; but not really */
+
 long32_t csNadconBufrSize = 16384;			/* This buffer size ensures that any
 											   HARN/HPGN grid file is read into
 											   memory and stored in the internal
@@ -176,14 +178,15 @@ int CSnadcnS (struct cs_GridFile_ *gridFile)
 	if (nadcnPtr->latShift == NULL) goto error;
 
 	/* Verify that the two files are consistent. */
-	if (nadcnPtr->lngShift->coverage.southWest [0] != nadcnPtr->latShift->coverage.southWest [0] ||
-		nadcnPtr->lngShift->coverage.southWest [1] != nadcnPtr->latShift->coverage.southWest [1] ||
-		nadcnPtr->lngShift->coverage.northEast [0] != nadcnPtr->latShift->coverage.northEast [0] ||
-		nadcnPtr->lngShift->coverage.northEast [1] != nadcnPtr->latShift->coverage.northEast [1] ||
-		nadcnPtr->lngShift->elementCount           != nadcnPtr->latShift->elementCount ||
-		nadcnPtr->lngShift->recordCount            != nadcnPtr->latShift->recordCount ||
-		nadcnPtr->lngShift->deltaLng               != nadcnPtr->latShift->deltaLng ||
-		nadcnPtr->lngShift->deltaLat               != nadcnPtr->latShift->deltaLat)
+	if (!CS_cmpDbls (nadcnPtr->lngShift->coverage.southWest [0],nadcnPtr->latShift->coverage.southWest [0]) ||
+		!CS_cmpDbls (nadcnPtr->lngShift->coverage.southWest [1],nadcnPtr->latShift->coverage.southWest [1]) ||
+		!CS_cmpDbls (nadcnPtr->lngShift->coverage.northEast [0],nadcnPtr->latShift->coverage.northEast [0]) ||
+		!CS_cmpDbls (nadcnPtr->lngShift->coverage.northEast [1],nadcnPtr->latShift->coverage.northEast [1]) ||
+		nadcnPtr->lngShift->elementCount != nadcnPtr->latShift->elementCount ||
+		nadcnPtr->lngShift->recordCount  != nadcnPtr->latShift->recordCount ||
+		!CS_cmpDbls (nadcnPtr->lngShift->deltaLng,nadcnPtr->latShift->deltaLng) ||
+		!CS_cmpDbls (nadcnPtr->lngShift->deltaLat,nadcnPtr->latShift->deltaLat)
+	   )
 	{
 		CS_erpt (cs_NADCON_CONS);
 		goto error;
@@ -386,6 +389,8 @@ int CSnadcnF3 (struct cs_Nadcn_ *nadcn,double *ll_trg,Const double *ll_src)
 }
 int CSnadcnI2 (struct cs_Nadcn_ *nadcn,double *ll_trg,Const double *ll_src)
 {
+	extern double cs_LlNoise;
+
 	short lng_ok;
 	short lat_ok;
 
@@ -397,6 +402,8 @@ int CSnadcnI2 (struct cs_Nadcn_ *nadcn,double *ll_trg,Const double *ll_src)
 	double newResult [3];
 
 	status = -1;			/* Defensive, until we know differently. */
+
+	epsilon [0] = epsilon [1] = nadcn->errorValue + cs_LlNoise;
 
 	guess [LNG] = ll_src [LNG];
 	guess [LAT] = ll_src [LAT];
@@ -419,7 +426,7 @@ int CSnadcnI2 (struct cs_Nadcn_ *nadcn,double *ll_trg,Const double *ll_src)
 		}
 
 		/* See how far we are off. */
-		epsilon [LNG] = -CS_deltaLongitude (ll_src [LNG],newResult [LNG]);
+		epsilon [LNG] = CS_lngEpsilon (ll_src [LNG],newResult [LNG]);
 		epsilon [LAT] = ll_src [LAT] - newResult [LAT];
 
 		/* If our guess at the longitude is off by more than
@@ -479,7 +486,10 @@ int CSnadcnI3 (struct cs_Nadcn_ *nadcn,double *ll_trg,Const double *ll_src)
 	extern double cs_Zero;
 
 	int status;
+	int statusV;
 	double deltaHgt;
+
+	status = statusV = csGRIDI_ST_SYSTEM;		/* until we know otherwise */
 
 	/* We use the NAD83 (i.e. ll_src in this case) to determine the elevation
 	   shift.  Cine ll_src and ll_trg are often pointers to the same array, we
@@ -497,7 +507,7 @@ int CSnadcnI3 (struct cs_Nadcn_ *nadcn,double *ll_trg,Const double *ll_src)
 		   if the return status is not zero.  We would do some defensive
 		   programming to avoid this reliance, but this module is performance
 		   sensitive. */
-		CSvrtcon29To88 (&deltaHgt,ll_src);
+		statusV = CSvrtcon29To88 (&deltaHgt,ll_src);
 	}
 
 	/* Use the 2D inverse to move the horizontal potion of the coordinate.
@@ -507,6 +517,12 @@ int CSnadcnI3 (struct cs_Nadcn_ *nadcn,double *ll_trg,Const double *ll_src)
 	if (status == csGRIDI_ST_OK)
 	{
 		ll_trg [2] = ll_src [2] - deltaHgt;
+	}
+
+	/* Accumulate the status values. */
+	if (status == 0 && statusV != 0)
+	{
+		status = csGRIDI_ST_COVERAGE;
 	}
 	return status;
 }
@@ -838,6 +854,7 @@ double CStestNadconFile (struct cs_NadconFile_* thisPtr,Const double *sourceLL)
 	density =  CStestCoverage (&(thisPtr->coverage),sourceLL);
 	return density;
 }
+/*lint -e826  inappropriate cast: 'fltPtr = (float *)(chrPtr)' which we do a lot in this function. */
 int CSextractNadconFile (struct cs_NadconFile_* thisPtr,Const double* sourceLL)
 {
 	extern double cs_LlNoise;			/* 1.0E-12 */
@@ -1116,9 +1133,9 @@ error:
 	/* Negative return indicates a system error of sorts. */
 	return csGRIDI_ST_SYSTEM;
 }
+/*lint +e826 */
 int CScalcNadconFile (struct cs_NadconFile_* thisPtr,double* result,Const double* sourceLL)
 {
-	extern double cs_Zero;
 	extern double cs_Mhuge;
 
 	int cellStatus;

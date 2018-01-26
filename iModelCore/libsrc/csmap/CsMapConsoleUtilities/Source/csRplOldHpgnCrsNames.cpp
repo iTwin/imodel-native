@@ -17,7 +17,7 @@
 //
 
 #include "csConsoleUtilities.hpp"
-#include "csNameMapper.hpp"
+#include "cs_NameMapper.hpp"
 
 extern "C" unsigned long KcsNmInvNumber;
 extern "C" unsigned long KcsNmMapNoNumber;

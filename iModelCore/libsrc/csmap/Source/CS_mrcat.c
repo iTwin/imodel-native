@@ -333,7 +333,7 @@ int EXP_LVL9 CSmrcatF (Const struct cs_Mrcat_ *mrcat,double xy [2],Const double 
 {
 	extern double cs_One;				/* 1.0 */
 	extern double cs_Degree;			/* 1.0 / 57.29577... */
-	extern double cs_Pi_o_2;            /* Pi / 2.0 */
+	extern double cs_Pi_o_2;			/* Pi / 2.0 */
 	extern double cs_Two_pi;			/* 2 pi */
 	extern double cs_Pi;				/*  Pi, i.e. 3.14159 */
 	extern double cs_3Pi_o_2;			/*  3 pi over 2  */
@@ -343,8 +343,8 @@ int EXP_LVL9 CSmrcatF (Const struct cs_Mrcat_ *mrcat,double xy [2],Const double 
 	extern double cs_SPTest;			/* 0.001 arc seconds
 										   short of the south
 										   pole in radians. */
-	extern double cs_AnglTest;          /* 4.85E-08; about 30 centimeters on
-	                                       the surface of the earth in radians */
+	extern double cs_AnglTest;			/* 4.85E-08; about 30 centimeters on
+										   the surface of the earth in radians */
 
 	int rtn_val;
 
@@ -364,7 +364,7 @@ int EXP_LVL9 CSmrcatF (Const struct cs_Mrcat_ *mrcat,double xy [2],Const double 
 	   in the definition.  We used to adjust so that the longitude was in the
 	   +/1 180 range, so as to establish a one to one relationship between
 	   the cartesian and sphereical coordinate systems.
-	   
+
 	   We now adjust the supplied longitude to be within the longitude range
 	   specified in the definition (i.e. the useful range).  Thus, the
 	   input longitude can now be less than -180 or greater than +180.
@@ -372,7 +372,7 @@ int EXP_LVL9 CSmrcatF (Const struct cs_Mrcat_ *mrcat,double xy [2],Const double 
 	   The inverse is adjusted to accept easting values which produce
 	   such longitudes and thus will produce the original longitude
 	   value as long as this longitude is within the specified range.
-	   
+
 	   However, once these longitudes go through another transformation,
 	   such as a datum transformation, it is likely that the value will
 	   again be normailzed to be within +- 180, and this capability
@@ -441,9 +441,6 @@ int EXP_LVL9 CSmrcatF (Const struct cs_Mrcat_ *mrcat,double xy [2],Const double 
 			del_lng = lng - mrcat->cent_lng;
 		}
 	}
-
-
-
 	xy [XX] = mrcat->Rfact * del_lng;
 
 	/* Bogus values of latitude can cause big problems.  We are a bit more

@@ -28,7 +28,6 @@
 #include "cs_map.h"
 
 /*lint -esym(613,err_list) */
-/*lint -esym(715,prj_code) */
 
 /**********************************************************************
 **	err_cnt = CSsstroQ (cs_def,prj_code,err_list,list_sz);

@@ -38,7 +38,7 @@
 **
 **	File is positioned past the magic number on the front.
 **********************************************************************/
-csFILE * EXP_LVL3 CS_gxopn (Const char *mode)
+csFILE * EXP_LVL5 CS_gxopn (Const char *mode)
 {
 	return CS_gxFileOpen(mode);
 }
@@ -53,7 +53,7 @@ csFILE * EXP_LVL3 CS_gxopn (Const char *mode)
 **	int flag;					returns +1 for successful read, 0 for EOF,
 **								-1 for error.
 **********************************************************************/
-int EXP_LVL3 CS_gxrd (csFILE *strm,struct cs_GeodeticTransform_ *gx_def)
+int EXP_LVL5 CS_gxrd (csFILE *strm,struct cs_GeodeticTransform_ *gx_def)
 {
 	char datumKeyName[cs_KEYNM_DEF] = { '\0' };
 
@@ -94,7 +94,7 @@ int EXP_LVL3 CS_gxrd (csFILE *strm,struct cs_GeodeticTransform_ *gx_def)
 **	int st;						returns FALSE if write was completed successfully,
 **								else returns TRUE.
 **********************************************************************/
-int EXP_LVL3 CS_gxwr (csFILE *strm,Const struct cs_GeodeticTransform_ *gx_def)
+int EXP_LVL5 CS_gxwr (csFILE *strm,Const struct cs_GeodeticTransform_ *gx_def)
 {
 	return CS_gxWrite(strm, gx_def);
 }
@@ -191,7 +191,7 @@ int CS_gxwrtchk(struct cs_GeodeticTransform_ *gx_target, Const struct cs_Geodeti
 **	If the Geodetic Transformation Dictionary does not already contain an entry
 **	with the indicated key name, the entry is added.
 *******************************************************************************/
-int EXP_LVL3 CS_gxupd (struct cs_GeodeticTransform_ *gx_def)
+int EXP_LVL5 CS_gxupd (struct cs_GeodeticTransform_ *gx_def)
 {
 	int result = CS_gxUpdate(gx_def);
 
@@ -251,7 +251,7 @@ struct cs_GeodeticTransform_ * EXP_LVL3 CS_gxdef (Const char *xfrmName)
 	return CS_gxdef2(xfrmName, NULL);
 }
 
-struct cs_GeodeticTransform_* EXP_LVL3 CS_gxdef2 (Const char *xfrmName, char* pszDirPath)
+struct cs_GeodeticTransform_* EXP_LVL5 CS_gxdef2 (Const char *xfrmName, char* pszDirPath)
 {
 	return CS_gxDefinition(xfrmName, pszDirPath);
 }
@@ -286,18 +286,16 @@ int EXP_LVL3 CS_gxdefAll (struct cs_GeodeticTransform_ **pDefArray[])
 **								definition geodetic transformation
 **								structure.
 **********************************************************************/
+/*lint -esym(550,direction)   not used in this module, retained to assist in debugging */
 struct cs_GeodeticTransform_ * EXP_LVL3 CS_gxdefEx (Const char *srcDatum,
 													Const char *trgDatum)
 {
 	extern char csErrnam [];
 	extern char cs_UserDir[];
-	extern char cs_Dir[];
-	extern char* cs_DirP;
-
 	extern int cs_Error;
 
 	char currentDir[MAXPATH] = { '\0' };
-	char targetPaths[2][MAXPATH] = { '\0', '\0' };
+	char targetPaths[2][MAXPATH] = { {'\0'}, {'\0'} };
 	char const* pTargetPath;
 
 	int globalFoundForward;
@@ -305,7 +303,7 @@ struct cs_GeodeticTransform_ * EXP_LVL3 CS_gxdefEx (Const char *srcDatum,
 
 	
 	int st;
-	int i;
+	size_t i;
 	int direction;
 
 	long fwdFpos;
@@ -335,7 +333,11 @@ struct cs_GeodeticTransform_ * EXP_LVL3 CS_gxdefEx (Const char *srcDatum,
 	st = CS_nampp (tmpKeyName);
 	if (st != 0) goto error;
 
-	CS_getdr(currentDir);
+	st = CS_getdr(currentDir);
+	if (st != 0)
+	{
+		goto error;
+	}
 
 	CS_stncp(targetPaths[0], cs_UserDir, sizeof(targetPaths[0]));
 	CS_stncp(targetPaths[1], currentDir, sizeof(targetPaths[1]));
@@ -470,12 +472,11 @@ struct cs_GeodeticTransform_ * EXP_LVL3 CS_gxdefEx (Const char *srcDatum,
 			}
 		}
 		
-		if (strm != NULL)
+		if (strm != NULL)			/*lint !e774  boolean always evaluates to true */
 		{
 			CS_fclose (strm);
 			strm = NULL;
 		}
-
 	}
 
 	if (NULL == gx_def)
@@ -489,7 +490,11 @@ struct cs_GeodeticTransform_ * EXP_LVL3 CS_gxdefEx (Const char *srcDatum,
 		goto error;
 	}
 
-	CS_setdr(currentDir, NULL);
+	st = CS_setdr(currentDir, NULL);
+	if (st != 0)
+	{
+		goto error;
+	}
 
 	/* Return a pointer to the malloc'ed geodetic path definition to the
 	   user. */
@@ -503,10 +508,11 @@ error:
 		gx_def = NULL;
 	}
 
-	CS_setdr(currentDir, NULL);
+	CS_setdr(currentDir, NULL);			/*lint !e534  ignoring return value, can't do much here on failure */
 
 	return (gx_def);
 }
+/*lint +esym(550,direction) */
 
 /**********************************************************************
 **	CS_gxfnm (new_name);
@@ -523,20 +529,27 @@ void EXP_LVL1 CS_gxfnm (Const char *new_name)
 	(void)CS_stncp (cs_Gxname,new_name,cs_FNM_MAXLEN);
 	return;
 }
-
-int EXP_LVL1 CS_gxswp (struct cs_GeodeticTransform_* gx_def)
+int EXP_LVL5 CS_gxswp (struct cs_GeodeticTransform_* gx_def,int writeFlag)
 {
 	int swap;
+
+	short lclMethodCode;
+
+	lclMethodCode = gx_def->methodCode;
 
 	/* Swap the elements which are common to all variations of this
 	   definition. */
 	swap = CS_bswap ((void *)gx_def,cs_BSWP_GXDEF_BASE);
+	if (writeFlag == 0)
+	{
+		lclMethodCode = gx_def->methodCode;
+	}
 	
 	/* If we are indeed swapping, swap the items which are variation
 	   dependent. */
 	if (swap)
 	{
-		switch (gx_def->methodCode & cs_DTCPRMTYP_MASK) {
+		switch (lclMethodCode & cs_DTCPRMTYP_MASK) {
 		
 		case cs_DTCPRMTYP_GEOCTR:
 			CS_bswap (&gx_def->parameters.geocentricParameters,cs_BSWP_GXDEF_GEOCTR);
@@ -558,10 +571,24 @@ int EXP_LVL1 CS_gxswp (struct cs_GeodeticTransform_* gx_def)
 	}
 	return swap;
 }
+int EXP_LVL5 CS_gxswpRd (struct cs_GeodeticTransform_* gx_def)
+{
+	int rtnValue;
+
+	rtnValue = CS_gxswp (gx_def,FALSE);
+	return rtnValue;
+}
+int EXP_LVL5 CS_gxswpWr (struct cs_GeodeticTransform_* gx_def)
+{
+	int rtnValue;
+
+	rtnValue = CS_gxswp (gx_def,TRUE);
+	return rtnValue;
+}
 /* Normalize the path name with the current platform.  Specifically,
    switch the directory separator character to what is appropriate
    for the current platform. */
-void EXP_LVL1 CS_gxsep (struct cs_GeodeticTransform_* gx_def)
+void EXP_LVL5 CS_gxsep (struct cs_GeodeticTransform_* gx_def)
 {
 	short idx;
 	short pathCount;

@@ -29,6 +29,8 @@
 
 #include "cs_map.h"
 
+/*lint -esym(613,err_list)  possible use of null pointerl but not really */
+
 /**********************************************************************
 **	err_cnt = CSnerthQ (cs_def,prj_code,err_list,list_sz);
 **

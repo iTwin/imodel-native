@@ -64,8 +64,7 @@ enum csNadconFileType {	nadconTypeNoneYet = 0,
 #	pragma Align_members (1)
 #elif _RUN_TIME == _rt_MSC16 || _RUN_TIME == _rt_MSVC16 || _RUN_TIME == _rt_MSDOTNET || \
 														   _RUN_TIME == _rt_MSWIN64 ||  \
-														   _RUN_TIME == _rt_MSVC32 ||   \
-														   _RUN_TIME == _rt_WINCE
+														   _RUN_TIME == _rt_MSVC32
 #	pragma pack (1)
 #elif _RUN_TIME == _rt_HPUX
 #	pragma pack 1
@@ -141,8 +140,7 @@ struct csNadconFileHdr_
 #	pragma Align_members ()
 #elif _RUN_TIME == _rt_MSC16 || _RUN_TIME == _rt_MSVC16 || _RUN_TIME == _rt_MSDOTNET || \
 														   _RUN_TIME == _rt_MSWIN64 ||  \
-														   _RUN_TIME == _rt_MSVC32 ||   \
-														   _RUN_TIME == _rt_WINCE
+														   _RUN_TIME == _rt_MSVC32
 #	pragma pack ()
 #elif _RUN_TIME == _rt_HPUX
 #	pragma pack

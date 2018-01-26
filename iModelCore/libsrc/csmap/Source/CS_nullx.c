@@ -27,6 +27,7 @@
 
 #include "cs_map.h"
 
+/*lint -esym(550,list_sz)   variable not accessed */
 int EXP_LVL9 CSnullxQ (struct cs_GeodeticTransform_ *gxDef,unsigned short xfrmCode,int err_list [],int list_sz)
 {
 	int err_cnt;
@@ -37,7 +38,7 @@ int EXP_LVL9 CSnullxQ (struct cs_GeodeticTransform_ *gxDef,unsigned short xfrmCo
 
 	/* Check the definition stuff specific to csNullx_
 	   There is nothing to check here, but we leave a sample test
-	   commented out to give the future developer s clue as to how
+	   commented out to give the future developer a clue as to how
 	   this function is supposed to work.
 	if (fabs (gxDef->parameters.geocentricParameters.deltaX) > 1.0E-06)
 	{
@@ -45,6 +46,7 @@ int EXP_LVL9 CSnullxQ (struct cs_GeodeticTransform_ *gxDef,unsigned short xfrmCo
 	}  */
 	return (err_cnt + 1);
 }
+/*lint +esym(550,list_sz) */
 int EXP_LVL9 CSnullxS (struct cs_GxXform_* gxXfrm)
 {
 	struct csNullx_* nullx;

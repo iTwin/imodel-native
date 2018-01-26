@@ -142,4 +142,3 @@ const char *CSsourceGridCell (struct csGridCell_* thisPtr)
 {
 	return thisPtr->sourceId;
 }
-

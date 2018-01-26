@@ -132,6 +132,14 @@ int EXP_LVL9 CSlmbrtQ (	Const struct cs_Csdef_ *cs_def,unsigned short prj_code,i
 				}
 			}
 		}
+		if (prj_code == cs_PRJCOD_LMMICH)
+		{
+			/* Need to check one extra parameter here. */
+			if (cs_def->prj_prm3 < 0.9990 || cs_def->prj_prm3 > 1.0001)
+			{
+				if (++err_cnt < list_sz) err_list [err_cnt] = cs_CSQ_STDPLL;
+			}
+		}
 	}
 	else
 	{
@@ -139,7 +147,7 @@ int EXP_LVL9 CSlmbrtQ (	Const struct cs_Csdef_ *cs_def,unsigned short prj_code,i
 
 		if (cs_def->scl_red < cs_SclRedMin || cs_def->scl_red > cs_SclRedMax)
 		{
-			if (++err_cnt < list_sz) err_list [err_cnt] = cs_CSQ_SCLRED;
+			if (++err_cnt < list_sz) err_list [err_cnt] = cs_CSQ_ELPSCL;
 		}
 	}
 
@@ -232,7 +240,8 @@ void EXP_LVL9 CSlmbrtS (struct cs_Csprm_ *csprm)
 	lmbrt = &csprm->proj_prms.lmbrt;
 
 	/* The following is the same for all variations. */
-	lmbrt->belgium = cs_Zero;
+	lmbrt->belgium = cs_Zero;		/* until we know different */
+	lmbrt->ellipsoidK = cs_One;		/* until we know different. */
 	lmbrt->org_lng = csprm->csdef.org_lng * cs_Degree;
 	lmbrt->org_lat = csprm->csdef.org_lat * cs_Degree;
 	lmbrt->x_off = csprm->csdef.x_off;
@@ -325,9 +334,19 @@ void EXP_LVL9 CSlmbrtS (struct cs_Csprm_ *csprm)
 		lmbrt->affineB1    = csprm->csdef.prj_prm7;
 		lmbrt->affineB2    = csprm->csdef.prj_prm8;
 		break;
+
+	case cs_PRJCOD_LMMICH:
+		/* Two reference parallels, no scale reduction. */
+		ref_lat1 = csprm->csdef.prj_prm1 * cs_Degree;
+		ref_lat2 = csprm->csdef.prj_prm2 * cs_Degree;
+		lmbrt->k = csprm->csdef.scale;
+		lmbrt->e_rad = csprm->datum.e_rad;
+		lmbrt->ecent = csprm->datum.ecent;
+		lmbrt->ellipsoidK = csprm->csdef.prj_prm3;
+		break;
 	}
 
-	/* A few special calculations if there is an Affone post-process. */
+	/* A few special calculations if there is an Affine post-process. */
 	if (csprm->prj_code == cs_PRJCOD_LMBRTAF)
 	{
 		lmbrt->affineK = sqrt (lmbrt->affineA1 * lmbrt->affineA1 + lmbrt->affineB1 * lmbrt->affineB1);
@@ -415,6 +434,13 @@ void EXP_LVL9 CSlmbrtS (struct cs_Csprm_ *csprm)
 		/* The rest of this is all the same, regardless of the variation. */
 		lmbrt->F = m1 / (lmbrt->n * pow (t1,lmbrt->n));
 		lmbrt->aF = lmbrt->e_rad * lmbrt->k * lmbrt->F;
+		if (csprm->prj_code == cs_PRJCOD_LMMICH)
+		{
+			/* The Michigan variation uses an elevated ellipsoid.  I think
+			   we can deal with this here in the setup, leaving the actual
+			   forward and inverse calculations unchanged. */
+			lmbrt->aF *= lmbrt->ellipsoidK;
+		}
 		lmbrt->rho0 = lmbrt->aF * pow (lmbrt->t0,lmbrt->n);
 
 		/* Now we compute the coefficients for the conformal latitude
@@ -1074,7 +1100,7 @@ double EXP_LVL9 CSlmbrtK (Const struct cs_Lmbrt_ *lmbrt,Const double ll [2])
 		tmp3 = sqrt (cs_One - tmp3);
 		m = cos_lat / tmp3;
 
-		kk = lmbrt->n * lmbrt->k0 * lmbrt->F * t_n / m;
+		kk = (lmbrt->n * lmbrt->k0 * lmbrt->F * t_n * lmbrt->ellipsoidK) / m ;
 
 		/* If we have an affine post process, we need to factor that in. */
 		if ((lmbrt->quad & csTRMER_AFFINE) != 0) kk *= lmbrt->affineK;

@@ -176,8 +176,8 @@ int CStestI (bool verbose,long32_t duration)
 				 prjPtr->code == cs_PRJCOD_SYS34_99 ||
 				 prjPtr->code == cs_PRJCOD_TRMRKRG  ||
 				 prjPtr->code == cs_PRJCOD_LMBRTAF  ||
-				 prjPtr->code == cs_PRJCOD_MSTRO
-				)
+				 prjPtr->code == cs_PRJCOD_MSTRO    ||
+				 prjPtr->code == cs_PRJCOD_LMMICH)
 			   )
 			{
 				continue;
@@ -185,7 +185,7 @@ int CStestI (bool verbose,long32_t duration)
 
 			if (verbose)
 			{
-				printf ("Testing WKT import/export using %s.              \r",gp->key_nm);
+				printf ("Testing WKT import/export using %s::%s.              \r",tp->group,gp->key_nm);
 			}
 
 			/* We do not attempt to convert anything that is cartographically

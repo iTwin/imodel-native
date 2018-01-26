@@ -47,6 +47,22 @@ extern "C"
 	extern struct cs_Prjtab_ cs_Prjtab [];
 }
 
+// The following defines a list of coordinate system definitions which are
+// known to produce errors. This list is used to skip them during the
+// test.  Currently, the "comments" are not used.
+struct csTestJIgnores_
+{
+	ErcWktFlavor flavor;
+	char csMapName [32];	
+	char* comment [128];
+} csTestJIgnores [] =
+{
+	// Testing of the follwoing definitions are skipped for the reasons indicated.
+	{ wktFlvrEsri,        "Makassar/E.NEIEZ", "Central meridian is about 7 degrees west of the western useful range limit."  },
+	{ wktFlvrEsri,   "GunungSegara.NEIEZ/01", "Central meridian is about 3 degrees west of the western useful range limit."  },
+	{ wktFlvrNone,                        "", "End of table marker."                                                         }
+};
+
 int CStestJ (bool verbose,long32_t duration)
 {
 	int status;
@@ -67,6 +83,7 @@ int CStestJ (bool verbose,long32_t duration)
 	struct cs_Csprm_ *msiCS;
 	struct cs_Csprm_ *epsgCS;
 	struct cs_Prjtab_ *prjPtr;
+	struct csTestJIgnores_ *ignorePtr;
 
 	char csMapName [64];
 	char csWktBufr [2048];
@@ -152,6 +169,21 @@ int CStestJ (bool verbose,long32_t duration)
 		}
 		msiNamePtr = csMapName;
 		
+		// There are few coordinate systems that we need to skip.  Check the
+		// ignore table above for the list and reasons therefore.
+		for (ignorePtr = csTestJIgnores;ignorePtr->csMapName[0] != '\0';ignorePtr += 1)
+		{
+			if (!CS_stricmp (msiNamePtr,ignorePtr->csMapName))
+			{
+				break;
+			}
+		}
+		if (ignorePtr->csMapName [0] != '\0')
+		{
+			// We skip this one.
+			continue;
+		}
+
 		csDefPtr = CS_csdef (msiNamePtr);
 		if (csDefPtr == 0)
 		{
@@ -177,6 +209,7 @@ int CStestJ (bool verbose,long32_t duration)
 				SWISS    --> Most vendors support this as an RSKEW approximation
 				TRMRKRG  --> Nobody supports this one but us
 				MRCATPV  --> Don't know what name ESRI (or others) use for this projection.
+				LM-MICH  --> Not implemented by ESRI, as yet
 
 				There are other projections which we don't want to handle here, but
 				they should not show up on an EPSG scan of the name mapper.
@@ -185,7 +218,8 @@ int CStestJ (bool verbose,long32_t duration)
 			    prjPtr->code == cs_PRJCOD_OBQCYL  ||
 			    prjPtr->code == cs_PRJCOD_SWISS   ||
 			    prjPtr->code == cs_PRJCOD_TRMRKRG ||
-			    prjPtr->code == cs_PRJCOD_MRCATPV)
+			    prjPtr->code == cs_PRJCOD_MRCATPV ||
+			    prjPtr->code == cs_PRJCOD_LMMICH)
 			{
 				CS_free (csDefPtr);
 				continue;
@@ -230,8 +264,7 @@ int CStestJ (bool verbose,long32_t duration)
 		}
 
 		/* We use the useful range in the MSI definition to compute a suitable
-		   pair of x and y coordinates for the test.  (EPSG definitions don't
-		   have such information.) */
+		   pair of x and y coordinates for the test. */
 		llh [0] = msiCS->cent_mer + msiCS->min_ll [0] * 0.65;
 		llh [1] = msiCS->min_ll [1] + (msiCS->max_ll [1] - msiCS->min_ll [1]) * 0.65;
 		llh [2] = 0.0;

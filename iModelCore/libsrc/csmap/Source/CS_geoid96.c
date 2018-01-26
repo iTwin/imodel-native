@@ -290,6 +290,7 @@ double CStestGeoid96GridFile (struct csGeoid96GridFile_* __This,Const double *so
 	object, this function is not to be called unless the provided source
 	coordinate is within the coverage of the object.
 */
+/*lint -e826  disable message on fltPtr = (float *)(chrPtr) used extensively here */
 int CScalcGeoid96GridFile (struct csGeoid96GridFile_* __This,double* result,Const double* sourceLL)
 {
 	extern double cs_One;
@@ -712,3 +713,4 @@ error:
 	/* Negative return indicates a system error of sorts. */
 	return -1;
 }
+/*lint +e826 */

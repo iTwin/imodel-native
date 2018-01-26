@@ -37,52 +37,30 @@
 #include <ctype.h>
 #include <wchar.h>
 #include <wctype.h>
-#if !defined(__WINCE__)
-#	include <sys/types.h>
-#	include <sys/stat.h>
-#	if _RUN_TIME < _rt_UNIXPCC
-#		include <io.h>
-#	else
-#		define _stat stat
-#	endif
+#include <sys/stat.h>
+#if _RUN_TIME < _rt_UNIXPCC
+#	include <io.h>
+#	include <float.h>
+#else
+#	define _stat stat
 #endif
 
-/* This static function converts a FILETIME structure to a _time_t value.  Since this
-   is defintely a windows thing, we compile it only when Windows CE is the target. */
-#if _RUN_TIME == _rt_WINCE
-static time_t CStmToTime_ (SYSTEMTIME *sysTime)
+/* For some strange reason, isnan() sems to be controversial. */
+#if _RUN_TIME == _rt_MSDOTNET || _RUN_TIME == _rt_MSWIN64
+int EXP_LVL3 CS_isnan (double xxx)
 {
-	static short monthTab     [14] = {0,0,31,59,90,120,151,181,212,243,273,304,334,32767};
-	static short monthTabLeap [14] = {0,0,32,60,91,121,152,182,213,244,274,305,335,32767};
-	
-	short leap;
-	short year;
-	long days;
-	time_t rtnValue;
-
-	/* Convert from SYSTEMTIME to time_t.  Note, in CS-MAP we do not really
-	   care about the time of day.  We're only interested in the number of
-	   days since January 1, 1970. */
-	year = sysTime->wYear;
-	days = year * 365 + (year / 4) - (year / 100) + (year / 400) - (year / 4000);
-	leap = ((year % 4) == 0) && ((year % 100) != 0 || (year % 400) == 0) && ((year % 4000) != 0);
-	if (leap)
-	{
-		days += monthTabLeap [sysTime->wMonth] + (sysTime->wDay - 1);
-	}
-	else
-	{
-		days += monthTab [sysTime->wMonth] + (sysTime->wDay - 1);
-	}
-	/* 719527 is the number of days from Jan 1, 0000 to Jan 1, 1970, assuming
-	   a Gregorian calendar was always in use. */
-	rtnValue = (days - 719527) * (60 * 60 * 24);
-	return rtnValue;
+	return _isnan (xxx);
+}
+#else
+int CS_isnan (double xxx)
+{
+	return isnan (xxx);
 }
 #endif
+
 /* Having that as a resource, we code some very useful functions which the
-   pinheads on the ANSI committee dumped. */
-Const char * EXP_LVL1 CS_ecvt (double value,int count,int *dec,int *sign)
+   the ANSI committee dumped. */
+Const char * EXP_LVL3 CS_ecvt (double value,int count,int *dec,int *sign)
 {
 	static char result [24];
 
@@ -135,6 +113,7 @@ int EXP_LVL3 CS_stricmp (Const char* cp1,Const char *cp2)
 	char cc1, cc2;
 	int result;
 
+	cc1 = cc2 = '\0';
 	result = 0;
 	while (result == 0)
 	{
@@ -145,6 +124,10 @@ int EXP_LVL3 CS_stricmp (Const char* cp1,Const char *cp2)
 		result = cc1 - cc2;
 		if (cc1 == '\0' || cc2 == '\0') break;
 	}
+	if (cc1 != '\0' || cc2 != '\0')
+	{
+		result = cc1 - cc2;
+	}
 	return (result);
 }
 int EXP_LVL3 CS_wcsicmp (Const wchar_t* cp1,Const wchar_t *cp2)
@@ -152,6 +135,7 @@ int EXP_LVL3 CS_wcsicmp (Const wchar_t* cp1,Const wchar_t *cp2)
 	wint_t wc1, wc2;
 	int result;
 
+	wc1 = wc2 = L'\0';
 	result = 0;
 	while (result == 0)
 	{
@@ -161,6 +145,10 @@ int EXP_LVL3 CS_wcsicmp (Const wchar_t* cp1,Const wchar_t *cp2)
 		if (iswupper (wc2)) wc2 = (wint_t)towlower (wc2);
 		result = (int)(wc1 - wc2);
 		if (wc1 == '\0' || wc2 == '\0') break;
+	}
+	if (wc1 != '\0' || wc2 != '\0')
+	{
+		result = (int)(wc1 - wc2);
 	}
 	return (result);
 }
@@ -178,11 +166,7 @@ int EXP_LVL9 CS_access (Const char *path,int mode)
 	   for you by adjusting the comments on the code
 	   below. */
 
-#if _RUN_TIME == _rt_WINCE
-#	define cs_CODE_CHOICE 4
-#else
-#	define cs_CODE_CHOICE 0
-#endif
+#define cs_CODE_CHOICE 0
 #if cs_CODE_CHOICE == 0
 
 	/* Use this one if your run-time library supports access.  You may
@@ -339,34 +323,14 @@ int EXP_LVL9 CS_access (Const char *path,int mode)
 
 /* The following is used to supplant the need for the stat and fstat functions
    which are not ANSI.  They are widely supported in C run-time libraries,
-   but not in Windows CE, so we have this function to perform the primary
-   function which we used stat/fstat for.
-   
+   so we have this function to perform the primary function of stat/fstat.
+
    That is, return the date/time of the last modification of a file.
    Returns zero if the file is not a regular file or does not exist. */
 cs_Time_ EXP_LVL7 CS_fileModTime (Const char *filePath)
 {
+	int st;
 	cs_Time_ rtnValue;
-#if _RUN_TIME == _rt_WINCE
-	HANDLE hFile;
-	FILETIME writeTime;
-	SYSTEMTIME systemTime;
-	wchar_t wFilePath [MAX_PATH];
-
-	rtnValue = 0;
-	mbstowcs (wFilePath,filePath,MAX_PATH);
-	hFile = CreateFile (wFilePath,0,0,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,INVALID_HANDLE_VALUE);
-	if (hFile != INVALID_HANDLE_VALUE)
-	{
-		if (GetFileTime (hFile,NULL,NULL,&writeTime) != 0)
-		{
-			FileTimeToSystemTime (&writeTime,&systemTime);
-			rtnValue = (cs_Time_)CStmToTime_ (&systemTime);
-		}
-	}
-	return rtnValue;
-#elif _RUN_TIME == _rt_MSWIN64
-	int st;
 	struct _stat statBufr;
 
 	rtnValue = 0;
@@ -375,18 +339,6 @@ cs_Time_ EXP_LVL7 CS_fileModTime (Const char *filePath)
 	{
 		rtnValue = (cs_Time_)statBufr.st_mtime;
 	}
-	return rtnValue;
-#else	
-	int st;
-	struct _stat statBufr;
-
-	rtnValue = 0;
-	st = _stat (filePath,&statBufr);
-	if (st == 0)
-	{
-		rtnValue = (cs_Time_)statBufr.st_mtime;
-	}
-#endif
 	return rtnValue;
 }
 #ifdef CS_strnicmp
@@ -444,11 +396,7 @@ char *EXP_LVL3 CS_strrchr (Const char *cPtr, int chr)
 #endif
 double EXP_LVL1 CS_ansiAtof (Const char *string)
 {
-#if _RUN_TIME != _rt_WINCE
 	return atof (string);
-#else
-	return atof (string);
-#endif
 }
 
 #ifdef CS_getenv
@@ -456,15 +404,7 @@ double EXP_LVL1 CS_ansiAtof (Const char *string)
 #endif
 char * EXP_LVL9 CS_getenv (Const char *varName)
 {
-#if _RUN_TIME == _rt_WINCE
-	/* There is no environment in Windows CE.  Only the registry.
-	   Thus, we simply indicate that the variable didn't exist.
-	   Since use of environmental variables is optional in
-	   CS-MAP, this works fine. */
-	return NULL;
-#else
 	return getenv (varName);
-#endif	
 }
 
 #ifdef CS_remove
@@ -472,17 +412,10 @@ char * EXP_LVL9 CS_getenv (Const char *varName)
 #endif
 int EXP_LVL9 CS_remove (Const char *path)
 {
-#ifdef __WINCE__
-/* I don't know how to do this in Windows CE, YET. */
-	BOOL st;
-	wchar_t wPath [MAX_PATH];
-	mbstowcs (wPath,path,MAX_PATH);
-	st = DeleteFile (wPath);
-	return st ? 0 : -1;
-#else
-	/* Remove is ANSI standard, so this part is easy. */
+	/* A hold over from previously supported environments (WIN CE).  This
+	   is no longer necessary, but is retained in lieu of changing a lot of
+	   other code. */
 	return remove (path);
-#endif
 }
 
 /**********************************************************************
@@ -504,18 +437,7 @@ int EXP_LVL9 CS_rename (Const char *old,Const char *new_name)
 
 	int st;
 
-#if _RUN_TIME != _rt_WINCE
 	st = rename (old,new_name);
-#else
-	/* Windows CE's rename function has been renamed MoveFile. */
-	wchar_t wOld [MAX_PATH];
-	wchar_t wNew [MAX_PATH];
-
-	mbstowcs (wOld,old,MAX_PATH);
-	mbstowcs (wNew,new_name,MAX_PATH);
-	st = MoveFile (wOld,wNew);
-	if (st != 0) st = 0;
-#endif
 	if (st != 0)
 	{
 		(void)strcpy (csErrnam,old);
@@ -530,18 +452,10 @@ int EXP_LVL9 CS_rename (Const char *old,Const char *new_name)
 #endif
 double EXP_LVL9 CS_strtod (Const char *ptr,char **endPtr)
 {
-#ifdef __WINCE__
-	wchar_t *wEndPtr;
-	double rtnValue;
-	wchar_t wAscii [64];
-	mbstowcs (wAscii,ptr,64);
-	rtnValue = wcstod (wAscii,&wEndPtr);
-	*endPtr = (char *)ptr + (wEndPtr - wAscii);
-	return rtnValue;
-#else
-	/* time is ANSI standard, so this part is easy. */
+	/* A hold over from previously supported environments (WIN CE).  This
+	   is no longer necessary, but is retained in lieu of changing a lot of
+	   other code. */
 	return strtod (ptr,endPtr);
-#endif
 }
 
 #ifdef CS_strtol
@@ -549,18 +463,10 @@ double EXP_LVL9 CS_strtod (Const char *ptr,char **endPtr)
 #endif
 long32_t EXP_LVL9 CS_strtol (Const char *ptr,char **endPtr,int base)
 {
-#ifdef __WINCE__
-	wchar_t *wEndPtr;
-	long32_t rtnValue;
-	wchar_t wAscii [64];
-	mbstowcs (wAscii,ptr,64);
-	rtnValue = (long32_t)wcstol (wAscii,&wEndPtr,base);
-	*endPtr = (char *)ptr + (wEndPtr - wAscii);
-	return rtnValue;
-#else
-	/* time is ANSI standard, so this part is easy. */
+	/* A hold over from previously supported environments (WIN CE).  This
+	   is no longer necessary, but is retained in lieu of changing a lot of
+	   other code. */
 	return (long32_t)strtol (ptr,endPtr,base);
-#endif
 }
 
 #ifdef CS_strtoul
@@ -568,37 +474,24 @@ long32_t EXP_LVL9 CS_strtol (Const char *ptr,char **endPtr,int base)
 #endif
 ulong32_t EXP_LVL9 CS_strtoul (Const char *ptr,char **endPtr,int base)
 {
-#ifdef __WINCE__
-	wchar_t *wEndPtr;
-	ulong32_t rtnValue;
-	wchar_t wAscii [64];
-	mbstowcs (wAscii,ptr,64);
-	rtnValue = (ulong32_t)wcstoul (wAscii,&wEndPtr,base);
-	*endPtr = (char *)ptr + (wEndPtr - wAscii);
-	return rtnValue;
-#else
-	/* time is ANSI standard, so this part is easy. */
+	/* A hold over from previously supported environments (WIN CE).  This
+	   is no longer necessary, but is retained in lieu of changing a lot of
+	   other code. */
 	return (ulong32_t)strtoul (ptr,endPtr,base);
-#endif
 }
 
 cs_Time_ EXP_LVL9 CS_time (cs_Time_ *ptr)
 {
 	cs_Time_ rtnValue;
-#ifdef __WINCE__
-	SYSTEMTIME sysTime;
 
-	GetSystemTime (&sysTime);
-	rtnValue = CStmToTime_ (&sysTime);
-	return rtnValue;
-#elif _RUN_TIME == _rt_MSWIN64
+//??// Do we need to make a 64 bit version for LINUX?
+#if _RUN_TIME == _rt_MSWIN64
 	time_t time64 = time ((time_t*)0);
 	rtnValue = (__time32_t)(time64);
 	if (ptr != 0)
 	{
 		*ptr = rtnValue;
 	}
-	return rtnValue;
 #else
 	time_t time32 = time ((time_t*)0);
 	rtnValue = time32;
@@ -606,8 +499,8 @@ cs_Time_ EXP_LVL9 CS_time (cs_Time_ *ptr)
 	{
 		*ptr = rtnValue;
 	}
-	return rtnValue;
 #endif
+	return rtnValue;
 }
 #ifdef CS_bsearch
 #	undef CS_bsearch

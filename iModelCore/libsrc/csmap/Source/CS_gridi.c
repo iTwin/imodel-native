@@ -27,6 +27,8 @@
 
 #include "cs_map.h"
 
+/*lint -esym(613,err_list)  possible use of null pointer, but not really */
+
 int EXP_LVL9 CSgridiQ (struct cs_GeodeticTransform_ *gxDef,unsigned short xfrmCode,
 														   int err_list [],
 														   int list_sz)
@@ -119,11 +121,14 @@ int EXP_LVL9 CSgridiQ (struct cs_GeodeticTransform_ *gxDef,unsigned short xfrmCo
 				   error conditions, only report them. */
 				if (++err_cnt < list_sz) err_list [err_cnt] = cs_DTQ_ISERFBK;
 			}
-			if (((gxIdxPtr->methodCode & cs_DTCPRMTYP_MASK) != cs_DTCPRMTYP_STANDALONE) &&
-			    ((gxIdxPtr->methodCode & cs_DTCPRMTYP_MASK) != cs_DTCPRMTYP_GEOCTR) &&
-			    ((gxIdxPtr->methodCode & cs_DTCPRMTYP_MASK) != cs_DTCPRMTYP_PWRSRS))
+			else
 			{
-				if (++err_cnt < list_sz) err_list [err_cnt] = cs_DTQ_FBKMTH;
+				if (((gxIdxPtr->methodCode & cs_DTCPRMTYP_MASK) != cs_DTCPRMTYP_STANDALONE) &&
+					((gxIdxPtr->methodCode & cs_DTCPRMTYP_MASK) != cs_DTCPRMTYP_GEOCTR) &&
+					((gxIdxPtr->methodCode & cs_DTCPRMTYP_MASK) != cs_DTCPRMTYP_PWRSRS))
+				{
+					if (++err_cnt < list_sz) err_list [err_cnt] = cs_DTQ_FBKMTH;
+				}
 			}
 		}
 	}
@@ -229,7 +234,7 @@ int EXP_LVL9 CSgridiS (struct cs_GxXform_* gxXfrm)
 		gridFilePtr->direction = cs_DTCDIR_NONE;
 		if (fileDefPtr->direction == 'F' || fileDefPtr->direction == 'f') gridFilePtr->direction = cs_DTCDIR_FWD;
 		if (fileDefPtr->direction == 'I' || fileDefPtr->direction == 'i') gridFilePtr->direction = cs_DTCDIR_INV;
-		gridFilePtr->format = fileDefPtr->fileFormat;
+		gridFilePtr->format = CSgridFileFormatCvt (fileDefPtr->fileFormat);
 		cp = fileDefPtr->fileName;
 		cc1 = *cp;
 		cc2 = *(cp + 1);
@@ -249,6 +254,12 @@ int EXP_LVL9 CSgridiS (struct cs_GxXform_* gxXfrm)
 			   it as it is. */
 			CS_stncp (gridFilePtr->filePath,fileDefPtr->fileName,sizeof (gridFilePtr->filePath));
 		}
+
+		/* Force directory separator to the correct character for this run time
+		   environment.  Trac Ticket #175. */
+		CSrplDirSep (gridFilePtr->filePath);
+
+		// Set up the remainder of the transformation. */
 		gridFilePtr->bufferSize = 0L;	/* Zero says use format based default value. */
 		gridFilePtr->flags = 0UL;		/* Legacy feature, currently unused. */
 		gridFilePtr->density = 0.0;
@@ -299,32 +310,6 @@ int EXP_LVL9 CSgridiS (struct cs_GxXform_* gxXfrm)
 			goto error;
 		}
 		
-/* Kludge to fix a defect.  The "RGF93_to_NTF-G-Grid" transformation, or
-   anything similar to it, can and will often refer to the "NTF-G_to_WGS84"
-   geodetic transformation (a Molodensky transformation) as a fallback.  The
-   problem is that the "RGF93_to_NTF-G-Grid" transformation converts from RGF93
-   (i.e. WGS84) to NTF, while the "NTF-G_to_WGS84" transformation converts
-   in the opposite direction.  This defect is introduced, and a lot of
-   additional confusion is experienced, because the French grid interpolation
-   data file, "gr3df97a.txt" converts from the new to the old (RGF93 -> NTF),
-   while all other grid data interpoolation files convert from the old to
-   the new.  The "old to the new" convention of most all grid data files
-   (except the French) is consistent with standard datum definitions (i.e.
-   convert to WGS84, the newer datum).  There are better weays to deal with
-   these issues.  Scheduling pressure and the need to pass a comprehensive
-   regression test have lead to this rather kludgy solution.
-   
-   TODO -- Fix this in a more generic manner.  I suspect, that we need to
-   define a new Molodensky transformation that goes in the opposite direction
-   as the normal one (i.e. flip the signs on the translation vector) and use
-   that as the fall back for transforms which involving NTF and RGF93 which
-   are defined to go in the opposite direction. */ 
-if (!CS_stricmp (filesPtr->fallback,"NTF-G_to_WGS84") &&
-	!CS_stricmp (gxXfrm->gxDef.srcDatum,"RGF93") &&
-	!CS_stricmp (gxXfrm->gxDef.trgDatum,"NTF-G-Grid"))
-{
-	gridi->fallbackDir = cs_DTCDIR_INV;
-}
 	}
 	return 0;
 
@@ -341,7 +326,7 @@ error:
 			gridFilePtr = gridi->gridFiles [idx];
 			if (gridFilePtr != NULL)
 			{
-				(*gridFilePtr->destroy)(gridFilePtr->fileObject.genericPtr);
+				(*gridFilePtr->destroy)(gridFilePtr->fileObject.genericPtr);		/*lint !e534  ignoring return value */
 			}
 		}
 	}
@@ -716,7 +701,7 @@ int EXP_LVL9 CSgridiR (struct csGridi_ *gridi)
 		gridFilePtr = gridi->gridFiles [idx];
 		if (gridFilePtr != NULL)
 		{
-			(*gridFilePtr->release)(gridFilePtr->fileObject.genericPtr);
+			(*gridFilePtr->release)(gridFilePtr->fileObject.genericPtr);		/*lint !e534  ignoring return value, always zero */
 		}
 	}
 	return status;
@@ -733,7 +718,7 @@ int EXP_LVL9 CSgridiD (struct csGridi_ *gridi)
 		gridFilePtr = gridi->gridFiles [idx];
 		if (gridFilePtr != NULL)
 		{
-			(*gridFilePtr->destroy)(gridFilePtr->fileObject.genericPtr);
+			(*gridFilePtr->destroy)(gridFilePtr->fileObject.genericPtr);		/*lint !e534  ignoring return value, always 0 */
 			CS_free (gridFilePtr);
 			gridi->gridFiles [idx] = NULL;
 		}
@@ -802,4 +787,24 @@ int CSgridiT (struct csGridi_ *gridi,double* ll_src,short direction)
 		}
 	}
 	return selectedIdx;
+}
+enum csGridFormat CSgridFileFormatCvt (unsigned flagValue)
+{
+	enum csGridFormat rtnValue;
+
+	switch (flagValue)
+	{
+		case  cs_DTCFRMT_NONE:    rtnValue = gridFrmtNone;    break;
+		case  cs_DTCFRMT_CNTv1:   rtnValue = gridFrmtNTv1;    break;
+		case  cs_DTCFRMT_CNTv2:   rtnValue = gridFrmtNTv2;    break;
+		case  cs_DTCFRMT_NADCN:   rtnValue = gridFrmtNadcn;   break;
+		case  cs_DTCFRMT_FRNCH:   rtnValue = gridFrmtFrnch;   break;
+		case  cs_DTCFRMT_JAPAN:   rtnValue = gridFrmtJapan;   break;
+		case  cs_DTCFRMT_ATS77:   rtnValue = gridFrmtAts77;   break;
+		case  cs_DTCFRMT_OST97:   rtnValue = gridFrmtOst97;   break;
+		case  cs_DTCFRMT_OST02:   rtnValue = gridFrmtOst02;   break;
+		case  cs_DTCFRMT_GEOCN:   rtnValue = gridFrmtGeocn;   break;
+		default:                  rtnValue = gridFrmtUnknown; break;
+	}
+	return rtnValue;
 }

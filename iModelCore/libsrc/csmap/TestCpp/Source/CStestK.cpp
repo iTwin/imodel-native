@@ -37,33 +37,50 @@ extern "C"
 	extern "C" int csErrlng;
 	extern "C" int csErrlat;
 	extern "C" unsigned short cs_ErrSup;
+	extern "C" char csErrnam [MAXPATH];
 
 	#if _RUN_TIME <= _rt_UNIXPCC
 	extern "C" ulong32_t cs_Doserr;
 	#endif
 
+#ifdef __SKIP__2231
+	// The functionality associated with these variables was broken with
+	// version 2231.  It used to be that a pointer to the original
+	// coordinate system name was passed to the user definition functions,
+	// thus a complete WKT string would be passed.  This is no longer true.
+	// Thus, as a temporary fix for this test function, we now use CS_wktToCsEx
+	// directly in order to convert the test strings to coordinate system
+	// definitions.
 	extern "C" int (*CS_usrCsDefPtr)(struct cs_Csdef_ *ptr,Const char *keyName);
 	extern "C" int (*CS_usrDtDefPtr)(struct cs_Dtdef_ *ptr,Const char *keyName);
 	extern "C" int (*CS_usrElDefPtr)(struct cs_Eldef_ *ptr,Const char *keyName);
+#endif
 }
 
+// The following dfefine the location of test data files.  cs_TestDir is
+// the actual path to the test data directory with a trailing separator
+// character, cs_TestDirP points to the terminating null character.
 extern char cs_TestDir [];
 extern char* cs_TestDirP;
 
+// The following defines a list of coordinate system definitions which are
+// known to produce errors. This list is used to skip them during the
+// test.  Currently, the "comments" are not used.
 struct csTestKIgnores_
 {
 	ErcWktFlavor flavor;
-	char csMapName [32];	
-	char* comment [128];
+	char csMapName [32];
+	char comment [128];
 } csTestKIgnores [] =
 {
 	// The ESRI WKT data we have been using for testing is more than a decade old.  It is unlikely
 	// that the discrepancies listed in the following table still exist in any ESRI product.  But
 	// the discrepancies do still exist in the ancient test data file we are using.
 	{ wktFlvrEsri,        "Carthage.TM-11NE", "ESRI GCS unit is grad, should be degree?  Affects interpretation of central meridian."                           },
+	{ wktFlvrEsri,             "Carthage.LL", "ESRI GCS unit is grad, but the name does not indicate that as it does with newer versions."                      },
 	{ wktFlvrEsri,   "Dabola1981.UTM-28N/01", "ESRI Has incorrect ellipsoid.  Is Clrk_1880-RGN, should be(?) Clrk-IGN."                                         },
 	{ wktFlvrEsri,   "Dabola1981.UTM-29N/01", "ESRI Has incorrect ellipsoid.  Is Clrk_1880-RGN, should be(?) Clrk-IGN."                                         },
-	{ wktFlvrEsri,            "HUN-EOV72-7P", "ESRI uses Hotine approximation to the Oblique Cynlindrical."                                                     },
+	{ wktFlvrEsri,            "HUN-EOV72-7P", "ESRI uses Hotine approximation to the Oblique Cylindrical."                                                     },
 	{ wktFlvrEsri,                 "IND-0/a", "ESRI uses datum variant EPSG Operation code 1533; we use 1155 (ellipsoid different)."                            },
 	{ wktFlvrEsri,                 "IND-I/a", "ESRI uses datum variant EPSG Operation code 1533; we use 1155 (ellipsoid different)."                            },
 	{ wktFlvrEsri,               "IND-IIA/a", "ESRI uses datum variant EPSG Operation code 1533; we use 1155 (ellipsoid different)."                            },
@@ -79,15 +96,18 @@ struct csTestKIgnores_
 	{ wktFlvrEsri,       "KuwaitUtility.KTM", "ESRI has scale reduction of 0.9996; EPSG says 1.0.  Choosing EPSG over ESRI here."                               },
 	{ wktFlvrEsri,       "NAD27.CubaNorte/1", "ESRI uses 1SP Lambert, CS-MAP and EPSG uses the 2SP Lambert. Thus, the differences are difficult to reconcile."  },
 	{ wktFlvrEsri,         "NAD27.CubaSur/1", "ESRI uses 1SP Lambert, CS-MAP and EPSG uses the 2SP Lambert. Thus, the differences are difficult to reconcile."  },
-	{ wktFlvrEsri,     "OSNI52.IrishNtlGrid", "ESRI has Scale reduction at 1.000035; CS-MAP and EPSG say 1.0.  Who knows?"                                      },
+	{ wktFlvrEsri,   "OSNI52/b.IrishNtlGrid", "ESRI has Scale reduction at 1.000035; CS-MAP and EPSG say 1.0.  Who knows?"                                      },
 	{ wktFlvrEsri,  "Rassadiran_1.NakhlTaqi", "ESRI says org_lat == 27 34 7.7837; EPSG & CS_MAP say org_lat == 27 31 7.7837."                                   },
 	{ wktFlvrEsri,  "RGN/91-93.NewCaledonia", "ESRI ellipsoid is International 1924; should be GRS 1980?."                                                      },
 	{ wktFlvrEsri,      "ST87/Ouvea.UTM-58S", "ESRI ellipsoid is International 1924; should be GRS WGS84?."                                                     },
-	{ wktFlvrEsri,    "TMBLI-B.RSOBorneo.ch", "ESRI says false arigin is zero:zero;; CS-MAP and EPSG say otherwise."                                            },
-	{ wktFlvrEsri,    "TMBLI-B.RSOBorneo.ft", "ESRI says false arigin is zero:zero;; CS-MAP and EPSG say otherwise."                                            },
-	{ wktFlvrEsri,     "TMBLI-B.RSOBorneo.m", "ESRI says false arigin is zero:zero;; CS-MAP and EPSG say otherwise."                                            },
+	{ wktFlvrEsri,    "TMBLI-B.RSOBorneo.ch", "ESRI says false origin is zero:zero;; CS-MAP and EPSG say otherwise."                                            },
+	{ wktFlvrEsri,    "TMBLI-B.RSOBorneo.ft", "ESRI says false origin is zero:zero;; CS-MAP and EPSG say otherwise."                                            },
+	{ wktFlvrEsri,     "TMBLI-B.RSOBorneo.m", "ESRI says false origin is zero:zero;; CS-MAP and EPSG say otherwise."                                            },
 	{ wktFlvrEsri,            "WGS84.TM-6NE", "ESRI says false northing is 10,000,000.0; EPSG says zero.  We go with EPSG."                                     },
-	{ wktFlvrEsri,             "HD72/7P.EOV", "Does not appear that ESRI has a parameter for Standard parallel as CS-MAP does"                                  },
+	{ wktFlvrEsri,            "HD72/7Pa.EOV", "Does not appear that ESRI has a parameter for Standard parallel as CS-MAP does"                                  },
+	{ wktFlvrEsri,             "Merchich/01", "ESRI GCS unit is grad, but the name does not indicate that as it does with newer versions."                      },
+	{ wktFlvrEsri,         "Voirol1875_1.LL", "ESRI GCS unit is grad, but the name does not indicate that as it does with newer versions."                      },
+	{ wktFlvrEsri,     "Kertau.MalayaRSO/02", "ESRI has updated to the EPSG unit of the British Chain Truncated."                                               },
 	{ wktFlvrNone,                        "", "End of table marker."                                                                                            }
 };
 int CStestK (bool verbose,long32_t duration)
@@ -105,6 +125,14 @@ int CStestK (bool verbose,long32_t duration)
 
 	struct cs_Csprm_ *msiCS;
 	struct cs_Csprm_ *wktCS;
+
+#ifndef __SKIP__2231
+	int st;
+	struct cs_Csdef_ csDef;
+	struct cs_Dtdef_ dtDef;
+	struct cs_Eldef_ elDef;
+#endif
+
 	FILE* wktStream;
 	FILE* parseReport;
 	FILE* mapReport;
@@ -175,6 +203,9 @@ int CStestK (bool verbose,long32_t duration)
 	}
 	else
 	{
+		// If the files indicated in the following code exist, specific and
+		// rather detailed information about failures is written to the
+		// respective files.
 		CS_stncp (cs_TestDirP,"WktParseReport.txt",MAXPATH);
 		parseReport = fopen (cs_TestDirP,"wt");
 		CS_stncp (cs_TestDirP,"WktMapReport.txt",MAXPATH);
@@ -183,11 +214,13 @@ int CStestK (bool verbose,long32_t duration)
 		csMapReport = fopen (cs_TestDirP,"wt");
 		CS_stncp (cs_TestDirP,"WktCompareReport.txt",MAXPATH);
 		cmpReport = fopen (cs_TestDirP,"wt");
-
+		
+#ifdef __SKIP__2231
 		/* Activate the WKT capability for CS_csloc () */
 		CS_usrCsDefPtr = CS_wktCsDefFunc;
 		CS_usrDtDefPtr = CS_wktDtDefFunc;
 		CS_usrElDefPtr = CS_wktElDefFunc;
+#endif
 
 		/* Read each of the WKT definitions in the test file. */
 		wktCS = 0;
@@ -217,13 +250,44 @@ int CStestK (bool verbose,long32_t duration)
 			}
 
 			/* Convert the WKT string to a coordinate conversion. */
+#ifdef __SKIP__2231
 			wktCS = CS_csloc (csWktBufr);
+#else
+			/* Verify that what we have been given is indeed a WKT string.  If
+			   it isn't, we can promptly issue an error report and continue on
+			   to the next WKT string. */
+			st = CS_isWkt (csWktBufr);
+			if (st < 0)
+			{
+				/* It sort of looks like a WKT string, but is not a valid
+				   WKT string due to bracket imbalance. */
+				CS_stncp (csErrnam,csWktBufr,48);
+				CS_erpt (cs_WKT_BADFORM);
+				return -1;
+			}
+			if (st == 0)
+			{
+				/* It isn't a WKT string, and really doesn't come close.  So we
+				   assume this is just extra stuff in the test data file and
+				   silently ignore it. */
+				continue;		
+			}
+
+			/* We have something worth parsing, let's see ho well we do. */
+			wktCS = 0;
+			st = CS_wktToCsEx (&csDef,&dtDef,&elDef,flavor,csWktBufr,0);
+			if (st == 0)
+			{
+				wktCS = CScsloc1 (&csDef);
+			}
+#endif
 			if (wktCS == 0)
 			{
 				/* Here if the WKT parse and conversion failed.  If due to a
 				   datum mapping failure or an unsupported projection we do not
 				   report it at the current time.  This is a test of WKT. */
-				if (cs_Error != cs_WKT_DTMAP && cs_Error != cs_WKT_INVPROJ)
+				if (cs_Error != cs_WKT_DTMAP  && cs_Error != cs_WKT_INVPROJ &&
+					cs_Error != cs_DT_NOT_FND && cs_Error != cs_EL_NOT_FND)
 				{
 					CS_errmsg (errMesg,sizeof (errMesg));
 					if (parseReport != 0)
@@ -331,15 +395,16 @@ int CStestK (bool verbose,long32_t duration)
 						{
 							if (cmpReport != 0)
 							{
-								fprintf (cmpReport,"Line %ld: Comparision of WKT '%s' and CS-MAP '%s' failed [%f  %f].\n",lineNbr,wktCS->csdef.desc_nm,dictName,deltaX,deltaY);
+								fprintf (cmpReport,"Line %ld: Comparison of WKT '%s' and CS-MAP '%s' failed [%f  %f].\n",lineNbr,wktCS->csdef.desc_nm,dictName,deltaX,deltaY);
 							}
-							printf ("Comparision of WKT '%s' and MSI '%s' failed.\n",wktCS->csdef.desc_nm,dictName);
+							printf ("Comparison of WKT '%s' and MSI '%s' failed.\n",wktCS->csdef.desc_nm,dictName);
 							err_cnt += 1;
 
 							// For debugging convenience.
 							CS_ll2cs (msiCS,msiResult,testInput);
 							CS_ll2cs (wktCS,wktResult,testInput);
 						}
+						// For debugging convenience.
 						//status = CScs2WktEx (csWktBufr,sizeof (csWktBufr),flavor,msiCS,0,0,1);
 						CS_free (wktCS);
 						CS_free (msiCS);
@@ -354,9 +419,11 @@ int CStestK (bool verbose,long32_t duration)
 		if (cmpReport   != 0) { fclose (cmpReport); cmpReport = 0; }
 
 		fclose (wktStream);
+#ifdef __SKIP__2231
 		CS_usrCsDefPtr = 0;
 		CS_usrDtDefPtr = 0;
 		CS_usrElDefPtr = 0;
+#endif
 	}
 
 	csReleaseNameMapper ();

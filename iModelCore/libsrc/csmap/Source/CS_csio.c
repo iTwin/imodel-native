@@ -38,7 +38,7 @@
 **
 **	File is positioned past the magic number on the front.
 **********************************************************************/
-csFILE* EXP_LVL3 CS_csopn (Const char *mode)
+csFILE* EXP_LVL5 CS_csopn (Const char *mode)
 {
 	return CS_csFileOpen(mode);
 }
@@ -69,7 +69,7 @@ void CS_csDictCls (csFILE* stream)
 **								EOF, -1 for error.
 **
 **********************************************************************/
-int EXP_LVL3 CS_csrd (csFILE *strm,struct cs_Csdef_ *cs_def, int *crypt)
+int EXP_LVL5 CS_csrd (csFILE *strm,struct cs_Csdef_ *cs_def, int *crypt)
 {
 	return CS_csRead(strm, cs_def, crypt);
 }
@@ -90,7 +90,7 @@ int EXP_LVL3 CS_csrd (csFILE *strm,struct cs_Csdef_ *cs_def, int *crypt)
 **								TRUE.
 **
 **********************************************************************/
-int EXP_LVL3 CS_cswr (csFILE *strm, Const struct cs_Csdef_ *cs_def, int crypt)
+int EXP_LVL5 CS_cswr (csFILE *strm, Const struct cs_Csdef_ *cs_def, int crypt)
 {
 	return CS_csWrite(strm, cs_def, crypt);
 }
@@ -159,7 +159,7 @@ int EXP_LVL3 CS_csdel (struct cs_Csdef_ *csdef)
 */
 #define cs_CSCHK_OPTS (cs_CSCHK_DATUM | cs_CSCHK_ELLIPS | cs_CSCHK_REPORT)
 
-int EXP_LVL3 CS_csupd (struct cs_Csdef_ *csdef,int crypt)
+int EXP_LVL5 CS_csupd (struct cs_Csdef_ *csdef,int crypt)
 {
 	extern char *cs_CsKeyNames;
 	extern struct cs_Prjtab_ cs_Prjtab [];	/* Projection Table */
@@ -381,7 +381,7 @@ struct cs_Csdef_ * EXP_LVL3 CS_csdef (Const char *cs_nam)
 **								coordinate system definition structure; else
 **								a NULL value for failure.
 **********************************************************************/
-struct cs_Csdef_ * EXP_LVL3 CS_csdef2 (Const char *cs_nam, char* pszDirPath)
+struct cs_Csdef_ * EXP_LVL7 CS_csdef2 (Const char *cs_nam, char* pszDirPath)
 {
 	return CS_csDefinition(cs_nam, pszDirPath, NULL);
 }

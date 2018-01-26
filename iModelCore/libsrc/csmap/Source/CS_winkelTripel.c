@@ -29,6 +29,8 @@
 
 #include "cs_map.h"
 
+/*lint -esym(613,err_list)  possible use of null pointer; but not really */
+
 /* Std Lat == 50.467 for Winkel, 40.0 for Bartholomew. */
 
 int EXP_LVL9 CSwinklQ (Const struct cs_Csdef_ *cs_def,unsigned short prj_code,int err_list [],int list_sz)

@@ -29,12 +29,8 @@
 #include "cs_Legacy.h"
 
 extern int (*CS_usrCsDefPtr)(struct cs_Csdef_ *ptr,Const char *keyName);
-extern int (*CS_usrDtDefPtr)(struct cs_Dtdef_ *ptr,Const char *keyName);
-extern int (*CS_usrElDefPtr)(struct cs_Eldef_ *ptr,Const char *keyName);
-extern double (*CS_usrUnitPtr)(short type,Const char *unitName);
 
-
-int EXP_LVL1 CS_getcs (Const char *cs_name,struct cs_Csdef_ *bufr)
+int EXP_LVL2 CS_getcs (Const char *cs_name,struct cs_Csdef_ *bufr)
 {
 	extern int cs_Error;
 
@@ -56,7 +52,7 @@ int EXP_LVL1 CS_getcs (Const char *cs_name,struct cs_Csdef_ *bufr)
 	return (status);
 }
 
-int EXP_LVL1 CS_getdt (	Const char *dt_name,
+int EXP_LVL2 CS_getdt (	Const char *dt_name,
 			struct cs_Dtdef_ *bufr)
 {
 	extern int cs_Error;
@@ -79,7 +75,7 @@ int EXP_LVL1 CS_getdt (	Const char *dt_name,
 	return (status);
 }
 
-int EXP_LVL1 CS_getel (	Const char *el_name,
+int EXP_LVL2 CS_getel (	Const char *el_name,
 			struct cs_Eldef_ *bufr)
 {
 	extern int cs_Error;
@@ -366,43 +362,47 @@ int EXP_LVL1 CS_elIsValid (Const char *key_name)
 	return (0);
 }
 
-int EXP_LVL1 CS_csEnumByGroup (int index,Const char *grp_name,struct cs_Csgrplst_ *cs_descr)
+int EXP_LVL2 CS_csEnumByGroup (int index,Const char *grp_name,struct cs_Csgrplst_ *cs_descr)
 {
-	extern int cs_Error;
-	extern csThread struct cs_Csgrplst_ *cs_CsGrpList;
+	extern struct cs_Csgrplst_ *cs_CsGrpList;
 
 	static char cur_group [24] = "!!!";
 
 	int ii;
+	int rtnValue;
 	
 	struct cs_Csgrplst_ *ptr;
 
+	rtnValue = 0;					// i.e. false */
 	if (index < 0)
 	{
 		CS_erpt (cs_INV_INDX);
-		return (-cs_Error);
 	}
-
-	if (cs_CsGrpList == NULL || CS_stricmp (grp_name,cur_group))
+	else
 	{
+		if (cs_CsGrpList == NULL || CS_stricmp (grp_name,cur_group))
+		{
+			if (cs_CsGrpList != NULL)
+			{
+				CS_csgrpf (cs_CsGrpList);
+				cs_CsGrpList = NULL;
+			}
+			CS_stncp (cur_group,grp_name,sizeof (cur_group));
+			CS_csgrp (cur_group,&cs_CsGrpList);					/*lint !e534 */
+		}
 		if (cs_CsGrpList != NULL)
 		{
-			CS_csgrpf (cs_CsGrpList);
-			cs_CsGrpList = NULL;
+			ptr = cs_CsGrpList;
+			for (ii = 0;ii < index && ptr != NULL;ii++) ptr = ptr->next;
+			if (ptr != NULL)
+			{
+				memcpy (cs_descr,ptr,sizeof (*cs_descr));
+				cs_descr->next = NULL;
+				rtnValue = 1;				/* i.e. TRUE  */
+			}
 		}
-		CS_stncp (cur_group,grp_name,sizeof (cur_group));
-		CS_csgrp (cur_group,&cs_CsGrpList);					/*lint !e534 */
 	}
-	if (cs_CsGrpList == NULL) return (-1);
-
-	ptr = cs_CsGrpList;
-	for (ii = 0;ii < index && ptr != NULL;ii++) ptr = ptr->next;
-	if (ptr != NULL)
-	{
-		memcpy (cs_descr,ptr,sizeof (*cs_descr));
-		cs_descr->next = NULL;
-	}
-	return (ptr != NULL);
+	return (rtnValue);
 }
 
 int EXP_LVL1 CS_csGrpEnum (int index,char *grp_name,int name_sz,char *grp_dscr,int dscr_sz)
@@ -440,10 +440,7 @@ int EXP_LVL1 CS_csGrpEnum (int index,char *grp_name,int name_sz,char *grp_dscr,i
 
 char * EXP_LVL9 CScsKeyNames (void)
 {
-	extern csThread char *cs_CsKeyNames;
-
-	int st;
-	int crypt;
+	extern char *cs_CsKeyNames;
 
 	size_t len;
 	size_t malc_size;
@@ -452,10 +449,8 @@ char * EXP_LVL9 CScsKeyNames (void)
 	char *cp;
 	char *new_ptr;
 	char *tmp_ptr;
-	csFILE *strm;
 
  	__ALIGNMENT__1		/* Required by some Sun compilers. */
-	struct cs_Csdef_ cs_def;
 
 	/* If cs_CsKeyNames is not NULL, we already have a list, simply return it. */
 
@@ -470,16 +465,21 @@ char * EXP_LVL9 CScsKeyNames (void)
 		}
 		else
 		{
-			strm = CS_csopn (_STRM_BINRD);
-			if (strm != NULL)
+            struct cs_Csdef_** pDefArray = NULL; // first entry in the array of pointers
+            // Read all cs definitons
+            int csCount = CS_csdefAll(&pDefArray);
+
+			if (csCount >=0 )
 			{
-				while ((st = CS_csrd (strm,&cs_def,&crypt)) > 0)
+                struct cs_Csdef_** pNext = pDefArray;
+                int ii;
+                for(ii = 0; ii < csCount; ++ii)
 				{
 					/* Make sure we have enough room for the new
 					   entry, its terminating null character, AND
 					   the extra null which terminates the whole list. */
 
-					len = strlen (cs_def.key_nm);
+                    len = strlen ((*pNext)->key_nm);
 					if ((used_size + len + 2) >= malc_size)
 					{
 						malc_size += 2048;
@@ -498,24 +498,26 @@ char * EXP_LVL9 CScsKeyNames (void)
 					   in case the realloc has moved the list to new memory. */
 
 					cp = new_ptr + used_size;
-					cp = CS_stcpy (cp,cs_def.key_nm);
+					cp = CS_stcpy (cp,(*pNext)->key_nm);
 					used_size += len + 1;
+                    pNext++;
 				}
-				CS_csDictCls (strm);
-				if (st != 0)
-				{
-					/* Here if the above loop terminated due to an
-					   error, rather than a simple EOF. */
-
-					CS_free (new_ptr);
-					new_ptr = NULL;
-				}
+                // Clean up
+                pNext = pDefArray;
+                for(ii = 0; ii < csCount; ++ii)
+			    {
+                    CS_free(*pNext); // release the definition
+                    pNext++;
+                }
 			}
 			else
 			{
 				CS_free (new_ptr);
 				new_ptr = NULL;
 			}
+            // Clean up
+            CS_free(pDefArray); //free the array, but not the pointers
+            pDefArray = NULL;
 		}
 
 		if (new_ptr != NULL)
@@ -540,7 +542,7 @@ char * EXP_LVL9 CScsKeyNames (void)
 
 char * EXP_LVL9 CSdtKeyNames (void)
 {
-	extern csThread char *cs_DtKeyNames;
+	extern char *cs_DtKeyNames;
 
 	int st;
 	int crypt;
@@ -619,7 +621,7 @@ char * EXP_LVL9 CSdtKeyNames (void)
 
 char * EXP_LVL9 CSelKeyNames (void)
 {
-	extern csThread char *cs_ElKeyNames;
+	extern char *cs_ElKeyNames;
 
 	int st;
 	int crypt;
@@ -1343,7 +1345,7 @@ void EXP_LVL3 CS_fillIn (struct cs_Csdef_ *csPtr)
 	/* There are some things we do in general. */
 
 	if ((prjPtr->flags & cs_PRJFLG_SCLRED) == 0) csPtr->scl_red = 1.0;
-	if ((prjPtr->flags & cs_PRJFLG_ORGLAT) == 1) csPtr->org_lat = 0.0;
+	if ((prjPtr->flags & cs_PRJFLG_ORGLAT) != 0) csPtr->org_lat = 0.0;
 
 	switch (prjPtr->code) {
 	default:

@@ -27,6 +27,8 @@
 
 #include "cs_map.h"
 
+/*lint -esym(613,err_list)  possible use of a null pointer; but not really. */
+
 int CSfrnchQ (struct csGeodeticXfromParmsFile_* fileParms,Const char* dictDir,int err_list [],int list_sz)
 {
 	extern char cs_DirsepC;
@@ -188,8 +190,6 @@ int CSfrnchI2 (struct cs_Frnch_ *frnch,double *ll_trg,Const double *ll_src)
 }
 int CSfrnchI3 (struct cs_Frnch_ *frnch,double *ll_trg,Const double *ll_src)
 {
-	extern double cs_Zero;
-
 	int status;
 
 	double myNtf [3];
@@ -614,8 +614,6 @@ Const char* CSpathFrnch (Const struct cs_Frnch_* thisPtr)
 }
 double CStestFrnch (struct cs_Frnch_* thisPtr,Const double location [2])
 {
- 	extern double cs_Zero;
-
 	double density;
 
 	density = CStestCoverage (&thisPtr->coverage,location);
@@ -771,6 +769,8 @@ int CScalcRgfToNtf (struct cs_Frnch_* thisPtr,double* llNtf,Const double *llRgf9
    been evaluated as yet. */
 int CScalcNtfToRgf (struct cs_Frnch_* thisPtr,double* llRgf,Const double* llNtf)
 {
+	extern double cs_Zero;
+
 	int ii;
 	int lngOk;
 	int latOk;
@@ -779,6 +779,8 @@ int CScalcNtfToRgf (struct cs_Frnch_* thisPtr,double* llRgf,Const double* llNtf)
 	double guess [3];
 	double newLl [3];
 	double epsilon [3];
+
+	epsilon [0] = epsilon [1] = epsilon [2] = cs_Zero;	/* keep lint happy */
 
 	/* Assume everything goes OK until we know different. */
 	rtnVal = csGRIDI_ST_OK;
@@ -807,7 +809,7 @@ int CScalcNtfToRgf (struct cs_Frnch_* thisPtr,double* llRgf,Const double* llNtf)
 		}
 
 		/* See how far we are off. */
-		epsilon [LNG] = llNtf [LNG] - newLl [LNG];
+		epsilon [LNG] = CS_lngEpsilon (llNtf [LNG],newLl [LNG]);
 		epsilon [LAT] = llNtf [LAT] - newLl [LAT];
 
 		/* If our guess at the longitude is off by more than

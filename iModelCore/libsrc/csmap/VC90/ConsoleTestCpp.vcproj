@@ -47,6 +47,8 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderThrough="csTestCpp.hpp"
 				WarningLevel="4"
 				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="4"
@@ -63,6 +65,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="csmapd.lib"
+				OutputFile="$(OutDir)\CS_TestCpp.exe"
 				AdditionalLibraryDirectories="&quot;$(ProjectDir)..\lib90\$(ConfigurationName)&quot;"
 				GenerateDebugInformation="true"
 				RandomizedBaseAddress="1"
@@ -121,6 +124,8 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderThrough="csTestCpp.hpp"
 				WarningLevel="4"
 				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="3"
@@ -137,6 +142,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="csmapd.lib"
+				OutputFile="$(OutDir)\CS_TestCpp.exe"
 				AdditionalLibraryDirectories="&quot;$(ProjectDir)..\lib90\$(ConfigurationName)64&quot;"
 				GenerateDebugInformation="true"
 				RandomizedBaseAddress="1"
@@ -192,6 +198,8 @@
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="&quot;$(ProjectDir)..\TestCpp\Include&quot;;&quot;$(ProjectDir)..\Include&quot;"
 				RuntimeLibrary="2"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderThrough="csTestCpp.hpp"
 				WarningLevel="4"
 				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="3"
@@ -208,6 +216,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="csmap.lib"
+				OutputFile="$(OutDir)\CS_TestCpp.exe"
 				AdditionalLibraryDirectories="&quot;$(ProjectDir)..\lib90\$(ConfigurationName)&quot;"
 				GenerateDebugInformation="true"
 				OptimizeReferences="2"
@@ -266,6 +275,8 @@
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="&quot;$(ProjectDir)../TestCpp/Include&quot;;&quot;$(ProjectDir)../Include&quot;"
 				RuntimeLibrary="2"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderThrough="csTestCpp.hpp"
 				WarningLevel="4"
 				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="3"
@@ -282,6 +293,8 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="csmap.lib"
+				ShowProgress="0"
+				OutputFile="$(OutDir)\CS_TestCpp.exe"
 				AdditionalLibraryDirectories="&quot;$(ProjectDir)..\lib90\$(ConfigurationName)64&quot;"
 				GenerateDebugInformation="true"
 				OptimizeReferences="2"
@@ -321,6 +334,50 @@
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
+			<File
+				RelativePath="..\TestCpp\Source\CS_osGeoTest.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\TestCpp\Source\CS_TestCpp.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\TestCpp\Source\CStest0.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
+			</File>
 			<File
 				RelativePath="..\TestCpp\Source\CStest1.cpp"
 				>
@@ -370,10 +427,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\TestCpp\Source\csTestCpp.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\TestCpp\Source\CStestD.cpp"
 				>
 			</File>
@@ -418,6 +471,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\TestCpp\Source\CStestQ.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\TestCpp\Source\CStestR.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\TestCpp\Source\CStestS.cpp"
 				>
 			</File>
@@ -429,10 +490,6 @@
 				RelativePath="..\TestCpp\Source\CStestT.cpp"
 				>
 			</File>
-			<File
-				RelativePath="..\TestCpp\Source\CStestZ.cpp"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -440,20 +497,22 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath="..\TestCpp\Include\cs_OsGeoTest.hpp"
+				>
+			</File>
+			<File
 				RelativePath="..\TestCpp\Include\csTestCpp.hpp"
 				>
 			</File>
 		</Filter>
 		<Filter
-			Name="Resource Files"
-			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
-			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
-			>
-		</Filter>
-		<Filter
 			Name="TestData"
 			Filter="*.dat"
 			>
+			<File
+				RelativePath="..\TestCpp\CsMapRegressBase.csv"
+				>
+			</File>
 			<File
 				RelativePath="..\TestCpp\TEST.DAT"
 				>

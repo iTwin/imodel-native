@@ -280,7 +280,7 @@ int main (int argc,char *argv [])
 		return (1);
 	}
 
-	/* Compile the Category DIctionary. */
+	/* Compile the Category Dictionary. */
 	strcpy (src_name,src_dir);
 	strcat (src_name,"category.asc");
 	printf ("Compiling %s to %s.\n",src_name,ct_path);
@@ -316,8 +316,9 @@ int main (int argc,char *argv [])
 		return (1);
 	}
 
+
 	/* We're done. */
-	printf ("All dictionaries and multiple regressions compiled successfully.\n");
+	printf ("All dictionaries compiled successfully.\n");
 	if (!batch) acknowledge ();
 
 	return (0);

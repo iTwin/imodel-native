@@ -328,6 +328,7 @@ double CStestGeoid99GridFile (struct csGeoid99GridFile_* __This,Const double *so
 	object, this function is not to be called unless the provided source
 	coordinate is within the coverage of the object.
 */
+/*lint -e826  disable message on fltPtr = (float *)(chrPtr) used extensively here */
 int CScalcGeoid99GridFile (struct csGeoid99GridFile_* __This,double* result,Const double* sourceLL)
 {
 	extern double cs_One;
@@ -636,8 +637,8 @@ int CScalcGeoid99GridFile (struct csGeoid99GridFile_* __This,double* result,Cons
 			lngTmp = (long)sizeof (struct csGeoid99Hdr_) - __This->bufferBeginPosition;
 #endif
 			if (lngTmp < 0) lngTmp = 0L;
-			
-			swapCount = (__This->bufferEndPosition - (__This->bufferBeginPosition + lngTmp)) / sizeof (float);
+
+			swapCount = (__This->bufferEndPosition - (__This->bufferBeginPosition + lngTmp)) / (long32_t)sizeof (float);
 			sprintf (swapSpec,"%ldf",swapCount);
 			chrPtr = (char *)(__This->dataBuffer) + lngTmp;
 			CSbswap (chrPtr,swapSpec);
@@ -889,9 +890,9 @@ double EXP_LVL9 CSgeoidQterp (double sourceDelta [2],float array [9])
 	double result;
 	double f0, f1, f2;
 
-	f0 = CSgeoidQterp1 (sourceDelta [0],array [0],array [1],array [2]);
-	f1 = CSgeoidQterp1 (sourceDelta [0],array [3],array [4],array [5]);
-	f2 = CSgeoidQterp1 (sourceDelta [0],array [6],array [7],array [8]);
+	f0 = CSgeoidQterp1 (sourceDelta [0],(double)array [0],(double)array [1],(double)array [2]);
+	f1 = CSgeoidQterp1 (sourceDelta [0],(double)array [3],(double)array [4],(double)array [5]);
+	f2 = CSgeoidQterp1 (sourceDelta [0],(double)array [6],(double)array [7],(double)array [8]);
 	result = CSgeoidQterp1 (sourceDelta [1],f0,f1,f2);
 	return result;
 }
@@ -913,3 +914,4 @@ double EXP_LVL9 CSgeoidQterp1 (double delta,double f0,double f1,double f2)
 	result = f0 + delta * df0 + tmp * d2f0;
 	return result;
 }
+/*lint +e826 */

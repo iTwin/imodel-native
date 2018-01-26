@@ -6,7 +6,7 @@
 #       $Date: 2010/04/21 15:09:58 $
 #     $Author: Alain.Robert $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 #----------------------------------------------------------------
@@ -147,7 +147,7 @@ MultiCompileDepends=$(_MakeFileSpec)
 
     $(o)CS_ansi$(oext):               $(csSrcDir)CS_ansi.c ${MultiCompileDepends}
 
-    $(o)CS_ats77New$(oext):           $(csSrcDir)CS_ats77New.c ${MultiCompileDepends}
+    $(o)CS_ats77$(oext):              $(csSrcDir)CS_ats77.c ${MultiCompileDepends}
 
     $(o)CS_azmea$(oext):              $(csSrcDir)CS_azmea.c ${MultiCompileDepends}
 
@@ -217,6 +217,8 @@ MultiCompileDepends=$(_MakeFileSpec)
 
     $(o)CS_general$(oext):            $(csSrcDir)CS_general.c ${MultiCompileDepends}
 
+    $(o)CS_geocn$(oext):              $(csSrcDir)CS_geocn.c ${MultiCompileDepends}
+
     $(o)CS_geoct$(oext):              $(csSrcDir)CS_geoct.c ${MultiCompileDepends}
 
     $(o)CS_geoid96$(oext):            $(csSrcDir)CS_geoid96.c ${MultiCompileDepends}
@@ -249,7 +251,7 @@ MultiCompileDepends=$(_MakeFileSpec)
 
     $(o)CS_hpApi$(oext):              $(csSrcDir)CS_hpApi.c ${MultiCompileDepends}
 
-    $(o)CS_japanNew$(oext):           $(csSrcDir)CS_japanNew.c ${MultiCompileDepends}
+    $(o)CS_japan$(oext):              $(csSrcDir)CS_japan.c ${MultiCompileDepends}
 
     $(o)CS_krovk$(oext):              $(csSrcDir)CS_krovk.c ${MultiCompileDepends}
 
@@ -377,7 +379,6 @@ MultiCompileDepends=$(_MakeFileSpec)
     
     $(o)CSgxcomp$(oext):              $(csSrcDir)CSgxcomp.c ${MultiCompileDepends}
 
-    $(o)CSmrcomp$(oext):              $(csSrcDir)CSmrcomp.c ${MultiCompileDepends}
 
 # No need to compile this file since it is included by CS_sys34.c pulling its content into the process.
 #    $(o)CSsys34KMS$(oext):            $(csSrcDir)CSsys34KMS.c ${MultiCompileDepends}
@@ -393,31 +394,30 @@ MultiCompileDepends=$(_MakeFileSpec)
 # C++ file below
 # Files csBrowser.cpp, csDataDir.cpp, csDualBrowse.cpp, csWinHlp.cpp are not compiled since they implement unrequired dialogs.
 
-#    $(o)CS_mfc$(oext):                $(csSrcDir)CS_mfc.cpp ${MultiCompileDepends}
+#    $(o)CS_mfc$(oext):                  $(csSrcDir)CS_mfc.cpp ${MultiCompileDepends}
 
-    $(o)CS_wellKnownText$(oext):      $(csSrcDir)CS_wellKnownText.cpp ${MultiCompileDepends}
+    $(o)CS_wellKnownText$(oext):         $(csSrcDir)CS_wellKnownText.cpp ${MultiCompileDepends}
 
-    $(o)CScs2Wkt$(oext):              $(csSrcDir)CScs2Wkt.cpp ${MultiCompileDepends}
+    $(o)CS_wktObjKonstants$(oext):       $(csSrcDir)CS_wktObjKonstants.cpp ${MultiCompileDepends}
 
-    $(o)csCsvFileSupport$(oext):      $(csSrcDir)csCsvFileSupport.cpp ${MultiCompileDepends}
+    $(o)CScs2Wkt$(oext):                 $(csSrcDir)CScs2Wkt.cpp ${MultiCompileDepends}
 
-    $(o)CSdt2Wkt$(oext):              $(csSrcDir)CSdt2Wkt.cpp ${MultiCompileDepends}
+    $(o)CS_csvFileSupport$(oext):        $(csSrcDir)CS_csvFileSupport.cpp ${MultiCompileDepends}
 
-    $(o)CSel2Wkt$(oext):              $(csSrcDir)CSel2Wkt.cpp ${MultiCompileDepends}
+    $(o)CSdt2Wkt$(oext):                 $(csSrcDir)CSdt2Wkt.cpp ${MultiCompileDepends}
 
-    $(o)csEpsgStuff$(oext):           $(csSrcDir)csEpsgStuff.cpp ${MultiCompileDepends}
+    $(o)CSel2Wkt$(oext):                 $(csSrcDir)CSel2Wkt.cpp ${MultiCompileDepends}
 
-    $(o)csEpsgSupport$(oext):         $(csSrcDir)csEpsgSupport.cpp ${MultiCompileDepends}
+    $(o)CS_epsgStuff$(oext):           $(csSrcDir)CS_epsgStuff.cpp ${MultiCompileDepends}
 
-#    $(o)CSKeyNm$(oext):               $(csSrcDir)CSKeyNm.cpp ${MultiCompileDepends}
+    $(o)CS_epsgSupport$(oext):         $(csSrcDir)CS_epsgSupport.cpp ${MultiCompileDepends}
 
-    $(o)csNameMapper$(oext):          $(csSrcDir)csNameMapper.cpp ${MultiCompileDepends}
+    $(o)CS_wktObject$(oext):           $(csSrcDir)CS_wktObject.cpp ${MultiCompileDepends}
 
-    $(o)csNameMapperSupport$(oext):   $(csSrcDir)csNameMapperSupport.cpp ${MultiCompileDepends}
+    $(o)CS_nameMapper$(oext):          $(csSrcDir)CS_nameMapper.cpp ${MultiCompileDepends}
 
-    $(o)rcWellKnownText$(oext):       $(csSrcDir)rcWellKnownText.cpp ${MultiCompileDepends}
+    $(o)CS_nameMapperSupport$(oext):   $(csSrcDir)CS_nameMapperSupport.cpp ${MultiCompileDepends}
 
-    $(o)rcWktKonstants$(oext):        $(csSrcDir)rcWktKonstants.cpp ${MultiCompileDepends}
 
     $(o)CSIoUtil$(oext):              $(csSrcDir)CSIoUtil.cpp ${MultiCompileDepends}
 

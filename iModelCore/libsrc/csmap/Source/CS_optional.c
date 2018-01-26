@@ -1102,7 +1102,7 @@ long32_t EXP_LVL1 CS_ftoa (char *bufr,int size,double value,long32_t frmt)
 		   Note, dec_pnt is the number of digits to the left
 		   of the decimal point. */
 
-		for (ii = 0;*cp != '\0';ii += 1)
+		for (ii = 0;*cp != '\0';ii += 1)		/*lint !e441   loop variable (idx) not referenced in conditional expression */
 		{
 			if (cma_flg && ii != 0)
 			{
@@ -1196,16 +1196,19 @@ long32_t EXP_LVL1 CS_ftoa (char *bufr,int size,double value,long32_t frmt)
 **	value was not a valid state plane zone number (given the status
 **	of the is83 flag.
 **********************************************************************/
-
+/*lint -e785   too few initializers for aggrate (cs-ZoneMap) */
+/*lint -esym(754,cs_ZoneMap_::type)   not referenced */
+/*lint -esym(754,cs_ZoneMap_::fill)   not referenced */
 struct cs_ZoneMap_
 {
 	short zoneNbr;
 	char keyName27 [24];
 	char keyName83 [24];
-	char type;
+	char type;				/* T = Transverse Mercator, L = Lambert Conformal COnic, etc. */
 	char fill;
 };
 
+/* TODO:  This feature should be merged with the "FIPS" feature in CS_fips.c */
 struct cs_ZoneMap_ cs_ZoneMap [] =
 {
 	{  101,   "AL-E",     "AL83-E",'T'  },
@@ -1390,6 +1393,7 @@ struct cs_ZoneMap_ cs_ZoneMap [] =
 
 	{    0,       "",           "",'\0' }
 };
+/*lint +e785 */
 
 int EXP_LVL1 CS_spZoneNbrMap (char *zoneNbr,int is83)
 {

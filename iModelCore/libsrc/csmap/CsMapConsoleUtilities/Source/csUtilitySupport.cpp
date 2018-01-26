@@ -5,10 +5,10 @@
 //
 // The information contained herein is confidential, proprietary
 // to Autodesk, Inc., and considered a trade secret as defined 
-// in section 499C of the penal code of the State of California.  
+// in section 499C of the penal code of the State of California.
 // Use of this information by anyone other than authorized employees
 // of Autodesk, Inc. is granted only under a written non-disclosure 
-// agreement, expressly prescribing the scope and manner of such use.       
+// agreement, expressly prescribing the scope and manner of such use.
 //
 // CREATED BY:
 //      Norm Olsen
@@ -20,6 +20,9 @@
 extern "C" unsigned long KcsNmInvNumber;
 extern "C" unsigned long KcsNmMapNoNumber;
 extern "C" double cs_Zero;
+extern "C" double cs_LlNoise;
+extern "C" struct cs_Prjtab_ cs_Prjtab [];
+extern "C" struct cs_PrjprmMap_ cs_PrjprmMap [];
 
 const wchar_t* dbl2wcs (double dblVal)
 {
@@ -43,7 +46,7 @@ const wchar_t* dbl2wcs (double dblVal)
 	}
 	else
 	{
-		// A normal number.  COnvert at high precision, but trim trailing
+		// A normal number.  Convert at high precision, but trim trailing
 		// zeros.  Always leave one zero after the decimal point for
 		// integer values.
 		swprintf (wcBufr,128,L"%.12f",dblVal);
@@ -68,6 +71,104 @@ const wchar_t* dbl2wcs (double dblVal)
 	return wcBufr;
 }
 
+unsigned short CS_getPrjCode (const char* projKeyName)
+{
+	unsigned short projCode = cs_PRJCOD_END;
+	struct cs_Prjtab_ *pp;
+
+	for (pp = cs_Prjtab;*pp->key_nm != '\0';pp++)
+	{
+		if (!CS_stricmp (pp->key_nm,projKeyName))
+		{
+			projCode = pp->code;
+			break;
+		}
+	}
+	return projCode;
+}
+
+unsigned char CS_getParmCode (unsigned short projCode,unsigned parmNbr)
+{
+	unsigned char parmCode;
+	struct cs_PrjprmMap_* prmTblPtr;
+
+	parmCode = cs_PRMCOD_NOTUSED;
+	if (parmNbr >= 1 && parmNbr <= 24)
+	{
+		for (prmTblPtr = cs_PrjprmMap;prmTblPtr->prj_code != cs_PRJCOD_END;prmTblPtr += 1)
+		{
+			if (prmTblPtr->prj_code == projCode)
+			{
+				parmCode = prmTblPtr->prm_types [parmNbr - 1];
+				break;
+			}
+		}
+	}
+	return parmCode;
+}
+bool CS_crsHasUsefulRng (const struct cs_Csdef_& csDef)
+{
+	bool hasUsefulRange;
+	
+	hasUsefulRange = (csDef.ll_max [0] != 0.0) || (csDef.ll_max [1] != 0.0) ||
+					 (csDef.ll_min [0] != 0.0) || (csDef.ll_min [1] != 0.0);
+	return hasUsefulRange;
+}
+
+// The following function reads a CSV with one set of delimiters and writes
+// with a second set of delimiters.  Especially useful when dealing with
+// WKT files where all the element names are quoted strings, and you need
+// to get rid of the double quotes.
+bool CsvDelimiterConvert (const wchar_t* csDataDir,const wchar_t* inputFile,bool labels,
+																			const wchar_t* fromDelims,
+																			const wchar_t* toDelims,
+																			const wchar_t* outputFile)
+{
+	bool ok (false);
+
+	wchar_t filePath [MAXPATH + MAXPATH];
+
+	std::wifstream iStrm;
+	std::wofstream oStrm;
+
+	TcsCsvStatus csvStatus;
+	TcsCsvFileBase csvData (labels,3,5,fromDelims);
+
+	// Open source file
+	wcsncpy (filePath,csDataDir,MAXPATH);
+	wcscat (filePath,L"\\");
+	wcscat (filePath,inputFile);
+	iStrm.open (filePath,std::ios_base::in);
+	ok = iStrm.is_open ();
+
+	// Read the input file.
+	if (ok)
+	{
+		ok = csvData.ReadFromStream (iStrm,labels,csvStatus);
+		iStrm.close ();
+	}
+
+	if (ok)
+	{
+		csvData.SetDelimiters (toDelims);
+	}
+	if (ok)
+	{
+		// Create/Truncate the output file.
+		wcsncpy (filePath,csDataDir,MAXPATH);
+		wcscat (filePath,L"\\");
+		wcscat (filePath,outputFile);
+		oStrm.open (filePath,std::ios_base::out | std::ios_base::trunc);
+		ok = oStrm.is_open ();
+	}
+	if (ok)
+	{
+		ok = csvData.WriteToStream (oStrm,labels,csvStatus);
+		oStrm.close ();
+	}
+	return ok;
+}
+
 // Returns a pointer to a TcsEpsgDataSetV6 object.  Specifically, a
 // TcsEpsgDataSetV6 object initialized with the contents of the the folder
 // pointed to by the csEpsgDir global variable defined in the
@@ -75,7 +176,7 @@ const wchar_t* dbl2wcs (double dblVal)
 // elimiate the possibility of having two of these floating around as
 // it is quite time consuming to buyild one of these things.
 
-// The following should be const, by the dumb Micros??t linker can't find it if it is.
+// The following should be const, but the dumb Micros??t linker can't find it if it is.
 extern wchar_t csEpsgDir [];
 TcsEpsgDataSetV6* csEpsgDataSetV6Ptr = 0;
 
@@ -83,7 +184,7 @@ const TcsEpsgDataSetV6* GetEpsgObjectPtr ()
 {
 	if (csEpsgDataSetV6Ptr == 0)
 	{
-		csEpsgDataSetV6Ptr = new TcsEpsgDataSetV6 (csEpsgDir,L"7.05");
+		csEpsgDataSetV6Ptr = new TcsEpsgDataSetV6 (csEpsgDir);
 	}
 	return csEpsgDataSetV6Ptr;
 }
@@ -189,19 +290,292 @@ int CS_nmMprRplName (TcsCsvFileBase& csvFile,short fldNbr,const char* oldName,
 	}
 	return ok?rplCount:-1;
 }
+//newPage//
+EcsIntersectionType CS_intersection2D (const double firstFrm  [2],
+									   const double firstTo   [2],
+									   const double secondFrm [2],
+									   const double secondTo  [2],
+									   double intersection [2])
+{
+	EcsIntersectionType result;
+	double delX1, delY1;
+	double delX2, delY2;
+	double num, denom;			// numerator and denominator
+	double fuzz;
 
+	// Compute a value which we will use as a substitute for zero.  We start
+	// with the absolute value of the largest of all the coordinates in the
+	// calculation.
+	fuzz = fabs (firstFrm [0]);
+	if (fabs (firstFrm  [1]) > fuzz) fuzz = fabs (firstFrm  [1]); 
+	if (fabs (firstTo   [0]) > fuzz) fuzz = fabs (firstTo   [0]); 
+	if (fabs (firstTo   [1]) > fuzz) fuzz = fabs (firstTo   [1]); 
+	if (fabs (secondFrm [0]) > fuzz) fuzz = fabs (secondFrm [0]); 
+	if (fabs (secondFrm [1]) > fuzz) fuzz = fabs (secondFrm [1]); 
+	if (fabs (secondTo  [0]) > fuzz) fuzz = fabs (secondTo  [0]); 
+	if (fabs (secondTo  [1]) > fuzz) fuzz = fabs (secondTo  [1]);
+
+	// Take the magnitude of the largest coordinate involved in this
+	// and divide by 100 billion.  That is, we assume that any two numbers
+	// where the first 12 digits of precision are the same, are the same
+	// number.  Due to calculation slop using real numbers, we rarely
+	// encounter the cold hard zero value which indicates that the two
+	// lines are -arallel or colinear.
+	fuzz *= 1.0E-12;
+
+	// Compute the denominator which also tells us if the lines are
+	// parallel or collinear.
+	delX1 = firstTo  [0] - firstFrm  [0];
+	delY1 = firstTo  [1] - firstFrm  [1];
+	delX2 = secondTo [0] - secondFrm [0];
+	delY2 = secondTo [1] - secondFrm [1];
+	denom = delX2 * delY1 - delX1 * delY2;
+
+	// If parallel or colinear, we can't do much.  There is no intersection
+	// except at infinity.
+	if (fabs (denom) < fuzz)
+	{
+		return (isectParallel);
+	}
+
+	// Compute the intersection.
+	num = delX1 * delX2 * (secondFrm [1] - firstFrm [1]) +
+		  delX2 * delY1 *  firstFrm  [0] -
+		  delX1 * delY2 *  secondFrm [0];
+	intersection [0] = num / denom;
+
+	num = delY1 * delY2 * (secondFrm [0] - firstFrm [0]) +	
+		  delY2 * delX1 *  firstFrm [1] -
+		  delY1 * delX2 *  secondFrm [1];
+	intersection [1] = num / -denom;
+
+	// Now to compute the location of the intersection point relative to the
+	// line segments involved. This is often very important.  That is, does the
+	// actual intersection point reside on either line; perhaps its on both
+	// lines.  We start by assuming the the intersection point does not reside
+	// on either line.
+
+	// We write code which works independent of whatever values are
+	// assigned to the intersection type enumerator. A bit slower, a
+	// bit larger, but much more robust.
+	result = isectNeither;
+	if (fabs (delX1) > fabs (delY1))
+	{
+		// first line segment is more horizontal than vertical. We will use the
+		// x value to test if the resulting point is on the segment.
+		if (delX1 >= 0.0)
+		{
+			if (intersection [0] >= firstFrm [0] && intersection [0] <= firstTo [0])
+			{
+				result = isectFirst;
+			}
+		}
+		else
+		{
+			if (intersection [0] <= firstFrm [0] && intersection [0] >= firstTo [0])
+			{
+				result = isectFirst;
+			}
+		}
+	}
+	else
+	{
+		// first segment is more verical than horizontal. We will use the y
+		// value to test if the resulting point is on the segment.
+		if (delY1 >= 0.0)
+		{
+			if (intersection [1] >= firstFrm [1] && intersection [1] <= firstTo [1])
+			{
+				result = isectFirst;
+			}
+		}
+		else
+		{
+			if (intersection [1] <= firstFrm [1] && intersection [1] >= firstTo [1])
+			{
+				result = isectFirst;
+			}
+		}
+	}
+
+	// Same stuff with the second segment.
+	if (fabs (delX2) > fabs (delY2))
+	{
+		if (delX2 >= 0.0)
+		{
+			if (intersection [0] >= secondFrm [0] && intersection [0] <= secondTo [0])
+			{
+				 result = (result == isectFirst) ? isectBoth : isectSecond;
+			}
+		}
+		else
+		{
+			if (intersection [0] <= secondFrm [0] && intersection [0] >= secondTo [0])
+			{
+				 result = (result == isectFirst) ? isectBoth : isectSecond;
+			}
+		}
+	}
+	else
+	{
+		if (delY2 >= 0.0)
+		{
+			if (intersection [1] >= secondFrm [1] && intersection [1] <= secondTo [1])
+			{
+				 result = (result == isectFirst) ? isectBoth : isectSecond;
+			}
+		}
+		else
+		{
+			if (intersection [1] <= secondFrm [1] && intersection [1] >= secondTo [1])
+			{
+				 result = (result == isectFirst) ? isectBoth : isectSecond;
+			}
+		}
+	}
+	return result;
+}
 //newPage//
 ///////////////////////////////////////////////////////////////////////////////
 // TcsCoordsysFile Object  --  Abstracts the CS-MAP Coordsys file.
 //
 // This object is used to access CS-MAP Coordsys files.
 //
+// Standard sort function. The constructor uses this function to sort the
+// array thus enabling use of binary search to get coordinate systems by
+// key name.
 bool TcsCoordsysFile::KeyNameLessThan (const cs_Csdef_& lhs,const cs_Csdef_& rhs)
 {
 	int cmpValue = CS_stricmp (lhs.key_nm,rhs.key_nm);
 	return (cmpValue < 0);
 }
+//
+// Function used to sort the dictionary image into "CRS" order.  That is,
+// to bring all CRS's which are identical as far as projection and basic
+// projection parameters together.  Originally devised to connect CRS
+// definitions without a useful range with "identical" CRS definitions
+// which did have a useful range.  Identical, in this case, implies that
+// datum and unit differences are ignored, as they would have minimal
+// effect on the the geographic useful range.
+// 
+int TcsCoordsysFile::ProjectionCompare (const cs_Csdef_& lhs,const cs_Csdef_& rhs)
+{
+	int cmpValue;
+	unsigned short lhsPrjCode;
+	unsigned short rhsPrjCode;
+	double tmpDbl;
+
+	lhsPrjCode = CS_getPrjCode (lhs.prj_knm);
+	rhsPrjCode = CS_getPrjCode (rhs.prj_knm);
+	cmpValue = lhsPrjCode - rhsPrjCode;
+	if (cmpValue == 0)
+	{
+		if (lhsPrjCode == 1)
+		{
+			cmpValue = CS_stricmp (lhs.dat_knm,rhs.dat_knm);
+		}
+		else
+		{
+			tmpDbl = lhs.org_lng - rhs.org_lng;
+			if (tmpDbl < -1.0E-05)
+			{
+				cmpValue = -1;
+			}
+			else if (tmpDbl > 1.0E-05)
+			{
+				cmpValue = 1;
+			}
+			if (cmpValue == 0)
+			{
+				tmpDbl = lhs.org_lat - rhs.org_lat;
+				if (tmpDbl < -1.0E-05)
+				{
+					cmpValue = -1;
+				}
+				else if (tmpDbl > 1.0E-05)
+				{
+					cmpValue = 1;
+				}
+			}
+		}
+		if (cmpValue == 0)
+		{
+			tmpDbl = lhs.prj_prm1 - rhs.prj_prm1;
+			if (tmpDbl < -1.0E-05)
+			{
+				cmpValue = -1;
+			}
+			else if (tmpDbl > 1.0E-05)
+			{
+				cmpValue = 1;
+			}
+		}
+		if (cmpValue == 0)
+		{
+			tmpDbl = lhs.prj_prm2 - rhs.prj_prm2;
+			if (tmpDbl < -1.0E-05)
+			{
+				cmpValue = -1;
+			}
+			else if (tmpDbl > 1.0E-05)
+			{
+				cmpValue = 1;
+			}
+		}
+		if (cmpValue == 0)
+		{
+			tmpDbl = lhs.prj_prm3 - rhs.prj_prm3;
+			if (tmpDbl < -1.0E-05)
+			{
+				cmpValue = -1;
+			}
+			else if (tmpDbl > 1.0E-05)
+			{
+				cmpValue = 1;
+			}
+		}
+		if (cmpValue == 0)
+		{
+			tmpDbl = lhs.prj_prm4 - rhs.prj_prm4;
+			if (tmpDbl < -1.0E-05)
+			{
+				cmpValue = -1;
+			}
+			else if (tmpDbl > 1.0E-05)
+			{
+				cmpValue = 1;
+			}
+		}
+	}
+	return cmpValue;
+}
+bool TcsCoordsysFile::ProjectionLessThan (const cs_Csdef_& lhs,const cs_Csdef_& rhs)
+{
+	int cmpValue;
+	
+	cmpValue = ProjectionCompare (lhs,rhs);
+
+	// If we are still the same at this point, we simply force a definition
+	// with a useful range to preceed a definition which does not have a
+	// useful range.
+	if (cmpValue == 0)
+	{
+		bool lhsHasRng = CS_crsHasUsefulRng (lhs);
+		bool rhsHasRng = CS_crsHasUsefulRng (rhs);
+		if (lhsHasRng && !rhsHasRng)
+		{
+			cmpValue = -1;
+		}
+		else if (rhsHasRng && !lhsHasRng)
+		{
+			cmpValue = +1;
+		}
+	}
+	return (cmpValue < 0);
+}
+
 TcsCoordsysFile::TcsCoordsysFile () : Ok                (false),
+									  SortedByName      (false),
 									  CurrentIndex      (0),
 									  CoordinateSystems ()
 {
@@ -218,6 +592,7 @@ TcsCoordsysFile::TcsCoordsysFile () : Ok                (false),
 
 		// Sort by key name to assure a binary searchable order.
 		std::sort (CoordinateSystems.begin (),CoordinateSystems.end (),KeyNameLessThan);
+		SortedByName = true;
 		CS_fclose (csStrm);
 		Ok = true;
 	}
@@ -239,15 +614,30 @@ const cs_Csdef_* TcsCoordsysFile::FetchCoordinateSystem (const char* keyName) co
 	const struct cs_Csdef_* csDefPtr = 0;
 	struct cs_Csdef_ locateValue;
 	std::vector<struct cs_Csdef_>::const_iterator locItr;
-	
+
+	memset (&locateValue,'\0',sizeof (locateValue));
 	CS_stncp (locateValue.key_nm,keyName,sizeof (locateValue.key_nm));
-	locItr = std::lower_bound (CoordinateSystems.begin (),CoordinateSystems.end (),locateValue,KeyNameLessThan);
-	if (locItr != CoordinateSystems.end ())
+	if (SortedByName)
 	{
-		csDefPtr = &(*locItr);
-		if (CS_stricmp (csDefPtr->key_nm,keyName))
+		locItr = std::lower_bound (CoordinateSystems.begin (),CoordinateSystems.end (),locateValue,KeyNameLessThan);
+		if (locItr != CoordinateSystems.end ())
 		{
-			csDefPtr = 0;
+			csDefPtr = &(*locItr);
+			if (CS_stricmp (csDefPtr->key_nm,keyName))
+			{
+				csDefPtr = 0;
+			}
+		}
+	}
+	else
+	{
+		for (locItr = CoordinateSystems.begin ();locItr != CoordinateSystems.end ();locItr++)
+		{
+			csDefPtr = &(*locItr);
+			if (!CS_stricmp (csDefPtr->key_nm,keyName))
+			{
+				break;
+			}
 		}
 	}
 	return csDefPtr;
@@ -261,6 +651,12 @@ const struct cs_Csdef_* TcsCoordsysFile::FetchNextCs (void)
 	}
 	return csDefPtr;
 }
+void TcsCoordsysFile::OrderByProjection (void)
+{
+	SortedByName = false;
+	std::sort (CoordinateSystems.begin (),CoordinateSystems.end (),ProjectionLessThan);
+}
+
 //newPage//
 ///////////////////////////////////////////////////////////////////////////////
 // TcsDatumsFile Object  --  Abstracts the CS-MAP Datums file.
@@ -594,6 +990,21 @@ void TcsCategory::AddItem (const TcsCategoryItem& newItem)
 {
 	Items.push_back (newItem);
 }
+void TcsCategory::RemoveItem (const TcsCategoryItem& oldItem)
+{
+	const char *itmNamePtr;
+	std::vector<TcsCategoryItem>::iterator itmItr;
+	
+	for (itmItr = Items.begin ();itmItr != Items.end ();itmItr++)
+	{
+		itmNamePtr = itmItr->GetItemName ();
+		if (!CS_stricmp (itmNamePtr,oldItem.GetItemName()))
+		{
+			Items.erase (itmItr);
+			break;
+		}
+	}
+}
 bool TcsCategory::ReadFromStream (std::istream& inStrm)
 {
 	bool ok (false);
@@ -820,6 +1231,8 @@ bool TcsCategoryFile::DeprecateCrs (const char* oldCrsName,const char* newCrsNam
 
 	// Scan all catagories looking for an item with an item name equal to
 	// the provided old CRS name.
+	// NOTICE: This code currently assumes that a CSR name is never duplicated
+	// with a category.
 	rplCount = 0;
 	for (catItr = Categories.begin ();ok && catItr != Categories.end ();catItr++)
 	{
@@ -841,15 +1254,68 @@ bool TcsCategoryFile::DeprecateCrs (const char* oldCrsName,const char* newCrsNam
 				obsoleteCat->AddItem (deprecatedItem);
 			}
 			rplCount += 1;
-			
+
 			// Replace the old name of this entry with the new name and
 			// new description, is any.
-			itemPtr->SetItemName (newCrsName);
-			if (newCrsDescription != 0 && *newCrsDescription != '\0')
+			// We're removing an item from a category.  This does not affect
+			// the category iterator.
+			categoryPtr->RemoveItem (*itemPtr);
+		}
+	}
+	if (ok)
+	{
+		ok = (rplCount > 0);
+	}
+	return ok;
+}
+bool TcsCategoryFile::DeprecateCrsDel (const char* oldCrsName,const char* useCrs,
+															  const char* deprNote)
+{
+	bool ok (false);
+	unsigned rplCount;
+	TcsCategory* obsoleteCat;
+	TcsCategory* categoryPtr;
+	TcsCategoryItem* itemPtr;
+	std::vector<TcsCategory>::iterator catItr;
+
+	char itemDescription [256];
+
+	// We will need to add a copy of every entry that we modify to the
+	// Obsolete category, so we obtain a pointer to that category now.
+	obsoleteCat = FetchCategory (TcsCategoryFile::KcsObsoleteCatName);
+	ok = (obsoleteCat != 0);
+
+	// Formulate the description which we will apply to the deprecated
+	// category item.
+	sprintf (itemDescription,"%s - use %s for new work.",deprNote,useCrs);
+
+	// Scan all catagories looking for an item with an item name equal to
+	// the provided old CRS name.
+	rplCount = 0;
+	for (catItr = Categories.begin ();ok && catItr != Categories.end ();catItr++)
+	{
+		categoryPtr = &(*catItr);
+		if (categoryPtr == obsoleteCat)
+		{
+			continue;
+		}
+		itemPtr = categoryPtr->GetItem (oldCrsName);
+		if (itemPtr != 0)
+		{
+			// We have found a reference to this CRS in current category.
+			// If we have not done so already, make sure the obsolete category
+			// has a refernce to the CRS we are deprecating.
+			if (rplCount == 0)
 			{
-				itemPtr->SetDescription (newCrsDescription);
+				TcsCategoryItem deprecatedItem (*itemPtr);
+				deprecatedItem.SetDescription (itemDescription);
+				obsoleteCat->AddItem (deprecatedItem);
 			}
-		}					
+			rplCount += 1;
+
+			// Remove the deprecated item from this category.
+			categoryPtr->RemoveItem (*itemPtr);
+		}
 	}
 	if (ok)
 	{
@@ -1644,6 +2110,20 @@ void TcsKeyNameList::WriteToStream (std::wostream& listStream)
 }
 //newPage//
 //=========================================================================
+// TcsNameMapperSource -- An object which contains the NameMapper .csv
+// source file as a plain old .csv file.  Useful when doing maintenance.
+// Doing maintenance on the NameMapper when implemented in it natural
+// form, i.e. a std::set<TcsNameMap>, is quite restrictive as you can't
+// change data in the individual TcsNameMap elements which are a part of
+// the key for std::set<TcsNameMap>.  SInce most all elements are part
+// of the key, this limitation can be quite daunting.
+//
+// A the NameMapper carries nmemonics for the flavor, rather than the
+// numeric value actually used internally, this object necessarily
+// maintains a table of the nmemonic names assigned to the various flavors.
+// Otherwise, it's pretty much a simple shell in top the the
+// TcsCsvFileBase object which contains the actual NameMapper data.
+//=========================================================================
 // Construction, Destruction, and Assignment
 TcsNameMapperSource::TcsNameMapperSource (void) : TcsCsvFileBase (true,9,11),
 												  Ok (true)
@@ -1655,11 +2135,21 @@ TcsNameMapperSource::TcsNameMapperSource (void) : TcsCsvFileBase (true,9,11),
 		FlavorNames [index][0] = '\0';
 		FlavorIdValues [index] = 0UL;
 	}
+	memset (NameBuffer,'\0',sizeof (NameBuffer));
 }
 TcsNameMapperSource::TcsNameMapperSource (const TcsNameMapperSource& source)
 											:
-										  TcsCsvFileBase (source)
+										  TcsCsvFileBase (source),
+										  Ok             (source.Ok)
 {
+	for (int idx = 0;idx < FlavorCount;idx += 1)
+	{
+		wcsncpy (FlavorNames [idx],source.FlavorNames [idx],FlavorSize);
+		FlavorNames [idx][FlavorSize - 1] = L'\0';
+		FlavorIdValues [idx] = source.FlavorIdValues [idx];
+	}
+	wcsncpy (NameBuffer,source.NameBuffer,wcCount (NameBuffer));
+	NameBuffer [wcCount (NameBuffer) - 1] = L'\0';
 }
 TcsNameMapperSource::~TcsNameMapperSource (void)
 {
@@ -1670,6 +2160,15 @@ TcsNameMapperSource& TcsNameMapperSource::operator= (const TcsNameMapperSource& 
 	if (&rhs != this)
 	{
 		TcsCsvFileBase::operator= (rhs);
+		Ok = rhs.Ok;
+		for (int idx = 0;idx < FlavorCount;idx += 1)
+		{
+			wcsncpy (FlavorNames [idx],rhs.FlavorNames [idx],FlavorSize);
+			FlavorNames [idx] [FlavorSize - 1] = L'\0';
+			FlavorIdValues [idx] = rhs.FlavorIdValues [idx];
+		}
+		wcsncpy (NameBuffer,rhs.NameBuffer,wcCount (NameBuffer));
+		NameBuffer [wcCount (NameBuffer) - 1] = L'\0';
 	}
 	return *this;
 }
@@ -1698,47 +2197,272 @@ bool TcsNameMapperSource::ReadFromFile (const char* csvSourceFile)
 	}
 	return ok;
 }
-bool TcsNameMapperSource::RenameObject (EcsMapObjType nameSpace,EcsNameFlavor flavor,
-																const char* currentName,
-																const char* newName)
+unsigned long TcsNameMapperSource::GetIdent (unsigned recNbr) const
+{
+	return GetFieldAsUlong (recNbr,IdentFld);
+}
+unsigned long TcsNameMapperSource::GetType (unsigned recNbr) const
+{
+	return GetFieldAsUlong (recNbr,IdentFld);
+}
+EcsNameFlavor TcsNameMapperSource::GetFlavor (unsigned recNbr) const
 {
 	bool ok;
-
-	unsigned long recordIdx;
-	const wchar_t* flvrPtr;
-
-	wchar_t wOldName [256];
-	wchar_t wNewName [256];
-
-	std::wstring field;
-	std::wstring flvrName;
-	std::wstring objtName;
-
+	
+	unsigned long ulValue;
+	EcsNameFlavor result (csMapFlvrUnknown);
+	std::wstring fieldData;
 	TcsCsvStatus status;
 
-	ok = true;
-	mbstowcs (wOldName,currentName,wcCount (wOldName));
-	flvrPtr = FlavorNames [static_cast<int>(flavor)];
-	for (recordIdx = 0;ok && recordIdx < RecordCount ();recordIdx += 1)
+	ok = (recNbr < RecordCount ());
+	if (ok)
 	{
-		ok = GetField (flvrName,recordIdx,FlvrFld,status);
-		if (ok && wcsicmp (flvrName.c_str(),flvrPtr))
+		ok = GetField (fieldData,recNbr,FlvrFld,status);
+		if (ok)
+		{
+			wchar_t firstChar = *fieldData.c_str();
+			if (iswdigit (firstChar))
+			{
+				// The flavor field is numeric, this is easy.
+				ulValue = wcstoul (fieldData.c_str(),0,10);
+				result = static_cast<EcsNameFlavor>(ulValue);
+			}
+			else
+			{
+				// The flavor field is a nmemonic.  Need to work through
+				// the nmomonc table to get a numeric value.
+				for (int idx = 0;idx < FlavorCount;idx += 1)
+				{
+					if (!wcsicmp (FlavorNames [idx],fieldData.c_str ()))
+					{
+						result = static_cast<EcsNameFlavor>(FlavorIdValues [idx]);
+						break;
+					}
+				}
+			}
+		}
+	}
+	return result;
+}
+unsigned long TcsNameMapperSource::GetFlavorIdent (unsigned recNbr) const
+{
+	return GetFieldAsUlong (recNbr,IdentFld);
+}
+const wchar_t* TcsNameMapperSource::GetName (unsigned recNbr) const
+{
+	return GetFieldAsString (recNbr,NameFld);
+}
+unsigned long TcsNameMapperSource::GetDupSort (unsigned recNbr) const
+{
+	return GetFieldAsUlong (recNbr,IdentFld);
+}
+unsigned long TcsNameMapperSource::GetAliasFlag (unsigned recNbr) const
+{
+	return GetFieldAsUlong (recNbr,IdentFld);
+}
+unsigned long TcsNameMapperSource::GetFlags (unsigned recNbr) const
+{
+	return GetFieldAsUlong (recNbr,IdentFld);
+}
+unsigned long TcsNameMapperSource::GetDeprecation (unsigned recNbr) const
+{
+	return GetFieldAsUlong (recNbr,IdentFld);
+}
+const wchar_t* TcsNameMapperSource::GetRemarks (unsigned recNbr) const
+{
+	return GetFieldAsString (recNbr,RemrksFld);
+}
+const wchar_t* TcsNameMapperSource::GetComment (unsigned recNbr) const
+{
+	return GetFieldAsString (recNbr,CommntFld);
+}
+bool TcsNameMapperSource::SetIdent (unsigned recNbr,unsigned long newIdent)
+{
+	return SetUlongField (recNbr,IdentFld,newIdent);
+}
+bool TcsNameMapperSource::SetType (unsigned recNbr,unsigned long newType)
+{
+	return SetUlongField (recNbr,IdentFld,newType);
+}
+bool TcsNameMapperSource::SetFlavor (unsigned recNbr,EcsNameFlavor newFlavor)
+{
+	bool ok (false);
+	int idx;
+
+	// If the record number is greater than Flavor count, we write
+	// the nmemonic value.  Otherwise we wrtie as an integer.
+	if (recNbr < FlavorCount)
+	{
+		ok = SetUlongField (recNbr,FlvrFld,newFlavor);
+	}
+	else
+	{
+		for (idx = 0;idx < FlavorCount;idx += 1)
+		{
+			if (FlavorIdValues [idx] == static_cast<unsigned long>(newFlavor))
+			{
+				ok = SetStringField (recNbr,FlvrFld,FlavorNames [idx]);
+				break;
+			}
+		}
+		ok = (idx < FlavorCount);	
+	}
+	return ok;
+}
+bool TcsNameMapperSource::SetFlavorIdent (unsigned recNbr,unsigned long newFlavorIdent)
+{
+	return SetUlongField (recNbr,FlvrIdFld,newFlavorIdent);
+}
+bool TcsNameMapperSource::SetName (unsigned recNbr,const wchar_t* newName)
+{
+	return SetStringField (recNbr,NameFld,newName);
+}
+bool TcsNameMapperSource::SetDupSort (unsigned recNbr,unsigned long newDupSort)
+{
+	return SetUlongField (recNbr,DupSrtFld,newDupSort);
+}
+bool TcsNameMapperSource::SetAliasFlag (unsigned recNbr,unsigned long newAliasFlag)
+{
+	return SetUlongField (recNbr,AliasFld,newAliasFlag);
+}
+bool TcsNameMapperSource::SetFlags (unsigned recNbr,unsigned long newFlags)
+{
+	return SetUlongField (recNbr,FlagsFld,newFlags);
+}
+bool TcsNameMapperSource::SetDeprecation (unsigned recNbr,unsigned long newDeprecation)
+{
+	return SetUlongField (recNbr,DeprctFld,newDeprecation);
+}
+bool TcsNameMapperSource::SetRemarks (unsigned recNbr,const wchar_t* newRemarks)
+{
+	return SetStringField (recNbr,RemrksFld,newRemarks);
+}
+bool TcsNameMapperSource::SetComment (unsigned recNbr,const wchar_t* newComment)
+{
+	return SetStringField (recNbr,CommntFld,newComment);
+}
+bool TcsNameMapperSource::Locate (unsigned& result,unsigned long type,EcsNameFlavor flavor,const wchar_t* name) const
+{
+	bool ok (false);
+	unsigned recordCount;
+	unsigned recNbr (UlErrorValue);
+
+	recordCount = RecordCount ();
+	for (recNbr = 0;recNbr < recordCount;recNbr += 1)
+	{
+		if ((GetType (recNbr) != type) || (GetFlavor (recNbr) != flavor))
 		{
 			continue;
 		}
-		// Flavor matches, see if the old name matches.
-		if (ok)
+		if (wcsicmp (GetName (recNbr),name))
 		{
-			ok = GetField (objtName,recordIdx,NameFld,status);
-			if (ok && wcsicmp (flvrName.c_str(),wOldName))
-			{
-				// We have found it, make the change.
-				mbstowcs (wNewName,newName,wcCount (wNewName));
-				field = wNewName;
-				ok = ReplaceField (field,recordIdx,NameFld,status);
-				break;
-			}
-		}		
+			continue;
+		}
+		ok = true;
+		break;
+	}
+	result = ok ? recNbr : UlErrorValue;
+	return ok;
+}
+bool TcsNameMapperSource::Locate (unsigned& result,unsigned long type,EcsNameFlavor flavor,unsigned long flvrId)
+{
+	bool ok (false);
+	unsigned recordCount;
+	unsigned recNbr;
+
+	recordCount = RecordCount ();
+	for (recNbr = 0;recNbr < recordCount;recNbr += 1)
+	{
+		if ((GetType (recNbr) != type) || (GetFlavor (recNbr) != flavor))
+		{
+			continue;
+		}
+		if (GetFlavorIdent (recNbr) != flvrId)
+		{
+			continue;
+		}
+		ok = true;
+		break;
+	}
+	result = ok ? recNbr : UlErrorValue;
+	return ok;
+}
+bool TcsNameMapperSource::Locate (unsigned& result,unsigned long type,EcsNameFlavor flavor,const char* name)
+{
+	bool ok;
+	
+	wchar_t wcName [256];
+	
+	mbstowcs (wcName,name,wcCount (wcName));
+	wcName [255] = L'\0';
+	ok = TcsNameMapperSource::Locate (result,type,flavor,wcName);
+	return ok;
+}
+bool TcsNameMapperSource::LocateNameMap (unsigned& result,TcsNameMap& locator,bool byId)
+{
+	bool ok (false);
+	unsigned recNbr;
+	unsigned long type;
+	EcsNameFlavor flavor;
+	unsigned long flvrId;
+	const wchar_t* namePtr;
+
+	type = locator.GetMapClass ();
+	flavor = locator.GetFlavor ();
+
+	if (byId)
+	{
+		flvrId = locator.GetNumericId ();
+		ok = Locate (recNbr,type,flavor,flvrId);
+	}
+	else
+	{
+		namePtr = locator.GetNamePtr ();
+		ok = Locate (recNbr,type,flavor,namePtr);
+	}
+	result = ok ? recNbr : UlErrorValue;
+	return ok;
+}
+bool TcsNameMapperSource::ReplaceNameMap (unsigned recNbr,TcsNameMap& updatedNameMap)
+{
+	bool ok;
+	
+	        ok = SetIdent (recNbr,updatedNameMap.GetGenericId ());
+	if (ok) ok = SetType (recNbr,updatedNameMap.GetMapClass ());
+	if (ok) ok = SetType (recNbr,updatedNameMap.GetMapClass ());
+	if (ok) ok = SetFlavor (recNbr,updatedNameMap.GetFlavor ());
+	if (ok) ok = SetFlavorIdent (recNbr,updatedNameMap.GetNumericId ());
+	if (ok) ok = SetName (recNbr,updatedNameMap.GetNamePtr ());
+	if (ok) ok = SetDupSort(recNbr,updatedNameMap.GetDupSort ());
+	if (ok) ok = SetAliasFlag (recNbr,updatedNameMap.GetAliasFlag ());
+	if (ok) ok = SetFlags (recNbr,(unsigned long)updatedNameMap.GetUserValue ());
+	if (ok) ok = SetDeprecation (recNbr,updatedNameMap.DeprecatedBy ());
+	if (ok) ok = SetRemarks (recNbr,updatedNameMap.GetRemarks ());
+	if (ok) ok = SetComment (recNbr,updatedNameMap.GetComments ());
+	return ok;
+}
+bool TcsNameMapperSource::AddNameMap (TcsNameMap& newNameMap)
+{
+	return false;
+}
+bool TcsNameMapperSource::DeleteNameMap (unsigned recNbr)
+{
+	return false;
+}
+bool TcsNameMapperSource::RenameObject (EcsMapObjType type,EcsNameFlavor flavor,
+														   const char* currentName,
+														   const char* newName)
+{
+	bool ok;
+	unsigned recNbr;
+	wchar_t wcNewName [256];
+
+	ok = Locate (recNbr,type,flavor,currentName);
+	if (ok)
+	{
+		mbstowcs (wcNewName,newName,wcCount (wcNewName));
+		wcNewName [255] = L'\0';
+		ok = SetName (recNbr,wcNewName);
 	}
 	return ok;
 }
@@ -1756,7 +2480,7 @@ bool TcsNameMapperSource::WriteToFile (const char* csvSourceFile,bool overwrite)
 	}
 	else
 	{
-		woStrm.open (csvSourceFile,std::ios_base::out | std::ios_base::trunc);
+		woStrm.open (csvSourceFile,std::ios_base::out | std::ios_base::app);
 	}
 	ok = woStrm.is_open ();
 	if (ok)
@@ -1780,7 +2504,7 @@ bool TcsNameMapperSource::InitializeFlavors ()
 	unsigned long typeValue;
 	unsigned long flvrIdx;
 	
-	std::wstring field;
+	std::wstring fieldData;
 	TcsCsvStatus status;
 
 	for (index = 0;index < 32;index += 1)
@@ -1793,43 +2517,37 @@ bool TcsNameMapperSource::InitializeFlavors ()
 	recordCount = RecordCount ();
 	for (index = 0;ok && (index < recordCount);index += 1)
 	{
-		ok = GetFieldAsUlong (typeValue,index,TypeFld);
-		if (ok)
+		typeValue = GetFieldAsUlong (index,TypeFld);
+		if (typeValue == 1UL)
 		{
-			flvrIdx = 0UL;				// to keep lint happy
-			if (typeValue == 1UL)
+			// Its a flavor name definition record.  Extract the nmemonic and
+			// save it in the proper place.
+			ok = GetField (fieldData,index,NameFld,status);
+			if (ok)
 			{
-				ok = GetField (field,index,NameFld,status);
-				if (ok)
-				{
-					ok = GetFieldAsUlong (flvrIdx,index,FlvrFld);
-				}
-				if (ok)
-				{
-					wcsncpy (FlavorNames [flvrIdx],field.c_str (),32);
-					FlavorNames [flvrIdx][31] = L'\0';
-				}
+				flvrIdx = GetFieldAsUlong (index,FlvrFld);
+				wcsncpy (FlavorNames [flvrIdx],fieldData.c_str (),FlavorSize);
+				FlavorNames [flvrIdx][FlavorSize - 1] = L'\0';
 			}
-			else if (typeValue > 1)
+		}
+		else if (typeValue > 1)
+		{
+			// It is not a flavor nmemonic definition.  What we need to do
+			// here is accumulate the highest currently used Generic ID for
+			// each flavor.
+			ok = GetField (fieldData,index,FlvrFld,status);
+			if (ok)
 			{
-				idntValue = 0UL;			// to keep lint happy
-				ok = GetField (field,index,FlvrFld,status);
-				if (ok)
+				idntValue = GetFieldAsUlong (index,IdentFld);
+				for (flvrIdx = 0;flvrIdx < FlavorCount;flvrIdx += 1)
 				{
-					ok = GetFieldAsUlong (idntValue,index,IdntFld);
-				}
-				if(ok)
-				{
-					for (flvrIdx = 0;flvrIdx < 32;flvrIdx += 1)
+					if (!wcsicmp (FlavorNames [flvrIdx],fieldData.c_str ()))
 					{
-						if (!wcsicmp (FlavorNames [flvrIdx],field.c_str ()))
+						if (idntValue > FlavorIdValues [flvrIdx])
 						{
-							if (idntValue > FlavorIdValues [flvrIdx])
-							{
-								FlavorIdValues [flvrIdx] = idntValue;
-								break; 
-							}
-						}	
+							FlavorIdValues [flvrIdx] = idntValue;
+							break; 
+						}
 					}
 				}
 			}
@@ -1837,24 +2555,1216 @@ bool TcsNameMapperSource::InitializeFlavors ()
 	}
 	return ok;
 }
-bool TcsNameMapperSource::GetFieldAsUlong (unsigned long& rtnValue,unsigned recordNbr,
-																   short fieldNbr)
+unsigned long TcsNameMapperSource::GetFieldAsUlong (unsigned recNbr,short fldNbr) const
 {
-	bool ok (false);
-
-	wchar_t* dummy;
-	std::wstring field;
+	bool ok;
+	unsigned long result (UlErrorValue);
+	std::wstring fieldData;
 	TcsCsvStatus status;
-	
-	ok = GetField (field,recordNbr,fieldNbr,status);
+
+	ok = (recNbr < RecordCount ());
 	if (ok)
 	{
-		wchar_t firstChar = *field.c_str();
-		ok = iswdigit (firstChar);
+		ok = GetField (fieldData,recNbr,fldNbr,status);
 		if (ok)
 		{
-			rtnValue = wcstoul (field.c_str(),&dummy,10);
+			wchar_t firstChar = *fieldData.c_str();
+			ok = iswdigit (firstChar);
+			if (ok)
+			{
+				result = wcstoul (fieldData.c_str(),0,10);
+			}
+		}
+	}
+	return result;
+}
+// This function should return a pointer to the actual string in the .CSV file
+// object.  That is the indent.  We need high performance to the name for
+// simple comparison purposes, so we deisre very much to avoid copying the
+// string.
+const wchar_t* TcsNameMapperSource::GetFieldAsString (unsigned recNbr,short fldNbr) const
+{
+	bool ok;
+	const wchar_t* result (0);
+	std::wstring fieldData;
+	TcsCsvStatus status;
+
+	ok = (recNbr < RecordCount ());
+	if (ok)
+	{
+		ok = GetField (fieldData,recNbr,fldNbr,status);
+		if (ok)
+		{
+			result = fieldData.c_str();
+		}
+	}
+	return result;
+}
+bool TcsNameMapperSource::SetUlongField (unsigned recNbr,short fldNbr,unsigned long newValue)
+{
+	bool ok;
+
+	wchar_t buffer [256]; 	
+	std::wstring fieldData;
+	TcsCsvStatus status;
+	
+	ok = (recNbr < RecordCount ());
+	if (ok)
+	{
+		ok = (fldNbr < FieldCount (recNbr));
+		if (ok)
+		{
+			swprintf (buffer,wcCount (buffer),L"%lu",newValue);
+			fieldData = buffer;
+			ok = ReplaceField (fieldData,recNbr,fldNbr,status);
 		}
 	}
 	return ok;
 }
+bool TcsNameMapperSource::SetStringField (unsigned recNbr,short fldNbr,const wchar_t* newString)
+{
+	bool ok;
+
+	std::wstring fieldData;
+	TcsCsvStatus status;
+	
+	ok = (recNbr < RecordCount ());
+	if (ok)
+	{
+		ok = (fldNbr < FieldCount (recNbr));
+		if (ok)
+		{
+			fieldData = newString;
+			ok = ReplaceField (fieldData,recNbr,fldNbr,status);
+		}
+	}
+	return ok;
+}
+//newPage//
+//=============================================================================
+// TcsLasLosFile -- An objet specifically designed to construct and
+// subsequently write customized .l?s file sets as used by the USGS program
+// known as NADCON.
+//
+// Note that the member variable DataImage is assumed to be in one of two
+// states.
+//	1> Null value, clearly meaning no memory has been allocated as yet and
+//	   that there is obviously no data of value in the "DataImage".
+//	2> Memory has been allocated and the size of the memory block is specified
+//	   by the RecCount and EleCount member variables. Upon allocation, the
+//	   "DataImage will be initialized to a special value
+//	   (TcsLasLosFile::NoValue) and other elements may have valuable data
+//	   in them.
+//
+// Also note that the SetGridValue and GetGridValue member functions which
+// take longitude and latitude as doubles for arguments expect the longitude
+// and latitude arguemnts to be in degrees modulo the appropriate cell size.
+// To enforce/accomplish this, the provided arguments are converted to an
+// integer number of seconds before being used to calculate an index value
+// into the DataImage array.  This assumes that the cell size is always an
+// integer number of seconds, which has always been the case.
+//
+// NoValue < NoValueTest by definition
+//		[for example: bool noValue = (gridValue < NoValueTest);
+const float TcsLasLosFile::NoValue       = -1.0000E+24F;
+const float TcsLasLosFile::NoValueTest   = -1.5000E+23F;
+// EdgeValue < EdgeValueTest by definition
+//		[for example: bool edgeValue = (gridValue < NoValueTest);
+// Yes, that means applying the edge value test to a "NoValue" produces true.
+const float TcsLasLosFile::EdgeValue     = -1.0000E+23F;
+const float TcsLasLosFile::EdgeValueTest = -1.5000E+22F;
+//=============================================================================
+// Construction  /  Destruction  /  Assignment
+TcsLasLosFile::TcsLasLosFile (void) : EleCount       (0),
+									  RecCount       (0),
+									  SwLongitude    (0.0),
+									  SwLatitude     (0.0),
+									  DeltaLongitude (0.0),
+									  DeltaLatitude  (0.0),
+									  DataImage      (0),
+									  ZeeCount       (0L),
+									  Angle          (0.0)
+{
+	memset (FileIdent,'\0',sizeof (FileIdent));
+	memset (Program,'\0',sizeof (Program));
+	memset (FilePath,'\0',sizeof (FilePath));
+}
+TcsLasLosFile::TcsLasLosFile (double swLng,double swLat,double cellSize,long32_t recCount,
+																		long32_t eleCount)
+																			:
+																		 EleCount       (eleCount),
+																		 RecCount       (recCount),
+																		 SwLongitude    (swLng),
+																		 SwLatitude     (swLat),
+																		 DeltaLongitude (cellSize),
+																		 DeltaLatitude  (cellSize),
+																		 DataImage      (0),
+																		 ZeeCount       (0L),
+																		 Angle          (0.0)
+{
+	memset (FileIdent,'\0',sizeof (FileIdent));
+	memset (Program,'\0',sizeof (Program));
+	memset (FilePath,'\0',sizeof (FilePath));
+
+	size_t arraySize = EleCount * RecCount;
+	DataImage = new float [arraySize];
+	for (size_t idx = 0;idx < arraySize;idx += 1)
+	{
+		DataImage [idx] = NoValue;
+	}
+	return;
+}
+TcsLasLosFile::TcsLasLosFile (const TcsLasLosFile& source) : EleCount       (source.EleCount),
+															 RecCount       (source.RecCount),
+															 SwLongitude    (source.SwLongitude),
+															 SwLatitude     (source.SwLatitude),
+															 DeltaLongitude (source.DeltaLongitude),
+															 DeltaLatitude  (source.DeltaLatitude),
+															 DataImage      (0),
+															 ZeeCount       (source.ZeeCount),
+															 Angle          (source.Angle)
+{
+	if (source.DataImage != 0)
+	{
+		size_t arraySize = EleCount * RecCount;
+		DataImage = new float [arraySize];
+		for (size_t idx = 0;idx < arraySize;idx += 1)
+		{
+			DataImage [idx] = source.DataImage [idx];
+		}
+	}
+
+	CS_stncp (FileIdent,source.FileIdent,sizeof (FileIdent));
+	CS_stncp (Program,source.Program,sizeof (Program));
+	CS_stncp (FilePath,source.FilePath,sizeof (FilePath));
+	return;
+}
+TcsLasLosFile& TcsLasLosFile::operator= (const TcsLasLosFile& rhs)
+{
+	if (this != &rhs)
+	{
+		if (DataImage != 0)
+		{
+			delete [] DataImage;
+			DataImage = 0;					// defensive :>)
+		}
+		EleCount       = rhs.EleCount;
+		RecCount       = rhs.RecCount;
+		SwLongitude    = rhs.SwLongitude;
+		SwLatitude     = rhs.SwLatitude;
+		DeltaLongitude = rhs.DeltaLongitude;
+		DeltaLatitude  = rhs.DeltaLatitude;
+
+		if (rhs.DataImage != 0)
+		{
+			size_t arraySize = EleCount * RecCount;
+			DataImage = new float [arraySize];
+			for (size_t idx = 0;idx < arraySize;idx += 1)
+			{
+				DataImage [idx] = rhs.DataImage [idx];
+			}
+		}
+
+		CS_stncp (FileIdent,rhs.FileIdent,sizeof (FileIdent));
+		CS_stncp (Program,rhs.Program,sizeof (Program));
+		CS_stncp (FilePath,rhs.FilePath,sizeof (FilePath));
+		ZeeCount = rhs.ZeeCount;
+		Angle    = rhs.Angle;
+	}
+	return *this;
+}
+TcsLasLosFile::~TcsLasLosFile (void)
+{
+	delete [] DataImage;		// delete [] 0 is a legal no op per Strooustrup
+}
+//=============================================================================
+// Named Member Functions (Methods)
+bool TcsLasLosFile::ReadFromFile (const char* filePath)
+{
+	bool ok (false);
+	
+	size_t rdCnt;
+	float ioFloat;
+	long32_t ioLong;
+	long strmPos;
+
+	// If we have some existing data, we need to get rid of it.  This function
+	// will replace everything.
+	delete [] DataImage;
+	DataImage = 0;
+
+	// Open the file.
+	csFILE* lasStrm = CS_fopen (filePath,_STRM_BINRD);
+	ok = (lasStrm != NULL);
+	if (ok)
+	{
+		CS_stncp (FilePath,filePath,sizeof (FilePath));
+		// To avoid compiler dependent staructure packing problems, we read each
+		// element of a NADCON filer header individually.
+
+		// Should we do something about by swapping  here?  Currently,
+		// we intend to use this function once, in the Windows environment,
+		// so we'll simply assume a little endian environment all around.
+		
+		// Read in 56 bytes of FileIdent.
+		rdCnt  = CS_fread (FileIdent,1,sizeof (FileIdent),lasStrm);
+		ok = (rdCnt == sizeof (FileIdent));
+
+		// Read in 8 bytes of Program.
+		rdCnt  = CS_fread (Program,1,sizeof (Program),lasStrm);
+		ok &= (rdCnt == sizeof (Program));
+
+		// Element Count, and so forth
+		rdCnt  = CS_fread (&ioLong,1,sizeof (ioLong),lasStrm);
+		ok &= (rdCnt == sizeof (ioLong));
+		EleCount = ioLong;
+
+		rdCnt  = CS_fread (&ioLong,1,sizeof (ioLong),lasStrm);
+		ok &= (rdCnt == sizeof (ioLong));
+		RecCount = ioLong;
+
+		rdCnt  = CS_fread (&ioLong,1,sizeof (ioLong),lasStrm);
+		ok &= (rdCnt == sizeof (ioLong));
+		ZeeCount = ioLong;
+
+		rdCnt  = CS_fread (&ioFloat,1,sizeof (ioFloat),lasStrm);
+		ok &= (rdCnt == sizeof (ioFloat));
+		SwLongitude = static_cast<double>(ioFloat);
+
+		rdCnt  = CS_fread (&ioFloat,1,sizeof (ioFloat),lasStrm);
+		ok &= (rdCnt == sizeof (ioFloat));
+		DeltaLongitude = static_cast<double>(ioFloat);
+
+		rdCnt  = CS_fread (&ioFloat,1,sizeof (ioFloat),lasStrm);
+		ok &= (rdCnt == sizeof (ioFloat));
+		SwLatitude = static_cast<double>(ioFloat);
+
+		rdCnt  = CS_fread (&ioFloat,1,sizeof (ioFloat),lasStrm);
+		ok &= (rdCnt == sizeof (ioFloat));
+		DeltaLatitude = static_cast<double>(ioFloat);
+
+		rdCnt  = CS_fread (&ioFloat,1,sizeof (ioFloat),lasStrm);
+		ok &= (rdCnt == sizeof (ioFloat));
+		Angle = static_cast<double>(ioFloat);
+
+		if (ok)
+		{
+			// We have read everything we need. Note that due to the FORTRAN
+			// heritage of the NADCON program and thus supporting data files,
+			// the Heaser record is the same size as any ther record.  Thus,
+			// the size of the Header record is:
+			//		EleCount * sizeof (float) + sizeof (long32_t);
+			//
+			// Above, we have read 96 bytes. Thus, it is quite likely that the
+			// input stream is not proper;y positioned to read in data values,
+			// YET.
+			// (As a side note, that means the minimum EleCount value which
+			// works for all this is 23!!!)
+			strmPos = EleCount * sizeof (float) + sizeof (long32_t);
+			int seekStat = CS_fseek (lasStrm,strmPos,SEEK_SET);
+			ok = (seekStat == 0);
+		}
+
+		// Read in the grid data.  Note, each record has a long32_t record
+		// number element on the front.  I have chosen to throw these away for
+		// this object.
+		if (ok)
+		{
+			size_t arraySize = EleCount * RecCount;
+			DataImage = new float [arraySize];
+			for (size_t idx = 0;idx < arraySize;idx += 1)
+			{
+				DataImage [idx] = NoValue;
+			}
+		}
+		for (long32_t recIdx = 0;ok && recIdx < RecCount;recIdx += 1)
+		{
+			rdCnt  = CS_fread (&ioLong,1,sizeof (ioLong),lasStrm);
+			ok &= (rdCnt == sizeof (ioLong));
+			// One would think that this long value would contain the record
+			// number, but that does not appear to be the case.  Testing
+			// suggests this value is alsways zero.
+			// ok = (ioLong == recIdx);		// Defensive
+
+			for (long32_t eleIdx = 0;ok && eleIdx < EleCount;eleIdx += 1)
+			{
+				rdCnt  = CS_fread (&ioFloat,1,sizeof (ioFloat),lasStrm);
+				ok &= (rdCnt == sizeof (ioFloat));
+				size_t index = ((recIdx * EleCount) + eleIdx);
+				DataImage [index] = ioFloat;
+			}
+		}
+		CS_fclose (lasStrm);
+	}
+	return ok;
+}
+bool TcsLasLosFile::ReadFromFile (const wchar_t* filePath)
+{
+	char ccFilePath [MAXPATH];
+	
+	wcstombs (ccFilePath,filePath,sizeof (ccFilePath));
+	bool ok = ReadFromFile (ccFilePath);
+	return ok;
+}
+bool TcsLasLosFile::GetGridValue (float& result,long32_t recIdx,long32_t eleIdx) const
+{
+	bool ok (false);
+
+	if (RecCount > 0L && recIdx >= 0L && recIdx < RecCount &&
+		EleCount > 0L && eleIdx >= 0L && eleIdx < EleCount &&
+		DataImage != 0)
+	{
+		size_t index = (recIdx * EleCount) + eleIdx;
+		result = DataImage [index];
+		ok = true;
+	}
+	return ok;
+}
+bool TcsLasLosFile::GetGridValue (double& result,long32_t recNbr,long32_t eleNbr) const
+{
+	bool ok;
+	float floatResult;
+	
+	ok = GetGridValue (floatResult,recNbr,eleNbr);
+	if (ok)
+	{
+		result = static_cast<double>(floatResult);
+	}
+	return ok;
+}
+bool TcsLasLosFile::GetGridValue (double& result,double longitude,double latitude) const
+{
+	// This round value may be a bit too small.  We could easily go to one half
+	// a minute as far as any las/los file we know of.  Be careful!  The las/los
+	// files for Hawaii and PRVI have ugly numbers for the grid cell size which
+	// may cause problems here.
+	static const double rndValue = (1.0 / 3600) * 0.5;	// one half second in degrees
+
+	bool ok (false);
+	long32_t recIdx;
+	long32_t eleIdx;
+
+	eleIdx = (long32_t)((longitude - SwLongitude + rndValue) / DeltaLongitude);
+	recIdx = (long32_t)((latitude  - SwLatitude  + rndValue) / DeltaLatitude);
+
+	// Note, GetGridValue overload used below will check the validity of the
+	// index values, not need to do so here.
+	ok = GetGridValue (result,recIdx,eleIdx);
+	return ok;
+}
+bool TcsLasLosFile::SetGridValue (long32_t recIdx,long32_t eleIdx,float gridValue)
+{
+	bool ok (false);
+
+	if (RecCount > 0L && recIdx >= 0L && recIdx < RecCount &&
+		EleCount > 0L && eleIdx >= 0L && eleIdx < EleCount &&
+		DataImage != 0)
+	{
+		size_t index = (recIdx * EleCount) + eleIdx;
+		DataImage [index] = gridValue;
+		ok = true;
+	}
+	return ok;
+}
+bool TcsLasLosFile::SetGridValue (double longitude,double latitude,double gridValue)
+{
+	// This round value may be a bit too small.  We could easily go to one  half
+	// a minute as far as any las/los file we know of.  Be careful!  The las/los
+	// files for Hawaii and PRVI have ugly numbers for the grid cell size which
+	// may cause problems here.
+	static const double rndValue = (1.0 / 3600) * 0.5;	// one half second in degrees
+
+	bool ok (false);
+	long32_t recIdx;
+	long32_t eleIdx;
+
+	eleIdx = (long32_t)((longitude - SwLongitude + rndValue) / DeltaLongitude);
+	recIdx = (long32_t)((latitude  - SwLatitude  + rndValue) / DeltaLatitude);
+
+	// Note, SetGridValue overload used below will check the validity of the
+	// index values, not need to do so here.
+	ok = SetGridValue (recIdx,eleIdx,gridValue);
+	return ok;
+}
+bool TcsLasLosFile::GetGridLocation (double lngLat [2],long32_t recIdx,long32_t eleIdx) const
+{
+	bool ok;
+
+	ok = (RecCount > 0L && recIdx >= 0L && recIdx < RecCount &&
+		 EleCount > 0L && eleIdx >= 0L && eleIdx < EleCount &&
+		 DataImage != 0);
+	if (ok)
+	{
+		lngLat [0] = SwLongitude + (DeltaLongitude * static_cast<double>(eleIdx));
+		lngLat [1] = SwLatitude  + (DeltaLatitude  * static_cast<double>(recIdx));
+	}
+	return ok;
+}
+bool TcsLasLosFile::SetGridValue (long32_t recNbr,long32_t eleNbr,double gridValue)
+{
+	float floatValue = static_cast<float>(gridValue);
+	bool ok = SetGridValue (recNbr,eleNbr,floatValue);
+	return ok;
+}
+void TcsLasLosFile::SetFileIdent (const char* fileIdent)
+{
+	memset (FileIdent,'\0',sizeof (FileIdent));
+	if (fileIdent != 0)
+	{
+		CS_stncp (FileIdent,fileIdent,sizeof (FileIdent));
+	}
+}
+void TcsLasLosFile::SetProgram (const char* program)
+{
+	memset (Program,'\0',sizeof (Program));
+	if (program != 0)
+	{
+		CS_stncp (Program,program,sizeof (Program));
+	}
+}
+bool TcsLasLosFile::IsCovered (double longitude,double latitude) const
+{
+	bool isCovered;
+
+	double maxLongitude = SwLongitude + (DeltaLongitude * static_cast<double>(EleCount - 1));
+	isCovered = (longitude >= SwLongitude) && (longitude <= maxLongitude);
+	if (isCovered)
+	{
+		double maxLatitude = SwLatitude + (DeltaLatitude * static_cast<double>(RecCount - 1));
+		isCovered = (latitude >= SwLatitude) && (latitude <= maxLatitude);
+	}
+	return isCovered;
+}
+bool TcsLasLosFile::IsCovered (double lngLat [2]) const
+{
+	return IsCovered (lngLat [0],lngLat [1]);
+}
+//=============================================================================
+// This function does not work well.  It relies on the subject grid geometry
+// meeting some standards which are not usually met.  Essentially, a geometry
+// such as:
+//
+//        *********************************************
+//        *********************************************
+//        *****************        ********************
+//        *****************        ********************
+//        *****************        ********************
+//                                 ********************
+//                                 ********************
+// will generate holes in a grid which previously did not have any holes.
+// Use of this function is commented out until a better solution can be
+// devised. 
+//=============================================================================
+// This function finds the edge of coverage for each record and column, then
+// fills the edge 'No Value' with the edge real value times delta.
+bool TcsLasLosFile::EdgeFillDelta (double delta)
+{
+	bool ok;
+
+	long32_t eleIdx;
+	long32_t recIdx;
+
+	double gridValue;
+	double edgeValue;
+
+	//  Yes, delta had better be less than 1.0, and should not be negative.
+	ok = (delta < 1.0) && (delta > 0.0);
+
+	// As east/west aggregate of the 48 state is greater east to west than it
+	// is north to south, we do the element columns first.
+	for (eleIdx = 0L;ok && eleIdx < EleCount;eleIdx += 1)
+	{
+		// Do the south edge of each element column.
+		for (recIdx = 0L;ok && recIdx < RecCount;recIdx += 1)
+		{
+			ok = GetGridValue (gridValue,recIdx,eleIdx);
+			if (ok && (gridValue > NoValueTest))
+			{
+				// Found a real value.  Set the previous 'No Value' to the
+				// indicated value, and then we are done.  Nothing to do if the
+				// edge is the grid boundary.
+				if (recIdx > 0)
+				{
+					edgeValue = gridValue * delta;
+					ok = SetGridValue ((recIdx - 1L),eleIdx,edgeValue);
+				}
+				break;
+			}
+			// Normal termination of the loop (i.e. no break) means the entire
+			// element column is 'No Value'; and we purposely leave it that way.
+		}
+		// Do the north edge.
+		for (recIdx = (RecCount - 1);ok && recIdx >= 0;recIdx -= 1)
+		{
+			ok = GetGridValue (gridValue,recIdx,eleIdx);
+			if (ok && (gridValue > NoValueTest))
+			{
+				// Found a real value.  Set the previous 'No Value' to the
+				// indicated value, and then we are done.  Nothing to do if the
+				// edge is the grid boundary.
+				if (recIdx < (RecCount - 1L))
+				{
+					edgeValue = gridValue * delta;
+					ok = SetGridValue ((recIdx + 1L),eleIdx,edgeValue);
+				}
+				break;
+			}
+			// Normal termination of the loop (i.e. no break) means the entire
+			// element column is 'No Value'; and we leave it that way.
+		}
+	}
+
+	// Do all the east/west edges now.
+	for (recIdx = 0L;ok && recIdx < RecCount;recIdx += 1)
+	{
+		for (eleIdx = 0L;ok && eleIdx < EleCount;eleIdx += 1)
+		{
+			ok = GetGridValue (gridValue,recIdx,eleIdx);
+			if (ok && (gridValue > NoValueTest))
+			{
+				// Found a real value.  Set the previous 'No Value' to the
+				// indicated value, and then we are done.  Nothing to do if the
+				// edge is the grid boundary.
+				if (eleIdx > 0)
+				{
+					edgeValue = gridValue * delta;
+					ok = SetGridValue (recIdx,(eleIdx - 1L),edgeValue);
+				}
+				break;
+			}
+			// Normal termination of the loop (i.e. no break) means the entire
+			// record is 'No Value'; and we leave it that way.
+		}
+		for (eleIdx = (EleCount - 1L);ok && eleIdx >= 0;eleIdx -= 1)
+		{
+			ok = GetGridValue (gridValue,recIdx,eleIdx);
+			if (ok && (gridValue > NoValueTest))
+			{
+				// Found a real value.  Set the previous 'No Value' to the
+				// indicated value, and then we are done.  Nothing to do if the
+				// edge is the grid boundary.
+				if (eleIdx < (EleCount - 1L))
+				{
+					edgeValue = gridValue * delta;
+					ok = SetGridValue (recIdx,(eleIdx + 1L),edgeValue);
+				}
+				break;
+			}
+			// Normal termination of the loop (i.e. no break) means the entire
+			// element column is 'No Value'; and we leave it that way.
+		}
+	}
+	return ok;
+}
+// This function replaces all remaining edge 'No Value' cells with the
+// specified fill value.
+bool TcsLasLosFile::EdgeFill (double fillValue)
+{
+	bool ok (true);
+	long32_t recIdx;
+	long32_t eleIdx;
+	float gridValue;
+	float myFillValue;
+
+	myFillValue = static_cast<float>(fillValue);
+
+	for (recIdx = 0L;ok && recIdx < RecCount;recIdx += 1)
+	{
+		for (eleIdx = 0L;ok && eleIdx < EleCount;eleIdx += 1)
+		{
+			ok = GetGridValue (gridValue,recIdx,eleIdx);
+			// We have a separate test value for edges, but at this point,
+			// there should not be any.
+			if (ok && (gridValue > NoValueTest))
+			{
+				// Found a real value, this is the western edge of valid data.
+				break;
+			}
+			ok = SetGridValue (recIdx,eleIdx,EdgeValue);
+		}
+		for (eleIdx = (EleCount - 1L);ok && eleIdx >= 0;eleIdx -= 1)
+		{
+			ok = GetGridValue (gridValue,recIdx,eleIdx);
+			if (ok && (gridValue > NoValueTest))
+			{
+				// Found a real value, the eastern edge of valid data.
+				break;
+			}
+			ok = SetGridValue (recIdx,eleIdx,EdgeValue);
+		}
+	}
+	// Now we locate the edges in the north/south direction.  The above will
+	// have marked lots of cells with the EdgeValue.  This is true in the
+	// cases where the entire record was in the "edge" area.  The algorithm
+	// below needs to consider these values as NoValue.  That is why we have
+	// the two different values.
+	for (eleIdx = 0L;ok && eleIdx < EleCount;eleIdx += 1)
+	{
+		for (recIdx = 0L;ok && recIdx < RecCount;recIdx += 1)
+		{
+			ok = GetGridValue (gridValue,recIdx,eleIdx);
+			// Using EdgeValueTest, this test should stop this loop only when
+			// we hit a real grid value (i.e. a value in the [-10.0:+10.0]
+			// range.
+			if (ok && (gridValue > EdgeValueTest))
+			{
+				// Found the southern edge of valid data.
+				break;
+			}
+			// It may already be set to EdgeValue, but we make sure.
+			ok = SetGridValue (recIdx,eleIdx,EdgeValue);
+		}
+		for (recIdx = (RecCount - 1L);ok && recIdx >= 0;recIdx -= 1)
+		{
+			ok = GetGridValue (gridValue,recIdx,eleIdx);
+			if (ok && (gridValue > EdgeValueTest))
+			{
+				// Found the northern edge of valid data.
+				break;
+			}
+			ok = SetGridValue (recIdx,eleIdx,EdgeValue);
+		}
+	}
+
+	// Having done the above, we have properly identified all cells which are
+	// edge cells and we replace these value with zeros.
+	for (eleIdx = 0L;ok && eleIdx < EleCount;eleIdx += 1)
+	{
+		for (recIdx = 0L;ok && recIdx < RecCount;recIdx += 1)
+		{
+			ok = GetGridValue (gridValue,recIdx,eleIdx);
+			if (ok && (gridValue < NoValueTest))
+			{
+				// This is edge fill, specifically do not want to fill
+				// NoValue cells; at least not yet.
+				continue;
+			}
+			if (ok && (gridValue < EdgeValueTest))
+			{
+				ok = SetGridValue (recIdx,eleIdx,myFillValue);
+			}
+		}
+	}
+	return ok;
+}
+long32_t TcsLasLosFile::HoleCheck (std::wostream& rptStream,bool verbose)
+{
+	bool ok (true);
+	long32_t holeCount (0);
+
+	float gridValue;
+	double gridLL [2];
+
+	for (long32_t recIdx = 0L;ok && recIdx < RecCount;recIdx += 1)
+	{
+		for (long32_t eleIdx = 0L;ok && eleIdx < EleCount;eleIdx += 1)
+		{
+			ok = GetGridValue (gridValue,recIdx,eleIdx);
+			if (ok)
+			{
+				// Note, this test will also find edge values which have
+				// not been properly dealt with.
+				if (verbose && gridValue < EdgeValueTest)
+				{
+					holeCount += 1;
+					GetGridLocation (gridLL,recIdx,eleIdx);
+					std::wcout << "Hole detected at "
+							   << -gridLL [0]
+							   << L"W and "
+							   << gridLL [1]
+							   << L"N."
+							   << std::endl;
+				}
+			}
+		}
+	}
+	if (!ok)
+	{
+		holeCount = -1;
+	}
+	return holeCount;
+}
+bool TcsLasLosFile::WriteToFile (const char* filePath) const
+{
+	bool ok;
+	
+	size_t wrCnt;
+	float ioFloat;
+	long32_t ioLong;
+	long recordSize;
+
+	// If we don't have any data, there is nothing much to do but fail.
+	ok = (DataImage != 0);
+	if (ok)
+	{
+		// When we get to writing data, we will need to know the size of a
+		// data record.  The Header must also be exactly this size.  The
+		// sizeof (long32_t) is required to account for the record number
+		// element which FORTRAN likes to write in front of each record.
+		recordSize = EleCount * sizeof (float) + sizeof (long32_t);
+
+		// Open the file, truncate or create as appropriate.
+		csFILE* lasStrm = CS_fopen (filePath,_STRM_BINWR);
+		ok = (lasStrm != NULL);
+		if (ok)
+		{
+			// To avoid compiler dependent structure packing problems, we write
+			// each element of a NADCON filer header individually.
+
+			// Should we do something about by swapping  here?  Currently,
+			// we intend to use this function once, in the Windows environment,
+			// so we'll simply assume a little endian environment all around.
+			
+			// Write 56 bytes of FileIdent.
+			wrCnt  = CS_fwrite (FileIdent,1,sizeof (FileIdent),lasStrm);
+			ok = (wrCnt == sizeof (FileIdent));
+
+			// Write 8 bytes of Program.
+			wrCnt  = CS_fwrite (Program,1,sizeof (Program),lasStrm);
+			ok &= (wrCnt == sizeof (Program));
+
+			// Element Count, and so forth
+			wrCnt  = CS_fwrite (&EleCount,1,sizeof (EleCount),lasStrm);
+			ok &= (wrCnt == sizeof (EleCount));
+
+			wrCnt  = CS_fwrite (&RecCount,1,sizeof (RecCount),lasStrm);
+			ok &= (wrCnt == sizeof (RecCount));
+
+			wrCnt  = CS_fwrite (&ZeeCount,1,sizeof (ZeeCount),lasStrm);
+			ok &= (wrCnt == sizeof (ZeeCount));
+
+			ioFloat = static_cast<float>(SwLongitude);
+			wrCnt  = CS_fwrite (&ioFloat,1,sizeof (ioFloat),lasStrm);
+			ok &= (wrCnt == sizeof (ioFloat));
+
+			ioFloat = static_cast<float>(DeltaLongitude);
+			wrCnt  = CS_fwrite (&ioFloat,1,sizeof (ioFloat),lasStrm);
+			ok &= (wrCnt == sizeof (ioFloat));
+
+			ioFloat = static_cast<float>(SwLatitude);
+			wrCnt  = CS_fwrite (&ioFloat,1,sizeof (ioFloat),lasStrm);
+			ok &= (wrCnt == sizeof (ioFloat));
+
+			ioFloat = static_cast<float>(DeltaLatitude);
+			wrCnt  = CS_fwrite (&ioFloat,1,sizeof (ioFloat),lasStrm);
+			ok &= (wrCnt == sizeof (ioFloat));
+
+			ioFloat = static_cast<float>(Angle);
+			wrCnt  = CS_fwrite (&ioFloat,1,sizeof (ioFloat),lasStrm);
+			ok &= (wrCnt == sizeof (ioFloat));
+
+			// OK, the Header record has to exactly as long as any other record.
+			// So we have to write some zeros until s uch time as we have
+			// written the equivalent of a data record.  What we have written
+			// above is the equivalent of 96 bytes.  We could make the
+			// performance of this function a skoch better at the expense of
+			// more complexity.  I choose the simple appropach.
+			ioFloat = 0.0;
+			while (ok && ftell (lasStrm) < recordSize)
+			{
+				ioFloat = static_cast<float>(Angle);
+				wrCnt  = CS_fwrite (&ioFloat,1,sizeof (ioFloat),lasStrm);
+				ok &= (wrCnt == sizeof (ioFloat));
+			}
+		}
+		// We still good, we can write RecCount data records now.
+		for (long32_t recIdx = 0L;ok && recIdx < RecCount;recIdx += 1)
+		{
+			ioLong = recIdx + 1;
+			wrCnt  = CS_fwrite (&ioLong,1,sizeof (ioLong),lasStrm);
+			ok &= (wrCnt == sizeof (ioLong));
+			for (long32_t eleIdx = 0L;eleIdx < EleCount;eleIdx += 1)
+			{
+				size_t index = (recIdx * EleCount) + eleIdx;
+				ioFloat = DataImage [index];
+				wrCnt  = CS_fwrite (&ioFloat,1,sizeof (ioFloat),lasStrm);
+				ok &= (wrCnt == sizeof (ioFloat));
+			}
+		}
+		CS_fclose (lasStrm);
+	}
+	return ok;
+}
+bool TcsLasLosFile::WriteToFile (const wchar_t* filePath) const
+{
+	char ccFilePath [MAXPATH];
+	
+	wcstombs (ccFilePath,filePath,sizeof (ccFilePath));
+	bool ok = WriteToFile (ccFilePath);
+	return ok;
+}
+// The following is useful for examining the data values in a grid file
+// using a spreadsheet program such as Excel.
+bool TcsLasLosFile::WriteGridToCsv (const char* filePath) const
+{
+	bool ok;
+	
+	// If we don't have any data, there is nothing much to do but fail.
+	ok = (DataImage != 0);
+	if (ok)
+	{
+		// Open the file, truncate or create as appropriate.
+		csFILE* csvStrm = CS_fopen (filePath,_STRM_BINWR);
+		ok = (csvStrm != NULL);
+		if (ok)
+		{
+			// We're still good, we can write RecCount data records now.
+			// Write a header record with EleCount cells which carry the
+			// longitude values.
+			double cellLongitude = SwLongitude;
+			fprintf (csvStrm,"Lat/Long,");
+			for (long32_t eleIdx = 0L;eleIdx < EleCount;eleIdx += 1)
+			{
+				if (eleIdx != (EleCount - 1))
+				{
+					fprintf (csvStrm,"%#8.3f,",cellLongitude);
+				}
+				else
+				{
+					fprintf (csvStrm,"%#8.3f\n",cellLongitude);
+				}
+				cellLongitude += DeltaLongitude;
+			}
+
+			// We write in reverse record order so that when viewing in Excel,
+			// the values are displayed with north on top and south on the
+			// bottom. I got tired of having to sort the spreadsheet.
+			double recLatitude = SwLatitude + (DeltaLatitude * static_cast<double>(RecCount - 1));
+			for (long32_t recIdx = (RecCount - 1);ok && recIdx >= 0;recIdx -= 1)
+			{
+				fprintf (csvStrm,"%#8.3f,",recLatitude);
+				for (long32_t eleIdx = 0L;eleIdx < EleCount;eleIdx += 1)
+				{
+					double gridValue;
+					ok = GetGridValue (gridValue,recIdx,eleIdx);
+					if (eleIdx != (EleCount - 1))
+					{
+						fprintf (csvStrm,"%#8.5f,",gridValue);
+					}
+					else
+					{
+						fprintf (csvStrm,"%#8.5f\n",gridValue);
+					}
+				}
+				recLatitude -= DeltaLatitude;
+			}
+			CS_fclose (csvStrm);
+		}
+	}
+	return ok;
+}
+//newPage//
+//=============================================================================
+// TcsFenceElement -- An element of a two dimensional fence
+TcsFenceElement::TcsFenceElement (void) : Xx (0.0),
+										  Yy (0.0)
+{
+}
+TcsFenceElement::TcsFenceElement (double xx,double yy) : Xx (xx),
+														 Yy (yy)
+{
+}
+TcsFenceElement::TcsFenceElement (const TcsFenceElement& source) : Xx (source.Xx),
+																   Yy (source.Yy)
+{
+}
+TcsFenceElement TcsFenceElement::operator= (const TcsFenceElement& rhs)
+{
+	if (this != &rhs)
+	{
+		Xx = rhs.Xx;
+		Yy = rhs.Yy;
+	}
+	return *this;
+}
+TcsFenceElement::~TcsFenceElement (void)
+{
+}
+//=============================================================================
+// TcsFence --  A collection of TcsFenceElement's.  Note a usable collection of
+// this type has impled properties of:
+//	1> The collection is closed; the last element is the same as the first.
+//	2> The implied boundary segments do not cross each other in any way.
+//	3> There are no holes or otherwise internal sub-boundaries
+// A successful call to the CLose function inplies that all of these implied
+//
+// In its current state, this object is designed to provide the "is a point
+// inside the boundary function" for a very specific case. More general use
+// will require an upgrade; be forewarned.
+TcsFence::TcsFence (void) : Ok       (false),
+							Fuzz     (1.0),
+							Elements ()
+{
+	RemovedPoint [0] = 0.0;
+	RemovedPoint [1] = 0.0;
+	LowerLeft [0]    =  1.0;
+	LowerLeft [1]    =  1.0;
+	UpperRight [0]   = -1.0;
+	UpperRight [1]   = -1.0;
+}
+TcsFence::TcsFence (const char* epsgXmlPolygonFile) : Ok       (false),
+													  Fuzz     (1.0),
+													  Elements ()
+{
+	ProcessEpsgXml (epsgXmlPolygonFile);
+	Close ();
+}
+TcsFence::TcsFence (const TcsFence& source) : Ok       (source.Ok),
+											  Fuzz     (source.Fuzz),
+											  Elements (source.Elements)
+{
+	RemovedPoint [0] = source.RemovedPoint [0];
+	RemovedPoint [1] = source.RemovedPoint [1];
+	LowerLeft [0]    = source.LowerLeft [0];
+	LowerLeft [1]    = source.LowerLeft [1];
+	UpperRight [0]   = source.UpperRight [0];
+	UpperRight [1]   = source.UpperRight [1];
+}
+TcsFence TcsFence::operator= (const TcsFence& rhs)
+{
+	if (this != &rhs)
+	{
+		Ok               = rhs.Ok;
+		Fuzz             = rhs.Fuzz;
+		RemovedPoint [0] = rhs.RemovedPoint [0];
+		RemovedPoint [1] = rhs.RemovedPoint [1];
+		LowerLeft [0]    = rhs.LowerLeft [0];
+		LowerLeft [1]    = rhs.LowerLeft [1];
+		UpperRight [0]   = rhs.UpperRight [0];
+		UpperRight [1]   = rhs.UpperRight [1];
+		Elements         = rhs.Elements;
+	}
+	return *this;
+}
+TcsFence::~TcsFence (void)
+{
+}
+TcsFence& TcsFence::operator+ (const TcsFenceElement& newElement)
+{
+	Ok = Add (newElement);
+	return *this;
+}
+void TcsFence::operator+= (const TcsFenceElement& newElement)
+{
+	Ok = Add (newElement);
+}
+bool TcsFence::Add (const TcsFenceElement& newElement)
+{
+	if (IsClosed ())			// true return implies eleCount > 2
+	{
+		Elements.pop_back ();
+	}
+	Elements.push_back (newElement);
+	Ok = false;
+	return true;
+}
+bool TcsFence::Close (void)
+{
+	Ok = SetUpCalc ();
+	return Ok;
+}
+bool TcsFence::IsInside (double xx,double yy) const
+{
+	bool isInside;
+	double queryPoint [2];
+
+	queryPoint [0] = xx;
+	queryPoint [1] = yy;
+	isInside = IsInside (queryPoint);
+	return isInside;
+}
+bool TcsFence::IsInside (double xy [2]) const
+{
+	bool isInside (false);
+	bool isOn (false);
+
+	long32_t isectCount (0);
+	EcsIntersectionType isectType;
+
+	double fenceFrom [2];
+	double fenceTo [2];
+	double isectPoint [2];
+
+	std::vector<TcsFenceElement>::const_iterator curItr;
+	std::vector<TcsFenceElement>::const_iterator nxtItr;
+
+	if (Ok)			// Means its closed and has 3 or more points + close point.
+	{
+		curItr = nxtItr = Elements.begin ();
+		++nxtItr;
+		while (nxtItr != Elements.end ())
+		{
+			fenceFrom [0] = curItr->GetX ();
+			fenceFrom [1] = curItr->GetY ();
+			fenceTo   [0] = nxtItr->GetX ();
+			fenceTo   [1] = nxtItr->GetY ();
+			isectType = CS_intersection2D (fenceFrom,fenceTo,RemovedPoint,xy,isectPoint);
+			if (isectType == isectBoth)
+			{
+				isectCount += 1;
+				if (!isOn)
+				{
+					double deltaX = isectPoint [0] - xy [0];
+					double deltaY = isectPoint [1] - xy [1];
+					isOn = (fabs (deltaX) < Fuzz) && (fabs (deltaY) < Fuzz);
+				}
+			}
+			curItr = nxtItr;
+			++nxtItr;
+		}
+		isInside = ((isectCount & 1) != 0) || isOn;
+	}
+	return isInside;
+}
+bool TcsFence::ProcessEpsgXml (const char* epsgXmlPolygonFile)
+{
+	bool ok;
+
+	char *prsPtr0;
+	char *prsPtr1;
+	char *prsPtr2;
+	char *xmlPtr;
+	char *startPtr;
+	char *endPtr;
+	char *startTag = "<gml:posList>";
+	char *endTag = "</gml:posList>";
+
+	// Prepare for possible error;
+	xmlPtr = 0;
+
+	// Open the file.
+	csFILE* xmlStrm = CS_fopen (epsgXmlPolygonFile,_STRM_TXTRD);
+	ok = (xmlStrm != NULL);
+	if (ok)
+	{
+		// Read in the entire file.
+		CS_fseek (xmlStrm,0,SEEK_END);
+		long fileSize = CS_ftell (xmlStrm);
+		CS_fseek (xmlStrm,0,SEEK_SET);
+		xmlPtr = new char [static_cast<size_t>(fileSize)];
+		ok = (xmlPtr != NULL);
+		if (ok)
+		{
+			size_t rdCount = CS_fread (xmlPtr,1,fileSize,xmlStrm);
+			ok = (static_cast<long>(rdCount) == fileSize);
+		}
+		CS_fclose (xmlStrm);
+	}
+	startPtr = 0;
+	endPtr = 0;
+	if (ok)
+	{
+		// Find the start of the polygon data.
+		startPtr = strstr (xmlPtr,startTag);
+		ok = (startPtr != 0);
+		if (ok)
+		{
+			startPtr += strlen (startTag);
+			
+			// Find the end of the polygon data.
+			endPtr = strstr (startPtr,endTag);
+			ok = (endPtr != 0);
+		}
+	}
+	
+	// Parse out the individual points and add to the Elements collection.
+	if (ok)
+	{
+		prsPtr0 = startPtr;
+		while (prsPtr0 < endPtr)
+		{
+			double yy = strtod (prsPtr0,&prsPtr1);
+			prsPtr1 += 1;
+			double xx = strtod (prsPtr1,&prsPtr2);
+			prsPtr2 += 1;
+			TcsFenceElement newElement (xx,yy);
+			Elements.push_back (newElement);
+
+			while (prsPtr2 < endPtr && isspace (*prsPtr2)) prsPtr2++;
+			prsPtr0 = prsPtr2;
+		}
+	}
+	delete [] xmlPtr;
+	return ok;
+}
+bool TcsFence::SetUpCalc (void)
+{
+	bool ok (false);
+	std::vector<TcsFenceElement>::iterator eleItr;
+
+	// All of this works and is "conceptually sound even if there is only one
+	// element.
+	if (!Elements.empty ())
+	{
+		for (eleItr = Elements.begin ();eleItr != Elements.end ();eleItr++)
+		{
+			if (eleItr == Elements.begin ())
+			{
+				LowerLeft [0] = UpperRight [0] = eleItr->GetX ();
+				LowerLeft [1] = UpperRight [1] = eleItr->GetY ();
+			}
+			else
+			{
+				if (eleItr->GetX () < LowerLeft [0])  LowerLeft [0]  = eleItr->GetX ();
+				if (eleItr->GetY () < LowerLeft [1])  LowerLeft [1]  = eleItr->GetY ();
+				if (eleItr->GetX () > UpperRight [0]) UpperRight [0] = eleItr->GetX ();
+				if (eleItr->GetY () > UpperRight [1]) UpperRight [1] = eleItr->GetY ();
+			}
+		}
+		
+		// Compute a Fuzz value.
+		Fuzz = fabs (UpperRight [0]);
+		if (fabs (UpperRight [1]) > Fuzz) Fuzz = fabs (UpperRight [1]);
+		if (fabs (LowerLeft  [0]) > Fuzz) Fuzz = fabs (LowerLeft  [0]);
+		if (fabs (LowerLeft  [1]) > Fuzz) Fuzz = fabs (LowerLeft  [1]);
+		Fuzz *= 1.0E-12;
+		
+		// Compute a removed point.  That is, a point we know to be outside any
+		// possible boundary constructed from the points in cluded in this
+		// fence so far. We arbitrairly choose a point to the lower left (i.e.
+		// southwest) of the boundary as defined (so far at least).
+		RemovedPoint [0] = LowerLeft [0] - fabs (LowerLeft [0]);
+		RemovedPoint [1] = LowerLeft [1] - fabs (LowerLeft [1]);
+
+		// Last thing is to close the boundary and compute the OK flag.  This
+		// we do only in the case where the fence has at least 3 (presumably
+		// unique) elements in it.  Note we do not set the Ok member, we only
+		// compute the value and return it.
+		size_t eleCount = Elements.size ();
+		if (eleCount >= 3)
+		{
+			ok = true;
+			if (!IsClosed ())
+			{
+				// Don't close the fence unless it needs it.  The user could
+				// have done that already for us; but maybe not.  Note, the
+				// IsCLosed function is indeed PRIVATE.  You don't want to call
+				// that member function unless a valid Fuzz value has been
+				// cacluated.
+				eleItr = Elements.begin ();
+				Elements.push_back (*eleItr);		// This should force a copy
+			}
+		}
+	}
+	return ok;
+}
+// The following function relies on the fact that a valid Fuzz value  has been
+// calculated.  Note, this function will consider a fence with one point in it
+// closed.  It will also consider a fence with exactly two points which are
+// identical as closed.
+bool TcsFence::IsClosed (void)
+{
+	bool closed (false);
+	size_t eleCount = Elements.size ();
+	if (eleCount > 0)
+	{
+		TcsFenceElement& first = Elements [0];
+		TcsFenceElement& last  = Elements [eleCount - 1];
+		double deltaX = fabs (first.GetX () - last.GetX ());
+		double deltaY = fabs (first.GetY () - last.GetY ());
+		closed = (deltaX < Fuzz) && (deltaY < Fuzz);
+	}
+	return closed;
+}
+
+

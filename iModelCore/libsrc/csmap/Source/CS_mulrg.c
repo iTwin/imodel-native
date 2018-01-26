@@ -28,12 +28,10 @@
 #include "cs_map.h"
 #include "cs_Legacy.h"
 
+/*lint -e702   Shift right of signed quantity; applied to shorts of values < 1024 */
+/*lint -esym(550,list_sz)   symbol not accessed */
 int EXP_LVL9 CSmulrgQ (struct cs_GeodeticTransform_ *gxDef,unsigned short xfrmCode,int err_list [],int list_sz)
 {
-	extern double cs_DelMax;
-	extern double cs_RotMax;
-	extern double cs_SclMax;
-
 	int err_cnt;
 
 	/* We will return (err_cnt + 1) below. */
@@ -49,6 +47,7 @@ int EXP_LVL9 CSmulrgQ (struct cs_GeodeticTransform_ *gxDef,unsigned short xfrmCo
 	/* That's it for DMA Multiple Regression transformation. */
 	return (err_cnt + 1);
 }
+/*lint +esym(550,list_sz) */
 /******************************************************************************
 */
 int EXP_LVL9 CSmulrgS (struct cs_GxXform_* gxXfrm)
@@ -92,7 +91,7 @@ int EXP_LVL9 CSmulrgS (struct cs_GxXform_* gxXfrm)
 	{
 		for (vv = 0;vv < 10;vv += 1)
 		{
-			idx = uu * 10 + vv;
+			idx = uu * 10 + vv;			/*lint !e734    result may be too many bits for a short */
 
 			mulrg->phiCoefs [idx]    = gxXfrm->gxDef.parameters.dmaMulRegParameters.coeffPhi [idx];
 			mulrg->lambdaCoefs [idx] = gxXfrm->gxDef.parameters.dmaMulRegParameters.coeffLambda [idx];
@@ -157,10 +156,10 @@ int EXP_LVL9 CSmulrgS (struct cs_GxXform_* gxXfrm)
 	   things. */
 	switch (mulrg->fallback) {
 	case cs_DTCMTH_MOLOD:
-		CSmolodSf (&mulrg->fallbackXfrm.molod,&gxXfrm->srcDatum,&cs_Wgs84Def);
+		CSmolodSf (&mulrg->fallbackXfrm.molod,&gxXfrm->srcDatum,&cs_Wgs84Def);		/*lint !e534   ignoring return value */
 		break;
 	case cs_DTCMTH_7PARM:
-		CSparm7Sf (&mulrg->fallbackXfrm.parm7,&gxXfrm->srcDatum,&cs_Wgs84Def);
+		CSparm7Sf (&mulrg->fallbackXfrm.parm7,&gxXfrm->srcDatum,&cs_Wgs84Def);		/*lint !e534   ignoring return value */
 		break;
 	case cs_DTCMTH_6PARM:
 		// TODO: 
@@ -293,7 +292,7 @@ int EXP_LVL9 CSmulrgF3 (struct csMulrg_ *mulrg,double* trgLl,Const double* srcLl
 
 			/* Compute the bit map bit number for this
 			   iteration for both loops. */
-			idx = ii * 10 + jj;		// This works for MULREG
+			idx = ii * 10 + jj;		/*lint !e734   too many bits for a short,  This works for MULREG! */
 			bitNbr = (idx & 0x1F);
 			wrdIdx = idx >> 5;
 			mask = (ulong32_t)0x80000000L >> bitNbr;
@@ -397,7 +396,7 @@ int EXP_LVL9 CSmulrgI3 (struct csMulrg_ *mulrg,double* trgLl,Const double* srcLl
 
 		/* See how far we are off.  Note, we use the latitude and
 		   longitude only.  Otherwise, we would never really converge. */
-		epsilon [LNG] = srcLl [LNG] - newLl [LNG];
+		epsilon [LNG] = CS_lngEpsilon (srcLl [LNG],newLl [LNG]);
 		epsilon [LAT] = srcLl [LAT] - newLl [LAT];
 
 		/* If our guess at the longitude is off by more than

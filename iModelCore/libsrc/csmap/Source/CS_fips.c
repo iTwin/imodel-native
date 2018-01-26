@@ -27,6 +27,8 @@
 
 #include "cs_map.h"
 
+/*lint -esym(754,csFipsCodes_::adscode)    not referenced, can't remember of what this is */
+
 const int csFipsCount = 3360;
 const int csFipsNameCount = 2041;
 

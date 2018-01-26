@@ -30,6 +30,8 @@
 
 #include "cs_map.h"
 
+/*lint -esym(613,err_list)  possible use of null pointer; but not really */
+
 static short csMaxIterations = 8;
 static double csCnvrgValue = 1.0E-09;
 static double csErrorValue = 1.0E-06;
@@ -37,8 +39,6 @@ static double csErrorValue = 1.0E-06;
 int EXP_LVL9 CSmolodQ (struct cs_GeodeticTransform_ *gxDef,unsigned short xfrmCode,int err_list [],int list_sz)
 {
 	extern double cs_DelMax;
-	extern double cs_RotMax;
-	extern double cs_SclMax;
 
 	int err_cnt;
 
@@ -66,8 +66,6 @@ int EXP_LVL9 CSmolodQ (struct cs_GeodeticTransform_ *gxDef,unsigned short xfrmCo
 
 int EXP_LVL9 CSmolodS (struct cs_GxXform_* gxXfrm)
 {
-	extern double cs_One;				/* 1.0 */
-
 	struct csMolod_ *molod;
 
 	molod = &gxXfrm->xforms.molod;
@@ -310,9 +308,6 @@ int EXP_LVL7 CSmolodI3 (struct csMolod_ *molod,double* trgLl,Const double* srcLl
 */
 int EXP_LVL7 CSmolodI2 (struct csMolod_* molod,double* trgLl,Const double* srcLl)
 {
-	static double smallValue  = 1.0E-09;		/* equates to =~ .1 millimeters */
-	static double smallValue2 = 1.0E-06;		/* equates to =~ 100 millimeters */
-
 	int ii;
 	int lngOk;
 	int latOk;
@@ -354,7 +349,7 @@ int EXP_LVL7 CSmolodI2 (struct csMolod_* molod,double* trgLl,Const double* srcLl
 		}
 
 		/* See how far we are off. */
-		epsilon [LNG] = srcLl [LNG] - newLl [LNG];
+		epsilon [LNG] = CS_lngEpsilon (srcLl [LNG],newLl [LNG]);
 		epsilon [LAT] = srcLl [LAT] - newLl [LAT];
 
 		/* If our guess at the longitude is off by more than

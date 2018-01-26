@@ -10,7 +10,7 @@
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
  *     * Neither the name of the Autodesk, Inc. nor the names of its
- *       contr butors may be used to endorse or promote products derived
+ *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY Autodesk, Inc. ``AS IS'' AND ANY
@@ -55,7 +55,6 @@
 						_fs_MS_DOS	(includes FAT 32 for now)
 						_fs_NT
 						_fs_UNIX
-						_fs_WINCE
 
 		_OPR_SYSTEM		operating system, possible values are:
 						_os_MS_DOS		3.01 and above
@@ -66,7 +65,6 @@
 						_os_UNIX		System V and above
 						_os_PHARLAP		Pharlap DOS extender
 						_os_RATIONAL	Tenberry DOS extender
-						_os_WINCE		Windows CE
 						_os_UNIX		Generic UNIX (is there such a thing?)
 
 		_RUN_TIME		run time library in use, possible values are:
@@ -80,7 +78,6 @@
 						_rt_METAWARE	Metaware 3.11
 						_rt_BORLAND16	Borland C++ 16 bit
 						_rt_BORLAND32	Borland C++ 16 bit
-						_rt_WINCE		Windows CE
 						_rt_UNIXPCC		UNIX portable C compiler (Linux)
 						_rt_SUN32		Sun Solaris 32 bit compiler
 						_rt_SUN64		Sun Solaris 64 bit compiler
@@ -88,7 +85,7 @@
 						_rt_HPUX		Hewlett Packard UNIX
 						_rt_AIX			IBM AIX versionof UNIX
 
-		_PROCESSOR		the processor/acrhitecture for which the compiled code is to run on:
+		_PROCESSOR		the processor/architecture for which the compiled code is to run on:
 						_pc_GENERIC		Not known, generate generic code
 						_pc_IX86		Intel 86 processor
 						_pc_IA64		Itanium 64 bit processor
@@ -111,7 +108,6 @@
 #define _fs_MS_DOS    1
 #define _fs_NT        2
 #define _fs_UNIX      3
-#define _fs_WINCE     4
 
 #define _os_NONE      0
 #define _os_MS_DOS    1
@@ -121,7 +117,6 @@
 #define _os_UNIX      6
 #define _os_PHARLAP   7
 #define _os_RATIONAL  8
-#define _os_WINCE     9
 #define _os_SOLARIS  10
 
 #define _mfc_VER4     1
@@ -143,7 +138,6 @@
 #define _rt_METAWARE    6
 #define _rt_BORLAND16   7
 #define _rt_BORLAND32   8
-#define _rt_WINCE       9
 #define _rt_MSDOTNET   10
 #define _rt_MSWIN64    11
 /* Anything less than the numeric value assigned to _rt_UNIXPCC is considered
@@ -160,8 +154,8 @@
 	With regard to the following list, we will refer to ranges of the value
 	at times.  Values less than 400 are reserved for 32 bit processors including
 	WinTel and Motorola type processors.  Values between, and including, 401 thru
-	599 are reserved for 64 bit processors.  Values bewteen, and including, 601
-	thru 799 are reserved for hand held, pocket PC type processor acrhitectures.
+	599 are reserved for 64 bit processors.  Values between, and including, 601
+	thru 799 are reserved for hand held, pocket PC type processor architectures.
 	
 	Currently, the processor is a concern only for structure alignment issues.
 */
@@ -171,7 +165,7 @@
 #define _pc_GENERIC_32    0x201
 #define _pc_IX86          0x202
 #define _pc_MOT32         0x203
-#define _pc_SPARC32       0x204        
+#define _pc_SPARC32       0x204
 #define _pc_BASE_64       0x400
 #define _pc_GENERIC_64    0x401
 #define _pc_IA64          0x402
@@ -186,17 +180,19 @@
 #undef _MFC_VERSION
 #undef _PROCESSOR
 
-/*******************************************************************************
-	In all CS-MAP code, we use __WINCE__ as the constant to control
-	compilation for Windows CE.  We define it once here so that users
-	can choose how to turn it on or off.  It is not clear to me that
-	Microsoft has choosen a standard define, so we try to make it easy
-	to deal with this issue.
-*******************************************************************************/
-#if defined (UNDER_CE) || defined (_WINCE)
-#	define __WINCE__
-#	define __WINCE_LEVEL__ 100		/* We don't know this, just reserving a name. */
-#endif
+/* I found the following information on the Web; thought capturing it and
+   permanently recording it here may be helpful.
+
+	MSVC++ 12.0 _MSC_VER == 1800 (Visual Studio 2013)
+	MSVC++ 11.0 _MSC_VER == 1700 (Visual Studio 2012)
+	MSVC++ 10.0 _MSC_VER == 1600 (Visual Studio 2010)
+	MSVC++ 9.0  _MSC_VER == 1500 (Visual Studio 2008)
+	MSVC++ 8.0  _MSC_VER == 1400 (Visual Studio 2005)
+	MSVC++ 7.1  _MSC_VER == 1310 (Visual Studio 2003)
+	MSVC++ 7.0  _MSC_VER == 1300
+	MSVC++ 6.0  _MSC_VER == 1200
+	MSVC++ 5.0  _MSC_VER == 1100
+*/
 
 /*
 	OK, configure for this compiler, and run time environment.
@@ -291,12 +287,6 @@
 #		define _RUN_TIME	_rt_WC386
 #		define _PROCESSOR	_pc_IX86
 #	endif
-#elif defined (__WINCE__)
-#	define _MEM_MODEL	_mm_VIRTUAL
-#	define _FILE_SYSTEM	_fs_WINCE
-#	define _OPR_SYSTEM	_os_WINCE
-#	define _RUN_TIME	_rt_WINCE
-#	define _PROCESSOR	_pc_GENERIC_CE
 #elif defined (_MSC_VER) && _MSC_VER >= 1400	/* MS Visual C++ V8, aka .NET 2005 */
 #	define _MEM_MODEL	_mm_VIRTUAL
 #	define _MFC_VERSION _mfc_VER8
@@ -463,7 +453,6 @@
 #endif
 
 #if _RUN_TIME == _rt_MSWIN64
-//#	define _CRT_SECURE_NO_DEPRECATE 
 #	if defined (__MFC__)
 #		define _WIN32_WINDOWS 0x0410
 #		define WINVER 0x0410
@@ -478,11 +467,15 @@
 #	pragma warning( disable : 4251 )		// XXX needs to have dll-interface to be used by clients of class YYY (whatever that means)
 #	pragma warning( disable : 4273 )		// inconsistent DLL linkage (whatever that means)
 #	pragma warning( disable : 4275 )		// non DLL-interface classkey 'identifier' used as base for DLL-interface classkey 'identifier' (whatever that means)
-#	pragma warning( disable : 4290 )		// C++ exception specification ignored except to indicate a function is not __declspec(nothrow)
+#	pragma warning( disable : 4290 )		// C++ exception specification ignored except to indicate a function is not _declspec(nothrow)
 #	pragma warning( disable : 4702 )		// unreachable code, produced by several STL templates
 #	pragma warning( disable : 4786 )		// symbol name truncated to 256 chars in debug database
 #	pragma warning( disable : 4800 )		// forcing value to bool true/false (performance warning)
 #	pragma warning( disable : 4996 )		// POSIX name for this item is deprecated.
+
+#	pragma warning( disable : 6330 )		// Analyze: isspace et. al. require an unsigned argument, we usually provide a char
+#	pragma warning( disable : 6303 )		// Analyze: doesn't line use of the %S format specifier in swprintf
+#	pragma warning( disable : 6054 )		// Source argument (arg 2) may not be null terminiated (security issue)
 #endif
 
 #if _MEM_MODEL == _mm_LARGE	|| _MEM_MODEL == _mm_COMPACT || _MEM_MODEL == _mm_HUGE
@@ -497,47 +490,8 @@
 
 #define Const const
 
-/* If there's a chance that the compilation is for a multi-threaded
-   environment, we define Thread appropriately.  Note, we couldn't
-   find any defines for WATCOM, so we're just guessing.
-
-   November 16, 1999.  The __declspec (thread) idea has turned out
-   to be a poor one.  The documentation is rather vague as to
-   how it is supposed to work, and by any rational guess as to
-   how something like this should work, it doesn't.  Therefore,
-   at this time, we shut this thing down.
-
-   The specific issue which prompted this decision is that when
-   Microsoft module compiled with Version 6 is linked with object
-   generated by any previous release, the resulting image (DLL
-   or EXE) is completely unstable.
-*/
-
-#if defined (__DONT_COMPILE_THIS__)
-#	if   _RUN_TIME == _rt_MSVC32 && defined (_MX)
-#		define csThread __declspec (thread)
-#	elif  _RUN_TIME == _rt_MSWIN64 && defined (_MX)
-#		define csThread __declspec (thread)
-#	elif  _RUN_TIME == _rt_MSDOTNET && defined (_MX)
-#		define csThread __declspec (thread)
-#	elif _RUN_TIME == _rt_WC386 && defined (_MX)
-#		define csThread __declspec (thread)
-#	elif _RUN_TIME == _rt_BORLAND32 && defined (__MX__)
-#		define csThread __thread
-#	else
-#		define csThread
-#	endif
-/* Thread stuff doesn't work in a DLL, no matter what. */
-#	if defined (ACRXAPP) || defined (DLM)
-#		undef csThread
-#		define csThread
-#	endif
-#else
-#	define csThread
-#endif
-
 /*
-	The following are used in an attempt to solve alignemnt
+	The following are used in an attempt to solve alignment
 	problems experienced on certain Sun compilers. Essentially,
 	they are used to force a double alignment before the
 	definition of a structure or union, either static or
@@ -604,7 +558,7 @@
 
 	EXP_LVL3	Highest Performance Interface, what used to
 				be called the Three/Six Function interface.
-				Usually used inside of heveay duty applications.
+				Usually used inside of heavy duty applications.
 
 	EXP_LVL5	Support functions accessible to, but not
 				normally used by users.
@@ -620,44 +574,73 @@
 #ifndef EXP_LVL1
 #	if defined (DLL_16)
 #		define EXP_LVL1 _pascal
-#		define EXP_DATA
 #	elif defined (DLL_32)
-#		define EXP_LVL1 _stdcall
-#		define EXP_DATA __declspec(dllimport)
+#		define EXP_LVL1 __stdcall
+#	elif defined (DLL_64)
+#		define EXP_LVL1 __declspec(dllexport)
 #	else
 #		define EXP_LVL1
-#		define EXP_DATA
 #	endif
 #endif
+
 #ifndef EXP_LVL2
-#	define EXP_LVL2
+#	if defined (DLL_16)
+#		define EXP_LVL2
+#	elif defined (DLL_32)
+#		define EXP_LVL2 __stdcall
+#	elif defined (DLL_64)
+#		define EXP_LVL2 __declspec(dllexport)
+#	else
+#		define EXP_LVL2
+#	endif
 #endif
+
 #ifndef EXP_LVL3
 #	if defined (DLL_16)
-#		define EXP_LVL3 _pascal
+#		define EXP_LVL3
 #	elif defined (DLL_32)
-#		define EXP_LVL3 _stdcall
+#		define EXP_LVL3 __stdcall
+#	elif defined (DLL_64)
+#		define EXP_LVL3 __declspec(dllexport)
 #	else
 #		define EXP_LVL3
 #	endif
 #endif
+
 #ifndef EXP_LVL4
 #	define EXP_LVL4
 #endif
+
 #ifndef EXP_LVL5
 #	define EXP_LVL5
 #endif
+
 #ifndef EXP_LVL6
 #	define EXP_LVL6
 #endif
+
 #ifndef EXP_LVL7
 #	define EXP_LVL7
 #endif
+
 #ifndef EXP_LVL8
 #	define EXP_LVL8
 #endif
+
 #ifndef EXP_LVL9
 #	define EXP_LVL9
+#endif
+
+#ifndef EXP_DATA
+#	if defined (DLL_16)
+#		define EXP_DATA
+#	elif defined (DLL_32)
+#		define EXP_DATA __declspec(dllexport)
+#	elif defined (DLL_64)
+#		define EXP_DATA __declspec(dllexport)
+#	else
+#		define EXP_DATA
+#	endif
 #endif
 
 /*
@@ -672,7 +655,7 @@
 	for your compiler.
 
 	Note, also, we now include all files for all modules.
-	We have choosen to do this as precompiled headers
+	We have chosen to do this as precompiled headers
 	is a common feature and thus including all of them
 	actually speeds things up.  Why is it that the
 	slowest compilers, i.e. the ones that need pre-compiled
@@ -716,10 +699,6 @@
 #	include <time.h>
 #elif _RUN_TIME == _rt_BORLAND32
 #	include <time.h>
-#elif _RUN_TIME == _rt_WINCE
-	/* There is no time.h in WINCE, time_t is defined in stdlib.h */
-	/* There is no sys/stat in WINCE, and there is no stat function. */
-#	include <Winbase.h>
 #elif _RUN_TIME == _rt_UNIXPCC
 #	include <time.h>
 #	include <malloc.h>
@@ -819,68 +798,6 @@
 #	define _STRM_BINWR "wb"		/* create a new file (or truncate old) for writing only */
 #	define _STRM_BINRW "w+b"	/* open existing file for read and write */
 #	define _STRM_BINUP "r+b"	/* open existing file for read and write */
-#endif
-
-/*
-	The following is for Windows CE.  It appears that many traditional
-	C run time library routines are not supported by some versions of
-	Windows CE.
-
-	If the function/feature is ANSI standard, we typically use a define
-	on the ANSI function name, and map it to a CS-MAP function which essentially
-	implements the feature.  In a few other cases, more drastic techniques
-	are necessary so that the same code compiles everywhere.
-
-	(Norm ought to join the Optimist Club.)
-*/
-#if _RUN_TIME == _rt_WINCE
-
-/* First we have some defines which need to be defined in order
-   to compile under WIN CE.  Generally, these are not used.
-   We provide values which the Microsoft C run-time library uses. */
-#ifndef _IOFBF
-#	define _IOFBF          0x0000
-#endif
-#ifndef _IOLBF
-#	define _IOLBF          0x0040
-#endif
-#ifndef _IONBF
-#	define _IONBF          0x0004
-#endif
-
-/* These are the ANSI guys, relatively easy. */
-#	define strrchr CS_strrchr
-#	define atof CS_ansiAtof
-#	ifndef isalpha
-#		define isalpha CS_isalpha
-#	endif
-#	ifndef isupper
-#		define isupper CS_isupper
-#	endif
-#	ifndef islower
-#		define islower CS_islower
-#	endif
-#	ifndef isdigit
-#		define isdigit CS_isdigit
-#	endif
-#	ifndef isxdigit
-#		define isxdigit CS_isxdigit
-#	endif
-#	ifndef isspace
-#		define isspace CS_isspace
-#	endif
-#	ifndef isalnum
-#		define isalnum CS_isalnum
-#	endif
-
-/* These are the non-ANSI guys, a bit tougher. */
-
-/* For this guy, we have a function which does nothing,
-   quickly and silently, of course. */
-#	define setvbuf CS_setvbuf
-
-/* That's it for now. */
-
 #endif
 
 /* These defines are necessary to compile under Linux, Unix, etc.
@@ -998,11 +915,12 @@ typedef long32_t cs_magic_t;
 	floating point exceptions.  Keeping the value significantly
 	less than 1.0E+38 means it will work, to a certain extent, for
 	floats as well as doubles.
+	
+	Note, at version 11.0, Microsoft's Visual Studio started
+	defining a value for INFINITY which is quite contrary to the
+	above described characteristics.  Therefore, we simply
+	avoid all use of this macro as of 12 Aug 2014.
 */
-
-#ifndef CSMAP_INFINITY
-#	define CSMAP_INFINITY 1.0E+32
-#endif
 
 #ifndef XX
 #	define XX 0
@@ -1030,7 +948,7 @@ typedef long32_t cs_magic_t;
 
 #ifndef MAXINT
 #	define MAXINT 32767	/* Minimum value which should be safe
-				   in any environment. */
+						   in any environment. */
 #endif
 
 /*
@@ -1103,7 +1021,6 @@ typedef long32_t cs_magic_t;
 #define cs_CNVRT_NRML  cs_CNVRT_OK
 #define cs_CNVRT_INDF  cs_CNVRT_USFL
 #define cs_CNVRT_RNG   cs_CNVRT_DOMN
-#define cs_CNVRT_DEMO   4095
 
 /*
 	The following define the bits allocated for the return
@@ -1390,6 +1307,7 @@ typedef long32_t cs_magic_t;
 #define cs_PRJCOD_PCARREE  68		/* Plate Carree, standard form.  This is _NOT_ the same
 									   as EPSG 9825 - Pseudo Plate Carree. */
 #define cs_PRJCOD_MRCATPV  69		/* Psuedo Mercator, Popular Visualization. */
+#define cs_PRJCOD_LMMICH   70		/* Lambert Conformal Conic,.Michigan Variation */
 
 #define cs_PRJCOD_HOM1UV   ((cs_PRJCOD_OBLQM << 8) + 1)
 #define cs_PRJCOD_HOM1XY   ((cs_PRJCOD_OBLQM << 8) + 2)
@@ -1541,7 +1459,8 @@ typedef long32_t cs_magic_t;
 #define cs_PRMCOD_SCLROTORGY  45		/* Y Coordinate of Scale/Roatet Origin */
 #define cs_PRMCOD_NRTHSCL     46		/* Cartesian Scale Factor */
 #define cs_PRMCOD_NRTHROT     47		/* Cartesian Rotation Angle */
-#define cs_PRMCOD_MAXIDX      47		/* Used to prevent erroneous memory access */
+#define cs_PRMCOD_ELPSCL      48		/* Ellipsoid Scale */
+#define cs_PRMCOD_MAXIDX      48		/* Used to prevent erroneous memory access */
 
 		/* These are not parameters as far as CS-MAP is concerned,
 		   but they are in the WKT way of things.  So we invent some
@@ -1745,6 +1664,7 @@ enum EcsWktParameter {	csWktPrmNone = 0,
 #define cs_PRMBMP_SCLRED   (1L <<  27)	/* Origin Scale Reduction */
 #define cs_PRMBMP_XXXOFF   (1L <<  28)	/* Origin False Easting */
 #define cs_PRMBMP_YYYOFF   (1L <<  29)	/* Origin False Northing */
+#define cs_PRMBMP_ELPSCL   (1L <<  30)	/* Ellipsoid Scale */
 
 /* Each of the following is a bit map of the REQUIRED parameters for each
    projection or variation thereof. */
@@ -1815,33 +1735,13 @@ enum EcsWktParameter {	csWktPrmNone = 0,
 #define cs_PJPRMBMP_RSKEWO		(cs_PRMBMP_UNIT   | cs_PRMBMP_PRJPRM1  | cs_PRMBMP_PRJPRM2  | cs_PRMBMP_PRJPRM3  | cs_PRMBMP_SCLRED   | cs_PRMBMP_XXXOFF   | cs_PRMBMP_YYYOFF )UL
 #define cs_PJPRMBMP_WINKL		(cs_PRMBMP_UNIT   | cs_PRMBMP_ORGLNG   | cs_PRMBMP_PRJPRM1  | cs_PRMBMP_XXXOFF   | cs_PRMBMP_YYYOFF )UL
 #define cs_PJPRMBMP_NRTHSRT		(cs_PRMBMP_UNIT   | cs_PRMBMP_PRJPRM1  | cs_PRMBMP_PRJPRM2  | cs_PRMBMP_PRJPRM3  | cs_PRMBMP_PRJPRM4  | cs_PRMBMP_XXXOFF   | cs_PRMBMP_YYYOFF )UL
+#define cs_PJPRMBMP_LMMICH		(cs_PRMBMP_UNIT   | cs_PRMBMP_PRJPRM1  | cs_PRMBMP_PRJPRM2  | cs_PRMBMP_ORGLNG   | cs_PRMBMP_ORGLAT   | cs_PRMBMP_XXXOFF   | cs_PRMBMP_YYYOFF | cs_PRMBMP_ELPSCL)UL
 
 #if defined(GEOCOORD_ENHANCEMENT)
 /* Same as HOM1XY except there is the additional parameter 4 which contains the above ellipsoid height */
 #define cs_PJPRMBMP_MNDOTOBL	(cs_PRMBMP_UNIT   | cs_PRMBMP_PRJPRM1  | cs_PRMBMP_PRJPRM2  | cs_PRMBMP_PRJPRM3  | cs_PRMBMP_PRJPRM4  | cs_PRMBMP_SCLRED   | cs_PRMBMP_XXXOFF   | cs_PRMBMP_YYYOFF )UL
 #endif
 
-/*
-	The following define the bits for the "keepers" parameter
-	to the CS_init function.  This stuff applies only
-	to Windows multi-thread programs.
-*/
-	
-#define cs_THRD_NONE	      0		/* Don't keep anything. */
-#define cs_THRD_CSNAME  (1 << 0)	/* Keep Coordinate System
-									   Dictionary file name if valid */
-#define cs_THRD_DTNAME  (1 << 1)	/* Keep Datum Dictionary file
-									   name if valid */
-#define cs_THRD_ELNAME  (1 << 2)	/* Keep Ellipsoid Dictionary file
-									   name if valid */
-#define cs_THRD_DTDFLT  (1 << 3)	/* Keep default Datum status, even
-									   if not valid */
-#define cs_THRD_ELDFLT  (1 << 4)	/* Keep default Ellipsoid status,
-									   even if not valid */
-#define cs_THRD_LUDFLT  (1 << 5)	/* Keep default Linear Unit status,
-									   even if not valid */
-#define cs_THRD_AUDFLT  (1 << 6)	/* Keep default Angular Unit status,
-									   even if not valid */
 
 /*
 	Maximum length of a Coordinate System, Datum, and or
@@ -1895,22 +1795,8 @@ enum EcsWktParameter {	csWktPrmNone = 0,
 #define cs_GP_NAME           "GeodeticPath.CSD"
 #endif
 #define cs_NMP_NAME          "NameMapper.csv"
-#define cs_NAD_NAME          "Nad27ToNad83.gdc"
-#define cs_HARN_NAME         "Nad83ToHarn.gdc"
 #define cs_GEOID_NAME        "GeoidHeight.gdc"
 #define cs_VERTCON_NAME      "Vertcon.gdc"
-#define cs_AGD66_NAME        "Agd66ToGda94.gdc"
-#define cs_AGD84_NAME        "Agd84ToGda94.gdc"
-#define cs_NZGD49_NAME       "Nzgd49ToNzgd2K.gdc"
-#define cs_ATS77_NAME        "Ats77ToCsrs.gdc"
-#define cs_CSRS_NAME         "Nad83ToCsrs.gdc"
-#define cs_CSRS27_NAME       "Nad27ToCsrs.gdc"
-#define cs_JGD2K_NAME        "TokyoToJgd2k.gdc"
-#define cs_ED50_NAME         "Ed50ToEtrf89.gdc"
-#define cs_DHDN_NAME         "DhdnToEtrf89.gdc"
-#define cs_N27A77_NAME       "Nad27ToAts77.gdc"
-#define cs_RGF93_NAME        "Rgf93ToNtf.gdc"		
-#define cs_CH1903_NAME       "Ch1903ToPlus.gdc"
 
 #define cs_OSTN97_NAME       "OSTN97.TXT"
 #define cs_OSTN97_NAME_BIN   "OSTN97._nt"
@@ -1962,8 +1848,7 @@ enum EcsWktParameter {	csWktPrmNone = 0,
 #	pragma Align_members (1)
 #elif _RUN_TIME == _rt_MSC16 || _RUN_TIME == _rt_MSVC16 || _RUN_TIME == _rt_MSDOTNET || \
 														   _RUN_TIME == _rt_MSWIN64 ||  \
-														   _RUN_TIME == _rt_MSVC32 ||   \
-														   _RUN_TIME == _rt_WINCE
+														   _RUN_TIME == _rt_MSVC32
 #	pragma pack (1)
 #elif _RUN_TIME == _rt_HPUX
 #	pragma pack 1
@@ -2048,8 +1933,7 @@ struct cs_Csdef05_
 #	pragma Align_members ()
 #elif _RUN_TIME == _rt_MSC16 || _RUN_TIME == _rt_MSVC16 || _RUN_TIME == _rt_MSDOTNET || \
 														   _RUN_TIME == _rt_MSWIN64 ||  \
-														   _RUN_TIME == _rt_MSVC32 ||   \
-														   _RUN_TIME == _rt_WINCE
+														   _RUN_TIME == _rt_MSVC32
 #	pragma pack ()
 #elif _RUN_TIME == _rt_HPUX
 #	pragma pack
@@ -2068,8 +1952,7 @@ struct cs_Csdef05_
 #	pragma Align_members (1)
 #elif _RUN_TIME == _rt_MSC16 || _RUN_TIME == _rt_MSVC16 || _RUN_TIME == _rt_MSDOTNET || \
 														   _RUN_TIME == _rt_MSWIN64 ||  \
-														   _RUN_TIME == _rt_MSVC32 ||   \
-														   _RUN_TIME == _rt_WINCE
+														   _RUN_TIME == _rt_MSVC32
 #	pragma pack (1)
 #elif _RUN_TIME == _rt_HPUX
 #	pragma pack 1
@@ -2245,8 +2128,7 @@ struct cs_Ctdef_
 #	pragma Align_members ()
 #elif _RUN_TIME == _rt_MSC16 || _RUN_TIME == _rt_MSVC16 || _RUN_TIME == _rt_MSDOTNET || \
 														   _RUN_TIME == _rt_MSWIN64 ||  \
-														   _RUN_TIME == _rt_MSVC32 ||   \
-														   _RUN_TIME == _rt_WINCE
+														   _RUN_TIME == _rt_MSVC32
 #	pragma pack ()
 #elif _RUN_TIME == _rt_HPUX
 #	pragma pack
@@ -2265,8 +2147,7 @@ struct cs_Ctdef_
 #	pragma Align_members (1)
 #elif _RUN_TIME == _rt_MSC16 || _RUN_TIME == _rt_MSVC16 || _RUN_TIME == _rt_MSDOTNET || \
 														   _RUN_TIME == _rt_MSWIN64 ||  \
-														   _RUN_TIME == _rt_MSVC32 ||   \
-														   _RUN_TIME == _rt_WINCE
+														   _RUN_TIME == _rt_MSVC32
 #	pragma pack (1)
 #elif _RUN_TIME == _rt_HPUX
 #	pragma pack 1
@@ -2718,8 +2599,7 @@ struct cs_Csdef_
 #	pragma Align_members ()
 #elif _RUN_TIME == _rt_MSC16 || _RUN_TIME == _rt_MSVC16 || _RUN_TIME == _rt_MSDOTNET || \
 														   _RUN_TIME == _rt_MSWIN64 ||  \
-														   _RUN_TIME == _rt_MSVC32 ||   \
-														   _RUN_TIME == _rt_WINCE
+														   _RUN_TIME == _rt_MSVC32
 #	pragma pack ()
 #elif _RUN_TIME == _rt_HPUX
 #	pragma pack
@@ -2930,6 +2810,7 @@ struct cs_Zone_
 #define cs_LMBRT_TWOSP 1
 #define cs_LMBRT_ONESP 2
 #define cs_LMBRT_BELGN 3
+#define cs_LMBRT_MICHIGAN 4
 #define csLMBRT_AFFINE (1 << 9)	/* This bit is set in the quad variable
 								   when the affine post processor is active. */
 
@@ -2995,6 +2876,8 @@ struct cs_Lmbrt_
 							   calculations. */
 	double k0;				/* scale reduction factor, used only in the
 							   grid scale functions. */
+	double ellipsoidK;		/* Ellipsoid scale factor, used only in the
+							   MICHIGAN variation as of this writing. */
 
 	/* Affine post processor stuff */
 	double affineA0;		/* Coefficients for Affine transformation. */
@@ -5936,33 +5819,14 @@ struct cs_PrjprmMap_
 enum cs_GdcCatalogType
 {
 	gdcTypeNone = 0,
-	gdcTypeHorizontal,
-	gdcTypeThreeDimensional,
-	gdcTypeVertical,
+	gdcTypeVertical = 3,					/* hard set to preserve legacy values */
 	gdcTypeSeparation
 };
 enum cs_GdcCatalogs
 {
 	gdcFileNone = 0,						/* for Debugging */
-	gdcFileNad27ToNad83,					/*   1 */
-	gdcFileNad83ToHarn,						/*   2 */
-	gdcFileAgd66ToGda94,					/*   3 */
-	gdcFileAgd84ToGda94,					/*   4 */
-	gdcFileNzgd49ToNzgd2K,					/*   5 */
-	gdcFileAts77ToCsrs,						/*   6 */
-	gdcFileNad83ToCsrs,						/*   7 */
-	gdcFileTokyoToJgd2k,					/*   8 */
-	gdcFileNad27ToCsrs,						/*   9 */
-	gdcFileEd50ToEtrf89,					/*  10 */
-	gdcFileDhdnToEtrf89,					/*  11 */
-	gdcFileNad27ToAts77,					/*  12 */
-	gdcFileGeoidHeight,						/*  13 */
+	gdcFileGeoidHeight = 13,				/*  13, hard set to preserve legacy value */
 	gdcFileVertcon,							/*  14 */
-	gdcFileRgf93ToNtf,						/*  15 */
-	gdcFileCh1903ToPlus,					/*  16 */
-#ifdef GEOCOORD_ENHANCEMENT
-	gdcFileGenGridToWgs84,					/*  17 */
-#endif
 	gdcFileDisabled = 9999
 };
 
@@ -6139,154 +6003,6 @@ struct csMgrsGrdSqrVector_
 struct cs_Csdef_;
 struct cs_Dtdef_;
 struct cs_Eldef_;
-
-/******************************************************************************
-**	An instance of the following is used as part of a generic lock mechanism.
-**	By generic, we mean a mechanism which has been insulated, to the degree
-**	reasonable, from the underlying operating system in use.  CS-MAP presents
-**	a pointer to a different object of this type for each different resource
-**	which needs to have controlled access in the multi-threaded enviornment.
-**	
-**	The primary area here is the initial null area.  It is 128 bytes long
-**	and CS-MAP does nothing with this hunk of memory other than initialize
-**	it to zero if such a structure is indeed allocated on the heap.
-**
-**	It is intended that the remaining elements in this structure be used by
-**	the user supplied functions which implement multi-thread locking in
-**	user's environment.  For the Microsoft Windows 32 environment, CS-MAP
-**	has supplied functions which have been tested.  See the code for these
-**	for an example of how this structure was intended to be used.
-**	Examination of the referenced code will indicate that several of the
-**	elements in this structure are not strictly required; many are used
-**	for error reporting and debugging purposes only.
-*/
-enum lockType_ {lockNone = 0, lockShared, lockExclusive };
-struct cs_ThrdLock_
-{
-	unsigned char lockMemory [128];
-	enum lockType_ lockType; 
-	ulong32_t lockingThreadId;
-	ulong32_t sharedLockCount;
-	cs_Time_ lockingTime;
-	char lockName [32];
-};
-/*
-	An instance of the following structure is created on the heap for each
-	different thread in the host process.  Access to all information in this
-	structure definition is now	accessed, either directly or via macros,
-	after first obtaining a pointer to this structure through the use of
-	a thread ID number and a linked list search.  Such searches are not
-	required once a conversion is set up, so the performance impact is
-	quite minimal.
-*/
-struct cs_Thread_
-{
-	/* The following identifies an instance of this object as belonging
-	   to a specific thread.  A value of zero is valid in a single
-	   thread environment. */
-	ulong32_t csThreadId;
-
-	/* The following are used to maintain a list of these things.  We use
-	   a linked list as searching is reasonably fast, and there is neither a
-	   predetermined or a massive re-allocate function.  In this design,
-	   we presume that the number of concurrent thread is in the 1 to
-	   10 range, and NOT in the 25 to 100 range. */
-	struct cs_Thread_ *next;
-	struct cs_Thread_ *prev;		/* currently not used. */
-
-	/* What follows is, essentially, a complete list of all global variables
-	   use in CS-MAP which are not constant.  As a result, each thread has
-	   its own set of non-constant "global" variables. */
-
-	char cs_DirsepC;
-	char cs_ExtsepC;
-	char cs_OptchrC;
-	char cs_DecpntC;
-	char cs_DigsepC;
-	char cs_RatioC;
-	char cs_Unique;
-	char cs_LngDir [6];
-	char cs_LatDir [6];
-
-	char cs_Dir [512];
-
-	char cs_Csname  [cs_FNM_MAXLEN];
-	char cs_Dtname  [cs_FNM_MAXLEN];
-	char cs_Elname  [cs_FNM_MAXLEN];
-	char cs_Envvar  [cs_FNM_MAXLEN];
-
-	char cs_NadName     [cs_FNM_MAXLEN];
-	char cs_HarnName    [cs_FNM_MAXLEN];
-	char cs_GeoidName   [cs_FNM_MAXLEN];
-	char cs_VertconName [cs_FNM_MAXLEN];
-	char cs_Agd66Name   [cs_FNM_MAXLEN];
-	char cs_Agd84Name   [cs_FNM_MAXLEN];
-	char cs_Nzgd49Name  [cs_FNM_MAXLEN];
-	char cs_Ats77Name   [cs_FNM_MAXLEN];
-	char cs_CsrsName    [cs_FNM_MAXLEN];
-	char cs_Csrs27Name  [cs_FNM_MAXLEN];
-	char cs_Jgd2kName   [cs_FNM_MAXLEN];
-	char cs_Ed50Name    [cs_FNM_MAXLEN];
-	char cs_N27A77Name  [cs_FNM_MAXLEN];
-	char cs_Rgf93Name   [cs_FNM_MAXLEN];
-
-#ifdef GEOCOORD_ENHANCEMENT
-    char cs_GenGridName      [cs_FNM_MAXLEN];
-
-#endif
-
-	char csDtDflt [32];									/* The current default datum. */
-	char csElDflt [32];									/* The current default ellipsoid. */
-	char csLuDflt [32];									/* The current default linear unit. */
-	char csAuDflt [32];									/* The current default angular unit. */
-	char csErrnam [1024];
-	char csErrmsg [256];
-
-	short cs_Protect;
-
-	int cs_Safe;
-	int cs_Error;
-	int cs_Errno;
-	int csErrlng;
-	int csErrlat;
-	unsigned short cs_ErrSup;
-	ulong32_t cs_Doserr;
-
-	struct csCscach_ *csCscachP;
-	int csCscachI;
-	struct csDtcach_ *csDtcachP;
-	int csDtcachI;
-
-	char *cs_CsKeyNames;
-	char *cs_DtKeyNames;
-	char *cs_ElKeyNames;
-	struct cs_Csgrplst_ *cs_CsGrpList;
-	struct cs_Mgrs_ *cs_MgrsPtr;
-	struct cs_GdcCatalogTable_ *gdcCatalogTable;	/* This thing is allocated on the heap. */
-
-	double csGeoCtrErad;
-	double csGeoCtrEsq;
-	double cs_ERadMax;
-	double cs_PRadMax;
-	double cs_ERadMin;
-	double cs_PRadMin;
-	double cs_EccentMax;
-	double cs_DelMax;
-	double cs_RotMax;
-	double cs_SclMax;
-	double cs_SclRedMin;
-	double cs_SclRedMax;
-	double cs_ElevElMin;
-	double cs_ElevElMax;
-
-	int (*CS_usrCsDefPtr)(struct cs_Csdef_ *csDef,Const char *keyName);
-	int (*CS_usrDtDefPtr)(struct cs_Dtdef_ *dtDef,Const char *keyName);
-	int (*CS_usrElDefPtr)(struct cs_Eldef_ *elDef,Const char *keyName);
-	double (*CS_usrUnitPtr)(short type,Const char *unitName);
-	int (*cs_CsHook)(struct cs_Csdef_ *csdef,unsigned short prj_code,ulong32_t prj_flags);
-	int (*cs_DtHook)(struct cs_Dtdef_ *dtdef);
-};
-/* End of cs_Thread_ structure. */
 
 #ifdef __cplusplus
 extern "C" {
@@ -6747,6 +6463,8 @@ int CScalcRegnFromMgrs (struct cs_Mgrs_ *_This,double sw [2],double ne [2],Const
 #define cs_GPQ_INVNM    287     /* Invalid transformation name */
 #define cs_GPQ_NOXFRM   288     /* Transformation name is not that of an existing transformation */
 
+#define cs_CSQ_ELPSCL   289     /* Invalid value for Ellipsoid Scale parameter */
+
 	/* End coordinate system definition checker specific stuff. */
 
 #define cs_DLM_CSIDX_FULL 301		/* Coordindate System index is full. */
@@ -6969,11 +6687,17 @@ int CScalcRegnFromMgrs (struct cs_Mgrs_ *_This,double sw [2],double ne [2],Const
 #define cs_CT_CS_ADD_DUP  469		/* CT already contains a CS with that name. */
 #define cs_CT_DICT		  470		/* CT dictionary open failed. */
 
-#define cs_DICT_INV		  471		/* Dictionary contains invalid at least 1 invalid entry */
+#define cs_DICT_INV		  471		/* Dictionary contains at least 1 invalid entry */
 #define cs_DICT_DUP_IDS   472		/* Dictionary contains duplicate IDs */
 
+#define cs_ENV_TOOLONG    473		/* String presented for environmental subsitution is too long. */
+#define cs_ENV_NOVAR      474		/* A referenced environmental variable did not exist. */
+#define cs_ENV_FORMAT     475		/* The format of the string presented fro environmental
+									   variable subsitution is improperly formatted. */
+#define cs_SELF_TEST      476		/* Self test during object construction failed. */
 
-#define cs_ERROR_MAX	  cs_DICT_DUP_IDS
+#define cs_ERROR_MAX	  cs_SELF_TEST
+
 
 #ifdef GEOCOORD_ENHANCEMENT
 #define cs_GENGRID_RNG_F	  530		/* FATAL: Data point outside range
@@ -7030,11 +6754,10 @@ double		EXP_LVL5	CS_adj2pi (double az_in);
 double		EXP_LVL5	CS_adj2piI (double az_in);
 int			EXP_LVL5	CS_adjll (double ll [2]);
 int			EXP_LVL1	CS_altdr (Const char *alt_dir);
-int			EXP_LVL1	CS_usrdr (Const char *usr_dir);
 double		EXP_LVL1	CS_ansiAtof (Const char *string);
 void		EXP_LVL1	CS_ats77Name (Const char *newName);
 long32_t	EXP_LVL1	CS_atof (double *result,Const char *value);
-char*		EXP_LVL1	CS_audflt (Const char *dflt_au);
+char*		EXP_LVL3	CS_audflt (Const char *dflt_au);
 int			EXP_LVL1	CS_azddll (double e_rad,double e_sq,Const double from_ll [2],double az,double dd,double to_ll [2]);
 double		EXP_LVL1	CS_azsphr (Const double ll0 [2],Const double ll1 [2]);
 
@@ -7055,14 +6778,14 @@ void		EXP_LVL7	CS_csDictCls (csFILE* stream);
 int			EXP_LVL7	CS_cscmp (Const struct cs_Csdef_ *pp,Const struct cs_Csdef_ *qq);
 double		EXP_LVL3	CS_cscnv (Const struct cs_Csprm_ *csprm,Const double ll [3]);
 struct cs_Csdef_* EXP_LVL3	CS_csdef (Const char *cs_nam);
-struct cs_Csdef_ * EXP_LVL3 CS_csdef2 (Const char *cs_nam, char* pszDirPath);
+struct cs_Csdef_ * EXP_LVL7 CS_csdef2 (Const char *cs_nam, char* pszDirPath);
 int			EXP_LVL3	CS_csdefAll (struct cs_Csdef_ **pDefArray[]);
-int			EXP_LVL1	CS_csDefCmp (Const struct cs_Csdef_ *original,Const struct cs_Csdef_ *revised,char* message,size_t messageSize);
-int			EXP_LVL1	CS_csDefCmpEx (double* qValuePtr,Const struct cs_Csdef_ *original,Const struct cs_Csdef_ *revised,char* message,size_t msgSize);
+int			EXP_LVL3	CS_csDefCmp (Const struct cs_Csdef_ *original,Const struct cs_Csdef_ *revised,char* message,size_t messageSize);
+int			EXP_LVL3	CS_csDefCmpEx (double* qValuePtr,Const struct cs_Csdef_ *original,Const struct cs_Csdef_ *revised,char* message,size_t msgSize);
 int			EXP_LVL3	CS_csdel (struct cs_Csdef_ *csdef);
 int			EXP_LVL5	CS_csDiff (FILE *rptStrm,struct cs_Csdef_ *was,struct cs_Csdef_ *is);
 int			EXP_LVL1	CS_csEnum (int index,char *key_name,int size);
-int 		EXP_LVL1 	CS_csEnumByGroup (int index,Const char *grp_name,struct cs_Csgrplst_ *cs_descr);
+int 		EXP_LVL2	CS_csEnumByGroup (int index,Const char *grp_name,struct cs_Csgrplst_ *cs_descr);
 void		EXP_LVL1	CS_csfnm (Const char *new_name);
 int			EXP_LVL1	CS_csGrpEnum (int index,char *grp_name,int name_sz,char *grp_dscr,int dscr_sz);
 void		EXP_LVL3	CS_csgrpf (struct cs_Csgrplst_ *grp_list);
@@ -7071,16 +6794,16 @@ int			EXP_LVL1	CS_csIsValid (Const char *key_name);
 struct cs_Csprm_* EXP_LVL3	CS_cslcl (Const double min_ll [2],Const double max_ll [2],Const char *units,Const struct cs_Datum_ *datum,double map_scl);
 struct cs_Csprm_* EXP_LVL3	CS_csloc (Const char *cs_nam);
 
-csFILE *	EXP_LVL3	CS_csopn (Const char *mode);
+csFILE *	EXP_LVL5	CS_csopn (Const char *mode);
 int			EXP_LVL1	CS_csRangeEnum (int index,char *key_name,int size);
 int			EXP_LVL1	CS_csRangeEnumSetup (double longitude,double latitude);
-int			EXP_LVL3	CS_csrd (csFILE *strm,struct cs_Csdef_ *cs_def,int *crypt);
-int			EXP_LVL3	CS_csrup (Const char *distrb,Const char *bkupnm);
+int			EXP_LVL5	CS_csrd (csFILE *strm,struct cs_Csdef_ *cs_def,int *crypt);
+int			EXP_LVL5	CS_csrup (Const char *distrb,Const char *bkupnm);
 double		EXP_LVL3	CS_cssch (Const struct cs_Csprm_ *csprm,Const double ll [2]);
 double		EXP_LVL3	CS_cssck (Const struct cs_Csprm_ *csprm,Const double ll [2]);
 double		EXP_LVL3	CS_csscl (Const struct cs_Csprm_ *csprm,Const double ll [2]);
-int			EXP_LVL3	CS_csupd (struct cs_Csdef_ *csdef,int crypt);
-int			EXP_LVL3	CS_cswr (csFILE *strm,Const struct cs_Csdef_ *cs_def,int crypt);
+int			EXP_LVL5	CS_csupd (struct cs_Csdef_ *csdef,int crypt);
+int			EXP_LVL5	CS_cswr (csFILE *strm,Const struct cs_Csdef_ *cs_def,int crypt);
 
 int			EXP_LVL1	CS_cmpDbls (double first,double second);
 int			EXP_LVL3	CS_defCmpPrjPrm (struct cs_Prjtab_* pp,int prmNbr,double orgValue,double revValue,char *message,size_t messageSize);
@@ -7093,62 +6816,59 @@ struct cs_Dtcprm_* EXP_LVL3	CS_dtcsu (Const struct cs_Csprm_ *src_cs,Const struc
 int			EXP_LVL3	CS_dtcvt (struct cs_Dtcprm_ *dtc_ptr,Const double ll_in [2],double ll_out [2]);
 int			EXP_LVL3	CS_dtcvt3D (struct cs_Dtcprm_ *dtc_ptr,Const double ll_in [3],double ll_out [3]);
 struct cs_Dtdef_* EXP_LVL3	CS_dtdef (Const char *dat_nam);
-struct cs_Dtdef_ * EXP_LVL3	CS_dtdef2 (Const char *dat_nam, char* pszDirPath);
+struct cs_Dtdef_ * EXP_LVL5	CS_dtdef2 (Const char *dat_nam, char* pszDirPath);
 int			EXP_LVL3	CS_dtdefAll	(struct cs_Dtdef_ **pDefArray[]);
 int			EXP_LVL3	CS_dtDefCmp (Const struct cs_Dtdef_ *original,Const struct cs_Dtdef_ *revised,char* message,size_t messageSize);
 int			EXP_LVL3	CS_dtDefCmpEx (double *qValuePtr,Const struct cs_Dtdef_ *original,Const struct cs_Dtdef_ *revised,char* message,size_t msgSize);
-int			EXP_LVL3	CS_dtdel (struct cs_Dtdef_ *dtdef);
-char*		EXP_LVL1	CS_dtdflt (Const char *dflt_dt);
+int			EXP_LVL5	CS_dtdel (struct cs_Dtdef_ *dtdef);
+char*		EXP_LVL3	CS_dtdflt (Const char *dflt_dt);
 void		EXP_LVL7	CS_dtDictCls (csFILE* stream);
 int			EXP_LVL5	CS_dtDiff (FILE *rptStrm,struct cs_Dtdef_ *was,struct cs_Dtdef_ *is);
 int			EXP_LVL1	CS_dtEnum (int index,char *key_name,int size);
 void		EXP_LVL1	CS_dtfnm (Const char *new_name);
 int			EXP_LVL1	CS_dtIsValid (Const char *key_name);
 struct cs_Datum_* EXP_LVL5	CS_dtloc (Const char *dat_nam);
-csFILE *	EXP_LVL3	CS_dtopn (Const char *mode);
-int			EXP_LVL3	CS_dtrd (csFILE *strm,struct cs_Dtdef_ *dt_def,int *crypt);
-int			EXP_LVL3	CS_dtrup (Const char *distrb,Const char *bkupnm);
-void		EXP_LVL3	CS_dtTrail (struct cs_Dtcprm_ *dtc_ptr,char* auditTrail,int size,Const double ll_in [3]);
-int			EXP_LVL3	CS_dtupd (struct cs_Dtdef_ *dtdef,int crypt);
-int			EXP_LVL3	CS_dtwr (csFILE *strm,Const struct cs_Dtdef_ *dt_def,int crypt);
+csFILE *	EXP_LVL5	CS_dtopn (Const char *mode);
+int			EXP_LVL5	CS_dtrd (csFILE *strm,struct cs_Dtdef_ *dt_def,int *crypt);
+int			EXP_LVL5	CS_dtrup (Const char *distrb,Const char *bkupnm);
+void		EXP_LVL5	CS_dtTrail (struct cs_Dtcprm_ *dtc_ptr,char* auditTrail,int size,Const double ll_in [3]);
+int			EXP_LVL5	CS_dtupd (struct cs_Dtdef_ *dtdef,int crypt);
+int			EXP_LVL5	CS_dtwr (csFILE *strm,Const struct cs_Dtdef_ *dt_def,int crypt);
 int			EXP_LVL3	CS_dynutm (struct cs_Csprm_ *csprm,int zone);
 
 Const char*	EXP_LVL3	CS_ecvt (double value,int count,int *dec,int *sign);
 int			EXP_LVL7	CS_elcmp (Const struct cs_Eldef_ *pp,Const struct cs_Eldef_ *qq);
-struct cs_Eldef_* EXP_LVL3     CS_eldef (Const char *el_nam);
-struct cs_Eldef_* EXP_LVL3     CS_eldef2 (Const char *el_nam, char* pszFileDirPath);
+struct cs_Eldef_* EXP_LVL3	CS_eldef (Const char *el_nam);
+struct cs_Eldef_* EXP_LVL5	CS_eldef2 (Const char *el_nam, char* pszFileDirPath);
 int			EXP_LVL3	CS_eldefAll (struct cs_Eldef_ **pDefArray[]);
 int			EXP_LVL3	CS_elDefCmp (Const struct cs_Eldef_ *original,Const struct cs_Eldef_ *revised,char* message,size_t messageSize);
 int			EXP_LVL3	CS_elDefCmpEx (double* qValuePtr,Const struct cs_Eldef_ *original,Const struct cs_Eldef_ *revised,char* message,size_t msgSize);
-int			EXP_LVL3	CS_eldel (struct cs_Eldef_ *eldef);
-char*		EXP_LVL1	CS_eldflt (Const char *dflt_el);
+int			EXP_LVL5	CS_eldel (struct cs_Eldef_ *eldef);
+char*		EXP_LVL3	CS_eldflt (Const char *dflt_el);
 void		EXP_LVL7	CS_elDictCls (csFILE* stream);
 int			EXP_LVL5	CS_elDiff (FILE *rptStrm,struct cs_Eldef_ *was,struct cs_Eldef_ *is);
 int			EXP_LVL1	CS_elEnum (int index,char *key_name,int size);
 void		EXP_LVL1	CS_elfnm (Const char *new_name);
 int			EXP_LVL1	CS_elIsValid (Const char *key_name);
-csFILE *	EXP_LVL3	CS_elopn (Const char *mode);
-int			EXP_LVL3	CS_elrd (csFILE *strm,struct cs_Eldef_ *el_def,int *crypt);
-int			EXP_LVL3	CS_elrup (Const char *distrb,Const char *bkupnm);
-int			EXP_LVL3	CS_elupd (struct cs_Eldef_ *eldef,int crypt);
-int			EXP_LVL3	CS_elwr (csFILE *strm,Const struct cs_Eldef_ *el_def,int crypt);
-int			EXP_LVL1	CS_epsg2msi (long32_t epsgNbr,char* msiKeyName,int size);
-Const char* EXP_LVL1	CS_epsgDtmNbr2EsriName (long32_t epsgNbr,unsigned short* flags);
-Const char* EXP_LVL1	CS_epsgDtmNbr2OracleName (long32_t epsgNbr,unsigned short* flags);
-long32_t	EXP_LVL1	CS_epsgNbr2Esri (long32_t epsgNbr,unsigned short* flags);
-Const char* EXP_LVL1	CS_epsgNbr2EsriName (long32_t epsgNbr);
-long32_t	EXP_LVL1	CS_epsgNbr2Oracle (long32_t epsgNbr,unsigned short* flags);
+csFILE *	EXP_LVL5	CS_elopn (Const char *mode);
+int			EXP_LVL5	CS_elrd (csFILE *strm,struct cs_Eldef_ *el_def,int *crypt);
+int			EXP_LVL5	CS_elrup (Const char *distrb,Const char *bkupnm);
+int			EXP_LVL5	CS_elupd (struct cs_Eldef_ *eldef,int crypt);
+int			EXP_LVL5	CS_elwr (csFILE *strm,Const struct cs_Eldef_ *el_def,int crypt);
+int			EXP_LVL3	CS_envsub (char* stringBufr,size_t bufrSize);
+int			EXP_LVL3	CS_envsubWc (wchar_t* stringBufr,size_t bufrSize);	/* bufrSize === # of characters */
 void		EXP_LVL3	CS_erpt (int err_num);
 void		EXP_LVL1	CS_errmsg (char *user_bufr,int buf_size);
 
 void		EXP_LVL1	CS_fast (int fast);
 void		EXP_LVL3	CS_fillIn (struct cs_Csdef_ *cs_def);
 cs_Time_	EXP_LVL7	CS_fileModTime (Const char *filePath);
-void		EXP_LVL1	CS_free (void *ptr);
+void		EXP_LVL5	CS_free (void *ptr);
+void		EXP_LVL3	CS_dllFree (void *ptr);
 long32_t	EXP_LVL1	CS_ftoa (char *bufr,int size,double value,long32_t frmt);
 
 int			EXP_LVL3	CS_gdcDisable (enum cs_GdcCatalogs ident);
-Const char *EXP_LVL1	CS_gdcEnum (int index,int *ident);
+Const char*	EXP_LVL3	CS_gdcEnum (int index,int *ident);
 enum cs_GdcCatalogs EXP_LVL3 CS_gdcGetIdent (Const char *catalogName);
 Const char *EXP_LVL3	CS_gdcGetName (enum cs_GdcCatalogs ident);
 int			EXP_LVL3	CS_gdcSetName (enum cs_GdcCatalogs ident,Const char *newName);
@@ -7157,7 +6877,7 @@ int			EXP_LVL1	CS_geoctrSetUp (const char* ellipsoid);
 int			EXP_LVL1	CS_geoctrGetLlh (double llh [3],double xyz [3]);
 int			EXP_LVL1	CS_geoctrGetXyz (double xyz [3],double llh [3]);
 
-int			EXP_LVL1	CS_getcs (Const char *cs_nam,struct cs_Csdef_ *cs_ptr);
+int			EXP_LVL2	CS_getcs (Const char *cs_nam,struct cs_Csdef_ *cs_ptr);
 int			EXP_LVL3	CS_getCountyFips (int stateFips,Const char* countyName);
 int			EXP_LVL3	CS_getCountyNad27 (int state,int county);
 int			EXP_LVL3	CS_getCountyNad83 (int state,int county);
@@ -7165,8 +6885,8 @@ double		EXP_LVL1	CS_getCurvatureAt (Const char *csKeyName,double lat);
 int			EXP_LVL1	CS_getDataDirectory (char *data_dir,int dir_sz);
 int			EXP_LVL1	CS_getDatumOf (Const char *csKeyName,char *datumName,int size);
 int			EXP_LVL1	CS_getDescriptionOf (Const char *csKeyName,char *description,int size);
-int			EXP_LVL1	CS_getdt (Const char *dt_nam,struct cs_Dtdef_ *dt_ptr);
-int			EXP_LVL1	CS_getel (Const char *el_nam,struct cs_Eldef_ *el_ptr);
+int			EXP_LVL2	CS_getdt (Const char *dt_nam,struct cs_Dtdef_ *dt_ptr);
+int			EXP_LVL2	CS_getel (Const char *el_nam,struct cs_Eldef_ *el_ptr);
 int			EXP_LVL1	CS_getEllipsoidOf (Const char *csKeyName,char *ellipsoidName,int size);
 int			EXP_LVL1	CS_getElValues (Const char *el_name,double *radius,double *e_Sq);
 char *		EXP_LVL9	CS_getenv (Const char *varname);
@@ -7181,34 +6901,36 @@ int			EXP_LVL7	CS_gpcmp (Const struct cs_GeodeticPath_ *pp,Const struct cs_Geode
 struct cs_GeodeticPath_*
 			EXP_LVL3	CS_gpdef (Const char *pathName);
 struct cs_GeodeticPath_ *
-			EXP_LVL3	CS_gpdef2 (Const char *pathName, char* pszDirPath);
+			EXP_LVL5	CS_gpdef2 (Const char *pathName, char* pszDirPath);
 struct cs_GeodeticPath_*
 			EXP_LVL3	CS_gpdefEx (int *direction,Const char *srcDatum,Const char *trgDatum);
 int			EXP_LVL3	CS_gpdefAll (struct cs_GeodeticPath_ **pDefArray[]);
 int			EXP_LVL3	CS_gpdel (struct cs_GeodeticPath_ *gpdef);
 void		EXP_LVL1	CS_gpfnm (Const char *new_name);
-csFILE *	EXP_LVL3	CS_gpopn (Const char *mode);
-int			EXP_LVL3	CS_gprd (csFILE *strm,struct cs_GeodeticPath_ *gp_def);
-int			EXP_LVL3	CS_gpupd (struct cs_GeodeticPath_ *gp_def);
-int			EXP_LVL3	CS_gpwr (csFILE *strm,Const struct cs_GeodeticPath_ *gp_def);
+csFILE *	EXP_LVL5	CS_gpopn (Const char *mode);
+int			EXP_LVL5	CS_gprd (csFILE *strm,struct cs_GeodeticPath_ *gp_def);
+int			EXP_LVL5	CS_gpupd (struct cs_GeodeticPath_ *gp_def);
+int			EXP_LVL5	CS_gpwr (csFILE *strm,Const struct cs_GeodeticPath_ *gp_def);
 
 int			EXP_LVL1	CS_gxchk (Const struct cs_GeodeticTransform_ *gxXform,unsigned short gxChkFlg,int err_list [],int list_sz);
 int			EXP_LVL7	CS_gxcmp (Const struct cs_GeodeticTransform_ *pp,Const struct cs_GeodeticTransform_ *qq);
 struct cs_GeodeticTransform_*
 			EXP_LVL3	CS_gxdef (Const char *xfrmName);
 struct cs_GeodeticTransform_*
-			EXP_LVL3	CS_gxdef2 (Const char *xfrmName, char* pszDirPath);
+			EXP_LVL5	CS_gxdef2 (Const char *xfrmName, char* pszDirPath);
 struct cs_GeodeticTransform_*
 			EXP_LVL3	CS_gxdefEx (Const char *srcDatum,Const char *trgDatum);
 int			EXP_LVL3	CS_gxdefAll (struct cs_GeodeticTransform_ **pDefArray[]);
 int			EXP_LVL3	CS_gxdel (struct cs_GeodeticTransform_ *gpdef);
 void		EXP_LVL1	CS_gxfnm (Const char *new_name);
-csFILE *	EXP_LVL3	CS_gxopn (Const char *mode);
-int			EXP_LVL3	CS_gxrd (csFILE *strm,struct cs_GeodeticTransform_ *gp_def);
-void		EXP_LVL3	CS_gxsep (struct cs_GeodeticTransform_* gx_def);
-int			EXP_LVL5	CS_gxswp (struct cs_GeodeticTransform_* gx_def);
-int			EXP_LVL3	CS_gxupd (struct cs_GeodeticTransform_ *gp_def);
-int			EXP_LVL3	CS_gxwr (csFILE *strm,Const struct cs_GeodeticTransform_ *gp_def);
+csFILE *	EXP_LVL5	CS_gxopn (Const char *mode);
+int			EXP_LVL5	CS_gxrd (csFILE *strm,struct cs_GeodeticTransform_ *gp_def);
+void		EXP_LVL5	CS_gxsep (struct cs_GeodeticTransform_* gx_def);
+int			EXP_LVL5	CS_gxswp (struct cs_GeodeticTransform_* gx_def,int writeFlag);
+int			EXP_LVL5	CS_gxswpRd (struct cs_GeodeticTransform_* gx_def);
+int			EXP_LVL5	CS_gxswpWr (struct cs_GeodeticTransform_* gx_def);
+int			EXP_LVL5	CS_gxupd (struct cs_GeodeticTransform_ *gp_def);
+int			EXP_LVL5	CS_gxwr (csFILE *strm,Const struct cs_GeodeticTransform_ *gp_def);
 
 void		EXP_LVL5	CS_iicpy (const struct cs_Cmplx_ *aa,struct cs_Cmplx_ *bb);
 void		EXP_LVL5	CS_iicrt (struct cs_Cmplx_ *aa,double rVal,double iVal);
@@ -7247,6 +6969,7 @@ int			EXP_LVL3	CS_isalpha (int chr);
 int			EXP_LVL3	CS_isupper (int chr);
 int			EXP_LVL3	CS_islower (int chr);
 int			EXP_LVL3	CS_isdigit (int chr);
+int			EXP_LVL3	CS_isnan (double xxx);
 int			EXP_LVL3	CS_isxdigit (int chr);
 int			EXP_LVL3	CS_isspace (int chr);
 int			EXP_LVL3	CS_isalnum (int chr);
@@ -7257,36 +6980,17 @@ int			EXP_LVL3	CS_ll3cs (Const struct cs_Csprm_ *csprm,double xy [3],Const doubl
 double		EXP_LVL1	CS_llazdd (double e_rad,double e_sq,Const double ll_from [2],Const double ll_to [2],double *dist);
 int			EXP_LVL3	CS_llchk (Const struct cs_Csprm_ *csprm,int cnt,Const double pnts [][3]);
 int			EXP_LVL1	CS_llFromMgrs (double latLng [2],const char* mgrsString);
+double		EXP_LVL7	CS_lngEpsilon (double baseLL,double calcLL);
 void		EXP_LVL7	CS_lput (char *fld,Const char *str,int size,char fill);
-char*		EXP_LVL1	CS_ludflt (Const char *dflt_lu);
+char*		EXP_LVL3	CS_ludflt (Const char *dflt_lu);
 
-void*		EXP_LVL1	CS_malc (size_t blk_size);
+void		EXP_LVL5	*CS_malc (size_t blk_size);
 int			EXP_LVL1	CS_mgrsSetUp (const char* ellipsoid,short bessel);
 int			EXP_LVL1	CS_mgrsFromLl (char *result,double latLng [2],int prec);
 Const char*	EXP_LVL3	CS_mifcs (Const struct cs_Csdef_ *cs_def);
-long32_t	EXP_LVL1	CS_msi2epsg (Const char *msiKeyName);
-Const char*	EXP_LVL1	CS_msiDtmName2Esri (Const char* msiName,unsigned short* flags);
-Const char*	EXP_LVL1	CS_msiDtmName2Oracle (Const char* msiName,unsigned short* flags);
-Const char*	EXP_LVL1	CS_msiElpName2Esri (Const char* msiName);
-Const char*	EXP_LVL1	CS_msiElpName2Oracle (Const char* msiName);
-Const char*	EXP_LVL1	CS_msiName2Esri (Const char* msiName);
-const char*	EXP_LVL1	CS_msiName2Oracle (Const char* msiName);
-
+int			EXP_LVL1	CS_msiCs2Wkt (char *wktBufr,size_t bufrSize,Const char* msiCsName,enum ErcWktFlavor flavor);
 int			EXP_LVL5	CS_nampp (char *name);
 int			EXP_LVL5	CS_nampp64 (char *name);
-
-long32_t	EXP_LVL1	CS_oracleNbr2Epsg (long32_t oracleNbr,unsigned short* flags);
-long32_t	EXP_LVL1	CS_oracleName2Epsg (Const char* oracleName);
-const char* EXP_LVL1	CS_oracleName2Msi (Const char* oracleName);
-long32_t	EXP_LVL1	CS_oracleName2Nbr (Const char* oracleName);
-Const char*	EXP_LVL1	CS_oracleNameByIdx (unsigned short index,unsigned short* flags);
-Const char*	EXP_LVL1	CS_oracleNbr2Name (long32_t oracleNbr);
-long32_t	EXP_LVL1	CS_oracleNbrByIdx (unsigned short index,unsigned short* flags);
-long32_t	EXP_LVL1	CS_oracleDtmName2EpsgNbr (Const char* oracleName,unsigned short* flags);
-Const char* EXP_LVL1	CS_oracleDtmName2Msi (Const char* oracleName,unsigned short* flags);
-Const char* EXP_LVL1	CS_oracleDtmNameByIdx (unsigned short index,unsigned short* flags);
-long32_t	EXP_LVL1	CS_oracleElpName2Epsg (Const char* oracleName);
-Const char* EXP_LVL1	CS_oracleElpName2Msi (Const char* oracleName);
 
 int			EXP_LVL1	CS_prchk (short prot_val);
 int			EXP_LVL1	CS_prjEnum (int index,ulong32_t *prj_flags,char *prj_keynm,int keynm_sz,
@@ -7303,11 +7007,12 @@ void		EXP_LVL9	CS_quadF (double xy [2],double xx,double yy,double x_off,double y
 void		EXP_LVL9	CS_quadI (double *xx,double *yy,Const double xy [2],double x_off,double y_off,short quad);
 void		EXP_LVL9	CS_quadMM (double min_xy [2],double max_xy [2],double x_off,double y_off,short quad);
 
-void*		EXP_LVL1	CS_ralc (void *ptr,size_t blk_size);
+void		EXP_LVL5	*CS_ralc (void *ptr,size_t blk_size);
 void		EXP_LVL1	CS_recvr (void);
 int			EXP_LVL9	CS_remove (Const char *path);
-void        EXP_LVL9    CS_removeRedundantWhiteSpace (char *string);
+void		EXP_LVL9	CS_removeRedundantWhiteSpace (char *string);
 int			EXP_LVL9	CS_rename (Const char *prev,Const char *current);
+int			EXP_LVL5	CS_rwDictDir (char *rsltPath,size_t rsltSize,Const char* srcPath);
 
 double		EXP_LVL1	CS_scale (Const char *cs_nam,double ll [2]);
 double		EXP_LVL1	CS_scalh (Const char *cs_nam,double ll [2]);
@@ -7337,6 +7042,7 @@ int			EXP_LVL3	CS_tolower (int chr);
 int			EXP_LVL3	CS_toupper (int chr);
 Const void*	EXP_LVL9	CS_tpars (char **pntr,Const void *table,int tab_size);
 int			EXP_LVL7	CS_trim (char *string);
+int			EXP_LVL7	CS_trimWc (wchar_t *string);
 
 double		EXP_LVL9	CS_un2d (Const char *name);
 int			EXP_LVL1	CS_unEnum (int index,int type,char *un_name,int un_size);
@@ -7347,6 +7053,7 @@ double		EXP_LVL1	CS_unitlu (short type,Const char *name);
 Const char*	EXP_LVL3	CS_unitluByFactor (short type,double factor);
 int			EXP_LVL3	CS_unitDel (short type,Const char *name);
 
+int			EXP_LVL1	CS_usrdr (Const char *usr_dir);
 void		EXP_LVL1	CS_usrDtfnm (Const char *new_name);
 void		EXP_LVL1	CS_usrElfnm (Const char *new_name);
 int			EXP_LVL3	CS_utmzon (double lng);
@@ -7370,15 +7077,6 @@ Const struct cs_Zone_* EXP_LVL9	CS_znlocI (Const struct cs_Zone_ zones [8],
 										   double yy);
 int			EXP_LVL9	CS_zones (Const struct cs_Csdef_ *csdef,struct cs_Zone_ *zp);
 
-int			EXP_LVL7	CSagd66Init (void);
-void		EXP_LVL7	CSagd66Cls (void);
-int			EXP_LVL7	CSagd66ToGda94 (double ll_gda94 [3],Const double ll_agd66 [3]);
-Const char *EXP_LVL7	CSagd66ToGda94Log (Const double ll_66 [2]);
-int			EXP_LVL7	CSagd84Init (void);
-void		EXP_LVL7	CSagd84Cls (void);
-int			EXP_LVL7	CSagd84ToGda94 (double ll_gda94 [3],Const double ll_agd84 [3]);
-Const char *EXP_LVL7	CSagd84ToGda94Log (Const double ll_84 [2]);
-
 double		EXP_LVL9	CSalberC (Const struct cs_Alber_ *alber,Const double ll [2]);
 int			EXP_LVL9	CSalberF (Const struct cs_Alber_ *alber,double xy [2],Const double ll [2]);
 double		EXP_LVL9	CSalberH (Const struct cs_Alber_ *alber,Const double ll [2]);
@@ -7392,10 +7090,6 @@ int			EXP_LVL9	CSalberX (Const struct cs_Alber_ *alber,int cnt,Const double pnts
 void		EXP_LVL5	CSasciiToXml (char *xml,const char *ascii);
 
 long32_t	EXP_LVL7	CSatof (double *result,Const char *value,char rdxChr,char sepChr,char ratioChr);
-int			EXP_LVL7	CSats77Init (void);
-void		EXP_LVL7	CSats77Cls (void);
-int			EXP_LVL7	CSats77ToCsrs (double ll_csrs [3],Const double ll_ats77 [3]);
-Const char *EXP_LVL7	CSats77ToCsrsLog (Const double ll_77 [2]);
 
 double		EXP_LVL9	CSazmeaqq (Const struct cs_Azmea_ *azmea,double sin_lat,double *sin_sq);
 double		EXP_LVL9	CSazmeaC (Const struct cs_Azmea_ *azmea,Const double ll [2]);
@@ -7453,32 +7147,16 @@ int			EXP_LVL9	CSbpcncX (Const struct cs_Bpcnc_ *bpcnc,int cnt,Const double pnts
 
 double		EXP_LVL5	CSccsphrD (Const double ll0 [2],Const double ll1 [2]);
 double		EXP_LVL5	CSccsphrR (Const double ll0 [2],Const double ll1 [2]);
-int			EXP_LVL7	CSch1903Init (void);
-void		EXP_LVL7	CSch1903Cls (void);
-int			EXP_LVL7	CSch1903ToPlus (double llPlus [3],Const double llCh1903 [3]);
-Const char *EXP_LVL7	CSch1903ToPlusLog (Const double llCh1903 [2]);
 double		EXP_LVL5	CSchiFcal (Const struct cs_ChicofF_ *chiF_ptr,double lat);
 void		EXP_LVL5	CSchiFsu (struct cs_ChicofF_ *chiF_ptr,double e_sq);
 double		EXP_LVL5	CSchiIcal (Const struct cs_ChicofI_ *chiI_ptr,double chi);
 void		EXP_LVL5	CSchiIsu (struct cs_ChicofI_ *chiI_ptr,double e_sq);
-int			EXP_LVL9	CSchtrs95ToEtrf89 (double ll_etrf89 [3],Const double ll_chtrs95 [3]);
 
-
-int			EXP_LVL9	CScnt2init (int fd,Const char *name);
-int			EXP_LVL9	CScnt2mm (int fd,double min_ll [2],double max_ll [2],double *density);
-int			EXP_LVL9	CScs2src (struct cs_Csdef_ *cs_def,FILE *fstr_out);
 int			EXP_LVL9	CScscomp (Const char *inpt,Const char *outp,
 												   int flags,
 												   Const char *elpath,
 												   Const char *dtpath,
 												   int (*err_func)(char *mesg));
-void		EXP_LVL7	CScsrs27Cls (void);
-int			EXP_LVL7	CScsrs27Init (void);
-void		EXP_LVL7	CScsrsCls (void);
-int			EXP_LVL7	CScsrsInit (void);
-int			EXP_LVL7	CScsrsToAts77 (double ll_ats77 [3],Const double ll_csrs [3]);
-int			EXP_LVL7	CScsrsToNad27 (double ll_27 [3],Const double ll_csrs [3]);
-int			EXP_LVL9	CScsrsToNad83 (double ll_83 [3],Const double ll_csrs [3]);
 
 double		EXP_LVL9	CScsiniC (Const struct cs_Csini_ *csini,Const double ll [2]);
 int			EXP_LVL9	CScsiniF (Const struct cs_Csini_ *csini,double xy [2],Const double ll [2]);
@@ -7498,10 +7176,6 @@ struct cs_Csprm_* EXP_LVL3	CScsloc2 (struct cs_Csdef_ *cs_ptr,
 
 double		EXP_LVL3	CSdefCmpPrjPrm (struct cs_Prjtab_* pp,int prmNbr,double orgValue,double revValue,char *message,size_t messageSize);
 int			EXP_LVL9	CSdfltpro (int type,char *name,int size);
-int			EXP_LVL7	CSdhdnInit (void);
-void		EXP_LVL7	CSdhdnCls (void);
-int			EXP_LVL7	CSdhdnToEtrf89 (double ll_etrf89 [3],Const double ll_dhdn [3]);
-Const char *EXP_LVL7	CSdhdnToEtrf89Log (Const double ll_dhdn [2]);
 
 int			EXP_LVL3	CSdtcvt (struct cs_Dtcprm_ *dtcPrm,short flag3D,Const double ll_in [3],double ll_out [3]);
 int			EXP_LVL9	CSdtcomp (Const char *inpt,Const char *outp,
@@ -7515,12 +7189,6 @@ struct cs_Dtcprm_* EXP_LVL3	CSdtcsu2 (Const struct cs_GeodeticTransform_ *xfrmDe
 char*		EXP_LVL9	CSdtKeyNames (void);
 struct cs_Datum_* EXP_LVL5	CSdtloc1 (Const struct cs_Dtdef_ *dtdef_p);
 struct cs_Datum_* EXP_LVL5	CSdtloc2 (Const struct cs_Dtdef_ *dtdef_p,Const struct cs_Eldef_ *eldef_p);
-
-int			EXP_LVL7	CSed50Init (void);
-void		EXP_LVL7	CSed50Cls (void);
-int			EXP_LVL7	CSed50ToEtrf89 (double ll_etrf89 [3],Const double ll_ed50 [3]);
-Const char *EXP_LVL7	CSed50ToEtrf89Log (Const double ll_50 [2]);
-
 
 double		EXP_LVL9	CSedcncC (Const struct cs_Edcnc_ *edcnc,Const double ll [2]);
 int			EXP_LVL9	CSedcncF (Const struct cs_Edcnc_ *edcnc,double xy [2],Const double ll [2]);
@@ -7567,19 +7235,6 @@ int			EXP_LVL9	CSelcomp (Const char *inpt,Const char *outp,
 												   int (*err_func)(char *mesg));
 char*		EXP_LVL9	CSelKeyNames (void);
 unsigned short	EXP_LVL7	CSerpt (char *mesg,int size,int err_num);
-Const char*	EXP_LVL3	CSepsg2msiCS (long32_t epsgNbr,short *flags);
-Const char*	EXP_LVL3	CSepsg2msiDT (long32_t epsgNbr,short *flags);
-Const char*	EXP_LVL3	CSepsg2msiEL (long32_t epsgNbr,short *flags);
-long32_t	EXP_LVL3	CSepsgByIdxCS (int index);
-long32_t	EXP_LVL3	CSepsgByIdxDT (int index);
-long32_t	EXP_LVL3	CSepsgByIdxEL (int index);
-
-Const char*	EXP_LVL3	CSmsiByIdxCS (int index);
-
-int			EXP_LVL9	CSetrf89ToChtrs95 (double ll_chtrs95 [3],Const double ll_etrf89 [3]);
-int			EXP_LVL7	CSetrf89ToDhdn (double ll_dhdn [3],Const double ll_etrf89 [3]);
-int			EXP_LVL7	CSetrf89ToEd50 (double ll_ed50 [3],Const double ll_etrf89 [3]);
-int			EXP_LVL7	CSetrf89ToWgs84 (double ll_wgs84 [3],Const double ll_etrf89 [3]);
 int			EXP_LVL5	CSextractDbl (csFILE *aStrm,double* result);
 
 const char*	EXP_LVL3	CSfips2a (int state,int county);
@@ -7588,9 +7243,6 @@ int			EXP_LVL3	CSgaussF (struct cs_Gauss_* gauss,double gaussian [2],double elli
 int			EXP_LVL3	CSgaussI (struct cs_Gauss_* gauss,double ellipsoidal [2],double gaussian [2]);
 struct cs_Gauss_* EXP_LVL3	CSgaussS (double e_rad,double e_sq,double orgLng,double stdLat);
 
-int			EXP_LVL7	CSgda94ToAgd66 (double ll_agd66 [3],Const double ll_gda94 [3]);
-int			EXP_LVL7	CSgda94ToAgd84 (double ll_agd84 [3],Const double ll_gda94 [3]);
-int			EXP_LVL9	CSgda94ToWgs84 (double ll_wgs84 [3],Const double ll_gda94 [3]);
 int			EXP_LVL7	CSgdcGenerate (Const char *directory);
 
 int			EXP_LVL1	CS_geoidHgt (Const double ll_84 [2],double *height);
@@ -7615,9 +7267,6 @@ int			EXP_LVL9	CSgxcomp (Const char *inpt,Const char *outp,int flags,const char 
 int			EXP_LVL9	CSgxcomp (Const char *inpt,Const char *outp,int flags,char *datum,int (*err_func)(char *mesg));
 #endif
 
-int			EXP_LVL7	CSharnToNad83 (double ll_83 [3],Const double ll_91 [3]);
-void		EXP_LVL9	CSharnCls (void);
-int			EXP_LVL7	CSharnInit (void);
 
 double		EXP_LVL9	CShmlsnC (Const struct cs_Hmlsn_ *hmlsn,Const double ll [2]);
 int			EXP_LVL9	CShmlsnF (Const struct cs_Hmlsn_ *hmlsn,double xy [2],Const double ll [2]);
@@ -7714,10 +7363,6 @@ void		EXP_LVL9	CSmrcatS (struct cs_Csprm_ *csprm);
 int			EXP_LVL9	CSmrcatX (Const struct cs_Mrcat_ *mrcat,int cnt,Const double pnts [][3]);
 double		EXP_LVL5	CSmrcatPhiFromK (double e_sq,double scl_red);
 
-long32_t	EXP_LVL3	CSmsi2EpsgCS (Const char *msiKeyName,short* flags);	
-long32_t	EXP_LVL3	CSmsi2EpsgDT (Const char *msiKeyName,short* flags);	
-long32_t	EXP_LVL3	CSmsi2EpsgEL (Const char *msiKeyName,short* flags);	
-
 double		EXP_LVL9	CSmstroC (Const struct cs_Mstro_ *mstro,Const double ll [2]);
 int			EXP_LVL9	CSmstroF (Const struct cs_Mstro_ *mstro,double xy [2],Const double ll [2]);
 int			EXP_LVL9	CSmstroI (Const struct cs_Mstro_ *mstro,double ll [2],Const double xy [2]);
@@ -7741,25 +7386,6 @@ int			EXP_LVL9	CSnacylQ (Const struct cs_Csdef_ *csdef,unsigned short prj_code,i
 void		EXP_LVL9	CSnacylS (struct cs_Csprm_ *csprm);
 int			EXP_LVL9	CSnacylX (Const struct cs_Nacyl_ *nacyl,int cnt,Const double pnts [][3]);
 
-int			EXP_LVL7	CSn27a77Init (void);
-void		EXP_LVL9	CSn27a77Cls (void);
-int			EXP_LVL7	CSnad27ToAts77 (double ll_ats77 [3],Const double ll_nad27 [3]);
-int			EXP_LVL7	CSats77ToNad27 (double ll_nad27 [3],Const double ll_ats77 [3]);
-Const char *EXP_LVL7	CSnad27ToAts77Log (Const double ll_27 [2]);
-
-int			EXP_LVL9	CSnad27ToCsrs (double ll_csrs [3],Const double ll_83 [3]);
-Const char *EXP_LVL7	CSnad27ToCsrsLog (Const double ll_27 [2]);
-int			EXP_LVL7	CSnad27ToNad83 (double ll_83 [3],Const double ll_27 [3]);
-Const char *EXP_LVL7	CSnad27ToNad83Log (Const double ll_27 [2]);
-
-int			EXP_LVL9	CSnad83ToCsrs (double ll_csrs [3],Const double ll_83 [3]);
-Const char *EXP_LVL7	CSnad83ToCsrsLog (Const double ll_83 [2]);
-int			EXP_LVL7	CSnad83ToHarn (double ll_91 [3],Const double ll_83 [3]);
-Const char *EXP_LVL7	CSnad83ToHarnLog (Const double ll_83 [3]);
-int			EXP_LVL7	CSnad83ToNad27 (double ll_27 [3],Const double ll_83 [3]);
-int			EXP_LVL9	CSnad83ToWgs84 (double ll_84 [3],Const double ll_83 [3]);
-void		EXP_LVL9	CSnadCls (void);
-int			EXP_LVL7	CSnadInit (void);
 struct cs_Dtcprm_ * EXP_LVL9	CSnulinit (Const char *src_name,Const char *dst_name);
 
 double		EXP_LVL9	CSnerthC (Const struct cs_Nerth_ *nerth,Const double ll [2]);
@@ -7772,20 +7398,6 @@ void		EXP_LVL9	CSnerthS (struct cs_Csprm_ *csprm);
 int			EXP_LVL9	CSnerthX (Const struct cs_Nerth_ *nerth,int cnt,Const double pnts [][3]);
 
 int			EXP_LVL7	CSnampp (char *name,size_t nameSize);
-
-int			EXP_LVL9	CSnzgd2KToWgs84 (double ll_wgs84 [3],Const double ll_nzgd2K [3]);
-int			EXP_LVL7	CSnzgd49Init (void);
-void		EXP_LVL7	CSnzgd49Cls (void);
-int			EXP_LVL7	CSnzgd49ToNzgd2K (double ll_nzgd2K [3],Const double ll_nzgd49 [3]);
-int			EXP_LVL7	CSnzgd2KToNzgd49 (double ll_nzgd49 [3],Const double ll_nzgd2K [3]);
-
-#ifdef GEOCOORD_ENHANCEMENT
-int			EXP_LVL7	CSGenGridInit (void);
-void		EXP_LVL7	CSGenGridCls (void);
-int			EXP_LVL7	CSGenGridToWgs84 (double ll_nzgd2K [3],Const double ll_gengrid [3]);
-int			EXP_LVL7	CSWgs84ToGenGrid (double ll_gengrid [3],Const double ll_nzgd2K [3]);
-
-#endif
 
 double		EXP_LVL9	CSnzlndC (Const struct cs_Nzlnd_ *nzlnd,Const double ll [2]);
 int			EXP_LVL9	CSnzlndF (Const struct cs_Nzlnd_ *nzlnd,double xy [2],Const double ll [2]);
@@ -7825,8 +7437,6 @@ int			EXP_LVL9	CSostroL (Const struct cs_Ostro_ *ostro,int cnt,Const double pnts
 int			EXP_LVL9	CSostroQ (Const struct cs_Csdef_ *csdef,unsigned short prj_code,int err_list [],int list_sz);
 void		EXP_LVL9	CSostroS (struct cs_Csprm_ *csprm);
 int			EXP_LVL9	CSostroX (Const struct cs_Ostro_ *stero,int cnt,Const double pnts [][3]);
-
-int			EXP_LVL7	CSplusToCh1903 (double llCh1903 [3],Const double llPlus [3]);
 
 double		EXP_LVL9	CSplycnC (Const struct cs_Plycn_ *plycn,Const double ll [2]);
 int			EXP_LVL9	CSplycnF (Const struct cs_Plycn_ *plycn,double xy [2],Const double ll [2]);
@@ -7963,13 +7573,6 @@ int			EXP_LVL7	CSvrtconInit (void);
 void		EXP_LVL9	CSvrtconCls (void);
 int			EXP_LVL7	CSvrtcon29To88 (double* deltaHgt,Const double ll_83 [3]);
 
-int			EXP_LVL9	CSwgs84ToNzgd2K (double ll_nzgd2K [3],Const double ll_wgs84 [3]);
-int			EXP_LVL9	CSwgs72ToWgs84  (double ll_wgs84  [3],Const double ll_wgs72 [3]);
-int			EXP_LVL9	CSwgs84ToWgs72  (double ll_wgs72  [3],Const double ll_wgs84 [3]);
-int			EXP_LVL9	CSwgs84ToNad83  (double ll_nad83  [3],Const double ll_wgs84 [3]);
-int			EXP_LVL9	CSwgs84ToGda94  (double ll_gda94  [3],Const double ll_wgs84 [3]);
-int			EXP_LVL9	CSwgs84ToEtrf89 (double ll_etrf89 [3],Const double ll_wgs84 [3]);
-
 int			EXP_LVL9	CSzone (struct cs_Zone_ *zp,double west,double cent,double east);
 
 int			EXP_LVL3	CSel2Wkt (char *bufr,size_t bufrSize,enum ErcWktFlavor flavor,const struct cs_Eldef_ *el_def);
@@ -8020,8 +7623,8 @@ int			EXP_LVL9	CSMNDOToblqmX (Const struct cs_MNDOTOblqm_ *oblqm,int cnt,Const d
 
 int			EXP_LVL1	CS_vldCtName (const char* catName);
 int			EXP_LVL1	CS_vldCtNameEx (const char* catName, struct cs_Ctdef_* pCtDef);
-Const char*	EXP_LVL1	CS_getCatName (unsigned idx);
-Const char*	EXP_LVL1	CS_getItmName (const char* catName,unsigned idx);
+Const char*	EXP_LVL3	CS_getCatName (unsigned idx);
+Const char*	EXP_LVL3	CS_getItmName (const char* catName,unsigned idx);
 int			EXP_LVL1	CS_getItmNameCount (const char* catName);
 
 void		EXP_LVL3	CS_ctfnm (const char* new_name);
@@ -8042,7 +7645,7 @@ struct	cs_Ctdef_*	EXP_LVL3	CSrdCatFile (void);
 struct	cs_Ctdef_*	EXP_LVL3	CSnewCategory (Const char* ctName);
 struct	cs_Ctdef_*	EXP_LVL3	CSnewCategoryEx (Const char* ctName, int preAllocate);
 struct	cs_Ctdef_*	EXP_LVL3	CSgetCtDef(const char* catName);
-int		            EXP_LVL3	CSgetCtDefAll(struct cs_Ctdef_ **pDefArray[]);
+int					EXP_LVL3	CSgetCtDefAll(struct cs_Ctdef_ **pDefArray[]);
 struct	cs_Ctdef_*	EXP_LVL3	CScpyCategory(Const struct cs_Ctdef_ * pCategoryIn);
 struct	cs_Ctdef_*	EXP_LVL3	CScpyCategoryEx(struct cs_Ctdef_* pDstCategory, Const struct cs_Ctdef_ * pSrcCategory, int setProtectFlag);
 int					EXP_LVL3	CSclnCategory(struct cs_Ctdef_ * pCategoryIn);
@@ -8053,7 +7656,7 @@ int					EXP_LVL3	CSwrtCategory (csFILE* stream,Const struct cs_Ctdef_*ctDefPtr);
 int					EXP_LVL3	CSwrtCatFile (csFILE* stream,Const struct cs_Ctdef_*ctDefPtr);
 void				EXP_LVL3	CSrlsCategory (struct cs_Ctdef_ *ctDefPtr);
 void				EXP_LVL3	CSrlsCategoryList (struct cs_Ctdef_ *ctDefHead);
-void				EXP_LVL3	CSrlsCategories();
+void				EXP_LVL3	CSrlsCategories(void);
 int					EXP_LVL9	CSctcomp (Const char *inpt,Const char *outp,int flags,Const char *coordsys,
 																			  int (*err_func)(char *mesg));
 
@@ -8064,32 +7667,6 @@ int					EXP_LVL3	CS_ctdel (struct cs_Ctdef_ *ctdef);
 int					EXP_LVL3	CS_ctupd (Const struct cs_Ctdef_ *ctdef);
 int					EXP_LVL3	CS_ctrd (csFILE *strm, struct cs_Ctdef_ *ct_def);
 int					EXP_LVL3	CS_ctwr (csFILE *strm,Const struct cs_Ctdef_ *ct_def);
-
-#if defined (__MFC__)
-// The following are the prototype interface functions for the MFC portion
-// of the package, i.e. the dialog boxes and stuff. Note, these names are
-// not mangled for easy access by Visual Basic, et. al.
-int EXP_LVL3 CSwinhlp (void* wHandle,ulong32_t context);
-int EXP_LVL1 CS_newKeyName (char *keyName,int type,int preserve);
-int EXP_LVL1 CS_newKeyNameEx (char *keyName,int type,int preserve,const char *title,const char *legend);
-long32_t EXP_LVL1 CS_ftoaFormat (long32_t format,int lock);
-void EXP_LVL1 CS_elEditor (char *elKeyName);
-void EXP_LVL1 CS_dtEditor (char *dtKeyName);
-void EXP_LVL1 CS_csEditor (char *csKeyName);
-void EXP_LVL1 CS_gdcEditor (char *gdcName);
-void EXP_LVL1 CS_csTest (char *srcSystem,char *trgSystem,double srcXYZ [3]);
-int  EXP_LVL1 CS_csBrowser (char* keyName);
-int  EXP_LVL1 CS_csDualBrowser (char* srcKeyName,char* trgKeyName);
-int  EXP_LVL1 CS_csDataDir (int flags);
-void EXP_LVL1 CS_mgTest (char *elKeyName);
-void EXP_LVL1 CS_mgTestA (char *elKeyName,int *prec,long* latFrmt,long* lngFrmt);
-int  EXP_LVL1 CS_dtSelector  (char *dtKeyName);
-int  EXP_LVL1 CS_dtSelectorA (char *dtKeyName,char *description,char *source,char *ellipsoid,char *technique);
-int  EXP_LVL1 CS_elSelector  (char *elKeyName);
-int  EXP_LVL1 CS_elSelectorA (char *elKeyName,char *description,char *source);
-int  EXP_LVL1 CS_geoCtrDlg (char *elKeyName,double geographic [3],double geoCtr [3]);
-int  EXP_LVL1 CS_geoCtrDlgA (char *elKeyName,double geographic [3],double geoCtr [3],long32_t geographicFrmt [3],long32_t geoCtrFrmt [3]);
-#endif
 
 #ifdef __cplusplus
 }
@@ -8113,8 +7690,32 @@ struct csZGridCellCache_
 	struct csZGridCell_ *listHead;
 };
 
-/* The following is the header on a Geoid 99 file.  We define it here to
-   take advanatge of whatever packing is currently in place. */
+/* Set the maximum packing available situation for the following
+   structures.  We do not write them to disk, but we read them and
+   use sizeof to determine the size of the entire structure on disk.
+
+   Code should be rewritten to read each individual element from the
+   binary file and not rely on reading an entire structure from the
+   file; especially if one is relying on sizeof to determine how much
+   data to read. */
+#if   _RUN_TIME == _rt_BORLAND16 || _RUN_TIME == _rt_BORLAND32
+#	pragma option -a1
+#elif _RUN_TIME == _rt_METAWARE
+#	pragma Align_members (1)
+#elif _RUN_TIME == _rt_MSC16 || _RUN_TIME == _rt_MSVC16 || _RUN_TIME == _rt_MSDOTNET || \
+														   _RUN_TIME == _rt_MSWIN64 ||  \
+														   _RUN_TIME == _rt_MSVC32
+#	pragma pack (1)
+#elif _RUN_TIME == _rt_HPUX
+#	pragma pack 1
+#elif _RUN_TIME == _rt_AIX
+#	pragma options align=packed
+#elif _RUN_TIME >= _rt_UNIXPCC
+#	pragma pack (1)
+#else
+	/* I don't know what would work for WATCOM. */
+#endif
+
 struct csGeoid99Hdr_
 {
 	double latMin;			/* Lowest latitude covered in the file,
@@ -8178,6 +7779,30 @@ struct csBynGridFileHdr_
 };
 #define cs_BSWP_BynFileHDR "llllssssdssdssss28c"
 
+/*
+	We've finished defining all structures which get read from
+	disk. We return packing to whatever the user needs.  Thus,
+	hopefully, you can use whatever packing you need for your
+	application, while I've specified what I need for mine.
+*/
+#if   _RUN_TIME == _rt_BORLAND16 || _RUN_TIME == _rt_BORLAND32
+#	pragma option -a.
+#elif _RUN_TIME == _rt_METAWARE
+#	pragma Align_members ()
+#elif _RUN_TIME == _rt_MSC16 || _RUN_TIME == _rt_MSVC16 || _RUN_TIME == _rt_MSDOTNET || \
+														   _RUN_TIME == _rt_MSWIN64 ||  \
+														   _RUN_TIME == _rt_MSVC32
+#	pragma pack ()
+#elif _RUN_TIME == _rt_HPUX
+#	pragma pack
+#elif _RUN_TIME == _rt_AIX
+#	pragma options align=reset
+#elif _RUN_TIME >= _rt_UNIXPCC
+#	pragma pack ()
+#else
+	/* I don't know what would work for WATCOM. */
+#endif
+
 /******************************************************************************
 	US Geoid 96 file object.  Essentially the same as a csGridFileUS.  However,
 	the Geoid 96 algorithm uses the biquadratic calculation techique.  This is
@@ -8207,8 +7832,8 @@ struct csGeoid96GridFile_
 										   -1 says nothing in buffer */
 	void *dataBuffer;					/* not allocated until required, i.e.
 										   file is actually opened. */
-	char filePath [MAXPATH];
-	char fileName [16];
+	char filePath [MAXPATH];			/* Full path to source data file. */
+	char fileName [32];					/* Used for error reporting. */
 };
 /******************************************************************************
 	US Geoid 99 file object.  A variation on the basic theme used in Geoid96
@@ -8243,14 +7868,14 @@ struct csGeoid99GridFile_
 										   required.  A value other than one,
 										   specifically 0x01000000 means
 										   swapping is required. */
-	char filePath [MAXPATH];
-	char fileName [32];
+	char filePath [MAXPATH];			/* Full path to source data file. */
+	char fileName [32];					/* Used for error reporting. */
 };
 
 /*
 	The following object is used to access files of the OSTN97.txt type.
 	That is, the UK equivalent of NAD83, although it is actually
-	ETRS89.  (OSTN97 is the Ordnance Survet National Transformation of 1997.)
+	ETRS89.  (OSTN97 is the Ordnance Survey National Transformation of 1997.)
 
 	Note, that the coverage element is superfluous and is not used.
 	We keep it around, and maintain it with valid data, in case
@@ -8273,8 +7898,9 @@ struct cs_Ostn97_
 										   -2 says nothing in buffer */
 	void *dataBuffer;					/* not allocated until required, i.e.
 										   file is actually opened. */
-	char filePath [MAXPATH];
-	char fileName [32];
+	char filePath [MAXPATH];			/* Full path to source data file. */
+	char fileName [32];					/* Used for error reporting. */
+	char binaryPath [MAXPATH];			/* Full path of binary shadow file. */
 };
 
 /*
@@ -8300,8 +7926,9 @@ struct cs_Osgm91_
 										   -2 says nothing in buffer */
 	void *dataBuffer;					/* not allocated until required, i.e.
 										   file is actually opened. */
-	char filePath [MAXPATH];
-	char fileName [32];
+	char filePath [MAXPATH];			/* Full path to source data file. */
+	char fileName [32];					/* Used for error reporting. */
+	char binaryPath [MAXPATH];			/* Full path of binary shadow file. */
 	struct cs_Trmer_ osgb36Trmer;
 };
 
@@ -8318,7 +7945,7 @@ struct cs_Osgm91_
 
 	As we did with the 97 version, we assume that there is one file, and
 	that it won't change (famous last words).  Since the file does not
-	have anyheader on it, we hard code the values which would normally
+	have any header on it, we hard code the values which would normally
 	be coded in a file header if the file had one.
 */
 struct cs_Ostn02_
@@ -8338,8 +7965,9 @@ struct cs_Ostn02_
 										   -2 says nothing in buffer */
 	void *dataBuffer;					/* not allocated until required, i.e.
 										   file is actually opened. */
-	char filePath [MAXPATH];
-	char fileName [32];
+	char filePath [MAXPATH];			/* Full path to source data file. */
+	char fileName [32];					/* Used for error reporting. */
+	char binaryPath [MAXPATH];			/* Full path of binary shadow file. */
 };
 
 /*
@@ -8349,8 +7977,8 @@ struct cs_Ostn02_
 	conversion between the two is rather simple, as the text file is a long
 	list of doubles, and the binary version is also a long list of doubles
 	in binary format.  In the binary case, there is the possibility of a 
-	byte swapping problem.  We assume all distributions are in the little
-	endian form.
+	byte swapping problem.  We assume all binary distributions are in the
+	little endian form.
 	
 	Essentially, the data file consists of a six double header which defines
 	the coverage of the file and the density of (cell size) of the grid.
@@ -8378,8 +8006,9 @@ struct cs_Egm96_
 										   -2 says nothing in buffer */
 	void *dataBuffer;					/* not allocated until required, i.e.
 										   file is actually opened. */
-	char filePath [MAXPATH];
-	char fileName [32];
+	char filePath [MAXPATH];			/* Full path to source data file. */
+	char fileName [32];					/* Used for error reporting. */
+	char binaryPath [MAXPATH];			/* Full path of binary shadow file. */
 };
 
 /* This object represents an implementation of the Byn file
@@ -8418,6 +8047,7 @@ struct csBynGridFile_
 										   size they are, need to be swapped. */
 	char filePath [MAXPATH];
 	char fileName [32];
+	char bynFilePath [MAXPATH];
 };
 
 /******************************************************************************
@@ -8588,9 +8218,7 @@ int CSprivateOstn97 (struct cs_Ostn97_ *__This,double result [2],const double et
 int CSforwardOstn97 (struct cs_Ostn97_ *__This,double osgb36 [2],const double etrs89 [2]);
 int CSinverseOstn97 (struct cs_Ostn97_ *__This,double etrs89 [2],const double osgb36 [2]);
 int CSmkBinaryOstn97 (struct cs_Ostn97_ *__This);
-#ifdef _DEBUG
-double CStestOstn97 (struct cs_Ostn97_ *__This);
-#endif
+double CSdebugOstn97 (struct cs_Ostn97_ *__This);
 
 
 struct cs_Ostn02_ *CSnewOstn02 (const char *filePath);
@@ -8600,9 +8228,7 @@ int CSprivateOstn02 (struct cs_Ostn02_ *__This,double result [2],const double et
 int CSforwardOstn02 (struct cs_Ostn02_ *__This,double osgb36 [2],const double etrs89 [2]);
 int CSinverseOstn02 (struct cs_Ostn02_ *__This,double etrs89 [2],const double osgb36 [2]);
 int CSmkBinaryOstn02 (struct cs_Ostn02_ *__This);
-#ifdef _DEBUG
 double CStestOstn02 (struct cs_Ostn02_ *__This);
-#endif
 
 struct cs_Osgm91_ *CSnewOsgm91 (const char *filePath,long32_t bufferSize,ulong32_t flags,double density);
 void CSdeleteOsgm91 (struct cs_Osgm91_ *__This);
@@ -8610,9 +8236,7 @@ void CSreleaseOsgm91 (struct cs_Osgm91_ *__This);
 double CStestOsgm91 (struct cs_Osgm91_ *__This,const double etrs89 [2]);
 int CScalcOsgm91 (struct cs_Osgm91_ *__This,double *geoidHgt,const double etrs89 [2]);
 int CSmkBinaryOsgm91 (struct cs_Osgm91_ *__This);
-#ifdef _DEBUG
 double CSdebugOsgm91 (struct cs_Osgm91_ *__This);
-#endif
 
 struct cs_Egm96_ *CSnewEgm96 (const char *filePath,long32_t bufferSize,ulong32_t flags,double density);
 void CSdeleteEgm96 (struct cs_Egm96_ *__This);
@@ -8663,14 +8287,7 @@ int CS_ftw (const char *path, int (*fn) (const char *,const struct stat *, int),
 	we need to undef these defines.
 */
 
-/* The above have not been implemented in CS-MAP; the following have CS-MAP definitions.
-   Of course, the CS-MAP definitions need only be used when the C run-time library
-   does not provide support for them.
-   
-   Usualy left in for the distribution for performance considerations.  It is often
-   necessary to comment these defines out for testing purposes. */
-
-#if _RUN_TIME != _rt_WINCE && !defined (_DEBUG)
+#if !defined (_DEBUG)
 #	define CS_getenv  getenv
 #	define CS_rename  rename
 #	define CS_rewind  rewind

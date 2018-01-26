@@ -39,8 +39,8 @@ extern "C"
 	#include "cs_map.h"
 	#include "cs_ioUtil.h"
 
+	extern char csErrnam [];
 
-    extern char csErrnam[];
 	extern char cs_Csname[];
 	extern char cs_Dtname[];
 	extern char cs_Elname[];
@@ -344,6 +344,23 @@ int CS_DefinitionRead(csFILE *& strm, TCsMapStruct *& def, char (&keyName)[_KeyN
 	CS_CHECK_NULL_ARG(def, 2);
 
 	/* Synchronize the strm before the read. */
+
+	/* *************   NOTE   *******************************************
+	   Researching for a solution to Trac Ticket #177, the following was
+	   observed:  This one function call eats from 6 to 100 times as much CPU
+	   time as the remainder of the function.  Disassembly has been analyzed,
+	   but to no avail.  Removing this function call from this module and
+	   placing an identical function call just prior to any use of the
+	   CS_csrd function performs normally.  I cannot fathom why having this
+	   function call in this module has such a devastating effect on
+	   performance.
+
+	   As this is not a critical need (at least at this time), and since the
+	   desired synchronization may be very important in certain environments,
+	   and since this is not a problem under Linux, this code is left as is.
+
+	   Trac Ticket #177 is marked as will not fix. */
+
 	int st = CS_fseek (strm, 0L, SEEK_CUR);
 	if (st != 0)
 	{
@@ -401,7 +418,7 @@ int CS_DefinitionRead(csFILE *& strm, TCsMapStruct *& def, char (&keyName)[_KeyN
 	   established by CS_nampp over the years has always been
 	   expanded, never restricted.  Thus, any definition which
 	   was legitimate in a previous release would always be
-	   legitimate iin subsequent releases. */
+	   legitimate in subsequent releases. */
 	char tmpKeyName[_KeyNameSize];
 	CS_stncp (tmpKeyName, keyName, _KeyNameSize);
 	if (CSnampp(tmpKeyName, _KeyNameSize) != 0)
@@ -492,7 +509,7 @@ TCsMapStruct* DefinitionGet(
 		TCsMapStruct* pDef = (TCsMapStruct*) CS_malc (blockSize);
 		if (NULL == pDef)
 		{
-			//this is a serious proplem; get out here immediately
+			//this is a serious problem; get out here immediately
 			CS_erpt (cs_NO_MEM);
 			return NULL;
 		}
@@ -512,20 +529,42 @@ TCsMapStruct* DefinitionGet(
 	}
 
 	CS_stncp (csErrnam, keyName, MAXPATH);
-
 	CS_erpt (notFoundErrorCode);
 
 	return NULL;
 }
 
+/***************************************************************************************
+Get all definitions out of the dictionaries (system and user).
+First the user dictionary definitions will come, followed by the system definitions.
+Parameters:
+    pAllDefs        Array with all definitions read. User dictionary definitions first, followed by
+                    the system definitions. The caller needs to free the containing definitions.
+    TOpen           File open function.
+    TRead           Function to read dictionaries non encrypted.
+    TReadCrypt      Optional. Function to read encrypted dictionaries.
+    TGetKey         Optional. Function to get the key, id of the definition. This is required for 
+                    the duplicate check.
+    pDuplicatesMap  Optional. Map with duplicate definitions (Definition key compare). The first
+                    definition of a duplicate is part of the 'pAllDefs' collection. The caller needs
+                    to free the duplicate definitions in the vector.
+
+Return the total of definitions read.
+	-1 ... failure
+	>0 ... success
+***************************************************************************************/
 template<class TCsMapStruct>
 int DefinitionGetAll(TCsMapStruct* *pAllDefs[],
 	csFILE* (*TOpen)(const char* mode),
 	int (*TRead)(csFILE*, TCsMapStruct*),
 	int (*TReadCrypt)(csFILE*, TCsMapStruct*, int*),
 	char const* (*TGetKey)(TCsMapStruct const*) = NULL,
-	std::map<char const*, std::vector<TCsMapStruct *>, CsMapKeyCompare> *pDuplicatesMap = NULL)
+	std::map<char const*, std::pair<TCsMapStruct * const, std::vector<TCsMapStruct *> >, CsMapKeyCompare> *pDuplicatesMap = NULL)
 {
+    typedef std::vector<TCsMapStruct *> TCsMapStructVector;
+    typedef std::pair<TCsMapStruct * const, TCsMapStructVector> DuplicateItem;
+    typedef std::map<char const*, DuplicateItem, CsMapKeyCompare> DuplicateMap;
+
 	cs_Error = 0;
 
 	CS_CHECK_NULL_ARG_RETURN(pAllDefs, 1, -1);
@@ -546,7 +585,7 @@ int DefinitionGetAll(TCsMapStruct* *pAllDefs[],
 	}
 
 	//in case we encounter duplicates, we'll put them into pDuplicatesMap, in which case,
-	//the entries will not be put into [pAllDefs]
+	//the entries will not be put into [pAllDefs]. Only the first definition of a duplicate will be put into [pAllDefs].
 	const bool checkDuplicates = (NULL != pDuplicatesMap && NULL != TGetKey);
 	typedef std::map<char const*, TCsMapStruct *, CsMapKeyCompare> EntriesKeyNameMap;
 	EntriesKeyNameMap allEntries; //this will be getting hold of all entries we read from the dictionary; just the pointers(!)
@@ -591,15 +630,31 @@ int DefinitionGetAll(TCsMapStruct* *pAllDefs[],
 				typename EntriesKeyNameMap::const_iterator const& knownIdEntry = allEntries.find(pId);
 				if (allEntries.end() != knownIdEntry)
 				{
-					//yes - make sure, we log it into the vector we've in [pDuplicatesMap]
-					//note, that we'll leave the entry in [allEntries], too
-					typename std::vector<TCsMapStruct *>& defDuplicateVector = (*pDuplicatesMap)[pId];
-					defDuplicateVector.push_back(pDef);
+                    // We have a duplicate. Get the related duplicate item.
+                    typename DuplicateMap::iterator defDuplicateEntry = pDuplicatesMap->find(pId);
+				    if (pDuplicatesMap->end() == defDuplicateEntry)
+                    {
+                        // No related duplicate item is available, create one and set the first duplicate definition.
+                        DuplicateItem defDuplicate(knownIdEntry->second, TCsMapStructVector());
+                        std::pair<typename DuplicateMap::iterator, bool> insertResult = pDuplicatesMap->insert(std::make_pair(pId, defDuplicate));
+                        if (!insertResult.second)
+                        {
+                            // Not expected
+		                    CS_erpt(cs_ISER);
+		                    return -1;
+	                    }
+                        defDuplicateEntry = insertResult.first;
+                    }
+                    DuplicateItem& defDuplicate = defDuplicateEntry->second;
+                    TCsMapStructVector& defDuplicateVector = defDuplicate.second;
+                    defDuplicateVector.push_back(pDef);
 				}
 				else
 				{
 					//No - so log this definition along with it's key...
 					allEntries[pId] = pDef;
+                    // Add definition also into all definition collection
+                    allDefs.push_back(pDef);
 				}
 			}
 			else
@@ -612,42 +667,6 @@ int DefinitionGetAll(TCsMapStruct* *pAllDefs[],
 
 		if (readStatus) //the last read status must be 0, i.e. EOF
 			goto error;
-	}
-
-	if (checkDuplicates)
-	{
-		//in case we were checking for duplicates above, we now have our entries a bit mixed
-		//for sure 1 is in [allEntries]; but there might be a list of additional duplicates
-		//which is in [pDuplicatesMap]; for sure, we haven't put anything into [allDefs].
-		//this we'll do now
-		_ASSERT(0 == allDefs.size());
-
-		for(typename EntriesKeyNameMap::iterator allEntriesIterator = allEntries.begin();
-			allEntriesIterator != allEntries.end();
-			++allEntriesIterator)
-		{
-			TCsMapStruct *pDef = allEntriesIterator->second;
-
-			typename std::map<char const*, std::vector<TCsMapStruct *>, CsMapKeyCompare>::iterator duplicateMapIterator;
-			duplicateMapIterator = pDuplicatesMap->find(TGetKey(pDef));
-			if (pDuplicatesMap->end() == duplicateMapIterator)
-			{
-				//the entry isn't a duplicate, i.e. we can put it directly into [allDefs]
-				allDefs.push_back(pDef);
-			}
-			else
-			{
-				//here, the entry has duplicates - as such, it must not be added to the [allDefs] list
-				//instead, all the duplicates will be reported to the caller via [pDuplicatesMap]
-				std::vector<TCsMapStruct *>& defDuplicateVector = duplicateMapIterator->second;
-				_ASSERT(1 == defDuplicateVector.size()); //everything else should be considered a bug - unless the dictionaries are corrupted
-				defDuplicateVector.push_back(pDef); //make sure, we're also reporting the first entry
-			}
-
-			//now that we've moved everything into either [pDuplicatesMap] or [allDefs],
-			//make sure, we don't reference it from [allEntriesIterator], too
-			allEntriesIterator->second = NULL;
-		}
 	}
 
 	arraySize = allDefs.size() * sizeof(TCsMapStruct*);
@@ -676,26 +695,21 @@ error:
 
 	if (NULL != pDuplicatesMap)
 	{
-		for(typename std::map<char const*, std::vector<TCsMapStruct *>, CsMapKeyCompare>::const_iterator defIterator = pDuplicatesMap->begin(); 
+        for(typename DuplicateMap::const_iterator defIterator = pDuplicatesMap->begin(); 
 			defIterator != pDuplicatesMap->end(); ++defIterator)
 		{
-			std::vector<TCsMapStruct *> const& defDuplicateVector = defIterator->second;
+            const DuplicateItem& defDuplicate = defIterator->second;
+			TCsMapStructVector const& defDuplicateVector = defDuplicate.second;
 			for(size_t i = 0; i < defDuplicateVector.size(); ++i)
 			{
 				CS_free(defDuplicateVector[i]);
 			}
 
-			pDuplicatesMap->clear(); //report an emtpy map to the caller
+			pDuplicatesMap->clear(); //report an empty map to the caller
 		}
 	}
 
-	for(typename EntriesKeyNameMap::iterator allEntriesIterator = allEntries.begin();
-			allEntriesIterator != allEntries.end();
-			++allEntriesIterator)
-	{
-		TCsMapStruct *pDef = allEntriesIterator->second;
-		CS_free(pDef);
-	}
+    // No need to free allEntries. They are also part of allDefs
 
 	return -1;
 }
@@ -726,7 +740,7 @@ int CS_DefinitionWrite (csFILE *& strm, TCsMapStruct *& def, const char* const s
 
 		for (;;)
 		{
-		    unsigned char key = (unsigned char) rand ();
+			unsigned char key = (unsigned char) rand ();
 			unsigned char* cpe = (unsigned char*) def;
 			unsigned char* cp = cpe + sizeof(*def);
 			*encryptKeyAddress = (char)key;
@@ -832,13 +846,13 @@ int CS_DefinitionDelete(TCsMapStruct const* def, char (&keyName)[_KeyNameSize],
 	if (isWriteProtectedType > 0)
 	{
 		switch(isWriteProtectedType)
-	{
+		{
 		case DEF_PROTECTED_SYSTEM_DEF:
 			CS_erpt(_SysDefProtectError);
 			return -1;
 		case DEF_PROTECTED_USER_DEF:
 			CS_erpt(_UserDefProtectError);
-		return -1;
+			return -1;
 		default:
 			_ASSERT(false);
 			return -1;
@@ -1107,7 +1121,7 @@ int CS_DefinitionUpdate (TCsMapStruct *toUpdate, char (&keyName)[_KeyNameSize],
 		if (targetDefExists && DEF_PROTECTED_NONE != targetDefProtectedType)
 		{
 			switch(targetDefProtectedType)
-		{
+			{
 			case DEF_PROTECTED_SYSTEM_DEF:
 				CS_erpt(_SysDefProtectError);
 				return -1;
@@ -1193,8 +1207,7 @@ csFILE * CS_FileOpen (const char* const filename, const char *const mode)
 
 	if (strm == NULL)
 	{
-        strcpy (csErrnam,cs_Dir);
-
+		strcpy (csErrnam,cs_Dir);
 		CS_erpt (cs_GPDICT);
 
 		return NULL;

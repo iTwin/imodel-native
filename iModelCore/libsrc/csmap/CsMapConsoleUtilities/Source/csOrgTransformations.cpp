@@ -2005,13 +2005,6 @@ bool csWriteHardCodedStuff (std::wofstream& gtStrm,std::wofstream& gpStrm,const 
 		{dtcTypCh1903ToPlus,     dtcTypChPlusToChtrs95, dtcTypChtrs95ToEtrf89, dtcTypEtrf89ToWgs84  },
 		{dtcTypWgs84ToEtrf89,    dtcTypEtrf89ToChtrs95, dtcTypChtrs95ToChPlus, dtcTypPlusToCh1903   }
 	},
-#ifdef GEOCOORD_ENHANCEMENT
-	{cs_DTCTYP_GENGRID,
-		{dtcTypGenGridToWgs84,   dtcTypNone,            dtcTypNone,           dtcTypNone  },
-		{dtcTypWgs84ToGenGrid,   dtcTypNone,            dtcTypNone,           dtcTypNone  }
-	},
-#endif
-
 };
 ********************************************************************************************/
 bool csAdjustSrcAndTrg (std::wofstream& gpStrm,char *srcDatum,char *trgDatum,

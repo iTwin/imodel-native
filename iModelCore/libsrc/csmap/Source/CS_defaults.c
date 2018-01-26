@@ -60,7 +60,7 @@
 
 static char previous [24];
 
-char * EXP_LVL1 CS_dtdflt (Const char *dflt_dt)
+char* EXP_LVL3 CS_dtdflt (Const char *dflt_dt)
 {
 	extern char csDtDflt [];
 
@@ -90,7 +90,7 @@ char * EXP_LVL1 CS_dtdflt (Const char *dflt_dt)
 	return (previous);
 }
 
-char * EXP_LVL1 CS_eldflt (Const char *dflt_el)
+char* EXP_LVL3 CS_eldflt (Const char *dflt_el)
 
 {
 	extern char csElDflt [];
@@ -118,7 +118,7 @@ char * EXP_LVL1 CS_eldflt (Const char *dflt_el)
 	return (previous);
 }
 
-char * EXP_LVL1 CS_ludflt (Const char *dflt_lu)
+char* EXP_LVL3 CS_ludflt (Const char *dflt_lu)
 
 {
 	extern char csLuDflt [];
@@ -146,7 +146,7 @@ char * EXP_LVL1 CS_ludflt (Const char *dflt_lu)
 	return (previous);
 }
 
-char * EXP_LVL1 CS_audflt (Const char *dflt_au)
+char* EXP_LVL3 CS_audflt (Const char *dflt_au)
 
 {
 	extern char csAuDflt [];

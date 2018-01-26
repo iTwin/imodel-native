@@ -29,6 +29,7 @@
 
 /*lint -esym(613,err_list) */
 /*lint -esym(715,prj_code) */
+/*lint -esym(534,CSbonneF)  ignoring return value */
 
 /**********************************************************************
 **	err_cnt = CSbonneQ (cs_def,prj_code,err_list,list_sz);

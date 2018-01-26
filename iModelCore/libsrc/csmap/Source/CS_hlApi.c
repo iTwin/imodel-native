@@ -26,7 +26,7 @@
 */
 
 #include "cs_map.h"
-#include "csNameMapperSupport.h"
+#include "cs_NameMapperSupport.h"
 
 void EXP_LVL1 CS_fast (int mode)
 {
@@ -61,6 +61,12 @@ void EXP_LVL1 CS_fast (int mode)
 **	datum conversions.  These caches are searched for each
 **	conversion.
 **********************************************************************/
+/*lint -e539   unexpected indentation */
+
+/* TO DO Lint suggests that dereferencing a null pointer is a distinct
+   possibility here.  Decades of use suggest this is not likely.
+   This should be verified when resources permit. */
+/*lint -e794  possible use of a null pointer */
 
 int EXP_LVL1 CS_cnvrt (Const char *src_cs,Const char *dst_cs,double coord [3])
 
@@ -78,51 +84,49 @@ int EXP_LVL1 CS_cnvrt (Const char *src_cs,Const char *dst_cs,double coord [3])
 	int status;
 	int dt_st;
 
+	char msgBufr [MAXPATH];
 	double my_ll [3];
 
 	status = 0;
 
-
 	/* Get a pointer to the two coordinate systems involved. */
-if (csDiagnostic != 0) fprintf (csDiagnostic,"%s[%d] %s->%s\n",modl_name,__LINE__,src_cs,dst_cs);
 	src_ptr = CSbcclu (src_cs);
 	if (src_ptr == NULL) goto error;
 	dst_ptr = CSbcclu (dst_cs);
 	if (dst_ptr == NULL) goto error;
-if (csDiagnostic != 0) fprintf (csDiagnostic,"%s[%d] %p & %p\n",modl_name,__LINE__,src_ptr,dst_ptr);
 
 	/* Get a pointer to the datum conversion required. */
 	dtc_ptr = CSbdclu (src_ptr,dst_ptr,cs_DTCFLG_DAT_F,cs_DTCFLG_BLK_W);
 	if (dtc_ptr == NULL) goto error;
-if (csDiagnostic != 0) fprintf (csDiagnostic,"%s[%d] %p\n",modl_name,__LINE__,dtc_ptr);
 
 	/* Convert the coordinate and return the result to the
 	   user. */
 	st = CS_cs2ll (src_ptr,my_ll,coord);
-if (csDiagnostic != 0) fprintf (csDiagnostic,"%s[%d] %d\n",modl_name,__LINE__,st);
 	if (st != cs_CNVRT_NRML)
 	{
 		status |= cs_BASIC_SRCRNG;
 	}
 	dt_st = CS_dtcvt (dtc_ptr,my_ll,my_ll);
-if (csDiagnostic != 0) fprintf (csDiagnostic,"%s[%d] %d\n",modl_name,__LINE__,dt_st);
 	if (dt_st != 0)
 	{
 		if (dt_st < 0) goto error;
 		status |= cs_BASIC_DTCWRN;
 	}
 	st = CS_ll2cs (dst_ptr,coord,my_ll);
-if (csDiagnostic != 0) fprintf (csDiagnostic,"%s[%d] %d\n",modl_name,__LINE__,st);
 	if (st != cs_CNVRT_NRML)
 	{
 		status |= cs_BASIC_DSTRNG;
 	}
 
 	/* That's it. */
-if (csDiagnostic != 0) fprintf (csDiagnostic,"%s[%d] %d\n",modl_name,__LINE__,status);
 	return (status);
 
 error:
+	if (csDiagnostic != 0)
+	{
+		CS_errmsg (msgBufr,sizeof (msgBufr));
+		fprintf (csDiagnostic,"Error detected in %s: %s\n",modl_name,msgBufr);
+	}
 	return (-cs_Error);
 }
 
@@ -154,50 +158,49 @@ int EXP_LVL1 CS_cnvrt3D (Const char *src_cs,Const char *dst_cs,double coord [3])
 	int status;
 	int dt_st;
 
+	char msgBufr [MAXPATH];
 	double my_ll [3];
 
 	status = 0;
 
 
 	/* Get a pointer to the two coordinate systems involved. */
-if (csDiagnostic != 0) fprintf (csDiagnostic,"%s[%d] %s->%s\n",modl_name,__LINE__,src_cs,dst_cs);
 	src_ptr = CSbcclu (src_cs);
 	if (src_ptr == NULL) goto error;
 	dst_ptr = CSbcclu (dst_cs);
 	if (dst_ptr == NULL) goto error;
-if (csDiagnostic != 0) fprintf (csDiagnostic,"%s[%d] %p & %p\n",modl_name,__LINE__,src_ptr,dst_ptr);
 
 	/* Get a pointer to the datum conversion required. */
 	dtc_ptr = CSbdclu (src_ptr,dst_ptr,cs_DTCFLG_DAT_F,cs_DTCFLG_BLK_W);
-if (csDiagnostic != 0) fprintf (csDiagnostic,"%s[%d] %p\n",modl_name,__LINE__,dtc_ptr);
 	if (dtc_ptr == NULL) goto error;
 
 	/* Convert the coordinate and return the result to the user. */
 	st = CS_cs3ll (src_ptr,my_ll,coord);
-if (csDiagnostic != 0) fprintf (csDiagnostic,"%s[%d] %d\n",modl_name,__LINE__,st);
 	if (st != cs_CNVRT_NRML)
 	{
 		status |= cs_BASIC_SRCRNG;
 	}
 	dt_st = CS_dtcvt3D (dtc_ptr,my_ll,my_ll);
-if (csDiagnostic != 0) fprintf (csDiagnostic,"%s[%d] %d\n",modl_name,__LINE__,dt_st);
 	if (dt_st != 0)
 	{
 		if (dt_st < 0) goto error;
 		status |= cs_BASIC_DTCWRN;
 	}
 	st = CS_ll3cs (dst_ptr,coord,my_ll);
-if (csDiagnostic != 0) fprintf (csDiagnostic,"%s[%d] %d\n",modl_name,__LINE__,st);
 	if (st != cs_CNVRT_NRML)
 	{
 		status |= cs_BASIC_DSTRNG;
 	}
 
 	/* That's it. */
-if (csDiagnostic != 0) fprintf (csDiagnostic,"%s[%d] %d\n",modl_name,__LINE__,status);
 	return (status);
 
 error:
+	if (csDiagnostic != 0)
+	{
+		CS_errmsg (msgBufr,sizeof (msgBufr));
+		fprintf (csDiagnostic,"Error detected in %s: %s\n",modl_name,msgBufr);
+	}
 	return (-cs_Error);
 }
 
@@ -227,8 +230,8 @@ error:
 
 struct cs_Csprm_ * EXP_LVL9 CSbcclu (Const char *cs_name)
 {
-	extern csThread struct csCscach_ *csCscachP;
-	extern csThread int csCscachI;
+	extern struct csCscach_ *csCscachP;
+	extern int csCscachI;
 
 	cs_Register struct csCscach_ *ch_ptr;
 
@@ -374,7 +377,7 @@ error:
 **********************************************************************/
 void EXP_LVL1 CSbccDbg (char *results,int rsltSz)
 {
-	extern csThread struct csCscach_ *csCscachP;
+	extern struct csCscach_ *csCscachP;
 
 	int need;
 	char *cp;
@@ -431,8 +434,8 @@ struct cs_Dtcprm_ * EXP_LVL9 CSbdclu (	Const struct cs_Csprm_ *src_cs,
 										int dat_err,
 										int blk_err)
 {
-	extern csThread struct csDtcach_ *csDtcachP;
-	extern csThread int csDtcachI;
+	extern struct csDtcach_ *csDtcachP;
+	extern int csDtcachI;
 
 	unsigned short srcPrjCode;
 	unsigned short dstPrjCode;
@@ -565,7 +568,7 @@ error:
 **********************************************************************/
 void EXP_LVL1 CSbdcDbg (char *results,int rsltSz)
 {
-	extern csThread struct csDtcach_ *csDtcachP;
+	extern struct csDtcach_ *csDtcachP;
 
 	int need;
 	char *cp;
@@ -674,7 +677,6 @@ double EXP_LVL1 CS_scalh (Const char *cs_nam,double ll [2])
 	else		    hh = cs_Mone;
 	return (hh);
 }
-
 /**********************************************************************
 	The following function releases all resources acquired by the
 	functions defined in this module.
@@ -682,18 +684,18 @@ double EXP_LVL1 CS_scalh (Const char *cs_nam,double ll [2])
 
 void EXP_LVL1 CS_recvr (void)
 {
-	extern csThread struct cs_Ostn97_ *cs_Ostn97Ptr;
-	extern csThread struct cs_Ostn02_ *cs_Ostn02Ptr;
+	extern struct cs_Ostn97_ *cs_Ostn97Ptr;
+	extern struct cs_Ostn02_ *cs_Ostn02Ptr;
 
-	extern csThread struct csCscach_ *csCscachP;
-	extern csThread struct csDtcach_ *csDtcachP;
+	extern struct csCscach_ *csCscachP;
+	extern struct csDtcach_ *csDtcachP;
 
-	extern csThread char *cs_CsKeyNames;
-	extern csThread char *cs_DtKeyNames;
-	extern csThread char *cs_ElKeyNames;
-	extern csThread char *cs_CsLlEnum;
-	extern csThread struct cs_Csgrplst_ *cs_CsGrpList;
-	extern csThread struct cs_Mgrs_ *cs_MgrsPtr;
+	extern char *cs_CsKeyNames;
+	extern char *cs_DtKeyNames;
+	extern char *cs_ElKeyNames;
+	extern char *cs_CsLlEnum;
+	extern struct cs_Csgrplst_ *cs_CsGrpList;
+	extern struct cs_Mgrs_ *cs_MgrsPtr;
 
 	struct csDtcach_ *dtch_ptr;
 	struct csDtcach_ *dtch_tmp;
@@ -815,7 +817,6 @@ void EXP_LVL1 CS_recvr (void)
 int EXP_LVL1 CS_mgrsSetUp (const char* ellipsoid,short bessel)
 {
 	extern struct cs_Mgrs_ *cs_MgrsPtr;
-
 
 	if (cs_MgrsPtr != NULL)
 	{

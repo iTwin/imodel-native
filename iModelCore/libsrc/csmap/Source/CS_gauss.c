@@ -30,7 +30,7 @@
 #include "cs_map.h"
 
 /*                           meters       unitless      degrees      degrees */
-struct cs_Gauss_* CSgaussS (double e_rad,double e_sq,double orgLng,double stdLat)
+struct cs_Gauss_* EXP_LVL3 CSgaussS (double e_rad,double e_sq,double orgLng,double stdLat)
 {
 	extern double cs_Zero;
 	extern double cs_Half;
@@ -112,7 +112,7 @@ error:
 	}
 	return NULL;
 }
-int CSgaussF (struct cs_Gauss_* gauss,double gaussian [2],double ellipsoidal [2])
+int EXP_LVL3 CSgaussF (struct cs_Gauss_* gauss,double gaussian [2],double ellipsoidal [2])
 {
 
 	extern double cs_Half;			/* 0.5 */
@@ -153,7 +153,7 @@ int CSgaussF (struct cs_Gauss_* gauss,double gaussian [2],double ellipsoidal [2]
 	
 	return rtnValue;
 }
-int CSgaussI (struct cs_Gauss_* gauss,double ellipsoidal [2],double gaussian [2])
+int EXP_LVL3 CSgaussI (struct cs_Gauss_* gauss,double ellipsoidal [2],double gaussian [2])
 {
 	extern double cs_Half;			/* 0.5 */
 	extern double cs_One;			/* 1.0 */
