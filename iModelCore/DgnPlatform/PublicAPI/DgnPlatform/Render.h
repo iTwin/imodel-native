@@ -542,7 +542,7 @@ public:
     //! @param[in] srcData the HDR data
     //! @param[in] srcLen the number of bytes of HDR data
     //! @param[in] encoding the encoding (either RGBM or RGBE)
-    DGNPLATFORM_EXPORT static HDRImage FromHDR(uint8_t const* srcData, uint32_t srcLen, Encoding = Encoding::RGBM);
+    DGNPLATFORM_EXPORT static HDRImage FromHDR(uint8_t const* srcData, uint32_t srcLen, Encoding encoding = Encoding::RGBM);
     bvector<float> Decode () const;
     void Encode(Encoding encoding); 
 }; 
