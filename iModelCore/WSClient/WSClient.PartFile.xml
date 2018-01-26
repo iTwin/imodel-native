@@ -85,6 +85,7 @@
         <SubPart PartName="ECObjectsNative"               PartFile="ECObjects"   Repository="ECObjects" />
         <SubPart PartName="ECDbLibrary"                   PartFile="ECDb"        Repository="ECDb" />
         <SubPart PartName="BeHttpLibrary"                 PartFile="BeHttp"      Repository="BeHttp" />
+        <SubPart PartName="BeSecurityLibrary"             PartFile="BeSecurity"  Repository="BeSecurity" />
         <Bindings>
             <Libs>Delivery/$(libprefix)WebServicesClient$(libext)</Libs>
             <Assemblies>Delivery/$(libprefix)WebServicesClient$(ApiNumber)$(shlibext)</Assemblies>
