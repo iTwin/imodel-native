@@ -1382,7 +1382,6 @@ Render::SceneLightsPtr DisplayStyle3d::CreateSceneLights(Render::TargetR target)
     
     s_testIndex = (++s_testIndex) % (sizeof(testIbls) / sizeof(testIbls[0]));
 
-    s_testIndex = 1;
     BeFileName  testSmartIbl(testIbls[s_testIndex]);
 
     ImageLight::SolarFromSmartIBL(lights->m_imageBased.m_solar, testSmartIbl);
@@ -1395,7 +1394,8 @@ Render::SceneLightsPtr DisplayStyle3d::CreateSceneLights(Render::TargetR target)
             {
             Texture::CreateParams createParams;
 
-            m_diffuseLightTexture = target.GetSystem()._CreateTexture(diffuseMap->GetImage(), GetDgnDb());
+            createParams.SetIsRGBE();
+            m_diffuseLightTexture = target.GetSystem()._CreateTexture(diffuseMap->GetImage(), GetDgnDb(), createParams);
             }
         }
     if (!m_reflectionTexture.IsValid())  
