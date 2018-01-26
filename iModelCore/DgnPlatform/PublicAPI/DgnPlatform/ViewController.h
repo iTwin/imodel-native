@@ -554,7 +554,6 @@ private:
 protected:
     bool m_loading = false;
     bool m_defaultDeviceOrientationValid = false;
-    Render::MaterialPtr m_skybox;
     RotMatrix m_defaultDeviceOrientation;
     double m_sceneLODSize = 6.0; 
     double m_nonSceneLODSize = 7.0; 
@@ -584,8 +583,6 @@ protected:
     DGNPLATFORM_EXPORT SpatialViewController(SpatialViewDefinitionCR definition);
     ~SpatialViewController() {}
 
-    void LoadSkyBox(Render::SystemCR system);
-    Render::TexturePtr LoadTexture(Utf8CP fileName, Render::SystemCR system);
     double GetGroundElevation() const;
     AxisAlignedBox3d GetGroundExtents(DgnViewportCR) const;
     void DrawGroundPlane(DecorateContextR);

@@ -143,8 +143,7 @@ public:
     void SetShowSourceLights(bool val) {m_sourceLights = val;}
     bool ShowCameraLights() const {return m_cameraLights;}
     void SetShowCameraLights(bool val) {m_cameraLights = val;}
-    bool ShowSolarLight
-    () const {return m_solarLight;}
+    bool ShowSolarLight() const {return m_solarLight;}
     void SetShowSolarLight(bool val) {m_solarLight = val;}
     bool ShowShadows() const {return m_shadows;}
     void SetShowShadows(bool val) {m_shadows = val;}
@@ -528,42 +527,25 @@ public:
 };
 
 //=======================================================================================
-//! An uncompressed high definition image in Rgb (3 floats pixel) 
+//! An uncompressed high definition image in either RGBE or RGBM  
 // @bsiclass                                                    Ray.Bentley     01/2018
 //=======================================================================================
-struct HDRImage
+struct HDRImage : Image
 {
-    uint32_t        m_width = 0;
-    uint32_t        m_height = 0;
-    bvector<float>  m_image;
+    enum class Encoding : uint32_t {RGBE = 0, RGBM = 1, RGBD = 2};
 
+private:
+    Encoding        m_encoding;
+
+public:
     //! Create an HDRImage from a (Radiance) HDR data.
     //! @param[in] srcData the HDR data
     //! @param[in] srcLen the number of bytes of HDR data
-    DGNPLATFORM_EXPORT static Image FromHDR(uint8_t const* srcData, uint32_t srcLen);
-
-    bool IsValid() const {return 0!=m_width && 0!=m_height && 0 != m_image.size();} //!< @return true if this image holds valid data
+    //! @param[in] encoding the encoding (either RGBM or RGBE)
+    DGNPLATFORM_EXPORT static HDRImage FromHDR(uint8_t const* srcData, uint32_t srcLen, Encoding encoding = Encoding::RGBM);
+    bvector<float> Decode () const;
+    void Encode(Encoding encoding); 
 }; 
-
-//=======================================================================================
-// ! A rendering environment including background and seperate HDR images for reflection, 
-// ! diffuse and specular lighting.
-// @bsiclass                                            Ray.Bentley         01/2018
-//=======================================================================================
-struct  Environment
-{
-    enum class Mapping : uint32_t { Spherical, Cylindrical, Angular, Rectangular };
-
-    struct Map { Mapping m_mapping; Image m_image; };
-    struct HDRMap { Mapping m_mapping; HDRImage m_image; };
-
-    HDRMap              m_diffuse;              // Diffuse lighting.
-    bvector<HDRMap>     m_specularLODs;;
-    Render::Image       m_background;
-
-    DGNPLATFORM_EXPORT static Environment FromSmartIBL (BeFileNameCR fileName); 
-
-};
 
 //=======================================================================================
 //! Identifies a texture or material.
@@ -645,11 +627,13 @@ struct Texture : RefCounted<NonCopyableClass>
         int m_pitch = 0;
         bool m_isTileSection = false;
         bool m_isGlyph = false;
+        bool m_isRGBE = false;;      // HDR stored with exponent (or multiplier).
 
         TextureKeyCR GetKey() const { return m_key; }
 
         void SetIsTileSection() {m_isTileSection=true;}
         void SetPitch(int val) {m_pitch=val;}
+        void SetIsRGBE() { m_isRGBE = true; }
 
         explicit CreateParams(TextureKeyCR key=TextureKey()) : m_key(key) { }
     };
@@ -2665,17 +2649,72 @@ struct Light : RefCounted<NonCopyableClass>
 DEFINE_REF_COUNTED_PTR(Light)
 
 //=======================================================================================
+// @bsiclass                                                    Ray.Benley      01/2018
+//=======================================================================================
+struct ImageLight
+{
+    enum class Mapping : uint32_t { Spherical, Cylindrical, Angular, Rectangular, Invalid };
+
+    template <typename T_Image> struct T_Map : RefCounted<NonCopyableClass>
+        {
+        T_Map() { }
+        T_Map(T_Image&& image, Mapping mapping, DPoint2dCR offset = DPoint2d::FromZero(), double gamma = 1.0, bool viewOriented = false) : 
+              m_image(std::move(image)), m_mapping(mapping), m_offset(offset), m_gamma(gamma), m_viewOriented(viewOriented) { }
+
+        T_Image         m_image;
+        Mapping         m_mapping = Mapping::Invalid; 
+        bool            m_viewOriented = false;
+        DPoint2d        m_offset = DPoint2d::FromZero(); 
+        double          m_gamma = 0.0;
+        bool IsValid() { return m_image.IsValid(); }
+        T_Image const&  GetImage() { return m_image; }
+        };
+
+    typedef struct T_Map<Image>             Map;
+    typedef struct T_Map<HDRImage>          HDRMap;
+    typedef struct T_Map<bvector<HDRImage>> HDRMultiMap;
+
+    DEFINE_REF_COUNTED_PTR(Map)
+    DEFINE_REF_COUNTED_PTR(HDRMap)
+    DEFINE_REF_COUNTED_PTR(HDRMultiMap)
+
+
+    struct Solar    // Some images include a simple solar light...
+        {
+        DVec3d                      m_direction = DVec3d::From(0.0, 0.0, 0.0);
+        ColorDef                    m_color = ColorDef::White();
+        double                      m_intensity = 0.0;
+        };
+
+    static HDRMapPtr DiffuseFromSmartIBL (BeFileNameCR fileName, HDRImage::Encoding encoding = HDRImage::Encoding::RGBM);
+    static HDRMapPtr ReflectionFromSmartIBL (BeFileNameCR fileName, HDRImage::Encoding encoding = HDRImage::Encoding::RGBM);
+    static MapPtr    BackgroundFromSmartIBL (BeFileNameCR fileName);
+    static BentleyStatus SolarFromSmartIBL(Solar& solar, BeFileNameCR fileName);
+
+};
+
+
+//=======================================================================================
 //! A list of Render::Lights, plus the f-stop setting for the camera 
 // @bsiclass                                                    Keith.Bentley   03/17
 //=======================================================================================
 struct SceneLights : RefCounted<NonCopyableClass>
 {
-    double m_fstop = 0.0; //!< must be between -3 and +3
-    bvector<LightPtr> m_list;
+    double                          m_fstop = 0.0; //!< must be between -3 and +3
+    bvector<LightPtr>               m_list;
+
+    // Image based lighting...
+
+    struct
+        {
+        Render::TexturePtr          m_environmentMap;       // Reflections
+        Render::TexturePtr          m_diffuseImage;
+        ImageLight::Solar           m_solar;
+        } m_imageBased;
+    
     void AddLight(LightPtr light) {if (light.IsValid()) m_list.push_back(light);}
     bool IsEmpty() const {return m_list.empty();}
 
-    TexturePtr  m_environmentMap = nullptr;          // For image based specular... WIP
 };
 DEFINE_REF_COUNTED_PTR(SceneLights)
 
@@ -2711,7 +2750,6 @@ public:
     explicit HiliteSettings(ColorDef color=Defaults::Color(), double visibleRatio=Defaults::VisibleRatio(), double hiddenRatio=Defaults::HiddenRatio(), Silhouette silhouette=Defaults::Width())
         : m_color(color), m_visibleRatio(visibleRatio), m_hiddenRatio(hiddenRatio), m_silhouette(silhouette)
         {
-        Clamp(m_visibleRatio);
         Clamp(m_hiddenRatio);
         }
 
@@ -2735,18 +2773,18 @@ struct Plan
 {
     enum class AntiAliasPref {Detect=0, On=1, Off=2};
 
-    bool m_is3d;
-    ViewFlags m_viewFlags;
-    Frustum m_frustum;
-    double m_fraction;
-    ColorDef m_bgColor;
-    ColorDef m_monoColor;
-    HiliteSettings m_hiliteSettings;
-    AntiAliasPref m_aaLines;
-    AntiAliasPref m_aaText;
-    HiddenLineParams m_hline;
-    ClipVectorPtr m_activeVolume;
-    SceneLightsCPtr m_lights;   //! if not valid, render with default lighting
+    bool                m_is3d;
+    ViewFlags           m_viewFlags;
+    Frustum             m_frustum;
+    double              m_fraction;
+    ColorDef            m_bgColor;
+    ColorDef            m_monoColor;
+    HiliteSettings      m_hiliteSettings;
+    AntiAliasPref       m_aaLines;
+    AntiAliasPref       m_aaText;
+    HiddenLineParams    m_hline;
+    ClipVectorPtr       m_activeVolume;
+    SceneLightsCPtr     m_lights;   //! if not valid, render with default lighting
     DGNPLATFORM_EXPORT Plan(DgnViewportCR);
 };
 
