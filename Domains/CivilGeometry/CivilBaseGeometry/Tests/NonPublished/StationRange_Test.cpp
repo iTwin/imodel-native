@@ -2,7 +2,7 @@
 |
 |  $Source: CivilBaseGeometry/Tests/NonPublished/StationRange_Test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestHeader.h"
@@ -44,7 +44,7 @@ void StationRange_Constructors()
 void StationRange_Length()
     {
     // Invalid range yields an undefined length (infinity, NAN)?
-    EXPECT_EQ_DOUBLE(NAN, StationRange().Length());
+    EXPECT_EQ(NAN, StationRange().Length());
     
     EXPECT_EQ_DOUBLE(1.0, StationRange(-3.0, -2.0).Length());
     EXPECT_EQ_DOUBLE(28.0, StationRange(-14.0, 14.0).Length());
@@ -55,7 +55,7 @@ void StationRange_Length()
 //---------------------------------------------------------------------------------------
 void StationRange_Center()
     {
-    EXPECT_EQ_DOUBLE(NAN, StationRange().Center());
+    EXPECT_EQ(NAN, StationRange().Center());
 
     EXPECT_EQ_DOUBLE(0.0, StationRange(0.0, 0.0).Center());
     EXPECT_EQ_DOUBLE(-1.0, StationRange(-1.0, -1.0).Center());
@@ -124,7 +124,7 @@ void StationRange_Extend()
 void StationRange_SignedDistance()
     {
     StationRange range;
-    EXPECT_EQ_DOUBLE(NAN, range.SignedDistance(0.0));
+    EXPECT_EQ(NAN, range.SignedDistance(0.0));
 
     range = StationRange(0.0, 0.0);
     EXPECT_EQ_DOUBLE(0.0, range.SignedDistance(0.0));
