@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ViewDefinition.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -1342,6 +1342,7 @@ Render::SceneLightsPtr DisplayStyle3d::CreateSceneLights(Render::TargetR target)
             {
             DVec3d dir = DVec3d::UnitZ();
             auto& sundir = sceneLights[json_sunDir()];
+
             if (!sundir.isNull())
                 JsonUtils::DVec3dFromJson(dir, sundir);
 
@@ -1351,6 +1352,103 @@ Render::SceneLightsPtr DisplayStyle3d::CreateSceneLights(Render::TargetR target)
 
 
     lights->m_fstop = GetSceneBrightness();
+
+//#define IBL_TESTING
+#ifdef IBL_TESTING
+    static WCharP      testIbls[] = 
+            {
+             L"D:\\SmartIBL\\Desert_Highway.zip",
+             L"D:\\SmartIBL\\Winter_Forest.zip",
+             L"D:\\SmartIBL\\MonValley_DirtRoad.zip",
+             L"D:\\SmartIBL\\Hamarikyu_Bridge_B.zip",
+             L"D:\\SmartIBL\\Mono_Lake_B.zip",
+             L"D:\\SmartIBL\\Footprint_Court.zip",
+             L"D:\\SmartIBL\\Chiricahua_NarrowPath.zip",
+             L"D:\\SmartIBL\\Serpentine_Valley.zip",
+             L"D:\\SmartIBL\\Barcelona_Rooftops.zip",
+             L"D:\\SmartIBL\\Theatre_Center.zip",
+             L"D:\\SmartIBL\\Summi_Pool.zip",
+             L"D:\\SmartIBL\\RidgeCrest_Road.zip",
+             L"D:\\SmartIBL\\Alexs_Apartment.zip",
+             L"D:\\SmartIBL\\Arches_E_Pinetree.zip",
+             L"D:\\SmartIBL\\Zion_Sunsetpeek.zip",
+             L"D:\\SmartIBL\\Papermill_Ruins_E.zip",
+             L"D:\\SmartIBL\\Zion_Sunsetpeek.zip",
+             L"D:\\SmartIBL\\Walk_of_Fame.zip",
+             L"D:\\SmartIBL\\GrandCanyon_C_YumaPoint.zip",
+             L"D:\\SmartIBL\\Factory_Catwalk.zip",
+             };
+    static int s_testIndex = -1;
+    
+    s_testIndex = (++s_testIndex) % (sizeof(testIbls) / sizeof(testIbls[0]));
+
+    s_testIndex = 1;
+    BeFileName  testSmartIbl(testIbls[s_testIndex]);
+
+    ImageLight::SolarFromSmartIBL(lights->m_imageBased.m_solar, testSmartIbl);
+
+    if (!m_diffuseLightTexture.IsValid())
+        {
+        auto    diffuseMap = ImageLight::DiffuseFromSmartIBL(testSmartIbl, HDRImage::Encoding::RGBM);
+
+        if (diffuseMap.IsValid())
+            {
+            Texture::CreateParams createParams;
+
+            m_diffuseLightTexture = target.GetSystem()._CreateTexture(diffuseMap->GetImage(), GetDgnDb());
+            }
+        }
+    if (!m_reflectionTexture.IsValid())  
+        {
+        auto    reflectionMap = ImageLight::ReflectionFromSmartIBL(testSmartIbl, HDRImage::Encoding::RGBM);
+
+        if (reflectionMap.IsValid())
+            {
+            Texture::CreateParams createParams;
+
+            createParams.SetIsRGBE();
+            m_reflectionTexture = target.GetSystem()._CreateTexture(reflectionMap->GetImage(), GetDgnDb(), createParams);
+            }
+        }
+    if (!m_skyboxMaterial.IsValid())
+        {
+        auto    backgroundMap = ImageLight::BackgroundFromSmartIBL(testSmartIbl);
+
+        if (backgroundMap.IsValid())
+            {
+            Material::CreateParams matParams;
+            matParams.SetDiffuseColor(ColorDef::White());
+            matParams.SetShadows(false);
+            matParams.SetAmbient(1.0);
+            matParams.SetDiffuse(0.0);
+            matParams.SetShadows(false);
+
+            TextureMapping::Params mapParams;
+            TextureMapping::Trans2x3 transform(0.0, 1.0 /* Negate to match stupid MicroStation Flip -1.0 */, 0.0, 1.0, 0.0, 0.0);
+            mapParams.SetTransform(&transform);
+
+            Render::TexturePtr bgTexture = target.GetSystem()._CreateTexture(backgroundMap->GetImage(), GetDgnDb());
+
+            matParams.MapTexture(*bgTexture, mapParams);
+
+            m_skyboxMaterial = target.GetSystem()._CreateMaterial(matParams, GetDgnDb());
+            }
+        }
+
+    lights->m_imageBased.m_diffuseImage = m_diffuseLightTexture.get();
+    lights->m_imageBased.m_environmentMap = m_reflectionTexture.get();
+
+#else if (ENVIRONMENT_REFLECTIONS)
+    if (IsSkyBoxEnabled())
+        {
+        LoadSkyBoxMaterial (target.GetSystem());
+
+        if (m_skyboxMaterial.IsValid() && m_skyboxMaterial->HasTextureMapping())
+            lights->m_imageBased.m_environmentMap = const_cast<Render::TextureP> (m_skyboxMaterial->GetTextureMapping().GetTexture());
+        }
+#endif
+
+
     return lights;
     }
 

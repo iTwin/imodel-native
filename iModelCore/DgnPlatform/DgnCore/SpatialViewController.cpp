@@ -448,14 +448,6 @@ Render::SceneLightsPtr SpatialViewController::GetLights() const
     auto& displayStyle = GetSpatialViewDefinition().GetDisplayStyle3d();
     m_lights = displayStyle.CreateSceneLights(*target); // lighting setup for the scene
 
-    if (displayStyle.IsSkyBoxEnabled())
-        {
-        (const_cast<SpatialViewControllerP> (this))->LoadSkyBox (target->GetSystem());
-
-        if (m_skybox.IsValid() && m_skybox->HasTextureMapping())
-            m_lights->m_environmentMap = const_cast<Render::TextureP> (m_skybox->GetTextureMapping().GetTexture());
-        }
-
     if (!displayStyle.GetViewFlags().ShowSourceLights())
         return m_lights;
 

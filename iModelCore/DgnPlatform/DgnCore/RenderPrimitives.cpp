@@ -346,6 +346,7 @@ private:
         bool IsStrokes() const { return m_isStrokes; }
         bool IsCurved() const { return m_isCurved; }
         bool HasRaster() const { return m_raster.IsValid(); }
+        bool GetRange(DRange3dR cRange) const { if (IsValid()) { return m_curves->GetRange(cRange); }  return false; } 
 
         Strokes::PointLists GetStrokes(IFacetOptionsR facetOptions)
             {
@@ -2232,9 +2233,51 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
 
     auto facetOptions = CreateFacetOptions(chordTolerance);
 
+//#define WIP_RASTER_GLYPH_TOLERANCING
+#if defined(WIP_RASTER_GLYPH_TOLERANCING)
+    double maxDiagDist = 0.0;
     for (size_t i = 0; i < textString.GetNumGlyphs(); i++)
         {
         auto textGlyph = glyphs[i];
+
+        Glyph* glyph = nullptr != textGlyph ? FindOrInsert(*textGlyph, textString.GetStyle().GetFont()) : nullptr;
+        if (nullptr == glyph || !glyph->IsValid())
+            continue;
+        else if ((glyph->IsStrokes() && nullptr == strokes) || (!glyph->IsStrokes() && nullptr == polyfaces))
+            continue;
+
+        DRange3d glyphRange;
+        glyph->GetRange(glyphRange);
+
+        double diagDist = glyphRange.DiagonalDistanceXY();
+        //DEBUG_PRINTF("diagDist = %f", diagDist);
+        if (diagDist > maxDiagDist)
+            maxDiagDist = diagDist;
+        }
+
+    double maxGlyphPixelLength = maxDiagDist / chordTolerance;
+    bool doTextAsRasterIfPossible = maxGlyphPixelLength <= 64.0;
+    if (maxDiagDist > 0.0)
+        {
+        DEBUG_PRINTF("maxDiagDist = %f", maxDiagDist);
+        DEBUG_PRINTF("chordTolerance = %f", chordTolerance);
+        DEBUG_PRINTF("maxGlyphPixelLength = %f", maxGlyphPixelLength);
+        DEBUG_PRINTF("doTextAsRasterIfPossible = %s", doTextAsRasterIfPossible ? "true" : "false");
+        DEBUG_PRINTF("");
+        }
+#else
+    bool doTextAsRasterIfPossible = false;
+#endif
+
+//#define TEST_FORCE_RASTER_GLYPHS
+#if defined(TEST_FORCE_RASTER_GLYPHS)
+    doTextAsRasterIfPossible = true;
+#endif
+
+    for (size_t i = 0; i < textString.GetNumGlyphs(); i++)
+        {
+        auto textGlyph = glyphs[i];
+
         Glyph* glyph = nullptr != textGlyph ? FindOrInsert(*textGlyph, textString.GetStyle().GetFont()) : nullptr;
         if (nullptr == glyph || !glyph->IsValid())
             continue;
@@ -2260,16 +2303,21 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
             }
         else
             {
-// #define TEST_RASTER_GLYPHS
             DisplayParamsCPtr displayParams(&geom.GetDisplayParams());
-#if !defined(TEST_RASTER_GLYPHS)
-            PolyfaceHeaderPtr polyface = glyph->GetPolyface(*facetOptions);
-#else
-            Glyph::RasterPolyface raster = glyph->GetRasterPolyface(*facetOptions, *context.GetRenderSystem(), context.GetDgnDb());
-            PolyfaceHeaderPtr polyface = raster.m_polyface;
-            if (raster.IsValid())
-                displayParams = displayParams->CloneForRasterText(*raster.m_texture);
-#endif
+            PolyfaceHeaderPtr polyface;
+
+            if (doTextAsRasterIfPossible)
+                {
+                Glyph::RasterPolyface raster = glyph->GetRasterPolyface(*facetOptions, *context.GetRenderSystem(), context.GetDgnDb());
+                polyface = raster.m_polyface;
+                if (raster.IsValid())
+                    displayParams = displayParams->CloneForRasterText(*raster.m_texture);
+                }
+            else
+                {
+                polyface = glyph->GetPolyface(*facetOptions);
+                }
+
             if (polyface.IsValid() && polyface->HasFacets())
                 {
                 polyface->Transform(glyphTransform);
