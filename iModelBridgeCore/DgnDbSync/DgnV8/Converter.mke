@@ -155,6 +155,8 @@ $(o)DgnV8Font$(oext) : $(baseDir)DgnV8Font.cpp $(DgnV8APISrc)DgnV8Font.h $(DgnDb
 # Shared source from other branches, so cannot use PCH.
 $(o)V8IModelExtraFiles$(oext) : $(SrcV8IModelExtraFiles)V8IModelExtraFiles.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
+$(o)ScalableMeshV8Utilities$(oext):  $(baseDir)ScalableMeshV8Utilities.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 
 nonPortableObjects =% $(MultiCompileObjectList)
