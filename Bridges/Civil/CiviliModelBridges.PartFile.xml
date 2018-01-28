@@ -190,6 +190,40 @@
     </Part>
 
   <!-- ........................................................................................................................................ -->
+  <!-- PublishORDToBIM    This is a utility application. It links with and runs the bridge in a standalone mode.                                 -->
+  <!-- ........................................................................................................................................ -->
+
+  <Product Name="PublishORDToBIM">
+    <SubPart PartName="PublishORDToBIMExe" />
+    <Directories DirectoryListName="PublishORDToBIMDirectoryList" />
+  </Product>
+
+  <ProductDirectoryList ListName="PublishORDToBIMDirectoryList">
+    <ProductDirectory Name="ApplicationRoot"                Path=""/>
+    <ProductDirectory Name="Assemblies"   RelativeTo="ApplicationRoot"/>
+    <ProductDirectory Name="Assemblies"   RelativeTo="ApplicationRoot" LibType="static"/>
+    <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"/>
+    <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"  LibType="static"/>
+    <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
+    <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices" LibType="static"/>
+    <ProductDirectory Name="DgnV8Dlls"  Path="DgnV8"/>
+    <ProductDirectory Name="CifDlls"  Path="Cif"/>
+    <ProductDirectory Name="ScalableMeshV8SDK" Deliver="false" />
+    <ProductDirectory Name="BentleyDesktopClientApi" RelativeTo="ApplicationRoot" />
+    <ProductDirectory Name="BentleyDesktopClientApi_Native" RelativeTo="ApplicationRoot" />
+    <ProductDirectory Name="BentleyClientSharedAssemblies" RelativeTo="ApplicationRoot"/>
+  </ProductDirectoryList>
+
+  <Part Name="PublishORDToBIMExe" BentleyBuildMakeFile="ORDBridge/PublishORDToBIM/PublishORDToBIM.mke" >
+    <SubPart PartName="ORDBridgeLibrary"/>
+    <SubPart PartName="DgnV8ConverterSqlang" PartFile="DgnDbSync" Repository="DgnDbSync" />
+    <SubPart PartName="iModelBridgeFwk-en" PartFile="iModelBridge"     Repository="DgnDbSync" />
+    <Bindings>
+      <Files ProductDirectoryName="ApplicationRoot">Delivery/PublishORDToBIM$(exeext)</Files>
+    </Bindings>
+  </Part>
+
+  <!-- ........................................................................................................................................ -->
   <!-- CS06Bridge    The bridge itself is a product, containing all of the needed shared libraries, plus assets. -->
   <!-- ........................................................................................................................................ -->
 
