@@ -2,7 +2,7 @@
 |
 |     $Source: Configuration/UrlProvider.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -385,6 +385,11 @@ IHttpHandlerPtr UrlProvider::GetSecurityConfigurator(IHttpHandlerPtr customHandl
         }, customHandler);
     }
 
+void UrlProvider::SetHttpHandler(IHttpHandlerPtr customHandler)
+    {
+    s_customHandler = customHandler;
+    s_buddi = std::make_shared<BuddiClient>(s_customHandler, nullptr, s_thread);
+    }
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
