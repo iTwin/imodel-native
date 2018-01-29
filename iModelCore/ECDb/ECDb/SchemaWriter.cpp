@@ -6,9 +6,11 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -877,13 +879,17 @@ BentleyStatus SchemaWriter::InsertSchemaEntry(ECSchemaCR schema)
     if (BE_SQLITE_OK != stmt->BindInt64(7, (int64_t) schema.GetVersionMinor()))
         return ERROR;
 
-    //Persist uint32_t as int64 to not lose unsigned-ness
-    if (BE_SQLITE_OK != stmt->BindInt64(8, (int64_t) schema.GetOriginalECXmlVersionMajor()))
-        return ERROR;
+    //original version of 0.0 is considered an unset versio
+    if (schema.GetOriginalECXmlVersionMajor() > 0 || schema.GetOriginalECXmlVersionMinor() > 0)
+        {
+        //Persist uint32_t as int64 to not lose unsigned-ness
+        if (BE_SQLITE_OK != stmt->BindInt64(8, (int64_t) schema.GetOriginalECXmlVersionMajor()))
+            return ERROR;
 
-    //Persist uint32_t as int64 to not lose unsigned-ness
-    if (BE_SQLITE_OK != stmt->BindInt64(9, (int64_t) schema.GetOriginalECXmlVersionMinor()))
-        return ERROR;
+        //Persist uint32_t as int64 to not lose unsigned-ness
+        if (BE_SQLITE_OK != stmt->BindInt64(9, (int64_t) schema.GetOriginalECXmlVersionMinor()))
+            return ERROR;
+        }
 
     if (BE_SQLITE_DONE != stmt->Step())
         return ERROR;
@@ -2575,7 +2581,6 @@ BentleyStatus SchemaWriter::UpdateEnumeration(ECEnumerationChange& enumChange, E
         return ERROR;
         }
 
-    bool allowDisruptiveChanges = !newEnum.GetIsStrict();
     if (enumChange.IsStrict().IsValid())
         {
         if (enumChange.IsStrict().GetNew().IsNull())
@@ -2589,10 +2594,7 @@ BentleyStatus SchemaWriter::UpdateEnumeration(ECEnumerationChange& enumChange, E
         //Allow transition from "strict" to "non-strict" but not the other way around.
         if (enumChange.IsStrict().GetOld().Value() == true &&
             enumChange.IsStrict().GetNew().Value() == false)
-            {
-            allowDisruptiveChanges = true;
             sqlUpdateBuilder.AddSetExp("IsStrict", enumChange.IsStrict().GetNew().Value());
-            }
         else
             {
             Issues().ReportV("ECSchema Upgrade failed. ECEnumeration %s: 'IsStrict' changed. 'Non-strict' cannot be change to 'strict'. The other way around is allowed.",
@@ -2618,55 +2620,17 @@ BentleyStatus SchemaWriter::UpdateEnumeration(ECEnumerationChange& enumChange, E
             sqlUpdateBuilder.AddSetExp("Description", enumChange.GetDescription().GetNew().Value().c_str());
         }
 
-
-
-    ECEnumeratorChanges enumeratorChanges = enumChange.Enumerators();
+    ECEnumeratorChanges& enumeratorChanges = enumChange.Enumerators();
     if (enumeratorChanges.IsValid())
         {
-        if (allowDisruptiveChanges)
-            {
-            Utf8String enumValueJson;
-            if (SUCCESS != SchemaPersistenceHelper::SerializeEnumerationValues(enumValueJson, newEnum))
-                return ERROR;
+        if (SUCCESS != VerifyEnumeratorChanges(oldEnum, enumeratorChanges))
+            return ERROR;
+    
+        Utf8String enumValueJson;
+        if (SUCCESS != SchemaPersistenceHelper::SerializeEnumerationValues(enumValueJson, newEnum))
+            return ERROR;
 
-            sqlUpdateBuilder.AddSetExp("EnumValues", enumValueJson.c_str());
-            }
-        else
-            {
-            bool allowRewriteEnumValues = false;
-            for (size_t i = 0; i < enumeratorChanges.Count(); i++)
-                {
-                ECEnumeratorChange& change = enumeratorChanges.At(i);
-                if (change.GetState() == ChangeState::Deleted)
-                    {
-                    Issues().ReportV("ECSchema Upgrade failed. An enumerator was deleted from Enumeration %s which is not supported.", oldEnum.GetFullName().c_str());
-                    return ERROR;
-                    }
-                else if (change.GetState() == ChangeState::New)
-                    {
-                    allowRewriteEnumValues = true;
-                    }
-                else if (change.GetState() == ChangeState::Modified)
-                    {
-                    if (change.GetName().IsValid() || change.GetInteger().IsValid() || change.GetString().IsValid())
-                        {
-                        Issues().ReportV("ECSchema Upgrade failed. The name or value of one or more enumerators of Enumeration %s was modified which is not supported.", oldEnum.GetFullName().c_str());
-                        return ERROR;
-                        }
-
-                    allowRewriteEnumValues = true;
-                    }
-                }
-
-            if (allowRewriteEnumValues)
-                {
-                Utf8String enumValueJson;
-                if (SUCCESS != SchemaPersistenceHelper::SerializeEnumerationValues(enumValueJson, newEnum))
-                    return ERROR;
-
-                sqlUpdateBuilder.AddSetExp("EnumValues", enumValueJson.c_str());
-                }
-            }
+        sqlUpdateBuilder.AddSetExp("EnumValues", enumValueJson.c_str());
         }
 
     sqlUpdateBuilder.AddWhereExp("Id", oldEnum.GetId().GetValue());
@@ -2678,6 +2642,77 @@ BentleyStatus SchemaWriter::UpdateEnumeration(ECEnumerationChange& enumChange, E
 
     return SUCCESS;
     }
+
+//---------------------------------------------------------------------------------------
+// Enumerator name changes are only allowed for int enums when it has been changed from the meaningless auto-generated name that was applied during the conversion of the schema
+// to EC3.2. This is a one-way opportunity to modify the auto-generated, meaningless names.
+// @bsimethod                                                  Krischan.Eberle 01/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::VerifyEnumeratorChanges(ECEnumerationCR oldEnum, ECEnumeratorChanges& enumeratorChanges) const
+    {
+    //The schema comparer compares enumerators by their name. So it cannot detect a name change directly.
+    //this algorithm is based on the assumption that a "deleted" enumerator in the old enum, and a "new" enumerator in the new enum
+    //are the same if their integer value is the same.
+    //this is only done for int enums. For string enums, enumerator name changes are not allowed at all.
+    //Once the enumerator name changes are detected, any regular deleted enumerators are invalid, any regular new enumerators are fine.
+    const bool isIntEnum = oldEnum.GetType() == PRIMITIVETYPE_Integer;
+    bmap<int, ECEnumeratorChange*> deletedEnumerators, newEnumerators;
+    for (size_t i = 0; i < enumeratorChanges.Count(); i++)
+        {
+        ECEnumeratorChange& change = enumeratorChanges.At(i);
+        switch (change.GetState())
+            {
+                case ChangeState::New:
+                    if (isIntEnum)
+                        newEnumerators[change.GetInteger().GetNew().Value()] = &change;
+
+                    continue;
+                case ChangeState::Deleted:
+                    if (isIntEnum)
+                        deletedEnumerators[change.GetInteger().GetOld().Value()] = &change;
+                    else
+                        {
+                        Issues().ReportV("ECSchema Upgrade failed. An enumerator was deleted from Enumeration %s which is not supported.", oldEnum.GetFullName().c_str());
+                        return ERROR;
+                        }
+
+                    break;
+                case ChangeState::Modified:
+                    if (change.GetInteger().IsValid() || change.GetString().IsValid())
+                        {
+                        Issues().ReportV("ECSchema Upgrade failed. The value of one or more enumerators of Enumeration %s was modified which is not supported.", oldEnum.GetFullName().c_str());
+                        return ERROR;
+                        }
+
+                    break;
+
+                default:
+                    BeAssert(false);
+                    return ERROR;
+            }
+        }
+
+    //only need to iterate over deleted enumerators. Any newEnumerators which this might miss, is fine, as they are always supported
+    for (bpair<int, ECEnumeratorChange*> const& kvPair : deletedEnumerators)
+        {
+        const int val = kvPair.first;
+        Utf8StringCR oldEnumeratorName = kvPair.second->GetName().GetOld().Value();
+        if (newEnumerators.find(val) != newEnumerators.end())
+            {
+            //We consider this a name change as the int values are equal. Now check whether the old enum name is valid or not
+            Utf8String defaultName = ECEnumerator::DetermineName(oldEnum.GetName(), nullptr, &val);
+            if (oldEnumeratorName.EqualsIAscii(defaultName))
+                continue; // only supported case of changing an enumerator name
+            }
+
+        //no counterpart with matching value found or old name is not the auto-generated EC3.2 conversion default name
+        Issues().ReportV("ECSchema Upgrade failed. An enumerator was deleted from Enumeration %s which is not supported.", oldEnum.GetFullName().c_str());
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------

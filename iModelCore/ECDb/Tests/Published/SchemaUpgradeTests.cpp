@@ -5586,21 +5586,19 @@ TEST_F(SchemaUpgradeTestFixture, ValidateModifingAddingDeletingBaseClassNotSuppo
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaUpgradeTestFixture, DeleteExistingECEnumeration)
     {
-    SchemaItem schemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("DeleteExistingECEnumeration.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         " <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False'>"
         "   <ECEnumerator value = '0' displayLabel = 'txt' />"
         "   <ECEnumerator value = '1' displayLabel = 'bat' />"
         " </ECEnumeration>"
-        "</ECSchema>");
+        "</ECSchema>")));
 
-    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
-    SchemaItem editedSchemaItem(
+    ASSERT_EQ(ERROR, ImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem)) << "Deletion of ECEnumeration is not supported";
+        "</ECSchema>"))) << "Deletion of ECEnumeration is not supported";
     }
 
 //---------------------------------------------------------------------------------------
@@ -5634,32 +5632,23 @@ TEST_F(SchemaUpgradeTestFixture, ModifyECEnumeratorsOfPreEC32Enum)
         " </ECEnumeration>"
         "</ECSchema>"))) << "Deleting enumerator";
 
-    EXPECT_EQ(ERROR, ImportSchema(SchemaItem(
+    EXPECT_EQ(SUCCESS, ImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
         " <ECEnumeration typeName='MyEnum' backingTypeName='int' isStrict='True'>"
         "   <ECEnumerator name='TxtFile' value = '0' displayLabel = 'txt' />"
         "   <ECEnumerator name='LogFile' value = '1' displayLabel = 'log' />"
         " </ECEnumeration>"
-        "</ECSchema>"))) << "Changing to EC3.2 where names differ from what the EC3->EC3.2 conversion would do means a name change which is not supported";
+        "</ECSchema>"))) << "Changing enumerator names when the old schema originates from pre EC3.2 is allowed";
 
-    EXPECT_EQ(SUCCESS, ImportSchema(SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
-        " <ECEnumeration typeName='MyEnum' backingTypeName='int' isStrict='True'>"
-        "   <ECEnumerator name='MyEnum0' value = '0' displayLabel = 'txt' />"
-        "   <ECEnumerator name='MyEnum1' value = '1' displayLabel = 'log' />"
-        " </ECEnumeration>"
-        "</ECSchema>"))) << "Changing to EC3.2 should not result in any changes";
-
-    EXPECT_EQ(SUCCESS, ImportSchema(SchemaItem(
+    EXPECT_EQ(ERROR, ImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         " <ECEnumeration typeName='MyEnum' backingTypeName='int' isStrict='True'>"
         "   <ECEnumerator value = '0' displayLabel = 'txt' />"
         "   <ECEnumerator value = '1' displayLabel = 'log' />"
         " </ECEnumeration>"
-        "</ECSchema>"))) << "Importing a pre EC3.2 schema without changes is expected to work";
+        "</ECSchema>"))) << "Importing a pre EC3.2 schema as the old schemas's enumerator names were already changed away from the default name";
     }
 
 //---------------------------------------------------------------------------------------
@@ -8689,26 +8678,7 @@ TEST_F(SchemaUpgradeTestFixture, UpdateECEnumerationFromStrictToNonStrictAndUpda
         "   <ECEnumerator value = '13' displayLabel = 'dll1' />"
         " </ECEnumeration>"
         "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
-
-    ECEnumerationCP updatedEnum = m_ecdb.Schemas().GetEnumeration("TestSchema", "NonStrictEnum");
-    ASSERT_TRUE(updatedEnum != nullptr);
-    ASSERT_STREQ("Test2Display", updatedEnum->GetDisplayLabel().c_str());
-    ASSERT_STREQ("Test2Desc", updatedEnum->GetDescription().c_str());
-    ASSERT_EQ(false, updatedEnum->GetIsStrict());
-    ASSERT_EQ(PRIMITIVETYPE_Integer, updatedEnum->GetType());
-
-    std::function<void(int32_t, Utf8CP)> assertEnumerator = [&](int32_t value, Utf8CP displayLabel)
-        {
-        ECEnumeratorCP newEnum = updatedEnum->FindEnumerator(value);
-        ASSERT_TRUE(newEnum != nullptr);
-        ASSERT_STREQ(displayLabel, newEnum->GetDisplayLabel().c_str());
-        };
-
-    assertEnumerator(10, "txt1");
-    assertEnumerator(11, "bat1");
-    assertEnumerator(12, "exe1");
-    assertEnumerator(13, "dll1");
+    ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem)) << "Modifying enumerator values is not supported";
     }
 
 
@@ -8731,19 +8701,162 @@ TEST_F(SchemaUpgradeTestFixture, UpdateECEnumerationFromUnStrictToStrict)
     SchemaItem editedSchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        " <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='True' displayLabel='Test2Display' description='Test2Desc'>"
-        "   <ECEnumerator value = '10' displayLabel = 'txt1' />"
-        "   <ECEnumerator value = '11' displayLabel = 'bat1' />"
-        "   <ECEnumerator value = '12' displayLabel = 'exe1' />"
-        "   <ECEnumerator value = '13' displayLabel = 'dll1' />"
+        " <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='True' displayLabel='Test1Display' description='Test1Desc'>"
+        "   <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "   <ECEnumerator value = '1' displayLabel = 'bat' />"
         " </ECEnumeration>"
         "</ECSchema>");
     ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem)) << "Cannot change IsStrict from false to true";
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   01/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, ChangeECEnumeratorValue)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("ChangeECEnumeratorValue.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8" ?>
+              <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEnumeration typeName="IntEnum" backingTypeName="int" >
+                    <ECEnumerator name="On" value="0" />
+                    <ECEnumerator name="Off" value="1" />
+                </ECEnumeration>
+                <ECEnumeration typeName="StringEnum" backingTypeName="string" >
+                    <ECEnumerator name="On" value="On" />
+                    <ECEnumerator name="Off" value="Off" />
+                </ECEnumeration>
+                </ECSchema>)xml")));
+
+    ASSERT_EQ(ERROR, ImportSchema(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8" ?>
+              <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEnumeration typeName="IntEnum" backingTypeName="int" >
+                    <ECEnumerator name="On" value="0" />
+                    <ECEnumerator name="Off" value="2" />
+                </ECEnumeration>
+                <ECEnumeration typeName="StringEnum" backingTypeName="string" >
+                    <ECEnumerator name="On" value="On" />
+                    <ECEnumerator name="Off" value="Off" />
+                </ECEnumeration>
+                </ECSchema>)xml")));
+
+    ASSERT_EQ(ERROR, ImportSchema(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8" ?>
+              <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEnumeration typeName="IntEnum" backingTypeName="int" >
+                    <ECEnumerator name="On" value="0" />
+                    <ECEnumerator name="Off" value="1" />
+                </ECEnumeration>
+                <ECEnumeration typeName="StringEnum" backingTypeName="string" >
+                    <ECEnumerator name="On" value="Turn On" />
+                    <ECEnumerator name="Off" value="Off" />
+                </ECEnumeration>
+                </ECSchema>)xml")));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   01/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, ModifyEnumeratorNameInPre32ECSchema)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("ModifyEnumeratorNameInPre32ECSchema.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8" ?>
+              <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECEnumeration typeName="IntEnum" backingTypeName="int" >
+                    <ECEnumerator value="0" />
+                    <ECEnumerator value="1" />
+                </ECEnumeration>
+                <ECEnumeration typeName="StringEnum" backingTypeName="string" >
+                    <ECEnumerator value="On" />
+                    <ECEnumerator value="Off" />
+                </ECEnumeration>
+                </ECSchema>)xml")));
+
+    EXPECT_EQ(ERROR, ImportSchema(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8" ?>
+              <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEnumeration typeName="IntEnum" backingTypeName="int" >
+                    <ECEnumerator name="IntEnum0" value="0" />
+                    <ECEnumerator name="IntEnum1" value="1" />
+                </ECEnumeration>
+                <ECEnumeration typeName="StringEnum" backingTypeName="string" >
+                    <ECEnumerator name="TurnOn" value="On" />
+                    <ECEnumerator name="Off" value="Off" />
+                </ECEnumeration>
+                </ECSchema>)xml"))) << "Enumerator names of String enums can never be changed";
+
+    EXPECT_EQ(SUCCESS, ImportSchema(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8" ?>
+              <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEnumeration typeName="IntEnum" backingTypeName="int" >
+                    <ECEnumerator name="On" value="0" />
+                    <ECEnumerator name="Off" value="1" />
+                </ECEnumeration>
+                <ECEnumeration typeName="StringEnum" backingTypeName="string" >
+                    <ECEnumerator name="On" value="On" />
+                    <ECEnumerator name="Off" value="Off" />
+                </ECEnumeration>
+                </ECSchema>)xml"))) << "When coming from 3.1 schema, an enumerator name change for an int enum is valid";
+
+    EXPECT_EQ(ERROR, ImportSchema(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8" ?>
+              <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEnumeration typeName="IntEnum" backingTypeName="int" >
+                    <ECEnumerator name="TurnOn" value="0" />
+                    <ECEnumerator name="TurnOff" value="1" />
+                </ECEnumeration>
+                <ECEnumeration typeName="StringEnum" backingTypeName="string" >
+                    <ECEnumerator name="On" value="On" />
+                    <ECEnumerator name="Off" value="Off" />
+                </ECEnumeration>
+                </ECSchema>)xml"))) << "Once the name was changed after the 3.1 conversion, it cannot be changed anymore";
+
+    //now cover what the actual algo does to approximate the detection that the schema comes from 3.1
+    //this theoretically allows to change the name in EC3.2 schemas, but only if the names happen to be the default names (which are meaningless
+    ASSERT_EQ(SUCCESS, SetupECDb("ModifyEnumeratorNameInPre32ECSchema.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8" ?>
+              <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEnumeration typeName="IntEnum" backingTypeName="int" >
+                    <ECEnumerator name="IntEnum0" value="0" />
+                    <ECEnumerator name="IntEnum1" value="1" />
+                </ECEnumeration>
+                <ECEnumeration typeName="StringEnum" backingTypeName="string" >
+                    <ECEnumerator name="On" value="On" />
+                    <ECEnumerator name="Off" value="Off" />
+                </ECEnumeration>
+                </ECSchema>)xml")));
+
+    EXPECT_EQ(SUCCESS, ImportSchema(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8" ?>
+              <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEnumeration typeName="IntEnum" backingTypeName="int" >
+                    <ECEnumerator name="On" value="0" />
+                    <ECEnumerator name="Off" value="1" />
+                </ECEnumeration>
+                <ECEnumeration typeName="StringEnum" backingTypeName="string" >
+                    <ECEnumerator name="On" value="On" />
+                    <ECEnumerator name="Off" value="Off" />
+                </ECEnumeration>
+                </ECSchema>)xml"))) << "When the enumerator name is the default EC3.2 conversion name, the change is valid";
+
+    EXPECT_EQ(ERROR, ImportSchema(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8" ?>
+              <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEnumeration typeName="IntEnum" backingTypeName="int" >
+                    <ECEnumerator name="TurnOn" value="0" />
+                    <ECEnumerator name="TurnOff" value="1" />
+                </ECEnumeration>
+                <ECEnumeration typeName="StringEnum" backingTypeName="string" >
+                    <ECEnumerator name="On" value="On" />
+                    <ECEnumerator name="Off" value="Off" />
+                </ECEnumeration>
+                </ECSchema>)xml"))) << "Once the name was changed away from the EC3.2 conversion default name, it cannot be changed anymore";
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, UpdateECEnumerationStrictEnumAddDeleteEnumerators)
+TEST_F(SchemaUpgradeTestFixture, UpdateECEnumerationAddDeleteEnumerators)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"

@@ -1124,6 +1124,119 @@ TEST_F(FileFormatCompatibilityTests, PreEC32Enums)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  01/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(FileFormatCompatibilityTests, PreEC32EnumsWithSchemaUpgrade)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("PreEC32EnumsWithSchemaUpgrade.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8" ?>
+              <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECEnumeration typeName="IntEnum" backingTypeName="int" >
+                    <ECEnumerator value="0" />
+                    <ECEnumerator value="1" />
+                </ECEnumeration>
+                <ECEnumeration typeName="StringEnum" backingTypeName="string" >
+                    <ECEnumerator value="On" />
+                    <ECEnumerator value="Off" />
+                </ECEnumeration>
+                </ECSchema>)xml")));
+
+    {
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT e.Name,e.EnumValues FROM ec_Enumeration e JOIN ec_Schema s ON e.SchemaId=s.Id WHERE s.Name='TestSchema' ORDER BY e.Name"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(JsonValue(R"json([{"Name":"IntEnum0","IntValue":0},{"Name":"IntEnum1","IntValue":1}])json"), JsonValue(stmt.GetValueText(1))) << stmt.GetValueText(0);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(JsonValue(R"json([{"Name":"On", "StringValue":"On"},{"Name":"Off","StringValue":"Off"}])json"), JsonValue(stmt.GetValueText(1))) << stmt.GetValueText(0);
+    }
+
+    {
+    ECEnumerationCP ecenum = m_ecdb.Schemas().GetEnumeration("TestSchema", "IntEnum");
+    ASSERT_TRUE(ecenum != nullptr);
+    ECEnumeratorCP enumValue = ecenum->FindEnumerator(0);
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_STREQ("IntEnum0", enumValue->GetName().c_str());
+    ASSERT_EQ(0, enumValue->GetInteger());
+    enumValue = ecenum->FindEnumerator(1);
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_EQ(1, enumValue->GetInteger());
+    ASSERT_STREQ("IntEnum1", enumValue->GetName().c_str());
+
+    AssertMetaSchemaEnumeration(m_ecdb, "TestSchema", "IntEnum");
+    }
+
+    {
+    ECEnumerationCP ecenum = m_ecdb.Schemas().GetEnumeration("TestSchema", "StringEnum");
+    ASSERT_TRUE(ecenum != nullptr);
+    ECEnumeratorCP enumValue = ecenum->FindEnumerator("On");
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_STREQ("On", enumValue->GetName().c_str());
+    ASSERT_STREQ("On", enumValue->GetString().c_str());
+    enumValue = ecenum->FindEnumerator("Off");
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_STREQ("Off", enumValue->GetName().c_str());
+    ASSERT_STREQ("Off", enumValue->GetString().c_str());
+
+    AssertMetaSchemaEnumeration(m_ecdb, "TestSchema", "StringEnum");
+
+    }
+
+    // now run schema upgrade that modifies the names
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8" ?>
+              <ECSchema schemaName="TestSchema" alias="ts" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEnumeration typeName="IntEnum" backingTypeName="int" >
+                    <ECEnumerator name="On" value="0" />
+                    <ECEnumerator name="Off" value="1" />
+                </ECEnumeration>
+                <ECEnumeration typeName="StringEnum" backingTypeName="string" >
+                    <ECEnumerator name="On" value="On" />
+                    <ECEnumerator name="Off" value="Off" />
+                </ECEnumeration>
+                </ECSchema>)xml")));
+
+    {
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT e.Name,e.EnumValues FROM ec_Enumeration e JOIN ec_Schema s ON e.SchemaId=s.Id WHERE s.Name='TestSchema' ORDER BY e.Name"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(JsonValue(R"json([{"Name":"On","IntValue":0},{"Name":"Off","IntValue":1}])json"), JsonValue(stmt.GetValueText(1))) << stmt.GetValueText(0);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(JsonValue(R"json([{"Name":"On", "StringValue":"On"},{"Name":"Off","StringValue":"Off"}])json"), JsonValue(stmt.GetValueText(1))) << stmt.GetValueText(0);
+    }
+
+    {
+    ECEnumerationCP ecenum = m_ecdb.Schemas().GetEnumeration("TestSchema", "IntEnum");
+    ASSERT_TRUE(ecenum != nullptr);
+    ECEnumeratorCP enumValue = ecenum->FindEnumerator(0);
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_STREQ("On", enumValue->GetName().c_str());
+    ASSERT_EQ(0, enumValue->GetInteger());
+    enumValue = ecenum->FindEnumerator(1);
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_EQ(1, enumValue->GetInteger());
+    ASSERT_STREQ("Off", enumValue->GetName().c_str());
+
+    AssertMetaSchemaEnumeration(m_ecdb, "TestSchema", "IntEnum");
+    }
+
+    {
+    ECEnumerationCP ecenum = m_ecdb.Schemas().GetEnumeration("TestSchema", "StringEnum");
+    ASSERT_TRUE(ecenum != nullptr);
+    ECEnumeratorCP enumValue = ecenum->FindEnumerator("On");
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_STREQ("On", enumValue->GetName().c_str());
+    ASSERT_STREQ("On", enumValue->GetString().c_str());
+    enumValue = ecenum->FindEnumerator("Off");
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_STREQ("Off", enumValue->GetName().c_str());
+    ASSERT_STREQ("Off", enumValue->GetString().c_str());
+
+    AssertMetaSchemaEnumeration(m_ecdb, "TestSchema", "StringEnum");
+
+    }
+    }
+
+//---------------------------------------------------------------------------------------
 //* quick check whether schema import works for benchmark schemas.
 //* Use this test to create a new benchmark file
 // @bsiclass                                     Krischan.Eberle                  10/17
