@@ -54,12 +54,12 @@ struct SchemaCopyTest : CopyTestFixture
 //---------------+---------------+---------------+---------------+---------------+-------
 void SchemaCopyTest::SetUp()
     {
+    CopyTestFixture::SetUp();
     bvector<WString> searchPaths;
     searchPaths.push_back(ECTestFixture::GetTestDataPath(L""));
     m_schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
     m_schemaContext = ECSchemaReadContext::CreateContext();
     m_schemaContext->AddSchemaLocater(*m_schemaLocater);
-    CopyTestFixture::SetUp();
     }
 
 //---------------------------------------------------------------------------------------

@@ -20,14 +20,13 @@ struct PropertyPriorityCustomAttributeConversionTest : ECTestFixture
     {
     ECSchemaPtr m_becaSchema;
 
-    virtual void SetUp() override
+    void SetUp() override
         {
-        ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+        ECTestFixture::SetUp();
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
         SchemaKey key("EditorCustomAttributes", 1, 3);
         m_becaSchema = ECSchema::LocateSchema(key, *schemaContext);
         ASSERT_TRUE(m_becaSchema.IsValid());
-
-        ECTestFixture::SetUp();
         }
 
     ECClassCP GetPropertyPriorityClass() const
@@ -56,9 +55,11 @@ struct StandardCustomAttributeConversionTests : ECTestFixture
 
     Utf8String GetDateTimeInfoValue(IECInstancePtr instancePtr, Utf8CP name);
 
-    virtual void SetUp() override
+    void SetUp() override
         {
-        ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+        ECTestFixture::SetUp();
+
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
         SchemaKey key("Bentley_Standard_CustomAttributes", 1, 6);
         m_bscaSchema = ECSchema::LocateSchema(key, *schemaContext);
@@ -67,8 +68,6 @@ struct StandardCustomAttributeConversionTests : ECTestFixture
         SchemaKey coreCAKey("CoreCustomAttributes", 1, 0, 0);
         m_coreCASchema = ECSchema::LocateSchema(coreCAKey, *schemaContext);
         ASSERT_TRUE(m_coreCASchema.IsValid());
-
-        ECTestFixture::SetUp();
         }
     };
 
@@ -77,11 +76,17 @@ struct StandardCustomAttributeConversionTests : ECTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 struct CustomAttributeRemovalTest : ECTestFixture
     {
-    ECSchemaReadContextPtr   m_readContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr m_readContext;
     Utf8String m_customAttributeName;
     Utf8String m_customAttributeSchemaName;
     ECSchemaPtr m_schema;
     ECSchemaPtr m_refSchema;
+
+    void SetUp() override
+        {
+        ECTestFixture::SetUp();
+        m_readContext = ECSchemaReadContext::CreateContext();
+        }
 
     CustomAttributeRemovalTest(Utf8String schemaName, Utf8String customAttributeName)
         :m_customAttributeName(customAttributeName), m_customAttributeSchemaName(schemaName){}
@@ -131,7 +136,13 @@ struct CustomAttributeRemovalTest : ECTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 struct StandardValueToEnumConversionTest : CustomAttributeRemovalTest
     {
-    ECSchemaReadContextPtr   m_validationReadContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr   m_validationReadContext;
+
+    void SetUp() override
+        {
+        CustomAttributeRemovalTest::SetUp();
+        m_validationReadContext = ECSchemaReadContext::CreateContext();
+        }
 
     StandardValueToEnumConversionTest()
         :CustomAttributeRemovalTest("EditorCustomAttributes", "StandardValues") {}

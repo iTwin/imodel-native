@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/InstanceTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -120,8 +120,9 @@ struct StringEncodingTests : ECTestFixture
     {
     ECSchemaPtr         m_schema;
 
-    StringEncodingTests() : ECTestFixture()
+    void SetUp() override
         {
+        ECTestFixture::SetUp();
         ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
         ECSchemaPtr schema;
         EXPECT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlString (m_schema, s_schemaXml, *schemaContext));  
