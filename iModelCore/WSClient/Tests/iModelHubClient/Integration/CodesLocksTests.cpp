@@ -35,6 +35,87 @@ struct CodesLocksTests : public iModelTestsBase
     };
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                    Benas.Kikutis                   01/2018
+//---------------------------------------------------------------------------------------
+TEST_F(CodesLocksTests, QueryLocksCodes)
+    {
+    //Prapare imodel and acquire briefcases
+    BriefcasePtr briefcase = AcquireAndOpenBriefcase();
+    DgnDbR db = briefcase->GetDgnDb();
+    auto manager = IntegrationTestsBase::_GetRepositoryManager(db);
+
+    int codesCountBeforeTest = briefcase->GetiModelConnection().QueryAllCodes()->GetResult().GetValue().size();
+    int locksCountBeforeTest = briefcase->GetiModelConnection().QueryAllLocks()->GetResult().GetValue().size();
+
+    iModelHubHelpers::ExpectCodesCount(briefcase, 0);
+    iModelHubHelpers::ExpectLocksCount(briefcase, 0);
+
+    //Create two models in different briefcases. This should also acquire locks automatically.
+    PhysicalModelPtr model = CreateModel(TestCodeName().c_str(), briefcase->GetDgnDb());
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false));
+
+    DgnCode code = CreateElementCode(db, TestCodeName(1).c_str(), TestCodeName().c_str());
+    DgnCode code2 = CreateElementCode(db, TestCodeName(2).c_str(), TestCodeName().c_str());
+    DgnCodeSet codesSet;
+    codesSet.insert(code);
+    codesSet.insert(code2);
+
+    // Firstly codes are not reserved
+    RepositoryStatus status;
+    EXPECT_FALSE(db.BriefcaseManager().AreCodesReserved(codesSet, &status));
+    EXPECT_EQ(RepositoryStatus::CodeNotReserved, status);
+
+    // Reserve codes
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().ReserveCodes(codesSet).Result());
+
+    iModelHubHelpers::ExpectCodesCount(briefcase, 2);
+    iModelHubHelpers::ExpectLocksCount(briefcase, 4);
+
+
+    codesSet.clear();
+    codesSet.insert(code);
+
+    //Check if querying locks and codes work as expected
+    LockableIdSet lockIds;
+
+    iModelHubHelpers::ExpectCodesCountByIds(*briefcase, 1, true, codesSet);
+
+    auto result1 = briefcase->GetiModelConnection().QueryLocksByBriefcaseId(briefcase->GetBriefcaseId())->GetResult();
+    EXPECT_SUCCESS(result1);
+    EXPECT_EQ(4, result1.GetValue().size());
+
+    auto result2 = briefcase->GetiModelConnection().QueryCodesLocksById(codesSet, lockIds)->GetResult();
+    EXPECT_SUCCESS(result2);
+    EXPECT_EQ(1, result2.GetValue().GetCodes().size());
+
+    auto result3 = briefcase->GetiModelConnection().QueryCodesLocksById(codesSet, lockIds, briefcase->GetBriefcaseId())->GetResult();
+    EXPECT_SUCCESS(result3);
+    EXPECT_EQ(1, result3.GetValue().GetCodes().size());
+
+    auto result4 = briefcase->GetiModelConnection().QueryCodesByBriefcaseId(briefcase->GetBriefcaseId())->GetResult();
+    EXPECT_SUCCESS(result4);
+    EXPECT_EQ(2, result4.GetValue().size());
+
+    codesSet.clear();
+    auto result5 = briefcase->GetiModelConnection().QueryCodesByIds(codesSet, briefcase->GetBriefcaseId())->GetResult();
+    EXPECT_SUCCESS(result5);
+    EXPECT_EQ(0, result5.GetValue().size());
+
+    auto result6 = briefcase->GetiModelConnection().QueryAllCodes()->GetResult();
+    EXPECT_SUCCESS(result6);
+    EXPECT_EQ(3 + codesCountBeforeTest, result6.GetValue().size());
+
+    auto result7 = briefcase->GetiModelConnection().QueryAllLocks()->GetResult();
+    EXPECT_SUCCESS(result7);
+    EXPECT_EQ(4 + locksCountBeforeTest, result7.GetValue().size());
+
+    auto result8 = briefcase->GetiModelConnection().QueryAllCodesLocks()->GetResult();
+    EXPECT_SUCCESS(result8);
+    EXPECT_EQ(3 + codesCountBeforeTest, result8.GetValue().GetCodes().size());
+    EXPECT_EQ(4 + locksCountBeforeTest, result8.GetValue().GetLocks().size());
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                    Andrius.Zonys                   08/2016
 //---------------------------------------------------------------------------------------
 TEST_F(CodesLocksTests, PushAndRelinquishCodesLocks)
@@ -299,3 +380,5 @@ TEST_F(CodesLocksTests, RelinquishOtherUserCodesLocks)
     ExpectCodeState(CreateCodeReserved(modelElem3->GetCode(), db2), imodelManager2);
     iModelHubHelpers::ExpectLocksCount(briefcase2, 3);
     }
+
+    // Please keep in mind that in case of pushing new ChangeSet you will get AnotherUserIsPushing exception, because of one of the tests above

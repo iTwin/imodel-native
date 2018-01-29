@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/CompatibilityTests/Parser/TestData.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -40,6 +40,7 @@ struct TestRepositories
     {
     TestRepository create;
     TestRepository upgrade;
+    TestRepository downloadSchemas;
     };
 
 void PrintTo(const TestRepository& value, ::std::ostream* os);

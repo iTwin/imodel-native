@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/CompatibilityTests/TestMain.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -36,8 +36,10 @@ int main(int argc, char** argv)
         FAIL();
         });
 
-
     ::testing::InitGoogleMock(&argc, argv);
+
+    if (::testing::GTEST_FLAG(filter).empty() || ::testing::GTEST_FLAG(filter) == "*")
+        ::testing::GTEST_FLAG(filter) = "*RepositoryCompatibilityTests*";
 
     int runStatus = RUN_ALL_TESTS();
 

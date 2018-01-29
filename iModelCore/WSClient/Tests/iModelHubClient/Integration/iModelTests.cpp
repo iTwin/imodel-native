@@ -58,6 +58,21 @@ TEST_F(iModelTests, SuccessfulCreateiModel)
     iModelResult getResult = s_client->GetiModelById(s_projectId, createResult.GetValue()->GetId())->GetResult();
     ASSERT_SUCCESS(getResult) << "Needs defect filed";
     EXPECT_EQ(getResult.GetValue()->GetUserCreated(), getResult.GetValue()->GetOwnerInfo()->GetId());
+
+    auto queryResult = s_client->GetiModels(s_projectId)->GetResult();
+    ASSERT_SUCCESS(queryResult);
+    bvector<iModelInfoPtr>& imodels = queryResult.GetValue();
+    DateTime compareDate (DateTime::Kind::Utc, 2018, 1, 1, 0, 0, 0, 0);
+    for (iModelInfoPtr imodel : imodels)
+        {
+        EXPECT_FALSE(imodel->GetServerURL().empty());
+        EXPECT_FALSE(imodel->GetId().empty());
+        EXPECT_FALSE(imodel->GetName().empty());
+
+        DateTimeCR createdDate = imodel->GetCreatedDate();
+        EXPECT_TRUE(createdDate.IsValid());
+        EXPECT_EQ((int)DateTime::CompareResult::EarlierThan, (int)DateTime::Compare(compareDate, createdDate));
+        }
     }
 
 /*--------------------------------------------------------------------------------------+

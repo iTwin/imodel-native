@@ -4,7 +4,7 @@
 USING_NAMESPACE_BENTLEY_IMODELHUB_UNITTESTS
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    05/2015
+* @bsimethod                                                    Farhad.Kabir    11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 MockIMSHttpHandler::MockIMSHttpHandler()
     {
@@ -12,7 +12,7 @@ MockIMSHttpHandler::MockIMSHttpHandler()
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    05/2015
+* @bsimethod                                                    Farhad.Kabir    11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 Tasks::AsyncTaskPtr<Http::Response> MockIMSHttpHandler::_PerformRequest(RequestCR request)
     {

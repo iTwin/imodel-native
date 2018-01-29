@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/iModelHub/Client/Client.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -71,7 +71,7 @@ private:
     (
     BeSQLite::DbResult* status, BeFileName filePath, ChangeSets changeSets, 
     SchemaUpgradeOptions::DomainUpgradeOptions domainUpgradeOptions = SchemaUpgradeOptions::DomainUpgradeOptions::ValidateOnly,
-    SchemaUpgradeOptions::RevisionUpgradeOptions changeSetUpgradeOptions = SchemaUpgradeOptions::RevisionUpgradeOptions::Merge
+    RevisionProcessOption processOption = RevisionProcessOption::Merge
     );
 
 public:
@@ -253,10 +253,10 @@ public:
     //! @param[out] status BE_SQLITE_OK if the DgnDb file was successfully opened, error code otherwise. May be NULL.
     //! @param[in] filePath Path to DgnDb that schema changes should be added or removed.
     //! @param[in] changeSets ChangeSets to add or remove.
-    //! @param[in] changeSetUpgradeOptions Option to control the ChangeSet upgrades
+    //! @param[in] processOption Option to control the ChangeSet upgrades
     //! @return Returns a shared pointer to opened DgnDb instance.
     IMODELHUBCLIENT_EXPORT static DgnDbPtr OpenWithSchemaUpgrade(BeSQLite::DbResult* status, BeFileName filePath, ChangeSets changeSets,
-                                                                 SchemaUpgradeOptions::RevisionUpgradeOptions changeSetUpgradeOptions = SchemaUpgradeOptions::RevisionUpgradeOptions::Merge);
+                                                                 RevisionProcessOption processOption = RevisionProcessOption::Merge);
 
 
     //! Dowloads local briefcase updated to specified version. This briefcase can be used as standalone file and cannot be opened with function OpenBriefcase

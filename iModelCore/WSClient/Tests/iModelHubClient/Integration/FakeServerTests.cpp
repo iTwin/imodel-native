@@ -93,6 +93,9 @@ class FakeServerFixture : public IntegrationTestsBase
             }
     };
 /*
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FakeServerFixture, CreateiModelFromSeed) 
 {
 WCharCP serverPath = outPath.GetWCharCP();
@@ -144,7 +147,9 @@ Json::Value iModelCreationJson(Utf8StringCR iModelName, Utf8StringCR description
     }
 
 #ifdef WIP
-
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FakeServerFixture, CreateiModel)
     {
 
@@ -266,6 +271,9 @@ TEST_F(FakeServerFixture, TestBuddyResponse)
         printf("%s\n", tokens[1].c_str());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FakeServerFixture, TestMockHandler)
     {
     /*ClientPtr    m_client;
