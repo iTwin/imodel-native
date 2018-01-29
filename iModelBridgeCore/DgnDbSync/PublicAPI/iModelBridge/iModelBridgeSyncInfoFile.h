@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/iModelBridge/iModelBridgeSyncInfoFile.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -702,5 +702,19 @@ public:
     IMODEL_BRIDGE_EXPORT bool DetectSpatialDataTransformChange(TransformR newTrans, TransformR oldTrans,
         iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ROWID srid, Utf8CP kind, Utf8StringCR id);
 };
+//=======================================================================================
+// @bsiclass                                    BentleySystems 
+//=======================================================================================
+struct DocSourceItem : iModelBridgeSyncInfoFile::ISourceItem
+    {
+    DgnCode m_linkCode;
+    iModelBridgeSyncInfoFile::SourceState m_sstate;
+
+    DocSourceItem(DgnCode const& linkCode, iModelBridgeSyncInfoFile::SourceState const& sstate) : m_linkCode(linkCode), m_sstate(sstate) { ; }
+
+    Utf8String _GetId() override { return m_linkCode.GetValue().GetUtf8CP(); }
+    double _GetLastModifiedTime() override { return m_sstate.GetLastModifiedTime(); }
+    Utf8String _GetHash() override { return m_sstate.GetHash(); }
+    };
 
 END_BENTLEY_DGN_NAMESPACE
