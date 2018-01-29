@@ -1012,6 +1012,77 @@ TEST_F(ConverterTests, UseConverterAsLibrary)
     wprintf(L"%ls\n", outputBim->GetFileName().c_str());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            01/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ConverterTests, UpdateWithDeletedParent)
+    {
+    LineUpFiles(L"UpdateWithDeletedParent.bim", L"Test3d.dgn", false);
+    V8FileEditor v8editor;
+    v8editor.Open(m_v8FileName);
+
+    BentleyStatus status = ERROR;
+    DgnV8Api::EditElementHandle arcEEH1, arcEEH2;
+    v8editor.CreateArc(arcEEH1, false, v8editor.m_defaultModel);
+    v8editor.CreateArc(arcEEH2, false, v8editor.m_defaultModel);
+
+    DgnV8Api::EditElementHandle cellEEH;
+    v8editor.CreateCell(cellEEH, L"UserCell", false, v8editor.m_defaultModel);
+
+    status = DgnV8Api::NormalCellHeaderHandler::AddChildElement(cellEEH, arcEEH1);
+    EXPECT_TRUE(SUCCESS == status);
+    status = DgnV8Api::NormalCellHeaderHandler::AddChildElement(cellEEH, arcEEH2);
+    EXPECT_TRUE(SUCCESS == status);
+    status = DgnV8Api::NormalCellHeaderHandler::AddChildComplete(cellEEH);
+    EXPECT_TRUE(SUCCESS == status);
+
+    EXPECT_TRUE(SUCCESS == cellEEH.AddToModel());
+    v8editor.Save();
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+
+    DgnElementId child1Id;
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+
+        DgnElementCPtr elem1 = FindV8ElementInDgnDb(*db, cellEEH.GetElementId());
+        ASSERT_TRUE(elem1.IsValid());
+        DgnElementIdSet children = elem1->QueryChildren();
+        EXPECT_EQ(2, (int32_t) children.size()) << "Number of child in cell are not equal";
+
+        child1Id = *children.begin();
+        DgnElementCPtr child1 = db->Elements().GetElement(child1Id);
+        ASSERT_TRUE(child1.IsValid());
+        }
+
+    DgnV8Api::DisplayHandler* dHandler = cellEEH.GetDisplayHandler();
+    ASSERT_TRUE(nullptr != dHandler);
+
+    DgnV8Api::ElementAgenda   dropAgenda;
+    DgnV8Api::DropGeometry    dropGeometry;
+
+    dropGeometry.SetOptions(DgnV8Api::DropGeometry::OPTION_Complex);
+
+    ASSERT_TRUE(SUCCESS == dHandler->Drop(cellEEH, dropAgenda, dropGeometry));
+    ASSERT_TRUE(SUCCESS == cellEEH.DeleteFromModel());
+
+    DgnV8Api::EditElementHandle* curr = dropAgenda.GetFirstP();
+    DgnV8Api::EditElementHandle* end = curr + dropAgenda.GetCount();
+
+    for (; curr < end; curr++)
+        curr->AddToModel();
+    v8editor.Save();
+
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        DgnElementCPtr child1 = db->Elements().GetElement(child1Id);
+        ASSERT_TRUE(child1.IsValid());
+        }
+
+    }
+
 struct TestXDomain : XDomain
     {
     int m_counts[2] {};
