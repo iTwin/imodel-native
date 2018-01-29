@@ -91,17 +91,17 @@ struct Conversion
 struct UnitSystem
 {
 friend struct StandardUnitSystems;
+friend struct UnitRegistry;
 private:
     Utf8String m_name;
 
     UnitSystem() = delete;
+    static UnitSystemP Create(Utf8CP name) {return new UnitSystem(name);}
 
 protected:
     UnitSystem(Utf8CP name) : m_name(name) {}
 
 public:
-    static UnitSystemP Create(Utf8CP name) {return new UnitSystem(name);}
-
     Utf8CP GetName() const {return m_name.c_str();}
 };
 

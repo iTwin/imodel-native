@@ -84,119 +84,6 @@ void UnitRegistry::InsertUnique (Utf8Vector &vec, Utf8String &str)
     vec.push_back(str);
     }
 
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void UnitRegistry::AddSystem (Utf8CP name)
-    {
-    // TODO: use error return enum
-    if (Utf8String::IsNullOrEmpty(name))
-        {
-        LOG.error("Cannot create UnitSystem because name is null");
-        return;
-        }
-    if (NameConflicts(name))
-        {
-        LOG.errorv("Cannot create UnitSystem '%s' because that name is already in use.", name);
-        return;
-        }
-
-    auto unitSystem = UnitSystem::Create(name);
-    m_systems.Insert(unitSystem->GetName(), unitSystem);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    01/2018
-//--------------------------------------------------------------------------------------
-void UnitRegistry::AddSystem(UnitSystemR unitSystem)
-    {
-    if (NameConflicts(unitSystem.GetName()))
-        {
-        LOG.errorv("Cannot create UnitSystem '%s' because that name is already in use.", unitSystem.GetName());
-        return;
-        }
-
-    m_systems.Insert(unitSystem.GetName(), &unitSystem);
-    }
-
-Utf8CP GetBasePhenomenonName(Utf8Char baseSymbol)
-    {
-    switch (baseSymbol)
-        {
-        case BasePhenomena::Capita:
-            return CAPITA;
-        case BasePhenomena::ElectricCurrent:
-            return CURRENT;
-        case BasePhenomena::Finance:
-            return FINANCE;
-        case BasePhenomena::Length:
-            return LENGTH;
-        case BasePhenomena::Luminosity:
-            return LUMINOSITY;
-        case BasePhenomena::Mass:
-            return MASS;
-        case BasePhenomena::Mole:
-            return MOLE;
-        case BasePhenomena::PlaneAngle:
-            return ANGLE;
-        case BasePhenomena::Ratio:
-            return ONE;
-        case BasePhenomena::SolidAngle:
-            return SOLIDANGLE;
-        case BasePhenomena::Temperature:
-            return TEMPERATURE;
-        case BasePhenomena::TemperatureChange:
-            return TEMPERATURE_CHANGE;
-        case BasePhenomena::Time:
-            return TIME;
-        default:
-            return EMPTY_STRING;
-        }
-    }
-//-------------------------------------------------------------------------------------//
-// @bsimethod                                              Colin.Kerr     02/16
-//+---------------+---------------+---------------+---------------+---------------+----//
-void UnitRegistry::AddBasePhenomenon(Utf8Char baseSymbol)
-    {
-    Utf8CP phenomenaName = GetBasePhenomenonName(baseSymbol);
-    if (Utf8String::IsNullOrEmpty(phenomenaName))
-        return;
-
-    if (HasPhenomena(phenomenaName))
-        {
-        LOG.errorv("Cannot create Base Phenomenon '%s' because name is already in use", phenomenaName);
-        return;
-        }
-
-    auto phenomena = new Phenomenon(phenomenaName, phenomenaName, baseSymbol, m_nextId);
-    ++m_nextId;
-
-    m_phenomena.insert(bpair<Utf8String, PhenomenonP>(phenomenaName, phenomena));
-    }
-
-//-------------------------------------------------------------------------------------//
-// @bsimethod                                              Colin.Kerr     02/16
-//+---------------+---------------+---------------+---------------+---------------+----//
-void UnitRegistry::AddPhenomenon (Utf8CP phenomenaName, Utf8CP definition)
-    {
-    if (Utf8String::IsNullOrEmpty(phenomenaName))
-        {
-        LOG.error("Failed to create Phenomenon because name is null");
-        return;
-        }
-
-    if (HasPhenomena(phenomenaName))
-        {
-        LOG.errorv("Cannot create Phenomenon '%s' because name is already in use", phenomenaName);
-        return;
-        }
-
-    auto phenomena = new Phenomenon(phenomenaName, definition, ' ', m_nextId);
-    ++m_nextId;
-
-    m_phenomena.insert(bpair<Utf8String, PhenomenonP>(phenomenaName, phenomena));
-    }
-
 //---------------------------------------------------------------------------------------//
 // @bsimethod                                              Colin.Kerr           02/16
 //+---------------+---------------+---------------+---------------+---------------+------//
@@ -245,27 +132,6 @@ UnitP UnitRegistry::AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP
     m_units.insert(bpair<Utf8String, UnitP>(unitName, unit));
 
     return unit;
-    }
-
-//---------------------------------------------------------------------------------------//
-// @bsimethod                                              Colin.Kerr           02/16
-//+---------------+---------------+---------------+---------------+---------------+------//
-UnitCP UnitRegistry::AddUnitForBasePhenomenon(Utf8CP unitName, Utf8Char baseSymbol)
-    {
-    if (Utf8String::IsNullOrEmpty(unitName))
-        {
-        LOG.errorv("Cannot create base unit because the input name is null");
-        return nullptr;
-        }
-
-    Utf8CP phenomenonName = GetBasePhenomenonName(baseSymbol);
-    if (Utf8String::IsNullOrEmpty(phenomenonName))
-        {
-        LOG.errorv("Cannot create base unit '%s' because the input base symbol '%c' does not map to a base phenomenon", unitName, baseSymbol);
-        return nullptr;
-        }
-
-    return AddUnitInternal(phenomenonName, SI, unitName, unitName, baseSymbol, 1, 0, false);
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -501,6 +367,105 @@ void UnitRegistry::AllUnits(bvector<UnitCP>& allUnits) const
         }
     }
 
+Utf8CP GetBasePhenomenonName(Utf8Char baseSymbol)
+    {
+    switch (baseSymbol)
+        {
+        case BasePhenomena::Capita:
+            return CAPITA;
+        case BasePhenomena::ElectricCurrent:
+            return CURRENT;
+        case BasePhenomena::Finance:
+            return FINANCE;
+        case BasePhenomena::Length:
+            return LENGTH;
+        case BasePhenomena::Luminosity:
+            return LUMINOSITY;
+        case BasePhenomena::Mass:
+            return MASS;
+        case BasePhenomena::Mole:
+            return MOLE;
+        case BasePhenomena::PlaneAngle:
+            return ANGLE;
+        case BasePhenomena::Ratio:
+            return ONE;
+        case BasePhenomena::SolidAngle:
+            return SOLIDANGLE;
+        case BasePhenomena::Temperature:
+            return TEMPERATURE;
+        case BasePhenomena::TemperatureChange:
+            return TEMPERATURE_CHANGE;
+        case BasePhenomena::Time:
+            return TIME;
+        default:
+            return EMPTY_STRING;
+        }
+    }
+//-------------------------------------------------------------------------------------//
+// @bsimethod                                              Colin.Kerr     02/16
+//+---------------+---------------+---------------+---------------+---------------+----//
+void UnitRegistry::AddBasePhenomenon(Utf8Char baseSymbol)
+    {
+    Utf8CP phenomenaName = GetBasePhenomenonName(baseSymbol);
+    if (Utf8String::IsNullOrEmpty(phenomenaName))
+        return;
+
+    if (HasPhenomena(phenomenaName))
+        {
+        LOG.errorv("Cannot create Base Phenomenon '%s' because name is already in use", phenomenaName);
+        return;
+        }
+
+    auto phenomena = new Phenomenon(phenomenaName, phenomenaName, baseSymbol, m_nextId);
+    ++m_nextId;
+
+    m_phenomena.insert(bpair<Utf8String, PhenomenonP>(phenomenaName, phenomena));
+    }
+
+//-------------------------------------------------------------------------------------//
+// @bsimethod                                              Colin.Kerr     02/16
+//+---------------+---------------+---------------+---------------+---------------+----//
+void UnitRegistry::AddPhenomenon (Utf8CP phenomenaName, Utf8CP definition)
+    {
+    if (Utf8String::IsNullOrEmpty(phenomenaName))
+        {
+        LOG.error("Failed to create Phenomenon because name is null");
+        return;
+        }
+
+    if (HasPhenomena(phenomenaName))
+        {
+        LOG.errorv("Cannot create Phenomenon '%s' because name is already in use", phenomenaName);
+        return;
+        }
+
+    auto phenomena = new Phenomenon(phenomenaName, definition, ' ', m_nextId);
+    ++m_nextId;
+
+    m_phenomena.insert(bpair<Utf8String, PhenomenonP>(phenomenaName, phenomena));
+    }
+
+//---------------------------------------------------------------------------------------//
+// @bsimethod                                              Colin.Kerr           02/16
+//+---------------+---------------+---------------+---------------+---------------+------//
+UnitCP UnitRegistry::AddUnitForBasePhenomenon(Utf8CP unitName, Utf8Char baseSymbol)
+    {
+    if (Utf8String::IsNullOrEmpty(unitName))
+        {
+        LOG.errorv("Cannot create base unit because the input name is null");
+        return nullptr;
+        }
+
+    Utf8CP phenomenonName = GetBasePhenomenonName(baseSymbol);
+    if (Utf8String::IsNullOrEmpty(phenomenonName))
+        {
+        LOG.errorv("Cannot create base unit '%s' because the input base symbol '%c' does not map to a base phenomenon", unitName, baseSymbol);
+        return nullptr;
+        }
+
+    return AddUnitInternal(phenomenonName, SI, unitName, unitName, baseSymbol, 1, 0, false);
+    }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                      02/2016
 //--------------------------------------------------------------------------------------
@@ -527,6 +492,41 @@ void UnitRegistry::AllPhenomena(bvector<PhenomenonCP>& allPhenomena) const
     {
     for (auto const& phenomenonAndName : m_phenomena)
         allPhenomena.push_back(phenomenonAndName.second);
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void UnitRegistry::AddSystem (Utf8CP name)
+    {
+    // TODO: use error return enum
+    if (Utf8String::IsNullOrEmpty(name))
+        {
+        LOG.error("Cannot create UnitSystem because name is null");
+        return;
+        }
+    if (HasSystem(name))
+        {
+        LOG.errorv("Cannot create UnitSystem '%s' because that name is already in use.", name);
+        return;
+        }
+
+    auto unitSystem = UnitSystem::Create(name);
+    m_systems.Insert(unitSystem->GetName(), unitSystem);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+void UnitRegistry::AddSystem(UnitSystemR unitSystem)
+    {
+    if (HasSystem(unitSystem.GetName()))
+        {
+        LOG.errorv("Cannot create UnitSystem '%s' because that name is already in use.", unitSystem.GetName());
+        return;
+        }
+
+    m_systems.Insert(unitSystem.GetName(), &unitSystem);
     }
 
 //--------------------------------------------------------------------------------------

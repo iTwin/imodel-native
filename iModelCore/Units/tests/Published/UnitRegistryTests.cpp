@@ -57,15 +57,13 @@ struct UnitRegistryTests : UnitsTestFixture
 
         void Populate();
 
-    public:
-        TestUnitLocater() { Populate(); }
+    protected:
+        UnitP _LocateUnitP(Utf8CP name) const override;
+        PhenomenonP _LocatePhenomenonP(Utf8CP name) const override {return 0 == strcmp(m_phenomenon->GetName(), name) ? m_phenomenon : nullptr;}
+        UnitSystemP _LocateUnitSystemP(Utf8CP name) const override {return 0 == strcmp(m_unitSystem->GetName(), name) ? m_unitSystem : nullptr;}
 
-        UnitCP LocateUnit(Utf8CP name) const override {return LocateUnitP(name);}
-        UnitP LocateUnitP(Utf8CP name) const override;
-        PhenomenonCP LocatePhenomenon(Utf8CP name) const override {return LocatePhenomenonP(name);}
-        PhenomenonP LocatePhenomenonP(Utf8CP name) const override {return 0 == strcmp(m_phenomenon->GetName(), name) ? m_phenomenon : nullptr;}
-        UnitSystemCP LocateUnitSystem(Utf8CP name) const override { return LocateUnitSystemP(name); }
-        UnitSystemP LocateUnitSystemP(Utf8CP name) const override {return 0 == strcmp(m_unitSystem->GetName(), name) ? m_unitSystem : nullptr;}
+    public:
+        TestUnitLocater() {Populate();}
     };
 };
 
@@ -160,7 +158,6 @@ TEST_F(UnitRegistryTests, TestEveryDefaultUnitIsAddedToItsPhenomenon)
 //! UnitRegistryTests
 //=======================================================================================
 
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    01/2018
 //--------------------------------------------------------------------------------------
@@ -178,7 +175,7 @@ void UnitRegistryTests::TestUnitLocater::Populate()
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    01/2018
 //--------------------------------------------------------------------------------------
-UnitP UnitRegistryTests::TestUnitLocater::LocateUnitP(Utf8CP name) const
+UnitP UnitRegistryTests::TestUnitLocater::_LocateUnitP(Utf8CP name) const
     {
     auto val_iter = m_units.find(name);
     if (val_iter == m_units.end())

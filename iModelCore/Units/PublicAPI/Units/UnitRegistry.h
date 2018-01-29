@@ -24,13 +24,19 @@ typedef RefCountedPtr<UnitRegistry> UnitRegistryPtr;
 //=======================================================================================
 struct IUnitLocater : NonCopyableClass
 {
+
+protected:
+    virtual UnitP _LocateUnitP(Utf8CP name) const = 0;
+    virtual PhenomenonP _LocatePhenomenonP(Utf8CP name) const = 0;
+    virtual UnitSystemP _LocateUnitSystemP(Utf8CP name) const = 0;
+
 public:
-    virtual UnitCP LocateUnit(Utf8CP name) const = 0;
-    virtual UnitP LocateUnitP(Utf8CP name) const = 0;
-    virtual PhenomenonCP LocatePhenomenon(Utf8CP name) const = 0;
-    virtual PhenomenonP LocatePhenomenonP(Utf8CP name) const = 0;
-    virtual UnitSystemCP LocateUnitSystem(Utf8CP name) const = 0;
-    virtual UnitSystemP LocateUnitSystemP(Utf8CP name) const = 0;
+    UnitP LocateUnitP(Utf8CP name) const {return _LocateUnitP(name);}
+    UnitCP LocateUnit(Utf8CP name) const {return LocateUnitP(name);}
+    PhenomenonP LocatePhenomenonP(Utf8CP name) const {return _LocatePhenomenonP(name);}
+    PhenomenonCP LocatePhenomenon(Utf8CP name) const {return LocatePhenomenonP(name);}
+    UnitSystemP LocateUnitSystemP(Utf8CP name) const {return _LocateUnitSystemP(name);}
+    UnitSystemCP LocateUnitSystem(Utf8CP name) const {return LocateUnitSystemP(name);}
 };
 
 //=======================================================================================
