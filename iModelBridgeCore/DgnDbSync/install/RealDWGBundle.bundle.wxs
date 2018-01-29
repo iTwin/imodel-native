@@ -15,7 +15,7 @@
         <WixVariable Id="WixMbaPrereqLicenseUrl" Value="Nothing.rtf" />
         
         <Chain ParallelCache="yes">
-            <MsiPackage Id="PowerProductPackage" SourceFile="$(var.PowerProductPath)$(var.bbVarProductShortName)$(var.bbVarProductTargetPlatform).msi"  Compressed="yes"  Visible="no" EnableFeatureSelection="yes" ForcePerMachine="yes" Description="iModelBridge for Autodesk(R) DWG(TM)">
+            <MsiPackage Id="PowerProductPackage" SourceFile="$(var.PowerProductPath)$(var.bbVarProductShortName)$(var.bbVarProductTargetPlatform).msi"  Compressed="yes"  Visible="no" EnableFeatureSelection="yes" ForcePerMachine="yes" Description="iModel Bridge Service - Autodesk(R) DWG(TM)">
                 <MsiProperty Name="INSTALLDIR" Value="[InstallDirectory]"/>
                 <MsiProperty Name="PACKAGE_HOMEROOT" Value="[ConfigurationDirectory]"/>
                 <MsiProperty Name="FROMLAUNCHSETUP" Value="1"/>
@@ -76,7 +76,7 @@
       </wbb:UISequences>
 
         <?ifdef BBinstallerBuildTypeRelease?>
-        <Variable Name="InstallDirectory" Value="[ProgramFiles64Folder]Bentley\IModelBridgeForRealDwg\" Persisted="yes" Type="string"/>
+        <Variable Name="InstallDirectory" Value="[ProgramFiles64Folder]Bentley\DwgBridge\" Persisted="yes" Type="string"/>
         <?else?>
         <Variable Name="InstallDirectory" Value="[ProgramFiles64Folder]Bentley\$(var.bbVarProductShortName)-$(var.INSTALLER_PRODUCT_VERSION)\" Persisted="yes" Type="string"/>
         <?endif?>

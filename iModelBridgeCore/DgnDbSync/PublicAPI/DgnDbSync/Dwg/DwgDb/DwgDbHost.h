@@ -80,7 +80,7 @@ public:
     virtual bool            _GetAlternateFontName (WStringR altFont) const { altFont.assign(L"simplex.shx"); return true; }
     //! Supply DWG file password.
     virtual bool            _GetPassword (WCharCP dwgName, PasswordChoice choice, WCharP password, const size_t bufSize) { return false; }
-    //! Supply a registry product root key.  Default is "SOFTWARE\\Autodesk\\ObjectDBX\\R<Version.Number>.
+    //! Supply a registry product root key.  Default is "SOFTWARE\\Autodesk\\ObjectDBX\\R<Version.Number>".
     virtual WCharCP         _GetRegistryProductRootKey (RootRegistry type) { return nullptr; }
     //! Supply a locale for the product from Microsoft assigned ID's.
     virtual LCID            _GetRegistryProductLCID () { return 0x0409; /*English*/ }

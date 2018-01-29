@@ -968,7 +968,6 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
         {
         GetRegistry()._QueryAllFilesAssignedToBridge(params.m_drawingAndSheetFiles, m_jobEnvArgs.m_bridgeRegSubKey.c_str());
         }
-    params.SetDoDetectDeletedModelsAndElements(false); // *** TFS#781198
     if (!m_jobEnvArgs.m_skipAssignmentCheck)
         params.SetDocumentPropertiesAccessor(*this);
     params.SetBridgeRegSubKey(m_jobEnvArgs.m_bridgeRegSubKey);
@@ -1252,6 +1251,7 @@ int iModelBridgeFwk::ProcessSchemaChange()
 
     DbResult dbres;
     bool madeSchemaChanges = false;
+    m_briefcaseDgnDb = nullptr; // close the current connection to the briefcase db before attempting to reopen it!
     m_briefcaseDgnDb = m_bridge->OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges);
     if (!m_briefcaseDgnDb.IsValid())
         {
@@ -1361,6 +1361,7 @@ int iModelBridgeFwk::UpdateExistingBim()
 
         // Open the briefcase in the normal way, allowing domain schema changes to be pulled in.
         bool madeSchemaChanges = false;
+        m_briefcaseDgnDb = nullptr; // close the current connection to the briefcase db before attempting to reopen it!
         m_briefcaseDgnDb = m_bridge->OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges);
         uint8_t retryopenII = 0;
         while (!m_briefcaseDgnDb.IsValid() && (DbResult::BE_SQLITE_ERROR_SchemaUpgradeFailed == dbres) && (++retryopenII < m_serverArgs.m_maxRetryCount) && DgnDbServerClientUtils::SleepBeforeRetry())

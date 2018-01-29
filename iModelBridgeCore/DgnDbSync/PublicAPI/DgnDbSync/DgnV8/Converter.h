@@ -972,6 +972,7 @@ protected:
     DGNDBSYNC_EXPORT ~Converter();
 
     DGNDBSYNC_EXPORT virtual SyncInfo::V8ElementMapping _FindFirstElementMappedTo(DgnV8Api::DisplayPath const& proxyPath, bool tail, IChangeDetector::T_SyncInfoElementFilter* filter = nullptr);
+    virtual DgnV8Api::ModelInfo const& _GetModelInfo(DgnV8ModelCR v8Model) { return v8Model.GetModelInfo(); }
 
 public:
     virtual Params const& _GetParams() const = 0;
@@ -1060,7 +1061,7 @@ public:
     DgnElementId WriteRepositoryLink(DgnV8FileR file);
 
     //! Look in the in-memory cache for the RepositoryLink that represents this file in the BIM
-    DgnElementId GetRepositoryLinkFromAppData(DgnV8FileCR file);
+    DGNDBSYNC_EXPORT DgnElementId GetRepositoryLinkFromAppData(DgnV8FileCR file);
 
     void SetRepositoryLinkInAppData(DgnV8FileCR file, DgnElementId rlinkId);
 
@@ -2179,6 +2180,8 @@ protected:
 
     SpatialConverterBase(SpatialParams const& p) : T_Super(p) {}
 
+    DgnV8Api::ModelInfo const& _GetModelInfo(DgnV8ModelCR v8Model) override { return m_rootModelRef->GetDgnModelP()->GetModelInfo(); }
+
 public:
     virtual SpatialParams const& _GetSpatialParams() const = 0;
 
@@ -2831,6 +2834,7 @@ struct ConvertV8Lights : ConvertToDgnDbElementExtension
     void _ProcessResults(ElementConversionResults&, DgnV8EhCR, ResolvedModelMapping const&, Converter&) override;
     bool _IgnorePublicChildren() override {return true;}
     bool _DisablePostInstancing() override {return true;}
+    BisConversionRule _DetermineBisConversionRule(DgnV8EhCR v8eh, DgnDbR dgndb, BisConversionTargetModelInfoCR) override;
 };
 
 //=======================================================================================
