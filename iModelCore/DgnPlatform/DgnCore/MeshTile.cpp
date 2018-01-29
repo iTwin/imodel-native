@@ -882,6 +882,10 @@ IFacetOptionsPtr TileGenerator::CreateTileFacetOptions(double chordTolerance)
     opts->SetNormalsRequired(true);
     opts->SetBsplineSurfaceEdgeHiding(0);
 
+    // Avoid Parasolid concurrency bottlenecks.
+    opts->SetIgnoreHiddenBRepEntities(true);
+    opts->SetOmitBRepEdgeChainIds(true);
+
     return opts;
     }
 

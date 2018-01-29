@@ -1458,6 +1458,10 @@ IFacetOptionsPtr Geometry::CreateFacetOptions(double chordTolerance)
     opts->SetNormalsRequired(true);
     opts->SetEdgeChainsRequired(true);
 
+    // Avoid Parasolid concurrency bottlenecks.
+    opts->SetIgnoreHiddenBRepEntities(true);
+    opts->SetOmitBRepEdgeChainIds(true);
+
     return opts;
     }
 
