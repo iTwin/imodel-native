@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/FacetOptions.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -200,6 +200,14 @@ void IFacetOptions::SetSilhouetteOrigin (DPoint3d silhouetteOrigin) {_SetSilhoue
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
 DPoint3d IFacetOptions::GetSilhouetteOrigin () const {return _GetSilhouetteOrigin ();}
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray,Bentley     01/2018
++--------------------------------------------------------------------------------------*/
+bool IFacetOptions::GetIgnoreHiddenBRepEntities () const { return _GetIgnoreHiddenBRepEntities(); }
+void IFacetOptions::SetIgnoreHiddenBRepEntities (bool ignoreHiddenBRepEntities) { _SetIgnoreHiddenBRepEntities(ignoreHiddenBRepEntities); }
+bool IFacetOptions::GetOmitBRepEdgeChainIds () const { return _GetOmitBRepEdgeChainIds(); }
+void IFacetOptions::SetOmitBRepEdgeChainIds (bool omit) { _SetOmitBRepEdgeChainIds(omit); }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
@@ -484,6 +492,9 @@ struct FacetOptions : public IFacetOptions
 
     bool m_hideSmoothEdgesWhenGeneratingNormals;
 
+    bool m_ignoreHiddenBRepEntities = false;
+    bool m_omitBRepEdgeChainIds = false;
+
     // Get/Set pair for ChordTolerance.  Simple access to m_chordTolerance
    double _GetChordTolerance () const override
             {return m_chordTolerance; }
@@ -662,6 +673,12 @@ struct FacetOptions : public IFacetOptions
     bool _GetHideSmoothEdgesWhenGeneratingNormals () const override { return m_hideSmoothEdgesWhenGeneratingNormals; }
     void _SetHideSmoothEdgesWhenGeneratingNormals (bool hideSmoothEdgesWhenGeneratingNormals)  override { m_hideSmoothEdgesWhenGeneratingNormals = hideSmoothEdgesWhenGeneratingNormals; }
 
+    bool _GetIgnoreHiddenBRepEntities () const override { return m_ignoreHiddenBRepEntities; }
+    void _SetIgnoreHiddenBRepEntities (bool ignoreHiddenBRepEntities) override { m_ignoreHiddenBRepEntities = ignoreHiddenBRepEntities; }
+
+    bool _GetOmitBRepEdgeChainIds () const override { return m_omitBRepEdgeChainIds; }
+    void _SetOmitBRepEdgeChainIds (bool omitBRepEdgeChainIds) override { m_omitBRepEdgeChainIds = omitBRepEdgeChainIds; }
+
 
     IFacetOptionsPtr _Clone () const override { return new FacetOptions (*this); }
 
@@ -699,6 +716,8 @@ void _SetDefaults () override
     m_ignoreFaceAttachments = false;
     m_hideSmoothEdgesWhenGeneratingNormals = true;
     m_bsplineSurfaceEdgeHiding = 1;
+    m_ignoreHiddenBRepEntities = false;
+    m_omitBRepEdgeChainIds = false;
     }
 
 void _SetCurveDefaults () override
