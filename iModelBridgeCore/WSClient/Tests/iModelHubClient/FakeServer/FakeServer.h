@@ -12,9 +12,8 @@
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_DGN
-
 //This class has methods that are faking each possible Rest Call to iModelHub
-struct CentralRepository 
+class CentralRepository 
     {
     enum Response 
         {
@@ -28,16 +27,16 @@ struct CentralRepository
         static void EntertainPushRequest();
     };
 
-struct FakeServer 
+class FakeServer 
     {
     public:
-        
+
         //!!! Generic Operations related to iModel
 
         //create an iModel from an already existing seed file
         //@iModelName  indicates path for seed file
         static BeFileNameStatus CreateiModelFromSeed(WCharCP seedFilePath, WCharCP serverPath, WCharP seedFile);
-        static BeFileNameStatus CreateiModel(WCharCP serverPath, WCharCP seedFile);
+        static BeFileNameStatus CreateiModel(BeFileName serverPath, WCharCP seedFile);
 
         //delete an existing iModel from server
         //@iModelName  name of the imodel, to be deleted
@@ -47,7 +46,7 @@ struct FakeServer
         //create an instance of iModel before acquiring it
         BeFileNameStatus CreateiModelInstance();
         //Dowload the iModel instance in order to acquire it
-        static BeFileNameStatus DownloadiModel(WCharCP downloadPath, WCharCP serverPath, WCharP fileToDownload);
+        static BeFileNameStatus DownloadiModel(BeFileName downloadPath, CharCP serverPath, CharCP fileToDownload);
         //acquire an instance of an existing iModel
         BeFileNameStatus AcquireiModel();
 

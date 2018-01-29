@@ -11,17 +11,25 @@
 #include "FakeServer.h"
 
 BEGIN_BENTLEY_IMODELHUB_UNITTESTS_NAMESPACE
-struct RequestHandler
+USING_NAMESPACE_BENTLEY_HTTP
+
+class RequestHandler
     {
-    WCharCP serverPath;
+    Utf8String serverPath; 
     public:
         RequestHandler();
         ~RequestHandler();
-        Http::Response PerformGetRequest(Http::Request req);
-        Http::Response PerformOtherRequest(Http::Request req);
-        Http::Response CreateiModel(Http::Request req);
+        Response PerformGetRequest(Request req);
+        Response PerformOtherRequest(Request req);
+        Response CreateiModel(Request req);
+        Response DownloadiModel(bvector<Utf8String> args);
+        Response BuddiRequest(Request req);
+        Response ImsTokenRequest (Request req);
+        Response PluginRequest(Request req);
+        static DbResult Initialize(BeFileName temporaryDir, BeSQLiteLib::LogErrors logSqliteErrors = BeSQLiteLib::LogErrors::No);
+        void CheckDb();
+        void Insert(bvector<Utf8String> insertStr);
 
-    private:
 
     };
 END_BENTLEY_IMODELHUB_UNITTESTS_NAMESPACE
