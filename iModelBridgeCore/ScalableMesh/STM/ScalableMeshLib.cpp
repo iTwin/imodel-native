@@ -221,62 +221,74 @@ WebServiceKey GetBingKey()
     {
     Utf8String readBuffer;
 
-    WString buddiUrl;
+    BENTLEY_NAMESPACE_NAME::NativeLogging::ILogger*   logger = BENTLEY_NAMESPACE_NAME::NativeLogging::LoggingManager::GetLogger("Bing");
+
+    logger->debug("Retrieving Bing Key from CC");
+
+    WString serverUrl;
     UINT32 bufLen;
     CallStatus status = APIERR_SUCCESS;
+    try
+        {
+        char tempBuffer[100000];
 
-    CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
-    wchar_t* buffer;
-    status = CCApi_GetBuddiUrl(api, L"ContextServices", NULL, &bufLen);
-    bufLen++;
-    buffer = (wchar_t*) calloc(1, bufLen * sizeof(wchar_t));
-    status = CCApi_GetBuddiUrl(api, L"ContextServices", buffer, &bufLen);
-    buddiUrl.assign(buffer);
-    CCApi_FreeApi(api);
+        CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
+
+        bool sessionActive = false;
+        status = CCApi_IsUserSessionActive(api, &sessionActive);
+        sprintf(tempBuffer, "user Session Active status: %ld Active: %ld", status, sessionActive ? 1 : 0);
+        logger->debug(tempBuffer);
+
+        wchar_t* buffer;
+        status = CCApi_GetBuddiUrl(api, L"ContextServices", NULL, &bufLen);
+        if (APIERR_SUCCESS != status)
+            {
+            sprintf(tempBuffer, "1st GetBuddiURL status : %ld", status);
+            logger->error(tempBuffer);
+        }
+
+        bufLen++;
+        buffer = (wchar_t*) calloc(1, bufLen * sizeof(wchar_t));
+        status = CCApi_GetBuddiUrl(api, L"ContextServices", buffer, &bufLen);
+        if (APIERR_SUCCESS != status)
+            {
+            char tempBuffer[100000];
+            sprintf(tempBuffer, "2nd GetBuddiURL status: %ld", status);
+            logger->error(tempBuffer);
+            }
+        serverUrl.assign(buffer);
+        CCApi_FreeApi(api);
+        }
+    catch (...)
+        {
+        logger->error("CC exception caught");
+        return WebServiceKey();
+    }
+
+    logger->debug(serverUrl.c_str());
 
     Utf8String contextServiceURL;
-    contextServiceURL.assign(Utf8String(buddiUrl.c_str()).c_str());
+    contextServiceURL.assign(Utf8String(serverUrl.c_str()).c_str());
 
-#ifndef REMOVE_WHEN_KEYSERVICE_IN_PRODUCTION
-
-#ifdef VANCOUVER_API    
-    if (contextServiceURL.StartsWith("https://connect-contextservices.bentley.com/")) //Production server do not know this API yet, return the local key if Connected for the moment.
-        {
-        bool isConnected = true;//DgnClientApp::AbstractUiState().GetValue("BentleyConnect_SignedIn", false);
-        return isConnected ? WebServiceKey(BING_AUTHENTICATION_KEY) : WebServiceKey();
-        }
-#else
-    if (contextServiceURL.StartsWithI("https://connect-contextservices.bentley.com/")) //Production server do not know this API yet, return the local key if Connected for the moment.
-        {
-        bool isConnected = true;//DgnClientApp::AbstractUiState().GetValue("BentleyConnect_SignedIn", false);
-        return isConnected ? WebServiceKey(BING_AUTHENTICATION_KEY) : WebServiceKey();
-        }
-#endif
-
-#endif // !REMOVE_WHEN_KEYSERVICE_IN_PRODUCTION
 
     uint64_t productId(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProductId());
-    Utf8String productIdStr;
 
-#ifdef VANCOUVER_API    
-    wchar_t prodIdStr[200];
-    BeStringUtilities::FormatUInt64(prodIdStr, 200, productId, HexFormatOptions::None);
-    BeStringUtilities::WCharToUtf8(productIdStr, prodIdStr);
-#else
-    Utf8Char prodIdStr[200];
-    BeStringUtilities::FormatUInt64(prodIdStr, productId);
-    productIdStr.append(prodIdStr);
-#endif
+    Utf8Char productIdStr[200];
+    BeStringUtilities::FormatUInt64(productIdStr, productId);
 
     Utf8String bingKeyUrl(contextServiceURL);
     bingKeyUrl.append("v2.4/repositories/ContextKeyService--Server/ContextKeyServiceSchema/BingApiKey?$filter=productId+eq+");
-    bingKeyUrl.append(productIdStr.c_str());
+    bingKeyUrl.append(productIdStr);
+
+    logger->debug("Perform curl using");
+    logger->debug(bingKeyUrl.c_str());
 
     Utf8String postFields;
     CURLcode result = PerformCurl(bingKeyUrl, &readBuffer, nullptr, postFields);
 
     if (CURLE_OK != result)
         {
+        logger->error("curl failed, returning empty key");
         return WebServiceKey();
         }
 
@@ -285,6 +297,7 @@ WebServiceKey GetBingKey()
 
     if (!packageInfos.isMember("instances"))
         {
+        logger->error("instances is not a member of packageInfos, returning empty key");
         return WebServiceKey();
         }
 
@@ -296,9 +309,13 @@ WebServiceKey GetBingKey()
         {
         DateTime expiration;
         DateTime::FromString(expiration, packageInfos["instances"][0]["properties"]["expirationDate"].asCString());
+        logger->debug("Key retrieved");
+        logger->debug(packageInfos["instances"][0]["properties"]["key"].asCString());
+
         return WebServiceKey(packageInfos["instances"][0]["properties"]["key"].asString(), expiration);
         }
 
+    logger->error("invalid instances in packageInfos, returning empty key");
     return WebServiceKey();
     }
 
