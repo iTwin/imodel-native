@@ -2,25 +2,56 @@
 |
 |  $Source: geom/test/PolyfaceTest/t_decimate.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "testHarness.h"
 #include <stdio.h>
-
-void testDecimate (int select, bvector<DPoint3d> &points, double shortEdge, size_t numCollapse, bool print = false)
+// ASSUME points are in quad grid layout 
+void testDecimate (int select, bvector<DPoint3d> &points, int vertsPerRow, double shortEdge, size_t numCollapse, bool print = false)
     {
     if (select != 0)
         return;
     Check::StartScope ("Decimate ShortEdge", shortEdge);
     DRange3d range = DRange3d::From (points);
     SaveAndRestoreCheckTransform shifter (1.5 * range.XLength (), 0, 0);
-    PolyfaceHeaderPtr mesh = PolyfaceHeader::CreateQuadGrid (3);
+    PolyfaceHeaderPtr mesh = PolyfaceHeader::CreateVariableSizeIndexed ();
+    mesh->Param ().SetActive (true);
     if (print)
         printf ("\nEdgeCollapse method %d\n", select);
-    for (DPoint3d xyz : points)
-        mesh->Point ().push_back (xyz);
-    mesh->ConvertToVariableSizeSignedOneBasedIndexedFaceLoops ();
+        // simple push to point and param arrays.
+    for (size_t i = 0; i < points.size (); i++)
+        {
+        mesh->Point ().push_back (points[i]);
+        mesh->Param ().push_back( DPoint2d::From(points[i]));
+        }
+    for (size_t i0 = 0; i0 + vertsPerRow  <= points.size (); i0 += vertsPerRow)
+        {
+
+        if (i0 > 0)
+            {
+            for (size_t i = 0; i + 1 < vertsPerRow; i++)    // i is index of a quad moving left to right along this row.
+                {
+                // ZERO based point indices of quad in this row and below
+                //    j0---j1
+                //     |\  |
+                //     |  \|
+                //    k0---k1
+                size_t j0 = i0 + i;           size_t j1 = j0 + 1;
+                size_t k0 = j0 - vertsPerRow; size_t k1 = k0 + 1;
+                // add one to make one-based
+                mesh->PointIndex ().push_back ((int)(k0 + 1));
+                mesh->PointIndex ().push_back ((int)(k1 + 1));
+                mesh->PointIndex ().push_back ((int)(j0 + 1));
+                mesh->PointIndex ().push_back ((int)0);
+
+                mesh->PointIndex ().push_back ((int)(k1 + 1));
+                mesh->PointIndex ().push_back ((int)(j1 + 1));
+                mesh->PointIndex ().push_back ((int)(j0 + 1));
+                mesh->PointIndex ().push_back ((int)0);
+                }
+            }
+        }
     Check::SaveTransformed (*mesh);
     Check::Shift (0, 1.5 * range.YLength (), 0);
     size_t numA = 0;
@@ -59,12 +90,12 @@ TEST(Polyface,DecimateByEdgeCollapseWithBoundaryControl)
         };
     static bool s_print = false;
     // blind edge collapse -- expect to collapse edges from 00--10, 02--10, (0,4)--(0.5,3.5)
-    testDecimate (0, points, 1.2, 3, s_print);
-    testDecimate (0, points, 0.3, 0, s_print);
+    testDecimate (0, points, 3, 1.2, 3, s_print);
+    testDecimate (0, points, 3, 0.3, 0, s_print);
 
     // with boundary protect expect to preserve the upper boundar beause if sharp edge?
-    testDecimate (1, points, 1.2, 2, s_print);
-    testDecimate (1, points, 0.3, 0, s_print);
+    testDecimate (1, points, 3, 1.2, 2, s_print);
+    testDecimate (1, points, 3, 0.3, 0, s_print);
 
     Check::ClearGeometry ("Polyface.DecimateByEdgeCollapseWithBuondaryControl");
     }

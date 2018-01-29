@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/pf_vertexCollapse.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -47,20 +47,66 @@ size_t PolyfaceHeader::DecimateByEdgeCollapse (double abstol, double rangeFracti
 
     bvector<DPoint3d> &point = Point ();
     bsiDPoint3dArray_findClusters (point, blockedIndex, &newXYZ, abstol, false, true, &oldToNew);
+    bool sharedParamIndex = m_param.size () == m_point.size () && m_paramIndex.size () == 0;
+    bool sharedNormalIndex = m_normal.size () == m_point.size () && m_normalIndex.size () == 0;
+    bool sharedColorIndex = m_intColor.size () == m_point.size () && m_intColor.size () == 0;
 
     size_t num0 = m_point.size ();
     size_t num1 = newXYZ.size ();
-    // REMARK: this loop works with the reference to the inplace m_pointIndex.
-    for (auto &index1: m_pointIndex)
+    if (sharedParamIndex || sharedNormalIndex || sharedColorIndex)
         {
-        if (index1 != 0)
+        // point collapse carries params.
+        bvector<DPoint2d> newParam;
+        if (sharedParamIndex)
+            newParam.resize (newXYZ.size ());       // all zeros
+
+        bvector<DVec3d> newNormal;
+        if (sharedNormalIndex)
+            newNormal.resize (newXYZ.size ());       // all zeros
+
+        bvector<uint32_t> newColor;
+        if (sharedColorIndex)
+            newColor.resize (newXYZ.size ());       // all zeros
+
+        for (size_t k = 0; k < m_pointIndex.size (); k++)
             {
-            int index0 = abs (index1) - 1;
-            int s = index1 > 0 ? 1 : -1;
-            index1 = s * (1 + (int)oldToNew[index0]);
+            int index1 = m_pointIndex[k];
+            if (index1 != 0)
+                {
+                int index0 = abs (index1) - 1;
+                int s = index1 > 0 ? 1 : -1;
+                // update the pointIndex (which is also param index)
+                size_t newIndex0 = oldToNew[index0];
+                m_pointIndex[k]  = s * (1 +  (int)newIndex0);
+                // copy from old param to new.   This will gradually replace all the zeros.
+                if (sharedParamIndex)
+                    newParam[newIndex0] = m_param[index0];
+                if (sharedNormalIndex)
+                    newNormal[newIndex0] = m_normal[index0];
+                if (sharedColorIndex)
+                    newColor[newIndex0] = m_intColor[index0];
+                }
             }
+        if (sharedParamIndex)
+            m_param.swap (newParam);
+        if (sharedNormalIndex)
+            m_normal.swap (newNormal);
+        if (sharedColorIndex)
+            m_intColor.swap (newColor);
         }
-    
+    else
+        {
+        // REMARK: this loop works with the reference to the inplace m_pointIndex.
+        for (auto &index1: m_pointIndex)
+            {
+            if (index1 != 0)
+                {
+                int index0 = abs (index1) - 1;
+                int s = index1 > 0 ? 1 : -1;
+                index1 = s * (1 + (int)oldToNew[index0]);
+                }
+            }
+        }    
     m_point.ClearAndAppend (newXYZ);
     return num0 - num1;
     }
