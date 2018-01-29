@@ -2192,7 +2192,6 @@ private:
     TileGeometryList            m_curLeafGeometries;
     double                      m_minRangeDiagonal;
     double                      m_minTextBoxSize;
-    double                      m_minLineStyleWidth;
     bool*                       m_leafThresholdExceeded;
     size_t                      m_leafCountThreshold;
     size_t                      m_leafCount;
@@ -2254,7 +2253,6 @@ public:
         m_targetFacetOptions->SetChordTolerance(targetTolerance);
         m_minRangeDiagonal = s_minRangeBoxSize * targetTolerance;
         m_minTextBoxSize  = s_minTextBoxToleranceRatio * targetTolerance;
-        m_minLineStyleWidth = s_minLineStyleWidthToleranceRatio * targetTolerance;
 
         m_transformFromDgn.Multiply (m_tileRange, m_range);
         }
@@ -2268,6 +2266,7 @@ public:
 
     DgnDbR GetDgnDb() const { return m_dgndb; }
     TileGenerationCacheCR GetCache() const { return m_cache; }
+    DRange3dCR GetRange() const { return m_range; }
 
     bool BelowMinRange(DRange3dCR range) const
         {
@@ -2313,12 +2312,8 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_DoLineStyleStroke(Render::LineStyleSymbCR lsSymb, IFacetOptionsPtr& facetOptions, SimplifyGraphic& gf) const
     {
-#if defined(WIP_STROKE_LINE_STYLES)
     facetOptions = GetLineStyleFacetOptions(lsSymb);
     return facetOptions.IsValid();
-#else
-    return false;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2879,6 +2874,16 @@ public:
         m_is3dView = T::Is3d(); // force Brien to call _AddArc2d() if we're in a 2d model...
         SetViewFlags(GetDefaultViewFlags());
         }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual bool _AnyPointVisible(DPoint3dCP worldPoints, int nPts, double tolerance) override
+    {
+    DRange3d        pointRange = DRange3d::From(worldPoints, nPts);
+
+    return pointRange.IntersectsWith(m_processor.GetRange());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
