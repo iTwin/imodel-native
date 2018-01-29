@@ -15,6 +15,7 @@
 #include "RequestHandler.h"
 
 BEGIN_BENTLEY_IMODELHUB_UNITTESTS_NAMESPACE
+USING_NAMESPACE_BENTLEY_HTTP
 
 struct MockIMSHttpHandler : public Http::IHttpHandler
     {
