@@ -867,21 +867,24 @@ TEST_F(CodesTests, CodeIdsTest)
     auto response = db1.BriefcaseManager().ReserveCodes(codeSet, IBriefcaseManager::ResponseOptions::CodeState);
     EXPECT_EQ(RepositoryStatus::Success, response.Result());
 
-    LockableIdSet locks; 
     DgnCodeSet codes;
     codes.insert(code1);
     codes.insert(code2);
-    auto result = briefcase1->GetiModelConnection().QueryCodesLocksById(codes, locks)->GetResult();
+    auto result = briefcase1->GetiModelConnection().QueryCodesByIds(codes)->GetResult();
     EXPECT_SUCCESS(result);
 
-    auto codeStatesIterator = result.GetValue().GetCodes().begin();
+    auto codeStatesIterator = result.GetValue().begin();
     auto code1Result = *codeStatesIterator;
     codeStatesIterator++;
     auto code2Result = *codeStatesIterator;
 
     // Check if scope requirements were properly parsed
-    EXPECT_EQ(code1.GetScopeString(), code1Result.GetScopeString());
-    EXPECT_EQ(code2.GetScopeString(), code2Result.GetScopeString());
+    EXPECT_EQ(code1.GetScopeString(), code1Result.GetCode().GetScopeString());
+    EXPECT_EQ(code2.GetScopeString(), code2Result.GetCode().GetScopeString());
+
+    //Query empty array of codes
+    DgnCodeSet emptyCodes;
+    iModelHubHelpers::ExpectCodesCountByIds(*briefcase1, 0, false, emptyCodes);
     }
 
 //---------------------------------------------------------------------------------------

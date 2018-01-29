@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/iModelHub/Client/Error.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -57,11 +57,12 @@ public:
         FailedToGetProjectPermissions,
         ChangeSetAlreadyHasVersion,
         VersionAlreadyExists,
+        QueryIdsNotSpecified,
 
         //Long Running Processes Errors
         FileIsNotYetInitialized = 100,
         FileIsOutdated,
-        FileHasDifferentId,
+        FileCodeTooLong,
         FileInitializationFailed,
 
         //iModel Hub Client API Errors

@@ -17,9 +17,11 @@
 #include "TestsHost.h"
 #include "Parser/ArgumentParser.h"
 #include "Disk/DiskRepositoryClient.h"
+#include "Logging/Logging.h"
 
 bvector<TestRepositories> s_createTestData;
 bvector<TestRepositories> s_upgradeTestData;
+bvector<TestRepositories> s_downloadSchemasTestData;
 
 StubLocalState s_localState;
 IHttpHandlerPtr s_proxy;
@@ -33,9 +35,13 @@ void RepositoryCompatibilityTests::SetTestData(const bvector<TestRepositories>& 
             {
             s_upgradeTestData.push_back(repositories);
             }
-        else
+        else if (repositories.create.IsValid())
             {
             s_createTestData.push_back(repositories);
+            }
+        else if (repositories.downloadSchemas.IsValid())
+            {
+            s_downloadSchemasTestData.push_back(repositories);
             }
         }
     }
@@ -145,6 +151,46 @@ void CreateTestPaths(IWSRepositoryClientPtr client, Utf8CP testName, BeFileName&
     envOut.temporaryFileCacheDir = cachePathOut;
 
     cachePathOut.AppendToPath(L"WSCache.ecdb");
+    }
+
+struct RepositoryCompatibilityTests_DownloadSchemas : RepositoryCompatibilityTests {};
+INSTANTIATE_TEST_CASE_P(, RepositoryCompatibilityTests_DownloadSchemas, ::testing::ValuesIn(s_downloadSchemasTestData));
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(RepositoryCompatibilityTests_DownloadSchemas, Download)
+    {
+    auto repository = GetParam().downloadSchemas;
+    auto client = CreateClient(repository);
+
+    BeFileName path;
+    CacheEnvironment env;
+    CreateTestPaths(client, "DownloadSchemas", path, env);
+    BeFileName schemasFolder = env.persistentFileCacheDir;
+    schemasFolder.AppendToPath(L"Schemas").AppendSeparator();
+    BeFileName::CreateNewDirectory(schemasFolder);
+    ASSERT_TRUE(schemasFolder.DoesPathExist());
+
+    auto schemas = client->SendGetSchemasRequest()->GetResult().GetValue();
+    ASSERT_TRUE(schemas.GetInstances().IsValid());
+
+    for (auto schema : schemas.GetInstances())
+        {
+        const rapidjson::Value& properties = schema.GetProperties();
+
+        SchemaKey key(
+            properties["Name"].GetString(),
+            properties["VersionMajor"].GetInt(),
+            properties.HasMember("VersionWrite") ? properties["VersionWrite"].GetInt() : 0, // EC2 compatibility
+            properties["VersionMinor"].GetInt());
+
+        BeFileName schemaFilePath(schemasFolder);
+        schemaFilePath.AppendToPath(BeFileName(key.GetFullSchemaName() + ".ecschema.xml"));
+
+        EXPECT_TRUE(client->SendGetFileRequest(schema.GetObjectId(), schemaFilePath)->GetResult().IsSuccess());
+        }
+
+    LOG.infov("Downloaded schemas to: %s", schemasFolder.GetNameUtf8().c_str());
     }
 
 struct RepositoryCompatibilityTests_Create : RepositoryCompatibilityTests {};

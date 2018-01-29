@@ -711,25 +711,25 @@ BriefcaseInfoTaskPtr Client::RestoreBriefcase(iModelInfoCR iModelInfo, BeSQLite:
 //---------------------------------------------------------------------------------------
 DgnDbPtr Client::OpenWithSchemaUpgradeInternal(BeSQLite::DbResult* status, BeFileName filePath, ChangeSets changeSets, 
                                                SchemaUpgradeOptions::DomainUpgradeOptions domainUpgradeOptions, 
-                                               SchemaUpgradeOptions::RevisionUpgradeOptions changeSetUpgradeOptions)
+                                               RevisionProcessOption processOption)
     {
     bvector<DgnRevisionCP> changeSetsToMerge;
     ConvertToChangeSetPointersVector(changeSets, changeSetsToMerge);
 
-    if (SchemaUpgradeOptions::RevisionUpgradeOptions::Reverse == changeSetUpgradeOptions)
+    if (RevisionProcessOption::Reverse == processOption)
         std::reverse(changeSetsToMerge.begin(), changeSetsToMerge.end());
 
     auto upgradeOptions = SchemaUpgradeOptions(domainUpgradeOptions);
-    upgradeOptions.SetUpgradeFromRevisions(changeSetsToMerge, changeSetUpgradeOptions);
+    upgradeOptions.SetUpgradeFromRevisions(changeSetsToMerge, processOption);
     return Dgn::DgnDb::OpenDgnDb(status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, upgradeOptions));
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikolinuas            07/2017
 //---------------------------------------------------------------------------------------
-DgnDbPtr Client::OpenWithSchemaUpgrade(BeSQLite::DbResult* status, BeFileName filePath, ChangeSets changeSets, SchemaUpgradeOptions::RevisionUpgradeOptions changeSetUpgradeOptions)
+DgnDbPtr Client::OpenWithSchemaUpgrade(BeSQLite::DbResult* status, BeFileName filePath, ChangeSets changeSets, RevisionProcessOption processOption)
     {
-    return OpenWithSchemaUpgradeInternal(status, filePath, changeSets, SchemaUpgradeOptions::DomainUpgradeOptions::ValidateOnly, changeSetUpgradeOptions);
+    return OpenWithSchemaUpgradeInternal(status, filePath, changeSets, SchemaUpgradeOptions::DomainUpgradeOptions::ValidateOnly, processOption);
     }
 
 //---------------------------------------------------------------------------------------

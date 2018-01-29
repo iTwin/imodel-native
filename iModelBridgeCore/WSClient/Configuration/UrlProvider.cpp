@@ -260,6 +260,14 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ImsPassiveAuthUrl(
     &s_urlRegistry
     );
 
+const UrlProvider::UrlDescriptor UrlProvider::Urls::iModelBridgeConfiguration(
+    "iModelBridgeConfiguration",
+    "https://dev-connect-iModelBridgeConfiguration.bentley.com",
+    "https://qa-connect-iModelBridgeConfiguration.bentley.com",
+    "https://connect-iModelBridgeConfiguration.bentley.com",
+    &s_urlRegistry
+    );
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Brad.Hadden   11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
