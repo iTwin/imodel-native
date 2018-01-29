@@ -125,6 +125,12 @@ protected:
    GEOMAPI_VIRTUAL int _GetBsplineSurfaceEdgeHiding () const = 0;
    GEOMAPI_VIRTUAL void _SetBsplineSurfaceEdgeHiding (int edgeHiding) = 0;
 
+   GEOMAPI_VIRTUAL bool _GetIgnoreHiddenBRepEntities () const = 0;
+   GEOMAPI_VIRTUAL void _SetIgnoreHiddenBRepEntities (bool ignoreHiddenBRepEntities) = 0;
+
+   GEOMAPI_VIRTUAL bool _GetOmitBRepEdgeChainIds () const = 0;
+   GEOMAPI_VIRTUAL void _SetOmitBRepEdgeChainIds (bool doOmit) = 0;
+
    GEOMAPI_VIRTUAL IFacetOptionsPtr  _Clone() const = 0;
 
 // Protected signatures of public/protected methods
@@ -290,6 +296,16 @@ GEOMDLLIMPEXP bool GetIgnoreFaceMaterialAttachments () const;
 GEOMDLLIMPEXP void SetHideSmoothEdgesWhenGeneratingNormals (bool hideSmoothEdgesWhenGeneratingNormals);
 //! Get whether mooth edges between facets are marked as hidden when normals are genereted for a polyface without normals.
 GEOMDLLIMPEXP bool GetHideSmoothEdgesWhenGeneratingNormals () const;
+
+//! Set whether to ignore hidden entities (edges and faces from unification) in BRep entities (optimization for tile generation).
+GEOMDLLIMPEXP bool GetIgnoreHiddenBRepEntities () const;
+//! Get whether to ignore hidden entities (edges and faces from unification) in BRep entities (optimization for tile generation).k
+GEOMDLLIMPEXP void SetIgnoreHiddenBRepEntities (bool ignoreHiddenBRepEntities);
+
+//! Get whether to omit edges chain ids. ((optimization for tile generation).
+GEOMDLLIMPEXP bool GetOmitBRepEdgeChainIds () const;
+//! Set whether to omit edges chain ids. ((optimization for tile generation).
+GEOMDLLIMPEXP void SetOmitBRepEdgeChainIds (bool doOmit);
 
 //! Set all parameters to default values
 GEOMDLLIMPEXP void SetDefaults ();
