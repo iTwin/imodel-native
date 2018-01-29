@@ -90,6 +90,7 @@ struct Conversion
 //=======================================================================================
 struct UnitSystem
 {
+friend struct StandardUnitSystems;
 private:
     Utf8String m_name;
 

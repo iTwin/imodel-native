@@ -883,13 +883,12 @@ void AddApparentPower(UnitRegistry& reg)
     reg.AddUnit(APPARENT_POWER, METRIC, "MVA", "[MEGA]*VA");
     }
 
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void UnitRegistry::AddDefaultUnits()
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Caleb.Shafer            01/18
+//---------------------------------------------------------------------------------------
+void UnitRegistry::AddBaseUnits()
     {
     UnitCP un;
-
     AddUnitForBasePhenomenon("M", BasePhenomena::Length)->AddSynonym("METER");
     AddUnitForBasePhenomenon("KG", BasePhenomena::Mass);
     AddUnitForBasePhenomenon("S", BasePhenomena::Time)->AddSynonym("SEC");
@@ -907,9 +906,13 @@ void UnitRegistry::AddDefaultUnits()
     AddUnitForBasePhenomenon("US$", BasePhenomena::Finance);
     AddUnitForBasePhenomenon("PERSON", BasePhenomena::Capita);
     AddUnitForBasePhenomenon("ONE", BasePhenomena::Ratio); // TODO: I don't like that Ratio has base unit of ONE and all unitless unit will have a phenomenon of Ratio ...
+    }
 
-
-
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void UnitRegistry::AddDefaultUnits()
+    {
     AddLengths(*this);
     //AddLinearCost(*this);
     AddLinearRate(*this);

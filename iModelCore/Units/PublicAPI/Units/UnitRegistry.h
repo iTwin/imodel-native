@@ -80,14 +80,19 @@ private:
     UnitRegistry(const UnitRegistry& rhs) = delete;
     UnitRegistry & operator= (const UnitRegistry& rhs) = delete;
 
-    void AddDefaultSystems();
+    
     void AddDefaultPhenomena();
     void AddDefaultUnits();
     void AddDefaultConstants();
     void AddDefaultMappings();
 
+    void AddBaseSystems();
+    void AddBaseUnits();
+    void AddBasePhenomena();
+
     void InsertUnique(Utf8Vector &vec, Utf8String &str);
     void AddSystem(Utf8CP name);
+    void AddSystem(UnitSystemR unitSystem);
     void AddPhenomenon(Utf8CP phenomenaName, Utf8CP definition);
     void AddBasePhenomenon(Utf8Char baseSymbol);
     UnitCP AddUnitForBasePhenomenon(Utf8CP unitName, Utf8Char baseSymbol);
@@ -135,9 +140,13 @@ public:
     //! @param[in] includeSynonyms  If true, will include all units synonyms
     UNITS_EXPORT void AllUnitNames(bvector<Utf8String>& allUnitNames, bool includeSynonyms) const;
 
-    //! Populates the provided vector with all Units in the registry
+    //! Populates the provided vector with all Phenomena in the registry
     //! @param[in] allPhenomena The vector to populate with the phenomena
     UNITS_EXPORT void AllPhenomena(bvector<PhenomenonCP>& allPhenomena) const;
+
+    //! Populates the provided vector with all UnitSystems in the registry
+    //! @param[in] allUnitSystems The vector to populate with the unit systems
+    UNITS_EXPORT void AllSystems(bvector<UnitSystemCP>& allUnitSystems) const;
 
     // Register methods.
     UNITS_EXPORT UnitCP AddDummyUnit(Utf8CP unitName);
@@ -154,7 +163,7 @@ public:
     UNITS_EXPORT UnitSystemCP LookupUnitSystem(Utf8CP name) const;
 
     // bool Exists methods.
-    UNITS_EXPORT bool HasSystem (Utf8CP systemName) const {return m_systems.end() != m_systems.find(systemName);}
+    bool HasSystem (Utf8CP systemName) const {return m_systems.end() != m_systems.find(systemName);}
     bool HasPhenomena(Utf8CP phenomenaName) const {return m_phenomena.end() != m_phenomena.find(phenomenaName);}
     bool HasUnit(Utf8CP unitName) const {return m_units.end() != m_units.find(unitName);}
 

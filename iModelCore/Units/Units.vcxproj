@@ -27,6 +27,7 @@
     <None Include="Units.mke" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="PrivateAPI\Units\StandardDefinitions.h" />
     <ClInclude Include="PublicAPI\Units\Quantity.h" />
     <ClInclude Include="PublicAPI\Units\UnitRegistry.h" />
     <ClInclude Include="PrivateAPI\Units\StandardNames.h" />

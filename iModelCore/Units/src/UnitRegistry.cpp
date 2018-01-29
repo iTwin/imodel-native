@@ -23,7 +23,14 @@ UnitRegistry * UnitRegistry::s_instance = nullptr;
 UnitRegistry& UnitRegistry::Instance()
     {
     if (nullptr == s_instance)
+        {
         s_instance = new UnitRegistry();
+        s_instance->AddDefaultPhenomena();
+        s_instance->AddDefaultUnits();
+        s_instance->AddDefaultConstants();
+        s_instance->AddDefaultMappings();
+        }
+
     return *s_instance;
     }
 
@@ -41,12 +48,9 @@ void UnitRegistry::Clear()
 //---------------------------------------------------------------------------------------
 UnitRegistry::UnitRegistry(IUnitLocaterP locater) : m_locater(locater)
     {
-    // This is going to change... There shouldn't be as much to initialize.
-    AddDefaultSystems();
-    AddDefaultPhenomena();
-    AddDefaultUnits();
-    AddDefaultConstants();
-    AddDefaultMappings();
+    AddBaseSystems();
+    AddBasePhenomena();
+    AddBaseUnits();
     }
 
 //---------------------------------------------------------------------------------------
@@ -99,6 +103,20 @@ void UnitRegistry::AddSystem (Utf8CP name)
 
     auto unitSystem = UnitSystem::Create(name);
     m_systems.Insert(unitSystem->GetName(), unitSystem);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+void UnitRegistry::AddSystem(UnitSystemR unitSystem)
+    {
+    if (NameConflicts(unitSystem.GetName()))
+        {
+        LOG.errorv("Cannot create UnitSystem '%s' because that name is already in use.", unitSystem.GetName());
+        return;
+        }
+
+    m_systems.Insert(unitSystem.GetName(), &unitSystem);
     }
 
 Utf8CP GetBasePhenomenonName(Utf8Char baseSymbol)
@@ -177,25 +195,6 @@ void UnitRegistry::AddPhenomenon (Utf8CP phenomenaName, Utf8CP definition)
     ++m_nextId;
 
     m_phenomena.insert(bpair<Utf8String, PhenomenonP>(phenomenaName, phenomena));
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void UnitRegistry::AddDefaultSystems ()
-    {
-    AddSystem(SI);
-    AddSystem(CGS);
-    AddSystem(METRIC);
-    AddSystem(IMPERIAL);
-    AddSystem(MARITIME);
-    AddSystem(USSURVEY);
-    AddSystem(INDUSTRIAL);
-    AddSystem(INTERNATIONAL);
-    AddSystem(USCUSTOM);
-    AddSystem(STATISTICS);
-    AddSystem(FINANCE);
-    AddSystem(CONSTANT);
     }
 
 //---------------------------------------------------------------------------------------//
@@ -481,44 +480,6 @@ UnitCP UnitRegistry::LookupConstant(Utf8CP name) const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                      02/2016
 //--------------------------------------------------------------------------------------
-PhenomenonP UnitRegistry::LookupPhenomenonP(Utf8CP name) const
-    {
-    auto val_iter = m_phenomena.find(name);
-    if (val_iter != m_phenomena.end())
-        return (*val_iter).second;
-    return nullptr != m_locater ? m_locater->LocatePhenomenonP(name) : nullptr;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Colin.Kerr                      02/2016
-//--------------------------------------------------------------------------------------
-PhenomenonCP UnitRegistry::LookupPhenomenon(Utf8CP name) const
-    {
-    return LookupPhenomenonP(name);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Colin.Kerr                      01/2018
-//--------------------------------------------------------------------------------------
-UnitSystemP UnitRegistry::LookupUnitSystemP(Utf8CP name) const
-    {
-    auto usIt = m_systems.find(name);
-    if (usIt != m_systems.end())
-        return (*usIt).second;
-    return nullptr != m_locater ? m_locater->LocateUnitSystemP(name) : nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Caleb.Shafer            01/18
-//---------------------------------------------------------------------------------------
-UnitSystemCP UnitRegistry::LookupUnitSystem(Utf8CP name) const
-    {
-    return LookupUnitSystemP(name);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Colin.Kerr                      02/2016
-//--------------------------------------------------------------------------------------
 void UnitRegistry::AllUnitNames(bvector<Utf8String>& allUnitNames, bool includeSynonyms) const
     {
     for (auto const& unitAndName : m_units)
@@ -543,10 +504,57 @@ void UnitRegistry::AllUnits(bvector<UnitCP>& allUnits) const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                      02/2016
 //--------------------------------------------------------------------------------------
+PhenomenonP UnitRegistry::LookupPhenomenonP(Utf8CP name) const
+    {
+    auto val_iter = m_phenomena.find(name);
+    if (val_iter != m_phenomena.end())
+        return (*val_iter).second;
+    return nullptr != m_locater ? m_locater->LocatePhenomenonP(name) : nullptr;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      02/2016
+//--------------------------------------------------------------------------------------
+PhenomenonCP UnitRegistry::LookupPhenomenon(Utf8CP name) const
+    {
+    return LookupPhenomenonP(name);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      02/2016
+//--------------------------------------------------------------------------------------
 void UnitRegistry::AllPhenomena(bvector<PhenomenonCP>& allPhenomena) const
     {
     for (auto const& phenomenonAndName : m_phenomena)
         allPhenomena.push_back(phenomenonAndName.second);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      01/2018
+//--------------------------------------------------------------------------------------
+UnitSystemP UnitRegistry::LookupUnitSystemP(Utf8CP name) const
+    {
+    auto usIt = m_systems.find(name);
+    if (usIt != m_systems.end())
+        return (*usIt).second;
+    return nullptr != m_locater ? m_locater->LocateUnitSystemP(name) : nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Caleb.Shafer            01/18
+//---------------------------------------------------------------------------------------
+UnitSystemCP UnitRegistry::LookupUnitSystem(Utf8CP name) const
+    {
+    return LookupUnitSystemP(name);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      02/2016
+//--------------------------------------------------------------------------------------
+void UnitRegistry::AllSystems(bvector<UnitSystemCP>& allUnitSystems) const
+    {
+    for (auto const& unitSystemAndName : m_systems)
+        allUnitSystems.push_back(unitSystemAndName.second);
     }
 
 /*--------------------------------------------------------------------------------**//**

@@ -91,6 +91,71 @@ TEST_F(UnitRegistrySingletonTests, AddAndRetrieveConstant)
     EXPECT_EQ(createdConstant, retreivedConstantAsUnit);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Colin.Kerr                                  03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UnitRegistrySingletonTests, AllUnitsNeededForFirstReleaseExist)
+    {
+    bvector<Utf8String> missingUnits;
+    bvector<Utf8String> foundUnits;
+    bvector<Utf8String> foundMappedUnits;
+    auto lineProcessor = [&missingUnits, &foundUnits, &foundMappedUnits] (bvector<Utf8String>& lines)
+        {
+        for (auto const& unitName : lines)
+            {
+            UnitCP unit = UnitRegistry::Instance().LookupUnit(unitName.c_str());
+            if (nullptr != unit)
+                {
+                foundUnits.push_back(unitName);
+                continue;
+                }
+
+            unit = UnitRegistry::Instance().LookupUnitUsingOldName(unitName.c_str());
+            if (nullptr != unit)
+                {
+                foundMappedUnits.push_back(unitName);
+                continue;
+                }
+
+            missingUnits.push_back(unitName);
+            }
+        };
+
+    ReadConversionCsvFile(L"NeededUnits.csv", lineProcessor);
+
+    if (missingUnits.size() != 0)
+        {
+        Utf8String missingString = BeStringUtilities::Join(missingUnits, ", ");
+        EXPECT_EQ(0, missingUnits.size()) << "Some needed units were not found\n" << missingString.c_str();
+        }
+    ASSERT_NE(0, foundUnits.size()) << "No units were found";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Colin.Kerr                                 02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UnitRegistryTests, TestEveryDefaultUnitIsAddedToItsPhenomenon)
+    {
+    UnitRegistry& hub = UnitRegistry::Instance();
+    bvector<UnitCP> allUnits;
+    hub.AllUnits(allUnits);
+    for (auto const& unit : allUnits)
+        {
+        PhenomenonCP unitPhenomenon = unit->GetPhenomenon();
+        ASSERT_NE(nullptr, unitPhenomenon) << "Unit " << unit->GetName() << " does not have phenomenon";
+        auto it = find_if(unitPhenomenon->GetUnits().begin(), unitPhenomenon->GetUnits().end(),
+                       [&unit] (UnitCP unitInPhenomenon) { return 0 == strcmp(unitInPhenomenon->GetName(), unit->GetName()); });
+        
+        T_Utf8StringVector unitNames;
+        if (unitPhenomenon->GetUnits().end() == it)
+            {
+            for (auto const& phenUnit : unitPhenomenon->GetUnits())
+                unitNames.push_back(phenUnit->GetName());
+            }
+        ASSERT_NE(unitPhenomenon->GetUnits().end(), it) << "Unit " << unit->GetName() << " is not registered with it's phenomenon: " << unitPhenomenon->GetName() << "Registered units are: " << BeStringUtilities::Join(unitNames, ", ");
+        }
+    }
+
 //=======================================================================================
 //! UnitRegistryTests
 //=======================================================================================
@@ -146,6 +211,107 @@ TEST_F(UnitRegistryTests, AddUnitLocater)
     registry->RemoveLocater();
     EXPECT_EQ(nullptr, registry->LookupUnit("TestUnit1"));
     EXPECT_EQ(nullptr, registry->LookupPhenomenon("TestPhen"));
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+TEST_F(UnitRegistryTests, TestAllBaseUnitsAdded)
+    {
+    UnitRegistryPtr registry = UnitRegistry::Create();
+    EXPECT_TRUE(registry->HasUnit("M"));
+    EXPECT_TRUE(registry->HasUnit("S"));
+    EXPECT_TRUE(registry->HasUnit("K"));
+    EXPECT_TRUE(registry->HasUnit("DELTA_KELVIN"));
+    EXPECT_TRUE(registry->HasUnit("A"));
+    EXPECT_TRUE(registry->HasUnit("MOL"));
+    EXPECT_TRUE(registry->HasUnit("CD"));
+    EXPECT_TRUE(registry->HasUnit("RAD"));
+    EXPECT_TRUE(registry->HasUnit("STERAD"));
+    EXPECT_TRUE(registry->HasUnit("US$"));
+    EXPECT_TRUE(registry->HasUnit("PERSON"));
+    EXPECT_TRUE(registry->HasUnit("ONE"));
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+TEST_F(UnitRegistryTests, TestAllBasePhenomenaAdded)
+    {
+    UnitRegistryPtr registry = UnitRegistry::Create();
+    EXPECT_TRUE(registry->HasPhenomena("LENGTH"));
+    EXPECT_TRUE(registry->HasPhenomena("MASS"));
+    EXPECT_TRUE(registry->HasPhenomena("TIME"));
+    EXPECT_TRUE(registry->HasPhenomena("TEMPERATURE"));
+    EXPECT_TRUE(registry->HasPhenomena("TEMPERATURE_CHANGE"));
+    EXPECT_TRUE(registry->HasPhenomena("CURRENT"));
+    EXPECT_TRUE(registry->HasPhenomena("MOLE"));
+    EXPECT_TRUE(registry->HasPhenomena("LUMINOSITY"));
+    EXPECT_TRUE(registry->HasPhenomena("ANGLE"));
+    EXPECT_TRUE(registry->HasPhenomena("SOLIDANGLE"));
+    EXPECT_TRUE(registry->HasPhenomena("FINANCE"));
+    EXPECT_TRUE(registry->HasPhenomena("CAPITA"));
+    EXPECT_TRUE(registry->HasPhenomena("ONE"));
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+TEST_F(UnitRegistryTests, TestAllBaseUnitSystemsAdded)
+    {
+    UnitRegistryPtr registry = UnitRegistry::Create();
+    EXPECT_TRUE(registry->HasSystem("SI"));
+    EXPECT_TRUE(registry->HasSystem("CGS"));
+    EXPECT_TRUE(registry->HasSystem("METRIC"));
+    EXPECT_TRUE(registry->HasSystem("IMPERIAL"));
+    EXPECT_TRUE(registry->HasSystem("MARITIME"));
+    EXPECT_TRUE(registry->HasSystem("USSURVEY"));
+    EXPECT_TRUE(registry->HasSystem("INDUSTRIAL"));
+    EXPECT_TRUE(registry->HasSystem("INTERNATIONAL"));
+    EXPECT_TRUE(registry->HasSystem("USCUSTOM"));
+    EXPECT_TRUE(registry->HasSystem("STATISTICS"));
+    EXPECT_TRUE(registry->HasSystem("FINANCE"));
+    EXPECT_TRUE(registry->HasSystem("CONSTANT"));
+
+    bvector<UnitSystemCP> unitSystems;
+    registry->AllSystems(unitSystems);
+
+    EXPECT_EQ(12, unitSystems.size());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+TEST_F(UnitRegistryTests, TestStaticBaseUnitSystemsAreOnlyCreatedOnce)
+    {
+    UnitRegistryPtr registry1 = UnitRegistry::Create();
+    UnitRegistryPtr registry2 = UnitRegistry::Create();
+
+    EXPECT_EQ(registry1->LookupUnitSystem("SI"), registry2->LookupUnitSystem("SI"));
+    EXPECT_EQ(registry1->LookupUnitSystem("CGS"), registry2->LookupUnitSystem("CGS"));
+    EXPECT_EQ(registry1->LookupUnitSystem("METRIC"), registry2->LookupUnitSystem("METRIC"));
+    EXPECT_EQ(registry1->LookupUnitSystem("IMPERIAL"), registry2->LookupUnitSystem("IMPERIAL"));
+    EXPECT_EQ(registry1->LookupUnitSystem("MARITIME"), registry2->LookupUnitSystem("MARITIME"));
+    EXPECT_EQ(registry1->LookupUnitSystem("USSURVEY"), registry2->LookupUnitSystem("USSURVEY"));
+    EXPECT_EQ(registry1->LookupUnitSystem("INDUSTRIAL"), registry2->LookupUnitSystem("INDUSTRIAL"));
+    EXPECT_EQ(registry1->LookupUnitSystem("INTERNATIONAL"), registry2->LookupUnitSystem("INTERNATIONAL"));
+    EXPECT_EQ(registry1->LookupUnitSystem("USCUSTOM"), registry2->LookupUnitSystem("USCUSTOM"));
+    EXPECT_EQ(registry1->LookupUnitSystem("STATISTICS"), registry2->LookupUnitSystem("STATISTICS"));
+    EXPECT_EQ(registry1->LookupUnitSystem("FINANCE"), registry2->LookupUnitSystem("FINANCE"));
+    EXPECT_EQ(registry1->LookupUnitSystem("CONSTANT"), registry2->LookupUnitSystem("CONSTANT"));
+    
+    EXPECT_EQ(UnitRegistry::Instance().LookupUnitSystem("SI"), registry2->LookupUnitSystem("SI"));
+    EXPECT_EQ(UnitRegistry::Instance().LookupUnitSystem("CGS"), registry2->LookupUnitSystem("CGS"));
+    EXPECT_EQ(UnitRegistry::Instance().LookupUnitSystem("METRIC"), registry2->LookupUnitSystem("METRIC"));
+    EXPECT_EQ(UnitRegistry::Instance().LookupUnitSystem("IMPERIAL"), registry2->LookupUnitSystem("IMPERIAL"));
+    EXPECT_EQ(UnitRegistry::Instance().LookupUnitSystem("MARITIME"), registry2->LookupUnitSystem("MARITIME"));
+    EXPECT_EQ(UnitRegistry::Instance().LookupUnitSystem("USSURVEY"), registry2->LookupUnitSystem("USSURVEY"));
+    EXPECT_EQ(UnitRegistry::Instance().LookupUnitSystem("INDUSTRIAL"), registry2->LookupUnitSystem("INDUSTRIAL"));
+    EXPECT_EQ(UnitRegistry::Instance().LookupUnitSystem("INTERNATIONAL"), registry2->LookupUnitSystem("INTERNATIONAL"));
+    EXPECT_EQ(UnitRegistry::Instance().LookupUnitSystem("USCUSTOM"), registry2->LookupUnitSystem("USCUSTOM"));
+    EXPECT_EQ(UnitRegistry::Instance().LookupUnitSystem("STATISTICS"), registry2->LookupUnitSystem("STATISTICS"));
+    EXPECT_EQ(UnitRegistry::Instance().LookupUnitSystem("FINANCE"), registry2->LookupUnitSystem("FINANCE"));
+    EXPECT_EQ(UnitRegistry::Instance().LookupUnitSystem("CONSTANT"), registry2->LookupUnitSystem("CONSTANT"));
     }
 
 END_UNITS_UNITTESTS_NAMESPACE

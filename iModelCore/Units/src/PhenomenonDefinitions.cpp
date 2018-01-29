@@ -10,10 +10,137 @@
 
 USING_NAMESPACE_BENTLEY_UNITS
 
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void UnitRegistry::AddDefaultPhenomena ()
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+UnitSystemR StandardUnitSystems::GetSI()
+    {
+    static UnitSystemP s_si = new UnitSystem(SI);
+    return *s_si;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+UnitSystemR StandardUnitSystems::GetCGS()
+    {
+    static UnitSystemP s_cgs = new UnitSystem(CGS);
+    return *s_cgs;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+UnitSystemR StandardUnitSystems::GetMetric()
+    {
+    static UnitSystemP s_metric = new UnitSystem(METRIC);
+    return *s_metric;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+UnitSystemR StandardUnitSystems::GetImperial()
+    {
+    static UnitSystemP s_imperial = new UnitSystem(IMPERIAL);
+    return *s_imperial;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+UnitSystemR StandardUnitSystems::GetMaritime()
+    {
+    static UnitSystemP s_maritime = new UnitSystem(MARITIME);
+    return *s_maritime;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+UnitSystemR StandardUnitSystems::GetUSSurvey()
+    {
+    static UnitSystemP s_survey = new UnitSystem(USSURVEY);
+    return *s_survey;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+UnitSystemR StandardUnitSystems::GetIndustrial()
+    {
+    static UnitSystemP s_industrial = new UnitSystem(INDUSTRIAL);
+    return *s_industrial;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+UnitSystemR StandardUnitSystems::GetInternational()
+    {
+    static UnitSystemP s_international = new UnitSystem(INTERNATIONAL);
+    return *s_international;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+UnitSystemR StandardUnitSystems::GetUSCustom()
+    {
+    static UnitSystemP s_custom = new UnitSystem(USCUSTOM);
+    return *s_custom;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+UnitSystemR StandardUnitSystems::GetStatistics()
+    {
+    static UnitSystemP s_stats = new UnitSystem(STATISTICS);
+    return *s_stats;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+UnitSystemR StandardUnitSystems::GetFinance()
+    {
+    static UnitSystemP s_finance = new UnitSystem(FINANCE);
+    return *s_finance;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+UnitSystemR StandardUnitSystems::GetConstant()
+    {
+    static UnitSystemP s_constant = new UnitSystem(CONSTANT);
+    return *s_constant;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+void UnitRegistry::AddBaseSystems()
+    {
+    AddSystem(StandardUnitSystems::GetSI());
+    AddSystem(StandardUnitSystems::GetCGS());
+    AddSystem(StandardUnitSystems::GetMetric());
+    AddSystem(StandardUnitSystems::GetImperial());
+    AddSystem(StandardUnitSystems::GetMaritime());
+    AddSystem(StandardUnitSystems::GetUSSurvey());
+    AddSystem(StandardUnitSystems::GetIndustrial());
+    AddSystem(StandardUnitSystems::GetInternational());
+    AddSystem(StandardUnitSystems::GetUSCustom());
+    AddSystem(StandardUnitSystems::GetStatistics());
+    AddSystem(StandardUnitSystems::GetFinance());
+    AddSystem(StandardUnitSystems::GetConstant());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+void UnitRegistry::AddBasePhenomena()
     {
     AddBasePhenomenon(BasePhenomena::Length);
     AddBasePhenomenon(BasePhenomena::Mass);
@@ -28,7 +155,13 @@ void UnitRegistry::AddDefaultPhenomena ()
     AddBasePhenomenon(BasePhenomena::Finance);
     AddBasePhenomenon(BasePhenomena::Capita);
     AddBasePhenomenon(BasePhenomena::Ratio);
+    }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void UnitRegistry::AddDefaultPhenomena ()
+    {
     AddPhenomenon(APPARENT_POWER, "ELECTRIC_POTENTIAL*CURRENT");
     AddPhenomenon(AREA, "LENGTH(2)");
     AddPhenomenon(VOLUME, "LENGTH(3)");
@@ -106,5 +239,3 @@ void UnitRegistry::AddDefaultPhenomena ()
 
     AddPhenomenon(VOLUME_RATIO, "VOLUME*VOLUME(-1)");
     }
-
-
