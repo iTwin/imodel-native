@@ -48,14 +48,6 @@ struct IModelJsTimer : Napi::ObjectWrap<IModelJsTimer>
         static uv_loop_t* GetEventLoop() { return Host::GetInstance().GetEventLoop(); }
 
     public:
-        IModelJsTimer(const Napi::CallbackInfo& info) : Napi::ObjectWrap<IModelJsTimer>(info)
-            {
-            m_timeout = info[0].ToNumber();
-            m_function = Napi::Persistent(info[1].As<Napi::Function>());
-            uv_timer_init(GetEventLoop(), &m_handle);
-            Ref(); // keep this alive until it fires
-            }
-
         static void Init(Napi::Env& env, Napi::Object exports)
             {
             Napi::HandleScope scope(env);
@@ -70,6 +62,25 @@ struct IModelJsTimer : Napi::ObjectWrap<IModelJsTimer>
             s_constructor.SuppressDestruct();
             }
 
+        IModelJsTimer(const Napi::CallbackInfo& info) : Napi::ObjectWrap<IModelJsTimer>(info)
+            {
+            m_timeout = info[0].ToNumber();
+            m_function = Napi::Persistent(info[1].As<Napi::Function>());
+            uv_timer_init(GetEventLoop(), &m_handle);
+            Ref(); // keep this alive until the uv event is done with it. See OnUvHandleClose below.
+            }
+
+        static void OnUvHandleClose(uv_handle_t* handle)
+            {
+            auto wrap = static_cast<IModelJsTimer*>(handle->data);
+            wrap->Unref(); // allow this object to be GC'd
+            }
+
+        static void CloseUvHandle(uv_timer_t* handle)
+            {
+            uv_close((uv_handle_t*)handle, OnUvHandleClose);
+            }
+
         Napi::Value Start(const Napi::CallbackInfo& info)
             {
             int err = uv_timer_start(&m_handle, OnTimeout, m_timeout, 0);
@@ -77,12 +88,10 @@ struct IModelJsTimer : Napi::ObjectWrap<IModelJsTimer>
             return Napi::Number::New(Env(), err);
             }
 
-        Napi::Value Stop(const Napi::CallbackInfo& info)
+        void Stop(const Napi::CallbackInfo& info)
             {
-            int err = uv_timer_stop(&m_handle);
-            Unref(); // allow this object to be GC'd
-            Napi::HandleScope handle_scope(Env());
-            return Napi::Number::New(Env(), err);
+            uv_timer_stop(&m_handle);
+            CloseUvHandle(&m_handle);
             }
 
         static void OnTimeout(uv_timer_t* handle)
@@ -97,13 +106,12 @@ struct IModelJsTimer : Napi::ObjectWrap<IModelJsTimer>
                     }
                 catch (Napi::Error err)
                     {
-                    fprintf(stderr, err.Message().c_str());
+                    fprintf(stderr, err.Message().c_str()); // *** WIP_LOGGING
                     }
                 }
             if (0 == uv_timer_get_repeat(handle))
                 {
-                // Note that if there is an exception pending, then it is not safe to call Stop, as that tries to create values.
-                wrap->Unref(); // allow this object to be GC'd
+                CloseUvHandle(&wrap->m_handle);
                 }
             }
     };

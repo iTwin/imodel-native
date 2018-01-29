@@ -72,7 +72,7 @@ cDefs + -DUSING_UV_SHARED=1
 cDefs + -DEXTERNAL_NAPI=1
 cIncs + -I$(nodeAddonApiPublicApiSourceDir)
 
-%if $(TARGET_PLATFORM) == "Windows"
+%if $(TARGET_PLATFORM) == "Windows" || $(TARGET_PLATFORM) == "WinRT" || $(TARGET_PLATFORM) == "Android" || $(TARGET_PLATFORM) == "Linux"
 
 nodeApiV8Dir = $(baseDir)v8/
 
@@ -83,6 +83,15 @@ $(o)node_api$(oext)       : $(nodeApiV8Dir)node_api.cc $(napiHeaders) ${MultiCom
 $(o)node_internals$(oext) : $(nodeApiV8Dir)node_internals.cc $(napiHeaders) ${MultiCompileDepends}
 
 imodelJsObjs + $(o)node_api$(oext) $(o)node_internals$(oext)
+
+%elif $(TARGET_PLATFORM) == "iOS" || $(TARGET_PLATFORM) == "MacOS"
+
+# *** TBD: JSC
+
+
+%else
+
+%error unsupported platform
 
 %endif
 
