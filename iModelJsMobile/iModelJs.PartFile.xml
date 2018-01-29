@@ -35,12 +35,20 @@
      ======================================================================================================== -->
     <!-- This is a fake product that allows for testing of the mobile architecture on Windows desktop -->
     <Product Name="imodeljswinx64-product">
-        <SubPart PartName="imodeljswinx64-exe"/>
+        <SubPart PartName="imodeljswinx64-exe" LibType="Dynamic"/>
+        <SubPart PartName="imodeljswinx64-unix" LibType="Static"/>
         <Directories DirectoryListName="imodeljswinx64" />
     </Product>
 
-    <Part Name="imodeljswinx64-exe" BentleyBuildMakeFile="apps/winx64/imodeljswinx64-exe.mke">
-        <SubPart PartName="iModelJs" />
+    <Part Name="imodeljswinx64-exe" BentleyBuildMakeFile="apps/winx64/imodeljswinx64-exe.mke" OnlyPlatforms="x64">
+        <SubPart PartName="iModelJs" LibType="Dynamic" />
+        <Bindings>
+            <Files ProductDirectoryName="ApplicationRoot">Delivery/imodeljswinx64$(exeext)</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="imodeljswinx64-unix" BentleyBuildMakeFile="apps/winx64/imodeljswinx64-exe.mke" OnlyPlatforms="MacOS*,Linux*">
+        <SubPart PartName="iModelJs" LibType="Static" />
         <Bindings>
             <Files ProductDirectoryName="ApplicationRoot">Delivery/imodeljswinx64$(exeext)</Files>
         </Bindings>
@@ -95,7 +103,7 @@
     <!-- **** Gtest        **** -->
     <!-- ********************** -->
 
-    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke"
+    <Part Name="Gtest-Base" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke"
     BentleyBuildMakeOptions="-dTEST_NAME=iModelJsTests -dTEST_COLLECTION_PRODUCT=iModelJs-Tests -dTEST_FRAMEWORK_SQLANG=iModelJsNodeAddon_en.sqlang.db3" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="iModelJs-Tests"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
@@ -105,14 +113,22 @@
         </Bindings>
     </Part>
 
+    <Part Name="Gtest-Windows" OnlyPlatforms="x64">
+        <SubPart PartName="Gtest-Base" LibType="Dynamic"/>
+    </Part>
+
+    <Part Name="Gtest-Unix" OnlyPlatforms="MacOS*,Linux*">
+        <SubPart PartName="Gtest-Base" LibType="Static"/>
+    </Part>
+
     <Product Name="iModelJs-Gtest">
-        <SubPart PartName="Gtest"/>
+        <SubPart PartName="Gtest-Windows"/>
+        <SubPart PartName="Gtest-Unix"/>
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
     <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=iModelJs-Gtest -dGTEST_NAME=iModelJsTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/iModelJsTests" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="iModelJs-Gtest" />
-        <!-- <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/> -->
     </Part>
 
     <!-- ********************** -->
