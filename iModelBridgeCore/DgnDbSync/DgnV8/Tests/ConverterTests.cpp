@@ -1069,15 +1069,17 @@ TEST_F(ConverterTests, UpdateWithDeletedParent)
     DgnV8Api::EditElementHandle* curr = dropAgenda.GetFirstP();
     DgnV8Api::EditElementHandle* end = curr + dropAgenda.GetCount();
 
+    DgnV8Api::EditElementHandle* firstChild = dropAgenda.GetFirstP();
     for (; curr < end; curr++)
         curr->AddToModel();
     v8editor.Save();
 
+    // The update will fail to insert the child elements because the code will be a duplicate of the previous children which haven't been deleted yet.
     DoUpdate(m_dgnDbFileName, m_v8FileName);
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        DgnElementCPtr child1 = db->Elements().GetElement(child1Id);
+        DgnElementCPtr child1 = FindV8ElementInDgnDb(*db, firstChild->GetElementId());
         ASSERT_TRUE(child1.IsValid());
         }
 
