@@ -6,7 +6,7 @@ USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
 
     
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                     Earlin.Lutz  10/17
+* @bsimethod                                                     Earlin.Lutz  01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PseudoSpiral,Serialize)
     {
@@ -125,6 +125,9 @@ ICurvePrimitivePtr ConstructSpiralRadiusRadiusLength (int typeCode, Angle bearin
     return fullSpiral;
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  01/18
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Spiral,TwoRadiusConstruction)
     {
     double radiusB = 1000.0;
@@ -231,6 +234,9 @@ void testRadiusCombinations (bvector<double> radiiA, bvector<double> radiiB)
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  01/18
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Spiral,MixedRadiusConstructionsA)
     {
     // mixed radius constructions with varying magnitudes.
@@ -239,6 +245,9 @@ TEST(Spiral,MixedRadiusConstructionsA)
     Check::ClearGeometry ("Spiral.MixedRadiusConstructionsA");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  01/18
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Spiral,MixedRadiusConstructionsB)
     {
     // mixed radius constructions with nearly equal magnitudes
@@ -248,6 +257,9 @@ TEST(Spiral,MixedRadiusConstructionsB)
     Check::ClearGeometry ("Spiral.MixedRadiusConstructionsB");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  01/18
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Spiral,ClothoidCosineApproximation)
     {
     double R = 1000.0;

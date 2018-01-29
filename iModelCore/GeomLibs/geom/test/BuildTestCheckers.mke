@@ -2,7 +2,7 @@
 #
 #  $Source: geom/test/BuildTestCheckers.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 NO_DEFAULT_CLANG_WARNINGS   = 1
@@ -18,7 +18,7 @@ always:
     !~@mkdir $(o)
 
 # ignore: local variable is initialized but not referenced
-CCompOpts       + -wd4189
+# CCompOpts       + -wd4189
 
 CCompPDBName    = GeomLibsCheckers
 

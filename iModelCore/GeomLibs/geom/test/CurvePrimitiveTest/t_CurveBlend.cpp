@@ -1742,8 +1742,8 @@ TEST(CurveVector,BuildDistanceIndexFromFile)
                 {
                 CurveVectorPtr cv = g->GetAsCurveVector();
                 auto strokes = cv->Stroke (*strokeOptions);
-                double a = strokes->Length ();
-                double b = cv->Length ();
+                // double a = strokes->Length ();
+                // double b = cv->Length ();
                 if (cv.IsValid ())
                     {
                     int numPass = 10;
@@ -1835,10 +1835,10 @@ TEST(CurveVector,SpiralCuts)
                         Check::Print (*cv1, "FULL PATH");
                         Check::PrintIndent (1); Check::Print (cv1->Length (), "Full path length");
                         PathLocationDetail detailA, detailB, detailAXY, detailBXY;
-                        auto locationA = parentPath->SearchByDistanceFromPathStart (distanceA, detailA);
-                        auto locationB = parentPath->SearchByDistanceFromPathStart (distanceB, detailB);
-                        auto locationAXY = parentPath->SearchByDistanceFromPathStart (distanceA, detailAXY);
-                        auto locationBXY = parentPath->SearchByDistanceFromPathStart (distanceB, detailBXY);
+                        //auto locationA = parentPath->SearchByDistanceFromPathStart (distanceA, detailA);
+                        //auto locationB = parentPath->SearchByDistanceFromPathStart (distanceB, detailB);
+                        //auto locationAXY = parentPath->SearchByDistanceFromPathStart (distanceA, detailAXY);
+                        //auto locationBXY = parentPath->SearchByDistanceFromPathStart (distanceB, detailBXY);
 
                         printf ("  Total parentPath length %.17g\n", parentPath->TotalPathLength ());
                         Check::Print ("\ndetailA"); Check::Print (detailA);
