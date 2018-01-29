@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Configuration/UrlProvider.h $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -87,7 +87,7 @@ struct UrlProvider
             );
 
         WSCLIENT_EXPORT static void Uninitialize();
-
+        WSCLIENT_EXPORT static void SetHttpHandler(IHttpHandlerPtr customHandler);
         //! Should be used with all requests to provided URLs!
         //! Returns handler that will configure requests depending on environment.
         //! Will setup certificate validation appropriately.
