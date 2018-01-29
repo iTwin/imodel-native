@@ -2755,7 +2755,7 @@ struct RealityMeshAttachmentConversion
 struct ConvertV8TagToDgnDbExtension : ConvertToDgnDbElementExtension
 {
     static void Register();
-    virtual Result _PreConvertElement(DgnV8EhCR, Converter&, TransformCR, DgnModel&) {return Result::SkipElement;}
+    virtual Result _PreConvertElement(DgnV8EhCR, Converter&, ResolvedModelMapping const&) override {return Result::SkipElement;}
 };
 
 //=======================================================================================
