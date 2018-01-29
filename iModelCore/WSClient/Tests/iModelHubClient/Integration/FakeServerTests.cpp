@@ -92,10 +92,11 @@ class FakeServerFixture : public IntegrationTestsBase
             EXPECT_EQ(BeFileNameStatus::Success, FakeServer::DeleteAlliModels(serverPath));*/
             }
     };
-/*
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Farhad.Kabir    12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+/*
 TEST_F(FakeServerFixture, CreateiModelFromSeed) 
 {
 WCharCP serverPath = outPath.GetWCharCP();
@@ -146,7 +147,7 @@ Json::Value iModelCreationJson(Utf8StringCR iModelName, Utf8StringCR description
     return iModelCreation;
     }
 
-#ifdef WIP
+#ifdef __WIP__
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Farhad.Kabir    12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -306,4 +307,4 @@ TEST(FakeServerFixt, Demo)
     printf("%d\n", BeXmlStatus::BEXML_Success);
     }
 
-#endif // WIP
+#endif // __WIP__
