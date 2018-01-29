@@ -2,7 +2,7 @@
 #
 #     $Source: gtest/CheckLogfilesForFailures.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -19,6 +19,14 @@ breakOnFailure = 1
     breakOnFailure = 0
 %endif
 
+%ifdef USE_TIA_MAP
+	LogFilesDir=$(OutputRootDir)LogFiles/RunRequiredTests/ExecutionLogs/
+	always:
+		python $(SrcRoot)DgnDbTestingScripts/TestImpactAnalysis/RunRequiredTests.py
+%endif
+		
 always:
     python $(_makeFilePath)CheckLogfilesForFailures.py $(LogFilesDir) $(breakOnFailure)
+
+
 

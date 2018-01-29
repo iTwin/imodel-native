@@ -2,36 +2,36 @@
 #
 #     $Source: gtest/RunGtest.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
 
 %ifndef GTEST_PRODUCT
-    %error Define GTEST_PRODUCT to identify the test executable as a path relative to the Product directory, e.g., -dGTEST_PRODUCT=BeSQLite-Gtest/BeSQLiteTest
+	%error Define GTEST_PRODUCT to identify the test executable as a path relative to the Product directory, e.g., -dGTEST_PRODUCT=BeSQLite-Gtest/BeSQLiteTest
 %endif
 
 %ifndef GTEST_NAME
-    GTEST_NAME = $(GTEST_PROJECT)
+	GTEST_NAME = $(GTEST_PROJECT)
 %endif
 
 %ifndef GTEST_OUTPUT_DIR
-    GTEST_OUTPUT_DIR=$(OutputRootDir)build/RunGtest/${GTEST_PRODUCT}/$(GTEST_NAME)
+	GTEST_OUTPUT_DIR=$(OutputRootDir)build/RunGtest/${GTEST_PRODUCT}/$(GTEST_NAME)
 %endif
 
 %ifndef GTEST_LOGFILE_NAME
-    GTEST_LOGFILE_NAME=$(GTEST_NAME).log
-    #GTEST_LOGFILE_NAME=${GTEST_PRODUCT}/$(GTEST_NAME).log
+	GTEST_LOGFILE_NAME=$(GTEST_NAME).log
+	#GTEST_LOGFILE_NAME=${GTEST_PRODUCT}/$(GTEST_NAME).log
 %endif
 
 BentleyTestDir=$(SrcRoot)util/gtest/BentleyTest/
 runDir=$[@realpath ${GTEST_OUTPUT_DIR}]/run/
 
 %if defined (BMAKE_DELETE_ALL_TARGETS)
-    always:
-        -$(rmdirRecursiveCmd) $(runDir)
+	always:
+		-$(rmdirRecursiveCmd) $(runDir)
 
-    %return
+	%return
 %endif
 
 LogDir=$(runDir)logs/
@@ -44,48 +44,56 @@ MAKE_PRODUCT_COPY_PRODUCT_NAME = $(GTEST_PRODUCT)
 exeName = ${MAKE_PRODUCT_COPY_DIR}/$(GTEST_NAME)
 
 always:
-    !~@mkdir ${GTEST_OUTPUT_DIR}
-    !~@mkdir ${runDir}
-    !~@mkdir ${runDir}/Output
-    !~@mkdir ${runDir}/Temp
-    !~@mkdir ${LogDir}
+	!~@mkdir ${GTEST_OUTPUT_DIR}
+	!~@mkdir ${runDir}
+	!~@mkdir ${runDir}/Output
+	!~@mkdir ${runDir}/Temp
+	!~@mkdir ${LogDir}
 
 %ifdef BENTLEY_NO_RUN_GTEST
-    always:
-        >$(LogDir)test.log
-        tests were not run
-        <
-        ~linkfile "$(BuildContext)Delivery/Gtest/Logs/$(GTEST_LOGFILE_NAME)=$(ResultsCapture)"
+	always:
+		>$(LogDir)test.log
+		tests were not run
+		<
+		~linkfile "$(BuildContext)Delivery/Gtest/Logs/$(GTEST_LOGFILE_NAME)=$(ResultsCapture)"
 %endif
 
-%if defined (winNT) 
-    
-    testName = $[@basename $(exeName)]
+%if defined (winNT)
+	%ifdef USE_TIA_MAP
+		%message Skipping test execution
+		always:
+			>$(LogDir)test.log
+			tests were not run
+			<
+			~linkfile "$(BuildContext)Delivery/Gtest/Logs/$(GTEST_LOGFILE_NAME)=$(ResultsCapture)"
+		
+	%else
+		testName = $[@basename $(exeName)]
 
-    %if defined(RUN_GTEST_MINIMIZED) || defined(BEGTEST_RUN_MINIMIZED)
-        RunPrefix=start "$(testName)" \/WAIT \/MIN
-    %else
-        RunPrefix=start "$(testName)" \/WAIT
-    %endif
+		%if defined(RUN_GTEST_MINIMIZED) || defined(BEGTEST_RUN_MINIMIZED)
+			RunPrefix=start "$(testName)" \/WAIT \/MIN
+		%else
+			RunPrefix=start "$(testName)" \/WAIT
+		%endif
 
 
-    $(ResultsCapture) : $(exeName).exe
-        >$(ResultsCapture)
-        $(exeName)
-        <
-        >$(LogDir)run.bat
-        $(exeName) | $(_makeFilePath)TeeGtest.py $(ResultsCapture)
-        exit
-        <
-        -$(RunPrefix) $(LogDir)run.bat
-
+		$(ResultsCapture) : $(exeName).exe
+			>$(ResultsCapture)
+			$(exeName)
+			<
+			>$(LogDir)run.bat
+			$(exeName) | $(_makeFilePath)TeeGtest.py $(ResultsCapture)
+			exit
+			<
+			-$(RunPrefix) $(LogDir)run.bat
+	%endif
 %else
-    
-    $(ResultsCapture) : $(exeName)
-        >$(ResultsCapture)
-        $(exeName)
-        <
-        -$(exeName) >> $(ResultsCapture) 2>&1
+	
+	$(ResultsCapture) : $(exeName)
+		>$(ResultsCapture)
+		$(exeName)
+		<
+		-$(exeName) >> $(ResultsCapture) 2>&1
 
 %endif
 
@@ -93,12 +101,13 @@ always:
 
 BreakOnFailure = 0
 %if defined (BEGTEST_BREAK_ON_FAILURE)
-    BreakOnFailure = 1
+	BreakOnFailure = 1
 %endif
 
+%ifndef USE_TIA_MAP
+	always:
+		 python $(_makeFilePath)CheckLogfilesForFailures.py $[@dir $(ResultsCapture)] $(BreakOnFailure)
+%endif
+	 
 always:
-     python $(_makeFilePath)CheckLogfilesForFailures.py $[@dir $(ResultsCapture)] $(BreakOnFailure)
-		
-     
-always:
-    ~linkfile "$(BuildContext)Delivery/Gtest/Logs/$(GTEST_LOGFILE_NAME)=$(ResultsCapture)"
+	~linkfile "$(BuildContext)Delivery/Gtest/Logs/$(GTEST_LOGFILE_NAME)=$(ResultsCapture)"
