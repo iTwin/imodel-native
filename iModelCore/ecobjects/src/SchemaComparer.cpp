@@ -1094,11 +1094,12 @@ BentleyStatus SchemaComparer::CompareECEnumeration(ECEnumerationChange& change, 
 BentleyStatus SchemaComparer::CompareECEnumerators(ECEnumeratorChanges& changes, EnumeratorIterable const& oldValues, EnumeratorIterable const& newValues)
     {
     std::map<Utf8CP, ECEnumeratorCP, CompareIUtf8Ascii> oldEnumValues, newEnumValues, allEnumValues;
-    for (ECEnumeratorCP enumCP : oldValues)
-        oldEnumValues[enumCP->GetName().c_str()] = enumCP;
+    for (ECEnumeratorCP ecenum : oldValues)
+        oldEnumValues[ecenum->GetName().c_str()] = ecenum;
 
-    for (ECEnumeratorCP enumCP : newValues)
-        newEnumValues[enumCP->GetName().c_str()] = enumCP;
+    for (ECEnumeratorCP ecenum : newValues)
+        newEnumValues[ecenum->GetName().c_str()] = ecenum;
+
 
     allEnumValues.insert(oldEnumValues.cbegin(), oldEnumValues.cend());
     allEnumValues.insert(newEnumValues.cbegin(), newEnumValues.cend());
@@ -1171,6 +1172,7 @@ BentleyStatus SchemaComparer::CompareECEnumerators(ECEnumeratorChanges& changes,
 
     return SUCCESS;
     }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
