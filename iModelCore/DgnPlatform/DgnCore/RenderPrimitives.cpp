@@ -346,6 +346,7 @@ private:
         bool IsStrokes() const { return m_isStrokes; }
         bool IsCurved() const { return m_isCurved; }
         bool HasRaster() const { return m_raster.IsValid(); }
+        bool GetRange(DRange3dR cRange) const { if (IsValid()) { return m_curves->GetRange(cRange); }  return false; } 
 
         Strokes::PointLists GetStrokes(IFacetOptionsR facetOptions)
             {
@@ -2230,11 +2231,26 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
     Transform rot = Transform::From(RotMatrix::From2Vectors(xAxis, yAxis));
     Transform textTransform = Transform::FromProduct(geom.GetTransform(), textString.ComputeTransform());
 
+    DRange2d textRange2d = textString.GetRange();
+    DRange3d textRange = DRange3d::From(textRange2d.low.x, textRange2d.low.y, 0.0, textRange2d.high.x, textRange2d.high.y, 0.0);
+    textTransform.Multiply(textRange, textRange);
+
+    DPoint3d textRangeCenter = DPoint3d::FromInterpolate(textRange.low, 0.5, textRange.high);
+    double pixelSize = context.GetPixelSizeAtPoint(&textRangeCenter);
+    double meterSize = 0.0 != pixelSize ? 1.0 / pixelSize : 0.0;
+
+    double minAxis = std::min(textRange.XLength(), textRange.YLength());
+    double textSize = minAxis * meterSize;
+    constexpr double s_minToleranceRatioMultiplier = 2.0; // from ElementTileTree.cpp; used to multiply the s_minToleranceRatio
+    constexpr double s_texSizeThreshold = 64.0;
+    bool doTextAsRasterIfPossible = textSize / s_minToleranceRatioMultiplier <= s_texSizeThreshold;
+
     auto facetOptions = CreateFacetOptions(chordTolerance);
 
     for (size_t i = 0; i < textString.GetNumGlyphs(); i++)
         {
         auto textGlyph = glyphs[i];
+
         Glyph* glyph = nullptr != textGlyph ? FindOrInsert(*textGlyph, textString.GetStyle().GetFont()) : nullptr;
         if (nullptr == glyph || !glyph->IsValid())
             continue;
@@ -2260,16 +2276,21 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
             }
         else
             {
-// #define TEST_RASTER_GLYPHS
             DisplayParamsCPtr displayParams(&geom.GetDisplayParams());
-#if !defined(TEST_RASTER_GLYPHS)
-            PolyfaceHeaderPtr polyface = glyph->GetPolyface(*facetOptions);
-#else
-            Glyph::RasterPolyface raster = glyph->GetRasterPolyface(*facetOptions, *context.GetRenderSystem(), context.GetDgnDb());
-            PolyfaceHeaderPtr polyface = raster.m_polyface;
-            if (raster.IsValid())
-                displayParams = displayParams->CloneForRasterText(*raster.m_texture);
-#endif
+            PolyfaceHeaderPtr polyface;
+
+            if (doTextAsRasterIfPossible)
+                {
+                Glyph::RasterPolyface raster = glyph->GetRasterPolyface(*facetOptions, *context.GetRenderSystem(), context.GetDgnDb());
+                polyface = raster.m_polyface;
+                if (raster.IsValid())
+                    displayParams = displayParams->CloneForRasterText(*raster.m_texture);
+                }
+            else
+                {
+                polyface = glyph->GetPolyface(*facetOptions);
+                }
+
             if (polyface.IsValid() && polyface->HasFacets())
                 {
                 polyface->Transform(glyphTransform);

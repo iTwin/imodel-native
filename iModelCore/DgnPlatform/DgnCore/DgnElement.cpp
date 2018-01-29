@@ -2255,7 +2255,12 @@ DgnDbStatus ElementGroupsMembers::Insert(DgnElementCR group, DgnElementCR member
     statement->BindId(3, member.GetElementClassId());
     statement->BindId(4, member.GetElementId());
     statement->BindInt(5, priority);
-    return (BE_SQLITE_DONE == statement->Step()) ? DgnDbStatus::Success : DgnDbStatus::BadRequest;
+    DbResult result = statement->Step();
+    if (BE_SQLITE_DONE == result)
+        return DgnDbStatus::Success;
+    if (BE_SQLITE_CONSTRAINT_UNIQUE == result)
+        return DgnDbStatus::ConstraintNotUnique;
+    return DgnDbStatus::BadRequest;
     }
 
 //---------------------------------------------------------------------------------------

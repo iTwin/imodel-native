@@ -595,7 +595,7 @@ bool ViewContext::_VisitAllModelElements()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   07/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-double ViewContext::GetPixelSizeAtPoint(DPoint3dCP inPoint) const
+double ViewContext::_GetPixelSizeAtPoint(DPoint3dCP inPoint) const
     {
     DPoint3d vec[2];
 

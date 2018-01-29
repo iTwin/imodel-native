@@ -81,7 +81,8 @@ struct TileContext;
 
 constexpr double s_minRangeBoxSize = 2.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh ###TODO: Revisit...
 constexpr double s_tileScreenSize = 512.0;
-constexpr double s_minToleranceRatio = s_tileScreenSize * 2.0;
+constexpr double s_minToleranceRatioMultiplier = 2.0;
+constexpr double s_minToleranceRatio = s_tileScreenSize * s_minToleranceRatioMultiplier;
 constexpr uint32_t s_minElementsPerTile = 100; // ###TODO: The complexity of a single element's geometry can vary wildly...
 constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
 constexpr double s_spatialRangeMultiplier = 1.0001; // must be > 1.0 - need to expand project extents slightly to avoid clipping geometry that lies right on one of their planes...
@@ -404,6 +405,7 @@ protected:
     bool _WantUndisplayed() override { return true; }
     AreaPatternTolerance _GetAreaPatternTolerance(CurveVectorCR) override { return AreaPatternTolerance(m_tolerance); }
     Render::SystemP _GetRenderSystem() const override { return m_loadContext.GetRenderSystem(); }
+    double _GetPixelSizeAtPoint(DPoint3dCP) const override { return m_tolerance; }
 
 public:
     TileContext(GeometryList& geometries, RootR root, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, double tolerance, LoadContextCR loadContext)
@@ -1930,6 +1932,7 @@ private:
     SystemP _GetRenderSystem() const override { return m_loadContext.GetRenderSystem(); }
     GraphicBuilderPtr _CreateGraphic(GraphicBuilder::CreateParams const&) override { BeAssert(false); return nullptr; }
     GraphicPtr _CreateBranch(GraphicBranch&, DgnDbR, TransformCR, ClipVectorCP) override { BeAssert(false); return nullptr; }
+    double _GetPixelSizeAtPoint(DPoint3dCP) const override { return m_tolerance; }
 public:
     MeshGenerator(TileCR tile, GeometryOptionsCR options, LoadContextCR loadContext);
 
