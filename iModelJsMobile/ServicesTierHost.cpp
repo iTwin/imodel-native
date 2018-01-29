@@ -106,7 +106,7 @@ struct IModelJsTimer : Napi::ObjectWrap<IModelJsTimer>
                     }
                 catch (Napi::Error err)
                     {
-                    fprintf(stderr, err.Message().c_str()); // *** WIP_LOGGING
+                    LOG(err.Message().c_str());
                     }
                 }
             if (0 == uv_timer_get_repeat(handle))
@@ -398,7 +398,7 @@ void Host::HandleReady()
         }
     catch (Napi::Error err)
         {
-        fprintf(stderr, "%s\n", err.Message().c_str());
+        LOG(err.Message().c_str());
         }
     }
 
@@ -439,7 +439,7 @@ void Host::HandleIdle()
             }
         catch (Napi::Error err)
             {
-            fprintf(stderr, err.Message().c_str());
+            LOG(err.Message().c_str());
             }
         }
     }
@@ -610,13 +610,13 @@ void Host::SetupJsRuntime()
             {
             JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS(1);
             auto msg = JS_CALLBACK_GET_STRING(0);
-            printf("%s\n", msg.Utf8Value().c_str());
+            LOG(msg.Utf8Value().c_str());
             return info.Env().Undefined();
             }));
         }
     catch (Napi::Error err) // JS threw an exception
         {
-        fprintf(stderr, "%s\n", err.Message().c_str());
+        LOG(err.Message().c_str());
         return;
         }
     }
@@ -670,7 +670,8 @@ Utf8String Host::GetSystemArgv() const
     WString argvW(::GetCommandLineW());
     argv.Assign(argvW.GetWCharCP());
 #else
-#error WIP
+// TODO: GetSystemArgv
+BeAssert(false && "TBD");
 #endif
 
     return argv;

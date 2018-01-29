@@ -13,3 +13,6 @@
 #include <Bentley/BeFileName.h>
 #include <iModelJs/iModelJs.h>
 #include <iModelJs/iModelJsServicesTier.h>
+
+// *** TBD: Logging
+#define LOG(s) fputs(s, stderr)

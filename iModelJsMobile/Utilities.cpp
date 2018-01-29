@@ -78,13 +78,15 @@ END_BENTLEY_IMODELJS_JS_NAMESPACE
 
 #ifdef BENTLEYCONFIG_OS_APPLE_IOS
 
-#error WIP
+#warning WIP
+
+#elifdef BENTLEYCONFIG_OS_APPLE_MACOS
 
 #elifdef BENTLEYCONFIG_OS_WINRT
 
 #error WIP
 
-#else
+#elif defined(BENTLEYCONFIG_OS_WINDOWS) || defined(BENTLEYCONFIG_OS_ANDROID) || defined(BENTLEYCONFIG_OS_LINUX)
 
 #include <google_v8/v8.h>
 #include <google_v8/v8-debug.h>

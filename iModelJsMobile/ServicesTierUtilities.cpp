@@ -1434,6 +1434,7 @@ Napi::Object Utilities::CreateInitParams(Napi::Env& env)
     static_assert (O_CREAT      <= Js::MAX_SAFE_JS_INTEGER, "Js");
     static_assert (O_TRUNC      <= Js::MAX_SAFE_JS_INTEGER, "Js");
     static_assert (O_EXCL       <= Js::MAX_SAFE_JS_INTEGER, "Js");
+#ifdef _WIN32
     static_assert (O_TEXT       <= Js::MAX_SAFE_JS_INTEGER, "Js");
     static_assert (O_BINARY     <= Js::MAX_SAFE_JS_INTEGER, "Js");
     static_assert (O_RAW        <= Js::MAX_SAFE_JS_INTEGER, "Js");
@@ -1441,7 +1442,7 @@ Napi::Object Utilities::CreateInitParams(Napi::Env& env)
     static_assert (O_NOINHERIT  <= Js::MAX_SAFE_JS_INTEGER, "Js");
     static_assert (O_SEQUENTIAL <= Js::MAX_SAFE_JS_INTEGER, "Js");
     static_assert (O_RANDOM     <= Js::MAX_SAFE_JS_INTEGER, "Js");
-
+#endif
     static_assert (S_IFMT   <= Js::MAX_SAFE_JS_INTEGER, "Js");
     static_assert (S_IFDIR  <= Js::MAX_SAFE_JS_INTEGER, "Js");
     static_assert (S_IFCHR  <= Js::MAX_SAFE_JS_INTEGER, "Js");
@@ -1457,6 +1458,7 @@ Napi::Object Utilities::CreateInitParams(Napi::Env& env)
     params.Set ("uv_fs_O_CREAT",      Napi::Number::New(env, O_CREAT));
     params.Set ("uv_fs_O_TRUNC",      Napi::Number::New(env, O_TRUNC));
     params.Set ("uv_fs_O_EXCL",       Napi::Number::New(env, O_EXCL));
+#ifdef _WIN32
     params.Set ("uv_fs_O_TEXT",       Napi::Number::New(env, O_TEXT));
     params.Set ("uv_fs_O_BINARY",     Napi::Number::New(env, O_BINARY));
     params.Set ("uv_fs_O_RAW",        Napi::Number::New(env, O_RAW));
@@ -1464,7 +1466,7 @@ Napi::Object Utilities::CreateInitParams(Napi::Env& env)
     params.Set ("uv_fs_O_NOINHERIT",  Napi::Number::New(env, O_NOINHERIT));
     params.Set ("uv_fs_O_SEQUENTIAL", Napi::Number::New(env, O_SEQUENTIAL));
     params.Set ("uv_fs_O_RANDOM",     Napi::Number::New(env, O_RANDOM));
-
+#endif
     params.Set ("uv_fs_S_IFMT",   Napi::Number::New(env, S_IFMT));
     params.Set ("uv_fs_S_IFDIR",  Napi::Number::New(env, S_IFDIR));
     params.Set ("uv_fs_S_IFCHR",  Napi::Number::New(env, S_IFCHR));
