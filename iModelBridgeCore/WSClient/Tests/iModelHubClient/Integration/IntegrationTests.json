@@ -1,15 +1,15 @@
 {
-  "Environment": "DEV",
-  "ProjectId": "52a2af9e-1430-4a09-8b77-f168762863e6",
+  "Environment": "QA",
+  "ProjectId": "7dfb2388-92cf-4ec7-94a7-ff72853466df",
   "Users": [
     {
-      "Password": "admin_password_please_change",
-      "Username": "admin_user_please_change",
+      "Password": "6W7pn_kK",
+      "Username": "farhad.kabir@bentley.com",
       "IsAdmin": true
     },
     {
-      "Password": "regular_password_please_change",
-      "Username": "regular_user_please_change"
+      "Password": "6W7pn_kK",
+      "Username": "farhad.kabir@bentley.com"
     }
   ]
 }

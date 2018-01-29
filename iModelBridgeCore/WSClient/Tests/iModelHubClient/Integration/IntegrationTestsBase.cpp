@@ -8,6 +8,7 @@
 #include "IntegrationTestsBase.h"
 #include <WebServices/iModelHub/Client/ClientHelper.h>
 #include <BeHttp/ProxyHttpHandler.h>
+#include "../FakeServer/MockIMHubHttpHandler.h"
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_IMODELHUB
@@ -67,6 +68,9 @@ void InitializeTests()
     BeSQLite::EC::ECDb::Initialize(temp, &assets);
     Http::HttpClient::Initialize(assets);
     UrlProvider::Initialize(IntegrationTestsSettings::Instance().GetEnvironment(), UrlProvider::DefaultTimeout, StubLocalState::Instance());
+    auto mockHandler = std::make_shared<MockIMSHttpHandler>();
+    UrlProvider::SetHttpHandler(mockHandler);
+    ClientHelper::Initialize(IntegrationTestsSettings::Instance().GetClientInfo(), StubLocalState::Instance(), mockHandler);
     ClientHelper::Initialize(IntegrationTestsSettings::Instance().GetClientInfo(), StubLocalState::Instance(), ProxyHttpHandler::GetFiddlerProxyIfReachable());
 
     s_initialized = true;
@@ -148,6 +152,8 @@ DgnDbPtr IntegrationTestsBase::CreateTestDb(Utf8StringCR dbName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelResult IntegrationTestsBase::CreateiModel(DgnDbPtr db, bool expectSuccess)
     {
+    auto mockHandler = std::make_shared<MockIMSHttpHandler>();
+    s_client->SetHttpHandler(mockHandler);
     return iModelHubHelpers::CreateNewiModel(s_client, db, s_projectId, expectSuccess);
     }
 
