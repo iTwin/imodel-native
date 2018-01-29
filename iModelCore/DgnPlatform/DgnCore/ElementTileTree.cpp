@@ -2081,7 +2081,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
     if (nullptr == polyface || 0 == polyface->GetPointIndexCount())
         return;
 
-    bool doDecimate = !m_tile.IsLeaf() && geom.DoDecimate() && polyface->GetPointCount() > GetDecimatePolyfacePointCount();
+    bool doDecimate = !m_tile.IsLeaf() && geom.DoDecimate() && 0 == polyface->GetPointCount() > GetDecimatePolyfacePointCount() && /* Decimator doesn't handle params... */ 0 == polyface->GetParamCount();      
     bool doVertexCluster = !doDecimate && geom.DoVertexCluster() && rangePixels < GetVertexClusterThresholdPixels();
 
     if (doDecimate)
