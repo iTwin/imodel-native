@@ -6,7 +6,7 @@ USING_NAMESPACE_BENTLEY_TASKS
 USING_NAMESPACE_BENTLEY_HTTP
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    05/2015
+* @bsimethod                                                    Farhad.Kabir    11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 MockIMSHttpHandler::MockIMSHttpHandler()
     {
@@ -14,7 +14,7 @@ MockIMSHttpHandler::MockIMSHttpHandler()
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    05/2015
+* @bsimethod                                                    Farhad.Kabir    11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<Response> MockIMSHttpHandler::_PerformRequest(RequestCR request)
     {
