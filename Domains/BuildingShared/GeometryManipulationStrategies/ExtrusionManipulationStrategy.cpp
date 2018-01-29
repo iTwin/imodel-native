@@ -332,13 +332,34 @@ BentleyStatus ExtrusionManipulationStrategy::_TryGetProperty
     {
     if (0 == strcmp(key, prop_IsHeightSet()))
         {
-        value = m_heightSet || m_dynamicHeightSet;
+        value = m_heightSet;
         return BentleyStatus::SUCCESS;
         }
 
     if (0 == strcmp(key, prop_IsSweepDirectionSet()))
         {
-        value = m_sweepDirectionSet || m_dynamicHeightSet;
+        value = m_sweepDirectionSet;
+        return BentleyStatus::SUCCESS;
+        }
+
+    return T_Super::_TryGetProperty(key, value);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ExtrusionManipulationStrategy::_TryGetProperty
+(
+    Utf8CP key, 
+    DVec3d& value
+) const
+    {
+    if (0 == strcmp(key, prop_SweepDirection()))
+        {
+        if (!m_sweepDirectionSet && !m_dynamicSweepDirectionSet)
+            return BentleyStatus::ERROR;
+
+        value = GetSweepDirection();
         return BentleyStatus::SUCCESS;
         }
 
