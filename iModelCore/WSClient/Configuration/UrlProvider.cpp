@@ -393,6 +393,11 @@ IHttpHandlerPtr UrlProvider::GetSecurityConfigurator(IHttpHandlerPtr customHandl
         }, customHandler);
     }
 
+void UrlProvider::SetHttpHandler(IHttpHandlerPtr customHandler)
+    {
+    s_customHandler = customHandler;
+    s_buddi = std::make_shared<BuddiClient>(s_customHandler, nullptr, s_thread);
+    }
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
