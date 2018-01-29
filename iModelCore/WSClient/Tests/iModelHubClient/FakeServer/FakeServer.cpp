@@ -13,7 +13,7 @@ BeFileNameStatus FakeServer::CreateiModelFromSeed(WCharCP seedFilePath, WCharCP 
         return BeFileNameStatus::UnknownError;
     return BeFileNameStatus::Success;
     }
-BeFileNameStatus FakeServer::CreateiModel(WCharCP serverPath, WCharCP seedFile)
+BeFileNameStatus FakeServer::CreateiModel(BeFileName serverPath, WCharCP seedFile)
     {
 
     BeFileName servPathFile(serverPath);
@@ -41,12 +41,16 @@ BeFileNameStatus FakeServer::DeleteiModel(WCharCP serverPath, WCharCP filename)
         return BeFileNameStatus::CantDeleteFile;
     return BeFileNameStatus::Success;
     }
-BeFileNameStatus FakeServer::DownloadiModel(WCharCP downloadPath, WCharCP serverPath, WCharP fileToDownload)
+BeFileNameStatus FakeServer::DownloadiModel(BeFileName downloadPath, CharCP serverPath, CharCP fileToDownload)
     {
     BeFileName imodelPathFile(downloadPath);
     BeFileName servPathFile(serverPath);
-    imodelPathFile.AppendToPath(fileToDownload);
-    servPathFile.AppendToPath(fileToDownload);
+    imodelPathFile.AppendA("\\");
+    servPathFile.AppendA("\\");
+    imodelPathFile.AppendA(fileToDownload);
+    servPathFile.AppendA(fileToDownload);
+    imodelPathFile.AppendA(".bim");
+    servPathFile.AppendA(".bim");
     BeFileNameStatus stat = BeFileName::BeCopyFile(servPathFile.GetName(), imodelPathFile.GetName());
     if (BeFileNameStatus::Success != stat)
         return BeFileNameStatus::UnknownError;
@@ -62,3 +66,4 @@ DgnDbPtr FakeServer::AcquireBriefcase(DbResult &res, WCharCP filePath, WCharP fi
     filename.AppendToPath(file);
     return DgnDb::OpenDgnDb(&res, filename, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     }
+

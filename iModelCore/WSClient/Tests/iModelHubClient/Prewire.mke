@@ -2,7 +2,7 @@
 #
 #  $Source: Tests/iModelHubClient/Prewire.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 %include mdl.mki
@@ -11,3 +11,7 @@ baseDir = $(_MakeFilePath)
 
 $(BuildContext)Delivery/iModelHubNativeTests/ignore_list.txt : $(baseDir)ignore_list.txt
     $(LinkFirstDepToFirstTarget)
+
+seedDataSource=$(SrcRoot)DgnClientSdkTestData/MockServer/
+$(BuildContext)Delivery/iModelHubNativeTests/MockServer : $(seedDataSource)
+    $(LinkFirstDepToFirstTargetAsDirectory)
