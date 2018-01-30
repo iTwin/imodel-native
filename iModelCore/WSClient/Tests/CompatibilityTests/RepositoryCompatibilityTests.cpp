@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/CompatibilityTests/RepositoryCompatibilityTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -17,9 +17,11 @@
 #include "TestsHost.h"
 #include "Parser/ArgumentParser.h"
 #include "Disk/DiskRepositoryClient.h"
+#include "Logging/Logging.h"
 
 bvector<TestRepositories> s_createTestData;
 bvector<TestRepositories> s_upgradeTestData;
+bvector<TestRepositories> s_downloadSchemasTestData;
 
 StubLocalState s_localState;
 IHttpHandlerPtr s_proxy;
@@ -33,9 +35,13 @@ void RepositoryCompatibilityTests::SetTestData(const bvector<TestRepositories>& 
             {
             s_upgradeTestData.push_back(repositories);
             }
-        else
+        else if (repositories.create.IsValid())
             {
             s_createTestData.push_back(repositories);
+            }
+        else if (repositories.downloadSchemas.IsValid())
+            {
+            s_downloadSchemasTestData.push_back(repositories);
             }
         }
     }
@@ -57,11 +63,23 @@ void RepositoryCompatibilityTests::TearDown()
 
     if (!TestsHost::GetErrorLog().empty())
         ADD_FAILURE() << TestsHost::GetErrorLog();
+
+    if (::testing::Test::HasFailure())
+        {
+        if (!GetParam().create.comment.empty())
+            ADD_FAILURE() << "Known issue: " << GetParam().create.comment;
+
+        if (!GetParam().upgrade.comment.empty())
+            ADD_FAILURE() << "Known issue: " << GetParam().create.comment;
+
+        if (!GetParam().downloadSchemas.comment.empty())
+            ADD_FAILURE() << "Known issue: " << GetParam().create.comment;
+        }
     }
 
 void CreateDateStampFile(Utf8StringCR testName, BeFileName path)
     {
-    Utf8String name = testName + "-" + DateTime::GetCurrentTimeUtc().ToUtf8String() + ".stamp";
+    Utf8String name = testName + "-" + Utf8String(DateTime::GetCurrentTimeUtc().ToString()) + ".stamp";
     name.ReplaceAll(":", ".");
     path.AppendToPath(BeFileName(name));
     BeFile file;
@@ -82,19 +100,23 @@ BeFileName GetOutputPath()
     return path;
     }
 
-BeFileName GetOutputPath(Utf8StringCR testName, Utf8StringCR repositoryId, Utf8StringCR dateStr)
+BeFileName GetOutputPath(Utf8StringCR testName, Utf8StringCR customLabel, Utf8String repositoryId, Utf8StringCR dateStr)
     {
+    if (!customLabel.empty())
+        repositoryId = customLabel;
+
     BeFileName path = GetOutputPath();
     path.AppendToPath(BeFileName(dateStr));
     path.AppendToPath(BeFileName(testName));
     path.AppendToPath(BeFileName(repositoryId));
+
     return path;
     }
 
-BeFileName GetNewOutputPath(Utf8StringCR testName, Utf8StringCR repositoryId)
+BeFileName GetNewOutputPath(Utf8StringCR testName, Utf8StringCR customLabel, Utf8StringCR repositoryId)
     {
     auto todayStr = GetDateStr(DateTime::GetCurrentTimeUtc());
-    auto path = GetOutputPath(testName, repositoryId, todayStr);
+    auto path = GetOutputPath(testName, customLabel, repositoryId, todayStr);
 
     if (path.DoesPathExist())
         EXPECT_EQ(BeFileNameStatus::Success, BeFileName::EmptyAndRemoveDirectory(path));
@@ -134,9 +156,9 @@ IWSRepositoryClientPtr CreateClient(TestRepository& repository)
     return client;
     }
 
-void CreateTestPaths(IWSRepositoryClientPtr client, Utf8CP testName, BeFileName& cachePathOut, CacheEnvironment& envOut)
+void CreateTestPaths(IWSRepositoryClientPtr client, Utf8StringCR testName, Utf8StringCR customLabel, BeFileName& cachePathOut, CacheEnvironment& envOut)
     {
-    cachePathOut = GetNewOutputPath(testName, client->GetRepositoryId());
+    cachePathOut = GetNewOutputPath(testName, customLabel, client->GetRepositoryId());
 
     CreateDateStampFile(testName, cachePathOut);
 
@@ -147,8 +169,51 @@ void CreateTestPaths(IWSRepositoryClientPtr client, Utf8CP testName, BeFileName&
     cachePathOut.AppendToPath(L"WSCache.ecdb");
     }
 
+struct RepositoryCompatibilityTests_DownloadSchemas : RepositoryCompatibilityTests {};
+INSTANTIATE_TEST_CASE_P(, RepositoryCompatibilityTests_DownloadSchemas, ::testing::ValuesIn(s_downloadSchemasTestData));
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(RepositoryCompatibilityTests_DownloadSchemas, Download)
+    {
+    auto repository = GetParam().downloadSchemas;
+    auto client = CreateClient(repository);
+
+    BeFileName path;
+    CacheEnvironment env;
+    CreateTestPaths(client, "DownloadSchemas", repository.label, path, env);
+    BeFileName schemasFolder = env.persistentFileCacheDir;
+    schemasFolder.AppendToPath(L"Schemas").AppendSeparator();
+    BeFileName::CreateNewDirectory(schemasFolder);
+    ASSERT_TRUE(schemasFolder.DoesPathExist());
+
+    auto schemas = client->SendGetSchemasRequest()->GetResult().GetValue();
+    ASSERT_TRUE(schemas.GetInstances().IsValid());
+
+    for (auto schema : schemas.GetInstances())
+        {
+        const rapidjson::Value& properties = schema.GetProperties();
+
+        SchemaKey key(
+            WString(properties["Name"].GetString(), true).c_str(),
+            properties["VersionMajor"].GetInt(),
+            properties["VersionMinor"].GetInt());
+
+        BeFileName schemaFilePath(schemasFolder);
+        Utf8PrintfString fullSchemaName("%s.%2d.%2d", Utf8String(key.m_schemaName).c_str(), key.m_versionMajor, key.m_versionMinor);
+        schemaFilePath.AppendToPath(BeFileName(fullSchemaName + ".ecschema.xml"));
+     
+        EXPECT_TRUE(client->SendGetFileRequest(schema.GetObjectId(), schemaFilePath)->GetResult().IsSuccess());
+        }
+
+    LOG.infov("Downloaded schemas to: %s", schemasFolder.GetNameUtf8().c_str());
+    }
+
 struct RepositoryCompatibilityTests_Create : RepositoryCompatibilityTests {};
 INSTANTIATE_TEST_CASE_P(, RepositoryCompatibilityTests_Create, ::testing::ValuesIn(s_createTestData));
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     12/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(RepositoryCompatibilityTests_Create, Create)
     {
     auto repository = GetParam().create;
@@ -156,7 +221,7 @@ TEST_P(RepositoryCompatibilityTests_Create, Create)
 
     BeFileName path;
     CacheEnvironment env;
-    CreateTestPaths(client, "Create", path, env);
+    CreateTestPaths(client, "Create", repository.label, path, env);
     ASSERT_FALSE(path.DoesPathExist());
 
     auto createResult = CachingDataSource::OpenOrCreate(client, path, env)->GetResult();
@@ -165,6 +230,9 @@ TEST_P(RepositoryCompatibilityTests_Create, Create)
 
 struct RepositoryCompatibilityTests_Upgrade : RepositoryCompatibilityTests {};
 INSTANTIATE_TEST_CASE_P(, RepositoryCompatibilityTests_Upgrade, ::testing::ValuesIn(s_upgradeTestData));
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     12/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(RepositoryCompatibilityTests_Upgrade, Upgrade)
     {
     // Create base cache
@@ -173,7 +241,7 @@ TEST_P(RepositoryCompatibilityTests_Upgrade, Upgrade)
 
     BeFileName path;
     CacheEnvironment env;
-    CreateTestPaths(client, "Upgrade", path, env);
+    CreateTestPaths(client, "Upgrade", repository.label, path, env);
     ASSERT_FALSE(path.DoesPathExist());
 
     auto createResult = CachingDataSource::OpenOrCreate(client, path, env)->GetResult();
