@@ -948,8 +948,11 @@ void ORDConverter::CreateRoadRailElements()
             if (bimAlignmentCPtr.IsValid())
                 {
                 auto v8Iter = m_v8ToBimElmMap.find(cifAlignmentEntry.second);
-                auto& bimElmPtr = v8Iter->second;
-                RoadRailAlignment::Alignment::AddRepresentedBy(*bimAlignmentCPtr, *bimElmPtr);
+                if (v8Iter != m_v8ToBimElmMap.end())
+                    {
+                    auto& bimElmPtr = v8Iter->second;
+                    RoadRailAlignment::Alignment::AddRepresentedBy(*bimAlignmentCPtr, *bimElmPtr);
+                    }
                 }
             }
 
@@ -1003,8 +1006,11 @@ void ORDConverter::CreateRoadRailElements()
             if (pathwayElmCPtr.IsValid())
                 {
                 auto v8Iter = m_v8ToBimElmMap.find(cifCorridorEntry.second);
-                auto& bimElmPtr = v8Iter->second;
-                RoadRailPhysical::PathwayElement::AddRepresentedBy(*pathwayElmCPtr, *bimElmPtr);
+                if (v8Iter != m_v8ToBimElmMap.end())
+                    {
+                    auto& bimElmPtr = v8Iter->second;
+                    RoadRailPhysical::PathwayElement::AddRepresentedBy(*pathwayElmCPtr, *bimElmPtr);
+                    }
                 }
             }
         }
