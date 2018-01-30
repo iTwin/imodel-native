@@ -8,7 +8,7 @@ echo    RunWSClientCompatibilityTestToolForKnownServices.bat
 echo Run all tests:
 echo    RunWSClientCompatibilityTestToolForKnownServices.bat *
 echo Run specific test by number:
-echo    RunWSClientCompatibilityTestToolForKnownServices.bat */10
+echo    RunWSClientCompatibilityTestToolForKnownServices.bat *10
 
 set gtestAction=--gtest_filter=*RepositoryCompatibilityTests*%1
 if "%1" == "" set gtestAction=--gtest_list_tests
