@@ -2,12 +2,13 @@
 |
 |     $Source: Tests/CompatibilityTests/Parser/TestData.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
 
+#include <WebServices/Client/WSError.h>
 #include <WebServices/Configuration/UrlProvider.h>
 #include <WebServices/Connect/ConnectSignInManager.h>
 
@@ -18,6 +19,9 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 struct TestRepository
     {
+    Utf8String label;
+    Utf8String comment;
+
     BeFileName schemasDir;
 
     Utf8String serverUrl;
@@ -39,6 +43,7 @@ struct TestRepositories
     {
     TestRepository create;
     TestRepository upgrade;
+    TestRepository downloadSchemas;
     };
 
 void PrintTo(const TestRepository& value, ::std::ostream* os);

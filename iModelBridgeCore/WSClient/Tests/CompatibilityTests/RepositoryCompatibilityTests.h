@@ -2,12 +2,13 @@
 |
 |     $Source: Tests/CompatibilityTests/RepositoryCompatibilityTests.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
 
+#include <WebServices/Client/WSError.h>
 #include "Parser/TestData.h"
 #include <Bentley/BeTest.h>
 #include <WebServices/Configuration/UrlProvider.h>

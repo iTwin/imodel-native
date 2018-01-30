@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/CompatibilityTests/Disk/DiskRepositoryClient.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -29,7 +29,7 @@ bool Sha1Calc(const bvector<Byte>& input, unsigned char *binaryHash, unsigned in
     EVP_MD_CTX *mdctx;
     if ((mdctx = EVP_MD_CTX_create()) == NULL)
         return false;
-
+    
     if (!EVP_DigestInit_ex(mdctx, EVP_sha1(), NULL))
         return false;
 
@@ -102,7 +102,7 @@ m_schemasDir(schemasDir)
         if (path.IsDirectory())
             continue;
 
-        if (!path.GetExtension().EqualsI(L"xml"))
+        if (!path.GetFileNameAndExtension().ContainsI(L".ecschema.xml"))
             continue;
 
         SchemaKey key;

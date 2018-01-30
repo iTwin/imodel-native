@@ -2,10 +2,11 @@
 |
 |     $Source: Tests/CompatibilityTests/TestMain.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
+#include <WebServices/Client/WSError.h>
 #include "Parser/ArgumentParser.h"
 #include "RepositoryCompatibilityTests.h"
 #include "TestsHost.h"
@@ -31,6 +32,9 @@ int main(int argc, char** argv)
     BeTest::Initialize(*host);
 
     ::testing::InitGoogleMock(&argc, argv);
+
+    if (::testing::GTEST_FLAG(filter).empty() || ::testing::GTEST_FLAG(filter) == "*")
+        ::testing::GTEST_FLAG(filter) = "*RepositoryCompatibilityTests*";
 
     int runStatus = RUN_ALL_TESTS();
 

@@ -2,15 +2,11 @@
 |
 |     $Source: Tests/CompatibilityTests/Disk/DiskRepositoryClientTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
-//#define COMPILE_TESTS
-#ifdef DEBUG
 #define COMPILE_TESTS
-#endif
-
 #ifdef COMPILE_TESTS
 
 #include "DiskRepositoryClient.h"
@@ -67,6 +63,9 @@ struct DiskRepositoryClientTests : Test
         }
     };
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DiskRepositoryClientTests, GetSchemas_SchemaAndOtherFilesInFolder_CacheCreatationSucceeds)
     {
     BeFileName path = s_testFolder;
@@ -89,6 +88,9 @@ TEST_F(DiskRepositoryClientTests, GetSchemas_SchemaAndOtherFilesInFolder_CacheCr
         })->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DiskRepositoryClientTests, SendGetFileRequest_SchemaFileNotChanged_SameEtags)
     {
     BeFileName path = s_testFolder;
@@ -112,6 +114,9 @@ TEST_F(DiskRepositoryClientTests, SendGetFileRequest_SchemaFileNotChanged_SameEt
     EXPECT_FALSE(fileResponse3.IsModified());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DiskRepositoryClientTests, SendGetFileRequest_SchemaFileChanged_DifferentEtags)
     {
     BeFileName path = s_testFolder;
