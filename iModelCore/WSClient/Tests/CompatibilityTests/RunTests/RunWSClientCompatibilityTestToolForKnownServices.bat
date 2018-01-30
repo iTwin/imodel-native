@@ -8,7 +8,7 @@ echo    RunWSClientCompatibilityTestToolForKnownServices.bat
 echo Run all tests:
 echo    RunWSClientCompatibilityTestToolForKnownServices.bat *
 echo Run specific test by number:
-echo    RunWSClientCompatibilityTestToolForKnownServices.bat */10
+echo    RunWSClientCompatibilityTestToolForKnownServices.bat *10
 
 set gtestAction=--gtest_filter=*RepositoryCompatibilityTests*%1
 if "%1" == "" set gtestAction=--gtest_list_tests
@@ -18,9 +18,18 @@ set outfile=%workdir%results.xml
 
 if exist %outfile% del %outfile%
 
+set exePath=%OutRoot%Winx64\Product\WSClientCompatibilityTestTool\WSClientCompatibilityTests.exe
+
+if not exist %exePath% (
+echo;
+echo Missing tool, building...
+echo;
+call bb -ax64 -r WSClient -f WSClient -p WSClientCompatibilityTestTool b
+)
+
 @echo on
 
-call %OutRoot%Winx64\Product\WSClientCompatibilityTestTool\WSClientCompatibilityTests.exe ^
+call %exePath% ^
     %2 %3 %4 %5 %6 %7 %8 %9 ^
     %gtestAction% ^
     --gtest_output=xml:%outfile% ^
@@ -32,4 +41,6 @@ call %OutRoot%Winx64\Product\WSClientCompatibilityTestTool\WSClientCompatibility
 if exist %outfile% (
 call python %~dp0\TestReport\makereport.py "%outfile%" > %workdir%results.htm
 start %workdir%results.htm
+echo;
+echo Results: %workdir%results.htm
 )
