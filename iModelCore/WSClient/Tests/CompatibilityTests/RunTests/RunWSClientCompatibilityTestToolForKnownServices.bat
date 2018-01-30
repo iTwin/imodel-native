@@ -18,9 +18,18 @@ set outfile=%workdir%results.xml
 
 if exist %outfile% del %outfile%
 
+set exePath=%OutRoot%Winx64\build\WSClientCompatibilityTests\WSClientCompatibilityTests.exe
+
+if not exist %exePath% (
+echo;
+echo Missing tool, building...
+echo;
+call bb -ax64 -r WSClient -f WSClient -p WSClientCompatibilityTestTool b
+)
+
 @echo on
 
-call %OutRoot%Winx64\build\WSClientCompatibilityTests\WSClientCompatibilityTests.exe ^
+call %exePath% ^
     %2 %3 %4 %5 %6 %7 %8 %9 ^
     %gtestAction% ^
     --gtest_output=xml:%outfile% ^
