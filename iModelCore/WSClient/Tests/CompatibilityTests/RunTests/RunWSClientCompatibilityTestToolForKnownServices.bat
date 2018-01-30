@@ -1,5 +1,7 @@
 
 @echo;
+@echo Build executable with:
+@echo    bb -ax64 -r WSClient -f WSClient -p WSClientCompatibilityTestTool b
 @echo Running specific test cases. Get test list:
 @echo    RunWSClientCompatibilityTestToolForKnownServices.bat "--gtest_list_tests"
 @echo Filter on test number:
