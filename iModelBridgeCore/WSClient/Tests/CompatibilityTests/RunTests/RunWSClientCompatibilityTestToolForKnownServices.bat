@@ -13,7 +13,7 @@ echo    RunWSClientCompatibilityTestToolForKnownServices.bat */10
 set gtestAction=--gtest_filter=*RepositoryCompatibilityTests*%1
 if "%1" == "" set gtestAction=--gtest_list_tests
 
-set workdir=%OutRoot%WSClientCompatibilityTestTool\
+set workdir=%OutRoot%WSCTT\
 set outfile=%workdir%results.xml
 
 if exist %outfile% del %outfile%
