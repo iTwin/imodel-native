@@ -103,7 +103,7 @@ BeFileName GetOutputPath()
 BeFileName GetOutputPath(Utf8StringCR testName, Utf8StringCR customLabel, Utf8String repositoryId, Utf8StringCR dateStr)
     {
     if (!customLabel.empty())
-        repositoryId = customLabel + "-" + repositoryId;
+        repositoryId = customLabel;
 
     BeFileName path = GetOutputPath();
     path.AppendToPath(BeFileName(dateStr));
