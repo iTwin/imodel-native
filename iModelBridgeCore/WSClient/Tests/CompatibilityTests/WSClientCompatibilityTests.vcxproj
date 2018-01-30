@@ -31,6 +31,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="CompatibilityTests.mke" />
+    <None Include="RunTests\RunWSClientCompatibilityTestToolForKnownServices.bat" />
+    <None Include="RunTests\RunWSClientCompatibilityTestToolForKnownServices.config" />
   </ItemGroup>
   <PropertyGroup>
     <ShowAllFiles>true</ShowAllFiles>

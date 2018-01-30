@@ -83,8 +83,10 @@ struct TestArgs
         vector<TestArg> args;
 
     public:
-        const size_t resultSize = -1;
-        const size_t inspectIndex = -1;
+        size_t resultSize = -1;
+        size_t inspectIndex = -1;
+
+        std::shared_ptr<TestArgs> parentArgs;
 
     public:
         TestArgs(vector<TestArg> args) : args(args) {};
@@ -106,7 +108,35 @@ vector<char*> TestArgs::GetArgs() const
     {
     for (auto& arg : args)
         arg.Prepare();
+    if (parentArgs)
+        parentArgs->GetArgs();
     return GetArgsNoPrepare();
+    }
+
+vector<TestArgs> GenerateParams(vector<TestArgs> params)
+    {
+    vector<TestArgs> output = params;
+
+    // Add duplicated --config test case for each param
+    for (auto& param : params)
+        {
+        Utf8String content;
+
+        auto args = param.GetArgsNoPrepare();
+        for (int i = 1; i < args.size(); i++)
+            {
+            auto arg = args[i];
+            content += arg;
+            content += "\n";
+            }
+        TestArgs newParam({"Foo.exe", "--config", TestArg::File(content)});
+        newParam.parentArgs = std::make_shared<TestArgs>(param);
+        newParam.inspectIndex = param.inspectIndex;
+        newParam.resultSize = param.resultSize;
+        output.push_back(newParam);
+        }
+
+    return output;
     }
 
 Utf8String s_xmlTokenStr =
@@ -126,10 +156,10 @@ void PrintTo(const TestArgs& value, ::std::ostream* os)
 struct ArgumentParserTests : Test {};
 
 struct ArgumentParserTests_TempDirArg : TestWithParam<TestArgs> {};
-INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_TempDirArg, ValuesIn(vector<TestArgs>{
+INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_TempDirArg, ValuesIn(GenerateParams(vector<TestArgs>{
         {{"Foo.exe", "--workdir", "TestDir\\TestFolder", "--createcache", "-url", "URL", "-r", "RId"}},
         {{"Foo.exe", "--createcache", "-url", "URL", "-r", "RId", "--workdir", "TestDir\\TestFolder"}},
-    }));
+    })));
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2016
@@ -162,10 +192,10 @@ TEST_P(ArgumentParserTests_TempDirArg, Parse_ValidParameters_FillsTestDataAndRet
     }
 
 struct ArgumentParserTests_SilentProvided : TestWithParam<TestArgs> {};
-INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_SilentProvided, ValuesIn(vector<TestArgs>{
+INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_SilentProvided, ValuesIn(GenerateParams(vector<TestArgs>{
         {{"Foo.exe", "--silent", "--createcache", "-url", "URL", "-r", "RId"}},
         {{"Foo.exe", "--createcache", "-url", "URL", "-r", "RId", "--silent"}},
-    }));
+    })));
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2016
@@ -207,15 +237,15 @@ TEST_F(ArgumentParserTests, Parse_SilentNotProvided_LogLevelOne)
     }
 
 struct ArgumentParserTests_DownloadSchemas : TestWithParam<TestArgs> {};
-INSTANTIATE_TEST_CASE_P(DownloadSchemasOnly, ArgumentParserTests_DownloadSchemas, ValuesIn(vector<TestArgs>{
+INSTANTIATE_TEST_CASE_P(DownloadSchemasOnly, ArgumentParserTests_DownloadSchemas, ValuesIn(GenerateParams(vector<TestArgs>{
         {1, 0, {"Foo.exe", "--downloadschemas", "-url", "URL", "-r", "RId"}},
         {1, 0, {"Foo.exe", "--downloadschemas", "-r", "RId", "-url", "URL"}},
-    }));
-INSTANTIATE_TEST_CASE_P(DownloadSchemasWithCreate, ArgumentParserTests_DownloadSchemas, ValuesIn(vector<TestArgs>{
+    })));
+INSTANTIATE_TEST_CASE_P(DownloadSchemasWithCreate, ArgumentParserTests_DownloadSchemas, ValuesIn(GenerateParams(vector<TestArgs>{
         {2, 1, {"Foo.exe", "--createcache", "-url", "URLX", "-r", "RIdX", "--downloadschemas", "-url", "URL", "-r", "RId"}},
         {2, 0, {"Foo.exe", "--downloadschemas", "-url", "URL", "-r", "RId", "--createcache", "-url", "URLX", "-r", "RIdX"}},
         {3, 1, {"Foo.exe", "--createcache", "-url", "URLX", "-r", "RIdX", "--downloadschemas", "-url", "URL", "-r", "RId", "--createcache", "-url", "URLX", "-r", "RIdX"}},
-    }));
+    })));
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2016
@@ -247,10 +277,10 @@ TEST_P(ArgumentParserTests_DownloadSchemas, Parse_ValidParameters_FillsTestDataA
     }
 
 struct ArgumentParserTests_CreateWithoutCredentials : TestWithParam<TestArgs> {};
-INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_CreateWithoutCredentials, ValuesIn(vector<TestArgs>{
+INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_CreateWithoutCredentials, ValuesIn(GenerateParams(vector<TestArgs>{
         {{"Foo.exe", "--createcache", "-url", "URL", "-r", "RId"}},
         {{"Foo.exe", "--createcache", "-r", "RId", "-url", "URL"}},
-    }));
+    })));
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2016
@@ -283,10 +313,10 @@ TEST_P(ArgumentParserTests_CreateWithoutCredentials, Parse_ValidParameters_Fills
     }
 
 struct ArgumentParserTests_CreateWithLabelAndComment : TestWithParam<TestArgs> {};
-INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_CreateWithLabelAndComment, ValuesIn(vector<TestArgs>{
+INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_CreateWithLabelAndComment, ValuesIn(GenerateParams(vector<TestArgs>{
         {{"Foo.exe", "--createcache", "-c", "comment", "-url", "URL", "-l", "label", "-r", "RId"}},
         {{"Foo.exe", "--createcache", "-l", "label", "-r", "RId", "-url", "URL", "-c", "comment"}},
-    }));
+    })));
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2016
@@ -321,11 +351,52 @@ TEST_P(ArgumentParserTests_CreateWithLabelAndComment, Parse_ValidParameters_Fill
     EXPECT_EQ("comment", testData[0].create.comment);
     }
 
+struct ArgumentParserTests_CreateWithConfig : TestWithParam<TestArgs> {};
+INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_CreateWithConfig, ValuesIn(GenerateParams(vector<TestArgs>{
+        {1, 0, {"Foo.exe", "--config", TestArg::File("--createcache\n-url URL\n-r RId\n-c Comment Here")}},
+        {1, 0, {"Foo.exe", "--config", TestArg::File("--createcache\n-url URL\n#This is commented out\n-r RId\n-c Comment Here")}},
+        {1, 0, {"Foo.exe", "--config", TestArg::File("  --createcache  \n-url    URL\n   #This is commented out   \n\n  -r   RId\n  -c Comment Here")}},
+        {1, 0, {"Foo.exe", "--config", TestArg::File("\n \n \n--createcache\n-url URL\n-r RId\n-c Comment Here  \n\n")}},
+        {1, 0, {"Foo.exe", "--config", TestArg::File("--createcache\n-url URL\n\n\n-r RId\n\n-c Comment Here")}},
+    })));
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ArgumentParserTests_CreateWithConfig, Parse_ValidParameters_FillsTestDataAndReturnsZero)
+    {
+    auto args = GetParam().GetArgs();
+
+    int logLevel;
+    BeFileName workDir;
+    bvector<TestRepositories> testData;
+    std::stringstream err;
+    std::stringstream out;
+
+    EXPECT_EQ(0, ArgumentParser::Parse((int) args.size(), args.data(), logLevel, workDir, testData, &err, &out));
+    EXPECT_TRUE(workDir.empty());
+    EXPECT_EQ("", err.str());
+    EXPECT_EQ("", out.str());
+
+    ASSERT_EQ(GetParam().resultSize, testData.size());
+
+    auto it = GetParam().inspectIndex;
+    EXPECT_FALSE(testData[it].upgrade.IsValid());
+    EXPECT_TRUE(testData[it].create.IsValid());
+
+    EXPECT_EQ("URL", testData[it].create.serverUrl);
+    EXPECT_EQ("RId", testData[it].create.id);
+    EXPECT_EQ(Credentials(), testData[it].create.credentials);
+    EXPECT_EQ(nullptr, testData[it].create.token);
+    EXPECT_EQ(nullptr, testData[it].create.environment);
+    EXPECT_EQ("Comment Here", testData[it].create.comment);
+    }
+
 struct ArgumentParserTests_CreateWithBasicAuth : TestWithParam<TestArgs> {};
-INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_CreateWithBasicAuth, ValuesIn(vector<TestArgs>{
+INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_CreateWithBasicAuth, ValuesIn(GenerateParams(vector<TestArgs>{
         {{"Foo.exe", "--createcache", "-url", "URL", "-r", "RId", "-auth:basic", "TestUser:TestPass"}},
         {{"Foo.exe", "--createcache", "-r", "RId", "-auth:basic", "TestUser:TestPass", "-url", "URL"}},
-    }));
+    })));
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2016
@@ -359,7 +430,7 @@ TEST_P(ArgumentParserTests_CreateWithBasicAuth, Parse_ValidParameters_FillsTestD
 
 struct ArgumentParserTests_CreateWithImsAuth : TestWithParam<pair<TestArgs, UrlProvider::Environment>> {};
 INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_CreateWithImsAuth, ValuesIn(vector<pair<TestArgs, UrlProvider::Environment>>{
-        {{{"Foo.exe", "--createcache", "-url", "URL", "-r", "RId", "-auth:dev:ims", "TestUser:TestPass"}}, UrlProvider::Environment::Dev},
+        { {{"Foo.exe", "--createcache", "-url", "URL", "-r", "RId", "-auth:dev:ims", "TestUser:TestPass"}}, UrlProvider::Environment::Dev},
         {{{"Foo.exe", "--createcache", "-url", "URL", "-r", "RId", "-auth:qa:ims", "TestUser:TestPass"}}, UrlProvider::Environment::Qa},
         {{{"Foo.exe", "--createcache", "-url", "URL", "-r", "RId", "-auth:prod:ims", "TestUser:TestPass"}}, UrlProvider::Environment::Release},
     }));
@@ -399,7 +470,7 @@ TEST_P(ArgumentParserTests_CreateWithImsAuth, Parse_ValidParameters_FillsTestDat
 
 struct ArgumentParserTests_CreateWithImsTokenAuth : TestWithParam<pair<TestArgs, UrlProvider::Environment>> {};
 INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_CreateWithImsTokenAuth, ValuesIn(vector<pair<TestArgs, UrlProvider::Environment>>{
-        {{{"Foo.exe", "--createcache", "-url", "URL", "-r", "RId", "-auth:dev:token", TestArg::File(s_xmlTokenStr)}}, UrlProvider::Environment::Dev},
+        { {{"Foo.exe", "--createcache", "-url", "URL", "-r", "RId", "-auth:dev:token", TestArg::File(s_xmlTokenStr)}}, UrlProvider::Environment::Dev},
         {{{"Foo.exe", "--createcache", "-url", "URL", "-r", "RId", "-auth:qa:token", TestArg::File(s_xmlTokenStr)}}, UrlProvider::Environment::Qa},
         {{{"Foo.exe", "--createcache", "-url", "URL", "-r", "RId", "-auth:prod:token", TestArg::File(s_xmlTokenStr)}}, UrlProvider::Environment::Release},
     }));
@@ -438,10 +509,10 @@ TEST_P(ArgumentParserTests_CreateWithImsTokenAuth, Parse_ValidParameters_FillsTe
     }
 
 struct ArgumentParserTests_CreateAndUpgradeWithBasicAuth : TestWithParam<TestArgs> {};
-INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_CreateAndUpgradeWithBasicAuth, ValuesIn(vector<TestArgs>{
+INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_CreateAndUpgradeWithBasicAuth, ValuesIn(GenerateParams(vector<TestArgs>{
         {{"Foo.exe", "--createcache", "-url", "URL1", "-r", "R1", "-auth:basic", "U1:P1", "--upgradecache", "-url", "URL2", "-r", "R2", "-auth:basic", "U2:P2"}},
         {{"Foo.exe", "--createcache", "-auth:basic", "U1:P1", "-url", "URL1", "-r", "R1", "--upgradecache", "-r", "R2", "-auth:basic", "U2:P2", "-url", "URL2"}},
-    }));
+    })));
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2016
@@ -480,17 +551,17 @@ TEST_P(ArgumentParserTests_CreateAndUpgradeWithBasicAuth, Parse_ValidParameters_
     }
 
 struct ArgumentParserTests_CreateAndUpgradeWithDefaultParams : TestWithParam<TestArgs> {};
-INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_CreateAndUpgradeWithDefaultParams, ValuesIn(vector<TestArgs>{
+INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_CreateAndUpgradeWithDefaultParams, ValuesIn(GenerateParams(vector<TestArgs>{
         {1, 0, {"Foo.exe", "--createcache", "-url", "URL1", "-r", "R2", "-l", "LABEL", "-auth:basic", "U2:P2", "--upgradecache", "-url", "URL2"}},
         {1, 0, {"Foo.exe", "--createcache", "-url", "URL2", "-r", "R1", "-l", "LABEL", "-auth:basic", "U2:P2", "--upgradecache", "-r", "R2"}},
         {1, 0, {"Foo.exe", "--createcache", "-url", "URL2", "-r", "R2", "-l", "LABEL", "-auth:basic", "U1:P1", "--upgradecache", "-auth:basic", "U2:P2"}},
         {1, 0, {"Foo.exe", "--createcache", "-url", "URL2", "-r", "R2", "-l", "LABEL", "-auth:qa:ims", "U1:P1", "--upgradecache", "-auth:basic", "U2:P2"}},
         {1, 0, {"Foo.exe", "--createcache", "-url", "URL2", "-r", "R2", "-l", "LABEL", "-auth:qa:token", TestArg::File(s_xmlTokenStr), "--upgradecache", "-auth:basic", "U2:P2"}},
-    }));
-INSTANTIATE_TEST_CASE_P(DownloadSchemasInvolved, ArgumentParserTests_CreateAndUpgradeWithDefaultParams, ValuesIn(vector<TestArgs>{
+    })));
+INSTANTIATE_TEST_CASE_P(DownloadSchemasInvolved, ArgumentParserTests_CreateAndUpgradeWithDefaultParams, ValuesIn(GenerateParams(vector<TestArgs>{
         {2, 0, {"Foo.exe", "--createcache", "-url", "URL1", "-r", "R2", "-auth:basic", "U2:P2", "-l", "LABEL", "--upgradecache", "-url", "URL2", "--downloadschemas", "-url", "URLX", "-r", "RX"}},
         {2, 1, {"Foo.exe", "--downloadschemas", "-url", "URLX", "-r", "RX", "--createcache", "-url", "URL1", "-r", "R2", "-auth:basic", "U2:P2", "-l", "LABEL", "--upgradecache", "-url", "URL2"}},
-    }));
+    })));
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2016
@@ -527,10 +598,10 @@ TEST_P(ArgumentParserTests_CreateAndUpgradeWithDefaultParams, Parse_UpgradeCache
     }
 
 struct ArgumentParserTests_CreateWithSchemas : TestWithParam<TestArgs> {};
-INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_CreateWithSchemas, ValuesIn(vector<TestArgs>{
+INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_CreateWithSchemas, ValuesIn(GenerateParams(vector<TestArgs>{
         {{"Foo.exe", "--createcache", "-schemas", TestArg::Folder("Test")}},
         {{"Foo.exe", "--createcache", "-schemas", TestArg::Folder("Test/")}},
-    }));
+    })));
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2016
@@ -564,10 +635,10 @@ TEST_P(ArgumentParserTests_CreateWithSchemas, Parse_ValidParameters_FillsTestDat
     }
 
 struct ArgumentParserTests_UpgradeFromSchemas : TestWithParam<TestArgs> {};
-INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_UpgradeFromSchemas, ValuesIn(vector<TestArgs>{
+INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_UpgradeFromSchemas, ValuesIn(GenerateParams(vector<TestArgs>{
         {{"Foo.exe", "--createcache", "-schemas", TestArg::Folder("Test"), "--upgradecache", "-url", "URL", "-r", "R"}},
         {{"Foo.exe", "--createcache", "-schemas", TestArg::Folder("Test/"), "--upgradecache", "-url", "URL", "-r", "R"}},
-    }));
+    })));
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2016
@@ -608,9 +679,9 @@ TEST_P(ArgumentParserTests_UpgradeFromSchemas, Parse_ValidParameters_FillsTestDa
     }
 
 struct ArgumentParserTests_UpgradeToSchemas : TestWithParam<TestArgs> {};
-INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_UpgradeToSchemas, ValuesIn(vector<TestArgs>{
+INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_UpgradeToSchemas, ValuesIn(GenerateParams(vector<TestArgs>{
         {{"Foo.exe", "--createcache", "-url", "URL", "-r", "R", "--upgradecache", "-schemas", TestArg::Folder("Test/")}},
-    }));
+    })));
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2016
@@ -651,51 +722,51 @@ TEST_P(ArgumentParserTests_UpgradeToSchemas, Parse_ValidParameters_FillsTestData
     }
 
 struct ArgumentParserTests_InvalidParameters : TestWithParam<TestArgs> {};
-INSTANTIATE_TEST_CASE_P(NoParameters, ArgumentParserTests_InvalidParameters, ValuesIn(vector<TestArgs>{
+INSTANTIATE_TEST_CASE_P(NoParameters, ArgumentParserTests_InvalidParameters, ValuesIn(GenerateParams(vector<TestArgs>{
         {{"Foo.exe"}},
-    }));
-INSTANTIATE_TEST_CASE_P(NoCreateCache, ArgumentParserTests_InvalidParameters, ValuesIn(vector<TestArgs>{
+    })));
+INSTANTIATE_TEST_CASE_P(NoCreateCache, ArgumentParserTests_InvalidParameters, ValuesIn(GenerateParams(vector<TestArgs>{
         {{"Foo.exe", "--upgradecache", "-url", "URL2", "-r", "R2"}},
         {{"Foo.exe", "--downloadschemas", "-url", "URL1", "-r", "R1", "--upgradecache", "-url", "URL2", "-r", "R2"}},
         {{"Foo.exe", "-url", "URL2", "-r", "R2"}},
-    }));
-INSTANTIATE_TEST_CASE_P(NoUrl, ArgumentParserTests_InvalidParameters, ValuesIn(vector<TestArgs>{
+    })));
+INSTANTIATE_TEST_CASE_P(NoUrl, ArgumentParserTests_InvalidParameters, ValuesIn(GenerateParams(vector<TestArgs>{
         {{"Foo.exe", "--createcache", "-r", "R"}},
         {{"Foo.exe", "--createcache", "-r", "R", "-token", TestArg::File(s_xmlTokenStr)}},
         {{"Foo.exe", "--createcache", "-r", "R", "-imsenv", "PROD"}},
-    }));
-INSTANTIATE_TEST_CASE_P(NoRepoId, ArgumentParserTests_InvalidParameters, ValuesIn(vector<TestArgs>{
+    })));
+INSTANTIATE_TEST_CASE_P(NoRepoId, ArgumentParserTests_InvalidParameters, ValuesIn(GenerateParams(vector<TestArgs>{
         {{"Foo.exe", "--createcache", "-url", "URL"}},
         {{"Foo.exe", "--createcache", "-url", "URL", "-token", TestArg::File(s_xmlTokenStr)}},
         {{"Foo.exe", "--createcache", "-url", "URL", "-imsenv", "PROD"}},
-    }));
-INSTANTIATE_TEST_CASE_P(NoUserOrPass, ArgumentParserTests_InvalidParameters, ValuesIn(vector<TestArgs>{
+    })));
+INSTANTIATE_TEST_CASE_P(NoUserOrPass, ArgumentParserTests_InvalidParameters, ValuesIn(GenerateParams(vector<TestArgs>{
         {{"Foo.exe", "--createcache", "-url", "URL", "-r", "R", "-auth:basic", "UserName"}},
-    }));
-INSTANTIATE_TEST_CASE_P(InvalidAuth, ArgumentParserTests_InvalidParameters, ValuesIn(vector<TestArgs>{
+    })));
+INSTANTIATE_TEST_CASE_P(InvalidAuth, ArgumentParserTests_InvalidParameters, ValuesIn(GenerateParams(vector<TestArgs>{
         {{"Foo.exe", "--createcache", "-url", "URL", "-r", "R", "-auth:foo", "A:B"}},
         {{"Foo.exe", "--createcache", "-url", "URL", "-r", "R", "-auth:qa:foo", "A:B"}},
         {{"Foo.exe", "--createcache", "-url", "URL", "-r", "R", "-auth:foo:ims", "A:B"}},
         {{"Foo.exe", "--createcache", "-url", "URL", "-r", "R", "-auth:foo:token", "A:B"}},
         {{"Foo.exe", "--createcache", "-url", "URL", "-r", "R", "-auth:qa:token", "NotTokenPath"}},
-    }));
-INSTANTIATE_TEST_CASE_P(MissingValues, ArgumentParserTests_InvalidParameters, ValuesIn(vector<TestArgs>{
+    })));
+INSTANTIATE_TEST_CASE_P(MissingValues, ArgumentParserTests_InvalidParameters, ValuesIn(GenerateParams(vector<TestArgs>{
         {{"Foo.exe", "--createcache", "-url", "-r", "R", "-auth:basic", "A:B"}},
         {{"Foo.exe", "--createcache", "-url", "URL", "-r", "-auth:basic", "A:B"}},
         {{"Foo.exe", "--createcache", "-url", "URL", "-r", "R", "-auth:basic"}},
         {{"Foo.exe", "--createcache", "-url", "URL", "-r", "R", "-auth:basic", "-imsenv"}},
         {{"Foo.exe", "--createcache", "-url", "URL", "-r", "R", "-auth:basic", "--upgradecache", "-url", "URL2", "-r", "R2", "-u", "U2", "-p", "P2"}},
-    }));
-INSTANTIATE_TEST_CASE_P(CreateWithSchemasNonExistingDir, ArgumentParserTests_InvalidParameters, ValuesIn(vector<TestArgs>{
+    })));
+INSTANTIATE_TEST_CASE_P(CreateWithSchemasNonExistingDir, ArgumentParserTests_InvalidParameters, ValuesIn(GenerateParams(vector<TestArgs>{
         {{"Foo.exe", "--createcache", "-schemas", "C:\\nonexistingdir\\"}},
         {{"Foo.exe", "--createcache", "-schemas", "C:\\nonexistingdir"}},
         {{"Foo.exe", "--createcache", "-schemas", "foo_not_a_dir"}},
         {{"Foo.exe", "--createcache", "-schemas", TestArg::File(s_xmlTokenStr)}},
-    }));
-INSTANTIATE_TEST_CASE_P(UknownParameters, ArgumentParserTests_InvalidParameters, ValuesIn(vector<TestArgs>{
+    })));
+INSTANTIATE_TEST_CASE_P(UknownParameters, ArgumentParserTests_InvalidParameters, ValuesIn(GenerateParams(vector<TestArgs>{
         {{"Foo.exe", "--foo", "--createcache", "-url", "URL", "-r", "R"}},
         {{"Foo.exe", "--createcache", "-url", "URL", "-r", "R", "-foo", "boo"}},
-    }));
+    })));
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2016
@@ -747,11 +818,11 @@ TEST_P(ArgumentParserTests_Help, Parse_HelpSupplied_PrintsHelpWithoutError)
     }
 
 struct ArgumentParserTests_GTestArguments : TestWithParam<TestArgs> {};
-INSTANTIATE_TEST_CASE_P(GTestArguments, ArgumentParserTests_GTestArguments, ValuesIn(vector<TestArgs>{
+INSTANTIATE_TEST_CASE_P(GTestArguments, ArgumentParserTests_GTestArguments, ValuesIn(GenerateParams(vector<TestArgs>{
         {{"Foo.exe", "--createcache", "-url", "URL", "-r", "RId", "--gtest_foo"}},
         {{"Foo.exe", "--gtest_foo", "--createcache", "-url", "URL", "-r", "RId"}},
         {{"Foo.exe", "--createcache", "-url", "URL", "--gtest_foo=*aa*", "-r", "RId"}},
-    }));
+    })));
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2016

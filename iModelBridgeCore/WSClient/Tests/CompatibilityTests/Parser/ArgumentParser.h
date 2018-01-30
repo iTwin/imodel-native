@@ -26,6 +26,15 @@ struct ArgumentParser
             bvector<TestRepositories>& testDataOut,
             std::ostream* err
             );
+        
+        static int ParseConfigFile
+            (
+            Utf8String filePath,
+            int& logLevelOut,
+            BeFileName& tempDirOut,
+            bvector<TestRepositories>& testDataOut,
+            std::ostream* err
+            );
 
         static bool GetArgValue(int argc, const bvector<Utf8String>&, int& iInOut, Utf8CP& argValueOut, std::ostream* err);
         static bool ParseAuth(Utf8CP auth, Utf8CP value, TestRepository& repo, std::ostream* err);

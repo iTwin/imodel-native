@@ -27,7 +27,7 @@ std::ostream* output
 )
     {
     bvector<Utf8String> args;
-    for (int i = 0; i < argc; i++)
+    for (int i = 1; i < argc; i++)
         args.push_back(argv[i]);
 
     return Parse(args, logLevelOut, tempDirOut, testDataOut, err, output);
@@ -85,7 +85,7 @@ std::ostream* err
     TestRepositories* currentRepos = nullptr;
     TestRepository* currentRepo = nullptr;
     size_t argc = args.size();
-    for (int i = 1; i < argc; i++)
+    for (int i = 0; i < argc; i++)
         {
         auto& arg = args[i];
 
@@ -117,13 +117,27 @@ std::ostream* err
             continue;
             }
 
+        Utf8CP argValue = nullptr;
+
+        if (arg == "--config")
+            {
+            currentRepo = nullptr;
+
+            if (!GetArgValue(argc, args, i, argValue, err))
+                return -1;
+
+            auto status = ParseConfigFile(argValue, logLevelOut, tempDirOut, testDataOut, err);
+            if (0 != status)
+                return status;
+            continue;
+            }
+
         if (arg == "--silent")
             {
             logLevelOut = 0;
             continue;
             }
 
-        Utf8CP argValue = nullptr;
         if (arg == "--workdir")
             {
             if (!GetArgValue(argc, args, i, argValue, err))
@@ -343,6 +357,63 @@ std::shared_ptr<UrlProvider::Environment> ArgumentParser::ParseEnv(Utf8StringCR 
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+int ArgumentParser::ParseConfigFile
+(
+Utf8String filePath,
+int& logLevelOut,
+BeFileName& tempDirOut,
+bvector<TestRepositories>& testDataOut,
+std::ostream* err
+)
+    {
+    BeFile file;
+    bvector<Byte> content;
+    if (BeFileStatus::Success != file.Open(filePath, BeFileAccess::Read) ||
+        BeFileStatus::Success != file.ReadEntireFile(content) ||
+        BeFileStatus::Success != file.Close())
+        {
+        PrintError(err, Utf8PrintfString("Could not read config file: %s", filePath.c_str()).c_str());
+        return -1;
+        }
+    content.push_back(0);
+
+    bvector<Utf8String> tokens;
+    BeStringUtilities::Split((Utf8CP)content.data(), "\n", tokens);
+
+    for (auto& token : tokens)
+        token.Trim();
+
+    std::remove_if(tokens.begin(), tokens.end(), [] (Utf8StringCR line)
+        {
+        if (line.empty())
+            return true;
+        if (line[0] == '#')
+            return true;
+        return false;
+        });
+
+    bvector<Utf8String> args;
+    for (auto& token : tokens)
+        {
+        auto pos = token.find_first_of(' ');
+        if (Utf8String::npos == pos)
+            pos = token.length();
+
+        args.push_back(token.substr(0, pos));
+
+        Utf8String value = token.substr(pos, token.length());
+        value.Trim();
+
+        if (!value.empty())
+            args.push_back(value);
+        }
+
+    return TryParse(args, logLevelOut, tempDirOut, testDataOut, err);
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ArgumentParser::PrintError(std::ostream* err, Utf8CP error)
@@ -375,7 +446,7 @@ void ArgumentParser::PrintHelp(std::ostream* out)
     *out << "  --createcache      Run cache creation test." << std::endl;
     *out << "  --upgradecache     Run cache upgrade test. Upgrade will use --createcache test as base. Parameters for upgrade are optional - they default to base ones." << std::endl;
     *out << "  --downloadschemas  Run schema download test. Schemas will be left in work dir and could be inspected or reused. Will run before any create or upgrade tests." << std::endl;
-    *out << "  --config           File containing test setup instead of command-line." << std::endl;
+    *out << "  --config           File containing test setup instead of command-line. Each argument and its value should be on new line. Lines starting with # will be ingored." << std::endl;
     *out << "Parameters for server connection:" << std::endl;
     *out << "  -url URL           WSG server URL" << std::endl;
     *out << "  -r REPOID          repository ID" << std::endl;
