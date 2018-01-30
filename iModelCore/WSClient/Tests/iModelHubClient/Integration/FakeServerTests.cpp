@@ -148,6 +148,7 @@ Json::Value iModelCreationJson(Utf8StringCR iModelName, Utf8StringCR description
     }
 
 #ifdef __WIP__
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Farhad.Kabir    12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -211,6 +212,9 @@ TEST_F(FakeServerFixture, CreateiModel)
 
 //{"instances":[{"instanceId":"Project","schemaName":"Plugins","className":"PluginIdentifier","properties":{"ECPluginID":"Project","DisplayLabel":"Project"},"eTag":"\"XX8D88hmQX54h3Mq4muPnVO0yVQ=\""},{"instanceId":"iModel","schemaName":"Plugins","className":"PluginIdentifier","properties":{"ECPluginID":"iModel","DisplayLabel":"iModel"},"eTag":"\"rCWzHX/X9jqKDPqDqq1rSrXMseI=\""},{"instanceId":"Bentley.ECServices","schemaName":"Plugins","className":"PluginIdentifier","properties":{"ECPluginID":"Bentley.ECServices","DisplayLabel":"Bentley.ECServices"},"eTag":"\"HqP0PTZyesAOhccoX8fGr3fosBk=\""}]}
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FakeServerFixture, DownloadiModel)
     {
 
@@ -228,6 +232,9 @@ TEST_F(FakeServerFixture, DownloadiModel)
     auto proxy   = ProxyHttpHandler::GetFiddlerProxyIfReachable(handlePtr);
     */
     }
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FakeServerFixture, CheckPluginsRequests)
     {
     Utf8String url("https://qa-imodelhubapi.bentley.com/v2.0/Plugins");
@@ -239,7 +246,9 @@ TEST_F(FakeServerFixture, CheckPluginsRequests)
     printf("%s\n", response.GetHeaders().GetValue("Mas-Server"));
     }
 
-
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FakeServerFixture, TestBuddyResponse) 
     {
     Utf8String url("https://qa-ims.bentley.com/rest/ActiveSTSService/json/IssueEx");
@@ -286,7 +295,10 @@ TEST_F(FakeServerFixture, TestMockHandler)
     */
     }
 
-TEST(FakeServerFixt, Demo) 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(FakeServerFixt, TestRequestToken) 
     {
 
     Utf8String responseBody("{\"RequestedSecurityToken\":\"<saml:Assertion MajorVersion>\"}");
@@ -306,5 +318,4 @@ TEST(FakeServerFixt, Demo)
 
     printf("%d\n", BeXmlStatus::BEXML_Success);
     }
-
 #endif // __WIP__

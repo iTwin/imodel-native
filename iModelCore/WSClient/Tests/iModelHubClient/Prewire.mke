@@ -12,6 +12,6 @@ baseDir = $(_MakeFilePath)
 $(BuildContext)Delivery/iModelHubNativeTests/ignore_list.txt : $(baseDir)ignore_list.txt
     $(LinkFirstDepToFirstTarget)
 
-seedDataSource=$(SrcRoot)DgnClientSdkTestData/MockServer/
+seedDataSource=$(SrcRoot)DgnClientSdkUnitTestData/MockServer/
 $(BuildContext)Delivery/iModelHubNativeTests/MockServer : $(seedDataSource)
     $(LinkFirstDepToFirstTargetAsDirectory)

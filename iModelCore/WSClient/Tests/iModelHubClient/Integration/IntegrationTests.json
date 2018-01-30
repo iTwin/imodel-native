@@ -4,12 +4,12 @@
   "Users": [
     {
       "Password": "admin_password_please_change",
-      "Username": "admin_user_please_change",
+      "Username": "fadmin_user_please_change",
       "IsAdmin": true
     },
     {
-      "Password": "regular_password_please_change",
-      "Username": "regular_user_please_change"
+      "Password": "admin_password_please_change",
+      "Username": "admin_user_please_change"
     }
   ]
 }
