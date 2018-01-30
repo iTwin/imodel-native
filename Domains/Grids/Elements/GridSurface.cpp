@@ -266,8 +266,6 @@ DgnDbStatus      GridSurface::_OnInsert
     if (status != DgnDbStatus::Success)
         return status;
 
-    GridCPtr grid = GetDgnDb().Elements().Get<Grid>(GetGridId());
-    GridDrivesGridSurfaceHandler::Insert(GetDgnDb(), *grid, *this);
     return status;
     }
 
@@ -312,7 +310,6 @@ Dgn::DgnDbStatus GridSurface::_OnDelete() const
 void GridSurface::_OnInserted(DgnElementP copiedFrom) const
     {
     T_Super::_OnInserted(copiedFrom);
-
 
     GridCPtr grid = GetDgnDb().Elements().Get<Grid>(GetGridId());
     GridDrivesGridSurfaceHandler::Insert(GetDgnDb(), *grid, *this);
