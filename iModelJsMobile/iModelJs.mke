@@ -101,7 +101,7 @@ addonObjs = $[@wildcard $(BuildContext)SubParts/imodeljs-addon-objs/*$(oext)]
 #   Create the library
 #--------------------------------------------------------------------------------------
 DLM_NAME = $(appName)
-DLM_OBJECT_FILES            = $(iModelJsObjs) $(addonObjs) 
+DLM_OBJECT_FILES            = $(iModelJsObjs) $(addonObjs) $(ContextLibPrefix)$(stlibprefix)uv$(stlibext)
 DLM_OBJECT_DEST             = $(o)
 DLM_DEST                    = $(o)
 DLM_EXPORT_DEST             = $(o)
@@ -111,8 +111,6 @@ DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 
 ContextLibPrefix = $(BuildContext)SubParts/Libs/$(libprefix)
-
-LINKER_LIBRARIES + $(ContextLibPrefix)libuv$(stlibext)
 
 %include $(BuildContext)SubParts/imodeljs-addon-build-tools/addon_input_libs.mki
 
