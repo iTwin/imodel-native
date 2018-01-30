@@ -147,6 +147,7 @@ Json::Value iModelCreationJson(Utf8StringCR iModelName, Utf8StringCR description
     return iModelCreation;
     }
 
+#ifdef __WIP__
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Farhad.Kabir    12/2017
@@ -306,3 +307,4 @@ TEST(FakeServerFixt, Demo)
 
     printf("%d\n", BeXmlStatus::BEXML_Success);
     }
+#endif // __WIP__
