@@ -435,7 +435,7 @@ TEST(CzechSpiral,NewtonStep)
 
             double distanceStep = spiralLength / edgeCount[i];
             //double curvature1 = 1.0 / radius1;
-            //double averageRadius = 2.0 * radius1;
+            // unused - double averageRadius = 2.0 * radius1;
             //double averageCircleRadians = spiralLength / averageRadius;
             double directCurvature = 0;
             bvector<DPoint3d>xy;
