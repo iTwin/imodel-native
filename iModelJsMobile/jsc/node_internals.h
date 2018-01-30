@@ -12,12 +12,7 @@
 #include <libuv/uv.h>
 #include <string>
 
-// Windows 8+ does not like abort() in Release mode
-#ifdef _WIN32
-#define ABORT_NO_BACKTRACE() raise(SIGABRT)
-#else
 #define ABORT_NO_BACKTRACE() abort()
-#endif
 
 #define ABORT() node::Abort()
 
