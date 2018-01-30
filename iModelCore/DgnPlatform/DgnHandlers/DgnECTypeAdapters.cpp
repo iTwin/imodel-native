@@ -2,7 +2,7 @@
 |
 |  $Source: DgnHandlers/DgnECTypeAdapters.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -3143,8 +3143,8 @@ bool TryGetKindOfQuantity(ECPropertyCP ecProp, KindOfQuantityCP& kindOfQuantity)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TryGetOldUnitFromNewName(Utf8CP newUnitName, UnitR oldUnit)
     {
-    Utf8String oldUnitName;
-    return Units::UnitRegistry::Instance().TryGetOldName(newUnitName, oldUnitName) && Unit::GetUnitByName(oldUnit, oldUnitName.c_str());
+    Utf8CP oldUnitName = Units::UnitRegistry::TryGetOldName(newUnitName);
+    return nullptr != oldUnitName && Unit::GetUnitByName(oldUnit, oldUnitName);
     }
 
 /*---------------------------------------------------------------------------------**//**
