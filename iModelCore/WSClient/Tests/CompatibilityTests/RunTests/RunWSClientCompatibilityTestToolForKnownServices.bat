@@ -32,4 +32,6 @@ call %OutRoot%Winx64\Product\WSClientCompatibilityTestTool\WSClientCompatibility
 if exist %outfile% (
 call python %~dp0\TestReport\makereport.py "%outfile%" > %workdir%results.htm
 start %workdir%results.htm
+echo;
+echo Results: %workdir%results.htm
 )
