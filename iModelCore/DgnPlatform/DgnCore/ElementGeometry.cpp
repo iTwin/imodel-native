@@ -4025,35 +4025,7 @@ BentleyStatus GeometrySource::_StrokeHit(DecorateContextR context, HitDetailCR h
             return ERROR;
         }
 
-    // Use branch to push geometry towards eye and to override color from normal flash for primitive/part sub-selection...
-    double      offsetDist = context.GetPixelSizeAtPoint(&hit.GetHitPoint());
-    DVec3d      offsetDir;
-    DPoint3d    viewPt[2];
-    Transform   offsetTrans;
-
-    viewPt[0].Init(0.5, 0.5, 0.0);
-    viewPt[1].Init(0.5, 0.5, 1.0);
-
-    context.NpcToWorld(viewPt, viewPt, 2);
-    offsetDir.DifferenceOf(viewPt[1], viewPt[0]);
-    offsetDir.ScaleToLength(4.0 * offsetDist);
-    offsetTrans.InitFrom(offsetDir);
-
-    ColorDef color = context.GetViewport()->GetHiliteColor();
-    Render::OvrGraphicParams ovrParams;
-
-    if (SubSelectionMode::Segment != subMode)
-        {
-        ovrParams.SetLineColor(color);
-        ovrParams.SetFillColor(color);
-        ovrParams.SetLineTransparency(0x64);
-        ovrParams.SetFillTransparency(0x64);
-        }
-
-    GraphicBranch branch;
-
-    branch.Add(*graphic);
-    context.AddWorldDecoration(*context.CreateBranch(branch, context.GetDgnDb(), offsetTrans), &ovrParams);
+    hit.FlashGraphic(*graphic, context);
 
     return SUCCESS;
     }

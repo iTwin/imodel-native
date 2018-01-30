@@ -1205,7 +1205,24 @@ BentleyStatus DecorateContext::DrawNormalHit(HitDetailCR hit)
         return ERROR;
 
     // Allow sub-class involvement for flashing sub-entities...
-    return (nullptr != m_viewport ? m_viewport->GetViewControllerR()._StrokeHit(*this, *source, hit) : source->StrokeHit(*this, hit));
+    if (SUCCESS == (nullptr != m_viewport ? m_viewport->GetViewControllerR()._StrokeHit(*this, *source, hit) : source->StrokeHit(*this, hit)))
+        return SUCCESS;
+
+    if (element.IsValid())
+        {
+        m_viewport->SetFlashed(hit.GetElementId(), 0.25);
+        return SUCCESS;
+        }
+
+    // For locatable transient, can't use SetFlashed to hilite the entire GeometryStream, create a graphic and draw in hilite color instead...
+    Render::GraphicPtr graphic = source->Draw(*this, 0.0);
+
+    if (!graphic.IsValid())
+        return ERROR;
+
+    hit.FlashGraphic(*graphic, *this);
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**

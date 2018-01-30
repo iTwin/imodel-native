@@ -2,7 +2,7 @@
 |
 |     $Source: DgnHandlers/HitDetail.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -544,6 +544,39 @@ HitDetail::~HitDetail() {}
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HitDetail::_Draw(DecorateContextR context) const {context.DrawHit(*this);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void HitDetail::FlashGraphic(Render::GraphicR graphic, DecorateContextR context) const
+    {
+    // Use branch to push geometry towards eye and to override color from normal flash for primitive/part sub-selection...
+    double      offsetDist = context.GetPixelSizeAtPoint(&GetHitPoint());
+    DVec3d      offsetDir;
+    DPoint3d    viewPt[2];
+    Transform   offsetTrans;
+
+    viewPt[0].Init(0.5, 0.5, 0.0);
+    viewPt[1].Init(0.5, 0.5, 1.0);
+
+    context.NpcToWorld(viewPt, viewPt, 2);
+    offsetDir.DifferenceOf(viewPt[1], viewPt[0]);
+    offsetDir.ScaleToLength(4.0 * offsetDist);
+    offsetTrans.InitFrom(offsetDir);
+
+    ColorDef color = context.GetViewport()->GetHiliteColor();
+    Render::OvrGraphicParams ovrParams;
+
+    ovrParams.SetLineColor(color);
+    ovrParams.SetFillColor(color);
+    ovrParams.SetLineTransparency(0x40);
+    ovrParams.SetFillTransparency(0x40);
+
+    GraphicBranch branch;
+
+    branch.Add(graphic);
+    context.AddWorldDecoration(*context.CreateBranch(branch, context.GetDgnDb(), offsetTrans), &ovrParams);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/2015
