@@ -240,6 +240,45 @@ TEST_P(ArgumentParserTests_CreateWithoutCredentials, Parse_ValidParameters_Fills
     EXPECT_EQ(nullptr, testData[0].create.environment);
     }
 
+struct ArgumentParserTests_CreateWithLabelAndComment : TestWithParam<TestArgs> {};
+INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_CreateWithLabelAndComment, ValuesIn(vector<TestArgs>{
+        {"Foo.exe", "--createcache", "-c", "comment", "-url", "URL", "-l", "label" , "-r", "RId"},
+        {"Foo.exe", "--createcache", "-l", "label", "-r", "RId", "-url", "URL", "-c", "comment"},
+    }));
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ArgumentParserTests_CreateWithLabelAndComment, Parse_ValidParameters_FillsTestDataAndReturnsZero)
+    {
+    auto args = GetParam();
+
+    int logLevel;
+    BeFileName workDir;
+    bvector<TestRepositories> testData;
+    std::stringstream err;
+    std::stringstream out;
+
+    EXPECT_EQ(0, ArgumentParser::Parse((int) args.size(), args.data(), logLevel, workDir, testData, &err, &out));
+    EXPECT_TRUE(workDir.empty());
+    EXPECT_EQ("", err.str());
+    EXPECT_EQ("", out.str());
+
+    ASSERT_EQ(1, testData.size());
+
+    EXPECT_FALSE(testData[0].upgrade.IsValid());
+    EXPECT_TRUE(testData[0].create.IsValid());
+
+    EXPECT_EQ("URL", testData[0].create.serverUrl);
+    EXPECT_EQ("RId", testData[0].create.id);
+    EXPECT_EQ(Credentials(), testData[0].create.credentials);
+    EXPECT_EQ(nullptr, testData[0].create.token);
+    EXPECT_EQ(nullptr, testData[0].create.environment);
+
+    EXPECT_EQ("label", testData[0].create.label);
+    EXPECT_EQ("comment", testData[0].create.comment);
+    }
+
 struct ArgumentParserTests_CreateWithBasicAuth : TestWithParam<TestArgs> {};
 INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_CreateWithBasicAuth, ValuesIn(vector<TestArgs>{
         {"Foo.exe", "--createcache", "-url", "URL", "-r", "RId", "-auth:basic", "TestUser:TestPass"},
@@ -400,15 +439,15 @@ TEST_P(ArgumentParserTests_CreateAndUpgradeWithBasicAuth, Parse_ValidParameters_
 
 struct ArgumentParserTests_CreateAndUpgradeWithDefaultParams : TestWithParam<std::tuple<int, int, TestArgs>> {};
 INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_CreateAndUpgradeWithDefaultParams, ValuesIn(vector<std::tuple<int, int, TestArgs>>{
-        {1, 0, {"Foo.exe", "--createcache", "-url", "URL1", "-r", "R2", "-auth:basic", "U2:P2", "--upgradecache", "-url", "URL2"}},
-        {1, 0, {"Foo.exe", "--createcache", "-url", "URL2", "-r", "R1", "-auth:basic", "U2:P2", "--upgradecache", "-r", "R2"}},
-        {1, 0, {"Foo.exe", "--createcache", "-url", "URL2", "-r", "R2", "-auth:basic", "U1:P1", "--upgradecache", "-auth:basic", "U2:P2"}},
-        {1, 0, {"Foo.exe", "--createcache", "-url", "URL2", "-r", "R2", "-auth:qa:ims", "U1:P1", "--upgradecache", "-auth:basic", "U2:P2"}},
-        {1, 0, {"Foo.exe", "--createcache", "-url", "URL2", "-r", "R2", "-auth:qa:token", GetTestTokenPath(), "--upgradecache", "-auth:basic", "U2:P2"}}
+        {1, 0, {"Foo.exe", "--createcache", "-url", "URL1", "-r", "R2", "-l", "LABEL", "-auth:basic", "U2:P2", "--upgradecache", "-url", "URL2"}},
+        {1, 0, {"Foo.exe", "--createcache", "-url", "URL2", "-r", "R1", "-l", "LABEL", "-auth:basic", "U2:P2", "--upgradecache", "-r", "R2"}},
+        {1, 0, {"Foo.exe", "--createcache", "-url", "URL2", "-r", "R2", "-l", "LABEL", "-auth:basic", "U1:P1", "--upgradecache", "-auth:basic", "U2:P2"}},
+        {1, 0, {"Foo.exe", "--createcache", "-url", "URL2", "-r", "R2", "-l", "LABEL", "-auth:qa:ims", "U1:P1", "--upgradecache", "-auth:basic", "U2:P2"}},
+        {1, 0, {"Foo.exe", "--createcache", "-url", "URL2", "-r", "R2", "-l", "LABEL", "-auth:qa:token", GetTestTokenPath(), "--upgradecache", "-auth:basic", "U2:P2"}}
     }));
 INSTANTIATE_TEST_CASE_P(DownloadSchemasInvolved, ArgumentParserTests_CreateAndUpgradeWithDefaultParams, ValuesIn(vector<std::tuple<int, int, TestArgs>>{
-        {2, 0, {"Foo.exe", "--createcache", "-url", "URL1", "-r", "R2", "-auth:basic", "U2:P2", "--upgradecache", "-url", "URL2", "--downloadschemas", "-url", "URLX", "-r", "RX"}},
-        {2, 1, {"Foo.exe", "--downloadschemas", "-url", "URLX", "-r", "RX", "--createcache", "-url", "URL1", "-r", "R2", "-auth:basic", "U2:P2", "--upgradecache", "-url", "URL2"}},
+        {2, 0, {"Foo.exe", "--createcache", "-url", "URL1", "-r", "R2", "-auth:basic", "U2:P2", "-l", "LABEL", "--upgradecache", "-url", "URL2", "--downloadschemas", "-url", "URLX", "-r", "RX"}},
+        {2, 1, {"Foo.exe", "--downloadschemas", "-url", "URLX", "-r", "RX", "--createcache", "-url", "URL1", "-r", "R2", "-auth:basic", "U2:P2", "-l", "LABEL", "--upgradecache", "-url", "URL2"}},
     }));
 
 /*--------------------------------------------------------------------------------------+
@@ -442,6 +481,7 @@ TEST_P(ArgumentParserTests_CreateAndUpgradeWithDefaultParams, Parse_UpgradeCache
     EXPECT_EQ(Credentials("U2", "P2"), testData[it].upgrade.credentials);
     EXPECT_EQ(nullptr, testData[it].upgrade.token);
     EXPECT_EQ(nullptr, testData[it].upgrade.environment);
+    EXPECT_EQ("LABEL", testData[it].upgrade.label);
     }
 
 struct ArgumentParserTests_CreateWithSchemas : TestWithParam<TestArgs> {};

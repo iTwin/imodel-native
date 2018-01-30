@@ -163,6 +163,18 @@ std::ostream* err
             currentRepo->schemasDir = dir;
             currentRepo->schemasDir.AppendSeparator();
             }
+        else if (0 == strcmp(arg, "-l"))
+            {
+            if (!GetArgValue(argc, args, i, argValue, err))
+                return -1;
+            currentRepo->label = argValue;
+            }
+        else if (0 == strcmp(arg, "-c"))
+            {
+            if (!GetArgValue(argc, args, i, argValue, err))
+                return -1;
+            currentRepo->comment = argValue;
+            }
         else
             {
             PrintError(err, Utf8PrintfString("Uknown parameter: %s", arg).c_str());
@@ -334,7 +346,8 @@ void ArgumentParser::PrintHelp(std::ostream* out)
     *out << "                            [--upgradecache   [<parameters>]" << std::endl;
     *out << "                            [--createcache     <parameters> ...]" << std::endl;
     *out << "                            [--downloadschemas <parameters>]" << std::endl;
-    *out << "  <parameters>: -url URL -r REPOID [-auth:XXX VALUE]]" << std::endl;
+    *out << "                            [--config <filepath>]" << std::endl;
+    *out << "  <parameters>: -url URL -r REPOID [-auth:XXX VALUE][-l TESTLABEL][-c FAILURECOMMENT]" << std::endl;
     *out << "  <parameters>: -schemas PATH" << std::endl;
     *out << "Usage with schemas:" << std::endl;
     *out << "  WSClientCompatibilityTests --createcache -schemas PATH --upgradecache ..." << std::endl;
@@ -342,6 +355,7 @@ void ArgumentParser::PrintHelp(std::ostream* out)
     *out << "  --createcache      Run cache creation test." << std::endl;
     *out << "  --upgradecache     Run cache upgrade test. Upgrade will use --createcache test as base. Parameters for upgrade are optional - they default to base ones." << std::endl;
     *out << "  --downloadschemas  Run schema download test. Schemas will be left in work dir and could be inspected or reused. Will run before any create or upgrade tests." << std::endl;
+    *out << "  --config           File containing test setup instead of command-line." << std::endl;
     *out << "Parameters for server connection:" << std::endl;
     *out << "  -url URL           WSG server URL" << std::endl;
     *out << "  -r REPOID          repository ID" << std::endl;
@@ -355,6 +369,9 @@ void ArgumentParser::PrintHelp(std::ostream* out)
     *out << "  -auth:qa:token   C:\\token.xml" << std::endl;
     *out << "  -auth:prod:token C:\\token.xml" << std::endl;
     *out << "                     Authenticate using XML IMS SAML token. Token is read from file" << std::endl;
+    *out << "  -l TestLabel       Add descriptive name for test. Will be used in workdir folder structure as well as test output." << std::endl;
+    *out << "  -c \"Failure Comment\"" << std::endl;
+    *out << "                     Optional comment to be shown when test fails for known issues." << std::endl;
     *out << "Parameters when stubbing server with local schema list:" << std::endl;
     *out << "  -schemas C:\\s\\     Path to folder containing all repository schemas. Can be used to test upgrade from last known good schemas to server" << std::endl;
     *out << "Other:" << std::endl;
