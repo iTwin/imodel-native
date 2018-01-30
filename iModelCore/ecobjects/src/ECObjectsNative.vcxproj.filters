@@ -144,6 +144,9 @@
     <ClCompile Include="SchemaParseUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ECSchemaDownConverter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsPch.h">
@@ -263,10 +266,16 @@
     <ClInclude Include="..\PrivateApi\ECObjects\SchemaParseUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\ECSchemaDownConverter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ecobjects.mke" />
     <None Include="ECObjectsCompileOpts.mki" />
     <None Include="..\mki\ECObjects.mki" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="..\ECObjects.PartFile.xml" />
   </ItemGroup>
 </Project>

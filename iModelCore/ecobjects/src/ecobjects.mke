@@ -2,7 +2,7 @@
 #
 #     $Source: src/ecobjects.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -42,6 +42,7 @@ MultiCompileDepends = $(_MakeFileSpec)
 ECObjectsHeaders =              $(ecobjectsPublicAPISrc)ECObjects.h \
                                 $(ecobjectsPublicAPISrc)ECSchema.h \
                                 $(ecobjectsPublicAPISrc)ECSchemaConverter.h \
+                                $(ecobjectsPublicAPISrc)ECSchemaDownConverter.h \
                                 $(ecobjectsPublicAPISrc)ECSchemaValidator.h \
                                 $(ecobjectsPublicAPISrc)ECValue.h \
                                 $(ecobjectsPublicAPISrc)ECInstance.h \
@@ -71,6 +72,8 @@ $(o)SchemaParseUtils$(oext)                                : $(baseDir)SchemaPar
 $(o)ECSchema$(oext)                                        : $(baseDir)ECSchema.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)ECSchemaConverter$(oext)                               : $(baseDir)ECSchemaConverter.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)ECSchemaDownConverter$(oext)                           : $(baseDir)ECSchemaDownConverter.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)ECSchemaValidator$(oext)                               : $(baseDir)ECSchemaValidator.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 

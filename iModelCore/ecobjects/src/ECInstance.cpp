@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECInstance.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -3523,24 +3523,8 @@ struct NamedAttributeDeserializer : ICustomAttributeDeserializer
             if (schema.IsNull())
                 return false;
 
-            ECClassCP structClass = schema->GetClassCP(existingStructClassName.c_str());
-            if (!structClass)
-                {
-                LOG.errorv("Failed to inject customattribute class: \"%s\" to schema by copying struct class: \"%s\" which does not exist", m_newClassName.c_str(), existingStructClassName.c_str());
-                BeAssert(false);
-                return false;
-                }
-
-            ECCustomAttributeClassP attributeClass = NULL;
-            if (ECObjectsStatus::Success != schema->CreateCustomAttributeClass(attributeClass, m_newClassName))
-                return false;
-
-            for (ECPropertyCP sourceProp : structClass->GetProperties(false))
-                {
-                ECPropertyP destProperty;
-                attributeClass->CopyProperty(destProperty, sourceProp, true);
-                }
-            return true;
+            ECClassCP attributeClass = nullptr;
+            return CustomAttributeDeserializerManager::CreateAttrClassVersion(schema.get(), existingStructClassName.c_str(), m_newClassName.c_str(), attributeClass);
             }
 
         Utf8String GetSchemaName(BeXmlNodeR xmlNode)
@@ -3595,7 +3579,36 @@ struct NamedAttributeDeserializer : ICustomAttributeDeserializer
             InstanceXmlReader   reader(context, xmlNode, m_newClassName);
             return reader.ReadInstance(ecInstance);
             }
+
     };
+
+bool CustomAttributeDeserializerManager::CreateAttrClassVersion(ECSchemaP schema, Utf8CP existingClassName, Utf8CP newClassName, ECClassCP& attributeClass)
+    {
+    ECClassCP structClass = schema->GetClassCP(existingClassName);
+    if (!structClass)
+        {
+        LOG.errorv("Failed to inject customattribute class: \"%s\" to schema by copying struct class: \"%s\" which does not exist", newClassName, existingClassName);
+        BeAssert(false);
+        return false;
+        }
+
+    ECCustomAttributeClassP newClass;
+    if (ECObjectsStatus::Success != schema->CreateCustomAttributeClass(newClass, newClassName))
+        {
+        attributeClass = schema->GetClassCP(newClassName);
+        return nullptr != attributeClass;
+        }
+
+    for (ECPropertyCP sourceProp : structClass->GetProperties(false))
+        {
+        ECPropertyP destProperty;
+        newClass->CopyProperty(destProperty, sourceProp, true);
+        }
+
+    attributeClass = newClass;
+    return true;
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Basanta.Kharel                 12/2015
