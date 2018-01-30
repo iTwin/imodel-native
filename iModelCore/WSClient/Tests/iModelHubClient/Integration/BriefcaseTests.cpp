@@ -76,8 +76,6 @@ struct BriefcaseTests : public iModelTestsBase
         }
     };
 
-TEST_F(BriefcaseTests, CreateAniModelonHub) 
-    {}
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                              Algirdas.Mikoliunas    07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
