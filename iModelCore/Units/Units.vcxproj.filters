@@ -65,6 +65,9 @@
     <ClCompile Include="src\UnitTypes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\UnitNameMappings.cpp">
+      <Filter>Source Files\Units</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="mki\Units.mki" />
@@ -109,6 +112,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PrivateAPI\Units\StandardDefinitions.h">
+      <Filter>Header Files\Units</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\Units\UnitNameMappings.h">
       <Filter>Header Files\Units</Filter>
     </ClInclude>
   </ItemGroup>

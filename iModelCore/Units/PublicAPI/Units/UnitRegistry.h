@@ -90,7 +90,6 @@ private:
     void AddDefaultPhenomena();
     void AddDefaultUnits();
     void AddDefaultConstants();
-    void AddDefaultMappings();
 
     void AddBaseSystems();
     void AddBaseUnits();
@@ -116,8 +115,6 @@ private:
     bool TryGetConversion(uint64_t index, Conversion& conversion);
     void AddConversion(uint64_t index, Conversion& conversion) {m_conversions.Insert(index, conversion);}
 
-    void AddMapping(Utf8CP oldName, Utf8CP newName);
-    void AddECMapping(Utf8CP name, Utf8CP ecName);
     bool HasConstant(Utf8CP constantName) const {return nullptr != LookupConstant(constantName);}
 
 public:
@@ -175,14 +172,14 @@ public:
 
     //Mapping methods
     //Gets the "new" unit name from a legacy unit name
-    UNITS_EXPORT bool TryGetNewName(Utf8CP oldName, Utf8StringR newName) const;
+    UNITS_EXPORT static Utf8CP TryGetNewName(Utf8CP oldName);
     //Gets the legacy unit name for a unit name
-    UNITS_EXPORT bool TryGetOldName(Utf8CP newName, Utf8StringR oldName) const;
+    UNITS_EXPORT static Utf8CP TryGetOldName(Utf8CP newName);
 
     //Gets the EC compatible name for a unit name
-    UNITS_EXPORT bool TryGetECName(Utf8CP name, Utf8StringR ecName) const;
+    UNITS_EXPORT static Utf8CP TryGetECName(Utf8CP name);
     //Gets the mapped unit name for an EC compatible name
-    UNITS_EXPORT bool TryGetNameFromECName(Utf8CP ecName, Utf8StringR name) const;
+    UNITS_EXPORT static Utf8CP TryGetNameFromECName(Utf8CP ecName);
 
     UNITS_EXPORT UnitCP LookupUnitUsingOldName(Utf8CP oldName) const;
     UnitCP GetPlatformLengthUnit() {return LookupUnit("M");}

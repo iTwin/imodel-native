@@ -28,7 +28,6 @@ UnitRegistry& UnitRegistry::Instance()
         s_instance->AddDefaultPhenomena();
         s_instance->AddDefaultUnits();
         s_instance->AddDefaultConstants();
-        s_instance->AddDefaultMappings();
         }
 
     return *s_instance;
@@ -560,81 +559,37 @@ void UnitRegistry::AllSystems(bvector<UnitSystemCP>& allUnitSystems) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Robert.Schili     03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UnitRegistry::AddMapping(Utf8CP oldName, Utf8CP newName)
+// static
+Utf8CP UnitRegistry::TryGetNewName(Utf8CP oldName)
     {
-    // NOTE: New mappings overwrite previously added mappings
-    m_oldNameNewNameMapping[oldName] = newName;
-    m_newNameOldNameMapping[newName] = oldName;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                              Robert.Schili     01/18
-//--------------------------------------------------------------------------------------
-void UnitRegistry::AddECMapping(Utf8CP name, Utf8CP ecName)
-    {
-    // NOTE: New mappings overwrite previously added mappings
-    m_nameECNameMapping[name] = ecName;
-    m_ecNameNameMapping[ecName] = name;
+    return UnitNameMappings::TryGetNewNameFromOldName(oldName);
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Robert.Schili     03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UnitRegistry::TryGetNewName(Utf8CP oldName, Utf8StringR newName) const
+// static
+Utf8CP UnitRegistry::TryGetOldName(Utf8CP newName)
     {
-    auto p = m_oldNameNewNameMapping.find(oldName);
-    if (p != m_oldNameNewNameMapping.end())
-        {
-        newName = p->second;
-        return true;
-        }
-
-    return false;
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Robert.Schili     03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool UnitRegistry::TryGetOldName(Utf8CP newName, Utf8StringR oldName) const
-    {
-    auto p = m_newNameOldNameMapping.find(newName);
-    if (p != m_newNameOldNameMapping.end())
-        {
-        oldName = p->second;
-        return true;
-        }
-
-    return false;
+    return UnitNameMappings::TryGetOldNameFromNewName(newName);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                              Robert.Schili     01/18
 //--------------------------------------------------------------------------------------
-bool UnitRegistry::TryGetECName(Utf8CP name, Utf8StringR ecName) const
+// static
+Utf8CP UnitRegistry::TryGetECName(Utf8CP name)
     {
-    auto p = m_nameECNameMapping.find(name);
-    if (p != m_oldNameNewNameMapping.end())
-        {
-        ecName = p->second;
-        return true;
-        }
-
-    return false;
+    return UnitNameMappings::TryGetECNameFromNewName(name);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                              Robert.Schili     01/18
 //--------------------------------------------------------------------------------------
-bool UnitRegistry::TryGetNameFromECName(Utf8CP ecName, Utf8StringR name) const
+// static
+Utf8CP UnitRegistry::TryGetNameFromECName(Utf8CP ecName)
     {
-    auto p = m_ecNameNameMapping.find(ecName);
-    if (p != m_ecNameNameMapping.end())
-        {
-        name = p->second;
-        return true;
-        }
-
-    return false;
+    return UnitNameMappings::TryGetNewNameFromECName(ecName);
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -642,12 +597,10 @@ bool UnitRegistry::TryGetNameFromECName(Utf8CP ecName, Utf8StringR name) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 UnitCP UnitRegistry::LookupUnitUsingOldName(Utf8CP oldName) const
     {
-    Utf8String newName;
-    if (TryGetNewName(oldName, newName))
-        {
-        return LookupUnitP(newName.c_str());
-        }
-    return nullptr;
+    auto newName = UnitRegistry::TryGetNewName(oldName);
+    if (nullptr == newName)
+        return nullptr;    
+    return LookupUnitP(newName);
     }
 
 /*--------------------------------------------------------------------------------**//**

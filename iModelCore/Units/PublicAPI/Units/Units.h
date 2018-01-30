@@ -30,6 +30,8 @@
 #define UNITS_TYPEDEFS(_name_)  \
     BEGIN_BENTLEY_UNITS_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_UNITS_NAMESPACE
 
+#include <Units/UnitNameMappings.h>
 #include <Units/UnitTypes.h>
 #include <Units/Quantity.h>
 #include <Units/UnitRegistry.h>
+
