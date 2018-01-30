@@ -189,6 +189,9 @@ protected:
     //! Draw the contents of the view.
     virtual void _DrawView(ViewContextR) = 0;
 
+    //! Override this if you want to perform some logic on each iteration of the render loop.
+    virtual void _OnRenderFrame() { }
+
     DGNPLATFORM_EXPORT void InvalidateScene();
     bool IsSceneReady() const;
 
