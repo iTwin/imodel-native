@@ -63,9 +63,9 @@ Dgn::DgnElementId target
         thisCurve->SetCurve (newCurve);
         thisCurve->Update ();
         }
-    else
+    /*else
         db.Txns ().ReportError (*new TxnManager::ValidationError (TxnManager::ValidationError::Severity::Fatal, "failed to create gridCurve"));
-
+*/
     }
 
 /*---------------------------------------------------------------------------------**//**

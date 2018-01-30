@@ -66,6 +66,8 @@ protected:
 
     GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnDelete() const override;
 
+    GRIDELEMENTS_EXPORT virtual void _OnInserted(Dgn::DgnElementP copiedFrom) const override;
+
     //! Rotates grid by given angle in radians
     //! @param[in] theta            angle in radians
     GRIDELEMENTS_EXPORT virtual BentleyStatus _RotateXY(double theta);
