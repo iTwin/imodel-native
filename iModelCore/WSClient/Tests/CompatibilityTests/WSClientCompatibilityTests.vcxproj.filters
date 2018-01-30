@@ -25,5 +25,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="CompatibilityTests.mke" />
+    <None Include="RunTests\RunWSClientCompatibilityTestToolForKnownServices.config" />
+    <None Include="RunTests\RunWSClientCompatibilityTestToolForKnownServices.bat" />
   </ItemGroup>
 </Project>
