@@ -1,0 +1,2 @@
+include "assets/ECSchemas/ECObjects.ecschema.xml"
+rename  "assets/ECSchemas/ECObjects.ecschema.xml" "iModelSchemaEditor/ECObjects.ecschema.xml"

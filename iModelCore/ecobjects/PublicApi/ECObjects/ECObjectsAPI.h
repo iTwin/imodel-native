@@ -53,6 +53,7 @@ capture this information.
 #include <ECObjects/ECName.h>
 #include <ECObjects/SchemaResourceKeyHelper.h>
 #include <ECObjects/ECSchemaConverter.h>
+#include <ECObjects/ECSchemaDownConverter.h>
 #include <ECObjects/ECSchemaValidator.h>
 #include <ECObjects/SupplementalSchema.h>
 #include <ECObjects/ECContext.h>

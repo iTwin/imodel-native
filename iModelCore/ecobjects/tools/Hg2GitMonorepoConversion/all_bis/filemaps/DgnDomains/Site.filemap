@@ -1,0 +1,2 @@
+include "Site.ecschema.xml"
+rename  "Site.ecschema.xml" "Domains/Site/Site.ecschema.xml"

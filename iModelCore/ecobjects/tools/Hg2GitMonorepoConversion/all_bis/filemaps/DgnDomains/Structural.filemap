@@ -1,0 +1,2 @@
+include "StructuralPhysical.ecschema.xml"
+rename  "StructuralPhysical.ecschema.xml" "Domains/Structural/StructuralPhysical.ecschema.xml"

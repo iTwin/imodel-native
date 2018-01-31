@@ -1,0 +1,14 @@
+include "ThreeMxSchema/ThreeMx.ecschema.xml"
+rename  "ThreeMxSchema/ThreeMx.ecschema.xml" "Domains/RealityModeling/ThreeMxSchema/ThreeMx.ecschema.xml"
+
+include "ScalableMeshSchema/ScalableMesh.ecschema.xml"
+rename  "ScalableMeshSchema/ScalableMesh.ecschema.xml" ""
+
+include "RasterSchema/Raster.ecschema.xml"
+rename  "RasterSchema/Raster.ecschema.xml" "Domains/RealityModeling/RasterSchema/Raster.ecschema.xml"
+
+include "PointCloudSchema/PointCloud.ecschema.xml"
+rename  "PointCloudSchema/PointCloud.ecschema.xml" "Domains/RealityModeling/PointCloudSchema/PointCloud.ecschema.xml"
+
+include "DataCaptureSchema/DataCapture.01.00.00.ecschema.xml"
+rename  "DataCaptureSchema/DataCapture.01.00.00.ecschema.xml" "Domains/RealityModeling/DataCaptureSchema/DataCapture.01.00.00.ecschema.xml"

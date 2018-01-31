@@ -903,6 +903,82 @@ TEST_F(UnitsCustomAttributesConversionTests, SchemaWithIsUnitSystemSchema_Attrib
     verifyReferencedSchemas(*schema, expectedRefSchemas);
     }
 
+
+Utf8String getUnitName(ECSchemaCP schema, Utf8CP className, Utf8CP propertyName, Utf8CP caName, Utf8CP caPropName)
+    {
+    IECInstancePtr myUnitSpec = schema->GetClassCP(className)->GetPropertyP(propertyName)->GetCustomAttributeLocal(caName);
+    if (myUnitSpec.IsValid())
+        {
+        ECValue unitName;
+        myUnitSpec->GetValue(unitName, caPropName);
+        return unitName.GetUtf8CP();
+        }
+    return "";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Colin.Kerr                          01/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(UnitsCustomAttributesConversionTests, EC3KOQsConvertBackToUnitSpecificationsCAs)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding='UTF-8'?>
+        <ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+            <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" alias="V2ToV3" />
+            <ECEntityClass typeName='A' modifier='abstract'>
+                <ECProperty propertyName='PropA' typeName='double' kindOfQuantity='MyKindOfQuantity'>
+                    <ECCustomAttributes>
+                        <OldPersistenceUnit xmlns="ECv3ConversionAttributes.01.00">
+                            <Name>FOOT</Name>
+                        </OldPersistenceUnit>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECEntityClass>
+            <ECEntityClass typeName='B' modifer='none'>
+                <BaseClass>A</BaseClass>
+                <ECProperty propertyName='PropA' typeName='double' />
+            </ECEntityClass>
+            <ECEntityClass typeName='C' modifer='sealed'>
+                <BaseClass>B</BaseClass>
+                <ECProperty propertyName='PropA' typeName='double' />
+            </ECEntityClass>
+            <ECEntityClass typeName='D' modifer='sealed'>
+                <ECProperty propertyName='Prop0' typeName='double' />
+                <ECProperty propertyName='Prop1' typeName='double' kindOfQuantity='SecondKindOfQuantity' />
+                <ECProperty propertyName='Prop2' typeName='double' kindOfQuantity='AnotherKindOfQuantity' />
+            </ECEntityClass>
+            <KindOfQuantity typeName='MyKindOfQuantity' description='Kind of a Description here'
+                displayLabel='best quantity of all times' persistenceUnit='CM' relativeError='10e-3'
+                presentationUnits='FT;IN;MILLIINCH'/>
+            <KindOfQuantity typeName='SecondKindOfQuantity' persistenceUnit='N' relativeError='10e-3' />
+            <KindOfQuantity typeName='AnotherKindOfQuantity' persistenceUnit='PA' relativeError='10e-3'
+                presentationUnits='PSI'/>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext)) << "ECSchema failed to deserialize EC3 schema.";
+    ASSERT_TRUE(schema.IsValid());
+
+    ASSERT_TRUE(ECSchemaDownConverter::Convert(*schema));
+
+    bvector<Utf8String> expectedRefSchemas;
+    expectedRefSchemas.push_back("Unit_Attributes.01.00.00");
+    verifyReferencedSchemas(*schema, expectedRefSchemas);
+    EXPECT_STREQ("CENTIMETRE", getUnitName(schema.get(), "A", "PropA", "UnitSpecificationAttr", "UnitName").c_str());
+    EXPECT_FALSE(schema->GetClassCP("A")->GetPropertyP("PropA")->GetCustomAttribute("OldPersistenceUnit").IsValid());
+    EXPECT_STREQ("FOOT", getUnitName(schema.get(), "A", "PropA", "DisplayUnitSpecificationAttr", "DisplayUnitName").c_str());
+    EXPECT_STREQ("NEWTON", getUnitName(schema.get(), "D", "Prop1", "UnitSpecificationAttr", "UnitName").c_str());
+    EXPECT_FALSE(schema->GetClassCP("D")->GetPropertyP("Prop1")->GetCustomAttributeLocal("DisplayUnitSpecificationAttr").IsValid());
+    EXPECT_STREQ("NEWTON_PER_METRE_SQUARED", getUnitName(schema.get(), "D", "Prop2", "UnitSpecificationAttr", "UnitName").c_str());
+    EXPECT_STREQ("POUND_FORCE_PER_INCH_SQUARED", getUnitName(schema.get(), "D", "Prop2", "DisplayUnitSpecificationAttr", "DisplayUnitName").c_str());
+    EXPECT_FALSE(schema->GetClassCP("B")->GetPropertyP("PropA")->GetCustomAttributeLocal("UnitSpecificationAttr").IsValid());
+    EXPECT_FALSE(schema->GetClassCP("B")->GetPropertyP("PropA")->GetCustomAttributeLocal("DisplayUnitSpecificationAttr").IsValid());
+    EXPECT_FALSE(schema->GetClassCP("C")->GetPropertyP("PropA")->GetCustomAttributeLocal("UnitSpecificationAttr").IsValid());
+    EXPECT_FALSE(schema->GetClassCP("C")->GetPropertyP("PropA")->GetCustomAttributeLocal("DisplayUnitSpecificationAttr").IsValid());
+    EXPECT_FALSE(schema->GetClassCP("D")->GetPropertyP("Prop0")->GetCustomAttributeLocal("UnitSpecificationAttr").IsValid());
+    EXPECT_FALSE(schema->GetClassCP("D")->GetPropertyP("Prop0")->GetCustomAttributeLocal("DisplayUnitSpecificationAttr").IsValid());
+    }
+
 //=======================================================================================
 //! UnitInstanceConversionTest
 //=======================================================================================

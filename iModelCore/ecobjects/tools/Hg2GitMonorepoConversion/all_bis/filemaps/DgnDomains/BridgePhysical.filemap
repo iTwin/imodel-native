@@ -1,0 +1,2 @@
+include "BridgePhysical.ecschema.xml"
+rename  "BridgePhysical.ecschema.xml" "Domains/BridgePhysical/BridgePhysical.ecschema.xml"

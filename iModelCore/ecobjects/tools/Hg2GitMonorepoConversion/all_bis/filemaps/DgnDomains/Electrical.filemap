@@ -1,0 +1,5 @@
+include "ElectricalPhysicalSchema/EC3_Schemas/ElectricalPhysical.ecschema.xml"
+rename  "ElectricalPhysicalSchema/EC3_Schemas/ElectricalPhysical.ecschema.xml" "Domains/Electrical/EC3_Schemas/ElectricalPhysical.ecschema.xml"
+
+include "ElectricalPhysicalSchema/EC2_Schemas/ElectricalPhysical.ecschema.xml"
+rename  "ElectricalPhysicalSchema/EC2_Schemas/ElectricalPhysical.ecschema.xml" "Domains/Electrical/EC2_Schemas/ElectricalPhysical.ecschema.xml"

@@ -1,0 +1,14 @@
+include "ECSchemas/BisCore.ecschema.xml"
+rename  "ECSchemas/BisCore.ecschema.xml" "Domains/Dgn/BisCore.ecschema.xml"
+
+include "ECSchemas/Functional.ecschema.xml"
+rename  "ECSchemas/Functional.ecschema.xml" "Domains/Dgn/Functional.ecschema.xml"
+
+include "ECSchemas/Generic.ecschema.xml"
+rename  "ECSchemas/Generic.ecschema.xml" "Domains/Dgn/Generic.ecschema.xml"
+
+include "ECSchemas/Markup.ecschema.xml"
+rename  "ECSchemas/Markup.ecschema.xml" "Domains/Dgn/Markup.ecschema.xml"
+
+include "ECSchemas/PhysicalMaterial.ecschema.xml"
+rename  "ECSchemas/PhysicalMaterial.ecschema.xml" "Domains/Dgn/PhysicalMaterial.ecschema.xml"
