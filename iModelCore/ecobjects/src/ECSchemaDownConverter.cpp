@@ -37,8 +37,8 @@ bool addUnitSpecificationsToProperty(ECSchemaR schema, ECPropertyP ecProperty, E
     {
     schema.AddReferencedSchema(unitAttributesSchema);
     Utf8CP perUnitName = ecProperty->GetKindOfQuantity()->GetPersistenceUnit().GetUnit()->GetName();
-    Utf8String oldPerUnitName;
-    if(!Units::UnitRegistry::Instance().TryGetOldName(perUnitName, oldPerUnitName))
+    Utf8CP oldPerUnitName = Units::UnitRegistry::Instance().TryGetOldName(perUnitName);
+    if(nullptr == oldPerUnitName)
         {
         LOG.warningv("Failed to find old  unit name for the persistence unit '%s' used on property '%s.%s.%s'", 
                      perUnitName, schema.GetName().c_str(), ecProperty->GetClass().GetName().c_str(), ecProperty->GetName().c_str());
@@ -48,15 +48,15 @@ bool addUnitSpecificationsToProperty(ECSchemaR schema, ECPropertyP ecProperty, E
     IECInstancePtr unitSpecCA;
     if (!tryCreateCA(unitAttributesSchema, UNIT_SPECIFICATION_ORIG, UNIT_SPECIFICATION, unitSpecCA))
         return false;
-    ECValue oldName(oldPerUnitName.c_str());
+    ECValue oldName(oldPerUnitName);
     unitSpecCA->SetValue(UNIT_NAME, oldName);
     ecProperty->SetCustomAttribute(*unitSpecCA);
 
     if (ecProperty->GetKindOfQuantity()->HasPresentationUnits())
         {
         Utf8CP presUnitName = ecProperty->GetKindOfQuantity()->GetDefaultPresentationUnit().GetUnit()->GetName();
-        Utf8String oldPresUnitName;
-        if (!Units::UnitRegistry::Instance().TryGetOldName(presUnitName, oldPresUnitName))
+        Utf8CP oldPresUnitName = Units::UnitRegistry::Instance().TryGetOldName(presUnitName);
+        if (nullptr == oldPresUnitName)
             {
             LOG.warningv("Failed to find old  unit name for the presentation unit '%s' used on property '%s.%s.%s'",
                          presUnitName, schema.GetName().c_str(), ecProperty->GetClass().GetName().c_str(), ecProperty->GetName().c_str());
@@ -66,7 +66,7 @@ bool addUnitSpecificationsToProperty(ECSchemaR schema, ECPropertyP ecProperty, E
         IECInstancePtr displayUnitSpecCA;
         if (!tryCreateCA(unitAttributesSchema, DISPLAY_UNIT_SPECIFICATION_ORIG, DISPLAY_UNIT_SPECIFICATION, displayUnitSpecCA))
             return false;
-        ECValue oldPresName(oldPresUnitName.c_str());
+        ECValue oldPresName(oldPresUnitName);
         displayUnitSpecCA->SetValue(DISPLAY_UNIT_NAME, oldPresName);
         ECValue formatString(DEFAULT_FORMATTER);
         displayUnitSpecCA->SetValue(DISPLAY_FORMAT_STRING, formatString);

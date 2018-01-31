@@ -39,27 +39,28 @@ MultiCompileDepends = $(_MakeFileSpec)
 #----------------------------------------------------------------------
 #   Objects that go into the ECObjects library
 #----------------------------------------------------------------------
-ECObjectsHeaders =              $(ecobjectsPublicAPISrc)ECObjects.h \
+ECObjectsHeaders =              $(baseDir)DateTimeInfoAccessor.h \
+                                $(ecobjectsPublicAPISrc)CalculatedProperty.h \
+                                $(ecobjectsPublicAPISrc)DesignByContract.h \
+                                $(ecobjectsPublicAPISrc)ECDBuffer.h \
+                                $(ecobjectsPublicAPISrc)ECEnabler.h \
+                                $(ecobjectsPublicAPISrc)ECInstance.h \
+                                $(ecobjectsPublicAPISrc)ECJsonUtilities.h \
+                                $(ecobjectsPublicAPISrc)ECName.h \
+                                $(ecobjectsPublicAPISrc)ECObjects.h \
+                                $(ecobjectsPublicAPISrc)ECObjectsAPIOverview.h \
+                                $(ecobjectsPublicAPISrc)ECQuantityFormatting.h \
+                                $(ecobjectsPublicAPISrc)ECRelationshipPath.h \
                                 $(ecobjectsPublicAPISrc)ECSchema.h \
                                 $(ecobjectsPublicAPISrc)ECSchemaConverter.h \
                                 $(ecobjectsPublicAPISrc)ECSchemaDownConverter.h \
                                 $(ecobjectsPublicAPISrc)ECSchemaValidator.h \
                                 $(ecobjectsPublicAPISrc)ECValue.h \
-                                $(ecobjectsPublicAPISrc)ECInstance.h \
-                                $(ecobjectsPublicAPISrc)ECEnabler.h \
-                                $(ecobjectsPublicAPISrc)DesignByContract.h \
-                                $(ecobjectsPublicAPISrc)ECDBuffer.h \
-                                $(ecobjectsPublicAPISrc)SupplementalSchema.h \
-                                $(ecobjectsPublicAPISrc)ECObjectsAPIOverview.h \
-                                $(ecobjectsPublicAPISrc)CalculatedProperty.h \
-                                $(ecobjectsPublicAPISrc)StandardCustomAttributeHelper.h \
-                                $(baseDir)DateTimeInfoAccessor.h \
+                                $(ecobjectsPublicAPISrc)SchemaComparer.h \
                                 $(ecobjectsPublicAPISrc)SchemaLocalizedStrings.h \
                                 $(ecobjectsPublicAPISrc)SchemaResourceKeyHelper.h \
-                                $(ecobjectsPublicAPISrc)ECJsonUtilities.h \
-                                $(ecobjectsPublicAPISrc)ECRelationshipPath.h \
-                                $(ecobjectsPublicAPISrc)ECQuantityFormatting.h \
-                                $(ecobjectsPublicAPISrc)SchemaComparer.h \
+                                $(ecobjectsPublicAPISrc)StandardCustomAttributeHelper.h \
+                                $(ecobjectsPublicAPISrc)SupplementalSchema.h \
                                 $(ecobjectsPrivateAPISrc)SchemaParseUtils.h
 
 ECUnitsHeaders =                $(ecunitsPublicAPISrc)Units.h \
@@ -67,7 +68,33 @@ ECUnitsHeaders =                $(ecunitsPublicAPISrc)Units.h \
 
 # ECObjects
 
-$(o)SchemaParseUtils$(oext)                                : $(baseDir)SchemaParseUtils.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+$(o)CalculatedProperty$(oext)                              : $(baseDir)CalculatedProperty.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)DateTimeInfoAccessor$(oext)                            : $(baseDir)DateTimeInfoAccessor.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)DesignByContract$(oext)                                : $(baseDir)DesignByContract.cpp $(ecobjectsPublicAPISrc)DesignByContract.h ${MultiCompileDepends}
+
+$(o)ECClass$(oext)                                         : $(baseDir)ECClass.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)ECContext$(oext)                                       : $(baseDir)ECContext.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)ECCustomAttribute$(oext)                               : $(baseDir)ECCustomAttribute.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)ECDBuffer$(oext)                                       : $(baseDir)ECDBuffer.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)ECEnabler$(oext)                                       : $(baseDir)ECEnabler.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)ECEnumeration$(oext)                                   : $(baseDir)ECEnumeration.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)ECInstance$(oext)                                      : $(baseDir)ECInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)ECJsonUtilities$(oext)                                 : $(baseDir)ECJsonUtilities.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)ECProperty$(oext)                                      : $(baseDir)ECProperty.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)ECQuantityFormatting$(oext)                            : $(baseDir)ECQuantityFormatting.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)ECRelationshipPath$(oext)                              : $(baseDir)ECRelationshipPath.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)ECSchema$(oext)                                        : $(baseDir)ECSchema.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
@@ -77,41 +104,35 @@ $(o)ECSchemaDownConverter$(oext)                           : $(baseDir)ECSchemaD
 
 $(o)ECSchemaValidator$(oext)                               : $(baseDir)ECSchemaValidator.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-$(o)SchemaXml$(oext)                                       : $(baseDir)SchemaXml.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
-
-$(o)SchemaJson$(oext)                                      : $(baseDir)SchemaJson.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
-
 $(o)ECType$(oext)                                          : $(baseDir)ECType.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-$(o)ECClass$(oext)                                         : $(baseDir)ECClass.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
-
-$(o)ECEnumeration$(oext)                                   : $(baseDir)ECEnumeration.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
-
-$(o)KindOfQuantity$(oext)                                  : $(baseDir)KindOfQuantity.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
-
-$(o)PropertyCategory$(oext)                                : $(baseDir)PropertyCategory.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
-
-$(o)ECProperty$(oext)                                      : $(baseDir)ECProperty.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
-
-$(o)ECInstance$(oext)                                      : $(baseDir)ECInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
-
-$(o)ECCustomAttribute$(oext)                               : $(baseDir)ECCustomAttribute.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
-
-$(o)ECcontext$(oext)                                       : $(baseDir)ECcontext.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
-
 $(o)ECValue$(oext)                                         : $(baseDir)ECValue.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
-
-$(o)ECEnabler$(oext)                                       : $(baseDir)ECEnabler.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
-
-$(o)ExpressionNode$(oext)                                  : $(baseDir)ExpressionNode.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)ExpressionContext$(oext)                               : $(baseDir)ExpressionContext.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)ExpressionHandler$(oext)                               : $(baseDir)ExpressionHandler.cpp $(ECObjectsHeaders) $(ecobjectsPublicAPISrc)ECExpressionNode.h ${MultiCompileDepends}
 
-$(o)SystemSymbolProvider$(oext)                            : $(baseDir)SystemSymbolProvider.cpp $(ECObjectsHeaders) $(ecobjectsPublicAPISrc)SystemSymbolProvider.h ${MultiCompileDepends}
+$(o)ExpressionNode$(oext)                                  : $(baseDir)ExpressionNode.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-$(o)ECDBuffer$(oext)                                       : $(baseDir)ECDBuffer.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+$(o)KindOfQuantity$(oext)                                  : $(baseDir)KindOfQuantity.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)PresentationMetadataHelper$(oext)                      : $(baseDir)PresentationMetadataHelper.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)PropertyCategory$(oext)                                : $(baseDir)PropertyCategory.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)SchemaComparer$(oext)                                  : $(baseDir)SchemaComparer.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)SchemaLocalizedStrings$(oext)                          : $(baseDir)SchemaLocalizedStrings.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)SchemaJson$(oext)                                      : $(baseDir)SchemaJson.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)SchemaParseUtils$(oext)                                : $(baseDir)SchemaParseUtils.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)SchemaResourceKeyHelper$(oext)                         : $(baseDir)SchemaResourceKeyHelper.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)SchemaXml$(oext)                                       : $(baseDir)SchemaXml.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)StandardCustomAttributeHelper$(oext)                   : $(baseDir)StandardCustomAttributeHelper.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)StandaloneECInstance$(oext)                            : $(baseDir)StandaloneECInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)StandaloneECInstance.h
 
@@ -119,27 +140,7 @@ $(o)StandaloneECRelationshipInstance$(oext)                : $(baseDir)Standalon
 
 $(o)SupplementalSchema$(oext)                              : $(baseDir)SupplementalSchema.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-$(o)DesignByContract$(oext)                                : $(baseDir)DesignByContract.cpp $(ecobjectsPublicAPISrc)DesignByContract.h ${MultiCompileDepends}
-
-$(o)CalculatedProperty$(oext)                              : $(baseDir)CalculatedProperty.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
-
-$(o)DateTimeInfoAccessor$(oext)                            : $(baseDir)DateTimeInfoAccessor.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
-
-$(o)StandardCustomAttributeHelper$(oext)                   : $(baseDir)StandardCustomAttributeHelper.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
-
-$(o)PresentationMetadataHelper$(oext)                      : $(baseDir)PresentationMetadataHelper.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
-
-$(o)SchemaLocalizedStrings$(oext)                          : $(baseDir)SchemaLocalizedStrings.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
-
-$(o)SchemaResourceKeyHelper$(oext)                         : $(baseDir)SchemaResourceKeyHelper.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
-
-$(o)ECJsonUtilities$(oext)                                 : $(baseDir)ECJsonUtilities.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
-
-$(o)ECRelationshipPath$(oext)                              : $(baseDir)ECRelationshipPath.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
-
-$(o)ECQuantityFormatting$(oext)                            : $(baseDir)ECQuantityFormatting.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
-
-$(o)SchemaComparer$(oext)                                  : $(baseDir)SchemaComparer.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+$(o)SystemSymbolProvider$(oext)                            : $(baseDir)SystemSymbolProvider.cpp $(ECObjectsHeaders) $(ecobjectsPublicAPISrc)SystemSymbolProvider.h ${MultiCompileDepends}
 
 # ECUnits
 
