@@ -727,6 +727,7 @@ namespace BuildingDomain
 
 		Utf8String localCategoryName = buildingClass->GetDisplayLabel();
         localCategoryName.Trim();
+        Dgn::DgnDbTable::ReplaceInvalidCharacters(localCategoryName, Dgn::DgnCategory::GetIllegalCharacters(), '_');
 		if (nullptr != categoryName)
 			localCategoryName = categoryName;
 
