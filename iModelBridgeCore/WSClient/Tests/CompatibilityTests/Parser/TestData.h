@@ -30,6 +30,7 @@ struct TestRepository
     Credentials credentials;
     SamlTokenPtr token;
     std::shared_ptr<UrlProvider::Environment> environment;
+    bool validateCertificate = true;
 
     bool IsValid() const
         {
