@@ -6,7 +6,7 @@
 |       $Date: 2012/01/27 16:45:29 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -449,6 +449,10 @@ StatusInt IScalableMeshCreator::Impl::SetTextureStreamFromUrl(WString url)
 
     if (streamingRaster == nullptr)
         {
+        BENTLEY_NAMESPACE_NAME::NativeLogging::ILogger*   logger = BENTLEY_NAMESPACE_NAME::NativeLogging::LoggingManager::GetLogger("ScalableMesh");
+        logger->debug("Failed to load streaming raster in IScalableMeshCreator::Impl::SetTextureStreamFromUrl");
+        logger->debugv(url.c_str());
+
         return ERROR;
         }
                     

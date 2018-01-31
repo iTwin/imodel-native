@@ -6,7 +6,7 @@
 |       $Date: 2012/07/25 14:13:37 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -88,6 +88,10 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #ifndef VANCOUVER_API    
 #include <STMInternal/Foundations/FoundationsPrivateTools.h>
 #endif 
+
+
+#include <Logging\bentleylogging.h>
+
 
 //Useful for detecting memory leak
 //#define _DEBUG
