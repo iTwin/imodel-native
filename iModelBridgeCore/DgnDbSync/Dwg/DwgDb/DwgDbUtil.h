@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgDb/DwgDbUtil.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -15,8 +15,10 @@ USING_NAMESPACE_DWGDB
 // do not publish this in PublicAPI
 #ifdef DWGTOOLKIT_OpenDwg
 #define DwgDbArray          OdArray
+#define DwgDbVersion        OdDb::DwgVersion
 #elif DWGTOOLKIT_RealDwg
 #define DwgDbArray          AcArray
+#define DwgDbVersion        AcDb::AcDbDwgVersion
 #endif
 
 struct Util : NonCopyableClass
@@ -54,4 +56,7 @@ public:
     static void                 GetGeMatrix (DWGGE_TypeR(Matrix3d) matrix, TransformCR trans);
     static size_t               GetGePointArray (DWGGE_TypeR(Point3dArray) pointsOut, DPoint3dArrayCR pointsIn);
     static size_t               GetGePointArray (DWGGE_TypeR(Point2dArray) pointsOut, DPoint2dArrayCR pointsIn);
+
+    static DwgFileVersion   GetDwgVersionFrom (DwgDbVersion dwgVersion);
+    static DwgDbVersion     GetDwgVersionFrom (DwgFileVersion dwgVersion);
     };  // Util

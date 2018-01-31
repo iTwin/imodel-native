@@ -1,2 +1,2 @@
 
-ImporterAppTests.createIBIMandIModelFromDxf     # Assertion
+# ImporterAppTests.createIBIMandIModelFromDxf     # Assertion

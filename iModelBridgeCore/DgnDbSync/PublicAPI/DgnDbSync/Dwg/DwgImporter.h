@@ -1027,9 +1027,8 @@ protected:
     bool        IsCreatingNewDgnDb () { return GetOptions().IsCreatingNewDgnDb(); }
 
     //! @name Importing schemas
+    //! @see public method MakeSchemaChanges
     //! @{
-    //! An iModelBridge must call this method from _MakeSchemaChanges, to create/update the stored DwgAttributeDefinitions schema.
-    DGNDBSYNC_EXPORT BentleyStatus  MakeSchemaChanges ();
     //! Cache a PresentationRule content of a host element which must be seperated from the modelspace as a PhysicalObject and a paperspace as a DrawingGraphic.
     DGNDBSYNC_EXPORT BentleyStatus  AddPresentationRuleContent (DgnElementCR hostElement, Utf8StringCR attrdefName);
     //! Create and embed PresentationRules for DwgAttributeDefinitions schema:
@@ -1208,6 +1207,9 @@ public:
     DgnSubCategoryId                    InsertAlternateSubCategory (DgnSubCategoryCPtr subcategory, DgnSubCategory::Appearance const& appearance, Utf8CP desiredName = nullptr);
     T_GeometryBuilderList&              GetSharedPartListR () { return m_sharedGeometryPartList; }
     T_GeometryBuilderList const&        GetSharedPartList () const { return m_sharedGeometryPartList; }
+
+    //! An iModelBridge must call this method from _MakeSchemaChanges, to create/update the stored DwgAttributeDefinitions schema.
+    DGNDBSYNC_EXPORT BentleyStatus      MakeSchemaChanges ();
 
     //! Call this once before working with DwgImporter, after initializing DgnDb's DgnPlatformLib
     //! @param toolkitDir Installed RealDWG or OpenDWG folder; default to the same folder as the EXE.
