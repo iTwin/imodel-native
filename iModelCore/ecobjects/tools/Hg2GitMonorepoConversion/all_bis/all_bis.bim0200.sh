@@ -117,7 +117,7 @@ done
 #tree $DIR_GIT -n
 
 ## Create new branch
-GIT_BRANCH="git_branch_$(date +%Y-%m-%d)"
+GIT_BRANCH="bim0200dev_merge_$(date +%Y-%m-%d)"
 cd $DIR_GIT
 git checkout -b $GIT_BRANCH
 
