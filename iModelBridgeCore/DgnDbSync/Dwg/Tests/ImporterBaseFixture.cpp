@@ -2,7 +2,7 @@
 |
 |  $Source: Dwg/Tests/ImporterBaseFixture.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ImporterBaseFixture.h"
@@ -129,6 +129,7 @@ void ImporterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR outputName, Bent
 
     importer->SetDgnDb (*db.get());
     importer->AttachSyncInfo ();
+    importer->MakeSchemaChanges ();
 
     // find an existing import job
     ASSERT_EQ(DwgImporter::ImportJobLoadStatus::Success, importer->FindJob());
@@ -158,5 +159,13 @@ void ImporterTestBaseFixture::LineUpFiles(BentleyApi::WCharCP outputDgnDbFileNam
     MakeWritableCopyOf(outSyncFile, syncFile, DwgSyncInfo::GetDbFileName(m_dgnDbFileName).GetFileNameAndExtension().c_str());
     if (doConvert)
         DoConvert(m_dgnDbFileName, m_dwgFileName);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t ImporterTestBaseFixture::GetCount() const
+    {
+    return  m_count;
     }
 

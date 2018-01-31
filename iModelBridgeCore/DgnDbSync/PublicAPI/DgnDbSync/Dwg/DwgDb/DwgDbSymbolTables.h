@@ -191,6 +191,7 @@ public:
     DWGDB_EXPORT DwgDbStatus                GetBlockReferenceIds (DwgDbObjectIdArrayR ids, bool noNested = true, bool validate = false);
     DWGDB_EXPORT DwgDbStatus                OpenSpatialIndex (DwgDbSpatialIndexPtr& indexOut, DwgDbOpenMode mode) const;
     DWGDB_EXPORT DwgDbStatus                OpenSortentsTable (DwgDbSortentsTablePtr& sortentsOut, DwgDbOpenMode mode);
+    DWGDB_EXPORT DwgDbObjectId              AppendEntity (DwgDbEntityR entity);
     };  // DwgDbBlockTableRecord
 DWGDB_DEFINE_OBJECTPTR (BlockTableRecord)
 

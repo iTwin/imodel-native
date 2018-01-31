@@ -230,18 +230,27 @@
     DWGDB_EXPORT DwgDbStatus        UpgradeOpen ();                                     \
     DWGDB_EXPORT DwgDbStatus        DowngradeOpen ();                                   \
     DWGDB_EXPORT DwgDbStatus        Close ();                                           \
+    DWGDB_EXPORT DwgDbStatus        Erase ();                                           \
     DWGDB_EXPORT DwgString          GetDxfName () const;                                \
     DWGDB_EXPORT DwgString          GetDwgClassName () const;                           \
     DWGDB_EXPORT DwgResBufIterator  GetXData (DwgStringCR name=DwgString()) const;      \
     DWGDB_EXPORT DwgDbStatus        DxfOutFields (IDxfFilerR filer) const;              \
-    DWGDB_EXPORT DwgDbStatus        DxfOut (IDxfFilerR filer) const;                    \
-    DWGDB_EXPORT static _className_* StaticCreateObject ();
+    DWGDB_EXPORT DwgDbStatus        DxfOut (IDxfFilerR filer) const;
 
-// declare all common DwgDbXxxxx members derived from toolkit's DbObjects
-#define DWGDB_DECLARE_COMMON_MEMBERS(_classSuffix_)                                     \
+// declare static method Create, which instantiates a super new DbObject for the purpose of saving to DWG
+#define DWGDB_OBJECT_DECLARE_CREATE(_classSuffix_)                                      \
+    DWGDB_EXPORT static DwgDb##_classSuffix_##* Create ();
+
+// declare all common DwgDbXxxxx members derived from toolkit's DbObjects, but no static Create method
+#define DWGDB_DECLARE_BASECLASS_MEMBERS(_classSuffix_)                                  \
     DEFINE_T_SUPER (DWGDB_SUPER_CONSTRUCTOR(##_classSuffix_##))                         \
     DWGDB_PSEUDO_DECLARE_MEMBERS (DwgDb##_classSuffix_##)                               \
     DWGDB_OBJECT_DECLARE_MEMBERS (DwgDb##_classSuffix_##)
+
+// declare all common DwgDbXxxxx members derived from toolkit's DbObjects, with the static Create method
+#define DWGDB_DECLARE_COMMON_MEMBERS(_classSuffix_)                                     \
+    DWGDB_DECLARE_BASECLASS_MEMBERS(_classSuffix_)                                      \
+    DWGDB_OBJECT_DECLARE_CREATE(_classSuffix_)
 
 // define a common DwgDbXxxxPtr
 #define DWGDB_DEFINE_OBJECTPTR(_classSuffix_)                                                                                           \
@@ -252,6 +261,8 @@
         DWGDB_OVERRIDE_SMARTPTR_INTERFACE (Db##_classSuffix_##)                                                                         \
         DWGDB_EXPORT DwgDb##_classSuffix_##Ptr (DwgDbObjectId id, DwgDbOpenMode mode = DwgDbOpenMode::ForRead, bool openErased = false, \
                                                 bool openLocked = false);                                                               \
+        DWGDB_EXPORT DwgDb##_classSuffix_##Ptr (DwgDb##_classSuffix_##* obj);                                                           \
+        DWGDB_EXPORT DwgDb##_classSuffix_##Ptr& operator = (DwgDb##_classSuffix_##* obj);                                               \
         };
 
 // type conversion casts
@@ -389,6 +400,28 @@ enum class DwgDbStatus
     UrlCacheError,
     };
 #define ToDwgDbStatus(status)   static_cast<DwgDbStatus> (##status)
+
+enum class DwgFileVersion
+    {
+    Invalid                     = -2,   // Not a DWG version at all
+    Newer                       = -1,   // A newer version not currently supported
+    Unknown                     = 0,    // An old version not known to us but can potentially open
+    R2_5                        = 1,
+    R2_6                        = 2,
+    R9                          = 3,
+    R10                         = 4,
+    R11                         = 5,
+    R13                         = 6,
+    R14                         = 7,
+    R2000                       = 8,
+    R2004                       = 9,
+    R2007                       = 10,
+    R2010                       = 11,
+    R2013                       = 12,
+    R2018                       = 13,
+    MAX                         = R2018,
+    Current                     = 0xFF
+    };  // DwgFileVersion
 
 enum class DwgDbLineWeight
     { 

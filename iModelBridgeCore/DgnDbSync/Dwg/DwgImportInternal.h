@@ -153,7 +153,7 @@ public:
     void                    Initialize (DwgImporter& importer);
     void                    NewProgressMeter ();
 
-    static DwgImportHost&   GetHost ();
+    DGNDBSYNC_EXPORT static DwgImportHost& GetHost ();
 };  // DwgImportHost
 
 /*=================================================================================**//**
