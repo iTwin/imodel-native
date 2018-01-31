@@ -429,7 +429,7 @@ TilesetPublisher::Status PublishChangeSets(Json::Value& revisionsJson, TilesetPu
             revisionJson["preModels"] = revisionPublisher.GetModelsJson(modelIds);
             }
 
-        revisionJson["name"] = Utf8PrintfString("1.%d", revisionIndex + 1);
+        revisionJson["name"] = Utf8PrintfString("%d", revisionIndex + 1);
         revisionJson["elements"] = std::move(revisionElementsJson);
         revisionJson.removeMember("url");
 
