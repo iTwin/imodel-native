@@ -85,13 +85,21 @@ cIncs + -I$(nodeAddonApiPublicApiSourceDir)
 
 $(o)node_internals$(oext) : $(baseDir)node_internals.cc $(napiHeaders) ${MultiCompileDepends}
 
+imodelJsObjs + $(o)node_internals$(oext) 
+
 %if defined (USE_V8)
 
     $(o)node_api$(oext)       : $(nodeApiDir)node_api.cc $(napiHeaders) ${MultiCompileDepends}
 
+    $(o)v8_node_internalsi$(oext) : $(nodeApiDir)v8_node_internals.cc $(napiHeaders) ${MultiCompileDepends}
+
+    imodelJsObjs + $(o)node_api$(oext) $(o)v8_node_internalsi$(oext)
+
 %elif defined(USE_JAVASCRIPT_CORE)
 
     $(o)node_api$(oext)       : $(nodeApiDir)node_api.cc $(napiHeaders) ${MultiCompileDepends}
+
+    imodelJsObjs + $(o)node_api$(oext)
 
 %else
 
@@ -99,9 +107,9 @@ $(o)node_internals$(oext) : $(baseDir)node_internals.cc $(napiHeaders) ${MultiCo
 
 %endif
 
-imodelJsObjs + $(o)node_api$(oext) $(o)node_internals$(oext)
-
-
+#--------------------------------------------------------------------------------------
+#   Pull in the addon's object files
+#--------------------------------------------------------------------------------------
 addonObjs = $[@wildcard $(BuildContext)SubParts/imodeljs-addon-objs/*$(oext)]
 
 #--------------------------------------------------------------------------------------

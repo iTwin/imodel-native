@@ -8,27 +8,19 @@
  *
  ******************************************************************************/
 
-// #include <node_buffer.h>
-// #include <node_object_wrap.h>
 #include <limits.h>  // INT_MAX
 #include <string.h>
 #include <algorithm>
 #include <cmath>
 #include <vector>
-#include "node_api.h"
-#include "util-inl.h"
-#include "../node_internals.h"
 #include <Bentley/BeAssert.h>
+#include <node-addon-api/node_api.h>
+#include "../node_internals.h"
+#include "util-inl.h"
+#include "v8_node_internals.h"
 #undef min
 
 #define NAPI_VERSION  1
-
-static
-napi_status napi_set_last_error(napi_env env, napi_status error_code,
-                                uint32_t engine_error_code = 0,
-                                void* engine_reserved = nullptr);
-static
-napi_status napi_clear_last_error(napi_env env);
 
 struct napi_env__ {
   explicit napi_env__(v8::Isolate* _isolate): isolate(_isolate),

@@ -21,7 +21,9 @@
       #define NAPI_EXTERN /* nothing */
     #else
       // Building native module against node with built-in N-API
-      #define NAPI_EXTERN __declspec(dllimport)
+      // The addon is statically linked into the host mobile app
+      // #define NAPI_EXTERN __declspec(dllimport) 
+      #define NAPI_EXTERN /* nothing */
     #endif
   #else
     // Building node with built-in N-API
