@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/NavigationQuery.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -168,6 +168,7 @@ struct EXPORT_VTABLE_ATTRIBUTE BoundQueryRecursiveChildrenIdSet : BoundQueryValu
         };
 
 private:
+    IConnectionCR m_connection;
     bset<ECRelationshipClassCP> m_relationships;
     bool m_isForward;
     bvector<BeSQLite::EC::ECInstanceId> m_parentIds;
@@ -182,17 +183,17 @@ protected:
     ECPRESENTATION_EXPORT BeSQLite::EC::ECSqlStatus _Bind(BeSQLite::EC::ECSqlStatement&, uint32_t index) const override;
 
 public:
-    BoundQueryRecursiveChildrenIdSet(bset<ECRelationshipClassCP> relationships, bool isForward, bvector<BeSQLite::EC::ECInstanceId> const& parentIds)
-        : m_relationships(relationships), m_isForward(isForward), m_parentIds(std::move(parentIds)), m_childrenSet(nullptr)
+    BoundQueryRecursiveChildrenIdSet(IConnectionCR connection, bset<ECRelationshipClassCP> relationships, bool isForward, bvector<BeSQLite::EC::ECInstanceId> const& parentIds)
+        : m_connection(connection), m_relationships(relationships), m_isForward(isForward), m_parentIds(std::move(parentIds)), m_childrenSet(nullptr)
         {}
     BoundQueryRecursiveChildrenIdSet(BoundQueryRecursiveChildrenIdSet const& other)
-        : m_relationships(other.m_relationships), m_isForward(other.m_isForward), m_parentIds(other.m_parentIds), m_childrenSet(nullptr)
+        : m_connection(other.m_connection), m_relationships(other.m_relationships), m_isForward(other.m_isForward), m_parentIds(other.m_parentIds), m_childrenSet(nullptr)
         {
         if (nullptr != other.m_childrenSet)
             m_childrenSet = new BeSQLite::IdSet<BeSQLite::EC::ECInstanceId>(*other.m_childrenSet);
         }
     BoundQueryRecursiveChildrenIdSet(BoundQueryRecursiveChildrenIdSet&& other)
-        : m_relationships(std::move(other.m_relationships)), m_isForward(other.m_isForward), m_parentIds(std::move(other.m_parentIds)), m_childrenSet(other.m_childrenSet)
+        : m_connection(other.m_connection), m_relationships(std::move(other.m_relationships)), m_isForward(other.m_isForward), m_parentIds(std::move(other.m_parentIds)), m_childrenSet(other.m_childrenSet)
         {
         other.m_childrenSet = nullptr;
         }

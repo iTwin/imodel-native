@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/CustomizationHelperTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../../../Source/RulesDriven/RulesEngine/JsonNavNode.h"
@@ -48,8 +48,8 @@ struct CustomizationHelperTests : ::testing::Test
         if (!s_project->GetECDb().GetDefaultTransaction()->IsActive())
             s_project->GetECDb().GetDefaultTransaction()->Begin();
         
-        m_customFunctions = new CustomFunctionsInjector(m_connections, CustomizationHelperTests::s_project->GetECDb());
         m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb());
+        m_customFunctions = new CustomFunctionsInjector(m_connections, *m_connection);
         m_ruleset = PresentationRuleSet::CreateInstance("CustomizationHelperTests", 1, 0, false, "", "", "", false);
         m_context = NavNodesProviderContext::Create(*m_ruleset, true, TargetTree_Both, 0, 
             m_settings, m_expressionsCache, m_relatedPathsCache, m_nodesFactory, m_nodesCache, m_providerFactory, nullptr);

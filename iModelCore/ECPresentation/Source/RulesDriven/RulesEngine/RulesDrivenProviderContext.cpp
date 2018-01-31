@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/RulesDrivenProviderContext.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -104,8 +104,8 @@ void RulesDrivenProviderContext::SetQueryContext(IConnectionManagerCR connection
     m_connections = &connections;
     m_connection = &connection;
     m_statementCache = &statementCache;
-    m_schemaHelper = new ECSchemaHelper(connection.GetDb(), &m_relatedPathsCache, m_statementCache);
-    customFunctions.OnConnection(connection.GetDb());
+    m_schemaHelper = new ECSchemaHelper(connection, &m_relatedPathsCache, m_statementCache);
+    customFunctions.OnConnection(connection);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -118,7 +118,7 @@ void RulesDrivenProviderContext::SetQueryContext(RulesDrivenProviderContextCR ot
     m_connections = other.m_connections;
     m_connection = other.m_connection;
     m_statementCache = other.m_statementCache;
-    m_schemaHelper = new ECSchemaHelper(m_connection->GetDb(), &m_relatedPathsCache, m_statementCache);
+    m_schemaHelper = new ECSchemaHelper(*m_connection, &m_relatedPathsCache, m_statementCache);
     }
 
 /*---------------------------------------------------------------------------------**//**

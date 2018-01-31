@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/PresentationManagerMultithreadingTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TestHelpers.h"
@@ -14,6 +14,8 @@ USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 USING_NAMESPACE_ECPRESENTATIONTESTS
+
+#ifndef RULES_ENGINE_FORCE_SINGLE_THREAD
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2015
@@ -1278,7 +1280,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, DoesntCancelCont
     SelectionInfo selection("selection provider", false, *NavNodeKeyListContainer::Create());
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContentDescriptor(connection2->GetDb(), nullptr, selection, options.GetJson()), false);
+    DoRequest(m_manager->GetContentDescriptor(connection2->GetECDb(), nullptr, selection, options.GetJson()), false);
     ChangeSelectionAndVerifyResult(false);
 
     m_connections.NotifyConnectionClosed(*connection2);
@@ -1389,7 +1391,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, DoesntCancelCont
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     ContentDescriptorCPtr descriptor = ContentDescriptor::Create();
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContent(connection2->GetDb(), *descriptor, selection, PageOptions(), options.GetJson()), false);
+    DoRequest(m_manager->GetContent(connection2->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()), false);
     ChangeSelectionAndVerifyResult(false);
 
     m_connections.NotifyConnectionClosed(*connection2);
@@ -1500,7 +1502,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, DoesntCancelCont
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     ContentDescriptorCPtr descriptor = ContentDescriptor::Create();
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContentSetSize(connection2->GetDb(), *descriptor, selection, options.GetJson()), false);
+    DoRequest(m_manager->GetContentSetSize(connection2->GetECDb(), *descriptor, selection, options.GetJson()), false);
     ChangeSelectionAndVerifyResult(false);
 
     m_connections.NotifyConnectionClosed(*connection2);
@@ -1573,3 +1575,5 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsNodeColla
     DoRequest(m_manager->NotifyNodeCollapsed(s_project->GetECDb(), 1));
     TerminateAndVerifyResult();
     }
+
+#endif // RULES_ENGINE_FORCE_SINGLE_THREAD

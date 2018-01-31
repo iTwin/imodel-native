@@ -2,12 +2,13 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/ECSchemaHelper.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 #include <ECPresentation/RulesDriven/PresentationManager.h>
 #include "ECSchemaHelper.h"
+#include "NavigationQuery.h"
 #include "LoggingHelper.h"
 #include <set>
 
@@ -56,8 +57,8 @@ bool RelatedPathsCache::Key::operator<(Key const& other) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaHelper::ECSchemaHelper(ECDbCR db, RelatedPathsCache* relatedPathsCache, ECSqlStatementCache const* statementCache)
-    : m_db(db), 
+ECSchemaHelper::ECSchemaHelper(IConnectionCR connection, RelatedPathsCache* relatedPathsCache, ECSqlStatementCache const* statementCache)
+    : m_connection(connection), 
     m_relatedPathsCache(relatedPathsCache), m_ownsRelatedPathsCache(nullptr == relatedPathsCache), 
     m_statementCache(statementCache), m_ownsStatementCache(nullptr == statementCache)
     {
@@ -81,7 +82,7 @@ ECSchemaHelper::~ECSchemaHelper()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCP ECSchemaHelper::GetSchema(Utf8CP schemaName) const {return m_db.Schemas().GetSchema(schemaName);}
+ECSchemaCP ECSchemaHelper::GetSchema(Utf8CP schemaName) const {return m_connection.GetECDb().Schemas().GetSchema(schemaName);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2015
@@ -115,15 +116,17 @@ ECClassCP ECSchemaHelper::GetECClass(Utf8CP fullClassName) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP ECSchemaHelper::GetECClass(ECClassId id) const {return m_db.Schemas().GetClass(id);}
+ECClassCP ECSchemaHelper::GetECClass(ECClassId id) const {return m_connection.GetECDb().Schemas().GetClass(id);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<ECClassCP> ECSchemaHelper::GetECClassesByName(Utf8CP name) const
     {
+    Savepoint txn(m_connection.GetDb(), "ECSchemaHelper::GetECClassesByName");
+    
     static Utf8CP statementStr = "SELECT ECInstanceId FROM [meta].[ECClassDef] WHERE Name = ?";
-    CachedECSqlStatementPtr stmt = m_statementCache->GetPreparedStatement(m_db, statementStr);
+    CachedECSqlStatementPtr stmt = m_statementCache->GetPreparedStatement(m_connection.GetECDb().Schemas(), m_connection.GetDb(), statementStr);
     if (stmt.IsNull())
         {
         BeAssert(false);
@@ -137,7 +140,7 @@ bvector<ECClassCP> ECSchemaHelper::GetECClassesByName(Utf8CP name) const
 
     bvector<ECClassCP> classes;
     for (ECClassId id : ids)
-        classes.push_back(m_db.Schemas().GetClass(id));
+        classes.push_back(m_connection.GetECDb().Schemas().GetClass(id));
     return classes;
     }
 
@@ -409,7 +412,7 @@ bool ECSchemaHelper::AreSchemasSupported(Utf8StringCR schemaListStr) const
 
     for (Utf8StringCR name : schemaNames)
         {
-        if (nullptr == m_db.Schemas().GetSchema(name.c_str()))
+        if (nullptr == m_connection.GetECDb().Schemas().GetSchema(name.c_str()))
             return false;
         }
 
@@ -430,7 +433,7 @@ ECSchemaSet ECSchemaHelper::GetECSchemas(Utf8StringCR supportedSchemasStr) const
         return schemas;
 
     // no schemas means all schemas (except some specific ones)
-    bvector<ECSchemaCP> allSchemas = m_db.Schemas().GetSchemas();    
+    bvector<ECSchemaCP> allSchemas = m_connection.GetECDb().Schemas().GetSchemas();    
 
     ECSchemaSet allSupportedSchemas;
     for (ECSchemaCP schema : allSchemas)
@@ -469,6 +472,8 @@ struct ECSchemaHelper::SupportedClassesResolver
         };
 
 private:
+    IConnectionCR m_connection;
+    ECSqlStatementCache const& m_statementsCache;
     mutable int m_flags;
     mutable ECSchemaSet m_schemaList;
     mutable IdSet<ECSchemaId> m_schemaIds;
@@ -503,8 +508,10 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Saulius.Skliutas                09/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    IdSet<ECClassId> DeterminePolymorphicallySupportedClassesIds(ECDbCR db, BeSQLite::EC::ECSqlStatementCache const& statementsCache, bool include) const
+    IdSet<ECClassId> DeterminePolymorphicallySupportedClassesIds(bool include) const
         {
+        Savepoint txn(m_connection.GetDb(), "SupportedClassesResolver::DeterminePolymorphicallySupportedClassesIds");    
+    
         IdSet<ECClassId> const& ids = include ? GetIncludedEntityClassIds() : GetExcludedEntityClassIds();
 
         Utf8String whereClause;
@@ -514,7 +521,7 @@ private:
             " FROM [meta].[ClassHasAllBaseClasses] ";
         query.append("WHERE ").append(whereClause);
 
-        CachedECSqlStatementPtr stmt = statementsCache.GetPreparedStatement(db, query.c_str());
+        CachedECSqlStatementPtr stmt = m_statementsCache.GetPreparedStatement(m_connection.GetECDb().Schemas(), m_connection.GetDb(), query.c_str());
         if (IdSetHelper::BIND_VirtualSet == action)
             {
             stmt->BindVirtualSet(1, ids);
@@ -536,8 +543,9 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                07/2016
     +---------------+---------------+---------------+---------------+---------------+------*/
-    SupportedClassesResolver(ECSchemaSet const& supportedSchemas, SupportedEntityClassInfos const* classInfos, SupportedRelationshipClassInfos const* relationshipInfos)
-        : m_flags(0)
+    SupportedClassesResolver(IConnectionCR connection, ECSqlStatementCache const& statements, 
+        ECSchemaSet const& supportedSchemas, SupportedEntityClassInfos const* classInfos, SupportedRelationshipClassInfos const* relationshipInfos)
+        : m_flags(0), m_connection(connection), m_statementsCache(statements)
         {
         m_schemaList = supportedSchemas;
         m_classInfos = classInfos;
@@ -661,11 +669,11 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Saulius.Skliutas                09/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    IdSet<ECClassId> const& GetPolymorphicallyIncludedClassIds(ECDbCR db, BeSQLite::EC::ECSqlStatementCache const& statementsCache) const
+    IdSet<ECClassId> const& GetPolymorphicallyIncludedClassIds() const
         {
         if (0 == (m_flags & DeterminedPolymorphicallyIncludedClasses))
             {
-            m_polymorphicallyIncludedClassIds = DeterminePolymorphicallySupportedClassesIds(db, statementsCache, true);
+            m_polymorphicallyIncludedClassIds = DeterminePolymorphicallySupportedClassesIds(true);
             m_flags |= DeterminedPolymorphicallyIncludedClasses;
             }
         return m_polymorphicallyIncludedClassIds;
@@ -674,11 +682,11 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Saulius.Skliutas                09/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    IdSet<ECClassId> const& GetPolymorphicallyExcludedClassIds(ECDbCR db, BeSQLite::EC::ECSqlStatementCache const& statementsCache) const
+    IdSet<ECClassId> const& GetPolymorphicallyExcludedClassIds() const
         {
         if (0 == (m_flags & DeterminedPolymorphicallyExcludedClasses))
             {
-            m_polymorphicallyExcludedClassIds = DeterminePolymorphicallySupportedClassesIds(db, statementsCache, false);
+            m_polymorphicallyExcludedClassIds = DeterminePolymorphicallySupportedClassesIds(false);
             m_flags |= DeterminedPolymorphicallyExcludedClasses;
             }
         return m_polymorphicallyExcludedClassIds;
@@ -823,7 +831,7 @@ static BentleyStatus BindVariables(ECSqlStatement& stmt, VirtualSet const& sourc
     
     if (depth <= 0 && !ShouldAcceptAllClasses(resolver, include))
         {
-        IdSet<ECClassId> const& ids = include ? resolver.GetPolymorphicallyIncludedClassIds(*stmt.GetECDb(), statementsCache) : resolver.GetPolymorphicallyExcludedClassIds(*stmt.GetECDb(), statementsCache);
+        IdSet<ECClassId> const& ids = include ? resolver.GetPolymorphicallyIncludedClassIds() : resolver.GetPolymorphicallyExcludedClassIds();
         if(!stmt.BindVirtualSet(stmt.GetParameterIndex("supportedClassIds"), ids).IsSuccess())
             {
             BeAssert(false);
@@ -850,8 +858,9 @@ void ECSchemaHelper::GetPaths(bvector<bpair<RelatedClassPath, bool>>& paths, bma
     bset<RelatedClass>& usedRelationships, SupportedClassesResolver const& resolver, VirtualSet const& sourceClassIds, int relationshipDirection, 
     int depth, ECEntityClassCP targetClass, bool include) const
     {
+    Savepoint txn(m_connection.GetDb(), "ECSchemaHelper::GetPaths"); 
     Utf8String query = CreateRelationshipPathsQuery(resolver, relationshipDirection, depth, include);
-    CachedECSqlStatementPtr stmt = m_statementCache->GetPreparedStatement(m_db, query.c_str());
+    CachedECSqlStatementPtr stmt = m_statementCache->GetPreparedStatement(m_connection.GetECDb().Schemas(), m_connection.GetDb(), query.c_str());
     if (stmt.IsValid())
         GetPaths(paths, relationshipsUseCounter, usedRelationships, *stmt, resolver, sourceClassIds, relationshipDirection, depth, targetClass, include);
     }
@@ -1082,7 +1091,7 @@ bvector<bpair<RelatedClassPath, bool>> ECSchemaHelper::GetRelationshipClassPaths
     bvector<bpair<RelatedClassPath, bool>> paths;
     SupportedEntityClassInfos classInfos = GetECClassesFromClassList(options.m_supportedClasses, true);
     SupportedRelationshipClassInfos relationshipInfos = GetECRelationshipClasses(options.m_supportedRelationships);
-    SupportedClassesResolver resolver(GetECSchemas(options.m_supportedSchemas), 
+    SupportedClassesResolver resolver(m_connection, *m_statementCache, GetECSchemas(options.m_supportedSchemas), 
         (classInfos.empty() && 0 == *options.m_supportedClasses) ? nullptr : &classInfos, 
         (relationshipInfos.empty() && 0 == *options.m_supportedRelationships) ? nullptr : &relationshipInfos);
     
@@ -1323,53 +1332,35 @@ void SupportedClassNamesParser::Parse()
 struct ECInstanceLoadStatementCache : BeSQLite::Db::AppData
 {
 private:
-    bmap<Utf8String, ECSqlStatement*> m_statements;
+    ECSqlStatementCache m_cache;
+private:
+    ECInstanceLoadStatementCache() : m_cache(50, "ECInstanceLoadStatementCache") {}
 public:
     static RefCountedPtr<ECInstanceLoadStatementCache> Create() {return new ECInstanceLoadStatementCache();}
-    ~ECInstanceLoadStatementCache()
-        {
-        for (auto statement : m_statements)
-            delete statement.second;
-        }
-    ECSqlStatement* GetStatement(ECDbCR db, Utf8CP query)
-        {
-        auto iter = m_statements.find(query);
-        if (m_statements.end() == iter)
-            iter = m_statements.Insert(query, new ECSqlStatement()).first;
-        if (!iter->second->IsPrepared())
-            {
-            if (ECSqlStatus::Success != iter->second->Prepare(db, query))
-                return nullptr;
-            }
-        else
-            {
-            iter->second->Reset();
-            }
-        return iter->second;
-        }
+    CachedECSqlStatementPtr GetStatement(IConnectionCR connection, Utf8CP query) {return m_cache.GetPreparedStatement(connection.GetECDb().Schemas(), connection.GetDb(), query);}
 };
 static ECInstanceLoadStatementCache::Key s_cacheKey;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECSqlStatement* GetPreparedStatement(ECDbCR db, Utf8CP ecsql)
+static CachedECSqlStatementPtr GetPreparedStatement(IConnectionCR connection, Utf8CP ecsql)
     {
-    RefCountedPtr<BeSQLite::Db::AppData> cache = db.FindAppData(s_cacheKey);
+    RefCountedPtr<BeSQLite::Db::AppData> cache = connection.GetDb().FindAppData(s_cacheKey);
     if (cache.IsNull())
         {
         cache = ECInstanceLoadStatementCache::Create();
-        db.AddAppData(s_cacheKey, cache.get(), true);
+        connection.GetDb().AddAppData(s_cacheKey, cache.get());
         }
-    return static_cast<ECInstanceLoadStatementCache*>(cache.get())->GetStatement(db, ecsql);
+    return static_cast<ECInstanceLoadStatementCache*>(cache.get())->GetStatement(connection, ecsql);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr ECInstancesHelper::LoadInstance(ECDbCR db, ECInstanceKeyCR key)
+IECInstancePtr ECInstancesHelper::LoadInstance(IConnectionCR connection, ECInstanceKeyCR key)
     {
-    ECClassCP selectClass = db.Schemas().GetClass(key.GetClassId());
+    ECClassCP selectClass = connection.GetECDb().Schemas().GetClass(key.GetClassId());
     if (nullptr == selectClass || !selectClass->IsEntityClass())
         {
         BeAssert(false);
@@ -1378,8 +1369,8 @@ IECInstancePtr ECInstancesHelper::LoadInstance(ECDbCR db, ECInstanceKeyCR key)
 
     Utf8String ecsql("SELECT * FROM ONLY ");
     ecsql.append(selectClass->GetECSqlName()).append(" WHERE ECInstanceId=?");
-    ECSqlStatement* stmt = GetPreparedStatement(db, ecsql.c_str());
-    if (nullptr == stmt)
+    CachedECSqlStatementPtr stmt = GetPreparedStatement(connection, ecsql.c_str());
+    if (stmt.IsNull())
         {
         BeAssert(false);
         return nullptr;
@@ -1392,13 +1383,110 @@ IECInstancePtr ECInstancesHelper::LoadInstance(ECDbCR db, ECInstanceKeyCR key)
         }
 
     ECInstanceECSqlSelectAdapter adapter(*stmt);
-    if (BeSQLite::DbResult::BE_SQLITE_ROW != stmt->Step())
+    DbResult result = stmt->Step();
+    if (DbResult::BE_SQLITE_ROW != result)
+        return nullptr;
+
+    return adapter.GetInstance();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValue ECInstancesHelper::GetValue(IConnectionCR connection, ECInstanceKeyCR key, Utf8CP propertyName)
+    {
+    ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(key.GetClassId());
+    if (nullptr == ecClass || !ecClass->IsEntityClass())
         {
         BeAssert(false);
-        return nullptr;
+        return ECValue();
+        }
+    ECPropertyCP ecProperty = ecClass->GetPropertyP(propertyName);
+    if (nullptr == ecProperty || !ecProperty->GetIsPrimitive())
+        {
+        BeAssert(false);
+        return ECValue();
+        }
+    return GetValue(connection, *ecClass, key.GetInstanceId(), *ecProperty);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValue ECInstancesHelper::GetValue(IConnectionCR connection, ECClassCR ecClass, ECInstanceId instanceId, ECPropertyCR ecProperty)
+    {
+    Utf8String ecsql("SELECT ");
+    ecsql.append("[").append(ecProperty.GetName()).append("] ");
+    ecsql.append("FROM ONLY ");
+    ecsql.append(ecClass.GetECSqlName()).append(" WHERE ECInstanceId = ?");
+    CachedECSqlStatementPtr stmt = GetPreparedStatement(connection, ecsql.c_str());
+    if (stmt.IsNull())
+        {
+        BeAssert(false);
+        return ECValue();
         }
 
-    IECInstancePtr instance = adapter.GetInstance();
-    stmt->Reset();
-    return instance;
+    if (ECSqlStatus::Success != stmt->BindId(1, instanceId))
+        {
+        BeAssert(false);
+        return ECValue();
+        }
+    
+    if (DbResult::BE_SQLITE_ROW != stmt->Step())
+        {
+        BeAssert(false);
+        return ECValue();
+        }
+
+    return ValueHelpers::GetECValueFromSqlValue(ecProperty.GetAsPrimitiveProperty()->GetType(), stmt->GetValue(0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECInstancesHelper::SetValue(IConnectionCR connection, ECInstanceKeyCR key, Utf8CP propertyName, ECValueCR value)
+    {
+    ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(key.GetClassId());
+    if (nullptr == ecClass || !ecClass->IsEntityClass())
+        {
+        BeAssert(false);
+        return;
+        }
+    ECPropertyCP ecProperty = ecClass->GetPropertyP(propertyName);
+    if (nullptr == ecProperty || !ecProperty->GetIsPrimitive())
+        {
+        BeAssert(false);
+        return;
+        }
+    SetValue(connection, *ecClass, key.GetInstanceId(), *ecProperty, value);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECInstancesHelper::SetValue(IConnectionCR connection, ECClassCR ecClass, ECInstanceId instanceId, ECPropertyCR ecProperty, ECValueCR value)
+    {
+    Utf8String ecsql("UPDATE ");
+    ecsql.append(ecClass.GetECSqlName()).append(" ");
+    ecsql.append("SET ").append("[").append(ecProperty.GetName()).append("] = ?");
+    ecsql.append(" WHERE ECInstanceId = ?");
+
+    ECSqlStatus status;
+    CachedECSqlStatementPtr stmt = GetPreparedStatement(connection, ecsql.c_str());
+    if (stmt.IsNull())
+        {
+        BeAssert(false);
+        return;
+        }
+
+    BoundQueryECValue bv(value);
+    status = bv.Bind(*stmt, 1);
+    BeAssert(status.IsSuccess());
+    
+    status = stmt->BindId(2, instanceId);
+    BeAssert(status.IsSuccess());
+    
+    DbResult result = stmt->Step();
+    BeAssert(DbResult::BE_SQLITE_DONE == result);
+    UNUSED_VARIABLE(result);
     }

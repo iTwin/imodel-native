@@ -153,7 +153,7 @@ struct RulesDrivenECPresentationManagerImpl::UsedClassesListener : IECDbUsedClas
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool IsRulesetSupported(ECDbCR connection, PresentationRuleSetCR ruleset)
+static bool IsRulesetSupported(IConnectionCR connection, PresentationRuleSetCR ruleset)
     {
     ECSchemaHelper helper(connection, nullptr, nullptr);
     return helper.AreSchemasSupported(ruleset.GetSupportedSchemas());
@@ -170,7 +170,7 @@ static PresentationRuleSetPtr FindRuleset(IRulesetLocaterManager const& locaters
         LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("Invalid ruleset ID: '%s'", rulesetId).c_str(), LOG_ERROR);
         return nullptr;
         }
-    if (!IsRulesetSupported(connection.GetDb(), *ruleset))
+    if (!IsRulesetSupported(connection, *ruleset))
         {
         LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("Ruleset '%s' not supported by connection", rulesetId).c_str(), LOG_INFO);
         return nullptr;
@@ -242,12 +242,11 @@ public:
         for (auto iter : m_caches)
             delete iter.second;
         }
-    T& GetCache(ECDbCR db)
+    T& GetCache(IConnectionCR connection)
         {
-        IConnectionPtr connection = m_connections.GetConnection(db);
-        auto iter = m_caches.find(connection->GetId());
+        auto iter = m_caches.find(connection.GetId());
         if (m_caches.end() == iter)
-            iter = m_caches.Insert(connection->GetId(), CreateFunc()).first;
+            iter = m_caches.Insert(connection.GetId(), CreateFunc()).first;
         return *iter->second;
         }
 };
@@ -258,7 +257,7 @@ public:
 ECSqlStatementCache* CreateECSqlStatementCache() {return new ECSqlStatementCache(50);}
 struct RulesDrivenECPresentationManagerImpl::ECDbStatementsCache : ConnectionBasedCache<ECSqlStatementCache, CreateECSqlStatementCache>, IECSqlStatementCacheProvider
     {
-    ECSqlStatementCache& _GetECSqlStatementCache(ECDbCR db) override {return ConnectionBasedCache::GetCache(db);}
+    ECSqlStatementCache& _GetECSqlStatementCache(IConnectionCR connection) override {return ConnectionBasedCache::GetCache(connection);}
     ECDbStatementsCache(IConnectionManagerCR connections) : ConnectionBasedCache(connections) {}
     };
 
@@ -381,11 +380,11 @@ protected:
         // get various caches
         IUserSettings const& settings = m_manager.GetUserSettings(rulesetId);
         ECExpressionsCache& ecexpressionsCache = m_manager.m_rulesetECExpressionsCache->Get(rulesetId);
-        RelatedPathsCache& relatedPathsCache = m_manager.m_relatedPathsCache->GetCache(connection.GetDb());
-        ECSqlStatementCache& statementsCache = m_manager.m_statementCache->GetCache(connection.GetDb());
+        RelatedPathsCache& relatedPathsCache = m_manager.m_relatedPathsCache->GetCache(connection);
+        ECSqlStatementCache& statementsCache = m_manager.m_statementCache->GetCache(connection);
 
         // notify listener with ECClasses used in this ruleset
-        ECSchemaHelper schemaHelper(connection.GetDb(), &relatedPathsCache, &statementsCache);
+        ECSchemaHelper schemaHelper(connection, &relatedPathsCache, &statementsCache);
         UsedClassesHelper::NotifyListenerWithRulesetClasses(*m_manager.m_usedClassesListener, ecexpressionsCache, connection, *ruleset);
 
         // set up the nodes provider context
@@ -722,8 +721,8 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetConten
     ECExpressionsCache& ecexpressionsCache = m_rulesetECExpressionsCache->Get(ruleset->GetRuleSetId().c_str());
 
     // get connection-related caches
-    RelatedPathsCache& relatedPathsCache = m_relatedPathsCache->GetCache(connection.GetDb());
-    ECSqlStatementCache& statementCache = m_statementCache->GetCache(connection.GetDb());
+    RelatedPathsCache& relatedPathsCache = m_relatedPathsCache->GetCache(connection);
+    ECSqlStatementCache& statementCache = m_statementCache->GetCache(connection);
 
     // set up the provider context
     ContentProviderContextPtr context = ContentProviderContext::Create(*ruleset, true, key.GetPreferredDisplayType(), *m_nodesCache,
@@ -791,11 +790,11 @@ bvector<SelectClassInfo> RulesDrivenECPresentationManagerImpl::_GetContentClasse
     ECExpressionsCache& ecexpressionsCache = m_rulesetECExpressionsCache->Get(ruleset->GetRuleSetId().c_str());
 
     // get connection-related caches
-    RelatedPathsCache& relatedPathsCache = m_relatedPathsCache->GetCache(connection.GetDb());
-    ECSqlStatementCache& statementCache = m_statementCache->GetCache(connection.GetDb());
+    RelatedPathsCache& relatedPathsCache = m_relatedPathsCache->GetCache(connection);
+    ECSqlStatementCache& statementCache = m_statementCache->GetCache(connection);
 
     // locate the classes
-    ECSchemaHelper schemaHelper(connection.GetDb(), &relatedPathsCache, &statementCache);
+    ECSchemaHelper schemaHelper(connection, &relatedPathsCache, &statementCache);
     ContentClassesLocater::Context locaterContext(schemaHelper, m_connections, connection, *ruleset, preferredDisplayType, settings, ecexpressionsCache, *m_nodesCache);
     return ContentClassesLocater(locaterContext).Locate(classes);
     }
@@ -926,7 +925,7 @@ void RulesDrivenECPresentationManagerImpl::_OnNodeChecked(IConnectionCR connecti
     {
     JsonNavNodePtr node = GetNodesCache().GetNode(nodeId);
     if (node.IsValid())
-        CustomizationHelper::NotifyCheckedStateChanged(connection.GetDb(), *node, true);
+        CustomizationHelper::NotifyCheckedStateChanged(connection, *node, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -936,7 +935,7 @@ void RulesDrivenECPresentationManagerImpl::_OnNodeUnchecked(IConnectionCR connec
     {
     JsonNavNodePtr node = GetNodesCache().GetNode(nodeId);
     if (node.IsValid())
-        CustomizationHelper::NotifyCheckedStateChanged(connection.GetDb(), *node, false);
+        CustomizationHelper::NotifyCheckedStateChanged(connection, *node, false);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/RulesDriven/PresentationManager.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -34,7 +34,7 @@ USING_NAMESPACE_BENTLEY_EC
 #define LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE_THREADS            LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE ".Threads"
 
 //__PUBLISH_SECTION_END__
-#define RULES_ENGINE_FORCE_SINGLE_THREAD
+//#define RULES_ENGINE_FORCE_SINGLE_THREAD
 struct IRulesDrivenECPresentationManagerDependenciesFactory;
 //__PUBLISH_SECTION_START__
 

@@ -2,7 +2,7 @@
 |
 |     $Source: Source/Connection.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -89,23 +89,28 @@ struct TrackingConnection : RefCounted<ThreadVerifyingConnection>, IECDbClosedLi
 private:
     ConnectionManager& m_manager;
     Utf8String m_id;
-    ECDbR m_db;
+    ECDbR m_ecdb;
     bool m_isPrimary;
     bool m_isOpen;
 private:
     TrackingConnection(ConnectionManager& manager, Utf8String id, ECDbR db, bool isPrimary)
-        : m_manager(manager), m_id(id), m_db(db), m_isPrimary(isPrimary)
+        : m_manager(manager), m_id(id), m_ecdb(db), m_isPrimary(isPrimary)
         {
-        ECDbClosedNotifier::Register(*this, m_db, true);
-        m_isOpen = m_db.IsDbOpen();
+        ECDbClosedNotifier::Register(*this, m_ecdb, true);
+        m_isOpen = m_ecdb.IsDbOpen();
         LOG_CONNECTIONS.infov("%p TrackingConnection[%s] created", this, m_id.c_str());
         }
 protected:
     Utf8StringCR _GetId() const override {return m_id;}
-    ECDbR _GetDb() const override
+    ECDbR _GetECDb() const override
         {
         VerifyThread();
-        return m_db;
+        return m_ecdb;
+        }
+    BeSQLite::Db& _GetDb() const override
+        {
+        VerifyThread();
+        return m_ecdb;
         }
     bool _IsOpen() const override
         {
@@ -115,13 +120,13 @@ protected:
     bool _IsReadOnly() const override
         {
         VerifyThread();
-        return m_db.IsReadonly();
+        return m_ecdb.IsReadonly();
         }
     int _GetPriority() const override {return 100;}
     void _OnConnectionClosed(ECDbCR db) override
         {
         VerifyThread();
-        BeAssert(&db == &m_db);
+        BeAssert(&db == &m_ecdb);
         if (m_isOpen)
             {
             LOG_CONNECTIONS.infov("%p TrackingConnection[%s] closed", this, m_id.c_str());
@@ -132,15 +137,15 @@ protected:
     void _OnConnectionReloaded(ECDbCR db) override
         {
         VerifyThread();
-        BeAssert(&db == &m_db);
+        BeAssert(&db == &m_ecdb);
         if (m_isOpen)
             {
             LOG_CONNECTIONS.infov("%p TrackingConnection[%s] reloaded", this, m_id.c_str());
             m_manager.NotifyConnectionClosed(m_id);
             if (m_isPrimary)
-                m_manager.NotifyPrimaryConnectionOpened(m_db);
+                m_manager.NotifyPrimaryConnectionOpened(m_ecdb);
             else
-                m_manager.NotifyConnectionOpened(m_db);
+                m_manager.NotifyConnectionOpened(m_ecdb);
             }
         }
 public:
@@ -157,7 +162,7 @@ struct IProxyConnectionsTracker
     virtual void OnProxyConnectionRelease(struct ProxyConnection const&) = 0;
     };
 
-//#define MULTIPLE_CONNECTIONS
+#define MULTIPLE_CONNECTIONS
 //=======================================================================================
 //! A thread-local connection that's based on the supplied primary connection. It notifies
 //! supplied IProxyConnectionsTracker so it can track when ProxyConnections are/aren't
@@ -170,7 +175,7 @@ private:
     IProxyConnectionsTracker* m_tracker;
     TrackingConnection const& m_primaryConnection;
 #ifdef MULTIPLE_CONNECTIONS
-    mutable ECDb m_db;
+    mutable BeSQLite::Db m_db;
 #endif
     mutable BeAtomic<uint32_t> m_refCount;
 
@@ -183,7 +188,7 @@ private:
         {
 #ifdef MULTIPLE_CONNECTIONS
         AnyThreadConnectionAccess noThreadVerification(m_primaryConnection);
-        m_db.OpenBeSQLiteDb(m_primaryConnection.GetDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::Readonly));
+        m_db.OpenBeSQLiteDb(m_primaryConnection.GetDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::Readonly, DefaultTxn::No));
 #endif
         LOG_CONNECTIONS.infov("%p ProxyConnection[%s] created on thread %d.", this, m_primaryConnection.GetId().c_str(), (int)GetThreadId());
         }
@@ -193,19 +198,24 @@ protected:
     * @bsimethod                                    Grigas.Petraitis            11/2017
     +---------------+---------------+---------------+---------------+-----------+------*/
     Utf8StringCR _GetId() const override {return m_primaryConnection.GetId();}
-
+    
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            11/2017
     +---------------+---------------+---------------+---------------+-----------+------*/
-    ECDbR _GetDb() const override
+    ECDbR _GetECDb() const override
         {
         VerifyThread();
-#ifdef MULTIPLE_CONNECTIONS
-        return m_db;
-#else
         AnyThreadConnectionAccess noThreadVerification(m_primaryConnection);
-        return m_primaryConnection.GetDb();
-#endif
+        return m_primaryConnection.GetECDb();
+        }
+
+    /*-----------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis            01/2018
+    +---------------+---------------+---------------+---------------+-----------+------*/
+    BeSQLite::Db& _GetDb() const override
+        {
+        VerifyThread();
+        return m_db;
         }
 
     /*-----------------------------------------------------------------------------**//**

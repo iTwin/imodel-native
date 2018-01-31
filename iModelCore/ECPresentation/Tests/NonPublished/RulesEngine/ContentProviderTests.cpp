@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/ContentProviderTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../../../Source/RulesDriven/RulesEngine/QueryContracts.h"
@@ -40,9 +40,9 @@ void ContentProviderTests::SetUp()
     m_widgetClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Widget");
     m_gadgetClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Gadget");
     m_sprocketClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Sprocket");
-
-    m_customFunctions = new CustomFunctionsInjector(m_connections, s_project->GetECDb());
+    
     m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb());
+    m_customFunctions = new CustomFunctionsInjector(m_connections, *m_connection);
     m_ruleset = PresentationRuleSet::CreateInstance("ContentProviderTests", 1, 0, false, "", "", "", false);
 
     m_context = ContentProviderContext::Create(*m_ruleset, true, ContentDisplayType::Undefined, m_nodesLocater, m_categorySupplier,

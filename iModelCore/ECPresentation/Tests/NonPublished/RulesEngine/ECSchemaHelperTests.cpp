@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/ECSchemaHelperTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSchemaHelperTests.h"
@@ -47,7 +47,8 @@ void ECSchemaHelperTests::TearDownTestCase()
 //---------------------------------------------------------------------------------------
 void ECSchemaHelperTests::SetUp()
     {
-    m_helper = new ECSchemaHelper(s_project->GetECDbCR(), nullptr, nullptr);
+    m_connection = new TestConnection(s_project->GetECDb());
+    m_helper = new ECSchemaHelper(*m_connection, nullptr, nullptr);
     }
 
 //---------------------------------------------------------------------------------------

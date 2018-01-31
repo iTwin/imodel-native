@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/ECExpressionContextsProvider.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -77,11 +77,11 @@ typedef RefCountedPtr<RulesEngineRootSymbolsContext> RulesEngineRootSymbolsConte
 struct ECInstanceContextEvaluator : PropertySymbol::ContextEvaluator
 {
 private:
-    ECDbCR m_db;
+    IConnectionCR m_connection;
     ECInstanceKey m_key;
-    ECInstanceContextEvaluator(ECDbCR db, ECInstanceKey key) : m_db(db), m_key(key) {}
+    ECInstanceContextEvaluator(IConnectionCR connection, ECInstanceKey key) : m_connection(connection), m_key(key) {}
 public:
-    static RefCountedPtr<ECInstanceContextEvaluator> Create(ECDbCR db, ECInstanceKey key) {return new ECInstanceContextEvaluator(db, key);}
+    static RefCountedPtr<ECInstanceContextEvaluator> Create(IConnectionCR connection, ECInstanceKey key) {return new ECInstanceContextEvaluator(connection, key);}
     ExpressionContextPtr _GetContext() override
         {
         IECInstancePtr instance;
@@ -89,14 +89,14 @@ public:
         if (m_key.IsValid())
             {
             // load the instance 
-            instance = ECInstancesHelper::LoadInstance(m_db, m_key);
+            instance = ECInstancesHelper::LoadInstance(m_connection, m_key);
             }
         else if (m_key.GetClassId().IsValid())
             {
             // if the instance id is not valid, create an empty instance - this 
             // makes sure we can further successfully use this instance in ECExpressions
             // and all its properties are NULL
-            ECClassCP ecClass = m_db.Schemas().GetClass(m_key.GetClassId());
+            ECClassCP ecClass = m_connection.GetECDb().Schemas().GetClass(m_key.GetClassId());
             instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
             }
         else
@@ -116,14 +116,19 @@ public:
 struct NodeECInstanceContextEvaluator : PropertySymbol::ContextEvaluator
 {
 private:
+    IConnectionCR m_connection;
     JsonNavNodeCPtr m_node;
-    NodeECInstanceContextEvaluator(JsonNavNodeCR node) : m_node(&node) {}
+    NodeECInstanceContextEvaluator(IConnectionCR connection, JsonNavNodeCR node) : m_connection(connection), m_node(&node) {}
 public:
-    static RefCountedPtr<NodeECInstanceContextEvaluator> Create(JsonNavNodeCR node) {return new NodeECInstanceContextEvaluator(node);}
+    static RefCountedPtr<NodeECInstanceContextEvaluator> Create(IConnectionCR connection, JsonNavNodeCR node) {return new NodeECInstanceContextEvaluator(connection, node);}
     ExpressionContextPtr _GetContext() override
         {
+        ECInstanceNodeKey const* key = m_node->GetKey().AsECInstanceNodeKey();
+        if (nullptr == key)
+            return nullptr;
+
         InstanceExpressionContextPtr instanceContext = InstanceExpressionContext::Create(nullptr);
-        RefCountedPtr<IECInstance const> instance = m_node->GetInstance();
+        IECInstancePtr instance = ECInstancesHelper::LoadInstance(m_connection, key->GetInstanceKey());
         if (instance.IsValid())
             instanceContext->SetInstance(*instance);
         return instanceContext;
@@ -234,7 +239,7 @@ private:
             return ExpressionStatus::Success;
             }
         
-        ECClassCP nodeClass = ctx.m_connection.GetDb().Schemas().GetClass(extendedData.GetECClassId());
+        ECClassCP nodeClass = ctx.m_connection.GetECDb().Schemas().GetClass(extendedData.GetECClassId());
         if (nullptr == nodeClass)
             {
             BeAssert(false);
@@ -281,7 +286,7 @@ protected:
 
             ECClassCP nodeClass = nullptr;
             if (nodeExtendedData.HasECClassId())
-                nodeClass = m_context.m_connection.GetDb().Schemas().GetClass(nodeExtendedData.GetECClassId());
+                nodeClass = m_context.m_connection.GetECDb().Schemas().GetClass(nodeExtendedData.GetECClassId());
 
             context.AddSymbol(*ValueSymbol::Create("IsNull", ECValue(false)));
             context.AddSymbol(*ValueSymbol::Create("Type", ECValue(node.GetType().c_str(), false)));
@@ -310,7 +315,7 @@ protected:
                     case ECRelatedInstanceDirection::Forward:  relationshipDirection = "Forward"; break;
                     }
                 
-                ECClassCP parentClass = m_context.m_connection.GetDb().Schemas().GetClass(nodeExtendedData.GetParentECClassId());
+                ECClassCP parentClass = m_context.m_connection.GetECDb().Schemas().GetClass(nodeExtendedData.GetParentECClassId());
                 context.AddSymbol(*ValueSymbol::Create("ParentClassName", ECValue(parentClass->GetName().c_str(), false)));
                 context.AddSymbol(*ValueSymbol::Create("ParentSchemaName", ECValue(parentClass->GetSchema().GetName().c_str(), false)));
                 context.AddSymbol(*ValueSymbol::Create("RelationshipDirection", ECValue(relationshipDirection.c_str(), true)));
@@ -321,7 +326,7 @@ protected:
                 BeAssert(nullptr != node.GetKey().AsECInstanceNodeKey());
                 context.AddSymbol(*ValueSymbol::Create("InstanceId", ECValue(node.GetKey().AsECInstanceNodeKey()->GetInstanceId().ToString().c_str())));
                 context.AddSymbol(*ValueSymbol::Create("IsInstanceNode", ECValue(true)));
-                context.AddSymbol(*PropertySymbol::Create("ECInstance", *NodeECInstanceContextEvaluator::Create(node)));
+                context.AddSymbol(*PropertySymbol::Create("ECInstance", *NodeECInstanceContextEvaluator::Create(m_context.m_connection, node)));
                 }
             else
                 {
@@ -612,7 +617,7 @@ ExpressionContextPtr ECExpressionContextsProvider::GetCustomizationRulesContext(
 
     // this
     if (params.GetNode().GetType().Equals(NAVNODE_TYPE_ECInstanceNode))
-        rootCtx->GetSymbolsContext().AddSymbol(*PropertySymbol::Create("this", *NodeECInstanceContextEvaluator::Create(params.GetNode())));
+        rootCtx->GetSymbolsContext().AddSymbol(*PropertySymbol::Create("this", *NodeECInstanceContextEvaluator::Create(params.GetConnection(), params.GetNode())));
     else
         rootCtx->GetSymbolsContext().AddSymbol(*ValueSymbol::Create("this", ECValue()));
 
@@ -622,7 +627,7 @@ ExpressionContextPtr ECExpressionContextsProvider::GetCustomizationRulesContext(
     for (NavNodeExtendedData::RelatedInstanceKey const& key : relatedInstanceKeys)
         {
         rootCtx->GetSymbolsContext().AddSymbol(*PropertySymbol::Create(key.GetAlias(), 
-            *ECInstanceContextEvaluator::Create(params.GetConnection().GetDb(), key.GetInstanceKey())));
+            *ECInstanceContextEvaluator::Create(params.GetConnection(), key.GetInstanceKey())));
         }
 
     // ECInstance methods
@@ -635,16 +640,16 @@ ExpressionContextPtr ECExpressionContextsProvider::GetCustomizationRulesContext(
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Tautvydas.Zinys                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionContextPtr ECExpressionContextsProvider::GetCalculatedPropertyContext(JsonNavNodeCR thisNode, IUserSettings const& userSettings)
+ExpressionContextPtr ECExpressionContextsProvider::GetCalculatedPropertyContext(CalculatedPropertyContextParameters const& params)
     {
     RulesEngineRootSymbolsContextPtr rootCtx = RulesEngineRootSymbolsContext::Create();
 
     // UserSettings
-    UserSettingsSymbolsProvider userSettingsSymbols(rootCtx->AddContext(*new UserSettingsSymbolsProvider::Context(userSettings, nullptr)));
+    UserSettingsSymbolsProvider userSettingsSymbols(rootCtx->AddContext(*new UserSettingsSymbolsProvider::Context(params.GetUserSettings(), params.GetUsedSettingsListener())));
     userSettingsSymbols.PublishSymbols(rootCtx->GetSymbolsContext(), bvector<Utf8String>());
 
     // this
-    rootCtx->GetSymbolsContext().AddSymbol(*PropertySymbol::Create("this", *NodeECInstanceContextEvaluator::Create(thisNode)));
+    rootCtx->GetSymbolsContext().AddSymbol(*PropertySymbol::Create("this", *NodeECInstanceContextEvaluator::Create(params.GetConnection(), params.GetNode())));
 
     // ECInstance methods
     ECInstanceMethodSymbolsProvider ecInstanceMethods;

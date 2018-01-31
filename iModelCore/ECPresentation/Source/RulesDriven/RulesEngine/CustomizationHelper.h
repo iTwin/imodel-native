@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/CustomizationHelper.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -62,7 +62,7 @@ struct CustomizationHelper
     {
     ECPRESENTATION_EXPORT static void Customize(NavNodesProviderContextCR context, JsonNavNode& node, bool customizeLabel);
     ECPRESENTATION_EXPORT static void Customize(ContentProviderContextCR context, ContentSetItemR item);
-    ECPRESENTATION_EXPORT static void NotifyCheckedStateChanged(BeSQLite::EC::ECDbR db, JsonNavNodeCR node, bool isChecked);
+    ECPRESENTATION_EXPORT static void NotifyCheckedStateChanged(IConnectionCR, JsonNavNodeCR node, bool isChecked);
     };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

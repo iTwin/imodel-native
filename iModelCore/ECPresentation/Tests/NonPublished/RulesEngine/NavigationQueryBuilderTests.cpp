@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/NavigationQueryBuilderTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "QueryBuilderTests.h"
@@ -15,9 +15,9 @@ void NavigationQueryBuilderTests::SetUp()
     {
     Localization::Init();
     
-    m_connection = m_connections.NotifyConnectionOpened(ExpectedQueries::GetInstance(BeTest::GetHost()).GetDb());
+    m_connection = &ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnection();
     m_ruleset = PresentationRuleSet::CreateInstance("NavigationQueryBuilderTests", 1, 0, false, "", "", "", false);
-    m_schemaHelper = new ECSchemaHelper(ExpectedQueries::GetInstance(BeTest::GetHost()).GetDb(), &m_relatedPathsCache, nullptr);
+    m_schemaHelper = new ECSchemaHelper(*m_connection, &m_relatedPathsCache, nullptr);
     m_builder = new NavigationQueryBuilder(NavigationQueryBuilderParameters(*m_schemaHelper, m_connections,
         *m_connection, *m_ruleset, m_settings, nullptr, m_expressionsCache, m_nodesCache));
 

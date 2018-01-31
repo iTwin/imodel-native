@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/NavNodesCache.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -1596,7 +1596,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool AreRelated(ECDbCR connection, DataSourceFilter::RelatedInstanceInfo const& relationshipInfo, bset<ECInstanceKey> const& keys, ECSqlStatementCache& statements)
+static bool AreRelated(IConnectionCR connection, DataSourceFilter::RelatedInstanceInfo const& relationshipInfo, bset<ECInstanceKey> const& keys, ECSqlStatementCache& statements)
     {
     for (ECInstanceKeyCR key : keys)
         {
@@ -1607,7 +1607,7 @@ static bool AreRelated(ECDbCR connection, DataSourceFilter::RelatedInstanceInfo 
     Utf8String query;
     for (ECClassId relationshipClassId : relationshipInfo.m_relationshipClassIds)
         {
-        ECRelationshipClassCP relationshipClass = connection.Schemas().GetClass(relationshipClassId)->GetRelationshipClassCP();
+        ECRelationshipClassCP relationshipClass = connection.GetECDb().Schemas().GetClass(relationshipClassId)->GetRelationshipClassCP();
         if (nullptr == relationshipClass)
             {
             BeAssert(false);
@@ -1637,7 +1637,8 @@ static bool AreRelated(ECDbCR connection, DataSourceFilter::RelatedInstanceInfo 
             }
         }
 
-    CachedECSqlStatementPtr stmt = statements.GetPreparedStatement(connection, query.c_str(), nullptr);
+    Savepoint txn(connection.GetDb(), "NodesCache/AreRelated"); 
+    CachedECSqlStatementPtr stmt = statements.GetPreparedStatement(connection.GetECDb().Schemas(), connection.GetDb(), query.c_str());
     if (!stmt.IsValid())
         {
         BeAssert(false);
@@ -1665,7 +1666,7 @@ static bool AreRelated(ECDbCR connection, DataSourceFilter::RelatedInstanceInfo 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool AnyKeyMatchesFilter(ECDbCR connection, Utf8CP serializedFilter, bset<ECInstanceKey> const& keys, ECSqlStatementCache& statements)
+static bool AnyKeyMatchesFilter(IConnectionCR connection, Utf8CP serializedFilter, bset<ECInstanceKey> const& keys, ECSqlStatementCache& statements)
     {
     rapidjson::Document json;
     json.Parse(serializedFilter);
@@ -1763,7 +1764,7 @@ bvector<HierarchyLevelInfo> NodesCache::GetRelatedHierarchyLevels(Utf8StringCR c
 
     // bind classes for polymorphic search
     bset<ECClassId> ids;
-    AddBaseAndDerivedClasses(ids, connection->GetDb(), keys);
+    AddBaseAndDerivedClasses(ids, connection->GetECDb(), keys);
     ECClassIdSet polymorphicIds(ids);
     stmt->BindVirtualSet(2, polymorphicIds);
 
@@ -1778,12 +1779,12 @@ bvector<HierarchyLevelInfo> NodesCache::GetRelatedHierarchyLevels(Utf8StringCR c
     ECInstanceKeySet instanceKeysVirtualSet(keys);
     stmt->BindVirtualSet(6, instanceKeysVirtualSet);
 
-    ECSqlStatementCache& ecsqlStatements = m_ecsqlStamementCache.GetECSqlStatementCache(connection->GetDb());
+    ECSqlStatementCache& ecsqlStatements = m_ecsqlStamementCache.GetECSqlStatementCache(*connection);
     while (BE_SQLITE_ROW == stmt->Step())
         {
         int priority = stmt->GetValueInt(4);
         Utf8CP filter = stmt->GetValueText(3);
-        if (priority < 2 && nullptr != filter && 0 != *filter && !AnyKeyMatchesFilter(connection->GetDb(), filter, keys, ecsqlStatements))
+        if (priority < 2 && nullptr != filter && 0 != *filter && !AnyKeyMatchesFilter(*connection, filter, keys, ecsqlStatements))
             continue;
 
         Utf8CP connectionId = stmt->GetValueText(0);

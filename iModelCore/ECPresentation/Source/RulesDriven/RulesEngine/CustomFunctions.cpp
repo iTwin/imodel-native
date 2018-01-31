@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/CustomFunctions.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -132,7 +132,7 @@ struct GetECInstanceDisplayLabelScalar : CachingScalarFunction<bmap<ECInstanceId
                 NavNodesHelper::AddRelatedInstanceInfo(*thisNode, args[3].GetValueText());
 
                 // look for label override
-                ECDbExpressionSymbolContext ecdbSymbols(GetContext().GetSchemaHelper().GetDb());
+                ECDbExpressionSymbolContext ecdbSymbols(GetContext().GetSchemaHelper().GetConnection().GetECDb());
                 RulesPreprocessor::CustomizationRuleParameters params(GetContext().GetConnections(), GetContext().GetConnection(), *thisNode, GetContext().GetParentNode(),
                     GetContext().GetRuleset(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache());
                 LabelOverrideCP labelOverride = RulesPreprocessor::GetLabelOverride(params);
@@ -155,16 +155,12 @@ struct GetECInstanceDisplayLabelScalar : CachingScalarFunction<bmap<ECInstanceId
 
                 if (label.empty())
                     {
-                    ECClassCP ecClass = GetContext().GetSchemaHelper().GetDb().Schemas().GetClass(classId);
+                    ECClassCP ecClass = GetContext().GetSchemaHelper().GetConnection().GetECDb().Schemas().GetClass(classId);
                     BeAssert(nullptr != ecClass);
 
                     // if the override didn't apply, look for instance label property
                     if (nullptr != ecClass->GetInstanceLabelProperty())
-                        {
                         label = args[2].GetValueText();
-                        if (label.empty())
-                            thisNode->GetInstance()->GetDisplayLabel(label);
-                        }
 
                     // if all failed, use ECClass display label
                     if (label.empty())
@@ -201,7 +197,7 @@ struct GetECClassDisplayLabelScalar : CachingScalarFunction<bmap<ECClassId, Utf8
         auto iter = GetCache().find(classId);
         if (GetCache().end() == iter)
             {
-            ECClassCP ecClass = GetContext().GetSchemaHelper().GetDb().Schemas().GetClass(classId);
+            ECClassCP ecClass = GetContext().GetSchemaHelper().GetConnection().GetECDb().Schemas().GetClass(classId);
             BeAssert(nullptr != ecClass);
 
             Utf8String label;
@@ -288,7 +284,9 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
         if (GetCache().end() == iter)
             {
             JsonNavNodePtr thisNode = GetContext().GetNodesFactory().CreateECInstanceNode(GetContext().GetConnection(), classId, instanceId, "");
-            ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCalculatedPropertyContext(*thisNode, GetContext().GetUserSettings());
+            ECExpressionContextsProvider::CalculatedPropertyContextParameters params(*thisNode, GetContext().GetConnection(), 
+                GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener());
+            ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCalculatedPropertyContext(params);
 
             ECValue value;
             Utf8String expressionResult;
@@ -378,7 +376,7 @@ public:
         auto iter = GetCache().find(key);
         if (GetCache().end() == iter)
             {
-            ECClassCP ecClass = GetContext().GetSchemaHelper().GetDb().Schemas().GetClass(classId);
+            ECClassCP ecClass = GetContext().GetSchemaHelper().GetConnection().GetECDb().Schemas().GetClass(classId);
             if (nullptr == ecClass)
                 {
                 BeAssert(false);
@@ -534,7 +532,7 @@ struct GetPropertyDisplayValueScalar : ECPresentation::ScalarFunction
             ctx.SetResultError("Invalid number of arguments", BE_SQLITE_ERROR);
             return;
             }
-        ECClassCP ecClass = GetContext().GetSchemaHelper().GetDb().Schemas().GetClass(args[0].GetValueText(), args[1].GetValueText());
+        ECClassCP ecClass = GetContext().GetSchemaHelper().GetConnection().GetECDb().Schemas().GetClass(args[0].GetValueText(), args[1].GetValueText());
         ECPropertyP ecProperty = ecClass->GetPropertyP(args[2].GetValueText());
         ECValue value;
 
@@ -810,7 +808,7 @@ struct IsOfClassScalar : ECPresentation::ScalarFunction
         {
         BeAssert(3 == nArgs);
         ECClassId classId = args[0].GetValueId<ECClassId>();
-        ECClassCP ecClass = GetContext().GetSchemaHelper().GetDb().Schemas().GetClass(classId);
+        ECClassCP ecClass = GetContext().GetSchemaHelper().GetConnection().GetECDb().Schemas().GetClass(classId);
         BeAssert(nullptr != ecClass);
 
         Utf8CP className = args[1].GetValueText();
@@ -836,7 +834,7 @@ struct GetECClassIdScalar : ECPresentation::ScalarFunction
         BeAssert(2 == nArgs);
         Utf8CP className = args[0].GetValueText();
         Utf8CP schemaName = args[1].GetValueText();
-        ECClassId id = GetContext().GetSchemaHelper().GetDb().Schemas().GetClassId(schemaName, className);
+        ECClassId id = GetContext().GetSchemaHelper().GetConnection().GetECDb().Schemas().GetClassId(schemaName, className);
         ctx.SetResultInt64(id.GetValueUnchecked());
         }
     };
@@ -1237,7 +1235,7 @@ struct IsRecursivelyRelatedScalar : CachingScalarFunction<IsRecursivelyRelatedFu
             Utf8String relationshipSchemaName, relationshipClassName;
             ECClassCP relationshipClass = nullptr;
             if (ECObjectsStatus::Success != ECClass::ParseClassName(relationshipSchemaName, relationshipClassName, key.m_fullRelationshipName)
-                || nullptr == (relationshipClass = GetContext().GetSchemaHelper().GetDb().Schemas().GetClass(relationshipSchemaName, relationshipClassName))
+                || nullptr == (relationshipClass = GetContext().GetSchemaHelper().GetConnection().GetECDb().Schemas().GetClass(relationshipSchemaName, relationshipClassName))
                 || !relationshipClass->IsRelationshipClass())
                 {
                 BeAssert(false);
@@ -1264,7 +1262,8 @@ struct IsRecursivelyRelatedScalar : CachingScalarFunction<IsRecursivelyRelatedFu
                 return;
                 }
 
-            CachedECSqlStatementPtr stmt = cache.m_statements.GetPreparedStatement(GetContext().GetSchemaHelper().GetDb(), query.c_str());
+            IConnectionCR connection = GetContext().GetSchemaHelper().GetConnection();
+            CachedECSqlStatementPtr stmt = cache.m_statements.GetPreparedStatement(connection.GetECDb().Schemas(), connection.GetDb(), query.c_str());
             if (stmt.IsNull())
                 {
                 BeAssert(false);
@@ -1297,7 +1296,7 @@ struct GetECEnumerationValueScalar : ECPresentation::ScalarFunction
         BeAssert(3 == nArgs);
         Utf8CP enumSchema = args[0].GetValueText();
         Utf8CP enumClass = args[1].GetValueText();
-        ECEnumerationCP enumeration = GetContext().GetSchemaHelper().GetDb().Schemas().GetEnumeration(enumSchema, enumClass);
+        ECEnumerationCP enumeration = GetContext().GetSchemaHelper().GetConnection().GetECDb().Schemas().GetEnumeration(enumSchema, enumClass);
         if (nullptr == enumeration)
             {
             BeAssert(false);
@@ -1557,12 +1556,12 @@ CustomFunctionsInjector::CustomFunctionsInjector(IConnectionManagerCR connection
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-CustomFunctionsInjector::CustomFunctionsInjector(IConnectionManagerCR connections, ECDbR db)
+CustomFunctionsInjector::CustomFunctionsInjector(IConnectionManagerCR connections, IConnectionCR connection)
     : m_connections(connections)
     {
     m_connections.AddListener(*this);
     CreateFunctions();
-    OnConnection(db);
+    OnConnection(connection);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1570,8 +1569,12 @@ CustomFunctionsInjector::CustomFunctionsInjector(IConnectionManagerCR connection
 +---------------+---------------+---------------+---------------+---------------+------*/
 CustomFunctionsInjector::~CustomFunctionsInjector()
     {
-    for (ECDb const* db : m_handledDbs)
-        UnregisterFromDb(*db);
+    for (Utf8StringCR connectionId : m_handledConnectionIds)
+        {
+        IConnectionPtr connection = m_connections.GetConnection(connectionId.c_str());
+        if (connection.IsValid())
+            Unregister(*connection);
+        }
     DestroyFunctions();
     m_connections.DropListener(*this);
     }
@@ -1624,11 +1627,11 @@ void CustomFunctionsInjector::DestroyFunctions()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CustomFunctionsInjector::RegisterInDb(ECDbCR db)
+void CustomFunctionsInjector::Register(IConnectionCR connection)
     {
     for (ScalarFunction* func : m_scalarFunctions)
         {
-        DbResult result = (DbResult)db.AddFunction(*func);
+        DbResult result = (DbResult)connection.GetDb().AddFunction(*func);
         if (DbResult::BE_SQLITE_OK != result)
             {
             BeAssert(false);
@@ -1638,7 +1641,7 @@ void CustomFunctionsInjector::RegisterInDb(ECDbCR db)
 
     for (AggregateFunction* func : m_aggregateFunctions)
         {
-        DbResult result = (DbResult)db.AddFunction(*func);
+        DbResult result = (DbResult)connection.GetDb().AddFunction(*func);
         if (DbResult::BE_SQLITE_OK != result)
             {
             BeAssert(false);
@@ -1650,14 +1653,14 @@ void CustomFunctionsInjector::RegisterInDb(ECDbCR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CustomFunctionsInjector::UnregisterFromDb(ECDbCR db)
+void CustomFunctionsInjector::Unregister(IConnectionCR connection)
     {
-    if (!db.IsDbOpen())
+    if (!connection.IsOpen())
         return;
 
     for (ScalarFunction* func : m_scalarFunctions)
         {
-        DbResult result = (DbResult)db.RemoveFunction(*func);
+        DbResult result = (DbResult)connection.GetDb().RemoveFunction(*func);
         if (DbResult::BE_SQLITE_OK != result)
             {
             BeAssert(false);
@@ -1666,7 +1669,7 @@ void CustomFunctionsInjector::UnregisterFromDb(ECDbCR db)
         }
     for (AggregateFunction* func : m_aggregateFunctions)
         {
-        DbResult result = (DbResult)db.RemoveFunction(*func);
+        DbResult result = (DbResult)connection.GetDb().RemoveFunction(*func);
         if (DbResult::BE_SQLITE_OK != result)
             {
             BeAssert(false);
@@ -1678,13 +1681,13 @@ void CustomFunctionsInjector::UnregisterFromDb(ECDbCR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CustomFunctionsInjector::OnConnection(ECDbCR connection)
+void CustomFunctionsInjector::OnConnection(IConnectionCR connection)
     {
-    if (m_handledDbs.end() != m_handledDbs.find(&connection))
+    if (Handles(connection))
         return;
 
-    m_handledDbs.insert(&connection);
-    RegisterInDb(connection);
+    m_handledConnectionIds.insert(connection.GetId());
+    Register(connection);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1694,7 +1697,7 @@ void CustomFunctionsInjector::_OnConnectionEvent(ConnectionEvent const& evt)
     {
     if (ConnectionEventType::Closed == evt.GetEventType())
         {
-        UnregisterFromDb(evt.GetConnection().GetDb());
-        m_handledDbs.erase(&evt.GetConnection().GetDb());
+        Unregister(evt.GetConnection());
+        m_handledConnectionIds.erase(evt.GetConnection().GetId());
         }
     }

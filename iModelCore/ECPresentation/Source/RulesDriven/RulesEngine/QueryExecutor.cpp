@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/QueryExecutor.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -65,7 +65,7 @@ Utf8CP QueryExecutor::GetQueryString() const
 CachedECSqlStatementPtr QueryExecutor::GetStatement() const
     {
     Utf8CP query = GetQueryString();
-    return m_statementCache.GetPreparedStatement(GetDb(), query);
+    return m_statementCache.GetPreparedStatement(GetConnection().GetECDb().Schemas(), GetConnection().GetDb(), query);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -99,6 +99,7 @@ void QueryExecutor::ReadRecords(ICancelationTokenCP cancelationToken)
 
     // get the statement
     RefCountedPtr<PerformanceLogger> _l = LoggingHelper::CreatePerformanceLogger(Log::Default, "[QueryExecutor] Getting prepared statement", NativeLogging::LOG_TRACE);
+    Savepoint txn(m_connection.GetDb(), "QueryExecutor::ReadRecords");
     CachedECSqlStatementPtr statement = GetStatement();
     if (statement.IsNull())
         {
@@ -666,7 +667,7 @@ void ContentQueryExecutor::_ReadRecord(ECSqlStatement& statement)
         }
     
     ContentValueAppender values;
-    FieldValueInstanceKeyReader fieldValueInstanceKeyReader(GetDb(), primaryRecordKeys);
+    FieldValueInstanceKeyReader fieldValueInstanceKeyReader(GetConnection().GetECDb(), primaryRecordKeys);
     Utf8String displayLabel, imageId;
     ECClassCP recordClass = nullptr;
     if (0 == ((int)ContentFlags::KeysOnly & descriptor.GetContentFlags()))

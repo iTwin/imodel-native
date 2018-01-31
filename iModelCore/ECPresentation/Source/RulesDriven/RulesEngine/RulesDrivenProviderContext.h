@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/RulesDrivenProviderContext.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once 
@@ -84,7 +84,6 @@ public:
     bool IsQueryContext() const {return m_isQueryContext;}
     IConnectionManagerCR GetConnections() const {BeAssert(IsQueryContext()); return *m_connections;}
     IConnectionCR GetConnection() const {BeAssert(IsQueryContext()); return *m_connection;}
-    ECDbR GetDb() const {BeAssert(IsQueryContext()); return GetConnection().GetDb();}
     ECSqlStatementCache const& GetStatementCache() const {BeAssert(IsQueryContext()); return *m_statementCache;}
     ECSchemaHelper const& GetSchemaHelper() const {BeAssert(IsQueryContext()); return *m_schemaHelper;}
 };

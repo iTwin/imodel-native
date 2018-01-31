@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/ECInstanceChangeHandlers.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -58,9 +58,9 @@ bvector<ECInstanceChangeResult> ECInstanceChangesDirector::Handle(IConnectionCR 
         bool didSucceed = false;
         for (IECInstanceChangeHandlerPtr const& handler : m_handlers)
             {
-            if (CanHandle(checksCache, *handler, connection.GetDb(), info.GetPrimaryInstanceClass()))
+            if (CanHandle(checksCache, *handler, connection.GetECDb(), info.GetPrimaryInstanceClass()))
                 {
-                ECInstanceChangeResult result = handler->Change(connection.GetDb(), info, propertyAccessor, value);
+                ECInstanceChangeResult result = handler->Change(connection.GetECDb(), info, propertyAccessor, value);
                 if (SUCCESS == result.GetStatus())
                     {
                     results.push_back(result);

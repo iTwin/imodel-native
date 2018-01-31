@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/TestNavNode.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TestNavNode.h"
@@ -26,10 +26,7 @@ void TestNavNode::InitNode(IConnectionP connection)
     extendedData.SetRulesetId("Invalid ruleset ID");
 
     if (nullptr != connection)
-        {
-        SetECDb(connection->GetDb());
         extendedData.SetConnectionId(connection->GetId());
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**

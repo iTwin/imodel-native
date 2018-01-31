@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/JsonNavNode.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -16,7 +16,7 @@
 * @bsimethod                                    Pranciskus.Ambrazas            06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 JsonNavNode::JsonNavNode() 
-    : m_allocator(NAVNODE_JSON_CHUNK_SIZE), m_json(rapidjson::Document(&m_allocator)), m_ecdb(nullptr)
+    : m_allocator(NAVNODE_JSON_CHUNK_SIZE), m_json(rapidjson::Document(&m_allocator))//, m_ecdb(nullptr)
     {
     m_json.SetObject();
     }
@@ -92,21 +92,6 @@ RapidJsonValueR JsonNavNode::_GetExtendedData() const
     if (!m_json.IsObject() || !m_json.HasMember(NAVNODE_ExtendedData))
         m_json.AddMember(NAVNODE_ExtendedData, rapidjson::Value(rapidjson::kObjectType), m_json.GetAllocator());
     return m_json[NAVNODE_ExtendedData];
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<IECInstance const> JsonNavNode::GetInstance() const
-    {
-    ECInstanceNodeKey const* key = GetKey().AsECInstanceNodeKey();
-    if (nullptr == key || !key->GetInstanceKey().IsValid())
-        return nullptr;
-    
-    if (m_instance.IsNull())
-        LoadECInstance();
-
-    return m_instance;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -234,27 +219,6 @@ void JsonNavNode::AddMember(Utf8CP name, rapidjson::Value& value)
         m_json.AddMember(rapidjson::GenericStringRef<Utf8Char>(name), value, m_json.GetAllocator());
     else
         iterator->value = value;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void JsonNavNode::LoadECInstance() const
-    {
-    if (nullptr == m_ecdb)
-        {
-        // ECDb must be set to load the ECInstance
-        BeAssert(false);
-        return;
-        }
-
-    BeAssert(0 == strcmp(NAVNODE_TYPE_ECInstanceNode, m_json[NAVNODE_Type].GetString()));
-    BeAssert(m_json.HasMember(NAVNODE_InstanceId));
-    
-    NavNodeExtendedData extendedData(*this);
-    BeAssert(extendedData.HasECClassId());
-
-    m_instance = ECInstancesHelper::LoadInstance(*m_ecdb, ECInstanceKey(extendedData.GetECClassId(), ECInstanceId(m_json[NAVNODE_InstanceId].GetUint64())));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -422,7 +386,7 @@ JsonNavNodePtr JsonNavNodesFactory::CreateFromJson(IConnectionCR connection, rap
 void JsonNavNodesFactory::InitECInstanceNode(JsonNavNodeR node, IConnectionCR connection, ECClassId classId, ECInstanceId instanceId, Utf8CP label) const
     {
     ECClassCP ecClass = nullptr;
-    if (nullptr == (ecClass = connection.GetDb().Schemas().GetClass(classId)))
+    if (nullptr == (ecClass = connection.GetECDb().Schemas().GetClass(classId)))
         {
         BeAssert(false);
         return;
@@ -433,7 +397,6 @@ void JsonNavNodesFactory::InitECInstanceNode(JsonNavNodeR node, IConnectionCR co
     node.SetType(NAVNODE_TYPE_ECInstanceNode);
     node.SetExpandedImageId(ImageHelper::GetImageId(*ecClass, true, true).c_str());
     node.SetCollapsedImageId(ImageHelper::GetImageId(*ecClass, true, false).c_str());
-    node.SetECDb(connection.GetDb());
 
     NavNodeExtendedData extendedData(node);
     extendedData.SetGroupedInstanceKey(ECInstanceKey(classId, instanceId));
@@ -454,7 +417,6 @@ void JsonNavNodesFactory::InitECInstanceNode(JsonNavNodeR node, Utf8StringCR con
     node.SetType(NAVNODE_TYPE_ECInstanceNode);
     node.SetExpandedImageId(ImageHelper::GetImageId(instance.GetClass(), true, true).c_str());
     node.SetCollapsedImageId(ImageHelper::GetImageId(instance.GetClass(), true, false).c_str());
-    node.SetInstance(instance);
 
     NavNodeExtendedData extendedData(node);
     extendedData.SetGroupedInstanceKey(ECInstanceKey(instance.GetClass().GetId(), instanceId));
@@ -566,9 +528,7 @@ void JsonNavNodesFactory::InitCustomNode(JsonNavNodeR node, Utf8StringCR connect
 +---------------+---------------+---------------+---------------+---------------+------*/
 void JsonNavNodesFactory::InitFromJson(JsonNavNodeR node, IConnectionCR connection, rapidjson::Document&& json) const
     {
-    node.m_json = std::move(json);
-    node.SetECDb(connection.GetDb());
-    
+    node.m_json = std::move(json);    
     NavNodeExtendedData extendedData(node);
     extendedData.SetConnectionId(connection.GetId());
     }

@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/QueryExecutor.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once 
@@ -60,7 +60,6 @@ private:
 
 protected:
     IConnectionCR GetConnection() const {return m_connection;}
-    ECDbR GetDb() const {return m_connection.GetDb();}
 
 protected:
     virtual void _Reset();

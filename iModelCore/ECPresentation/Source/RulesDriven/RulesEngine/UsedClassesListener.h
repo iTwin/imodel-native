@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/UsedClassesListener.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once 
@@ -30,7 +30,7 @@ struct ECDbUsedClassesListenerWrapper : IUsedClassesListener
     ECDbUsedClassesListenerWrapper(IConnectionCR connection, IECDbUsedClassesListener& wrappedListener)
         : m_connection(connection), m_wrappedListener(wrappedListener)
         {}
-    void _OnClassUsed(ECClassCR ecClass, bool polymorphically) override {m_wrappedListener.NotifyClassUsed(m_connection.GetDb(), ecClass, polymorphically);}
+    void _OnClassUsed(ECClassCR ecClass, bool polymorphically) override {m_wrappedListener.NotifyClassUsed(m_connection.GetECDb(), ecClass, polymorphically);}
     };
 
 /*=================================================================================**//**

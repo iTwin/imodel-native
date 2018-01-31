@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/TestHelpers.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -58,15 +58,15 @@ struct RulesEngineTestHelpers
 
     static Utf8String GetDisplayLabel(IECInstanceCR instance);
 
-    static IECInstancePtr InsertInstance(ECDbR, ECClassCR ecClass, std::function<void(IECInstanceR)> const& instancePreparer = nullptr);
-    static IECInstancePtr InsertInstance(ECDbR, ECInstanceInserter& inserter, ECClassCR ecClass, std::function<void(IECInstanceR)> const& instancePreparer = nullptr);
-    static ECInstanceKey InsertRelationship(ECDbR db, ECRelationshipClassCR relationship, IECInstanceCR source, IECInstanceR target, std::function<void(IECInstanceR)> const& instancePreparer = nullptr);
-    static ECInstanceKey InsertRelationship(ECDbTestProject& project, ECRelationshipClassCR relationship, IECInstanceCR source, IECInstanceR target, std::function<void(IECInstanceR)> const& instancePreparer = nullptr);
-    static void DeleteInstances(ECDbR db, ECClassCR ecClass, bool polymorphic = false);
-    static void DeleteInstance(ECDbR db, ECInstanceKeyCR key);
-    static void DeleteInstance(ECDbR db, IECInstanceCR instance);
-    static void DeleteInstance(ECDbTestProject& project, ECInstanceKeyCR key);
-    static void DeleteInstance(ECDbTestProject& project, IECInstanceCR instance);
+    static IECInstancePtr InsertInstance(ECDbR, ECClassCR ecClass, std::function<void(IECInstanceR)> const& instancePreparer = nullptr, bool commit = false);
+    static IECInstancePtr InsertInstance(ECDbR, ECInstanceInserter& inserter, ECClassCR ecClass, std::function<void(IECInstanceR)> const& instancePreparer = nullptr, bool commit = false);
+    static ECInstanceKey InsertRelationship(ECDbR db, ECRelationshipClassCR relationship, IECInstanceCR source, IECInstanceR target, std::function<void(IECInstanceR)> const& instancePreparer = nullptr, bool commit = false);
+    static ECInstanceKey InsertRelationship(ECDbTestProject& project, ECRelationshipClassCR relationship, IECInstanceCR source, IECInstanceR target, std::function<void(IECInstanceR)> const& instancePreparer = nullptr, bool commit = false);
+    static void DeleteInstances(ECDbR db, ECClassCR ecClass, bool polymorphic = false, bool commit = false);
+    static void DeleteInstance(ECDbR db, ECInstanceKeyCR key, bool commit = false);
+    static void DeleteInstance(ECDbR db, IECInstanceCR instance, bool commit = false);
+    static void DeleteInstance(ECDbTestProject& project, ECInstanceKeyCR key, bool commit = false);
+    static void DeleteInstance(ECDbTestProject& project, IECInstanceCR instance, bool commit = false);
     static IECInstancePtr GetInstance(ECDbR& project, ECClassCR ecClass, ECInstanceId id);
     static ECInstanceKey GetInstanceKey(IECInstanceCR);
 
@@ -562,7 +562,7 @@ private:
 protected:
     NavNodesProviderContextPtr _Create(IConnectionCR connection, Utf8CP rulesetId, uint64_t const* parentNodeId, ICancelationTokenCP cancelationToken, bool disableUpdates) const override
         {
-        m_customFunctions.OnConnection(connection.GetDb());
+        m_customFunctions.OnConnection(connection);
 
         PresentationRuleSetCPtr ruleset = m_ruleset;
         if (ruleset.IsNull())

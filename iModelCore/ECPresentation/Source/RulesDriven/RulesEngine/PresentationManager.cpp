@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/PresentationManager.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -204,7 +204,9 @@ protected:
         folly::via(&m_executor, [&, connectionId = m_connections.GetConnection(db)->GetId(), changes]()
             {
             IConnectionPtr connection = m_connections.GetConnection(connectionId.c_str());
-            NotifyECInstancesChanged(connection->GetDb(), changes);
+            // we didn't make any changes, but need to restart the transaction so changes from other connections become visible
+            //connection->GetDb().AbandonChanges(); 
+            NotifyECInstancesChanged(connection->GetECDb(), changes);
             });
         }
 public:
@@ -328,7 +330,7 @@ protected:
     void _InvalidateCache(Utf8CP rulesetId) override {m_wrapped.InvalidateCache(rulesetId);}
     void _RegisterLocater(RuleSetLocater& locater) override {m_wrapped.RegisterLocater(locater);}
     void _UnregisterLocater(RuleSetLocater const& locater) override {m_wrapped.UnregisterLocater(locater);}
-    bvector<PresentationRuleSetPtr> _LocateRuleSets(ECDbCR db, Utf8CP rulesetId) const override {return m_wrapped.LocateRuleSets(db, rulesetId);}
+    bvector<PresentationRuleSetPtr> _LocateRuleSets(IConnectionCR connection, Utf8CP rulesetId) const override {return m_wrapped.LocateRuleSets(connection, rulesetId);}
     bvector<Utf8String> _GetRuleSetIds() const override {return m_wrapped.GetRuleSetIds();}
 
     // IRulesetCallbacksHandler

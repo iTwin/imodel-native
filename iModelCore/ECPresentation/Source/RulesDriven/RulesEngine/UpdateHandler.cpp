@@ -372,13 +372,13 @@ protected:
         if (m_remapInfo.empty())
             return bvector<IUpdateTaskPtr>();
 
-        INavNodeKeysContainerCPtr selectionKeys = GetNewKeys(*m_selectionManager.GetSelection(m_connection.GetDb()));
+        INavNodeKeysContainerCPtr selectionKeys = GetNewKeys(*m_selectionManager.GetSelection(m_connection.GetECDb()));
         if (0 != selectionKeys->size())
-            m_selectionManager.ChangeSelection(m_connection.GetDb(), "RefreshSelectionTask", false, *selectionKeys);
+            m_selectionManager.ChangeSelection(m_connection.GetECDb(), "RefreshSelectionTask", false, *selectionKeys);
 
-        INavNodeKeysContainerCPtr subSelectionKeys = GetNewKeys(*m_selectionManager.GetSubSelection(m_connection.GetDb()));
+        INavNodeKeysContainerCPtr subSelectionKeys = GetNewKeys(*m_selectionManager.GetSubSelection(m_connection.GetECDb()));
         if (0 != subSelectionKeys->size())
-            m_selectionManager.ChangeSelection(m_connection.GetDb(), "RefreshSelectionTask", true, *subSelectionKeys);
+            m_selectionManager.ChangeSelection(m_connection.GetECDb(), "RefreshSelectionTask", true, *subSelectionKeys);
 
         return bvector<IUpdateTaskPtr>();
         }

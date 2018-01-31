@@ -2,7 +2,7 @@
 |
 |     $Source: Source/Selection.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -197,7 +197,7 @@ SelectionManager::SelectionStorage& SelectionManager::GetStorage(IConnectionCR c
     {
     auto iter = m_selections.find(connection.GetId());
     if (m_selections.end() == iter)
-        iter = m_selections.Insert(connection.GetId(), new ECDbSelection(*this, connection.GetDb(), GetLogger())).first;
+        iter = m_selections.Insert(connection.GetId(), new ECDbSelection(*this, connection.GetECDb(), GetLogger())).first;
     return isSubSelection ? iter->second->GetSubSelection() : iter->second->GetSelection();
     }
 
@@ -523,7 +523,7 @@ void SelectionSyncHandler::_OnSelectionChanged(SelectionChangedEventCR evt)
     bvector<ECInstanceKey> selectedKeys;
 
     // get the default content descriptor
-    ContentDescriptorCPtr defaultDescriptor = IECPresentationManager::GetManager().GetContentDescriptor(evt.GetConnection().GetDb(), contentDisplayType, selection, contentOptions).get();
+    ContentDescriptorCPtr defaultDescriptor = IECPresentationManager::GetManager().GetContentDescriptor(evt.GetConnection().GetECDb(), contentDisplayType, selection, contentOptions).get();
     if (defaultDescriptor.IsNull())
         {
         _SelectInstances(evt, selectedKeys);
@@ -535,7 +535,7 @@ void SelectionSyncHandler::_OnSelectionChanged(SelectionChangedEventCR evt)
     descriptor->AddContentFlag(ContentFlags::KeysOnly);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(evt.GetConnection().GetDb(), *descriptor, selection, PageOptions(), contentOptions).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(evt.GetConnection().GetECDb(), *descriptor, selection, PageOptions(), contentOptions).get();
     if (content.IsNull())
         {
         _SelectInstances(evt, selectedKeys);

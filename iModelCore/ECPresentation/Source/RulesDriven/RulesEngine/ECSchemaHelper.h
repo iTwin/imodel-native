@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/ECSchemaHelper.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once 
@@ -117,7 +117,7 @@ struct ECSchemaHelper : NonCopyableClass
         };
 
 private:
-    ECDbCR m_db;
+    IConnectionCR m_connection;
     RelatedPathsCache* m_relatedPathsCache;
     bool m_ownsRelatedPathsCache;
     ECSqlStatementCache const* m_statementCache;
@@ -137,9 +137,9 @@ private:
         int relationshipDirection, int depth, ECEntityClassCP targetClass, bool include) const;
                 
 public:
-    ECPRESENTATION_EXPORT ECSchemaHelper(ECDbCR db, RelatedPathsCache*, ECSqlStatementCache const*);
+    ECPRESENTATION_EXPORT ECSchemaHelper(IConnectionCR, RelatedPathsCache*, ECSqlStatementCache const*);
     ECPRESENTATION_EXPORT ~ECSchemaHelper();
-    ECDbCR GetDb() const {return m_db;}
+    IConnectionCR GetConnection() const {return m_connection;}
 
     ECPRESENTATION_EXPORT ECSchemaCP GetSchema(Utf8CP schemaName) const;
     ECPRESENTATION_EXPORT ECClassCP GetECClass(Utf8CP schemaName, Utf8CP className, bool isFullSchemaName = false) const;
@@ -216,7 +216,11 @@ struct ECInstancesHelper : NonCopyableClass
 private:
     ECInstancesHelper() {}
 public:
-    static IECInstancePtr LoadInstance(ECDbCR db, ECInstanceKeyCR key);
+    static IECInstancePtr LoadInstance(IConnectionCR, ECInstanceKeyCR);
+    static ECValue GetValue(IConnectionCR, ECInstanceKeyCR, Utf8CP propertyName);
+    static ECValue GetValue(IConnectionCR, ECClassCR, ECInstanceId, ECPropertyCR);
+    static void SetValue(IConnectionCR, ECInstanceKeyCR, Utf8CP propertyName, ECValueCR);
+    static void SetValue(IConnectionCR, ECClassCR, ECInstanceId, ECPropertyCR, ECValueCR);
 };
 
 /*=================================================================================**//**
