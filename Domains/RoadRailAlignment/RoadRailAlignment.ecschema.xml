@@ -9,10 +9,9 @@
     <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="SQ.M(DefaultReal)" presentationUnits="SQ.M(real2u);SQ.FT(real2u)" relativeError="0.0001"/>
     <KindOfQuantity typeName="ANGLE" displayLabel="Angle" persistenceUnit="RAD(DefaultReal)" presentationUnits="ARC_DEG(real2u);ARC_DEG(dms)" relativeError="0.0001"/>
     <KindOfQuantity typeName="BEARING" displayLabel="Bearing" persistenceUnit="RAD(DefaultReal)" presentationUnits="ARC_DEG(dms)" relativeError="0.0001"/>
-    <KindOfQuantity typeName="SLOPE" displayLabel="Slope" persistenceUnit="M/M" relativeError="1e-2" />
+    <KindOfQuantity typeName="SLOPE" displayLabel="Slope" persistenceUnit="M/M" relativeError="0.0001" />
 
-
-  <ECEntityClass typeName="AlignmentCategoryModel">
+    <ECEntityClass typeName="AlignmentCategoryModel">
         <BaseClass>bis:DefinitionModel</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
