@@ -105,6 +105,7 @@ struct UrlProvider
             WSCLIENT_EXPORT static const UrlDescriptor ConnectTermsOfServiceUrl;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectProjectUrl;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgGlobal;
+            WSCLIENT_EXPORT static const UrlDescriptor ConnectedContext;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgPersonalPublishing;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgProjectContent;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgProjectShare;
@@ -127,6 +128,7 @@ struct UrlProvider
             WSCLIENT_EXPORT static const UrlDescriptor ImsActiveSTSHelperService;
             WSCLIENT_EXPORT static const UrlDescriptor ImsPassiveAuthUrl;
             WSCLIENT_EXPORT static const UrlDescriptor iModelBridgeConfiguration;
+            WSCLIENT_EXPORT static const UrlDescriptor RecommendationServiceUrl;
             };
     };
 

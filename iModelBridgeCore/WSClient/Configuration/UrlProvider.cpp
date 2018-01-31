@@ -92,6 +92,14 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgGlobal(
     &s_urlRegistry
     );
 
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectedContext(
+    "CONNECTEDContextService.URL",
+    "https://dev-wsg20-eus.cloudapp.net",
+    "https://qa-connect-wsg20.bentley.com",
+    "https://connect-wsg20.bentley.com",
+    &s_urlRegistry
+    );
+
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgPersonalPublishing(
     "Mobile.ConnectWsgPersonalPublishing",
     "https://dev-wsg20-eus.cloudapp.net",
@@ -265,6 +273,14 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::iModelBridgeConfiguration(
     "https://dev-connect-iModelBridgeConfiguration.bentley.com",
     "https://qa-connect-iModelBridgeConfiguration.bentley.com",
     "https://connect-iModelBridgeConfiguration.bentley.com",
+    &s_urlRegistry
+    );
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::RecommendationServiceUrl(
+    "RecommendationService.URL",
+    "https://dev-recommendation-eus.cloudapp.net",
+    "https://qa-connect-recommendation.bentley.com",
+    "https://connect-recommendation.bentley.com",
     &s_urlRegistry
     );
 

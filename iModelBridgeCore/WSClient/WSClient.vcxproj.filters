@@ -1235,6 +1235,9 @@
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\FileAccessKey.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Cache\SyncNotifier.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="WSClient.PartFile.xml" />
