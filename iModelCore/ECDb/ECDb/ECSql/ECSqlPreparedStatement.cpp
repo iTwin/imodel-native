@@ -187,11 +187,23 @@ DbResult SingleECSqlPreparedStatement::DoStep()
         return BE_SQLITE_ERROR;
 
     const DbResult nativeSqlStatus = m_sqliteStatement.Step();
-    if (BE_SQLITE_ROW != nativeSqlStatus && BE_SQLITE_DONE != nativeSqlStatus)
+    switch (nativeSqlStatus)
         {
-        Utf8String msg;
-        msg.Sprintf("Step failed for ECSQL '%s': SQLite Step failed [Native SQL: '%s'] with. Error:", GetECSql(), GetNativeSql());
-        ECDbLogger::LogSqliteError(m_ecdb, nativeSqlStatus, msg.c_str());
+            case BE_SQLITE_ROW:
+            case BE_SQLITE_DONE:
+                break;
+
+            case BE_SQLITE_INTERRUPT:
+                LOG.infov("Stepping ECSqlStatement was interrupted. [ECSQL: %s, Native SQL: %s]", GetECSql(), GetNativeSql());
+                break;
+
+            default:
+            {
+            Utf8String msg;
+            msg.Sprintf("Step failed for ECSQL '%s': SQLite Step failed [Native SQL: '%s'] with. Error:", GetECSql(), GetNativeSql());
+            ECDbLogger::LogSqliteError(m_ecdb, nativeSqlStatus, msg.c_str());
+            break;
+            }
         }
 
     return nativeSqlStatus;

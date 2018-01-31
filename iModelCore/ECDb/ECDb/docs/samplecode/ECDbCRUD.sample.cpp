@@ -898,10 +898,10 @@ BentleyStatus ECDb_ECSqlSelectMultiThreaded()
     Db dataSourceECDb;
     dataSourceECDb.OpenBeSQLiteDb(filePath, ECDb::OpenParams(Db::OpenMode::Readonly));
 
-    // in Thread 1...
+    // in Thread 1 or 2...
     // Prepare statement
     ECSqlStatement statement;
-    ECSqlStatus stat = statement.Prepare(ecdb.Schemas(), dataSourceECDb, "SELECT FirstName, LastName, Birthday FROM stco.Employee WHERE LastName LIKE 'S%' ORDER BY LastName, FirstName");
+    ECSqlStatus stat = statement.Prepare(ecdb.Schemas(), dataSourceECDb, "SELECT FirstName, LastName FROM stco.Employee WHERE LastName LIKE 'S%' ORDER BY LastName, FirstName");
     if (!stat.IsSuccess())
         {
         // do error handling here...
@@ -912,12 +912,7 @@ BentleyStatus ECDb_ECSqlSelectMultiThreaded()
     // Execute statement and step over each row of the result set
     while (BE_SQLITE_ROW == statement.Step())
         {
-        // Property indices in result set are 0-based -> 0 refers to first property in result set
-        Utf8CP firstName = statement.GetValueText(0);
-        Utf8CP lastName = statement.GetValueText(1);
-        DateTime birthday = statement.GetValueDateTime(2);
         // do something with the retrieved data of this row
-        printf("%s, %s - Born %s\n", lastName, firstName, birthday.ToString().c_str());
         }
 
     //__PUBLISH_EXTRACT_END__

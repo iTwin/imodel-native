@@ -8554,6 +8554,40 @@ TEST_F(SchemaUpgradeTestFixture, DeleteMaxSharedColumnsBeforeOverflow)
     AssertSchemaUpdate(editedSchemaXml, filePath, {false, false}, "Deleting MaxSharedColumnsBeforeOverflow");
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                 01/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, AddEnumAndEnumProperty)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("AddEnumAndEnumProperty.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECEntityClass typeName="Foo" >
+            <ECProperty propertyName="Name" typeName="string"/>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECEnumeration typeName="MyEnum" backingTypeName="int" isStrict="False">
+           <ECEnumerator value="0" displayLabel="On" />
+           <ECEnumerator value="1" displayLabel="Off" />
+         </ECEnumeration>
+        <ECEntityClass typeName="Foo" >
+            <ECProperty propertyName="Name" typeName="string"/>
+            <ECProperty propertyName="Status" typeName="MyEnum"/>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    ECClassCP fooClass = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
+    ASSERT_TRUE(fooClass != nullptr);
+    ECPropertyCP enumProp = fooClass->GetPropertyP("Status");
+    ASSERT_TRUE(enumProp != nullptr && enumProp->GetIsPrimitive());
+    ECEnumerationCP actualEnum = enumProp->GetAsPrimitiveProperty()->GetEnumeration();
+    ASSERT_TRUE(actualEnum != nullptr);
+    ASSERT_STREQ("MyEnum", actualEnum->GetName().c_str());
+    ASSERT_EQ(actualEnum, m_ecdb.Schemas().GetEnumeration("TestSchema", "MyEnum"));
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     04/16
