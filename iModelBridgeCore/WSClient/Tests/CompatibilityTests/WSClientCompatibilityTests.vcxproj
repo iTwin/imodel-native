@@ -12,6 +12,7 @@
     <ClCompile Include="Disk\DiskRepositoryClient.cpp" />
     <ClCompile Include="Disk\DiskRepositoryClientTests.cpp" />
     <ClCompile Include="Logging\GenericLogProvider.cpp" />
+    <ClCompile Include="Parser\TestDataTests.cpp" />
     <ClCompile Include="RepositoryCompatibilityTests.cpp" />
     <ClCompile Include="Parser\TestData.cpp" />
     <ClCompile Include="TestMain.cpp" />

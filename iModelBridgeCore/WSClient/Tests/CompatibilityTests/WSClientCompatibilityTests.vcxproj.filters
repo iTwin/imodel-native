@@ -11,6 +11,7 @@
     <ClCompile Include="TestsHelper.cpp" />
     <ClCompile Include="TestsHost.cpp" />
     <ClCompile Include="Logging\GenericLogProvider.cpp" />
+    <ClCompile Include="Parser\TestDataTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Disk\DiskRepositoryClient.h" />

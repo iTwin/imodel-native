@@ -309,6 +309,7 @@ bool ArgumentParser::ParseAuth(Utf8CP auth, Utf8CP value, TestRepository& repo, 
         {
         repo.environment = ParseEnv(tokens[1], err);
         repo.token = ParseTokenPath(value, err);
+        repo.tokenPath = BeFileName(value);
         return repo.environment && repo.token;
         }
 
