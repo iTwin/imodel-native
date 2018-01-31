@@ -53,7 +53,7 @@
           <!--<Directory SourceName="SdkSources/V8_InternalSDK/Dlls" ProductDirectoryName="ScalableMeshV8SDK" Required="true" />-->
           <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)ScalableMesh$(libext)</Libs>    
           <Assemblies>delivery/$(shlibprefix)ScalableMesh$(ApiNumber)$(shlibext)</Assemblies>             
-          <Files>delivery/ScalableMeshCacert.pem</Files>
+          <Files ProductDirectoryName="ApplicationRoot" Required="true">delivery/ScalableMeshCacert.pem</Files>
           <PublicAPI Domain="ScalableMesh" />
         </Bindings>
     </Part>

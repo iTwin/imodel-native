@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/ReprojectionModel.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -404,7 +404,7 @@ void    ReprojectionModel::Reverse()
 
     // Invoke reversing of ancestor
     // This call will in turn invoque Prepare()
-    HGF2DTransfoModel::Reverse();
+    HGF2DTransfoModel::_Reverse();
     }
 
 

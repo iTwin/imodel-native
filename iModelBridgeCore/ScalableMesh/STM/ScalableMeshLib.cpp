@@ -160,11 +160,8 @@ CURLcode RequestHttp(Utf8StringCR url, Utf8StringCP writeString, FILE* fp, Utf8S
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postFields.c_str());
         curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, postFields.length());
         }
-    assert(!"CurlConstructor not available on BIM02 - Refactor might be required");
-/*
-    CurlConstructor curlConstructor;
-    headers = curl_slist_append(headers, curlConstructor.GetToken().c_str());
-*/
+  
+    headers = curl_slist_append(headers, ConnectTokenManager::GetInstance().GetToken().c_str());
 
     curl_easy_setopt(curl, CURLOPT_URL, url);
     Utf8String pemFileName;
@@ -222,10 +219,8 @@ CURLcode PerformCurl(Utf8StringCR url, Utf8StringCP writeString, FILE* fp, Utf8S
 WebServiceKey GetBingKey()
     {    
 
-    assert(!"SM_BIM02_REFACTOR");
-#if 0
     Utf8String readBuffer;    
-#ifdef VANCOUVER_API
+
     WString buddiUrl;
     UINT32 bufLen;
     CallStatus status = APIERR_SUCCESS;
@@ -238,33 +233,9 @@ WebServiceKey GetBingKey()
     status = CCApi_GetBuddiUrl(api, L"ContextServices", buffer, &bufLen);
     buddiUrl.assign(buffer);
     CCApi_FreeApi(api);
-#else
-    wstring buddiUrl;
-    Bentley::Connect::Wrapper::Native::ConnectClientWrapper connectClient;
-    std::wstring buddiUrl;
-    connectClient.GetBuddiUrl(L"ContextServices", buddiUrl);    
-#endif
 
     Utf8String contextServiceURL;
     contextServiceURL.assign(Utf8String(buddiUrl.c_str()).c_str());
-
-#ifndef REMOVE_WHEN_KEYSERVICE_IN_PRODUCTION
-
-#ifdef VANCOUVER_API    
-    if (contextServiceURL.StartsWith("https://connect-contextservices.bentley.com/")) //Production server do not know this API yet, return the local key if Connected for the moment.
-        {
-        bool isConnected = true;//DgnClientApp::AbstractUiState().GetValue("BentleyConnect_SignedIn", false);
-        return isConnected ? WebServiceKey(BING_AUTHENTICATION_KEY) : WebServiceKey();
-        }
-#else
-    if (contextServiceURL.StartsWithI("https://connect-contextservices.bentley.com/")) //Production server do not know this API yet, return the local key if Connected for the moment.
-        {
-        bool isConnected = true;//DgnClientApp::AbstractUiState().GetValue("BentleyConnect_SignedIn", false);
-        return isConnected ? WebServiceKey(BING_AUTHENTICATION_KEY) : WebServiceKey();
-        }
-#endif
-
-#endif // !REMOVE_WHEN_KEYSERVICE_IN_PRODUCTION
 
     uint64_t productId(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProductId());
     Utf8String productIdStr;
@@ -309,7 +280,7 @@ WebServiceKey GetBingKey()
         DateTime::FromString(expiration, packageInfos["instances"][0]["properties"]["expirationDate"].asCString());
         return WebServiceKey(packageInfos["instances"][0]["properties"]["key"].asString(), expiration);
         }
-#endif    
+
     return WebServiceKey();
     }
 
