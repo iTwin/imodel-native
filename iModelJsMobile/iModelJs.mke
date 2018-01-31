@@ -15,6 +15,10 @@ baseDir = $(_MakeFilePath)
 publicApiSourceDr = $(baseDir)PublicAPI/iModelJs/
 appName = iModelJs
 
+%if $(TARGET_PLATFORM) == "MacOS"
+cIncs + -framework JavaScriptCore
+%endif
+
 o = $(OutputRootDir)build/$(appName)/
 
 %if !defined (BMAKE_DELETE_ALL_TARGETS)
@@ -86,7 +90,7 @@ imodelJsObjs + $(o)node_api$(oext) $(o)node_internals$(oext)
 
 %elif $(TARGET_PLATFORM) == "iOS" || $(TARGET_PLATFORM) == "MacOS"
 
-nodeApiJscDir = $(baseDir)v8/
+nodeApiJscDir = $(baseDir)jsc/
 
 cDefs + -DUSING_V8_SHARED=1
 

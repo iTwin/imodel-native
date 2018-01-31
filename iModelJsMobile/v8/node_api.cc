@@ -16,7 +16,8 @@
 #include <cmath>
 #include <vector>
 #include "node_api.h"
-#include "node_internals.h"
+#include "util-inl.h"
+#include "../node_internals.h"
 #include <Bentley/BeAssert.h>
 #undef min
 
