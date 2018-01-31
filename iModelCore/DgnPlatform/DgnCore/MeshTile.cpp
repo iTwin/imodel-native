@@ -882,6 +882,10 @@ IFacetOptionsPtr TileGenerator::CreateTileFacetOptions(double chordTolerance)
     opts->SetNormalsRequired(true);
     opts->SetBsplineSurfaceEdgeHiding(0);
 
+    // Avoid Parasolid concurrency bottlenecks.
+    opts->SetIgnoreHiddenBRepEntities(true);
+    opts->SetOmitBRepEdgeChainIds(true);
+
     return opts;
     }
 
@@ -1013,12 +1017,25 @@ private:
 
     T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override;
     bool _DoDecimate () const override { return m_geometry->GetAsPolyfaceHeader().IsValid(); }
-    size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_geometry); }
     T_TileStrokes _GetStrokes (IFacetOptionsR facetOptions) override;
 
     static PolyfaceHeaderPtr FixPolyface(PolyfaceHeaderR, IFacetOptionsR);
     static void AddNormals(PolyfaceHeaderR, IFacetOptionsR);
     static void AddParams(PolyfaceHeaderR, IFacetOptionsR);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t _GetFacetCount(FacetCounter& counter) const override 
+    { 
+    // Limit polyfaces to count to 10000 facets - This may make more of them appear in leaves
+    // but else they can cause overly deep trees (as their count is not dependent on tolerance).
+    // Scene_3d from TFS# 805023 - XFrog trees.
+    constexpr       size_t      s_maxPolyfaceCount = 10000;
+    size_t          facetCount =  counter.GetFacetCount(*m_geometry);
+
+    return (m_geometry->GetAsPolyfaceHeader().IsValid()) ? std::min(s_maxPolyfaceCount, facetCount) : facetCount;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
@@ -1280,7 +1297,7 @@ public:
 
     T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override { return m_part->GetPolyfaces(facetOptions, *this); }
     T_TileStrokes _GetStrokes (IFacetOptionsR facetOptions) override { return m_part->GetStrokes(facetOptions, *this); }
-    size_t _GetFacetCount(FacetCounter& counter) const override { return m_part->GetFacetCount (counter) / m_part->GetInstanceCount(); }
+    size_t _GetFacetCount(FacetCounter& counter) const override { return m_part->GetInstanceCount() == 1 ? m_part->GetFacetCount (counter) : 0; }  // Only count a single definition rather than true instanced count. (TFS# 805023).
     TileGeomPartCPtr _GetPart() const override { return m_part; }
 
 };  // GeomPartInstanceTileGeometry 
@@ -1682,7 +1699,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTilesFromModels(ITileCollecto
     for (auto const& modelId : modelIds)
         {
         auto model = GetDgnDb().Models().GetModel(modelId);
-        if (model.IsValid())
+        if (model.IsValid()) // && 0xca == modelId.GetValue())
             modelFutures.push_back(GenerateTiles(collector, leafTolerance, surfacesOnly, maxPointsPerTile, *model));
         }
 
@@ -1746,7 +1763,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
     if (nullptr != getTileTree)
         {
         // ###TODO: Change point clouds to go through this path instead of _GenerateMeshTiles below.
-        if (getTileTree->_AllowPublishing())
+        if (getTileTree->_AllowPublishing())                                                                                                                                                                                                      
             return GenerateTilesFromTileTree(&collector, leafTolerance, surfacesOnly, geometricModel);
         else if (nullptr != getPublishedURL)
             return collector._AcceptPublishedTilesetInfo(model, *getPublishedURL);
@@ -2188,7 +2205,6 @@ private:
     TileGeometryList            m_curLeafGeometries;
     double                      m_minRangeDiagonal;
     double                      m_minTextBoxSize;
-    double                      m_minLineStyleWidth;
     bool*                       m_leafThresholdExceeded;
     size_t                      m_leafCountThreshold;
     size_t                      m_leafCount;
@@ -2244,13 +2260,12 @@ public:
           m_leafThresholdExceeded(leafThresholdExceeded), m_leafCountThreshold(leafCountThreshold), m_leafCount(0), m_is2d(is2d), m_surfacesOnly (surfacesOnly)
         {
         static const double s_minTextBoxToleranceRatio = 1.0;           // Below this ratio to tolerance text is rendered as box.
-        static const double s_minLineStyleWidthToleranceRatio = 1.0;     // Below this ratio to tolerance line styles are rendered as continuous.
+        //static const double s_minLineStyleWidthToleranceRatio = 1.0;     // Below this ratio to tolerance line styles are rendered as continuous.
 
         double targetTolerance = tolerance * transformFromDgn.ColumnXMagnitude();
         m_targetFacetOptions->SetChordTolerance(targetTolerance);
         m_minRangeDiagonal = s_minRangeBoxSize * targetTolerance;
         m_minTextBoxSize  = s_minTextBoxToleranceRatio * targetTolerance;
-        m_minLineStyleWidth = s_minLineStyleWidthToleranceRatio * targetTolerance;
 
         m_transformFromDgn.Multiply (m_tileRange, m_range);
         }
@@ -2264,6 +2279,7 @@ public:
 
     DgnDbR GetDgnDb() const { return m_dgndb; }
     TileGenerationCacheCR GetCache() const { return m_cache; }
+    DRange3dCR GetRange() const { return m_range; }
 
     bool BelowMinRange(DRange3dCR range) const
         {
@@ -2309,12 +2325,8 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_DoLineStyleStroke(Render::LineStyleSymbCR lsSymb, IFacetOptionsPtr& facetOptions, SimplifyGraphic& gf) const
     {
-#if defined(WIP_STROKE_LINE_STYLES)
     facetOptions = GetLineStyleFacetOptions(lsSymb);
     return facetOptions.IsValid();
-#else
-    return false;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2875,6 +2887,16 @@ public:
         m_is3dView = T::Is3d(); // force Brien to call _AddArc2d() if we're in a 2d model...
         SetViewFlags(GetDefaultViewFlags());
         }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual bool _AnyPointVisible(DPoint3dCP worldPoints, int nPts, double tolerance) override
+    {
+    DRange3d        pointRange = DRange3d::From(worldPoints, nPts);
+
+    return pointRange.IntersectsWith(m_processor.GetRange());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016

@@ -2019,11 +2019,9 @@ void MeshGenerator::AddMeshes(GeomPartR part, bvector<GeometryCP> const& instanc
     if (rangePixels < s_minRangeBoxSize)
         return;
 
-    auto facetOptions = first->CreateFacetOptions(m_tolerance, m_options.m_normalMode);
-
     // Get the polyfaces and strokes with no transform applied
-    PolyfaceList polyfaces = part.GetPolyfaces(*facetOptions, nullptr, *this);
-    StrokesList strokes = part.GetStrokes(*facetOptions, nullptr, *this);
+    PolyfaceList polyfaces = part.GetPolyfaces(m_tolerance, m_options.m_normalMode, nullptr, *this);
+    StrokesList strokes = part.GetStrokes(m_tolerance, nullptr, *this);
 
     // For each instance, transform the polyfaces and add them to the mesh
     Transform invTransform = Transform::FromIdentity();
@@ -2081,7 +2079,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
     if (nullptr == polyface || 0 == polyface->GetPointIndexCount())
         return;
 
-    bool doDecimate = !m_tile.IsLeaf() && geom.DoDecimate() && polyface->GetPointCount() > GetDecimatePolyfacePointCount();
+    bool doDecimate = !m_tile.IsLeaf() && geom.DoDecimate() && 0 == polyface->GetPointCount() > GetDecimatePolyfacePointCount() && /* Decimator doesn't handle params... */ 0 == polyface->GetParamCount();      
     bool doVertexCluster = !doDecimate && geom.DoVertexCluster() && rangePixels < GetVertexClusterThresholdPixels();
 
     if (doDecimate)
@@ -2250,7 +2248,7 @@ void MeshGenerator::ClipPoints(StrokesR strokes) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshGenerator::AddStrokes(GeometryR geom, double rangePixels, bool isContained)
     {
-    auto strokes = geom.GetStrokes(*geom.CreateFacetOptions(m_tolerance, NormalMode::Never), *this);
+    auto strokes = geom.GetStrokes(m_tolerance, *this);
     AddStrokes(strokes, geom, rangePixels, isContained);
     }
 

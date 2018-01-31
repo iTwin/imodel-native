@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/HitDetail.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -209,6 +209,7 @@ public:
     bool IsSheetHit() const {return nullptr!=m_sheetViewport;}
     Sheet::Attachment::ViewportP GetSheetAttachViewport() const {return m_sheetViewport;}
     void Draw(DecorateContextR context) const {_Draw(context);}
+    DGNPLATFORM_EXPORT void FlashGraphic(Render::GraphicR, DecorateContextR) const; //!< @private
     DGNPLATFORM_EXPORT Utf8String GetInfoString(Utf8CP delimiter) const;
     DGNVIEW_EXPORT bool IsInSelectionSet() const;
     DGNPLATFORM_EXPORT DgnElementCPtr GetElement() const;

@@ -263,7 +263,7 @@ StatusInt IFacetTopologyTable::ConvertToPolyface (PolyfaceHeaderR polyface, IFac
                     {
                     CurveTopologyId      curveTopologyId;
 
-                     if (!ftt._GetEdgeCurveId (curveTopologyId, found->second, true))
+                     if (facetOptions.GetOmitBRepEdgeChainIds() || !ftt._GetEdgeCurveId (curveTopologyId, found->second, true))
                         curveTopologyId = getUnidentifiedEdgeId(found->second, edgeToIdMap);
                 
                     PolyfaceEdge             polyfaceEdge(1 + xyzIndex, 1 + ftt_vertexToPoint[ftt_finToVertex[nextFinIndex]]);
@@ -1349,7 +1349,15 @@ void            FacetEntity (IBRepEntityCR in, IFacetOptionsR facetOptions)
 
     IFaceMaterialAttachmentsCP attachments = in.GetFaceMaterialAttachments();
 
-    CompleteTable (entityTag, attachments, PSolidAttrib::HasHiddenEdge (entityTag), PSolidAttrib::HasHiddenFace (entityTag));
+    bool            hasHiddenEdge = false, hasHiddenFace = false;
+
+    if (!facetOptions.GetIgnoreHiddenBRepEntities())
+        {
+        hasHiddenEdge = PSolidAttrib::HasHiddenEdge (entityTag);
+        hasHiddenFace = PSolidAttrib::HasHiddenFace (entityTag);
+        }
+
+    CompleteTable (entityTag, attachments, hasHiddenEdge, hasHiddenFace);
     }
 
 /*---------------------------------------------------------------------------------**//**
