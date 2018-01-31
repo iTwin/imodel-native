@@ -2,7 +2,7 @@
 |
 |     $Source: BuildingDomainUtilities.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BuildingDomainInternal.h"
@@ -729,7 +729,7 @@ namespace BuildingDomain
 			return nullptr;
 
 		Utf8String localCategoryName = buildingClass->GetDisplayLabel();
-
+        localCategoryName.Trim();
 		if (nullptr != categoryName)
 			localCategoryName = categoryName;
 

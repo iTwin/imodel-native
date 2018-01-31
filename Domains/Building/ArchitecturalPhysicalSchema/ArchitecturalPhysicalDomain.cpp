@@ -2,7 +2,7 @@
 |
 |     $Source: ArchitecturalPhysicalSchema/ArchitecturalPhysicalDomain.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BuildingDomainInternal.h"
@@ -90,7 +90,9 @@ namespace ArchitecturalPhysical
 		appearance.SetColor(color);
 
 		Dgn::SpatialCategory category(db.GetDictionaryModel(),  codeValue, Dgn::DgnCategory::Rank::Domain);
-		category.Insert(appearance);
+        Dgn::DgnDbStatus status;
+		category.Insert(appearance, &status);
+        BeAssert(Dgn::DgnDbStatus::Success == status);
 		return category.GetCategoryId();
 		}
 
