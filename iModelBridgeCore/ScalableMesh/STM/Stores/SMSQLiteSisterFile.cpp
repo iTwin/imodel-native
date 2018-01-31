@@ -32,8 +32,6 @@ BeFileName GetTempPathFromProjectPath(const BeFileName& path)
 
 bool SMSQLiteSisterFile::GetSisterSQLiteFileName(WString & sqlFileName, SMStoreDataType dataType, bool useTempPath) const
     {
-    useTempPath = false;
-
     switch (dataType)
         {
         case SMStoreDataType::LinearFeature:
