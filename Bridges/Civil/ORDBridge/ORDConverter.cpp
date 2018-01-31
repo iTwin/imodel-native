@@ -829,7 +829,7 @@ void updateProjectExtents(SpatialModelCR spatialModel, ORDConverter::Params& par
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConvertORDElementXDomain::ConvertORDElementXDomain(ORDConverter& converter): m_converter(converter)
     {
-    m_spatialLocationClassId = converter.GetDgnDb().Schemas().GetClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_SpatialLocation);
+    m_graphic3dClassId = converter.GetDgnDb().Schemas().GetClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_Graphic3d);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -882,12 +882,11 @@ ConvertORDElementXDomain::Result ConvertORDElementXDomain::_PreConvertElement(Dg
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConvertORDElementXDomain::_DetermineElementParams(DgnClassId& classId, DgnCode& code, DgnCategoryId& categoryId, DgnV8EhCR v8el, DgnDbSync::DgnV8::Converter& converter, ECObjectsV8::IECInstance const* primaryV8Instance, DgnDbSync::DgnV8::ResolvedModelMapping const& v8mm)
     {
-    if (!m_spatialLocationClassId.IsValid() || !v8el.GetDgnModelP()->Is3D())
+    if (!v8el.GetDgnModelP()->Is3D())
         return;
 
-    auto alignmentIter = m_alignmentV8RefSet.find(v8el.GetElementRef());
-    if (alignmentIter != m_alignmentV8RefSet.end())
-        classId = m_spatialLocationClassId;
+    if (!classId.IsValid())
+        classId = m_graphic3dClassId;
     }
 
 /*---------------------------------------------------------------------------------**//**
