@@ -2,7 +2,7 @@
 |
 |     $Source: DgnHandlers/HitDetail.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -544,6 +544,25 @@ HitDetail::~HitDetail() {}
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HitDetail::_Draw(DecorateContextR context) const {context.DrawHit(*this);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void HitDetail::FlashGraphic(Render::GraphicR graphic, DecorateContextR context) const
+    {
+    ColorDef color = context.GetViewport()->GetHiliteColor();
+    Render::OvrGraphicParams ovrParams;
+
+    ovrParams.SetLineColor(color);
+    ovrParams.SetFillColor(color);
+    ovrParams.SetLineTransparency(0x40);
+    ovrParams.SetFillTransparency(0x40);
+
+    // NOTE: Pushing graphic towards eye was problematic depending on zoom (could end up outside project extents).
+    //       Since we're mostly trying to optimize for "edge" hits here (flashing element is handled by Viewport::SetFlashed) we're
+    //       always going to use a world overlay. Solids look ok drawn as overlay now, that wasn't the case with QVis...
+    context.AddWorldOverlay(graphic, &ovrParams);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/2015
