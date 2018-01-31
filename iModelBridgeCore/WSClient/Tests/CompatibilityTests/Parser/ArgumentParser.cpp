@@ -397,21 +397,15 @@ std::ostream* err
     bvector<Utf8String> tokens;
     BeStringUtilities::Split((Utf8CP)content.data(), "\n", tokens);
 
-    for (auto& token : tokens)
-        token.Trim();
-
-    std::remove_if(tokens.begin(), tokens.end(), [] (Utf8StringCR line)
-        {
-        if (line.empty())
-            return true;
-        if (line[0] == '#')
-            return true;
-        return false;
-        });
-
     bvector<Utf8String> args;
     for (auto& token : tokens)
         {
+        token.Trim();
+        if (token.empty())
+            continue;
+        if (token[0] == '#')
+            continue;
+
         auto pos = token.find_first_of(' ');
         if (Utf8String::npos == pos)
             pos = token.length();
