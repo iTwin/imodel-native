@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
+#include <BeSQLite/L10N.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -213,14 +214,25 @@ int main(int argc, char** argv)
     logFilePath.BeGetFullPathName();
     BentleyApi::NativeLogging::LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, logFilePath);
     BentleyApi::NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
+    workingDirectory.AppendToPath(L"Assets");
 
-    BeFileName standardSchemaPath(workingDirectory);
-    standardSchemaPath.AppendToPath(L"Assets");
-    ECSchemaReadContext::Initialize(standardSchemaPath);
+    BeFileName sqlangFile(workingDirectory.c_str());
+    sqlangFile.AppendToPath(L"sqlang");
+    BeFileName tempDirectory(sqlangFile.c_str());
+    sqlangFile.AppendToPath(L"Tools_en.sqlang.db3");
+
+    BeSQLite::BeSQLiteLib::Initialize(tempDirectory, BeSQLite::BeSQLiteLib::LogErrors::Yes);
+    BeSQLite::L10N::Initialize(BeSQLite::L10N::SqlangFiles(sqlangFile));
+
+    ECSchemaReadContext::Initialize(workingDirectory);
     s_logger->infov(L"Initializing ECSchemaReadContext to '%ls'", workingDirectory);
 
     s_logger->infov(L"Loading schema '%ls' for  validation", options.InputFile.GetName());
-    return ValidateSchema(options);
+    int validationResult = ValidateSchema(options);
+
+    BeSQLite::L10N::Shutdown();
+
+    return validationResult;
     }
 
 
