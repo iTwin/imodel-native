@@ -1,0 +1,11 @@
+include "schemas/PlantCustomAttributes.ecschema.xml"
+rename  "schemas/PlantCustomAttributes.ecschema.xml" "Domains/Plant/PlantCustomAttributes.ecschema.xml"
+
+include "schemas/ProcessFunctional.ecschema.xml"
+rename  "schemas/ProcessFunctional.ecschema.xml" "Domains/Plant/ProcessFunctional.ecschema.xml"
+
+include "schemas/ProcessPhysical.ecschema.xml"
+rename  "schemas/ProcessPhysical.ecschema.xml" "Domains/Plant/ProcessPhysical.ecschema.xml"
+
+include "schemas/ProcessPidGraphical.ecschema.xml"
+rename  "schemas/ProcessPidGraphical.ecschema.xml" "Domains/Plant/ProcessPidGraphical.ecschema.xml"

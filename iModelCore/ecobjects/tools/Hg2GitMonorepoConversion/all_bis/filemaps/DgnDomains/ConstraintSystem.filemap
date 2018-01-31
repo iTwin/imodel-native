@@ -1,0 +1,2 @@
+include "ConstraintModel/ConstraintModel.ecschema.xml"
+rename  "ConstraintModel/ConstraintModel.ecschema.xml" "Domains/ConstraintModel/ConstraintModel.ecschema.xml"

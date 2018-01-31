@@ -1,0 +1,26 @@
+include "MechanicalFunctional/EC3_Schemas/MechanicalFunctional.ecschema.xml"
+rename  "MechanicalFunctional/EC3_Schemas/MechanicalFunctional.ecschema.xml" "Domains/Building/MechanicalFunctional/EC3_Schemas/MechanicalFunctional.ecschema.xml"
+
+include "MechanicalFunctional/EC2_Schemas/MechanicalFunctional.01.00.ecschema.xml"
+rename  "MechanicalFunctional/EC2_Schemas/MechanicalFunctional.01.00.ecschema.xml" "Domains/Building/MechanicalFunctional/EC2_Schemas/MechanicalFunctional.01.00.ecschema.xml"
+
+include "BuildingPhysicalSchema/EC3_Schemas/BuildingPhysical.ecschema.xml"
+rename  "BuildingPhysicalSchema/EC3_Schemas/BuildingPhysical.ecschema.xml" "Domains/Building/BuildingPhysicalSchema/EC3_Schemas/BuildingPhysical.ecschema.xml"
+
+include "BuildingCommonSchema/EC2_Schemas/BuildingCommon.01.00.ecschema.xml"
+rename  "BuildingCommonSchema/EC2_Schemas/BuildingCommon.01.00.ecschema.xml" "Domains/Building/BuildingCommonSchema/EC2_Schemas/BuildingCommon.01.00.ecschema.xml"
+
+include "BuildingCommonSchema/EC3_Schemas/BuildingCommon.ecschema.xml"
+rename  "BuildingCommonSchema/EC3_Schemas/BuildingCommon.ecschema.xml" "Domains/Building/BuildingCommonSchema/EC3_Schemas/BuildingCommon.ecschema.xml"
+
+include "ArchitecturalPhysicalSchema/EC3_Schemas/ArchitecturalPhysical.ecschema.xml"
+rename  "ArchitecturalPhysicalSchema/EC3_Schemas/ArchitecturalPhysical.ecschema.xml" "Domains/Building/ArchitecturalPhysicalSchema/EC3_Schemas/ArchitecturalPhysical.ecschema.xml"
+
+include "ArchitecturalPhysicalSchema/EC2_Schemas/ArchitecturalPhysical.01.00.ecschema.xml"
+rename  "ArchitecturalPhysicalSchema/EC2_Schemas/ArchitecturalPhysical.01.00.ecschema.xml" "Domains/Building/ArchitecturalPhysicalSchema/EC2_Schemas/ArchitecturalPhysical.01.00.ecschema.xml"
+
+include "BuildingPhysicalSchema/EC2_Schemas/buildingPhysical.01.00.ecschema.xml"
+rename  "BuildingPhysicalSchema/EC2_Schemas/buildingPhysical.01.00.ecschema.xml" "Domains/Building/BuildingPhysicalSchema/EC2_Schemas/buildingPhysical.01.00.ecschema.xml"
+
+include "MechanicalFunctional/EC2_Schemas/Functional.01.00.ecschema.xml"
+rename  "MechanicalFunctional/EC2_Schemas/Functional.01.00.ecschema.xml" "Domains/Building/MechanicalFunctional/EC2_Schemas/Functional.01.00.ecschema.xml"

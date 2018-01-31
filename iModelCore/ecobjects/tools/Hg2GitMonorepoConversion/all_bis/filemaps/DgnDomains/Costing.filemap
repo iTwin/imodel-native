@@ -1,0 +1,2 @@
+include "Costing.ecschema.xml"
+rename  "Costing.ecschema.xml" "Domains/Costing/Costing.ecschema.xml"
