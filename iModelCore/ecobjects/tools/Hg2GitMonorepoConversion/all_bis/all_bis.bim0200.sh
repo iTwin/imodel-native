@@ -104,17 +104,17 @@ done
 
 
 ## Setup example git repo.
-## Uncomment this for testing. Be sure to override DIR_GIT.
-rm -rf $DIR_GIT
-mkdir -p $DIR_GIT
-cecho ${HEADER1} "SETTING UP GIT REPO"
-cd $DIR_GIT
-git init
-echo "This git repo is #monolit." > README.txt
-git add .
-git commit -m "init commit"
-cecho ${HEADER2} "GIT REPO AFTER SETUP"
-tree $DIR_GIT -n
+## Uncomment this section for testing. Be sure to override DIR_GIT.
+#rm -rf $DIR_GIT
+#mkdir -p $DIR_GIT
+#cecho ${HEADER1} "SETTING UP GIT REPO"
+#cd $DIR_GIT
+#git init
+#echo "This git repo is #monolit." > README.txt
+#git add .
+#git commit -m "init commit"
+#cecho ${HEADER2} "GIT REPO AFTER SETUP"
+#tree $DIR_GIT -n
 
 ## Create new branch
 GIT_BRANCH="git_branch_$(date +%Y-%m-%d)"
