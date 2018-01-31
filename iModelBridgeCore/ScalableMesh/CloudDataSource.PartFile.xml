@@ -2,9 +2,16 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\bsicommon\build\PartFile.xsd" >
 
-    <Part Name="AzureSDK">
-        <SubPart PartName="cpprestsdk"      PartFile="${SrcRoot}bsicommon/CvsPartfiles/cpprestsdk"   Repository="Bin-cpprestsdk" />        
-        <SubPart PartName="wastorage"       PartFile="${SrcRoot}bsicommon/CvsPartfiles/wastorage"    Repository="Bin-wastorage" />
+    <Part Name="AzureSDK" BentleyBuildMakeFile="nuget.prewire.mke">
+        <NuGetPackage targetFramework="native">wastorage.v140</NuGetPackage>
+        <Bindings>
+          <VendorAPI Domain="wastorage" />
+          <VendorAPI Domain="cpprestsdk" /> 
+          <Assemblies>nuget/native/WAStorage.v140/lib/native/v140/x64/Release/wastorage.dll</Assemblies>
+          <Libs>nuget/native/WAStorage.v140/lib/native/v140/x64/Release/wastorage.lib</Libs>
+          <Assemblies>nuget/native/cpprestsdk.v140.windesktop.msvcstl.dyn.rt-dyn/lib/native/v140/windesktop/msvcstl/dyn/rt-dyn/x64/Release/*.dll</Assemblies>
+          <Libs>nuget/native/cpprestsdk.v140.windesktop.msvcstl.dyn.rt-dyn/lib/native/v140/windesktop/msvcstl/dyn/rt-dyn/x64/Release/*.lib</Libs>
+        </Bindings>
     </Part>
 
     <!--<Part Name="CloudDataSource" BMakeFile="CloudDataSource.mke" BMakeOptions="+dENABLE_COMPILER_ANALYZE=1 +dSECURITY_ONLY_COMPILER_ANALYZE=1" ApiNumber="G">-->
