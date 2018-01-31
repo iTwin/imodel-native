@@ -550,20 +550,6 @@ void HitDetail::_Draw(DecorateContextR context) const {context.DrawHit(*this);}
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HitDetail::FlashGraphic(Render::GraphicR graphic, DecorateContextR context) const
     {
-    // Use branch to push geometry towards eye and to override color from normal flash for primitive/part sub-selection...
-    double      offsetDist = context.GetPixelSizeAtPoint(&GetHitPoint());
-    DVec3d      offsetDir;
-    DPoint3d    viewPt[2];
-    Transform   offsetTrans;
-
-    viewPt[0].Init(0.5, 0.5, 0.0);
-    viewPt[1].Init(0.5, 0.5, 1.0);
-
-    context.NpcToWorld(viewPt, viewPt, 2);
-    offsetDir.DifferenceOf(viewPt[1], viewPt[0]);
-    offsetDir.ScaleToLength(4.0 * offsetDist);
-    offsetTrans.InitFrom(offsetDir);
-
     ColorDef color = context.GetViewport()->GetHiliteColor();
     Render::OvrGraphicParams ovrParams;
 
@@ -572,10 +558,10 @@ void HitDetail::FlashGraphic(Render::GraphicR graphic, DecorateContextR context)
     ovrParams.SetLineTransparency(0x40);
     ovrParams.SetFillTransparency(0x40);
 
-    GraphicBranch branch;
-
-    branch.Add(graphic);
-    context.AddWorldDecoration(*context.CreateBranch(branch, context.GetDgnDb(), offsetTrans), &ovrParams);
+    // NOTE: Pushing graphic towards eye was problematic depending on zoom (could end up outside project extents).
+    //       Since we're mostly trying to optimize for "edge" hits here (flashing element is handled by Viewport::SetFlashed) we're
+    //       always going to use a world overlay. Solids look ok drawn as overlay now, that wasn't the case with QVis...
+    context.AddWorldOverlay(graphic, &ovrParams);
     }
 
 /*---------------------------------------------------------------------------------**//**

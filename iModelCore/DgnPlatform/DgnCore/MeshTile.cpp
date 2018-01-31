@@ -1017,12 +1017,25 @@ private:
 
     T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override;
     bool _DoDecimate () const override { return m_geometry->GetAsPolyfaceHeader().IsValid(); }
-    size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_geometry); }
     T_TileStrokes _GetStrokes (IFacetOptionsR facetOptions) override;
 
     static PolyfaceHeaderPtr FixPolyface(PolyfaceHeaderR, IFacetOptionsR);
     static void AddNormals(PolyfaceHeaderR, IFacetOptionsR);
     static void AddParams(PolyfaceHeaderR, IFacetOptionsR);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t _GetFacetCount(FacetCounter& counter) const override 
+    { 
+    // Limit polyfaces to count to 10000 facets - This may make more of them appear in leaves
+    // but else they can cause overly deep trees (as their count is not dependent on tolerance).
+    // Scene_3d from TFS# 805023 - XFrog trees.
+    constexpr       size_t      s_maxPolyfaceCount = 10000;
+    size_t          facetCount =  counter.GetFacetCount(*m_geometry);
+
+    return (m_geometry->GetAsPolyfaceHeader().IsValid()) ? std::min(s_maxPolyfaceCount, facetCount) : facetCount;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
@@ -1284,7 +1297,7 @@ public:
 
     T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override { return m_part->GetPolyfaces(facetOptions, *this); }
     T_TileStrokes _GetStrokes (IFacetOptionsR facetOptions) override { return m_part->GetStrokes(facetOptions, *this); }
-    size_t _GetFacetCount(FacetCounter& counter) const override { return m_part->GetFacetCount (counter) / m_part->GetInstanceCount(); }
+    size_t _GetFacetCount(FacetCounter& counter) const override { return m_part->GetInstanceCount() == 1 ? m_part->GetFacetCount (counter) : 0; }  // Only count a single definition rather than true instanced count. (TFS# 805023).
     TileGeomPartCPtr _GetPart() const override { return m_part; }
 
 };  // GeomPartInstanceTileGeometry 
@@ -1686,7 +1699,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTilesFromModels(ITileCollecto
     for (auto const& modelId : modelIds)
         {
         auto model = GetDgnDb().Models().GetModel(modelId);
-        if (model.IsValid())
+        if (model.IsValid()) // && 0xca == modelId.GetValue())
             modelFutures.push_back(GenerateTiles(collector, leafTolerance, surfacesOnly, maxPointsPerTile, *model));
         }
 
@@ -1750,7 +1763,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
     if (nullptr != getTileTree)
         {
         // ###TODO: Change point clouds to go through this path instead of _GenerateMeshTiles below.
-        if (getTileTree->_AllowPublishing())
+        if (getTileTree->_AllowPublishing())                                                                                                                                                                                                      
             return GenerateTilesFromTileTree(&collector, leafTolerance, surfacesOnly, geometricModel);
         else if (nullptr != getPublishedURL)
             return collector._AcceptPublishedTilesetInfo(model, *getPublishedURL);
