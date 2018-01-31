@@ -473,6 +473,8 @@ BentleyStatus ORDAlignmentsConverter::UpdateBimVerticalAlignment(ProfileCR cifPr
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ORDAlignmentsConverter::ConvertProfiles(AlignmentCR cifAlignment, AlignmentBim::AlignmentCR alignment, ORDConverter::Params& params)
     {
+    ModelRefPinner modelPinner;
+
     Bentley::WString activeProfileId;
     auto activeProfilePtr = cifAlignment.GetActiveProfile();
     if (activeProfilePtr.IsValid())
