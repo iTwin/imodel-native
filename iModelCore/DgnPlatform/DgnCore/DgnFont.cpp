@@ -2,13 +2,16 @@
 |
 |     $Source: DgnCore/DgnFont.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnFontData.h>
 #include <DgnPlatform/DgnRscFontStructures.h>   // For HMASK_RSC_HOLE
 
+// To be able to free the freetype library instance in the destructor.
+#include <ft2build.h>
+#include FT_MODULE_H
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     03/2015
@@ -17,6 +20,21 @@ DgnPlatformLib::Host::FontAdmin::~FontAdmin()
     {
     DELETE_AND_CLEAR(m_dbFonts);
     DELETE_AND_CLEAR(m_lastResortFontDb);
+
+    if (m_triedToLoadFTLibrary && (nullptr != m_ftLibrary))
+        {
+        // Ensure to use the freetype library to free TT fonts before destroying the library.
+        if (m_lastResortTTFont.IsValid())
+            m_lastResortTTFont = nullptr;
+        if (m_decoratorFont.IsValid())
+            m_decoratorFont = nullptr;
+
+        FT_Error freeStatus = FT_Done_Library(m_ftLibrary);
+        if (FT_Err_Ok != freeStatus)
+            { BeAssert(false); }
+
+        m_ftLibrary = nullptr;
+        }
     }
 
 //---------------------------------------------------------------------------------------
