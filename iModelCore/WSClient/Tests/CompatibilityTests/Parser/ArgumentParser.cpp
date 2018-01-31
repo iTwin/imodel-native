@@ -209,6 +209,21 @@ std::ostream* err
                 return -1;
             currentRepo->comment = argValue;
             }
+        else if (arg == "-validateCertificates")
+            {
+            if (!GetArgValue(argc, args, i, argValue, err))
+                return -1;
+
+            Utf8String str(argValue);
+            str.ToLower().Trim();
+            bool validateCertificate = false;
+            if (str == "true")
+                validateCertificate = true;
+            if (str == "false")
+                validateCertificate = false;
+
+            currentRepo->validateCertificate = validateCertificate;
+            }
         else
             {
             PrintError(err, Utf8PrintfString("Uknown parameter: %s at positition %d", arg, i).c_str());
@@ -463,6 +478,8 @@ void ArgumentParser::PrintHelp(std::ostream* out)
     *out << "  -l TestLabel       Add descriptive name for test. Will be used in workdir folder structure as well as test output." << std::endl;
     *out << "  -c \"Failure Comment\"" << std::endl;
     *out << "                     Optional comment to be shown when test fails for known issues." << std::endl;
+    *out << "  -validateCertificates [true|false]" << std::endl;
+    *out << "                     Optionally disable SSL certificate validation. Default is true." << std::endl;
     *out << "Parameters when stubbing server with local schema list:" << std::endl;
     *out << "  -schemas C:\\s\\     Path to folder containing all repository schemas. Can be used to test upgrade from last known good schemas to server" << std::endl;
     *out << "Other:" << std::endl;

@@ -236,6 +236,78 @@ TEST_F(ArgumentParserTests, Parse_SilentNotProvided_LogLevelOne)
     EXPECT_EQ(1, logLevel);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ArgumentParserTests, Parse_ValidateCertificatesNotProvided_SetsValidateCertificatesToTrue)
+    {
+    TestArgs testArgs({"Foo.exe", "--createcache", "-url", "URL", "-r", "RId"});
+    auto args = testArgs.GetArgs();
+
+    int logLevel;
+    BeFileName workDir;
+    bvector<TestRepositories> testData;
+    std::stringstream err;
+    std::stringstream out;
+
+    EXPECT_EQ(0, ArgumentParser::Parse((int) args.size(), args.data(), logLevel, workDir, testData, &err, &out));
+    EXPECT_EQ("", err.str());
+    EXPECT_EQ("", out.str());
+    EXPECT_EQ(1, logLevel);
+
+    ASSERT_EQ(1, testData.size());
+
+    EXPECT_EQ(true, testData[0].create.validateCertificate);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ArgumentParserTests, Parse_ValidateCertificatesFalse_SetsValidateCertificatesToFalse)
+    {
+    TestArgs testArgs({"Foo.exe", "--createcache", "-url", "URL", "-r", "RId", "-validateCertificates", "FaLsE"});
+    auto args = testArgs.GetArgs();
+
+    int logLevel;
+    BeFileName workDir;
+    bvector<TestRepositories> testData;
+    std::stringstream err;
+    std::stringstream out;
+
+    EXPECT_EQ(0, ArgumentParser::Parse((int) args.size(), args.data(), logLevel, workDir, testData, &err, &out));
+    EXPECT_EQ("", err.str());
+    EXPECT_EQ("", out.str());
+    EXPECT_EQ(1, logLevel);
+
+    ASSERT_EQ(1, testData.size());
+
+    EXPECT_EQ(false, testData[0].create.validateCertificate);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ArgumentParserTests, Parse_ValidateCertificatesTrue_SetsValidateCertificatesToTrue)
+    {
+    TestArgs testArgs({"Foo.exe", "--createcache", "-url", "URL", "-r", "RId", "-validateCertificates", "tRuE"});
+    auto args = testArgs.GetArgs();
+
+    int logLevel;
+    BeFileName workDir;
+    bvector<TestRepositories> testData;
+    std::stringstream err;
+    std::stringstream out;
+
+    EXPECT_EQ(0, ArgumentParser::Parse((int) args.size(), args.data(), logLevel, workDir, testData, &err, &out));
+    EXPECT_EQ("", err.str());
+    EXPECT_EQ("", out.str());
+    EXPECT_EQ(1, logLevel);
+
+    ASSERT_EQ(1, testData.size());
+
+    EXPECT_EQ(true, testData[0].create.validateCertificate);
+    }
+
 struct ArgumentParserTests_DownloadSchemas : TestWithParam<TestArgs> {};
 INSTANTIATE_TEST_CASE_P(DownloadSchemasOnly, ArgumentParserTests_DownloadSchemas, ValuesIn(GenerateParams(vector<TestArgs>{
         {1, 0, {"Foo.exe", "--downloadschemas", "-url", "URL", "-r", "RId"}},

@@ -10,6 +10,7 @@
 
 #include <WebServices/Cache/CachingDataSource.h>
 #include <MobileDgn/Utils/Http/ProxyHttpHandler.h>
+#include <MobileDgn/Utils/Http/HttpConfigurationHandler.h>
 
 #include "../UnitTests/Published/WebServices/Connect/StubLocalState.h"
 
@@ -132,6 +133,15 @@ IWSRepositoryClientPtr CreateClient(TestRepository& repository)
         return std::make_shared<DiskRepositoryClient>(repository.schemasDir);
 
     auto httpHandler = s_proxy;
+
+    if (repository.validateCertificate == false)
+        {
+        httpHandler = std::make_shared<HttpConfigurationHandler>([] (HttpRequest& request)
+            {
+            request.SetValidateCertificate(false);
+            }, httpHandler);
+        }
+
     if (repository.environment)
         {
         UrlProvider::Initialize(*repository.environment, UrlProvider::DefaultTimeout, &s_localState, nullptr, s_proxy);
