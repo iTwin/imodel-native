@@ -1,2 +1,0 @@
-include "RoadRailPhysical.ecschema.xml"
-rename  "RoadRailPhysical.ecschema.xml" "Domains/RoadRailPhysical/RoadRailPhysical.ecschema.xml"

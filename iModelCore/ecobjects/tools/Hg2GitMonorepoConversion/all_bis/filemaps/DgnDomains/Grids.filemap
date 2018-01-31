@@ -1,2 +1,0 @@
-include "Grids/Grids.ecschema.xml"
-rename  "Grids/Grids.ecschema.xml" "Domains/Grids/Grids.ecschema.xml"

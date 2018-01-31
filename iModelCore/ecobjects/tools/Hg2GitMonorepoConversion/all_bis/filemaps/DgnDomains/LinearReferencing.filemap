@@ -1,2 +1,0 @@
-include "LinearReferencing.ecschema.xml"
-rename  "LinearReferencing.ecschema.xml" "Domains/LinearReferencing/LinearReferencing.ecschema.xml"

@@ -1,2 +1,0 @@
-include "Profiles.ecschema.xml"
-rename  "Profiles.ecschema.xml" "Domains/Profiles/Profiles.ecschema.xml"

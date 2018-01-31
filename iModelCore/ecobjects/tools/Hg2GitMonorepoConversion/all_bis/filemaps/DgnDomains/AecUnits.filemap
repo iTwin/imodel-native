@@ -1,2 +1,0 @@
-include "schema/AecUnits.ecschema.xml"
-rename  "schema/AecUnits.ecschema.xml" "Domains/AecUnits/AecUnits.ecschema.xml"

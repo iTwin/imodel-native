@@ -1,2 +1,0 @@
-include "Planning.ecschema.xml"
-rename  "Planning.ecschema.xml" "Domains/Planning/Planning.ecschema.xml"
