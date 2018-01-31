@@ -119,6 +119,12 @@ void QueryExecutor::ReadRecords(ICancelationTokenCP cancelationToken)
         }
     _l = nullptr;
             
+    if (nullptr != cancelationToken && cancelationToken->IsCanceled())
+        {
+        LoggingHelper::LogMessage(Log::Default, "[QueryExecutor] Records read canceled", NativeLogging::LOG_TRACE);
+        return;
+        }
+
     // read the records
     m_readStarted = true;
     _l = LoggingHelper::CreatePerformanceLogger(Log::Default, "[QueryExecutor] Reading and caching new records", NativeLogging::LOG_TRACE);
@@ -138,9 +144,18 @@ void QueryExecutor::ReadRecords(ICancelationTokenCP cancelationToken)
         }
     _l = nullptr;
 
-    BeAssert(DbResult::BE_SQLITE_DONE == result);
-    m_readFinished = true;
-    LoggingHelper::LogMessage(Log::Default, Utf8PrintfString("[QueryExecutor] Finished reading %d records", recordsRead).c_str(), NativeLogging::LOG_TRACE);
+    switch (result)
+        {
+        case BE_SQLITE_DONE:
+            m_readFinished = true;
+            LoggingHelper::LogMessage(Log::Default, Utf8PrintfString("[QueryExecutor] Finished reading %d records", recordsRead).c_str(), NativeLogging::LOG_TRACE);
+            break;
+        case BE_SQLITE_INTERRUPT:
+            LoggingHelper::LogMessage(Log::Default, "[QueryExecutor] Records read interrupted", NativeLogging::LOG_TRACE);
+            break;
+        default:
+            BeAssert(false && "Unexpected result");
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

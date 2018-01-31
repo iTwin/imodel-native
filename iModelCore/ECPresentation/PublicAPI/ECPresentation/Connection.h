@@ -27,12 +27,14 @@ protected:
     virtual BeSQLite::Db& _GetDb() const = 0;
     virtual bool _IsOpen() const = 0;
     virtual bool _IsReadOnly() const = 0;
+    virtual void _InterruptRequests() const = 0;
 public:
     Utf8StringCR GetId() const {return _GetId();}
     ECDbR GetECDb() const {return _GetECDb();}
     BeSQLite::Db& GetDb() const {return _GetDb();}
     bool IsOpen() const {return _IsOpen();}
     bool IsReadOnly() const {return _IsReadOnly();}
+    void InterruptRequests() const {_InterruptRequests();}
 };
 
 //=======================================================================================
