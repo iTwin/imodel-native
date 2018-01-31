@@ -15,8 +15,15 @@ baseDir = $(_MakeFilePath)
 publicApiSourceDr = $(baseDir)PublicAPI/iModelJs/
 appName = iModelJs
 
-%if $(TARGET_PLATFORM) == "MacOS"
-cIncs + -framework JavaScriptCore
+%if $(TARGET_PLATFORM) == "Windows" || $(TARGET_PLATFORM) == "WinRT" || $(TARGET_PLATFORM) == "Android" || $(TARGET_PLATFORM) == "Linux"
+    USE_V8 = 1
+    nodeApiDir = $(baseDir)v8/
+    cDefs + -DUSING_V8_SHARED=1
+%elif $(TARGET_PLATFORM) == "iOS" || $(TARGET_PLATFORM) == "MacOS"
+    USE_JAVASCRIPT_CORE=1
+    nodeApiDir = $(baseDir)jsc/
+%else
+    %error Unsupported platform
 %endif
 
 o = $(OutputRootDir)build/$(appName)/
@@ -76,35 +83,24 @@ cDefs + -DUSING_UV_SHARED=1
 cDefs + -DEXTERNAL_NAPI=1
 cIncs + -I$(nodeAddonApiPublicApiSourceDir)
 
-%if $(TARGET_PLATFORM) == "Windows" || $(TARGET_PLATFORM) == "WinRT" || $(TARGET_PLATFORM) == "Android" || $(TARGET_PLATFORM) == "Linux"
+$(o)node_internals$(oext) : $(baseDir)node_internals.cc $(napiHeaders) ${MultiCompileDepends}
 
-nodeApiV8Dir = $(baseDir)v8/
+%if defined (USE_V8)
 
-cDefs + -DUSING_V8_SHARED=1
+    $(o)node_api$(oext)       : $(nodeApiDir)node_api.cc $(napiHeaders) ${MultiCompileDepends}
 
-$(o)node_api$(oext)       : $(nodeApiV8Dir)node_api.cc $(napiHeaders) ${MultiCompileDepends}
+%elif defined(USE_JAVASCRIPT_CORE)
 
-$(o)node_internals$(oext) : $(nodeApiV8Dir)node_internals.cc $(napiHeaders) ${MultiCompileDepends}
-
-imodelJsObjs + $(o)node_api$(oext) $(o)node_internals$(oext)
-
-%elif $(TARGET_PLATFORM) == "iOS" || $(TARGET_PLATFORM) == "MacOS"
-
-nodeApiJscDir = $(baseDir)jsc/
-
-cDefs + -DUSING_V8_SHARED=1
-
-$(o)node_api$(oext)       : $(nodeApiJscDir)node_api.cc $(napiHeaders) ${MultiCompileDepends}
-
-$(o)node_internals$(oext) : $(nodeApiJscDir)node_internals.cc $(napiHeaders) ${MultiCompileDepends}
-
-imodelJsObjs + $(o)node_api$(oext) $(o)node_internals$(oext)
+    $(o)node_api$(oext)       : $(nodeApiDir)node_api.cc $(napiHeaders) ${MultiCompileDepends}
 
 %else
 
-%error unsupported platform
+    %error unsupported JavaScript engine
 
 %endif
+
+imodelJsObjs + $(o)node_api$(oext) $(o)node_internals$(oext)
+
 
 addonObjs = $[@wildcard $(BuildContext)SubParts/imodeljs-addon-objs/*$(oext)]
 

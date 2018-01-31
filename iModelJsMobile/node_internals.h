@@ -74,4 +74,11 @@ NO_RETURN void FatalError(const char* location, const char* message);
 
 }  // namespace node
 
+
+napi_status napi_set_last_error(napi_env env, napi_status error_code,
+                                uint32_t engine_error_code = 0,
+                                void* engine_reserved = nullptr);
+napi_status napi_clear_last_error(napi_env env);
+
+
 #endif  // SRC_NODE_INTERNALS_H_

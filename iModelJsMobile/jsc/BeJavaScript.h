@@ -1,21 +1,6 @@
-/*--------------------------------------------------------------------------------------+
-|
-|     $Source: jsc/BeJavaScript.h $
-|
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
-|
-+--------------------------------------------------------------------------------------*/
-#pragma once
-//__PUBLISH_SECTION_START__
 
-#include <Bentley/Bentley.h>
-#include <Bentley/RefCounted.h>
-#include <Bentley/BeAssert.h>
-#include <json/json.h>
-
-#define BEJAVASCRIPT_JAVASCRIPTCORE_ENGINE
-
-#include <JavaScriptCore/JavaScriptCore.h>
+   *** THIS FILE IS NOT TO BE COMPILED ***
+   *** COPY CODE FROM HERE INTO jsc/node_api.cc ***
 
 BEGIN_BENTLEY_NAMESPACE
 
@@ -83,7 +68,7 @@ public:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                   Steve.Wilson                    2/17
     //---------------------------------------------------------------------------------------
-    BeJsEnvironment (void* systemEnvironment);
+    BeJsEnvironment (JSContextGroupRef systemEnvironment);
 
     //---------------------------------------------------------------------------------------
     // @bsimethod                                   Steve.Wilson                    2/15
@@ -146,7 +131,7 @@ public:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                   Steve.Wilson                    2/15
     //---------------------------------------------------------------------------------------
-    BeJsContext (BeJsEnvironmentCR environment, JSContextGroupRef systemContext);
+    BeJsContext (BeJsEnvironmentCR environment, JSGlobalContextRef systemContext);
 
     //---------------------------------------------------------------------------------------
     // @bsimethod                                   Steve.Wilson                    2/15
@@ -246,6 +231,9 @@ public:
     //---------------------------------------------------------------------------------------
     void Reset();
 
+bool IsValid() const;
+static BeJsValue InvalidHandle();
+void Invalidate();
     //---------------------------------------------------------------------------------------
     // @bsimethod                                                   Steve.Wilson    2/15
     //---------------------------------------------------------------------------------------
@@ -818,7 +806,7 @@ public:
         {
         friend struct BeJsNativeFunction;
 
-    private:
+//    private:
         BeJsContext const* m_context;
 
         bool m_isConstructCall;

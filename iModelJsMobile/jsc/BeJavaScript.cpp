@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <BeJavaScript/BeJavaScript.h>
+#include "BeJavaScript.h"
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Steve.Wilson                    2/15
@@ -325,19 +325,17 @@ BeJsContext::BeJsContext (BeJsEnvironmentCR environment, Utf8CP identifier, Utf8
     m_jscContext = JSGlobalContextCreateInGroup (environment.GetJscContextGroup(), NULL);
     
     FindLanguageObjects();
-    Initialize (initializationScript, identifier);
     }
 
-BeJsContext::BeJsContext (BeJsEnvironmentCR environment, void* systemContext)
+BeJsContext::BeJsContext (BeJsEnvironmentCR environment, JSGlobalContextRef systemContext)
     : m_environment (&environment)
     {
     BeAssert (engine == BeJsEnvironment::GetActiveEngine());
 
-    m_jscContext = reinterpret_cast<JSGlobalContextRef>(systemContext);
+    m_jscContext = systemContext;
     JSGlobalContextRetain (m_jscContext);
 
     FindLanguageObjects();
-    Initialize (nullptr, nullptr);
     }
 
 void BeJsContext::FindLanguageObjects()
@@ -390,8 +388,8 @@ BeJsValue BeJsContext::EvaluateScript (Utf8CP script, Utf8CP identifier, Evaluat
             if (exception != nullptr)
                 {
                 BeJsObject exceptionObject (*this, jscException);
-                BeJsString trace = exceptionObject.GetStringProperty ("stack");
-
+                // *** TODO BeJsString trace = exceptionObject.GetStringProperty ("stack");
+BeJsString trace(*this, "TBD");
                 (*exception).message = BeJsString (exceptionObject.CallMemberFunction ("toString")).GetValue();
 
                 if (trace.IsString())
@@ -542,6 +540,7 @@ bool BeJsValue::IsEqualStrict (BeJsValueCR value) const
     return JSValueIsStrictEqual (m_context->GetJscContext(), m_jscValue, value.GetJscValue());
     }
 
+/*
 BeJsValue BeJsValue::Null (BeJsContextCR context)
     {
     JSValueRef nullRef = JSValueMakeNull (context.GetJscContext());
@@ -553,6 +552,7 @@ BeJsValue BeJsValue::Undefined (BeJsContextCR context)
     JSValueRef undefinedRef = JSValueMakeUndefined (context.GetJscContext());
     return BeJsValue (context, undefinedRef);
     }
+    */
 
 BeJsPrimitive::BeJsPrimitive (BeJsContextCR context)
     : BeJsValue (context)
@@ -981,8 +981,8 @@ void BeJsNativePointer::Dispose()
 
    _BeJsNativePointer* wrapper = static_cast<_BeJsNativePointer*>(_BeJsNativePointer::GetFromHandle (*m_context, m_jscValue));
 
-    if (wrapper->m_callback != nullptr)
-        wrapper->m_callback (wrapper->m_object, this);
+    if (wrapper->m_disposeCallback != nullptr)
+        wrapper->m_disposeCallback (wrapper->m_object, this);
 
     wrapper->m_object = nullptr;
     }
