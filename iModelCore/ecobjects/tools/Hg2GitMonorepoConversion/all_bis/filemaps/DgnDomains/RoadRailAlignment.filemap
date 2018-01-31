@@ -1,2 +1,0 @@
-include "RoadRailAlignment.ecschema.xml"
-rename  "RoadRailAlignment.ecschema.xml" "Domains/RoadRailAlignment/RoadRailAlignment.ecschema.xml"

@@ -1,2 +1,0 @@
-include "BuildingSpacePlanning.ecschema.xml"
-rename  "BuildingSpacePlanning.ecschema.xml" "Domains/BuildingSpacePlanning/BuildingSpacePlanning.ecschema.xml"
