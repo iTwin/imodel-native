@@ -93,7 +93,7 @@ private:
             {
             // note: the task will get removed from m_tasks when the promise actually gets canceled
             task->_Cancel();
-            LoggingHelper::LogMessage(Log::Default, Utf8PrintfString("Promise canceled: %s", task->GetId()).c_str());
+            LoggingHelper::LogMessage(Log::Default, Utf8PrintfString("Promise canceled: %s", task->GetId().c_str()).c_str());
             }
         return !tasks.empty();
         }
