@@ -135,19 +135,28 @@
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECRelationshipClass typeName="ElementRepresentsElement" strength="referencing" modifier="Abstract">
+    <ECRelationshipClass typeName="DrawingGraphicRepresentsAlignment" strength="referencing" modifier="Sealed">
+        <BaseClass>bis:DrawingGraphicRepresentsElement</BaseClass>
+        <Source multiplicity="(0..*)" roleLabel="represents" polymorphic="true">
+            <Class class="bis:DrawingGraphic"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is represented by" polymorphic="false">
+            <Class class="Alignment"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="GraphicalElement3dRepresentsSpatialElement" strength="referencing" modifier="Abstract">
         <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..*)" roleLabel="represents" polymorphic="true">
-            <Class class="bis:Element"/>
+            <Class class="bis:GraphicalElement3d"/>
         </Source>
         <Target multiplicity="(0..*)" roleLabel="is represented by" polymorphic="true">
             <Class class="bis:SpatialElement"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="ElementRepresentsAlignment" strength="referencing" modifier="Sealed">
-        <BaseClass>ElementRepresentsElement</BaseClass>
+    <ECRelationshipClass typeName="GraphicalElement3dRepresentsAlignment" strength="referencing" modifier="Sealed">
+        <BaseClass>GraphicalElement3dRepresentsSpatialElement</BaseClass>
         <Source multiplicity="(0..*)" roleLabel="represents" polymorphic="true">
-            <Class class="bis:Element"/>
+            <Class class="bis:GraphicalElement3d"/>
         </Source>
         <Target multiplicity="(0..1)" roleLabel="is represented by" polymorphic="false">
             <Class class="Alignment"/>

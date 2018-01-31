@@ -40,28 +40,48 @@ AlignmentPtr Alignment::Create(AlignmentModelCR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 AlignmentCPtr Alignment::GetAssociated(DgnElementCR element)
     {
+    // 1. If element is itself an alignment, return it.
     if (auto alignmentCP = dynamic_cast<AlignmentCP>(&element))
         return alignmentCP;
 
+    // 2. If element is a Horizontal Alignment, return its Alignment.
     if (auto horizAlignmentCP = dynamic_cast<HorizontalAlignmentCP>(&element))
         return horizAlignmentCP->QueryAlignment();
 
+    // 3. If element is a Vertical Alignment, return its Alignment.
     if (auto vertAlignmentCP = dynamic_cast<VerticalAlignmentCP>(&element))
         return &vertAlignmentCP->GetAlignment();
 
-    auto stmtPtr = element.GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BRRA_SCHEMA(BRRA_REL_ElementRepresentsAlignment) " WHERE SourceECInstanceId=?;");
-    BeAssert(stmtPtr.IsValid());
+    // 4. If element is 3d and it represents an Alignment, return it.
+    if (element.ToGeometrySource3d())
+        {
+        auto stmtPtr = element.GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BRRA_SCHEMA(BRRA_REL_GraphicalElement3dRepresentsAlignment) " WHERE SourceECInstanceId=?;");
+        BeAssert(stmtPtr.IsValid());
 
-    stmtPtr->BindId(1, element.GetElementId());
-    if (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
-        return Alignment::Get(element.GetDgnDb(), stmtPtr->GetValueId<DgnElementId>(0));
+        stmtPtr->BindId(1, element.GetElementId());
+        if (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
+            return Alignment::Get(element.GetDgnDb(), stmtPtr->GetValueId<DgnElementId>(0));
+        }
 
-    stmtPtr = element.GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_DrawingGraphicRepresentsElement) " WHERE SourceECInstanceId=?;");
-    BeAssert(stmtPtr.IsValid());
+    // 5. If element is a DrawingGraphic (2d) and it represents an Alignment, return it.
+    if (element.ToDrawingGraphic())
+        {
+        auto stmtPtr = element.GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BRRA_SCHEMA(BRRA_REL_DrawingGraphicRepresentsAlignment) " WHERE SourceECInstanceId=?;");
+        BeAssert(stmtPtr.IsValid());
 
-    stmtPtr->BindId(1, element.GetElementId());
-    if (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
-        return Alignment::Get(element.GetDgnDb(), stmtPtr->GetValueId<DgnElementId>(0));
+        stmtPtr->BindId(1, element.GetElementId());
+        if (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
+            return Alignment::Get(element.GetDgnDb(), stmtPtr->GetValueId<DgnElementId>(0));
+        }
+
+    // 6. If element is an ILinearElementSource, return its main ILinearElement if it is an Alignment.
+    if (auto iLinearElementSource = dynamic_cast<ILinearElementSourceCP>(&element))
+        {
+        auto mainILinearElementId = iLinearElementSource->QueryMainLinearElement();
+        auto alignmentPtr = Alignment::Get(element.GetDgnDb(), mainILinearElementId);
+        if (alignmentPtr.IsValid())
+            return alignmentPtr;
+        }
 
     return nullptr;
     }
@@ -293,21 +313,15 @@ DgnDbStatus Alignment::AddRepresentedBy(AlignmentCR alignment, DgnElementCR repr
     if (!representedBy.GetElementId().IsValid() || !alignment.GetElementId().IsValid())
         return DgnDbStatus::BadElement;
     
-    Utf8String schemaName, relClassName;
+    Utf8String relClassName;
     if (representedBy.ToGeometrySource2d())
-        { 
-        schemaName = BIS_ECSCHEMA_NAME;
-        relClassName = BIS_REL_DrawingGraphicRepresentsElement;
-        }
+        relClassName = BRRA_REL_DrawingGraphicRepresentsAlignment;
     else
-        {
-        schemaName = BRRA_SCHEMA_NAME;
-        relClassName = BRRA_REL_ElementRepresentsAlignment;
-        }
+        relClassName = BRRA_REL_GraphicalElement3dRepresentsAlignment;
 
     ECInstanceKey insKey;
     if (DbResult::BE_SQLITE_OK != alignment.GetDgnDb().InsertLinkTableRelationship(insKey,
-        *alignment.GetDgnDb().Schemas().GetClass(schemaName, relClassName)->GetRelationshipClassCP(),
+        *alignment.GetDgnDb().Schemas().GetClass(BRRA_SCHEMA_NAME, relClassName)->GetRelationshipClassCP(),
         ECInstanceId(representedBy.GetElementId().GetValue()), ECInstanceId(alignment.GetElementId().GetValue())))
         return DgnDbStatus::BadElement;
 
