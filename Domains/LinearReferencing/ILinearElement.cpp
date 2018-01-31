@@ -2,7 +2,7 @@
 |
 |     $Source: ILinearElement.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "LinearReferencingInternal.h"
@@ -37,6 +37,23 @@ bset<DgnElementId> ILinearElementSource::QueryLinearElements() const
         retVal.insert(stmt.GetValueId<DgnElementId>(0));
 
     return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId ILinearElementSource::_QueryMainLinearElement() const
+    {
+    ECSqlStatement stmt;
+    stmt.Prepare(ToElement().GetDgnDb(), "SELECT TargetECInstanceId FROM " BLR_SCHEMA(BLR_REL_ILinearElementSourceProvidesILinearElements)
+        " WHERE SourceECInstanceId = ? LIMIT 1");
+    BeAssert(stmt.IsPrepared());
+
+    stmt.BindId(1, ToElement().GetElementId());
+    if (DbResult::BE_SQLITE_ROW == stmt.Step())
+        return stmt.GetValueId<DgnElementId>(0);
+
+    return DgnElementId();
     }
 
 /*---------------------------------------------------------------------------------**//**

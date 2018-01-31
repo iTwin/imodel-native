@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/LinearReferencing/ILinearElement.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -67,10 +67,14 @@ protected:
 
     virtual Dgn::DgnElementCR _ILinearElementSourceToDgnElement() const = 0;
 
+    // Default implementation returns first ILinearElement found in the iModel.
+    LINEARREFERENCING_EXPORT virtual Dgn::DgnElementId _QueryMainLinearElement() const;
+
 public:
     Dgn::DgnElementCR ToElement() const { return _ILinearElementSourceToDgnElement(); }
     Dgn::DgnElementR ToElementR() { return *const_cast<Dgn::DgnElementP>(&_ILinearElementSourceToDgnElement()); }
     LINEARREFERENCING_EXPORT bset<Dgn::DgnElementId> QueryLinearElements() const;
+    Dgn::DgnElementId QueryMainLinearElement() const { return _QueryMainLinearElement(); }
 }; // ILinearElementSource
 
 typedef BeSQLite::EC::ECInstanceId LinearlyReferencedLocationId;
