@@ -29,6 +29,8 @@ struct TestRepository
 
     Credentials credentials;
     SamlTokenPtr token;
+    BeFileName tokenPath;
+
     std::shared_ptr<UrlProvider::Environment> environment;
     bool validateCertificate = true;
 

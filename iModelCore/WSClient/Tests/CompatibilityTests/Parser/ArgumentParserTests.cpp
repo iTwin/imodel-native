@@ -575,6 +575,7 @@ TEST_P(ArgumentParserTests_CreateWithImsTokenAuth, Parse_ValidParameters_FillsTe
     EXPECT_EQ("RId", testData[0].create.id);
     EXPECT_EQ(Credentials(), testData[0].create.credentials);
     EXPECT_STREQ(s_xmlTokenStr.c_str(), testData[0].create.token->AsString().c_str());
+    EXPECT_FALSE(testData[0].create.tokenPath.empty());
 
     ASSERT_NE(nullptr, testData[0].create.environment);
     EXPECT_EQ(param.second, *testData[0].create.environment);
