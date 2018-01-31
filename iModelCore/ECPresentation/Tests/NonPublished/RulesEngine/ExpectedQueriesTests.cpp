@@ -5137,7 +5137,7 @@ TEST(ExpectedQueriesTest, RunAllExpectedQueries)
 
     IConnectionManagerCR connections = ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnections();
     IConnectionCR connection = ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnection();
-    ECDbR db = connection.GetECDb();
+    // unused - ECDbR db = connection.GetECDb();
     TestUserSettings userSettings;
     ECExpressionsCache ecexpressionsCache;
     RelatedPathsCache relatedPathsCache;
