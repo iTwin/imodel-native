@@ -2740,6 +2740,10 @@ public:
     //! @see sqlite3_errmsg, sqlite3_errcode
     BE_SQLITE_EXPORT Utf8String GetLastError(DbResult* lastResult = nullptr) const;
 
+    //! Causes any pending database operation to abort and return at its earliest opportunity.
+    //! @see sqlite3_interrupt
+    BE_SQLITE_EXPORT void Interrupt() const;
+
     //! Commit the outermost transaction, writing changes to the file. Then, restart the transaction.
     //! @param[in] changesetName The name of the operation that generated these changes. If transaction tracking is enabled,
     //! this will be saved with the changeset and reported as the operation that is "undone/redone" if this changeset is reversed or reinstated.

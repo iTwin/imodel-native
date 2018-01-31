@@ -453,6 +453,7 @@ bool     Db::IsReadonly() const {return m_dbFile->m_readonly;}
 BeGuid   Db::GetDbGuid() const {return m_dbFile->m_dbGuid;}
 int32_t  Db::GetCurrentSavepointDepth() const {return (int32_t) m_dbFile->m_txns.size();}
 Utf8String Db::GetLastError(DbResult* lastResult) const {return IsDbOpen() ? m_dbFile->GetLastError(lastResult) : "Not opened";}
+void Db::Interrupt() const {return sqlite3_interrupt(GetSqlDb());}
 BeBriefcaseId Db::GetBriefcaseId() const {return m_dbFile->m_briefcaseId;}
 
 int64_t  Db::GetLastInsertRowId() const {return sqlite3_last_insert_rowid(GetSqlDb());}
