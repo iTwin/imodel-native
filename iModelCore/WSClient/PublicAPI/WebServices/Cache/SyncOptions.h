@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/SyncOptions.h $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -70,7 +70,7 @@ struct SyncOptions
             return (pair == m_fileCancellationTokens.end() ? nullptr : pair->second);
             };
         
-        WSCACHE_EXPORT void SetFileUploadFinishCallaback(FileUploadCallback callback) { m_fileUploadFinishCallback = callback; };
+        WSCACHE_EXPORT void SetFileUploadFinishCallback(FileUploadCallback callback) { m_fileUploadFinishCallback = callback; };
         WSCACHE_EXPORT FileUploadCallback& GetFileUploadFinishCallback() { return m_fileUploadFinishCallback; };
     };
 

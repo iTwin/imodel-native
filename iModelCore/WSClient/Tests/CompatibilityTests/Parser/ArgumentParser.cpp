@@ -209,6 +209,21 @@ std::ostream* err
                 return -1;
             currentRepo->comment = argValue;
             }
+        else if (arg == "-validateCertificates")
+            {
+            if (!GetArgValue(argc, args, i, argValue, err))
+                return -1;
+
+            Utf8String str(argValue);
+            str.ToLower().Trim();
+            bool validateCertificate = false;
+            if (str == "true")
+                validateCertificate = true;
+            if (str == "false")
+                validateCertificate = false;
+
+            currentRepo->validateCertificate = validateCertificate;
+            }
         else
             {
             PrintError(err, Utf8PrintfString("Uknown parameter: %s at positition %d", arg, i).c_str());
@@ -294,6 +309,7 @@ bool ArgumentParser::ParseAuth(Utf8CP auth, Utf8CP value, TestRepository& repo, 
         {
         repo.environment = ParseEnv(tokens[1], err);
         repo.token = ParseTokenPath(value, err);
+        repo.tokenPath = BeFileName(value);
         return repo.environment && repo.token;
         }
 
@@ -385,18 +401,15 @@ std::ostream* err
     for (auto& token : tokens)
         token.Trim();
 
-    std::remove_if(tokens.begin(), tokens.end(), [] (Utf8StringCR line)
-        {
-        if (line.empty())
-            return true;
-        if (line[0] == '#')
-            return true;
-        return false;
-        });
-
     bvector<Utf8String> args;
     for (auto& token : tokens)
         {
+        token.Trim();
+        if (token.empty())
+            continue;
+        if (token[0] == '#')
+            continue;
+
         auto pos = token.find_first_of(' ');
         if (Utf8String::npos == pos)
             pos = token.length();
@@ -463,6 +476,8 @@ void ArgumentParser::PrintHelp(std::ostream* out)
     *out << "  -l TestLabel       Add descriptive name for test. Will be used in workdir folder structure as well as test output." << std::endl;
     *out << "  -c \"Failure Comment\"" << std::endl;
     *out << "                     Optional comment to be shown when test fails for known issues." << std::endl;
+    *out << "  -validateCertificates [true|false]" << std::endl;
+    *out << "                     Optionally disable SSL certificate validation. Default is true." << std::endl;
     *out << "Parameters when stubbing server with local schema list:" << std::endl;
     *out << "  -schemas C:\\s\\     Path to folder containing all repository schemas. Can be used to test upgrade from last known good schemas to server" << std::endl;
     *out << "Other:" << std::endl;
