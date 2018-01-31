@@ -389,18 +389,13 @@ ECClassId SchemaReader::GetClassId(Utf8StringCR schemaName, Utf8StringCR classNa
     {
     //Always looking up the ECClassId from the DB seems too slow. Therefore cache the requested ids.
     ECClassId ecClassId;
-    {
     BeMutexHolder ecdbLock(GetECDbMutex());
     ecClassId = m_cache.Find(schemaName, className);
     if (ecClassId.IsValid())
         return ecClassId;
-    }
 
-    BeSqliteDbMutexHolder dbLock(GetECDbR());
-    BeMutexHolder ecdbLock(GetECDbMutex());
 
     ecClassId = SchemaPersistenceHelper::GetClassId(GetECDb(), GetTableSpace(), schemaName.c_str(), className.c_str(), lookupMode);
-
     //add id to cache (only if valid class id to avoid overflow of the cache)
     if (ecClassId.IsValid())
         m_cache.Insert(schemaName, className, ecClassId);
