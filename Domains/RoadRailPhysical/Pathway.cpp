@@ -28,21 +28,15 @@ DgnDbStatus PathwayElement::AddRepresentedBy(PathwayElementCR pathway, DgnElemen
     if (!representedBy.GetElementId().IsValid() || !pathway.GetElementId().IsValid())
         return DgnDbStatus::BadElement;
 
-    Utf8String schemaName, relClassName;
+    Utf8String relClassName;
     if (representedBy.ToGeometrySource2d())
-        {
-        schemaName = BIS_ECSCHEMA_NAME;
-        relClassName = BIS_REL_DrawingGraphicRepresentsElement;
-        }
+        relClassName = BRRP_REL_DrawingGraphicRepresentsPathway;
     else
-        {
-        schemaName = BRRA_SCHEMA_NAME;
-        relClassName = BRRA_REL_ElementRepresentsAlignment;
-        }
+        relClassName = BRRP_REL_GraphicalElement3dRepresentsPathway;
 
     ECInstanceKey insKey;
     if (DbResult::BE_SQLITE_OK != pathway.GetDgnDb().InsertLinkTableRelationship(insKey,
-        *pathway.GetDgnDb().Schemas().GetClass(schemaName, relClassName)->GetRelationshipClassCP(),
+        *pathway.GetDgnDb().Schemas().GetClass(BRRP_SCHEMA_NAME, relClassName)->GetRelationshipClassCP(),
         ECInstanceId(representedBy.GetElementId().GetValue()), ECInstanceId(pathway.GetElementId().GetValue())))
         return DgnDbStatus::BadElement;
 

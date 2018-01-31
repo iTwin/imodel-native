@@ -40,13 +40,31 @@
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECRelationshipClass typeName="ElementRepresentsPathway" strength="referencing" modifier="Sealed">
-        <BaseClass>rralign:ElementRepresentsElement</BaseClass>
+    <ECRelationshipClass typeName="DrawingGraphicRepresentsPathway" strength="referencing" modifier="Sealed">
+        <BaseClass>bis:DrawingGraphicRepresentsElement</BaseClass>
         <Source multiplicity="(0..*)" roleLabel="represents" polymorphic="true">
-            <Class class="bis:Element"/>
+            <Class class="bis:DrawingGraphic"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is represented by" polymorphic="false">
+            <Class class="PathwayElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="GraphicalElement3dRepresentsPathway" strength="referencing" modifier="Sealed">
+        <BaseClass>rralign:GraphicalElement3dRepresentsSpatialElement</BaseClass>
+        <Source multiplicity="(0..*)" roleLabel="represents" polymorphic="true">
+            <Class class="bis:GraphicalElement3d"/>
         </Source>
         <Target multiplicity="(0..1)" roleLabel="is represented by" polymorphic="true">
             <Class class="PathwayElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="GeometricElementBoundsContentForSheet" strength="referencing" modifier="None">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
+        <Source multiplicity="(0..*)" roleLabel="bounds content for" polymorphic="true">
+            <Class class="bis:GeometricElement"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="has content bounded by" polymorphic="false">
+            <Class class="bis:Sheet"/>
         </Target>
     </ECRelationshipClass>
 </ECSchema>
