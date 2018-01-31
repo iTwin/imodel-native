@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/funcs/cluster.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //
@@ -55,9 +55,17 @@ double    abstol,
 bool      bXYZ
 )
     {
+    // Changed from distance test to coordinate compares to avoid bottleneck in tile
+    // generation decimation (Scene_3d) -- Ray B.  01/2018
+#ifdef DISTANCE_TEST
     double dd = bXYZ ? pKeyA->xyz.DistanceSquared (pKeyB->xyz)
                     : pKeyA->xyz.DistanceSquaredXY (pKeyB->xyz);
     return dd < abstol * abstol;
+#else
+    return fabs(pKeyA->xyz.x - pKeyB->xyz.x) < abstol &&
+           fabs(pKeyA->xyz.y - pKeyB->xyz.y) < abstol &&
+           (!bXYZ || fabs(pKeyA->xyz.z - pKeyB->xyz.z) < abstol);
+#endif    
     }
 
 
