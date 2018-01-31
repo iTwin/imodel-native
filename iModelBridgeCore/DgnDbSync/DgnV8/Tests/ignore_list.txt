@@ -29,9 +29,10 @@ ECSchemaTests.RemapReservedPropertyNames
 #-----
 ECConversionTests.UpdateWithNewElementAndNoPreviousECData
 ECConversionTests.UpdateExistingWithNewInstance
+
 ConverterTests.UpdateWithDeletedParent
 
-    # TFS#812477
+    # TFS#812546
     # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 01/29/2018
     # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(1081): error: Value of: child1.IsValid()
     # Actual: false

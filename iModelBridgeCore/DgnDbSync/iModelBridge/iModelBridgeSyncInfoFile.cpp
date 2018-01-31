@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/iModelBridgeSyncInfoFile.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <iModelBridge/iModelBridgeSyncInfoFile.h>
@@ -627,20 +627,6 @@ void iModelBridgeWithSyncInfoBase::_DeleteSyncInfo()
     iModelBridgeSyncInfoFile::DeleteSyncInfoFileFor(_GetParams().GetBriefcaseName());
     }
 
-//=======================================================================================
-// @bsiclass                                    BentleySystems 
-//=======================================================================================
-struct DocSourceItem : iModelBridgeSyncInfoFile::ISourceItem
-    {
-    DgnCode m_linkCode;
-    iModelBridgeSyncInfoFile::SourceState m_sstate;
-
-    DocSourceItem(DgnCode const& linkCode, iModelBridgeSyncInfoFile::SourceState const& sstate) : m_linkCode(linkCode), m_sstate(sstate) {;}
-
-    Utf8String _GetId() override {return m_linkCode.GetValue().GetUtf8CP();}
-    double _GetLastModifiedTime() override {return m_sstate.GetLastModifiedTime();}
-    Utf8String _GetHash() override {return m_sstate.GetHash();}
-    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17

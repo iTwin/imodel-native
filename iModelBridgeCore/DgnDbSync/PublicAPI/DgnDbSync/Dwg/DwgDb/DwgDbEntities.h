@@ -93,7 +93,7 @@ BEGIN_DWGDB_NAMESPACE
 class DwgDbEntity : public DWGDB_EXTENDCLASS(Entity)
     {
 public:
-    DWGDB_DECLARE_COMMON_MEMBERS(Entity)
+    DWGDB_DECLARE_BASECLASS_MEMBERS(Entity)
     DWGDB_DECLARE_ENTITY_MEMBERS()
     };  // DwgDbEntity
 DWGDB_DEFINE_OBJECTPTR (Entity)
@@ -201,6 +201,11 @@ public:
     DWGDB_EXPORT double     GetTotalAngle () const;
     DWGDB_EXPORT DVec3d     GetNormal () const;
     DWGDB_EXPORT double     GetThickness () const;
+    DWGDB_EXPORT DwgDbStatus SetCenter (DPoint3dCR center);
+    DWGDB_EXPORT DwgDbStatus SetRadius (double radius);
+    DWGDB_EXPORT DwgDbStatus SetStartAngle (double radians);
+    DWGDB_EXPORT DwgDbStatus SetEndAngle (double radians);
+    DWGDB_EXPORT DwgDbStatus SetThickness (double thickness);
     };  // DwgDbArc
 DWGDB_DEFINE_OBJECTPTR (Arc)
 
@@ -217,6 +222,9 @@ public:
     DWGDB_EXPORT double     GetDiameter () const;
     DWGDB_EXPORT DVec3d     GetNormal () const;
     DWGDB_EXPORT double     GetThickness () const;
+    DWGDB_EXPORT DwgDbStatus SetCenter (DPoint3dCR center);
+    DWGDB_EXPORT DwgDbStatus SetRadius (double radius);
+    DWGDB_EXPORT DwgDbStatus SetThickness (double thickness);
     };  // DwgDbCircle
 DWGDB_DEFINE_OBJECTPTR (Circle)
 

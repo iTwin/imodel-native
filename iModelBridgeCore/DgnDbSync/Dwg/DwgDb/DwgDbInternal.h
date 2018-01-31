@@ -497,7 +497,16 @@ END_DWGDB_NAMESPACE
         }                                                                                                                       \
     DwgDbStatus DwgDb##_classSuffix_##Ptr::CreateObject() { return this->_CreateObject(); }                                     \
     DwgDbStatus DwgDb##_classSuffix_##Ptr::AcquireObject(DwgDb##_classSuffix_## *& obj) { return this->_AcquireObject(obj); }   \
-    DwgDbStatus DwgDb##_classSuffix_##Ptr::CloseObject() { return this->_CloseObject(); }
+    DwgDbStatus DwgDb##_classSuffix_##Ptr::CloseObject() { return this->_CloseObject(); }                                       \
+    DwgDb##_classSuffix_##Ptr::DwgDb##_classSuffix_##Ptr (DwgDb##_classSuffix_##* obj)                                          \
+        {                                                                                                                       \
+        IMPLEMENT_SMARTPTR_ACQUIREOBJECT(obj);                                                                                  \
+        }                                                                                                                       \
+    DwgDb##_classSuffix_##Ptr& DwgDb##_classSuffix_##Ptr::operator = (DwgDb##_classSuffix_##* obj)                              \
+        {                                                                                                                       \
+        IMPLEMENT_SMARTPTR_ACQUIREOBJECT(obj);                                                                                  \
+        return *this;                                                                                                           \
+        }
         
 #define DWGDB_ENTITY_DEFINE_GETRANGE(_classSuffix_)                                     \
     DwgDbStatus DwgDb##_classSuffix_##::GetRange (DRange3dR range) const                \
@@ -516,6 +525,11 @@ END_DWGDB_NAMESPACE
             DWGDB_DEFINE_SMARTPTR_OPENOBJECT_CONSTRUCTOR(##_classSuffix_##)             \
             DWGDB_IMPLEMENT_SMARTPTR_INTERFACE(##_classSuffix_##)
 
+// create a new super DbObject which can then be later saved as a DB resident
+#define DWGDB_OBJECT_DEFINE_CREATE(_classSuffix_)                                       \
+    DwgDb##_classSuffix_##P DwgDb##_classSuffix_##::Create()                            \
+        { return DwgDb##_classSuffix_##::Cast(new DWGDB_Type(_classSuffix_)()); }
+
 // define common methods for DbObject derivitives
 #define DWGDB_OBJECT_DEFINE_MEMBERS(_classSuffix_)                                                                                                                              \
     DwgDbObjectId      DwgDb##_classSuffix_##::GetObjectId () const { return T_Super::objectId(); }                                                                             \
@@ -524,26 +538,31 @@ END_DWGDB_NAMESPACE
     DwgDbStatus        DwgDb##_classSuffix_##::UpgradeOpen () { DWGDB_CALLSDKMETHOD(upgradeOpen(); return DwgDbStatus::Success;, return ToDwgDbStatus(upgradeOpen());) }        \
     DwgDbStatus        DwgDb##_classSuffix_##::DowngradeOpen () { DWGDB_CALLSDKMETHOD(downgradeOpen(); return DwgDbStatus::Success;, return ToDwgDbStatus(downgradeOpen());) }  \
     DwgDbStatus        DwgDb##_classSuffix_##::Close () { DWGDB_CALLSDKMETHOD(T_Super::release(); return DwgDbStatus::Success;, return ToDwgDbStatus(T_Super::close());) }      \
+    DwgDbStatus        DwgDb##_classSuffix_##::Erase () { DWGDB_CALLSDKMETHOD(T_Super::release(); return DwgDbStatus::Success;, return ToDwgDbStatus(T_Super::erase());) }      \
     DwgString          DwgDb##_classSuffix_##::GetDxfName () const { return isA()->dxfName(); }                                                                                 \
-    DwgString          DwgDb##_classSuffix_##::GetDwgClassName () const { return isA()->name(); }                                                                                  \
-    DwgDb##_classSuffix_##P DwgDb##_classSuffix_##::StaticCreateObject () { return new DwgDb##_classSuffix_##(); }                                                              \
+    DwgString          DwgDb##_classSuffix_##::GetDwgClassName () const { return isA()->name(); }                                                                               \
     DWGDB_DEFINE_DXFOUTFIELDS_MEMBER(##_classSuffix_##)                                                                                                                         \
     DWGDB_DEFINE_DXFOUT_MEMBER(##_classSuffix_##)                                                                                                                               \
     DWGDB_DEFINE_GETXDATA_MEMBER(##_classSuffix_##)                                                                                                                             \
     DWGRX_DEFINE_RX_MEMBER(Db##_classSuffix_##)
 
-// define common methods for DbObject derivitives requiring psuedo-database
+// define common methods for DbObject derivitives requiring psuedo-database (e.g. DwgGi objects)
     // define psuedo-database entities
     // implement SmartPtr interfaces & define their non-virtual counterparts
     // define common DbObject methods (above)
-#define DWGDB_OBJECT_DEFINE_MEMBERS2(_classSuffix_)                                                                                                                             \
+#define DWGDB_OBJECT_DEFINE_BASEMEMBERS(_classSuffix_)              \
     DWGDB_PSEUDO_DEFINE_MEMBERS(_classSuffix_)                      \
     DWGDB_DEFINE_SMARTPTR_MEMBERS(_classSuffix_)                    \
     DWGDB_OBJECT_DEFINE_MEMBERS(_classSuffix_)
 
+// define common methods generic Object, plus an object Create method
+#define DWGDB_OBJECT_DEFINE_MEMBERS2(_classSuffix_)                 \
+    DWGDB_OBJECT_DEFINE_BASEMEMBERS(_classSuffix_)                  \
+    DWGDB_OBJECT_DEFINE_CREATE(_classSuffix_)
+    
 // define common methods for DbEntity derivitives:
-#define DWGDB_ENTITY_DEFINE_MEMBERS(_classSuffix_)                  \
-    DWGDB_OBJECT_DEFINE_MEMBERS2(_classSuffix_)                     \
+#define DWGDB_ENTITY_DEFINE_BASEMEMBERS(_classSuffix_)              \
+    DWGDB_OBJECT_DEFINE_BASEMEMBERS(_classSuffix_)                  \
     DWGDB_ENTITY_DEFINE_GETGRIPPOINTS(_classSuffix_)                \
     DWGDB_ENTITY_DEFINE_GETRANGE(_classSuffix_)                     \
     uint16_t            DwgDb##_classSuffix_##::GetColorIndex () const { return static_cast<uint16_t>(T_Super::colorIndex()); }            \
@@ -562,6 +581,11 @@ END_DWGDB_NAMESPACE
     bool                DwgDb##_classSuffix_##::CanReceiveShadows () const { return T_Super::receiveShadows(); }                                 \
     bool                DwgDb##_classSuffix_##::IsPlanar () const { return T_Super::isPlanar(); }                                                \
     void DwgDb##_classSuffix_##::GetEcs(TransformR ecs) const { DWGGE_Type(Matrix3d) m; DWGDB_CALLSDKMETHOD(m=T_Super::getEcs(), T_Super::getEcs(m)); return Util::GetTransform(ecs, m); }
+
+// define common methods for DbEntity as above, plus an object Create method
+#define DWGDB_ENTITY_DEFINE_MEMBERS(_classSuffix_)                  \
+    DWGDB_ENTITY_DEFINE_BASEMEMBERS(_classSuffix_)                  \
+    DWGDB_OBJECT_DEFINE_CREATE(_classSuffix_)
 
 
 void    RegisterDwgDbObjectExtensions (bool beforeValidation);

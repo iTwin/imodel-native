@@ -198,6 +198,9 @@ LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)acgex$(RealDwgSuffix)$(libext)
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)AcDbPointCloudObj$(libext)
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)acSceneOE$(libext)
 
+# Need UuidCreate
+LINKER_LIBRARIES_DELAYLOADED    + Rpcrt4.lib
+
 %endif  // OpenDwg or RealDwg
 
 %include $(sharedMki)linkLibrary.mki

@@ -25,27 +25,6 @@ USING_NAMESPACE_DWGDB
 
 BEGIN_DGNDBSYNC_DWG_NAMESPACE
 
-enum class DwgFileVersion
-    {
-    Invalid = -2,   // Not a DWG version at all
-    Newer   = -1,   // A newer version not currently supported
-    Unknown = 0,    // An old version not known to us but can potentially open
-    R2_5    = 1,
-    R2_6    = 2,
-    R9      = 3,
-    R10     = 4,
-    R11     = 5,
-    R13     = 6,
-    R14     = 7,
-    R2000   = 8,
-    R2004   = 9,
-    R2007   = 10,
-    R2010   = 11,
-    R2013   = 12,
-    R2018   = 13,
-    MAX     = R2018
-    };  // DwgFileVersion
-
 struct DwgHelper : NonCopyableClass
     {
     DGNDBSYNC_EXPORT static StandardUnit     GetStandardUnitFromDwgUnit (DwgDbUnits const& dwgUnit);

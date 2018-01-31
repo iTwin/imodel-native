@@ -109,6 +109,9 @@ public:
     DWGDB_EXPORT DwgDbObjectId      GetObjectId (DwgDbHandleCR handle);
     DWGDB_EXPORT DwgDbLightingUnits GetLightingUnits () const;
     DWGDB_EXPORT bool               GetLightGlyphDisplay () const;
+    DWGDB_EXPORT DwgFileVersion     GetFileVersion () const;
+    DWGDB_EXPORT DwgDbStatus        SaveAs (WCharCP newFileName, DwgFileVersion ver = DwgFileVersion::Current, bool createBakFile = false);
+    DWGDB_EXPORT DwgDbStatus        SaveAsDxf (WCharCP dxfFileName, DwgFileVersion ver = DwgFileVersion::Current, int precision = 6);
     };  // DwgDbDatabase
 
 /*=================================================================================**//**

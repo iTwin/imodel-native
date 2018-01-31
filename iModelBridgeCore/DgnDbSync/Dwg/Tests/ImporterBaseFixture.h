@@ -2,7 +2,7 @@
 |
 |  $Source: Dwg/Tests/ImporterBaseFixture.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -33,5 +33,6 @@ public:
     void DoConvert(BentleyApi::BeFileNameCR output, BentleyApi::BeFileNameCR input);
     void DoUpdate(BentleyApi::BeFileNameCR output, BentleyApi::BeFileNameCR input, bool expectFailure = false);
     void SetUp_CreateNewDgnDb(); // look for name of bim to create in m_seedDgnDbFileName
+    uint32_t GetCount() const;
 };
 
