@@ -18,6 +18,9 @@ static Utf8CP const DISPLAY_UNIT_NAME               = "DisplayUnitName";
 static Utf8CP const DISPLAY_FORMAT_STRING           = "DisplayFormatString";
 static Utf8CP const DEFAULT_FORMATTER               = "0.######";
 
+static Utf8CP const ECV3_CONVERSION_ATTRIBUTES      = "ECv3ConversionAttributes";
+static Utf8CP const OLD_PERSISTENCE_UNIT            = "OldPersistenceUnit";
+
 bool tryCreateCA(ECSchemaR schema, Utf8CP origClassName, Utf8CP className, IECInstancePtr& caInstance)
     {
     ECClassCP ecClass = nullptr;
@@ -72,6 +75,12 @@ bool addUnitSpecificationsToProperty(ECSchemaR schema, ECPropertyP ecProperty, E
     return true;
     }
 
+void removeOldPersistenceUnitCustomAttribute(ECSchemaR schema, ECPropertyP ecProperty)
+    {
+    ecProperty->RemoveCustomAttribute(ECV3_CONVERSION_ATTRIBUTES, OLD_PERSISTENCE_UNIT);
+    ecProperty->RemoveSupplementedCustomAttribute(ECV3_CONVERSION_ATTRIBUTES, OLD_PERSISTENCE_UNIT);
+    }
+
 ECSchemaPtr getSchema()
     {
     auto context = ECSchemaReadContext::CreateContext();
@@ -91,12 +100,22 @@ bool ECSchemaDownConverter::Convert(ECSchemaR schema)
 
     for(auto const& ecClass : schema.GetClasses())
         {
-        for(auto const& ecProperty : ecClass->GetProperties())
+        for(auto const& ecProperty : ecClass->GetProperties(false))
             {
             if (ecProperty->IsKindOfQuantityDefinedLocally())
-                addUnitSpecificationsToProperty(schema, ecProperty, *s_unitAttributesSchema);
+                {
+                if(!addUnitSpecificationsToProperty(schema, ecProperty, *s_unitAttributesSchema))
+                    {
+                    LOG.errorv("Failed to add UnitSpecifications to property '%s.%s.%s' stopping conversion.", 
+                               schema.GetName().c_str(), ecClass->GetName().c_str(), ecProperty->GetName().c_str());
+                    return false;
+                    }
+                removeOldPersistenceUnitCustomAttribute(schema, ecProperty);
+                }
             }
         }
+
+    schema.RemoveUnusedSchemaReferences();
     return true;
     }
 

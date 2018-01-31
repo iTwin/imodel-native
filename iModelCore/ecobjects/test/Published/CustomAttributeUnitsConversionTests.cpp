@@ -923,8 +923,15 @@ TEST_F(UnitsCustomAttributesConversionTests, EC3KOQsConvertBackToUnitSpecificati
     {
     Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding='UTF-8'?>
         <ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+            <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" alias="V2ToV3" />
             <ECEntityClass typeName='A' modifier='abstract'>
-                <ECProperty propertyName='PropA' typeName='double' kindOfQuantity='MyKindOfQuantity' />
+                <ECProperty propertyName='PropA' typeName='double' kindOfQuantity='MyKindOfQuantity'>
+                    <ECCustomAttributes>
+                        <OldPersistenceUnit xmlns="ECv3ConversionAttributes.01.00">
+                            <Name>FOOT</Name>
+                        </OldPersistenceUnit>
+                    </ECCustomAttributes>
+                </ECProperty>
             </ECEntityClass>
             <ECEntityClass typeName='B' modifer='none'>
                 <BaseClass>A</BaseClass>
@@ -954,7 +961,11 @@ TEST_F(UnitsCustomAttributesConversionTests, EC3KOQsConvertBackToUnitSpecificati
 
     ASSERT_TRUE(ECSchemaDownConverter::Convert(*schema));
 
+    bvector<Utf8String> expectedRefSchemas;
+    expectedRefSchemas.push_back("Unit_Attributes.01.00.00");
+    verifyReferencedSchemas(*schema, expectedRefSchemas);
     EXPECT_STREQ("CENTIMETRE", getUnitName(schema.get(), "A", "PropA", "UnitSpecificationAttr", "UnitName").c_str());
+    EXPECT_FALSE(schema->GetClassCP("A")->GetPropertyP("PropA")->GetCustomAttribute("OldPersistenceUnit").IsValid());
     EXPECT_STREQ("FOOT", getUnitName(schema.get(), "A", "PropA", "DisplayUnitSpecificationAttr", "DisplayUnitName").c_str());
     EXPECT_STREQ("NEWTON", getUnitName(schema.get(), "D", "Prop1", "UnitSpecificationAttr", "UnitName").c_str());
     EXPECT_FALSE(schema->GetClassCP("D")->GetPropertyP("Prop1")->GetCustomAttributeLocal("DisplayUnitSpecificationAttr").IsValid());
