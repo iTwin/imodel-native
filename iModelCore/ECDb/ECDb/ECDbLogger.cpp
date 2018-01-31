@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbLogger.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -34,7 +34,7 @@ BentleyApi::NativeLogging::ILogger& ECDbLogger::Get()
 //static
 void ECDbLogger::LogSqliteError(BeSQLite::Db const& db, BeSQLite::DbResult sqliteStat, Utf8CP errorMessageHeader)
     {
-    if (BE_SQLITE_OK == sqliteStat || !Get().isSeverityEnabled(NativeLogging::LOG_ERROR))
+    if (BE_SQLITE_OK == sqliteStat || BE_SQLITE_ROW == sqliteStat || BE_SQLITE_DONE == sqliteStat || BE_SQLITE_INTERRUPT == sqliteStat || !Get().isSeverityEnabled(NativeLogging::LOG_ERROR))
         return;
 
     if (errorMessageHeader == nullptr)
