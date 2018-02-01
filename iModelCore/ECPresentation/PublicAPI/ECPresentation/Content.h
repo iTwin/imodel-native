@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/Content.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,6 +13,7 @@
 #include <ECPresentation/ExtendedData.h>
 #include <ECPresentation/NavNode.h>
 #include <ECPresentation/RulesDriven/Rules/RelatedPropertiesSpecification.h>
+
 #include <ECDb/ECInstanceId.h>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
@@ -549,6 +550,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
     {
     private:
         int m_priority;
+        bmap<ECClassCP, bvector<ECPropertyCP>> m_labelProperties;
 
     protected:
         DisplayLabelField* _AsDisplayLabelField() override {return this;}
@@ -568,6 +570,18 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
 
         //! Set the priority for this field.
         void SetPriority(int priority) {m_priority = priority;}
+
+        //! Get names of properties whose values should be used as display label
+        bvector<ECPropertyCP> const GetPropertiesForClass(ECClassCP ecClass) const
+            {
+            if (nullptr == ecClass  || m_labelProperties.empty())
+                return bvector<ECPropertyCP>();
+            auto iter = m_labelProperties.find(ecClass);
+            return iter != m_labelProperties.end() ? iter->second : bvector<ECPropertyCP>();
+            }
+
+        //! Set names of properties whose values should be used as display label
+        void SetPropertiesMap(bmap<ECClassCP, bvector<ECPropertyCP>> labelProperties) {m_labelProperties = labelProperties;}
     };
 
     //===================================================================================
@@ -935,6 +949,9 @@ public:
     void RemoveField(size_t index) {RemoveField(*m_fields[index]);}
     //! Remove a field from this descriptor by name.
     ECPRESENTATION_EXPORT void RemoveField(Utf8CP name);
+
+    //! Get display label field.
+    DisplayLabelField* GetDisplayLabelField() const {return !m_fields.empty() && m_fields[0]->IsDisplayLabelField() ? m_fields[0]->AsDisplayLabelField() : nullptr;}
 
     //! Get the sorting field used to sort content.
     Field const* GetSortingField() const {return (m_sortingFieldIndex < 0 || m_sortingFieldIndex >= (int)m_fields.size()) ? nullptr : m_fields[m_sortingFieldIndex];}

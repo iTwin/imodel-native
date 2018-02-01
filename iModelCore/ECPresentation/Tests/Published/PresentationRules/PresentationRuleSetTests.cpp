@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/PresentationRules/PresentationRuleSetTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PresentationRulesTests.h"
@@ -211,10 +211,14 @@ TEST_F(PresentationRuleSetTests, WritesToXml)
     UserSettingsGroupP userSettingsGroup = new UserSettingsGroup("UserCategoryLabel");
     ASSERT_TRUE(nullptr != userSettingsGroup);
 
+    InstanceLabelOverrideP instanceLabelOverride = new InstanceLabelOverride(100, true, "TestClassName", "TestProperties");
+    ASSERT_TRUE(nullptr != sortingRule);
+
     ruleSet->AddPresentationRule(*checkBoxRule);
     ruleSet->AddPresentationRule(*renameNodeRule);
     ruleSet->AddPresentationRule(*sortingRule);
     ruleSet->AddPresentationRule(*userSettingsGroup);
+    ruleSet->AddPresentationRule(*instanceLabelOverride);
 
     Utf8String serializedRuleSet = ruleSet->WriteToXmlString();
 
@@ -230,27 +234,28 @@ TEST_F(PresentationRuleSetTests, WritesToXml)
          R"(IsSearchEnabled="true" )"
          R"(SearchClasses="" )"
          R"(ExtendedData="">)"
-        R"(<RootNodeRule Priority="1" AutoExpand="false" TargetTree="Both" StopFurtherProcessing="false" Condition="TestCondition1" OnlyIfNotHandled="true"/>)"
-                R"(<ChildNodeRule Priority="2" TargetTree="SelectionTree" StopFurtherProcessing="false" Condition="TestCondition2" OnlyIfNotHandled="true"/>)"
-                R"(<ContentRule Priority="3" CustomControl="" Condition="TestCondition3" OnlyIfNotHandled="true"/>)"
-                R"(<ImageIdOverride Priority="4" ImageId="ImageIdOverrideTestValue" Condition="TestCondition4" OnlyIfNotHandled="false"/>)"
-                R"(<LabelOverride Priority="5" Label="LabelOverrideLabelValue" Description="LabelOverrideDescriptionValue" Condition="TestCondition5" OnlyIfNotHandled="false"/>)"
-                R"(<StyleOverride Priority="6" ForeColor="Blue" BackColor="Red" FontStyle="Bold" Condition="TestCondition6" OnlyIfNotHandled="false"/>)"
-                R"(<GroupingRule Priority="8" SchemaName="DummySchemaName" ClassName="DummyClassName" ContextMenuCondition="ContextMenuCondition" )"
-                 R"(ContextMenuLabel="ContextMenuLabel" SettingsId="SettingsId" Condition="TestCondition7" OnlyIfNotHandled="true">)"
-                    R"(<ClassGroup ContextMenuLabel="ContextMenuLabel" DefaultGroupLabel="" CreateGroupForSingleItem="true" SchemaName="SchemaName" BaseClassName="BaseClassName"/>)"
-                    R"(<PropertyGroup ContextMenuLabel="ImageId" DefaultGroupLabel="" ImageId="ContextMenuLabel" CreateGroupForSingleItem="true" )"
-                     R"(CreateGroupForUnspecifiedValues="true" PropertyName="PropertyName" GroupingValue="DisplayLabel" SortingValue="DisplayLabel">)"
-                        R"(<Range FromValue="FromValue" ToValue="ToValue" Label="Label" ImageId="ImageId"/>)"
-                    R"(</PropertyGroup>)"
-                R"(</GroupingRule>)"
-                R"(<LocalizationResourceKeyDefinition Priority="7" Id="UniqueId" Key="LocalizedStringAccessKey" DefaultValue="ThisIsTheValueIfItFails"/>)"
-                R"(<UserSettings Priority="1000" CategoryLabel="UserCategoryLabel"/><CheckBoxRule Priority="9" PropertyName="checkBoxProperty" UseInversedPropertyValue="false" )"
-                 R"(DefaultValue="false" IsEnabled="" Condition="checkBoxCondition" OnlyIfNotHandled="true"/>)"
-                R"(<RenameNodeRule Priority="10" Condition="RenameRuleCondition" OnlyIfNotHandled="false"/>)"
-                R"(<SortingRule Priority="11" SchemaName="DummySchemaName" ClassName="DummyClassName" PropertyName="DummyPropertyName" SortAscending="false" DoNotSort="true" )"
-                 R"(IsPolymorphic="false" Condition="SortingCondition" OnlyIfNotHandled="false"/>)"
-            R"(</PresentationRuleSet>)";
+            R"(<RootNodeRule Priority="1" AutoExpand="false" TargetTree="Both" StopFurtherProcessing="false" Condition="TestCondition1" OnlyIfNotHandled="true"/>)"
+            R"(<ChildNodeRule Priority="2" TargetTree="SelectionTree" StopFurtherProcessing="false" Condition="TestCondition2" OnlyIfNotHandled="true"/>)"
+            R"(<ContentRule Priority="3" CustomControl="" Condition="TestCondition3" OnlyIfNotHandled="true"/>)"
+            R"(<ImageIdOverride Priority="4" ImageId="ImageIdOverrideTestValue" Condition="TestCondition4" OnlyIfNotHandled="false"/>)"
+            R"(<LabelOverride Priority="5" Label="LabelOverrideLabelValue" Description="LabelOverrideDescriptionValue" Condition="TestCondition5" OnlyIfNotHandled="false"/>)"
+            R"(<StyleOverride Priority="6" ForeColor="Blue" BackColor="Red" FontStyle="Bold" Condition="TestCondition6" OnlyIfNotHandled="false"/>)"
+            R"(<GroupingRule Priority="8" SchemaName="DummySchemaName" ClassName="DummyClassName" ContextMenuCondition="ContextMenuCondition" )"
+             R"(ContextMenuLabel="ContextMenuLabel" SettingsId="SettingsId" Condition="TestCondition7" OnlyIfNotHandled="true">)"
+                R"(<ClassGroup ContextMenuLabel="ContextMenuLabel" DefaultGroupLabel="" CreateGroupForSingleItem="true" SchemaName="SchemaName" BaseClassName="BaseClassName"/>)"
+                R"(<PropertyGroup ContextMenuLabel="ImageId" DefaultGroupLabel="" ImageId="ContextMenuLabel" CreateGroupForSingleItem="true" )"
+                 R"(CreateGroupForUnspecifiedValues="true" PropertyName="PropertyName" GroupingValue="DisplayLabel" SortingValue="DisplayLabel">)"
+                    R"(<Range FromValue="FromValue" ToValue="ToValue" Label="Label" ImageId="ImageId"/>)"
+                R"(</PropertyGroup>)"
+            R"(</GroupingRule>)"
+            R"(<LocalizationResourceKeyDefinition Priority="7" Id="UniqueId" Key="LocalizedStringAccessKey" DefaultValue="ThisIsTheValueIfItFails"/>)"
+            R"(<UserSettings Priority="1000" CategoryLabel="UserCategoryLabel"/><CheckBoxRule Priority="9" PropertyName="checkBoxProperty" UseInversedPropertyValue="false" )"
+             R"(DefaultValue="false" IsEnabled="" Condition="checkBoxCondition" OnlyIfNotHandled="true"/>)"
+            R"(<RenameNodeRule Priority="10" Condition="RenameRuleCondition" OnlyIfNotHandled="false"/>)"
+            R"(<SortingRule Priority="11" SchemaName="DummySchemaName" ClassName="DummyClassName" PropertyName="DummyPropertyName" SortAscending="false" DoNotSort="true" )"
+             R"(IsPolymorphic="false" Condition="SortingCondition" OnlyIfNotHandled="false"/>)"
+            R"(<InstanceLabelOverride Priority="100" ClassName="TestClassName" PropertyNames="TestProperties" OnlyIfNotHandled="true"/>)"
+        R"(</PresentationRuleSet>)";
     EXPECT_STREQ(expected, serializedRuleSet.c_str());
     }
 
@@ -273,6 +278,7 @@ TEST_F(PresentationRuleSetTests, ComputesCorrectHashes)
     ruleset1->AddPresentationRule(*new SortingRule());
     ruleset1->AddPresentationRule(*new UserSettingsGroup());
     ruleset1->AddPresentationRule(*new ContentModifier());
+    ruleset1->AddPresentationRule(*new InstanceLabelOverride());
     PresentationRuleSetPtr ruleset2 = PresentationRuleSet::CreateInstance("rulesetId", 1, 0, true, "", "", "", true);
     ruleset2->AddPresentationRule(*new RootNodeRule());
     ruleset2->AddPresentationRule(*new ChildNodeRule());
@@ -287,6 +293,7 @@ TEST_F(PresentationRuleSetTests, ComputesCorrectHashes)
     ruleset2->AddPresentationRule(*new SortingRule());
     ruleset2->AddPresentationRule(*new UserSettingsGroup());
     ruleset2->AddPresentationRule(*new ContentModifier());
+    ruleset2->AddPresentationRule(*new InstanceLabelOverride());
     PresentationRuleSetPtr ruleset3 = PresentationRuleSet::CreateInstance("rulesetId", 1, 0, true, "", "", "", true);
 
     // Hashes are same for rulesets with same rules
@@ -349,6 +356,7 @@ TEST_F(PresentationRuleSetTests, TestCustomizationRuleLoadingFromXml)
         "    VersionMinor=\"3\""
         "    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
         "    xsi:noNamespaceSchemaLocation=\"PresentationRuleSetSchema.xsd\">"
+        "    <InstanceLabelOverride ClassName='testClass' PropertyNames='testProperties'/>"
         "    <RootNodeRule>"
         "      <LabelOverride Label = 'newLabel1' />"
         "    </RootNodeRule>"
@@ -389,6 +397,13 @@ TEST_F(PresentationRuleSetTests, TestCustomizationRuleLoadingFromXml)
     EXPECT_STREQ("", imageIdOverride->GetCondition().c_str());
     EXPECT_STREQ("NewImageId100", imageIdOverride->GetImageId().c_str());
     EXPECT_EQ(1000, imageIdOverride->GetPriority());
+
+    ASSERT_EQ(1, ruleSet->GetInstanceLabelOverrides().size());
+    InstanceLabelOverride* instnceLabelOverride = dynamic_cast<InstanceLabelOverride*>(ruleSet->GetInstanceLabelOverrides()[0]);
+    EXPECT_STREQ("testClass", instnceLabelOverride->GetClassName().c_str());
+    ASSERT_EQ(1, instnceLabelOverride->GetPropertyNames().size());
+    EXPECT_STREQ("testProperties", instnceLabelOverride->GetPropertyNames()[0].c_str());
+    EXPECT_EQ(1000, instnceLabelOverride->GetPriority());
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/CustomFunctions.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,6 +17,7 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 #define FUNCTION_NAME_GetECInstanceDisplayLabel     "GetECInstanceDisplayLabel"
 #define FUNCTION_NAME_GetECClassDisplayLabel        "GetECClassDisplayLabel"
 #define FUNCTION_NAME_GetECPropertyDisplayLabel     "GetECPropertyDisplayLabel"
+#define FUNCTION_NAME_GetNavigationPropertyLabel    "GetNavigationPropertyLabel"
 #define FUNCTION_NAME_GetSortingValue               "GetSortingValue"
 #define FUNCTION_NAME_GetRangeIndex                 "GetRangeIndex"
 #define FUNCTION_NAME_GetRangeImageId               "GetRangeImageId"

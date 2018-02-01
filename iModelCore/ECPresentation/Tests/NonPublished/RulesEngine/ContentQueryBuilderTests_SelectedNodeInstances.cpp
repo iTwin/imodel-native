@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/ContentQueryBuilderTests_SelectedNodeInstances.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "QueryBuilderTests.h"
@@ -471,3 +471,100 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_SelectsRawValueAndGroups
         << "Expected: " << BeRapidJsonUtilities::ToPrettyString(expected->GetContract()->GetDescriptor().AsJson()) << "\r\n"
         << "Actual:   " << BeRapidJsonUtilities::ToPrettyString(query->GetContract()->GetDescriptor().AsJson());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_InstanceLabelOverride_AppliedByPriority)
+    {
+    m_descriptorBuilder->GetContext().SetPreferredDisplayType(ContentDisplayType::Grid);
+
+    ECClassCP ecClass = GetECClass("RulesEngineTest", "Widget");
+    SelectedNodeInstancesSpecification spec(1, false, "", "", false);
+    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID,Description", 1000, true));
+    m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
+    m_ruleset->AddPresentationRule(*new InstanceLabelOverride(2, true, "RulesEngineTest:Widget", "Description"));
+    TestParsedSelectionInfo info(*ecClass, ECInstanceId((uint64_t)123));
+    ContentDescriptorPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
+    ASSERT_TRUE(descriptor.IsValid());
+    descriptor->AddContentFlag(ContentFlags::ShowLabels);
+
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor, info);
+    ASSERT_TRUE(query.IsValid());
+
+    ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SelectedNodeInstances_InstanceLabelOverride_AppliedByPriority");
+    EXPECT_TRUE(expected->IsEqual(*query)) 
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_InstanceLabelOverride_OverrideSpecifiedClassInstancesLabelsWhenMultipleClassesSelected)
+    {
+    m_descriptorBuilder->GetContext().SetPreferredDisplayType(ContentDisplayType::Grid);
+
+    ECClassCP widgetClass = GetECClass("RulesEngineTest", "Widget");
+    ECClassCP gadgetClass = GetECClass("RulesEngineTest", "Gadget");
+
+    // set up selection
+    TestParsedSelectionInfo info({
+        bpair<ECClassCP, ECInstanceId>(gadgetClass, {ECInstanceId((uint64_t)1)}), 
+        bpair<ECClassCP, ECInstanceId>(widgetClass, {ECInstanceId((uint64_t)2)}), 
+        });
+
+    SelectedNodeInstancesSpecification spec(1, false, "", "", false);
+    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 1000, true));
+    m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
+
+    ContentDescriptorPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
+    ASSERT_TRUE(descriptor.IsValid());
+    descriptor->AddContentFlag(ContentFlags::ShowLabels);
+
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor, info);
+    ASSERT_TRUE(query.IsValid());
+
+    ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SelectedNodeInstances_InstanceLabelOverride_OverrideSpecifiedClassInstancesLabelsWhenMultipleClassesSelected");
+    EXPECT_TRUE(expected->IsEqual(*query)) 
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_InstanceLabelOverride_OverrideNavigationProperty)
+    {
+    m_descriptorBuilder->GetContext().SetPreferredDisplayType(ContentDisplayType::Grid);
+
+    ECClassCP widgetClass = GetECClass("RulesEngineTest", "Widget");
+    ECClassCP gadgetClass = GetECClass("RulesEngineTest", "Gadget");
+
+    // set up selection
+    TestParsedSelectionInfo info({
+        bpair<ECClassCP, ECInstanceId>(gadgetClass, {ECInstanceId((uint64_t)1)}), 
+        bpair<ECClassCP, ECInstanceId>(widgetClass, {ECInstanceId((uint64_t)2)}), 
+        });
+
+    SelectedNodeInstancesSpecification spec(1, false, "", "", false);
+    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID,Widget", 1000, true));
+    m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
+
+    ContentDescriptorPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
+    ASSERT_TRUE(descriptor.IsValid());
+    descriptor->AddContentFlag(ContentFlags::ShowLabels);
+
+
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor, info);
+    ASSERT_TRUE(query.IsValid());
+
+    ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SelectedNodeInstances_InstanceLabelOverride_OverrideNavigationProperty");
+    EXPECT_TRUE(expected->IsEqual(*query)) 
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
+    }
+

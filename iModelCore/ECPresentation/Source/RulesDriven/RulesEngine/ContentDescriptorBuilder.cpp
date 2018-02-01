@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/ContentDescriptorBuilder.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -445,6 +445,22 @@ public:
         m_descriptor = ContentDescriptor::Create(GetContext().GetPreferredDisplayType());
         if (nullptr != m_specification)
             QueryBuilderHelpers::ApplyDefaultContentFlags(*m_descriptor, GetContext().GetPreferredDisplayType(), *m_specification);
+
+        if (!m_descriptor->HasContentFlag(ContentFlags::NoFields))
+            {
+            if (nullptr == m_descriptor->GetDisplayLabelField())
+                {
+                Utf8String displayLabel = L10N::GetString(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel());
+                if (displayLabel.empty())
+                    {
+                    BeAssert(false);
+                    displayLabel = "Display Label";
+                    }
+                m_descriptor->AddField(new ContentDescriptor::DisplayLabelField(displayLabel));
+                }
+            m_descriptor->GetDisplayLabelField()->SetPropertiesMap(QueryBuilderHelpers::GetMappedLabelOverridingProperties(GetContext().GetSchemaHelper(), GetContext().GetRuleset().GetInstanceLabelOverrides()));
+            }
+
         }
         
     /*---------------------------------------------------------------------------------**//**

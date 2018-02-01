@@ -21,17 +21,17 @@ struct EXPORT_VTABLE_ATTRIBUTE InstanceLabelOverride : public CustomizationRule
     {
     private:
         Utf8String m_className;
-        Utf8String m_propertyNames;
+        bvector<Utf8String> m_properties;
 
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
         ECPRESENTATION_EXPORT virtual CharCP _GetXmlElementName() const override;
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
-        ECPRESENTATION_EXPORT virtual bool _ReadXml (BeXmlNodeP xmlNode) override;
+        ECPRESENTATION_EXPORT virtual bool _ReadXml(BeXmlNodeP xmlNode) override;
 
         //! Writes rule information to given XmlNode.
-        ECPRESENTATION_EXPORT virtual void _WriteXml (BeXmlNodeP xmlNode) const override;
+        ECPRESENTATION_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const override;
 
         //! Accept nested customization rule visitor
         ECPRESENTATION_EXPORT void _Accept(CustomizationRuleVisitor& visitor) const override;
@@ -45,13 +45,11 @@ struct EXPORT_VTABLE_ATTRIBUTE InstanceLabelOverride : public CustomizationRule
     public:
         InstanceLabelOverride() {}
 
-        InstanceLabelOverride(int priority, bool onlyIfNotHandled, Utf8String className, Utf8String propertyNames) 
-            : CustomizationRule(priority, onlyIfNotHandled), m_className(className), m_propertyNames(propertyNames)
-            {}
+        ECPRESENTATION_EXPORT InstanceLabelOverride(int priority, bool onlyIfNotHandled, Utf8String className, Utf8StringCR propertyNames);
 
         ECPRESENTATION_EXPORT Utf8StringCR GetClassName() const;
 
-        ECPRESENTATION_EXPORT Utf8StringCR GetPropertyNames() const;
+        ECPRESENTATION_EXPORT bvector<Utf8String> const& GetPropertyNames() const;
     };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

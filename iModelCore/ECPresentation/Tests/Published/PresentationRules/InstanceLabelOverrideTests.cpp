@@ -32,7 +32,28 @@ TEST_F(InstanceLabelOverrideTests, LoadsFromXml)
     InstanceLabelOverride override;
     EXPECT_TRUE(override.ReadXml(xml->GetRootElement()));
     EXPECT_STREQ("TestClass", override.GetClassName().c_str());
-    EXPECT_STREQ("prop1,prop2", override.GetPropertyNames().c_str());
+    ASSERT_EQ(2, override.GetPropertyNames().size());
+    EXPECT_STREQ("prop1", override.GetPropertyNames()[0].c_str());
+    EXPECT_STREQ("prop2", override.GetPropertyNames()[1].c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras               12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(InstanceLabelOverrideTests, LoadsFromXml_TrimsEmptySpacesAroundPropertyNames)
+    {
+    static Utf8CP xmlString = R"(
+        <InstanceLabelOverride ClassName="TestClass" PropertyNames="  prop1 ,   prop2  "/>
+        )";
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
+    ASSERT_EQ(BEXML_Success, xmlStatus);
+    InstanceLabelOverride override;
+    EXPECT_TRUE(override.ReadXml(xml->GetRootElement()));
+    EXPECT_STREQ("TestClass", override.GetClassName().c_str());
+    ASSERT_EQ(2, override.GetPropertyNames().size());
+    EXPECT_STREQ("prop1", override.GetPropertyNames()[0].c_str());
+    EXPECT_STREQ("prop2", override.GetPropertyNames()[1].c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -49,7 +70,7 @@ TEST_F(InstanceLabelOverrideTests, LoadsFromXmlWithDefaultValues)
     
     EXPECT_TRUE(override.ReadXml(xml->GetRootElement()));
     EXPECT_STREQ("", override.GetClassName().c_str());
-    EXPECT_STREQ("", override.GetPropertyNames().c_str());
+    EXPECT_TRUE(override.GetPropertyNames().empty());
     }
 
 ///*---------------------------------------------------------------------------------**//**

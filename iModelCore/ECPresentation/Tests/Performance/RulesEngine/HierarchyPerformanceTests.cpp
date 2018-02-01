@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Performance/RulesEngine/HierarchyPerformanceTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "RulesEnginePerformanceTests.h"
@@ -48,10 +48,6 @@ struct HierarchyPerformanceTests : RulesEnginePerformanceTests
         PresentationRuleSetPtr ruleset = PresentationRuleSet::ReadFromXmlString(R"ruleset(
             <PresentationRuleSet RuleSetId="Items" VersionMajor="1" VersionMinor="3" SupportedSchemas="Generic,BisCore"
                                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="PresentationRuleSetSchema.xsd">
-
-                <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("DefinitionPartition", "BisCore") ANDALSO ThisNode.InstanceId = "16"' Label='"Dictionary"' Priority='200'/>
-                <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("LinkPartition", "BisCore") ANDALSO ThisNode.InstanceId = "14"' Label='"Reality Data Links"' Priority='200'/>
-                <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Element", "BisCore")' Label='IIF(IsNull(this.UserLabel) OR this.UserLabel="", this.CodeValue, this.UserLabel)' OnlyIfNotHandled='true' Priority='100' />
 
                 <ImageIdOverride ImageId='"ECLiteralImage://CATEGORY"' Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Category", "BisCore")'  Priority='100'/>
                 <ImageIdOverride ImageId='"ECLiteralImage://MODEL"' Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Model", "BisCore")' Priority='100'/>
@@ -324,4 +320,48 @@ TEST_F(HierarchyPerformanceTests, UpdateGeometricElementInHierarchy)
     Timer _time;
     source->NotifyECInstanceChanged(m_project, id, *ecClass, ChangeType::Update);
     _time.Finish();
+    }
+
+/*=================================================================================**//**
+* @bsiclass                                     Aidas.Vaiksnoras                01/2018
++===============+===============+===============+===============+===============+======*/
+struct LabelOverrideHierarchyPerformanceTests : HierarchyPerformanceTests 
+    {
+    PresentationRuleSetPtr _SupplyRuleset() const override
+        {
+        PresentationRuleSetPtr ruleset = HierarchyPerformanceTests::_SupplyRuleset();
+        ruleset->AddPresentationRule(*new LabelOverride(R"(ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Element", "BisCore"))", 100, R"(IIF(IsNull(this.UserLabel) OR this.UserLabel="", this.CodeValue, this.UserLabel))", ""));
+        return ruleset;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(LabelOverrideHierarchyPerformanceTests, CreateFullHierarchy)
+    {
+    Timer t_hierarchy;
+    IncrementallyGetNodes("Items", nullptr, false);
+    }
+
+/*=================================================================================**//**
+* @betest                                       Aidas.Vaiksnoras                01/2018
++===============+===============+===============+===============+===============+======*/
+struct InstanceLabelOverrideHierarchyPerformanceTests : HierarchyPerformanceTests 
+    {
+    PresentationRuleSetPtr _SupplyRuleset() const override
+        {
+        PresentationRuleSetPtr ruleset = HierarchyPerformanceTests::_SupplyRuleset();
+        ruleset->AddPresentationRule(*new InstanceLabelOverride(100, true, "BisCore:Element", "CodeValue,UserLabel"));
+        return ruleset;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(InstanceLabelOverrideHierarchyPerformanceTests, CreateFullHierarchy)
+    {
+    Timer t_hierarchy;
+    IncrementallyGetNodes("Items", nullptr, false);
     }

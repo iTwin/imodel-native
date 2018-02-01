@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/Rules/CommonTools.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -95,4 +95,15 @@ Utf8CP CommonTools::FormatRelationshipMeaningString(RelationshipMeaning meaning)
     if (RelationshipMeaning::RelatedInstance == meaning)
         return COMMON_XML_ATTRIBUTE_VALUE_RELATIONSHIP_MEANING_RELATEDINSTANCE;
     return COMMON_XML_ATTRIBUTE_VALUE_RELATIONSHIP_MEANING_RELATEDINSTANCE;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<Utf8String> CommonTools::ParsePropertiesNames(Utf8StringCR properties)
+    {
+    bvector<Utf8String> propertiesNamesList;
+    BeStringUtilities::Split(properties.c_str(), ",", propertiesNamesList);
+    std::for_each(propertiesNamesList.begin(), propertiesNamesList.end(), [](Utf8StringR name){name.Trim();});
+    return propertiesNamesList;
     }

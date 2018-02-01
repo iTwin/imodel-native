@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/CommonTools.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -41,6 +41,9 @@ public:
 
     //! Formats RelationshipMeaning string value
     static Utf8CP FormatRelationshipMeaningString(RelationshipMeaning meaning);
+
+    //! Parse properties names from string value to vector of properties names.
+    static bvector<Utf8String> ParsePropertiesNames(Utf8StringCR value);
 
     //! Copies the rules in source vector into the target vector.
     template<typename T> 

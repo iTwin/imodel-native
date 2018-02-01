@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/ContentQueryBuilderTests_ContentInstancesOfSpecificClasses.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "QueryBuilderTests.h"
@@ -284,4 +284,74 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_SelectPointP
     EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()))
         << "Expected: " << BeRapidJsonUtilities::ToPrettyString(expected->GetContract()->GetDescriptor().AsJson()) << "\r\n"
         << "Actual:   " << BeRapidJsonUtilities::ToPrettyString(query->GetContract()->GetDescriptor().AsJson());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_InstanceLabelOverride_AppliedByPriority)
+    {
+    ContentInstancesOfSpecificClassesSpecification spec(1, "", "RulesEngineTest:Widget", false);
+    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID,Description", 1000, true));
+    m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
+    m_ruleset->AddPresentationRule(*new InstanceLabelOverride(2, true, "RulesEngineTest:Widget", "Description"));
+
+    ContentDescriptorPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
+    ASSERT_TRUE(descriptor.IsValid());
+    descriptor->AddContentFlag(ContentFlags::ShowLabels);
+
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor);
+    ASSERT_TRUE(query.IsValid());
+
+    ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("ContentInstancesOfSpecificClasses_InstanceLabelOverride_AppliedByPriority");
+    EXPECT_TRUE(expected->IsEqual(*query)) 
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_InstanceLabelOverride_OverrideOnlySpecifiedClassInstancesLabels)
+    {
+    ContentInstancesOfSpecificClassesSpecification spec(1, "", "RulesEngineTest:Widget,Gadget", false);
+    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 1000, true));
+    m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
+
+    ContentDescriptorPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
+    ASSERT_TRUE(descriptor.IsValid());
+    descriptor->AddContentFlag(ContentFlags::ShowLabels);
+
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor);
+    ASSERT_TRUE(query.IsValid());
+
+    ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("ContentInstancesOfSpecificClasses_InstanceLabelOverride_OverrideOnlySpecifiedClassInstancesLabels");
+    EXPECT_TRUE(expected->IsEqual(*query)) 
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_InstanceLabelOverride_OverrideNavigationProperty)
+    {
+    ContentInstancesOfSpecificClassesSpecification spec(1, "", "RulesEngineTest:Gadget", false);
+    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID,Widget", 1000, true));
+    m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
+
+    ContentDescriptorPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
+    ASSERT_TRUE(descriptor.IsValid());
+    descriptor->AddContentFlag(ContentFlags::ShowLabels);
+
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor);
+    ASSERT_TRUE(query.IsValid());
+
+    ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("ContentInstancesOfSpecificClasses_InstanceLabelOverride_OverrideNavigationProperty");
+    EXPECT_TRUE(expected->IsEqual(*query)) 
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
     }

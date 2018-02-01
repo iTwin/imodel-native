@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/NavigationQueryBuilderTests_AllRelatedInstanceNodes.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "QueryBuilderTests.h"
@@ -532,6 +532,53 @@ TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_GroupByRelationship
     ASSERT_TRUE(query.IsValid());
     
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("AllRelatedInstanceNodes_GroupByRelationshipAndClassAndLabel_LabelNodeChildrenQuery", spec);
+    EXPECT_TRUE(expected->IsEqual(*query))
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_InstanceLabelOverride_AppliedByPriority)
+    {
+    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Widget"));
+    m_nodesCache.Cache(*parentNode, false);
+
+    AllRelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, 0, "RulesEngineTest");
+    spec.SetRequiredRelationDirection(RequiredRelationDirection_Forward);
+    m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Gadget", "MyID"));
+    m_ruleset->AddPresentationRule(*new InstanceLabelOverride(2, true, "RulesEngineTest:Gadget", "Description"));
+    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
+    ASSERT_EQ(1, queries.size());
+
+    NavigationQueryPtr query = queries[0];
+    ASSERT_TRUE(query.IsValid());
+    
+    NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("AllRelatedInstanceNodes_InstanceLabelOverride_AppliedByPriority", spec);
+    EXPECT_TRUE(expected->IsEqual(*query))
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (NavigationQueryBuilderTests, AllRelatedInstanceNodes_InstanceLabelOverride_OverrideOnlySpecifiedClassInstancesLabels)
+    {
+    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Gadget"));
+    m_nodesCache.Cache(*parentNode, false);
+
+    AllRelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, 0, "RulesEngineTest");
+    spec.SetRequiredRelationDirection(RequiredRelationDirection_Both);
+    m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Sprocket", "MyID"));
+    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
+    ASSERT_EQ(1, queries.size());
+
+    NavigationQueryPtr query = queries[0];
+    ASSERT_TRUE(query.IsValid());
+    
+    NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("AllRelatedInstanceNodes_InstanceLabelOverride_OverrideOnlySpecifiedClassInstancesLabels", spec);
     EXPECT_TRUE(expected->IsEqual(*query))
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();

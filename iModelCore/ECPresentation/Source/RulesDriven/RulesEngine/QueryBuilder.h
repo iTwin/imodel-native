@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/QueryBuilder.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once 
@@ -248,6 +248,9 @@ public:
     static void ApplyDefaultContentFlags(ContentDescriptorR descriptor, Utf8CP displayType, ContentSpecificationCR);
     static void AddCalculatedFields(ContentDescriptorR, CalculatedPropertiesSpecificationList const&, ILocalizationProvider const*, PresentationRuleSetCR, ECClassCP);
     static void Aggregate(ContentDescriptorPtr& aggregateDescriptor, ContentDescriptorR inputDescriptor);
+
+    static bmap<ECClassCP, bvector<ECPropertyCP>> GetMappedLabelOverridingProperties(ECSchemaHelper const& helper, InstanceLabelOverrideList labelOverrides);
+
     static ContentQueryPtr CreateMergedResultsQuery(ContentQueryR, ContentDescriptorR);
 
     static BeSQLite::IdSet<BeSQLite::EC::ECInstanceId> CreateIdSetFromJsonArray(RapidJsonValueCR);

@@ -81,6 +81,7 @@ typedef bvector<CheckBoxRuleP>                      CheckBoxRuleList;
 typedef bvector<RenameNodeRuleP>                    RenameNodeRuleList;
 typedef bvector<SortingRuleP>                       SortingRuleList;
 typedef bvector<ContentModifierP>                   ContentModifierList;
+typedef bvector<InstanceLabelOverrideP>             InstanceLabelOverrideList;
 typedef bvector<PropertyEditorParametersSpecificationP> PropertyEditorParametersList;
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

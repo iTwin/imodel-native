@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/PresentationManagerImplTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TestHelpers.h"
@@ -79,6 +79,7 @@ void RulesDrivenECPresentationManagerImplTests::TearDownTestCase()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenECPresentationManagerImplTests::SetUp()
     {
+    Localization::Init();
     m_impl = new RulesDrivenECPresentationManagerImpl(RulesDrivenECPresentationManagerDependenciesFactory(), m_connections,
         RulesEngineTestHelpers::GetPaths(BeTest::GetHost()), true);
     m_impl->SetCategorySupplier(&m_categorySupplier);
@@ -98,6 +99,7 @@ void RulesDrivenECPresentationManagerImplTests::TearDown()
     {
     m_connection = nullptr;
     DELETE_AND_CLEAR(m_impl);
+    Localization::Terminate();
     }
 
 /*=================================================================================**//**

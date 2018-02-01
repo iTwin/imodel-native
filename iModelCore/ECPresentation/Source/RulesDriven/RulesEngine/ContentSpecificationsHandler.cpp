@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/ContentSpecificationsHandler.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -326,6 +326,8 @@ static bset<ECClassCP> CollectContentModifiers(ECSchemaHelper const& helper, Pre
         else
             classes.insert(ecClass); 
         }
+    for (InstanceLabelOverrideCP labelOverride : ruleset.GetInstanceLabelOverrides())
+        classes.insert(helper.GetECClass(labelOverride->GetClassName().c_str())); 
     return classes;
     }
 
