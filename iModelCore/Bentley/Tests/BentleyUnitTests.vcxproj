@@ -16,6 +16,7 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <ItemGroup>
+    <ClCompile Include="..\Bentley\nonport\BeTest.cpp" />
     <ClCompile Include="NonPublished\bentleylogging_test.cpp" />
     <ClCompile Include="NonPublished\BeStringUtilitiesTests.cpp" />
     <ClCompile Include="NonPublished\consoleatp.cpp" />
@@ -79,6 +80,7 @@
     <None Include="Prewire.mke" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\PublicAPI\Bentley\BeTest.h" />
     <ClInclude Include="Performance\PerformanceTests.h" />
     <ClInclude Include="Published\bunique_ptr_test.h" />
     <ClInclude Include="Published\BeSystemInfo_Tests.h" />

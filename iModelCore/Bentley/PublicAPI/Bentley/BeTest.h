@@ -231,6 +231,9 @@ typedef void T_BeAssertListener (WCharCP _Message, WCharCP _File, unsigned _Line
 //! Register an assertion failure listener
 BENTLEYDLL_EXPORT static void SetBeAssertListener (T_BeAssertListener*);
 
+BENTLEYDLL_EXPORT static void setS_mainThreadId (intptr_t id);
+
+
 ///@}
 
 ///@name Information about the currently running test 

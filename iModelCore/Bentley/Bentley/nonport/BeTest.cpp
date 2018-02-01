@@ -299,6 +299,15 @@ void            BeTest::SetFailOnAssert (bool doFail, BeAssertFunctions::AssertT
     s_bentleyCS.unlock();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Taslim.Murad    01/2018
+//--------------------------------------------------------------------------------------
+void BeTest::setS_mainThreadId (intptr_t id)
+    {
+    s_mainThreadId = id;
+    return void ();
+    }
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                                    01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -307,7 +316,7 @@ void BeTest::SetFailOnInvalidParameterAssert(bool doFail)
     BeMutexHolder lock(s_bentleyCS);
     s_failOnInvalidParameterAssert = doFail;
     }
-
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
