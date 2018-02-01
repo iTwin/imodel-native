@@ -174,10 +174,10 @@ TEST_F(BasicTests, UpdateElements_AddDelete)
     EXPECT_EQ (0, GetCount());
     /*-----------------------------------------------------------------------------------
     At this time, tests run through TMR, and only TMR, failed on reading in the updated DgnDb!
-    The old file prior to update was read in! BentleyApi::BeThreadUtilities::BeSleep(1)
-    can resolve the failure, but why not do something meaningful here - check DWG file?
-    Enough time to let file flushed to hard disc.
+    The old file prior to update was read in! Opening/closing to workaround it!
     -----------------------------------------------------------------------------------*/
+    if (true)
+        OpenExistingDgnDb (m_dgnDbFileName, Db::OpenMode::Readonly);
     CheckDwgEntity (numElements, entityHandle, false);
     CheckDbElement (numElements, codeValue, false);
     }
