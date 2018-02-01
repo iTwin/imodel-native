@@ -3305,6 +3305,38 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCache
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsRemovedFromCacheAfterConnectionClose)
+    {
+    // set up selection
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentDescriptorIsRemovedFromCacheAfterConnectionClose", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
+    rules->AddPresentationRule(*rule);
+
+    // request
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+
+    // simulate re-opening
+    IConnectionCP connection = m_connections.GetConnection(s_project->GetECDb());
+    m_connections.NotifyConnectionClosed(*connection);
+    m_connections.NotifyConnectionOpened(s_project->GetECDb());
+
+    // request again
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+        
+    // verify the two objects aren't equal
+    EXPECT_NE(descriptor1, descriptor2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesHiddenPropertiesSpecification)

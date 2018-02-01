@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/ContentProviders.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -395,7 +395,7 @@ void ContentProvider::LoadCompositePropertiesFieldValue(ContentSetItemR item, Co
             if (handledClassIds.end() != handledClassIds.find(key.GetClassId()))
                 continue;
 
-            ECClassCP keyClass = GetContext().GetDb().Schemas().GetClass(key.GetClassId());
+            ECClassCP keyClass = GetContext().GetConnection().GetECDb().Schemas().GetClass(key.GetClassId());
             bvector<ContentDescriptor::Property const*> matchingProperties = field.FindMatchingProperties(keyClass);
             BeAssert(matchingProperties.size() <= 1);
             if (matchingProperties.size() == 0)

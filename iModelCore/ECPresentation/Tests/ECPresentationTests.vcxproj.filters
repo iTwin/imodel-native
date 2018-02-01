@@ -94,6 +94,7 @@
     <ClCompile Include="TestHelpers\PresentationRulesetTest.cpp" />
     <ClCompile Include="TestHelpers\TestRuleSetLocater.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\NavNodeTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\OptimizedExpressionsEvaluationTests.cpp" />
     <ClCompile Include="Published\PresentationRules\InstanceLabelOverrideTests.cpp" />
   </ItemGroup>
   <ItemGroup>

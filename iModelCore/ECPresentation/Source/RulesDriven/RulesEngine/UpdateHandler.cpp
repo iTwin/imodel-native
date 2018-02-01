@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/UpdateHandler.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -372,13 +372,13 @@ protected:
         if (m_remapInfo.empty())
             return bvector<IUpdateTaskPtr>();
 
-        INavNodeKeysContainerCPtr selectionKeys = GetNewKeys(*m_selectionManager.GetSelection(m_connection.GetDb()));
+        INavNodeKeysContainerCPtr selectionKeys = GetNewKeys(*m_selectionManager.GetSelection(m_connection.GetECDb()));
         if (0 != selectionKeys->size())
-            m_selectionManager.ChangeSelection(m_connection.GetDb(), "RefreshSelectionTask", false, *selectionKeys);
+            m_selectionManager.ChangeSelection(m_connection.GetECDb(), "RefreshSelectionTask", false, *selectionKeys);
 
-        INavNodeKeysContainerCPtr subSelectionKeys = GetNewKeys(*m_selectionManager.GetSubSelection(m_connection.GetDb()));
+        INavNodeKeysContainerCPtr subSelectionKeys = GetNewKeys(*m_selectionManager.GetSubSelection(m_connection.GetECDb()));
         if (0 != subSelectionKeys->size())
-            m_selectionManager.ChangeSelection(m_connection.GetDb(), "RefreshSelectionTask", true, *subSelectionKeys);
+            m_selectionManager.ChangeSelection(m_connection.GetECDb(), "RefreshSelectionTask", true, *subSelectionKeys);
 
         return bvector<IUpdateTaskPtr>();
         }
@@ -887,9 +887,9 @@ void HierarchyUpdater::CustomizeNode(JsonNavNodeCP oldNode, JsonNavNodeR nodeToC
         nodeChanged = true;
         }
 
-    // if old node was expanded, we have to expand new node too if it has children
+    // if old node was expanded, we have to expand new node too
     bool isOldNodeExpanded = (nullptr != oldNode && oldNode->IsExpanded());
-    if (isOldNodeExpanded && nodeToCustomize.HasChildren() && !nodeToCustomize.IsExpanded())
+    if (isOldNodeExpanded && !nodeToCustomize.IsExpanded())
         {
         nodeToCustomize.SetIsExpanded(true);
         nodeChanged = true;

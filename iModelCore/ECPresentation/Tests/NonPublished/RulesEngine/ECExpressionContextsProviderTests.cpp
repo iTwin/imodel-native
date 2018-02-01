@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/ECExpressionContextsProviderTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -67,6 +67,11 @@ struct ECExpressionContextsProviderTests : ::testing::Test
         DELETE_AND_CLEAR(s_project);
         }
 
+    void SetUp() override
+        {
+        s_project->GetECDb().AbandonChanges();
+        }
+
     static Utf8String GetTestSchemaXMLString()
         {
         return
@@ -100,6 +105,10 @@ struct ECExpressionContextsProviderTests : ::testing::Test
             "            <Class class=\"DerivedA\" />"
             "        </Target>"
             "    </ECRelationshipClass>"
+            "    <ECEntityClass typeName=\"Struct3\">"
+            "        <ECArrayProperty propertyName=\"GetNodeRulesContext_ChildInstanceNode_GetProperty_Array\" typeName=\"int\" />"
+            "        <ECProperty propertyName=\"GetNodeRulesContext_ChildInstanceNode_GetProperty_Int\" typeName=\"int\" />"
+            "    </ECEntityClass>"
             "</ECSchema>";
         }
     };
@@ -607,28 +616,15 @@ TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_GroupingNode_Grou
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_ChildInstanceNode_GetProperty)
     {
-    Utf8CP schemaXml =
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-        "    <ECClass typeName=\"Struct1\" isStruct=\"True\">"
-        "        <ECArrayProperty propertyName=\"GetNodeRulesContext_ChildInstanceNode_GetProperty_Array\" typeName=\"int\" />"
-        "        <ECProperty propertyName=\"GetNodeRulesContext_ChildInstanceNode_GetProperty_Int\" typeName=\"int\" />"
-        "    </ECClass>"
-        "</ECSchema>";
-    ECSchemaPtr schema;
-    EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *ECSchemaReadContext::CreateContext()));  
-
-    ECClassP struct1 = schema->GetClassP("Struct1");
-    struct1->SetId(ECClassId((uint64_t)1));
-    ASSERT_TRUE(nullptr != struct1);
-
-    IECInstancePtr instance = struct1->GetDefaultStandaloneEnabler()->CreateInstance();
-    instance->SetInstanceId("156");
-    instance->SetValue("GetNodeRulesContext_ChildInstanceNode_GetProperty_Int", ECValue(999));
-    instance->AddArrayElements("GetNodeRulesContext_ChildInstanceNode_GetProperty_Array", 3);
-    instance->SetValue("GetNodeRulesContext_ChildInstanceNode_GetProperty_Array", ECValue(0), 0);
-    instance->SetValue("GetNodeRulesContext_ChildInstanceNode_GetProperty_Array", ECValue(11), 1);
-    instance->SetValue("GetNodeRulesContext_ChildInstanceNode_GetProperty_Array", ECValue(22), 2);
+    ECClassCP struct3 = GetSchema().GetClassCP("Struct3");
+    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *struct3, [](IECInstanceR instance)
+        {
+        instance.SetValue("GetNodeRulesContext_ChildInstanceNode_GetProperty_Int", ECValue(999));
+        instance.AddArrayElements("GetNodeRulesContext_ChildInstanceNode_GetProperty_Array", 3);
+        instance.SetValue("GetNodeRulesContext_ChildInstanceNode_GetProperty_Array", ECValue(0), 0);
+        instance.SetValue("GetNodeRulesContext_ChildInstanceNode_GetProperty_Array", ECValue(11), 1);
+        instance.SetValue("GetNodeRulesContext_ChildInstanceNode_GetProperty_Array", ECValue(22), 2);
+        });
 
     TestNavNodePtr navNode = TestNodesHelper::CreateInstanceNode(*instance);
     ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection, m_userSettings, nullptr));

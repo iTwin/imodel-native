@@ -82,7 +82,7 @@ void UsedClassesHelper::NotifyListenerWithRulesetClasses(IUsedClassesListener& l
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UsedClassesHelper::NotifyListenerWithUsedClasses(IECDbUsedClassesListener& listener, ECExpressionsCache& ecexpressionsCache, IConnectionCR connection, Utf8StringCR ecexpression)
     {
-    ECSchemaHelper schemaHelper(connection.GetDb(), nullptr, nullptr);
+    ECSchemaHelper schemaHelper(connection, nullptr, nullptr);
     ECDbUsedClassesListenerWrapper wrapper(connection, listener);
     NotifyListenerWithUsedClasses(wrapper, schemaHelper, ecexpressionsCache, ecexpression);
     }
@@ -92,7 +92,7 @@ void UsedClassesHelper::NotifyListenerWithUsedClasses(IECDbUsedClassesListener& 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UsedClassesHelper::NotifyListenerWithRulesetClasses(IECDbUsedClassesListener& listener, ECExpressionsCache& ecexpressionsCache, IConnectionCR connection, PresentationRuleSetCR ruleset)
     {
-    ECSchemaHelper schemaHelper(connection.GetDb(), nullptr, nullptr);
+    ECSchemaHelper schemaHelper(connection, nullptr, nullptr);
     ECDbUsedClassesListenerWrapper wrapper(connection, listener);
     NotifyListenerWithRulesetClasses(wrapper, schemaHelper, ecexpressionsCache, ruleset);
     }
@@ -2980,54 +2980,6 @@ private:
             inputUppercase = inputUppercase.erase(pos);
             }
         }
-    
-    /*-----------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis            11/2017
-    +---------------+---------------+---------------+---------------+-----------+------*/
-    ECValue GetPropertyValue(ECInstanceKeyCR instanceKey, Utf8StringCR propertyName)
-        {
-        ECClassCP ecClass = m_helper.GetECClass(instanceKey.GetClassId());
-        if (nullptr == ecClass)
-            {
-            BeAssert(false);
-            return ECValue();
-            }
-        ECPropertyCP prop = ecClass->GetPropertyP(propertyName.c_str());
-        if (nullptr == prop)
-            {
-            BeAssert(false);
-            LoggingHelper::LogMessage(Log::Navigation, "ECClass does not have a property with the specified name", NativeLogging::LOG_ERROR);
-            return ECValue();
-            }
-        if (!prop->GetIsPrimitive())
-            {
-            BeAssert(false);
-            LoggingHelper::LogMessage(Log::Navigation, "Can only get value of primitive properties", NativeLogging::LOG_ERROR);
-            return ECValue();
-            }
-
-        Utf8String query = Utf8String("SELECT ").append(prop->GetName());
-        query.append(" FROM ").append(ecClass->GetECSqlName());
-        query.append(" WHERE ECInstanceId = ?");
-        
-        ECSqlStatement stmt;
-        if (!stmt.Prepare(m_helper.GetDb(), query.c_str()).IsSuccess())
-            {
-            BeAssert(false);
-            LoggingHelper::LogMessage(Log::Navigation, "Failed to get ECProperty value for ECPropertyValueQuerySpecification", NativeLogging::LOG_ERROR);
-            return ECValue();
-            }
-        stmt.BindId(1, instanceKey.GetInstanceId());
-
-        DbResult result = stmt.Step();
-        if (BE_SQLITE_ROW != result)
-            {
-            BeAssert(false);
-            return ECValue();
-            }
-
-        return ValueHelpers::GetECValueFromSqlValue(prop->GetAsPrimitiveProperty()->GetType(), stmt.GetValue(0));
-        }
 
 protected:
     /*-----------------------------------------------------------------------------**//**
@@ -3071,7 +3023,7 @@ protected:
             return;
             }
 
-        ECValue propertyValue = GetPropertyValue(m_parentNode->GetKey().AsECInstanceNodeKey()->GetInstanceKey(), queryProperty->GetName());
+        ECValue propertyValue = ECInstancesHelper::GetValue(m_helper.GetConnection(), m_parentNode->GetKey().AsECInstanceNodeKey()->GetInstanceKey(), queryProperty->GetName().c_str());
         if (!propertyValue.IsString())
             {
             BeAssert(false);

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/RuleSetLocaterTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -42,9 +42,9 @@ TEST(RulesetLocaterManager, LocateSupportedRulesets)
     ECDbTestProject project;
     project.Create("RulesetLocaterManager_LocateSupportedRulesets");
     project.GetECDb().Schemas().ImportSchemas(context->GetCache().GetSchemas());
-    connections.NotifyConnectionOpened(project.GetECDb());
+    IConnectionPtr connection = connections.NotifyConnectionOpened(project.GetECDb());
 
-    bvector<PresentationRuleSetPtr> rulesets = manager.LocateRuleSets(project.GetECDbCR(), nullptr);
+    bvector<PresentationRuleSetPtr> rulesets = manager.LocateRuleSets(*connection, nullptr);
     ASSERT_EQ(3, rulesets.size());
 
     // note: the order of rule sets is unknown
@@ -66,12 +66,12 @@ TEST(RulesetLocaterManager, DisposesCachedRulesetsOnRulesetDispose)
     
     ECDbTestProject project;
     project.Create("DisposesCachedRulesetsOnRulesetDispose");
-    connections.NotifyConnectionOpened(project.GetECDb());
+    IConnectionPtr connection = connections.NotifyConnectionOpened(project.GetECDb());
 
     locater->AddRuleSet(*PresentationRuleSet::CreateInstance("Test", 1, 0, false, "", "", "", false));
 
     // first pass:
-    bvector<PresentationRuleSetPtr> rulesets = manager.LocateRuleSets(project.GetECDbCR(), nullptr);
+    bvector<PresentationRuleSetPtr> rulesets = manager.LocateRuleSets(*connection, nullptr);
     ASSERT_EQ(1, rulesets.size());
     EXPECT_EQ(0, rulesets[0]->GetVersionMinor());
 
@@ -79,7 +79,7 @@ TEST(RulesetLocaterManager, DisposesCachedRulesetsOnRulesetDispose)
     locater->AddRuleSet(*PresentationRuleSet::CreateInstance("Test", 1, 1, false, "", "", "", false));
 
     // verify we still get cached version:
-    rulesets = manager.LocateRuleSets(project.GetECDbCR(), "Test");
+    rulesets = manager.LocateRuleSets(*connection, "Test");
     ASSERT_EQ(1, rulesets.size());
     EXPECT_EQ(0, rulesets[0]->GetVersionMinor());
 
@@ -87,7 +87,7 @@ TEST(RulesetLocaterManager, DisposesCachedRulesetsOnRulesetDispose)
     ((IRulesetCallbacksHandler&)manager)._OnRulesetDispose(*rulesets[0]);
     
     // verify we get new results now:
-    rulesets = manager.LocateRuleSets(project.GetECDbCR(), "Test");
+    rulesets = manager.LocateRuleSets(*connection, "Test");
     ASSERT_EQ(2, rulesets.size());
     EXPECT_EQ(0, rulesets[0]->GetVersionMinor());
     EXPECT_EQ(1, rulesets[1]->GetVersionMinor());
@@ -110,7 +110,7 @@ TEST(RulesetLocaterManager, DisposesCachedRulesetsOnConnectionClose)
     locater->AddRuleSet(*PresentationRuleSet::CreateInstance("Test", 1, 0, false, "", "", "", false));
 
     // first pass:
-    bvector<PresentationRuleSetPtr> rulesets = manager.LocateRuleSets(project.GetECDbCR(), nullptr);
+    bvector<PresentationRuleSetPtr> rulesets = manager.LocateRuleSets(*connection, nullptr);
     ASSERT_EQ(1, rulesets.size());
     EXPECT_EQ(0, rulesets[0]->GetVersionMinor());
 
@@ -118,7 +118,7 @@ TEST(RulesetLocaterManager, DisposesCachedRulesetsOnConnectionClose)
     locater->AddRuleSet(*PresentationRuleSet::CreateInstance("Test", 1, 1, false, "", "", "", false));
 
     // verify we still get cached version:
-    rulesets = manager.LocateRuleSets(project.GetECDbCR(), "Test");
+    rulesets = manager.LocateRuleSets(*connection, "Test");
     ASSERT_EQ(1, rulesets.size());
     EXPECT_EQ(0, rulesets[0]->GetVersionMinor());
 
@@ -127,7 +127,7 @@ TEST(RulesetLocaterManager, DisposesCachedRulesetsOnConnectionClose)
     connections.NotifyConnectionOpened(project.GetECDb());
     
     // verify we get a fresh version:
-    rulesets = manager.LocateRuleSets(project.GetECDbCR(), "Test");
+    rulesets = manager.LocateRuleSets(*connection, "Test");
     ASSERT_EQ(2, rulesets.size());
     EXPECT_EQ(0, rulesets[0]->GetVersionMinor());
     EXPECT_EQ(1, rulesets[1]->GetVersionMinor());
@@ -686,7 +686,7 @@ struct EmbeddedRuleSetLocaterTests : ::testing::Test
     void SetUp() override
         {
         m_connection = new TestConnection(s_project->GetECDb());
-        m_embedder = new RuleSetEmbedder(m_connection->GetDb());
+        m_embedder = new RuleSetEmbedder(m_connection->GetECDb());
         }
 
     void TearDown() override

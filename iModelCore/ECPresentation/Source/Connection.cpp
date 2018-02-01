@@ -2,7 +2,7 @@
 |
 |     $Source: Source/Connection.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -33,6 +33,7 @@ rapidjson::Document ConnectionEvent::AsJson(rapidjson::Document::AllocatorType* 
     return json;
     }
 
+struct ProxyConnection;
 //=======================================================================================
 // @bsiclass                                    Grigas.Petraitis                11/2017
 //=======================================================================================
@@ -43,6 +44,7 @@ private:
     intptr_t m_threadId;
     mutable BeMutex m_threadVerificationMutex;
     mutable bool m_skipThreadVerification;
+    BeAtomic<bool> m_aa;
 protected:
     ThreadVerifyingConnection() : m_threadId(BeThreadUtilities::GetCurrentThreadId()), m_skipThreadVerification(false) {}
     void VerifyThread() const
@@ -82,69 +84,40 @@ public:
 //! ConnectionManager.
 // @bsiclass                                    Grigas.Petraitis                10/2017
 //=======================================================================================
-struct TrackingConnection : RefCounted<ThreadVerifyingConnection>, IECDbClosedListener
+struct PrimaryConnection : RefCounted<ThreadVerifyingConnection>, IECDbClosedListener
 {
-    friend struct AnyThreadConnectionAccess;
-
 private:
     ConnectionManager& m_manager;
     Utf8String m_id;
-    ECDbR m_db;
+    ECDbR m_ecdb;
     bool m_isPrimary;
     bool m_isOpen;
+    bset<ProxyConnection const*> m_proxyConnections;
+
 private:
-    TrackingConnection(ConnectionManager& manager, Utf8String id, ECDbR db, bool isPrimary)
-        : m_manager(manager), m_id(id), m_db(db), m_isPrimary(isPrimary)
+    PrimaryConnection(ConnectionManager& manager, Utf8String id, ECDbR db, bool isPrimary)
+        : m_manager(manager), m_id(id), m_ecdb(db), m_isPrimary(isPrimary)
         {
-        ECDbClosedNotifier::Register(*this, m_db, true);
-        m_isOpen = m_db.IsDbOpen();
-        LOG_CONNECTIONS.infov("%p TrackingConnection[%s] created", this, m_id.c_str());
+        ECDbClosedNotifier::Register(*this, m_ecdb, true);
+        m_isOpen = m_ecdb.IsDbOpen();
+        LOG_CONNECTIONS.infov("%p PrimaryConnection[%s] created", this, m_id.c_str());
         }
+
 protected:
     Utf8StringCR _GetId() const override {return m_id;}
-    ECDbR _GetDb() const override
-        {
-        VerifyThread();
-        return m_db;
-        }
-    bool _IsOpen() const override
-        {
-        VerifyThread();
-        return m_isOpen;
-        }
-    bool _IsReadOnly() const override
-        {
-        VerifyThread();
-        return m_db.IsReadonly();
-        }
+    ECDbR _GetECDb() const override {VerifyThread(); return m_ecdb;}
+    BeSQLite::Db& _GetDb() const override {VerifyThread(); return m_ecdb;}
+    bool _IsOpen() const override {VerifyThread(); return m_isOpen;}
+    bool _IsReadOnly() const override {VerifyThread(); return m_ecdb.IsReadonly();}
     int _GetPriority() const override {return 100;}
-    void _OnConnectionClosed(ECDbCR db) override
-        {
-        VerifyThread();
-        BeAssert(&db == &m_db);
-        if (m_isOpen)
-            {
-            LOG_CONNECTIONS.infov("%p TrackingConnection[%s] closed", this, m_id.c_str());
-            m_isOpen = false;
-            m_manager.NotifyConnectionClosed(m_id);
-            }
-        }
-    void _OnConnectionReloaded(ECDbCR db) override
-        {
-        VerifyThread();
-        BeAssert(&db == &m_db);
-        if (m_isOpen)
-            {
-            LOG_CONNECTIONS.infov("%p TrackingConnection[%s] reloaded", this, m_id.c_str());
-            m_manager.NotifyConnectionClosed(m_id);
-            if (m_isPrimary)
-                m_manager.NotifyPrimaryConnectionOpened(m_db);
-            else
-                m_manager.NotifyConnectionOpened(m_db);
-            }
-        }
+    void _InterruptRequests() const override;
+    void _OnConnectionClosed(ECDbCR db) override;
+    void _OnConnectionReloaded(ECDbCR db) override;
+
 public:
-    static RefCountedPtr<TrackingConnection> Create(ConnectionManager& manager, Utf8String id, ECDbR db, bool isPrimary) {return new TrackingConnection(manager, id, db, isPrimary);}
+    static RefCountedPtr<PrimaryConnection> Create(ConnectionManager& manager, Utf8String id, ECDbR db, bool isPrimary) {return new PrimaryConnection(manager, id, db, isPrimary);}
+    void NotifyProxyConnectionOpened(ProxyConnection const& proxy) {m_proxyConnections.insert(&proxy);}
+    void NotifyProxyConnectionClosed(ProxyConnection const& proxy) {m_proxyConnections.erase(&proxy);}
 };
 
 //=======================================================================================
@@ -157,7 +130,7 @@ struct IProxyConnectionsTracker
     virtual void OnProxyConnectionRelease(struct ProxyConnection const&) = 0;
     };
 
-//#define MULTIPLE_CONNECTIONS
+#define MULTIPLE_CONNECTIONS
 //=======================================================================================
 //! A thread-local connection that's based on the supplied primary connection. It notifies
 //! supplied IProxyConnectionsTracker so it can track when ProxyConnections are/aren't
@@ -168,9 +141,9 @@ struct ProxyConnection : ThreadVerifyingConnection
 {
 private:
     IProxyConnectionsTracker* m_tracker;
-    TrackingConnection const& m_primaryConnection;
+    PrimaryConnection const& m_primaryConnection;
 #ifdef MULTIPLE_CONNECTIONS
-    mutable ECDb m_db;
+    mutable BeSQLite::Db m_db;
 #endif
     mutable BeAtomic<uint32_t> m_refCount;
 
@@ -178,12 +151,12 @@ private:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            11/2017
     +---------------+---------------+---------------+---------------+-----------+------*/
-    ProxyConnection(IProxyConnectionsTracker* tracker, TrackingConnection const& primaryConnection)
+    ProxyConnection(IProxyConnectionsTracker* tracker, PrimaryConnection const& primaryConnection)
         : m_tracker(tracker), m_primaryConnection(primaryConnection)
         {
 #ifdef MULTIPLE_CONNECTIONS
         AnyThreadConnectionAccess noThreadVerification(m_primaryConnection);
-        m_db.OpenBeSQLiteDb(m_primaryConnection.GetDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::Readonly));
+        m_db.OpenBeSQLiteDb(m_primaryConnection.GetDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::Readonly, DefaultTxn::No));
 #endif
         LOG_CONNECTIONS.infov("%p ProxyConnection[%s] created on thread %d.", this, m_primaryConnection.GetId().c_str(), (int)GetThreadId());
         }
@@ -193,19 +166,24 @@ protected:
     * @bsimethod                                    Grigas.Petraitis            11/2017
     +---------------+---------------+---------------+---------------+-----------+------*/
     Utf8StringCR _GetId() const override {return m_primaryConnection.GetId();}
-
+    
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            11/2017
     +---------------+---------------+---------------+---------------+-----------+------*/
-    ECDbR _GetDb() const override
+    ECDbR _GetECDb() const override
         {
         VerifyThread();
-#ifdef MULTIPLE_CONNECTIONS
-        return m_db;
-#else
         AnyThreadConnectionAccess noThreadVerification(m_primaryConnection);
-        return m_primaryConnection.GetDb();
-#endif
+        return m_primaryConnection.GetECDb();
+        }
+
+    /*-----------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis            01/2018
+    +---------------+---------------+---------------+---------------+-----------+------*/
+    BeSQLite::Db& _GetDb() const override
+        {
+        VerifyThread();
+        return m_db;
         }
 
     /*-----------------------------------------------------------------------------**//**
@@ -227,12 +205,21 @@ protected:
         AnyThreadConnectionAccess noThreadVerification(m_primaryConnection);
         return m_primaryConnection.IsReadOnly();
         }
+    
+    /*-----------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis            01/2018
+    +---------------+---------------+---------------+---------------+-----------+------*/
+    void _InterruptRequests() const override
+        {
+        VerifyThread();
+        m_db.Interrupt();
+        }
 
 public:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            11/2017
     +---------------+---------------+---------------+---------------+-----------+------*/
-    static RefCountedPtr<ProxyConnection> Create(IProxyConnectionsTracker* tracker, TrackingConnection const& primaryConnection)
+    static RefCountedPtr<ProxyConnection> Create(IProxyConnectionsTracker* tracker, PrimaryConnection const& primaryConnection)
         {
         AnyThreadConnectionAccess noThreadVerification(primaryConnection);
         BeAssert(primaryConnection.IsOpen());
@@ -289,6 +276,52 @@ public:
     uint32_t GetRefCount() const {return m_refCount.load();}
 };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimaryConnection::_InterruptRequests() const
+    {
+    VerifyThread();
+    for (ProxyConnection const* proxy : m_proxyConnections)
+        {
+        AnyThreadConnectionAccess noThreadVerification(*proxy);
+        proxy->InterruptRequests();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimaryConnection::_OnConnectionClosed(ECDbCR db)
+    {
+    VerifyThread();
+    BeAssert(&db == &m_ecdb);
+    if (m_isOpen)
+        {
+        LOG_CONNECTIONS.infov("%p PrimaryConnection[%s] closed", this, m_id.c_str());
+        m_isOpen = false;
+        m_manager.NotifyConnectionClosed(m_id);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimaryConnection::_OnConnectionReloaded(ECDbCR db)
+    {
+    VerifyThread();
+    BeAssert(&db == &m_ecdb);
+    if (m_isOpen)
+        {
+        LOG_CONNECTIONS.infov("%p PrimaryConnection[%s] reloaded", this, m_id.c_str());
+        m_manager.NotifyConnectionClosed(m_id);
+        if (m_isPrimary)
+            m_manager.NotifyPrimaryConnectionOpened(m_ecdb);
+        else
+            m_manager.NotifyConnectionOpened(m_ecdb);
+        }
+    }
+
 //=======================================================================================
 // @bsiclass                                    Grigas.Petraitis                10/2017
 //=======================================================================================
@@ -312,7 +345,7 @@ struct ThreadLocalConnectionStore : IProxyConnectionsTracker, protected BeThread
         };
 
 private:
-    RefCountedPtr<TrackingConnection> m_primaryConnection;
+    RefCountedPtr<PrimaryConnection> m_primaryConnection;
     bvector<RefCountedPtr<ProxyConnection>> m_proxyConnections;
     BeConditionVariable m_proxyConnectionsCV;
 
@@ -332,7 +365,7 @@ public:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            10/2017
     +---------------+---------------+---------------+---------------+-----------+------*/
-    ThreadLocalConnectionStore(TrackingConnection& primaryConnection)
+    ThreadLocalConnectionStore(PrimaryConnection& primaryConnection)
         : m_primaryConnection(&primaryConnection)
         {
         SetValueAsPointer(m_primaryConnection.get());
@@ -362,7 +395,12 @@ public:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            11/2017
     +---------------+---------------+---------------+---------------+-----------+------*/
-    void OnProxyConnectionRelease(ProxyConnection const&) override {m_proxyConnectionsCV.notify_all();}
+    void OnProxyConnectionRelease(ProxyConnection const& proxy) override
+        {
+        if (0 == proxy.GetRefCount())
+            m_primaryConnection->NotifyProxyConnectionClosed(proxy);
+        m_proxyConnectionsCV.notify_all();
+        }
 
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            10/2017
@@ -375,6 +413,7 @@ public:
 
         RefCountedPtr<ProxyConnection> proxy = ProxyConnection::Create(this, *m_primaryConnection);
         m_proxyConnections.push_back(proxy);
+        m_primaryConnection->NotifyProxyConnectionOpened(*proxy);
         SetValueAsPointer(proxy.get());
         return proxy.get();
         }
@@ -382,7 +421,7 @@ public:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            10/2017
     +---------------+---------------+---------------+---------------+-----------+------*/
-    TrackingConnection const& GetPrimaryConnection() const {return *m_primaryConnection;}
+    PrimaryConnection const& GetPrimaryConnection() const {return *m_primaryConnection;}
 };
 
 //=======================================================================================
@@ -406,7 +445,7 @@ public:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            10/2017
     +---------------+---------------+---------------+---------------+-----------+------*/
-    void Add(TrackingConnection& connection)
+    void Add(PrimaryConnection& connection)
         {
         if (m_connections.end() != m_connections.find(connection.GetId()))
             {
@@ -492,6 +531,19 @@ void ConnectionManager::_DropListener(IConnectionsListener& listener) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectionManager::BroadcastEvent(ConnectionEvent const& evt) const
+    {
+    BeMutexHolder lock(m_listenersMutex);
+    bvector<IConnectionsListener*> listeners = m_listeners;
+    lock.unlock();
+
+    for (IConnectionsListener* listener : listeners)
+        listener->NotifyConnectionEvent(evt);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 IConnection* ConnectionManager::_GetConnection(Utf8CP connectionId) const
@@ -526,26 +578,13 @@ IConnectionPtr ConnectionManager::GetOrCreateConnection(ECDbR ecdb, bool isProje
     if (connection.IsValid())
         return connection;
 
-    RefCountedPtr<TrackingConnection> primaryConnection = TrackingConnection::Create(*this, connectionId, ecdb, isProjectPrimary);
+    RefCountedPtr<PrimaryConnection> primaryConnection = PrimaryConnection::Create(*this, connectionId, ecdb, isProjectPrimary);
     m_activeConnections->Add(*primaryConnection);
     lock.unlock();
 
     BroadcastEvent(ConnectionEvent(*primaryConnection, isProjectPrimary, ConnectionEventType::Opened));
     
     return primaryConnection;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectionManager::BroadcastEvent(ConnectionEvent const& evt) const
-    {
-    BeMutexHolder lock(m_listenersMutex);
-    bvector<IConnectionsListener*> listeners = m_listeners;
-    lock.unlock();
-
-    for (IConnectionsListener* listener : listeners)
-        listener->NotifyConnectionEvent(evt);
     }
 
 /*---------------------------------------------------------------------------------**//**

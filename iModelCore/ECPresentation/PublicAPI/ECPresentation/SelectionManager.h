@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/SelectionManager.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -99,7 +99,7 @@ public:
     IConnectionCR GetConnection() const {return *m_connection;}
 
     //! Get the ECDb.
-    ECDbCR GetDb() const {return m_connection->GetDb();}
+    ECDbCR GetDb() const {return m_connection->GetECDb();}
 
     //! Get the selection source name.
     Utf8StringCR GetSourceName() const {return m_sourceName;}

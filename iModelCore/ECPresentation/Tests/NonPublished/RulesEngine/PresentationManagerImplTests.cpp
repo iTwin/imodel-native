@@ -237,7 +237,7 @@ TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsConten
 
     // request and verify
     RulesDrivenECPresentationManager::ContentOptions options(m_ruleset->GetRuleSetId().c_str());
-    ECClassCP inputClass = m_connection->GetDb().Schemas().GetClass("ECDbMeta", "ECClassDef");
+    ECClassCP inputClass = m_connection->GetECDb().Schemas().GetClass("ECDbMeta", "ECClassDef");
     bvector<SelectClassInfo> contentClasses = m_impl->GetContentClasses(*m_connection, nullptr, {inputClass}, options, *token);
     EXPECT_TRUE(contentClasses.empty());
     }

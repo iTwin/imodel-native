@@ -182,7 +182,8 @@ void ExpectedQueries::PrepareSchemaContext()
     ASSERT_TRUE(SUCCESS == m_project.GetECDb().Schemas().ImportSchemas(importSchemas));
     m_project.GetECDb().SaveChanges();
 
-    m_schemaHelper = new ECSchemaHelper(m_project.GetECDbCR(), &m_relatedPathsCache, nullptr);
+    m_connection = m_connections.NotifyConnectionOpened(m_project.GetECDb());
+    m_schemaHelper = new ECSchemaHelper(*m_connection, &m_relatedPathsCache, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5058,7 +5059,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &class_Element, *query), "this");
         query->From(class_Element, true, "this");
         query->Join(RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0)), true);
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryRecursiveChildrenIdSet(relationships, true, selectedIds)});
+        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryRecursiveChildrenIdSet(*m_connection, relationships, true, selectedIds)});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -5097,7 +5098,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &class_Element, *query), "this");
         query->From(class_Element, true, "this");
         query->Join(RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0)), true);
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryRecursiveChildrenIdSet(relationships, true, selectedIds)});
+        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryRecursiveChildrenIdSet(*m_connection, relationships, true, selectedIds)});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -5136,7 +5137,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &class_Element, *query), "this");
         query->From(class_Element, true, "this");
         query->Join(RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0)), true);
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryRecursiveChildrenIdSet(relationships, true, selectedIds)});
+        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryRecursiveChildrenIdSet(*m_connection, relationships, true, selectedIds)});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -5662,7 +5663,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 static void ExecuteQueries(bmap<Utf8String, NavigationQueryCPtr> queries, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, 
     IUserSettings const& userSettings, RelatedPathsCache& relatedPathsCache, ECExpressionsCache& ecexpressionsCache)
     {
-    ECDbR db = connection.GetDb();
+    ECDbR db = connection.GetECDb();
     for (auto pair : queries)
         {
         Utf8String const& name = pair.first;
@@ -5671,7 +5672,7 @@ static void ExecuteQueries(bmap<Utf8String, NavigationQueryCPtr> queries, IConne
         LOGI("Query: '%s'", name.c_str());
 
         JsonNavNodesFactory nodesFactory;
-        ECSchemaHelper schemaHelper(db, &relatedPathsCache, nullptr);
+        ECSchemaHelper schemaHelper(connection, &relatedPathsCache, nullptr);
         CustomFunctionsContext functionsContext(schemaHelper, connections, connection, ruleset, userSettings, nullptr, ecexpressionsCache, nodesFactory, nullptr, nullptr, &query->GetExtendedData());
         
         Utf8String queryStr = query->ToString();
@@ -5689,7 +5690,7 @@ static void ExecuteQueries(bmap<Utf8String, NavigationQueryCPtr> queries, IConne
 static void ExecuteQueries(bmap<Utf8String, ContentQueryCPtr> queries, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, 
     IUserSettings const& userSettings, RelatedPathsCache& relatedPathsCache, ECExpressionsCache& ecexpressionsCache)
     {
-    ECDbR db = connection.GetDb();
+    ECDbR db = connection.GetECDb();
     for (auto pair : queries)
         {
         Utf8String const& name = pair.first;
@@ -5699,7 +5700,7 @@ static void ExecuteQueries(bmap<Utf8String, ContentQueryCPtr> queries, IConnecti
         LOGI("Query: '%s'", name.c_str());
         
         JsonNavNodesFactory nodesFactory;
-        ECSchemaHelper schemaHelper(db, &relatedPathsCache, nullptr);
+        ECSchemaHelper schemaHelper(connection, &relatedPathsCache, nullptr);
         CustomFunctionsContext functionsContext(schemaHelper, connections, connection, ruleset, userSettings, nullptr, ecexpressionsCache, nodesFactory, nullptr, nullptr, nullptr);
         
         Utf8String queryStr = query->ToString();
@@ -5722,15 +5723,15 @@ TEST(ExpectedQueriesTest, RunAllExpectedQueries)
 
     Localization::Init();
 
-    TestConnectionManager connections;
-    IConnectionPtr connection = connections.NotifyConnectionOpened(ExpectedQueries::GetInstance(BeTest::GetHost()).GetDb());
-    ECDbR db = connection->GetDb();
+    IConnectionManagerCR connections = ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnections();
+    IConnectionCR connection = ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnection();
+    // unused - ECDbR db = connection.GetECDb();
     TestUserSettings userSettings;
     ECExpressionsCache ecexpressionsCache;
     RelatedPathsCache relatedPathsCache;
     PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance("test", 1, 0, false, "", "", "", false);
-    CustomFunctionsInjector customFunctions(connections, db);
+    CustomFunctionsInjector customFunctions(connections, connection);
 
-    ExecuteQueries(ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQueries(), connections, *connection, *ruleset, userSettings, relatedPathsCache, ecexpressionsCache);
-    ExecuteQueries(ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQueries(), connections, *connection, *ruleset, userSettings, relatedPathsCache, ecexpressionsCache);
+    ExecuteQueries(ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQueries(), connections, connection, *ruleset, userSettings, relatedPathsCache, ecexpressionsCache);
+    ExecuteQueries(ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQueries(), connections, connection, *ruleset, userSettings, relatedPathsCache, ecexpressionsCache);
     }

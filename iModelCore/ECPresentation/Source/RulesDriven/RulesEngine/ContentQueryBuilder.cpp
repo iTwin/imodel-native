@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/ContentQueryBuilder.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -91,6 +91,7 @@ bvector<ECInstanceId> const& ParsedSelectionInfo::_GetInstanceIds(ECClassCR sele
 struct RecursiveQueriesHelper
 {
 private:
+    IConnectionCR m_connection;
     ContentDescriptorCR m_descriptor;
     BoundQueryRecursiveChildrenIdSet* m_fwdRecursiveChildrenIds;
     BoundQueryRecursiveChildrenIdSet* m_bwdRecursiveChildrenIds;
@@ -128,8 +129,8 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                04/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    RecursiveQueriesHelper(ContentDescriptorCR descriptor) 
-        : m_descriptor(descriptor), m_fwdRecursiveChildrenIds(nullptr), m_bwdRecursiveChildrenIds(nullptr)
+    RecursiveQueriesHelper(IConnectionCR connection, ContentDescriptorCR descriptor) 
+        : m_connection(connection), m_descriptor(descriptor), m_fwdRecursiveChildrenIds(nullptr), m_bwdRecursiveChildrenIds(nullptr)
         {}
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                04/2017
@@ -163,7 +164,7 @@ public:
                         relationships.insert(rel.GetRelationship());
                     }
                 }
-            set = new BoundQueryRecursiveChildrenIdSet(relationships, forward, selection.GetInstanceIds(*thisInfo.GetPrimaryClass()));
+            set = new BoundQueryRecursiveChildrenIdSet(m_connection, relationships, forward, selection.GetInstanceIds(*thisInfo.GetPrimaryClass()));
             }
         return *set;
         }
@@ -225,7 +226,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentRelatedInstancesSpecific
     ContentQueryPtr query;
     for (SelectClassInfo const& selectClassInfo : specificationDescriptor->GetSelectClasses())
         {
-        RecursiveQueriesHelper recursiveQueries(*specificationDescriptor);
+        RecursiveQueriesHelper recursiveQueries(m_params.GetConnection(), *specificationDescriptor);
 
         ComplexContentQueryPtr classQuery = ComplexContentQuery::Create();
         ContentQueryContractPtr contract = ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectClassInfo.GetSelectClass(), *classQuery);

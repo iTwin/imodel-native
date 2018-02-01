@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/RulesDriven/RuleSetLocater.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -248,7 +248,7 @@ protected:
     virtual void _InvalidateCache(Utf8CP rulesetId) {}
     virtual void _RegisterLocater(RuleSetLocater& locater) = 0;
     virtual void _UnregisterLocater(RuleSetLocater const& locater) = 0;
-    virtual bvector<PresentationRuleSetPtr> _LocateRuleSets(ECDbCR db, Utf8CP rulesetId) const = 0;
+    virtual bvector<PresentationRuleSetPtr> _LocateRuleSets(IConnectionCR, Utf8CP rulesetId) const = 0;
     virtual bvector<Utf8String> _GetRuleSetIds() const = 0;
 
 public:
@@ -267,10 +267,10 @@ public:
     void UnregisterLocater(RuleSetLocater const& locater) {_UnregisterLocater(locater);}
 
     //! Find all rulesets that are supported by the specified connection.
-    //! @param[in] db The ECDb to check whether the ruleset is supported.
+    //! @param[in] connection The connection to check whether the ruleset is supported.
     //! @param[in] rulesetId The ID of the ruleset to find. If nullptr, all available rulesets are returned.
     //! @note A ruleset is considered supported if all its schemas are supported in the specified connection.
-    bvector<PresentationRuleSetPtr> LocateRuleSets(ECDbCR db, Utf8CP rulesetId) const {return _LocateRuleSets(db, rulesetId);}
+    bvector<PresentationRuleSetPtr> LocateRuleSets(IConnectionCR connection, Utf8CP rulesetId) const {return _LocateRuleSets(connection, rulesetId);}
 
     //! Get IDs of all available rulesets.
     bvector<Utf8String> GetRuleSetIds() const {return _GetRuleSetIds();}
@@ -311,7 +311,7 @@ protected:
     ECPRESENTATION_EXPORT void _InvalidateCache(Utf8CP rulesetId) override;
     ECPRESENTATION_EXPORT void _RegisterLocater(RuleSetLocater&) override;
     ECPRESENTATION_EXPORT void _UnregisterLocater(RuleSetLocater const&) override;
-    ECPRESENTATION_EXPORT bvector<PresentationRuleSetPtr> _LocateRuleSets(ECDbCR, Utf8CP rulesetId) const override;
+    ECPRESENTATION_EXPORT bvector<PresentationRuleSetPtr> _LocateRuleSets(IConnectionCR, Utf8CP rulesetId) const override;
     ECPRESENTATION_EXPORT bvector<Utf8String> _GetRuleSetIds() const override;
 
     // IRulesetCallbacksHandler

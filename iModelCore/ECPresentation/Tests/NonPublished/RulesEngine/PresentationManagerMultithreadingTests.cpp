@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/PresentationManagerMultithreadingTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TestHelpers.h"
@@ -15,6 +15,8 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 USING_NAMESPACE_ECPRESENTATIONTESTS
 
+#ifndef RULES_ENGINE_FORCE_SINGLE_THREAD
+
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2015
 +===============+===============+===============+===============+===============+======*/
@@ -23,6 +25,7 @@ struct RulesDrivenECPresentationManagerMultithreadingTests : ::testing::Test
     static Utf8CP s_projectName;
     static ECDbTestProject* s_project;
     TestConnectionManager m_connections;
+    TestConnection* m_connection;
     RulesDrivenECPresentationManager* m_manager;
     
     static void SetUpTestCase();
@@ -61,7 +64,7 @@ void RulesDrivenECPresentationManagerMultithreadingTests::TearDownTestCase()
 void RulesDrivenECPresentationManagerMultithreadingTests::SetUp()
     {
     m_manager = new RulesDrivenECPresentationManager(m_connections, RulesEngineTestHelpers::GetPaths(BeTest::GetHost()), true);
-    m_connections.NotifyConnectionOpened(s_project->GetECDb());
+    m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb()).get();
     Sync();
     }
 
@@ -568,9 +571,10 @@ struct RulesDrivenECPresentationManagerRequestCancelationTests : RulesDrivenECPr
     BeAtomic<bool> m_didFinishBlocking;
     BeAtomic<bool> m_didGetHit;
     folly::Future<folly::Unit> m_result;
+    bool m_connectionInterrupted;
 
     RulesDrivenECPresentationManagerRequestCancelationTests()
-        : m_result(folly::makeFuture())
+        : m_result(folly::makeFuture()), m_connectionInterrupted(false)
         {}
 
     void BlockECPresentationThread()
@@ -597,6 +601,8 @@ struct RulesDrivenECPresentationManagerRequestCancelationTests : RulesDrivenECPr
         m_locater = TestRuleSetLocater::Create();
         m_manager->GetLocaters().RegisterLocater(*m_locater);
         m_locater->AddRuleSet(*PresentationRuleSet::CreateInstance(s_rulesetId, 1, 0, false, "", "", "", false));
+
+        m_connection->SetInterruptHandler([&](){m_connectionInterrupted = true;});
         }
 
     virtual void TearDown() override
@@ -623,7 +629,7 @@ struct RulesDrivenECPresentationManagerRequestCancelationTests : RulesDrivenECPr
         m_result = callback.then([](){});
         }
 
-    void VerifyCancelation(bool expectCanceled = true)
+    void VerifyCancelation(bool expectCanceled, bool expectConnectionInterrupted)
         {
         if (expectCanceled)
             {
@@ -642,30 +648,31 @@ struct RulesDrivenECPresentationManagerRequestCancelationTests : RulesDrivenECPr
             EXPECT_TRUE(m_result.hasValue());
             EXPECT_TRUE(m_didGetHit.load());
             }
+        EXPECT_EQ(expectConnectionInterrupted, m_connectionInterrupted);
         }
 
     void TerminateAndVerifyResult()
         {
         DELETE_AND_CLEAR(m_manager);
-        VerifyCancelation();
+        VerifyCancelation(true, false);
         }
 
     void CloseConnectionAndVerifyResult()
         {
         m_connections.NotifyConnectionClosed(*m_connections.GetConnection(s_project->GetECDb()));
-        VerifyCancelation();
+        VerifyCancelation(true, true);
         }
     
     void DisposeRulesetAndVerifyResult()
         {
         m_locater->Clear();
-        VerifyCancelation();
+        VerifyCancelation(true, false);
         }
     
     void ChangeSelectionAndVerifyResult(bool expectCanceled = true)
         {
         m_selectionManager->SetSelection(s_project->GetECDb(), *NavNodeKeyListContainer::Create());
-        VerifyCancelation(expectCanceled);
+        VerifyCancelation(expectCanceled, expectCanceled);
         }
     };
 uint64_t RulesDrivenECPresentationManagerRequestCancelationTests::s_blockingTaskTimeout = 5 * 1000; // 5 seconds to avoid hanging tests on failure
@@ -1265,7 +1272,10 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, DoesntCancelCont
     {
     ECDbTestProject project2;
     project2.Create("DoesntCancelContentDescriptorRequestWhenSelectionOnDifferentConnectionChanges");
-    IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project2.GetECDb());
+    RefCountedPtr<TestConnection> connection2 = m_connections.NotifyConnectionOpened(project2.GetECDb());
+
+    bool connectionInterrupted = false;
+    connection2->SetInterruptHandler([&connectionInterrupted](){connectionInterrupted = true;});
 
     // set the request handler
     m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, SelectionInfo const&, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
@@ -1278,8 +1288,9 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, DoesntCancelCont
     SelectionInfo selection("selection provider", false, *NavNodeKeyListContainer::Create());
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContentDescriptor(connection2->GetDb(), nullptr, selection, options.GetJson()), false);
+    DoRequest(m_manager->GetContentDescriptor(connection2->GetECDb(), nullptr, selection, options.GetJson()), false);
     ChangeSelectionAndVerifyResult(false);
+    EXPECT_FALSE(connectionInterrupted);
 
     m_connections.NotifyConnectionClosed(*connection2);
     }
@@ -1375,7 +1386,10 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, DoesntCancelCont
     {
     ECDbTestProject project2;
     project2.Create("DoesntCancelContentRequestWhenSelectionOnDifferentConnectionChanges");
-    IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project2.GetECDb());
+    RefCountedPtr<TestConnection> connection2 = m_connections.NotifyConnectionOpened(project2.GetECDb());
+
+    bool connectionInterrupted = false;
+    connection2->SetInterruptHandler([&connectionInterrupted](){connectionInterrupted = true;});
 
     // set the request handler
     m_impl->SetContentHandler([&](IConnectionCR, ContentDescriptorCR, SelectionInfo const&, PageOptionsCR, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
@@ -1389,8 +1403,9 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, DoesntCancelCont
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     ContentDescriptorCPtr descriptor = ContentDescriptor::Create();
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContent(connection2->GetDb(), *descriptor, selection, PageOptions(), options.GetJson()), false);
+    DoRequest(m_manager->GetContent(connection2->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()), false);
     ChangeSelectionAndVerifyResult(false);
+    EXPECT_FALSE(connectionInterrupted);
 
     m_connections.NotifyConnectionClosed(*connection2);
     }
@@ -1486,7 +1501,10 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, DoesntCancelCont
     { 
     ECDbTestProject project2;
     project2.Create("DoesntCancelContentSetSizeRequestWhenSelectionOnDifferentConnectionChanges");
-    IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project2.GetECDb());
+    RefCountedPtr<TestConnection> connection2 = m_connections.NotifyConnectionOpened(project2.GetECDb());
+
+    bool connectionInterrupted = false;
+    connection2->SetInterruptHandler([&connectionInterrupted](){connectionInterrupted = true;});
        
     // set the request handler
     m_impl->SetContentSetSizeHandler([&](IConnectionCR, ContentDescriptorCR, SelectionInfo const&, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
@@ -1500,8 +1518,9 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, DoesntCancelCont
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     ContentDescriptorCPtr descriptor = ContentDescriptor::Create();
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContentSetSize(connection2->GetDb(), *descriptor, selection, options.GetJson()), false);
+    DoRequest(m_manager->GetContentSetSize(connection2->GetECDb(), *descriptor, selection, options.GetJson()), false);
     ChangeSelectionAndVerifyResult(false);
+    EXPECT_FALSE(connectionInterrupted);
 
     m_connections.NotifyConnectionClosed(*connection2);
     }
@@ -1573,3 +1592,5 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsNodeColla
     DoRequest(m_manager->NotifyNodeCollapsed(s_project->GetECDb(), 1));
     TerminateAndVerifyResult();
     }
+
+#endif // RULES_ENGINE_FORCE_SINGLE_THREAD

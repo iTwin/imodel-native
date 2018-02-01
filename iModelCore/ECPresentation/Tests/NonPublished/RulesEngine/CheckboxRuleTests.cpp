@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/CheckboxRuleTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -196,27 +196,18 @@ TEST_F(CheckboxRuleTests, CustomizationHelper_NotifyCheckedStateChanged)
     EXPECT_TRUE(node->IsCheckboxEnabled());
     EXPECT_TRUE(node->IsChecked());
 
-    RefCountedPtr<IECInstance const> nodeInstance = node->GetInstance();
-    Utf8String instanceIdStr = nodeInstance->GetInstanceId();
-    ECInstanceId instanceId;
-    ECInstanceId::FromString(instanceId, instanceIdStr.c_str());
+    ECInstanceNodeKey const* key = node->GetKey().AsECInstanceNodeKey();
 
     ECValue value;
-    EXPECT_EQ(ECObjectsStatus::Success, nodeInstance->GetValue(value, "BoolProperty"));
-    EXPECT_EQ(true, value.GetBoolean());
-    EXPECT_EQ(ECObjectsStatus::Success, RulesEngineTestHelpers::GetInstance(s_project->GetECDb(), *m_widgetClass, instanceId)->GetValue(value, "BoolProperty"));
+    EXPECT_EQ(ECObjectsStatus::Success, RulesEngineTestHelpers::GetInstance(s_project->GetECDb(), *m_widgetClass, key->GetInstanceId())->GetValue(value, "BoolProperty"));
     EXPECT_EQ(true, value.GetBoolean());
 
-    CustomizationHelper::NotifyCheckedStateChanged(s_project->GetECDb(), *node, false);
-    EXPECT_EQ(ECObjectsStatus::Success, nodeInstance->GetValue(value, "BoolProperty"));
-    EXPECT_EQ(false, value.GetBoolean());
-    EXPECT_EQ(ECObjectsStatus::Success, RulesEngineTestHelpers::GetInstance(s_project->GetECDb(), *m_widgetClass, instanceId)->GetValue(value, "BoolProperty"));
+    CustomizationHelper::NotifyCheckedStateChanged(*m_connection, *node, false);
+    EXPECT_EQ(ECObjectsStatus::Success, RulesEngineTestHelpers::GetInstance(s_project->GetECDb(), *m_widgetClass, key->GetInstanceId())->GetValue(value, "BoolProperty"));
     EXPECT_EQ(false, value.GetBoolean());
     
-    CustomizationHelper::NotifyCheckedStateChanged(s_project->GetECDb(), *node, true);
-    EXPECT_EQ(ECObjectsStatus::Success, nodeInstance->GetValue(value, "BoolProperty"));
-    EXPECT_EQ(true, value.GetBoolean());
-    EXPECT_EQ(ECObjectsStatus::Success, RulesEngineTestHelpers::GetInstance(s_project->GetECDb(), *m_widgetClass, instanceId)->GetValue(value, "BoolProperty"));
+    CustomizationHelper::NotifyCheckedStateChanged(*m_connection, *node, true);
+    EXPECT_EQ(ECObjectsStatus::Success, RulesEngineTestHelpers::GetInstance(s_project->GetECDb(), *m_widgetClass, key->GetInstanceId())->GetValue(value, "BoolProperty"));
     EXPECT_EQ(true, value.GetBoolean());
     }
 

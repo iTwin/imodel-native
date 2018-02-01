@@ -334,7 +334,7 @@ static bset<ECClassCP> CollectContentModifiers(ECSchemaHelper const& helper, Pre
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void ProcessQueryClassesPolymorphically(bvector<SupportedEntityClassInfo>& infos, bset<ECClassCP> const& modifierClassList, ECDbCR connection)
+static void ProcessQueryClassesPolymorphically(bvector<SupportedEntityClassInfo>& infos, bset<ECClassCP> const& modifierClassList, SchemaManagerCR schemas)
     {
     bset<SupportedEntityClassInfo*> infosWithBasePrimaryClasses;
     bset<SupportedEntityClassInfo> infosToAppend;
@@ -351,15 +351,15 @@ static void ProcessQueryClassesPolymorphically(bvector<SupportedEntityClassInfo>
                 // the rule wants to customize a subclass of the class and leave other subclasses unsorted -
                 // this means we have to expand the ecClass into its subclasses
                 bvector<SupportedEntityClassInfo> subclassInfos;
-                subclassInfos.reserve(connection.Schemas().GetDerivedClasses(info.GetClass()).size());
-                for (ECClassCP derived : connection.Schemas().GetDerivedClasses(info.GetClass()))
+                subclassInfos.reserve(schemas.GetDerivedClasses(info.GetClass()).size());
+                for (ECClassCP derived : schemas.GetDerivedClasses(info.GetClass()))
                     {
                     SupportedEntityClassInfo copy(*derived->GetEntityClassCP());
                     copy.SetFlags((int)(info.GetFlags() | CLASS_FLAG_Polymorphic));
                     subclassInfos.push_back(std::move(copy));
                     }
 
-                ProcessQueryClassesPolymorphically(subclassInfos, modifierClassList, connection);
+                ProcessQueryClassesPolymorphically(subclassInfos, modifierClassList, schemas);
                 infosWithBasePrimaryClasses.insert(&info);
                 infosToAppend.insert(subclassInfos.begin(), subclassInfos.end());
                 }
@@ -387,7 +387,7 @@ static void ProcessQueryClassesPolymorphically(bvector<SupportedEntityClassInfo>
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void ProcessRelationshipPathsPolymorphically(bvector<RelatedClassPath>& relatedPaths, bset<ECClassCP> const& modifierClassList, ECDbCR connection)
+static void ProcessRelationshipPathsPolymorphically(bvector<RelatedClassPath>& relatedPaths, bset<ECClassCP> const& modifierClassList, SchemaManagerCR schemas)
     {
     bvector<RelatedClassPath> childPaths;
     for (ECClassCP modifierClass : modifierClassList)
@@ -397,14 +397,14 @@ static void ProcessRelationshipPathsPolymorphically(bvector<RelatedClassPath>& r
             if (!related.back().IsPolymorphic() || !modifierClass->Is(related.back().GetTargetClass()))
                 continue;
 
-            for (ECClassCP derived : connection.Schemas().GetDerivedClasses(*related.back().GetTargetClass()))
+            for (ECClassCP derived : schemas.GetDerivedClasses(*related.back().GetTargetClass()))
                 {
                 RelatedClassPath copy(related);
                 copy.back().SetTargetClass(*derived->GetEntityClassCP());
                 childPaths.push_back(copy);
                 }
             related.back().SetIsPolymorphic(false);
-            ProcessRelationshipPathsPolymorphically(childPaths, modifierClassList, connection);
+            ProcessRelationshipPathsPolymorphically(childPaths, modifierClassList, schemas);
             }
         }
     for (RelatedClassPath const& relatedPath : childPaths)
@@ -426,7 +426,7 @@ bset<ECClassCP> const& ContentSpecificationsHandler::GetModifierClasses() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentSpecificationsHandler::_OnBeforeAppendClassInfos(bvector<SupportedEntityClassInfo>& infos)
     {
-    ProcessQueryClassesPolymorphically(infos, GetModifierClasses(), GetContext().GetSchemaHelper().GetDb());
+    ProcessQueryClassesPolymorphically(infos, GetModifierClasses(), GetContext().GetSchemaHelper().GetConnection().GetECDb().Schemas());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -434,7 +434,7 @@ void ContentSpecificationsHandler::_OnBeforeAppendClassInfos(bvector<SupportedEn
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentSpecificationsHandler::_OnBeforeAppendClassPaths(bvector<RelatedClassPath>& paths)
     {
-    ProcessRelationshipPathsPolymorphically(paths, GetModifierClasses(), GetContext().GetSchemaHelper().GetDb());
+    ProcessRelationshipPathsPolymorphically(paths, GetModifierClasses(), GetContext().GetSchemaHelper().GetConnection().GetECDb().Schemas());
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/Connection.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -23,14 +23,18 @@ struct IConnection : IRefCounted
 {
 protected:
     virtual Utf8StringCR _GetId() const = 0;
-    virtual ECDbR _GetDb() const = 0;
+    virtual ECDbR _GetECDb() const = 0;
+    virtual BeSQLite::Db& _GetDb() const = 0;
     virtual bool _IsOpen() const = 0;
     virtual bool _IsReadOnly() const = 0;
+    virtual void _InterruptRequests() const = 0;
 public:
     Utf8StringCR GetId() const {return _GetId();}
-    ECDbR GetDb() const {return _GetDb();}
+    ECDbR GetECDb() const {return _GetECDb();}
+    BeSQLite::Db& GetDb() const {return _GetDb();}
     bool IsOpen() const {return _IsOpen();}
     bool IsReadOnly() const {return _IsReadOnly();}
+    void InterruptRequests() const {_InterruptRequests();}
 };
 
 //=======================================================================================

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/ECSchemaHelperTests.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -204,6 +204,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 struct ECSchemaHelperTests : ::testing::Test
     {
     static ECDbTestProject* s_project;
+    IConnectionPtr m_connection;
     ECSchemaHelper* m_helper;
 
     ECSchemaHelperTests() : m_helper(nullptr) {}

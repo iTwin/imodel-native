@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/NavNodesCache.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once 
@@ -40,10 +40,10 @@ struct IECSqlStatementCacheProvider
 {
 protected:
     virtual ~IECSqlStatementCacheProvider() {}
-    virtual ECSqlStatementCache& _GetECSqlStatementCache(ECDbCR db) = 0;
+    virtual ECSqlStatementCache& _GetECSqlStatementCache(IConnectionCR) = 0;
 
 public:
-    ECSqlStatementCache& GetECSqlStatementCache(ECDbCR db) {return _GetECSqlStatementCache(db);}
+    ECSqlStatementCache& GetECSqlStatementCache(IConnectionCR connection) {return _GetECSqlStatementCache(connection);}
 };
 
 //=======================================================================================

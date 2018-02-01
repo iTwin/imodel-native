@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/CustomizationHelper.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -162,55 +162,45 @@ bool NavNodeCustomizer::ApplyCheckboxRules()
     if (nullptr == rule)
         return false;
             
-    bool isChecked;
-    bool isReadOnly;
-    if (!rule->GetPropertyName().empty() && m_node.GetType().Equals(NAVNODE_TYPE_ECInstanceNode))
+    bool isChecked = false;
+    bool isReadOnly = false;
+    if (!rule->GetPropertyName().empty() && nullptr != m_node.GetKey().AsECInstanceNodeKey())
         {
-        RefCountedPtr<IECInstance const> instance = m_node.GetInstance();
-        if (instance.IsNull())
+        ECClassCP boundPropertyClass = m_context.GetConnection().GetECDb().Schemas().GetClass(m_node.GetKey().AsECInstanceNodeKey()->GetECClassId());
+        if (nullptr == boundPropertyClass || !boundPropertyClass->IsEntityClass())
+            {
+            BeAssert(false);
+            return false;
+            }
+        ECPropertyCP boundProperty = boundPropertyClass->GetPropertyP(rule->GetPropertyName().c_str());
+        if (nullptr == boundProperty || !boundProperty->GetIsPrimitive())
+            {
+            BeAssert(false);
+            return false;
+            }
+        ECValue boundValue = ECInstancesHelper::GetValue(m_context.GetConnection(), *boundPropertyClass, m_node.GetKey().AsECInstanceNodeKey()->GetInstanceId(), *boundProperty);
+        if (!boundValue.IsBoolean())
             {
             BeAssert(false);
             return false;
             }
 
-        ECPropertyCP boundProperty = instance->GetClass().GetPropertyP(rule->GetPropertyName().c_str());
-        if (nullptr == boundProperty)
-            {
-            BeAssert(false);
-            return false;
-            }
-
-        ECValue value;
-        if (ECObjectsStatus::Success != instance->GetValue(value, boundProperty->GetName().c_str()))
-            {
-            BeAssert(false);
-            return false;
-            }
-
-        if (!value.IsBoolean())
-            {
-            BeAssert(false);
-            return false;
-            }
-
-        if (value.IsNull())
+        if (boundValue.IsNull())
             isChecked = rule->GetDefaultValue();
         else
-            isChecked = rule->GetUseInversedPropertyValue() ? !value.GetBoolean() : value.GetBoolean();
-        isReadOnly = m_context.GetConnection().IsReadOnly() || boundProperty->GetIsReadOnly() || value.IsReadOnly();
+            isChecked = rule->GetUseInversedPropertyValue() ? !boundValue.GetBoolean() : boundValue.GetBoolean();
+        isReadOnly = m_context.GetConnection().IsReadOnly() || boundProperty->GetIsReadOnly() || boundValue.IsReadOnly();
 
         m_setter._SetCheckboxBoundInfo(rule->GetPropertyName(), rule->GetUseInversedPropertyValue());
         }
     else
         {
-        isChecked = rule->GetDefaultValue();
         ECValue value;
-        if (!rule->GetIsEnabled().empty()
+        isChecked = rule->GetDefaultValue();
+        isReadOnly = (!rule->GetIsEnabled().empty()
             && ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, rule->GetIsEnabled(), GetNodeExpressionContext()) 
-            && value.IsBoolean())     
-            isReadOnly = !value.GetBoolean();
-        else 
-            isReadOnly = false;
+            && value.IsBoolean()    
+            && !value.GetBoolean());
         }
 
     m_setter._SetIsCheckboxVisible(true);
@@ -226,7 +216,7 @@ NavNodeCustomizer::NavNodeCustomizer(RulesDrivenProviderContextCR context, JsonN
     : m_context(context), m_node(node), m_parentNode(parentNode), m_setter(setter), m_ecdbSymbolsContext(nullptr)
     {
     if (m_context.IsQueryContext())
-        m_ecdbSymbolsContext = new ECDbExpressionSymbolContext(m_context.GetDb());
+        m_ecdbSymbolsContext = new ECDbExpressionSymbolContext(m_context.GetConnection().GetECDb());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -336,32 +326,34 @@ void CustomizationHelper::Customize(ContentProviderContextCR context, ContentSet
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CustomizationHelper::NotifyCheckedStateChanged(ECDbR db, JsonNavNodeCR node, bool isChecked)
+void CustomizationHelper::NotifyCheckedStateChanged(IConnectionCR connection, JsonNavNodeCR node, bool isChecked)
     {
     NavNodeExtendedData extendedData(node);
     if (extendedData.HasCheckboxBoundPropertyName())
         {
         if (extendedData.IsCheckboxBoundPropertyInversed())
             isChecked = !isChecked;
-
-        RefCountedPtr<IECInstance const> instance = node.GetInstance();
-        ECPropertyCP prop = instance->GetClass().GetPropertyP(extendedData.GetCheckboxBoundPropertyName());
-        if (nullptr == prop)
+        
+        ECClassCP boundPropertyClass = connection.GetECDb().Schemas().GetClass(node.GetKey().AsECInstanceNodeKey()->GetECClassId());
+        if (nullptr == boundPropertyClass || !boundPropertyClass->IsEntityClass())
+            {
+            BeAssert(false);
+            return;
+            }
+        ECPropertyCP boundProperty = boundPropertyClass->GetPropertyP(extendedData.GetCheckboxBoundPropertyName());
+        if (nullptr == boundProperty || !boundProperty->GetIsPrimitive())
             {
             BeAssert(false);
             return;
             }
 
-        BeAssert(!instance->IsReadOnly());
-        BeAssert(!prop->GetIsReadOnly());
-        BeAssert(!db.IsReadonly());
-        BeAssert(!db.GetECDbSettings().RequiresECCrudWriteToken());
+        BeAssert(!boundProperty->GetIsReadOnly());
+        BeAssert(!connection.IsReadOnly());
+        BeAssert(!connection.GetECDb().GetECDbSettings().RequiresECCrudWriteToken());
 
-        const_cast<IECInstanceP>(instance.get())->SetValue(prop->GetName().c_str(), ECValue(isChecked));
-        
-        ECInstanceUpdater updater(db, *instance, nullptr);
-        DbResult status = updater.Update(*instance);
-        BeAssert(BE_SQLITE_OK == status);
-        db.SaveChanges();
+        ECInstancesHelper::SetValue(connection, *boundPropertyClass, node.GetKey().AsECInstanceNodeKey()->GetInstanceId(),
+            *boundProperty, ECValue(isChecked));
+
+        connection.GetECDb().SaveChanges();
         }
     }

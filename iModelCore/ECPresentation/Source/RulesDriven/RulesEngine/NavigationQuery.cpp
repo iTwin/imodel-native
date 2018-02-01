@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/NavigationQuery.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -115,7 +115,7 @@ bool BoundQueryIdSet::_Equals(BoundQueryValue const& other) const
 struct VirtualSetStatementPreparer : BoundQueryRecursiveChildrenIdSet::IChildIdsStatementPreparer
 {
 private:
-    ECDbCR m_db;
+    IConnectionCR m_connection;
     bset<ECRelationshipClassCP> const& m_relationships;
     bool m_isForward;
     ECSqlStatement m_stmt;
@@ -141,14 +141,14 @@ private:
         }
 
 public:
-    VirtualSetStatementPreparer(ECDbCR db, bset<ECRelationshipClassCP> const& relationships, bool isForward)
-        : m_db(db), m_relationships(relationships), m_isForward(isForward)
+    VirtualSetStatementPreparer(IConnectionCR connection, bset<ECRelationshipClassCP> const& relationships, bool isForward)
+        : m_connection(connection), m_relationships(relationships), m_isForward(isForward)
         {}
     ECSqlStatement& _GetStatement(bvector<ECInstanceId> const& sourceIds) override
         {
         if (!m_stmt.IsPrepared())
             {
-            ECSqlStatus status = m_stmt.Prepare(m_db, CreateSelectQuery().c_str());
+            ECSqlStatus status = m_stmt.Prepare(m_connection.GetECDb().Schemas(), m_connection.GetDb(), CreateSelectQuery().c_str());
             if (!status.IsSuccess())
                 {
                 BeAssert(false);
@@ -183,7 +183,7 @@ public:
 struct BoundIdsStatementPreparer : BoundQueryRecursiveChildrenIdSet::IChildIdsStatementPreparer
 {
 private:
-    ECDbCR m_db;
+    IConnectionCR m_connection;
     bset<ECRelationshipClassCP> const& m_relationships;
     bool m_isForward;
     bvector<ECSqlStatement*> m_statements;
@@ -213,8 +213,8 @@ private:
         }
 
 public:
-    BoundIdsStatementPreparer(ECDbCR db, bset<ECRelationshipClassCP> const& relationships, bool isForward)
-        : m_db(db), m_relationships(relationships), m_isForward(isForward)
+    BoundIdsStatementPreparer(IConnectionCR connection, bset<ECRelationshipClassCP> const& relationships, bool isForward)
+        : m_connection(connection), m_relationships(relationships), m_isForward(isForward)
         {}
     ~BoundIdsStatementPreparer()
         {
@@ -225,7 +225,7 @@ public:
         {
         m_statements.push_back(new ECSqlStatement());
         ECSqlStatement& stmt = *m_statements.back();
-        if (!stmt.Prepare(m_db, CreateSelectQuery(sourceIds.size()).c_str()).IsSuccess())
+        if (!stmt.Prepare(m_connection.GetECDb().Schemas(), m_connection.GetDb(), CreateSelectQuery(sourceIds.size()).c_str()).IsSuccess())
             {
             BeAssert(false);
             return stmt;
@@ -272,8 +272,8 @@ private:
         }
 
 public:
-    SmartStatementPreparer(ECDbCR db, bset<ECRelationshipClassCP> const& relationships, bool isForward)
-        : m_vSetPreparer(db, relationships, isForward), m_idsPreparer(db, relationships, isForward)
+    SmartStatementPreparer(IConnectionCR connection, bset<ECRelationshipClassCP> const& relationships, bool isForward)
+        : m_vSetPreparer(connection, relationships, isForward), m_idsPreparer(connection, relationships, isForward)
         {}
     ECSqlStatement& _GetStatement(bvector<ECInstanceId> const& sourceIds) override
         {
@@ -308,7 +308,8 @@ ECSqlStatus BoundQueryRecursiveChildrenIdSet::_Bind(ECSqlStatement& stmt, uint32
     if (nullptr == m_childrenSet)
         {
         m_childrenSet = new IdSet<ECInstanceId>();
-        SmartStatementPreparer prep(*stmt.GetECDb(), m_relationships, m_isForward);
+        Savepoint txn(m_connection.GetDb(), "BoundQueryRecursiveChildrenIdSet::_Bind"); 
+        SmartStatementPreparer prep(m_connection, m_relationships, m_isForward);
         RecursivelySelectRelatedKeys(*m_childrenSet, prep, m_parentIds);
         }
 
@@ -320,7 +321,7 @@ ECSqlStatus BoundQueryRecursiveChildrenIdSet::_Bind(ECSqlStatement& stmt, uint32
 +---------------+---------------+---------------+---------------+---------------+------*/
 BoundQueryValue* BoundQueryRecursiveChildrenIdSet::_Clone() const
     {
-    BoundQueryRecursiveChildrenIdSet* set = new BoundQueryRecursiveChildrenIdSet(m_relationships, m_isForward, m_parentIds);
+    BoundQueryRecursiveChildrenIdSet* set = new BoundQueryRecursiveChildrenIdSet(m_connection, m_relationships, m_isForward, m_parentIds);
     if (nullptr != m_childrenSet)
         set->m_childrenSet = new IdSet<ECInstanceId>(*m_childrenSet);
     return set;
@@ -335,7 +336,8 @@ bool BoundQueryRecursiveChildrenIdSet::_Equals(BoundQueryValue const& other) con
     if (nullptr == otherVirtualSet)
         return false;
 
-    return m_relationships == otherVirtualSet->m_relationships 
+    return m_connection.GetId().Equals(otherVirtualSet->m_connection.GetId())
+        && m_relationships == otherVirtualSet->m_relationships 
         && m_isForward == otherVirtualSet->m_isForward 
         && m_parentIds == otherVirtualSet->m_parentIds;
     }

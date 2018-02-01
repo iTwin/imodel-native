@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/TestHelpers.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TestHelpers.h"
@@ -37,22 +37,23 @@ Utf8String RulesEngineTestHelpers::GetDisplayLabel(IECInstanceCR instance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr RulesEngineTestHelpers::InsertInstance(ECDbR db, ECInstanceInserter& inserter, ECClassCR ecClass, std::function<void(IECInstanceR)> const& instancePreparer)
+IECInstancePtr RulesEngineTestHelpers::InsertInstance(ECDbR db, ECInstanceInserter& inserter, ECClassCR ecClass, std::function<void(IECInstanceR)> const& instancePreparer, bool commit)
     {
     IECInstancePtr instance = ecClass.GetDefaultStandaloneEnabler()->CreateInstance();
     if (nullptr != instancePreparer)
         instancePreparer(*instance);
     inserter.Insert(*instance);
-#ifdef WIP_REQUIRE_COMMITS
-    db.SaveChanges();
-#endif
+    
+    if (commit)
+        db.SaveChanges();
+
     return instance;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Pranciskus.Ambrazas             02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceKey RulesEngineTestHelpers::InsertRelationship(ECDbR db, ECRelationshipClassCR relationship, IECInstanceCR source, IECInstanceR target, std::function<void(IECInstanceR)> const& instancePreparer)
+ECInstanceKey RulesEngineTestHelpers::InsertRelationship(ECDbR db, ECRelationshipClassCR relationship, IECInstanceCR source, IECInstanceR target, std::function<void(IECInstanceR)> const& instancePreparer, bool commit)
     {
     ECInstanceId sourceId;
     ECInstanceId::FromString(sourceId, source.GetInstanceId().c_str());
@@ -89,9 +90,10 @@ ECInstanceKey RulesEngineTestHelpers::InsertRelationship(ECDbR db, ECRelationshi
         updateStmt.BindId(2, targetKey.GetInstanceId());
         updateStmt.Step();
         target.SetValue(navigationPropertyName, ECValue(sourceKey.GetInstanceId()));
-#ifdef WIP_REQUIRE_COMMITS
-        db.SaveChanges();
-#endif
+
+        if (commit)
+            db.SaveChanges();
+
         return ECInstanceKey(relationship.GetId(), targetKey.GetInstanceId());
         }
         
@@ -105,48 +107,48 @@ ECInstanceKey RulesEngineTestHelpers::InsertRelationship(ECDbR db, ECRelationshi
     ECInstanceInserter inserter(db, relationship, nullptr);
     DbResult result = inserter.InsertRelationship(key, sourceKey.GetInstanceId(), targetKey.GetInstanceId(), instance.get());
     BeAssert(DbResult::BE_SQLITE_OK == result);
-#ifdef WIP_REQUIRE_COMMITS
-    db.SaveChanges();
-#endif
+    
+    if (commit)
+        db.SaveChanges();
+
     return key;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Pranciskus.Ambrazas             02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceKey RulesEngineTestHelpers::InsertRelationship(ECDbTestProject& project, ECRelationshipClassCR relationship, IECInstanceCR source, IECInstanceR target, std::function<void(IECInstanceR)> const& instancePreparer)
+ECInstanceKey RulesEngineTestHelpers::InsertRelationship(ECDbTestProject& project, ECRelationshipClassCR relationship, IECInstanceCR source, IECInstanceR target, std::function<void(IECInstanceR)> const& instancePreparer, bool commit)
     {
-    return InsertRelationship(project.GetECDb(), relationship, source, target, instancePreparer);
+    return InsertRelationship(project.GetECDb(), relationship, source, target, instancePreparer, commit);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr RulesEngineTestHelpers::InsertInstance(ECDbR db, ECClassCR ecClass, std::function<void(IECInstanceR)> const& instancePreparer)
+IECInstancePtr RulesEngineTestHelpers::InsertInstance(ECDbR db, ECClassCR ecClass, std::function<void(IECInstanceR)> const& instancePreparer, bool commit)
     {
     ECInstanceInserter inserter(db, ecClass, nullptr);
-    return InsertInstance(db, inserter, ecClass, instancePreparer);
+    return InsertInstance(db, inserter, ecClass, instancePreparer, commit);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesEngineTestHelpers::DeleteInstances(ECDbR db, ECClassCR ecClass, bool polymorphic)
+void RulesEngineTestHelpers::DeleteInstances(ECDbR db, ECClassCR ecClass, bool polymorphic, bool commit)
     {
     Utf8String ecsql = Utf8String("DELETE FROM ").append(ecClass.GetECSqlName());
     ECSqlStatement stmt;
     stmt.Prepare(db, ecsql.c_str());
     stmt.Step();
 
-#ifdef WIP_REQUIRE_COMMITS
-    db.SaveChanges();
-#endif
+    if (commit)
+        db.SaveChanges();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesEngineTestHelpers::DeleteInstance(ECDbR db, ECInstanceKeyCR key)
+void RulesEngineTestHelpers::DeleteInstance(ECDbR db, ECInstanceKeyCR key, bool commit)
     {
     ECClassCP ecClass = db.Schemas().GetClass(key.GetClassId());
     if (nullptr == ecClass)
@@ -178,9 +180,10 @@ void RulesEngineTestHelpers::DeleteInstance(ECDbR db, ECInstanceKeyCR key)
                 }
             updateStmt.BindId(1, key.GetInstanceId());
             updateStmt.Step();
-#ifdef WIP_REQUIRE_COMMITS
-            db.SaveChanges();
-#endif
+
+            if (commit)
+                db.SaveChanges();
+
             return;
             }
         }
@@ -197,36 +200,36 @@ void RulesEngineTestHelpers::DeleteInstance(ECDbR db, ECInstanceKeyCR key)
     BeSQLite::DbResult result = statement.Step();
     UNUSED_VARIABLE(result);
     BeAssert(result == BE_SQLITE_DONE);
-#ifdef WIP_REQUIRE_COMMITS
-    db.SaveChanges();
-#endif
+    
+    if (commit)
+        db.SaveChanges();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesEngineTestHelpers::DeleteInstance(ECDbR db, IECInstanceCR instance)
+void RulesEngineTestHelpers::DeleteInstance(ECDbR db, IECInstanceCR instance, bool commit)
     {
     ECInstanceId id;
     ECInstanceId::FromString(id, instance.GetInstanceId().c_str());
     ECInstanceKey key(instance.GetClass().GetId(), id);
-    DeleteInstance(db, key);
+    DeleteInstance(db, key, commit);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesEngineTestHelpers::DeleteInstance(ECDbTestProject& project, IECInstanceCR instance)
+void RulesEngineTestHelpers::DeleteInstance(ECDbTestProject& project, IECInstanceCR instance, bool commit)
     {
-    DeleteInstance(project.GetECDb(), instance);
+    DeleteInstance(project.GetECDb(), instance, commit);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesEngineTestHelpers::DeleteInstance(ECDbTestProject& project, ECInstanceKeyCR key)
+void RulesEngineTestHelpers::DeleteInstance(ECDbTestProject& project, ECInstanceKeyCR key, bool commit)
     {
-    DeleteInstance(project.GetECDb(), key);
+    DeleteInstance(project.GetECDb(), key, commit);
     }
 
 /*---------------------------------------------------------------------------------**//**

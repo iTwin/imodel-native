@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/ExpectedQueries.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -143,7 +143,9 @@ struct ExpectedQueries
 private:
     bmap<Utf8String, NavigationQueryCPtr> m_navigationQueries;
     bmap<Utf8String, ContentQueryCPtr> m_contentQueries;
+    TestConnectionManager m_connections;
     ECDbTestProject m_project;
+    IConnectionPtr m_connection;
     RelatedPathsCache m_relatedPathsCache;
     ECSchemaHelper* m_schemaHelper;
     bvector<PropertyGroupCP> m_propertyGroupsToDelete;
@@ -177,6 +179,8 @@ public:
     ECClassCP GetECClass(Utf8CP schemaName, Utf8CP className);
     bvector<ECClassCP> GetECClasses(Utf8CP schemaName);
     ECDbR GetDb() {return m_project.GetECDb();}
+    IConnectionCR GetConnection() {return *m_connection;}
+    IConnectionManagerCR GetConnections() {return m_connections;}
     };
 
 END_ECPRESENTATIONTESTS_NAMESPACE
