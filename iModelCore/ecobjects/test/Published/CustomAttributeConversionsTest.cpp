@@ -2482,6 +2482,42 @@ TEST_F(StandardCustomAttributeConversionTests, CategoryCustomAttribute_NameNotVa
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Caleb.Shafer                 06/2017
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyPriorityCustomAttributeConversionTest, EmptyPropertyPriorityIsRemovedAndPriorityAttributeNotSet)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="EditorCustomAttributes" version="1.03" prefix="beca"/>
+            <ECClass typeName="A" isDomainClass="true">
+                <ECProperty propertyName="propWithPriority" typeName="string">
+                    <ECCustomAttributes>
+                        <PropertyPriority xmlns="EditorCustomAttributes.01.03" />
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_EQ(1, schema->GetReferencedSchemas().size());
+
+    ECClassCP ecClass = schema->GetClassCP("A");
+    ECPropertyCP ecProp = ecClass->GetPropertyP("propWithPriority");
+    CheckForPropertyPriorityCALocally(ecProp, true);
+
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_EQ(0, schema->GetReferencedSchemas().size());
+
+    ECClassCP afterConv = schema->GetClassCP("A");
+    ECPropertyCP afterConvProp = afterConv->GetPropertyP("propWithPriority");
+    EXPECT_FALSE(afterConvProp->IsPriorityLocallyDefined());
+    CheckForPropertyPriorityCALocally(afterConvProp, false);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                 06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PropertyPriorityCustomAttributeConversionTest, LocallyDefinedPropertyPriority)
     {
     {
