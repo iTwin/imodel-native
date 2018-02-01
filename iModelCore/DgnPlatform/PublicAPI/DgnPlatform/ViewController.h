@@ -189,6 +189,9 @@ protected:
     //! Draw the contents of the view.
     virtual void _DrawView(ViewContextR) = 0;
 
+    //! Override this if you want to perform some logic on each iteration of the render loop.
+    virtual void _OnRenderFrame() { }
+
     DGNPLATFORM_EXPORT void InvalidateScene();
     bool IsSceneReady() const;
 
@@ -554,7 +557,6 @@ private:
 protected:
     bool m_loading = false;
     bool m_defaultDeviceOrientationValid = false;
-    Render::MaterialPtr m_skybox;
     RotMatrix m_defaultDeviceOrientation;
     double m_sceneLODSize = 6.0; 
     double m_nonSceneLODSize = 7.0; 
@@ -584,8 +586,6 @@ protected:
     DGNPLATFORM_EXPORT SpatialViewController(SpatialViewDefinitionCR definition);
     ~SpatialViewController() {}
 
-    void LoadSkyBox(Render::SystemCR system);
-    Render::TexturePtr LoadTexture(Utf8CP fileName, Render::SystemCR system);
     double GetGroundElevation() const;
     AxisAlignedBox3d GetGroundExtents(DgnViewportCR) const;
     void DrawGroundPlane(DecorateContextR);

@@ -1185,7 +1185,7 @@ Json::Value DgnElement::RelatedElement::ToJson(DgnDbR db) const
     {
     Json::Value val;
     val[json_id()] = m_id.ToHexStr();
-    val[json_relClass()] = db.Schemas().GetClass(m_relClassId)->GetName();
+    val[json_relClassName()] = db.Schemas().GetClass(m_relClassId)->GetName();
     return val;
     }
 
@@ -1202,7 +1202,7 @@ void DgnElement::RelatedElement::FromJson(DgnDbR db, JsonValueCR val)
 
     m_id.FromJson(val[json_id()]);
     if (m_id.IsValid())
-        m_relClassId = ECJsonUtilities::GetClassIdFromClassNameJson(val[json_relClass()], db.GetClassLocater());
+        m_relClassId = ECJsonUtilities::GetClassIdFromClassNameJson(val[json_relClassName()], db.GetClassLocater());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1330,6 +1330,13 @@ static ECN::IECInstancePtr ecStructInstanceFromJson(ECN::ECClassCR eclass, JsonV
 //---------------------------------------------------------------------------------------
 static BentleyStatus setPropertyFromJson(ElementECPropertyAccessor& propAccessor, ValueKind itemKind, PrimitiveType primitiveItemType, JsonValueCR jsonProp, PropertyArrayIndex arrayIdx = PropertyArrayIndex())
     {
+    if (jsonProp.isNull())
+        {
+        ECN::ECValue nullValue;
+        nullValue.SetToNull();
+        return (DgnDbStatus::Success == propAccessor.SetPropertyValue(nullValue, arrayIdx))? BSISUCCESS: BSIERROR;
+        }
+
     //  ----------------------------------------------------
     if (ECN::VALUEKIND_Primitive == itemKind)
         {
@@ -1353,19 +1360,26 @@ static BentleyStatus setPropertyFromJson(ElementECPropertyAccessor& propAccessor
     if (ECN::VALUEKIND_Navigation == itemKind)
         {
         BeInt64Id id;
-        ECClassId relationshipClassId;
+        ECRelationshipClassCP relClass = nullptr;
         if (jsonProp.isObject())
             {
-            id.FromString(jsonProp["id"].asCString());
+            id = BeInt64Id::FromString(jsonProp[DgnElement::RelatedElement::json_id()].asCString());
             bvector<Utf8String> classNameParts;
-            BeStringUtilities::Split(jsonProp["relClass"].asCString(), ":", classNameParts);
-            relationshipClassId = propAccessor.GetElement().GetDgnDb().Schemas().GetClassId(classNameParts[0], classNameParts[1]);
+            BeStringUtilities::Split(jsonProp[DgnElement::RelatedElement::json_relClassName()].asCString(), ":", classNameParts);
+            auto cls = propAccessor.GetElement().GetDgnDb().Schemas().GetClass(classNameParts[0], classNameParts[1]);
+            if (nullptr == cls || nullptr == cls->GetRelationshipClassCP())
+                {
+                BeDataAssert(false);
+                return BSIERROR;
+                }
+            relClass = cls->GetRelationshipClassCP();
             }
         else
             {
-            id.FromString(jsonProp.asCString());
+            id = BeInt64Id::FromString(jsonProp.asCString());
             }
-        ECN::ECValue nav(id, relationshipClassId);
+        ECN::ECValue nav;
+        nav.SetNavigationInfo(id, relClass);
         return (DgnDbStatus::Success == propAccessor.SetPropertyValue(nav, arrayIdx))? BSISUCCESS: BSIERROR;
         }
 
@@ -2241,7 +2255,12 @@ DgnDbStatus ElementGroupsMembers::Insert(DgnElementCR group, DgnElementCR member
     statement->BindId(3, member.GetElementClassId());
     statement->BindId(4, member.GetElementId());
     statement->BindInt(5, priority);
-    return (BE_SQLITE_DONE == statement->Step()) ? DgnDbStatus::Success : DgnDbStatus::BadRequest;
+    DbResult result = statement->Step();
+    if (BE_SQLITE_DONE == result)
+        return DgnDbStatus::Success;
+    if (BE_SQLITE_CONSTRAINT_UNIQUE == result)
+        return DgnDbStatus::ConstraintNotUnique;
+    return DgnDbStatus::BadRequest;
     }
 
 //---------------------------------------------------------------------------------------

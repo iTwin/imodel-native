@@ -81,7 +81,8 @@ struct TileContext;
 
 constexpr double s_minRangeBoxSize = 2.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh ###TODO: Revisit...
 constexpr double s_tileScreenSize = 512.0;
-constexpr double s_minToleranceRatio = s_tileScreenSize * 2.0;
+constexpr double s_minToleranceRatioMultiplier = 2.0;
+constexpr double s_minToleranceRatio = s_tileScreenSize * s_minToleranceRatioMultiplier;
 constexpr uint32_t s_minElementsPerTile = 100; // ###TODO: The complexity of a single element's geometry can vary wildly...
 constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
 constexpr double s_spatialRangeMultiplier = 1.0001; // must be > 1.0 - need to expand project extents slightly to avoid clipping geometry that lies right on one of their planes...
@@ -404,6 +405,7 @@ protected:
     bool _WantUndisplayed() override { return true; }
     AreaPatternTolerance _GetAreaPatternTolerance(CurveVectorCR) override { return AreaPatternTolerance(m_tolerance); }
     Render::SystemP _GetRenderSystem() const override { return m_loadContext.GetRenderSystem(); }
+    double _GetPixelSizeAtPoint(DPoint3dCP) const override { return m_tolerance; }
 
 public:
     TileContext(GeometryList& geometries, RootR root, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, double tolerance, LoadContextCR loadContext)
@@ -1930,6 +1932,7 @@ private:
     SystemP _GetRenderSystem() const override { return m_loadContext.GetRenderSystem(); }
     GraphicBuilderPtr _CreateGraphic(GraphicBuilder::CreateParams const&) override { BeAssert(false); return nullptr; }
     GraphicPtr _CreateBranch(GraphicBranch&, DgnDbR, TransformCR, ClipVectorCP) override { BeAssert(false); return nullptr; }
+    double _GetPixelSizeAtPoint(DPoint3dCP) const override { return m_tolerance; }
 public:
     MeshGenerator(TileCR tile, GeometryOptionsCR options, LoadContextCR loadContext);
 
@@ -2016,11 +2019,9 @@ void MeshGenerator::AddMeshes(GeomPartR part, bvector<GeometryCP> const& instanc
     if (rangePixels < s_minRangeBoxSize)
         return;
 
-    auto facetOptions = first->CreateFacetOptions(m_tolerance, m_options.m_normalMode);
-
     // Get the polyfaces and strokes with no transform applied
-    PolyfaceList polyfaces = part.GetPolyfaces(*facetOptions, nullptr, *this);
-    StrokesList strokes = part.GetStrokes(*facetOptions, nullptr, *this);
+    PolyfaceList polyfaces = part.GetPolyfaces(m_tolerance, m_options.m_normalMode, nullptr, *this);
+    StrokesList strokes = part.GetStrokes(m_tolerance, nullptr, *this);
 
     // For each instance, transform the polyfaces and add them to the mesh
     Transform invTransform = Transform::FromIdentity();
@@ -2078,7 +2079,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
     if (nullptr == polyface || 0 == polyface->GetPointIndexCount())
         return;
 
-    bool doDecimate = !m_tile.IsLeaf() && geom.DoDecimate() && polyface->GetPointCount() > GetDecimatePolyfacePointCount();
+    bool doDecimate = !m_tile.IsLeaf() && geom.DoDecimate() && 0 == polyface->GetPointCount() > GetDecimatePolyfacePointCount() && /* Decimator doesn't handle params... */ 0 == polyface->GetParamCount();      
     bool doVertexCluster = !doDecimate && geom.DoVertexCluster() && rangePixels < GetVertexClusterThresholdPixels();
 
     if (doDecimate)
@@ -2247,7 +2248,7 @@ void MeshGenerator::ClipPoints(StrokesR strokes) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshGenerator::AddStrokes(GeometryR geom, double rangePixels, bool isContained)
     {
-    auto strokes = geom.GetStrokes(*geom.CreateFacetOptions(m_tolerance, NormalMode::Never), *this);
+    auto strokes = geom.GetStrokes(m_tolerance, *this);
     AddStrokes(strokes, geom, rangePixels, isContained);
     }
 
@@ -2684,12 +2685,8 @@ GraphicPtr TileContext::FinishGraphic(GeometryAccumulatorR accum, TileBuilder& b
 GraphicPtr TileContext::FinishSubGraphic(GeometryAccumulatorR accum, TileSubGraphic& subGf)
     {
     DgnGeometryPartCR input = subGf.GetInput();
-    if (accum.GetGeometries().empty())
-        BeAssert(m_loadContext.WasAborted());
-
-    subGf.SetOutput(*GeomPart::Create(input.GetBoundingBox(), accum.GetGeometries()));
-    if (accum.GetGeometries().empty())
-        BeAssert(m_loadContext.WasAborted());
+    if (!accum.GetGeometries().empty())
+        subGf.SetOutput(*GeomPart::Create(input.GetBoundingBox(), accum.GetGeometries()));
 
     return m_finishedGraphic;
     }
@@ -2850,24 +2847,34 @@ private:
     bool _IsInvalidated(TileTree::DirtyRangesCR) const override { return false; }
     void _UpdateRange(DRange3dCR, DRange3dCR) override { }
 
-    ////SelectParent _SelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args) const override
-    ////    {
-    ////    BeAssert(nullptr == GetParent());
-    ////    BeAssert(selected.empty());
-    ////    selected.push_back(this);
-    ////    return SelectParent::No;
-    ////    }
-
     bool _HasChildren() const override { return false; }
     ChildTiles const* _GetChildren(bool) const override { return nullptr; }
     void _ValidateChildren() const override { }
     Utf8String _GetTileCacheKey() const override { return "NotCacheable!"; }
+
+    SelectParent _SelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args) const override;
 public:
     ThumbnailTile(DRange3dCR range, ThumbnailRoot& root, double minToleranceRatio) : T_Super(root, TileTree::OctTree::TileId::RootId(), range, minToleranceRatio)
         {
         //
         }
 };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Tile::SelectParent ThumbnailTile::_SelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args) const
+    {
+    BeAssert(nullptr == GetParent());
+    BeAssert(selected.empty());
+
+    selected.push_back(this);
+
+    if (!IsReady())
+        args.InsertMissing(*this);
+
+    return SelectParent::No;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/18

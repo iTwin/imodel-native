@@ -158,6 +158,7 @@ protected:
     DGNPLATFORM_EXPORT virtual Render::TexturePtr _CreateTexture(Render::ImageSourceCR source, Render::Image::BottomUp bottomUp) const;
     DGNPLATFORM_EXPORT virtual Render::SystemP _GetRenderSystem() const;
     DGNPLATFORM_EXPORT virtual Render::TargetP _GetRenderTarget() const;
+    DGNPLATFORM_EXPORT virtual double _GetPixelSizeAtPoint(DPoint3dCP origin) const;
     DGNPLATFORM_EXPORT ViewContext();
 
 public:
@@ -264,7 +265,7 @@ public:
     //! @param[in] origin The point at which the pixel size is calculated. This point is only relevant in camera views, where local coordinates
     //!                   closer to the eye are larger than those further from the eye. May be nullptr, in which case the center of the view is used.
     //! @return the length, in the current coordinate system units, of a unit bvector in the x direction in DgnCoordSystem::View, starting at \c origin.
-    DGNPLATFORM_EXPORT double GetPixelSizeAtPoint(DPoint3dCP origin) const;
+    double GetPixelSizeAtPoint(DPoint3dCP origin) const { return _GetPixelSizeAtPoint(origin); }
 
     //! Get the current state of the ViewFlags for this context
     //! When a ViewContext is first attached to a DgnViewport, the ViewFlags are initialized

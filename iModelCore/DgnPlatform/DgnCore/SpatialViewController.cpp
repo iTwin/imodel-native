@@ -116,7 +116,9 @@ void SpatialViewController::_DrawDecorations(DecorateContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d SpatialViewController::_GetViewedExtents(DgnViewportCR vp) const
     {
+    constexpr double s_spatialRangeMultiplier = 1.0001; // Ensure geometry lying smack up against the extents is not excluded by frustum...
     AxisAlignedBox3d box = GetDgnDb().GeoLocation().GetProjectExtents();
+    box.ScaleAboutCenter(box, s_spatialRangeMultiplier);
     box.Extend(GetGroundExtents(vp));
     return box;
     }
@@ -445,14 +447,6 @@ Render::SceneLightsPtr SpatialViewController::GetLights() const
 
     auto& displayStyle = GetSpatialViewDefinition().GetDisplayStyle3d();
     m_lights = displayStyle.CreateSceneLights(*target); // lighting setup for the scene
-
-    if (displayStyle.IsSkyBoxEnabled())
-        {
-        (const_cast<SpatialViewControllerP> (this))->LoadSkyBox (target->GetSystem());
-
-        if (m_skybox.IsValid() && m_skybox->HasTextureMapping())
-            m_lights->m_environmentMap = const_cast<Render::TextureP> (m_skybox->GetTextureMapping().GetTexture());
-        }
 
     if (!displayStyle.GetViewFlags().ShowSourceLights())
         return m_lights;

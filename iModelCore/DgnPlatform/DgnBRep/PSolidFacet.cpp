@@ -2,7 +2,7 @@
 |
 |     $Source: DgnBRep/PSolidFacet.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -64,7 +64,7 @@ virtual bool        _IsHiddenFace (int32_t entityTag) = 0;
 virtual bool        _IsHiddenEdge (int32_t entityTag) = 0;
 
 virtual T_FaceAttachmentsVec const* _GetFaceAttachmentsVec () = 0;
-virtual T_FaceToSubElemIdMap const* _GetFaceToSubElemIdMap () = 0;
+virtual T_FaceToAttachmentIndexMap const* _GetFaceToAttachmentIndexMap () = 0;
 
 public:
 
@@ -158,7 +158,6 @@ static void initFinToEdgeMap (T_FinToEdgeMap& finToEdgeMap, IFacetTopologyTable&
         if (!doEdgeHiding || !ftt._IsHiddenEdge (finEdge[i].y))
             finToEdgeMap.insert (bpair <int32_t, int32_t> (finEdge[i].x, finEdge[i].y));
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2012
@@ -264,7 +263,7 @@ StatusInt IFacetTopologyTable::ConvertToPolyface (PolyfaceHeaderR polyface, IFac
                     {
                     CurveTopologyId      curveTopologyId;
 
-                     if (!ftt._GetEdgeCurveId (curveTopologyId, found->second, true))
+                     if (facetOptions.GetOmitBRepEdgeChainIds() || !ftt._GetEdgeCurveId (curveTopologyId, found->second, true))
                         curveTopologyId = getUnidentifiedEdgeId(found->second, edgeToIdMap);
                 
                     PolyfaceEdge             polyfaceEdge(1 + xyzIndex, 1 + ftt_vertexToPoint[ftt_finToVertex[nextFinIndex]]);
@@ -507,11 +506,11 @@ struct PSolidFacetTopologyTable : public RefCounted <IFacetTopologyTable>
 {
 private:
 
-PK_TOPOL_facet_2_r_t    m_table;
-T_FaceAttachmentsVec    m_faceAttachmentsVec;
-T_FaceToSubElemIdMap    m_faceToSubElemIdMap;
-bset<int32_t>           m_hiddenFaces;
-bset<int32_t>           m_hiddenEdges;
+PK_TOPOL_facet_2_r_t        m_table;
+T_FaceAttachmentsVec        m_faceAttachmentsVec;
+T_FaceToAttachmentIndexMap  m_faceToAttachmentIndexMap;
+bset<int32_t>               m_hiddenFaces;
+bset<int32_t>               m_hiddenEdges;
 
 public:
 
@@ -543,7 +542,7 @@ PSolidFacetTopologyTable (IBRepEntityCR in, IFacetOptionsR options)
 * @bsimethod                                                    BrienBastings   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 T_FaceAttachmentsVec const* _GetFaceAttachmentsVec() override {return (m_faceAttachmentsVec.empty() ? NULL : &m_faceAttachmentsVec);};
-T_FaceToSubElemIdMap const* _GetFaceToSubElemIdMap() override {return (m_faceToSubElemIdMap.empty() ? NULL : &m_faceToSubElemIdMap);};
+T_FaceToAttachmentIndexMap const* _GetFaceToAttachmentIndexMap() override {return (m_faceToAttachmentIndexMap.empty() ? NULL : &m_faceToAttachmentIndexMap);};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
@@ -1114,19 +1113,10 @@ void    CompleteTable (PK_ENTITY_t entityTag, IFaceMaterialAttachmentsCP attachm
         PSolidAttrib::GetHiddenBodyFaces (m_hiddenFaces, entityTag);
         }
 
-    if (nullptr == attachments)
+    if (nullptr != attachments)
         {
-        bvector<PK_FACE_t> faces;
-
-        PSolidTopo::GetBodyFaces (faces, entityTag);
-
-        for (size_t i=0; i<faces.size(); i++)
-            m_faceToSubElemIdMap[faces[i]] = make_bpair((int32_t) (i + 1), 0); // 0 is invalid attachment index...
-        }
-    else
-        {
-        m_faceAttachmentsVec = attachments->_GetFaceAttachmentsVec ();
-        m_faceToSubElemIdMap = attachments->_GetFaceToSubElemIdMap ();
+        m_faceAttachmentsVec = attachments->_GetFaceAttachmentsVec();
+        PSolidAttrib::PopulateFaceMaterialIndexMap(m_faceToAttachmentIndexMap, entityTag, m_faceAttachmentsVec.size());
         }
     }
 
@@ -1359,7 +1349,15 @@ void            FacetEntity (IBRepEntityCR in, IFacetOptionsR facetOptions)
 
     IFaceMaterialAttachmentsCP attachments = in.GetFaceMaterialAttachments();
 
-    CompleteTable (entityTag, attachments, PSolidAttrib::HasHiddenEdge (entityTag), PSolidAttrib::HasHiddenFace (entityTag));
+    bool            hasHiddenEdge = false, hasHiddenFace = false;
+
+    if (!facetOptions.GetIgnoreHiddenBRepEntities())
+        {
+        hasHiddenEdge = PSolidAttrib::HasHiddenEdge (entityTag);
+        hasHiddenFace = PSolidAttrib::HasHiddenFace (entityTag);
+        }
+
+    CompleteTable (entityTag, attachments, hasHiddenEdge, hasHiddenFace);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1428,15 +1426,15 @@ PolyfaceHeaderPtr PSolidUtil::FacetEntity(IBRepEntityCR entity, IFacetOptionsR f
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool facetTableToPolyfaces(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<FaceAttachment>& params, IFacetOptionsR facetOptions, IFacetTopologyTable& facetTopo)
     {
-    T_FaceToSubElemIdMap const& faceToSubElemIdMap = entity.GetFaceMaterialAttachments()->_GetFaceToSubElemIdMap();
-    T_FaceAttachmentsVec const& faceAttachmentsVec = entity.GetFaceMaterialAttachments()->_GetFaceAttachmentsVec();
+    T_FaceToAttachmentIndexMap  const& faceToAttachmentIndexMap = *facetTopo._GetFaceToAttachmentIndexMap();
+    T_FaceAttachmentsVec const& faceAttachmentsVec = *facetTopo._GetFaceAttachmentsVec();
     bmap<int, PolyfaceHeaderCP> faceToPolyfaces;
     bmap<FaceAttachment, PolyfaceHeaderCP> uniqueFaceAttachments;
     
-    for (T_FaceToSubElemIdMap::const_iterator curr = faceToSubElemIdMap.begin(); curr != faceToSubElemIdMap.end(); ++curr)
+    for (T_FaceToAttachmentIndexMap::const_iterator curr = faceToAttachmentIndexMap.begin(); curr != faceToAttachmentIndexMap.end(); ++curr)
         {
-        BeAssert (curr->second.second < faceAttachmentsVec.size());
-        FaceAttachment faceAttachment = faceAttachmentsVec.at(curr->second.second);
+        BeAssert(curr->second < faceAttachmentsVec.size());
+        FaceAttachment faceAttachment = faceAttachmentsVec.at(curr->second);
         bmap<FaceAttachment, PolyfaceHeaderCP>::iterator found = uniqueFaceAttachments.find(faceAttachment);
 
         if (found == uniqueFaceAttachments.end())
