@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/MaterialConverter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -694,6 +694,12 @@ void Converter::ConvertModelMaterials(DgnV8ModelR dgnModel)
     for (;iter != end;++iter)
         {
         DgnV8Api::Material const&   v8Material = *iter;
+
+        if (nullptr == &v8Material)
+            {
+            BeAssert(false);
+            continue;       // Jerry Flynn Dining Scene...
+            }
 
         if (GetRemappedMaterial(&v8Material).IsValid())
             {
