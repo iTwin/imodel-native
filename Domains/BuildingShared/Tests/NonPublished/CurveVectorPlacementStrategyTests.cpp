@@ -505,8 +505,8 @@ TEST_F(CurveVectorPlacementStrategyTests, CreateLineString_MetesAndBounds)
     CurveVectorPtr expectedCvFinal = CurveVector::CreateLinear({{0,0,0}, {2,2,0}, {0,2,0}}, CurveVector::BOUNDARY_TYPE_Open);
 
     bvector<Utf8String> directions(2);
-    UnitConverter::DirectionToMeetsAndBoundsString(directions[0], DVec3d::FromStartEnd(DPoint3d::From(0, 0, 0), DPoint3d::From(2, 2, 0)));
-    UnitConverter::DirectionToMeetsAndBoundsString(directions[1], DVec3d::FromStartEnd(DPoint3d::From(2, 2, 0), DPoint3d::From(0, 2, 0)));
+    Building::Shared::UnitConverter::DirectionToMeetsAndBoundsString(directions[0], DVec3d::FromStartEnd(DPoint3d::From(0, 0, 0), DPoint3d::From(2, 2, 0)));
+    Building::Shared::UnitConverter::DirectionToMeetsAndBoundsString(directions[1], DVec3d::FromStartEnd(DPoint3d::From(2, 2, 0), DPoint3d::From(0, 2, 0)));
     bvector<double> lengths(2);
     lengths[0] = DSegment3d::From({0,0,0}, {2,2,0}).Length();
     lengths[1] = DSegment3d::From({2,2,0}, {0,2,0}).Length();
