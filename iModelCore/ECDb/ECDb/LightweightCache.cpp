@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/LightweightCache.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -65,8 +65,8 @@ StorageDescription const& LightweightCache::GetStorageDescription(ClassMap const
         return *(it->second.get());
     }
 
-    BeSqliteDbMutexHolder dbLock(GetECDbR());
     BeMutexHolder ecdbLock(GetECDbMutex());
+    BeSqliteDbMutexHolder dbLock(GetECDbR());
     auto it = m_storageDescriptions.find(classId);
     if (it != m_storageDescriptions.end())
         return *(it->second.get());
@@ -89,8 +89,8 @@ std::vector<ECN::ECClassId> const& LightweightCache::LoadClassIdsPerTable(DbTabl
             return itor->second;
         }
 
-    BeSqliteDbMutexHolder dbLock(GetECDbR());
     BeMutexHolder ecdbLock(GetECDbMutex());
+    BeSqliteDbMutexHolder dbLock(GetECDbR());
     auto itor = m_classIdsPerTable.find(&tbl);
     if (itor != m_classIdsPerTable.end())
         return itor->second;
@@ -135,8 +135,8 @@ bset<DbTable const*> const& LightweightCache::LoadTablesForClassId(ECN::ECClassI
             return itor->second;
         }
 
-    BeSqliteDbMutexHolder dbLock(GetECDbR());
     BeMutexHolder ecdbLock(GetECDbMutex());
+    BeSqliteDbMutexHolder dbLock(GetECDbR());
     auto itor = m_tablesPerClassId.find(classId);
     if (itor != m_tablesPerClassId.end())
         return itor->second;
@@ -191,8 +191,8 @@ bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache:
             return itor->second;
         }
 
-    BeSqliteDbMutexHolder dbLock(GetECDbR());
     BeMutexHolder ecdbLock(GetECDbMutex());
+    BeSqliteDbMutexHolder dbLock(GetECDbR());
     auto itor = m_constraintClassIdsPerRelClassIds.find(relationshipId);
     if (itor != m_constraintClassIdsPerRelClassIds.end())
         return itor->second;
@@ -245,8 +245,8 @@ LightweightCache::ClassIdsPerTableMap const& LightweightCache::LoadHorizontalPar
             return itor->second;
         }
 
-    BeSqliteDbMutexHolder dbLock(GetECDbR());
     BeMutexHolder ecdbLock(GetECDbMutex());
+    BeSqliteDbMutexHolder dbLock(GetECDbR());
     auto itor = m_horizontalPartitions.find(classId);
     if (itor != m_horizontalPartitions.end())
         return itor->second;

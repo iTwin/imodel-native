@@ -130,11 +130,11 @@ ECClassCP SchemaReader::GetClass(Utf8StringCR schemaNameOrAlias, Utf8StringCR cl
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCP SchemaReader::GetClass(ECClassId ecClassId) const
     {
+    BeMutexHolder ecdbLock(GetECDbMutex());
     if (!ecClassId.IsValid())
         return nullptr;
 
         {
-        BeMutexHolder ecdbLock(GetECDbMutex());
         ClassDbEntry* cacheEntry = m_cache.Find(ecClassId);
         if (cacheEntry == nullptr)
             {
@@ -148,8 +148,6 @@ ECClassCP SchemaReader::GetClass(ECClassId ecClassId) const
             return cacheEntry->m_cachedClass;
         }
 
-    BeSqliteDbMutexHolder dbLock(GetECDbR());
-    BeMutexHolder ecdbLock(GetECDbMutex());
     Context ctx;
     ECClassCP ecclass = GetClass(ctx, ecClassId);
     if (ecclass != nullptr)
@@ -580,7 +578,6 @@ BentleyStatus SchemaReader::EnsureDerivedClassesExist(ECClassId ecClassId) const
         }
     }
 
-    BeSqliteDbMutexHolder dbLock(GetECDbR());
     BeMutexHolder ecdbLock(GetECDbMutex());
     if (ClassDbEntry* entry = m_cache.Find(ecClassId))
         {
@@ -642,7 +639,6 @@ BentleyStatus SchemaReader::ReadEnumeration(ECEnumerationP& ecEnum, Context& ctx
     const int isStrictColIx = 5;
     const int valuesColIx = 6;
 
-    BeSqliteDbMutexHolder dbLock(GetECDbR());
     BeMutexHolder ecdbLock(GetECDbMutex());
     if (EnumDbEntry* entry = m_cache.Find(enumId))
         {
@@ -723,7 +719,6 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityP& koq, Context& ct
     const int relErrorColIx = 5;
     const int presUnitColIx = 6;
 
-    BeSqliteDbMutexHolder dbLock(GetECDbR());
     BeMutexHolder ecdbLock(GetECDbMutex());
     if (KindOfQuantityDbEntry* entry = m_cache.Find(koqId))
         {
@@ -806,7 +801,6 @@ BentleyStatus SchemaReader::ReadPropertyCategory(PropertyCategoryP& cat, Context
     const int descriptionColIx = 3;
     const int priorityColIx = 4;
 
-    BeSqliteDbMutexHolder dbLock(GetECDbR());
     BeMutexHolder ecdbLock(GetECDbMutex());
     if (PropertyCategoryDbEntry* entry = m_cache.Find(catId))
         {
@@ -873,7 +867,6 @@ BentleyStatus SchemaReader::LoadSchemaDefinition(SchemaDbEntry*& schemaEntry, bv
         }
     }
 
-    BeSqliteDbMutexHolder dbLock(GetECDbR());
     BeMutexHolder ecdbLock(GetECDbMutex());
     if (schemaEntry = m_cache.Find(ecSchemaId))
         {
@@ -964,7 +957,6 @@ BentleyStatus SchemaReader::LoadSchemaEntitiesFromDb(SchemaDbEntry* ecSchemaKey,
         return SUCCESS;
     }
 
-    BeSqliteDbMutexHolder dbLock(GetECDbR());
     BeMutexHolder ecdbLock(GetECDbMutex());
     //Accessing cache object not safe. Parent funtion make sure its a thread safe call
     //Enure all reference schemas also loaded

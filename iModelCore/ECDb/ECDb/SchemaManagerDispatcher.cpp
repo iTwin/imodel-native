@@ -495,8 +495,8 @@ BentleyStatus TableSpaceSchemaManager::TryGetClassMap(ClassMap*& classMap, Class
         }
     }
 
-    BeSqliteDbMutexHolder dbMutex(const_cast<ECDb&>(GetECDb()));
     BeMutexHolder ecdbMutex(GetECDb().GetImpl().GetMutex());
+    BeSqliteDbMutexHolder dbMutex(const_cast<ECDb&>(GetECDb()));
     auto it = m_classMapDictionary.find(ecClass.GetId());
     if (m_classMapDictionary.end() != it)
         {
