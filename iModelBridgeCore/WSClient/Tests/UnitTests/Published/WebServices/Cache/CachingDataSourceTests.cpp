@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/CachingDataSourceTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -2984,6 +2984,66 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteDataAndNotModfieid_ReturnsCached)
     EXPECT_EQ("A", result.GetValue().GetJson()["TestProperty"].asString());
     }
 
+TEST_F(CachingDataSourceTests, GetObject_RemoteDataAndNotEnoughRights_RemovesInstanceFromCache)
+    {
+    auto ds = GetTestDataSourceV1();
+
+    ObjectId objectId("TestSchema.TestClass", "Foo");
+
+    StubInstances instances;
+    instances.Add(objectId, { { "TestProperty", "A" } }, "TestTag");
+
+    auto txn = ds->StartCacheTransaction();
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), nullptr));
+
+    Json::Value instance;
+    txn.GetCache().ReadInstance(objectId, instance);
+    ASSERT_FALSE(instance.isNull());
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(_, Utf8String("TestTag"), _))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(WSError(WSError::Id::NotEnoughRights)))));
+
+    auto result = ds->GetObject(objectId, CachingDataSource::DataOrigin::RemoteData, IDataSourceCache::JsonFormat::Raw)->GetResult();
+
+    ASSERT_FALSE(result.IsSuccess());
+    EXPECT_EQ(WSError::Id::NotEnoughRights, result.GetError().GetWSError().GetId());
+    txn = ds->StartCacheTransaction();
+    txn.GetCache().ReadInstance(objectId, instance);
+    txn.Commit();
+    ASSERT_TRUE(instance.isNull());
+    }
+
+TEST_F(CachingDataSourceTests, GetObject_RemoteDataAndInstanceNotFound_RemovesInstanceFromCache)
+    {
+    auto ds = GetTestDataSourceV1();
+
+    ObjectId objectId("TestSchema.TestClass", "Foo");
+
+    StubInstances instances;
+    instances.Add(objectId, { { "TestProperty", "A" } }, "TestTag");
+
+    auto txn = ds->StartCacheTransaction();
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), nullptr));
+
+    Json::Value instance;
+    txn.GetCache().ReadInstance(objectId, instance);
+    ASSERT_FALSE(instance.isNull());
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(_, Utf8String("TestTag"), _))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(WSError(WSError::Id::InstanceNotFound)))));
+
+    auto result = ds->GetObject(objectId, CachingDataSource::DataOrigin::RemoteData, IDataSourceCache::JsonFormat::Raw)->GetResult();
+
+    ASSERT_FALSE(result.IsSuccess());
+    EXPECT_EQ(WSError::Id::InstanceNotFound, result.GetError().GetWSError().GetId());
+    txn = ds->StartCacheTransaction();
+    txn.GetCache().ReadInstance(objectId, instance);
+    txn.Commit();
+    ASSERT_TRUE(instance.isNull());
+    }
+
 //Cached Data
 
 TEST_F(CachingDataSourceTests, GetObject_CachedDataAndQueryResponseNotCachedBackgroundSync_ErrorDoesNotSyncInBackground)
@@ -3246,6 +3306,65 @@ TEST_F(CachingDataSourceTests, GetObject_CachedOrRemoteDataAndQueryResponseNotCa
     EXPECT_EQ(ICachingDataSource::SyncStatus::NotSynced, backgroundSyncResult.GetValue());
     }
 
+TEST_F(CachingDataSourceTests, GetObject_CachedOrRemoteDataRemoteInstanceNotFound_BackgroundSyncReturnSynced)
+    {
+    auto ds = GetTestDataSourceV1();
+
+    ObjectId objectId("TestSchema.TestClass", "Foo");
+
+    StubInstances instances;
+    instances.Add(objectId, { { "TestProperty", "A" } });
+
+    auto txn = ds->StartCacheTransaction();
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), nullptr));
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(WSError(WSError::Id::InstanceNotFound)))));
+
+    auto backgroundSync = SyncNotifier::Create();
+    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedOrRemoteData, backgroundSync), IDataSourceCache::JsonFormat::Raw)->GetResult();
+
+    ASSERT_TRUE(result.IsSuccess());
+
+    auto backgroundSyncResult = backgroundSync->OnComplete()->GetResult();
+    ASSERT_TRUE(backgroundSyncResult.IsSuccess());
+    EXPECT_EQ(ICachingDataSource::SyncStatus::Synced, backgroundSyncResult.GetValue());
+
+    txn = ds->StartCacheTransaction();
+    auto instanceKey = txn.GetCache().FindInstance(objectId);
+    ASSERT_FALSE(instanceKey.IsValid());
+    }
+
+TEST_F(CachingDataSourceTests, GetObject_CachedOrRemoteDataRemoteNotEnoughRights_BackgroundSyncReturnSynced)
+    {
+    auto ds = GetTestDataSourceV1();
+
+    ObjectId objectId("TestSchema.TestClass", "Foo");
+
+    StubInstances instances;
+    instances.Add(objectId, { { "TestProperty", "A" } });
+
+    auto txn = ds->StartCacheTransaction();
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), nullptr));
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(WSError(WSError::Id::NotEnoughRights)))));
+
+    auto backgroundSync = SyncNotifier::Create();
+    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedOrRemoteData, backgroundSync), IDataSourceCache::JsonFormat::Raw)->GetResult();
+
+    ASSERT_TRUE(result.IsSuccess());
+
+    auto backgroundSyncResult = backgroundSync->OnComplete()->GetResult();
+    ASSERT_TRUE(backgroundSyncResult.IsSuccess());
+    EXPECT_EQ(ICachingDataSource::SyncStatus::Synced, backgroundSyncResult.GetValue());
+
+    txn = ds->StartCacheTransaction();
+    auto instanceKey = txn.GetCache().FindInstance(objectId);
+    ASSERT_FALSE(instanceKey.IsValid());
+    }
 // RemoteOrCachedData
 
 TEST_F(CachingDataSourceTests, GetObject_RemoteOrCachedDataResponseCachedAndNetworkErrorsBackgroundSync_DoesNotSyncInBackground)

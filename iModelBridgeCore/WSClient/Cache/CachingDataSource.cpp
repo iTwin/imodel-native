@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/CachingDataSource.cpp $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -731,17 +731,18 @@ ICancellationTokenPtr ct
             }
 
         m_client->SendGetObjectRequest(objectId, txn.GetCache().ReadInstanceCacheTag(objectId), ct)
-            ->Then(m_cacheAccessThread, [=] (WSObjectsResult& objectsResult)
+            ->Then<bool>(m_cacheAccessThread, [=] (WSObjectsResult& objectsResult)
             {
             auto txn = StartCacheTransaction();
             DataOrigin returningDataOrigin = DataOrigin::RemoteData;
+            bool isObjectNotFound = false;
             if (objectsResult.IsSuccess())
                 {
                 auto status = txn.GetCache().UpdateInstance(objectId, objectsResult.GetValue());
                 if (CacheStatus::OK != status)
                     {
                     result->SetError(status);
-                    return;
+                    return isObjectNotFound;
                     }
 
                 if (!objectsResult.GetValue().IsModified())
@@ -751,6 +752,9 @@ ICancellationTokenPtr ct
                 }
             else
                 {
+                if (objectsResult.GetError().IsInstanceNotAvailableError())
+                    isObjectNotFound = true;
+
                 if (CachingDataSource::DataOrigin::RemoteOrCachedData == origin &&
                     WSError::Status::ConnectionError == objectsResult.GetError().GetStatus() &&
                     txn.GetCache().GetCachedObjectInfo(objectId).IsFullyCached())
@@ -760,7 +764,7 @@ ICancellationTokenPtr ct
                 else
                     {
                     result->SetError(objectsResult.GetError());
-                    return;
+                    return isObjectNotFound;
                     }
                 }
 
@@ -770,12 +774,21 @@ ICancellationTokenPtr ct
             if (cachedData->isNull())
                 {
                 result->SetError(Error(Status::InternalCacheError));
-                return;
+                return isObjectNotFound;
                 }
 
             txn.Commit();
             result->SetSuccess({cachedData, returningDataOrigin});
-            });
+            return isObjectNotFound;
+            })->Then(m_cacheAccessThread, [=](bool isObjectNotFound)
+                {
+                if (isObjectNotFound)
+                    {
+                    auto txn = StartCacheTransaction();
+                    txn.GetCache().RemoveInstance(objectId);
+                    txn.Commit();
+                    }
+                });
         })
             ->Then<ObjectsResult>([=]
             {
@@ -840,7 +853,9 @@ ICancellationTokenPtr ct
         GetObjectInternal(objectId, DataOrigin::RemoteData, format, ct)
             ->Then(m_cacheAccessThread, [=](CachingDataSource::ObjectsResult& result)
             {
-            if (!result.IsSuccess())
+            if (!result.IsSuccess() && result.GetError().GetWSError().IsInstanceNotAvailableError())
+                finalBackgroundSyncResult->SetSuccess(SyncStatus::Synced);
+            else if (!result.IsSuccess())
                 finalBackgroundSyncResult->SetError(result.GetError());
             else if (result.GetValue().GetOrigin() == DataOrigin::RemoteData)
                 finalBackgroundSyncResult->SetSuccess(SyncStatus::Synced);
@@ -1647,9 +1662,7 @@ ICancellationTokenPtr ct
                 {
                 result->SetError(objectsResult.GetError());
 
-                WSError::Id errorId = objectsResult.GetError().GetId();
-                if (WSError::Id::InstanceNotFound == errorId ||
-                    WSError::Id::NotEnoughRights == errorId)
+                if (objectsResult.GetError().IsInstanceNotAvailableError())
                     {
                     txn.GetCache().RemoveInstance(objectId);
                     }
