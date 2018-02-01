@@ -4117,14 +4117,14 @@ void IPolyfaceConstruction::AddRegion (CurveVectorCR region)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-IPolyfaceConstructionPtr IPolyfaceConstruction::New (IFacetOptionsR options)
+IPolyfaceConstructionPtr IPolyfaceConstruction::New (IFacetOptionsR options, double pointMatchTolerance, double paramMatchTolerance, double normalMatchTolerance)
     {
-    return new PolyfaceConstruction (options);
+    return new PolyfaceConstruction (options, pointMatchTolerance, paramMatchTolerance, normalMatchTolerance);
     }
 
-IPolyfaceConstructionPtr IPolyfaceConstruction::Create (IFacetOptionsR options)
+IPolyfaceConstructionPtr IPolyfaceConstruction::Create (IFacetOptionsR options, double pointMatchTolerance, double paramMatchTolerance, double normalMatchTolerance)
     {
-    return new PolyfaceConstruction (options);
+    return new PolyfaceConstruction (options, pointMatchTolerance, paramMatchTolerance, normalMatchTolerance);
     }
 
 

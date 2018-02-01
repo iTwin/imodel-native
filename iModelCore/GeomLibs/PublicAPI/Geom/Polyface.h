@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/Polyface.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -3077,11 +3077,23 @@ GEOMDLLIMPEXP DPoint3dZYXTolerancedSortComparison(double absTol, double relTol);
 GEOMDLLIMPEXP bool operator() (const DPoint3d& pointA, const DPoint3d &pointB) const;
 };
 
+struct DVec3dZYXTolerancedSortComparison
+{
+double m_absTol;
+double m_relTol;
+GEOMDLLIMPEXP DVec3dZYXTolerancedSortComparison(double absTol, double relTol);
+GEOMDLLIMPEXP bool operator() (const DVec3d& pointA, const DVec3d &pointB) const;
+};
+
 /*--------------------------------------------------------------------------------**//**
 +--------------------------------------------------------------------------------------*/
 struct PolyfaceZYXMap : bmap <DPoint3d, size_t, DPoint3dZYXTolerancedSortComparison>
 {
 PolyfaceZYXMap (DPoint3dZYXTolerancedSortComparison const &compare);
+};
+struct PolyfaceZYXDVec3dMap : bmap <DVec3d, size_t, DVec3dZYXTolerancedSortComparison>
+{
+PolyfaceZYXDVec3dMap (DVec3dZYXTolerancedSortComparison const &compare);
 };
 
 
@@ -3111,6 +3123,7 @@ bool operator () (const uint32_t & pointA, const uint32_t &pointB) const;
 
 
 
+
 //! Support class for constructing meshes.
 //! Maintains lookup structures to assist indexing as points, parameters, normals are added to a mesh.
 //! The client mesh is owned by the caller.
@@ -3128,7 +3141,7 @@ struct PolyfaceCoordinateMap: public RefCountedBase, NonCopyableClass
 protected:
     PolyfaceHeader &m_polyface;
     struct PolyfaceZYXMap *m_pointMap;
-    bmap <DVec3d, size_t, DVec3dZYXSortComparison> m_normalMap;
+    struct PolyfaceZYXDVec3dMap *m_normalMap;
     struct PolyfaceZYXMap * m_paramMap;
     bmap <uint32_t, size_t, UInt32SortComparison> m_intColorMap;
 
@@ -3143,9 +3156,12 @@ PolyfaceCoordinateMap (PolyfaceHeader &referencedPolyface);
 //! @param [in] xyzRelTol relative tolerance for point comparisons.
 //! @param [in] paramAbsTol absolute tolerance for param comparisons.
 //! @param [in] paramRelTol relative tolerance for param comparisons.
+//! @param [in] normalAbsTol absolute tolerance for normal comparisons.
+//! @param [in] normalRelTol relative tolerance for normal comparisons.
 PolyfaceCoordinateMap (PolyfaceHeader &referencedPolyface,
     double xyzAbsTol, double xyzRelTol,
-    double paramAbsTol, double paramRelTol
+    double paramAbsTol, double paramRelTol,
+    double normalAbsTol = 1.0E-14, double normalRelTol = 1.0E-12
     );
 
 ~PolyfaceCoordinateMap ();

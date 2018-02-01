@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/PolyfaceCoordinateMap.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -88,6 +88,24 @@ bool DPoint3dZYXTolerancedSortComparison::operator() (const DPoint3d& pointA, co
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
+DVec3dZYXTolerancedSortComparison::DVec3dZYXTolerancedSortComparison (double absTol, double relTol)
+    : m_absTol (absTol), m_relTol (relTol)
+    {
+    }
+   
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
+bool DVec3dZYXTolerancedSortComparison::operator() (const DVec3d& pointA, const DVec3d &pointB) const
+    {
+    return sort_zyx<double> (pointA.x, pointA.y, pointA.z, pointB.x, pointB.y, pointB.z, m_absTol, m_relTol);
+    }
+
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
 bool DVec3dZYXSortComparison::operator () (const DVec3d& vecA, const DVec3d &vecB) const
     {
     return sort_zyx<double> (vecA.x, vecA.y, vecA.z, vecB.x, vecB.y, vecB.z);
@@ -118,6 +136,7 @@ PolyfaceCoordinateMap::PolyfaceCoordinateMap (PolyfaceHeaderR polyface) : m_poly
     {
     m_pointMap = new PolyfaceZYXMap (DPoint3dZYXTolerancedSortComparison (s_defaultAbsTol, s_defaultRelTol));
     m_paramMap = new PolyfaceZYXMap (DPoint3dZYXTolerancedSortComparison (s_defaultAbsTol, s_defaultRelTol));
+    m_normalMap = new PolyfaceZYXDVec3dMap (DVec3dZYXTolerancedSortComparison (s_defaultAbsTol, s_defaultRelTol));
     }
 
 
@@ -126,6 +145,14 @@ PolyfaceCoordinateMap::PolyfaceCoordinateMap (PolyfaceHeaderR polyface) : m_poly
 +--------------------------------------------------------------------------------------*/
 PolyfaceZYXMap::PolyfaceZYXMap (DPoint3dZYXTolerancedSortComparison const &compare)
         : bmap <DPoint3d, size_t, DPoint3dZYXTolerancedSortComparison> (compare)
+        {
+        }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsistruct                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
+PolyfaceZYXDVec3dMap::PolyfaceZYXDVec3dMap (DVec3dZYXTolerancedSortComparison const &compare)
+        : bmap <DVec3d, size_t, DVec3dZYXTolerancedSortComparison> (compare)
         {
         }
 
@@ -139,11 +166,14 @@ PolyfaceHeaderR polyface,
 double xyzAbsTol,
 double xyzRelTol,
 double paramAbsTol,
-double paramRelTol
+double paramRelTol,
+double normalAbsTol,
+double normalRelTol
 )  : m_polyface (polyface), m_currentParamZ(0.0)
     {
     m_pointMap = new PolyfaceZYXMap (DPoint3dZYXTolerancedSortComparison (xyzAbsTol,   xyzRelTol  ));
     m_paramMap = new PolyfaceZYXMap (DPoint3dZYXTolerancedSortComparison (paramAbsTol, paramRelTol));
+    m_normalMap = new PolyfaceZYXDVec3dMap (DVec3dZYXTolerancedSortComparison (normalAbsTol, normalRelTol));
     }
 
 
@@ -151,6 +181,7 @@ PolyfaceCoordinateMap::~PolyfaceCoordinateMap ()
     {
     delete m_pointMap;
     delete m_paramMap;
+    delete m_normalMap;
     }
 
 
@@ -328,7 +359,7 @@ size_t PolyfaceCoordinateMap::AddNormal (DVec3dCR normal)
     size_t index;
     if (FindNormal (normal, index))
         return index;
-    m_normalMap[normal] = index = m_polyface.Normal ().AppendAndReturnIndex (normal);
+    (*m_normalMap)[normal] = index = m_polyface.Normal ().AppendAndReturnIndex (normal);
     return index;
     }
 
@@ -339,8 +370,8 @@ size_t PolyfaceCoordinateMap::AddNormal (DVec3dCR normal)
 bool PolyfaceCoordinateMap::FindNormal (DVec3dCR normal, size_t &index)
     {
     index = SIZE_MAX;
-    bmap<DVec3d, size_t, DVec3dZYXSortComparison>::iterator key = m_normalMap.find (normal);
-    if (key == m_normalMap.end ())
+    auto key = (*m_normalMap).find (normal);
+    if (key == (*m_normalMap).end ())
         return false;
     index = key->second;
     return true;
@@ -493,7 +524,7 @@ PolyfaceHeader& PolyfaceCoordinateMap::GetPolyfaceHeaderR ()
 void PolyfaceCoordinateMap::ClearData ()
     {
     m_pointMap->clear ();
-    m_normalMap.clear ();
+    m_normalMap->clear ();
     m_paramMap->clear ();
     m_intColorMap.clear ();
     m_polyface.ClearAllVectors ();

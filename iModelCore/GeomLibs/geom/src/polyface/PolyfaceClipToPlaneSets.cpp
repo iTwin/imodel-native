@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/PolyfaceClipToPlaneSets.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -726,6 +726,7 @@ StatusInt   finishClipping (IPolyfaceConstructionR outputBuilder,  OutputChainMa
     return output._ProcessClippedPolyface (clippedMesh);
     }
 
+static const double s_builderMatchPointTolerance = 1.0E-8;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -761,7 +762,7 @@ StatusInt   PolyfaceQuery::ClipToPlaneSetIntersection (T_ClipPlaneSets const& pl
     facetOptions->SetNormalsRequired (0 != GetNormalCount());
     facetOptions->SetParamsRequired (0 != GetParamCount());
 
-    IPolyfaceConstructionPtr        outputBuilder = IPolyfaceConstruction::New (*facetOptions);
+    IPolyfaceConstructionPtr        outputBuilder = IPolyfaceConstruction::New (*facetOptions, s_builderMatchPointTolerance);
     PolyfaceClipFacet               facet (index);
     OutputChainMap                  outputChainMap (*this);
     PolyfaceClipToPlaneSetContext   clipContext (planeSets, *outputBuilder, outputChainMap, distanceTolerance, triangulateOutput);
@@ -872,7 +873,7 @@ StatusInt   PolyfaceQuery::ClipToRange (DRange3dCR clipRange, PolyfaceQuery::ICl
     facetOptions->SetNormalsRequired (0 != GetNormalCount());
     facetOptions->SetParamsRequired (0 != GetParamCount());
 
-    IPolyfaceConstructionPtr        outputBuilder = IPolyfaceConstruction::New (*facetOptions);
+    IPolyfaceConstructionPtr        outputBuilder = IPolyfaceConstruction::New (*facetOptions, s_builderMatchPointTolerance);
     PolyfaceClipFacet               facet (0);
     OutputChainMap                  outputChainMap (*this);
     PolyfaceClipToRangeContext      clipContext(clipRange, *outputBuilder, outputChainMap, distanceTolerance, triangulateOutput);

@@ -979,10 +979,18 @@ double yDistanceFactor = 1.0
 //! Add complete facets.
 GEOMDLLIMPEXP bool Add (PolyfaceHeaderR polyface);
 //! Return a system default facet construction object.  DEPRECATED -- use Create(options)
-GEOMDLLIMPEXP static IPolyfaceConstructionPtr New (IFacetOptionsR options);
+//! @param [in] options facet options
+//! @param [in] pointMatchTolerance tolerance for testing for identical points (0.0 to use relative tolerance)
+//! @param [in] paramMatchTolerance tolerance for testing for identical params (0.0 to use relative tolerance)
+//! @param [in] normalMatchTolerance tolerance for testing for identical normals (0.0 to use relative tolerance)
+GEOMDLLIMPEXP static IPolyfaceConstructionPtr New (IFacetOptionsR options, double pointMatchTolerance = 0.0, double paramMatchTolerance = 1.0E-12, double normalMatchTolerance = 1.0E-12);
 
 //! Return a system default facet construction object.
-GEOMDLLIMPEXP static IPolyfaceConstructionPtr Create (IFacetOptionsR options);
+//! @param [in] options facet options
+//! @param [in] pointMatchTolerance tolerance for testing for identical points (0.0 to use relative tolerance)
+//! @param [in] paramMatchTolerance tolerance for testing for identical params (0.0 to use relative tolerance)
+//! @param [in] normalMatchTolerance tolerance for testing for identical normals (0.0 to use relative tolerance)
+GEOMDLLIMPEXP static IPolyfaceConstructionPtr Create (IFacetOptionsR options, double pointMatchTolerance = 0.0, double paramMatchTolerance = 1.0E-12, double normalMatchTolerance = 1.0E-12);
 
 };
 
@@ -1056,6 +1064,6 @@ void  _EndFace () override;
 
 public:
 //! Prefered construction object ...
-PolyfaceConstruction (IFacetOptionsR options);
+PolyfaceConstruction (IFacetOptionsR options, double pointMatchTolerance, double paramMatchTolerance, double normalMatchTolerance);
 };
 END_BENTLEY_GEOMETRY_NAMESPACE

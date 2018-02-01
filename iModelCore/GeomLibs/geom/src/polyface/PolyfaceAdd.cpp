@@ -2,18 +2,19 @@
 |
 |     $Source: geom/src/polyface/PolyfaceAdd.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
+static double s_defaultRelTol = 1.0e-12;
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-PolyfaceConstruction::PolyfaceConstruction(IFacetOptionsR options)
+PolyfaceConstruction::PolyfaceConstruction(IFacetOptionsR options, double pointMatchTolerance, double paramMatchTolerance, double normalMatchTolerance)
     : m_facetOptions (&options)
     {
     m_polyfacePtr = PolyfaceHeader::CreateVariableSizeIndexed ();
@@ -28,7 +29,7 @@ PolyfaceConstruction::PolyfaceConstruction(IFacetOptionsR options)
         m_polyfacePtr->ParamIndex ().SetActive (true);
         m_polyfacePtr->FaceIndex ().SetActive (true);
         }
-    m_coordinateMapPtr = PolyfaceCoordinateMap::New (*m_polyfacePtr);
+    m_coordinateMapPtr = new PolyfaceCoordinateMap (*m_polyfacePtr, pointMatchTolerance, (0.0 == pointMatchTolerance ? s_defaultRelTol : 0.0), paramMatchTolerance, (0.0 == paramMatchTolerance ? s_defaultRelTol : 0.0), normalMatchTolerance, (0.0 == normalMatchTolerance ? s_defaultRelTol : 0.0));
     SetFaceIndex (0);
     }
 
