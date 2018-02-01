@@ -66,8 +66,8 @@ TEST_F(LineStringMetesAndBoundsPlacementStrategyTests, CreatesPrimitiveLineStrin
 
     ICurvePrimitivePtr expectedCP = ICurvePrimitive::CreateLineString({{0,0,0},{2,2,0},{0,2,0}});
     bvector<Utf8String> directions(2);
-    UnitConverter::DirectionToMeetsAndBoundsString(directions[0], DVec3d::FromStartEnd(DPoint3d::From(0,0,0), DPoint3d::From(2,2,0)));
-    UnitConverter::DirectionToMeetsAndBoundsString(directions[1], DVec3d::FromStartEnd(DPoint3d::From(2,2,0), DPoint3d::From(0,2,0)));
+    BENTLEY_BUILDING_SHARED_NAMESPACE_NAME::UnitConverter::DirectionToMeetsAndBoundsString(directions[0], DVec3d::FromStartEnd(DPoint3d::From(0,0,0), DPoint3d::From(2,2,0)));
+    BENTLEY_BUILDING_SHARED_NAMESPACE_NAME::UnitConverter::DirectionToMeetsAndBoundsString(directions[1], DVec3d::FromStartEnd(DPoint3d::From(2,2,0), DPoint3d::From(0,2,0)));
     bvector<double> lengths(2);
     lengths[0] = DSegment3d::From({0,0,0}, {2,2,0}).Length();
     lengths[1] = DSegment3d::From({2,2,0}, {0,2,0}).Length();
