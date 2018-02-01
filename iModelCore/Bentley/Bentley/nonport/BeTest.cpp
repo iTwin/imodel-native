@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/BeTest.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)
@@ -297,6 +297,16 @@ void            BeTest::SetFailOnAssert (bool doFail, BeAssertFunctions::AssertT
 
     s_bentleyCS.unlock();
     }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Taslim.Murad    01/2018
+//--------------------------------------------------------------------------------------
+void BeTest::setS_mainThreadId (intptr_t id)
+{
+    s_mainThreadId = id;
+    return void ();
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
