@@ -894,8 +894,11 @@ StatusInt   PolyfaceQuery::ClipToRange (DRange3dCR clipRange, PolyfaceQuery::ICl
         facet.Init (*visitor, outputChainMap);
         clipContext.ClipPolyfaceFacetToRangeAxis (facet, 0);
         }
-    outputBuilder->SetFaceData (faceData);
-    outputBuilder->EndFace();
+    if (nullptr != GetFaceDataCP())
+        {
+        outputBuilder->SetFaceData (faceData);
+        outputBuilder->EndFace();
+        }
 
     return finishClipping(*outputBuilder, outputChainMap, output, triangulateOutput);
     }
