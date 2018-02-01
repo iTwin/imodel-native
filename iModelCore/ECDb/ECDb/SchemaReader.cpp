@@ -133,23 +133,19 @@ ECClassCP SchemaReader::GetClass(ECClassId ecClassId) const
     if (!ecClassId.IsValid())
         return nullptr;
 
-        {
-        BeMutexHolder ecdbLock(GetECDbMutex());
-        ClassDbEntry* cacheEntry = m_cache.Find(ecClassId);
-        if (cacheEntry == nullptr)
-            {
-            //ECDb allows nullptr as entry in the cache to indicate that this is a class which was attempted
-            //to be loaded before but failed. Subsequent calls don't have to attempt a load anymore, so nullptr
-            //can be returned right away.
-            if (m_cache.HasClassEntry(ecClassId))
-                return nullptr;
-            }
-        else
-            return cacheEntry->m_cachedClass;
-        }
-
-    BeSqliteDbMutexHolder dbLock(GetECDbR());
     BeMutexHolder ecdbLock(GetECDbMutex());
+    ClassDbEntry* cacheEntry = m_cache.Find(ecClassId);
+    if (cacheEntry == nullptr)
+        {
+        //ECDb allows nullptr as entry in the cache to indicate that this is a class which was attempted
+        //to be loaded before but failed. Subsequent calls don't have to attempt a load anymore, so nullptr
+        //can be returned right away.
+        if (m_cache.HasClassEntry(ecClassId))
+            return nullptr;
+        }
+    else
+        return cacheEntry->m_cachedClass;
+
     Context ctx;
     ECClassCP ecclass = GetClass(ctx, ecClassId);
     if (ecclass != nullptr)
@@ -570,25 +566,12 @@ ECPropertyId SchemaReader::GetPropertyId(ECPropertyCR prop) const
 //---------------------------------------------------------------------------------------
 BentleyStatus SchemaReader::EnsureDerivedClassesExist(ECClassId ecClassId) const
     {
-    {
     BeMutexHolder ecdbLock(GetECDbMutex());
-    if (ClassDbEntry* entry = m_cache.Find(ecClassId))
-        {
-        if (entry->m_ensureDerivedClassesExist)
-            return SUCCESS;
+    ClassDbEntry* entry = m_cache.Find(ecClassId);
+    if (entry != nullptr && entry->m_ensureDerivedClassesExist)
+        return SUCCESS;
 
-        }
-    }
-
-    BeSqliteDbMutexHolder dbLock(GetECDbR());
-    BeMutexHolder ecdbLock(GetECDbMutex());
-    if (ClassDbEntry* entry = m_cache.Find(ecClassId))
-        {
-        if (entry->m_ensureDerivedClassesExist)
-            return SUCCESS;
-
-        entry->m_ensureDerivedClassesExist = true;
-        }
+    entry->m_ensureDerivedClassesExist = true;
 
     Context ctx;
     if (SUCCESS != EnsureDerivedClassesExist(ctx, ecClassId))
@@ -625,14 +608,12 @@ BentleyStatus SchemaReader::EnsureDerivedClassesExist(Context& ctx, ECClassId ec
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaReader::ReadEnumeration(ECEnumerationP& ecEnum, Context& ctx, ECEnumerationId enumId) const
     {
-    {
     BeMutexHolder ecdbLock(GetECDbMutex());
     if (EnumDbEntry* entry = m_cache.Find(enumId))
         {
         ecEnum = entry->m_cachedEnum;
         return SUCCESS;
         }
-    }
 
     const int schemaIdIx = 0;
     const int nameIx = 1;
@@ -641,14 +622,6 @@ BentleyStatus SchemaReader::ReadEnumeration(ECEnumerationP& ecEnum, Context& ctx
     const int typeColIx = 4;
     const int isStrictColIx = 5;
     const int valuesColIx = 6;
-
-    BeSqliteDbMutexHolder dbLock(GetECDbR());
-    BeMutexHolder ecdbLock(GetECDbMutex());
-    if (EnumDbEntry* entry = m_cache.Find(enumId))
-        {
-        ecEnum = entry->m_cachedEnum;
-        return SUCCESS;
-        }
 
     CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT SchemaId,Name,DisplayLabel,Description,UnderlyingPrimitiveType,IsStrict,EnumValues FROM [%s]." TABLE_Enumeration " WHERE Id=?", GetTableSpace().GetName().c_str()).c_str());
     if (stmt == nullptr)
@@ -706,14 +679,12 @@ BentleyStatus SchemaReader::ReadEnumeration(ECEnumerationP& ecEnum, Context& ctx
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityP& koq, Context& ctx, KindOfQuantityId koqId) const
     {
-    {
     BeMutexHolder ecdbLock(GetECDbMutex());
     if (KindOfQuantityDbEntry* entry = m_cache.Find(koqId))
         {
         koq = entry->m_cachedKoq;
         return SUCCESS;
         }
-    }
 
     const int schemaIdIx = 0;
     const int nameIx = 1;
@@ -722,14 +693,6 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityP& koq, Context& ct
     const int persUnitColIx = 4;
     const int relErrorColIx = 5;
     const int presUnitColIx = 6;
-
-    BeSqliteDbMutexHolder dbLock(GetECDbR());
-    BeMutexHolder ecdbLock(GetECDbMutex());
-    if (KindOfQuantityDbEntry* entry = m_cache.Find(koqId))
-        {
-        koq = entry->m_cachedKoq;
-        return SUCCESS;
-        }
 
     CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT SchemaId,Name,DisplayLabel,Description,PersistenceUnit,RelativeError,PresentationUnits FROM [%s]." TABLE_KindOfQuantity " WHERE Id=?", GetTableSpace().GetName().c_str()).c_str());
     if (stmt == nullptr)
@@ -791,28 +754,18 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityP& koq, Context& ct
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaReader::ReadPropertyCategory(PropertyCategoryP& cat, Context& ctx, PropertyCategoryId catId) const
     {
-    {
     BeMutexHolder ecdbLock(GetECDbMutex());
     if (PropertyCategoryDbEntry* entry = m_cache.Find(catId))
         {
         cat = entry->m_cachedCategory;
         return SUCCESS;
         }
-    }
 
     const int schemaIdIx = 0;
     const int nameIx = 1;
     const int displayLabelColIx = 2;
     const int descriptionColIx = 3;
     const int priorityColIx = 4;
-
-    BeSqliteDbMutexHolder dbLock(GetECDbR());
-    BeMutexHolder ecdbLock(GetECDbMutex());
-    if (PropertyCategoryDbEntry* entry = m_cache.Find(catId))
-        {
-        cat = entry->m_cachedCategory;
-        return SUCCESS;
-        }
 
     CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT SchemaId,Name,DisplayLabel,Description,Priority FROM [%s]." TABLE_PropertyCategory " WHERE Id=?", GetTableSpace().GetName().c_str()).c_str());
     if (stmt == nullptr)
@@ -864,16 +817,6 @@ BentleyStatus SchemaReader::ReadPropertyCategory(PropertyCategoryP& cat, Context
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SchemaReader::LoadSchemaDefinition(SchemaDbEntry*& schemaEntry, bvector<SchemaDbEntry*>& newlyLoadedSchemas, ECSchemaId ecSchemaId) const
     {
-    {
-    BeMutexHolder ecdbLock(GetECDbMutex());
-    if (schemaEntry = m_cache.Find(ecSchemaId))
-        {
-        BeAssert(schemaEntry->m_cachedSchema != nullptr);
-        return SUCCESS;
-        }
-    }
-
-    BeSqliteDbMutexHolder dbLock(GetECDbR());
     BeMutexHolder ecdbLock(GetECDbMutex());
     if (schemaEntry = m_cache.Find(ecSchemaId))
         {
@@ -958,14 +901,10 @@ BentleyStatus SchemaReader::LoadSchemaEntitiesFromDb(SchemaDbEntry* ecSchemaKey,
     if (!ecSchemaKey)
         return ERROR;
 
-    {
     BeMutexHolder ecdbLock(GetECDbMutex());
     if (fullyLoadedSchemas.find(ecSchemaKey) != fullyLoadedSchemas.end())
         return SUCCESS;
-    }
 
-    BeSqliteDbMutexHolder dbLock(GetECDbR());
-    BeMutexHolder ecdbLock(GetECDbMutex());
     //Accessing cache object not safe. Parent funtion make sure its a thread safe call
     //Enure all reference schemas also loaded
     for (auto& refSchemaKey : ecSchemaKey->m_cachedSchema->GetReferencedSchemas())

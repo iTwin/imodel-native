@@ -484,7 +484,7 @@ BentleyStatus TableSpaceSchemaManager::TryGetClassMap(ClassMap*& classMap, Class
         BeAssert(false && "ECClass must have an ECClassId when mapping to the ECDb.");
         return ERROR;
         }
-    {
+    
     BeMutexHolder ecdbMutex(GetECDb().GetImpl().GetMutex());
     classMap = nullptr;
     auto it = m_classMapDictionary.find(ecClass.GetId());
@@ -493,17 +493,7 @@ BentleyStatus TableSpaceSchemaManager::TryGetClassMap(ClassMap*& classMap, Class
         classMap = it->second.get();
         return SUCCESS;
         }
-    }
-
-    BeSqliteDbMutexHolder dbMutex(const_cast<ECDb&>(GetECDb()));
-    BeMutexHolder ecdbMutex(GetECDb().GetImpl().GetMutex());
-    auto it = m_classMapDictionary.find(ecClass.GetId());
-    if (m_classMapDictionary.end() != it)
-        {
-        classMap = it->second.get();
-        return SUCCESS;
-        }
-
+    
     //lazy loading the class map implemented with const-casting the actual loading so that the 
     //get method itself can remain const (logically const)
     return TryLoadClassMap(classMap, ctx, ecClass);
