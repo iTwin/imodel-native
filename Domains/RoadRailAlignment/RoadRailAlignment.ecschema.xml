@@ -24,6 +24,7 @@
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
         <ECProperty propertyName="StartStation" typeName="double" kindOfQuantity="STATION"/>
+        <ECProperty propertyName="StartValue" typeName="double" kindOfQuantity="LENGTH"/>
     </ECEntityClass>
     <ECEntityClass typeName="HorizontalAlignmentsPortion" description="Horizontal/Top portions of Alignments in an AlignmentModel that will be broken down in more detail in a separate HorizontalAlignmentModel.">
         <BaseClass>bis:SpatialLocationPortion</BaseClass>
