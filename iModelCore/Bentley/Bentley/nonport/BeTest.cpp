@@ -304,7 +304,7 @@ void            BeTest::SetFailOnAssert (bool doFail, BeAssertFunctions::AssertT
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BeTest::SetFailOnInvalidParameterAssert(bool doFail)
     {
-    BeCriticalSectionHolder lock(s_bentleyCS);
+    BeMutexHolder lock(s_bentleyCS);
     s_failOnInvalidParameterAssert = doFail;
     }
 
@@ -1093,13 +1093,13 @@ uintptr_t pReserved
 
     bool failOnAssert;
         {
-        BeCriticalSectionHolder holder(s_bentleyCS);
+        BeMutexHolder holder(s_bentleyCS);
         failOnAssert = s_failOnInvalidParameterAssert;
         }
 
     if (!failOnAssert)
         {
-        Bentley::NativeLogging::LoggingManager::GetLogger(L"BeAssert")->infov(L"Ignoring parameter failure: %ls\n", parameterFailure.c_str());
+        BentleyApi::NativeLogging::LoggingManager::GetLogger(L"BeAssert")->infov(L"Ignoring parameter failure: %ls\n", parameterFailure.c_str());
         return;
         }
     
