@@ -488,6 +488,7 @@ protected:
     BentleyStatus LoadTile();
     BentleyStatus DoReadFromDb();
     BentleyStatus DoSaveToDb();
+    BentleyStatus DeleteRow(RealityData::CacheR, uint64_t rowId);
 
     virtual uint64_t _GetCreateTime() const { return BeTimeUtilities::GetCurrentTimeAsUnixMillis(); }
 public:
@@ -510,6 +511,9 @@ public:
     //! Given the time (in unix millis) at which the tile was written to the cache, return true if the cached tile is no longer usable.
     //! If so, it will be deleted from the cache and _LoadTile() will be used to produce a new tile instead.
     virtual bool _IsExpired(uint64_t cachedTileCreateTime) { return false; }
+
+    //! Return false if m_tileBytes contains invalid data and should be updated from source.
+    virtual bool _IsValidData() { return true; }
 
     struct LoadFlag
         {

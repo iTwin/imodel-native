@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/TileIO.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -339,5 +339,8 @@ DGNPLATFORM_EXPORT ReadStatus ReadDgnTile(Render::Primitives::MeshBuilderMapR bu
 
 // Read geometry from one of the web-standard tile formats (i3dm, b3dm, cmpt, pnts, vctr)
 DGNPLATFORM_EXPORT ReadStatus ReadWebTile(Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, GeometricModelR model, Render::System& renderSystem);
+
+// Return false if feature table contains data not valid for DgnDb.
+bool VerifyFeatureTable(StreamBufferR, DgnDbR);
 
 END_TILETREE_IO_NAMESPACE
