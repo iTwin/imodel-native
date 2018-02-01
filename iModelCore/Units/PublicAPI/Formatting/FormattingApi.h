@@ -778,7 +778,7 @@ struct FormatUnitSet
         UNITS_EXPORT Json::Value ToJsonVerbose(bool useAlias = true) const;
         UNITS_EXPORT Utf8String ToJsonString(bool useAlias = true, bool verbose = false) const;
 
-        UNITS_EXPORT Json::Value FormatQuantityJson(BEU::QuantityCR qty, bool useAlias) const;
+        UNITS_EXPORT Json::Value FormatQuantityJson(BEU::QuantityCR qty, bool useAlias, Utf8CP space="") const;
         UNITS_EXPORT BEU::UnitCP ResetUnit();
         UNITS_EXPORT BEU::PhenomenonCP GetPhenomenon() { return (nullptr == m_unit) ? nullptr : m_unit->GetPhenomenon(); }
         UNITS_EXPORT void LoadJsonData(Json::Value jval);
