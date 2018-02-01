@@ -17,8 +17,9 @@ USING_NAMESPACE_DGNDBSYNC_DWG
 struct ImporterTestBaseFixture : public ImporterTests
 {
 private:
-    bool m_wantCleanUp = true;
-    uint32_t    m_count;
+    bool        m_wantCleanUp = true;
+    uint32_t    m_count = 0;
+    double      m_scaleDwgToMeters = 1.0;
 
 public:
     DwgImporter::Options   m_options;
@@ -34,5 +35,6 @@ public:
     void DoUpdate(BentleyApi::BeFileNameCR output, BentleyApi::BeFileNameCR input, bool expectFailure = false);
     void SetUp_CreateNewDgnDb(); // look for name of bim to create in m_seedDgnDbFileName
     uint32_t GetCount() const;
+    double GetScaleDwgToMeters() const;
 };
 
