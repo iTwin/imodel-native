@@ -311,10 +311,7 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadSchemaChildFromXml(ECSchemaPtr& schema
             return status;
             }
 
-        // Need to use this ugly switch case here instead of template specialization because explicit specialization of a member function within a class scope 
-        // is not currently supported in clang or gcc.
-        ECObjectsStatus addStatus = schemaOut->AddSchemaChild<T>(schemaChild, childType);
-                
+        ECObjectsStatus addStatus = schemaOut->AddSchemaChild<T>(schemaChild, childType);        
         if (ECObjectsStatus::NamedItemAlreadyExists == addStatus)
             {
             LOG.errorv("Duplicate property category node for %s in schema %s.", schemaChild->GetName().c_str(), schemaOut->GetFullSchemaName().c_str());

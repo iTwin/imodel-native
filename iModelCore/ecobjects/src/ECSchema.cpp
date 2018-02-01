@@ -23,7 +23,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 // If you are developing schemas, particularly when editing them by hand, you want to have this variable set to false so you get the asserts to help you figure out what is going wrong.
 // Test programs generally want to get error status back and not assert, so they call ECSchema::AssertOnXmlError (false);
-static  bool        s_noAssert = false;
+static bool s_noAssert = false;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
@@ -48,7 +48,7 @@ static bool ClassNameComparer(ECClassP class1, ECClassP class2)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECNameValidation::ValidationResult ECNameValidation::Validate (Utf8CP name)
     {
-    if (NULL == name || 0 == *name)
+    if (nullptr == name || 0 == *name)
         return RESULT_NullOrEmpty;
     else if ('0' <= name[0] && '9' >= name[0])
         return RESULT_BeginsWithDigit;
@@ -212,7 +212,7 @@ void ECValidatedName::SetName (Utf8CP name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECValidatedName::SetDisplayLabel(Utf8CP label)
     {
-    if (NULL == label || '\0' == *label)
+    if (nullptr == label || '\0' == *label)
         {
         m_hasExplicitDisplayLabel = false;
         m_displayLabel.clear();
@@ -1007,6 +1007,9 @@ ECObjectsStatus ECSchema::CreatePropertyCategory(PropertyCategoryP& propertyCate
     return status;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
 template<typename T, typename T_MAP>
 ECObjectsStatus ECSchema::AddSchemaChildToMap(T* child, T_MAP* map, ECSchemaElementType childType)
     {
@@ -1030,25 +1033,19 @@ ECObjectsStatus ECSchema::AddSchemaChildToMap(T* child, T_MAP* map, ECSchemaElem
     }
 
 template<typename T> ECObjectsStatus ECSchema::AddSchemaChild(T* child, ECSchemaElementType childType) {;}
-template<> ECObjectsStatus ECSchema::AddSchemaChild<ECEnumeration>(ECEnumerationP child, ECSchemaElementType childType) { return AddSchemaChildToMap<ECEnumeration, EnumerationMap>(child, &m_enumerationMap, childType); }
-template<> ECObjectsStatus ECSchema::AddSchemaChild<PropertyCategory>(PropertyCategoryP child, ECSchemaElementType childType) { return AddSchemaChildToMap<PropertyCategory, PropertyCategoryMap>(child, &m_propertyCategoryMap, childType); }
-template<> ECObjectsStatus ECSchema::AddSchemaChild<KindOfQuantity>(KindOfQuantityP child, ECSchemaElementType childType) { return AddSchemaChildToMap<KindOfQuantity, KindOfQuantityMap>(child, &m_kindOfQuantityMap, childType); }
+template<> ECObjectsStatus ECSchema::AddSchemaChild<ECEnumeration>(ECEnumerationP child, ECSchemaElementType childType) {return AddSchemaChildToMap<ECEnumeration, EnumerationMap>(child, &m_enumerationMap, childType);}
+template<> ECObjectsStatus ECSchema::AddSchemaChild<PropertyCategory>(PropertyCategoryP child, ECSchemaElementType childType) {return AddSchemaChildToMap<PropertyCategory, PropertyCategoryMap>(child, &m_propertyCategoryMap, childType);}
+template<> ECObjectsStatus ECSchema::AddSchemaChild<KindOfQuantity>(KindOfQuantityP child, ECSchemaElementType childType) {return AddSchemaChildToMap<KindOfQuantity, KindOfQuantityMap>(child, &m_kindOfQuantityMap, childType);}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
 bool ECSchema::NamedElementExists(Utf8CP name)
     {
-    if (m_classMap.find(name) != m_classMap.end())
-        return true;
-
-    if (m_enumerationMap.find(name) != m_enumerationMap.end())
-        return true;
-
-    if (m_kindOfQuantityMap.find(name) != m_kindOfQuantityMap.end())
-        return true;
-
-    return m_propertyCategoryMap.find(name) != m_propertyCategoryMap.end();
+    return (m_classMap.find(name) != m_classMap.end()) ||
+        (m_enumerationMap.find(name) != m_enumerationMap.end()) ||
+        (m_kindOfQuantityMap.find(name) != m_kindOfQuantityMap.end()) ||
+        (m_propertyCategoryMap.find(name) != m_propertyCategoryMap.end());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1370,7 +1367,7 @@ ECSchemaCP ECSchema::GetSchemaByAliasP(Utf8StringCR alias) const
             return schemaIterator->first;
         }
 
-    return NULL;
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1539,7 +1536,7 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema(ECSchemaR refSchema)
 
         // If it is a relationship class, check the constraints to make sure the constraints don't use that schema
         ECRelationshipClassP relClass = ecClass->GetRelationshipClassP();
-        if (NULL != relClass)
+        if (nullptr != relClass)
             {
             ECRelationshipConstraintCR targetConstraint = relClass->GetTarget();
             for (auto ca : targetConstraint.GetCustomAttributes(false))
@@ -1686,11 +1683,11 @@ ECSchemaPtr ECSchema::LocateSchema(SchemaKeyR key, ECSchemaReadContextR schemaCo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus LogXmlLoadError (BeXmlDomP xmlDom)
+BentleyStatus LogXmlLoadError(BeXmlDomP xmlDom)
     {
     WString     errorString;
     int         line = 0, linePos = 0;
-    if (NULL == xmlDom)
+    if (nullptr == xmlDom)
         {
         BeXmlDom::GetLastErrorString (errorString);
         }
@@ -1709,7 +1706,7 @@ BentleyStatus LogXmlLoadError (BeXmlDomP xmlDom)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   
 //---------------+---------------+---------------+---------------+---------------+-------
-static void AddFilePathToSchemaPaths  (ECSchemaReadContextR schemaContext, WCharCP ecSchemaXmlFile)
+static void AddFilePathToSchemaPaths(ECSchemaReadContextR schemaContext, WCharCP ecSchemaXmlFile)
     {
     BeFileName pathToThisSchema (BeFileName::DevAndDir, ecSchemaXmlFile);
     schemaContext.AddSchemaPath(pathToThisSchema);
@@ -1756,7 +1753,7 @@ bool SearchPathSchemaFileLocater::TryLoadingSupplementalSchemas(Utf8StringCR sch
     while (SUCCESS == fileList.GetNextFileName (filePath))
         {
         WCharCP     fileName = filePath.GetName();
-        ECSchemaPtr schemaOut = NULL;
+        ECSchemaPtr schemaOut = nullptr;
 
         if (SchemaReadStatus::Success != ECSchema::ReadFromXmlFile (schemaOut, fileName, schemaContext))
             continue;
@@ -2066,7 +2063,7 @@ static const uint32_t crc_table[256] = {
       0x5d681b02L, 0x2a6f2b94L, 0xb40bbe37L, 0xc30c8ea1L, 0x5a05df1bL,
       0x2d02ef8dL
     };
-struct          CheckSumHelper
+struct CheckSumHelper
     {
     #define CRC32(c, b) (crc_table[((int)(c) ^ (b)) & 0xff] ^ ((c) >> 8))
     #define DO1(buf)  crc = CRC32(crc, *buf++)
@@ -2141,7 +2138,7 @@ SchemaReadStatus ECSchema::ReadFromXmlFile(ECSchemaPtr& schemaOut, WCharCP ecSch
     {
     StopWatch timer(true);
     LOG.debugv (L"About to read native ECSchema from file: fileName='%ls'", ecSchemaXmlFile);
-    schemaOut = NULL;
+    schemaOut = nullptr;
 
     SchemaReadStatus status = SchemaReadStatus::Success;
 
@@ -2187,7 +2184,7 @@ SchemaReadStatus ECSchema::ReadFromXmlString(ECSchemaPtr& schemaOut, Utf8CP ecSc
     {
     StopWatch timer(true);
     LOG.debugv (L"About to read native ECSchema read from string."); // mainly included for timing
-    schemaOut = NULL;
+    schemaOut = nullptr;
     SchemaReadStatus status = SchemaReadStatus::Success;
 
     size_t stringByteCount = strlen (ecSchemaXml) * sizeof(Utf8Char);
@@ -2238,7 +2235,7 @@ SchemaReadStatus ECSchema::ReadFromXmlString(ECSchemaPtr& schemaOut, WCharCP ecS
     {
     StopWatch timer(true);
     LOG.debugv (L"About to read native ECSchema read from string."); // mainly included for timing
-    schemaOut = NULL;
+    schemaOut = nullptr;
     SchemaReadStatus status = SchemaReadStatus::Success;
 
     BeXmlStatus xmlStatus;
@@ -3040,14 +3037,14 @@ static IECTypeAdapterContext::FactoryFn s_typeAdapterContextFactory;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IECTypeAdapterContext::RegisterFactory (FactoryFn fn)  { s_typeAdapterContextFactory = fn; }
+void IECTypeAdapterContext::RegisterFactory(FactoryFn fn) {s_typeAdapterContextFactory = fn;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECTypeAdapterContextPtr IECTypeAdapterContext::Create (ECPropertyCR prop, IECInstanceCR instance, uint32_t componentIndex)
+IECTypeAdapterContextPtr IECTypeAdapterContext::Create(ECPropertyCR prop, IECInstanceCR instance, uint32_t componentIndex)
     {
-    return NULL != s_typeAdapterContextFactory ? s_typeAdapterContextFactory (prop, instance, componentIndex) : NULL;
+    return nullptr != s_typeAdapterContextFactory ? s_typeAdapterContextFactory (prop, instance, componentIndex) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
