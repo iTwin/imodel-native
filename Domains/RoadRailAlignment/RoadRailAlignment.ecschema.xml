@@ -2,7 +2,6 @@
 <ECSchema schemaName="RoadRailAlignment" alias="rralign" version="01.00.00" description="Base schema for the Alignment domain in light of Road and Rail applications." xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
     <ECSchemaReference name="LinearReferencing" version="01.00.00" alias="lr"/>
-    <ECSchemaReference name="AecUnits" version="01.00.00" alias="aecu"/>
 
     <KindOfQuantity typeName="STATION" displayLabel="Station" persistenceUnit="M(DefaultReal)" presentationUnits="M(stop1000-2-3z);FT(stop100-2-2z)" relativeError="0.0001"/>
     <KindOfQuantity typeName="LENGTH" displayLabel="Length" persistenceUnit="M(DefaultReal)" presentationUnits="M(real2u);FT(real2u)" relativeError="0.0001"/>
@@ -37,14 +36,14 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="HorizontalGeometry" typeName="Bentley.Geometry.Common.IGeometry" kindOfQuantity="aecu:LENGTH"/>
+        <ECProperty propertyName="HorizontalGeometry" typeName="Bentley.Geometry.Common.IGeometry" kindOfQuantity="LENGTH"/>
     </ECEntityClass>
     <ECEntityClass typeName="VerticalAlignment" description="Detailing of a Alignment or a portion of it, vertically along its path.">
         <BaseClass>bis:GeometricElement2d</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="VerticalGeometry" typeName="Bentley.Geometry.Common.IGeometry" kindOfQuantity="aecu:LENGTH" description="Geometry primitives accurately describing the vertical alignment. X-values mean distance-along the HorizontalAlignment; Y-values are always zero; Z-values provide elevation information."/>
+        <ECProperty propertyName="VerticalGeometry" typeName="Bentley.Geometry.Common.IGeometry" kindOfQuantity="LENGTH" description="Geometry primitives accurately describing the vertical alignment. X-values mean distance-along the HorizontalAlignment; Y-values are always zero; Z-values provide elevation information."/>
     </ECEntityClass>
     <ECEntityClass typeName="AlignmentModel" description="Container for related Alignments, uniquely scoping their Codes.">
         <BaseClass>bis:SpatialLocationModel</BaseClass>

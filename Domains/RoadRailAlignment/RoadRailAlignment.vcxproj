@@ -41,8 +41,12 @@
     <ClInclude Include="RoadRailAlignmentInternal.h" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="RoadRailAlignment.ecschema.xml" />
-    <Xml Include="RoadRailAlignment.PartFile.xml" />
+    <Xml Include="RoadRailAlignment.ecschema.xml">
+      <SubType>Designer</SubType>
+    </Xml>
+    <Xml Include="RoadRailAlignment.PartFile.xml">
+      <SubType>Designer</SubType>
+    </Xml>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Alignment.cpp" />
