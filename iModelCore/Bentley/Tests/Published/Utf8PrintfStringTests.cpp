@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/Utf8PrintfStringTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -72,4 +72,20 @@ TEST_F(Utf8PrintfStringTests, Ctor_PositionalFormatWithMixedTypes_FormattedStrin
     {
     EXPECT_STREQ("A 111 B Foo", Utf8PrintfString("A %1$d B %2$s", 111, "Foo").c_str());
     EXPECT_STREQ("A Foo B 111", Utf8PrintfString("A %2$s B %1$d", 111, "Foo").c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Vincas.Razma                      10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(Utf8PrintfStringTests, Sprintf_BadFormat_DoesNotCrash)
+    {
+    Utf8CP a = "a";
+    Utf8CP b = "b";
+    Utf8String str;
+
+    BeTest::SetFailOnInvalidParameterAssert(false);
+    str.Sprintf("%s foo % type", a, b);
+    BeTest::SetFailOnInvalidParameterAssert(true);
+
+    EXPECT_STREQ("", str.c_str());
     }

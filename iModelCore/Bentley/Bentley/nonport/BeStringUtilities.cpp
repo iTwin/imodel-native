@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/BeStringUtilities.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
@@ -1866,7 +1866,11 @@ int BentleyApi::BeUtf8StringSprintf(Utf8String& outStr, CharCP fmt, va_list ap, 
     if (initialLengthGuess == -1)
         initialLengthGuess = BeUtf8StringGuessLength(fmt, ap);
 
-    ScopedArray<Utf8Char> buffer(initialLengthGuess+1);
+    // Format is invalid
+    if (initialLengthGuess < 0)
+        return -1;
+
+    ScopedArray<Utf8Char> buffer (initialLengthGuess + 1);
 
 #ifdef _MSC_VER
         auto result = _vsprintf_p_l(buffer.GetData(), initialLengthGuess + 1, fmt, getEnUsLocale(), ap);
@@ -1899,7 +1903,11 @@ int BentleyApi::BeWStringSprintf(WString& outStr, WCharCP fmt, va_list ap, int i
     if (initialLengthGuess == -1)
         initialLengthGuess = BeWStringGuessLength(fmt, ap);
 
-    ScopedArray<wchar_t> buffer(initialLengthGuess+1);    // output buffer must have space for trailing \0
+    // Format is invalid
+    if (initialLengthGuess < 0)
+        return -1;
+
+    ScopedArray<wchar_t> buffer (initialLengthGuess + 1);    // output buffer must have space for trailing \0
 
 #ifdef _MSC_VER
     auto result = _vswprintf_p(buffer.GetData(), initialLengthGuess + 1, fmt, ap); // output buffer must have space for trailing \0

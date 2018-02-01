@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/BeTest.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)
@@ -56,6 +56,7 @@ static BeAssertFunctions::T_BeAssertHandler*    s_assertHandler;                
 static bool                                     s_assertHandlerCanBeChanged=true;   // MT: s_bentleyCS
 static bvector<BeTest::T_BeAssertListener*>     s_assertListeners;                  // MT: s_bentleyCS
 static bool                                     s_failOnAssert[(int)BeAssertFunctions::AssertType::TypeCount]; // MT: Problem! If one thread sets this, it will affect assertions that fail on other threads. *** WIP_MT make this thread-local?
+static bool                                     s_failOnInvalidParameterAssert = true;
 static bool                                     s_runningUnderGtest;                // indicates that we are running under gtest. MT: set only during initialization 
 static bool                                     s_hadAssert;
 static RefCountedPtr<BeTest::Host>              s_host;                             // MT: set only during initialization. Used on multiple threads. Must be thread-safe internally.
@@ -296,6 +297,15 @@ void            BeTest::SetFailOnAssert (bool doFail, BeAssertFunctions::AssertT
         } 
 
     s_bentleyCS.unlock();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                                    01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeTest::SetFailOnInvalidParameterAssert(bool doFail)
+    {
+    BeCriticalSectionHolder lock(s_bentleyCS);
+    s_failOnInvalidParameterAssert = doFail;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1078,6 +1088,21 @@ uintptr_t pReserved
         parameterFailure.append(buf);
         }
 
+    if (parameterFailure.empty())
+        parameterFailure = L"Invalid format parameter";
+
+    bool failOnAssert;
+        {
+        BeCriticalSectionHolder holder(s_bentleyCS);
+        failOnAssert = s_failOnInvalidParameterAssert;
+        }
+
+    if (!failOnAssert)
+        {
+        Bentley::NativeLogging::LoggingManager::GetLogger(L"BeAssert")->infov(L"Ignoring parameter failure: %ls\n", parameterFailure.c_str());
+        return;
+        }
+    
     BentleyApi::NativeLogging::LoggingManager::GetLogger(L"BeAssert")->error(parameterFailure.c_str());
 
 #ifdef USE_GTEST

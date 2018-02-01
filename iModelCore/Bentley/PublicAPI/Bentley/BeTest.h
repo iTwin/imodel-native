@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeTest.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -217,6 +217,10 @@ BENTLEYDLL_EXPORT static void SetFailOnAssert (bool doFail, BeAssertFunctions::A
 //! Query if the specified kinds of assertion failures are turned on or not.
 //! @return true if tests will break when assertion failures are detected or false if not.
 BENTLEYDLL_EXPORT static bool GetFailOnAssert (BeAssertFunctions::AssertType atype = BeAssertFunctions::AssertType::All);
+
+//! Disable invalid printf parameter asserts in some tests that produce them to test failures.
+//! Should not be used in other cases.
+BENTLEYDLL_EXPORT static void SetFailOnInvalidParameterAssert(bool doFail);
 
 //! Returns a flag indicating the there was an assertion failure in the current test.
 BENTLEYDLL_EXPORT static bool GetAssertionFailed();
