@@ -45,29 +45,11 @@ void UnitRegistry::Clear()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Caleb.Shafer            01/18
 //---------------------------------------------------------------------------------------
-UnitRegistry::UnitRegistry(IUnitLocaterP locater) : m_locater(locater)
+UnitRegistry::UnitRegistry()
     {
     AddBaseSystems();
     AddBasePhenomena();
     AddBaseUnits();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Caleb.Shafer            01/18
-//---------------------------------------------------------------------------------------
-// static
-UnitRegistryPtr UnitRegistry::Create()
-    {
-    return Create(nullptr);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Caleb.Shafer            01/18
-//---------------------------------------------------------------------------------------
-// static
-UnitRegistryPtr UnitRegistry::Create(IUnitLocaterP locater)
-    {
-    return new UnitRegistry(locater);
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -301,9 +283,7 @@ BentleyStatus UnitRegistry::AddSynonym(UnitCP unit, Utf8CP synonymName)
 UnitP UnitRegistry::LookupUnitP(Utf8CP name) const
     {
     auto val_iter = m_units.find(name);
-    if (val_iter != m_units.end())
-        return (*val_iter).second;
-    return nullptr != m_locater ? m_locater->LocateUnitP(name) : nullptr;
+    return val_iter == m_units.end() ? nullptr : (*val_iter).second;
     }
 
 //--------------------------------------------------------------------------------------
@@ -471,9 +451,7 @@ UnitCP UnitRegistry::AddUnitForBasePhenomenon(Utf8CP unitName, Utf8Char baseSymb
 PhenomenonP UnitRegistry::LookupPhenomenonP(Utf8CP name) const
     {
     auto val_iter = m_phenomena.find(name);
-    if (val_iter != m_phenomena.end())
-        return (*val_iter).second;
-    return nullptr != m_locater ? m_locater->LocatePhenomenonP(name) : nullptr;
+    return val_iter == m_phenomena.end() ? nullptr : (*val_iter).second;
     }
 
 //--------------------------------------------------------------------------------------
@@ -533,10 +511,8 @@ void UnitRegistry::AddSystem(UnitSystemR unitSystem)
 //--------------------------------------------------------------------------------------
 UnitSystemP UnitRegistry::LookupUnitSystemP(Utf8CP name) const
     {
-    auto usIt = m_systems.find(name);
-    if (usIt != m_systems.end())
-        return (*usIt).second;
-    return nullptr != m_locater ? m_locater->LocateUnitSystemP(name) : nullptr;
+    auto val_iter = m_systems.find(name);
+    return val_iter == m_systems.end() ? nullptr : (*val_iter).second;
     }
 
 //---------------------------------------------------------------------------------------
@@ -606,7 +582,7 @@ UnitCP UnitRegistry::LookupUnitUsingOldName(Utf8CP oldName) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              David Fox-Rabinovitz     09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t  UnitRegistry::LoadSynonyms(Json::Value jval) const
+size_t UnitRegistry::LoadSynonyms(Json::Value jval) const
     {
     size_t num = 0;
     UnitSynonymMap map;

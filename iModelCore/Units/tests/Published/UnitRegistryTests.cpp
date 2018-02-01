@@ -47,24 +47,6 @@ struct UnitRegistryTests : UnitsTestFixture
         TestUnit(UnitSystemCR unitSystem, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant) :
             Unit(unitSystem, phenomenon, name, id, definition, baseSymbol, factor, offset, isConstant) { }
     };
-
-    struct TestUnitLocater : IUnitLocater
-    {
-    private:
-        bmap<Utf8String, TestUnit*> m_units;
-        TestPhenomenon* m_phenomenon;
-        TestUnitSystem* m_unitSystem;
-
-        void Populate();
-
-    protected:
-        UnitP _LocateUnitP(Utf8CP name) const override;
-        PhenomenonP _LocatePhenomenonP(Utf8CP name) const override {return 0 == strcmp(m_phenomenon->GetName(), name) ? m_phenomenon : nullptr;}
-        UnitSystemP _LocateUnitSystemP(Utf8CP name) const override {return 0 == strcmp(m_unitSystem->GetName(), name) ? m_unitSystem : nullptr;}
-
-    public:
-        TestUnitLocater() {Populate();}
-    };
 };
 
 //--------------------------------------------------------------------------------------
@@ -161,73 +143,20 @@ TEST_F(UnitRegistryTests, TestEveryDefaultUnitIsAddedToItsPhenomenon)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    01/2018
 //--------------------------------------------------------------------------------------
-void UnitRegistryTests::TestUnitLocater::Populate()
-    {
-    m_unitSystem = new TestUnitSystem("Banana");
-    m_phenomenon = new TestPhenomenon("TestPhen", "Def", 'D', 0);
-
-    m_units.insert(bpair<Utf8String, TestUnit*>("TestUnit1", new TestUnit(*m_unitSystem, *m_phenomenon, "TestUnit1", 1, "Def1", ' ', 1, 0, false)));
-    m_units.insert(bpair<Utf8String, TestUnit*>("TestUnit2", new TestUnit(*m_unitSystem, *m_phenomenon, "TestUnit2", 2, "Def2", ' ', 1, 0, false)));
-    m_units.insert(bpair<Utf8String, TestUnit*>("TestUnit3", new TestUnit(*m_unitSystem, *m_phenomenon, "TestUnit3", 3, "Def3", ' ', 1, 0, false)));
-    m_units.insert(bpair<Utf8String, TestUnit*>("TestUnit4", new TestUnit(*m_unitSystem, *m_phenomenon, "TestUnit4", 4, "Def4", ' ', 1, 0, false)));
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    01/2018
-//--------------------------------------------------------------------------------------
-UnitP UnitRegistryTests::TestUnitLocater::_LocateUnitP(Utf8CP name) const
-    {
-    auto val_iter = m_units.find(name);
-    if (val_iter == m_units.end())
-        return nullptr;
-
-    return (*val_iter).second;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    01/2018
-//--------------------------------------------------------------------------------------
-TEST_F(UnitRegistryTests, AddUnitLocater)
-    {
-    TestUnitLocater* locater = new TestUnitLocater();
-
-    UnitRegistryPtr registry = UnitRegistry::Create();
-    ASSERT_TRUE(registry.IsValid());
-
-    EXPECT_EQ(nullptr, registry->LookupUnit("TestUnit1"));
-    EXPECT_EQ(nullptr, registry->LookupPhenomenon("TestPhen"));
-
-    registry->AddLocater(*locater);
-
-    PhenomenonCP locaterPhen = registry->LookupPhenomenon("TestPhen");
-    EXPECT_NE(nullptr, locaterPhen);
-
-    UnitCP locaterUnit = registry->LookupUnit("TestUnit1");
-    EXPECT_NE(nullptr, locaterUnit);
-
-    registry->RemoveLocater();
-    EXPECT_EQ(nullptr, registry->LookupUnit("TestUnit1"));
-    EXPECT_EQ(nullptr, registry->LookupPhenomenon("TestPhen"));
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    01/2018
-//--------------------------------------------------------------------------------------
 TEST_F(UnitRegistryTests, TestAllBaseUnitsAdded)
     {
-    UnitRegistryPtr registry = UnitRegistry::Create();
-    EXPECT_TRUE(registry->HasUnit("M"));
-    EXPECT_TRUE(registry->HasUnit("S"));
-    EXPECT_TRUE(registry->HasUnit("K"));
-    EXPECT_TRUE(registry->HasUnit("DELTA_KELVIN"));
-    EXPECT_TRUE(registry->HasUnit("A"));
-    EXPECT_TRUE(registry->HasUnit("MOL"));
-    EXPECT_TRUE(registry->HasUnit("CD"));
-    EXPECT_TRUE(registry->HasUnit("RAD"));
-    EXPECT_TRUE(registry->HasUnit("STERAD"));
-    EXPECT_TRUE(registry->HasUnit("US$"));
-    EXPECT_TRUE(registry->HasUnit("PERSON"));
-    EXPECT_TRUE(registry->HasUnit("ONE"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasUnit("M"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasUnit("S"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasUnit("K"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasUnit("DELTA_KELVIN"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasUnit("A"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasUnit("MOL"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasUnit("CD"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasUnit("RAD"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasUnit("STERAD"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasUnit("US$"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasUnit("PERSON"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasUnit("ONE"));
     }
 
 //--------------------------------------------------------------------------------------
@@ -235,20 +164,19 @@ TEST_F(UnitRegistryTests, TestAllBaseUnitsAdded)
 //--------------------------------------------------------------------------------------
 TEST_F(UnitRegistryTests, TestAllBasePhenomenaAdded)
     {
-    UnitRegistryPtr registry = UnitRegistry::Create();
-    EXPECT_TRUE(registry->HasPhenomena("LENGTH"));
-    EXPECT_TRUE(registry->HasPhenomena("MASS"));
-    EXPECT_TRUE(registry->HasPhenomena("TIME"));
-    EXPECT_TRUE(registry->HasPhenomena("TEMPERATURE"));
-    EXPECT_TRUE(registry->HasPhenomena("TEMPERATURE_CHANGE"));
-    EXPECT_TRUE(registry->HasPhenomena("CURRENT"));
-    EXPECT_TRUE(registry->HasPhenomena("MOLE"));
-    EXPECT_TRUE(registry->HasPhenomena("LUMINOSITY"));
-    EXPECT_TRUE(registry->HasPhenomena("ANGLE"));
-    EXPECT_TRUE(registry->HasPhenomena("SOLIDANGLE"));
-    EXPECT_TRUE(registry->HasPhenomena("FINANCE"));
-    EXPECT_TRUE(registry->HasPhenomena("CAPITA"));
-    EXPECT_TRUE(registry->HasPhenomena("ONE"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomena("LENGTH"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomena("MASS"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomena("TIME"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomena("TEMPERATURE"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomena("TEMPERATURE_CHANGE"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomena("CURRENT"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomena("MOLE"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomena("LUMINOSITY"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomena("ANGLE"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomena("SOLIDANGLE"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomena("FINANCE"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomena("CAPITA"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomena("ONE"));
     }
 
 //--------------------------------------------------------------------------------------
@@ -256,59 +184,22 @@ TEST_F(UnitRegistryTests, TestAllBasePhenomenaAdded)
 //--------------------------------------------------------------------------------------
 TEST_F(UnitRegistryTests, TestAllBaseUnitSystemsAdded)
     {
-    UnitRegistryPtr registry = UnitRegistry::Create();
-    EXPECT_TRUE(registry->HasSystem("SI"));
-    EXPECT_TRUE(registry->HasSystem("CGS"));
-    EXPECT_TRUE(registry->HasSystem("METRIC"));
-    EXPECT_TRUE(registry->HasSystem("IMPERIAL"));
-    EXPECT_TRUE(registry->HasSystem("MARITIME"));
-    EXPECT_TRUE(registry->HasSystem("USSURVEY"));
-    EXPECT_TRUE(registry->HasSystem("INDUSTRIAL"));
-    EXPECT_TRUE(registry->HasSystem("INTERNATIONAL"));
-    EXPECT_TRUE(registry->HasSystem("USCUSTOM"));
-    EXPECT_TRUE(registry->HasSystem("STATISTICS"));
-    EXPECT_TRUE(registry->HasSystem("FINANCE"));
-    EXPECT_TRUE(registry->HasSystem("CONSTANT"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasSystem("SI"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasSystem("CGS"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasSystem("METRIC"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasSystem("IMPERIAL"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasSystem("MARITIME"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasSystem("USSURVEY"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasSystem("INDUSTRIAL"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasSystem("INTERNATIONAL"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasSystem("USCUSTOM"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasSystem("STATISTICS"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasSystem("FINANCE"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasSystem("CONSTANT"));
 
     bvector<UnitSystemCP> unitSystems;
-    registry->AllSystems(unitSystems);
-
+    UnitRegistry::Instance().AllSystems(unitSystems);
     EXPECT_EQ(12, unitSystems.size());
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    01/2018
-//--------------------------------------------------------------------------------------
-TEST_F(UnitRegistryTests, TestStaticBaseUnitSystemsAreOnlyCreatedOnce)
-    {
-    UnitRegistryPtr registry1 = UnitRegistry::Create();
-    UnitRegistryPtr registry2 = UnitRegistry::Create();
-
-    EXPECT_EQ(registry1->LookupUnitSystem("SI"), registry2->LookupUnitSystem("SI"));
-    EXPECT_EQ(registry1->LookupUnitSystem("CGS"), registry2->LookupUnitSystem("CGS"));
-    EXPECT_EQ(registry1->LookupUnitSystem("METRIC"), registry2->LookupUnitSystem("METRIC"));
-    EXPECT_EQ(registry1->LookupUnitSystem("IMPERIAL"), registry2->LookupUnitSystem("IMPERIAL"));
-    EXPECT_EQ(registry1->LookupUnitSystem("MARITIME"), registry2->LookupUnitSystem("MARITIME"));
-    EXPECT_EQ(registry1->LookupUnitSystem("USSURVEY"), registry2->LookupUnitSystem("USSURVEY"));
-    EXPECT_EQ(registry1->LookupUnitSystem("INDUSTRIAL"), registry2->LookupUnitSystem("INDUSTRIAL"));
-    EXPECT_EQ(registry1->LookupUnitSystem("INTERNATIONAL"), registry2->LookupUnitSystem("INTERNATIONAL"));
-    EXPECT_EQ(registry1->LookupUnitSystem("USCUSTOM"), registry2->LookupUnitSystem("USCUSTOM"));
-    EXPECT_EQ(registry1->LookupUnitSystem("STATISTICS"), registry2->LookupUnitSystem("STATISTICS"));
-    EXPECT_EQ(registry1->LookupUnitSystem("FINANCE"), registry2->LookupUnitSystem("FINANCE"));
-    EXPECT_EQ(registry1->LookupUnitSystem("CONSTANT"), registry2->LookupUnitSystem("CONSTANT"));
-    
-    EXPECT_EQ(UnitRegistry::Instance().LookupUnitSystem("SI"), registry2->LookupUnitSystem("SI"));
-    EXPECT_EQ(UnitRegistry::Instance().LookupUnitSystem("CGS"), registry2->LookupUnitSystem("CGS"));
-    EXPECT_EQ(UnitRegistry::Instance().LookupUnitSystem("METRIC"), registry2->LookupUnitSystem("METRIC"));
-    EXPECT_EQ(UnitRegistry::Instance().LookupUnitSystem("IMPERIAL"), registry2->LookupUnitSystem("IMPERIAL"));
-    EXPECT_EQ(UnitRegistry::Instance().LookupUnitSystem("MARITIME"), registry2->LookupUnitSystem("MARITIME"));
-    EXPECT_EQ(UnitRegistry::Instance().LookupUnitSystem("USSURVEY"), registry2->LookupUnitSystem("USSURVEY"));
-    EXPECT_EQ(UnitRegistry::Instance().LookupUnitSystem("INDUSTRIAL"), registry2->LookupUnitSystem("INDUSTRIAL"));
-    EXPECT_EQ(UnitRegistry::Instance().LookupUnitSystem("INTERNATIONAL"), registry2->LookupUnitSystem("INTERNATIONAL"));
-    EXPECT_EQ(UnitRegistry::Instance().LookupUnitSystem("USCUSTOM"), registry2->LookupUnitSystem("USCUSTOM"));
-    EXPECT_EQ(UnitRegistry::Instance().LookupUnitSystem("STATISTICS"), registry2->LookupUnitSystem("STATISTICS"));
-    EXPECT_EQ(UnitRegistry::Instance().LookupUnitSystem("FINANCE"), registry2->LookupUnitSystem("FINANCE"));
-    EXPECT_EQ(UnitRegistry::Instance().LookupUnitSystem("CONSTANT"), registry2->LookupUnitSystem("CONSTANT"));
     }
 
 END_UNITS_UNITTESTS_NAMESPACE

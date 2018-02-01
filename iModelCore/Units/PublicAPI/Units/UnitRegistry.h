@@ -9,42 +9,15 @@
 
 /*__PUBLISH_SECTION_START__*/
 #include <Units/Units.h>
-#include <Bentley/RefCounted.h>
-
-UNITS_TYPEDEFS(UnitRegistry)
-UNITS_TYPEDEFS(IUnitLocater)
 
 BEGIN_BENTLEY_UNITS_NAMESPACE
-
-typedef RefCountedPtr<UnitRegistry> UnitRegistryPtr;
-
-//=======================================================================================
-//! An interface that is implemented by a class that provides units
-// @bsistruct                                                   Caleb.Shafer       01/18
-//=======================================================================================
-struct IUnitLocater : NonCopyableClass
-{
-
-protected:
-    virtual UnitP _LocateUnitP(Utf8CP name) const = 0;
-    virtual PhenomenonP _LocatePhenomenonP(Utf8CP name) const = 0;
-    virtual UnitSystemP _LocateUnitSystemP(Utf8CP name) const = 0;
-
-public:
-    UnitP LocateUnitP(Utf8CP name) const {return _LocateUnitP(name);}
-    UnitCP LocateUnit(Utf8CP name) const {return LocateUnitP(name);}
-    PhenomenonP LocatePhenomenonP(Utf8CP name) const {return _LocatePhenomenonP(name);}
-    PhenomenonCP LocatePhenomenon(Utf8CP name) const {return LocatePhenomenonP(name);}
-    UnitSystemP LocateUnitSystemP(Utf8CP name) const {return _LocateUnitSystemP(name);}
-    UnitSystemCP LocateUnitSystem(Utf8CP name) const {return LocateUnitSystemP(name);}
-};
 
 //=======================================================================================
 //! A central place to store registered units with the system.  Users interact
 //! with the units system here.
 // @bsiclass                                                    Chris.Tartamella   02/16
 //=======================================================================================
-struct UnitRegistry : RefCountedBase
+struct UnitRegistry
 {
 friend struct Unit;
 private:
@@ -73,20 +46,14 @@ private:
     bmap<Utf8String, UnitP> m_units;
 
     bmap<uint64_t, Conversion> m_conversions;
-    bmap<Utf8String, Utf8String> m_oldNameNewNameMapping;
-    bmap<Utf8String, Utf8String> m_newNameOldNameMapping;
-    // key = unit name, value = ec name
-    bmap<Utf8String, Utf8String> m_nameECNameMapping;
-    // key = ec name, value = unit name
-    bmap<Utf8String, Utf8String> m_ecNameNameMapping;
 
-    IUnitLocaterP m_locater;
-
-    UnitRegistry(IUnitLocaterP locater = nullptr);
+    UnitRegistry();
     UnitRegistry(const UnitRegistry& rhs) = delete;
     UnitRegistry & operator= (const UnitRegistry& rhs) = delete;
-
     
+    // TODO: Remove
+    // The Default methods below are used to populate the UnitRegistry with the definitions that were previously
+    // added to the registry and should be phased out in place of User defined definitions inside of an ECSchema.
     void AddDefaultPhenomena();
     void AddDefaultUnits();
     void AddDefaultConstants();
@@ -119,19 +86,13 @@ private:
 
 public:
     //! Returns a pointer to the singleton instance of the UnitRegistry
+    //!
+    //! If the singleton has not yet been instantiated the UnitRegistry will be initialized with 
+    //! a set of base Units, Phenomena, and Unit Systems. For more details see the description of the class. TODO
     UNITS_EXPORT static UnitRegistry & Instance();
 
+    //! Clears the singleton instance of all definitions.
     UNITS_EXPORT static void Clear(); // TODO: Remove or hide so cannot be called from public API, only needed for performance testing
-
-    //! Constructs a registry
-    UNITS_EXPORT static UnitRegistryPtr Create();
-    UNITS_EXPORT static UnitRegistryPtr Create(IUnitLocaterP locater);
-
-    //! Adds a unit locater to this registry. If there is an existing locater, it will be overriden.
-    UNITS_EXPORT void AddLocater(IUnitLocaterR locater) {m_locater = &locater;}
-
-    //! Remove the current locater from this registry.
-    UNITS_EXPORT void RemoveLocater() {m_locater = nullptr;}
 
     //! Populates the provided vector with all Units in the registry
     //! @param[in] allUnits The vector to populate with the units
