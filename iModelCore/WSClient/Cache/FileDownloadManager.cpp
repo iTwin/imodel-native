@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/FileDownloadManager.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -95,10 +95,7 @@ FileCache cacheLocation
         auto txn = m_ds->StartCacheTransaction();
         if (!fileResult.IsSuccess())
             {
-            WSError::Id errorId = fileResult.GetError().GetId();
-
-            if (WSError::Id::InstanceNotFound == errorId ||
-                WSError::Id::NotEnoughRights == errorId)
+            if (fileResult.GetError().IsInstanceNotAvailableError())
                 {
                 txn.GetCache().RemoveFile(objectId);
                 }
