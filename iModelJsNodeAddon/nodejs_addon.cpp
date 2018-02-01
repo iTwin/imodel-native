@@ -1433,6 +1433,572 @@ public:
     };
 
 //=======================================================================================
+// Projects the AddonECSqlColumnInfo interface into JS.
+//! @bsiclass
+//=======================================================================================
+struct AddonECSqlColumnInfo : Napi::ObjectWrap<AddonECSqlColumnInfo>
+    {
+    private:
+        //Must match ECSqlValueType in imodeljs-nodeaddonapi.d.ts
+        enum class Type
+            {
+            Blob = 1,
+            Boolean = 2,
+            DateTime = 3,
+            Double = 4,
+            Geometry = 5,
+            Id = 6,
+            Int = 7,
+            Int64 = 8,
+            Point2d = 9,
+            Point3d = 10,
+            String = 11,
+            Navigation = 12,
+            Struct = 13,
+            PrimitiveArray = 14,
+            StructArray = 15
+            };
+
+        static Napi::FunctionReference s_constructor;
+        ECSqlColumnInfo const* m_colInfo = nullptr;
+
+        ECSqlColumnInfo const& GetColInfo() const
+            {
+            if (m_colInfo == nullptr)
+                Napi::TypeError::New(Env(), "Invalid ECSqlColumnInfo").ThrowAsJavaScriptException();
+
+            return *m_colInfo;
+            }
+
+    public:
+        AddonECSqlColumnInfo(Napi::CallbackInfo const& info) : Napi::ObjectWrap<AddonECSqlColumnInfo>(info)
+                {
+                if (info.Length() != 1)
+                    Napi::TypeError::New(Env(), "AddonECSqlColumnInfo constructor expects two argument.").ThrowAsJavaScriptException();
+
+                m_colInfo = info[0].As<Napi::External<ECSqlColumnInfo>>().Data();
+                if (m_colInfo == nullptr)
+                    Napi::TypeError::New(Env(), "Invalid first arg for AddonECSqlColumnInfo constructor. ECSqlColumnInfo must not be nullptr").ThrowAsJavaScriptException();
+                }
+
+            ~AddonECSqlColumnInfo() {}
+
+            static bool InstanceOf(Napi::Value val)
+                {
+                if (!val.IsObject())
+                    return false;
+
+                Napi::HandleScope scope(val.Env());
+                return val.As<Napi::Object>().InstanceOf(s_constructor.Value());
+                }
+
+            //  Create projections
+            static void Init(Napi::Env& env, Napi::Object exports)
+                {
+                // ***
+                // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
+                // ***
+                Napi::HandleScope scope(env);
+                Napi::Function t = DefineClass(env, "AddonECSqlColumnInfo", {
+                InstanceMethod("getType", &AddonECSqlColumnInfo::GetType),
+                InstanceMethod("getPropertyPath", &AddonECSqlColumnInfo::GetPropertyPath),
+                InstanceMethod("getPropertyName", &AddonECSqlColumnInfo::GetPropertyName),
+                InstanceMethod("isSystemProperty", &AddonECSqlColumnInfo::IsSystemProperty),
+                InstanceMethod("isGeneratedProperty", &AddonECSqlColumnInfo::IsGeneratedProperty),
+                InstanceMethod("getRootClassTableSpace", &AddonECSqlColumnInfo::GetRootClassTableSpace)});
+                InstanceMethod("getRootClassName", &AddonECSqlColumnInfo::GetRootClassName),
+                InstanceMethod("getRootClassAlias", &AddonECSqlColumnInfo::GetRootClassAlias),
+
+                exports.Set("AddonECSqlColumnInfo", t);
+
+                s_constructor = Napi::Persistent(t);
+                // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
+                // from running at program shutdown time, which would attempt to reset the reference when
+                // the environment is no longer valid.
+                s_constructor.SuppressDestruct();
+                }
+
+            static Napi::Object New(Napi::Env const& env, ECSqlColumnInfo const& colInfo)
+                {
+                return s_constructor.New({Napi::External<ECSqlColumnInfo>::New(env, const_cast<ECSqlColumnInfo*>(&colInfo))});
+                }
+
+            Napi::Value GetType(const Napi::CallbackInfo& info)
+                {
+                if (info.Length() != 0)
+                    Napi::TypeError::New(info.Env(), "GetType must not have arguments").ThrowAsJavaScriptException();
+
+                ECTypeDescriptor const& dataType = GetColInfo().GetDataType();
+                Type type = Type::Id;
+                if (GetColInfo().IsSystemProperty() && dataType.IsPrimitive() && dataType.GetPrimitiveType() == PRIMITIVETYPE_Long)
+                    type = Type::Id;
+                else if (dataType.IsNavigation())
+                    type = Type::Navigation;
+                else if (dataType.IsStruct())
+                    type = Type::Struct;
+                else if (dataType.IsPrimitiveArray())
+                    type = Type::PrimitiveArray;
+                else if (dataType.IsStructArray())
+                    type = Type::StructArray;
+                else
+                    {
+                    BeAssert(dataType.IsPrimitive());
+                    switch (dataType.GetPrimitiveType())
+                        {
+                            case PRIMITIVETYPE_Binary:
+                                type = Type::Blob;
+                                break;
+                            case PRIMITIVETYPE_Boolean:
+                                type = Type::Boolean;
+                                break;
+                            case PRIMITIVETYPE_DateTime:
+                                type = Type::DateTime;
+                                break;
+                            case PRIMITIVETYPE_Double:
+                                type = Type::Double;
+                                break;
+                            case PRIMITIVETYPE_IGeometry:
+                                type = Type::Geometry;
+                                break;
+                            case PRIMITIVETYPE_Integer:
+                                type = Type::Int;
+                                break;
+                            case PRIMITIVETYPE_Long:
+                                type = Type::Int64;
+                                break;
+                            case PRIMITIVETYPE_Point2d:
+                                type = Type::Point2d;
+                                break;
+                            case PRIMITIVETYPE_Point3d:
+                                type = Type::Point3d;
+                                break;
+                            case PRIMITIVETYPE_String:
+                                type = Type::String;
+                                break;
+                            default:
+                                Napi::TypeError::New(info.Env(), "Unsupported ECSqlValue primitive type.").ThrowAsJavaScriptException();
+                                break;
+                        }
+                    }
+
+                return Napi::Number::New(Env(), (int) type);
+                }
+
+            Napi::Value GetPropertyPath(const Napi::CallbackInfo& info)
+                {
+                if (info.Length() != 0)
+                    Napi::TypeError::New(info.Env(), "GetPropertyPath must not have arguments").ThrowAsJavaScriptException();
+
+                return Napi::String::New(Env(), GetColInfo().GetPropertyPath().ToString().c_str());
+                }
+
+            Napi::Value GetPropertyName(const Napi::CallbackInfo& info)
+                {
+                if (info.Length() != 0)
+                    Napi::TypeError::New(info.Env(), "GetPropertyName must not have arguments").ThrowAsJavaScriptException();
+
+                ECPropertyCP prop = GetColInfo().GetProperty();
+                Utf8String propName;
+                if (prop != nullptr)
+                    propName.assign(prop->GetName());
+
+                return Napi::String::New(Env(), propName.c_str());
+                }
+
+            Napi::Value IsSystemProperty(const Napi::CallbackInfo& info)
+                {
+                if (info.Length() != 0)
+                    Napi::TypeError::New(info.Env(), "IsSystemProperty must not have arguments").ThrowAsJavaScriptException();
+
+                return Napi::Boolean::New(Env(), GetColInfo().IsSystemProperty());
+                }
+
+            Napi::Value IsGeneratedProperty(const Napi::CallbackInfo& info)
+                {
+                if (info.Length() != 0)
+                    Napi::TypeError::New(info.Env(), "IsGeneratedProperty must not have arguments").ThrowAsJavaScriptException();
+
+                return Napi::Boolean::New(Env(), GetColInfo().IsGeneratedProperty());
+                }
+
+            Napi::Value GetRootClassTableSpace(const Napi::CallbackInfo& info)
+                {
+                if (info.Length() != 0)
+                    Napi::TypeError::New(info.Env(), "GetRootClassTableSpace must not have arguments").ThrowAsJavaScriptException();
+
+                return Napi::String::New(Env(), GetColInfo().GetRootClass().GetTableSpace().c_str());
+                }
+
+            Napi::Value GetRootClassName(const Napi::CallbackInfo& info)
+                {
+                if (info.Length() != 0)
+                    Napi::TypeError::New(info.Env(), "GetRootClassName must not have arguments").ThrowAsJavaScriptException();
+
+                return Napi::String::New(Env(), ECJsonUtilities::FormatClassName(GetColInfo().GetRootClass().GetClass()).c_str());
+                }
+
+            Napi::Value GetRootClassAlias(const Napi::CallbackInfo& info)
+                {
+                if (info.Length() != 0)
+                    Napi::TypeError::New(info.Env(), "GetRootClassAlias must not have arguments").ThrowAsJavaScriptException();
+
+                return Napi::String::New(Env(), GetColInfo().GetRootClass().GetAlias().c_str());
+                }
+        };
+
+//=======================================================================================
+// Projects the IECSqlValue interface into JS.
+//! @bsiclass
+//=======================================================================================
+struct AddonECSqlValue : Napi::ObjectWrap<AddonECSqlValue>
+    {
+private:
+    static Napi::FunctionReference s_constructor;
+    IECSqlValue const* m_ecsqlValue = nullptr;
+    ECDb const* m_ecdb = nullptr;
+
+
+    IECSqlValue const& GetECSqlValue() const
+        {
+        if (m_ecsqlValue == nullptr)
+            Napi::TypeError::New(Env(), "Invalid ECSqlValue").ThrowAsJavaScriptException();
+
+        return *m_ecsqlValue;
+        }
+public:
+    AddonECSqlValue(Napi::CallbackInfo const& info) : Napi::ObjectWrap<AddonECSqlValue>(info)
+        {
+        if (info.Length() != 2)
+            Napi::TypeError::New(Env(), "AddonECSqlValue constructor expects two arguments.").ThrowAsJavaScriptException();
+
+        m_ecsqlValue = info[0].As<Napi::External<IECSqlValue>>().Data();
+        if (m_ecsqlValue == nullptr)
+            Napi::TypeError::New(Env(), "Invalid first arg for AddonECSqlValue constructor. IECSqlValue must not be nullptr").ThrowAsJavaScriptException();
+
+        m_ecdb = info[1].As<Napi::External<ECDb>>().Data();
+        if (m_ecdb == nullptr)
+            Napi::TypeError::New(Env(), "Invalid second arg for AddonECSqlValue constructor. ECDb must not be nullptr").ThrowAsJavaScriptException();
+        }
+
+    ~AddonECSqlValue() {}
+
+    static bool InstanceOf(Napi::Value val)
+        {
+        if (!val.IsObject())
+            return false;
+
+        Napi::HandleScope scope(val.Env());
+        return val.As<Napi::Object>().InstanceOf(s_constructor.Value());
+        }
+
+    //  Create projections
+    static void Init(Napi::Env& env, Napi::Object exports)
+        {
+        // ***
+        // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
+        // ***
+        Napi::HandleScope scope(env);
+        Napi::Function t = DefineClass(env, "AddonECSqlValue", {
+        InstanceMethod("dispose", &AddonECSqlValue::Dispose),
+        InstanceMethod("isNull", &AddonECSqlValue::IsNull),
+        InstanceMethod("getColumnInfo", &AddonECSqlValue::GetColumnInfo),
+        InstanceMethod("getBlob", &AddonECSqlValue::GetBlob),
+        InstanceMethod("getBoolean", &AddonECSqlValue::GetBoolean),
+        InstanceMethod("getDateTime", &AddonECSqlValue::GetDateTime),
+        InstanceMethod("getDouble", &AddonECSqlValue::GetDouble),
+        InstanceMethod("getId", &AddonECSqlValue::GetId),
+        InstanceMethod("getInt", &AddonECSqlValue::GetInt),
+        InstanceMethod("getInt64", &AddonECSqlValue::GetInt64),
+        InstanceMethod("getPoint2d", &AddonECSqlValue::GetPoint2d),
+        InstanceMethod("getPoint3d", &AddonECSqlValue::GetPoint3d),
+        InstanceMethod("getString", &AddonECSqlValue::GetString),
+        InstanceMethod("getNavigation", &AddonECSqlValue::GetNavigation),
+        InstanceMethod("getStructIterator", &AddonECSqlValue::GetStructIterator),
+        InstanceMethod("getArrayIterator", &AddonECSqlValue::GetArrayIterator)
+        });
+
+        exports.Set("AddonECSqlValue", t);
+
+        s_constructor = Napi::Persistent(t);
+        // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
+        // from running at program shutdown time, which would attempt to reset the reference when
+        // the environment is no longer valid.
+        s_constructor.SuppressDestruct();
+        }
+
+    static Napi::Object New(Napi::Env const& env, IECSqlValue const& val, ECDbCR ecdb)
+        {
+        return s_constructor.New({Napi::External<IECSqlValue>::New(env, const_cast<IECSqlValue*>(&val)), Napi::External<ECDb>::New(env, const_cast<ECDb*>(&ecdb))});
+        }
+
+    void Dispose(const Napi::CallbackInfo& info)
+        {
+        if (m_ecsqlValue != nullptr)
+            m_ecsqlValue = nullptr;
+
+        if (m_ecdb != nullptr)
+            m_ecdb = nullptr;
+        }
+
+    Napi::Value GetColumnInfo(const Napi::CallbackInfo& info)
+        {
+        if (info.Length() != 0)
+            Napi::TypeError::New(info.Env(), "GetColumnInfo must not have arguments").ThrowAsJavaScriptException();
+
+        return AddonECSqlColumnInfo::New(Env(), GetECSqlValue().GetColumnInfo());
+        }
+
+    Napi::Value IsNull(const Napi::CallbackInfo& info)
+        {
+        if (info.Length() != 0)
+            Napi::TypeError::New(info.Env(), "IsNull must not have arguments").ThrowAsJavaScriptException();
+
+        return Napi::Boolean::New(Env(), GetECSqlValue().IsNull());
+        }
+
+    Napi::Value GetBlob(const Napi::CallbackInfo& info)
+        {
+        if (info.Length() != 0)
+            Napi::TypeError::New(info.Env(), "GetBlob must not have arguments").ThrowAsJavaScriptException();
+
+        int blobSize = -1;
+        void const* blob = GetECSqlValue().GetBlob(&blobSize);
+
+        Utf8String base64Str;
+        Base64Utilities::Encode(base64Str, (Byte const*) blob, (size_t) blobSize);
+
+        return Napi::String::New(Env(), base64Str.c_str());
+        }
+
+    Napi::Value GetBoolean(const Napi::CallbackInfo& info)
+        {
+        if (info.Length() != 0)
+            Napi::TypeError::New(info.Env(), "GetBoolean must not have arguments").ThrowAsJavaScriptException();
+
+        return Napi::Boolean::New(Env(), GetECSqlValue().GetBoolean());
+        }
+
+    Napi::Value GetDateTime(const Napi::CallbackInfo& info)
+        {
+        if (info.Length() != 0)
+            Napi::TypeError::New(info.Env(), "GetDateTime must not have arguments").ThrowAsJavaScriptException();
+
+        DateTime dt = GetECSqlValue().GetDateTime();
+        return Napi::String::New(Env(), dt.ToString().c_str());
+        }
+
+    Napi::Value GetDouble(const Napi::CallbackInfo& info)
+        {
+        if (info.Length() != 0)
+            Napi::TypeError::New(info.Env(), "GetBlob must not have arguments").ThrowAsJavaScriptException();
+
+        return Napi::Number::New(Env(), GetECSqlValue().GetDouble());
+        }
+
+    Napi::Value GetId(const Napi::CallbackInfo& info)
+        {
+        if (info.Length() != 0)
+            Napi::TypeError::New(info.Env(), "GetId must not have arguments").ThrowAsJavaScriptException();
+
+        const BeInt64Id id = GetECSqlValue().GetId<BeInt64Id>();
+        return Napi::String::New(Env(), id.ToHexStr().c_str());
+        }
+
+    Napi::Value GetInt(const Napi::CallbackInfo& info)
+        {
+        if (info.Length() != 0)
+            Napi::TypeError::New(info.Env(), "GetInt must not have arguments").ThrowAsJavaScriptException();
+
+        return Napi::Number::New(Env(), GetECSqlValue().GetInt());
+        }
+
+    Napi::Value GetInt64(const Napi::CallbackInfo& info)
+        {
+        if (info.Length() != 0)
+            Napi::TypeError::New(info.Env(), "GetInt64 must not have arguments").ThrowAsJavaScriptException();
+
+        return Napi::Number::New(Env(), GetECSqlValue().GetInt64());
+        }
+
+    Napi::Value GetPoint2d(const Napi::CallbackInfo& info)
+        {
+        if (info.Length() != 0)
+            Napi::TypeError::New(info.Env(), "GetPoint2d must not have arguments").ThrowAsJavaScriptException();
+
+        DPoint2d pt = GetECSqlValue().GetPoint2d();
+        Napi::Object jsPt = Napi::Object::New(Env());
+        jsPt.Set(ECN::ECJsonSystemNames::Point::X(), Napi::Number::New(Env(), pt.x));
+        jsPt.Set(ECN::ECJsonSystemNames::Point::Y(), Napi::Number::New(Env(), pt.y));
+        return jsPt;
+        }
+
+    Napi::Value GetPoint3d(const Napi::CallbackInfo& info)
+        {
+        if (info.Length() != 0)
+            Napi::TypeError::New(info.Env(), "GetPoint3d must not have arguments").ThrowAsJavaScriptException();
+
+        DPoint3d pt = GetECSqlValue().GetPoint3d();
+        Napi::Object jsPt = Napi::Object::New(Env());
+        jsPt.Set(ECN::ECJsonSystemNames::Point::X(), Napi::Number::New(Env(), pt.x));
+        jsPt.Set(ECN::ECJsonSystemNames::Point::Y(), Napi::Number::New(Env(), pt.y));
+        jsPt.Set(ECN::ECJsonSystemNames::Point::Z(), Napi::Number::New(Env(), pt.z));
+        return jsPt;
+        }
+
+    Napi::Value GetString(const Napi::CallbackInfo& info)
+        {
+        if (info.Length() != 0)
+            Napi::TypeError::New(info.Env(), "GetString must not have arguments").ThrowAsJavaScriptException();
+
+        return Napi::String::New(Env(), GetECSqlValue().GetText());
+        }
+
+    Napi::Value GetNavigation(const Napi::CallbackInfo& info)
+        {
+        if (info.Length() != 0)
+            Napi::TypeError::New(info.Env(), "GetNavigation must not have arguments").ThrowAsJavaScriptException();
+
+        ECClassId relClassId;
+        BeInt64Id navId = GetECSqlValue().GetNavigation(&relClassId);
+
+        Napi::Object jsNavValue = Napi::Object::New(Env());
+        jsNavValue.Set(ECN::ECJsonSystemNames::Navigation::Id(), Napi::String::New(Env(), navId.ToHexStr().c_str()));
+        if (relClassId.IsValid())
+            {
+            Utf8StringCR relClassTableSpace = GetECSqlValue().GetColumnInfo().GetRootClass().GetTableSpace();
+            ECClassCP relClass = m_ecdb->Schemas().GetClass(relClassId, relClassTableSpace.c_str());
+            if (relClass == nullptr)
+                Napi::TypeError::New(info.Env(), "Failed to find ECRelationhipClass for the Navigation Value's RelECClassId.").ThrowAsJavaScriptException();
+
+            Utf8String relClassName = ECJsonUtilities::FormatClassName(*relClass);
+            jsNavValue.Set(ECN::ECJsonSystemNames::Navigation::RelClassName(), Napi::String::New(Env(), relClassName.c_str()));
+            }
+
+        return jsNavValue;
+        }
+
+    //implementations are after AddonECSqlValueIterable as it needs to call into that class
+    Napi::Value GetStructIterator(const Napi::CallbackInfo&);
+    Napi::Value GetArrayIterator(const Napi::CallbackInfo&);
+    };
+
+//=======================================================================================
+// Projects the IECSqlValueIterable interface into JS.
+//! @bsiclass
+//=======================================================================================
+struct AddonECSqlValueIterator : Napi::ObjectWrap<AddonECSqlValueIterator>
+    {
+    private:
+        static Napi::FunctionReference s_constructor;
+        ECDb const* m_ecdb = nullptr;
+        IECSqlValueIterable::const_iterator m_it;
+        IECSqlValueIterable::const_iterator m_endIt;
+
+    public:
+        AddonECSqlValueIterator(Napi::CallbackInfo const& info) : Napi::ObjectWrap<AddonECSqlValueIterator>(info)
+            {
+            if (info.Length() != 2)
+                Napi::TypeError::New(Env(), "AddonECSqlValueIterator constructor expects two argument.").ThrowAsJavaScriptException();
+
+            IECSqlValueIterable const* iterable = info[0].As<Napi::External<IECSqlValueIterable>>().Data();
+            if (iterable == nullptr)
+                Napi::TypeError::New(Env(), "Invalid first arg for AddonECSqlValueIterator constructor. IECSqlValueIterable must not be nullptr").ThrowAsJavaScriptException();
+
+            m_it = iterable->begin();
+            m_endIt = iterable->end();
+
+            m_ecdb = info[1].As<Napi::External<ECDb>>().Data();
+            if (m_ecdb == nullptr)
+                Napi::TypeError::New(Env(), "Invalid second arg for AddonECSqlValueIterator constructor. ECDb must not be nullptr").ThrowAsJavaScriptException();
+            }
+
+        ~AddonECSqlValueIterator() {}
+
+        static bool InstanceOf(Napi::Value val)
+            {
+            if (!val.IsObject())
+                return false;
+
+            Napi::HandleScope scope(val.Env());
+            return val.As<Napi::Object>().InstanceOf(s_constructor.Value());
+            }
+
+        //  Create projections
+        static void Init(Napi::Env& env, Napi::Object exports)
+            {
+            // ***
+            // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
+            // ***
+            Napi::HandleScope scope(env);
+            Napi::Function t = DefineClass(env, "AddonECSqlValueIterator", {
+            InstanceMethod("dispose", &AddonECSqlValueIterator::Dispose),
+            InstanceMethod("moveNext", &AddonECSqlValueIterator::MoveNext),
+            InstanceMethod("getCurrent", &AddonECSqlValueIterator::GetCurrent)});
+
+            exports.Set("AddonECSqlValueIterator", t);
+
+            s_constructor = Napi::Persistent(t);
+            // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
+            // from running at program shutdown time, which would attempt to reset the reference when
+            // the environment is no longer valid.
+            s_constructor.SuppressDestruct();
+            }
+
+        static Napi::Object New(Napi::Env const& env, IECSqlValueIterable const& iterable, ECDb const& ecdb)
+            {
+            return s_constructor.New({Napi::External<IECSqlValueIterable>::New(env, const_cast<IECSqlValueIterable*>(&iterable)), Napi::External<ECDb>::New(env, const_cast<ECDb*>(&ecdb))});
+            }
+
+        void Dispose(const Napi::CallbackInfo& info) 
+            {
+            if (m_ecdb != nullptr)
+                m_ecdb = nullptr;
+            }
+
+        Napi::Value MoveNext(const Napi::CallbackInfo& info)
+            {
+            if (info.Length() != 0)
+                Napi::TypeError::New(info.Env(), "AddonECSqlValueIterator::MoveNext must not have arguments").ThrowAsJavaScriptException();
+
+            if (m_it != m_endIt)
+                ++m_it; //don't increment if the iterator is already at its end.
+
+            return Napi::Boolean::New(info.Env(), m_it != m_endIt);
+            }
+
+        Napi::Value GetCurrent(const Napi::CallbackInfo& info)
+            {
+            if (info.Length() != 0)
+                Napi::TypeError::New(info.Env(), "AddonECSqlValueIterator::GetCurrent must not have arguments").ThrowAsJavaScriptException();
+
+            return AddonECSqlValue::New(Env(), *m_it, *m_ecdb);
+            }
+    };
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle               01/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+Napi::Value AddonECSqlValue::GetStructIterator(const Napi::CallbackInfo& info)
+    {
+    if (info.Length() != 0)
+        Napi::TypeError::New(info.Env(), "GetStructIterator must not have arguments").ThrowAsJavaScriptException();
+
+    return AddonECSqlValueIterator::New(info.Env(), GetECSqlValue().GetStructIterable(), *m_ecdb);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle               01/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+Napi::Value AddonECSqlValue::GetArrayIterator(const Napi::CallbackInfo& info)
+    {
+    if (info.Length() != 0)
+        Napi::TypeError::New(info.Env(), "GetArrayIterator must not have arguments").ThrowAsJavaScriptException();
+
+    return AddonECSqlValueIterator::New(info.Env(), GetECSqlValue().GetArrayIterable(), *m_ecdb);
+    }
+
+
+//=======================================================================================
 // Projects the ECSqlStatement class into JS.
 //! @bsiclass
 //=======================================================================================
@@ -1463,6 +2029,8 @@ public:
           InstanceMethod("bindValues", &AddonECSqlStatement::BindValues),
           InstanceMethod("step", &AddonECSqlStatement::Step),
           InstanceMethod("stepForInsert", &AddonECSqlStatement::StepForInsert),
+          InstanceMethod("getColumnCount", &AddonECSqlStatement::GetColumnCount),
+          InstanceMethod("getValue", &AddonECSqlStatement::GetValue),
           InstanceMethod("getRow", &AddonECSqlStatement::GetRow),
         });
 
@@ -1601,6 +2169,36 @@ public:
         return ret;
         }
 
+    Napi::Value GetColumnCount(const Napi::CallbackInfo& info)
+        {
+        MUST_HAVE_M_STMT;
+        if (info.Length() != 0)
+            {
+            Napi::TypeError::New(Env(), "GetColumnCount requires no arguments").ThrowAsJavaScriptException();
+            return Env().Undefined();
+            }
+
+        int colCount = m_stmt->GetColumnCount();
+        return Napi::Number::New(info.Env(), colCount);
+        }
+
+    Napi::Value GetValue(const Napi::CallbackInfo& info)
+        {
+        MUST_HAVE_M_STMT;
+
+        if (info.Length() != 1)
+            {
+            Napi::TypeError::New(Env(), "GetValue requires column index").ThrowAsJavaScriptException();
+            return Env().Undefined();
+            }
+
+        REQUIRE_ARGUMENT_INTEGER(0, colIndex);
+
+        IECSqlValue const& val = m_stmt->GetValue(colIndex);
+        return AddonECSqlValue::New(info.Env(), val, *m_stmt->GetECDb());
+        }
+
+    //! @deprecated Use AddonECSqlStatement::GetValue instead
     Napi::Value GetRow(const Napi::CallbackInfo& info)
         {
         MUST_HAVE_M_STMT;
@@ -1763,6 +2361,9 @@ static Napi::Object iModelJsAddonRegisterModule(Napi::Env env, Napi::Object expo
     IModelJsAddon::AddonECDb::Init(env, exports);
     IModelJsAddon::AddonECSqlStatement::Init(env, exports);
     IModelJsAddon::AddonECSqlBinder::Init(env, exports);
+    IModelJsAddon::AddonECSqlValue::Init(env, exports);
+    IModelJsAddon::AddonECSqlColumnInfo::Init(env, exports);
+    IModelJsAddon::AddonECSqlValueIterator::Init(env, exports);
     IModelJsAddon::AddonBriefcaseManagerResourcesRequest::Init(env, exports);
     IModelJsAddon::AddonECPresentationManager::Init(env, exports);
 
@@ -1777,6 +2378,9 @@ static Napi::Object iModelJsAddonRegisterModule(Napi::Env env, Napi::Object expo
 Napi::FunctionReference IModelJsAddon::AddonBriefcaseManagerResourcesRequest::s_constructor;
 Napi::FunctionReference IModelJsAddon::AddonECSqlStatement::s_constructor;
 Napi::FunctionReference IModelJsAddon::AddonECSqlBinder::s_constructor;
+Napi::FunctionReference IModelJsAddon::AddonECSqlValue::s_constructor;
+Napi::FunctionReference IModelJsAddon::AddonECSqlColumnInfo::s_constructor;
+Napi::FunctionReference IModelJsAddon::AddonECSqlValueIterator::s_constructor;
 Napi::FunctionReference IModelJsAddon::AddonDgnDb::s_constructor;
 Napi::FunctionReference IModelJsAddon::AddonECPresentationManager::s_constructor;
 Napi::FunctionReference IModelJsAddon::AddonECDb::s_constructor;

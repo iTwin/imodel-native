@@ -515,15 +515,15 @@ declare class AddonECSqlStatement implements IDisposable {
     constructor();
 
     /**
-     * Prepare an ECSql statement.
+     * Prepare an ECSQL statement.
      * @param db The native DgnDb object
-     * @param ecSql The statement to prepare
-     * @return Zero status in case of success. Non-zero error status in case of failure. The error's message property will contain additional information.
+     * @param ecsql The ECSQL to prepare
+     * @return Returns the Zero status in case of success. Non-zero error status in case of failure. The error's message property will contain additional information.
      */
-    prepare(db: AddonDgnDb | AddonECDb, ecSql: string): StatusCodeWithMessage<DbResult>;
+    prepare(db: AddonDgnDb | AddonECDb, ecsql: string): StatusCodeWithMessage<DbResult>;
 
     /** Reset the statement to just before the first row.
-     * @return non-zero error status in case of failure.
+     * @return Returns non-zero error status in case of failure.
      */
     reset(): DbResult;
 
@@ -533,35 +533,48 @@ declare class AddonECSqlStatement implements IDisposable {
     /**
      * Gets a binder for the specified parameter. It can be used to bind any type of values to the parameter.
      * @param param Index (1-based) or name (without leading colon) of the parameter.
-     * @return Binder for the specified parameter
+     * @return Returns the binder for the specified parameter
      */
     getBinder(param: number | string): AddonECSqlBinder;
 
     /** Clear the bindings of this statement. See bindValues.
-     * @return non-zero error status in case of failure.
+     * @return Returns a non-zero error status in case of failure.
      */
     clearBindings(): DbResult;
 
     /** @deprecated Use getBinder instead
-     * Bind one or more values to placeholders in this ECSql statement.
+     * Bind one or more values to placeholders in this ECSQL statement.
      * @param valuesJson The values to bind in stringified JSON format. The values must be an array if the placeholders are positional, or an any object with properties if the placeholders are named.
-     * @return Zero status in case of success. Non-zero error status in case of failure. The error's message property will contain additional information.
+     * @return Returns the Zero status in case of success. Non-zero error status in case of failure. The error's message property will contain additional information.
      */
     bindValues(valuesJson: string): StatusCodeWithMessage<DbResult>;
 
     /** Step this statement to move to the next row.
-     * @return BE_SQLITE_ROW if the step moved to a new row. BE_SQLITE_DONE if the step failed because there is no next row. Another non-zero error status if step failed because of an error.
+     * @return Returns BE_SQLITE_ROW if the step moved to a new row. Returns BE_SQLITE_DONE if the step failed because there is no next row. Another non-zero error status if step failed because of an error.
     */
     step(): DbResult;
 
     /** Step this INSERT statement and returns the status along with the ECInstanceId of the newly inserted row.
-     * @return BE_SQLITE_DONE if the insert was successful. Another non-zero error status if step failed because of an error.
+     * @return Returns BE_SQLITE_DONE if the insert was successful. Returns another non-zero error status if step failed because of an error.
     */
     stepForInsert(): { status: DbResult, id: string };
 
-    /**
+    /** 
+    * Get the value of the specified column for the current row
+    * @param columnIndex Index (0-based) of the column in the ECSQL SELECT clause for which the value is to be retrieved.
+    * @return Returns the ECSQL value of the specified column for the current row
+    */
+    getValue(columnIndex: number): AddonECSqlValue;
+
+    /** 
+    * Get the number of ECSQL columns in the result set after calling step on a SELECT statement.
+    * @return Returns the ECSQL value of the specified column for the current row
+    */
+    getColumnCount(): number;
+
+    /** @deprecated Use getValue instead
      * Get the current row, which the most recent step reached.
-     * @return The current row in JSON stringified format.
+     * @return Returns the current row in JSON stringified format.
      */
     getRow(): string;
 
@@ -648,6 +661,110 @@ declare class AddonECSqlBinder implements IDisposable {
      * @return Binder for the new array element.
      */
     addArrayElement(): AddonECSqlBinder;
+}
+
+/* The data type of an AddonECSqlValue. */
+export enum ECSqlValueType {
+    Blob = 1,
+    Boolean = 2,
+    DateTime = 3,
+    Double = 4,
+    Geometry = 5,
+    Id = 6,
+    Int = 7,
+    Int64 = 8,
+    Point2d = 9,
+    Point3d = 10,
+    String = 11,
+    Navigation = 12,
+    Struct = 13,
+    PrimitiveArray = 14,
+    StructArray = 15
+}
+
+/* The AddonECSqlColumnInfo class that is projected by the iModelJs node addon. 
+   @remarks No need to dispose this is its native counterpart is owned by the IECSqlValue. */
+declare class AddonECSqlColumnInfo {
+    constructor();
+
+    /** Gets the data type of the column. */
+    getType(): ECSqlValueType;
+    /** Gets the ECSQL property path of the column. */
+    getPropertyPath(): string;
+    /** Gets the name of the ECProperty backing the column.
+     * @remarks This is the leaf entry of the ECSQL property path.
+     */
+    getPropertyName(): string;
+    /** Indicates whether the column refers to a system property (e.g. id, className) backing the column. */
+    isSystemProperty(): boolean;
+    /** Indicates whether the column is backed by a generated property or not. For SELECT clause items that are expressions other
+     * than simply a reference to an ECProperty, a property is generated containing the expression name.
+     */
+    isGeneratedProperty(): boolean;
+    /** Gets the table space in which this root class is persisted.
+     * @remarks for classes in the primary file the table space is MAIN. For classes in attached
+     * files, the table space is the name by which the file was attached (see BentleyApi::BeSQLite::Db::AttachDb)
+     * For generated properties the table space is empty */
+    getRootClassTableSpace(): string;
+    /** Gets the fully qualified name of the ECClass of the top-level ECProperty backing this column. */
+    getRootClassName(): string;
+    /** Gets the class alias of the root class to which the column refers to.
+     * @returns Returns the alias of root class the column refers to or an empty string if no class alias was specified in the select clause */
+    getRootClassAlias(): string;
+}
+
+/* The AddonECSqlValue class that is projected by the iModelJs node addon. */
+declare class AddonECSqlValue implements IDisposable {
+    constructor();
+
+    dispose(): void;
+
+    /** Get information about the ECSQL SELECT clause column this value refers to. */
+    getColumnInfo(): AddonECSqlColumnInfo;
+
+    isNull(): boolean;
+    /** Get value as a BLOB, formatted as Base64-encoded string. */
+    getBlob(): string;
+    /** Get value as boolean. */
+    getBoolean(): boolean;
+    /** Get value as date time, formatted as ISO8601 string. */
+    getDateTime(): string;
+    /** Get value as double. */
+    getDouble(): number;
+    /** Get value as id, formatted as hexadecimal string. */
+    getId(): string;
+    /** Get value as int. */
+    getInt(): number;
+    /** Get value as int64. This method does not deal with JS accuracy issues of int64 values greater than 2^53. */
+    getInt64(): number;
+    /** Get value as Point2d. */
+    getPoint2d(): { x: number, y: number };
+    /** Get value as Point3d. */
+    getPoint3d(): { x: number, y: number, z: number};
+    /** Get value as string. */
+    getString(): string;
+    /** Get value as Navigation property value. */
+    getNavigation(): { id: string, relClassName?: string };
+
+    /** Get an iterator for iterating the struct members of this struct value. */
+    getStructIterator(): AddonECSqlValueIterator;
+    /** Get an iterator for iterating the array elements of this array value. */
+    getArrayIterator(): AddonECSqlValueIterator;
+}
+
+/* The AddonECSqlValueIterator class that is projected by the iModelJs node addon. */
+declare class AddonECSqlValueIterator implements IDisposable {
+    constructor();
+    dispose(): void;
+    /**
+     * Move the iterator to the next ECSqlValue.
+     * @returns Returns true if the iterator now points to the next element. Returns false if the iterator reached the end.
+     */
+    moveNext(): boolean;
+    /**
+     * Get the ECSqlValue the iterator is currently pointing to.
+     */
+    getCurrent(): AddonECSqlValue;
 }
 
 /* The AddonECPresentationManager class that is projected by the iModelJs node addon. */
