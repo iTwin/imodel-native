@@ -618,12 +618,17 @@ public:
 struct CompositeValue
     {
 private:
+	bool m_negative;
     double m_parts[CompositeValueSpec::indxLimit];
     FormatProblemDetail m_problem;
-
+	double GetSignFactor() { return m_negative ? -1.0 : 1.0; }
     void Init();
 public:
     UNITS_EXPORT CompositeValue();
+	void SetNegative() { m_negative = true; }
+	void SetPositive() { m_negative = false; }
+	Utf8String GetSignPrefix(bool useParenth = false) { return m_negative?  (useParenth ? "(" : "-") : ""; }
+	Utf8String GetSignSuffix(bool useParenth = false) { return m_negative ? (useParenth ? ")" : "") : ""; }
     double SetMajor(double dval)  { return m_parts[CompositeValueSpec::indxMajor] = dval; }
     double SetMiddle(double dval) { return m_parts[CompositeValueSpec::indxMiddle] = dval; }
     double SetMinor(double dval)  { return m_parts[CompositeValueSpec::indxMinor] = dval; }

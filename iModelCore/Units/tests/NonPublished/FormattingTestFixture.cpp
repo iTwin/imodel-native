@@ -235,7 +235,7 @@ void FormattingTestFixture::ShowQuantity(double dval, Utf8CP uom, Utf8CP fusUnit
         }
 
     Utf8String fmtQ = fus.FormatQuantity(q, space);
-    LOG.infov("===ShowQuantity: %f of %s = %s", dval, uom, fmtQ.c_str());
+    LOG.infov("\n===ShowQuantity: %f of %s = %s", dval, uom, fmtQ.c_str());
     Json::Value jval = fus.FormatQuantityJson(q, true);
     Utf8String jsonQ = jval.ToString();
     LOG.infov("JSON: %s", jsonQ.c_str());
