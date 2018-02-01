@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/IntegrationTests/BeHttp/HttpRequestTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "Tests.h"
@@ -841,7 +841,7 @@ struct MethodParam
 
 std::ostream& operator<<(std::ostream& os, const MethodParam& value)
     {
-    os << value.url << "," << value.method << "," << Utf8PrintfString("%.8s(%d)", value.requestBody.c_str(), value.requestBody.size());
+    os << value.url << "," << value.method << "," << Utf8PrintfString("Body: \"%.8s..\" Size:(%d)", value.requestBody.c_str(), value.requestBody.size());
     return os;
     }
 
