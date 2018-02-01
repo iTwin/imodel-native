@@ -130,12 +130,7 @@ ECSqlStatus SingleECSqlPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         }
 
     //don't let BeSQLite log and assert on error (therefore use TryPrepare instead of Prepare)
-    DbResult nativeSqlStat;
- 
-    if (DbCP conn = ctx.GetSecondaryConnection())
-        nativeSqlStat = m_sqliteStatement.TryPrepare(*conn, nativeSql.c_str());
-    else
-        nativeSqlStat = m_sqliteStatement.TryPrepare(m_ecdb, nativeSql.c_str());
+    const DbResult nativeSqlStat = m_sqliteStatement.TryPrepare(ctx.GetDataSourceConnection(), nativeSql.c_str());
 
     if (nativeSqlStat != BE_SQLITE_OK)
         {
@@ -192,11 +187,23 @@ DbResult SingleECSqlPreparedStatement::DoStep()
         return BE_SQLITE_ERROR;
 
     const DbResult nativeSqlStatus = m_sqliteStatement.Step();
-    if (BE_SQLITE_ROW != nativeSqlStatus && BE_SQLITE_DONE != nativeSqlStatus)
+    switch (nativeSqlStatus)
         {
-        Utf8String msg;
-        msg.Sprintf("Step failed for ECSQL '%s': SQLite Step failed [Native SQL: '%s'] with. Error:", GetECSql(), GetNativeSql());
-        ECDbLogger::LogSqliteError(m_ecdb, nativeSqlStatus, msg.c_str());
+            case BE_SQLITE_ROW:
+            case BE_SQLITE_DONE:
+                break;
+
+            case BE_SQLITE_INTERRUPT:
+                LOG.infov("Stepping ECSqlStatement was interrupted. [ECSQL: %s, Native SQL: %s]", GetECSql(), GetNativeSql());
+                break;
+
+            default:
+            {
+            Utf8String msg;
+            msg.Sprintf("Step failed for ECSQL '%s': SQLite Step failed [Native SQL: '%s'] with. Error:", GetECSql(), GetNativeSql());
+            ECDbLogger::LogSqliteError(m_ecdb, nativeSqlStatus, msg.c_str());
+            break;
+            }
         }
 
     return nativeSqlStatus;

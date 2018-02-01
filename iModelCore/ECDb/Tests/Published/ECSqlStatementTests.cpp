@@ -17,107 +17,6 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 struct ECSqlStatementTestFixture : ECDbTestFixture {};
-//---------------------------------------------------------------------------------------
-// @bsimethod                                      Affan.Khan                 09/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, PrepareECSqlStatmentUsingSecondaryReadonlyConnection)
-    {
-    ASSERT_EQ(SUCCESS, SetupECDb("econn1.ecdb", SchemaItem(
-        R"xml(<?xml version="1.0" encoding="utf-8"?>
-                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                    <ECEntityClass typeName="A">
-                        <ECProperty propertyName="Name" typeName="string" />
-                        <ECProperty propertyName="Size" typeName="int" />
-                    </ECEntityClass>
-                    <ECEntityClass typeName="B">
-                        <ECProperty propertyName="Name" typeName="string" />
-                        <ECProperty propertyName="A" typeName="int" />
-                     </ECEntityClass>
-                </ECSchema>)xml")));
-
-    BeFileName seedFileA(m_ecdb.GetDbFileName(), true);
-    m_ecdb.CloseDb();
-
-    ASSERT_EQ(SUCCESS, SetupECDb("econn2.ecdb", SchemaItem(
-        R"xml(<?xml version="1.0" encoding="utf-8"?>
-                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                    <ECEntityClass typeName="A">
-                        <ECProperty propertyName="Name" typeName="string" />
-                        <ECProperty propertyName="Size" typeName="int" />
-                    </ECEntityClass>
-                    <ECEntityClass typeName="B">
-                        <ECProperty propertyName="Name" typeName="string" />
-                        <ECProperty propertyName="A" typeName="int" />
-                     </ECEntityClass>
-                </ECSchema>)xml")));
-
-    BeFileName seedFileB(m_ecdb.GetDbFileName(), true);
-    m_ecdb.CloseDb();
-
-
-    ECDb ecdbA, ecdbB;
-    Db dbA, dbB;
-
-    ASSERT_EQ(BE_SQLITE_OK, ecdbA.OpenBeSQLiteDb(seedFileA, Db::OpenParams(Db::OpenMode::Readonly)));
-    ASSERT_EQ(BE_SQLITE_OK, dbA.OpenBeSQLiteDb(seedFileA, Db::OpenParams(Db::OpenMode::Readonly)));
-    ASSERT_EQ(BE_SQLITE_OK, ecdbB.OpenBeSQLiteDb(seedFileB, Db::OpenParams(Db::OpenMode::Readonly)));
-    ASSERT_EQ(BE_SQLITE_OK, dbB.OpenBeSQLiteDb(seedFileB, Db::OpenParams(Db::OpenMode::Readonly)));
-
-    { //ECdb and Db must match. They must point to exact same file on disk
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdbA.Schemas(), dbA, "SELECT* FROM ts.A"));
-    }
-
-    { //ECdb and Db must match. They must point to exact same file on disk
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Error, stmt.Prepare(ecdbA.Schemas(), dbB, "SELECT* FROM ts.A"));
-    }
-
-    { //ECdb and Db must match. They must point to exact same file on disk
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Error, stmt.Prepare(ecdbB.Schemas(), dbA, "SELECT* FROM ts.A"));
-    }
-
-    { //ECdb and Db must match. They must point to exact same file on disk
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdbB.Schemas(), dbB, "SELECT* FROM ts.A"));
-    }
-
-    { //Only metaData could be read/write or readonly. Data connection must be readonly
-    Db wDbA;
-    ASSERT_EQ(BE_SQLITE_OK, wDbA.OpenBeSQLiteDb(seedFileA, Db::OpenParams(Db::OpenMode::ReadWrite)));
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Error, stmt.Prepare(ecdbA.Schemas(), wDbA, "SELECT* FROM ts.A"));
-    }
-
-    { //Only metaData could be read/write or readonly. Data connection must be readonly
-    ECDb wECDb;
-    ASSERT_EQ(BE_SQLITE_OK, wECDb.OpenBeSQLiteDb(seedFileA, Db::OpenParams(Db::OpenMode::ReadWrite)));
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(wECDb.Schemas(), dbA, "SELECT* FROM ts.A"));
-    }
-
-    { //Only SELECT is supported
-    ECDb wECDb;
-    ASSERT_EQ(BE_SQLITE_OK, wECDb.OpenBeSQLiteDb(seedFileA, Db::OpenParams(Db::OpenMode::ReadWrite)));
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Error, stmt.Prepare(wECDb.Schemas(), dbA, "insert into [ts].[A]([Name],[Size])values('foo', 2222)"));
-    }
-
-    { //Only SELECT is supported
-    ECDb wECDb;
-    ASSERT_EQ(BE_SQLITE_OK, wECDb.OpenBeSQLiteDb(seedFileA, Db::OpenParams(Db::OpenMode::ReadWrite)));
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Error, stmt.Prepare(wECDb.Schemas(), dbA, "update [ts].[A] set [Name]='foo',[Size]=233223"));
-    }
-
-    { //Only SELECT is supported
-    ECDb wECDb;
-    ASSERT_EQ(BE_SQLITE_OK, wECDb.OpenBeSQLiteDb(seedFileA, Db::OpenParams(Db::OpenMode::ReadWrite)));
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Error, stmt.Prepare(wECDb.Schemas(), dbA, "delete from [ts].[A]"));
-    }
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/15
@@ -6093,7 +5992,7 @@ TEST_F(ECSqlStatementTestFixture, ECInstanceIdConversion)
     EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId)) << "InstanceId with negative number '" << instanceId << "' is not expected to be supported by ECInstanceId::FromString";
 
     //now test with invalid instance ids
-    BeTest::SetFailOnAssert(false);
+    ScopedDisableFailOnAssertion disableFailOnAssertion;
 
     instanceId = "0x75BCD15";
     expectedECInstanceId = ECInstanceId(UINT64_C(123456789));
@@ -6109,9 +6008,139 @@ TEST_F(ECSqlStatementTestFixture, ECInstanceIdConversion)
 
     instanceId = "blabla";
     EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId)) << "Non-numeric InstanceId '" << instanceId << "' is not expected to be supported by ECInstanceId::FromString";
-
-    BeTest::SetFailOnAssert(true);
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Affan.Khan                 09/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, PrepareECSqlStatmentUsingSecondaryReadonlyConnection)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("econn1.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECEntityClass typeName="A">
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECProperty propertyName="Size" typeName="int" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="B">
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECProperty propertyName="A" typeName="int" />
+                     </ECEntityClass>
+                </ECSchema>)xml")));
+
+    BeFileName seedFileA(m_ecdb.GetDbFileName(), true);
+    m_ecdb.CloseDb();
+
+    ASSERT_EQ(SUCCESS, SetupECDb("econn2.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECEntityClass typeName="A">
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECProperty propertyName="Size" typeName="int" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="B">
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECProperty propertyName="A" typeName="int" />
+                     </ECEntityClass>
+                </ECSchema>)xml")));
+
+    BeFileName seedFileB(m_ecdb.GetDbFileName(), true);
+    m_ecdb.CloseDb();
+
+
+    ECDb ecdbA, ecdbB;
+    Db dbA, dbB;
+
+    ASSERT_EQ(BE_SQLITE_OK, ecdbA.OpenBeSQLiteDb(seedFileA, Db::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(BE_SQLITE_OK, dbA.OpenBeSQLiteDb(seedFileA, Db::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(BE_SQLITE_OK, ecdbB.OpenBeSQLiteDb(seedFileB, Db::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(BE_SQLITE_OK, dbB.OpenBeSQLiteDb(seedFileB, Db::OpenParams(Db::OpenMode::Readonly)));
+
+    { //ECdb and Db must match. They must point to exact same file on disk
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdbA.Schemas(), dbA, "SELECT* FROM ts.A"));
+    }
+
+    { //ECdb and Db must match. They must point to exact same file on disk
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Error, stmt.Prepare(ecdbA.Schemas(), dbB, "SELECT* FROM ts.A"));
+    }
+
+    { //ECdb and Db must match. They must point to exact same file on disk
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Error, stmt.Prepare(ecdbB.Schemas(), dbA, "SELECT* FROM ts.A"));
+    }
+
+    { //ECdb and Db must match. They must point to exact same file on disk
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdbB.Schemas(), dbB, "SELECT* FROM ts.A"));
+    }
+
+    { //Only metaData could be read/write or readonly. Data connection must be readonly
+    Db wDbA;
+    ASSERT_EQ(BE_SQLITE_OK, wDbA.OpenBeSQLiteDb(seedFileA, Db::OpenParams(Db::OpenMode::ReadWrite)));
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Error, stmt.Prepare(ecdbA.Schemas(), wDbA, "SELECT* FROM ts.A"));
+    }
+
+    { //Only metaData could be read/write or readonly. Data connection must be readonly
+    ECDb wECDb;
+    ASSERT_EQ(BE_SQLITE_OK, wECDb.OpenBeSQLiteDb(seedFileA, Db::OpenParams(Db::OpenMode::ReadWrite)));
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(wECDb.Schemas(), dbA, "SELECT* FROM ts.A"));
+    }
+
+    { //Only SELECT is supported
+    ECDb wECDb;
+    ASSERT_EQ(BE_SQLITE_OK, wECDb.OpenBeSQLiteDb(seedFileA, Db::OpenParams(Db::OpenMode::ReadWrite)));
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Error, stmt.Prepare(wECDb.Schemas(), dbA, "insert into [ts].[A]([Name],[Size])values('foo', 2222)"));
+    }
+
+    { //Only SELECT is supported
+    ECDb wECDb;
+    ASSERT_EQ(BE_SQLITE_OK, wECDb.OpenBeSQLiteDb(seedFileA, Db::OpenParams(Db::OpenMode::ReadWrite)));
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Error, stmt.Prepare(wECDb.Schemas(), dbA, "update [ts].[A] set [Name]='foo',[Size]=233223"));
+    }
+
+    { //Only SELECT is supported
+    ECDb wECDb;
+    ASSERT_EQ(BE_SQLITE_OK, wECDb.OpenBeSQLiteDb(seedFileA, Db::OpenParams(Db::OpenMode::ReadWrite)));
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Error, stmt.Prepare(wECDb.Schemas(), dbA, "delete from [ts].[A]"));
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                01/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, InterruptStep)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("InterruptStep.ecdb"));
+
+    int totalRowCount = -1;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT count(*) FROM meta.ECPropertyDef"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    totalRowCount = stmt.GetValueInt(0);
+    }
+
+    const int interruptAfterIterations = 5;
+    ASSERT_GE(totalRowCount, interruptAfterIterations + 100) << "There should be many rows after the interruption to make sure SQLite does not finish the stepping";
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM meta.ECPropertyDef"));
+
+    for (int i = 0; i < interruptAfterIterations; i++)
+        {
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        }
+
+    m_ecdb.Interrupt();
+    ASSERT_EQ(BE_SQLITE_INTERRUPT, stmt.Step());
+    }
+
 //---------------------------------------------------------------------------------
 // Verifies correct ECSQL parsing on Android
 // @bsimethod                              Affan.Khan                       10/13

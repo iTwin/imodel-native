@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/docs/samplecode/ECDbCRUD.sample.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECDb/ECDbApi.h>
@@ -881,5 +881,41 @@ BentleyStatus ECDb_ECSqlAndCustomSQLiteFunctions()
     return SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   01/18
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDb_ECSqlSelectMultiThreaded()
+    {
+    //__PUBLISH_EXTRACT_START__ Overview_ECDb_ECSqlSelectMultiThreaded.sampleCode
+    BeFileName filePath(L"C:\\mypath\\myfile.ecdb");
 
+    // in Thread 1...
+    ECDb ecdb;
+    ecdb.OpenBeSQLiteDb(filePath, ECDb::OpenParams(Db::OpenMode::Readonly));
+
+    // in Thread 2... 
+    // Data source connection must point to very same file and must be opened readonly!
+    Db dataSourceECDb;
+    dataSourceECDb.OpenBeSQLiteDb(filePath, ECDb::OpenParams(Db::OpenMode::Readonly));
+
+    // in Thread 1 or 2...
+    // Prepare statement
+    ECSqlStatement statement;
+    ECSqlStatus stat = statement.Prepare(ecdb.Schemas(), dataSourceECDb, "SELECT FirstName, LastName FROM stco.Employee WHERE LastName LIKE 'S%' ORDER BY LastName, FirstName");
+    if (!stat.IsSuccess())
+        {
+        // do error handling here...
+        return ERROR;
+        }
+
+    // in Thread 2...
+    // Execute statement and step over each row of the result set
+    while (BE_SQLITE_ROW == statement.Step())
+        {
+        // do something with the retrieved data of this row
+        }
+
+    //__PUBLISH_EXTRACT_END__
+    return SUCCESS;
+    }
 END_BENTLEY_SQLITE_EC_NAMESPACE

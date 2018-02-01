@@ -21,39 +21,28 @@ NativeLogging::ILogger* ECSqlStatement::Impl::s_prepareDiagnosticsLogger = nullp
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        03/17
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Utf8CP ecsql, ECCrudWriteToken const* writeToken, bool logErrors, DbCP readonlyConn)
+ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Db const* dataSourceECDb, Utf8CP ecsql, ECCrudWriteToken const* writeToken, bool logErrors)
     {
     ScopedIssueReporter issues(ecdb, logErrors);
-    //Is it the same connection
-    if (readonlyConn)
+    //Verify that dataSourceECDb meets all necessary conditions
+    if (dataSourceECDb != nullptr && dataSourceECDb != &ecdb)
         {
-        if (readonlyConn == &ecdb)
-            readonlyConn = nullptr;
-        else
+        if (!dataSourceECDb->IsDbOpen())
             {
-            if (!readonlyConn->IsDbOpen())
-                {
-                issues.Report("'readonlyConn' parameter poin to a connection that is not open");
-                return ECSqlStatus::Error;
-                }
+            issues.ReportV("Failed to prepare '%s'. The data source ECDb (parameter 'dataSourceECDb') is not open.", ecsql);
+            return ECSqlStatus::Error;
+            }
 
-            if (!readonlyConn->IsReadonly())
-                {
-                issues.Report("'readonlyConn' parameter must point to a readonly db connection");
-                return ECSqlStatus::Error;
-                }
+        if (!dataSourceECDb->IsReadonly())
+            {
+            issues.ReportV("Failed to prepare '%s'. The data source ECDb (parameter 'dataSourceECDb') is not a read-only connection.", ecsql);
+            return ECSqlStatus::Error;
+            }
 
-            if (readonlyConn->GetDbGuid() != ecdb.GetDbGuid())
-                {
-                issues.Report("'readonlyConn' parameter must point to a db that has same DbGuid as ecdb provided");
-                return ECSqlStatus::Error;
-                }
-
-            if (BeStringUtilities::Stricmp(readonlyConn->GetDbFileName(), ecdb.GetDbFileName()) != 0)
-                {
-                issues.Report("'readonlyConn' parameter must point to a db file on disk as the ecdb");
-                return ECSqlStatus::Error;
-                }            
+        if (dataSourceECDb->GetDbGuid() != ecdb.GetDbGuid() || BeStringUtilities::Stricmp(dataSourceECDb->GetDbFileName(), ecdb.GetDbFileName()) != 0)
+            {
+            issues.ReportV("Failed to prepare '%s'. The data source ECDb (parameter 'dataSourceECDb') must be a connection to the same ECDb file as the ECSQL parsing ECDb connection (parameter 'ecdb').", ecsql);
+            return ECSqlStatus::Error;
             }
         }
 
@@ -91,7 +80,8 @@ ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Utf8CP ecsql, ECCrudWrite
         return ECSqlStatus::Error;
         }
 
-    ECSqlPrepareContext ctx(preparedStatement, issues, readonlyConn);
+    //if dataSourceECDb is nullptr, the primary ECDb is used
+    ECSqlPrepareContext ctx(preparedStatement, dataSourceECDb != nullptr ? *dataSourceECDb : ecdb, issues);
     ECSqlStatus stat = preparedStatement.Prepare(ctx, *exp, ecsql);
     if (!stat.IsSuccess())
         Finalize();

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestFixture.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,6 +11,31 @@
 #include "TestHelper.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
+
+//=======================================================================================
+//! Disables "Fail On Assertion" for the lifetime of this object.
+//! Use this helper classes instead of BeTest::SetFailOnAssert as it automatically resets
+//! the FailOnAssert state when the ScopedDisableFailOnAssertion object goes out of scope
+// @bsiclass                                               Krischan.Eberle     01/2018
+//=======================================================================================    
+struct ScopedDisableFailOnAssertion final
+    {
+private:
+    bool m_isNoop = false;
+
+public:
+    explicit ScopedDisableFailOnAssertion(bool disable = true) : m_isNoop(!BeTest::GetFailOnAssert() || !disable)
+        {
+        if (!m_isNoop)
+            BeTest::SetFailOnAssert(false);
+        }
+
+    ~ScopedDisableFailOnAssertion()
+        {
+        if (!m_isNoop)
+            BeTest::SetFailOnAssert(true);
+        }
+    };
 
 //=======================================================================================
 //! ECDb that requires a schema import token. For testing the schema import token feature

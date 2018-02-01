@@ -92,12 +92,23 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! @return ECSqlStatus::Success or error codes
         ECDB_EXPORT ECSqlStatus Prepare(ECDb const& ecdb, Utf8CP ecsql, ECCrudWriteToken const* token, bool logErrors);
 
-        //! Prepares the statement with the specified SELECT ECSQL for multithreading senario.
-        //! @param[in] schemaManager schemaManager that is use to parse the ECSqlStatment. e.g. as returned from  @ref BentleyApi::BeSQLite::EC::ECDb::Schemas() "ECDb::Schemas()"
-        //! @param[in] datasource underlying BeSQLite connection to execute ECSqlStatment
-        //! @param[in] ecsql SELECT ECSQL
+        //! Prepares the statement with the specified @b SELECT ECSQL for multi-threading scenarios.
+        //! @remarks This special type of prepare uses two different ECDb connections to the @b same ECDb file. One connection
+        //! is used to parse the ECSQL (represented by @p schemaManager), the other connection is used to execute the statement
+        //! (represented by @p dataSourceECDb). This can be leveraged in multi-threading scenarios
+        //! where one thread would open the parse connection, and another thread the executing connection.
+        //! @note The following conditions must be met. Otherwise an error is returned
+        //!     * Only ECSQL SELECT is supported
+        //!     * Both connections must point to the very same ECDb file.
+        //!     * @p dataSourceECDb must be read-only
+        //!
+        //! @see @ref ECDbCodeSampleExecuteECSqlSelectMultiThreaded for a code example
+        //! @param[in] schemaManager SchemaManager that is to be used to parse the ECSQL. e.g. as returned from  @ref BentleyApi::BeSQLite::EC::ECDb::Schemas() "ECDb::Schemas()"
+        //! @param[in] dataSourceECDb Connection to the same %ECDb file which is to be used to execute ECSqlStatment. Must be read-only, but can be in a
+        //! another thread than @p schemaManager
+        //! @param[in] selectECSql SELECT ECSQL
         //! @return ECSqlStatus::Success or error codes
-        ECDB_EXPORT ECSqlStatus Prepare(SchemaManager const& schemaManager, Db const& datasource, Utf8CP ecsql);       
+        ECDB_EXPORT ECSqlStatus Prepare(SchemaManager const& schemaManager, Db const& dataSourceECDb, Utf8CP selectECSql);
 
         //! Indicates whether this statement is already prepared or not.
         //! @return true, if it is prepared. false otherwise
@@ -474,14 +485,14 @@ struct EXPORT_VTABLE_ATTRIBUTE CachedECSqlStatement final : ECSqlStatement
 
     private:
         mutable BeAtomic<uint32_t> m_refCount;
-        bool m_isInCache;
+        bool m_isInCache = true;
         ECDbCR m_ecdb;
-        DbCP m_datasource;
-        ECCrudWriteToken const* m_crudWriteToken;
+        Db const* m_dataSourceECDb = nullptr;
+        ECCrudWriteToken const* m_crudWriteToken = nullptr;
         ECSqlStatementCache const& m_cache;
 
-        explicit CachedECSqlStatement(ECSqlStatementCache const& cache, ECDbCR ecdb, DbCP datasource, ECCrudWriteToken const* crudWriteToken) 
-            : ECSqlStatement(), m_isInCache(true), m_cache(cache), m_ecdb(ecdb), m_datasource(datasource), m_crudWriteToken(crudWriteToken) {}
+        CachedECSqlStatement(ECSqlStatementCache const& cache, ECDbCR ecdb, Db const* dataSourceECDb, ECCrudWriteToken const* crudWriteToken)
+            : ECSqlStatement(), m_cache(cache), m_ecdb(ecdb), m_dataSourceECDb(dataSourceECDb), m_crudWriteToken(crudWriteToken) {}
 
     public:
         DEFINE_BENTLEY_NEW_DELETE_OPERATORS
@@ -561,15 +572,22 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatementCache final
         //! @return Prepared and ready-to-use statement or nullptr in case of preparation or other errors
         ECDB_EXPORT CachedECSqlStatementPtr GetPreparedStatement(ECDbCR ecdb, Utf8CP ecsql, ECCrudWriteToken const* token) const;
 
-        //! Gets a cached and prepared statement for the specified ECSQL.
+        //! Gets a cached and prepared statement for the specified SELECT ECSQL.
+        //! @remarks
+        //! This overload is for multi-threading scenarios. See 
+        //! @ref BentleyApi::BeSQLite::EC::ECSqlStatement::Prepare(SchemaManager const&, Db const&, Utf8CP) "ECSqlStatement::Prepare(SchemaManager const&, Db const&, Utf8CP)"
+        //! for details.
+        //! 
         //! If there was no statement in the cache for the ECSQL, a new one will be prepared and cached.
         //! Otherwise an existing ready-to-use statement will be returned, i.e. clients neither need to call 
         //! ECSqlStatement::Reset nor ECSqlStatement::ClearBindings on it.
-        //! @param [in] schemaManager schemaManager use to parse ECSqlStatement
-        //! @param [in] datasource BeSQLite connection use to execute ECSqlStatement
-        //! @param [in] ecsql ECSQL string for which to return a prepared statement
+        //! @see BentleyApi::BeSQLite::EC::ECSqlStatement::Prepare(SchemaManager const&, Db const&, Utf8CP)
+        //! @param[in] schemaManager SchemaManager that is to be used to parse the ECSQL. e.g. as returned from  @ref BentleyApi::BeSQLite::EC::ECDb::Schemas() "ECDb::Schemas()"
+        //! @param[in] dataSourceECDb Connection to the same ECDb file which is to be used to execute ECSqlStatment. Must be read-only, but can be in a
+        //! another thread than @p schemaManager
+        //! @param[in] selectECSql SELECT ECSQL
         //! @return Prepared and ready-to-use statement or nullptr in case of preparation or other errors
-        ECDB_EXPORT CachedECSqlStatementPtr GetPreparedStatement(SchemaManagerCR schemaManager, DbCR datasource, Utf8CP ecsql) const;
+        ECDB_EXPORT CachedECSqlStatementPtr GetPreparedStatement(SchemaManagerCR schemaManager, DbCR dataSourceECDb, Utf8CP selectECSql) const;
 
         //! Returns whether the cache is currently empty or not.
         //! @return true if cache is empty, false otherwise

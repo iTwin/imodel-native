@@ -2,11 +2,12 @@
 |
 |  $Source: Tests/BackDoor/ECDbTestFixture.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicAPI/BackDoor/ECDb/ECDbTestFixture.h"
 #include "PublicAPI/BackDoor/ECDb/TestHelper.h"
+#include <BeSQLite/L10N.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -334,9 +335,7 @@ BentleyStatus ECDbTestFixture::ReadECSchema(ECSchemaReadContextPtr& context, ECD
         context->AddSchemaLocater(ecdb.GetSchemaLocater());
         }
 
-    const bool wasFailOnAssert = BeTest::GetFailOnAssert();
-    if (wasFailOnAssert)
-        BeTest::SetFailOnAssert(false);
+    ScopedDisableFailOnAssertion disableFailOnAssert;
 
     ECSchemaPtr schema = nullptr;
     SchemaReadStatus stat = SchemaReadStatus::Success;
@@ -372,9 +371,6 @@ BentleyStatus ECDbTestFixture::ReadECSchema(ECSchemaReadContextPtr& context, ECD
             break;
             }
         }
-
-    if (wasFailOnAssert)
-        BeTest::SetFailOnAssert(true);
 
     if (SchemaReadStatus::Success != stat)
         {
@@ -433,6 +429,15 @@ void ECDbTestFixture::Initialize()
 
         ECDb::Initialize(temporaryDir, &applicationSchemaDir);
         srand((uint32_t)(BeTimeUtilities::QueryMillisecondsCounter() & 0xFFFFFFFF));
+
+        BeFileName sqlangFile;
+        BeTest::GetHost().GetDgnPlatformAssetsDirectory(sqlangFile);
+        sqlangFile.AppendToPath(L"sqlang");
+        sqlangFile.AppendToPath(L"Units_en.sqlang.db3");
+
+        BeSQLite::L10N::Shutdown();
+        BeSQLite::L10N::Initialize(BeSQLite::L10N::SqlangFiles(sqlangFile));
+
         s_isInitialized = true;
         }
     }

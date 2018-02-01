@@ -108,6 +108,7 @@ struct ECSqlPrepareContext final
 
     private:
         ECDbCR m_ecdb;
+        Db const& m_dataSourceECDb;
         ScopedIssueReporter const& m_issues;
         SingleECSqlPreparedStatement* m_singlePreparedStatement = nullptr;
         NativeSqlBuilder m_nativeSqlBuilder;
@@ -115,20 +116,21 @@ struct ECSqlPrepareContext final
         ExpScopeStack m_scopes;
         SelectClauseInfo m_selectionOptions;
         int m_nextSystemSqlParameterNameSuffix = 0;
-        DbCP m_secondaryConn;
         //not copyable
         ECSqlPrepareContext(ECSqlPrepareContext const&) = delete;
         ECSqlPrepareContext& operator=(ECSqlPrepareContext const&) = delete;
 
     public:
-        ECSqlPrepareContext(IECSqlPreparedStatement&, ScopedIssueReporter const&, DbCP);
+        ECSqlPrepareContext(IECSqlPreparedStatement&, Db const& dataSourceECDb, ScopedIssueReporter const&);
         void Reset(SingleECSqlPreparedStatement&);
 
         ECDbCR GetECDb() const { return m_ecdb; }
+        //! Used to prepare the generated SQLite statement against. Usually this is the same as GetECDb, but
+        //! it can be a different connection (e.g. in a different thread) to the very same ECDb file.
+        Db const& GetDataSourceConnection() const { return m_dataSourceECDb; }
         ScopedIssueReporter const& Issues() const { return m_issues; }
         SelectClauseInfo const& GetSelectionOptions() const { return m_selectionOptions; }
         SelectClauseInfo& GetSelectionOptionsR() { return m_selectionOptions; }
-        DbCP GetSecondaryConnection() const { return m_secondaryConn; }
         SingleECSqlPreparedStatement& GetPreparedStatement() const { BeAssert(m_singlePreparedStatement != nullptr); return *m_singlePreparedStatement; }
         template <class TECSqlPreparedStatement>
         TECSqlPreparedStatement& GetPreparedStatement() const
