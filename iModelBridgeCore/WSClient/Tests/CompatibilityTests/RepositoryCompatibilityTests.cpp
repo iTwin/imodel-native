@@ -136,7 +136,7 @@ IWSRepositoryClientPtr CreateClient(TestRepository& repository)
 
     if (repository.validateCertificate == false)
         {
-        httpHandler = std::make_shared<HttpConfigurationHandler>([] (HttpRequest& request)
+        httpHandler = std::make_shared<HttpConfigurationHandler>([] (Http::Request& request)
             {
             request.SetValidateCertificate(false);
             }, httpHandler);

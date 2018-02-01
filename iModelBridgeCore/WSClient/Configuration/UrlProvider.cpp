@@ -52,14 +52,6 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::BIMReviewShare(
     &s_urlRegistry
     );
 
-const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectedContext(
-    "CONNECTEDContextService.URL",
-    nullptr,
-    nullptr,
-    nullptr,
-    &s_urlRegistry
-    );
-
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectEula(
     "Mobile.ConnectEula",
     "https://dev-agreement-eus.cloudapp.net/rest",
