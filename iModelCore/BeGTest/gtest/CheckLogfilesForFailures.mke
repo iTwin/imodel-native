@@ -19,12 +19,6 @@ breakOnFailure = 1
     breakOnFailure = 0
 %endif
 
-%ifdef USE_TIA_MAP
-	LogFilesDir=$(OutputRootDir)LogFiles/RunRequiredTests/ExecutionLogs/
-	always:
-		python $(SrcRoot)DgnDbTestingScripts/TestImpactAnalysis/RunRequiredTests.py
-%endif
-		
 always:
     python $(_makeFilePath)CheckLogfilesForFailures.py $(LogFilesDir) $(breakOnFailure)
 

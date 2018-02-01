@@ -59,34 +59,53 @@ always:
 %endif
 
 %if defined (winNT)
-	%ifdef USE_TIA_MAP
-		%message Skipping test execution
+	%ifdef ONLY_TEST_CHANGES
+		%message Run only required tests
 		always:
-			>$(LogDir)test.log
-			tests were not run
-			<
-			~linkfile "$(BuildContext)Delivery/Gtest/Logs/$(GTEST_LOGFILE_NAME)=$(ResultsCapture)"
-		
-	%else
-		testName = $[@basename $(exeName)]
+			python $(SrcRoot)DgnDbTestingScripts\TestImpactAnalysis\FindRequiredTests.py --gtestName=$(GTEST_NAME)
 
-		%if defined(RUN_GTEST_MINIMIZED) || defined(BEGTEST_RUN_MINIMIZED)
-			RunPrefix=start "$(testName)" \/WAIT \/MIN
-		%else
-			RunPrefix=start "$(testName)" \/WAIT
+		REQ_TESTS_DIR=$(OutputRootDir)LogFiles/RunRequiredTests/
+		GTEST_FILTER_FILE=$(REQ_TESTS_DIR)$(GTEST_NAME)_command.txt
+		%iffile $(GTEST_FILTER_FILE) 
+			%if $[@readfile $(GTEST_FILTER_FILE)] !=" " 
+				GTEST_FILTER=$[@readfile $(GTEST_FILTER_FILE)]
+			%endif
 		%endif
-
-
-		$(ResultsCapture) : $(exeName).exe
-			>$(ResultsCapture)
-			$(exeName)
-			<
-			>$(LogDir)run.bat
-			$(exeName) | $(_makeFilePath)TeeGtest.py $(ResultsCapture)
-			exit
-			<
-			-$(RunPrefix) $(LogDir)run.bat
+		%ifndef GTEST_FILTER 
+			#No need to run tests.
+			%message Skipping test execution
+			always:
+				>$(LogDir)test.log
+				[==========] No tests are affected by current change.
+				[==========] 0 tests from 0 test cases ran. (0 ms total)
+				<
+				~linkfile "$(BuildContext)Delivery/Gtest/Logs/$(GTEST_LOGFILE_NAME)=$(ResultsCapture)"
+		%endif
 	%endif
+	
+	testName = $[@basename $(exeName)]
+
+	%if defined(RUN_GTEST_MINIMIZED) || defined(BEGTEST_RUN_MINIMIZED)
+		RunPrefix=start "$(testName)" \/WAIT \/MIN
+	%else
+		RunPrefix=start "$(testName)" \/WAIT
+	%endif
+
+
+	$(ResultsCapture) : $(exeName).exe
+		>$(ResultsCapture)
+		$(exeName)
+		<
+		>$(LogDir)run.bat
+		%ifdef GTEST_FILTER
+			$(exeName) $(GTEST_FILTER) | $(_makeFilePath)TeeGtest.py $(ResultsCapture)
+		%else
+			$(exeName) | $(_makeFilePath)TeeGtest.py $(ResultsCapture)		
+		%endif
+		exit
+		<
+		-$(RunPrefix) $(LogDir)run.bat
+	
 %else
 	
 	$(ResultsCapture) : $(exeName)
@@ -104,10 +123,6 @@ BreakOnFailure = 0
 	BreakOnFailure = 1
 %endif
 
-%ifndef USE_TIA_MAP
-	always:
-		 python $(_makeFilePath)CheckLogfilesForFailures.py $[@dir $(ResultsCapture)] $(BreakOnFailure)
-%endif
-	 
 always:
+	python $(_makeFilePath)CheckLogfilesForFailures.py $[@dir $(ResultsCapture)] $(BreakOnFailure)
 	~linkfile "$(BuildContext)Delivery/Gtest/Logs/$(GTEST_LOGFILE_NAME)=$(ResultsCapture)"
