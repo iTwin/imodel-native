@@ -2,7 +2,7 @@
 |
 |     $Source: gtest/BeGTestExe.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)
@@ -12,8 +12,14 @@
     #include <assert.h>
 #endif
 
+#include <future>
+#include <thread>
+#include <chrono>
+#include <iostream>
+
 #include <Bentley/BeTest.h>
 #include <Bentley/BeFileName.h>
+#include <Bentley/BeTimeUtilities.h>
 #include <Bentley/Desktop/FileSystem.h>
 #include <BeSQLite/L10N.h>
 #include <Logging/bentleylogging.h>
@@ -332,6 +338,26 @@ int WinSetEnv(const char * name, const char * value)
     return SetEnvironmentVariableA(name, value);
     }
 #endif
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Taslim.Murad    01/2018
+//---------------------------------------------------------------------------------------
+static int runAllTestsWithTimeout (uint64_t timeoutInSeconds)
+{
+    std::promise<bool> promisedFinished;
+    auto futureResult = promisedFinished.get_future ();
+    int testResult = 0;
+    std::thread ([&]()
+    {
+        BeTest::setS_mainThreadId (BeThreadUtilities::GetCurrentThreadId ());
+        testResult = RUN_ALL_TESTS ();
+        promisedFinished.set_value (true);
+    }).detach ();
+    EXPECT_TRUE (std::future_status::ready == futureResult.wait_for (std::chrono::seconds (timeoutInSeconds)));
+    return testResult;
+}
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -449,7 +475,8 @@ int main(int argc, char **argv)
     int errors = 0;
     if (check == 0)
         {//  Run the tests
-        errors = RUN_ALL_TESTS(); 
+       // errors = RUN_ALL_TESTS(); 
+        errors = runAllTestsWithTimeout (1800); //30/*min*/ * 60/*sec/min*/);
         }
 #if defined(BENTLEY_WIN32)
     if (umdh_Use(argc, argv))
