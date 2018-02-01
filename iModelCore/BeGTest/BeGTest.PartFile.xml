@@ -57,7 +57,7 @@
         
         <ProductDirectory Name="WSClientTestAssets"                 Path="Assets/WSClientTestAssets"/>
         <ProductDirectory Name="WSClientTestAssets"                 Path="Assets/WSClientTestAssets" LibType="static"/>
-
+		
         <ProductDirectory Name="DgnDisplayTestData"                 Path="Assets/DgnDisplayTestData"/>
         <ProductDirectory Name="DgnDisplayTestData"                 Path="Assets/DgnDisplayTestData" LibType="static"/>
 
@@ -81,6 +81,9 @@
         <ProductDirectory Name="TestingProjects-Documents-DgnDb" Path="Assets/Documents/DgnClientFxTestData" LibType="static"/>
 		<ProductDirectory Name="TestingProjects_Documents_DgnDb" Deliver="false"/>
         <ProductDirectory Name="TestingProjects_Documents_DgnDb" Deliver="false" LibType="static"/>
+		<ProductDirectory Name="ImodelHubTestData"         Path="Assets/Documents/ImodelHubTestData"/>
+		<ProductDirectory Name="ImodelHubTestData"         Path="Assets/Documents/ImodelHubTestData" LibType="static"/>
+		
     </ProductDirectoryList>
 
     <!-- Every unit-test related part that calls DetectAndCompileUnitTests.mki should depend on this -->
