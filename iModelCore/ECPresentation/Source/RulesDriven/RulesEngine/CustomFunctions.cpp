@@ -249,7 +249,7 @@ struct GetNavigationPropertyLabelScalar : CachingScalarFunction<bmap<ECInstanceK
             Utf8String label;
             if (key.IsValid())
                 {
-                ECClassCP ecClass = GetContext().GetSchemaHelper().GetDb().Schemas().GetClass(classId);
+                ECClassCP ecClass = GetContext().GetSchemaHelper().GetConnection().GetECDb().Schemas().GetClass(classId);
                 if (nullptr == ecClass)
                     {
                     BeAssert(false && "Invalid class");
@@ -260,7 +260,7 @@ struct GetNavigationPropertyLabelScalar : CachingScalarFunction<bmap<ECInstanceK
                 bmap<ECClassCP, bvector<ECPropertyCP>> instanceLabelOverrides = QueryBuilderHelpers::GetMappedLabelOverridingProperties(GetContext().GetSchemaHelper(), GetContext().GetRuleset().GetInstanceLabelOverrides());
                 if (!instanceLabelOverrides.empty())
                     {
-                    IECInstancePtr instance = ECInstancesHelper::LoadInstance(GetContext().GetSchemaHelper().GetDb(), key);
+                    IECInstancePtr instance = ECInstancesHelper::LoadInstance(GetContext().GetSchemaHelper().GetConnection(), key);
                     ProcessIntanceLabelOverrides(label, *ecClass, instanceLabelOverrides, *instance);
                     }
 

@@ -1242,7 +1242,7 @@ TEST_F(CustomFunctionTests, GetDisplayLabelForInstanceInHierarchy_UsesInstanceLa
 
     ECInstanceId widgetInstanceID;
     ECInstanceId::FromString(widgetInstanceID, widgetInstance->GetInstanceId().c_str());
-    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetNavigationPropertyLabel(?, ?) FROM RET.Widget"));
@@ -1257,7 +1257,7 @@ TEST_F(CustomFunctionTests, GetDisplayLabelForInstanceInHierarchy_UsesInstanceLa
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, GetDisplayLabelForInstanceInHierarchy_UsesClassDisplayLabelAsDefault)
     {
-    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetNavigationPropertyLabel(?, ?) FROM RET.Widget"));

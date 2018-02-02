@@ -503,8 +503,7 @@ TEST_F (NavigationQueryExecutorTests, InstanceNodesSortedAlphanumerically_Instan
         {
         JsonNavNodePtr node = executor.GetNode(i);
         ASSERT_TRUE(node.IsValid());
-        RefCountedPtr<IECInstance const> instance = node->GetInstance();
-        ASSERT_TRUE(instance.IsValid());
+        EXPECT_TRUE(nullptr != node->GetKey().AsECInstanceNodeKey());
         switch (i + 1)
             {
             case 1: ASSERT_STREQ("Widget9A9", node->GetLabel().c_str()); break;
