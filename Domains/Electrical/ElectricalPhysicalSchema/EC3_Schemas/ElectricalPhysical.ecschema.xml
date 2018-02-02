@@ -3,12 +3,6 @@
     <ECSchemaReference name="ECv3ConversionAttributes" version="01.00.00" alias="V2ToV3"/>
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00.13" alias="bsca"/>
 	<ECSchemaReference name="BisCore" version="01.00.00" alias="bis" />
-    <ECCustomAttributes>
-        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.13">
-            <SchemaFullNameAtEditingStart>Electrical.01.00</SchemaFullNameAtEditingStart>
-            <TrackingEnabled>True</TrackingEnabled>
-        </SchemaChangeTrackingState>
-    </ECCustomAttributes>
 	
     <ECEntityClass typeName="Device" description="This class defines an instance of a device.">
         <BaseClass>bis:PhysicalElement</BaseClass>
