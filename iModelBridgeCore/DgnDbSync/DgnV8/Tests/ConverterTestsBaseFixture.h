@@ -20,6 +20,8 @@ struct ConverterTestBaseFixture : public testing::Test
         void InitializeTheConverter();
 
         bool m_wantCleanUp = true;
+
+        ISChemaImportVerifier *m_verifier = nullptr;
         virtual bool _ShouldImportSchema(BentleyApi::Utf8StringCR fullSchemaName, DgnV8Api::DgnModel& v8Model) { return true; }
 
     public:

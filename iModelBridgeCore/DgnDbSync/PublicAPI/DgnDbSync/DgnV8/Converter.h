@@ -500,6 +500,13 @@ struct IFinishConversion
     virtual void _OnFinishConversion(Converter&) = 0;
 };
 
+struct ISChemaImportVerifier
+{
+    //! This is invoked by RetrieveV8ECSchemas to determine whether a given schema should be imported or not.  It is an alternative for those bridges that do not sublass
+    //! from Converter themselves, and thus cannot override the Converter::_ShouldImportSchema virtual method.
+    virtual bool _ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model) = 0;
+};
+
 //=======================================================================================
 //! Base class for V8-BIM converters. This base class functions as a library of conversion
 //! functions for a subclass to use. The subclass may convert spatial data and non-spatial (e.g., 
@@ -965,6 +972,7 @@ protected:
     ElementConverter*   m_elementConverter = nullptr;
     ElementAspectConverter* m_elementAspectConverter;
     bvector<IFinishConversion*> m_finishers;
+    bvector<ISChemaImportVerifier*> m_schemaImportVerifiers;
     bmap<DgnClassId, bvector<ECN::ECClassId>> m_classToAspectMappings;
     DgnModelId          m_jobDefinitionModelId;
 
@@ -973,6 +981,7 @@ protected:
 
     DGNDBSYNC_EXPORT virtual SyncInfo::V8ElementMapping _FindFirstElementMappedTo(DgnV8Api::DisplayPath const& proxyPath, bool tail, IChangeDetector::T_SyncInfoElementFilter* filter = nullptr);
     virtual DgnV8Api::ModelInfo const& _GetModelInfo(DgnV8ModelCR v8Model) { return v8Model.GetModelInfo(); }
+    virtual bool _ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model) { return true; }
 
 public:
     virtual Params const& _GetParams() const = 0;
@@ -980,8 +989,12 @@ public:
 
     bool SkipECContent() const {return m_skipECContent;}
 
+    //! Add a callback to be invoked by RetrieveV8ECSchemas
+    //! @param v    Verifier to be invoked by RetrieveV8ECSchemas to determine whether a given schema should be imported
+    void AddSchemaImportVerifier(ISChemaImportVerifier& v) { m_schemaImportVerifiers.push_back(&v); }
+
     //! Allows a bridge to determine whether a particular schema should be imported or not
-    virtual bool _ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model) { return true; }
+    bool ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model);
     //! @}
 
     //! This returns false if the V8 file should not be converted by the bridge.
