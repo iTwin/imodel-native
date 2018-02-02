@@ -66,11 +66,11 @@ struct CurvePrimitiveManipulationStrategy : public GeometryManipulationStrategy
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ICurvePrimitivePtr FinishPrimitive() const;
         
-        CurvePrimitivePlacementStrategyPtr CreateDefaultPlacementStrategy();
-        LinePlacementStrategyPtr CreateLinePlacementStrategy(LinePlacementStrategyType strategyType);
-        ArcPlacementStrategyPtr CreateArcPlacementStrategy(ArcPlacementStrategyType strategyType);
-        LineStringPlacementStrategyPtr CreateLineStringPlacementStrategy(LineStringPlacementStrategyType strategyType);
-        SplinePlacementStrategyPtr CreateSplinePlacementStrategy(SplinePlacementStrategyType strategyType);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurvePrimitivePlacementStrategyPtr CreateDefaultPlacementStrategy();
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT LinePlacementStrategyPtr CreateLinePlacementStrategy(LinePlacementStrategyType strategyType);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ArcPlacementStrategyPtr CreateArcPlacementStrategy(ArcPlacementStrategyType strategyType);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT LineStringPlacementStrategyPtr CreateLineStringPlacementStrategy(LineStringPlacementStrategyType strategyType);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT SplinePlacementStrategyPtr CreateSplinePlacementStrategy(SplinePlacementStrategyType strategyType);
         
         bvector<DPoint3d> const& GetAcceptedKeyPoints() const { return m_keyPoints; }
 
