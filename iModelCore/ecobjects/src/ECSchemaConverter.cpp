@@ -1475,6 +1475,9 @@ ECObjectsStatus PropertyPriorityConverter::Convert(ECSchemaR schema, IECCustomAt
         {
         LOG.warningv("Found a PropertyPriority custom attribute on an the ECProperty, '%s.%s', but it did not contain a Priority value. Dropping custom attribute....",
             prop->GetClass().GetFullName(), prop->GetName().c_str());
+
+        container.RemoveCustomAttribute(BECA_SCHEMANAME, PROPERTY_PRIORITY);
+        container.RemoveSupplementedCustomAttribute(BECA_SCHEMANAME, PROPERTY_PRIORITY);
         return ECObjectsStatus::Success;
         }
 
@@ -1483,16 +1486,10 @@ ECObjectsStatus PropertyPriorityConverter::Convert(ECSchemaR schema, IECCustomAt
         {
         LOG.errorv("Failed to set the priority on ECProperty, %s.%s, from the PropertyPriority custom attribute", 
             prop->GetClass().GetFullName(), prop->GetName().c_str());
-        return status;
         }
 
-    if (!prop->RemoveCustomAttribute(BECA_SCHEMANAME, PROPERTY_PRIORITY) &&
-        !prop->RemoveSupplementedCustomAttribute(BECA_SCHEMANAME, PROPERTY_PRIORITY))
-        {
-        LOG.errorv("Couldn't remove the CustomAttribute %s:%s from the property %s.%s", BECA_SCHEMANAME, PROPERTY_PRIORITY, 
-            prop->GetClass().GetFullName(), prop->GetName().c_str());
-        return ECObjectsStatus::Error;
-        }
+    container.RemoveCustomAttribute(BECA_SCHEMANAME, PROPERTY_PRIORITY);
+    container.RemoveSupplementedCustomAttribute(BECA_SCHEMANAME, PROPERTY_PRIORITY);
 
     return status;
     }

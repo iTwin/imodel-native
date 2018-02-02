@@ -1,2 +1,0 @@
-include "Forms.ecschema.xml"
-rename  "Forms.ecschema.xml" "Domains/Forms/Forms.ecschema.xml"
