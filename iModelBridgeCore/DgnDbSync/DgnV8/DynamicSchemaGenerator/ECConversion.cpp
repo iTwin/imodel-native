@@ -1153,6 +1153,8 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
          {
          if (schema->IsSupplementalSchema())
              continue;
+         if (BisClassConverter::SchemaConversionContext::ExcludeSchemaFromBisification(*schema))
+             continue;
          if (!ECN::ECSchemaConverter::Convert(*schema, false))
              {
              Utf8PrintfString error("Failed to run the schema converter on v8 ECSchema '%s'", schema->GetFullSchemaName().c_str());
