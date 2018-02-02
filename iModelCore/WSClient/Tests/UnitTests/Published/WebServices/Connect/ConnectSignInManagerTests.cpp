@@ -10,6 +10,7 @@
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
 #include "MockImsClient.h"
 #include "MockConnectionClientInterface.h"
+#include "MockConnectSignInManagerListener.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 using namespace ::testing;
@@ -647,6 +648,10 @@ TEST_F(ConnectSignInManagerTests, GetTokenProvider_DelegationAndIdentityTokenReq
     int count = 0;
     manager->SetTokenExpiredHandler([&] { count++; });
 
+    NiceMock<MockConnectSignInManagerListener> listener;
+    EXPECT_CALL(listener, _OnUserTokenExpired()).Times(1);
+    manager->RegisterListener(&listener);
+
     auto provider = manager->GetTokenProvider("https://foo.com");
 
     HttpError error(ConnectionStatus::OK, HttpStatus::Unauthorized);
@@ -669,6 +674,10 @@ TEST_F(ConnectSignInManagerTests, GetTokenProvider_TokenRequestFailsDueToConnect
 
     int count = 0;
     manager->SetTokenExpiredHandler([&] { count++; });
+
+    NiceMock<MockConnectSignInManagerListener> listener;
+    EXPECT_CALL(listener, _OnUserTokenExpired()).Times(0);
+    manager->RegisterListener(&listener);
 
     auto provider = manager->GetTokenProvider("https://foo.com");
 
@@ -695,6 +704,9 @@ TEST_F(ConnectSignInManagerTests, GetTokenProvider_TokenDelegationFailsButIdenti
     int count = 0;
     manager->SetTokenExpiredHandler([&] { count++; });
 
+    NiceMock<MockConnectSignInManagerListener> listener;
+    EXPECT_CALL(listener, _OnUserTokenExpired()).Times(0);
+    manager->RegisterListener(&listener);
     auto provider = manager->GetTokenProvider("https://foo.com");
 
     HttpError error(ConnectionStatus::OK, HttpStatus::Unauthorized);
@@ -714,6 +726,9 @@ TEST_F(ConnectSignInManagerTests, SignInWithToken_FirstTime_UserChangeHandlerNot
     int count = 0;
     manager->SetUserChangeHandler([&] { count++; });
 
+    NiceMock<MockConnectSignInManagerListener> listener;
+    EXPECT_CALL(listener, _OnUserChanged()).Times(0);
+    manager->RegisterListener(&listener);
     EXPECT_CALL(*imsClient, RequestToken(An<SamlTokenCR>(), _, _))
         .WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(StubSamlToken({{"name", "TestUser"}})))));
 
@@ -730,6 +745,9 @@ TEST_F(ConnectSignInManagerTests, SignInWithToken_SecondTimeWithSameUser_UserCha
     int count = 0;
     manager->SetUserChangeHandler([&] { count++; });
 
+    NiceMock<MockConnectSignInManagerListener> listener;
+    EXPECT_CALL(listener, _OnUserChanged()).Times(0);
+    manager->RegisterListener(&listener);
     EXPECT_CALL(*imsClient, RequestToken(An<SamlTokenCR>(), _, _))
         .WillRepeatedly(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(StubSamlToken({{"name", "TestUser"}})))));
 
@@ -747,6 +765,9 @@ TEST_F(ConnectSignInManagerTests, SignInWithToken_SecondTimeAfterSignOutWithSame
     int count = 0;
     manager->SetUserChangeHandler([&] { count++; });
 
+    NiceMock<MockConnectSignInManagerListener> listener;
+    EXPECT_CALL(listener, _OnUserChanged()).Times(0);
+    manager->RegisterListener(&listener);
     EXPECT_CALL(*imsClient, RequestToken(An<SamlTokenCR>(), _, _))
         .WillRepeatedly(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(StubSamlToken({{"name", "TestUser"}})))));
 
@@ -764,6 +785,10 @@ TEST_F(ConnectSignInManagerTests, SignInWithToken_SecondTimeAfterSignOutWithDiff
 
     int count = 0;
     manager->SetUserChangeHandler([&] { count++; });
+    
+    NiceMock<MockConnectSignInManagerListener> listener;
+    EXPECT_CALL(listener, _OnUserChanged()).Times(1);
+    manager->RegisterListener(&listener);
 
     InSequence seq;
     EXPECT_CALL(*imsClient, RequestToken(An<SamlTokenCR>(), _, _))
@@ -785,6 +810,10 @@ TEST_F(ConnectSignInManagerTests, SignInWithCredentials_SecondTimeAfterSignOutWi
 
     int count = 0;
     manager->SetUserChangeHandler([&] { count++; });
+    
+    NiceMock<MockConnectSignInManagerListener> listener;
+    EXPECT_CALL(listener, _OnUserChanged()).Times(1);
+    manager->RegisterListener(&listener);
 
     InSequence seq;
     EXPECT_CALL(*imsClient, RequestToken(An<CredentialsCR>(), _, _))
@@ -909,6 +938,54 @@ TEST_F(ConnectSignInManagerTests, SetUserChangeHandler_CreedentialsUserWasChange
     EXPECT_EQ(0, count);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ConnectSignInManagerTests, SetUserChangeHandler_CreedentialsUserWasChangedInOtherSignInManagerWithSharedPersistence_ListenerCalledOnce)
+{
+    // Mimics two apps signing-in independently with shared secure store
+
+    auto imsClient1 = std::make_shared<MockImsClient>();
+    auto imsClient2 = std::make_shared<MockImsClient>();
+    StubLocalState localState1;
+    StubLocalState localState2;
+
+    EXPECT_CALL(*imsClient1, RequestToken(An<CredentialsCR>(), _, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(StubSamlToken({ { "name", "TestUserA" } })))));
+    EXPECT_CALL(*imsClient2, RequestToken(An<CredentialsCR>(), _, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(StubSamlToken({ { "name", "TestUserB" } })))));
+
+    // App 1
+    auto manager1 = ConnectSignInManager::Create(imsClient1, &localState1, m_secureStore);
+    ASSERT_TRUE(manager1->SignInWithCredentials({ "A", "PA" })->GetResult().IsSuccess());
+    manager1->FinalizeSignIn();
+    ASSERT_EQ("TestUserA", manager1->GetUserInfo().username);
+
+    // App 2
+    auto manager2 = ConnectSignInManager::Create(imsClient2, &localState2, m_secureStore);
+    ASSERT_FALSE(manager2->IsSignedIn());
+    ASSERT_TRUE(manager2->SignInWithCredentials({ "B", "PB" })->GetResult().IsSuccess());
+    manager2->FinalizeSignIn();
+    EXPECT_EQ("TestUserB", manager2->GetUserInfo().username);
+
+    // App 1 restarts
+    manager1 = ConnectSignInManager::Create(imsClient1, &localState1, m_secureStore);
+    EXPECT_EQ("TestUserB", manager1->GetUserInfo().username);
+
+    NiceMock<MockConnectSignInManagerListener> listener;
+    EXPECT_CALL(listener, _OnUserChanged()).Times(1);
+    manager1->RegisterListener(&listener);
+
+    Mock::VerifyAndClearExpectations(&listener);
+
+    // App 1 restarts again
+    manager1 = ConnectSignInManager::Create(imsClient1, &localState1, m_secureStore);
+    EXPECT_EQ("TestUserB", manager1->GetUserInfo().username);
+
+    EXPECT_CALL(listener, _OnUserChanged()).Times(0);
+    manager1->RegisterListener(&listener);
+}
+
 TEST_F(ConnectSignInManagerTests, SignInWithToken_SignInHandlerSet_CallsHandlerAfterFinalize)
     {
     auto imsClient = std::make_shared<MockImsClient>();
@@ -916,6 +993,10 @@ TEST_F(ConnectSignInManagerTests, SignInWithToken_SignInHandlerSet_CallsHandlerA
 
     int count = 0;
     manager->SetUserSignInHandler([&] { count++; });
+
+    NiceMock<MockConnectSignInManagerListener> listener;
+    EXPECT_CALL(listener, _OnUserSignedIn()).Times(1);
+    manager->RegisterListener(&listener);
 
     InSequence seq;
     EXPECT_CALL(*imsClient, RequestToken(An<SamlTokenCR>(), _, _))
@@ -927,6 +1008,37 @@ TEST_F(ConnectSignInManagerTests, SignInWithToken_SignInHandlerSet_CallsHandlerA
     EXPECT_EQ(1, count);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ConnectSignInManagerTests, UnregisterListener_ListenerWasSetAndSignIn_DoesNotCallSignInListenerAfterUnregister)
+    {
+    auto imsClient = std::make_shared<MockImsClient>();
+    auto manager = ConnectSignInManager::Create(imsClient, &m_localState, m_secureStore);
+
+    EXPECT_CALL(*imsClient, RequestToken(An<SamlTokenCR>(), _, _))
+        .WillRepeatedly(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(StubSamlToken({{"name", "TestUser"}})))));
+
+    NiceMock<MockConnectSignInManagerListener> listener1, listener2;
+    manager->RegisterListener(&listener1);
+    manager->RegisterListener(&listener2);
+
+    EXPECT_CALL(listener1, _OnUserSignedIn()).Times(1);
+    EXPECT_CALL(listener2, _OnUserSignedIn()).Times(1);
+
+    ASSERT_TRUE(manager->SignInWithToken(StubSamlToken())->GetResult().IsSuccess());
+    manager->FinalizeSignIn();
+    Mock::VerifyAndClearExpectations(&listener1);
+    Mock::VerifyAndClearExpectations(&listener2);
+
+    EXPECT_CALL(listener1, _OnUserSignedIn()).Times(1);
+    EXPECT_CALL(listener2, _OnUserSignedIn()).Times(0);
+    manager->UnregisterListener(&listener2);
+
+    ASSERT_TRUE(manager->SignInWithToken(StubSamlToken())->GetResult().IsSuccess());
+    manager->FinalizeSignIn();
+    }
+
 TEST_F(ConnectSignInManagerTests, SignOut_SignInHandlerSet_CallsHandler)
     {
     auto imsClient = std::make_shared<MockImsClient>();
@@ -934,6 +1046,10 @@ TEST_F(ConnectSignInManagerTests, SignOut_SignInHandlerSet_CallsHandler)
 
     int count = 0;
     manager->SetUserSignOutHandler([&] { count++; });
+
+    NiceMock<MockConnectSignInManagerListener> listener;
+    EXPECT_CALL(listener, _OnUserSignedOut()).Times(1);
+    manager->RegisterListener(&listener);
 
     InSequence seq;
     EXPECT_CALL(*imsClient, RequestToken(An<SamlTokenCR>(), _, _))
