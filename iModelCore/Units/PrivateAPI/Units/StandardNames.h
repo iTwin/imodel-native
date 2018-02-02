@@ -155,6 +155,8 @@ public:
     static const Utf8Char Finance = '$';
     static const Utf8Char Capita = 'X';
     static const Utf8Char Ratio = 'R';
+
+    static Utf8CP GetBasePhenomenonName(Utf8Char baseSymbol);
 };
 
 END_BENTLEY_UNITS_NAMESPACE

@@ -140,6 +140,44 @@ void UnitRegistry::AddBaseSystems()
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    01/2018
 //--------------------------------------------------------------------------------------
+Utf8CP BasePhenomena::GetBasePhenomenonName(Utf8Char baseSymbol)
+    {
+    switch (baseSymbol)
+        {
+        case BasePhenomena::Capita:
+            return CAPITA;
+        case BasePhenomena::ElectricCurrent:
+            return CURRENT;
+        case BasePhenomena::Finance:
+            return FINANCE;
+        case BasePhenomena::Length:
+            return LENGTH;
+        case BasePhenomena::Luminosity:
+            return LUMINOSITY;
+        case BasePhenomena::Mass:
+            return MASS;
+        case BasePhenomena::Mole:
+            return MOLE;
+        case BasePhenomena::PlaneAngle:
+            return ANGLE;
+        case BasePhenomena::Ratio:
+            return ONE;
+        case BasePhenomena::SolidAngle:
+            return SOLIDANGLE;
+        case BasePhenomena::Temperature:
+            return TEMPERATURE;
+        case BasePhenomena::TemperatureChange:
+            return TEMPERATURE_CHANGE;
+        case BasePhenomena::Time:
+            return TIME;
+        default:
+            return EMPTY_STRING;
+        }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
 void UnitRegistry::AddBasePhenomena()
     {
     AddBasePhenomenon(BasePhenomena::Length);

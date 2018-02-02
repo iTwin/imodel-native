@@ -13,21 +13,20 @@
 BEGIN_BENTLEY_UNITS_NAMESPACE
 
 //=======================================================================================
+//! There are 3 different sets of names:
+//! - oldNames
+//!     - Came from EC2.0 and the old ECF Units implementation
+//! - newNames
+//!     - New unit names that were created for the first version of a new Units System in the iModel world
+//! - ecName
+//!     - Added when the new Unit Systems needed to allow custom extensibility through an ECSchema, all names
+//!        had to become ECName compatible. Check the ECObjects documentation for more information on ECName.
 // @bsistruct                                                    Caleb.Shafer      01/18
 //=======================================================================================
 struct UnitNameMappings
 {
 private:
     static UnitNameMappings * s_mappings;
-
-    // There are 3 different sets of names:
-    //  - oldNames
-    //      - Came from EC2.0 and the old ECF Units implementation
-    //  - newNames
-    //      - New unit names that were created for the first version of a new Units System in the iModel world
-    //  - ecName
-    //      - Added when the new Unit Systems needed to allow custom extensibility through an ECSchema, all names
-    //        had to become ECName compatible. Check the ECObjects documentation for more information on ECName.
 
     bmap<Utf8String, Utf8String> m_oldNameNewNameMapping; // key: oldName value: newName
     bmap<Utf8String, Utf8String> m_newNameOldNameMapping; // key: newName value: oldName
