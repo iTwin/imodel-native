@@ -79,7 +79,7 @@ void DwgFileEditor::DeleteEntity (DwgDbHandleCR entityHandle)
     ASSERT_DWGDBSUCCESS (entity.OpenStatus()) << "Cannot open entity for write!";
 
     if (DwgDbStatus::Success == entity.OpenStatus())
-        entity->Erase ();
+        ASSERT_DWGDBSUCCESS (entity->Erase()) << "Requested entity cannot be deleted from DWG file!";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -88,4 +88,46 @@ void DwgFileEditor::DeleteEntity (DwgDbHandleCR entityHandle)
 DwgDbObjectIdCR DwgFileEditor::GetCurrentObjectId () const
     {
     return  m_currentObjectId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void    DwgFileEditor::TransformEntitiesBy (T_EntityHandles const& handles, TransformCR transform)
+    {
+    DwgDbBlockTableRecordPtr modelspace (m_dwgdb->GetModelspaceId(), DwgDbOpenMode::ForWrite);
+    ASSERT_DWGDBSUCCESS (modelspace.OpenStatus()) << "Modelspace block cannot be opened for write";
+    
+    auto iter = modelspace->GetBlockChildIterator ();
+    for (iter.Start(); !iter.Done(); iter.Step())
+        {
+        auto found = std::find_if (handles.begin(), handles.end(), [&](DwgDbHandleCR h) { return iter.GetEntityId().GetHandle()==h; });
+        if (found != handles.end())
+            {
+            DwgDbEntityPtr  entity(iter.GetEntityId(), DwgDbOpenMode::ForWrite);
+            ASSERT_DWGDBSUCCESS (entity.OpenStatus()) << "An entity cannot be opened for write!";
+            ASSERT_DWGDBSUCCESS (entity->TransformBy(transform)) << "Entity is not transformed!";
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t  DwgFileEditor::CountAndCheckModelspaceEntity (bool& found, DwgDbHandleCR entityHandle) const
+    {
+    size_t  count = 0;
+    found = false;
+    DwgDbBlockTableRecordPtr modelspace (m_dwgdb->GetModelspaceId(), DwgDbOpenMode::ForRead);
+    if (modelspace.OpenStatus() == DwgDbStatus::Success)
+        {
+        auto iter = modelspace->GetBlockChildIterator ();
+        for (iter.Start(); !iter.Done(); iter.Step())
+            {
+            if (iter.GetEntityId().GetHandle() == entityHandle)
+                found = true;
+            count++;
+            }
+        }
+    return  count;
     }

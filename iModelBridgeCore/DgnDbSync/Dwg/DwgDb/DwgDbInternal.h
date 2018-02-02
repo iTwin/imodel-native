@@ -580,7 +580,8 @@ END_DWGDB_NAMESPACE
     bool                DwgDb##_classSuffix_##::CanCastShadows () const { return T_Super::castShadows(); }                                       \
     bool                DwgDb##_classSuffix_##::CanReceiveShadows () const { return T_Super::receiveShadows(); }                                 \
     bool                DwgDb##_classSuffix_##::IsPlanar () const { return T_Super::isPlanar(); }                                                \
-    void DwgDb##_classSuffix_##::GetEcs(TransformR ecs) const { DWGGE_Type(Matrix3d) m; DWGDB_CALLSDKMETHOD(m=T_Super::getEcs(), T_Super::getEcs(m)); return Util::GetTransform(ecs, m); }
+    void DwgDb##_classSuffix_##::GetEcs(TransformR ecs) const { DWGGE_Type(Matrix3d) m; DWGDB_CALLSDKMETHOD(m=T_Super::getEcs(), T_Super::getEcs(m)); return Util::GetTransform(ecs, m); } \
+    DwgDbStatus         DwgDb##_classSuffix_##::TransformBy (TransformCR t) { DWGGE_Type(Matrix3d) m; Util::GetGeMatrix(m, t); return ToDwgDbStatus(T_Super::transformBy(m)); }
 
 // define common methods for DbEntity as above, plus an object Create method
 #define DWGDB_ENTITY_DEFINE_MEMBERS(_classSuffix_)                  \
