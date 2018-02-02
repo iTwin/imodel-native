@@ -1439,7 +1439,7 @@ public:
 struct AddonECSqlColumnInfo : Napi::ObjectWrap<AddonECSqlColumnInfo>
     {
     private:
-        //Must match ECSqlValueType in imodeljs-nodeaddonapi.d.ts
+        //Must match ECSqlValueType in imodeljs-core
         enum class Type
             {
             Blob = 1,
@@ -1472,179 +1472,187 @@ struct AddonECSqlColumnInfo : Napi::ObjectWrap<AddonECSqlColumnInfo>
 
     public:
         AddonECSqlColumnInfo(Napi::CallbackInfo const& info) : Napi::ObjectWrap<AddonECSqlColumnInfo>(info)
+            {
+            if (info.Length() != 1)
+                Napi::TypeError::New(Env(), "AddonECSqlColumnInfo constructor expects two argument.").ThrowAsJavaScriptException();
+
+            m_colInfo = info[0].As<Napi::External<ECSqlColumnInfo>>().Data();
+            if (m_colInfo == nullptr)
+                Napi::TypeError::New(Env(), "Invalid first arg for AddonECSqlColumnInfo constructor. ECSqlColumnInfo must not be nullptr").ThrowAsJavaScriptException();
+            }
+
+        ~AddonECSqlColumnInfo() {}
+
+        static bool InstanceOf(Napi::Value val)
+            {
+            if (!val.IsObject())
+                return false;
+
+            Napi::HandleScope scope(val.Env());
+            return val.As<Napi::Object>().InstanceOf(s_constructor.Value());
+            }
+
+        //  Create projections
+        static void Init(Napi::Env& env, Napi::Object exports)
+            {
+            // ***
+            // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
+            // ***
+            Napi::HandleScope scope(env);
+            Napi::Function t = DefineClass(env, "AddonECSqlColumnInfo", {
+            InstanceMethod("getType", &AddonECSqlColumnInfo::GetType),
+            InstanceMethod("getName", &AddonECSqlColumnInfo::GetName),
+            InstanceMethod("getPropertyPath", &AddonECSqlColumnInfo::GetPropertyPath),
+            InstanceMethod("isSystemProperty", &AddonECSqlColumnInfo::IsSystemProperty),
+            InstanceMethod("isGeneratedProperty", &AddonECSqlColumnInfo::IsGeneratedProperty),
+            InstanceMethod("getRootClassTableSpace", &AddonECSqlColumnInfo::GetRootClassTableSpace),
+            InstanceMethod("getRootClassName", &AddonECSqlColumnInfo::GetRootClassName),
+            InstanceMethod("getRootClassAlias", &AddonECSqlColumnInfo::GetRootClassAlias)});
+
+            exports.Set("AddonECSqlColumnInfo", t);
+
+            s_constructor = Napi::Persistent(t);
+            // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
+            // from running at program shutdown time, which would attempt to reset the reference when
+            // the environment is no longer valid.
+            s_constructor.SuppressDestruct();
+            }
+
+        static Napi::Object New(Napi::Env const& env, ECSqlColumnInfo const& colInfo)
+            {
+            return s_constructor.New({Napi::External<ECSqlColumnInfo>::New(env, const_cast<ECSqlColumnInfo*>(&colInfo))});
+            }
+
+        Napi::Value GetType(const Napi::CallbackInfo& info)
+            {
+            if (info.Length() != 0)
+                Napi::TypeError::New(info.Env(), "GetType must not have arguments").ThrowAsJavaScriptException();
+
+            ECTypeDescriptor const& dataType = GetColInfo().GetDataType();
+            Type type = Type::Id;
+            if (GetColInfo().IsSystemProperty() && dataType.IsPrimitive() && dataType.GetPrimitiveType() == PRIMITIVETYPE_Long)
+                type = Type::Id;
+            else if (dataType.IsNavigation())
+                type = Type::Navigation;
+            else if (dataType.IsStruct())
+                type = Type::Struct;
+            else if (dataType.IsPrimitiveArray())
+                type = Type::PrimitiveArray;
+            else if (dataType.IsStructArray())
+                type = Type::StructArray;
+            else
                 {
-                if (info.Length() != 1)
-                    Napi::TypeError::New(Env(), "AddonECSqlColumnInfo constructor expects two argument.").ThrowAsJavaScriptException();
-
-                m_colInfo = info[0].As<Napi::External<ECSqlColumnInfo>>().Data();
-                if (m_colInfo == nullptr)
-                    Napi::TypeError::New(Env(), "Invalid first arg for AddonECSqlColumnInfo constructor. ECSqlColumnInfo must not be nullptr").ThrowAsJavaScriptException();
-                }
-
-            ~AddonECSqlColumnInfo() {}
-
-            static bool InstanceOf(Napi::Value val)
-                {
-                if (!val.IsObject())
-                    return false;
-
-                Napi::HandleScope scope(val.Env());
-                return val.As<Napi::Object>().InstanceOf(s_constructor.Value());
-                }
-
-            //  Create projections
-            static void Init(Napi::Env& env, Napi::Object exports)
-                {
-                // ***
-                // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
-                // ***
-                Napi::HandleScope scope(env);
-                Napi::Function t = DefineClass(env, "AddonECSqlColumnInfo", {
-                InstanceMethod("getType", &AddonECSqlColumnInfo::GetType),
-                InstanceMethod("getPropertyPath", &AddonECSqlColumnInfo::GetPropertyPath),
-                InstanceMethod("getPropertyName", &AddonECSqlColumnInfo::GetPropertyName),
-                InstanceMethod("isSystemProperty", &AddonECSqlColumnInfo::IsSystemProperty),
-                InstanceMethod("isGeneratedProperty", &AddonECSqlColumnInfo::IsGeneratedProperty),
-                InstanceMethod("getRootClassTableSpace", &AddonECSqlColumnInfo::GetRootClassTableSpace)});
-                InstanceMethod("getRootClassName", &AddonECSqlColumnInfo::GetRootClassName),
-                InstanceMethod("getRootClassAlias", &AddonECSqlColumnInfo::GetRootClassAlias),
-
-                exports.Set("AddonECSqlColumnInfo", t);
-
-                s_constructor = Napi::Persistent(t);
-                // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
-                // from running at program shutdown time, which would attempt to reset the reference when
-                // the environment is no longer valid.
-                s_constructor.SuppressDestruct();
-                }
-
-            static Napi::Object New(Napi::Env const& env, ECSqlColumnInfo const& colInfo)
-                {
-                return s_constructor.New({Napi::External<ECSqlColumnInfo>::New(env, const_cast<ECSqlColumnInfo*>(&colInfo))});
-                }
-
-            Napi::Value GetType(const Napi::CallbackInfo& info)
-                {
-                if (info.Length() != 0)
-                    Napi::TypeError::New(info.Env(), "GetType must not have arguments").ThrowAsJavaScriptException();
-
-                ECTypeDescriptor const& dataType = GetColInfo().GetDataType();
-                Type type = Type::Id;
-                if (GetColInfo().IsSystemProperty() && dataType.IsPrimitive() && dataType.GetPrimitiveType() == PRIMITIVETYPE_Long)
-                    type = Type::Id;
-                else if (dataType.IsNavigation())
-                    type = Type::Navigation;
-                else if (dataType.IsStruct())
-                    type = Type::Struct;
-                else if (dataType.IsPrimitiveArray())
-                    type = Type::PrimitiveArray;
-                else if (dataType.IsStructArray())
-                    type = Type::StructArray;
-                else
+                BeAssert(dataType.IsPrimitive());
+                switch (dataType.GetPrimitiveType())
                     {
-                    BeAssert(dataType.IsPrimitive());
-                    switch (dataType.GetPrimitiveType())
-                        {
-                            case PRIMITIVETYPE_Binary:
-                                type = Type::Blob;
-                                break;
-                            case PRIMITIVETYPE_Boolean:
-                                type = Type::Boolean;
-                                break;
-                            case PRIMITIVETYPE_DateTime:
-                                type = Type::DateTime;
-                                break;
-                            case PRIMITIVETYPE_Double:
-                                type = Type::Double;
-                                break;
-                            case PRIMITIVETYPE_IGeometry:
-                                type = Type::Geometry;
-                                break;
-                            case PRIMITIVETYPE_Integer:
-                                type = Type::Int;
-                                break;
-                            case PRIMITIVETYPE_Long:
-                                type = Type::Int64;
-                                break;
-                            case PRIMITIVETYPE_Point2d:
-                                type = Type::Point2d;
-                                break;
-                            case PRIMITIVETYPE_Point3d:
-                                type = Type::Point3d;
-                                break;
-                            case PRIMITIVETYPE_String:
-                                type = Type::String;
-                                break;
-                            default:
-                                Napi::TypeError::New(info.Env(), "Unsupported ECSqlValue primitive type.").ThrowAsJavaScriptException();
-                                break;
-                        }
+                        case PRIMITIVETYPE_Binary:
+                            type = Type::Blob;
+                            break;
+                        case PRIMITIVETYPE_Boolean:
+                            type = Type::Boolean;
+                            break;
+                        case PRIMITIVETYPE_DateTime:
+                            type = Type::DateTime;
+                            break;
+                        case PRIMITIVETYPE_Double:
+                            type = Type::Double;
+                            break;
+                        case PRIMITIVETYPE_IGeometry:
+                            type = Type::Geometry;
+                            break;
+                        case PRIMITIVETYPE_Integer:
+                            type = Type::Int;
+                            break;
+                        case PRIMITIVETYPE_Long:
+                            type = Type::Int64;
+                            break;
+                        case PRIMITIVETYPE_Point2d:
+                            type = Type::Point2d;
+                            break;
+                        case PRIMITIVETYPE_Point3d:
+                            type = Type::Point3d;
+                            break;
+                        case PRIMITIVETYPE_String:
+                            type = Type::String;
+                            break;
+                        default:
+                            Napi::TypeError::New(info.Env(), "Unsupported ECSqlValue primitive type.").ThrowAsJavaScriptException();
+                            break;
                     }
-
-                return Napi::Number::New(Env(), (int) type);
                 }
 
-            Napi::Value GetPropertyPath(const Napi::CallbackInfo& info)
+            return Napi::Number::New(Env(), (int) type);
+            }
+
+        Napi::Value GetName(const Napi::CallbackInfo& info)
+            {
+            if (info.Length() != 0)
+                Napi::TypeError::New(info.Env(), "GetName must not have arguments").ThrowAsJavaScriptException();
+
+            ECPropertyCP prop = GetColInfo().GetProperty();
+            Utf8String propName;
+            if (prop != nullptr)
                 {
-                if (info.Length() != 0)
-                    Napi::TypeError::New(info.Env(), "GetPropertyPath must not have arguments").ThrowAsJavaScriptException();
-
-                return Napi::String::New(Env(), GetColInfo().GetPropertyPath().ToString().c_str());
-                }
-
-            Napi::Value GetPropertyName(const Napi::CallbackInfo& info)
-                {
-                if (info.Length() != 0)
-                    Napi::TypeError::New(info.Env(), "GetPropertyName must not have arguments").ThrowAsJavaScriptException();
-
-                ECPropertyCP prop = GetColInfo().GetProperty();
-                Utf8String propName;
-                if (prop != nullptr)
+                //if property is generated, the display label contains the select clause item as is.
+                //The property name in contrast would have encoded special characters of the select clause item.
+                //Ex: SELECT MyProp + 4 FROM Foo -> the name must be "MyProp + 4"
+                if (GetColInfo().IsGeneratedProperty())
+                    propName.assign(prop->GetDisplayLabel());
+                else
                     propName.assign(prop->GetName());
-
-                return Napi::String::New(Env(), propName.c_str());
                 }
 
-            Napi::Value IsSystemProperty(const Napi::CallbackInfo& info)
-                {
-                if (info.Length() != 0)
-                    Napi::TypeError::New(info.Env(), "IsSystemProperty must not have arguments").ThrowAsJavaScriptException();
+            return Napi::String::New(Env(), propName.c_str());
+            }
 
-                return Napi::Boolean::New(Env(), GetColInfo().IsSystemProperty());
-                }
+        Napi::Value GetPropertyPath(const Napi::CallbackInfo& info)
+            {
+            if (info.Length() != 0)
+                Napi::TypeError::New(info.Env(), "GetPropertyPath must not have arguments").ThrowAsJavaScriptException();
 
-            Napi::Value IsGeneratedProperty(const Napi::CallbackInfo& info)
-                {
-                if (info.Length() != 0)
-                    Napi::TypeError::New(info.Env(), "IsGeneratedProperty must not have arguments").ThrowAsJavaScriptException();
+            return Napi::String::New(Env(), GetColInfo().GetPropertyPath().ToString().c_str());
+            }
 
-                return Napi::Boolean::New(Env(), GetColInfo().IsGeneratedProperty());
-                }
+        Napi::Value IsSystemProperty(const Napi::CallbackInfo& info)
+            {
+            if (info.Length() != 0)
+                Napi::TypeError::New(info.Env(), "IsSystemProperty must not have arguments").ThrowAsJavaScriptException();
 
-            Napi::Value GetRootClassTableSpace(const Napi::CallbackInfo& info)
-                {
-                if (info.Length() != 0)
-                    Napi::TypeError::New(info.Env(), "GetRootClassTableSpace must not have arguments").ThrowAsJavaScriptException();
+            return Napi::Boolean::New(Env(), GetColInfo().IsSystemProperty());
+            }
 
-                return Napi::String::New(Env(), GetColInfo().GetRootClass().GetTableSpace().c_str());
-                }
+        Napi::Value IsGeneratedProperty(const Napi::CallbackInfo& info)
+            {
+            if (info.Length() != 0)
+                Napi::TypeError::New(info.Env(), "IsGeneratedProperty must not have arguments").ThrowAsJavaScriptException();
 
-            Napi::Value GetRootClassName(const Napi::CallbackInfo& info)
-                {
-                if (info.Length() != 0)
-                    Napi::TypeError::New(info.Env(), "GetRootClassName must not have arguments").ThrowAsJavaScriptException();
+            return Napi::Boolean::New(Env(), GetColInfo().IsGeneratedProperty());
+            }
 
-                return Napi::String::New(Env(), ECJsonUtilities::FormatClassName(GetColInfo().GetRootClass().GetClass()).c_str());
-                }
+        Napi::Value GetRootClassTableSpace(const Napi::CallbackInfo& info)
+            {
+            if (info.Length() != 0)
+                Napi::TypeError::New(info.Env(), "GetRootClassTableSpace must not have arguments").ThrowAsJavaScriptException();
 
-            Napi::Value GetRootClassAlias(const Napi::CallbackInfo& info)
-                {
-                if (info.Length() != 0)
-                    Napi::TypeError::New(info.Env(), "GetRootClassAlias must not have arguments").ThrowAsJavaScriptException();
+            return Napi::String::New(Env(), GetColInfo().GetRootClass().GetTableSpace().c_str());
+            }
 
-                return Napi::String::New(Env(), GetColInfo().GetRootClass().GetAlias().c_str());
-                }
-        };
+        Napi::Value GetRootClassName(const Napi::CallbackInfo& info)
+            {
+            if (info.Length() != 0)
+                Napi::TypeError::New(info.Env(), "GetRootClassName must not have arguments").ThrowAsJavaScriptException();
+
+            return Napi::String::New(Env(), ECJsonUtilities::FormatClassName(GetColInfo().GetRootClass().GetClass()).c_str());
+            }
+
+        Napi::Value GetRootClassAlias(const Napi::CallbackInfo& info)
+            {
+            if (info.Length() != 0)
+                Napi::TypeError::New(info.Env(), "GetRootClassAlias must not have arguments").ThrowAsJavaScriptException();
+
+            return Napi::String::New(Env(), GetColInfo().GetRootClass().GetAlias().c_str());
+            }
+    };
 
 //=======================================================================================
 // Projects the IECSqlValue interface into JS.
@@ -1706,6 +1714,7 @@ public:
         InstanceMethod("getBoolean", &AddonECSqlValue::GetBoolean),
         InstanceMethod("getDateTime", &AddonECSqlValue::GetDateTime),
         InstanceMethod("getDouble", &AddonECSqlValue::GetDouble),
+        InstanceMethod("getGeometry", &AddonECSqlValue::GetGeometry),
         InstanceMethod("getId", &AddonECSqlValue::GetId),
         InstanceMethod("getInt", &AddonECSqlValue::GetInt),
         InstanceMethod("getInt64", &AddonECSqlValue::GetInt64),
@@ -1793,6 +1802,19 @@ public:
             Napi::TypeError::New(info.Env(), "GetBlob must not have arguments").ThrowAsJavaScriptException();
 
         return Napi::Number::New(Env(), GetECSqlValue().GetDouble());
+        }
+
+    Napi::Value GetGeometry(const Napi::CallbackInfo& info)
+        {
+        if (info.Length() != 0)
+            Napi::TypeError::New(info.Env(), "GetGeometry must not have arguments").ThrowAsJavaScriptException();
+
+        IGeometryPtr geom = GetECSqlValue().GetGeometry();
+        Json::Value json;
+        if (SUCCESS != ECJsonUtilities::IGeometryToJson(json, *geom))
+            Napi::TypeError::New(info.Env(), "Could not convert IGeometry to JSON.").ThrowAsJavaScriptException();
+
+        return Napi::String::New(Env(), json.ToString().c_str());
         }
 
     Napi::Value GetId(const Napi::CallbackInfo& info)
@@ -1891,6 +1913,8 @@ struct AddonECSqlValueIterator : Napi::ObjectWrap<AddonECSqlValueIterator>
     private:
         static Napi::FunctionReference s_constructor;
         ECDb const* m_ecdb = nullptr;
+        IECSqlValueIterable const* m_iterable = nullptr;
+        bool m_isBeforeFirstElement = true;
         IECSqlValueIterable::const_iterator m_it;
         IECSqlValueIterable::const_iterator m_endIt;
 
@@ -1900,12 +1924,11 @@ struct AddonECSqlValueIterator : Napi::ObjectWrap<AddonECSqlValueIterator>
             if (info.Length() != 2)
                 Napi::TypeError::New(Env(), "AddonECSqlValueIterator constructor expects two argument.").ThrowAsJavaScriptException();
 
-            IECSqlValueIterable const* iterable = info[0].As<Napi::External<IECSqlValueIterable>>().Data();
-            if (iterable == nullptr)
+            m_iterable = info[0].As<Napi::External<IECSqlValueIterable>>().Data();
+            if (m_iterable == nullptr)
                 Napi::TypeError::New(Env(), "Invalid first arg for AddonECSqlValueIterator constructor. IECSqlValueIterable must not be nullptr").ThrowAsJavaScriptException();
 
-            m_it = iterable->begin();
-            m_endIt = iterable->end();
+            m_endIt = m_iterable->end();
 
             m_ecdb = info[1].As<Napi::External<ECDb>>().Data();
             if (m_ecdb == nullptr)
@@ -1953,15 +1976,28 @@ struct AddonECSqlValueIterator : Napi::ObjectWrap<AddonECSqlValueIterator>
             {
             if (m_ecdb != nullptr)
                 m_ecdb = nullptr;
+
+            if (m_iterable != nullptr)
+                m_iterable = nullptr;
             }
 
+        // A JS iterator expects the initial state of an iterator to be before the first element.
+        // So on the first call to MoveNext, the C++ iterator must be created, and not incremented.
         Napi::Value MoveNext(const Napi::CallbackInfo& info)
             {
             if (info.Length() != 0)
                 Napi::TypeError::New(info.Env(), "AddonECSqlValueIterator::MoveNext must not have arguments").ThrowAsJavaScriptException();
 
-            if (m_it != m_endIt)
-                ++m_it; //don't increment if the iterator is already at its end.
+            if (m_isBeforeFirstElement)
+                {
+                m_it = m_iterable->begin();
+                m_isBeforeFirstElement = false;
+                }
+            else
+                {
+                if (m_it != m_endIt)
+                    ++m_it; //don't increment if the iterator is already at its end.
+                }
 
             return Napi::Boolean::New(info.Env(), m_it != m_endIt);
             }

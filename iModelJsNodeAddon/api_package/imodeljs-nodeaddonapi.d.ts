@@ -663,38 +663,22 @@ declare class AddonECSqlBinder implements IDisposable {
     addArrayElement(): AddonECSqlBinder;
 }
 
-/* The data type of an AddonECSqlValue. */
-export enum ECSqlValueType {
-    Blob = 1,
-    Boolean = 2,
-    DateTime = 3,
-    Double = 4,
-    Geometry = 5,
-    Id = 6,
-    Int = 7,
-    Int64 = 8,
-    Point2d = 9,
-    Point3d = 10,
-    String = 11,
-    Navigation = 12,
-    Struct = 13,
-    PrimitiveArray = 14,
-    StructArray = 15
-}
 
 /* The AddonECSqlColumnInfo class that is projected by the iModelJs node addon. 
    @remarks No need to dispose this is its native counterpart is owned by the IECSqlValue. */
 declare class AddonECSqlColumnInfo {
     constructor();
 
-    /** Gets the data type of the column. */
-    getType(): ECSqlValueType;
+    /** Gets the data type of the column. 
+     *  @returns one of the values of the enum ECSqlValueType values, defined in imodeljs-core/common.
+     *  (enums cannot be defined in the addon)
+     */
+    getType(): number;
+    /** Gets the name of the column.
+     */
+    getName(): string;
     /** Gets the ECSQL property path of the column. */
     getPropertyPath(): string;
-    /** Gets the name of the ECProperty backing the column.
-     * @remarks This is the leaf entry of the ECSQL property path.
-     */
-    getPropertyName(): string;
     /** Indicates whether the column refers to a system property (e.g. id, className) backing the column. */
     isSystemProperty(): boolean;
     /** Indicates whether the column is backed by a generated property or not. For SELECT clause items that are expressions other
@@ -731,6 +715,8 @@ declare class AddonECSqlValue implements IDisposable {
     getDateTime(): string;
     /** Get value as double. */
     getDouble(): number;
+    /** Get value as IGeometry formatted as JSON. */
+    getGeometry(): string;
     /** Get value as id, formatted as hexadecimal string. */
     getId(): string;
     /** Get value as int. */
