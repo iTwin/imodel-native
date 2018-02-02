@@ -1716,6 +1716,7 @@ public:
         InstanceMethod("getDouble", &AddonECSqlValue::GetDouble),
         InstanceMethod("getGeometry", &AddonECSqlValue::GetGeometry),
         InstanceMethod("getId", &AddonECSqlValue::GetId),
+        InstanceMethod("getClassNameForClassId", &AddonECSqlValue::GetClassNameForClassId),
         InstanceMethod("getInt", &AddonECSqlValue::GetInt),
         InstanceMethod("getInt64", &AddonECSqlValue::GetInt64),
         InstanceMethod("getPoint2d", &AddonECSqlValue::GetPoint2d),
@@ -1824,6 +1825,35 @@ public:
 
         const BeInt64Id id = GetECSqlValue().GetId<BeInt64Id>();
         return Napi::String::New(Env(), id.ToHexStr().c_str());
+        }
+
+    Napi::Value GetClassNameForClassId(const Napi::CallbackInfo& info)
+        {
+        if (info.Length() != 0)
+            Napi::TypeError::New(info.Env(), "GetClassNameForClassId must not have arguments").ThrowAsJavaScriptException();
+
+        ECSqlColumnInfo const& colInfo = GetECSqlValue().GetColumnInfo();
+        if (colInfo.IsSystemProperty())
+            {
+            Utf8StringCR propName = colInfo.GetProperty()->GetName();
+            if (propName.EndsWithIAscii("ECClassId"))
+                {
+                const ECClassId classId = GetECSqlValue().GetId<ECClassId>();
+
+                Utf8StringCR tableSpace = GetECSqlValue().GetColumnInfo().GetRootClass().GetTableSpace();
+                ECClassCP ecClass = m_ecdb->Schemas().GetClass(classId, tableSpace.c_str());
+                if (ecClass == nullptr)
+                    {
+                    Utf8String err;
+                    err.Sprintf("Class not found for ECClassId %s.", classId.ToHexStr().c_str());
+                    Napi::TypeError::New(info.Env(), err.c_str()).ThrowAsJavaScriptException();
+                    }
+
+                return Napi::String::New(Env(), ECJsonUtilities::FormatClassName(*ecClass).c_str());
+                }
+            }
+
+        Napi::TypeError::New(info.Env(), "AddonECSqlValue.getClassNameForClassId can only be called if the ECSqlValue represents an ECClassId system property.").ThrowAsJavaScriptException();
         }
 
     Napi::Value GetInt(const Napi::CallbackInfo& info)

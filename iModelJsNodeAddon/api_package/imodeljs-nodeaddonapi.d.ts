@@ -719,6 +719,8 @@ declare class AddonECSqlValue implements IDisposable {
     getGeometry(): string;
     /** Get value as id, formatted as hexadecimal string. */
     getId(): string;
+    /** If this ECSqlValue represents a class id, this method returns the fully qualified class name. */
+    getClassNameForClassId(): string;
     /** Get value as int. */
     getInt(): number;
     /** Get value as int64. This method does not deal with JS accuracy issues of int64 values greater than 2^53. */

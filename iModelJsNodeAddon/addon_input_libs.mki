@@ -33,6 +33,11 @@ THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libfreetype2.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)liblzma.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libsnappy.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libUnits.a
+%if defined (BENTLEYCONFIG_PARASOLID)
+    THIN_ARCHIVE_INPUTS + $(ContextSubPartsLibs)libpskernel.a
+%else
+    %error parasolid should be available on all platforms that support imodeljs addon
+%endif
 
 %else
 
