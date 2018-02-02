@@ -1596,12 +1596,14 @@ Utf8String FormatUnitSet::FormatQuantity(BEU::QuantityCR qty, Utf8CP space) cons
     return txt;
     }
 
-Json::Value FormatUnitSet::FormatQuantityJson(BEU::QuantityCR qty, bool useAlias) const
+// Utf8String StdFormatQuantity(NamedFormatSpecCR nfs, BEU::QuantityCR qty, BEU::UnitCP useUnit = nullptr, Utf8CP space = nullptr, Utf8CP useLabel = nullptr, int prec = -1, double round = -1.0);
+
+Json::Value FormatUnitSet::FormatQuantityJson(BEU::QuantityCR qty, bool useAlias, Utf8CP space) const
     {
     Utf8String str;
     Json::Value jval = ToJson(useAlias);
     BEU::Quantity conv = qty.ConvertTo(m_unit);
-    Utf8String txt = NumericFormatSpec::StdFormatQuantity(*m_formatSpec, conv, nullptr, " ");
+    Utf8String txt = NumericFormatSpec::StdFormatQuantity(*m_formatSpec, conv, nullptr, space);
     jval[FormatConstant::FUSJsonValue()] = conv.GetMagnitude();
     jval[FormatConstant::FUSJsonDispValue()] = txt.c_str();
     return jval;

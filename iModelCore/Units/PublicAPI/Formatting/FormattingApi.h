@@ -618,12 +618,17 @@ public:
 struct CompositeValue
     {
 private:
+	bool m_negative;
     double m_parts[CompositeValueSpec::indxLimit];
     FormatProblemDetail m_problem;
-
+	double GetSignFactor() { return m_negative ? -1.0 : 1.0; }
     void Init();
 public:
     UNITS_EXPORT CompositeValue();
+	void SetNegative() { m_negative = true; }
+	void SetPositive() { m_negative = false; }
+	Utf8String GetSignPrefix(bool useParenth = false) { return m_negative?  (useParenth ? "(" : "-") : ""; }
+	Utf8String GetSignSuffix(bool useParenth = false) { return m_negative ? (useParenth ? ")" : "") : ""; }
     double SetMajor(double dval)  { return m_parts[CompositeValueSpec::indxMajor] = dval; }
     double SetMiddle(double dval) { return m_parts[CompositeValueSpec::indxMiddle] = dval; }
     double SetMinor(double dval)  { return m_parts[CompositeValueSpec::indxMinor] = dval; }
@@ -773,7 +778,7 @@ struct FormatUnitSet
         UNITS_EXPORT Json::Value ToJsonVerbose(bool useAlias = true) const;
         UNITS_EXPORT Utf8String ToJsonString(bool useAlias = true, bool verbose = false) const;
 
-        UNITS_EXPORT Json::Value FormatQuantityJson(BEU::QuantityCR qty, bool useAlias) const;
+        UNITS_EXPORT Json::Value FormatQuantityJson(BEU::QuantityCR qty, bool useAlias, Utf8CP space="") const;
         UNITS_EXPORT BEU::UnitCP ResetUnit();
         UNITS_EXPORT BEU::PhenomenonCP GetPhenomenon() { return (nullptr == m_unit) ? nullptr : m_unit->GetPhenomenon(); }
         UNITS_EXPORT void LoadJsonData(Json::Value jval);

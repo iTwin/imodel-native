@@ -135,8 +135,16 @@ TEST(FormattingTest, Preliminary)
     //else
     //    LOG.infov("NumAcc %d %s  (%s)", nacc.GetByteCount(), nacc.ToText().c_str());
 
+
+	FormattingTestFixture::ShowQuantity(135.191736, "ARC_DEG", "ARC_DEG", "dms8", "");
+	FormattingTestFixture::ShowQuantity(-135.191736, "ARC_DEG", "ARC_DEG", "dms8", "");
+	FormattingTestFixture::ShowQuantity(0.256, "ARC_DEG", "ARC_DEG", "dms8", "");
+	FormattingTestFixture::ShowQuantity(-0.256, "ARC_DEG", "ARC_DEG", "dms8", "");
+
     FormattingTestFixture::ShowQuantity(10.0, "M", "FT", "fi8", " ");
+	FormattingTestFixture::ShowQuantity(-10.0, "M", "FT", "fi8", " ");
     FormattingTestFixture::ShowQuantity(10.0, "M", "FT", "fi16", "");
+	FormattingTestFixture::ShowQuantity(-10.0, "M", "FT", "fi16", "");
     FormattingTestFixture::ShowQuantity(20.0, "M", "FT", "fi8", nullptr);
 
     FormattingTestFixture::TestFUSQuantity(20.0, "M", "FT(real4)", nullptr);
@@ -450,6 +458,7 @@ TEST(FormattingTest, Pasring)
     FormattingTestFixture::ParseToQuantity("2/3_FT", 0, "IN");
     FormattingTestFixture::ParseToQuantity("3_FT 1/2IN", 0, "IN");
     FormattingTestFixture::ParseToQuantity(u8"135°11'30 1/4\" ", 0, "ARC_DEG");
+	FormattingTestFixture::ParseToQuantity(u8"-135°11'30 1/4\" ", 0, "ARC_DEG");
     FormattingTestFixture::ParseToQuantity(u8"135°11'30 1/4\" ", 0, "RAD");
     FormattingTestFixture::ParseToQuantity("5' 0\"", 0, "FT");
     FormattingTestFixture::ParseToQuantity("0' 3\"", 0, "FT");
