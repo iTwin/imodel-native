@@ -1111,6 +1111,11 @@ GEOMAPI_VIRTUAL StatusInt   _ProcessClippedPolyface (PolyfaceHeaderR polyfaceHea
  //! @description Clip polyface to intersection of an array of plane sets.
 GEOMDLLIMPEXP StatusInt   ClipToPlaneSetIntersection (T_ClipPlaneSets const& planeSets, IClipToPlaneSetOutput& output, bool triangulateOutput) const;
 
+
+//!  @description Fast, crude decimator - used during tile generation.
+GEOMDLLIMPEXP PolyfaceHeaderPtr FastClusteredDecimate (double tolerance);
+
+
  //! @description Clip polyface to range.
 GEOMDLLIMPEXP StatusInt   ClipToRange (DRange3dCR clipRange, PolyfaceQuery::IClipToPlaneSetOutput& output, bool triangulateOutput) const;
 
