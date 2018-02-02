@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 #include <DgnPlatform/ElementTileTree.h>
-#include <DgnPlatform/TileIO.h>
+#include <DgnPlatform/TileReader.h>
 #include <folly/BeFolly.h>
 #include <DgnPlatform/RangeIndex.h>
 #include <numeric>
@@ -1147,6 +1147,21 @@ bool Loader::_IsExpired(uint64_t createTimeMillis)
 
     uint64_t lastModMillis = tile.GetElementRoot().GetModel()->GetLastElementModifiedTime();
     return createTimeMillis < static_cast<uint64_t>(lastModMillis);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Loader::_IsValidData()
+    {
+    // TFS#800675 quick-fix...reject cached tile if it contains deleted elements
+    // (We key off the most recent modification to any element in the model in order to determine
+    // tile validity - that obviously can't work for deleted elements).
+    // Eventual real solution is to selectively repair tiles by combining cached data with data
+    // from changed elements.
+    BeAssert(!m_tileBytes.empty());
+    TileTree::IO::DgnTileReader reader(m_tileBytes, *GetElementTile().GetElementRoot().GetModel(), *GetRenderSystem());
+    return reader.VerifyFeatureTable();
     }
 
 /*---------------------------------------------------------------------------------**//**
