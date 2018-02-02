@@ -146,6 +146,9 @@ static void initLogging (char const* argv0)
     BeFileName configFile;
     if (SUCCESS == getLogConfigurationFilename(configFile, argv0))
         {
+        // set BENTLEY_DWGIMPORTER_LOGGING_CONFIG so ImporterAppTests will be able to use the same logging config
+        if (!::SetEnvironmentVariableW(L"BENTLEY_DWGIMPORTER_LOGGING_CONFIG", configFile.GetName()))
+            printf ("Unable to set BENTLEY_DWGIMPORTER_LOGGING_CONFIG - ImporterAppTests will use default logging config.\n");
         NativeLogging::LoggingConfig::SetOption (CONFIG_OPTION_CONFIG_FILE, configFile);
         NativeLogging::LoggingConfig::ActivateProvider (NativeLogging::LOG4CXX_LOGGING_PROVIDER);
         }
