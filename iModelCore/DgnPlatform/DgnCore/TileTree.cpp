@@ -1559,6 +1559,7 @@ void Root::InvalidateDamagedTiles()
     if (m_damagedRanges.empty() || m_rootTile.IsNull())
         return;
 
+    CancelAllTileLoads();
     while (m_activeLoads.size() > 0)
         m_cv.InfiniteWait(lock);
 
