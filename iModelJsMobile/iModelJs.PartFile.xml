@@ -104,7 +104,7 @@
     <!-- ********************** -->
 
     <Part Name="Gtest-Base" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke"
-    BentleyBuildMakeOptions="-dTEST_NAME=iModelJsTests -dTEST_COLLECTION_PRODUCT=iModelJs-Tests -dTEST_FRAMEWORK_SQLANG=iModelJsNodeAddon_en.sqlang.db3" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    BentleyBuildMakeOptions="-dTEST_NAME=iModelJsTests -dTEST_COLLECTION_PRODUCT=iModelJs-Tests -dTEST_FRAMEWORK_SQLANG=iModelJsNodeAddon_en.sqlang.db3" OnlyPlatforms="x86,x64,MacOs*,Linux*,iOSARM64">
         <SubProduct ProductName="iModelJs-Tests"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -117,7 +117,7 @@
         <SubPart PartName="Gtest-Base" LibType="Dynamic"/>
     </Part>
 
-    <Part Name="Gtest-Unix" OnlyPlatforms="MacOS*,Linux*">
+    <Part Name="Gtest-Unix" OnlyPlatforms="MacOS*,Linux*,iOSARM64">
         <SubPart PartName="Gtest-Base" LibType="Static"/>
     </Part>
 
@@ -127,7 +127,7 @@
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=iModelJs-Gtest -dGTEST_NAME=iModelJsTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/iModelJsTests" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=iModelJs-Gtest -dGTEST_NAME=iModelJsTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/iModelJsTests" OnlyPlatforms="x86,x64,MacOs*,Linux*,iOSARM64">
         <SubProduct ProductName="iModelJs-Gtest" />
     </Part>
 

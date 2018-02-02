@@ -76,11 +76,7 @@ Runtime::EvaluateResult Runtime::EvaluateScript (Utf8CP str, Utf8CP id) {return 
 
 END_BENTLEY_IMODELJS_JS_NAMESPACE
 
-#ifdef BENTLEYCONFIG_OS_APPLE_IOS
-
-#warning WIP
-
-#elif defined(BENTLEYCONFIG_OS_APPLE_MACOS)
+#if defined(BENTLEYCONFIG_OS_APPLE_IOS) || defined(BENTLEYCONFIG_OS_APPLE_MACOS)
 
 BEGIN_BENTLEY_IMODELJS_JS_NAMESPACE
 

@@ -530,7 +530,15 @@ void Host::SetupJsRuntime()
         //BeFileName tmpDir;
         //Desktop::FileSystem::BeGetTempPath(tmpDir);
         knownLocations.Set("tempDir", Napi::String::New(env, newDir(cwd, L"tempDir", true).c_str()));
-#else
+#elif defined(BENTLEYCONFIG_OS_APPLE_IOS)
+        BeFileName cwd;
+        Desktop::FileSystem::GetCwd(cwd);
+        knownLocations.Set("packageAssetsDir", Napi::String::New(env, newDir(cwd, L"packageAssetsDir", false).c_str()));
+        knownLocations.Set("assetsDir", Napi::String::New(env, newDir(cwd, L"assetsDir", false).c_str()));
+        //BeFileName tmpDir;
+        //Desktop::FileSystem::BeGetTempPath(tmpDir);
+        knownLocations.Set("tempDir", Napi::String::New(env, newDir(cwd, L"tempDir", true).c_str()));
+#else 
         #error implement known locations for mobile platforms ...
 #endif
 
