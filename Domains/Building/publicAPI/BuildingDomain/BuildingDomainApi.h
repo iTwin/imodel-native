@@ -2,7 +2,7 @@
 |
 |     $Source: publicAPI/BuildingDomain/BuildingDomainApi.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,6 +11,6 @@
 
 #include "ArchitecturalPhysical\ArchitecturalPhysicalApi.h"
 #include "BuildingPhysical\BuildingPhysicalApi.h"
-#include "BuildingCommon\BuildingCommonApi.h"
-#include "MechanicalFunctional\MechanicalFunctionalApi.h"
+//#include "BuildingCommon\BuildingCommonApi.h"
+//#include "MechanicalFunctional\MechanicalFunctionalApi.h"
 #include "BuildingDomainUtilities.h"

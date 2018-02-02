@@ -2,7 +2,7 @@
 |
 |     $Source: BimCreater/Bimcreater/BimCreater.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -239,7 +239,7 @@ Dgn::DgnDbPtr BimCreater::CreateDgnDb(BeFileNameCR outputFileName)
 Dgn::DgnDbPtr BimCreater::OpenDgnDb(BeFileNameCR outputFileName)
 	{
 	// Initialize parameters needed to create a DgnDb
-	Dgn::DgnDb::OpenParams openParams(BeSQLite::Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, Dgn::SchemaUpgradeOptions::AllowedDomainUpgrades::CompatibleOnly );
+	Dgn::DgnDb::OpenParams openParams(BeSQLite::Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes );
 
 	// Create the DgnDb file. The BisCore domain schema is also imported. Note that a seed file is not required.
 	BeSQLite::DbResult openStatus;
@@ -1110,7 +1110,7 @@ BentleyStatus BimCreater::DoCreate()
 
     if (BentleyStatus::SUCCESS != BuildingDomain::BuildingDomainUtilities::RegisterDomainHandlers())
         return BentleyStatus::ERROR;
-
+#ifdef USE_PROTOTYPE
     if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(PlantBIM::ProcessEquipmentFunctionalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
         return BentleyStatus::ERROR;
 
@@ -1122,9 +1122,10 @@ BentleyStatus BimCreater::DoCreate()
 
     if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(PlantBIM::ProcessPipingFunctionalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
         return BentleyStatus::ERROR;
-
+#else
     if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(PlantBIM::ProcessPlantFunctionalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
         return BentleyStatus::ERROR;
+#endif
 
     if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(Building::SpacePlanning::SpacePlanningDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
         return BentleyStatus::ERROR;
@@ -1154,9 +1155,9 @@ BentleyStatus BimCreater::DoCreate()
 
     // This is where we create add the information to the BIM file. You can control the number of Units, SubUnits and P&ID. 
 
-    int numberOfUnits = 5;
-    int numberOfSubunits = 3;
-    int numberOfPids = 10;
+    int numberOfUnits = 1;
+    int numberOfSubunits = 1;
+    int numberOfPids = 5;
 
     for (int unitNum = 0; unitNum < numberOfUnits; unitNum++)
         {
@@ -1178,12 +1179,12 @@ BentleyStatus BimCreater::DoCreate()
         
         a->Add(buildingGeometry);
 
-        Building::SpacePlanning::BuildingPtr containmentBuilding = Building::SpacePlanning::Building::Create ( *physicalModel, a, 250.0);
+        //Building::SpacePlanning::BuildingPtr containmentBuilding = Building::SpacePlanning::Building::Create ( *physicalModel, a, 250.0);
 
-        Building::SpacePlanning::BuildingRequirementPtr building = Building::SpacePlanning::BuildingRequirement::Create(*db, functionalModel->GetModelId());
+        //Building::SpacePlanning::BuildingRequirementPtr building = Building::SpacePlanning::BuildingRequirement::Create(*db, functionalModel->GetModelId());
 
-        Dgn::DgnElementCPtr bldg = containmentBuilding->Insert();
-        Dgn::DgnElementCPtr fbldg = building->Insert();
+        //Dgn::DgnElementCPtr bldg = containmentBuilding->Insert();
+        //Dgn::DgnElementCPtr fbldg = building->Insert();
 
 
         for (int subUnitNum = 0; subUnitNum < numberOfSubunits; subUnitNum++)
@@ -1382,46 +1383,10 @@ BentleyStatus BimCreater::PopulateEquipmentProperties(Dgn::DgnElementPtr element
     element->SetPropertyValue("Number", stringValue);
     element->SetPropertyValue("NUMBER", stringValue);
 
+    BentleyB0200::AecUnits::AecUnitsUtilities::SetDoublePropertyUsingUnitString(*element, "Diameter", AEC_UNIT_MM, 150.0);
+    BentleyB0200::AecUnits::AecUnitsUtilities::SetDoublePropertyUsingUnitString(*element, "DIAMETER", AEC_UNIT_MM, 150.0);
 
-    doubleValue.SetDouble(2.0);
-    element->SetPropertyValue("Height", doubleValue);
-    element->SetPropertyValue("Width", doubleValue);
-    element->SetPropertyValue("HEIGHT", doubleValue);
-    element->SetPropertyValue("WIDTH", doubleValue);
-
-    doubleValue.SetDouble(200);
-    element->SetPropertyValue("Diameter", doubleValue);
-    element->SetPropertyValue("DIAMETER", doubleValue);
-
-   
-
-    doubleValue.SetDouble(65.0);
-    element->SetPropertyValue("OperatingTemperature", doubleValue);
-    element->SetPropertyValue("OPERATING_TEMPERATURE", doubleValue);
-
-    doubleValue.SetDouble(80.0);
-    element->SetPropertyValue("UpperLimitDesignTemperature", doubleValue);
-    element->SetPropertyValue("UPPER_LIMIT_DESIGN_TEMPERATURE", doubleValue);
-
-    doubleValue.SetDouble(60.0);
-    element->SetPropertyValue("AmbientOperatingTemperature", doubleValue);
-    element->SetPropertyValue("AMBIENT_OPERATING_TEMPERATURE", doubleValue);
-
-    doubleValue.SetDouble(6.0);
-    element->SetPropertyValue("LowerLimitDesignPressure", doubleValue);
-    element->SetPropertyValue("LOWER_LIMIT_DESIGN_PRESSURE", doubleValue);
-
-    doubleValue.SetDouble(6.0);
-    element->SetPropertyValue("OperatingPressure", doubleValue);
-    element->SetPropertyValue("OPERATING_PRESSURE", doubleValue);
-
-    doubleValue.SetDouble(12.0);
-    element->SetPropertyValue("UpperLimitDesignPressure", doubleValue);
-    element->SetPropertyValue("UpperLimitPressure", doubleValue);
-    element->SetPropertyValue("UPPER_LIMIT_DESIGN_PRESSURE", doubleValue);
-    element->SetPropertyValue("UPPER_LIMIT_PRESSURE", doubleValue);
-
-    
+ 
     return BentleyStatus::SUCCESS;
 
     }
@@ -1454,15 +1419,37 @@ BentleyStatus BimCreater::PopulateElementProperties(Dgn::DgnElementPtr element)
             ECN::ECValue doubleValue;
 
             if (prop->GetName() == "InsulationThickness" || prop->GetName() == "INSULATION_THICKNESS")
-                doubleValue.SetDouble( 50.0 );
+                BentleyB0200::AecUnits::AecUnitsUtilities::SetDoublePropertyUsingUnitString(*element, prop->GetName(), AEC_UNIT_MM, 50.0);
             else if (prop->GetName() == "DryWeight" || prop->GetName() == "DRY_WEIGHT")
-                doubleValue.SetDouble(900.0);
+                BentleyB0200::AecUnits::AecUnitsUtilities::SetDoublePropertyUsingUnitString(*element, prop->GetName(), AEC_UNIT_LBM, 900.0);
             else if (prop->GetName() == "TotalWeight" || prop->GetName() == "TOTAL_WEIGHT")
-                doubleValue.SetDouble(1500.0);
-            else
-                doubleValue.SetDouble((i + 1) * 10.0);
+                BentleyB0200::AecUnits::AecUnitsUtilities::SetDoublePropertyUsingUnitString(*element, prop->GetName(), AEC_UNIT_LBM, 1500.0);
+            else if (prop->GetName() == "OverallHeight" || prop->GetName() == "Height" || prop->GetName() == "HEIGHT" )
+                BentleyB0200::AecUnits::AecUnitsUtilities::SetDoublePropertyUsingUnitString(*element, prop->GetName(), AEC_UNIT_MM, 2500.0);
+            else if (prop->GetName() == "OverallWidth" || prop->GetName() == "Width" || prop->GetName() == "WIDTH")
+                BentleyB0200::AecUnits::AecUnitsUtilities::SetDoublePropertyUsingUnitString(*element, prop->GetName(), AEC_UNIT_MM, 1000.0);
+            else if (prop->GetName() == "LowerLimitDesignTemperature" )
+                BentleyB0200::AecUnits::AecUnitsUtilities::SetDoublePropertyUsingUnitString(*element, prop->GetName(), AEC_UNIT_CELSIUS, 50.0);
+            else if (prop->GetName() == "UpperLimitDesignTemperature" || prop->GetName() == "UPPER_LIMIT_DESIGN_TEMPERATURE")
+                BentleyB0200::AecUnits::AecUnitsUtilities::SetDoublePropertyUsingUnitString(*element, prop->GetName(), AEC_UNIT_CELSIUS, 90.0);
+            else if (prop->GetName() == "OperatingTemperature" || prop->GetName() == "OPERATING_TEMPERATURE")
+                BentleyB0200::AecUnits::AecUnitsUtilities::SetDoublePropertyUsingUnitString(*element, prop->GetName(), AEC_UNIT_CELSIUS, 80.0);
+            else if (prop->GetName() == "AmbientOperatingTemperature" || prop->GetName() == "AMBIENT_OPERATING_TEMPERATURE")
+                BentleyB0200::AecUnits::AecUnitsUtilities::SetDoublePropertyUsingUnitString(*element, prop->GetName(), AEC_UNIT_CELSIUS, 80.0);
+            else if (prop->GetName() == "LowerLimitDesignPressure" || prop->GetName() == "LOWER_LIMIT_DESIGN_PRESSURE" )
+                BentleyB0200::AecUnits::AecUnitsUtilities::SetDoublePropertyUsingUnitString(*element, prop->GetName(), AEC_UNIT_PA, 3.0);
+            else if (prop->GetName() == "OperatingPressure" || prop->GetName() == "OPERATING_PRESSURE")
+                BentleyB0200::AecUnits::AecUnitsUtilities::SetDoublePropertyUsingUnitString(*element, prop->GetName(), AEC_UNIT_PA, 5.0);
+            else if (prop->GetName() == "UpperLimitDesignPressure" || prop->GetName() == "UPPER_LIMIT_DESIGN_PRESSURE" )
+                BentleyB0200::AecUnits::AecUnitsUtilities::SetDoublePropertyUsingUnitString(*element, prop->GetName(), AEC_UNIT_PA, 8.0);
 
-            element->SetPropertyValue(prop->GetName().c_str(), doubleValue);
+            
+            
+            else
+                {
+                doubleValue.SetDouble((i + 1) * 10.0);
+                element->SetPropertyValue(prop->GetName().c_str(), doubleValue);
+                }
             }
         else if (typeName == "string")
             {
@@ -1563,24 +1550,24 @@ BentleyStatus BimCreater::CreateBuilding(BuildingPhysical::BuildingPhysicalModel
 
 			GeometricTools::CreateGeometry(buildingElement, physicalModel);
 
-			ECN::IECInstancePtr instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "Classification");
-			PopulateInstanceProperties(instance);
-			instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "Manufacturer");
-			PopulateInstanceProperties(instance);
-			instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "Phases");
-			PopulateInstanceProperties(instance);
-			instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "IdentityData");
-			PopulateInstanceProperties(instance);
-			instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "FireResistance");
-			PopulateInstanceProperties(instance);
-			instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "AnalyticalProperties");
-			PopulateInstanceProperties(instance);
-			instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "AcousticalProperties");
-			PopulateInstanceProperties(instance);
-			instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "ABDIFCOerrides");
-			PopulateInstanceProperties(instance);
-			instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "ABDIdentification");
-			PopulateInstanceProperties(instance);
+			//ECN::IECInstancePtr instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "Classification");
+			//PopulateInstanceProperties(instance);
+			//instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "Manufacturer");
+			//PopulateInstanceProperties(instance);
+			//instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "Phases");
+			//PopulateInstanceProperties(instance);
+			//instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "IdentityData");
+			//PopulateInstanceProperties(instance);
+			//instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "FireResistance");
+			//PopulateInstanceProperties(instance);
+			//instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "AnalyticalProperties");
+			//PopulateInstanceProperties(instance);
+			//instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "AcousticalProperties");
+			//PopulateInstanceProperties(instance);
+			//instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "ABDIFCOerrides");
+			//PopulateInstanceProperties(instance);
+			//instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "ABDIdentification");
+			//PopulateInstanceProperties(instance);
 
 			PopulateElementProperties(buildingElement);
 
@@ -1634,24 +1621,24 @@ BentleyStatus BimCreater::CreateBuilding(BuildingPhysical::BuildingPhysicalModel
 
 			GeometricTools::CreateGeometry(buildingElement, physicalModel);
 
-			ECN::IECInstancePtr instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "Classification");
-			PopulateInstanceProperties(instance);
-			instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "Manufacturer");
-			PopulateInstanceProperties(instance);
-			instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "Phases");
-			PopulateInstanceProperties(instance);
-			instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "IdentityData");
-			PopulateInstanceProperties(instance);
-			instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "FireResistance");
-			PopulateInstanceProperties(instance);
-			instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "AnalyticalProperties");
-			PopulateInstanceProperties(instance);
-			instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "AcousticalProperties");
-			PopulateInstanceProperties(instance);
-			instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "ABDIFCOerrides");
-			PopulateInstanceProperties(instance);
-			instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "ABDIdentification");
-			PopulateInstanceProperties(instance);
+			//ECN::IECInstancePtr instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "Classification");
+			//PopulateInstanceProperties(instance);
+			//instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "Manufacturer");
+			//PopulateInstanceProperties(instance);
+			//instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "Phases");
+			//PopulateInstanceProperties(instance);
+			//instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "IdentityData");
+			//PopulateInstanceProperties(instance);
+			//instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "FireResistance");
+			//PopulateInstanceProperties(instance);
+			//instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "AnalyticalProperties");
+			//PopulateInstanceProperties(instance);
+			//instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "AcousticalProperties");
+			//PopulateInstanceProperties(instance);
+			//instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "ABDIFCOerrides");
+			//PopulateInstanceProperties(instance);
+			//instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "ABDIdentification");
+			//PopulateInstanceProperties(instance);
 
 			PopulateElementProperties(buildingElement);
 

@@ -2,7 +2,7 @@
 |
 |     $Source: BimCreater/Bimcreater/Geometry.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "stdafx.h"
@@ -924,6 +924,11 @@ BentleyStatus GeometricTools::Create3dPipeGeometry(Dgn::PhysicalElementR pipe, D
 
     // Create the centerline
 
+    Dgn::DgnSubCategoryId subCategoryId;
+
+    BuildingDomain::BuildingDomainUtilities::FindOrCreateSubCategory(&pipe.GetDgnDb(), categoryId, subCategoryId, "Center Line");
+
+    params.SetSubCategoryId(subCategoryId);
     params.SetWeight(2);
     builder->Append(params);
 

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/BuildingDomainTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BuildingDomainBaseFixture.h"
@@ -59,8 +59,8 @@ TEST_F(BuildingDomainTestFixture, EnsureDomainsAreRegistered)
 
     DgnDomainCP architecturalDomain = db->Domains().FindDomain(ArchitecturalPhysical::ArchitecturalPhysicalDomain::GetDomain().GetDomainName());
     ASSERT_TRUE(NULL != architecturalDomain);
-	DgnDomainCP buildingCommonDomain = db->Domains().FindDomain(BuildingCommon::BuildingCommonDomain::GetDomain().GetDomainName());
-	ASSERT_TRUE(NULL != buildingCommonDomain);
+//	DgnDomainCP buildingCommonDomain = db->Domains().FindDomain(BuildingCommon::BuildingCommonDomain::GetDomain().GetDomainName());
+//	ASSERT_TRUE(NULL != buildingCommonDomain);
 	DgnDomainCP buildingPhysicalDomain = db->Domains().FindDomain(BuildingPhysical::BuildingPhysicalDomain::GetDomain().GetDomainName());
 	ASSERT_TRUE(NULL != buildingPhysicalDomain);
 	}

@@ -1,13 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="BuildingPhysical" alias="BldgPhys" version="01.00.00" description="Building Physical Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00.13" alias="bsca"/>
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
-    <ECCustomAttributes>
-        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.13">
-            <SchemaFullNameAtEditingStart>BuildingPhysical.01.00</SchemaFullNameAtEditingStart>
-            <TrackingEnabled>True</TrackingEnabled>
-        </SchemaChangeTrackingState>
-    </ECCustomAttributes>
     <ECEntityClass typeName="BuildingPhysicalModel" displayLabel="Building Physical Model">
         <BaseClass>bis:PhysicalModel</BaseClass>
         <ECCustomAttributes>

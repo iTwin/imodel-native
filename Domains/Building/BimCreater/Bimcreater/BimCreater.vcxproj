@@ -104,14 +104,14 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_CONSOLE;%(PreprocessorDefinitions);BENTLEY_WIN32;</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(DesignModelingDomainsSDKLocation)PublicApi;$(DesignModelingDomainsSDKLocation)VendorApi</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(DesignModelingDomainsSDKLocation)PublicApi;$(DesignModelingDomainsSDKLocation)VendorApi;D:\Builds\SourceTrees\BuildingDomainDev\out\Winx64\BuildContexts\DgnClientFx\VendorAPI</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(DesignModelingDomainsSDKLocation)lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>BuildingElements.lib;SpacePlanningDomain.lib;GridElements.lib;BentleyGeom.lib;BuildingDomain.lib;Bentley.lib;BeSQLite.lib;BeSQLiteEC.lib;DgnPlatform.lib;BeXml.lib;BeLibXml2.lib;ECObjects.lib;Units.lib;BaseGeoCoord.lib;BeJsonCpp.lib;plantPrototypeDomainHandler.lib;plantDomainHandler.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>AecUnits.lib;BuildingElements.lib;SpacePlanningDomain.lib;GridElements.lib;BentleyGeom.lib;BuildingDomain.lib;Bentley.lib;BeSQLite.lib;BeSQLiteEC.lib;DgnPlatform.lib;BeXml.lib;BeLibXml2.lib;ECObjects.lib;Units.lib;BaseGeoCoord.lib;BeJsonCpp.lib;plantPrototypeDomainHandler.lib;plantDomainHandler.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /s /y $(DesignModelingDomainsSdkLocation)Assemblies\*  $(outdir)

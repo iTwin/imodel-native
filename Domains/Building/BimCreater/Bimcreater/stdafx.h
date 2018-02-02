@@ -6,12 +6,20 @@
 #pragma once
 
 #include <BuildingDomain/BuildingDomainApi.h>
-#include <Grids\gridsApi.h>
-#include <PlantPrototype\CommonEquipmentFunctional.h>
-#include <PlantPrototype\CommonPipingFunctionalBreakdown.h>
-#include <PlantPrototype\CommonPipingPhysical.h>
-#include <PlantPrototype\CommonPipingFunctional.h>
-#include <Plant\CommonPlantFunctional.h>
+#include <Grids/gridsApi.h>
+#include <AecUnits/AecUnitsApi.h>
+
+#define USE_PROTOTYPE
+
+#ifdef USE_PROTOTYPE
+    #include <PlantPrototype\CommonEquipmentFunctional.h>
+    #include <PlantPrototype\CommonPipingFunctionalBreakdown.h>
+    #include <PlantPrototype\CommonPipingPhysical.h>
+    #include <PlantPrototype\CommonPipingFunctional.h>
+#else
+    #include <Plant\PlantDomainApi.h>
+#endif
+
 #include <SpacePlanning\Domain\SpacePlanningDomain.h>
 #include <SpacePlanning\Elements\ElementsApi.h>
 #include <SpacePlanning\Handlers\HandlersApi.h>
