@@ -2,7 +2,7 @@
 #
 #     $Source: building.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
@@ -65,9 +65,9 @@ CPchOpts  = $(UsePrecompiledHeaderOptions)
 
 $(o)ArchitecturalPhysicalDomain$(oext) : $(ArchPhysSrc)ArchitecturalPhysicalDomain.cpp ${MultiCompileDepends} $(ArchPhysPublicApi)ArchitecturalPhysicalDomain.h
 
-$(o)BuildingCommonDomain$(oext) : $(BldgCmnSrc)BuildingCommonDomain.cpp ${MultiCompileDepends} $(BldgCmnPublicApi)BuildingCommonDomain.h
+#$(o)BuildingCommonDomain$(oext) : $(BldgCmnSrc)BuildingCommonDomain.cpp ${MultiCompileDepends} $(BldgCmnPublicApi)BuildingCommonDomain.h
 
-$(o)MechanicalFunctionalDomain$(oext) : $(MechFuncSrc)MechanicalFunctionalDomain.cpp ${MultiCompileDepends} $(MechFuncPublicApi)MechanicalFunctionalDomain.h
+#$(o)MechanicalFunctionalDomain$(oext) : $(MechFuncSrc)MechanicalFunctionalDomain.cpp ${MultiCompileDepends} $(MechFuncPublicApi)MechanicalFunctionalDomain.h
 
 $(o)BuildingPhysicalDomain$(oext) : $(BldgPhysSrc)BuildingPhysicalDomain.cpp ${MultiCompileDepends} $(BldgPhysPublicApi)BuildingPhysicalDomain.h
 

@@ -30,8 +30,8 @@ namespace BuildingDomain
         if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::ArchitecturalPhysical::ArchitecturalPhysicalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
 			return BentleyStatus::ERROR;
 
-		if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::BuildingCommon::BuildingCommonDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
-			return BentleyStatus::ERROR;
+		//if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::BuildingCommon::BuildingCommonDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+		//	return BentleyStatus::ERROR;
 
         if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(Profiles::ProfilesDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
             return BentleyStatus::ERROR;
@@ -48,8 +48,8 @@ namespace BuildingDomain
 		if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain( Dgn::FunctionalDomain::GetDomain() , Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
 			return BentleyStatus::ERROR;
 
-		if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::MechanicalFunctional::MechanicalFunctionalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
-			return BentleyStatus::ERROR;
+		//if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::MechanicalFunctional::MechanicalFunctionalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+		//	return BentleyStatus::ERROR;
 
         if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain( ConstraintModel::ConstraintModelDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
             return BentleyStatus::ERROR;
@@ -1069,6 +1069,38 @@ namespace BuildingDomain
 
         return BentleyStatus::SUCCESS;
         }
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Bentley.Systems
+    //---------------------------------------------------------------------------------------
+
+    Dgn::DgnDbStatus BuildingDomainUtilities::FindOrCreateSubCategory(Dgn::DgnDbPtr dgnDb, Dgn::DgnCategoryId categoryId, Dgn::DgnSubCategoryId &subCategoryId, Utf8CP subCategoryName)
+        {
+
+        Dgn::DefinitionModelR dictionary = dgnDb->GetDictionaryModel();
+        Utf8String subName(subCategoryName);
+
+        Dgn::DgnCode subCategoryCode = Dgn::DgnSubCategory::CreateCode(*dgnDb, categoryId, subName);
+
+        subCategoryId = Dgn::DgnSubCategory::QuerySubCategoryId(*dgnDb, subCategoryCode);
+
+
+        if (!subCategoryId.IsValid())
+            {
+            Dgn::DgnSubCategory::CreateParams subParams(*dgnDb, categoryId, subName, Dgn::DgnSubCategory::Appearance());
+            Dgn::DgnSubCategory subCategory(subParams);
+
+            Dgn::DgnDbStatus status;
+            Dgn::DgnElementCPtr element = subCategory.Insert(&status);
+            if (status != Dgn::DgnDbStatus::Success)
+                return status;
+
+            dgnDb->SaveChanges();
+            subCategoryId = subCategory.GetSubCategoryId();
+            }
+        return Dgn::DgnDbStatus::Success;
+        }
+
 
     }
 

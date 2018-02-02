@@ -2,7 +2,7 @@
 |
 |     $Source: publicAPI/BuildingDomain/BuildingDomainUtilities.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -99,6 +99,8 @@ namespace BuildingDomain
         BUILDING_DOMAIN_EXPORT static BentleyStatus                                    SetDoublePropertyFromStringWithUnits(Dgn::DgnElementR element, Utf8StringCR propertyName, Utf8StringCR propertyValueString);
         BUILDING_DOMAIN_EXPORT static BentleyStatus                                    SetDoublePropertyUsingUnitString(Dgn::DgnElementR element, Utf8StringCR propertyName, Utf8StringCR unitString, double value);
         BUILDING_DOMAIN_EXPORT static BentleyStatus                                    GetDoublePropertyUsingUnitString(Dgn::DgnElementCR element, Utf8StringCR propertyName, Utf8StringCR unitString, double& value);
+        BUILDING_DOMAIN_EXPORT static Dgn::DgnDbStatus                                 FindOrCreateSubCategory(Dgn::DgnDbPtr dgnDb, Dgn::DgnCategoryId categoryId, Dgn::DgnSubCategoryId &subCategoryId, Utf8CP subCategoryName);
+
         };
 
 	//=======================================================================================
