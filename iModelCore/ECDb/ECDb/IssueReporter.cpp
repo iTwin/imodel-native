@@ -15,7 +15,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 BentleyStatus IssueReporter::AddListener(ECDb::IIssueListener const& issueListener)
     {
     BeMutexHolder lock(m_mutex);
-
     if (m_issueListener != nullptr)
         return ERROR;
 

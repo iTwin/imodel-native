@@ -228,7 +228,6 @@ CachedStatementPtr ECDb::Impl::GetCachedSqliteStatement(Utf8CP sql) const
         return nullptr;
 
     BeAssert(m_ecdb.GetDbFile() != nullptr);
-
     CachedStatementPtr stmt = nullptr;
     if (BE_SQLITE_OK != m_sqliteStatementCache.GetPreparedStatement(stmt, *m_ecdb.GetDbFile(), sql))
         return nullptr;
@@ -243,7 +242,6 @@ CachedStatementPtr ECDb::Impl::GetCachedSqliteStatement(Utf8CP sql) const
 void ECDb::Impl::ClearECDbCache(Utf8CP tableSpace) const
     {
     BeMutexHolder lock(m_mutex);
-
     for (AppData::Key const* appDataKey : m_appDataToDeleteOnClearCache)
         {
         m_ecdb.DropAppData(*appDataKey);
@@ -253,7 +251,6 @@ void ECDb::Impl::ClearECDbCache(Utf8CP tableSpace) const
         m_schemaManager->ClearCache(tableSpace);
 
     const_cast<ChangeManager&>(m_changeManager).ClearCache();
-
     const_cast<StatementCache&>(m_sqliteStatementCache).Empty();
 
     //increment the counter. This allows code (e.g. ECSqlStatement) that depends on objects in the cache to invalidate itself
@@ -269,7 +266,6 @@ void ECDb::Impl::ClearECDbCache(Utf8CP tableSpace) const
 BentleyStatus ECDb::Impl::OnAddFunction(DbFunction& function) const
     {
     BeMutexHolder lock(m_mutex);
-
     DbFunctionKey key(function);
     m_sqlFunctions[key] = &function;
     return SUCCESS;
@@ -281,7 +277,6 @@ BentleyStatus ECDb::Impl::OnAddFunction(DbFunction& function) const
 void ECDb::Impl::OnRemoveFunction(DbFunction& function) const
     {
     BeMutexHolder lock(m_mutex);
-
     DbFunctionKey key(function);
     m_sqlFunctions.erase(key);
     }
@@ -328,7 +323,6 @@ void ECDb::Impl::UnregisterBuiltinFunctions() const
 BentleyStatus ECDb::Impl::Purge(ECDb::PurgeMode mode) const
     {
     BeMutexHolder lock(m_mutex);
-
     if (Enum::Contains(mode, ECDb::PurgeMode::FileInfoOwnerships))
         {
         if (SUCCESS != PurgeFileInfos())
