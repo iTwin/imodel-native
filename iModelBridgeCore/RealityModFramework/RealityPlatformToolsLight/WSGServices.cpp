@@ -59,6 +59,11 @@ void WSGRequest::_PerformRequest(const WSGURL& wsgRequest, RawServerResponse& re
     {
     if(m_requestCallback)
         return m_requestCallback(wsgRequest, response, verifyPeer, file);
+    else
+        {
+        response.body = "Curl is not included with this version of RealityPlatformTools."
+                        "In order to perform requests, you must first set WSGRequest::GetInstance().SetRequestCallback(...)";
+        }
     }
 
 //-------------------------------------------------------------------------------------

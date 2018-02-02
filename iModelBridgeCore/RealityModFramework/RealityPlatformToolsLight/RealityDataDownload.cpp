@@ -76,6 +76,11 @@ RealityDataDownload::~RealityDataDownload()
         delete[] m_pEntries;
     };
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                           Spencer.Mason                             01/2018
+// Without Curl, the RealityDataDownload class loses its purpose. Do not use this class,
+// if you are using RealityPlatformToolsLight
+//----------------------------------------------------------------------------------------
 RealityDataDownload::DownloadReport* RealityDataDownload::Perform()
     {
     m_dlReport = DownloadReport();

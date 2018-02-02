@@ -54,8 +54,12 @@ void GCSRequestManager::GCS_status_func(int index, void *pClient, int ErrorCode,
         }
     }
 
-void GCSRequestManager::Setup(Utf8String serverUrl)
+RPT_DownloadFunction GCSRequestManager::s_downloadFunction = nullptr;
+
+void GCSRequestManager::Setup(Utf8String serverUrl, RPT_DownloadFunction downloadCallback)
     {
+    s_downloadFunction = downloadCallback;
+
     Utf8String serverName = serverUrl;
     if(serverName.empty())
         serverName = MakeBuddiCall(L"ContextServices");
@@ -132,29 +136,38 @@ void GCSRequestManager::SimplePackageDownload(bvector<GeoPoint2d> footprint, bve
         ReportError(Utf8String(parseError.c_str()));
         return;
         }
-
-    RealityDataDownloadPtr pDownload = RealityDataDownload::Create(downloadOrder);
-    RealityDataDownload::DownloadReport* report = nullptr;
-    if (pDownload != NULL)
+    
+        RealityDataDownload::DownloadReport* report = nullptr;
+    if(s_downloadFunction)
         {
-        pDownload->SetProgressCallBack(GCS_progress_func, 0.1);
-        pDownload->SetStatusCallBack(GCS_status_func);
-        if(!certificatePath.empty())
-            pDownload->SetCertificatePath(certificatePath);
-        if(proxyCallback)
-            pDownload->SetProxyCallBack(proxyCallback);
-        report = pDownload->Perform();
+        report = s_downloadFunction(downloadOrder);
         }
     else
         {
-        ReportError("Failed to initialize download");
-        return;
+        RealityDataDownloadPtr pDownload = RealityDataDownload::Create(downloadOrder);
+        if (pDownload != NULL)
+            {
+            pDownload->SetProgressCallBack(GCS_progress_func, 0.1);
+            pDownload->SetStatusCallBack(GCS_status_func);
+            if(!certificatePath.empty())
+                pDownload->SetCertificatePath(certificatePath);
+            if(proxyCallback)
+                pDownload->SetProxyCallBack(proxyCallback);
+            report = pDownload->Perform();
+            }
+        else
+            {
+            ReportError("Failed to initialize download");
+            return;
+            }
         }
 
     Report("-----Download Complete-----");
 
     Utf8String reportString;
     report->ToXml(reportString);
+
+    delete report;
 
     BeFileName reportPath = path.PopDir();
     reportPath.AppendToPath(L"report.xml");

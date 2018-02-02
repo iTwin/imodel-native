@@ -570,15 +570,15 @@ void GeoCoordinationService::Request(const BingKeyRequest& request, RawServerRes
     rawResponse = BasicRequest(static_cast<const GeoCoordinationServiceRequest*>(&request));
 
     Utf8String packageId = "";
-    Json::Value packageInfos(Json::objectValue);
-    Json::Reader::Parse(rawResponse.body, packageInfos);
+    Json::Value instances(Json::objectValue);
+    Json::Reader::Parse(rawResponse.body, instances);
 
-    if (rawResponse.status == RequestStatus::BADREQ || !packageInfos["instances"][0].isMember("properties") || !packageInfos["instances"][0]["properties"].isMember("key") || !packageInfos["instances"][0]["properties"].isMember("expirationDate"))
+    if (rawResponse.status == RequestStatus::BADREQ || !instances["instances"][0].isMember("properties") || !instances["instances"][0]["properties"].isMember("key") || !instances["instances"][0]["properties"].isMember("expirationDate"))
         rawResponse.status = RequestStatus::BADREQ;
     else
         {
-        key = packageInfos["instances"][0]["properties"]["key"].asCString();
-        expirationDate = packageInfos["instances"][0]["properties"]["expirationDate"].asCString();
+        key = instances["instances"][0]["properties"]["key"].asCString();
+        expirationDate = instances["instances"][0]["properties"]["expirationDate"].asCString();
         }
     }
 
