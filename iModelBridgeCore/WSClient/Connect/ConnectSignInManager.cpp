@@ -201,8 +201,7 @@ void ConnectSignInManager::FinalizeSignIn()
     StoreAuthenticationType(m_auth.type);
     m_cs.Leave();
 
-    if (m_userSignInHandler)
-        m_userSignInHandler();
+    _OnUserSignedIn();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -233,8 +232,7 @@ void ConnectSignInManager::SignOut()
     LOG.infov("ConnectSignOut");
     m_cs.Leave();
 
-    if (m_userSignOutHandler)
-        m_userSignOutHandler();
+    _OnUserSignedOut();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -299,6 +297,92 @@ Utf8String ConnectSignInManager::GetLastUsername() const
     {
     return m_secureStore->Decrypt(m_localState.GetValue(LOCALSTATE_Namespace, LOCALSTATE_SignedInUser).asString().c_str());
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectSignInManager::RegisterListener(IListener* listener)
+{
+    BeCriticalSectionHolder lock(m_cs);
+    if (listener == nullptr)
+        return;
+    m_listeners.insert(listener);
+    CheckUserChange();
+}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectSignInManager::UnregisterListener(IListener* listener)
+{
+    BeCriticalSectionHolder lock(m_cs);
+    m_listeners.erase(listener);
+}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectSignInManager::_OnUserTokenExpired() const
+{
+    auto listeners = m_listeners;
+    for (auto listener : listeners)
+        listener->_OnUserTokenExpired();
+
+    if (m_tokenExpiredHandler)
+        m_tokenExpiredHandler();
+}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectSignInManager::_OnUserChanged() const
+{
+    auto listeners = m_listeners;
+    for (auto listener : listeners)
+        listener->_OnUserChanged();
+
+    if (m_userChangeHandler)
+        m_userChangeHandler();
+}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectSignInManager::_OnUserSignedIn() const
+{
+    auto listeners = m_listeners;
+    for (auto listener : listeners)
+        listener->_OnUserSignedIn();
+
+    if (m_userSignInHandler)
+        m_userSignInHandler();
+}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectSignInManager::_OnUserSignedOut() const
+{
+    auto listeners = m_listeners;
+    for (auto listener : listeners)
+        listener->_OnUserSignedOut();
+
+    if (m_userSignOutHandler)
+        m_userSignOutHandler();
+}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectSignInManager::_OnUserSignedInViaConnectionClient() const
+{
+    auto listeners = m_listeners;
+    for (auto listener : listeners)
+        listener->_OnUserSignedInViaConnectionClient();
+
+    if (m_connectionClientSignInHandler)
+        m_connectionClientSignInHandler();
+}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                           Vytautas.Barkauskas    02/2016
@@ -422,7 +506,7 @@ IConnectAuthenticationPersistencePtr persistence
 
         auth.tokenProvider = IdentityTokenProvider::Create(m_client, auth.persistence, [=]
             {
-            this->m_tokenExpiredHandler();
+            _OnUserTokenExpired();
             });
         }
     else if (AuthenticationType::Credentials == type)
@@ -489,11 +573,8 @@ void ConnectSignInManager::CheckUserChange()
     if (info.username == storedUsername)
         return;
 
-    if (m_userChangeHandler)
-        {
-        m_userChangeHandler();
-        StoreSignedInUser();
-        }
+    _OnUserChanged();
+    StoreSignedInUser();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -623,8 +704,7 @@ void ConnectSignInManager::ConnectionClientListener::ConnectionClientCallback(in
     if (IConnectionClientInterface::EVENT_TYPE::LOGIN == eventId)
         {
         LOG.infov("Connection Client: Login event");
-        if (m_manager->m_connectionClientSignInHandler)
-            m_manager->m_connectionClientSignInHandler();
+        m_manager->_OnUserSignedInViaConnectionClient();
         }
     else if (IConnectionClientInterface::EVENT_TYPE::LOGOUT == eventId)
         {
