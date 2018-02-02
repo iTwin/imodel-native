@@ -60,7 +60,37 @@ struct napi_env__ {
 };
 
 
+napi_status napi_set_last_error(napi_env env, napi_status error_code,
+                                uint32_t engine_error_code,
+                                void* engine_reserved)
+{
+  return error_code;
+}
 
+napi_status napi_clear_last_error(napi_env env)
+{
+  return napi_ok;
+}
+
+NAPI_NO_RETURN void napi_fatal_error(const char* location,
+                                     size_t location_len,
+                                     const char* message,
+                                     size_t message_len)
+{
+  std::string location_string;
+  std::string message_string;
+
+  node::FatalError(location_string.c_str(), message_string.c_str());
+}
+
+napi_status napi_get_last_error_info(napi_env env,
+                                     const napi_extended_error_info** result)
+{
+  CHECK_ENV(env);
+  CHECK_ARG(env, result);
+
+  return napi_ok;
+}
 
 napi_status napi_create_function(napi_env env,
                                  const char* utf8name,

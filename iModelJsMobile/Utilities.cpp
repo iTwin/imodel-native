@@ -80,9 +80,62 @@ END_BENTLEY_IMODELJS_JS_NAMESPACE
 
 #warning WIP
 
-#elifdef BENTLEYCONFIG_OS_APPLE_MACOS
+#elif defined(BENTLEYCONFIG_OS_APPLE_MACOS)
 
-#elifdef BENTLEYCONFIG_OS_WINRT
+BEGIN_BENTLEY_IMODELJS_JS_NAMESPACE
+
+struct RuntimeInternal
+    {
+    friend struct Runtime;
+
+private:
+    Napi::Env* m_initEnv {};
+
+public:
+    Napi::Env& Env() {return *m_initEnv;}
+    static Runtime* s_runtime;
+    };
+
+void Runtime::Initialize()
+    {
+    }
+
+Runtime::Runtime (Utf8CP name, bool startDebugger, uint16_t debuggerPort)
+    : m_name     (name),
+      m_engine   (Engine::V8),
+      m_debugger (nullptr)
+    {
+    }
+
+Runtime::~Runtime()
+    {
+    }
+
+Napi::Env& Runtime::Env()
+    {
+    return m_impl->Env();
+    }
+
+void Runtime::StartDebugger (uint16_t port)
+    {
+    }
+
+void Runtime::NotifyIdle()
+    {
+    }
+
+Runtime& Runtime::GetRuntime(Napi::Env const& env)
+    {
+    return *(RuntimeInternal::s_runtime);
+    }
+
+bool Runtime::s_initialized = false;
+void* Runtime::s_initializationData = nullptr;
+Runtime* RuntimeInternal::s_runtime = nullptr;
+
+END_BENTLEY_IMODELJS_JS_NAMESPACE
+
+#elif defined(BENTLEYCONFIG_OS_WINRT)
 
 #error WIP
 
