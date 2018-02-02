@@ -207,7 +207,7 @@ BentleyStatus   AttributeFactory::ProcessConstantAttributes (DwgDbObjectIdCR blo
             DwgString   defaultValue;
 
             // 1 - create an PhysicalElement displaying a visible attribute:
-            if (!attrdef->IsInvisible() && attrdef->GetValueString(defaultValue) && !defaultValue.IsEmpty() && nullptr != (attrib = DwgDbAttribute::StaticCreateObject()))
+            if (!attrdef->IsInvisible() && attrdef->GetValueString(defaultValue) && !defaultValue.IsEmpty() && nullptr != (attrib = DwgDbAttribute::Create()))
                 {
                 attrib->SetFrom (attrdef.get(), toBlockRef);
 

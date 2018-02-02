@@ -144,7 +144,7 @@ public:
 class DwgDbObject : public DWGDB_EXTENDCLASS(Object)
     {
 public:
-    DWGDB_DECLARE_COMMON_MEMBERS(Object)
+    DWGDB_DECLARE_BASECLASS_MEMBERS(Object)
 
     DWGDB_EXPORT bool               IsAProxy () const;
     DWGDB_EXPORT bool               IsPersistent () const;

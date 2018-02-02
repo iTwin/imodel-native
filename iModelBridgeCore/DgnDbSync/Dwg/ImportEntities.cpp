@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/ImportEntities.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -697,7 +697,6 @@ DgnStyleId      GetDgnLineStyle (bool& isContinuous, double& effectiveScale) con
     if (effectiveLinetype.IsValid())
         return  m_dwgImporter.GetDgnLineStyleFor (effectiveLinetype);
 
-    BeDataAssert (false && "Invalid DWG linetype object ID!!");
     return  DgnStyleId();
     }
 
@@ -774,7 +773,6 @@ RenderMaterialId   GetDgnMaterial () const
     if (effectiveMaterial.IsValid())
         return  m_dwgImporter.GetDgnMaterialFor (effectiveMaterial);
 
-    BeDataAssert (false && "Invalid DWG material object ID!!");
     return  RenderMaterialId();
     }
 

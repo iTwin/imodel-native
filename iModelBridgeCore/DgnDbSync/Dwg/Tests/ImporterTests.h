@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/Tests/ImporterTests.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,6 +21,9 @@
 #define ASSERT_NOT_SUCCESS(value)       ASSERT_NE(SUCCESS,value)
 #define EXPECT_SUCCESS(value)           EXPECT_EQ(SUCCESS,value)
 #define EXPECT_NOT_SUCCESS(value)       EXPECT_NE(SUCCESS,value)
+
+#define ASSERT_DWGDBSUCCESS(value)      ASSERT_EQ (DwgDbStatus::Success,value)
+#define EXPECT_DWGDBSUCCESS(value)      EXPECT_EQ (DwgDbStatus::Success,value)
 
 #define ASSERT_NULL(statement)          ASSERT_TRUE (NULL == statement)
 #define ASSERT_NOT_NULL(statement)      ASSERT_TRUE (NULL != statement)

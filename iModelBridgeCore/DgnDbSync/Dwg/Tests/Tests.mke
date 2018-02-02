@@ -2,7 +2,7 @@
 #
 #  $Source: Dwg/Tests/Tests.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 programName = DwgImporterTests
@@ -59,6 +59,8 @@ $(o)BasicTests.obj                  : $(BEGTEST_INPUT)BasicTests.cpp            
 
 $(o)ImportConfigEditor.obj          : $(BEGTEST_INPUT)ImportConfigEditor.cpp        $(TestsHeaders) ${MultiCompileDepends}
 
+$(o)DwgFileEditor.obj               : $(BEGTEST_INPUT)DwgFileEditor.cpp             $(TestsHeaders) ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 
 %undef CPchOpts
@@ -75,7 +77,11 @@ GTEST_MAIN_IS_SUPPLIED = 1
 %include $(BuildContext)SubParts/google_gtest_mki/gtestobj.mki
 
 LOCAL_GUNITTEST_OBJS + $(MultiCompileObjectList)
-LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/*.lib]
+LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/Be*.lib]
+LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/Dgn*.lib]
+LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/iModel*.lib]
+LOCAL_GUNITTEST_OBJS + $(BuildContext)SubParts/Libs/Raster.lib
+LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/RealDwg2018/*.lib]
 
 
 LINKER_LIBRARIES    + $(DwgImporterLib)

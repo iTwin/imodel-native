@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/Tests/gtestmain.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)
@@ -126,6 +126,7 @@ static BentleyStatus getLogConfigurationFilename (BeFileName& configFile, char c
         }
 
     configFile = BeFileName (BeFileName::DevAndDir, WString(argv0,true).c_str());
+    configFile.AppendToPath (L"Assets");
     configFile.AppendToPath (s_configFileName);
     configFile.BeGetFullPathName ();
     if (BeFileName::DoesPathExist (configFile))

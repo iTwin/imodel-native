@@ -356,6 +356,22 @@ DwgDbStatus     DwgDbBlockTableRecord::GetBlockReferenceIds (DwgDbObjectIdArrayR
     return  status;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbObjectId   DwgDbBlockTableRecord::AppendEntity (DwgDbEntityR entity)
+    {
+    DwgDbObjectId   entityId;
+#ifdef DWGTOOLKIT_OpenDwg
+    entityId = T_Super::appendOdDbEntity (&entity);
+#elif DWGTOOLKIT_RealDwg
+    AcDbEntity* acEntity = AcDbEntity::cast (&entity);
+    if (Acad::eOk != T_Super::appendAcDbEntity(entityId, acEntity))
+        entityId.SetNull();
+#endif
+    return  entityId;
+    }
+
 DwgDbObjectId   DwgDbBlockTableRecord::GetLayoutId () const     { return T_Super::getLayoutId(); }
 bool            DwgDbBlockTableRecord::IsExternalReference () const { return T_Super::isFromExternalReference(); }
 bool            DwgDbBlockTableRecord::IsOverlayReference () const { return T_Super::isFromOverlayReference(); }
