@@ -13,12 +13,30 @@
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
 
+struct IPointComparator
+    {
+    bool operator()(Point3dCR lhs, Point3dCR rhs) const
+            {
+            if (lhs.x < rhs.x)
+                return true;
+            else if (lhs.x > rhs.x)
+                return false;
+
+            if (lhs.y < rhs.y)
+                return true;
+            else if (lhs.y > rhs.y)
+                return false;
+
+            return lhs.z < rhs.z;
+            }
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolyfaceHeaderPtr   PolyfaceQuery::FastClusteredDecimate (double tolerance)
     {
-    PolyfaceZYXMap                  pointMap (DPoint3dZYXTolerancedSortComparison (tolerance, 0.0));
+    bmap<Point3d, size_t, IPointComparator> pointMap; 
     DPoint3dCP                      points = GetPointCP();
     DVec3dCP                        normals = GetNormalCP();
     DPoint2dCP                      params = GetParamCP();
@@ -60,7 +78,14 @@ PolyfaceHeaderPtr   PolyfaceQuery::FastClusteredDecimate (double tolerance)
             auto        foundCluster = inputPointIndexToCluster.find(inputPointIndex);
             if (foundCluster == inputPointIndexToCluster.end())
                 {
-                auto        pointMapInsert = pointMap.Insert(points[inputPointIndex], nextClusterIndex);
+                DPoint3d    dPoint = points[inputPointIndex];
+                Point3d     iPoint;
+
+                iPoint.x = (int32_t) (dPoint.x / tolerance);
+                iPoint.y = (int32_t) (dPoint.y / tolerance);
+                iPoint.z = (int32_t) (dPoint.z / tolerance);
+
+                auto        pointMapInsert = pointMap.Insert(iPoint, nextClusterIndex);
 
                 if (pointMapInsert.second)
                     clusterIndex = nextClusterIndex++;
@@ -112,15 +137,10 @@ PolyfaceHeaderPtr   PolyfaceQuery::FastClusteredDecimate (double tolerance)
             }
         if (doParams)
             {
-#define AVERAGE_PARAM
-#ifdef AVERAGE_PARAM
             for (auto& paramIndex : cluster->m_paramIndices)
                 param.Add(params[paramIndex]);
         
             param.Scale(scale);
-#else
-            param = params[cluster->m_paramIndices.front()];
-#endif
             cluster->m_outputParamIndex = builder->FindOrAddParam(param);
             }
         }
@@ -141,11 +161,6 @@ PolyfaceHeaderPtr   PolyfaceQuery::FastClusteredDecimate (double tolerance)
             }
         if (faceClusters.size() > 2)                                                                                       
             {
-            if (faceClusters.size() > 3)
-                {
-                BeAssert(false);
-                continue;
-                }
             for (auto& cluster : faceClusters)
                 {
                 builder->AddPointIndex(cluster->m_outputPointIndex, true /* TBD... Visibilty?? */);
