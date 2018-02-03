@@ -30,6 +30,9 @@ PolyfaceHeaderPtr   PolyfaceQuery::FastClusteredDecimate (double tolerance)
         bvector<int32_t>    m_pointIndices;
         bvector<int32_t>    m_normalIndices;
         bvector<int32_t>    m_paramIndices;
+        size_t              m_outputPointIndex;
+        size_t              m_outputParamIndex;
+        size_t              m_outputNormalIndex;
 
         Cluster() { };
         Cluster(int32_t pointIndex, int32_t normalIndex, int32_t paramIndex) : m_pointIndices(1, pointIndex), m_normalIndices(normalIndex, 1), m_paramIndices(paramIndex, 1) { }
@@ -43,6 +46,7 @@ PolyfaceHeaderPtr   PolyfaceQuery::FastClusteredDecimate (double tolerance)
         };
     
     bmap<size_t, RefCountedPtr<Cluster>> clusters;
+    bmap <size_t, Cluster*>     inputPointIndexToCluster;
        
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*this); visitor->AdvanceToNextFace(); )
         {
@@ -52,16 +56,26 @@ PolyfaceHeaderPtr   PolyfaceQuery::FastClusteredDecimate (double tolerance)
             int32_t     inputNormalIndex = doNormals ? visitor->GetClientNormalIndexCP()[i] : -1;
             int32_t     inputParamIndex  = doParams  ? visitor->GetClientParamIndexCP()[i] : -1; 
             size_t      clusterIndex;
-            auto        pointMapInsert = pointMap.Insert(points[inputPointIndex], nextClusterIndex);
 
-            if (pointMapInsert.second)
-                clusterIndex = nextClusterIndex++;
+            auto        foundCluster = inputPointIndexToCluster.find(inputPointIndex);
+            if (foundCluster == inputPointIndexToCluster.end())
+                {
+                auto        pointMapInsert = pointMap.Insert(points[inputPointIndex], nextClusterIndex);
+
+                if (pointMapInsert.second)
+                    clusterIndex = nextClusterIndex++;
+                else
+                    clusterIndex = pointMapInsert.first->second;
+                
+                auto        clusterInsert = clusters.Insert(clusterIndex, new Cluster());
+
+                clusterInsert.first->second->Add(inputPointIndex, inputNormalIndex, inputParamIndex);
+                inputPointIndexToCluster.Insert(inputPointIndex, clusterInsert.first->second.get());
+                }
             else
-                clusterIndex = pointMapInsert.first->second;
-
-            auto        clusterInsert = clusters.Insert(clusterIndex, new Cluster());
-
-            clusterInsert.first->second->Add(inputPointIndex, inputNormalIndex, inputParamIndex);
+                {
+                foundCluster->second->Add(inputPointIndex, inputNormalIndex, inputParamIndex);
+                }
             }
         }
 
@@ -73,7 +87,6 @@ PolyfaceHeaderPtr   PolyfaceQuery::FastClusteredDecimate (double tolerance)
     IPolyfaceConstructionPtr    builder = IPolyfaceConstruction::Create(*facetOptions, 1.0E-12);
 
     // Build clustered points.
-    bmap <size_t, size_t>           inputToClusterPoint, inputToClusterNormal, inputToClusterParam;
 
     for (auto& pair : clusters)
         {
@@ -87,57 +100,59 @@ PolyfaceHeaderPtr   PolyfaceQuery::FastClusteredDecimate (double tolerance)
             point.Add(points[pointIndex]);
         
         point.Scale(scale);
-        size_t  clusterPointIndex = builder->FindOrAddPoint(point);
-
-        for (auto& pointIndex : cluster->m_pointIndices)
-            inputToClusterPoint[pointIndex] = clusterPointIndex;
+        cluster->m_outputPointIndex = builder->FindOrAddPoint(point);
 
         if (doNormals)
             {
             for (auto& normalIndex : cluster->m_normalIndices)
                 normal.Add(normals[normalIndex]);
         
-            normal.Scale(scale);
-            size_t  clusterNormalIndex = builder->FindOrAddNormal(normal);
-
-            for (auto& normalIndex : cluster->m_normalIndices)
-                inputToClusterNormal[normalIndex] = clusterNormalIndex;
+            normal.Normalize();
+            cluster->m_outputNormalIndex = builder->FindOrAddNormal(normal);
             }
         if (doParams)
             {
+#define AVERAGE_PARAM
+#ifdef AVERAGE_PARAM
             for (auto& paramIndex : cluster->m_paramIndices)
                 param.Add(params[paramIndex]);
         
             param.Scale(scale);
-            size_t  clusterParamIndex = builder->FindOrAddParam(param);
-
-            for (auto& paramIndex : cluster->m_paramIndices)
-                inputToClusterParam[paramIndex] = clusterParamIndex;
+#else
+            param = params[cluster->m_paramIndices.front()];
+#endif
+            cluster->m_outputParamIndex = builder->FindOrAddParam(param);
             }
         }
 
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*this); visitor->AdvanceToNextFace(); )
         {
-        bset<size_t>        unique;
-        bvector<int32_t>    undecimatedInputIndices;
+        bset<Cluster*>       unique;
+        bvector<Cluster*>   faceClusters;
+
         for (size_t i=0, count = visitor->NumEdgesThisFace(); i<count; i++)
             {
             int32_t         inputPointIndex = visitor->GetClientPointIndexCP()[i];
-            size_t          clusterIndex = inputToClusterPoint[inputPointIndex];
-            auto            insert = unique.insert(clusterIndex);
+            Cluster*        cluster = inputPointIndexToCluster[inputPointIndex];
+            auto            insert = unique.insert(cluster);
 
             if (insert.second)
-                undecimatedInputIndices.push_back(inputPointIndex);
+                faceClusters.push_back(cluster);
             }
-        if (undecimatedInputIndices.size() > 2)                                                                                       
+        if (faceClusters.size() > 2)                                                                                       
             {
-            for (auto& inputIndex : undecimatedInputIndices)
+            if (faceClusters.size() > 3)
                 {
-                builder->AddPointIndex(inputToClusterPoint[inputIndex], true /* TBD... Visibilty?? */);
+                BeAssert(false);
+                continue;
+                }
+            for (auto& cluster : faceClusters)
+                {
+                builder->AddPointIndex(cluster->m_outputPointIndex, true /* TBD... Visibilty?? */);
                 if (nullptr != normals)
-                    builder->AddNormalIndex(inputToClusterNormal[inputIndex]);
+                    builder->AddNormalIndex(cluster->m_outputNormalIndex);
                 if (nullptr != params)
-                    builder->AddParamIndex(inputToClusterParam[inputIndex]);
+                    builder->AddParamIndex(cluster->m_outputParamIndex);
                 }
             builder->AddPointIndexTerminator();
             if (nullptr != normals)
