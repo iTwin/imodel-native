@@ -2524,6 +2524,10 @@ public:
     //! @see _GetRootModelId for how the root model is specified. Note that subclasses define the root model within the root file in different ways.
     DGNDBSYNC_EXPORT DgnV8Api::DgnFileStatus InitRootModel() {return _InitRootModel();}
 
+    //! Allow access for PowerProduct element handler bridge-extensions. V8Files have appdata tracing back to Repository Links (to decorate).
+    //! @return bvector with const v8Files for this converter.
+    DGNDBSYNC_EXPORT bvector<DgnV8FileP> const & GetV8Files() const { return m_v8Files; }
+
     //! Do the conversion. @see HadFatalError
     DGNDBSYNC_EXPORT BentleyStatus Process();
 };
