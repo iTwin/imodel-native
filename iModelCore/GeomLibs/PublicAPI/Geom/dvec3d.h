@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/dvec3d.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -130,6 +130,9 @@ static DVec3d UnitX (){return DVec3d::From (1,0,0);}
 static DVec3d UnitY() { return DVec3d::From(0, 1, 0);}
 //! @description unit Z vector
 static DVec3d UnitZ() { return DVec3d::From (0, 0, 1);}
+
+//! @description vector of zeros
+static DVec3d FromZero() { return DVec3d::From (0, 0, 0);}
 
 //! @description Copies doubles from a 3 component array to the x,y, and z components
 //! of a DVec3d
