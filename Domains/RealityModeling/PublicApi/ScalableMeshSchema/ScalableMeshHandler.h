@@ -275,11 +275,15 @@ struct SMModelClipInfo
         {
         m_shape = shape;
         m_type = type;
+        m_isActive = true;
+        m_geomType = 0;
         }
 
     SMModelClipInfo()
         {
-        m_type = SMNonDestructiveClipType::Mask;                
+        m_type = SMNonDestructiveClipType::Mask;       
+        m_isActive = true;
+        m_geomType = 0;
         }
 
     void FromBlob(size_t& currentBlobInd, const uint8_t* pClipData);
@@ -288,7 +292,8 @@ struct SMModelClipInfo
 
     bvector<DPoint3d>                      m_shape;
     ScalableMesh::SMNonDestructiveClipType m_type;
-
+    bool                                   m_isActive;
+    uint32_t                               m_geomType;
     };
 
 
@@ -321,6 +326,7 @@ struct SMClipProvider : public ScalableMesh::IClipDefinitionDataProvider
         virtual void GetTerrainRegionName(Utf8String& name, uint64_t id);
         virtual void RemoveTerrainRegionName(uint64_t id) {};
     };
+
 
 //=======================================================================================
 // @bsiclass
@@ -391,7 +397,7 @@ public: //MST_TEMP
 
     void Cleanup(bool isModelDelete);
 
-    void DrawBingLogo(BentleyB0200::Dgn::ViewContextR context, Byte const* pBitmapRGBA, DPoint2d const& bitmapSize);
+    void DrawBingLogo(BentleyB0200::Dgn::DecorateContextR context, Byte const* pBitmapRGBA, DPoint2d const& bitmapSize);
     IScalableMeshProgressiveQueryEnginePtr GetProgressiveQueryEngine();
 		void InitializeTerrainRegions(/*Dgn::ViewContextR*/);
 		

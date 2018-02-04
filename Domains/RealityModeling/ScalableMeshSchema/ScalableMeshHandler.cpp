@@ -19,6 +19,7 @@
 #include <ScalableMesh\ScalableMeshUtilityFunctions.h>
 #include <DgnPlatform\TextString.h>
 #include <DgnPlatform\DgnGeoCoord.h>
+#include <DgnView\ViewManager.h>
 
 
 #define SCALABLEMESH_MODEL_PROP_Clips           "SmModelClips"
@@ -454,7 +455,7 @@ void GetBingLogoInfo(Transform& correctedViewToView, ViewContextR context)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.St-Pierre  08/2017
 //----------------------------------------------------------------------------------------
-void ScalableMeshModel::DrawBingLogo(ViewContextR context, Byte const* pBitmapRGBA, DPoint2d const& bitmapSize)
+void ScalableMeshModel::DrawBingLogo(DecorateContextR context, Byte const* pBitmapRGBA, DPoint2d const& bitmapSize)
     {
     if (NULL == pBitmapRGBA)
         return;
@@ -480,34 +481,69 @@ void ScalableMeshModel::DrawBingLogo(ViewContextR context, Byte const* pBitmapRG
     GetBingLogoInfo(correctedViewToView, context);
 
     correctedViewToView.Multiply(bitmapInView, 4);
-
-
-    assert(!"ViewToLocal not available on Bim02");
-
-#if 0
+    
 
     DPoint3d bitmapInLocal[4];
-    context.ViewToLocal(bitmapInLocal, bitmapInView, 4);
+    //context.ViewToLocal(bitmapInLocal, bitmapInView, 4);
+    context.ViewToWorld(bitmapInLocal, bitmapInView, 4);
 
     bitmapInView[0].z = bitmapInView[1].z = bitmapInView[2].z = bitmapInView[3].z = 0/*context.GetViewport()->GetActiveZRoot()*/;
 
     // When raster is drawn by D3D, the texture is modulated by the active color (the materal fill color). 
     // Override the material fill color for raster to white so that the appearance won't mysteriously change in the future.
+#if 0
     ElemMatSymbP matSymb = context.GetElemMatSymb();
 
     ColorDef color(0xff, 0xff, 0xff, 0x01);    
     matSymb->SetLineColor(color);
     matSymb->SetFillColor(color);
     context.GetIDrawGeom().ActivateMatSymb(matSymb);
+#endif
 
     //ok to call this here? m_viewContext.GetViewport ()->GetIViewOutput ()->ShowTransparent();
     //m_viewContext.GetIViewDraw()->SetSymbology (0x00FFFFFF, 0x00FFFFFF, 0, 0);
-    context.GetIViewDraw().DrawRaster(bitmapInLocal, (int)(bitmapSize.x * 4), (int)bitmapSize.x, (int)bitmapSize.y, true, QV_RGBA_FORMAT, pBitmapRGBA, NULL);
+    
+    //context.GetIViewDraw().DrawRaster(bitmapInLocal, (int)(bitmapSize.x * 4), (int)bitmapSize.x, (int)bitmapSize.y, true, QV_RGBA_FORMAT, pBitmapRGBA, NULL);
+
+    size_t imageDataSize = bitmapSize.x * bitmapSize.y * 4;
+    ByteStream imageBytes(imageDataSize);
+    
+    memcpy(imageBytes.GetDataP(), pBitmapRGBA, imageDataSize);
+    
+    Image binaryImage(bitmapSize.x, bitmapSize.y, std::move(imageBytes), Image::Format::Rgb);
+
+    Render::Texture::CreateParams params;
+    params.SetIsTileSection();  // tile section have clamp instead of warp mode for out of bound pixels. That help reduce seams between tiles when magnified.            
+    TexturePtr texturePtr(context.CreateTexture(binaryImage));
+    
+    Material::CreateParams matParams;
+
+    TextureMapping::Params textureMappingParams;    
+    matParams.MapTexture(*texturePtr, textureMappingParams);
+
+
+    //GraphicBuilderPtr graphicBuilder(GraphicBuilder::CreateSubGraphic(TransformCR subToGraphic, ClipVectorCP clip = nullptr) const { return _CreateSubGraphic(subToGraphic, clip); }
+
+    auto graphic = context.CreateWorldOverlay();
+/*
+    graphic->SetSymbology(ColorDef::Black(), ColorDef::Black(), 8);
+    DPoint3d* line = &tmpPoints[0];
+    graphic->AddLineString(2, line);
+
+    graphic->SetSymbology(ColorDef::White(), context.GetViewport()->GetContrastToBackgroundColor(), 4);
+    graphic->AddLineString(2, line);
+
+    graphic->SetSymbology(ColorDef::Black(), ColorDef::Black(), 10);
+    graphic->AddPointString(2, line);
+    graphic->SetSymbology(ColorDef::White(), context.GetViewport()->GetContrastToBackgroundColor(), 6);
+    graphic->AddPointString(2, line);
+*/
+    graphic->AddShape(4, bitmapInLocal, true);
+    context.AddWorldOverlay(*graphic->Finish());
+//#endif
 
     // SetToViewCoords is only valid during overlay mode aka DecorateScreen
     //m_viewContext.GetViewport ()->GetIViewOutput ()->SetToViewCoords (false);
-
-#endif
     }
 
 static bool s_loadTexture = true;
@@ -690,8 +726,7 @@ Dgn::TileTree::Tile::SelectParent SMNode::_SelectTiles(bvector<Dgn::TileTree::Ti
         {
         m_3smModel->InitializeTerrainRegions(/*args.m_context*/);
         }
-
-
+    
     if (s_tryCustomSelect)
         {        
         static clock_t startTime = 0;
@@ -2006,22 +2041,29 @@ void ScalableMeshModel::GetAllScalableMeshes(BentleyApi::Dgn::DgnDbCR dgnDb, bve
     BeAssert(classId.IsValid());
 
     //LoadAllScalableMeshModels(dgnDb);
-/*
-    ModelIterator modelIter(dgnDb.Models().MakeIterator("ScalableMesh"));
+
+    auto modelIter = dgnDb.Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialModel));
+
+    //ModelIterator modelIter(dgnDb.Models().MakeIterator("ScalableMesh"));
     bvector<DgnModelId> modelIds(modelIter.BuildIdList());
 
     for (auto& modelId : modelIds)
         {
-        DgnModelPtr modelPtr(dgnDb.Models().FindModel(modelId));
-        assert(modelPtr.IsValid() && modelPtr->GetClassId() == classId);                    
-        models.push_back(dynamic_cast<IMeshSpatialModelP>(modelPtr.get()));
-        }
-*/
+        //DgnModelPtr modelPtr(dgnDb.Models().FindModel(modelId));
+        DgnModelPtr modelPtr(dgnDb.Models().GetModel(modelId));        
 
+        if (modelPtr.IsValid() && modelPtr->GetClassId() == classId)
+            {
+            //assert(modelPtr.IsValid() && modelPtr->GetClassId() == classId);                    
+            models.push_back(dynamic_cast<IMeshSpatialModelP>(modelPtr.get()));
+            }
+        }
+/*
     for (auto& model : dgnDb.Models().GetLoadedModels())
         {
         if (model.second->GetClassId() == classId) models.push_back(dynamic_cast<IMeshSpatialModelP>(model.second.get()));
         }
+*/
     }
 
 #if 0
@@ -2340,24 +2382,41 @@ void ScalableMeshModel::CompactExtraFiles()
 
 	m_smPtr->CompactExtraFiles();
 }
+
+
+struct ScalableMeshHandlerViewDecoration : public ViewDecoration
+    {
+    virtual ~ScalableMeshHandlerViewDecoration() override {}
+
+    virtual void _DrawDecoration(DecorateContextR context) override 
+        {
+        DPoint2d bitmapSize;
+
+        const Byte* pBitmap = IScalableMeshTextureInfo::GetBingMapLogo(bitmapSize);
+
+        if (NULL != pBitmap)
+            m_smModel->DrawBingLogo(context, pBitmap, bitmapSize);
+        
+        int i = 0;
+        i = i;
+        }
+
+    virtual void _PickDecoration(PickContextR) override  {}
+    
+    ScalableMeshModel* m_smModel;
+    };
+
+
+ScalableMeshHandlerViewDecoration s_viewDecoration; 
+
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
 void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     {
     assert(m_smPtr == nullptr);    
-
-    bvector<IMeshSpatialModelP> allScalableMeshes;
-    ScalableMeshModel::GetAllScalableMeshes(dgnProject, allScalableMeshes);
-    size_t nOfOtherModels = 0;
-    for (auto& sm : allScalableMeshes)
-        {
-        if (sm != this) nOfOtherModels++;
-        }
-
-
-    allScalableMeshes.clear();    
-
+    
     BeFileName clipFileBase = GenerateClipFileName(smFilename, dgnProject);
 
     m_basePath = clipFileBase;
@@ -2515,11 +2574,20 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
         SetDisplayTexture(false);
         }
 
+/*
     m_clipProvider = new SMClipProvider(this);    
 
     ScalableMesh::IScalableMeshClippingOptions& options = m_smPtr->EditClippingOptions();
     options.SetClipDefinitionsProvider(m_clipProvider);
     options.SetShouldRegenerateStaleClipFiles(true);
+*/
+
+/*
+    s_viewDecoration.m_smModel = this;
+
+    ViewManager::GetManager().AddViewDecoration(&s_viewDecoration);
+*/
+    
     }
 
 //----------------------------------------------------------------------------------------
@@ -3422,6 +3490,12 @@ void SMModelClipInfo::FromBlob(size_t& currentBlobInd, const uint8_t* pClipData)
  
     memcpy(&m_type, &pClipData[currentBlobInd], sizeof(m_type));
     currentBlobInd += sizeof(m_type);
+
+    memcpy(&m_isActive, &pClipData[currentBlobInd], sizeof(m_isActive));
+    currentBlobInd += sizeof(m_isActive);
+
+    memcpy(&m_geomType, &pClipData[currentBlobInd], sizeof(m_geomType));
+    currentBlobInd += sizeof(m_geomType);    
     }
 
 //----------------------------------------------------------------------------------------
@@ -3441,6 +3515,14 @@ void SMModelClipInfo::ToBlob(bvector<uint8_t>& clipData)
     currentBlobInd = clipData.size();
     clipData.resize(clipData.size() + sizeof(m_type));
     memcpy(&clipData[currentBlobInd], &m_type, sizeof(m_type));
+
+    currentBlobInd = clipData.size();
+    clipData.resize(clipData.size() + sizeof(m_isActive));
+    memcpy(&clipData[currentBlobInd], &m_isActive, sizeof(m_isActive));
+
+    currentBlobInd = clipData.size();
+    clipData.resize(clipData.size() + sizeof(m_geomType));
+    memcpy(&clipData[currentBlobInd], &m_geomType, sizeof(m_geomType));
     }
 
 //----------------------------------------------------------------------------------------
@@ -3552,6 +3634,15 @@ DgnDbStatus ScalableMeshModel::_ReadSelectParams(BeSQLite::EC::ECSqlStatement& s
             m_linksToGroundModels[modelId].first = linkDataPtr[modelId * 2];
             m_linksToGroundModels[modelId].second = linkDataPtr[modelId * 2 + 1];            
             }            
+        }
+    
+    if (m_smPtr.IsValid())
+        {     
+        m_clipProvider = new SMClipProvider(this);
+
+        ScalableMesh::IScalableMeshClippingOptions& options = m_smPtr->EditClippingOptions();
+        options.SetClipDefinitionsProvider(m_clipProvider);
+        options.SetShouldRegenerateStaleClipFiles(true);
         }
 
     return DgnDbStatus::Success;
