@@ -202,7 +202,7 @@ DbResult AddonUtils::ReadChangeSets(bvector<DgnRevisionPtr>& revisionPtrs, bool&
             containsSchemaChanges = changeSetToken.isMember("containsSchemaChanges") && changeSetToken["containsSchemaChanges"].asBool();
 
         Utf8String id = changeSetToken["id"].asString();
-        Utf8String parentId = (ii > 0) ? changeSetTokens[ii - 1]["id"].asString() : dgndb.Revisions().GetParentRevisionId();
+        Utf8String parentId = changeSetToken["parentId"].asString();
 
         RevisionStatus revStatus;
         DgnRevisionPtr revision = DgnRevision::Create(&revStatus, id, parentId, dbGuid);
