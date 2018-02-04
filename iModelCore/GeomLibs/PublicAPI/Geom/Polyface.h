@@ -1113,7 +1113,7 @@ GEOMDLLIMPEXP StatusInt   ClipToPlaneSetIntersection (T_ClipPlaneSets const& pla
 
 
 //!  @description Fast, crude decimator - used during tile generation.
-GEOMDLLIMPEXP PolyfaceHeaderPtr FastClusteredDecimate (double tolerance);
+GEOMDLLIMPEXP PolyfaceHeaderPtr ClusteredVertexDecimate (double tolerance);
 
 
  //! @description Clip polyface to range.

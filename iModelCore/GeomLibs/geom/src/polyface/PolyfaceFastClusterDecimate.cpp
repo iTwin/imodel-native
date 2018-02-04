@@ -34,7 +34,7 @@ struct IPointComparator
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceHeaderPtr   PolyfaceQuery::FastClusteredDecimate (double tolerance)
+PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance)
     {
     bmap<Point3d, size_t, IPointComparator> pointMap; 
     DPoint3dCP                      points = GetPointCP();
@@ -112,7 +112,6 @@ PolyfaceHeaderPtr   PolyfaceQuery::FastClusteredDecimate (double tolerance)
     IPolyfaceConstructionPtr    builder = IPolyfaceConstruction::Create(*facetOptions, 1.0E-12);
 
     // Build clustered points.
-
     for (auto& pair : clusters)
         {
         auto const& cluster = pair.second;
