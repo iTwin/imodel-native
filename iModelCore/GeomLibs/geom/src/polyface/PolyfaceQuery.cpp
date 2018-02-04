@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/PolyfaceQuery.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -925,15 +925,54 @@ size_t PolyfaceQuery::GetNumFacet () const
 +--------------------------------------------------------------------------------------*/
 size_t PolyfaceQuery::GetNumFacet (size_t &maxPerFace) const
     {
-    PolyfaceVisitorPtr visitorPtr = PolyfaceVisitor::Attach (*this, false);
-    PolyfaceVisitor & visitor = *visitorPtr.get ();
     size_t numFacet = 0;
     maxPerFace = 0;
-    for (visitor.Reset ();visitor.AdvanceToNextFace ();)
+
+    switch (GetMeshStyle())
         {
-        numFacet++;
-        if (visitor.NumEdgesThisFace () > maxPerFace)
-            maxPerFace = visitor.NumEdgesThisFace();
+        case MESH_ELM_STYLE_INDEXED_FACE_LOOPS:
+            {
+            uint32_t        numPerFace = GetNumPerFace();
+            if (numPerFace <= 1)
+                {
+                size_t     numThisFacet = 0;
+
+                for (int32_t const *index = GetPointIndexCP(), *end = index + GetPointIndexCount(); index < end; index++)
+                    {
+                    if (0 == *index)
+                        {
+                        if (numThisFacet > maxPerFace)
+                            maxPerFace = numThisFacet;
+
+                        numFacet++;
+                        numThisFacet = 0;
+                        }
+                    else
+                        {
+                        numThisFacet++;
+                        }
+                    }
+                }
+            else
+                {
+                maxPerFace = numPerFace;
+                numFacet = GetPointIndexCount() / maxPerFace;
+                }
+            break;
+            }
+
+        default:
+            {
+            PolyfaceVisitorPtr visitorPtr = PolyfaceVisitor::Attach (*this, false);
+            PolyfaceVisitor & visitor = *visitorPtr.get ();
+            for (visitor.Reset ();visitor.AdvanceToNextFace ();)
+                {
+                numFacet++;
+                if (visitor.NumEdgesThisFace () > maxPerFace)
+                    maxPerFace = visitor.NumEdgesThisFace();
+                }
+            break;
+            }
         }
     return numFacet;
     }
