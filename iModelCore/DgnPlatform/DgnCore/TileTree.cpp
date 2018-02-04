@@ -149,6 +149,31 @@ folly::Future<BentleyStatus> TileLoader::_ReadFromDb()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus TileLoader::DeleteRow(RealityData::CacheR cache, uint64_t rowId)
+    {
+    CachedStatementPtr stmt;
+    cache.GetDb().GetCachedStatement(stmt, "DELETE FROM " TABLE_NAME_TileTree " WHERE ROWID=?");
+    stmt->BindInt64(1, rowId);
+    if (BE_SQLITE_DONE != stmt->Step())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    cache.GetDb().GetCachedStatement(stmt, "DELETE FROM " TABLE_NAME_TileTreeCreateTime " WHERE ROWID=?");
+    stmt->BindInt64(1, rowId);
+    if (BE_SQLITE_DONE != stmt->Step())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Attempt to load a tile from the local cache.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -183,23 +208,10 @@ BentleyStatus TileLoader::DoReadFromDb()
         uint64_t createTime = stmt->GetValueInt64(Column::Created);
         if (_IsExpired(createTime))
             {
-            cache->GetDb().GetCachedStatement(stmt, "DELETE FROM " TABLE_NAME_TileTree " WHERE ROWID=?");
-            stmt->BindInt64(1, rowId);
-            if (BE_SQLITE_DONE != stmt->Step())
-                {
-                BeAssert(false);
-                return ERROR;
-                }
-
-            cache->GetDb().GetCachedStatement(stmt, "DELETE FROM " TABLE_NAME_TileTreeCreateTime " WHERE ROWID=?");
-            stmt->BindInt64(1, rowId);
-            if (BE_SQLITE_DONE != stmt->Step())
-                {
-                BeAssert(false);
-                }
-
+            DeleteRow(*cache, rowId);
             return ERROR;
             }
+
         if (0 == stmt->GetValueInt64(Column::DataSize))
             {
             m_tileBytes.clear();
@@ -229,7 +241,16 @@ BentleyStatus TileLoader::DoReadFromDb()
                 BeAssert(false);
                 return ERROR;
                 }
+
+            m_tileBytes.SetPos(0);
+            if (!_IsValidData())
+                {
+                m_tileBytes.clear();
+                DeleteRow(*cache, rowId);
+                return ERROR;
+                }
             }
+
         m_tileBytes.SetPos(0);
         m_contentType = stmt->GetValueText(Column::ContentType);
         m_expirationDate = stmt->GetValueInt64(Column::Expires);
@@ -238,7 +259,7 @@ BentleyStatus TileLoader::DoReadFromDb()
 
         if (BE_SQLITE_OK == cache->GetDb().GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TileTreeCreateTime " SET Created=? WHERE ROWID=?"))
             {
-            stmt->BindInt64(1, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+            stmt->BindInt64(1, _GetCreateTime());
             stmt->BindInt64(2, rowId);
             if (BE_SQLITE_DONE != stmt->Step())
                 {
@@ -360,7 +381,7 @@ BentleyStatus TileLoader::DoSaveToDb()
         rc = cache->GetDb().GetCachedStatement(stmt, "INSERT INTO " TABLE_NAME_TileTreeCreateTime " (Created) VALUES (?)");
         BeAssert(BE_SQLITE_OK == rc && stmt.IsValid());
 
-        stmt->BindInt64(1, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+        stmt->BindInt64(1, _GetCreateTime());
         rc = stmt->Step();
         if (BE_SQLITE_DONE != rc)
             {
