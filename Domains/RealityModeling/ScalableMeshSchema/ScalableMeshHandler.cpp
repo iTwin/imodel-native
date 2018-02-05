@@ -469,10 +469,10 @@ void ScalableMeshModel::DrawBingLogo(DecorateContextR context, Byte const* pBitm
     bitmapInView[0].x = 0;
     bitmapInView[0].y = bitmapDrawSize.y;
     bitmapInView[1].x = bitmapDrawSize.x;
-    bitmapInView[1].y = bitmapDrawSize.y;
-    bitmapInView[2].x = 0;
+    bitmapInView[1].y = bitmapDrawSize.y;    
+    bitmapInView[2].x = bitmapDrawSize.x;
     bitmapInView[2].y = 0;
-    bitmapInView[3].x = bitmapDrawSize.x;
+    bitmapInView[3].x = 0;
     bitmapInView[3].y = 0;
     bitmapInView[0].z = bitmapInView[1].z = bitmapInView[2].z = bitmapInView[3].z = 0;
 
@@ -499,18 +499,13 @@ void ScalableMeshModel::DrawBingLogo(DecorateContextR context, Byte const* pBitm
     matSymb->SetFillColor(color);
     context.GetIDrawGeom().ActivateMatSymb(matSymb);
 #endif
-
-    //ok to call this here? m_viewContext.GetViewport ()->GetIViewOutput ()->ShowTransparent();
-    //m_viewContext.GetIViewDraw()->SetSymbology (0x00FFFFFF, 0x00FFFFFF, 0, 0);
     
-    //context.GetIViewDraw().DrawRaster(bitmapInLocal, (int)(bitmapSize.x * 4), (int)bitmapSize.x, (int)bitmapSize.y, true, QV_RGBA_FORMAT, pBitmapRGBA, NULL);
-
     size_t imageDataSize = bitmapSize.x * bitmapSize.y * 4;
     ByteStream imageBytes(imageDataSize);
     
     memcpy(imageBytes.GetDataP(), pBitmapRGBA, imageDataSize);
     
-    Image binaryImage(bitmapSize.x, bitmapSize.y, std::move(imageBytes), Image::Format::Rgb);
+    Image binaryImage(bitmapSize.x, bitmapSize.y, std::move(imageBytes), Image::Format::Rgba);
 
     Render::Texture::CreateParams params;
     params.SetIsTileSection();  // tile section have clamp instead of warp mode for out of bound pixels. That help reduce seams between tiles when magnified.            
@@ -521,29 +516,17 @@ void ScalableMeshModel::DrawBingLogo(DecorateContextR context, Byte const* pBitm
     TextureMapping::Params textureMappingParams;    
     matParams.MapTexture(*texturePtr, textureMappingParams);
 
-
-    //GraphicBuilderPtr graphicBuilder(GraphicBuilder::CreateSubGraphic(TransformCR subToGraphic, ClipVectorCP clip = nullptr) const { return _CreateSubGraphic(subToGraphic, clip); }
-
+    MaterialPtr matPtr(context.GetRenderSystem()->_CreateMaterial(matParams, context.GetDgnDb()));
+    
     auto graphic = context.CreateWorldOverlay();
-/*
-    graphic->SetSymbology(ColorDef::Black(), ColorDef::Black(), 8);
-    DPoint3d* line = &tmpPoints[0];
-    graphic->AddLineString(2, line);
 
-    graphic->SetSymbology(ColorDef::White(), context.GetViewport()->GetContrastToBackgroundColor(), 4);
-    graphic->AddLineString(2, line);
+    GraphicParams graphicParams;
+    graphicParams.SetMaterial(matPtr.get());
 
-    graphic->SetSymbology(ColorDef::Black(), ColorDef::Black(), 10);
-    graphic->AddPointString(2, line);
-    graphic->SetSymbology(ColorDef::White(), context.GetViewport()->GetContrastToBackgroundColor(), 6);
-    graphic->AddPointString(2, line);
-*/
+    graphic->SetSymbology(ColorDef::Yellow(), ColorDef::Yellow(), 8);
+    graphic->ActivateGraphicParams(graphicParams);        
     graphic->AddShape(4, bitmapInLocal, true);
     context.AddWorldOverlay(*graphic->Finish());
-//#endif
-
-    // SetToViewCoords is only valid during overlay mode aka DecorateScreen
-    //m_viewContext.GetViewport ()->GetIViewOutput ()->SetToViewCoords (false);
     }
 
 static bool s_loadTexture = true;
@@ -2581,13 +2564,16 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     options.SetClipDefinitionsProvider(m_clipProvider);
     options.SetShouldRegenerateStaleClipFiles(true);
 */
+    if (m_textureInfo->IsTextureAvailable() && m_textureInfo->IsUsingBingMap())
+        { 
+        s_viewDecoration.m_smModel = this;
 
-/*
-    s_viewDecoration.m_smModel = this;
-
-    ViewManager::GetManager().AddViewDecoration(&s_viewDecoration);
-*/
-    
+        ViewManager::GetManager().AddViewDecoration(&s_viewDecoration);        
+        }
+    else
+        { 
+        ViewManager::GetManager().DropViewDecoration(&s_viewDecoration);
+        }
     }
 
 //----------------------------------------------------------------------------------------
