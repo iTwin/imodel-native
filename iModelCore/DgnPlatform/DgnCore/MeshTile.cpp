@@ -723,7 +723,7 @@ bool TileMeshBuilder::GetMaterial(RenderMaterialId materialId, DgnDbR dgnDb)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, RenderMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool doVertexCluster, bool includeParams, uint32_t fillColor, bool requireNormals)
+void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, RenderMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool includeParams, uint32_t fillColor, bool requireNormals)
     {
     auto const&         points = visitor.Point();
     bool const*         visitorVisibility = visitor.GetVisibleCP();
@@ -732,18 +732,8 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, RenderMaterialId mat
     if (requireNormals && visitor.Normal().size() < points.size())
         return; // TFS#790263: Degenerate triangle - ignore
 
-    doVertexCluster=false;
     for (size_t iTriangle =0; iTriangle< nTriangles; iTriangle++)
         {
-        if (doVertexCluster)
-            {
-            DVec3d      cross;
-
-            cross.CrossProductToPoints (points.at(0), points.at(iTriangle+1), points.at(iTriangle+2));
-            if (cross.MagnitudeSquared() < m_areaTolerance)
-                return;
-            }
-
         TileTriangle        newTriangle(!visitor.GetTwoSided());
         bvector<DPoint2d>   params = visitor.Param();
 
@@ -770,7 +760,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, RenderMaterialId mat
             {
             size_t index = (0 == i) ? 0 : iTriangle + i; 
             VertexKey vertex(points.at(index), requireNormals ? &visitor.Normal().at(index) : nullptr, !includeParams || params.empty() ? nullptr : &params.at(index), attributes, fillColor);
-            newTriangle.m_indices[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
+            newTriangle.m_indices[i] = AddVertex(vertex);
             }
 
         BeAssert(m_mesh->Params().empty() || m_mesh->Params().size() == m_mesh->Points().size());
@@ -784,14 +774,14 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, RenderMaterialId mat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureAttributesCR attributes, bool doVertexCluster, uint32_t fillColor)
+void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureAttributesCR attributes, uint32_t fillColor)
     {
     TilePolyline    newPolyline;
 
     for (auto& point : points)
         {
         VertexKey vertex(point, nullptr, nullptr, attributes, fillColor);
-        newPolyline.m_indices.push_back (doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex));
+        newPolyline.m_indices.push_back (AddVertex(vertex));
         }
 
     m_mesh->AddPolyline (newPolyline);
@@ -803,7 +793,7 @@ void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureAttrib
 void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, RenderMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool includeParams, uint32_t fillColor)
     {
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); )
-        AddTriangle(*visitor, materialId, dgnDb, attributes, false, includeParams, fillColor, nullptr != polyface.GetNormalCP());
+        AddTriangle(*visitor, materialId, dgnDb, attributes,  includeParams, fillColor, nullptr != polyface.GetNormalCP());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -811,28 +801,16 @@ void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, RenderMaterialId ma
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t TileMeshBuilder::AddVertex(VertexKey const& vertex)
     {
-    auto found = m_unclusteredVertexMap.find(vertex);
-    if (m_unclusteredVertexMap.end() != found)
+    auto found = m_vertexMap.find(vertex);
+    if (m_vertexMap.end() != found)
         return found->second;
 
     auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), m_attributes.GetIndex(vertex.m_attributes), vertex.m_color);
-    m_unclusteredVertexMap[vertex] = index;
+    m_vertexMap[vertex] = index;
     return index;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t TileMeshBuilder::AddClusteredVertex(VertexKey const& vertex)
-    {
-    auto found = m_clusteredVertexMap.find(vertex);
-    if (m_clusteredVertexMap.end() != found)
-        return found->second;
 
-    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), m_attributes.GetIndex(vertex.m_attributes), vertex.m_color);
-    m_clusteredVertexMap[vertex] = index;
-    return index;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
@@ -1134,8 +1112,6 @@ private:
         { 
         InitGlyphCurves();     // Should be able to defer this when font threaded ness is resolved.
         }
-
-    bool _DoVertexCluster() const override { return false; }
 
 public:
     static TileGeometryPtr Create(TextStringR textString, TransformCR transform, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, DgnDbR db)
@@ -3082,7 +3058,6 @@ struct MeshTileClipOutput : PolyfaceQuery::IClipToPlaneSetOutput
 TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode normalMode, bool doSurfacesOnly, bool doRangeTest, ITileGenerationFilterCP filter, TileGeometryList const& geometries) const
     {
     static const double         s_vertexToleranceRatio    = .1;
-    static const double         s_vertexClusterThresholdPixels = 5.0;
     static const double         s_facetAreaToleranceRatio = .1;
     static const size_t         s_decimatePolyfacePointCount = 100;
 
@@ -3136,13 +3111,11 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
                 {
                 // Decimate if the range of the geometry is small in the tile OR we are not in a leaf and we have geometry originating from polyface with many points (railings from Penn state building).
                 // A polyface with many points is likely a tesselation from an outside source.
-                static bool s_forceVertexCluster = false;
-                bool        doDecimate           = !m_isLeaf && geom->DoDecimate() && polyface->GetPointCount() > s_decimatePolyfacePointCount;
-                bool        doVertexCluster      = s_forceVertexCluster || (doDecimate && geom->DoVertexCluster() && rangePixels < s_vertexClusterThresholdPixels);
+                bool                doDecimate           = !m_isLeaf && geom->DoDecimate() && polyface->GetPointCount() > s_decimatePolyfacePointCount;
+                PolyfaceHeaderPtr   decimated;
 
-                if (doDecimate)
-                    polyface->DecimateByEdgeCollapse (tolerance, 0.0);
-
+                if (doDecimate && (decimated = polyface->ClusteredVertexDecimate(tolerance * 2.0)).IsValid())
+                    polyface = decimated;
                 
                 MeshTileClipOutput  clipOutput;
 
@@ -3153,7 +3126,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
 
                 for (auto& outputPolyface : clipOutput.m_output)
                     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*outputPolyface); visitor->AdvanceToNextFace(); /**/)
-                        meshBuilder->AddTriangle (*visitor, displayParams->GetRenderMaterialId(), db, attributes, doVertexCluster, hasTexture, hasTexture ? 0 : displayParams->GetColor(), nullptr != outputPolyface->GetNormalCP());
+                        meshBuilder->AddTriangle (*visitor, displayParams->GetRenderMaterialId(), db, attributes, hasTexture, hasTexture ? 0 : displayParams->GetColor(), nullptr != outputPolyface->GetNormalCP());
                 }
             }
 
@@ -3174,7 +3147,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
                     builderMap[key] = meshBuilder = TileMeshBuilder::Create(*displayParams, m_transformFromDgn, vertexTolerance, facetAreaTolerance, const_cast<FeatureAttributesMapR>(m_attributes));
 
                 for (auto& strokePoints : tileStrokes.m_strokes)
-                    meshBuilder->AddPolyline (strokePoints, attributes, rangePixels < s_vertexClusterThresholdPixels, displayParams->GetColor());
+                    meshBuilder->AddPolyline (strokePoints, attributes,  displayParams->GetColor());
                 }
             }
         }
