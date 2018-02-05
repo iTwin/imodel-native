@@ -968,5 +968,9 @@ TEST(ClipPlaneSet,ClipToSetDifference_MultipleClips_MutlipleMasks)
         Check::Shift (0, yStep,0);
         Check::SaveTransformed (*outside);
         }
+
+
+    // extract each pair of consecutive triangles as a small mesh.  Do both clip and full classify and confirm same classification
+    
     Check::ClearGeometry ("ClipPlaneSet.ClipToSetDifference_MultipleClips_MutlipleMasks");
     }
