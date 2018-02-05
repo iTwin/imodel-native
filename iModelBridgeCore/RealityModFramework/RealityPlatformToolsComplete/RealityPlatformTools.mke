@@ -64,7 +64,7 @@ $(o)SimpleWSGBase$(oext) : $(childDir)SimpleWSGBase.cpp $(PublicApiDir)SimpleWSG
 
 $(o)SimpleRDSApi$(oext) : $(baseDir)SimpleRDSApi.cpp $(PublicApiDir)SimpleRDSApi.h ${MultiCompileDepends}
 
-$(o)SimpleGCSApi$(oext) : $(baseDir)SimpleGCSApi.cpp $(PublicApiDir)SimpleGCSApi.h ${MultiCompileDepends}
+$(o)SimpleGCSApi$(oext) : $(childDir)SimpleGCSApi.cpp $(PublicApiDir)SimpleGCSApi.h ${MultiCompileDepends}
 
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.

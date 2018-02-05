@@ -76,6 +76,11 @@ void GCSRequestManager::Setup(Utf8String serverUrl, RPT_DownloadFunction downloa
     GeoCoordinationService::SetServerComponents(serverName, version, "IndexECPlugin--Server", "RealityModeling");
     }
 
+void GCSRequestManager::SetDownloadFunction(RPT_DownloadFunction downloadCallback)
+    {
+    s_downloadFunction = downloadCallback;
+    }
+
 void GCSRequestManager::SimplePackageDownload(bvector<GeoPoint2d> footprint, bvector<RealityDataBase::Classification> classes, SE_selectionFunction pi_func, BeFileName path,
     BeFileName certificatePath, RealityDataDownload_ProxyCallBack proxyCallback)
     {
@@ -137,60 +142,49 @@ void GCSRequestManager::SimplePackageDownload(bvector<GeoPoint2d> footprint, bve
         return;
         }
     
-        RealityDataDownload::DownloadReport* report = nullptr;
+    bool submitReport = true;
+    RealityDataDownload::DownloadReport* report = nullptr;
     if(s_downloadFunction)
         {
-        report = s_downloadFunction(downloadOrder);
+        report = s_downloadFunction(downloadOrder, certificatePath, proxyCallback);
         }
     else
         {
-        RealityDataDownloadPtr pDownload = RealityDataDownload::Create(downloadOrder);
-        if (pDownload != NULL)
-            {
-            pDownload->SetProgressCallBack(GCS_progress_func, 0.1);
-            pDownload->SetStatusCallBack(GCS_status_func);
-            if(!certificatePath.empty())
-                pDownload->SetCertificatePath(certificatePath);
-            if(proxyCallback)
-                pDownload->SetProxyCallBack(proxyCallback);
-            report = pDownload->Perform();
-            }
-        else
-            {
-            ReportError("Failed to initialize download");
-            return;
-            }
+        submitReport = AlternateDownload(report, downloadOrder, certificatePath, proxyCallback);
         }
 
-    Report("-----Download Complete-----");
+    if (submitReport)
+        {
+        Report("-----Download Complete-----");
 
-    Utf8String reportString;
-    report->ToXml(reportString);
+        Utf8String reportString;
+        report->ToXml(reportString);
 
-    delete report;
+        delete report;
 
-    BeFileName reportPath = path.PopDir();
-    reportPath.AppendToPath(L"report.xml");
+        BeFileName reportPath = path.PopDir();
+        reportPath.AppendToPath(L"report.xml");
 
-    BeFile stream;
-    stream.Create(reportPath.c_str(), true);
-    stream.Open(reportPath.GetNameUtf8(), BeFileAccess::Write);
-    uint32_t bytesWritten;
-    uint32_t numBytes = (uint32_t)reportString.length();
+        BeFile stream;
+        stream.Create(reportPath.c_str(), true);
+        stream.Open(reportPath.GetNameUtf8(), BeFileAccess::Write);
+        uint32_t bytesWritten;
+        uint32_t numBytes = (uint32_t)reportString.length();
 
-    stream.Write(&bytesWritten, reportString.c_str(), numBytes);
-    stream.Close();
+        stream.Write(&bytesWritten, reportString.c_str(), numBytes);
+        stream.Close();
 
-    DateTime now = DateTime::GetCurrentTimeUtc();
+        DateTime now = DateTime::GetCurrentTimeUtc();
 
-    Utf8String distinctReportName = Utf8PrintfString("report-%s.xml", now.ToString());
-    distinctReportName.ReplaceAll(":", ".");
+        Utf8String distinctReportName = Utf8PrintfString("report-%s.xml", now.ToString());
+        distinctReportName.ReplaceAll(":", ".");
 
-    DownloadReportUploadRequest upReq = DownloadReportUploadRequest(prep, distinctReportName, reportPath);
-    RawServerResponse upResponse = RawServerResponse();
-    GeoCoordinationService::Request(upReq, upResponse);
+        DownloadReportUploadRequest upReq = DownloadReportUploadRequest(prep, distinctReportName, reportPath);
+        RawServerResponse upResponse = RawServerResponse();
+        GeoCoordinationService::Request(upReq, upResponse);
 
-    reportPath.BeDeleteFile();
+        reportPath.BeDeleteFile();
+        }
     }
 
 ConnectedResponse GCSRequestManager::SimpleBingKeyRequest(Utf8StringCR productId, Utf8StringR key, Utf8StringR expirationDate)

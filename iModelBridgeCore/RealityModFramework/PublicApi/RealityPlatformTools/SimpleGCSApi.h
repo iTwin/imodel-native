@@ -8,7 +8,7 @@ BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
 typedef std::function<bvector<Utf8String>(bvector<GeoPoint2d> footprint, SpatialEntityDatasetPtr dataset)> SE_selectionFunction;
 
-typedef std::function<RealityDataDownload::DownloadReport*(RealityDataDownload::Link_File_wMirrors_wSisters)>RPT_DownloadFunction;
+typedef std::function<RealityDataDownload::DownloadReport*(RealityDataDownload::Link_File_wMirrors_wSisters, BeFileName certificatePath, RealityDataDownload_ProxyCallBack proxyCallback)>RPT_DownloadFunction;
 
 struct GCSRequestManager : public WSGRequestManager
     {
@@ -22,9 +22,14 @@ struct GCSRequestManager : public WSGRequestManager
         BeFileName certificatePath = BeFileName(), RealityDataDownload_ProxyCallBack proxyCallback = nullptr);
 
     REALITYDATAPLATFORM_EXPORT static ConnectedResponse SimpleBingKeyRequest(Utf8StringCR productId, Utf8StringR key, Utf8StringR expirationDate);
+
+    REALITYDATAPLATFORM_EXPORT static void SetDownloadFunction(RPT_DownloadFunction downloadCallback);
 private:
     REALITYDATAPLATFORM_EXPORT static int GCS_progress_func(int index, void *pClient, size_t ByteCurrent, size_t ByteTotal);
     REALITYDATAPLATFORM_EXPORT static void GCS_status_func(int index, void *pClient, int ErrorCode, const char* pMsg);
+    REALITYDATAPLATFORM_EXPORT static bool AlternateDownload(RealityDataDownload::DownloadReport* report, 
+        const RealityDataDownload::Link_File_wMirrors_wSisters& downloadOrder, 
+        BeFileName certificatePath, RealityDataDownload_ProxyCallBack proxyCallback);
 
     static RPT_DownloadFunction s_downloadFunction;
     };
