@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeTest.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -226,6 +226,9 @@ typedef void T_BeAssertListener (WCharCP _Message, WCharCP _File, unsigned _Line
 
 //! Register an assertion failure listener
 BENTLEYDLL_EXPORT static void SetBeAssertListener (T_BeAssertListener*);
+
+BENTLEYDLL_EXPORT static void setS_mainThreadId (intptr_t id);
+
 
 ///@}
 
