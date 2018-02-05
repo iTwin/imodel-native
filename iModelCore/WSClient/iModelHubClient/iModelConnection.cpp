@@ -2417,7 +2417,10 @@ FileTaskPtr iModelConnection::GetSeedFileById(BeGuidCR fileId, ICancellationToke
         if (!filesResult.IsSuccess())
             return FileResult::Error(filesResult.GetError());
 
-        return FileResult::Success(*filesResult.GetValue().begin());
+        bvector<FileInfoPtr> files = filesResult.GetValue();
+        if (files.empty())
+            return FileResult::Error(Error::Id::FileDoesNotExist);
+        return FileResult::Success(*files.begin());
         });
     }
 
