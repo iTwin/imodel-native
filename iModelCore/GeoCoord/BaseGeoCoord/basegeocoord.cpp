@@ -2,7 +2,7 @@
 |
 |   $Source: BaseGeoCoord/basegeocoord.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #ifdef _MSC_VER
@@ -14,7 +14,7 @@
 #include    <GeoCoord/BaseGeoCoord.h>
 #include    <GeoCoord/basegeocoordapi.h>
 #include    <GeoCoord/GCSLibrary.h>
-#include    <csmap/csNameMapperSupport.h>
+#include    <CSMap/cs_NameMapperSupport.h>
 #include    <csmap/cs_map.h>
 #include    <csmap/cs_Legacy.h>
 #include    <sys/types.h>
@@ -163,6 +163,11 @@ static  CoordSysData    csDataMap[] =
   { COORDSYS_EDCYLE,    CS_EDCYLE,  BaseGCS::pcvEquidistantCylindricalEllipsoid,            /* cs_PRJCOD_EDCYLE   */ },
   { COORDSYS_PCARREE,   CS_PCARREE, BaseGCS::pcvPlateCarree,                                /* cs_PRJCOD_PCARREE  */ },
   { COORDSYS_MRCATPV,   CS_MRCATPV, BaseGCS::pcvPopularVisualizationPseudoMercator,         /* cs_PRJCOD_MRCATPV  */ },
+  { COORDSYS_MNDOTOBL,  CS_MNDOTOBL,BaseGCS::pcvObliqueMercatorMinnesota,                   /* cs_PRJCOD_MNDOTOBL */ },
+  { COORDSYS_LMMICH,    CS_LMMICH,  BaseGCS::pcvLambertMichigan,                            /* cs_PRJCOD_LMMICH   */ },
+  { COORDSYS_KRVK95,    CS_KRVK95,  BaseGCS::pcvCzechKrovak95,                              /* cs_PRJCOD_KRVK95   */ },
+  { COORDSYS_TRMRS,     CS_TRMRS,   BaseGCS::pcvSnyderTransverseMercator,                   /* cs_PRJCOD_TRMRS    */ },
+
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -5554,7 +5559,9 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 VerticalDatumConverter (bool inputIsInNAD27, VertDatumCode inputVdc, VertDatumCode outputVdc)
     {
-    BeAssert (inputVdc != outputVdc);
+    // Datums should be different except if both are Geoid.
+    BeAssert (inputVdc != outputVdc || inputVdc == vdcGeoid);
+
 
     m_fromVDC = inputVdc;
     m_toVDC = outputVdc;
@@ -5607,6 +5614,10 @@ GeoPointCR  inLatLong
     // vdcGeoid    vdcGeoid - In this specific case we remove Geoid elev, apply ellipsoidal height diff then apply Geoid at new location.
     //                        although this case would give approximatively the same result the slight
     //                        lat/long value may introduce a very small change in elevation.
+
+    // If both datums are Geoid then we bypass conversion
+    if (vdcGeoid == m_fromVDC && vdcGeoid == m_toVDC)
+        return SUCCESS;
 
     // If we have NGVD29 to NAVD88 conversion
     if ((m_fromVDC == vdcNGVD29 || m_fromVDC == vdcNAVD88) && (m_toVDC == vdcNGVD29 || m_toVDC == vdcNAVD88) && (m_toVDC != m_fromVDC))
@@ -8431,6 +8442,41 @@ StatusInt   BaseGCS::SetElevationAboveGeoid (double value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   07/06
 +---------------+---------------+---------------+---------------+---------------+------*/
+double BaseGCS::GetEllipsoidScaleFactor () const
+    {
+    if (NULL == m_csParameters)
+        return 0.0;
+
+    switch (m_csParameters->prj_code)
+        {
+        case cs_PRJCOD_LMMICH:
+            return m_csParameters->csdef.prj_prm3;
+        }
+    return 0.0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Barry.Bentley   07/06
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt   BaseGCS::SetEllipsoidScaleFactor (double value)
+    {
+    if (NULL == m_csParameters)
+        return GEOCOORDERR_InvalidCoordSys;
+
+    switch (m_csParameters->prj_code)
+        {
+        case cs_PRJCOD_LMMICH:
+            m_csParameters->csdef.prj_prm3 = value;
+            return SUCCESS;
+        }
+
+    return GEOCOORDERR_ProjectionDoesntUseParameter;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Barry.Bentley   07/06
++---------------+---------------+---------------+---------------+---------------+------*/
 int BaseGCS::GetUTMZone () const
     {
     if (NULL == m_csParameters)
@@ -9333,6 +9379,12 @@ bool            BaseGCS::IsNAD83 () const
         return true;
     if (0 == BeStringUtilities::Stricmp (m_csParameters->datum.key_nm, "NAD83/2011"))
         return true;
+    if (0 == BeStringUtilities::Stricmp (m_csParameters->datum.key_nm, "NAD83/HARN"))
+        return true;
+    if (0 == BeStringUtilities::Stricmp (m_csParameters->datum.key_nm, "NSRS07"))
+        return true;
+    if (0 == BeStringUtilities::Stricmp (m_csParameters->datum.key_nm, "NSRS11"))
+        return true;
 
     return false;
     }
@@ -10197,7 +10249,7 @@ bool            BaseGCS::Compare (BaseGCSCR compareTo, bool& datumDifferent, boo
         if (mp->prj_code == cs_PRJCOD_END)
             return true;
     
-        if ((cs_PRJCOD_LM2SP == m_csParameters->prj_code) || (cs_PRJCOD_LMBLG == m_csParameters->prj_code) || (cs_PRJCOD_ALBER == m_csParameters->prj_code) || (cs_PRJCOD_EDCNC == m_csParameters->prj_code))
+        if ((cs_PRJCOD_LMMICH == m_csParameters->prj_code) ||(cs_PRJCOD_LM2SP == m_csParameters->prj_code) || (cs_PRJCOD_LMBLG == m_csParameters->prj_code) || (cs_PRJCOD_ALBER == m_csParameters->prj_code) || (cs_PRJCOD_EDCNC == m_csParameters->prj_code))
             {
             // We process Lambert 2SP differently since the order of parallels is irrelevant
             if ((!doubleSame(thisDef.prj_prm1,compareDef.prj_prm1) && !doubleSame(thisDef.prj_prm1,compareDef.prj_prm2)) || 
@@ -13421,7 +13473,10 @@ BaseGCSCR       to
     // are they the same?
     VertDatumCode   fromVDC = NetVerticalDatum (from);
     VertDatumCode   toVDC   = NetVerticalDatum (to);
-    if (fromVDC == toVDC)
+
+    // If vertical datums are both geoid we still create a vertical datum converter to prevent ellipsoidal
+    // vertical transformation
+    if (fromVDC == toVDC && fromVDC != vdcGeoid) 
         return NULL;
 
     // If either vertical datum codes are NGVD29 or NAVD88 then we init
@@ -15405,6 +15460,9 @@ WStringR       DatumAsASC
             break;
 #endif
 
+        case cs_DTCTYP_PLYNM:
+            DatumAsAscStream << "            USE: POLYNM" << std::endl;
+            break;
 
         default:
             return ERROR;

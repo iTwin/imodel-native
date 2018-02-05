@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/GeoCoord/BaseGeoDefs.r.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -85,6 +85,8 @@
 #define CS_PCARREE  "PCARREE"
 #define CS_MRCATPV  "MRCAT-PV"
 #define CS_MNDOTOBL "OBL-MNDOT"
+#define CS_LMMICH   "LM-MICH"
+#define CS_TRMRS    "TM-SNYDER"
 
 
 #define MSGLISTID_GeoCoordErrors        1
@@ -179,7 +181,10 @@ enum    DgnProjectionTypes
     COORDSYS_EDCYLE    =    76, // (Cyln) Equidistant Cylindrical Ellipsoid variation
     COORDSYS_PCARREE   =    77, // (Cyln) Simple Cylindrical Plate Carree
     COORDSYS_MRCATPV   =    78, // (Cyln) Mercator Popular Visuualization Variation
-    COORDSYS_MNDOTOBL  =    79, // (Cyln) Minnesoat DOT Oblique Mercator
+    COORDSYS_MNDOTOBL  =    79, // (Cyln) Minnesota DOT Oblique Mercator
+    COORDSYS_LMMICH    =    80, // (Cone) Michigan Lambert (2SP with scaling)
+    COORDSYS_KRVK95    =    81, // (Cone) Krovak 95
+    COORDSYS_TRMRS     =    82, // (Cone) Transverse Mercator Snyder Formulation
 
     COORDSYS_Geographic =   COORDSYS_UNITY, // Geographic Latitude/Longitude
     COORDSYS_StatePlane =   101,    // (Vars) Obsolete, use COORDSYS_SPCSL

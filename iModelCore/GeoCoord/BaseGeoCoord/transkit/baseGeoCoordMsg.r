@@ -2,7 +2,7 @@
 |
 |     $Source: BaseGeoCoord/transkit/baseGeoCoordMsg.r $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------+
@@ -130,7 +130,7 @@ MessageList MSGLISTID_GeoCoordNames =
     { COORDSYS_NESRT,           "Non-earth - Scale, Rotation then Translation"      },
     { COORDSYS_LMBRTAF,         "Lambert Conformal Conic with Affine Processor"     },
 
-    { COORDSYS_UTMZNBF,         "Universal Transverse Mercator using BF Calculation" },
+    { COORDSYS_UTMZNBF,         "Universal Transverse Mercator using BF Calculation"},
     { COORDSYS_TRMERBF,         "Transverse Mercator using BF Calculation"          },
 
     { COORDSYS_S3401,           "Danish System 1934/1945 (KMS 2001 Polynomials)"    },
@@ -138,6 +138,10 @@ MessageList MSGLISTID_GeoCoordNames =
     { COORDSYS_PCARREE,         "Plate Carree / Simple Cylindrical"                 },
     { COORDSYS_MRCATPV,         "Popular Visualization Pseudo Mercator"             },
     { COORDSYS_MNDOTOBL,        "Oblique Mercator Minnesota DOT"                    },                   
+    { COORDSYS_LMMICH,          "Lambert Conformal Conic Michigan Variation"        },   
+    { COORDSYS_KRVK95 ,         "Krovak Oblique Conformal Conic/95 Adjustment"      },                   
+    { COORDSYS_TRMRS ,          "Transverse Mercator Snyder Formulation"            },                   
+          
     }
 };
 
