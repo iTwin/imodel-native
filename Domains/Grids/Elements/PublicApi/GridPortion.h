@@ -107,9 +107,10 @@ public:
     //---------------------------------------------------------------------------------------
     //! intersects this grid with the given surface, creates gridcurves
     //! @param[in] surface      surface to intersect
-    //! @param[in] targetModel  model to create gridcurves in
+    //! @param[in] gridCurvesPortion   portion to create new gridcurves in
     //! @return BentleyStatus for the operation result
-    GRIDELEMENTS_EXPORT BentleyStatus   IntersectGridSurface(GridSurfaceCPtr surface, Dgn::DgnModelCR targetModel) const;
+    //! @note GridCurvesPortion must be inserted
+    GRIDELEMENTS_EXPORT BentleyStatus   IntersectGridSurface(GridSurfaceCPtr surface, GridCurvesPortionCR targetPortion) const;
     };
     
 //=======================================================================================

@@ -109,7 +109,7 @@ BeSQLite::EC::ECInstanceKey GridSurfaceCreatesGridCurveHandler::Insert
 Dgn::DgnDbR db,
 GridSurfaceCPtr thisSurface,
 GridSurfaceCPtr otherSurface,
-Dgn::DgnModelCR targetModel
+GridCurvesPortionCR targetPortion
 )
     {
     //if elements are not valid or not in the db, then can't do anything about it.
@@ -129,11 +129,11 @@ Dgn::DgnModelCR targetModel
         {
         GridCurvePtr curve;
         if (bodyThis->GetLineCP())
-            curve = GridLine::Create(targetModel, bodyThis);
+            curve = GridLine::Create(targetPortion, bodyThis);
         else if (bodyThis->GetArcCP())
-            curve = GridArc::Create(targetModel, bodyThis);
+            curve = GridArc::Create(targetPortion, bodyThis);
         else if (bodyThis->GetBsplineCurveCP() || bodyThis->GetInterpolationCurveCP())
-            curve = GridSpline::Create(targetModel, bodyThis);
+            curve = GridSpline::Create(targetPortion, bodyThis);
         if (curve.IsNull())
             return BeSQLite::EC::ECInstanceKey();
 

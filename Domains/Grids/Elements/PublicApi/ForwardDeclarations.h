@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Elements/PublicApi/ForwardDeclarations.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -26,6 +26,7 @@ GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS(GridSplineSurface)
 GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS(PlanGridSplineSurface)
 GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS(SketchSplineGridSurface)
 
+GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS(GridCurvesPortion)
 GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS(GridCurve)
 GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS(GridArc)
 GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS(GridLine)

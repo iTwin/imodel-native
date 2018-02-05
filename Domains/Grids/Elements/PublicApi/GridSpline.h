@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Elements/PublicApi/GridSpline.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -38,10 +38,11 @@ public:
     // Creation
     //---------------------------------------------------------------------------------------
     //! Creates a grid spline
-    //! @param[in]  model   model for the grid spline
+    //! @param[in]  gridCurvesPortion   portion for the grid spline
     //! @param[in]  curve   curve geometry
     //! @return             Grid spline
-    GRIDELEMENTS_EXPORT static GridSplinePtr Create (Dgn::DgnModelCR model, ICurvePrimitivePtr curve);
+    //! @note GridCurvesPortion must be inserted
+    GRIDELEMENTS_EXPORT static GridSplinePtr Create (GridCurvesPortionCR gridCurvesPortion, ICurvePrimitivePtr curve);
 };
 
 END_GRIDS_NAMESPACE

@@ -37,11 +37,11 @@ ICurvePrimitivePtr  curve
 +---------------+---------------+---------------+---------------+---------------+------*/
 GridLinePtr                 GridLine::Create 
 (
-Dgn::DgnModelCR model,
+GridCurvesPortionCR portion,
 ICurvePrimitivePtr  curve
 )
     {
-    return new GridLine (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), curve);
+    return new GridLine(CreateParamsFromModel(*portion.GetSubModel(), QueryClassId(portion.GetDgnDb())), curve);
     }
 
 /*---------------------------------------------------------------------------------**//**

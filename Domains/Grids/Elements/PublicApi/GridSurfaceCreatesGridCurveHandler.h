@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Elements/PublicApi/GridSurfaceCreatesGridCurveHandler.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -34,9 +34,10 @@ public:
     //! @param[in]  db              db to create relationship in
     //! @param[in]  thisSurface     first surface creating grid intersection curve
     //! @param[in]  otherSurface    other surface creating grid intersection curve. This is the base surface in the relationship
-    //! @param[in]  targetModel     model to create new grid curve in
+    //! @param[in]  gridCurvesPortion   portion to create new grid curve in
     //! @return key to created relationship
-    GRIDELEMENTS_EXPORT static BeSQLite::EC::ECInstanceKey Insert (Dgn::DgnDbR db, GridSurfaceCPtr thisSurface, GridSurfaceCPtr otherSurface, Dgn::DgnModelCR targetModel);
+    //! @note GridCurvesPortion must be inserted
+    GRIDELEMENTS_EXPORT static BeSQLite::EC::ECInstanceKey Insert (Dgn::DgnDbR db, GridSurfaceCPtr thisSurface, GridSurfaceCPtr otherSurface, GridCurvesPortionCR targetPortion);
 };
 
 END_GRIDS_NAMESPACE

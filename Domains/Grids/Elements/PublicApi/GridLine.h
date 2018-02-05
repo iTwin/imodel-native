@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Elements/PublicApi/GridLine.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -40,10 +40,11 @@ public:
     // Creation
     //---------------------------------------------------------------------------------------
     //! Creates a grid line
-    //! @param[in]  model   model for the gridline
+    //! @param[in]  gridCurvesPortion   portion for the gridline
     //! @param[in]  curve   curve geometry
     //! @return             Grid line
-    GRIDELEMENTS_EXPORT static GridLinePtr Create (Dgn::DgnModelCR model, ICurvePrimitivePtr curve);
+    //! @note GridCurvesPortion must be inserted
+    GRIDELEMENTS_EXPORT static GridLinePtr Create (GridCurvesPortionCR gridCurvesPortion, ICurvePrimitivePtr curve);
 };
 
 END_GRIDS_NAMESPACE
