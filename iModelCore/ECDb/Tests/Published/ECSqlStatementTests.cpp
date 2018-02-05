@@ -6165,5 +6165,259 @@ TEST_F(ECSqlStatementTestFixture, ECSqlParseTreeFormatter_ParseAndFormatECSqlPar
     AssertParseECSql(ecdb, "INSERT INTO [V8TagsetDefinitions].[grid__x0024__0__x0024__CB_1] ([CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457],[CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454]) VALUES ('', '1.1', '', '', '', '2.2', '', '', '', '2.5', '', '', '', '2.5', '', '', '', '2.1', '', '', '', 'E.3', '', '', '', 'B.4', '', '', '', 'D.4', '', '')");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Affan.Khn                            02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementTestFixture, OptimizeECSqlForSealedAndClassWithNotDerviedClasses)
+    {
+    if (true)
+        {
+        ASSERT_EQ(SUCCESS, SetupECDb("ecsqlOpt00.ecdb", SchemaItem(
+            R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECEntityClass typeName="Foo">
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECProperty propertyName="Size" typeName="int" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Goo" modifier="sealed">
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECProperty propertyName="A" typeName="int" />
+                     </ECEntityClass>
+                </ECSchema>)xml")));
 
+
+        ECClassId fooId = m_ecdb.Schemas().GetClass("TestSchema", "Foo")->GetId();
+        ECClassId gooId = m_ecdb.Schemas().GetClass("TestSchema", "Goo")->GetId();
+
+        if (true)
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ts.Foo"));
+            Utf8String acutal = stmt.GetNativeSql();
+            Utf8String expected = Utf8PrintfString("SELECT [Foo].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,%" PRIu64 " ECClassId FROM [main].[ts_Foo]) [Foo]", fooId.GetValue());
+            ASSERT_STREQ(expected.c_str(), acutal.c_str());
+            }
+
+
+        if (true)
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ONLY ts.Foo"));
+            Utf8String acutal = stmt.GetNativeSql();
+            Utf8String expected = Utf8PrintfString("SELECT [Foo].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,%" PRIu64 " ECClassId FROM [main].[ts_Foo]) [Foo]", fooId.GetValue());
+            ASSERT_STREQ(expected.c_str(), acutal.c_str());
+            }
+
+        if (true)
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ts.Goo"));
+            Utf8String acutal = stmt.GetNativeSql();
+            Utf8String expected = Utf8PrintfString("SELECT [Goo].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,%" PRIu64 " ECClassId FROM [main].[ts_Goo]) [Goo]", gooId.GetValue());
+            ASSERT_STREQ(expected.c_str(), acutal.c_str());
+            }
+
+        if (true)
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ONLY ts.Goo"));
+            Utf8String acutal = stmt.GetNativeSql();
+            Utf8String expected = Utf8PrintfString("SELECT [Goo].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,%" PRIu64 " ECClassId FROM [main].[ts_Goo]) [Goo]", gooId.GetValue());
+            ASSERT_STREQ(expected.c_str(), acutal.c_str());
+            }
+
+        m_ecdb.CloseDb();
+        }
+
+    if (true)
+        {
+        ASSERT_EQ(SUCCESS, SetupECDb("ecsqlOpt01.ecdb", SchemaItem(
+            R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Boo">
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00'>
+                                 <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <ShareColumns xmlns='ECDbMap.02.00'/>
+                        </ECCustomAttributes>
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Foo">
+                       <BaseClass>Boo</BaseClass>
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECProperty propertyName="Size" typeName="int" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Goo" modifier="sealed">
+\                       <BaseClass>Boo</BaseClass>
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECProperty propertyName="A" typeName="int" />
+                     </ECEntityClass>
+                </ECSchema>)xml")));
+
+
+        ECClassId fooId = m_ecdb.Schemas().GetClass("TestSchema", "Foo")->GetId();
+        ECClassId gooId = m_ecdb.Schemas().GetClass("TestSchema", "Goo")->GetId();
+
+        if (true)
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ts.Foo"));
+            Utf8String acutal = stmt.GetNativeSql(); 
+            Utf8String expected = Utf8PrintfString("SELECT [Foo].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,[ECClassId] FROM [main].[ts_Boo] WHERE [ts_Boo].ECClassId=%" PRIu64 ") [Foo]", fooId.GetValue());
+            ASSERT_STREQ(expected.c_str(), acutal.c_str());
+            }
+
+
+        if (true)
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ONLY ts.Foo"));
+            Utf8String acutal = stmt.GetNativeSql();
+            Utf8String expected = Utf8PrintfString("SELECT [Foo].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,[ECClassId] FROM [main].[ts_Boo] WHERE [ts_Boo].ECClassId=%" PRIu64 ") [Foo]", fooId.GetValue());
+            ASSERT_STREQ(expected.c_str(), acutal.c_str());
+            }
+
+        if (true)
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ts.Goo"));
+            Utf8String acutal = stmt.GetNativeSql();
+            Utf8String expected = Utf8PrintfString("SELECT [Goo].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,[ECClassId] FROM [main].[ts_Boo] WHERE [ts_Boo].ECClassId=%" PRIu64 ") [Goo]", gooId.GetValue());
+            ASSERT_STREQ(expected.c_str(), acutal.c_str());
+            }
+
+        if (true)
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ONLY ts.Goo"));
+            Utf8String acutal = stmt.GetNativeSql();
+            Utf8String expected = Utf8PrintfString("SELECT [Goo].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,[ECClassId] FROM [main].[ts_Boo] WHERE [ts_Boo].ECClassId=%" PRIu64 ") [Goo]", gooId.GetValue());
+            ASSERT_STREQ(expected.c_str(), acutal.c_str());
+            }
+
+        m_ecdb.CloseDb();
+        }
+
+
+    if (true)
+        {
+        ASSERT_EQ(SUCCESS, SetupECDb("ecsqlOpt02.ecdb", SchemaItem(
+            R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Boo">
+                        <ECCustomAttributes>
+                            <ClassMap xmlns='ECDbMap.02.00'>
+                                 <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <ShareColumns xmlns='ECDbMap.02.00'/>
+                        </ECCustomAttributes>
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Foo">
+                       <BaseClass>Boo</BaseClass>
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECProperty propertyName="Size" typeName="int" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Coo">
+                       <BaseClass>Foo</BaseClass>
+                        <ECProperty propertyName="N1" typeName="string" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Voo">
+                       <BaseClass>Foo</BaseClass>
+                        <ECProperty propertyName="N2" typeName="string" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Goo" modifier="sealed">
+                       <BaseClass>Boo</BaseClass>
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECProperty propertyName="A" typeName="int" />
+                     </ECEntityClass>
+                </ECSchema>)xml")));
+
+
+        ECClassId fooId = m_ecdb.Schemas().GetClass("TestSchema", "Foo")->GetId();
+        ECClassId gooId = m_ecdb.Schemas().GetClass("TestSchema", "Goo")->GetId();
+        ECClassId cooId = m_ecdb.Schemas().GetClass("TestSchema", "Coo")->GetId();
+        ECClassId vooId = m_ecdb.Schemas().GetClass("TestSchema", "Voo")->GetId();
+
+        if (true)
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ts.Foo"));
+            Utf8String acutal = stmt.GetNativeSql();
+            Utf8String expected = Utf8PrintfString("SELECT [Foo].[ECInstanceId] FROM (SELECT [ts_Boo].[Id] ECInstanceId,[ts_Boo].[ECClassId] FROM [main].[ts_Boo] INNER JOIN [main].ec_cache_ClassHierarchy [CHC_ts_Boo] ON [CHC_ts_Boo].[ClassId]=[ts_Boo].ECClassId AND [CHC_ts_Boo].[BaseClassId]=%" PRIu64 ") [Foo]", fooId.GetValue());
+            ASSERT_STREQ(expected.c_str(), acutal.c_str());
+            }
+
+
+        if (true)
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ONLY ts.Foo"));
+            Utf8String acutal = stmt.GetNativeSql();
+            Utf8String expected = Utf8PrintfString("SELECT [Foo].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,[ECClassId] FROM [main].[ts_Boo] WHERE [ts_Boo].ECClassId=%" PRIu64 ") [Foo]", fooId.GetValue());
+            ASSERT_STREQ(expected.c_str(), acutal.c_str());
+            }
+
+
+        if (true)
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ts.Coo"));
+            Utf8String acutal = stmt.GetNativeSql();
+            Utf8String expected = Utf8PrintfString("SELECT [Coo].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,[ECClassId] FROM [main].[ts_Boo] WHERE [ts_Boo].ECClassId=%" PRIu64 ") [Coo]", cooId.GetValue());
+            ASSERT_STREQ(expected.c_str(), acutal.c_str());
+            }
+
+
+        if (true)
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ONLY ts.Coo"));
+            Utf8String acutal = stmt.GetNativeSql();
+            Utf8String expected = Utf8PrintfString("SELECT [Coo].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,[ECClassId] FROM [main].[ts_Boo] WHERE [ts_Boo].ECClassId=%" PRIu64 ") [Coo]", cooId.GetValue());
+            ASSERT_STREQ(expected.c_str(), acutal.c_str());
+            }
+
+        if (true)
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ts.Voo"));
+            Utf8String acutal = stmt.GetNativeSql();
+            Utf8String expected = Utf8PrintfString("SELECT [Voo].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,[ECClassId] FROM [main].[ts_Boo] WHERE [ts_Boo].ECClassId=%" PRIu64 ") [Voo]", vooId.GetValue());
+            ASSERT_STREQ(expected.c_str(), acutal.c_str());
+            }
+
+
+        if (true)
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ONLY ts.Voo"));
+            Utf8String acutal = stmt.GetNativeSql();
+            Utf8String expected = Utf8PrintfString("SELECT [Voo].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,[ECClassId] FROM [main].[ts_Boo] WHERE [ts_Boo].ECClassId=%" PRIu64 ") [Voo]", vooId.GetValue());
+            ASSERT_STREQ(expected.c_str(), acutal.c_str());
+            }
+
+
+        if (true)
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ts.Goo"));
+            Utf8String acutal = stmt.GetNativeSql();
+            Utf8String expected = Utf8PrintfString("SELECT [Goo].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,[ECClassId] FROM [main].[ts_Boo] WHERE [ts_Boo].ECClassId=%" PRIu64 ") [Goo]", gooId.GetValue());
+            ASSERT_STREQ(expected.c_str(), acutal.c_str());
+            }
+
+        if (true)
+            {
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ONLY ts.Goo"));
+            Utf8String acutal = stmt.GetNativeSql();
+            Utf8String expected = Utf8PrintfString("SELECT [Goo].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,[ECClassId] FROM [main].[ts_Boo] WHERE [ts_Boo].ECClassId=%" PRIu64 ") [Goo]", gooId.GetValue());
+            ASSERT_STREQ(expected.c_str(), acutal.c_str());
+            }
+
+        m_ecdb.CloseDb();
+        }
+    }
 END_ECDBUNITTESTS_NAMESPACE
