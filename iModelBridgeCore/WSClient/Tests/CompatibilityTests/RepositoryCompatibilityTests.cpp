@@ -63,6 +63,18 @@ void RepositoryCompatibilityTests::TearDown()
 
     if (!TestsHost::GetErrorLog().empty())
         ADD_FAILURE() << TestsHost::GetErrorLog();
+
+    if (::testing::Test::HasFailure())
+        {
+        if (!GetParam().create.comment.empty())
+            ADD_FAILURE() << "Known issue: " << GetParam().create.comment;
+
+        if (!GetParam().upgrade.comment.empty())
+            ADD_FAILURE() << "Known issue: " << GetParam().create.comment;
+
+        if (!GetParam().downloadSchemas.comment.empty())
+            ADD_FAILURE() << "Known issue: " << GetParam().create.comment;
+        }
     }
 
 void CreateDateStampFile(Utf8StringCR testName, BeFileName path)
@@ -88,19 +100,23 @@ BeFileName GetOutputPath()
     return path;
     }
 
-BeFileName GetOutputPath(Utf8StringCR testName, Utf8StringCR repositoryId, Utf8StringCR dateStr)
+BeFileName GetOutputPath(Utf8StringCR testName, Utf8StringCR customLabel, Utf8String repositoryId, Utf8StringCR dateStr)
     {
+    if (!customLabel.empty())
+        repositoryId = customLabel;
+
     BeFileName path = GetOutputPath();
     path.AppendToPath(BeFileName(dateStr));
     path.AppendToPath(BeFileName(testName));
     path.AppendToPath(BeFileName(repositoryId));
+
     return path;
     }
 
-BeFileName GetNewOutputPath(Utf8StringCR testName, Utf8StringCR repositoryId)
+BeFileName GetNewOutputPath(Utf8StringCR testName, Utf8StringCR customLabel, Utf8StringCR repositoryId)
     {
     auto todayStr = GetDateStr(DateTime::GetCurrentTimeUtc());
-    auto path = GetOutputPath(testName, repositoryId, todayStr);
+    auto path = GetOutputPath(testName, customLabel, repositoryId, todayStr);
 
     if (path.DoesPathExist())
         EXPECT_EQ(BeFileNameStatus::Success, BeFileName::EmptyAndRemoveDirectory(path));
@@ -140,9 +156,9 @@ IWSRepositoryClientPtr CreateClient(TestRepository& repository)
     return client;
     }
 
-void CreateTestPaths(IWSRepositoryClientPtr client, Utf8CP testName, BeFileName& cachePathOut, CacheEnvironment& envOut)
+void CreateTestPaths(IWSRepositoryClientPtr client, Utf8StringCR testName, Utf8StringCR customLabel, BeFileName& cachePathOut, CacheEnvironment& envOut)
     {
-    cachePathOut = GetNewOutputPath(testName, client->GetRepositoryId());
+    cachePathOut = GetNewOutputPath(testName, customLabel, client->GetRepositoryId());
 
     CreateDateStampFile(testName, cachePathOut);
 
@@ -165,7 +181,7 @@ TEST_P(RepositoryCompatibilityTests_DownloadSchemas, Download)
 
     BeFileName path;
     CacheEnvironment env;
-    CreateTestPaths(client, "DownloadSchemas", path, env);
+    CreateTestPaths(client, "DownloadSchemas", repository.label, path, env);
     BeFileName schemasFolder = env.persistentFileCacheDir;
     schemasFolder.AppendToPath(L"Schemas").AppendSeparator();
     BeFileName::CreateNewDirectory(schemasFolder);
@@ -205,7 +221,7 @@ TEST_P(RepositoryCompatibilityTests_Create, Create)
 
     BeFileName path;
     CacheEnvironment env;
-    CreateTestPaths(client, "Create", path, env);
+    CreateTestPaths(client, "Create", repository.label, path, env);
     ASSERT_FALSE(path.DoesPathExist());
 
     auto createResult = CachingDataSource::OpenOrCreate(client, path, env)->GetResult();
@@ -225,7 +241,7 @@ TEST_P(RepositoryCompatibilityTests_Upgrade, Upgrade)
 
     BeFileName path;
     CacheEnvironment env;
-    CreateTestPaths(client, "Upgrade", path, env);
+    CreateTestPaths(client, "Upgrade", repository.label, path, env);
     ASSERT_FALSE(path.DoesPathExist());
 
     auto createResult = CachingDataSource::OpenOrCreate(client, path, env)->GetResult();
