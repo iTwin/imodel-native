@@ -657,9 +657,9 @@ $(OUT_DIR)PolyfaceIndexedStitch$(OUT_EXT)      : $(geomSrcPolyface)PolyfaceIndex
 
 $(OUT_DIR)PolyfaceClipToPlaneSets$(OUT_EXT)    : $(geomSrcPolyface)PolyfaceClipToPlaneSets.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-$(OUT_DIR)PolyfaceFastClusterDecimate$(OUT_EXT)    : $(geomSrcPolyface)PolyfaceFastClusterDecimate.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+$(OUT_DIR)PolyfaceClusterDecimation$(OUT_EXT)    : $(geomSrcPolyface)PolyfaceClusterDecimation.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-$(OUT_DIR)PolyfaceQuantizedCoordinateMap$(OUT_EXT)    : $(geomSrcPolyface)PolyfaceQuantizedCoordinateMap.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+$(OUT_DIR)PolyfaceLightweightBuilder$(OUT_EXT)    : $(geomSrcPolyface)PolyfaceLightweightBuilder.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)ClipPlaneSet$(OUT_EXT)      : $(geomSrcPolyface)ClipPlaneSet.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 

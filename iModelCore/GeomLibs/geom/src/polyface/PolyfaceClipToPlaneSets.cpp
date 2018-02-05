@@ -1,4 +1,6 @@
 /*--------------------------------------------------------------------------------------+
+
+    
 |
 |     $Source: geom/src/polyface/PolyfaceClipToPlaneSets.cpp $
 |
@@ -512,7 +514,7 @@ void    Init (PolyfaceVisitorR visitor, OutputChainMap& outputChainMap)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void   AddToPolyface  (PolyfaceQuantizedCoordinateMap& builder, OutputChainMap& outputChainMap, double areaTolerance) const
+void   AddToPolyface  (LightweightPolyfaceBuilder& builder, OutputChainMap& outputChainMap, double areaTolerance) const
     {
     size_t          count;
 
@@ -558,14 +560,14 @@ void   AddToPolyface  (PolyfaceQuantizedCoordinateMap& builder, OutputChainMap& 
 +===============+===============+===============+===============+===============+======*/
 struct PolyfaceClipToPlaneSetContext
 {
-    PolyfaceQuantizedCoordinateMap&     m_builder;
+    LightweightPolyfaceBuilder&     m_builder;
     bool                                m_triangulate;
     double                              m_tolerance;
     double                              m_areaTolerance;
     OutputChainMap&                     m_outputChainMap;
     T_ClipPlaneSets const&              m_planeSets;
 
-    PolyfaceClipToPlaneSetContext (T_ClipPlaneSets const& planeSets, PolyfaceQuantizedCoordinateMap& output, OutputChainMap& chainMap, double tolerance, bool triangulate) : 
+    PolyfaceClipToPlaneSetContext (T_ClipPlaneSets const& planeSets, LightweightPolyfaceBuilder& output, OutputChainMap& chainMap, double tolerance, bool triangulate) : 
                         m_planeSets(planeSets),
                         m_builder (output), 
                         m_outputChainMap (chainMap), 
@@ -708,7 +710,7 @@ void   ClipPolyfaceFacet (PolyfaceClipFacet const& facet)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   finishClipping (PolyfaceQuantizedCoordinateMap& outputBuilder,  OutputChainMap& outputChainMap, PolyfaceQuery::IClipToPlaneSetOutput& output, bool triangulateOutput)
+StatusInt   finishClipping (LightweightPolyfaceBuilder& outputBuilder,  OutputChainMap& outputChainMap, PolyfaceQuery::IClipToPlaneSetOutput& output, bool triangulateOutput)
     {
     PolyfaceHeaderR     clippedMesh = *outputBuilder.GetPolyface();
 
@@ -757,7 +759,7 @@ StatusInt   PolyfaceQuery::ClipToPlaneSetIntersection (T_ClipPlaneSets const& pl
         return output._ProcessUnclippedPolyface (*this);
 
     PolyfaceHeaderPtr                   outputPolyface = PolyfaceHeader::CreateVariableSizeIndexed();
-    PolyfaceQuantizedCoordinateMapPtr   outputBuilder = PolyfaceQuantizedCoordinateMap::Create (*outputPolyface);
+    LightweightPolyfaceBuilderPtr   outputBuilder = LightweightPolyfaceBuilder::Create (*outputPolyface);
     PolyfaceClipFacet                   facet (index);
     OutputChainMap                      outputChainMap (*this);
     PolyfaceClipToPlaneSetContext       clipContext (planeSets, *outputBuilder, outputChainMap, distanceTolerance, triangulateOutput);
@@ -790,7 +792,7 @@ StatusInt   PolyfaceQuery::ClipToPlaneSetIntersection (T_ClipPlaneSets const& pl
 +===============+===============+===============+===============+===============+======*/
 struct PolyfaceClipToRangeContext
 {
-    PolyfaceQuantizedCoordinateMap&              m_builder;
+    LightweightPolyfaceBuilder&              m_builder;
     bool                                m_triangulate;
     double                              m_areaTolerance;
     OutputChainMap&                     m_outputChainMap;
@@ -800,7 +802,7 @@ struct PolyfaceClipToRangeContext
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceClipToRangeContext (DRange3dCR range, PolyfaceQuantizedCoordinateMap& output, OutputChainMap& chainMap, double tolerance, bool triangulate) : 
+PolyfaceClipToRangeContext (DRange3dCR range, LightweightPolyfaceBuilder& output, OutputChainMap& chainMap, double tolerance, bool triangulate) : 
     m_range(range), m_builder (output), m_outputChainMap (chainMap), m_areaTolerance (tolerance * tolerance), m_triangulate (triangulate) 
     {
     m_axes[0] = ClipRangeAxis(0, true,  range.low.x);
@@ -869,7 +871,7 @@ StatusInt   PolyfaceQuery::ClipToRange (DRange3dCR clipRange, PolyfaceQuery::ICl
     facetOptions->SetParamsRequired (0 != GetParamCount());
 
     PolyfaceHeaderPtr                   outputPolyface = PolyfaceHeader::CreateVariableSizeIndexed();
-    PolyfaceQuantizedCoordinateMapPtr   outputBuilder = PolyfaceQuantizedCoordinateMap::Create (*outputPolyface);
+    LightweightPolyfaceBuilderPtr   outputBuilder = LightweightPolyfaceBuilder::Create (*outputPolyface);
     PolyfaceClipFacet                   facet (0);
     OutputChainMap                      outputChainMap (*this);
     PolyfaceClipToRangeContext          clipContext(clipRange, *outputBuilder, outputChainMap, distanceTolerance, triangulateOutput);

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: geom/src/polyface/PolyfaceFastClusterDecimate.cpp $
+|     $Source: geom/src/polyface/PolyfaceClusterDecimation.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -109,7 +109,7 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance)
         return nullptr;     // No Clusters found.
 
     PolyfaceHeaderPtr                   decimatedPolyface = PolyfaceHeader::CreateVariableSizeIndexed();
-    PolyfaceQuantizedCoordinateMapPtr   coordinateMap = PolyfaceQuantizedCoordinateMap::Create(*decimatedPolyface);
+    LightweightPolyfaceBuilderPtr   coordinateMap = LightweightPolyfaceBuilder::Create(*decimatedPolyface);
 
     // Build clustered points.
     for (auto& pair : clusters)

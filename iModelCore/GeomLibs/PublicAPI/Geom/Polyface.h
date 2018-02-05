@@ -3345,9 +3345,9 @@ struct IFacetProcessor
 GEOMAPI_VIRTUAL void Process (PolyfaceVectors &) = 0;
 };
 
-typedef RefCountedPtr<struct PolyfaceQuantizedCoordinateMap>  PolyfaceQuantizedCoordinateMapPtr;
+typedef RefCountedPtr<struct LightweightPolyfaceBuilder>  LightweightPolyfaceBuilderPtr;
 
-struct PolyfaceQuantizedCoordinateMap : RefCountedBase
+struct LightweightPolyfaceBuilder : RefCountedBase
 {
     struct QPoint3d
         {
@@ -3378,10 +3378,10 @@ private:
     FacetFaceData           m_currentFaceData;
 
 
-    PolyfaceQuantizedCoordinateMap(PolyfaceHeaderR polyface, double pointTolerance, double normalTolerance, double paramTolerance);
+    LightweightPolyfaceBuilder(PolyfaceHeaderR polyface, double pointTolerance, double normalTolerance, double paramTolerance);
 
 public:
-    static PolyfaceQuantizedCoordinateMapPtr Create(PolyfaceHeaderR polyface, double pointTolerance = 1.0E-8, double normalTolerance = 1.0E-10, double paramTolerance = 1.0E-10) { return new PolyfaceQuantizedCoordinateMap(polyface, pointTolerance, normalTolerance, paramTolerance); }
+    static LightweightPolyfaceBuilderPtr Create(PolyfaceHeaderR polyface, double pointTolerance = 1.0E-8, double normalTolerance = 1.0E-10, double paramTolerance = 1.0E-10) { return new LightweightPolyfaceBuilder(polyface, pointTolerance, normalTolerance, paramTolerance); }
 
     //! Find or add a point.  Return the (0-based) index.
     GEOMDLLIMPEXP size_t FindOrAddPoint (DPoint3dCR point);
@@ -3419,7 +3419,7 @@ public:
     //! Finalize data for the current face.
     GEOMDLLIMPEXP void EndFace ();
 
-};  //  PolyfaceQuantizedCoordinateMap
+};  //  LightweightPolyfaceBuilder
 
 
 /*__PUBLISH_SECTION_START__*/
