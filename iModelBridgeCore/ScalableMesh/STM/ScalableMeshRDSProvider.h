@@ -2,7 +2,7 @@
 |
 |     $Source: STM/ScalableMeshRDSProvider.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,7 +10,7 @@
 /*--------------------------------------------------------------------------------------+
 |   Header File Dependencies
 +--------------------------------------------------------------------------------------*/
-#include <RealityPlatform/RealityDataService.h>
+#include <RealityPlatformTools\RealityDataService.h>
 #include <ScalableMesh/IScalableMeshRDSProvider.h>
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
