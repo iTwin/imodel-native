@@ -19,6 +19,9 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 struct TestRepository
     {
+    Utf8String label;
+    Utf8String comment;
+
     BeFileName schemasDir;
 
     Utf8String serverUrl;
