@@ -986,7 +986,7 @@ ReadStatus DgnTileReader::ReadFeatureTable(FeatureTableR featureTable)
             !m_buffer.Read(index))
             {
             BeAssert(false);
-            return ReadStatus::FeatureTableError;;
+            return ReadStatus::FeatureTableError;
             }
 
         featureTable.Insert(Feature(DgnElementId(elementId), DgnSubCategoryId(subCategoryId), static_cast<DgnGeometryClass>(geometryClass)), index);
@@ -995,6 +995,53 @@ ReadStatus DgnTileReader::ReadFeatureTable(FeatureTableR featureTable)
     m_buffer.SetPos(startPos + header.length);
 
     return ReadStatus::Success;
+    }
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   01/18
+//=======================================================================================
+struct StreamBufferScope
+{
+    StreamBufferR   m_buffer;
+
+    explicit StreamBufferScope(StreamBufferR buffer) : m_buffer(buffer) { m_buffer.SetPos(0); }
+    ~StreamBufferScope() { m_buffer.SetPos(0); }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnTileReader::VerifyFeatureTable()
+    {
+    StreamBufferScope scope(m_buffer);
+
+    DgnTile::Header tileHeader;
+    DgnTile::FeatureTableHeader tableHeader;
+    if (!tileHeader.Read(m_buffer) || !tableHeader.Read(m_buffer))
+        {
+        BeAssert(false);
+        return false;
+        }
+
+    uint64_t elemId;
+    uint32_t numBytesToSkip = sizeof(uint64_t) + sizeof(uint32_t) + sizeof(uint32_t);
+    CachedStatementPtr stmt = m_model.GetDgnDb().GetCachedStatement("SELECT ModelId FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?");
+    for (size_t i = 0; i < tableHeader.count; i++)
+        {
+        if (!m_buffer.Read(elemId) || !m_buffer.Advance(numBytesToSkip))
+            {
+            BeAssert(false);
+            return false;
+            }
+
+        stmt->BindId(1, DgnElementId(elemId));
+        if (BE_SQLITE_ROW != stmt->Step())
+            return false;
+
+        stmt->Reset();
+        }
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**

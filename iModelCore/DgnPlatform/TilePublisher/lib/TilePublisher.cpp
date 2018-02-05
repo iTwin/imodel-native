@@ -2,7 +2,7 @@
 |
 |     $Source: TilePublisher/lib/TilePublisher.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <TilePublisher/TilePublisher.h>
@@ -4049,7 +4049,7 @@ Json::Value PublisherContext::GetCategoriesJson (DgnCategoryIdSet const& categor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PublisherContext::GetViewJson(Json::Value& json, ViewDefinitionCR view, TransformCR transform)
+bool PublisherContext::GetViewJson(Json::Value& json, ViewDefinitionCR view, TransformCR transform)
     {
     auto                spatialView = view.ToSpatialView();
     ViewDefinition2dCP  view2d;
@@ -4061,14 +4061,18 @@ void PublisherContext::GetViewJson(Json::Value& json, ViewDefinitionCR view, Tra
     else if (nullptr != (view2d = view.ToDrawingView()) ||
              nullptr != (view2d = view.ToSheetView()))
         {
-        auto fakeModelSelectorId = view2d->GetBaseModelId().ToString();
+        auto modelId = view2d->GetBaseModelId();
+        if (m_modelRanges.end() == m_modelRanges.find(modelId))
+            return false; // model produced no tiles
+
+        auto fakeModelSelectorId = modelId.ToString();
         fakeModelSelectorId.append("_2d");
         json["modelSelector"] = fakeModelSelectorId;
         }
     else
         {
         BeAssert(false && "Unexpected view type");
-        return;
+        return false;
         }
 
     json["name"] = view.GetName();
@@ -4115,6 +4119,8 @@ void PublisherContext::GetViewJson(Json::Value& json, ViewDefinitionCR view, Tra
         {
         json["type"] = nullptr != view.ToDrawingView() ? "drawing" : "sheet";;
         }
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4191,8 +4197,8 @@ Json::Value PublisherContext::GetViewDefinitionsJson()
 
         Json::Value entry(Json::objectValue);
  
-        GetViewJson(entry, *viewDefinition, nullptr != viewDefinition->ToSpatialView() ? spatialTransform : Transform::FromIdentity());
-        viewsJson[viewId.ToString()] = entry;
+        if (GetViewJson(entry, *viewDefinition, nullptr != viewDefinition->ToSpatialView() ? spatialTransform : Transform::FromIdentity()))
+            viewsJson[viewId.ToString()] = entry;
         }
     return viewsJson;
     }

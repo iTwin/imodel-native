@@ -212,6 +212,8 @@ public:
     DgnTileReader(StreamBufferR buffer, DgnModelR model, Render::System& system) : GltfReader(buffer, model, system) { }
 
     ReadStatus ReadTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR, bool& isLeaf);
+
+    bool VerifyFeatureTable();
 };
 
 END_TILETREE_IO_NAMESPACE

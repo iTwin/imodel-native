@@ -98,16 +98,18 @@ void SpatialViewController::_DrawDecorations(DecorateContextR context)
         }
 
     static int const FILL_TRANSPARENCY = 128;
+    auto bg = context.CreateViewOverlay();
     ColorDef bgColor = vp.MakeColorTransparency(ColorDef::White(), FILL_TRANSPARENCY);
-    graphic->SetBlankingFill(bgColor);
-    
+    bg->SetBlankingFill(bgColor);
+
     DPoint3d textShape[4];
     textShape[0].Init(runningTextBounds.low);
     textShape[1].Init(runningTextBounds.low.x, runningTextBounds.high.y);
     textShape[2].Init(runningTextBounds.high.x, runningTextBounds.high.y);
     textShape[3].Init(runningTextBounds.high.x, runningTextBounds.low.y);
-    graphic->AddShape(_countof(textShape), textShape, true);
+    bg->AddShape(_countof(textShape), textShape, true);
 
+    context.AddViewOverlay(*bg->Finish());
     context.AddViewOverlay(*graphic->Finish());
     }
 
