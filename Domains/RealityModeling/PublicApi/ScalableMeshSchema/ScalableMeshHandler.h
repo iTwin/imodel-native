@@ -224,8 +224,7 @@ private:
     
 
     //SceneInfo   m_sceneInfo;
-    Dgn::ClipVectorCPtr m_clip;
-    BentleyStatus LocateFromSRS(); // compute location transform from spatial reference system in the sceneinfo
+    Dgn::ClipVectorCPtr m_clip;    
     Utf8CP _GetName() const override { return "3SM"; }
     Dgn::ClipVectorCP _GetClipVector() const override { return m_clip.get(); }
 

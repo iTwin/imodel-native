@@ -271,168 +271,6 @@ static bool s_dontShowMesh = false;
 static bool s_showTiles = false;
 static double s_tileSizePerIdStringSize = 10.0;
 
-void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNodes,
-        bvector<IScalableMeshCachedDisplayNodePtr>& overviewMeshNodes,
-        Dgn::RenderContextR                         context,
-        const DMatrix4d&                            storageToUors,
-
-                             bset<uint64_t>&                             activeClips,
-                             bool                                        displayTexture, 
-                             bool                                        isCesium)
-    {
-#if 0 //NEEDS_WORK_SM_TEMP_OUT
-
-#ifdef PRINT_SMDISPLAY_MSG
-    PRINT_MSG("ProgressiveDrawMeshNode2 meshNode : %I64u overviewMeshNode : %I64u \n", meshNodes.size(), overviewMeshNodes.size());
-#endif
-
-    static size_t s_callCount = 0;
-
-    bvector<IScalableMeshCachedDisplayNodePtr> requestedNodes;
-    bvector<IScalableMeshCachedDisplayNodePtr> nodesWithoutQvElem;
-
-    Render::GraphicBranch graphics;
-
-    if (overviewMeshNodes.size() > 0)
-        {
-        //NEEDS_WORK_SM : If kept needs clean up
-        for (size_t nodeInd = 0; nodeInd < overviewMeshNodes.size(); nodeInd++)
-            {
-            /*
-               if (context.CheckStop())
-               break;
-               */
-
-            //NEEDS_WORK_SM_PROGRESSIVE : IsMeshLoaded trigger load header.
-            //assert(overviewMeshNodes[nodeInd]->IsHeaderLoaded() && overviewMeshNodes[nodeInd]->IsMeshLoaded());
-            /*
-               if (!meshNodes[nodeInd]->IsHeaderLoaded() || !meshNodes[nodeInd]->IsMeshLoaded())
-               requestedNodes.push_back(meshNodes[nodeInd]);
-               else
-               */
-
-                {
-                /*
-                   ElemMatSymbP matSymbP = context.GetElemMatSymb();
-
-                   matSymbP->Init();
-                   ColorDef white(0xff, 0xff, 0xff);
-                   ColorDef green(0, 0x77, 0);
-				   matSymbP->SetLineColor(overviewMeshNodes[nodeInd]->IsTextured() && displayTexture ? white : green);
-	               matSymbP->SetFillColor(overviewMeshNodes[nodeInd]->IsTextured() && displayTexture ? white : green);
-
-                   matSymbP->SetFillTransparency(s_transparency);
-                   matSymbP->SetLineTransparency(s_transparency);
-
-                   matSymbP->SetIsFilled(false);
-                   context.ResetContextOverrides(); // If not reset, last drawn override is applyed to dtm (Selected/Hide preview)
-                   context.GetIDrawGeom().ActivateMatSymb(matSymbP);
-                   */
-                }
-
-            bvector<SmCachedDisplayMesh*> cachedMeshes;
-            bvector<bpair<bool, uint64_t>> textureIds;
-                        
-            if (SUCCESS == overviewMeshNodes[nodeInd]->GetCachedMeshes(cachedMeshes, textureIds))
-                {
-                for (auto& cachedMesh : cachedMeshes)
-                    {
-                    graphics.Add(*cachedMesh->m_graphic);
-                    }        
-                }
-            else
-                {
-                /*NEEDS_WORK_SM : Not support yet.
-                  __int64 meshId = GetMeshId(overviewMeshNodes[nodeInd]->GetNodeId());
-
-                  qvElem = QvCachedNodeManager::GetManager().FindQvElem(meshId, dtmDataRef.get());
-                  */
-                //assert(!"Should not get here");
-                }
-            }
-        }
-
-    if (meshNodes.size() > 0)
-        {
-        //NEEDS_WORK_SM : If kept needs clean up
-        for (size_t nodeInd = 0; nodeInd < meshNodes.size(); nodeInd++)
-            {
-            /*
-               if (context.CheckStop())
-               break;
-               */
-
-            //NEEDS_WORK_SM_PROGRESSIVE : IsMeshLoaded trigger load header.
-            //assert(meshNodes[nodeInd]->IsHeaderLoaded() && meshNodes[nodeInd]->IsMeshLoaded());
-            /*
-               if (!meshNodes[nodeInd]->IsHeaderLoaded() || !meshNodes[nodeInd]->IsMeshLoaded())
-               requestedNodes.push_back(meshNodes[nodeInd]);
-               else
-               */
-
-            bvector<SmCachedDisplayMesh*> cachedMeshes;
-            bvector<bpair<bool, uint64_t>> textureIds;
-                        
-            if (SUCCESS == meshNodes[nodeInd]->GetCachedMeshes(cachedMeshes, textureIds))
-                {
-                for (auto& cachedMesh : cachedMeshes)
-                    {
-                    graphics.Add(*cachedMesh->m_graphic);
-                    }        
-                }
-            else
-                {
-                //assert(!"Should not occur");
-                /*NEEDS_WORK_SM : Not support yet.
-                  __int64 meshId = GetMeshId(meshNodes[nodeInd]->GetNodeId());
-                  qvElem = QvCachedNodeManager::GetManager().FindQvElem(meshId, dtmDataRef.get());
-                  */
-                }
-            }
-        }
-
-    if (graphics.m_entries.empty())
-        return;
-
-    Transform storageToUorsTransform;
-    storageToUorsTransform.InitFrom(storageToUors);
-    //context.PushTransform(storageToUorsTransform);
-
-    //auto group = context.CreateBranch(Render::Graphic::CreateParams(nullptr, storageToUorsTransform), graphics);
-    auto group = context.CreateBranch(graphics, &storageToUorsTransform);
-    context.OutputGraphic(*group, nullptr);
-
-#endif
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  4/2015
-//----------------------------------------------------------------------------------------
-bool ShouldDrawInContext (ViewContextR context)
-    {
-    /*
-       switch (context.GetDrawPurpose())
-       {
-       case DrawPurpose::Hilite:
-       case DrawPurpose::Unhilite:
-       case DrawPurpose::ChangedPre:       // Erase, rely on Healing.
-       case DrawPurpose::RestoredPre:      // Erase, rely on Healing.
-       case DrawPurpose::Pick:
-       case DrawPurpose::Flash:
-       case DrawPurpose::CaptureGeometry:
-       case DrawPurpose::FenceAccept:
-       case DrawPurpose::RegionFlood:
-       case DrawPurpose::FitView:
-       case DrawPurpose::ExportVisibleEdges:
-       case DrawPurpose::ModelFacet:
-       return false;
-       }
-       */
-
-    return true;
-    }
-	
-
 
 void GetBingLogoInfo(Transform& correctedViewToView, ViewContextR context)
     {
@@ -452,7 +290,6 @@ void GetBingLogoInfo(Transform& correctedViewToView, ViewContextR context)
         }
     }
 
-static bool s_loadTexture = true;
 static bool s_waitQueryComplete = true;
 
 /*---------------------------------------------------------------------------------**//**
@@ -499,12 +336,11 @@ void SMNode::_GetCustomMetadata(Utf8StringR name, Json::Value& data) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mathieu.St-Pierre  08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool s_tryProgQuery = false;
 static bool s_tryCustomSelect = true;
 
 Tile::ChildTiles const* SMNode::_GetChildren(bool load) const
     { 
-    if (!s_tryProgQuery && !s_tryCustomSelect)
+    if (!s_tryCustomSelect)
         return __super::_GetChildren(load);
 /*
     if (!IsReady())
@@ -813,288 +649,7 @@ Dgn::TileTree::Tile::SelectParent SMNode::_SelectTiles(bvector<Dgn::TileTree::Ti
         return SelectParent::Yes;
         }
 
-
-    if (m_parent == nullptr && s_tryProgQuery)
-        { 
-        //m_displayNodesCache->SetRenderSys(Dgn::Render::SystemP renderSys);
-
-        ScalableMeshDrawingInfoPtr nextDrawingInfoPtr(new ScalableMeshDrawingInfo(&args.m_context));
-        
-        //nextDrawingInfoPtr->m_smPtr = m_smPtr.get();
-        //nextDrawingInfoPtr->m_currentQuery = (int)((GetModelId().GetValue() - GetModelId().GetBriefcaseId().GetValue()) & 0xFFFF);
-        nextDrawingInfoPtr->m_currentQuery = 0;
-
-        bool newQuery = true;
-
-        if ((m_3smModel->m_currentDrawingInfoPtr != nullptr)/* &&
-            (m_3smModel->m_currentDrawingInfoPtr->GetDrawPurpose() != DrawPurpose::UpdateDynamic)*/)
-        {
-            //If the m_dtmPtr equals 0 it could mean that the last data request to the STM was cancelled, so start a new request even
-            //if the view has not changed.
-            if (m_3smModel->m_currentDrawingInfoPtr->HasAppearanceChanged(nextDrawingInfoPtr) == false /*&& !m_forceRedraw*/)
-            {
-                //assert((m_currentDrawingInfoPtr->m_overviewNodes.size() == 0) && (m_currentDrawingInfoPtr->m_meshNodes.size() > 0));            
-                //ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_smToModelUorTransform, (ScalableMeshDisplayCacheManager*)m_displayNodesCache.get(), m_smPtr->ShouldInvertClips() ? m_notActiveClips : m_activeClips, m_displayTexture, m_smPtr->IsCesium3DTiles());
-
-
-                int queryId = m_3smModel->m_currentDrawingInfoPtr->m_currentQuery;
-
-                if (m_3smModel->GetProgressiveQueryEngine()->IsQueryComplete(queryId))
-                {
-                    m_3smModel->m_currentDrawingInfoPtr->m_meshNodes.clear();
-
-                    StatusInt status = m_3smModel->GetProgressiveQueryEngine()->GetRequiredNodes(m_3smModel->m_currentDrawingInfoPtr->m_meshNodes, queryId);
-
-                    assert(status == SUCCESS);
-
-                    assert(m_3smModel->m_currentDrawingInfoPtr->m_overviewNodes.size() == 0 || m_3smModel->m_currentDrawingInfoPtr->m_meshNodes.size() > 0);
-                    bvector<IScalableMeshNodePtr> nodes;
-                    for (auto& nodeP : m_3smModel->m_currentDrawingInfoPtr->m_meshNodes) nodes.push_back(nodeP.get());
-                    m_3smModel->m_smPtr->SetCurrentlyViewedNodes(nodes);
-
-                    m_3smModel->m_currentDrawingInfoPtr->m_overviewNodes.clear();
-
-                    status = m_3smModel->GetProgressiveQueryEngine()->StopQuery(queryId);
-
-                    assert(status == SUCCESS);
-
-//                    m_hasFetchedFinalNode = true;
-                }
-                else
-                {
-                    m_3smModel->m_currentDrawingInfoPtr->m_meshNodes.clear();
-                    StatusInt status = m_3smModel->GetProgressiveQueryEngine()->GetRequiredNodes(m_3smModel->m_currentDrawingInfoPtr->m_meshNodes, queryId);
-                    assert(status == SUCCESS);
-
-                    m_3smModel->m_currentDrawingInfoPtr->m_overviewNodes.clear();
-                    status = m_3smModel->GetProgressiveQueryEngine()->GetOverviewNodes(m_3smModel->m_currentDrawingInfoPtr->m_overviewNodes, queryId);
-                    assert(status == SUCCESS);
-                }
-
-                
-                newQuery = false;
-            }
-        }
-
-
-        if (newQuery)
-            {
-
-            m_3smModel->m_currentDrawingInfoPtr = nextDrawingInfoPtr;
-
-            BentleyStatus status;
-
-            /*
-            if (restartQuery)
-            {*/
-                status = m_3smModel->GetProgressiveQueryEngine()->StopQuery(/*nextDrawingInfoPtr->GetViewNumber()*/nextDrawingInfoPtr->m_currentQuery);
-                assert(status == SUCCESS);
-            //}
-
-            
-            DMatrix4d localToView(args.m_context.GetWorldToView().M0);
-
-            ClipVectorPtr clipVector;
-            //clip = args.m_context.GetTransformClipStack().GetClip();
-            Render::FrustumPlanes frustumPlanes(args.m_context.GetFrustumPlanes());
-                
-            ConvexClipPlaneSet convexClipPlaneSet(&frustumPlanes.m_planes[0], 6);
-
-            ClipPlaneSet clipPlaneSet(convexClipPlaneSet);
-
-            ClipPrimitivePtr clipPrimitive(ClipPrimitive::CreateFromClipPlanes(clipPlaneSet));
-
-            clipVector = ClipVector::CreateFromPrimitive(clipPrimitive.get());
-
-
-            DMatrix4d smToUOR = DMatrix4d::From(m_3smModel->m_smToModelUorTransform);
-
-            bsiDMatrix4d_multiply(&localToView, &localToView, &smToUOR);
-   
-
-            IScalableMeshViewDependentMeshQueryParamsPtr viewDependentQueryParams(IScalableMeshViewDependentMeshQueryParams::CreateParams());
-
-            viewDependentQueryParams->SetMinScreenPixelsPerPoint(s_minScreenPixelsPerPoint);
-
-            if (m_3smModel->m_textureInfo->IsUsingBingMap())
-                {
-                viewDependentQueryParams->SetMaxPixelError(s_maxPixelErrorStreamingTexture);
-                }
-            else
-                {
-                viewDependentQueryParams->SetMaxPixelError(s_maxPixelError);
-                }
-
-            viewDependentQueryParams->SetRootToViewMatrix(localToView.coff);
-        
-            clipVector->TransformInPlace(m_3smModel->m_modelUorToSmTransform);
-
-            viewDependentQueryParams->SetViewClipVector(clipVector);
-
-
-            int queryId = 0;
-
-            bvector<bool> clips;
-            /*NEEDS_WORK_SM : Get clips
-            m_DTMDataRef->GetVisibleClips(clips);
-            */   
-
-            //ScalableMeshDrawingInfoPtr nextDrawingInfoPtr(new ScalableMeshDrawingInfo(&context));
-            m_3smModel->m_currentDrawingInfoPtr = new ScalableMeshDrawingInfo(&args.m_context);
-
-            StatusInt statusQuery = m_3smModel->GetProgressiveQueryEngine()->StartQuery(queryId,
-                viewDependentQueryParams,
-                m_3smModel->m_currentDrawingInfoPtr->m_meshNodes,
-                m_3smModel->m_displayTexture, //No wireframe mode, so always load the texture.
-                clips,
-                m_3smModel->m_smPtr);
-
-            assert(statusQuery == SUCCESS);
-        
-            if (s_waitQueryComplete || !m_3smModel->m_isProgressiveDisplayOn)
-                {
-                while (!m_3smModel->GetProgressiveQueryEngine()->IsQueryComplete(queryId))
-                    {
-                    BeThreadUtilities::BeSleep(200);
-                    }
-                }
-
-            // int terrainQueryId = -1;    
-            //auto terrainSM = m_smPtr->GetTerrainSM();
-
-            /*   if (!clipFromCoverageSet.empty() && terrainSM.IsValid())
-            {
-            m_currentDrawingInfoPtr->m_terrainOverviewNodes.clear();
-            terrainQueryId = (int)((GetModelId().GetValue() - GetModelId().GetBriefcaseId().GetValue()) & 0xFFFFFFFF | 0xAFFF);//nextDrawingInfoPtr->GetViewNumber();
-            m_currentDrawingInfoPtr->m_terrainQuery = terrainQueryId;
-            bvector<bool> clips;
-
-            status = GetProgressiveQueryEngine()->StartQuery(terrainQueryId,
-            viewDependentQueryParams,
-            m_currentDrawingInfoPtr->m_terrainMeshNodes,
-            true, //No wireframe mode, so always load the texture.
-            clips,
-            terrainSM);   
-
-            if (!m_isProgressiveDisplayOn)
-            {
-            while (!GetProgressiveQueryEngine()->IsQueryComplete(terrainQueryId))
-            {
-            BeThreadUtilities::BeSleep (200);
-            }
-            }
-            }*/
-
-                bool needProgressive;
- 
-
-            if (m_3smModel->GetProgressiveQueryEngine()->IsQueryComplete(queryId))
-                {
-                m_3smModel->m_currentDrawingInfoPtr->m_meshNodes.clear();
-                status = m_3smModel->GetProgressiveQueryEngine()->GetRequiredNodes(m_3smModel->m_currentDrawingInfoPtr->m_meshNodes, queryId);
-                assert(status == SUCCESS);
-                m_3smModel->m_currentDrawingInfoPtr->m_overviewNodes.clear();
-
-                bvector<IScalableMeshNodePtr> nodes;
-                for (auto& nodeP : m_3smModel->m_currentDrawingInfoPtr->m_meshNodes) nodes.push_back(nodeP.get());
-                m_3smModel->m_smPtr->SetCurrentlyViewedNodes(nodes);    
-                //needProgressive = false;
-                }
-            else
-                {
-                status = m_3smModel->GetProgressiveQueryEngine()->GetOverviewNodes(m_3smModel->m_currentDrawingInfoPtr->m_overviewNodes, queryId);
-
-                m_3smModel->m_currentDrawingInfoPtr->m_meshNodes.clear();
-
-                status = m_3smModel->GetProgressiveQueryEngine()->GetRequiredNodes(m_3smModel->m_currentDrawingInfoPtr->m_meshNodes, queryId);
-                bvector<IScalableMeshNodePtr> nodes;
-                for (auto& nodeP : m_3smModel->m_currentDrawingInfoPtr->m_meshNodes) nodes.push_back(nodeP.get());
-                for (auto& nodeP : m_3smModel->m_currentDrawingInfoPtr->m_overviewNodes) nodes.push_back(nodeP.get());
-                m_3smModel->m_smPtr->SetCurrentlyViewedNodes(nodes);
-                assert(status == SUCCESS);
-
-                //NEEDS_WORK_MST : Will be fixed when the lowest resolution is created and pin at creation time.
-                //assert(m_currentDrawingInfoPtr->m_overviewNodes.size() > 0);
-                assert(status == SUCCESS);
-
-                //needProgressive = true;
-                }
-            }
-        }
-        
-    if (s_tryProgQuery)
-        {
-        DgnDb::VerifyClientThread();
-
-        bool foundNode = false; 
-
-        for (auto& node : m_3smModel->m_currentDrawingInfoPtr->m_meshNodes)
-            {        
-            if (m_scalableMeshNodePtr->GetNodeId() == node->GetNodeId())
-                {
-                foundNode = true;
-                break;
-                }
-            }
-
-        if (foundNode)
-            {
-            if (IsReady())
-                {   
-                selected.push_back(this);
-                return SelectParent::No;
-                }
-            else
-                {                                
-                SMNodePtr thisTile(const_cast<SMNode*>(this));
-                //m_3smModel->m_currentDrawingInfoPtr->m_nodesToLoad.push_back(thisTile);
-                args.InsertMissing(*this);
-                return SelectParent::Yes;
-                }        
-            }
-
-        bset<__int64>& ancestors(m_3smModel->m_currentDrawingInfoPtr->GetAncestors());
-
-        bool drawParent = false;
-    
-        if (ancestors.find(m_scalableMeshNodePtr->GetNodeId()) != ancestors.end())
-            {
-            auto children = _GetChildren(true);
-
-            if (nullptr != children)
-                {
-                for (auto const& child : *children)
-                    {                    
-                    if (SelectParent::Yes == child->_SelectTiles(selected, args))
-                        {
-                        drawParent = true;
-                        // NB: We must continue iterating children so that they can be requested if missing...
-                        }
-                    }            
-                }
-            }
-    
-        if (!drawParent)
-            {
-            return SelectParent::No;
-            }
-
-        if (IsReady())
-            {
-            if (_HasGraphics())
-                selected.push_back(this);
-
-            return SelectParent::No;
-            }
-        else if (_HasBackupGraphics())
-            {
-            // Caching previous graphics while regenerating tile to reduce flishy-flash when model changes.
-            selected.push_back(this);
-            return SelectParent::No;
-            }
-
-        return SelectParent::Yes;
-        }
+      
     
     return __super::_SelectTiles(selected, args);
     }
@@ -1178,181 +733,18 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
         m_3smModel->InitializeTerrainRegions(/*args.m_context*/);
         }
 
-
-    //BeAssert(IsQueued() || ((m_parent != nullptr) && (m_parent->GetLoadStatus() == LoadStatus::Loading)));
-
     m_loadStatus.store(LoadStatus::Loading);
 
     BeAssert(m_children.empty());
 
     DRange3d range3D(scene.m_smPtr->GetRootNode()->GetContentExtent());
-    //DRange3d range3D(m_scalableMeshNodePtr->GetContentExtent());
-
 
     Transform toFloatTransform(scene.GetToFloatTransform());
 
     if (!ReadHeader(toFloatTransform))
         return ERROR;
 
-#if 0
-    bmap<Utf8String, int> textureIds, nodeIds;
-    bmap<Utf8String, Utf8String> geometryNodeCorrespondence;
-    int nodeCount = 0;
-
-    uint32_t magicSize = (uint32_t)GetMagicString().size();
-    ByteCP currPos = in.GetCurrent();
-    if (!in.Advance(magicSize))
-        {
-        LOG_ERROR("Can't read magic number");
-        return ERROR;
-        }
-
-    Utf8String magicNumber((Utf8CP)currPos, (Utf8CP)in.GetCurrent());
-    if (magicNumber != GetMagicString())
-        {
-        LOG_ERROR("wrong magic number");
-        return ERROR;
-        }
-
-    uint32_t infoSize;
-    if (!CtmContext::ReadBytes(in, &infoSize, 4))
-        {
-        LOG_ERROR("Can't read size");
-        return ERROR;
-        }
-
-    Utf8P infoStr = (Utf8P)in.GetCurrent();
-    Json::Value pt;
-    Json::Reader reader;
-    if (!reader.parse(infoStr, infoStr + infoSize, pt))
-        {
-        LOG_ERROR("Cannot parse info: ");
-        return ERROR;
-        }
-
-    int version = pt.get("version", 0).asInt();
-    if (version != 1)
-        {
-        LOG_ERROR("Unsupported version");
-        return ERROR;
-        }
-
-    JsonValueCR nodes = pt["nodes"];
-    if (!nodes.empty())
-        {
-        for (JsonValueCR node : nodes)
-            {
-            Utf8String nodeName;
-            bvector<Utf8String> nodeResources;
-            nodeName = node.get("id", "").asCString();
-
-            NodePtr nodeptr = new Node(GetRootR(), this);
-
-            if (!nodeptr->ReadHeader(node, nodeName, nodeResources))
-                return ERROR;
-
-            nodeIds[nodeName] = nodeCount++;
-            for (size_t i = 0; i < nodeResources.size(); ++i)
-                geometryNodeCorrespondence[nodeResources[i]] = nodeName;
-
-            m_children.push_back(nodeptr);
-            }
-        }
-
-    Utf8String resourceType, resourceFormat, resourceName;
-    uint32_t resourceSize;
-    uint32_t offset = (uint32_t)GetMagicString().size() + 4 + infoSize;
-
-    JsonValueCR resources = pt["resources"];
-    if (resources.empty())
-        return SUCCESS;
-
-    bmap<Utf8String, Dgn::Render::TexturePtr> renderTextures;
-    for (JsonValueCR resource : resources)
-        {
-        resourceType = resource.get("type", "").asCString();
-        resourceFormat = resource.get("format", "").asCString();
-        resourceName = resource.get("id", "").asCString();
-        resourceSize = resource.get("size", 0).asUInt();
-
-        uint32_t thisOffset = offset;
-        offset += resourceSize;
-
-        if (resourceType == "textureBuffer" && resourceFormat == "jpg" && !resourceName.empty() && resourceSize > 0)
-            {
-            in.SetPos(thisOffset);
-            ByteCP buffer = in.GetCurrent();
-            if (!in.Advance(resourceSize))
-                {
-                LOG_ERROR("Cannot read texture data");
-                return ERROR;
-                }
-
-            ImageSource jpeg(ImageSource::Format::Jpeg, ByteStream(buffer, resourceSize));
-            renderTextures[resourceName] = scene._CreateTexture(jpeg, Image::Format::Rgb, Image::BottomUp::Yes, renderSys);
-            }
-        }
-
-    offset = (uint32_t)GetMagicString().size() + 4 + infoSize;
-    for (JsonValueCR resource : resources)
-        {
-        resourceType = resource.get("type", "").asCString();
-        resourceFormat = resource.get("format", "").asCString();
-        resourceName = resource.get("id", "").asCString();
-        resourceSize = resource.get("size", 0).asUInt();
-
-        uint32_t thisOffset = offset;
-        offset += resourceSize;
-
-        if (resourceType == "geometryBuffer" && resourceFormat == "ctm" && !resourceName.empty() && resourceSize > 0)
-            {
-            if (geometryNodeCorrespondence.find(resourceName) == geometryNodeCorrespondence.end())
-                {
-                LOG_ERROR("Geometry is not referenced by any node");
-                return ERROR;
-                }
-
-            Utf8String nodeName = geometryNodeCorrespondence[resourceName];
-            auto nodeId = nodeIds.find(nodeName);
-            if (nodeId == nodeIds.end())
-                {
-                LOG_ERROR("Node name is unknown");
-                return ERROR;
-                }
-
-            CtmContext ctm(in, thisOffset);
-            if (CTM_NONE != ctm.GetError())
-                {
-                LOG_ERROR("CTM read error: %s", ctmErrorString(ctm.GetError()));
-                return ERROR;
-                }
-
-            uint32_t textureCoordsArrays = ctm.GetInteger(CTM_UV_MAP_COUNT);
-            if (textureCoordsArrays != 1)
-                continue;
-
-            Utf8String texName = resource.get("texture", Json::Value("")).asCString();
-            if (texName.empty())
-                continue;
-
-            Render::IGraphicBuilder::TriMeshArgs trimesh;
-            trimesh.m_numPoints = ctm.GetInteger(CTM_VERTEX_COUNT);
-            trimesh.m_points = ctm.GetFloatArray(CTM_VERTICES);
-            trimesh.m_normals = (ctm.GetInteger(CTM_HAS_NORMALS) == CTM_TRUE) ? ctm.GetFloatArray(CTM_NORMALS) : nullptr;
-            trimesh.m_numIndices = 3 * ctm.GetInteger(CTM_TRIANGLE_COUNT);
-            trimesh.m_vertIndex = ctm.GetIntegerArray(CTM_INDICES);
-            trimesh.m_textureUV = (FPoint2d const*)ctm.GetFloatArray(CTM_UV_MAP_1);
-
-            auto texture = renderTextures.find(texName);
-            trimesh.m_texture = (texture == renderTextures.end()) ? nullptr : texture->second;
-
-            ((Node*)m_children[nodeId->second].get())->m_meshes.push_front(scene.CreateGeometry(trimesh, renderSys));
-            }
-        }
-#endif
-
-
-    if (!s_tryProgQuery && !s_tryCustomSelect)
+    if (!s_tryCustomSelect)
         { 
         bvector<IScalableMeshNodePtr> childrenNodes(m_scalableMeshNodePtr->GetChildrenNodes());
     
@@ -1394,20 +786,6 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
         if (!m_scalableMeshNodePtr->IsDataUpToDate()) m_scalableMeshNodePtr->UpdateData();
         m_scalableMeshNodePtr->ApplyAllExistingClips(scene.m_smPtr->GetReprojectionTransform());
         smMeshPtr = m_scalableMeshNodePtr->GetMesh(loadFlagsPtr);
-
-
-
-        //if (/*(m_scalableMeshNodePtr->IsLoaded(displayCacheManagerPtr.get(), loadTexture) == false && meshNode->IsLoadedInVRAM(displayCacheManagerPtr.get(), loadTexture) == false) || */!m_scalableMeshNodePtr->IsClippingUpToDate() /*|| !m_scalableMeshNodePtr->HasCorrectClipping(m_activeClips)*/)
-            {
-/*
-            if (!m_scalableMeshNodePtr->IsDataUpToDate()) m_scalableMeshNodePtr->UpdateData();
-            m_scalableMeshNodePtr->ApplyAllExistingClips(scene.m_smPtr->GetReprojectionTransform());            
-            //meshNode->LoadMesh(false, clipVisibilities, displayCacheManagerPtr, loadTexture, scalableMeshPtr->ShouldInvertClips());
-            //assert(m_scalableMeshNodePtr->HasCorrectClipping(m_3smModel->m_activeClips));
-*/
-            }
-
-        //smMeshPtr = m_scalableMeshNodePtr->GetMeshByParts(m_3smModel->m_activeClips);
         }
         
     if (!smMeshPtr.IsValid())
@@ -1417,7 +795,7 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
 
     TileTree::TriMeshTree::TriMesh::CreateParams trimesh;
 
-    trimesh.m_numPoints = polyfaceQuery->GetPointIndexCount(); //smMeshPtr->GetNbPoints();
+    trimesh.m_numPoints = polyfaceQuery->GetPointIndexCount(); 
     FPoint3d* points = new FPoint3d[trimesh.m_numPoints];
 
     for (size_t pointInd = 0; pointInd < trimesh.m_numPoints; pointInd++)
@@ -1428,12 +806,6 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
         points[pointInd].x = (float)resultPts.x;
         points[pointInd].y = (float)resultPts.y;
         points[pointInd].z = (float)resultPts.z;
-
-        /*
-           points[pointInd].x = (float)polyfaceQuery->GetPointCP()[pointInd].x;
-           points[pointInd].y = (float)polyfaceQuery->GetPointCP()[pointInd].y;
-           points[pointInd].z = (float)polyfaceQuery->GetPointCP()[pointInd].z;
-           */
         }
 
     trimesh.m_points = points;
@@ -1443,16 +815,14 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
 
     for (size_t faceVerticeInd = 0; faceVerticeInd < polyfaceQuery->GetPointIndexCount(); faceVerticeInd++)
         {
-        vertIndex[faceVerticeInd] = faceVerticeInd; //polyfaceQuery->GetPointIndexCP()[faceVerticeInd] - 1;
+        vertIndex[faceVerticeInd] = faceVerticeInd;
         }
 
     trimesh.m_vertIndex = vertIndex;
 
    
     if (s_applyTexture && renderSys != nullptr && m_scalableMeshNodePtr->IsTextured())
-        {        
-        //IScalableMeshTexturePtr smTexturePtr(m_scalableMeshNodePtr->GetTexture());
-
+        {                
 #if 1 //NEEDS_WORK_SM GetTextureCompressed doesn't currently work for Cesium. 
         IScalableMeshTexturePtr smTexturePtr(m_scalableMeshNodePtr->GetTexture());
 
@@ -1490,10 +860,7 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
         ImageSource imageSource(jpegImage, ImageSource::Format::Jpeg);        
         trimesh.m_texture = renderSys->_CreateTexture(imageSource, Image::Format::Rgb, Image::BottomUp::Yes);
         trimesh.m_textureUV = textureUv;
-#endif
-        //ImageSource jpeg(ImageSource::Format::Jpeg, ByteStream(buffer, resourceSize));
-        
-                
+#endif                                
         }
 
     Dgn::TileTree::TriMeshTree::TriMeshList triMeshList;
@@ -1508,18 +875,6 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
 
     if (trimesh.m_textureUV)
         delete [] trimesh.m_textureUV;
-
-#if 0
-    Render::IGraphicBuilder::TriMeshArgs trimesh;
-    trimesh.m_numPoints = scalableMesh->GetNbPoints();
-    trimesh.m_points = ctm.GetFloatArray(CTM_VERTICES);
-    trimesh.m_normals = (ctm.GetInteger(CTM_HAS_NORMALS) == CTM_TRUE) ? ctm.GetFloatArray(CTM_NORMALS) : nullptr;
-    trimesh.m_numIndices = 3 * ctm.GetInteger(CTM_TRIANGLE_COUNT);
-    trimesh.m_vertIndex = ctm.GetIntegerArray(CTM_INDICES);
-    trimesh.m_textureUV = (FPoint2d const*)ctm.GetFloatArray(CTM_UV_MAP_1);
-#endif
-
-    //BENTLEY_SM_EXPORT IScalableMeshTexturePtr GetTexture() const;
 
     return SUCCESS;
     }
@@ -1538,20 +893,12 @@ BentleyStatus SMScene::LoadNodeSynchronous(SMNodeR node)
  * @bsimethod                                                   Mathieu.St-Pierre  08/17
  +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SMScene::LoadScene()
-    {
-    /*
-       if (SUCCESS != ReadSceneFile())
-       return ERROR;
-       */
-
+    {    
     if (!m_smPtr.IsValid())
-        return ERROR;
-
-    //CreateCache(m_sceneInfo.m_sceneName.c_str(), 1024 * 1024 * 1024); // 1 GB
+        return ERROR;    
 
     IScalableMeshNodePtr smNode(m_smPtr->GetRootNode());
-    SMNode* root = new SMNode(*this, nullptr, smNode);
-    //root->m_childPath = m_sceneInfo.m_rootNodePath;
+    SMNode* root = new SMNode(*this, nullptr, smNode);    
     m_rootTile = root;
     root->m_3smModel = m_3smModel;
 
@@ -1559,88 +906,6 @@ BentleyStatus SMScene::LoadScene()
     result.wait(BeDuration::Seconds(2)); // only wait for 2 seconds
     return result.isReady() ? SUCCESS : ERROR;
     }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                      Mathieu.St-Pierre  08/17
-//----------------------------------------------------------------------------------------
-BentleyStatus SMScene::LocateFromSRS()
-    {
-#if 0
-    DgnGCSPtr bimGCS = m_db.GeoLocation().GetDgnGCS();
-    if (!bimGCS.IsValid())
-        return ERROR; // BIM is not geolocated, can't use geolocation in 3mx scene
-
-    if (m_sceneInfo.m_reprojectionSystem.empty())
-        return SUCCESS;  // scene has no spatial reference system, give up.
-
-    WString    warningMsg;
-    StatusInt  status, warning;
-
-    DgnGCSPtr threeMxGCS = DgnGCS::CreateGCS(m_db);
-
-    int epsgCode;
-    double latitude, longitude;
-    if (1 == sscanf(m_sceneInfo.m_reprojectionSystem.c_str(), "EPSG:%d", &epsgCode))
-        status = threeMxGCS->InitFromEPSGCode(&warning, &warningMsg, epsgCode);
-    else if (2 == sscanf(m_sceneInfo.m_reprojectionSystem.c_str(), "ENU:%lf,%lf", &latitude, &longitude))
-        {
-        // ENU specification does not impose any projection method so we use the first azimuthal available using values that will
-        // mimic the intent (North is Y positive, no offset)
-        // Note that we could have injected the origin here but keeping it in the transform as for other GCS specs
-        if (latitude < 90.0 && latitude > -90.0 && longitude < 180.0 && longitude > -180.0)
-            status = threeMxGCS->InitAzimuthalEqualArea(&warningMsg, L"WGS84", L"METER", longitude, latitude, 0.0, 1.0, 0.0, 0.0, 1);
-        else
-            status = ERROR;
-        }
-    else
-        status = threeMxGCS->InitFromWellKnownText(&warning, &warningMsg, DgnGCS::wktFlavorEPSG, WString(m_sceneInfo.m_reprojectionSystem.c_str(), false).c_str());
-
-    if (SUCCESS != status)
-        {
-        BeAssert(false && warningMsg.c_str());
-        return ERROR;
-        }
-
-    // Compute a linear transform that approximates the reprojection transformation at the origin.
-    Transform localTransform;
-    status = threeMxGCS->GetLocalTransform(&localTransform, m_sceneInfo.m_origin, nullptr, true/*doRotate*/, true/*doScale*/, *bimGCS);
-
-    // 0 == SUCCESS, 1 == Warning, 2 == Severe Warning,  Negative values are severe errors.
-    if (status == 0 || status == 1)
-        {
-        m_location = localTransform;
-        return SUCCESS;
-        }
-#endif
-
-    return ERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- * @bsimethod                                                   Mathieu.St-Pierre  08/17
- +---------------+---------------+---------------+---------------+---------------+------*/
-#if 0
-BentleyStatus Scene::ReadSceneFile()
-    {
-    StreamBuffer rootStream;
-
-    if (IsHttp())
-        {
-        TileTree::HttpDataQuery query(m_sceneFile, nullptr);
-        query.Perform().wait();
-
-        rootStream = std::move(query.GetData());
-        }
-    else
-        {
-        TileTree::FileDataQuery query(m_sceneFile, nullptr);
-        rootStream = std::move(query.Perform().get());
-        }
-
-    return rootStream.HasData() ? m_sceneInfo.Read(rootStream) : ERROR;
-    }
-#endif
-
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.St-Pierre  12/2016
