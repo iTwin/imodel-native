@@ -142,6 +142,24 @@ Utf8StringCR AddonUtils::GetLastECDbIssue()
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 02/18
+//---------------------------------------------------------------------------------------
+DbResult AddonUtils::CreateDgnDb(DgnDbPtr& db, BeFileNameCR pathname, Utf8StringCR rootSubjectName, Utf8StringCR rootSubjectDescription)
+    {
+    BeFileName path = pathname.GetDirectoryName();
+    if (!path.DoesPathExist())
+        return BE_SQLITE_NOTFOUND;
+
+    DbResult result;
+    CreateDgnDbParams createParams(rootSubjectName.c_str(), rootSubjectDescription.empty() ? nullptr : rootSubjectDescription.c_str());
+    db = DgnDb::CreateDgnDb(&result, pathname, createParams);
+    if (db.IsValid())
+        db->AddIssueListener(s_listener);
+
+    return result;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
 DbResult AddonUtils::OpenDgnDb(DgnDbPtr& db, BeFileNameCR fileOrPathname, DgnDb::OpenMode mode)

@@ -170,13 +170,21 @@ declare class AddonDgnDb {
   /** Get the IModelProps of this iModel. */
   getIModelProps(): string;
 
+  /** 
+   * Create a local iModel. 
+   * @param dbName The full path to the iModel in the local file system
+   * @param rootSubjectName Name of the root subject
+   * param rootSubjectDescription Description of the root subject
+   */
+  createDgnDb(dbName: string, rootSubjectName: string, rootSubjectDescription?: string): DbResult;
+ 
   /**
    * Open a local iModel.
-   * @param dbname The full path to the iModel in the local file system
+   * @param dbName The full path to the iModel in the local file system
    * @param mode The open mode
    * @return non-zero error status if operation failed.
    */
-  openDgnDb(dbname: string, mode: OpenMode): DbResult;
+  openDgnDb(dbName: string, mode: OpenMode): DbResult;
 
   /** Close this iModel. */
   closeDgnDb(): void;
@@ -234,6 +242,12 @@ declare class AddonDgnDb {
 
   /** Get the briefcase Id of this iModel. */
   getBriefcaseId(): number;
+
+  /**
+   * Get the change set the iModel was reversed to
+   * @return Returns the change set id if the iModel was reversed, or undefined if the iModel was not reversed.
+   */
+  getReversedChangeSetId(): string|undefined;
 
   /**
    * Get the Id of the last change set that was merged into or created from the Db. This is the parent for any new change sets that will be created from the iModel.
