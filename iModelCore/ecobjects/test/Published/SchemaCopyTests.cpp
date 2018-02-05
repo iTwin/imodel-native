@@ -104,6 +104,26 @@ TEST_F(SchemaCopyTest, Schema_Success)
     EXPECT_EQ(5, m_targetSchema->GetVersionMinor());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Kyle.Abramowitz    02/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaCopyTest, CopiedSchemaShouldAlwaysHaveOriginalXmlVersionSetToLatest)
+    {
+    uint32_t latestMajor;
+    uint32_t latestMinor;
+
+    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(m_sourceSchema, "TestSchema", "ts", 1, 0, 0, ECVersion::Latest));
+    CopySchema();
+    ECSchema::ParseECVersion(latestMajor, latestMinor, ECVersion::Latest);
+    EXPECT_EQ(m_targetSchema->GetOriginalECXmlVersionMajor(), latestMajor);
+    EXPECT_EQ(m_targetSchema->GetOriginalECXmlVersionMinor(), latestMinor);
+
+    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(m_sourceSchema, "TestSchema", "ts", 1, 0, 0, ECVersion::V2_0));
+    CopySchema();
+    EXPECT_EQ(m_targetSchema->GetOriginalECXmlVersionMajor(), latestMajor);
+    EXPECT_EQ(m_targetSchema->GetOriginalECXmlVersionMinor(), latestMinor);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/

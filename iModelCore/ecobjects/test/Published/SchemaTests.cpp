@@ -1386,6 +1386,49 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     delete card;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Kyle.Abramowitz   02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaCreationTest, CreatingASchemaWithLatestECVersionSetsOriginalXmlVersionToLatest)
+    {
+    ECSchemaPtr testSchema;
+    uint32_t    latestMajor;
+    uint32_t    latestMinor;
+    uint32_t    testSchemaMajor;
+    uint32_t    testSchemaMinor;
+
+    ECSchema::ParseECVersion(latestMajor, latestMinor, ECVersion::Latest);
+    ECSchema::CreateSchema(testSchema, "TestSchema", "ts", 1, 0, 2, ECVersion::Latest);
+    
+    EXPECT_EQ(latestMajor, testSchema->GetOriginalECXmlVersionMajor());
+    EXPECT_EQ(latestMinor, testSchema->GetOriginalECXmlVersionMinor());
+
+    ECSchema::ParseECVersion(testSchemaMajor, testSchemaMinor, testSchema->GetECVersion());
+    EXPECT_EQ(latestMajor, testSchemaMajor);
+    EXPECT_EQ(latestMinor, testSchemaMinor);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Kyle.Abramowitz   02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaCreationTest, CreatingASchemaWithOldVersionStillSetsLatestOriginalXmlVersion)
+    {
+    ECSchemaPtr testSchema;
+    uint32_t    latestMajor;
+    uint32_t    latestMinor;
+    uint32_t    testSchemaMajor;
+    uint32_t    testSchemaMinor;
+
+    ECSchema::ParseECVersion(latestMajor, latestMinor, ECVersion::Latest);
+    ECSchema::CreateSchema(testSchema, "TestSchema", "ts", 1, 0, 2, ECVersion::V3_0);
+
+    EXPECT_EQ(latestMajor, testSchema->GetOriginalECXmlVersionMajor());
+    EXPECT_EQ(latestMinor, testSchema->GetOriginalECXmlVersionMinor());
+
+    ECSchema::ParseECVersion(testSchemaMajor, testSchemaMinor, testSchema->GetECVersion());
+    EXPECT_EQ(3, testSchemaMajor);
+    EXPECT_EQ(0, testSchemaMinor);
+    }
 //=======================================================================================
 //! ECNameValidationTest
 //=======================================================================================

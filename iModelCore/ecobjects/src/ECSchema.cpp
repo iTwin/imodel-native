@@ -1082,7 +1082,6 @@ ECObjectsStatus ECSchema::SetECVersion(ECVersion ecVersion)
         case ECVersion::V3_1:
         case ECVersion::V3_2:
             m_ecVersion = ecVersion;
-            status = ParseECVersion(m_originalECXmlVersionMajor, m_originalECXmlVersionMinor, ecVersion);
             break;
         default:
             return ECObjectsStatus::InvalidECVersion;
@@ -1105,7 +1104,8 @@ ECObjectsStatus ECSchema::CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR sche
         ECObjectsStatus::Success != (status = schemaOut->SetVersionRead (versionRead)) ||
         ECObjectsStatus::Success != (status = schemaOut->SetVersionWrite(versionWrite)) ||
         ECObjectsStatus::Success != (status = schemaOut->SetVersionMinor (versionMinor)) ||
-        ECObjectsStatus::Success != (status = schemaOut->SetECVersion (ecVersion)))
+        ECObjectsStatus::Success != (status = schemaOut->SetECVersion (ecVersion)) ||
+        ECObjectsStatus::Success != (status = schemaOut->ParseECVersion(schemaOut->m_originalECXmlVersionMajor, schemaOut->m_originalECXmlVersionMinor, ECVersion::Latest)))
         {
         schemaOut = nullptr;
         return status;
