@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/ClipPlaneSet.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -576,7 +576,7 @@ ConvexClipPlaneSet ConvexClipPlaneSet::FromXYBox (double x0, double y0, double x
     return convexSet;
     }
 
-ConvexClipPlaneSet ConvexClipPlaneSet::FromXYPolyLine (bvector<DPoint3d> &points, bvector<bool> &interior, bool leftIsInside)
+ConvexClipPlaneSet ConvexClipPlaneSet::FromXYPolyLine (bvector<DPoint3d> const &points, bvector<bool> const &interior, bool leftIsInside)
     {
     ConvexClipPlaneSet  convexSet;
     for (size_t i0 = 0; i0 + 1 < points.size (); i0++)
@@ -586,8 +586,11 @@ ConvexClipPlaneSet ConvexClipPlaneSet::FromXYPolyLine (bvector<DPoint3d> &points
         perp.z = 0.0;
         if (!leftIsInside)
             perp.Negate ();
+        bool hidden = false;
+        if (interior.size () > i0)
+            hidden = interior[i0];
         if (perp.Normalize ())
-            convexSet.push_back (ClipPlane (perp, points[i0], interior[i0], interior[i0]));
+            convexSet.push_back (ClipPlane (perp, points[i0], false, false));
         }
 
     return convexSet;
@@ -942,17 +945,17 @@ void ConvexClipPlaneSet::AppendCrossings (ICurvePrimitiveCR curve, bvector<Curve
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClipPlaneSet::ClipPlaneSet (ClipPlaneCP planes, size_t nPlanes) : T_ConvexClipPlaneSets (1)
+ClipPlaneSet::ClipPlaneSet (ClipPlaneCP planes, size_t nPlanes)
     {
-    front() = ConvexClipPlaneSet (planes, nPlanes);
+    push_back (ConvexClipPlaneSet (planes, nPlanes));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClipPlaneSet::ClipPlaneSet (ConvexClipPlaneSetCR convexSet) : T_ConvexClipPlaneSets (1)
+ClipPlaneSet::ClipPlaneSet (ConvexClipPlaneSetCR convexSet) 
     {
-    front() = convexSet;
+    push_back (convexSet);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1243,5 +1246,201 @@ ClipPlaneSetCP maskSet
     AppendPrimitiveStartEnd (curve, crossings);
     return ClassifyCrossings (crossings, clipSet, maskSet, false, nullptr);
     }
+
+//**********************************************************************
+// Polygon Clipping
+//**********************************************************************
+// Interface for intermediate results announced by PolygonClipContext
+struct PolygonAnnouncer
+{
+virtual void AnnounceInside (bvector<DPoint3d> &polygon){}
+virtual void AnnounceOutside (bvector<DPoint3d> &polygon){}
+virtual bool TerminateRequested () { return false;}
+};
+
+struct PolygonAnnouncer_QuitWhenMixed : PolygonAnnouncer
+{
+size_t m_numIn;
+size_t m_numOut;
+void ClearCounts ()
+    {
+    m_numIn = 0;
+    m_numOut = 0;
+    }
+PolygonAnnouncer_QuitWhenMixed () {ClearCounts ();}
+void AnnounceInside (bvector<DPoint3d> &polygon){}
+void AnnounceOutside (bvector<DPoint3d> &polygon){}
+bool TerminateRequested () { return m_numIn > 0 && m_numOut > 0;}
+
+};
+
+struct PolygonAnnouncer_Save : PolygonAnnouncer
+{
+PolyfaceHeaderPtr m_insideMesh;
+PolyfaceHeaderPtr m_outsideMesh;
+PolygonAnnouncer_Save () {
+    m_insideMesh = PolyfaceHeader::CreateVariableSizeIndexed ();
+    m_outsideMesh = PolyfaceHeader::CreateVariableSizeIndexed ();
+    }
+void AnnounceInside (bvector<DPoint3d> &polygon){
+    m_insideMesh->AddPolygon (polygon);
+    }
+void AnnounceOutside (bvector<DPoint3d> &polygon){
+    m_outsideMesh->AddPolygon (polygon);
+    }
+bool TerminateRequested () { return false;}
+};
+
+struct PolyfaceClipContext
+{
+BVectorCache<DPoint3d> m_currentCandidates;
+BVectorCache<DPoint3d> m_nextCandidates;
+
+bvector<DPoint3d> m_currentCandidate;
+BVectorCache<DPoint3d> m_shards;
+
+bvector<DPoint3d> m_inside;
+bvector<DPoint3d> m_work1;
+bvector<DPoint3d> m_work2;
+double m_distanceTolerance;
+
+ClipPlaneSetCR m_clipSet;
+ClipPlaneSetCP m_maskSet;
+PolyfaceClipContext (ClipPlaneSetCR clipSet, ClipPlaneSetCP maskSet) : m_clipSet (clipSet), m_maskSet(maskSet)
+    {
+    m_distanceTolerance = 0;
+    }
+
+void ClipAndAnnounce (bvector<DPoint3d> &polygon, PolygonAnnouncer &handler)
+    {
+    m_currentCandidates.ClearToCache ();
+    m_currentCandidates.PushCopy (polygon);
+    // m_candidates contains polygon content not yet found to be IN a clip set . . 
+    for (auto convexSet : m_clipSet)
+        {
+        while (m_currentCandidates.SwapBackPop (m_currentCandidate))
+            {
+            convexSet.ConvexPolygonClipInsideOutside (m_currentCandidate, m_inside, m_shards, m_work1, m_work2, true, m_distanceTolerance);
+            if (m_inside.size () > 0)
+                {
+                handler.AnnounceInside (m_inside);
+                if (handler.TerminateRequested ())
+                    return;
+                }
+            // shards become candidates for further clip plane sets
+            m_nextCandidates.MoveAllFrom (m_shards);
+            }
+        m_currentCandidates.MoveAllFrom (m_nextCandidates);
+        }
+    for (auto &outside : m_currentCandidates)
+        {
+        handler.AnnounceOutside (outside);
+        if (handler.TerminateRequested ())
+            return;
+        }
+    }
+
+void ClipAndCollect (bvector<DPoint3d> &polygon, ClipPlaneSetCR clipset, BVectorCache<DPoint3d> &insideShards, BVectorCache<DPoint3d> &outsideShards)
+    {
+    m_currentCandidates.ClearToCache ();
+    m_currentCandidates.PushCopy (polygon);
+    // m_candidates contains polygon content not yet found to be IN a clip set . . 
+    for (auto convexSet : clipset)
+        {
+        while (m_currentCandidates.SwapBackPop (m_currentCandidate))
+            {
+            convexSet.ConvexPolygonClipInsideOutside (m_currentCandidate, m_inside, m_shards, m_work1, m_work2, true, m_distanceTolerance);
+            if (m_inside.size () > 0)
+                insideShards.PushCopy (m_inside);
+            // shards become candidates for further clip plane sets
+            m_nextCandidates.MoveAllFrom (m_shards);
+            }
+        m_currentCandidates.MoveAllFrom (m_nextCandidates);
+        }
+    for (auto &outside : m_currentCandidates)
+        outsideShards.PushCopy (outside);
+    }
+
+};
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ClipPlaneContainment ClipPlaneSet::ClassifyPolyfaceInSetDifference
+(
+PolyfaceHeaderCR polyface,
+ClipPlaneSetCR clipSet,
+ClipPlaneSetCP maskSet
+)
+    {
+    auto visitor = PolyfaceVisitor::Attach (polyface);
+    PolyfaceClipContext context (clipSet, maskSet);
+    PolygonAnnouncer_QuitWhenMixed handler;
+    for (visitor->Reset (); visitor->AdvanceToNextFace ();)
+        {
+        context.ClipAndAnnounce (visitor->Point (), handler);
+        if (handler.TerminateRequested ())
+            return ClipPlaneContainment::ClipPlaneContainment_Ambiguous;
+        }
+    if (handler.m_numIn > 0 && handler.m_numOut == 0)
+        return ClipPlaneContainment::ClipPlaneContainment_StronglyInside;
+    if (handler.m_numIn == 0 && handler.m_numOut > 0)
+        return ClipPlaneContainment::ClipPlaneContainment_StronglyOutside;
+    return ClipPlaneContainment::ClipPlaneContainment_Ambiguous;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClipPlaneSet::ClipToSetDifference
+(
+PolyfaceHeaderCR polyface,
+ClipPlaneSetCR clipSet,
+ClipPlaneSetCP maskSet,
+PolyfaceHeaderPtr &inside,
+PolyfaceHeaderPtr &outside
+)
+    {
+    auto visitor = PolyfaceVisitor::Attach (polyface);
+    PolyfaceClipContext context (clipSet, maskSet);
+    PolygonAnnouncer_Save handler;
+    BVectorCache<DPoint3d> insideA;
+    BVectorCache<DPoint3d> outsideA;
+    BVectorCache<DPoint3d> insideB;
+    BVectorCache<DPoint3d> outsideB;
+    for (visitor->Reset (); visitor->AdvanceToNextFace ();)
+        {
+        insideA.ClearToCache ();
+        outsideA.ClearToCache ();
+        context.ClipAndCollect (visitor->Point (), clipSet, insideA, outsideA);
+        if (!maskSet)
+            {
+            for (auto &shard : insideA)
+                handler.AnnounceInside (shard);
+            for (auto &shard: outsideA)
+                handler.AnnounceOutside (shard);
+            }
+        else
+            {
+            // outside of clipper is done ..
+            for (auto &shard: outsideA)
+                handler.AnnounceOutside (shard);
+            // insides need second split by masks . .
+            for (auto &shard : insideA)
+                {
+                context.ClipAndCollect (shard, *maskSet, insideB, outsideB);
+                // (inside, outside are reversed in the mask holes!!)
+                for (auto &shard : insideB)
+                    handler.AnnounceOutside (shard);
+                for (auto &shard: outsideB)
+                    handler.AnnounceInside (shard);
+                }
+            }
+        }
+    inside = handler.m_insideMesh;
+    outside = handler.m_outsideMesh;
+    }
+
+
+
 
 END_BENTLEY_GEOMETRY_NAMESPACE

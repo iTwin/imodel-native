@@ -803,3 +803,170 @@ TEST(RecursiveClipSets,LineClip0)
         }
     Check::ClearGeometry ("RecursiveClipSets.LineClip0");
     }
+
+// Output the clip of a rectangle with each convex set.
+void ShowClipperXY (ClipPlaneSetCR clipper, double x0, double y0, double x1, double y1, double z = 0.0)
+    {
+    auto points = bvector<DPoint3d> {
+        DPoint3d::From (x0, y0, z),
+        DPoint3d::From (x1, y0, z),
+        DPoint3d::From (x1, y1, z),
+        DPoint3d::From (x0, y1, z)
+        //, DPoint3d::From (x0, y0, 0)
+        };
+    bvector<DPoint3d> inside;
+    bvector<DPoint3d> work;
+    for (auto &convexSet : clipper)
+        {
+        convexSet.ConvexPolygonClip (points, inside, work);
+        Check::SaveTransformed (inside, true);
+        }
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(ClipPlaneSet,ClipToSetDifference_MutlipleClips_NoMasks)
+    {
+    auto polyface = UnitGridPolyface
+            (
+            DPoint3dDVec3dDVec3d (  0,0,1,    10,0,0,   0,4,0),
+            3,2, true
+            );
+    polyface->ConvertToVariableSizeSignedOneBasedIndexedFaceLoops ();
+    auto convexClipA = ConvexClipPlaneSet::FromXYBox (1,-1, 3,20);
+    auto convexClipB = ConvexClipPlaneSet::FromXYBox (5,0.1, 12,2.8);
+    bvector<bool> hidden;   // empty vector for arg
+    auto convexClipC = ConvexClipPlaneSet::FromXYPolyLine (
+            bvector<DPoint3d> {DPoint3d::From (12, 6, 0), DPoint3d::From (15,0,0)}, 
+            hidden, true);
+    ClipPlaneSet clipPlaneSet;
+    clipPlaneSet.push_back (convexClipA);
+    clipPlaneSet.push_back (convexClipB);
+    clipPlaneSet.push_back (convexClipC);
+    ShowClipperXY (clipPlaneSet, -1,-1, 40, 10, 2);
+    Check::SaveTransformed (*polyface);
+
+    PolyfaceHeaderPtr inside, outside;
+    ClipPlaneSet::ClipToSetDifference (*polyface, clipPlaneSet, nullptr, inside, outside);
+    if (inside.IsValid ())
+        {
+        Check::Shift (0, 15,0);
+        Check::SaveTransformed (*inside);
+        }
+    if (outside.IsValid ())
+        {
+        Check::Shift (0, 15,0);
+        Check::SaveTransformed (*outside);
+        }
+    Check::ClearGeometry ("ClipPlaneSet.ClipToSetDifference_MutlipleClips_NoMasks");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(ClipPlaneSet,ClipToSetDifference_OneClip_MutlipleMasks)
+    {
+    auto polyface = UnitGridPolyface
+            (
+            DPoint3dDVec3dDVec3d (  0,0,1,    10,0,0,   0,4,0),
+            3,2, true
+            );
+    polyface->ConvertToVariableSizeSignedOneBasedIndexedFaceLoops ();
+    auto convexClipA = ConvexClipPlaneSet::FromXYBox (1,-1, 3,4);
+    auto convexClipB = ConvexClipPlaneSet::FromXYBox (5,0.1, 12,2.8);
+    bvector<bool> hidden;   // empty vector for arg
+    ClipPlaneSet masks;
+    masks.push_back (convexClipA);
+    masks.push_back (convexClipB);
+
+    ClipPlaneSet clip;
+    auto outer = ConvexClipPlaneSet::FromXYPolyLine (
+            bvector<DPoint3d> {
+                DPoint3d::From (-2, -3, 0),
+                DPoint3d::From (18,-3,0),
+                DPoint3d::From (10,8,0),
+                DPoint3d::From (0,8,0),
+                DPoint3d::From (-2, -3, 0),
+                }, 
+            hidden, true);
+    clip.push_back (outer);
+
+    ShowClipperXY (clip, -10,-10, 40, 10, 2);
+    ShowClipperXY (masks, -10,-10, 40, 10, 2);
+
+    Check::Shift (20, 10,0);
+    PolyfaceHeaderPtr inside, outside;
+    ClipPlaneSet::ClipToSetDifference (*polyface, clip, &masks, inside, outside);
+    Check::SaveTransformed (*polyface);
+    if (inside.IsValid ())
+        {
+        Check::Shift (0, 10,0);
+        Check::SaveTransformed (*inside);
+        }
+    if (outside.IsValid ())
+        {
+        Check::Shift (0, 10,0);
+        Check::SaveTransformed (*outside);
+        }
+    Check::ClearGeometry ("ClipPlaneSet.ClipToSetDifference_OneClip_MutlipleMasks");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(ClipPlaneSet,ClipToSetDifference_MultipleClips_MutlipleMasks)
+    {
+    auto polyface = UnitGridPolyface
+            (
+            DPoint3dDVec3dDVec3d (  0,0,1,    10,0,0,   0,4,0),
+            6,4, true
+            );
+    auto range = polyface->PointRange ();
+    double yStep = range.YLength () + 2;
+    polyface->ConvertToVariableSizeSignedOneBasedIndexedFaceLoops ();
+    auto convexClipA = ConvexClipPlaneSet::FromXYBox (1,-1, 3,4);
+    auto convexClipB = ConvexClipPlaneSet::FromXYBox (5,0.1, 12,2.8);
+    bvector<bool> hidden;   // empty vector for arg
+    ClipPlaneSet masks;
+    masks.push_back (convexClipA);
+    masks.push_back (convexClipB);
+
+    ClipPlaneSet clip;
+    auto outerA = ConvexClipPlaneSet::FromXYPolyLine (
+            bvector<DPoint3d> {
+                DPoint3d::From (-2, -3, 0),
+                DPoint3d::From (18,-3,0),
+                DPoint3d::From (10,8,0),
+                DPoint3d::From (0,8,0),
+                DPoint3d::From (-2, -3, 0),
+                }, 
+            hidden, true);
+    auto outerB = ConvexClipPlaneSet::FromXYPolyLine (
+            bvector<DPoint3d> {
+                DPoint3d::From (11,8,0),
+                DPoint3d::From (19,-3,0),
+                DPoint3d::From (30,0,0),
+                DPoint3d::From (30,1,0),
+                }, 
+            hidden, true);
+    clip.push_back (outerA);
+    clip.push_back (outerB);
+
+    ShowClipperXY (clip, -10,-10, 40, 10, 2);
+    ShowClipperXY (masks, -10,-10, 40, 10, 2);
+    Check::SaveTransformed (*polyface);
+
+    PolyfaceHeaderPtr inside, outside;
+    ClipPlaneSet::ClipToSetDifference (*polyface, clip, &masks, inside, outside);
+    if (inside.IsValid ())
+        {
+        Check::Shift (0, yStep,0);
+        Check::SaveTransformed (*inside);
+        }
+    if (outside.IsValid ())
+        {
+        Check::Shift (0, yStep,0);
+        Check::SaveTransformed (*outside);
+        }
+    Check::ClearGeometry ("ClipPlaneSet.ClipToSetDifference_MultipleClips_MutlipleMasks");
+    }
