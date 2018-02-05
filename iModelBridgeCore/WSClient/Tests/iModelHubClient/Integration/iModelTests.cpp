@@ -139,7 +139,7 @@ TEST_F(iModelTests, QueryNonExistentiModelByName)
     {
     iModelResult getResult = s_client->GetiModelByName(s_projectId, "bad imodel")->GetResult();
     ASSERT_FAILURE(getResult);
-    EXPECT_EQ(Error::Id::iModelDoesNotExist, getResult.GetError().GetId()) << "TFS#804290";
+    EXPECT_EQ(Error::Id::iModelDoesNotExist, getResult.GetError().GetId());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -160,7 +160,7 @@ TEST_F(iModelTests, SuccessfulCreateiModelWithASpaceInName)
     TestsProgressCallback callback;
     m_imodelName = "iModel With A Space In Name";
     Utf8String description = m_imodelName + " is created by iModelHubHost";
-    ASSERT_SUCCESS(iModelHubHelpers::DeleteiModelByName(s_client, m_imodelName)) << "TFS#804290";
+    ASSERT_SUCCESS(iModelHubHelpers::DeleteiModelByName(s_client, m_imodelName));
 
     iModelResult createResult = s_client->CreateNewiModel(s_projectId, *m_db, m_imodelName, description, true, callback.Get())->GetResult();
     ASSERT_SUCCESS(createResult);
