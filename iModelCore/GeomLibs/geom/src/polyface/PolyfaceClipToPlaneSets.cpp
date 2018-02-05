@@ -512,7 +512,7 @@ void    Init (PolyfaceVisitorR visitor, OutputChainMap& outputChainMap)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void   AddToPolyface  (IPolyfaceConstructionR builder, OutputChainMap& outputChainMap, double areaTolerance) const
+void   AddToPolyface  (PolyfaceQuantizedCoordinateMap& builder, OutputChainMap& outputChainMap, double areaTolerance) const
     {
     size_t          count;
 
@@ -558,14 +558,14 @@ void   AddToPolyface  (IPolyfaceConstructionR builder, OutputChainMap& outputCha
 +===============+===============+===============+===============+===============+======*/
 struct PolyfaceClipToPlaneSetContext
 {
-    IPolyfaceConstructionR              m_builder;
+    PolyfaceQuantizedCoordinateMap&     m_builder;
     bool                                m_triangulate;
     double                              m_tolerance;
     double                              m_areaTolerance;
     OutputChainMap&                     m_outputChainMap;
     T_ClipPlaneSets const&              m_planeSets;
 
-    PolyfaceClipToPlaneSetContext (T_ClipPlaneSets const& planeSets, IPolyfaceConstructionR output, OutputChainMap& chainMap, double tolerance, bool triangulate) : 
+    PolyfaceClipToPlaneSetContext (T_ClipPlaneSets const& planeSets, PolyfaceQuantizedCoordinateMap& output, OutputChainMap& chainMap, double tolerance, bool triangulate) : 
                         m_planeSets(planeSets),
                         m_builder (output), 
                         m_outputChainMap (chainMap), 
@@ -708,9 +708,9 @@ void   ClipPolyfaceFacet (PolyfaceClipFacet const& facet)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   finishClipping (IPolyfaceConstructionR outputBuilder,  OutputChainMap& outputChainMap, PolyfaceQuery::IClipToPlaneSetOutput& output, bool triangulateOutput)
+StatusInt   finishClipping (PolyfaceQuantizedCoordinateMap& outputBuilder,  OutputChainMap& outputChainMap, PolyfaceQuery::IClipToPlaneSetOutput& output, bool triangulateOutput)
     {
-    PolyfaceHeaderR     clippedMesh = outputBuilder.GetClientMeshR();
+    PolyfaceHeaderR     clippedMesh = *outputBuilder.GetPolyface();
 
     if (0 == clippedMesh.GetPointIndexCount())
         return SUCCESS;
@@ -756,17 +756,13 @@ StatusInt   PolyfaceQuery::ClipToPlaneSetIntersection (T_ClipPlaneSets const& pl
     if (!doClip)
         return output._ProcessUnclippedPolyface (*this);
 
-    IFacetOptionsPtr            facetOptions = IFacetOptions::New();
-
-    facetOptions->SetNormalsRequired (0 != GetNormalCount());
-    facetOptions->SetParamsRequired (0 != GetParamCount());
-
-    IPolyfaceConstructionPtr        outputBuilder = IPolyfaceConstruction::New (*facetOptions, s_builderMatchPointTolerance);
-    PolyfaceClipFacet               facet (index);
-    OutputChainMap                  outputChainMap (*this);
-    PolyfaceClipToPlaneSetContext   clipContext (planeSets, *outputBuilder, outputChainMap, distanceTolerance, triangulateOutput);
-    size_t                          currentFaceIndex = 0, thisFaceIndex;
-    FacetFaceData                   faceData;
+    PolyfaceHeaderPtr                   outputPolyface = PolyfaceHeader::CreateVariableSizeIndexed();
+    PolyfaceQuantizedCoordinateMapPtr   outputBuilder = PolyfaceQuantizedCoordinateMap::Create (*outputPolyface);
+    PolyfaceClipFacet                   facet (index);
+    OutputChainMap                      outputChainMap (*this);
+    PolyfaceClipToPlaneSetContext       clipContext (planeSets, *outputBuilder, outputChainMap, distanceTolerance, triangulateOutput);
+    size_t                              currentFaceIndex = 0, thisFaceIndex;
+    FacetFaceData                       faceData;
                                                                        
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*this); visitor->AdvanceToNextFace(); )
         {
@@ -794,7 +790,7 @@ StatusInt   PolyfaceQuery::ClipToPlaneSetIntersection (T_ClipPlaneSets const& pl
 +===============+===============+===============+===============+===============+======*/
 struct PolyfaceClipToRangeContext
 {
-    IPolyfaceConstructionR              m_builder;
+    PolyfaceQuantizedCoordinateMap&              m_builder;
     bool                                m_triangulate;
     double                              m_areaTolerance;
     OutputChainMap&                     m_outputChainMap;
@@ -804,7 +800,7 @@ struct PolyfaceClipToRangeContext
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceClipToRangeContext (DRange3dCR range, IPolyfaceConstructionR output, OutputChainMap& chainMap, double tolerance, bool triangulate) : 
+PolyfaceClipToRangeContext (DRange3dCR range, PolyfaceQuantizedCoordinateMap& output, OutputChainMap& chainMap, double tolerance, bool triangulate) : 
     m_range(range), m_builder (output), m_outputChainMap (chainMap), m_areaTolerance (tolerance * tolerance), m_triangulate (triangulate) 
     {
     m_axes[0] = ClipRangeAxis(0, true,  range.low.x);
@@ -872,12 +868,13 @@ StatusInt   PolyfaceQuery::ClipToRange (DRange3dCR clipRange, PolyfaceQuery::ICl
     facetOptions->SetNormalsRequired (0 != GetNormalCount());
     facetOptions->SetParamsRequired (0 != GetParamCount());
 
-    IPolyfaceConstructionPtr        outputBuilder = IPolyfaceConstruction::New (*facetOptions, s_builderMatchPointTolerance);
-    PolyfaceClipFacet               facet (0);
-    OutputChainMap                  outputChainMap (*this);
-    PolyfaceClipToRangeContext      clipContext(clipRange, *outputBuilder, outputChainMap, distanceTolerance, triangulateOutput);
-    size_t                          currentFaceIndex = 0, thisFaceIndex;
-    FacetFaceData                   faceData;
+    PolyfaceHeaderPtr                   outputPolyface = PolyfaceHeader::CreateVariableSizeIndexed();
+    PolyfaceQuantizedCoordinateMapPtr   outputBuilder = PolyfaceQuantizedCoordinateMap::Create (*outputPolyface);
+    PolyfaceClipFacet                   facet (0);
+    OutputChainMap                      outputChainMap (*this);
+    PolyfaceClipToRangeContext          clipContext(clipRange, *outputBuilder, outputChainMap, distanceTolerance, triangulateOutput);
+    size_t                              currentFaceIndex = 0, thisFaceIndex;
+    FacetFaceData                       faceData;
                                                                        
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*this); visitor->AdvanceToNextFace(); )
         {

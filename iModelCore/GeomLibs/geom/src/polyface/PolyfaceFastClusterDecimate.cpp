@@ -7,8 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 
-#include  <Bentley/bset.h>
 #include  <Bentley/bmap.h>
+#include  <Bentley/bset.h>
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
@@ -108,8 +108,8 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance)
     if (clusters.size() == GetPointCount())
         return nullptr;     // No Clusters found.
 
-    IFacetOptionsPtr            facetOptions = IFacetOptions::Create();
-    IPolyfaceConstructionPtr    builder = IPolyfaceConstruction::Create(*facetOptions, 1.0E-12);
+    PolyfaceHeaderPtr                   decimatedPolyface = PolyfaceHeader::CreateVariableSizeIndexed();
+    PolyfaceQuantizedCoordinateMapPtr   coordinateMap = PolyfaceQuantizedCoordinateMap::Create(*decimatedPolyface);
 
     // Build clustered points.
     for (auto& pair : clusters)
@@ -124,7 +124,7 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance)
             point.Add(points[pointIndex]);
         
         point.Scale(scale);
-        cluster->m_outputPointIndex = builder->FindOrAddPoint(point);
+        cluster->m_outputPointIndex = coordinateMap->FindOrAddPoint(point);
 
         if (doNormals)
             {
@@ -132,7 +132,7 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance)
                 normal.Add(normals[normalIndex]);
         
             normal.Normalize();
-            cluster->m_outputNormalIndex = builder->FindOrAddNormal(normal);
+            cluster->m_outputNormalIndex = coordinateMap->FindOrAddNormal(normal);
             }
         if (doParams)
             {
@@ -140,7 +140,7 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance)
                 param.Add(params[paramIndex]);
         
             param.Scale(scale);
-            cluster->m_outputParamIndex = builder->FindOrAddParam(param);
+            cluster->m_outputParamIndex = coordinateMap->FindOrAddParam(param);
             }
         }
 
@@ -162,20 +162,20 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance)
             {
             for (auto& cluster : faceClusters)
                 {
-                builder->AddPointIndex(cluster->m_outputPointIndex, true /* TBD... Visibilty?? */);
+                coordinateMap->AddPointIndex(cluster->m_outputPointIndex, true /* Visiblity???*/ );
                 if (nullptr != normals)
-                    builder->AddNormalIndex(cluster->m_outputNormalIndex);
+                    coordinateMap->AddNormalIndex(cluster->m_outputNormalIndex);
                 if (nullptr != params)
-                    builder->AddParamIndex(cluster->m_outputParamIndex);
+                    coordinateMap->AddParamIndex(cluster->m_outputParamIndex);
                 }
-            builder->AddPointIndexTerminator();
+            coordinateMap->AddPointIndexTerminator();
             if (nullptr != normals)
-                builder->AddNormalIndexTerminator();
+                coordinateMap->AddNormalIndexTerminator();
             if (nullptr != params)
-                builder->AddParamIndexTerminator();
+                coordinateMap->AddParamIndexTerminator();
             }
         }
-    return builder->GetClientMeshPtr();
+    return decimatedPolyface;
     }
 
 

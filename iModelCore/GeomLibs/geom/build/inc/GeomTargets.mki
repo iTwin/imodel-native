@@ -659,6 +659,8 @@ $(OUT_DIR)PolyfaceClipToPlaneSets$(OUT_EXT)    : $(geomSrcPolyface)PolyfaceClipT
 
 $(OUT_DIR)PolyfaceFastClusterDecimate$(OUT_EXT)    : $(geomSrcPolyface)PolyfaceFastClusterDecimate.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
+$(OUT_DIR)PolyfaceQuantizedCoordinateMap$(OUT_EXT)    : $(geomSrcPolyface)PolyfaceQuantizedCoordinateMap.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
 $(OUT_DIR)ClipPlaneSet$(OUT_EXT)      : $(geomSrcPolyface)ClipPlaneSet.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)ClipPlane$(OUT_EXT)      : $(geomSrcPolyface)ClipPlane.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}

@@ -3345,7 +3345,81 @@ struct IFacetProcessor
 GEOMAPI_VIRTUAL void Process (PolyfaceVectors &) = 0;
 };
 
+typedef RefCountedPtr<struct PolyfaceQuantizedCoordinateMap>  PolyfaceQuantizedCoordinateMapPtr;
 
+struct PolyfaceQuantizedCoordinateMap : RefCountedBase
+{
+    struct QPoint3d
+        {
+        int64_t     m_x, m_y, m_z;
+
+        QPoint3d() { }
+        QPoint3d(DPoint3dCR point, double tol); 
+        QPoint3d(DVec3dCR vector, double tol); 
+        bool operator < (struct QPoint3d const& rhs) const;
+        };
+    struct QPoint2d
+        {
+        int64_t     m_x, m_y, m_z;
+
+        QPoint2d() { }
+        QPoint2d(DPoint2dCR point, double tol); 
+        bool operator < (struct QPoint2d const& rhs) const;
+        };
+
+private:       
+    bmap<QPoint3d, size_t>  m_pointMap;
+    bmap<QPoint3d, size_t>  m_normalMap;
+    bmap<QPoint2d, size_t>  m_paramMap;
+    PolyfaceHeaderPtr       m_polyface;
+    double                  m_pointTolerance;
+    double                  m_normalTolerance;
+    double                  m_paramTolerance;
+    FacetFaceData           m_currentFaceData;
+
+
+    PolyfaceQuantizedCoordinateMap(PolyfaceHeaderR polyface, double pointTolerance, double normalTolerance, double paramTolerance);
+
+public:
+    static PolyfaceQuantizedCoordinateMapPtr Create(PolyfaceHeaderR polyface, double pointTolerance = 1.0E-8, double normalTolerance = 1.0E-10, double paramTolerance = 1.0E-10) { return new PolyfaceQuantizedCoordinateMap(polyface, pointTolerance, normalTolerance, paramTolerance); }
+
+    //! Find or add a point.  Return the (0-based) index.
+    GEOMDLLIMPEXP size_t FindOrAddPoint (DPoint3dCR point);
+
+    //! Find or add a normal.  Return the (0-based) index.
+    GEOMDLLIMPEXP size_t FindOrAddNormal (DVec3dCR normal);
+
+    //! Find or add a param.  Return the (0-based) index.
+    GEOMDLLIMPEXP size_t FindOrAddParam (DPoint2dCR param);
+
+    //! Add a point index, adjusted to 1-based indexing with visibility in sign. 
+    GEOMDLLIMPEXP void AddPointIndex (size_t zeroBasedIndex, bool visible);
+
+    //! Add a normal index, adjusted to 1-based indexing. 
+    GEOMDLLIMPEXP void AddNormalIndex (size_t zeroBasedIndex);
+
+    //! Add a param index, adjusted to 1-based indexing  
+    GEOMDLLIMPEXP void AddParamIndex (size_t zeroBasedIndex);
+
+    //! Add a terminator to the point index table.  
+    GEOMDLLIMPEXP void AddPointIndexTerminator ( );
+
+    //! Add a terminator to the normal index table. 
+    GEOMDLLIMPEXP void AddNormalIndexTerminator ( );
+
+    //! Add a terminator to the param index table.  
+    GEOMDLLIMPEXP void AddParamIndexTerminator ( );
+
+    //! Return polyface
+    PolyfaceHeaderPtr GetPolyface() { return m_polyface; }
+
+    //! Set the current face data.
+    GEOMDLLIMPEXP void SetFaceData (FacetFaceDataCR data);
+
+    //! Finalize data for the current face.
+    GEOMDLLIMPEXP void EndFace ();
+
+};  //  PolyfaceQuantizedCoordinateMap
 
 
 /*__PUBLISH_SECTION_START__*/
