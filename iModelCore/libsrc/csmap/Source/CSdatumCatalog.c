@@ -44,10 +44,9 @@
 	need for copying datum files.
 */
 
-/*lint -e722 */					/* Suspicious use of ';', i.e. one statement for loop searches */
+/*lint -e722   suspicious use of ';', i.e. for loops without a body or statement */
 
 #include "cs_map.h"
-#include "cs_Legacy.h"
 #include <ctype.h>
 
 /******************************************************************************
@@ -74,7 +73,7 @@ void EXP_LVL5 CSrplDirSep (char *path)
 	to change these filenames at run time (you can simply edit the header file
 	for a compile time change) should use these functions.
 */
-Const char * EXP_LVL1 CS_gdcEnum (int index,int *ident)
+Const char* EXP_LVL3 CS_gdcEnum (int index,int *ident)
 {
 	extern struct cs_GdcCatalogTable_ cs_GdcCatalogTable [];
 
@@ -214,6 +213,9 @@ Const struct cs_GdcCatalogTable_* EXP_LVL3 CS_gdcTable (enum cs_GdcCatalogs iden
 	The argument MUST be a full path name.  This function expects to extract
 	the directory of the catalog file from the base.
 */
+/*lint -esym(429,__This)    pointer is not freed */
+/* Verified that it is indeed free'ed in the event of an error.  I suspect the
+   rather elaborate macro in CS_free has confused PC-Lint. */
 struct csDatumCatalog_* CSnewDatumCatalog (Const char* pathName)
 {
 	extern char cs_DirsepC;
@@ -391,7 +393,7 @@ struct csDatumCatalog_* CSnewDatumCatalog (Const char* pathName)
 		/* Parse the file name and the buffer size from the file. */
 		cpt = ctemp;
 		quote = FALSE;
-		for (cp = lineBufr;*cp != '\0';cp += 1)
+		for (cp = lineBufr;*cp != '\0';cp += 1)			/*lint !e850   loop variable (cp) is modified within the loop body */
 		{
 			if (*cp == '"')
 			{
@@ -422,7 +424,7 @@ struct csDatumCatalog_* CSnewDatumCatalog (Const char* pathName)
 				*cpt++ = *cp;
 			}
 		}
-		*cpt = '\0';
+		*cpt = '\0';						/*lint !e850   loop variable (cp) is modified within the loop body ~~*/
 
 		/* Parse the buffer size, if its there. */
 		bufferSize = 0L;
@@ -550,6 +552,8 @@ error:
 	}
 	return NULL;
 }
+/*lint +esym(429,__This) */
+
 /******************************************************************************
 	Destructor
 */

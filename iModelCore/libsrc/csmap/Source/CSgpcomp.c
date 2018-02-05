@@ -27,10 +27,9 @@
 
 #include "cs_map.h"
 
-/* Entire module skipped if this is an Embedded compile for project management
-   convenience.  Don't think it likely that we'll need to compile dictionaries
-   in the Embedded environment. */
-#if !defined (__WINCE__)
+/*lint -esym(767,GP_NAME,DESC_NM,SOURCE,SRC_DTM,TRG_DTM,XFORM,GROUP,EPSG_NBR,ACCURACY)  possibly different values in other modules */
+/*lint -esym(534,err_func)   ignoring return value */
+/*lint -esym(754,cs_GpcmpT_::label)  not referenced directly, only indirectly */
 
 #define GP_NAME  1
 #define DESC_NM  2
@@ -119,6 +118,7 @@ int EXP_LVL9 CSgpcomp (	Const char *inpt,
 
 	size_t rdCnt;
 	size_t wrCnt;
+	size_t strLen;
 
 	char *cp;
 	char *cp1;
@@ -282,12 +282,25 @@ int EXP_LVL9 CSgpcomp (	Const char *inpt,
 		{
 			continue;
 		}
+
+		/* Remove a comment appended to a data dtatement. */
 		cp = buff;
 		while ((cp = strchr (cp,'#')) != NULL)
 		{
-			if (*(cp + 1) != '#' &&
-				*(cp - 1) != '\\')
+			if (*(cp - 1) == '\\')
 			{
+				/* This is an escaped '#' character.  Remove the escape
+				   character, ignore the escaped character, and continue the
+				   search. */
+				strLen = strlen (cp);
+				CS_stncp ((cp - 1),cp,(int)strLen);
+				++cp;
+			}
+			else
+			{
+				/* The beginning of an appended comment. Note, the value
+				   portion of the statement line is trimmed before being
+				   used and/or tested. */
 				*cp = '\0';
 				break;
 			}
@@ -463,7 +476,7 @@ int EXP_LVL9 CSgpcomp (	Const char *inpt,
 		{
 			CS_fclose (xfrmStrm);
 		}
-				return (err_cnt);
+		return (err_cnt);
 	}
 
 	/* Sort the output file. */
@@ -472,7 +485,7 @@ int EXP_LVL9 CSgpcomp (	Const char *inpt,
 
 	/* Check for duplicate names. */
 	CS_fseek (outStrm,(long)sizeof (magic),SEEK_SET);
-	CS_gprd (outStrm,&gpdef);
+	CS_gprd (outStrm,&gpdef);				/*lint !e534  ignorin return value */
 	CS_stncp (last_name,gpdef.pathName,sizeof (last_name));
 	while (!cancel && CS_gprd (outStrm,&gpdef))
 	{
@@ -531,22 +544,20 @@ int CSgpdefwr (	csFILE *outStrm,
 	err_cnt = 0;
 	cancel = FALSE;
 
-	if (err_cnt == 0)
-	{
-		gpdef->protect = TRUE;
-		/* The following sets the "creation date" to Jan 1, 2002 (approx) for
-		   all test coordinate systems.  This enables the protection system to
-		   be tested.  Normally, distribution definitions are protected from
-		   any kind of change. */
-		if (!CS_stricmp (gpdef->group,"TEST")) gpdef->protect = 4383;
+	gpdef->protect = TRUE;
+	/* The following sets the "creation date" to Jan 1, 2002 (approx) for
+	   all test coordinate systems.  This enables the protection system to
+	   be tested.  Normally, distribution definitions are protected from
+	   any kind of change. */
+	if (!CS_stricmp (gpdef->group,"TEST")) gpdef->protect = 4383;
 
-		CS_gpwr (outStrm,gpdef);
-	}
-	
+	/* Set the path 'reverible' member to true, until we know differently. */
+	gpdef->reversible = TRUE;
+
 	/* Verify  that all of the referenced geodetic transformations
 	   do indeed exist in the provided Geodetic Transformation
 	   Dictionary. */
-	if (xfrmStrm != NULL)
+	if (xfrmStrm != NULL && err_cnt == 0)
 	{
 		count = gpdef->elementCount;
 		for (index = 0;index < count;index += 1)
@@ -559,9 +570,17 @@ int CSgpdefwr (	csFILE *outStrm,
 			flag = CS_bins (xfrmStrm,(long32_t)sizeof (cs_magic_t),(long32_t)-1,sizeof (gx_def),&gx_def,(CMPFUNC_CAST)CS_gxcmp);
 			if (flag == 1)
 			{
-				st = CS_gxrd (dtmStrm,&gx_def);
+				st = CS_gxrd (xfrmStrm,&gx_def);
 				if (st == 1)
 				{
+					/* Reset the 'reversible' flag if this geodetic transformation
+					   is not reverible.  All geodetic transformations in the path
+					   must be reversible if the path is to be reverseable. */
+					if (gx_def.inverseSupported == 0)
+					{
+						gpdef->reversible = FALSE;
+					}
+
 					if (!CS_stricmp (gx_def.group,"LeGACY") && CS_stricmp (gpdef->group,"LEGACY"))
 					{
 						if (warn)
@@ -585,7 +604,13 @@ int CSgpdefwr (	csFILE *outStrm,
 				err_cnt += 1;
 			}
 		}
-	}	
+	}
+
+	st = CS_gpwr (outStrm,gpdef);
+	if (st != 0)
+	{
+		err_cnt += 1;
+	}
 
 	if (warn && gpdef->description [0] == '\0')
 	{
@@ -600,4 +625,3 @@ int CSgpdefwr (	csFILE *outStrm,
 	if (cancel && err_cnt == 0) err_cnt = 1;
 	return (cancel ? -err_cnt : err_cnt);
 }
-#endif

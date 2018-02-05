@@ -28,7 +28,6 @@
 #include "cs_map.h"
 
 /*lint -esym(613,err_list) */
-/*lint -esym(715,prj_code) */
 
 /*
 	The following tables are defined here in the setup module
@@ -196,7 +195,7 @@ void EXP_LVL9 CSrobinS (struct cs_Csprm_ *csprm)
 
 	csprm->cent_mer = robin->org_lng * cs_Radian;
 	if (csprm->csdef.ll_min [LNG] == 0.0 &&
-		csprm->csdef.ll_min [LNG] == 0.0)
+		csprm->csdef.ll_min [LAT] == 0.0)
 	{
 		/* Here if the definition does not specify; we
 		   calculate some reasonable values.  Note, the

@@ -153,42 +153,42 @@
 #define cs_PRJFLGS_TRMER	(cs_PRJFLG_SPHERE | cs_PRJFLG_ELLIPS | \
 							 cs_PRJFLG_SCALK  | cs_PRJFLG_CNVRG  | \
 							 cs_PRJFLG_CNFRM  | \
-							 cs_PRJFLG_CYLND  | cs_PRJFLG_TRNSV | \
+							 cs_PRJFLG_CYLND  | cs_PRJFLG_TRNSV  | \
 							 cs_PRJFLG_SCLRED | cs_PRJFLG_ORGLNG | \
 							 cs_PRJFLG_RNTRNT)
 
 #define cs_PRJFLGS_TRMRKRG	(cs_PRJFLG_SPHERE | cs_PRJFLG_ELLIPS | \
 							 cs_PRJFLG_SCALK  | cs_PRJFLG_CNVRG  | \
 							 cs_PRJFLG_CNFRM  | \
-							 cs_PRJFLG_CYLND  | cs_PRJFLG_TRNSV | \
+							 cs_PRJFLG_CYLND  | cs_PRJFLG_TRNSV  | \
 							 cs_PRJFLG_SCLRED | cs_PRJFLG_ORGLNG | \
 							 cs_PRJFLG_RNTRNT)
 
 #define cs_PRJFLGS_TRMRS	(cs_PRJFLG_SPHERE | cs_PRJFLG_ELLIPS | \
 							 cs_PRJFLG_SCALK  | cs_PRJFLG_CNVRG  | \
 							 cs_PRJFLG_CNFRM  | \
-							 cs_PRJFLG_CYLND  | cs_PRJFLG_TRNSV | \
+							 cs_PRJFLG_CYLND  | cs_PRJFLG_TRNSV  | \
 							 cs_PRJFLG_SCLRED | cs_PRJFLG_ORGLNG | \
 							 cs_PRJFLG_RNTRNT)
 
 #define cs_PRJFLGS_SOTRM	(cs_PRJFLG_SPHERE | cs_PRJFLG_ELLIPS | \
 							 cs_PRJFLG_SCALK  | cs_PRJFLG_CNVRG  | \
 							 cs_PRJFLG_CNFRM  | \
-							 cs_PRJFLG_CYLND  | cs_PRJFLG_TRNSV | \
+							 cs_PRJFLG_CYLND  | cs_PRJFLG_TRNSV  | \
 							 cs_PRJFLG_SCLRED | cs_PRJFLG_ORGLNG | \
 							 cs_PRJFLG_RNTRNT)
 
 #define cs_PRJFLGS_UTM		(cs_PRJFLG_SPHERE | cs_PRJFLG_ELLIPS | \
 							 cs_PRJFLG_SCALK  | cs_PRJFLG_CNVRG  | \
 							 cs_PRJFLG_CNFRM  | \
-							 cs_PRJFLG_CYLND  | cs_PRJFLG_TRNSV | \
+							 cs_PRJFLG_CYLND  | cs_PRJFLG_TRNSV  | \
 							 cs_PRJFLG_ORGLNG | cs_PRJFLG_ORGLAT | cs_PRJFLG_ORGFLS | \
 							 cs_PRJFLG_RNTRNT)
 
 #define cs_PRJFLGS_WCCST	(cs_PRJFLG_SPHERE | cs_PRJFLG_ELLIPS | \
 							 cs_PRJFLG_SCALK  | cs_PRJFLG_CNVRG  | \
 							 cs_PRJFLG_CNFRM  | \
-							 cs_PRJFLG_CYLND  | cs_PRJFLG_TRNSV | \
+							 cs_PRJFLG_CYLND  | cs_PRJFLG_TRNSV  | \
 							 cs_PRJFLG_SCLRED | cs_PRJFLG_ORGLNG | \
 							 cs_PRJFLG_RNTRNT)
 
@@ -224,21 +224,21 @@
 #define cs_PRJFLGS_HOM2UV	(cs_PRJFLG_SPHERE | cs_PRJFLG_ELLIPS | \
 							 cs_PRJFLG_SCALK  | \
 							 cs_PRJFLG_CNFRM  | \
-							 cs_PRJFLG_CYLND  | cs_PRJFLG_OBLQ | \
+							 cs_PRJFLG_CYLND  | cs_PRJFLG_OBLQ   | \
 							 cs_PRJFLG_SCLRED | cs_PRJFLG_ORGLNG | \
 							 cs_PRJFLG_RNTRNT)
 
 #define cs_PRJFLGS_HOM2XY	(cs_PRJFLG_SPHERE | cs_PRJFLG_ELLIPS | \
 							 cs_PRJFLG_SCALK  | \
 							 cs_PRJFLG_CNFRM  | \
-							 cs_PRJFLG_CYLND  | cs_PRJFLG_OBLQ | \
+							 cs_PRJFLG_CYLND  | cs_PRJFLG_OBLQ   | \
 							 cs_PRJFLG_SCLRED | cs_PRJFLG_ORGLNG | \
 							 cs_PRJFLG_RNTRNT)
 
 #define cs_PRJFLGS_RSKEW	(cs_PRJFLG_SPHERE | cs_PRJFLG_ELLIPS | \
 							 cs_PRJFLG_SCALK  | \
 							 cs_PRJFLG_CNFRM  | \
-							 cs_PRJFLG_CYLND  | cs_PRJFLG_OBLQ | \
+							 cs_PRJFLG_CYLND  | cs_PRJFLG_OBLQ   | \
 							 cs_PRJFLG_SCLRED | cs_PRJFLG_ORGLAT | \
 							 cs_PRJFLG_ORGLNG | \
 							 cs_PRJFLG_RNTRNT)
@@ -246,7 +246,7 @@
 #define cs_PRJFLGS_RSKEWC	(cs_PRJFLG_SPHERE | cs_PRJFLG_ELLIPS | \
 							 cs_PRJFLG_SCALK  | \
 							 cs_PRJFLG_CNFRM  | \
-							 cs_PRJFLG_CYLND  | cs_PRJFLG_OBLQ | \
+							 cs_PRJFLG_CYLND  | cs_PRJFLG_OBLQ   | \
 							 cs_PRJFLG_SCLRED | cs_PRJFLG_ORGLAT | \
 							 cs_PRJFLG_ORGLNG | \
 							 cs_PRJFLG_RNTRNT)
@@ -286,7 +286,7 @@
 							 cs_PRJFLG_RNTRNT)
 
 #define cs_PRJFLGS_MODPC	(cs_PRJFLG_ELLIPS | \
-							 cs_PRJFLG_CONIC	 | \
+							 cs_PRJFLG_CONIC  | \
 							 cs_PRJFLG_ORGLNG | cs_PRJFLG_ORGLAT | \
 							 cs_PRJFLG_RNTRNT)
 
@@ -565,6 +565,12 @@
 							 cs_PRJFLG_CYLND  | \
 							 cs_PRJFLG_ORGLAT | cs_PRJFLG_ORGLNG | \
 							 cs_PRJFLG_RNTRNT)
+                             							 
+#define cs_PRJFLGS_LMMICH	(cs_PRJFLG_SPHERE | cs_PRJFLG_ELLIPS | \
+							 cs_PRJFLG_SCALK  | cs_PRJFLG_CNVRG  | \
+							 cs_PRJFLG_CNFRM  | \
+							 cs_PRJFLG_CONIC  | \
+							 cs_PRJFLG_RNTRNT)
 #if defined (TOTAL_SPECIAL)
 #define cs_PRJFLGS_UTMZNBF	(cs_PRJFLG_SPHERE | cs_PRJFLG_ELLIPS | \
 							 cs_PRJFLG_SCALK  | cs_PRJFLG_CNVRG  | \
@@ -775,6 +781,9 @@ struct cs_Prjtab_ cs_Prjtab [] =
 	{   "OBL-MNDOT",CSMNDOToblqmS,CSMNDOToblqmQ,cs_PRJCOD_MNDOTOBL,cs_PRJFLGS_MNDOTOBL,0UL, 
 	    			"Oblique Mercator, Minnesota DOT Variation"},
 #endif
+	{   "LM-MICH",CSlmbrtS,CSlmbrtQ,cs_PRJCOD_LMMICH,cs_PRJFLGS_LMMICH,1051UL,
+	    			"Lambert Conformal Conic Projection, Two Standard Parallels"},
+
 	{           "",NULL,    NULL,    cs_PRJCOD_END,  0L, 0UL,
 					""}	/* End of table marker. */
 };
@@ -1300,7 +1309,7 @@ struct cs_Prjprm_ csPrjprm [] =
 										4L,		/* CS_ftoa format */
 										0L,		/* Help ID */
 										0L,		/* String ID */
-			"Average Geoid Height (meters)",		/* Label */
+		   "Average Geoid Height (meters)",		/* Label */
 							cs_PRMPTYP_DBL,		/* Physical Type */
 						   cs_PRMLTYP_GHGT,		/* Logical Type */
 									   0UL,		/* EPSG parameter code */
@@ -1609,6 +1618,22 @@ struct cs_Prjprm_ csPrjprm [] =
 										 0,		/* Projection Code */
 										 0,		/* Parameter Number */
 										 0		/* Sprintf Processing */
+	},
+	/* Index = 48; Ellipsoid Scale Factor, cs_PRMCOD_ELPSCL */
+	{
+								   0.99909,		/* Minimum value, quite arbitrary in this case */
+								   1.0001,		/* Maximum value, quite arbitrary in this case */
+									   1.0,		/* Suitable default. */
+							   cs_FRMT_SCL,		/* CS_ftoa format */
+										0L,		/* Help ID */
+										0L,		/* String ID */
+				  "Ellipsoid Scale Factor",		/* Label */
+							cs_PRMPTYP_DBL,		/* Physical Type */
+						  cs_PRMLTYP_SCALE,		/* Logical Type */
+								    1038UL,		/* EPSG parameter code */
+										 0,		/* Projection Code */
+										 0,		/* Parameter Number */
+										 0		/* Sprintf Processing */
 	}
 };
 
@@ -1623,6 +1648,7 @@ struct cs_Prjprm_ csPrjprm [] =
 	the uninitialized entries.
 */
 
+/*lint -e785  too few initializers, refering to most all entries with less than 24 params */
 struct cs_PrjprmMap_ cs_PrjprmMap [] =
 {
 	{ cs_PRJCOD_UNITY, { cs_PRMCOD_WESTLL, cs_PRMCOD_EASTLL }},
@@ -1710,14 +1736,15 @@ struct cs_PrjprmMap_ cs_PrjprmMap [] =
   {cs_PRJCOD_SYS34_99, { cs_PRMCOD_DENRGN }},
 	{cs_PRJCOD_RSKEWO, { cs_PRMCOD_GCPLNG,  cs_PRMCOD_GCPLAT, cs_PRMCOD_SKWAZM }},
    {cs_PRJCOD_TRMRKRG, { cs_PRMCOD_CNTMER }},
-   {  cs_PRJCOD_WINKL, { cs_PRMCOD_STDPLL }},
+   {  cs_PRJCOD_WINKL, {  cs_PRMCOD_STDPLL }},
   { cs_PRJCOD_NRTHSRT, { cs_PRMCOD_NRTHSCL, cs_PRMCOD_NRTHROT, cs_PRMCOD_SCLROTORGX, cs_PRMCOD_SCLROTORGY }},
    {cs_PRJCOD_LMBRTAF, { cs_PRMCOD_NSTDPLL, cs_PRMCOD_SSTDPLL,  cs_PRMCOD_AFA0, cs_PRMCOD_AFB0,
 						 cs_PRMCOD_AFA1, cs_PRMCOD_AFA2, cs_PRMCOD_AFB1, cs_PRMCOD_AFB2}},
   {cs_PRJCOD_SYS34_01, { cs_PRMCOD_DENRGN }},
    { cs_PRJCOD_EDCYLE, { cs_PRMCOD_STDPLL }},
   { cs_PRJCOD_PCARREE, { 0 }},
-   {cs_PRJCOD_MRCATPV, { cs_PRMCOD_CNTMER}},						 
+   {cs_PRJCOD_MRCATPV, { cs_PRMCOD_CNTMER}},
+      { cs_PRJCOD_LMMICH, { cs_PRMCOD_NSTDPLL,cs_PRMCOD_SSTDPLL,cs_PRMCOD_ELPSCL}},
 #if defined (TOTAL_SPECIAL)
         {cs_PRJCOD_UTMZNBF, { cs_PRMCOD_UTMZN, cs_PRMCOD_HSNS }},     // TOTAL UTM Zone - Added BJB 3/2007
         {cs_PRJCOD_TRMERBF, { cs_PRMCOD_CNTMER }},                    // TOTAL UTM Zone - Added BJB 3/2007
@@ -1729,3 +1756,4 @@ struct cs_PrjprmMap_ cs_PrjprmMap [] =
 
 	{   cs_PRJCOD_END, { 0 }}
 };
+/*lint +e785 */

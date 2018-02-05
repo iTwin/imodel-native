@@ -52,8 +52,7 @@ enum csNTv2Type {csNTv2TypeNone = 0,
 #	pragma Align_members (1)
 #elif _RUN_TIME == _rt_MSC16 || _RUN_TIME == _rt_MSVC16 || _RUN_TIME == _rt_MSDOTNET || \
 														   _RUN_TIME == _rt_MSWIN64 ||  \
-														   _RUN_TIME == _rt_MSVC32 ||   \
-														   _RUN_TIME == _rt_WINCE
+														   _RUN_TIME == _rt_MSVC32
 #	pragma pack (1)
 #elif _RUN_TIME == _rt_HPUX
 #	pragma pack 1
@@ -253,8 +252,7 @@ struct csNTv2SubHdr_
 #	pragma Align_members ()
 #elif _RUN_TIME == _rt_MSC16 || _RUN_TIME == _rt_MSVC16 || _RUN_TIME == _rt_MSDOTNET || \
 														   _RUN_TIME == _rt_MSWIN64 ||  \
-														   _RUN_TIME == _rt_MSVC32 ||   \
-														   _RUN_TIME == _rt_WINCE
+														   _RUN_TIME == _rt_MSVC32
 #	pragma pack ()
 #elif _RUN_TIME == _rt_HPUX
 #	pragma pack
@@ -345,9 +343,15 @@ struct csNTv2SubGrid_
 	unsigned short RowCount;	/* The number of grid rows (i.e. records)
 								   in the sub-grid. */
 	unsigned short ElementCount;/* Number of 16 byte data records in each row. */
+#ifdef GEOCOORD_ENHANCEMENT
+	unsigned long  RowSize;		/* Size of records in the sub-grid in
+								   bytes; i.e. the length of each row of
+								   longitude values (16 * ElementCount). */
+#else
 	unsigned short RowSize;		/* Size of records in the sub-grid in
 								   bytes; i.e. the length of each row of
 								   longitude values (16 * ElementCount). */
+#endif
 	short Cacheable;			/* TRUE says this sub-grid is cachable.
 								   Certain sub-grids have been found to
 								   be non-cachable due to a bust in the
@@ -367,7 +371,9 @@ struct cs_NTv2_
 									/* Since the header tells us how many
 									   of these things there are, we use
 									   a malloc'ed array of these things. */
-	csFILE *Stream;					/* Provides access to the data file. */
+	char* fileImage;				/* Entire .gsb file copied into memory for
+									   performance. */
+	long32_t fileImageSize;			/* Size of the copied .gsb file. */
 	long32_t HdrRecCnt;				/* Number of 16 byte records in the
 									   file header.  In the Australian
 									   version, not all records are 16
@@ -407,6 +413,26 @@ struct cs_NTv2_
 									   a string which includes the file name,
 									   and the actual sub-grid used to do
 									   a calculation. */
+	/* Two items of note with regard to the folowing two elements.
+	   1> These are of the normal CS-MAP east longitude is positive, west
+		  longitude is negative variety.  These are computed to optimumize
+		  coverage validation performance.
+	   2> There may be holes of no coverage within this range.  Specifically,
+		  NTv2 data files which do not adhere to the original standard (such
+		  as the Spanish file) have subgrids which overlap and when combined
+		  do not form a complete rectangle.  The following two values will
+		  only indicate is coverage is likely.  A complete scan of the
+		  subgrids is necessary to accurately determine coverage.
+	   These values are for performance purposes only.  To quickly determine
+	   the possibility of coverage for the specific case of geography which
+	   normally falls within the NAD83 area of coverage, but where an NTv2
+	   file will only cover a rather small portion of the geography. */
+	double swExtents [2];			/* East positive geographical coordinates
+									   of the Southwest extents of the entire
+									   file coverage. */
+	double neExtents [2];			/* East positive geographical coordinates
+									   of the Northwest extents of the entire
+									   file coverage. */
 	double errorValue;
 	double cnvrgValue;
 	short maxIterations;

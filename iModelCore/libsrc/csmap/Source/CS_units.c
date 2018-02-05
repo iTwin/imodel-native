@@ -248,43 +248,6 @@ int EXP_LVL3 CS_unitDel (short type,Const char *name)
 	}
 	return status;
 }
-
-#ifdef GEOCOORD_ENHANCEMENT
-/*
-** The following code is preserved from previous version (11.15) of Mentor CSMAP
-** The new Open Source version will select the closest unit to the factor provided
-** but will not make a judgment about the minimal closeness required to match. This 
-** imposes a new responsibility to the caller to verify how close the match is prior to 
-** using the returned unit.
-**
-** The code is de-activated yet can be reactivated if we judge the new function does not make sense
-**
-*/
-#if (0)
-Const char* EXP_LVL3 CS_unitluByFactor (short type,double factor)
-{
-	extern struct cs_Unittab_ cs_Unittab [];
-
-	int equal;
-	Const char* unitNamePtr = 0;
-	struct cs_Unittab_ *tabPtr;
-
-	for (tabPtr = cs_Unittab;tabPtr->type != cs_UTYP_END;tabPtr++)
-	{
-		if (tabPtr->type == type)
-		{
-			 equal = CS_cmpDbls (tabPtr->factor,factor);
-			 if (equal != 0)
-			 {
-				unitNamePtr = tabPtr->name;
-				break;
-			}
-		}
-	}
-	return unitNamePtr;
-}
-#endif
-#endif
 Const char* EXP_LVL3 CS_unitluByFactor (short type,double factor)
 {
 	extern struct cs_Unittab_ cs_Unittab [];

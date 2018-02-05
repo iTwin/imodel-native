@@ -27,6 +27,8 @@
 
 #include "cs_map.h"
 
+/*lint -esym(613,err_list)  possible use of null pointer; but not really */
+
 static const double wgs72Erad = 6378135.000;
 static const double wgs72deltaF = 0.3121057E-07;
 int EXP_LVL9 CSwgs72Q (struct cs_GeodeticTransform_ *gxDef,unsigned short xfrmCode,int err_list [],int list_sz)
@@ -116,12 +118,10 @@ int EXP_LVL9 CSwgs72F2 (struct csWgs72_ *wgs72,double* ll_84,Const double* ll_72
 
 	double lat;
 	double del_lat;
-	double sin_lat;
 	double cos_lat;
 	double sin_2_lat;
 
 	lat = ll_72 [LAT] * cs_Degree;
-	sin_lat = sin (lat);
 	cos_lat = cos (lat);
 	sin_2_lat = sin (cs_Two * lat);
 
@@ -182,13 +182,11 @@ int EXP_LVL9 CSwgs72I2 (struct csWgs72_ *wgs72,double* ll_72,Const double* ll_84
 
 	double lat;
 	double del_lat;
-	double sin_lat;
 	double cos_lat;
 	double sin_2_lat;
 
 	lat = ll_84 [LAT] * cs_Degree;
 
-	sin_lat = sin (lat);
 	cos_lat = cos (lat);
 	sin_2_lat = sin (cs_Two * lat);
 

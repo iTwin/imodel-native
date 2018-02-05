@@ -27,8 +27,8 @@
 
 #include "cs_map.h"
 
-/******************************************************************************
-	These are static global variables, represent a possible  multi-threading
+/*
+	These are static global variables, represent a possible multi-threading
 	problem.
 */
 struct csVertconUS_* csVertconUS = NULL;

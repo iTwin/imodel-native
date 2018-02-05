@@ -2,7 +2,7 @@
 #
 #     $Source: GeoCoordData.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
@@ -45,6 +45,7 @@ always:
 #    Geodetic Data Catalog files, which are used in conjunction with .las, .los files:
 always:
     CreateSymLinks.py   -f"$(GeoCoordData)coordsys.dty.xml=$(csDictionarySourcesDir)coordsys.dty.xml"
+    CreateSymLinks.py   -f"$(GeoCoordData)UserOverrideGeodeticTransformSeed.asc=$(csDictionarySourcesDir)UserOverrideGeodeticTransformSeed.asc"
 %endif
     
 ##### NOT_NOW_GRAPHITE_WIP #####

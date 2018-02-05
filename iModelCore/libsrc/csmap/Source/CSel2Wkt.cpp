@@ -25,9 +25,18 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Now comes May 21, 2014 
+// The following list, and the order of their listing, has been optimized for
+// the use of pre-compiled headers.  Some of these files are unreferenced in
+// this module, a small price paid for the efficiency affored by pre-compiled
+// headers.
+
 #include "cs_map.h"
-#include "CS_wkt.h"
-#include "csNameMapperSupport.h"
+#include "cs_NameMapper.hpp"
+//  cs_NameMapper.hpp includes cs_CsvFileSupport.hpp
+//  cs_NameMapper.hpp includes csNameMapperSupport.hpp
+#include "cs_WktObject.hpp"
+#include "cs_wkt.h"
 
 extern "C" const double cs_Zero;
 extern "C" const double cs_One;

@@ -25,14 +25,14 @@ extern "C" unsigned long KcsNmMapNoNumber;
 // This module was written to generate a list of HPGN systems, a proposed
 // new name in the "HARN/??" scheme of things, along with the isolated
 // datum name.  This list was not intended to be used as is, only as a base
-// which woul be 956% correct, and have the minor changes added separately.
+// which would be 95% correct, and have the minor changes added separately.
 
 // THUS, this module is of even more questionable long term value than many
 // of the other modules in this project.  Nevertheless, we save the code as
-// something similar may be beeded in the future and its a shame to throw
-// away code the works.
+// something similar may be needed in the future and its a shame to throw
+// away code that works.
 
-// Turns out that the MInnesota COunty systems are based on NAD83 rather
+// Turns out that the MInnesota County systems are based on NAD83 rather
 // than HARN; so all that code related to Minnesota is useless.
 
 #ifdef __SKIP__

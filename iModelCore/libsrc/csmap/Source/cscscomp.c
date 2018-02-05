@@ -39,10 +39,15 @@
 
 #include "cs_map.h"
 
-/* Entire module skipped if this is an Embedded compile for project management
-   convenience.  Don't think it likely that we'll need to compile dictionaries
-   in the Embedded environment. */
-#if !defined (__WINCE__)
+/*lint -esym(767,CS_NAME,DESC_NM,DT_NAME,EL_NAME,ORG_LAT,ORG_LNG,SCL_RED,MAP_SCL)   possibly different values in other modules */
+/*lint -esym(767,ZERO_X,ZERO_Y,PARM1,PARM2,PARM3,PARM4,PARM5,PARM6,PARM7,PARM8)     possibly different values in other modules */
+/*lint -esym(767,PARM9,PARM10,PARM11,PARM12,PARM13,PARM14,PARM15,PARM16,PARM17)     possibly different values in other modules */
+/*lint -esym(767,PARM18,PARM19,PARM20,PARM21,PARM22,PARM23,PARM24,X_OFF,Y_OFF)      possibly different values in other modules */
+/*lint -esym(767,PROJ,UNIT,HGT_LNG,HGT_LAT,HGT_ZZ,MIN_LNG,MIN_LAT,MAX_LNG,MAX_LAT)  possibly different values in other modules */
+/*lint -esym(767,MIN_XX,MIN_YY,MAX_XX,MAX_YY,QUAD,ORDER,ZONES,GROUP,LOCATION)       possibly different values in other modules */
+/*lint -esym(767,COUNTRY,SOURCE,EPSG_NBR,SRID_NBR,EPSG_QD)                          possibly different values in other modules */
+
+/*lint -esym(754,cs_CscmpT_::label)  not referenced directly, only indirectly */
 
 /**********************************************************************
 **	err_cnt = CScscomp (inpt,outp,flags,elipsoid,datum,err_func);
@@ -83,7 +88,7 @@
 **	cs_CMPLR_CRYPT -- Encrypt the output.
 **********************************************************************/
 
-#if _RUN_TIME == _rt_UNIXPCC || _RUN_TIME == _rt_SUN32 || _RUN_TIME == rt_SUN64 || _RUN_TIME == _rt_MOSXUNIX || _RUN_TIME == _rt_HPUX
+#if _RUN_TIME == _rt_UNIXPCC || _RUN_TIME == _rt_SUN32 || _RUN_TIME == _rt_SUN64 || _RUN_TIME == _rt_MOSXUNIX || _RUN_TIME == _rt_HPUX
 #       include <unistd.h>
 #       include <ctype.h>
 #endif
@@ -150,7 +155,7 @@
 
 struct cs_CscmpT_
 {
-	char label [16];			/*lint !e754 */
+	char label [16];
 	int type;
 };
 
@@ -435,9 +440,20 @@ int EXP_LVL9 CScscomp (	Const char *inpt,
 		cp = buff;
 		while ((cp = strchr (cp,'#')) != NULL)
 		{
-			if (*(cp + 1) != '#' &&
-				*(cp - 1) != '\\')
+			if (*(cp - 1) == '\\')
 			{
+				/* This is an escaped '#' character.  Remove the escape
+				   character, ignore the escaped character, and continue the
+				   search. */
+				strLen = strlen (cp);
+				CS_stncp ((cp - 1),cp,(int)strLen);
+				++cp;
+			}
+			else
+			{
+				/* The beginning of an appended comment. Note, the value
+				   portion of the statement line is trimmed before being
+				   used and/or tested. */
 				*cp = '\0';
 				break;
 			}
@@ -1200,12 +1216,10 @@ int CScsdefwr (	csFILE *outStrm,
 		cancel = (*err_func)(err_msg);
 	}
 
-	if (err_cnt == 1 && list_sz > 0 && err_list [0] == cs_SYS34_NOSRC)
+	if (err_cnt == 1 && list_sz > 0 && err_list [0] == cs_SYS34_NOSRC)		/*lint !e774  boolean always evaluates to true */
 	{
 		err_cnt = 0;
 	}
 	if (cancel && err_cnt == 0) err_cnt = 1;
 	return (cancel ? -err_cnt : err_cnt);
 }
-
-#endif

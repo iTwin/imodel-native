@@ -483,6 +483,7 @@ int EXP_LVL9 CSazmeaF (Const struct cs_Azmea_ *azmea,double xy [2],Const double 
 	extern double cs_NPTest;		/* 0.001 seconds of arc
 									   short of the north pole,
 									   in radians. */
+	extern double cs_Mhuge;			/* -1.0E+32 */
 
 	int rtn_val;
 
@@ -613,8 +614,8 @@ int EXP_LVL9 CSazmeaF (Const struct cs_Azmea_ *azmea,double xy [2],Const double 
 		default:
 
 			rtn_val = cs_CNVRT_DOMN;
-			x = -CSMAP_INFINITY;
-			y = -CSMAP_INFINITY;
+			x = cs_Mhuge;
+			y = cs_Mhuge;
 		}											/*lint !e744 */
 
 	}
@@ -720,8 +721,8 @@ int EXP_LVL9 CSazmeaF (Const struct cs_Azmea_ *azmea,double xy [2],Const double 
 		default:
 
 			rtn_val = cs_CNVRT_DOMN;
-			x = -CSMAP_INFINITY;
-			y = -CSMAP_INFINITY;
+			x = cs_Mhuge;
+			y = cs_Mhuge;
 		}										/*lint !e744 */
 	}
 	

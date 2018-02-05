@@ -183,7 +183,6 @@ void EXP_LVL9 CSkrovkS (struct cs_Csprm_ *csprm)
 	extern double cs_Degree;		/*  1.0 / RADIAN  */
 	extern double cs_Radian;		/*  57.27....  */
 	extern double cs_Pi;			/*  Pi (3.14159....) */
-	extern double cs_Pi_o_2;		/*  Pi over 2 */
 	extern double cs_Pi_o_4;		/*  Pi over 4 */
 	extern double cs_Zero;			/*  0.0 */
 	extern double cs_Half;			/*  0.5 */
@@ -413,8 +412,6 @@ int EXP_LVL9 CSkrovkI (Const struct cs_Krovk_ *krovk,double lnglat [2],Const dou
 	extern double cs_Radian;		/*  57.29577..... */
 	extern double cs_Pi;			/*  Pi */
 	extern double cs_Pi_o_2;		/*  Pi over 2 */
-	extern double cs_Pi_o_4;		/*  Pi over 4 */
-	extern double cs_Half;			/*  0.5 */
 	extern double cs_One;			/*  1.0 */
 	extern double cs_Two;			/*  2.0 */
 
@@ -725,10 +722,6 @@ void EXP_LVL9 CSkrovk95 (double deltaXY [2],Const double xy [2])
 double EXP_LVL9 CSkrovkCsMapParam (double e_rad,double e_sq,double orgLng,double stdLat,double epsgParm)
 {
 	extern double cs_Zero;
-	extern double cs_Half;			/* 0.5 */
-	extern double cs_One;			/* 1.0 */
-	extern double cs_Two;
-	extern double cs_Pi_o_4;		/* pi over 4 */
 	extern double cs_Pi_o_2;		/* pi over 2 */
 	extern double cs_Degree;
 	extern double cs_Radian;
@@ -747,7 +740,7 @@ double EXP_LVL9 CSkrovkCsMapParam (double e_rad,double e_sq,double orgLng,double
 		gaussian [LNG] = orgLng;
 		latS = cs_Pi_o_2 - (epsgParm * cs_Degree);
 		gaussian [LAT] = latS * cs_Radian;
-		CSgaussI (gauss,ellipsoidal,gaussian);
+		CSgaussI (gauss,ellipsoidal,gaussian);		/*lint !e534  ignoring return value */
 		csMapParm = ellipsoidal [LAT];
 		CS_free (gauss);
 	}
@@ -756,10 +749,6 @@ double EXP_LVL9 CSkrovkCsMapParam (double e_rad,double e_sq,double orgLng,double
 double EXP_LVL9 CSkrovkEpsgParam (double e_rad,double e_sq,double orgLng,double stdLat,double csMapParm)
 {
 	extern double cs_Zero;
-	extern double cs_Half;			/* 0.5 */
-	extern double cs_One;			/* 1.0 */
-	extern double cs_Two;
-	extern double cs_Pi_o_4;		/* pi over 4 */
 	extern double cs_Pi_o_2;		/* pi over 2 */
 	extern double cs_Degree;
 	extern double cs_Radian;
@@ -777,7 +766,7 @@ double EXP_LVL9 CSkrovkEpsgParam (double e_rad,double e_sq,double orgLng,double 
 	{
 		ellipsoidal [LNG] = orgLng;
 		ellipsoidal [LAT] = csMapParm;
-		CSgaussF (gauss,gaussian,ellipsoidal);
+		CSgaussF (gauss,gaussian,ellipsoidal);		/*lint !e534  ignoring return value */
 		latE = gaussian [LAT] * cs_Degree;
 		epsgParm = (cs_Pi_o_2 - latE) * cs_Radian;
 		CS_free (gauss);

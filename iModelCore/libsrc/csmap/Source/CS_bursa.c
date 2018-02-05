@@ -27,6 +27,8 @@
 
 #include "cs_map.h"
 
+/*lint -esym(613,err_list) possible use of a null pointer */
+
 int EXP_LVL9 CSbursaQ (struct cs_GeodeticTransform_ *gxDef,unsigned short xfrmCode,int err_list [],int list_sz)
 {
 	extern double cs_DelMax;
@@ -267,7 +269,7 @@ int EXP_LVL9 CSbursaI2 (struct csBursa_ *bursa,double* trgLl,Const double* srcLl
 		}
 
 		/* See how far we are off. */
-		epsilon [LNG] = srcLl [LNG] - newLl [LNG];
+		epsilon [LNG] = CS_lngEpsilon (srcLl [LNG],newLl [LNG]);
 		epsilon [LAT] = srcLl [LAT] - newLl [LAT];
 
 		/* If our guess at the longitude is off by more than
@@ -330,7 +332,6 @@ int EXP_LVL9 CSbursaL (struct csBursa_ *bursa,int cnt,Const double pnts [][3])
 }
 int EXP_LVL9 CSbursaN (struct csBursa_ *bursa)
 {
-	extern double cs_One;		/* 1.0 */
 	int isNull;
 	
 	isNull = (fabs (bursa->deltaX) < 1.0E-03) &&

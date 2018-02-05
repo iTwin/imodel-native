@@ -86,7 +86,7 @@ struct csVertconUS_* CSnewVertconUS (Const char *catalog)
 		}
 		else
 		{
-			for (findPtr = thisPtr->listHead;findPtr->next != NULL;findPtr = findPtr->next);
+			for (findPtr = thisPtr->listHead;findPtr->next != NULL;findPtr = findPtr->next);	/*lint !e722  suspicious use of ';' */
 			findPtr->next = vcEntryPtr;
 		}
 	}
@@ -169,7 +169,11 @@ void CSfirstVertconUS (struct csVertconUS_* thisPtr,struct csVertconUSEntry_* vc
 	{
 		if (curPtr == vcEntryPtr)
 		{
-			prvPtr->next = curPtr->next;
+			/* prvPtr will not be null if vcEntryPtr is indeed in the
+			   list.  We do not get here is vcEntryPtr is the first
+			   entry in the list.  Thus, we can never get here on
+			   the first iteration of the loop. */
+			prvPtr->next = curPtr->next;		/*lint !e613  possible use of null pointer */
 			curPtr->next = thisPtr->listHead;
 			thisPtr->listHead = curPtr;
 			break;
@@ -220,6 +224,9 @@ void CSreleaseVertconUS (struct csVertconUS_* thisPtr)
 /******************************************************************************
 	Constructor  (for an 'Entry' sub object)
 */
+/*lint -esym(429,thisPtr)    pointer is not freed */
+/* Verified that it is indeed free'ed in the event of an error.  I suspect the
+   rather elaborate macro in CS_free has confused PC-Lint. */
 struct csVertconUSEntry_* CSnewVertconUSEntry (struct csDatumCatalogEntry_* catPtr)
 {
 	extern char cs_DirsepC;
@@ -287,9 +294,10 @@ struct csVertconUSEntry_* CSnewVertconUSEntry (struct csDatumCatalogEntry_* catP
 	}
 	return thisPtr;
 error:
-	CSdeleteVertconUSEntry (thisPtr);
+	if (thisPtr != NULL) CSdeleteVertconUSEntry (thisPtr);
 	return NULL;
 }
+/*lint +esym(429,thisPtr) */
 
 /******************************************************************************
 	Destructor  (for an 'Entry' sub object)
@@ -305,7 +313,7 @@ void CSdeleteVertconUSEntry (struct csVertconUSEntry_* thisPtr)
 		CS_free (thisPtr);
 	}
 	return;
-}
+}							/*lint !e429  custodial pointer not frre'd -- PC-Lint bug */
 
 /******************************************************************************
 	Release resources  (for an 'Entry' sub object)

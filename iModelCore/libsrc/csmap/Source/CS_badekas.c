@@ -27,6 +27,8 @@
 
 #include "cs_map.h"
 
+/*lint -esym(613,err_list) */
+
 int EXP_LVL9 CSbdkasQ (struct cs_GeodeticTransform_ *gxDef, unsigned short xfrmCode, int err_list [], int list_sz)
 {
 	extern double cs_DelMax;
@@ -68,14 +70,10 @@ int EXP_LVL9 CSbdkasQ (struct cs_GeodeticTransform_ *gxDef, unsigned short xfrmC
 	{
 		if (++err_cnt < list_sz) err_list [err_cnt] = cs_DTQ_BWSCALE;
 	}
-
-	//TODO: ---
-    /* That's it for Bursa WOlf (Position Vector Variety). */
 	return (err_cnt + 1);
 }
 /******************************************************************************
-	//TODO: ---
-    What we call the Bursa/Wolfe tranformation is an approximation of the
+	What we call the Bursa/Wolfe transformation is an approximation of the
 	Seven Parameter transformation.  The following approximations apply:
 
 	1> The cosine of all rotation angles is one.
@@ -308,7 +306,7 @@ int EXP_LVL9 CSbdkasI2 (struct csBdkas_ *badekas, double* trgLl, Const double* s
 		}
 
 		/* See how far we are off. */
-		epsilon [LNG] = srcLl [LNG] - newLl [LNG];
+		epsilon [LNG] = CS_lngEpsilon (srcLl [LNG],newLl [LNG]);
 		epsilon [LAT] = srcLl [LAT] - newLl [LAT];
 
 		/* If our guess at the longitude is off by more than
@@ -362,7 +360,6 @@ int EXP_LVL9 CSbdkasI2 (struct csBdkas_ *badekas, double* trgLl, Const double* s
 }
 int EXP_LVL9 CSbdkasN (struct csBdkas_ *bdkas)
 {
-	extern double cs_One;		/* 1.0 */
 	int isNull;
 
 	isNull = (fabs (bdkas->deltaX) < 1.0E-03) &&

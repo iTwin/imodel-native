@@ -38,7 +38,7 @@
 **
 **	File is positioned past the magic number on the front.
 **********************************************************************/
-csFILE * EXP_LVL3 CS_elopn (Const char *mode)
+csFILE * EXP_LVL5 CS_elopn (Const char *mode)
 {
 	return CS_elFileOpen(mode);
 }
@@ -68,7 +68,7 @@ void CS_elDictCls (csFILE* stream)
 **								-1 for error.
 **
 **********************************************************************/
-int EXP_LVL3 CS_elrd (csFILE *strm,struct cs_Eldef_ *el_def,int *crypt)
+int EXP_LVL5 CS_elrd (csFILE *strm,struct cs_Eldef_ *el_def,int *crypt)
 {
 	return CS_elRead(strm, el_def, crypt);
 }
@@ -86,7 +86,7 @@ int EXP_LVL3 CS_elrd (csFILE *strm,struct cs_Eldef_ *el_def,int *crypt)
 **								else returns TRUE.
 **
 **********************************************************************/
-int EXP_LVL3 CS_elwr (csFILE *strm,Const struct cs_Eldef_ *el_def,int crypt)
+int EXP_LVL5 CS_elwr (csFILE *strm,Const struct cs_Eldef_ *el_def,int crypt)
 {
 	return CS_elWrite(strm, el_def, crypt);
 }
@@ -101,7 +101,7 @@ int EXP_LVL3 CS_elwr (csFILE *strm,Const struct cs_Eldef_ *el_def,int crypt)
 **								completed, else returns -1.
 **
 **********************************************************************/
-int EXP_LVL3 CS_eldel (struct cs_Eldef_ *eldef)
+int EXP_LVL5 CS_eldel (struct cs_Eldef_ *eldef)
 {
 	extern char *cs_ElKeyNames;
 
@@ -135,7 +135,7 @@ int EXP_LVL3 CS_eldel (struct cs_Eldef_ *eldef)
 **	If the Ellipsoid Dictionary does not already contain an entry
 **	with the indicated key name, the entry is added.
 **********************************************************************/
-int EXP_LVL3 CS_elupd (struct cs_Eldef_ *eldef,int crypt)
+int EXP_LVL5 CS_elupd (struct cs_Eldef_ *eldef,int crypt)
 {
 	extern char csErrnam [];
 
@@ -313,7 +313,7 @@ int EXP_LVL3 CS_eldefAll (struct cs_Eldef_ **pDefArray[])
 	return CS_elDefinitionAll(pDefArray);
 }
 
-struct cs_Eldef_ * EXP_LVL3 CS_eldef2 (Const char *el_nam, char* pszDirPath)
+struct cs_Eldef_ * EXP_LVL5 CS_eldef2 (Const char *el_nam, char* pszDirPath)
 {
 	extern char csErrnam [];
 
@@ -380,7 +380,7 @@ struct cs_Eldef_ * EXP_LVL3 CS_eldef2 (Const char *el_nam, char* pszDirPath)
 	return (el_ptr);
 
 error:
-	if (el_ptr != NULL)
+	if (el_ptr != NULL)			/*lint !e774  boolean expression always evaluates to true */
 	{
 		CS_free (el_ptr);
 		el_ptr = NULL;

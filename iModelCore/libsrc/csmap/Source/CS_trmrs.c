@@ -204,7 +204,7 @@ void EXP_LVL9 CStrmrsS (struct cs_Csprm_ *csprm)
 
 	test_ll [LNG] = CS_adj2pi (trmrs->cent_lng + cs_EETest) * cs_Radian;
 	test_ll [LAT] = cs_Zero;
-	CStrmrsF (trmrs,test_ll,test_ll);
+	CStrmrsF (trmrs,test_ll,test_ll);				/*lint !e534   ignoring return value */
 	trmrs->xx_max = fabs (test_ll [XX]);
 
 	/* Set up the coordinate checking information.  If the user has
@@ -268,7 +268,7 @@ void EXP_LVL9 CStrmrsS (struct cs_Csprm_ *csprm)
 
 		test_ll [LNG] = CS_adj180 (csprm->cent_mer + csprm->max_ll [LNG]);
 		test_ll [LAT] = trmrs->org_lat * cs_Radian;
-		CStrmrsF (trmrs,test_xy,test_ll);
+		CStrmrsF (trmrs,test_xy,test_ll);				/*lint !e534   ignoring return value */
 		csprm->max_xy [XX] = test_xy [XX] - trmrs->x_off;
 		csprm->min_xy [XX] = -csprm->max_xy [XX];
 
@@ -277,10 +277,10 @@ void EXP_LVL9 CStrmrsS (struct cs_Csprm_ *csprm)
 
 		test_ll [LNG] = csprm->cent_mer;
 		test_ll [LAT] = -84.0;
-		CStrmrsF (trmrs,test_xy,test_ll);
+		CStrmrsF (trmrs,test_xy,test_ll);				/*lint !e534   ignoring return value */
 		csprm->min_xy [YY] = test_xy [YY] - trmrs->y_off;
 		test_ll [LAT] = 84.0;
-		CStrmrsF (trmrs,test_xy,test_ll);
+		CStrmrsF (trmrs,test_xy,test_ll);				/*lint !e534   ignoring return value */
 		csprm->max_xy [YY] = test_xy [YY] - trmrs->y_off;
 
 		/* Apply quad processing, e.g. a left handed coordinate

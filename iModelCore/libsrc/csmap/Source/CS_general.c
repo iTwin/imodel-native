@@ -55,9 +55,6 @@ int EXP_LVL1 CS_altdr (Const char *alt_dir)
 	extern char cs_Dir [];
 	extern char *cs_DirP;
 
-	extern char cs_UserDir [];
-	extern char *cs_UserDirP;
-
 	extern char cs_Csname [];
 	extern char cs_Envvar [];
 	extern char cs_DirsepC;
@@ -87,11 +84,7 @@ int EXP_LVL1 CS_altdr (Const char *alt_dir)
 	/* See if the Coordinate System Dictionary exists in the
 	   proposed alternate directory. If alt_dir is the NULL
 	   pointer, we use the value of the environmental variable
-	   whose name is defined in the cs_Envvar global variabele.
-	   
-	   There is no "getenv" in the NS VC++ Version 8 embedded
-	   environment. */
-#if !defined (__WINCE__)
+	   whose name is defined in the cs_Envvar global variable. */
 #if defined(NO_BENTLEY_CHANGES) || !defined (BENTLEY_WINRT)
 	if (alt_dir == NULL)
 	{
@@ -138,7 +131,6 @@ int EXP_LVL1 CS_altdr (Const char *alt_dir)
 		ctemp [2] = '\0';
 		cp = &ctemp [2];
 	}
-#endif
 
 	/* See if the coordinate system dictionary resides in the
 	   desired location.  Note, we only use the name here, we
@@ -242,6 +234,150 @@ arg_error:
 
 	CS_erpt(cs_INV_ARG1);
 	return -1;
+}
+
+/**********************************************************************
+**	int status = CS_rwDictDir (rsltPath,srcPath);
+**
+**  char* rsltPath;		character array in which the results of this
+**						function are returned.
+**  size_t rsltSize;	sizeof the character array pointed to by the
+**						rsltPath argument.
+**  char* srcPath;		character array containing a path to the
+**						original data file in is normal location.
+**	int status;			0 if successfull, -1 otherwise
+**
+** This method is used only in the case where a shadow binary version
+** of a large text file is created and maintained to suppress the
+** need of parsing the text file for each use.
+**
+** For example, the original and distribution WW15MGH.GRD file
+** consists of 9.528 megabytes of text which must be parsed and
+** and converted to binary form before it can be used.  Since this
+** file rarely (if ever) changes, but since we do not wish to preclude
+** the idea of it changing, we like to convert the file to binary
+** once, and alieviate the need to do so again until the source data
+** file actually changes.  Now, with that background, consider:
+**
+** The source file resides in the traditional Dictionary/Data folder.
+** The binary shadow file is typically created in, and resides in, the
+** traditional Dictionary data folder.  What if, for quite rational
+** reasons, the traditional Dictionary data folder is write protected?
+** In this case, the system needs an alternative directory in which to
+** create and maintain the binary shadow file if reparseing 9.5
+** megabytes of text data is to be avoided in future uses.
+**
+** Given the path of such a data file, this function will return
+** a possibly modified path.  Upon success, the possibly modified
+** path is guaranteed to be writable.  Note, that if the given path
+** was writable, the returned path is simply a copy of the given
+** path.
+**********************************************************************/
+int EXP_LVL5 CS_rwDictDir (char *rsltPath,size_t rsltSize,Const char* srcPath)
+{
+#if _RUN_TIME < _rt_UNIXPCC
+	/* Here for Windows.  I do not believe this can be a problem on Windows NT
+	   systems.  Have tried, but I can't figure out how to write protect a
+	   folder/directory such that new files could not be created.  So the
+	   return value is always simply the path we were provided.
+
+	   Should this prove wrong, simply remove this conditional compile
+	   block and all whould be well. */
+
+	/* This is the default return value, even if there is an error
+	   of some sort. */
+	CS_stncp (rsltPath,srcPath,(int)rsltSize);
+	return 0;
+#else
+	extern char cs_DirsepC;
+	extern char cs_UserDir [];
+	extern char csErrnam [];
+
+	/* Here for Linux/UNIX.  Directorires/folders can be write protected
+	   such that new files cannot be created in the directory/folder.
+	   We have some work to do. */
+	int st;
+	int rtnValue;
+	size_t envLen;
+	size_t fileLen;
+	
+	char* ccPtr;
+	char* envPtr;
+	char* fileNamePtr;
+	char rwPath [MAXPATH + 32];
+	char envPath [MAXPATH];
+
+	rtnValue = -1;				/* until we know different. */
+
+	/* Even in the event of failure, we want the returned rsltPath
+	   to have a string value which will not cause a crash. */
+	CS_stncp (rsltPath,srcPath,(int)rsltSize);
+
+	/* What is provided to us is a full path which ends with a file name and,
+	   possibly, an extension.  It is the directory (folder) which we need to
+	   examine and determine if we can create a file within it. */
+	CS_stncp (rwPath,srcPath,sizeof (rwPath));
+	fileNamePtr = strrchr (rwPath,cs_DirsepC);
+	if (fileNamePtr == NULL)
+	{
+		CS_stncp (csErrnam,"CS_rwDictDir:1",MAXPATH);
+		CS_erpt (cs_ISER);
+		goto error;
+	}
+
+	*fileNamePtr++ = '\0';		/* fileNamePtr now points to the file name
+								   portion of the path. */
+	if (CS_access (rwPath,02) == 0)
+	{
+		/* The original source directory appears writable, so we use it. */
+		rtnValue = 0;
+	}
+	else
+	{
+		/* The original directory/folder is not writable.  What do we do now?
+		   We use the value of the "CS_MAP_DIR_RW" environmental variable as
+		   the directory for the shadow file. */
+		envPtr = getenv ("CS_MAP_DIR_RW");
+		if (envPtr != NULL)
+		{
+			/* System has been configured to use this directory.
+			   Replace environmental variable references. */
+			CS_stncp (envPath,envPtr,sizeof (envPath));
+			do
+			{
+				st = CS_envsub (envPath,sizeof (envPath));
+			} while (st == 1);
+
+			/* We have an alternate path name now, so construct the
+			   full alternate path name now, being careful not to overflow
+			   any buffers. */
+			if (st == 0)
+			{
+				envLen = strlen (envPath);
+				fileLen = strlen (fileNamePtr);
+				if ((envLen + fileLen + 1) < rsltSize)
+				{
+					ccPtr = CS_stncp (rsltPath,envPtr,rsltSize);
+					if (*(ccPtr - 1) != cs_DirsepC)
+					{
+						*ccPtr++ = cs_DirsepC;
+					}
+					CS_stncat (rsltPath,fileNamePtr,rsltSize);
+					rtnValue = 0;
+				}
+				else
+				{
+					CS_stncp (csErrnam,"CS_rwDictDir:2",MAXPATH);
+					CS_erpt (cs_ISER);
+					goto error;
+				}
+			}
+		}
+	}
+	return rtnValue;
+error:
+	return rtnValue;
+#endif
 }
 
 /**********************************************************************
@@ -446,199 +582,6 @@ double EXP_LVL9 CS_un2d (Const char *name)
 }
 
 /**********************************************************************
-**	CS_init (keep_dflts);
-**
-**	int keep_dflts;				bitmap of flags indicating what is
-**								to be kept fropm previous thread.
-**
-**	This function exists specifically for the multi-threaded
-**	environment of Windows 32/95/NT.  Threads are quite different
-**	from UNIX processes in that they share the same data address
-**	space as the parent (and all colleague) threads.  Thus, in
-**	a multi-threaded program using CS-MAP, two threads would
-**	quite normally be modifying the same data.
-**
-**	Since each thread has it's own stack space all automatic
-**	variables are safe.  We need only concern ourselves with the
-**	static/global variables in use.  There are several of these
-**	in CS-MAP.
-**
-**	This function is the result of our initial effort to make CS-MAP
-**	thread safe.  We currently rely on the compiler's ability
-**	(Microsoft and Borland provide this, not sure about Watcom)
-**	to declare a variable as being thread local.  While the
-**	documentation is rather obscure, we assume this means that
-**	all variable declared as thread local are assign addresses in
-**	a data segment for which a unique copy is generated for each
-**	new thread.  It is not clear from the documentation, but we
-**	also assume that each new thread will get an uninitialized
-**	copy of whatever was present in the parent thread.
-**
-**	The primary purpose of this module is to initialize all variables
-**	declared as thread local to appropriate start up values. The
-**	one argument indicates if the default values for datums,
-**	ellipsoids, and units are to be preserved from the parent
-**	thread.
-**
-**	If all of our assumptions are correct, and we have properly
-**	isolated all the appropriate variables, you should be able
-**	to use CS-MAP safely in a multi-threaded environment by:
-**
-**	1) Recompiling CS-MAP assuring that the csThread define actually
-**	   maps to the correct stuff for you compiler.
-**	2) Calling this function in the new thread code, immedaitely
-**	   after the new thread is created.
-**
-**	If there are problems with multi-threaded use, the problems
-**	will be in one of two areas:
-**
-**	1) File names and the muliple use of the cs_Dir character array.
-**	2) The use of the NAD27/83 and HPGN datum shift caches.  These
-**	   are malloc'ed, but the pointer to same is in a global static
-**	   variable.  Thus, it is possible for two different threads to
-**	   be manipulating the same stack without knowledge of what
-**	   the other is doing.
-**
-**	If any of this doesn't work, we'll have to do some major
-**	surgery to several functions, and change the calling sequence
-**	of some.  Stick to the higher level Application Program
-**	Interfaces and you wll be insulated from these changes.
-**********************************************************************/
-
-void EXP_LVL1 CS_init (int keepers)
-{
-#if _FILE_SYSTEM == _fs_UNIX
-	extern char cs_DirsepC;
-#endif
-	extern char cs_DirK [];
-	extern csThread char cs_Dir [];
-	extern csThread char *cs_DirP;
-
-	extern csThread char cs_Csname [];
-	extern csThread char cs_Dtname [];
-	extern csThread char cs_Elname [];
-
-	extern csThread char csDtDflt [];
-	extern csThread char csElDflt [];
-	extern csThread char csLuDflt [];
-	extern csThread char csAuDflt [];
-
-	extern csThread int cs_Sortbs;
-
-	extern csThread int cs_Error;
-	extern csThread int cs_Errno;
-	extern csThread int csErrlng;
-	extern csThread int csErrlat;
-	extern csThread unsigned short cs_ErrSup;
-
-	extern csThread char csErrnam [];
-	extern csThread char csErrmsg [];
-
-	extern csThread struct csCscach_ *csCscachP;
-	extern csThread int csCscachI;
-	extern csThread struct csDtcach_ *csDtcachP;
-	extern csThread int csDtcachI;
-
-	extern csThread char *cs_CsKeyNames;
-	extern csThread char *cs_DtKeyNames;
-	extern csThread char *cs_ElKeyNames;
-	extern csThread struct cs_Csgrplst_ *cs_CsGrpList;
-
-	int status;
-
-	char chr_tmp [MAXPATH];
-
-	/* First, we attempt to preserve the location of the
-	   data directory.  First we attempt to assure that
-	   there is something valid there.  Depending on the
-	   file system: */
-
-#if _FILE_SYSTEM == _fs_UNIX
-	if (cs_Dir [0] == cs_DirsepC)
-#else
-	if (cs_Dir [1] == ':' || (cs_Dir [0] == '\\' && cs_Dir [1] == '\\'))
-#endif
-	{
-		/* cs_Dir contents appear to be valid. */
-
-		*cs_DirP = '\0';
-		CS_stncp (chr_tmp,cs_Dir,sizeof (chr_tmp));
-		status = CS_altdr (chr_tmp);
-	}
-	else
-	{
-		/* cs_Dir contents appear to be invalid. */
-
-		status = CS_altdr (NULL);
-	}
-
-	/* If we haven't located a valid directory, we establish
-	   a default name.  While probably invalid, it is at least
-	   it is the same value which was initially established
-	   at compile time. */
-
-	if (status != 0)
-	{
-		cs_DirP = CS_stcpy (cs_Dir,cs_DirK);
-	}
-
-	/* Initialize the dictionary file names. */
-
-	CS_stcpy (cs_DirP,(char *)cs_Csname);
-	if (CS_access (cs_Dir,0) || (keepers & cs_THRD_CSNAME) == 0)
-	{
-		CS_stcpy ((char *)cs_Csname,cs_CS_NAME);
-	}
-	CS_stcpy (cs_DirP,(char *)cs_Dtname);
-	if (CS_access (cs_Dir,0) || (keepers & cs_THRD_DTNAME) == 0)
-	{
-		CS_stcpy ((char *)cs_Dtname,cs_DAT_NAME);
-	}
-	CS_stcpy (cs_DirP,(char *)cs_Elname);
-	if (CS_access (cs_Dir,0) || (keepers & cs_THRD_ELNAME) == 0)
-	{
-		CS_stcpy ((char *)cs_Elname,cs_ELL_NAME);
-	}
-
-	/* Initialize the defaults. */
-
-	if ((keepers & cs_THRD_DTDFLT) == 0) csDtDflt [0] = '\0';
-	if ((keepers & cs_THRD_ELDFLT) == 0) csElDflt [0] = '\0';
-	if ((keepers & cs_THRD_LUDFLT) == 0) csLuDflt [0] = '\0';
-	if ((keepers & cs_THRD_AUDFLT) == 0) csAuDflt [0] = '\0';
-
-	/* The remainder are always initialized.  Application programs
-	   can re-initalize as they like when this function returns. */
-
-#if _MEM_MODEL == _mm_VIRTUAL || _MEM_MODEL == _mm_FLAT
-	cs_Sortbs = 128 * 1024;
-#else
-	cs_Sortbs = 24 * 1024;
-#endif
-
-	cs_Error = 0;
-	cs_Errno = 0;
-	csErrlng = 0;
-	csErrlat = 0;
-	cs_ErrSup = 0;
-
-	csErrnam [0] = '\0';
-	csErrmsg [0] = '\0';
-
-	csCscachP = NULL;
-	csCscachI = cs_CSCACH_MAX;
-	csDtcachP = NULL;
-	csDtcachI = cs_DTCACH_MAX;
-
-	cs_CsKeyNames = NULL;
-	cs_DtKeyNames = NULL;
-	cs_ElKeyNames = NULL;
-	cs_CsGrpList = NULL;
-
-	return;
-}
-
-/**********************************************************************
 **	CS_quadF (xy,xx,yy,x_off,y_off,quad);
 **	CS_quadI (&xx,&yy,xy,x_off,y_off,quad);
 **
@@ -827,9 +770,11 @@ int EXP_LVL5 CSextractDbl (csFILE *aStrm,double* result)
 	state = initial;
 	while (state != done)
 	{
-		cc = CS_fgetc (aStrm);
 		switch (state) {
 		case initial:
+			/* Skip leading white space.  Capture and start extraction on
+			   anything other than white space. */
+			cc = CS_fgetc (aStrm);
 			if (cc == EOF)
 			{
 				st = 1;
@@ -845,7 +790,14 @@ int EXP_LVL5 CSextractDbl (csFILE *aStrm,double* result)
 
 		case extract:
 			/* Can't get here unless we have at least one character to
-			   evaluate. */
+			   evaluate. Extract characters until we see some thing that
+			   isn't white space.
+
+			   TO DO: Should terminate extraction on first character which is
+			   not numeric or part of a normal real number.  Further, the
+			   character which terminates this sequence should remain available
+			   (unget(?)) to be read by the calling module. */
+			cc = CS_fgetc (aStrm);
 			if (cc == EOF)
 			{
 				state = evaluate;
@@ -879,8 +831,8 @@ int EXP_LVL5 CSextractDbl (csFILE *aStrm,double* result)
 	return st;
 }
 
-// The following parses a line of text into space separated tokens.  Note
-// this function is destructive to the "lineBuffer: argument.
+/* The following parses a line of text into space separated tokens.  Note
+   this function is destructive to the "lineBuffer" argument. */
 unsigned CS_spaceParse (char *lineBuffer,char *ptrs [],unsigned maxPtrs)
 {
 	unsigned index = 0;
@@ -901,7 +853,7 @@ unsigned CS_spaceParse (char *lineBuffer,char *ptrs [],unsigned maxPtrs)
 	return index;
 }
 
-// The following does itsmagic inplace; how nice.
+/* The following does its magic in-place; how nice. */
 void CS_removeRedundantWhiteSpace (char *string)
 {
 	char cc;

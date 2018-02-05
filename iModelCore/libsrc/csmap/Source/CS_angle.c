@@ -1125,7 +1125,9 @@ baseMeridian,  relativeLongitude, deltaLongitude,  Case
       -179.0,             +179.0,         +358.0, special case 2
       +179.0,             -179.0,         -358.0, special case 3
 */
-double EXP_LVL7 CS_deltaLongitude (double baseMeridian,double relativeLongitude)
+
+/*lint -esym(550,myBase,myRelative)    not accessed, but nice to have when debugging */
+double EXP_LVL3 CS_deltaLongitude (double baseMeridian,double relativeLongitude)
 {
 	extern double cs_K180;
 	extern double cs_Km180;
@@ -1161,4 +1163,32 @@ double EXP_LVL7 CS_deltaLongitude (double baseMeridian,double relativeLongitude)
 		deltaLongitude += cs_K360;
 	}
 	return deltaLongitude;
+}
+/*lint +esym(550,myBase,myRelative) */
+
+/* Quickly calculate the epsilon between two longitudes (in degrees) given
+   That the two longitudes are relatively close to each other.  This function
+   is used in iterative inverse computations and is necessary to properly
+   handle cases close to the +/- 180 degree crack.  We want to be quick in
+   the normal (i.e. 99.99999% of the time) where the longitudes are far
+   enough away from the crack that the calculation is fast.  Returning
+   a value with the proper sign is very important here. */
+double EXP_LVL7 CS_lngEpsilon (double baseLL,double calcLL)
+{
+	extern double cs_K90;
+	extern double cs_K360;
+	extern double cs_Km360;
+
+	double epsilon;
+
+	epsilon = baseLL - calcLL;
+	if (fabs (epsilon) > cs_K90)
+	{
+		/* It is the assumption of this function that in this case, the
+		   +/- 180 degree crack is involved.  Need to do some adjusting.
+		   We further assume that the given longitudes are +/- 180
+		   normalized. */
+		epsilon += (epsilon > 0.0) ? cs_Km360 : cs_K360;
+	}
+	return epsilon;
 }

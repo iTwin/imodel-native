@@ -100,25 +100,94 @@ extern "C" double cs_One;
 unsigned long KcsSkippedDatums [] =
 {
 //	    0UL,		// Uncomment this line to enable testing for these datums
-	 6140UL,		// CSRS -- CSRS definitions convert from NAD83/WGS84 to CSRS
-					//         They do not convert from CSRS to WGS84.
-	 6149UL,		// CH1903 -- This definition does not convert directly to WGS84
-	 6152UL,		// HARN 2D -- EPSG considers the current WGS84 to be equivalent to HARN.
-	 6267UL,		// NAD27 -- EPSG has several non-grid variants, and some 40 grid based variants.
-					//          any attempt to make a compariosn is quite useless.
-	 6322UL,		// WGS72 -- CS-MAP uses an internal harcoded algortihm
-	 6210UL,		// ARC1960  -- EPSG has no variant equivalent to CS-MAP
-					//             definition, yet CS-MAP definition is
-					//             considered to be a valid one. (Feb2011)
-	 6657UL,		// Reykjavik -- several reputable sources have different definitions.
-					//              The CS-MAP definition jives with Mugnier.  I could
-					//              not verify the EPSG definition anywhere else, even at
-					//              the source EPSG specifies. (Feb2011)
-	 6230UL,		// ERP50-7P -- Our definition comes from NIMA.  It does not match precisely
-					//             with any of the 42 variants EPSG defines.  It is close enough
-					//             to warrant our blessing as a valid definition even though
-					//             EPSG does not carry this definition.
-		0UL			// End of Table marker.
+	 6140UL,		// CSRS       -- CSRS definitions convert from NAD83/WGS84 to CSRS
+					//               They do not convert from CSRS to WGS84.
+	 6149UL,		// CH1903     -- This definition does not convert directly to WGS84
+	 6152UL,		// HARN 2D    -- EPSG considers the current WGS84 to be equivalent to HARN.
+	 6267UL,		// NAD27      -- EPSG has several non-grid variants, and some 40 grid based variants.
+					//               any attempt to make a comparison is quite useless.
+	 6322UL,		// WGS72      -- CS-MAP uses an internal harcoded algortihm
+	 6210UL,		// ARC1960    -- EPSG has no variant equivalent to CS-MAP
+					//               definition, yet CS-MAP definition is
+					//               considered to be a valid one. (Feb2011)
+	 6657UL,		// Reykjavik  -- several reputable sources have different definitions.
+					//               The CS-MAP definition jives with Mugnier.  I could
+					//               not verify the EPSG definition anywhere else, even at
+					//               the source EPSG specifies. (Feb2011)
+	 6230UL,		// ERP50-7P   -- Our definition comes from NIMA.  It does not match precisely
+					//               with any of the 42 variants EPSG defines.  It is close enough
+					//               to warrant our blessing as a valid definition even though
+					//               EPSG does not carry this definition.
+					// Entries all made 19 November 2015
+	1116UL,			// NSRS(2011) -- While EPSG has a base CRS referenceing this datum (6318), it
+					//               (as yet) has no coordinate operations defined for converting
+					//               from or to this datum.
+	1128UL,			// JGD2011    -- While EPSG has a base CRS referenceing this datum (6668), it
+					//               (as yet) has no coordinate operations defined for converting
+					//               from or to this datum.
+	6286UL,			// QATAR 1948 -- While EPSG has a base CRS referencing this datum (4286), it
+					//               (as yet) has no coordinate operations defined for converting
+					//               from or to this datum.
+	6610UL,			// Xian 1980  -- While EPSG has a base CRS referenceing this datum (4610), it
+					//               (as yet) has no coordinate operations defined for converting
+					//               from or to this datum.
+	6738UL,			// Hong Kong 1963 -- While EPSG has a base CRS referenceing this datum (4738), it
+					//               (as yet) has no coordinate operations defined for converting
+					//               from or to this datum.
+	6801UL,			// CH1903(Bern) -- While EPSG has a base CRS referenceing this datum (4801), it
+					//               (as yet) has no coordinate operations defined for converting
+					//               from or to this datum.
+	1025UL,			// TWD67      -- While EPSG has a base CRS referenceing this datum (3821), it
+					//               (as yet) has no coordinate operations defined for converting
+					//               from or to this datum.
+	6243UL,			// Kalianpur 1880 -- While EPSG has a base CRS referenceing this datum (4243), it
+					//               (as yet) has no coordinate operations defined for converting
+					//               from or to this datum.
+	6653UL,			// ITRF94     -- EPSG and CS_MAP have such a geodetic datum.  However, neither
+					//               have a geogrpahic system referenced to this datum.  EPSG only
+					//               has a geocentric system referenced to this datum.  Thus, there
+					//               is nothing to compare (except maybe the ellipsoid).
+	6809UL,			// Belge 1950(Brussels) -- While EPSG has a base CRS referenceing this datum (4809),
+					//               the only transformation for this datum is to datum Belge 1950.  This
+					//               is essentially a conversion to itself as the only difference
+					//               between the two is the prime meridian.  If the conversion was a
+					//               compound to WGS84, we might have a chance here.
+	   0UL			// End of Table marker.
+};
+
+// The following is a list of CRS defitions which are not tested for the
+// reasons given in the comments.
+//;
+unsigned long KcsSkippedCRSs [] =
+{
+//	    0UL,		// Uncomment this line to enable testing for these datums
+	 3053UL,		// Hjorsey / Lambert -- CRS requires the Lambert Conformal
+					//                      conic West Oriented projection which
+					//                      is not supported in CS-MAP.  SUSPECT
+					//                      CS_MAP's 'Hjorsey.IcelandGrid' system
+					//                      produces the same results with the
+					//                      traditional Lambert, but different
+					//                      quad specifications.
+	 4030UL,		// Unknown datum based upon the WGS 84 ellipsoid -- This EPSG
+					//                      system maps to CS-MAP's "LL" system.
+					//                      That is, a cartographically regerenced
+					//                      geographic coordinate system referenced
+					//                      to the WGS84 ellipsoid.  As there are
+					//                      no datums involved, the code which compares
+					//                      the two systems reports a bogus failure.
+					//                      Probably could write a whole bunch of code
+					//                      to compare these to systems, but it's just
+					//                      not worth it.
+	 4087UL,		// WGS 84 / World Equidistant Cylindrical -- This is the
+					//                      equivalent of CS-MAP 'WORLD-EQDIST-CYL'
+					//                      The CS-MAP implementation of the the
+					//                      underlying Equidistant Cylindrical
+					//                      project supports an additional parameter
+					//                      (org_lat) which EPSG does not support.
+					//                      Because of this slifght difference. this
+					//                      TestN would otherwise flag this system
+					//                      as an error.
+	   0UL			// End of Table marker.
 };
 
 int CStestN (const TcsEpsgDataSetV6& epsgV6,bool verbose,long32_t duration)
@@ -130,11 +199,12 @@ int CStestN (const TcsEpsgDataSetV6& epsgV6,bool verbose,long32_t duration)
 
 	int okCnt = 0;				// successful definition comparisons
 
-	int errCnt = 0;				// total error count, function return value
-	int mapCnt = 0;				// number of NameMapper failures
+	int errCnt  = 0;			// total error count, function return value
+	int mapCnt  = 0;			// number of NameMapper failures
 	int diffCnt = 0;			// number of comparison failures
-	int cvtCnt = 0;				// number of EPSG -> CS-MAP conversion failiures
+	int cvtCnt  = 0;			// number of EPSG -> CS-MAP conversion failiures
 	int failCnt = 0;			// number of failures encountered in EPSG access code
+	int skipCnt = 0;			// number of systems skipped due to skip table
 
 	unsigned idx;
 	unsigned variant;
@@ -142,6 +212,8 @@ int CStestN (const TcsEpsgDataSetV6& epsgV6,bool verbose,long32_t duration)
 	unsigned recordCount;
 	unsigned variantCount;
 	TcsEpsgCode epsgCode;
+	TcsEpsgCode baseCode;
+	TcsEpsgCode datumCode;
 	TcsEpsgCode oprtnCode;
 
 	double qValue;
@@ -195,6 +267,12 @@ int CStestN (const TcsEpsgDataSetV6& epsgV6,bool verbose,long32_t duration)
 		if (!ok)
 		{
 			// The conversion failed.
+			if (verbose)
+			{
+				printf ("conversion of EPSG Ellipsoid '%s' [%lu] to CS-MAP form failed.\n",
+																	epsgKeyName,
+																	static_cast<unsigned long>(epsgCode));
+			}
 			cvtCnt += 1;
 			continue;
 		}
@@ -208,6 +286,12 @@ int CStestN (const TcsEpsgDataSetV6& epsgV6,bool verbose,long32_t duration)
 																	 epsgCode);
 		if (csMapSt != csMapOk)
 		{
+			if (verbose)
+			{
+				printf ("Mapping of EPSG Ellipsoid '%s' [%lu] to CS-MAP equivalent failed.\n",
+																	epsgKeyName,
+																	static_cast<unsigned long>(epsgCode));
+			}
 			mapCnt += 1;
 			continue;
 		}
@@ -251,15 +335,16 @@ int CStestN (const TcsEpsgDataSetV6& epsgV6,bool verbose,long32_t duration)
 		}
 		// On to the next ellipsoid.
 	}
-	printf ("\tEllipsoid Test: ok = %d, different = %d, noCvt = %d, failed = %d\n",okCnt,diffCnt,cvtCnt,failCnt);
+	printf ("\tEllipsoid Test: ok = %d, different = %d, noMap = %d, noCvt = %d, failed = %d, skipped = %d\n",okCnt,diffCnt,mapCnt,cvtCnt,failCnt,skipCnt);
 	errCnt += (diffCnt + failCnt);
 
 	// Initialize for the datum equivalence test report. 
-	okCnt = 0;
-	mapCnt = 0;
-	diffCnt = 0;
-	cvtCnt = 0;
-	failCnt = 0;
+	okCnt      = 0;
+	mapCnt     = 0;
+	diffCnt    = 0;
+	cvtCnt     = 0;
+	failCnt    = 0;
+	skipCnt    = 0;
 	csMapDtDef = 0;
 
 	// Now for the datum definitions.  This gets rather complicated as the difference
@@ -319,6 +404,7 @@ int CStestN (const TcsEpsgDataSetV6& epsgV6,bool verbose,long32_t duration)
 		}
 		if (KcsSkippedDatums [idx] != 0)
 		{
+			skipCnt += 1;
 			continue;
 		}
 
@@ -339,6 +425,12 @@ int CStestN (const TcsEpsgDataSetV6& epsgV6,bool verbose,long32_t duration)
 																 epsgCode);
 		if (csMapSt != csMapOk)
 		{
+			if (verbose)
+			{
+				printf ("Mapping of EPSG Datum '%s' [%lu] to CS-MAP equivalent failed.\n",
+																epsgKeyName,
+																static_cast<unsigned long>(epsgCode));
+			}
 			mapCnt += 1;
 			continue;
 		}
@@ -419,9 +511,9 @@ int CStestN (const TcsEpsgDataSetV6& epsgV6,bool verbose,long32_t duration)
 						// current definition of what the qFactor really is.
 						// This has been pretty dynamic through all this
 						// development.
-						for (unsigned idx = 0;idx < variantCount;idx++)
+						for (unsigned idx2 = 0;idx2 < variantCount;idx2++)
 						{
-							variantPtr = opVariants.GetVariantPtr (idx);
+							variantPtr = opVariants.GetVariantPtr (idx2);
 							if (variantPtr == 0) continue;		// NO CRASHES, thank you.
 							lclVariant = variantPtr->GetVariantNbr ();
 							lclOk = epsgV6.GetCsMapDatum (epsgDtDef,epsgElDef,epsgCode,lclVariant);
@@ -432,29 +524,12 @@ int CStestN (const TcsEpsgDataSetV6& epsgV6,bool verbose,long32_t duration)
 								lclOk = true;
 								continue;
 							}
-							
+
 							// EPSG does not support the Seven Parameter, only Bursa/Wolf.
 							if (csMapDtDef->to84_via == cs_DTCTYP_7PARM && epsgDtDef.to84_via == cs_DTCTYP_BURS)
 							{
-								// CS-MAP definition is the 7PARAMETER, so we set the EPSG
-								// code to 7PARAMETER as well.  This works as the use and
-								// nature of the parameters are the same.  There should not be
-								// any major difference.  We may want to increase the
-								// comparison tolerance levels in this case.
 								epsgDtDef.to84_via = cs_DTCTYP_7PARM;
-
-								// Correct a major flaw.  Previously, it was assumed that the
-								// Seven Parameter transformation was of the Position Vector
-								// form.  Turns out it has been of the Coordinate Frame
-								// variety for many years.  Thus, in this case we must flip
-								// the signs of the rotations of one of these definitions if
-								// we are to compare the parameters in the definitions.
-								// We flip the epsgDtDef parameters values as we have just
-								// changed the method specification in that definition.
-								epsgDtDef.rot_X *= -1.0;
-								epsgDtDef.rot_Y *= -1.0;
-								epsgDtDef.rot_Z *= -1.0;
-							}					
+							}
 							
 							/* OK, now we can do the comparison to see if this variant is
 							   the best match of those available to us. */
@@ -491,6 +566,12 @@ int CStestN (const TcsEpsgDataSetV6& epsgV6,bool verbose,long32_t duration)
 		ok = epsgV6.GetCsMapDatum (epsgDtDef,epsgElDef,epsgCode,variant);
 		if (!ok)
 		{
+			if (verbose)
+			{
+				printf ("conversion of EPSG Datum '%s' [%lu] to CS-MAP form failed.\n",
+																	epsgKeyName,
+																	static_cast<unsigned long>(epsgCode));
+			}
 			cvtCnt += 1;
 			continue;
 		}
@@ -501,24 +582,7 @@ int CStestN (const TcsEpsgDataSetV6& epsgV6,bool verbose,long32_t duration)
 			// EPSG does not support the Seven Parameter, only Bursa/Wolf.
 			if (csMapDtDef->to84_via == cs_DTCTYP_7PARM && epsgDtDef.to84_via == cs_DTCTYP_BURS)
 			{
-				// CS-MAP definition is the 7PARAMETER, so we set the EPSG
-				// code to 7PARAMETER as well.  This works as the use and
-				// nature of the parameters are the same.  There should not be
-				// any major difference.  We may want to increase the
-				// comparison tolerance levels in this case.
 				epsgDtDef.to84_via = cs_DTCTYP_7PARM;
-
-				// Correct a major flaw.  Previously, it was assumed that the
-				// Seven Parameter transformation was of the Position Vector
-				// form.  Turns out it has been of the Coordinate Frame
-				// variety for many years.  Thus, in this case we must flip
-				// the signs of the rotations of one of these definitions if
-				// we are to compare the parameters in the definitions.
-				// We flip the epsgDtDef parameters values as we have just
-				// changed the method specification in that definition.
-				epsgDtDef.rot_X *= -1.0;
-				epsgDtDef.rot_Y *= -1.0;
-				epsgDtDef.rot_Z *= -1.0;
 			}
 
 			// Molodensky, GeoCentric, and Three Parameter are essentially the same.
@@ -565,14 +629,16 @@ int CStestN (const TcsEpsgDataSetV6& epsgV6,bool verbose,long32_t duration)
 			CS_free (csMapDtDef);
 		}
 	}
-	printf ("\tDatum Test: ok = %d, different = %d, noCvt = %d, failed = %d\n",okCnt,diffCnt,cvtCnt,failCnt);
+	printf ("\tDatum Test: ok = %d, different = %d, noMap = %d, noCvt = %d, failed = %d, skipped = %d\n",okCnt,diffCnt,mapCnt,cvtCnt,failCnt,skipCnt);
 	errCnt += (diffCnt + failCnt);
 
-	okCnt = 0;
-	mapCnt = 0;
+	// Initialize for the CRS Definition test.
+	okCnt   = 0;
+	mapCnt  = 0;
 	diffCnt = 0;
-	cvtCnt = 0;
+	cvtCnt  = 0;
 	failCnt = 0;
+	skipCnt = 0;
 	EcsCrsType crsType;
 
 	// Now for the Coordinate System dictionary definitions.
@@ -606,6 +672,26 @@ int CStestN (const TcsEpsgDataSetV6& epsgV6,bool verbose,long32_t duration)
 		{
 			continue;
 		}
+
+		// Skip any system listed in the KcsSkippedCRSs array.  The reason for
+		// eacho such "skip" is given in the commments associated with the
+		// array's definition.
+		if (ok)
+		{
+			for (idx = 0;KcsSkippedCRSs [idx] != 0UL;idx += 1)
+			{
+				if ((unsigned long)epsgCode == KcsSkippedCRSs [idx])
+				{
+					break;
+				}
+			}
+			if (KcsSkippedCRSs [idx] != 0)
+			{
+				skipCnt += 1;
+				continue;
+			}
+		}
+
 //??//TODO//
 // There is a disagreement on code 2057 which I have not been able to
 // resolve at this time.  It has to do with which actual variation of
@@ -613,10 +699,48 @@ int CStestN (const TcsEpsgDataSetV6& epsgV6,bool verbose,long32_t duration)
 // CsMap specification of RSKEW to be wrong, but can't determine which
 // is the correct one.  Since this system is only used for the terminal
 // area of a single oil refinerary in Iran, I'm not going to lose any
-// sleep of leaving this for another day.
+// sleep over leaving this for another day.
 		if (epsgCode == 2057UL)			// Rassadiran / Nakhl e Taqi
 		{
+			skipCnt += 1;
 			continue;
+		}
+
+		// Extract the Datum code and look it up in the Skipped Datums list.
+		// The comparison technique used below will not work if there is
+		// no reliable CS-MAP version of the EPSG datum reference.  It pretty
+		// much requires that a call to GetCsMapDatum is successful.  Therefore,
+		// like the datums above, we skip it after counting it as skipped.
+		if (crsType == epsgCrsTypProjected)
+		{
+			ok = epsgV6.GetFieldByCode (baseCode,epsgTblReferenceSystem,epsgFldSourceGeogCrsCode,epsgCode);
+		}
+		else if (crsType == epsgCrsTypGeographic2D)
+		{
+			baseCode = epsgCode;
+		}
+		else
+		{
+			ok = false;                     // keep VS2010 happy
+		}
+		if (ok)
+		{
+			ok = epsgV6.GetFieldByCode (datumCode,epsgTblReferenceSystem,epsgFldDatumCode,baseCode);
+		}
+		if (ok)
+		{
+			for (idx = 0;KcsSkippedDatums [idx] != 0UL;idx += 1)
+			{
+				if ((unsigned long)datumCode == KcsSkippedDatums [idx])
+				{
+					break;
+				}
+			}
+			if (KcsSkippedDatums [idx] != 0)
+			{
+				skipCnt += 1;
+				continue;
+			}
 		}
 
 		// Get the EPSG CRS name for reporting purposes.
@@ -646,11 +770,16 @@ int CStestN (const TcsEpsgDataSetV6& epsgV6,bool verbose,long32_t duration)
 		}
 		else
 		{
-    		csMapSt = csMapNoMatch;                     // keep VS2010 happy
-
+			csMapSt = csMapNoMatch;                     // keep VS2010 happy
 		}
 		if (csMapSt != csMapOk)
 		{
+			if (verbose)
+			{
+				printf ("Mapping of EPSG CRS '%s' [%lu] to CS-MAP equivalent failed.\n",
+																	epsgKeyName,
+																	static_cast<unsigned long>(epsgCode));
+			}
 			mapCnt += 1;
 			continue;
 		}
@@ -736,7 +865,7 @@ int CStestN (const TcsEpsgDataSetV6& epsgV6,bool verbose,long32_t duration)
 			// NameMapper Audit.  So, we ignore it here.
 		}
 	}
-	printf ("\tCoordsys Test: ok = %d, different = %d, noCvt = %d, failed = %d\n",okCnt,diffCnt,cvtCnt,failCnt);
+	printf ("\tCoordsys Test: ok = %d, different = %d, noMap = %d, noCvt = %d, failed = %d, skipped = %d\n",okCnt,diffCnt,mapCnt,cvtCnt,failCnt,skipCnt);
 	errCnt += (diffCnt + failCnt);
 
 	return errCnt;

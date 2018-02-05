@@ -455,6 +455,11 @@ int EXP_LVL9 CSazmedF (Const struct cs_Azmed_ *azmed,double xy [2],Const double 
 										   also be considered to
 										   be the cosine of
 										   cs_AnglTest. */
+	extern double cs_LlNoise;			/* 1.0e-12; about the resolution of an
+										   angle in degrees when one accounts 
+										   for calculation noise. Any angle
+										   less then this can usually be
+										   considered to be zero. */
 
 	int rtn_val;
 
@@ -688,37 +693,61 @@ int EXP_LVL9 CSazmedF (Const struct cs_Azmed_ *azmed,double xy [2],Const double 
 				psi = atan (tmp2);
 			}
 			tmp3 = (azmed->cos_org_lat * tan (psi)) -
-			       (azmed->sin_org_lat * cos_del_lng);
+				(azmed->sin_org_lat * cos_del_lng);
 
 			/* Tmp3 and sin_del_lng will both be zero if the
 			   point is the origin.  Most atan2's (not all) will
 			   bomb if both args are zero. */
-
-			if (fabs (sin_del_lng) > cs_AnglTest)
+			if ((fabs (sin_del_lng) < cs_LlNoise) &&
+				(fabs (tmp3) < cs_LlNoise))
 			{
+				/* We are approaching the origin.  Do a very rudimentary
+				   equivalent to atan2 on the values.  Note, tmp3 is
+				   essentially the sine of delta latitude. In this context,
+				   cs_LlNoise is roughly 6 microns. */
+				if (fabs (sin_del_lng) > fabs (tmp3))
+				{
+					/* We'll use sin_del_lng. */
+					if (sin_del_lng < cs_Zero)
+					{
+						Az = cs_Mpi_o_2;
+						sin_Az = cs_Mone;
+						cos_Az = cs_Zero;
+					}
+					else
+					{
+						Az = cs_Pi_o_2;
+						sin_Az = cs_One;
+						cos_Az = cs_Zero;
+					}
+				}
+				else
+				{
+					/* Here to use tmp3 (delta Latitude). */
+					if (tmp3 < cs_Zero)
+					{
+						Az = cs_Mpi;
+						sin_Az = cs_Zero;
+						cos_Az = cs_Mone;
+					}
+					else
+					{
+						Az = cs_Zero;
+						sin_Az = cs_Zero;
+						cos_Az = cs_One;
+					}
+				}
+			}
+			else
+			{
+				/* At least one of the arguments is not zero.  Atan2 can
+				   re relied upon to produce vaalid results. */
 				Az = atan2 (sin_del_lng,tmp3);
 				sin_Az = sin (Az);
 				cos_Az = cos (Az);
 			}
-			else
-			{
-				/* del_lng is zero, we do a quick and
-				   dirty atan2. */
 
-				sin_Az = cs_Zero;
-				if (tmp3 >= 0.0)
-				{
-					Az = cs_Zero;
-					cos_Az = cs_One;
-				}
-				else
-				{
-					Az = cs_Mpi;
-					cos_Az = cs_Mone;
-				}
-			}
-
-			/* Ok, we have the azimuth.  Need to compute the
+			/* Ok, we have the (an) azimuth.  Need to compute the
 			   angular distance to the point on the ellipsoid.
 			   In the case of small angles, the sine and the
 			   angle are equivalent. */

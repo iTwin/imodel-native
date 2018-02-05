@@ -45,8 +45,8 @@ int EXP_LVL3 CS_csDefCmp (Const struct cs_Csdef_ *original,Const struct cs_Csdef
 	extern double cs_Six;
 	extern double cs_Zero;
 
-	int errCnt = 0;
-	int errCntCnc = 0;
+	int errCnt;
+	int errCntCnc;
 
 	struct cs_Prjtab_ *pp;
 
@@ -58,6 +58,15 @@ int EXP_LVL3 CS_csDefCmp (Const struct cs_Csdef_ *original,Const struct cs_Csdef
 	const struct cs_Csdef_ *lclRevPtr;
 	struct cs_Csdef_ lclOriginal;
 	struct cs_Csdef_ lclRevised;
+
+	errCnt = 0;
+	errCntCnc = 0;
+	errMsg [0] = '\0';				/* Defensive programming, also keeps lint happy */
+	if (message != NULL && messageSize > 1)
+	{
+		/* Initialize the users messge array. */
+		*message = '\0';
+	}
 
 	/* Before we get onto this to heavy; we check the projection code of the
 	   original and the revised.  If the original is UTM, and the revised is
@@ -96,7 +105,7 @@ int EXP_LVL3 CS_csDefCmp (Const struct cs_Csdef_ *original,Const struct cs_Csdef
 
 	if (CS_stricmp (lclOrgPtr->prj_knm,lclRevPtr->prj_knm))
 	{
-		if (errCnt == 0)
+		if (errCnt == 0)		/*lint !e774   boolean always evaluates to True (correct in this case) */
 		{
 			sprintf (errMsg,"Projection key name was %s, is now %s",lclOrgPtr->prj_knm,lclRevPtr->prj_knm);
 		}
@@ -104,16 +113,16 @@ int EXP_LVL3 CS_csDefCmp (Const struct cs_Csdef_ *original,Const struct cs_Csdef
 	}
 	if (CS_stricmp (lclOrgPtr->unit,lclRevPtr->unit))
 	{
-		if (errCnt == 0)
+		if (errCnt == 0)		/*lint !e774   boolean always evaluates to True (not always in this case) */
 		{
 			sprintf (errMsg,"Unit name was %s, is now %s",lclOrgPtr->unit,lclRevPtr->unit);
 		}
 		errCnt += 1;
 	}
 
-	/* If the projection codes don't match, we're in deep do-do.  So, we bag it now
-	   if we haven't got a match so far. */
-	if (errCnt != 0)
+	/* If the projection and/or unit names don't match, we're in deep do-do.
+	   So, we bag it now. */
+	if (errCnt != 0)			/*lint !e774   boolean always evaluates to True (not always in this case) */
 	{
 		if (message != 0 && messageSize > 1)
 		{
@@ -131,9 +140,11 @@ int EXP_LVL3 CS_csDefCmp (Const struct cs_Csdef_ *original,Const struct cs_Csdef
 			break;
 		}
 	}
-	if (pp->check == NULL)
+	if (pp->key_nm [0] == '\0')
 	{
-		if (errCnt == 0)
+		/* The projection name in the revised definition is not in the
+		   projection data table. */
+		if (errCnt == 0)			/*lint !e774   boolean always evaluates to True (correct in this instance) */
 		{
 			sprintf (errMsg,"Projection key name is now %s which is invalid.",lclRevPtr->prj_knm);
 		}
@@ -141,27 +152,23 @@ int EXP_LVL3 CS_csDefCmp (Const struct cs_Csdef_ *original,Const struct cs_Csdef
 	}
 	else
 	{
-		if (message != NULL && messageSize > 1)
-		{
-			if (errCnt == 0) *message = '\0';
-		}
-		else
-		{
-			CS_stncp (message,errMsg,(int)messageSize);
-		}
+		/* We have the required pointer to the approriate projection
+		   table entry.  We can proceed on to the real work of this
+		   function.
 
-		/* Check all of the parameters. */
-		if (errCnt == 0) errMsg[0] = '\0';
+		   Check all of the parameters. */
+		errMsg[0] = '\0';
 
 		/* We skip checking the first two parameters for the Unity projection as WKT
-		   does not support the longitude range feature. */
+		   does not support the longitude range feature.  If the projection is a 
+		   conic, the first two parameters require special treatment. */
 		if (pp->code != cs_PRJCOD_UNITY)
 		{
 			/* For conic projections which require two standard parallels, the order of the parallels
 			   does not make any difference to the mathemagics of the projection.  In this case,
 			   if (prm1 != prm1 && prm2 != prm2) we do an additional check of
-			   if (prm1 == prm2 and prm2 == prm1).  It is traditional to supply the northern
-			   parallel first, but the are variations of WKT out there to do not follw this
+			   if (prm1 == prm2 && prm2 == prm1).  It is traditional to supply the northern
+			   parallel first, but there are variations of WKT out there to do not follow this
 			   tradition (and it is only a tradition). */
 			if (pp->code == cs_PRJCOD_LM2SP   ||
 				pp->code == cs_PRJCOD_LMBLG   ||
@@ -187,6 +194,9 @@ int EXP_LVL3 CS_csDefCmp (Const struct cs_Csdef_ *original,Const struct cs_Csdef
 				errCnt += CS_defCmpPrjPrm (pp, 2,lclOrgPtr->prj_prm2 ,lclRevPtr->prj_prm2,errMsg,sizeof (errMsg));
 			}
 		}
+		
+		/* The f1rst two parameters have been dealt with, dealing with the rest
+		   is rather straight forward. */
 		errCnt += CS_defCmpPrjPrm (pp, 3,lclOrgPtr->prj_prm3 ,lclRevPtr->prj_prm3,errMsg,sizeof (errMsg));
 		errCnt += CS_defCmpPrjPrm (pp, 4,lclOrgPtr->prj_prm4 ,lclRevPtr->prj_prm4,errMsg,sizeof (errMsg));
 		errCnt += CS_defCmpPrjPrm (pp, 5,lclOrgPtr->prj_prm5 ,lclRevPtr->prj_prm5,errMsg,sizeof (errMsg));
@@ -211,6 +221,7 @@ int EXP_LVL3 CS_csDefCmp (Const struct cs_Csdef_ *original,Const struct cs_Csdef
 		errCnt += CS_defCmpPrjPrm (pp,24,lclOrgPtr->prj_prm24,lclRevPtr->prj_prm24,errMsg,sizeof (errMsg));
 	}
 
+	/* Deal with the rest of the projected coordinate system definition. */
 	if ((pp->flags & cs_PRJFLG_ORGLAT) == 0)
 	{
 		if (CS_cmpDbls (lclOrgPtr->org_lat,lclRevPtr->org_lat) == 0)
@@ -279,7 +290,6 @@ int EXP_LVL3 CS_csDefCmp (Const struct cs_Csdef_ *original,Const struct cs_Csdef
 			CS_stncp (message,errMsg,(int)messageSize);
 		}
 	}
-
 	return errCnt;
 }
 int EXP_LVL3 CS_defCmpPrjPrm (struct cs_Prjtab_* pp,int prmNbr,double orgValue,double revValue,char *message,size_t messageSize)
@@ -294,7 +304,9 @@ int EXP_LVL3 CS_defCmpPrjPrm (struct cs_Prjtab_* pp,int prmNbr,double orgValue,d
 	double tolerance;
 
 	char errMsg [512];
+
 	errCnt = 0;
+	errMsg [0] = '\0';			/* Defensive programming, also keeps lint happy */
 
 	/* Get the type of parameter. */
 	for (mapPtr = cs_PrjprmMap;mapPtr->prj_code != cs_PRJCOD_END;mapPtr += 1)
@@ -435,12 +447,12 @@ int EXP_LVL3 CS_dtDefCmp (Const struct cs_Dtdef_ *original,Const struct cs_Dtdef
 		/* Both are the null transformation, so they are essentially
 		   equivalent. */
 		return errCnt;
-    }
+	}
 
 	/* Compare the transformation technique. */
 	if (original->to84_via != revised->to84_via)
-    {
-		if (errCnt == 0)
+	{
+		if (errCnt == 0)			/*lint !e774   boolean always evaluates to True (correct in this instance) */
 		{
 			sprintf (errMsg,"Datum transformation method on datum named %s does not match.  Method was %d, is now %d",
 							original->key_nm,
@@ -449,11 +461,11 @@ int EXP_LVL3 CS_dtDefCmp (Const struct cs_Dtdef_ *original,Const struct cs_Dtdef
 		}
 		
 		/* We bump the error count by 8 to make this error appear to be more
-		   than other types of errors. */
+		   severe than other types of errors. */
 		errCnt += 8;
-    }
-    else
-    {
+	}
+	else
+	{
 		/* If the transformation technique is the same, it makes sense to compare
 		   the parameters; if the transformation is of the type that uses
 		   parameters, of course. */
@@ -593,10 +605,11 @@ int EXP_LVL3 CS_elDefCmp (Const struct cs_Eldef_ *original,Const struct cs_Eldef
 
 	char errMsg [512];
 
+	errMsg [0] = '\0';				/* Defensive programming, also keeps lint happy */
 	/* Pretty simple for an ellipsoid. */
 	if (fabs (original->e_rad - revised->e_rad) > 6.0E-04)
 	{
-		if (errCnt == 0)
+		if (errCnt == 0)			/*lint !e774   boolean always evaluates to True (correct in this instance) */
 		{
 			sprintf (errMsg,"%s: Equatorial radius was %14.4f, is now %14.4f",original->key_nm,original->e_rad,revised->e_rad);
 		}

@@ -850,7 +850,7 @@ int	EXP_LVL1 CS_isCsPrmReentrant (Const struct cs_Csprm_ *prjConversion)
 	}
 	return isReentrant;
 }
-int	CS_isCsReentrant (Const char *csys)
+int	EXP_LVL1 CS_isCsReentrant (Const char *csys)
 {
 	extern char csErrnam [];				/* Dimensioned at MAXPATH */
 	extern struct cs_Prjtab_ cs_Prjtab [];	/* Projection Table */

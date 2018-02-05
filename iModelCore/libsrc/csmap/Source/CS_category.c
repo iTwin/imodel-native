@@ -25,7 +25,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-/*lint -esym(550,ctItmName,dummy)  */
+/*lint -esym(550,ctItmName,dummy)  not accessed, used to support sizeof operator */
+/*lint -esym(550,crypt)            not accessed, required function parameter */
 
 #include "cs_map.h"
 #include "cs_ioUtil.h"
@@ -182,11 +183,6 @@ int ExtendCsNameBlock(struct cs_Ctdef_* pCategoryIn, size_t byCount);
 	cs_Error = 0;
 
 	CS_CHECK_NULL_ARG(ppCategory, 2);
-	if (index < 0)
-	{
-		CS_erpt(cs_INV_ARG1);
-		return -1;
-	}
 
 	*ppCategory = NULL;
 
@@ -343,7 +339,7 @@ int GetIndexOfName(Const struct cs_Ctdef_* pCategory, Const char* name)
 		return -1;
 	}
 
-	if (NULL == name || '\0' == name || CS_nampp((char*)name))
+	if (NULL == name || '\0' == *name || CS_nampp((char*)name))
 	{
 		CS_erpt(cs_INV_ARG2);
 		return -1;
@@ -410,7 +406,6 @@ int AddCsName(struct cs_Ctdef_* ctDefPtr, Const char* csName)
 **************************************************************************/
 int CanModifyCsName(Const char* catName, unsigned idx, struct cs_Ctdef_** ctDefPtr)
 {
-	extern char cs_UserDir [];
 	extern int cs_Error;
 	extern char csErrnam [];
 
@@ -509,11 +504,7 @@ int ExtendCsNameBlock(struct cs_Ctdef_* pCategoryIn, size_t byCount)
 
 	//now update the struct...
 	pCategoryIn->csNames = allocatedBlock;
-#ifdef GEOCOORD_ENHANCEMENT
 	pCategoryIn->allocCnt = (ulong32_t)totalRequiredCount;
-#else
-	pCategoryIn->allocCnt = totalRequiredCount;
-#endif
 	//...and zero out everything, that's beyond the last CS name
 	memset(&pCategoryIn->csNames[pCategoryIn->nameCnt], '\0', (totalRequiredCount - pCategoryIn->nameCnt) * blockSize);
 	return 0;
@@ -559,11 +550,12 @@ int EXP_LVL1 CS_vldCtNameEx (const char* catName, struct cs_Ctdef_* pCtDef)
 	return 1;
 
 error:
-	if (NULL != pCtDef)
-		CSclnCategory(pCtDef);
+	if (NULL != pCtDef)				/*lint !e774  boolean always evaluates to true */
+		CSclnCategory(pCtDef);		/*lint !e534  ignoring return value */
 
 	return -1;
 }
+
 /******************************************************************************
  * Returns the category name associated with the idx'th category in the
  * category list.  Returns null if no category data available, or if the idx
@@ -572,7 +564,7 @@ error:
  * Use this function to enumerate all category names by incrementing the idx
  * value by one after each call, until such time as a null pointer is returned.
  *****************************************************************************/
-Const char* EXP_LVL1 CS_getCatName (unsigned idx)
+Const char* EXP_LVL3 CS_getCatName (unsigned idx)
 {
 	unsigned myIdx = 0;
 	Const char* rtnValue = 0;
@@ -616,7 +608,7 @@ int EXP_LVL1 CS_getItmNameCount (const char* catName)
 
 /******************************************************************************
  * Returns the item name associated with the idx'th item in the category
- * indicated by the catName argument.  Returns null if no category data
+ * indicated by the catName argument. Returns null if no category data
  * available, or if the catName argument is not that of a valid category, or
  * the idx argument is too large.  idx of zero means the first item name.
  *
@@ -624,18 +616,18 @@ int EXP_LVL1 CS_getItmNameCount (const char* catName)
  * incrementing the idx value by one after each call, until such time as a
  * null pointer is returned.
  *****************************************************************************/
-Const char* EXP_LVL1 CS_getItmName (const char* catName,unsigned idx)
-{
+Const char* EXP_LVL3 CS_getItmName (const char* catName,unsigned idx)
+{	
 	struct cs_Ctdef_* ctDefPtr;
 	
 	if (GetCategoryPtr(catName, &ctDefPtr))
 		return NULL;
 
 	if (NULL == ctDefPtr)
-			{
+	{
 		CS_erpt(cs_CT_NOT_FND);
 		return NULL;
-		}
+	}
 
 	if (idx >= ctDefPtr->nameCnt)
 	{
@@ -701,15 +693,15 @@ struct cs_Ctdef_* EXP_LVL3 CSgetCtDef(const char* catName)
 	return NULL;
 }
 
-/*******************************************/
-/* Copies all category definitions in a newly
-/* allocated array pointed to by [pDefArray]
-/* 
-/* Returns the number of pointer to elements contained
-/* in [pDefArray]. Returns >= 0 if successful.
-/* -1 otherwise in which case [*pDefArray] will
-/* have been set to NULL.
-/*******************************************/
+/*******************************************
+ * Copies all category definitions in a newly
+ * allocated array pointed to by [pDefArray]
+ * 
+ * Returns the number of pointer to elements contained
+ * in [pDefArray]. Returns >= 0 if successful.
+ * -1 otherwise in which case [*pDefArray] will
+ * have been set to NULL.
+********************************************/
 int EXP_LVL3 CSgetCtDefAll(struct cs_Ctdef_ **pDefArray[])
 {
 	extern int cs_Error;
@@ -793,10 +785,10 @@ error:
 	return -1;
 }
 
-/*******************************************/
-/* Cleans any content, except for the name,
-/* from the category passed in.
-/*******************************************/
+/*******************************************
+ * Cleans any content, except for the name,
+ * from the category passed in.
+********************************************/
 int EXP_LVL3 CSclnCategory(struct cs_Ctdef_ * pCategoryIn)
 {
 	char catName[sizeof((struct cs_Ctdef_*)0)->ctName / sizeof(char)] = { '\0' };
@@ -850,7 +842,7 @@ struct	cs_Ctdef_*	EXP_LVL3 CScpyCategoryEx(struct cs_Ctdef_* pDstCategory, Const
 	else
 	{
 		//remove everything, except for the name, from the category
-		CSclnCategory(pDstCategory);
+		CSclnCategory(pDstCategory);			/*lint !e534   ignoring return value */
 	}
 
 	CS_stncp(pDstCategory->ctName, pSrcCategory->ctName, sizeof(((struct cs_Ctdef_*)0)->ctName) / sizeof(char));
@@ -875,7 +867,7 @@ struct	cs_Ctdef_*	EXP_LVL3 CScpyCategoryEx(struct cs_Ctdef_* pDstCategory, Const
 			//this CS string is invalid...
 			CS_erpt(cs_INV_ARG2); //...i.e. [pSrcCategory]
 			goto error;
-	}
+		}
 	}
 
 	pDstCategory->nameCnt = index;
@@ -900,6 +892,7 @@ error:
 
 	return NULL;
 }
+
 /******************************************************************************
  * Replaces the idx'th item name in the category indicated by the catName
  * argument.  It is assumed that the idx argument is that which was used to
@@ -912,7 +905,6 @@ error:
  *****************************************************************************/
 int EXP_LVL3 CSrplItmName (Const char* catName, unsigned idx, Const char* newName)
 {
-	extern char cs_UserDir [];
 	char newCrsName[cs_KEYNM_DEF] = { '\0' };
 	int categoryUpdate;
 
@@ -976,7 +968,7 @@ int EXP_LVL3 CSrmvItmNameEx (struct cs_Ctdef_ *pCategoryIn, Const char* name)
 	}
 
 	if (NULL == name || '\0' == *name)
-		{
+	{
 		CS_erpt(cs_INV_ARG2);
 		return -1;
 	}
@@ -986,16 +978,16 @@ int EXP_LVL3 CSrmvItmNameEx (struct cs_Ctdef_ *pCategoryIn, Const char* name)
 	{
 		Const char * pszCategoryName = pCategoryIn->ctName;
 		if ('\0' == *pszCategoryName)
-			{
+		{
 			pszCategoryName = "Unknown";
-			}
+		}
 
 		//cs is not contained
 		CS_stncp(csErrnam, pszCategoryName, MAXPATH);
 		CS_erpt(cs_CT_CS_NOT_IN);
 
 		return -1;
-		}
+	}
 
 	if (pCategoryIn->nameCnt != (ulong32_t)(csNameIndex - 1))
 	{
@@ -1055,7 +1047,6 @@ int EXP_LVL3 CSrmvItmNames (Const char* catName)
 int EXP_LVL3 CSrmvItmNamesEx (struct cs_Ctdef_ *pCategoryIn)
 {
 	extern int cs_Error;
-	extern char csErrnam [];
 
 	cs_Error = 0;
 
@@ -1071,6 +1062,7 @@ int EXP_LVL3 CSrmvItmNamesEx (struct cs_Ctdef_ *pCategoryIn)
 
 	return 0;
 }
+
 /******************************************************************************
  * Adds an item name to the category indicated by the ctName argument.
  *
@@ -1094,7 +1086,7 @@ int EXP_LVL3 CSaddItmName(Const char* catName, Const char* newName)
 	cs_Error = 0;
 
 	if (GetCategoryPtr(catName, &ctDefPtr))
-	return -1;
+		return -1;
 
 	if (NULL == ctDefPtr)
 	{
@@ -1106,6 +1098,7 @@ int EXP_LVL3 CSaddItmName(Const char* catName, Const char* newName)
 
 	return CSaddItmNameEx(ctDefPtr, newName);
 }
+
 /******************************************************************************
  * Adds an item name to the category indicated by the pCategoryIn argument.
  *
@@ -1134,7 +1127,7 @@ int EXP_LVL3 CSaddItmNameEx(struct cs_Ctdef_ *pCategoryIn, Const char* newName)
 
 	//make sure all arguments we got are valid
 	if (NULL == newName || 0 != CS_nampp((char*)newName))
-		{
+	{
 		CS_erpt(cs_INV_ARG2);
 		return -1;
 	}
@@ -1190,20 +1183,20 @@ csFILE* EXP_LVL3 CS_ctopn (Const char *mode)
 				strcpy (csErrnam,cs_Dir);
 				CS_erpt (cs_CS_BAD_MAGIC);
 			}
-				}
-				else
-				{
+		}
+		else
+		{
 			if (CS_ferror (strm)) CS_erpt (cs_IOERR);
 			else				  CS_erpt (cs_INV_FILE);
 			CS_fclose (strm);
 			strm = NULL;
-				}
-			}
+		}
+	}
 	else
-			{
+	{
 		strcpy (csErrnam,cs_Dir);
 		CS_erpt (cs_CT_DICT);
-			}
+	}
 
 	return (strm);
 }
@@ -1220,7 +1213,7 @@ int EXP_LVL3 CSdelCategory(Const char* catName)
 {
 	extern int cs_Error;
 	extern char csErrnam [];
-	extern int cs_Protect;
+	extern short cs_Protect;
 
 	int unlinkStatus = 0;
 	struct cs_Ctdef_* pCategory = NULL;
@@ -1285,11 +1278,9 @@ int EXP_LVL3 CSdelCategory(Const char* catName)
 **********************************************************************/
 int EXP_LVL3 CSupdCategory(Const struct cs_Ctdef_* categoryIn)
 {
-	extern struct cs_Ctdef_* cs_CtDefHead;
-
 	extern int cs_Error;
 	extern char csErrnam [];
-	extern int cs_Protect;
+	extern short cs_Protect;
 
 	char testCsName[cs_KEYNM_DEF] = { '\0' };
 
@@ -1314,7 +1305,7 @@ int EXP_LVL3 CSupdCategory(Const struct cs_Ctdef_* categoryIn)
 	}
 
 	//we accept all category names - as long as they are not empty...
-	if ('\0' == categoryIn->ctName)
+	if ('\0' == *categoryIn->ctName)
 	{
 		CS_erpt(cs_INV_ARG1);
 		return -1;
@@ -1374,7 +1365,8 @@ int EXP_LVL3 CSupdCategory(Const struct cs_Ctdef_* categoryIn)
 			}
 		}
 
-		LinkInCategory(pLocalCategory, toUpdate, TRUE /* release [toUpdate] */);
+		/* release [toUpdate] */
+		LinkInCategory(pLocalCategory, toUpdate, TRUE);  /*lint !e534  ignoring return value */
 
 		//make sure, we're not releasing anything anymore...
 		pLocalCategory = NULL;
@@ -1454,7 +1446,7 @@ int EXP_LVL3 CSupdCategories (Const struct cs_Ctdef_* ctDefPtr)
 	if (NULL == ctDefPtr)
 		ctDefPtr = cs_CtDefHead;
 
-	CS_getdr(currentDir);
+	CS_getdr(currentDir);			/*lint !e534  jgnoring return value */
 
 	//if we've a user dictionary path, we must only
 	//write out the "user definitions"; the system file we must *not* touch
@@ -1518,14 +1510,14 @@ int EXP_LVL3 CSupdCategories (Const struct cs_Ctdef_* ctDefPtr)
 	if (0 != writeStatus)
 		goto error;
 
-	if (NULL != targetFileStream)
+	if (NULL != targetFileStream)		/*lint !e774  boolean always evaluates to true */
 	{
 		CS_fclose(targetFileStream);
 		targetFileStream = NULL;
 	}
 
 	//set the CSD file directory back to what it was before
-	CS_setdr(currentDir, NULL);
+	CS_setdr(currentDir, NULL);			/*lint !e534  ignoring return value */
 	return 0;
 
 error:
@@ -1539,7 +1531,7 @@ error:
 	ctToWrite = NULL;
 
 	//set the CSD file directory back to what it was before
-	CS_setdr(currentDir, NULL);
+	CS_setdr(currentDir, NULL);			/*lint !e534  ignoring return value */
 
 	return -1;
 }
@@ -1573,7 +1565,7 @@ int EXP_LVL3 CSwrtCategory (csFILE* stream,Const struct cs_Ctdef_*ctDefPtr)
 		return -1;
 	}
 
-	CS_stncp (dummy.csName,cs_CATDEF_UNUSED,sizeof (dummy.csName));	
+	CS_stncp (dummy.csName,cs_CATDEF_UNUSED,sizeof (dummy.csName));
 	wrCnt = CS_fwrite (ctDefPtr->ctName,sizeof (ctDefPtr->ctName),1,stream);
 	if (wrCnt == 1)
 	{
@@ -1623,12 +1615,12 @@ int EXP_LVL3 CSrplCatNameEx (Const char* oldCtName, Const char* newCtName)
 	}
 
 	if (TRUE == liveCatPtr->protect)
-		{
+	{
 		CS_stncp(csErrnam, oldCtName, MAXPATH);
 		CS_erpt(cs_CT_PROT);
 
 		goto error;
-		}
+	}
 
 	CS_stncp (liveCatPtr->ctName, newCtName, cs_CATDEF_CATNMSZ);
 	return 0;
@@ -1640,7 +1632,7 @@ error:
 int EXP_LVL3 CSrplCatName (Const char* newCtName, unsigned idx)
 {
 	extern int cs_Error;
-	extern char csErrnam [];
+
 	struct cs_Ctdef_* liveCatPtr = NULL;
 
 	cs_Error = 0;
@@ -1657,6 +1649,7 @@ int EXP_LVL3 CSrplCatName (Const char* newCtName, unsigned idx)
 
 	return CSrplCatNameEx(liveCatPtr->ctName, newCtName);
 }
+
 int EXP_LVL3 CSaddCategory (Const char* catName)
 {
 	extern int cs_Error;
@@ -1680,6 +1673,7 @@ int EXP_LVL3 CSaddCategory (Const char* catName)
 		goto error;
 
 	return 0;
+
 error:
 	if (NULL != newDefPtr)
 	{
@@ -1689,6 +1683,7 @@ error:
 
 	return -1;
 }
+
 struct cs_Ctdef_* EXP_LVL3 CSnewCategory (Const char* ctName)
 {
 	return CSnewCategoryEx(ctName, TRUE);
@@ -1711,21 +1706,23 @@ struct cs_Ctdef_* EXP_LVL3 CSnewCategoryEx (Const char* ctName, int preAllocate)
 	memset(newDefPtr, 0x0, sizeof(struct cs_Ctdef_));
 
 	if (NULL != ctName && '\0' != ctName[0])
-	CS_stncp (newDefPtr->ctName,ctName,sizeof (newDefPtr->ctName));
+		CS_stncp (newDefPtr->ctName,ctName,sizeof (newDefPtr->ctName));
 
 	if (TRUE == preAllocate)
 	{
 		if (ExtendCsNameBlock(newDefPtr, 0))
 		{
 			CSrlsCategory(newDefPtr);
-		goto error;
-	}
+			goto error;
+		}
 	}
 
 	return newDefPtr;
+
 error:
 	return NULL;
 }
+
 struct cs_Ctdef_* EXP_LVL3 CSrdCategory (csFILE* stream)
 {
 	extern int cs_Error;
@@ -1785,7 +1782,7 @@ int EXP_LVL3 CSrdCategoryEx (csFILE* stream, struct cs_Ctdef_ *ctDefPtr)
 
 	//clean the category instance because we'll be filling it with
 	//the information from the file
-	CSclnCategory(ctDefPtr);
+	CSclnCategory(ctDefPtr);				/*lint !e534  ignoring return value */
 
 	rdCnt = CS_fread (ctDefPtr->ctName,sizeof (ctDefPtr->ctName),1,stream);
 	if (rdCnt == 1)
@@ -1832,17 +1829,17 @@ int EXP_LVL3 CSrdCategoryEx (csFILE* stream, struct cs_Ctdef_ *ctDefPtr)
 	return 1;
 
 error:
-	CSclnCategory(ctDefPtr);
+	CSclnCategory(ctDefPtr);			/*lint !e534  ignoring return value */
 	return (0 != cs_Error) ? -1 : 0;
 }
+
 struct cs_Ctdef_* EXP_LVL3 CSrdCatFile ()
 {
 	extern char csErrnam [];
 	extern int cs_Error;
 	extern char cs_Dir [];
-	extern char* cs_DirP;
 	extern char cs_UserDir [];
-
+	
 	struct cs_Ctdef_* ctDefHead = NULL;
 
 	csFILE* stream = NULL;
@@ -1852,12 +1849,13 @@ struct cs_Ctdef_* EXP_LVL3 CSrdCatFile ()
 
 	ulong32_t csNameIndex = 0;
 
-	int i = 0;
+	unsigned i = 0;
 	int dictionaryFound = FALSE;
 	int currentIsUserDictionary = FALSE;
 	int hasUserDictionaryPath = FALSE;
 	
-	char targetPaths[2][MAXPATH] = { '\0', '\0' };
+	char targetPaths[2][MAXPATH] = { {'\0'},
+									 {'\0'} };		/* keeping gcc happy */
 	char const* pTargetPath;
 
 	char currentDir[MAXPATH] = { '\0' }; //the variable we're temporarily storing the current path in
@@ -1867,7 +1865,7 @@ struct cs_Ctdef_* EXP_LVL3 CSrdCatFile ()
 	cs_Error = 0;
 	hasUserDictionaryPath = ('\0' != cs_UserDir[0]);
 
-	CS_getdr(currentDir);
+	CS_getdr(currentDir);				/*lint !e534  ignoring return value */
 	
 	//first look into the directory first where we're storing the system CSD files in.
 	//note, that this is different to all other types of dictionaries.
@@ -1875,9 +1873,9 @@ struct cs_Ctdef_* EXP_LVL3 CSrdCatFile ()
 	CS_stncp(targetPaths[1], cs_UserDir, sizeof(targetPaths[1]));
 
 	for (i = 0; i < (sizeof(targetPaths) / sizeof(targetPaths[0])); ++i)
-	{	
+	{
 		if (NULL != stream)
-	{	
+		{
 			CS_fclose (stream);
 			stream = NULL;
 		}
@@ -1889,7 +1887,7 @@ struct cs_Ctdef_* EXP_LVL3 CSrdCatFile ()
 
 		//switch [cs_dir] and [cs_DirP] to whatever the current target directory is
 		if (CS_setdr(pTargetPath, tempDir))
-		goto error;
+			goto error;
 
 		stream = CS_ctopn(_STRM_BINRD);
 
@@ -1901,7 +1899,7 @@ struct cs_Ctdef_* EXP_LVL3 CSrdCatFile ()
 		{
 			cs_Error = 0; //no problem; we've more paths to go...
 			continue;
-	}
+		}
 		
 		dictionaryFound = TRUE;
 
@@ -1910,18 +1908,18 @@ struct cs_Ctdef_* EXP_LVL3 CSrdCatFile ()
 
 		currentIsUserDictionary = (i == 1);
 		for (;;)
-	{
+		{
 			//at this point we know, that the file exists and we could open it.
 			//So, no matter whether this was the user-defined file or
 			//the "system" file, we don't continue if there was an error reading
 			//from the file
-		ctDefPtr = CSrdCategory (stream);
-		if (ctDefPtr == NULL)
-		{
-			if (cs_Error != 0)
+			ctDefPtr = CSrdCategory (stream);
+			if (ctDefPtr == NULL)
 			{
-				goto error;
-			}
+				if (cs_Error != 0)
+				{
+					goto error;
+				}
 
 				break; //EOF reached
 			}
@@ -1941,7 +1939,7 @@ struct cs_Ctdef_* EXP_LVL3 CSrdCatFile ()
 				{
 					if (GetCategoryPtrEx(ctDefHead, ctDefPtr->ctName, &systemCategory))
 						goto error; //if this has failed, something is going *very* bad here...
-		}
+				}
 				//else: systemCategory is still NULL... meaning that [ctDefPtr] will be made our new head
 
 				if (NULL != systemCategory)
@@ -1968,26 +1966,26 @@ struct cs_Ctdef_* EXP_LVL3 CSrdCatFile ()
 			}
 
 			/* Add it to the existing category tree. */
-		if (ctDefHead == NULL)
-		{
-			ctDefHead = ctDefPtr;
-		}
-		else
-		{
+			if (ctDefHead == NULL)
+			{
+				ctDefHead = ctDefPtr;
+			}
+			else
+			{
 				//get the last category in the list
 				if (NULL == ctLastDefPtr)
-			{
+				{
 					ctLastDefPtr = ctDefHead;
 					while (ctLastDefPtr->next != NULL)
 					{
 						ctLastDefPtr = ctLastDefPtr->next;
-			}
-		}
+					}
+				}
 
 				//and interconnect the 2 categories
 				ctLastDefPtr->next = ctDefPtr;
 				ctDefPtr->previous = ctLastDefPtr;
-	}
+			}
 
 			ctLastDefPtr = ctDefPtr; //keep track of the last cs_Ctdef_ instance we linked in
 
@@ -2017,6 +2015,7 @@ error:
 		CSrlsCategoryList (ctDefHead);
 		ctDefHead = NULL;
 	}
+
 	if (stream != NULL)
 	{
 		CS_fclose (stream);
@@ -2024,6 +2023,7 @@ error:
 	}
 	return NULL;
 }
+
 int EXP_LVL3 CSwrtCatFile (csFILE* stream,Const struct cs_Ctdef_ *ctDefPtr)
 {
 	int st;
@@ -2036,7 +2036,7 @@ int EXP_LVL3 CSwrtCatFile (csFILE* stream,Const struct cs_Ctdef_ *ctDefPtr)
 	};
 	return st;
 }
-void CSrlsCategory (struct cs_Ctdef_ *ctDefPtr)
+void EXP_LVL3 CSrlsCategory (struct cs_Ctdef_ *ctDefPtr)
 {
 	if (ctDefPtr != NULL)
 	{
@@ -2047,6 +2047,7 @@ void CSrlsCategory (struct cs_Ctdef_ *ctDefPtr)
 		CS_free (ctDefPtr);
 	}
 }
+
 void EXP_LVL3 CSrlsCategoryList (struct cs_Ctdef_ *ctDefHead)
 {
 	struct cs_Ctdef_ *tmpPtr;
@@ -2060,7 +2061,7 @@ void EXP_LVL3 CSrlsCategoryList (struct cs_Ctdef_ *ctDefHead)
 }
 
 
-void EXP_LVL3 CSrlsCategories()
+void EXP_LVL3 CSrlsCategories(void)
 {
 	extern struct cs_Ctdef_* cs_CtDefHead;
 
@@ -2087,10 +2088,12 @@ void EXP_LVL3 CSrlsCategories()
 **	to license LEX/YACC.
 **********************************************************************/
 
+/*lint -esym(550,test,warn)       not accessed, but potentially useful */
 int EXP_LVL9 CSctcomp (	Const char *inpt,Const char *outp,int flags,Const char *coordsys,
 																		  int (*err_func)(char *mesg))
 {
 	extern struct cs_Ctdef_* cs_CtDefHead;
+	extern char cs_DirsepC;
 
 	int st;
 	int demo;
@@ -2159,7 +2162,7 @@ int EXP_LVL9 CSctcomp (	Const char *inpt,Const char *outp,int flags,Const char *
 		if (csStrm == NULL)
 		{
 			sprintf (err_msg,"Couldn't open %s as a datum file.",coordsys);
-			(*err_func)(err_msg);
+			(*err_func)(err_msg);			/*lint !e534  ignoring return value */
 			CS_fclose (inStrm);
 			return (1);
 		}
@@ -2170,7 +2173,7 @@ int EXP_LVL9 CSctcomp (	Const char *inpt,Const char *outp,int flags,Const char *
 			(!demo && magic != cs_CSDEF_MAGIC))
 		{
 			sprintf (err_msg,"%s is not a Coordinate System Dictionary file.",coordsys);
-			(*err_func)(err_msg);
+			(*err_func)(err_msg);			/*lint !e534  ignoring return value */
 			CS_fclose (inStrm);
 			CS_fclose (csStrm);
 			return (1);
@@ -2203,7 +2206,7 @@ int EXP_LVL9 CSctcomp (	Const char *inpt,Const char *outp,int flags,Const char *
 		while ((cp = strchr (cp,';')) != NULL)
 		{
 			if (*(cp + 1) != ';' &&
-				*(cp - 1) != '\\')
+				*(cp - 1) != cs_DirsepC)
 			{
 				*cp = '\0';
 				break;
@@ -2373,6 +2376,8 @@ int EXP_LVL9 CSctcomp (	Const char *inpt,Const char *outp,int flags,Const char *
 	/* Close up and get out. */
 	return err_cnt;	
 }
+/*lint +esym(550,test,warn) */
+
 /* The following verifies that the proposed coordinate system name exists.
    Returns -1 if it doesn't exist, +1 if it exists and is in the LEGACY
    group.  Otherwise a zero is returned.  In the absence of a coordinate
@@ -2388,7 +2393,7 @@ short CSctCompCsChk (csFILE *csStrm,Const char* csName)
 	if (csStrm != NULL)
 	{
 		CS_stncp (cs_def.key_nm,csName,sizeof (cs_def.key_nm));
-		CS_nampp (cs_def.key_nm);
+		CS_nampp (cs_def.key_nm);			/*lint !e534   ignoring return value */
 		cs_def.fill [0] = '\0';
 		cs_def.fill [1] = '\0';
 		flag = CS_bins (csStrm,(long32_t)sizeof (cs_magic_t),(long32_t)-1,sizeof (cs_def),&cs_def,(CMPFUNC_CAST)CS_cscmp);

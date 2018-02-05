@@ -48,7 +48,7 @@ private:
 
 public:
 	CSDictionarySwitch()
-		: m_bInitialized(false), m_bSwitched(false), m_bCanSwitch(false)
+		: m_bSwitched(false), m_bCanSwitch(false), m_bInitialized(false)
 	{
 		memset(this->m_currentDir, '\0', sizeof(this->m_currentDir) / sizeof(char));
 		
@@ -83,8 +83,6 @@ public:
 
 	~CSDictionarySwitch()
 	{
-		extern char cs_Dir[];
-
 		if (!this->m_bInitialized)
 			return;
 

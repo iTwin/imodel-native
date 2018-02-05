@@ -61,17 +61,20 @@
 	or by calling the CS_recvr () function.
 */ 
 
-struct csThread cs_Ostn97_ *cs_Ostn97Ptr = NULL;
+struct cs_Ostn97_ *cs_Ostn97Ptr = NULL;
 
 struct cs_Ostn97_ *CSnewOstn97 (const char *filePath /* path to the txt file */)
 {
 	extern char cs_DirsepC;
 	extern char cs_ExtsepC;
+	extern char csErrnam [];
 
 	int st;
 
 	char *cp;
 	struct cs_Ostn97_ *__This = NULL;
+
+	double testValue;
 
 	/* Allocate and initialize the object. */
 	__This = CS_malc (sizeof (struct cs_Ostn97_));
@@ -107,10 +110,23 @@ struct cs_Ostn97_ *CSnewOstn97 (const char *filePath /* path to the txt file */)
 		cp = strrchr (__This->fileName,cs_ExtsepC);
 		if (cp != NULL) *cp = '\0';
 	}
-	
+	memset (__This->binaryPath,'\0',sizeof (__This->binaryPath));
+
 	/* Create a binary file if one does not exist already. */
 	st = CSmkBinaryOstn97 (__This);
 	if (st != 0) goto error;
+
+	/* As this module has been modified to operate with binary files
+	   provided with the distribution, thus opening the possibility of
+	   byte order disparities, it is appropriate that a quick simple
+	   check be performed to verify proper initialization of the object. */
+	testValue = CSdebugOstn97 (__This);	/* Test value is in meters. */
+	if (testValue > 0.5)
+	{
+		CS_stncp (csErrnam,"cs_Ostn97_",MAXPATH);
+		CS_erpt (cs_SELF_TEST);
+		goto error;
+	}
 
 	/* That's that. */
 	return __This;
@@ -178,20 +194,13 @@ int CSprivateOstn97 (struct cs_Ostn97_ *__This,double result [2],const double et
 	   ETRS89 coordinates are out of range, -1 for any other error (i.e. call
 	   CS_errmsg for a textual description of the error). */;
 
-	/* Return now if the input numbers are ridculous.  This protects much of the
-	   code below from domain errors, overflows, etc.
-	if (etrs89 [0] < 0.0 || etrs89 [0] > 40.0 || etrs89 [1] < 0.0 || etrs89 [1] > 60.0)
-	{
-		result [0] = result [1] = cs_Zero;
-		return 1;
-	} */
-
 	/* Compute the indices of the grid cells involved. */
 	recNbr = (long32_t)etrs89 [1] / 1000;
 	eleNbr = (long32_t)etrs89 [0] / 1000;
 
 	/* Return now if out of range. */
-	if (recNbr < 0 || recNbr > 1400 || eleNbr < 0 || eleNbr > 700)
+	if (recNbr < 0 || recNbr >= __This->recordCount ||
+		eleNbr < 0 || eleNbr >= __This->elementCount)
 	{
 		result [0] = result [1] = cs_Zero;
 		return 1;
@@ -224,10 +233,10 @@ int CSprivateOstn97 (struct cs_Ostn97_ *__This,double result [2],const double et
 		   open it again now. */
 		if (__This->strm == NULL)
 		{
-			__This->strm = CS_fopen (__This->filePath,_STRM_BINRD);
+			__This->strm = CS_fopen (__This->binaryPath,_STRM_BINRD);
 			if (__This->strm == NULL)
 			{
-				CS_stncp (csErrnam,__This->filePath,MAXPATH);
+				CS_stncp (csErrnam,__This->binaryPath,MAXPATH);
 				CS_erpt (cs_DTC_FILE);
 				goto error;
 			}
@@ -251,7 +260,7 @@ int CSprivateOstn97 (struct cs_Ostn97_ *__This,double result [2],const double et
 				recLast += 1;
 			}
 		}
-		while (recLast > 1401)
+		while (recLast >= __This->recordCount)
 		{
 			recFirst -= 1;
 			recLast -= 1;
@@ -259,7 +268,7 @@ int CSprivateOstn97 (struct cs_Ostn97_ *__This,double result [2],const double et
 		readCount = (recLast - recFirst + 1) * __This->recordSize;
 		if (readCount != __This->bufferSize)
 		{
-			CS_stncp (csErrnam,"CS_ostn97:2",MAXPATH);
+			CS_stncp (csErrnam,"CS_ostn97:1",MAXPATH);
 			CS_erpt (cs_ISER);
 			goto error;
 		}
@@ -270,20 +279,20 @@ int CSprivateOstn97 (struct cs_Ostn97_ *__This,double result [2],const double et
 		checkSeek = CS_fseek (__This->strm,__This->bufferBeginPosition,SEEK_SET);
 		if (checkSeek < 0L)
 		{
-			CS_stncp (csErrnam,__This->filePath,MAXPATH);
+			CS_stncp (csErrnam,__This->binaryPath,MAXPATH);
 			CS_erpt (cs_IOERR);
 			goto error;
 		}
 		checkCount = (long32_t)CS_fread (__This->dataBuffer,1,(size_t)readCount,__This->strm);
 		if (checkCount != readCount)
 		{
-			CS_stncp (csErrnam,__This->filePath,MAXPATH);
+			CS_stncp (csErrnam,__This->binaryPath,MAXPATH);
 			CS_erpt (cs_INV_FILE);
 			goto error;
 		}
 		if (CS_ferror (__This->strm))
 		{
-			CS_stncp (csErrnam,__This->filePath,MAXPATH);
+			CS_stncp (csErrnam,__This->binaryPath,MAXPATH);
 			CS_erpt (cs_IOERR);
 			goto error;
 		}
@@ -307,9 +316,11 @@ int CSprivateOstn97 (struct cs_Ostn97_ *__This,double result [2],const double et
 
 	/* Byte swapping is not necessary, since we built the binary file on the
 	   host machine, and the function which builds it does not swap bytes.
-	   
+
 	   Should this ever change, for whatever reason, you may need the
-	   following code.
+	   following code.  Please note that the CS_bswap function suggested
+	   below assumes the binary data is extracted from a file of the
+	   little endian (i.e. PC) byte order.
 
 	CS_bswap (southWest,"ff");
 	CS_bswap (southEast,"ff");
@@ -381,7 +392,7 @@ int CSinverseOstn97 (struct cs_Ostn97_ *__This,double etrs89 [2],const double os
 
 	/* Compute our first guess. */
 	st = CSprivateOstn97 (__This,fwdDelta,osgb36);
-	if (st > 0) return st;	
+	if (st > 0) return st;
 
 	/* Compute our first guess. */
 	myEtrs89 [0] = osgb36 [0] - fwdDelta [0];
@@ -396,7 +407,7 @@ int CSinverseOstn97 (struct cs_Ostn97_ *__This,double etrs89 [2],const double os
 		itrCount -= 1;
 		if (itrCount < 0)
 		{
-			CS_stncp (csErrnam,"CS_geoid99:2",MAXPATH);
+			CS_stncp (csErrnam,"CS_ostn97:2",MAXPATH);
 			CS_erpt (cs_ISER);
 			st = -1;
 			break;
@@ -430,10 +441,10 @@ int CSinverseOstn97 (struct cs_Ostn97_ *__This,double etrs89 [2],const double os
    This function is required as records in the ASCII text file are not
    of fixed length, and there are a million of them.  The binary file
    enables random access to the data file for decent performance without
-   eating up 8MB of RAM. */
+   eating up 16MB of RAM. */
 int CSmkBinaryOstn97 (struct cs_Ostn97_ *__This)
 {
-	extern char cs_ExtsepC;
+	extern char cs_DirsepC;
 	extern char csErrnam [];
 
 	int st;
@@ -448,31 +459,47 @@ int CSmkBinaryOstn97 (struct cs_Ostn97_ *__This)
 
 	float floatBufr [2];
 	char lineBufr [128];
-	char binaryPath [MAXPATH];
 
-	CS_stncp (binaryPath,__This->filePath,sizeof (binaryPath));
-	cp = strrchr (binaryPath,cs_ExtsepC);
+	/* Keep lint happy */
+	aStrm = bStrm = NULL;
+	aTime = bTime = 0;
+
+	CS_rwDictDir (__This->binaryPath,sizeof (__This->binaryPath),__This->filePath);
+	cp = strrchr (__This->binaryPath,cs_DirsepC);
 	if (cp == NULL) 
 	{
 		CS_stncp (csErrnam,__This->filePath,MAXPATH);
 		CS_erpt (cs_DTC_FILE);
 		goto error;
 	}
-	CS_stcpy ((cp + 1),"_nt");
+	cp += 1;
+	*cp = '\0';
+	/* Arranging to use CS_stncat here properly deals with the size of
+	   all the character strings in use. */
+	CS_stncat (__This->binaryPath,cs_OSTN97_NAME_BIN,sizeof (__This->binaryPath));
 
-	bTime = CS_fileModTime (binaryPath);
-	if (bTime == 0)
-	{
+	/* 04Oct2015: A previous change was made as revisions 2336 & 2286 to enable
+	   the binary files to be shipped without the ASCII files.  This implies that
+	   the binary file shipped has a binary byte order the same as the platform upon
+	   which this library will be operating.  This is contrary to the
+	   origianl design.  However, this developer will not change this
+	   feature.  However, in making this change, the ability to "update"
+	   (i.e. regenerate an existing binary when a newer ASCII file is
+	   present was eliminated.  This change corrects this flaw. */
 	aTime = CS_fileModTime (__This->filePath);
-	if (aTime == 0)
-	{
-		CS_stncp (csErrnam,__This->filePath,MAXPATH);
-		CS_erpt (cs_DTC_FILE);
-		goto error;
-	}
+	bTime = CS_fileModTime (__This->binaryPath);
 
+	/* If the binary file is present, and the ASCII file is not, the binary is
+	   accepted.  If the ASCII file exists (aTime > 0) and is newer than the
+	   binary file (aTime >= bTime), the binary file is recreated.  If the
+	   ASCII file does not exist, aTime will be zero, and the attempt to
+	   creat a binary file will occur only if the binary file does not exist.
+	   In the case where neither file exists, the ASCII file open will
+	   fail and the user properly notified. */
+	if (bTime == 0 || aTime >= bTime)
+	{
 		/* Here to create a, possibly new, binary version of the
-		   OSGB97.txt file.  We write a file which has two floats
+		   OSTN97.txt file.  We write a file which has two floats
 		   for each line of text that we read. */
 		aStrm = CS_fopen (__This->filePath,_STRM_TXTRD);
 		if (aStrm == NULL)
@@ -483,10 +510,10 @@ int CSmkBinaryOstn97 (struct cs_Ostn97_ *__This)
 		}
 		/* The mode of the following open will truncate any existing file, and
 		   create a new file if necessary. */
-		bStrm = CS_fopen (binaryPath,_STRM_BINWR);
+		bStrm = CS_fopen (__This->binaryPath,_STRM_BINWR);
 		if (bStrm == NULL)
 		{
-			CS_stncp (csErrnam,__This->filePath,MAXPATH);
+			CS_stncp (csErrnam,__This->binaryPath,MAXPATH);
 			CS_erpt (cs_FL_OPEN);
 			goto error;
 		}
@@ -526,34 +553,49 @@ int CSmkBinaryOstn97 (struct cs_Ostn97_ *__This)
 			goto error;
 		}
 	}
-
-	/* If all that was done successfully, we change the name of
-	   the file and return success. */
-	CS_stncp (__This->filePath,binaryPath,sizeof (__This->filePath));
 	return 0;
 error:
+	if (aStrm != NULL) CS_fclose (aStrm);						 /*lint !e449*/
+	if (bStrm != NULL)											 /*lint !e449*/
+	{
+		CS_fclose (bStrm);
+		CS_remove (__This->binaryPath);							/*lint !e534*/
+		memset (__This->binaryPath,'\0',sizeof (__This->binaryPath));
+	}
 	return -1;
 }
-#ifdef _DEBUG
-double CStestOstn97 (struct cs_Ostn97_ *__This)
+double CSdebugOstn97 (struct cs_Ostn97_ *__This)
 {
+	extern double cs_Huge;
+
+	int st;
+
+	double rtnValue;
 	double deltaX, deltaY;
 	double knownEtrs89 [2];
 	double calcEtrs89 [2];
 	double calcOsgb36 [2];
 	double knownOsgb36 [2];
 
+	rtnValue = cs_Huge;			/* Until we know differently. */
+
 	knownEtrs89 [0] = 651307.003;
 	knownEtrs89 [1] = 313255.686;
 	knownOsgb36 [0] = 651409.903;
 	knownOsgb36 [1] = 313177.270;
 
-	CSforwardOstn97 (__This,calcOsgb36,knownEtrs89);
-	deltaX = knownOsgb36 [0] - calcOsgb36 [0];
-	deltaY = knownOsgb36 [1] - calcOsgb36 [1];
-	CSinverseOstn97 (__This,calcEtrs89,calcOsgb36);
-	deltaX += knownEtrs89 [0] - calcEtrs89 [0];
-	deltaY += knownEtrs89 [1] - calcEtrs89 [1];
-	return sqrt (deltaX * deltaX + deltaY * deltaY);
+	st = CSforwardOstn97 (__This,calcOsgb36,knownEtrs89);
+	if (st == 0)
+	{
+		deltaX = knownOsgb36 [0] - calcOsgb36 [0];
+		deltaY = knownOsgb36 [1] - calcOsgb36 [1];
+		st = CSinverseOstn97 (__This,calcEtrs89,calcOsgb36);
+		if (st == 0)
+		{
+			deltaX += knownEtrs89 [0] - calcEtrs89 [0];
+			deltaY += knownEtrs89 [1] - calcEtrs89 [1];
+			rtnValue = sqrt (deltaX * deltaX + deltaY * deltaY);
+		}
+	}
+	return rtnValue;
 }
-#endif

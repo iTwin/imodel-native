@@ -27,8 +27,6 @@
 
 #include "cs_map.h"
 
-struct csThread cs_Osgm91_ *cs_Osgm91Ptr = NULL;
-
 /*
 	This file contains the implementation of the Osgm91 object.
 
@@ -51,6 +49,7 @@ struct cs_Osgm91_ *CSnewOsgm91 (const char *filePath,long32_t bufferSize,ulong32
 {
 	extern char cs_DirsepC;
 	extern char cs_ExtsepC;
+	extern char csErrnam [];
 
 	extern double cs_Half;
 	extern double cs_One;
@@ -62,6 +61,10 @@ struct cs_Osgm91_ *CSnewOsgm91 (const char *filePath,long32_t bufferSize,ulong32
 	char *cp;
 	struct cs_Osgm91_ *__This = NULL;
 	struct cs_Eldef_ *elPtr;
+
+	double testValue;
+
+	elPtr = NULL;
 
 	/* Allocate and initialize the object. */
 	__This = CS_malc (sizeof (struct cs_Osgm91_));
@@ -99,7 +102,8 @@ struct cs_Osgm91_ *CSnewOsgm91 (const char *filePath,long32_t bufferSize,ulong32
 		cp = strrchr (__This->fileName,cs_ExtsepC);
 		if (cp != NULL) *cp = '\0';
 	}
-	
+	memset (__This->binaryPath,'\0',sizeof (__This->binaryPath));
+
 	/* Create a binary file if one does not exist already. */
 	st = CSmkBinaryOsgm91 (__This);
 	if (st != 0) goto error;
@@ -108,6 +112,12 @@ struct cs_Osgm91_ *CSnewOsgm91 (const char *filePath,long32_t bufferSize,ulong32
 	   convert latitude and longitude to OSGB36 coodinates before
 	   throwing them at the Grid file. */
 	elPtr = CS_eldef ("GRS1980");
+	if (elPtr == NULL)
+	{
+		goto error;
+	}
+
+	__This->osgb36Trmer.kruger = 0;				/* Use traditional formulation */
 	__This->osgb36Trmer.cent_lng = -cs_Two * cs_Degree;
 	__This->osgb36Trmer.org_lat = 49.0 * cs_Degree;
 	__This->osgb36Trmer.k = 0.9996012717;
@@ -129,6 +139,15 @@ struct cs_Osgm91_ *CSnewOsgm91 (const char *filePath,long32_t bufferSize,ulong32
 																   cos (__This->osgb36Trmer.org_lat));
 	__This->osgb36Trmer.quad = 0;
 	CS_free (elPtr);
+	elPtr = NULL;
+
+	testValue = CSdebugOsgm91 (__This);
+	if (testValue > 0.5)
+	{
+		CS_stncp (csErrnam,"cs_Osgm91_",MAXPATH);
+		CS_erpt (cs_SELF_TEST);
+		goto error;
+	}
 
 	/* That's that. */
 	return __This;
@@ -202,7 +221,7 @@ int CScalcOsgm91 (struct cs_Osgm91_ *__This,double *geoidHgt,const double etrs89
 	   coordinates.  Essentially, we apply the OS British National Grid
 	   Transformation, using the GRS1980 ellipsoid, to produce the necessary
 	   cartesian coordinates. */
-	CStrmerF (&__This->osgb36Trmer,xy,etrs89);
+	CStrmerF (&__This->osgb36Trmer,xy,etrs89);				/*lint !e534  ignoring return value */
 
 	/* Given the ETRS89 OSGB coordinates, return the translation values necessary to
 	   produce official OSGB36 coordinates.  Returns zero on normal completion, +1 if
@@ -214,7 +233,7 @@ int CScalcOsgm91 (struct cs_Osgm91_ *__This,double *geoidHgt,const double etrs89
 	eleNbr = (long32_t)(xy [0] / 2000.0) - 50;
 
 	/* Return now if out of range. */
-	if (recNbr < 0 || recNbr > __This->recordCount || eleNbr < 0 || __This->elementCount > 700)
+	if (recNbr < 0 || recNbr >= __This->recordCount || eleNbr < 0 || eleNbr >= __This->elementCount)
 	{
 		*geoidHgt = cs_Zero;
 		return 1;
@@ -247,10 +266,10 @@ int CScalcOsgm91 (struct cs_Osgm91_ *__This,double *geoidHgt,const double etrs89
 		   open it again now. */
 		if (__This->strm == NULL)
 		{
-			__This->strm = CS_fopen (__This->filePath,_STRM_BINRD);
+			__This->strm = CS_fopen (__This->binaryPath,_STRM_BINRD);
 			if (__This->strm == NULL)
 			{
-				CS_stncp (csErrnam,__This->filePath,MAXPATH);
+				CS_stncp (csErrnam,__This->binaryPath,MAXPATH);
 				CS_erpt (cs_DTC_FILE);
 				goto error;
 			}
@@ -274,7 +293,7 @@ int CScalcOsgm91 (struct cs_Osgm91_ *__This,double *geoidHgt,const double etrs89
 				recLast += 1;
 			}
 		}
-		while (recLast > 500)
+		while (recLast >= __This->recordCount)
 		{
 			recFirst -= 1;
 			recLast -= 1;
@@ -293,20 +312,20 @@ int CScalcOsgm91 (struct cs_Osgm91_ *__This,double *geoidHgt,const double etrs89
 		checkSeek = CS_fseek (__This->strm,__This->bufferBeginPosition,SEEK_SET);
 		if (checkSeek < 0L)
 		{
-			CS_stncp (csErrnam,__This->filePath,MAXPATH);
+			CS_stncp (csErrnam,__This->binaryPath,MAXPATH);
 			CS_erpt (cs_IOERR);
 			goto error;
 		}
 		checkCount = (long32_t)CS_fread (__This->dataBuffer,1,(size_t)readCount,__This->strm);
 		if (checkCount != readCount)
 		{
-			CS_stncp (csErrnam,__This->filePath,MAXPATH);
+			CS_stncp (csErrnam,__This->binaryPath,MAXPATH);
 			CS_erpt (cs_INV_FILE);
 			goto error;
 		}
 		if (CS_ferror (__This->strm))
 		{
-			CS_stncp (csErrnam,__This->filePath,MAXPATH);
+			CS_stncp (csErrnam,__This->binaryPath,MAXPATH);
 			CS_erpt (cs_IOERR);
 			goto error;
 		}
@@ -324,11 +343,17 @@ int CScalcOsgm91 (struct cs_Osgm91_ *__This,double *geoidHgt,const double etrs89
 	northWest = *fltPtr;
 	northEast = *(fltPtr + 1);
 
-	/* Swap the bytes as necessary. */
-	CS_bswap (&southWest,"f");
-	CS_bswap (&southEast,"f");
-	CS_bswap (&northWest,"f");
-	CS_bswap (&northEast,"f");
+	/* Byte swapping is not necessary, since we built the binary file on the
+	   host machine, and the function which builds it does not swap bytes.
+
+	   Should this ever change, for whatever reason, you may need the
+	   following code.
+
+	CS_bswap (southWest,"f");
+	CS_bswap (southEast,"f");
+	CS_bswap (northWest,"f");
+	CS_bswap (northEast,"f");
+	*/
 
 	/* Perform the bi-linear calculation. */
 	tt = fmod (xy [0],2000.0) / 2000.0;
@@ -373,10 +398,13 @@ int CSmkBinaryOsgm91 (struct cs_Osgm91_ *__This)
 
 	float floatBufr;
 	char lineBufr [128];
-	char binaryPath [MAXPATH];
 
-	CS_stncp (binaryPath,__This->filePath,sizeof (binaryPath));
-	cp = strrchr (binaryPath,cs_ExtsepC);
+	/* Keep lint happy. */
+	aStrm = bStrm = NULL;
+	aTime = bTime = 0;
+
+	CS_rwDictDir (__This->binaryPath,sizeof (__This->binaryPath),__This->filePath);
+	cp = strrchr (__This->binaryPath,cs_ExtsepC);
 	if (cp == NULL) 
 	{
 		CS_stncp (csErrnam,__This->filePath,MAXPATH);
@@ -386,18 +414,12 @@ int CSmkBinaryOsgm91 (struct cs_Osgm91_ *__This)
 	CS_stcpy ((cp + 1),"_gm");
 
 	aTime = CS_fileModTime (__This->filePath);
-	if (aTime == 0)
-	{
-		CS_stncp (csErrnam,__This->filePath,MAXPATH);
-		CS_erpt (cs_DTC_FILE);
-		goto error;
-	}
+	bTime = CS_fileModTime (__This->binaryPath);
 
-	bTime = CS_fileModTime (binaryPath);
 	if (bTime == 0 || bTime <= aTime)
 	{
 		/* Here to create a, possibly new, binary version of the
-		   OSGB97.txt file.  We write a file which has two floats
+		   OSGM91.TXT file.  We write a file which has two floats
 		   for each line of text that we read. */
 		aStrm = CS_fopen (__This->filePath,_STRM_TXTRD);
 		if (aStrm == NULL)
@@ -408,10 +430,10 @@ int CSmkBinaryOsgm91 (struct cs_Osgm91_ *__This)
 		}
 		/* The mode of the following open will truncate any existing file, and
 		   create a new file if necessary. */
-		bStrm = CS_fopen (binaryPath,_STRM_BINWR);
+		bStrm = CS_fopen (__This->binaryPath,_STRM_BINWR);
 		if (bStrm == NULL)
 		{
-			CS_stncp (csErrnam,__This->filePath,MAXPATH);
+			CS_stncp (csErrnam,__This->binaryPath,MAXPATH);
 			CS_erpt (cs_FL_OPEN);
 			goto error;
 		}
@@ -431,27 +453,36 @@ int CSmkBinaryOsgm91 (struct cs_Osgm91_ *__This)
 			goto error;
 		}
 	}
-
-	/* If all that was done successfully, we change the name of
-	   the file and return success. */
-	CS_stncp (__This->filePath,binaryPath,sizeof (__This->filePath));
 	return 0;
 error:
+	if (aStrm != NULL) CS_fclose (aStrm);			/*lint !e449 */
+	if (bStrm != NULL)								/*lint !e449 */
+	{
+		CS_fclose (bStrm);
+		CS_remove (__This->binaryPath);				/*lint !e534 */
+		memset (__This->binaryPath,'\0',sizeof (__This->binaryPath));
+	}
 	return -1;
 }
-#ifdef _DEBUG
 double CSdebugOsgm91 (struct cs_Osgm91_ *__This)
 {
+	extern double cs_Huge;
 	int st;
+
+	double rtnValue;
 	double calcHgt;
 	double knownHgt;
 	double etrs89 [2];
 
+	rtnValue = cs_Huge;			/* Until we know different. */
+
 	etrs89 [0] =  1.71753230899;
 	etrs89 [1] = 52.65725668745;
 	st = CScalcOsgm91 (__This,&calcHgt,etrs89);
-	knownHgt = 44.273306;
-	return fabs (calcHgt - knownHgt);
+	if (st == 0)
+	{
+		knownHgt = 44.273306;
+		rtnValue = fabs (calcHgt - knownHgt);
+	}
+	return rtnValue;
 }
-#endif
-

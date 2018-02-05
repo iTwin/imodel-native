@@ -59,7 +59,7 @@ int EXP_LVL1 CS_unique (int newValue)
    own definitions in the "cs_ClientBeg.h" or "cs_ClientEnd.h" header
    files. */
 
-void * EXP_LVL1 CS_malc (size_t blk_size)
+void EXP_LVL5 *CS_malc (size_t blk_size)
 {
 #ifndef _csMalloc
 #	define _csMalloc(_n) malloc(_n)
@@ -67,7 +67,7 @@ void * EXP_LVL1 CS_malc (size_t blk_size)
 	return (_csMalloc (blk_size));
 }
 
-void * EXP_LVL1 CS_ralc (void *ptr,size_t new_size)
+void EXP_LVL5 *CS_ralc (void *ptr,size_t new_size)
 {
 #ifndef _csRealloc
 #	define _csRealloc(_m,_n) realloc(_m,_n)
@@ -75,17 +75,15 @@ void * EXP_LVL1 CS_ralc (void *ptr,size_t new_size)
 	return (_csRealloc (ptr,new_size));
 }
 
-#if _RUN_TIME != _rt_WINCE
-void * EXP_LVL1 CS_calc (size_t blk_count,size_t blk_size)
+void EXP_LVL5 *CS_calc (size_t blk_count,size_t blk_size)
 {
 #ifndef _csCalloc
 #	define _csCalloc(_n,_s) calloc(_n,_s)
 #endif
 	return (_csCalloc (blk_count,blk_size));
 }
-#endif
 
-void EXP_LVL1 CS_free (void *ptr)
+void EXP_LVL5 CS_free (void *ptr)
 {
 #ifndef _csFree
 #	define _csFree(_m) {if (_m) {free(_m); _m = 0;} }
@@ -95,6 +93,11 @@ void EXP_LVL1 CS_free (void *ptr)
 
 	lclPtr = ptr;
 	_csFree (lclPtr);
+	return;
+}
+void EXP_LVL3 CS_dllFree (void *ptr)
+{
+	CS_free (ptr);
 	return;
 }
 

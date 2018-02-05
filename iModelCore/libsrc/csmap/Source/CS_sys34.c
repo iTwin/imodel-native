@@ -44,6 +44,7 @@
 	The cs_Sys34_ structure closely resembles a cs_Trmer_ structure,
 	somewhat tailored for UTM calculations.
 */
+/*lint -e835      A zero has been given as argument to operator - */
 
 #include "cs_map.h"
 #include "CSsys34KMS.c"

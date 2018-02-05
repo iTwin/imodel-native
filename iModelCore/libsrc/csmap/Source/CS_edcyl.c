@@ -556,7 +556,7 @@ double EXP_LVL9 CSedcylK (Const struct cs_Edcyl_ *edcyl,Const double ll [2])
 **								in effect for the coordinate system
 **								being used, assuming the Equidistant
 **								Cylindrical Projection.
-**	double ll [2];				the longitude ([0]) and the latitude ([0])
+**	double ll [2];				the longitude ([0]) and the latitude ([1])
 **								of the point at which the true scale of
 **								the coordinate system is to be computed.
 **								Values are in degrees.
@@ -567,22 +567,15 @@ double EXP_LVL9 CSedcylK (Const struct cs_Edcyl_ *edcyl,Const double ll [2])
 
 double EXP_LVL9 CSedcylH (Const struct cs_Edcyl_ *edcyl,Const double ll [2])
 {
-	extern double cs_Degree;			/* 1.0 / RADIAN  */
-	extern double cs_Pi_o_2;			/* Pi over 2 */
 	extern double cs_One;				/* 1.0 */
 	extern double cs_Mone;				/* -1.0 */
 	extern double cs_SclInf;			/* 9.9E+04, the value we
 										   return for an infinite
 										   scale factor. */
-	extern double cs_NPTest;			/* 0.001 arc seconds short
-										   of the north pole, in
-										   radians. */
+
 	int status;
 
 	double hh;
-	double lng;
-	double lat;
-
 	double ll_dd;
 	double xy_dd;
 	double del_xx, del_yy;
@@ -597,15 +590,13 @@ double EXP_LVL9 CSedcylH (Const struct cs_Edcyl_ *edcyl,Const double ll [2])
 	}
 	else
 	{
-		/* We haven'y located a formula for the ellipsoid yet.
+		/* We haven't located a formula for the ellipsoid yet.
 
 		   Establish two points along the meridian which are
 		   about 1 second (about 30 meters) apart from each
 		   other, with the point in question in the middle.
 		   Then convert each point to the equivalent grid
 		   coordinates. */
-		lng = ll [LNG] * cs_Degree;
-		lat = ll [LAT] * cs_Degree;
 		ll1 [LNG] = ll [LNG];
 		ll1 [LAT] = ll [LAT] - (0.5 / 3600.0);
 		status = CSedcylF (edcyl,xy1,ll1);

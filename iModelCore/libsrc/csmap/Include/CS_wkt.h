@@ -161,4 +161,5 @@ void CS_wktElNameFix (char *ellipsoidName,size_t rsltSize,const char *srcName);
 void CS_wktDtNameFix (char *datumName,size_t rsltSize,const char *srcName);
 void CS_wktCsNameFix (char *csysName,size_t rsltSize,const char *srcName);
 unsigned short CS_wktProjLookUp (ErcWktFlavor flavor,const char *wktName);
+bool EXP_LVL3 CSgetParamNm (char* paramName,size_t paramSize,EcsNameFlavor nmFlavor,int paramCode);
 #endif

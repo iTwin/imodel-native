@@ -1,0 +1,2 @@
+﻿This VC (Visual Studio) version is no longer supported. Please move to a newer one.
+Soon the folder will be removed from the vault. The CsMap source code expects that at minimum C++11 is supported from the compiler.

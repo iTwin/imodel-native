@@ -41,24 +41,46 @@
 */
 
 #if _RUN_TIME < _rt_UNIXPCC
-char cs_DirK [MAXPATH] = "C:\\MAPPING\\";
-csThread char cs_Dir [MAXPATH] = "";
-csThread char *cs_DirP = NULL;
-csThread char cs_UserDir [MAXPATH] = "";
+/* Rather arbitrary, an CS-MAP Open Source choice. However, there are several
+   applications which require access to many of these same files. */
+char cs_DirK [MAXPATH] = "C:\\ProgramData\\GeodeticData";
+char cs_Dir [MAXPATH] = "";
+char *cs_DirP = NULL;
+char cs_UserDir [MAXPATH] = "";
 char cs_DirsepC = '\\';
 char cs_ExtsepC = '.';
 char cs_OptchrC = '/';
-csThread char cs_NameMapperName [MAXPATH] = "NameMapper.csv";
+char cs_EnvchrC = '%';
+char cs_EnvStartC = '%';
+char cs_EnvEndC = '%';
+wchar_t cs_DirsepWC = L'\\';
+wchar_t cs_ExtsepWC = L'.';
+wchar_t cs_OptchrWC = L'/';
+wchar_t cs_EnvchrWC = L'%';
+wchar_t cs_EnvStartWC = L'%';
+wchar_t cs_EnvEndWC = L'%';
 #else
-char cs_DirK [MAXPATH] = "/usr/MAPPING/data/";
-char cs_Dir [MAXPATH] = "/usr/MAPPING/data/";
+/* Rather arbitrary, an CS-MAP Open Source choice. However, there are several
+   applications which require access to many of these same files. */
+char cs_DirK [MAXPATH] = "/usr/etc/GeodeticData/";
+char cs_Dir [MAXPATH] = "";
 char *cs_DirP = NULL;
 char cs_UserDir [MAXPATH] = "";
 char cs_DirsepC = '/';
 char cs_ExtsepC = '.';
 char cs_OptchrC = '-';
-char cs_NameMapperName [MAXPATH] = "NameMapper.csv";
+char cs_EnvchrC = '$';
+char cs_EnvStartC = '{';
+char cs_EnvEndC = '}';
+wchar_t cs_DirsepWC = L'/';
+wchar_t cs_ExtsepWC = L'.';
+wchar_t cs_OptchrWC = L'-';
+wchar_t cs_EnvchrWC = L'$';
+wchar_t cs_EnvStartWC = L'{';
+wchar_t cs_EnvEndWC = L'}';
 #endif
+/* This is an 8 bit char on both platforms.  Trac Ticket #174. */
+char cs_NameMapperName [MAXPATH] = "NameMapper.csv";
 
 /*
 	The following are used in CS_atof and CS_ftoa for the
@@ -108,36 +130,17 @@ Const char cs_Nmchset [32] = " _-$:.;~/";
 	future changes in the system.
 */
 
-csThread char cs_Csname  [cs_FNM_MAXLEN]      = cs_CS_NAME;
-csThread char cs_Dtname  [cs_FNM_MAXLEN]      = cs_DAT_NAME;
-csThread char cs_Elname  [cs_FNM_MAXLEN]      = cs_ELL_NAME;
-csThread char cs_Ctname  [cs_FNM_MAXLEN]      = cs_CT_NAME;
-csThread char cs_Gxname  [cs_FNM_MAXLEN]      = cs_GX_NAME;
-csThread char cs_Gpname  [cs_FNM_MAXLEN]      = cs_GP_NAME;
+char cs_Csname  [cs_FNM_MAXLEN]      = cs_CS_NAME;
+char cs_Dtname  [cs_FNM_MAXLEN]      = cs_DAT_NAME;
+char cs_Elname  [cs_FNM_MAXLEN]      = cs_ELL_NAME;
+char cs_Ctname  [cs_FNM_MAXLEN]      = cs_CT_NAME;
+char cs_Gxname  [cs_FNM_MAXLEN]      = cs_GX_NAME;
+char cs_Gpname  [cs_FNM_MAXLEN]      = cs_GP_NAME;
 
-csThread char cs_Envvar  [cs_FNM_MAXLEN]      = cs_ENV_VAR;
-csThread char cs_NmMapNm [cs_FNM_MAXLEN]      = cs_NMP_NAME;
+char cs_Envvar  [cs_FNM_MAXLEN]      = cs_ENV_VAR;
 
-csThread char cs_NadName     [cs_FNM_MAXLEN]  = cs_NAD_NAME;
-csThread char cs_HarnName    [cs_FNM_MAXLEN]  = cs_HARN_NAME;
-csThread char cs_GeoidName   [cs_FNM_MAXLEN]  = cs_GEOID_NAME;
-csThread char cs_VertconName [cs_FNM_MAXLEN]  = cs_VERTCON_NAME;
-csThread char cs_Agd66Name   [cs_FNM_MAXLEN]  = cs_AGD66_NAME;
-csThread char cs_Agd84Name   [cs_FNM_MAXLEN]  = cs_AGD84_NAME;
-csThread char cs_Nzgd49Name  [cs_FNM_MAXLEN]  = cs_NZGD49_NAME;
-csThread char cs_Ats77Name   [cs_FNM_MAXLEN]  = cs_ATS77_NAME;
-csThread char cs_CsrsName    [cs_FNM_MAXLEN]  = cs_CSRS_NAME;
-csThread char cs_Csrs27Name  [cs_FNM_MAXLEN]  = cs_CSRS27_NAME;
-csThread char cs_Jgd2kName   [cs_FNM_MAXLEN]  = cs_JGD2K_NAME;
-csThread char cs_Ed50Name    [cs_FNM_MAXLEN]  = cs_ED50_NAME;
-csThread char cs_Rgf93Name   [cs_FNM_MAXLEN]  = cs_RGF93_NAME;
-csThread char cs_DhdnName    [cs_FNM_MAXLEN]  = cs_DHDN_NAME;
-csThread char cs_Ch1903Name  [cs_FNM_MAXLEN]  = cs_CH1903_NAME;
-csThread char cs_N27A77Name  [cs_FNM_MAXLEN]  = cs_N27A77_NAME;
-
-#ifdef GEOCOORD_ENHANCEMENT
-csThread char cs_GenGridName [cs_FNM_MAXLEN]  = cs_GENGRID_NAME;
-#endif
+char cs_GeoidName   [cs_FNM_MAXLEN]  = cs_GEOID_NAME;
+char cs_VertconName [cs_FNM_MAXLEN]  = cs_VERTCON_NAME;
 
 /*
 	The following array supports the enumerator for GDC file
@@ -156,24 +159,8 @@ csThread char cs_GenGridName [cs_FNM_MAXLEN]  = cs_GENGRID_NAME;
 */
 struct cs_GdcCatalogTable_ cs_GdcCatalogTable [] =
 {
-	{  gdcFileNad27ToNad83, cs_NadName    ,	gdcTypeHorizontal,       0UL, ".las.los.gsb.dac",    "NADCON files (*.l?s)|*.l?s|Canadian Ntv2 (*.gsb)|*.gsb|Canadian Ntv1 (*.dac)|*.dac||"},
-	{   gdcFileNad83ToHarn, cs_HarnName   ,	gdcTypeHorizontal,       0UL, ".las.los"            ,"NADCON files (*.l?s)|*.l?s||"              },
-	{  gdcFileAgd66ToGda94, cs_Agd66Name  ,	gdcTypeHorizontal,       0UL, ".gsb"                ,"Canadian Ntv2 format (*.gsb)|*.gsb||"      },
-	{  gdcFileAgd84ToGda94, cs_Agd84Name  ,	gdcTypeHorizontal,       0UL, ".gsb"                ,"Canadian Ntv2 format (*.gsb)|*.gsb||"      },
-	{gdcFileNzgd49ToNzgd2K, cs_Nzgd49Name ,	gdcTypeHorizontal,       0UL, ".gsb"                ,"Canadian Ntv2 format (*.gsb)|*.gsb||"      },
-	{   gdcFileAts77ToCsrs, cs_Ats77Name  ,	gdcTypeHorizontal,       0UL, ".gsb"                ,"Canadian Ntv2 format (*.gsb)|*.gsb||"      },
-	{   gdcFileNad83ToCsrs, cs_CsrsName   ,	gdcTypeHorizontal,       0UL, ".gsb"                ,"Canadian Ntv2 format (*.gsb)|*.gsb||"      },
-	{  gdcFileTokyoToJgd2k, cs_Jgd2kName  ,	gdcTypeHorizontal,       0UL, ".gsb"                ,"Japanese Grid format (*.par)|*.par||"      },
-	{   gdcFileNad27ToCsrs, cs_Csrs27Name ,	gdcTypeHorizontal,       0UL, ".gsb.gdc"            ,"Canadian Ntv2 format (*.gsb)|*.gsb|Ats77 Geodetic Data Catalog (*.gdc)|*.gdc||"},
-	{  gdcFileEd50ToEtrf89, cs_Ed50Name   ,	gdcTypeHorizontal,       0UL, ".gsb"                ,"Canadian Ntv2 format (*.gsb)|*.gsb||"      },
-	{  gdcFileDhdnToEtrf89, cs_DhdnName   ,	gdcTypeHorizontal,       0UL, ".gsb"                ,"Canadian Ntv2 format (*.gsb)|*.gsb||"      },
-	{  gdcFileNad27ToAts77, cs_N27A77Name ,	gdcTypeHorizontal,       0UL, ".gsb"                ,"ATS77 Transform files (*.DAT)|*.DAT"       },
 	{   gdcFileGeoidHeight, cs_GeoidName  ,	gdcTypeSeparation,       0UL, ".geo.bin.byn.txt.grd","Geoid96 (*.geo)|*.geo|Geoid99 (*.bin)|*.bin|Canadian (*.byn)|*.byn|UK OSGM91 (*.txt)|*.txt|EGM96 (*.grd)|*.grd||"},
 	{       gdcFileVertcon, cs_VertconName,	gdcTypeVertical,         0UL, ".94"                 ,"Vertcon files (*.94)|*.94||"               },
-	{    gdcFileRgf93ToNtf, cs_Rgf93Name  ,	gdcTypeThreeDimensional, 0UL, ".txt.gsb"            ,"French IGN Datum Shift Files (*.txt)|*.txt|Canadian Ntv2 (*.gsb)|*.gsb|All Files (*.*)|*.*||"},
-#ifdef GEOCOORD_ENHANCEMENT
-	{gdcFileGenGridToWgs84, cs_GenGridName,	gdcTypeHorizontal,    0UL, ".gsb"            ,"Canadian Ntv2 format (*.gsb)|*.gsb||"      },
-#endif 
 	{          gdcFileNone, 0             ,	gdcTypeNone,             0UL, ""                    ,""                                          }
 };
 
@@ -183,10 +170,10 @@ struct cs_GdcCatalogTable_ cs_GdcCatalogTable [] =
 	the null string, says that the specific feature is
 	inactive.
 */
-csThread char csDtDflt [32] = "";	/* The current default datum. */
-csThread char csElDflt [32] = "";	/* The current default ellipsoid. */
-csThread char csLuDflt [32] = "";	/* The current default linear unit. */
-csThread char csAuDflt [32] = "";	/* The current default angular unit. */
+char csDtDflt [32] = "";	/* The current default datum. */
+char csElDflt [32] = "";	/* The current default ellipsoid. */
+char csLuDflt [32] = "";	/* The current default linear unit. */
+char csAuDflt [32] = "";	/* The current default angular unit. */
 
 /*
 	The following are used to control the dictionary protection
@@ -215,17 +202,17 @@ int cs_Safe = 1;
 */
 
 #if _MEM_MODEL == _mm_VIRTUAL || _MEM_MODEL == _mm_FLAT
-csThread int cs_Sortbs = 128 * 1024;
+int cs_Sortbs = 128 * 1024;
 #else
-csThread int cs_Sortbs = 24 * 1024;
+int cs_Sortbs = 24 * 1024;
 #endif
-csThread int cs_Error = 0;
-csThread int cs_Errno = 0;
-csThread int csErrlng = 0;
-csThread int csErrlat = 0;
-csThread unsigned short cs_ErrSup = 0;
+int cs_Error = 0;
+int cs_Errno = 0;
+int csErrlng = 0;
+int csErrlat = 0;
+unsigned short cs_ErrSup = 0;
 #if _RUN_TIME <= _rt_UNIXPCC
-csThread ulong32_t cs_Doserr = 0;
+ulong32_t cs_Doserr = 0;
 #endif
 
 /* The following should be left assigned to zero.  When this variable is
@@ -241,29 +228,29 @@ csFILE* csDiagnostic = 0;
 	High Performance Interface.
 */
 
-csThread struct csCscach_ *csCscachP = NULL;
-csThread int csCscachI = cs_CSCACH_MAX;
-csThread struct csDtcach_ *csDtcachP = NULL;
-csThread int csDtcachI = cs_DTCACH_MAX;
+struct csCscach_ *csCscachP = NULL;
+int csCscachI = cs_CSCACH_MAX;
+struct csDtcach_ *csDtcachP = NULL;
+int csDtcachI = cs_DTCACH_MAX;
 
-csThread char *cs_CsKeyNames = NULL;
-csThread char *cs_DtKeyNames = NULL;
-csThread char *cs_ElKeyNames = NULL;
-csThread char *cs_CsLlEnum = NULL;
-csThread struct cs_Csgrplst_ *cs_CsGrpList = NULL;
+char *cs_CsKeyNames = NULL;
+char *cs_DtKeyNames = NULL;
+char *cs_ElKeyNames = NULL;
+char *cs_CsLlEnum = NULL;
+struct cs_Csgrplst_ *cs_CsGrpList = NULL;
 
 /* Used for high level MGRS access. */
-csThread struct cs_Mgrs_ *cs_MgrsPtr = NULL;
+struct cs_Mgrs_ *cs_MgrsPtr = NULL;
 
 /* Used for geocentric coordinate calculations. */
-csThread double csGeoCtrErad = 0.0;
-csThread double csGeoCtrEsq = 0.0;
+double csGeoCtrErad = 0.0;
+double csGeoCtrEsq = 0.0;
 
 /* Note: several functions assume that csErrnam is dimensioned
    at MAXPATH (i.e. a minimum value). */
-   
-csThread char csErrnam [MAXPATH] = "???";
-csThread char csErrmsg [256] = "???";
+
+char csErrnam [MAXPATH] = "<?>";
+char csErrmsg [cs_ERRMSG_SIZE] = "<?>";
 
 /* The following carries a pointer to the category list. */
 struct cs_Ctdef_* cs_CtDefHead = NULL;
@@ -315,6 +302,7 @@ Const double cs_Fifth    =   (1.0 / 5.0);
 Const double cs_Fourth   =   (1.0 / 4.0);
 Const double cs_Third    =   (1.0 / 3.0);
 Const double cs_Half     =   0.5;
+Const double cs_Mhalf    =  -0.5;
 Const double cs_One      =   1.0;
 Const double cs_Two      =   2.0;
 Const double cs_Three    =   3.0;
@@ -348,29 +336,18 @@ Const double cs_SclInf   = 9999.99;		/* The value we return for
 										   result actually approaches
 										   infinity. */
 
-	/*  The value of INFINITY has been carefully selected to
-	    be very large, but not so large as it cannot be used.
-	    Thus, for tan (PI/2), we often use this value and then
-	    proceed to square it, multiply by it, divide by it,
-	    etc.  Thus, don't make this value too small, but don't
-	    make it too big either.  Its possible that this value
-	    will be used in cases where floats are used, so we
-	    like to keep it around 1.0E+32. */
+	/*  The value of cs_Huge and cs_Mhuge are carefully selected to
+	    be very large, but not so large as it cannot be used.  Thus,
+	    for tan (PI/2), we often use this value and then proceed to
+	    square it, multiply by it, divide by it, etc.  Thus, don't make
+	    this value too small, but don't make it too big either.  It's
+	    possible that this value will be used in cases where floats are
+	    used, so we like to keep it around 1.0E+32. */
 
-Const double cs_Zero1  = 0.0;
-#if (_RUN_TIME == _rt_HPUX) || (_RUN_TIME == _rt_AIX)
-	/* It appears that HP UNIX has it's own idea about INFINITY.  I guess I should
-	   have used the name cs_INFINITY. */
-	Const double cs_Huge   = 1.0E+32;	/* Value often returned when
-										   the real result would be
-										   infinite. */
-	Const double cs_Mhuge  = -1.0E+32;	/* Negative infinity. */
-#else
-	Const double cs_Huge   = CSMAP_INFINITY;	/* Value often returned when
-										   the real result would be
-										   infinite. */
-	Const double cs_Mhuge  = -CSMAP_INFINITY;	/* Negative infinity. */
-#endif
+Const double cs_Huge   = 1.0E+32;	/* Value often returned when
+									   the real result would be
+									   infinite. */
+Const double cs_Mhuge  = -1.0E+32;	/* Negative infinity. */
 
 	/* The following constants are used to check the validity of
 	   a definitions following acquisition from disk.
@@ -498,17 +475,6 @@ Const double cs_Wgs84_esq = 0.00669437999013;	/* WGS-84 eccentricity
 												   squared */
 Const double cs_Wgs84_1esq = 0.99330562000987;	/* WGS-84 1.0 - e_sq */
 
-/* Formatting variables used by the CScs2src, CScs2xml, and similar
-   functions. */
-long32_t csLatFrmt = 16L;
-long32_t csLngFrmt = 16L;
-long32_t csAnglFrmt = 16L;
-long32_t csXyFrmt = 5L;
-long32_t csZzFrmt = 5L;
-long32_t csRedFrmt = 0L;
-long32_t csSclFrmt = 0L;
-long32_t csCoefFrmt = 11L;
-
 /* The following definition is used in fallback cases only.  That is, where
    extraordinary calculations are being performed.  In all "normal"
    situations, the definition fetched from the dictionary(s) is/are used. */
@@ -517,7 +483,7 @@ struct cs_Datum_ cs_Wgs84Def =
 	"WGS84",				/* datum key name */
 	"WGS84",				/* ellipsoid key name */
 	6378137.000,			/* equatorial radius */
-	6356752.3142,			/* polar radius */
+	6356752.314245179,		/* polar radius */
 	1.0 / 298.257223563,	/* flattening */
 	0.0818191908426,		/* eccentricity */
 	0.0,					/* Delta X */
@@ -595,49 +561,61 @@ Const short cs_QuadMapSO [] =
 
 Const struct cs_Grptbl_ cs_CsGrptbl [] =
 {
-	{  "SPCS27","State Planes, NAD27 Based, US Foot"          ,cs_GRPTBL_ACTIVE},
-	{  "SPCS83","State Planes, NAD83 Based, Meters"           ,cs_GRPTBL_ACTIVE},
-	{ "SPCS83F","State Planes, NAD83 Based, US Foot"          ,cs_GRPTBL_ACTIVE},
-	{ "SPCS83I","State Planes, NAD83 Based, Intn'l Foot"      ,cs_GRPTBL_ACTIVE},
-	{  "SPCSHP","State Planes, HARN (HPGN) Based, Meters"     ,cs_GRPTBL_ACTIVE},
-	{ "SPCSHPF","State Planes, HARN (HPGN) Based, US Foot"    ,cs_GRPTBL_ACTIVE},
-	{ "SPCSHPI","State Planes, HARN (HPGN) Based, Intn'l Foot",cs_GRPTBL_ACTIVE},
-	{      "LL","Latitude/Longitude"                          ,cs_GRPTBL_ACTIVE},
-	{   "UTM27","UTM Zones, NAD27 Based, Meters"              ,cs_GRPTBL_ACTIVE},
-	{  "UTM27F","UTM Zones, NAD27 Based, US Foot"             ,cs_GRPTBL_ACTIVE},
-	{  "UTM27I","UTM Zones, NAD27 Based, Intn'l Foot"         ,cs_GRPTBL_ACTIVE},
-	{   "UTM83","UTM Zones, NAD83 Based, Meters"              ,cs_GRPTBL_ACTIVE},
-	{  "UTM83F","UTM Zones, NAD83 Based, US Foot"             ,cs_GRPTBL_ACTIVE},
-	{  "UTM83I","UTM Zones, NAD83 Based, Intn'l Foot"         ,cs_GRPTBL_ACTIVE},
-	{   "UTMHP","UTM Zones, HARN (HPGN) Based, Meters"        ,cs_GRPTBL_ACTIVE},
-	{  "UTMHPF","UTM Zones, HARN (HPGN) Based, US Foot"       ,cs_GRPTBL_ACTIVE},
-	{  "UTMHPI","UTM Zones, HARN (HPGN) Based, Intn'l Foot"   ,cs_GRPTBL_ACTIVE},
-	{ "OTHR-US","Other US Coordinate Systems"                 ,cs_GRPTBL_ACTIVE},
-	{  "CANADA","Canadian Coordinate Systems"                 ,cs_GRPTBL_ACTIVE},
-	{ "OTHR-NA","Other North American Coordinate Systems"     ,cs_GRPTBL_ACTIVE},
-	{    "UTMN","UTM Zones, Northern Hemisphere, Meters"      ,cs_GRPTBL_ACTIVE},
-	{    "UTMS","UTM Zones, Southern Hemisphere, Meters"      ,cs_GRPTBL_ACTIVE},
-	{   "WORLD","World/Continent Coordinate Systems"          ,cs_GRPTBL_ACTIVE},
-	{  "EUROPE","European Coordinate Systems"                 ,cs_GRPTBL_ACTIVE},
-	{   "AUSNZ","Australia/New Zealand Coordinate Systems"    ,cs_GRPTBL_ACTIVE},
-	{   "SAMER","South American Coordinate Systems"           ,cs_GRPTBL_ACTIVE},
-	{   "CAMER","Central American Coordinate Systems"         ,cs_GRPTBL_ACTIVE},
-	{  "AFRICA","African Coordinate Systems"                  ,cs_GRPTBL_ACTIVE},
-	{    "ASIA","Asian Coordinate Systems"                    ,cs_GRPTBL_ACTIVE},
-	{  "RUSSIA","Russian Coordinate Systems"                  ,cs_GRPTBL_ACTIVE},
-	{ "PACIFIC","Other Pacific Coordinate Systems"            ,cs_GRPTBL_ACTIVE},
-	{"ATLANTIC","Other Atlantic Coordinate Systems"           ,cs_GRPTBL_ACTIVE},
-	{   "POLAR","Polar Coordinate Systems"                    ,cs_GRPTBL_ACTIVE},
-	{ "EPSGPRJ","Projected defs from EPSG, area undetermined" ,cs_GRPTBL_ACTIVE},
-	{  "EPSGLL","Geographic defs from EPSG, area undetermined",cs_GRPTBL_ACTIVE},
-	{    "TEST","Test Coordinate Systems"                     ,cs_GRPTBL_ACTIVE},
-	{    "USER","User Defined Coordinate Systems"             ,cs_GRPTBL_ACTIVE},
-	{"WKTSUPPT","Well Known Text Support"                     ,cs_GRPTBL_ACTIVE},
-	{   "CARIB","Caribean/Gulf of Mexico and Vicinity"        ,cs_GRPTBL_ACTIVE},
-	{ "MIDEAST","Mideast/Holy Land"                           ,cs_GRPTBL_ACTIVE},
-	{  "INDIAN","Indian Ocean"                                ,cs_GRPTBL_ACTIVE},
-	{   "NERTH","Non geospatial (non-Earth) transformations"  ,cs_GRPTBL_ACTIVE},
-	{    "NONE","No group specified in definition"            ,cs_GRPTBL_ACTIVE},
-	{  "LEGACY","Obsolete/Incorrect; for legacy use only"     ,cs_GRPTBL_ACTIVE},
-	{        "",""                                            ,cs_GRPTBL_END}
+	{     "SPCS27","State Planes, NAD27 Based, US Foot"           ,cs_GRPTBL_ACTIVE},
+	{     "SPCS83","State Planes, NAD83 Based, Meters"            ,cs_GRPTBL_ACTIVE},
+	{    "SPCS83F","State Planes, NAD83 Based, US Foot"           ,cs_GRPTBL_ACTIVE},
+	{    "SPCS83I","State Planes, NAD83 Based, Intn'l Foot"       ,cs_GRPTBL_ACTIVE},
+	{     "SPCSHP","State Planes, HARN (HPGN) Based, Meters"      ,cs_GRPTBL_ACTIVE},
+	{    "SPCSHPF","State Planes, HARN (HPGN) Based, US Foot"     ,cs_GRPTBL_ACTIVE},
+	{    "SPCSHPI","State Planes, HARN (HPGN) Based, Intn'l Foot" ,cs_GRPTBL_ACTIVE},
+	{   "SPNSRS07","State Planes, NSRS 2007 Based, Meters"        ,cs_GRPTBL_ACTIVE},
+	{  "SPNSRS07F","State Planes, NSRS 2007 Based, US Foot"       ,cs_GRPTBL_ACTIVE},
+	{  "SPNSRS07I","State Planes, NSRS 2007 Based, Intn'l Foot"   ,cs_GRPTBL_ACTIVE},
+	{   "SPNSRS11","State Planes, NSRS 2011 Based, Meters"        ,cs_GRPTBL_ACTIVE},
+	{  "SPNSRS11F","State Planes, NSRS 2011 Based, US Foot"       ,cs_GRPTBL_ACTIVE},
+	{  "SPNSRS11I","State Planes, NSRS 2011 Based, Intn'l Foot"   ,cs_GRPTBL_ACTIVE},
+	{         "LL","Latitude/Longitude"                           ,cs_GRPTBL_ACTIVE},
+	{      "UTM27","UTM Zones, NAD27 Based, Meters"               ,cs_GRPTBL_ACTIVE},
+	{     "UTM27F","UTM Zones, NAD27 Based, US Foot"              ,cs_GRPTBL_ACTIVE},
+	{     "UTM27I","UTM Zones, NAD27 Based, Intn'l Foot"          ,cs_GRPTBL_ACTIVE},
+	{      "UTM83","UTM Zones, NAD83 Based, Meters"               ,cs_GRPTBL_ACTIVE},
+	{     "UTM83F","UTM Zones, NAD83 Based, US Foot"              ,cs_GRPTBL_ACTIVE},
+	{     "UTM83I","UTM Zones, NAD83 Based, Intn'l Foot"          ,cs_GRPTBL_ACTIVE},
+	{      "UTMHP","UTM Zones, HARN (HPGN) Based, Meters"         ,cs_GRPTBL_ACTIVE},
+	{     "UTMHPF","UTM Zones, HARN (HPGN) Based, US Foot"        ,cs_GRPTBL_ACTIVE},
+	{     "UTMHPI","UTM Zones, HARN (HPGN) Based, Intn'l Foot"    ,cs_GRPTBL_ACTIVE},
+	{  "UTMNSRS07","UTM Zones, NSRS 2007 Based, Meters"           ,cs_GRPTBL_ACTIVE},
+	{ "UTMNSRS07F","UTM Zones, NSRS 2007 Based, US Foot"          ,cs_GRPTBL_ACTIVE},
+	{ "UTMNSRS07I","UTM Zones, NSRS 2007 Based, Intn'l Foot"      ,cs_GRPTBL_ACTIVE},
+	{  "UTMNSRS11","UTM Zones, NSRS 2011 Based, Meters"           ,cs_GRPTBL_ACTIVE},
+	{ "UTMNSRS11F","UTM Zones, NSRS 2011 Based, US Foot"          ,cs_GRPTBL_ACTIVE},
+	{ "UTMNSRS11I","UTM Zones, NSRS 2011 Based, Intn'l Foot"      ,cs_GRPTBL_ACTIVE},
+	{    "OTHR-US","Other US Coordinate Systems"                  ,cs_GRPTBL_ACTIVE},
+	{     "CANADA","Canadian Coordinate Systems"                  ,cs_GRPTBL_ACTIVE},
+	{    "OTHR-NA","Other North American Coordinate Systems"      ,cs_GRPTBL_ACTIVE},
+	{       "UTMN","UTM Zones, Northern Hemisphere, Meters"       ,cs_GRPTBL_ACTIVE},
+	{       "UTMS","UTM Zones, Southern Hemisphere, Meters"       ,cs_GRPTBL_ACTIVE},
+	{      "WORLD","World/Continent Coordinate Systems"           ,cs_GRPTBL_ACTIVE},
+	{     "EUROPE","European Coordinate Systems"                  ,cs_GRPTBL_ACTIVE},
+	{      "AUSNZ","Australia/New Zealand Coordinate Systems"     ,cs_GRPTBL_ACTIVE},
+	{      "SAMER","South American Coordinate Systems"            ,cs_GRPTBL_ACTIVE},
+	{      "CAMER","Central American Coordinate Systems"          ,cs_GRPTBL_ACTIVE},
+	{     "AFRICA","African Coordinate Systems"                   ,cs_GRPTBL_ACTIVE},
+	{       "ASIA","Asian Coordinate Systems"                     ,cs_GRPTBL_ACTIVE},
+	{     "RUSSIA","Russian Coordinate Systems"                   ,cs_GRPTBL_ACTIVE},
+	{    "PACIFIC","Other Pacific Coordinate Systems"             ,cs_GRPTBL_ACTIVE},
+	{   "ATLANTIC","Other Atlantic Coordinate Systems"            ,cs_GRPTBL_ACTIVE},
+	{      "POLAR","Polar Coordinate Systems"                     ,cs_GRPTBL_ACTIVE},
+	{    "EPSGPRJ","Projected defs from EPSG, area undetermined"  ,cs_GRPTBL_ACTIVE},
+	{     "EPSGLL","Geographic defs from EPSG, area undetermined ",cs_GRPTBL_ACTIVE},
+	{       "TEST","Test Coordinate Systems"                      ,cs_GRPTBL_ACTIVE},
+	{       "USER","User Defined Coordinate Systems"              ,cs_GRPTBL_ACTIVE},
+	{   "WKTSUPPT","Well Known Text Support"                      ,cs_GRPTBL_ACTIVE},
+	{      "CARIB","Caribean/Gulf of Mexico and Vicinity"         ,cs_GRPTBL_ACTIVE},
+	{    "MIDEAST","Mideast/Holy Land"                            ,cs_GRPTBL_ACTIVE},
+	{     "INDIAN","Indian Ocean"                                 ,cs_GRPTBL_ACTIVE},
+	{      "NERTH","Non geospatial (non-Earth) transformations"   ,cs_GRPTBL_ACTIVE},
+	{       "NONE","No group specified in definition"             ,cs_GRPTBL_ACTIVE},
+	{     "LEGACY","Obsolete/Incorrect; for legacy use only"      ,cs_GRPTBL_ACTIVE},
+	{           "",""                                             ,cs_GRPTBL_END}
 };

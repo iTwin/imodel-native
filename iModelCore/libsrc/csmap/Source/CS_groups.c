@@ -69,7 +69,7 @@ int EXP_LVL3 CS_csgrp (Const char *grp_key,struct cs_Csgrplst_ **grp_list)
 	if (tp->group [0] == '\0')
 	{
 		CS_stncp (csErrnam,grp_key,MAXPATH);
-	    	CS_erpt (cs_CSGRP_INVKEY);
+		CS_erpt (cs_CSGRP_INVKEY);
 		goto error;
 	}
 
@@ -88,8 +88,8 @@ int EXP_LVL3 CS_csgrp (Const char *grp_key,struct cs_Csgrplst_ **grp_list)
 		}
 		else
 		{
-			lp->next = CS_malc (sizeof (struct cs_Csgrplst_));	/*lint !e644 */
-			lp = lp->next;
+			lp->next = CS_malc (sizeof (struct cs_Csgrplst_));		/*lint !e613   possible use of null pointer (incorrect diagnostic) */
+			lp = lp->next;											/*lint !e613   possible use of null pointer (incorrect diagnostic) */
 		}
 		if (lp == NULL)
 		{

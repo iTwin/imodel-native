@@ -25,12 +25,20 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "cs_map.h"
-#include "cs_Legacy.h"
-#include "CS_wkt.h"
-#include "csNameMapperSupport.h"
+// Now comes May 21, 2014 
+// The following list, and the order of their listing, has been optimized for
+// the use of pre-compiled headers.  Some of these files are unreferenced in
+// this module, a small price paid for the efficiency affored by pre-compiled
+// headers.
 
-bool CSgetParamNm (char* paramName,size_t paramSize,EcsNameFlavor nmFlavor,int paramCode);
+#include "cs_map.h"
+#include "cs_NameMapper.hpp"
+//  cs_NameMapper.hpp includes cs_CsvFileSupport.hpp
+//  cs_NameMapper.hpp includes csNameMapperSupport.hpp
+#include "cs_WktObject.hpp"
+#include "cs_wkt.h"
+
+#include "cs_Legacy.h"
 
 extern "C" int cs_Error;
 extern "C" char csErrnam [];

@@ -489,7 +489,7 @@ struct csErrtab_ csErrtab [] =
  {  cs_CSQ_ELEVEL, csET_NM,cs_ERSUP_OPR,
 						   "%s :: Value supplied for elevated ellipsoid is outside acceptable range." },
  {  cs_CSQ_OSTN02, csET_NM,cs_ERSUP_OPR,
-						   "%s :: OSTN02.TXT grid shift file could not be located or opened with read access." },
+						   "%s :: OSTN02.txt grid shift file could not be located or opened with read access." },
  {  cs_CSQ_TMKRG0, csET_NM,cs_ERSUP_OPR,
 						   "%s :: Transverse Mercator Kruger formulation requested with non-zero origin latitude." },
  {  cs_DTQ_FILE,   csET_NM,cs_ERSUP_OPR,
@@ -520,6 +520,8 @@ struct csErrtab_ csErrtab [] =
 						   "%s :: The name of a geodetic transformation listed in this path is not valid." },
  {   cs_GPQ_NOXFRM,csET_NM,cs_ERSUP_OPR,
 						   "%s :: The name of a geodetic transformation listed is not that of an exiting transformation." },
+ {   cs_CSQ_ELPSCL,csET_NM,cs_ERSUP_OPR,
+						   "%s :: Ellipsoid Scale parameter is out of expected range." },
 
  {     cs_MGRS_LL,csET_LOC,cs_ERSUP_OPR,
 						   "Invalid Lat/Long (%s) presented for MGRS conversion." },
@@ -808,29 +810,29 @@ struct csErrtab_ csErrtab [] =
 						   "No path could be found or automatically constructed to convert from %s."},
  { cs_ATS77_INV,         0,cs_ERSUP_SOFT,
 						   "An attempt to perform an inverse calculation using an ATS77 'TRANSFORM' file was detected.  Cannot comply."},
- { cs_CT_NOT_FND, csET_NM,cs_ERSUP_OPR,
+ { cs_CT_NOT_FND,  csET_NM,cs_ERSUP_OPR,
 						   "Category named %s does not exist."},
  { cs_CT_CS_NOT_IN, csET_NM,cs_ERSUP_OPR,
 						   "Category does not contain a coordinate system named %s."},
- { cs_CT_PROT, csET_NM,cs_ERSUP_OPR,
+ { cs_CT_PROT,      csET_NM,cs_ERSUP_OPR,
 						   "Category %s cannot be removed."},
- { cs_CT_CS_ADD_DUP, csET_NM,cs_ERSUP_OPR,
+ { cs_CT_CS_ADD_DUP,csET_NM,cs_ERSUP_OPR,
 						   "Category already contains a coordinate system named %s."},
- { cs_CT_DICT,              0,cs_ERSUP_CONFIG,
+ { cs_CT_DICT,            0,cs_ERSUP_CONFIG,
 						   "The Category dictionary open failed."},
- { cs_DICT_INV,             0,cs_ERSUP_CONFIG,
+ { cs_DICT_INV,           0,cs_ERSUP_CONFIG,
 						   "A dictionary contains an invalid entry."},
- { cs_DICT_DUP_IDS,         0,cs_ERSUP_CONFIG,
+ { cs_DICT_DUP_IDS,       0,cs_ERSUP_CONFIG,
 						   "A dictionary contains duplicated key names."},
-#ifdef GEOCOORD_ENHANCEMENT
- {cs_GENGRID_RNG_F,csET_LOC,cs_ERSUP_RNG,
-						   "Encountered data at %s which is outside GENGRID<->WGS84 conversion extents."},
- {cs_GENGRID_RNG_W,csET_LOC,cs_ERSUP_RNG,
-						   "WARNING: Data in range %s is outside GENGRID<->WGS84 data file coverage; conversion results are unshifted."},
- {cs_GENGRID_RNG_A,csET_LOC,cs_ERSUP_OPR,
-						   "WARNING: Data in range %s is outside GENGRID<->WGS84 data file coverage; using fallback approximation." },
-#endif
- {              0,       0,0,""}
+ { cs_ENV_TOOLONG,        0,cs_ERSUP_SOFT,
+						   "String presented for environmental variable substitution too long."},
+ { cs_ENV_NOVAR,    csET_NM,cs_ERSUP_CONFIG,
+						   "Environmental variable substitution failed, variable %s not set."},
+ { cs_ENV_FORMAT,   csET_NM,cs_ERSUP_SOFT,
+						   "Environmental variable substitution failed; invalid format (%s...)."},
+ { cs_SELF_TEST ,   csET_NM,cs_ERSUP_SOFT,
+						   "Self test of object named %s failed during construction."},
+ {              0,        0,0,""}
 };
 
 void EXP_LVL9 CSsprntf (char *dst,int size,char *frmt,char *insert);
@@ -858,16 +860,12 @@ unsigned short EXP_LVL7 CSerpt (char *mesg,int size,int err_num)
 	char ctemp [32];
 	char insert [32];
 
-#if _RUN_TIME == _rt_WINCE
-	cs_Errno = GetLastError ();
-	cs_Doserr = cs_Errno;
-#elif _RUN_TIME < _rt_UNIXPCC
+#if _RUN_TIME < _rt_UNIXPCC
 	cs_Errno = errno;
 	cs_Doserr = _doserrno;
 #else
 	cs_Errno = errno;
 #endif
-
 	cs_Error = err_num;
 
 	/* Locate the appropriate message. */
@@ -886,23 +884,23 @@ unsigned short EXP_LVL7 CSerpt (char *mesg,int size,int err_num)
 				/* Build a string which defines the
 				   location.  We desire to do this
 				   re-entrantly. */
-				ltemp = -csErrlng;
-				dir_cc = 'W';
-				if (csErrlng >= 0)
+				ltemp = (long32_t)csErrlng;
+				dir_cc = 'E';
+				if (csErrlng < 0)
 				{
-					ltemp = csErrlng;
-					dir_cc = 'E';
+					ltemp = (long32_t)(-csErrlng);
+					dir_cc = 'W';
 				}
 				CSreltoa (ctemp,sizeof (ctemp),ltemp);
 				cp = CS_stcpy (insert,ctemp);
 				*cp++ = dir_cc;
 				*cp++ = ':';
 				
-				ltemp = csErrlat;
+				ltemp = (long32_t)csErrlat;
 				dir_cc = 'N';
 				if (csErrlat < 0)
 				{
-					ltemp = -csErrlat;
+					ltemp = (long32_t)(-csErrlat);
 					dir_cc = 'S';
 				}
 				CSreltoa (ctemp,sizeof (ctemp),ltemp);

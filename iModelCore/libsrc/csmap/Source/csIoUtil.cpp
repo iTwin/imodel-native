@@ -351,14 +351,14 @@ csFILE* CS_gxFileOpen(Const char* mode)
 
 int CS_gxRead (csFILE *strm, struct cs_GeodeticTransform_ *gx_def)
 {
-	Q_RETURN(int, -1, (CS_DefinitionRead<cs_GeodeticTransform_>(strm, gx_def, gx_def->xfrmName, NULL, NULL, NULL, CS_gxswp)));
+	Q_RETURN(int, -1, (CS_DefinitionRead<cs_GeodeticTransform_>(strm, gx_def, gx_def->xfrmName, NULL, NULL, NULL, CS_gxswpRd)));
 }
 
 int CS_gxWrite(csFILE *strm, Const struct cs_GeodeticTransform_ * gx_def)
 {
 	cs_GeodeticTransform_ localDef = *gx_def;
 	cs_GeodeticTransform_ *pLocalDef = &localDef;
-	Q_RETURN(int, -1, (CS_DefinitionWrite<cs_GeodeticTransform_>(strm, pLocalDef, NULL, NULL, CS_gxswp)));
+	Q_RETURN(int, -1, (CS_DefinitionWrite<cs_GeodeticTransform_>(strm, pLocalDef, NULL, NULL, CS_gxswpWr)));
 }
 
 int CS_gxDelete(struct cs_GeodeticTransform_ *gx_def)
@@ -417,7 +417,9 @@ char Const* CS_gxkey(Const struct cs_GeodeticTransform_ *gx_def);
 int CS_gxDefinitionAll(struct cs_GeodeticTransform_** pAllDefs[])
 {
 	int newDefCount = -1;
-	typedef std::map<char const*, std::vector<struct cs_GeodeticTransform_ *>, CsMapKeyCompare> GxDuplicatesMap;
+    typedef std::pair<struct cs_GeodeticTransform_ * const, std::vector<struct cs_GeodeticTransform_ *> > GxDuplicatesPair;
+    typedef std::map<char const*, GxDuplicatesPair, CsMapKeyCompare> GxDuplicatesMap;
+    
 	GxDuplicatesMap gxDuplicates;
 	int readStatus = DefinitionGetAll<cs_GeodeticTransform_>(pAllDefs, CS_gxopn, CS_gxrd, NULL, CS_gxkey, &gxDuplicates);
 	if (readStatus < 0)
@@ -434,26 +436,34 @@ int CS_gxDefinitionAll(struct cs_GeodeticTransform_** pAllDefs[])
 		for(GxDuplicatesMap::iterator gxIterator = gxDuplicates.begin();
 			gxIterator != gxDuplicates.end(); ++gxIterator)
 		{
-			std::vector<struct cs_GeodeticTransform_ *>& gxDefVector = gxIterator->second;
-			_ASSERT(2 == gxDefVector.size()); //what else could have happened
+            GxDuplicatesPair gxDefPair = gxIterator->second;
+            std::vector<struct cs_GeodeticTransform_ *>& gxDefVector = gxDefPair.second;
+			_ASSERT(1 <= gxDefVector.size()); //what else could have happened
 
-			if (gxDefVector.size() < 2)
+			if (gxDefVector.size() < 1)
 				continue;
 
-			struct cs_GeodeticTransform_ *gx_target = gxDefVector[gxDefVector.size() - 1]; //the definition from the system dictionaries is always read last
-			struct cs_GeodeticTransform_ *gx_source = gxDefVector[0]; //the definition from the user dictionary will always be at index 0
+			struct cs_GeodeticTransform_ *gx_target = gxDefPair.first; //the definition from the user dictionary is always read first
+			struct cs_GeodeticTransform_ *gx_source = gxDefVector[0]; //the definition from the system dictionaries will always read last
 
+            // Special handling for the grid file based transformations
+            // A duplicate is expected for overwriting the grid file parameters by the user.
 			if (CS_gxGridOvrly(gx_target, gx_source))
 			{
-				//this *MUST* be a grid file based transformation;
-				//if it wasn't, i.e. [CS_gxGridOvrly] returned something different than 0,
+                // It was not a grid file based transformation, i.e. [CS_gxGridOvrly] returned something different than 0,
 				//we have duplicated IDs
-				CS_erpt(cs_DICT_DUP_IDS);
-				goto error;
+                // Add first duplicate definition to duplicate collection
+                duplicateDefs.push_back(gxDefVector[0]);
+                gxDefVector.erase(gxDefVector.begin());
+
+                //CS_erpt(cs_DICT_DUP_IDS);
+				//goto error;
 			}
 
-			duplicateDefs.push_back(gx_target);
-			for(size_t i = 0; i < (gxDefVector.size() - 1); /* don't CS_free [gx_target] */ ++i)
+			// Clean up and throw away the third and following duplicates. Note as maximum only a pair of
+            // duplicates will be in the final collection. Duplicates are not expected, but could happen
+            // in some dictionary update scenarios. This allows the user to clean them up from a UI.
+			for(size_t i = 0; i < gxDefVector.size(); ++i)
 			{
 				CS_free(gxDefVector[i]);
 			}
@@ -498,7 +508,8 @@ error:
 
 	for(GxDuplicatesMap::iterator duplicatesIterator = gxDuplicates.begin(); duplicatesIterator != gxDuplicates.end(); ++duplicatesIterator)
 	{
-		std::vector<struct cs_GeodeticTransform_ *> const& defDuplicates = duplicatesIterator->second;
+        GxDuplicatesPair gxDefPair = duplicatesIterator->second;
+        std::vector<struct cs_GeodeticTransform_ *> const& defDuplicates = gxDefPair.second;
 		for(size_t i = 0; i < defDuplicates.size(); ++i)
 		{
 			CS_free(defDuplicates[i]);

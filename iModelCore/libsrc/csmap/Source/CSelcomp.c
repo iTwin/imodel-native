@@ -27,10 +27,8 @@
 
 #include "cs_map.h"
 
-/* Entire module skipped if this is an Embedded compile for project management
-   convenience.  Don't think it likely that we'll need to compile dictionaries
-   in the Embedded environment. */
-#if !defined (__WINCE__)
+/*lint -esym(767,EL_NAME,DESC_NM,E_RAD,P_RAD,FLAT,ECENT,GROUP,SOURCE,EPSG_NBR)  possibly different values in other modules */
+/*lint -esym(754,cs_ElcmpT_::label)  not referenced directly, only indirectly */
 
 #define EL_NAME 1
 #define DESC_NM 2
@@ -197,9 +195,20 @@ int EXP_LVL9 CSelcomp (	Const char *inpt,
 		cp = buff;
 		while ((cp = strchr (cp,'#')) != NULL)
 		{
-			if (*(cp + 1) != '#' &&
-				*(cp - 1) != '\\')
+			if (*(cp - 1) == '\\')
 			{
+				/* This is an escaped '#' character.  Remove the escape
+				   character, ignore the escaped character, and continue the
+				   search. */
+				strLen = strlen (cp);
+				CS_stncp ((cp - 1),cp,(int)strLen);
+				++cp;
+			}
+			else
+			{
+				/* The beginning of an appended comment. Note, the value
+				   portion of the statement line is trimmed before being
+				   used and/or tested. */
 				*cp = '\0';
 				break;
 			}
@@ -419,4 +428,3 @@ int CSeldefwr (	csFILE *outStrm,
 	if (cancel && err_cnt == 0) err_cnt = 1;
 	return (cancel ? -err_cnt : err_cnt);
 }
-#endif

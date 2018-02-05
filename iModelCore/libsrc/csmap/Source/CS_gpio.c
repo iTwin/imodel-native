@@ -38,7 +38,7 @@
 **
 **	File is positioned past the magic number on the front.
 **********************************************************************/
-csFILE * EXP_LVL3 CS_gpopn (Const char *mode)
+csFILE * EXP_LVL5 CS_gpopn (Const char *mode)
 {
 	return CS_gpFileOpen(mode);
 }
@@ -46,14 +46,14 @@ csFILE * EXP_LVL3 CS_gpopn (Const char *mode)
 /**********************************************************************
 **	flag = CS_gprd (strm,gp_rec);
 **
-**	csFILE strm;				file/device from which the possibly enrypted
+**	csFILE strm;				file/device from which the possibly encrypted
 **								ellipsoid definition is to be read.
 **	struct cs_GeodeticPathDef_ *gp_rec;
 **								next geodetic path definition record is returned here.
 **	int flag;					returns +1 for successful read, 0 for EOF,
 **								-1 for error.
 **********************************************************************/
-int EXP_LVL3 CS_gprd (csFILE *strm,struct cs_GeodeticPath_ *gp_def)
+int EXP_LVL5 CS_gprd (csFILE *strm,struct cs_GeodeticPath_ *gp_def)
 {
     char tempPathKeyName[64] = { '\0' };
     char tempDatumKeyname[cs_KEYNM_DEF] = { '\0' };
@@ -106,7 +106,7 @@ int EXP_LVL3 CS_gprd (csFILE *strm,struct cs_GeodeticPath_ *gp_def)
 **	int st;						returns FALSE if write was completed successfully,
 **								else returns TRUE.
 **********************************************************************/
-int EXP_LVL3 CS_gpwr (csFILE *strm,Const struct cs_GeodeticPath_ *gp_def)
+int EXP_LVL5 CS_gpwr (csFILE *strm,Const struct cs_GeodeticPath_ *gp_def)
 {
 	return CS_gpWrite(strm, gp_def);
 }
@@ -142,7 +142,7 @@ int EXP_LVL3 CS_gpdel (struct cs_GeodeticPath_ *gp_def)
 **	If the Geodetic Path Dictionary does not already contain an entry
 **	with the indicated key name, the entry is added.
 *******************************************************************************/
-int EXP_LVL3 CS_gpupd (struct cs_GeodeticPath_ *gp_def)
+int EXP_LVL5 CS_gpupd (struct cs_GeodeticPath_ *gp_def)
 {
 	return CS_gpUpdate(gp_def);
 }
@@ -155,12 +155,12 @@ int EXP_LVL3 CS_gpupd (struct cs_GeodeticPath_ *gp_def)
 **								The geodetic path definition records which
 **								are to be compared.
 **	int cmp_val;				return is negative if pp follows qq in the
-**								collating sequence, positive if pp preceeds
+**								collating sequence, positive if pp precedes
 **								qq, and zero if they are equivalent.
 **
 ** Compares only the three elements required to make the key value of
-** each record unique.  Thus, rcrdCnt and protect are not in cluided
-** in thecomparison.
+** each record unique.  Thus, rcrdCnt and protect are not included
+** in the comparison.
 **********************************************************************/
 int EXP_LVL7 CS_gpcmp (Const struct cs_GeodeticPath_ *pp,
 					   Const struct cs_GeodeticPath_ *qq)
@@ -169,7 +169,7 @@ int EXP_LVL7 CS_gpcmp (Const struct cs_GeodeticPath_ *pp,
 
 	/* OK, now we can compare the two structures.  For sorting
 	   and binary search purposes, we only look at the source and
-	   traget key names and the record number. */
+	   target key names and the record number. */
 
 	st = CS_stricmp (pp->pathName,qq->pathName);
 	return (st);
@@ -193,10 +193,11 @@ struct cs_GeodeticPath_ * EXP_LVL3 CS_gpdef (Const char *pathName)
 	return CS_gpdef2 (pathName, NULL);
 }
 
-struct cs_GeodeticPath_ * EXP_LVL3 CS_gpdef2 (Const char *pathName, char* pszDirPath)
+struct cs_GeodeticPath_ * EXP_LVL5 CS_gpdef2 (Const char *pathName, char* pszDirPath)
 {
 	return CS_gpDefinition(pathName, pszDirPath);
 }
+
 
 /**********************************************************************
 **	gp_ptr = CS_gpdefEx (Const char* srcDatum,Const char* trgDatum);
@@ -206,27 +207,25 @@ struct cs_GeodeticPath_ * EXP_LVL3 CS_gpdef2 (Const char *pathName, char* pszDir
 **	char *trgDatum;				key name of the target datum of the path
 **								definition which is to be fetched.
 **	struct cs_GeodeticPath_ *gp_ptr;
-**								returns a pointer to a malloc'ed ellipsoid definition
-**								structure.
-**
+**								returns a pointer to a malloc'ed
+**								geodetic path definition structure.
 **********************************************************************/
+/*lint -esym(550,globalFoundForward)  Variable set, but not used. */
 struct cs_GeodeticPath_ * EXP_LVL3 CS_gpdefEx (int* direction,
 											   Const char *srcDatum,
 											   Const char *trgDatum)
 {
 	extern char csErrnam [];
 	extern char cs_UserDir[];
-	extern char cs_Dir[];
-	extern char* cs_DirP;
 
 	extern int cs_Error;
 
 	char currentDir[MAXPATH] = { '\0' };
-	char targetPaths[2][MAXPATH] = { '\0', '\0' };
+	char targetPaths[2][MAXPATH] = { { '\0'}, {'\0'} };
 	char const* pTargetPath;
 	
 	int st;
-	int i;
+	size_t i;
 
 	long curFpos;
 	long fwdFpos;
@@ -260,12 +259,14 @@ struct cs_GeodeticPath_ * EXP_LVL3 CS_gpdefEx (int* direction,
 	st = CS_nampp (tmpKeyName);
 	if (st != 0) goto error;
 
-	CS_getdr(currentDir);
+	st = CS_getdr(currentDir);
+	if (st != 0) goto error;
 
 	CS_stncp(targetPaths[0], cs_UserDir, sizeof(targetPaths[0]));
 	CS_stncp(targetPaths[1], currentDir, sizeof(targetPaths[1]));
 
-	//go through all directories we've
+	/* go through all directories we possibly have.  Search the user
+	   dictionary first, than the distribution directory. */
 	for (i = 0; i < (sizeof(targetPaths) / sizeof(targetPaths[0])); ++i)
 	{
 		if (NULL != strm)
@@ -306,44 +307,33 @@ struct cs_GeodeticPath_ * EXP_LVL3 CS_gpdefEx (int* direction,
 			{
 				break;
 			}
-		
+
 			/* See if we have a match in the forward direction. */
 			if (!CS_stricmp (gp_rec.srcDatum,srcDatum) &&
 				!CS_stricmp (gp_rec.trgDatum,trgDatum))
 			{
 				//we must not have yet hit a "forward path"
-				if (fwdFpos == 0L && 0 == globalFoundForward)
-				{
-					fwdFpos = curFpos;
-					globalFoundForward = 1;
-				}
-				else
-				{
-					sprintf (errMsg,"'%s' to '%s'",srcDatum,trgDatum);
-					CS_stncp (csErrnam,errMsg,MAXPATH);
-					CS_erpt (cs_GEOPATH_DUP);
-
-					goto error;
-				}
+				fwdFpos = curFpos;
+				globalFoundForward = 1;
+                // Optimization, stop search when a forward path is found. 
+                // The forward paths are preferred over the backward ones.
+                break;
 			}
-			/* See if we have a match in the inverse direction. */
-			if (!CS_stricmp (gp_rec.srcDatum,trgDatum) &&
-				!CS_stricmp (gp_rec.trgDatum,srcDatum))
+			/* See if we have a match in the inverse direction, but only if the path
+			   is marked as reversible. */
+			else if (gp_rec.reversible != 0)
 			{
-				if (invFpos == 0L && 0 == globalFoundBackward)
+				if (!CS_stricmp (gp_rec.srcDatum,trgDatum) &&
+					!CS_stricmp (gp_rec.trgDatum,srcDatum))
 				{
-					invFpos = curFpos;
-					globalFoundBackward = 1;
+					if (invFpos == 0L && 0 == globalFoundBackward) // When double inverse entry. Be tolerant and continue.
+					{
+						invFpos = curFpos;
+						globalFoundBackward = 1;
+					}
 				}
-				else
-				{
-					sprintf (errMsg,"'%s' to '%s'",srcDatum,trgDatum);
-					CS_stncp (csErrnam,errMsg,MAXPATH);
-					CS_erpt (cs_GEOPATH_DUP);
-					goto error;
-				}
+				// Continue search, the forward paths are preferred over the backward ones.
 			}
-
 		} //for (;;)
 
 		/* We always return the forward definition if we found one. */
@@ -400,15 +390,22 @@ struct cs_GeodeticPath_ * EXP_LVL3 CS_gpdefEx (int* direction,
 			}
 		}
 		
-		if (strm != NULL)
+		if (strm != NULL)			/*lint !e774  always evaluates to true */
 		{
 			CS_fclose (strm);
 			strm = NULL;
 		}
+        if (fwdFpos != 0L && NULL != gp_def) 
+        {
+            // Optimization, stop search when a forward path is found. 
+            // The forward paths are preferred over the backward ones.
+            // Continue searching when no or only a backward path is found.
+            break;
+        }
 	}
 
-	//report a failure after we've gone through the 2 directories and we still haven't found
-	//any good entry
+	/* report a failure after we've gone through the 2 directories and we still haven't found
+	   any good entry */
 	if (NULL == gp_def)
 	{
 		sprintf (errMsg,"'%s' to '%s'",srcDatum,trgDatum);
@@ -418,7 +415,11 @@ struct cs_GeodeticPath_ * EXP_LVL3 CS_gpdefEx (int* direction,
 		goto error;
 	}
 
-	CS_setdr(currentDir, NULL);
+	st = CS_setdr(currentDir, NULL);
+	if (st != 0)
+	{
+		goto error;
+	}
 
 	/* Return a pointer to the malloc'ed geodetic path definition to the
 	   user. */
@@ -432,12 +433,12 @@ error:
 		gp_def = NULL;
 	}
 
-	CS_setdr(currentDir, NULL);
+	CS_setdr(currentDir, NULL);		/*lint !e534  ignoring return value, not much we can do about it here */
 
 	return NULL;
 }
 
-int CS_gpchk (Const struct cs_GeodeticPath_ *gpPath,unsigned short gpChkFlg,int err_list [],int list_sz)
+int EXP_LVL1 CS_gpchk (Const struct cs_GeodeticPath_ *gpPath,unsigned short gpChkFlg,int err_list [],int list_sz)
 {
 	short gpIdx;
 	
@@ -455,7 +456,7 @@ int CS_gpchk (Const struct cs_GeodeticPath_ *gpPath,unsigned short gpChkFlg,int 
 	}
 
 	/* Checking the datum names is optional as this code will always check
-	   agains the datum dictionary in the standard location.  This may not
+	   against the datum dictionary in the standard location.  This may not
 	   be appropriate in certain environments such as the dictionary
 	   compiler. */
 	if ((gpChkFlg & cs_GPCHK_DATUM) != 0)
@@ -499,7 +500,7 @@ int CS_gpchk (Const struct cs_GeodeticPath_ *gpPath,unsigned short gpChkFlg,int 
 			/* The following flag check enables us to use this function in the
 			   dictionary compiler.  In the compiler, it may be, or may not be,
 			   appropriate to check the transformation dictionary for a valid
-			   name as the dictionaries being generated may not be the smae ones
+			   name as the dictionaries being generated may not be the same ones
 			   that standard CS_gx??? functions will access. */
 			if ((gpChkFlg & cs_GPCHK_XFORM) != 0)
 			{
