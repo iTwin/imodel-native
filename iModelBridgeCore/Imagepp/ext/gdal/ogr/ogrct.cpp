@@ -187,6 +187,12 @@ static const char* GetProjLibraryName()
 static int LoadProjLibrary()
 
 {
+    //IPP We do not deliver proj.dll so prevent gdal from finding it and starting to behave differently on some machine. 
+    //    e.g.  Some python installs are now delivering proj.dll.
+    //    For BSB format, that means the raster won't be reprojected and will remain in the native GCS. Geocoord will do the reprojection if needed.
+#if 1
+    return FALSE;
+#else
     CPLMutexHolderD( &hPROJMutex );
     static int  bTriedToLoad = FALSE;
     const char *pszLibName;
@@ -195,7 +201,7 @@ static int LoadProjLibrary()
         return( pfn_pj_transform != NULL );
 
     bTriedToLoad = TRUE;
-
+    
     pszLibName = GetProjLibraryName();
 
 #ifdef PROJ_STATIC
@@ -284,6 +290,7 @@ static int LoadProjLibrary()
     }
 
     return( TRUE );
+#endif
 }
 
 /************************************************************************/
