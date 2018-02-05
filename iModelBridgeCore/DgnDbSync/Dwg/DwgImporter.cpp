@@ -1826,6 +1826,8 @@ void            DwgImporter::ParseConfigurationFile (T_Utf8StringVectorR userObj
                 m_options.SetSyncBlockChanges (boolValue);
             else if (str.EqualsI("PreferRenderableGeometry"))
                 m_options.SetPreferRenderableGeometry (boolValue);
+            else if (str.EqualsI("SyncDwgVersionGuid"))
+                m_options.SetSyncDwgVersionGuid (boolValue);
             }
         }
 

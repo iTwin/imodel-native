@@ -3617,6 +3617,22 @@ BisConversionTargetModelInfo::BisConversionTargetModelInfo(DgnModelCR model)
         m_modelType = ModelType::TwoD;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+bool Converter::ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model)
+    {
+    if (!_ShouldImportSchema(fullSchemaName, v8Model))
+        return false;
+
+    for (auto v : m_schemaImportVerifiers)
+        {
+        if (!v->_ShouldImportSchema(fullSchemaName, v8Model))
+            return false;
+        }
+    return true;
+    }
+
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
 

@@ -313,6 +313,7 @@ public:
         StandardUnit        m_unspecifiedBlockUnits;
         T_DwgWeightMap      m_lineweightMapping;
         bool                m_syncBlockChanges;
+        bool                m_syncDwgVersionGuid;
         bool                m_importRasters;
         bool                m_importPointClouds;
         uint16_t            m_pointCloudLevelOfDetails;
@@ -330,6 +331,7 @@ public:
             m_unspecifiedBlockUnits = StandardUnit::MetricMeters;
             m_lineweightMapping.clear ();
             m_syncBlockChanges = false;
+            m_syncDwgVersionGuid = false;
             m_importRasters = false;
             m_importPointClouds = false;
             m_pointCloudLevelOfDetails = 1;
@@ -350,6 +352,7 @@ public:
         void SetUnspecifiedBlockUnits (StandardUnit v) {m_unspecifiedBlockUnits = v;}
         void SetLineWeightMapping (T_DwgWeightMap const& map) { m_lineweightMapping = map; }
         void SetSyncBlockChanges (bool syncBlocks) { m_syncBlockChanges = syncBlocks; }
+        void SetSyncDwgVersionGuid (bool checkGuid) { m_syncDwgVersionGuid = checkGuid; }
         void SetImportRasterAttachments (bool allow) { m_importRasters = allow; }
         void SetImportPointClouds (bool allow) { m_importPointClouds = allow; }
         void SetPointCloudLevelOfDetails (uint16_t lod) { if (lod <= 100) m_pointCloudLevelOfDetails = lod; }
@@ -373,6 +376,8 @@ public:
         bool CopyLayerIfDifferent() const {return m_copyLayer == CopyLayer::IfDifferent;}
         uint32_t GetDgnLineWeight (DwgDbLineWeight dwgWeight) const;
         bool GetSyncBlockChanges () const { return m_syncBlockChanges; }
+        //! Can DWG VersionGuid be used for sync?  Recommended for DWG files changed only by AutoCAD based products.
+        bool GetSyncDwgVersionGuid () const { return m_syncDwgVersionGuid; }
         bool GetImportRasterAttachments () const { return m_importRasters; }
         bool GetImportPointClouds () const { return m_importPointClouds; }
         uint16_t GetPointCloudLevelOfDetails () const { return m_pointCloudLevelOfDetails; }

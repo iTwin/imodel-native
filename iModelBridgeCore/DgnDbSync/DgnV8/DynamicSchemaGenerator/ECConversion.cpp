@@ -1153,6 +1153,8 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
          {
          if (schema->IsSupplementalSchema())
              continue;
+         if (BisClassConverter::SchemaConversionContext::ExcludeSchemaFromBisification(*schema))
+             continue;
          if (!ECN::ECSchemaConverter::Convert(*schema, false))
              {
              Utf8PrintfString error("Failed to run the schema converter on v8 ECSchema '%s'", schema->GetFullSchemaName().c_str());
@@ -2498,7 +2500,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::RetrieveV8ECSchemas(DgnV8Model
         //TODO: Need to filter out V8/MicroStation specific ECSchemas, not needed in Graphite
 
         Utf8String fullName(schemaKey.GetFullSchemaName().c_str());
-        if (!m_converter._ShouldImportSchema(fullName, v8Model))
+        if (!m_converter.ShouldImportSchema(fullName, v8Model))
             {
             m_skippedSchemas.push_back(Utf8String(schemaKey.GetName().c_str()));
             continue;
