@@ -23,7 +23,6 @@ struct SketchGridSurfaceManipulationStrategy : public BBS::ElementManipulationSt
         double m_topElevation;
         GridAxisCPtr m_axis; // TODO to Ptr
         Utf8String m_gridName;
-        PlanGridPlanarSurfacePtr m_surface;
 
         SketchGridSurfaceManipulationStrategy();
 
@@ -32,6 +31,7 @@ struct SketchGridSurfaceManipulationStrategy : public BBS::ElementManipulationSt
         virtual bool _IsDynamicKeyPointSet() const override;
         virtual void _ResetDynamicKeyPoint() override;
         virtual bool _IsComplete() const override;
+        virtual bool _CanAcceptMorePoints() const override;
         virtual void _SetProperty(Utf8CP key, double const & value) override;
         virtual void _SetProperty(Utf8CP key, Dgn::DgnElement const& value) override;
         virtual void _SetProperty(Utf8CP key, Utf8String const& value) override;
@@ -45,7 +45,10 @@ struct SketchGridSurfaceManipulationStrategy : public BBS::ElementManipulationSt
         // SketchGridSurfaceManipulationStrategy
         virtual BentleyStatus _UpdateGridSurface();
         virtual Utf8String _GetMessage() const = 0;
-        virtual BBS::CurvePrimitivePlacementStrategyPtr _GetStrategyForAppend() = 0;
+        virtual PlanGridPlanarSurfaceCP _GetGridSurfaceCP() = 0;
+        virtual PlanGridPlanarSurfaceP _GetGridSurfaceP() = 0;
+        virtual BBS::CurvePrimitivePlacementStrategyPtr _GetGeometryPlacementStrategyP() = 0;
+        virtual BBS::CurvePrimitivePlacementStrategyCPtr _GetGeometryPlacementStrategy() const = 0;
 
     public:
         Utf8String GetMessage() const;

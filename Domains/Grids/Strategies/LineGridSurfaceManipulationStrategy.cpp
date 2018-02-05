@@ -20,6 +20,7 @@ LineGridSurfaceManipulationStrategy::LineGridSurfaceManipulationStrategy
     : T_Super()
     , m_currentPlacementType(linePlacementStrategyType)
     , m_geometryManipulationStrategy(LineManipulationStrategy::Create())
+    , m_surface(nullptr)
     {
     BeAssert(m_geometryManipulationStrategy.IsValid() && "Geometry manipulation strategy is valid");
     }
@@ -29,17 +30,13 @@ LineGridSurfaceManipulationStrategy::LineGridSurfaceManipulationStrategy
 //---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus LineGridSurfaceManipulationStrategy::_UpdateGridSurface()
     {
-    SketchLineGridSurfacePtr surface = dynamic_cast<SketchLineGridSurfaceP>(m_surface.get());
-    if (surface.IsNull())
-        return BentleyStatus::ERROR;
-
     T_Super::_UpdateGridSurface();
 
     bvector<DPoint3d> keyPoints = m_geometryManipulationStrategy->GetKeyPoints();
     if (2 != keyPoints.size())
         return BentleyStatus::ERROR;
 
-    surface->SetBaseLine(DPoint2d::From(keyPoints[0]), DPoint2d::From(keyPoints[1]));
+    m_surface->SetBaseLine(DPoint2d::From(keyPoints[0]), DPoint2d::From(keyPoints[1]));
 
     return BentleyStatus::SUCCESS;
     }
@@ -55,9 +52,17 @@ Utf8String LineGridSurfaceManipulationStrategy::_GetMessage() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              02/2018
 //---------------+---------------+---------------+---------------+---------------+------
-BBS::CurvePrimitivePlacementStrategyPtr LineGridSurfaceManipulationStrategy::_GetStrategyForAppend()
+BBS::CurvePrimitivePlacementStrategyPtr LineGridSurfaceManipulationStrategy::_GetGeometryPlacementStrategyP()
     {
     return m_geometryManipulationStrategy->CreateLinePlacementStrategy(m_currentPlacementType);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+BBS::CurvePrimitivePlacementStrategyCPtr LineGridSurfaceManipulationStrategy::_GetGeometryPlacementStrategy() const
+    {
+    return m_geometryManipulationStrategy->CreateLinePlacementStrategy(m_currentPlacementType).get();
     }
 
 //--------------------------------------------------------------------------------------
@@ -66,43 +71,6 @@ BBS::CurvePrimitivePlacementStrategyPtr LineGridSurfaceManipulationStrategy::_Ge
 void LineGridSurfaceManipulationStrategy::ChangeCurrentPlacementType(BBS::LinePlacementStrategyType newLinePlacementStrategyType)
     {
     m_currentPlacementType = newLinePlacementStrategyType;
-    // TODO properties?
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas              02/2018
-//---------------+---------------+---------------+---------------+---------------+------
-bool LineGridSurfaceManipulationStrategy::_IsComplete() const
-    {
-    return m_geometryManipulationStrategy->IsComplete() && T_Super::_IsComplete();
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas              02/2018
-//---------------+---------------+---------------+---------------+---------------+------
-bool LineGridSurfaceManipulationStrategy::_CanAcceptMorePoints() const
-    {
-    return m_geometryManipulationStrategy->CanAcceptMorePoints();
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas              02/2018
-//---------------+---------------+---------------+---------------+---------------+------
-void LineGridSurfaceManipulationStrategy::_SetProperty(Utf8CP key, double const & value)
-    {
-    T_Super::_SetProperty(key, value);
-    m_geometryManipulationStrategy->SetProperty(key, value);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas              02/2018
-//---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus LineGridSurfaceManipulationStrategy::_TryGetProperty(Utf8CP key, double & value) const
-    {
-    if (BentleyStatus::ERROR == T_Super::_TryGetProperty(key, value))
-        return m_geometryManipulationStrategy->TryGetProperty(key, value);
-
-    return BentleyStatus::SUCCESS;
     }
 
 //--------------------------------------------------------------------------------------
@@ -113,9 +81,6 @@ Dgn::DgnElementPtr LineGridSurfaceManipulationStrategy::_FinishElement
     Dgn::DgnModelR model
 )
     {
-    if (m_surface.IsValid())
-        return T_Super::_FinishElement();
-
     if (!IsComplete())
         return nullptr;
 
@@ -161,6 +126,9 @@ Dgn::DgnElementPtr LineGridSurfaceManipulationStrategy::_FinishElement
     bvector<DPoint3d> keyPoints = m_geometryManipulationStrategy->GetKeyPoints();
     if (2 != keyPoints.size())
         return nullptr;
+
+    if (m_surface.IsValid())
+        return T_Super::_FinishElement();
 
     SketchLineGridSurface::CreateParams params
     (
