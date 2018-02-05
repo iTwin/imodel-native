@@ -174,7 +174,8 @@ iModelTaskPtr Client::GetiModelByName(Utf8StringCR projectId, Utf8StringCR iMode
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting iModel with name %s.", iModelName.c_str());
     WSQuery query = WSQuery(ServerSchema::Schema::Project, ServerSchema::Class::iModel);
     Utf8String filter;
-    filter.Sprintf("%s+eq+'%s'", ServerSchema::Property::iModelName, iModelName.c_str());
+    Utf8String updatedName = BeUri::EscapeString(iModelName);
+    filter.Sprintf("%s+eq+'%s'", ServerSchema::Property::iModelName, updatedName.c_str());
     query.SetFilter(filter);
 
     //Always select HasCreatorInfo relationship
