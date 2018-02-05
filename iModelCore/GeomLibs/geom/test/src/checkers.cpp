@@ -1470,9 +1470,11 @@ void Check::SaveTransformed(MSBsplineSurfacePtr const &data)
     {
     SaveTransformed(IGeometry::Create (data->Clone ()));}
 
-void Check::SaveTransformed (bvector<DPoint3d> const &data)
+void Check::SaveTransformed (bvector<DPoint3d> const &data, bool addClosure)
     {
     auto cv = ICurvePrimitive::CreateLineString (data);
+    if (addClosure && data.size () > 0)
+        cv->GetLineStringP ()->push_back (data[0]);
     SaveTransformed (IGeometry::Create (cv));
     }
 void Check::SaveTransformedMarker (DPoint3dCR &xyz, double markerSize)

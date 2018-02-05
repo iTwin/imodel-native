@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/funcs/polygon3d.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -423,7 +423,7 @@ double      tol               /* tolerance for ON case detection */
 static double dotProductToPointXY
 
 (
-DPoint3dCP pVector,
+DVec3dCP pVector,
 DPoint3dCP pBasePoint,
 DPoint3dCP pTargetPoint
 )
@@ -454,7 +454,7 @@ int         numPoint,         /* number of planes */
 double      tol               /* tolerance for ON case detection */
 )
     {
-    DPoint3d tangent, normal;
+    DVec3d tangent, normal;
     double v0, v1;
     double u0, u1;
     double u;
