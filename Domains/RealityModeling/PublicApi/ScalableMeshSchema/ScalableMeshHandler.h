@@ -397,7 +397,6 @@ public: //MST_TEMP
 
     void Cleanup(bool isModelDelete);
 
-    void DrawBingLogo(BentleyB0200::Dgn::DecorateContextR context, Byte const* pBitmapRGBA, DPoint2d const& bitmapSize);
     IScalableMeshProgressiveQueryEnginePtr GetProgressiveQueryEngine();
 		void InitializeTerrainRegions(/*Dgn::ViewContextR*/);
 		

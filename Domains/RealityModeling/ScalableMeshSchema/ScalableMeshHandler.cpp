@@ -452,83 +452,6 @@ void GetBingLogoInfo(Transform& correctedViewToView, ViewContextR context)
         }
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.St-Pierre  08/2017
-//----------------------------------------------------------------------------------------
-void ScalableMeshModel::DrawBingLogo(DecorateContextR context, Byte const* pBitmapRGBA, DPoint2d const& bitmapSize)
-    {
-    if (NULL == pBitmapRGBA)
-        return;
-
-    // SetToViewCoords is only valid during overlay mode aka DecorateScreen
-    //m_viewContext.GetViewport ()->GetIViewOutput ()->SetToViewCoords (true);
-
-    DPoint2d bitmapDrawSize = { bitmapSize.x, bitmapSize.y };
-
-    DPoint3d bitmapInView[4];
-    bitmapInView[0].x = 0;
-    bitmapInView[0].y = bitmapDrawSize.y;
-    bitmapInView[1].x = bitmapDrawSize.x;
-    bitmapInView[1].y = bitmapDrawSize.y;    
-    bitmapInView[2].x = bitmapDrawSize.x;
-    bitmapInView[2].y = 0;
-    bitmapInView[3].x = 0;
-    bitmapInView[3].y = 0;
-    bitmapInView[0].z = bitmapInView[1].z = bitmapInView[2].z = bitmapInView[3].z = 0;
-
-    Transform correctedViewToView;
-    
-    GetBingLogoInfo(correctedViewToView, context);
-
-    correctedViewToView.Multiply(bitmapInView, 4);
-    
-
-    DPoint3d bitmapInLocal[4];
-    //context.ViewToLocal(bitmapInLocal, bitmapInView, 4);
-    context.ViewToWorld(bitmapInLocal, bitmapInView, 4);
-
-    bitmapInView[0].z = bitmapInView[1].z = bitmapInView[2].z = bitmapInView[3].z = 0/*context.GetViewport()->GetActiveZRoot()*/;
-
-    // When raster is drawn by D3D, the texture is modulated by the active color (the materal fill color). 
-    // Override the material fill color for raster to white so that the appearance won't mysteriously change in the future.
-#if 0
-    ElemMatSymbP matSymb = context.GetElemMatSymb();
-
-    ColorDef color(0xff, 0xff, 0xff, 0x01);    
-    matSymb->SetLineColor(color);
-    matSymb->SetFillColor(color);
-    context.GetIDrawGeom().ActivateMatSymb(matSymb);
-#endif
-    
-    size_t imageDataSize = bitmapSize.x * bitmapSize.y * 4;
-    ByteStream imageBytes(imageDataSize);
-    
-    memcpy(imageBytes.GetDataP(), pBitmapRGBA, imageDataSize);
-    
-    Image binaryImage(bitmapSize.x, bitmapSize.y, std::move(imageBytes), Image::Format::Rgba);
-
-    Render::Texture::CreateParams params;
-    params.SetIsTileSection();  // tile section have clamp instead of warp mode for out of bound pixels. That help reduce seams between tiles when magnified.            
-    TexturePtr texturePtr(context.CreateTexture(binaryImage));
-    
-    Material::CreateParams matParams;
-
-    TextureMapping::Params textureMappingParams;    
-    matParams.MapTexture(*texturePtr, textureMappingParams);
-
-    MaterialPtr matPtr(context.GetRenderSystem()->_CreateMaterial(matParams, context.GetDgnDb()));
-    
-    auto graphic = context.CreateWorldOverlay();
-
-    GraphicParams graphicParams;
-    graphicParams.SetMaterial(matPtr.get());
-
-    graphic->SetSymbology(ColorDef::Yellow(), ColorDef::Yellow(), 8);
-    graphic->ActivateGraphicParams(graphicParams);        
-    graphic->AddShape(4, bitmapInLocal, true);
-    context.AddWorldOverlay(*graphic->Finish());
-    }
-
 static bool s_loadTexture = true;
 static bool s_waitQueryComplete = true;
 
@@ -2369,6 +2292,87 @@ void ScalableMeshModel::CompactExtraFiles()
 
 struct ScalableMeshHandlerViewDecoration : public ViewDecoration
     {
+    private: 
+
+        //----------------------------------------------------------------------------------------
+        // @bsimethod                                                   Mathieu.St-Pierre  08/2017
+        //----------------------------------------------------------------------------------------
+        void DrawBingLogo(DecorateContextR context, Byte const* pBitmapRGBA, DPoint2d const& bitmapSize)
+            {
+            if (NULL == pBitmapRGBA)
+                return;
+
+            // SetToViewCoords is only valid during overlay mode aka DecorateScreen
+            //m_viewContext.GetViewport ()->GetIViewOutput ()->SetToViewCoords (true);
+
+            DPoint2d bitmapDrawSize = { bitmapSize.x, bitmapSize.y };
+
+            DPoint3d bitmapInView[4];
+            bitmapInView[0].x = 0;
+            bitmapInView[0].y = bitmapDrawSize.y;
+            bitmapInView[1].x = bitmapDrawSize.x;
+            bitmapInView[1].y = bitmapDrawSize.y;
+            bitmapInView[2].x = bitmapDrawSize.x;
+            bitmapInView[2].y = 0;
+            bitmapInView[3].x = 0;
+            bitmapInView[3].y = 0;
+            bitmapInView[0].z = bitmapInView[1].z = bitmapInView[2].z = bitmapInView[3].z = 0;
+
+            Transform correctedViewToView;
+
+            GetBingLogoInfo(correctedViewToView, context);
+
+            correctedViewToView.Multiply(bitmapInView, 4);
+  
+
+            DPoint3d bitmapInLocal[4];
+            //context.ViewToLocal(bitmapInLocal, bitmapInView, 4);
+            context.ViewToWorld(bitmapInLocal, bitmapInView, 4);
+
+            bitmapInView[0].z = bitmapInView[1].z = bitmapInView[2].z = bitmapInView[3].z = 0/*context.GetViewport()->GetActiveZRoot()*/;
+
+            // When raster is drawn by D3D, the texture is modulated by the active color (the materal fill color). 
+            // Override the material fill color for raster to white so that the appearance won't mysteriously change in the future.
+    #if 0
+            ElemMatSymbP matSymb = context.GetElemMatSymb();
+
+            ColorDef color(0xff, 0xff, 0xff, 0x01);
+            matSymb->SetLineColor(color);
+            matSymb->SetFillColor(color);
+            context.GetIDrawGeom().ActivateMatSymb(matSymb);
+    #endif
+
+            size_t imageDataSize = bitmapSize.x * bitmapSize.y * 4;
+            ByteStream imageBytes(imageDataSize);
+
+            memcpy(imageBytes.GetDataP(), pBitmapRGBA, imageDataSize);
+
+            Image binaryImage(bitmapSize.x, bitmapSize.y, std::move(imageBytes), Image::Format::Rgba);
+
+            Render::Texture::CreateParams params;
+            params.SetIsTileSection();  // tile section have clamp instead of warp mode for out of bound pixels. That help reduce seams between tiles when magnified.            
+            TexturePtr texturePtr(context.CreateTexture(binaryImage));
+
+            Material::CreateParams matParams;
+
+            TextureMapping::Params textureMappingParams;
+            matParams.MapTexture(*texturePtr, textureMappingParams);
+
+            MaterialPtr matPtr(context.GetRenderSystem()->_CreateMaterial(matParams, context.GetDgnDb()));
+
+            auto graphic = context.CreateWorldOverlay();
+
+            GraphicParams graphicParams;
+            graphicParams.SetMaterial(matPtr.get());
+
+            graphic->SetSymbology(ColorDef::Yellow(), ColorDef::Yellow(), 8);
+            graphic->ActivateGraphicParams(graphicParams);
+            graphic->AddShape(4, bitmapInLocal, true);
+            context.AddWorldOverlay(*graphic->Finish());
+            }
+
+    public: 
+
     virtual ~ScalableMeshHandlerViewDecoration() override {}
 
     virtual void _DrawDecoration(DecorateContextR context) override 
@@ -2378,15 +2382,10 @@ struct ScalableMeshHandlerViewDecoration : public ViewDecoration
         const Byte* pBitmap = IScalableMeshTextureInfo::GetBingMapLogo(bitmapSize);
 
         if (NULL != pBitmap)
-            m_smModel->DrawBingLogo(context, pBitmap, bitmapSize);
-        
-        int i = 0;
-        i = i;
+            DrawBingLogo(context, pBitmap, bitmapSize);                
         }
 
-    virtual void _PickDecoration(PickContextR) override  {}
-    
-    ScalableMeshModel* m_smModel;
+    virtual void _PickDecoration(PickContextR) override  {}        
     };
 
 
@@ -2557,17 +2556,8 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
         SetDisplayTexture(false);
         }
 
-/*
-    m_clipProvider = new SMClipProvider(this);    
-
-    ScalableMesh::IScalableMeshClippingOptions& options = m_smPtr->EditClippingOptions();
-    options.SetClipDefinitionsProvider(m_clipProvider);
-    options.SetShouldRegenerateStaleClipFiles(true);
-*/
     if (m_textureInfo->IsTextureAvailable() && m_textureInfo->IsUsingBingMap())
-        { 
-        s_viewDecoration.m_smModel = this;
-
+        {         
         ViewManager::GetManager().AddViewDecoration(&s_viewDecoration);        
         }
     else
