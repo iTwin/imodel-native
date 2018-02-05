@@ -1622,7 +1622,7 @@ ECObjectsStatus ECClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginni
         {
         if (*baseClassIterator == (ECClassP) &baseClass)
             {
-            LOG.errorv("Cannot add class '%s' as a base class to '%s' because it already exists as a base class", baseClass.GetFullName(), GetFullName());
+            LOG.infov("Cannot add class '%s' as a base class to '%s' because it already exists as a base class", baseClass.GetFullName(), GetFullName());
             return ECObjectsStatus::NamedItemAlreadyExists;
             }
         }
