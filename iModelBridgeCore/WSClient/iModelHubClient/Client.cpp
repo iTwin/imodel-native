@@ -648,6 +648,7 @@ BriefcaseInfoTaskPtr Client::RestoreBriefcase(iModelInfoCR iModelInfo, BeSQLite:
     const Utf8String methodName = "Client::RestoreBriefcase";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+    CHECK_BRIEFCASEID(briefcaseID, BriefcaseInfoResult);
 
     if (iModelInfo.GetId().empty())
         {
@@ -964,6 +965,7 @@ StatusTaskPtr Client::AbandonBriefcase(iModelInfoCR iModelInfo, BeSQLite::BeBrie
     const Utf8String methodName = "Client::AbandonBriefcase";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+    CHECK_BRIEFCASEID(briefcaseId, StatusResult);
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, iModelInfo.GetWSRepositoryName(), m_clientInfo, nullptr, 
                                                                m_customHandler);
