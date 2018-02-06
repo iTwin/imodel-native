@@ -344,6 +344,7 @@ int WinSetEnv(const char * name, const char * value)
 //---------------------------------------------------------------------------------------
 static int runAllTestsWithTimeout (uint64_t timeoutInSeconds)
 {
+    int tempStatus = 1;
     std::promise<bool> promisedFinished;
     auto futureResult = promisedFinished.get_future ();
     int testResult = 0;
@@ -351,9 +352,14 @@ static int runAllTestsWithTimeout (uint64_t timeoutInSeconds)
     {
         BeTest::setS_mainThreadId (BeThreadUtilities::GetCurrentThreadId ());
         testResult = RUN_ALL_TESTS ();
+        tempStatus = testResult;        
         promisedFinished.set_value (true);
     }).detach ();
     EXPECT_TRUE (std::future_status::ready == futureResult.wait_for (std::chrono::seconds (timeoutInSeconds)));
+    if (tempStatus == 1)
+    {
+        printf ("%s", "Test Is Aborted Because Timeout Duration Is Reached");
+    }
     return testResult;
 }
 
