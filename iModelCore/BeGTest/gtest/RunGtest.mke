@@ -62,7 +62,7 @@ always:
 	%ifdef ONLY_TEST_CHANGES
 		%message Run only required tests
 		always:
-			python $(SrcRoot)DgnDbTestingScripts\TestImpactAnalysis\FindRequiredTests.py --gtestName=$(GTEST_NAME)
+			python $(SrcRoot)DgnDbTestingScripts/TestImpactAnalysis/FindRequiredTests.py --gtestName=$(GTEST_NAME)
 
 		REQ_TESTS_DIR=$(OutputRootDir)LogFiles/RunRequiredTests/
 		GTEST_FILTER_FILE=$(REQ_TESTS_DIR)$(GTEST_NAME)_command.txt
@@ -91,19 +91,18 @@ always:
 		RunPrefix=start "$(testName)" \/WAIT
 	%endif
 
-
 	$(ResultsCapture) : $(exeName).exe
 		>$(ResultsCapture)
 		$(exeName)
 		<
-		>$(LogDir)run.bat
 		%ifdef GTEST_FILTER
-			$(exeName) $(GTEST_FILTER) | $(_makeFilePath)TeeGtest.py $(ResultsCapture)
-		%else
+			python $(SrcRoot)DgnDbTestingScripts/TestImpactAnalysis/CreateBatch.py $(exeName) $(GTEST_FILTER) $(SrcRoot)BeGTest\gtest\TeeGtest.py $(ResultsCapture)
+		%else			
+			>$(LogDir)run.bat
 			$(exeName) | $(_makeFilePath)TeeGtest.py $(ResultsCapture)		
-		%endif
-		exit
-		<
+			exit
+			<
+		%endif			
 		-$(RunPrefix) $(LogDir)run.bat
 	
 %else
