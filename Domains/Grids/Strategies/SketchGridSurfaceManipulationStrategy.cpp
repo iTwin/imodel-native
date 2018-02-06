@@ -19,80 +19,47 @@ const Utf8CP SketchGridSurfaceManipulationStrategy::prop_Grid = "Grid";
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-ISolidPrimitivePtr SketchGridSurfaceManipulationStrategy::FinishGeometry() const
+BentleyStatus SketchGridSurfaceManipulationStrategy::_UpdateGridSurface()
     {
-    return m_geometryManipulationStrategy->FinishSolidPrimitive();
+    PlanGridPlanarSurfacePtr surface = _GetGridSurfaceP();
+
+    if (m_axis.IsNull() || surface.IsNull())
+        return BentleyStatus::ERROR;
+
+    if (m_axis->GetElementId() != surface->GetAxisId())
+        surface->SetAxisId(m_axis->GetElementId());
+
+    if (surface->GetStartElevation() != m_bottomElevation)
+        surface->SetStartElevation(m_bottomElevation);
+    
+    if (surface->GetEndElevation() != m_topElevation)
+        surface->SetEndElevation(m_topElevation);
+
+    return BentleyStatus::SUCCESS;
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-SketchGridSurfaceManipulationStrategy::SketchGridSurfaceManipulationStrategy
-(
-    BBS::ExtrusionManipulationStrategyR geometryManipulationStrategy
-)
-    : T_Super()
-    , m_geometryManipulationStrategy(&geometryManipulationStrategy)
+Dgn::DgnElementPtr SketchGridSurfaceManipulationStrategy::_FinishElement()
     {
-    }
+    PlanGridPlanarSurfacePtr surface = _GetGridSurfaceP();
+    BeAssert(surface.IsValid() && "Shouldn't be called with invalid surface");
+    
+    if (surface.IsNull() || !IsComplete())
+        return nullptr;
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas              01/2018
-//---------------+---------------+---------------+---------------+---------------+------
-bvector<DPoint3d> SketchGridSurfaceManipulationStrategy::_GetKeyPoints() const
-    {
-    return m_geometryManipulationStrategy->GetKeyPoints();
-    }
+    if (BentleyStatus::ERROR == _UpdateGridSurface())
+        return nullptr;
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas              01/2018
-//---------------+---------------+---------------+---------------+---------------+------
-bool SketchGridSurfaceManipulationStrategy::_IsDynamicKeyPointSet() const
-    {
-    return m_geometryManipulationStrategy->IsDynamicKeyPointSet();
-    }
+    if (!surface->GetDgnDb().Txns().InDynamicTxn())
+        if (Dgn::RepositoryStatus::Success != BuildingLocks_LockElementForOperation(*surface, BeSQLite::DbOpcode::Update, "Update Grid Surface"))
+            return nullptr;
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas              01/2018
-//---------------+---------------+---------------+---------------+---------------+------
-void SketchGridSurfaceManipulationStrategy::_ResetDynamicKeyPoint()
-    {
-    return m_geometryManipulationStrategy->ResetDynamicKeyPoint();
-    }
+    if (surface->Update().IsNull())
+        return nullptr;
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas              01/2018
-//---------------+---------------+---------------+---------------+---------------+------
-bool SketchGridSurfaceManipulationStrategy::_IsComplete() const
-    {
-    if (!m_geometryManipulationStrategy->IsComplete())
-        return false;
-
-    ISolidPrimitivePtr geometry = FinishGeometry();
-    if (geometry.IsNull())
-        return false;
-
-    DgnExtrusionDetail extDetail;
-    if (!geometry->TryGetDgnExtrusionDetail(extDetail))
-        return false;
-
-    DPoint3d centroid;
-    DVec3d normal;
-    double area;
-    if (!extDetail.m_baseCurve->CentroidNormalArea(centroid, normal, area))
-        return false;
-    if (DoubleOps::AlmostEqual(area, 0))
-        return false;
-
-    return true;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas              01/2018
-//---------------+---------------+---------------+---------------+---------------+------
-bool SketchGridSurfaceManipulationStrategy::_CanAcceptMorePoints() const
-    {
-    return m_geometryManipulationStrategy->CanAcceptMorePoints();
+    return surface;
     }
 
 //--------------------------------------------------------------------------------------
@@ -109,9 +76,67 @@ BentleyStatus SketchGridSurfaceManipulationStrategy::_TryGetProperty
     else if (0 == strcmp(key, prop_TopElevation))
         value = m_topElevation;
     else
-        return BentleyStatus::ERROR;
+        return _GetGeometryPlacementStrategy()->TryGetProperty(key, value);
 
     return BentleyStatus::SUCCESS;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+SketchGridSurfaceManipulationStrategy::SketchGridSurfaceManipulationStrategy()
+    : T_Super()
+    , m_axis(nullptr)
+    , m_gridName("")
+    , m_bottomElevation(0)
+    , m_topElevation(0)
+    {
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bvector<DPoint3d> SketchGridSurfaceManipulationStrategy::_GetKeyPoints() const
+    {
+    return _GetGeometryPlacementStrategy()->GetKeyPoints();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool SketchGridSurfaceManipulationStrategy::_IsDynamicKeyPointSet() const
+    {
+    return _GetGeometryPlacementStrategy()->IsDynamicKeyPointSet();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void SketchGridSurfaceManipulationStrategy::_ResetDynamicKeyPoint()
+    {
+    _GetGeometryPlacementStrategyP()->ResetDynamicKeyPoint();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool SketchGridSurfaceManipulationStrategy::_IsComplete() const
+    {
+    if (_GetGeometryPlacementStrategy()->IsComplete())
+        return false;
+
+    if (m_axis.IsNull() && m_gridName.empty())
+        return false;
+
+    return true;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool SketchGridSurfaceManipulationStrategy::_CanAcceptMorePoints() const
+    {
+    return _GetGeometryPlacementStrategy()->CanAcceptMorePoints();
     }
 
 //--------------------------------------------------------------------------------------
@@ -127,6 +152,8 @@ void SketchGridSurfaceManipulationStrategy::_SetProperty
         m_bottomElevation = value;
     else if (0 == strcmp(key, prop_TopElevation))
         m_topElevation = value;
+    else
+        _GetGeometryPlacementStrategyP()->SetProperty(key, value);
     }
 
 //--------------------------------------------------------------------------------------
@@ -140,11 +167,8 @@ BentleyStatus SketchGridSurfaceManipulationStrategy::_TryGetProperty
     {
     if (0 == strcmp(key, prop_Name))
         {
-        if (m_grid.IsValid())
-            {
-            value = m_grid->GetName();
-            return BentleyStatus::SUCCESS;
-            }
+        value = m_gridName;
+        return BentleyStatus::SUCCESS;
         }
 
     return BentleyStatus::ERROR;
@@ -161,8 +185,6 @@ BentleyStatus SketchGridSurfaceManipulationStrategy::_TryGetProperty
     {
     /*if (0 == strcmp(key, prop_Axis))
         value = *m_axis.get();
-    else if (0 == strcmp(key, prop_Grid))
-        value = *m_grid.get();
     else
         return BentleyStatus::ERROR;
 
@@ -182,16 +204,21 @@ void SketchGridSurfaceManipulationStrategy::_SetProperty
     {
     if (0 == strcmp(key, prop_Axis))
         m_axis = dynamic_cast<GridAxisCP>(&value);
-    else if (0 == strcmp(key, prop_Grid))
-        m_grid = dynamic_cast<GridCP>(&value);
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas              01/2018
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
 //---------------+---------------+---------------+---------------+---------------+------
-void SketchGridSurfaceManipulationStrategy::OnDynamicOperationEnd()
+void SketchGridSurfaceManipulationStrategy::_SetProperty
+(
+    Utf8CP key, 
+    Utf8String const & value
+)
     {
-    _OnDynamicOperationEnd();
+    if (0 == strcmp(key, prop_Name))
+        {
+        m_gridName = value;
+        }
     }
 
 //--------------------------------------------------------------------------------------

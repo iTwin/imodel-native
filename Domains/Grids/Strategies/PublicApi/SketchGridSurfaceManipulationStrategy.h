@@ -18,45 +18,39 @@ struct SketchGridSurfaceManipulationStrategy : public BBS::ElementManipulationSt
     {
     DEFINE_T_SUPER(BBS::ElementManipulationStrategy)
 
-    private:
-        BBS::ExtrusionManipulationStrategyPtr m_geometryManipulationStrategy;
-        double m_bottomElevation = 0;
-        double m_topElevation = 0;
-        GridAxisCPtr m_axis = nullptr; // TODO to Ptr
-        GridCPtr m_grid = nullptr; // TODO to Ptr
-
-        ISolidPrimitivePtr FinishGeometry() const;
-
     protected:
-        SketchGridSurfaceManipulationStrategy()
-            : SketchGridSurfaceManipulationStrategy(*BBS::ExtrusionManipulationStrategy::Create()) { }
+        double m_bottomElevation;
+        double m_topElevation;
+        GridAxisCPtr m_axis; // TODO to Ptr
+        Utf8String m_gridName;
 
-        SketchGridSurfaceManipulationStrategy(BBS::ExtrusionManipulationStrategyR geometryManipulationStrategy);
+        SketchGridSurfaceManipulationStrategy();
 
-        virtual BBS::GeometryManipulationStrategyCR _GetGeometryManipulationStrategy() const override { return *m_geometryManipulationStrategy; }
-        virtual BBS::GeometryManipulationStrategyR _GetGeometryManipulationStrategyR() override { return *m_geometryManipulationStrategy; }
-
+        // GeometryManipulationStrategyBase
         virtual bvector<DPoint3d> _GetKeyPoints() const override;
-
         virtual bool _IsDynamicKeyPointSet() const override;
         virtual void _ResetDynamicKeyPoint() override;
-
         virtual bool _IsComplete() const override;
         virtual bool _CanAcceptMorePoints() const override;
-
-        virtual BentleyStatus _TryGetProperty(Utf8CP key, double & value) const override;
         virtual void _SetProperty(Utf8CP key, double const & value) override;
-
-        virtual BentleyStatus _TryGetProperty(Utf8CP key, Utf8String& value) const override;
-
-        virtual BentleyStatus _TryGetProperty(Utf8CP key, Dgn::DgnElement& value) const override;
         virtual void _SetProperty(Utf8CP key, Dgn::DgnElement const& value) override;
+        virtual void _SetProperty(Utf8CP key, Utf8String const& value) override;
+        virtual BentleyStatus _TryGetProperty(Utf8CP key, double & value) const override;
+        virtual BentleyStatus _TryGetProperty(Utf8CP key, Dgn::DgnElement & value) const override;
+        virtual BentleyStatus _TryGetProperty(Utf8CP key, Utf8String & value) const override;
 
-        virtual void _OnDynamicOperationEnd() = 0;
+        // ElementManipulationStrategy
+        virtual Dgn::DgnElementPtr _FinishElement() override;
+
+        // SketchGridSurfaceManipulationStrategy
+        virtual BentleyStatus _UpdateGridSurface();
         virtual Utf8String _GetMessage() const = 0;
+        virtual PlanGridPlanarSurfaceCP _GetGridSurfaceCP() = 0;
+        virtual PlanGridPlanarSurfaceP _GetGridSurfaceP() = 0;
+        virtual BBS::CurvePrimitivePlacementStrategyPtr _GetGeometryPlacementStrategyP() = 0;
+        virtual BBS::CurvePrimitivePlacementStrategyCPtr _GetGeometryPlacementStrategy() const = 0;
 
     public:
-        void OnDynamicOperationEnd();
         Utf8String GetMessage() const;
 
         static const Utf8CP prop_BottomElevation;

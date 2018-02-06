@@ -19,15 +19,47 @@ const Utf8CP SketchGridSurfacePlacementStrategy::prop_Grid = SketchGridSurfaceMa
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-void SketchGridSurfacePlacementStrategy::OnDynamicOperationEnd()
+Utf8String SketchGridSurfacePlacementStrategy::GetMessage() const
     {
-    _GetSketchGridSurfaceManipulationStrategyR().OnDynamicOperationEnd();
+    return _GetSketchGridSurfaceManipulationStrategy().GetMessage();
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-Utf8String SketchGridSurfacePlacementStrategy::GetMessage() const
+BentleyStatus SketchGridSurfacePlacementStrategy::_TryGetProperty(Utf8CP key, double & value) const
     {
-    return _GetSketchGridSurfaceManipulationStrategy().GetMessage();
+    return _GetSketchGridSurfaceManipulationStrategy().TryGetProperty(key, value);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void SketchGridSurfacePlacementStrategy::_SetProperty(Utf8CP key, double const & value)
+    {
+    _GetSketchGridSurfaceManipulationStrategyR().SetProperty(key, value);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SketchGridSurfacePlacementStrategy::_TryGetProperty(Utf8CP key, Utf8String & value) const
+    {
+    return _GetSketchGridSurfaceManipulationStrategy().TryGetProperty(key, value);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SketchGridSurfacePlacementStrategy::_TryGetProperty(Utf8CP key, Dgn::DgnElement & value) const
+    {
+    return _GetSketchGridSurfaceManipulationStrategy().TryGetProperty(key, value);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void SketchGridSurfacePlacementStrategy::_SetProperty(Utf8CP key, Dgn::DgnElement const & value)
+    {
+    _GetSketchGridSurfaceManipulationStrategyR().SetProperty(key, value);
     }
