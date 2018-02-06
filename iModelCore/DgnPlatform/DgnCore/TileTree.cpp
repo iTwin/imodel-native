@@ -694,7 +694,7 @@ void Root::DoneTileLoad(TileLoadStatePtr state) const
     {
     BeAssert(nullptr != state);
     BeMutexHolder lock(m_cv.GetMutex());
-    // NB: If the load was canceled by RequestTiles(), it no longer exists in m_activeLoads
+    BeAssert(m_activeLoads.end() != m_activeLoads.find(state));
     m_activeLoads.erase(state);
     m_cv.notify_all();
     }
@@ -1140,18 +1140,12 @@ void Root::RequestTiles(MissingNodesCR missingNodes, BeDuration partialTimeout)
         {
         // First cancel any loading/queued tiles which are no longer needed
         BeMutexHolder lock(m_cv.GetMutex());
-        for (auto iter = m_activeLoads.begin(); iter != m_activeLoads.end(); /**/)
+        for (auto& load : m_activeLoads)
             {
-            auto& load = *iter;
             if (!load->IsCanceled() && !missingNodes.Contains(load->GetTile()))
                 {
-                ++numCanceled;
                 load->SetCanceled();
-                iter = m_activeLoads.erase(iter);
-                }
-            else
-                {
-                ++iter;
+                ++numCanceled;
                 }
             }
         }
@@ -1576,6 +1570,10 @@ void Root::InvalidateDamagedTiles()
     BeMutexHolder lock(m_cv.GetMutex());
     if (m_damagedRanges.empty() || m_rootTile.IsNull())
         return;
+
+    CancelAllTileLoads();
+    while (m_activeLoads.size() > 0)
+        m_cv.InfiniteWait(lock);
 
     DirtyRanges dirty(m_damagedRanges);
     UpdateRange(dirty);
