@@ -338,7 +338,7 @@ struct  ClipPlaneSet :  bvector <ConvexClipPlaneSet>
 
     //! Determine if a Polyface is completely in, completely out, or mixed with respect
     //! to a postive ClipPlaneSet and a mask (hole) ClipPlaneSet.
-    //! @param curve [in] curve to test
+    //! @param polyface [in] polyface to test
     //! @param clipSet [in] the positive clip set
     //! @param maskSet [in] the negative (holes) clip set
     GEOMDLLIMPEXP static ClipPlaneContainment ClassifyPolyfaceInSetDifference
@@ -349,7 +349,7 @@ struct  ClipPlaneSet :  bvector <ConvexClipPlaneSet>
     );
 
     //! Clip a polyface to a a postive ClipPlaneSet and a mask (hole) ClipPlaneSet.
-    //! @param curve [in] curve to test
+    //! @param polyface [in] polyface to test
     //! @param clipSet [in] the positive clip set
     //! @param maskSet [in] the negative (holes) clip set
     //! @param inside [out] (optional) "inside" parts
