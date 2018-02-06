@@ -3166,7 +3166,8 @@ PolyfaceCoordinateMap (PolyfaceHeader &referencedPolyface);
 PolyfaceCoordinateMap (PolyfaceHeader &referencedPolyface,
     double xyzAbsTol, double xyzRelTol,
     double paramAbsTol, double paramRelTol,
-    double normalAbsTol = 1.0E-14, double normalRelTol = 1.0E-12
+    double normalAbsTol = 1.0E-14, double normalRelTol = 1.0E-12
+
     );
 
 ~PolyfaceCoordinateMap ();

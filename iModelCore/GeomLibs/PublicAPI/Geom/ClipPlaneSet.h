@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/ClipPlaneSet.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,6 +11,7 @@
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
 typedef bvector <ClipPlane>     T_ClipPlanes;
+typedef bvector <ClipPlaneSet>    T_ClipPlaneSets;
 
 
 enum    ClipPlaneContainment
@@ -80,6 +81,15 @@ bool SwapBackPop (bvector<T> &data)
         }
     return false;
     }
+void MoveAllFrom (BVectorCache<T> &other)
+    {
+    while (other.size () > 0)
+        {
+        this->push_back (bvector<T> ());
+        this->back ().swap (other.back ());
+        other.pop_back ();
+        }
+    }
 };
 /*=================================================================================**//**
 //! A ConvexClipPlaneSet is an array of planes oriented so the intersection of their inside halfspaces is a convex volume.
@@ -114,9 +124,14 @@ struct  ConvexClipPlaneSet : T_ClipPlanes
     //! Create clip plane set from XY box.
     GEOMDLLIMPEXP static ConvexClipPlaneSet  FromXYBox (double x0, double y0, double x1, double y1);
 
-    //! Create clip plane set from XY polygon.
-    // normals
-    GEOMDLLIMPEXP static ConvexClipPlaneSet  FromXYPolyLine (bvector<DPoint3d> &points, bvector<bool> &hiddenEdge, bool leftIsInside);
+    //! Create clip plane set for regiosn to one side of a polyline.
+    //! If hiddenEdge is an empty array, all clips are marked as regular clippers
+    GEOMDLLIMPEXP static ConvexClipPlaneSet  FromXYPolyLine
+    (
+    bvector<DPoint3d> const &points,
+    bvector<bool> const &hiddenEdge,
+    bool leftIsInside
+    );
 
     //! Add space "to the left of a polyline", with left determined by edges and an upvector.
     //!<ul>
@@ -212,13 +227,11 @@ struct  ConvexClipPlaneSet : T_ClipPlanes
 }; // ConvexClipPlaneSet
 
 
-typedef bvector <ConvexClipPlaneSet>    T_ConvexClipPlaneSets;
-
 /*=================================================================================**//**
 //! A ClipPlaneSet is an array of ConvexClipPlaneSet representing the union of all of these sets.
 //! @bsiclass  
 +===============+===============+===============+===============+===============+======*/
-struct  ClipPlaneSet :  T_ConvexClipPlaneSets
+struct  ClipPlaneSet :  bvector <ConvexClipPlaneSet>
     {
     //! Create empty clip plane set
     ClipPlaneSet () { }
@@ -323,9 +336,32 @@ struct  ClipPlaneSet :  T_ConvexClipPlaneSets
     ClipPlaneSetCP maskSet
     );
 
+    //! Determine if a Polyface is completely in, completely out, or mixed with respect
+    //! to a postive ClipPlaneSet and a mask (hole) ClipPlaneSet.
+    //! @param curve [in] curve to test
+    //! @param clipSet [in] the positive clip set
+    //! @param maskSet [in] the negative (holes) clip set
+    GEOMDLLIMPEXP static ClipPlaneContainment ClassifyPolyfaceInSetDifference
+    (
+    PolyfaceHeaderCR polyface,
+    ClipPlaneSetCR clipSet,
+    ClipPlaneSetCP maskSet
+    );
 
-    };
-
-typedef bvector <ClipPlaneSet>    T_ClipPlaneSets;
+    //! Clip a polyface to a a postive ClipPlaneSet and a mask (hole) ClipPlaneSet.
+    //! @param curve [in] curve to test
+    //! @param clipSet [in] the positive clip set
+    //! @param maskSet [in] the negative (holes) clip set
+    //! @param inside [out] (optional) "inside" parts
+    //! @param outside [out] (optional) "outside" parts
+    GEOMDLLIMPEXP void static ClipToSetDifference
+    (
+    PolyfaceHeaderCR polyface,
+    ClipPlaneSetCR clipSet,
+    ClipPlaneSetCP maskSet,
+    PolyfaceHeaderPtr *inside,
+    PolyfaceHeaderPtr *outside
+    );
+};
 
 END_BENTLEY_GEOMETRY_NAMESPACE

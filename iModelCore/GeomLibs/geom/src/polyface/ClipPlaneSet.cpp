@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/ClipPlaneSet.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -576,7 +576,7 @@ ConvexClipPlaneSet ConvexClipPlaneSet::FromXYBox (double x0, double y0, double x
     return convexSet;
     }
 
-ConvexClipPlaneSet ConvexClipPlaneSet::FromXYPolyLine (bvector<DPoint3d> &points, bvector<bool> &interior, bool leftIsInside)
+ConvexClipPlaneSet ConvexClipPlaneSet::FromXYPolyLine (bvector<DPoint3d> const &points, bvector<bool> const &interior, bool leftIsInside)
     {
     ConvexClipPlaneSet  convexSet;
     for (size_t i0 = 0; i0 + 1 < points.size (); i0++)
@@ -586,8 +586,11 @@ ConvexClipPlaneSet ConvexClipPlaneSet::FromXYPolyLine (bvector<DPoint3d> &points
         perp.z = 0.0;
         if (!leftIsInside)
             perp.Negate ();
+        bool hidden = false;
+        if (interior.size () > i0)
+            hidden = interior[i0];
         if (perp.Normalize ())
-            convexSet.push_back (ClipPlane (perp, points[i0], interior[i0], interior[i0]));
+            convexSet.push_back (ClipPlane (perp, points[i0], false, false));
         }
 
     return convexSet;
@@ -942,17 +945,17 @@ void ConvexClipPlaneSet::AppendCrossings (ICurvePrimitiveCR curve, bvector<Curve
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClipPlaneSet::ClipPlaneSet (ClipPlaneCP planes, size_t nPlanes) : T_ConvexClipPlaneSets (1)
+ClipPlaneSet::ClipPlaneSet (ClipPlaneCP planes, size_t nPlanes)
     {
-    front() = ConvexClipPlaneSet (planes, nPlanes);
+    push_back (ConvexClipPlaneSet (planes, nPlanes));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClipPlaneSet::ClipPlaneSet (ConvexClipPlaneSetCR convexSet) : T_ConvexClipPlaneSets (1)
+ClipPlaneSet::ClipPlaneSet (ConvexClipPlaneSetCR convexSet) 
     {
-    front() = convexSet;
+    push_back (convexSet);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1242,6 +1245,157 @@ ClipPlaneSetCP maskSet
         maskSet->AppendCrossings (curve, crossings);
     AppendPrimitiveStartEnd (curve, crossings);
     return ClassifyCrossings (crossings, clipSet, maskSet, false, nullptr);
+    }
+
+struct PolyfaceClipContext
+{
+BVectorCache<DPoint3d> m_currentCandidates;
+BVectorCache<DPoint3d> m_nextCandidates;
+
+bvector<DPoint3d> m_currentCandidate;
+BVectorCache<DPoint3d> m_shards;
+
+bvector<DPoint3d> m_inside;
+bvector<DPoint3d> m_work1;
+bvector<DPoint3d> m_work2;
+double m_distanceTolerance;
+
+ClipPlaneSetCR m_clipSet;
+ClipPlaneSetCP m_maskSet;
+PolyfaceClipContext (ClipPlaneSetCR clipSet, ClipPlaneSetCP maskSet) : m_clipSet (clipSet), m_maskSet(maskSet)
+    {
+    m_distanceTolerance = 0;
+    }
+
+void ClipAndCollect (bvector<DPoint3d> &polygon, ClipPlaneSetCR clipset, BVectorCache<DPoint3d> &insideShards, BVectorCache<DPoint3d> &outsideShards)
+    {
+    m_currentCandidates.ClearToCache ();
+    m_currentCandidates.PushCopy (polygon);
+    // m_candidates contains polygon content not yet found to be IN a clip set . . 
+    for (auto convexSet : clipset)
+        {
+        while (m_currentCandidates.SwapBackPop (m_currentCandidate))
+            {
+            convexSet.ConvexPolygonClipInsideOutside (m_currentCandidate, m_inside, m_shards, m_work1, m_work2, true, m_distanceTolerance);
+            if (m_inside.size () > 0)
+                insideShards.PushCopy (m_inside);
+            // shards become candidates for further clip plane sets
+            m_nextCandidates.MoveAllFrom (m_shards);
+            }
+        m_currentCandidates.MoveAllFrom (m_nextCandidates);
+        }
+    for (auto &outside : m_currentCandidates)
+        outsideShards.PushCopy (outside);
+    }
+
+};
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ClipPlaneContainment ClipPlaneSet::ClassifyPolyfaceInSetDifference
+(
+PolyfaceHeaderCR polyface,
+ClipPlaneSetCR clipSet,
+ClipPlaneSetCP maskSet
+)
+    {
+    auto visitor = PolyfaceVisitor::Attach (polyface);
+    PolyfaceClipContext context (clipSet, maskSet);
+    BVectorCache<DPoint3d> insideA;
+    BVectorCache<DPoint3d> outsideA;
+    BVectorCache<DPoint3d> insideB;
+    BVectorCache<DPoint3d> outsideB;
+    size_t numIn = 0;
+    size_t numOut = 0;
+    for (visitor->Reset (); visitor->AdvanceToNextFace ();)
+        {
+        insideA.ClearToCache ();
+        outsideA.ClearToCache ();
+        context.ClipAndCollect (visitor->Point (), clipSet, insideA, outsideA);
+        if (!maskSet)
+            {
+            numIn += insideA.size ();
+            numOut += outsideA.size ();
+            }
+        else
+            {
+            numOut += outsideA.size ();
+            // insides need second split by masks . .
+            for (auto &shard : insideA)
+                {
+                context.ClipAndCollect (shard, *maskSet, insideB, outsideB);
+                // (inside, outside are reversed in the mask holes!!)
+                numOut += insideB.size ();
+                numIn += outsideB.size ();
+                }
+            }
+        if (numIn > 0 && numOut > 0)
+            return ClipPlaneContainment::ClipPlaneContainment_Ambiguous;
+        }
+    if (numIn > 0 && numOut == 0)
+        return ClipPlaneContainment::ClipPlaneContainment_StronglyInside;
+    if (numIn == 0 && numOut > 0)
+        return ClipPlaneContainment::ClipPlaneContainment_StronglyOutside;
+    return ClipPlaneContainment::ClipPlaneContainment_Ambiguous;
+    }
+static void AddPolygonsToMesh (PolyfaceHeaderPtr *mesh, BVectorCache<DPoint3d> &shards)
+    {
+    if (mesh != nullptr)
+        {
+        for (auto &shard : shards)
+            (*mesh)->AddPolygon (shard);
+        }
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClipPlaneSet::ClipToSetDifference
+(
+PolyfaceHeaderCR polyface,
+ClipPlaneSetCR clipSet,
+ClipPlaneSetCP maskSet,
+PolyfaceHeaderPtr *inside,
+PolyfaceHeaderPtr *outside
+)
+    {
+    if (inside != nullptr)
+        *inside = PolyfaceHeader::CreateVariableSizeIndexed ();
+    if (outside != nullptr)
+        *outside = PolyfaceHeader::CreateVariableSizeIndexed ();
+    auto visitor = PolyfaceVisitor::Attach (polyface);
+    PolyfaceClipContext context (clipSet, maskSet);
+    BVectorCache<DPoint3d> insideA;
+    BVectorCache<DPoint3d> outsideA;
+    BVectorCache<DPoint3d> insideB;
+    BVectorCache<DPoint3d> outsideB;
+    for (visitor->Reset (); visitor->AdvanceToNextFace ();)
+        {
+        insideA.ClearToCache ();
+        outsideA.ClearToCache ();
+        context.ClipAndCollect (visitor->Point (), clipSet, insideA, outsideA);
+        if (!maskSet)
+            {
+            AddPolygonsToMesh (outside, outsideA);
+            AddPolygonsToMesh (inside, insideA);
+            }
+        else
+            {
+            // outside of clipper is done ..
+            AddPolygonsToMesh (outside, outsideA);
+                // insides need second split by masks . .
+            for (auto &shard : insideA)
+                {
+                context.ClipAndCollect (shard, *maskSet, insideB, outsideB);
+                // YES  -- inside/outside names are swapped because this is the result of a mask clip
+                AddPolygonsToMesh (outside, insideB);
+                AddPolygonsToMesh (inside, outsideB);
+                }
+            }
+        }
+    if (inside != nullptr)
+        (*inside)->Compress ();
+    if (outside != nullptr)
+        (*outside)->Compress ();
     }
 
 END_BENTLEY_GEOMETRY_NAMESPACE

@@ -2,7 +2,7 @@
 |
 |  $Source: geom/test/PolyfaceTest/t_normals.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "testHarness.h"
@@ -278,5 +278,28 @@ TEST(FastCutFill,SinusoidPlane)
             }
 #endif
         ExerciseCutFill (dtm, road, "Sinusoid, Road");
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(Polyface,GetNumFacet)
+    {
+    for (auto triangulated: {false, true})
+        {
+        Check::NamedScope scope0 ("Triangulated ", triangulated ? 1 : 0);
+        for (auto coordinateOnly : {false, true})
+            {
+            Check::NamedScope scope1 ("CoordinateOnly", coordinateOnly ? 1 : 0);
+            auto pf3 = UnitGridPolyface (DPoint3dDVec3dDVec3d (  0,0,1,    10,0,0,   0,4,0), 3,1, triangulated, coordinateOnly);
+            size_t maxPerFacetGri;
+            size_t numFacetGri = pf3->GetNumFacet (maxPerFacetGri);
+            pf3->ConvertToVariableSizeSignedOneBasedIndexedFaceLoops ();
+            size_t maxPerFacetIndexe;
+            size_t numFacetIndexe = pf3->GetNumFacet (maxPerFacetIndexe);
+            Check::Size (maxPerFacetGri, maxPerFacetIndexe, "MaxPerFace grid, indexed");
+            Check::Size (numFacetGri, numFacetIndexe, "numFacet grid, indexed");
+            }
         }
     }
