@@ -245,7 +245,7 @@ Response RequestHandler::UploadNewSeedFile(Request req)
     bvector<Utf8String> args = ParseUrl(req);
     Utf8String instanceid = GetInstanceid(args[2]);
 
-    req.GetRequestBody()->GetFilePath();
+    //req.GetRequestBody()->GetFilePath();
 
     BeFileName dbName("ServerRepo.db");
     BeFileName dbPath(serverPath);
