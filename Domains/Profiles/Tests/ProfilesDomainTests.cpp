@@ -38,6 +38,22 @@ TEST_F(ProfilesDomainTestsFixture, EnsureDomainsAreRegistered)
     ASSERT_TRUE(NULL != profilesDomain);
     }
 
+TEST_F(ProfilesDomainTestsFixture, ValidateSchema)
+    {
+    DgnDbPtr db = OpenDgnDb();
+    ASSERT_TRUE(db.IsValid());
+
+    ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext(true, true);
+    context->AddSchemaLocater((*db).GetSchemaLocater());
+
+    ECN::SchemaKey refKey = ECN::SchemaKey(BENTLEY_PROFILES_SCHEMA_NAME, 1, 0);
+
+    ECN::ECSchemaPtr refSchema = context->LocateSchema(refKey, ECN::SchemaMatchType::LatestWriteCompatible);
+    ASSERT_TRUE(refSchema.IsValid());
+
+    ASSERT_TRUE(ECN::ECSchemaValidator::Validate(*refSchema));
+    }
+
 TEST_F(ProfilesDomainTestsFixture, CreateModel)
     {
     DgnDbPtr db = OpenDgnDb();
