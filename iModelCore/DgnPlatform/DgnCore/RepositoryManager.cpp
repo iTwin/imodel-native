@@ -24,6 +24,7 @@ private:
     IOwnedLocksIteratorPtr _GetOwnedLocks(FastQuery fast) override { return nullptr; }
     RepositoryStatus _OnFinishRevision(DgnRevision const&) override { return RepositoryStatus::Success; }
     RepositoryStatus _RefreshFromRepository() override { return RepositoryStatus::Success; }
+    RepositoryStatus _ClearUserHeldCodesLocks() override { return RepositoryStatus::Success; }
     void _OnElementInserted(DgnElementId) override { }
     void _OnModelInserted(DgnModelId) override { }
     void _StartBulkOperation() override {}
@@ -85,6 +86,7 @@ protected:
     IOwnedLocksIteratorPtr _GetOwnedLocks(FastQuery fast) override;
     RepositoryStatus _OnFinishRevision(DgnRevision const&) override;
     RepositoryStatus _RefreshFromRepository() override { return Refresh(); }
+    RepositoryStatus _ClearUserHeldCodesLocks() override { return ClearUserHeldCodesLocks(); }
     void _OnElementInserted(DgnElementId) override;
     void _OnModelInserted(DgnModelId) override;
     void _OnDgnDbDestroyed() override;
@@ -120,6 +122,7 @@ protected:
     bool CreateLocksTable(Utf8CP tableName);
     bool CreateCodesTable(Utf8CP tableName);
     RepositoryStatus Refresh();
+    RepositoryStatus ClearUserHeldCodesLocks();
     RepositoryStatus Pull();
     DbResult Save()
         {
@@ -492,6 +495,33 @@ RepositoryStatus BriefcaseManagerBase::Refresh()
         }
 
     return Pull();
+    }
+
+//-------------------------------------------------------------------------------------------
+// @bsimethod                                                 Diego.Pinate     01/18
+//-------------------------------------------------------------------------------------------
+RepositoryStatus BriefcaseManagerBase::ClearUserHeldCodesLocks()
+    {
+    if (DbState::Ready != m_localDbState)
+        {
+        // Either we haven't yet initialized the localDB, or failed to do so previously. Retry that.
+        RepositoryStatus stat;
+        Validate(&stat);
+        return stat;
+        }
+
+    // Clear user held locks and codes
+    m_localDbState = DbState::Invalid; // assume something will go wrong...
+    if (BE_SQLITE_OK != GetLocalDb().ExecuteSql("DELETE FROM " TABLE_Locks)
+        || BE_SQLITE_OK != GetLocalDb().ExecuteSql("DELETE FROM " TABLE_Codes))
+        {
+        return RepositoryStatus::SyncError;
+        }
+    
+    Save();
+    
+    m_localDbState = DbState::Ready;
+    return RepositoryStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
