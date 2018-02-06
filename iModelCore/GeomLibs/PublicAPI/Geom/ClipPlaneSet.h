@@ -352,13 +352,15 @@ struct  ClipPlaneSet :  bvector <ConvexClipPlaneSet>
     //! @param curve [in] curve to test
     //! @param clipSet [in] the positive clip set
     //! @param maskSet [in] the negative (holes) clip set
+    //! @param inside [out] (optional) "inside" parts
+    //! @param outside [out] (optional) "outside" parts
     GEOMDLLIMPEXP void static ClipToSetDifference
     (
     PolyfaceHeaderCR polyface,
     ClipPlaneSetCR clipSet,
     ClipPlaneSetCP maskSet,
-    PolyfaceHeaderPtr &inside,
-    PolyfaceHeaderPtr &outside
+    PolyfaceHeaderPtr *inside,
+    PolyfaceHeaderPtr *outside
     );
 };
 

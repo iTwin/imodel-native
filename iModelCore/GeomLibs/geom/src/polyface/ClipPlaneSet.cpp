@@ -1326,7 +1326,7 @@ ClipPlaneSetCP maskSet
                 context.ClipAndCollect (shard, *maskSet, insideB, outsideB);
                 // (inside, outside are reversed in the mask holes!!)
                 numOut += insideB.size ();
-                numOut += outsideB.size ();
+                numIn += outsideB.size ();
                 }
             }
         if (numIn > 0 && numOut > 0)
@@ -1338,7 +1338,14 @@ ClipPlaneSetCP maskSet
         return ClipPlaneContainment::ClipPlaneContainment_StronglyOutside;
     return ClipPlaneContainment::ClipPlaneContainment_Ambiguous;
     }
-
+static void AddPolygonsToMesh (PolyfaceHeaderPtr *mesh, BVectorCache<DPoint3d> &shards)
+    {
+    if (mesh != nullptr)
+        {
+        for (auto &shard : shards)
+            (*mesh)->AddPolygon (shard);
+        }
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Earlin.Lutz     11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1347,12 +1354,14 @@ void ClipPlaneSet::ClipToSetDifference
 PolyfaceHeaderCR polyface,
 ClipPlaneSetCR clipSet,
 ClipPlaneSetCP maskSet,
-PolyfaceHeaderPtr &inside,
-PolyfaceHeaderPtr &outside
+PolyfaceHeaderPtr *inside,
+PolyfaceHeaderPtr *outside
 )
     {
-    inside = PolyfaceHeader::CreateVariableSizeIndexed ();
-    outside = PolyfaceHeader::CreateVariableSizeIndexed ();
+    if (inside != nullptr)
+        *inside = PolyfaceHeader::CreateVariableSizeIndexed ();
+    if (outside != nullptr)
+        *outside = PolyfaceHeader::CreateVariableSizeIndexed ();
     auto visitor = PolyfaceVisitor::Attach (polyface);
     PolyfaceClipContext context (clipSet, maskSet);
     BVectorCache<DPoint3d> insideA;
@@ -1366,33 +1375,27 @@ PolyfaceHeaderPtr &outside
         context.ClipAndCollect (visitor->Point (), clipSet, insideA, outsideA);
         if (!maskSet)
             {
-            for (auto &shard: outsideA)
-                outside->AddPolygon (shard);
-            for (auto &shard : insideA)
-                inside->AddPolygon (shard);
+            AddPolygonsToMesh (outside, outsideA);
+            AddPolygonsToMesh (inside, insideA);
             }
         else
             {
             // outside of clipper is done ..
-            for (auto &shard: outsideA)
-                outside->AddPolygon (shard);
+            AddPolygonsToMesh (outside, outsideA);
                 // insides need second split by masks . .
             for (auto &shard : insideA)
                 {
                 context.ClipAndCollect (shard, *maskSet, insideB, outsideB);
-                // (inside, outside are reversed in the mask holes!!)
-                for (auto &shard : insideB)
-                    outside->AddPolygon (shard);
-                for (auto &shard: outsideB)
-                    inside->AddPolygon (shard);
+                // YES  -- inside/outside names are swapped because this is the result of a mask clip
+                AddPolygonsToMesh (outside, insideB);
+                AddPolygonsToMesh (inside, outsideB);
                 }
             }
         }
-    inside->Compress ();
-    outside->Compress ();
+    if (inside != nullptr)
+        (*inside)->Compress ();
+    if (outside != nullptr)
+        (*outside)->Compress ();
     }
-
-
-
 
 END_BENTLEY_GEOMETRY_NAMESPACE

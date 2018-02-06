@@ -847,7 +847,7 @@ TEST(ClipPlaneSet,ClipToSetDifference_MutlipleClips_NoMasks)
     Check::SaveTransformed (*polyface);
 
     PolyfaceHeaderPtr inside, outside;
-    ClipPlaneSet::ClipToSetDifference (*polyface, clipPlaneSet, nullptr, inside, outside);
+    ClipPlaneSet::ClipToSetDifference (*polyface, clipPlaneSet, nullptr, &inside, &outside);
     if (inside.IsValid ())
         {
         Check::Shift (0, 15,0);
@@ -896,7 +896,7 @@ TEST(ClipPlaneSet,ClipToSetDifference_OneClip_MutlipleMasks)
 
     Check::Shift (20, 10,0);
     PolyfaceHeaderPtr inside, outside;
-    ClipPlaneSet::ClipToSetDifference (*polyface, clip, &masks, inside, outside);
+    ClipPlaneSet::ClipToSetDifference (*polyface, clip, &masks, &inside, &outside);
     Check::SaveTransformed (*polyface);
     if (inside.IsValid ())
         {
@@ -957,7 +957,7 @@ TEST(ClipPlaneSet,ClipToSetDifference_MultipleClips_MutlipleMasks)
     Check::SaveTransformed (*polyface);
 
     PolyfaceHeaderPtr inside, outside;
-    ClipPlaneSet::ClipToSetDifference (*polyface, clip, &masks, inside, outside);
+    ClipPlaneSet::ClipToSetDifference (*polyface, clip, &masks, &inside, &outside);
     if (inside.IsValid ())
         {
         Check::Shift (0, yStep,0);
@@ -971,6 +971,26 @@ TEST(ClipPlaneSet,ClipToSetDifference_MultipleClips_MutlipleMasks)
 
 
     // extract each pair of consecutive triangles as a small mesh.  Do both clip and full classify and confirm same classification
-    
+    size_t targetPerBlock = 2;
+    auto visitor = PolyfaceVisitor::Attach (*polyface);
+    PolyfaceHeaderPtr smallPolyface = PolyfaceHeader::CreateVariableSizeIndexed ();
+    for (visitor->Reset (); visitor->AdvanceToNextFace ();)
+        {
+        smallPolyface->AddPolygon (visitor->Point ());
+        if (smallPolyface->GetNumFacet () >= targetPerBlock)
+            {
+            ClipPlaneSet::ClipToSetDifference (*smallPolyface, clip, &masks, &inside, &outside);
+            size_t numIn = inside->GetNumFacet ();
+            size_t numOut = outside->GetNumFacet ();
+            auto c0 = ClipPlaneSet::ClassifyPolyfaceInSetDifference (*smallPolyface, clip, &masks);
+            auto c1 = ClipPlaneContainment::ClipPlaneContainment_Ambiguous;
+            if (numIn > 0 && numOut == 0)
+                c1 = ClipPlaneContainment::ClipPlaneContainment_StronglyInside;
+            if (numOut > 0 && numIn == 0)
+                c1 = ClipPlaneContainment::ClipPlaneContainment_StronglyOutside;
+            Check::Int ((int)c0, (int)c1, "polyface in/out clipSets via clip, classify");
+            PolyfaceHeaderPtr smallPolyface = PolyfaceHeader::CreateVariableSizeIndexed ();
+            }
+        }
     Check::ClearGeometry ("ClipPlaneSet.ClipToSetDifference_MultipleClips_MutlipleMasks");
     }
