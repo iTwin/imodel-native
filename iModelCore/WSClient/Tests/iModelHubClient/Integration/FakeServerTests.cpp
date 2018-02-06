@@ -16,7 +16,7 @@ USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_IMODELHUB
 
 
-class FakeServerFixture : public IntegrationTestsBase
+class FakeServerFixture : public testing::Test //: public IntegrationTestsBase
     {
     public:
 
@@ -93,22 +93,6 @@ class FakeServerFixture : public IntegrationTestsBase
             }
     };
 
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Farhad.Kabir    12/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-/*
-TEST_F(FakeServerFixture, CreateiModelFromSeed) 
-{
-WCharCP serverPath = outPath.GetWCharCP();
-WCharP downloadPath = L"E:\\out"; 
-WCharP seedFile = L"Test_Seed.bim";
-EXPECT_EQ(BeFileNameStatus::Success, FakeServer::DownloadiModel(downloadPath, serverPath, seedFile));
-DbResult res = DbResult::BE_SQLITE_OK;
-DgnDbPtr m_db = FakeServer::AcquireBriefcase(res, downloadPath, seedFile);
-EXPECT_EQ(DbResult::BE_SQLITE_OK, res);
-EXPECT_TRUE(m_db.IsValid());
-}*/
-
 Utf8String GetUrlWithoutLengthWarning(Utf8StringCR path, Utf8StringCR queryString)
     {
     Utf8String url("https://qa-imodelhubapi.bentley.com/v2.5");
@@ -147,7 +131,6 @@ Json::Value iModelCreationJson(Utf8StringCR iModelName, Utf8StringCR description
     return iModelCreation;
     }
 
-#ifdef __WIP__
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Farhad.Kabir    12/2017
@@ -160,16 +143,17 @@ TEST_F(FakeServerFixture, CreateiModel)
     Json::Value objectCreationJson = iModelCreationJson(iModelName, description);
 
 
-    Utf8String url;
+    Utf8String url("https://qa-imodelhubapi.bentley.com/v2.5/Repositories/Project--1b2b32312-3222-3212-63d3-12312d4rr4/ProjectScope/iModel");
+    Utf8String urlUpdate("https://qa-imodelhubapi.bentley.com/v2.5/Repositories/iModel--1b2b32312-3222-3212-63d3-12312d4rr4/iModelScope/SeedFile");
     {
     ObjectId objectId;
     Utf8String schemaName = objectCreationJson["instance"]["schemaName"].asString();
     Utf8String className = objectCreationJson["instance"]["className"].asString();
     Utf8String instanceId = objectCreationJson["instance"]["instanceId"].asString();
 
-    url = GetUrl(CreateClassSubPath(schemaName, className));
+    /*url = GetUrl(CreateClassSubPath(schemaName, className));
     if (!instanceId.empty() && objectCreationJson["instance"]["changeState"].asString() != "new")
-        url += "/" + instanceId;
+        url += "/" + instanceId;*/
     }
 
 
@@ -182,7 +166,7 @@ TEST_F(FakeServerFixture, CreateiModel)
 
     HttpResponseContentPtr reqContent = response.GetContent();
     HttpBodyPtr reqBody = reqContent->GetBody();
-    char readBuff[1000] ;
+    char readBuff[1000];
     size_t buffSize = 100000;
     reqBody->Read(readBuff, buffSize);
     Utf8String reqBodyRead(readBuff);
@@ -200,18 +184,6 @@ TEST_F(FakeServerFixture, CreateiModel)
     Response response2 = request2.PerformAsync()->GetResult();
     }
 
-// BuddyResponse for https://buddi.bentley.com/discovery.asmx     *****POST****
-
-// <?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema"><soap:Body><GetUrlResponse xmlns="http://tempuri.org/"><GetUrlResult>https://qa-ims.bentley.com/rest/DelegationSTSService</GetUrlResult></GetUrlResponse></soap:Body></soap:Envelope>
-
-//ImsClient // Response body for getting imsToken    for https://qa-ims.bentley.com/rest/DelegationSTSService/json/IsseEx    *****POST****
-
-//{"RequestedSecurityToken":"<saml:Assertion MajorVersion=\"1\" MinorVersion=\"1\" AssertionID=\"_0713c1c9-94e1-4fd2-89ae-0c5608431963\" Issuer=\"https:\\/\\/qa-ims.bentley.com\\/\" IssueInstant=\"2018-01-16T06:54:11.414Z\" xmlns:saml=\"urn:oasis:names:tc:SAML:1.0:assertion\"><saml:Conditions NotBefore=\"2018-01-16T06:54:11.383Z\" NotOnOrAfter=\"2018-01-16T07:54:11.383Z\"><saml:AudienceRestrictionCondition><saml:Audience>https:\\/\\/connect-wsg20.bentley.com<\\/saml:Audience><\\/saml:AudienceRestrictionCondition><\\/saml:Conditions><saml:AttributeStatement><saml:Subject><saml:NameIdentifier>87313509-6248-41e0-b43f-62aa4513a3e4<\\/saml:NameIdentifier><saml:SubjectConfirmation><saml:ConfirmationMethod>urn:oasis:names:tc:SAML:1.0:cm:holder-of-key<\\/saml:ConfirmationMethod><KeyInfo xmlns=\"http:\\/\\/www.w3.org\\/2000\\/09\\/xmldsig#\"><trust:BinarySecret xmlns:trust=\"http:\\/\\/docs.oasis-open.org\\/ws-sx\\/ws-trust\\/200512\">ztWy7J9S7Z7PJB1LDYnqG5tLwqqkxLJQxvdY\\/HfhRXA=<\\/trust:BinarySecret><\\/KeyInfo><\\/saml:SubjectConfirmation><\\/saml:Subject><saml:Attribute AttributeName=\"name\" AttributeNamespace=\"http:\\/\\/schemas.xmlsoap.org\\/ws\\/2005\\/05\\/identity\\/claims\"><saml:AttributeValue>Farhad.Kabir@bentley.com<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\"givenname\" AttributeNamespace=\"http:\\/\\/schemas.xmlsoap.org\\/ws\\/2005\\/05\\/identity\\/claims\"><saml:AttributeValue>Farhad<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\"surname\" AttributeNamespace=\"http:\\/\\/schemas.xmlsoap.org\\/ws\\/2005\\/05\\/identity\\/claims\"><saml:AttributeValue>Kabir<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\"emailaddress\" AttributeNamespace=\"http:\\/\\/schemas.xmlsoap.org\\/ws\\/2005\\/05\\/identity\\/claims\"><saml:AttributeValue>Farhad.Kabir@bentley.com<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\"role\" AttributeNamespace=\"http:\\/\\/schemas.microsoft.com\\/ws\\/2008\\/06\\/identity\\/claims\"><saml:AttributeValue>BENTLEY_EMPLOYEE<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\"sapbupa\" AttributeNamespace=\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\"><saml:AttributeValue>1004183475<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\"site\" AttributeNamespace=\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\"><saml:AttributeValue>1004174721<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\"ultimatesite\" AttributeNamespace=\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\"><saml:AttributeValue>1001389117<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\"sapentitlement\" AttributeNamespace=\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\"><saml:AttributeValue>INTERNAL<\\/saml:AttributeValue><saml:AttributeValue>BENTLEY_LEARN<\\/saml:AttributeValue><saml:AttributeValue>SELECT_2006<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\"entitlement\" AttributeNamespace=\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\"><saml:AttributeValue>BENTLEY_EMPLOYEE<\\/saml:AttributeValue><saml:AttributeValue>BENTLEY_LEARN<\\/saml:AttributeValue><saml:AttributeValue>SELECT_2006<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\"countryiso\" AttributeNamespace=\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\"><saml:AttributeValue>PK<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\"languageiso\" AttributeNamespace=\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\"><saml:AttributeValue>EN<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\"ismarketingprospect\" AttributeNamespace=\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\"><saml:AttributeValue>false<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\"isbentleyemployee\" AttributeNamespace=\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\"><saml:AttributeValue>true<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\"becommunitiesusername\" AttributeNamespace=\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\"><saml:AttributeValue>87313509-6248-41E0-B43F-62AA4513A3E4<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\"becommunitiesemailaddress\" AttributeNamespace=\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\"><saml:AttributeValue>Farhad.Kabir@bentley.com<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\"userid\" AttributeNamespace=\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\"><saml:AttributeValue>87313509-6248-41e0-b43f-62aa4513a3e4<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\"organization\" AttributeNamespace=\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\"><saml:AttributeValue>Bentley Systems Inc<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\"has_select\" AttributeNamespace=\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\"><saml:AttributeValue>true<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\"organizationid\" AttributeNamespace=\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\"><saml:AttributeValue>e82a584b-9fae-409f-9581-fd154f7b9ef9<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\"ultimateid\" AttributeNamespace=\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\"><saml:AttributeValue>72adad30-c07c-465d-a1fe-2f2dfac950a4<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\"ultimatereferenceid\" AttributeNamespace=\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\"><saml:AttributeValue>72adad30-c07c-465d-a1fe-2f2dfac950a4<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\"usagecountryiso\" AttributeNamespace=\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\"><saml:AttributeValue>PK<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\"actor\" AttributeNamespace=\"http:\\/\\/schemas.xmlsoap.org\\/ws\\/2009\\/09\\/identity\\/claims\"><saml:AttributeValue>&lt;Actor&gt;&lt;saml:Attribute AttributeName=\"name\" AttributeNamespace=\"http:\\/\\/schemas.xmlsoap.org\\/ws\\/2005\\/05\\/identity\\/claims\" xmlns:saml=\"urn:oasis:names:tc:SAML:1.0:assertion\"&gt;&lt;saml:AttributeValue&gt;CN=ims-token-signing.bentley.com, OU=IT, O=Bentley Systems Inc, L=Exton, S=PA, C=US&lt;\\/saml:AttributeValue&gt;&lt;\\/saml:Attribute&gt;&lt;\\/Actor&gt;<\\/saml:AttributeValue><\\/saml:Attribute><\\/saml:AttributeStatement><ds:Signature xmlns:ds=\"http:\\/\\/www.w3.org\\/2000\\/09\\/xmldsig#\"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm=\"http:\\/\\/www.w3.org\\/2001\\/10\\/xml-exc-c14n#\" \\/><ds:SignatureMethod Algorithm=\"http:\\/\\/www.w3.org\\/2001\\/04\\/xmldsig-more#rsa-sha256\" \\/><ds:Reference URI=\"#_0713c1c9-94e1-4fd2-89ae-0c5608431963\"><ds:Transforms><ds:Transform Algorithm=\"http:\\/\\/www.w3.org\\/2000\\/09\\/xmldsig#enveloped-signature\" \\/><ds:Transform Algorithm=\"http:\\/\\/www.w3.org\\/2001\\/10\\/xml-exc-c14n#\" \\/><\\/ds:Transforms><ds:DigestMethod Algorithm=\"http:\\/\\/www.w3.org\\/2001\\/04\\/xmlenc#sha256\" \\/><ds:DigestValue>0Bxb3R5siOMAOYYG2+bQGoFDxCN9ToykNAqjCS3sRcg=<\\/ds:DigestValue><\\/ds:Reference><\\/ds:SignedInfo><ds:SignatureValue>RzyhlnrMcEEuN90p9h8NkSJWqhYI99eW2K3ywU4WnlNSdTGfZJ7ywZqLfLqPOR1AM0BAVS1DclsnAmTHvMK1sqsDcEhnePRb1kN1OXkIgV2NJaKOx7ikX6M7AhTq7QQMMPZbb+EHeRDNqAFHZbxuxSmc+CRPsUZoPnpVdYADSWWA+lhuKuLv6R\\/ZoiegFo47Cxb6w2mgGDPBgydxBpCgWuxhI6XKUtqI28GdE\\/PofJWNp51dwuFpP0FBOxanThAL8MJwWByNXjFcXYxaGYS0vjPkZBfZ4yJgVe4kG8tHEcrWcSCVNSZi0VqeLOa3I1SpAiROpOEZTSiHVgMlPrn9xw==<\\/ds:SignatureValue><KeyInfo xmlns=\"http:\\/\\/www.w3.org\\/2000\\/09\\/xmldsig#\"><X509Data><X509Certificate>MIIFXjCCBEagAwIBAgITXwAAMAAnZoWkOOCfDgAAAAAwADANBgkqhkiG9w0BAQsFADBMMRMwEQYKCZImiZPyLGQBGRYDY29tMRcwFQYKCZImiZPyLGQBGRYHYmVudGxleTEcMBoGA1UEAxMTQmVudGxleS1JbnRlcm5hbC1DQTAeFw0xNzA4MjgxOTQ2MDdaFw0yMjA4MjcxOTQ2MDdaMH0xCzAJBgNVBAYTAlVTMQswCQYDVQQIEwJQQTEOMAwGA1UEBxMFRXh0b24xHDAaBgNVBAoTE0JlbnRsZXkgU3lzdGVtcyBJbmMxCzAJBgNVBAsTAklUMSYwJAYDVQQDEx1pbXMtdG9rZW4tc2lnbmluZy5iZW50bGV5LmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALnpXaPUjWevGxnIkY9bJsdatInIbo2StS3xAmVX3dd9uGUFu7HL4ciJMOlHFlwsASOGreMGdHVQmPnFgL2W5ekghzs\\/Vk\\/asXSYzWtVwQftS2VZZqTcuLrwaYNPznv6vaNPNTTbUI4kXgBCH0S+pA\\/ulhqF03dCopRCB4BR0z\\/9r1WrkxYzUF2fKhKifoyBaX8TqqEnw6ZKAyCMDVRN\\/Dm7ORVEDw\\/\\/iMO0vtXXjFPH3KV2EZn02+K5pdqWpkVzf9TSCfEQZL2JoYAfCVC6Z5gh5Dja+UTIfjJw45lTy4TPD+ivVpPcni6Wiln6i701OCYXMK1WxhwU1vV+eeaQvDUCAwEAAaOCAgYwggICMAsGA1UdDwQEAwIFoDAdBgNVHQ4EFgQUadvHSgG2syhu++t\\/OnkpOawqhOQwKAYDVR0RBCEwH4IdaW1zLXRva2VuLXNpZ25pbmcuYmVudGxleS5jb20wHwYDVR0jBBgwFoAUbjdsNQxJ7tInD1RS39J9x4\\/\\/Zt0wUQYDVR0fBEowSDBGoESgQoZAaHR0cDovL2V4dHByZGNhMDEuYmVudGxleS5jb20vQ2VydEVucm9sbC9CZW50bGV5LUludGVybmFsLUNBLmNybDCBxQYIKwYBBQUHAQEEgbgwgbUwgbIGCCsGAQUFBzAChoGlbGRhcDovLy9DTj1CZW50bGV5LUludGVybmFsLUNBLENOPUFJQSxDTj1QdWJsaWMlMjBLZXklMjBTZXJ2aWNlcyxDTj1TZXJ2aWNlcyxDTj1Db25maWd1cmF0aW9uLERDPWJzaXJvb3QsREM9Y29tP2NBQ2VydGlmaWNhdGU\\/YmFzZT9vYmplY3RDbGFzcz1jZXJ0aWZpY2F0aW9uQXV0aG9yaXR5MDwGCSsGAQQBgjcVBwQvMC0GJSsGAQQBgjcVCIXHrEDf+UuDsZcegeqVQoex+FwxgYOFKoGk0EgCAWQCAQYwEwYDVR0lBAwwCgYIKwYBBQUHAwEwGwYJKwYBBAGCNxUKBA4wDDAKBggrBgEFBQcDATANBgkqhkiG9w0BAQsFAAOCAQEAVyEM1YbcQbtxXpt9qheZ4VIDaCKmhyf1PyyqRQqqzZF9KKpbEnV\\/XRf0qSQNGO4CU6HwOp5zpOpCDX3pKOJYP3NRL6OkvU01jiDg6d9v9EyTd6sqVbEUJ7pKkzmGWkEL1URXPAZY6TiHShpMdkC5+BGLOSIXYcbdp2aMGRMT5Y6e+vWggvy4BUC1Ced9mULAKMSIQeEH76tLYKyLQ44ftqaYep+piGEdtEzah8S9bsS9dcbiIm+yeXiCgyNGvmV1SteaKLn+o2r\\/bU3BAzjA3slKLzZG5u295SeRh6+xRxbm4tOAq\\/s02uN7Jxn22GwXv\\/l+RRhpK4RmgPVnygmbUA==<\\/X509Certificate><\\/X509Data><\\/KeyInfo><\\/ds:Signature><\\/saml:Assertion>","TokenType":""}
-
-// authentication Response for https://qa-imodelhubapi.bentley.com/v2.0/Plugins    *****GET****
-
-//{"instances":[{"instanceId":"Project","schemaName":"Plugins","className":"PluginIdentifier","properties":{"ECPluginID":"Project","DisplayLabel":"Project"},"eTag":"\"XX8D88hmQX54h3Mq4muPnVO0yVQ=\""},{"instanceId":"iModel","schemaName":"Plugins","className":"PluginIdentifier","properties":{"ECPluginID":"iModel","DisplayLabel":"iModel"},"eTag":"\"rCWzHX/X9jqKDPqDqq1rSrXMseI=\""},{"instanceId":"Bentley.ECServices","schemaName":"Plugins","className":"PluginIdentifier","properties":{"ECPluginID":"Bentley.ECServices","DisplayLabel":"Bentley.ECServices"},"eTag":"\"HqP0PTZyesAOhccoX8fGr3fosBk=\""}]}
-
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Farhad.Kabir    01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -224,13 +196,6 @@ TEST_F(FakeServerFixture, DownloadiModel)
     IHttpHandlerPtr handlePtr = std::make_shared<MockIMSHttpHandler>();
     Request request(url, method, handlePtr);
     Response response = request.PerformAsync()->GetResult();
-    /*ClientPtr    m_client;
-    iModelInfoPtr m_imodel;
-    iModelConnectionPtr m_imodelConnection;
-
-    IHttpHandlerPtr handlePtr = std::make_shared<MockIMSHttpHandler> ();
-    auto proxy   = ProxyHttpHandler::GetFiddlerProxyIfReachable(handlePtr);
-    */
     }
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Farhad.Kabir    01/2018
@@ -245,7 +210,52 @@ TEST_F(FakeServerFixture, CheckPluginsRequests)
     Response response = request.PerformAsync()->GetResult();
     printf("%s\n", response.GetHeaders().GetValue("Mas-Server"));
     }
+TEST_F(FakeServerFixture, UpdateServerFile)
+    {
+    /* Utf8String url("https://imodelhubqasa01.blob.core.windows.net/imodelhub-3e7ce8fe-aa5e-4ee0-959c-6708d8fc365d/BriefcaseTestsu-bd997d8f-e7f7-4a8b-ad27-785e99f866f0.bim?sv=2016-05-31&sr=b&sig=%2BW0sVgxmBQGzim82S9LwRH4ao");
 
+    Utf8String method = "PUT";
+
+
+    IHttpHandlerPtr handlePtr = std::make_shared<MockIMSHttpHandler>();
+    
+
+    BeFileName filePath("E:\\out\\Test_Seed.bim");
+    BeFile file;
+    file.Open(filePath, BeFileAccess::Read);
+
+    uint64_t fileSize;
+    ASSERT_EQ(BeFileStatus::Success, file.GetSize(fileSize));
+    
+    file.Close();
+
+    uint64_t chunkSize = 4 * 1024 * 1024;   // Max 4MB.
+
+    HttpBodyPtr body = HttpFileBody::Create(filePath);
+    Utf8String blockIds = "";
+    int chunkNumber = 0;
+    uint64_t bytesTo = chunkSize * chunkNumber + chunkSize - 1; // -1 because ranges are inclusive.
+    if (bytesTo >= fileSize)
+        bytesTo = fileSize - 1;
+
+    std::stringstream blockIdStream;
+    blockIdStream << std::setw(5) << std::setfill('0') << chunkNumber;
+    std::string blockId = blockIdStream.str();
+    Utf8String encodedBlockId = Base64Utilities::Encode(blockId.c_str()).c_str();
+    blockIds += Utf8PrintfString("<Latest>%s</Latest>", encodedBlockId.c_str());
+
+    // Update URL
+    Utf8String blockUrl = Utf8PrintfString("%s&comp=block&blockid=%s", url.c_str(), encodedBlockId.c_str());
+
+    Request request(blockUrl, method, handlePtr);
+
+    request.GetHeaders().SetValue("x-ms-blob-type", "BlockBlob");
+    request.SetRequestBody(HttpRangeBody::Create(body, chunkSize * chunkNumber, bytesTo));
+
+    
+    Response response = request.PerformAsync()->GetResult();
+    HttpBodyPtr fBody = request.GetRequestBody();*/
+    }
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Farhad.Kabir    01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -282,23 +292,9 @@ TEST_F(FakeServerFixture, TestBuddyResponse)
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Farhad.Kabir    12/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(FakeServerFixture, TestMockHandler)
-    {
-    /*ClientPtr    m_client;
-    iModelInfoPtr m_imodel;
-    iModelConnectionPtr m_imodelConnection;
-
-    IHttpHandlerPtr handlePtr = std::make_shared<MockIMSHttpHandler> ();
-    auto proxy   = ProxyHttpHandler::GetFiddlerProxyIfReachable(handlePtr);
-    */
-    }
-
-/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Farhad.Kabir    01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(FakeServerFixt, TestRequestToken) 
+TEST_F(FakeServerFixture, TestRequestToken) 
     {
 
     Utf8String responseBody("{\"RequestedSecurityToken\":\"<saml:Assertion MajorVersion>\"}");
@@ -318,4 +314,3 @@ TEST(FakeServerFixt, TestRequestToken)
 
     printf("%d\n", BeXmlStatus::BEXML_Success);
     }
-#endif // __WIP__
