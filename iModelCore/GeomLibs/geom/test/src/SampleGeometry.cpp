@@ -122,17 +122,52 @@ PolyfaceHeaderPtr HyperbolicGridMesh (size_t numI, size_t numJ, double x11, doub
     return mesh;
     }
 
-PolyfaceHeaderPtr UnitGridPolyface (DPoint3dDVec3dDVec3dCR plane, int numXEdge, int numYEdge, bool triangulated)
+PolyfaceHeaderPtr UnitGridPolyface (DPoint3dDVec3dDVec3dCR plane, int numXEdge, int numYEdge, bool triangulated, bool coordinateOnly)
     {
-    PolyfaceHeaderPtr mesh = triangulated ?
-              PolyfaceHeader::CreateTriangleGrid (numXEdge + 1)
-            : PolyfaceHeader::CreateQuadGrid (numXEdge + 1);
-    for (int j = 0; j <= numYEdge; j++)
+    if (coordinateOnly)
         {
-        for (int i = 0; i <= numXEdge; i++)
-            mesh->Point ().push_back (plane.Evaluate ((double)i, (double)j));
+        PolyfaceHeaderPtr mesh = PolyfaceHeader::CreateFixedBlockCoordinates(triangulated ? 3 : 4);
+        for (int j = 0; j < numYEdge; j++)
+            {
+            for (int i = 0; i < numXEdge; i++)
+                {
+                DPoint3d xyz00 = plane.Evaluate ((double)i, (double)j);
+                DPoint3d xyz10 = plane.Evaluate ((double)(i+1), (double)j);
+                DPoint3d xyz11 = plane.Evaluate ((double)(i+1), (double)(j+1));
+                DPoint3d xyz01 = plane.Evaluate ((double)i, (double)(j+1));
+                if (triangulated)
+                    {
+                    mesh->Point ().push_back (xyz00);
+                    mesh->Point ().push_back (xyz10);
+                    mesh->Point ().push_back (xyz01);
+
+                    mesh->Point ().push_back (xyz10);
+                    mesh->Point ().push_back (xyz11);
+                    mesh->Point ().push_back (xyz01);
+                    }
+                else
+                    {
+                    mesh->Point ().push_back (xyz00);
+                    mesh->Point ().push_back (xyz10);
+                    mesh->Point ().push_back (xyz11);
+                    mesh->Point ().push_back (xyz01);
+                    }
+                }
+            }
+        return mesh;
         }
-    return mesh;
+    else
+        {
+        PolyfaceHeaderPtr mesh = triangulated ?
+                  PolyfaceHeader::CreateTriangleGrid (numXEdge + 1)
+                : PolyfaceHeader::CreateQuadGrid (numXEdge + 1);
+        for (int j = 0; j <= numYEdge; j++)
+            {
+            for (int i = 0; i <= numXEdge; i++)
+                mesh->Point ().push_back (plane.Evaluate ((double)i, (double)j));
+            }
+        return mesh;
+        }
     }
 
 PolyfaceHeaderPtr CreatePolyface_ExtrudedL

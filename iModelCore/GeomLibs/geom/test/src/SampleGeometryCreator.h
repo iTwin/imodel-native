@@ -907,7 +907,7 @@ double wInterior = 0.5
 );
 
 
-PolyfaceHeaderPtr UnitGridPolyface (DPoint3dDVec3dDVec3dCR plane, int numXEdge, int numYEdge, bool triangulated = false);
+PolyfaceHeaderPtr UnitGridPolyface (DPoint3dDVec3dDVec3dCR plane, int numXEdge, int numYEdge, bool triangulated = false, bool coordinateOnly = false);
 
 //! Create a polygon with square wave upper side.
 //! Wave moves along x axis.
