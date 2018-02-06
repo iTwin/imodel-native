@@ -2,7 +2,7 @@
 #
 #  $Source: ScalableMesh.mki $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
@@ -36,10 +36,8 @@ nameToDefine = NO_IODEFS
 nameToDefine = NOMINMAX
 %include cdefapnd.mki
 
-%ifdef SCALABLE_MESH_ATP_COMPILE
-    nameToDefine=SCALABLE_MESH_ATP
-    %include cdefapnd.mki
-%endif
+nameToDefine=SCALABLE_MESH_ATP
+%include cdefapnd.mki
 
 %ifndef NDEBUG
 nameToDefine=INDEX_DUMPING_ACTIVATED
