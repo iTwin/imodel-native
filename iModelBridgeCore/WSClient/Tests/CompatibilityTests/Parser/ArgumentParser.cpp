@@ -13,12 +13,32 @@
 #include <Bentley/Base64Utilities.h>
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    12/2016
+* @bsimethod                                                    Vincas.Razma    01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 int ArgumentParser::Parse
 (
 int argc,
 char** argv,
+int& logLevelOut,
+BeFileName& tempDirOut,
+bvector<TestRepositories>& testDataOut,
+std::ostream* err,
+std::ostream* output
+)
+    {
+    bvector<Utf8String> args;
+    for (int i = 1; i < argc; i++)
+        args.push_back(argv[i]);
+
+    return Parse(args, logLevelOut, tempDirOut, testDataOut, err, output);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+int ArgumentParser::Parse
+(
+const bvector<Utf8String>& args,
 int& logLevelOut,
 BeFileName& tempDirOut,
 bvector<TestRepositories>& testDataOut,
@@ -30,16 +50,16 @@ std::ostream* out
     tempDirOut.clear();
     testDataOut.clear();
 
-    for (int i = 1; i < argc; i++)
+    for (Utf8StringCR arg : args)
         {
-        if (0 == strcmp(argv[i], "--help"))
+        if (arg == "--help")
             {
             PrintHelp(out);
             return 0;
             }
         }
 
-    auto status = TryParse(argc, argv, logLevelOut, tempDirOut, testDataOut, err);
+    auto status = TryParse(args, logLevelOut, tempDirOut, testDataOut, err);
     if (status == 0)
         return 0;
 
@@ -55,8 +75,7 @@ std::ostream* out
 +---------------+---------------+---------------+---------------+---------------+------*/
 int ArgumentParser::TryParse
 (
-int argc,
-char** argv,
+const bvector<Utf8String>& args,
 int& logLevelOut,
 BeFileName& tempDirOut,
 bvector<TestRepositories>& testDataOut,
@@ -65,27 +84,28 @@ std::ostream* err
     {
     TestRepositories* currentRepos = nullptr;
     TestRepository* currentRepo = nullptr;
-    for (int i = 1; i < argc; i++)
+    size_t argc = args.size();
+    for (int i = 0; i < argc; i++)
         {
-        auto arg = argv[i];
+        auto& arg = args[i];
 
-        if (0 == Utf8String(arg).find("--gtest"))
+        if (0 == arg.find("--gtest"))
             continue;
 
-        if (0 == strcmp(arg, "--downloadschemas"))
+        if (arg == "--downloadschemas")
             {
             testDataOut.push_back(TestRepositories());
             currentRepo = &testDataOut.back().downloadSchemas;
             continue;
             }
-        if (0 == strcmp(arg, "--createcache"))
+        if (arg == "--createcache")
             {
             testDataOut.push_back(TestRepositories());
             currentRepos = &testDataOut.back();
             currentRepo = &currentRepos->create;
             continue;
             }
-        if (0 == strcmp(arg, "--upgradecache"))
+        if (arg == "--upgradecache")
             {
             if (currentRepos == nullptr)
                 {
@@ -97,16 +117,30 @@ std::ostream* err
             continue;
             }
 
-        if (0 == strcmp(arg, "--silent"))
+        Utf8CP argValue = nullptr;
+
+        if (arg == "--config")
+            {
+            currentRepo = nullptr;
+
+            if (!GetArgValue(argc, args, i, argValue, err))
+                return -1;
+
+            auto status = ParseConfigFile(argValue, logLevelOut, tempDirOut, testDataOut, err);
+            if (0 != status)
+                return status;
+            continue;
+            }
+
+        if (arg == "--silent")
             {
             logLevelOut = 0;
             continue;
             }
 
-        Utf8CP argValue = nullptr;
-        if (0 == strcmp(arg, "--workdir"))
+        if (arg == "--workdir")
             {
-            if (!GetArgValue(argc, argv, i, argValue, err))
+            if (!GetArgValue(argc, args, i, argValue, err))
                 return -1;
             tempDirOut = BeFileName(argValue);
             continue;
@@ -118,23 +152,23 @@ std::ostream* err
             return -1;
             }
 
-        if (0 == strcmp(arg, "-url"))
+        if (arg == "-url")
             {
-            if (!GetArgValue(argc, argv, i, argValue, err))
+            if (!GetArgValue(argc, args, i, argValue, err))
                 return -1;
             currentRepo->schemasDir.clear();
             currentRepo->serverUrl = argValue;
             }
-        else if (0 == strcmp(arg, "-r"))
+        else if (arg == "-r")
             {
-            if (!GetArgValue(argc, argv, i, argValue, err))
+            if (!GetArgValue(argc, args, i, argValue, err))
                 return -1;
             currentRepo->schemasDir.clear();
             currentRepo->id = argValue;
             }
-        else if (0 == Utf8String(arg).find("-auth:"))
+        else if (0 == arg.find("-auth:"))
             {
-            if (!GetArgValue(argc, argv, i, argValue, err))
+            if (!GetArgValue(argc, args, i, argValue, err))
                 return -1;
 
             currentRepo->schemasDir.clear();
@@ -142,15 +176,15 @@ std::ostream* err
             currentRepo->token = nullptr;
             currentRepo->environment = nullptr;
 
-            if (!ParseAuth(arg, argValue, *currentRepo, err))
+            if (!ParseAuth(arg.c_str(), argValue, *currentRepo, err))
                 {
                 PrintError(err, Utf8PrintfString("Invalid format: %s %s", arg, argValue).c_str());
                 return -1;
                 }
             }
-        else if (0 == strcmp(arg, "-schemas"))
+        else if (arg == "-schemas")
             {
-            if (!GetArgValue(argc, argv, i, argValue, err))
+            if (!GetArgValue(argc, args, i, argValue, err))
                 return -1;
             BeFileName dir(argValue);
             if (!dir.DoesPathExist() || !dir.IsDirectory())
@@ -163,9 +197,21 @@ std::ostream* err
             currentRepo->schemasDir = dir;
             currentRepo->schemasDir.AppendSeparator();
             }
+        else if (arg == "-l")
+            {
+            if (!GetArgValue(argc, args, i, argValue, err))
+                return -1;
+            currentRepo->label = argValue;
+            }
+        else if (arg == "-c")
+            {
+            if (!GetArgValue(argc, args, i, argValue, err))
+                return -1;
+            currentRepo->comment = argValue;
+            }
         else
             {
-            PrintError(err, Utf8PrintfString("Uknown parameter: %s", arg).c_str());
+            PrintError(err, Utf8PrintfString("Uknown parameter: %s at positition %d", arg, i).c_str());
             return -1;
             }
         }
@@ -202,16 +248,16 @@ std::ostream* err
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ArgumentParser::GetArgValue(int argc, char** argv, int& iInOut, Utf8CP& argValueOut, std::ostream* err)
+bool ArgumentParser::GetArgValue(int argc, const bvector<Utf8String>& args, int& iInOut, Utf8CP& argValueOut, std::ostream* err)
     {
-    Utf8CP arg = argv[iInOut];
+    Utf8CP arg = args[iInOut].c_str();
     if (iInOut + 1 >= argc)
         {
         PrintError(err, Utf8PrintfString("Missig value for: %s", arg).c_str());
         return false;
         }
 
-    argValueOut = argv[++iInOut];
+    argValueOut = args[++iInOut].c_str();
     if (Utf8String::IsNullOrEmpty(argValueOut) ||
         argValueOut[0] == '-' ||
         argValueOut[0] == '.')
@@ -311,6 +357,63 @@ std::shared_ptr<UrlProvider::Environment> ArgumentParser::ParseEnv(Utf8StringCR 
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+int ArgumentParser::ParseConfigFile
+(
+Utf8String filePath,
+int& logLevelOut,
+BeFileName& tempDirOut,
+bvector<TestRepositories>& testDataOut,
+std::ostream* err
+)
+    {
+    BeFile file;
+    bvector<Byte> content;
+    if (BeFileStatus::Success != file.Open(filePath, BeFileAccess::Read) ||
+        BeFileStatus::Success != file.ReadEntireFile(content) ||
+        BeFileStatus::Success != file.Close())
+        {
+        PrintError(err, Utf8PrintfString("Could not read config file: %s", filePath.c_str()).c_str());
+        return -1;
+        }
+    content.push_back(0);
+
+    bvector<Utf8String> tokens;
+    BeStringUtilities::Split((Utf8CP)content.data(), "\n", tokens);
+
+    for (auto& token : tokens)
+        token.Trim();
+
+    std::remove_if(tokens.begin(), tokens.end(), [] (Utf8StringCR line)
+        {
+        if (line.empty())
+            return true;
+        if (line[0] == '#')
+            return true;
+        return false;
+        });
+
+    bvector<Utf8String> args;
+    for (auto& token : tokens)
+        {
+        auto pos = token.find_first_of(' ');
+        if (Utf8String::npos == pos)
+            pos = token.length();
+
+        args.push_back(token.substr(0, pos));
+
+        Utf8String value = token.substr(pos, token.length());
+        value.Trim();
+
+        if (!value.empty())
+            args.push_back(value);
+        }
+
+    return TryParse(args, logLevelOut, tempDirOut, testDataOut, err);
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ArgumentParser::PrintError(std::ostream* err, Utf8CP error)
@@ -334,7 +437,8 @@ void ArgumentParser::PrintHelp(std::ostream* out)
     *out << "                            [--upgradecache   [<parameters>]" << std::endl;
     *out << "                            [--createcache     <parameters> ...]" << std::endl;
     *out << "                            [--downloadschemas <parameters>]" << std::endl;
-    *out << "  <parameters>: -url URL -r REPOID [-auth:XXX VALUE]]" << std::endl;
+    *out << "                            [--config <filepath>]" << std::endl;
+    *out << "  <parameters>: -url URL -r REPOID [-auth:XXX VALUE][-l TESTLABEL][-c FAILURECOMMENT]" << std::endl;
     *out << "  <parameters>: -schemas PATH" << std::endl;
     *out << "Usage with schemas:" << std::endl;
     *out << "  WSClientCompatibilityTests --createcache -schemas PATH --upgradecache ..." << std::endl;
@@ -342,6 +446,7 @@ void ArgumentParser::PrintHelp(std::ostream* out)
     *out << "  --createcache      Run cache creation test." << std::endl;
     *out << "  --upgradecache     Run cache upgrade test. Upgrade will use --createcache test as base. Parameters for upgrade are optional - they default to base ones." << std::endl;
     *out << "  --downloadschemas  Run schema download test. Schemas will be left in work dir and could be inspected or reused. Will run before any create or upgrade tests." << std::endl;
+    *out << "  --config           File containing test setup instead of command-line. Each argument and its value should be on new line. Lines starting with # will be ingored." << std::endl;
     *out << "Parameters for server connection:" << std::endl;
     *out << "  -url URL           WSG server URL" << std::endl;
     *out << "  -r REPOID          repository ID" << std::endl;
@@ -355,6 +460,9 @@ void ArgumentParser::PrintHelp(std::ostream* out)
     *out << "  -auth:qa:token   C:\\token.xml" << std::endl;
     *out << "  -auth:prod:token C:\\token.xml" << std::endl;
     *out << "                     Authenticate using XML IMS SAML token. Token is read from file" << std::endl;
+    *out << "  -l TestLabel       Add descriptive name for test. Will be used in workdir folder structure as well as test output." << std::endl;
+    *out << "  -c \"Failure Comment\"" << std::endl;
+    *out << "                     Optional comment to be shown when test fails for known issues." << std::endl;
     *out << "Parameters when stubbing server with local schema list:" << std::endl;
     *out << "  -schemas C:\\s\\     Path to folder containing all repository schemas. Can be used to test upgrade from last known good schemas to server" << std::endl;
     *out << "Other:" << std::endl;
