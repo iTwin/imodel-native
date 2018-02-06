@@ -510,7 +510,7 @@ RepositoryStatus BriefcaseManagerBase::ClearUserHeldCodesLocks()
         return stat;
         }
 
-    // Empty out our local DB tables and re-populate from server
+    // Clear user held locks and codes
     m_localDbState = DbState::Invalid; // assume something will go wrong...
     if (BE_SQLITE_OK != GetLocalDb().ExecuteSql("DELETE FROM " TABLE_Locks)
         || BE_SQLITE_OK != GetLocalDb().ExecuteSql("DELETE FROM " TABLE_Codes))

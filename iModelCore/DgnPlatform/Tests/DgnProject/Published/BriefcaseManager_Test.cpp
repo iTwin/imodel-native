@@ -1395,7 +1395,7 @@ TEST_F(SingleBriefcaseLocksTest, ClearUserHeldCodesLocks)
     DgnElementCR el = *cpEl;
     LockableSchemas lockableSchemas(db);
 
-    ExpectLevel(db, LockLevel::Shared);
+    ExpectLevel(db, LockLevel::None);
     ExpectLevel(model, LockLevel::None);
     ExpectLevel(el, LockLevel::None);
 
@@ -1408,7 +1408,7 @@ TEST_F(SingleBriefcaseLocksTest, ClearUserHeldCodesLocks)
     EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().ClearUserHeldCodesLocks());
     ExpectLevel(model, LockLevel::None);
     ExpectLevel(el, LockLevel::None);
-    ExpectLevel(db, LockLevel::Shared);
+    ExpectLevel(db, LockLevel::None);
     }
 
 /*---------------------------------------------------------------------------------**//**
