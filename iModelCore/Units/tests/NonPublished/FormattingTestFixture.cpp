@@ -1303,6 +1303,13 @@ void FormattingTestFixture::ShowSynonyms()
         }
     }
 
+void FormattingTestFixture::TestFusLabel(Utf8CP fusFormat, Utf8CP fusUnit, Utf8CP fusName)
+{
+	FormatUnitSet fus = FormatUnitSet(fusFormat, fusUnit);
+
+
+}
+
 END_BENTLEY_FORMATTEST_NAMESPACE
 
 //WString wJson(jval.ToString().c_str(), true);

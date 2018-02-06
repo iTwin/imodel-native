@@ -1434,7 +1434,9 @@ NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecCR fmt
     m_formatSet.push_back(nfs);
     return nfs->GetNumericSpec();
     }
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/16
+//---------------------------------------------------------------------------------------
 NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, Utf8CP alias)
     {
     if (IsFormatDefined(name, alias))
@@ -1452,7 +1454,9 @@ NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecCR fmt
     m_formatSet.push_back(nfs);
     return nfs->GetNumericSpec();
     }
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/16
+//---------------------------------------------------------------------------------------
 NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP jsonString)
     {
     Json::Value jval (Json::objectValue);
@@ -1477,7 +1481,9 @@ NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP jsonString)
     m_formatSet.push_back(nfs);
     return nfs->GetNumericSpec();
     }
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/16
+//---------------------------------------------------------------------------------------
 NamedFormatSpecCP StdFormatSet::AddCustomFormat(Utf8CP jsonString)
     {
     //Json::Value* jval = new Json::Value();
@@ -1504,7 +1510,9 @@ NamedFormatSpecCP StdFormatSet::AddCustomFormat(Utf8CP jsonString)
     m_customSet.push_back(nfs);
     return nfs;// ->GetNumericSpec();
     }
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/16
+//---------------------------------------------------------------------------------------
 NamedFormatSpecCP StdFormatSet::AppendCustomFormat(Utf8CP jsonString, FormatProblemDetailR problem)
     {
     StdFormatSetP sp = Set();
@@ -1517,7 +1525,9 @@ NamedFormatSpecCP StdFormatSet::AppendCustomFormat(Utf8CP jsonString, FormatProb
         }
     return nfs;
     }
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/16
+//---------------------------------------------------------------------------------------
 bool StdFormatSet::AreSetsIdentical()
     {
     size_t num = Set()->GetFormatCount();
@@ -1557,6 +1567,9 @@ NumericFormatSpecCP StdFormatSet::GetNumericFormat(Utf8CP name, bool IncludeCust
         }*/
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//---------------------------------------------------------------------------------------
 NamedFormatSpecCP StdFormatSet::FindFormatSpec(Utf8CP name, bool IncludeCustom)
     {
     NamedFormatSpecCP fmtP = *Set()->m_formatSet.begin();
@@ -1612,7 +1625,9 @@ bool StdFormatSet::IsFormatDefined(Utf8CP name, Utf8CP alias)
     return false;
     }
 
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//---------------------------------------------------------------------------------------
 bvector<Utf8CP> StdFormatSet::StdFormatNames(bool useAlias)
     {
     bvector<Utf8CP> vec;
@@ -1647,7 +1662,9 @@ bvector<Utf8CP> StdFormatSet::StdFormatNames(bool useAlias)
 //    return vec;
 //    }
 
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//---------------------------------------------------------------------------------------
 Utf8String StdFormatSet::StdFormatNameList(bool useAlias)
     {
     Utf8String  txt;
@@ -1668,7 +1685,9 @@ Utf8String StdFormatSet::StdFormatNameList(bool useAlias)
         }
     return txt;
     }
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//---------------------------------------------------------------------------------------
 Utf8String StdFormatSet::CustomNameList(bool useAlias)
     {
     Utf8String  txt;
@@ -1689,7 +1708,9 @@ Utf8String StdFormatSet::CustomNameList(bool useAlias)
         }
     return txt;
     }
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//---------------------------------------------------------------------------------------
 void FormattingToken::Init()
     {
     m_cursorStart = (nullptr == m_cursor) ? 0 : m_cursor->GetCurrentPosition();

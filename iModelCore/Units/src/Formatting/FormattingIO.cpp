@@ -879,6 +879,8 @@ void NamedFormatSpec::ReplaceLocalizables(JsonValueCR jval)
 Json::Value FormatUnitSet::ToJson(bool useAlias, bool verbose) const
     {
     Json::Value jval;
+	if (!m_fusName.empty())
+		jval[json_fusName()] = m_fusName.c_str();
     jval[json_unitName()] = m_unit->GetName();
     if(verbose)
         jval[json_formatSpec()] = m_formatSpec->ToJson(true);
@@ -928,6 +930,10 @@ void FormatUnitSet::LoadJsonData(Json::Value jval)
             if (nullptr == m_formatSpec)
                 m_problem.UpdateProblemCode(FormatProblemCode::UnknownStdFormatName);
             }
+		else if (BeStringUtilities::StricmpAscii(paramName, json_fusName()) == 0)
+			{
+				m_fusName = val.asString();
+			}
         }
     }
 

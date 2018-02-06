@@ -1336,11 +1336,13 @@ void FormatUnitSet::Init()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
-FormatUnitSet::FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, bool cloneData)
+FormatUnitSet::FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, Utf8CP fusName, bool cloneData)
     {
     m_formatSpec = format;
     m_unitName = Utf8String(unit->GetName());
     m_unit = unit;
+	if (!Utils::IsNameNullOrEmpty(fusName))
+		m_fusName = Utf8String(fusName);
     if (nullptr == m_formatSpec)
         m_formatSpec = StdFormatSet::FindFormatSpec(FormatConstant::DefaultFormatName());
     if (nullptr == m_formatSpec)
@@ -1361,13 +1363,15 @@ FormatUnitSet::FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, bool cl
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
-FormatUnitSet::FormatUnitSet(Utf8CP formatName, Utf8CP unitName, bool cloneData)
+FormatUnitSet::FormatUnitSet(Utf8CP formatName, Utf8CP unitName, Utf8CP fusName, bool cloneData)
     {
     m_problem = FormatProblemDetail();
     m_unit = nullptr;
     if (Utils::IsNameNullOrEmpty(formatName))
         formatName = FormatConstant::DefaultFormatName();
-    m_formatSpec = StdFormatSet::FindFormatSpec(formatName);
+	if (!Utils::IsNameNullOrEmpty(fusName))
+		m_fusName = Utf8String(fusName); 
+	m_formatSpec = StdFormatSet::FindFormatSpec(formatName);
     if (nullptr == m_formatSpec)
         m_problem.UpdateProblemCode(FormatProblemCode::UnknownStdFormatName);
     else
@@ -1408,6 +1412,24 @@ FormatUnitSet& FormatUnitSet::operator=(const FormatUnitSet& other)
         }
     return *this;
     }
+
+FormatUnitSet::FormatUnitSet(FormatUnitSetCR other, Utf8CP newName)
+{
+	m_formatSpec = other.m_formatSpec;
+	m_unitName = other.m_unitName;
+	m_fusName = other.m_fusName;
+	m_unit = other.m_unit;
+	m_problem = FormatProblemDetail(other.m_problem);
+}
+
+FormatUnitSet::FormatUnitSet(FormatUnitSetCP other, Utf8CP newName)
+{
+	m_formatSpec = other->m_formatSpec;
+	m_unitName = other->m_unitName;
+	m_fusName = other->m_fusName;
+	m_unit = other->m_unit;
+	m_problem = FormatProblemDetail(other->m_problem);
+}
 
 
 //----------------------------------------------------------------------------------------
@@ -1557,6 +1579,25 @@ Utf8String FormatUnitSet::ToText(bool useAlias) const
     return buf;
     }
 
+Utf8CP FormatUnitSet::GetDefaultDisplayLabel() const
+{
+	Utf8CP fnP = (nullptr == m_formatSpec) ? "#" : m_formatSpec->GetName();
+	Utf8PrintfString lab("FUS_%s_%s", fnP, m_unitName.c_str());
+	Utf8String dispLabel = BeSQLite::L10N::GetString(UnitsL10N::GetNameSpace(), BeSQLite::L10N::StringId(lab.c_str()));
+	return dispLabel.c_str();
+}
+
+Utf8CP FormatUnitSet::GetDisplayLabel(bool useDefault) const
+{
+	if (m_fusName.empty() || useDefault)
+		return GetDefaultDisplayLabel();
+
+	Utf8PrintfString nam("FUS_%s", m_fusName.c_str());
+	Utf8String dispLabel = BeSQLite::L10N::GetString(UnitsL10N::GetNameSpace(), BeSQLite::L10N::StringId(nam.c_str()));
+
+	return dispLabel.c_str();
+}
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
@@ -1596,7 +1637,6 @@ Utf8String FormatUnitSet::FormatQuantity(BEU::QuantityCR qty, Utf8CP space) cons
     return txt;
     }
 
-// Utf8String StdFormatQuantity(NamedFormatSpecCR nfs, BEU::QuantityCR qty, BEU::UnitCP useUnit = nullptr, Utf8CP space = nullptr, Utf8CP useLabel = nullptr, int prec = -1, double round = -1.0);
 
 Json::Value FormatUnitSet::FormatQuantityJson(BEU::QuantityCR qty, bool useAlias, Utf8CP space) const
     {

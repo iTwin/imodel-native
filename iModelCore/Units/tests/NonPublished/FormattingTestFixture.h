@@ -95,6 +95,7 @@ struct FormattingTestFixture
         static void ShowPhenomenon(BEU::PhenomenonCP phenP, bvector<BEU::PhenomenonCP>& undefPhenomena);
         static void ShowKnownPhenomena();
         static void ShowSynonyms();
+		static void TestFusLabel(Utf8CP unitName, Utf8CP formatName, Utf8CP fusName);
         //static void LoadUnitSynonymsTest();
     };
 
