@@ -110,15 +110,13 @@
 
 //Categories
 #define GRIDS_CATEGORY_CODE_GridCurve                           "GridCurve"
-
 #define GRIDS_CATEGORY_CODE_GridSurface                         "GridSurface"
-
-
 #define GRIDS_CATEGORY_CODE_Uncategorized                       "Uncategorized"
 
 //Authorities
 #define GRIDS_AUTHORITY_GridCurve                       GRIDS_CODESPEC_CODE(GRIDS_CLASS_GridCurve)
-#define GRIDS_AUTHORITY_Grid                     GRIDS_CODESPEC_CODE(GRIDS_CLASS_Grid)
+#define GRIDS_AUTHORITY_Grid                            GRIDS_CODESPEC_CODE(GRIDS_CLASS_Grid)
+#define GRIDS_AUTHORITY_GridCurvesPortion               GRIDS_CODESPEC_CODE(GRIDS_CLASS_GridCurvesPortion)
 
 //-----------------------------------------------------------------------------------------
 // Define both RefCounterPtr/CPtr and (P, CP, R, CR) types

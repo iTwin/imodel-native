@@ -2640,6 +2640,9 @@ TEST_F(GridsTestFixture, OrthogonalGridCurvesAreCreated)
     OrthogonalGridPtr orthogonalGrid = OrthogonalGrid::CreateAndInsertWithSurfaces(orthogonalParams, 2, 1);
     ASSERT_TRUE(orthogonalGrid.IsValid()) << "Failed to create orthogonal grid";
 
+    GridCurvesPortionPtr curvesPortion = GridCurvesPortion::Create(*m_model);
+    curvesPortion->Insert();
+
     db.SaveChanges();
 
     /////////////////////////////////////////////////////////////
@@ -2648,7 +2651,7 @@ TEST_F(GridsTestFixture, OrthogonalGridCurvesAreCreated)
     // Check intersection success
     for (GridPlanarSurfacePtr floorGridSurface : floorGridPlanes)
         {
-        BentleyStatus status = orthogonalGrid->IntersectGridSurface(floorGridSurface.get(), *m_model.get());
+        BentleyStatus status = orthogonalGrid->IntersectGridSurface(floorGridSurface.get(), *curvesPortion);
         ASSERT_EQ(BentleyStatus::SUCCESS, status) << "Failed to intersect grid surfaces";
         }
 
@@ -2773,6 +2776,8 @@ TEST_F(GridsTestFixture, RadialGridCurvesAreCreated)
     RadialGridPtr radialGrid = RadialGrid::CreateAndInsertWithSurfaces(radialParams, 2, 2);
     ASSERT_TRUE(radialGrid.IsValid()) << "Failed to create radial grid";
 
+    GridCurvesPortionPtr curvesPortion = GridCurvesPortion::Create(*m_model);
+    curvesPortion->Insert();
     db.SaveChanges();
 
     /////////////////////////////////////////////////////////////
@@ -2781,7 +2786,7 @@ TEST_F(GridsTestFixture, RadialGridCurvesAreCreated)
     // Check intersection success
     for (GridPlanarSurfacePtr floorGridSurface : floorGridPlanes)
         {
-        BentleyStatus status = radialGrid->IntersectGridSurface(floorGridSurface.get(), *m_model.get());
+        BentleyStatus status = radialGrid->IntersectGridSurface(floorGridSurface.get(), *curvesPortion);
         ASSERT_EQ(BentleyStatus::SUCCESS, status) << "Failed to intersect grid surfaces";
         }
 
@@ -2922,13 +2927,16 @@ TEST_F(GridsTestFixture, SketchGridCurvesAreCreated)
     ASSERT_TRUE(spline.IsValid()) << "Failed to create grid spline surface";
     spline->Insert();
 
+    GridCurvesPortionPtr curvesPortion = GridCurvesPortion::Create(*m_model);
+    curvesPortion->Insert();
+
     /////////////////////////////////////////////////////////////
     // Check intersection curves with sketch grid
     /////////////////////////////////////////////////////////////
     // Check intersection success
     for (GridPlanarSurfacePtr floorGridSurface : floorGridPlanes)
         {
-        BentleyStatus status = sketchGrid->IntersectGridSurface(floorGridSurface.get(), *m_model.get());
+        BentleyStatus status = sketchGrid->IntersectGridSurface(floorGridSurface.get(), *curvesPortion);
         ASSERT_EQ(BentleyStatus::SUCCESS, status) << "Failed to intersect grid surfaces";
         }
 
@@ -3011,8 +3019,11 @@ TEST_F(GridsTestFixture, GridArc_Created)
     double arcAngle = DVec3d::FromStartEnd(DPoint3d::From( 0, 0, 0 ), DPoint3d::From(5, 0, 0 )).AngleToXY(DVec3d::FromStartEnd(DPoint3d::From(0, 0, 0 ), DPoint3d::From(0, 5, 0 )));
     ASSERT_EQ(arcEllipse.ArcLength(), arcAngle * 5) << "Created arcCurve's length is incorrect";
 
+    GridCurvesPortionPtr curvesPortion = GridCurvesPortion::Create(*m_model);
+    curvesPortion->Insert();
+
     // Try creating the grid arc
-    GridArcPtr arc = GridArc::Create(*m_model.get(), arcCurve);
+    GridArcPtr arc = GridArc::Create(*curvesPortion, arcCurve);
     ASSERT_TRUE(arc.IsValid()) << "Error when creating grid arc";
 
     ASSERT_TRUE(arc->Insert().IsValid()) << "Error when inserting grid arc";
@@ -3029,7 +3040,7 @@ TEST_F(GridsTestFixture, GridArc_Created)
     ICurvePrimitivePtr lineCurve = ICurvePrimitive::CreateLine({ 0, 0, 0 }, { 5, 0, 0 });
     ASSERT_TRUE(lineCurve.IsValid()) << "Failed to create line curve";
 
-    GridArcPtr lineArc = GridArc::Create(*m_model.get(), lineCurve);
+    GridArcPtr lineArc = GridArc::Create(*curvesPortion, lineCurve);
     ASSERT_TRUE(lineArc.IsValid()) << "Error when creating grid arc";
 
     ASSERT_TRUE(lineArc->Insert().IsNull()) << "Should not be able to insert GridArc with invalid geometry";
@@ -3069,8 +3080,10 @@ TEST_F(GridsTestFixture, GridLine_Created)
         return linePoint.AlmostEqual({ 5, 0, 0 });
         })) << "Created line curve geometry is incorrect";
 
+    GridCurvesPortionPtr curvesPortion = GridCurvesPortion::Create(*m_model);
+    curvesPortion->Insert();
     // Try creating the grid line
-    GridLinePtr gridLine = GridLine::Create(*m_model.get(), lineCurve);
+    GridLinePtr gridLine = GridLine::Create(*curvesPortion, lineCurve);
     ASSERT_TRUE(gridLine.IsValid()) << "Error when creating grid line";
 
     ASSERT_TRUE(gridLine->Insert().IsValid()) << "Error when inserting grid line";
@@ -3087,7 +3100,7 @@ TEST_F(GridsTestFixture, GridLine_Created)
     ICurvePrimitivePtr arcCurve = GeometryUtils::CreateArc({ 0, 0, 0 }, { 5, 0, 0 }, { 0, 5, 0 }, true);
     ASSERT_TRUE(arcCurve.IsValid()) << "Failed to create line curve";
 
-    GridLinePtr arcLine = GridLine::Create(*m_model.get(), arcCurve);
+    GridLinePtr arcLine = GridLine::Create(*curvesPortion, arcCurve);
     ASSERT_TRUE(arcLine.IsValid()) << "Error when creating grid line";
 
     ASSERT_TRUE(arcLine->Insert().IsNull()) << "Should not be able to insert GridLine with invalid geometry";
@@ -3108,6 +3121,8 @@ TEST_F(GridsTestFixture, GridSpline_Created)
     {
     DgnDbR db = *DgnClientApp::App().Project();
 
+    GridCurvesPortionPtr curvesPortion = GridCurvesPortion::Create(*m_model);
+    curvesPortion->Insert();
     /////////////////////////////////////////////////////////////
     // Create Grid spline with curve primitive containing spline
     /////////////////////////////////////////////////////////////
@@ -3117,7 +3132,7 @@ TEST_F(GridsTestFixture, GridSpline_Created)
     ASSERT_TRUE(splineCurve.IsValid()) << "Failed to create spline curve";
 
     // Try creating the grid line
-    GridSplinePtr gridSpline = GridSpline::Create(*m_model.get(), splineCurve);
+    GridSplinePtr gridSpline = GridSpline::Create(*curvesPortion, splineCurve);
     ASSERT_TRUE(gridSpline.IsValid()) << "Error when creating grid spline";
 
     ASSERT_TRUE(gridSpline->Insert().IsValid()) << "Error when inserting grid spline";
@@ -3134,7 +3149,7 @@ TEST_F(GridsTestFixture, GridSpline_Created)
     ICurvePrimitivePtr arcCurve = GeometryUtils::CreateArc({ 0, 0, 0 }, { 5, 0, 0 }, { 0, 5, 0 }, true);
     ASSERT_TRUE(arcCurve.IsValid()) << "Failed to create spline curve";
 
-    GridSplinePtr arcSpline = GridSpline::Create(*m_model.get(), arcCurve);
+    GridSplinePtr arcSpline = GridSpline::Create(*curvesPortion, arcCurve);
     ASSERT_TRUE(arcSpline.IsValid()) << "Error when creating grid spline";
 
     ASSERT_TRUE(arcSpline->Insert().IsNull()) << "Should not be able to insert GridSpline with invalid geometry";
