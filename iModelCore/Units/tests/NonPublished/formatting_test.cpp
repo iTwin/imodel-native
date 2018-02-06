@@ -662,15 +662,15 @@ TEST(FormattingTest, PhysValues)
     //  adding practically convenient aliases/synonyms to selected Units
 
     BEU::UnitCP yrdUOM = BEU::UnitRegistry::Instance().LookupUnitCI("YRD");
-    BEU::UnitRegistry::Instance().AddSynonym("YRD", "YARD");
-    BEU::UnitCP yardUOM = BEU::UnitRegistry::Instance().LookupUnitCI("YARD");
-    BEU::UnitRegistry::Instance().AddSynonym("YARD", "YRDS");
-    BEU::UnitCP yrdsdUOM = BEU::UnitRegistry::Instance().LookupUnitCI("YRDS");
+    yrdUOM->AddSynonym("YARD");
+    yrdUOM->AddSynonym("YRDS");
   
     BEU::UnitCP ftUOM = BEU::UnitRegistry::Instance().LookupUnitCI("FT");
-    BEU::UnitRegistry::Instance().AddSynonym("FT", "FOOT");
-    BEU::UnitRegistry::Instance().AddSynonym("IN", "INCH");
+    ftUOM->AddSynonym("FOOT");
+    
     BEU::UnitCP inUOM = BEU::UnitRegistry::Instance().LookupUnitCI("IN");
+    inUOM->AddSynonym("INCH");
+
     BEU::UnitCP degUOM = BEU::UnitRegistry::Instance().LookupUnitCI("ARC_DEG");
     BEU::UnitCP minUOM = BEU::UnitRegistry::Instance().LookupUnitCI("ARC_MINUTE");
     BEU::UnitCP secUOM = BEU::UnitRegistry::Instance().LookupUnitCI("ARC_SECOND");
@@ -693,8 +693,8 @@ TEST(FormattingTest, PhysValues)
     EXPECT_STREQ ("74 15/32 ft", NumericFormatSpec::StdFormatQuantity("fractu", len, ftUOM, " ").c_str());
     EXPECT_STREQ ("74 1/2 ft", NumericFormatSpec::StdFormatQuantity("fract16u", len, ftUOM, " ").c_str());
     EXPECT_STREQ ("74 15/32 ft", NumericFormatSpec::StdFormatQuantity("fract32u", len, ftUOM, " ").c_str());
-    EXPECT_STREQ ("24 7/8 yd", NumericFormatSpec::StdFormatQuantity("fract8u", len, yardUOM, " ").c_str());
-    EXPECT_STREQ ("24 7/8-yd", NumericFormatSpec::StdFormatQuantity("fract8u", len, yrdsdUOM, "-").c_str());
+    EXPECT_STREQ ("24 7/8 yd", NumericFormatSpec::StdFormatQuantity("fract8u", len, yrdUOM, " ").c_str());
+    EXPECT_STREQ ("24 7/8-yd", NumericFormatSpec::StdFormatQuantity("fract8u", len, yrdUOM, "-").c_str());
 
     FormatUnitSet fusYF = FormatUnitSet("FT(fract32u)");
     //LOG.infov("FUS->Q  %s", fusYF.FormatQuantity(len).c_str());

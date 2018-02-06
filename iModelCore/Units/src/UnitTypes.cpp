@@ -64,41 +64,10 @@ ExpressionCR UnitsSymbol::Evaluate(int depth, std::function<UnitsSymbolCP(Utf8CP
     return *m_symbolExpression;
     }
 
-// TODO: Is the definition correct here?
-// TODO: We should probably restrict inverting units to units which are unitless.  If we do not then the inverted unit would have a different signature.
-Unit::Unit(UnitCR parent, Utf8CP unitName, uint32_t id) :
-    Unit(*(parent.GetUnitSystem()), *(parent.GetPhenomenon()), unitName, id, parent.GetDefinition(), parent.GetBaseSymbol(), 0, 0, false)
-    {
-    m_system = parent.GetUnitSystem();
-    m_phenomenon = parent.GetPhenomenon();
-    SetName(unitName);
-    m_parent = &parent;
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Unit::Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, Utf8Char dimensonSymbol, 
-           double factor, double offset, bool isConstant) : UnitsSymbol(name, definition, dimensonSymbol, id, factor, offset),
-           m_parent(nullptr), m_isConstant(isConstant)
-    {
-    m_system = &system;
-    m_phenomenon = &phenomenon;
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-UnitP Unit::Create(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP unitName, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant)
-    {
-    LOG.debugv("Creating unit %s  Factor: %.17g  Offset: %d", unitName, factor, offset);
-    return new Unit(system, phenomenon, unitName, id, definition, baseSymbol, factor, offset, isConstant);
-    }
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                      03/2016
 //--------------------------------------------------------------------------------------
-UnitP Unit::Create(UnitCR parentUnit, Utf8CP unitName, uint32_t id)
+UnitP Unit::_Create(UnitCR parentUnit, Utf8CP unitName, uint32_t id)
     {
     if (parentUnit.HasOffset())
         {
@@ -459,16 +428,6 @@ Utf8String Phenomenon::GetPhenomenonSignature() const
     Expression baseExpression;
     Expression::CreateExpressionWithOnlyBaseSymbols(phenomenonExpression, baseExpression);
     return baseExpression.ToString(false);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Colin.Kerr                      03/2016
-//--------------------------------------------------------------------------------------
-void Phenomenon::AddUnit(UnitCR unit)
-    {
-    auto it = find_if(m_units.begin(), m_units.end(), [&unit] (UnitCP existingUnit) { return existingUnit->GetId() == unit.GetId(); });
-    if (it == m_units.end())
-        m_units.push_back(&unit);
     }
 
 //--------------------------------------------------------------------------------------

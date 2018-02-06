@@ -11,6 +11,8 @@
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <Units/Units.h>
 
+using namespace std;
+
 UNITS_TYPEDEFS(UnitsSymbol)
 UNITS_TYPEDEFS(Unit)
 UNITS_TYPEDEFS(InverseUnit)
@@ -95,14 +97,19 @@ friend struct UnitRegistry;
 private:
     Utf8String m_name;
 
+    // Lifecycle is managed by the UnitRegistry so we don't allow copies or assignments.
     UnitSystem() = delete;
-    static UnitSystemP Create(Utf8CP name) {return new UnitSystem(name);}
+    UnitSystem(UnitSystemCR system) = delete;
+    UnitSystemR operator=(UnitSystemCR unit) = delete;
 
 protected:
+    static UnitSystemP _Create(Utf8CP name) {return new UnitSystem(name);}
+
     UnitSystem(Utf8CP name) : m_name(name) {}
+    virtual ~UnitSystem() {}
 
 public:
-    Utf8CP GetName() const {return m_name.c_str();}
+    Utf8StringCR GetName() const {return m_name;}
 };
 
 //=======================================================================================
@@ -171,10 +178,12 @@ private:
     mutable Utf8String m_displayLabel;
     mutable Utf8String m_displayDescription;
 
-    static UnitP Create(UnitSystemCR sysName, PhenomenonCR phenomenon, Utf8CP unitName, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant);
-    static UnitP Create(UnitCR parentUnit, Utf8CP unitName, uint32_t id);
+    Unit(UnitCR parentUnit, Utf8CP name, uint32_t id)
+        : Unit(*(parentUnit.GetUnitSystem()), *(parentUnit.GetPhenomenon()), name, id, parentUnit.GetDefinition(), parentUnit.GetBaseSymbol(), 0, 0, false)
+        {
+        m_parent = &parentUnit;
+        }
 
-    Unit(UnitCR parentUnit, Utf8CP name, uint32_t id);
     Unit() :UnitsSymbol(), m_system(nullptr), m_phenomenon(nullptr), m_parent(nullptr), m_isConstant(true) {}
     // Lifecycle is managed by the UnitRegistry so we don't allow copies or assignments.
 
@@ -191,7 +200,18 @@ private:
     bool GenerateConversion(UnitCR toUnit, Conversion& conversion) const;
 
 protected:
-    UNITS_EXPORT Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant);
+    // Needs to be overriden by any sub class
+    static UnitP _Create(UnitSystemCR sysName, PhenomenonCR phenomenon, Utf8CP unitName, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant)
+        {
+        NativeLogging::LoggingManager::GetLogger(L"UnitsNative")->debugv("Creating unit %s  Factor: %.17g  Offset: %d", unitName, factor, offset);
+        return new Unit(sysName, phenomenon, unitName, id, definition, baseSymbol, factor, offset, isConstant);
+        }
+
+    UNITS_EXPORT static UnitP _Create(UnitCR parentUnit, Utf8CP unitName, uint32_t id);
+
+    Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, Utf8Char dimensonSymbol, double factor, double offset, bool isConstant) 
+        : UnitsSymbol(name, definition, dimensonSymbol, id, factor, offset), m_parent(nullptr), m_isConstant(isConstant), m_system(&system), m_phenomenon(&phenomenon)
+        { }
 
 public:
     UNITS_EXPORT Utf8String GetUnitSignature() const;
@@ -200,13 +220,14 @@ public:
     UNITS_EXPORT Utf8CP GetLabel() const;
     UNITS_EXPORT Utf8CP GetDescription() const;
 
-    bool IsSI() const {return 0 == strcmp(m_system->GetName(), "SI");} // TODO: Replace with something better ... SI is a known system
-    bool IsRegistered() const;
-    bool IsConstant() const {return m_isConstant;}
-    UnitSystemCP GetUnitSystem() const {return m_system;}
-    PhenomenonCP GetPhenomenon() const {return m_phenomenon;}
+    bool IsSI() const {return 0 == strcmp(m_system->GetName().c_str(), "SI");} // TODO: Replace with something better ... SI is a known system
 
-    UnitCP MultiplyUnit (UnitCR rhs) const;
+    bool IsRegistered() const; //!< Indicates if this Unit is in the UnitRegistry singleton
+    bool IsConstant() const {return m_isConstant;} //!< Indicates if this Unit is constant.
+    UnitSystemCP GetUnitSystem() const {return m_system;} //!< Gets the UnitSystem for this Unit.
+    PhenomenonCP GetPhenomenon() const {return m_phenomenon;} //!< Gets the Phenomenon for this Unit.
+
+    UnitCP MultiplyUnit(UnitCR rhs) const;
     UnitCP DivideUnit(UnitCR rhs) const;
 
     UNITS_EXPORT void AddSynonym(Utf8CP synonym) const;
@@ -220,6 +241,11 @@ public:
 };
 
 //=======================================================================================
+//! UnitSynonymMap links a non-canonical unit name (synonym) to the specific Unit. Attaching 
+//! "synonyms" to the specific Units helps in avoiding conflict between synonyms. However, 
+//! each synonym must be unique among all synonyms of the specific Phenomenon. The canonical
+//! Unit name must be unique among all units of all Phenomena
+//!
 // @bsistruct
 //=======================================================================================
 struct UnitSynonymMap
@@ -231,13 +257,8 @@ private:
     UNITS_EXPORT void Init(Utf8CP unitName, Utf8CP synonym);
     UNITS_EXPORT void LoadJson(Json::Value jval);
 public:
-    UnitSynonymMap() { m_unit = nullptr; m_synonym.clear(); }
-    //!
-    //! @description UnitSynonymMap links a non-canonical unit name (synonym) to the specific Unit
-    //! @remark Attaching "synonyms" to the specific Units helps in avoiding conflict between synonyms
-    //! @remark However, each synonym must be unique among all synonyms of the specific Phenomenon
-    //! @remark The canonical Unit name must be unique among all units of all Phenomena
-    //!
+    UnitSynonymMap() {m_unit = nullptr; m_synonym.clear();}
+    
     //! The first argument of the constructor is a required text string that can contain of of the 
     //! following:
     //!   a valid canonical Unit name
@@ -245,11 +266,12 @@ public:
     //!   a Json string that containts a canonical Unit name and its synonym: {"synonym":"^","unitName":"ARC_DEG"}
     //! When the first argument contains only the name of the unit, the second argument must be a synonym
     //! Invalide names or their invalid combination will result in the empty Map
-
     UNITS_EXPORT UnitSynonymMap(Utf8CP unitName, Utf8CP synonym = nullptr);
     UNITS_EXPORT UnitSynonymMap(UnitCP unit, Utf8CP synonym) :m_unit(unit), m_synonym(synonym) {}
+
     //UNITS_EXPORT UnitSynonymMap(Utf8CP descriptor);
     UNITS_EXPORT UnitSynonymMap(Json::Value jval);
+
     bool IsMapEmpty() {return (nullptr == m_unit) && m_synonym.empty();}
     Utf8CP GetSynonym() const {return m_synonym.c_str();}
     Utf8CP GetUnitName() const {return m_unit->GetName();}
@@ -278,7 +300,12 @@ private:
     mutable bvector<UnitSynonymMap> m_altNames;
     mutable Utf8String m_displayLabel;
 
-    void AddUnit(UnitCR unit);
+    void AddUnit(UnitCR unit) 
+        {
+        auto it = find_if(m_units.begin(), m_units.end(), [&unit](UnitCP existingUnit) { return existingUnit->GetId() == unit.GetId(); });
+        if (it == m_units.end())
+            m_units.push_back(&unit);
+        }
     void AddMap(UnitSynonymMapCR map);
     Phenomenon() = delete;
     Phenomenon(PhenomenonCR phenomenon) = delete;

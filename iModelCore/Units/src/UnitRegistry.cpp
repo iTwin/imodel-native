@@ -65,69 +65,6 @@ void UnitRegistry::InsertUnique (Utf8Vector &vec, Utf8String &str)
     vec.push_back(str);
     }
 
-//---------------------------------------------------------------------------------------//
-// @bsimethod                                              Colin.Kerr           02/16
-//+---------------+---------------+---------------+---------------+---------------+------//
-UnitP UnitRegistry::AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant)
-    {
-    if (Utf8String::IsNullOrEmpty(unitName))
-        {
-        LOG.error("Cannot create base unit because the input name is null");
-        return nullptr;
-        }
-
-    // TODO: Add back in check for system name
-
-    if (NameConflicts(unitName))
-        {
-        LOG.errorv("Could not create unit '%s' because that name is already in use", unitName);
-        return nullptr;
-        }
-
-    PhenomenonP phenomenon = LookupPhenomenonP(phenomName);
-    if (nullptr == phenomenon)
-        {
-        LOG.errorv("Could not find phenomenon '%s'", phenomName);
-        return nullptr;
-        }
-
-    UnitSystemCP system = LookupUnitSystem(systemName);
-    if (nullptr == system)
-        {
-        LOG.errorv("Could not find system '%s'", systemName);
-        return nullptr;
-        }
-
-    auto unit = Unit::Create(*system, *phenomenon, unitName, m_nextId, definition, baseSymbol, factor, offset, isConstant);
-    if (nullptr == unit)
-        return nullptr;
-
-    // Add the unit label as a synonym as long as it is not the same as the actual unit name
-    if (!Utf8String::IsNullOrEmpty(unit->GetLabel()) && (0 != strcmp(unit->GetLabel(), unitName)))
-        unit->AddSynonym(unit->GetLabel());
-
-    phenomenon->AddUnit(*unit);
-
-    ++m_nextId;
-
-    m_units.insert(bpair<Utf8String, UnitP>(unitName, unit));
-
-    return unit;
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-UnitP UnitRegistry::AddUnitP (Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double factor, double offset)
-    {
-    if (Utf8String::IsNullOrEmpty(unitName))
-        {
-        LOG.errorv("Could not create unit because unit name is null");
-        return nullptr;
-        }
-    return AddUnitInternal(phenomName, systemName, unitName, definition, ' ', factor, offset, false);
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -144,69 +81,6 @@ UnitCP UnitRegistry::AddDummyUnit(Utf8CP unitName)
 //---------------------------------------------------------------------------------------//
 // @bsimethod                                              Colin.Kerr           03/16
 //+---------------+---------------+---------------+---------------+---------------+------//
-UnitCP UnitRegistry::AddInvertingUnit(Utf8CP parentUnitName, Utf8CP unitName)
-    {
-    if (Utf8String::IsNullOrEmpty(unitName))
-        {
-        LOG.error("Cannot create unit because the input name is null");
-        return nullptr;
-        }
-
-    if (Utf8String::IsNullOrEmpty(parentUnitName))
-        {
-        LOG.errorv("Cannot create unit %s because it's parent name is null", unitName);
-        return nullptr;
-        }
-
-    UnitCP parentUnit = LookupUnit(parentUnitName);
-    if (nullptr == parentUnit)
-        {
-        LOG.errorv("Cannot create unit %s because it's parent unit %s cannot be found", unitName, parentUnitName);
-        return nullptr;
-        }
-
-    if (NameConflicts(unitName))
-        {
-        LOG.errorv("Could not create unit '%s' because that name is already in use", unitName);
-        return nullptr;
-        }
-
-    auto unit = Unit::Create(*parentUnit, unitName, m_nextId);
-    if (nullptr == unit)
-        return nullptr;
-
-    PhenomenonP phenomenon = LookupPhenomenonP(parentUnit->GetPhenomenon()->GetName());
-    phenomenon->AddUnit(*unit);
-
-    ++m_nextId;
-
-    m_units.insert(bpair<Utf8String, UnitP>(unitName, unit));
-
-    return unit;
-    }
-
-//---------------------------------------------------------------------------------------//
-// @bsimethod                                              Colin.Kerr           02/16
-//+---------------+---------------+---------------+---------------+---------------+------//
-bool UnitRegistry::NameConflicts(Utf8CP name)
-    {
-    if (HasConstant(name))
-        {
-        LOG.errorv("Name '%s' conflicts with a constant that is already registered", name);
-        return true;
-        }
-
-    if (HasUnit(name))
-        {
-        LOG.errorv("Name '%s' conflicts with a unit that is already registered", name);
-        return true;
-        }
-    return false;
-    }
-
-//---------------------------------------------------------------------------------------//
-// @bsimethod                                              Colin.Kerr           03/16
-//+---------------+---------------+---------------+---------------+---------------+------//
 bool UnitRegistry::TryGetConversion(uint64_t index, Conversion& conversion)
     {
     auto it = m_conversions.find(index);
@@ -216,82 +90,6 @@ bool UnitRegistry::TryGetConversion(uint64_t index, Conversion& conversion)
         return true;
         }
     return false;
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-UnitCP UnitRegistry::AddConstant(Utf8CP phenomName, Utf8CP constantName, Utf8CP definition, double factor)
-    {
-    if (Utf8String::IsNullOrEmpty(constantName))
-        {
-        LOG.error("Could not create constant because name is null or empty");
-        return nullptr;
-        }
-
-    return AddUnitInternal(phenomName, CONSTANT, constantName, definition, ' ', factor, 0, true);
-    }
-
-//---------------------------------------------------------------------------------------//
-// @bsimethod                                              Colin.Kerr           02/16
-//+---------------+---------------+---------------+---------------+---------------+------//
-BentleyStatus UnitRegistry::AddSynonym(Utf8CP unitName, Utf8CP synonymName)
-    {
-    if (Utf8String::IsNullOrEmpty(synonymName))
-        return BentleyStatus::ERROR;
-    if (Utf8String::IsNullOrEmpty(unitName))
-        return BentleyStatus::ERROR;
-
-    if (NameConflicts(synonymName))
-        {
-        LOG.errorv("Could not create synonym with name '%s' becasue it conflicts with an existing name", synonymName);
-        return BentleyStatus::ERROR;
-        }
-
-    UnitP unit = LookupUnitP(unitName);
-    if (nullptr == unit)
-        {
-        LOG.errorv("Could not create synonym with name '%s' because the unit it is for is null", synonymName);
-        return BentleyStatus::ERROR;
-        }
-
-    m_units.insert(bpair<Utf8String, UnitP>(synonymName, unit));
-
-    return BentleyStatus::SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------//
-// @bsimethod                                              Colin.Kerr           02/16
-//+---------------+---------------+---------------+---------------+---------------+------//
-BentleyStatus UnitRegistry::AddSynonym(UnitCP unit, Utf8CP synonymName)
-    {
-    if (Utf8String::IsNullOrEmpty(synonymName))
-        return BentleyStatus::ERROR;
-
-    if (nullptr == unit)
-        {
-        LOG.errorv("Could not create synonym with name '%s' because the unit it is for is null", synonymName);
-        return BentleyStatus::ERROR;
-        }
-
-    return AddSynonym(unit->GetName(), synonymName);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                              Chris.Tartamella       02/16
-//--------------------------------------------------------------------------------------
-UnitP UnitRegistry::LookupUnitP(Utf8CP name) const
-    {
-    auto val_iter = m_units.find(name);
-    return val_iter == m_units.end() ? nullptr : (*val_iter).second;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                              Chris.Tartamella       02/16
-//--------------------------------------------------------------------------------------
-UnitCP UnitRegistry::LookupUnit(Utf8CP name) const
-    {
-    return LookupUnitP(name);
     }
 
 //---------------------------------------------------------------------------------------
@@ -346,82 +144,50 @@ void UnitRegistry::AllUnits(bvector<UnitCP>& allUnits) const
         }
     }
 
-Utf8CP GetBasePhenomenonName(Utf8Char baseSymbol)
-    {
-    switch (baseSymbol)
-        {
-        case BasePhenomena::Capita:
-            return CAPITA;
-        case BasePhenomena::ElectricCurrent:
-            return CURRENT;
-        case BasePhenomena::Finance:
-            return FINANCE;
-        case BasePhenomena::Length:
-            return LENGTH;
-        case BasePhenomena::Luminosity:
-            return LUMINOSITY;
-        case BasePhenomena::Mass:
-            return MASS;
-        case BasePhenomena::Mole:
-            return MOLE;
-        case BasePhenomena::PlaneAngle:
-            return ANGLE;
-        case BasePhenomena::Ratio:
-            return ONE;
-        case BasePhenomena::SolidAngle:
-            return SOLIDANGLE;
-        case BasePhenomena::Temperature:
-            return TEMPERATURE;
-        case BasePhenomena::TemperatureChange:
-            return TEMPERATURE_CHANGE;
-        case BasePhenomena::Time:
-            return TIME;
-        default:
-            return EMPTY_STRING;
-        }
-    }
 //-------------------------------------------------------------------------------------//
 // @bsimethod                                              Colin.Kerr     02/16
 //+---------------+---------------+---------------+---------------+---------------+----//
 void UnitRegistry::AddBasePhenomenon(Utf8Char baseSymbol)
     {
-    Utf8CP phenomenaName = GetBasePhenomenonName(baseSymbol);
-    if (Utf8String::IsNullOrEmpty(phenomenaName))
+    Utf8CP phenomName = BasePhenomena::GetBasePhenomenonName(baseSymbol);
+    if (Utf8String::IsNullOrEmpty(phenomName))
         return;
 
-    if (HasPhenomena(phenomenaName))
+    if (HasPhenomenon(phenomName))
         {
-        LOG.errorv("Cannot create Base Phenomenon '%s' because name is already in use", phenomenaName);
+        LOG.errorv("Cannot create Base Phenomenon '%s' because name is already in use", phenomName);
         return;
         }
 
-    auto phenomena = new Phenomenon(phenomenaName, phenomenaName, baseSymbol, m_nextId);
+    auto phenomena = new Phenomenon(phenomName, phenomName, baseSymbol, m_nextId);
     ++m_nextId;
 
-    m_phenomena.insert(bpair<Utf8String, PhenomenonP>(phenomenaName, phenomena));
+    m_phenomena.insert(bpair<Utf8String, PhenomenonP>(phenomName, phenomena));
     }
 
 //-------------------------------------------------------------------------------------//
 // @bsimethod                                              Colin.Kerr     02/16
 //+---------------+---------------+---------------+---------------+---------------+----//
-void UnitRegistry::AddPhenomenon (Utf8CP phenomenaName, Utf8CP definition)
+PhenomenonCP UnitRegistry::AddPhenomenon (Utf8CP phenomenaName, Utf8CP definition)
     {
     if (Utf8String::IsNullOrEmpty(phenomenaName))
         {
         LOG.error("Failed to create Phenomenon because name is null");
-        return;
+        return nullptr;
         }
 
-    if (HasPhenomena(phenomenaName))
+    if (HasPhenomenon(phenomenaName))
         {
         LOG.errorv("Cannot create Phenomenon '%s' because name is already in use", phenomenaName);
-        return;
+        return nullptr;
         }
 
     auto phenomena = new Phenomenon(phenomenaName, definition, ' ', m_nextId);
     ++m_nextId;
 
     m_phenomena.insert(bpair<Utf8String, PhenomenonP>(phenomenaName, phenomena));
+
+    return phenomena;
     }
 
 //---------------------------------------------------------------------------------------//
@@ -435,31 +201,14 @@ UnitCP UnitRegistry::AddUnitForBasePhenomenon(Utf8CP unitName, Utf8Char baseSymb
         return nullptr;
         }
 
-    Utf8CP phenomenonName = GetBasePhenomenonName(baseSymbol);
+    Utf8CP phenomenonName = BasePhenomena::GetBasePhenomenonName(baseSymbol);
     if (Utf8String::IsNullOrEmpty(phenomenonName))
         {
         LOG.errorv("Cannot create base unit '%s' because the input base symbol '%c' does not map to a base phenomenon", unitName, baseSymbol);
         return nullptr;
         }
 
-    return AddUnitInternal(phenomenonName, SI, unitName, unitName, baseSymbol, 1, 0, false);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Colin.Kerr                      02/2016
-//--------------------------------------------------------------------------------------
-PhenomenonP UnitRegistry::LookupPhenomenonP(Utf8CP name) const
-    {
-    auto val_iter = m_phenomena.find(name);
-    return val_iter == m_phenomena.end() ? nullptr : (*val_iter).second;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Colin.Kerr                      02/2016
-//--------------------------------------------------------------------------------------
-PhenomenonCP UnitRegistry::LookupPhenomenon(Utf8CP name) const
-    {
-    return LookupPhenomenonP(name);
+    return AddUnitInternal<Unit>(phenomenonName, SI, unitName, unitName, baseSymbol, 1, 0, false);
     }
 
 //--------------------------------------------------------------------------------------
@@ -471,56 +220,35 @@ void UnitRegistry::AllPhenomena(bvector<PhenomenonCP>& allPhenomena) const
         allPhenomena.push_back(phenomenonAndName.second);
     }
 
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void UnitRegistry::AddSystem (Utf8CP name)
-    {
-    // TODO: use error return enum
-    if (Utf8String::IsNullOrEmpty(name))
-        {
-        LOG.error("Cannot create UnitSystem because name is null");
-        return;
-        }
-    if (HasSystem(name))
-        {
-        LOG.errorv("Cannot create UnitSystem '%s' because that name is already in use.", name);
-        return;
-        }
-
-    auto unitSystem = UnitSystem::Create(name);
-    m_systems.Insert(unitSystem->GetName(), unitSystem);
-    }
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    01/2018
 //--------------------------------------------------------------------------------------
 void UnitRegistry::AddSystem(UnitSystemR unitSystem)
     {
-    if (HasSystem(unitSystem.GetName()))
+    if (HasSystem(unitSystem.GetName().c_str()))
         {
-        LOG.errorv("Cannot create UnitSystem '%s' because that name is already in use.", unitSystem.GetName());
+        LOG.errorv("Cannot create UnitSystem '%s' because that name is already in use.", unitSystem.GetName().c_str());
         return;
         }
 
-    m_systems.Insert(unitSystem.GetName(), &unitSystem);
+    m_systems.Insert(unitSystem.GetName().c_str(), &unitSystem);
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                   Colin.Kerr                      01/2018
+// @bsimethod                                   Caleb.Shafer                    02/2018
 //--------------------------------------------------------------------------------------
-UnitSystemP UnitRegistry::LookupUnitSystemP(Utf8CP name) const
+UnitSystemP UnitRegistry::RemoveSystem(Utf8CP name)
     {
-    auto val_iter = m_systems.find(name);
-    return val_iter == m_systems.end() ? nullptr : (*val_iter).second;
-    }
+    UnitSystemP ptrReturn = nullptr;
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Caleb.Shafer            01/18
-//---------------------------------------------------------------------------------------
-UnitSystemCP UnitRegistry::LookupUnitSystem(Utf8CP name) const
-    {
-    return LookupUnitSystemP(name);
+    auto iter = m_systems.find(name);
+    if (iter != m_systems.end())
+        {
+        ptrReturn = iter->second;
+        m_systems.erase(iter);
+        }
+
+    return ptrReturn;
     }
 
 //--------------------------------------------------------------------------------------

@@ -11,8 +11,8 @@
 
 BEGIN_UNITS_UNITTESTS_NAMESPACE
 
-struct UnitRegistrySingletonTests : UnitsTestFixture 
-    {
+struct UnitRegistryTests : UnitsTestFixture 
+{
     void SetUp() override
         {
         UnitsTestFixture::SetUp();
@@ -25,15 +25,16 @@ struct UnitRegistrySingletonTests : UnitsTestFixture
         UnitsTestFixture::TearDown();
         UnitRegistry::Clear();
         }
-    };
 
-struct UnitRegistryTests : UnitsTestFixture 
-{
     struct TestUnitSystem : UnitSystem
     {
-    public:
+    friend struct UnitRegistry;
+    private:
         TestUnitSystem(Utf8CP name) : UnitSystem(name) {}
+    protected:
+        static TestUnitSystem* _Create(Utf8CP name) {return new TestUnitSystem(name);}
     };
+
     struct TestPhenomenon : Phenomenon
     {
     public:
@@ -43,16 +44,27 @@ struct UnitRegistryTests : UnitsTestFixture
 
     struct TestUnit : Unit
     {
-    public:
+    friend struct UnitRegistry;
+    private:
         TestUnit(UnitSystemCR unitSystem, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant) :
             Unit(unitSystem, phenomenon, name, id, definition, baseSymbol, factor, offset, isConstant) { }
+
+        TestUnit(UnitCR parentUnit, Utf8CP name, uint32_t id)
+        : TestUnit(*(parentUnit.GetUnitSystem()), *(parentUnit.GetPhenomenon()), name, id, parentUnit.GetDefinition(), ' ', 0, 0, false)
+        { }
+
+    protected:
+        static TestUnit* _Create(UnitSystemCR sysName, PhenomenonCR phenomenon, Utf8CP unitName, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant)
+        {return new TestUnit(sysName, phenomenon, unitName, id, definition, baseSymbol, factor, offset, isConstant);}
+
+        static TestUnit* _Create(UnitCR parentUnit, Utf8CP unitName, uint32_t id) {return new TestUnit(parentUnit, unitName, id);}
     };
 };
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    01/2018
 //--------------------------------------------------------------------------------------
-TEST_F(UnitRegistrySingletonTests, AddAndRetrieveConstant)
+TEST_F(UnitRegistryTests, AddAndRetrieveConstant)
     {
     // Add constant
     PhenomenonCP phen = UnitRegistry::Instance().LookupPhenomenon("LENGTH");
@@ -74,7 +86,7 @@ TEST_F(UnitRegistrySingletonTests, AddAndRetrieveConstant)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            Colin.Kerr                                  03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UnitRegistrySingletonTests, AllUnitsNeededForFirstReleaseExist)
+TEST_F(UnitRegistryTests, AllUnitsNeededForFirstReleaseExist)
     {
     bvector<Utf8String> missingUnits;
     bvector<Utf8String> foundUnits;
@@ -164,19 +176,19 @@ TEST_F(UnitRegistryTests, TestAllBaseUnitsAdded)
 //--------------------------------------------------------------------------------------
 TEST_F(UnitRegistryTests, TestAllBasePhenomenaAdded)
     {
-    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomena("LENGTH"));
-    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomena("MASS"));
-    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomena("TIME"));
-    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomena("TEMPERATURE"));
-    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomena("TEMPERATURE_CHANGE"));
-    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomena("CURRENT"));
-    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomena("MOLE"));
-    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomena("LUMINOSITY"));
-    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomena("ANGLE"));
-    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomena("SOLIDANGLE"));
-    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomena("FINANCE"));
-    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomena("CAPITA"));
-    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomena("ONE"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomenon("LENGTH"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomenon("MASS"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomenon("TIME"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomenon("TEMPERATURE"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomenon("TEMPERATURE_CHANGE"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomenon("CURRENT"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomenon("MOLE"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomenon("LUMINOSITY"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomenon("ANGLE"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomenon("SOLIDANGLE"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomenon("FINANCE"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomenon("CAPITA"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomenon("ONE"));
     }
 
 //--------------------------------------------------------------------------------------
@@ -201,5 +213,100 @@ TEST_F(UnitRegistryTests, TestAllBaseUnitSystemsAdded)
     UnitRegistry::Instance().AllSystems(unitSystems);
     EXPECT_EQ(12, unitSystems.size());
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+TEST_F(UnitRegistryTests, TestAddingDerivedUnits)
+    {
+    TestUnit const* testConstant = UnitRegistry::Instance().AddConstant<TestUnit>("ONE", "TestConstant", "", 0);
+    ASSERT_NE(nullptr, testConstant);
+    UnitCP retrievedConstant = UnitRegistry::Instance().LookupUnit("TestConstant");
+    EXPECT_EQ(retrievedConstant, testConstant);
+    TestUnit const* retrievedTestConstant = dynamic_cast<TestUnit const*>(retrievedConstant);
+    EXPECT_NE(nullptr, retrievedTestConstant);
+
+    TestUnit const* testUnit = UnitRegistry::Instance().AddUnit<TestUnit>("ONE", "SI", "TestUnit", "TEST");
+    ASSERT_NE(nullptr, testUnit);
+    UnitCP retrievedUnit = UnitRegistry::Instance().LookupUnit("TestUnit");
+    EXPECT_EQ(retrievedUnit, testUnit);
+    TestUnit const* retrievedTestUnit = dynamic_cast<TestUnit const*>(retrievedUnit);
+    EXPECT_NE(nullptr, retrievedTestUnit);
+
+    TestUnit const* testInverseUnit = UnitRegistry::Instance().AddInvertingUnit<TestUnit>("TestUnit", "InverseTestUnit");
+    ASSERT_NE(nullptr, testInverseUnit);
+    UnitCP retrievedInverseUnit = UnitRegistry::Instance().LookupUnit("InverseTestUnit");
+    EXPECT_EQ(retrievedInverseUnit, testInverseUnit);
+    TestUnit const* retrievedInverseTestUnit = dynamic_cast<TestUnit const*>(retrievedInverseUnit);
+    EXPECT_NE(nullptr, retrievedInverseTestUnit);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    02/2018
+//--------------------------------------------------------------------------------------
+TEST_F(UnitRegistryTests, TestAddingDerivedUnitSystems)
+    {
+    TestUnitSystem const* testSystem = UnitRegistry::Instance().AddSystem<TestUnitSystem>("TestSystem");
+    ASSERT_NE(nullptr, testSystem);
+    UnitSystemCP retrievedSystem = UnitRegistry::Instance().LookupUnitSystem("TestSystem");
+    ASSERT_EQ(testSystem, retrievedSystem);
+
+    TestUnitSystem const* retrievedTestSystem = dynamic_cast<TestUnitSystem const*>(retrievedSystem);
+    EXPECT_NE(nullptr, retrievedTestSystem);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    02/2018
+//--------------------------------------------------------------------------------------
+TEST_F(UnitRegistryTests, RemovingAUnitSystem)
+    {
+    UnitSystemCP testSystem = UnitRegistry::Instance().AddSystem("TestSystem");
+    ASSERT_NE(nullptr, testSystem);
+
+    UnitSystemCP removedSystem = UnitRegistry::Instance().RemoveSystem("TestSystem");
+    ASSERT_EQ(testSystem, removedSystem);
+    ASSERT_FALSE(UnitRegistry::Instance().HasSystem("TestSystem"));
+
+    EXPECT_STREQ("TestSystem", removedSystem->GetName().c_str());
+    }
+
+
+// TODO: find a way to test compile time assertions.. Interesting talk on it, https://www.youtube.com/watch?time_continue=2105&v=zxDzMjfsgjg. Maybe try to use this style? 
+#if 0
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+TEST_F(UnitRegistryTests, TestAddingBadUnits)
+    {
+    struct NotAUnit
+        {
+        private:
+            NotAUnit(UnitSystemCR unitSystem, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant) { }
+
+        protected:
+        // Want to verify that just having a proper API does not allow the template to work.
+        static NotAUnit* _Create(UnitSystemCR sysName, PhenomenonCR phenomenon, Utf8CP unitName, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant)
+            {return new NotAUnit(sysName, phenomenon, unitName, id, definition, baseSymbol, factor, offset, isConstant);}
+        };
+
+    UnitRegistry::Instance().AddUnit<NotAUnit>("ONE", "SI", "TestUnit", "TEST");
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+TEST_F(UnitRegistryTests, TestAddingBadUnitSystem)
+    {
+    struct BadUnitSystem
+        {
+        private:
+            BadUnitSystem(Utf8CP name) {}
+        protected:
+            static BadUnitSystem* _Create(Utf8CP name) {return new BadUnitSystem(name);}
+        };
+
+    UnitRegistry::Instance().AddSystem<BadUnitSystem>("TestUnitSystem");
+    }
+#endif
 
 END_UNITS_UNITTESTS_NAMESPACE
