@@ -1377,6 +1377,40 @@ TEST_F(SingleBriefcaseLocksTest, AcquireLocks)
     ExpectLevel(db, LockLevel::Shared);
     }
 
+//-------------------------------------------------------------------------------------------
+// @bsimethod                                                 Diego.Pinate     01/18
+//-------------------------------------------------------------------------------------------
+TEST_F(SingleBriefcaseLocksTest, ClearUserHeldCodesLocks)
+    {
+    SetupDb(L"ClearUserHeldCodesLocksTest.bim", m_bcId);
+
+    // Create a new element - requires locking the dictionary model + the db
+    DgnDbR db = *m_db;
+    DgnModelPtr pModel = db.Models().GetModel(m_modelId);
+    ASSERT_TRUE(pModel.IsValid());
+    DgnElementCPtr cpEl = db.Elements().GetElement(m_elemId);
+    ASSERT_TRUE(cpEl.IsValid());
+
+    DgnModelCR model = *pModel;
+    DgnElementCR el = *cpEl;
+    LockableSchemas lockableSchemas(db);
+
+    ExpectLevel(db, LockLevel::Shared);
+    ExpectLevel(model, LockLevel::None);
+    ExpectLevel(el, LockLevel::None);
+
+    ExpectAcquire(model, LockLevel::Shared);
+    ExpectAcquire(el, LockLevel::Exclusive);
+    ExpectLevel(model, LockLevel::Shared);
+    ExpectLevel(el, LockLevel::Exclusive);
+    ExpectLevel(db, LockLevel::Shared); // a shared lock on a model => shared lock on DB
+
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().ClearUserHeldCodesLocks());
+    ExpectLevel(model, LockLevel::None);
+    ExpectLevel(el, LockLevel::None);
+    ExpectLevel(db, LockLevel::Shared);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * A single briefcase can always acquire locks with no contention ... bulk mode version.
 * @bsimethod                                                    Paul.Connelly   10/15

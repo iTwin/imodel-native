@@ -197,6 +197,7 @@ protected:
     virtual void _OnElementInserted(DgnElementId id) = 0;
     virtual void _OnModelInserted(DgnModelId id) = 0;
     virtual RepositoryStatus _RefreshFromRepository() = 0;
+    virtual RepositoryStatus _ClearUserHeldCodesLocks() = 0;
     virtual void _OnDgnDbDestroyed() { }
 
     // Bulk operations
@@ -414,6 +415,8 @@ public:
     //! @return Success, or an error status
     //! @remarks This is generally only useful if the repository was temporarily unavailable when previous requests were attempted.
     RepositoryStatus RefreshFromRepository() { return _RefreshFromRepository(); }
+    //! Clears user held locks from local cache, only used in special workflows
+    RepositoryStatus ClearUserHeldCodesLocks() { return _ClearUserHeldCodesLocks(); }
     RepositoryStatus OnFinishRevision(DgnRevision const& rev) { return _OnFinishRevision(rev); } //!< @private
     void OnElementInserted(DgnElementId id); //!< @private
     void OnModelInserted(DgnModelId id); //!< @private
