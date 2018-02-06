@@ -868,7 +868,7 @@ void DgnRevision::ExtractCodes(DgnCodeSet& assignedCodes, DgnCodeSet& discardedC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    11/2016
 //---------------------------------------------------------------------------------------
-void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb) const
+void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb, bool extractInserted) const
     {
     LockRequest lockRequest;
 
@@ -913,7 +913,9 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb) const
 
         BeAssert(modelId.IsValid());
         lockRequest.InsertLock(LockableId(modelId), LockLevel::Shared);
-        lockRequest.InsertLock(LockableId(DgnElementId(entry.GetPrimaryInstanceId().GetValueUnchecked())), LockLevel::Exclusive);
+        // TFS#788401: We don't want to extract locks for inserted elements, as once it is pushed to the server
+        if (extractInserted || entry.GetDbOpcode() != DbOpcode::Insert)
+            lockRequest.InsertLock(LockableId(DgnElementId(entry.GetPrimaryInstanceId().GetValueUnchecked())), LockLevel::Exclusive);
         }
 
     // Any models or CodeSpecs directly changed?
@@ -928,8 +930,12 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb) const
         if (!entry.IsPrimaryTable())
             continue;
 
-        if (primaryClass->Is(modelClass))
+        // TFS#788401: We don't want to extract locks for inserted models unless we set extractInserted to true
+        if (primaryClass->Is(modelClass) && (extractInserted || entry.GetDbOpcode() != DbOpcode::Insert))
             lockRequest.InsertLock(LockableId(LockableType::Model, DgnModelId(entry.GetPrimaryInstanceId().GetValueUnchecked())), LockLevel::Exclusive);
+        // If a model is inserted, we don't want to have any locks related to it (same as inserted elements)
+        else if (!extractInserted && primaryClass->Is(modelClass) && entry.GetDbOpcode() == DbOpcode::Insert)
+            lockRequest.Remove(LockableId(LockableType::Model, DgnModelId(entry.GetPrimaryInstanceId().GetValueUnchecked())));
         else if (primaryClass->Is(codeSpecClass))
             lockRequest.InsertCodeSpecsLock(dgndb);
         }
