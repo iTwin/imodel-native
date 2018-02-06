@@ -584,20 +584,32 @@ BentleyStatus Root::DeleteCacheFile()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/17
+* @bsimethod                                                    Paul.Connelly   02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName TileCache::GetCacheFileName(BeFileNameCR baseName)
+BeFileName DgnPlatformLib::Host::TileAdmin::_GetRealityDataCacheFileName(Utf8CP realityCacheName) const
     {
+    // TFS#784733: Navigator wants these in a subdirectory to simplify management of various other types of caches
+    // NB: Only reality data caches go in that subdirectory - element tiles go next to the iModel
     BeFileName filename = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
 
-    // TFS#784733: Navigator wants these in a subdirectory to simplify management of various other types of caches
     filename.AppendToPath(L"Tiles");
     filename.AppendSeparator();
     BeFileName::CreateNewDirectory(filename);
 
-    filename.AppendToPath(baseName);
+    filename.AppendToPath(WString(realityCacheName, true).c_str());
     filename.AppendExtension(L"TileCache");
 
+    return filename;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName DgnPlatformLib::Host::TileAdmin::_GetElementCacheFileName(DgnDbCR db) const
+    {
+    // TFS#816125: Tile cache names must be unique. Easiest way to ensure that is to put in same directory as iModel.
+    BeFileName filename = db.GetFileName();
+    filename.AppendExtension(L"TileCache");
     return filename;
     }
 
@@ -609,7 +621,7 @@ void Root::CreateCache(Utf8CP realityCacheName, uint64_t maxSize, bool httpOnly)
     if (httpOnly && !IsHttp()) 
         return;
         
-    m_localCacheName = TileCache::GetCacheFileName(BeFileName(realityCacheName));
+    m_localCacheName = T_HOST.GetTileAdmin()._GetRealityDataCacheFileName(realityCacheName);
     m_cache = new TileCache(maxSize);
     if (SUCCESS != m_cache->OpenAndPrepare(m_localCacheName))
         m_cache = nullptr;
