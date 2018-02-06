@@ -126,6 +126,7 @@ public:
     IMODELHUBCLIENT_EXPORT Error();
     IMODELHUBCLIENT_EXPORT Error(Error::Id id);
     Error(Error::Id id, Utf8StringCR message) {m_id = id; m_message = message;}
+    Error(Error::Id id, Utf8StringCR message, Utf8StringCR description) { m_id = id; m_message = message; m_description = description; }
     IMODELHUBCLIENT_EXPORT Error(Dgn::DgnDbCR db, BeSQLite::DbResult result);
     IMODELHUBCLIENT_EXPORT Error(Dgn::DgnDbPtr db, BeSQLite::DbResult result);
     IMODELHUBCLIENT_EXPORT Error(WebServices::WSErrorCR error);

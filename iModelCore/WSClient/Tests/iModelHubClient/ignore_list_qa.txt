@@ -8,10 +8,6 @@ WebsiteSeedFileTests.CreateSeedFile
 #   Tests that are failing
 #----------------------------------------------------------------------------------------
 BriefcaseSchemaChangesTests.*
-BriefcaseTests.UnsuccessfulRestoreBriefcase
-BriefcaseTests.QueryInformationAboutMasterBriefcase
-BriefcaseTests.QueryInformationAboutStandaloneBriefcase
-BriefcaseTests.QueryInformationAboutNonexistentBriefcase
 ChangeSetsTests.CancelDownloadChangeSets
 SeedFileTests.ReplaceWithoutLockediModel
 StatisticsTests.QueryUserStatisticsWithAllStatistics
