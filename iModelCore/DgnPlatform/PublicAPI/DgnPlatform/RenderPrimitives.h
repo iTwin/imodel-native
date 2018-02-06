@@ -569,8 +569,7 @@ struct MeshBuilder : RefCountedBase
 
 private:
     MeshPtr                         m_mesh;
-    VertexMap                       m_clusteredVertexMap;
-    VertexMap                       m_unclusteredVertexMap;
+    VertexMap                       m_vertexMap;
     TriangleSet                     m_triangleSet;
     double                          m_tolerance;
     double                          m_areaTolerance;
@@ -585,8 +584,8 @@ public:
     static MeshBuilderPtr Create(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar)
         { return new MeshBuilder(params, tolerance, areaTolerance, featureTable, type, range, is2d, isPlanar); }
 
-    DGNPLATFORM_EXPORT void AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR, DgnDbR dgnDb, FeatureCR feature, bool doVertexClustering, bool includeParams, uint32_t fillColor, bool requireNormals);
-    DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureCR feature, bool doVertexClustering, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter);
+    DGNPLATFORM_EXPORT void AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor, bool requireNormals);
+    DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureCR feature, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter);
     void AddPolyline(bvector<QPoint3d> const&, FeatureCR, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter);
     void AddPointString(bvector<DPoint3d> const& pointString, FeatureCR feature, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter);
     DGNPLATFORM_EXPORT void BeginPolyface(PolyfaceQueryCR polyface, MeshEdgeCreationOptionsCR options);
@@ -594,8 +593,7 @@ public:
 
     void AddMesh(TriangleCR triangle);
     void AddTriangle(TriangleCR triangle);
-    uint32_t AddClusteredVertex(VertexKey const& vertex) { return AddVertex(m_clusteredVertexMap, vertex); }
-    uint32_t AddVertex(VertexKey const& vertex) { return AddVertex(m_unclusteredVertexMap, vertex); }
+    uint32_t AddVertex(VertexKey const& vertex) { return AddVertex(m_vertexMap, vertex); }
 
     MeshP GetMesh() { return m_mesh.get(); } //!< The mesh under construction
     double GetTolerance() const { return m_tolerance; }

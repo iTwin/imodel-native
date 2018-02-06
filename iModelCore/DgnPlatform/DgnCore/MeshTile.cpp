@@ -3058,7 +3058,6 @@ struct MeshTileClipOutput : PolyfaceQuery::IClipToPlaneSetOutput
 TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode normalMode, bool doSurfacesOnly, bool doRangeTest, ITileGenerationFilterCP filter, TileGeometryList const& geometries) const
     {
     static const double         s_vertexToleranceRatio    = .1;
-    static const double         s_vertexClusterThresholdPixels = 5.0;
     static const double         s_facetAreaToleranceRatio = .1;
     static const size_t         s_decimatePolyfacePointCount = 100;
 

@@ -173,8 +173,6 @@ private:
         //
         }
 
-    bool _DoVertexCluster() const override { return false; }
-
 public:
     static GeometryPtr Create(TextStringR textString, TransformCR transform, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db, bool checkGlyphBoxes)
         {
@@ -1210,7 +1208,7 @@ void MeshBuilder::AddTriangle(TriangleCR triangle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR mappedTexture, DgnDbR dgnDb, FeatureCR feature, bool doVertexCluster, bool includeParams, uint32_t fillColor, bool requireNormals)
+void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR mappedTexture, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor, bool requireNormals)
     {
     auto const&     points = visitor.Point();
     bool const*     visitorVisibility = visitor.GetVisibleCP();
@@ -1222,15 +1220,6 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
     // The face represented by this visitor should be convex (we request that in facet options) - so we do a simple fan triangulation.
     for (size_t iTriangle =0; iTriangle < nTriangles; iTriangle++)
         {
-        if (doVertexCluster)
-            {
-            DVec3d      cross;
-
-            cross.CrossProductToPoints (points.at(0), points.at(iTriangle+1), points.at(iTriangle+2));
-            if (cross.MagnitudeSquared() < m_areaTolerance)
-                return;
-            }
-
         Triangle            newTriangle(!visitor.GetTwoSided());
         bvector<DPoint2d>   params = visitor.Param();
         bool                visibility[3];
@@ -1260,7 +1249,7 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
             size_t      index = (0 == i) ? 0 : iTriangle + i; 
             VertexKey   vertex(points[index], feature, fillColor, m_mesh->Verts().GetParams(), requireNormals ? &visitor.Normal()[index] : nullptr, haveParams ? &params[index] : nullptr);
 
-            newTriangle[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
+            newTriangle[i] = AddVertex(vertex);
             if (m_currentPolyface.IsValid())
                 m_currentPolyface->m_vertexIndexMap.Insert(newTriangle[i], visitor.ClientPointIndex()[index]);
             }
@@ -1272,14 +1261,14 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureCR feature, bool doVertexCluster, uint32_t fillColor, double startDistance, DPoint3dCR  rangeCenter)
+void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureCR feature, uint32_t fillColor, double startDistance, DPoint3dCR  rangeCenter)
     {
     MeshPolyline    newPolyline(startDistance, rangeCenter);
 
     for (auto& point : points)
         {
         VertexKey vertex(point, feature, fillColor, m_mesh->Verts().GetParams());
-        newPolyline.GetIndices().push_back (doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex));
+        newPolyline.GetIndices().push_back (AddVertex(vertex));
         }
 
     m_mesh->AddPolyline (newPolyline);
@@ -2023,7 +2012,7 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
 
             uint32_t fillColor = displayParams->GetFillColor();
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
-                meshBuilder.AddFromPolyfaceVisitor(*visitor, displayParams->GetTextureMapping(), GetDgnDb(), geom->GetFeature(), false, hasTexture, fillColor, nullptr != polyface->GetNormalCP());
+                meshBuilder.AddFromPolyfaceVisitor(*visitor, displayParams->GetTextureMapping(), GetDgnDb(), geom->GetFeature(), hasTexture, fillColor, nullptr != polyface->GetNormalCP());
 
             meshBuilder.EndPolyface();
             }
@@ -2045,7 +2034,7 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
                     if (tileStrokes.m_disjoint)
                         builder.AddPointString(strokePoints.m_points, geom->GetFeature(), fillColor, strokePoints.m_startDistance, strokePoints.m_rangeCenter);
                     else
-                        builder.AddPolyline(strokePoints.m_points, geom->GetFeature(), false, fillColor, strokePoints.m_startDistance, strokePoints.m_rangeCenter);
+                        builder.AddPolyline(strokePoints.m_points, geom->GetFeature(), fillColor, strokePoints.m_startDistance, strokePoints.m_rangeCenter);
                     }
                 }
             }
