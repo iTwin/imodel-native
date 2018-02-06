@@ -927,7 +927,7 @@ size_t PolyfaceQuery::GetNumFacet (size_t &maxPerFace) const
     {
     size_t numFacet = 0;
     maxPerFace = 0;
-
+    size_t numVertexPerRow, numVertexPerColumn;
     switch (GetMeshStyle())
         {
         case MESH_ELM_STYLE_INDEXED_FACE_LOOPS:
@@ -960,8 +960,28 @@ size_t PolyfaceQuery::GetNumFacet (size_t &maxPerFace) const
                 }
             break;
             }
+        case MESH_ELM_STYLE_COORDINATE_QUADS:
+            numFacet = GetPointCount () / 4;
+            maxPerFace = 4;
+            break;
+        case MESH_ELM_STYLE_COORDINATE_TRIANGLES:
+            numFacet = GetPointCount () / 3;
+            maxPerFace = 3;
+            break;
+        case MESH_ELM_STYLE_TRIANGLE_GRID:
+            numVertexPerRow = GetNumPerRow ();
+            numVertexPerColumn = GetPointCount () / numVertexPerRow;
+            numFacet = 2 * (numVertexPerRow - 1) * (numVertexPerColumn - 1);
+            maxPerFace = 3;
+            break;
+        case MESH_ELM_STYLE_QUAD_GRID:
+            numVertexPerRow = GetNumPerRow ();
+            numVertexPerColumn = GetPointCount () / numVertexPerRow;
+            numFacet = (numVertexPerRow - 1) * (numVertexPerColumn - 1);
+            maxPerFace = 4;
+            break;
 
-        default:
+        default:    // really?  Are there more kinds?
             {
             PolyfaceVisitorPtr visitorPtr = PolyfaceVisitor::Attach (*this, false);
             PolyfaceVisitor & visitor = *visitorPtr.get ();
