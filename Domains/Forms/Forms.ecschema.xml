@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="Forms" alias="frm" version="01.00.00" description="Forms Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00.13" alias="bsca"/>
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
     <ECSchemaReference name="Profiles" version="01.00.00" alias="prf"/>
     <ECEntityClass typeName="Form" displayLabel="Form Aspect" modifier="none">
@@ -43,7 +42,16 @@
         <ECProperty propertyName="Length" displayLabel="Length" typeName="double" kindOfQuantity="LENGTH"/>
         <ECNavigationProperty description="StraightProfiledExtrusion has Profile" propertyName="Profile" direction="Forward" relationshipName="StraightProfiledExtrusionHasProfile" />
     </ECEntityClass>
-    <ECRelationshipClass typeName="StraightProfiledExtrusionHasProfile" description="StraightProfiledExtrusion has Profile" modifier="None" strength="holding">
+    <ECRelationshipClass typeName="PhysicalElementOwnsFormAspect" description="Physical Element owns Form Aspect" modifier="None" strength="embedding">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="bis:PhysicalElement"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Form"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="StraightProfiledExtrusionHasProfile" description="StraightProfiledExtrusion has Profile" modifier="None" strength="referencing">
         <Source multiplicity="(0..*)" roleLabel="linked to" polymorphic="true">
             <Class class="StraightProfiledExtrusion"/>
         </Source>
@@ -51,7 +59,7 @@
             <Class class="prf:Profile"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="CurvedProfiledExtrusionHasStartProfile" description="CurvedProfiledExtrusion has StartProfile" modifier="None" strength="holding">
+    <ECRelationshipClass typeName="CurvedProfiledExtrusionHasStartProfile" description="CurvedProfiledExtrusion has StartProfile" modifier="None" strength="referencing">
         <Source multiplicity="(0..*)" roleLabel="linked to" polymorphic="true">
             <Class class="CurvedProfiledExtrusion"/>
         </Source>
@@ -59,7 +67,7 @@
             <Class class="prf:Profile"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="CurvedProfiledExtrusionHasEndProfile" description="CurvedProfiledExtrusion has EndProfile" modifier="None" strength="holding">
+    <ECRelationshipClass typeName="CurvedProfiledExtrusionHasEndProfile" description="CurvedProfiledExtrusion has EndProfile" modifier="None" strength="referencing">
         <Source multiplicity="(0..*)" roleLabel="linked to" polymorphic="true">
             <Class class="CurvedProfiledExtrusion"/>
         </Source>
