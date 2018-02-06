@@ -8,7 +8,6 @@ WebsiteSeedFileTests.CreateSeedFile
 #   Tests that are failing
 #----------------------------------------------------------------------------------------
 BriefcaseSchemaChangesTests.*
-ChangeSetsTests.CancelDownloadChangeSets
 SeedFileTests.ReplaceWithoutLockediModel
 LocksTests.WorkflowCreateNewElementModelExclusivelyLocked
 LocksTests.WorkflowUpdateElementWithExclusiveModelLock

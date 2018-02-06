@@ -133,7 +133,7 @@ Error::Error(WebServices::WSErrorCR error)
         }
     else
         {
-        m_id = ErrorIdFromWSError(error.GetId());
+        m_id = ErrorIdFromWSError(error);
         }
     }
 
