@@ -68,6 +68,8 @@ public:
     template<typename T>
     SchemaReadStatus ReadSchemaChildFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode, ECSchemaElementType childType);
 
+    SchemaReadStatus ReadUnitSystemFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode);
+
     void PopulateSchemaElementOrder(ECSchemaElementsOrder& elementOrder, BeXmlNodeR schemaNode);
     virtual bool IsSchemaChildElementNode(BeXmlNodeR schemaNode, ECSchemaElementType childType) {return _IsSchemaChildElementNode(schemaNode, childType);}
 };

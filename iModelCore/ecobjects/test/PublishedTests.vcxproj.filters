@@ -19,6 +19,9 @@
     <Filter Include="Source Files\SchemaConverter">
       <UniqueIdentifier>{11adc197-be69-46d3-9656-cb9acd7813ad}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Units">
+      <UniqueIdentifier>{77da0cb6-be83-4c5d-b180-b6167b4219d8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Published\MacroTests.cpp">
@@ -143,6 +146,9 @@
     </ClCompile>
     <ClCompile Include="Published\SchemaLocatorTests.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\UnitSystemTests.cpp">
+      <Filter>Source Files\Units</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -61,6 +61,7 @@ ECObjectsHeaders =              $(baseDir)DateTimeInfoAccessor.h \
                                 $(ecobjectsPublicAPISrc)SchemaResourceKeyHelper.h \
                                 $(ecobjectsPublicAPISrc)StandardCustomAttributeHelper.h \
                                 $(ecobjectsPublicAPISrc)SupplementalSchema.h \
+                                $(ecobjectsPublicAPISrc)ECUnit.h \
                                 $(ecobjectsPrivateAPISrc)SchemaParseUtils.h
 
 ECUnitsHeaders =                $(ecunitsPublicAPISrc)Units.h \
@@ -141,6 +142,8 @@ $(o)StandaloneECRelationshipInstance$(oext)                : $(baseDir)Standalon
 $(o)SupplementalSchema$(oext)                              : $(baseDir)SupplementalSchema.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)SystemSymbolProvider$(oext)                            : $(baseDir)SystemSymbolProvider.cpp $(ECObjectsHeaders) $(ecobjectsPublicAPISrc)SystemSymbolProvider.h ${MultiCompileDepends}
+
+$(o)UnitSystem$(oext)                                      : $(baseDir)UnitSystem.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 # ECUnits
 

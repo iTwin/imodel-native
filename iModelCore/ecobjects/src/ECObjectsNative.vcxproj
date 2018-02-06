@@ -89,6 +89,7 @@
     <ClCompile Include="StandardCustomAttributeHelper.cpp" />
     <ClCompile Include="SupplementalSchema.cpp" />
     <ClCompile Include="SystemSymbolProvider.cpp" />
+    <ClCompile Include="UnitSystem.cpp" />
     <ClCompile Include="Units\ECUnitsClassLocater.cpp" />
     <ClCompile Include="Units\Units.cpp" />
   </ItemGroup>
@@ -113,6 +114,7 @@
     <ClInclude Include="..\PublicApi\ECObjects\ECSchemaConverter.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECSchemaDownConverter.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECSchemaValidator.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECUnit.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECValue.h" />
     <ClInclude Include="..\PublicApi\ECObjects\PresentationMetadataHelper.h" />
     <ClInclude Include="..\PublicApi\ECObjects\SchemaComparer.h" />

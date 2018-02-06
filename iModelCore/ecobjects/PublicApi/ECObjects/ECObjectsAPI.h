@@ -71,3 +71,5 @@ capture this information.
 
 #include <ECObjects/DesignByContract.h>
 
+#include <ECObjects/ECUnit.h>
+

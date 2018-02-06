@@ -82,20 +82,26 @@ struct SchemaResourceKeyHelper
             }
 
         ECOBJECTS_EXPORT static Utf8String ComputeHash(Utf8CP invariant);
+
         ECOBJECTS_EXPORT static Utf8String GetSchemaDisplayLabelKey(ECSchemaCR ecSchema);
         ECOBJECTS_EXPORT static Utf8String GetSchemaDescriptionKey(ECSchemaCR ecSchema);
+
         ECOBJECTS_EXPORT static Utf8String GetTypeDisplayLabelKey(ECClassCR ecClass);
-        ECOBJECTS_EXPORT static Utf8String GetTypeDisplayLabelKey(ECEnumerationCR ecEnumeration);
         ECOBJECTS_EXPORT static Utf8String GetTypeDescriptionKey(ECClassCR ecClass);
+        ECOBJECTS_EXPORT static Utf8String GetTypeDisplayLabelKey(ECEnumerationCR ecEnumeration);
         ECOBJECTS_EXPORT static Utf8String GetTypeDescriptionKey(ECEnumerationCR ecEnumeration);
         ECOBJECTS_EXPORT static Utf8String GetTypeDescriptionKey(ECEnumeratorCR ecEnumerator);
         ECOBJECTS_EXPORT static Utf8String GetTypeDisplayLabelKey(KindOfQuantityCR kindOfQuantity);
         ECOBJECTS_EXPORT static Utf8String GetTypeDescriptionKey(KindOfQuantityCR kindOfQuantity);
         ECOBJECTS_EXPORT static Utf8String GetTypeDisplayLabelKey(PropertyCategoryCR propertyCategory);
         ECOBJECTS_EXPORT static Utf8String GetTypeDescriptionKey(PropertyCategoryCR propertyCategory);
+        ECOBJECTS_EXPORT static Utf8String GetTypeDisplayLabelKey(UnitSystemCR unitSystem);
+        ECOBJECTS_EXPORT static Utf8String GetTypeDescriptionKey(UnitSystemCR unitSystem);
+
         ECOBJECTS_EXPORT static Utf8String GetTypeChildDisplayLabelKey(ECPropertyCR ecProperty);
         ECOBJECTS_EXPORT static Utf8String GetTypeChildDescriptionKey(ECPropertyCR ecProperty);
         ECOBJECTS_EXPORT static Utf8String GetTypeChildDisplayLabelKey(ECEnumeratorCR ecEnumerator);
+
         ECOBJECTS_EXPORT static Utf8String GetRelationshipSourceRoleLabelKey(ECRelationshipClassCR relClass, Utf8CP invariant);
         ECOBJECTS_EXPORT static Utf8String GetRelationshipTargetRoleLabelKey(ECRelationshipClassCR relClass, Utf8CP invariant);
     };

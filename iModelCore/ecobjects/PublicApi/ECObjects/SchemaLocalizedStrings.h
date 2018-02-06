@@ -54,6 +54,9 @@ public:
     ECOBJECTS_EXPORT Utf8StringCR GetPropertyDisplayLabel(ECPropertyCP ecProperty, Utf8StringCR invariantDisplayLabel) const;
     ECOBJECTS_EXPORT Utf8StringCR GetPropertyDescription(ECPropertyCP ecProperty, Utf8StringCR invariantDescription) const;
 
+    ECOBJECTS_EXPORT Utf8StringCR GetUnitSystemDisplayLabel(UnitSystemCR unitSystem, Utf8StringCR invariantRoleLabel) const;
+    ECOBJECTS_EXPORT Utf8StringCR GetUnitSystemDescription(UnitSystemCR unitSystem, Utf8StringCR invariantDescription) const;
+
     ECOBJECTS_EXPORT Utf8StringCR GetRelationshipSourceRoleLabel(ECRelationshipClassCP relClass, Utf8StringCR invariantRoleLabel) const;
     ECOBJECTS_EXPORT Utf8StringCR GetRelationshipTargetRoleLabel(ECRelationshipClassCP relClass, Utf8StringCR invariantRoleLabel) const;
 

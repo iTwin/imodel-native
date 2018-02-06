@@ -61,6 +61,9 @@ EC_TYPEDEFS(ECSchemaCache);
 EC_TYPEDEFS(PropertyCategory);
 EC_TYPEDEFS(PropertyCategoryContainer);
 
+EC_TYPEDEFS(UnitSystem);
+EC_TYPEDEFS(UnitSystemContainer);
+
 EC_TYPEDEFS(IECInstance);
 EC_TYPEDEFS(IECInstanceInterface);
 EC_TYPEDEFS(IECRelationshipInstance);
@@ -556,6 +559,14 @@ struct KindOfQuantityId : BeInt64Id
 struct PropertyCategoryId : BeInt64Id
     {
     BEINT64_ID_DECLARE_MEMBERS(PropertyCategoryId, BeInt64Id)
+    };
+
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct UnitSystemId : BeInt64Id
+    {
+    BEINT64_ID_DECLARE_MEMBERS(UnitSystemId, BeInt64Id)
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

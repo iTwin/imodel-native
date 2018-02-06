@@ -283,6 +283,19 @@ ECSchema::~ECSchema ()
     m_propertyCategoryMap.clear();
     BeAssert(m_propertyCategoryMap.empty());
 
+    for (auto entry : m_unitSystemMap)
+        {
+        // Remove from the registry before removing from ECSchema
+        Units::UnitRegistry::Instance().RemoveSystem(entry.first);
+
+        // This should be the same pointer as the UnitRegistry has, so it should not matter which one is deleted.
+        auto unitSystem = entry.second;
+        delete unitSystem;
+        }
+
+    m_unitSystemMap.clear();
+    BeAssert(m_unitSystemMap.empty());
+
     m_refSchemaList.clear();
 
     memset ((void*)this, 0xececdead, 4);// Replaced sizeof(this) with 4. There is value 
@@ -567,6 +580,8 @@ Utf8CP ECSchema::SchemaElementTypeToString(ECSchemaElementType elementType)
             return KIND_OF_QUANTITY_ELEMENT;
         case ECSchemaElementType::PropertyCategory:
             return PROPERTY_CATEGORY_ELEMENT;
+        case ECSchemaElementType::UnitSystem:
+            return UNIT_SYSTEM_ELEMENT;
         }
 
     return EMPTY_STRING;
@@ -1010,6 +1025,46 @@ ECObjectsStatus ECSchema::CreatePropertyCategory(PropertyCategoryP& propertyCate
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    01/2018
 //--------------------------------------------------------------------------------------
+ECObjectsStatus ECSchema::CreateUnitSystem(UnitSystemP& system, Utf8CP name, Utf8CP displayLabel, Utf8CP description)
+    {
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
+
+    system = Units::UnitRegistry::Instance().AddSystem<UnitSystem>(name);
+    if (nullptr == system)
+        return ECObjectsStatus::Error;
+
+    system->SetSchema(*this);
+
+    ECObjectsStatus status = system->SetDisplayLabel(displayLabel);
+    if (ECObjectsStatus::Success != status)
+        {
+        Units::UnitRegistry::Instance().RemoveSystem(system->GetName().c_str());
+        delete system;
+        system = nullptr;
+        }
+
+    status = system->SetDescription(description);
+    if (ECObjectsStatus::Success != status)
+        {
+        Units::UnitRegistry::Instance().RemoveSystem(system->GetName().c_str());
+        delete system;
+        system = nullptr;
+        }
+
+    status = AddSchemaChildToMap<UnitSystem, UnitSystemMap>(system, &m_unitSystemMap, ECSchemaElementType::UnitSystem);
+    if (ECObjectsStatus::Success != status)
+        {
+        Units::UnitRegistry::Instance().RemoveSystem(system->GetName().c_str());
+        delete system;
+        system = nullptr;
+        }
+
+    return status;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
 template<typename T, typename T_MAP>
 ECObjectsStatus ECSchema::AddSchemaChildToMap(T* child, T_MAP* map, ECSchemaElementType childType)
     {
@@ -1036,6 +1091,7 @@ template<typename T> ECObjectsStatus ECSchema::AddSchemaChild(T* child, ECSchema
 template<> ECObjectsStatus ECSchema::AddSchemaChild<ECEnumeration>(ECEnumerationP child, ECSchemaElementType childType) {return AddSchemaChildToMap<ECEnumeration, EnumerationMap>(child, &m_enumerationMap, childType);}
 template<> ECObjectsStatus ECSchema::AddSchemaChild<PropertyCategory>(PropertyCategoryP child, ECSchemaElementType childType) {return AddSchemaChildToMap<PropertyCategory, PropertyCategoryMap>(child, &m_propertyCategoryMap, childType);}
 template<> ECObjectsStatus ECSchema::AddSchemaChild<KindOfQuantity>(KindOfQuantityP child, ECSchemaElementType childType) {return AddSchemaChildToMap<KindOfQuantity, KindOfQuantityMap>(child, &m_kindOfQuantityMap, childType);}
+template<> ECObjectsStatus ECSchema::AddSchemaChild<UnitSystem>(UnitSystemP child, ECSchemaElementType childType) {return AddSchemaChildToMap<UnitSystem, UnitSystemMap>(child, &m_unitSystemMap, childType);}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
@@ -1045,7 +1101,8 @@ bool ECSchema::NamedElementExists(Utf8CP name)
     return (m_classMap.find(name) != m_classMap.end()) ||
         (m_enumerationMap.find(name) != m_enumerationMap.end()) ||
         (m_kindOfQuantityMap.find(name) != m_kindOfQuantityMap.end()) ||
-        (m_propertyCategoryMap.find(name) != m_propertyCategoryMap.end());
+        (m_propertyCategoryMap.find(name) != m_propertyCategoryMap.end()) ||
+        (m_unitSystemMap.find(name) != m_unitSystemMap.end());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2632,6 +2689,17 @@ void ECSchemaElementsOrder::CreateAlphabeticalOrder(ECSchemaCR ecSchema)
         else
             AddElement(pPropertyCategory->GetName().c_str(), ECSchemaElementType::PropertyCategory);
         }
+
+    for (auto unitSystem : ecSchema.GetUnitSystems())
+         {
+        if (nullptr == unitSystem)
+            {
+            BeAssert(false);
+            continue;
+            }
+        else
+            AddElement(unitSystem->GetName().c_str(), ECSchemaElementType::UnitSystem);
+         }
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -105,6 +105,20 @@ Utf8String SchemaResourceKeyHelper::GetTypeDescriptionKey(PropertyCategoryCR pro
                                  propertyCategory.GetInvariantDescription().c_str());
     }
 
+Utf8String SchemaResourceKeyHelper::GetTypeDisplayLabelKey(UnitSystemCR unitSystem)
+    {
+    return GetTypeDisplayLabelKey(unitSystem.GetSchema().GetName().c_str(),
+        unitSystem.GetName().c_str(),
+        unitSystem.GetInvariantDisplayLabel().c_str());
+    }
+
+Utf8String SchemaResourceKeyHelper::GetTypeDescriptionKey(UnitSystemCR unitSystem)
+    {
+    return GetTypeDescriptionKey(unitSystem.GetSchema().GetName().c_str(),
+        unitSystem.GetName().c_str(),
+        unitSystem.GetInvariantDescription().c_str());
+    }
+
 Utf8String SchemaResourceKeyHelper::GetTypeChildDisplayLabelKey(ECPropertyCR ecProperty)
     {
     return GetTypeChildDisplayLabelKey(ecProperty.GetClass().GetSchema().GetName().c_str(),
