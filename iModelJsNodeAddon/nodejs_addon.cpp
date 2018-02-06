@@ -1471,19 +1471,20 @@ struct AddonECSqlColumnInfo : Napi::ObjectWrap<AddonECSqlColumnInfo>
             {
             Blob = 1,
             Boolean = 2,
-            DateTime = 3,
-            Double = 4,
-            Geometry = 5,
-            Id = 6,
-            Int = 7,
-            Int64 = 8,
-            Point2d = 9,
-            Point3d = 10,
-            String = 11,
-            Navigation = 12,
-            Struct = 13,
-            PrimitiveArray = 14,
-            StructArray = 15
+            ClassId = 3,
+            DateTime = 4,
+            Double = 5,
+            Geometry = 6,
+            Id = 7,
+            Int = 8,
+            Int64 = 9,
+            Point2d = 10,
+            Point3d = 11,
+            String = 12,
+            Navigation = 13,
+            Struct = 14,
+            PrimitiveArray = 15,
+            StructArray = 16
             };
 
         static Napi::FunctionReference s_constructor;
@@ -1528,7 +1529,7 @@ struct AddonECSqlColumnInfo : Napi::ObjectWrap<AddonECSqlColumnInfo>
             Napi::HandleScope scope(env);
             Napi::Function t = DefineClass(env, "AddonECSqlColumnInfo", {
             InstanceMethod("getType", &AddonECSqlColumnInfo::GetType),
-            InstanceMethod("getName", &AddonECSqlColumnInfo::GetName),
+            InstanceMethod("getPropertyName", &AddonECSqlColumnInfo::GetPropertyName),
             InstanceMethod("getPropertyPath", &AddonECSqlColumnInfo::GetPropertyPath),
             InstanceMethod("isSystemProperty", &AddonECSqlColumnInfo::IsSystemProperty),
             InstanceMethod("isGeneratedProperty", &AddonECSqlColumnInfo::IsGeneratedProperty),
@@ -1558,7 +1559,12 @@ struct AddonECSqlColumnInfo : Napi::ObjectWrap<AddonECSqlColumnInfo>
             ECTypeDescriptor const& dataType = GetColInfo().GetDataType();
             Type type = Type::Id;
             if (GetColInfo().IsSystemProperty() && dataType.IsPrimitive() && dataType.GetPrimitiveType() == PRIMITIVETYPE_Long)
-                type = Type::Id;
+                {
+                if (GetColInfo().GetProperty()->GetName().EndsWithIAscii("ECClassId"))
+                    type = Type::ClassId;
+                else
+                    type = Type::Id;
+                }
             else if (dataType.IsNavigation())
                 type = Type::Navigation;
             else if (dataType.IsStruct())
@@ -1611,25 +1617,27 @@ struct AddonECSqlColumnInfo : Napi::ObjectWrap<AddonECSqlColumnInfo>
             return Napi::Number::New(Env(), (int) type);
             }
 
-        Napi::Value GetName(const Napi::CallbackInfo& info)
+        Napi::Value GetPropertyName(const Napi::CallbackInfo& info)
             {
             if (info.Length() != 0)
                 Napi::TypeError::New(info.Env(), "GetName must not have arguments").ThrowAsJavaScriptException();
 
             ECPropertyCP prop = GetColInfo().GetProperty();
-            Utf8String propName;
-            if (prop != nullptr)
+            if (prop == nullptr)
+                Napi::TypeError::New(info.Env(), "ECSqlColumnInfo does not represent a property.").ThrowAsJavaScriptException();
+
+            //if property is generated, the display label contains the select clause item as is.
+            //The property name in contrast would have encoded special characters of the select clause item.
+            //Ex: SELECT MyProp + 4 FROM Foo -> the name must be "MyProp + 4"
+            if (GetColInfo().IsGeneratedProperty())
                 {
-                //if property is generated, the display label contains the select clause item as is.
-                //The property name in contrast would have encoded special characters of the select clause item.
-                //Ex: SELECT MyProp + 4 FROM Foo -> the name must be "MyProp + 4"
-                if (GetColInfo().IsGeneratedProperty())
-                    propName.assign(prop->GetDisplayLabel());
-                else
-                    propName.assign(prop->GetName());
+                if (prop == nullptr)
+                    Napi::TypeError::New(info.Env(), "ECSqlColumnInfo's Property must not be null for a generated property.").ThrowAsJavaScriptException();
+
+                return Napi::String::New(Env(), prop->GetDisplayLabel().c_str());
                 }
 
-            return Napi::String::New(Env(), propName.c_str());
+            return Napi::String::New(Env(), prop->GetName().c_str());
             }
 
         Napi::Value GetPropertyPath(const Napi::CallbackInfo& info)
@@ -1789,7 +1797,7 @@ public:
         {
         if (info.Length() != 0)
             Napi::TypeError::New(info.Env(), "IsNull must not have arguments").ThrowAsJavaScriptException();
-
+        
         return Napi::Boolean::New(Env(), GetECSqlValue().IsNull());
         }
 
@@ -1860,27 +1868,20 @@ public:
             Napi::TypeError::New(info.Env(), "GetClassNameForClassId must not have arguments").ThrowAsJavaScriptException();
 
         ECSqlColumnInfo const& colInfo = GetECSqlValue().GetColumnInfo();
-        if (colInfo.IsSystemProperty())
+        if (!colInfo.IsSystemProperty() || !colInfo.GetProperty()->GetName().EndsWithIAscii("ECClassId"))
+            Napi::TypeError::New(info.Env(), "AddonECSqlValue.getClassNameForClassId can only be called if the ECSqlValue represents an ECClassId system property.").ThrowAsJavaScriptException();
+
+        const ECClassId classId = GetECSqlValue().GetId<ECClassId>();
+        Utf8StringCR tableSpace = GetECSqlValue().GetColumnInfo().GetRootClass().GetTableSpace();
+        ECClassCP ecClass = m_ecdb->Schemas().GetClass(classId, tableSpace.c_str());
+        if (ecClass == nullptr)
             {
-            Utf8StringCR propName = colInfo.GetProperty()->GetName();
-            if (propName.EndsWithIAscii("ECClassId"))
-                {
-                const ECClassId classId = GetECSqlValue().GetId<ECClassId>();
-
-                Utf8StringCR tableSpace = GetECSqlValue().GetColumnInfo().GetRootClass().GetTableSpace();
-                ECClassCP ecClass = m_ecdb->Schemas().GetClass(classId, tableSpace.c_str());
-                if (ecClass == nullptr)
-                    {
-                    Utf8String err;
-                    err.Sprintf("Class not found for ECClassId %s.", classId.ToHexStr().c_str());
-                    Napi::TypeError::New(info.Env(), err.c_str()).ThrowAsJavaScriptException();
-                    }
-
-                return Napi::String::New(Env(), ECJsonUtilities::FormatClassName(*ecClass).c_str());
-                }
+            Utf8String err;
+            err.Sprintf("Class not found for ECClassId %s.", classId.ToHexStr().c_str());
+            Napi::TypeError::New(info.Env(), err.c_str()).ThrowAsJavaScriptException();
             }
 
-        Napi::TypeError::New(info.Env(), "AddonECSqlValue.getClassNameForClassId can only be called if the ECSqlValue represents an ECClassId system property.").ThrowAsJavaScriptException();
+        return Napi::String::New(Env(), ECJsonUtilities::FormatClassName(*ecClass).c_str());
         }
 
     Napi::Value GetInt(const Napi::CallbackInfo& info)

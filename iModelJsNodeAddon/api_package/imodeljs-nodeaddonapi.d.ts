@@ -688,24 +688,32 @@ declare class AddonECSqlColumnInfo {
      *  (enums cannot be defined in the addon)
      */
     getType(): number;
-    /** Gets the name of the column.
+
+    /** Gets the name of the property backing the column.
      */
-    getName(): string;
-    /** Gets the ECSQL property path of the column. */
+    getPropertyName(): string;
+
+    /** Gets the ECSQL property path of the specified column.
+    */
     getPropertyPath(): string;
+
     /** Indicates whether the column refers to a system property (e.g. id, className) backing the column. */
     isSystemProperty(): boolean;
+
     /** Indicates whether the column is backed by a generated property or not. For SELECT clause items that are expressions other
      * than simply a reference to an ECProperty, a property is generated containing the expression name.
      */
     isGeneratedProperty(): boolean;
+
     /** Gets the table space in which this root class is persisted.
      * @remarks for classes in the primary file the table space is MAIN. For classes in attached
      * files, the table space is the name by which the file was attached (see BentleyApi::BeSQLite::Db::AttachDb)
      * For generated properties the table space is empty */
     getRootClassTableSpace(): string;
+
     /** Gets the fully qualified name of the ECClass of the top-level ECProperty backing this column. */
     getRootClassName(): string;
+
     /** Gets the class alias of the root class to which the column refers to.
      * @returns Returns the alias of root class the column refers to or an empty string if no class alias was specified in the select clause */
     getRootClassAlias(): string;
