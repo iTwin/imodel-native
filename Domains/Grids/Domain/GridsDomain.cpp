@@ -157,6 +157,10 @@ void GridsDomain::EnsureDomainAuthoritiesExist (Dgn::DgnDbR db)
         {
         InsertCodeSpec (db, GRIDS_AUTHORITY_GridCurve);
         }
+    if (!db.CodeSpecs().QueryCodeSpecId(GRIDS_AUTHORITY_GridCurvesPortion).IsValid())
+        {
+        InsertCodeSpec(db, GRIDS_AUTHORITY_GridCurvesPortion);
+        }
     }
 
 //---------------------------------------------------------------------------------------
