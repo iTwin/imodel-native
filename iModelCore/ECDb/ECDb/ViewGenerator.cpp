@@ -20,6 +20,15 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //static 
 BentleyStatus ViewGenerator::GenerateSelectFromViewSql(NativeSqlBuilder& viewSql, ECSqlPrepareContext const& prepareContext, ClassMap const& classMap, bool isPolymorphicQuery, MemberFunctionCallExp const* memberFunctionCallExp)
     {
+    //ECSQL-OPT: Following is a optimization that allow ECSQL to convert a polymorphic query to a none-polymorphic query (which is fast) if the class
+    //           queried has no dervied classes. Decision is taken independent of if class is sealed or not sealed.
+    if (isPolymorphicQuery)
+        {
+        if (prepareContext.GetECDb().Schemas().GetDerivedClasses(classMap.GetClass(), classMap.GetPrimaryTable().GetTableSpace().GetName().c_str()).empty())
+            isPolymorphicQuery = false; //Convert a polymorphic query into a none-polymorphic query
+        }
+    //----------------------------------------------------------------------------------------------------------------------------------------------
+
     SelectFromViewContext ctx(prepareContext, classMap.GetSchemaManager(), isPolymorphicQuery, memberFunctionCallExp);
     if (memberFunctionCallExp == nullptr) 
         return GenerateViewSql(viewSql, ctx, classMap);

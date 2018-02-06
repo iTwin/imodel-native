@@ -571,8 +571,6 @@ BentleyStatus SchemaReader::EnsureDerivedClassesExist(ECClassId ecClassId) const
     if (entry != nullptr && entry->m_ensureDerivedClassesExist)
         return SUCCESS;
 
-    entry->m_ensureDerivedClassesExist = true;
-
     Context ctx;
     if (SUCCESS != EnsureDerivedClassesExist(ctx, ecClassId))
         return ERROR;
@@ -598,6 +596,9 @@ BentleyStatus SchemaReader::EnsureDerivedClassesExist(Context& ctx, ECClassId ec
         if (GetClass(ctx, stmt->GetValueId<ECClassId>(0)) == nullptr)
             return ERROR;
         }
+
+    ClassDbEntry* entry = m_cache.Find(ecClassId);
+    entry->m_ensureDerivedClassesExist = true;
 
     return SUCCESS;
     }

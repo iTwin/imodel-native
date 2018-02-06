@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/BackDoor/TestHelper.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicAPI/BackDoor/ECDb/TestHelper.h"
@@ -111,7 +111,9 @@ Utf8String TestHelper::ECSqlToSql(Utf8CP ecsql) const
     {
     ECSqlStatement stmt; 
     if (ECSqlStatus::Success == stmt.Prepare(m_ecdb, ecsql))
+        {
         return Utf8String(stmt.GetNativeSql());
+        }
 
     return Utf8String();
     }
