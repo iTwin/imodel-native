@@ -13,9 +13,18 @@
         <BaseClass>bis:ElementUniqueAspect</BaseClass>
         <ECProperty propertyName="ElasticModulus" typeName="double" description="Modulus of Elasticity" displayLabel="Elastic Modulus" kindOfQuantity="M_PER_L_T2"/>
         <ECProperty propertyName="PoissonsRatio" typeName="double" description="Poisson's Ratio" displayLabel="Poisson's Ratio" kindOfQuantity="NONE"/>
-        <ECProperty propertyName="TensileStrength" typeName="double" description="Tensile Strength" displayLabel="Tensile Strength" kindOfQuantity="M_PER_L_T2_PSI"/>
+        <ECProperty propertyName="TensileStrength" typeName="double" description="Tensile Strength" displayLabel="Tensile Strength" kindOfQuantity="M_PER_L_T2"/>
         <ECProperty propertyName="ThermalExpansionCoefficient" typeName="double" description="Thermal Expansion Coefficient (1/deg.F) " displayLabel="Thermal Expansion Coefficient" kindOfQuantity="K"/>
     </ECEntityClass>
+    <ECRelationshipClass typeName="PhysicalMaterialOwnsMaterialProperties" displayLabel="Physical Material Owns Material Properties" modifier="None" strength="embedding">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" roleLabel="Physical Material Owns Material Properties" polymorphic="true">
+            <Class class="bis:PhysicalMaterial"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="Physical Material Owns Material Properties (Reversed)" polymorphic="true">
+            <Class class="MaterialProperties"/>
+        </Target>
+    </ECRelationshipClass>
     <ECEnumeration typeName="ConcretePropertyCalcType" backingTypeName="int" isStrict="true">
         <ECEnumerator value="0" displayLabel="PerCode"/>
         <ECEnumerator value="1" displayLabel="Specified"/>
@@ -209,6 +218,5 @@
     </ECRelationshipClass>
     <KindOfQuantity typeName="M_PER_L_T2" displayLabel="M_PER_L_T2" persistenceUnit="PA(DefaultReal)" relativeError="0.0001"/>
     <KindOfQuantity typeName="NONE" displayLabel="NONE" persistenceUnit="ONE(DefaultReal)" relativeError="0.0001"/>
-    <KindOfQuantity typeName="M_PER_L_T2_PSI" displayLabel="M_PER_L_T2_PSI" persistenceUnit="PSI(DefaultReal)" relativeError="0.0001"/>
-    <KindOfQuantity typeName="K" displayLabel="K" persistenceUnit="FAHRENHEIT(DefaultReal)" relativeError="0.0001"/>
+    <KindOfQuantity typeName="K" displayLabel="K" persistenceUnit="K(DefaultReal)" relativeError="0.0001"/>
 </ECSchema>

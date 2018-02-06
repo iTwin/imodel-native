@@ -51,6 +51,24 @@ TEST_F(StructuralDomainTestFixture, EnsureDomainsAreRegistered)
 
 BE_JSON_NAME(StructuralDomain)
 
+
+TEST_F(StructuralDomainTestFixture, ValidateSchema)
+    {
+    DgnDbPtr db = OpenDgnDb();
+    ASSERT_TRUE(db.IsValid());
+
+    ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext(true, true);
+    context->AddSchemaLocater((*db).GetSchemaLocater());
+
+    ECN::SchemaKey refKey = ECN::SchemaKey(BENTLEY_STRUCTURAL_PHYSICAL_SCHEMA_NAME, 1, 0);
+
+    ECN::ECSchemaPtr refSchema = context->LocateSchema(refKey, ECN::SchemaMatchType::LatestWriteCompatible);
+    ASSERT_TRUE(refSchema.IsValid());
+
+    ASSERT_TRUE(ECN::ECSchemaValidator::Validate(*refSchema));
+    }
+
+
 TEST_F(StructuralDomainTestFixture, CreatePhysicalPartition)
     {
     DgnDbPtr db = CreateDgnDb();
