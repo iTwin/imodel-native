@@ -53,7 +53,7 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance)
         size_t              m_outputNormalIndex;
 
         Cluster() { };
-        Cluster(int32_t pointIndex, int32_t normalIndex, int32_t paramIndex) : m_pointIndices(1, pointIndex), m_normalIndices(normalIndex, 1), m_paramIndices(paramIndex, 1) { }
+        Cluster(int32_t pointIndex, int32_t normalIndex, int32_t paramIndex) : m_pointIndices(1, pointIndex), m_normalIndices(1, normalIndex), m_paramIndices(1, paramIndex) { }
                                                                                                  
         void Add (int32_t pointIndex, int32_t normalIndex, int32_t paramIndex)
             {

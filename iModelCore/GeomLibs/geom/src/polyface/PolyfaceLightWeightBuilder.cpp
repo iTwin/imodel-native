@@ -97,13 +97,15 @@ size_t  LightweightPolyfaceBuilder::FindOrAddPoint(DPoint3dCR point)
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t  LightweightPolyfaceBuilder::FindOrAddNormal (DVec3dCR normal)
     {
-    auto    insert = m_normalMap.Insert(QPoint3d(normal, m_normalTolerance), m_polyface->GetNormalCount());
+    BeAssert(DoubleOps::WithinTolerance(normal.MagnitudeSquared(), 1.0, 0.001));
 
+    auto    insert = m_normalMap.Insert(QPoint3d(normal, m_normalTolerance), m_polyface->GetNormalCount());
     if (insert.second)
         m_polyface->Normal().push_back(normal);
 
     return insert.first->second;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/

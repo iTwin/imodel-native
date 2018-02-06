@@ -467,7 +467,11 @@ void    AddInterpolatedPoint (PolyfaceClipFacet const& unclipped, size_t i, size
     m_chainEdges.push_back (chainEdge);
 
     if (!unclipped.m_normals.empty())
-        m_normals.push_back(DVec3d::FromInterpolate (unclipped.m_normals[i], t, unclipped.m_normals[iNext]));
+        {
+        auto normal = DVec3d::FromInterpolate(unclipped.m_normals[i], t, unclipped.m_normals[iNext]);
+        normal.Normalize();
+        m_normals.push_back(normal);
+        }
 
     if (!unclipped.m_params.empty())
         {
