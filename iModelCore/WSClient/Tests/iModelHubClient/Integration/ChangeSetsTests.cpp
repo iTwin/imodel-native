@@ -22,7 +22,8 @@ int GetDirSize(BeFileName dirToCheck)
 
     while (SUCCESS == fileIterator.GetNextFileName(tempFileName))
         {
-        size++;
+        if (!tempFileName.GetExtension().Equals(L"lock"))
+            size++;
         }
 
     return size;
