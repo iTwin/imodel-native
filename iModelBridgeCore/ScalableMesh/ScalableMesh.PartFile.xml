@@ -16,7 +16,7 @@
     </Part>
 
   <Part Name="ScalableMeshRDSDependencies" >
-    <SubPart PartName="RealityPlatform"                             PartFile="RealityModFramework"                      Repository="RealityModFramework"/>
+    <SubPart PartName="RealityPlatformTools"                        PartFile="RealityModFramework"                      Repository="RealityModFramework"/>
     <SubPart PartName="ConnectClientWrapperNative.VC120"            PartFile="BentleyDesktopClient"                     Repository="BentleyDesktopClient"/>
   </Part>
 
@@ -141,7 +141,7 @@
         <ProductDirectory   Name="Assemblies"                               Path="Dlls"                      />
 
         <ProductDirectory   Name="RealityAssemblies"                        Path="Dlls"                      />
-        <ProductDirectory   Name="RealityPlatformLibs"                      Path="Libs"                      />
+        <ProductDirectory   Name="RealityPlatformToolsLibs"                 Path="Libs"                      />
         <ProductDirectory   Name="ZlibNativeAssemblies"                     Path="Dlls" />
         <ProductDirectory   Name="BentleyDesktopClientApi"                  Path="Dlls" />
 
@@ -214,7 +214,7 @@
         <SubPart PartName="PSolidAcisInterop" PartFile="DgnDisplay" Repository="DgnDisplay" />
         <SubPart PartName="DgnGeoCoord" PartFile="GeoCoord" Repository="GeoCoord" />
         <SubPart PartName="DgnPlatformDataFiles" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>
-        <SubPart PartName="RealityPlatform" PartFile="RealityModFramework" Repository="RealityModFramework"/>
+        <SubPart PartName="RealityPlatformTools" PartFile="RealityModFramework" Repository="RealityModFramework"/>
         <Directories DirectoryListName="DgnPlatform" PartFile="DgnPlatform" Repository="DgnPlatform" />      
         <Directories DirectoryListName="ScalableMeshSDK" />        
     </Product>

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/Stores/SMStreamingDataStore.hpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -1430,7 +1430,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
 
         header->m_arePoints3d = nodeHeader.isMember("arePoints3d") ? nodeHeader["arePoints3d"].asBool() : false;
 
-        //header->m_nbFaceIndexes = nodeHeader["nbFaceIndexes"].asUInt();
+        header->m_nbFaceIndexes = nodeHeader["nbFaceIndexes"].asUInt();
 
         //header->m_uvID = nodeHeader["uvID"].asUInt();
         header->m_uvID = header->m_id; // Same as node ID?

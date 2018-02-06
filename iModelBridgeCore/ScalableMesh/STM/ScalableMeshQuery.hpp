@@ -6,7 +6,7 @@
 |       $Date: 2012/11/29 17:30:45 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1558,23 +1558,30 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
                 BeAssert(status == SUCCESS);
                 }
 
-            if (clips != nullptr)
+			DRange3d range3D2(_GetContentExtent());
+
+           
+          //  if (clips != nullptr && range3D2.XLength() < 150 && range3D2.YLength() < 150)
                 {
-                static std::mutex mtx;
-                std::lock_guard<std::mutex> lock(mtx);
+               // static std::mutex mtx;
+              //  std::lock_guard<std::mutex> lock(mtx);
                 bvector<DPoint3d> clearedPts;
                 bvector<int32_t> clearedIndices;
                 bvector<int32_t> newUvsIndices;
                 bvector<DPoint2d> newUvs;
                 bvector<bvector<PolyfaceHeaderPtr>> polyfaces;
                 map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
-                GetRegionsFromClipVector3D(polyfaces, clips.get(), meshPtr->GetPolyfaceQuery());
+				if (!GetRegionsFromClipVector3D(polyfaces, clips.get(), meshPtr->GetPolyfaceQuery()))
+				{
+					meshP = meshPtr.get();
+					return meshP;
+				}
 
                 // Clear mesh
                 meshPtr = ScalableMeshMesh::Create();
 
                 // Reconstruct mesh with new polyface
-                auto polyface = polyfaces[1].empty() ? nullptr : polyfaces[1][0];
+                auto polyface = polyfaces[0].empty() ? nullptr : polyfaces[0][0];
                 if (polyface != nullptr)
                     {
                     status = meshPtr->AppendMesh(polyface->Point().size(), polyface->Point().data(),
@@ -3264,12 +3271,12 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(b
 
     bvector<int> componentPointsId;
     // if (NULL == m_meshNode->GetGraphPtr()) m_meshNode->CreateGraph();
-    RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(m_meshNode->GetGraphPtr());
+   /* RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(m_meshNode->GetGraphPtr());
     MTGGraph* newGraphP = new MTGGraph();
     CreateGraphFromIndexBuffer(newGraphP, (const long*)&indicesLine[0], (int)indicesLine.size(), (int)nodePts.size(), componentPointsId, &vertices[0]);
 
     graphPtr->SetData(newGraphP);
-    graphPtr->SetDirty();
+    graphPtr->SetDirty();*/
 
 
     if (componentPointsId.size() > 0)
@@ -3338,12 +3345,12 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(b
     
     bvector<int> componentPointsId;
    // if (NULL == m_meshNode->GetGraphPtr()) m_meshNode->CreateGraph();
-    RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(m_meshNode->GetGraphPtr());
+   /* RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(m_meshNode->GetGraphPtr());
     MTGGraph* newGraphP = new MTGGraph();
     CreateGraphFromIndexBuffer(newGraphP , (const long*)&indicesLine[0], (int)indicesLine.size(), (int)nodePts.size(), componentPointsId, &vertices[0]);
 
     graphPtr->SetData(newGraphP);
-    graphPtr->SetDirty();
+    graphPtr->SetDirty();*/
 
 
     if (componentPointsId.size() > 0)

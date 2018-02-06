@@ -563,7 +563,7 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish
                 ++nbProcessedNodes;
                 }
             };
-        distributor = new Distribution_Type(nodeDataSaver, nbThreads, maxQueueSize);
+		distributor = new Distribution_Type(nodeDataSaver, [](HFCPtr<SMMeshIndexNode<POINT, EXTENT>>& node) {return true; }, nbThreads, maxQueueSize);
         }
 
     static auto loadChildExtentHelper = [](SMPointIndexNode<POINT, EXTENT>* parent, SMPointIndexNode<POINT, EXTENT>* child) ->void
