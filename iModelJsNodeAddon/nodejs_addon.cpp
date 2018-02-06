@@ -511,7 +511,22 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         REQUIRE_ARGUMENT_INTEGER(1, mode);
         RETURN_IF_HAD_EXCEPTION
         DgnDbPtr db;
-        auto status = AddonUtils::OpenDgnDb(db, BeFileName(dbname.c_str(), true), (Db::OpenMode)mode);
+        DbResult status = AddonUtils::OpenDgnDb(db, BeFileName(dbname.c_str(), true), (Db::OpenMode)mode);
+        if (BE_SQLITE_OK == status)
+            OnDgnDbOpened(db.get());
+
+        return Napi::Number::New(Env(), (int)status);
+        }
+
+    Napi::Value CreateDgnDb(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, dbName);
+        REQUIRE_ARGUMENT_STRING(1, rootSubjectName);
+        OPTIONAL_ARGUMENT_STRING(2, rootSubjectDescription);
+        RETURN_IF_HAD_EXCEPTION
+
+        DgnDbPtr db;
+        DbResult status = AddonUtils::CreateDgnDb(db, BeFileName(dbName.c_str(), true), rootSubjectName, rootSubjectDescription);
         if (BE_SQLITE_OK == status)
             OnDgnDbOpened(db.get());
 
@@ -928,6 +943,16 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         return Napi::String::New(Env(), parentRevId.c_str());
         }
 
+    Napi::Value GetReversedChangeSetId(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        RETURN_IF_HAD_EXCEPTION
+        if (!m_dgndb->Revisions().HasReversedRevisions())
+            return Env().Undefined();
+        Utf8String reversedRevId = m_dgndb->Revisions().GetReversedRevisionId();
+        return Napi::String::New(Env(), reversedRevId.c_str());
+        }
+
     Napi::Value GetDbGuid(const Napi::CallbackInfo& info)
         {
         REQUIRE_DB_TO_BE_OPEN
@@ -1095,6 +1120,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         // ***
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "AddonDgnDb", {
+            InstanceMethod("createDgnDb", &AddonDgnDb::CreateDgnDb),
             InstanceMethod("openDgnDb", &AddonDgnDb::OpenDgnDb),
             InstanceMethod("closeDgnDb", &AddonDgnDb::CloseDgnDb),
             InstanceMethod("processChangeSets", &AddonDgnDb::ProcessChangeSets),
@@ -1106,6 +1132,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
             InstanceMethod("extractChangeSummary", &AddonDgnDb::ExtractChangeSummary),
             InstanceMethod("setBriefcaseId", &AddonDgnDb::SetBriefcaseId),
             InstanceMethod("getBriefcaseId", &AddonDgnDb::GetBriefcaseId),
+            InstanceMethod("getReversedChangeSetId", &AddonDgnDb::GetReversedChangeSetId),
             InstanceMethod("getParentChangeSetId", &AddonDgnDb::GetParentChangeSetId),
             InstanceMethod("getDbGuid", &AddonDgnDb::GetDbGuid),
             InstanceMethod("setDbGuid", &AddonDgnDb::SetDbGuid),

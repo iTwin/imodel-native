@@ -59,6 +59,7 @@ public:
     typedef std::function<void(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType)> T_AssertHandler;
 
     static void Initialize(BeFileNameCR, T_AssertHandler assertHandler);
+    static BeSQLite::DbResult CreateDgnDb(DgnDbPtr& db, BeFileNameCR pathname, Utf8StringCR rootSubjectName, Utf8StringCR rootSubjectDescription);
     static BeSQLite::DbResult OpenDgnDb(DgnDbPtr &, BeFileNameCR dbname, DgnDb::OpenMode mode);
     static BeSQLite::DbResult SetupBriefcase(DgnDbPtr &db, JsonValueCR briefcaseToken);
     static void CloseDgnDb(DgnDbR dgndb);
