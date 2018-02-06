@@ -1465,8 +1465,13 @@ ECObjectsStatus ECSchema::CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQ
 
     targetKOQ->SetDescription(sourceKOQ.GetInvariantDescription().c_str());
 
-    targetKOQ->SetDefaultPresentationUnit(sourceKOQ.GetDefaultPresentationUnit());
     targetKOQ->SetPersistenceUnit(sourceKOQ.GetPersistenceUnit());
+    if (sourceKOQ.HasPresentationUnits())
+        {
+        for (const auto& fus : sourceKOQ.GetPresentationUnitList())
+            targetKOQ->AddPresentationUnit(fus);
+        }
+    
     targetKOQ->SetRelativeError(sourceKOQ.GetRelativeError());
 
     return ECObjectsStatus::Success;
@@ -2518,6 +2523,20 @@ SchemaWriteStatus ECSchema::WriteToXmlString(Utf8StringR ecSchemaXml, ECVersion 
     xmlWriter->ToString (ecSchemaXml);
 
     return SchemaWriteStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------//
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------//
+SchemaWriteStatus ECSchema::WriteToEC2XmlString(Utf8StringR ec2SchemaXml, ECSchemaP schemaToSerialize)
+    {
+    if (nullptr == schemaToSerialize)
+        return SchemaWriteStatus::FailedToCreateXml;
+
+    ECSchemaPtr schemaCopy;
+    schemaToSerialize->CopySchema(schemaCopy);
+    ECSchemaDownConverter::Convert(*schemaCopy);
+    return schemaCopy->WriteToXmlString(ec2SchemaXml, ECVersion::V2_0);
     }
 
 /*---------------------------------------------------------------------------------**//**
