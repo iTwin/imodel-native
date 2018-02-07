@@ -3423,7 +3423,7 @@ TEST_F(GridsTestFixture, GridSurfacesTests)
 
 
             invalidGridCurvesPortion_FromHandler->SetCategoryId(categoryId);
-            ASSERT_TRUE(!invalidGridCurvesPortion_FromHandler->Insert().IsNull()) << "Grid curves portion element via handler insertion failed";
+            ASSERT_TRUE(invalidGridCurvesPortion_FromHandler->Insert().IsValid()) << "Grid curves portion element via handler insertion failed";
 
             ASSERT_TRUE(invalidGridCurvesPortion_FromHandler->GetElementId().IsValid()) << "Grid curves portion element id via handler is invalid";
         }
