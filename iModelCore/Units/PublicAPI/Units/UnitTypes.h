@@ -302,7 +302,7 @@ private:
 
     void AddUnit(UnitCR unit) 
         {
-        auto it = find_if(m_units.begin(), m_units.end(), [&unit](UnitCP existingUnit) { return existingUnit->GetId() == unit.GetId(); });
+        auto it = std::find_if(m_units.begin(), m_units.end(), [&unit](UnitCP existingUnit) { return existingUnit->GetId() == unit.GetId(); });
         if (it == m_units.end())
             m_units.push_back(&unit);
         }
