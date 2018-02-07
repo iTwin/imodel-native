@@ -69,7 +69,7 @@ bvector<Utf8String> Select(bvector<GeoPoint2d> footprint, SpatialEntityDatasetPt
 
 TEST_F(SimpleGCSIntegrationTests, DownloadTest)
     {
-    GCSRequestManager::Setup("");
+    GCSRequestManager::Setup();
 
     bvector<GeoPoint2d> myFootprint;
     myFootprint.push_back(GeoPoint2d::From(-79.25, 38.57));

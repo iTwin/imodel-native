@@ -264,8 +264,8 @@ void RealityDataDownload::ReportStatus(int index, void *pClient, int ErrorCode, 
 
     RealityDataDownload::FileTransfer* pEntry = (RealityDataDownload::FileTransfer*)pClient;
         
-    bmap<WString, TransferReport*>::iterator it = m_dlReport.results.find(pEntry->filename);
-    if(it == m_dlReport.results.end())
+    bmap<WString, TransferReport*>::iterator it = m_dlReport->results.find(pEntry->filename);
+    if(it == m_dlReport->results.end())
         return;//something went wrong
 
     TransferReport* tr = it->second;

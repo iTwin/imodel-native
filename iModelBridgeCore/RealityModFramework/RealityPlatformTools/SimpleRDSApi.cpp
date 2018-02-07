@@ -446,7 +446,7 @@ ConnectedResponse ConnectedRealityDataDocument::Delete()
         }
 
     RealityDataDeleteDocument request = RealityDataDeleteDocument(m_id);
-    RawServerResponse rawResponse = RealityDataService::BasicRequest(&request);
+    RawServerResponse rawResponse = RealityDataService::BasicRequest(&request, "changedInstance");
 
     response.Clone(rawResponse);
 
@@ -604,7 +604,7 @@ ConnectedResponse ConnectedRealityDataFolder::Delete()
         }
 
     RealityDataDeleteFolder request = RealityDataDeleteFolder(m_id);
-    RawServerResponse rawResponse = RealityDataService::BasicRequest(&request);
+    RawServerResponse rawResponse = RealityDataService::BasicRequest(&request, "changedInstance");
 
     response.Clone(rawResponse);
 
@@ -951,7 +951,8 @@ ConnectedResponse ConnectedRealityData::Delete()
         return response;
         }
     RealityDataDelete realityDataReq = RealityDataDelete(m_identifier);
-    RawServerResponse rawResponse = RealityDataService::BasicRequest(&realityDataReq);
+    RawServerResponse rawResponse = RawServerResponse();
+    RealityDataService::Request(realityDataReq, rawResponse);
 
     response.Clone(rawResponse);
 

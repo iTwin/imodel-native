@@ -27,7 +27,7 @@ struct GCSRequestManager : public WSGRequestManager
 private:
     REALITYDATAPLATFORM_EXPORT static int GCS_progress_func(int index, void *pClient, size_t ByteCurrent, size_t ByteTotal);
     REALITYDATAPLATFORM_EXPORT static void GCS_status_func(int index, void *pClient, int ErrorCode, const char* pMsg);
-    REALITYDATAPLATFORM_EXPORT static bool AlternateDownload(RealityDataDownload::DownloadReport* report, 
+    REALITYDATAPLATFORM_EXPORT static bool AlternateDownload(RealityDataDownload::DownloadReport** report, 
         const RealityDataDownload::Link_File_wMirrors_wSisters& downloadOrder, 
         BeFileName certificatePath, RealityDataDownload_ProxyCallBack proxyCallback);
 

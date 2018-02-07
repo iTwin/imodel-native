@@ -83,7 +83,7 @@ RealityDataDownload::~RealityDataDownload()
 //----------------------------------------------------------------------------------------
 RealityDataDownload::DownloadReport* RealityDataDownload::Perform()
     {
-    m_dlReport = DownloadReport();
+    m_dlReport = new DownloadReport();
     //m_caps = bvector<downloadCap>();
     m_caps = bmap<Utf8String, DownloadCap>();
 
@@ -91,7 +91,7 @@ RealityDataDownload::DownloadReport* RealityDataDownload::Perform()
 
     //perform download
 
-    return &m_dlReport;
+    return m_dlReport;
     }
 
 void RealityDataDownload::SetProxy(void* pTool, Utf8StringCR proxyUrl, Utf8StringCR proxyCreds)

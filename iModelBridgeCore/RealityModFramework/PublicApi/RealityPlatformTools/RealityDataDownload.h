@@ -365,11 +365,11 @@ private:
     Utf8String                              m_proxyCreds;
     RealityDataDownload_ProgressCallBack    m_pProgressFunc;
     RealityDataDownload_HeartbeatCallBack   m_pHeartbeatFunc;
-    float                                   m_progressStep = 0.01;
+    float                                   m_progressStep = 0.01f;
     RealityDataDownload_StatusCallBack      m_pStatusFunc;
     RealityDataDownload_ProxyCallBack       m_pProxyFunc;
     RealityDataDownload_TokenCallBack       m_pTokenFunc;
-    DownloadReport                          m_dlReport;
+    DownloadReport*                         m_dlReport;
     bmap<Utf8String, DownloadCap>           m_caps;
     bvector<bpair<Utf8String, FileTransfer*>> m_waitingList;
     };

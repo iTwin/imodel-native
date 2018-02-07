@@ -150,7 +150,7 @@ void GCSRequestManager::SimplePackageDownload(bvector<GeoPoint2d> footprint, bve
         }
     else
         {
-        submitReport = AlternateDownload(report, downloadOrder, certificatePath, proxyCallback);
+        submitReport = AlternateDownload(&report, downloadOrder, certificatePath, proxyCallback);
         }
 
     if (submitReport)

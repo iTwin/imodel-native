@@ -192,7 +192,7 @@ RealityDataDownload::~RealityDataDownload()
 
 RealityDataDownload::DownloadReport* RealityDataDownload::Perform()
     {
-    m_dlReport = DownloadReport();
+    m_dlReport = new DownloadReport();
     //m_caps = bvector<downloadCap>();
     m_caps = bmap<Utf8String, DownloadCap>();
     // we can optionally limit the total amount of connections this multi handle uses 
@@ -366,7 +366,7 @@ RealityDataDownload::DownloadReport* RealityDataDownload::Perform()
 
         } while (still_running);
 
-    return &m_dlReport;
+    return m_dlReport;
     }
 
 void RealityDataDownload::SetProxy(CURL* pCurl, Utf8StringCR proxyUrl, Utf8StringCR proxyCreds)
@@ -604,7 +604,7 @@ SetupRequestStatus RealityDataDownload::SetupRequestandFile(FileTransfer* ft, bo
             {
             TransferReport* tr = new TransferReport();
             tr->url = ft->mirrors[0].url;
-            m_dlReport.results.Insert(ft->filename, tr);
+            m_dlReport->results.Insert(ft->filename, tr);
             }
         return SetupRequestStatus::Success;
         }

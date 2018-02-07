@@ -3,7 +3,7 @@
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 bool GCSRequestManager::AlternateDownload
-    (RealityDataDownload::DownloadReport* report, const RealityDataDownload::Link_File_wMirrors_wSisters& downloadOrder,
+    (RealityDataDownload::DownloadReport** report, const RealityDataDownload::Link_File_wMirrors_wSisters& downloadOrder,
         BeFileName certificatePath, RealityDataDownload_ProxyCallBack proxyCallback)
     {
     RealityDataDownloadPtr pDownload = RealityDataDownload::Create(downloadOrder);
@@ -15,7 +15,7 @@ bool GCSRequestManager::AlternateDownload
             pDownload->SetCertificatePath(certificatePath);
         if (proxyCallback)
             pDownload->SetProxyCallBack(proxyCallback);
-        report = pDownload->Perform();
+        *(report) = pDownload->Perform();
         }
     else
         {
