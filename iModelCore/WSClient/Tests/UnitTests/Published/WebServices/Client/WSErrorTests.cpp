@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/WSErrorTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -58,6 +58,22 @@ TEST_F(WSErrorTests, CreateFunctionalityNotSupportedError_NewError_SetsStatusAnd
     EXPECT_EQ(WSError::Id::NotSupported, error.GetId());
     EXPECT_NE("", error.GetDisplayMessage());
     EXPECT_EQ("", error.GetDisplayDescription());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSErrorTests, IsInstanceNotAvailableError_ChecksAllErrorIds_ReturnTrueOnlyWithNotFoundOrNotEnoughRights)
+    {
+    for (int id = (int)WSError::Id::Unknown; id < (int)WSError::Id::_Last; id++)
+        {
+        auto errorId = (WSError::Id)id;
+        auto error = WSError(errorId);
+        if (errorId == WSError::Id::InstanceNotFound || errorId == WSError::Id::NotEnoughRights)
+            EXPECT_TRUE(error.IsInstanceNotAvailableError());
+        else
+            EXPECT_FALSE(error.IsInstanceNotAvailableError());
+        }
     }
 
 /*--------------------------------------------------------------------------------------+
