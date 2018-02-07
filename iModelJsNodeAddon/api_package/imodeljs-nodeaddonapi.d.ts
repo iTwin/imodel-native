@@ -690,12 +690,16 @@ declare class AddonECSqlColumnInfo {
     getType(): number;
 
     /** Gets the name of the property backing the column.
+     * @remarks If this column is backed by a generated property, i.e. it represents ECSQL expression,
+     * the access string consists of the name of the generated property.
      */
     getPropertyName(): string;
 
-    /** Gets the ECSQL property path of the specified column.
-    */
-    getPropertyPath(): string;
+    /** Gets the full access string to the corresponding ECSqlValue starting from the root class.
+     * @remarks If this column is backed by a generated property, i.e. it represents ECSQL expression,
+     * the access string consists of the ECSQL expression.
+     */
+    getAccessString(): string;
 
     /** Indicates whether the column refers to a system property (e.g. id, className) backing the column. */
     isSystemProperty(): boolean;
