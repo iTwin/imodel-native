@@ -11,12 +11,14 @@
 #include <Units/Units.h>
 
 BEGIN_BENTLEY_UNITS_NAMESPACE
-
+//! @addtogroup UnitsGroup
+//! @beginGroup
 //=======================================================================================
 //! A central place to store registered units with the system.  Users interact
 //! with the units system here.
 // @bsiclass                                                    Chris.Tartamella   02/16
 //=======================================================================================
+
 struct UnitRegistry
 {
 friend struct Unit;
@@ -150,5 +152,6 @@ public:
     UNITS_EXPORT UnitCP LookupUnitCI(Utf8CP name) const;
 };
 
+/** @endGroup */
 END_BENTLEY_UNITS_NAMESPACE
 /*__PUBLISH_SECTION_END__*/
