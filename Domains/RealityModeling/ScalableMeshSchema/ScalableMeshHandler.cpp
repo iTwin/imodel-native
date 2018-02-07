@@ -529,6 +529,7 @@ Dgn::TileTree::Tile::SelectParent SMNode::_SelectTiles(bvector<Dgn::TileTree::Ti
 
         if (viewStatus == SMNodeViewStatus::NotVisible)
             {
+            _UnloadChildren(args.m_purgeOlderThan);
             return SelectParent::No;
             }
 
@@ -592,6 +593,7 @@ Dgn::TileTree::Tile::SelectParent SMNode::_SelectTiles(bvector<Dgn::TileTree::Ti
             }
 #endif
 
+            _UnloadChildren(args.m_purgeOlderThan);
 
             if (IsReady())
                 {
@@ -606,7 +608,7 @@ Dgn::TileTree::Tile::SelectParent SMNode::_SelectTiles(bvector<Dgn::TileTree::Ti
                 */
                 args.InsertMissing(*this);
                 return SelectParent::Yes;
-                }
+                }            
             }
 
         assert(viewStatus == SMNodeViewStatus::TooCoarse);
