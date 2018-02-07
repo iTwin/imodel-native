@@ -57,7 +57,7 @@ RealityData::CachePtr DgnDb::ElementTileCache() const
     {
     if (!m_elementTileCache.IsValid())
         {
-        BeFileName cacheName = TileTree::TileCache::GetCacheFileName(GetFileName().GetBaseName());
+        BeFileName cacheName = T_HOST.GetTileAdmin()._GetElementCacheFileName(*this);
         m_elementTileCache = new TileTree::TileCache(1024*1024*1024);
         if (SUCCESS != m_elementTileCache->OpenAndPrepare(cacheName))
             m_elementTileCache = nullptr;
