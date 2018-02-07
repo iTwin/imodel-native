@@ -8,20 +8,30 @@ WebsiteSeedFileTests.CreateSeedFile
 #   Tests that are failing
 #----------------------------------------------------------------------------------------
 BriefcaseSchemaChangesTests.*
-BriefcaseTests.UnsuccessfulRestoreBriefcase
-BriefcaseTests.QueryInformationAboutMasterBriefcase
-BriefcaseTests.QueryInformationAboutStandaloneBriefcase
-BriefcaseTests.QueryInformationAboutNonexistentBriefcase
-ChangeSetsTests.CancelDownloadChangeSets
-iModelTests.QueryNonExistentiModelByName
-iModelTests.SuccessfulCreateiModelWithASpaceInName
 SeedFileTests.ReplaceWithoutLockediModel
-SeedFileTests.QueryNonExistentSeedFile
+LocksTests.WorkflowCreateNewElementModelExclusivelyLocked
+LocksTests.WorkflowUpdateElementWithExclusiveModelLock
+
+#----------------------------------------------------------------------------------------
+#   Tests that require statistics
+#----------------------------------------------------------------------------------------
 StatisticsTests.QueryUserStatisticsWithAllStatistics
 StatisticsTests.QueryUserStatisticsWithSelectedStatistics
 StatisticsTests.QueryUsersStatisticsWithAllStatistics
 StatisticsTests.QueryUsersStatisticsWithSelectedStatistics
 StatisticsTests.QueryAllUsersStatisticsWithAllStatistics
 StatisticsTests.QueryAllUsersStatisticsWithSelectedStatistics
-LocksTests.WorkflowCreateNewElementModelExclusivelyLocked
-LocksTests.WorkflowUpdateElementWithExclusiveModelLock
+#----------------------------------------------------------------------------------------
+#   Tests that require seed file replacement
+#----------------------------------------------------------------------------------------
+LRPTests.InitializeFileJob
+SeedFileTests.DownloadArchivedSeedFile
+SeedFileTests.PushAndPullAfterReplacement
+SeedFileTests.ReplaceSeedFileWithLocks
+SeedFileTests.DeleteFile
+SeedFileTests.OpenBriefcaseAfterReplace
+SeedFileTests.RecoverBriefcaseAfterReplace
+SeedFileTests.CanceledFileReplaceCodesLocksChangeSets
+SeedFileTests.FileReplaceInProgressCodesLocksChangeSetsDenied
+SeedFileTests.ReplaceCodesLocksChangeSets
+SeedFileTests.EmptyFileReplaceOtherUser
