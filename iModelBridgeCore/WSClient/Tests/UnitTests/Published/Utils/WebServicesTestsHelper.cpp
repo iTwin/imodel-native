@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/WebServicesTestsHelper.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -153,7 +153,11 @@ HttpResponse StubWSErrorHttpResponse(HttpStatus status, Utf8StringCR errorId, Ut
 WSInfo StubWSInfoWebApi(BeVersion webApiVersion, WSInfo::Type type)
     {
     BeVersion serverVersion;
-    if (webApiVersion >= BeVersion(2, 0))
+    if (webApiVersion >= BeVersion(2, 7))
+        {
+        serverVersion = BeVersion(2, 7);
+        }
+    else if (webApiVersion >= BeVersion(2, 0))
         {
         serverVersion = BeVersion(2, 0);
         }
@@ -221,6 +225,11 @@ HttpResponse StubWSInfoHttpResponseWebApi24()
 HttpResponse StubWSInfoHttpResponseWebApi25()
     {
     return StubWSInfoHttpResponseWebApi(BeVersion(2, 5));
+    }
+
+HttpResponse StubWSInfoHttpResponseWebApi27()
+    {
+    return StubWSInfoHttpResponseWebApi(BeVersion(2, 7));
     }
 
 HttpResponse StubWSInfoHttpResponseWebApi(BeVersion webApiVersion)
@@ -375,7 +384,7 @@ BeFileName StubFile(Utf8StringCR content, Utf8StringCR customFileName)
 
 BeFileName StubFileWithSize(uint64_t bytesCount, Utf8StringCR customFileName)
     {
-    BeFileName filePath = StubFilePath();
+    BeFileName filePath = StubFilePath(customFileName);
 
     BeFile file;
     EXPECT_EQ(BeFileStatus::Success, file.Create(filePath));

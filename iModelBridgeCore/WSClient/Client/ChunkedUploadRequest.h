@@ -2,7 +2,7 @@
  |
  |     $Source: Client/ChunkedUploadRequest.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -35,11 +35,12 @@ struct ChunkedUploadRequest
         Utf8String m_url;
         Utf8String m_method;
 
-        Utf8String  m_handshakeContentType;
-        HttpBodyPtr m_handshakeBody;
-        HttpBodyPtr m_mainBody;
-        Utf8String  m_mainBodyFileName;
-        Utf8String  m_etag;
+        Utf8String          m_handshakeContentType;
+        HttpBodyPtr         m_handshakeBody;
+        HttpBodyPtr         m_mainBody;
+        Utf8String          m_mainBodyFileName;
+        Utf8String          m_etag;
+        HttpRequestHeaders  m_lastRequestHeaders;
 
         ETagRetrievedCallback           m_etagRetrievedCallback;
         ICancellationTokenPtr           m_cancellationToken;
@@ -49,6 +50,7 @@ struct ChunkedUploadRequest
         std::shared_ptr<TransferData>   m_data;
 
     private:
+        void   AddLastRequestHeadersTo(HttpRequestR request);
         static AsyncTaskPtr<HttpResponse> PerformAsync(std::shared_ptr<ChunkedUploadRequest> cuRequest);
         static AsyncTaskPtr<void> SendHandshakeAndContinue(std::shared_ptr<ChunkedUploadRequest> cuRequest);
         static void SendChunkAndContinue(std::shared_ptr<ChunkedUploadRequest> cuRequest);
@@ -77,6 +79,9 @@ struct ChunkedUploadRequest
 
         //! Return true from callback when request needs to be canceled
         WSCLIENT_EXPORT void SetCancellationToken(ICancellationTokenPtr token);
+
+        //! Used to assign headers for final upload request
+        WSCLIENT_EXPORT HttpRequestHeadersR GetLastRequestHeaders();
 
         //! Progress callback for whole upload
         WSCLIENT_EXPORT void SetUploadProgressCallback(HttpRequest::ProgressCallbackCR onProgress);

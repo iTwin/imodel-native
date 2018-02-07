@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WebApi/WebApiV1.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -172,6 +172,7 @@ struct WebApiV1 : public WebApi
             (
             HttpBodyPtr changeset,
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
@@ -180,15 +181,17 @@ struct WebApiV1 : public WebApi
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
-        
+
         virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
             (
             ObjectIdCR relatedObjectId,
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
@@ -199,12 +202,14 @@ struct WebApiV1 : public WebApi
             Utf8String eTag = nullptr,
             BeFileNameCR filePath = BeFileName(),
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
         virtual AsyncTaskPtr<WSDeleteObjectResult> SendDeleteObjectRequest
             (
             ObjectIdCR objectId,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
@@ -213,6 +218,7 @@ struct WebApiV1 : public WebApi
             ObjectIdCR objectId,
             BeFileNameCR filePath,
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
     };

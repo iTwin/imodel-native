@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WebApi/WebApi.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -80,6 +80,7 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
             (
             HttpBodyPtr changeset,
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
@@ -88,6 +89,7 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
@@ -97,6 +99,7 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
@@ -107,12 +110,14 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
             Utf8String eTag = nullptr,
             BeFileNameCR filePath = BeFileName(),
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
         virtual AsyncTaskPtr<WSDeleteObjectResult> SendDeleteObjectRequest
             (
             ObjectIdCR objectId,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
@@ -121,6 +126,7 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
             ObjectIdCR objectId,
             BeFileNameCR filePath,
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
     };

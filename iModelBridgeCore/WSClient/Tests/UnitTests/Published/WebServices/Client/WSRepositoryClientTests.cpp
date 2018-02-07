@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/WSRepositoryClientTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -39,6 +39,38 @@ Json::Value StubWSObjectCreationJson()
                 "properties": {}
                 }
             })");
+    }
+
+void Expect4_jSrS(MockHttpHandler& handler)
+    {
+    handler.ExpectRequests(4);
+    handler.ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    std::map<Utf8String, Utf8String> headers {{"Operation-Location", "FooBooBar"}};
+    handler.ForRequest(2, StubHttpResponse(HttpStatus::Accepted, "", headers));
+
+    DateTime dateTime;
+    auto scheduleTime = dateTime.GetCurrentTimeUtc().ToUtf8String();
+
+    Utf8String body =
+        Utf8PrintfString(R"({
+            "instances" : [
+                {
+                "instanceId": "6b39f111-e38e-41b2-bf33-1c9b2a0965e1",
+                "schemaName": "Jobs",
+                "className": "Job",
+                "properties" :
+                    {
+                    "ResponseStatusCode":200,
+                    "ResponseContent":"Good Content",
+                    "ResponseHeaders":"",
+                    "ScheduleTime": "%s",
+                    "Status":"Succeeded"
+                    }
+                }]
+            })", scheduleTime);
+
+    handler.ForRequest(3, StubHttpResponse(HttpStatus::OK, body, headers));
+    handler.ForRequest(4, StubHttpResponse(HttpStatus::OK));
     }
 
 TEST_F(WSRepositoryClientTests, VerifyAccess_CredentialsPassed_SendsSameCredentials)
@@ -1034,7 +1066,7 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV25_CapsWebApiToV25)
     client->SendQueryRequest(StubWSQuery(), nullptr, nullptr)->Wait();
     }
 
-TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV26_CapsWebApiToV25)
+TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV26_CapsWebApiToV26)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
@@ -1042,7 +1074,22 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV26_CapsWebApiToV25)
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi({2, 6}));
     GetHandler().ForRequest(2, [=] (HttpRequestCR request)
         {
-        EXPECT_EQ("https://srv.com/ws/v2.5/Repositories/foo/TestSchema/TestClass", request.GetUrl());
+        EXPECT_EQ("https://srv.com/ws/v2.6/Repositories/foo/TestSchema/TestClass", request.GetUrl());
+        return StubHttpResponse();
+        });
+
+    client->SendQueryRequest(StubWSQuery(), nullptr, nullptr)->Wait();
+    }
+
+TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV28_CapsWebApiToV27)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi({2, 8}));
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        EXPECT_EQ("https://srv.com/ws/v2.7/Repositories/foo/TestSchema/TestClass", request.GetUrl());
         return StubHttpResponse();
         });
 
@@ -1557,6 +1604,30 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithFilePath_Add
     }
 #endif
 
+TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_EnableJobsWebApiV2JobSucceedsResponseSucceeds_Success)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    Json::Value objectCreationJson = ToJson(
+        R"( {
+            "instance" :
+                {
+                "schemaName" : "TargetObjectSchema",
+                "className" : "TargetObjectClass",
+                "properties" : {}
+                }
+            })");
+
+    auto relatedObject = ObjectId("RelatedObjectSchema", "RelatedObjectClass", "RelatedObjectId");
+
+    Expect4_jSrS(GetHandler());
+
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetJobOptions()->EnableJobsIfPossible();
+    auto result = client->SendCreateObjectRequestWithOptions(relatedObject, objectCreationJson, Bentley::BeFileName(), nullptr, options)->GetResult();
+    EXPECT_TRUE(result.IsSuccess());
+    }
+
 TEST_F(WSRepositoryClientTests, SendChangesetRequest_WebApiV13_ErrorNotSupported)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1619,6 +1690,19 @@ TEST_F(WSRepositoryClientTests, SendChangesetRequest_WebApiV21AndReceives200_Suc
     auto result = client->SendChangesetRequest(HttpStringBody::Create("TestChangeset"), nullptr, nullptr)->GetResult();
     EXPECT_TRUE(result.IsSuccess());
     EXPECT_EQ("TestChangesetResponse", result.GetValue()->AsString());
+    }
+
+TEST_F(WSRepositoryClientTests, SendChangesetRequest_EnableJobsWebApiV2JobSucceedsResponseSucceeds_SuccessAndReturnsBody)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    Expect4_jSrS(GetHandler());
+
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetJobOptions()->EnableJobsIfPossible();
+    auto result = client->SendChangesetRequestWithOptions(HttpStringBody::Create("TestChangeset"), nullptr, options)->GetResult();
+    EXPECT_TRUE(result.IsSuccess());
+    EXPECT_EQ("Good Content", result.GetValue()->AsString());
     }
 
 TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV1_SendsPostRequest)
@@ -1788,6 +1872,18 @@ TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV2AndFileETagSentB
     EXPECT_EQ("NewTag", result.GetValue().GetFileETag());
     }
 
+TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_EnableJobsWebApiV2JobSucceedsResponseSucceeds_Success)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    Expect4_jSrS(GetHandler());
+
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetJobOptions()->EnableJobsIfPossible();
+    auto result = client->SendUpdateObjectRequestWithOptions(StubObjectId(), Json::objectValue, nullptr, Bentley::BeFileName(), nullptr, options)->GetResult();
+    EXPECT_TRUE(result.IsSuccess());
+    }
+
 TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_WebApiV1_SendsDeleteRequest)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1842,6 +1938,373 @@ TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_WebApiV2ResponseIsOK_Suc
 
     auto result = client->SendDeleteObjectRequest({"TestSchema.TestClass", "TestId"})->GetResult();
     EXPECT_TRUE(result.IsSuccess());
+    }
+
+TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_EnableJobsWebApiV1_SendsSimpleDeleteRequest)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("DELETE", request.GetMethod().c_str());
+        EXPECT_STREQ("https://srv.com/ws/v1.1/DataSources/foo/Objects/TestClass/TestId", request.GetUrl().c_str());
+        return StubHttpResponse();
+        });
+
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetJobOptions()->EnableJobsIfPossible();
+    client->SendDeleteObjectRequestWithOptions({"TestSchema.TestClass", "TestId"}, options)->Wait();
+    }
+
+TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_EnableJobsWebApiV2JobNotSupported_SendsSimpleDeleteRequest)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("DELETE", request.GetMethod().c_str());
+        EXPECT_STREQ("https://srv.com/ws/v2.0/Repositories/foo/TestSchema/TestClass/TestId", request.GetUrl().c_str());
+        return StubHttpResponse(ConnectionStatus::OK);
+        });
+
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetJobOptions()->EnableJobsIfPossible();
+    client->SendDeleteObjectRequestWithOptions({"TestSchema.TestClass", "TestId"}, options)->Wait();
+    }
+
+TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_EnableJobsWebApiV2JobNotSupportedResponseIsOK_Success)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::OK));
+
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetJobOptions()->EnableJobsIfPossible();
+    auto result = client->SendDeleteObjectRequestWithOptions({"TestSchema.TestClass", "TestId"}, options)->GetResult();
+    EXPECT_TRUE(result.IsSuccess());
+    }
+
+TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_EnableJobsWebApiV2ResponseSendsJobsSequence_SendsJobDeleteRequest)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    auto jobUrl = "https://srv.com/ws/v2.6/Repositories/Job";
+    DateTime dateTime;
+    auto scheduleTime = dateTime.GetCurrentTimeUtc().ToUtf8String();
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 7);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("DELETE", request.GetMethod().c_str());
+        EXPECT_STREQ("Allow", request.GetHeaders().GetValue("Mas-Async-Job"));
+        EXPECT_STREQ("https://srv.com/ws/v2.7/Repositories/foo/TestSchema/TestClass/TestId", request.GetUrl().c_str());
+        std::map<Utf8String, Utf8String> headers {{"Operation-Location", jobUrl}};
+
+        return StubHttpResponse(HttpStatus::Accepted, "", headers);
+        });
+    GetHandler().ForRequest(3, [=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("GET", request.GetMethod().c_str());
+        EXPECT_STREQ(jobUrl, request.GetUrl().c_str());
+        Utf8String body =
+            Utf8PrintfString(R"({
+            "instances" : [
+                {
+                "instanceId": "6b39f111-e38e-41b2-bf33-1c9b2a0965e1",
+                "schemaName": "Jobs",
+                "className": "Job",
+                "properties" :
+                    {
+                    "ScheduleTime": "%s",
+                    "Status":"NotStarted"
+                    }
+                }]
+            })", scheduleTime);
+
+        std::map<Utf8String, Utf8String> headers;
+        return StubHttpResponse(HttpStatus::OK, body, headers);
+        });
+    GetHandler().ForRequest(4, [=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("GET", request.GetMethod().c_str());
+        EXPECT_STREQ(jobUrl, request.GetUrl().c_str());
+        Utf8String body =
+            Utf8PrintfString(R"({
+            "instances" : [
+                {
+                "instanceId": "6b39f111-e38e-41b2-bf33-1c9b2a0965e1",
+                "schemaName": "Jobs",
+                "className": "Job",
+                "properties" :
+                    {
+                    "ScheduleTime": "%s",
+                    "Status":"Running"
+                    }
+                }]
+            })", scheduleTime);
+
+        std::map<Utf8String, Utf8String> headers;
+        return StubHttpResponse(HttpStatus::OK, body, headers);
+        });
+    GetHandler().ForRequest(5, [=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("GET", request.GetMethod().c_str());
+        EXPECT_STREQ(jobUrl, request.GetUrl().c_str());
+        Utf8String body =
+            Utf8PrintfString(R"({
+            "instances" : [
+                {
+                "instanceId": "6b39f111-e38e-41b2-bf33-1c9b2a0965e1",
+                "schemaName": "Jobs",
+                "className": "Job",
+                "properties" :
+                    {
+                    "ScheduleTime": "%s",
+                    "Status":"Running"
+                    }
+                }]
+            })", scheduleTime);
+
+        std::map<Utf8String, Utf8String> headers;
+        return StubHttpResponse(HttpStatus::OK, body, headers);
+        });
+    GetHandler().ForRequest(6, [=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("GET", request.GetMethod().c_str());
+        EXPECT_STREQ(jobUrl, request.GetUrl().c_str());
+        Utf8String body =
+            Utf8PrintfString(R"({
+            "instances" : [
+                {
+                "instanceId": "6b39f111-e38e-41b2-bf33-1c9b2a0965e1",
+                "schemaName": "Jobs",
+                "className": "Job",
+                "properties" :
+                    {
+                    "ScheduleTime": "%s",
+                    "ResponseStatusCode":200,
+                    "ResponseContent":"Good Content",
+                    "ResponseHeaders":"",
+                    "Status":"Succeeded"
+                    }
+                }]
+            })", scheduleTime);
+
+        std::map<Utf8String, Utf8String> headers;
+        return StubHttpResponse(HttpStatus::OK, body, headers);
+        });
+    GetHandler().ForRequest(7, [=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("DELETE", request.GetMethod().c_str());
+        EXPECT_STREQ(jobUrl, request.GetUrl().c_str());
+
+        return StubHttpResponse(HttpStatus::OK);
+        });
+
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetJobOptions()->EnableJobsIfPossible();
+    client->SendDeleteObjectRequestWithOptions({"TestSchema.TestClass", "TestId"}, options)->Wait();
+    }
+
+TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_EnableJobsWebApiV2JobRequestFailed_Fails)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    auto jobUrl = "https://srv.com/ws/v2.0/Repositories/Job";
+    std::map<Utf8String, Utf8String> headers {{"Operation-Location", jobUrl}};
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::InternalServerError, "", headers));
+
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetJobOptions()->EnableJobsIfPossible();
+    auto result = client->SendDeleteObjectRequestWithOptions({"TestSchema.TestClass", "TestId"}, options)->GetResult();
+    EXPECT_FALSE(result.IsSuccess());
+    }
+
+TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_EnableJobsWebApiV2JobSucceedsResponseSucceeds_Success)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    Expect4_jSrS(GetHandler());
+
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetJobOptions()->EnableJobsIfPossible();
+    auto result = client->SendDeleteObjectRequestWithOptions({"TestSchema.TestClass", "TestId"}, options)->GetResult();
+    EXPECT_TRUE(result.IsSuccess());
+    }
+
+TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_EnableJobsWebApiV2JobSucceedsAfterLongDelayResponseSucceeds_Success)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(4);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    auto jobUrl = "https://srv.com/ws/v2.0/Repositories/Job";
+    std::map<Utf8String, Utf8String> headers {{"Operation-Location", jobUrl}};
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::Accepted, "", headers));
+
+    Utf8String body =
+        Utf8PrintfString(R"({
+            "instances" : [
+                {
+                "instanceId": "6b39f111-e38e-41b2-bf33-1c9b2a0965e1",
+                "schemaName": "Jobs",
+                "className": "Job",
+                "properties" :
+                    {
+                    "ResponseStatusCode":200,
+                    "ResponseContent":"Good Content",
+                    "ResponseHeaders":"",
+                    "ScheduleTime": "2000-01-01T13:43:57.3126099Z",
+                    "Status":"Succeeded"
+                    }
+                }]
+            })");
+
+    GetHandler().ForRequest(3, StubHttpResponse(HttpStatus::OK, body, headers));
+    GetHandler().ForRequest(4, StubHttpResponse(HttpStatus::OK));
+
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetJobOptions()->EnableJobsIfPossible();
+    auto result = client->SendDeleteObjectRequestWithOptions({"TestSchema.TestClass", "TestId"}, options)->GetResult();
+    EXPECT_TRUE(result.IsSuccess());
+    }
+
+TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_EnableJobsWebApiV2JobsRunningAfterLongDelay_Fails)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(4);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    auto jobUrl = "https://srv.com/ws/v2.0/Repositories/Job";
+    std::map<Utf8String, Utf8String> headers {{"Operation-Location", jobUrl}};
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::Accepted, "", headers));
+
+    Utf8String body =
+        Utf8PrintfString(R"({
+            "instances" : [
+                {
+                "instanceId": "6b39f111-e38e-41b2-bf33-1c9b2a0965e1",
+                "schemaName": "Jobs",
+                "className": "Job",
+                "properties" :
+                    {
+                    "ScheduleTime":  "2000-01-01T13:43:57.3126099Z",
+                    "Status":"Running"
+                    }
+                }]
+            })");
+
+    GetHandler().ForRequest(3, StubHttpResponse(HttpStatus::OK, body, headers));
+    GetHandler().ForRequest(4, StubHttpResponse(HttpStatus::OK));
+
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetJobOptions()->EnableJobsIfPossible();
+    auto result = client->SendDeleteObjectRequestWithOptions({"TestSchema.TestClass", "TestId"}, options)->GetResult();
+    EXPECT_FALSE(result.IsSuccess());
+    }
+
+TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_EnableJobsAndWebApiV2JobsSuceedsFailsToDeleteJob_Fails)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(4);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    auto jobUrl = "https://srv.com/ws/v2.0/Repositories/Job";
+    std::map<Utf8String, Utf8String> headers {{"Operation-Location", jobUrl}};
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::Accepted, "", headers));
+
+    DateTime dateTime;
+    auto scheduleTime = dateTime.GetCurrentTimeUtc().ToUtf8String();
+
+    Utf8String body =
+        Utf8PrintfString(R"({
+            "instances" : [
+                {
+                "instanceId": "6b39f111-e38e-41b2-bf33-1c9b2a0965e1",
+                "schemaName": "Jobs",
+                "className": "Job",
+                "properties" :
+                    {
+                    "ResponseStatusCode":420,
+                    "ResponseContent":"Failed",
+                    "ResponseHeaders":"",
+                    "ScheduleTime": "%s",
+                    "Status":"Succeeded"
+                    }
+                }]
+            })", scheduleTime);
+
+    GetHandler().ForRequest(3, StubHttpResponse(HttpStatus::OK, body, headers));
+    GetHandler().ForRequest(4, StubHttpResponse(HttpStatus::OK));
+
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetJobOptions()->EnableJobsIfPossible();
+    auto result = client->SendDeleteObjectRequestWithOptions({"TestSchema.TestClass", "TestId"}, options)->GetResult();
+    EXPECT_FALSE(result.IsSuccess());
+    }
+
+TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_EnableJobsWebApiV2JobFails_Fails)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(4);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    auto jobUrl = "https://srv.com/ws/v2.0/Repositories/Job";
+    std::map<Utf8String, Utf8String> headers {{"Operation-Location", jobUrl}};
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::Accepted, "", headers));
+
+    DateTime dateTime;
+    auto scheduleTime = dateTime.GetCurrentTimeUtc().ToUtf8String();
+
+    Utf8String body =
+        Utf8PrintfString(R"({
+            "instances" : [
+                {
+                "instanceId": "6b39f111-e38e-41b2-bf33-1c9b2a0965e1",
+                "schemaName": "Jobs",
+                "className": "Job",
+                "properties" :
+                    {
+                    "ScheduleTime": "%s",
+                    "Status":"Failed"
+                    }
+                }]
+            })", scheduleTime);
+
+    GetHandler().ForRequest(3, StubHttpResponse(HttpStatus::OK, body, headers));
+    GetHandler().ForRequest(4, StubHttpResponse(HttpStatus::OK));
+
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetJobOptions()->EnableJobsIfPossible();
+    auto result = client->SendDeleteObjectRequestWithOptions({"TestSchema.TestClass", "TestId"}, options)->GetResult();
+    EXPECT_FALSE(result.IsSuccess());
+    }
+
+TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_EnableJobsWebApiV2JobsResponseIsUnauthorized_Fails)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(4);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    auto jobUrl = "https://srv.com/ws/v2.0/Repositories/Job";
+    std::map<Utf8String, Utf8String> headers {{"Operation-Location", jobUrl}};
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::Accepted, "", headers));
+    GetHandler().ForRequest(3, StubHttpResponse(HttpStatus::Unauthorized));
+    GetHandler().ForRequest(4, StubHttpResponse(HttpStatus::Unauthorized));
+
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetJobOptions()->EnableJobsIfPossible();
+    auto result = client->SendDeleteObjectRequestWithOptions({"TestSchema.TestClass", "TestId"}, options)->GetResult();
+    EXPECT_FALSE(result.IsSuccess());
     }
 
 TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV1_SendsPutRequest)
@@ -2057,6 +2520,19 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectA
     auto response = client->SendUpdateFileRequest(StubObjectId(), fileName)->GetResult();
     EXPECT_FALSE(response.IsSuccess());
     EXPECT_EQ(WSError::Status::ServerNotSupported, response.GetError().GetStatus());
+    }
+
+TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_EnableJobsWebApiV2JobSucceedsResponseSucceeds_Success)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    Expect4_jSrS(GetHandler());
+
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetJobOptions()->EnableJobsIfPossible();
+    auto result = client->SendUpdateFileRequestWithOptions({"TestSchema.TestClass", "TestId"}, StubFile("TestContent"), nullptr, options)->GetResult();
+    EXPECT_TRUE(result.IsSuccess());
+    EXPECT_STREQ("Good Content", result.GetValue().GetBody()->AsString().c_str());
     }
 
 TEST_F(WSRepositoryClientTests, SendGetSchemasRequest_WebApiV11AndNoDefaultSchema_Fails)
@@ -2438,8 +2914,8 @@ TEST_P(WSRepositoryClientTests_Location, ParseRepositoryUrl_Url_LocationParsed)
     {
     auto param = GetParam();
     auto repository = WSRepositoryClient::ParseRepositoryUrl(param[0]);
-    EXPECT_EQ(param[1], repository.GetLocation());
-    EXPECT_EQ("https://foo.com/boo", repository.GetServerUrl());
-    EXPECT_EQ("A", repository.GetPluginId());
+    EXPECT_STREQ(param[1].c_str(), repository.GetLocation().c_str());
+    EXPECT_STREQ("https://foo.com/boo", repository.GetServerUrl().c_str());
+    EXPECT_STREQ("A", repository.GetPluginId().c_str());
     }
 #endif
