@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbSystemSchemaHelper.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -125,7 +125,7 @@ public:
     Point GetPoint() const { BeAssert(m_type == Type::Point); return m_pointKind; }
     Navigation GetNavigation() const { BeAssert(m_type == Type::Navigation); return m_navKind; }
     //Indicates whether the system property is of an id type
-    bool IsId() const { BeAssert(IsSystemProperty()); return m_type != Type::Point; }
+    bool IsId() const { return IsSystemProperty() && m_type != Type::Point; }
 
     static ECSqlSystemPropertyInfo const& ECInstanceId() { return s_ecinstanceId; }
     static ECSqlSystemPropertyInfo const& ECClassId() { return s_ecclassid; }

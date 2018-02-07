@@ -220,7 +220,7 @@ struct ECSqlColumnInfo final
             //! For generated properties the table space is empty
             Utf8StringCR GetTableSpace() const { BeAssert(IsValid()); return m_tableSpace; }
             //! Gets the class alias of the root class to which the column refers to.
-            //! @return Alias of root class the column refers to or nullptr if no class alias was specified in the select clause
+            //! @return Alias of root class the column refers to or an empty string if no class alias was specified in the select clause
             Utf8StringCR GetAlias() const { BeAssert(IsValid()); return m_alias; }
 
         };

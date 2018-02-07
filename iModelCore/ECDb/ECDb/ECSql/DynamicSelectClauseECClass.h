@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/DynamicSelectClauseECClass.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -31,7 +31,7 @@ struct DynamicSelectClauseECClass final
 
         ECSqlStatus Initialize();
 
-        ECSqlStatus AddProperty(ECN::ECPropertyCP& generatedProperty, Utf8StringCR propName, DerivedPropertyExp const& selectClauseItemExp);
+        ECSqlStatus AddProperty(ECN::ECPropertyCP& generatedProperty, ECSqlPrepareContext&, Utf8StringCR propName, DerivedPropertyExp const& selectClauseItemExp, PropertyNameExp const* selectClauseItemPropNameExp);
         ECSqlStatus AddReferenceToStructSchema(ECN::ECSchemaCR structSchema) const;
         ECN::ECEntityClassR GetClass() const { BeAssert(m_class != nullptr); return *m_class; }
         ECN::ECSchemaR GetSchema() const { BeAssert(m_schema != nullptr); return *m_schema; }
