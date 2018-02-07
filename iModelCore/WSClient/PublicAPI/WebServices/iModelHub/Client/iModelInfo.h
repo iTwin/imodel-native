@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/iModelHub/Client/iModelInfo.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -14,7 +14,9 @@
 #include <WebServices/iModelHub/Client/UserInfo.h>
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
+
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
 typedef RefCountedPtr<struct iModelInfo> iModelInfoPtr;
 DEFINE_POINTER_SUFFIX_TYPEDEFS(iModelInfo);
 DEFINE_TASK_TYPEDEFS(iModelInfoPtr, iModel);
