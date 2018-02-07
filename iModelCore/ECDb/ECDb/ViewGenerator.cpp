@@ -24,7 +24,9 @@ BentleyStatus ViewGenerator::GenerateSelectFromViewSql(NativeSqlBuilder& viewSql
     //           queried has no dervied classes. Decision is taken independent of if class is sealed or not sealed.
     if (isPolymorphicQuery)
         {
-        if (prepareContext.GetECDb().Schemas().GetDerivedClasses(classMap.GetClass(), classMap.GetPrimaryTable().GetTableSpace().GetName().c_str()).empty())
+        if (classMap.GetClass().GetClassModifier() == ECClassModifier::Sealed)
+            isPolymorphicQuery = false;
+        else if (prepareContext.GetECDb().Schemas().GetDerivedClasses(classMap.GetClass(), classMap.GetPrimaryTable().GetTableSpace().GetName().c_str()).empty())
             isPolymorphicQuery = false; //Convert a polymorphic query into a none-polymorphic query
         }
     //----------------------------------------------------------------------------------------------------------------------------------------------
