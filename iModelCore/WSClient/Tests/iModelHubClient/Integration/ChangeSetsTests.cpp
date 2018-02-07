@@ -22,7 +22,8 @@ int GetDirSize(BeFileName dirToCheck)
 
     while (SUCCESS == fileIterator.GetNextFileName(tempFileName))
         {
-        size++;
+        if (!tempFileName.GetExtension().Equals(L"lock"))
+            size++;
         }
 
     return size;
@@ -182,7 +183,7 @@ TEST_F(ChangeSetsTests, ChangeSetsInfo)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeSetsTests, PullMergeAndPush)
     {
-    m_briefcase = AcquireAndOpenBriefcase(false);
+    m_briefcase = AcquireAndOpenBriefcase(true);
 
     Utf8String originalChangeSetId = m_briefcase->GetDgnDb().Revisions().GetParentRevisionId();
 
@@ -245,7 +246,7 @@ TEST_F(ChangeSetsTests, PreDownload)
 
     // Wait max 50 sec until changeSet files are preDownloaded
     int maxIterations = 100;
-    while (IsDirEmpty(preDownloadPath) && maxIterations > 0)
+    while (GetDirSize(preDownloadPath) < 2 && maxIterations > 0)
         {
         BeThreadUtilities::BeSleep(500);
         maxIterations--;

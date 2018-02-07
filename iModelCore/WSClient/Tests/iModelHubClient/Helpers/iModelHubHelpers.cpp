@@ -376,6 +376,33 @@ namespace iModelHubHelpers
             }
         EXPECT_TRUE(expectedCount == locksCount);
         }
+    
+    //---------------------------------------------------------------------------------------
+    //@bsimethod                                     Eligijus.Mauragas             01/2016
+    //---------------------------------------------------------------------------------------
+    void ExpectLocksCountByLevelAndId(BriefcasePtr briefcase, int expectedCount, bool byBriefcaseId, LockableIdSet& ids, LockLevel expectedLevel)
+        {
+        auto result = QueryLocksById(*briefcase, byBriefcaseId, ids)->GetResult();
+
+        EXPECT_SUCCESS(result);
+
+        int locksCount = 0;
+        for (DgnLockInfo lockState : result.GetValue())
+            {
+            if (expectedLevel == LockLevel::Exclusive)
+                {
+                if (expectedLevel == lockState.GetOwnership().GetLockLevel())
+                    locksCount++;
+                }
+            else
+                {
+                for (auto owner : lockState.GetOwnership().GetSharedOwners())
+                    if (expectedLevel == lockState.GetOwnership().GetLockLevel())
+                        locksCount++;
+                }
+            }
+        EXPECT_TRUE(expectedCount == locksCount);
+        }
 
     /*--------------------------------------------------------------------------------------+
     * @bsimethod                                    Karolis.Dziedzelis              01/2018
@@ -463,7 +490,7 @@ namespace iModelHubHelpers
         DgnModelPtr model = CreateModel(Utf8GuidString("AddChangeSetsModel%s").c_str(), briefcase.GetDgnDb());
         for (uint32_t i = statingNumber; i < statingNumber + count; ++i)
             {
-            CreateElement(*model, false);
+            CreateElement(*model, true);
             ChangeSetsResult result = PullMergeAndPush(briefcase, expectSuccess, true, expectSuccess);
             if (!result.IsSuccess())
                 {

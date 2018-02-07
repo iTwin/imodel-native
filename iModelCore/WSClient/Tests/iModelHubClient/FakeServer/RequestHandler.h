@@ -19,13 +19,20 @@ class RequestHandler
     public:
         RequestHandler();
         ~RequestHandler();
-        Response PerformGetRequest(Request req);
-        Response PerformOtherRequest(Request req);
-        Response CreateiModel(Request req);
-        Response DownloadiModel(bvector<Utf8String> args);
+        //
         Response BuddiRequest(Request req);
         Response ImsTokenRequest (Request req);
         Response PluginRequest(Request req);
+        ////
+        Response PerformGetRequest(Request req);
+        Response PerformOtherRequest(Request req);
+        
+        //////
+        Response CreateiModel(Request req);
+        Response DownloadiModel(bvector<Utf8String> args);
+        Response UploadNewSeedFile(Request req);
+        Response CreateFileInstance(Request req);
+        
         static DbResult Initialize(BeFileName temporaryDir, BeSQLiteLib::LogErrors logSqliteErrors = BeSQLiteLib::LogErrors::No);
         void CheckDb();
         void Insert(bvector<Utf8String> insertStr);

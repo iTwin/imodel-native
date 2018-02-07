@@ -20,46 +20,13 @@ RequestHandler::RequestHandler()
 
 RequestHandler::~RequestHandler()
     {
-
     }
 
-bvector<Utf8String> ParseUrl(Request req) 
+void CreateTable(Utf8CP tableName, BentleyB0200::BeSQLite::Db& db, Utf8CP ddl) 
     {
-    Utf8String requestUrl = req.GetUrl();
-    bvector<Utf8String> tokens;
-    Utf8CP url = requestUrl.c_str();
-    BeStringUtilities::Split(url, "/", nullptr, tokens);
-    return tokens;
+    if (!db.TableExists(tableName))
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateTable(tableName, ddl));
     }
-
-Response ProjectSchemaClassiModelWithQuery()
-    {
-    /*Utf8CP url = "asd";
-    HttpResponseContentPtr respContent;
-    HttpBodyPtr body;
-    respContent->Create(body);
-    Response resp(respContent, url, ConnectionStatus::OK, HttpStatus::OK);*/
-    Response resp;
-    return resp;
-    }
-Response ProjectSchemaClassiModel()
-    {
-    Utf8CP url = "asd";
-    HttpResponseContentPtr respContent;
-    HttpBodyPtr body;
-    respContent->Create(body);
-    Response resp(respContent, url, ConnectionStatus::OK, HttpStatus::OK);
-    //Response resp;
-    return resp;
-    }
-
-Response GetProjectSchema(bvector<Utf8String> args) 
-    {
-    if (args.size() > 7)
-        return ProjectSchemaClassiModelWithQuery();
-    return ProjectSchemaClassiModel();
-    }
-
 Utf8String GetInstanceid(Utf8String str)
     {
     bvector<Utf8String> tokens;
@@ -77,179 +44,13 @@ Utf8String GetInstanceid(Utf8String str)
 
     return instanceid;
     }
-
-Response RequestHandler::DownloadiModel(bvector<Utf8String> args)
+bvector<Utf8String> ParseUrl(Request req) 
     {
-    //download by checking instanceid from db
-    Utf8String instanceid = GetInstanceid(args[2]);
-
-    BeFileName dbName("ServerRepo.db");
-    BeFileName dbPath(serverPath);
-    dbPath.AppendToPath(dbName);
-    BentleyB0200::BeSQLite::Db m_db;
-    CharCP filetoDownload;
-    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
-        {
-        Statement st;
-        st.Prepare(m_db, "Select Name from instances where instanceid = ?");
-        st.BindText(1, instanceid, Statement::MakeCopy::No);
-
-        printf("%d\n", st.Step());
-        //printf("Success\n");
-        filetoDownload = st.GetValueText(0);
-        //printf("%s\n", filetoDownload);
-
-
-        BeFileName downloadPath;
-        BeTest::GetHost().GetOutputRoot(downloadPath);
-        //outPath.AppendToPath(L"Server");
-        downloadPath.AppendToPath(L"iModelHub");
-        /*printf("%ls\n", downloadPath.GetWCharCP());
-        printf("%s\n", serverPath.c_str());
-        printf("%s\n", filetoDownload);*/
-        FakeServer::DownloadiModel(downloadPath, serverPath.c_str(), filetoDownload);
-        st.Finalize();
-        }
-
-    Response resp;
-    return resp;
-    }
-
-Response RequestHandler::PerformGetRequest(Request req)
-    {
-    Utf8String urlExpected("https://qa-imodelhubapi.bentley.com/v2.0/Plugins");
-    //identify the type of request
-    // do the specific operation by passing to the concerned function
-    // build up the response according to the action taken
-    // return response
-    bvector<Utf8String> args = ParseUrl(req);
-    //get request with Project Schema
-    Response resp;
-    /*if (args[5] == ServerSchema::Schema::Project)
-    resp = GetProjectSchema(args);*/
-    if (!req.GetUrl().CompareTo(urlExpected))
-        return RequestHandler::PluginRequest(req);
-    if (1)//detect imodelhub
-        resp = DownloadiModel(args);
-    //get request with iModel--Nr
-    return resp;
-    }
-DbResult RequestHandler::Initialize(BeFileName temporaryDir, BeSQLiteLib::LogErrors logSqliteErrors)
-    {
-    const DbResult stat = BeSQLiteLib::Initialize(temporaryDir, logSqliteErrors);
-    return stat;
-    }
-
-void CreateTable(Utf8CP tableName, BentleyB0200::BeSQLite::Db& db, Utf8CP ddl) 
-    {
-    if (!db.TableExists(tableName))
-        ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateTable(tableName, ddl));
-    }
-
-void RequestHandler::CheckDb() 
-    {
-    BentleyB0200::BeSQLite::Db m_db;
-    BeFileName dbName("ServerRepo.db");
-    BeFileName dbPath(serverPath);
-    dbPath.AppendToPath(dbName);
-    if (dbPath.DoesPathExist())
-        {
-        ASSERT_EQ(DbResult::BE_SQLITE_OK, m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)));
-        if(!m_db.TableExists("instances"))
-            CreateTable("instances", m_db, "instanceid STRING, className STRING, schemaName STRING, Description STRING, Name STRING, Initialized STRING");
-        if(!m_db.TableExists("users"))
-            CreateTable("users", m_db, "UserCreated STRING, CreatedDate STRING");
-        }
-    m_db.CloseDb();
-    }
-
-void RequestHandler::Insert(bvector<Utf8String> insertStr) 
-    {
-    BeFileName dbName("ServerRepo.db");
-    BeFileName dbPath(serverPath);
-    dbPath.AppendToPath(dbName);
-    BentleyB0200::BeSQLite::Db m_db;
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)));
-    //ASSERT_EQ(DbResult::BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO instances(instanceid, className, schemaName, Description, Name, Initialized) VALUES ('sa','sa', 'sa','sa','sa','sa')"));
-    Statement insertSt;
-    insertSt.Prepare(m_db, "INSERT INTO instances(instanceid, className, schemaName, Description, Name) VALUES (?,?,?,?,?)");
-    insertSt.BindText(1, insertStr[0], Statement::MakeCopy::No);
-    insertSt.BindText(2, insertStr[1], Statement::MakeCopy::No);
-    insertSt.BindText(3, insertStr[2], Statement::MakeCopy::No);
-    insertSt.BindText(4, insertStr[3], Statement::MakeCopy::No);
-    insertSt.BindText(5, insertStr[4], Statement::MakeCopy::No);
-    ASSERT_EQ(BE_SQLITE_DONE, insertSt.Step());
-    insertSt.Finalize();
-/*
-    ASSERT_EQ(BE_SQLITE_OK, m_db.DropTable("instances"));
-    ASSERT_EQ(BE_SQLITE_OK, m_db.DropTable("users"));*/
-    m_db.CloseDb();
-    }
-
-
-Http::Response StubJsonHttpResponse(HttpStatus httpStatus, Utf8CP url, Utf8StringCR body, const bmap<Utf8String, Utf8String>& headers = bmap<Utf8String, Utf8String> ())
-    {
-    auto newHeaders = headers;
-    newHeaders["Content-Type"] = "application/json";
-    ConnectionStatus status = ConnectionStatus::OK;
-    auto content = HttpResponseContent::Create(HttpStringBody::Create(body));
-    for (const auto& header : headers)
-        {
-        content->GetHeaders().SetValue(header.first, header.second);
-        }
-    return Http::Response(content, url, status, httpStatus);
-    }
-
-Response RequestHandler::CreateiModel(Request req)
-    {
-
-    
-    HttpBodyPtr reqBody = req.GetRequestBody();
-    char readBuff[1000] ;
-    size_t buffSize = 100000;
-    reqBody->Read(readBuff, buffSize);
-    Utf8String reqBodyRead(readBuff);
-
-    Json::Reader reader;
-    Json::Value settings;
-    reader.Parse(reqBodyRead, settings);
-    BeGuid projGuid(true);
-    printf("%s\n", projGuid.ToString().c_str());
-    bvector<Utf8String> input = {   projGuid.ToString(),  
-        settings["instance"]["className"].asString(),
-        settings["instance"]["schemaName"].asString(),
-        settings["instance"]["properties"]["Description"].asString(), 
-        settings["instance"]["properties"]["Name"].asString()};
-
-    Utf8String fileName(settings["instance"]["properties"]["Name"].asString());
-    BeFileName fileToCreate(fileName);
-    BeFileName servPath(serverPath);
-    if (BeFileNameStatus::Success == FakeServer::CreateiModel(servPath, fileToCreate.GetWCharCP()))
-        {
-        CheckDb();
-        Insert(input);
-
-        }
-
-
-    Json::Value iModelCreation(Json::objectValue);
-    JsonValueR changedInstance = iModelCreation[ServerSchema::ChangedInstance] = Json::objectValue;
-    changedInstance["change"] = "Created";
-    JsonValueR InstanceAfterChange = changedInstance[ServerSchema::InstanceAfterChange] = Json::objectValue;
-    InstanceAfterChange[ServerSchema::InstanceId] = projGuid.ToString();
-    InstanceAfterChange[ServerSchema::SchemaName] = ServerSchema::Schema::Project;
-    InstanceAfterChange[ServerSchema::ClassName] = ServerSchema::Class::iModel;
-    JsonValueR properties = InstanceAfterChange[ServerSchema::Properties] = Json::objectValue;
-    properties[ServerSchema::Property::Description] = settings["instance"]["properties"]["Description"].asString();
-    properties[ServerSchema::Property::Name] = settings["instance"]["properties"]["Name"].asString();
-    properties[ServerSchema::Property::UserCreated] = "";
-
-
-    Utf8String contentToWrite(Json::FastWriter().write(iModelCreation));
-
-    //Response resp(m_content, req.GetUrl().c_str(),ConnectionStatus::OK, HttpStatus::Created);
-
-    return StubJsonHttpResponse(HttpStatus::Created, req.GetUrl().c_str(), contentToWrite);
+    Utf8String requestUrl = req.GetUrl();
+    bvector<Utf8String> tokens;
+    Utf8CP url = requestUrl.c_str();
+    BeStringUtilities::Split(url, "/", nullptr, tokens);
+    return tokens;
     }
 
 Response RequestHandler::PluginRequest(Request req)
@@ -288,7 +89,7 @@ Response RequestHandler::BuddiRequest(Request req)
 
 Response RequestHandler::ImsTokenRequest(Request req) 
     {
-    
+
     const bmap<Utf8String, Utf8String>& headers = bmap<Utf8String, Utf8String>();
     auto newHeaders = headers;
     newHeaders["Content-Type"] = "application/json";
@@ -301,6 +102,233 @@ Response RequestHandler::ImsTokenRequest(Request req)
     return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
     }
 
+Response ProjectSchemaClassiModelWithQuery()
+    {
+    /*Utf8CP url = "asd";
+    HttpResponseContentPtr respContent;
+    HttpBodyPtr body;
+    respContent->Create(body);
+    Response resp(respContent, url, ConnectionStatus::OK, HttpStatus::OK);*/
+    Response resp;
+    return resp;
+    }
+
+Response ProjectSchemaClassiModel()
+    {
+    Utf8CP url = "asd";
+    HttpResponseContentPtr respContent;
+    HttpBodyPtr body;
+    respContent->Create(body);
+    Response resp(respContent, url, ConnectionStatus::OK, HttpStatus::OK);
+    //Response resp;
+    return resp;
+    }
+
+Response GetProjectSchema(bvector<Utf8String> args) 
+    {
+    if (args.size() > 7)
+        return ProjectSchemaClassiModelWithQuery();
+    return ProjectSchemaClassiModel();
+    }
+
+DbResult RequestHandler::Initialize(BeFileName temporaryDir, BeSQLiteLib::LogErrors logSqliteErrors)
+    {
+    const DbResult stat = BeSQLiteLib::Initialize(temporaryDir, logSqliteErrors);
+    return stat;
+    }
+
+void RequestHandler::CheckDb() 
+    {
+    BentleyB0200::BeSQLite::Db m_db;
+    BeFileName dbName("ServerRepo.db");
+    BeFileName dbPath(serverPath);
+    dbPath.AppendToPath(dbName);
+    if (dbPath.DoesPathExist())
+        {
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)));
+        if(!m_db.TableExists("instances"))
+            CreateTable("instances", m_db, "instanceid STRING, className STRING, schemaName STRING, Description STRING, Name STRING, Initialized STRING");
+        if(!m_db.TableExists("users"))
+            CreateTable("users", m_db, "UserCreated STRING, CreatedDate STRING");
+        }
+    m_db.CloseDb();
+    }
+
+void RequestHandler::Insert(bvector<Utf8String> insertStr) 
+    {
+    BeFileName dbName("ServerRepo.db");
+    BeFileName dbPath(serverPath);
+    dbPath.AppendToPath(dbName);
+    BentleyB0200::BeSQLite::Db m_db;
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)));
+    //ASSERT_EQ(DbResult::BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO instances(instanceid, className, schemaName, Description, Name, Initialized) VALUES ('sa','sa', 'sa','sa','sa','sa')"));
+    Statement insertSt;
+    insertSt.Prepare(m_db, "INSERT INTO instances(instanceid, className, schemaName, Description, Name) VALUES (?,?,?,?,?)");
+    insertSt.BindText(1, insertStr[0], Statement::MakeCopy::No);
+    insertSt.BindText(2, insertStr[1], Statement::MakeCopy::No);
+    insertSt.BindText(3, insertStr[2], Statement::MakeCopy::No);
+    insertSt.BindText(4, insertStr[3], Statement::MakeCopy::No);
+    insertSt.BindText(5, insertStr[4], Statement::MakeCopy::No);
+    ASSERT_EQ(BE_SQLITE_DONE, insertSt.Step());
+    insertSt.Finalize();
+    /*
+    ASSERT_EQ(BE_SQLITE_OK, m_db.DropTable("instances"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.DropTable("users"));*/
+    m_db.CloseDb();
+    }
+
+
+Http::Response StubJsonHttpResponse(HttpStatus httpStatus, Utf8CP url, Utf8StringCR body, const bmap<Utf8String, Utf8String>& headers = bmap<Utf8String, Utf8String> ())
+    {
+    auto newHeaders = headers;
+    newHeaders["Content-Type"] = "application/json";
+    ConnectionStatus status = ConnectionStatus::OK;
+    auto content = HttpResponseContent::Create(HttpStringBody::Create(body));
+    for (const auto& header : headers)
+        {
+        content->GetHeaders().SetValue(header.first, header.second);
+        }
+    return Http::Response(content, url, status, httpStatus);
+    }
+
+Response RequestHandler::CreateiModel(Request req)
+    {
+
+    HttpBodyPtr reqBody = req.GetRequestBody();
+    char readBuff[1000] ;
+    size_t buffSize = 100000;
+    reqBody->Read(readBuff, buffSize);
+    Utf8String reqBodyRead(readBuff);
+
+    Json::Reader reader;
+    Json::Value settings;
+    reader.Parse(reqBodyRead, settings);
+    BeGuid projGuid(true);
+    printf("%s\n", projGuid.ToString().c_str());
+    bvector<Utf8String> input = {   projGuid.ToString(),  
+        settings["instance"]["className"].asString(),
+        settings["instance"]["schemaName"].asString(),
+        settings["instance"]["properties"]["Description"].asString(),
+        settings["instance"]["properties"]["Name"].asString()};
+
+    Utf8String fileName(settings["instance"]["properties"]["Name"].asString());
+    BeFileName fileToCreate(fileName);
+    BeFileName servPath(serverPath);
+    if (BeFileNameStatus::Success == FakeServer::CreateiModel(servPath, fileToCreate.GetWCharCP()))
+        {
+        CheckDb();
+        Insert(input);
+
+        }
+    Json::Value iModelCreation(Json::objectValue);
+    JsonValueR changedInstance = iModelCreation[ServerSchema::ChangedInstance] = Json::objectValue;
+    changedInstance["change"] = "Created";
+    JsonValueR InstanceAfterChange = changedInstance[ServerSchema::InstanceAfterChange] = Json::objectValue;
+    InstanceAfterChange[ServerSchema::InstanceId] = projGuid.ToString();
+    InstanceAfterChange[ServerSchema::SchemaName] = ServerSchema::Schema::Project;
+    InstanceAfterChange[ServerSchema::ClassName] = ServerSchema::Class::iModel;
+    JsonValueR properties = InstanceAfterChange[ServerSchema::Properties] = Json::objectValue;
+    properties[ServerSchema::Property::Description] = settings["instance"]["properties"]["Description"].asString();
+    properties[ServerSchema::Property::Name] = settings["instance"]["properties"]["Name"].asString();
+    properties[ServerSchema::Property::UserCreated] = "";
+
+
+    Utf8String contentToWrite(Json::FastWriter().write(iModelCreation));
+
+    //Response resp(m_content, req.GetUrl().c_str(),ConnectionStatus::OK, HttpStatus::Created);
+
+    return StubJsonHttpResponse(HttpStatus::Created, req.GetUrl().c_str(), contentToWrite);
+    }
+
+Response RequestHandler::UploadNewSeedFile(Request req) 
+    {
+    bvector<Utf8String> args = ParseUrl(req);
+    Utf8String instanceid = GetInstanceid(args[2]);
+
+    //req.GetRequestBody()->GetFilePath();
+
+    BeFileName dbName("ServerRepo.db");
+    BeFileName dbPath(serverPath);
+    dbPath.AppendToPath(dbName);
+
+    BentleyB0200::BeSQLite::Db m_db;
+    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
+        {
+        size_t count;
+        Statement st;
+        st.Prepare(m_db, "Select COUNT(*) from instances where instanceid = ?");
+        st.BindText(1, instanceid, Statement::MakeCopy::No);
+
+        printf("%d\n", st.Step());
+        
+        /*if (!st.GetValueInt(0))
+            FakeServer::CreateiModelFromSeed(downloadPath, serverPath.c_str(), filetoDownload);*/
+        st.Finalize();
+        }
+    m_db.CloseDb();
+    Response resp;
+    return resp;
+    }
+Response RequestHandler::DownloadiModel(bvector<Utf8String> args)
+    {
+    //download by checking instanceid from db
+    Utf8String instanceid = GetInstanceid(args[2]);
+
+    BeFileName dbName("ServerRepo.db");
+    BeFileName dbPath(serverPath);
+    dbPath.AppendToPath(dbName);
+    BentleyB0200::BeSQLite::Db m_db;
+    CharCP filetoDownload;
+    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
+        {
+        Statement st;
+        st.Prepare(m_db, "Select Name from instances where instanceid = ?");
+        st.BindText(1, instanceid, Statement::MakeCopy::No);
+
+        printf("%d\n", st.Step());
+        //printf("Success\n");
+        filetoDownload = st.GetValueText(0);
+        //printf("%s\n", filetoDownload);
+
+
+        BeFileName downloadPath;
+        BeTest::GetHost().GetOutputRoot(downloadPath);
+        //outPath.AppendToPath(L"Server");
+        downloadPath.AppendToPath(L"iModelHub");
+        /*printf("%ls\n", downloadPath.GetWCharCP());
+        printf("%s\n", serverPath.c_str());
+        printf("%s\n", filetoDownload);*/
+        FakeServer::DownloadiModel(downloadPath, serverPath.c_str(), filetoDownload);
+        st.Finalize();
+        }
+
+    Response resp;
+    return resp;
+    }
+
+Response RequestHandler::CreateFileInstance(Request req) 
+    {
+    return Response();
+    }
+Response RequestHandler::PerformGetRequest(Request req)
+    {
+    Utf8String urlExpected("https://qa-imodelhubapi.bentley.com/v2.0/Plugins");
+    //identify the type of request
+    // do the specific operation by passing to the concerned function
+    // build up the response according to the action taken
+    // return response
+    bvector<Utf8String> args = ParseUrl(req);
+    //get request with Project Schema
+    Response resp;
+    /*if (args[5] == ServerSchema::Schema::Project)
+    resp = GetProjectSchema(args);*/
+    if (!req.GetUrl().CompareTo(urlExpected))
+        return RequestHandler::PluginRequest(req);
+    if (req.GetUrl().Contains("https://imodelhubqasa01.blob.core.windows.net/imodelhub"))//detect imodelhub
+        resp = DownloadiModel(args);
+    //get request with iModel--Nr
+    return resp;
+    }
 Response RequestHandler::PerformOtherRequest(Request req)
     {
     printf("%s\n", req.GetUrl().c_str());
@@ -313,5 +341,10 @@ Response RequestHandler::PerformOtherRequest(Request req)
         return RequestHandler::ImsTokenRequest(req);
     if (!req.GetUrl().CompareTo(urlExpected3))
         return RequestHandler::ImsTokenRequest(req);
-    return RequestHandler::CreateiModel(req);
+
+    if (req.GetUrl().Contains("Repositories/Project") && req.GetUrl().Contains("ProjectScope/iModel"))
+        return RequestHandler::CreateiModel(req);
+    if (req.GetUrl().Contains("Repositories/iModel") && req.GetUrl().Contains("iModelScope/SeedFile"))
+        return RequestHandler::CreateFileInstance(req);
+    return RequestHandler::UploadNewSeedFile(req);
     }
