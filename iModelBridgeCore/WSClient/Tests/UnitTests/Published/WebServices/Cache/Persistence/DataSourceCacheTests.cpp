@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Persistence/DataSourceCacheTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -209,6 +209,55 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasWithDeletedPropertyPassedToDat
 
     ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema2}));
     EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("UpdateSchema"));
+    }
+
+TEST_F(DataSourceCacheTests, UpdateSchemas_NewSchemaWithECDbMapSharedTableCA_SuccessAndSchemasAccessable_Graphite0505OnlyTest)
+    {
+    // Verify if schema prepared for BIM02 ECDb can be consumed by Graphite0505 ECDb as well
+    auto cache = GetTestCache();
+
+    auto schema1 = ParseSchema(
+        R"xml(<ECSchema schemaName="UpdateSchema" nameSpacePrefix="US" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+            <ECClass typeName="TestClass" >
+                <ECProperty propertyName="A" typeName="string" />
+            </ECClass>
+            <ECClass typeName="TestClass2" >
+                <BaseClass>TestClass</BaseClass>
+                <ECProperty propertyName="B" typeName="string" />
+            </ECClass>
+        </ECSchema>)xml");
+
+    auto schema2 = ParseSchema(
+        R"xml(<ECSchema schemaName="UpdateSchema" nameSpacePrefix="US" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+            <ECClass typeName="TestClass" >
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.01.00">
+                        <MapStrategy>
+                            <Strategy>SharedTable</Strategy>
+                            <AppliesToSubclasses>True</AppliesToSubclasses>
+                        </MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="A" typeName="string" />
+            </ECClass>
+            <ECClass typeName="TestClass2" >
+                <BaseClass>TestClass</BaseClass>
+                <ECProperty propertyName="B" typeName="string" />
+            </ECClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema1}));
+    ASSERT_TRUE(nullptr != cache->GetAdapter().GetECSchema("UpdateSchema"));
+
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot(nullptr, {"UpdateSchema.TestClass", "Foo"}));
+    ASSERT_TRUE(cache->FindInstance({"UpdateSchema.TestClass", "Foo"}).IsValid());
+
+    ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema2}));
+    EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("UpdateSchema"));
+
+    ASSERT_TRUE(cache->FindInstance({"UpdateSchema.TestClass", "Foo"}).IsValid());
     }
 
 TEST_F(DataSourceCacheTests, UpdateSchemas_NullSchemaPassed_Error)
