@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WebApi/WebApiV1.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -939,11 +939,13 @@ AsyncTaskPtr<WSChangesetResult> WebApiV1::SendChangesetRequest
 (
 HttpBodyPtr changeset,
 HttpRequest::ProgressCallbackCR uploadProgressCallback,
+IWSRepositoryClient::RequestOptionsPtr options,
 ICancellationTokenPtr ct
 ) const
     {
     return CreateCompletedAsyncTask(WSChangesetResult::Error(WSError::CreateFunctionalityNotSupportedError()));
     }
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Petras.Sukys    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -953,6 +955,7 @@ ObjectIdCR relatedObjectId,
 JsonValueCR objectCreationJson,
 BeFileNameCR filePath,
 HttpRequest::ProgressCallbackCR uploadProgressCallback,
+IWSRepositoryClient::RequestOptionsPtr options,
 ICancellationTokenPtr ct
 ) const
     {
@@ -967,6 +970,7 @@ AsyncTaskPtr<WSCreateObjectResult> WebApiV1::SendCreateObjectRequest
 JsonValueCR objectCreationJson,
 BeFileNameCR filePath,
 HttpRequest::ProgressCallbackCR uploadProgressCallback,
+IWSRepositoryClient::RequestOptionsPtr options,
 ICancellationTokenPtr ct
 ) const
     {
@@ -1008,6 +1012,7 @@ JsonValueCR propertiesJson,
 Utf8String eTag,
 BeFileNameCR filePath,
 HttpRequest::ProgressCallbackCR uploadProgressCallback,
+IWSRepositoryClient::RequestOptionsPtr options,
 ICancellationTokenPtr ct
 ) const
     {
@@ -1041,6 +1046,7 @@ ICancellationTokenPtr ct
 AsyncTaskPtr<WSDeleteObjectResult> WebApiV1::SendDeleteObjectRequest
 (
 ObjectIdCR objectId,
+IWSRepositoryClient::RequestOptionsPtr options,
 ICancellationTokenPtr ct
 ) const
     {
@@ -1067,6 +1073,7 @@ AsyncTaskPtr<WSUpdateFileResult> WebApiV1::SendUpdateFileRequest
 ObjectIdCR objectId,
 BeFileNameCR filePath,
 HttpRequest::ProgressCallbackCR uploadProgressCallback,
+IWSRepositoryClient::RequestOptionsPtr options,
 ICancellationTokenPtr ct
 ) const
     {

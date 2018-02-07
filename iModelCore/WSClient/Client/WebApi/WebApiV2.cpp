@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WebApi/WebApiV2.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -18,7 +18,7 @@
 #define VALUE_FileAccessUrlType_Azure   "AzureBlobSasUrl"
 #define VALUE_True                      "true"
 
-const BeVersion WebApiV2::s_maxTestedWebApi(2, 5);
+const BeVersion WebApiV2::s_maxTestedWebApi(2, 7);
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -26,7 +26,8 @@ const BeVersion WebApiV2::s_maxTestedWebApi(2, 5);
 WebApiV2::WebApiV2(std::shared_ptr<const ClientConfiguration> configuration, WSInfo info) :
 WebApi(configuration),
 m_info(info),
-m_azureClient(AzureBlobStorageClient::Create(configuration->GetHttpHandler()))
+m_azureClient(AzureBlobStorageClient::Create(configuration->GetHttpHandler())),
+m_jobApi(JobApi::Create(configuration))
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -499,13 +500,12 @@ AsyncTaskPtr<WSChangesetResult> WebApiV2::SendChangesetRequest
 (
 HttpBodyPtr changeset,
 HttpRequest::ProgressCallbackCR uploadProgressCallback,
+IWSRepositoryClient::RequestOptionsPtr options,
 ICancellationTokenPtr ct
 ) const
     {
     if (GetMaxWebApiVersion() < BeVersion(2, 1))
-        {
         return CreateCompletedAsyncTask(WSChangesetResult::Error(WSError::CreateFunctionalityNotSupportedError()));
-        }
 
     Utf8String url = GetUrl("$changeset");
     HttpRequest request = m_configuration->GetHttpClient().CreatePostRequest(url);
@@ -516,13 +516,18 @@ ICancellationTokenPtr ct
     request.SetCancellationToken(ct);
     request.SetUploadProgressCallback(uploadProgressCallback);
 
-    return request.PerformAsync()->Then<WSChangesetResult>([this] (HttpResponse& response)
+    return m_jobApi->ExecuteViaJob(request, m_info, options ? options->GetJobOptions() : nullptr, ct)
+        ->Then<WSChangesetResult>([=] (HttpJobResult& response)
         {
-        if (HttpStatus::OK != response.GetHttpStatus())
+        if (!response.IsSuccess())
+            return WSChangesetResult::Error(response.GetError());
+
+        auto httpResponse = response.GetValue();
+        if (HttpStatus::OK != httpResponse.GetHttpStatus())
             {
-            return WSChangesetResult::Error(response);
+            return WSChangesetResult::Error(httpResponse);
             }
-        return WSChangesetResult::Success(response.GetContent()->GetBody());
+        return WSChangesetResult::Success(httpResponse.GetContent()->GetBody());
         });
     }
 
@@ -534,10 +539,11 @@ AsyncTaskPtr<WSCreateObjectResult> WebApiV2::SendCreateObjectRequest
 JsonValueCR objectCreationJson,
 BeFileNameCR filePath,
 HttpRequest::ProgressCallbackCR uploadProgressCallback,
+IWSRepositoryClient::RequestOptionsPtr options,
 ICancellationTokenPtr ct
 ) const
     {
-    return SendCreateObjectRequest(ObjectId(), objectCreationJson, filePath, uploadProgressCallback, ct);
+    return SendCreateObjectRequest(ObjectId(), objectCreationJson, filePath, uploadProgressCallback, options, ct);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -549,6 +555,7 @@ ObjectIdCR relatedObjectId,
 JsonValueCR objectCreationJson,
 BeFileNameCR filePath,
 HttpRequest::ProgressCallbackCR uploadProgressCallback,
+IWSRepositoryClient::RequestOptionsPtr options,
 ICancellationTokenPtr ct
 ) const
     {
@@ -576,7 +583,7 @@ ICancellationTokenPtr ct
 
         url += "/";
 
-        if (schemaName.compare(createdClassSchema.asCString()) != 0 )
+        if (schemaName.compare(createdClassSchema.asCString()) != 0)
             url += createdClassSchema.asString() + ".";
 
         url += createdClassName.asString();
@@ -595,18 +602,20 @@ ICancellationTokenPtr ct
 
     request.SetHandshakeRequestBody(HttpStringBody::Create(Json::FastWriter().write(objectCreationJson)), "application/json");
     if (!filePath.empty())
-        {
         request.SetRequestBody(HttpFileBody::Create(filePath), Utf8String(filePath.GetFileNameAndExtension()));
-        }
+
     request.SetCancellationToken(ct);
     request.SetUploadProgressCallback(uploadProgressCallback);
-
-    return request.PerformAsync()->Then<WSCreateObjectResult>([this, instanceId] (HttpResponse& httpResponse)
+    return m_jobApi->ExecuteViaJob(request, m_info, options ? options->GetJobOptions() : nullptr, ct)
+        ->Then<WSCreateObjectResult>([=] (HttpJobResult& response)
         {
+        if (!response.IsSuccess())
+            return WSCreateObjectResult::Error(response.GetError());
+
         if (instanceId.empty())
-            return ResolveCreateObjectResponse(httpResponse);
+            return ResolveCreateObjectResponse(response.GetValue());
         else
-            return ResolveUpdateObjectResponse(httpResponse);
+            return ResolveUpdateObjectResponse(response.GetValue());
         });
     }
 
@@ -620,6 +629,7 @@ JsonValueCR propertiesJson,
 Utf8String eTag,
 BeFileNameCR filePath,
 HttpRequest::ProgressCallbackCR uploadProgressCallback,
+IWSRepositoryClient::RequestOptionsPtr options,
 ICancellationTokenPtr ct
 ) const
     {
@@ -648,15 +658,18 @@ ICancellationTokenPtr ct
 
     request.SetHandshakeRequestBody(HttpStringBody::Create(Json::FastWriter().write(updateJson)), "application/json");
     if (!filePath.empty())
-        {
         request.SetRequestBody(HttpFileBody::Create(filePath), Utf8String(filePath.GetFileNameAndExtension()));
-        }
+
     request.SetCancellationToken(ct);
     request.SetUploadProgressCallback(uploadProgressCallback);
 
-    return request.PerformAsync()->Then<WSUpdateObjectResult>([this] (HttpResponse& httpResponse)
+    return m_jobApi->ExecuteViaJob(request, m_info, options ? options->GetJobOptions() : nullptr, ct)
+        ->Then<WSUpdateObjectResult>([=] (HttpJobResult& response)
         {
-        return ResolveUpdateObjectResponse(httpResponse);
+        if (!response.IsSuccess())
+            return WSUpdateObjectResult::Error(response.GetError());
+
+        return ResolveUpdateObjectResponse(response.GetValue());
         });
     }
 
@@ -666,16 +679,20 @@ ICancellationTokenPtr ct
 AsyncTaskPtr<WSDeleteObjectResult> WebApiV2::SendDeleteObjectRequest
 (
 ObjectIdCR objectId,
+IWSRepositoryClient::RequestOptionsPtr options,
 ICancellationTokenPtr ct
 ) const
     {
     Utf8String url = GetUrl(CreateObjectSubPath(objectId));
     HttpRequest request = m_configuration->GetHttpClient().CreateRequest(url, "DELETE");
 
-    request.SetCancellationToken(ct);
-
-    return request.PerformAsync()->Then<WSDeleteObjectResult>([] (HttpResponse& httpResponse)
+    return m_jobApi->ExecuteViaJob(request, m_info, options ? options->GetJobOptions() : nullptr, ct)
+        ->Then<WSDeleteObjectResult>([=] (HttpJobResult& response)
         {
+        if (!response.IsSuccess())
+            return WSDeleteObjectResult::Error(response.GetError());
+
+        auto httpResponse = response.GetValue();
         if (HttpStatus::OK == httpResponse.GetHttpStatus())
             {
             return WSDeleteObjectResult::Success();
@@ -692,6 +709,7 @@ AsyncTaskPtr<WSUpdateFileResult> WebApiV2::SendUpdateFileRequest
 ObjectIdCR objectId,
 BeFileNameCR filePath,
 HttpRequest::ProgressCallbackCR uploadProgressCallback,
+IWSRepositoryClient::RequestOptionsPtr options,
 ICancellationTokenPtr ct
 ) const
     {
@@ -714,53 +732,82 @@ ICancellationTokenPtr ct
         }
 
     auto finalResult = std::make_shared<WSUpdateFileResult>();
-    return request.PerformAsync()->Then([=] (HttpResponse& response)
+    return m_jobApi
+        ->ExecuteViaJob(request, m_info, options ? options->GetJobOptions() : nullptr, ct)
+        ->Then([=] (HttpJobResult& response)
         {
-        if (HttpStatus::OK == response.GetHttpStatus())
+        if (!response.IsSuccess())
             {
-            finalResult->SetSuccess(ResolveUploadResponse(response));
+            finalResult->SetError(response.GetError());
             return;
             }
 
-        if (HttpStatus::TemporaryRedirect != response.GetHttpStatus())
+        auto httpResponse = response.GetValue();
+        ResolveUpdateFileResponse(httpResponse, url, filePath, uploadProgressCallback, ct)
+            ->Then([=] (WSUpdateFileResult result)
             {
-            finalResult->SetError(response);
-            return;
-            }
-
-        Utf8String redirectUrl = response.GetHeaders().GetLocation();
-        Utf8String redirectType = response.GetHeaders().GetValue(HEADER_MasFileAccessUrlType);
-        Utf8String confirmationId = response.GetHeaders().GetValue(HEADER_MasUploadConfirmationId);
-
-        if (redirectType != VALUE_FileAccessUrlType_Azure)
-            {
-            LOG.errorv("Header field '%s' contains not supported value: '%s'", HEADER_MasFileAccessUrlType, redirectType.c_str());
-            finalResult->SetError(WSError::CreateServerNotSupportedError());
-            return;
-            }
-
-        m_azureClient->SendUpdateFileRequest(redirectUrl, filePath, uploadProgressCallback, ct)->Then([=] (AzureResult azureResult)
-            {
-            if (!azureResult.IsSuccess())
-                {
-                finalResult->SetError(azureResult.GetError());
-                return;
-                }
-                
-            finalResult->SetSuccess({nullptr, azureResult.GetValue().GetETag()});
-            if (confirmationId.empty())
-                return;
-
-            HttpRequest request = m_configuration->GetHttpClient().CreateRequest(url, "PUT");
-            request.GetHeaders().SetValue(HEADER_MasUploadConfirmationId, confirmationId);
-            request.PerformAsync()->Then([=] (HttpResponse& response)
-                {
-                if (HttpStatus::OK != response.GetHttpStatus())
-                    finalResult->SetError(response);
-                });
+            *finalResult = result;
             });
-        })
-            ->Then<WSUpdateFileResult>([=]
+
+        })->Then<WSUpdateFileResult>([=]
+            {
+            return *finalResult;
+            });
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                julius.cepukenas   12/2017
++--------------------------------------------------------------------------------------*/
+AsyncTaskPtr<WSCreateObjectResult> WebApiV2::ResolveUpdateFileResponse
+(
+HttpResponse& httpResponse,
+Utf8StringCR url,
+BeFileNameCR filePath,
+HttpRequest::ProgressCallbackCR uploadProgressCallback,
+ICancellationTokenPtr ct
+) const
+    {
+    if (HttpStatus::OK == httpResponse.GetHttpStatus())
+        {
+        return CreateCompletedAsyncTask(WSCreateObjectResult::Success(ResolveUploadResponse(httpResponse)));
+        }
+
+    if (HttpStatus::TemporaryRedirect != httpResponse.GetHttpStatus())
+        {
+        return CreateCompletedAsyncTask(WSCreateObjectResult::Error(httpResponse));
+        }
+
+    Utf8String redirectUrl = httpResponse.GetHeaders().GetLocation();
+    Utf8String redirectType = httpResponse.GetHeaders().GetValue(HEADER_MasFileAccessUrlType);
+    Utf8String confirmationId = httpResponse.GetHeaders().GetValue(HEADER_MasUploadConfirmationId);
+
+    if (redirectType != VALUE_FileAccessUrlType_Azure)
+        {
+        LOG.errorv("Header field '%s' contains not supported value: '%s'", HEADER_MasFileAccessUrlType, redirectType.c_str());
+        return CreateCompletedAsyncTask(WSCreateObjectResult::Error(WSError::CreateServerNotSupportedError()));
+        }
+
+    auto finalResult = std::make_shared<WSCreateObjectResult>();
+    return m_azureClient->SendUpdateFileRequest(redirectUrl, filePath, uploadProgressCallback, ct)->Then([=] (AzureResult azureResult)
+        {
+        if (!azureResult.IsSuccess())
+            {
+            finalResult->SetError(azureResult.GetError());
+            return;
+            }
+
+        finalResult->SetSuccess({nullptr, azureResult.GetValue().GetETag()});
+        if (confirmationId.empty())
+            return;
+
+        HttpRequest request = m_configuration->GetHttpClient().CreateRequest(url, "PUT");
+        request.GetHeaders().SetValue(HEADER_MasUploadConfirmationId, confirmationId);
+        request.PerformAsync()->Then([=] (HttpResponse& response)
+            {
+            if (HttpStatus::OK != response.GetHttpStatus())
+                finalResult->SetError(response);
+            });
+        })->Then<WSCreateObjectResult>([=]
             {
             return *finalResult;
             });

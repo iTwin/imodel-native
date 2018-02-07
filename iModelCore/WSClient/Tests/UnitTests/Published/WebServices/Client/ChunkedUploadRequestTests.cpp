@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/ChunkedUploadRequestTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -159,4 +159,73 @@ TEST_F(ChunkedUploadRequestTests, PerformAsync_SecondResponseWithPreconditionFai
         });
 
     EXPECT_EQ(ConnectionStatus::Canceled, request.PerformAsync()->GetResult().GetConnectionStatus());
+    }
+
+TEST_F(ChunkedUploadRequestTests, PerformAsync_LastRequestHeadersAdded_HeadersCorrect)
+    {
+    ChunkedUploadRequest request("PUT", "http://foo.com", GetClient());
+    request.GetLastRequestHeaders().AddValue("A", "1");
+
+    GetHandler().ExpectOneRequest().ForAnyRequest([] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("1", request.GetHeaders().GetValue("A"));
+        return StubHttpResponse(ConnectionStatus::OK);
+        });
+
+    request.PerformAsync()->Wait();
+    }
+
+TEST_F(ChunkedUploadRequestTests, PerformAsync_RequestBodySpecifiedLastRequestHeadersAdded_HeadersCorrect)
+    {
+    ChunkedUploadRequest request("PUT", "http://foo.com", GetClient());
+
+    request.SetRequestBody(HttpStringBody::Create("abcd"), nullptr);
+    request.GetLastRequestHeaders().AddValue("A", "1");
+
+    GetHandler().ExpectOneRequest().ForAnyRequest([] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("1", request.GetHeaders().GetValue("A"));
+        return StubHttpResponse(ConnectionStatus::OK);
+        });
+
+    request.PerformAsync()->Wait();
+    }
+
+TEST_F(ChunkedUploadRequestTests, PerformAsync_HandshakeRequestBodySpecifiedLastRequestHeadersAdded_HeadersCorrect)
+    {
+    ChunkedUploadRequest request("PUT", "http://foo.com", GetClient());
+
+    request.SetHandshakeRequestBody(HttpStringBody::Create("abcd"), nullptr);
+    request.GetLastRequestHeaders().AddValue("A", "1");
+
+    GetHandler().ExpectOneRequest().ForAnyRequest([] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("1", request.GetHeaders().GetValue("A"));
+        return StubHttpResponse(ConnectionStatus::OK);
+        });
+
+    request.PerformAsync()->Wait();
+    }
+
+TEST_F(ChunkedUploadRequestTests, PerformAsync_ResponseToChunkedLastRequestHeadersAdded_HeadersCorrect)
+    {
+    ChunkedUploadRequest request("PUT", "http://foo.com", GetClient());
+    request.SetHandshakeRequestBody(HttpStringBody::Create("abcd"), nullptr);
+    request.SetRequestBody(HttpStringBody::Create("abcd"), nullptr);
+    request.GetLastRequestHeaders().AddValue("A", "1");
+
+    GetHandler()
+        .ExpectRequests(2)
+        .ForRequest(1, [] (HttpRequestCR request)
+            {
+            EXPECT_STREQ(nullptr, request.GetHeaders().GetValue("A"));
+            return StubHttpResponse(HttpStatus::ResumeIncomplete, "", {{"ETag", "uploadTag"}, {"Range", "bytes=0-2"}});
+            })
+        .ForRequest(2, [] (HttpRequestCR request)
+            {
+            EXPECT_STREQ("1", request.GetHeaders().GetValue("A"));
+            return StubHttpResponse(HttpStatus::OK);
+            });
+
+    EXPECT_EQ(HttpStatus::OK, request.PerformAsync()->GetResult().GetHttpStatus());
     }

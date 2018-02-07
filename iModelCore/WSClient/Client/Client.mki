@@ -2,7 +2,7 @@
 #
 #     $Source: Client/Client.mki $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -24,6 +24,7 @@ ClientMkiHeaders =  $(ClientMkiPublicApiDir)ClientInfo.h                        
                     $(ClientMkiPublicApiDir)WSChangeset.h                       \
                     $(ClientMkiPublicApiDir)WSClient.h                          \
                     $(ClientMkiPublicApiDir)WSError.h                           \
+                    $(ClientMkiPublicApiDir)WSJob.h                             \
                     $(ClientMkiPublicApiDir)WSInfo.h                            \
                     $(ClientMkiPublicApiDir)WSQuery.h                           \
                     $(ClientMkiPublicApiDir)WSRepository.h                      \
@@ -38,6 +39,7 @@ ClientMkiHeaders =  $(ClientMkiPublicApiDir)ClientInfo.h                        
                     $(ClientMkiSourceDir)WebApi/WebApiV1.h                      \
                     $(ClientMkiSourceDir)WebApi/WebApiV1BentleyConnect.h        \
                     $(ClientMkiSourceDir)WebApi/WebApiV2.h                      \
+                    $(ClientMkiSourceDir)WebApi/WebApiV2Utils/JobApi.h         \
                     $(ClientMkiSourceDir)WSError.xliff.h                         
 
 #----------------------------------------------------------------------
@@ -100,6 +102,8 @@ $(o)WSRepositoryClient$(oext)               : $(ClientMkiSourceDir)WSRepositoryC
 
 $(o)WSFileResponse$(oext)                   : $(ClientMkiSourceDir)Response/WSFileResponse.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
+$(o)WSJob$(oext)                            : $(ClientMkiSourceDir)WSJob.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
 $(o)WSObjectsReader$(oext)                  : $(ClientMkiSourceDir)Response/WSObjectsReader.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)WSObjectsReaderV1$(oext)                : $(ClientMkiSourceDir)Response/WSObjectsReaderV1.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
@@ -115,3 +119,5 @@ $(o)WebApiV1$(oext)                         : $(ClientMkiSourceDir)WebApi/WebApi
 $(o)WebApiV1BentleyConnect$(oext)           : $(ClientMkiSourceDir)WebApi/WebApiV1BentleyConnect.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)WebApiV2$(oext)                         : $(ClientMkiSourceDir)WebApi/WebApiV2.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)JobApi$(oext)                           : $(ClientMkiSourceDir)WebApi/WebApiV2Utils/JobApi.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
