@@ -114,6 +114,246 @@ void GridsStrategyTests::TearDown()
     }
 
 //---------------------------------------------------------------------------------------
+// @betest                                   Haroldas.Vitunskas                 02/2018
+//--------------+---------------+---------------+---------------+---------------+-------- 
+TEST_F(GridsStrategyTests, LineGridSurfacePlacementByPointsStrategy)
+    {
+    //////////////////////////////////////
+    // Try creating strategy object
+    //////////////////////////////////////
+    DgnDbR db = *DgnClientApp::App().Project();
+
+    // Create strategy
+    LineGridSurfacePlacementStrategyPtr strategy = LineGridSurfacePlacementStrategy::Create(LinePlacementStrategyType::Points);
+    ASSERT_TRUE(strategy.IsValid()) << "Failed to create strategy";
+    
+    // Check placement type
+    ASSERT_EQ(LinePlacementStrategyType::Points, strategy->GetCurrentPlacementType()) << "Placement type is incorrect";
+
+    double botElevation, topElevation;
+    GridAxisCPtr axis;
+    Utf8String gridName;
+
+    // Check initial bottom elevation
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LineGridSurfacePlacementStrategy::prop_BottomElevation, botElevation)) << "Failed to get bottom elevation";
+    ASSERT_EQ(0, botElevation) << "Bottom elevation is incorrect";
+
+    // Check initial top elevation
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LineGridSurfacePlacementStrategy::prop_TopElevation, topElevation)) << "Failed to get top elevation";
+    ASSERT_EQ(0, topElevation) << "Top elevation is incorrect";
+
+    // Check initial axis
+    /*
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LineGridSurfacePlacementStrategy::prop_Axis, axis));
+    ASSERT_TRUE(axis.IsNull());
+    */ // TODO DgnElement->DgnElementPtr
+
+    // Check initial name
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LineGridSurfacePlacementStrategy::prop_Name, gridName)) << "Failed to get grid name";
+    ASSERT_TRUE(gridName.empty()) << "Grid name is incorrect";
+
+    //////////////////////////////////////
+    // Try modifying sketch properties
+    //////////////////////////////////////
+    // Try setting bottom elevation
+    strategy->SetProperty(LineGridSurfacePlacementStrategy::prop_BottomElevation, 10.0);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LineGridSurfacePlacementStrategy::prop_BottomElevation, botElevation)) << "Failed to get bottom elevation";
+    ASSERT_EQ(10, botElevation) << "Bottom elevation is incorrect";
+
+    // Return bottom elevation to default
+    strategy->SetProperty(LineGridSurfacePlacementStrategy::prop_BottomElevation, 0.0);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LineGridSurfacePlacementStrategy::prop_BottomElevation, botElevation)) << "Failed to get bottom elevation";
+    ASSERT_EQ(0, botElevation) << "Bottom elevation is incorrect";
+
+
+    // Try setting top elevation
+    strategy->SetProperty(LineGridSurfacePlacementStrategy::prop_TopElevation, 10.0);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LineGridSurfacePlacementStrategy::prop_TopElevation, topElevation)) << "Failed to get top elevation";
+    ASSERT_EQ(10, topElevation) << "Top elevation is incorrect";
+
+    // Return top elevation to default
+    strategy->SetProperty(LineGridSurfacePlacementStrategy::prop_TopElevation, 0.0);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LineGridSurfacePlacementStrategy::prop_TopElevation, topElevation)) << "Failed to get top elevation";
+    ASSERT_EQ(0, topElevation) << "Top elevation is incorrect";
+
+
+    // Try setting grid axis
+    /*
+    Dgn::DefinitionModelCR defModel = db.GetDictionaryModel();
+    SketchAxisPtr newAxis = GeneralGridAxis::CreateAndInsert(defModel, *m_sketchGrid);
+    strategy->SetProperty(LineGridSurfacePlacementStrategy::prop_Axis, newAxis);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LineGridSurfacePlacementStrategy::prop_Axis, axis));
+    ASSERT_TRUE(axis.IsValid());
+    ASSERT_EQ(axis->GetElementId(), newAxis->GetElementId());
+    */ // TODO DgnElement->DgnElementPtr
+    
+    // Return axis to default
+    /*
+    strategy->SetProperty(LineGridSurfacePlacementStrategy::prop_Axis, nullptr);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LineGridSurfacePlacementStrategy::prop_Axis, axis));
+    ASSERT_TRUE(axis.IsNull());
+    */ // TODO DgnElement->DgnElementPtr
+
+
+    // Try setting grid name
+    strategy->SetProperty(LineGridSurfacePlacementStrategy::prop_Name, Utf8String("Test grid name"));
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LineGridSurfacePlacementStrategy::prop_Name, gridName)) << "Failed to get grid name";
+    ASSERT_EQ(0, strcmp("Test grid name", gridName.c_str())) << "Grid name is incorrect";
+
+    // Return grid name to default
+    strategy->SetProperty(LineGridSurfacePlacementStrategy::prop_Name, Utf8String(""));
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LineGridSurfacePlacementStrategy::prop_Name, gridName)) << "Failed to get grid name";
+    ASSERT_TRUE(gridName.empty()) << "Grid name is incorrect";
+
+    //////////////////////////////////////
+    // Try adding key points
+    //////////////////////////////////////
+    ASSERT_EQ(0, strategy->GetKeyPoints().size()) << "Incorrect number of key points";
+
+    strategy->AddKeyPoint({ 0, 0, 0 });
+    ASSERT_EQ(1, strategy->GetKeyPoints().size()) << "Incorrect number of key points";
+    ASSERT_TRUE(strategy->GetKeyPoints()[0].AlmostEqual({ 0, 0, 0 })) << "Incorrect first key point";
+    ASSERT_FALSE(strategy->IsComplete()) << "Incorrect strategy state";
+
+    strategy->AddKeyPoint({ 1, 2, 0 });
+    ASSERT_EQ(2, strategy->GetKeyPoints().size()) << "Incorrect number of key points";
+    ASSERT_TRUE(strategy->GetKeyPoints()[0].AlmostEqual({ 0, 0, 0 })) << "Incorrect first key point";
+    ASSERT_TRUE(strategy->GetKeyPoints()[1].AlmostEqual({ 1, 2, 0 })) << "Incorrect second key point";
+    ASSERT_FALSE(strategy->IsComplete()) << "Incorrect strategy state";
+
+    //////////////////////////////////////
+    // Try finishing a grid surface
+    //////////////////////////////////////
+    // Set minimal required properties
+    strategy->SetProperty(LineGridSurfacePlacementStrategy::prop_TopElevation, 10.0);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LineGridSurfacePlacementStrategy::prop_TopElevation, topElevation)) << "Failed to get top elevation";
+    ASSERT_EQ(10, topElevation) << "Top elevation is incorrect";
+
+    strategy->SetProperty(LineGridSurfacePlacementStrategy::prop_Name, Utf8String("Test grid name"));
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LineGridSurfacePlacementStrategy::prop_Name, gridName)) << "Failed to get grid name";
+    ASSERT_EQ(0, strcmp("Test grid name", gridName.c_str())) << "Grid name is incorrect";
+
+    ASSERT_TRUE(strategy->IsComplete()) << "Incorrect strategy state";
+
+    // Finish surface
+    GridPlanarSurfacePtr surface = dynamic_cast<GridPlanarSurface*>(strategy->FinishElement(*m_model.get()).get());
+    ASSERT_TRUE(surface.IsValid()) << "Failed to create surface";
+    DgnElementId surfaceId = surface->GetElementId();
+    ASSERT_TRUE(surfaceId.IsValid()) << "Failed to insert surface";
+
+    GridCPtr grid = Grid::TryGet(db, m_model->GetModeledElementId(), "Test grid name");
+    ASSERT_TRUE(grid.IsValid()) << "Failed to create/insert grid";
+    ASSERT_TRUE(grid->GetElementId().IsValid());
+
+    bvector<DgnElementId> axesIds = grid->MakeAxesIterator().BuildIdList<DgnElementId>();
+    ASSERT_EQ(1, axesIds.size());
+
+    CheckGridSurface(surface, grid->GetElementId(), axesIds[0], 10, { 0, 0, 0 }, { 1, 2, 0 });
+
+    //////////////////////////////////////
+    // Try modifying the grid surface
+    //////////////////////////////////////
+    // Change bottom elevation. Finished surface should also change
+    strategy->SetProperty(LineGridSurfacePlacementStrategy::prop_BottomElevation, 5.0);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LineGridSurfacePlacementStrategy::prop_BottomElevation, botElevation)) << "Failed to get bottom elevation";
+    ASSERT_EQ(5.0, botElevation) << "Bottom elevation is incorrect";
+
+    surface = dynamic_cast<GridPlanarSurface*>(strategy->FinishElement(*m_model.get()).get());
+    ASSERT_TRUE(surface.IsValid()) << "Failed to create surface";
+    ASSERT_TRUE(surface->GetElementId().IsValid()) << "Failed to insert surface";
+    ASSERT_EQ(surfaceId, surface->GetElementId()) << "Surface ID should not have changed";
+    CheckGridSurface(surface, grid->GetElementId(), axesIds[0], 5, { 0, 0, 5 }, { 1, 2, 5 });
+
+    // Change top elevation. Finished surface should also change
+    strategy->SetProperty(LineGridSurfacePlacementStrategy::prop_TopElevation, 15.0);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LineGridSurfacePlacementStrategy::prop_TopElevation, topElevation)) << "Failed to get top elevation";
+    ASSERT_EQ(15.0, topElevation) << "Top elevation is incorrect";
+
+    surface = dynamic_cast<GridPlanarSurface*>(strategy->FinishElement(*m_model.get()).get());
+    ASSERT_TRUE(surface.IsValid()) << "Failed to create surface";
+    ASSERT_TRUE(surface->GetElementId().IsValid()) << "Failed to insert surface";
+    ASSERT_EQ(surfaceId, surface->GetElementId()) << "Surface ID should not have changed";
+    CheckGridSurface(surface, grid->GetElementId(), axesIds[0], 10, { 0, 0, 5 }, { 1, 2, 5 });
+
+    // TODO: Change axis
+
+    //////////////////////////////////////
+    // Try using dynamic points
+    //////////////////////////////////////
+    strategy = LineGridSurfacePlacementStrategy::Create(LinePlacementStrategyType::Points);
+    ASSERT_TRUE(strategy.IsValid()) << "Failed to create strategy";
+
+    ASSERT_EQ(0, strategy->GetKeyPoints().size()) << "Incorrect number of key points";
+
+    // Add key point
+    strategy->AddKeyPoint({ 0, 0, 0 });
+    ASSERT_EQ(1, strategy->GetKeyPoints().size()) << "Incorrect number of key points";
+    ASSERT_TRUE(strategy->GetKeyPoints()[0].AlmostEqual({ 0, 0, 0 })) << "Incorrect first key point";
+    ASSERT_FALSE(strategy->IsComplete()) << "Incorrect strategy state";
+
+    // Add dynamic key point
+    strategy->AddDynamicKeyPoint({ 1, 2, 0 });
+    ASSERT_EQ(2, strategy->GetKeyPoints().size()) << "Incorrect number of key points";
+    ASSERT_TRUE(strategy->GetKeyPoints()[0].AlmostEqual({ 0, 0, 0 })) << "Incorrect first key point";
+    ASSERT_TRUE(strategy->GetKeyPoints()[1].AlmostEqual({ 1, 2, 0 })) << "Incorrect second key point";
+    ASSERT_FALSE(strategy->IsComplete()) << "Incorrect strategy state";
+
+    // Set minimal required properties
+    strategy->SetProperty(LineGridSurfacePlacementStrategy::prop_TopElevation, 10.0);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LineGridSurfacePlacementStrategy::prop_TopElevation, topElevation)) << "Failed to get top elevation";
+    ASSERT_EQ(10, topElevation) << "Top elevation is incorrect";
+
+    strategy->SetProperty(LineGridSurfacePlacementStrategy::prop_Name, Utf8String("Test grid name"));
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LineGridSurfacePlacementStrategy::prop_Name, gridName)) << "Failed to get grid name";
+    ASSERT_EQ(0, strcmp("Test grid name", gridName.c_str())) << "Grid name is incorrect";
+
+    ASSERT_TRUE(strategy->IsComplete()) << "Incorrect strategy state";
+
+    // Finish surface
+    surface = dynamic_cast<GridPlanarSurface*>(strategy->FinishElement(*m_model.get()).get());
+    ASSERT_TRUE(surface.IsValid()) << "Failed to create surface";
+    surfaceId = surface->GetElementId();
+    ASSERT_TRUE(surfaceId.IsValid()) << "Failed to insert surface";
+
+    grid = Grid::TryGet(db, m_model->GetModeledElementId(), "Test grid name");
+    ASSERT_TRUE(grid.IsValid()) << "Failed to create/insert grid";
+    ASSERT_TRUE(grid->GetElementId().IsValid());
+
+    axesIds = grid->MakeAxesIterator().BuildIdList<DgnElementId>();
+    ASSERT_EQ(2, axesIds.size());
+
+    CheckGridSurface(surface, grid->GetElementId(), axesIds[1], 10, { 0, 0, 0 }, { 1, 2, 0 });
+
+    // Change dynamic key point
+    strategy->AddDynamicKeyPoint({ 5, 6, 0 });
+    ASSERT_EQ(2, strategy->GetKeyPoints().size()) << "Incorrect number of key points";
+    ASSERT_TRUE(strategy->GetKeyPoints()[0].AlmostEqual({ 0, 0, 0 })) << "Incorrect first key point";
+    ASSERT_TRUE(strategy->GetKeyPoints()[1].AlmostEqual({ 5, 6, 0 })) << "Incorrect second key point";
+    ASSERT_TRUE(strategy->IsComplete()) << "Incorrect strategy state";
+
+    surface = dynamic_cast<GridPlanarSurface*>(strategy->FinishElement(*m_model.get()).get());
+    ASSERT_TRUE(surface.IsValid()) << "Failed to create surface";
+    ASSERT_TRUE(surface->GetElementId().IsValid()) << "Failed to insert surface";
+    ASSERT_EQ(surfaceId, surface->GetElementId()) << "Surface ID should not have changed";
+    CheckGridSurface(surface, grid->GetElementId(), axesIds[1], 10, { 0, 0, 0 }, { 5, 6, 0 });
+
+    // Try unprojected point. It should be projected onto grid bottom elevation
+    strategy->AddDynamicKeyPoint({ 1, 2, 3 });
+    ASSERT_EQ(2, strategy->GetKeyPoints().size()) << "Incorrect number of key points";
+    ASSERT_TRUE(strategy->GetKeyPoints()[0].AlmostEqual({ 0, 0, 0 })) << "Incorrect first key point";
+    ASSERT_TRUE(strategy->GetKeyPoints()[1].AlmostEqual({ 1, 2, 0 })) << "Incorrect second key point";
+    ASSERT_TRUE(strategy->IsComplete()) << "Incorrect strategy state";
+
+    surface = dynamic_cast<GridPlanarSurface*>(strategy->FinishElement(*m_model.get()).get());
+    ASSERT_TRUE(surface.IsValid()) << "Failed to create surface";
+    ASSERT_TRUE(surface->GetElementId().IsValid()) << "Failed to insert surface";
+    ASSERT_EQ(surfaceId, surface->GetElementId()) << "Surface ID should not have changed";
+    CheckGridSurface(surface, grid->GetElementId(), axesIds[1], 10, { 0, 0, 0 }, { 1, 2, 0 });
+
+    db.SaveChanges();
+    }
+
+//---------------------------------------------------------------------------------------
 // @betest                                   Haroldas.Vitunskas                 12/2017
 //--------------+---------------+---------------+---------------+---------------+-------- 
 TEST_F(GridsStrategyTests, LineGridPlacementStrategyTests)

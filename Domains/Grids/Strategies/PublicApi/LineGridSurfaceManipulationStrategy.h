@@ -38,10 +38,13 @@ struct LineGridSurfaceManipulationStrategy : public SketchGridSurfaceManipulatio
         virtual PlanGridPlanarSurfaceP _GetGridSurfaceP() override { return m_surface.get(); }
         virtual BBS::CurvePrimitivePlacementStrategyPtr _GetGeometryPlacementStrategyP() override;
         virtual BBS::CurvePrimitivePlacementStrategyCPtr _GetGeometryPlacementStrategy() const override;
+        virtual BBS::CurvePrimitiveManipulationStrategyCR _GetCurvePrimitiveManipulationStrategy() const override { return *m_geometryManipulationStrategy; }
+        virtual BBS::CurvePrimitiveManipulationStrategyR _GetCurvePrimitiveManipulationStrategyR() override { return *m_geometryManipulationStrategy; }
 
     public:
         GRIDSTRATEGIES_EXPORT static LineGridSurfaceManipulationStrategyPtr Create(BBS::LinePlacementStrategyType linePlacementStrategyType) { return new LineGridSurfaceManipulationStrategy(linePlacementStrategyType); }
         GRIDSTRATEGIES_EXPORT void ChangeCurrentPlacementType(BBS::LinePlacementStrategyType newLinePlacementStrategyType);
+        GRIDSTRATEGIES_EXPORT BBS::LinePlacementStrategyType GetCurrentPlacementType() const;
     };
 
 END_GRIDS_NAMESPACE

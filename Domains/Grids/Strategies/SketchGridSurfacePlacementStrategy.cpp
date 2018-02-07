@@ -14,7 +14,6 @@ const Utf8CP SketchGridSurfacePlacementStrategy::prop_BottomElevation = SketchGr
 const Utf8CP SketchGridSurfacePlacementStrategy::prop_TopElevation = SketchGridSurfaceManipulationStrategy::prop_TopElevation;
 const Utf8CP SketchGridSurfacePlacementStrategy::prop_Axis = SketchGridSurfaceManipulationStrategy::prop_Axis;
 const Utf8CP SketchGridSurfacePlacementStrategy::prop_Name = SketchGridSurfaceManipulationStrategy::prop_Name;
-const Utf8CP SketchGridSurfacePlacementStrategy::prop_Grid = SketchGridSurfaceManipulationStrategy::prop_Grid;
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              01/2018

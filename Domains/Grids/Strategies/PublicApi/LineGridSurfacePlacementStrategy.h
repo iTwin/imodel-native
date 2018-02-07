@@ -36,6 +36,7 @@ struct LineGridSurfacePlacementStrategy : public SketchGridSurfacePlacementStrat
     public:
         GRIDSTRATEGIES_EXPORT static LineGridSurfacePlacementStrategyPtr Create(BBS::LinePlacementStrategyType linePlacementStrategyType) { return new LineGridSurfacePlacementStrategy(linePlacementStrategyType); }
         GRIDSTRATEGIES_EXPORT void ChangeCurrentPlacementType(BBS::LinePlacementStrategyType newLinePlacementStrategyType);
+        GRIDSTRATEGIES_EXPORT BBS::LinePlacementStrategyType GetCurrentPlacementType() const;
     };
 
 END_GRIDS_NAMESPACE

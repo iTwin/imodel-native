@@ -45,3 +45,11 @@ void LineGridSurfacePlacementStrategy::ChangeCurrentPlacementType(BBS::LinePlace
     {
     m_manipulationStrategy->ChangeCurrentPlacementType(newLinePlacementStrategyType);
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+BBS::LinePlacementStrategyType LineGridSurfacePlacementStrategy::GetCurrentPlacementType() const
+    {
+    return m_manipulationStrategy->GetCurrentPlacementType();
+    }

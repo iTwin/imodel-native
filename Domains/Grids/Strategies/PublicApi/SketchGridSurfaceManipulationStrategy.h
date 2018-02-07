@@ -23,10 +23,23 @@ struct SketchGridSurfaceManipulationStrategy : public BBS::ElementManipulationSt
         double m_topElevation;
         GridAxisCPtr m_axis; // TODO to Ptr
         Utf8String m_gridName;
+        DPlane3d m_workingPlane;
 
         SketchGridSurfaceManipulationStrategy();
 
         // GeometryManipulationStrategyBase
+        virtual void _AppendDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
+        virtual void _AppendDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) override;
+        virtual void _InsertDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index) override;
+        virtual void _InsertDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index) override;
+        virtual void _UpdateDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index) override;
+        virtual void _UpdateDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index) override;
+        virtual void _UpsertDynamicKeyPoint(DPoint3d newDynamicKeyPoint, size_t index) override;
+        virtual void _UpsertDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index) override;
+        virtual void _AppendKeyPoint(DPoint3dCR newKeyPoint) override;
+        virtual void _AppendKeyPoints(bvector<DPoint3d> const& newKeyPoints) override;
+        virtual void _InsertKeyPoint(DPoint3dCR newKeyPoint, size_t index) override;
+        virtual void _ReplaceKeyPoint(DPoint3dCR newKeyPoint, size_t index) override;
         virtual bvector<DPoint3d> _GetKeyPoints() const override;
         virtual bool _IsDynamicKeyPointSet() const override;
         virtual void _ResetDynamicKeyPoint() override;
@@ -43,10 +56,15 @@ struct SketchGridSurfaceManipulationStrategy : public BBS::ElementManipulationSt
         virtual Dgn::DgnElementPtr _FinishElement() override;
 
         // SketchGridSurfaceManipulationStrategy
+        DPoint3d ProjectPoint(DPoint3d point);
+        BentleyStatus GetOrCreateGridAndAxis(SketchGridCPtr& grid, Dgn::SpatialLocationModelPtr spatialModel);
+        void ProjectExistingPoints();
         virtual BentleyStatus _UpdateGridSurface();
         virtual Utf8String _GetMessage() const = 0;
         virtual PlanGridPlanarSurfaceCP _GetGridSurfaceCP() = 0;
         virtual PlanGridPlanarSurfaceP _GetGridSurfaceP() = 0;
+        virtual BBS::CurvePrimitiveManipulationStrategyCR _GetCurvePrimitiveManipulationStrategy() const = 0;
+        virtual BBS::CurvePrimitiveManipulationStrategyR _GetCurvePrimitiveManipulationStrategyR() = 0;
         virtual BBS::CurvePrimitivePlacementStrategyPtr _GetGeometryPlacementStrategyP() = 0;
         virtual BBS::CurvePrimitivePlacementStrategyCPtr _GetGeometryPlacementStrategy() const = 0;
 
@@ -57,7 +75,6 @@ struct SketchGridSurfaceManipulationStrategy : public BBS::ElementManipulationSt
         static const Utf8CP prop_TopElevation;
         static const Utf8CP prop_Axis;
         static const Utf8CP prop_Name;
-        static const Utf8CP prop_Grid;
     };
 
 END_GRIDS_NAMESPACE

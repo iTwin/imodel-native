@@ -14,7 +14,6 @@ const Utf8CP SketchGridSurfaceManipulationStrategy::prop_BottomElevation = "Bott
 const Utf8CP SketchGridSurfaceManipulationStrategy::prop_TopElevation = "TopElevation";
 const Utf8CP SketchGridSurfaceManipulationStrategy::prop_Axis = "Axis";
 const Utf8CP SketchGridSurfaceManipulationStrategy::prop_Name = "Name";
-const Utf8CP SketchGridSurfaceManipulationStrategy::prop_Grid = "Grid";
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              01/2018
@@ -82,6 +81,81 @@ BentleyStatus SketchGridSurfaceManipulationStrategy::_TryGetProperty
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SketchGridSurfaceManipulationStrategy::GetOrCreateGridAndAxis(SketchGridCPtr& grid, Dgn::SpatialLocationModelPtr spatialModel)
+    {
+    Dgn::DgnDbR db = spatialModel->GetDgnDb();
+
+    if (m_axis.IsValid())
+        {
+        // Check if grid name is the same
+        grid = db.Elements().Get<SketchGrid>(m_axis->GetGridId());
+        if (!m_gridName.empty() && 0 != strcmp(grid->GetName(), m_gridName.c_str()))
+            return BentleyStatus::ERROR; // Grid name is incorrect
+        }
+    else if (!m_gridName.empty())
+        {
+        // Create new grid and/or axis
+        grid = dynamic_cast<SketchGrid*>(Grid::TryGet(db,
+                            spatialModel->GetModeledElementId(),
+                            m_gridName.c_str()).get());
+
+        if (grid.IsNull())
+            {
+            SketchGridPtr sketchGrid = SketchGrid::Create(*spatialModel,
+                                                          spatialModel->GetModeledElementId(),
+                                                          m_gridName.c_str(),
+                                                          m_bottomElevation,
+                                                          m_topElevation);
+            if (sketchGrid.IsNull())
+                return BentleyStatus::ERROR; // Failed to create grid
+
+            if (sketchGrid->Insert().IsNull())
+                return BentleyStatus::ERROR;
+
+            grid = sketchGrid.get();
+            }
+       
+        Dgn::DefinitionModelCR defModel = db.GetDictionaryModel();
+        m_axis = GeneralGridAxis::CreateAndInsert(defModel, *grid).get();
+        if (m_axis.IsNull())
+            return BentleyStatus::ERROR;
+        }
+
+    m_workingPlane = grid->GetPlane();
+    m_workingPlane.origin.z = m_bottomElevation;
+    ProjectExistingPoints();
+
+    return BentleyStatus::SUCCESS;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void SketchGridSurfaceManipulationStrategy::ProjectExistingPoints()
+    {
+    bvector<DPoint3d> allKeyPoints = _GetCurvePrimitiveManipulationStrategy().GetKeyPoints();
+    bvector<DPoint3d> acceptedKeyPoints = _GetCurvePrimitiveManipulationStrategy().GetAcceptedKeyPoints();
+    for (size_t i = 0; i < acceptedKeyPoints.size(); ++i)
+        {
+        ReplaceKeyPoint(acceptedKeyPoints[i], i); // Will project point internally
+        }
+
+    if (allKeyPoints.size() != acceptedKeyPoints.size())
+        {
+        size_t dynamicCount = allKeyPoints.size() - acceptedKeyPoints.size();
+        for (size_t i = 0; i < dynamicCount; ++i)
+            {
+            if (0 == acceptedKeyPoints.size())
+                UpdateDynamicKeyPoint(allKeyPoints[i + acceptedKeyPoints.size()], i); // Will project point internally
+            else
+                InsertDynamicKeyPoint(allKeyPoints[i + acceptedKeyPoints.size()], i); // Will project point internally
+            }
+        }
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              01/2018
 //---------------+---------------+---------------+---------------+---------------+------
 SketchGridSurfaceManipulationStrategy::SketchGridSurfaceManipulationStrategy()
@@ -90,7 +164,139 @@ SketchGridSurfaceManipulationStrategy::SketchGridSurfaceManipulationStrategy()
     , m_gridName("")
     , m_bottomElevation(0)
     , m_topElevation(0)
+    , m_workingPlane(DPlane3d::FromOriginAndNormal(DPoint3d::From(0, 0, 0), DVec3d::From(0, 0, 1)))
     {
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+DPoint3d SketchGridSurfaceManipulationStrategy::ProjectPoint
+(
+    DPoint3d point
+)
+    {
+    DPoint3d projected = point;
+    m_workingPlane.ProjectPoint(projected, point);
+    return projected;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void SketchGridSurfaceManipulationStrategy::_AppendDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint)
+    {
+    DPoint3d projected = ProjectPoint(newDynamicKeyPoint);
+    T_Super::_AppendDynamicKeyPoint(projected);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void SketchGridSurfaceManipulationStrategy::_AppendDynamicKeyPoints(bvector<DPoint3d> const & newDynamicKeyPoints)
+    {
+    bvector<DPoint3d> projected(newDynamicKeyPoints.size());
+    std::transform(newDynamicKeyPoints.begin(), newDynamicKeyPoints.end(), projected.begin(), [&](DPoint3d point) { return ProjectPoint(point); });
+
+    T_Super::_AppendDynamicKeyPoints(projected);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void SketchGridSurfaceManipulationStrategy::_InsertDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index)
+    {
+    DPoint3d projected = ProjectPoint(newDynamicKeyPoint);
+    T_Super::_InsertDynamicKeyPoint(projected, index);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void SketchGridSurfaceManipulationStrategy::_InsertDynamicKeyPoints(bvector<DPoint3d> const & newDynamicKeyPoints, size_t index)
+    {
+    bvector<DPoint3d> projected(newDynamicKeyPoints.size());
+    std::transform(newDynamicKeyPoints.begin(), newDynamicKeyPoints.end(), projected.begin(), [&](DPoint3d point) { return ProjectPoint(point); });
+
+    T_Super::_InsertDynamicKeyPoints(projected, index);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void SketchGridSurfaceManipulationStrategy::_UpdateDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index)
+    {
+    DPoint3d projected = ProjectPoint(newDynamicKeyPoint);
+    T_Super::_UpdateDynamicKeyPoint(projected, index);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void SketchGridSurfaceManipulationStrategy::_UpdateDynamicKeyPoints(bvector<DPoint3d> const & newDynamicKeyPoints, size_t index)
+    {
+    bvector<DPoint3d> projected(newDynamicKeyPoints.size());
+    std::transform(newDynamicKeyPoints.begin(), newDynamicKeyPoints.end(), projected.begin(), [&](DPoint3d point) { return ProjectPoint(point); });
+
+    T_Super::_UpdateDynamicKeyPoints(projected, index);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void SketchGridSurfaceManipulationStrategy::_UpsertDynamicKeyPoint(DPoint3d newDynamicKeyPoint, size_t index)
+    {
+    DPoint3d projected = ProjectPoint(newDynamicKeyPoint);
+    T_Super::_UpsertDynamicKeyPoint(projected, index);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void SketchGridSurfaceManipulationStrategy::_UpsertDynamicKeyPoints(bvector<DPoint3d> const & newDynamicKeyPoints, size_t index)
+    {
+    bvector<DPoint3d> projected(newDynamicKeyPoints.size());
+    std::transform(newDynamicKeyPoints.begin(), newDynamicKeyPoints.end(), projected.begin(), [&](DPoint3d point) { return ProjectPoint(point); });
+
+    T_Super::_UpsertDynamicKeyPoints(projected, index);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void SketchGridSurfaceManipulationStrategy::_AppendKeyPoint(DPoint3dCR newKeyPoint)
+    {
+    DPoint3d projected = ProjectPoint(newKeyPoint);
+    T_Super::_AppendKeyPoint(projected);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void SketchGridSurfaceManipulationStrategy::_AppendKeyPoints(bvector<DPoint3d> const & newKeyPoints)
+    {
+    bvector<DPoint3d> projected(newKeyPoints.size());
+    std::transform(newKeyPoints.begin(), newKeyPoints.end(), projected.begin(), [&](DPoint3d point) { return ProjectPoint(point); });
+
+    T_Super::_AppendKeyPoints(projected);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void SketchGridSurfaceManipulationStrategy::_InsertKeyPoint(DPoint3dCR newKeyPoint, size_t index)
+    {
+    DPoint3d projected = ProjectPoint(newKeyPoint);
+    T_Super::_InsertKeyPoint(projected, index);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void SketchGridSurfaceManipulationStrategy::_ReplaceKeyPoint(DPoint3dCR newKeyPoint, size_t index)
+    {
+    DPoint3d projected = ProjectPoint(newKeyPoint);
+    T_Super::_ReplaceKeyPoint(projected, index);
     }
 
 //--------------------------------------------------------------------------------------
@@ -122,10 +328,13 @@ void SketchGridSurfaceManipulationStrategy::_ResetDynamicKeyPoint()
 //---------------+---------------+---------------+---------------+---------------+------
 bool SketchGridSurfaceManipulationStrategy::_IsComplete() const
     {
-    if (_GetGeometryPlacementStrategy()->IsComplete())
+    if (!_GetGeometryPlacementStrategy()->IsComplete())
         return false;
 
     if (m_axis.IsNull() && m_gridName.empty())
+        return false;
+
+    if (m_topElevation <= m_bottomElevation)
         return false;
 
     return true;
@@ -149,7 +358,11 @@ void SketchGridSurfaceManipulationStrategy::_SetProperty
 )
     {
     if (0 == strcmp(key, prop_BottomElevation))
+        {
         m_bottomElevation = value;
+        m_workingPlane.origin.z = m_bottomElevation;
+        ProjectExistingPoints();
+        }
     else if (0 == strcmp(key, prop_TopElevation))
         m_topElevation = value;
     else

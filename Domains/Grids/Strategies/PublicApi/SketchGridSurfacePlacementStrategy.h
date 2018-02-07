@@ -42,7 +42,6 @@ struct SketchGridSurfacePlacementStrategy : public BBS::ElementPlacementStrategy
         GRIDSTRATEGIES_EXPORT static const Utf8CP prop_TopElevation;
         GRIDSTRATEGIES_EXPORT static const Utf8CP prop_Axis;
         GRIDSTRATEGIES_EXPORT static const Utf8CP prop_Name;
-        GRIDSTRATEGIES_EXPORT static const Utf8CP prop_Grid;
 
         GRIDSTRATEGIES_EXPORT Utf8String GetMessage() const;
     };
