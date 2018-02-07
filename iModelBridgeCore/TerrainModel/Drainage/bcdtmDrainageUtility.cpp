@@ -2,7 +2,7 @@
 |
 |     $Source: Drainage/bcdtmDrainageUtility.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcdtmDrainage.h"
@@ -480,7 +480,7 @@ int bcdtmDrainage_getTriangleFlowDirectionDtmObject
 */
 {
  long   onLine ;
- double dx,dy,dz,nd,Xi,Yi,Zi ;
+ double dx,dy,dz,Xi,Yi,Zi ;
  
 /*
 ** Initialise
@@ -491,7 +491,7 @@ int bcdtmDrainage_getTriangleFlowDirectionDtmObject
 /*
 ** Calculate Orthogonal Intersection Of P3 on P1,P2
 */
- nd = bcdtmMath_distanceOfPointFromLine(&onLine,pointAddrP(dtmP,P1)->x,pointAddrP(dtmP,P1)->y,pointAddrP(dtmP,P2)->x,pointAddrP(dtmP,P2)->y,pointAddrP(dtmP,P3)->x,pointAddrP(dtmP,P3)->y,&Xi,&Yi) ;
+ bcdtmMath_distanceOfPointFromLineSquared(&onLine,pointAddrP(dtmP,P1)->x,pointAddrP(dtmP,P1)->y,pointAddrP(dtmP,P2)->x,pointAddrP(dtmP,P2)->y,pointAddrP(dtmP,P3)->x,pointAddrP(dtmP,P3)->y,&Xi,&Yi) ;
 /*
 ** Interpolate z Value On Line P1P2
 */
