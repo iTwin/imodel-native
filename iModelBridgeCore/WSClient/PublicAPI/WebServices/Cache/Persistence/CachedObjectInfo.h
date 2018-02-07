@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/Persistence/CachedObjectInfo.h $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,8 +11,7 @@
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <ECDb/ECDb.h>
 #include <WebServices/Cache/WebServicesCache.h>
-
-#include "ChangeManager.h"
+#include <WebServices/Cache/Persistence/IChangeManager.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
@@ -36,7 +35,7 @@ struct CachedObjectInfo
         WSCACHE_EXPORT Utf8String GetObjectCacheTag() const;
 
         WSCACHE_EXPORT IChangeManager::ChangeStatus  GetChangeStatus() const;
-        WSCACHE_EXPORT ChangeManager::SyncStatus    GetSyncStatus() const;
+        WSCACHE_EXPORT IChangeManager::SyncStatus    GetSyncStatus() const;
 
         WSCACHE_EXPORT ECInstanceKey GetCachedInstanceKey() const;
         WSCACHE_EXPORT ObjectIdCR GetObjectId() const;

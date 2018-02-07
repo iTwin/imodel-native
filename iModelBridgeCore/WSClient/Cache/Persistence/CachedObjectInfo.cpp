@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/CachedObjectInfo.cpp $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -63,7 +63,7 @@ IChangeManager::ChangeStatus CachedObjectInfo::GetChangeStatus() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-ChangeManager::SyncStatus CachedObjectInfo::GetSyncStatus() const
+IChangeManager::SyncStatus CachedObjectInfo::GetSyncStatus() const
     {
     return m_info->GetSyncStatus();
     }
