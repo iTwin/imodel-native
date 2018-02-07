@@ -776,7 +776,7 @@
         <SubPart PartName="RealityAdminUnitTests"/>
         <SubPart PartName="CrawlerLibUnitTests"/>
         <SubPart PartName="SpatioTemporalSelectorTests"/>
-        <SubPart PartName="IntegrationTests"/> <!--Uncomment this SubPart to build & run integration tests-->
+        <!--<SubPart PartName="IntegrationTests"/>--> <!--Uncomment this SubPart to build & run integration tests-->
     </Part>
     
     <Part Name="IntegrationTests">
