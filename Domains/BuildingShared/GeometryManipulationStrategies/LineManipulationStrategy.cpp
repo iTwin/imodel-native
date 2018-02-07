@@ -40,7 +40,7 @@ void LineManipulationStrategy::_AppendKeyPoint
 //---------------+---------------+---------------+---------------+---------------+------
 bool LineManipulationStrategy::_IsComplete() const 
     {
-    return GetAcceptedKeyPoints().size() == 2;
+    return GetKeyPoints().size() == 2;
     }
 
 //--------------------------------------------------------------------------------------
