@@ -3373,7 +3373,7 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteDataAndNotEnoughRights_RemovesIns
     EXPECT_CALL(GetMockClient(), SendGetObjectRequest(_, Utf8String("TestTag"), _))
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(WSError(WSError::Id::NotEnoughRights)))));
 
-    auto result = ds->GetObject(objectId, CachingDataSource::DataOrigin::RemoteData, IDataSourceCache::JsonFormat::Raw)->GetResult();
+    auto result = ds->GetObject(objectId, CachingDataSource::DataOrigin::RemoteData)->GetResult();
 
     ASSERT_FALSE(result.IsSuccess());
     EXPECT_EQ(WSError::Id::NotEnoughRights, result.GetError().GetWSError().GetId());
@@ -3403,7 +3403,7 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteDataAndInstanceNotFound_RemovesIn
     EXPECT_CALL(GetMockClient(), SendGetObjectRequest(_, Utf8String("TestTag"), _))
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(WSError(WSError::Id::InstanceNotFound)))));
 
-    auto result = ds->GetObject(objectId, CachingDataSource::DataOrigin::RemoteData, IDataSourceCache::JsonFormat::Raw)->GetResult();
+    auto result = ds->GetObject(objectId, CachingDataSource::DataOrigin::RemoteData)->GetResult();
 
     ASSERT_FALSE(result.IsSuccess());
     EXPECT_EQ(WSError::Id::InstanceNotFound, result.GetError().GetWSError().GetId());
@@ -3719,7 +3719,7 @@ TEST_F(CachingDataSourceTests, GetObject_CachedOrRemoteDataRemoteInstanceNotFoun
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(WSError(WSError::Id::InstanceNotFound)))));
 
     auto backgroundSync = SyncNotifier::Create();
-    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedOrRemoteData, backgroundSync), IDataSourceCache::JsonFormat::Raw)->GetResult();
+    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedOrRemoteData, backgroundSync))->GetResult();
 
     ASSERT_TRUE(result.IsSuccess());
 
@@ -3749,7 +3749,7 @@ TEST_F(CachingDataSourceTests, GetObject_CachedOrRemoteDataRemoteNotEnoughRights
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(WSError(WSError::Id::NotEnoughRights)))));
 
     auto backgroundSync = SyncNotifier::Create();
-    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedOrRemoteData, backgroundSync), IDataSourceCache::JsonFormat::Raw)->GetResult();
+    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedOrRemoteData, backgroundSync))->GetResult();
 
     ASSERT_TRUE(result.IsSuccess());
 
