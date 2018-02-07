@@ -2465,7 +2465,8 @@ ICancellationTokenPtr               cancellationToken
 
     //Set used locks to the ECChangeSet
     LockRequest usedLocks;
-    usedLocks.FromRevision(*changeSet, dgndb);
+    usedLocks.FromRevision(*changeSet, dgndb, !relinquishCodesLocks);
+
     BeGuid seedFileId;
     seedFileId.FromString(changeSet->GetDbGuid().c_str());
     if (!usedLocks.IsEmpty())
