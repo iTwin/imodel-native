@@ -3398,3 +3398,34 @@ TEST_F(GridsTestFixture, GridSurfacesTests)
     }
     db.SaveChanges();
     }
+    //---------------------------------------------------------------------------------------
+    // @betest                                      Martynas.Saulius                02/2018
+    //--------------+---------------+---------------+---------------+---------------+-------- 
+    TEST_F(GridsTestFixture, GridCurvesPortionTests) {
+        { //Creation, Insertion, Update validity
+            GridCurvesPortionPtr portion = GridCurvesPortion::Create(*m_model);
+            ASSERT_TRUE(portion.IsValid()) << "Failed to create grid curves portion";
+            ASSERT_TRUE(portion->Insert().IsValid()) << "Failed to insert grid curves portion";
+            DgnDbStatus stat;
+            portion->Update(&stat);
+            ASSERT_EQ(DgnDbStatus::Success, stat) << "Failed to update inserted grid curves portion";
+        }
+        DgnDbR db = *DgnClientApp::App().Project();
+
+        DgnCategoryId categoryId = SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), GRIDS_CATEGORY_CODE_Uncategorized);
+        { // Check grid curves portion create from handler
+            GridCurvesPortionHandler& portionHandler = GridCurvesPortionHandler::GetHandler();
+            DgnClassId portionClassId = db.Domains().GetClassId(portionHandler);
+            DgnElement::CreateParams portionParams(db, m_model->GetModelId(), portionClassId);
+
+            GridCurvesPortionPtr invalidGridCurvesPortion_FromHandler = dynamic_cast<GridCurvesPortion *>(portionHandler.Create(portionParams).get());
+            ASSERT_TRUE(invalidGridCurvesPortion_FromHandler.IsValid()) << "Grid curves portion element created from handler shouldn't be a nullptr";
+
+
+            invalidGridCurvesPortion_FromHandler->SetCategoryId(categoryId);
+            ASSERT_TRUE(!invalidGridCurvesPortion_FromHandler->Insert().IsNull()) << "Grid curves portion element via handler insertion failed";
+
+            ASSERT_TRUE(invalidGridCurvesPortion_FromHandler->GetElementId().IsValid()) << "Grid curves portion element id via handler is invalid";
+        }
+        db.SaveChanges();
+    }
