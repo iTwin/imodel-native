@@ -183,7 +183,7 @@ TEST_F(ChangeSetsTests, ChangeSetsInfo)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeSetsTests, PullMergeAndPush)
     {
-    m_briefcase = AcquireAndOpenBriefcase(false);
+    m_briefcase = AcquireAndOpenBriefcase(true);
 
     Utf8String originalChangeSetId = m_briefcase->GetDgnDb().Revisions().GetParentRevisionId();
 

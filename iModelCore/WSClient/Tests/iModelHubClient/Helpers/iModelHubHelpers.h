@@ -44,6 +44,7 @@ namespace iModelHubHelpers
     void ExpectLocksCountById(BriefcasePtr briefcase, int expectedCount, bool byBriefcaseId, LockableIdSet& ids);
     void ExpectLocksCountById(BriefcasePtr briefcase, int expectedCount, bool byBriefcaseId, LockableId id1, LockableId id2);
     void ExpectLocksCountById(BriefcasePtr briefcase, int expectedCount, bool byBriefcaseId, LockableId id1, LockableId id2, LockableId id3);
+    void ExpectLocksCountByLevelAndId(BriefcasePtr briefcase, int expectedCount, bool byBriefcaseId, LockableIdSet& ids, LockLevel expectedLevel);
     void ExpectCodesCountByIds(BriefcaseR briefcase, int expectedCount, bool byBriefcaseId, DgnCodeSet& codes);
 
     ChangeSetsResult PullMergeAndPush(BriefcasePtr briefcase, bool shouldPush, bool relinquish = true, bool expectSuccess = true);
