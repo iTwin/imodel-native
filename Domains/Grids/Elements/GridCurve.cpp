@@ -62,14 +62,32 @@ DgnClassId classId
     return createParams;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+Dgn::DgnDbStatus      GridCurve::CheckDependancyToModel
+(
+) const //TODO: write a test for this function. GridSpline, GridArc, GridLine. Normal creation and Handler creation
+{
+    DgnModelPtr model = GetModel();
+    GridCurvesPortionCPtr portion = GetDgnDb().Elements().Get<GridCurvesPortion>(model->GetModeledElementId());
+    if (portion.IsNull()) //pointer must not be null
+        return DgnDbStatus::ValidationFailed;
+
+    return DgnDbStatus::Success;
+}
+
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  12/17
 //---------------------------------------------------------------------------------------
 Dgn::DgnDbStatus GridCurve::_OnInsert()
     {
+    DgnDbStatus status = CheckDependancyToModel();
+    if (status != DgnDbStatus::Success)
+        return status;
     if (!_ValidateGeometry(GetCurve()))
         return DgnDbStatus::ValidationFailed;
-
     return T_Super::_OnInsert();
     }
 
@@ -78,6 +96,9 @@ Dgn::DgnDbStatus GridCurve::_OnInsert()
 //---------------------------------------------------------------------------------------
 Dgn::DgnDbStatus GridCurve::_OnUpdate(Dgn::DgnElementCR original)
     {
+    DgnDbStatus status = CheckDependancyToModel();
+    if (status != DgnDbStatus::Success)
+        return status;
     if (!_ValidateGeometry(GetCurve()))
         return DgnDbStatus::ValidationFailed;
 
