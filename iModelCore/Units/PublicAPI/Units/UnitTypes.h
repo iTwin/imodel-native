@@ -211,7 +211,7 @@ protected:
 
     Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, Utf8Char dimensonSymbol, double factor, double offset, bool isConstant) 
         : UnitsSymbol(name, definition, dimensonSymbol, id, factor, offset), m_parent(nullptr), m_isConstant(isConstant), m_system(&system), m_phenomenon(&phenomenon)
-        { }
+        {}
 
 public:
     UNITS_EXPORT Utf8String GetUnitSignature() const;
@@ -302,7 +302,7 @@ private:
 
     void AddUnit(UnitCR unit) 
         {
-        auto it = std::find_if(m_units.begin(), m_units.end(), [&unit](UnitCP existingUnit) { return existingUnit->GetId() == unit.GetId(); });
+        auto it = std::find_if(m_units.begin(), m_units.end(), [&unit](UnitCP existingUnit) {return existingUnit->GetId() == unit.GetId();});
         if (it == m_units.end())
             m_units.push_back(&unit);
         }
@@ -316,6 +316,7 @@ private:
     UNITS_EXPORT uint32_t GetPhenomenonId() const override {return GetId();}
 
 protected:
+    UNITS_EXPORT static PhenomenonP _Create(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id) {return new Phenomenon(name, definition, baseSymbol, id);}
     UNITS_EXPORT Phenomenon(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id) : UnitsSymbol(name, definition, baseSymbol, id, 0.0, 0) {}
 
 public:
@@ -324,7 +325,7 @@ public:
     bool HasUnits() const {return m_units.size() > 0;}
     bool HasSynonyms() const {return m_altNames.size() > 0;}
     bvector<UnitCP> const GetUnits() const {return m_units;}
-    UnitCP GetSIUnit() const {auto it = std::find_if(m_units.begin(), m_units.end(), [](UnitCP unit) { return unit->IsSI(); });  return m_units.end() == it ? nullptr : *it;}
+    UnitCP GetSIUnit() const {auto it = std::find_if(m_units.begin(), m_units.end(), [](UnitCP unit) {return unit->IsSI();});  return m_units.end() == it ? nullptr : *it;}
 
     UNITS_EXPORT bool IsCompatible(UnitCR unit) const;
     bool Equals(PhenomenonCR comparePhenomenon) const {return GetPhenomenonId() == comparePhenomenon.GetPhenomenonId();}
@@ -342,8 +343,8 @@ public:
     UNITS_EXPORT void AddSynonymMaps(Json::Value jval) const;
     UNITS_EXPORT Json::Value SynonymMapToJson() const;
     UNITS_EXPORT static Json::Value SynonymMapVectorToJson(bvector<UnitSynonymMap> mapV);
-    UNITS_EXPORT T_UnitSynonymVector* GetSynonymVector() const { return &m_altNames; }
-    UNITS_EXPORT size_t GetSynonymCount() const { return m_altNames.size(); }
+    UNITS_EXPORT T_UnitSynonymVector* GetSynonymVector() const {return &m_altNames;}
+    UNITS_EXPORT size_t GetSynonymCount() const {return m_altNames.size();}
     UNITS_EXPORT Utf8CP GetLabel() const;
 };
 

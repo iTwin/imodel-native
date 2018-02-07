@@ -12,7 +12,7 @@
 BEGIN_UNITS_UNITTESTS_NAMESPACE
 
 struct UnitRegistryTests : UnitsTestFixture 
-{
+    {
     void SetUp() override
         {
         UnitsTestFixture::SetUp();
@@ -27,39 +27,40 @@ struct UnitRegistryTests : UnitsTestFixture
         }
 
     struct TestUnitSystem : UnitSystem
-    {
-    friend struct UnitRegistry;
-    private:
-        TestUnitSystem(Utf8CP name) : UnitSystem(name) {}
-    protected:
-        static TestUnitSystem* _Create(Utf8CP name) {return new TestUnitSystem(name);}
-    };
+        {
+        friend struct UnitRegistry;
+        private:
+            TestUnitSystem(Utf8CP name) : UnitSystem(name) {}
+        protected:
+            static TestUnitSystem* _Create(Utf8CP name) {return new TestUnitSystem(name);}
+        };
 
     struct TestPhenomenon : Phenomenon
-    {
-    public:
-        TestPhenomenon(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id) :
-            Phenomenon(name, definition, baseSymbol, id) {}
-    };
+        {
+        friend struct UnitRegistry;
+        public:
+            TestPhenomenon(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id) : Phenomenon(name, definition, baseSymbol, id) {}
+        protected:
+            static TestPhenomenon* _Create(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id) {return new TestPhenomenon(name, definition, baseSymbol, id);}
+        };
 
     struct TestUnit : Unit
-    {
-    friend struct UnitRegistry;
-    private:
-        TestUnit(UnitSystemCR unitSystem, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant) :
-            Unit(unitSystem, phenomenon, name, id, definition, baseSymbol, factor, offset, isConstant) { }
+        {
+        friend struct UnitRegistry;
+        private:
+            TestUnit(UnitSystemCR unitSystem, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant) :
+                Unit(unitSystem, phenomenon, name, id, definition, baseSymbol, factor, offset, isConstant) {}
 
-        TestUnit(UnitCR parentUnit, Utf8CP name, uint32_t id)
-        : TestUnit(*(parentUnit.GetUnitSystem()), *(parentUnit.GetPhenomenon()), name, id, parentUnit.GetDefinition(), ' ', 0, 0, false)
-        { }
+            TestUnit(UnitCR parentUnit, Utf8CP name, uint32_t id)
+            : TestUnit(*(parentUnit.GetUnitSystem()), *(parentUnit.GetPhenomenon()), name, id, parentUnit.GetDefinition(), ' ', 0, 0, false) {}
 
-    protected:
-        static TestUnit* _Create(UnitSystemCR sysName, PhenomenonCR phenomenon, Utf8CP unitName, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant)
-        {return new TestUnit(sysName, phenomenon, unitName, id, definition, baseSymbol, factor, offset, isConstant);}
+        protected:
+            static TestUnit* _Create(UnitSystemCR sysName, PhenomenonCR phenomenon, Utf8CP unitName, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant)
+            {return new TestUnit(sysName, phenomenon, unitName, id, definition, baseSymbol, factor, offset, isConstant);}
 
-        static TestUnit* _Create(UnitCR parentUnit, Utf8CP unitName, uint32_t id) {return new TestUnit(parentUnit, unitName, id);}
+            static TestUnit* _Create(UnitCR parentUnit, Utf8CP unitName, uint32_t id) {return new TestUnit(parentUnit, unitName, id);}
+        };
     };
-};
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    01/2018
@@ -256,6 +257,23 @@ TEST_F(UnitRegistryTests, TestAddingDerivedUnitSystems)
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
+//--------------------------------------------------------------------------------------
+TEST_F(UnitRegistryTests, TestAddingDerivedPhenomenon)
+    {
+    TestPhenomenon const* testSystem = UnitRegistry::Instance().AddPhenomenon<TestPhenomenon>("TestPhenomenon", "LENGTH*LENGTH");
+    ASSERT_NE(nullptr, testSystem);
+    PhenomenonCP retrievedSystem = UnitRegistry::Instance().LookupPhenomenon("TestPhenomenon");
+    ASSERT_EQ(testSystem, retrievedSystem);
+
+    TestPhenomenon const* retrievedTestSystem = dynamic_cast<TestPhenomenon const*>(retrievedSystem);
+    EXPECT_NE(nullptr, retrievedTestSystem);
+
+    bool hasDerivedPhenomenon = UnitRegistry::Instance().HasPhenomenon("TestPhenomenon");
+    ASSERT_TRUE(hasDerivedPhenomenon);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    02/2018
 //--------------------------------------------------------------------------------------
 TEST_F(UnitRegistryTests, RemovingAUnitSystem)
@@ -306,6 +324,22 @@ TEST_F(UnitRegistryTests, TestAddingBadUnitSystem)
         };
 
     UnitRegistry::Instance().AddSystem<BadUnitSystem>("TestUnitSystem");
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
+//--------------------------------------------------------------------------------------
+TEST_F(UnitRegistryTests, TestAddingBadPhenomenon)
+    {
+    struct BadPhenomenon
+        {
+        private:
+            BadPhenomenon(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id) {}
+        protected:
+            static BadPhenomenon* _Create(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id) { return new BadPhenomenon(name, definition, baseSymbol, id); }
+        };
+
+    UnitRegistry::Instance().AddPhenomenon<BadPhenomenon>("TestPhenomenon");
     }
 #endif
 

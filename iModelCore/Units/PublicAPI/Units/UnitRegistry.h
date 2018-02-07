@@ -71,6 +71,30 @@ private:
     void AddBasePhenomenon(Utf8Char baseSymbol);
     UnitCP AddUnitForBasePhenomenon(Utf8CP unitName, Utf8Char baseSymbol);
 
+    template <typename PHENOM_TYPE>
+    PHENOM_TYPE* AddPhenomenonInternal(Utf8CP phenomenaName, Utf8CP definition)
+        {
+        static_assert(std::is_base_of<Phenomenon, PHENOM_TYPE>::value, "PHENOM_TYPE must derive from Units::Phenomenon");
+        if (Utf8String::IsNullOrEmpty(phenomenaName))
+            {
+            NativeLogging::LoggingManager::GetLogger(L"UnitsNative")->error("Failed to create Phenomenon because name is null");
+            return nullptr;
+            }
+
+        if (HasPhenomenon(phenomenaName))
+            {
+            NativeLogging::LoggingManager::GetLogger(L"UnitsNative")->errorv("Cannot create Phenomenon '%s' because name is already in use", phenomenaName);
+            return nullptr;
+            }
+
+        auto phenomena = PHENOM_TYPE::_Create(phenomenaName, definition, ' ', m_nextId);
+        ++m_nextId;
+
+        m_phenomena.insert(bpair<Utf8String, PHENOM_TYPE*>(phenomenaName, phenomena));
+
+        return phenomena;
+        }
+
     template <typename UNIT_TYPE>
     UNIT_TYPE* AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant)
         {
@@ -281,12 +305,20 @@ public:
     //! @param[in] constantName Name of the Constant to be created
     //! @return A constant Unit if successfully created and added to the registry, nullptr otherwise.
     UnitCP AddConstant(Utf8CP phenomName, Utf8CP constantName, Utf8CP definition, double factor) {return AddConstant<Unit>(phenomName, constantName, definition, factor);}
-    
+
+    //! Creates a Phenomenon and adds it to this registry.
+    //! @param[in] name Name of the Phenomenon to be created.
+    //! @param[in] definition
+    //! @note The PHENOM_TYPE provided must derive from Units::Phenomenon
+    //! @return A Phenomenon if successfully created and added to the registry, nullptr otherwise.
+    template <typename PHENOM_TYPE>
+    PHENOM_TYPE* AddPhenomenon(Utf8CP name, Utf8CP definition) {return AddPhenomenonInternal<PHENOM_TYPE>(name, definition);}
+
     //! Creates a Phenomenon and adds it to this registry.
     //! @param[in] name Name of the Phenomenon to be created.
     //! @param[in] definition
     //! @return A Phenomenon if successfully created and added to the registry, nullptr otherwise.
-    PhenomenonCP AddPhenomenon(Utf8CP name, Utf8CP definition);
+    PhenomenonCP AddPhenomenon(Utf8CP name, Utf8CP definition) {return AddPhenomenon<Phenomenon>(name, definition);}
 
     //! Creates a system, of the provided SYSTEM_TYPE, and adds it to this registry.
     //! @param[in] name Name of the System to be created

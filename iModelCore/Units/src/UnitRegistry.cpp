@@ -165,31 +165,6 @@ void UnitRegistry::AddBasePhenomenon(Utf8Char baseSymbol)
     m_phenomena.insert(bpair<Utf8String, PhenomenonP>(phenomName, phenomena));
     }
 
-//-------------------------------------------------------------------------------------//
-// @bsimethod                                              Colin.Kerr     02/16
-//+---------------+---------------+---------------+---------------+---------------+----//
-PhenomenonCP UnitRegistry::AddPhenomenon (Utf8CP phenomenaName, Utf8CP definition)
-    {
-    if (Utf8String::IsNullOrEmpty(phenomenaName))
-        {
-        LOG.error("Failed to create Phenomenon because name is null");
-        return nullptr;
-        }
-
-    if (HasPhenomenon(phenomenaName))
-        {
-        LOG.errorv("Cannot create Phenomenon '%s' because name is already in use", phenomenaName);
-        return nullptr;
-        }
-
-    auto phenomena = new Phenomenon(phenomenaName, definition, ' ', m_nextId);
-    ++m_nextId;
-
-    m_phenomena.insert(bpair<Utf8String, PhenomenonP>(phenomenaName, phenomena));
-
-    return phenomena;
-    }
-
 //---------------------------------------------------------------------------------------//
 // @bsimethod                                              Colin.Kerr           02/16
 //+---------------+---------------+---------------+---------------+---------------+------//
