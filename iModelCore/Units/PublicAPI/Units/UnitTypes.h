@@ -11,7 +11,6 @@
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <Units/Units.h>
 
-using namespace std;
 
 UNITS_TYPEDEFS(UnitsSymbol)
 UNITS_TYPEDEFS(Unit)
@@ -23,7 +22,8 @@ UNITS_TYPEDEFS(UnitSynonymMap)
 UNITS_TYPEDEFS(UnitSystem)
 
 BEGIN_BENTLEY_UNITS_NAMESPACE
-
+//! @addtogroup UnitsGroup
+//! @beginGroup
 BE_JSON_NAME(synonymMap)
 BE_JSON_NAME(unitName)
 BE_JSON_NAME(synonym)
@@ -347,5 +347,6 @@ public:
     UNITS_EXPORT Utf8CP GetLabel() const;
 };
 
+/** @endGroup */
 END_BENTLEY_UNITS_NAMESPACE
 /*__PUBLISH_SECTION_END__*/
