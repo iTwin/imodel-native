@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Client/WSError.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -46,7 +46,10 @@ struct WSError : public AsyncError
             CertificateError,
 
             // See WSError::Id for more information
-            ReceivedError
+            ReceivedError,
+
+            // Not actual Status.
+            _Last
             };
 
         enum class Id
@@ -73,7 +76,10 @@ struct WSError : public AsyncError
             ServerError,
             BadRequest,
             Conflict,
-            ProxyAuthenticationRequired
+            ProxyAuthenticationRequired,
+
+            // Not actual Id.
+            _Last
             };
 
     private:
@@ -135,6 +141,9 @@ struct WSError : public AsyncError
         WSCLIENT_EXPORT Utf8StringCR GetDisplayMessage() const;
         //! DEPRECATED! Use GetDescription()
         WSCLIENT_EXPORT Utf8StringCR GetDisplayDescription() const;
+        //! Checks if instance should be available for user
+        bool IsInstanceNotAvailableError() const 
+            { return m_id == Id::InstanceNotFound || m_id == Id::NotEnoughRights; };
     };
 
 typedef WSError& WSErrorR;

@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/CacheNavigationTask.cpp $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -184,10 +184,7 @@ void CacheNavigationTask::CacheNavigationTrees(const bvector<ObjectId>& navigati
                     }
                 else
                     {
-                    WSError::Id errorId = result.GetError().GetWSError().GetId();
-
-                    if (WSError::Id::InstanceNotFound == errorId ||
-                        WSError::Id::NotEnoughRights == errorId)
+                    if (result.GetError().GetWSError().IsInstanceNotAvailableError())
                         {
                         if (forceFullRecursiveCaching)
                             {
