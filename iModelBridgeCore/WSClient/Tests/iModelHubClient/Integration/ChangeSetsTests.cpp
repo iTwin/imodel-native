@@ -343,12 +343,12 @@ TEST_F(ChangeSetsTests, CancelDownloadChangeSets)
     ChangeSetsTaskPtr changeSetsTask = s_connection->DownloadChangeSetsAfterId("", s_db->GetDbGuid(), callback.Get(), cancellationToken);
     changeSetsTask->Execute();
     cancellationToken->SetCanceled();
-
+    BeThreadUtilities::BeSleep(5000);
     changeSetsTask->Wait();
 
     ChangeSetsResult result = changeSetsTask->GetResult();
     ASSERT_FAILURE(result);
-    EXPECT_EQ(Error::Id::Canceled, result.GetError().GetId()) << "TFS#804287";
+    EXPECT_EQ(Error::Id::Canceled, result.GetError().GetId());
     callback.Verify(false);
     }
 

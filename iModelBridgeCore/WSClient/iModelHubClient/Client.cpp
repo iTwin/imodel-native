@@ -174,7 +174,8 @@ iModelTaskPtr Client::GetiModelByName(Utf8StringCR projectId, Utf8StringCR iMode
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting iModel with name %s.", iModelName.c_str());
     WSQuery query = WSQuery(ServerSchema::Schema::Project, ServerSchema::Class::iModel);
     Utf8String filter;
-    filter.Sprintf("%s+eq+'%s'", ServerSchema::Property::iModelName, iModelName.c_str());
+    Utf8String updatedName = BeUri::EscapeString(iModelName);
+    filter.Sprintf("%s+eq+'%s'", ServerSchema::Property::iModelName, updatedName.c_str());
     query.SetFilter(filter);
 
     //Always select HasCreatorInfo relationship
@@ -647,6 +648,7 @@ BriefcaseInfoTaskPtr Client::RestoreBriefcase(iModelInfoCR iModelInfo, BeSQLite:
     const Utf8String methodName = "Client::RestoreBriefcase";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+    CHECK_BRIEFCASEID(briefcaseID, BriefcaseInfoResult);
 
     if (iModelInfo.GetId().empty())
         {
@@ -963,6 +965,7 @@ StatusTaskPtr Client::AbandonBriefcase(iModelInfoCR iModelInfo, BeSQLite::BeBrie
     const Utf8String methodName = "Client::AbandonBriefcase";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+    CHECK_BRIEFCASEID(briefcaseId, StatusResult);
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, iModelInfo.GetWSRepositoryName(), m_clientInfo, nullptr, 
                                                                m_customHandler);
