@@ -731,7 +731,7 @@ StatusInt   finishClipping (LightweightPolyfaceBuilder& outputBuilder,  OutputCh
     return output._ProcessClippedPolyface (clippedMesh);
     }
 
-static const double s_builderMatchPointTolerance = 1.0E-8;
+//static const double s_builderMatchPointTolerance = 1.0E-8;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
