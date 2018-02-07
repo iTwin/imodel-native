@@ -35,6 +35,20 @@ struct EventsTests : public iModelTestsBase
     };
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                Algirdas.Mikoliunas                  02/2018
+//---------------------------------------------------------------------------------------
+void WaitForEventsCount(int currentCount1, int expectedCount1, int currentCount2, int expectedCount2)
+    {
+    for (int i = 0; i < 20; i++)
+        {
+        if (currentCount1 == expectedCount1 && currentCount2 == expectedCount2)
+            break;
+
+        BeThreadUtilities::BeSleep(500);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                Arvind.Venkateswaran                  08/2016
 //---------------------------------------------------------------------------------------
 TEST_F(EventsTests, SubscribeTests)
@@ -133,13 +147,13 @@ TEST_F(EventsTests, SingleCallbackTest)
     version->SetName("NewName");
     EXPECT_SUCCESS(versionManager.UpdateVersion(*version)->GetResult());
 
-    BeThreadUtilities::BeSleep(3000);
+    WaitForEventsCount(callbackNum, 8, 0, 0);
 
     EXPECT_SUCCESS(briefcase->UnsubscribeEventsCallback(callback)->GetResult());
-    EXPECT_EQ(10, callbackNum);
+    EXPECT_EQ(8, callbackNum);
 
     EXPECT_EQ(2, codeEventCallbackNum);
-    EXPECT_EQ(4, lockEventCallbackNum);
+    EXPECT_EQ(2, lockEventCallbackNum);
     EXPECT_EQ(1, changeSetPrePushEventCallbackNum);
     EXPECT_EQ(1, changeSetPostPushEventCallbackNum);
     EXPECT_EQ(2, versionEventCallbackNum);
@@ -181,18 +195,11 @@ TEST_F(EventsTests, MultipleCallbacksTest)
 
     // Act and wait for events
     iModelHubHelpers::AddChangeSets(briefcase);
-
-    for (int i = 0; i < 20; i++)
-        {
-        if (4 == callbackNum1 && 1 == callbackNum2)
-            break;
-
-        BeThreadUtilities::BeSleep(1000);
-        }
+    WaitForEventsCount(callbackNum1, 2, callbackNum2, 1);
 
     EXPECT_SUCCESS(briefcase->UnsubscribeEventsCallback(callback1)->GetResult());
     EXPECT_SUCCESS(briefcase->UnsubscribeEventsCallback(callback2)->GetResult());
-    EXPECT_EQ(4, callbackNum1);
+    EXPECT_EQ(2, callbackNum1);
     EXPECT_EQ(1, callbackNum2);
     }
 
@@ -233,12 +240,12 @@ TEST_F(EventsTests, MultipleBriefcasesTest)
 
     // Act and wait for events
     iModelHubHelpers::AddChangeSets(briefcase);
-    BeThreadUtilities::BeSleep(3000);
+    WaitForEventsCount(callbackNum1, 2, callbackNum2, 2);
 
     EXPECT_SUCCESS(briefcase->UnsubscribeEventsCallback(callback1)->GetResult());
     EXPECT_SUCCESS(briefcase2->UnsubscribeEventsCallback(callback2)->GetResult());
-    EXPECT_EQ(4, callbackNum1);
-    EXPECT_EQ(4, callbackNum2);
+    EXPECT_EQ(2, callbackNum1);
+    EXPECT_EQ(2, callbackNum2);
     }
 
 //---------------------------------------------------------------------------------------
@@ -281,9 +288,9 @@ TEST_F(EventsTests, UnsubscribedNotCalledTest)
 
     // Act and wait for events
     iModelHubHelpers::AddChangeSets(briefcase);
-    BeThreadUtilities::BeSleep(3000);
+    WaitForEventsCount(callbackNum1, 0, callbackNum2, 2);
 
     EXPECT_SUCCESS(briefcase2->UnsubscribeEventsCallback(callback2)->GetResult());
     EXPECT_EQ(0, callbackNum1);
-    EXPECT_EQ(4, callbackNum2);
+    EXPECT_EQ(2, callbackNum2);
     }

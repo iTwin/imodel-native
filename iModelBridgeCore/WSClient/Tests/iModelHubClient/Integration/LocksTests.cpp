@@ -456,4 +456,284 @@ TEST_F(LocksTests, RelinquishOtherUserLocks)
     iModelHubHelpers::ExpectLocksCountById(briefcase1, 4, false, LockableId(*model1), LockableId(*model2), LockableId(model1->GetDgnDb()));
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas           12/2017
+//---------------------------------------------------------------------------------------
+void VerifyLocalAndServerLocks(BriefcasePtr briefcase, LockableId lock, LockLevel lockLevel, bool expectLocalLock, bool expectLockInServer)
+    {
+    LockableIdSet locks;
+    locks.insert(lock);
 
+    iModelHubHelpers::ExpectLocksCountByLevelAndId(briefcase, expectLockInServer ? 1 : 0, false, locks, lockLevel);
+    iModelHubHelpers::ExpectLocksCountByLevelAndId(briefcase, expectLockInServer ? 1 : 0, true, locks, lockLevel);
+
+    DgnDbR dgndb = briefcase->GetDgnDb();
+    DgnLockSet locksSet;
+
+    if (expectLocalLock)
+        {
+        locksSet.insert(DgnLock(lock, lockLevel));
+        EXPECT_TRUE(dgndb.BriefcaseManager().AreLocksHeld(locksSet));
+
+        if (lockLevel == LockLevel::Shared)
+            {
+            locksSet.clear();
+            locksSet.insert(DgnLock(lock, LockLevel::Exclusive));
+            EXPECT_FALSE(dgndb.BriefcaseManager().AreLocksHeld(locksSet));
+            }
+        }
+    else
+        {
+        locksSet.insert(DgnLock(lock, LockLevel::Exclusive));
+        EXPECT_FALSE(dgndb.BriefcaseManager().AreLocksHeld(locksSet));
+
+        locksSet.clear();
+        locksSet.insert(DgnLock(lock, LockLevel::Shared));
+        EXPECT_FALSE(dgndb.BriefcaseManager().AreLocksHeld(locksSet));
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas           12/2017
+//---------------------------------------------------------------------------------------
+TEST_F(LocksTests, WorkflowCreateNewElementReleaseLocksOnPush)
+    {
+    auto briefcase = AcquireAndOpenBriefcase();
+
+    auto createdModel = CreateModel(TestCodeName().c_str(), briefcase->GetDgnDb());
+    briefcase->GetDgnDb().SaveChanges();
+
+    // After creation user should have local lock, but it should not be send to server
+    auto lockDbId = LockableId(briefcase->GetDgnDb());
+    auto lockModelId = LockableId(createdModel->GetModelId());
+    VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, true, true);
+    VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Exclusive, true, false);
+    
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, true));
+
+    // After push with release locks, no locks should be held
+    VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, false, false);
+    VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Exclusive, false, false);
+
+    auto newElement = CreateElement(*createdModel, true);
+    briefcase->GetDgnDb().SaveChanges();
+    auto lockElementId = LockableId(newElement->GetElementId());
+
+    // After new element is created user should get shared lock for model and exclusive for new element
+    VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, true, true);
+    VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Shared, true, true);
+    VerifyLocalAndServerLocks(briefcase, lockElementId, LockLevel::Exclusive, true, false);
+
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, true));
+
+    // After push no locks should be left
+    VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, false, false);
+    VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Shared, false, false);
+    VerifyLocalAndServerLocks(briefcase, lockElementId, LockLevel::Shared, false, false);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas           12/2017
+//---------------------------------------------------------------------------------------
+TEST_F(LocksTests, WorkflowCreateNewElementDoNotReleaseLocks)
+    {
+    auto briefcase = AcquireAndOpenBriefcase();
+
+    auto createdModel = CreateModel(TestCodeName().c_str(), briefcase->GetDgnDb());
+    briefcase->GetDgnDb().SaveChanges();
+
+    // After creation user should have local lock, but it should not be send to server
+    auto lockDbId = LockableId(briefcase->GetDgnDb());
+    auto lockModelId = LockableId(createdModel->GetModelId());
+    VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, true, true);
+    VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Exclusive, true, false);
+
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false));
+    
+    // Locks should be set after push
+    VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, true, true);
+    VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Exclusive, true, true);
+
+    // Release model lock
+    DgnLockSet lockSet;
+    lockSet.insert(DgnLock(lockModelId, LockLevel::None));
+    lockSet.insert(DgnLock(lockDbId, LockLevel::None));
+    EXPECT_EQ(RepositoryStatus::Success, briefcase->GetDgnDb().BriefcaseManager().DemoteLocks(lockSet));
+    VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, false, false);
+    VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Shared, false, false);
+
+    // New element creation should acquire locks
+    auto newElement = CreateElement(*createdModel, true);
+    briefcase->GetDgnDb().SaveChanges();
+    auto lockElementId = LockableId(newElement->GetElementId());
+
+    // After new element is created user should get shared lock for model and exclusive for new element
+    VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, true, true);
+    VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Shared, true, true);
+    VerifyLocalAndServerLocks(briefcase, lockElementId, LockLevel::Exclusive, true, false);
+
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false));
+
+    // After push locks should be set
+    VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, true, true);
+    VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Shared, true, true);
+    VerifyLocalAndServerLocks(briefcase, lockElementId, LockLevel::Exclusive, true, true);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas           12/2017
+//---------------------------------------------------------------------------------------
+TEST_F(LocksTests, WorkflowCreateNewElementModelExclusivelyLocked)
+    {
+    auto briefcase = AcquireAndOpenBriefcase();
+
+    auto createdModel = CreateModel(TestCodeName().c_str(), briefcase->GetDgnDb());
+    briefcase->GetDgnDb().SaveChanges();
+
+    // After creation user should have local lock, but it should not be sent to server
+    auto lockDbId = LockableId(briefcase->GetDgnDb());
+    auto lockModelId = LockableId(createdModel->GetModelId());
+    VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, true, true);
+    VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Exclusive, true, false);
+
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, true));
+
+    VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, false, false);
+    VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Exclusive, false, false);
+
+    // Lock model exclusively
+    LockRequest lockRequest;
+    lockRequest.Insert(*createdModel, LockLevel::Exclusive);
+    EXPECT_EQ(RepositoryStatus::Success, briefcase->GetDgnDb().BriefcaseManager().AcquireLocks(lockRequest).Result());
+    VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, true, true);
+    VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Exclusive, true, true);
+
+    // New element creation should not acquire locks in the server
+    auto newElement = CreateElement(*createdModel, true);
+    briefcase->GetDgnDb().SaveChanges();
+    auto lockElementId = LockableId(newElement->GetElementId());
+
+    // After new element is created user only exclusive model lock should exist in the server
+    VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, true, true);
+    VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Exclusive, true, true);
+    VerifyLocalAndServerLocks(briefcase, lockElementId, LockLevel::Exclusive, true, false);
+
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false));
+
+    // After new element is created user only exclusive model lock should exist in the server
+    VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, true, true);
+    VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Exclusive, true, true);
+    VerifyLocalAndServerLocks(briefcase, lockElementId, LockLevel::Exclusive, true, false); // Lock should not be sent to the server, since user has model locked exclusively
+
+    // Demote lock of model - should demote lock of element
+    DgnLockSet lockSet;
+    lockSet.insert(DgnLock(lockDbId, LockLevel::None));
+    lockSet.insert(DgnLock(lockModelId, LockLevel::None));
+    EXPECT_EQ(RepositoryStatus::Success, briefcase->GetDgnDb().BriefcaseManager().DemoteLocks(lockSet));
+    VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, false, false);
+    VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Shared, false, false);
+    VerifyLocalAndServerLocks(briefcase, lockElementId, LockLevel::Exclusive, false, false);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas           12/2017
+//---------------------------------------------------------------------------------------
+TEST_F(LocksTests, WorkflowUpdateElement)
+    {
+    auto briefcase = AcquireAndOpenBriefcase();
+    DgnDbR db = briefcase->GetDgnDb();
+
+    auto createdModel = CreateModel(TestCodeName().c_str(), db);
+    auto newElement = CreateElement(*createdModel, true);
+    db.SaveChanges();
+
+    // After creation user should have local lock, but it should not be send to server
+    auto lockDbId = LockableId(briefcase->GetDgnDb());
+    auto lockModelId = LockableId(createdModel->GetModelId());
+    auto lockElementId = LockableId(newElement->GetElementId());
+    VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, true, true);
+    VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Exclusive, true, false);
+    VerifyLocalAndServerLocks(briefcase, lockElementId, LockLevel::Exclusive, true, false);
+
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, true));
+
+    // After push there should be no locks left
+    VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, false, false);
+    VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Exclusive, false, false);
+    VerifyLocalAndServerLocks(briefcase, lockElementId, LockLevel::Exclusive, false, false);
+
+    // Prepare for element update
+    IBriefcaseManager::Request req;
+    DgnElementPtr existingElement = briefcase->GetDgnDb().Elements().GetForEdit<PhysicalElement>(newElement->GetElementId());
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().PrepareForElementUpdate(req, *existingElement, IBriefcaseManager::PrepareAction::Acquire));
+    existingElement->SetUserLabel("New label");
+    existingElement->Update();
+    briefcase->GetDgnDb().SaveChanges();
+
+    // User should have shared lock for model and exclusive for element in both server and locally
+    VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, true, true);
+    VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Shared, true, true);
+    VerifyLocalAndServerLocks(briefcase, lockElementId, LockLevel::Exclusive, true, true);
+
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, true));
+
+    // After push locks should be cleared
+    VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, false, false);
+    VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Shared, false, false);
+    VerifyLocalAndServerLocks(briefcase, lockElementId, LockLevel::Exclusive, false, false);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas           12/2017
+//---------------------------------------------------------------------------------------
+TEST_F(LocksTests, WorkflowUpdateElementWithExclusiveModelLock)
+    {
+    auto briefcase = AcquireAndOpenBriefcase();
+    DgnDbR db = briefcase->GetDgnDb();
+
+    auto createdModel = CreateModel(TestCodeName().c_str(), db);
+    auto newElement = CreateElement(*createdModel, true);
+    db.SaveChanges();
+
+    // After creation user should have local lock, but it should not be send to server
+    auto lockDbId = LockableId(briefcase->GetDgnDb());
+    auto lockModelId = LockableId(createdModel->GetModelId());
+    auto lockElementId = LockableId(newElement->GetElementId());
+    VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, true, true);
+    VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Exclusive, true, false);
+    VerifyLocalAndServerLocks(briefcase, lockElementId, LockLevel::Exclusive, true, false);
+
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, true));
+
+    // After push there should be no locks left
+    VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, false, false);
+    VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Exclusive, false, false);
+    VerifyLocalAndServerLocks(briefcase, lockElementId, LockLevel::Exclusive, false, false);
+
+    // Lock model exclusively
+    LockRequest lockRequest;
+    lockRequest.Insert(*createdModel, LockLevel::Exclusive);
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().AcquireLocks(lockRequest).Result());
+    VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, true, true);
+    VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Exclusive, true, true);
+
+    // Prepare for element update
+    IBriefcaseManager::Request req;
+    DgnElementPtr existingElement = briefcase->GetDgnDb().Elements().GetForEdit<PhysicalElement>(newElement->GetElementId());
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().PrepareForElementUpdate(req, *existingElement, IBriefcaseManager::PrepareAction::Acquire));
+    existingElement->SetUserLabel("New label");
+    existingElement->Update();
+    db.SaveChanges();
+
+    // User should have exclusive lock for model and only local lock for element
+    VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, true, true);
+    VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Exclusive, true, true);
+    VerifyLocalAndServerLocks(briefcase, lockElementId, LockLevel::Exclusive, true, false);
+
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false));
+
+    // After push locks should not be cleared
+    VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, true, true);
+    VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Exclusive, true, true);
+    VerifyLocalAndServerLocks(briefcase, lockElementId, LockLevel::Exclusive, true, false);
+    }
