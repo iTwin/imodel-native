@@ -2,7 +2,7 @@
 |
 |   $Source: DgnCore/UnitDefinition.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -48,18 +48,18 @@ UnitBase UnitDefinition::BaseFromInt(uint32_t val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitSystem UnitDefinition::SystemFromInt(uint32_t val)
+Dgn::UnitSystem UnitDefinition::SystemFromInt(uint32_t val)
     {
     if (3 < val)
-        { BeDataAssert(0); return UnitSystem::Undefined; }
+        { BeDataAssert(0); return Dgn::UnitSystem::Undefined; }
 
-    return (UnitSystem) val;
+    return (Dgn::UnitSystem) val;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UnitDefinition::Init(UnitBase base, UnitSystem sys, double num, double den, Utf8CP label)
+void UnitDefinition::Init(UnitBase base, Dgn::UnitSystem sys, double num, double den, Utf8CP label)
     {
     m_base = base;
     m_system = sys;
@@ -89,7 +89,7 @@ void UnitDefinition::Init(UnitDefinitionCR source)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UnitDefinition::SetInvalid()
     {
-    Init(UnitBase::None, UnitSystem::Undefined, 0.0, 0.0, NULL);
+    Init(UnitBase::None, Dgn::UnitSystem::Undefined, 0.0, 0.0, NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -106,7 +106,7 @@ void UnitDefinition::SetLabel(Utf8CP val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitDefinition::UnitDefinition(UnitBase base, UnitSystem sys, double num, double den, Utf8CP label)
+UnitDefinition::UnitDefinition(UnitBase base, Dgn::UnitSystem sys, double num, double den, Utf8CP label)
     {
     Init(base, sys, num, den, label);
     }
