@@ -2,16 +2,16 @@
 |
 |     $Source: PublicAPI/WebServices/iModelHub/Client/ChangeSetCacheManager.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 #include <WebServices/iModelHub/Common.h>
 
-USING_NAMESPACE_BENTLEY_WEBSERVICES
-
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
+
+USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ChangeSetCacheManager);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(iModelConnection);

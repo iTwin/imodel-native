@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/iModelHub/Client/VersionsManager.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,9 +12,9 @@
 #include <WebServices/iModelHub/Client/ChangeSetInfo.h>
 #include <WebServices/iModelHub/Client/VersionInfo.h>
 
-USING_NAMESPACE_BENTLEY_WEBSERVICES
-
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
+
+USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(VersionsManager);
 //WIP remove then relationship to get changeSets implemented
