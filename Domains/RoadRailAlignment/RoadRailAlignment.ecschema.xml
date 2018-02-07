@@ -115,13 +115,13 @@
         </ECCustomAttributes>
         <ECProperty propertyName="Station" typeName="double" kindOfQuantity="STATION"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="AlignmentOwnsStations" strength="embedding" modifier="Sealed" description="Relationship definitiong ownership from an Alignment to its child Stations.">
+    <ECRelationshipClass typeName="AlignmentOwnsReferents" strength="embedding" modifier="None" description="Relationship definitiong ownership from an Alignment to its child Referents.">
         <BaseClass>bis:ElementOwnsChildElements</BaseClass>
         <Source multiplicity="(0..1)" polymorphic="false" roleLabel="owns">
             <Class class="Alignment"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="false" roleLabel="is owned by">
-            <Class class="AlignmentStation"/>
+        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="is owned by">
+            <Class class="AlignmentReferentElement"/>
         </Target>
     </ECRelationshipClass>
     <ECEntityClass typeName="AlignmentProfileViewDefinition" description="A specialized view for vertical alignments.">

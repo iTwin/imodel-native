@@ -2,7 +2,7 @@
 |
 |     $Source: AlignmentReferent.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "RoadRailAlignmentInternal.h"
@@ -46,7 +46,7 @@ AlignmentStationPtr AlignmentStation::Create(AlignmentCR alignment, double dista
         return nullptr;
 
     CreateParams params(alignment.GetDgnDb(), alignment.GetModelId(), QueryClassId(alignment.GetDgnDb()), AlignmentCategory::Get(alignment.GetDgnDb()));
-    params.SetParentId(alignment.GetElementId(), DgnClassId(alignment.GetDgnDb().Schemas().GetClassId(BRRA_SCHEMA_NAME, BRRA_REL_AlignmentOwnsStations)));
+    params.SetParentId(alignment.GetElementId(), DgnClassId(alignment.GetDgnDb().Schemas().GetClassId(BRRA_SCHEMA_NAME, BRRA_REL_AlignmentOwnsReferents)));
 
     AlignmentStationPtr retVal(new AlignmentStation(params, distanceAlongFromStart, station));
     retVal->_SetLinearElement(alignment.GetElementId());
