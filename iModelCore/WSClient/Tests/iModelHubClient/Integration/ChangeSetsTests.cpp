@@ -246,7 +246,7 @@ TEST_F(ChangeSetsTests, PreDownload)
 
     // Wait max 50 sec until changeSet files are preDownloaded
     int maxIterations = 100;
-    while (IsDirEmpty(preDownloadPath) && maxIterations > 0)
+    while (GetDirSize(preDownloadPath) < 2 && maxIterations > 0)
         {
         BeThreadUtilities::BeSleep(500);
         maxIterations--;
