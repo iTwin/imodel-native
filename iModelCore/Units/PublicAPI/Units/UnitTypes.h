@@ -10,7 +10,7 @@
 /*__PUBLISH_SECTION_START__*/
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <Units/Units.h>
-
+#include <type_traits>
 
 UNITS_TYPEDEFS(UnitsSymbol)
 UNITS_TYPEDEFS(Unit)

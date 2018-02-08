@@ -98,7 +98,7 @@ private:
     template <typename UNIT_TYPE>
     UNIT_TYPE* AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant)
         {
-        static_assert(std::is_base_of<Unit, UNIT_TYPE>::value, "UNIT_TYPE must derive from Units::Unit.");
+        static_assert((std::is_base_of<Unit, UNIT_TYPE>::value), "UNIT_TYPE must derive from Units::Unit.");
         if (Utf8String::IsNullOrEmpty(unitName))
             {
             NativeLogging::LoggingManager::GetLogger(L"UnitsNative")->error("Cannot create base unit because the input name is null");
@@ -145,7 +145,7 @@ private:
     template<typename UNIT_TYPE>
     UNIT_TYPE* AddInvertingUnitInternal(Utf8CP parentUnitName, Utf8CP unitName)
         {
-        static_assert(std::is_base_of<Unit, UNIT_TYPE>::value, "UNIT_TYPE must derive from Units::Unit.");
+        static_assert((std::is_base_of<Unit, UNIT_TYPE>::value), "UNIT_TYPE must derive from Units::Unit.");
         if (Utf8String::IsNullOrEmpty(unitName))
             {
             NativeLogging::LoggingManager::GetLogger(L"UnitsNative")->error("Cannot create unit because the input name is null");
@@ -188,7 +188,7 @@ private:
     template<typename SYSTEM_TYPE>
     SYSTEM_TYPE* AddSystemInternal(Utf8CP name)
         {
-        static_assert(std::is_base_of<UnitSystem, SYSTEM_TYPE>::value, "SYSTEM_TYPE must derive from Units::UnitSystem.");
+        static_assert((std::is_base_of<UnitSystem, SYSTEM_TYPE>::value), "SYSTEM_TYPE must derive from Units::UnitSystem.");
         if (Utf8String::IsNullOrEmpty(name))
             {
             NativeLogging::LoggingManager::GetLogger(L"UnitsNative")->error("Cannot create UnitSystem because name is null");
@@ -253,8 +253,8 @@ public:
     //! Creates a Unit, of the provided UNIT_TYPE, and adds it to the registry.
     //! @param[in] phenomName Name of the Phenomenon the Unit must be added to.
     //! @param[in] systemName Name of the UnitSystem the Unit must be added to.
-    //! @param[in] constantName Name of the Constant to be created.
-    //! @param[in] definition 
+    //! @param[in] unitName Name of the Unit to be created.
+    //! @param[in] definition
     //! @param[in] factor
     //! @param[in] offset
     //! @note The UNIT_TYPE provided must derive from Units::Unit
@@ -266,8 +266,8 @@ public:
     //! Creates a Unit and adds it to the registry.
     //! @param[in] phenomName Name of the Phenomenon the Unit must be added to.
     //! @param[in] systemName Name of the UnitSystem the Unit must be added to.
-    //! @param[in] constantName Name of the Constant to be created.
-    //! @param[in] definition 
+    //! @param[in] unitName Name of the Unit to be created.
+    //! @param[in] definition
     //! @param[in] factor
     //! @param[in] offset
     //! @return A Unit if successfully created and added to this registry, nullptr otherwise.
@@ -291,6 +291,8 @@ public:
     //! Creates a Constant, of the provided UNIT_TYPE, and adds it to this registry.
     //! @param[in] phenomName Name of the Phenomenon the new Constant is needs to be added to
     //! @param[in] constantName Name of the Constant to be created
+    //! @param[in] definition
+    //! @param[in] factor
     //! @note The UNIT_TYPE provided must derive from Units::Unit
     //! @return A constant UNIT_TYPE if successfully created and added to the registry, nullptr otherwise.
     template <typename UNIT_TYPE>
@@ -303,6 +305,8 @@ public:
     //! Creates a Constant and adds it to this registry.
     //! @param[in] phenomName Name of the Phenomenon the new Constant is needs to be added to
     //! @param[in] constantName Name of the Constant to be created
+    //! @param[in] definition
+    //! @param[in] factor
     //! @return A constant Unit if successfully created and added to the registry, nullptr otherwise.
     UnitCP AddConstant(Utf8CP phenomName, Utf8CP constantName, Utf8CP definition, double factor) {return AddConstant<Unit>(phenomName, constantName, definition, factor);}
 
