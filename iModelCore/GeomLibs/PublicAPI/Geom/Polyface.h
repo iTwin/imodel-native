@@ -1112,7 +1112,7 @@ GEOMAPI_VIRTUAL StatusInt   _ProcessClippedPolyface (PolyfaceHeaderR polyfaceHea
 GEOMDLLIMPEXP StatusInt   ClipToPlaneSetIntersection (T_ClipPlaneSets const& planeSets, IClipToPlaneSetOutput& output, bool triangulateOutput) const;
 
 
-//!  @description Fast, crude decimator - used during tile generation.
+//!  @description Fas clustered vertex decimator - used during tile generation.
 GEOMDLLIMPEXP PolyfaceHeaderPtr ClusteredVertexDecimate (double tolerance);
 
 
@@ -2230,6 +2230,8 @@ GEOMDLLIMPEXP size_t DecimateByEdgeCollapse
 double abstol,  //!< [in] absolute tolerance for collapsing vertices
 double rangeFractionTol //!< [in] tolerance as fraction of range of the mesh points
 );
+//!  @description Fast normal generation - used during tile generation. 
+GEOMDLLIMPEXP void BuildNormalsFast(double creaseTolerance);
 
 //! Examine vertex indices within each facet.
 //! If consecutive indices are identical, that is a short edge.
