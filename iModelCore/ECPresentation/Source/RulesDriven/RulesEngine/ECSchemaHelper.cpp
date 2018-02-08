@@ -136,8 +136,12 @@ ECSchemaHelper::~ECSchemaHelper()
     {
     if (m_ownsRelatedPathsCache)
         delete m_relatedPathsCache;
+    if (m_ownsPolymorphicallyRelatedClassesCache)
+        delete m_polymorphicallyRelatedClassesCache;
     if (m_ownsStatementCache)
         delete m_statementCache;
+    if (m_ownsECExpressionsCache)
+        delete m_ecexpressionsCache;
     }
 
 /*---------------------------------------------------------------------------------**//**

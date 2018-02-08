@@ -181,7 +181,6 @@ struct RecursiveQueriesHelper
 {
 private:
     IConnectionCR m_connection;
-    SelectClassInfo const& m_selectClassInfo;
     InstanceFilteringParams::RecursiveQueryInfo const& m_recursiveQueryInfo;
 
 private:
@@ -283,8 +282,8 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                04/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    RecursiveQueriesHelper(IConnectionCR connection, SelectClassInfo const& selectClassInfo, InstanceFilteringParams::RecursiveQueryInfo const& recursiveQueryInfo) 
-        : m_connection(connection), m_selectClassInfo(selectClassInfo), m_recursiveQueryInfo(recursiveQueryInfo)
+    RecursiveQueriesHelper(IConnectionCR connection, InstanceFilteringParams::RecursiveQueryInfo const& recursiveQueryInfo) 
+        : m_connection(connection), m_recursiveQueryInfo(recursiveQueryInfo)
         {}
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                04/2017
@@ -330,7 +329,7 @@ void QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresentationQuery<T>& query
             if (nullptr != params.GetRecursiveQueryInfo())
                 {
                 // in case of recursive query just bind the children ids
-                RecursiveQueriesHelper recursiveQueries(params.GetConnection(), params.GetSelectInfo(), *params.GetRecursiveQueryInfo());
+                RecursiveQueriesHelper recursiveQueries(params.GetConnection(), *params.GetRecursiveQueryInfo());
                 bset<ECInstanceId> ids = recursiveQueries.GetRecursiveChildrenIds(*params.GetSelection(), params.GetSelectInfo());
                 IdsFilteringHelper<bset<ECInstanceId>> filteringHelper(ids);
                 query.Where(filteringHelper.CreateWhereClause("[this].[ECInstanceId]").c_str(), filteringHelper.CreateBoundValues());
