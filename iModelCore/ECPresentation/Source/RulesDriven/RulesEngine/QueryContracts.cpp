@@ -307,6 +307,20 @@ Utf8String PresentationQueryMergeField::_GetSelectClause(Utf8CP prefix, bool use
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> static void AppendToVector(bvector<T>&) {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T, typename First, typename... Args> static void AppendToVector(bvector<T>& vec, First&& first, Args&&... args)
+    {
+    vec.push_back(std::forward<First>(first));
+    AppendToVector(vec, std::forward<Args>(args)...);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 template<typename... Args> static bvector<Utf8String> CreateList(Args&&... args)
     {
     bvector<Utf8String> list;
@@ -380,20 +394,6 @@ public:
         return new SkippedInstanceKeysAggregateField(name, internalField);
         }
 };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> static void AppendToVector(bvector<T>&) {}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T, typename First, typename... Args> static void AppendToVector(bvector<T>& vec, First&& first, Args&&... args)
-    {
-    vec.push_back(std::forward<First>(first));
-    AppendToVector(vec, std::forward<Args>(args)...);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
@@ -847,8 +847,8 @@ Utf8String ECPropertyGroupingNodesQueryContract::GetPropertyValueClause(Utf8CP p
     {
     if (nullptr != m_foreignKeyClass)
         {
-        ECPropertyCP foreignKeyClassLabelProperty = m_foreignKeyClass->GetInstanceLabelProperty();
-        Utf8CP labelClause = nullptr != foreignKeyClassLabelProperty ? foreignKeyClassLabelProperty->GetName().c_str() : "''";
+        // unused - ECPropertyCP foreignKeyClassLabelProperty = m_foreignKeyClass->GetInstanceLabelProperty();
+        // unused - Utf8CP labelClause = nullptr != foreignKeyClassLabelProperty ? foreignKeyClassLabelProperty->GetName().c_str() : "''";
         PresentationQueryContractFieldPtr field = PresentationQueryContractFunctionField::Create(DisplayLabelFieldName, FUNCTION_NAME_GetNavigationPropertyLabel,
             CreateFieldsList("ECClassId", "ECInstanceId"));
         return field->GetSelectClause("parentInstance");
