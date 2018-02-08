@@ -56,22 +56,24 @@ AlignmentCPtr Alignment::GetAssociated(DgnElementCR element)
     if (element.ToGeometrySource3d())
         {
         auto stmtPtr = element.GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BRRA_SCHEMA(BRRA_REL_GraphicalElement3dRepresentsAlignment) " WHERE SourceECInstanceId=?;");
-        BeAssert(stmtPtr.IsValid());
-
-        stmtPtr->BindId(1, element.GetElementId());
-        if (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
-            return Alignment::Get(element.GetDgnDb(), stmtPtr->GetValueId<DgnElementId>(0));
+        if (stmtPtr.IsValid())
+            {
+            stmtPtr->BindId(1, element.GetElementId());
+            if (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
+                return Alignment::Get(element.GetDgnDb(), stmtPtr->GetValueId<DgnElementId>(0));
+            }
         }
 
     // 5. If element is a DrawingGraphic (2d) and it represents an Alignment, return it.
     if (element.ToDrawingGraphic())
         {
         auto stmtPtr = element.GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BRRA_SCHEMA(BRRA_REL_DrawingGraphicRepresentsAlignment) " WHERE SourceECInstanceId=?;");
-        BeAssert(stmtPtr.IsValid());
-
-        stmtPtr->BindId(1, element.GetElementId());
-        if (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
-            return Alignment::Get(element.GetDgnDb(), stmtPtr->GetValueId<DgnElementId>(0));
+        if (stmtPtr.IsValid())
+            {
+            stmtPtr->BindId(1, element.GetElementId());
+            if (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
+                return Alignment::Get(element.GetDgnDb(), stmtPtr->GetValueId<DgnElementId>(0));
+            }
         }
 
     // 6. If element is an ILinearElementSource, return its main ILinearElement if it is an Alignment.
