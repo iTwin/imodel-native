@@ -70,6 +70,9 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance)
         {
         for (size_t i=0, count = visitor->NumEdgesThisFace(); i<count; i++)
             {
+            if ((doNormals && nullptr == visitor->GetClientNormalIndexCP()) || (doParams && nullptr == visitor->GetClientParamIndexCP()))
+                continue;   // degenerate facet...
+
             int32_t     inputPointIndex  = visitor->GetClientPointIndexCP()[i];
             int32_t     inputNormalIndex = doNormals ? visitor->GetClientNormalIndexCP()[i] : -1;
             int32_t     inputParamIndex  = doParams  ? visitor->GetClientParamIndexCP()[i] : -1; 
