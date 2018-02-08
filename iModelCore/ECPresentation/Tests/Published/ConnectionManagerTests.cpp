@@ -109,8 +109,8 @@ TEST_F(ConnectionManagerTests, ReturnsProxyConnectionWhenRequestedByConnectionId
     m_manager.NotifyConnectionOpened(s_project->GetECDb());
     IConnectionPtr primaryConnection = m_manager.GetConnection(s_project->GetECDb());
     ASSERT_TRUE(primaryConnection.IsValid());
-    Utf8StringCR primaryConnectionId = primaryConnection->GetId();
-    ECDbCR primaryConnectionDb = primaryConnection->GetECDb();
+    // unused - Utf8StringCR primaryConnectionId = primaryConnection->GetId();
+    // unused - ECDbCR primaryConnectionDb = primaryConnection->GetECDb();
     
     std::thread([&]()
         {

@@ -5230,7 +5230,7 @@ TEST(ExpectedQueriesTest, RunAllExpectedQueries)
 
     IConnectionManagerCR connections = ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnections();
     IConnectionCR connection = ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnection();
-    ECDbR db = connection.GetECDb();
+    // unused - ECDbR db = connection.GetECDb();
     TestUserSettings userSettings;
     PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance("test", 1, 0, false, "", "", "", false);
     CustomFunctionsInjector customFunctions(connections, connection);
