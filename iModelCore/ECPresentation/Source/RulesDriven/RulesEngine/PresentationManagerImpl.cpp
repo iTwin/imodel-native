@@ -491,19 +491,19 @@ void RulesDrivenECPresentationManagerImpl::_OnConnectionEvent(ConnectionEvent co
     {
     if (evt.GetEventType() == ConnectionEventType::Opened)
         {
+#ifdef WIP_EMBEDDED_SUPPLEMENTAL_RULESETS
         RuleSetLocaterPtr locater = m_embeddedRuleSetLocaters[evt.GetConnection().GetId()] = SupplementalRuleSetLocater::Create(*EmbeddedRuleSetLocater::Create(evt.GetConnection()));
         GetLocaters().RegisterLocater(*locater);
+#endif
         }
     else if (evt.GetEventType() == ConnectionEventType::Closed)
         {
         auto iter = m_embeddedRuleSetLocaters.find(evt.GetConnection().GetId());
-        if (m_embeddedRuleSetLocaters.end() == iter)
+        if (m_embeddedRuleSetLocaters.end() != iter)
             {
-            BeAssert(false);
-            return;
+            GetLocaters().UnregisterLocater(*iter->second);
+            m_embeddedRuleSetLocaters.erase(iter);
             }
-        GetLocaters().UnregisterLocater(*iter->second);
-        m_embeddedRuleSetLocaters.erase(iter);
         m_contentCache->ClearCache(evt.GetConnection());
         }
     }
