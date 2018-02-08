@@ -2089,8 +2089,8 @@ static Feature featureFromParams(DgnElementId elemId, DisplayParamsCR params)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double rangePixels, bool isContained)
     {
-    PolyfaceHeaderP polyface = tilePolyface.m_polyface.get();
-    if (nullptr == polyface || 0 == polyface->GetPointIndexCount())
+    PolyfaceHeaderPtr polyface = tilePolyface.m_polyface.get();
+    if (polyface.IsNull() || 0 == polyface->GetPointIndexCount())
         return;
 
     bool doDecimate = !m_tile.IsLeaf() && geom.DoDecimate() && 0 == polyface->GetPointCount() > GetDecimatePolyfacePointCount() && /* Decimator doesn't handle params... */ 0 == polyface->GetParamCount();      
