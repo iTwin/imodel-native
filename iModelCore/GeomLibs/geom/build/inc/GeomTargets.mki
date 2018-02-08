@@ -659,7 +659,7 @@ $(OUT_DIR)PolyfaceClipToPlaneSets$(OUT_EXT)    : $(geomSrcPolyface)PolyfaceClipT
 
 $(OUT_DIR)PolyfaceClusterDecimation$(OUT_EXT)    : $(geomSrcPolyface)PolyfaceClusterDecimation.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-$(OUT_DIR)PolyfaceLightweightBuilder$(OUT_EXT)    : $(geomSrcPolyface)PolyfaceLightweightBuilder.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+$(OUT_DIR)PolyfaceLightWeightBuilder$(OUT_EXT)    : $(geomSrcPolyface)PolyfaceLightWeightBuilder.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)ClipPlaneSet$(OUT_EXT)      : $(geomSrcPolyface)ClipPlaneSet.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
