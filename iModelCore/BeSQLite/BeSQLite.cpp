@@ -3183,6 +3183,7 @@ ZipErrors SnappyFromBlob::Init(DbCR db, Utf8CP tableName, Utf8CP column, int64_t
     else if (BE_SQLITE_OK != m_blobIO.Open((DbR) db, tableName, column, rowId, 0))
         {
         m_blobBytesLeft = 0;
+        LOG.errorv("sqlite3_open_blob failed: %s", db.GetLastError(nullptr).c_str());
         return  ZIP_ERROR_BLOB_READ_ERROR;
         }
 
