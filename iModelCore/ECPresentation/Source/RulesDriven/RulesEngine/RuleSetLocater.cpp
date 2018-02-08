@@ -139,7 +139,7 @@ bvector<PresentationRuleSetPtr> RuleSetLocaterManager::_LocateRuleSets(IConnecti
             return cacheIter->second;
         }
 
-    ECSchemaHelper helper(connection, nullptr, nullptr);
+    ECSchemaHelper helper(connection, nullptr, nullptr, nullptr, nullptr);
     bvector<RuleSetLocaterPtr> sortedLocaters = m_locaters;
     std::sort(sortedLocaters.begin(), sortedLocaters.end(), [](RuleSetLocaterPtr a, RuleSetLocaterPtr b)
         {

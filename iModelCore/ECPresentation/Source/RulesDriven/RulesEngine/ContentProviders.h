@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/ContentProviders.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once 
@@ -36,14 +36,17 @@ private:
 
 private:
     void Init();
-    ECPRESENTATION_EXPORT ContentProviderContext(PresentationRuleSetCR, bool, Utf8String, INavNodeLocaterCR, IPropertyCategorySupplierR, IUserSettings const&, ECExpressionsCache&, RelatedPathsCache&, JsonNavNodesFactory const&, IJsonLocalState const*);
+    ECPRESENTATION_EXPORT ContentProviderContext(PresentationRuleSetCR, bool, Utf8String, INavNodeLocaterCR, IPropertyCategorySupplierR, IUserSettings const&, 
+        ECExpressionsCache&, RelatedPathsCache&, PolymorphicallyRelatedClassesCache&, JsonNavNodesFactory const&, IJsonLocalState const*);
     ECPRESENTATION_EXPORT ContentProviderContext(ContentProviderContextCR other);
     
 public:
     static ContentProviderContextPtr Create(PresentationRuleSetCR ruleset, bool holdRuleset, Utf8String preferredDisplayType, INavNodeLocaterCR nodesLocater, IPropertyCategorySupplierR categorySupplier,
-        IUserSettings const& settings, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, JsonNavNodesFactory const& nodesFactory, IJsonLocalState const* localState)
+        IUserSettings const& settings, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache, 
+        JsonNavNodesFactory const& nodesFactory, IJsonLocalState const* localState)
         {
-        return new ContentProviderContext(ruleset, holdRuleset, preferredDisplayType, nodesLocater, categorySupplier, settings, ecexpressionsCache, relatedPathsCache, nodesFactory, localState);
+        return new ContentProviderContext(ruleset, holdRuleset, preferredDisplayType, nodesLocater, categorySupplier, settings, ecexpressionsCache, 
+            relatedPathsCache, polymorphicallyRelatedClassesCache, nodesFactory, localState);
         }
     static ContentProviderContextPtr Create(ContentProviderContextCR other) {return new ContentProviderContext(other);}
     ~ContentProviderContext();

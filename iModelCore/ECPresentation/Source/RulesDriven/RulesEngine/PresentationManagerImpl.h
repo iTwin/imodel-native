@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/PresentationManagerImpl.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once 
@@ -180,8 +180,7 @@ public:
 struct RulesDrivenECPresentationManagerImpl : RulesDrivenECPresentationManager::Impl, ECInstanceChangeEventSource::IEventHandler, 
     ISelectionChangesListener, IRulesetCallbacksHandler, IUserSettingsChangeListener, IConnectionsListener
 {
-    struct ECDbStatementsCache;
-    struct ECDbRelatedPathsCache;
+    struct ECDbCaches;
     struct RulesetECExpressionsCache;
     struct UsedClassesListener;
     struct NodesProviderContextFactory;
@@ -195,8 +194,7 @@ private:
     CustomFunctionsInjector* m_customFunctions;
     mutable NodesCache* m_nodesCache;
     mutable ContentCache* m_contentCache;
-    ECDbStatementsCache* m_statementCache;
-    ECDbRelatedPathsCache* m_relatedPathsCache;
+    ECDbCaches* m_ecdbCaches;
     RulesetECExpressionsCache* m_rulesetECExpressionsCache;    
     UpdateHandler* m_updateHandler;
     UsedClassesListener* m_usedClassesListener;

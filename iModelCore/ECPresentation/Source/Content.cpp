@@ -2,7 +2,7 @@
 |
 |     $Source: Source/Content.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -844,7 +844,7 @@ void ContentDescriptor::ECPropertiesField::InitFromProperty(ECClassCR primaryCla
     IPropertyCategorySupplierP categorySupplier)
     {
     if (nullptr != categorySupplier)
-        SetCategory(categorySupplier->GetCategory(primaryClass, prop.GetRelatedClassPath(), prop.GetProperty()));
+        SetCategory(categorySupplier->GetCategory(primaryClass, prop.GetRelatedClassPath(), prop.GetProperty(), prop.GetRelationshipMeaning()));
     SetName(Utf8String(prop.GetPropertyClass().GetName()).append("_").append(prop.GetProperty().GetName()));
     SetLabel(prop.GetProperty().GetDisplayLabel());
     m_properties.push_back(prop);
@@ -853,26 +853,33 @@ void ContentDescriptor::ECPropertiesField::InitFromProperty(ECClassCR primaryCla
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<ContentDescriptor::Property const*> ContentDescriptor::ECPropertiesField::FindMatchingProperties(ECClassCP targetClass) const
+bvector<ContentDescriptor::Property const*> const& ContentDescriptor::ECPropertiesField::FindMatchingProperties(ECClassCP targetClass) const
     {
-    bvector<ContentDescriptor::Property const*> matchingProperties;
+    static bvector<ContentDescriptor::Property const*> const s_empty;
     if (m_properties.empty())
-        return matchingProperties;
+        return s_empty;
 
-    if (nullptr == targetClass)
+    auto iter = m_matchingPropertiesCache.find(targetClass);
+    if (m_matchingPropertiesCache.end() == iter)
         {
-        for (Property const& p : m_properties)
-            matchingProperties.push_back(&p);
-        }
-    else
-        {
-        for (Property const& prop : m_properties)
+        bvector<ContentDescriptor::Property const*> matchingProperties;
+        if (nullptr == targetClass)
             {
-            if (targetClass->Is(&prop.GetPropertyClass()) || prop.IsRelated() && targetClass->Is(prop.GetRelatedClassPath().front().GetTargetClass()))
-                matchingProperties.push_back(&prop);
+            for (Property const& p : m_properties)
+                matchingProperties.push_back(&p);
             }
+        else
+            {
+            for (Property const& prop : m_properties)
+                {
+                if (targetClass->Is(&prop.GetPropertyClass()) || prop.IsRelated() && targetClass->Is(prop.GetRelatedClassPath().front().GetTargetClass()))
+                    matchingProperties.push_back(&prop);
+                }
+            }
+        iter = m_matchingPropertiesCache.insert(std::make_pair(targetClass, matchingProperties)).first;
         }
-    return matchingProperties;
+
+    return iter->second;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1408,24 +1415,26 @@ BentleyStatus DefaultPropertyFormatter::_GetFormattedPropertyValue(Utf8StringR f
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DefaultPropertyFormatter::_GetFormattedPropertyLabel(Utf8StringR formattedLabel, ECPropertyCR ecProperty, ECClassCR ecClass, RelatedClassPath const& relationshipPath, RelationshipMeaning relationshipMeaning) const
     {
-    formattedLabel.clear();
-    if (!relationshipPath.empty() && RelationshipMeaning::RelatedInstance == relationshipMeaning)
-        formattedLabel.append(ecClass.GetDisplayLabel()).append(" ").append(ecProperty.GetDisplayLabel());
-    else
-        formattedLabel = ecProperty.GetDisplayLabel();
+    formattedLabel = ecProperty.GetDisplayLabel();
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentDescriptor::Category DefaultCategorySupplier::_GetCategory(ECClassCR, RelatedClassPathCR, ECPropertyCR prop)
+ContentDescriptor::Category DefaultCategorySupplier::_GetCategory(ECClassCR primaryClass, RelatedClassPathCR path, ECPropertyCR prop, RelationshipMeaning relationshipMeaning)
     {
     PropertyCategoryCP propertyCategory = prop.GetCategory();
-    if (nullptr == propertyCategory)
-        return ContentDescriptor::Category::GetDefaultCategory();
+    if (nullptr != propertyCategory)
+        {
+        return ContentDescriptor::Category(propertyCategory->GetName(), propertyCategory->GetDisplayLabel(), 
+            propertyCategory->GetDescription(), propertyCategory->GetPriority());
+        }
 
-    return ContentDescriptor::Category(propertyCategory->GetName(), propertyCategory->GetDisplayLabel(), propertyCategory->GetDescription(), propertyCategory->GetPriority());
+    if (RelationshipMeaning::RelatedInstance == relationshipMeaning)
+        return GetCategory(primaryClass, path, *path.back().GetSourceClass());
+
+    return ContentDescriptor::Category::GetDefaultCategory();
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -120,13 +120,13 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE BoundQueryIdSet : BoundQueryValue
 {
 private:
-    BeSQLite::IdSet<BeSQLite::EC::ECInstanceId> m_set;
+    BeSQLite::IdSet<BeInt64Id> m_set;
 protected:
     ECPRESENTATION_EXPORT bool _Equals(BoundQueryValue const&) const override;
-    BoundQueryValue* _Clone() const override {return new BoundQueryIdSet(BeSQLite::IdSet<BeSQLite::EC::ECInstanceId>(m_set));}
+    BoundQueryValue* _Clone() const override {return new BoundQueryIdSet(BeSQLite::IdSet<BeInt64Id>(m_set));}
     ECPRESENTATION_EXPORT BeSQLite::EC::ECSqlStatus _Bind(BeSQLite::EC::ECSqlStatement&, uint32_t index) const override;
 public:
-    BoundQueryIdSet(BeSQLite::IdSet<BeSQLite::EC::ECInstanceId>&& set) : m_set(std::move(set)) {}
+    BoundQueryIdSet(BeSQLite::IdSet<BeInt64Id>&& set) : m_set(std::move(set)) {}
     BoundQueryIdSet(bvector<BeSQLite::EC::ECInstanceId> const& vec)
         {
         for (BeSQLite::EC::ECInstanceId const& id : vec)
@@ -157,47 +157,43 @@ public:
 };
 
 /*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                03/2017
+* @bsiclass                                     Grigas.Petraitis                02/2018
 +===============+===============+===============+===============+===============+======*/
-struct EXPORT_VTABLE_ATTRIBUTE BoundQueryRecursiveChildrenIdSet : BoundQueryValue
-{    
-    struct IChildIdsStatementPreparer
-        {
-        virtual ~IChildIdsStatementPreparer() {}
-        virtual BeSQLite::EC::ECSqlStatement& _GetStatement(bvector<BeSQLite::EC::ECInstanceId> const& sourceIds) = 0;
-        };
-
+struct FilteredIdsHandler
+    {
+    virtual ~FilteredIdsHandler() {}
+    virtual Utf8String _GetWhereClause(Utf8CP idSelector, size_t) const = 0;
+    virtual void _Accept(BeInt64Id) = 0;
+    virtual BoundQueryValuesList _GetBoundValues() = 0;
+    ECPRESENTATION_EXPORT static FilteredIdsHandler* Create(size_t);
+    };
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                02/2018
++===============+===============+===============+===============+===============+======*/
+template<typename TIterable>
+struct IdsFilteringHelper
+{
 private:
-    IConnectionCR m_connection;
-    bset<ECRelationshipClassCP> m_relationships;
-    bool m_isForward;
-    bvector<BeSQLite::EC::ECInstanceId> m_parentIds;
-    mutable BeSQLite::IdSet<BeSQLite::EC::ECInstanceId>* m_childrenSet;
-
-private:
-    static void RecursivelySelectRelatedKeys(BeSQLite::IdSet<BeSQLite::EC::ECInstanceId>& result, IChildIdsStatementPreparer&, bvector<BeSQLite::EC::ECInstanceId> const& sourceIds);
-
-protected:
-    ECPRESENTATION_EXPORT bool _Equals(BoundQueryValue const&) const override;
-    ECPRESENTATION_EXPORT BoundQueryValue* _Clone() const override;
-    ECPRESENTATION_EXPORT BeSQLite::EC::ECSqlStatus _Bind(BeSQLite::EC::ECSqlStatement&, uint32_t index) const override;
+    TIterable const* m_set;
+    bool m_ownsSet;
+    FilteredIdsHandler* m_handler;
 
 public:
-    BoundQueryRecursiveChildrenIdSet(IConnectionCR connection, bset<ECRelationshipClassCP> relationships, bool isForward, bvector<BeSQLite::EC::ECInstanceId> const& parentIds)
-        : m_connection(connection), m_relationships(relationships), m_isForward(isForward), m_parentIds(std::move(parentIds)), m_childrenSet(nullptr)
-        {}
-    BoundQueryRecursiveChildrenIdSet(BoundQueryRecursiveChildrenIdSet const& other)
-        : m_connection(other.m_connection), m_relationships(other.m_relationships), m_isForward(other.m_isForward), m_parentIds(other.m_parentIds), m_childrenSet(nullptr)
+    IdsFilteringHelper(TIterable const& set) : m_set(&set), m_ownsSet(false), m_handler(FilteredIdsHandler::Create(m_set->size())) {}
+    IdsFilteringHelper(TIterable&& set) : m_set(new TIterable(std::move(set))), m_ownsSet(true), m_handler(FilteredIdsHandler::Create(m_set->size())) {}
+    ~IdsFilteringHelper()
         {
-        if (nullptr != other.m_childrenSet)
-            m_childrenSet = new BeSQLite::IdSet<BeSQLite::EC::ECInstanceId>(*other.m_childrenSet);
+        DELETE_AND_CLEAR(m_handler);
+        if (m_ownsSet)
+            DELETE_AND_CLEAR(m_set);
         }
-    BoundQueryRecursiveChildrenIdSet(BoundQueryRecursiveChildrenIdSet&& other)
-        : m_connection(other.m_connection), m_relationships(std::move(other.m_relationships)), m_isForward(other.m_isForward), m_parentIds(std::move(other.m_parentIds)), m_childrenSet(other.m_childrenSet)
+    Utf8String CreateWhereClause(Utf8CP idSelector) const {return m_handler->_GetWhereClause(idSelector, m_set->size());}
+    BoundQueryValuesList CreateBoundValues()
         {
-        other.m_childrenSet = nullptr;
+        for (auto el : *m_set)
+            m_handler->_Accept(el);
+        return m_handler->_GetBoundValues();
         }
-    ~BoundQueryRecursiveChildrenIdSet() {DELETE_AND_CLEAR(m_childrenSet);}
 };
 
 /*=================================================================================**//**
@@ -219,6 +215,7 @@ public:
         }
     void InvalidateQueryString() const {m_queryString.clear();}
     BoundQueryValuesList GetBoundValues() const {return _GetBoundValues();}
+    ECPRESENTATION_EXPORT BentleyStatus BindValues(ECSqlStatement&) const;
 };
 
 /*=================================================================================**//**

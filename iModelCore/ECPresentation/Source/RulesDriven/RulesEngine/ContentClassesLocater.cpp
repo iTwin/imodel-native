@@ -108,6 +108,7 @@ protected:
 public:
     ClassSelectionInfo(NavNodeKeyListCR keys, SchemaManagerCR schemas)
         {
+        bset<ECClassId> classIds;
         for (NavNodeKeyCPtr const& key : keys)
             {
             if (nullptr == key->AsECInstanceNodeKey())
@@ -116,8 +117,12 @@ public:
                 continue;
                 }
             ECClassId classId = key->AsECInstanceNodeKey()->GetECClassId();
+            if (classIds.end() != classIds.find(classId))
+                continue;
+
             ECClassCP ecClass = schemas.GetClass(classId);
             m_classes.push_back(ecClass);
+            classIds.insert(classId);
             }
         }
 };

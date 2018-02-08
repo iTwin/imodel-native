@@ -27,15 +27,13 @@ struct QueryExecutorTests : ::testing::Test
     
     TestConnectionManager m_connections;
     IConnectionPtr m_connection;
-    ECSqlStatementCache m_statementCache;
-    RelatedPathsCache m_relatedPathsCache;
-    ECExpressionsCache m_expressionsCache;
     JsonNavNodesFactory m_nodesFactory;
     TestUserSettings m_userSettings;
     PresentationRuleSetPtr m_ruleset;
     CustomFunctionsInjector* m_customFunctionsInjector;
     DefaultCategorySupplier m_categorySupplier;
     TestPropertyFormatter const* m_propertyFormatter;
+    ECSqlStatementCache m_statementCache;
     ECSchemaHelper* m_schemaHelper;
     
     ECEntityClassCP m_widgetClass;
@@ -53,7 +51,7 @@ struct QueryExecutorTests : ::testing::Test
         Localization::Init();
         m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb());
         m_customFunctionsInjector = new CustomFunctionsInjector(m_connections, *m_connection);
-        m_schemaHelper = new ECSchemaHelper(*m_connection, &m_relatedPathsCache, &m_statementCache);
+        m_schemaHelper = new ECSchemaHelper(*m_connection, nullptr, nullptr, &m_statementCache, nullptr);
         m_ruleset = PresentationRuleSet::CreateInstance("QueryExecutorTests", 1, 0, false, "", "", "", false);
 
         m_widgetClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Widget")->GetEntityClassCP();

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/PresentationRules/ContentModifierTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PresentationRulesTests.h"
@@ -126,7 +126,7 @@ TEST_F(ContentModifierTests, WriteToXml)
     static Utf8CP expected = ""
         "<Root>"
             R"(<ContentModifier Priority="1000" ClassName="ClassName" SchemaName="SchemaName">)"
-                R"(<RelatedProperties RelationshipClassNames="RelationshipClassName" RelatedClassNames="RelatedClassNames" PropertyNames="Properties" RequiredDirection="Forward" RelationshipMeaning="RelatedInstance"/>)"
+                R"(<RelatedProperties RelationshipClassNames="RelationshipClassName" RelatedClassNames="RelatedClassNames" PropertyNames="Properties" RequiredDirection="Forward" RelationshipMeaning="RelatedInstance" IsPolymorphic="false"/>)"
                 R"(<DisplayedProperties PropertyNames="properties" Priority="1000"/>)"
                 R"(<CalculatedProperties>)"
                     R"(<Property Label="label" Priority="0">Value</Property>)"

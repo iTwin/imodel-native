@@ -35,6 +35,7 @@ private:
     IUserSettings const& m_userSettings;
     mutable UsedUserSettingsListener* m_usedSettingsListener;
     RelatedPathsCache& m_relatedPathsCache;
+    PolymorphicallyRelatedClassesCache& m_polymorphicallyRelatedClassesCache;
     ECExpressionsCache& m_ecexpressionsCache;
     JsonNavNodesFactory const& m_nodesFactory;
     ICancelationTokenCP m_cancelationToken;
@@ -54,7 +55,8 @@ private:
     void Init();
 
 protected:
-    ECPRESENTATION_EXPORT RulesDrivenProviderContext(PresentationRuleSetCR, bool holdRuleset, IUserSettings const&, ECExpressionsCache&, RelatedPathsCache&, JsonNavNodesFactory const&, IJsonLocalState const*);
+    ECPRESENTATION_EXPORT RulesDrivenProviderContext(PresentationRuleSetCR, bool holdRuleset, IUserSettings const&, ECExpressionsCache&, 
+        RelatedPathsCache&, PolymorphicallyRelatedClassesCache&, JsonNavNodesFactory const&, IJsonLocalState const*);
     ECPRESENTATION_EXPORT RulesDrivenProviderContext(RulesDrivenProviderContextCR other);
     
     ECPRESENTATION_EXPORT void SetQueryContext(IConnectionManagerCR, IConnectionCR, ECSqlStatementCache const&, CustomFunctionsInjector&);

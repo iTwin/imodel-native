@@ -82,7 +82,7 @@ void UsedClassesHelper::NotifyListenerWithRulesetClasses(IUsedClassesListener& l
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UsedClassesHelper::NotifyListenerWithUsedClasses(IECDbUsedClassesListener& listener, ECExpressionsCache& ecexpressionsCache, IConnectionCR connection, Utf8StringCR ecexpression)
     {
-    ECSchemaHelper schemaHelper(connection, nullptr, nullptr);
+    ECSchemaHelper schemaHelper(connection, nullptr, nullptr, nullptr, nullptr);
     ECDbUsedClassesListenerWrapper wrapper(connection, listener);
     NotifyListenerWithUsedClasses(wrapper, schemaHelper, ecexpressionsCache, ecexpression);
     }
@@ -92,7 +92,7 @@ void UsedClassesHelper::NotifyListenerWithUsedClasses(IECDbUsedClassesListener& 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UsedClassesHelper::NotifyListenerWithRulesetClasses(IECDbUsedClassesListener& listener, ECExpressionsCache& ecexpressionsCache, IConnectionCR connection, PresentationRuleSetCR ruleset)
     {
-    ECSchemaHelper schemaHelper(connection, nullptr, nullptr);
+    ECSchemaHelper schemaHelper(connection, nullptr, nullptr, nullptr, nullptr);
     ECDbUsedClassesListenerWrapper wrapper(connection, listener);
     NotifyListenerWithRulesetClasses(wrapper, schemaHelper, ecexpressionsCache, ruleset);
     }
@@ -457,9 +457,9 @@ protected:
     bool _ApplyFilter(ComplexNavigationQueryPtr& query, SelectQueryInfo const&, NavNodeCR filteringNode) const override
         {
         NavNodeExtendedData extendedData(filteringNode);
+        IdsFilteringHelper<IdSet<ECInstanceId>> filteringHelper(extendedData.GetGroupedInstanceIds());
         PresentationQueryContractFieldCPtr ecInstanceIdField = query->GetContract()->GetField(DisplayLabelGroupingNodesQueryContract::ECInstanceIdFieldName);
-        query->Where(Utf8PrintfString("InVirtualSet(?, %s)", ecInstanceIdField->GetSelectClause(query->GetSelectPrefix()).c_str()).c_str(),
-            {new BoundQueryIdSet(extendedData.GetGroupedInstanceIds())});
+        query->Where(filteringHelper.CreateWhereClause(ecInstanceIdField->GetSelectClause(query->GetSelectPrefix()).c_str()).c_str(), filteringHelper.CreateBoundValues());
 
         PresentationQueryContractFieldCPtr labelField = query->GetContract()->GetField(DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName);
         query->Where(Utf8PrintfString("%s = ?", labelField->GetSelectClause(query->GetSelectPrefix()).c_str()).c_str(), 
@@ -903,6 +903,7 @@ protected:
                 }
             else if (value->IsArray())
                 {
+                // WIP: use IdsFilteringHelper
                 whereClause = Utf8String("InVirtualSet(?, ").append(whereClause).append(")");
                 if (ecProperty->GetIsNavigation())
                     whereClauseBindings.push_back(new BoundQueryIdSet(QueryBuilderHelpers::CreateIdSetFromJsonArray(*value)));                    

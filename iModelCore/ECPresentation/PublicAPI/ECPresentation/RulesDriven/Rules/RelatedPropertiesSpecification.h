@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/RelatedPropertiesSpecification.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -35,12 +35,13 @@ properties of related classes.
 struct RelatedPropertiesSpecification : HashableBase
     {
     private:
-        RequiredRelationDirection          m_requiredDirection;
-        Utf8String                         m_relationshipClassNames;
-        Utf8String                         m_relatedClassNames;
-        Utf8String                         m_propertyNames;
+        RequiredRelationDirection m_requiredDirection;
+        Utf8String m_relationshipClassNames;
+        Utf8String m_relatedClassNames;
+        Utf8String m_propertyNames;
         RelatedPropertiesSpecificationList m_nestedRelatedPropertiesSpecification;
-        RelationshipMeaning                m_relationshipMeaning;
+        RelationshipMeaning m_relationshipMeaning;
+        bool m_polymorphic;
 
     protected:
         //! Computes specification hash.
@@ -48,20 +49,15 @@ struct RelatedPropertiesSpecification : HashableBase
         
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECPRESENTATION_EXPORT RelatedPropertiesSpecification ();
+        ECPRESENTATION_EXPORT RelatedPropertiesSpecification();
         
         //! Copy constructor.
         ECPRESENTATION_EXPORT RelatedPropertiesSpecification(RelatedPropertiesSpecification const&);
 
         //! Constructor.
-        ECPRESENTATION_EXPORT RelatedPropertiesSpecification 
-                                       (
-                                        RequiredRelationDirection  requiredDirection,
-                                        Utf8String                 relationshipClassNames,
-                                        Utf8String                 relatedClassNames,
-                                        Utf8String                 propertyNames,
-                                        RelationshipMeaning        relationshipMeaning
-                                       );
+        ECPRESENTATION_EXPORT RelatedPropertiesSpecification(RequiredRelationDirection requiredDirection,
+            Utf8String relationshipClassNames, Utf8String relatedClassNames, Utf8String propertyNames,
+            RelationshipMeaning relationshipMeaning, bool polymorphic = false);
 
         //! Destructor.
         ECPRESENTATION_EXPORT                              ~RelatedPropertiesSpecification (void);
@@ -97,6 +93,12 @@ struct RelatedPropertiesSpecification : HashableBase
 
         //! Set relationship meaning.
         ECPRESENTATION_EXPORT void                         SetRelationshipMeaning(RelationshipMeaning);
+        
+        //! Should related classes be handled polymorphically
+        bool IsPolymorphic() const {return m_polymorphic;}
+
+        //! Set whether related classes should be handled polymorphically
+        void SetIsPolymorphic(bool value) {m_polymorphic = value;}
 
         //! Nested related properties, that will be shown next to ECInstance proerties (the same row for example).
         ECPRESENTATION_EXPORT RelatedPropertiesSpecificationList const& GetNestedRelatedProperties() const;

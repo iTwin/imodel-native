@@ -9,6 +9,7 @@
 #include <ECPresentation/RulesDriven/PresentationManager.h>
 #include "ContentSpecificationsHandler.h"
 #include "ECExpressionContextsProvider.h"
+#include "QueryBuilderHelpers.h"
 #include "LoggingHelper.h"
 
 #define NO_RELATED_PROPERTIES_KEYWORD "_none_"
@@ -48,6 +49,35 @@ static int GetRelationshipDirection(SpecificationType const& specification)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String CreateRelatedClassNamesList(bvector<RelatedClassPath> const& paths)
+    {
+    Utf8String list;
+    ECSchemaCP prevSchema = nullptr;
+    for (RelatedClassPath const& path : paths)
+        {
+        if (path.empty() || path.size() > 1)
+            {
+            BeAssert(false);
+            continue;
+            }
+        RelatedClassCR relatedClass = path.back();
+        if (prevSchema != &relatedClass.GetTargetClass()->GetSchema())
+            {
+            if (!list.empty())
+                list.append(";");
+            list.append(relatedClass.GetTargetClass()->GetSchema().GetName()).append(":");
+            prevSchema = &relatedClass.GetTargetClass()->GetSchema();
+            }
+        if (!list.EndsWith(":"))
+            list.append(",");
+        list.append(relatedClass.GetTargetClass()->GetName());
+        }
+    return list;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ContentSpecificationsHandler::AppendProperty(PropertyAppender& appender, bvector<RelatedClass>& navigationPropertyPaths, 
@@ -69,21 +99,79 @@ bool ContentSpecificationsHandler::AppendProperty(PropertyAppender& appender, bv
     return appender.Append(prop, alias);
     }
 
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                02/2018
++===============+===============+===============+===============+===============+======*/
+struct ContentSpecificationsHandler::AppendRelatedPropertyParams
+{
+private:
+    RelatedClassPath const& m_relatedClassPath;
+    ECClassCR m_relatedClass;
+    Utf8String m_relatedClassAlias;
+    RelatedPropertiesSpecificationCR m_relatedPropertySpec;
+    InstanceFilteringParams const& m_instanceFilteringParams;
+public:
+    AppendRelatedPropertyParams(RelatedClassPath const& relatedClassPath, ECClassCR relatedClass, 
+        Utf8String relatedClassAlias, RelatedPropertiesSpecificationCR relatedPropertySpec, InstanceFilteringParams const& instanceFilteringParams)
+        : m_relatedClassPath(relatedClassPath), m_relatedClass(relatedClass), m_relatedClassAlias(relatedClassAlias), 
+        m_relatedPropertySpec(relatedPropertySpec), m_instanceFilteringParams(instanceFilteringParams)
+        {}
+    RelatedClassPath const& GetRelatedClassPath() const {return m_relatedClassPath;}
+    ECClassCR GetRelatedClass() const {return m_relatedClass;}
+    Utf8StringCR GetRelatedClassAlias() const {return m_relatedClassAlias;}
+    RelatedPropertiesSpecificationCR GetRelatedPropertySpec() const {return m_relatedPropertySpec;}
+    InstanceFilteringParams const& GetInstanceFilteringParams() const {return m_instanceFilteringParams;}
+};
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                02/2018
++===============+===============+===============+===============+===============+======*/
+struct ContentSpecificationsHandler::AppendRelatedPropertiesParams
+{
+private:
+    RelatedClassPath const& m_relatedClassPath;
+    ECClassCR m_relatedClass;
+    Utf8String m_relatedClassAlias;
+    RelatedPropertiesSpecificationList const& m_relatedPropertySpecs;
+    InstanceFilteringParams const& m_instanceFilteringParams;
+public:
+    AppendRelatedPropertiesParams(RelatedClassPath const& relatedClassPath, ECClassCR relatedClass, 
+        Utf8String relatedClassAlias, RelatedPropertiesSpecificationList const& specs, InstanceFilteringParams const& instanceFilteringParams)
+        : m_relatedClassPath(relatedClassPath), m_relatedClass(relatedClass), m_relatedClassAlias(relatedClassAlias), 
+        m_relatedPropertySpecs(specs), m_instanceFilteringParams(instanceFilteringParams)
+        {}
+    RelatedClassPath const& GetRelatedClassPath() const {return m_relatedClassPath;}
+    ECClassCR GetRelatedClass() const {return m_relatedClass;}
+    Utf8StringCR GetRelatedClassAlias() const {return m_relatedClassAlias;}
+    RelatedPropertiesSpecificationList const& GetRelatedPropertySpecs() const {return m_relatedPropertySpecs;}
+    InstanceFilteringParams const& GetInstanceFilteringParams() const {return m_instanceFilteringParams;}
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<RelatedClassPath> ContentSpecificationsHandler::AppendRelatedProperties(RelatedClassPath const& relatedClassPath, ECClassCR relatedClass, 
-    Utf8StringCR relatedClassAlias, RelatedPropertiesSpecificationCR relatedPropertySpec)
+bvector<RelatedClassPath> ContentSpecificationsHandler::AppendRelatedProperties(AppendRelatedPropertyParams const& params)
     {
     bvector<RelatedClassPath> allPaths;
 
     bvector<Utf8String> propertyNames;
-    BeStringUtilities::Split(relatedPropertySpec.GetPropertyNames().c_str(), ",", propertyNames);
+    BeStringUtilities::Split(params.GetRelatedPropertySpec().GetPropertyNames().c_str(), ",", propertyNames);
     std::for_each(propertyNames.begin(), propertyNames.end(), [](Utf8StringR name){name.Trim();});
         
-    ECSchemaHelper::RelationshipClassPathOptions options(relatedClass, GetRelationshipDirection(relatedPropertySpec), 0, 
-        GetContext().GetRuleset().GetSupportedSchemas().c_str(), relatedPropertySpec.GetRelationshipClassNames().c_str(), 
-        relatedPropertySpec.GetRelatedClassNames().c_str(), GetContext().GetRelationshipUseCounts());
+    Utf8String relatedClassNames = params.GetRelatedPropertySpec().GetRelatedClassNames();
+    if (params.GetRelatedPropertySpec().IsPolymorphic())
+        {
+        bvector<RelatedClassPath> polymorphicallyRelatedClasses = GetContext().GetSchemaHelper().GetPolymorphicallyRelatedClassesWithInstances(params.GetRelatedClass(),
+            params.GetRelatedPropertySpec().GetRelationshipClassNames(), (ECRelatedInstanceDirection)GetRelationshipDirection(params.GetRelatedPropertySpec()),
+            params.GetRelatedPropertySpec().GetRelatedClassNames(), &params.GetInstanceFilteringParams());
+        if (polymorphicallyRelatedClasses.empty())
+            return bvector<RelatedClassPath>();
+        relatedClassNames = CreateRelatedClassNamesList(polymorphicallyRelatedClasses);
+        }
+
+    ECSchemaHelper::RelationshipClassPathOptions options(params.GetRelatedClass(), GetRelationshipDirection(params.GetRelatedPropertySpec()), 0, 
+        GetContext().GetRuleset().GetSupportedSchemas().c_str(), params.GetRelatedPropertySpec().GetRelationshipClassNames().c_str(), 
+        relatedClassNames.c_str(), GetContext().GetRelationshipUseCounts());
     bvector<bpair<RelatedClassPath, bool>> paths = GetContext().GetSchemaHelper().GetRelationshipClassPaths(options);
 
     for (auto pair : paths)
@@ -98,8 +186,8 @@ bvector<RelatedClassPath> ContentSpecificationsHandler::AppendRelatedProperties(
 
         RelatedClass& relationshipInfo = path.back();
 
-        RelatedClassPath propertyRelatedClassPath = relatedClassPath;
-        Utf8String targetClassAlias = relatedClassPath.empty() ? GetRelatedClassAlias(*relationshipInfo.GetSourceClass(), GetContext()) : relatedClassAlias;
+        RelatedClassPath propertyRelatedClassPath = params.GetRelatedClassPath();
+        Utf8String targetClassAlias = propertyRelatedClassPath.empty() ? GetRelatedClassAlias(*relationshipInfo.GetSourceClass(), GetContext()) : params.GetRelatedClassAlias();
         propertyRelatedClassPath.push_back(RelatedClass(*relationshipInfo.GetTargetClass(), *relationshipInfo.GetSourceClass(), 
             *relationshipInfo.GetRelationship(), relationshipInfo.IsForwardRelationship(), 
             targetClassAlias.c_str(), relationshipInfo.GetRelationshipAlias(), relationshipInfo.IsPolymorphic()));
@@ -115,7 +203,7 @@ bvector<RelatedClassPath> ContentSpecificationsHandler::AppendRelatedProperties(
         bool appendPath = false;
         if (propertyNames.empty())
             {
-            PropertyAppenderPtr appender = _CreatePropertyAppender(*pathClass, propertyRelatedClassPath, relatedPropertySpec.GetRelationshipMeaning());
+            PropertyAppenderPtr appender = _CreatePropertyAppender(*pathClass, propertyRelatedClassPath, params.GetRelatedPropertySpec().GetRelationshipMeaning());
             ECPropertyIterable properties = pathClass->GetProperties(true);
             for (ECPropertyCP ecProperty : properties)
                 appendPath |= AppendProperty(*appender, navigationPropertiesPaths, *ecProperty, pathClassAlias.c_str());
@@ -126,7 +214,7 @@ bvector<RelatedClassPath> ContentSpecificationsHandler::AppendRelatedProperties(
             }
         else
             {
-            PropertyAppenderPtr appender = _CreatePropertyAppender(*pathClass, propertyRelatedClassPath, relatedPropertySpec.GetRelationshipMeaning());
+            PropertyAppenderPtr appender = _CreatePropertyAppender(*pathClass, propertyRelatedClassPath, params.GetRelatedPropertySpec().GetRelationshipMeaning());
             for (Utf8StringCR propertyName : propertyNames)
                 {
                 ECPropertyCP ecProperty = pathClass->GetPropertyP(propertyName.c_str());
@@ -135,8 +223,9 @@ bvector<RelatedClassPath> ContentSpecificationsHandler::AppendRelatedProperties(
                 }
             }
 
-        bvector<RelatedClassPath> relatedPaths = AppendRelatedProperties(propertyRelatedClassPath, *pathClass, 
-            pathClassAlias, relatedPropertySpec.GetNestedRelatedProperties(), true);
+        AppendRelatedPropertiesParams nestedPropertyParams(propertyRelatedClassPath, *pathClass, pathClassAlias, 
+            params.GetRelatedPropertySpec().GetNestedRelatedProperties(), params.GetInstanceFilteringParams());
+        bvector<RelatedClassPath> relatedPaths = AppendRelatedProperties(nestedPropertyParams, true);
         if (!relatedPaths.empty())
             {
             for (RelatedClassPath& relatedPath : relatedPaths)
@@ -159,12 +248,12 @@ bvector<RelatedClassPath> ContentSpecificationsHandler::AppendRelatedProperties(
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentSpecificationsHandler::AppendRelatedProperties(bvector<RelatedClassPath>& paths, RelatedClassPath const& relatedClassPath, 
-    ECClassCR relatedClass, Utf8StringCR relatedClassAlias, RelatedPropertiesSpecificationList const& relatedProperties)
+void ContentSpecificationsHandler::AppendRelatedProperties(bvector<RelatedClassPath>& paths, AppendRelatedPropertiesParams const& params)
     {
-    for (RelatedPropertiesSpecificationCP spec : relatedProperties)
+    for (RelatedPropertiesSpecificationCP spec : params.GetRelatedPropertySpecs())
         {
-        bvector<RelatedClassPath> specPaths = AppendRelatedProperties(relatedClassPath, relatedClass, relatedClassAlias, *spec);
+        AppendRelatedPropertyParams specParams(params.GetRelatedClassPath(), params.GetRelatedClass(), params.GetRelatedClassAlias(), *spec, params.GetInstanceFilteringParams());
+        bvector<RelatedClassPath> specPaths = AppendRelatedProperties(specParams);
         paths.insert(paths.end(), specPaths.begin(), specPaths.end());
         }
     }
@@ -172,21 +261,24 @@ void ContentSpecificationsHandler::AppendRelatedProperties(bvector<RelatedClassP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<RelatedClassPath> ContentSpecificationsHandler::AppendRelatedProperties(RelatedClassPath const& relatedClassPath, ECClassCR relatedClass, 
-    Utf8StringCR relatedClassAlias, RelatedPropertiesSpecificationList const& relatedProperties, bool isNested)
+bvector<RelatedClassPath> ContentSpecificationsHandler::AppendRelatedProperties(AppendRelatedPropertiesParams const& params, bool isNested)
     {
     bvector<RelatedClassPath> paths;
 
     // appends from content rule
-    AppendRelatedProperties(paths, relatedClassPath, relatedClass, relatedClassAlias, relatedProperties);
+    AppendRelatedProperties(paths, params);
 
     if (!isNested)
         {
         // appends from content modifiers
         for (ContentModifierCP modifier : GetContext().GetRuleset().GetContentModifierRules())
             {
-            if (relatedClass.Is(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str()))
-                AppendRelatedProperties(paths, relatedClassPath, relatedClass, relatedClassAlias, modifier->GetRelatedProperties());
+            if (params.GetRelatedClass().Is(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str()))
+                {
+                AppendRelatedPropertiesParams modifierParams(params.GetRelatedClassPath(), params.GetRelatedClass(),
+                    params.GetRelatedClassAlias(), modifier->GetRelatedProperties(), params.GetInstanceFilteringParams());
+                AppendRelatedProperties(paths, modifierParams);
+                }
             }
         }
 
@@ -217,7 +309,7 @@ static bvector<RelatedClassPath> GetRelatedClassPaths(ECSchemaHelper const& help
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentSpecificationsHandler::AppendClass(ECClassCR ecClass, ContentSpecificationCR spec, bool isSpecificationPolymorphic)
+void ContentSpecificationsHandler::AppendClass(ECClassCR ecClass, ContentSpecificationCR spec, bool isSpecificationPolymorphic, IParsedSelectionInfo const* selection, Utf8StringCR instanceFilter)
     {
     if (GetContext().IsClassHandled(ecClass))
         return;
@@ -232,7 +324,10 @@ void ContentSpecificationsHandler::AppendClass(ECClassCR ecClass, ContentSpecifi
     
     if (_ShouldIncludeRelatedProperties())
         {
-        bvector<RelatedClassPath> relatedPropertyPaths = AppendRelatedProperties(s_emptyRelationshipPath, ecClass, "this", spec.GetRelatedProperties(), false);
+        InstanceFilteringParams filteringParams(GetContext().GetConnection(), GetContext().GetSchemaHelper().GetECExpressionsCache(),
+            selection, info, nullptr, instanceFilter.c_str());
+        AppendRelatedPropertiesParams params(s_emptyRelationshipPath, ecClass, "this", spec.GetRelatedProperties(), filteringParams);
+        bvector<RelatedClassPath> relatedPropertyPaths = AppendRelatedProperties(params, false);
         for (RelatedClassCR navigationPropertyPath : navigationPropertiesPaths)
             relatedPropertyPaths.push_back({navigationPropertyPath});
         info.SetRelatedPropertyPaths(relatedPropertyPaths);
@@ -245,8 +340,12 @@ void ContentSpecificationsHandler::AppendClass(ECClassCR ecClass, ContentSpecifi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentSpecificationsHandler::AppendClassPaths(bvector<RelatedClassPath> const& paths, ECClassCR nodeClass, ContentRelatedInstancesSpecificationCR spec)
+void ContentSpecificationsHandler::AppendClassPaths(bvector<RelatedClassPath> const& paths, ECClassCR nodeClass, ContentRelatedInstancesSpecificationCR spec, IParsedSelectionInfo const& selection)
     {
+    InstanceFilteringParams::RecursiveQueryInfo const* recursiveInfo = nullptr;
+    if (spec.IsRecursive())
+        recursiveInfo = new InstanceFilteringParams::RecursiveQueryInfo(paths);
+
     for (RelatedClassPath path : paths)
         {
         bool isSelectPolymorphic = path.back().IsPolymorphic();
@@ -273,7 +372,10 @@ void ContentSpecificationsHandler::AppendClassPaths(bvector<RelatedClassPath> co
         
         if (_ShouldIncludeRelatedProperties())
             {
-            bvector<RelatedClassPath> relatedPropertyPaths = AppendRelatedProperties(s_emptyRelationshipPath, selectClass, "this", spec.GetRelatedProperties(), true);
+            InstanceFilteringParams filteringParams(GetContext().GetConnection(), GetContext().GetSchemaHelper().GetECExpressionsCache(),
+                &selection, appendInfo, recursiveInfo, spec.GetInstanceFilter().c_str());
+            AppendRelatedPropertiesParams params(s_emptyRelationshipPath, selectClass, "this", spec.GetRelatedProperties(), filteringParams);
+            bvector<RelatedClassPath> relatedPropertyPaths = AppendRelatedProperties(params, false);
             for (RelatedClassCR navigationPropertyPath : navigationPropertiesPaths)
                 relatedPropertyPaths.push_back({navigationPropertyPath});
             appendInfo.SetRelatedPropertyPaths(relatedPropertyPaths);
@@ -281,6 +383,8 @@ void ContentSpecificationsHandler::AppendClassPaths(bvector<RelatedClassPath> co
 
         _AppendClass(appendInfo);
         }
+
+    DELETE_AND_CLEAR(recursiveInfo);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -453,8 +557,10 @@ void ContentSpecificationsHandler::HandleSpecification(SelectedNodeInstancesSpec
     
     for (SupportedEntityClassInfo const& classInfo : classInfos)
         {
-        if (IsECClassAccepted(specification, classInfo.GetClass()))
-            AppendClass(classInfo.GetClass(), specification, classInfo.IsPolymorphic());
+        if (!IsECClassAccepted(specification, classInfo.GetClass()))
+            continue;
+        
+        AppendClass(classInfo.GetClass(), specification, classInfo.IsPolymorphic(), &selection, "");
         }
     }
 
@@ -470,7 +576,7 @@ void ContentSpecificationsHandler::HandleSpecification(ContentRelatedInstancesSp
         {
         bvector<RelatedClassPath> paths = GetRelatedClassPaths(GetContext().GetSchemaHelper(), GetContext(), *ecClass, specification, GetContext().GetRuleset());
         _OnBeforeAppendClassPaths(paths);
-        AppendClassPaths(paths, *ecClass, specification);
+        AppendClassPaths(paths, *ecClass, specification, selection);
         }
     }
     
@@ -491,5 +597,5 @@ void ContentSpecificationsHandler::HandleSpecification(ContentInstancesOfSpecifi
     _OnBeforeAppendClassInfos(classInfosVec);
 
     for (SupportedEntityClassInfo const& classInfo : classInfosVec)
-        AppendClass(classInfo.GetClass(), specification, classInfo.IsPolymorphic());
+        AppendClass(classInfo.GetClass(), specification, classInfo.IsPolymorphic(), nullptr, specification.GetInstanceFilter());
     }

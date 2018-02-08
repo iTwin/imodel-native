@@ -36,8 +36,6 @@ struct CustomFunctionTests : ::testing::Test
     TestLocalizationProvider m_localizationProvider;
     TestUserSettings m_userSettings;
     JsonNavNodesFactory m_nodesFactory;
-    ECExpressionsCache m_expressionsCache;
-    RelatedPathsCache m_relatedPathsCache;
     ECSchemaHelper* m_schemaHelper;
     TestPropertyFormatter const* m_propertyFormatter;
     
@@ -52,7 +50,7 @@ struct CustomFunctionTests : ::testing::Test
         m_widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *s_widgetClass);
         ECInstanceId::FromString(m_widgetInstanceId, m_widgetInstance->GetInstanceId().c_str());
         m_propertyFormatter = new TestPropertyFormatter();
-        m_schemaHelper = new ECSchemaHelper(*m_connection, &m_relatedPathsCache, nullptr);
+        m_schemaHelper = new ECSchemaHelper(*m_connection, nullptr, nullptr, nullptr, nullptr);
         }
 
     void TearDown() override
@@ -94,7 +92,7 @@ TEST_F(CustomFunctionTests, GetECInstanceDisplayLabel_UsesLabelOverride)
     {
     m_ruleset->AddPresentationRule(*new LabelOverride("", 1, "\"CustomLabel\"", "\"CustomDescription\""));
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetECInstanceDisplayLabel(?, ?, '', '') FROM RET.Widget"));
@@ -114,7 +112,7 @@ TEST_F(CustomFunctionTests, GetECInstanceDisplayLabel_UsesInstanceLabel)
     ECInstanceId instanceJId;
     ECInstanceId::FromString(instanceJId, instanceJ->GetInstanceId().c_str());
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetECInstanceDisplayLabel(?, ?, DisplayLabel, '') FROM RET.ClassJ"));
@@ -129,7 +127,7 @@ TEST_F(CustomFunctionTests, GetECInstanceDisplayLabel_UsesInstanceLabel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, GetECInstanceDisplayLabel_UsesClassDisplayLabel)
     {
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetECInstanceDisplayLabel(?, ?, '', '') FROM RET.Widget"));
@@ -152,7 +150,7 @@ TEST_F(CustomFunctionTests, GetECInstanceDisplayLabel_Localizes)
         return true;
         });
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
     ctx.SetLocalizationProvider(m_localizationProvider);
 
     ECSqlStatement stmt;
@@ -170,7 +168,7 @@ TEST_F(CustomFunctionTests, GetECClassDisplayLabel_UsesLabelOverride)
     {
     m_ruleset->AddPresentationRule(*new LabelOverride("", 1, "\"CustomLabel\"", "\"CustomDescription\""));
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetECClassDisplayLabel(?, 0) FROM RET.Widget"));
@@ -193,7 +191,7 @@ TEST_F(CustomFunctionTests, EvaluateECExpression)
 
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
     ctx.SetLocalizationProvider(m_localizationProvider);
 
     m_widgetInstance->SetValue("MyID", ECValue("Test"));
@@ -212,7 +210,7 @@ TEST_F(CustomFunctionTests, EvaluateECExpression)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, GetECClassDisplayLabel_UsesClassDisplayLabel)
     {
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetECClassDisplayLabel(?, 0) FROM RET.Widget"));
@@ -234,7 +232,7 @@ TEST_F(CustomFunctionTests, GetECClassDisplayLabel_Localizes)
         return true;
         });
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
     ctx.SetLocalizationProvider(m_localizationProvider);
 
     ECSqlStatement stmt;
@@ -251,7 +249,7 @@ TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_UsesLabelOverride)
     {
     m_ruleset->AddPresentationRule(*new LabelOverride("", 1, "\"CustomLabel\"", "\"CustomDescription\""));
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetECPropertyDisplayLabel(?, ?, ECInstanceId, ?, 0) FROM RET.Widget"));
@@ -267,7 +265,7 @@ TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_UsesLabelOverride)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_UsesPropertyValue)
     {
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetECPropertyDisplayLabel(?, ?, ECInstanceId, ?, 0) FROM RET.Widget"));
@@ -291,7 +289,7 @@ TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_Localizes)
         return true;
         });
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
     ctx.SetLocalizationProvider(m_localizationProvider);
 
     ECSqlStatement stmt;
@@ -309,7 +307,7 @@ TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_Localizes)
 TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_GroupingByNullValue_LabelIsLocalizedNotSpecified)
     {
     PropertyGroup spec("", "", true, "MyID");    
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetECPropertyDisplayLabel(?, ?, ECInstanceId, ?, 0) FROM RET.Widget"));
@@ -333,7 +331,7 @@ TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_RangeBased_ReturnsOtherRan
     ECPropertyCR groupingProperty = *s_widgetClass->GetPropertyP("DoubleProperty");
     NavigationQueryExtendedData(*query).AddRangesData(groupingProperty, spec);
 
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetECPropertyDisplayLabel(?, ?, ECInstanceId, ?, 0) FROM RET.Widget"));
@@ -357,7 +355,7 @@ TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_RangeBased_ReturnsRangeLab
     ECPropertyCR groupingProperty = *s_widgetClass->GetPropertyP("DoubleProperty");
     NavigationQueryExtendedData(*query).AddRangesData(groupingProperty, spec);
 
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetECPropertyDisplayLabel(?, ?, ECInstanceId, ?, 0) FROM RET.Widget"));
@@ -381,7 +379,7 @@ TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_RangeBased_ReturnsRangeVal
     ECPropertyCR groupingProperty = *s_widgetClass->GetPropertyP("DoubleProperty");
     NavigationQueryExtendedData(*query).AddRangesData(groupingProperty, spec);
 
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetECPropertyDisplayLabel(?, ?, ECInstanceId, ?, 0) FROM RET.Widget"));
@@ -397,7 +395,7 @@ TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_RangeBased_ReturnsRangeVal
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, GetSortingValue_PadsInteger)
     {
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetSortingValue(?) FROM RET.Widget"));
@@ -411,7 +409,7 @@ TEST_F(CustomFunctionTests, GetSortingValue_PadsInteger)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, GetSortingValue_PadsDouble)
     {
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetSortingValue(?) FROM RET.Widget"));
@@ -425,7 +423,7 @@ TEST_F(CustomFunctionTests, GetSortingValue_PadsDouble)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, GetSortingValue_PadsText)
     {
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetSortingValue(?) FROM RET.Widget"));
@@ -439,7 +437,7 @@ TEST_F(CustomFunctionTests, GetSortingValue_PadsText)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, GetSortingValue_PadsComplexText)
     {
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetSortingValue(?) FROM RET.Widget"));
@@ -472,7 +470,7 @@ TEST_F(CustomFunctionTests, GetRangeIndex_PropertyValueDoesntMatchAnyRange)
     ECPropertyCR groupingProperty = *s_widgetClass->GetPropertyP("DoubleProperty");
     NavigationQueryExtendedData(*query).AddRangesData(groupingProperty, spec);
 
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetRangeIndex(?) FROM RET.Widget"));
@@ -494,7 +492,7 @@ TEST_F(CustomFunctionTests, GetRangeIndex_ReturnsValidRangeIndex)
     ECPropertyCR groupingProperty = *s_widgetClass->GetPropertyP("DoubleProperty");
     NavigationQueryExtendedData(*query).AddRangesData(groupingProperty, spec);
 
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetRangeIndex(?) FROM RET.Widget"));
@@ -516,7 +514,7 @@ TEST_F(CustomFunctionTests, GetRangeImageId_ReturnsEmptyStringIfValueDoesntMatch
     ECPropertyCR groupingProperty = *s_widgetClass->GetPropertyP("DoubleProperty");
     NavigationQueryExtendedData(*query).AddRangesData(groupingProperty, spec);
 
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetRangeImageId(?) FROM RET.Widget"));
@@ -538,7 +536,7 @@ TEST_F(CustomFunctionTests, GetRangeImageId_ReturnsRangeImageIdIfValueMatches)
     ECPropertyCR groupingProperty = *s_widgetClass->GetPropertyP("DoubleProperty");
     NavigationQueryExtendedData(*query).AddRangesData(groupingProperty, spec);
 
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetRangeImageId(?) FROM RET.Widget"));
@@ -555,7 +553,7 @@ TEST_F(CustomFunctionTests, IsOfClass)
     ECClassCP classF = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassF");
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classF);
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT IsOfClass(ECClassId, 'ClassF', 'RulesEngineTest') FROM RET.ClassF"));
@@ -578,7 +576,7 @@ TEST_F(CustomFunctionTests, IsOfClass)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, GetGroupedInstanceIds)
     {
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
     ECSqlStatement stmt;
 
     // verify it works with one input value
@@ -633,7 +631,7 @@ TEST_F(CustomFunctionTests, GetGroupedInstanceIds)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, GetSettingValue)
     {
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
     
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetSettingValue('test') FROM RET.Widget"));
@@ -652,7 +650,7 @@ TEST_F(CustomFunctionTests, GetSettingValue)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, GetSettingIntValue)
     {
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
     
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetSettingIntValue('test') FROM RET.Widget"));
@@ -671,7 +669,7 @@ TEST_F(CustomFunctionTests, GetSettingIntValue)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, GetSettingBoolValue)
     {
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
     
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetSettingBoolValue('test') FROM RET.Widget"));
@@ -690,7 +688,7 @@ TEST_F(CustomFunctionTests, GetSettingBoolValue)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, InSettingIntValues)
     {
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
     
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT InSettingIntValues('test', 2) FROM RET.Widget"));
@@ -710,7 +708,7 @@ TEST_F(CustomFunctionTests, InSettingIntValues)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, HasSetting)
     {
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
     
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT HasSetting('test') FROM RET.Widget"));
@@ -731,7 +729,7 @@ TEST_F(CustomFunctionTests, GetECClassId)
     ECClassCP widgetClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Widget");
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *widgetClass);
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT RulesEngine_GetECClassId('Widget', 'RulesEngineTest') FROM RET.Widget"));
@@ -770,7 +768,7 @@ TEST_F(CustomFunctionTests, GetMergedValue)
     Utf8String defaultVariesStrLocalizationId = PRESENTATION_LOCALIZEDSTRING(RulesEngineL10N::GetNameSpace().m_namespace, RulesEngineL10N::LABEL_General_Varies().m_str);
     Utf8PrintfString formattedVariesStr(CONTENTRECORD_MERGED_VALUE_FORMAT, defaultVariesStrLocalizationId.c_str());
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     Utf8CP query = "SELECT " FUNCTION_NAME_GetMergedValue "(MyID), "
                              FUNCTION_NAME_GetMergedValue "(Description), "
@@ -821,7 +819,7 @@ TEST_F(CustomFunctionTests, IsRecursivelyRelated_BackwardDirection)
                5
     */
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     Utf8CP query = "SELECT e.IntProperty, r.IntProperty "
                    "  FROM RET.ClassN e, RET.ClassN r "
@@ -873,7 +871,7 @@ TEST_F(CustomFunctionTests, IsRecursivelyRelated_ForwardDirection)
                5
     */
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     Utf8CP query = "SELECT e.IntProperty, r.IntProperty "
                    "  FROM RET.ClassN e, RET.ClassN r "
@@ -924,7 +922,7 @@ TEST_F(CustomFunctionTests, IsRecursivelyRelated_FindsRelatedInstances)
                5
     */
     
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     Utf8CP query = "SELECT e.IntProperty "
                    "  FROM RET.ClassN e, RET.ClassN r "
@@ -956,7 +954,7 @@ TEST_F(CustomFunctionTests, GetECEnumerationValue)
         instance.SetValue("IntEnum", ECValue(3));
         });
 
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     Utf8CP query = "SELECT " FUNCTION_NAME_GetECEnumerationValue "('RulesEngineTest', 'StringEnum', StrEnum), "
                              FUNCTION_NAME_GetECEnumerationValue "('RulesEngineTest', 'IntegerEnum', IntEnum) "
@@ -979,7 +977,7 @@ TEST_F(CustomFunctionTests, ECInstanceKeyArray)
     ECInstanceId gadgetId;
     ECInstanceId::FromString(gadgetId, gadget->GetInstanceId().c_str());
 
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     Utf8CP query = "SELECT " FUNCTION_NAME_ECInstanceKeysArray "(ECClassId, ECInstanceId) "
                    "  FROM RET.Gadget ";
@@ -1011,7 +1009,7 @@ TEST_F(CustomFunctionTests, AggregateJsonArray)
     ECClassCP gadgetClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Gadget");
     IECInstancePtr gadget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *gadgetClass);
     IECInstancePtr gadget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *gadgetClass);
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     Utf8CP query = "SELECT " FUNCTION_NAME_AggregateJsonArray "('[{\"ECInstanceId\": ' || CAST(ECInstanceId AS TEXT) || '}]') "
                    "  FROM RET.Gadget ";
@@ -1035,7 +1033,7 @@ TEST_F(CustomFunctionTests, GetPointAsJsonString)
         {
         instance.SetValue("PointProperty", ECValue(DPoint3d::From(1.512, 1.512, 1.512)));
         });
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     Utf8CP query = "SELECT " FUNCTION_NAME_GetPointAsJsonString "([PointProperty].x, [PointProperty].y, [PointProperty].z) "
                    "  FROM RET.ClassH ";
@@ -1057,7 +1055,7 @@ TEST_F(CustomFunctionTests, GetPropertyDisplayValue_Point2d)
     ECClassCP classH = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassH");
     IECInstancePtr instanceH = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classH);
 
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr, m_propertyFormatter);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr, m_propertyFormatter);
     Utf8CP query = "SELECT " FUNCTION_NAME_GetPropertyDisplayValue "(?, ?, ?, '{\"x\":1.512,\"y\":1.512}') "
                    "  FROM RET.ClassH h";
 
@@ -1078,7 +1076,7 @@ TEST_F(CustomFunctionTests, GetPropertyDisplayValue_Point3d)
     ECClassCP classH = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassH");
     IECInstancePtr instanceH = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classH);
 
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr, m_propertyFormatter);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr, m_propertyFormatter);
     Utf8CP query = "SELECT " FUNCTION_NAME_GetPropertyDisplayValue "(?, ?, ?, '{\"x\":1.512,\"y\":1.512,\"z\":1.512}') "
                    "  FROM RET.ClassH h";
 
@@ -1096,7 +1094,7 @@ TEST_F(CustomFunctionTests, GetPropertyDisplayValue_Point3d)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, GetPropertyDisplayValue_Double)
     {
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr, m_propertyFormatter);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr, m_propertyFormatter);
     Utf8CP query = "SELECT " FUNCTION_NAME_GetPropertyDisplayValue "(?, ?, ?, 1.123456789) "
                    "  FROM RET.Widget";
 
@@ -1120,7 +1118,7 @@ TEST_F(CustomFunctionTests, Are3dPointsEqualByValue_ReturnsTrue)
         instance.SetValue("PointProperty", ECValue(DPoint3d::From(1.512, 1.512, 1.512)));
         });
 
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
     Utf8CP query = "SELECT " FUNCTION_NAME_ArePointsEqualByValue "('{\"x\":1.512,\"y\":1.512,\"z\":1.512}', [PointProperty].x, [PointProperty].y, [PointProperty].z)"
                    "  FROM RET.ClassH";
 
@@ -1141,7 +1139,7 @@ TEST_F(CustomFunctionTests, Are3dPointsEqualByValue_ReturnsFalse)
         instance.SetValue("PointProperty", ECValue(DPoint3d::From(1.512, 1.512, 1.512)));
         });
 
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
     Utf8CP query = "SELECT " FUNCTION_NAME_ArePointsEqualByValue "('{\"x\":1.51200000012,\"y\":1.512,\"z\":1.512}', [PointProperty].x, [PointProperty].y, [PointProperty].z)"
                    "  FROM RET.ClassH";
 
@@ -1162,7 +1160,7 @@ TEST_F(CustomFunctionTests, Are2dPointsEqualByValue_ReturnsTrue)
         instance.SetValue("Point2dProperty", ECValue(DPoint2d::From(1.512, 1.512)));
         });
 
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
     Utf8CP query = "SELECT " FUNCTION_NAME_ArePointsEqualByValue "('{\"x\":1.512,\"y\":1.512}', [Point2dProperty].x, [Point2dProperty].y)"
                    "  FROM RET.ClassH";
 
@@ -1183,7 +1181,7 @@ TEST_F(CustomFunctionTests, Are2dPointsEqualByValue_ReturnsFalse)
         instance.SetValue("Point2dProperty", ECValue(DPoint2d::From(1.512, 1.512)));
         });
 
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
     Utf8CP query = "SELECT " FUNCTION_NAME_ArePointsEqualByValue "('{\"x\":1.51200000012,\"y\":1.512}', [Point2dProperty].x, [Point2dProperty].y)"
                    "  FROM RET.ClassH";
 
@@ -1202,7 +1200,7 @@ TEST_F(CustomFunctionTests, AreDoublesEqualByValue_ReturnsTrue)
     ECInstanceUpdater updater(GetDb(), *m_widgetInstance, nullptr);
     ASSERT_EQ(BE_SQLITE_OK, updater.Update(*m_widgetInstance));
 
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
     Utf8CP query = "SELECT " FUNCTION_NAME_AreDoublesEqualByValue "(1.123456789, DoubleProperty)"
                    "  FROM RET.Widget";
 
@@ -1221,7 +1219,7 @@ TEST_F(CustomFunctionTests, AreDoublesEqualByValue_ReturnsFalse)
     ECInstanceUpdater updater(GetDb(), *m_widgetInstance, nullptr);
     ASSERT_EQ(BE_SQLITE_OK, updater.Update(*m_widgetInstance));
 
-    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, nullptr);
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
     Utf8CP query = "SELECT " FUNCTION_NAME_AreDoublesEqualByValue "(1.123456789, DoubleProperty)"
                    "  FROM RET.Widget";
 

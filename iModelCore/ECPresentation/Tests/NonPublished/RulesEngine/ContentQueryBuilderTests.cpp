@@ -15,12 +15,12 @@ void ContentQueryBuilderTests::SetUp()
     Localization::Init();
     m_connection = &ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnection();
     m_ruleset = PresentationRuleSet::CreateInstance("", 1, 0, false, "", "", "", false);
-    m_schemaHelper = new ECSchemaHelper(*m_connection, &m_relatedPathsCache, nullptr);
+    m_schemaHelper = new ECSchemaHelper(*m_connection, nullptr, nullptr, nullptr, nullptr);
     m_descriptorBuilder = new ContentDescriptorBuilder(*new ContentDescriptorBuilder::Context(*m_schemaHelper, m_connections,
         *m_connection, *m_ruleset, ContentDisplayType::Undefined, m_categorySupplier, 
         nullptr, &m_localizationProvider));
     m_queryBuilder = new ContentQueryBuilder(ContentQueryBuilderParameters(*m_schemaHelper, m_connections,
-        m_nodesLocater, *m_connection, *m_ruleset, m_settings, m_expressionsCache, 
+        m_nodesLocater, *m_connection, *m_ruleset, m_settings, m_schemaHelper->GetECExpressionsCache(), 
         m_categorySupplier, nullptr, nullptr, &m_localizationProvider));
     }
 

@@ -110,13 +110,7 @@ void QueryExecutor::ReadRecords(ICancelationTokenCP cancelationToken)
     
     // bind query variables
     _l = LoggingHelper::CreatePerformanceLogger(Log::Default, "[QueryExecutor] Binding query variable values", NativeLogging::LOG_TRACE);
-    bvector<BoundQueryValue const*> boundValues = m_query->GetBoundValues();
-    for (size_t i = 0; i < boundValues.size(); ++i)
-        {
-        BoundQueryValue const* value = boundValues[i];
-        ECSqlStatus status = value->Bind(*statement, (uint32_t)(i + 1));
-        BeAssert(status.IsSuccess());
-        }
+    m_query->BindValues(*statement);
     _l = nullptr;
             
     if (nullptr != cancelationToken && cancelationToken->IsCanceled())

@@ -400,7 +400,7 @@ struct TestCategorySupplier : IPropertyCategorySupplier
         : m_category(category)
         {
         }
-    ContentDescriptor::Category _GetCategory(ECClassCR, RelatedClassPathCR, ECPropertyCR) override {return m_category;}
+    ContentDescriptor::Category _GetCategory(ECClassCR, RelatedClassPathCR, ECPropertyCR, RelationshipMeaning) override {return m_category;}
     ContentDescriptor::Category _GetCategory(ECClassCR, RelatedClassPathCR, ECClassCR) override {return m_category;}
     ContentDescriptor::Category GetUsedCategory() const {return m_category;}
     void SetUsedCategory(ContentDescriptor::Category category)
@@ -417,6 +417,56 @@ struct TestPropertyFormatter : IECPropertyFormatter
     BentleyStatus _GetFormattedPropertyValue(Utf8StringR formattedValue, ECPropertyCR ecProperty, ECValueCR ecValue) const override;
     BentleyStatus _GetFormattedPropertyLabel(Utf8StringR formattedLabel, ECPropertyCR ecProperty, ECClassCR propertyClass, RelatedClassPath const& relatedClassPath, RelationshipMeaning relationshipMeaning) const override;
     };
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                07/2017
++===============+===============+===============+===============+===============+======*/
+struct TestParsedSelectionInfo : IParsedSelectionInfo
+{
+private:
+    bvector<ECClassCP> m_classes;
+    bmap<ECClassCP, bvector<ECInstanceId>> m_instanceIds;
+protected:
+    bvector<ECClassCP> const& _GetClasses() const override {return m_classes;}
+    bvector<ECInstanceId> const& _GetInstanceIds(ECClassCR ecClass) const override
+        {
+        auto iter = m_instanceIds.find(&ecClass);
+        if (m_instanceIds.end() != iter)
+            return iter->second;
+        static bvector<ECInstanceId> s_empty;
+        return s_empty;
+        }
+public:
+    TestParsedSelectionInfo() {}
+    TestParsedSelectionInfo(IECInstanceCR instance)
+        {
+        m_classes.push_back(&instance.GetClass());
+        m_instanceIds[&instance.GetClass()].push_back((ECInstanceId)ECInstanceId::FromString(instance.GetInstanceId().c_str()));
+        }
+    TestParsedSelectionInfo(ECClassCR ecClass, ECInstanceId instanceId)
+        {
+        m_classes.push_back(&ecClass);
+        m_instanceIds[&ecClass].push_back(instanceId);
+        }
+    TestParsedSelectionInfo(ECClassCR ecClass, bvector<ECInstanceId> instanceIds)
+        {
+        m_classes.push_back(&ecClass);
+        m_instanceIds[&ecClass] = instanceIds;
+        }
+    TestParsedSelectionInfo(bvector<bpair<ECClassCP, ECInstanceId>> pairs)
+        {
+        bset<ECClassCP> used;
+        for (auto pair : pairs)
+            {
+            if (used.end() == used.find(pair.first))
+                {
+                m_classes.push_back(pair.first);
+                used.insert(pair.first);
+                }
+            m_instanceIds[pair.first].push_back(pair.second);
+            }
+        }
+};
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2016
@@ -551,6 +601,7 @@ private:
     IECDbUsedClassesListener* m_usedClassesListener;
     mutable ECExpressionsCache m_ecexpressionsCache;
     mutable RelatedPathsCache m_relatedPathsCache;
+    mutable PolymorphicallyRelatedClassesCache m_polymorphicallyRelatedClassesCache;
     mutable ECSqlStatementCache m_statementsCache;
     mutable CustomFunctionsInjector m_customFunctions;
     mutable TestNodesCache m_testNodesCache;
@@ -568,7 +619,8 @@ protected:
         if (ruleset.IsNull())
             ruleset = PresentationRuleSet::CreateInstance(rulesetId, 1, 0, false, "", "", "", false);
         NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*ruleset, true, TargetTree_MainTree, parentNodeId, 
-            m_settings, m_ecexpressionsCache, m_relatedPathsCache, m_nodesFactory, GetNodesCache(), m_providerFactory, nullptr);
+            m_settings, m_ecexpressionsCache, m_relatedPathsCache, m_polymorphicallyRelatedClassesCache, m_nodesFactory, 
+            GetNodesCache(), m_providerFactory, nullptr);
         context->SetQueryContext(m_connections, connection, m_statementsCache, m_customFunctions, m_usedClassesListener);
         context->SetIsUpdatesDisabled(disableUpdates);
         context->SetCancelationToken(cancelationToken);

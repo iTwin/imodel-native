@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/ContentQueryBuilderTests_SelectedNodeInstances.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "QueryBuilderTests.h"
@@ -158,6 +158,107 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_RemovesHiddenProperty)
     ASSERT_TRUE(query.IsValid());
 
     ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SelectedNodeInstances_RemovesHiddenProperty");
+    EXPECT_TRUE(expected->IsEqual(*query)) 
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(SelectedNodeInstances_RemovesAllHiddenPropertiesWhenHidingAtSpecificationLevel, R"*(
+    <ECEntityClass typeName="Element">
+        <ECProperty propertyName="ElementProperty" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="PhysicalElement">
+        <BaseClass>Element</BaseClass>
+        <ECProperty propertyName="PhysicalProperty" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_RemovesAllHiddenPropertiesWhenHidingAtSpecificationLevel)
+    {
+    ECClassCP ecClass = GetECClass("PhysicalElement");
+    SelectedNodeInstancesSpecification spec(1, false, "", "", false);
+    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("*", 1000, false));
+    
+    TestParsedSelectionInfo info(*ecClass, ECInstanceId((uint64_t)123));
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
+    ASSERT_TRUE(descriptor.IsValid());
+
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor, info);
+    ASSERT_TRUE(query.IsValid());
+
+    ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SelectedNodeInstances_RemovesAllHiddenPropertiesWhenHidingAtSpecificationLevel");
+    EXPECT_TRUE(expected->IsEqual(*query)) 
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(SelectedNodeInstances_RemovesAllHiddenBaseClassPropertiesWhenHidingAtContentModifierLevel, R"*(
+    <ECEntityClass typeName="Element">
+        <ECProperty propertyName="ElementProperty" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="PhysicalElement">
+        <BaseClass>Element</BaseClass>
+        <ECProperty propertyName="PhysicalProperty" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_RemovesAllHiddenBaseClassPropertiesWhenHidingAtContentModifierLevel)
+    {
+    ECClassCP baseClass = GetECClass("Element");
+    ECClassCP derivedClass = GetECClass("PhysicalElement");
+    SelectedNodeInstancesSpecification spec(1, false, "", "", false);
+    ContentModifier* modifier = new ContentModifier(baseClass->GetSchema().GetName(), baseClass->GetName());
+    modifier->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("*", 1000, false));
+    m_ruleset->AddPresentationRule(*modifier);
+    
+    TestParsedSelectionInfo info(*derivedClass, ECInstanceId((uint64_t)123));
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
+    ASSERT_TRUE(descriptor.IsValid());
+
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor, info);
+    ASSERT_TRUE(query.IsValid());
+
+    ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SelectedNodeInstances_RemovesAllHiddenBaseClassPropertiesWhenHidingAtContentModifierLevel");
+    EXPECT_TRUE(expected->IsEqual(*query)) 
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(SelectedNodeInstances_RemovesAllHiddenDerivedClassPropertiesWhenHidingAtContentModifierLevel, R"*(
+    <ECEntityClass typeName="Element">
+        <ECProperty propertyName="ElementProperty" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="PhysicalElement">
+        <BaseClass>Element</BaseClass>
+        <ECProperty propertyName="PhysicalProperty" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_RemovesAllHiddenDerivedClassPropertiesWhenHidingAtContentModifierLevel)
+    {
+    ECClassCP derivedClass = GetECClass("PhysicalElement");
+    SelectedNodeInstancesSpecification spec(1, false, "", "", false);
+    ContentModifier* modifier = new ContentModifier(derivedClass->GetSchema().GetName(), derivedClass->GetName());
+    modifier->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("*", 1000, false));
+    m_ruleset->AddPresentationRule(*modifier);
+    
+    TestParsedSelectionInfo info(*derivedClass, ECInstanceId((uint64_t)123));
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
+    ASSERT_TRUE(descriptor.IsValid());
+
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor, info);
+    ASSERT_TRUE(query.IsValid());
+
+    ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SelectedNodeInstances_RemovesAllHiddenDerivedClassPropertiesWhenHidingAtContentModifierLevel");
     EXPECT_TRUE(expected->IsEqual(*query)) 
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();

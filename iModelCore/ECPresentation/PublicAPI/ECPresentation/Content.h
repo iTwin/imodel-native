@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/Content.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -63,7 +63,7 @@ public:
 
     //! Constructor. Initializes the instance from the provided list of ECClasses.
     //! @param[in] classes List of ECClasses to create the selection info for.
-    ECPRESENTATION_EXPORT SelectionInfo(bvector<ECN::ECClassCP> const& classes);
+    ECPRESENTATION_EXPORT SelectionInfo(bvector<ECClassCP> const& classes);
 
     //! Compare this selection event info object with the supplied one.
     ECPRESENTATION_EXPORT bool operator==(SelectionInfo const& other) const;
@@ -145,7 +145,7 @@ struct ContentDisplayType
 struct SelectClassInfo
 {
 private:
-    ECN::ECClassCP m_selectClass;
+    ECClassCP m_selectClass;
     bool m_isPolymorphic;
     bvector<RelatedClassPath> m_relatedPropertyPaths;
     RelatedClassPath m_pathToPrimaryClass;
@@ -154,7 +154,7 @@ public:
     //! Constructor. Creates an invalid object.
     SelectClassInfo() : m_selectClass(nullptr) {}
     //! Constructor. Creates an information instance with the specified ECClass.
-    SelectClassInfo(ECN::ECClassCR selectClass, bool isPolymorphic) : m_selectClass(&selectClass), m_isPolymorphic(isPolymorphic) {}
+    SelectClassInfo(ECClassCR selectClass, bool isPolymorphic) : m_selectClass(&selectClass), m_isPolymorphic(isPolymorphic) {}
 
     //! Returns whether this info is equal to the supplied one.
     bool Equals(SelectClassInfo const& other) const
@@ -170,7 +170,7 @@ public:
     bool operator!=(SelectClassInfo const& other) const {return !Equals(other);}
 
     //! Get the select ECClass.
-    ECN::ECClassCR GetSelectClass() const {return *m_selectClass;}
+    ECClassCR GetSelectClass() const {return *m_selectClass;}
 
     //! Is the select polymorphic.
     bool IsSelectPolymorphic() const {return m_isPolymorphic;}
@@ -178,7 +178,7 @@ public:
     void SetIsSelectPolymorphic(bool value) {m_isPolymorphic = value;}
 
     //! Get the primary ECClass. 
-    ECN::ECClassCP GetPrimaryClass() const {return m_pathToPrimaryClass.empty() ? nullptr : m_pathToPrimaryClass.back().GetTargetClass();}
+    ECClassCP GetPrimaryClass() const {return m_pathToPrimaryClass.empty() ? nullptr : m_pathToPrimaryClass.back().GetTargetClass();}
 
     //! Get paths to related property ECClasses.
     bvector<RelatedClassPath> const& GetRelatedPropertyPaths() const {return m_relatedPropertyPaths;}
@@ -328,20 +328,21 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         static int const DEFAULT_PRIORITY = 0;
     private:
         Utf8String m_prefix;
-        ECN::ECClassCP m_propertyClass;
-        ECN::ECPropertyCP m_property;
+        ECClassCP m_propertyClass;
+        ECPropertyCP m_property;
         RelatedClassPath m_relatedClassPath;
+        RelationshipMeaning m_relationshipMeaning;
 
     private:
-        ECPRESENTATION_EXPORT static ECN::PrimitiveECPropertyCP GetPrimitiveProperty(ECN::StructECPropertyCR, Utf8StringCR accessString);
+        ECPRESENTATION_EXPORT static PrimitiveECPropertyCP GetPrimitiveProperty(StructECPropertyCR, Utf8StringCR accessString);
 
     public:
         //! Constructor. Creates a property for a primitive ECProperty.
         //! @param[in] prefix Class alias that's used to query this property.
         //! @param[in] propertyClass The exact class of this property.
         //! @param[in] ecProperty The ECProperty that's wrapped by this struct.
-        Property(Utf8String prefix, ECN::ECClassCR propertyClass, ECN::ECPropertyCR ecProperty) 
-            : m_prefix(prefix), m_propertyClass(&propertyClass), m_property(&ecProperty)
+        Property(Utf8String prefix, ECClassCR propertyClass, ECPropertyCR ecProperty) 
+            : m_prefix(prefix), m_propertyClass(&propertyClass), m_property(&ecProperty), m_relationshipMeaning(RelationshipMeaning::SameInstance)
             {}
 
         //! Is this struct equal to the supplied one.
@@ -356,21 +357,25 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         void SetPrefix(Utf8String prefix) {m_prefix = prefix;}
 
         // Get the exact class that the root wrapped property belongs to.
-        ECN::ECClassCR GetPropertyClass() const {return *m_propertyClass;}
+        ECClassCR GetPropertyClass() const {return *m_propertyClass;}
 
         //! Get the wrapped property.
-        ECN::ECPropertyCR GetProperty() const {return *m_property;}
+        ECPropertyCR GetProperty() const {return *m_property;}
 
         //! Is this a related property.
         bool IsRelated() const {return !m_relatedClassPath.empty();}
         //! Make this a related property.
         //! @param[in] path The relationship path that describes the relationship between this property and main properties.
-        void SetIsRelated(RelatedClassPath path) {m_relatedClassPath = path;}
+        //! @param[in] meaning The relationship meaning.
+        void SetIsRelated(RelatedClassPath path, RelationshipMeaning meaning) {m_relatedClassPath = path; m_relationshipMeaning = meaning;}
         //! Make this a related property.
         //! @param[in] relatedClass The related class object that describes the relationship between this property and main properties.
-        void SetIsRelated(RelatedClass relatedClass) {m_relatedClassPath.clear(); m_relatedClassPath.push_back(relatedClass);}
+        //! @param[in] meaning The relationship meaning.
+        void SetIsRelated(RelatedClass relatedClass, RelationshipMeaning meaning) {m_relatedClassPath.clear(); m_relatedClassPath.push_back(relatedClass); m_relationshipMeaning = meaning;}
         //! Get the relationship path that describes the relationship between this property and main properties.
         RelatedClassPathCR GetRelatedClassPath() const {return m_relatedClassPath;}
+        //! Get the relationship meaning. Always SameInstance if this is not a related property.
+        RelationshipMeaning GetRelationshipMeaning() const {return m_relationshipMeaning;}
         //! Get the priority of this property.
         int GetPriority() const {return m_property->GetPriority();}
     };
@@ -580,7 +585,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
     private:
         int m_priority;
         Utf8String m_valueExpression;
-        ECN::ECClassCP m_class;
+        ECClassCP m_class;
 
     protected:
         CalculatedPropertyField* _AsCalculatedPropertyField() override {return this;}
@@ -597,7 +602,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         //! @param[in] valueExpression Value ECExpression. Supports localization.
         //! @param[in] ecClass Entity class this field is intended for.
         //! @param[in] priority Field priority.
-        CalculatedPropertyField(Utf8String label, Utf8String name, Utf8String valueExpression, ECN::ECClassCP ecClass, int priority = Property::DEFAULT_PRIORITY)
+        CalculatedPropertyField(Utf8String label, Utf8String name, Utf8String valueExpression, ECClassCP ecClass, int priority = Property::DEFAULT_PRIORITY)
             : Field(Category::GetDefaultCategory(), name, label), m_valueExpression(valueExpression), m_class(ecClass), m_priority(priority)
             {}
 
@@ -605,7 +610,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         Utf8String const& GetValueExpression() const {return m_valueExpression;}
 
         //! Get the class this field is intended for.
-        ECN::ECClassCP GetClass() const {return m_class;}
+        ECClassCP GetClass() const {return m_class;}
         
         //! Set the priority for this field.
         void SetPriority(int priority) {m_priority = priority;}
@@ -620,10 +625,11 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
     {
     private:
         bvector<Property> m_properties;
+        mutable std::unordered_map<ECClassCP, bvector<Property const*>> m_matchingPropertiesCache;
         bool m_isValidName;
 
     private:
-        ECPRESENTATION_EXPORT void InitFromProperty(ECN::ECClassCR, Property const&, IPropertyCategorySupplierP);
+        ECPRESENTATION_EXPORT void InitFromProperty(ECClassCR, Property const&, IPropertyCategorySupplierP);
 
     protected:
         ECPropertiesField* _AsPropertiesField() override {return this;}
@@ -650,7 +656,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         //! @param[in] primaryClass ECClass of primary (root) instance. Matches @e prop.GetPropertyClass() if the property is not of related instance.
         //! @param[in] prop Property that this field is based on.
         //! @param[in] categorySupplier The category supplier used to determine the category of this field.
-        ECPropertiesField(ECN::ECClassCR primaryClass, Property const& prop, IPropertyCategorySupplierR categorySupplier)
+        ECPropertiesField(ECClassCR primaryClass, Property const& prop, IPropertyCategorySupplierR categorySupplier)
             {
             InitFromProperty(primaryClass, prop, &categorySupplier);
             }
@@ -658,7 +664,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         //! Constructor. Creates a field with a single @ref Property and invalid Category.
         //! @param[in] primaryClass ECClass of primary (root) instance. Matches @e prop.GetPropertyClass() if the property is not of related instance.
         //! @param[in] prop Property that this field is based on.
-        ECPropertiesField(ECN::ECClassCR primaryClass, Property const& prop) {InitFromProperty(primaryClass, prop, nullptr);}
+        ECPropertiesField(ECClassCR primaryClass, Property const& prop) {InitFromProperty(primaryClass, prop, nullptr);}
 
         //! Copy constructor.
         ECPropertiesField(ECPropertiesField const& other) : Field(other), m_properties(other.m_properties), m_isValidName(other.m_isValidName) {}
@@ -678,7 +684,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         bvector<Property> const& GetProperties() const {return m_properties;}
         //! Find properties that match the supplied class. If nullptr is supplied, 
         //! all properties are returned.
-        bvector<Property const*> FindMatchingProperties(ECN::ECClassCP) const;
+        bvector<Property const*> const& FindMatchingProperties(ECClassCP) const;
     };
     
     //===================================================================================
@@ -688,7 +694,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
     struct NestedContentField : Field
     {
     private:
-        ECN::ECClassCR m_contentClass;
+        ECClassCR m_contentClass;
         Utf8String m_contentClassAlias;
         RelatedClassPath m_relationshipPath;
         bvector<Field*> m_fields;
@@ -714,7 +720,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         //! @param[in] fields A list of fields which this field consists from.
         //! @param[in] priority Priority of the field
         NestedContentField(Category category, Utf8String name, Utf8String label, 
-            ECN::ECClassCR contentClass, Utf8String contentClassAlias, RelatedClassPath relationshipPath,
+            ECClassCR contentClass, Utf8String contentClassAlias, RelatedClassPath relationshipPath,
             bvector<Field*> fields = bvector<Field*>(), int priority = Property::DEFAULT_PRIORITY) 
             : Field(category, name, label), m_contentClass(contentClass), m_contentClassAlias(contentClassAlias), 
             m_relationshipPath(relationshipPath), m_fields(fields), m_priority(priority)
@@ -739,7 +745,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         ~NestedContentField() {for (Field const* field : m_fields) {DELETE_AND_CLEAR(field);}}
 
         //! Get the content class whose content is returned by this field.
-        ECN::ECClassCR GetContentClass() const {return m_contentClass;}
+        ECClassCR GetContentClass() const {return m_contentClass;}
 
         //! Get alias of the content class
         Utf8StringCR GetContentClassAlias() const {return m_contentClassAlias;}
@@ -1027,7 +1033,7 @@ struct ContentSetItem : RefCountedBase, RapidJsonExtendedDataHolder<>
     typedef bmap<FieldProperty, bvector<BeSQLite::EC::ECInstanceKey>> FieldPropertyInstanceKeyMap;
 
 private:
-    ECN::ECClassCP m_class;
+    ECClassCP m_class;
     bvector<BeSQLite::EC::ECInstanceKey> m_keys;
     Utf8String m_displayLabel;
     Utf8String m_imageId;
@@ -1088,9 +1094,9 @@ public:
 
     //! Get the ECClass whose values are contained in this record.
     //! @note May be null when the record contains multiple merged values of different classes.
-    ECN::ECClassCP GetClass() const {return m_class;}
+    ECClassCP GetClass() const {return m_class;}
     //! Set the ECClass whose values are contained in this record.
-    void SetClass(ECN::ECClassCP ecClass) {m_class = ecClass;}
+    void SetClass(ECClassCP ecClass) {m_class = ecClass;}
     
     //! Get the display label of this item.
     Utf8StringCR GetDisplayLabel() const {return m_displayLabel;}
@@ -1140,26 +1146,26 @@ public:
 struct ChangedECInstanceInfo
 {
 private:
-    ECN::ECClassCP m_primaryInstanceClass;
+    ECClassCP m_primaryInstanceClass;
     BeSQLite::EC::ECInstanceId m_primaryInstanceId;
-    ECN::ECClassCP m_changedInstanceClass;
+    ECClassCP m_changedInstanceClass;
     BeSQLite::EC::ECInstanceId m_changedInstanceId;
     RelatedClassPath m_pathToPrimary;
 
 public:
-    ChangedECInstanceInfo(ECN::ECClassCR primaryInstanceClass, BeSQLite::EC::ECInstanceId primaryInstanceId)
+    ChangedECInstanceInfo(ECClassCR primaryInstanceClass, BeSQLite::EC::ECInstanceId primaryInstanceId)
         : m_primaryInstanceClass(&primaryInstanceClass), m_primaryInstanceId(primaryInstanceId), m_changedInstanceClass(nullptr)
         {}
-    ChangedECInstanceInfo(ECN::ECClassCR primaryInstanceClass, BeSQLite::EC::ECInstanceId primaryInstanceId, 
-        ECN::ECClassCR changedInstanceClass, BeSQLite::EC::ECInstanceId changedInstanceId, RelatedClassPath pathToPrimaryInstance)
+    ChangedECInstanceInfo(ECClassCR primaryInstanceClass, BeSQLite::EC::ECInstanceId primaryInstanceId, 
+        ECClassCR changedInstanceClass, BeSQLite::EC::ECInstanceId changedInstanceId, RelatedClassPath pathToPrimaryInstance)
         : m_primaryInstanceClass(&primaryInstanceClass), m_primaryInstanceId(primaryInstanceId), 
         m_changedInstanceClass(&changedInstanceClass), m_changedInstanceId(changedInstanceId), m_pathToPrimary(pathToPrimaryInstance)
         {}
 
-    ECN::ECClassCR GetPrimaryInstanceClass() const {return *m_primaryInstanceClass;}
+    ECClassCR GetPrimaryInstanceClass() const {return *m_primaryInstanceClass;}
     BeSQLite::EC::ECInstanceId GetPrimaryInstanceId() const {return m_primaryInstanceId;}
 
-    ECN::ECClassCR GetChangedInstanceClass() const {return (nullptr != m_changedInstanceClass) ? *m_changedInstanceClass : *m_primaryInstanceClass;}
+    ECClassCR GetChangedInstanceClass() const {return (nullptr != m_changedInstanceClass) ? *m_changedInstanceClass : *m_primaryInstanceClass;}
     BeSQLite::EC::ECInstanceId GetChangedInstanceId() const {return (nullptr != m_changedInstanceClass) ? m_changedInstanceId : m_primaryInstanceId;}
     RelatedClassPath const& GetPathToPrimaryInstance() const {return m_pathToPrimary;}
 };
@@ -1172,14 +1178,14 @@ struct ECInstanceChangeResult
 {
 private:
     BentleyStatus m_status;
-    ECN::ECValue m_changedValue;
+    ECValue m_changedValue;
     Utf8String m_errorMessage;
 
 private:
     ECInstanceChangeResult(BentleyStatus status) : m_status(status) {}
 
 public:
-    ECPRESENTATION_EXPORT static ECInstanceChangeResult Success(ECN::ECValue changedValue);
+    ECPRESENTATION_EXPORT static ECInstanceChangeResult Success(ECValue changedValue);
     ECPRESENTATION_EXPORT static ECInstanceChangeResult Error(Utf8String message);
     ECPRESENTATION_EXPORT static ECInstanceChangeResult Ignore(Utf8String reason = "");
 
@@ -1206,7 +1212,7 @@ public:
         }
 
     BentleyStatus GetStatus() const {return m_status;}
-    ECN::ECValueCR GetChangedValue() const {return m_changedValue;}
+    ECValueCR GetChangedValue() const {return m_changedValue;}
     Utf8StringCR GetErrorMessage() const {return m_errorMessage;}
     ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::MemoryPoolAllocator<>* allocator = nullptr) const;
 };
@@ -1224,8 +1230,8 @@ protected:
     virtual ~IECPropertyFormatter() {}
 
     //! @see GetFormattedPropertyValue
-    virtual BentleyStatus _GetFormattedPropertyValue(Utf8StringR, ECN::ECPropertyCR, ECN::ECValueCR) const = 0;
-    virtual BentleyStatus _GetFormattedPropertyLabel(Utf8StringR, ECN::ECPropertyCR, ECN::ECClassCR, RelatedClassPath const&, RelationshipMeaning) const = 0;
+    virtual BentleyStatus _GetFormattedPropertyValue(Utf8StringR, ECPropertyCR, ECValueCR) const = 0;
+    virtual BentleyStatus _GetFormattedPropertyLabel(Utf8StringR, ECPropertyCR, ECClassCR, RelatedClassPath const&, RelationshipMeaning) const = 0;
 
 public:
     //! Formats the supplied ECValue.
@@ -1233,7 +1239,7 @@ public:
     //! @param[in] ecProperty The property whose value is being formatted.
     //! @param[in] ecValue The value to format.
     //! @return SUCCESS if the value was successfully formatted.
-    BentleyStatus GetFormattedPropertyValue(Utf8StringR formattedValue, ECN::ECPropertyCR ecProperty, ECN::ECValueCR ecValue) const 
+    BentleyStatus GetFormattedPropertyValue(Utf8StringR formattedValue, ECPropertyCR ecProperty, ECValueCR ecValue) const 
         {
         return _GetFormattedPropertyValue(formattedValue, ecProperty, ecValue);
         }
@@ -1245,7 +1251,7 @@ public:
     //! @param[in] relatedClassPath Relationship path from the displayed ECInstance class to the supplied ECProperty class.
     //! @param[in] relationshipMeaning Meaning of relationship between displayed ECInstace class and ECProperty class.
     //! @return SUCCESS if the label was successfully formatted.
-    BentleyStatus GetFormattedPropertyLabel(Utf8StringR formattedLabel, ECN::ECPropertyCR ecProperty, ECN::ECClassCR propertyClass, 
+    BentleyStatus GetFormattedPropertyLabel(Utf8StringR formattedLabel, ECPropertyCR ecProperty, ECClassCR propertyClass, 
         RelatedClassPath const& relatedClassPath, RelationshipMeaning relationshipMeaning) const
         {
         return _GetFormattedPropertyLabel(formattedLabel, ecProperty, propertyClass, relatedClassPath, relationshipMeaning);
@@ -1261,8 +1267,8 @@ public:
 struct DefaultPropertyFormatter : IECPropertyFormatter
 {
 protected:
-    ECPRESENTATION_EXPORT virtual BentleyStatus _GetFormattedPropertyValue(Utf8StringR, ECN::ECPropertyCR, ECN::ECValueCR) const override;
-    ECPRESENTATION_EXPORT virtual BentleyStatus _GetFormattedPropertyLabel(Utf8StringR, ECN::ECPropertyCR, ECN::ECClassCR, RelatedClassPath const&, RelationshipMeaning) const override;
+    ECPRESENTATION_EXPORT virtual BentleyStatus _GetFormattedPropertyValue(Utf8StringR, ECPropertyCR, ECValueCR) const override;
+    ECPRESENTATION_EXPORT virtual BentleyStatus _GetFormattedPropertyLabel(Utf8StringR, ECPropertyCR, ECClassCR, RelatedClassPath const&, RelationshipMeaning) const override;
 };
 
 //=======================================================================================
@@ -1278,11 +1284,11 @@ protected:
     //! Virtual destructor.
     virtual ~IPropertyCategorySupplier() {}
 
-    //! @see GetCategory(ECN::ECClassCR, RelatedClassPathCR, ECN::ECPropertyCR)
-    virtual ContentDescriptor::Category _GetCategory(ECN::ECClassCR, RelatedClassPathCR, ECN::ECPropertyCR) = 0;
+    //! @see GetCategory(ECClassCR, RelatedClassPathCR, ECPropertyCR)
+    virtual ContentDescriptor::Category _GetCategory(ECClassCR, RelatedClassPathCR, ECPropertyCR, RelationshipMeaning) = 0;
     
-    //! @see GetCategory(ECN::ECClassCR, RelatedClassPathCR, ECN::ECClassCR)
-    virtual ContentDescriptor::Category _GetCategory(ECN::ECClassCR, RelatedClassPathCR, ECN::ECClassCR) = 0;
+    //! @see GetCategory(ECClassCR, RelatedClassPathCR, ECClassCR)
+    virtual ContentDescriptor::Category _GetCategory(ECClassCR, RelatedClassPathCR, ECClassCR) = 0;
 
 public:
     //! Get category for the specified ECProperty.
@@ -1290,16 +1296,17 @@ public:
     //! @param[in] path Relationship path from @e primaryClass to @e ecProperty class. Not empty only if @e ecProperty belongs
     //!                 to a related instance.
     //! @param[in] ecProperty ECProperty whose category is requested.
-    ContentDescriptor::Category GetCategory(ECN::ECClassCR primaryClass, RelatedClassPathCR path, ECN::ECPropertyCR ecProperty)
+    //! @param[in] relationshipMeaning Meaning of relationship between the primaryClass and ECProperty class.
+    ContentDescriptor::Category GetCategory(ECClassCR primaryClass, RelatedClassPathCR path, ECPropertyCR ecProperty, RelationshipMeaning relationshipMeaning)
         {
-        return _GetCategory(primaryClass, path, ecProperty);
+        return _GetCategory(primaryClass, path, ecProperty, relationshipMeaning);
         }
 
     //! Get category for the specified nested content ECClass.
     //! @param[in] primaryClass ECClass of the primary (root) instance.
     //! @param[in] path Relationship path from @e primaryClass to @e nestedContentClass.
     //! @param[in] nestedContentClass ECClass whose category is requested.
-    ContentDescriptor::Category GetCategory(ECN::ECClassCR primaryClass, RelatedClassPathCR path, ECN::ECClassCR nestedContentClass)
+    ContentDescriptor::Category GetCategory(ECClassCR primaryClass, RelatedClassPathCR path, ECClassCR nestedContentClass)
         {
         return _GetCategory(primaryClass, path, nestedContentClass);
         }
@@ -1317,8 +1324,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DefaultCategorySupplier : IPropertyCategorySuppli
 public:
     static const int NESTED_CONTENT_CATEGORY_PRIORITY = 400000; // matches Standard::General
 protected:
-    ECPRESENTATION_EXPORT virtual ContentDescriptor::Category _GetCategory(ECN::ECClassCR, RelatedClassPathCR, ECN::ECPropertyCR) override;
-    ECPRESENTATION_EXPORT virtual ContentDescriptor::Category _GetCategory(ECN::ECClassCR, RelatedClassPathCR, ECN::ECClassCR) override;
+    ECPRESENTATION_EXPORT virtual ContentDescriptor::Category _GetCategory(ECClassCR, RelatedClassPathCR, ECPropertyCR, RelationshipMeaning) override;
+    ECPRESENTATION_EXPORT virtual ContentDescriptor::Category _GetCategory(ECClassCR, RelatedClassPathCR, ECClassCR) override;
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE
