@@ -3480,7 +3480,9 @@ public:
 
     //! Creates a new UnitSystem and adds it to the schema.
     //! @param[out] unitSystem If successful, will contain a new UnitSystem object
-    //! @param[in] name        Name of the propertyCategory to create 
+    //! @param[in] name        Name of the unit system to create 
+    //! @param[in] label       Display label of the unit system
+    //! @param[in] description Description of the unit system
     //! @return A status code indicating whether or not the Unit Systems was successfully created and added to the schema
     ECOBJECTS_EXPORT ECObjectsStatus CreateUnitSystem(UnitSystemP& unitSystem, Utf8CP name, Utf8CP label = nullptr, Utf8CP description = nullptr);
 
