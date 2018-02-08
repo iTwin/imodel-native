@@ -26,7 +26,7 @@ DbResult ProfileUpgrader_4002::_Upgrade(ECDbCR ecdb) const
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    DbResult stat = ecdb.ExecuteDdl("ALTER TABLE " TABLE_Schema " ADD COLUMN OriginalECVersionMajor INTEGER");
+    stat = ecdb.ExecuteDdl("ALTER TABLE " TABLE_Schema " ADD COLUMN OriginalECVersionMajor INTEGER");
     if (BE_SQLITE_OK != stat)
         {
         LOG.errorv("ECDb profile upgrade failed: Could not add column OriginalECVersionMajor to table " TABLE_Schema ": %s.", ecdb.GetLastError().c_str());
