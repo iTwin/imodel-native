@@ -714,3 +714,50 @@ ECInstanceId AddonUtils::GetInstanceIdFromInstance(ECDbCR ecdb, JsonValueCR json
     return instanceId;
     }
 
+//************************************************************************************
+// HexStrSqlFunction
+//************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      02/18
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+HexStrSqlFunction* HexStrSqlFunction::s_singleton = nullptr;
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      02/18
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+HexStrSqlFunction& HexStrSqlFunction::GetSingleton()
+    {
+    if (s_singleton == nullptr)
+        s_singleton = new HexStrSqlFunction();
+
+    return *s_singleton;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      02/18
+//+---------------+---------------+---------------+---------------+---------------+------
+void HexStrSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
+    {
+    DbValue const& numValue = args[0];
+    if (numValue.IsNull())
+        {
+        ctx.SetResultNull();
+        return;
+        }
+
+    if (numValue.GetValueType() != DbValueType::IntegerVal)
+        {
+        ctx.SetResultError("Argument of function HexStr is expected to be a number.");
+        return;
+        }
+
+    static const size_t stringBufferLength = std::numeric_limits<uint64_t>::digits + 1; //+1 for the trailing 0 character
+
+    Utf8Char stringBuffer[stringBufferLength]; //+1 for the trailing 0 character;
+    BeStringUtilities::FormatUInt64(stringBuffer, stringBufferLength, numValue.GetValueUInt64(), (HexFormatOptions) ((int) HexFormatOptions::IncludePrefix));
+
+    ctx.SetResultText(stringBuffer, strlen(stringBuffer), Context::CopyData::Yes);
+    }

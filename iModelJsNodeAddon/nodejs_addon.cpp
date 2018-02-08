@@ -200,6 +200,9 @@ struct AddonECDb : Napi::ObjectWrap<AddonECDb>
             REQUIRE_ARGUMENT_STRING(0, dbName);
             RETURN_IF_HAD_EXCEPTION
             const DbResult status = AddonUtils::CreateECDb(GetECDb(), BeFileName(dbName.c_str(), true));
+            if (BE_SQLITE_OK == status)
+                GetECDb().AddFunction(HexStrSqlFunction::GetSingleton());
+
             return Napi::Number::New(Env(), (int) status);
             }
 
@@ -210,6 +213,9 @@ struct AddonECDb : Napi::ObjectWrap<AddonECDb>
             RETURN_IF_HAD_EXCEPTION
 
             const DbResult status = AddonUtils::OpenECDb(GetECDb(), BeFileName(dbName.c_str(), true), (Db::OpenMode) mode);
+            if (BE_SQLITE_OK == status)
+                GetECDb().AddFunction(HexStrSqlFunction::GetSingleton());
+
             return Napi::Number::New(Env(), (int) status);
             }
 
@@ -217,6 +223,7 @@ struct AddonECDb : Napi::ObjectWrap<AddonECDb>
             {
             if (m_ecdb != nullptr)
                 {
+                m_ecdb->RemoveFunction(HexStrSqlFunction::GetSingleton());
                 m_ecdb->CloseDb();
                 m_ecdb = nullptr;
                 }
@@ -430,7 +437,9 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         {
         if (!m_dgndb.IsValid())
             return;
+
         TearDownPresentationManager();
+        m_dgndb->RemoveFunction(HexStrSqlFunction::GetSingleton());
         AddonUtils::CloseDgnDb(*m_dgndb);
         AddonAppData::Remove(GetDgnDb());
         m_dgndb = nullptr;
@@ -447,6 +456,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
 
         SetupPresentationManager();
         AddonAppData::Add(*this);
+        m_dgndb->AddFunction(HexStrSqlFunction::GetSingleton());
         }
 
     static AddonDgnDb* From(DgnDbR db)
@@ -1596,17 +1606,14 @@ struct AddonECSqlColumnInfo : Napi::ObjectWrap<AddonECSqlColumnInfo>
                             break;
                             }
 
-                        if (GetColInfo().IsGeneratedProperty())
+                        ECPropertyCP prop = GetColInfo().GetProperty();
+                        if (prop->HasExtendedType())
                             {
-                            ECPropertyCP genProp = GetColInfo().GetProperty();
-                            if (genProp->HasExtendedType())
+                            BeAssert(prop->GetIsPrimitive());
+                            if (prop->GetAsPrimitiveProperty()->GetExtendedTypeName().EqualsIAscii("Id"))
                                 {
-                                BeAssert(GetColInfo().GetProperty()->GetIsPrimitive());
-                                if (genProp->GetAsPrimitiveProperty()->GetExtendedTypeName().EqualsIAscii("Id"))
-                                    {
-                                    type = Type::Id;
-                                    break;
-                                    }
+                                type = Type::Id;
+                                break;
                                 }
                             }
 
