@@ -1799,6 +1799,7 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::Description: return "Description";
             case SystemId::Direction: return "Direction";
             case SystemId::DisplayLabel: return "DisplayLabel";
+            case SystemId::ECVersion: return "ECVersion";
             case SystemId::Enumeration: return "Enumeration";
             case SystemId::Enumerations: return "Enumerations";
             case SystemId::Enumerator: return "Enumerator";
@@ -1828,6 +1829,8 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::Multiplicity: return "Multiplicity";
             case SystemId::Name: return "Name";
             case SystemId::Navigation: return "Navigation";
+            case SystemId::OriginalECXmlVersionMajor: return "OriginalECXmlVersionMajor";
+            case SystemId::OriginalECXmlVersionMinor: return "OriginalECXmlVersionMinor";
             case SystemId::Properties: return "Properties";
             case SystemId::Property: return "Property";
             case SystemId::PropertyCategories: return "PropertyCategories";
