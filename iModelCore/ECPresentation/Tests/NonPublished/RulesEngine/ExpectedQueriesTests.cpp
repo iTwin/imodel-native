@@ -3275,6 +3275,61 @@ void ExpectedQueries::RegisterExpectedQueries()
         RegisterQuery("SelectedNodeInstances_RemovesHiddenProperty", *query);
         }
 
+    // SelectedNodeInstances_RemovesAllHiddenPropertiesWhenHidingAtSpecificationLevel
+        {
+        Utf8CP queryName = "SelectedNodeInstances_RemovesAllHiddenPropertiesWhenHidingAtSpecificationLevel";
+        ECClassCP selectClass = GetECClass(queryName, "PhysicalElement");
+
+        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(*selectClass, false));
+
+        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        query->SelectContract(*ContentQueryContract::Create(1, *descriptor, selectClass, *query), "this");
+        query->From(*selectClass, false, "this");
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
+#ifdef WIP_SORTING_GRID_CONTENT
+        query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
+#endif
+        RegisterQuery("SelectedNodeInstances_RemovesAllHiddenPropertiesWhenHidingAtSpecificationLevel", *query);
+        }
+
+    // SelectedNodeInstances_RemovesAllHiddenBaseClassPropertiesWhenHidingAtContentModifierLevel
+        {
+        Utf8CP queryName = "SelectedNodeInstances_RemovesAllHiddenBaseClassPropertiesWhenHidingAtContentModifierLevel";
+        ECClassCP selectClass = GetECClass(queryName, "PhysicalElement");
+
+        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(*selectClass, false));
+        AddField(*descriptor, *selectClass, ContentDescriptor::Property("this", *selectClass , *selectClass->GetPropertyP("PhysicalProperty")));
+
+        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        query->SelectContract(*ContentQueryContract::Create(1, *descriptor, selectClass, *query), "this");
+        query->From(*selectClass, false, "this");
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
+#ifdef WIP_SORTING_GRID_CONTENT
+        query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
+#endif
+        RegisterQuery("SelectedNodeInstances_RemovesAllHiddenBaseClassPropertiesWhenHidingAtContentModifierLevel", *query);
+        }
+
+    // SelectedNodeInstances_RemovesAllHiddenDerivedClassPropertiesWhenHidingAtContentModifierLevel
+        {
+        Utf8CP queryName = "SelectedNodeInstances_RemovesAllHiddenDerivedClassPropertiesWhenHidingAtContentModifierLevel";
+        ECClassCP selectClass = GetECClass(queryName, "PhysicalElement");
+
+        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(*selectClass, false));
+
+        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        query->SelectContract(*ContentQueryContract::Create(1, *descriptor, selectClass, *query), "this");
+        query->From(*selectClass, false, "this");
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
+#ifdef WIP_SORTING_GRID_CONTENT
+        query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
+#endif
+        RegisterQuery("SelectedNodeInstances_RemovesAllHiddenDerivedClassPropertiesWhenHidingAtContentModifierLevel", *query);
+        }
+
     // SelectedNodeInstances_RemovesMultipleHiddenProperties
         {
         ContentDescriptorPtr descriptor = ContentDescriptor::Create();

@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/PropertyInfoStore.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once 
@@ -14,7 +14,7 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 /*=================================================================================**//**
 * @bsiclass                                     Saulius.Skliutas                07/2017
 +===============+===============+===============+===============+===============+======*/
-struct PropertiesDisplayInfo
+struct PropertyDisplayInfo
 {
 private:
     Utf8String m_propertyName;
@@ -22,11 +22,11 @@ private:
     bool m_displayed;
 
 public:
-    PropertiesDisplayInfo() {}
-    PropertiesDisplayInfo(Utf8String propertyName) : m_propertyName(propertyName) {}
-    PropertiesDisplayInfo(Utf8String propertyName, int priority, bool displayed) : m_propertyName(propertyName), m_priority(priority), m_displayed(displayed) {}
+    PropertyDisplayInfo() {}
+    PropertyDisplayInfo(Utf8String propertyName) : m_propertyName(propertyName) {}
+    PropertyDisplayInfo(Utf8String propertyName, int priority, bool displayed) : m_propertyName(propertyName), m_priority(priority), m_displayed(displayed) {}
 
-    bool operator<(PropertiesDisplayInfo const& rhs) const
+    bool operator<(PropertyDisplayInfo const& rhs) const
         {
         return strcmp(GetPropertyName(), rhs.GetPropertyName()) < 0;
         }
@@ -37,21 +37,59 @@ public:
 };
 
 /*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                02/2018
++===============+===============+===============+===============+===============+======*/
+struct DefaultDisplayInfo
+{
+private:
+    bool m_display;
+    int m_priority;
+public:
+    DefaultDisplayInfo() : m_display(false), m_priority(0) {}
+    DefaultDisplayInfo(bool display, int priority) : m_display(display), m_priority(priority) {}
+    bool ShouldDisplay() const {return m_display;}
+    int GetPriority() const {return m_priority;}
+};
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                02/2018
++===============+===============+===============+===============+===============+======*/
+struct DisplayInfo
+{
+private:
+    bmap<ECClassCP, DefaultDisplayInfo> m_defaultDisplayInfos;
+    bset<PropertyDisplayInfo> m_propertyDisplayInfos;
+
+public:
+    DefaultDisplayInfo const* GetDefaultDisplayInfo(ECClassCP ecClass) const
+        {
+        auto iter = m_defaultDisplayInfos.find(ecClass);
+        return (m_defaultDisplayInfos.end() != iter) ? &iter->second : nullptr;
+        }
+    void AddDefaultDisplayInfo(ECClassCP ecClass, DefaultDisplayInfo info) {m_defaultDisplayInfos[ecClass] = info;}
+
+    bset<PropertyDisplayInfo> const& GetPropertyDisplayInfos() const {return m_propertyDisplayInfos;}
+    bset<PropertyDisplayInfo>& GetPropertyDisplayInfos() {return m_propertyDisplayInfos;}
+
+    bool ShouldDisplay(ECClassCR, ECPropertyCR) const;
+    void Merge(DisplayInfo const& other);
+};
+
+/*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                10/2017
 +===============+===============+===============+===============+===============+======*/
 struct PropertyInfoStore
 {
 private:
     ECSchemaHelper const& m_schemaHelper;
-    bmap<ECClassCP, bset<PropertiesDisplayInfo>> m_perClassPropertyDisplayInfos; // per-class property display info
-    mutable bmap<ECClassCP, bset<PropertiesDisplayInfo>> m_aggregatedPropertyDisplayInfos; // property display info, including base class properties
+    bmap<ECClassCP, DisplayInfo> m_perClassPropertyDisplayInfos; // per-class property display info
+    mutable bmap<ECClassCP, DisplayInfo> m_aggregatedPropertyDisplayInfos; // property display info, including base class properties
     bmap<ECClassCP, bmap<Utf8String, ContentFieldEditor const*>> m_propertyEditors;
 
 private:
-    static void InsertPropertiesDisplayInfo(ECClassCP ecClass, bset<PropertiesDisplayInfo> const& source, bset<PropertiesDisplayInfo>& target);
     void CollectPropertiesDisplayRules(ECClassCP ecClass, PropertiesDisplaySpecificationCR spec);
-    void InitPropertiesDisplayInfo(ContentSpecificationCP specification, ContentModifierList const& contentModifiers);
-    bset<PropertiesDisplayInfo> const& GetPropertiesDisplayInfo(ECClassCR ecClass) const;
+    void InitPropertyDisplayInfos(ContentSpecificationCP specification, ContentModifierList const& contentModifiers);
+    DisplayInfo const& GetDisplayInfo(ECClassCR ecClass) const;
     static ContentFieldEditor const* CreateEditor(PropertyEditorsSpecificationCR spec);
     void InitPropertyEditors(ContentSpecificationCP specification, ContentModifierList const& contentModifiers);
 
