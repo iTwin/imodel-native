@@ -966,7 +966,7 @@ TEST_F(ChangeSummaryTestFixture, ChangeSummaryWithCustomMetaData)
     //add a custom schema to the change file
     ASSERT_EQ(SUCCESS, TestHelper(cacheFile).ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
          <ECSchema schemaName="ChangeSets" alias="cset" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-          <ECSchemaReference name="ECDbChange" version="01.00.00" alias="change"/>
+          <ECSchemaReference name="ECDbChange" version="01.00.01" alias="change"/>
           <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
           <ECEntityClass typeName="ChangeSet" modifier="Sealed">
               <ECNavigationProperty propertyName="Summary" relationshipName="ChangeSummaryExtractedFromChangeSet" direction="Backward"/>

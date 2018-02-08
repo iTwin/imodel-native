@@ -250,7 +250,7 @@
     <None Include="ECSql\parser\sqlflex.l" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="ECSchemas\ECDbChange.01.00.00.ecschema.xml" />
+    <Xml Include="ECSchemas\ECDbChange.01.00.01.ecschema.xml" />
     <Xml Include="ECSchemas\ECDbFileInfo.02.00.00.ecschema.xml" />
     <Xml Include="ECSchemas\ECDbMap.02.00.00.ecschema.xml" />
     <Xml Include="ECSchemas\ECDbMeta.01.00.00.ecschema.xml" />
