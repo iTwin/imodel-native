@@ -959,6 +959,9 @@ TEST_F(UnitsCustomAttributesConversionTests, EC3KOQsConvertBackToUnitSpecificati
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext)) << "ECSchema failed to deserialize EC3 schema.";
     ASSERT_TRUE(schema.IsValid());
 
+    Utf8String convertedDuringXmlSerialization;
+    ASSERT_EQ(SchemaWriteStatus::Success, ECSchema::WriteToEC2XmlString(convertedDuringXmlSerialization, schema.get()));
+
     ASSERT_TRUE(ECSchemaDownConverter::Convert(*schema));
 
     bvector<Utf8String> expectedRefSchemas;
@@ -977,6 +980,11 @@ TEST_F(UnitsCustomAttributesConversionTests, EC3KOQsConvertBackToUnitSpecificati
     EXPECT_FALSE(schema->GetClassCP("C")->GetPropertyP("PropA")->GetCustomAttributeLocal("DisplayUnitSpecificationAttr").IsValid());
     EXPECT_FALSE(schema->GetClassCP("D")->GetPropertyP("Prop0")->GetCustomAttributeLocal("UnitSpecificationAttr").IsValid());
     EXPECT_FALSE(schema->GetClassCP("D")->GetPropertyP("Prop0")->GetCustomAttributeLocal("DisplayUnitSpecificationAttr").IsValid());
+
+    Utf8String convertedThenSerialized;
+    ASSERT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(convertedThenSerialized, ECVersion::V2_0));
+
+    ASSERT_STREQ(convertedDuringXmlSerialization.c_str(), convertedThenSerialized.c_str());
     }
 
 //=======================================================================================

@@ -163,7 +163,36 @@ TEST_F(SchemaCopyTest, TestKindOfQuantity)
     EXPECT_STREQ("Test KoQ", targetKoq->GetDisplayLabel().c_str());
     EXPECT_STREQ("Test Description", targetKoq->GetDescription().c_str());
     EXPECT_STREQ("CM", targetKoq->GetDefaultPresentationUnit().GetUnitName().c_str());
+    EXPECT_EQ(2, targetKoq->GetPresentationUnitList().size());
+    EXPECT_STREQ("MM", targetKoq->GetPresentationUnitList().at(1).GetUnitName().c_str());
     EXPECT_STREQ("M", targetKoq->GetPersistenceUnit().GetUnit()->GetName());
+    EXPECT_EQ(10e-3, targetKoq->GetRelativeError());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    08/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaCopyTest, TestKindOfQuantity_NoPresentationUnit)
+    {
+    CreateTestSchema();
+
+    KindOfQuantityP koq;
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateKindOfQuantity(koq, "TestKoQ"));
+    koq->SetDisplayLabel("Test KoQ");
+    koq->SetDescription("Test Description");
+    koq->SetPersistenceUnit("M");
+    koq->SetRelativeError(10e-3);
+
+    CopySchema();
+
+    EXPECT_EQ(1, m_targetSchema->GetKindOfQuantityCount());
+
+    KindOfQuantityCP targetKoq = m_targetSchema->GetKindOfQuantityCP("TestKoQ");
+    ASSERT_TRUE(nullptr != targetKoq);
+    EXPECT_STREQ("Test KoQ", targetKoq->GetDisplayLabel().c_str());
+    EXPECT_STREQ("Test Description", targetKoq->GetDescription().c_str());
+    EXPECT_STREQ("M", targetKoq->GetPersistenceUnit().GetUnit()->GetName());
+    EXPECT_FALSE(targetKoq->HasPresentationUnits());
     EXPECT_EQ(10e-3, targetKoq->GetRelativeError());
     }
 

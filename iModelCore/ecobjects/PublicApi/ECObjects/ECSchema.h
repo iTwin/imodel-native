@@ -3848,6 +3848,13 @@ public:
     //!           contain the read schema.  Otherwise schemaOut will be unmodified.
     ECOBJECTS_EXPORT static SchemaReadStatus ReadFromXmlStream(ECSchemaPtr& schemaOut, IStreamP ecSchemaXmlStream, ECSchemaReadContextR schemaContext);
 
+    //! Serializes the schema as EC2 Xml with the standard EC3 attributes converted to EC2 standard custom attributes.  
+    //! @param[out] ec2SchemaXml        The string containing the EC2 Xml for the input schema
+    //! @param[in]  schemaToSerialize   The schema to serialize as EC2 Xml.  See ECSchemaDownConverter for details of conversion.
+    //! @return A status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then ecSchemaXml will contain the serialized schema.  
+    //!             Otherwise, ecSchemaXml will be unmodified.  Schema is always unmodified.
+    ECOBJECTS_EXPORT static SchemaWriteStatus WriteToEC2XmlString(Utf8StringR ec2SchemaXml, ECSchemaP schemaToSerialize);
+
     //! Returns true if the schema is an ECStandard schema
     //! @return True if a standard schema, false otherwise
     //! @param[in]  schemaName  Name of the schema to test.  This is just the schema name, no version info

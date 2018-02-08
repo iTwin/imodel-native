@@ -15,6 +15,12 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 // Converts EC3 attributes to EC2 custom attributes.  Use the CustomECSchemaConverter to do 
 // EC2 custom attribute to EC3 attribute conversion.
+// <remarks>
+// This class does the following conversions:
+// <list type="bullet">
+// <item>Creates UnitSpecification and DisplayUnitSpecifications for each property with a KindOfQuantity applied</item>
+// </list>
+// </remarks>
 // @bsiclass                                                    Colin.Kerr   01/2018
 //+===============+===============+===============+===============+===============+======
 struct ECSchemaDownConverter : NonCopyableClass
