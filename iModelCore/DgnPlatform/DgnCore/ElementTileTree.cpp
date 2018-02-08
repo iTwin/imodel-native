@@ -2089,6 +2089,7 @@ static Feature featureFromParams(DgnElementId elemId, DisplayParamsCR params)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double rangePixels, bool isContained)
     {
+    // TFS#817210
     PolyfaceHeaderPtr polyface = tilePolyface.m_polyface.get();
     if (polyface.IsNull() || 0 == polyface->GetPointIndexCount())
         return;
