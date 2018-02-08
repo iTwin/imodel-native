@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ECSchema schemaName="ECDbChange" alias="change" version="01.00.00" displayLabel="ECDb Change" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+<ECSchema schemaName="ECDbChange" alias="change" version="01.00.01" displayLabel="ECDb Change" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
     <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
 
     <ECEntityClass typeName="ChangeSummary" displayLabel="Summary" modifier="Sealed">
-        <ECProperty propertyName="ExtendedProperties" typeName="string" extendedType="Json" />
+        <ECProperty propertyName="ExtendedProperties" typeName="string" extendedTypeName="Json" />
     </ECEntityClass>
 
     <ECEnumeration typeName="OpCode" backingTypeName="int" isStrict="true">
@@ -13,8 +13,8 @@
     </ECEnumeration>
 
     <ECStructClass typeName="InstanceKey" displayLabel="InstanceKey" modifier="Sealed">
-        <ECProperty propertyName="Id" typeName="long" />
-        <ECProperty propertyName="ClassId" typeName="long" />
+        <ECProperty propertyName="Id" typeName="long" extendedTypeName="Id"/>
+        <ECProperty propertyName="ClassId" typeName="long" extendedTypeName="Id"/>
     </ECStructClass>
     
     <ECEntityClass typeName="InstanceChange" displayLabel="Instance Change"  modifier="Sealed" description="Represents an instance change in a change summary">

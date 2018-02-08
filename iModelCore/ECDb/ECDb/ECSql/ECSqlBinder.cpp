@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlBinder.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -72,7 +72,7 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlPrepareContex
         {
         PropertyNameExp const& propNameExp = targetExp->GetAs<PropertyNameExp>();
         ECSqlSystemPropertyInfo const& sysPropInfo = propNameExp.GetSystemPropertyInfo();
-        if (sysPropInfo.IsSystemProperty() && sysPropInfo.IsId())
+        if (sysPropInfo.IsId())
             return CreateIdBinder(ctx, propNameExp.GetPropertyMap(), sysPropInfo, paramNameGen);
         }
 

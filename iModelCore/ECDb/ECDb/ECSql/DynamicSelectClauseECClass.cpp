@@ -95,7 +95,7 @@ ECSqlStatus DynamicSelectClauseECClass::GeneratePropertyIfRequired(ECN::ECProper
             }
 
         BeAssert(m_selectClauseNames.find(propName) == m_selectClauseNames.end() && "at this point select clause item name should be unique");
-        ECSqlStatus stat = AddProperty(generatedProperty, propName, selectClauseItemExp);
+        ECSqlStatus stat = AddProperty(generatedProperty, ctx, propName, selectClauseItemExp, selectClauseItemPropNameExp);
         if (!stat.IsSuccess())
             return stat;
         }
@@ -109,7 +109,7 @@ ECSqlStatus DynamicSelectClauseECClass::GeneratePropertyIfRequired(ECN::ECProper
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generatedProperty, Utf8StringCR propName, DerivedPropertyExp const& selectClauseItemExp)
+ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generatedProperty, ECSqlPrepareContext& ctx, Utf8StringCR propName, DerivedPropertyExp const& selectClauseItemExp, PropertyNameExp const* selectClauseItemPropNameExp)
     {
     ECSqlTypeInfo const& typeInfo = selectClauseItemExp.GetExpression()->GetTypeInfo();
     const ECSqlTypeInfo::Kind typeKind = typeInfo.GetKind();
@@ -126,6 +126,24 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
             PrimitiveECPropertyP primProp = nullptr;
             if (ECObjectsStatus::Success != GetClass().CreatePrimitiveProperty(primProp, encodedPropName, typeInfo.GetPrimitiveType()))
                 return ECSqlStatus::Error;
+
+            if (selectClauseItemPropNameExp != nullptr)
+                {
+                if (selectClauseItemPropNameExp->GetSystemPropertyInfo().IsId())
+                    {
+                    //This is a workaround to expose the information that a generated property refers to an Id system property.
+                    //iModelJs needs that information to format aliased system property expressions as id.
+                    BeAssert(primProp->GetType() == PRIMITIVETYPE_Long);
+                    primProp->SetExtendedTypeName("Id");
+                    }
+                else if (!selectClauseItemPropNameExp->IsPropertyRef())
+                    {
+                    //Extended types are preserved as well
+                    ECPropertyCR prop = selectClauseItemPropNameExp->GetPropertyMap().GetProperty();
+                    if (prop.HasExtendedType())
+                        primProp->SetExtendedTypeName(prop.GetAsPrimitiveProperty()->GetExtendedTypeName().c_str());
+                    }
+                }
 
             generatedPropertyP = primProp;
             break;
@@ -155,6 +173,14 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
             PrimitiveArrayECPropertyP arrayProp = nullptr;
             if (ECObjectsStatus::Success != GetClass().CreatePrimitiveArrayProperty(arrayProp, encodedPropName, typeInfo.GetPrimitiveType()))
                 return ECSqlStatus::Error;
+
+            if (selectClauseItemPropNameExp != nullptr && !selectClauseItemPropNameExp->IsPropertyRef())
+                {
+                //Extended types are preserved as well
+                ECPropertyCR prop = selectClauseItemPropNameExp->GetPropertyMap().GetProperty();
+                if (prop.HasExtendedType())
+                    arrayProp->SetExtendedTypeName(prop.GetAsPrimitiveArrayProperty()->GetExtendedTypeName().c_str());
+                }
 
             generatedPropertyP = arrayProp;
             break;
