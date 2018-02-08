@@ -67,6 +67,7 @@ enum class SystemId
     Description,
     Direction,
     DisplayLabel,
+    ECVersion,
     Enumeration,
     Enumerations,
     Enumerator,
@@ -97,6 +98,8 @@ enum class SystemId
     Multiplicity,
     Name,
     Navigation,
+    OriginalECXmlVersionMajor,
+    OriginalECXmlVersionMinor,
     Properties,
     Property,
     PropertyCategories,
@@ -883,6 +886,10 @@ struct SchemaChange final : ECObjectChange
         UInt32Change& GetVersionRead() { return Get<UInt32Change>(SystemId::VersionRead); }
         UInt32Change& GetVersionMinor() { return Get<UInt32Change>(SystemId::VersionMinor); }
         UInt32Change& GetVersionWrite() { return Get<UInt32Change>(SystemId::VersionWrite); }
+        ECPrimitiveChange<ECVersion>& GetECVersion() { return Get<ECPrimitiveChange<ECVersion>>(SystemId::ECVersion); }
+        UInt32Change& GetOriginalECXmlVersionMajor() { return Get<UInt32Change>(SystemId::OriginalECXmlVersionMajor); }
+        UInt32Change& GetOriginalECXmlVersionMinor() { return Get<UInt32Change>(SystemId::OriginalECXmlVersionMinor); }
+
         StringChange& GetAlias() { return Get<StringChange>(SystemId::Alias); }
         ReferenceChanges& References() { return Get<ReferenceChanges>(SystemId::References); }
         ClassChanges& Classes() { return Get<ClassChanges>(SystemId::Classes); }
