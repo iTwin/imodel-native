@@ -8126,7 +8126,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, RelatedPropertiesSpecifica
     EXPECT_STREQ("Widget", descriptor->GetVisibleFields()[2]->AsPropertiesField()->GetLabel().c_str());
 
     ASSERT_TRUE(descriptor->GetVisibleFields()[3]->IsPropertiesField());
-    EXPECT_STREQ("Widget IntProperty", descriptor->GetVisibleFields()[3]->AsPropertiesField()->GetLabel().c_str());
+    EXPECT_STREQ("IntProperty", descriptor->GetVisibleFields()[3]->AsPropertiesField()->GetLabel().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

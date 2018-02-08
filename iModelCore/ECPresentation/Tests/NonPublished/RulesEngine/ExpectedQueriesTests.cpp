@@ -146,6 +146,42 @@ ContentDescriptor::Field& ExpectedQueries::AddField(ContentDescriptorR descripto
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static ContentDescriptor::Property CreateProperty(Utf8String prefix, ECClassCR propertyClass, ECPropertyCR ecProperty)
+    {
+    return ContentDescriptor::Property(prefix, propertyClass, ecProperty);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static ContentDescriptor::Property CreateProperty(Utf8String prefix, ECClassCR propertyClass, ECPropertyCR ecProperty, RelatedClassPath relatedClassPath, RelationshipMeaning relationshipMeaning)
+    {
+    ContentDescriptor::Property p = CreateProperty(prefix, propertyClass, ecProperty);
+    p.SetIsRelated(relatedClassPath, relationshipMeaning);
+    return p;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static ContentDescriptor::Property CreateProperty(Utf8String prefix, ECClassCR propertyClass, ECPropertyCR ecProperty, RelatedClass relatedClass, RelationshipMeaning relationshipMeaning)
+    {
+    RelatedClassPath path;
+    path.push_back(relatedClass);
+    return CreateProperty(prefix, propertyClass, ecProperty, path, relationshipMeaning);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static ContentDescriptor::Category CreateCategory(ECClassCR ecClass)
+    {
+    return ContentDescriptor::Category(ecClass.GetName(), ecClass.GetDisplayLabel(), ecClass.GetDescription(), DefaultCategorySupplier::NESTED_CONTENT_CATEGORY_PRIORITY);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ExpectedQueries::PrepareSchemaContext()
@@ -3318,8 +3354,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         auto widgetKeyField = new ContentDescriptor::ECInstanceKeyField();
         descriptor->AddField(widgetKeyField);
 
-        field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("rel_RET_Widget_1", ret_Widget, *ret_Widget.GetPropertyP("IntProperty")));
-        const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadgets_0"));
+        field = &AddField(*descriptor, ret_Gadget, CreateProperty("rel_RET_Widget_1", ret_Widget, *ret_Widget.GetPropertyP("IntProperty"),
+            RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadgets_0"), RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName("rel_Gadget_Widget_IntProperty");
         descriptor->GetAllFields().back()->SetLabel("Widget IntProperty");
         widgetKeyField->AddKeyField(*field->AsPropertiesField());
@@ -3355,14 +3391,14 @@ void ExpectedQueries::RegisterExpectedQueries()
         auto widgetKeyField = new ContentDescriptor::ECInstanceKeyField();
         descriptor->AddField(widgetKeyField);
 
-        field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("rel_RET_Widget_1", ret_Widget, *ret_Widget.GetPropertyP("IntProperty")));
-        const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadgets_0"));
+        field = &AddField(*descriptor, ret_Gadget, CreateProperty("rel_RET_Widget_1", ret_Widget, *ret_Widget.GetPropertyP("IntProperty"),
+            RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadgets_0"), RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName("rel_Gadget_Widget_IntProperty");
         descriptor->GetAllFields().back()->SetLabel("Widget IntProperty");
         widgetKeyField->AddKeyField(*field->AsPropertiesField());
 
-        field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("rel_RET_Widget_1", ret_Widget, *ret_Widget.GetPropertyP("LongProperty")));
-        const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadgets_0"));
+        field = &AddField(*descriptor, ret_Gadget, CreateProperty("rel_RET_Widget_1", ret_Widget, *ret_Widget.GetPropertyP("LongProperty"),
+            RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadgets_0"), RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName("rel_Gadget_Widget_LongProperty");
         descriptor->GetAllFields().back()->SetLabel("Widget LongProperty");
         widgetKeyField->AddKeyField(*field->AsPropertiesField());
@@ -3399,20 +3435,20 @@ void ExpectedQueries::RegisterExpectedQueries()
         auto gadgetKeyField = new ContentDescriptor::ECInstanceKeyField();
         descriptor->AddField(gadgetKeyField);
 
-        field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("rel_RET_Gadget_1", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
-        const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprockets_0"));
+        field = &AddField(*descriptor, ret_Sprocket, CreateProperty("rel_RET_Gadget_1", ret_Gadget, *ret_Gadget.GetPropertyP("MyID"),
+            RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprockets_0"), RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName("rel_Sprocket_Gadget_MyID");
         descriptor->GetAllFields().back()->SetLabel("Gadget MyID");
         gadgetKeyField->AddKeyField(*field->AsPropertiesField());
 
-        field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("rel_RET_Gadget_1", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
-        const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprockets_0"));
+        field = &AddField(*descriptor, ret_Sprocket, CreateProperty("rel_RET_Gadget_1", ret_Gadget, *ret_Gadget.GetPropertyP("Description"),
+            RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprockets_0"), RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName("rel_Sprocket_Gadget_Description");
         descriptor->GetAllFields().back()->SetLabel("Gadget Description");
         gadgetKeyField->AddKeyField(*field->AsPropertiesField());
         
-        field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("nav_RET_Widget_0", ret_Gadget, *ret_Gadget.GetPropertyP("Widget")));
-        const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprockets_0"));
+        field = &AddField(*descriptor, ret_Sprocket, CreateProperty("nav_RET_Widget_0", ret_Gadget, *ret_Gadget.GetPropertyP("Widget"),
+            RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprockets_0"), RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName("rel_Sprocket_Gadget_Widget");
         descriptor->GetAllFields().back()->SetLabel("Gadget Widget");
         descriptor->AddField(new ContentDescriptor::ECNavigationInstanceIdField(*field->AsPropertiesField()));
@@ -3452,8 +3488,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         auto class1KeyField = new ContentDescriptor::ECInstanceKeyField();
         descriptor->AddField(class1KeyField);
 
-        field = &AddField(*descriptor, sc_Class2, ContentDescriptor::Property("rel_sc_Class1_1", sc_Class1, *sc_Class1.GetPropertyP("PropertyA")));
-        const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(sc_Class1, sc_Class2, sc_Class1HasClass2And3, true, "rel_sc_Class2_0", "rel_sc_Class1HasClass2And3_0"));
+        field = &AddField(*descriptor, sc_Class2, CreateProperty("rel_sc_Class1_1", sc_Class1, *sc_Class1.GetPropertyP("PropertyA"),
+            RelatedClass(sc_Class1, sc_Class2, sc_Class1HasClass2And3, true, "rel_sc_Class2_0", "rel_sc_Class1HasClass2And3_0"), RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName("rel_Class2_Class1_PropertyA");
         descriptor->GetAllFields().back()->SetLabel("Class1 PropertyA");
         class1KeyField->AddKeyField(*field->AsPropertiesField());
@@ -3492,8 +3528,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         auto widgetKeyField = new ContentDescriptor::ECInstanceKeyField();
         descriptor->AddField(widgetKeyField);
 
-        field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("rel_RET_Widget_1", ret_Widget, *ret_Widget.GetPropertyP("IntProperty")));
-        const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadget_0"));
+        field = &AddField(*descriptor, ret_Gadget, CreateProperty("rel_RET_Widget_1", ret_Widget, *ret_Widget.GetPropertyP("IntProperty"),
+            RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadget_0"), RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName("rel_Gadget_Widget_IntProperty");
         descriptor->GetAllFields().back()->SetLabel("Widget IntProperty");
         widgetKeyField->AddKeyField(*field->AsPropertiesField());
@@ -3501,8 +3537,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         auto sprocketKeyField = new ContentDescriptor::ECInstanceKeyField();
         descriptor->AddField(sprocketKeyField);
 
-        field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("nav_RET_Gadget_2", ret_Sprocket, *ret_Sprocket.GetPropertyP("Gadget")));
-        const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "rel_RET_Gadget_1", "rel_RET_GadgetHasSprocket_0"));
+        field = &AddField(*descriptor, ret_Gadget, CreateProperty("nav_RET_Gadget_2", ret_Sprocket, *ret_Sprocket.GetPropertyP("Gadget"),
+            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "rel_RET_Gadget_1", "rel_RET_GadgetHasSprocket_0"), RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName("rel_Gadget_Sprocket_Gadget");
         descriptor->GetAllFields().back()->SetLabel("Sprocket Gadget");
         descriptor->AddField(new ContentDescriptor::ECNavigationInstanceIdField(*field->AsPropertiesField()));
@@ -3549,11 +3585,11 @@ void ExpectedQueries::RegisterExpectedQueries()
         auto widgetKeyField = new ContentDescriptor::ECInstanceKeyField();
         descriptor->AddField(widgetKeyField);
 
-        field = new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category::GetDefaultCategory(), "Widget_Description", "Description");
-        field->AsPropertiesField()->AddProperty(ContentDescriptor::Property("rel_RET_Widget_1", ret_Widget, *ret_Widget.GetPropertyP("Description")));
-        const_cast<ContentDescriptor::Property&>(field->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadgets_0"));
-        field->AsPropertiesField()->AddProperty(ContentDescriptor::Property("rel_RET_Widget_2", ret_Widget, *ret_Widget.GetPropertyP("Description")));
-        const_cast<ContentDescriptor::Property&>(field->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadgets_0"));
+        field = new ContentDescriptor::ECPropertiesField(CreateCategory(ret_Widget), "Widget_Description", "Description");
+        field->AsPropertiesField()->AddProperty(CreateProperty("rel_RET_Widget_1", ret_Widget, *ret_Widget.GetPropertyP("Description"),
+            RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadgets_0"), RelationshipMeaning::RelatedInstance));
+        field->AsPropertiesField()->AddProperty(CreateProperty("rel_RET_Widget_2", ret_Widget, *ret_Widget.GetPropertyP("Description"),
+            RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadgets_0"), RelationshipMeaning::RelatedInstance));
         descriptor->AddField(field);
         descriptor->GetAllFields().back()->SetName("rel_Gadget_Widget_Description");
         descriptor->GetAllFields().back()->SetLabel("Widget Description");
@@ -3607,11 +3643,11 @@ void ExpectedQueries::RegisterExpectedQueries()
         auto widgetKeyField = new ContentDescriptor::ECInstanceKeyField();
         descriptor->AddField(widgetKeyField);
 
-        field = new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category::GetDefaultCategory(), "Widget_IntProperty", "IntProperty");
-        field->AsPropertiesField()->AddProperty(ContentDescriptor::Property("rel_RET_Widget_0", ret_Widget, *ret_Widget.GetPropertyP("IntProperty")));
-        const_cast<ContentDescriptor::Property&>(field->AsPropertiesField()->GetProperties().back()).SetIsRelated(nestedRelatedPropertiesPath1);
-        field->AsPropertiesField()->AddProperty(ContentDescriptor::Property("rel_RET_Widget_1", ret_Widget, *ret_Widget.GetPropertyP("IntProperty")));
-        const_cast<ContentDescriptor::Property&>(field->AsPropertiesField()->GetProperties().back()).SetIsRelated(nestedRelatedPropertiesPath2);
+        field = new ContentDescriptor::ECPropertiesField(CreateCategory(ret_Widget), "Widget_IntProperty", "IntProperty");
+        field->AsPropertiesField()->AddProperty(CreateProperty("rel_RET_Widget_0", ret_Widget, *ret_Widget.GetPropertyP("IntProperty"),
+            nestedRelatedPropertiesPath1, RelationshipMeaning::RelatedInstance));
+        field->AsPropertiesField()->AddProperty(CreateProperty("rel_RET_Widget_1", ret_Widget, *ret_Widget.GetPropertyP("IntProperty"),
+            nestedRelatedPropertiesPath2, RelationshipMeaning::RelatedInstance));
         descriptor->AddField(field);
         descriptor->GetAllFields().back()->SetName("rel_Sprocket_Gadget_Widget_IntProperty");
         descriptor->GetAllFields().back()->SetLabel("Widget IntProperty");
@@ -3657,8 +3693,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         auto widgetKeyField = new ContentDescriptor::ECInstanceKeyField();
         descriptor->AddField(widgetKeyField);
 
-        field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("rel_RET_Widget_0", ret_Widget, *ret_Widget.GetPropertyP("Description")));
-        const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(nestedRelatedPropertiesPath);
+        field = &AddField(*descriptor, ret_Sprocket, CreateProperty("rel_RET_Widget_0", ret_Widget, *ret_Widget.GetPropertyP("Description"),
+            nestedRelatedPropertiesPath, RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName("rel_Sprocket_Gadget_Widget_Description");
         descriptor->GetAllFields().back()->SetLabel("Widget Description");
         widgetKeyField->AddKeyField(*field->AsPropertiesField());
@@ -3708,8 +3744,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         auto gadgetKeyField = new ContentDescriptor::ECInstanceKeyField();
         descriptor->AddField(gadgetKeyField);
 
-        field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("rel_RET_Gadget_1", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
-        const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(gadgetRelatedPropertiesPath);
+        field = &AddField(*descriptor, ret_Sprocket, CreateProperty("rel_RET_Gadget_1", ret_Gadget, *ret_Gadget.GetPropertyP("Description"),
+            gadgetRelatedPropertiesPath, RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName("rel_Sprocket_Gadget_Description");
         descriptor->GetAllFields().back()->SetLabel("Gadget Description");
         gadgetKeyField->AddKeyField(*field->AsPropertiesField());
@@ -3717,8 +3753,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         auto widgetKeyField = new ContentDescriptor::ECInstanceKeyField();
         descriptor->AddField(widgetKeyField);
 
-        field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("rel_RET_Widget_0", ret_Widget, *ret_Widget.GetPropertyP("Description")));
-        const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(widgetRelatedPropertiesPath);
+        field = &AddField(*descriptor, ret_Sprocket, CreateProperty("rel_RET_Widget_0", ret_Widget, *ret_Widget.GetPropertyP("Description"),
+            widgetRelatedPropertiesPath, RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName("rel_Sprocket_Gadget_Widget_Description");
         descriptor->GetAllFields().back()->SetLabel("Widget Description");
         widgetKeyField->AddKeyField(*field->AsPropertiesField());
@@ -4769,8 +4805,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         auto widgetKeyField = new ContentDescriptor::ECInstanceKeyField();
         descriptor->AddField(widgetKeyField);
 
-        field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("rel_RET_Widget_0", ret_Widget, *ret_Widget.GetPropertyP("MyID")));
-        const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadgets_0"));
+        field = &AddField(*descriptor, ret_Gadget, CreateProperty("rel_RET_Widget_0", ret_Widget, *ret_Widget.GetPropertyP("MyID"),
+            RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadgets_0"), RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName("rel_Gadget_Widget_MyID");
         descriptor->GetAllFields().back()->SetLabel("Widget MyID");
         widgetKeyField->AddKeyField(*field->AsPropertiesField());
@@ -4824,11 +4860,11 @@ void ExpectedQueries::RegisterExpectedQueries()
         auto gadgetKeyField = new ContentDescriptor::ECInstanceKeyField();
         descriptor->AddField(gadgetKeyField);
 
-        field = new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category::GetDefaultCategory(), "", "");
-        field->AsPropertiesField()->AddProperty(ContentDescriptor::Property("rel_RET_Gadget_0", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
-        const_cast<ContentDescriptor::Property&>(field->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "rel_RET_Widget_0", "rel_RET_WidgetHasGadget_0"));
-        field->AsPropertiesField()->AddProperty(ContentDescriptor::Property("rel_RET_Gadget_2", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
-        const_cast<ContentDescriptor::Property&>(field->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprockets_0"));
+        field = new ContentDescriptor::ECPropertiesField(CreateCategory(ret_Gadget), "", "");
+        field->AsPropertiesField()->AddProperty(CreateProperty("rel_RET_Gadget_0", ret_Gadget, *ret_Gadget.GetPropertyP("MyID"),
+            RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "rel_RET_Widget_0", "rel_RET_WidgetHasGadget_0"), RelationshipMeaning::RelatedInstance));
+        field->AsPropertiesField()->AddProperty(CreateProperty("rel_RET_Gadget_2", ret_Gadget, *ret_Gadget.GetPropertyP("MyID"),
+            RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprockets_0"), RelationshipMeaning::RelatedInstance));
         descriptor->AddField(field);
         descriptor->GetAllFields().back()->SetName("rel_Widget_Sprocket_Gadget_MyID");
         descriptor->GetAllFields().back()->SetLabel("Gadget MyID");
@@ -4873,8 +4909,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         auto gadgetKeyField = new ContentDescriptor::ECInstanceKeyField();
         descriptor->AddField(gadgetKeyField);
 
-        field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("rel_RET_Gadget_1", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
-        const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprockets_0"));
+        field = &AddField(*descriptor, ret_Sprocket, CreateProperty("rel_RET_Gadget_1", ret_Gadget, *ret_Gadget.GetPropertyP("Description"),
+            RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprockets_0"), RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName("rel_Sprocket_Gadget_Description");
         descriptor->GetAllFields().back()->SetLabel("Gadget Description");
         gadgetKeyField->AddKeyField(*field->AsPropertiesField());
@@ -4909,8 +4945,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         auto gadgetKeyField = new ContentDescriptor::ECInstanceKeyField();
         descriptor->AddField(gadgetKeyField);
 
-        field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("rel_RET_Gadget_1", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
-        const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprockets_0"));
+        field = &AddField(*descriptor, ret_Sprocket, CreateProperty("rel_RET_Gadget_1", ret_Gadget, *ret_Gadget.GetPropertyP("Description"),
+            RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprockets_0"), RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName("rel_Sprocket_Gadget_Description");
         descriptor->GetAllFields().back()->SetLabel("Gadget Description");
         gadgetKeyField->AddKeyField(*field->AsPropertiesField());
@@ -4945,8 +4981,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         auto gadgetKeyField = new ContentDescriptor::ECInstanceKeyField();
         descriptor->AddField(gadgetKeyField);
         
-        field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("rel_RET_Gadget_1", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
-        const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprockets_0"));
+        field = &AddField(*descriptor, ret_Sprocket, CreateProperty("rel_RET_Gadget_1", ret_Gadget, *ret_Gadget.GetPropertyP("Description"),
+            RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprockets_0"), RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName("rel_Sprocket_Gadget_Description");
         descriptor->GetAllFields().back()->SetLabel("Gadget Description");
         gadgetKeyField->AddKeyField(*field->AsPropertiesField());

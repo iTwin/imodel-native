@@ -400,7 +400,7 @@ struct TestCategorySupplier : IPropertyCategorySupplier
         : m_category(category)
         {
         }
-    ContentDescriptor::Category _GetCategory(ECClassCR, RelatedClassPathCR, ECPropertyCR) override {return m_category;}
+    ContentDescriptor::Category _GetCategory(ECClassCR, RelatedClassPathCR, ECPropertyCR, RelationshipMeaning) override {return m_category;}
     ContentDescriptor::Category _GetCategory(ECClassCR, RelatedClassPathCR, ECClassCR) override {return m_category;}
     ContentDescriptor::Category GetUsedCategory() const {return m_category;}
     void SetUsedCategory(ContentDescriptor::Category category)
