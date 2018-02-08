@@ -1514,7 +1514,7 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
             Utf8CP actualDdl = actualDdlStmt.GetValueText(0);
 
             if (BeStringUtilities::StricmpAscii(benchmarkName,"ec_Schema") == 0)
-                EXPECT_STREQ("CREATE TABLE ec_Schema(Id INTEGER PRIMARY KEY,Name TEXT UNIQUE NOT NULL COLLATE NOCASE,DisplayLabel TEXT,Description TEXT,Alias TEXT UNIQUE NOT NULL COLLATE NOCASE,VersionDigit1 INTEGER NOT NULL,VersionDigit2 INTEGER NOT NULL,VersionDigit3 INTEGER NOT NULL, OriginalECVersionMajor INTEGER, OriginalECVersionMinor INTEGER)",
+                EXPECT_STREQ("CREATE TABLE ec_Schema(Id INTEGER PRIMARY KEY,Name TEXT UNIQUE NOT NULL COLLATE NOCASE,DisplayLabel TEXT,Description TEXT,Alias TEXT UNIQUE NOT NULL COLLATE NOCASE,VersionDigit1 INTEGER NOT NULL,VersionDigit2 INTEGER NOT NULL,VersionDigit3 INTEGER NOT NULL, ECVersion INTEGER, OriginalECXmlVersionMajor INTEGER, OriginalECXmlVersionMinor INTEGER)",
                              actualDdl);
             else
                 EXPECT_STREQ(benchmarkDdl, actualDdl) << "DB object in upgraded file has different DDL than in benchmark file: " << benchmarkName;

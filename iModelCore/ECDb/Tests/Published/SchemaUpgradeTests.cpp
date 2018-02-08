@@ -211,6 +211,46 @@ TEST_F(SchemaUpgradeTestFixture, UpdateECSchemaAttributes)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                     02/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, ECVersions)
+    {
+    auto verifySchemaVersion = [] (ECDbCR ecdb, Utf8CP schemaName, ECVersion expectedECVersion, uint32_t expectedOriginalXmlVersionMajor, uint32_t expectedOriginalXmlVersionMinor)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECVersion, OriginalECXmlVersionMajor, OriginalECXmlVersionMinor FROM meta.ECSchemaDef WHERE Name=?"));
+        stmt.BindText(1, schemaName, IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(expectedECVersion, (ECVersion) stmt.GetValueInt(0));
+        ASSERT_EQ(expectedOriginalXmlVersionMajor, (uint32_t) stmt.GetValueInt(1));
+        ASSERT_EQ(expectedOriginalXmlVersionMinor, (uint32_t) stmt.GetValueInt(2));
+        };
+
+    ASSERT_EQ(SUCCESS, SetupECDb("SchemaOriginalECXmlVersion.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "</ECSchema>")));
+    verifySchemaVersion(m_ecdb, "TestSchema", ECVersion::Latest, 3, 0);
+
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "</ECSchema>")));
+    verifySchemaVersion(m_ecdb, "TestSchema", ECVersion::Latest, 3, 1);
+
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "</ECSchema>")));
+    verifySchemaVersion(m_ecdb, "TestSchema", ECVersion::Latest, 3, 2);
+
+    ASSERT_EQ(ERROR, ImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "</ECSchema>"))) << "Downgrade of ECXml version is not supported";
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaUpgradeTestFixture, UpdateECClassAttributes)
@@ -4423,8 +4463,8 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColum
     m_ecdb.SaveChanges();
     SchemaItem deleteFoo(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECSchemaReference name = 'ECDbMap' version='02.00' alias = 'ecdbmap' />"
         "   <ECEntityClass typeName='Parent' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
@@ -4468,8 +4508,8 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColum
     m_ecdb.SaveChanges();
     SchemaItem deleteGoo(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECSchemaReference name = 'ECDbMap' version='02.00' alias = 'ecdbmap' />"
         "   <ECEntityClass typeName='Parent' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
@@ -4500,8 +4540,8 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColum
     m_ecdb.SaveChanges();
     SchemaItem deleteParent(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='4.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='4.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECSchemaReference name = 'ECDbMap' version='02.00' alias = 'ecdbmap' />"
         "</ECSchema>");
     ASSERT_EQ(SUCCESS, ImportSchema(deleteParent)) << "Deleting Class with CA  JoinedTablePerDirectSubClass,SharedColumnForSubClasses is expected to be supported";
 
@@ -4511,8 +4551,8 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColum
     //Add Parent ===================================================================================================
     ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='5.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='5.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECSchemaReference name = 'ECDbMap' version='02.00' alias = 'ecdbmap' />"
         "   <ECEntityClass typeName='Parent' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
@@ -4538,8 +4578,8 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColum
     m_ecdb.SaveChanges();
     SchemaItem addGoo(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='6.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='6.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECSchemaReference name = 'ECDbMap' version='02.00' alias = 'ecdbmap' />"
         "   <ECEntityClass typeName='Parent' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
@@ -4576,8 +4616,8 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColum
     m_ecdb.SaveChanges();
     SchemaItem addFoo(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='7.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='7.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECSchemaReference name = 'ECDbMap' version='02.00' alias = 'ecdbmap' />"
         "   <ECEntityClass typeName='Parent' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
@@ -5724,6 +5764,58 @@ TEST_F(SchemaUpgradeTestFixture, ModifyECEnumeratorsOfEC32Enum)
 
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                  02/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, ModifyECEnumeratorNames)
+    {
+    //starting with pre EC3.2 schema
+    ASSERT_EQ(SUCCESS, SetupECDb("ModifyECEnumeratorNames.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        " <ECEnumeration typeName='MyEnum' backingTypeName='int' isStrict='True'>"
+        "   <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "   <ECEnumerator value = '1' displayLabel = 'log' />"
+        " </ECEnumeration>"
+        "</ECSchema>"))) << "EC3 Enum";
+
+    EXPECT_EQ(SUCCESS, ImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        " <ECEnumeration typeName='MyEnum' backingTypeName='int' isStrict='True'>"
+        "   <ECEnumerator name='TxtFile' value = '0' displayLabel = 'txt' />"
+        "   <ECEnumerator name='LogFile' value = '1' displayLabel = 'log' />"
+        " </ECEnumeration>"
+        "</ECSchema>"))) << "Changing enumerator names when the old schema originates from pre EC3.2 is allowed";
+
+    EXPECT_EQ(ERROR, ImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        " <ECEnumeration typeName='MyEnum' backingTypeName='int' isStrict='True'>"
+        "   <ECEnumerator name='TxtFile1' value = '0' displayLabel = 'txt' />"
+        "   <ECEnumerator name='LogFile' value = '1' displayLabel = 'log' />"
+        " </ECEnumeration>"
+        "</ECSchema>"))) << "Changing the names again after it was upgraded to EC3.2 is not allowed";
+
+    //starting with EC3.2 schema
+    ASSERT_EQ(SUCCESS, SetupECDb("ModifyECEnumeratorNames.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        " <ECEnumeration typeName='MyEnum' backingTypeName='int' isStrict='True'>"
+        "   <ECEnumerator name='TxtFile' value = '0' displayLabel = 'txt' />"
+        "   <ECEnumerator name='LogFile' value = '1' displayLabel = 'log' />"
+        " </ECEnumeration>"
+        "</ECSchema>"))) << "EC3.2 Enum";
+
+    EXPECT_EQ(ERROR, ImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        " <ECEnumeration typeName='MyEnum' backingTypeName='int' isStrict='True'>"
+        "   <ECEnumerator name='TxtFile1' value = '0' displayLabel = 'txt' />"
+        "   <ECEnumerator name='LogFile' value = '1' displayLabel = 'log' />"
+        " </ECEnumeration>"
+        "</ECSchema>"))) << "Changing the names in an EC3.2 schema is not supported";
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
@@ -7324,7 +7416,7 @@ TEST_F(SchemaUpgradeTestFixture, ModifyECArrayProperty_KOQToKOQ)
 
     Utf8CP editedSchemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <KindOfQuantity typeName='KindOfQuantity1' description='KindOfQuantity1'"
         "                    displayLabel='KindOfQuantity1' persistenceUnit='CM' relativeError='.5'"
         "                    presentationUnits='FT;IN' />"
@@ -8845,8 +8937,7 @@ TEST_F(SchemaUpgradeTestFixture, ModifyEnumeratorNameInPre32ECSchema)
                 </ECEnumeration>
                 </ECSchema>)xml"))) << "Once the name was changed after the 3.1 conversion, it cannot be changed anymore";
 
-    //now cover what the actual algo does to approximate the detection that the schema comes from 3.1
-    //this theoretically allows to change the name in EC3.2 schemas, but only if the names happen to be the default names (which are meaningless
+    //now start with EC3.2 enum which should never allow to rename an enumerator
     ASSERT_EQ(SUCCESS, SetupECDb("ModifyEnumeratorNameInPre32ECSchema.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8" ?>
               <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -8860,7 +8951,7 @@ TEST_F(SchemaUpgradeTestFixture, ModifyEnumeratorNameInPre32ECSchema)
                 </ECEnumeration>
                 </ECSchema>)xml")));
 
-    EXPECT_EQ(SUCCESS, ImportSchema(SchemaItem(
+    EXPECT_EQ(ERROR, ImportSchema(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8" ?>
               <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECEnumeration typeName="IntEnum" backingTypeName="int" >
@@ -8871,7 +8962,7 @@ TEST_F(SchemaUpgradeTestFixture, ModifyEnumeratorNameInPre32ECSchema)
                     <ECEnumerator name="On" value="On" />
                     <ECEnumerator name="Off" value="Off" />
                 </ECEnumeration>
-                </ECSchema>)xml"))) << "When the enumerator name is the default EC3.2 conversion name, the change is valid";
+                </ECSchema>)xml"))) << "Even if the enumerator name is the default EC3.2 conversion name, the change is not valid";
 
     EXPECT_EQ(ERROR, ImportSchema(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8" ?>

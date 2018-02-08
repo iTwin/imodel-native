@@ -26,21 +26,21 @@ DbResult ProfileUpgrader_4002::_Upgrade(ECDbCR ecdb) const
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    stat = ecdb.ExecuteDdl("ALTER TABLE " TABLE_Schema " ADD COLUMN OriginalECVersionMajor INTEGER");
+    stat = ecdb.ExecuteDdl("ALTER TABLE " TABLE_Schema " ADD COLUMN OriginalECXmlVersionMajor INTEGER");
     if (BE_SQLITE_OK != stat)
         {
-        LOG.errorv("ECDb profile upgrade failed: Could not add column OriginalECVersionMajor to table " TABLE_Schema ": %s.", ecdb.GetLastError().c_str());
+        LOG.errorv("ECDb profile upgrade failed: Could not add column OriginalECXmlVersionMajor to table " TABLE_Schema ": %s.", ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    stat = ecdb.ExecuteDdl("ALTER TABLE " TABLE_Schema " ADD COLUMN OriginalECVersionMinor INTEGER");
+    stat = ecdb.ExecuteDdl("ALTER TABLE " TABLE_Schema " ADD COLUMN OriginalECXmlVersionMinor INTEGER");
     if (BE_SQLITE_OK != stat)
         {
-        LOG.errorv("ECDb profile upgrade failed: Could not add column OriginalECVersionMinor to table " TABLE_Schema ": %s.", ecdb.GetLastError().c_str());
+        LOG.errorv("ECDb profile upgrade failed: Could not add column OriginalECXmlVersionMinor to table " TABLE_Schema ": %s.", ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    LOG.debug("ECDb profile upgrade: Added columns ECVersion, OriginalECVersionMajor and OriginalECVersionMinor to table " TABLE_Schema ".");
+    LOG.debug("ECDb profile upgrade: Added columns ECVersion, OriginalECXmlVersionMajor and OriginalECXmlVersionMinor to table " TABLE_Schema ".");
 
     stat = UpgradeECEnums(ecdb);
     if (BE_SQLITE_OK != stat)
