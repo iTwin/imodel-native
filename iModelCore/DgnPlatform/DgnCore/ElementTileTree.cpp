@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 #include <DgnPlatform/ElementTileTree.h>
-#include <DgnPlatform/TileIO.h>
+#include <DgnPlatform/TileReader.h>
 #include <folly/BeFolly.h>
 #include <DgnPlatform/RangeIndex.h>
 #include <numeric>
@@ -1150,6 +1150,21 @@ bool Loader::_IsExpired(uint64_t createTimeMillis)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Loader::_IsValidData()
+    {
+    // TFS#800675 quick-fix...reject cached tile if it contains deleted elements
+    // (We key off the most recent modification to any element in the model in order to determine
+    // tile validity - that obviously can't work for deleted elements).
+    // Eventual real solution is to selectively repair tiles by combining cached data with data
+    // from changed elements.
+    BeAssert(!m_tileBytes.empty());
+    TileTree::IO::DgnTileReader reader(m_tileBytes, *GetElementTile().GetElementRoot().GetModel(), *GetRenderSystem());
+    return reader.VerifyFeatureTable();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileCR Loader::GetElementTile() const { return static_cast<TileCR>(*m_tile); }
@@ -1911,7 +1926,6 @@ private:
     DRange3d            m_contentRange = DRange3d::NullRange();
     bool                m_maxGeometryCountExceeded = false;
 
-    static constexpr double GetVertexClusterThresholdPixels() { return 5.0; }
     static constexpr size_t GetDecimatePolyfacePointCount() { return 100; }
 
     MeshBuilderR GetMeshBuilder(MeshBuilderMap::Key const& key);
@@ -1920,7 +1934,7 @@ private:
     void AddPolyfaces(GeometryR geom, double rangePixels, bool isContained);
     void AddPolyfaces(PolyfaceList& polyfaces, GeometryR geom, double rangePixels, bool isContained);
     void AddPolyface(Polyface& polyface, GeometryR, double rangePixels, bool isContained);
-    void AddClippedPolyface(PolyfaceQueryCR, DgnElementId, DisplayParamsCR, MeshEdgeCreationOptions, bool isPlanar, bool doVertexCluster);
+    void AddClippedPolyface(PolyfaceQueryCR, DgnElementId, DisplayParamsCR, MeshEdgeCreationOptions, bool isPlanar);
 
     void AddStrokes(GeometryR geom, double rangePixels, bool isContained);
     void AddStrokes(StrokesList& strokes, GeometryR geom, double rangePixels, bool isContained);
@@ -2075,17 +2089,21 @@ static Feature featureFromParams(DgnElementId elemId, DisplayParamsCR params)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double rangePixels, bool isContained)
     {
-    PolyfaceHeaderP polyface = tilePolyface.m_polyface.get();
-    if (nullptr == polyface || 0 == polyface->GetPointIndexCount())
+    // TFS#817210
+    PolyfaceHeaderPtr polyface = tilePolyface.m_polyface.get();
+    if (polyface.IsNull() || 0 == polyface->GetPointIndexCount())
         return;
 
-    bool doDecimate = !m_tile.IsLeaf() && geom.DoDecimate() && 0 == polyface->GetPointCount() > GetDecimatePolyfacePointCount() && /* Decimator doesn't handle params... */ 0 == polyface->GetParamCount();      
-    bool doVertexCluster = !doDecimate && geom.DoVertexCluster() && rangePixels < GetVertexClusterThresholdPixels();
+    bool doDecimate = !m_tile.IsLeaf() && geom.DoDecimate() && polyface->GetPointCount() > GetDecimatePolyfacePointCount();
 
     if (doDecimate)
         {
         BeAssert(0 == polyface->GetEdgeChainCount());       // The decimation does not handle edge chains - but this only occurs for polyfaces which should never have them.
-        polyface->DecimateByEdgeCollapse(m_tolerance, 0.0);
+
+        PolyfaceHeaderPtr   decimated;
+
+        if (doDecimate && (decimated = polyface->ClusteredVertexDecimate(m_tolerance)).IsValid())
+            polyface = decimated.get();
         }
 
 #if defined(DISABLE_EDGE_GENERATION)
@@ -2102,7 +2120,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
 
     if (isContained)
         {
-        AddClippedPolyface(*polyface, elemId, tilePolyface.GetDisplayParams(), edges, isPlanar, doVertexCluster);
+        AddClippedPolyface(*polyface, elemId, tilePolyface.GetDisplayParams(), edges, isPlanar);
         }
     else
         {
@@ -2111,14 +2129,14 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
         polyface->ClipToRange(m_tile.GetRange(), clipOutput, false);
 
         for (auto& clipped : clipOutput.m_output)
-            AddClippedPolyface(*clipped, elemId, tilePolyface.GetDisplayParams(), edges, isPlanar, doVertexCluster);
+            AddClippedPolyface(*clipped, elemId, tilePolyface.GetDisplayParams(), edges, isPlanar);
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId elemId, DisplayParamsCR displayParams, MeshEdgeCreationOptions edgeOptions, bool isPlanar, bool doVertexCluster)
+void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId elemId, DisplayParamsCR displayParams, MeshEdgeCreationOptions edgeOptions, bool isPlanar)
     {
     bool hasTexture = displayParams.IsTextured();
     bool anyContributed = false;
@@ -2133,7 +2151,7 @@ void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId el
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); /**/)
         {
         anyContributed = true;
-        builder.AddFromPolyfaceVisitor(*visitor, displayParams.GetTextureMapping(), db, featureFromParams(elemId, displayParams), doVertexCluster, hasTexture, fillColor, nullptr != polyface.GetNormalCP());
+        builder.AddFromPolyfaceVisitor(*visitor, displayParams.GetTextureMapping(), db, featureFromParams(elemId, displayParams), hasTexture, fillColor, nullptr != polyface.GetNormalCP());
         m_contentRange.Extend(visitor->Point());
         }
 
@@ -2286,7 +2304,7 @@ void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, double rangePix
         if (stroke.m_points.size() > (strokes.m_disjoint ?  0 : 1))
             {
             m_contentRange.Extend(stroke.m_points);
-            builder.AddPolyline(stroke.m_points, featureFromParams(elemId, displayParams), rangePixels < GetVertexClusterThresholdPixels(), fillColor, stroke.m_startDistance, stroke.m_rangeCenter);
+            builder.AddPolyline(stroke.m_points, featureFromParams(elemId, displayParams), fillColor, stroke.m_startDistance, stroke.m_rangeCenter);
             }
         }
     }

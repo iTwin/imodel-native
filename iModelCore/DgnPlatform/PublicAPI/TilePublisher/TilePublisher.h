@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/TilePublisher/TilePublisher.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -395,7 +395,7 @@ public:
     TILEPUBLISHER_EXPORT static TileGeneratorStatus ConvertStatus(Status input);
     WString GetTileUrl(TileNodeCR tile, WCharCP fileExtension, ClassifierInfo const* classifier) const { return _GetTileUrl(tile, fileExtension, classifier); }
     TILEPUBLISHER_EXPORT Status GetViewsetJson(Json::Value& json, DPoint3dCR groundPoint, DgnViewId defaultViewId, GlobeMode);
-    TILEPUBLISHER_EXPORT void GetViewJson (Json::Value& json, ViewDefinitionCR view, TransformCR transform);
+    TILEPUBLISHER_EXPORT bool GetViewJson (Json::Value& json, ViewDefinitionCR view, TransformCR transform);
     void AddBatchTableAttributes (Json::Value& json, FeatureAttributesMapCR attrs) { _AddBatchTableAttributes(json, attrs); }
 
     TILEPUBLISHER_EXPORT Json::Value GetModelsJson (DgnModelIdSet const& modelIds);
