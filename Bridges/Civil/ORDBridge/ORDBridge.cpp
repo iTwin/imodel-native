@@ -51,7 +51,7 @@ BentleyStatus ORDBridge::_Initialize(int argc, WCharCP argv[])
     DgnPlatformCivilLib::InitializeWithDefaultHost();
     GeometryModelDgnECDataBinder::GetInstance().Initialize();
 
-    //m_params.SetConsiderNormal2dModelsSpatial(true);
+    m_params.SetProcessAffected(true);
 
     m_params.SetWantThumbnails(true);
 
@@ -67,7 +67,10 @@ BentleyStatus ORDBridge::_Initialize(int argc, WCharCP argv[])
 //---------------------------------------------------------------------------------------
 BentleyStatus ORDBridge::_OpenSource()
     {
+    DependencyManager::SetProcessingDisabled(false);
     auto initStat = m_converter->InitRootModel();
+    DependencyManager::SetProcessingDisabled(true);
+
     if (DgnV8Api::DGNFILE_STATUS_Success != initStat)
         {
         switch (initStat)
