@@ -256,6 +256,31 @@ private:
     ICancellationTokenPtr cancellationToken
     ) const;
 
+    //! Returns all codes and locks by ids.
+    CodeLockSetTaskPtr QueryCodesLocksByIdInternal
+    (
+    Dgn::DgnCodeSet const& codes,
+    LockableIdSet const& locks,
+    BeSQLite::BeBriefcaseId briefcaseId,
+    ICancellationTokenPtr cancellationToken = nullptr
+    ) const;
+
+    //! Returns all codes by ids and briefcase id.
+    CodeInfoSetTaskPtr QueryCodesByIdsInternal
+    (
+    Dgn::DgnCodeSet const& codes,
+    BeSQLite::BeBriefcaseId briefcaseId,
+    ICancellationTokenPtr cancellationToken = nullptr
+    ) const;
+
+    //! Returns all locks by ids and briefcase id.
+    LockInfoSetTaskPtr QueryLocksByIdsInternal
+    (
+    LockableIdSet const& locks,
+    BeSQLite::BeBriefcaseId briefcaseId,
+    ICancellationTokenPtr cancellationToken = nullptr
+    ) const;
+
     StatusTaskPtr QueryUnavailableCodesInternal(BeSQLite::BeBriefcaseId const briefcaseId, CodeLockSetResultInfoPtr codesLocksOut,
                                                 ICancellationTokenPtr cancellationToken) const;
 
