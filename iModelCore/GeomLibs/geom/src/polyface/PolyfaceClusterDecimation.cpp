@@ -155,7 +155,11 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance)
         for (size_t i=0, count = visitor->NumEdgesThisFace(); i<count; i++)
             {
             int32_t         inputPointIndex = visitor->GetClientPointIndexCP()[i];
-            Cluster*        cluster = inputPointIndexToCluster[inputPointIndex];
+            auto foundCluster = inputPointIndexToCluster.find(inputPointIndex);
+            if (inputPointIndexToCluster.end() == foundCluster)
+                continue; // degenerate facet, ignored above...
+
+            Cluster*        cluster = foundCluster->second;
             auto            insert = unique.insert(cluster);
 
             if (insert.second)
