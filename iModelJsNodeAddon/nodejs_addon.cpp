@@ -1591,20 +1591,26 @@ struct AddonECSqlColumnInfo : Napi::ObjectWrap<AddonECSqlColumnInfo>
                         case PRIMITIVETYPE_Long:
                         {
                         if (GetColInfo().IsSystemProperty())
+                            {
                             type = Type::Id;
-                        else if (GetColInfo().IsGeneratedProperty())
+                            break;
+                            }
+
+                        if (GetColInfo().IsGeneratedProperty())
                             {
                             ECPropertyCP genProp = GetColInfo().GetProperty();
                             if (genProp->HasExtendedType())
                                 {
                                 BeAssert(GetColInfo().GetProperty()->GetIsPrimitive());
                                 if (genProp->GetAsPrimitiveProperty()->GetExtendedTypeName().EqualsIAscii("Id"))
+                                    {
                                     type = Type::Id;
+                                    break;
+                                    }
                                 }
                             }
-                        else
-                            type = Type::Int64;
 
+                        type = Type::Int64;
                         break;
                         }
                         case PRIMITIVETYPE_Point2d:
