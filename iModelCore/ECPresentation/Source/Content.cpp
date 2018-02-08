@@ -199,7 +199,11 @@ int ContentDescriptor::GetFieldIndex(Utf8CP name) const
 bvector<ContentDescriptor::Field*> ContentDescriptor::GetVisibleFields() const
     {
     bvector<Field*> fields;
-    std::copy_if(m_fields.begin(), m_fields.end(), std::back_inserter(fields), [](Field const* f){return !f->IsSystemField();});
+    std::copy_if(m_fields.begin(), m_fields.end(), std::back_inserter(fields), [this](Field const* f) 
+        {
+        bool isHidden = (f->IsSystemField() || (f->IsDisplayLabelField() && !ShowLabels()));
+        return !isHidden;
+        });
     return fields;
     }
 /*---------------------------------------------------------------------------------**//**
@@ -364,34 +368,11 @@ void ContentDescriptor::RemoveContentFlag(ContentFlags flag)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentDescriptor::OnFlagAdded(ContentFlags flag)
-    {
-    if (ContentFlags::ShowLabels == flag)
-        {
-        Utf8String displayLabel = L10N::GetString(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel());
-        if (displayLabel.empty())
-            {
-            BeAssert(false);
-            displayLabel = "Display Label";
-            }
-        m_fields.insert(m_fields.begin(), new DisplayLabelField(displayLabel));
-        }
-    }
+void ContentDescriptor::OnFlagAdded(ContentFlags flag) {}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentDescriptor::OnFlagRemoved(ContentFlags flag)
-    {
-    if (ContentFlags::ShowLabels == flag)
-        {
-        auto iter = std::remove_if(m_fields.begin(), m_fields.end(), [](Field const* field){return field->IsDisplayLabelField();});
-        if (m_fields.end() != iter)
-            {
-            delete *iter;
-            m_fields.erase(iter);
-            }
-        }
-    }
+void ContentDescriptor::OnFlagRemoved(ContentFlags flag) {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                11/2017

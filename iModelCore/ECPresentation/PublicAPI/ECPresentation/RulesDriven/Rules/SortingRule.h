@@ -16,7 +16,7 @@ Sorting rule for defining sorting type of ECInstances. If no rule is defined, EC
 will be sorted using natural (alphanumeric) sorting by default.
 * @bsiclass                                     Eligijus.Mauragas               11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct SortingRule : public CustomizationRule
+struct SortingRule : public ConditionalCustomizationRule
     {
     private:
         Utf8String m_schemaName;

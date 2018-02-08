@@ -72,6 +72,10 @@
 #define LABEL_OVERRIDE_XML_ATTRIBUTE_LABEL                                            "Label"
 #define LABEL_OVERRIDE_XML_ATTRIBUTE_DESCRIPTION                                      "Description"
 
+#define INSTANCE_LABEL_OVERRIDE_XML_NODE_NAME                                          "InstanceLabelOverride"
+#define INSTANCE_LABEL_OVERRIDE_XML_ATTRIBUTE_CLASSNAME                                "ClassName"
+#define INSTANCE_LABEL_OVERRIDE_XML_ATTRIBUTE_PROPERTYNAMES                            "PropertyNames"
+
 #define STYLE_OVERRIDE_XML_NODE_NAME                                                  "StyleOverride"
 #define STYLE_OVERRIDE_XML_ATTRIBUTE_FORECOLOR                                        "ForeColor"
 #define STYLE_OVERRIDE_XML_ATTRIBUTE_BACKCOLOR                                        "BackColor"

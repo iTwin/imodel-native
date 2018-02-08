@@ -101,6 +101,37 @@ protected:
     CustomFunctionsContext& GetContext() const {return m_manager.GetCurrentContext();}
 };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static void ProcessLabelOverrides(Utf8StringR label, CustomFunctionsContext const& context, ECClassId const& classId, ECInstanceId const& instanceId, Utf8CP relatedInstanceInfo)
+    {
+    JsonNavNodePtr thisNode = context.GetNodesFactory().CreateECInstanceNode(context.GetConnection(), classId, instanceId, "");
+    NavNodesHelper::AddRelatedInstanceInfo(*thisNode, relatedInstanceInfo);
+
+    // look for label override
+    ECDbExpressionSymbolContext ecdbSymbols(context.GetSchemaHelper().GetConnection().GetECDb());
+    RulesPreprocessor::CustomizationRuleParameters params(context.GetConnections(), context.GetConnection(), *thisNode, context.GetParentNode(),
+        context.GetRuleset(), context.GetUserSettings(), context.GetUsedUserSettingsListener(), context.GetECExpressionsCache());
+    LabelOverrideCP labelOverride = RulesPreprocessor::GetLabelOverride(params);
+    if (nullptr != labelOverride && !labelOverride->GetLabel().empty())
+        {
+        // evaluate the ECExpression to get the label
+        ECExpressionContextsProvider::CustomizationRulesContextParameters params(*thisNode, context.GetParentNode(),
+            context.GetConnection(), context.GetUserSettings(), context.GetUsedUserSettingsListener());
+        ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCustomizationRulesContext(params);
+        ECValue value;
+        if (ECExpressionsHelper(context.GetECExpressionsCache()).EvaluateECExpression(value, labelOverride->GetLabel(), *expressionContext) && value.IsPrimitive() && value.ConvertPrimitiveToString(label))
+            {
+            if (nullptr != context.GetUsedClassesListener())
+                {
+                UsedClassesHelper::NotifyListenerWithUsedClasses(*context.GetUsedClassesListener(),
+                    context.GetSchemaHelper(), context.GetECExpressionsCache(), labelOverride->GetLabel());
+                }
+            }
+        }
+    }
+
 /*=================================================================================**//**
 * Parameters:
 * - ECClassId
@@ -109,7 +140,7 @@ protected:
 * - Related instances' info JSON (serialized to string). Format: [{"Alias":"related_1","ECClassId":1,"ECInstanceId":1},{"Alias":"related_2","ECClassId":2,"ECInstanceId":2},...]
 * @bsiclass                                     Grigas.Petraitis                04/2015
 +===============+===============+===============+===============+===============+======*/
-struct GetECInstanceDisplayLabelScalar : CachingScalarFunction<bmap<ECInstanceId, Utf8String>>
+struct GetECInstanceDisplayLabelScalar : CachingScalarFunction<bmap<ECInstanceKey, Utf8String>>
     {
     GetECInstanceDisplayLabelScalar(CustomFunctionsManager const& manager)
         : CachingScalarFunction(FUNCTION_NAME_GetECInstanceDisplayLabel, 4, DbValueType::TextVal, manager)
@@ -118,41 +149,17 @@ struct GetECInstanceDisplayLabelScalar : CachingScalarFunction<bmap<ECInstanceId
         {
         BeAssert(4 == nArgs);
         ECInstanceId instanceId (args[1].GetValueUInt64());
+        ECClassId classId = args[0].GetValueId<ECClassId>();
+        ECInstanceKey key(classId, instanceId);
 
-        auto iter = GetCache().find(instanceId);
+        auto iter = GetCache().find(key);
         if (GetCache().end() == iter)
             {
             Utf8String label;
 
-            if (instanceId.IsValid())
+            if (key.IsValid())
                 {
-                // create a temporary node for ECExpression evaluation context
-                ECClassId classId = args[0].GetValueId<ECClassId>();
-                JsonNavNodePtr thisNode = GetContext().GetNodesFactory().CreateECInstanceNode(GetContext().GetConnection(), classId, instanceId, "");
-                NavNodesHelper::AddRelatedInstanceInfo(*thisNode, args[3].GetValueText());
-
-                // look for label override
-                ECDbExpressionSymbolContext ecdbSymbols(GetContext().GetSchemaHelper().GetConnection().GetECDb());
-                RulesPreprocessor::CustomizationRuleParameters params(GetContext().GetConnections(), GetContext().GetConnection(), *thisNode, GetContext().GetParentNode(),
-                    GetContext().GetRuleset(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache());
-                LabelOverrideCP labelOverride = RulesPreprocessor::GetLabelOverride(params);
-                if (nullptr != labelOverride && !labelOverride->GetLabel().empty())
-                    {
-                    // evaluate the ECExpression to get the label
-                    ECExpressionContextsProvider::CustomizationRulesContextParameters params(*thisNode, GetContext().GetParentNode(),
-                        GetContext().GetConnection(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener());
-                    ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCustomizationRulesContext(params);
-                    ECValue value;
-                    if (ECExpressionsHelper(GetContext().GetECExpressionsCache()).EvaluateECExpression(value, labelOverride->GetLabel(), *expressionContext) && value.IsPrimitive() && value.ConvertPrimitiveToString(label))
-                        {
-                        if (nullptr != GetContext().GetUsedClassesListener())
-                            {
-                            UsedClassesHelper::NotifyListenerWithUsedClasses(*GetContext().GetUsedClassesListener(),
-                                GetContext().GetSchemaHelper(), GetContext().GetECExpressionsCache(), labelOverride->GetLabel());
-                            }
-                        }
-                    }
-
+                ProcessLabelOverrides(label, GetContext(), classId, instanceId, args[3].GetValueText());
                 if (label.empty())
                     {
                     ECClassCP ecClass = GetContext().GetSchemaHelper().GetConnection().GetECDb().Schemas().GetClass(classId);
@@ -164,7 +171,7 @@ struct GetECInstanceDisplayLabelScalar : CachingScalarFunction<bmap<ECInstanceId
 
                     // if all failed, use ECClass display label
                     if (label.empty())
-                        label = Utf8String(ecClass->GetDisplayLabel());
+                        label = CommonTools::GetDefaultDisplayLabel(ecClass->GetDisplayLabel(), instanceId.GetValue());
                     }
                 }
 
@@ -172,8 +179,106 @@ struct GetECInstanceDisplayLabelScalar : CachingScalarFunction<bmap<ECInstanceId
                 label = RULESENGINE_LOCALIZEDSTRING_NotSpecified;
 
             ApplyLocalization(label, GetContext());
-            iter = GetCache().Insert(instanceId, label).first;
+            iter = GetCache().Insert(key, label).first;
             }
+        ctx.SetResultText(iter->second.c_str(), (int)iter->second.size(), BeSQLite::DbFunction::Context::CopyData::No);
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool ApplyProperties(Utf8StringR label, bvector<ECPropertyCP> properties, IECInstanceCR instance)
+    {
+    ECValue value;
+    for (ECPropertyCP ecProperty : properties)
+        {           
+        if (ECObjectsStatus::Success == instance.GetValue(value, ecProperty->GetName().c_str()))
+            {
+            value.ConvertPrimitiveToString(label);
+            if (!label.empty())
+                return true;                            
+            }
+        }
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static void ProcessIntanceLabelOverrides(Utf8StringR label, ECClassCR ecClass, bmap<ECClassCP, bvector<ECPropertyCP>> const& labelOverrides, IECInstanceCR instance)
+    {
+    auto iter = labelOverrides.find(&ecClass);
+    if (iter != labelOverrides.end())
+        {
+        if (ApplyProperties(label, iter->second, instance))
+            return;
+        }
+    for (ECClassCP baseClass : ecClass.GetBaseClasses())
+        {
+        iter = labelOverrides.find(baseClass);
+        if (iter != labelOverrides.end())
+            {
+            if (ApplyProperties(label, iter->second, instance))
+                return;
+            }
+        ProcessIntanceLabelOverrides(label, *baseClass, labelOverrides, instance);
+        if (!label.empty())
+            return;
+        }
+    }
+
+/*=================================================================================**//**
+* Parameters:
+* - ECClassId
+* - ECInstanceId
+* @bsiclass                                     Aidas.Vaiksnoras                01/2018
++===============+===============+===============+===============+===============+======*/
+struct GetNavigationPropertyLabelScalar : CachingScalarFunction<bmap<ECInstanceKey, Utf8String>>
+    {
+    GetNavigationPropertyLabelScalar(CustomFunctionsManager const& manager)
+        : CachingScalarFunction(FUNCTION_NAME_GetNavigationPropertyLabel, 2, DbValueType::TextVal, manager)
+        {}
+    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+        {
+        BeAssert(2 == nArgs);
+        ECInstanceId instanceId (args[1].GetValueUInt64());
+        ECClassId classId = args[0].GetValueId<ECClassId>();
+        ECInstanceKey key(classId, instanceId);
+  
+        auto iter = GetCache().find(key);
+        if (GetCache().end() == iter)
+            {
+            Utf8String label;
+            if (key.IsValid())
+                {
+                ECClassCP ecClass = GetContext().GetSchemaHelper().GetConnection().GetECDb().Schemas().GetClass(classId);
+                if (nullptr == ecClass)
+                    {
+                    BeAssert(false && "Invalid class");
+                    ctx.SetResultError("Invalid ECClassId", BE_SQLITE_ERROR);
+                    return;
+                    }  
+
+                bmap<ECClassCP, bvector<ECPropertyCP>> instanceLabelOverrides = QueryBuilderHelpers::GetMappedLabelOverridingProperties(GetContext().GetSchemaHelper(), GetContext().GetRuleset().GetInstanceLabelOverrides());
+                if (!instanceLabelOverrides.empty())
+                    {
+                    IECInstancePtr instance = ECInstancesHelper::LoadInstance(GetContext().GetSchemaHelper().GetConnection(), key);
+                    ProcessIntanceLabelOverrides(label, *ecClass, instanceLabelOverrides, *instance);
+                    }
+
+                if (label.empty() && !GetContext().GetRuleset().GetLabelOverrides().empty())
+                    ProcessLabelOverrides(label, GetContext(), classId, instanceId, "");
+
+                if (label.empty())
+                    label = Utf8String(ecClass->GetDisplayLabel());
+                }
+            if (label.empty())
+                label = RULESENGINE_LOCALIZEDSTRING_NotSpecified;
+            ApplyLocalization(label, GetContext());
+            iter = GetCache().Insert(key, label).first;
+            }
+
         ctx.SetResultText(iter->second.c_str(), (int)iter->second.size(), BeSQLite::DbFunction::Context::CopyData::No);
         }
     };
@@ -1605,7 +1710,8 @@ void CustomFunctionsInjector::CreateFunctions()
     m_scalarFunctions.push_back(new GetPointAsJsonStringScalar(CustomFunctionsManager::GetManager()));
     m_scalarFunctions.push_back(new ArePointsEqualByValueScalar(CustomFunctionsManager::GetManager()));
     m_scalarFunctions.push_back(new AreDoublesEqualByValueScalar(CustomFunctionsManager::GetManager()));
-    m_scalarFunctions.push_back(new GetPropertyDisplayValueScalar(CustomFunctionsManager::GetManager()));    
+    m_scalarFunctions.push_back(new GetPropertyDisplayValueScalar(CustomFunctionsManager::GetManager()));
+    m_scalarFunctions.push_back(new GetNavigationPropertyLabelScalar(CustomFunctionsManager::GetManager()));
 
     m_aggregateFunctions.push_back(new GetGroupedInstanceKeysAggregate(CustomFunctionsManager::GetManager()));
     m_aggregateFunctions.push_back(new GetMergedValueAggregate(CustomFunctionsManager::GetManager()));

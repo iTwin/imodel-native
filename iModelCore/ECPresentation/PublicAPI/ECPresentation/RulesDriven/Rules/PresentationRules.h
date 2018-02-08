@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/PresentationRules.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,6 +17,7 @@
 #include <ECPresentation/RulesDriven/Rules/ImageIdOverride.h>
 #include <ECPresentation/RulesDriven/Rules/PresentationRuleSet.h>
 #include <ECPresentation/RulesDriven/Rules/LabelOverride.h>
+#include <ECPresentation/RulesDriven/Rules/InstanceLabelOverride.h>
 #include <ECPresentation/RulesDriven/Rules/StyleOverride.h>
 #include <ECPresentation/RulesDriven/Rules/LocalizationResourceKeyDefinition.h>
 #include <ECPresentation/RulesDriven/Rules/UserSettingsGroup.h>

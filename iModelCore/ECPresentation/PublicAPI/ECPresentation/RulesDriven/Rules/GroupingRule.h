@@ -42,7 +42,7 @@ protected:
 Presentation rule for child nodes advanced grouping in the hierarchy.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct GroupingRule : public CustomizationRule
+struct GroupingRule : public ConditionalCustomizationRule
     {
     private:
         Utf8String            m_schemaName;

@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/Rules/StyleOverride.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -24,7 +24,7 @@ StyleOverride::StyleOverride ()
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 StyleOverride::StyleOverride (Utf8StringCR condition, int priority, Utf8StringCR foreColor, Utf8StringCR backColor, Utf8StringCR fontStyle)
-    : CustomizationRule(condition, priority, false),
+    : ConditionalCustomizationRule(condition, priority, false),
         m_foreColor (foreColor), m_backColor (backColor), m_fontStyle (fontStyle)
     {
     }
@@ -51,7 +51,7 @@ bool StyleOverride::_ReadXml (BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_fontStyle, STYLE_OVERRIDE_XML_ATTRIBUTE_FONTSTYLE))
         m_fontStyle = "";
 
-    return PresentationRule::_ReadXml (xmlNode);
+    return ConditionalCustomizationRule::_ReadXml (xmlNode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -63,7 +63,7 @@ void StyleOverride::_WriteXml (BeXmlNodeP xmlNode) const
     xmlNode->AddAttributeStringValue (STYLE_OVERRIDE_XML_ATTRIBUTE_BACKCOLOR, m_backColor.c_str ());
     xmlNode->AddAttributeStringValue (STYLE_OVERRIDE_XML_ATTRIBUTE_FONTSTYLE, m_fontStyle.c_str ());
 
-    PresentationRule::_WriteXml (xmlNode);
+    ConditionalCustomizationRule::_WriteXml (xmlNode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -96,7 +96,7 @@ void StyleOverride::_Accept(CustomizationRuleVisitor& visitor) const { visitor._
 +---------------+---------------+---------------+---------------+---------------+------*/
 MD5 StyleOverride::_ComputeHash(Utf8CP parentHash) const
     {
-    MD5 md5 = CustomizationRule::_ComputeHash(parentHash);
+    MD5 md5 = ConditionalCustomizationRule::_ComputeHash(parentHash);
     md5.Add(m_foreColor.c_str(), m_foreColor.size());
     md5.Add(m_backColor.c_str(), m_backColor.size());
     md5.Add(m_fontStyle.c_str(), m_fontStyle.size());

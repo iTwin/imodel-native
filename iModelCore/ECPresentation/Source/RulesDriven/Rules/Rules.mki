@@ -2,7 +2,7 @@
 #
 #     $Source: Source/RulesDriven/Rules/Rules.mki $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -25,6 +25,8 @@ $(o)ContentRule$(oext)                                     : $(PresentationRules
 
 $(o)CheckBoxRule$(oext)                                    : $(PresentationRulesSourceDirectory)CheckBoxRule.cpp $(PresentationRulesDependencies)
 
+$(o)CustomizationRule$(oext)                               : $(PresentationRulesSourceDirectory)CustomizationRule.cpp $(PresentationRulesDependencies)
+
 $(o)DisplayRelatedItemsSpecification$(oext)                : $(PresentationRulesSourceDirectory)DisplayRelatedItemsSpecification.cpp $(PresentationRulesDependencies)
 
 $(o)RenameNodeRule$(oext)                                  : $(PresentationRulesSourceDirectory)RenameNodeRule.cpp $(PresentationRulesDependencies)
@@ -36,6 +38,8 @@ $(o)PresentationRule$(oext)                                : $(PresentationRules
 $(o)PresentationRuleSet$(oext)                             : $(PresentationRulesSourceDirectory)PresentationRuleSet.cpp $(PresentationRulesDependencies)
 
 $(o)LabelOverride$(oext)                                   : $(PresentationRulesSourceDirectory)LabelOverride.cpp $(PresentationRulesDependencies)
+
+$(o)InstanceLabelOverride$(oext)                           : $(PresentationRulesSourceDirectory)InstanceLabelOverride.cpp $(PresentationRulesDependencies)
 
 $(o)StyleOverride$(oext)                                   : $(PresentationRulesSourceDirectory)StyleOverride.cpp $(PresentationRulesDependencies)
 

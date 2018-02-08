@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/NavigationQueryBuilderTests_AllInstanceNodes.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "QueryBuilderTests.h"
@@ -369,6 +369,82 @@ TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_RecursiveNodeRelationships
     ASSERT_TRUE(query.IsValid());
     
     NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("AllInstanceNodes_RecursiveNodeRelationships", spec);
+    EXPECT_TRUE(expected->IsEqual(*query)) 
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(AllInstanceNodes_InstanceLabelOverride_AppliedByPriority, R"*(
+    <ECEntityClass typeName="Class1">
+        <ECProperty propertyName="Code" typeName="string" />
+        <ECProperty propertyName="Description" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_InstanceLabelOverride_AppliedByPriority)
+    {
+    Utf8String schemaName = BeTest::GetNameOfCurrentTest();
+    ECClassCP ecClass = GetECClass(schemaName.c_str(), "Class1");
+    IECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    TestNavNodePtr instanceNode = TestNodesHelper::CreateInstanceNode(*instance);
+    m_nodesCache.Cache(*instanceNode, false);
+
+    AllInstanceNodesSpecification spec(1, false, false, false, false, false, schemaName);
+    m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, ecClass->GetFullName(), "Code"));
+    m_ruleset->AddPresentationRule(*new InstanceLabelOverride(2, true, ecClass->GetFullName(), "Description"));
+
+    NavNodeExtendedData instanceNodeExtendedData(*instanceNode);
+    instanceNodeExtendedData.SetSpecificationHash(spec.GetHash());
+
+    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *instanceNode);
+    ASSERT_EQ(1, queries.size());
+
+    NavigationQueryPtr query = queries[0];
+    ASSERT_TRUE(query.IsValid());
+    
+    NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("AllInstanceNodes_InstanceLabelOverride_AppliedByPriority", spec);
+    EXPECT_TRUE(expected->IsEqual(*query)) 
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(AllInstanceNodes_InstanceLabelOverride_OverrideOnlySpecifiedClassInstancesLabels, R"*(
+    <ECEntityClass typeName="Class1">
+        <ECProperty propertyName="Code" typeName="string" />
+        <ECProperty propertyName="Description" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="Class2">
+        <ECProperty propertyName="Code" typeName="string" />
+        <ECProperty propertyName="Description" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_InstanceLabelOverride_OverrideOnlySpecifiedClassInstancesLabels)
+    {
+    Utf8String schemaName = BeTest::GetNameOfCurrentTest();
+    ECClassCP ecClass = GetECClass(schemaName.c_str(), "Class1");
+    IECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    TestNavNodePtr instanceNode = TestNodesHelper::CreateInstanceNode(*instance);
+    m_nodesCache.Cache(*instanceNode, false);
+
+    AllInstanceNodesSpecification spec(1, false, false, false, false, false, schemaName);
+    m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, ecClass->GetFullName(), "Code"));
+    m_ruleset->AddPresentationRule(*new InstanceLabelOverride(2, true, ecClass->GetFullName(), "Description"));
+
+    NavNodeExtendedData instanceNodeExtendedData(*instanceNode);
+    instanceNodeExtendedData.SetSpecificationHash(spec.GetHash());
+
+    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *instanceNode);
+    ASSERT_EQ(1, queries.size());
+
+    NavigationQueryPtr query = queries[0];
+    ASSERT_TRUE(query.IsValid());
+    
+    NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("AllInstanceNodes_InstanceLabelOverride_OverrideOnlySpecifiedClassInstancesLabels", spec);
     EXPECT_TRUE(expected->IsEqual(*query)) 
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
