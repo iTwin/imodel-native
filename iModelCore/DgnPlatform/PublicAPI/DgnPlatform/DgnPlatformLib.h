@@ -543,6 +543,8 @@ public:
   
         virtual void _OnUndisplayedSetChanged(DgnDbR) {}
 
+        virtual Sheet::Attachment::ViewportPtr _CreateSheetAttachViewport() {return nullptr;}
+
         Host()
             {
             m_sessionSettingsAdmin = nullptr;

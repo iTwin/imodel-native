@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/Sheet.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -231,12 +231,17 @@ namespace Attachment
     //=======================================================================================
     struct Viewport : OffscreenViewport
     {
+        Render::SystemP m_renderSys;
+        Render::TexturePtr m_texture;
+        DgnDb* m_db;
+
         Transform m_toParent = Transform::FromIdentity(); // attachment NPC to sheet world
         double m_biasDistance = 0.0; // distance in z to position tile in parent viewport's z-buffer (should be obtained by calling DepthFromDisplayPriority)
         Render::GraphicListPtr m_terrain;
         ClipVectorCPtr m_clips;
 
-        virtual void _QueueScene(UpdatePlan const& updatePlan);
+        DGNVIEW_EXPORT virtual void _CreateScene(UpdatePlan const& updatePlan);
+        void QueueScene(SceneContextR);
         virtual folly::Future<BentleyStatus> _CreateTile(TileTree::TileLoadStatePtr, Render::TexturePtr&, TileTree::QuadTree::Tile&, Point2dCR tileSize);
         void _AdjustAspectRatio(DPoint3dR, DVec3dR) override {}
 
@@ -249,6 +254,65 @@ namespace Attachment
         DGNVIEW_EXPORT Viewport();
         ClipVectorCP GetAttachClips() const {return m_clips.get();}
     };
+
+    //=======================================================================================
+    // Created specifically for capturing thumbnails. Has a single tile, whose range matches
+    // that of a ViewContext's frustum and whose graphics are faceted to the tolerance
+    // exactly appropriate for that frustum.
+    // @bsistruct                                                   Mark.Schlosser  02/2018
+    //=======================================================================================
+    struct TRoot : TileTree::QuadTree::Root
+    {
+        DEFINE_T_SUPER(Root);
+
+        DgnElementId m_attachmentId;
+        RefCountedPtr<Viewport> m_viewport;
+        DPoint2d m_scale; // scale factors to make square tiles
+        uint32_t m_pixels;
+        double m_biasDistance;
+
+        TRoot(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId attachmentId, uint32_t tileSize);
+
+        void _OnAddToRangeIndex(DRange3dCR, DgnElementId) override { }
+        void _OnRemoveFromRangeIndex(DRange3dCR, DgnElementId) override { }
+        void _OnUpdateRangeIndex(DRange3dCR, DRange3dCR, DgnElementId) override { }
+        void _OnProjectExtentsChanged(AxisAlignedBox3dCR) override { }
+        Utf8CP _GetName() const override {return "SheetTile";}
+
+        void LoadRootTile(DRange3dCR tileRange, GeometricModelR model);
+        void Draw(SceneContextR);
+
+        virtual ~TRoot() { ClearAllTiles(); }
+
+        void Populate();
+    };
+
+    //=======================================================================================
+    // @bsistruct                                                   Mark.Schlosser  02/2018
+    //=======================================================================================
+    struct TTile : TileTree::QuadTree::Tile
+    {
+        DEFINE_T_SUPER(Tile);
+
+        void _Invalidate() override { }
+        bool _IsInvalidated(TileTree::DirtyRangesCR) const override { return false; }
+        void _UpdateRange(DRange3dCR, DRange3dCR) override { }
+
+        bool _HasChildren() const override { return false; }
+        ChildTiles const* _GetChildren(bool) const override { return nullptr; }
+        void _ValidateChildren() const override { }
+        Utf8String _GetTileCacheKey() const override { return "NotCacheable!"; }
+        SelectParent _SelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args) const override;
+        TileTree::TilePtr _CreateChild(TileTree::QuadTree::TileId id) const override {return nullptr;}
+        TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) override {return nullptr;}
+
+        void SetupRange();
+        TRoot& GetTree() const {return (TRoot&) m_root;}
+
+        TTile(TRoot& root) : T_Super(root, TileTree::QuadTree::TileId(0,0,0), nullptr) { }
+    };
+
+    DEFINE_REF_COUNTED_PTR(TRoot)
 }
 
 //=======================================================================================
@@ -263,12 +327,10 @@ struct ViewController : Dgn::ViewController2d
 protected:
     struct Attachment
     {
-        DgnElementId    m_id;
-        TileTree::RootP m_root;
+        DgnElementId                m_id;
+        Sheet::Attachment::TRootPtr m_tree = nullptr;
 
-        explicit Attachment(DgnElementId id=DgnElementId()) : m_id(id), m_root(nullptr) { }
-
-        void LoadRoot(DgnDbR db, Render::SystemP system);
+        explicit Attachment(DgnElementId id=DgnElementId()) : m_id(id), m_tree(nullptr) { }
     };
 
     DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Attachment);
