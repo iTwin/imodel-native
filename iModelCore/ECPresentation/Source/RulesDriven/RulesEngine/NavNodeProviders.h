@@ -102,10 +102,10 @@ public:
     RootNodeRuleCR GetRootNodeRule() const {BeAssert(IsRootNodeContext()); return *m_rootNodeRule;}
 
     // child nodes context
-    ECPRESENTATION_EXPORT void SetChildNodeContext(ChildNodeRuleCR, NavNodeCR virtualParentNode);
+    ECPRESENTATION_EXPORT void SetChildNodeContext(ChildNodeRuleCP, NavNodeCR virtualParentNode);
     ECPRESENTATION_EXPORT void SetChildNodeContext(NavNodesProviderContextCR other);
     bool IsChildNodeContext() const {return m_isChildNodeContext;}
-    ChildNodeRuleCR GetChildNodeRule() const {BeAssert(IsChildNodeContext()); return *m_childNodeRule;}
+    ChildNodeRuleCP GetChildNodeRule() const {BeAssert(IsChildNodeContext()); return m_childNodeRule;}
 
     // ECDb context
     ECPRESENTATION_EXPORT void SetQueryContext(IConnectionManagerCR, IConnectionCR, ECSqlStatementCache const&, CustomFunctionsInjector&, IECDbUsedClassesListener*);

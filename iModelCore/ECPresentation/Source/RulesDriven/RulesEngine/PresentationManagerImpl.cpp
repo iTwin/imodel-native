@@ -308,7 +308,11 @@ private:
                 provider = MultiSpecificationNodesProvider::Create(context, specs, *parent);
             }
         if (provider.IsNull())
+            {
+            if (nullptr != parent)
+                context.SetChildNodeContext(nullptr, *parent);
             provider = EmptyNavNodesProvider::Create(context);
+            }
         return provider;
         }
 

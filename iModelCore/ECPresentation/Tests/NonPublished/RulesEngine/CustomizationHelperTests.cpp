@@ -209,7 +209,7 @@ TEST_F (CustomizationHelperTests, CustomizationExpressionContextHasParentNodeSym
         m_settings, m_expressionsCache, m_relatedPathsCache, m_polymorphicallyRelatedClassesCache, 
         m_nodesFactory, m_nodesCache, m_providerFactory, nullptr);
     childContext->SetQueryContext(*m_context);
-    childContext->SetChildNodeContext(rule, *parentNode);
+    childContext->SetChildNodeContext(&rule, *parentNode);
 
     JsonNavNodePtr thisNode = m_nodesFactory.CreateCustomNode(m_connection->GetId(), "This", "description", "imageId", "ThisType");
     NavNodeExtendedData(*thisNode).SetVirtualParentId(parentNodeId);
