@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Persistence/ChangeManagerTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -398,7 +398,7 @@ TEST_F(ChangeManagerTests, GetLegacyParentRelationshipClass_ExistingClasses_Retu
     auto relationship = cache->GetChangeManager().CreateRelationship(*relClass, parent, child);
     ASSERT_TRUE(relationship.IsValid());
 
-    ChangeManager::Changes changes;
+    IChangeManager::Changes changes;
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().GetChanges(changes));
 
     auto& relChanges = changes.GetRelationshipChanges();
@@ -1158,7 +1158,7 @@ TEST_F(ChangeManagerTests, ModifyFileName_InstanceWithModifiedFileAndNewNameCont
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ChangesIsEmpty_NoChanges_True)
     {
-    ChangeManager::Changes changes;
+    IChangeManager::Changes changes;
     EXPECT_TRUE(changes.IsEmpty());
     }
 
@@ -1167,8 +1167,8 @@ TEST_F(ChangeManagerTests, ChangesIsEmpty_NoChanges_True)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeManagerTests, ChangesIsEmpty_FileChangeAdded_False)
     {
-    ChangeManager::Changes changes;
-    changes.AddChange(ChangeManager::FileChange());
+    IChangeManager::Changes changes;
+    changes.AddChange(IChangeManager::FileChange());
     EXPECT_FALSE(changes.IsEmpty());
     }
 
@@ -1225,7 +1225,7 @@ TEST_F(ChangeManagerTests, GetChanges_NoChanges_Empty)
     // Arrange
     auto cache = GetTestCache();
     // Act
-    ChangeManager::Changes changes;
+    IChangeManager::Changes changes;
     auto status = cache->GetChangeManager().GetChanges(changes);
     // Assert
     ASSERT_EQ(SUCCESS, status);
@@ -1241,12 +1241,12 @@ TEST_F(ChangeManagerTests, GetChanges_CreatedObject_ReturnsInstance)
     auto cache = GetTestCache();
     auto instance = StubCreatedObjectInCache(*cache, "TestSchema.TestClass");
     // Act
-    ChangeManager::Changes changes;
+    IChangeManager::Changes changes;
     auto status = cache->GetChangeManager().GetChanges(changes);
     // Assert
     ASSERT_EQ(SUCCESS, status);
     EXPECT_EQ(1, changes.GetObjectChanges().size());
-    auto change = ChangeManager::ObjectChange(instance, IChangeManager::ChangeStatus::Created, ChangeManager::SyncStatus::Ready, 1);
+    auto change = IChangeManager::ObjectChange(instance, IChangeManager::ChangeStatus::Created, IChangeManager::SyncStatus::Ready, 1);
     EXPECT_CONTAINS(changes.GetObjectChanges(), change);
     }
 
@@ -1260,7 +1260,7 @@ TEST_F(ChangeManagerTests, GetChanges_DeletedObject_ReturnsChanges)
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().DeleteObject(instance));
     // Act
-    ChangeManager::Changes changes;
+    IChangeManager::Changes changes;
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().GetChanges(changes));
     // Assert
     ASSERT_EQ(1, changes.GetObjectChanges().size());
@@ -1279,12 +1279,12 @@ TEST_F(ChangeManagerTests, GetChanges_ModifiedFile_ReturnsChange)
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile(), false));
     // Act
-    ChangeManager::Changes changes;
+    IChangeManager::Changes changes;
     auto status = cache->GetChangeManager().GetChanges(changes, true);
     // Assert
     ASSERT_EQ(SUCCESS, status);
     EXPECT_EQ(1, changes.GetFileChanges().size());
-    auto change = ChangeManager::FileChange(instance, IChangeManager::ChangeStatus::Modified, ChangeManager::SyncStatus::Ready, 1);
+    auto change = IChangeManager::FileChange(instance, IChangeManager::ChangeStatus::Modified, IChangeManager::SyncStatus::Ready, 1);
     EXPECT_CONTAINS(changes.GetFileChanges(), change);
     }
 
@@ -1295,14 +1295,14 @@ TEST_F(ChangeManagerTests, GetChanges_GetOnlySyncReady_ReturnOnlyReadyInstances)
     {
     // Arrange
     auto cache = GetTestCache();
-    auto instanceNotReady = StubCreatedObjectInCache(*cache, ChangeManager::SyncStatus::NotReady, "TestSchema.TestClass");
-    auto instanceReady = StubCreatedObjectInCache(*cache, ChangeManager::SyncStatus::Ready, "TestSchema.TestClass");
+    auto instanceNotReady = StubCreatedObjectInCache(*cache, IChangeManager::SyncStatus::NotReady, "TestSchema.TestClass");
+    auto instanceReady = StubCreatedObjectInCache(*cache, IChangeManager::SyncStatus::Ready, "TestSchema.TestClass");
     // Act
-    ChangeManager::Changes changes;
+    IChangeManager::Changes changes;
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().GetChanges(changes, true));
     // Assert
     EXPECT_EQ(1, changes.GetObjectChanges().size());
-    auto change = ChangeManager::ObjectChange(instanceReady, IChangeManager::ChangeStatus::Created, ChangeManager::SyncStatus::Ready, 2);
+    auto change = IChangeManager::ObjectChange(instanceReady, IChangeManager::ChangeStatus::Created, IChangeManager::SyncStatus::Ready, 2);
     EXPECT_CONTAINS(changes.GetObjectChanges(), change);
     }
 
@@ -1316,7 +1316,7 @@ TEST_F(ChangeManagerTests, GetChanges_SpecificInstanceAndCreatedObject_ReturnsIn
     auto instanceA = StubCreatedObjectInCache(*cache, "TestSchema.TestClass");
     auto instanceB = StubCreatedObjectInCache(*cache, "TestSchema.TestClass");
     // Act
-    ChangeManager::Changes changes;
+    IChangeManager::Changes changes;
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().GetChanges(instanceB, changes));
     // Assert
     ASSERT_EQ(1, changes.GetObjectChanges().size());
@@ -1335,7 +1335,7 @@ TEST_F(ChangeManagerTests, GetChanges_SpecificInstanceAndModifiedFile_ReturnsCha
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile(), false));
     // Act
-    ChangeManager::Changes changes;
+    IChangeManager::Changes changes;
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().GetChanges(instance, changes));
     // Assert
     EXPECT_EQ(0, changes.GetObjectChanges().size());
@@ -1353,7 +1353,7 @@ TEST_F(ChangeManagerTests, GetChanges_SpecificInstanceAndCreatedRelationship_Ret
     auto cache = GetTestCache();
     auto relationship = StubCreatedRelationshipInCache(*cache);
     // Act
-    ChangeManager::Changes changes;
+    IChangeManager::Changes changes;
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().GetChanges(relationship, changes));
     // Assert
     EXPECT_EQ(0, changes.GetObjectChanges().size());
@@ -1374,7 +1374,7 @@ TEST_F(ChangeManagerTests, GetObjectChange_NotExistingObject_NoChangesStatus)
     auto change = cache->GetChangeManager().GetObjectChange(nonExistingInstance);
     // Assert
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, change.GetChangeStatus());
-    EXPECT_EQ(ChangeManager::SyncStatus::NotReady, change.GetSyncStatus());
+    EXPECT_EQ(IChangeManager::SyncStatus::NotReady, change.GetSyncStatus());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1400,11 +1400,11 @@ TEST_F(ChangeManagerTests, GetObjectChange_CreatedInstance_ReturnsObjectChange)
     auto cache = GetTestCache();
     auto instance = StubCreatedObjectInCache(*cache, "TestSchema.TestClass");
     // Act
-    ChangeManager::ObjectChange change = cache->GetChangeManager().GetObjectChange(instance);
+    IChangeManager::ObjectChange change = cache->GetChangeManager().GetObjectChange(instance);
     // Assert
     EXPECT_EQ(instance, change.GetInstanceKey());
     EXPECT_EQ(IChangeManager::ChangeStatus::Created, change.GetChangeStatus());
-    EXPECT_EQ(ChangeManager::SyncStatus::Ready, change.GetSyncStatus());
+    EXPECT_EQ(IChangeManager::SyncStatus::Ready, change.GetSyncStatus());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1444,11 +1444,11 @@ TEST_F(ChangeManagerTests, GetObjectChange_CreatedObjectWithSyncStatusNotReady_S
     {
     // Arrange
     auto cache = GetTestCache();
-    auto instance = StubCreatedObjectInCache(*cache, ChangeManager::SyncStatus::NotReady, "TestSchema.TestClass");
+    auto instance = StubCreatedObjectInCache(*cache, IChangeManager::SyncStatus::NotReady, "TestSchema.TestClass");
     // Act
     auto change = cache->GetChangeManager().GetObjectChange(instance);
     // Assert
-    EXPECT_EQ(ChangeManager::SyncStatus::NotReady, change.GetSyncStatus());
+    EXPECT_EQ(IChangeManager::SyncStatus::NotReady, change.GetSyncStatus());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1526,7 +1526,7 @@ TEST_F(ChangeManagerTests, GetRelationshipChange_CreatedRelationship_ReturnsRela
     EXPECT_EQ(source, change.GetSourceKey());
     EXPECT_EQ(target, change.GetTargetKey());
     EXPECT_EQ(IChangeManager::ChangeStatus::Created, change.GetChangeStatus());
-    EXPECT_EQ(ChangeManager::SyncStatus::Ready, change.GetSyncStatus());
+    EXPECT_EQ(IChangeManager::SyncStatus::Ready, change.GetSyncStatus());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1557,7 +1557,7 @@ TEST_F(ChangeManagerTests, GetFileChange_ModifiedFile_ReturnsFileChange)
     // Assert
     EXPECT_EQ(instance, change.GetInstanceKey());
     EXPECT_EQ(IChangeManager::ChangeStatus::Modified, change.GetChangeStatus());
-    EXPECT_EQ(ChangeManager::SyncStatus::Ready, change.GetSyncStatus());
+    EXPECT_EQ(IChangeManager::SyncStatus::Ready, change.GetSyncStatus());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1570,7 +1570,7 @@ TEST_F(ChangeManagerTests, SetSyncStatus_NonExistingObject_Error)
     auto nonExistingInstance = StubNonExistingInstanceKey(*cache);
     // Act
     BeTest::SetFailOnAssert(false);
-    auto status = cache->GetChangeManager().SetSyncStatus(nonExistingInstance, ChangeManager::SyncStatus::Ready);
+    auto status = cache->GetChangeManager().SetSyncStatus(nonExistingInstance, IChangeManager::SyncStatus::Ready);
     BeTest::SetFailOnAssert(true);
     // Assert
     ASSERT_EQ(ERROR, status);
@@ -1586,7 +1586,7 @@ TEST_F(ChangeManagerTests, SetSyncStatus_NotChangedObject_Error)
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
     // Act
     BeTest::SetFailOnAssert(false);
-    auto status = cache->GetChangeManager().SetSyncStatus(instance, ChangeManager::SyncStatus::Ready);
+    auto status = cache->GetChangeManager().SetSyncStatus(instance, IChangeManager::SyncStatus::Ready);
     BeTest::SetFailOnAssert(true);
     // Assert
     ASSERT_EQ(ERROR, status);
@@ -1599,12 +1599,12 @@ TEST_F(ChangeManagerTests, SetSyncStatus_CreatedObject_SuccessAndChangesStatus)
     {
     // Arrange
     auto cache = GetTestCache();
-    auto instance = StubCreatedObjectInCache(*cache, ChangeManager::SyncStatus::NotReady, "TestSchema.TestClass");
+    auto instance = StubCreatedObjectInCache(*cache, IChangeManager::SyncStatus::NotReady, "TestSchema.TestClass");
     // Act
-    auto status = cache->GetChangeManager().SetSyncStatus(instance, ChangeManager::SyncStatus::Ready);
+    auto status = cache->GetChangeManager().SetSyncStatus(instance, IChangeManager::SyncStatus::Ready);
     // Assert
     ASSERT_EQ(SUCCESS, status);
-    EXPECT_EQ(ChangeManager::SyncStatus::Ready, cache->GetChangeManager().GetObjectChange(instance).GetSyncStatus());
+    EXPECT_EQ(IChangeManager::SyncStatus::Ready, cache->GetChangeManager().GetObjectChange(instance).GetSyncStatus());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1616,10 +1616,10 @@ TEST_F(ChangeManagerTests, SetSyncStatus_CreatedRelationship_SuccessAndChangesSt
     auto cache = GetTestCache();
     auto relationship = StubCreatedRelationshipInCache(*cache);
     // Act
-    auto status = cache->GetChangeManager().SetSyncStatus(relationship, ChangeManager::SyncStatus::Ready);
+    auto status = cache->GetChangeManager().SetSyncStatus(relationship, IChangeManager::SyncStatus::Ready);
     // Assert
     ASSERT_EQ(SUCCESS, status);
-    EXPECT_EQ(ChangeManager::SyncStatus::Ready, cache->GetChangeManager().GetRelationshipChange(relationship).GetSyncStatus());
+    EXPECT_EQ(IChangeManager::SyncStatus::Ready, cache->GetChangeManager().GetRelationshipChange(relationship).GetSyncStatus());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1630,12 +1630,12 @@ TEST_F(ChangeManagerTests, SetSyncStatus_ModfiedFile_SuccessAndChangesStatus)
     // Arrange
     auto cache = GetTestCache();
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile(), false, ChangeManager::SyncStatus::NotReady));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile(), false, IChangeManager::SyncStatus::NotReady));
     // Act
-    auto status = cache->GetChangeManager().SetSyncStatus(instance, ChangeManager::SyncStatus::Ready);
+    auto status = cache->GetChangeManager().SetSyncStatus(instance, IChangeManager::SyncStatus::Ready);
     // Assert
     ASSERT_EQ(SUCCESS, status);
-    EXPECT_EQ(ChangeManager::SyncStatus::Ready, cache->GetChangeManager().GetFileChange(instance).GetSyncStatus());
+    EXPECT_EQ(IChangeManager::SyncStatus::Ready, cache->GetChangeManager().GetFileChange(instance).GetSyncStatus());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -2048,7 +2048,7 @@ TEST_F(ChangeManagerTests, ReadInstanceRevision_DeletedRelationshipWithSyncStatu
     // Arrange
     auto cache = GetTestCache();
     auto relationship = StubRelationshipInCache(*cache);
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().DeleteRelationship(relationship, ChangeManager::SyncStatus::NotReady));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().DeleteRelationship(relationship, IChangeManager::SyncStatus::NotReady));
     // Act
     auto revision = cache->GetChangeManager().ReadInstanceRevision(relationship);
     // Assert
@@ -2166,7 +2166,7 @@ TEST_F(ChangeManagerTests, ReadFileRevision_ModifiedFileWithSyncStatusNotReady_R
     // Arrange
     auto cache = GetTestCache();
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile(), false, ChangeManager::SyncStatus::NotReady));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile(), false, IChangeManager::SyncStatus::NotReady));
     // Act
     auto revision = cache->GetChangeManager().ReadFileRevision(instance);
     // Assert
@@ -3259,7 +3259,7 @@ TEST_F(ChangeManagerTests, GetCreatedRelationships_NoChangedRelationshipsForThat
     auto testRelClass = cache->GetAdapter().GetECRelationshipClass("TestSchema.TestRelationshipClass");
     auto source = StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"});
     auto target = StubInstanceInCache(*cache, {"TestSchema.TestClass", "B"});
-    ASSERT_TRUE(cache->GetChangeManager().CreateRelationship(*testRelClass, source, target, ChangeManager::SyncStatus::Ready).IsValid());
+    ASSERT_TRUE(cache->GetChangeManager().CreateRelationship(*testRelClass, source, target, IChangeManager::SyncStatus::Ready).IsValid());
     auto otherInstance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
     // Act
     bvector<IChangeManager::RelationshipChange> changes;
@@ -3279,8 +3279,8 @@ TEST_F(ChangeManagerTests, GetCreatedRelationships_CreatedRelationships_ReturnsR
     auto instanceA = StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"});
     auto instanceB = StubInstanceInCache(*cache, {"TestSchema.TestClass", "B"});
     auto instanceC = StubInstanceInCache(*cache, {"TestSchema.TestClass", "C"});
-    auto relationshipAB = cache->GetChangeManager().CreateRelationship(*testRelClass, instanceA, instanceB, ChangeManager::SyncStatus::Ready);
-    auto relationshipAC = cache->GetChangeManager().CreateRelationship(*testRelClass, instanceA, instanceC, ChangeManager::SyncStatus::Ready);
+    auto relationshipAB = cache->GetChangeManager().CreateRelationship(*testRelClass, instanceA, instanceB, IChangeManager::SyncStatus::Ready);
+    auto relationshipAC = cache->GetChangeManager().CreateRelationship(*testRelClass, instanceA, instanceC, IChangeManager::SyncStatus::Ready);
     ASSERT_TRUE(relationshipAB.IsValid());
     ASSERT_TRUE(relationshipAC.IsValid());
     // Act
