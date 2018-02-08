@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/ProcessLogger.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DwgImportInternal.h"
@@ -278,7 +278,11 @@ void            DwgImporter::IssueReporter::ECDbIssueListener::_OnIssueReported(
 void            DwgImporter::_ReportIssue(IssueSeverity severity, IssueCategory::StringId category, Utf8CP message, Utf8CP contextIn) 
     {
     Utf8CP contextStr = contextIn;
-    Utf8String context;
+
+    Utf8PrintfString testString("%s%s%s%s", IssueReporter::ToString(severity), category.m_str, nullptr == message ? "" : message, nullptr == contextIn ? "" : contextIn);
+    if (m_reportedIssues.find(testString) != m_reportedIssues.end())
+        return;
+    m_reportedIssues.insert (testString);
 
     m_issueReporter.Report (severity, category, message, contextStr);
     if ((int)severity <= (int)IssueSeverity::Error)

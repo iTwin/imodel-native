@@ -223,7 +223,7 @@ TEST_F(BasicTests, UpdateElements_DeleteMove)
     ASSERT_TRUE (db.IsValid());
     EXPECT_TRUE (db->IsDbOpen());
 
-    // is the deleted elemeent in the DgnDb
+    // is the deleted element in the DgnDb
     Utf8PrintfString    codeValue("Model:%llx", deleteHandle.AsUInt64());
     auto id = QueryElementId(*db, GENERIC_CLASS_PhysicalObject, codeValue.c_str());
     EXPECT_FALSE (id.IsValid());

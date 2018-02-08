@@ -15,6 +15,14 @@ USING_NAMESPACE_DGNDBSYNC_DWG
 // Use the same file names created by the makefile:
 static WCharCP      s_configFileName = L"DwgImporter.logging.config.xml";
 static WCharCP      s_sqlangFileName = L"sqlang/DwgImporter_en-US.sqlang.db3";
+static DwgBridge*   s_dwgBridgeInstance = nullptr;
+
+// Need different registry keys for OpenDWG and RealDWG bridge installers to avoid conflicts uninstalling the products.
+#ifdef DWGTOOLKIT_OpenDwg
+    static wchar_t* s_dwgBridgeRegKey = L"RealDwgBridge";
+#elif DWGTOOLKIT_RealDwg
+    static wchar_t* s_dwgBridgeRegKey = L"OpenDwgBridge";
+#endif
 
 
 BEGIN_DGNDBSYNC_DWG_NAMESPACE
@@ -360,8 +368,23 @@ END_DGNDBSYNC_DWG_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeRegSubKey)
     {
-    // Supply a generic DwgBridge
-    return  new DwgBridge();
+    // Instiate and supply a generic DwgBridge, for either OpenDwgBridge or RealDwgBridge
+    s_dwgBridgeInstance = new DwgBridge ();
+    return  s_dwgBridgeInstance;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridge_releaseInstance(iModelBridge* bridgeInstance)
+    {
+    if (dynamic_cast<DwgBridge*>(bridgeInstance) != nullptr)
+        {
+        delete s_dwgBridgeInstance;
+        s_dwgBridgeInstance = nullptr;
+        return  BentleyStatus::SUCCESS;
+        }
+    return  BentleyStatus::ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -374,6 +397,6 @@ void iModelBridge_getAffinity(WCharP buffer, const size_t bufferSize, iModelBrid
     if (DwgHelper::SniffDwgFile(filename) || DwgHelper::SniffDxfFile(filename))
         {
         affinityLevel = BentleyApi::Dgn::iModelBridge::Affinity::Low;
-        BeStringUtilities::Wcsncpy(buffer, bufferSize, L"DwgBridge");
+        BeStringUtilities::Wcsncpy(buffer, bufferSize, s_dwgBridgeRegKey);
         }
     }

@@ -893,8 +893,6 @@ public:
 
         BentleyStatus OpenReportFile();
 
-        static Utf8CP ToString(IssueSeverity);
-
     public:
         explicit IssueReporter(BeFileNameCR filename) : m_triedOpenReport(false), m_reportFileName(filename), m_reportFile(nullptr), m_ecdbIssueListener(*this) {}
         IssueReporter () : m_triedOpenReport(false), m_reportFileName(), m_reportFile(nullptr), m_ecdbIssueListener(*this) {}
@@ -914,6 +912,7 @@ public:
         static Utf8String FmtDoubles (double const* values, size_t count);
         static Utf8String FmtDPoint3d (DPoint3dCR point);
         static Utf8String FmtTransform (BentleyApi::TransformCR trans);
+        static Utf8CP ToString (IssueSeverity);
         };
 
 protected:
@@ -941,6 +940,7 @@ protected:
     bvector<ImportRule>         m_modelImportRules;
     bool                        m_errorCount;
     IssueReporter               m_issueReporter;
+    bset<Utf8String>            m_reportedIssues;
     StableIdPolicy              m_currIdPolicy;
     Config                      m_config;
     AnnotationTextStyleId       m_defaultTextstyleId;
