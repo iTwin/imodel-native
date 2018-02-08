@@ -256,9 +256,7 @@ namespace Attachment
     };
 
     //=======================================================================================
-    // Created specifically for capturing thumbnails. Has a single tile, whose range matches
-    // that of a ViewContext's frustum and whose graphics are faceted to the tolerance
-    // exactly appropriate for that frustum.
+    // Contains a single tile which contains a texture rendering of the sheet.
     // @bsistruct                                                   Mark.Schlosser  02/2018
     //=======================================================================================
     struct TRoot : TileTree::QuadTree::Root
