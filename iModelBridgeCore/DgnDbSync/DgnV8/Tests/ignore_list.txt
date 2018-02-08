@@ -11,15 +11,6 @@ DataValidationTests.*
 
 ECConversionTests.RelationshipInstance       # WIP UmarH
 
-
-#TFS 777181:
-RasterTests.RasterReprojected
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 10/27/2017
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\RasterTests.cpp(76): error: Failed
-    # Model range is wrong. Model: 12TVL305030_saltLake.itiff
-    # Expected: {-27262.460350 19477.554900}{-25753.419790 20986.611090}
-    # Actual:   {430500.000000 4503000.000000}{432000.000000 4504500.000000}
-
 #----------------------------------------------------------------------------------------
 #   Tests that are failing only on tiles branch
 #----------------------------------------------------------------------------------------
