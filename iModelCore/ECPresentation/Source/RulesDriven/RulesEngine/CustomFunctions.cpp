@@ -171,7 +171,7 @@ struct GetECInstanceDisplayLabelScalar : CachingScalarFunction<bmap<ECInstanceKe
 
                     // if all failed, use ECClass display label
                     if (label.empty())
-                        label = Utf8String(ecClass->GetDisplayLabel());
+                        label = CommonTools::GetDefaultDisplayLabel(ecClass->GetDisplayLabel(), instanceId.GetValue());
                     }
                 }
 
@@ -222,6 +222,9 @@ static void ProcessIntanceLabelOverrides(Utf8StringR label, ECClassCR ecClass, b
             if (ApplyProperties(label, iter->second, instance))
                 return;
             }
+        ProcessIntanceLabelOverrides(label, *baseClass, labelOverrides, instance);
+        if (!label.empty())
+            return;
         }
     }
 

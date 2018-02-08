@@ -939,6 +939,20 @@ bvector<PresentationQueryContractFieldCPtr> ECPropertyGroupingNodesQueryContract
     return fields;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool ProcessLabelOverridesPolymorpically(bvector<ECPropertyCP>& properties, ECClassCR ecClass, ContentDescriptor::DisplayLabelField const* field)
+    {
+    for (ECClassCP baseClass : ecClass.GetBaseClasses())
+        {
+        properties = field->GetPropertiesForClass(baseClass);
+        if (!properties.empty() || ProcessLabelOverridesPolymorpically(properties, *baseClass, field))
+            return true;
+        }
+    return false;
+    }
+
 Utf8CP ContentQueryContract::ECInstanceKeysFieldName = "ECInstanceKeys";
 Utf8CP ContentQueryContract::DisplayLabelFieldName = "DisplayLabel";
 /*---------------------------------------------------------------------------------**//**
@@ -965,16 +979,7 @@ PresentationQueryContractFunctionField const& ContentQueryContract::GetDisplayLa
         if (m_class)
             {
             bvector<ECPropertyCP> properties = field->GetPropertiesForClass(m_class);
-            if (properties.empty())
-                {
-                for (ECClassCP baseClass : m_class->GetBaseClasses())
-                    {
-                    properties = field->GetPropertiesForClass(baseClass);
-                    if (!properties.empty())
-                        break;
-                    }
-                }
-
+            ProcessLabelOverridesPolymorpically(properties, *m_class, field);
             if (!properties.empty())
                 {
                 RefCountedPtr<PresentationQueryContractFunctionField> nestedParameter = m_displayLabelField;

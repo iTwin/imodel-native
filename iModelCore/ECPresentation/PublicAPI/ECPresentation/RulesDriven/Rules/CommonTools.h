@@ -45,6 +45,9 @@ public:
     //! Parse properties names from string value to vector of properties names.
     static bvector<Utf8String> ParsePropertiesNames(Utf8StringCR value);
 
+    //! Combines class name with element Id of Base36 format.
+    ECPRESENTATION_EXPORT static Utf8String GetDefaultDisplayLabel(Utf8StringCR className, uint64_t id);
+
     //! Copies the rules in source vector into the target vector.
     template<typename T> 
     static void CopyRules(bvector<T*>& target, bvector<T*> const& source)

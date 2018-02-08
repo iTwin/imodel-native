@@ -9343,6 +9343,69 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingBaseClassPolymorph
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(SelectingClassInstanceLabelOverridesAppliedPolymorphically, R"*(
+    <ECEntityClass typeName="ClassA">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="BaseStringProperty" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassB">
+        <BaseClass>ClassA</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassC">
+        <BaseClass>ClassB</BaseClass>
+        <ECProperty propertyName="ClassC_String" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabelOverridesAppliedPolymorphically)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("ClassA");
+    ECClassCP classB = GetClass("ClassB");
+    ECClassCP classC = GetClass("ClassC");
+    IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance) {instance.SetValue("BaseStringProperty", ECValue("ClassC_BaseStringProperty"));});
+
+    // set up selection
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SelectingBaseClassPolymorphicallyChildrenLabelsAreOverriden", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classC->GetFullName(), true));
+    rules->AddPresentationRule(*rule);
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, classA->GetFullName(), "BaseStringProperty"));
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();;
+    ASSERT_TRUE(descriptor.IsValid());
+
+    // set the "show labels" flag
+    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
+    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
+    EXPECT_EQ(3, modifiedDescriptor->GetVisibleFields().size());
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();;
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    EXPECT_STREQ("ClassC_BaseStringProperty", contentSet.Get(0)->GetDisplayLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(NavigationPropertyLabelIsOverridenByTargetClassProperty, R"*(
@@ -9414,7 +9477,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, NavigationPropertyLabelIsOv
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(NavigationPropertyLabelIsOverridenByTargetBaseClassProperty, R"*(
+DEFINE_SCHEMA(NavigationPropertyLabelIsOverridenPolymorphically, R"*(
     <ECEntityClass typeName="ClassA">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
@@ -9427,37 +9490,41 @@ DEFINE_SCHEMA(NavigationPropertyLabelIsOverridenByTargetBaseClassProperty, R"*(
         <BaseClass>ClassA</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="ClassC">
-        <ECNavigationProperty propertyName="A" relationshipName="ClassCUsesClassA" direction="Forward" />
+        <BaseClass>ClassB</BaseClass>
     </ECEntityClass>
-    <ECRelationshipClass typeName="ClassCUsesClassA" strength="referencing" strengthDirection="backward" modifier="None">
+    <ECEntityClass typeName="ClassD">
+        <ECNavigationProperty propertyName="A" relationshipName="ClassDUsesClassA" direction="Forward" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ClassDUsesClassA" strength="referencing" strengthDirection="backward" modifier="None">
         <Source multiplicity="(0..1)" roleLabel="ClassC Uses ClassA" polymorphic="True">
-            <Class class="ClassC" />
+            <Class class="ClassD" />
         </Source>
         <Target multiplicity="(0..1)" roleLabel="ClassA is used by ClassC" polymorphic="True">
             <Class class="ClassA" />
         </Target>
     </ECRelationshipClass>
 )*");
-TEST_F(RulesDrivenECPresentationManagerContentTests, NavigationPropertyLabelIsOverridenByTargetBaseClassProperty)
+TEST_F(RulesDrivenECPresentationManagerContentTests, NavigationPropertyLabelIsOverridenPolymorphically)
     {
     // set up data set
     ECClassCP classA = GetClass("ClassA");
     ECClassCP classB = GetClass("ClassB");
     ECClassCP classC = GetClass("ClassC");
-    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) {instance.SetValue("BaseStringProperty", ECValue("ClassB_StringProperty"));});
-    IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
-    ECRelationshipClassCP classCUsesClassA = GetClass("ClassCUsesClassA")->GetRelationshipClassCP();
-    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classCUsesClassA, *instanceB, *instanceC);
+    ECClassCP classD = GetClass("ClassD");
+    IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance) {instance.SetValue("BaseStringProperty", ECValue("ClassC_StringProperty"));});
+    IECInstancePtr instanceD = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
+    ECRelationshipClassCP classCUsesClassA = GetClass("ClassDUsesClassA")->GetRelationshipClassCP();
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classCUsesClassA, *instanceC, *instanceD);
 
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("NavigationPropertyLabelIsOverridenByTargetBaseClassProperty", 1, 0, false, "", "", "", false);
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("NavigationPropertyLabelIsOverridenPolymorphically", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classC->GetFullName(), false));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classD->GetFullName(), false));
     rules->AddPresentationRule(*rule);
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, classA->GetFullName(), "BaseStringProperty"));
     // options
@@ -9477,5 +9544,5 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, NavigationPropertyLabelIsOv
     ASSERT_EQ(1, contentSet.GetSize());
 
     RapidJsonValueCR jsonValues = contentSet.Get(0)->GetDisplayValues();
-    EXPECT_STREQ("ClassB_StringProperty", jsonValues["ClassC_A"].GetString());
+    EXPECT_STREQ("ClassC_StringProperty", jsonValues["ClassD_A"].GetString());
     }
