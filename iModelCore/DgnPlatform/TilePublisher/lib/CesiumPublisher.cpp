@@ -149,11 +149,11 @@ DgnModelPtr     PublisherParams::GetDefaultModel(DgnDbR db, DgnViewId defaultVie
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitSystem      PublisherParams::GetUnitSystem (DgnDbR db, DgnViewId defaultViewId) const
+Dgn::UnitSystem      PublisherParams::GetUnitSystem (DgnDbR db, DgnViewId defaultViewId) const
     {
     auto        defaultModel = dynamic_cast<GeometricModelCP> (GetDefaultModel(db, defaultViewId).get());
 
-    return nullptr != defaultModel ? defaultModel->GetFormatter().GetMasterUnits().GetSystem() : UnitSystem::Undefined;
+    return nullptr != defaultModel ? defaultModel->GetFormatter().GetMasterUnits().GetSystem() : Dgn::UnitSystem::Undefined;
     }
 
 
