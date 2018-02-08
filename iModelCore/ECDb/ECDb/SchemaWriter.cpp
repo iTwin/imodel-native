@@ -2868,14 +2868,14 @@ BentleyStatus SchemaWriter::UpdateSchema(SchemaChange& schemaChange, ECSchemaCR 
 
     if (schemaChange.GetECVersion().IsValid())
         {
-        if ((int64_t) schemaChange.GetECVersion().GetOld().Value() > (int64_t) schemaChange.GetECVersion().GetNew().Value())
+        if (schemaChange.GetECVersion().GetOld().Value() > schemaChange.GetECVersion().GetNew().Value())
             {
             Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Decreasing 'ECVersion' of an ECSchema is not supported.",
                              oldSchema.GetFullSchemaName().c_str());
             return ERROR;
             }
 
-        updateBuilder.AddSetExp("ECVersion", (int64_t) schemaChange.GetECVersion().GetNew().Value());
+        updateBuilder.AddSetExp("ECVersion", schemaChange.GetECVersion().GetNew().Value());
         }
 
     const bool originalVersionMajorHasChanged = schemaChange.GetOriginalECXmlVersionMajor().IsValid();
