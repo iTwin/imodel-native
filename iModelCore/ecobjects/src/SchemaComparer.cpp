@@ -268,7 +268,7 @@ BentleyStatus SchemaComparer::CompareECSchema(SchemaChange& change, ECSchemaCR a
         change.GetVersionWrite().SetValue(a.GetVersionWrite(), b.GetVersionWrite());
 
     if (a.GetECVersion() != b.GetECVersion())
-        change.GetECVersion().SetValue(a.GetECVersion(), b.GetECVersion());
+        change.GetECVersion().SetValue((uint32_t) a.GetECVersion(), (uint32_t) b.GetECVersion());
 
     if (a.GetOriginalECXmlVersionMajor() != b.GetOriginalECXmlVersionMajor())
         change.GetOriginalECXmlVersionMajor().SetValue(a.GetOriginalECXmlVersionMajor(), b.GetOriginalECXmlVersionMajor());

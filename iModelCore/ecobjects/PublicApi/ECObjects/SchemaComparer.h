@@ -886,7 +886,7 @@ struct SchemaChange final : ECObjectChange
         UInt32Change& GetVersionRead() { return Get<UInt32Change>(SystemId::VersionRead); }
         UInt32Change& GetVersionMinor() { return Get<UInt32Change>(SystemId::VersionMinor); }
         UInt32Change& GetVersionWrite() { return Get<UInt32Change>(SystemId::VersionWrite); }
-        ECPrimitiveChange<ECVersion>& GetECVersion() { return Get<ECPrimitiveChange<ECVersion>>(SystemId::ECVersion); }
+        UInt32Change& GetECVersion() { return Get<UInt32Change>(SystemId::ECVersion); }
         UInt32Change& GetOriginalECXmlVersionMajor() { return Get<UInt32Change>(SystemId::OriginalECXmlVersionMajor); }
         UInt32Change& GetOriginalECXmlVersionMinor() { return Get<UInt32Change>(SystemId::OriginalECXmlVersionMinor); }
 
