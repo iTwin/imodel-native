@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/QueryContracts.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -484,22 +484,33 @@ public:
 };
 
 /*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                02/2018
++===============+===============+===============+===============+===============+======*/
+struct SimpleQueryContract : PresentationQueryContract
+{
+private:
+    bvector<PresentationQueryContractFieldCPtr> m_fields;
+protected:
+    ECPRESENTATION_EXPORT SimpleQueryContract(bvector<PresentationQueryContractFieldCPtr> = bvector<PresentationQueryContractFieldCPtr>());
+public:
+    static RefCountedPtr<SimpleQueryContract> Create() {return new SimpleQueryContract();}
+    static RefCountedPtr<SimpleQueryContract> Create(PresentationQueryContractFieldCR field) {return new SimpleQueryContract({&field});}
+    static RefCountedPtr<SimpleQueryContract> Create(bvector<PresentationQueryContractFieldCPtr> fields) {return new SimpleQueryContract(fields);}
+    bvector<PresentationQueryContractFieldCPtr> _GetFields() const {return m_fields;}
+    void AddField(PresentationQueryContractFieldCR field) {m_fields.push_back(&field);}
+};
+
+/*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                05/2016
 +===============+===============+===============+===============+===============+======*/
-struct CountQueryContract : PresentationQueryContract
+struct CountQueryContract : SimpleQueryContract
 {
 public:
     ECPRESENTATION_EXPORT static Utf8CP CountFieldName;
-
-private:
-    RefCountedPtr<PresentationQueryContractSimpleField> m_countField;
-
 private:
     ECPRESENTATION_EXPORT CountQueryContract();
-
 public:
     static RefCountedPtr<CountQueryContract> Create() {return new CountQueryContract();}
-    ECPRESENTATION_EXPORT bvector<PresentationQueryContractFieldCPtr> _GetFields() const override;
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

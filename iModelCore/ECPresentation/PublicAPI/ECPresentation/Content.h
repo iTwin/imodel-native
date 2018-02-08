@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/Content.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -620,6 +620,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
     {
     private:
         bvector<Property> m_properties;
+        mutable std::unordered_map<ECClassCP, bvector<Property const*>> m_matchingPropertiesCache;
         bool m_isValidName;
 
     private:
@@ -678,7 +679,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         bvector<Property> const& GetProperties() const {return m_properties;}
         //! Find properties that match the supplied class. If nullptr is supplied, 
         //! all properties are returned.
-        bvector<Property const*> FindMatchingProperties(ECN::ECClassCP) const;
+        bvector<Property const*> const& FindMatchingProperties(ECClassCP) const;
     };
     
     //===================================================================================

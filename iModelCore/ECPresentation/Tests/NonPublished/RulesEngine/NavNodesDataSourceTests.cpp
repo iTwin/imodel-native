@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/NavNodesDataSourceTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -31,12 +31,14 @@ struct NavNodesDataSourceTests : ::testing::Test, IECExpressionsCacheProvider
     TestNodesCache m_nodesCache;
     ECExpressionsCache m_expressionsCache;
     RelatedPathsCache m_relatedPathsCache;
+    PolymorphicallyRelatedClassesCache m_polymorphicallyRelatedClassesCache;
     
     void SetUp() override
         {
         m_ruleset = PresentationRuleSet::CreateInstance("NavNodesDataSourceTests", 1, 0, false, "", "", "", false);
         m_context = NavNodesProviderContext::Create(*m_ruleset, true, TargetTree_Both, 0, 
-            m_settings, m_expressionsCache, m_relatedPathsCache, s_nodesFactory, m_nodesCache, m_providerFactory, nullptr);
+            m_settings, m_expressionsCache, m_relatedPathsCache, m_polymorphicallyRelatedClassesCache, 
+            s_nodesFactory, m_nodesCache, m_providerFactory, nullptr);
         m_provider = TestNodesProvider::Create(*m_context);
         m_source = NavNodesDataSource::Create(*m_provider);
         }

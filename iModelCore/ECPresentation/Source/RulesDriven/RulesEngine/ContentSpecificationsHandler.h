@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/ContentSpecificationsHandler.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once 
@@ -86,16 +86,19 @@ struct ContentSpecificationsHandler
     };
     typedef RefCountedPtr<PropertyAppender> PropertyAppenderPtr;
 
+    struct AppendRelatedPropertyParams;
+    struct AppendRelatedPropertiesParams;
+
 private:    
     Context& m_context;
     mutable bset<ECClassCP> const* m_modifierClasses;
 
 private:
-    void AppendClass(ECClassCR, ContentSpecificationCR, bool isSpecificationPolymorphic);
-    void AppendClassPaths(bvector<RelatedClassPath> const&, ECClassCR primaryClass, ContentRelatedInstancesSpecificationCR);
-    bvector<RelatedClassPath> AppendRelatedProperties(RelatedClassPath const&, ECClassCR relatedClass, Utf8StringCR relatedClassAlias, RelatedPropertiesSpecificationCR);
-    bvector<RelatedClassPath> AppendRelatedProperties(RelatedClassPath const&, ECClassCR relatedClass, Utf8StringCR  relatedClassAlias, RelatedPropertiesSpecificationList const&, bool isNested);
-    void AppendRelatedProperties(bvector<RelatedClassPath>&, RelatedClassPath const&, ECClassCR relatedClass, Utf8StringCR relatedClassAlias, RelatedPropertiesSpecificationList const&);
+    void AppendClass(ECClassCR, ContentSpecificationCR, bool isSpecificationPolymorphic, IParsedSelectionInfo const*, Utf8StringCR instanceFilter);
+    void AppendClassPaths(bvector<RelatedClassPath> const&, ECClassCR primaryClass, ContentRelatedInstancesSpecificationCR, IParsedSelectionInfo const&);
+    bvector<RelatedClassPath> AppendRelatedProperties(AppendRelatedPropertyParams const&);
+    bvector<RelatedClassPath> AppendRelatedProperties(AppendRelatedPropertiesParams const&, bool isNested);
+    void AppendRelatedProperties(bvector<RelatedClassPath>&, AppendRelatedPropertiesParams const&);
     bool AppendProperty(PropertyAppender&, bvector<RelatedClass>&, ECPropertyCR, Utf8CP defaultAlias);
     bset<ECClassCP> const& GetModifierClasses() const;
 

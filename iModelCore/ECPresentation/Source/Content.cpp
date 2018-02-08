@@ -2,7 +2,7 @@
 |
 |     $Source: Source/Content.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -853,26 +853,33 @@ void ContentDescriptor::ECPropertiesField::InitFromProperty(ECClassCR primaryCla
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<ContentDescriptor::Property const*> ContentDescriptor::ECPropertiesField::FindMatchingProperties(ECClassCP targetClass) const
+bvector<ContentDescriptor::Property const*> const& ContentDescriptor::ECPropertiesField::FindMatchingProperties(ECClassCP targetClass) const
     {
-    bvector<ContentDescriptor::Property const*> matchingProperties;
+    static bvector<ContentDescriptor::Property const*> const s_empty;
     if (m_properties.empty())
-        return matchingProperties;
+        return s_empty;
 
-    if (nullptr == targetClass)
+    auto iter = m_matchingPropertiesCache.find(targetClass);
+    if (m_matchingPropertiesCache.end() == iter)
         {
-        for (Property const& p : m_properties)
-            matchingProperties.push_back(&p);
-        }
-    else
-        {
-        for (Property const& prop : m_properties)
+        bvector<ContentDescriptor::Property const*> matchingProperties;
+        if (nullptr == targetClass)
             {
-            if (targetClass->Is(&prop.GetPropertyClass()) || prop.IsRelated() && targetClass->Is(prop.GetRelatedClassPath().front().GetTargetClass()))
-                matchingProperties.push_back(&prop);
+            for (Property const& p : m_properties)
+                matchingProperties.push_back(&p);
             }
+        else
+            {
+            for (Property const& prop : m_properties)
+                {
+                if (targetClass->Is(&prop.GetPropertyClass()) || prop.IsRelated() && targetClass->Is(prop.GetRelatedClassPath().front().GetTargetClass()))
+                    matchingProperties.push_back(&prop);
+                }
+            }
+        iter = m_matchingPropertiesCache.insert(std::make_pair(targetClass, matchingProperties)).first;
         }
-    return matchingProperties;
+
+    return iter->second;
     }
 
 /*---------------------------------------------------------------------------------**//**

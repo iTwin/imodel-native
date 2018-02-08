@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Performance/RulesEngine/ContentPerformanceTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "RulesEnginePerformanceTests.h"
@@ -52,11 +52,19 @@ struct ContentPerformanceTests : RulesEnginePerformanceTests
                 </ContentRule>
 
                 <!-- Content modifiers that apply to any content rule -->
+                <ContentModifier ClassName="Element" SchemaName="BisCore">
+                    <RelatedProperties RelationshipClassNames='BisCore:ElementOwnsUniqueAspect' RelatedClassNames='BisCore:ElementUniqueAspect'
+                                       RequiredDirection='Forward' IsPolymorphic='True' />
+                    <RelatedProperties RelationshipClassNames='BisCore:ElementOwnsMultiAspects' RelatedClassNames='BisCore:ElementMultiAspect'
+                                       RequiredDirection='Forward' IsPolymorphic='True' />
+                </ContentModifier>
                 <ContentModifier ClassName="PhysicalElement" SchemaName="BisCore">
-                    <RelatedProperties RelationshipClassNames='BisCore:PhysicalElementIsOfType' RelatedClassNames='BisCore:PhysicalType' RequiredDirection='Forward' PropertyNames='CodeValue'/>
+                    <RelatedProperties RelationshipClassNames='BisCore:PhysicalElementIsOfType' RelatedClassNames='BisCore:PhysicalType' 
+                                       RequiredDirection='Forward' IsPolymorphic='True' />
                 </ContentModifier>
                 <ContentModifier ClassName="SpatialLocationElement" SchemaName="BisCore">
-                    <RelatedProperties RelationshipClassNames='BisCore:SpatialLocationIsOfType' RelatedClassNames='BisCore:SpatialLocationType' RequiredDirection='Forward' PropertyNames='CodeValue'/>
+                    <RelatedProperties RelationshipClassNames='BisCore:SpatialLocationIsOfType' RelatedClassNames='BisCore:SpatialLocationType'
+                                       RequiredDirection='Forward' IsPolymorphic='True' />
                 </ContentModifier>
 
             </PresentationRuleSet>
@@ -64,8 +72,30 @@ struct ContentPerformanceTests : RulesEnginePerformanceTests
         return ruleset;
         }
 
+    void GetContent(SelectionInfo const&, Utf8CP type, int expectedContentSize, Utf8CP passName);
     void GetContentForAllGeometricElements(Utf8CP type, int expectedContentSize);
     };
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentPerformanceTests::GetContent(SelectionInfo const& selection, Utf8CP type, int expectedContentSize, Utf8CP passName)
+    {
+    // start the timer
+    Utf8PrintfString timerName("%s: %s pass", BeTest::GetNameOfCurrentTest(), passName);
+    Timer _timer(timerName.c_str());
+
+    // get the descriptor
+    RulesDrivenECPresentationManager::ContentOptions options = CreateContentOptions();
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, type, selection, options.GetJson()).get();
+
+    // get the content
+    ContentCPtr content = m_manager->GetContent(m_project, *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ASSERT_TRUE(content.IsValid());
+    EXPECT_EQ(expectedContentSize, content->GetContentSet().GetSize());
+    for (ContentSetItemCPtr record : content->GetContentSet())
+        EXPECT_TRUE(record.IsValid());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                10/2017
@@ -80,19 +110,8 @@ void ContentPerformanceTests::GetContentForAllGeometricElements(Utf8CP type, int
         keys.push_back(ECInstanceNodeKey::Create(stmt.GetValueId<ECClassId>(0), stmt.GetValueId<ECInstanceId>(1)));
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
 
-    // start the timer
-    Timer _timer;
-
-    // get the descriptor
-    RulesDrivenECPresentationManager::ContentOptions options = CreateContentOptions();
-    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, type, selection, options.GetJson()).get();
-
-    // get the content
-    ContentCPtr content = m_manager->GetContent(m_project, *descriptor, selection, PageOptions(), options.GetJson()).get();
-    ASSERT_TRUE(content.IsValid());
-    EXPECT_EQ(expectedContentSize, content->GetContentSet().GetSize());
-    for (ContentSetItemCPtr record : content->GetContentSet())
-        EXPECT_TRUE(record.IsValid());
+    GetContent(selection, type, expectedContentSize, "First");
+    GetContent(selection, type, expectedContentSize, "Second");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -124,8 +143,18 @@ TEST_F(ContentPerformanceTests, GetDescriptorForAllElementSubclasses)
     SelectionInfo selection(allElementClasses);
     
     // get the descriptor
-    Timer _timer;
+    Utf8PrintfString timerName1("%s: First pass", BeTest::GetNameOfCurrentTest());
+    Timer _timer1(timerName1.c_str());
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, ContentDisplayType::PropertyPane, selection, CreateContentOptions().GetJson()).get();
+    EXPECT_TRUE(descriptor.IsValid());
+    _timer1.Finish();
+
+    // force clear content cache so descriptors aren't cached
+    m_manager->NotifyCategoriesChanged();
+
+    Utf8PrintfString timerName2("%s: Second pass", BeTest::GetNameOfCurrentTest());
+    Timer _timer2(timerName2.c_str());
+    descriptor = m_manager->GetContentDescriptor(m_project, ContentDisplayType::PropertyPane, selection, CreateContentOptions().GetJson()).get();
     EXPECT_TRUE(descriptor.IsValid());
     }
 
@@ -138,9 +167,16 @@ TEST_F(ContentPerformanceTests, GetDescriptorForAllElementSubclasses)
 TEST_F(ContentPerformanceTests, GetContentClassesForBisElements)
     {    
     ECClassCP elementClass = m_project.Schemas().GetClass("BisCore", "Element");
-
-    Timer _timer;
+    
+    Utf8PrintfString timerName1("%s: First pass", BeTest::GetNameOfCurrentTest());
+    Timer _timer1(timerName1.c_str());
     bvector<SelectClassInfo> classes = m_manager->GetContentClasses(m_project, ContentDisplayType::PropertyPane, {elementClass}, CreateContentOptions().GetJson()).get();
+    EXPECT_TRUE(!classes.empty());
+    _timer1.Finish();
+    
+    Utf8PrintfString timerName2("%s: Second pass", BeTest::GetNameOfCurrentTest());
+    Timer _timer2(timerName2.c_str());
+    classes = m_manager->GetContentClasses(m_project, ContentDisplayType::PropertyPane, {elementClass}, CreateContentOptions().GetJson()).get();
     EXPECT_TRUE(!classes.empty());
     }
 

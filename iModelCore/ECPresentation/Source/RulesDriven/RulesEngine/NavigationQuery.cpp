@@ -110,147 +110,64 @@ bool BoundQueryIdSet::_Equals(BoundQueryValue const& other) const
     }
 
 /*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                07/2017
+* @bsiclass                                     Grigas.Petraitis                02/2018
 +===============+===============+===============+===============+===============+======*/
-struct VirtualSetStatementPreparer : BoundQueryRecursiveChildrenIdSet::IChildIdsStatementPreparer
+struct NoIdsHandler : FilteredIdsHandler
 {
-private:
-    IConnectionCR m_connection;
-    bset<ECRelationshipClassCP> const& m_relationships;
-    bool m_isForward;
-    ECSqlStatement m_stmt;
-    bvector<IdSet<ECInstanceId>> m_setsStack;
-
-private:
-    Utf8String CreateSelectQuery() const
-        {
-        static Utf8CP s_sourceECInstanceIdField = "SourceECInstanceId";
-        static Utf8CP s_targetECInstanceIdField = "TargetECInstanceId";
-        static Utf8CP s_queryFormat = "SELECT %s FROM %s WHERE InVirtualSet(?, %s)";
-        Utf8String query;
-        for (ECRelationshipClassCP rel : m_relationships)
-            {
-            if (!query.empty())
-                query.append(" UNION ALL ");
-            if (m_isForward)
-                query.append(Utf8PrintfString(s_queryFormat, s_targetECInstanceIdField, rel->GetECSqlName().c_str(), s_sourceECInstanceIdField));
-            else
-                query.append(Utf8PrintfString(s_queryFormat, s_sourceECInstanceIdField, rel->GetECSqlName().c_str(), s_targetECInstanceIdField));
-            }
-        return query;
-        }
-
-public:
-    VirtualSetStatementPreparer(IConnectionCR connection, bset<ECRelationshipClassCP> const& relationships, bool isForward)
-        : m_connection(connection), m_relationships(relationships), m_isForward(isForward)
-        {}
-    ECSqlStatement& _GetStatement(bvector<ECInstanceId> const& sourceIds) override
-        {
-        if (!m_stmt.IsPrepared())
-            {
-            ECSqlStatus status = m_stmt.Prepare(m_connection.GetECDb().Schemas(), m_connection.GetDb(), CreateSelectQuery().c_str());
-            if (!status.IsSuccess())
-                {
-                BeAssert(false);
-                return m_stmt;
-                }
-            }
-        else
-            {
-            m_stmt.Reset();
-            }
-
-        IdSet<ECInstanceId> vSet;
-        for (ECInstanceId const& id : sourceIds)
-            vSet.insert(id);
-        m_setsStack.push_back(vSet);
-
-        int bindingIndex = 1;
-        for (ECRelationshipClassCP rel : m_relationships)
-            {
-            ECSqlStatus status = m_stmt.BindVirtualSet(bindingIndex++, m_setsStack.back());
-            BeAssert(status.IsSuccess());
-            UNUSED_VARIABLE(rel);
-            }
-
-        return m_stmt;
-        }
+protected:
+    Utf8String _GetWhereClause(Utf8CP idSelector, size_t) const override {return "FALSE";}
+    void _Accept(BeInt64Id id) override {BeAssert(false);}
+    BoundQueryValuesList _GetBoundValues() override {return BoundQueryValuesList();}
 };
 
 /*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                07/2017
+* @bsiclass                                     Grigas.Petraitis                02/2018
 +===============+===============+===============+===============+===============+======*/
-struct BoundIdsStatementPreparer : BoundQueryRecursiveChildrenIdSet::IChildIdsStatementPreparer
+struct VirtualSetIdsHandler : FilteredIdsHandler
 {
 private:
-    IConnectionCR m_connection;
-    bset<ECRelationshipClassCP> const& m_relationships;
-    bool m_isForward;
-    bvector<ECSqlStatement*> m_statements;
-
-private:
-    Utf8String CreateSelectQuery(size_t idsCount) const
+    IdSet<BeInt64Id> m_ids;
+protected:
+    Utf8String _GetWhereClause(Utf8CP idSelector, size_t) const override
         {
-        static Utf8CP s_sourceECInstanceIdField = "SourceECInstanceId";
-        static Utf8CP s_targetECInstanceIdField = "TargetECInstanceId";
-        static Utf8CP s_queryFormat = "SELECT %s FROM %s WHERE %s IN (%s)";
+        return Utf8String("InVirtualSet(?, ").append(idSelector).append(")");
+        }
+    void _Accept(BeInt64Id id) override {m_ids.insert(id);}
+    BoundQueryValuesList _GetBoundValues() override {return {new BoundQueryIdSet(std::move(m_ids))};}
+};
 
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                02/2018
++===============+===============+===============+===============+===============+======*/
+struct BoundIdsHandler : FilteredIdsHandler
+{
+private:
+    BoundQueryValuesList m_values;
+protected:
+    Utf8String _GetWhereClause(Utf8CP idSelector, size_t idsCount) const override
+        {
+        if (0 == idsCount)
+            return "FALSE";
         Utf8String idsArg(idsCount * 2 - 1, '?');
         for (size_t i = 1; i < idsArg.size(); i += 2)
             idsArg[i] = ',';
-
-        Utf8String query;
-        for (ECRelationshipClassCP rel : m_relationships)
-            {
-            if (!query.empty())
-                query.append(" UNION ALL ");
-            if (m_isForward)
-                query.append(Utf8PrintfString(s_queryFormat, s_targetECInstanceIdField, rel->GetECSqlName().c_str(), s_sourceECInstanceIdField, idsArg.c_str()));
-            else
-                query.append(Utf8PrintfString(s_queryFormat, s_sourceECInstanceIdField, rel->GetECSqlName().c_str(), s_targetECInstanceIdField, idsArg.c_str()));
-            }
-        return query;
+        return Utf8PrintfString("%s IN (%s)", idSelector, idsArg.c_str());
         }
-
+    void _Accept(BeInt64Id id) override {m_values.push_back(new BoundQueryId(id));}
+    BoundQueryValuesList _GetBoundValues() override {return std::move(m_values);}
 public:
-    BoundIdsStatementPreparer(IConnectionCR connection, bset<ECRelationshipClassCP> const& relationships, bool isForward)
-        : m_connection(connection), m_relationships(relationships), m_isForward(isForward)
-        {}
-    ~BoundIdsStatementPreparer()
+    ~BoundIdsHandler()
         {
-        for (ECSqlStatement* stmt : m_statements)
-            delete stmt;
-        }
-    ECSqlStatement& _GetStatement(bvector<ECInstanceId> const& sourceIds) override
-        {
-        m_statements.push_back(new ECSqlStatement());
-        ECSqlStatement& stmt = *m_statements.back();
-        if (!stmt.Prepare(m_connection.GetECDb().Schemas(), m_connection.GetDb(), CreateSelectQuery(sourceIds.size()).c_str()).IsSuccess())
-            {
-            BeAssert(false);
-            return stmt;
-            }
-        
-        int bindingIndex = 1;
-        for (ECRelationshipClassCP rel : m_relationships)
-            {
-            for (ECInstanceId const& sourceId : sourceIds)
-                {
-                ECSqlStatus status = stmt.BindId(bindingIndex++, sourceId);
-                BeAssert(status.IsSuccess());
-                UNUSED_VARIABLE(rel);
-                }
-            }
-        
-        return stmt;
+        for (BoundQueryValue const* v : m_values)
+            delete v;
         }
 };
 
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                07/2017
-+===============+===============+===============+===============+===============+======*/
-struct SmartStatementPreparer : BoundQueryRecursiveChildrenIdSet::IChildIdsStatementPreparer
-{
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+FilteredIdsHandler* FilteredIdsHandler::Create(size_t inputSize)
+    {
     // choosing when it's worth using virtual set vs bound IDs depends on 2 factors:
     // - rows count in the table we're selecting from (more rows make virtual set more expensive)
     // - bound IDs count (more IDs make binding them individually more expensive)
@@ -258,88 +175,31 @@ struct SmartStatementPreparer : BoundQueryRecursiveChildrenIdSet::IChildIdsState
     // bounds IDs - not, we chose the boundary pretty high.
     static const size_t BOUNDARY_VirtualSet = 100;
 
-private:
-    VirtualSetStatementPreparer m_vSetPreparer;
-    BoundIdsStatementPreparer m_idsPreparer;
-
-private:
-    IChildIdsStatementPreparer* GetPreparer(size_t inputSize)
-        {
-        if (inputSize > BOUNDARY_VirtualSet)
-            return &m_vSetPreparer;
-        else
-            return &m_idsPreparer;
-        }
-
-public:
-    SmartStatementPreparer(IConnectionCR connection, bset<ECRelationshipClassCP> const& relationships, bool isForward)
-        : m_vSetPreparer(connection, relationships, isForward), m_idsPreparer(connection, relationships, isForward)
-        {}
-    ECSqlStatement& _GetStatement(bvector<ECInstanceId> const& sourceIds) override
-        {
-        return GetPreparer(sourceIds.size())->_GetStatement(sourceIds);
-        }
-};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                03/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BoundQueryRecursiveChildrenIdSet::RecursivelySelectRelatedKeys(IdSet<ECInstanceId>& result, IChildIdsStatementPreparer& statementPreparer, 
-    bvector<ECInstanceId> const& sourceIds)
-    {
-    ECSqlStatement& stmt = statementPreparer._GetStatement(sourceIds);    
-    bvector<ECInstanceId> tempIds;
-    while (BeSQLite::DbResult::BE_SQLITE_ROW == stmt.Step())
-        {
-        ECInstanceId id = stmt.GetValueId<ECInstanceId>(0);
-        result.insert(id);
-        tempIds.push_back(id);
-        }
-
-    if (!tempIds.empty())
-        RecursivelySelectRelatedKeys(result, statementPreparer, tempIds);
+    if (0 == inputSize)
+        return new NoIdsHandler();
+    if (inputSize > BOUNDARY_VirtualSet)
+        return new VirtualSetIdsHandler();
+    return new BoundIdsHandler();
     }
 
 /*---------------------------------------------------------------------------------**//**
-// @bsimethod                                    Grigas.Petraitis                01/2017
+// @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSqlStatus BoundQueryRecursiveChildrenIdSet::_Bind(ECSqlStatement& stmt, uint32_t index) const
+BentleyStatus PresentationQueryBase::BindValues(ECSqlStatement& stmt) const
     {
-    if (nullptr == m_childrenSet)
+    BentleyStatus result = SUCCESS;
+    bvector<BoundQueryValue const*> boundValues = GetBoundValues();
+    for (size_t i = 0; i < boundValues.size(); ++i)
         {
-        m_childrenSet = new IdSet<ECInstanceId>();
-        Savepoint txn(m_connection.GetDb(), "BoundQueryRecursiveChildrenIdSet::_Bind"); 
-        SmartStatementPreparer prep(m_connection, m_relationships, m_isForward);
-        RecursivelySelectRelatedKeys(*m_childrenSet, prep, m_parentIds);
+        BoundQueryValue const* value = boundValues[i];
+        ECSqlStatus status = value->Bind(stmt, (uint32_t)(i + 1));
+        if (!status.IsSuccess())
+            {
+            BeAssert(false);
+            result = ERROR;
+            }
         }
-
-    return stmt.BindVirtualSet((int)index, *m_childrenSet);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod                                    Grigas.Petraitis                03/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-BoundQueryValue* BoundQueryRecursiveChildrenIdSet::_Clone() const
-    {
-    BoundQueryRecursiveChildrenIdSet* set = new BoundQueryRecursiveChildrenIdSet(m_connection, m_relationships, m_isForward, m_parentIds);
-    if (nullptr != m_childrenSet)
-        set->m_childrenSet = new IdSet<ECInstanceId>(*m_childrenSet);
-    return set;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod                                    Grigas.Petraitis                03/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool BoundQueryRecursiveChildrenIdSet::_Equals(BoundQueryValue const& other) const
-    {
-    BoundQueryRecursiveChildrenIdSet const* otherVirtualSet = dynamic_cast<BoundQueryRecursiveChildrenIdSet const*>(&other);
-    if (nullptr == otherVirtualSet)
-        return false;
-
-    return m_connection.GetId().Equals(otherVirtualSet->m_connection.GetId())
-        && m_relationships == otherVirtualSet->m_relationships 
-        && m_isForward == otherVirtualSet->m_isForward 
-        && m_parentIds == otherVirtualSet->m_parentIds;
+    return result;
     }
 
 /*---------------------------------------------------------------------------------**//**

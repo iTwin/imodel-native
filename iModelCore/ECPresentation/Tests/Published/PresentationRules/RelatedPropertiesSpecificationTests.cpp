@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/PresentationRules/RelatedPropertiesSpecificationTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PresentationRulesTests.h"
@@ -28,7 +28,8 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromXml)
             RelatedClassNames="Related:Class,Names"
             RequiredDirection="Backward" 
             PropertyNames="Property,Names"
-            RelationshipMeaning="SameInstance">
+            RelationshipMeaning="SameInstance"
+            IsPolymorphic="True">
             <RelatedProperties  />
         </RelatedProperties>
         )";
@@ -43,6 +44,7 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromXml)
     EXPECT_STREQ("Property,Names", spec.GetPropertyNames().c_str());
     EXPECT_EQ(RequiredRelationDirection_Backward, spec.GetRequiredRelationDirection());
     EXPECT_EQ(RelationshipMeaning::SameInstance, spec.GetRelationshipMeaning());
+    EXPECT_TRUE(spec.IsPolymorphic());
     EXPECT_EQ(1, spec.GetNestedRelatedProperties().size());
     }
 
@@ -51,7 +53,7 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromXml)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromXmlWithDefaultValues)
     {
-    static Utf8CP xmlString = "<RelatedProperties/>";
+    static Utf8CP xmlString = "<RelatedProperties />";
     BeXmlStatus xmlStatus;
     BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
     ASSERT_EQ(BEXML_Success, xmlStatus);
@@ -63,6 +65,7 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromXmlWithDefaultValues)
     EXPECT_STREQ("", spec.GetPropertyNames().c_str());
     EXPECT_EQ(RequiredRelationDirection_Both, spec.GetRequiredRelationDirection());
     EXPECT_EQ(RelationshipMeaning::RelatedInstance, spec.GetRelationshipMeaning());
+    EXPECT_FALSE(spec.IsPolymorphic());
     EXPECT_EQ(0, spec.GetNestedRelatedProperties().size());
     }
 
@@ -80,6 +83,7 @@ TEST_F(RelatedPropertiesSpecificationsTests, WritesToXml)
     spec.SetRelatedClassNames("Related:Class,Names");
     spec.SetPropertyNames("Property,Names");
     spec.SetRelationshipMeaning(RelationshipMeaning::RelatedInstance);
+    spec.SetIsPolymorphic(true);
     spec.AddNestedRelatedProperty(*new RelatedPropertiesSpecification());
     spec.WriteXml(xml->GetRootElement());
     
@@ -90,13 +94,15 @@ TEST_F(RelatedPropertiesSpecificationsTests, WritesToXml)
                 R"(RelatedClassNames="Related:Class,Names" )"
                 R"(PropertyNames="Property,Names" )"
                 R"(RequiredDirection="Backward" )"
-                R"(RelationshipMeaning="RelatedInstance">)"
+                R"(RelationshipMeaning="RelatedInstance" )"
+                R"(IsPolymorphic="true">)"
                 "<RelatedProperties "
                     R"(RelationshipClassNames="" )"
                     R"(RelatedClassNames="" )"
                     R"(PropertyNames="" )"
                     R"(RequiredDirection="Both" )"
-                    R"(RelationshipMeaning="RelatedInstance" />)"
+                    R"(RelationshipMeaning="RelatedInstance" )"
+                    R"(IsPolymorphic="false" />)"
             "</RelatedProperties>"
         "</Root>";
     EXPECT_STREQ(ToPrettyString(*BeXmlDom::CreateAndReadFromString(xmlStatus, expected)).c_str(), ToPrettyString(*xml).c_str());
@@ -108,10 +114,10 @@ TEST_F(RelatedPropertiesSpecificationsTests, WritesToXml)
 TEST_F(RelatedPropertiesSpecificationsTests, ComputesCorrectHashes)
     {
     RelatedPropertiesSpecification spec1(RequiredRelationDirection_Backward, "Relationship:Names",
-        "Related:Class,Names", "Property,Names", RelationshipMeaning::RelatedInstance);
+        "Related:Class,Names", "Property,Names", RelationshipMeaning::RelatedInstance, true);
     spec1.AddNestedRelatedProperty(*new RelatedPropertiesSpecification());
     RelatedPropertiesSpecification spec2(RequiredRelationDirection_Backward, "Relationship:Names",
-        "Related:Class,Names", "Property,Names", RelationshipMeaning::RelatedInstance);
+        "Related:Class,Names", "Property,Names", RelationshipMeaning::RelatedInstance, true);
     spec2.AddNestedRelatedProperty(*new RelatedPropertiesSpecification());
     RelatedPropertiesSpecification spec3(RequiredRelationDirection_Backward, "Relationship:Names",
         "Related:Class,Names", "Property,Names", RelationshipMeaning::RelatedInstance);

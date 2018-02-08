@@ -183,7 +183,7 @@ void ExpectedQueries::PrepareSchemaContext()
     m_project.GetECDb().SaveChanges();
 
     m_connection = m_connections.NotifyConnectionOpened(m_project.GetECDb());
-    m_schemaHelper = new ECSchemaHelper(*m_connection, &m_relatedPathsCache, nullptr);
+    m_schemaHelper = new ECSchemaHelper(*m_connection, nullptr, nullptr, nullptr, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -383,9 +383,9 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         NavigationQueryPtr nestedQueries = RulesEngineTestHelpers::CreateECInstanceNodesQueryForClasses(expectedQueryClasses, "this", [](ComplexNavigationQuery& query)
             {
-            query.Where("InVirtualSet(?, [this].[ECInstanceId]) AND "
+            query.Where("[this].[ECInstanceId] IN (?) AND "
                 "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[DisplayLabel], '[]') = ?",
-                {new BoundQueryIdSet({ECInstanceId((uint64_t)1)}), new BoundQueryECValue(ECValue("MyLabel"))});
+                {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("MyLabel"))});
             });
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
@@ -417,9 +417,9 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
         nested->SelectContract(*contract, "this");
         nested->From(b1_Class1A, false, "this");
-        nested->Where("InVirtualSet(?, [this].[ECInstanceId]) "
-            "AND GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[DisplayLabel], '[]') = ?",
-            {new BoundQueryIdSet({ECInstanceId((uint64_t)1)}), new BoundQueryECValue(ECValue("Label Grouping Node"))});
+        nested->Where("[this].[ECInstanceId] IN (?) AND "
+            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[DisplayLabel], '[]') = ?",
+            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("Label Grouping Node"))});
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();
@@ -995,17 +995,17 @@ void ExpectedQueries::RegisterExpectedQueries()
         nestedQuery1->SelectContract(*contract, "this");
         nestedQuery1->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprocket, true, "related", "rel_RET_GadgetHasSprocket_0"), false);
         nestedQuery1->Where("[related].[ECInstanceId] = ?", { new BoundQueryId(ECInstanceId((uint64_t)123)) });
-        nestedQuery1->Where("InVirtualSet(?, [this].[ECInstanceId]) "
-            "AND GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
-            { new BoundQueryIdSet({ ECInstanceId((uint64_t)1) }), new BoundQueryECValue(ECValue("MyLabel")) });
+        nestedQuery1->Where("[this].[ECInstanceId] IN (?) AND "
+            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
+            { new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("MyLabel")) });
 
         ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
         nestedQuery2->SelectContract(*contract, "this");
         nestedQuery2->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "related", "rel_RET_GadgetHasSprockets_0"), false);
         nestedQuery2->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
-        nestedQuery2->Where("InVirtualSet(?, [this].[ECInstanceId]) "
-            "AND GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
-            {new BoundQueryIdSet({ECInstanceId((uint64_t)1)}), new BoundQueryECValue(ECValue("MyLabel"))});
+        nestedQuery2->Where("[this].[ECInstanceId] IN (?) AND "
+            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
+            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("MyLabel"))});
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();
@@ -1069,33 +1069,33 @@ void ExpectedQueries::RegisterExpectedQueries()
         nestedQuery1->SelectContract(*contract, "this");
         nestedQuery1->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "related", "rel_RET_WidgetHasGadgets_0"), false);
         nestedQuery1->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
-        nestedQuery1->Where("InVirtualSet(?, [this].[ECInstanceId]) "
-            "AND GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
-            {new BoundQueryIdSet({ECInstanceId((uint64_t)1)}), new BoundQueryECValue(ECValue("Label Grouping Node"))});
+        nestedQuery1->Where("[this].[ECInstanceId] IN (?) AND "
+            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
+            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("Label Grouping Node"))});
     
         ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
         nestedQuery2->SelectContract(*contract, "this");
         nestedQuery2->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0"), false);
         nestedQuery2->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
-        nestedQuery2->Where("InVirtualSet(?, [this].[ECInstanceId]) "
-            "AND GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
-            {new BoundQueryIdSet({ECInstanceId((uint64_t)1)}), new BoundQueryECValue(ECValue("Label Grouping Node"))});
+        nestedQuery2->Where("[this].[ECInstanceId] IN (?) AND "
+            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
+            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("Label Grouping Node"))});
         
         ComplexNavigationQueryPtr nestedQuery3 = ComplexNavigationQuery::Create();
         nestedQuery3->SelectContract(*contract, "this");
         nestedQuery3->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets, true, "related", "rel_RET_WidgetsHaveGadgets_0"), false);
         nestedQuery3->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
-        nestedQuery3->Where("InVirtualSet(?, [this].[ECInstanceId]) "
-            "AND GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
-            {new BoundQueryIdSet({ECInstanceId((uint64_t)1)}), new BoundQueryECValue(ECValue("Label Grouping Node"))});
+        nestedQuery3->Where("[this].[ECInstanceId] IN (?) AND "
+            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
+            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("Label Grouping Node"))});
         
         ComplexNavigationQueryPtr nestedQuery4 = ComplexNavigationQuery::Create();
         nestedQuery4->SelectContract(*contract, "this");
         nestedQuery4->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0"), false);
         nestedQuery4->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
-        nestedQuery4->Where("InVirtualSet(?, [this].[ECInstanceId]) "
-            "AND GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
-            {new BoundQueryIdSet({ECInstanceId((uint64_t)1)}), new BoundQueryECValue(ECValue("Label Grouping Node"))});
+        nestedQuery4->Where("[this].[ECInstanceId] IN (?) AND "
+            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
+            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("Label Grouping Node"))});
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();
@@ -1191,9 +1191,9 @@ void ExpectedQueries::RegisterExpectedQueries()
         nestedQuery->SelectContract(*contract, "this");
         nestedQuery->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "related", "rel_RET_WidgetHasGadget"), false);
         nestedQuery->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
-        nestedQuery->Where("InVirtualSet(?, [this].[ECInstanceId]) "
-            "AND GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
-            {new BoundQueryIdSet({ECInstanceId((uint64_t)1)}), new BoundQueryECValue(ECValue("MyLabel"))});
+        nestedQuery->Where("[this].[ECInstanceId] IN (?) AND "
+            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
+            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("MyLabel"))});
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();
@@ -1215,9 +1215,9 @@ void ExpectedQueries::RegisterExpectedQueries()
         nestedQuery->SelectContract(*contract, "this");
         nestedQuery->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "related", "rel_RET_WidgetHasGadget"), false);
         nestedQuery->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
-        nestedQuery->Where("InVirtualSet(?, [this].[ECInstanceId]) "
-            "AND GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
-            {new BoundQueryIdSet({ECInstanceId((uint64_t)1)}), new BoundQueryECValue(ECValue("Label Grouping Node"))});
+        nestedQuery->Where("[this].[ECInstanceId] IN (?) AND "
+            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
+            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("Label Grouping Node"))});
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();
@@ -1679,16 +1679,16 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr nestedQuery1 = ComplexNavigationQuery::Create();
         nestedQuery1->SelectContract(*ECInstanceNodesQueryContract::Create(&b1_Class1A), "this");
         nestedQuery1->From(b1_Class1A, false, "this");
-        nestedQuery1->Where("InVirtualSet(?, [this].[ECInstanceId]) "
-            "AND GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[DisplayLabel], '[]') = ?",
-            {new BoundQueryIdSet({ECInstanceId((uint64_t)1)}), new BoundQueryECValue(ECValue("MyLabel"))});
+        nestedQuery1->Where("[this].[ECInstanceId] IN (?) AND "
+            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[DisplayLabel], '[]') = ?",
+            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("MyLabel"))});
 
         ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
         nestedQuery2->SelectContract(*ECInstanceNodesQueryContract::Create(&b1_Class1B), "this");
         nestedQuery2->From(b1_Class1B, false, "this");
-        nestedQuery2->Where("InVirtualSet(?, [this].[ECInstanceId]) "
-            "AND GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[DisplayLabel], '[]') = ?",
-            {new BoundQueryIdSet({ECInstanceId((uint64_t)1)}), new BoundQueryECValue(ECValue("MyLabel"))});
+        nestedQuery2->Where("[this].[ECInstanceId] IN (?) AND "
+            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[DisplayLabel], '[]') = ?",
+            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("MyLabel"))});
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();
@@ -1719,9 +1719,9 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr nestedQuery = ComplexNavigationQuery::Create();
         nestedQuery->SelectContract(*contract, "this");
         nestedQuery->From(b1_Class1A, false, "this");
-        nestedQuery->Where("InVirtualSet(?, [this].[ECInstanceId]) AND "
+        nestedQuery->Where("[this].[ECInstanceId] IN (?) AND "
             "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[DisplayLabel], '[]') = ?",
-            {new BoundQueryIdSet({ECInstanceId((uint64_t)1)}), new BoundQueryECValue(ECValue("Label Grouping Node"))});
+            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("Label Grouping Node"))});
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();
@@ -1944,9 +1944,9 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr instancesQuery = ComplexNavigationQuery::Create();
         instancesQuery->SelectContract(*contract, "searchQuery");
         instancesQuery->From(*searchQuery, "searchQuery");
-        instancesQuery->Where("InVirtualSet(?, [searchQuery].[" SEARCH_QUERY_FIELD_ECInstanceId "]) "
-            "AND GetECInstanceDisplayLabel([searchQuery].[" SEARCH_QUERY_FIELD_ECClassId "], [searchQuery].[" SEARCH_QUERY_FIELD_ECInstanceId "], '', '[]') = ?",
-            {new BoundQueryIdSet({ECInstanceId((uint64_t)1)}), new BoundQueryECValue(ECValue("MyLabel"))});
+        instancesQuery->Where("[searchQuery].[" SEARCH_QUERY_FIELD_ECInstanceId "] IN (?) AND "
+            "GetECInstanceDisplayLabel([searchQuery].[" SEARCH_QUERY_FIELD_ECClassId "], [searchQuery].[" SEARCH_QUERY_FIELD_ECInstanceId "], '', '[]') = ?",
+            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("MyLabel"))});
 
         ComplexNavigationQueryPtr ordered = ComplexNavigationQuery::Create();
         ordered->SelectAll();
@@ -1992,9 +1992,9 @@ void ExpectedQueries::RegisterExpectedQueries()
         instancesQuery->SelectContract(*contract, "searchQuery");
         instancesQuery->From(*searchQuery, "searchQuery");
         instancesQuery->Where("[searchQuery].[" SEARCH_QUERY_FIELD_ECClassId "] = ?"
-            " AND InVirtualSet(?, [searchQuery].[" SEARCH_QUERY_FIELD_ECInstanceId "])"
+            " AND [searchQuery].[" SEARCH_QUERY_FIELD_ECInstanceId "] IN (?)"
             " AND GetECInstanceDisplayLabel([searchQuery].[" SEARCH_QUERY_FIELD_ECClassId "], [searchQuery].[" SEARCH_QUERY_FIELD_ECInstanceId "], '', '[]') = ?",
-            {new BoundQueryId(ret_Widget.GetId()), new BoundQueryIdSet({ECInstanceId((uint64_t)1)}), new BoundQueryECValue(ECValue("Label Grouping Node"))});
+            {new BoundQueryId(ret_Widget.GetId()), new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("Label Grouping Node"))});
 
         ComplexNavigationQueryPtr ordered = ComplexNavigationQuery::Create();
         ordered->SelectAll();
@@ -3043,7 +3043,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         RelatedClass relatedInstanceClass(b4_ClassB, b4_ClassC, b4_ClassBHasClassC, true, "c", "rel_b4_ClassBHasClassC_0");
         NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(&b4_ClassB, {relatedInstanceClass});
     
-        Utf8PrintfString whereClause("InVirtualSet(?, [this].[ECInstanceId]) "
+        Utf8PrintfString whereClause("[this].[ECInstanceId] IN (?) "
             "AND GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[{\"Alias\":\"c\",\"ECClassId\":' || CAST(IFNULL([c].[ECClassId], %" PRIu64 ") AS TEXT) || ',\"ECInstanceId\":' || CAST(IFNULL([c].[ECInstanceId], 0) AS TEXT) || '}]') = ? "
             "AND [c].[SomeProperty] = ? "
             "AND [this].[Description] = ? "
@@ -3055,7 +3055,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         nested->Join(relatedInstanceClass, true);
         nested->Where(whereClause.c_str(),
             {
-            new BoundQueryIdSet({ECInstanceId((uint64_t)1)}), 
+            new BoundQueryId(ECInstanceId((uint64_t)1)),
             new BoundQueryECValue(ECValue("test")),
             new BoundQueryECValue(ECValue(99)),
             new BoundQueryECValue(ECValue("TestGroupingDescription")),
@@ -3123,7 +3123,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b1_Class1A, *query), "this");
         query->From(b1_Class1A, false, "this");
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -3141,7 +3141,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b1_Class1A, *query), "this");
         query->From(b1_Class1A, false, "this");
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet(bvector<ECInstanceId>{ECInstanceId((uint64_t)123), ECInstanceId((uint64_t)125)})});
+        query->Where("[this].[ECInstanceId] IN (?,?)", {new BoundQueryId(ECInstanceId((uint64_t)123)), new BoundQueryId(ECInstanceId((uint64_t)125))});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -3161,12 +3161,12 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query1 = ComplexContentQuery::Create();
         query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b1_Class1A, *query1), "this");
         query1->From(b1_Class1A, false, "this");
-        query1->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query1->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
         query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &b2_Class2, *query2), "this");
         query2->From(b2_Class2, false, "this");
-        query2->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query2->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
 #ifdef WIP_SORTING_GRID_CONTENT
@@ -3199,13 +3199,13 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query1 = ComplexContentQuery::Create();
         query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b4_ClassB, *query1), "this");
         query1->From(b4_ClassB, false, "this");
-        query1->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query1->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
         query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &b4_ClassC, *query2), "this");
         query2->From(b4_ClassC, false, "this");
         query2->Join(RelatedClass(b4_ClassC, b4_ClassB, b4_ClassBHasClassC, false, "nav_b4_ClassB_0", "nav_b4_ClassBHasClassC_0"), true);
-        query2->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query2->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
 #ifdef WIP_SORTING_GRID_CONTENT
@@ -3231,7 +3231,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &sc_Class3, *query), "this");
         query->From(sc_Class3, false, "this");
         query->Join(RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0"), true);
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -3254,7 +3254,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &sc_Class3, *query), "this");
         query->From(sc_Class3, false, "this");
         query->Join(RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0"), true);
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -3284,13 +3284,13 @@ void ExpectedQueries::RegisterExpectedQueries()
         query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &sc_Class2, *query1), "this");
         query1->From(sc_Class2, false, "this");
         query1->Join(RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0"), true);
-        query1->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query1->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
         query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &sc_Class3, *query2), "this");
         query2->From(sc_Class3, false, "this");
         query2->Join(RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_1", "nav_sc_Class1HasClass2And3_1"), true);
-        query2->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query2->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
 #ifdef WIP_SORTING_GRID_CONTENT
@@ -3329,7 +3329,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->From(ret_Gadget, false, "this");
         query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "rel_RET_Widget_1", "rel_RET_WidgetHasGadgets_0"), true);
         query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"), true);
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -3372,7 +3372,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->From(ret_Gadget, false, "this");
         query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "rel_RET_Widget_1", "rel_RET_WidgetHasGadgets_0"), true);
         query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"), true);
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -3427,7 +3427,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")
             }, true);
         query->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -3463,7 +3463,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->From(sc_Class2, false, "this");
         query->Join(RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "rel_sc_Class1_1", "rel_sc_Class1HasClass2And3_0"), true);
         query->Join(RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0"), true);
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -3522,7 +3522,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             }, true);
 
 
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -3565,7 +3565,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "rel_RET_Widget_1", "rel_RET_WidgetHasGadgets_0"), true);
         query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "rel_RET_Widget_2", "rel_RET_WidgetHasGadget_0"), true);
         query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"), true);
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
@@ -3624,7 +3624,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->Join(path2, true);
         query->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
 
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -3669,7 +3669,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->Join(relationshipPath, true);
         query->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
 
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -3730,7 +3730,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->Join(widgetRelationshipPath, true);
         query->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
 
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -3749,7 +3749,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentQueryContractPtr contract = ContentQueryContract::Create(1, *descriptor, &ret_ClassH, *query);
         query->SelectContract(*contract, "this");
         query->From(ret_ClassH, false, "this");
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         query->GroupByContract(*contract);
         RegisterQuery("SelectedNodeInstances_SelectsRawValueAndGroupsByDisplayValue", *query);
         }
@@ -3765,7 +3765,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b1_Class1A, *query), "this");
         query->From(b1_Class1A, false, "this");
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -3784,7 +3784,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr nested = ComplexContentQuery::Create();
         nested->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b1_Class1A, *nested), "this");
         nested->From(b1_Class1A, false, "this");
-        nested->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        nested->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
 #ifdef WIP_SORTING_GRID_CONTENT
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
@@ -3806,7 +3806,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b1_Class1A, *query), "this");
         query->From(b1_Class1A, false, "this");
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         RegisterQuery("SetsNoFieldsAndKeysOnlyFlagForGraphicsContentType", *query);
         }
@@ -3820,7 +3820,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr nested = ComplexContentQuery::Create();
         nested->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b1_Class1A, *nested), "this");
         nested->From(b1_Class1A, false, "this");
-        nested->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        nested->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
 #ifdef WIP_SORTING_GRID_CONTENT
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
@@ -4060,14 +4060,14 @@ void ExpectedQueries::RegisterExpectedQueries()
         query1->From(ret_Sprocket, true, "this");
         query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false), false);
         query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
-        query1->Where("InVirtualSet(?, [related].[ECInstanceId])", { new BoundQueryIdSet({ ECInstanceId((uint64_t)123) }) });
+        query1->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
         query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &ret_Sprocket, *query2), "this");
         query2->From(ret_Sprocket, true, "this");
         query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false), false);
         query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
-        query2->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query2->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
 #ifdef WIP_SORTING_GRID_CONTENT
@@ -4109,25 +4109,25 @@ void ExpectedQueries::RegisterExpectedQueries()
         query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Widget, *query1), "this");
         query1->From(ret_Widget, true, "this");
         query1->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "related", "rel_RET_WidgetHasGadgets_0", false), false);
-        query1->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query1->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
         query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &ret_Widget, *query2), "this");
         query2->From(ret_Widget, true, "this");
         query2->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0", false), false);
-        query2->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query2->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         ComplexContentQueryPtr query3 = ComplexContentQuery::Create();
         query3->SelectContract(*ContentQueryContract::Create(3, *descriptor, &ret_Widget, *query3), "this");
         query3->From(ret_Widget, true, "this");
         query3->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets, true, "related", "rel_RET_WidgetsHaveGadgets_0", false), false);
-        query3->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query3->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         ComplexContentQueryPtr query4 = ComplexContentQuery::Create();
         query4->SelectContract(*ContentQueryContract::Create(4, *descriptor, &ret_Widget, *query4), "this");
         query4->From(ret_Widget, true, "this");
         query4->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0", false), false);
-        query4->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query4->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         UnionContentQueryPtr query = UnionContentQuery::Create(*UnionContentQuery::Create(*UnionContentQuery::Create(*query1, *query2), *query3), *query4);
 #ifdef WIP_SORTING_GRID_CONTENT
@@ -4191,39 +4191,39 @@ void ExpectedQueries::RegisterExpectedQueries()
         query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Widget, *query1), "this");
         query1->From(ret_Widget, true, "this");
         query1->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "related", "rel_RET_WidgetHasGadgets_0", false), false);
-        query1->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query1->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
         query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &ret_Widget, *query2), "this");
         query2->From(ret_Widget, true, "this");
         query2->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0", false), false);
-        query2->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query2->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         ComplexContentQueryPtr query3 = ComplexContentQuery::Create();
         query3->SelectContract(*ContentQueryContract::Create(3, *descriptor, &ret_Widget, *query3), "this");
         query3->From(ret_Widget, true, "this");
         query3->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets, true, "related", "rel_RET_WidgetsHaveGadgets_0", false), false);
-        query3->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query3->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         ComplexContentQueryPtr query4 = ComplexContentQuery::Create();
         query4->SelectContract(*ContentQueryContract::Create(4, *descriptor, &ret_Widget, *query4), "this");
         query4->From(ret_Widget, true, "this");
         query4->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0", false), false);
-        query4->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query4->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         ComplexContentQueryPtr query5 = ComplexContentQuery::Create();
         query5->SelectContract(*ContentQueryContract::Create(5, *descriptor, &ret_Sprocket, *query5), "this");
         query5->From(ret_Sprocket, true, "this");
         query5->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false), false);
         query5->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
-        query5->Where("InVirtualSet(?, [related].[ECInstanceId])", { new BoundQueryIdSet({ ECInstanceId((uint64_t)123) }) });
+        query5->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         ComplexContentQueryPtr query6 = ComplexContentQuery::Create();
         query6->SelectContract(*ContentQueryContract::Create(6, *descriptor, &ret_Sprocket, *query6), "this");
         query6->From(ret_Sprocket, true, "this");
         query6->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false), false);
         query6->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
-        query6->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query6->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         UnionContentQueryPtr query = UnionContentQuery::Create(*UnionContentQuery::Create(*UnionContentQuery::Create(*UnionContentQuery::Create(*UnionContentQuery::Create(*query1, *query2), *query3), *query4), *query5), *query6);
 #ifdef WIP_SORTING_GRID_CONTENT
@@ -4261,14 +4261,14 @@ void ExpectedQueries::RegisterExpectedQueries()
         query1->From(ret_Sprocket, true, "this");
         query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false), false);
         query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
-        query1->Where("InVirtualSet(?, [related].[ECInstanceId])", { new BoundQueryIdSet(bvector<ECInstanceId>{ECInstanceId((uint64_t)123), ECInstanceId((uint64_t)125)}) });
+        query1->Where("[related].[ECInstanceId] IN (?,?)", {new BoundQueryId(ECInstanceId((uint64_t)123)), new BoundQueryId(ECInstanceId((uint64_t)125))});
 
         ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
         query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &ret_Sprocket, *query2), "this");
         query2->From(ret_Sprocket, true, "this");
         query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false), false);
         query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
-        query2->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet(bvector<ECInstanceId>{ECInstanceId((uint64_t)123), ECInstanceId((uint64_t)125)})});
+        query2->Where("[related].[ECInstanceId] IN (?,?)", {new BoundQueryId(ECInstanceId((uint64_t)123)), new BoundQueryId(ECInstanceId((uint64_t)125))});
 
         UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
 #ifdef WIP_SORTING_GRID_CONTENT
@@ -4306,14 +4306,14 @@ void ExpectedQueries::RegisterExpectedQueries()
         query1->From(ret_Gadget, true, "this");
         query1->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "related", "rel_RET_WidgetHasGadgets_0", false), false);
         query1->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"), true);
-        query1->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query1->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
         query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &ret_Gadget, *query2), "this");
         query2->From(ret_Gadget, true, "this");
         query2->Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true , "related", "rel_RET_GadgetHasSprockets_0", false), false);
         query2->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"), true);
-        query2->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)125)})});
+        query2->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)125)})});
 
         UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
 #ifdef WIP_SORTING_GRID_CONTENT
@@ -4351,7 +4351,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query1->From(ret_Sprocket, true, "this");
         query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false), false);
         query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), false);
-        query1->Where("InVirtualSet(?, [related].[ECInstanceId])", { new BoundQueryIdSet({ ECInstanceId((uint64_t)123) }) });
+        query1->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         query1->Where("[this].[MyID] = 'Sprocket MyID'", BoundQueryValuesList());
 
         ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
@@ -4359,7 +4359,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query2->From(ret_Sprocket, true, "this");
         query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false), false);
         query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), false);
-        query2->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query2->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         query2->Where("[this].[MyID] = 'Sprocket MyID'", BoundQueryValuesList());
 
         UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
@@ -4457,56 +4457,56 @@ void ExpectedQueries::RegisterExpectedQueries()
         query11->From(ret_Sprocket, true, "this");
         query11->Join(relationshipPath11, false);
         query11->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
-        query11->Where("InVirtualSet(?, [related].[ECInstanceId])", { new BoundQueryIdSet({ ECInstanceId((uint64_t)123) }) });
+        query11->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         ComplexContentQueryPtr query12 = ComplexContentQuery::Create();
         query12->SelectContract(*ContentQueryContract::Create(2, *descriptor, &ret_Sprocket, *query12), "this");
         query12->From(ret_Sprocket, true, "this");
         query12->Join(relationshipPath12, false);
         query12->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
-        query12->Where("InVirtualSet(?, [related].[ECInstanceId])", { new BoundQueryIdSet({ ECInstanceId((uint64_t)123) }) });
+        query12->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         ComplexContentQueryPtr query13 = ComplexContentQuery::Create();
         query13->SelectContract(*ContentQueryContract::Create(3, *descriptor, &ret_Sprocket, *query13), "this");
         query13->From(ret_Sprocket, true, "this");
         query13->Join(relationshipPath13, false);
         query13->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
-        query13->Where("InVirtualSet(?, [related].[ECInstanceId])", { new BoundQueryIdSet({ ECInstanceId((uint64_t)123) }) });
+        query13->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         ComplexContentQueryPtr query14 = ComplexContentQuery::Create();
         query14->SelectContract(*ContentQueryContract::Create(4, *descriptor, &ret_Sprocket, *query14), "this");
         query14->From(ret_Sprocket, true, "this");
         query14->Join(relationshipPath14, false);
         query14->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
-        query14->Where("InVirtualSet(?, [related].[ECInstanceId])", { new BoundQueryIdSet({ ECInstanceId((uint64_t)123) }) });
+        query14->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         ComplexContentQueryPtr query21 = ComplexContentQuery::Create();
         query21->SelectContract(*ContentQueryContract::Create(5, *descriptor, &ret_Sprocket, *query21), "this");
         query21->From(ret_Sprocket, true, "this");
         query21->Join(relationshipPath21, false);
         query21->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
-        query21->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query21->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         ComplexContentQueryPtr query22 = ComplexContentQuery::Create();
         query22->SelectContract(*ContentQueryContract::Create(6, *descriptor, &ret_Sprocket, *query22), "this");
         query22->From(ret_Sprocket, true, "this");
         query22->Join(relationshipPath22, false);
         query22->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
-        query22->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query22->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         ComplexContentQueryPtr query23 = ComplexContentQuery::Create();
         query23->SelectContract(*ContentQueryContract::Create(7, *descriptor, &ret_Sprocket, *query23), "this");
         query23->From(ret_Sprocket, true, "this");
         query23->Join(relationshipPath23, false);
         query23->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
-        query23->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query23->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         ComplexContentQueryPtr query24 = ComplexContentQuery::Create();
         query24->SelectContract(*ContentQueryContract::Create(8, *descriptor, &ret_Sprocket, *query24), "this");
         query24->From(ret_Sprocket, true, "this");
         query24->Join(relationshipPath24, false);
         query24->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
-        query24->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query24->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         UnionContentQueryPtr query = UnionContentQuery::Create(*UnionContentQuery::Create(*UnionContentQuery::Create(*UnionContentQuery::Create(*UnionContentQuery::Create(
             *UnionContentQuery::Create(*UnionContentQuery::Create(*query11, *query12), *query13), *query14), *query21), *query22), *query23), *query24);
@@ -4544,13 +4544,13 @@ void ExpectedQueries::RegisterExpectedQueries()
         query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Widget, *query1), "this");
         query1->From(ret_Widget, true, "this");
         query1->Join(relationshipPath1, false);
-        query1->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query1->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
         query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &ret_Widget, *query2), "this");
         query2->From(ret_Widget, true, "this");
         query2->Join(relationshipPath2, false);
-        query2->Where("InVirtualSet(?, [related].[ECInstanceId])", { new BoundQueryIdSet({ ECInstanceId((uint64_t)123) }) });
+        query2->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
 #ifdef WIP_SORTING_GRID_CONTENT
@@ -4589,7 +4589,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &class_Element, *query), "this");
         query->From(class_Element, true, "this");
         query->Join(RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0)), true);
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryRecursiveChildrenIdSet(*m_connection, relationships, true, selectedIds)});
+        query->Where("FALSE", BoundQueryValuesList()); // note: filtering by recursive children ids (there're no children in the dataset, so the result is just "FALSE"
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -4627,7 +4627,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &class_Element, *query), "this");
         query->From(class_Element, true, "this");
         query->Join(RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0)), true);
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryRecursiveChildrenIdSet(*m_connection, relationships, true, selectedIds)});
+        query->Where("FALSE", BoundQueryValuesList()); // note: filtering by recursive children ids (there're no children in the dataset, so the result is just "FALSE"
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -4665,7 +4665,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &class_Element, *query), "this");
         query->From(class_Element, true, "this");
         query->Join(RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0)), true);
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryRecursiveChildrenIdSet(*m_connection, relationships, true, selectedIds)});
+        query->Where("FALSE", BoundQueryValuesList()); // note: filtering by recursive children ids (there're no children in the dataset, so the result is just "FALSE"
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -4688,7 +4688,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->SelectContract(*contract, "this");
         query->From(ret_ClassH, true, "this");
         query->Join(RelatedClass(ret_ClassH, ret_ClassD, ret_ClassDHasClassE, false, "related", "rel_RET_ClassDHasClassE_0", false), false);
-        query->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         query->GroupByContract(*contract);
 
         RegisterQuery("ContentRelatedInstances_SelectPointPropertyRawDataGroupedByDisplayValue", *query);
@@ -4779,12 +4779,12 @@ void ExpectedQueries::RegisterExpectedQueries()
         q1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Gadget, *q1), "this");
         q1->From(ret_Gadget, false, "this");
         q1->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "rel_RET_Widget_0", "rel_RET_WidgetHasGadgets_0"), true);
-        q1->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)1)})});
+        q1->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)1)})});
         
         ComplexContentQueryPtr q2 = ComplexContentQuery::Create();
         q2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &ret_Widget, *q2), "this");
         q2->From(ret_Widget, false, "this");
-        q2->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)2)})});
+        q2->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)2)})});
 
         UnionContentQueryPtr query = UnionContentQuery::Create(*q1, *q2);
 #ifdef WIP_SORTING_GRID_CONTENT
@@ -5073,7 +5073,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 * @bsitest                                      Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void ExecuteQueries(bmap<Utf8String, NavigationQueryCPtr> queries, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, 
-    IUserSettings const& userSettings, RelatedPathsCache& relatedPathsCache, ECExpressionsCache& ecexpressionsCache)
+    IUserSettings const& userSettings)
     {
     ECDbR db = connection.GetECDb();
     for (auto pair : queries)
@@ -5084,8 +5084,9 @@ static void ExecuteQueries(bmap<Utf8String, NavigationQueryCPtr> queries, IConne
         LOGI("Query: '%s'", name.c_str());
 
         JsonNavNodesFactory nodesFactory;
-        ECSchemaHelper schemaHelper(connection, &relatedPathsCache, nullptr);
-        CustomFunctionsContext functionsContext(schemaHelper, connections, connection, ruleset, userSettings, nullptr, ecexpressionsCache, nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+        ECSchemaHelper schemaHelper(connection, nullptr, nullptr, nullptr, nullptr);
+        CustomFunctionsContext functionsContext(schemaHelper, connections, connection, ruleset, userSettings, nullptr, schemaHelper.GetECExpressionsCache(), 
+            nodesFactory, nullptr, nullptr, &query->GetExtendedData());
         
         Utf8String queryStr = query->ToString();
         ECSqlStatement statement;
@@ -5100,7 +5101,7 @@ static void ExecuteQueries(bmap<Utf8String, NavigationQueryCPtr> queries, IConne
 * @bsitest                                      Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void ExecuteQueries(bmap<Utf8String, ContentQueryCPtr> queries, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, 
-    IUserSettings const& userSettings, RelatedPathsCache& relatedPathsCache, ECExpressionsCache& ecexpressionsCache)
+    IUserSettings const& userSettings)
     {
     ECDbR db = connection.GetECDb();
     for (auto pair : queries)
@@ -5112,8 +5113,9 @@ static void ExecuteQueries(bmap<Utf8String, ContentQueryCPtr> queries, IConnecti
         LOGI("Query: '%s'", name.c_str());
         
         JsonNavNodesFactory nodesFactory;
-        ECSchemaHelper schemaHelper(connection, &relatedPathsCache, nullptr);
-        CustomFunctionsContext functionsContext(schemaHelper, connections, connection, ruleset, userSettings, nullptr, ecexpressionsCache, nodesFactory, nullptr, nullptr, nullptr);
+        ECSchemaHelper schemaHelper(connection, nullptr, nullptr, nullptr, nullptr);
+        CustomFunctionsContext functionsContext(schemaHelper, connections, connection, ruleset, userSettings, nullptr, schemaHelper.GetECExpressionsCache(), 
+            nodesFactory, nullptr, nullptr, nullptr);
         
         Utf8String queryStr = query->ToString();
         ECSqlStatement statement;
@@ -5139,11 +5141,9 @@ TEST(ExpectedQueriesTest, RunAllExpectedQueries)
     IConnectionCR connection = ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnection();
     ECDbR db = connection.GetECDb();
     TestUserSettings userSettings;
-    ECExpressionsCache ecexpressionsCache;
-    RelatedPathsCache relatedPathsCache;
     PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance("test", 1, 0, false, "", "", "", false);
     CustomFunctionsInjector customFunctions(connections, connection);
 
-    ExecuteQueries(ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQueries(), connections, connection, *ruleset, userSettings, relatedPathsCache, ecexpressionsCache);
-    ExecuteQueries(ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQueries(), connections, connection, *ruleset, userSettings, relatedPathsCache, ecexpressionsCache);
+    ExecuteQueries(ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQueries(), connections, connection, *ruleset, userSettings);
+    ExecuteQueries(ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQueries(), connections, connection, *ruleset, userSettings);
     }

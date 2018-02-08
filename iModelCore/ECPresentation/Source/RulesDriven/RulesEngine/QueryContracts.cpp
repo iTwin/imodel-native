@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/QueryContracts.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -911,7 +911,7 @@ ContentDescriptor::Property const* ContentQueryContract::FindMatchingProperty(Co
     if (nullptr == ecClass)
         ecClass = m_class;
 
-    bvector<ContentDescriptor::Property const*> matchingProperties = field.FindMatchingProperties(ecClass);
+    bvector<ContentDescriptor::Property const*> const& matchingProperties = field.FindMatchingProperties(ecClass);
     if (matchingProperties.empty())
         return nullptr;
 
@@ -1201,20 +1201,18 @@ bvector<PresentationQueryContractFieldCPtr> ContentQueryContract::_GetFields() c
     return contractFields;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+SimpleQueryContract::SimpleQueryContract(bvector<PresentationQueryContractFieldCPtr> fields)
+    : m_fields(fields)
+    {}
+
 Utf8CP CountQueryContract::CountFieldName = "RowsCount";
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 CountQueryContract::CountQueryContract()
     {
-    m_countField = PresentationQueryContractSimpleField::Create(CountFieldName, "COUNT(1)", false, false, true, FieldVisibility::Both);
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                07/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<PresentationQueryContractFieldCPtr> CountQueryContract::_GetFields() const
-    {
-    bvector<PresentationQueryContractFieldCPtr> fields;
-    fields.push_back(m_countField);
-    return fields;
+    AddField(*PresentationQueryContractSimpleField::Create(CountFieldName, "COUNT(1)", false, false, true, FieldVisibility::Both));
     }

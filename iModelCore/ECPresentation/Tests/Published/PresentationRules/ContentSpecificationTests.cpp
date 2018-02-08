@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/PresentationRules/ContentSpecificationTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PresentationRulesTests.h"
@@ -129,7 +129,7 @@ TEST_F(ContentSpecificationsTests, WritesToXml)
         "<Root>"
             R"(<TestSpecification Priority="123" ShowImages="true">)"
                 R"(<RelatedProperties RelationshipClassNames="RelationshipClassName" RelatedClassNames="RelatedClassNames" )"
-                    R"(PropertyNames="Properties" RequiredDirection="Forward" RelationshipMeaning="SameInstance" />)"
+                    R"(PropertyNames="Properties" RequiredDirection="Forward" RelationshipMeaning="SameInstance" IsPolymorphic="false"/>)"
                 R"(<DisplayedProperties PropertyNames="DisplayedProperty" Priority="123"/>)"
                 R"(<HiddenProperties PropertyNames="HiddenProperty" Priority="456"/>)"
                 R"(<CalculatedProperties>)"

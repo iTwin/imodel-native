@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/Rules/SortingRule.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -57,7 +57,7 @@ bool SortingRule::_ReadXml (BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_doNotSort,      SORTING_RULE_XML_ATTRIBUTE_DONOTSORT))
         m_doNotSort = false;
 
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_isPolymorphic,  SORTING_RULE_XML_ATTRIBUTE_ISPOLYMORPHIC))
+    if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_isPolymorphic,  COMMON_XML_ATTRIBUTE_ISPOLYMORPHIC))
         m_isPolymorphic = false;
 
     return PresentationRule::_ReadXml (xmlNode);
@@ -73,7 +73,7 @@ void SortingRule::_WriteXml (BeXmlNodeP xmlNode) const
     xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_PROPERTYNAME,          m_propertyName.c_str ());
     xmlNode->AddAttributeBooleanValue (SORTING_RULE_XML_ATTRIBUTE_SORTASCENDING,  m_sortAscending);
     xmlNode->AddAttributeBooleanValue (SORTING_RULE_XML_ATTRIBUTE_DONOTSORT,      m_doNotSort);
-    xmlNode->AddAttributeBooleanValue (SORTING_RULE_XML_ATTRIBUTE_ISPOLYMORPHIC,  m_isPolymorphic);
+    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_ISPOLYMORPHIC,  m_isPolymorphic);
 
     PresentationRule::_WriteXml (xmlNode);
     }

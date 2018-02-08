@@ -146,7 +146,6 @@ private:
     TestConnectionManager m_connections;
     ECDbTestProject m_project;
     IConnectionPtr m_connection;
-    RelatedPathsCache m_relatedPathsCache;
     ECSchemaHelper* m_schemaHelper;
     bvector<PropertyGroupCP> m_propertyGroupsToDelete;
     DefaultCategorySupplier m_categorySupplier;

@@ -18,9 +18,10 @@
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentProviderContext::ContentProviderContext(PresentationRuleSetCR ruleset, bool holdRuleset, Utf8String preferredDisplayType, INavNodeLocaterCR nodesLocater, IPropertyCategorySupplierR categorySupplier, 
-    IUserSettings const& userSettings, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, JsonNavNodesFactory const& nodesFactory, IJsonLocalState const* localState) 
-    : RulesDrivenProviderContext(ruleset, holdRuleset, userSettings, ecexpressionsCache, relatedPathsCache, nodesFactory, localState), m_preferredDisplayType(preferredDisplayType), 
-    m_nodesLocater(nodesLocater), m_categorySupplier(categorySupplier)
+    IUserSettings const& userSettings, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache, 
+    JsonNavNodesFactory const& nodesFactory, IJsonLocalState const* localState) 
+    : RulesDrivenProviderContext(ruleset, holdRuleset, userSettings, ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, nodesFactory, localState), 
+    m_preferredDisplayType(preferredDisplayType), m_nodesLocater(nodesLocater), m_categorySupplier(categorySupplier)
     {
     Init();
     }
@@ -396,7 +397,7 @@ void ContentProvider::LoadCompositePropertiesFieldValue(ContentSetItemR item, Co
                 continue;
 
             ECClassCP keyClass = GetContext().GetConnection().GetECDb().Schemas().GetClass(key.GetClassId());
-            bvector<ContentDescriptor::Property const*> matchingProperties = field.FindMatchingProperties(keyClass);
+            bvector<ContentDescriptor::Property const*> const& matchingProperties = field.FindMatchingProperties(keyClass);
             BeAssert(matchingProperties.size() <= 1);
             if (matchingProperties.size() == 0)
                 {
