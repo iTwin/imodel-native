@@ -603,6 +603,8 @@ struct Converter
         Utf8String m_pwUser;
         Utf8String m_pwPassword;
         Utf8String m_pwDataSource;
+        bool m_processAffected;
+
     public:
         Params() : m_v8sdkRelativeDir(L"DgnV8") // it's relative to the library's directory
             {
@@ -611,6 +613,7 @@ struct Converter
             m_skipUnchangedFiles = true;
             m_isPowerplatformBased = false;
             m_wantProvenanceInBim = false;
+            m_processAffected = false;
             }
 
         void SetInputRootDir(BentleyApi::BeFileNameCR fileName) {m_rootDir = fileName;}
@@ -634,6 +637,7 @@ struct Converter
         void SetProjectWiseUser(Utf8CP pwUser) {m_pwUser = pwUser;}
         void SetProjectWisePassword(Utf8CP pwPassword) {m_pwPassword = pwPassword;}
         void SetProjectWiseDataSource(Utf8CP pwDataSource) {m_pwDataSource = pwDataSource;}
+        void SetProcessAffected(bool processAffected) { m_processAffected = processAffected; }
 
         BeFileNameCR GetInputRootDir() const {return m_rootDir;}
         BeFileNameCR GetConfigFile() const {return m_configFile;}
@@ -656,6 +660,7 @@ struct Converter
         Utf8StringCR GetProjectWiseDataSource() const {return  m_pwDataSource;}
         bool GetIsPowerplatformBased() const {return m_isPowerplatformBased;}
         bool GetWantProvenanceInBim() const {return m_wantProvenanceInBim;}
+        bool GetProcessAffected() const { return m_processAffected; }
     };
 
     //! Guides the search for attachments with proxy graphics

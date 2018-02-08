@@ -362,7 +362,7 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
     auto rootModelId = _GetRootModelId();
 
     //  Load the root model and all of its reference attachments. Let V8 do this, so that we know that it's done correctly and in the same way that MicroStation would do it.
-    m_rootModelRef = m_rootFile->LoadRootModelById((Bentley::StatusInt*)&openStatus, rootModelId, /*fillCache*/true, /*loadRefs*/true, /*processAffected*/false);
+    m_rootModelRef = m_rootFile->LoadRootModelById((Bentley::StatusInt*)&openStatus, rootModelId, /*fillCache*/true, /*loadRefs*/true, GetParams().GetProcessAffected());
     if (NULL == m_rootModelRef)
         return openStatus;
 
