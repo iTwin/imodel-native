@@ -253,11 +253,32 @@ TEST_F(SchemaTest, DeleteKOQ)
         todelete.push_back(koq);
 
     for (auto koq : todelete)
-        {
         ASSERT_EQ(ECObjectsStatus::Success, schema->DeleteKindOfQuantity(*koq));
-        }
 
-    schema->DebugDump();
+    ASSERT_EQ(0, schema->GetKindOfQuantityCount());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    02/2018
+//--------------------------------------------------------------------------------------
+TEST_F(SchemaTest, DeleteUnitSystem)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0);
+    UnitSystemP system;
+    EC_ASSERT_SUCCESS(schema->CreateUnitSystem(system, "TestUnitSystem"));
+    ASSERT_NE(nullptr, system);
+    EXPECT_EQ(1, schema->GetUnitSystemCount());
+    EXPECT_EQ(system, schema->GetUnitSystemCP("TestUnitSystem"));
+
+    Units::UnitSystemCP unitSystem = Units::UnitRegistry::Instance().LookupUnitSystem("TestUnitSystem");
+    EXPECT_EQ(system, unitSystem);
+
+    EC_EXPECT_SUCCESS(schema->DeleteUnitSystem(*system));
+
+    Units::UnitSystemCP deletedUnitSystem = Units::UnitRegistry::Instance().LookupUnitSystem("TestUnitSystem");
+    EXPECT_EQ(nullptr, deletedUnitSystem);
+    EXPECT_EQ(nullptr, schema->GetUnitSystemCP("TestUnitSystem"));
     }
 
 //---------------------------------------------------------------------------------**//**
@@ -284,18 +305,18 @@ TEST_F(SchemaTest, TestCircularReference)
 TEST_F(SchemaTest, TestsLatestCompatible)
     {
     ECSchemaPtr testSchema;
-    ECSchemaReadContextPtr   schemaContext;
+    ECSchemaReadContextPtr schemaContext;
     SearchPathSchemaFileLocaterPtr schemaLocater;
     bvector<WString> searchPaths;
-    searchPaths.push_back (ECTestFixture::GetTestDataPath (L""));
-    schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater (searchPaths);
-    schemaContext = ECSchemaReadContext::CreateContext ();
-    schemaContext->AddSchemaLocater (*schemaLocater);
-    SchemaKey key ("Widgets", 01, 00);
-    testSchema = schemaContext->LocateSchema (key, SchemaMatchType::LatestWriteCompatible);
-    EXPECT_TRUE (testSchema.IsValid ());
-    EXPECT_TRUE (testSchema->GetVersionRead () == 9);
-    EXPECT_TRUE (testSchema->GetVersionMinor () == 6);
+    searchPaths.push_back (ECTestFixture::GetTestDataPath(L""));
+    schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
+    schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->AddSchemaLocater(*schemaLocater);
+    SchemaKey key("Widgets", 01, 00);
+    testSchema = schemaContext->LocateSchema(key, SchemaMatchType::LatestWriteCompatible);
+    EXPECT_TRUE(testSchema.IsValid());
+    EXPECT_EQ(9, testSchema->GetVersionRead());
+    EXPECT_EQ(6, testSchema->GetVersionMinor());
     }
 
 //---------------------------------------------------------------------------------**//**
@@ -324,7 +345,7 @@ TEST_F(SchemaTest, TestsLatest)
 TEST_F(SchemaTest, GetBaseClassPropertyWhenSchemaHaveDuplicatePrefixes)
     {
     ECSchemaPtr testSchema;
-    ECSchemaReadContextPtr   schemaContext;
+    ECSchemaReadContextPtr schemaContext;
     SearchPathSchemaFileLocaterPtr schemaLocater;
     bvector<WString> searchPaths;
     searchPaths.push_back (ECTestFixture::GetTestDataPath (L""));
@@ -334,13 +355,8 @@ TEST_F(SchemaTest, GetBaseClassPropertyWhenSchemaHaveDuplicatePrefixes)
     SchemaKey key ("DuplicatePrefixes", 01, 00);
     testSchema = schemaContext->LocateSchema (key, SchemaMatchType::Latest);
     EXPECT_TRUE (testSchema.IsValid ());
-    ECClassCP CircleClass = testSchema->GetClassCP ("Circle");
-    EXPECT_TRUE (CircleClass != NULL) << "Cannot Load Ellipse Class";
-
-    IECInstancePtr CircleClassInstance = CircleClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-    ECValue v;
-    v.SetUtf8CP ("test");
-    CircleClassInstance->SetValue ("Name", v);
+    ECClassCP circleClass = testSchema->GetClassCP ("Circle");
+    EXPECT_NE(nullptr, circleClass) << "Cannot Load Ellipse Class";
     }
 
 //---------------------------------------------------------------------------------**//**
@@ -349,7 +365,7 @@ TEST_F(SchemaTest, GetBaseClassPropertyWhenSchemaHaveDuplicatePrefixes)
 TEST_F(SchemaTest, GetBaseClassProperty)
     {
     ECSchemaPtr testSchema;
-    ECSchemaReadContextPtr   schemaContext;
+    ECSchemaReadContextPtr schemaContext;
     SearchPathSchemaFileLocaterPtr schemaLocater;
     bvector<WString> searchPaths;
     searchPaths.push_back (ECTestFixture::GetTestDataPath (L""));
@@ -359,13 +375,8 @@ TEST_F(SchemaTest, GetBaseClassProperty)
     SchemaKey key ("testschema", 01, 00);
     testSchema = schemaContext->LocateSchema (key, SchemaMatchType::Latest);
     EXPECT_TRUE (testSchema.IsValid ());
-    ECClassCP WheelsChildClass = testSchema->GetClassCP ("WheelsChild");
-    EXPECT_TRUE (WheelsChildClass != NULL) << "Cannot Load WheelsChild Class";
-
-    IECInstancePtr WheelsChildInstance = WheelsChildClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-    ECValue v;
-    v.SetUtf8CP ("test");
-    WheelsChildInstance->SetValue ("Name", v);
+    ECClassCP wheelsChildClass = testSchema->GetClassCP ("WheelsChild");
+    EXPECT_NE(nullptr, wheelsChildClass) << "Cannot Load WheelsChild Class";
     }
 
 //---------------------------------------------------------------------------------------
@@ -407,7 +418,6 @@ TEST_F(SchemaTest, HierarchyInCorrectOrder)
     EXPECT_TRUE(schemas[3]->GetAlias().EqualsIAscii("c"));
     EXPECT_TRUE(schemas[4]->GetAlias().EqualsIAscii("b"));
     EXPECT_TRUE(schemas[5]->GetAlias().EqualsIAscii("a"));
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -425,32 +435,32 @@ TEST_F(SchemaTest, ElementIdsAreNotSetAutomatically)
     PropertyCategoryP propCategory;
     uint64_t id(42);
 
-    ECSchema::CreateSchema (schema, "TestSchema", "ts", 5, 5, 5);
-    ASSERT_TRUE (schema.IsValid ());
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 5, 5);
+    ASSERT_TRUE(schema.IsValid());
     EXPECT_FALSE(schema->HasId()) << "Expected ECSchemaId to be unset when created via ECSchema::CreateSchema";
     schema->SetId(ECSchemaId(id));
     EXPECT_TRUE(schema->HasId()) << "Expected ECSchemaId to be set after calling ECSchema::SetId";
     EXPECT_EQ(id, schema->GetId().GetValue()) << "Expected ECSchemaId to be set to 42";
 
     //Create Domain Class
-    schema->CreateEntityClass (entityClass, "EntityClass");
-    ASSERT_TRUE (entityClass != NULL);
+    schema->CreateEntityClass(entityClass, "EntityClass");
+    ASSERT_NE(nullptr, entityClass);
     EXPECT_FALSE(entityClass->HasId()) << "Expected ECClassId to be unset when creating via ECSchema::CreateEntityClass";
     entityClass->SetId(ECClassId(id));
     EXPECT_TRUE(entityClass->HasId()) << "Expected ECClassId to be set after calling ECClass::SetId";
     EXPECT_EQ(id, entityClass->GetId().GetValue()) << "Expected ECClassId to be set to 42";
 
     //Create Struct
-    schema->CreateStructClass (structClass, "StructClass");
-    ASSERT_TRUE (structClass != NULL);
+    schema->CreateStructClass(structClass, "StructClass");
+    ASSERT_NE(nullptr, structClass);
     EXPECT_FALSE(structClass->HasId()) << "Expected ECClassId to be unset when creating via ECSchema::CreateStructClass";
     structClass->SetId(ECClassId(id));
     EXPECT_TRUE(structClass->HasId()) << "Expected ECClassId to be set on struct after calling ECClass::SetId";
     EXPECT_EQ(id, structClass->GetId().GetValue()) << "Expected ECClassId to be set to 42 on struct";
 
     //Create customAttributeClass
-    schema->CreateCustomAttributeClass (customAttributeClass, "CustomAttributeClass");
-    ASSERT_TRUE (customAttributeClass != NULL);
+    schema->CreateCustomAttributeClass(customAttributeClass, "CustomAttributeClass");
+    ASSERT_NE(nullptr, customAttributeClass);
     EXPECT_FALSE(customAttributeClass->HasId()) << "Expected ECClassId to be unset when creating via ECSchema::CreateCustomAttributeClass";
     customAttributeClass->SetId(ECClassId(id));
     EXPECT_TRUE(customAttributeClass->HasId()) << "Expected ECClassId to be set on custom attribute after calling ECClass::SetId";
@@ -458,7 +468,7 @@ TEST_F(SchemaTest, ElementIdsAreNotSetAutomatically)
 
     //Create RelationshipClass
     schema->CreateRelationshipClass(relationshipClass, "RelationshipClass");
-    ASSERT_TRUE(relationshipClass != NULL);
+    ASSERT_NE(nullptr, relationshipClass);
     relationshipClass->GetSource().AddClass(*entityClass);
     relationshipClass->GetTarget().AddClass(*entityClass);
     EXPECT_FALSE(relationshipClass->HasId()) << "Expected ECClassId to be unset when creating via ECSchema::CreateRelationshipClass";
@@ -468,7 +478,7 @@ TEST_F(SchemaTest, ElementIdsAreNotSetAutomatically)
 
     //Create Enumeration
     schema->CreateEnumeration(enumeration, "Enumeration", PrimitiveType::PRIMITIVETYPE_Integer);
-    ASSERT_TRUE(enumeration != nullptr);
+    ASSERT_NE(nullptr, enumeration);
     EXPECT_FALSE(enumeration->HasId()) << "Expected ECEnumerationId to be unset when creating via ECSchema::CreateEnumeration";
     enumeration->SetId(ECEnumerationId(id));
     EXPECT_TRUE(enumeration->HasId()) << "Expected ECEnumerationId to be set after calling ECEnumeration::SetId";
@@ -476,7 +486,7 @@ TEST_F(SchemaTest, ElementIdsAreNotSetAutomatically)
 
     //Create KindOfQuantity
     schema->CreateKindOfQuantity(koq, "KindOfQuantity");
-    ASSERT_TRUE(koq != nullptr);
+    ASSERT_NE(nullptr, koq);
     EXPECT_FALSE(koq->HasId()) << "Expected KindOfQuantityId to be unset when creating via ECSchema::CreateKindOfQuantity";
     koq->SetId(KindOfQuantityId(id));
     EXPECT_TRUE(koq->HasId()) << "Expected KindOfQuantityId to be set after calling KindOfQuantity::SetId";
@@ -484,7 +494,7 @@ TEST_F(SchemaTest, ElementIdsAreNotSetAutomatically)
 
     //Create PropertyCategory
     schema->CreatePropertyCategory(propCategory, "PropertyCategory");
-    ASSERT_TRUE(propCategory != nullptr);
+    ASSERT_NE(nullptr, propCategory);
     EXPECT_FALSE(propCategory->HasId()) << "Expected PropertyCategoryId to be unset when creating via ECSchema::CreatePropertyCategory";
     propCategory->SetId(PropertyCategoryId(id));
     EXPECT_TRUE(propCategory->HasId()) << "Expected PropertyCategoryId to be set after calling PropertyCategory::SetId";
@@ -493,34 +503,34 @@ TEST_F(SchemaTest, ElementIdsAreNotSetAutomatically)
     //Add Property of primitive type to entity class
     PrimitiveECPropertyP primitiveProperty;
     entityClass->CreatePrimitiveProperty(primitiveProperty, "PrimitiveProperty", PrimitiveType::PRIMITIVETYPE_Boolean);
-    ASSERT_TRUE(primitiveProperty != nullptr);
+    ASSERT_NE(nullptr, primitiveProperty);
     EXPECT_FALSE(primitiveProperty->HasId()) << "Expected ECPropertyId to be unset when creating  ECClass::CreatePrimitiveProperty";
     primitiveProperty->SetId(ECPropertyId(id));
     EXPECT_TRUE(primitiveProperty->HasId()) << "Expected ECPropertyId to be set on primitive after calling ECProperty::SetId";
     EXPECT_EQ(id, primitiveProperty->GetId().GetValue()) << "Expected ECPropertyId to be set to 42 on primitive";
 
     //Add Property of Array type to structClass
-    PrimitiveArrayECPropertyP MyArrayProp;
-    structClass->CreatePrimitiveArrayProperty (MyArrayProp, "ArrayProperty");
-    ASSERT_TRUE (MyArrayProp != NULL);
-    EXPECT_FALSE(MyArrayProp->HasId()) << "Expected ECPropertyId to be unset when creating  ECClass::CreateArrayProperty";
-    MyArrayProp->SetId(ECPropertyId(id));
-    EXPECT_TRUE(MyArrayProp->HasId()) << "Expected ECPropertyId to be set on array after calling ECProperty::SetId";
-    EXPECT_EQ(id, MyArrayProp->GetId().GetValue()) << "Expected ECPropertyId to be set to 42 on array";
+    PrimitiveArrayECPropertyP arrProp;
+    structClass->CreatePrimitiveArrayProperty (arrProp, "ArrayProperty");
+    ASSERT_NE(nullptr, arrProp);
+    EXPECT_FALSE(arrProp->HasId()) << "Expected ECPropertyId to be unset when creating  ECClass::CreateArrayProperty";
+    arrProp->SetId(ECPropertyId(id));
+    EXPECT_TRUE(arrProp->HasId()) << "Expected ECPropertyId to be set on array after calling ECProperty::SetId";
+    EXPECT_EQ(id, arrProp->GetId().GetValue()) << "Expected ECPropertyId to be set to 42 on array";
 
     //Add Property Of Struct type to custom attribute
-    StructECPropertyP PropertyOfCustomAttribute;
-    customAttributeClass->CreateStructProperty (PropertyOfCustomAttribute, "PropertyOfCustomAttribute", *structClass);
-    ASSERT_TRUE (PropertyOfCustomAttribute != NULL);
-    EXPECT_FALSE(PropertyOfCustomAttribute->HasId()) << "Expected ECPropertyId to be unset when creating  ECClass::CreateStructProperty";
-    PropertyOfCustomAttribute->SetId(ECPropertyId(id));
-    EXPECT_TRUE(PropertyOfCustomAttribute->HasId()) << "Expected ECPropertyId to be set on struct after calling ECProperty::SetId";
-    EXPECT_EQ(id, PropertyOfCustomAttribute->GetId().GetValue()) << "Expected ECPropertyId to be set to 42 on struct";
+    StructECPropertyP propOfCustomAttribute;
+    customAttributeClass->CreateStructProperty (propOfCustomAttribute, "PropertyOfCustomAttribute", *structClass);
+    ASSERT_NE(nullptr, propOfCustomAttribute);
+    EXPECT_FALSE(propOfCustomAttribute->HasId()) << "Expected ECPropertyId to be unset when creating  ECClass::CreateStructProperty";
+    propOfCustomAttribute->SetId(ECPropertyId(id));
+    EXPECT_TRUE(propOfCustomAttribute->HasId()) << "Expected ECPropertyId to be set on struct after calling ECProperty::SetId";
+    EXPECT_EQ(id, propOfCustomAttribute->GetId().GetValue()) << "Expected ECPropertyId to be set to 42 on struct";
 
     //Add Navgation property to entity class
     NavigationECPropertyP navigationProperty;
     entityClass->CreateNavigationProperty(navigationProperty, "NavigationProperty", *relationshipClass, ECRelatedInstanceDirection::Forward);
-    ASSERT_TRUE(navigationProperty != nullptr);
+    ASSERT_NE(nullptr, navigationProperty);
     EXPECT_FALSE(navigationProperty->HasId()) << "Expected ECPropertyId to be unset when creating  ECClass::CreateNavigationProperty";
     navigationProperty->SetId(ECPropertyId(id));
     EXPECT_TRUE(navigationProperty->HasId()) << "Expected ECPropertyId to be set on navigation property after calling ECProperty::SetId";

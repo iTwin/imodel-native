@@ -1094,6 +1094,18 @@ template<> ECObjectsStatus ECSchema::AddSchemaChild<KindOfQuantity>(KindOfQuanti
 template<> ECObjectsStatus ECSchema::AddSchemaChild<UnitSystem>(UnitSystemP child, ECSchemaElementType childType) {return AddSchemaChildToMap<UnitSystem, UnitSystemMap>(child, &m_unitSystemMap, childType);}
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    02/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus ECSchema::DeleteUnitSystem(UnitSystemR unitSystem)
+    {
+    // RemoveSystem will return nullptr if it cannot find the UnitSystem. No need
+    // to check since we still want to check the Schema for the unitSystem.
+    Units::UnitRegistry::Instance().RemoveSystem(unitSystem.GetName().c_str());
+
+    return DeleteSchemaChild<UnitSystem, UnitSystemMap>(unitSystem, &m_unitSystemMap);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
 bool ECSchema::NamedElementExists(Utf8CP name)

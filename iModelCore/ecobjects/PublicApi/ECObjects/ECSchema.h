@@ -3359,7 +3359,7 @@ public:
 
     UnitSystemContainerCR GetUnitSystems() const {return m_unitSystemContainer;} //!< Returns an iterable container of UnitSystems sorted by name.
     uint32_t GetUnitSystemCount() const {return (uint32_t)m_unitSystemMap.size();} //!< Gets the number of UnitSystems in the schema.
-    ECObjectsStatus DeleteUnitSystem(UnitSystemR unitSystem) {BeAssert(false);  return DeleteSchemaChild<UnitSystem, UnitSystemMap>(unitSystem, &m_unitSystemMap);} //!< Removes a UnitSystem from this schema.
+    ECOBJECTS_EXPORT ECObjectsStatus DeleteUnitSystem(UnitSystemR unitSystem); //!< Removes a UnitSystem from this schema.
 
     //! Indicates whether this schema is a so-called @b dynamic schema by
     //! checking whether the @b DynamicSchema custom attribute from the standard schema @b CoreCustomAttributes
