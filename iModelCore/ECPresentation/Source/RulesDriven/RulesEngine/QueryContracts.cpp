@@ -944,10 +944,12 @@ bvector<PresentationQueryContractFieldCPtr> ECPropertyGroupingNodesQueryContract
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool ProcessLabelOverridesPolymorpically(bvector<ECPropertyCP>& properties, ECClassCR ecClass, ContentDescriptor::DisplayLabelField const* field)
     {
+    if (!properties.empty())
+        return true;
     for (ECClassCP baseClass : ecClass.GetBaseClasses())
         {
         properties = field->GetPropertiesForClass(baseClass);
-        if (!properties.empty() || ProcessLabelOverridesPolymorpically(properties, *baseClass, field))
+        if (!ProcessLabelOverridesPolymorpically(properties, *baseClass, field))
             return true;
         }
     return false;

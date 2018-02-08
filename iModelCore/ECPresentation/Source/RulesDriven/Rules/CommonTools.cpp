@@ -111,16 +111,16 @@ bvector<Utf8String> CommonTools::ParsePropertiesNames(Utf8StringCR properties)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void ReverseString(Utf8StringR str)
+/*static void ReverseString(Utf8StringR str)
     {
     for (size_t i = 0; i < str.size() / 2; i++)
         std::swap(str[i], str[str.size() - i - 1]);
-    }
+    }*/
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String ToBase36String(uint64_t i)
+/*static Utf8String ToBase36String(uint64_t i)
     {
     static Utf8CP chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     Utf8String encoded;
@@ -131,15 +131,15 @@ static Utf8String ToBase36String(uint64_t i)
         }
     ReverseString(encoded);
     return !encoded.empty() ? encoded : "0";
-    }
+    }*/
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String CommonTools::GetDefaultDisplayLabel(Utf8StringCR className, uint64_t id)
+Utf8String CommonTools::GetDefaultDisplayLabel(Utf8StringCR className, uint64_t)
     {
     Utf8String label = className;
-    label.append(" ");
-    label.append(ToBase36String(id));
+    //label.append(" ");
+    //label.append(ToBase36String(id));
     return label;
     }

@@ -639,7 +639,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_SkipsSpecifiedNu
     rules->AddPresentationRule(*rule);
     
     // request for nodes
-    RulesDrivenECPresentationManager::NavigationOptions options("Paging_SkipsSpecifiedNumberOfNodes", TargetTree_MainTree);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_MainTree);
     DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(2), options.GetJson()).get();
     
     // expect 3 nodes: C, D, E
@@ -3194,7 +3194,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_C
     rules->AddPresentationRule(*groupingRule);
 
     // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Grouping_PropertyGroup_CreatesGroupForSingleItem", TargetTree_MainTree).GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
     DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
 
     // make sure we have 1 widget property grouping node
