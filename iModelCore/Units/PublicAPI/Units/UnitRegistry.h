@@ -74,7 +74,7 @@ private:
     template <typename PHENOM_TYPE>
     PHENOM_TYPE* AddPhenomenonInternal(Utf8CP phenomenaName, Utf8CP definition)
         {
-        static_assert(std::is_base_of<Phenomenon, PHENOM_TYPE>::value, "PHENOM_TYPE must derive from Units::Phenomenon");
+        static_assert((std::is_base_of<Phenomenon, PHENOM_TYPE>::value), "PHENOM_TYPE must derive from Units::Phenomenon");
         if (Utf8String::IsNullOrEmpty(phenomenaName))
             {
             NativeLogging::LoggingManager::GetLogger(L"UnitsNative")->error("Failed to create Phenomenon because name is null");
