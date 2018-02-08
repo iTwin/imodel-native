@@ -23,7 +23,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //ProfileVersion::Minor == ECSchema VersionWrite
 //ProfileVersion::Sub1 == ECSchema VersionMinor
 //static
-ProfileVersion const* ChangeManager::s_expectedCacheVersion = new ProfileVersion(1, 0, 0, 0);
+ProfileVersion const* ChangeManager::s_expectedCacheVersion = new ProfileVersion(1, 0, 1, 0);
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Krischan.Eberle     12/2017
@@ -181,7 +181,7 @@ DbResult ChangeManager::CreateChangeCacheFile(ECDbR cacheDb, BeFileNameCR cacheP
     ecdbStandardSchemasFolder.AppendToPath(L"ECDb");
     context->AddSchemaPath(ecdbStandardSchemasFolder);
 
-    ECN::SchemaKey schemaKey(ECSCHEMA_ECDbChange, 1, 0, 0);
+    ECN::SchemaKey schemaKey(ECSCHEMA_ECDbChange, 1, 0, 1);
     if (context->LocateSchema(schemaKey, ECN::SchemaMatchType::LatestWriteCompatible) == nullptr)
         {
         m_ecdb.GetImpl().Issues().ReportV("Failed to create new Change cache file '%s': Could not locate ECSchema " ECSCHEMA_ECDbChange, cachePath.GetNameUtf8().c_str());

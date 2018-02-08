@@ -127,12 +127,22 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
             if (ECObjectsStatus::Success != GetClass().CreatePrimitiveProperty(primProp, encodedPropName, typeInfo.GetPrimitiveType()))
                 return ECSqlStatus::Error;
 
-            //This is a workaround to expose the information that a generated property refers to an Id system property.
-            //iModelJs needs that information to format aliased system property expressions as id.
-            if (selectClauseItemPropNameExp != nullptr && selectClauseItemPropNameExp->GetSystemPropertyInfo().IsId())
+            if (selectClauseItemPropNameExp != nullptr)
                 {
-                BeAssert(primProp->GetType() == PRIMITIVETYPE_Long);
-                primProp->SetExtendedTypeName("Id");
+                if (selectClauseItemPropNameExp->GetSystemPropertyInfo().IsId())
+                    {
+                    //This is a workaround to expose the information that a generated property refers to an Id system property.
+                    //iModelJs needs that information to format aliased system property expressions as id.
+                    BeAssert(primProp->GetType() == PRIMITIVETYPE_Long);
+                    primProp->SetExtendedTypeName("Id");
+                    }
+                else if (!selectClauseItemPropNameExp->IsPropertyRef())
+                    {
+                    //Extended types are preserved as well
+                    ECPropertyCR prop = selectClauseItemPropNameExp->GetPropertyMap().GetProperty();
+                    if (prop.HasExtendedType())
+                        primProp->SetExtendedTypeName(prop.GetAsPrimitiveProperty()->GetExtendedTypeName().c_str());
+                    }
                 }
 
             generatedPropertyP = primProp;
@@ -163,6 +173,14 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
             PrimitiveArrayECPropertyP arrayProp = nullptr;
             if (ECObjectsStatus::Success != GetClass().CreatePrimitiveArrayProperty(arrayProp, encodedPropName, typeInfo.GetPrimitiveType()))
                 return ECSqlStatus::Error;
+
+            if (selectClauseItemPropNameExp != nullptr && !selectClauseItemPropNameExp->IsPropertyRef())
+                {
+                //Extended types are preserved as well
+                ECPropertyCR prop = selectClauseItemPropNameExp->GetPropertyMap().GetProperty();
+                if (prop.HasExtendedType())
+                    arrayProp->SetExtendedTypeName(prop.GetAsPrimitiveArrayProperty()->GetExtendedTypeName().c_str());
+                }
 
             generatedPropertyP = arrayProp;
             break;
