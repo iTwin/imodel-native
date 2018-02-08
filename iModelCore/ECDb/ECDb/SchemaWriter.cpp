@@ -845,7 +845,7 @@ BentleyStatus SchemaWriter::InsertSchemaEntry(ECSchemaCR schema)
     {
     BeAssert(!schema.HasId());
 
-    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO main.ec_Schema(Name,DisplayLabel,Description,Alias,VersionDigit1,VersionDigit2,VersionDigit3,OriginalECVersionMajor,OriginalECVersionMinor) VALUES(?,?,?,?,?,?,?,?,?)");
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO main.ec_Schema(Name,DisplayLabel,Description,Alias,VersionDigit1,VersionDigit2,VersionDigit3,ECVersion,OriginalECXmlVersionMajor,OriginalECXmlVersionMinor) VALUES(?,?,?,?,?,?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
@@ -879,15 +879,19 @@ BentleyStatus SchemaWriter::InsertSchemaEntry(ECSchemaCR schema)
     if (BE_SQLITE_OK != stmt->BindInt64(7, (int64_t) schema.GetVersionMinor()))
         return ERROR;
 
-    //original version of 0.0 is considered an unset versio
+    //Persist uint32_t as int64 to not lose unsigned-ness
+    if (BE_SQLITE_OK != stmt->BindInt64(8, (int64_t) schema.GetECVersion()))
+        return ERROR;
+
+    //original version of 0.0 is considered an unset version
     if (schema.GetOriginalECXmlVersionMajor() > 0 || schema.GetOriginalECXmlVersionMinor() > 0)
         {
         //Persist uint32_t as int64 to not lose unsigned-ness
-        if (BE_SQLITE_OK != stmt->BindInt64(8, (int64_t) schema.GetOriginalECXmlVersionMajor()))
+        if (BE_SQLITE_OK != stmt->BindInt64(9, (int64_t) schema.GetOriginalECXmlVersionMajor()))
             return ERROR;
 
         //Persist uint32_t as int64 to not lose unsigned-ness
-        if (BE_SQLITE_OK != stmt->BindInt64(9, (int64_t) schema.GetOriginalECXmlVersionMinor()))
+        if (BE_SQLITE_OK != stmt->BindInt64(10, (int64_t) schema.GetOriginalECXmlVersionMinor()))
             return ERROR;
         }
 
@@ -2692,18 +2696,17 @@ BentleyStatus SchemaWriter::VerifyEnumeratorChanges(ECEnumerationCR oldEnum, ECE
             }
         }
 
-    //only need to iterate over deleted enumerators. Any newEnumerators which this might miss, is fine, as they are always supported
+    const uint32_t oldSchemaOriginalVersionMajor = oldEnum.GetSchema().GetOriginalECXmlVersionMajor();
+    const uint32_t oldSchemaOriginalVersionMinor = oldEnum.GetSchema().GetOriginalECXmlVersionMinor();
+    const bool enumeratorNameChangeAllowed = oldSchemaOriginalVersionMajor < 3 || (oldSchemaOriginalVersionMajor == 3 && oldSchemaOriginalVersionMinor < 2);
+
+    //only need to iterate over deleted enumerators. Any new Enumerators which this might miss, is fine, as they are always supported
     for (bpair<int, ECEnumeratorChange*> const& kvPair : deletedEnumerators)
         {
         const int val = kvPair.first;
-        Utf8StringCR oldEnumeratorName = kvPair.second->GetName().GetOld().Value();
-        if (newEnumerators.find(val) != newEnumerators.end())
-            {
-            //We consider this a name change as the int values are equal. Now check whether the old enum name is valid or not
-            Utf8String defaultName = ECEnumerator::DetermineName(oldEnum.GetName(), nullptr, &val);
-            if (oldEnumeratorName.EqualsIAscii(defaultName))
-                continue; // only supported case of changing an enumerator name
-            }
+        //We consider this a name change as the int values are equal.
+        if (enumeratorNameChangeAllowed && newEnumerators.find(val) != newEnumerators.end())
+            continue; 
 
         //no counterpart with matching value found or old name is not the auto-generated EC3.2 conversion default name
         Issues().ReportV("ECSchema Upgrade failed. An enumerator was deleted from Enumeration %s which is not supported.", oldEnum.GetFullName().c_str());
@@ -2787,6 +2790,25 @@ BentleyStatus SchemaWriter::UpdateSchema(SchemaChange& schemaChange, ECSchemaCR 
         updateBuilder.AddSetExp("Name", schemaChange.GetName().GetNew().Value().c_str());
         }
 
+    if (schemaChange.GetAlias().IsValid())
+        {
+        if (schemaChange.GetAlias().GetNew().IsNull())
+            {
+            Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Alias must always be set.",
+                             oldSchema.GetFullSchemaName().c_str());
+            return ERROR;
+            }
+
+        if (m_ecdb.Schemas().Main().ContainsSchema(schemaChange.GetAlias().GetNew().Value(), SchemaLookupMode::ByAlias))
+            {
+            Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Alias is already used by another existing ECSchema.",
+                             oldSchema.GetFullSchemaName().c_str());
+            return ERROR;
+            }
+
+        updateBuilder.AddSetExp("Alias", schemaChange.GetAlias().GetNew().Value().c_str());
+        }
+
     if (schemaChange.GetDisplayLabel().IsValid())
         {
         if (schemaChange.GetDisplayLabel().GetNew().IsNull())
@@ -2803,7 +2825,8 @@ BentleyStatus SchemaWriter::UpdateSchema(SchemaChange& schemaChange, ECSchemaCR 
             updateBuilder.AddSetExp("Description", schemaChange.GetDescription().GetNew().Value().c_str());
         }
 
-    if (schemaChange.GetVersionRead().IsValid())
+    const bool versionReadHasChanged = schemaChange.GetVersionRead().IsValid();
+    if (versionReadHasChanged)
         {
         if (schemaChange.GetVersionRead().GetValue(ValueId::Deleted).Value() > schemaChange.GetVersionRead().GetValue(ValueId::New).Value())
             {
@@ -2816,9 +2839,11 @@ BentleyStatus SchemaWriter::UpdateSchema(SchemaChange& schemaChange, ECSchemaCR 
         updateBuilder.AddSetExp("VersionDigit1", schemaChange.GetVersionRead().GetNew().Value());
         }
 
-    if (schemaChange.GetVersionWrite().IsValid())
+    const bool versionWriteHasChanged = schemaChange.GetVersionWrite().IsValid();
+    if (versionWriteHasChanged)
         {
-        if (schemaChange.GetVersionWrite().GetValue(ValueId::Deleted).Value() > schemaChange.GetVersionWrite().GetValue(ValueId::New).Value())
+        //if major version has incremented, read version may be decremented
+        if (!versionReadHasChanged && schemaChange.GetVersionWrite().GetValue(ValueId::Deleted).Value() > schemaChange.GetVersionWrite().GetValue(ValueId::New).Value())
             {
             Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Decreasing 'VersionWrite' of an ECSchema is not supported.",
                                       oldSchema.GetFullSchemaName().c_str());
@@ -2830,7 +2855,8 @@ BentleyStatus SchemaWriter::UpdateSchema(SchemaChange& schemaChange, ECSchemaCR 
 
     if (schemaChange.GetVersionMinor().IsValid())
         {
-        if (schemaChange.GetVersionMinor().GetValue(ValueId::Deleted).Value() > schemaChange.GetVersionMinor().GetValue(ValueId::New).Value())
+        //if the higher digits have changed, minor version may be decremented
+        if (!versionReadHasChanged && !versionWriteHasChanged && schemaChange.GetVersionMinor().GetValue(ValueId::Deleted).Value() > schemaChange.GetVersionMinor().GetValue(ValueId::New).Value())
             {
             Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Decreasing 'VersionMinor' of an ECSchema is not supported.",
                                       oldSchema.GetFullSchemaName().c_str());
@@ -2840,24 +2866,47 @@ BentleyStatus SchemaWriter::UpdateSchema(SchemaChange& schemaChange, ECSchemaCR 
         updateBuilder.AddSetExp("VersionDigit3", schemaChange.GetVersionMinor().GetNew().Value());
         }
 
-    if (schemaChange.GetAlias().IsValid())
+    if (schemaChange.GetECVersion().IsValid())
         {
-        if (schemaChange.GetAlias().GetNew().IsNull())
+        if ((int64_t) schemaChange.GetECVersion().GetOld().Value() > (int64_t) schemaChange.GetECVersion().GetNew().Value())
             {
-            Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Alias must always be set.",
-                                      oldSchema.GetFullSchemaName().c_str());
+            Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Decreasing 'ECVersion' of an ECSchema is not supported.",
+                             oldSchema.GetFullSchemaName().c_str());
             return ERROR;
             }
 
-        if (m_ecdb.Schemas().Main().ContainsSchema(schemaChange.GetAlias().GetNew().Value(), SchemaLookupMode::ByAlias))
-            {
-            Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Alias is already used by another existing ECSchema.",
-                                      oldSchema.GetFullSchemaName().c_str());
-            return ERROR;
-            }
-
-        updateBuilder.AddSetExp("Alias", schemaChange.GetAlias().GetNew().Value().c_str());
+        updateBuilder.AddSetExp("ECVersion", (int64_t) schemaChange.GetECVersion().GetNew().Value());
         }
+
+    const bool originalVersionMajorHasChanged = schemaChange.GetOriginalECXmlVersionMajor().IsValid();
+    if (originalVersionMajorHasChanged)
+        {
+        uint32_t newVal = schemaChange.GetOriginalECXmlVersionMajor().GetNew().Value();
+        if (schemaChange.GetOriginalECXmlVersionMajor().GetOld().Value() > newVal)
+            {
+            Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Decreasing 'OriginalECXmlVersionMajor' of an ECSchema is not supported.",
+                             oldSchema.GetFullSchemaName().c_str());
+            return ERROR;
+            }
+
+        updateBuilder.AddSetExp("OriginalECXmlVersionMajor", newVal);
+        }
+
+    if (schemaChange.GetOriginalECXmlVersionMinor().IsValid())
+        {
+        uint32_t newVal = schemaChange.GetOriginalECXmlVersionMinor().GetNew().Value();
+
+        //if the higher digits have changed, minor version may be decremented
+        if (!originalVersionMajorHasChanged && schemaChange.GetOriginalECXmlVersionMinor().GetOld().Value() > newVal)
+            {
+            Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Decreasing 'OriginalECXmlVersionMinor' of an ECSchema is not supported.",
+                             oldSchema.GetFullSchemaName().c_str());
+            return ERROR;
+            }
+
+        updateBuilder.AddSetExp("OriginalECXmlVersionMinor", newVal);
+        }
+
 
     updateBuilder.AddWhereExp("Id", schemaId.GetValue());//this could even be on name
     if (updateBuilder.IsValid())

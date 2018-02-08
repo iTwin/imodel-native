@@ -213,8 +213,9 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
                                     "VersionDigit1 INTEGER NOT NULL,"
                                     "VersionDigit2 INTEGER NOT NULL,"
                                     "VersionDigit3 INTEGER NOT NULL,"
-                                    "OriginalECVersionMajor INTEGER,"
-                                    "OriginalECVersionMinor INTEGER)");
+                                    "ECVersion INTEGER,"
+                                    "OriginalECXmlVersionMajor INTEGER,"
+                                    "OriginalECXmlVersionMinor INTEGER)");
     if (BE_SQLITE_OK != stat)
         return stat;
 

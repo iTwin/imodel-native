@@ -19,6 +19,13 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+--------
 DbResult ProfileUpgrader_4002::_Upgrade(ECDbCR ecdb) const
     {
+    DbResult stat = ecdb.ExecuteDdl("ALTER TABLE " TABLE_Schema " ADD COLUMN ECVersion INTEGER");
+    if (BE_SQLITE_OK != stat)
+        {
+        LOG.errorv("ECDb profile upgrade failed: Could not add column ECVersion to table " TABLE_Schema ": %s.", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
     DbResult stat = ecdb.ExecuteDdl("ALTER TABLE " TABLE_Schema " ADD COLUMN OriginalECVersionMajor INTEGER");
     if (BE_SQLITE_OK != stat)
         {
@@ -33,7 +40,7 @@ DbResult ProfileUpgrader_4002::_Upgrade(ECDbCR ecdb) const
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    LOG.debug("ECDb profile upgrade: Added columns OriginalECVersionMajor and OriginalECVersionMinor to table " TABLE_Schema ".");
+    LOG.debug("ECDb profile upgrade: Added columns ECVersion, OriginalECVersionMajor and OriginalECVersionMinor to table " TABLE_Schema ".");
 
     stat = UpgradeECEnums(ecdb);
     if (BE_SQLITE_OK != stat)

@@ -1003,7 +1003,7 @@ BentleyStatus SchemaReader::LoadSchemaEntitiesFromDb(SchemaDbEntry* ecSchemaKey,
 BentleyStatus SchemaReader::LoadSchemaFromDb(SchemaDbEntry*& schemaEntry, ECSchemaId ecSchemaId) const
     {
     Utf8CP tableSpace = GetTableSpace().GetName().c_str();
-    CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT s.Name, s.DisplayLabel,s.Description,s.Alias,s.VersionDigit1,s.VersionDigit2,s.VersionDigit3,s.OriginalECVersionMajor,s.OriginalECVersionMinor,"
+    CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT s.Name, s.DisplayLabel,s.Description,s.Alias,s.VersionDigit1,s.VersionDigit2,s.VersionDigit3,s.OriginalECXmlVersionMajor,s.OriginalECXmlVersionMinor,"
                                                         "(SELECT COUNT(*) FROM [%s]." TABLE_Class "  c WHERE s.Id = c.SchemaId) + "
                                                         "(SELECT COUNT(*) FROM [%s]." TABLE_Enumeration " e WHERE s.Id = e.SchemaId) + "
                                                         "(SELECT COUNT(*) FROM [%s]." TABLE_KindOfQuantity " koq WHERE s.Id = koq.SchemaId) + "
@@ -1026,6 +1026,7 @@ BentleyStatus SchemaReader::LoadSchemaFromDb(SchemaDbEntry*& schemaEntry, ECSche
     uint32_t versionMajor = (uint32_t) stmt->GetValueInt64(4);
     uint32_t versionWrite = (uint32_t) stmt->GetValueInt64(5);
     uint32_t versionMinor = (uint32_t) stmt->GetValueInt64(6);
+
     Nullable<uint32_t> originalECVersionMajor, originalECVersionMinor;
     if (!stmt->IsColumnNull(7))
         originalECVersionMajor = (uint32_t) stmt->GetValueInt64(7);

@@ -109,10 +109,20 @@ void ECDbMetaSchemaECSqlTestFixture::AssertSchemaDef(ECSchemaCR expectedSchema, 
             ASSERT_EQ(expectedSchema.GetVersionMinor(), (uint32_t) val.GetInt()) << "ECSchemaDef.VersionMinor";
         else if (colName.EqualsI("VersionWrite"))
             ASSERT_EQ(expectedSchema.GetVersionWrite(), (uint32_t) val.GetInt()) << "ECSchemaDef.VersionWrite";
-        else if (colName.EqualsI("OriginalECVersionMajor"))
-            ASSERT_EQ(expectedSchema.GetOriginalECXmlVersionMajor(), (uint32_t) val.GetInt()) << "ECSchemaDef.OriginalECVersionMajor";
-        else if (colName.EqualsI("OriginalECVersionMinor"))
-            ASSERT_EQ(expectedSchema.GetOriginalECXmlVersionMinor(), (uint32_t) val.GetInt()) << "ECSchemaDef.OriginalECVersionMinor";
+        else if (colName.EqualsI("ECVersion"))
+            {
+            if (!val.IsNull())
+                {
+                const ECVersion actualVersion = (ECVersion) val.GetInt();
+                ASSERT_NE(ECVersion::V2_0, actualVersion) << "ECVersion is only persisted since V3.2";
+                ASSERT_NE(ECVersion::V3_0, actualVersion) << "ECVersion is only persisted since V3.2";
+                ASSERT_NE(ECVersion::V3_1, actualVersion) << "ECVersion is only persisted since V3.2";
+                }
+            }
+        else if (colName.EqualsI("OriginalECXmlVersionMajor"))
+            ASSERT_EQ(expectedSchema.GetOriginalECXmlVersionMajor(), (uint32_t) val.GetInt()) << "ECSchemaDef.OriginalECXmlVersionMajor";
+        else if (colName.EqualsI("OriginalECXmlVersionMinor"))
+            ASSERT_EQ(expectedSchema.GetOriginalECXmlVersionMinor(), (uint32_t) val.GetInt()) << "ECSchemaDef.OriginalECXmlVersionMinor";
         else
             FAIL() << "ECProperty ECSchemaDef." << colName.c_str() << " not tested. Test needs to be adjusted";
         }

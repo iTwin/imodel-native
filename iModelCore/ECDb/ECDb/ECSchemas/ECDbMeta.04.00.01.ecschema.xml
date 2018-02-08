@@ -33,8 +33,9 @@
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="OriginalECVersionMajor" typeName="int"/>
-        <ECProperty propertyName="OriginalECVersionMinor" typeName="int"/>
+        <ECProperty propertyName="ECVersion" typeName="int"/>
+        <ECProperty propertyName="OriginalECXmlVersionMajor" typeName="int"/>
+        <ECProperty propertyName="OriginalECXmlVersionMinor" typeName="int"/>
     </ECEntityClass>
     <ECEntityClass typeName="ECClassDef" description="ECClass" displayLabel="ECClass" modifier="Sealed">
         <ECCustomAttributes>
