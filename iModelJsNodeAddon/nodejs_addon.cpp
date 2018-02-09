@@ -2142,7 +2142,6 @@ public:
           InstanceMethod("dispose", &AddonECSqlStatement::Dispose),
           InstanceMethod("clearBindings", &AddonECSqlStatement::ClearBindings),
           InstanceMethod("getBinder", &AddonECSqlStatement::GetBinder),
-          InstanceMethod("bindValues", &AddonECSqlStatement::BindValues),
           InstanceMethod("step", &AddonECSqlStatement::Step),
           InstanceMethod("stepForInsert", &AddonECSqlStatement::StepForInsert),
           InstanceMethod("getColumnCount", &AddonECSqlStatement::GetColumnCount),
@@ -2246,23 +2245,6 @@ public:
         IECSqlBinder& binder = m_stmt->GetBinder(paramIndex);
         return AddonECSqlBinder::New(info.Env(), binder, *m_stmt->GetECDb());
         }
-
-    //! @deprecated Use AddonECSqlStatement::GetBinder instead
-    Napi::Value BindValues(const Napi::CallbackInfo& info)
-       {
-       MUST_HAVE_M_STMT;
-       REQUIRE_ARGUMENT_STRING(0, valuesStr);
-
-       //BeSqliteDbMutexHolder serializeAccess(*db->m_addondb); // hold mutex, so that we have a chance to get last ECDb error message
-
-       auto status = AddonUtils::JsonBinder::BindValues(*m_stmt, Json::Value::From(valuesStr));
-
-       if (BSISUCCESS != status)
-           return NapiUtils::CreateErrorObject0(BE_SQLITE_ERROR, AddonUtils::GetLastECDbIssue().c_str(), Env());
-
-       return NapiUtils::CreateErrorObject0(BE_SQLITE_OK, nullptr, Env());
-       }
-
 
     Napi::Value Step(const Napi::CallbackInfo& info)
         {

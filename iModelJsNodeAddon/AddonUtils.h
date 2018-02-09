@@ -43,19 +43,6 @@ public:
     static BeSQLite::EC::ECInstanceId GetInstanceIdFromInstance(BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
     static void InitLogging();
 
-    //! @deprecated Use NodeAddonECSqlStatement::GetBinder instead
-    struct JsonBinder
-    {
-      private:
-        static BentleyStatus BindPrimitiveValue(BeSQLite::EC::IECSqlBinder &binder, JsonValueCR bindingValue);
-        static BentleyStatus BindArrayValue(BeSQLite::EC::IECSqlBinder &binder, JsonValueCR value);
-        static BentleyStatus BindStructValue(BeSQLite::EC::IECSqlBinder &binder, JsonValueCR value);
-        static BentleyStatus BindValue(BeSQLite::EC::IECSqlBinder &binder, JsonValueCR bindingValue);
-
-      public:
-        static BentleyStatus BindValues(BeSQLite::EC::ECSqlStatement &stmt, JsonValueCR bindings);
-    };
-    
     typedef std::function<void(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType)> T_AssertHandler;
 
     static void Initialize(BeFileNameCR, T_AssertHandler assertHandler);

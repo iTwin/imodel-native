@@ -556,13 +556,6 @@ declare class AddonECSqlStatement implements IDisposable {
      */
     clearBindings(): DbResult;
 
-    /** @deprecated Use getBinder instead
-     * Bind one or more values to placeholders in this ECSQL statement.
-     * @param valuesJson The values to bind in stringified JSON format. The values must be an array if the placeholders are positional, or an any object with properties if the placeholders are named.
-     * @return Returns the Zero status in case of success. Non-zero error status in case of failure. The error's message property will contain additional information.
-     */
-    bindValues(valuesJson: string): StatusCodeWithMessage<DbResult>;
-
     /** Step this statement to move to the next row.
      * @return Returns BE_SQLITE_ROW if the step moved to a new row. Returns BE_SQLITE_DONE if the step failed because there is no next row. Another non-zero error status if step failed because of an error.
     */
