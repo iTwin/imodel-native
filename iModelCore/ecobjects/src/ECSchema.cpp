@@ -194,9 +194,6 @@ Utf8String ECNameValidation::EncodeToValidName (Utf8StringCR name)
 //+---------------+---------------+---------------+---------------+---------------+------//
 bool ECValidatedName::SetValidName(Utf8CP name, bool decodeNameToDisplayLabel)
     {
-    if (nullptr == name)
-        return false;
-
     if (!ECNameValidation::IsValidName(name))
         return false;
 
@@ -234,7 +231,6 @@ void ECValidatedName::SetDisplayLabel(Utf8CP label)
         {
         m_hasExplicitDisplayLabel = false;
         m_displayLabel.clear();
-        //ECNameValidation::DecodeFromValidName (m_displayLabel, m_name);
         }
     else
         {
