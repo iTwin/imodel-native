@@ -997,20 +997,12 @@ ContentQueryCPtr NestedContentProvider::_GetQuery() const
     if (m_adjustedQuery.IsNull() && !m_mergedResults)
         {
         Utf8StringCR idFieldAlias = m_field.GetRelationshipPath().empty() ? m_field.GetContentClassAlias() : m_field.GetRelationshipPath().front().GetTargetClassAlias();
+        Utf8String idSelector = Utf8String("[").append(idFieldAlias).append("].[ECInstanceId]");
+        bvector<ECInstanceId> ids;
+        std::transform(m_primaryInstanceKeys.begin(), m_primaryInstanceKeys.end(), std::back_inserter(ids), [](ECInstanceKeyCR key){return key.GetInstanceId();});
+        IdsFilteringHelper<bvector<ECInstanceId>> idsFilteringHelper(ids);
         ContentQueryPtr query = m_query->Clone();
-
-        Utf8String whereClause;
-        BoundQueryValuesList bindings;
-        if (IdSetHelper::BIND_VirtualSet == IdSetHelper::CreateInVirtualSetClause(whereClause, m_primaryInstanceKeys, Utf8String("[").append(idFieldAlias).append("].[ECInstanceId]")))
-            {
-            bindings = {new BoundQueryIdSet(m_primaryInstanceKeys)};
-            }
-        else
-            {
-            for (ECInstanceKeyCR key : m_primaryInstanceKeys)
-                bindings.push_back(new BoundQueryId(key.GetInstanceId()));
-            }
-        QueryBuilderHelpers::Where(query, whereClause.c_str(), bindings);
+        QueryBuilderHelpers::Where(query, idsFilteringHelper.CreateWhereClause(idSelector.c_str()).c_str(), idsFilteringHelper.CreateBoundValues());
         m_adjustedQuery = query;
         }
 
