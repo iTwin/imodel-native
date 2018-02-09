@@ -2577,29 +2577,37 @@ bool GeometryUtils::IsSameGeometry
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+Transform GeometryUtils::FindTransformBetweenPlanes(DPlane3d const & source, DPlane3d const & target)
+    {
+    // Find rotation transform
+    Transform transform = Transform::FromIdentity();
+    if (!target.normal.IsPositiveParallelTo(source.normal)) // check if rotation is needed
+        {
+        double rotationAngle = DVec3d::From(source.normal).AngleTo(target.normal);
+        // Will be rotating around vector which is perpendicular to both planes' normals. 
+        // Cross product will never be invalid because normals aren't parallel 
+        DVec3d rotationAxis = DVec3d::FromCrossProduct(source.normal, target.normal);
+
+        transform = Transform::FromAxisAndRotationAngle(DRay3d::FromOriginAndVector(target.origin, rotationAxis),
+                                                                rotationAngle);
+        }
+    transform.SetTranslation(DVec3d::FromStartEnd(source.origin, target.origin));
+
+    return transform;
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              01/2018
 //---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus GeometryUtils::TransformVectorOnPlane(DVec3dR transformed, DVec3d vector, DPlane3d plane)
     {
-    if (!plane.normal.IsPositiveParallelTo(DVec3d::From(0, 0, 1))) // rotate only if if normal is not the same as XY plane's
-        {
-        double transformAngle = DVec3d::From(0, 0, 1).AngleTo(plane.normal);
-        DVec3d rotationAxis = DVec3d::FromCrossProduct(DVec3d::From(0, 0, 1), plane.normal);
+    Transform transform = FindTransformBetweenPlanes(DPlane3d::FromOriginAndNormal(DPoint3d::From(0, 0, 0),
+                                                                    DVec3d::From(0, 0, 1)), /*XY plane*/
+                                                     plane);
+    transform.Multiply(transformed, vector);
 
-        ValidatedDVec3d rotated = DVec3d::FromRotateVectorAroundVector(vector, rotationAxis, Angle::FromRadians(transformAngle));
-        if (!rotated.IsValid())
-            return BentleyStatus::ERROR;
-
-        vector = rotated.Value();
-        }
-
-    if (!plane.origin.AlmostEqual(DPoint3d::FromZero()))
-        {
-        DVec3d translation = DVec3d::From(plane.origin);
-        vector.Add(translation);
-        }
-
-    transformed = vector;
     return BentleyStatus::SUCCESS;
     }
 

@@ -387,6 +387,10 @@ public:
     //! Checks if given ICurvePrimitives have the same geometry (within tolerance).
     BUILDINGSHAREDUTILS_EXPORT static bool IsSameGeometry(ICurvePrimitiveCR geom1, ICurvePrimitiveCR geom2, double tolerance = DoubleOps::SmallMetricDistance());
 
+
+    //! Finds transform from one plane to another
+    BUILDINGSHAREDUTILS_EXPORT static Transform FindTransformBetweenPlanes(DPlane3d const& source, DPlane3d const& target);
+
     //! Transforms vector from XY plane onto a given one
     //! @param[out] transformed transformed vector
     //! @param[in]  vector      vector to transform
