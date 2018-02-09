@@ -70,6 +70,8 @@ struct LinePointLengthAnglePlacementStrategy : LinePlacementStrategy
 
     protected:
         LinePointLengthAnglePlacementStrategy(DPlane3d const & workingPlane) : T_Super(), m_workingPlane(workingPlane) {}
+        LinePointLengthAnglePlacementStrategy(LineManipulationStrategyR manipulationStrategy, DPlane3d const & workingPlane);
+
 
         virtual void _SetWorkingPlane(DPlane3d const & plane);
         virtual DPlane3d _GetWorkingPlane() const { return m_workingPlane; }
@@ -94,6 +96,7 @@ struct LinePointLengthAnglePlacementStrategy : LinePlacementStrategy
         void UpdateEndPoint();
     public:
         static GEOMETRYMANIPULATIONSTRATEGIES_EXPORT LinePointLengthAnglePlacementStrategyPtr Create(DPlane3d const& plane) { return new LinePointLengthAnglePlacementStrategy(plane); }
+        static GEOMETRYMANIPULATIONSTRATEGIES_EXPORT LinePointLengthAnglePlacementStrategyPtr Create(LineManipulationStrategyR manipulationStrategy, DPlane3d const& plane) { return new LinePointLengthAnglePlacementStrategy(manipulationStrategy, plane); }
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void          SetWorkingPlane(DPlane3d const & plane) { return _SetWorkingPlane(plane); }
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT DPlane3d      GetWorkingPlane() const { return _GetWorkingPlane(); }
@@ -163,6 +166,7 @@ struct LinePointsLengthPlacementStrategy : LinePlacementStrategy
 
     protected:
         LinePointsLengthPlacementStrategy() : T_Super() {}
+        LinePointsLengthPlacementStrategy(LineManipulationStrategyR manipulationStrategy);
 
         virtual void _SetProperty(Utf8CP key, const double & value) override;
         virtual BentleyStatus _TryGetProperty(Utf8CP key, double & value) const override;
@@ -177,6 +181,7 @@ struct LinePointsLengthPlacementStrategy : LinePlacementStrategy
         BentleyStatus AdjustEndPoint();
     public:
         static GEOMETRYMANIPULATIONSTRATEGIES_EXPORT LinePointsLengthPlacementStrategyPtr Create() { return new LinePointsLengthPlacementStrategy(); }
+        static GEOMETRYMANIPULATIONSTRATEGIES_EXPORT LinePointsLengthPlacementStrategyPtr Create(LineManipulationStrategyR manipulationStrategy) { return new LinePointsLengthPlacementStrategy(manipulationStrategy); }
     };
 
 struct LinePointsAnglePlacementStrategy : LinePlacementStrategy
@@ -189,6 +194,7 @@ struct LinePointsAnglePlacementStrategy : LinePlacementStrategy
 
     protected:
         LinePointsAnglePlacementStrategy(DPlane3d plane) : T_Super(), m_workingPlane(plane) {}
+        LinePointsAnglePlacementStrategy(LineManipulationStrategyR manipulationStrategy, DPlane3d plane);
 
         virtual void _SetProperty(Utf8CP key, const double & value) override;
         virtual BentleyStatus _TryGetProperty(Utf8CP key, double & value) const override;
@@ -206,6 +212,7 @@ struct LinePointsAnglePlacementStrategy : LinePlacementStrategy
         BentleyStatus AdjustEndPoint();
     public:
         static GEOMETRYMANIPULATIONSTRATEGIES_EXPORT LinePointsAnglePlacementStrategyPtr Create(DPlane3d plane) { return new LinePointsAnglePlacementStrategy(plane); }
+        static GEOMETRYMANIPULATIONSTRATEGIES_EXPORT LinePointsAnglePlacementStrategyPtr Create(LineManipulationStrategyR manipulationStrategy, DPlane3d plane) { return new LinePointsAnglePlacementStrategy(manipulationStrategy, plane); }
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void          SetWorkingPlane(DPlane3d const & plane) { return _SetWorkingPlane(plane); }
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT DPlane3d      GetWorkingPlane() const { return _GetWorkingPlane(); }

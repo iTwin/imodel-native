@@ -27,40 +27,24 @@ LinePlacementStrategy::LinePlacementStrategy
 //---------------+---------------+---------------+---------------+---------------+------
 LinePlacementStrategyPtr LinePlacementStrategy::Create
 (
-    LinePlacementStrategyType strategyType
-)
-    {
-    switch (strategyType)
-        {
-        case LinePlacementStrategyType::Points :
-            return LinePointsPlacementStrategy::Create();
-        case LinePlacementStrategyType::PointsAngle :
-            return LinePointsAnglePlacementStrategy::Create(DPlane3d::FromOriginAndNormal({0,0,0}, DVec3d::From(0, 0, 1))); // default plane...
-        case LinePlacementStrategyType::PointsLength :
-            return LinePointsLengthPlacementStrategy::Create();
-        case LinePlacementStrategyType::PointLengthAngle :
-            return LinePointLengthAnglePlacementStrategy::Create(DPlane3d::FromOriginAndNormal({0,0,0}, DVec3d::From(0, 0, 1))); // default plane...
-        default:
-            BeAssert(false);
-            return nullptr;
-        }
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                01/2018
-//---------------+---------------+---------------+---------------+---------------+------
-LinePlacementStrategyPtr LinePlacementStrategy::Create
-(
     LinePlacementStrategyType strategyType,
     LineManipulationStrategyR manipulationStrategy
 )
     {
-    LinePlacementStrategyPtr placementStrategy = Create(strategyType);
-    if (placementStrategy.IsNull())
-        return nullptr;
-
-    placementStrategy->m_manipulationStrategy = &manipulationStrategy;
-    return placementStrategy;
+    switch (strategyType)
+        {
+        case LinePlacementStrategyType::Points:
+            return LinePointsPlacementStrategy::Create(manipulationStrategy);
+        case LinePlacementStrategyType::PointsAngle:
+            return LinePointsAnglePlacementStrategy::Create(manipulationStrategy, DPlane3d::FromOriginAndNormal({ 0,0,0 }, DVec3d::From(0, 0, 1))); // default plane...
+        case LinePlacementStrategyType::PointsLength:
+            return LinePointsLengthPlacementStrategy::Create(manipulationStrategy);
+        case LinePlacementStrategyType::PointLengthAngle:
+            return LinePointLengthAnglePlacementStrategy::Create(manipulationStrategy, DPlane3d::FromOriginAndNormal({ 0,0,0 }, DVec3d::From(0, 0, 1))); // default plane...
+        default:
+            BeAssert(false);
+            return nullptr;
+        }
     }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -189,6 +173,25 @@ void LinePointLengthAnglePlacementStrategy::UpdateEndPoint()
             ResetDynamicKeyPoint();
             T_Super::_AddDynamicKeyPoints({ firstPoint, endPoint });
             }
+        }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+LinePointLengthAnglePlacementStrategy::LinePointLengthAnglePlacementStrategy
+(
+    LineManipulationStrategyR manipulationStrategy,
+    DPlane3d const & workingPlane
+)
+    : T_Super(manipulationStrategy)
+    , m_workingPlane(workingPlane)
+    {
+    bvector<DPoint3d> keyPoints = GetKeyPoints();
+    if (2 == keyPoints.size())
+        {
+        m_length = keyPoints[0].Distance(keyPoints[1]);
+        m_angle = keyPoints[0].PlanarAngleTo(keyPoints[2], m_workingPlane.normal);
         }
     }
 
@@ -366,6 +369,22 @@ BentleyStatus LinePointsLengthPlacementStrategy::AdjustEndPoint()
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+LinePointsLengthPlacementStrategy::LinePointsLengthPlacementStrategy
+(
+    LineManipulationStrategyR manipulationStrategy
+)   : T_Super(manipulationStrategy)
+    {
+    bvector<DPoint3d> keyPoints = GetKeyPoints();
+    if (2 == keyPoints.size())
+        {
+        m_length = keyPoints[0].Distance(keyPoints[1]);
+        m_direction = DVec3d::FromStartEnd(keyPoints[0], keyPoints[1]);
+        }
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas             01/2018
 //---------------+---------------+---------------+---------------+---------------+------
 void LinePointsLengthPlacementStrategy::_SetProperty(Utf8CP key, const double & value)
@@ -392,6 +411,25 @@ BentleyStatus LinePointsLengthPlacementStrategy::_TryGetProperty(Utf8CP key, dou
 /////////////////////////////////////////////////////////////////////////////////////////
 // LinePointsAnglePlacementStrategy
 /////////////////////////////////////////////////////////////////////////////////////////
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+LinePointsAnglePlacementStrategy::LinePointsAnglePlacementStrategy
+(
+    LineManipulationStrategyR manipulationStrategy,
+    DPlane3d workingPlane
+)
+    : T_Super(manipulationStrategy)
+    , m_workingPlane(workingPlane)
+    {
+    bvector<DPoint3d> keyPoints = GetKeyPoints();
+    if (2 == keyPoints.size())
+        {
+        m_angle = keyPoints[0].PlanarAngleTo(keyPoints[2], m_workingPlane.normal);
+        }
+    }
+
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas             01/2018
 //---------------+---------------+---------------+---------------+---------------+------
