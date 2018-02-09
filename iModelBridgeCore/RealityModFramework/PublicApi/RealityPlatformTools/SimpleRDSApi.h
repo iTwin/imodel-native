@@ -73,7 +73,7 @@ public:
     
     //! Server request
     //! Will create a relationship between the realitydata and project set in this object
-    REALITYDATAPLATFORM_EXPORT ConnectedResponse Create();
+    REALITYDATAPLATFORM_EXPORT ConnectedResponse CreateOnServer();
 
     //! Server request
     //! Will delete a relationship between the realitydata and project set in this object

@@ -221,7 +221,7 @@ ConnectedResponse ConnectedRealityDataRelationship::RetrieveAllForProjectId(bvec
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
-ConnectedResponse ConnectedRealityDataRelationship::Create()
+ConnectedResponse ConnectedRealityDataRelationship::CreateOnServer()
     {
     ConnectedResponse response = ConnectedResponse();
     if (m_realityDataId.empty() || m_relatedId.empty())

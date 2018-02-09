@@ -1721,7 +1721,7 @@ void RealityDataConsole::Relationships()
 
     DisplayInfo("Related attached to this RealityData\n\n");
     for (RealityDataRelationshipPtr entity : entities)
-        DisplayInfo(Utf8PrintfString(" RelatedId          : %s\n RelationType", entity->GetRelatedId(), entity->GetRelationType()));
+        DisplayInfo(Utf8PrintfString(" RelatedId          : %s\n RelationType       : %s\n", entity->GetRelatedId(), entity->GetRelationType()));
     }
 
 void RealityDataConsole::CreateRD()

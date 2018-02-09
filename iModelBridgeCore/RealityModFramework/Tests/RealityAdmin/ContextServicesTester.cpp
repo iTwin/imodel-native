@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/RealityAdmin/ContextServicesTester.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -16,6 +16,7 @@
 #include <RealityAdmin/ContextServicesWorkbench.h>
 #include <RealityPlatformTools/RealityConversionTools.h>
 #include <RealityPlatformTools/RealityDataDownload.h>
+#include <RealityPlatformTools/WSGServices.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
@@ -33,40 +34,7 @@ class ContextServicesTestFixture : public testing::Test
     public:
 	Utf8String GetToken()
         {
-        Utf8String retString = "";
-        WChar exePath[MAX_PATH];
-        GetModuleFileNameW(NULL, exePath, MAX_PATH);
-
-        WString exeDir = exePath;
-        size_t pos = exeDir.find_last_of(L"/\\");
-        exeDir = exeDir.substr(0, pos + 1);
-
-        BeFileName testPath(exeDir);
-        testPath.AppendToPath(L"TokenExtractor.exe");
-
-        std::system(testPath.GetNameUtf8().c_str());
-
-        HGLOBAL   hglb;
-        LPTSTR    lptstr;
-
-        if (!IsClipboardFormatAvailable(CF_TEXT))
-            return "";
-        if (!OpenClipboard(NULL))
-            return "";
-
-        hglb = GetClipboardData(CF_TEXT);
-        if (hglb != NULL)
-            {
-            lptstr = (LPTSTR)GlobalLock(hglb);
-            if (lptstr != NULL)
-                {
-                retString = Utf8String(lptstr);
-                GlobalUnlock(hglb);
-                }
-            }
-        CloseClipboard();
-
-        return retString;
+        return ConnectTokenManager::GetInstance().GetToken();
         }
 
 
@@ -404,7 +372,7 @@ TEST_F(ContextServicesTestFixture, SourceTest)
 // Ensure that the usgsapi is returning values
 //-------------------------------------------------------------------------------------
 TEST_F(ContextServicesTestFixture, USGSTest)
-{
+    {
     Utf8String token = GetToken();
     ASSERT_TRUE(token.length() > 100);
 
@@ -430,7 +398,7 @@ TEST_F(ContextServicesTestFixture, USGSTest)
     WCharCP packageFile = cswBench->GetPackageFileName().GetName();
     ASSERT_TRUE(BeFileName::DoesPathExist(packageFile));
     BeFileName::EmptyAndRemoveDirectory(packageFile);
-}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Spencer.Mason                            10/2016

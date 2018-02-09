@@ -36,53 +36,16 @@ TEST_F(SimpleRDSIntegrationTestFixture, SimpleRDSIntegrationTest)
     ConnectedResponse response = ConnectedNavNode::GetRootNodes(rootNodes);
 
     ASSERT_TRUE(response.simpleSuccess);
-        
-    ConnectedRealityData rd = ConnectedRealityData(rootNodes[0].GetInstanceId());
-
-    ASSERT_TRUE(!rd.GetIdentifier().empty());
-
-    bvector<ConnectedRealityDataRelationshipPtr> relationships = bvector<ConnectedRealityDataRelationshipPtr>();
-    response = ConnectedRealityDataRelationship::RetrieveAllForRDId(relationships, rd.GetIdentifier());
-
-    ASSERT_TRUE(response.simpleSuccess);
-
-    if(relationships.size() > 0)
-        {
-        ASSERT_TRUE(!relationships[0]->GetRelatedId().empty());
-        }
-
-    bvector<ConnectedNavNode> childNodes = bvector<ConnectedNavNode>();
-
-    response = rootNodes[0].GetChildNodes(childNodes);
-
-    ASSERT_TRUE(response.simpleSuccess);
-
-    int testedTypes = 0;
-    for(ConnectedNavNode node : childNodes)
-        {
-        if(node.GetECClassName() == "Folder" && !(testedTypes && 1))
-            {
-            ConnectedRealityDataFolder folder = ConnectedRealityDataFolder(node.GetInstanceId());
-            ASSERT_TRUE(!folder.GetName().empty());
-            testedTypes |= 1;
-            }
-        else if (node.GetECClassName() == "Document" && !(testedTypes && 2))
-            {
-            ConnectedRealityDataDocument doc = ConnectedRealityDataDocument(node.GetInstanceId());
-            ASSERT_TRUE(!doc.GetContentType().empty());
-            testedTypes |= 2;
-            }
-        }
 
     ConnectedRealityDataEnterpriseStat stats = ConnectedRealityDataEnterpriseStat();
 
     response = stats.GetStats();
-    
+
     ASSERT_TRUE(response.simpleSuccess);
 
     ASSERT_TRUE(stats.GetTotalSizeKB() > 0);
-    
-    //Creating a repo to upload.
+        
+    //Creating a repo to upload./
     WChar exePath[MAX_PATH];
     GetModuleFileNameW(NULL, exePath, MAX_PATH);
     WString exeDir = exePath;
@@ -176,11 +139,79 @@ TEST_F(SimpleRDSIntegrationTestFixture, SimpleRDSIntegrationTest)
     Utf8String guid = crd.GetIdentifier();
 
     ASSERT_TRUE(!guid.empty());
-    
+
     dummyRoot.PopDir();
     dummyRoot = BeFileName(directory.c_str());
     dummyRoot.AppendToPath(L"DummyFolderDown");
 
+    RealityDataRelationshipPtr relationship = RealityDataRelationship::Create();
+    relationship->SetRealityDataId(crd.GetIdentifier());
+    relationship->SetRelationType("CONNECT-Project");
+    relationship->SetRelatedId("615f57e7-876e-46fc-ab11-79af30cae299");
+    ConnectedRealityDataRelationship connectedRelationship(relationship);
+    connectedRelationship.CreateOnServer();
+
+    bvector<ConnectedRealityDataRelationshipPtr> relationships = bvector<ConnectedRealityDataRelationshipPtr>();
+    response = ConnectedRealityDataRelationship::RetrieveAllForRDId(relationships, crd.GetIdentifier());
+
+    ASSERT_TRUE(response.simpleSuccess);
+    ASSERT_TRUE(relationships.size() > 0);
+    ASSERT_TRUE(relationships[0]->GetRelatedId().Equals(connectedRelationship.GetRelatedId()));
+
+    relationships = bvector<ConnectedRealityDataRelationshipPtr>();
+    response = ConnectedRealityDataRelationship::RetrieveAllForProjectId(relationships, "615f57e7-876e-46fc-ab11-79af30cae299");
+
+    ASSERT_TRUE(response.simpleSuccess);
+    ASSERT_TRUE(!relationships.empty());
+    ASSERT_TRUE((relationships[0])->GetRelatedId().Equals(connectedRelationship.GetRelatedId()));
+
+    response = connectedRelationship.Delete();
+    ASSERT_TRUE(response.simpleSuccess);
+
+    relationships = bvector<ConnectedRealityDataRelationshipPtr>();
+    response = ConnectedRealityDataRelationship::RetrieveAllForRDId(relationships, crd.GetIdentifier());
+
+    ASSERT_TRUE(response.simpleSuccess);
+    ASSERT_TRUE(relationships.empty());
+
+    NavNode node = NavNode(rootNodes[0].GetSchemaName(), crd.GetIdentifier(), rootNodes[0].GetTypeSystem(), rootNodes[0].GetECClassName());
+    ConnectedNavNode cNode = ConnectedNavNode(node);
+
+    bvector<ConnectedNavNode> childNodes = bvector<ConnectedNavNode>();
+
+    response = cNode.GetChildNodes(childNodes);
+
+    ASSERT_TRUE(response.simpleSuccess);
+    ASSERT_TRUE(childNodes.size() > 0);
+
+    int testedTypes = 0;
+    for (ConnectedNavNode node : childNodes)
+        {
+        if (node.GetECClassName() == "Folder" && !(testedTypes & 1))
+            {
+            ConnectedRealityDataFolder folder = ConnectedRealityDataFolder(node.GetInstanceId());
+            ASSERT_TRUE(!folder.GetName().empty());
+            dummyFile = BeFileName(dummyRoot.c_str());
+            dummyFile.AppendToPath(L"DummyDownFolder");
+            folder.Download(dummyFile, node.GetNavString());
+            ASSERT_TRUE(BeFileName::DoesPathExist(dummyFile.c_str()));
+            testedTypes |= 1;
+            }
+        else if (node.GetECClassName() == "Document" && !(testedTypes & 2))
+            {
+            ConnectedRealityDataDocument doc = ConnectedRealityDataDocument(node.GetInstanceId());
+            ASSERT_TRUE(!doc.GetContentType().empty());
+            dummyFile = BeFileName(dummyRoot.c_str());
+            dummyFile.AppendToPath(L"DummyDownDocument.json");
+            doc.Download(dummyFile, node.GetNavString());
+            ASSERT_TRUE(BeFileName::DoesPathExist(dummyFile.c_str()));
+            //doc.Upload()
+            testedTypes |= 2;
+            }
+        }
+
+    BeFileName::EmptyAndRemoveDirectory(dummyRoot.c_str());
+    
     ConnectedRealityData crd2 = ConnectedRealityData(guid);
     crd2.Download(dummyRoot, guid);
     crd2.SetName("SimpleModifiedExample (DELETE THIS)");
@@ -189,7 +220,7 @@ TEST_F(SimpleRDSIntegrationTestFixture, SimpleRDSIntegrationTest)
     ASSERT_TRUE(response.simpleSuccess);
 
     ASSERT_TRUE(BeFileName::EmptyAndRemoveDirectory(directory.c_str()) == BeFileNameStatus::Success);
-    
+
     ConnectedRealityData crd3 = ConnectedRealityData(guid);
     crd3.Delete();
 

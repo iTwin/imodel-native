@@ -196,12 +196,12 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataRelationshipCreateRequestTest)
 
     ConnectedRealityDataRelationship rel = ConnectedRealityDataRelationship();
     rel.SetRealityDataId("MyIdentifier");
-    ConnectedResponse response = rel.Create();
+    ConnectedResponse response = rel.CreateOnServer();
 
     EXPECT_FALSE(response.GetSuccess());
 
     rel.SetRelatedId("MYProjectID");
-    response = rel.Create();
+    response = rel.CreateOnServer();
 
     EXPECT_TRUE(response.simpleSuccess);
     }
