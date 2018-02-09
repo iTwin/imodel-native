@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECInstance.h $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -143,6 +143,10 @@ struct CustomAttributeDeserializerManager
         //! @param[in] deserializerName   Name of the custom deserializer.  
         //! @param[in] deserializer   The ICustomAttributeDeserializer to add
         ECOBJECTS_EXPORT  BentleyStatus                         AddCustomDeserializer (Utf8CP deserializerName, ICustomAttributeDeserializerP deserializer);
+
+        //! Adds a new copy of the class with the name existingClassName that has the same name with 'Attr' applied and is a custom attribute class
+        //! Returns true if the class was added or already exists in the schema.
+        ECOBJECTS_EXPORT static bool CreateAttrClassVersion(ECSchemaP schema, Utf8CP existingClassName, Utf8CP newClassName, ECClassCP& attributeClass);
     };
 
 //=======================================================================================

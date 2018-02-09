@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/SupplementalSchemaTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -72,7 +72,8 @@ struct SchemaHolderTestFixture : ECTestFixture
     public:
         virtual void SetUp() override
             {
-            ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+            T_Super::SetUp();
+            ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
             
             SchemaKey key("Bentley_Standard_CustomAttributes", 1, 6);
             m_bscaSchema = ECSchema::LocateSchema(key, *schemaContext);
@@ -81,8 +82,6 @@ struct SchemaHolderTestFixture : ECTestFixture
             SchemaKey coreCAKey("CoreCustomAttributes", 1, 0, 0);
             m_coreCASchema = ECSchema::LocateSchema(coreCAKey, *schemaContext);
             ASSERT_TRUE(m_coreCASchema.IsValid());
-
-            T_Super::SetUp();
             }
 
         virtual void TearDown() override

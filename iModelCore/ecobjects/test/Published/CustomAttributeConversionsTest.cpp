@@ -20,14 +20,13 @@ struct PropertyPriorityCustomAttributeConversionTest : ECTestFixture
     {
     ECSchemaPtr m_becaSchema;
 
-    virtual void SetUp() override
+    void SetUp() override
         {
-        ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+        ECTestFixture::SetUp();
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
         SchemaKey key("EditorCustomAttributes", 1, 3);
         m_becaSchema = ECSchema::LocateSchema(key, *schemaContext);
         ASSERT_TRUE(m_becaSchema.IsValid());
-
-        ECTestFixture::SetUp();
         }
 
     ECClassCP GetPropertyPriorityClass() const
@@ -56,9 +55,11 @@ struct StandardCustomAttributeConversionTests : ECTestFixture
 
     Utf8String GetDateTimeInfoValue(IECInstancePtr instancePtr, Utf8CP name);
 
-    virtual void SetUp() override
+    void SetUp() override
         {
-        ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+        ECTestFixture::SetUp();
+
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
         SchemaKey key("Bentley_Standard_CustomAttributes", 1, 6);
         m_bscaSchema = ECSchema::LocateSchema(key, *schemaContext);
@@ -67,8 +68,6 @@ struct StandardCustomAttributeConversionTests : ECTestFixture
         SchemaKey coreCAKey("CoreCustomAttributes", 1, 0, 0);
         m_coreCASchema = ECSchema::LocateSchema(coreCAKey, *schemaContext);
         ASSERT_TRUE(m_coreCASchema.IsValid());
-
-        ECTestFixture::SetUp();
         }
     };
 
@@ -77,11 +76,17 @@ struct StandardCustomAttributeConversionTests : ECTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 struct CustomAttributeRemovalTest : ECTestFixture
     {
-    ECSchemaReadContextPtr   m_readContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr m_readContext;
     Utf8String m_customAttributeName;
     Utf8String m_customAttributeSchemaName;
     ECSchemaPtr m_schema;
     ECSchemaPtr m_refSchema;
+
+    void SetUp() override
+        {
+        ECTestFixture::SetUp();
+        m_readContext = ECSchemaReadContext::CreateContext();
+        }
 
     CustomAttributeRemovalTest(Utf8String schemaName, Utf8String customAttributeName)
         :m_customAttributeName(customAttributeName), m_customAttributeSchemaName(schemaName){}
@@ -131,7 +136,13 @@ struct CustomAttributeRemovalTest : ECTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 struct StandardValueToEnumConversionTest : CustomAttributeRemovalTest
     {
-    ECSchemaReadContextPtr   m_validationReadContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr   m_validationReadContext;
+
+    void SetUp() override
+        {
+        CustomAttributeRemovalTest::SetUp();
+        m_validationReadContext = ECSchemaReadContext::CreateContext();
+        }
 
     StandardValueToEnumConversionTest()
         :CustomAttributeRemovalTest("EditorCustomAttributes", "StandardValues") {}
@@ -2476,6 +2487,42 @@ TEST_F(StandardCustomAttributeConversionTests, CategoryCustomAttribute_NameNotVa
     ECValue nameValue(encodedName.c_str());
     bananaCatCA->SetValue("Name", nameValue);
     propertyCategoryHasSameValuesAsCategoryCA(bananaCatCA.get(), bCat);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                 06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyPriorityCustomAttributeConversionTest, EmptyPropertyPriorityIsRemovedAndPriorityAttributeNotSet)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="EditorCustomAttributes" version="1.03" prefix="beca"/>
+            <ECClass typeName="A" isDomainClass="true">
+                <ECProperty propertyName="propWithPriority" typeName="string">
+                    <ECCustomAttributes>
+                        <PropertyPriority xmlns="EditorCustomAttributes.01.03" />
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_EQ(1, schema->GetReferencedSchemas().size());
+
+    ECClassCP ecClass = schema->GetClassCP("A");
+    ECPropertyCP ecProp = ecClass->GetPropertyP("propWithPriority");
+    CheckForPropertyPriorityCALocally(ecProp, true);
+
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_EQ(0, schema->GetReferencedSchemas().size());
+
+    ECClassCP afterConv = schema->GetClassCP("A");
+    ECPropertyCP afterConvProp = afterConv->GetPropertyP("propWithPriority");
+    EXPECT_FALSE(afterConvProp->IsPriorityLocallyDefined());
+    CheckForPropertyPriorityCALocally(afterConvProp, false);
     }
 
 //---------------------------------------------------------------------------------------

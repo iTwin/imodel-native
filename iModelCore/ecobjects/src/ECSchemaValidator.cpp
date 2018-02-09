@@ -548,16 +548,16 @@ ECObjectsStatus ECSchemaValidator::RelationshipValidator(ECClassCR ecClass)
 ECObjectsStatus ECSchemaValidator::KindOfQuantityValidator(KindOfQuantityCR koq)
     {
     // RULE: Persistence unit of phenomenon 'PERCENTAGE' (or other unitless ratios) are not allowed.
-    if (0 == strcmp(koq.GetPersistenceUnit().GetUnit()->GetPhenomenon()->GetName(), "PERCENTAGE"))
+    if (0 == strcmp(koq.GetPersistenceUnit().GetUnit()->GetPhenomenon()->GetName().c_str(), "PERCENTAGE"))
         {
         LOG.errorv("KindOfQuantity has persistence unit of Phenomenon 'PERCENTAGE'. Unitless ratios are not allowed. Use a ratio phenomenon which includes units like VOLUME_RATIO");
         return ECObjectsStatus::Error;
         }
 
     // RULE: KindOfQuantity must have an SI unit for its persistence unit.
-    if (0 != strcmp(koq.GetPersistenceUnit().GetUnit()->GetUnitSystem()->GetName(), "SI"))
+    if (0 != strcmp(koq.GetPersistenceUnit().GetUnit()->GetUnitSystem()->GetName().c_str(), "SI"))
         {
-        LOG.errorv("KindOfQuantity has persistence unit of unit system '%s' but must have an SI unit system", koq.GetPersistenceUnit().GetUnit()->GetUnitSystem()->GetName());
+        LOG.errorv("KindOfQuantity has persistence unit of unit system '%s' but must have an SI unit system", koq.GetPersistenceUnit().GetUnit()->GetUnitSystem()->GetName().c_str());
         return ECObjectsStatus::Error;
         }
 

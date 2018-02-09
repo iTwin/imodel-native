@@ -33,7 +33,7 @@ EC_TYPEDEFS(ECValueAccessorPairCollectionOptions);
 EC_TYPEDEFS(ECValuesCollection);
 EC_TYPEDEFS(ArrayInfo);
 EC_TYPEDEFS(ECSchema);
-EC_TYPEDEFS (SchemaKey);
+EC_TYPEDEFS(SchemaKey);
 EC_TYPEDEFS(ECSchemaReadContext);
 EC_TYPEDEFS(ECProperty);
 EC_TYPEDEFS(PrimitiveECProperty);
@@ -61,6 +61,9 @@ EC_TYPEDEFS(ECSchemaCache);
 EC_TYPEDEFS(PropertyCategory);
 EC_TYPEDEFS(PropertyCategoryContainer);
 
+EC_TYPEDEFS(UnitSystem);
+EC_TYPEDEFS(UnitSystemContainer);
+
 EC_TYPEDEFS(IECInstance);
 EC_TYPEDEFS(IECInstanceInterface);
 EC_TYPEDEFS(IECRelationshipInstance);
@@ -85,24 +88,24 @@ EC_TYPEDEFS(ECDBuffer);
 
 EC_TYPEDEFS(ICustomECStructSerializer);
 EC_TYPEDEFS(CustomStructSerializerManager);
-EC_TYPEDEFS (ICustomAttributeDeserializer);
-EC_TYPEDEFS (CustomAttributeDeserializerManager);
+EC_TYPEDEFS(ICustomAttributeDeserializer);
+EC_TYPEDEFS(CustomAttributeDeserializerManager);
 EC_TYPEDEFS(SupplementalSchemaMetaData);
-EC_TYPEDEFS (PresentationMetadataHelper);
+EC_TYPEDEFS(PresentationMetadataHelper);
 EC_TYPEDEFS(ECSchemaConverter);
 EC_TYPEDEFS(CustomECSchemaConverter);
 EC_TYPEDEFS(IECCustomAttributeConverter);
 EC_TYPEDEFS(ECSchemaValidator);
 
-EC_TYPEDEFS (CalculatedPropertySpecification);
-EC_TYPEDEFS (ParserRegex);
+EC_TYPEDEFS(CalculatedPropertySpecification);
+EC_TYPEDEFS(ParserRegex);
 EC_TYPEDEFS(IECTypeAdapterContext);
 EC_TYPEDEFS(IECSchemaRemapper);
 
-EC_TYPEDEFS (SchemaNameClassNamePair);
-EC_TYPEDEFS (UnitSpec);
-EC_TYPEDEFS (Unit);
-EC_TYPEDEFS (UnitConverter);
+EC_TYPEDEFS(SchemaNameClassNamePair);
+EC_TYPEDEFS(UnitSpec);
+EC_TYPEDEFS(Unit);
+EC_TYPEDEFS(UnitConverter);
 
 #ifndef DOCUMENTATION_GENERATOR
 EC_TYPEDEFS (AdHocPropertyMetadata);
@@ -556,6 +559,14 @@ struct KindOfQuantityId : BeInt64Id
 struct PropertyCategoryId : BeInt64Id
     {
     BEINT64_ID_DECLARE_MEMBERS(PropertyCategoryId, BeInt64Id)
+    };
+
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct UnitSystemId : BeInt64Id
+    {
+    BEINT64_ID_DECLARE_MEMBERS(UnitSystemId, BeInt64Id)
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

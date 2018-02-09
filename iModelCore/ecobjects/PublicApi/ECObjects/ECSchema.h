@@ -52,6 +52,7 @@ using EnumerationMap = bmap<Utf8CP, ECEnumerationP, less_str>;
 using KindOfQuantityMap = bmap<Utf8CP, KindOfQuantityP, less_str>;
 using PropertyMap = bmap<Utf8CP, ECPropertyP, less_str>;
 using PropertyCategoryMap = bmap<Utf8CP, PropertyCategoryP, less_str>;
+using UnitSystemMap = bmap<Utf8CP, UnitSystemP, less_str>;
 
 using ECCustomAttributeCollection = bvector<IECInstancePtr>;
 struct ECCustomAttributeInstanceIterable;
@@ -2975,6 +2976,15 @@ using SchemaItemContainer<KindOfQuantityMap, KindOfQuantityP>::SchemaItemContain
 //=======================================================================================
 // @bsistruct
 //=======================================================================================
+struct UnitSystemContainer : SchemaItemContainer<UnitSystemMap, UnitSystemP>
+{
+friend struct ECSchema;
+using SchemaItemContainer<UnitSystemMap, UnitSystemP>::SchemaItemContainer;
+};
+
+//=======================================================================================
+// @bsistruct
+//=======================================================================================
 struct PropertyCategoryContainer : SchemaItemContainer<PropertyCategoryMap, PropertyCategoryP>
 {
 friend struct ECSchema;
@@ -3107,7 +3117,7 @@ protected:
 
 public:
     //! Get the search paths registered for this locater
-    bvector<WString>const& GetSearchPath () const {return m_searchPaths;}
+    bvector<WString>const& GetSearchPath() const {return m_searchPaths;}
     //! Create a new SearchPathSchemaFileLocater using the input paths as schema search paths
     ECOBJECTS_EXPORT static SearchPathSchemaFileLocaterPtr CreateSearchPathSchemaFileLocater(bvector<WString> const& searchPaths, bool includeFilesWithNoVerExt=false);
 };
@@ -3120,7 +3130,8 @@ enum class ECSchemaElementType
     ECClass,
     ECEnumeration,
     KindOfQuantity,
-    PropertyCategory
+    PropertyCategory,
+    UnitSystem
 };
 
 //=======================================================================================
@@ -3183,6 +3194,7 @@ private:
     ECEnumerationContainer  m_enumerationContainer;
     KindOfQuantityContainer m_kindOfQuantityContainer;
     PropertyCategoryContainer m_propertyCategoryContainer;
+    UnitSystemContainer     m_unitSystemContainer;
 
     ECVersion               m_ecVersion;
 
@@ -3194,6 +3206,7 @@ private:
     EnumerationMap              m_enumerationMap;
     KindOfQuantityMap           m_kindOfQuantityMap;
     PropertyCategoryMap         m_propertyCategoryMap;
+    UnitSystemMap               m_unitSystemMap;
     ECSchemaReferenceList       m_refSchemaList;
     bool                        m_isSupplemented;
     bool                        m_hasExplicitDisplayLabel;
@@ -3206,7 +3219,7 @@ private:
 
     ECSchema() : m_classContainer(m_classMap), m_enumerationContainer(m_enumerationMap), m_isSupplemented(false),
         m_hasExplicitDisplayLabel(false), m_immutable(false), m_kindOfQuantityContainer(m_kindOfQuantityMap),
-        m_propertyCategoryContainer(m_propertyCategoryMap)
+        m_propertyCategoryContainer(m_propertyCategoryMap), m_unitSystemContainer(m_unitSystemMap)
         { }
     virtual ~ECSchema();
 
@@ -3216,6 +3229,7 @@ private:
     void FindUniqueClassName(Utf8StringR newName, Utf8CP originalName);
     bool NamedElementExists(Utf8CP name);
     ECObjectsStatus AddClass(ECClassP pClass, bool resolveConflicts = false);
+    ECObjectsStatus AddUnitSystem(UnitSystemP system);
 
     ECObjectsStatus SetVersionFromString(Utf8CP versionString);
     ECObjectsStatus CopyConstraints(ECRelationshipConstraintR toRelationshipConstraint, ECRelationshipConstraintR fromRelationshipConstraint);
@@ -3335,13 +3349,17 @@ public:
     uint32_t GetEnumerationCount() const {return (uint32_t) m_enumerationMap.size();}//!< Gets the number of enumerations in the schema
     ECObjectsStatus DeleteEnumeration(ECEnumerationR ecEnumeration) {return DeleteSchemaChild<ECEnumeration, EnumerationMap>(ecEnumeration, &m_enumerationMap);} //!< Removes an enumeration from this schema.
 
-    KindOfQuantityContainerCR GetKindOfQuantities() const {return m_kindOfQuantityContainer;} //!< Returns an iterable container of ECClasses sorted by name. For unsorted called overload.
+    KindOfQuantityContainerCR GetKindOfQuantities() const {return m_kindOfQuantityContainer;} //!< Returns an iterable container of ECClasses sorted by name.
     uint32_t GetKindOfQuantityCount() const {return (uint32_t) m_kindOfQuantityMap.size();} //!< Gets the number of kind of quantity in the schema
     ECObjectsStatus DeleteKindOfQuantity(KindOfQuantityR kindOfQuantity) {return DeleteSchemaChild<KindOfQuantity, KindOfQuantityMap>(kindOfQuantity, &m_kindOfQuantityMap);} //!< Removes a kind of quantity from this schema.
     
-    PropertyCategoryContainerCR GetPropertyCategories() const {return m_propertyCategoryContainer;} //!< Returns an iterable container of PropertyCategories sorted by name. For unsorted called overload.
+    PropertyCategoryContainerCR GetPropertyCategories() const {return m_propertyCategoryContainer;} //!< Returns an iterable container of PropertyCategories sorted by name.
     uint32_t GetPropertyCategoryCount() const {return (uint32_t) m_propertyCategoryMap.size();} //!< Gets the number of PropertyCategories in the schema.
     ECObjectsStatus DeletePropertyCategory(PropertyCategoryR propertyCategory) {return DeleteSchemaChild<PropertyCategory, PropertyCategoryMap>(propertyCategory, &m_propertyCategoryMap);} //!< Removes a PropertyCategory from this schema.
+
+    UnitSystemContainerCR GetUnitSystems() const {return m_unitSystemContainer;} //!< Returns an iterable container of UnitSystems sorted by name.
+    uint32_t GetUnitSystemCount() const {return (uint32_t)m_unitSystemMap.size();} //!< Gets the number of UnitSystems in the schema.
+    ECOBJECTS_EXPORT ECObjectsStatus DeleteUnitSystem(UnitSystemR unitSystem); //!< Removes a UnitSystem from this schema.
 
     //! Indicates whether this schema is a so-called @b dynamic schema by
     //! checking whether the @b DynamicSchema custom attribute from the standard schema @b CoreCustomAttributes
@@ -3460,6 +3478,14 @@ public:
     //! @return A status code indicating whether or not the property category was successfully created and added to the schema
     ECOBJECTS_EXPORT ECObjectsStatus CreatePropertyCategory(PropertyCategoryP& propertyCategory, Utf8CP name);
 
+    //! Creates a new UnitSystem and adds it to the schema.
+    //! @param[out] unitSystem If successful, will contain a new UnitSystem object
+    //! @param[in] name        Name of the unit system to create 
+    //! @param[in] label       Display label of the unit system
+    //! @param[in] description Description of the unit system
+    //! @return A status code indicating whether or not the Unit Systems was successfully created and added to the schema
+    ECOBJECTS_EXPORT ECObjectsStatus CreateUnitSystem(UnitSystemP& unitSystem, Utf8CP name, Utf8CP label = nullptr, Utf8CP description = nullptr);
+
     //! Get a schema by alias within the context of this schema and its referenced schemas.
     //! @param[in]  alias   The alias of the schema to lookup in the context of this schema and it's references.
     //!                     Passing an empty alias will return a pointer to the current schema.
@@ -3511,6 +3537,16 @@ public:
     //! @param[in]  name     The name of the property category to lookup.  This must be an unqualified (short) name.
     //! @return   A const pointer to an ECN::PropertyCategory if the named property category exists in within the current schema; otherwise, nullptr
     PropertyCategoryP GetPropertyCategoryP(Utf8CP name) {return GetSchemaChild<PropertyCategory, PropertyCategoryMap>(name, &m_propertyCategoryMap);}
+
+    //! Get a unit system by name within the context of this schema.
+    //! @param[in]  name     The name of the unit system to lookup.  This must be an unqualified (short) name.
+    //! @return   A const pointer to an ECN::UnitSystem if the named unit system exists in within the current schema; otherwise, nullptr
+    UnitSystemCP GetUnitSystemCP(Utf8CP name) const {return const_cast<ECSchemaP> (this)->GetUnitSystemP(name);}
+
+    //! Get a unit system by name within the context of this schema.
+    //! @param[in]  name     The name of the unit system to lookup.  This must be an unqualified (short) name.
+    //! @return   A pointer to an ECN::UnitSystem if the named unit system exists in within the current schema; otherwise, nullptr
+    UnitSystemP GetUnitSystemP(Utf8CP name) {return GetSchemaChild<UnitSystem, UnitSystemMap>(name, &m_unitSystemMap);}
 
     //! Gets the other schemas that are used by classes within this schema.
     //! Referenced schemas are the schemas that contain definitions of base classes,
@@ -3811,6 +3847,13 @@ public:
     //! @return   A status code indicating whether the schema was successfully read.  If SUCCESS is returned then schemaOut will
     //!           contain the read schema.  Otherwise schemaOut will be unmodified.
     ECOBJECTS_EXPORT static SchemaReadStatus ReadFromXmlStream(ECSchemaPtr& schemaOut, IStreamP ecSchemaXmlStream, ECSchemaReadContextR schemaContext);
+
+    //! Serializes the schema as EC2 Xml with the standard EC3 attributes converted to EC2 standard custom attributes.  
+    //! @param[out] ec2SchemaXml        The string containing the EC2 Xml for the input schema
+    //! @param[in]  schemaToSerialize   The schema to serialize as EC2 Xml.  See ECSchemaDownConverter for details of conversion.
+    //! @return A status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then ecSchemaXml will contain the serialized schema.  
+    //!             Otherwise, ecSchemaXml will be unmodified.  Schema is always unmodified.
+    ECOBJECTS_EXPORT static SchemaWriteStatus WriteToEC2XmlString(Utf8StringR ec2SchemaXml, ECSchemaP schemaToSerialize);
 
     //! Returns true if the schema is an ECStandard schema
     //! @return True if a standard schema, false otherwise

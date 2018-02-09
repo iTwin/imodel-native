@@ -997,7 +997,7 @@ bool kindOfQuantityHasMatchingPresentationUnit(KindOfQuantityCP koq, Units::Unit
 
 bool unitIsAcceptable (Units::UnitCP unit)
     {
-    return unit->IsSI() || 0 == strcmp(unit->GetPhenomenon()->GetName(), "PERCENTAGE");
+    return unit->IsSI() || 0 == strcmp(unit->GetPhenomenon()->GetName().c_str(), "PERCENTAGE");
     }
 
 ECObjectsStatus createNewKindOfQuantity(ECSchemaR schema, KindOfQuantityP& newKOQ, KindOfQuantityCP baseKOQ, Units::UnitCP newUnit, Units::UnitCP newDisplayUnit, bool& persistenceUnitChanged, Utf8CP newKoqName)
@@ -1017,7 +1017,7 @@ ECObjectsStatus createNewKindOfQuantity(ECSchemaR schema, KindOfQuantityP& newKO
         if (nullptr == newUnit)
             {
             Utf8String fullName = schema.GetFullSchemaName();
-            LOG.warningv("Failed to resolve SI unit for %s while converting KOQ %s in schema %s", originalUnit->GetName(), newKoqName, fullName.c_str());
+            LOG.warningv("Failed to resolve SI unit for %s while converting KOQ %s in schema %s", originalUnit->GetName().c_str(), newKoqName, fullName.c_str());
             return ECObjectsStatus::Error;
             }
         persistenceUnitChanged = true;
@@ -1025,7 +1025,7 @@ ECObjectsStatus createNewKindOfQuantity(ECSchemaR schema, KindOfQuantityP& newKO
 
     if (kindOfQuantityHasMatchingPersitenceUnit(baseKOQ, newUnit))
         {
-        newKOQ->SetPersistenceUnit(Formatting::FormatUnitSet("DefaultRealU", newUnit->GetName()));
+        newKOQ->SetPersistenceUnit(Formatting::FormatUnitSet("DefaultRealU", newUnit->GetName().c_str()));
         newKOQ->SetRelativeError(1e-4);
         }
     else
@@ -1036,9 +1036,9 @@ ECObjectsStatus createNewKindOfQuantity(ECSchemaR schema, KindOfQuantityP& newKO
         }
 
     if (nullptr != newDisplayUnit)
-        newKOQ->AddPresentationUnit(Formatting::FormatUnitSet("DefaultRealU", newDisplayUnit->GetName()));
+        newKOQ->AddPresentationUnit(Formatting::FormatUnitSet("DefaultRealU", newDisplayUnit->GetName().c_str()));
     else if (persistenceUnitChanged)
-        newKOQ->AddPresentationUnit(Formatting::FormatUnitSet("DefaultRealU", originalUnit->GetName()));
+        newKOQ->AddPresentationUnit(Formatting::FormatUnitSet("DefaultRealU", originalUnit->GetName().c_str()));
 
     return ECObjectsStatus::Success;
     }
@@ -1074,7 +1074,7 @@ ECObjectsStatus obtainKindOfQuantity(ECSchemaR schema, ECPropertyP prop, KindOfQ
     if (baseAndNewUnitAreIncompatible(baseKOQ, newUnit))
         {
         LOG.errorv("Cannot convert UnitSpecification on '%s.%s' because the base property unit '%s' is not compatible with this properties unit '%s'",
-                   prop->GetClass().GetFullName(), prop->GetName().c_str(), baseKOQ->GetPersistenceUnit().GetUnit()->GetName(), newUnit->GetName());
+                   prop->GetClass().GetFullName(), prop->GetName().c_str(), baseKOQ->GetPersistenceUnit().GetUnit()->GetName().c_str(), newUnit->GetName().c_str());
         return ECObjectsStatus::KindOfQuantityNotCompatible;
         }
 
@@ -1475,6 +1475,9 @@ ECObjectsStatus PropertyPriorityConverter::Convert(ECSchemaR schema, IECCustomAt
         {
         LOG.warningv("Found a PropertyPriority custom attribute on an the ECProperty, '%s.%s', but it did not contain a Priority value. Dropping custom attribute....",
             prop->GetClass().GetFullName(), prop->GetName().c_str());
+
+        container.RemoveCustomAttribute(BECA_SCHEMANAME, PROPERTY_PRIORITY);
+        container.RemoveSupplementedCustomAttribute(BECA_SCHEMANAME, PROPERTY_PRIORITY);
         return ECObjectsStatus::Success;
         }
 
@@ -1483,16 +1486,10 @@ ECObjectsStatus PropertyPriorityConverter::Convert(ECSchemaR schema, IECCustomAt
         {
         LOG.errorv("Failed to set the priority on ECProperty, %s.%s, from the PropertyPriority custom attribute", 
             prop->GetClass().GetFullName(), prop->GetName().c_str());
-        return status;
         }
 
-    if (!prop->RemoveCustomAttribute(BECA_SCHEMANAME, PROPERTY_PRIORITY) &&
-        !prop->RemoveSupplementedCustomAttribute(BECA_SCHEMANAME, PROPERTY_PRIORITY))
-        {
-        LOG.errorv("Couldn't remove the CustomAttribute %s:%s from the property %s.%s", BECA_SCHEMANAME, PROPERTY_PRIORITY, 
-            prop->GetClass().GetFullName(), prop->GetName().c_str());
-        return ECObjectsStatus::Error;
-        }
+    container.RemoveCustomAttribute(BECA_SCHEMANAME, PROPERTY_PRIORITY);
+    container.RemoveSupplementedCustomAttribute(BECA_SCHEMANAME, PROPERTY_PRIORITY);
 
     return status;
     }

@@ -80,7 +80,7 @@ public:
     CustomECSchemaConverter() {}
     CustomECSchemaConverterPtr static Create() { return new CustomECSchemaConverter(); }
 
-    //! Traverses the schema supplied and calls converters based on schemaName:customAttributeName
+    //! Converts EC2 schema metadata to EC3 concepts by traversing custom attributes of the supplied schema and calling converters based on schemaName:customAttributeName
     //! @param[in] schema   The schema to traverse
     //! @param[in] doValidate Flag saying whether to validate the schema or not.  This is used by the DgnV8Converter to disable validation until it has had a chance to fix the schemas
     ECOBJECTS_EXPORT bool Convert(ECSchemaR schema, bool doValidate = true);

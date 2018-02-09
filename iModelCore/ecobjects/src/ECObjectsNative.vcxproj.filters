@@ -75,7 +75,7 @@
     <ClCompile Include="CalculatedProperty.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ECContext.cpp">
+    <ClCompile Include="ECcontext.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ECDBuffer.cpp">
@@ -142,6 +142,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SchemaParseUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ECSchemaDownConverter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UnitSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -266,12 +272,18 @@
     <ClInclude Include="..\PublicApi\ECObjects\VirtualCollectionIterator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\ECSchemaDownConverter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\PublicApi\ECObjects\ECName.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\ECUnit.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ECObjects.mke" />
+    <None Include="ecobjects.mke" />
     <None Include="ECObjectsCompileOpts.mki" />
     <None Include="..\mki\ECObjects.mki" />
   </ItemGroup>

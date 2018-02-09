@@ -267,6 +267,15 @@ BentleyStatus SchemaComparer::CompareECSchema(SchemaChange& change, ECSchemaCR a
     if (a.GetVersionWrite() != b.GetVersionWrite())
         change.GetVersionWrite().SetValue(a.GetVersionWrite(), b.GetVersionWrite());
 
+    if (a.GetECVersion() != b.GetECVersion())
+        change.GetECVersion().SetValue((uint32_t) a.GetECVersion(), (uint32_t) b.GetECVersion());
+
+    if (a.GetOriginalECXmlVersionMajor() != b.GetOriginalECXmlVersionMajor())
+        change.GetOriginalECXmlVersionMajor().SetValue(a.GetOriginalECXmlVersionMajor(), b.GetOriginalECXmlVersionMajor());
+
+    if (a.GetOriginalECXmlVersionMinor() != b.GetOriginalECXmlVersionMinor())
+        change.GetOriginalECXmlVersionMinor().SetValue(a.GetOriginalECXmlVersionMinor(), b.GetOriginalECXmlVersionMinor());
+
     if (CompareECClasses(change.Classes(), a.GetClasses(), b.GetClasses()) != SUCCESS)
         return ERROR;
 
@@ -1094,11 +1103,12 @@ BentleyStatus SchemaComparer::CompareECEnumeration(ECEnumerationChange& change, 
 BentleyStatus SchemaComparer::CompareECEnumerators(ECEnumeratorChanges& changes, EnumeratorIterable const& oldValues, EnumeratorIterable const& newValues)
     {
     std::map<Utf8CP, ECEnumeratorCP, CompareIUtf8Ascii> oldEnumValues, newEnumValues, allEnumValues;
-    for (ECEnumeratorCP enumCP : oldValues)
-        oldEnumValues[enumCP->GetName().c_str()] = enumCP;
+    for (ECEnumeratorCP ecenum : oldValues)
+        oldEnumValues[ecenum->GetName().c_str()] = ecenum;
 
-    for (ECEnumeratorCP enumCP : newValues)
-        newEnumValues[enumCP->GetName().c_str()] = enumCP;
+    for (ECEnumeratorCP ecenum : newValues)
+        newEnumValues[ecenum->GetName().c_str()] = ecenum;
+
 
     allEnumValues.insert(oldEnumValues.cbegin(), oldEnumValues.cend());
     allEnumValues.insert(newEnumValues.cbegin(), newEnumValues.cend());
@@ -1171,6 +1181,7 @@ BentleyStatus SchemaComparer::CompareECEnumerators(ECEnumeratorChanges& changes,
 
     return SUCCESS;
     }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
@@ -1788,6 +1799,7 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::Description: return "Description";
             case SystemId::Direction: return "Direction";
             case SystemId::DisplayLabel: return "DisplayLabel";
+            case SystemId::ECVersion: return "ECVersion";
             case SystemId::Enumeration: return "Enumeration";
             case SystemId::Enumerations: return "Enumerations";
             case SystemId::Enumerator: return "Enumerator";
@@ -1817,6 +1829,8 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::Multiplicity: return "Multiplicity";
             case SystemId::Name: return "Name";
             case SystemId::Navigation: return "Navigation";
+            case SystemId::OriginalECXmlVersionMajor: return "OriginalECXmlVersionMajor";
+            case SystemId::OriginalECXmlVersionMinor: return "OriginalECXmlVersionMinor";
             case SystemId::Properties: return "Properties";
             case SystemId::Property: return "Property";
             case SystemId::PropertyCategories: return "PropertyCategories";

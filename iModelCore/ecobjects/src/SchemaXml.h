@@ -68,8 +68,10 @@ public:
     template<typename T>
     SchemaReadStatus ReadSchemaChildFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode, ECSchemaElementType childType);
 
+    SchemaReadStatus ReadUnitSystemFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode);
+
     void PopulateSchemaElementOrder(ECSchemaElementsOrder& elementOrder, BeXmlNodeR schemaNode);
-    virtual bool IsSchemaChildElementNode(BeXmlNodeR schemaNode, ECSchemaElementType childType) {return _IsSchemaChildElementNode(schemaNode, childType);};
+    virtual bool IsSchemaChildElementNode(BeXmlNodeR schemaNode, ECSchemaElementType childType) {return _IsSchemaChildElementNode(schemaNode, childType);}
 };
 
 // =====================================================================================
@@ -93,7 +95,7 @@ public:
     SchemaReadStatus ReadSchemaReferencesFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode) override {return _ReadSchemaReferencesFromXml(schemaOut, schemaNode);}
     SchemaReadStatus ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector& classes) override {return _ReadClassContentsFromXml(schemaOut, classes);}
 
-    bool IsSchemaChildElementNode (BeXmlNodeR schemaNode, ECSchemaElementType childType) override {return _IsSchemaChildElementNode(schemaNode, childType, ECVersion::V2_0);};
+    bool IsSchemaChildElementNode(BeXmlNodeR schemaNode, ECSchemaElementType childType) override {return _IsSchemaChildElementNode(schemaNode, childType, ECVersion::V2_0);}
 };
 
 // =====================================================================================

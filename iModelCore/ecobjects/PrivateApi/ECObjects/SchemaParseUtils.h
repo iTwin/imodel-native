@@ -13,8 +13,8 @@
 #define EC_NAMESPACE_PREFIX3                "ec3"
 
 #define ECXML_URI                           "http://www.bentley.com/schemas/Bentley.ECXML"
-#define ECJSON_URI                          "https://dev.bentley.com/json_schemas/ec/31/draft-01/ecschema"
-#define ECJSON_SCHEMA_CHILD_URI             "https://dev.bentley.com/json_schemas/ec/31/draft-01/schemachild"
+#define ECJSON_URI                          "https://dev.bentley.com/json_schemas/ec/32/draft-01/ecschema"
+#define ECJSON_SCHEMA_CHILD_URI             "https://dev.bentley.com/json_schemas/ec/32/draft-01/schemachild"
 
 #define ECJSON_URI_SPEC_ATTRIBUTE           "$schema"
 #define ECXML_SCHEMA_NAME_ATTRIBUTE         "schemaName"
@@ -37,6 +37,7 @@
 #define ECXML_ENUMERATION_ELEMENT           "ECEnumeration"
 #define ECJSON_ENUMERATION_ELEMENT          "Enumeration"
 #define PROPERTY_CATEGORY_ELEMENT           "PropertyCategory"
+#define UNIT_SYSTEM_ELEMENT                 "UnitSystem"
 
 #define ECXML_SCHEMAREFERENCE_ELEMENT       "ECSchemaReference"
 #define ECJSON_REFERENCES_ATTRIBUTE         "references"

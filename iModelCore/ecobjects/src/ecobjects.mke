@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: src/ECObjects.mke $
+#     $Source: src/ecobjects.mke $
 #
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -53,6 +53,7 @@ ECObjectsHeaders =              $(baseDir)DateTimeInfoAccessor.h \
                                 $(ecobjectsPublicAPISrc)ECRelationshipPath.h \
                                 $(ecobjectsPublicAPISrc)ECSchema.h \
                                 $(ecobjectsPublicAPISrc)ECSchemaConverter.h \
+                                $(ecobjectsPublicAPISrc)ECSchemaDownConverter.h \
                                 $(ecobjectsPublicAPISrc)ECSchemaValidator.h \
                                 $(ecobjectsPublicAPISrc)ECValue.h \
                                 $(ecobjectsPublicAPISrc)SchemaComparer.h \
@@ -60,6 +61,7 @@ ECObjectsHeaders =              $(baseDir)DateTimeInfoAccessor.h \
                                 $(ecobjectsPublicAPISrc)SchemaResourceKeyHelper.h \
                                 $(ecobjectsPublicAPISrc)StandardCustomAttributeHelper.h \
                                 $(ecobjectsPublicAPISrc)SupplementalSchema.h \
+                                $(ecobjectsPublicAPISrc)ECUnit.h \
                                 $(ecobjectsPrivateAPISrc)SchemaParseUtils.h
 
 ECUnitsHeaders =                $(ecunitsPublicAPISrc)Units.h \
@@ -98,6 +100,8 @@ $(o)ECRelationshipPath$(oext)                              : $(baseDir)ECRelatio
 $(o)ECSchema$(oext)                                        : $(baseDir)ECSchema.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)ECSchemaConverter$(oext)                               : $(baseDir)ECSchemaConverter.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)ECSchemaDownConverter$(oext)                           : $(baseDir)ECSchemaDownConverter.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)ECSchemaValidator$(oext)                               : $(baseDir)ECSchemaValidator.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
@@ -138,6 +142,8 @@ $(o)StandaloneECRelationshipInstance$(oext)                : $(baseDir)Standalon
 $(o)SupplementalSchema$(oext)                              : $(baseDir)SupplementalSchema.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)SystemSymbolProvider$(oext)                            : $(baseDir)SystemSymbolProvider.cpp $(ECObjectsHeaders) $(ecobjectsPublicAPISrc)SystemSymbolProvider.h ${MultiCompileDepends}
+
+$(o)UnitSystem$(oext)                                      : $(baseDir)UnitSystem.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 # ECUnits
 

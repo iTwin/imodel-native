@@ -80,12 +80,12 @@ TEST_F(KindOfQuantityTest, AddRemovePresentationUnits)
     {
     KindOfQuantityP koq = schema->GetKindOfQuantityP("MyKindOfQuantity");
     ASSERT_NE(nullptr, koq);
-    EXPECT_STREQ("FT", koq->GetDefaultPresentationUnit().GetUnit()->GetName());
+    EXPECT_STREQ("FT", koq->GetDefaultPresentationUnit().GetUnit()->GetName().c_str());
     auto presUnitList = koq->GetPresentationUnitList();
     EXPECT_EQ(3, presUnitList.size());
-    EXPECT_STREQ("FT", presUnitList.at(0).GetUnit()->GetName());
-    EXPECT_STREQ("IN", presUnitList.at(1).GetUnit()->GetName());
-    EXPECT_STREQ("MILLIINCH", presUnitList.at(2).GetUnit()->GetName());
+    EXPECT_STREQ("FT", presUnitList.at(0).GetUnit()->GetName().c_str());
+    EXPECT_STREQ("IN", presUnitList.at(1).GetUnit()->GetName().c_str());
+    EXPECT_STREQ("MILLIINCH", presUnitList.at(2).GetUnit()->GetName().c_str());
 
     koq->RemovePresentationUnit("IN");
     }
@@ -94,8 +94,8 @@ TEST_F(KindOfQuantityTest, AddRemovePresentationUnits)
     ASSERT_NE(nullptr, koq);
     auto presUnitList = koq->GetPresentationUnitList();
     EXPECT_EQ(2, presUnitList.size());
-    EXPECT_STREQ("FT", presUnitList.at(0).GetUnit()->GetName());
-    EXPECT_STREQ("MILLIINCH", presUnitList.at(1).GetUnit()->GetName());
+    EXPECT_STREQ("FT", presUnitList.at(0).GetUnit()->GetName().c_str());
+    EXPECT_STREQ("MILLIINCH", presUnitList.at(1).GetUnit()->GetName().c_str());
     }
     }
 
@@ -472,14 +472,14 @@ TEST_F(KindOfQuantityDeserializationTest, ExpectSuccessWhenRoundtripKindOfQuanti
     ASSERT_TRUE(deserializedKindOfQuantity != nullptr);
     EXPECT_STREQ("DL", deserializedKindOfQuantity->GetDisplayLabel().c_str());
     EXPECT_STREQ("DESC", deserializedKindOfQuantity->GetDescription().c_str());
-    EXPECT_STREQ("CM", deserializedKindOfQuantity->GetPersistenceUnit().GetUnit()->GetName());
+    EXPECT_STREQ("CM", deserializedKindOfQuantity->GetPersistenceUnit().GetUnit()->GetName().c_str());
     EXPECT_EQ(10e-3, deserializedKindOfQuantity->GetRelativeError());
 
-    EXPECT_STREQ("FT", deserializedKindOfQuantity->GetDefaultPresentationUnit().GetUnit()->GetName());
+    EXPECT_STREQ("FT", deserializedKindOfQuantity->GetDefaultPresentationUnit().GetUnit()->GetName().c_str());
     auto& resultAltUnits = deserializedKindOfQuantity->GetPresentationUnitList();
     EXPECT_EQ(3, resultAltUnits.size()); // Default presentation unit is included in list of presentation units
-    EXPECT_STREQ("IN", resultAltUnits[1].GetUnit()->GetName());
-    EXPECT_STREQ("MILLIINCH", resultAltUnits[2].GetUnit()->GetName());
+    EXPECT_STREQ("IN", resultAltUnits[1].GetUnit()->GetName().c_str());
+    EXPECT_STREQ("MILLIINCH", resultAltUnits[2].GetUnit()->GetName().c_str());
 
     ECClassCP deserializedClass = deserializedSchema->GetClassCP("EntityClass");
     ECPropertyP deserializedProperty = deserializedClass->GetPropertyP("QuantifiedProperty");

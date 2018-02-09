@@ -54,12 +54,12 @@ struct SchemaCopyTest : CopyTestFixture
 //---------------+---------------+---------------+---------------+---------------+-------
 void SchemaCopyTest::SetUp()
     {
+    CopyTestFixture::SetUp();
     bvector<WString> searchPaths;
     searchPaths.push_back(ECTestFixture::GetTestDataPath(L""));
     m_schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
     m_schemaContext = ECSchemaReadContext::CreateContext();
     m_schemaContext->AddSchemaLocater(*m_schemaLocater);
-    CopyTestFixture::SetUp();
     }
 
 //---------------------------------------------------------------------------------------
@@ -104,6 +104,26 @@ TEST_F(SchemaCopyTest, Schema_Success)
     EXPECT_EQ(5, m_targetSchema->GetVersionMinor());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Kyle.Abramowitz    02/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaCopyTest, CopiedSchemaShouldAlwaysHaveOriginalXmlVersionSetToLatest)
+    {
+    uint32_t latestMajor;
+    uint32_t latestMinor;
+
+    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(m_sourceSchema, "TestSchema", "ts", 1, 0, 0, ECVersion::Latest));
+    CopySchema();
+    ECSchema::ParseECVersion(latestMajor, latestMinor, ECVersion::Latest);
+    EXPECT_EQ(m_targetSchema->GetOriginalECXmlVersionMajor(), latestMajor);
+    EXPECT_EQ(m_targetSchema->GetOriginalECXmlVersionMinor(), latestMinor);
+
+    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(m_sourceSchema, "TestSchema", "ts", 1, 0, 0, ECVersion::V2_0));
+    CopySchema();
+    EXPECT_EQ(m_targetSchema->GetOriginalECXmlVersionMajor(), latestMajor);
+    EXPECT_EQ(m_targetSchema->GetOriginalECXmlVersionMinor(), latestMinor);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -143,7 +163,36 @@ TEST_F(SchemaCopyTest, TestKindOfQuantity)
     EXPECT_STREQ("Test KoQ", targetKoq->GetDisplayLabel().c_str());
     EXPECT_STREQ("Test Description", targetKoq->GetDescription().c_str());
     EXPECT_STREQ("CM", targetKoq->GetDefaultPresentationUnit().GetUnitName().c_str());
-    EXPECT_STREQ("M", targetKoq->GetPersistenceUnit().GetUnit()->GetName());
+    EXPECT_EQ(2, targetKoq->GetPresentationUnitList().size());
+    EXPECT_STREQ("MM", targetKoq->GetPresentationUnitList().at(1).GetUnitName().c_str());
+    EXPECT_STREQ("M", targetKoq->GetPersistenceUnit().GetUnit()->GetName().c_str());
+    EXPECT_EQ(10e-3, targetKoq->GetRelativeError());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    08/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaCopyTest, TestKindOfQuantity_NoPresentationUnit)
+    {
+    CreateTestSchema();
+
+    KindOfQuantityP koq;
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateKindOfQuantity(koq, "TestKoQ"));
+    koq->SetDisplayLabel("Test KoQ");
+    koq->SetDescription("Test Description");
+    koq->SetPersistenceUnit("M");
+    koq->SetRelativeError(10e-3);
+
+    CopySchema();
+
+    EXPECT_EQ(1, m_targetSchema->GetKindOfQuantityCount());
+
+    KindOfQuantityCP targetKoq = m_targetSchema->GetKindOfQuantityCP("TestKoQ");
+    ASSERT_TRUE(nullptr != targetKoq);
+    EXPECT_STREQ("Test KoQ", targetKoq->GetDisplayLabel().c_str());
+    EXPECT_STREQ("Test Description", targetKoq->GetDescription().c_str());
+    EXPECT_STREQ("M", targetKoq->GetPersistenceUnit().GetUnit()->GetName().c_str());
+    EXPECT_FALSE(targetKoq->HasPresentationUnits());
     EXPECT_EQ(10e-3, targetKoq->GetRelativeError());
     }
 
