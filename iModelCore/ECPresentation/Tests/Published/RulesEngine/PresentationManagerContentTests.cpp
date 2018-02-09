@@ -9365,7 +9365,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
     {
     // set up data set
     ECClassCP classA = GetClass("ClassA");
-    ECClassCP classB = GetClass("ClassB");
     ECClassCP classC = GetClass("ClassC");
     IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance) {instance.SetValue("BaseStringProperty", ECValue("ClassC_BaseStringProperty"));});
 
@@ -9434,7 +9433,6 @@ DEFINE_SCHEMA(NavigationPropertyLabelIsOverridenByTargetClassProperty, R"*(
 TEST_F(RulesDrivenECPresentationManagerContentTests, NavigationPropertyLabelIsOverridenByTargetClassProperty)
     {
     // set up data set
-    ECClassCP classA = GetClass("ClassA");
     ECClassCP classB = GetClass("ClassB");
     ECClassCP classC = GetClass("ClassC");
     IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) {instance.SetValue("BaseStringProperty", ECValue("ClassB_StringProperty"));});
@@ -9507,7 +9505,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, NavigationPropertyLabelIsOv
     {
     // set up data set
     ECClassCP classA = GetClass("ClassA");
-    ECClassCP classB = GetClass("ClassB");
     ECClassCP classC = GetClass("ClassC");
     ECClassCP classD = GetClass("ClassD");
     IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance) {instance.SetValue("BaseStringProperty", ECValue("ClassC_StringProperty"));});
