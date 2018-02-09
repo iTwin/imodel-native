@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/SelectionSyncHandler.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -31,7 +31,8 @@ Json::Value RulesDrivenSelectionSyncHandler::_CreateContentOptionsForSelection(S
 rapidjson::Document RulesDrivenSelectionSyncHandler::_CreateSelectionEventExtendedData() const
     {
     SelectionExtendedData extendedData;
-    extendedData.SetRulesetId(m_rulesetId.c_str());
+    if (!m_rulesetId.empty())
+        extendedData.SetRulesetId(m_rulesetId.c_str());
 
     rapidjson::Document d;
     d.CopyFrom(extendedData.GetJson(), d.GetAllocator());
