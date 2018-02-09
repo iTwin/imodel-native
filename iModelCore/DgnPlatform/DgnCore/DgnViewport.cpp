@@ -1195,6 +1195,20 @@ void DgnViewport::SetFlashed(DgnElementId id, double duration)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnViewport::ChangeActiveVolume(ClipVectorP volume)
+    {
+    auto& vc = GetViewControllerR();
+    vc.AssignActiveVolume(volume);
+    auto& style = vc.GetViewDefinitionR().GetDisplayStyle();
+    auto vf = style.GetViewFlags();
+    vf.SetShowClipVolume(nullptr != volume);
+    style.SetViewFlags(vf);
+    InvalidateRenderPlan();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Frustum::ScaleAboutCenter(double scale)
