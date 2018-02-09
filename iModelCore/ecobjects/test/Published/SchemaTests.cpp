@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/SchemaTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -1032,6 +1032,74 @@ TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveReferencedSchemaWithProperty
     EXPECT_FALSE(primProp->IsCategoryDefinedLocally());
 
     EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema)) << "The schema containing the propertyCateogry could not be removed even though all references to it have been removed.";
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Colin.Kerr                      02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveReferencedSchemaWithKindOfQuantity)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
+
+    ECSchemaPtr refSchema;
+    ECSchema::CreateSchema(refSchema, "RefSchema", "ts", 5, 0, 5);
+
+    ECEntityClassP entityClass;
+    KindOfQuantityP kindOfQuantity;
+    PrimitiveECPropertyP primProp;
+
+    schema->AddReferencedSchema(*refSchema);
+    EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schema, *refSchema));
+
+    refSchema->CreateKindOfQuantity(kindOfQuantity, "KindOfQuantity");
+
+    schema->CreateEntityClass(entityClass, "Entity");
+    entityClass->CreatePrimitiveProperty(primProp, "PrimProp");
+    primProp->SetKindOfQuantity(kindOfQuantity);
+
+    EXPECT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchema)) << 
+        "The schema containing the KindOfQUantity was removed when it shouldn't be because it is still in use within the ECProperty";
+
+    ASSERT_EQ(ECObjectsStatus::Success, primProp->SetKindOfQuantity(nullptr));
+    EXPECT_FALSE(primProp->IsKindOfQuantityDefinedLocally());
+
+    EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema)) << 
+        "The schema containing the KindOfQuantity could not be removed even though all references to it have been removed.";
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Colin.Kerr                      02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveReferencedSchemaWithEnumeration)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
+
+    ECSchemaPtr refSchema;
+    ECSchema::CreateSchema(refSchema, "RefSchema", "ts", 5, 0, 5);
+
+    ECEntityClassP entityClass;
+    ECEnumerationP enumeration;
+    PrimitiveECPropertyP primProp;
+
+    schema->AddReferencedSchema(*refSchema);
+    EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schema, *refSchema));
+
+    refSchema->CreateEnumeration(enumeration, "Enum", PrimitiveType::PRIMITIVETYPE_Integer);
+
+    schema->CreateEntityClass(entityClass, "Entity");
+    entityClass->CreatePrimitiveProperty(primProp, "PrimProp");
+    primProp->SetType(*enumeration);
+
+    EXPECT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchema)) <<
+        "The schema containing the ECEnumeration was removed when it shouldn't be because it is still in use within the ECProperty";
+
+    ASSERT_EQ(ECObjectsStatus::Success, primProp->SetType(PrimitiveType::PRIMITIVETYPE_Double));
+    EXPECT_EQ(nullptr, primProp->GetEnumeration());
+
+    EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema)) <<
+        "The schema containing the ECEnumeration could not be removed even though all references to it have been removed.";
     }
 
 /*---------------------------------------------------------------------------------**//**
