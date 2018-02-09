@@ -146,6 +146,7 @@ BENTLEY_TRANSLATABLE_STRINGS_START(UnitsL10N,units_msg)
     L10N_STRING(FormatTraits_AppendUnitName)                            // =="Append Unit Name"==
     L10N_STRING(FormatTraits_LeadingZeroes)                            // =="Show Leading Zeroes"==
     L10N_STRING(FormatTraits_TrailingZeroes)                            // =="Show Trailing Zeroes"==
+    L10N_STRING(FormatTraits_KeepDecimalPoint)                          // =="Keep Decimal Point"==
 BENTLEY_TRANSLATABLE_STRINGS_END
 
 #define UNITSL10N_GETSTRING(K)  BeSQLite::L10N::GetString(UnitsL10N::GetNameSpace(), UnitsL10N::K())
