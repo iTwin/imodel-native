@@ -736,6 +736,10 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     schemaOut->m_originalECXmlVersionMajor = ecXmlMajorVersion;
     schemaOut->m_originalECXmlVersionMinor = ecXmlMinorVersion;
 
+    // Handle conversion of encoded ECName to name + display label for legacy schemas
+    if (schemaOut->OriginalECXmlVersionLessThan(ECVersion::V3_1))
+        schemaOut->SetName(schemaKey.GetName().c_str());
+
     if (ECObjectsStatus::DuplicateSchema == m_schemaContext.AddSchema(*schemaOut))
         return SchemaReadStatus::DuplicateSchema;
 

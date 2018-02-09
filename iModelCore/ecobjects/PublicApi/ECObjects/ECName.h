@@ -32,8 +32,14 @@ public:
 
     Utf8StringCR GetName() const {return m_name;}
     bool IsDisplayLabelDefined() const {return m_hasExplicitDisplayLabel;}
-    Utf8StringCR GetDisplayLabel() const {return m_displayLabel;}
+    //! Returns the display label if set or the name if display label is not set
+    Utf8StringCR GetDisplayLabel() const {return m_hasExplicitDisplayLabel ? m_displayLabel : m_name;}
 #ifndef DOCUMENTATION_GENERATOR
+    //! Sets the name with no encoding if input string is valid ECName, returns false if input is not valid ECName.
+    //! @param[in]  name                        Characters to set as name
+    //! @param[in]  decodeNameToDisplayLabel    If true and no display label set the name will be decoded into the display label using ECNameValidation::DecodeFromValidName
+    //! @remarks    If decodeNameToDisplayLabel is set and the name is decoded into a display label IsDisplaylabelDefined will be set to true, if not it will be set to false.
+    bool SetValidName(Utf8CP name, bool decodeNameToDisplayLabel);
     void SetName(Utf8CP name);
     void SetDisplayLabel(Utf8CP label);
 #endif

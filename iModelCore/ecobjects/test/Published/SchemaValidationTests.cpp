@@ -98,6 +98,7 @@ TEST_F(SchemaValidationTests, TestValidSchemaNames)
     statusB = schemaA->CreateEntityClass(ecClass, "MyClass""§$%&/()");
     EXPECT_TRUE(statusB == ECObjectsStatus::InvalidName) << "Expected InvalidName because the class name contains invalid characters";
 
+    ASSERT_EQ(ECObjectsStatus::Success, schemaA->CreateEntityClass(ecClass, "MyClass"));
     PrimitiveECPropertyP prop;
     statusB = ecClass->CreatePrimitiveProperty(prop, "MyProperty!§$%&/()=", PRIMITIVETYPE_String);
     EXPECT_TRUE(statusB == ECObjectsStatus::InvalidName) << "Expected InvalidName because the property name contains invalid characters";

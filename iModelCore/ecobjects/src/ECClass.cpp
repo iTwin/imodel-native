@@ -100,10 +100,9 @@ Utf8StringCR ECClass::GetECSqlName() const
 //---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECClass::SetName (Utf8StringCR name)
     {
-    if (!ECNameValidation::IsValidName (name.c_str()))
+    if (!m_validatedName.SetValidName(name.c_str(), m_schema.OriginalECXmlVersionLessThan(ECVersion::V3_1)))
         return ECObjectsStatus::InvalidName;
 
-    m_validatedName.SetName (name.c_str());
     m_fullName = GetSchema().GetName() + ":" + GetName();
     
     return ECObjectsStatus::Success;

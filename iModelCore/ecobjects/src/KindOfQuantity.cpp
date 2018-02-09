@@ -15,10 +15,9 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus KindOfQuantity::SetName(Utf8CP name)
     {
-    if (!ECNameValidation::IsValidName(name))
+    if (!m_validatedName.SetValidName(name, false))
         return ECObjectsStatus::InvalidName;
 
-    m_validatedName.SetName(name);
     m_fullName = GetSchema().GetName() + ":" + GetName();
     return ECObjectsStatus::Success;
     }

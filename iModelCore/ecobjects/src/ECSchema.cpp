@@ -189,6 +189,24 @@ Utf8String ECNameValidation::EncodeToValidName (Utf8StringCR name)
     return encoded;
     }
 
+//---------------------------------------------------------------------------------------//
+// @bsimethod                                                    Colin.Kerr         02/2018
+//+---------------+---------------+---------------+---------------+---------------+------//
+bool ECValidatedName::SetValidName(Utf8CP name, bool decodeNameToDisplayLabel)
+    {
+    if (nullptr == name)
+        return false;
+
+    if (!ECNameValidation::IsValidName(name))
+        return false;
+
+    m_name = name;
+    if (decodeNameToDisplayLabel && !m_hasExplicitDisplayLabel)
+        m_hasExplicitDisplayLabel = ECNameValidation::DecodeFromValidName(m_displayLabel, m_name);
+
+    return true;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -216,7 +234,7 @@ void ECValidatedName::SetDisplayLabel(Utf8CP label)
         {
         m_hasExplicitDisplayLabel = false;
         m_displayLabel.clear();
-        ECNameValidation::DecodeFromValidName (m_displayLabel, m_name);
+        //ECNameValidation::DecodeFromValidName (m_displayLabel, m_name);
         }
     else
         {
@@ -312,9 +330,10 @@ ECObjectsStatus ECSchema::SetName (Utf8StringCR name)
     else if (!ECNameValidation::IsValidName (name.c_str()))
         return ECObjectsStatus::InvalidName;
 
-    ECNameValidation::EncodeToValidName (m_key.m_schemaName, name);
-    if (!m_hasExplicitDisplayLabel)
-        ECNameValidation::DecodeFromValidName (m_displayLabel, m_key.m_schemaName);
+    m_key.m_schemaName = name;
+
+    if (OriginalECXmlVersionLessThan(ECVersion::V3_1))
+        m_hasExplicitDisplayLabel = ECNameValidation::DecodeFromValidName(m_displayLabel, m_key.m_schemaName);
 
     return ECObjectsStatus::Success;
     }
@@ -373,7 +392,7 @@ ECObjectsStatus ECSchema::SetDisplayLabel (Utf8StringCR displayLabel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR ECSchema::GetDisplayLabel() const 
     {
-    return m_localizedStrings.GetSchemaDisplayLabel(this, m_displayLabel); 
+    return m_localizedStrings.GetSchemaDisplayLabel(this, GetInvariantDisplayLabel());
     }
 
 static Utf8CP s_standardSchemaNames[] =

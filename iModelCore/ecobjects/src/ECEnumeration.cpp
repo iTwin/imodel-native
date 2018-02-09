@@ -26,10 +26,9 @@ Utf8StringCR ECEnumeration::GetDisplayLabel() const {return GetSchema().GetLocal
 //---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECEnumeration::SetName(Utf8CP name)
     {
-    if (!ECNameValidation::IsValidName(name))
+    if (!m_validatedName.SetValidName(name, false))
         return ECObjectsStatus::InvalidName;
 
-    m_validatedName.SetName(name);
     m_fullName = GetSchema().GetName() + ":" + GetName();
     return ECObjectsStatus::Success;
     }
@@ -518,10 +517,9 @@ Utf8StringCR ECEnumerator::GetInvariantDisplayLabel() const
 //---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECEnumerator::SetName(Utf8StringCR name)
     {
-    if (!ECNameValidation::IsValidName(name.c_str()))
+    if (!m_validatedName.SetValidName(name.c_str(), false))
         return ECObjectsStatus::InvalidName;
 
-    m_validatedName.SetName(name.c_str());
     return ECObjectsStatus::Success;
     }
 

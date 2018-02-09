@@ -3300,7 +3300,7 @@ public:
 
     ECOBJECTS_EXPORT ECObjectsStatus SetDisplayLabel(Utf8StringCR value); //!< Sets the display label for this ECSchema
     ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const; //!< Gets the DisplayLabel for this ECSchema.  If no DisplayLabel has been set explicitly, returns the name of the schema.
-    Utf8StringCR GetInvariantDisplayLabel() const {return m_displayLabel;} //!< Gets the invariant display label for this ECSchema.
+    Utf8StringCR GetInvariantDisplayLabel() const {return m_hasExplicitDisplayLabel ? m_displayLabel : m_key.m_schemaName;} //!< Gets the invariant display label for this ECSchema.
     bool GetIsDisplayLabelDefined() const {return m_hasExplicitDisplayLabel;} //!< Returns true if the display label has been set explicitly for this schema or not
 
     ECOBJECTS_EXPORT ECObjectsStatus SetVersionRead(uint32_t value); //!< Sets the read version of this schema, check SchemaKey for detailed description.

@@ -178,7 +178,7 @@ TEST_F(SchemaDeserializationConversionTest, TestNamespacePrefixAttribute)
     EXPECT_EQ(SchemaReadStatus::Success, status);
     EXPECT_TRUE(schema.IsValid());
     ASSERT_TRUE(schema->IsECVersion(ECVersion::Latest));
-    EXPECT_EQ(schema->GetName().c_str(), schema->GetAlias().c_str());
+    EXPECT_STREQ(schema->GetName().c_str(), schema->GetAlias().c_str());
 
     Utf8CP schemaXml2 = "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='testSchema2' nameSpacePrefix='' version='01.00' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
@@ -189,7 +189,7 @@ TEST_F(SchemaDeserializationConversionTest, TestNamespacePrefixAttribute)
     EXPECT_EQ(SchemaReadStatus::Success, status);
     EXPECT_TRUE(schema2.IsValid());
     ASSERT_TRUE(schema2->IsECVersion(ECVersion::Latest));
-    EXPECT_EQ(schema2->GetName().c_str(), schema2->GetAlias().c_str());
+    EXPECT_STREQ(schema2->GetName().c_str(), schema2->GetAlias().c_str());
 
     Utf8CP schemaXml3 = "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='testSchema3' version='01.00' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -200,7 +200,7 @@ TEST_F(SchemaDeserializationConversionTest, TestNamespacePrefixAttribute)
     EXPECT_EQ(SchemaReadStatus::Success, status);
     EXPECT_TRUE(schema3.IsValid());
     ASSERT_TRUE(schema3->IsECVersion(ECVersion::Latest));
-    EXPECT_EQ(schema3->GetName().c_str(), schema3->GetAlias().c_str());
+    EXPECT_STREQ(schema3->GetName().c_str(), schema3->GetAlias().c_str());
 
     Utf8CP schemaXml4 = "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='testSchema4' nameSpacePrefix='' version='01.00' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -211,7 +211,7 @@ TEST_F(SchemaDeserializationConversionTest, TestNamespacePrefixAttribute)
     EXPECT_EQ(SchemaReadStatus::Success, status);
     EXPECT_TRUE(schema4.IsValid());
     ASSERT_TRUE(schema4->IsECVersion(ECVersion::Latest));
-    EXPECT_EQ(schema4->GetName().c_str(), schema4->GetAlias().c_str());
+    EXPECT_STREQ(schema4->GetName().c_str(), schema4->GetAlias().c_str());
     }
 
 //---------------------------------------------------------------------------------------

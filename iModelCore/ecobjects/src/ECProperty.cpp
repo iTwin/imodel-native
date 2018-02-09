@@ -93,11 +93,10 @@ ECPropertyId ECProperty::GetId () const
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECProperty::SetName (Utf8StringCR name)
-    {        
-    if (!ECNameValidation::IsValidName (name.c_str()))
+    {
+    if (!m_validatedName.SetValidName(name.c_str(), m_class.GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_1)))
         return ECObjectsStatus::InvalidName;
 
-    m_validatedName.SetName (name.c_str());
     return ECObjectsStatus::Success;
     }
 

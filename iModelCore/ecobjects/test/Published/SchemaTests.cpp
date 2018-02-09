@@ -1421,7 +1421,7 @@ struct ECNameValidationTest : ECTestFixture
         tester.Preprocess(*schema);
 
         Utf8String schemaXml;
-        EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(schemaXml));
+        EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(schemaXml, ECVersion::V2_0));
 
         schema = NULL;
         ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
@@ -1441,36 +1441,41 @@ struct DisplayLabelTester : ECNameValidationTest::ITester
 
     DisplayLabelTester(Utf8CP name, Utf8CP encodedName) : m_name(name), m_encodedName(encodedName) {}
 
-    template<typename T> void Compare(T const& target) const
+    template<typename T> void CompareNoAutoDecode(T const& target) const
         {
         EXPECT_FALSE(target.GetIsDisplayLabelDefined());
-        EXPECT_TRUE(target.GetName().Equals(m_encodedName)) << "Name: Expected " << m_encodedName.c_str() << " Actual " << target.GetName().c_str();
-        EXPECT_TRUE(target.GetDisplayLabel().Equals(m_name)) << "Label: Expected " << m_name.c_str() << " Actual " << target.GetDisplayLabel().c_str();
+        EXPECT_STREQ(m_encodedName.c_str(), target.GetName().c_str());
+        EXPECT_STREQ(m_encodedName.c_str(), target.GetDisplayLabel().c_str());
+        }
+    
+    template<typename T> void Compare(T const& target) const
+        {
+        EXPECT_EQ(!ECNameValidation::IsValidName(m_name.c_str()), target.GetIsDisplayLabelDefined());
+        EXPECT_STREQ(m_encodedName.c_str(), target.GetName().c_str());
+        EXPECT_STREQ(m_name.c_str(), target.GetDisplayLabel().c_str());
         }
 
     template<typename T> void CompareOverriddenLabel(T const& target, Utf8CP label) const
         {
         EXPECT_TRUE(target.GetIsDisplayLabelDefined());
-        EXPECT_TRUE(target.GetDisplayLabel().Equals(label));
+        EXPECT_STREQ(label, target.GetDisplayLabel().c_str());
         }
 
     virtual void Preprocess(ECSchemaR schema) const override
         {
-        // This test used to rely on SetName() automatically encoding a non-EC name.
-        // We removed that behavior because it diverges from managed EC (which throws an "invalid name" exception instead)
-        // So now we must explicitly encode the name first.
+        // This test used to test that ECObjects would decode names into display labels, this now only happens for deserialization from EC2 schemas
         Utf8String encodedName;
         EXPECT_EQ(!ECNameValidation::IsValidName(m_name.c_str()), ECNameValidation::EncodeToValidName(encodedName, m_name));
         schema.SetName(encodedName);
-        Compare(schema);
+        CompareNoAutoDecode(schema);
 
         ECEntityClassP ecclass;
         schema.CreateEntityClass(ecclass, encodedName);
-        Compare(*ecclass);
+        CompareNoAutoDecode(*ecclass);
 
         PrimitiveECPropertyP ecprop;
         ecclass->CreatePrimitiveProperty(ecprop, encodedName, PRIMITIVETYPE_String);
-        Compare(*ecprop);
+        CompareNoAutoDecode(*ecprop);
         }
 
     virtual void Postprocess(ECSchemaR schema) const override
@@ -1492,9 +1497,9 @@ struct DisplayLabelTester : ECNameValidationTest::ITester
 
         // Test explicitly un-setting display labels
         ecclass->SetDisplayLabel("");
-        Compare(*ecclass);
+        CompareNoAutoDecode(*ecclass);
         ecprop->SetDisplayLabel("");
-        Compare(*ecprop);
+        CompareNoAutoDecode(*ecprop);
         }
     };
 
