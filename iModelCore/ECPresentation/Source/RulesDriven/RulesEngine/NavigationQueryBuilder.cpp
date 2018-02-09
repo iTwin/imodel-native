@@ -909,11 +909,17 @@ protected:
             else if (value->IsArray())
                 {
                 // WIP: use IdsFilteringHelper
-                whereClause = Utf8String("InVirtualSet(?, ").append(whereClause).append(")");
                 if (ecProperty->GetIsNavigation())
-                    whereClauseBindings.push_back(new BoundQueryIdSet(QueryBuilderHelpers::CreateIdSetFromJsonArray(*value)));                    
+                    {
+                    IdsFilteringHelper<IdSet<BeInt64Id>> helper(QueryBuilderHelpers::CreateIdSetFromJsonArray(*value));
+                    whereClause = helper.CreateWhereClause(whereClause.c_str());
+                    whereClauseBindings = helper.CreateBoundValues();
+                    }
                 else
+                    {
+                    whereClause = Utf8String("InVirtualSet(?, ").append(whereClause).append(")");
                     whereClauseBindings.push_back(new BoundRapidJsonValueSet(*value, ecProperty->GetAsPrimitiveProperty()->GetType()));
+                    }
                 }
             else
                 {
