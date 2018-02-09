@@ -125,7 +125,7 @@ TEST_F(CustomFunctionTests, GetECInstanceDisplayLabel_UsesInstanceLabel)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CustomFunctionTests, GetECInstanceDisplayLabel_UsesClassDisplayLabel)
+TEST_F(CustomFunctionTests, GetECInstanceDisplayLabel_UsesDefaultInstanceDisplayLabel)
     {
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
@@ -134,7 +134,7 @@ TEST_F(CustomFunctionTests, GetECInstanceDisplayLabel_UsesClassDisplayLabel)
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, m_widgetInstanceId));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    ASSERT_STREQ(Utf8String(s_widgetClass->GetDisplayLabel().c_str()).c_str(), stmt.GetValueText(0));
+    ASSERT_STREQ(CommonTools::GetDefaultDisplayLabel(*m_widgetInstance).c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1262,5 +1262,5 @@ TEST_F(CustomFunctionTests, GetDisplayLabelForInstanceInHierarchy_UsesClassDispl
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, m_widgetInstanceId));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    ASSERT_STREQ(Utf8String(s_widgetClass->GetDisplayLabel().c_str()).c_str(), stmt.GetValueText(0));
+    ASSERT_STREQ(CommonTools::GetDefaultDisplayLabel(s_widgetClass->GetDisplayLabel(), m_widgetInstanceId.GetValue()).c_str(), stmt.GetValueText(0));
     }

@@ -271,7 +271,7 @@ struct GetNavigationPropertyLabelScalar : CachingScalarFunction<bmap<ECInstanceK
                     ProcessLabelOverrides(label, GetContext(), classId, instanceId, "");
 
                 if (label.empty())
-                    label = Utf8String(ecClass->GetDisplayLabel());
+                    label = CommonTools::GetDefaultDisplayLabel(ecClass->GetDisplayLabel(), instanceId.GetValue());
                 }
             if (label.empty())
                 label = RULESENGINE_LOCALIZEDSTRING_NotSpecified;

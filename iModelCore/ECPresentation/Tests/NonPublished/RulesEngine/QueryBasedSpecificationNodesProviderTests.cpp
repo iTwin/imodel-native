@@ -79,8 +79,10 @@ void QueryBasedSpecificationNodesProviderTests::SetUp()
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (QueryBasedSpecificationNodesProviderTests, OverridesLabel)
     {
-    LabelOverrideP labelOverride = new LabelOverride("ThisNode.IsInstanceNode AND ThisNode.ClassName=\"Widget\"", 1, "\"QueryBasedSpecificationNodesProviderTests.OverridesLabel\"", "");
-    m_ruleset->AddPresentationRule(*labelOverride);
+    LabelOverrideP widgetLabelOverride = new LabelOverride("ThisNode.IsInstanceNode AND ThisNode.ClassName=\"Widget\"", 1, "\"WidgetLabel\"", "");
+    LabelOverrideP gadgetLabelOverride = new LabelOverride("ThisNode.IsInstanceNode AND ThisNode.ClassName=\"Gadget\"", 1, "\"GadgetLabel\"", "");
+    m_ruleset->AddPresentationRule(*widgetLabelOverride);
+    m_ruleset->AddPresentationRule(*gadgetLabelOverride);
 
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);
@@ -97,12 +99,12 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, OverridesLabel)
     ASSERT_TRUE(provider->GetNode(node, index++));
     ASSERT_TRUE(nullptr != node->GetKey().AsECInstanceNodeKey());
     EXPECT_EQ(m_gadgetClass->GetId(), node->GetKey().AsECInstanceNodeKey()->GetECClassId());
-    EXPECT_STREQ(m_gadgetClass->GetDisplayLabel().c_str(), node->GetLabel().c_str());
-    
+    EXPECT_STREQ("GadgetLabel", node->GetLabel().c_str());
+
     ASSERT_TRUE(provider->GetNode(node, index++));
     ASSERT_TRUE(nullptr != node->GetKey().AsECInstanceNodeKey());
     EXPECT_EQ(m_widgetClass->GetId(), node->GetKey().AsECInstanceNodeKey()->GetECClassId());
-    EXPECT_STREQ("QueryBasedSpecificationNodesProviderTests.OverridesLabel", node->GetLabel().c_str());
+    EXPECT_STREQ("WidgetLabel", node->GetLabel().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

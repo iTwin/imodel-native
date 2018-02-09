@@ -48,6 +48,9 @@ public:
     //! Combines class name with element Id of Base36 format.
     ECPRESENTATION_EXPORT static Utf8String GetDefaultDisplayLabel(Utf8StringCR className, uint64_t id);
 
+    //! Combines class name with element Id of Base36 format.
+    ECPRESENTATION_EXPORT static Utf8String GetDefaultDisplayLabel(ECN::IECInstanceCR);
+
     //! Copies the rules in source vector into the target vector.
     template<typename T> 
     static void CopyRules(bvector<T*>& target, bvector<T*> const& source)

@@ -119,7 +119,7 @@ TEST_F (NavigationQueryExecutorTests, GetInstanceNodes)
     query->SelectAll();
     query->From(*RulesEngineTestHelpers::CreateECInstanceNodesQueryForClasses(classes, "this"));
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
-    
+
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *query);
     executor.ReadRecords();
@@ -132,13 +132,11 @@ TEST_F (NavigationQueryExecutorTests, GetInstanceNodes)
     ASSERT_TRUE(node.IsValid());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, node->GetType().c_str());
     EXPECT_EQ(*ECInstanceNodeKey::Create(*gadget), node->GetKey());
-    EXPECT_STREQ(RulesEngineTestHelpers::GetDisplayLabel(*gadget).c_str(), node->GetLabel().c_str());
     
     node = executor.GetNode(1);
     ASSERT_TRUE(node.IsValid());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, node->GetType().c_str());
     EXPECT_EQ(*ECInstanceNodeKey::Create(*widget), node->GetKey());
-    EXPECT_STREQ(RulesEngineTestHelpers::GetDisplayLabel(*widget).c_str(), node->GetLabel().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -239,24 +237,43 @@ TEST_F (NavigationQueryExecutorTests, GetClassGroupingNodes)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (NavigationQueryExecutorTests, GetDisplayLabelGroupingNodes)
     {
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR widget){widget.SetValue("MyID", ECValue("WidgetID"));});
+
     ECInstanceId widgetId;
     ECInstanceId::FromString(widgetId, widget->GetInstanceId().c_str());
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [&widgetId](IECInstanceR gadget){gadget.SetValue("Widget", ECValue((int64_t)widgetId.GetValue()));});
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [&widgetId](IECInstanceR gadget){gadget.SetValue("Widget", ECValue((int64_t)widgetId.GetValue()));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [&widgetId](IECInstanceR gadget)
+        {
+        gadget.SetValue("MyID", ECValue("GadgetID"));
+        gadget.SetValue("Widget", ECValue((int64_t)widgetId.GetValue()));
+        });
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [&widgetId](IECInstanceR gadget)
+        {
+        gadget.SetValue("MyID", ECValue("GadgetID"));
+        gadget.SetValue("Widget", ECValue((int64_t)widgetId.GetValue()));
+        });
 
     ECClassSet classes;
     classes[m_widgetClass] = true;
     classes[m_gadgetClass] = true;
 
+    RefCountedPtr<DisplayLabelGroupingNodesQueryContract> gadgetContract = DisplayLabelGroupingNodesQueryContract::Create(m_gadgetClass, true, bvector<RelatedClass>(), {m_gadgetClass->GetPropertyP("MyID")});
+    ComplexNavigationQueryPtr gadgetInstancesQuery = ComplexNavigationQuery::Create();
+    gadgetInstancesQuery->SelectContract(*gadgetContract, "this");
+    gadgetInstancesQuery->From(*m_gadgetClass, false, "this");
+
+    RefCountedPtr<DisplayLabelGroupingNodesQueryContract> widgetContract = DisplayLabelGroupingNodesQueryContract::Create(m_widgetClass, true, bvector<RelatedClass>(), {m_widgetClass->GetPropertyP("MyID")});
+    ComplexNavigationQueryPtr widgetInstancesQuery = ComplexNavigationQuery::Create();
+    widgetInstancesQuery->SelectContract(*widgetContract, "this");
+    widgetInstancesQuery->From(*m_widgetClass, false, "this");
+
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->SelectAll();
-    query->From(*RulesEngineTestHelpers::CreateLabelGroupingNodesQueryForClasses(classes, "this"));
+    query->From(*UnionNavigationQuery::Create(*gadgetInstancesQuery, *widgetInstancesQuery));
     query->GroupByContract(*DisplayLabelGroupingNodesQueryContract::Create(nullptr));
     query->OrderBy(DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName);
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::DisplayLabelGroupingNodes);
     query->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::DisplayLabel);
-        
+
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *query);
     executor.ReadRecords();
@@ -265,10 +282,10 @@ TEST_F (NavigationQueryExecutorTests, GetDisplayLabelGroupingNodes)
     NavNodeCPtr gadgetNode = executor.GetNode(0);
     NavNodeCPtr widgetNode = executor.GetNode(1);
     
-    EXPECT_STREQ("Widget", widgetNode->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", widgetNode->GetLabel().c_str());
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, widgetNode->GetType().c_str());
     
-    EXPECT_STREQ("Gadget", gadgetNode->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", gadgetNode->GetLabel().c_str());
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, gadgetNode->GetType().c_str());
     }
 
@@ -377,10 +394,10 @@ TEST_F (NavigationQueryExecutorTests, GetChildNodesOfClassGroupingNode_NotGroupe
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (NavigationQueryExecutorTests, GetChildNodesOfClassGroupingNode_GroupedByLabel)
     {
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR widget){widget.SetValue("MyID", ECValue("WidgetID"));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR widget){widget.SetValue("MyID", ECValue("WidgetID"));});
         
-    NavigationQueryContractPtr contract = DisplayLabelGroupingNodesQueryContract::Create(m_widgetClass);
+    RefCountedPtr<DisplayLabelGroupingNodesQueryContract> contract = DisplayLabelGroupingNodesQueryContract::Create(m_widgetClass, true, bvector<RelatedClass>(), {m_widgetClass->GetPropertyP("MyID")});
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->SelectAll();
     query->From(ComplexNavigationQuery::Create()->SelectContract(*contract).From(*m_widgetClass, false));
@@ -395,7 +412,7 @@ TEST_F (NavigationQueryExecutorTests, GetChildNodesOfClassGroupingNode_GroupedBy
 
     JsonNavNodePtr node = executor.GetNode(0);
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, node->GetType().c_str());
-    EXPECT_STREQ("Widget", node->GetLabel().c_str());
+    EXPECT_STREQ("WidgetID", node->GetLabel().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -726,8 +743,8 @@ TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithoutDisplay
 
     // create our own instances
     ECInstanceInserter gadgetInserter(s_project->GetECDb(), *m_gadgetClass, nullptr);
-    IECInstancePtr gadget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), gadgetInserter, *m_gadgetClass);
-    IECInstancePtr gadget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), gadgetInserter, *m_gadgetClass);
+    IECInstancePtr gadget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), gadgetInserter, *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("GadgetID"));});
+    IECInstancePtr gadget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), gadgetInserter, *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("GadgetID"));});
     ECInstanceInserter sprocketInserter(s_project->GetECDb(), *m_sprocketClass, nullptr);
     IECInstancePtr sprocket1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), sprocketInserter, *m_sprocketClass);
     IECInstancePtr sprocket2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), sprocketInserter, *m_sprocketClass);
@@ -750,7 +767,9 @@ TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithoutDisplay
     grouped->SelectAll().From(*nested).GroupByContract(*contract).OrderBy("DisplayLabel");
     grouped->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
     grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
-    
+
+    m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Gadget", "MyID"));   
+
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
     NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *grouped);
     executor.ReadRecords();
@@ -758,7 +777,7 @@ TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithoutDisplay
     
     JsonNavNodePtr node = executor.GetNode(0);
     ASSERT_TRUE(node.IsValid());
-    EXPECT_STREQ("Gadget", node->GetLabel().c_str());
+    EXPECT_STREQ("GadgetID", node->GetLabel().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -875,7 +894,7 @@ TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithDisplayLab
     ECRelationshipClassCP classDHasClassE = s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "ClassDHasClassE")->GetRelationshipClassCP();
 
     // create our own instances
-    IECInstancePtr instanceD = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
+    IECInstancePtr instanceD = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD, [](IECInstanceR instance){instance.SetValue("StringProperty", ECValue("ClassD_Label"));});
     IECInstancePtr instanceE1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE);
     IECInstancePtr instanceE2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classDHasClassE, *instanceD, *instanceE1);
@@ -892,7 +911,9 @@ TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithDisplayLab
     grouped->SelectAll().From(*nested).GroupByContract(*contract).OrderBy("DisplayLabel");
     grouped->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
     grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
-    
+
+    m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:ClassD", "StringProperty"));
+
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
     NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *grouped);
     executor.ReadRecords();
@@ -900,7 +921,7 @@ TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithDisplayLab
 
     JsonNavNodePtr node = executor.GetNode(0);
     ASSERT_TRUE(node.IsValid());
-    EXPECT_STREQ("ClassD", node->GetLabel().c_str());
+    EXPECT_STREQ("ClassD_Label", node->GetLabel().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1233,10 +1254,10 @@ TEST_F(NavigationQueryExecutorTests, SetsGroupedInstanceKeysForBaseClassGrouping
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NavigationQueryExecutorTests, SetsGroupedInstanceKeysForDisplayLabelGroupingNodes)
     {
-    IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
-    IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);    
+    IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
+    IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});    
 
-    NavigationQueryContractPtr contract = DisplayLabelGroupingNodesQueryContract::Create(m_widgetClass);
+    NavigationQueryContractPtr contract = DisplayLabelGroupingNodesQueryContract::Create(m_widgetClass, true, bvector<RelatedClass>(), {m_widgetClass->GetPropertyP("MyID")});
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->SelectAll();
     query->From(ComplexNavigationQuery::Create()->SelectContract(*contract).From(*m_widgetClass, true));
@@ -1244,7 +1265,8 @@ TEST_F(NavigationQueryExecutorTests, SetsGroupedInstanceKeysForDisplayLabelGroup
     query->OrderBy(DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName);
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::DisplayLabelGroupingNodes);
     query->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::DisplayLabel);
-    
+
+    //m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));   
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *query);
     executor.ReadRecords();

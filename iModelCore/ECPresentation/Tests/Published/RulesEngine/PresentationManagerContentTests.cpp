@@ -2917,7 +2917,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DisplayLabelFieldsGetCreate
 
     rapidjson::Document recordJson2 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR values2 = recordJson2["Values"];
-    EXPECT_STREQ("Gadget", values2[content->GetDescriptor().GetVisibleFields()[0]->GetName().c_str()].GetString());
+    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*gadget).c_str(), values2[content->GetDescriptor().GetVisibleFields()[0]->GetName().c_str()].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2966,9 +2966,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Displ
     RapidJsonValueCR values1 = recordJson["Values"];
     EXPECT_STREQ("Test Widget", values1[content->GetDescriptor().GetVisibleFields()[0]->GetName().c_str()].GetString());
 
+
     rapidjson::Document recordJson2 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR values2 = recordJson2["Values"];
-    EXPECT_STREQ("Gadget", values2[content->GetDescriptor().GetVisibleFields()[0]->GetName().c_str()].GetString());
+    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*gadget).c_str(), values2[content->GetDescriptor().GetVisibleFields()[0]->GetName().c_str()].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4773,13 +4774,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetOne
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
-    EXPECT_STREQ("ClassA", displayValues["ClassB_ClassC_A"].GetString());
+    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*instanceA).c_str(), displayValues["ClassB_ClassC_A"].GetString());
     RapidJsonValueCR values = recordJson["Values"];
     EXPECT_EQ(classAKey->GetInstanceId().GetValue(), values["ClassB_ClassC_A"].GetInt64());
 
     rapidjson::Document recordJson1 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR displayValues1 = recordJson1["DisplayValues"];
-    EXPECT_STREQ("ClassA", displayValues1["ClassB_ClassC_A"].GetString());
+    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*instanceA).c_str(), displayValues1["ClassB_ClassC_A"].GetString());
     RapidJsonValueCR values1 = recordJson1["Values"];
     EXPECT_EQ(classAKey->GetInstanceId().GetValue(), values1["ClassB_ClassC_A"].GetInt64());
     }
@@ -4831,7 +4832,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetDif
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
-    EXPECT_STREQ("Widget", displayValues["Gadget_Widget"].GetString());
+    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*widgetInstance).c_str(), displayValues["Gadget_Widget"].GetString());
     EXPECT_TRUE(displayValues["Sprocket_Gadget"].IsNull());
     RapidJsonValueCR values = recordJson["Values"];
     EXPECT_EQ(widgetKey->GetInstanceId().GetValue(), values["Gadget_Widget"].GetInt64());
@@ -4839,7 +4840,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetDif
 
     rapidjson::Document recordJson1 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR displayValues1 = recordJson1["DisplayValues"];
-    EXPECT_STREQ("Gadget", displayValues1["Sprocket_Gadget"].GetString());
+    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*gadgetInstance).c_str(), displayValues1["Sprocket_Gadget"].GetString());
     EXPECT_TRUE(displayValues1["Gadget_Widget"].IsNull());
     RapidJsonValueCR values1 = recordJson1["Values"];
     EXPECT_EQ(gadgetKey->GetInstanceId().GetValue(), values1["Sprocket_Gadget"].GetInt64());
@@ -4899,13 +4900,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetCor
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
-    EXPECT_STREQ("ClassA", displayValues["ClassB_ClassB2_A"].GetString());
+    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*instanceA).c_str(), displayValues["ClassB_ClassB2_A"].GetString());
     RapidJsonValueCR values = recordJson["Values"];
     EXPECT_EQ(instanceAKey->GetInstanceId().GetValue(), values["ClassB_ClassB2_A"].GetInt64());
 
     rapidjson::Document recordJson1 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR displayValues1 = recordJson1["DisplayValues"];
-    EXPECT_STREQ("ClassA2Base", displayValues1["ClassB_ClassB2_A"].GetString());
+    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*instanceA2Base).c_str(), displayValues1["ClassB_ClassB2_A"].GetString());
     RapidJsonValueCR values1 = recordJson1["Values"];
     EXPECT_EQ(instanceA2BaseKey->GetInstanceId().GetValue(), values1["ClassB_ClassB2_A"].GetInt64());
     }
@@ -4954,7 +4955,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetDer
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
-    EXPECT_STREQ("ClassA2", displayValues["ClassB2_A"].GetString());
+    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*instanceA2).c_str(), displayValues["ClassB2_A"].GetString());
     RapidJsonValueCR values = recordJson["Values"];
     EXPECT_EQ(instanceA2Key->GetInstanceId().GetValue(), values["ClassB2_A"].GetInt64());
     }
@@ -5202,10 +5203,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDerivedClassNavigationPr
     rapidjson::Document recordJson1 = contentSet.Get(0)->AsJson();
     EXPECT_TRUE(recordJson1["Values"]["ClassG_D"].IsNull());
     EXPECT_TRUE(recordJson1["DisplayValues"]["ClassG_D"].IsNull());
-    
+
     rapidjson::Document recordJson2 = contentSet.Get(1)->AsJson();
     EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*relatedInstance).GetInstanceId().GetValue(), recordJson2["Values"]["ClassG_D"].GetUint64());
-    EXPECT_STREQ("ClassD", recordJson2["DisplayValues"]["ClassG_D"].GetString());
+    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*relatedInstance).c_str(), recordJson2["DisplayValues"]["ClassG_D"].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -8677,8 +8678,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctNavigationProper
     {
     // prepare dataset
     ECRelationshipClassCP widgetHasGadgets = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
-    IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
+    IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
     IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
     RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgets, *widget, *gadget);
     RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgets, *widget1, *gadget);
@@ -8688,6 +8689,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctNavigationProper
     // create a ruleset
     PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", true);
     m_locater->AddRuleSet(*ruleSet);
+
+    ruleSet->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
 
     ContentRuleP rule = new ContentRule("", 1, false);
     ruleSet->AddPresentationRule(*rule);
@@ -8715,7 +8718,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctNavigationProper
     ASSERT_EQ(1, contentSet.GetSize());
 
     RapidJsonValueCR jsonValues = contentSet.Get(0)->GetDisplayValues();
-    EXPECT_STREQ("Widget", jsonValues["Gadget_Widget"].GetString());
+    EXPECT_STREQ("WidgetID", jsonValues["Gadget_Widget"].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -8834,7 +8837,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Overr
     {
     // set up the dataset
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("GadgetID"));});
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("GadgetID"));});
 
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
@@ -8868,7 +8871,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Overr
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(2, contentSet.GetSize());
-    EXPECT_STREQ("Gadget", contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*gadget).c_str(), contentSet.Get(0)->GetDisplayLabel().c_str());
     EXPECT_STREQ("WidgetID", contentSet.Get(1)->GetDisplayLabel().c_str());
     }
 
@@ -8880,7 +8883,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Overr
     // set up the dataset
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("Description", ECValue("GadgetDescription"));});
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_sprocketClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("SprocketID"));});
+    IECInstancePtr sprocket = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_sprocketClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("SprocketID"));});
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
@@ -8916,7 +8919,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Overr
     ASSERT_EQ(3, contentSet.GetSize());
     EXPECT_STREQ("GadgetDescription", contentSet.Get(0)->GetDisplayLabel().c_str());
     EXPECT_STREQ("WidgetID", contentSet.Get(1)->GetDisplayLabel().c_str());
-    EXPECT_STREQ("Sprocket", contentSet.Get(2)->GetDisplayLabel().c_str());
+    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*sprocket).c_str(), contentSet.Get(2)->GetDisplayLabel().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -8970,10 +8973,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Appli
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_WhenNoPropertiesSpecified_OverrideAsECInstanceDisplaylabel)
+TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_WhenNoPropertiesSpecified_OverrideAs_ClassName_BriefcaseId_LocalId)
     {
     // set up the dataset
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
@@ -9007,7 +9010,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_WhenN
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
-    EXPECT_STREQ("Widget", contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*widget).c_str(), contentSet.Get(0)->GetDisplayLabel().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -9016,7 +9019,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_WhenN
 TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_AssertsWhenNoClasesSpecified_OverrideAsECInstanceDisplaylabel)
     {
     // set up the dataset
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
@@ -9050,7 +9053,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Asser
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
-    EXPECT_STREQ("Widget", contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*widget).c_str(), contentSet.Get(0)->GetDisplayLabel().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -9103,7 +9106,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Overr
 TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_SetsDisplayLabelPropertyByDefaultAsECInstanceDisplaylabel)
     {
     // set up the dataset
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
@@ -9137,7 +9140,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_SetsD
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
-    EXPECT_STREQ("Widget", contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*widget).c_str(), contentSet.Get(0)->GetDisplayLabel().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -9267,7 +9270,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingBaseClassPolymorph
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(2, contentSet.GetSize());
 
-    EXPECT_STREQ("ClassA", contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*instanceA).c_str(), contentSet.Get(0)->GetDisplayLabel().c_str());
     EXPECT_STREQ("ClassB_StringProperty", contentSet.Get(1)->GetDisplayLabel().c_str());
     }
 

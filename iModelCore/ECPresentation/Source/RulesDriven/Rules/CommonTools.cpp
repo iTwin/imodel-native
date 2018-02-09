@@ -98,7 +98,7 @@ Utf8CP CommonTools::FormatRelationshipMeaningString(RelationshipMeaning meaning)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Vaiksnoras                01/2017
+* @bsimethod                                    Aidas.Vaiksnoras                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<Utf8String> CommonTools::ParsePropertiesNames(Utf8StringCR properties)
     {
@@ -109,18 +109,18 @@ bvector<Utf8String> CommonTools::ParsePropertiesNames(Utf8StringCR properties)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Vaiksnoras                02/2017
+* @bsimethod                                    Aidas.Vaiksnoras                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-/*static void ReverseString(Utf8StringR str)
+static void ReverseString(Utf8StringR str)
     {
     for (size_t i = 0; i < str.size() / 2; i++)
         std::swap(str[i], str[str.size() - i - 1]);
-    }*/
+    }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Vaiksnoras                02/2017
+* @bsimethod                                    Aidas.Vaiksnoras                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-/*static Utf8String ToBase36String(uint64_t i)
+static Utf8String ToBase36String(uint64_t i)
     {
     static Utf8CP chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     Utf8String encoded;
@@ -131,15 +131,37 @@ bvector<Utf8String> CommonTools::ParsePropertiesNames(Utf8StringCR properties)
         }
     ReverseString(encoded);
     return !encoded.empty() ? encoded : "0";
-    }*/
+    }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Vaiksnoras                02/2017
+* @bsimethod                                    Aidas.Vaiksnoras                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String CommonTools::GetDefaultDisplayLabel(Utf8StringCR className, uint64_t)
+static uint64_t GetBriefcaseId(uint64_t id) {return (uint64_t)id >> 40;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static uint64_t GetLocalId(uint64_t id) {return (uint64_t)id & (((uint64_t)1 << 40) - 1);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String CommonTools::GetDefaultDisplayLabel(Utf8StringCR className, uint64_t id)
     {
     Utf8String label = className;
-    //label.append(" ");
-    //label.append(ToBase36String(id));
+    label.append("-");
+    label.append(ToBase36String(GetBriefcaseId(id)));
+    label.append("-");
+    label.append(ToBase36String(GetLocalId(id)));
     return label;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String CommonTools::GetDefaultDisplayLabel(ECN::IECInstanceCR instance)
+    {
+    ECInstanceId id;
+    ECInstanceId::FromString(id, instance.GetInstanceId().c_str());
+    return GetDefaultDisplayLabel(instance.GetClass().GetDisplayLabel(), id.GetValue());
     }
