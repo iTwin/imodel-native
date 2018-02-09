@@ -175,7 +175,7 @@ private:
         if (nullptr == unit)
             return nullptr;
 
-        PhenomenonP phenomenon = LookupPhenomenonP(parentUnit->GetPhenomenon()->GetName());
+        PhenomenonP phenomenon = LookupPhenomenonP(parentUnit->GetPhenomenon()->GetName().c_str());
         phenomenon->AddUnit(*unit);
 
         ++m_nextId;
