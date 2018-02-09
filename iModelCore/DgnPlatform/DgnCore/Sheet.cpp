@@ -432,7 +432,7 @@ void Sheet::Attachment::TTile::SetupRange()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/17
+* @bsimethod                                                    Mark.Schlosser  02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Sheet::ViewController::_CreateScene(SceneContextR context)
     {
@@ -449,7 +449,9 @@ BentleyStatus Sheet::ViewController::_CreateScene(SceneContextR context)
             Attachment& attach = m_attachments[i];
             if (!attach.m_tree.IsValid())
                 {
-                attach.m_tree = new TRoot(GetDgnDb(), *this, attach.m_id, 512);
+                uint32_t texSize = 512;
+
+                attach.m_tree = new TRoot(GetDgnDb(), *this, attach.m_id, texSize);
                 attach.m_tree->Populate();
 
                 if (!attach.m_tree.IsValid())
@@ -463,6 +465,7 @@ BentleyStatus Sheet::ViewController::_CreateScene(SceneContextR context)
                 UpdatePlan const& plan = context.GetUpdatePlan();
                 viewport->m_renderSys = renderSys;
                 viewport->m_db = &context.GetDgnDb();
+                viewport->m_texSize = texSize;
                 viewport->_CreateScene(plan); // view controller for a drawing or spatial view, make a context in dgnview (renderthumbnail)
                 // this will sit and wait; tile will be ready when here (RenderThumbnail path)
 
@@ -546,7 +549,7 @@ DgnElementId Sheet::Model::FindFirstViewOfSheet(DgnDbR db, DgnModelId mid)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/18
+* @bsimethod                                                    Mark.Schlosser  02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 Tile::SelectParent TTile::_SelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args) const
     {

@@ -234,6 +234,7 @@ namespace Attachment
         Render::SystemP m_renderSys;
         Render::TexturePtr m_texture;
         DgnDb* m_db;
+        uint32_t m_texSize;
 
         Transform m_toParent = Transform::FromIdentity(); // attachment NPC to sheet world
         double m_biasDistance = 0.0; // distance in z to position tile in parent viewport's z-buffer (should be obtained by calling DepthFromDisplayPriority)
