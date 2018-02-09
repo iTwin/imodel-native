@@ -468,12 +468,11 @@ declare class AddonDgnDb {
     setBriefcaseManagerOptimisticConcurrencyControlPolicy(conflictPolicy: AddonBriefcaseManagerOnConflictPolicy): RepositoryStatus;
     
   /**
-   * Execute a test known to exist using the id recognized by the addon's test execution handler
-   * @param id The id of the test you wish to execute
-   * @param params A JSON string that should all of the data/parameters the test needs to function correctly
+   * Execute a test by name
+   * @param testName The name of the test to execute
+   * @param params A JSON string with the parameters for the test
    */
-  executeTestById(id: number, params: string): any;
-
+  executeTest(testName: string, params: string): any;
 }
 
 /* The AddonECDb class that is projected by the iModelJs node addon. */

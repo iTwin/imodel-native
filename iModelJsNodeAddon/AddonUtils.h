@@ -90,9 +90,8 @@ public:
     static RepositoryStatus BriefcaseManagerEndBulkOperation(DgnDbR dgndb);
 
     static void ThrowJsException(Utf8CP msg);
-
-    static NativeLogging::ILogger& GetLogger();
-    
+    static Json::Value ExecuteTest(DgnDbR, Utf8StringCR testName, Utf8StringCR params);
+    static NativeLogging::ILogger &GetLogger();
 };
 
 //=======================================================================================

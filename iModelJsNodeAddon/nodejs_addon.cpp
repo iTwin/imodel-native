@@ -1092,34 +1092,18 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         return Napi::Number::New(Env(), (int)AddonUtils::UpdateProjectExtents(GetDgnDb(), Json::Value::From(newExtentsJson)));
         }
 
-    // ========================================================================================
-    // Test method handler
-    // Note: This is where the developer may specify, given an ID from JS, what function should
-    // executed and returned.
-    // ========================================================================================
-    Napi::Value ExecuteTestById(const Napi::CallbackInfo& info)
-        {
-        REQUIRE_DB_TO_BE_OPEN
-        REQUIRE_ARGUMENT_INTEGER(0, testId);
+	// ========================================================================================
+	// Test method handler
+	// ========================================================================================
+	Napi::Value ExecuteTest(const Napi::CallbackInfo& info)
+		{
+		REQUIRE_DB_TO_BE_OPEN
+        REQUIRE_ARGUMENT_STRING(0, testName);
         REQUIRE_ARGUMENT_STRING(1, params);
-        RETURN_IF_HAD_EXCEPTION
+		RETURN_IF_HAD_EXCEPTION
 
-        switch (testId)
-            {
-            case 1:
-                return Napi::String::New(Env(), TestUtils::ViewStateCreate(params).ToString().c_str());
-            case 2:
-                return Napi::String::New(Env(), TestUtils::ViewStateVolumeAdjustments(params).ToString().c_str());
-            case 3:
-                return Napi::String::New(Env(), TestUtils::ViewStateLookAt(params).ToString().c_str());
-            case 4:
-                return Napi::String::New(Env(), TestUtils::DeserializeGeometryStream(params).ToString().c_str());
-            case 5:
-                return Napi::String::New(Env(), TestUtils::BuildKnownGeometryStream(params).ToString().c_str());
-            default:
-                return Napi::String::New(Env(), "{}");
-            }
-        }
+        return Napi::String::New(Env(), AddonUtils::ExecuteTest(GetDgnDb(), testName, params).ToString().c_str());
+		}
 
 
     //  Create projections
@@ -1181,7 +1165,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
             InstanceMethod("inBulkOperation", &AddonDgnDb::InBulkOperation),
 						
 			// DEVELOPMENT-ONLY METHODS:
-			InstanceMethod("executeTestById", &AddonDgnDb::ExecuteTestById),
+			InstanceMethod("executeTest", &AddonDgnDb::ExecuteTest),
 
         });
 
