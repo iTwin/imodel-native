@@ -716,36 +716,25 @@ public:
 //=======================================================================================
 struct FormatUnitSet
     {
+	friend struct StdFormatSet;
     private:
         NamedFormatSpecCP m_formatSpec;
         Utf8String  m_unitName;
         BEU::UnitCP m_unit;
         FormatProblemDetail m_problem;
         NamedFormatSpec m_localCopy;
-		Utf8String  m_fusName;
+		mutable Utf8String  m_fusName;
 
 		Utf8CP GetDefaultDisplayLabel() const;
+		Utf8CP SetFusName(Utf8CP name) const { m_fusName.assign(name);  return m_fusName.c_str(); }
+		
     public:
         UNITS_EXPORT void Init();
         UNITS_EXPORT FormatUnitSet():m_formatSpec(nullptr), m_unit(nullptr), m_localCopy(false), m_problem(FormatProblemDetail()) {}
-        UNITS_EXPORT FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, Utf8CP fusName = nullptr, bool cloneData = false);
-        UNITS_EXPORT FormatUnitSet(Utf8CP formatName, Utf8CP unitName, Utf8CP fusName = nullptr, bool cloneData = false);
-		UNITS_EXPORT FormatUnitSet(FormatUnitSetCR other, Utf8CP newName = nullptr);
-   //         {
-   //         m_formatSpec = other.m_formatSpec;
-   //         m_unitName = other.m_unitName;
-			//m_fusName = other.m_fusName;
-   //         m_unit = other.m_unit;
-   //         m_problem = FormatProblemDetail(other.m_problem);
-   //         }
-		UNITS_EXPORT FormatUnitSet(FormatUnitSetCP other, Utf8CP newName = nullptr);
-   //         {
-   //         m_formatSpec = other->m_formatSpec;
-   //         m_unitName = other->m_unitName;
-			//m_fusName = other->m_fusName;
-   //         m_unit = other->m_unit;
-   //         m_problem = FormatProblemDetail(other->m_problem);
-   //         }
+        UNITS_EXPORT FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, bool cloneData = false);
+        UNITS_EXPORT FormatUnitSet(Utf8CP formatName, Utf8CP unitName, bool cloneData = false);
+		UNITS_EXPORT FormatUnitSet(FormatUnitSetCR other);
+		UNITS_EXPORT FormatUnitSet(FormatUnitSetCP other);
         void Clone(FormatUnitSetCP other);
         UNITS_EXPORT FormatUnitSet& operator=(const FormatUnitSet& other);
 
@@ -774,7 +763,7 @@ struct FormatUnitSet
         Utf8String GetProblemDescription() const { return m_problem.GetProblemDescription(); }
         Utf8String GetUnitName() const { return m_unitName; }
 		Utf8CP GetFusName() const { return m_fusName.c_str(); }
-		Utf8CP SetFusName(Utf8CP name) { m_fusName.assign(name);  return m_fusName.c_str(); }
+
 		UNITS_EXPORT Utf8CP GetDisplayLabel(bool useDefault=false) const;
         UNITS_EXPORT Utf8String ToText(bool useAlias = true) const;
         BEU::UnitCP GetUnit() const { return m_unit; }
@@ -793,6 +782,7 @@ struct FormatUnitSet
         UNITS_EXPORT bool IsIdentical(FormatUnitSetCR other) const;
         UNITS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, size_t start);
         bool IsFullySpecified() { return (m_formatSpec == &m_localCopy); }
+		bool IsSetRegistered() { return !m_fusName.empty(); }
         bool HasComposite() const { return nullptr != m_formatSpec && m_formatSpec->HasComposite(); }
         size_t GetCompositeUnitCount() const { return HasComposite() ? m_formatSpec->GetCompositeUnitCount() : 0; }
         BEU::UnitCP GetCompositeMajorUnit() const { return HasComposite() ? m_formatSpec->GetCompositeMajorUnit() : nullptr; }
@@ -842,7 +832,8 @@ private:
     StdFormatSet() { m_problem = FormatProblemDetail(); }
     static StdFormatSetP Set();
     UNITS_EXPORT static bool IsFormatDefined(Utf8CP name, Utf8CP alias);
-	UNITS_EXPORT NumericFormatSpecCP FindFUS(Utf8CP fusName);
+	UNITS_EXPORT FormatUnitSetCP FindFUS(Utf8CP fusName) const;
+	bool HasDuplicate(Utf8CP name, FormatUnitSetCP * fusP);
 
 public:
     UNITS_EXPORT NamedFormatSpecCP AddCustomFormat(Utf8CP jsonString);
@@ -867,10 +858,10 @@ public:
 
     static FormatUnitSet DefaultFUS(BEU::QuantityCR qty) { return FormatUnitSet(DefaultFormatSpec(), qty.GetUnit()); }
 
-	UNITS_EXPORT NumericFormatSpecCP AddFUS(FormatUnitSetCR fusR, Utf8CP fusName);
-	UNITS_EXPORT NumericFormatSpecCP AddFUS(Utf8CP formatName, Utf8CP unitName, Utf8CP fusName, bool makeUnit = true);
-	UNITS_EXPORT NumericFormatSpecCP AddFUS(Utf8CP jsonString, Utf8CP fusName, bool makeUnit = true);
-	UNITS_EXPORT NumericFormatSpecCP LookupFUS(Utf8CP fusName);
+	UNITS_EXPORT FormatUnitSetCP AddFUS(FormatUnitSetCR fusR, Utf8CP fusName);
+	UNITS_EXPORT FormatUnitSetCP AddFUS(Utf8CP formatName, Utf8CP unitName, Utf8CP fusName, bool makeUnit = true);
+	UNITS_EXPORT FormatUnitSetCP AddFUS(Utf8CP jsonString, Utf8CP fusName, bool makeUnit = true);
+	UNITS_EXPORT FormatUnitSetCP LookupFUS(Utf8CP fusName);
 
    // UNITS_EXPORT bvector<Json::Value> ToJson();
     };

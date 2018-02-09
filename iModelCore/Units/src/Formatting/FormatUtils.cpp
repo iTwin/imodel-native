@@ -1336,13 +1336,11 @@ void FormatUnitSet::Init()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
-FormatUnitSet::FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, Utf8CP fusName, bool cloneData)
+FormatUnitSet::FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, bool cloneData)
     {
     m_formatSpec = format;
     m_unitName = Utf8String(unit->GetName());
     m_unit = unit;
-	if (!Utils::IsNameNullOrEmpty(fusName))
-		m_fusName = Utf8String(fusName);
     if (nullptr == m_formatSpec)
         m_formatSpec = StdFormatSet::FindFormatSpec(FormatConstant::DefaultFormatName());
     if (nullptr == m_formatSpec)
@@ -1363,14 +1361,13 @@ FormatUnitSet::FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, Utf8CP 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
-FormatUnitSet::FormatUnitSet(Utf8CP formatName, Utf8CP unitName, Utf8CP fusName, bool cloneData)
+FormatUnitSet::FormatUnitSet(Utf8CP formatName, Utf8CP unitName,  bool cloneData)
     {
     m_problem = FormatProblemDetail();
     m_unit = nullptr;
     if (Utils::IsNameNullOrEmpty(formatName))
         formatName = FormatConstant::DefaultFormatName();
-	if (!Utils::IsNameNullOrEmpty(fusName))
-		m_fusName = Utf8String(fusName); 
+
 	m_formatSpec = StdFormatSet::FindFormatSpec(formatName);
     if (nullptr == m_formatSpec)
         m_problem.UpdateProblemCode(FormatProblemCode::UnknownStdFormatName);
@@ -1413,20 +1410,20 @@ FormatUnitSet& FormatUnitSet::operator=(const FormatUnitSet& other)
     return *this;
     }
 
-FormatUnitSet::FormatUnitSet(FormatUnitSetCR other, Utf8CP newName)
+FormatUnitSet::FormatUnitSet(FormatUnitSetCR other)
 {
 	m_formatSpec = other.m_formatSpec;
 	m_unitName = other.m_unitName;
-	m_fusName = other.m_fusName;
+	m_fusName.clear();
 	m_unit = other.m_unit;
 	m_problem = FormatProblemDetail(other.m_problem);
 }
 
-FormatUnitSet::FormatUnitSet(FormatUnitSetCP other, Utf8CP newName)
+FormatUnitSet::FormatUnitSet(FormatUnitSetCP other)
 {
 	m_formatSpec = other->m_formatSpec;
 	m_unitName = other->m_unitName;
-	m_fusName = other->m_fusName;
+	m_fusName.clear();
 	m_unit = other->m_unit;
 	m_problem = FormatProblemDetail(other->m_problem);
 }
