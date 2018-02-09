@@ -483,16 +483,18 @@ TEST_F(DbMappingTestFixture, SubQueringEndTableRelationship)
                 </ECEntityClass>
             </ECSchema>)xml")));
 
+    //Following fails as end table relationship appear in subquery
     if (true)
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.ElementOwnsAspect"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM (SELECT TargetECClassId FROM ts.ElementOwnsAspect)"));
         }
 
+    //Following work as view is generated only through view generator
     if (true)
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM (SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.ElementOwnsAspect)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT TargetECClassId FROM ts.ElementOwnsAspect"));
         }
 
     }
