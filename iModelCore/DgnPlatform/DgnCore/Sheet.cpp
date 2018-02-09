@@ -247,6 +247,14 @@ struct RectanglePoints
 {
     DPoint2d m_pts[5]; // view coords
 
+    RectanglePoints(double xlow, double ylow, double xhigh, double yhigh) 
+        {
+        m_pts[0].x = m_pts[3].x = m_pts[4].x = xlow;
+        m_pts[0].y = m_pts[1].y = m_pts[4].y = ylow;
+        m_pts[1].x = m_pts[2].x = xhigh; 
+        m_pts[2].y = m_pts[3].y = yhigh;
+        }
+
     // Inputs in world coords
     RectanglePoints(double xlow, double ylow, double xhigh, double yhigh, ViewContextCR context)
         {
@@ -630,10 +638,8 @@ TRoot::TRoot(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId att
 
     // set a clip volume around view, so we only show the original volume
     m_clip = attach->GetClip();
-#if 0 // ###TODO
     if (!m_clip.IsValid())
         m_clip = new ClipVector(ClipPrimitive::CreateFromShape(RectanglePoints(range.low.x, range.low.y, range.high.x, range.high.y), 5, false, nullptr, nullptr, nullptr).get());
-#endif
 
 	int32_t biasDistance = Render::Target::DepthFromDisplayPriority(attach->GetDisplayPriority());
 	m_biasDistance = double(biasDistance);
