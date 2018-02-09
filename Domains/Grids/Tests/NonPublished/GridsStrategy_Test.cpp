@@ -22,6 +22,10 @@ USING_NAMESPACE_GRIDS
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX
 
+#define ASSERT_EQ_Plane(lhs, rhs)                                                            \
+            ASSERT_TRUE(lhs.origin.AlmostEqual(rhs.origin)) << "Plane origin is incorrect";  \
+            ASSERT_TRUE(lhs.normal.AlmostEqual(rhs.normal)) << "Plane normal is incorrect";
+
 //=======================================================================================
 // Sets up environment for Grid placement strategy unit testing.
 // @bsiclass                                    Haroldas.Vitunskas              12/2017
@@ -116,7 +120,7 @@ void GridsStrategyTests::TearDown()
 //---------------------------------------------------------------------------------------
 // @betest                                   Haroldas.Vitunskas                 02/2018
 //--------------+---------------+---------------+---------------+---------------+-------- 
-TEST_F(GridsStrategyTests, LineGridSurfacePlacementByPointsStrategy)
+TEST_F(GridsStrategyTests, LineGridSurfacePlacementStrategy_ByPoints)
     {
     //////////////////////////////////////
     // Try creating strategy object
@@ -133,6 +137,7 @@ TEST_F(GridsStrategyTests, LineGridSurfacePlacementByPointsStrategy)
     double botElevation, topElevation;
     GridAxisCPtr axis;
     Utf8String gridName;
+    DPlane3d workingPlane;
 
     // Check initial bottom elevation
     ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LineGridSurfacePlacementStrategy::prop_BottomElevation, botElevation)) << "Failed to get bottom elevation";
@@ -141,6 +146,10 @@ TEST_F(GridsStrategyTests, LineGridSurfacePlacementByPointsStrategy)
     // Check initial top elevation
     ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LineGridSurfacePlacementStrategy::prop_TopElevation, topElevation)) << "Failed to get top elevation";
     ASSERT_EQ(0, topElevation) << "Top elevation is incorrect";
+
+    // Check initial working plane
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LineGridSurfacePlacementStrategy::prop_WorkingPlane, workingPlane)) << "Failed to get working plane";
+    ASSERT_EQ_Plane(DPlane3d::FromOriginAndNormal({ 0, 0, 0 }, DVec3d::From(0, 0, 1)), workingPlane);
 
     // Check initial axis
     /*
@@ -165,7 +174,6 @@ TEST_F(GridsStrategyTests, LineGridSurfacePlacementByPointsStrategy)
     ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LineGridSurfacePlacementStrategy::prop_BottomElevation, botElevation)) << "Failed to get bottom elevation";
     ASSERT_EQ(0, botElevation) << "Bottom elevation is incorrect";
 
-
     // Try setting top elevation
     strategy->SetProperty(LineGridSurfacePlacementStrategy::prop_TopElevation, 10.0);
     ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LineGridSurfacePlacementStrategy::prop_TopElevation, topElevation)) << "Failed to get top elevation";
@@ -176,6 +184,10 @@ TEST_F(GridsStrategyTests, LineGridSurfacePlacementByPointsStrategy)
     ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LineGridSurfacePlacementStrategy::prop_TopElevation, topElevation)) << "Failed to get top elevation";
     ASSERT_EQ(0, topElevation) << "Top elevation is incorrect";
 
+    // Try setting working plane
+    strategy->SetProperty(LineGridSurfacePlacementStrategy::prop_WorkingPlane, DPlane3d::FromOriginAndNormal({ 5, 0, 0 }, DVec3d::From(1, 0, 0)));
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LineGridSurfacePlacementStrategy::prop_WorkingPlane, workingPlane)) << "Failed to get working plane";
+    ASSERT_EQ_Plane(DPlane3d::FromOriginAndNormal({ 5, 0, 0 }, DVec3d::From(1, 0, 0)), workingPlane);
 
     // Try setting grid axis
     /*
@@ -212,13 +224,13 @@ TEST_F(GridsStrategyTests, LineGridSurfacePlacementByPointsStrategy)
 
     strategy->AddKeyPoint({ 0, 0, 0 });
     ASSERT_EQ(1, strategy->GetKeyPoints().size()) << "Incorrect number of key points";
-    ASSERT_TRUE(strategy->GetKeyPoints()[0].AlmostEqual({ 0, 0, 0 })) << "Incorrect first key point";
+    ASSERT_TRUE(strategy->GetKeyPoints()[0].AlmostEqual({ 5, 0, 0 })) << "Incorrect first key point";
     ASSERT_FALSE(strategy->IsComplete()) << "Incorrect strategy state";
 
     strategy->AddKeyPoint({ 1, 2, 0 });
     ASSERT_EQ(2, strategy->GetKeyPoints().size()) << "Incorrect number of key points";
-    ASSERT_TRUE(strategy->GetKeyPoints()[0].AlmostEqual({ 0, 0, 0 })) << "Incorrect first key point";
-    ASSERT_TRUE(strategy->GetKeyPoints()[1].AlmostEqual({ 1, 2, 0 })) << "Incorrect second key point";
+    ASSERT_TRUE(strategy->GetKeyPoints()[0].AlmostEqual({ 5, 0, 0 })) << "Incorrect first key point";
+    ASSERT_TRUE(strategy->GetKeyPoints()[1].AlmostEqual({ 5, 2, 0 })) << "Incorrect second key point";
     ASSERT_FALSE(strategy->IsComplete()) << "Incorrect strategy state";
 
     //////////////////////////////////////
@@ -248,7 +260,7 @@ TEST_F(GridsStrategyTests, LineGridSurfacePlacementByPointsStrategy)
     bvector<DgnElementId> axesIds = grid->MakeAxesIterator().BuildIdList<DgnElementId>();
     ASSERT_EQ(1, axesIds.size());
 
-    CheckGridSurface(surface, grid->GetElementId(), axesIds[0], 10, { 0, 0, 0 }, { 1, 2, 0 });
+    CheckGridSurface(surface, grid->GetElementId(), axesIds[0], 10, { 5, 0, 0 }, { 5, 2, 0 });
 
     //////////////////////////////////////
     // Try modifying the grid surface
@@ -262,7 +274,7 @@ TEST_F(GridsStrategyTests, LineGridSurfacePlacementByPointsStrategy)
     ASSERT_TRUE(surface.IsValid()) << "Failed to create surface";
     ASSERT_TRUE(surface->GetElementId().IsValid()) << "Failed to insert surface";
     ASSERT_EQ(surfaceId, surface->GetElementId()) << "Surface ID should not have changed";
-    CheckGridSurface(surface, grid->GetElementId(), axesIds[0], 5, { 0, 0, 5 }, { 1, 2, 5 });
+    CheckGridSurface(surface, grid->GetElementId(), axesIds[0], 5, { 5, 0, 5 }, { 5, 2, 5 });
 
     // Change top elevation. Finished surface should also change
     strategy->SetProperty(LineGridSurfacePlacementStrategy::prop_TopElevation, 15.0);
@@ -273,7 +285,7 @@ TEST_F(GridsStrategyTests, LineGridSurfacePlacementByPointsStrategy)
     ASSERT_TRUE(surface.IsValid()) << "Failed to create surface";
     ASSERT_TRUE(surface->GetElementId().IsValid()) << "Failed to insert surface";
     ASSERT_EQ(surfaceId, surface->GetElementId()) << "Surface ID should not have changed";
-    CheckGridSurface(surface, grid->GetElementId(), axesIds[0], 10, { 0, 0, 5 }, { 1, 2, 5 });
+    CheckGridSurface(surface, grid->GetElementId(), axesIds[0], 10, { 5, 0, 5 }, { 5, 2, 5 });
 
     // TODO: Change axis
 
@@ -299,6 +311,10 @@ TEST_F(GridsStrategyTests, LineGridSurfacePlacementByPointsStrategy)
     ASSERT_FALSE(strategy->IsComplete()) << "Incorrect strategy state";
 
     // Set minimal required properties
+    strategy->SetProperty(LineGridSurfacePlacementStrategy::prop_BottomElevation, 5.0);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LineGridSurfacePlacementStrategy::prop_BottomElevation, botElevation)) << "Failed to get bot elevation";
+    ASSERT_EQ(5, botElevation) << "Bot elevation is incorrect";
+
     strategy->SetProperty(LineGridSurfacePlacementStrategy::prop_TopElevation, 10.0);
     ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LineGridSurfacePlacementStrategy::prop_TopElevation, topElevation)) << "Failed to get top elevation";
     ASSERT_EQ(10, topElevation) << "Top elevation is incorrect";
@@ -322,7 +338,7 @@ TEST_F(GridsStrategyTests, LineGridSurfacePlacementByPointsStrategy)
     axesIds = grid->MakeAxesIterator().BuildIdList<DgnElementId>();
     ASSERT_EQ(2, axesIds.size());
 
-    CheckGridSurface(surface, grid->GetElementId(), axesIds[1], 10, { 0, 0, 0 }, { 1, 2, 0 });
+    CheckGridSurface(surface, grid->GetElementId(), axesIds[1], 5, { 0, 0, 5 }, { 1, 2, 5 });
 
     // Change dynamic key point
     strategy->AddDynamicKeyPoint({ 5, 6, 0 });
@@ -335,9 +351,9 @@ TEST_F(GridsStrategyTests, LineGridSurfacePlacementByPointsStrategy)
     ASSERT_TRUE(surface.IsValid()) << "Failed to create surface";
     ASSERT_TRUE(surface->GetElementId().IsValid()) << "Failed to insert surface";
     ASSERT_EQ(surfaceId, surface->GetElementId()) << "Surface ID should not have changed";
-    CheckGridSurface(surface, grid->GetElementId(), axesIds[1], 10, { 0, 0, 0 }, { 5, 6, 0 });
-
-    // Try unprojected point. It should be projected onto grid bottom elevation
+    CheckGridSurface(surface, grid->GetElementId(), axesIds[1], 5, { 0, 0, 5 }, { 5, 6, 5 });
+    
+    // Try unprojected point. It should be projected onto grid working plane
     strategy->AddDynamicKeyPoint({ 1, 2, 3 });
     ASSERT_EQ(2, strategy->GetKeyPoints().size()) << "Incorrect number of key points";
     ASSERT_TRUE(strategy->GetKeyPoints()[0].AlmostEqual({ 0, 0, 0 })) << "Incorrect first key point";
@@ -348,10 +364,12 @@ TEST_F(GridsStrategyTests, LineGridSurfacePlacementByPointsStrategy)
     ASSERT_TRUE(surface.IsValid()) << "Failed to create surface";
     ASSERT_TRUE(surface->GetElementId().IsValid()) << "Failed to insert surface";
     ASSERT_EQ(surfaceId, surface->GetElementId()) << "Surface ID should not have changed";
-    CheckGridSurface(surface, grid->GetElementId(), axesIds[1], 10, { 0, 0, 0 }, { 1, 2, 0 });
+    CheckGridSurface(surface, grid->GetElementId(), axesIds[1], 5, { 0, 0, 5 }, { 1, 2, 5 });
 
     db.SaveChanges();
     }
+
+
 
 //---------------------------------------------------------------------------------------
 // @betest                                   Haroldas.Vitunskas                 12/2017

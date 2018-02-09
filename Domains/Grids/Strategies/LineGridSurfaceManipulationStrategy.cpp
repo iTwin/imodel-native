@@ -97,7 +97,8 @@ Dgn::DgnElementPtr LineGridSurfaceManipulationStrategy::_FinishElement
         return nullptr;
 
     SketchGridCPtr grid;
-    ValidateGridAndAxis(grid, spatialModel);
+    if (BentleyStatus::ERROR == GetOrCreateGridAndAxis(grid, spatialModel))
+        return nullptr;
 
     bvector<DPoint3d> keyPoints = m_geometryManipulationStrategy->GetKeyPoints();
     if (2 != keyPoints.size())

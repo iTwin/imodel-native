@@ -48,17 +48,20 @@ struct SketchGridSurfaceManipulationStrategy : public BBS::ElementManipulationSt
         virtual void _SetProperty(Utf8CP key, double const & value) override;
         virtual void _SetProperty(Utf8CP key, Dgn::DgnElement const& value) override;
         virtual void _SetProperty(Utf8CP key, Utf8String const& value) override;
+        virtual void _SetProperty(Utf8CP key, DPlane3d const& value) override;
         virtual BentleyStatus _TryGetProperty(Utf8CP key, double & value) const override;
         virtual BentleyStatus _TryGetProperty(Utf8CP key, Dgn::DgnElement & value) const override;
         virtual BentleyStatus _TryGetProperty(Utf8CP key, Utf8String & value) const override;
+        virtual BentleyStatus _TryGetProperty(Utf8CP key, DPlane3d & value) const override;
 
         // ElementManipulationStrategy
         virtual Dgn::DgnElementPtr _FinishElement() override;
 
         // SketchGridSurfaceManipulationStrategy
         DPoint3d ProjectPoint(DPoint3d point);
+        DPoint3d TransformPointBetweenPlanes(DPoint3d const& point, DPlane3d const & from, DPlane3d const & to);
         BentleyStatus GetOrCreateGridAndAxis(SketchGridCPtr& grid, Dgn::SpatialLocationModelPtr spatialModel);
-        void ProjectExistingPoints();
+        virtual void _OnWorkingPlaneChanged(DPlane3d const & original);
         virtual BentleyStatus _UpdateGridSurface();
         virtual Utf8String _GetMessage() const = 0;
         virtual PlanGridPlanarSurfaceCP _GetGridSurfaceCP() = 0;
@@ -75,6 +78,7 @@ struct SketchGridSurfaceManipulationStrategy : public BBS::ElementManipulationSt
         static const Utf8CP prop_TopElevation;
         static const Utf8CP prop_Axis;
         static const Utf8CP prop_Name;
+        static const Utf8CP prop_WorkingPlane;
     };
 
 END_GRIDS_NAMESPACE

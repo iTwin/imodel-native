@@ -14,6 +14,7 @@ const Utf8CP SketchGridSurfaceManipulationStrategy::prop_BottomElevation = "Bott
 const Utf8CP SketchGridSurfaceManipulationStrategy::prop_TopElevation = "TopElevation";
 const Utf8CP SketchGridSurfaceManipulationStrategy::prop_Axis = "Axis";
 const Utf8CP SketchGridSurfaceManipulationStrategy::prop_Name = "Name";
+const Utf8CP SketchGridSurfaceManipulationStrategy::prop_WorkingPlane = "WorkingPlane";
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              01/2018
@@ -123,9 +124,8 @@ BentleyStatus SketchGridSurfaceManipulationStrategy::GetOrCreateGridAndAxis(Sket
             return BentleyStatus::ERROR;
         }
 
-    m_workingPlane = grid->GetPlane();
-    m_workingPlane.origin.z = m_bottomElevation;
-    ProjectExistingPoints();
+    if (m_workingPlane.origin.AlmostEqual({ 0, 0, 0 }) && m_workingPlane.normal.AlmostEqual(DVec3d::From(0, 0, 1)))
+        SetProperty(prop_WorkingPlane, grid->GetPlane());
 
     return BentleyStatus::SUCCESS;
     }
@@ -133,13 +133,14 @@ BentleyStatus SketchGridSurfaceManipulationStrategy::GetOrCreateGridAndAxis(Sket
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              02/2018
 //---------------+---------------+---------------+---------------+---------------+------
-void SketchGridSurfaceManipulationStrategy::ProjectExistingPoints()
+void SketchGridSurfaceManipulationStrategy::_OnWorkingPlaneChanged(DPlane3d const& original)
     {
     bvector<DPoint3d> allKeyPoints = _GetCurvePrimitiveManipulationStrategy().GetKeyPoints();
     bvector<DPoint3d> acceptedKeyPoints = _GetCurvePrimitiveManipulationStrategy().GetAcceptedKeyPoints();
     for (size_t i = 0; i < acceptedKeyPoints.size(); ++i)
         {
-        ReplaceKeyPoint(acceptedKeyPoints[i], i); // Will project point internally
+        DPoint3d replacement = TransformPointBetweenPlanes(acceptedKeyPoints[i], original, m_workingPlane);
+        ReplaceKeyPoint(replacement, i);
         }
 
     if (allKeyPoints.size() != acceptedKeyPoints.size())
@@ -147,10 +148,12 @@ void SketchGridSurfaceManipulationStrategy::ProjectExistingPoints()
         size_t dynamicCount = allKeyPoints.size() - acceptedKeyPoints.size();
         for (size_t i = 0; i < dynamicCount; ++i)
             {
+
+            DPoint3d replacement = TransformPointBetweenPlanes(allKeyPoints[i + acceptedKeyPoints.size()], original, m_workingPlane);
             if (0 == acceptedKeyPoints.size())
-                UpdateDynamicKeyPoint(allKeyPoints[i + acceptedKeyPoints.size()], i); // Will project point internally
+                UpdateDynamicKeyPoint(replacement, i);
             else
-                InsertDynamicKeyPoint(allKeyPoints[i + acceptedKeyPoints.size()], i); // Will project point internally
+                InsertDynamicKeyPoint(replacement, i);
             }
         }
     }
@@ -179,6 +182,16 @@ DPoint3d SketchGridSurfaceManipulationStrategy::ProjectPoint
     DPoint3d projected = point;
     m_workingPlane.ProjectPoint(projected, point);
     return projected;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+DPoint3d SketchGridSurfaceManipulationStrategy::TransformPointBetweenPlanes(DPoint3d const & point, DPlane3d const & from, DPlane3d const & to)
+    {
+    DPoint3d result = point;
+    GeometryUtils::FindTransformBetweenPlanes(from, to).Multiply(result);
+    return result;
     }
 
 //--------------------------------------------------------------------------------------
@@ -360,8 +373,6 @@ void SketchGridSurfaceManipulationStrategy::_SetProperty
     if (0 == strcmp(key, prop_BottomElevation))
         {
         m_bottomElevation = value;
-        m_workingPlane.origin.z = m_bottomElevation;
-        ProjectExistingPoints();
         }
     else if (0 == strcmp(key, prop_TopElevation))
         m_topElevation = value;
@@ -381,6 +392,24 @@ BentleyStatus SketchGridSurfaceManipulationStrategy::_TryGetProperty
     if (0 == strcmp(key, prop_Name))
         {
         value = m_gridName;
+        return BentleyStatus::SUCCESS;
+        }
+
+    return BentleyStatus::ERROR;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SketchGridSurfaceManipulationStrategy::_TryGetProperty
+(
+    Utf8CP key, 
+    DPlane3d & value
+) const
+    {
+    if (0 == strcmp(key, prop_WorkingPlane))
+        {
+        value = m_workingPlane;
         return BentleyStatus::SUCCESS;
         }
 
@@ -431,6 +460,19 @@ void SketchGridSurfaceManipulationStrategy::_SetProperty
     if (0 == strcmp(key, prop_Name))
         {
         m_gridName = value;
+        }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void SketchGridSurfaceManipulationStrategy::_SetProperty(Utf8CP key, DPlane3d const & value)
+    {
+    if (0 == strcmp(key, prop_WorkingPlane))
+        {
+        DPlane3d originalPlane = m_workingPlane;
+        m_workingPlane = value;
+        _OnWorkingPlaneChanged(originalPlane);
         }
     }
 
