@@ -671,8 +671,8 @@ protected:
 
     Geometry(TransformCR tf, DRange3dCR tileRange, DgnElementId entityId, DisplayParamsCR params, bool isCurved, DgnDbR db);
 
-    virtual PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions, ViewContextR) = 0;
-    virtual StrokesList _GetStrokes (IFacetOptionsR facetOptions, ViewContextR) { return StrokesList(); }
+    virtual PolyfaceList _GetPolyfaces(double chordTolerance, NormalMode, ViewContextR) = 0;
+    virtual StrokesList _GetStrokes(double chordTolerance, ViewContextR) { return StrokesList(); }
     virtual bool _DoDecimate() const { return false; }
     virtual bool _DoVertexCluster() const { return true; }
     virtual size_t _GetFacetCount(FacetCounter& counter) const = 0;
@@ -691,16 +691,14 @@ public:
     Feature GetFeature() const { return m_params.IsValid() ? Feature(GetEntityId(), m_params->GetSubCategoryId(), m_params->GetClass()) : Feature(); }
 
     static IFacetOptionsPtr CreateFacetOptions(double chordTolerance);
-    IFacetOptionsPtr CreateFacetOptions(double chordTolerance, NormalMode normalMode) const;
 
     bool IsCurved() const { return m_isCurved; }
     bool HasTexture() const { return m_hasTexture; }
 
-    PolyfaceList GetPolyfaces(IFacetOptionsR facetOptions, ViewContextR context) { return _GetPolyfaces(facetOptions, context); }
-    PolyfaceList GetPolyfaces(double chordTolerance, NormalMode normalMode, ViewContextR);
+    PolyfaceList GetPolyfaces(double chordTolerance, NormalMode normalMode, ViewContextR context);
     bool DoDecimate() const { return _DoDecimate(); }
     bool DoVertexCluster() const { return _DoVertexCluster(); }
-    StrokesList GetStrokes (IFacetOptionsR facetOptions, ViewContextR context);
+    StrokesList GetStrokes (double chordTolerance, ViewContextR context);
     GeomPartCPtr GetPart() const { return _GetPart(); }
     void SetInCache(bool inCache) { _SetInCache(inCache); }
     void SetClipVector(ClipVectorCP clip) { m_clip = nullptr != clip ? ClipVector::CreateCopy(*clip) : nullptr; }
@@ -766,10 +764,8 @@ protected:
 
 public:
     static GeomPartPtr Create(DRange3dCR range, GeometryList const& geometry) { return new GeomPart(range, geometry); }
-    PolyfaceList GetPolyfaces(IFacetOptionsR facetOptions, GeometryCR instance, ViewContextR);
-    PolyfaceList GetPolyfaces(IFacetOptionsR facetOptions, GeometryCP instance, ViewContextR);
-    StrokesList GetStrokes(IFacetOptionsR facetOptions, GeometryCR instance, ViewContextR);
-    StrokesList GetStrokes(IFacetOptionsR facetOptions, GeometryCP instance, ViewContextR);
+    PolyfaceList GetPolyfaces(double chordTolerance, NormalMode, GeometryCP instance, ViewContextR);
+    StrokesList GetStrokes(double chordTolerance, GeometryCP instance, ViewContextR);
     size_t GetFacetCount(FacetCounter& counter, GeometryCR instance) const;
     bool IsCurved() const;
     GeometryList const& GetGeometries() const { return m_geometries; }

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/StrokeSymbol.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -204,7 +204,10 @@ void LsSymbolComponent::Draw(LineStyleContextR context, TransformCR transform, C
     Render::GraphicBuilderR mainGraphic = context.GetGraphicR();
     ViewContextR viewContext = context.GetViewContext();
 
+#ifdef UNNECESSARY_VIEWPORT_TEST
+    // Removed this test so that file publisher can reject symbols that are not within the tile.  (TFS# 80823).
     if (nullptr != viewContext.GetViewport())
+#endif
         {
         Transform partToWorld = Transform::FromProduct(mainGraphic.GetLocalToWorldTransform(), transform);
         ElementAlignedBox3d range = geomPart->GetBoundingBox();

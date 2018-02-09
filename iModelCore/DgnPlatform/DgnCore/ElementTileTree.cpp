@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 #include <DgnPlatform/ElementTileTree.h>
-#include <DgnPlatform/TileIO.h>
+#include <DgnPlatform/TileReader.h>
 #include <folly/BeFolly.h>
 #include <DgnPlatform/RangeIndex.h>
 #include <numeric>
@@ -1150,6 +1150,21 @@ bool Loader::_IsExpired(uint64_t createTimeMillis)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Loader::_IsValidData()
+    {
+    // TFS#800675 quick-fix...reject cached tile if it contains deleted elements
+    // (We key off the most recent modification to any element in the model in order to determine
+    // tile validity - that obviously can't work for deleted elements).
+    // Eventual real solution is to selectively repair tiles by combining cached data with data
+    // from changed elements.
+    BeAssert(!m_tileBytes.empty());
+    TileTree::IO::DgnTileReader reader(m_tileBytes, *GetElementTile().GetElementRoot().GetModel(), *GetRenderSystem());
+    return reader.VerifyFeatureTable();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileCR Loader::GetElementTile() const { return static_cast<TileCR>(*m_tile); }
@@ -2019,11 +2034,9 @@ void MeshGenerator::AddMeshes(GeomPartR part, bvector<GeometryCP> const& instanc
     if (rangePixels < s_minRangeBoxSize)
         return;
 
-    auto facetOptions = first->CreateFacetOptions(m_tolerance, m_options.m_normalMode);
-
     // Get the polyfaces and strokes with no transform applied
-    PolyfaceList polyfaces = part.GetPolyfaces(*facetOptions, nullptr, *this);
-    StrokesList strokes = part.GetStrokes(*facetOptions, nullptr, *this);
+    PolyfaceList polyfaces = part.GetPolyfaces(m_tolerance, m_options.m_normalMode, nullptr, *this);
+    StrokesList strokes = part.GetStrokes(m_tolerance, nullptr, *this);
 
     // For each instance, transform the polyfaces and add them to the mesh
     Transform invTransform = Transform::FromIdentity();
@@ -2250,7 +2263,7 @@ void MeshGenerator::ClipPoints(StrokesR strokes) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshGenerator::AddStrokes(GeometryR geom, double rangePixels, bool isContained)
     {
-    auto strokes = geom.GetStrokes(*geom.CreateFacetOptions(m_tolerance, NormalMode::Never), *this);
+    auto strokes = geom.GetStrokes(m_tolerance, *this);
     AddStrokes(strokes, geom, rangePixels, isContained);
     }
 
