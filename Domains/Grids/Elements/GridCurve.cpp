@@ -68,7 +68,7 @@ DgnClassId classId
 Dgn::DgnDbStatus      GridCurve::CheckDependancyToModel
 (
 ) const //TODO: write a test for this function. GridSpline, GridArc, GridLine. Normal creation and Handler creation
-{
+{ //TODO: update() with valid objects by changing modelID
     DgnModelPtr model = GetModel();
     GridCurvesPortionCPtr portion = GetDgnDb().Elements().Get<GridCurvesPortion>(model->GetModeledElementId());
     if (portion.IsNull()) //pointer must not be null
