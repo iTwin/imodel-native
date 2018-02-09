@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/LocksManager.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -152,7 +152,7 @@ void LockRequest::ExtractLockSet(DgnLockSet& locks)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LockRequest::FromRevision(DgnRevision& rev, DgnDbCR dgndb)
+void LockRequest::FromRevision(DgnRevision& rev, DgnDbCR dgndb, bool extractInserted)
     {
-    rev.ExtractLocks(m_locks, dgndb);
+    rev.ExtractLocks(m_locks, dgndb, extractInserted);
     }
