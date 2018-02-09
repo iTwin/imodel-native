@@ -135,8 +135,10 @@ UIList UIUtils::GetAvailableTraits()
     {
     UIList traits;
 
+    traits.AddListEntry(UIListEntry((int) FormatTraits::AppendUnitName, UNITSL10N_GETSTRING(FormatTraits_AppendUnitName).c_str(), json_AppendUnitName()));
     traits.AddListEntry(UIListEntry((int)FormatTraits::Use1000Separator, UNITSL10N_GETSTRING(FormatTraits_Use1000Separator).c_str(), json_Use1000Separator()));
-    traits.AddListEntry(UIListEntry((int)FormatTraits::AppendUnitName, UNITSL10N_GETSTRING(FormatTraits_Use1000Separator).c_str(), json_AppendUnitName()));
+    traits.AddListEntry(UIListEntry((int)FormatTraits::LeadingZeroes, UNITSL10N_GETSTRING(FormatTraits_LeadingZeroes).c_str(), json_LeadZeroes()));
+    traits.AddListEntry(UIListEntry((int)FormatTraits::TrailingZeroes, UNITSL10N_GETSTRING(FormatTraits_TrailingZeroes).c_str(), json_TrailZeroes()));
 
    // TraitsBitToJson(jTraits, json_TrailZeroes(), FormatTraits::TrailingZeroes, &ref, verbose);
    // TraitsBitToJson(jTraits, json_LeadZeroes(), FormatTraits::LeadingZeroes, &ref, verbose);
