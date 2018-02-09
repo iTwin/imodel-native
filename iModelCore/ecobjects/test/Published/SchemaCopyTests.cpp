@@ -165,7 +165,7 @@ TEST_F(SchemaCopyTest, TestKindOfQuantity)
     EXPECT_STREQ("CM", targetKoq->GetDefaultPresentationUnit().GetUnitName().c_str());
     EXPECT_EQ(2, targetKoq->GetPresentationUnitList().size());
     EXPECT_STREQ("MM", targetKoq->GetPresentationUnitList().at(1).GetUnitName().c_str());
-    EXPECT_STREQ("M", targetKoq->GetPersistenceUnit().GetUnit()->GetName());
+    EXPECT_STREQ("M", targetKoq->GetPersistenceUnit().GetUnit()->GetName().c_str());
     EXPECT_EQ(10e-3, targetKoq->GetRelativeError());
     }
 
@@ -191,7 +191,7 @@ TEST_F(SchemaCopyTest, TestKindOfQuantity_NoPresentationUnit)
     ASSERT_TRUE(nullptr != targetKoq);
     EXPECT_STREQ("Test KoQ", targetKoq->GetDisplayLabel().c_str());
     EXPECT_STREQ("Test Description", targetKoq->GetDescription().c_str());
-    EXPECT_STREQ("M", targetKoq->GetPersistenceUnit().GetUnit()->GetName());
+    EXPECT_STREQ("M", targetKoq->GetPersistenceUnit().GetUnit()->GetName().c_str());
     EXPECT_FALSE(targetKoq->HasPresentationUnits());
     EXPECT_EQ(10e-3, targetKoq->GetRelativeError());
     }

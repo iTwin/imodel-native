@@ -36,7 +36,7 @@ bool tryCreateCA(ECSchemaR schema, Utf8CP origClassName, Utf8CP className, IECIn
 bool addUnitSpecificationsToProperty(ECSchemaR schema, ECPropertyP ecProperty, ECSchemaR unitAttributesSchema)
     {
     schema.AddReferencedSchema(unitAttributesSchema);
-    Utf8CP perUnitName = ecProperty->GetKindOfQuantity()->GetPersistenceUnit().GetUnit()->GetName();
+    Utf8CP perUnitName = ecProperty->GetKindOfQuantity()->GetPersistenceUnit().GetUnit()->GetName().c_str();
     Utf8CP oldPerUnitName = Units::UnitRegistry::Instance().TryGetOldName(perUnitName);
     if(nullptr == oldPerUnitName)
         {
@@ -54,7 +54,7 @@ bool addUnitSpecificationsToProperty(ECSchemaR schema, ECPropertyP ecProperty, E
 
     if (ecProperty->GetKindOfQuantity()->HasPresentationUnits())
         {
-        Utf8CP presUnitName = ecProperty->GetKindOfQuantity()->GetDefaultPresentationUnit().GetUnit()->GetName();
+        Utf8CP presUnitName = ecProperty->GetKindOfQuantity()->GetDefaultPresentationUnit().GetUnit()->GetName().c_str();
         Utf8CP oldPresUnitName = Units::UnitRegistry::Instance().TryGetOldName(presUnitName);
         if (nullptr == oldPresUnitName)
             {
