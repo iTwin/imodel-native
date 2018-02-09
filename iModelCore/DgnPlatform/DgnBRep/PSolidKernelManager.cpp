@@ -2,7 +2,7 @@
 |
 |     $Source: DgnBRep/PSolidKernelManager.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -2451,7 +2451,7 @@ int             order
             pole.z = *geomArrayP++;
 
             if (rational)
-                *geomArrayP++;
+                geomArrayP++;
 
             points.push_back(pole);
             }
@@ -2830,7 +2830,8 @@ void PSolidGoOutput::ProcessSilhouettes(IParasolidWireOutput& output, DPoint3dCP
         }
  
     s_frustrumOutput.m_wireOutput = &output; // Setup static global callback function...
-    PK_ERROR_code_t failureCode = PK_TOPOL_render_line(1, &entityTag, PK_ENTITY_null, viewTransformTag, &options);
+    /* unused - PK_ERROR_code_t failureCode = */
+    PK_TOPOL_render_line(1, &entityTag, nullptr, viewTransformTag, &options);
     s_frustrumOutput.m_wireOutput = nullptr; // Clear static global callback function...
 
     PK_ENTITY_delete(1, &viewTransformTag);
@@ -2978,7 +2979,8 @@ void PSolidGoOutput::ProcessFaceHatching(IParasolidWireOutput& output, int divis
         return;
 
     s_frustrumOutput.m_wireOutput = &output; // Setup static global callback function...
-    PK_ERROR_code_t failureCode = PK_TOPOL_render_line(1, &entityTag, PK_ENTITY_null, PK_ENTITY_null, &options);
+    /* unused - PK_ERROR_code_t failureCode = */
+    PK_TOPOL_render_line(1, &entityTag, nullptr, PK_ENTITY_null, &options);
     s_frustrumOutput.m_wireOutput = nullptr; // Clear static global callback function...
     }
 
@@ -3043,49 +3045,10 @@ static int pki_start_modeler()
     if (SUCCESS != (failureCode = PK_MEMORY_register_callbacks (memoryFunctions))) // register memory alloc/free functions
         return failureCode;
 
-    /* Create face-id attribute definition */
-    PK_CLASS_t          entityIdOwnerTypes[] = {PK_CLASS_face, PK_CLASS_edge};
-    PK_ATTRIB_field_t   entityIdFieldTypes[] = {PK_ATTRIB_field_integer_c};
-    PK_ATTDEF_sf_t      entityIdAttribDefStruct;
-    PK_ATTDEF_t         entityIdAttribDefTag;
-
-    entityIdAttribDefStruct.name          = const_cast<CharP>(PKI_ENTITY_ID_ATTRIB_NAME);
-    entityIdAttribDefStruct.attdef_class  = PK_ATTDEF_class_06_c;
-    entityIdAttribDefStruct.n_owner_types = sizeof(entityIdOwnerTypes) / sizeof(entityIdOwnerTypes[0]);
-    entityIdAttribDefStruct.owner_types   = entityIdOwnerTypes;
-    entityIdAttribDefStruct.n_fields      = sizeof(entityIdFieldTypes) / sizeof(entityIdFieldTypes[0]);
-    entityIdAttribDefStruct.field_types   = entityIdFieldTypes;
-
-    PK_ATTDEF_create (&entityIdAttribDefStruct, &entityIdAttribDefTag);
-
-    /* Create userdata attribute definition */
-    PK_CLASS_t          userDataOwnerTypes[] = {PK_CLASS_body, PK_CLASS_region, PK_CLASS_shell, PK_CLASS_face, PK_CLASS_loop, PK_CLASS_edge, PK_CLASS_vertex};
-    PK_ATTRIB_field_t   userDataFieldTypes[] = {PK_ATTRIB_field_integer_c};
-    PK_ATTDEF_sf_t      userDataAttribDefStruct;
-    PK_ATTDEF_t         userDataAttribDefTag;
-
-    userDataAttribDefStruct.name          = const_cast<CharP>(PKI_USERDATA_ATTRIB_NAME);
-    userDataAttribDefStruct.attdef_class  = PK_ATTDEF_class_06_c;
-    userDataAttribDefStruct.n_owner_types = sizeof(userDataOwnerTypes) / sizeof(userDataOwnerTypes[0]);
-    userDataAttribDefStruct.owner_types   = userDataOwnerTypes;
-    userDataAttribDefStruct.n_fields      = sizeof(userDataFieldTypes) / sizeof(userDataFieldTypes[0]);
-    userDataAttribDefStruct.field_types   = userDataFieldTypes;
-
-    PK_ATTDEF_create(&userDataAttribDefStruct, &userDataAttribDefTag);
-
-    PK_CLASS_t          hiddenAttrOwnerTypes[] = {PK_CLASS_fin, PK_CLASS_edge, PK_CLASS_face, PK_CLASS_body};
-    PK_ATTRIB_field_t   hiddenAttrFieldTypes[] = {PK_ATTRIB_field_integer_c};
-    PK_ATTDEF_sf_t      hiddenAttrDefStruct;
-    PK_ATTDEF_t         hiddenAttrDefTag;
-
-    hiddenAttrDefStruct.name              = const_cast<CharP>(PKI_HIDDEN_ENTITY_ATTRIB_NAME);
-    hiddenAttrDefStruct.attdef_class      = PK_ATTDEF_class_01_c;
-    hiddenAttrDefStruct.n_owner_types     = sizeof (hiddenAttrOwnerTypes) / sizeof (hiddenAttrOwnerTypes[0]);
-    hiddenAttrDefStruct.owner_types       = hiddenAttrOwnerTypes;
-    hiddenAttrDefStruct.n_fields          = sizeof (hiddenAttrFieldTypes) / sizeof (hiddenAttrFieldTypes[0]);
-    hiddenAttrDefStruct.field_types       = hiddenAttrFieldTypes;
-
-    PK_ATTDEF_create(&hiddenAttrDefStruct, &hiddenAttrDefTag);
+    PSolidAttrib::CreateEntityIdAttributeDef(true);
+    PSolidAttrib::CreateUserDataAttributeDef(true);
+    PSolidAttrib::CreateHiddenEntityAttributeDef(true);
+    PSolidAttrib::CreateFaceMaterialIndexAttributeDef(true);
 
     s_parasolidInitialized = 1;
 

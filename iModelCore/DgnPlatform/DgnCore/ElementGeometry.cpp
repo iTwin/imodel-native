@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ElementGeometry.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -1374,7 +1374,6 @@ void GeometryStreamIO::Writer::Append(IBRepEntityCR entity)
     if (!badBRep)
         {
         bvector<FB::FaceSymbology> fbSymbVec;
-        bvector<FB::FaceSymbologyIndex> fbSymbIndexVec;
 
         if (nullptr != attachments)
             {
@@ -1397,22 +1396,12 @@ void GeometryStreamIO::Writer::Append(IBRepEntityCR entity)
 
                 fbSymbVec.push_back(fbSymb);
                 }
-
-            T_FaceToSubElemIdMap const& faceToSubElemIdMap = attachments->_GetFaceToSubElemIdMap();
-
-            for (T_FaceToSubElemIdMap::const_iterator curr = faceToSubElemIdMap.begin(); curr != faceToSubElemIdMap.end(); ++curr)
-                {
-                FB::FaceSymbologyIndex fbSymbIndex(curr->second.first, (uint32_t) curr->second.second);
-
-                fbSymbIndexVec.push_back(fbSymbIndex);
-                }
             }
 
         FlatBufferBuilder fbb;
 
         auto entityData = fbb.CreateVector(buffer, bufferSize);
         auto faceSymb = 0 != fbSymbVec.size() ? fbb.CreateVectorOfStructs(&fbSymbVec.front(), fbSymbVec.size()) : 0;
-        auto faceSymbIndex = 0 != fbSymbIndexVec.size() ? fbb.CreateVectorOfStructs(&fbSymbIndexVec.front(), fbSymbIndexVec.size()) : 0;
 
         FB::BRepDataBuilder builder(fbb);
         Transform entityTransform = entity.GetEntityTransform();
@@ -1422,10 +1411,7 @@ void GeometryStreamIO::Writer::Append(IBRepEntityCR entity)
         builder.add_entityData(entityData);
 
         if (nullptr != attachments)
-            {
             builder.add_symbology(faceSymb);
-            builder.add_symbologyIndex(faceSymbIndex);
-            }
 
         auto mloc = builder.Finish();
 
@@ -1887,7 +1873,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, IBRepEntityPtr& entity
     if (SUCCESS != PSolidUtil::RestoreEntityFromMemory(entity, ppfb->entityData()->Data(), ppfb->entityData()->Length(), *((TransformCP) ppfb->entityTransform())))
         return false;
 
-    if (!ppfb->has_symbology() || !ppfb->has_symbologyIndex())
+    if (!ppfb->has_symbology())
         return true;
 
     for (size_t iSymb=0; iSymb < ppfb->symbology()->Length(); iSymb++)
@@ -1908,19 +1894,36 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, IBRepEntityPtr& entity
             }
 
         if (nullptr == entity->GetFaceMaterialAttachments())
-            entity->InitFaceMaterialAttachments(&faceParams);
+            {
+            IFaceMaterialAttachmentsPtr attachments = PSolidUtil::CreateNewFaceAttachments(PSolidUtil::GetEntityTag(*entity), faceParams);
+
+            if (!attachments.IsValid())
+                break;
+
+            PSolidUtil::SetFaceAttachments(*entity, attachments.get());
+            }
         else
-            const_cast<T_FaceAttachmentsVec&>(entity->GetFaceMaterialAttachments()->_GetFaceAttachmentsVec()).push_back(faceParams);
+            {
+            entity->GetFaceMaterialAttachmentsP()->_GetFaceAttachmentsVecR().push_back(faceParams);
+            }
         }
 
-    if (nullptr == entity->GetFaceMaterialAttachments())
+    // Support for older BRep that didn't have face attachment index attrib and add the attributes now...
+    if (!ppfb->has_symbologyIndex())
+        return true;
+    
+    int         nFaces;
+    PK_FACE_t*  faces = nullptr;
+
+    if (SUCCESS != PK_BODY_ask_faces(PSolidUtil::GetEntityTag(*entity), &nFaces, &faces))
         return true;
 
-    T_FaceToSubElemIdMap const& faceToSubElemIdMap = entity->GetFaceMaterialAttachments()->_GetFaceToSubElemIdMap();
     bmap<int32_t, uint32_t> subElemIdToFaceMap;
 
-    for (T_FaceToSubElemIdMap::const_iterator curr = faceToSubElemIdMap.begin(); curr != faceToSubElemIdMap.end(); ++curr)
-        subElemIdToFaceMap[curr->second.first] = curr->first;
+    for (int iFace = 0; iFace < nFaces; iFace++)
+        subElemIdToFaceMap[iFace + 1] = faces[iFace]; // subElemId is 1 based face index...
+    
+    PK_MEMORY_free(faces);
 
     for (size_t iSymbIndex=0; iSymbIndex < ppfb->symbologyIndex()->Length(); iSymbIndex++)
         {
@@ -1930,7 +1933,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, IBRepEntityPtr& entity
         if (foundIndex == subElemIdToFaceMap.end())
             continue;
 
-        const_cast<T_FaceToSubElemIdMap&>(faceToSubElemIdMap)[foundIndex->second] = make_bpair(fbSymbIndex->faceIndex(), fbSymbIndex->symbIndex());
+        PSolidAttrib::SetFaceMaterialIndexAttribute(foundIndex->second, fbSymbIndex->symbIndex()); // NOTE: Call with 0 will remove an existing attrib...
         }
 
     return true;
@@ -4022,35 +4025,7 @@ BentleyStatus GeometrySource::_StrokeHit(DecorateContextR context, HitDetailCR h
             return ERROR;
         }
 
-    // Use branch to push geometry towards eye and to override color from normal flash for primitive/part sub-selection...
-    double      offsetDist = context.GetPixelSizeAtPoint(&hit.GetHitPoint());
-    DVec3d      offsetDir;
-    DPoint3d    viewPt[2];
-    Transform   offsetTrans;
-
-    viewPt[0].Init(0.5, 0.5, 0.0);
-    viewPt[1].Init(0.5, 0.5, 1.0);
-
-    context.NpcToWorld(viewPt, viewPt, 2);
-    offsetDir.DifferenceOf(viewPt[1], viewPt[0]);
-    offsetDir.ScaleToLength(4.0 * offsetDist);
-    offsetTrans.InitFrom(offsetDir);
-
-    ColorDef color = context.GetViewport()->GetHiliteColor();
-    Render::OvrGraphicParams ovrParams;
-
-    if (SubSelectionMode::Segment != subMode)
-        {
-        ovrParams.SetLineColor(color);
-        ovrParams.SetFillColor(color);
-        ovrParams.SetLineTransparency(0x64);
-        ovrParams.SetFillTransparency(0x64);
-        }
-
-    GraphicBranch branch;
-
-    branch.Add(*graphic);
-    context.AddWorldDecoration(*context.CreateBranch(branch, context.GetDgnDb(), offsetTrans), &ovrParams);
+    hit.FlashGraphic(*graphic, context);
 
     return SUCCESS;
     }

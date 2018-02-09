@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ElementTileTree.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -48,11 +48,14 @@ struct Loader : TileTree::TileLoader
     DEFINE_T_SUPER(TileTree::TileLoader);
 
 private:
+    uint64_t    m_createTime;
+
     Loader(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys);
 
     folly::Future<BentleyStatus> _GetFromSource() override;
     BentleyStatus _LoadTile() override;
     bool _IsExpired(uint64_t) override;
+    bool _IsValidData() override;
     folly::Future<BentleyStatus> _ReadFromDb() override;
 
     BentleyStatus LoadGeometryFromModel(Render::Primitives::GeometryCollection& geometry);
@@ -60,6 +63,8 @@ private:
     bool IsCacheable() const;
     TileCR GetElementTile() const;
     TileR GetElementTile();
+
+    uint64_t _GetCreateTime() const override { return m_createTime; }
 public:
     static LoaderPtr Create(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) { return new Loader(tile, loads, renderSys); }
 };
@@ -133,7 +138,7 @@ struct Root : TileTree::OctTree::Root
         ShowBoundingVolume = 1 << 0,
         ShowContentVolume = 1 << 1,
     };
-private:
+protected:
     struct SolidPrimitivePartMap
     {
         struct Key
@@ -182,6 +187,7 @@ private:
     bool LoadRootTile(DRange3dCR range, GeometricModelR model, bool populate);
 public:
     static RootPtr Create(GeometricModelR model, Render::SystemR system);
+    static RootPtr Create(GeometricModelR model, RenderContextR context);
     virtual ~Root() { ClearAllTiles(); }
 
     DgnModelId GetModelId() const { return m_modelId; }
@@ -216,7 +222,7 @@ struct Tile : TileTree::OctTree::Tile
 {
     DEFINE_T_SUPER(TileTree::OctTree::Tile);
 
-private:
+protected:
     struct DebugGraphics
     {
         Render::GraphicPtr  m_graphic;
@@ -238,9 +244,10 @@ private:
 
     Tile(Root& root, TileTree::OctTree::TileId id, Tile const* parent, DRange3dCP range, bool displayable);
     explicit Tile(Tile const& parent);
+    Tile(Root& root, TileTree::OctTree::TileId id, DRange3dCR range, double minToleranceRatio);
     ~Tile();
 
-    void InitTolerance();
+    void InitTolerance(double minToleranceRatio, bool isLeaf=false);
 
     TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr, Dgn::Render::SystemP renderSys = nullptr) override;
     TileTree::TilePtr _CreateChild(TileTree::OctTree::TileId) const override;
@@ -287,6 +294,8 @@ public:
 
     bool _IsPartial() const override { return nullptr != m_generator.get(); }
     void UpdateRange(DRange3dCR parentOld, DRange3dCR parentNew, bool allowShrink);
+
+    virtual bool IsCacheable() const;
 };
 
 END_ELEMENT_TILETREE_NAMESPACE

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/RepositoryManager.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -24,6 +24,7 @@ private:
     IOwnedLocksIteratorPtr _GetOwnedLocks(FastQuery fast) override { return nullptr; }
     RepositoryStatus _OnFinishRevision(DgnRevision const&) override { return RepositoryStatus::Success; }
     RepositoryStatus _RefreshFromRepository() override { return RepositoryStatus::Success; }
+    RepositoryStatus _ClearUserHeldCodesLocks() override { return RepositoryStatus::Success; }
     void _OnElementInserted(DgnElementId) override { }
     void _OnModelInserted(DgnModelId) override { }
     void _StartBulkOperation() override {}
@@ -85,6 +86,7 @@ protected:
     IOwnedLocksIteratorPtr _GetOwnedLocks(FastQuery fast) override;
     RepositoryStatus _OnFinishRevision(DgnRevision const&) override;
     RepositoryStatus _RefreshFromRepository() override { return Refresh(); }
+    RepositoryStatus _ClearUserHeldCodesLocks() override { return ClearUserHeldCodesLocks(); }
     void _OnElementInserted(DgnElementId) override;
     void _OnModelInserted(DgnModelId) override;
     void _OnDgnDbDestroyed() override;
@@ -120,6 +122,7 @@ protected:
     bool CreateLocksTable(Utf8CP tableName);
     bool CreateCodesTable(Utf8CP tableName);
     RepositoryStatus Refresh();
+    RepositoryStatus ClearUserHeldCodesLocks();
     RepositoryStatus Pull();
     DbResult Save()
         {
@@ -189,12 +192,42 @@ protected:
     void _OnCommit(TxnManager& mgr) override;
     void _OnAppliedChanges(TxnManager& mgr) override;
     void _OnUndoRedo(TxnManager& mgr, TxnAction) override;
+    bool _AreResourcesHeld(DgnLockSet& l, DgnCodeSet& c, RepositoryStatus* status) override 
+        {
+        auto ret = T_Super::_AreResourcesHeld(l, c, status);
+        if (nullptr != status && _IsBulkOperation() && !m_req.IsEmpty())
+            *status = RepositoryStatus::Success; // Don't report missing locks and codes if we are in the middle of a bulk op and haven't made our request yet.
+        return ret;
+        }
 
     // Note: functions like _QueryCodeStates and _QueryLockLevel do NOT look in m_req. They check what we actually have obtained from the server.
 
     void _StartBulkOperation() override;
     bool _IsBulkOperation() const override {return 0 != m_inBulkUpdate;}
     Response _EndBulkOperation() override;
+
+    void _ExtractRequestFromBulkOperation(Request& reqOut, bool locks, bool codes) override 
+        {
+        auto control = GetDgnDb().GetConcurrencyControl();
+        if (nullptr != control)
+            control->_OnExtractRequest(m_req, *this);
+
+        if (locks)
+            {
+            reqOut.Codes().insert(m_req.Codes().begin(), m_req.Codes().end());
+            m_req.Codes().clear();
+            }
+        if (codes)
+            {
+            reqOut.Locks().GetLockSet().insert(m_req.Locks().GetLockSet().begin(), m_req.Locks().GetLockSet().end());
+            m_req.Locks().Clear();
+            }
+        // TODO: merge options
+        // reqOut.SetOptions(m_req.Options());
+
+        if (nullptr != control)
+            control->_OnExtractedRequest(m_req, *this);
+        }
 
     void AccumulateRequests(Request const&);
 public:
@@ -235,7 +268,14 @@ void BriefcaseManagerBase::_OnDgnDbDestroyed()
 +---------------+---------------+---------------+---------------+---------------+------*/
 IBriefcaseManagerPtr DgnPlatformLib::Host::RepositoryAdmin::_CreateBriefcaseManager(DgnDbR db) const
     {
-    return db.IsMasterCopy() || db.IsStandaloneBriefcase() ? MasterBriefcaseManager::Create(db).get() : BulkUpdateBriefcaseManager::Create(db).get();
+    IBriefcaseManagerPtr bc;
+    if (db.IsMasterCopy() || db.IsStandaloneBriefcase())
+        bc = MasterBriefcaseManager::Create(db);
+    else
+        bc = BulkUpdateBriefcaseManager::Create(db);
+    if (bc.IsValid() && (nullptr != db.GetConcurrencyControl()))
+        db.GetConcurrencyControl()->_ConfigureBriefcaseManager(*bc);
+    return bc.get();
     }
 
 #define TABLE_Codes "Codes"
@@ -455,6 +495,33 @@ RepositoryStatus BriefcaseManagerBase::Refresh()
         }
 
     return Pull();
+    }
+
+//-------------------------------------------------------------------------------------------
+// @bsimethod                                                 Diego.Pinate     01/18
+//-------------------------------------------------------------------------------------------
+RepositoryStatus BriefcaseManagerBase::ClearUserHeldCodesLocks()
+    {
+    if (DbState::Ready != m_localDbState)
+        {
+        // Either we haven't yet initialized the localDB, or failed to do so previously. Retry that.
+        RepositoryStatus stat;
+        Validate(&stat);
+        return stat;
+        }
+
+    // Clear user held locks and codes
+    m_localDbState = DbState::Invalid; // assume something will go wrong...
+    if (BE_SQLITE_OK != GetLocalDb().ExecuteSql("DELETE FROM " TABLE_Locks)
+        || BE_SQLITE_OK != GetLocalDb().ExecuteSql("DELETE FROM " TABLE_Codes))
+        {
+        return RepositoryStatus::SyncError;
+        }
+    
+    Save();
+    
+    m_localDbState = DbState::Ready;
+    return RepositoryStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -875,12 +942,19 @@ IBriefcaseManager::Response BriefcaseManagerBase::_ProcessRequest(Request& req, 
     if (nullptr == mgr)
         return Response(purpose, req.Options(), RepositoryStatus::ServerUnavailable);
 
+    auto control = GetDgnDb().GetConcurrencyControl();
+    if (nullptr != control)
+        control->_OnProcessRequest(req, *this, purpose);
+
     auto response = RequestPurpose::Acquire == purpose ? mgr->Acquire(req, GetDgnDb()) : mgr->QueryAvailability(req, GetDgnDb());
     if (RequestPurpose::Acquire == purpose && RepositoryStatus::Success == response.Result())
         {
         InsertCodes(req.Codes(), TableType::Owned);
         InsertLocks(req.Locks(), TableType::Owned, true);
         }
+
+    if (nullptr != control)
+        control->_OnProcessedRequest(req, *this, purpose, response);
 
     return response;
     }
@@ -1213,22 +1287,30 @@ bool BriefcaseManagerBase::_AreResourcesHeld(DgnLockSet& locks, DgnCodeSet& code
     Cull(locks);
     Cull(codes);
 
+    auto control = GetDgnDb().GetConcurrencyControl();
+    if (nullptr != control)
+        control->_OnQueryHeld(locks, codes, *this);
+
+    bool allHeld = true;
+
     if (!locks.empty())
         {
         if (nullptr != pStatus)
             *pStatus = RepositoryStatus::LockNotHeld;
-
-        return false;
+        allHeld = false;
         }
     else if (!codes.empty())
         {
         if (nullptr != pStatus)
             *pStatus = RepositoryStatus::CodeNotReserved;
 
-        return false;
+        allHeld = false;
         }
 
-    return true;
+    if (nullptr != control)
+        control->_OnQueriedHeld(locks, codes, *this);
+
+    return allHeld;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1437,9 +1519,6 @@ DgnDbStatus IBriefcaseManager::ToDgnDbStatus(RepositoryStatus repoStatus, Reques
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus IBriefcaseManager::OnElementOperation(DgnElementCR el, BeSQLite::DbOpcode opcode)
     {
-    if (IsBulkOperation()) // In a bulk op, the "prepare" step schedules the request. We won't process it until later.
-        return DgnDbStatus::Success;
-
     Request req;
     return ToDgnDbStatus(PrepareForElementOperation(req, el, opcode, PrepareAction::Verify), req);
     }
@@ -1449,9 +1528,6 @@ DgnDbStatus IBriefcaseManager::OnElementOperation(DgnElementCR el, BeSQLite::DbO
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus IBriefcaseManager::OnModelOperation(DgnModelCR model, BeSQLite::DbOpcode opcode)
     {
-    if (IsBulkOperation()) // In a bulk op, the "prepare" step schedules the request. We won't process it until later.
-        return DgnDbStatus::Success;
-
     Request req;
     return ToDgnDbStatus(PrepareForModelOperation(req, model, opcode, PrepareAction::Verify), req);
     }

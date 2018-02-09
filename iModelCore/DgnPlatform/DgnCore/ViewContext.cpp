@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ViewContext.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -595,7 +595,7 @@ bool ViewContext::_VisitAllModelElements()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   07/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-double ViewContext::GetPixelSizeAtPoint(DPoint3dCP inPoint) const
+double ViewContext::_GetPixelSizeAtPoint(DPoint3dCP inPoint) const
     {
     DPoint3d vec[2];
 
@@ -1205,7 +1205,24 @@ BentleyStatus DecorateContext::DrawNormalHit(HitDetailCR hit)
         return ERROR;
 
     // Allow sub-class involvement for flashing sub-entities...
-    return (nullptr != m_viewport ? m_viewport->GetViewControllerR()._StrokeHit(*this, *source, hit) : source->StrokeHit(*this, hit));
+    if (SUCCESS == (nullptr != m_viewport ? m_viewport->GetViewControllerR()._StrokeHit(*this, *source, hit) : source->StrokeHit(*this, hit)))
+        return SUCCESS;
+
+    if (element.IsValid())
+        {
+        m_viewport->SetFlashed(hit.GetElementId(), 0.25);
+        return SUCCESS;
+        }
+
+    // For locatable transient, can't use SetFlashed to hilite the entire GeometryStream, create a graphic and draw in hilite color instead...
+    Render::GraphicPtr graphic = source->Draw(*this, 0.0);
+
+    if (!graphic.IsValid())
+        return ERROR;
+
+    hit.FlashGraphic(*graphic, *this);
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1634,7 +1651,7 @@ Render::TexturePtr ViewContext::_CreateTexture(Render::ImageCR image) const
     Render::TexturePtr tx;
     auto sys = GetRenderSystem();
     if (nullptr != sys)
-        tx = sys->_CreateTexture(image);
+        tx = sys->_CreateTexture(image, GetDgnDb());
 
     return tx;
     }
@@ -1647,7 +1664,7 @@ Render::TexturePtr ViewContext::_CreateTexture(Render::ImageSourceCR source, Ren
     Render::TexturePtr tx;
     auto sys = GetRenderSystem();
     if (nullptr != sys)
-        tx = sys->_CreateTexture(source, bottomUp);
+        tx = sys->_CreateTexture(source, bottomUp, GetDgnDb());
 
     return tx;
     }

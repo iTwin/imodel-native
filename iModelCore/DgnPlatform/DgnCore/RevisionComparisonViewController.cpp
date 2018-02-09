@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/RevisionComparisonViewController.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -96,11 +96,43 @@ StatusInt   ComparisonData::GetDbOpcode(DgnElementId elementId, BeSQLite::DbOpco
 +---------------+---------------+---------------+---------------+---------------+------*/
  RevisionComparison::Controller::Controller(SpatialViewDefinition const& view, ComparisonData const& data, Show flags, SymbologyCR symb) : T_Super(view), m_symbology(symb), m_comparisonData(&data), m_show(flags)//, m_label(TextString::Create())
     {
+    m_cnmHandler = [](RevisionComparison::ControllerPtr controller){ };
+
     // Build the opcode cache
     for (auto state : m_comparisonData->GetPersistentStates())
         m_persistentOpcodeCache[state.m_elementId] = state.m_opcode;
     for (auto state : m_comparisonData->GetTransientStates())
         m_transientOpcodeCache[state.m_element->GetElementId()] = state.m_opcode;
+    }
+
+//-------------------------------------------------------------------------------------------
+// @bsimethod                                                 Diego.Pinate     01/18
+//-------------------------------------------------------------------------------------------
+void RevisionComparison::Controller::SetItemsDisplayHandler(std::function<void(RevisionComparison::ControllerPtr)> handler)
+    {
+    m_cnmHandler = handler;
+    }
+
+//-------------------------------------------------------------------------------------------
+// @bsimethod                                                 Diego.Pinate     01/18
+//-------------------------------------------------------------------------------------------
+void RevisionComparison::Controller::_OnCategoryChange(bool singleEnable)
+    {
+    T_Super::_OnCategoryChange(singleEnable);
+
+    // TFS#798515: Provide callbacks for _OnCategoryChange so that version compare may sync view controllers
+    m_cnmHandler(this);
+    }
+
+//-------------------------------------------------------------------------------------------
+// @bsimethod                                                 Diego.Pinate     01/18
+//-------------------------------------------------------------------------------------------
+void RevisionComparison::Controller::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
+    {
+    T_Super::_ChangeModelDisplay(modelId, onOff);
+
+    // TFS#798515: Provide callbacks for _OnCategoryChange so that version compare may sync view controllers
+    m_cnmHandler(this);
     }
 
 //-------------------------------------------------------------------------------------------
@@ -385,7 +417,7 @@ void RevisionComparison::Controller::_OnViewOpened (DgnViewportR vp)
     if (viewFlags.GetRenderMode() != Render::RenderMode::SmoothShade)
         viewFlags.SetRenderMode(Render::RenderMode::SmoothShade);
 
-    viewFlags.SetShowVisibleEdges(true);
+    viewFlags.SetShowVisibleEdges(false);
     viewFlags.SetShowPatterns(false);
     viewFlags.SetShowGrid(false);
     viewFlags.SetShowClipVolume(false);

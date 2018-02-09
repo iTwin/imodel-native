@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnModel.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -1611,6 +1611,18 @@ AxisAlignedBox3d GeometricModel2d::_QueryModelRange() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TileTree::RootPtr GeometricModel::_GetTileTree(RenderContextR context)
+    {
+    // Inheritance situation is awkward here - reality models should all return GetTileTree(context.GetRenderSystem());
+    if (DrawPurpose::CaptureThumbnail == context.GetDrawPurpose())
+        return ElementTileTree::Root::Create(*this, context);
+    else
+        return GetTileTree(context.GetRenderSystem());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileTree::RootP GeometricModel::GetTileTree(Render::SystemP system)
@@ -1618,10 +1630,13 @@ TileTree::RootP GeometricModel::GetTileTree(Render::SystemP system)
     DgnDb::VerifyClientThread();
 
     // NB: Reality models sometimes need to load the root outside of the context of a render system.
-    // ###TODO_ELEMENT_TILE: Eventually we may need to support multiple render systems within a single application
-    // - in that case will not want to discard another system's root.
     if (m_root.IsNull() || (nullptr != system && m_root->GetRenderSystemP() != system))
+        {
+        // TFS#799212: current Root may contain a reality data cache db. Ensure its destructor runs
+        // before creating new Root to avoid SQLITE_BUSY errors.
+        m_root = nullptr;
         m_root = _CreateTileTree(system);
+        }
 
     return m_root.get();
     }

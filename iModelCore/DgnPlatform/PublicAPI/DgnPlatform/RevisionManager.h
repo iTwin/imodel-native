@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/RevisionManager.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -88,7 +88,7 @@ public:
     void SetSummary(Utf8CP summary) { m_summary = summary; }
 
     //! Extract the set of locks which are required for this revision's changes
-    DGNPLATFORM_EXPORT void ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb) const;
+    DGNPLATFORM_EXPORT void ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb, bool extractInserted = true) const;
     
     //! Extract the set of codes which were assigned to objects within this revision's changes
     DGNPLATFORM_EXPORT void ExtractCodes(DgnCodeSet& assignedCodes, DgnCodeSet& discardedCodes, DgnDbCR dgndb) const;
@@ -187,6 +187,7 @@ private:
     RevisionStatus DoMergeRevision(DgnRevisionCR revision);
     RevisionStatus DoReverseRevision(DgnRevisionCR revision);
     RevisionStatus DoReinstateRevision(DgnRevisionCR revision);
+    RevisionStatus DoProcessRevisions(bvector<DgnRevisionCP> const& revisions, RevisionProcessOption processOption);
 
     BeSQLite::DbResult SaveContainsSchemaChanges();
     BeSQLite::DbResult ClearContainsSchemaChanges();
@@ -261,6 +262,12 @@ public:
     //! @remarks After reinstating all the revisions, the user can make changes to the DgnDb and create new revisions
     //! again. @see ReverseRevision()
     DGNPLATFORM_EXPORT RevisionStatus ReinstateRevision(DgnRevisionCR revision);
+
+    //! Processes (merges, reverses or reinstates) a set of revisions
+    //! @param[in] revisions Revisions to be processed
+    //! @param[in] processOption Option to process, i.e., merge, reverse or reinstate the revisions
+    //! @return RevisionStatus::Success if the revision was successfully processed or some error status otherwise.
+    DGNPLATFORM_EXPORT RevisionStatus ProcessRevisions(bvector<DgnRevisionCP> const& revisions, RevisionProcessOption processOption);
 
     //! Checks if the Db has reversed revisions
     //! @see GetReversedRevisionId()

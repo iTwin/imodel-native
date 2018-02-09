@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/TileReader.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -514,6 +514,48 @@ Image GltfReader::GetTextureImage(Utf8CP name)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TextureMapping GltfReader::GetTextureMapping(Utf8CP name, Json::Value const& paramsJson)
+    {
+    if (!m_namedTextures.isMember(name))
+        return TextureMapping();
+
+    TextureKey key(name);
+    TexturePtr tex = m_renderSystem._FindTexture(key, m_model.GetDgnDb());
+    if (tex.IsNull())
+        {
+        auto const& texJson = m_namedTextures[name];
+        auto bvId = texJson["bufferView"].asString();
+        if (!m_bufferViews.isMember(bvId))
+            return TextureMapping();
+
+        auto const& bvJson = m_bufferViews[bvId];
+        uint32_t byteLength = bvJson["byteLength"].asUInt();
+        void const* pData = m_binaryData + bvJson["byteOffset"].asUInt();
+
+        auto format = static_cast<ImageSource::Format>(texJson["format"].asUInt());
+        ImageSource img(format, ByteStream(static_cast<uint8_t const*>(pData), byteLength));
+        Texture::CreateParams createParams(key);
+        createParams.m_isGlyph = texJson["isGlyph"].asBool();
+        tex = m_renderSystem._CreateTexture(img, Image::BottomUp::No, m_model.GetDgnDb(), createParams);
+        if (tex.IsNull())
+            return TextureMapping();
+        }
+
+    TextureMapping::Params params;
+    params.m_mapMode = static_cast<TextureMapping::Mode>(paramsJson["mode"].asUInt());
+    params.m_textureWeight = paramsJson["weight"].asDouble();
+    params.m_worldMapping = paramsJson["worldMapping"].asBool();
+
+    for (uint32_t i = 0; i < 2; i++)
+        for (uint32_t j = 0; j < 3; j++)
+            params.m_textureMat2x3.m_val[i][j] = paramsJson["transform"][i][j].asDouble();
+
+    return TextureMapping(*tex, params);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus GltfReader::ReadPolylines(bvector<MeshPolyline>& polylines, Json::Value value, Utf8CP name, bool disjoint)
@@ -769,6 +811,7 @@ ReadStatus GltfReader::InitGltf(Json::Value& meshValues)
     m_bufferViews    = sceneValue["bufferViews"];
     m_textures       = sceneValue["textures"];
     m_images         = sceneValue["images"];
+    m_namedTextures  = sceneValue["namedTextures"];
 
     if(!meshValues.isObject() || 
         !m_materialValues.isObject() ||
@@ -878,7 +921,7 @@ ReadStatus B3dmReader::ReadFeatureTable(Render::FeatureTableR features, Json::Va
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DisplayParamsCPtr displayParamsFromJson(Json::Value const& materialValue, DgnDbR db, Render::System& system)
+static DisplayParamsCPtr displayParamsFromJson(Json::Value const& materialValue, DgnDbR db, Render::System& system, GltfReader& reader)
     {
     GradientSymbPtr     gradient;
 
@@ -889,6 +932,10 @@ static DisplayParamsCPtr displayParamsFromJson(Json::Value const& materialValue,
         if (SUCCESS != gradient->FromJson(materialValue["gradient"]))
             gradient = nullptr;
         }
+
+    TextureMapping texMap;
+    if (materialValue.isMember("texture"))
+        texMap = reader.GetTextureMapping(materialValue["texture"]["name"].asCString(), materialValue["texture"]["params"]);
 
     return  DisplayParams::Create((DisplayParams::Type) materialValue["type"].asUInt(),
                                   DgnCategoryId(materialValue["categoryId"].asUInt64()),
@@ -902,7 +949,7 @@ static DisplayParamsCPtr displayParamsFromJson(Json::Value const& materialValue,
                                   (FillFlags) materialValue["fillFlags"].asUInt(),
                                   (DgnGeometryClass) materialValue["class"].asUInt(),
                                   materialValue["ignoreLighting"].asBool(),
-                                  db, system);
+                                  db, system, texMap);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -910,7 +957,7 @@ static DisplayParamsCPtr displayParamsFromJson(Json::Value const& materialValue,
 +---------------+---------------+---------------+---------------+---------------+------*/
 DisplayParamsCPtr DgnTileReader::_CreateDisplayParams(Json::Value const& materialValue)
     {
-    return displayParamsFromJson(materialValue, m_model.GetDgnDb(), m_renderSystem);
+    return displayParamsFromJson(materialValue, m_model.GetDgnDb(), m_renderSystem, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -939,7 +986,7 @@ ReadStatus DgnTileReader::ReadFeatureTable(FeatureTableR featureTable)
             !m_buffer.Read(index))
             {
             BeAssert(false);
-            return ReadStatus::FeatureTableError;;
+            return ReadStatus::FeatureTableError;
             }
 
         featureTable.Insert(Feature(DgnElementId(elementId), DgnSubCategoryId(subCategoryId), static_cast<DgnGeometryClass>(geometryClass)), index);
@@ -948,6 +995,53 @@ ReadStatus DgnTileReader::ReadFeatureTable(FeatureTableR featureTable)
     m_buffer.SetPos(startPos + header.length);
 
     return ReadStatus::Success;
+    }
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   01/18
+//=======================================================================================
+struct StreamBufferScope
+{
+    StreamBufferR   m_buffer;
+
+    explicit StreamBufferScope(StreamBufferR buffer) : m_buffer(buffer) { m_buffer.SetPos(0); }
+    ~StreamBufferScope() { m_buffer.SetPos(0); }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnTileReader::VerifyFeatureTable()
+    {
+    StreamBufferScope scope(m_buffer);
+
+    DgnTile::Header tileHeader;
+    DgnTile::FeatureTableHeader tableHeader;
+    if (!tileHeader.Read(m_buffer) || !tableHeader.Read(m_buffer))
+        {
+        BeAssert(false);
+        return false;
+        }
+
+    uint64_t elemId;
+    uint32_t numBytesToSkip = sizeof(uint64_t) + sizeof(uint32_t) + sizeof(uint32_t);
+    CachedStatementPtr stmt = m_model.GetDgnDb().GetCachedStatement("SELECT ModelId FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?");
+    for (size_t i = 0; i < tableHeader.count; i++)
+        {
+        if (!m_buffer.Read(elemId) || !m_buffer.Advance(numBytesToSkip))
+            {
+            BeAssert(false);
+            return false;
+            }
+
+        stmt->BindId(1, DgnElementId(elemId));
+        if (BE_SQLITE_ROW != stmt->Step())
+            return false;
+
+        stmt->Reset();
+        }
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1097,7 +1191,7 @@ private:
 
     DisplayParamsCPtr _CreateDisplayParams(Json::Value const& materialValue) override
         {
-        return displayParamsFromJson(materialValue, m_model.GetDgnDb(), m_renderSystem);
+        return displayParamsFromJson(materialValue, m_model.GetDgnDb(), m_renderSystem, *this);
         }
     BentleyStatus _ReadFeatures(bvector<uint32_t>& featureIndices, Json::Value const& primitiveValue) override { BeAssert(false); return ERROR; } // unused...
 

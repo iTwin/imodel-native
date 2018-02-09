@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 #include <DgnPlatform/ElementTileTree.h>
-#include <DgnPlatform/TileIO.h>
+#include <DgnPlatform/TileReader.h>
 #include <folly/BeFolly.h>
 #include <DgnPlatform/RangeIndex.h>
 #include <numeric>
@@ -60,10 +60,8 @@ struct TileContext;
 // Uncomment this to enable that (ideally after having addressed the symbology issue noted above)
 // #define SHARE_GEOMETRY_PARTS
 
-// #define DISABLE_CLIPPING
-
 // Uncomment to record and output statistics on # of cached tiles, time spent reading them, etc
-#define TILECACHE_DEBUG
+// #define TILECACHE_DEBUG
 
 // Uncomment to compare geometry read from tile cache data to that produced by LoadGeometryFromModel() and assert if unequal.
 // See TFS#772315 in which portions of geometry do not appear in tiles read from cache, but do appear if we disable the cache
@@ -83,7 +81,8 @@ struct TileContext;
 
 constexpr double s_minRangeBoxSize = 2.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh ###TODO: Revisit...
 constexpr double s_tileScreenSize = 512.0;
-constexpr double s_minToleranceRatio = s_tileScreenSize * 2.0;
+constexpr double s_minToleranceRatioMultiplier = 2.0;
+constexpr double s_minToleranceRatio = s_tileScreenSize * s_minToleranceRatioMultiplier;
 constexpr uint32_t s_minElementsPerTile = 100; // ###TODO: The complexity of a single element's geometry can vary wildly...
 constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
 constexpr double s_spatialRangeMultiplier = 1.0001; // must be > 1.0 - need to expand project extents slightly to avoid clipping geometry that lies right on one of their planes...
@@ -406,6 +405,7 @@ protected:
     bool _WantUndisplayed() override { return true; }
     AreaPatternTolerance _GetAreaPatternTolerance(CurveVectorCR) override { return AreaPatternTolerance(m_tolerance); }
     Render::SystemP _GetRenderSystem() const override { return m_loadContext.GetRenderSystem(); }
+    double _GetPixelSizeAtPoint(DPoint3dCP) const override { return m_tolerance; }
 
 public:
     TileContext(GeometryList& geometries, RootR root, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, double tolerance, LoadContextCR loadContext)
@@ -419,12 +419,13 @@ public:
 
     RootR GetRoot() const { return m_root; }
     System& GetRenderSystemR() const { BeAssert(nullptr != m_loadContext.GetRenderSystem()); return *m_loadContext.GetRenderSystem(); }
+    bool Is3d() const { return m_root.Is3d(); }
 
     double GetMinRangeDiagonalSquared() const { return m_minRangeDiagonalSquared; }
     bool BelowMinRange(DRange3dCR range) const
         {
         // Avoid processing any bits of geometry with range smaller than roughly half a pixel...
-        auto diag = range.low.DistanceSquared(range.high);
+        auto diag = Is3d() ? range.low.DistanceSquared(range.high) : range.low.DistanceSquaredXY(range.high);
         return diag < m_minRangeDiagonalSquared && 0.0 < diag; // ###TODO_ELEMENT_TILE: Dumb single-point primitives...
         }
 
@@ -480,7 +481,8 @@ TileBuilder::TileBuilder(TileContext& context, DgnElementId elemId, double range
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileBuilder::TileBuilder(TileContext& context, DRange3dCR range)
-    : GeometryListBuilder(context.GetRenderSystemR(), CreateParams::Scene(context.GetDgnDb())), m_context(context), m_rangeDiagonalSquared(range.low.DistanceSquared(range.high))
+    : GeometryListBuilder(context.GetRenderSystemR(), CreateParams::Scene(context.GetDgnDb())), m_context(context),
+    m_rangeDiagonalSquared(context.Is3d() ? range.low.DistanceSquared(range.high) : range.low.DistanceSquaredXY(range.high))
     {
     // for TileSubGraphic...
     SetCheckGlyphBoxes(true);
@@ -501,7 +503,7 @@ void TileBuilder::ReInitialize(DgnElementId elemId, double rangeDiagonalSquared,
 void TileBuilder::ReInitialize(DRange3dCR range)
     {
     GeometryListBuilder::ReInitialize(Transform::FromIdentity());
-    m_rangeDiagonalSquared = range.low.DistanceSquared(range.high);
+    m_rangeDiagonalSquared = m_context.Is3d() ? range.low.DistanceSquared(range.high) : range.low.DistanceSquaredXY(range.high);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -677,7 +679,14 @@ private:
         else if (!entry.m_range.IntersectsWith(m_range))
             return Stop::No; // why do we need to check the range again here? _CheckRangeTreeNode() should have handled it, but doesn't...
 
-        double sizeSq = Placement3d::IsMinimumRange(entry.m_range.m_low, entry.m_range.m_high, m_is2d) ? 0.0 : entry.m_range.m_low.DistanceSquared(entry.m_range.m_high);
+        double sizeSq;
+        if (Placement3d::IsMinimumRange(entry.m_range.m_low, entry.m_range.m_high, m_is2d))
+            sizeSq = 0.0;
+        else if (m_is2d)
+            sizeSq = entry.m_range.m_low.DistanceSquaredXY(entry.m_range.m_high);
+        else
+            sizeSq = entry.m_range.m_low.DistanceSquared(entry.m_range.m_high);
+
         if (0.0 == sizeSq || sizeSq >= m_minRangeDiagonalSquared)
             Insert(sizeSq, entry.m_id);
         else
@@ -721,7 +730,7 @@ END_UNNAMED_NAMESPACE
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Loader::Loader(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys)
-    : T_Super("", tile, loads, tile.GetRoot()._ConstructTileResource(tile), renderSys)
+    : T_Super("", tile, loads, tile.GetRoot()._ConstructTileResource(tile), renderSys), m_createTime(tile.GetElementRoot().GetModel()->GetLastElementModifiedTime())
     {
 #if defined(DISABLE_PARTIAL_TILES)
     if (nullptr != loads)
@@ -815,17 +824,24 @@ BentleyStatus Loader::LoadGeometryFromModel(Render::Primitives::GeometryCollecti
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Loader::IsCacheable() const
     {
+    return GetElementTile().IsCacheable();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Tile::IsCacheable() const
+    {
 #if defined(DISABLE_TILE_CACHE)
     // Tile cache is really annoying when debugging tile generation code...
     return false;
 #else
     // Host can specify no caching.
-    if (!T_HOST.GetTileAdmin()._WantCachedTiles(m_tile->GetRoot().GetDgnDb()))
+    if (!T_HOST.GetTileAdmin()._WantCachedTiles(GetRoot().GetDgnDb()))
         return false;
 
     // Don't cache tiles refined for zoom...
-    auto const& tile = GetElementTile();
-    if (tile.HasZoomFactor() && tile.GetZoomFactor() > 1.0)
+    if (HasZoomFactor() && GetZoomFactor() > 1.0)
         return false;
 
     return true;
@@ -1138,6 +1154,21 @@ bool Loader::_IsExpired(uint64_t createTimeMillis)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Loader::_IsValidData()
+    {
+    // TFS#800675 quick-fix...reject cached tile if it contains deleted elements
+    // (We key off the most recent modification to any element in the model in order to determine
+    // tile validity - that obviously can't work for deleted elements).
+    // Eventual real solution is to selectively repair tiles by combining cached data with data
+    // from changed elements.
+    BeAssert(!m_tileBytes.empty());
+    TileTree::IO::DgnTileReader reader(m_tileBytes, *GetElementTile().GetElementRoot().GetModel(), *GetRenderSystem());
+    return reader.VerifyFeatureTable();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileCR Loader::GetElementTile() const { return static_cast<TileCR>(*m_tile); }
@@ -1445,7 +1476,7 @@ bool Root::WantCacheGeometry(double rangeDiagSq) const
     // Only cache geometry which occupies a significant portion of the model's range, since it will appear in many tiles
     constexpr double rangeRatio = 0.25;
     DRange3d range = ComputeRange();
-    double diag = range.low.DistanceSquared(range.high);
+    double diag = Is3d() ? range.low.DistanceSquared(range.high) : range.low.DistanceSquaredXY(range.high);
     if (0.0 == diag)
         return false;
 
@@ -1498,7 +1529,7 @@ bool Root::GetCachedGeometry(GeometryList& geometry, DgnElementId elementId, dou
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Root::RemoveCachedGeometry(DRange3dCR range, DgnElementId id)
     {
-    double rangeDiagSq = range.low.DistanceSquared(range.high);
+    double rangeDiagSq = Is3d() ? range.low.DistanceSquared(range.high) : range.low.DistanceSquaredXY(range.high);
     if (WantCacheGeometry(rangeDiagSq))
         {
         BeMutexHolder lock(m_mutex);
@@ -1609,12 +1640,23 @@ Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRan
     : T_Super(octRoot, id, parent, false), m_displayable(displayable)
     {
     if (nullptr != parent)
-        m_range = ElementAlignedBox3d(parent->ComputeChildRange(*this));
+        m_range = ElementAlignedBox3d(parent->ComputeChildRange(*this, octRoot.Is2d()));
     else
         m_range.Extend(*range);
 
-    InitTolerance();
+    InitTolerance(s_minToleranceRatio);
     m_debugId = (octRoot.GetModelId().GetValue() << 32) + (id.m_level << 24) + (id.m_i << 16) + (id.m_j << 8) + id.m_k;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* NB: Constructor used by ThumbnailTile...
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Tile::Tile(Root& root, TileTree::OctTree::TileId id, DRange3dCR range, double minToleranceRatio)
+    : T_Super(root, id, nullptr, true), m_displayable(true)
+    {
+    m_range.Extend(range);
+    InitTolerance(minToleranceRatio, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1627,16 +1669,17 @@ Tile::Tile(Tile const& parent) : T_Super(const_cast<Root&>(parent.GetElementRoot
     BeAssert(parent.HasZoomFactor());
     SetZoomFactor(parent.GetZoomFactor() * 2.0);
 
-    InitTolerance();
+    InitTolerance(s_minToleranceRatio);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Tile::InitTolerance()
+void Tile::InitTolerance(double minToleranceRatio, bool isLeaf)
     {
-    m_tolerance = m_range.DiagonalDistance() / (s_minToleranceRatio * m_zoomFactor);
-    m_isLeaf = false;
+    double diagDist = GetElementRoot().Is3d() ? m_range.DiagonalDistance() : m_range.DiagonalDistanceXY();
+    m_tolerance = diagDist / (minToleranceRatio * m_zoomFactor);
+    m_isLeaf = isLeaf;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1657,7 +1700,7 @@ void Tile::_Invalidate()
         m_hasZoomFactor = false;
         m_zoomFactor = 1.0;
 
-        InitTolerance();
+        InitTolerance(s_minToleranceRatio);
 
         if (nullptr != GetParent())
             return;
@@ -1680,7 +1723,7 @@ bool Tile::_IsInvalidated(TileTree::DirtyRangesCR dirty) const
     minRangeDiagonalSquared *= minRangeDiagonalSquared;
     for (DRange3dCR range : dirty)
         {
-        double diagSq = range.low.DistanceSquared(range.high);
+        double diagSq = GetElementRoot().Is3d() ? range.low.DistanceSquared(range.high) : range.low.DistanceSquaredXY(range.high);
         if (diagSq >= minRangeDiagonalSquared || diagSq == 0.0) // ###TODO_ELEMENT_TILE: Dumb single-point primitives...
             return true;
         }
@@ -1832,7 +1875,7 @@ void Tile::_ValidateChildren() const
                 if (!child->HasZoomFactor())
                     {
                     child->SetZoomFactor(2.0 * GetZoomFactor());
-                    child->InitTolerance();
+                    child->InitTolerance(s_minToleranceRatio);
                     }
 
                 break;
@@ -1887,7 +1930,6 @@ private:
     DRange3d            m_contentRange = DRange3d::NullRange();
     bool                m_maxGeometryCountExceeded = false;
 
-    static constexpr double GetVertexClusterThresholdPixels() { return 5.0; }
     static constexpr size_t GetDecimatePolyfacePointCount() { return 100; }
 
     MeshBuilderR GetMeshBuilder(MeshBuilderMap::Key const& key);
@@ -1896,7 +1938,7 @@ private:
     void AddPolyfaces(GeometryR geom, double rangePixels, bool isContained);
     void AddPolyfaces(PolyfaceList& polyfaces, GeometryR geom, double rangePixels, bool isContained);
     void AddPolyface(Polyface& polyface, GeometryR, double rangePixels, bool isContained);
-    void AddClippedPolyface(PolyfaceQueryCR, DgnElementId, DisplayParamsCR, MeshEdgeCreationOptions, bool isPlanar, bool doVertexCluster);
+    void AddClippedPolyface(PolyfaceQueryCR, DgnElementId, DisplayParamsCR, MeshEdgeCreationOptions, bool isPlanar);
 
     void AddStrokes(GeometryR geom, double rangePixels, bool isContained);
     void AddStrokes(StrokesList& strokes, GeometryR geom, double rangePixels, bool isContained);
@@ -1908,6 +1950,7 @@ private:
     SystemP _GetRenderSystem() const override { return m_loadContext.GetRenderSystem(); }
     GraphicBuilderPtr _CreateGraphic(GraphicBuilder::CreateParams const&) override { BeAssert(false); return nullptr; }
     GraphicPtr _CreateBranch(GraphicBranch&, DgnDbR, TransformCR, ClipVectorCP) override { BeAssert(false); return nullptr; }
+    double _GetPixelSizeAtPoint(DPoint3dCP) const override { return m_tolerance; }
 public:
     MeshGenerator(TileCR tile, GeometryOptionsCR options, LoadContextCR loadContext);
 
@@ -1966,7 +2009,7 @@ void MeshGenerator::AddMeshes(GeometryList const& geometries, bool doRangeTest)
 void MeshGenerator::AddMeshes(GeometryR geom, bool doRangeTest)
     {
     DRange3dCR geomRange = geom.GetTileRange();
-    double rangePixels = geomRange.DiagonalDistance() / m_tolerance;
+    double rangePixels = (m_tile.GetElementRoot().Is3d() ? geomRange.DiagonalDistance() : geomRange.DiagonalDistanceXY()) / m_tolerance;
     if (rangePixels < s_minRangeBoxSize && 0.0 < geomRange.DiagonalDistance()) // ###TODO_ELEMENT_TILE: single point primitives have an empty range...
         return;   // ###TODO: -- Produce an artifact from optimized bounding box to approximate from range.
 
@@ -1990,15 +2033,13 @@ void MeshGenerator::AddMeshes(GeomPartR part, bvector<GeometryCP> const& instanc
     // All instances will have the same facet options and range size...
     GeometryCP first = *iter;
     DRange3dCR geomRange = first->GetTileRange();
-    double rangePixels = geomRange.DiagonalDistance() / m_tolerance;
+    double rangePixels = (m_tile.GetElementRoot().Is3d() ? geomRange.DiagonalDistance() : geomRange.DiagonalDistanceXY()) / m_tolerance;
     if (rangePixels < s_minRangeBoxSize)
         return;
 
-    auto facetOptions = first->CreateFacetOptions(m_tolerance, m_options.m_normalMode);
-
     // Get the polyfaces and strokes with no transform applied
-    PolyfaceList polyfaces = part.GetPolyfaces(*facetOptions, nullptr, *this);
-    StrokesList strokes = part.GetStrokes(*facetOptions, nullptr, *this);
+    PolyfaceList polyfaces = part.GetPolyfaces(m_tolerance, m_options.m_normalMode, nullptr, *this);
+    StrokesList strokes = part.GetStrokes(m_tolerance, nullptr, *this);
 
     // For each instance, transform the polyfaces and add them to the mesh
     Transform invTransform = Transform::FromIdentity();
@@ -2052,17 +2093,21 @@ static Feature featureFromParams(DgnElementId elemId, DisplayParamsCR params)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double rangePixels, bool isContained)
     {
-    PolyfaceHeaderP polyface = tilePolyface.m_polyface.get();
-    if (nullptr == polyface || 0 == polyface->GetPointIndexCount())
+    // TFS#817210
+    PolyfaceHeaderPtr polyface = tilePolyface.m_polyface.get();
+    if (polyface.IsNull() || 0 == polyface->GetPointIndexCount())
         return;
 
     bool doDecimate = !m_tile.IsLeaf() && geom.DoDecimate() && polyface->GetPointCount() > GetDecimatePolyfacePointCount();
-    bool doVertexCluster = !doDecimate && geom.DoVertexCluster() && rangePixels < GetVertexClusterThresholdPixels();
 
     if (doDecimate)
         {
         BeAssert(0 == polyface->GetEdgeChainCount());       // The decimation does not handle edge chains - but this only occurs for polyfaces which should never have them.
-        polyface->DecimateByEdgeCollapse(m_tolerance, 0.0);
+
+        PolyfaceHeaderPtr   decimated;
+
+        if (doDecimate && (decimated = polyface->ClusteredVertexDecimate(m_tolerance)).IsValid())
+            polyface = decimated.get();
         }
 
 #if defined(DISABLE_EDGE_GENERATION)
@@ -2079,7 +2124,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
 
     if (isContained)
         {
-        AddClippedPolyface(*polyface, elemId, tilePolyface.GetDisplayParams(), edges, isPlanar, doVertexCluster);
+        AddClippedPolyface(*polyface, elemId, tilePolyface.GetDisplayParams(), edges, isPlanar);
         }
     else
         {
@@ -2088,14 +2133,14 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
         polyface->ClipToRange(m_tile.GetRange(), clipOutput, false);
 
         for (auto& clipped : clipOutput.m_output)
-            AddClippedPolyface(*clipped, elemId, tilePolyface.GetDisplayParams(), edges, isPlanar, doVertexCluster);
+            AddClippedPolyface(*clipped, elemId, tilePolyface.GetDisplayParams(), edges, isPlanar);
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId elemId, DisplayParamsCR displayParams, MeshEdgeCreationOptions edgeOptions, bool isPlanar, bool doVertexCluster)
+void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId elemId, DisplayParamsCR displayParams, MeshEdgeCreationOptions edgeOptions, bool isPlanar)
     {
     bool hasTexture = displayParams.IsTextured();
     bool anyContributed = false;
@@ -2109,14 +2154,8 @@ void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId el
 
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); /**/)
         {
-#if defined(DISABLE_CLIPPING)
-        if (!GetTileRange().IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
-            continue;
-#else
-        BeAssert(GetTileRange().IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))));
-#endif
         anyContributed = true;
-        builder.AddFromPolyfaceVisitor(*visitor, displayParams.GetTextureMapping(), db, featureFromParams(elemId, displayParams), doVertexCluster, hasTexture, fillColor, nullptr != polyface.GetNormalCP());
+        builder.AddFromPolyfaceVisitor(*visitor, displayParams.GetTextureMapping(), db, featureFromParams(elemId, displayParams), hasTexture, fillColor, nullptr != polyface.GetNormalCP());
         m_contentRange.Extend(visitor->Point());
         }
 
@@ -2231,7 +2270,7 @@ void MeshGenerator::ClipPoints(StrokesR strokes) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshGenerator::AddStrokes(GeometryR geom, double rangePixels, bool isContained)
     {
-    auto strokes = geom.GetStrokes(*geom.CreateFacetOptions(m_tolerance, NormalMode::Never), *this);
+    auto strokes = geom.GetStrokes(m_tolerance, *this);
     AddStrokes(strokes, geom, rangePixels, isContained);
     }
 
@@ -2269,7 +2308,7 @@ void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, double rangePix
         if (stroke.m_points.size() > (strokes.m_disjoint ?  0 : 1))
             {
             m_contentRange.Extend(stroke.m_points);
-            builder.AddPolyline(stroke.m_points, featureFromParams(elemId, displayParams), rangePixels < GetVertexClusterThresholdPixels(), fillColor, stroke.m_startDistance, stroke.m_rangeCenter);
+            builder.AddPolyline(stroke.m_points, featureFromParams(elemId, displayParams), fillColor, stroke.m_startDistance, stroke.m_rangeCenter);
             }
         }
     }
@@ -2448,7 +2487,7 @@ Render::Primitives::GeometryCollection Tile::GenerateGeometry(LoadContextCR cont
     Render::Primitives::GeometryCollection collection;
     if (nullptr != m_generator.get())
         {
-        THREADLOG.errorv("Refining partial tile (processed %u times)", m_generator->GetAndIncrementUseCount());
+        //THREADLOG.errorv("Refining partial tile (processed %u times)", m_generator->GetAndIncrementUseCount());
         auto status = m_generator->GenerateGeometry(collection, context);
         switch (status)
             {
@@ -2668,12 +2707,8 @@ GraphicPtr TileContext::FinishGraphic(GeometryAccumulatorR accum, TileBuilder& b
 GraphicPtr TileContext::FinishSubGraphic(GeometryAccumulatorR accum, TileSubGraphic& subGf)
     {
     DgnGeometryPartCR input = subGf.GetInput();
-    if (accum.GetGeometries().empty())
-        BeAssert(m_loadContext.WasAborted());
-
-    subGf.SetOutput(*GeomPart::Create(input.GetBoundingBox(), accum.GetGeometries()));
-    if (accum.GetGeometries().empty())
-        BeAssert(m_loadContext.WasAborted());
+    if (!accum.GetGeometries().empty())
+        subGf.SetOutput(*GeomPart::Create(input.GetBoundingBox(), accum.GetGeometries()));
 
     return m_finishedGraphic;
     }
@@ -2793,5 +2828,124 @@ Render::GraphicPtr TileContext::_StrokeGeometry(GeometrySourceCR source, double 
     {
     Render::GraphicPtr graphic = source.Draw(*this, pixelSize);
     return WasAborted() ? nullptr : graphic;
+    }
+
+//=======================================================================================
+// Created specifically for capturing thumbnails. Has a single tile, whose range matches
+// that of a ViewContext's frustum and whose graphics are faceted to the tolerance
+// exactly appropriate for that frustum.
+// @bsistruct                                                   Paul.Connelly   01/18
+//=======================================================================================
+struct ThumbnailRoot : Root
+{
+    DEFINE_T_SUPER(Root);
+private:
+    ThumbnailRoot(GeometricModelR model, TransformCR transform, Render::SystemR system)
+        : T_Super(model, transform, system) { }
+
+    void _OnAddToRangeIndex(DRange3dCR, DgnElementId) override { }
+    void _OnRemoveFromRangeIndex(DRange3dCR, DgnElementId) override { }
+    void _OnUpdateRangeIndex(DRange3dCR, DRange3dCR, DgnElementId) override { }
+    void _OnProjectExtentsChanged(AxisAlignedBox3dCR) override { }
+
+    void LoadRootTile(DRange3dCR tileRange, GeometricModelR model);
+public:
+    virtual ~ThumbnailRoot() { ClearAllTiles(); }
+
+    static RefCountedPtr<ThumbnailRoot> Create(GeometricModelR model, RenderContextR context);
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   01/18
+//=======================================================================================
+struct ThumbnailTile : Tile
+{
+    DEFINE_T_SUPER(Tile);
+private:
+    bool IsCacheable() const override { return false; }
+
+    TileTree::TilePtr _CreateChild(TileTree::OctTree::TileId) const override { BeAssert(false); return nullptr; }
+    void _Invalidate() override { }
+    bool _IsInvalidated(TileTree::DirtyRangesCR) const override { return false; }
+    void _UpdateRange(DRange3dCR, DRange3dCR) override { }
+
+    bool _HasChildren() const override { return false; }
+    ChildTiles const* _GetChildren(bool) const override { return nullptr; }
+    void _ValidateChildren() const override { }
+    Utf8String _GetTileCacheKey() const override { return "NotCacheable!"; }
+
+    SelectParent _SelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args) const override;
+public:
+    ThumbnailTile(DRange3dCR range, ThumbnailRoot& root, double minToleranceRatio) : T_Super(root, TileTree::OctTree::TileId::RootId(), range, minToleranceRatio)
+        {
+        //
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Tile::SelectParent ThumbnailTile::_SelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args) const
+    {
+    BeAssert(nullptr == GetParent());
+    BeAssert(selected.empty());
+
+    selected.push_back(this);
+
+    if (!IsReady())
+        args.InsertMissing(*this);
+
+    return SelectParent::No;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+RefCountedPtr<ThumbnailRoot> ThumbnailRoot::Create(GeometricModelR model, RenderContextR context)
+    {
+    BeAssert(DrawPurpose::CaptureThumbnail == context.GetDrawPurpose());
+    BeAssert(nullptr != context.GetRenderSystem());
+
+    if (nullptr == context.GetRenderSystem() || DgnDbStatus::Success != model.FillRangeIndex())
+        return nullptr;
+
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PSolidKernelManager::StartSession();
+
+    if (s_psolidMainThreadMark.IsNull())
+        s_psolidMainThreadMark = new PSolidThreadUtil::MainThreadMark();
+#endif
+
+    DRange3d frustumRange = context.GetViewportR().GetFrustum().ToRange();
+    if (model.Is3dModel())
+        frustumRange.ScaleAboutCenter(frustumRange, s_spatialRangeMultiplier);
+
+    DPoint3d centroid = DPoint3d::FromInterpolate(frustumRange.low, 0.5, frustumRange.high);
+    Transform transform = Transform::From(centroid);
+
+    auto root = new ThumbnailRoot(model, transform, *context.GetRenderSystem());
+
+    Transform rangeTransform;
+    rangeTransform.InverseOf(transform);
+    DRange3d tileRange;
+    rangeTransform.Multiply(tileRange, frustumRange);
+
+    // This tile's size on screen in pixels matches the size of the view rect...
+    BSIRect viewRect = context.GetViewportR().GetViewRect();
+    double width = viewRect.Width();
+    double height = viewRect.Height();
+    double minToleranceRatio = sqrt(width*width + height*height) * 2.0;
+
+    root->m_rootTile = new ThumbnailTile(tileRange, *root, minToleranceRatio);
+
+    return root;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+RootPtr Root::Create(GeometricModelR model, RenderContextR context)
+    {
+    return ThumbnailRoot::Create(model, context).get();
     }
 

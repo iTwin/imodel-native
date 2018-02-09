@@ -81,9 +81,36 @@ static void collectCurveStrokes (Strokes::PointLists& strokes, CurveVectorCR cur
     }
 
 //=======================================================================================
+// This exists only to consolidate implementation of GetPolyfaces/Strokes used for
+// everything except geometry part instances. Used to be used by all Geometry classes
+// but TFS#813379 you can't create a single facet options for a geometry part's list of
+// geometries - some may have/need normals, UV params, etc; others may not.
+// @bsistruct                                                   Paul.Connelly   01/18
+//=======================================================================================
+struct SingularGeometry : Geometry
+{
+protected:
+    using Geometry::Geometry;
+
+    IFacetOptionsPtr CreateFacetOptions(double chordTolerance, NormalMode normalMode) const;
+
+    virtual PolyfaceList _GetPolyfaces(IFacetOptionsR, ViewContextR) = 0;
+    virtual StrokesList _GetStrokes(IFacetOptionsR, ViewContextR) { return StrokesList(); }
+
+    PolyfaceList _GetPolyfaces(double chordTolerance, NormalMode normalMode, ViewContextR context) override
+        {
+        return _GetPolyfaces(*CreateFacetOptions(chordTolerance, normalMode), context);
+        }
+    StrokesList _GetStrokes(double chordTolerance, ViewContextR context) override
+        {
+        return _GetStrokes(*CreateFacetOptions(chordTolerance, NormalMode::Never), context);
+        }
+};
+
+//=======================================================================================
 // @bsistruct                                                   Paul.Connelly   08/16
 //=======================================================================================
-struct PrimitiveGeometry : Geometry
+struct PrimitiveGeometry : SingularGeometry
 {
 private:
     IGeometryPtr        m_geometry;
@@ -91,7 +118,7 @@ private:
     bool                m_disjoint;
 
     PrimitiveGeometry(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, bool isCurved, DgnDbR db, bool disjoint)
-        : Geometry(tf, range, elemId, params, isCurved, db), m_geometry(&geometry), m_disjoint(disjoint) { }
+        : SingularGeometry(tf, range, elemId, params, isCurved, db), m_geometry(&geometry), m_disjoint(disjoint) { }
 
     PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions, ViewContextR context) override;
     StrokesList _GetStrokes (IFacetOptionsR facetOptions, ViewContextR context) override;
@@ -113,7 +140,7 @@ public:
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   08/16
 //=======================================================================================
-struct SolidKernelGeometry : Geometry
+struct SolidKernelGeometry : SingularGeometry
 {
 private:
     IBRepEntityPtr      m_entity;
@@ -132,7 +159,7 @@ public:
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     11/2016
 //=======================================================================================
-struct TextStringGeometry : Geometry
+struct TextStringGeometry : SingularGeometry
 {
 private:
     TextStringPtr                   m_text;
@@ -141,12 +168,10 @@ private:
     bool                            m_checkGlyphBoxes;
 
     TextStringGeometry(TextStringR text, TransformCR transform, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db, bool checkGlyphBoxes)
-        : Geometry(transform, range, elemId, params, true, db), m_text(&text), m_checkGlyphBoxes(checkGlyphBoxes), m_db(db)
+        : SingularGeometry(transform, range, elemId, params, true, db), m_text(&text), m_checkGlyphBoxes(checkGlyphBoxes), m_db(db)
         { 
         //
         }
-
-    bool _DoVertexCluster() const override { return false; }
 
 public:
     static GeometryPtr Create(TextStringR textString, TransformCR transform, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db, bool checkGlyphBoxes)
@@ -177,8 +202,8 @@ private:
 public:
     static GeometryPtr Create(GeomPartR  part, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db)  { return new GeomPartInstanceGeometry(part, tf, range, elemId, params, db); }
 
-    PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions, ViewContextR context) override { return m_part->GetPolyfaces(facetOptions, *this, context); }
-    StrokesList _GetStrokes (IFacetOptionsR facetOptions, ViewContextR context) override { return m_part->GetStrokes(facetOptions, *this, context); }
+    PolyfaceList _GetPolyfaces(double chordTolerance, NormalMode normalMode, ViewContextR context) override { return m_part->GetPolyfaces(chordTolerance, normalMode, this, context); }
+    StrokesList _GetStrokes (double chordTolerance, ViewContextR context) override { return m_part->GetStrokes(chordTolerance, this, context); }
     size_t _GetFacetCount(FacetCounter& counter) const override { return m_part->GetFacetCount (counter, *this); }
     GeomPartCPtr _GetPart() const override { return m_part; }
 
@@ -211,11 +236,13 @@ private:
     private:
         Strokes::PointLists m_strokes;
         PolyfaceHeaderPtr   m_polyface;
+        PolyfaceHeaderPtr   m_rasterPolyface;
     public:
         Geom() = default;
 
         Strokes::PointLists GetStrokes() const { return m_strokes; }
         PolyfaceHeaderPtr GetPolyface() const { return m_polyface.IsValid() ? m_polyface->Clone() : nullptr; }
+        PolyfaceHeaderPtr GetRasterPolyface() const { return m_rasterPolyface.IsValid() ? m_rasterPolyface->Clone() : nullptr; }
         bool IsValid() const { return m_polyface.IsValid() || !m_strokes.empty(); }
         void Invalidate() { m_polyface = nullptr; m_strokes.clear(); }
         void InitStrokes(CurveVectorCR curves, IFacetOptionsR facetOptions)
@@ -229,6 +256,9 @@ private:
             builder->AddRegion(curves);
             m_polyface = builder->GetClientMeshPtr();
             }
+        bool IsValidRaster() const { return m_rasterPolyface.IsValid(); }
+        void InvalidateRaster() { m_rasterPolyface = nullptr; }
+        void InitRasterPolyface(CurveVectorCR curves, IFacetOptionsR facetOptions);
     };
 
     static double s_tolerances[kTolerance_COUNT];
@@ -238,19 +268,93 @@ private:
     //=======================================================================================
     struct Glyph
     {
+        struct Raster
+        {
+            Image       m_image;
+            Utf8String  m_name;
+            TexturePtr  m_texture;
+
+            Raster() { } // for bmap...
+            Raster(DgnGlyphCR glyph, DgnFontCR font)
+                {
+                m_name.Sprintf("%s-%u", font.GetName().c_str(), glyph.GetId());
+
+                /*DgnGlyph::RasterStatus status = */ glyph.GetRaster(m_image);
+                //if (DgnGlyph::RasterStatus::Success != status)
+                //    DEBUG_PRINTF("Error %u retrieving raster", status);
+
+                //UNUSED_VARIABLE(status);
+
+#if defined(DEBUG_PRINT_GLYPH_RASTERS)
+                uint32_t imgWidth = m_image.GetWidth();
+                uint32_t imgHeight = m_image.GetHeight();
+                int imgBytesPerPixel = m_image.GetBytesPerPixel();
+                ByteStream const& imgByteStream = m_image.GetByteStream();
+                uint8_t const* imgData = imgByteStream.GetData();
+
+                DEBUG_PRINTF("");
+                DEBUG_PRINTF("Retrieving raster for glyph %d (%dx%d)", glyph.GetId(), imgWidth, imgHeight);
+
+                for (uint32_t y = 0; y < imgHeight; y++)
+                    {
+                    std::string str = "";
+                    for (uint32_t x = 0; x < imgWidth; x++)
+                        {
+                        uint32_t imgNdx = y * imgWidth * imgBytesPerPixel + x * imgBytesPerPixel;
+                        if (imgData[imgNdx + 3] > 0)
+                            str += "X";
+                        else
+                            str += " ";
+                        }
+                    DEBUG_PRINTF("%s", str.c_str());
+                    }
+#endif
+                }
+
+            bool IsValid() const { return m_texture.IsValid() || m_image.IsValid(); }
+            TexturePtr GetTexture(SystemR system, DgnDbR db)
+                {
+                if (m_texture.IsNull() && m_image.IsValid())
+                    {
+                    TextureKey key(m_name);
+                    m_texture = system._FindTexture(key, db);
+                    if (m_texture.IsNull())
+                        {
+                        Texture::CreateParams params(key);
+                        params.m_isGlyph = true;
+                        m_texture = system._CreateTexture(m_image, db, params);
+                        }
+
+                    m_image.Invalidate();
+                    BeAssert(m_texture.IsValid());
+                    }
+
+                return m_texture;
+                }
+        };
+
+    struct RasterPolyface
+    {
+        PolyfaceHeaderPtr   m_polyface;
+        TexturePtr          m_texture;
+
+        bool IsValid() const { return m_polyface.IsValid() && m_texture.IsValid(); }
+    };
+
     private:
         using Tolerance = GlyphCache::Tolerance;
 
         CurveVectorPtr      m_curves;
+        Raster              m_raster;
         Geom                m_geom[kTolerance_COUNT];
         double              m_smallestTolerance;
         bool                m_isCurved;
         bool                m_isStrokes;
 
-        template<typename T, typename U> void GetGeometry(IFacetOptionsR, T createGeom, U acceptGeom);
+        template<typename T, typename U> void GetGeometry(IFacetOptionsR, bool requestRaster, T createGeom, U acceptGeom);
     public:
         Glyph() = default; // for bmap...
-        Glyph(DgnGlyphCR glyph)
+        Glyph(DgnGlyphCR glyph, DgnFontCR font) : m_raster(glyph, font)
             {
             bool unusedArg;
             if ((m_curves = glyph.GetCurveVector(unusedArg)).IsValid())
@@ -266,12 +370,14 @@ private:
         bool IsValid() const { return m_curves.IsValid(); }
         bool IsStrokes() const { return m_isStrokes; }
         bool IsCurved() const { return m_isCurved; }
+        bool HasRaster() const { return m_raster.IsValid(); }
+        bool GetRange(DRange3dR cRange) const { if (IsValid()) { return m_curves->GetRange(cRange); }  return false; } 
 
         Strokes::PointLists GetStrokes(IFacetOptionsR facetOptions)
             {
             BeAssert(IsStrokes());
             Strokes::PointLists strokes;
-            GetGeometry(facetOptions,
+            GetGeometry(facetOptions, false,
                     [&](Geom& geom) { geom.InitStrokes(*m_curves, facetOptions); },
                     [&](Geom& geom) { strokes = geom.GetStrokes(); });
             return strokes;
@@ -280,9 +386,18 @@ private:
             {
             BeAssert(!IsStrokes());
             PolyfaceHeaderPtr polyface;
-            GetGeometry(facetOptions,
+            GetGeometry(facetOptions, false,
                     [&](Geom& geom) { geom.InitPolyface(*m_curves, facetOptions); },
                     [&](Geom& geom) { polyface = geom.GetPolyface(); });
+            return polyface;
+            }
+        RasterPolyface GetRasterPolyface(IFacetOptionsR facetOptions, SystemR system, DgnDbR db)
+            {
+            BeAssert(!IsStrokes()); // ###TODO: support rasterizing strokes (stick text)
+            RasterPolyface polyface;
+            GetGeometry(facetOptions, true,
+                    [&](Geom& geom) { geom.InitRasterPolyface(*m_curves, facetOptions); },
+                    [&](Geom& geom) { polyface.m_polyface = geom.GetRasterPolyface(); polyface.m_texture = m_raster.GetTexture(system, db); });
             return polyface;
             }
 
@@ -326,29 +441,29 @@ private:
 
     static IFacetOptionsPtr CreateFacetOptions(double tolerance);
 
-    Glyph* FindOrInsert(DgnGlyphCR);
-    void GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, TextStringGeometry const& text, double tolerance);
-    static void GetTextGeometry(StrokesList* strokes, PolyfaceList* polyfaces, TextStringGeometry const& text, double tolerance)
+    Glyph* FindOrInsert(DgnGlyphCR, DgnFontCR font);
+    void GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, TextStringGeometry const& text, double tolerance, ViewContextR context);
+    static void GetTextGeometry(StrokesList* strokes, PolyfaceList* polyfaces, TextStringGeometry const& text, double tolerance, ViewContextR context)
         {
         // Because we need the font mutex in order to operate on the glyphs, also use it to protect our internal data.
         BeMutexHolder lock(DgnFonts::GetMutex());
-        Get(text.GetDb()).GetGeometry(strokes, polyfaces, text, tolerance);
+        Get(text.GetDb()).GetGeometry(strokes, polyfaces, text, tolerance, context);
         }
 public:
-    static void GetGeometry(StrokesList& strokes, PolyfaceList& polyfaces, TextStringGeometry const& text, double tolerance)
+    static void GetGeometry(StrokesList& strokes, PolyfaceList& polyfaces, TextStringGeometry const& text, double tolerance, ViewContextR context)
         {
-        return GetTextGeometry(&strokes, &polyfaces, text, tolerance);
+        return GetTextGeometry(&strokes, &polyfaces, text, tolerance, context);
         }
-    static PolyfaceList GetPolyfaces(TextStringGeometry const& text, double tolerance)
+    static PolyfaceList GetPolyfaces(TextStringGeometry const& text, double tolerance, ViewContextR context)
         {
         PolyfaceList polyfaces;
-        GetTextGeometry(nullptr, &polyfaces, text, tolerance);
+        GetTextGeometry(nullptr, &polyfaces, text, tolerance, context);
         return polyfaces;
         }
-    static StrokesList GetStrokes(TextStringGeometry const& text, double tolerance)
+    static StrokesList GetStrokes(TextStringGeometry const& text, double tolerance, ViewContextR context)
         {
         StrokesList strokes;
-        GetTextGeometry(&strokes, nullptr, text, tolerance);
+        GetTextGeometry(&strokes, nullptr, text, tolerance, context);
         return strokes;
         }
 };
@@ -364,90 +479,160 @@ double GlyphCache::s_tolerances[GlyphCache::kTolerance_COUNT] =
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
+* @bsimethod                                                    Paul.Connelly   01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-DisplayParams::DisplayParams(Type type, GraphicParamsCR gfParams, GeometryParamsCP geomParams, bool filled) : m_type(type)
+void DisplayParams::InitGeomParams(DgnCategoryId catId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass)
     {
-    m_lineColor = gfParams.GetLineColor();
-    m_fillColor = m_lineColor;
+    m_categoryId = catId;
+    m_subCategoryId = subCatId;
+    m_class = geomClass;
+    }
 
-    if (nullptr != geomParams)
-        {
-        m_categoryId = geomParams->GetCategoryId();
-        m_subCategoryId = geomParams->GetSubCategoryId();
-        m_class = geomParams->GetGeometryClass();
-        if (nullptr != geomParams->GetPatternParams())
-            {
-            m_fillFlags = m_fillFlags | FillFlags::Behind;
-            }
-
-        if (!geomParams->IsResolved())
-            {
-            // TFS#786614: BRep with multiple face attachments - params may no longer be resolved.
-            // Doesn't matter - we will create GeometryParams for each of the face attachments - only need the
-            // class, category, and sub-category here.
-            geomParams = nullptr;
-            }
-        }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DisplayParams DisplayParams::ForType(Type type, GraphicParamsCR gf, GeometryParamsCP geom, bool filled, DgnDbR db, System& sys)
+    {
     switch (type)
         {
-        case Type::Mesh:
-            m_material = gfParams.GetMaterial();
-            m_gradient = gfParams.GetGradientSymb();
-            m_fillColor = gfParams.GetFillColor();
-
-            // We need these as well as line color for edges. Unfortunate side effect: may cause mesh params to compare inequal despite mesh itself not requiring these.
-            m_width = gfParams.GetWidth();
-            m_linePixels = static_cast<LinePixels>(gfParams.GetLinePixels());
-
-            if (filled)
-                {
-                m_fillFlags = m_fillFlags | FillFlags::ByView;
-                if (gfParams.IsBlankingRegion())
-                    m_fillFlags = m_fillFlags | FillFlags::Blanking;
-                }
-
-            if (nullptr != geomParams)
-                {
-                m_materialId = geomParams->GetMaterialId();
-                if (filled)
-                    {
-                    if (FillDisplay::Always == geomParams->GetFillDisplay())
-                        {
-                        m_fillFlags = m_fillFlags | FillFlags::Always;
-                        m_fillFlags = m_fillFlags & ~FillFlags::ByView;
-                        }
-
-                    if (geomParams->IsFillColorFromViewBackground())
-                        m_fillFlags = m_fillFlags | FillFlags::Background;
-                    }
-                }
-
-            if (m_material.IsValid() && m_material->HasTextureMapping())
-                {
-                // Texture already baked into material...e.g. skybox.
-                m_textureMapping = m_material->GetTextureMapping();
-                }
-            else
-                {
-                m_resolved = !m_materialId.IsValid() && m_gradient.IsNull();
-                if (m_resolved)
-                    m_hasRegionOutline = ComputeHasRegionOutline();
-                }
-
-            break;
-        case Type::Linear:
-            m_width = gfParams.GetWidth();
-            m_linePixels = static_cast<LinePixels>(gfParams.GetLinePixels());
-            m_fillColor = m_lineColor;
-            break;
-        case Type::Text:
-            m_ignoreLighting = true;
-            m_fillFlags = m_fillFlags | FillFlags::Always;
-            m_fillColor = m_lineColor;
-            break;
+        case Type::Mesh:    return ForMesh(gf, geom, filled, db, sys);
+        case Type::Text:    return ForText(gf, geom);
+        case Type::Linear:  return ForLinear(gf, geom);
+        default:            BeAssert(false); return ForText(gf, geom);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void DisplayParams::InitText(ColorDef lineColor, DgnCategoryId catId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass)
+    {
+    InitGeomParams(catId, subCatId, geomClass);
+    m_type = Type::Text;
+    m_lineColor = m_fillColor = lineColor;
+    m_ignoreLighting = true;
+    m_fillFlags = FillFlags::Always;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DisplayParams DisplayParams::ForText(GraphicParamsCR gf, GeometryParamsCP geom)
+    {
+    DgnCategoryId catId;
+    DgnSubCategoryId subCatId;
+    DgnGeometryClass geomClass = DgnGeometryClass::Primary;
+    if (nullptr != geom)
+        {
+        catId = geom->GetCategoryId();
+        subCatId = geom->GetSubCategoryId();
+        geomClass = geom->GetGeometryClass();
+        }
+
+    return DisplayParams(gf.GetLineColor(), catId, subCatId, geomClass);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void DisplayParams::InitLinear(ColorDef lineColor, uint32_t width, LinePixels pixels, DgnCategoryId catId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass)
+    {
+    InitGeomParams(catId, subCatId, geomClass);
+    m_type = Type::Linear;
+    m_lineColor = m_fillColor = lineColor;
+    m_width = width;
+    m_linePixels = pixels;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DisplayParams DisplayParams::ForLinear(GraphicParamsCR gf, GeometryParamsCP geom)
+    {
+    DgnCategoryId catId;
+    DgnSubCategoryId subCatId;
+    DgnGeometryClass geomClass = DgnGeometryClass::Primary;
+    if (nullptr != geom)
+        {
+        catId = geom->GetCategoryId();
+        subCatId = geom->GetSubCategoryId();
+        geomClass = geom->GetGeometryClass();
+        }
+
+    return DisplayParams(gf.GetLineColor(), gf.GetWidth(), static_cast<LinePixels>(gf.GetLinePixels()), catId, subCatId, geomClass);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void DisplayParams::InitMesh(ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels pixels, MaterialP mat, GradientSymbCP grad, TextureMappingCP tex,
+    FillFlags fillFlags, DgnCategoryId catId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass)
+    {
+    InitGeomParams(catId, subCatId, geomClass);
+    m_type = Type::Mesh;
+    m_lineColor = lineColor;
+    m_fillColor = fillColor;
+    m_fillFlags = fillFlags;
+    m_material = mat;
+    m_gradient = grad;
+    m_width = width;
+    m_linePixels = pixels;
+    m_hasRegionOutline = ComputeHasRegionOutline();
+    
+    if (nullptr == mat && nullptr != tex)
+        m_textureMapping = *tex;
+
+    BeAssert(m_gradient.IsNull() || m_textureMapping.IsValid());
+    BeAssert(m_gradient.IsNull() || m_gradient->GetRefCount() > 1); // assume caller allocated on heap...
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DisplayParams DisplayParams::ForMesh(GraphicParamsCR gf, GeometryParamsCP geom, bool filled, DgnDbR db, System& sys)
+    {
+    DgnCategoryId catId;
+    DgnSubCategoryId subCatId;
+    DgnGeometryClass geomClass = DgnGeometryClass::Primary;
+    FillFlags fillFlags = filled ? FillFlags::ByView : FillFlags::None;
+    if (gf.IsBlankingRegion())
+        fillFlags |= FillFlags::Blanking;
+
+    // TFS#786614: BRep with multiple face attachments - params may no longer be resolved.
+    // Doesn't matter - we will create GeometryParams for each of the face attachments - only need the
+    // class, category, and sub-category here.
+    if (nullptr != geom && geom->IsResolved())
+        {
+        catId = geom->GetCategoryId();
+        subCatId = geom->GetSubCategoryId();
+        geomClass = geom->GetGeometryClass();
+
+        if (nullptr != geom->GetPatternParams())
+            fillFlags |= FillFlags::Behind;
+
+        if (filled)
+            {
+            if (FillDisplay::Always == geom->GetFillDisplay())
+                {
+                fillFlags |= FillFlags::Always;
+                fillFlags&= ~FillFlags::ByView;
+                }
+
+            if (geom->IsFillColorFromViewBackground())
+                fillFlags |= FillFlags::Background;
+            }
+        }
+
+    auto grad = gf.GetGradientSymb();
+    TextureMapping tex;
+    TextureMappingP pTex = nullptr;
+    if (nullptr != grad)
+        {
+        tex = TextureMapping(*sys._GetTexture(*grad, db));
+        pTex = &tex;
+        }
+
+    return DisplayParams(gf.GetLineColor(), gf.GetFillColor(), gf.GetWidth(), static_cast<LinePixels>(gf.GetLinePixels()), gf.GetMaterial(), grad, pTex, fillFlags, catId, subCatId, geomClass);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -492,7 +677,7 @@ bool DisplayParams::ComputeHasRegionOutline() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DisplayParams::HasRegionOutline() const
     {
-    return m_resolved ? m_hasRegionOutline : ComputeHasRegionOutline();
+    return m_hasRegionOutline;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -500,42 +685,23 @@ bool DisplayParams::HasRegionOutline() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DisplayParamsCPtr DisplayParams::Clone() const
     {
-    BeAssert(m_resolved);
     return new DisplayParams(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
+* @bsimethod                                                    Paul.Connelly   01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DisplayParams::Resolve(DgnDbR db, System& sys)
+DisplayParamsCPtr DisplayParams::CloneForRasterText(TextureR texture) const
     {
-    if (m_resolved)
-        return;
+    BeAssert(Type::Text == GetType());
+    auto clone = new DisplayParams(*this);
 
-    if (m_gradient.IsValid())
-        {
-        m_textureMapping = TextureMapping(*sys._GetTexture(*m_gradient, db));
-        }
-    else if (m_materialId.IsValid())
-        {
-        auto dgnMaterial = RenderMaterial::Get(db, m_materialId);
-        if (dgnMaterial.IsValid())
-            {
-            // This will also be used later by MeshBuilder...
-            auto const& renderingAsset = dgnMaterial->GetRenderingAsset();
-            DgnTextureId texId;
-            auto const& texMap = renderingAsset.GetPatternMap();
-            if (texMap.IsValid() && texMap.GetTextureId().IsValid())
-                {
-                auto texture = sys._GetTexture(texMap.GetTextureId(), db);
-                if (texture.IsValid())
-                    m_textureMapping = TextureMapping(*texture, texMap.GetTextureMapParams());
-                }
-            }
-        }
-
-    m_hasRegionOutline = ComputeHasRegionOutline();
-    m_resolved = true;
+    TextureMapping::Trans2x3 tf(0.0, 1.0, 0.0, 1.0, 0.0, 0.0);
+    TextureMapping::Params params;
+    params.SetWeight(0.0);
+    params.SetTransform(&tf);
+    clone->m_textureMapping = TextureMapping(texture, params);
+    return clone;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -579,20 +745,11 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
     TEST_LESS_THAN(GetType());
     TEST_LESS_THAN(IgnoresLighting());
     TEST_LESS_THAN(GetLineWidth());
-    TEST_LESS_THAN(GetMaterialId());
+    TEST_LESS_THAN(GetMaterial());
     TEST_LESS_THAN(GetLinePixels());
     TEST_LESS_THAN(GetFillFlags());
     TEST_LESS_THAN(HasRegionOutline());
-
-    if (m_resolved && rhs.m_resolved)
-        {
-        TEST_LESS_THAN(GetTextureMapping().GetTexture()); // ###TODO: Care about whether params match?
-        }
-    else if (m_gradient.get() != rhs.m_gradient.get())
-        {
-        if (m_gradient.IsNull() || rhs.m_gradient.IsNull() || !(*m_gradient == *rhs.m_gradient))
-            return m_gradient.get() < rhs.m_gradient.get();
-        }
+    TEST_LESS_THAN(GetTextureMapping().GetTexture()); // ###TODO: Care about whether params match?
 
     if (ComparePurpose::Merge == purpose)
         {
@@ -628,22 +785,11 @@ bool DisplayParams::IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose) const
     TEST_EQUAL(GetType());
     TEST_EQUAL(IgnoresLighting());
     TEST_EQUAL(GetLineWidth());
-    TEST_EQUAL(GetMaterialId().GetValueUnchecked());
+    TEST_EQUAL(GetMaterial());
     TEST_EQUAL(GetLinePixels());
     TEST_EQUAL(GetFillFlags());
     TEST_EQUAL(HasRegionOutline());
-
-    if (m_resolved && rhs.m_resolved)
-        {
-        TEST_EQUAL(GetTextureMapping().GetTexture()); // ###TODO: Care about whether params match?
-        }
-    else
-        {
-        if (m_gradient.IsNull() != rhs.m_gradient.IsNull())
-            return false;
-        else if (m_gradient.IsValid() && m_gradient.get() != rhs.m_gradient.get() && !(*m_gradient == *rhs.m_gradient))
-            return false;
-        }
+    TEST_EQUAL(GetTextureMapping().GetTexture()); // ###TODO: Care about whether params match?
 
     if (ComparePurpose::Merge == purpose)
         {
@@ -675,8 +821,6 @@ DisplayParamsCR DisplayParamsCache::Get(DisplayParamsR toFind)
     auto iter = m_set.find(pToFind);
     if (m_set.end() == iter)
         {
-        toFind.Resolve(m_db, m_system);
-        BeAssert(toFind.m_resolved);
         iter = m_set.insert(toFind.Clone()).first;
 #if defined(DEBUG_DISPLAY_PARAMS_CACHE)
         printf("\nLooking for: %s\nCreated: %s\n", toFind.ToDebugString().c_str(), (*iter)->ToDebugString().c_str());
@@ -692,7 +836,7 @@ DisplayParamsCR DisplayParamsCache::Get(DisplayParamsR toFind)
 Utf8String DisplayParams::ToDebugString() const
     {
     Utf8CP types[3] = { "Mesh", "Linear", "Text" };
-    Utf8PrintfString str("%s line:%x fill:%x width:%u pix:%u fillflags:%u class:%u, %s%s%s",
+    Utf8PrintfString str("%s line:%x fill:%x width:%u pix:%u fillflags:%u class:%u, %s%s",
         types[static_cast<uint8_t>(m_type)],
         m_lineColor.GetValue(),
         m_fillColor.GetValue(),
@@ -701,7 +845,6 @@ Utf8String DisplayParams::ToDebugString() const
         static_cast<uint32_t>(m_fillFlags),
         static_cast<uint32_t>(m_class),
         m_ignoreLighting ? "ignoreLights " : "",
-        m_resolved ? "resolved " : "",
         m_hasRegionOutline ? "outlined" : "");
 
     return str;
@@ -1043,24 +1186,18 @@ void MeshBuilder::AddTriangle(TriangleCR triangle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR mappedTexture, DgnDbR dgnDb, FeatureCR feature, bool doVertexCluster, bool includeParams, uint32_t fillColor, bool requireNormals)
+void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR mappedTexture, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor, bool requireNormals)
     {
     auto const&     points = visitor.Point();
     bool const*     visitorVisibility = visitor.GetVisibleCP();
     size_t          nTriangles = points.size() - 2;
     
+    if (requireNormals && visitor.Normal().size() < points.size())
+        return; // TFS#790263: Degenerate triangle - no normals.
+
     // The face represented by this visitor should be convex (we request that in facet options) - so we do a simple fan triangulation.
     for (size_t iTriangle =0; iTriangle < nTriangles; iTriangle++)
         {
-        if (doVertexCluster)
-            {
-            DVec3d      cross;
-
-            cross.CrossProductToPoints (points.at(0), points.at(iTriangle+1), points.at(iTriangle+2));
-            if (cross.MagnitudeSquared() < m_areaTolerance)
-                return;
-            }
-
         Triangle            newTriangle(!visitor.GetTwoSided());
         bvector<DPoint2d>   params = visitor.Param();
         bool                visibility[3];
@@ -1069,7 +1206,9 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
         visibility[1] = visitorVisibility[iTriangle+1];
         visibility[2] = (iTriangle == nTriangles-1) ? visitorVisibility[iTriangle+2] : false;
 
+        BeAssert(!includeParams || !params.empty());
         bool haveParams = includeParams && !params.empty();
+        BeAssert(!haveParams || mappedTexture.IsValid());
         newTriangle.SetEdgeFlags(visibility);
         if (haveParams && mappedTexture.IsValid())
             {
@@ -1079,17 +1218,16 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
             BeAssert (m_mesh->Verts().empty() || !m_mesh->Params().empty());
             if (SUCCESS == textureMapParams.ComputeUVParams (computedParams, visitor))
                 params = computedParams;
+            else
+                BeAssert(false && "ComputeUVParams() failed");
             }
-
-        if (requireNormals && visitor.Normal().size() < points.size())
-            continue; // TFS#790263: Degenerate triangle - no normals.
 
         for (size_t i = 0; i < 3; i++)
             {
             size_t      index = (0 == i) ? 0 : iTriangle + i; 
             VertexKey   vertex(points[index], feature, fillColor, m_mesh->Verts().GetParams(), requireNormals ? &visitor.Normal()[index] : nullptr, haveParams ? &params[index] : nullptr);
 
-            newTriangle[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
+            newTriangle[i] = AddVertex(vertex);
             if (m_currentPolyface.IsValid())
                 m_currentPolyface->m_vertexIndexMap.Insert(newTriangle[i], visitor.ClientPointIndex()[index]);
             }
@@ -1101,14 +1239,14 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureCR feature, bool doVertexCluster, uint32_t fillColor, double startDistance, DPoint3dCR  rangeCenter)
+void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureCR feature, uint32_t fillColor, double startDistance, DPoint3dCR  rangeCenter)
     {
     MeshPolyline    newPolyline(startDistance, rangeCenter);
 
     for (auto& point : points)
         {
         VertexKey vertex(point, feature, fillColor, m_mesh->Verts().GetParams());
-        newPolyline.GetIndices().push_back (doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex));
+        newPolyline.GetIndices().push_back (AddVertex(vertex));
         }
 
     m_mesh->AddPolyline (newPolyline);
@@ -1197,23 +1335,15 @@ bool GeomPart::IsCurved() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     12/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceList GeomPart::GetPolyfaces(IFacetOptionsR facetOptions, GeometryCR instance, ViewContextR context)
-    {
-    return GetPolyfaces(facetOptions, &instance, context);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceList GeomPart::GetPolyfaces(IFacetOptionsR facetOptions, GeometryCP instance, ViewContextR context)
+PolyfaceList GeomPart::GetPolyfaces(double chordTolerance, NormalMode normalMode, GeometryCP instance, ViewContextR context)
     {
     PolyfaceList polyfaces;
     for (auto& geometry : m_geometries) 
         {
         BeAssert(geometry->GetTransform().IsIdentity());
-        PolyfaceList thisPolyfaces = geometry->GetPolyfaces (facetOptions, context);
+        PolyfaceList thisPolyfaces = geometry->GetPolyfaces (chordTolerance, normalMode, context);
 
         for (auto const& thisPolyface : thisPolyfaces)
             {
@@ -1238,23 +1368,15 @@ void GeomPart::SetInCache(bool inCache)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     12/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-StrokesList GeomPart::GetStrokes (IFacetOptionsR facetOptions, GeometryCR instance, ViewContextR context)
-    {
-    return GetStrokes(facetOptions, &instance, context);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-StrokesList GeomPart::GetStrokes(IFacetOptionsR facetOptions, GeometryCP instance, ViewContextR context)
+StrokesList GeomPart::GetStrokes(double chordTolerance, GeometryCP instance, ViewContextR context)
     {
     StrokesList strokes;
 
     for (auto& geometry : m_geometries) 
         {
-        StrokesList   thisStrokes = geometry->GetStrokes(facetOptions, context);
+        StrokesList   thisStrokes = geometry->GetStrokes(chordTolerance, context);
 
         if (!thisStrokes.empty())
             strokes.insert (strokes.end(), thisStrokes.begin(), thisStrokes.end());
@@ -1318,15 +1440,19 @@ IFacetOptionsPtr Geometry::CreateFacetOptions(double chordTolerance)
     opts->SetNormalsRequired(true);
     opts->SetEdgeChainsRequired(true);
 
+    // Avoid Parasolid concurrency bottlenecks.
+    opts->SetIgnoreHiddenBRepEntities(true);
+    opts->SetOmitBRepEdgeChainIds(true);
+
     return opts;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-IFacetOptionsPtr Geometry::CreateFacetOptions(double chordTolerance, NormalMode normalMode) const
+IFacetOptionsPtr SingularGeometry::CreateFacetOptions(double chordTolerance, NormalMode normalMode) const
     {
-    auto facetOptions = CreateFacetOptions(chordTolerance / m_transform.ColumnXMagnitude());
+    auto facetOptions = Geometry::CreateFacetOptions(chordTolerance / GetTransform().ColumnXMagnitude());
     bool normalsRequired = false;
 
     switch (normalMode)
@@ -1335,7 +1461,7 @@ IFacetOptionsPtr Geometry::CreateFacetOptions(double chordTolerance, NormalMode 
             normalsRequired = true; 
             break;
         case NormalMode::CurvedSurfacesOnly:    
-            normalsRequired = m_isCurved; 
+            normalsRequired = IsCurved(); 
             break;
         }
 
@@ -1350,7 +1476,7 @@ IFacetOptionsPtr Geometry::CreateFacetOptions(double chordTolerance, NormalMode 
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolyfaceList Geometry::GetPolyfaces(double chordTolerance, NormalMode normalMode, ViewContextR context)
     {
-    auto polyfaces = _GetPolyfaces(*CreateFacetOptions(chordTolerance, normalMode), context);
+    auto polyfaces = _GetPolyfaces(chordTolerance, normalMode, context);
     if (!m_clip.IsValid() || polyfaces.empty())
         return polyfaces;
 
@@ -1368,9 +1494,9 @@ PolyfaceList Geometry::GetPolyfaces(double chordTolerance, NormalMode normalMode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-StrokesList Geometry::GetStrokes (IFacetOptionsR facetOptions, ViewContextR context)
+StrokesList Geometry::GetStrokes (double chordTolerance, ViewContextR context)
     {
-    auto strokes = _GetStrokes(facetOptions, context);
+    auto strokes = _GetStrokes(chordTolerance, context);
     if (!m_clip.IsValid() || strokes.empty())
         return strokes;
 
@@ -1440,8 +1566,14 @@ PolyfaceHeaderPtr PrimitiveGeometry::FixPolyface(PolyfaceHeaderR geom, IFacetOpt
 void PrimitiveGeometry::AddNormals(PolyfaceHeaderR polyface, IFacetOptionsR facetOptions)
     {
     static double s_defaultCreaseRadians = Angle::DegreesToRadians(45.0);
+
+#define USE_SLOW_BUILDER            // Fast Builder WIP....
+#ifdef USE_SLOW_BUILDER
     static double s_defaultConeRadians = Angle::DegreesToRadians(90.0);
     polyface.BuildApproximateNormals(s_defaultCreaseRadians, s_defaultConeRadians, facetOptions.GetHideSmoothEdgesWhenGeneratingNormals());
+#else
+    polyface.BuildNormalsFast(s_defaultCreaseRadians);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1490,7 +1622,7 @@ PolyfaceList PrimitiveGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, ViewC
 
     CurveVectorPtr      curveVector = m_geometry->GetAsCurveVector();
 
-    if (curveVector.IsValid() && !curveVector->IsAnyRegionType())       // Non region curveVectors....
+    if (curveVector.IsValid() && !curveVector->IsAnyRegionType()) // Non region or unfilled planar regions....)
         return PolyfaceList();
 
     IPolyfaceConstructionPtr polyfaceBuilder = IPolyfaceConstruction::Create(facetOptions);
@@ -1560,7 +1692,7 @@ StrokesList PrimitiveGeometry::_GetStrokes (IFacetOptionsR facetOptions, ViewCon
 * @bsimethod                                                    Ray.Bentley     12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 SolidKernelGeometry::SolidKernelGeometry(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db)
-        : Geometry(tf, range, elemId, params, BRepUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid)
+        : SingularGeometry(tf, range, elemId, params, BRepUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)    
     if (DgnDb::ThreadId::Client != DgnDb::GetThreadId())
@@ -1864,14 +1996,14 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
 
             uint32_t fillColor = displayParams->GetFillColor();
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
-                meshBuilder.AddFromPolyfaceVisitor(*visitor, displayParams->GetTextureMapping(), GetDgnDb(), geom->GetFeature(), false, hasTexture, fillColor, nullptr != polyface->GetNormalCP());
+                meshBuilder.AddFromPolyfaceVisitor(*visitor, displayParams->GetTextureMapping(), GetDgnDb(), geom->GetFeature(), hasTexture, fillColor, nullptr != polyface->GetNormalCP());
 
             meshBuilder.EndPolyface();
             }
 
         if (!options.WantSurfacesOnly())
             {
-            auto tileStrokesArray = geom->GetStrokes(*geom->CreateFacetOptions(tolerance, NormalMode::Never), context);
+            auto tileStrokesArray = geom->GetStrokes(tolerance, context);
             for (auto& tileStrokes : tileStrokesArray)
                 {
                 DisplayParamsCPtr displayParams = tileStrokes.m_displayParams;
@@ -1886,7 +2018,7 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
                     if (tileStrokes.m_disjoint)
                         builder.AddPointString(strokePoints.m_points, geom->GetFeature(), fillColor, strokePoints.m_startDistance, strokePoints.m_rangeCenter);
                     else
-                        builder.AddPolyline(strokePoints.m_points, geom->GetFeature(), false, fillColor, strokePoints.m_startDistance, strokePoints.m_rangeCenter);
+                        builder.AddPolyline(strokePoints.m_points, geom->GetFeature(), fillColor, strokePoints.m_startDistance, strokePoints.m_rangeCenter);
                     }
                 }
             }
@@ -2004,7 +2136,7 @@ bool TextStringGeometry::DoGlyphBoxes (IFacetOptionsR facetOptions)
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolyfaceList TextStringGeometry::_GetPolyfaces(IFacetOptionsR facetOptionsIn, ViewContextR context)
     {
-    return GlyphCache::GetPolyfaces(*this, facetOptionsIn.GetChordTolerance());
+    return GlyphCache::GetPolyfaces(*this, facetOptionsIn.GetChordTolerance(), context);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2012,7 +2144,7 @@ PolyfaceList TextStringGeometry::_GetPolyfaces(IFacetOptionsR facetOptionsIn, Vi
 +---------------+---------------+---------------+---------------+---------------+------*/
 StrokesList TextStringGeometry::_GetStrokes (IFacetOptionsR facetOptions, ViewContextR context)
     {
-    return GlyphCache::GetStrokes(*this, facetOptions.GetChordTolerance());
+    return GlyphCache::GetStrokes(*this, facetOptions.GetChordTolerance(), context);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2046,9 +2178,41 @@ IFacetOptionsPtr GlyphCache::CreateFacetOptions(double chordTolerance)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void GlyphCache::Geom::InitRasterPolyface(CurveVectorCR curves, IFacetOptionsR facetOptionsIn)
+    {
+    DRange3d range;
+    if (!curves.GetRange(range))
+        {
+        BeAssert(false);
+        return;
+        }
+
+    DPoint3d ll = range.low;
+    DPoint3d ul = DPoint3d::From(range.low.x, range.high.y);
+    DPoint3d ur = range.high;
+    DPoint3d lr = DPoint3d::From(range.high.x, range.low.y);
+
+    bvector<DPoint3d> quadPts;
+    quadPts.push_back(ll);
+    quadPts.push_back(ul);
+    quadPts.push_back(ur);
+    quadPts.push_back(lr);
+
+    IFacetOptionsPtr facetOptions = facetOptionsIn.Clone();
+    facetOptions->SetParamsRequired(true);
+
+    IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create(*facetOptions);
+    //builder->AddPolygon(quadPts); // linker error???  unimplemented API!
+    builder->AddTriangulation(quadPts); // use instead...
+    m_rasterPolyface = builder->GetClientMeshPtr();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, TextStringGeometry const& geom, double chordTolerance)
+void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, TextStringGeometry const& geom, double chordTolerance, ViewContextR context)
     {
     TextStringCR textString = geom.GetText();
     DgnGlyphCP const* glyphs = textString.GetGlyphs();
@@ -2063,12 +2227,27 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
     Transform rot = Transform::From(RotMatrix::From2Vectors(xAxis, yAxis));
     Transform textTransform = Transform::FromProduct(geom.GetTransform(), textString.ComputeTransform());
 
+    DRange2d textRange2d = textString.GetRange();
+    DRange3d textRange = DRange3d::From(textRange2d.low.x, textRange2d.low.y, 0.0, textRange2d.high.x, textRange2d.high.y, 0.0);
+    textTransform.Multiply(textRange, textRange);
+
+    DPoint3d textRangeCenter = DPoint3d::FromInterpolate(textRange.low, 0.5, textRange.high);
+    double pixelSize = context.GetPixelSizeAtPoint(&textRangeCenter);
+    double meterSize = 0.0 != pixelSize ? 1.0 / pixelSize : 0.0;
+
+    double minAxis = std::min(textRange.XLength(), textRange.YLength());
+    double textSize = minAxis * meterSize;
+    constexpr double s_minToleranceRatioMultiplier = 2.0; // from ElementTileTree.cpp; used to multiply the s_minToleranceRatio
+    constexpr double s_texSizeThreshold = 64.0;
+    bool doTextAsRasterIfPossible = textSize / s_minToleranceRatioMultiplier <= s_texSizeThreshold;
+
     auto facetOptions = CreateFacetOptions(chordTolerance);
 
     for (size_t i = 0; i < textString.GetNumGlyphs(); i++)
         {
         auto textGlyph = glyphs[i];
-        Glyph* glyph = nullptr != textGlyph ? FindOrInsert(*textGlyph) : nullptr;
+
+        Glyph* glyph = nullptr != textGlyph ? FindOrInsert(*textGlyph, textString.GetStyle().GetFont()) : nullptr;
         if (nullptr == glyph || !glyph->IsValid())
             continue;
         else if ((glyph->IsStrokes() && nullptr == strokes) || (!glyph->IsStrokes() && nullptr == polyfaces))
@@ -2093,11 +2272,25 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
             }
         else
             {
-            PolyfaceHeaderPtr polyface = glyph->GetPolyface(*facetOptions);
+            DisplayParamsCPtr displayParams(&geom.GetDisplayParams());
+            PolyfaceHeaderPtr polyface;
+
+            if (doTextAsRasterIfPossible)
+                {
+                Glyph::RasterPolyface raster = glyph->GetRasterPolyface(*facetOptions, *context.GetRenderSystem(), context.GetDgnDb());
+                polyface = raster.m_polyface;
+                if (raster.IsValid())
+                    displayParams = displayParams->CloneForRasterText(*raster.m_texture);
+                }
+            else
+                {
+                polyface = glyph->GetPolyface(*facetOptions);
+                }
+
             if (polyface.IsValid() && polyface->HasFacets())
                 {
                 polyface->Transform(glyphTransform);
-                polyfaces->push_back(Polyface(geom.GetDisplayParams(), *polyface, false, true));
+                polyfaces->push_back(Polyface(*displayParams, *polyface, false, true));
                 }
             }
         }
@@ -2106,11 +2299,11 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-GlyphCache::Glyph* GlyphCache::FindOrInsert(DgnGlyphCR glyph)
+GlyphCache::Glyph* GlyphCache::FindOrInsert(DgnGlyphCR glyph, DgnFontCR font)
     {
     auto iter = m_map.find(&glyph);
     if (m_map.end() == iter)
-        iter = m_map.Insert(&glyph, Glyph(glyph)).first;
+        iter = m_map.Insert(&glyph, Glyph(glyph, font)).first;
 
     return &iter->second;
     }
@@ -2118,7 +2311,7 @@ GlyphCache::Glyph* GlyphCache::FindOrInsert(DgnGlyphCR glyph)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T, typename U> void GlyphCache::Glyph::GetGeometry(IFacetOptionsR facetOptions, T createGeom, U acceptGeom)
+template<typename T, typename U> void GlyphCache::Glyph::GetGeometry(IFacetOptionsR facetOptions, bool requestRaster, T createGeom, U acceptGeom)
     {
     BeAssert(IsValid());
     Tolerance tol = GetTolerance(facetOptions.GetChordTolerance());
@@ -2126,14 +2319,18 @@ template<typename T, typename U> void GlyphCache::Glyph::GetGeometry(IFacetOptio
     double chordTolerance = GetChordTolerance(tol, facetOptions.GetChordTolerance());
     if (kTolerance_Smallest == tol && chordTolerance < m_smallestTolerance)
         {
-        geom.Invalidate();
+        if (requestRaster)
+            geom.InvalidateRaster(); // this should never be necessary...tolerance does not affect textured quad.
+        else
+            geom.Invalidate();
+
         m_smallestTolerance = chordTolerance;
         }
 
-    if (!geom.IsValid())
+    if ((!geom.IsValid() && !requestRaster) || (!geom.IsValidRaster() && requestRaster))
         createGeom(geom);
 
-    if (geom.IsValid())
+    if ((geom.IsValid() && !requestRaster) || (geom.IsValidRaster() && requestRaster))
         acceptGeom(geom);
     }
 
@@ -2873,10 +3070,11 @@ GraphicPtr PrimitiveBuilder::_FinishGraphic(GeometryAccumulatorR accum)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double PrimitiveBuilder::ComputeTolerance(GeometryAccumulatorR accum) const
     {
+    constexpr double s_toleranceMult = 0.25;
     auto const& params = GetCreateParams();
     if (params.IsViewCoordinates())
         {
-        return 0.25;
+        return s_toleranceMult;
         }
     else if (nullptr == params.GetViewport())
         {
@@ -2890,7 +3088,7 @@ double PrimitiveBuilder::ComputeTolerance(GeometryAccumulatorR accum) const
 
         // NB: Geometry::CreateFacetOptions() will apply any scale factors from transform...no need to do it here.
         DPoint3d pt = DPoint3d::FromInterpolate(range.low, 0.5, range.high);
-        return params.GetViewport()->GetPixelSizeAtPoint(&pt);
+        return params.GetViewport()->GetPixelSizeAtPoint(&pt) * s_toleranceMult;
         }
     }
 
@@ -2977,16 +3175,48 @@ Triangle  TriangleList::GetTriangle(size_t index) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2017
+* @bsimethod                                                    Paul.Connelly   01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-DisplayParams::DisplayParams(Type type, DgnCategoryId catId, DgnSubCategoryId subCatId, GradientSymbCP gradient, RenderMaterialId matId, ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels linePixels, FillFlags fillFlags, DgnGeometryClass geomClass, bool ignoreLights, DgnDbR dgnDb, System& renderSys) :
-            m_type(type), m_categoryId(catId), m_subCategoryId(subCatId), m_gradient(gradient), m_materialId(matId), m_lineColor(lineColor), m_fillColor(fillColor), m_width(width), m_linePixels(linePixels), m_fillFlags(fillFlags), m_class(geomClass), m_ignoreLighting(ignoreLights), m_resolved(false) 
-    { 
-    // TFS#726824...
-    if (m_materialId.IsValid())
-        m_material = renderSys._GetMaterial(m_materialId, dgnDb);
+DisplayParamsCPtr DisplayParams::Create(Type type, DgnCategoryId catId, DgnSubCategoryId subCatId, GradientSymbCP gradient, RenderMaterialId materialId, ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels linePixels, FillFlags fillFlags, DgnGeometryClass geomClass, bool ignoreLights, DgnDbR dgnDb, System& renderSys, TextureMappingCR texMap)
+    {
+    switch (type)
+        {
+        case Type::Mesh:
+            {
+            MaterialPtr mat;
+            TextureMapping tex;
+            TextureMappingCP pTex = nullptr;
+            if (materialId.IsValid())
+                {
+                // NB: For now, we will never have a persistent material with a non-persistent texture (so ignore texMap arg)
+                mat = renderSys._GetMaterial(materialId, dgnDb);
+                }
+            else if (nullptr != gradient)
+                {
+                tex = TextureMapping(*renderSys._GetTexture(*gradient, dgnDb));
+                pTex = &tex;
+                }
+            else if (texMap.IsValid())
+                {
+                pTex = &texMap;
+                }
 
-    Resolve (dgnDb, renderSys); 
+            return new DisplayParams(lineColor, fillColor, width, linePixels, mat.get(), gradient, pTex, fillFlags, catId, subCatId, geomClass);
+            }
+        case Type::Linear:
+            {
+            return new DisplayParams(lineColor, width, linePixels, catId, subCatId, geomClass);
+            }
+        case Type::Text:
+            {
+            auto params = new DisplayParams(lineColor, catId, subCatId, geomClass);
+            params->m_textureMapping = texMap;
+            return params;
+            }
+        default:
+            BeAssert(false);
+            return nullptr;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

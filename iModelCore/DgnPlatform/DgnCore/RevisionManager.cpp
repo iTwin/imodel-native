@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/RevisionManager.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -425,6 +425,28 @@ ChangeSet::ConflictResolution ApplyRevisionChangeSet::_OnConflict(ChangeSet::Con
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    01/2018
+//---------------------------------------------------------------------------------------
+Utf8CP GetConflictCauseDescription(ChangeSet::ConflictCause cause)
+    {
+    switch (cause)
+        {
+        case ChangeSet::ConflictCause::Data:
+            return "Data (PRIMARY KEY found, but data was changed)";
+        case ChangeSet::ConflictCause::NotFound:
+            return "Not Found (PRIMARY KEY)";
+        case ChangeSet::ConflictCause::Conflict:
+            return "Conflict (Causes duplicate PRIMARY KEY)";
+        case ChangeSet::ConflictCause::Constraint:
+            return "Constraint (Causes UNIQUE, CHECK or NOT NULL constraint violation)";
+        case ChangeSet::ConflictCause::ForeignKey:
+            return "ForeignKey (Causes FOREIGN KEY constraint violation)";
+        default:
+            return "Unknown";
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
 // static
@@ -437,20 +459,42 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
     BeAssert(result == BE_SQLITE_OK);
     UNUSED_VARIABLE(result);
 
-    if (cause == ChangeSet::ConflictCause::NotFound)
-        {
-        if (opcode == DbOpcode::Delete)
-            return ChangeSet::ConflictResolution::Skip; // This is caused by propagate delete on a foreign key. It is not a problem.
-
-        BeAssert(false && "Ensure IDs are not reused - this may result in update of a record that has been previously deleted"); 
-            // Note: Cannot return ConflictResolution::Replace since that will cause BE_SQLITE_MISUSE error
-        }
-
     if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
         {
-        LOG.infov("Conflict detected - incoming revision %s:", indirect ? "skipped" : "replaced");
-        BeAssert(tableName != nullptr);
+        LOG.infov("------------------------------------------------------------------");
+        LOG.infov("Conflict detected - Cause: %s", GetConflictCauseDescription(cause));
         iter.Dump(dgndb, false, 1);
+        }
+
+    if (cause == ChangeSet::ConflictCause::NotFound)
+        {
+        /*
+        * Note: If ConflictCause = NotFound, the primary key was not found, and returning ConflictResolution::Replace is
+        * not an option at all - this will cause a BE_SQLITE_MISUSE error.
+        */
+        if (opcode == DbOpcode::Delete)
+            {
+            // Caused by CASCADE DELETE on a foreign key, and is usually not a problem. 
+            LOG.infov("Conflict resolved by keeping the existing entry and skipping the change");
+            return ChangeSet::ConflictResolution::Skip;
+            }
+
+        
+        if (opcode == DbOpcode::Update && 0 == ::strncmp(tableName, "ec_", 3))
+            {
+            // Caused by a ON DELETE SET NULL constraint on a foreign key - this is known to happen with "ec_" tables, but needs investigation if it happens otherwise        
+            LOG.infov("Conflict resolved by keeping the existing entry and skipping the change");
+            return ChangeSet::ConflictResolution::Skip;
+            }
+
+        LOG.infov("Aborted conflict resolution");
+        return ChangeSet::ConflictResolution::Abort; 
+        }
+
+    auto control = dgndb.GetOptimisticConcurrencyControl();
+    if (nullptr != control)
+        {
+        return control->_OnConflict(dgndb, cause, iter);
         }
 
     /*
@@ -473,8 +517,9 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
      *      - Only one user can make a direct change at one time, and the next user has to pull those changes before getting a
      *        lock to the same element
      *
-     * + Also see comments in TxnManager::MergeRevision()
+     * + Also see comments in TxnManager::MergeDataChangesInRevision()
      */
+    LOG.infov("Conflicting resolved by replacing the existing entry with the change");
     return ChangeSet::ConflictResolution::Replace;
     }
 
@@ -823,7 +868,7 @@ void DgnRevision::ExtractCodes(DgnCodeSet& assignedCodes, DgnCodeSet& discardedC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    11/2016
 //---------------------------------------------------------------------------------------
-void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb) const
+void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb, bool extractInserted) const
     {
     LockRequest lockRequest;
 
@@ -868,7 +913,9 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb) const
 
         BeAssert(modelId.IsValid());
         lockRequest.InsertLock(LockableId(modelId), LockLevel::Shared);
-        lockRequest.InsertLock(LockableId(DgnElementId(entry.GetPrimaryInstanceId().GetValueUnchecked())), LockLevel::Exclusive);
+        // TFS#788401: We don't want to extract locks for inserted elements, as once it is pushed to the server
+        if (extractInserted || entry.GetDbOpcode() != DbOpcode::Insert)
+            lockRequest.InsertLock(LockableId(DgnElementId(entry.GetPrimaryInstanceId().GetValueUnchecked())), LockLevel::Exclusive);
         }
 
     // Any models or CodeSpecs directly changed?
@@ -883,8 +930,12 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb) const
         if (!entry.IsPrimaryTable())
             continue;
 
-        if (primaryClass->Is(modelClass))
+        // TFS#788401: We don't want to extract locks for inserted models unless we set extractInserted to true
+        if (primaryClass->Is(modelClass) && (extractInserted || entry.GetDbOpcode() != DbOpcode::Insert))
             lockRequest.InsertLock(LockableId(LockableType::Model, DgnModelId(entry.GetPrimaryInstanceId().GetValueUnchecked())), LockLevel::Exclusive);
+        // If a model is inserted, we don't want to have any locks related to it (same as inserted elements)
+        else if (!extractInserted && primaryClass->Is(modelClass) && entry.GetDbOpcode() == DbOpcode::Insert)
+            lockRequest.Remove(LockableId(LockableType::Model, DgnModelId(entry.GetPrimaryInstanceId().GetValueUnchecked())));
         else if (primaryClass->Is(codeSpecClass))
             lockRequest.InsertCodeSpecsLock(dgndb);
         }
@@ -1155,12 +1206,13 @@ RevisionStatus RevisionManager::DoMergeRevision(DgnRevisionCR revision)
     {
     PRECONDITION(!m_dgndb.IsReadonly() && "Cannot merge changes into a Readonly database", RevisionStatus::CannotMergeIntoReadonly);
     PRECONDITION(!m_dgndb.IsMasterCopy() && "Cannot merge changes into the Master copy of a database", RevisionStatus::CannotMergeIntoMaster);
-
+    
     TxnManagerR txnMgr = m_dgndb.Txns();
 
     PRECONDITION(!txnMgr.HasChanges() && "There are unsaved changes in the current transaction. Call db.SaveChanges() or db.AbandonChanges() first", RevisionStatus::HasUncommittedChanges);
     PRECONDITION(!txnMgr.InDynamicTxn() && "Cannot merge revisions if in the middle of a dynamic transaction", RevisionStatus::InDynamicTransaction);
     PRECONDITION(!IsCreatingRevision() && "There is already a revision being created. Call AbandonCreateRevision() or FinishCreateRevision() first", RevisionStatus::IsCreatingRevision)
+    PRECONDITION(!HasReversedRevisions() && "Cannot merge changes into a database that has reversed revisions", RevisionStatus::CannotMergeIntoReversed);
 
     RevisionStatus status = revision.Validate(m_dgndb);
     if (RevisionStatus::Success != status)
@@ -1486,6 +1538,256 @@ RevisionStatus RevisionManager::DoReinstateRevision(DgnRevisionCR revision)
         }
 
     return txnMgr.ApplyRevision(revision, false /*=invert*/);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                         01/2018
+//---------------------------------------------------------------------------------------
+void OptimisticConcurrencyControlBase::_ConfigureBriefcaseManager(IBriefcaseManager& b)
+    {
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                         01/2018
+//---------------------------------------------------------------------------------------
+void OptimisticConcurrencyControlBase::_OnProcessRequest(IBriefcaseManager::Request& req, IBriefcaseManager&, IBriefcaseManager::RequestPurpose)
+    {
+    std::swap(m_locksTemp, req.Locks().GetLockSet()); // prepare to steal the locks
+
+    BeAssert(req.Locks().GetLockSet().empty());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                         01/2018
+//---------------------------------------------------------------------------------------
+void OptimisticConcurrencyControlBase::_OnProcessedRequest(IBriefcaseManager::Request& req, IBriefcaseManager&, IBriefcaseManager::RequestPurpose, IBriefcaseManager::Response& response)
+    {
+    if (response.Result() != RepositoryStatus::Success)
+        {
+        std::swap(m_locksTemp, req.Locks().GetLockSet()); // restore the locks that we stole
+        }
+    else
+        {
+        m_locks.insert(m_locksTemp.begin(), m_locksTemp.end()); // take ownership of the locks, so that we can report them to the caller (just for information purposes)
+        m_locksTemp.clear();
+        }
+    
+    BeAssert(m_locksTemp.empty());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                         01/2018
+//---------------------------------------------------------------------------------------
+void OptimisticConcurrencyControlBase::_OnExtractRequest(IBriefcaseManager::Request& req, IBriefcaseManager&)
+    {
+    BeAssert(m_locksTemp.empty());
+    
+    // In optimistic concurrency, we don't acquire locks. Instead, we report them.
+    auto& rlocks = req.Locks().GetLockSet();
+    m_locks.insert(rlocks.begin(), rlocks.end());   // steal the locks
+    rlocks.clear();
+
+    BeAssert(req.Locks().GetLockSet().empty());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                         01/2018
+//---------------------------------------------------------------------------------------
+void OptimisticConcurrencyControlBase::_OnExtractedRequest(IBriefcaseManager::Request&, IBriefcaseManager&)
+    {
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                         01/2018
+//---------------------------------------------------------------------------------------
+void OptimisticConcurrencyControlBase::_OnQueryHeld(DgnLockSet& locks, DgnCodeSet&, IBriefcaseManager&)
+    {
+    m_locks.insert(locks.begin(), locks.end()); // steal the locks
+    locks.clear();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                         01/2018
+//---------------------------------------------------------------------------------------
+void OptimisticConcurrencyControlBase::_OnQueriedHeld(DgnLockSet&, DgnCodeSet&, IBriefcaseManager&)
+    {
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                         01/2018
+//---------------------------------------------------------------------------------------
+BeSQLite::ChangeSet::ConflictResolution OptimisticConcurrencyControl::HandleConflict(OnConflict onConflict,
+                                                                                     Utf8CP tableName, BeSQLite::Changes::Change change, 
+                                                                                     BeSQLite::DbOpcode opcode, bool indirect)
+    {
+    if (indirect)
+        return BeSQLite::ChangeSet::ConflictResolution::Replace;
+
+    BeSQLite::ChangeSet::ConflictResolution res;
+    bvector<DgnElementId>* vec;
+
+    if (OptimisticConcurrencyControl::OnConflict::RejectIncomingChange == onConflict)
+        {
+        res = BeSQLite::ChangeSet::ConflictResolution::Skip;
+        vec = &m_conflictingElementsRejected;
+        }
+    else
+        {
+        res = BeSQLite::ChangeSet::ConflictResolution::Replace;
+        vec = &m_conflictingElementsAccepted;
+        }
+
+    if (!indirect)
+        {
+        // ***  NEEDS WORK: How to screen out tables that don't contain elements or models?
+        auto stage = (BeSQLite::DbOpcode::Insert == opcode)? BeSQLite::Changes::Change::Stage::New: BeSQLite::Changes::Change::Stage::Old;
+        DgnElementId elementId = DgnElementId(change.GetValue(0, stage).GetValueUInt64());
+        if (elementId.IsValid())
+            vec->push_back(elementId);
+        }
+
+    return res;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                         01/2018
+//---------------------------------------------------------------------------------------
+BeSQLite::ChangeSet::ConflictResolution OptimisticConcurrencyControl::_OnConflict(DgnDbCR db, BeSQLite::ChangeSet::ConflictCause cause, BeSQLite::Changes::Change change)
+    {
+    Utf8CP tableName = nullptr;
+    int nCols, indirect;
+    BeSQLite::DbOpcode opcode;
+    change.GetOperation(&tableName, &nCols, &opcode, &indirect);
+
+    BeAssert((nCols > 0) && "first col must be ID - we don't track tables with no ID");
+
+    OptimisticConcurrencyControl::OnConflict onConflict;
+
+    switch (cause)
+        {
+        case BeSQLite::ChangeSet::ConflictCause::Data:
+            // SQLITE_CHANGESET_DATA
+            //  The conflict handler is invoked with CHANGESET_DATA as the second argument when processing a DELETE or UPDATE change if a row with the required PRIMARY KEY fields is present in the database, but one or more other (non primary-key) fields modified by the update do not contain the expected "before" values.
+            //    opcode=DELETE   => updateVsDelete
+            //    opcode=UPDATE   => updateVsUpdate
+            if (BeSQLite::DbOpcode::Delete == opcode)
+                onConflict = m_policy.updateVsDelete;
+            else
+                {
+                BeAssert(BeSQLite::DbOpcode::Update == opcode);
+                onConflict = m_policy.updateVsUpdate;
+                }
+            break;
+
+        case BeSQLite::ChangeSet::ConflictCause::NotFound:
+            // SQLITE_CHANGESET_NOTFOUND
+            // The conflict handler is invoked with CHANGESET_NOTFOUND as the second argument when processing a DELETE or UPDATE change if a row with the required PRIMARY KEY fields is not present in the database.
+            //    opcode=DELETE   => (deleteVsDelete) => nop
+            //    opcode=UPDATE   => deleteVsUpdate
+            if (BeSQLite::DbOpcode::Delete == opcode)
+                {
+/*<==*/         return BeSQLite::ChangeSet::ConflictResolution::Skip;       // NOP!
+                }
+
+            BeAssert(BeSQLite::DbOpcode::Update == opcode);
+            onConflict = m_policy.deleteVsUpdate;
+            break;
+
+        case BeSQLite::ChangeSet::ConflictCause::Constraint:
+            // *** TBD: SQLITE_CHANGESET_CONSTRAINT
+            // If any other constraint violation occurs while applying a change (i.e. a UNIQUE, CHECK or NOT NULL constraint), the conflict handler is invoked with CHANGESET_CONSTRAINT as the second argument.
+            //    opcode=DELETE   => attempt to delete a row that is referenced as a FK by some existing row  ==> We have to reject the incoming delete!
+            //    opcode=INSERT   => new row violates a UNIQUE constraint                                     ==> We have to reject the incoming insert! << Can only happen on unique properties other than codes. What properties are unique???
+            //    opcode=UPDATE   => some column value violates a UNIQUE or NOT NULL constraint               ==> We have to reject the incoming change! <<             "                 "                       "
+            LOG.warning("Constraint Conflict should never happen");
+            onConflict = OptimisticConcurrencyControl::OnConflict::RejectIncomingChange;
+            break;
+
+        case BeSQLite::ChangeSet::ConflictCause::Conflict:
+        case BeSQLite::ChangeSet::ConflictCause::ForeignKey:
+
+            // *** SQLITE_CHANGESET_CONFLICT (CHANGESET_CONFLICT is passed as the second argument to the conflict handler while processing an INSERT change if the operation would result in duplicate primary key values.)
+            // *** Should never happen, since we use briefcase-based ids, etc.
+
+            // *** TBD: SQLITE_CHANGESET_FOREIGN_KEY
+            // If foreign key handling is enabled, and applying a changeset leaves the database in a state containing foreign key violations, the conflict handler is invoked with CHANGESET_FOREIGN_KEY as the second argument exactly once before the changeset is committed. If the conflict handler returns CHANGESET_OMIT, the changes, including those that caused the foreign key constraint violation, are committed. Or, if it returns CHANGESET_ABORT, the changeset is rolled back.
+            // This is a special status that is passed to the callback just before the changeset is committed. It applies to the changeset as a whole. 
+            // If the conflict handler returns CHANGESET_OMIT, the changes, including those that caused the foreign key constraint violation, are committed. Or, if it returns CHANGESET_ABORT, the changeset is rolled back.
+            //    ==> This should never happen, since we will reject incoming changes that would cause constraint violations, as described above.
+    
+            BeAssert(false && "Conflict cause Conflict and ForeignKey should never happen");
+            LOG.warning("NotFound Conflict should never happen");
+            onConflict = OptimisticConcurrencyControl::OnConflict::AcceptIncomingChange;
+            break;
+
+        default:
+            BeAssert(false && "Unexpected conflict cause");
+            onConflict = OptimisticConcurrencyControl::OnConflict::AcceptIncomingChange;
+            break;
+        }
+        
+    return HandleConflict(m_policy.updateVsUpdate, tableName, change, opcode, indirect);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                         01/2018
+//---------------------------------------------------------------------------------------
+OptimisticConcurrencyControl::OptimisticConcurrencyControl(Policy policy)
+    {
+    m_policy = policy;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/17
+//--------------------------------------------------------------------------------------
+RevisionStatus RevisionManager::DoProcessRevisions(bvector<DgnRevisionCP> const& revisions, RevisionProcessOption processOptions)
+    {
+    RevisionStatus status;
+    switch (processOptions)
+        {
+        case RevisionProcessOption::Merge:
+            for (DgnRevisionCP revision : revisions)
+                {
+                status = DoMergeRevision(*revision);
+                if (RevisionStatus::Success != status)
+                    return status;
+                }
+            break;
+        case RevisionProcessOption::Reverse:
+            for (DgnRevisionCP revision : revisions)
+                {
+                status = DoReverseRevision(*revision);
+                if (RevisionStatus::Success != status)
+                    return status;
+                }
+            break;
+        case RevisionProcessOption::Reinstate:
+            for (DgnRevisionCP revision : revisions)
+                {
+                status = DoReinstateRevision(*revision);
+                if (RevisionStatus::Success != status)
+                    return status;
+                }
+            break;
+        default:
+            BeAssert(false && "Invalid revision upgrade option");
+        }
+
+    return RevisionStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    12/2017
+//---------------------------------------------------------------------------------------
+RevisionStatus RevisionManager::ProcessRevisions(bvector<DgnRevisionCP> const& revisions, RevisionProcessOption processOptions)
+    {
+    for (DgnRevisionCP revision : revisions)
+        {
+        if (!EXPECTED_CONDITION(!revision->ContainsSchemaChanges(m_dgndb)) && "Cannot process a revision containing schema changes when the DgnDb is already open. Close the DgnDb and reopen with the upgrade schema options set to the revision.")
+            return RevisionStatus::ProcessSchemaChangesOnOpen;
+        }
+        
+    return DoProcessRevisions(revisions, processOptions);
     }
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

@@ -205,6 +205,7 @@ DGNPLATFORM_TYPEDEFS(RedlineViewController)
 DGNPLATFORM_TYPEDEFS(RedlineViewDefinition)
 DGNPLATFORM_TYPEDEFS(RegionGraphicsContext)
 DGNPLATFORM_TYPEDEFS(RenderContext)
+DGNPLATFORM_TYPEDEFS(RenderingAsset)
 DGNPLATFORM_TYPEDEFS(RepositoryLink)
 DGNPLATFORM_TYPEDEFS(RepositoryModel)
 DGNPLATFORM_TYPEDEFS(RevisionManager)
@@ -212,6 +213,7 @@ DGNPLATFORM_TYPEDEFS(RoleElement)
 DGNPLATFORM_TYPEDEFS(RoleModel)
 DGNPLATFORM_TYPEDEFS(ScanCriteria)
 DGNPLATFORM_TYPEDEFS(SceneContext)
+DGNPLATFORM_TYPEDEFS(ThumbnailContext)
 DGNPLATFORM_TYPEDEFS(SectionDrawing)
 DGNPLATFORM_TYPEDEFS(SelectionSetManager)
 DGNPLATFORM_TYPEDEFS(SheetViewDefinition)
@@ -380,6 +382,7 @@ BEGIN_BENTLEY_RENDER_NAMESPACE
     DEFINE_POINTER_SUFFIX_TYPEDEFS(GraphicParams)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(ISprite)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Image)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(HDRImage)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(ImageSource)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleInfo)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleParams)
@@ -514,6 +517,7 @@ struct BoundingBox3d : DRange3d
     explicit BoundingBox3d(DRange2dCR range2d) {DRange3d::InitFrom(&range2d.low, 2, 0.0);}
     bool IsValid() const {return !IsEmpty();}
     void ToJson(JsonValueR value) const {JsonUtils::DRange3dToJson(value, *this);}
+	void FromJson(JsonValueCR value) { JsonUtils::DRange3dFromJson(*this, value); }
 };
 
 //=======================================================================================
@@ -901,6 +905,7 @@ enum class DrawPurpose
     VisibilityCalculation,
     Dynamics,
     Redraw,
+    CaptureThumbnail,
 };
 
 //! Used to communicate the result of handling an event from a GPS.

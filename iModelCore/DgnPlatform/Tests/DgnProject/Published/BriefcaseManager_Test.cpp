@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/BriefcaseManager_Test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -1377,6 +1377,40 @@ TEST_F(SingleBriefcaseLocksTest, AcquireLocks)
     ExpectLevel(db, LockLevel::Shared);
     }
 
+//-------------------------------------------------------------------------------------------
+// @bsimethod                                                 Diego.Pinate     01/18
+//-------------------------------------------------------------------------------------------
+TEST_F(SingleBriefcaseLocksTest, ClearUserHeldCodesLocks)
+    {
+    SetupDb(L"ClearUserHeldCodesLocksTest.bim", m_bcId);
+
+    // Create a new element - requires locking the dictionary model + the db
+    DgnDbR db = *m_db;
+    DgnModelPtr pModel = db.Models().GetModel(m_modelId);
+    ASSERT_TRUE(pModel.IsValid());
+    DgnElementCPtr cpEl = db.Elements().GetElement(m_elemId);
+    ASSERT_TRUE(cpEl.IsValid());
+
+    DgnModelCR model = *pModel;
+    DgnElementCR el = *cpEl;
+    LockableSchemas lockableSchemas(db);
+
+    ExpectLevel(db, LockLevel::None);
+    ExpectLevel(model, LockLevel::None);
+    ExpectLevel(el, LockLevel::None);
+
+    ExpectAcquire(model, LockLevel::Shared);
+    ExpectAcquire(el, LockLevel::Exclusive);
+    ExpectLevel(model, LockLevel::Shared);
+    ExpectLevel(el, LockLevel::Exclusive);
+    ExpectLevel(db, LockLevel::Shared); // a shared lock on a model => shared lock on DB
+
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().ClearUserHeldCodesLocks());
+    ExpectLevel(model, LockLevel::None);
+    ExpectLevel(el, LockLevel::None);
+    ExpectLevel(db, LockLevel::None);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * A single briefcase can always acquire locks with no contention ... bulk mode version.
 * @bsimethod                                                    Paul.Connelly   10/15
@@ -2618,7 +2652,7 @@ TEST_F (FastQueryTest, CacheCodes)
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ExtractLocksTest : SingleBriefcaseLocksTest
 {
-    DgnDbStatus ExtractLocks(LockRequestR req)
+    DgnDbStatus ExtractLocks(LockRequestR req, bool extractInserted = true)
         {
         if (BE_SQLITE_OK != m_db->SaveChanges())
             return DgnDbStatus::WriteError;
@@ -2638,9 +2672,30 @@ struct ExtractLocksTest : SingleBriefcaseLocksTest
                 }
             }
 
-        req.FromRevision(*rev, *m_db);
+        req.FromRevision(*rev, *m_db, extractInserted);
         m_db->Revisions().AbandonCreateRevision();
         return DgnDbStatus::Success;
+        }
+    
+    //-------------------------------------------------------------------------------------------
+    // @bsimethod                                                 Diego.Pinate     12/17
+    //-------------------------------------------------------------------------------------------
+    DgnDbStatus Commit()
+        {
+        if (BE_SQLITE_OK != m_db->SaveChanges())
+            return DgnDbStatus::WriteError;
+
+        RevisionStatus revStat;
+        DgnRevisionPtr rev = m_db->Revisions().StartCreateRevision(&revStat);
+        if (rev.IsNull())
+            {
+            if (RevisionStatus::NoTransactions == revStat)
+                return DgnDbStatus::Success;
+            else
+                return DgnDbStatus::BadRequest;
+            }
+        
+        return m_db->Revisions().FinishCreateRevision() == RevisionStatus::Success ? DgnDbStatus::Success : DgnDbStatus::BadRequest;
         }
 };
 
@@ -2671,6 +2726,9 @@ TEST_F(ExtractLocksTest, UsedLocks)
     DgnDbR db = *m_db;
     DgnModelR model = *db.Models().GetModel(m_modelId);
     DgnElementCPtr cpEl = db.Elements().GetElement(m_elemId);
+    DgnModelPtr testModel = CreateModel("TestModelLocks");
+    DgnElementCPtr testElem = CreateElement(*testModel);
+    EXPECT_EQ(DgnDbStatus::Success, Commit());
 
     LockRequest req;
     EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
@@ -2699,28 +2757,108 @@ TEST_F(ExtractLocksTest, UsedLocks)
     EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
     EXPECT_TRUE(req.IsEmpty());
 
-    // Create a new model
-    DgnModelPtr newModel = CreateModel("NewModel");
-    DgnElementCPtr newElem = CreateElement(*newModel);
+    // Test creating a new model and a new element inside the new model WITHOUT extracting inserted locks
+        {
+        UndoScope V_V_V_Undo(db);
+        // Create a new model
+        DgnModelPtr newModel = CreateModel("NewModel");
+        DgnElementCPtr newElem = CreateElement(*newModel);
 
-    EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
-    EXPECT_EQ(5, req.Size());
-    EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*newModel)));
-    EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*newElem)));
-    EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
-    // Should also have locks for the RepositoryModel + Subject for newModel
+        EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req, false));
+        // A lock for the db, a lock for the root subject which the new model is created in
+        EXPECT_EQ(2, req.Size());
+        // TFS#788401: Now, we don't extract locks for inserted elements in the revision
+        EXPECT_EQ(LockLevel::None, req.GetLockLevel(LockableId(*newModel)));
+        EXPECT_EQ(LockLevel::None, req.GetLockLevel(LockableId(*newElem)));
+        EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
+        }
 
-    // Delete the new element
-    EXPECT_EQ(DgnDbStatus::Success, newElem->Delete());
+    // Change reversed on exit above scope
     EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
-    EXPECT_EQ(4, req.Size());
-    EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*newModel)));
-    EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
+    EXPECT_TRUE(req.IsEmpty());
+
+    // Test creating a new model and a new element inside the new model extracting inserted locks
+        {
+        UndoScope V_V_V_Undo(db);
+        // Create a new model
+        DgnModelPtr newModel = CreateModel("NewModel");
+        DgnElementCPtr newElem = CreateElement(*newModel);
+
+        EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req, true));
+        EXPECT_EQ(5, req.Size());
+        EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*newModel)));
+        EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*newElem)));
+        EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
+        }
+
+    // Change reversed on exit above scope
+    EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
+    EXPECT_TRUE(req.IsEmpty());
+
+    // Test creating an element inside an existing model WITHOUT extracting inserted locks
+        {
+        UndoScope V_V_V_Undo(db);
+        DgnElementCPtr newElem2 = CreateElement(*testModel);
+
+        EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req, false));
+        // Locks: Db and existing model (all shared)
+        EXPECT_EQ(2, req.Size());
+        EXPECT_EQ(LockLevel::None, req.GetLockLevel(LockableId(*newElem2)));
+        EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(*testModel)));
+        EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
+        }
+
+    // Change reversed on exit above scope
+    EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
+    EXPECT_TRUE(req.IsEmpty());
+
+    // Test creating an element inside an existing model extracting inserted locks
+        {
+        UndoScope V_V_V_Undo(db);
+        DgnElementCPtr newElem2 = CreateElement(*testModel);
+
+        EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req, true));
+        // Locks: Db and existing model (all shared)
+        EXPECT_EQ(3, req.Size());
+        EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*newElem2)));
+        EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(*testModel)));
+        EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
+        }
+
+    // Change reversed on exit above scope
+    EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
+    EXPECT_TRUE(req.IsEmpty());
+
+    // Test deleting an element in the existing model
+        {
+        UndoScope V_V_V_Undo(db);
+        // Delete the new element
+        LockableId testElemId (*testElem);
+        EXPECT_EQ(DgnDbStatus::Success, testElem->Delete());
+        EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
+        EXPECT_EQ(3, req.Size());
+        EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(*testModel)));
+        EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
+        EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(testElemId));
+        }
+
+    // Change reversed on exit above scope
+    EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
+    EXPECT_TRUE(req.IsEmpty());
 
     // Delete the new model
-    EXPECT_EQ(DgnDbStatus::Success, newModel->Delete());
-    EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
-    EXPECT_EQ(3, req.Size());
+        {
+        UndoScope V_V_V_Undo(db);
+        LockableId testModelId (*testModel);
+        LockableId testElemId (*testElem);
+        EXPECT_EQ(DgnDbStatus::Success, testModel->Delete());
+        EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
+        // Locks for db, model, the element that was in the model, and the root where the model was
+        EXPECT_EQ(3, req.Size());
+        EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
+        EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(testModelId));
+        EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(testElemId));
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2970,6 +3108,45 @@ TEST_F(CodesManagerTest, AutoReserveCodes)
     EXPECT_EQ(DgnDbStatus::CodeNotReserved, status);
 
     pStyle = nullptr;
+
+    db.SaveChanges();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void checkCodesAreReserved(DgnDbR db, DgnCodeSet const& codes, bool expectedValue)
+    {
+    DgnCodeInfoSet codeStates;
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().QueryCodeStates(codeStates, codes));
+    for (DgnCodeInfo const& codeState : codeStates)
+        {
+        EXPECT_EQ(expectedValue, codeState.IsReserved());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CodesManagerTest, AutoReserveCodesBulkOpMode)
+    {
+    DgnDbPtr pDb = SetupDb(L"PlantScenarioTest.bim", BeBriefcaseId(2));
+    DgnDbR db = *pDb;
+
+    db.BriefcaseManager().StartBulkOperation();
+    ASSERT_TRUE(db.BriefcaseManager().IsBulkOperation());
+
+    PhysicalModelPtr physicalModel = DgnDbTestUtils::InsertPhysicalModel(db, "TestPhysicalModel");
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(db, "TestSpatialCategory");
+
+    DgnCodeSet codes;
+    codes.insert(physicalModel->GetModeledElement()->GetCode());
+    codes.insert(db.Elements().GetElement(categoryId)->GetCode());
+    checkCodesAreReserved(db, codes, false);
+
+    db.BriefcaseManager().EndBulkOperation();
+
+    checkCodesAreReserved(db, codes, true);
 
     db.SaveChanges();
     }

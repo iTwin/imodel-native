@@ -30,8 +30,8 @@ struct Texture : Render::Texture
     ImageSource         m_imageSource;
     Image::BottomUp     m_bottomUp;
 
-    Texture(ImageCR image, Texture::CreateParams const& createParams) : m_createParams(createParams), m_imageSource(image, Image::Format::Rgba == image.GetFormat() ? ImageSource::Format::Png : ImageSource::Format::Jpeg), m_bottomUp(Image::BottomUp::No)  { }
-    Texture(ImageSourceCR source, Image::BottomUp bottomUp, Texture::CreateParams const& createParams) : m_createParams(createParams), m_imageSource(source), m_bottomUp(bottomUp) { }
+    Texture(ImageCR image, Texture::CreateParams const& createParams) : Render::Texture(createParams), m_createParams(createParams), m_imageSource(image, Image::Format::Rgba == image.GetFormat() ? ImageSource::Format::Png : ImageSource::Format::Jpeg), m_bottomUp(Image::BottomUp::No)  { }
+    Texture(ImageSourceCR source, Image::BottomUp bottomUp, Texture::CreateParams const& createParams) : Render::Texture(createParams), m_createParams(createParams), m_imageSource(source), m_bottomUp(bottomUp) { }
 
     Render::TileTextureImagePtr CreateTileTexture() const { return TileTextureImage::Create(ImageSource(m_imageSource), !m_createParams.m_isTileSection); }
 };  // Texture
@@ -141,11 +141,13 @@ struct RenderSystem : Render::System
     RenderSystem(ContextR context) : m_context(context) {  }
     ~RenderSystem() { }
 
+    MaterialPtr _FindMaterial(MaterialKeyCR, DgnDbR) const override { return nullptr; }
     virtual MaterialPtr _GetMaterial(RenderMaterialId, DgnDbR) const override { return nullptr; }
-    virtual MaterialPtr _CreateMaterial(Material::CreateParams const&) const override { return nullptr; } 
+    virtual MaterialPtr _CreateMaterial(Material::CreateParams const&, DgnDbR) const override { return nullptr; } 
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency, DgnDbR db) const override { BeAssert(false); return nullptr; }
     virtual GraphicPtr _CreateBranch(GraphicBranch&& branch, DgnDbR dgndb, TransformCR transform, ClipVectorCP clips) const override { BeAssert(false); return nullptr; }
     virtual GraphicPtr _CreateViewlet(GraphicBranch& branch, PlanCR, ViewletPosition const&) const override { BeAssert(false); return nullptr; };
+    TexturePtr _FindTexture(TextureKeyCR, DgnDbR) const override { BeAssert(false); return nullptr; }
     virtual TexturePtr _GetTexture(DgnTextureId textureId, DgnDbR db) const override { BeAssert(false); return nullptr; }
 
     virtual TexturePtr _CreateGeometryTexture(GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const override { BeAssert(false); return nullptr; }
@@ -158,8 +160,8 @@ struct RenderSystem : Render::System
     virtual uint32_t   _GetMaxFeaturesPerBatch() const override { return 0xffffffff; }
 
     virtual TexturePtr _GetTexture(GradientSymbCR gradient, DgnDbR db) const override {return nullptr; }
-    virtual TexturePtr _CreateTexture(ImageCR image, Texture::CreateParams const& params=Texture::CreateParams())  const override {return new Texture(image, params); }
-    virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::BottomUp bottomUp, Texture::CreateParams const& params=Texture::CreateParams())  const override {return new Texture(source, bottomUp, params); }
+    virtual TexturePtr _CreateTexture(ImageCR image, DgnDbR, Texture::CreateParams const& params)  const override {return new Texture(image, params); }
+    virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::BottomUp bottomUp, DgnDbR, Texture::CreateParams const& params)  const override {return new Texture(source, bottomUp, params); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017 

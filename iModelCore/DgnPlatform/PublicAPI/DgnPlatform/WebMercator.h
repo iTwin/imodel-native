@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/WebMercator.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -174,6 +174,7 @@ public:
     DGNPLATFORM_EXPORT WebMercatorModel(CreateParams const& params);
 
     TileTree::RootPtr _CreateTileTree(Render::SystemP) override;
+    TileTree::RootPtr _GetTileTree(RenderContextR) override;
     void _OnSaveJsonProperties() override;
     void _OnLoadedJsonProperties() override;
     double GetGroundBias() const {return m_groundBias;}

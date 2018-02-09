@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/LsName.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -598,12 +598,12 @@ Texture* LsDefinition::GetRasterTexture(double& textureWidth, ViewContextR conte
                     alpha[outIndex] = invert ? (255 - imageDef[inIndex]) : imageDef[inIndex];
 
                 Image imageObj(imageSize.x, imageSize.y, ByteStream(&alpha.front(), imageBytes), Image::Format::Alpha);
-                m_rasterTexture = vp->GetRenderTarget()->CreateTexture(imageObj);
+                m_rasterTexture = vp->GetRenderTarget()->CreateTexture(imageObj, context.GetDgnDb());
                 }
             else
                 {
                 Image imageObj(imageSize.x, imageSize.y, ByteStream(imageDef, imageSize.x*imageSize.y*4), Image::Format::Rgba);
-                m_rasterTexture = vp->GetRenderTarget()->CreateTexture(imageObj);
+                m_rasterTexture = vp->GetRenderTarget()->CreateTexture(imageObj, context.GetDgnDb());
                 }
             }
         }

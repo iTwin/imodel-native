@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/SkyBox.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -100,7 +100,7 @@ void SpatialViewController::DrawGroundPlane(DecorateContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::TexturePtr SpatialViewController::LoadTexture(Utf8CP fileName, Render::SystemCR system)
+Render::TexturePtr loadTexture(Utf8CP fileName, Render::SystemCR system, DgnDbR dgndb)
     {
 #if defined (NEEDS_WORK_GROUND_PLANE)
     bool isHttp = (0 == strncmp("http:", fileName, 5) || 0 == strncmp("https:", fileName, 6));
@@ -120,21 +120,24 @@ Render::TexturePtr SpatialViewController::LoadTexture(Utf8CP fileName, Render::S
         return nullptr;
 
     ImageSource jpeg(ImageSource::Format::Jpeg, std::move(jpegData));
-    return system._CreateTexture(jpeg, Image::BottomUp::No);
+    return system._CreateTexture(jpeg, Image::BottomUp::No, dgndb);
     }
 
 static Byte lerp(double t, Byte a, Byte b) {return a + t * double(b - a);}
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/16
+* @bsimethod                                    Keith.Bentley                   08/16                                                                  
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewController::LoadSkyBox(Render::SystemCR system)
+void DisplayStyle3d::LoadSkyBoxMaterial(Render::SystemCR system)
     {
+    if (m_skyboxMaterial.IsValid())
+        return;
+
     Render::TexturePtr texture;
 
-    auto& env = GetSpatialViewDefinition().GetDisplayStyle3d().GetEnvironmentDisplay();
+    auto& env = GetEnvironmentDisplay();
     if (!env.m_skybox.m_jpegFile.empty())
-        texture = LoadTexture(env.m_skybox.m_jpegFile.c_str(), system);
+        texture = loadTexture(env.m_skybox.m_jpegFile.c_str(), system, GetDgnDb());
 
     // we didn't get a jpeg sky, just create a gradient
     if (!texture.IsValid())
@@ -175,7 +178,7 @@ void SpatialViewController::LoadSkyBox(Render::SystemCR system)
             }
 
         Render::Image image(1, GRADIENT_PIXEL_COUNT, std::move(buffer), Image::Format::Rgba);
-        texture = system._CreateTexture(image);
+        texture = system._CreateTexture(image, GetDgnDb());
         }
 
     Material::CreateParams matParams;
@@ -184,12 +187,13 @@ void SpatialViewController::LoadSkyBox(Render::SystemCR system)
     matParams.SetAmbient(1.0);
     matParams.SetDiffuse(0.0);
     matParams.SetShadows(false);
-    m_skybox = system._CreateMaterial(matParams);
 
     TextureMapping::Params mapParams;
     TextureMapping::Trans2x3 transform(0.0, 1.0, 0.0, 1.0, 0.0, 0.0);
     mapParams.SetTransform(&transform);
-    m_skybox->MapTexture(TextureMapping(*texture, mapParams));
+    matParams.MapTexture(*texture, mapParams);
+
+    m_skyboxMaterial = system._CreateMaterial(matParams, GetDgnDb());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -308,15 +312,18 @@ void SpatialViewController::DrawSkyBox(DecorateContextR context)
         return;
 
     auto vp=context.GetViewport();
-    if (!m_skybox.IsValid())
-        LoadSkyBox(vp->GetRenderTarget()->GetSystem());
+    style3d.LoadSkyBoxMaterial(vp->GetRenderTarget()->GetSystem());
 
-    BeAssert(m_skybox.IsValid());
+    if (nullptr == style3d.GetSkyBoxMaterial())
+        {
+        BeAssert(false);
+        return;
+        }
 
     // create a graphic for the skybox, and assign the sky material to it.
     Render::GraphicBuilderPtr skyGraphic = context.CreateViewBackground();
     GraphicParams params;
-    params.SetMaterial(m_skybox.get());
+    params.SetMaterial(style3d.GetSkyBoxMaterial());
     skyGraphic->ActivateGraphicParams(params);
 
     // now create a 10x10 mesh on the backplane with the sky material mapped to its UV coordinates

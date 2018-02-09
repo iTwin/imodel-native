@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/RepositoryManager.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,6 +11,7 @@
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/LocksManager.h>
 #include <DgnPlatform/DgnCodesManager.h>
+#include <BeSQLite/ChangeSet.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -196,12 +197,14 @@ protected:
     virtual void _OnElementInserted(DgnElementId id) = 0;
     virtual void _OnModelInserted(DgnModelId id) = 0;
     virtual RepositoryStatus _RefreshFromRepository() = 0;
+    virtual RepositoryStatus _ClearUserHeldCodesLocks() = 0;
     virtual void _OnDgnDbDestroyed() { }
 
     // Bulk operations
     virtual void _StartBulkOperation() = 0;
     virtual bool _IsBulkOperation() const = 0;
     virtual Response _EndBulkOperation() = 0;
+    virtual void _ExtractRequestFromBulkOperation(Request&, bool locks, bool codes) {;}
 
     DGNPLATFORM_EXPORT IRepositoryManagerP GetRepositoryManager() const;
     DGNPLATFORM_EXPORT bool LocksRequired() const;
@@ -412,6 +415,8 @@ public:
     //! @return Success, or an error status
     //! @remarks This is generally only useful if the repository was temporarily unavailable when previous requests were attempted.
     RepositoryStatus RefreshFromRepository() { return _RefreshFromRepository(); }
+    //! Clears user held locks from local cache, only used in special workflows
+    RepositoryStatus ClearUserHeldCodesLocks() { return _ClearUserHeldCodesLocks(); }
     RepositoryStatus OnFinishRevision(DgnRevision const& rev) { return _OnFinishRevision(rev); } //!< @private
     void OnElementInserted(DgnElementId id); //!< @private
     void OnModelInserted(DgnModelId id); //!< @private
@@ -425,6 +430,8 @@ public:
     
     //! Check if a bulk operation is in progress
     bool IsBulkOperation() const {return _IsBulkOperation();}
+
+    void ExtractRequestFromBulkOperation(Request& r, bool locks, bool codes) {_ExtractRequestFromBulkOperation(r, locks, codes);}
 
     //! Call this if you want to acquire locks and codes @em before the end of the transaction.
     //! @note DgnDb::SaveChanges automatically calls this function to end the bulk operation and acquire locks and codes.
@@ -557,6 +564,101 @@ namespace RepositoryJson
     DGNPLATFORM_EXPORT void RequestPurposeToJson(JsonValueR value, IBriefcaseManager::RequestPurpose purpose);
 } // namespace RepositoryJson
 //__PUBLISH_SECTION_START__
+
+struct IOptimisticConcurrencyControl;
+
+/* A concurrency control policy */
+struct IConcurrencyControl : IRefCounted
+    {
+    virtual IOptimisticConcurrencyControl* _AsIOptimisticConcurrencyControl() = 0;
+    virtual void _ConfigureBriefcaseManager(IBriefcaseManager&) = 0;
+    virtual void _OnProcessRequest(IBriefcaseManager::Request&, IBriefcaseManager&, IBriefcaseManager::RequestPurpose) = 0;
+    virtual void _OnProcessedRequest(IBriefcaseManager::Request&, IBriefcaseManager&, IBriefcaseManager::RequestPurpose, IBriefcaseManager::Response&) = 0;
+    virtual void _OnQueryHeld(DgnLockSet&, DgnCodeSet&, IBriefcaseManager&) = 0;
+    virtual void _OnQueriedHeld(DgnLockSet&, DgnCodeSet&, IBriefcaseManager&) = 0;
+    virtual void _OnExtractRequest(IBriefcaseManager::Request&, IBriefcaseManager&) = 0;
+    virtual void _OnExtractedRequest(IBriefcaseManager::Request&, IBriefcaseManager&) = 0;
+    };
+
+/* The pessimistic concurrency control policy. Locks and codes must be acquired before a changeset can be pushed to iModelHub. */
+struct PessimisticConcurrencyControl : RefCounted<IConcurrencyControl>
+    {
+    IOptimisticConcurrencyControl* _AsIOptimisticConcurrencyControl() override {return nullptr;}
+    void _ConfigureBriefcaseManager(IBriefcaseManager&) override {}
+    void _OnProcessRequest(IBriefcaseManager::Request&, IBriefcaseManager&, IBriefcaseManager::RequestPurpose) override {}
+    void _OnProcessedRequest(IBriefcaseManager::Request&, IBriefcaseManager&, IBriefcaseManager::RequestPurpose, IBriefcaseManager::Response&) override {}
+    void _OnQueryHeld(DgnLockSet&, DgnCodeSet&, IBriefcaseManager&) override {}
+    void _OnQueriedHeld(DgnLockSet&, DgnCodeSet&, IBriefcaseManager&) override {}
+    void _OnExtractRequest(IBriefcaseManager::Request&, IBriefcaseManager&) override {}
+    void _OnExtractedRequest(IBriefcaseManager::Request&, IBriefcaseManager&) override {}
+    };
+
+/* An optimistic concurrency control policy */
+struct IOptimisticConcurrencyControl : IConcurrencyControl
+    {
+    virtual BeSQLite::ChangeSet::ConflictResolution _OnConflict(DgnDbCR, BeSQLite::ChangeSet::ConflictCause, BeSQLite::Changes::Change) = 0;
+    };
+
+/* An optimistic concurrency control policy */
+struct OptimisticConcurrencyControlBase : IOptimisticConcurrencyControl
+    {
+    DgnLockSet m_locks;
+    DgnLockSet m_locksTemp;
+
+    IOptimisticConcurrencyControl* _AsIOptimisticConcurrencyControl() override {return this;}
+    DGNPLATFORM_EXPORT void _ConfigureBriefcaseManager(IBriefcaseManager&) override;
+    DGNPLATFORM_EXPORT void _OnProcessRequest(IBriefcaseManager::Request&, IBriefcaseManager&, IBriefcaseManager::RequestPurpose) override;
+    DGNPLATFORM_EXPORT void _OnProcessedRequest(IBriefcaseManager::Request&, IBriefcaseManager&, IBriefcaseManager::RequestPurpose, IBriefcaseManager::Response&) override;
+    DGNPLATFORM_EXPORT void _OnQueryHeld(DgnLockSet&, DgnCodeSet&, IBriefcaseManager&) override;
+    DGNPLATFORM_EXPORT void _OnQueriedHeld(DgnLockSet&, DgnCodeSet&, IBriefcaseManager&) override;
+    DGNPLATFORM_EXPORT void _OnExtractRequest(IBriefcaseManager::Request&, IBriefcaseManager&) override;
+    DGNPLATFORM_EXPORT void _OnExtractedRequest(IBriefcaseManager::Request&, IBriefcaseManager&) override;
+    };
+
+/* An optimistic concurrency control policy where conflict-resolution is controlled by policy settings. */
+struct OptimisticConcurrencyControl : RefCounted<OptimisticConcurrencyControlBase>
+    {
+    /** How to handle a conflict */
+    enum class OnConflict
+        {
+        /** Reject the incoming change */
+        RejectIncomingChange = 0,
+        /** Accept the incoming change */
+        AcceptIncomingChange = 1,
+        };
+        
+    /** The options for how conflicts are to be handled during change-merging in an OptimisticConcurrencyControlPolicy.
+     * The scenario is that the caller has made some changes to the *local* briefcase. Now, the caller is attempting to
+     * merge in changes from iModelHub. The properties of this policy specify how to handle the *incoming* changes from iModelHub.
+     */
+    struct Policy
+        {
+        /** What to do with the incoming change in the case where the same entity was updated locally and also would be updated by the incoming change. */
+        OnConflict updateVsUpdate;
+        /** What to do with the incoming change in the case where an entity was updated locally and would be deleted by the incoming change. */
+        OnConflict updateVsDelete;
+        /** What to do with the incoming change in the case where an entity was deleted locally and would be updated by the incoming change. */
+        OnConflict deleteVsUpdate;
+        };
+
+    private:
+    Policy m_policy;
+    bvector<DgnElementId> m_conflictingElementsRejected;
+    bvector<DgnElementId> m_conflictingElementsAccepted;
+
+    BeSQLite::ChangeSet::ConflictResolution _OnConflict(DgnDbCR, BeSQLite::ChangeSet::ConflictCause, BeSQLite::Changes::Change) override;
+
+    BeSQLite::ChangeSet::ConflictResolution HandleConflict(OptimisticConcurrencyControl::OnConflict, Utf8CP tableName, BeSQLite::Changes::Change, BeSQLite::DbOpcode, bool indirect);
+
+    public:
+    DGNPLATFORM_EXPORT OptimisticConcurrencyControl(Policy conflicts);
+
+    bvector<DgnElementId> const& GetConflictingElementsRejected() const {return m_conflictingElementsRejected;}
+    bvector<DgnElementId> const& GetConflictingElementsAccepted() const {return m_conflictingElementsAccepted;}
+    void ConflictsProcessed() {m_conflictingElementsRejected.clear(); m_conflictingElementsAccepted.clear();}
+    };
+
+
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

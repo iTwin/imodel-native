@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/SpatialViewController.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -98,16 +98,18 @@ void SpatialViewController::_DrawDecorations(DecorateContextR context)
         }
 
     static int const FILL_TRANSPARENCY = 128;
+    auto bg = context.CreateViewOverlay();
     ColorDef bgColor = vp.MakeColorTransparency(ColorDef::White(), FILL_TRANSPARENCY);
-    graphic->SetBlankingFill(bgColor);
-    
+    bg->SetBlankingFill(bgColor);
+
     DPoint3d textShape[4];
     textShape[0].Init(runningTextBounds.low);
     textShape[1].Init(runningTextBounds.low.x, runningTextBounds.high.y);
     textShape[2].Init(runningTextBounds.high.x, runningTextBounds.high.y);
     textShape[3].Init(runningTextBounds.high.x, runningTextBounds.low.y);
-    graphic->AddShape(_countof(textShape), textShape, true);
+    bg->AddShape(_countof(textShape), textShape, true);
 
+    context.AddViewOverlay(*bg->Finish());
     context.AddViewOverlay(*graphic->Finish());
     }
 
@@ -116,7 +118,9 @@ void SpatialViewController::_DrawDecorations(DecorateContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d SpatialViewController::_GetViewedExtents(DgnViewportCR vp) const
     {
+    constexpr double s_spatialRangeMultiplier = 1.0001; // Ensure geometry lying smack up against the extents is not excluded by frustum...
     AxisAlignedBox3d box = GetDgnDb().GeoLocation().GetProjectExtents();
+    box.ScaleAboutCenter(box, s_spatialRangeMultiplier);
     box.Extend(GetGroundExtents(vp));
     return box;
     }
@@ -126,56 +130,11 @@ AxisAlignedBox3d SpatialViewController::_GetViewedExtents(DgnViewportCR vp) cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
     {
+    // ###TODO: TFS#806669: iModelHub team needs thumbnails fixed pronto...revisit.
+    if (DrawPurpose::CaptureThumbnail == context.GetDrawPurpose())
+        return CreateThumbnailScene(context);
+
     DgnDb::VerifyClientThread();
-
-#if defined(ELEMENT_TILE_PROFILE_RANGE_INDEX)
-    static bool s_filledRangeIndices = false;
-    if (!s_filledRangeIndices)
-        {
-        StopWatch profileTimer(true);
-        uint32_t numFilled = 0;
-        for (auto modelId : GetViewedModels())
-            {
-            auto model = GetDgnDb().Models().Get<GeometricModel>(modelId);
-            if (model.IsValid())
-                {
-                model->FillRangeIndex();
-                ++numFilled;
-                }
-            }
-
-        double rangeIndexTime = profileTimer.GetCurrentSeconds();
-        s_filledRangeIndices = true;
-        Utf8PrintfString msg("Filled %u range indices in %f seconds", numFilled, rangeIndexTime);
-        NotifyMessageDetails details(OutputMessagePriority::Info, msg.c_str());
-        T_HOST.GetNotificationAdmin()._OutputMessage(details);
-        }
-#endif
-
-#if defined(ELEMENT_TILE_PROFILE_CREATE_ROOT)
-    if (!m_allRootsLoaded)
-        {
-        StopWatch rootsTimer(true);
-        uint32_t numCreated = 0;
-        for (auto modelId : GetViewedModels())
-            {
-            auto model = GetDgnDb().Models().Get<GeometricModel3d>(modelId);
-            TileTree::RootP modelRoot;
-            if (model.IsValid())
-                {
-                modelRoot = model->GetTileTree(context.GetTargetR().GetSystem());
-                ++numCreated;
-                }
-
-            m_roots.Insert(modelId, modelRoot);
-            }
-
-        Utf8PrintfString msg("Loaded %u roots in %f seconds", numCreated, rootsTimer.GetCurrentSeconds());
-        NotifyMessageDetails details(OutputMessagePriority::Info, msg.c_str());
-        T_HOST.GetNotificationAdmin()._OutputMessage(details);
-        m_allRootsLoaded = true;
-        }
-#endif
 
     StopWatch timer(true);
 
@@ -250,6 +209,63 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
         }
 
     //DEBUG_PRINTF("CreateScene: %f", timer.GetCurrentSeconds());
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SpatialViewController::CreateThumbnailScene(SceneContextR context)
+    {
+    auto const& plan = context.GetUpdatePlan();
+    BeAssert(plan.WantWait());
+    uint32_t timeLimitMillis = 0;
+    BeDuration timeLimit;
+    if (plan.HasQuitTime() && plan.GetQuitTime().IsInFuture())
+        {
+        timeLimit = BeDuration(plan.GetQuitTime() - BeTimePoint::Now());
+        timeLimitMillis = std::chrono::duration_cast<std::chrono::milliseconds>(timeLimit).count();
+        }
+
+    // Load all the roots. Do not count time required toward our time limit.
+    bset<TileTree::RootPtr> roots;
+    for (auto modelId : GetViewedModels())
+        {
+        auto model = GetDgnDb().Models().Get<GeometricModel3d>(modelId);
+        if (model.IsValid())
+            {
+            auto root = model->GetTileTree(context);
+            if (root.IsValid())
+                {
+                roots.insert(root);
+                root->SelectTiles(context);
+                }
+            }
+        }
+
+    if (roots.empty())
+        return ERROR;
+
+    // Allow tiles to load...note we are again ignoring the time limit - could request partial tiles, but we don't want an incomplete scene...
+    context.m_requests.RequestMissing(BeDuration());
+
+    // Divvy up the time limit evenly among the models. Again, pretty hokey and possibly imbalanced.
+    uint32_t waitMillis = static_cast<uint32_t>(timeLimitMillis / static_cast<double>(roots.size()));
+    for (auto const& root : roots)
+        {
+        if (0 != waitMillis)
+            {
+            root->WaitForAllLoadsFor(waitMillis);
+            root->CancelAllTileLoads();
+            }
+        else
+            {
+            root->WaitForAllLoads();
+            }
+
+        root->DrawInView(context);
+        }
 
     return SUCCESS;
     }
@@ -431,10 +447,10 @@ Render::SceneLightsPtr SpatialViewController::GetLights() const
     if (nullptr == target)
         return nullptr;
 
-    auto& displayStle = GetSpatialViewDefinition().GetDisplayStyle3d();
-    m_lights = displayStle.CreateSceneLights(*target); // lighting setup for the scene
+    auto& displayStyle = GetSpatialViewDefinition().GetDisplayStyle3d();
+    m_lights = displayStyle.CreateSceneLights(*target); // lighting setup for the scene
 
-    if (!displayStle.GetViewFlags().ShowSourceLights())
+    if (!displayStyle.GetViewFlags().ShowSourceLights())
         return m_lights;
 
     auto& models = GetDgnDb().Models();

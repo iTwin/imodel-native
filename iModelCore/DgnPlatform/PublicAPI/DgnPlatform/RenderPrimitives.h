@@ -100,8 +100,7 @@ private:
     DgnSubCategoryId    m_subCategoryId;
     MaterialPtr         m_material; // meshes only
     GradientSymbCPtr    m_gradient;
-    TextureMapping      m_textureMapping;
-    RenderMaterialId    m_materialId;
+    TextureMapping      m_textureMapping; // only if m_material is null (e.g. gradients, glyph bitmaps)
     ColorDef            m_lineColor = ColorDef::White(); // all types of geometry (edge color for meshes)
     ColorDef            m_fillColor = ColorDef::White(); // meshes only
     uint32_t            m_width = 0; // linear and mesh (edges)
@@ -109,18 +108,31 @@ private:
     FillFlags           m_fillFlags = FillFlags::None; // meshes only
     DgnGeometryClass    m_class = DgnGeometryClass::Primary;
     bool                m_ignoreLighting = false; // always true for text and linear geometry; true for meshes only if normals not desired
-    bool                m_resolved = true;
     bool                m_hasRegionOutline = false;
 
     virtual uint32_t _GetExcessiveRefCountThreshold() const override { return 0x7fffffff; }
 
     DisplayParamsCPtr Clone() const;
     
-    DGNPLATFORM_EXPORT DisplayParams(Type, GraphicParamsCR, GeometryParamsCP, bool filled);
-    DGNPLATFORM_EXPORT DisplayParams(Type type, DgnCategoryId catId, DgnSubCategoryId subCatId, GradientSymbCP gradient, RenderMaterialId matId, ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels linePixels, FillFlags fillFlags, DgnGeometryClass geomClass, bool ignoreLights, DgnDbR dgnDb, System& renderSys);
+    static DisplayParams ForMesh(GraphicParamsCR gf, GeometryParamsCP geom, bool filled, DgnDbR db, System& sys);
+    static DisplayParams ForLinear(GraphicParamsCR gf, GeometryParamsCP geom);
+    static DisplayParams ForText(GraphicParamsCR gf, GeometryParamsCP geom);
+    static DisplayParams ForType(Type type, GraphicParamsCR gf, GeometryParamsCP geom, bool filled, DgnDbR db, System& sys);
+
     DisplayParams(DisplayParamsCR rhs) = default;
-    void Resolve(DgnDbR, System&);
+    DisplayParams(ColorDef lineColor, DgnCategoryId catId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass) { InitText(lineColor, catId, subCatId, geomClass); }
+    DisplayParams(ColorDef lineColor, uint32_t width, LinePixels px, DgnCategoryId cat, DgnSubCategoryId sub, DgnGeometryClass gc)
+        { InitLinear(lineColor, width, px, cat, sub, gc); }
+    DisplayParams(ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels px, MaterialP mat, GradientSymbCP grad, TextureMappingCP tx,
+        FillFlags ff, DgnCategoryId cat, DgnSubCategoryId sub, DgnGeometryClass gc)
+        { InitMesh(lineColor, fillColor, width, px, mat, grad, tx, ff, cat, sub, gc); }
+
     bool ComputeHasRegionOutline() const;
+
+    void InitGeomParams(DgnCategoryId, DgnSubCategoryId, DgnGeometryClass);
+    void InitText(ColorDef lineColor, DgnCategoryId, DgnSubCategoryId, DgnGeometryClass);
+    void InitLinear(ColorDef lineColor, uint32_t width, LinePixels, DgnCategoryId, DgnSubCategoryId, DgnGeometryClass);
+    void InitMesh(ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels, MaterialP, GradientSymbCP, TextureMappingCP, FillFlags, DgnCategoryId, DgnSubCategoryId, DgnGeometryClass);
 public:
     Type GetType() const { return m_type; }
     ColorDef GetFillColorDef() const { return m_fillColor; }
@@ -128,7 +140,7 @@ public:
     ColorDef GetLineColorDef() const { return m_lineColor; }
     uint32_t GetLineColor() const { return GetLineColorDef().GetValue(); }
 
-    TextureMappingCR GetTextureMapping() const { return m_textureMapping; }
+    TextureMappingCR GetTextureMapping() const { return m_material.IsValid() ? m_material->GetTextureMapping() : m_textureMapping; }
     MaterialP GetMaterial() const { return m_material.get(); }
     GradientSymbCP GetGradient() const { return m_gradient.get(); }
     uint32_t GetLineWidth() const { return m_width; }
@@ -138,12 +150,11 @@ public:
     DgnGeometryClass GetClass() const { return m_class; }
     DgnCategoryId GetCategoryId() const { return m_categoryId; }
     DgnSubCategoryId GetSubCategoryId() const { return m_subCategoryId; }
-    RenderMaterialId GetMaterialId() const { return m_materialId; }
 
     bool IgnoresLighting() const { return m_ignoreLighting; }
     bool HasFillTransparency() const { return 0 != GetFillColorDef().GetAlpha(); }
     bool HasLineTransparency() const { return 0 != GetLineColorDef().GetAlpha(); }
-    bool IsTextured() const { BeAssert(m_resolved); return m_textureMapping.IsValid(); }
+    bool IsTextured() const { return GetTextureMapping().IsValid(); }
     bool HasBlankingFill() const { return FillFlags::Blanking == (GetFillFlags() & FillFlags::Blanking); }
     bool NeverRegionOutline() const { return HasBlankingFill() || (m_gradient.IsValid() && !m_gradient->GetIsOutlined()); }
     bool HasRegionOutline() const;
@@ -157,26 +168,13 @@ public:
     DGNPLATFORM_EXPORT bool IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose=ComparePurpose::Strict) const;
     DGNPLATFORM_EXPORT bool IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose=ComparePurpose::Strict) const;
 
-    static DisplayParamsCPtr CreateForMesh(GraphicParamsCR gf, GeometryParamsCP geom, bool filled, DgnDbR db, System& sys)
-        {
-        DisplayParamsPtr dp = new DisplayParams(Type::Mesh, gf, geom, filled);
-        dp->Resolve(db, sys);
-        return dp;
-        }
-    static DisplayParamsCPtr CreateForLinear(GraphicParamsCR gf, GeometryParamsCP geom)
-        {
-        return new DisplayParams(Type::Linear, gf, geom, false);
-        }
-    static DisplayParamsCPtr CreateForText(GraphicParamsCR gf, GeometryParamsCP geom)
-        {
-        return new DisplayParams(Type::Text, gf, geom, false);
-        }
+    static DisplayParamsCPtr CreateForMesh(GraphicParamsCR gf, GeometryParamsCP geom, bool filled, DgnDbR db, System& sys) { return ForMesh(gf, geom, filled, db, sys).Clone(); }
+    static DisplayParamsCPtr CreateForLinear(GraphicParamsCR gf, GeometryParamsCP geom) { return ForLinear(gf, geom).Clone(); }
+    static DisplayParamsCPtr CreateForText(GraphicParamsCR gf, GeometryParamsCP geom) { return ForText(gf, geom).Clone(); }
     static DisplayParamsCPtr CreateForGeomPartInstance(DisplayParamsCR partParams, DisplayParamsCR instanceParams);
+    static DisplayParamsCPtr Create(Type type, DgnCategoryId catId, DgnSubCategoryId subCatId, GradientSymbCP gradient, RenderMaterialId matId, ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels linePixels, FillFlags fillFlags, DgnGeometryClass geomClass, bool ignoreLights, DgnDbR dgnDb, System& renderSys, TextureMappingCR texMap);
 
-    static DisplayParamsCPtr Create(Type type, DgnCategoryId catId, DgnSubCategoryId subCatId, GradientSymbCP gradient, RenderMaterialId matId, ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels linePixels, FillFlags fillFlags, DgnGeometryClass geomClass, bool ignoreLights, DgnDbR dgnDb, System& renderSys)
-        {
-        return new DisplayParams(type, catId, subCatId, gradient, matId, lineColor, fillColor, width, linePixels, fillFlags, geomClass, ignoreLights, dgnDb, renderSys);
-        }
+    DisplayParamsCPtr CloneForRasterText(TextureR raster) const;
 
     DGNPLATFORM_EXPORT Utf8String ToDebugString() const; //!< @private
 };
@@ -211,7 +209,7 @@ public:
     DisplayParamsCR GetForText(GraphicParamsCR gf, GeometryParamsCP geom) { return Get(DisplayParams::Type::Text, gf, geom, false); }
     DisplayParamsCR Get(DisplayParams::Type type, GraphicParamsCR gf, GeometryParamsCP geom, bool filled)
         {
-        DisplayParams ndp(type, gf, geom, filled);
+        DisplayParams ndp = DisplayParams::ForType(type, gf, geom, filled, m_db, m_system);
         return Get(ndp);
         }
 
@@ -275,8 +273,8 @@ struct Triangle
     bool        m_singleSided;
     uint8_t     m_edgeFlags[3];
 
-    uint32_t operator[](int index) const { BeAssert(index < 3); return m_indices[index]; }
-    uint32_t& operator[](int index) { BeAssert(index < 3); return m_indices[index]; }
+    uint32_t operator[](int index) const { BeAssert(index < 3); if(index>2) index=2; return m_indices[index]; }
+    uint32_t& operator[](int index) { BeAssert(index < 3); if(index>2) index=2; return m_indices[index]; }
 
     explicit Triangle(bool singleSided=true) : m_singleSided(singleSided) { SetIndices(0, 0, 0); SetEdgeFlags(MeshEdge::Flags::Visible); }
     Triangle(uint32_t indices[3], bool singleSided) : m_singleSided(singleSided) { SetIndices(indices); SetEdgeFlags(MeshEdge::Flags::Visible); }
@@ -289,7 +287,7 @@ struct Triangle
     void SetEdgeFlags(bool const* visible) { m_edgeFlags[0] = visible[0] ? MeshEdge::Flags::Visible : MeshEdge::Flags::Invisible; 
                                              m_edgeFlags[1] = visible[1] ? MeshEdge::Flags::Visible : MeshEdge::Flags::Invisible;
                                              m_edgeFlags[2] = visible[2] ? MeshEdge::Flags::Visible : MeshEdge::Flags::Invisible; }
-    bool GetEdgeVisible(size_t index) const { BeAssert(index < 3); return m_edgeFlags[index] == MeshEdge::Flags::Visible; }
+    bool GetEdgeVisible(size_t index) const { BeAssert(index < 3); if(index>2) index=2; return m_edgeFlags[index] == MeshEdge::Flags::Visible; }
 
     bool IsDegenerate() const  { return m_indices[0] == m_indices[1] || m_indices[0] == m_indices[2] || m_indices[1] == m_indices[2]; }                                   
 };
@@ -614,8 +612,7 @@ struct MeshBuilder : RefCountedBase
 
 private:
     MeshPtr                         m_mesh;
-    VertexMap                       m_clusteredVertexMap;
-    VertexMap                       m_unclusteredVertexMap;
+    VertexMap                       m_vertexMap;
     TriangleSet                     m_triangleSet;
     double                          m_tolerance;
     double                          m_areaTolerance;
@@ -630,8 +627,8 @@ public:
     static MeshBuilderPtr Create(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar)
         { return new MeshBuilder(params, tolerance, areaTolerance, featureTable, type, range, is2d, isPlanar); }
 
-    DGNPLATFORM_EXPORT void AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR, DgnDbR dgnDb, FeatureCR feature, bool doVertexClustering, bool includeParams, uint32_t fillColor, bool requireNormals);
-    DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureCR feature, bool doVertexClustering, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter);
+    DGNPLATFORM_EXPORT void AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor, bool requireNormals);
+    DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureCR feature, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter);
     void AddPolyline(bvector<QPoint3d> const&, FeatureCR, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter);
     void AddPointString(bvector<DPoint3d> const& pointString, FeatureCR feature, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter);
     DGNPLATFORM_EXPORT void BeginPolyface(PolyfaceQueryCR polyface, MeshEdgeCreationOptionsCR options);
@@ -639,8 +636,7 @@ public:
 
     void AddMesh(TriangleCR triangle);
     void AddTriangle(TriangleCR triangle);
-    uint32_t AddClusteredVertex(VertexKey const& vertex) { return AddVertex(m_clusteredVertexMap, vertex); }
-    uint32_t AddVertex(VertexKey const& vertex) { return AddVertex(m_unclusteredVertexMap, vertex); }
+    uint32_t AddVertex(VertexKey const& vertex) { return AddVertex(m_vertexMap, vertex); }
 
     MeshP GetMesh() { return m_mesh.get(); } //!< The mesh under construction
     double GetTolerance() const { return m_tolerance; }
@@ -716,8 +712,8 @@ protected:
 
     Geometry(TransformCR tf, DRange3dCR tileRange, DgnElementId entityId, DisplayParamsCR params, bool isCurved, DgnDbR db);
 
-    virtual PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions, ViewContextR) = 0;
-    virtual StrokesList _GetStrokes (IFacetOptionsR facetOptions, ViewContextR) { return StrokesList(); }
+    virtual PolyfaceList _GetPolyfaces(double chordTolerance, NormalMode, ViewContextR) = 0;
+    virtual StrokesList _GetStrokes(double chordTolerance, ViewContextR) { return StrokesList(); }
     virtual bool _DoDecimate() const { return false; }
     virtual bool _DoVertexCluster() const { return true; }
     virtual size_t _GetFacetCount(FacetCounter& counter) const = 0;
@@ -736,16 +732,14 @@ public:
     Feature GetFeature() const { return m_params.IsValid() ? Feature(GetEntityId(), m_params->GetSubCategoryId(), m_params->GetClass()) : Feature(); }
 
     static IFacetOptionsPtr CreateFacetOptions(double chordTolerance);
-    IFacetOptionsPtr CreateFacetOptions(double chordTolerance, NormalMode normalMode) const;
 
     bool IsCurved() const { return m_isCurved; }
     bool HasTexture() const { return m_hasTexture; }
 
-    PolyfaceList GetPolyfaces(IFacetOptionsR facetOptions, ViewContextR context) { return _GetPolyfaces(facetOptions, context); }
-    PolyfaceList GetPolyfaces(double chordTolerance, NormalMode normalMode, ViewContextR);
+    PolyfaceList GetPolyfaces(double chordTolerance, NormalMode normalMode, ViewContextR context);
     bool DoDecimate() const { return _DoDecimate(); }
     bool DoVertexCluster() const { return _DoVertexCluster(); }
-    StrokesList GetStrokes (IFacetOptionsR facetOptions, ViewContextR context);
+    StrokesList GetStrokes (double chordTolerance, ViewContextR context);
     GeomPartCPtr GetPart() const { return _GetPart(); }
     void SetInCache(bool inCache) { _SetInCache(inCache); }
     void SetClipVector(ClipVectorCP clip) { m_clip = nullptr != clip ? ClipVector::CreateCopy(*clip) : nullptr; }
@@ -811,10 +805,8 @@ protected:
 
 public:
     static GeomPartPtr Create(DRange3dCR range, GeometryList const& geometry) { return new GeomPart(range, geometry); }
-    PolyfaceList GetPolyfaces(IFacetOptionsR facetOptions, GeometryCR instance, ViewContextR);
-    PolyfaceList GetPolyfaces(IFacetOptionsR facetOptions, GeometryCP instance, ViewContextR);
-    StrokesList GetStrokes(IFacetOptionsR facetOptions, GeometryCR instance, ViewContextR);
-    StrokesList GetStrokes(IFacetOptionsR facetOptions, GeometryCP instance, ViewContextR);
+    PolyfaceList GetPolyfaces(double chordTolerance, NormalMode, GeometryCP instance, ViewContextR);
+    StrokesList GetStrokes(double chordTolerance, GeometryCP instance, ViewContextR);
     size_t GetFacetCount(FacetCounter& counter, GeometryCR instance) const;
     bool IsCurved() const;
     GeometryList const& GetGeometries() const { return m_geometries; }

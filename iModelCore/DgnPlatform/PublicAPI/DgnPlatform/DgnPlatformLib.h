@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnPlatformLib.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -434,10 +434,11 @@ public:
         //! Supplies functionality for coordinating multi-user DgnDb repositories
         struct RepositoryAdmin : IHostObject
             {
-            //! Create an IBriefcaseManager for the specified DgnDb
+            //! Create an IBriefcaseManager for the specified DgnDb. The implementation must *also* allow the DgnDb's ConcurrencyControl to configure the new briefcasemanager.
             //! In general it is not necessary to override this. The default implementation creates:
             //!  - For a master or standalone DgnDb, a briefcase manager which unconditionally grants all requests
             //!  - For any other DgnDb, a briefcase manager which forwards all requests to the repository manager (i.e., a server)
+            //!  In either case, this implementation calls db.GetConcurrencyControl()->_ConfigureBriefcaseManager(*newBriefcaseManager);
             DGNPLATFORM_EXPORT virtual IBriefcaseManagerPtr _CreateBriefcaseManager(DgnDbR db) const;
 
             //! Returns the repository manager for the specified DgnDb. Should be overridden by hosts which support server-hosted repositories
@@ -460,6 +461,12 @@ public:
 
             //! Respond when a new tile is generated.
             virtual void _OnNewTileReady(DgnDbR) { }
+
+            //! Return the full path to a .tilecache file for caching generated element tiles.
+            DGNPLATFORM_EXPORT BeFileName _GetElementCacheFileName(DgnDbCR db) const;
+
+            //! Return the full path to a .tilecache file for caching downloaded reality data tiles.
+            DGNPLATFORM_EXPORT BeFileName _GetRealityDataCacheFileName(Utf8CP realityCacheName) const;
         };
 
         typedef bvector<DgnDomain*> T_RegisteredDomains;
@@ -541,6 +548,8 @@ public:
         virtual Http::HttpClient::Options* _SupplyHttpClientOptions() {return nullptr;}
   
         virtual void _OnUndisplayedSetChanged(DgnDbR) {}
+
+        virtual Sheet::Attachment::ViewportPtr _CreateSheetAttachViewport() {return nullptr;}
 
         Host()
             {

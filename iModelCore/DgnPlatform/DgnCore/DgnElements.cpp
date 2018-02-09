@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnElements.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -585,6 +585,8 @@ void DgnElements::FinishUpdate(DgnElementCR replacement, DgnElementCR original)
 
     (*const_cast<DgnElementP>(&original))._CopyFrom(replacement);    // copy new data into original element
 
+    //Make sure copy over the m_federationGuid as its not copied during _CopyFrom()
+    (*const_cast<DgnElementP>(&original)).m_federationGuid = replacement.m_federationGuid;
     original._OnUpdateFinished(); // this gives geometric elements a chance to clear their graphics
     }
 

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ViewContext.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -158,6 +158,7 @@ protected:
     DGNPLATFORM_EXPORT virtual Render::TexturePtr _CreateTexture(Render::ImageSourceCR source, Render::Image::BottomUp bottomUp) const;
     DGNPLATFORM_EXPORT virtual Render::SystemP _GetRenderSystem() const;
     DGNPLATFORM_EXPORT virtual Render::TargetP _GetRenderTarget() const;
+    DGNPLATFORM_EXPORT virtual double _GetPixelSizeAtPoint(DPoint3dCP origin) const;
     DGNPLATFORM_EXPORT ViewContext();
 
 public:
@@ -264,7 +265,7 @@ public:
     //! @param[in] origin The point at which the pixel size is calculated. This point is only relevant in camera views, where local coordinates
     //!                   closer to the eye are larger than those further from the eye. May be nullptr, in which case the center of the view is used.
     //! @return the length, in the current coordinate system units, of a unit bvector in the x direction in DgnCoordSystem::View, starting at \c origin.
-    DGNPLATFORM_EXPORT double GetPixelSizeAtPoint(DPoint3dCP origin) const;
+    double GetPixelSizeAtPoint(DPoint3dCP origin) const { return _GetPixelSizeAtPoint(origin); }
 
     //! Get the current state of the ViewFlags for this context
     //! When a ViewContext is first attached to a DgnViewport, the ViewFlags are initialized
@@ -403,12 +404,26 @@ public:
 struct SceneContext : RenderListContext
 {
     DEFINE_T_SUPER(RenderListContext);
-
+protected:
+    SceneContext(DgnViewportR vp, Render::GraphicListR scene, UpdatePlan const& plan, TileTree::TileRequests& requests, DrawPurpose purpose);
+public:
     TileTree::TileRequests& m_requests;
 
-    SceneContext(DgnViewportR vp, Render::GraphicListR scene, UpdatePlan const& plan, TileTree::TileRequests& requests);
+    SceneContext(DgnViewportR vp, Render::GraphicListR scene, UpdatePlan const& plan, TileTree::TileRequests& requests)
+        : SceneContext(vp, scene, plan, requests, DrawPurpose::CreateScene) { }
 
     bool _CheckStop() override;
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   01/18
+//=======================================================================================
+struct ThumbnailContext : SceneContext
+{
+    DEFINE_T_SUPER(SceneContext);
+
+    ThumbnailContext(DgnViewportR vp, Render::GraphicListR scene, UpdatePlan const& plan, TileTree::TileRequests& requests)
+        : SceneContext(vp, scene, plan, requests, DrawPurpose::CaptureThumbnail) { }
 };
 
 //=======================================================================================

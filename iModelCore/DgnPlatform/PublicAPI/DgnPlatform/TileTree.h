@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/TileTree.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -488,7 +488,9 @@ protected:
     BentleyStatus LoadTile();
     BentleyStatus DoReadFromDb();
     BentleyStatus DoSaveToDb();
+    BentleyStatus DeleteRow(RealityData::CacheR, uint64_t rowId);
 
+    virtual uint64_t _GetCreateTime() const { return BeTimeUtilities::GetCurrentTimeAsUnixMillis(); }
 public:
     bool IsCanceledOrAbandoned() const {return (m_loads != nullptr && m_loads->IsCanceled()) || m_tile->IsAbandoned();}
     Dgn::Render::SystemP GetRenderSystem() const { return nullptr == m_renderSys ? m_tile->GetRoot().GetRenderSystemP(): m_renderSys; }
@@ -509,6 +511,9 @@ public:
     //! Given the time (in unix millis) at which the tile was written to the cache, return true if the cached tile is no longer usable.
     //! If so, it will be deleted from the cache and _LoadTile() will be used to produce a new tile instead.
     virtual bool _IsExpired(uint64_t cachedTileCreateTime) { return false; }
+
+    //! Return false if m_tileBytes contains invalid data and should be updated from source.
+    virtual bool _IsValidData() { return true; }
 
     struct LoadFlag
         {
@@ -818,7 +823,7 @@ protected:
     Render::GraphicPtr  m_graphic;
 
     Tile(Root& octRoot, TileId id, Tile const* parent, bool isLeaf) : T_Super(octRoot, parent), m_id(id), m_isLeaf(isLeaf) { }
-    DGNPLATFORM_EXPORT DRange3d ComputeChildRange(OctTree::Tile& child) const;
+    DGNPLATFORM_EXPORT DRange3d ComputeChildRange(OctTree::Tile& child, bool is2d=false) const;
 
 public:
     virtual TileTree::TilePtr _CreateChild(TileId) const = 0;
@@ -910,7 +915,7 @@ protected:
 
     void ClipTriMesh(TriMeshList& triMeshList, TriMesh::CreateParams const& geomParams, Render::SystemP renderSys);
 
-    virtual Render::TexturePtr _CreateTexture(Render::ImageSourceCR source, Render::Image::BottomUp bottomUp) const {return m_renderSystem ? m_renderSystem->_CreateTexture(source, bottomUp) : nullptr; }
+    virtual Render::TexturePtr _CreateTexture(Render::ImageSourceCR source, Render::Image::BottomUp bottomUp) const {return m_renderSystem ? m_renderSystem->_CreateTexture(source, bottomUp, GetDgnDb()) : nullptr; }
 
 public:
     DGNPLATFORM_EXPORT void CreateGeometry(TriMeshList& triMeshList, TriMesh::CreateParams const& geomParams, Render::SystemP renderSys);

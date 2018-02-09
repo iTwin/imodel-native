@@ -2,7 +2,7 @@
 #
 #     $Source: DgnPlatform.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 
@@ -276,6 +276,8 @@ $(CoreObjs)DgnShxFontData$(oext) :                  $(DgnCoreDir)DgnShxFontData.
 
 $(CoreObjs)Sprites$(oext) :                         $(DgnCoreDir)Sprites.cpp ${MultiCompileDepends}
 
+$(CoreObjs)HDRImage$(oext) :                        $(DgnCoreDir)HDRImage.cpp ${MultiCompileDepends}
+
 $(CoreObjs)ImageSource$(oext) :                     $(DgnCoreDir)ImageSource.cpp ${MultiCompileDepends}
 
 $(CoreObjs)ImageResize$(oext) :                     $(DgnCoreDir)ImageResize.cpp ${MultiCompileDepends}
@@ -371,6 +373,8 @@ $(CoreObjs)ModelSpatialClassifier$(oext) :                 $(DgnCoreDir)ModelSpa
 $(o)ECUtils$(oext) :                                $(DgnCoreDir)ECUtils.cpp $(DgnPlatformAPISrc)ECUtils.h ${MultiCompileDepends}
 
 $(o)RenderMaterial$(oext) :                         $(DgnCoreDir)RenderMaterial.cpp $(DgnPlatformAPISrc)RenderMaterial.h ${MultiCompileDepends}
+
+$(o)SmartIBL$(oext) :                      $(DgnCoreDir)SmartIBL.cpp ${MultiCompileDepends}
 
 $(o)DgnProvenance$(oext) :                          $(DgnCoreDir)DgnProvenance.cpp $(DgnPlatformAPISrc)DgnProvenance.h ${MultiCompileDepends}
 

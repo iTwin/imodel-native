@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/TileTree.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -149,6 +149,31 @@ folly::Future<BentleyStatus> TileLoader::_ReadFromDb()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus TileLoader::DeleteRow(RealityData::CacheR cache, uint64_t rowId)
+    {
+    CachedStatementPtr stmt;
+    cache.GetDb().GetCachedStatement(stmt, "DELETE FROM " TABLE_NAME_TileTree " WHERE ROWID=?");
+    stmt->BindInt64(1, rowId);
+    if (BE_SQLITE_DONE != stmt->Step())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    cache.GetDb().GetCachedStatement(stmt, "DELETE FROM " TABLE_NAME_TileTreeCreateTime " WHERE ROWID=?");
+    stmt->BindInt64(1, rowId);
+    if (BE_SQLITE_DONE != stmt->Step())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Attempt to load a tile from the local cache.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -183,23 +208,10 @@ BentleyStatus TileLoader::DoReadFromDb()
         uint64_t createTime = stmt->GetValueInt64(Column::Created);
         if (_IsExpired(createTime))
             {
-            cache->GetDb().GetCachedStatement(stmt, "DELETE FROM " TABLE_NAME_TileTree " WHERE ROWID=?");
-            stmt->BindInt64(1, rowId);
-            if (BE_SQLITE_DONE != stmt->Step())
-                {
-                BeAssert(false);
-                return ERROR;
-                }
-
-            cache->GetDb().GetCachedStatement(stmt, "DELETE FROM " TABLE_NAME_TileTreeCreateTime " WHERE ROWID=?");
-            stmt->BindInt64(1, rowId);
-            if (BE_SQLITE_DONE != stmt->Step())
-                {
-                BeAssert(false);
-                }
-
+            DeleteRow(*cache, rowId);
             return ERROR;
             }
+
         if (0 == stmt->GetValueInt64(Column::DataSize))
             {
             m_tileBytes.clear();
@@ -229,7 +241,16 @@ BentleyStatus TileLoader::DoReadFromDb()
                 BeAssert(false);
                 return ERROR;
                 }
+
+            m_tileBytes.SetPos(0);
+            if (!_IsValidData())
+                {
+                m_tileBytes.clear();
+                DeleteRow(*cache, rowId);
+                return ERROR;
+                }
             }
+
         m_tileBytes.SetPos(0);
         m_contentType = stmt->GetValueText(Column::ContentType);
         m_expirationDate = stmt->GetValueInt64(Column::Expires);
@@ -238,7 +259,7 @@ BentleyStatus TileLoader::DoReadFromDb()
 
         if (BE_SQLITE_OK == cache->GetDb().GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TileTreeCreateTime " SET Created=? WHERE ROWID=?"))
             {
-            stmt->BindInt64(1, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+            stmt->BindInt64(1, _GetCreateTime());
             stmt->BindInt64(2, rowId);
             if (BE_SQLITE_DONE != stmt->Step())
                 {
@@ -352,7 +373,7 @@ BentleyStatus TileLoader::DoSaveToDb()
     rc = cache->GetDb().GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TileTreeCreateTime " SET Created=? WHERE ROWID=?");
     BeAssert(BE_SQLITE_OK == rc && stmt.IsValid());
 
-    stmt->BindInt64(1, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+    stmt->BindInt64(1, _GetCreateTime());
     stmt->BindInt64(2, rowId);
     if (BE_SQLITE_ROW != stmt->Step())
         {
@@ -360,7 +381,7 @@ BentleyStatus TileLoader::DoSaveToDb()
         rc = cache->GetDb().GetCachedStatement(stmt, "INSERT INTO " TABLE_NAME_TileTreeCreateTime " (Created) VALUES (?)");
         BeAssert(BE_SQLITE_OK == rc && stmt.IsValid());
 
-        stmt->BindInt64(1, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+        stmt->BindInt64(1, _GetCreateTime());
         rc = stmt->Step();
         if (BE_SQLITE_DONE != rc)
             {
@@ -563,20 +584,32 @@ BentleyStatus Root::DeleteCacheFile()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/17
+* @bsimethod                                                    Paul.Connelly   02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName TileCache::GetCacheFileName(BeFileNameCR baseName)
+BeFileName DgnPlatformLib::Host::TileAdmin::_GetRealityDataCacheFileName(Utf8CP realityCacheName) const
     {
+    // TFS#784733: Navigator wants these in a subdirectory to simplify management of various other types of caches
+    // NB: Only reality data caches go in that subdirectory - element tiles go next to the iModel
     BeFileName filename = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
 
-    // TFS#784733: Navigator wants these in a subdirectory to simplify management of various other types of caches
     filename.AppendToPath(L"Tiles");
     filename.AppendSeparator();
     BeFileName::CreateNewDirectory(filename);
 
-    filename.AppendToPath(baseName);
+    filename.AppendToPath(WString(realityCacheName, true).c_str());
     filename.AppendExtension(L"TileCache");
 
+    return filename;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName DgnPlatformLib::Host::TileAdmin::_GetElementCacheFileName(DgnDbCR db) const
+    {
+    // TFS#816125: Tile cache names must be unique. Easiest way to ensure that is to put in same directory as iModel.
+    BeFileName filename = db.GetFileName();
+    filename.AppendExtension(L"TileCache");
     return filename;
     }
 
@@ -588,7 +621,7 @@ void Root::CreateCache(Utf8CP realityCacheName, uint64_t maxSize, bool httpOnly)
     if (httpOnly && !IsHttp()) 
         return;
         
-    m_localCacheName = TileCache::GetCacheFileName(BeFileName(realityCacheName));
+    m_localCacheName = T_HOST.GetTileAdmin()._GetRealityDataCacheFileName(realityCacheName);
     m_cache = new TileCache(maxSize);
     if (SUCCESS != m_cache->OpenAndPrepare(m_localCacheName))
         m_cache = nullptr;
@@ -661,7 +694,7 @@ void Root::DoneTileLoad(TileLoadStatePtr state) const
     {
     BeAssert(nullptr != state);
     BeMutexHolder lock(m_cv.GetMutex());
-    // NB: If the load was canceled by RequestTiles(), it no longer exists in m_activeLoads
+    BeAssert(m_activeLoads.end() != m_activeLoads.find(state));
     m_activeLoads.erase(state);
     m_cv.notify_all();
     }
@@ -1107,18 +1140,12 @@ void Root::RequestTiles(MissingNodesCR missingNodes, BeDuration partialTimeout)
         {
         // First cancel any loading/queued tiles which are no longer needed
         BeMutexHolder lock(m_cv.GetMutex());
-        for (auto iter = m_activeLoads.begin(); iter != m_activeLoads.end(); /**/)
+        for (auto& load : m_activeLoads)
             {
-            auto& load = *iter;
             if (!load->IsCanceled() && !missingNodes.Contains(load->GetTile()))
                 {
-                ++numCanceled;
                 load->SetCanceled();
-                iter = m_activeLoads.erase(iter);
-                }
-            else
-                {
-                ++iter;
+                ++numCanceled;
                 }
             }
         }
@@ -1259,6 +1286,31 @@ void OctTree::Tile::_DrawGraphics(TileTree::DrawArgsR args) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static DRange3d bisectRange2d(DRange3dCR range, bool takeLow)
+    {
+    DVec3d diag = range.DiagonalVector();
+    DRange3d subRange = range;
+
+    double bisect;
+    double* replace;
+    if (diag.x > diag.y)
+        {
+        bisect = (range.low.x + range.high.x) / 2.0;
+        replace = takeLow ? &subRange.high.x : &subRange.low.x;
+        }
+    else
+        {
+        bisect = (range.low.y + range.high.y) / 2.0;
+        replace = takeLow ? &subRange.high.y : &subRange.low.y;
+        }
+
+    *replace = bisect;
+    return subRange;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DRange3d bisectRange(DRange3dCR range, bool takeLow)
@@ -1291,15 +1343,26 @@ static DRange3d bisectRange(DRange3dCR range, bool takeLow)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d OctTree::Tile::ComputeChildRange(OctTree::Tile& child) const
+DRange3d OctTree::Tile::ComputeChildRange(OctTree::Tile& child, bool is2d) const
     {
     // Each dimension of the relative ID is 0 or 1, indicating which bisection of the range to take
     TileTree::OctTree::TileId relativeId = child.GetRelativeTileId();
     BeAssert(2 > relativeId.m_i && 2 > relativeId.m_j && 2 > relativeId.m_k);
 
-    DRange3d range = bisectRange(GetRange(), 0 == relativeId.m_i);
-    range = bisectRange(range, 0 == relativeId.m_j);
-    range = bisectRange(range, 0 == relativeId.m_k);
+    // We should never subdivide along z for 2d tiles...Ideally we would use a quad-tree for those
+    DRange3d range;
+    if (is2d)
+      {
+      range = bisectRange2d(GetRange(), 0 == relativeId.m_i);
+      range = bisectRange2d(range, 0 == relativeId.m_j);
+      range = bisectRange2d(range, 0 == relativeId.m_k);
+      }
+    else
+      {
+      range = bisectRange(GetRange(), 0 == relativeId.m_i);
+      range = bisectRange(range, 0 == relativeId.m_j);
+      range = bisectRange(range, 0 == relativeId.m_k);
+      }
 
     return range;
     }
@@ -1507,6 +1570,10 @@ void Root::InvalidateDamagedTiles()
     BeMutexHolder lock(m_cv.GetMutex());
     if (m_damagedRanges.empty() || m_rootTile.IsNull())
         return;
+
+    CancelAllTileLoads();
+    while (m_activeLoads.size() > 0)
+        m_cv.InfiniteWait(lock);
 
     DirtyRanges dirty(m_damagedRanges);
     UpdateRange(dirty);

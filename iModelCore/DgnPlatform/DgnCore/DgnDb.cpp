@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnDb.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -57,7 +57,7 @@ RealityData::CachePtr DgnDb::ElementTileCache() const
     {
     if (!m_elementTileCache.IsValid())
         {
-        BeFileName cacheName = TileTree::TileCache::GetCacheFileName(GetFileName().GetBaseName());
+        BeFileName cacheName = T_HOST.GetTileAdmin()._GetElementCacheFileName(*this);
         m_elementTileCache = new TileTree::TileCache(1024*1024*1024);
         if (SUCCESS != m_elementTileCache->OpenAndPrepare(cacheName))
             m_elementTileCache = nullptr;
@@ -106,18 +106,6 @@ DgnDb::~DgnDb()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDb::DestroyBriefcaseManager() 
-    {
-    if (m_briefcaseManager.IsValid())
-        {
-        m_briefcaseManager->OnDgnDbDestroyed();
-        m_briefcaseManager = nullptr;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDb::_OnDbClose() 
@@ -162,7 +150,7 @@ DbResult DgnDb::InitializeSchemas(Db::OpenParams const& params)
         return SchemaStatusToDbResult(status, true /*=isUpgrade*/);
 
     DbResult result;
-    if (BE_SQLITE_OK != (result = ProcessSchemaRevisions(params)))
+    if (BE_SQLITE_OK != (result = ProcessRevisions(params)))
         return result;
 
     if (status == SchemaStatus::SchemaUpgradeRequired && domainUpgradeOptions != SchemaUpgradeOptions::DomainUpgradeOptions::SkipUpgrade)
@@ -197,43 +185,15 @@ DbResult DgnDb::SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    04/17
 //--------------------------------------------------------------------------------------
-DbResult DgnDb::ProcessSchemaRevisions(Db::OpenParams const& params)
+DbResult DgnDb::ProcessRevisions(Db::OpenParams const& params)
     {
     SchemaUpgradeOptions schemaUpgradeOptions = (((DgnDb::OpenParams&) params).GetSchemaUpgradeOptions());
-    bvector<DgnRevisionCP> revisions = schemaUpgradeOptions.GetUpgradeRevisions();
+    bvector<DgnRevisionCP> revisions = schemaUpgradeOptions.GetRevisions();
     if (revisions.empty())
         return BE_SQLITE_OK;
 
-    SchemaUpgradeOptions::RevisionUpgradeOptions revisionUpgradeOptions = schemaUpgradeOptions.GetRevisionUpgradeOptions();
-    for (DgnRevisionCP revision : revisions)
-        {
-        if (!revision)
-            {
-            BeAssert(false);
-            return BE_SQLITE_ERROR_SchemaUpgradeFailed;
-            }
-
-        RevisionStatus status = RevisionStatus::Success;
-        switch (revisionUpgradeOptions)
-            {
-            case SchemaUpgradeOptions::RevisionUpgradeOptions::Merge:
-                status = Revisions().DoMergeRevision(*revision);
-                break;
-            case SchemaUpgradeOptions::RevisionUpgradeOptions::Reverse:
-                status = Revisions().DoReverseRevision(*revision);
-                break;
-            case SchemaUpgradeOptions::RevisionUpgradeOptions::Reinstate:
-                status = Revisions().DoReinstateRevision(*revision);
-                break;
-            default:
-                BeAssert(false && "Unkonwn revision upgrade option");
-            }
-
-        if (RevisionStatus::Success != status)
-            return BE_SQLITE_ERROR_SchemaUpgradeFailed;
-        }
-
-    return BE_SQLITE_OK;
+    RevisionStatus status = Revisions().DoProcessRevisions(revisions, schemaUpgradeOptions.GetRevisionProcessOption());
+    return status == RevisionStatus::Success ? BE_SQLITE_OK : BE_SQLITE_ERROR_SchemaUpgradeFailed;
     }
 
 //--------------------------------------------------------------------------------------
@@ -331,6 +291,35 @@ IBriefcaseManagerR DgnDb::BriefcaseManager()
         }
 
     return *m_briefcaseManager;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnDb::DestroyBriefcaseManager() 
+    {
+    if (m_briefcaseManager.IsValid())
+        {
+        m_briefcaseManager->OnDgnDbDestroyed();
+        m_briefcaseManager = nullptr;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DgnDb::SetConcurrencyControl(IConcurrencyControl* control)
+    {
+    // TBD: assert main thread
+
+    if (Txns().HasChanges())
+        return BSIERROR;
+
+    m_concurrencyControl = control;
+
+    DestroyBriefcaseManager();
+    return BSISUCCESS;
     }
 
 //--------------------------------------------------------------------------------------
@@ -502,7 +491,9 @@ DbResult DgnDb::DoOpenDgnDb(BeFileNameCR projectNameIn, OpenParams const& params
     DbResult stat = OpenBeSQLiteDb(fileName, params);
     if (BE_SQLITE_OK != stat)
         {
-        LOG.errorv("Error %s opening [%s]", Db::InterpretDbResult(stat), m_fileName.c_str());
+        // When it comes to schema upgrades, the caller probably does know what he is doing -- at least the iModelBridge framework does -- so this is not necessarily an "error".
+        auto sev = (BE_SQLITE_ERROR_SchemaUpgradeRequired == stat)? NativeLogging::LOG_INFO: NativeLogging::LOG_ERROR;
+        LOG.messagev(sev, "Error %s opening [%s]", Db::InterpretDbResult(stat), m_fileName.c_str());
         }
 
     return stat;
