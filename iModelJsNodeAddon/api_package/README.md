@@ -172,7 +172,7 @@ This scheme allows us to version the addon api in steps, with all downstream con
   a. Change their package.json to depend on the newer minor version of imodeljs-backend.
   b. NPM INSTALL
 
-Note: imodeljs-backend depends on imodeljs-nodeaddon and imodeljs-nodeaddonapi in three places: in backend/package.json, test/package.json, and testbed/package.json. Keep them consistent!
+Note: imodeljs-backend depends on imodeljs-nodeaddon and imodeljs-nodeaddonapi in two places: in backend/package.json, and testbed/package.json. Keep them consistent!
 
 ### How imodeljs-backend Checks Version Compatibility
 
