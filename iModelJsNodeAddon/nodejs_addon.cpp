@@ -16,7 +16,6 @@
 
 #include <json/value.h>
 #include "AddonUtils.h"
-#include "TestUtils.h"
 #include <ECDb/ECDb.h>
 #include <ECObjects/ECSchema.h>
 #include <rapidjson/rapidjson.h>
