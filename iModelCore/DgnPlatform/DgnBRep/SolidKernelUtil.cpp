@@ -1324,6 +1324,16 @@ BentleyStatus BRepUtil::UpdateFaceMaterialAttachments(IBRepEntityR target, bvect
 
     T_FaceAttachmentsVec& faceAttachmentsVec = attachments->_GetFaceAttachmentsVecR();
     size_t attachmentIndex = 0;
+    bool baseChanged = false;
+
+    if (nullptr != baseParams && faceAttachmentsVec.size() > 1 && faces.empty())
+        {
+        if (!(faceAttachmentsVec[0] == *baseParams))
+            {
+            faceAttachmentsVec[0] = *baseParams; // Update base symbology...
+            baseChanged = true;
+            }
+        }
 
     if (nullptr != faceParams) // Adding/Updating face attachments, see if this symbology is already present...
         {
@@ -1379,25 +1389,34 @@ BentleyStatus BRepUtil::UpdateFaceMaterialAttachments(IBRepEntityR target, bvect
         return SUCCESS;
         }
 
-    if (faceAttachmentsVec.size() > 2) // Cull attachment symbology that is no longer used by any face...
+    if (faceAttachmentsVec.size() > 2 || baseChanged) // Cull attachment symbology that is no longer used by any face...
         {
+        bvector<bool>   matchesBase;
         bvector<bool>   usedIndices;
         bvector<size_t> newIndices;
 
+        matchesBase.insert(matchesBase.begin(), faceAttachmentsVec.size(), false);
         usedIndices.insert(usedIndices.begin(), faceAttachmentsVec.size(), false);
         newIndices.insert(newIndices.begin(), faceAttachmentsVec.size(), 0);
 
+        if (baseChanged)
+            {
+            // FaceAttachment will no longer be considered used if it matches new base...
+            for (size_t i = 0; i < matchesBase.size(); ++i)
+                matchesBase[i] = (0 == i ? true : (faceAttachmentsVec[0] == faceAttachmentsVec[i]));
+            }
+
         for (T_FaceToAttachmentIndexMap::const_iterator curr = faceToIndexMap.begin(); curr != faceToIndexMap.end(); ++curr)
-            usedIndices.at(curr->second) = true;
+            usedIndices.at(curr->second) = !matchesBase.at(curr->second);
 
         bool    unusedAssignment = false;
         size_t  newIndex = 0;
 
         for (size_t i = 0; i < usedIndices.size(); ++i)
             {
-            if (usedIndices.at(i))
+            if (i == 0 || usedIndices.at(i))
                 newIndices[i] = newIndex++;
-            else if (i > 0)
+            else
                 unusedAssignment = true;
             }
 
@@ -1409,6 +1428,14 @@ BentleyStatus BRepUtil::UpdateFaceMaterialAttachments(IBRepEntityR target, bvect
                 {
                 if (i == 0 || usedIndices.at(i))
                     cleanAttachments.push_back(faceAttachmentsVec.at(i));
+                }
+
+            if (cleanAttachments.size() < 2)
+                {
+                PSolidAttrib::DeleteFaceMaterialIndexAttribute(PSolidUtil::GetEntityTag(target)); // Base symbology was changed to match all face attachments...
+                PSolidUtil::SetFaceAttachments(target, nullptr); // Clear face attachments vector...
+
+                return SUCCESS;
                 }
 
             faceAttachmentsVec = cleanAttachments;
