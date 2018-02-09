@@ -86,7 +86,7 @@ BentleyStatus Expression::GenerateConversionExpression(UnitCR from, UnitCR to, E
     if (from.GetPhenomenonId() != to.GetPhenomenonId())
         {
         LOG.errorv("Cannot convert from %s: (%s) to %s: (%s) because they are not belong to the same Phenomenon.",
-                   from.GetName(), from.GetDefinition(), to.GetName(), to.GetDefinition());
+                   from.GetName().c_str(), from.GetDefinition(), to.GetName().c_str(), to.GetDefinition());
         return BentleyStatus::ERROR;
         }
 
@@ -94,14 +94,14 @@ BentleyStatus Expression::GenerateConversionExpression(UnitCR from, UnitCR to, E
     Expression fromExpression = from.Evaluate();
     Expression toExpression = to.Evaluate();
 
-    fromExpression.LogExpression(NativeLogging::SEVERITY::LOG_DEBUG, from.GetName());
-    toExpression.LogExpression(NativeLogging::SEVERITY::LOG_DEBUG, to.GetName());
+    fromExpression.LogExpression(NativeLogging::SEVERITY::LOG_DEBUG, from.GetName().c_str());
+    toExpression.LogExpression(NativeLogging::SEVERITY::LOG_DEBUG, to.GetName().c_str());
 
     Expression::Copy(fromExpression, conversionExpression);
     Expression::MergeExpressions(from.GetDefinition(), conversionExpression, to.GetDefinition(), toExpression, -1);
     if (LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_DEBUG))
         {
-        Utf8PrintfString combinedName("%s/%s", from.GetName(), to.GetName());
+        Utf8PrintfString combinedName("%s/%s", from.GetName().c_str(), to.GetName().c_str());
         conversionExpression.LogExpression(NativeLogging::SEVERITY::LOG_DEBUG, combinedName.c_str());
         }
     return BentleyStatus::SUCCESS;
@@ -158,7 +158,7 @@ void Expression::MergeSymbol(Utf8CP targetDefinition, ExpressionR targetExpressi
     else
         {
         // TODO: We should ensure we are not adding an inverting unit in an expression because this will fail to generate a conversion
-        LOG.debugv("%s --> %s - Adding Unit for %s with Exponent: %d", sourceDefinition, targetDefinition, symbol->GetName(), symbolExponent);
+        LOG.debugv("%s --> %s - Adding Unit for %s with Exponent: %d", sourceDefinition, targetDefinition, symbol->GetName().c_str(), symbolExponent);
         targetExpression.Add(symbol, symbolExponent);
         }
 
@@ -207,7 +207,7 @@ BentleyStatus Expression::HandleToken(UnitsSymbolCR owner, int& depth, Expressio
             return BentleyStatus::ERROR;
             }
 
-        LOG.debugv("Evaluating %s", symbol->GetName());
+        LOG.debugv("Evaluating %s", symbol->GetName().c_str());
         Expression sourceExpression = symbol->Evaluate(depth, getSymbolByName);
         MergeExpressions(definition, expression, symbol->GetDefinition(), sourceExpression, mergedExponent);
         }
@@ -326,13 +326,13 @@ Utf8String ExpressionSymbol::ToString(bool includeFactors) const
     if (GetSymbol()->HasOffset())
         {
         if (GetSymbol()->GetFactor() == 1.0)
-            return Utf8PrintfString("(%s + %.15g)^%d", GetSymbol()->GetName(), GetSymbol()->GetOffset(), GetExponent());
+            return Utf8PrintfString("(%s + %.15g)^%d", GetSymbol()->GetName().c_str(), GetSymbol()->GetOffset(), GetExponent());
 
-        return Utf8PrintfString("%.15g(%s + %.15g)^%d", GetSymbol()->GetFactor(), GetSymbol()->GetName(), GetSymbol()->GetOffset(), GetExponent());
+        return Utf8PrintfString("%.15g(%s + %.15g)^%d", GetSymbol()->GetFactor(), GetSymbol()->GetName().c_str(), GetSymbol()->GetOffset(), GetExponent());
         }
 
     if (GetSymbol()->GetFactor() == 1.0)
-        return Utf8PrintfString("%s^%d", GetSymbol()->GetName(), GetExponent());
+        return Utf8PrintfString("%s^%d", GetSymbol()->GetName().c_str(), GetExponent());
 
-    return Utf8PrintfString("%.15g[%s]^%d", GetSymbol()->GetFactor(), GetSymbol()->GetName(), GetExponent());
+    return Utf8PrintfString("%.15g[%s]^%d", GetSymbol()->GetFactor(), GetSymbol()->GetName().c_str(), GetExponent());
     }

@@ -63,7 +63,7 @@ TEST_F (UnitsTests, UnitsMapping)
             continue;
         UnitCP unit = UnitRegistry::Instance().LookupUnit(i.second.c_str());
         ASSERT_NE(nullptr, unit) << "Couldn't find unit with name " << i.second.c_str();
-        EXPECT_STREQ(i.second.c_str(), unit->GetName()) << "Mapping for old unit '" << i.first.c_str() << "' uses a synonmym";
+        EXPECT_STREQ(i.second.c_str(), unit->GetName().c_str()) << "Mapping for old unit '" << i.first.c_str() << "' uses a synonmym";
         }
     }
 
@@ -168,7 +168,7 @@ TEST_F(UnitsTests, PrintOutAllUnitsGroupedByPhenonmenon)
 
             WriteLine(file, line.c_str());
 
-            WriteLine(file2, unit->GetName());
+            WriteLine(file2, unit->GetName().c_str());
             }
 
         WriteLine(file);
@@ -260,7 +260,7 @@ TEST_F(UnitsTests, TestUnitDefinitionsDoNotContainSynonyms)
 
             UnitCP subUnit = UnitRegistry::Instance().LookupUnit(unitName.c_str());
             ASSERT_NE(nullptr, subUnit) << "Could not find subunit: " << unitName;
-            EXPECT_STREQ(unitName.c_str(), subUnit->GetName()) << "The Unit " << unit->GetName() << " has sub unit " << unitName << " in it's definition which is a Synonym for " << subUnit->GetName();
+            EXPECT_STREQ(unitName.c_str(), subUnit->GetName().c_str()) << "The Unit " << unit->GetName() << " has sub unit " << unitName << " in it's definition which is a Synonym for " << subUnit->GetName();
             }
         }
     }

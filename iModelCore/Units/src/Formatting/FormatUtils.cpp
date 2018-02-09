@@ -1555,7 +1555,7 @@ Utf8String FormatUnitSet::ToText(bool useAlias) const
     if (HasProblem())
         return "";
     char buf[256];
-    sprintf(buf, "%s(%s)", m_unit->GetName(), (useAlias? m_formatSpec->GetAlias() : m_formatSpec->GetName()));
+    sprintf(buf, "%s(%s)", m_unit->GetName().c_str(), (useAlias? m_formatSpec->GetAlias() : m_formatSpec->GetName()));
     return buf;
     }
 

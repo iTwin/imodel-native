@@ -148,7 +148,7 @@ protected:
     UNITS_EXPORT virtual ~UnitsSymbol();
 
 public:
-    Utf8CP  GetName() const {return m_name.c_str();}
+    Utf8StringCR  GetName() const {return m_name;}
     Utf8StringCP GetNameSP() const {return &m_name;}
     Utf8CP  GetDefinition() const {return m_definition.c_str();}
     double  GetFactor() const {return m_factor;}
@@ -274,7 +274,7 @@ public:
 
     bool IsMapEmpty() {return (nullptr == m_unit) && m_synonym.empty();}
     Utf8CP GetSynonym() const {return m_synonym.c_str();}
-    Utf8CP GetUnitName() const {return m_unit->GetName();}
+    Utf8CP GetUnitName() const {return m_unit->GetName().c_str();}
     UnitCP GetUnit() const {return m_unit;}
     PhenomenonCP GetPhenomenon() const{return (nullptr == m_unit) ? nullptr : m_unit->GetPhenomenon();}
     UNITS_EXPORT Json::Value ToJson();

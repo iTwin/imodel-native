@@ -70,7 +70,7 @@ TEST_F(UnitRegistryTests, AddAndRetrieveConstant)
     // Add constant
     PhenomenonCP phen = UnitRegistry::Instance().LookupPhenomenon("LENGTH");
     ASSERT_NE(nullptr, phen) << "The Phenomenon 'Length' does not exist in the registry";
-    UnitCP createdConstant = UnitRegistry::Instance().AddConstant(phen->GetName(), "TestConstant", "ONE", 0);
+    UnitCP createdConstant = UnitRegistry::Instance().AddConstant(phen->GetName().c_str(), "TestConstant", "ONE", 0);
     ASSERT_NE(nullptr, createdConstant);
 
     EXPECT_TRUE(UnitRegistry::Instance().HasUnit("TestConstant"));
@@ -137,7 +137,7 @@ TEST_F(UnitRegistryTests, TestEveryDefaultUnitIsAddedToItsPhenomenon)
         PhenomenonCP unitPhenomenon = unit->GetPhenomenon();
         ASSERT_NE(nullptr, unitPhenomenon) << "Unit " << unit->GetName() << " does not have phenomenon";
         auto it = find_if(unitPhenomenon->GetUnits().begin(), unitPhenomenon->GetUnits().end(),
-                       [&unit] (UnitCP unitInPhenomenon) { return 0 == strcmp(unitInPhenomenon->GetName(), unit->GetName()); });
+                       [&unit] (UnitCP unitInPhenomenon) { return 0 == strcmp(unitInPhenomenon->GetName().c_str(), unit->GetName().c_str()); });
         
         T_Utf8StringVector unitNames;
         if (unitPhenomenon->GetUnits().end() == it)

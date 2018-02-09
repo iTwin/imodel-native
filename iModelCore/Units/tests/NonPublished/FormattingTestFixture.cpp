@@ -1115,7 +1115,7 @@ void FormattingTestFixture::RegistryLookupUnitCITest(Utf8CP unitName)
         LOG.infov("Unit Name %s is not defined", unitName);
         return;
         }
-    int diff = BeStringUtilities::StricmpAscii(unitName, unit->GetName());
+    int diff = BeStringUtilities::StricmpAscii(unitName, unit->GetName().c_str());
     EXPECT_TRUE(diff == 0);
     if(!diff)
         LOG.infov("Unit Name %s is not canonical %s", unitName, unit->GetName());

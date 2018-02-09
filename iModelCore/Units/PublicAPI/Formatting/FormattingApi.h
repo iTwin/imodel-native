@@ -936,9 +936,9 @@ struct QuantityTriadSpec : NumericTriad
         FormatProblemCode GetProblemCode() { return m_problem.GetProblemCode(); }
         bool UpdateProblemCode(FormatProblemCode code) { return m_problem.UpdateProblemCode(code); }
         UNITS_EXPORT Utf8String FormatQuantTriad(Utf8CP space, int prec, bool fract = false, bool includeZero = false);
-        Utf8CP GetTopUOM() { return (nullptr == m_topUnit) ? FormatConstant::EmptyString() : m_topUnit->GetName(); }
-        Utf8CP GetMidUOM() { return (nullptr == m_midUnit) ? FormatConstant::EmptyString() : m_midUnit->GetName(); }
-        Utf8CP GetLowUOM() { return (nullptr == m_lowUnit) ? FormatConstant::EmptyString() : m_lowUnit->GetName(); }
+        Utf8CP GetTopUOM() { return (nullptr == m_topUnit) ? FormatConstant::EmptyString() : m_topUnit->GetName().c_str(); }
+        Utf8CP GetMidUOM() { return (nullptr == m_midUnit) ? FormatConstant::EmptyString() : m_midUnit->GetName().c_str(); }
+        Utf8CP GetLowUOM() { return (nullptr == m_lowUnit) ? FormatConstant::EmptyString() : m_lowUnit->GetName().c_str(); }
         BEU::UnitCP GetTopUnit() { return m_topUnit; }
         BEU::UnitCP GetMidUnit() { return m_midUnit; }
         BEU::UnitCP GetLowUnit() { return m_lowUnit; }

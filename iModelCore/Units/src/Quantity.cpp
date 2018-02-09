@@ -333,6 +333,6 @@ bool Quantity::IsNullQuantity() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Quantity::ToDebugText() const
     {
-    Utf8PrintfString txt("%f %s", m_magnitude, m_unit->GetName());
+    Utf8PrintfString txt("%f %s", m_magnitude, m_unit->GetName().c_str());
     return(txt);
     }

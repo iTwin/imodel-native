@@ -71,16 +71,16 @@ UnitP Unit::_Create(UnitCR parentUnit, Utf8CP unitName, uint32_t id)
     {
     if (parentUnit.HasOffset())
         {
-        LOG.errorv("Cannot create inverting unit %s with parent %s because parent has an offset.", unitName, parentUnit.GetName());
+        LOG.errorv("Cannot create inverting unit %s with parent %s because parent has an offset.", unitName, parentUnit.GetName().c_str());
         return nullptr;
         }
     if (parentUnit.IsInverseUnit())
         {
-        LOG.errorv("Cannot create inverting unit %s with parent %s because parent is an inverting unit", unitName, parentUnit.GetName());
+        LOG.errorv("Cannot create inverting unit %s with parent %s because parent is an inverting unit", unitName, parentUnit.GetName().c_str());
         return nullptr;
         }
 
-    LOG.debugv("Creating inverting unit %s with parent unit %s", unitName, parentUnit.GetName());
+    LOG.debugv("Creating inverting unit %s with parent unit %s", unitName, parentUnit.GetName().c_str());
     return new Unit(parentUnit, unitName, id);
     }
 
@@ -89,7 +89,7 @@ UnitP Unit::_Create(UnitCR parentUnit, Utf8CP unitName, uint32_t id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Unit::IsRegistered() const
     {
-    return UnitRegistry::Instance().HasUnit(GetName());
+    return UnitRegistry::Instance().HasUnit(GetName().c_str());
     }
 
 //--------------------------------------------------------------------------------------
@@ -119,7 +119,7 @@ Utf8CP Unit::GetLabel() const
     if (m_displayLabel.empty())
         {
         MD5 md5;
-        Utf8PrintfString fullUnitName("%s:%s", GetPhenomenon()->GetName(), GetName());
+        Utf8PrintfString fullUnitName("%s:%s", GetPhenomenon()->GetName().c_str(), GetName().c_str());
         Utf8PrintfString resname("LABEL_%s", md5(fullUnitName).c_str());
         m_displayLabel = BeSQLite::L10N::GetString(BeSQLite::L10N::NameSpace("unit_labels"), BeSQLite::L10N::StringId(resname.c_str()));
 
@@ -141,7 +141,7 @@ Utf8CP Unit::GetDescription() const
     if (m_displayDescription.empty())
         {
         MD5 md5;
-        Utf8PrintfString fullUnitName("%s:%s", GetPhenomenon()->GetName(), GetName());
+        Utf8PrintfString fullUnitName("%s:%s", GetPhenomenon()->GetName().c_str(), GetName().c_str());
         Utf8PrintfString resname("DESCRIPTION_%s", md5(fullUnitName).c_str());
         m_displayDescription = BeSQLite::L10N::GetString(BeSQLite::L10N::NameSpace("unit_labels"), BeSQLite::L10N::StringId(resname.c_str()));
 
@@ -177,7 +177,7 @@ UnitsProblemCode Unit::Convert(double& converted, double value, UnitCP toUnit) c
     {
     if (nullptr == toUnit)
         {
-        LOG.errorv("Cannot convert from %s to a null toUnit, returning a conversion factor of 0.0", this->GetName());
+        LOG.errorv("Cannot convert from %s to a null toUnit, returning a conversion factor of 0.0", this->GetName().c_str());
         return UnitsProblemCode::UncomparableUnits;
         }
 
@@ -218,7 +218,7 @@ bool Unit::GenerateConversion(UnitCR toUnit, Conversion& conversion) const
     Expression conversionExpression;
     if (BentleyStatus::SUCCESS != Expression::GenerateConversionExpression(*this, toUnit, conversionExpression))
         {
-        LOG.errorv("Cannot convert from %s to %s, units incompatible", this->GetName(), toUnit.GetName());
+        LOG.errorv("Cannot convert from %s to %s, units incompatible", this->GetName().c_str(), toUnit.GetName().c_str());
         return false;
         }
 
@@ -228,7 +228,7 @@ bool Unit::GenerateConversion(UnitCR toUnit, Conversion& conversion) const
         if (toUnitExp.GetExponent() == 0)
             continue;
 
-        LOG.infov("Adding unit %s^%d to the conversion.  Factor: %.17g  Offset:%.17g", toUnitExp.GetSymbol()->GetName(),
+        LOG.infov("Adding unit %s^%d to the conversion.  Factor: %.17g  Offset:%.17g", toUnitExp.GetSymbol()->GetName().c_str(),
                   toUnitExp.GetExponent(), toUnitExp.GetSymbolFactor(), toUnitExp.GetSymbol()->GetOffset());
         double unitFactor = FastIntegerPower(toUnitExp.GetSymbolFactor(), abs(toUnitExp.GetExponent()));
         if (toUnitExp.GetExponent() > 0)
@@ -291,7 +291,7 @@ UnitsProblemCode Unit::DoNumericConversion(double& converted, double value, Unit
 
     if (conversion.Factor == 0.0)
         {
-        LOG.errorv("Cannot convert from %s to %s, units incompatible, returning a conversion factor of 0.0", this->GetName(), toUnit.GetName());
+        LOG.errorv("Cannot convert from %s to %s, units incompatible, returning a conversion factor of 0.0", this->GetName().c_str(), toUnit.GetName().c_str());
         return UnitsProblemCode::UncomparableUnits;
         }
 
@@ -329,7 +329,7 @@ UnitCP Unit::CombineWithUnit(UnitCR rhs, int factor) const
 
     Expression expression;
     Expression::Copy(temp, expression);
-    Expression::MergeExpressions(GetName(), expression, rhs.GetName(), expression2, factor);
+    Expression::MergeExpressions(GetName().c_str(), expression, rhs.GetName().c_str(), expression2, factor);
 
     bvector<PhenomenonCP> phenomList;
     PhenomenonCP matchingPhenom = nullptr;
@@ -352,7 +352,7 @@ UnitCP Unit::CombineWithUnit(UnitCR rhs, int factor) const
         temp = u->Evaluate();
         Expression unitExpr;
         Expression::Copy(temp, unitExpr);
-        Expression::MergeExpressions(u->GetName(), unitExpr, GetName(), expression, -1);
+        Expression::MergeExpressions(u->GetName().c_str(), unitExpr, GetName().c_str(), expression, -1);
 
         auto count = std::count_if(unitExpr.begin(), unitExpr.end(),
             [](ExpressionSymbolCR e) { return e.GetExponent() != 0; });
@@ -634,14 +634,14 @@ bool UnitSynonymMap::CompareSynonymMap(UnitSynonymMapCR map1, UnitSynonymMapCR m
         return false;
     if (nullptr == p2)
         return true;
-    int diff = BeStringUtilities::StricmpAscii(p1->GetName(), p2->GetName());
+    int diff = BeStringUtilities::StricmpAscii(p1->GetName().c_str(), p2->GetName().c_str());
     if (diff < 0)
         return true;
     if (diff > 0)
         return false;
     UnitCP un1 = map1.GetUnit();
     UnitCP un2 = map2.GetUnit();
-    diff = BeStringUtilities::StricmpAscii(un1->GetName(), un2->GetName());
+    diff = BeStringUtilities::StricmpAscii(un1->GetName().c_str(), un2->GetName().c_str());
     if (diff < 0)
         return true;
     if (diff > 0)
@@ -680,7 +680,7 @@ UnitCP Phenomenon::LookupUnit(Utf8CP unitName) const
     for (const UnitCP* up = m_units.begin(); up != m_units.end(); up++)
         {
         UnitCP const u = *up;
-        if (0 == BeStringUtilities::StricmpAscii(unitName, u->GetName()))
+        if (0 == BeStringUtilities::StricmpAscii(unitName, u->GetName().c_str()))
             return u;
         }
 
@@ -782,7 +782,7 @@ Utf8CP Phenomenon::GetLabel() const
     {
     if (m_displayLabel.empty())
         {
-        Utf8PrintfString stringId("PHENOMENON_%s", GetName());
+        Utf8PrintfString stringId("PHENOMENON_%s", GetName().c_str());
         m_displayLabel = BeSQLite::L10N::GetString(UnitsL10N::GetNameSpace(), BeSQLite::L10N::StringId(stringId.c_str()));
         }
 

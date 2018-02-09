@@ -106,7 +106,7 @@ public:
     ExpressionSymbol(UnitsSymbolCP symbol, int exponent) : m_exponent(exponent) { m_symbol = symbol; }
     ExpressionSymbol(ExpressionSymbol const& swE) : ExpressionSymbol(swE.m_symbol, swE.m_exponent) {};
 
-    Utf8CP GetName() const {return m_symbol->GetName();}
+    Utf8CP GetName() const {return m_symbol->GetName().c_str();}
     UnitsSymbolCP GetSymbol() const {return m_symbol;}
     double GetSymbolFactor() const {return m_symbol->GetFactor();}
 

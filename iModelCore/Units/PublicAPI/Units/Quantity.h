@@ -50,7 +50,7 @@ public:
     double GetMagnitude() const { return m_magnitude; }
     double Scale(double scale) { m_magnitude *= scale;  return m_magnitude; }
     UnitCP GetUnit () const { return m_unit; }
-    Utf8CP GetUnitName() const { return (nullptr == m_unit)? nullptr : m_unit->GetName(); }
+    Utf8CP GetUnitName() const { return (nullptr == m_unit)? nullptr : m_unit->GetName().c_str(); }
     Utf8CP GetUnitLabel() const { return (nullptr == m_unit)? nullptr : m_unit->GetLabel(); }
     PhenomenonCP GetPhenomenon () const { return (nullptr == m_unit) ? nullptr : m_unit->GetPhenomenon(); }
     UNITS_EXPORT Quantity ConvertTo(UnitCP unit) const;
