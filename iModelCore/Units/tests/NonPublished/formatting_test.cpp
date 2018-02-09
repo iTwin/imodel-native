@@ -299,7 +299,10 @@ TEST(FormattingTest, TestFUS)
     FormattingTestFixture::ShowQuantifiedValue("3 1/3'", "realu", "M");
     FormattingTestFixture::ShowQuantifiedValue("3 1/3'", "realu", "MM");
 
+	FormattingTestFixture::RegisterFUS("MM", "DefaultMM");
+
     FormattingTestFixture::TearDownL10N();
+
 LOG.infov("================  Testing FUS (end) ===========================\n");
     }
 

@@ -1748,49 +1748,49 @@ bool StdFormatSet::HasDuplicate(Utf8CP fusName, FormatUnitSetCP * fusOut)
 FormatUnitSetCP StdFormatSet::AddFUS(FormatUnitSetCR fusR, Utf8CP fusName)
 {
 	FormatUnitSetCP fusP;
-	if (HasDuplicate(fusName, &fusP))
+	if (Set()->HasDuplicate(fusName, &fusP))
 		return nullptr;
 
 	fusP = new FormatUnitSet(fusR); // make a clone
 	fusP->SetFusName(fusName);
-	m_fusSet.push_back(fusP);
-	return m_fusSet.back();
+	Set()->m_fusSet.push_back(fusP);
+	return Set()->m_fusSet.back();
 }
 
 FormatUnitSetCP StdFormatSet::AddFUS(Utf8CP formatName, Utf8CP unitName, Utf8CP fusName, bool makeUnit)
 {
 	FormatUnitSetCP fusP;
-	if (HasDuplicate(fusName, &fusP))
+	if (Set()->HasDuplicate(fusName, &fusP))
 		return nullptr;
 
 	fusP = new FormatUnitSet(formatName, unitName); // make FUS
 	if (fusP->HasProblem())
 	{
-		m_problem.UpdateProblemCode(FormatProblemCode::SFS_FailedToMakeFUS);
+		Set()->m_problem.UpdateProblemCode(FormatProblemCode::SFS_FailedToMakeFUS);
 		return nullptr;
 	}
 	fusP->SetFusName(fusName);
-	m_fusSet.push_back(fusP);
-	return m_fusSet.back();
+	Set()->m_fusSet.push_back(fusP);
+	return Set()->m_fusSet.back();
 }
-FormatUnitSetCP StdFormatSet::AddFUS(Utf8CP jsonString, Utf8CP fusName, bool makeUnit)
+FormatUnitSetCP StdFormatSet::AddFUS(Utf8CP descriptor, Utf8CP fusName, bool makeUnit)
 {
 	FormatUnitSetCP fusP;
-	if (HasDuplicate(fusName, &fusP))
+	if (Set()->HasDuplicate(fusName, &fusP))
 		return nullptr;
-	fusP = new FormatUnitSet(jsonString); // make FUS
+	fusP = new FormatUnitSet(descriptor); // make FUS
 	if (fusP->HasProblem())
 	{
-		m_problem.UpdateProblemCode(FormatProblemCode::SFS_FailedToMakeFUS);
+		Set()->m_problem.UpdateProblemCode(FormatProblemCode::SFS_FailedToMakeFUS);
 		return nullptr;
 	}
 	fusP->SetFusName(fusName);
-	m_fusSet.push_back(fusP);
-	return m_fusSet.back();
+	Set()->m_fusSet.push_back(fusP);
+	return Set()->m_fusSet.back();
 }
 FormatUnitSetCP StdFormatSet::LookupFUS(Utf8CP fusName)
 {
-	FormatUnitSetCP fusP = FindFUS(fusName);
+	FormatUnitSetCP fusP = Set()->FindFUS(fusName);
 	return fusP;
 }
 

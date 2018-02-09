@@ -858,11 +858,11 @@ public:
 
     static FormatUnitSet DefaultFUS(BEU::QuantityCR qty) { return FormatUnitSet(DefaultFormatSpec(), qty.GetUnit()); }
 
-	UNITS_EXPORT FormatUnitSetCP AddFUS(FormatUnitSetCR fusR, Utf8CP fusName);
-	UNITS_EXPORT FormatUnitSetCP AddFUS(Utf8CP formatName, Utf8CP unitName, Utf8CP fusName, bool makeUnit = true);
-	UNITS_EXPORT FormatUnitSetCP AddFUS(Utf8CP jsonString, Utf8CP fusName, bool makeUnit = true);
-	UNITS_EXPORT FormatUnitSetCP LookupFUS(Utf8CP fusName);
-
+	UNITS_EXPORT static FormatUnitSetCP AddFUS(FormatUnitSetCR fusR, Utf8CP fusName);
+	UNITS_EXPORT static FormatUnitSetCP AddFUS(Utf8CP formatName, Utf8CP unitName, Utf8CP fusName, bool makeUnit = true);
+	UNITS_EXPORT static FormatUnitSetCP AddFUS(Utf8CP descriptor, Utf8CP fusName, bool makeUnit = true);
+	UNITS_EXPORT static FormatUnitSetCP LookupFUS(Utf8CP fusName);
+	UNITS_EXPORT static bool FusRegistrationHasProblem() { return Set()->m_problem.IsProblem(); }
    // UNITS_EXPORT bvector<Json::Value> ToJson();
     };
 
