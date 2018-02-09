@@ -56,7 +56,7 @@ MultiCompileDepends = $(_MakeFileSpec)
 
 $(o)nodejs_addon$(oext) : $(baseDir)nodejs_addon.cpp $(baseDir)AddonUtils.h ${MultiCompileDepends}
 
-$(o)TestUtils$(oext) : $(baseDir)TestUtils.cpp $(baseDir)TestUtils.h ${MultiCompileDepends}
+$(o)TestUtils$(oext) : $(baseDir)TestUtils.cpp ${MultiCompileDepends}
 
 $(o)AddonUtils$(oext) : $(baseDir)AddonUtils.cpp $(baseDir)AddonUtils.h ${MultiCompileDepends} 
 

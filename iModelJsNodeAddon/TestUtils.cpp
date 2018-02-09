@@ -60,7 +60,14 @@ static Json::Value rotateCameraLocal(DgnDbR db, Utf8String params)
 
 	auto angle = props["angle"].asDouble();
 	auto axis  = JsonUtils::ToDVec3d(props["axis"]);
-	view->RotateCameraLocal(angle, axis);
+	DPoint3d about;
+	DPoint3dP aboutP = nullptr;
+	if (props.isMember("about")){
+		about = JsonUtils::ToDPoint3d(props["about"]);
+		aboutP = &about;
+	}
+
+	view->RotateCameraLocal(angle, axis, aboutP);
 	return view->ToJson();
 }
 
