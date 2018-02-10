@@ -260,7 +260,9 @@ enum class FormatProblemCode
     PS_MismatchingFUS = 2604,
 	SFS_InsertingNamelessFUS = 2701,
 	SFS_DuplicateFUSName = 2702,
-	SFS_FailedToMakeFUS = 2703
+	SFS_FailedToMakeFUS = 2703,
+	NMQ_InvalidUnitName = 2801,
+	NMQ_MissingName = 2802
     };
 
 enum class FormatProblemLevel  // these levels should be used for assigning the Problem code

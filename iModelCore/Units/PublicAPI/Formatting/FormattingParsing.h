@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Formatting/FormattingParsing.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -552,5 +552,21 @@ public:
     UNITS_EXPORT Utf8Char GetDelimeter();
     };
 
+//=======================================================================================
+// @bsiclass                                                    David.Fox-Rabinovitz
+//=======================================================================================
+struct NamedQuantity
+{
+private:
+	BEU::Quantity m_quant;
+    Utf8String m_name;
+	FormatProblemDetail m_problem;
 
+public:
+	UNITS_EXPORT NamedQuantity(Utf8CP name, BEU::Quantity quant) { m_name.assign(name);  m_quant = quant;  m_problem.Reset(); }
+	UNITS_EXPORT NamedQuantity(Utf8CP quantName, double magnitude, Utf8CP unitName);
+	UNITS_EXPORT BEU::QuantityCP GetQuantity() { return &m_quant; }
+
+	UNITS_EXPORT Utf8String ToText(int prec);
+};
 END_BENTLEY_FORMATTING_NAMESPACE

@@ -1997,14 +1997,15 @@ Utf8String FormatProblemDetail::GetProblemDescription() const
         case FormatProblemCode::PS_MissingFUS: return "Cannot parse expression without FUS";
         case FormatProblemCode::PS_MissingCompositeSpec: return "Cannot parse expression without Composite Format Spec";
         case FormatProblemCode::PS_MismatchingFUS: return "FUS does not match expression";
+		case FormatProblemCode::SFS_InsertingNamelessFUS: return "FUS name is required for registering";
+		case FormatProblemCode::SFS_DuplicateFUSName: return "FUS with htis name is already has been registered";
+		case FormatProblemCode::SFS_FailedToMakeFUS: return "Invalid defintion for the FUS to be registered";
+		case FormatProblemCode::NMQ_InvalidUnitName: return "Invalid unit name in the Named Quantity";
+		case FormatProblemCode::NMQ_MissingName: return "Named Quantity requires a not-empty name";
         case FormatProblemCode::NoProblems:
         default: return "No problems";
         }
     }
-
-
-
-
 
 
 /*

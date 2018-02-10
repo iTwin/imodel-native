@@ -301,6 +301,15 @@ TEST(FormattingTest, TestFUS)
 
 	FormattingTestFixture::RegisterFUS("MM", "DefaultMM");
 
+	NamedQuantity nmq = NamedQuantity("PipeLength", 12.45, "FT");
+	LOG.infov("Named Qty: %s", nmq.ToText(3));
+
+   LOG.infov("Named Qty: %s", NumericFormatSpec::StdFormatQuantity("fi32", *nmq.GetQuantity())); 
+   
+   //BEU::UnitCP useUnit = nullptr, Utf8CP space = "", Utf8CP useLabel = nullptr, int prec = -1, double round = -1.0);
+
+
+
     FormattingTestFixture::TearDownL10N();
 
 LOG.infov("================  Testing FUS (end) ===========================\n");
