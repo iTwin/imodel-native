@@ -17,14 +17,14 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="MainAlignment" relationshipName="PathwayRefersToMainAlignment" direction="Forward"/>
+        <ECNavigationProperty propertyName="MainLinearElement" relationshipName="PathwayRefersToMainLinearElement" direction="Forward"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="PathwayRefersToMainAlignment" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+    <ECRelationshipClass typeName="PathwayRefersToMainLinearElement" strength="referencing" strengthDirection="Forward" modifier="Sealed">
         <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to main">
             <Class class="PathwayElement"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="main is referenced by">
-            <Class class="rralign:Alignment"/>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="main is referenced by">
+            <Class class="lr:ILinearElement"/>
         </Target>
     </ECRelationshipClass>
     <ECEntityClass typeName="Roadway" modifier="Sealed" description="A Pathway with a smoothed or paved surface, made for traveling by motor vehicle, carriage, etc." >

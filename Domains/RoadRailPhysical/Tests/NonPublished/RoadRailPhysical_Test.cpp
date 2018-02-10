@@ -41,10 +41,10 @@ TEST_F(RoadRailPhysicalTests, BasicRoadwayTest)
 
     // Create Roadway
     auto roadwayPtr = Roadway::Create(*physicalModelPtr);
-    roadwayPtr->SetMainAlignment(alignmentPtr.get());
+    roadwayPtr->SetMainLinearElement(alignmentPtr.get());
     auto roadwayCPtr = roadwayPtr->Insert();
     ASSERT_TRUE(roadwayCPtr.IsValid());    
-    ASSERT_EQ(alignmentPtr->GetElementId(), roadwayCPtr->GetMainAlignmentId());
+    ASSERT_EQ(alignmentPtr->GetElementId(), roadwayCPtr->GetMainLinearElementId());
 
     alignmentPtr->SetILinearElementSource(roadwayPtr.get());
     ASSERT_TRUE(alignmentPtr->Update().IsValid());

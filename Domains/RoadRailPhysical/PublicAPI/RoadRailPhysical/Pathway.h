@@ -23,9 +23,6 @@ struct PathwayElement : Dgn::PhysicalElement, LinearReferencing::ILinearElementS
     DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_PathwayElement, Dgn::PhysicalElement);
     friend struct PathwayElementHandler;
 
-private:
-    mutable RefCountedPtr<LinearReferencing::ICascadeLinearLocationChangesAlgorithm> m_cascadeAlgorithmPtr;
-
 protected:
     //! @private
     explicit PathwayElement(CreateParams const& params) : T_Super(params) {}
@@ -36,9 +33,10 @@ public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(PathwayElement)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(PathwayElement)
 
-    Dgn::DgnElementId GetMainAlignmentId() const { return GetPropertyValueId<Dgn::DgnElementId>("MainAlignment"); }
-    RoadRailAlignment::AlignmentCPtr GetMainAlignment() const { return RoadRailAlignment::Alignment::Get(GetDgnDb(), GetMainAlignmentId()); }
-    ROADRAILPHYSICAL_EXPORT Dgn::DgnDbStatus SetMainAlignment(RoadRailAlignment::AlignmentCP alignment);
+    Dgn::DgnElementId GetMainLinearElementId() const { return GetPropertyValueId<Dgn::DgnElementId>("MainLinearElement"); }
+
+    template <class T> RefCountedCPtr<T> GetMainLinearElementAs() const { return GetDgnDb().Elements().Get<T>(GetMainLinearElementId()); }
+    ROADRAILPHYSICAL_EXPORT Dgn::DgnDbStatus SetMainLinearElement(LinearReferencing::ILinearElementCP linearElement);
 
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus AddRepresentedBy(PathwayElementCR pathway, Dgn::DgnElementCR representedBy);
 }; // PathwayElement

@@ -15,9 +15,12 @@ HANDLER_DEFINE_MEMBERS(RoadwayHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus PathwayElement::SetMainAlignment(AlignmentCP alignment)
+DgnDbStatus PathwayElement::SetMainLinearElement(ILinearElementCP linearElement)
     {
-    return SetPropertyValue("MainAlignment", (alignment) ? alignment->GetElementId() : DgnElementId(), Alignment::QueryClassId(GetDgnDb()));
+    if (linearElement)
+        return SetPropertyValue("MainLinearElement", linearElement->ToElement().GetElementId(), linearElement->ToElement().GetElementClassId());
+    else
+        return SetPropertyValue("MainLinearElement", DgnElementId(), DgnClassId());
     }
 
 /*---------------------------------------------------------------------------------**//**
