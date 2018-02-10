@@ -40,43 +40,9 @@ bset<DgnElementId> ILinearElementSource::QueryLinearElements() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      01/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId ILinearElementSource::_QueryMainLinearElement() const
-    {
-    ECSqlStatement stmt;
-    stmt.Prepare(ToElement().GetDgnDb(), "SELECT TargetECInstanceId FROM " BLR_SCHEMA(BLR_REL_ILinearElementSourceProvidesILinearElements)
-        " WHERE SourceECInstanceId = ? LIMIT 1");
-    BeAssert(stmt.IsPrepared());
-
-    stmt.BindId(1, ToElement().GetElementId());
-    if (DbResult::BE_SQLITE_ROW == stmt.Step())
-        return stmt.GetValueId<DgnElementId>(0);
-
-    return DgnElementId();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ILinearElementSource::_PrepareCascadeChanges(ICascadeLinearLocationChangesAlgorithmR algorithm) const
-    {
-    return algorithm.Prepare(*this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ILinearElementSource::_CommitCascadeChanges(ICascadeLinearLocationChangesAlgorithmR algorithm) const
-    {
-    return algorithm.Commit(*this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ILinearlyLocated::ILinearlyLocated():
-    m_cascadeLocationChangesFlag(CascadeLocationChangesAction::None)
+ILinearlyLocated::ILinearlyLocated()
     {
     }
 
@@ -162,13 +128,7 @@ LinearlyReferencedAtLocationCP ILinearlyLocated::GetLinearlyReferencedAtLocation
 +---------------+---------------+---------------+---------------+---------------+------*/
 LinearlyReferencedAtLocationP ILinearlyLocated::GetLinearlyReferencedAtLocationP(LinearlyReferencedLocationId id)
     {
-    auto retValP = DgnElement::MultiAspect::GetP<LinearlyReferencedAtLocation>(ToElementR(), *LinearlyReferencedAtLocation::QueryClass(ToElement().GetDgnDb()), id);
-
-    // Keeping track of accessed locationIds - needed while determining changes during cascade to neighbors
-    if (retValP && m_accessedAtLocationIds.find(id) == m_accessedAtLocationIds.end())
-        m_accessedAtLocationIds.insert(id);
-        
-    return retValP;
+    return DgnElement::MultiAspect::GetP<LinearlyReferencedAtLocation>(ToElementR(), *LinearlyReferencedAtLocation::QueryClass(ToElement().GetDgnDb()), id);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -185,13 +145,7 @@ LinearlyReferencedFromToLocationCP ILinearlyLocated::GetLinearlyReferencedFromTo
 +---------------+---------------+---------------+---------------+---------------+------*/
 LinearlyReferencedFromToLocationP ILinearlyLocated::GetLinearlyReferencedFromToLocationP(LinearlyReferencedLocationId id)
     {
-    auto retValP = DgnElement::MultiAspect::GetP<LinearlyReferencedFromToLocation>(ToElementR(), *LinearlyReferencedFromToLocation::QueryClass(ToElement().GetDgnDb()), id);
-
-    // Keeping track of accessed locationIds - needed while determining changes during cascade to neighbors
-    if (retValP && m_accessedFromToLocationIds.find(id) == m_accessedFromToLocationIds.end())
-        m_accessedFromToLocationIds.insert(id);
-        
-    return retValP;
+    return DgnElement::MultiAspect::GetP<LinearlyReferencedFromToLocation>(ToElementR(), *LinearlyReferencedFromToLocation::QueryClass(ToElement().GetDgnDb()), id);
     }
 
 /*---------------------------------------------------------------------------------**//**
