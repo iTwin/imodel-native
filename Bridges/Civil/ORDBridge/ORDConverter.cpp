@@ -703,7 +703,7 @@ BentleyStatus ORDCorridorsConverter::CreateNewRoadway(
                 if (bimMainAlignmentPtr->GetILinearElementSource().IsValid())
                     return BentleyStatus::ERROR; // Alignment already associated with another Roadway
 
-                roadwayPtr->SetMainAlignment(bimMainAlignmentPtr.get());
+                roadwayPtr->SetMainLinearElement(bimMainAlignmentPtr.get());
                 }
             }
         }
