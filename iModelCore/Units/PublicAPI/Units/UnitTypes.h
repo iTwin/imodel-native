@@ -316,8 +316,8 @@ private:
     UNITS_EXPORT uint32_t GetPhenomenonId() const override {return GetId();}
 
 protected:
-    UNITS_EXPORT static PhenomenonP _Create(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id) {return new Phenomenon(name, definition, baseSymbol, id);}
-    UNITS_EXPORT Phenomenon(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id) : UnitsSymbol(name, definition, baseSymbol, id, 0.0, 0) {}
+    static PhenomenonP _Create(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id) {return new Phenomenon(name, definition, baseSymbol, id);}
+    Phenomenon(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id) : UnitsSymbol(name, definition, baseSymbol, id, 0.0, 0) {}
 
 public:
     UNITS_EXPORT Utf8String GetPhenomenonSignature() const;

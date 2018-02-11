@@ -76,7 +76,7 @@ TEST_F(UnitsTests, CheckSignatureForEveryPhenomenon)
     UnitRegistry::Instance().AllPhenomena(allPhenomena);
     for (auto const& phenomenon : allPhenomena)
         {
-        PERFORMANCELOG.errorv("Dimension string for %s: %s", phenomenon->GetName(), phenomenon->GetPhenomenonSignature().c_str());
+        PERFORMANCELOG.errorv("Dimension string for %s: %s", phenomenon->GetName().c_str(), phenomenon->GetPhenomenonSignature().c_str());
         }
     }
 
@@ -153,7 +153,7 @@ TEST_F(UnitsTests, PrintOutAllUnitsGroupedByPhenonmenon)
             continue;
 
         WriteLine(file, "-Phenomenon-");
-        Utf8PrintfString line("%s,,%s,%s", phenomenon->GetName(), phenomenon->GetDefinition(), phenomenon->GetPhenomenonSignature().c_str());
+        Utf8PrintfString line("%s,,%s,%s", phenomenon->GetName().c_str(), phenomenon->GetDefinition(), phenomenon->GetPhenomenonSignature().c_str());
         WriteLine(file, line.c_str());
 
         WriteLine(file);
@@ -164,7 +164,7 @@ TEST_F(UnitsTests, PrintOutAllUnitsGroupedByPhenonmenon)
                 continue;
 
             Utf8String parsedExpression = unit->GetParsedUnitExpression();
-            line.Sprintf("%s,%s,%s,%s,%s", unit->GetName(), unit->GetUnitSystem()->GetName(), unit->GetDefinition(), unit->GetUnitSignature().c_str(), parsedExpression.c_str());
+            line.Sprintf("%s,%s,%s,%s,%s", unit->GetName().c_str(), unit->GetUnitSystem()->GetName().c_str(), unit->GetDefinition(), unit->GetUnitSignature().c_str(), parsedExpression.c_str());
 
             WriteLine(file, line.c_str());
 

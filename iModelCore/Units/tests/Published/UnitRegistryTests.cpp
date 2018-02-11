@@ -31,7 +31,7 @@ struct UnitRegistryTests : UnitsTestFixture
         friend struct UnitRegistry;
         private:
             TestUnitSystem(Utf8CP name) : UnitSystem(name) {}
-        protected:
+        public:
             static TestUnitSystem* _Create(Utf8CP name) {return new TestUnitSystem(name);}
         };
 
@@ -40,7 +40,7 @@ struct UnitRegistryTests : UnitsTestFixture
         friend struct UnitRegistry;
         public:
             TestPhenomenon(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id) : Phenomenon(name, definition, baseSymbol, id) {}
-        protected:
+        public:
             static TestPhenomenon* _Create(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id) {return new TestPhenomenon(name, definition, baseSymbol, id);}
         };
 
@@ -54,7 +54,7 @@ struct UnitRegistryTests : UnitsTestFixture
             TestUnit(UnitCR parentUnit, Utf8CP name, uint32_t id)
             : TestUnit(*(parentUnit.GetUnitSystem()), *(parentUnit.GetPhenomenon()), name, id, parentUnit.GetDefinition(), ' ', 0, 0, false) {}
 
-        protected:
+        public:
             static TestUnit* _Create(UnitSystemCR sysName, PhenomenonCR phenomenon, Utf8CP unitName, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant)
             {return new TestUnit(sysName, phenomenon, unitName, id, definition, baseSymbol, factor, offset, isConstant);}
 

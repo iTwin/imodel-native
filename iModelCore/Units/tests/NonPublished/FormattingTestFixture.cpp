@@ -1132,7 +1132,7 @@ void FormattingTestFixture::RegistryLookupUnitCITest(Utf8CP unitName)
     int diff = BeStringUtilities::StricmpAscii(unitName, unit->GetName().c_str());
     EXPECT_TRUE(diff == 0);
     if(!diff)
-        LOG.infov("Unit Name %s is not canonical %s", unitName, unit->GetName());
+        LOG.infov("Unit Name %s is not canonical %s", unitName, unit->GetName().c_str());
     }
 
 void FormattingTestFixture::StandaloneNamedFormatTest(Utf8CP jsonFormat, bool doPrint)
@@ -1253,10 +1253,10 @@ void FormattingTestFixture::ShowPhenomenon(BEU::PhenomenonCP phenP, bvector<BEU:
     if (phenP->HasUnits())
         {
         bvector<BEU::UnitCP> unitsV = phenP->GetUnits();
-        LOG.infov("Phenomenon %s (UOM list of %d)", phenP->GetName(), unitsV.size());
+        LOG.infov("Phenomenon %s (UOM list of %d)", phenP->GetName().c_str(), unitsV.size());
         for (const BEU::UnitCP* up = unitsV.begin(); up != unitsV.end(); up++)
             {
-            LOG.infov("  %s", (*up)->GetName());
+            LOG.infov("  %s", (*up)->GetName().c_str());
             }
         if (phenP->HasSynonyms())
             {
@@ -1273,7 +1273,7 @@ void FormattingTestFixture::ShowPhenomenon(BEU::PhenomenonCP phenP, bvector<BEU:
         }
     else
         {
-        LOG.infov("Phenomenon: %s (no UOM defined)", phenP->GetName());
+        LOG.infov("Phenomenon: %s (no UOM defined)", phenP->GetName().c_str());
         undefPhenomena.push_back(phenP);
         }
     return;
@@ -1293,7 +1293,7 @@ void FormattingTestFixture::ShowKnownPhenomena()
         LOG.infov("\nList of %d Phenomena without UOM: ", undefPhenomena.size());
         for (const BEU::PhenomenonCP* ph = undefPhenomena.begin(); ph != undefPhenomena.end(); ph++)
             {
-            LOG.infov("  %s", (*ph)->GetName());
+            LOG.infov("  %s", (*ph)->GetName().c_str());
             }
         }
     }
@@ -1308,7 +1308,7 @@ void FormattingTestFixture::ShowSynonyms()
         {
         if ((*un)->GetSynonymList(synonyms) > 0)
             {
-            LOG.infov("Unit %s synonyms:", (*un)->GetName());
+            LOG.infov("Unit %s synonyms:", (*un)->GetName().c_str());
             for (size_t i = 0; i < synonyms.size(); i++)
                 {
                 wsyn = WString(synonyms[i], true);

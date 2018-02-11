@@ -691,7 +691,7 @@ TEST(FormattingTest, PhysValues)
     //  one with the Uint Name and another with the pointer to a Unit definition
     BEU::UnitCP defUom = BEU::UnitRegistry::Instance().GetPlatformLengthUnit();
 
-    LOG.infov("Default Platform Units is %s", defUom->GetName());
+    LOG.infov("Default Platform Units is %s", defUom->GetName().c_str());
 
     BEU::Quantity const len = BEU::Quantity(22.7, *metrUOM);
 

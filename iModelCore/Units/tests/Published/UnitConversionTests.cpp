@@ -72,7 +72,7 @@ bool UnitConversionTests::TestUnitConversion (double fromVal, Utf8CP fromUnitNam
         NativeLogging::LoggingConfig::SetSeverity("Performance", NativeLogging::SEVERITY::LOG_TRACE);
         }
 
-    PERFORMANCELOG.debugv("About to try to convert %.16g %s to %s", fromVal, fromUnit->GetName(), targetUnit->GetName());
+    PERFORMANCELOG.debugv("About to try to convert %.16g %s to %s", fromVal, fromUnit->GetName().c_str(), targetUnit->GetName().c_str());
 
     double convertedVal;
     fromUnit->Convert(convertedVal, fromVal, targetUnit);
@@ -86,12 +86,12 @@ bool UnitConversionTests::TestUnitConversion (double fromVal, Utf8CP fromUnitNam
     //    }
 
     //double convertedVal = q->Value(targetUnitName);
-    PERFORMANCELOG.debugv("Converted %s to %s.  Expected: %.17g  Actual: %.17g", fromUnit->GetName(), targetUnit->GetName(), expectedVal, convertedVal);
+    PERFORMANCELOG.debugv("Converted %s to %s.  Expected: %.17g  Actual: %.17g", fromUnit->GetName().c_str(), targetUnit->GetName().c_str(), expectedVal, convertedVal);
     //if (fabs(convertedVal - expectedVal) > tolerance)
     if(!almost_equal<double>(expectedVal, convertedVal, ulp))
         {
         Utf8PrintfString formattedText("Conversion from %s (%s) to %s (%s). Input: %.17g \nOutput:   %.17g \nExpected: %.17g \nDiff:     %.17g   Diff/Exp: %.17g   ULP: %d\n", 
-                                       fromUnitName, fromUnit->GetName(), targetUnitName, targetUnit->GetName(), fromVal, convertedVal, expectedVal, convertedVal - expectedVal, (convertedVal - expectedVal)/expectedVal, ulp);
+                                       fromUnitName, fromUnit->GetName().c_str(), targetUnitName, targetUnit->GetName().c_str(), fromVal, convertedVal, expectedVal, convertedVal - expectedVal, (convertedVal - expectedVal)/expectedVal, ulp);
         conversionErrors.push_back(formattedText);
         EXPECT_FALSE(true) << formattedText;
         }
