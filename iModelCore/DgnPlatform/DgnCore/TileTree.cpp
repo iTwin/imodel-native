@@ -10,7 +10,7 @@
 #include <BeHttp/HttpClient.h>
 #include <numeric>
 
-#define WIP_SCALABLE_MESH
+//#define WIP_SCALABLE_MESH
 
 USING_NAMESPACE_TILETREE
 
