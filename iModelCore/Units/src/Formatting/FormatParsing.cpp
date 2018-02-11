@@ -296,6 +296,9 @@ size_t FormattingScannerCursor::GetNextSymbol()
     return m_uniCode;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//---------------------------------------------------------------------------------------
 size_t FormattingScannerCursor::HeadBitCount(unsigned char c)
     {
     size_t count = 0;
@@ -311,7 +314,9 @@ size_t FormattingScannerCursor::HeadBitCount(unsigned char c)
     return count;
     }
 
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//---------------------------------------------------------------------------------------
 size_t FormattingScannerCursor::GetNextReversed()
     {
     m_status = ScannerCursorStatus::Success;
@@ -558,6 +563,7 @@ Utf8String FormattingScannerCursor::CollapseSpaces(bool replace)
     return str;
     }
 POP_MSVC_IGNORE
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 04/17
 //----------------------------------------------------------------------------------------
@@ -671,7 +677,9 @@ Utf8String FormatDividerInstance::ToText()
 // FormattingSignature Methods
 //
 //===================================================
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 04/17
+//----------------------------------------------------------------------------------------
 bool FormattingSignature::Reset(size_t reserve)
     { 
     if (0 == reserve || reserve > m_size) // special case for releasing allocated memory
@@ -751,7 +759,9 @@ size_t FormattingSignature::AppendPattern()
     return m_patIndx;
     }
 
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 04/17
+//----------------------------------------------------------------------------------------
 size_t FormattingSignature::DetectUOMPattern(size_t ind)
     {
     Utf8Char buf[12];
@@ -773,6 +783,9 @@ size_t FormattingSignature::DetectUOMPattern(size_t ind)
     return 0;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 04/17
+//----------------------------------------------------------------------------------------
 size_t FormattingSignature::DetectFractPattern(size_t ind)
     {
     Utf8Char buf[12];
@@ -830,6 +843,9 @@ Utf8String FormattingSignature::ReversedSignature()
     return Utf8String(temp);
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 05/17
+//----------------------------------------------------------------------------------------
 Utf8String FormattingSignature::ReversedPattern()
     {
     size_t sigL = Utils::TextLength(m_pattern);
@@ -875,7 +891,9 @@ POP_MSVC_IGNORE
 // NumericAccumulator Methods
 //
 //===================================================
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 05/17
+//----------------------------------------------------------------------------------------
 int  NumericAccumulator::AddDigitValue(Utf8Char c)
     {
     switch (m_stat)
@@ -1152,6 +1170,9 @@ size_t UnitProxySet::UnitCount() const
     return 0;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 05/17
+//----------------------------------------------------------------------------------------
 bool UnitProxySet::IsIdentical(UnitProxySetCR other) const
     {
     size_t n1 = UnitCount();
@@ -1205,6 +1226,9 @@ CursorScanPoint::CursorScanPoint(Utf8CP input, size_t indx, bool revers)
       ProcessNext(input);
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 06/17
+//----------------------------------------------------------------------------------------
 void CursorScanPoint::Iterate(Utf8CP input, bool revers)
     {
     if (revers)
@@ -1213,6 +1237,9 @@ void CursorScanPoint::Iterate(Utf8CP input, bool revers)
         ProcessNext(input);
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 06/17
+//----------------------------------------------------------------------------------------
 void CursorScanPoint::ProcessASCII(unsigned char c)
     {
     m_bytes[m_len++] = c;
@@ -1305,7 +1332,9 @@ void CursorScanPoint::ProcessNext(Utf8CP input)
         break;
         }
     }
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 06/17
+//----------------------------------------------------------------------------------------
 void CursorScanPoint::Init()
     {
     m_uniCode = 0;
@@ -1409,7 +1438,9 @@ void CursorScanPoint::ProcessPrevious(Utf8CP input)
         }// end of While
     }
 
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 06/17
+//----------------------------------------------------------------------------------------
 Utf8PrintfString CursorScanPoint::ToText()
     {
     Utf8CP asc = IsAscii() ? Utf8PrintfString("(ASCII %c)", m_bytes[0]).c_str() : FormatConstant::EmptyString();
@@ -1425,6 +1456,9 @@ Utf8PrintfString CursorScanPoint::ToText()
 // FormatParseVector Methods
 //
 //===================================================
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 06/17
+//----------------------------------------------------------------------------------------
 size_t FormatParseVector::ExtractTriplet()
     {
     m_patt.word = 0;
@@ -1435,7 +1469,9 @@ size_t FormatParseVector::ExtractTriplet()
         }
     return m_bufIndex;
     }
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 06/17
+//----------------------------------------------------------------------------------------
 bool FormatParseVector::MoveFrame(bool forw)
     {
     bool mov = false;
@@ -1459,7 +1495,9 @@ bool FormatParseVector::MoveFrame(bool forw)
        ExtractTriplet();
     return mov;
     }
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 06/17
+//----------------------------------------------------------------------------------------
 FormatParseVector::FormatParseVector(Utf8CP input, bool revers)
     {
     m_patt.word = 0;
@@ -1473,7 +1511,9 @@ FormatParseVector::FormatParseVector(Utf8CP input, bool revers)
         }
     ExtractTriplet();
     }
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 06/17
+//----------------------------------------------------------------------------------------
 size_t FormatParseVector::AddPoint(CursorScanPointCR pnt)
     {
      //CursorScanPointCP last = m_vect.empty() ? nullptr : &m_vect.back();
@@ -1482,6 +1522,10 @@ size_t FormatParseVector::AddPoint(CursorScanPointCR pnt)
     }
 
 PUSH_MSVC_IGNORE(6385 6386)
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 06/17
+//----------------------------------------------------------------------------------------
 Utf8String FormatParseVector::GetPattern()
     {
     Utf8Char last, foll;
@@ -1502,6 +1546,9 @@ Utf8String FormatParseVector::GetPattern()
     return Utf8String(buf);
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 06/17
+//----------------------------------------------------------------------------------------
 Utf8String FormatParseVector::GetSignature()
     {
     size_t blen = m_vect.size() + 2;
@@ -1515,6 +1562,7 @@ Utf8String FormatParseVector::GetSignature()
     return Utf8String(buf);
     }
 POP_MSVC_IGNORE
+
 //===================================================
 //
 // CursorScanTriplet Methods
@@ -1584,7 +1632,9 @@ void CursorScanTriplet::PushSymbol(size_t symb)
 // NumberGrabber Methods
 //
 //===================================================
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 06/17
+//----------------------------------------------------------------------------------------
 size_t NumberGrabber::Grab(Utf8CP input, size_t start)
     {
     if (!Utils::IsNameNullOrEmpty(input))
@@ -1741,6 +1791,9 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start)
     return m_next - m_start;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 06/17
+//----------------------------------------------------------------------------------------
 Utf8CP NumberGrabber::GetTail() 
     { 
     return &m_input[m_next]; 
@@ -1751,7 +1804,9 @@ Utf8CP NumberGrabber::GetTail()
 // FormatParsingSegment Methods
 //
 //===================================================
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 06/17
+//----------------------------------------------------------------------------------------
 void FormatParsingSegment::Init(size_t start)
     {
     m_start = start;
@@ -1763,7 +1818,9 @@ void FormatParsingSegment::Init(size_t start)
     m_unit = nullptr;
     m_name = "";
     }
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 06/17
+//----------------------------------------------------------------------------------------
 FormatParsingSegment::FormatParsingSegment(NumberGrabberCR ng)
     {
     if (ng.GetType() == ParsingSegmentType::NotNumber)
@@ -1779,6 +1836,10 @@ FormatParsingSegment::FormatParsingSegment(NumberGrabberCR ng)
         }
     }
 PUSH_MSVC_IGNORE(6385 6386)
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 06/17
+//----------------------------------------------------------------------------------------
 FormatParsingSegment::FormatParsingSegment(bvector<CursorScanPoint> vect, size_t s, BEU::UnitCP refUnit)
     {
     Init(s);
@@ -1830,6 +1891,9 @@ FormatParsingSegment::FormatParsingSegment(bvector<CursorScanPoint> vect, size_t
     }
 POP_MSVC_IGNORE
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 06/17
+//----------------------------------------------------------------------------------------
 BEU::UnitCP FormatParsingSegment::GetUnit(Formatting::FormatUnitSetCP fusP)
     { 
     return (nullptr == fusP) ? m_unit : fusP->GetUnit(); 
@@ -1871,12 +1935,15 @@ Utf8PrintfString FormatParsingSegment::ToText(int n)
 
          }
     }
+
 //===================================================
 //
 // FormatParsingSet Methods
 //
 //===================================================
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 06/17
+//----------------------------------------------------------------------------------------
 BEU::UnitCP FormatParsingSet::GetUnit(Formatting::FormatUnitSetCP fusP)
     {
     return (nullptr == fusP) ? m_unit : fusP->GetUnit();
@@ -1950,12 +2017,16 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit)
             }
         }
     }
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 07/17
+//----------------------------------------------------------------------------------------
 FormatParsingSet::FormatParsingSet(Utf8CP input, size_t start, BEU::UnitCP unit)
     {
     Init(input, start, unit);
     }
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 07/17
+//----------------------------------------------------------------------------------------
 FormatParsingSet::FormatParsingSet(Utf8CP input, size_t start, Utf8CP unitName)
     {
     BEU::UnitCP unit = (nullptr == unitName) ? nullptr : BEU::UnitRegistry::Instance().LookupUnitCI(unitName);
@@ -1963,6 +2034,9 @@ FormatParsingSet::FormatParsingSet(Utf8CP input, size_t start, Utf8CP unitName)
     }
 PUSH_MSVC_IGNORE(6385 6386)
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 07/17
+//----------------------------------------------------------------------------------------
 Utf8String FormatParsingSet::GetSignature(bool distinct) //, int* colonCount)
     {
     Utf8String txt = "";
@@ -2036,7 +2110,9 @@ Utf8String FormatParsingSet::GetSignature(bool distinct) //, int* colonCount)
     return Utf8String(buf);
     }
 POP_MSVC_IGNORE
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 07/17
+//----------------------------------------------------------------------------------------
 bool FormatParsingSet::ValidateParsingFUS(int reqUnitCount, FormatUnitSetCP fusP)
     {
     if (0 == reqUnitCount)
@@ -2143,7 +2219,9 @@ bool FormatParsingSet::ValidateParsingFUS(int reqUnitCount, FormatUnitSetCP fusP
 //        qty = qty.ConvertTo(m_unit);
 //    return qty;
 //    }
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 07/17
+//----------------------------------------------------------------------------------------
 BEU::Quantity  FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatUnitSetCP fusP)
     {
     BEU::Quantity qty = BEU::Quantity();
@@ -2258,6 +2336,9 @@ BEU::Quantity  FormatParsingSet::GetQuantity(FormatProblemCode* probCode, Format
     return qty;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
+//----------------------------------------------------------------------------------------
 BEU::Quantity  FormatParsingSet::ComposeColonizedQuantity(Formatting::FormatSpecialCodes cod, FormatUnitSetCP fusP)
     {
     BEU::Quantity qty = BEU::Quantity();
@@ -2441,6 +2522,38 @@ BEU::Quantity  FormatParsingSet::ComposeColonizedQuantity(Formatting::FormatSpec
         }
     return qty;
     }
+
+
+//===================================================
+//
+// NamedQuantity Methods
+//
+//===================================================
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/18
+//----------------------------------------------------------------------------------------
+NamedQuantity::NamedQuantity(Utf8CP quantName, double dval, Utf8CP uom)
+	{
+	    Init(quantName, NamedQuantityType::Quantity);
+	    BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnitCI(uom);
+	    if (nullptr == unit)
+	        {
+	        LOG.infov("Invalid UOM: >%s<", uom);
+	        return;
+	        }
+		m_quant = BEU::Quantity(dval, *unit);
+	}
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/18
+//----------------------------------------------------------------------------------------
+Utf8String NamedQuantity::ToText(int prec)
+	{
+	Utf8String txt;
+	txt.Sprintf("%s = %s of %s", m_name.c_str(),  
+		         NumericFormatSpec::StdFormatDouble("real", m_quant.GetMagnitude(), prec).c_str(), m_quant.GetUnitName());
+	return txt;
+	}
 
 //===================================================
 //

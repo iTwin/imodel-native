@@ -137,8 +137,11 @@ UIList UIUtils::GetAvailableTraits()
 
     traits.AddListEntry(UIListEntry((int) FormatTraits::AppendUnitName, UNITSL10N_GETSTRING(FormatTraits_AppendUnitName).c_str(), json_AppendUnitName()));
     traits.AddListEntry(UIListEntry((int)FormatTraits::Use1000Separator, UNITSL10N_GETSTRING(FormatTraits_Use1000Separator).c_str(), json_Use1000Separator()));
-    traits.AddListEntry(UIListEntry((int)FormatTraits::LeadingZeroes, UNITSL10N_GETSTRING(FormatTraits_LeadingZeroes).c_str(), json_LeadZeroes()));
-    traits.AddListEntry(UIListEntry((int)FormatTraits::TrailingZeroes, UNITSL10N_GETSTRING(FormatTraits_TrailingZeroes).c_str(), json_TrailZeroes()));
+    // only used when width is set, so let's ignore for now since users won't likely be setting width.
+    //traits.AddListEntry(UIListEntry((int)FormatTraits::LeadingZeroes, UNITSL10N_GETSTRING(FormatTraits_LeadingZeroes).c_str(), json_LeadZeroes()));
+    traits.AddListEntry(UIListEntry((int)FormatTraits::KeepDecimalPoint, UNITSL10N_GETSTRING(FormatTraits_KeepDecimalPoint).c_str(), json_KeepDecPnt()));
+
+    // TraitsBitToJson(jTraits, json_KeepDecPnt(), FormatTraits::KeepDecimalPoint, &ref, verbose);
 
    // TraitsBitToJson(jTraits, json_TrailZeroes(), FormatTraits::TrailingZeroes, &ref, verbose);
    // TraitsBitToJson(jTraits, json_LeadZeroes(), FormatTraits::LeadingZeroes, &ref, verbose);
@@ -146,7 +149,6 @@ UIList UIUtils::GetAvailableTraits()
    // TraitsBitToJson(jTraits, json_KeepSingleZero(), FormatTraits::KeepSingleZero, &ref, verbose);
    // TraitsBitToJson(jTraits, json_ExponentZero(), FormatTraits::ExponentZero, &ref, verbose);
    // TraitsBitToJson(jTraits, json_ZeroEmpty(), FormatTraits::ZeroEmpty, &ref, verbose);
-   // TraitsBitToJson(jTraits, json_Use1000Separator(), FormatTraits::Use1000Separator, &ref, verbose);
    // TraitsBitToJson(jTraits, json_ApplyRounding(), FormatTraits::ApplyRounding, &ref, verbose);
    // TraitsBitToJson(jTraits, json_AppendUnitName(), FormatTraits::AppendUnitName, &ref, verbose);
    // TraitsBitToJson(jTraits, json_UseFractSymbol(), FormatTraits::UseFractSymbol, &ref, verbose);
@@ -1363,13 +1365,14 @@ FormatUnitSet::FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, bool cl
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
-FormatUnitSet::FormatUnitSet(Utf8CP formatName, Utf8CP unitName, bool cloneData)
+FormatUnitSet::FormatUnitSet(Utf8CP formatName, Utf8CP unitName,  bool cloneData)
     {
     m_problem = FormatProblemDetail();
     m_unit = nullptr;
     if (Utils::IsNameNullOrEmpty(formatName))
         formatName = FormatConstant::DefaultFormatName();
-    m_formatSpec = StdFormatSet::FindFormatSpec(formatName);
+
+	m_formatSpec = StdFormatSet::FindFormatSpec(formatName);
     if (nullptr == m_formatSpec)
         m_problem.UpdateProblemCode(FormatProblemCode::UnknownStdFormatName);
     else
@@ -1410,6 +1413,24 @@ FormatUnitSet& FormatUnitSet::operator=(const FormatUnitSet& other)
         }
     return *this;
     }
+
+FormatUnitSet::FormatUnitSet(FormatUnitSetCR other)
+{
+	m_formatSpec = other.m_formatSpec;
+	m_unitName = other.m_unitName;
+	m_fusName.clear();
+	m_unit = other.m_unit;
+	m_problem = FormatProblemDetail(other.m_problem);
+}
+
+FormatUnitSet::FormatUnitSet(FormatUnitSetCP other)
+{
+	m_formatSpec = other->m_formatSpec;
+	m_unitName = other->m_unitName;
+	m_fusName.clear();
+	m_unit = other->m_unit;
+	m_problem = FormatProblemDetail(other->m_problem);
+}
 
 
 //----------------------------------------------------------------------------------------
@@ -1559,6 +1580,25 @@ Utf8String FormatUnitSet::ToText(bool useAlias) const
     return buf;
     }
 
+Utf8CP FormatUnitSet::GetDefaultDisplayLabel() const
+{
+	Utf8CP fnP = (nullptr == m_formatSpec) ? "#" : m_formatSpec->GetName();
+	Utf8PrintfString lab("FUS_%s_%s", fnP, m_unitName.c_str());
+	Utf8String dispLabel = BeSQLite::L10N::GetString(UnitsL10N::GetNameSpace(), BeSQLite::L10N::StringId(lab.c_str()));
+	return dispLabel.c_str();
+}
+
+Utf8CP FormatUnitSet::GetDisplayLabel(bool useDefault) const
+{
+	if (m_fusName.empty() || useDefault)
+		return GetDefaultDisplayLabel();
+
+	Utf8PrintfString nam("FUS_%s", m_fusName.c_str());
+	Utf8String dispLabel = BeSQLite::L10N::GetString(UnitsL10N::GetNameSpace(), BeSQLite::L10N::StringId(nam.c_str()));
+
+	return dispLabel.c_str();
+}
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
@@ -1598,7 +1638,6 @@ Utf8String FormatUnitSet::FormatQuantity(BEU::QuantityCR qty, Utf8CP space) cons
     return txt;
     }
 
-// Utf8String StdFormatQuantity(NamedFormatSpecCR nfs, BEU::QuantityCR qty, BEU::UnitCP useUnit = nullptr, Utf8CP space = nullptr, Utf8CP useLabel = nullptr, int prec = -1, double round = -1.0);
 
 Json::Value FormatUnitSet::FormatQuantityJson(BEU::QuantityCR qty, bool useAlias, Utf8CP space) const
     {
@@ -1960,14 +1999,15 @@ Utf8String FormatProblemDetail::GetProblemDescription() const
         case FormatProblemCode::PS_MissingFUS: return "Cannot parse expression without FUS";
         case FormatProblemCode::PS_MissingCompositeSpec: return "Cannot parse expression without Composite Format Spec";
         case FormatProblemCode::PS_MismatchingFUS: return "FUS does not match expression";
+		case FormatProblemCode::SFS_InsertingNamelessFUS: return "FUS name is required for registering";
+		case FormatProblemCode::SFS_DuplicateFUSName: return "FUS with htis name is already has been registered";
+		case FormatProblemCode::SFS_FailedToMakeFUS: return "Invalid defintion for the FUS to be registered";
+		case FormatProblemCode::NMQ_InvalidUnitName: return "Invalid unit name in the Named Quantity";
+		case FormatProblemCode::NMQ_MissingName: return "Named Quantity requires a not-empty name";
         case FormatProblemCode::NoProblems:
         default: return "No problems";
         }
     }
-
-
-
-
 
 
 /*

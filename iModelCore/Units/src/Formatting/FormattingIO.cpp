@@ -116,6 +116,9 @@ size_t StdFormatSet::StdInit()
     cvs->SetUnitLabels("'", "\"");
     AddFormat("AmerFI8", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), cvs, "fi8");
     AddFormat("AmerFI16", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 16), cvs, "fi16");
+	AddFormat("AmerFI32", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 32), cvs, "fi32");
+
+
     cvs = new CompositeValueSpec("YRD", "FT", "IN");
     cvs->SetUnitLabels("yrd(s)", "'", "\"");
     AddFormat("AmerYFI8", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), cvs, "yfi8");
@@ -261,6 +264,8 @@ size_t StdFormatSet::CustomInit()
     AddCustomFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"mile(s)\", \"unitName\" : \"MILE\"}, \"MiddleUnit\" : {\"unitLabel\":\"yrd(s)\", \"unitName\" : \"YRD\"}, \"MinorUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"FT\"}, \"SubUnit\" : {\"unitLabel\":\"\\\"\", \"unitName\" : \"IN\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":4, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"myfi4\", \"SpecName\" : \"AmerMYFI4\", \"SpecType\" : \"composite\"}");
     AddCustomFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"'\", \"unitName\" : \"FT\"}, \"MiddleUnit\" : {\"unitLabel\":\"\"\", \"unitName\" : \"IN\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fi8\", \"SpecName\" : \"AmerFI8\", \"SpecType\" : \"composite\"}");
     AddCustomFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"'\", \"unitName\" : \"FT\"}, \"MiddleUnit\" : {\"unitLabel\":\"\"\", \"unitName\" : \"IN\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":16, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fi16\", \"SpecName\" : \"AmerFI16\", \"SpecType\" : \"composite\"}");
+	AddCustomFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"'\", \"unitName\" : \"FT\"}, \"MiddleUnit\" : {\"unitLabel\":\"\"\", \"unitName\" : \"IN\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":32, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fi32\", \"SpecName\" : \"AmerFI32\", \"SpecType\" : \"composite\"}");
+
     AddCustomFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"yrd(s)\", \"unitName\" : \"YRD\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"FT\"}, \"MinorUnit\" : {\"unitLabel\":\"\"\", \"unitName\" : \"IN\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"yfi8\", \"SpecName\" : \"AmerYFI8\", \"SpecType\" : \"composite\"}");
     AddCustomFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"hour(s)\", \"unitName\" : \"HR\"}, \"MiddleUnit\" : {\"unitLabel\":\"min\", \"unitName\" : \"MIN\"}, \"MinorUnit\" : {\"unitLabel\":\"sec\", \"unitName\" : \"S\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"decPrec\":2, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"hms\", \"SpecName\" : \"HMS\", \"SpecType\" : \"composite\"}");
 
@@ -879,6 +884,8 @@ void NamedFormatSpec::ReplaceLocalizables(JsonValueCR jval)
 Json::Value FormatUnitSet::ToJson(bool useAlias, bool verbose) const
     {
     Json::Value jval;
+	if (!m_fusName.empty())
+		jval[json_fusName()] = m_fusName.c_str();
     jval[json_unitName()] = m_unit->GetName();
     if(verbose)
         jval[json_formatSpec()] = m_formatSpec->ToJson(true);
@@ -928,6 +935,10 @@ void FormatUnitSet::LoadJsonData(Json::Value jval)
             if (nullptr == m_formatSpec)
                 m_problem.UpdateProblemCode(FormatProblemCode::UnknownStdFormatName);
             }
+		else if (BeStringUtilities::StricmpAscii(paramName, json_fusName()) == 0)
+			{
+				m_fusName = val.asString();
+			}
         }
     }
 
