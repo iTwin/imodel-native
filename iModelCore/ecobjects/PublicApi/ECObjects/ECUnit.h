@@ -30,8 +30,6 @@ private:
     Utf8String m_description;
     Utf8String m_displayLabel;
 
-    // Need to use the name defined in the base UnitSystem
-    // ECValidatedName m_validatedName;
     ECSchemaCP m_schema;
     void SetSchema(ECSchemaCR schema) {m_schema = &schema;}
 
