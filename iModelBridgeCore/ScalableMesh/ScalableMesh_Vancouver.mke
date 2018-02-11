@@ -488,6 +488,11 @@ certDir             = $(bsiCerts)
 #----------------------------------------------------------------------
 DLM_OBJECT_PCH      = $(o)ScalableMeshPCH$(oext)
 DLM_OBJECT_FILES    = $(cppObjects)
+DLM_DEST            = $(o)
+DLM_SYMB_DEST       = $(o)
+DLM_EXPORT_DEST     = $(o)
+DLM_OBJECT_DEST     = $(o)
+
 
 #SCALABLE_MESH_DGN=1
 
@@ -531,7 +536,7 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)$(BeJsonCppLib) \
     $(ContextSubpartsLibs)$(BentleyGeomLib) \
     $(ContextSubpartsLibs)IppJpegLibTurbo.lib \
-	$(ContextSubpartsLibs)BeLibJpegTurbo.lib \
+    $(ContextSubpartsLibs)BeLibJpegTurbo.lib \
     $(ContextSubpartsLibs)DgnPlatform.lib \
     $(ContextSubpartsLibs)RmgrTools.lib \
     $(ContextSubpartsLibs)DgnGeoCoord.lib \

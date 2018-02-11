@@ -10,7 +10,6 @@
 #include "InternalUtilityFunctions.h"
 #include <ImagePP/all/h/HRARaster.h>
 #include <ImagePP/all/h/HIMMosaic.h>
-#include <ImagePP/all/h/HPMPooledVector.h>
 #include <ImagePP/all/h/HRAClearOptions.h>
 #include <ImagePP/all/h/HRACopyFromOptions.h>
 #include <TerrainModel/Core/DTMIterators.h>
@@ -51,7 +50,7 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH
 extern ScalableMeshScheduler* s_clipScheduler;
 extern std::mutex s_schedulerLock;
 
-template<> struct PoolItem<DifferenceSet>
+/*template<> struct PoolItem<DifferenceSet>
     {
     typedef HPMIndirectCountLimitedPoolItem<DifferenceSet> Type;
     typedef HPMIndirectCountLimitedPool<DifferenceSet> PoolType;
@@ -66,7 +65,7 @@ inline void HPMIndirectCountLimitedPoolItem<DifferenceSet>::RecomputeCount() con
         m_deepCount += sizeof(set) + set->addedFaces.size()*sizeof(DPoint3d) + set->addedVertices.size() * sizeof(int32_t) +
             set->removedFaces.size() * sizeof(int32_t) + set->removedVertices.size() * sizeof(int32_t);
         }
-    }
+    }*/
 
 template<class POINT, class EXTENT> class ISMPointIndexMesher;
 template<class POINT, class EXTENT> class ISMMeshIndexFilter;
@@ -968,7 +967,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         ClipRegistry* GetClipRegistry()
             {
             return m_clipRegistry.GetPtr();
-            }        
+            }
         
 
         //ISMStore::FeatureType is the same as DTMFeatureType defined in TerrainModel.h.

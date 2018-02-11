@@ -26,9 +26,16 @@ IScalableMeshPublishParamsPtr IScalableMeshPublishParams::Create(const SMPublish
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Richard.Bois   11/17
-+---------------+---------------+---------------+---------------+---------------+------*/
+void IScalableMeshPublisher::ExtractPublishNodeHeader(IScalableMeshNodePtr nodePtr, Json::Value& smHeader)
+    {
+    _ExtractPublishNodeHeader(nodePtr, smHeader);
+    }
+
+void IScalableMeshPublisher::ExtractPublishMasterHeader(IScalableMeshPtr smPtr, Json::Value& smMasterHeader)
+    {
+    _ExtractPublishMasterHeader(smPtr, smMasterHeader);
+    }
+
 IScalableMeshPublisherPtr IScalableMeshPublisher::Create(const SMPublishType& type)
     {
     switch (type)

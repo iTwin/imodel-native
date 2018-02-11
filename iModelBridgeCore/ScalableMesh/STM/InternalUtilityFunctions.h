@@ -6,7 +6,7 @@
 |       $Date: 2012/06/27 14:06:54 $
 |     $Author: Chantal.Poulin $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -14,6 +14,8 @@
 
 #include <ScalableMesh/IScalableMeshClipContainer.h>
 #include <ScalableMesh/IScalableMeshQuery.h>
+#include "ImagePPHeaders.h" 
+
 
 void CalcNormals (DVec3d**      calculatedNormals,                  
                   const DVec3d& viewNormalParam, 
@@ -83,3 +85,4 @@ struct PtToPtConverter
     static void Transform(DPoint3d* ptsOut, const DPoint3d* ptsIn, size_t nbPts);
     };
 
+bool IsUrl(WCharCP filename);

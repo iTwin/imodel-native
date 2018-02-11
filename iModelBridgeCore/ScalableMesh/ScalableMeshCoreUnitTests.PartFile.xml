@@ -17,7 +17,7 @@
         <Directories DirectoryListName="ScalableMeshUnitTests"/>
     </Product>
 
-    <Part Name="ScalableMeshUnitTestsExe" BentleyBuildMakeFile="Tests/GTests/BuildTests_vancouver.mke">
+    <Part Name="ScalableMeshUnitTestsExe" BentleyBuildMakeFile="Tests/GTests/ScalableMeshUnitTests.mke">
       <SubPart PartName="google_gtest"         PartFile="gtest"            Repository="util-gtest" />
       <SubPart PartName="google_gtest_lib"     PartFile="gtest"            Repository="util-gtest" />
       <SubPart PartName="ScalableMesh"         PartFile="ScalableMeshCore" Repository="ScalableMesh" />

@@ -12,7 +12,7 @@ baseDir         = $(_MakeFilePath)
 
 %include  mdl.mki
 %include $(SrcRoot)ScalableMesh/mki/ScalableMeshLibName.mki
-%include $(SrcRoot)ScalableMesh/mki/ScalableMeshPolicy.mki
+%include $(SrcRoot)ScalableMesh/mki/ScalableMeshPolicy_Bim.mki
 %include $(baseDir)ScalableMesh.mki
 
 
@@ -22,7 +22,7 @@ baseDir         = $(_MakeFilePath)
 
 DgnPlatformV8LibDir = ${BuildContext}/SubParts/DgnV8Libs/
 
-dirToSearch=$(BuildContext)VendorAPI/Boost
+dirToSearch=$(BuildContext)VendorAPI/Boost_1_5_7_0
 %include cincapnd.mki
 
 #----------------------------------------------------------------------
@@ -37,8 +37,8 @@ always:
 always:
    @CreateSymLinks.py -d"$(BuildContext)PublicAPI/ScalableMesh=$(SCMPublicAPISrc)/ScalableMesh"
 
-always:
-   @CreateSymLinks.py -d"$(BuildContext)PublicAPI/DgnV8Api=$(BuildContext)SdkSources/ScalableMeshSDK/PublicAPI"
+#always:
+#   @CreateSymLinks.py -d"$(BuildContext)PublicAPI/DgnV8Api=$(BuildContext)SdkSources/V8_InternalSDK/PublicAPI"
 
 always:
    @CreateSymLinks.py -f"$(BuildContext)VendorAPI/TilePublisher/TilePublisher.h=$(tilePublisherDir)TilePublisher.h"
@@ -73,6 +73,9 @@ CCompOpts + -wd4244
 
 #release builds: error in boost (named_function_params.hpp)
 CCompOpts + -wd4172
+
+CCompOpts + -wd4002
+
 #----------------------------------------------------------------------
 #   Build precompiled header
 #----------------------------------------------------------------------
@@ -402,7 +405,7 @@ $(o)LandXMLFileImporter$(oext) : $(importerPluginsDir)LandXMLFileImporter.cpp $(
 
 $(o)XYZAsciiFileImporter$(oext) : $(importerPluginsDir)XYZAsciiFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)DGNdbImporter$(oext) : $(importerPluginsDir)DGNdbImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)DGNdbImporter$(oext) : $(importerPluginsDir)DGNdbImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 
 #   Importer from DcStmCore
@@ -418,7 +421,8 @@ $(o)DEMRasterImporter_dgndb$(oext) : $(importerPluginsDir)DEMRasterImporter_dgnd
 
 #$(o)DGNModelGeoRef$(oext) : $(geocoordsDir)DGNModelGeoRef.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)PODImporter_dgndb$(oext) : $(importerPluginsDir)PODImporter_dgndb.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#NEEDS_WORK_SM_POD_B0200 : Need to adapt to refactored Vortex API
+#$(o)PODImporter_dgndb$(oext) : $(importerPluginsDir)PODImporter_dgndb.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 #$(o)STMSource$(oext) : $(importerPluginsDir)STMSource.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
@@ -479,6 +483,11 @@ cppObjects =% $(MultiCompileObjectList)
 #----------------------------------------------------------------------
 DLM_OBJECT_PCH      = $(o)ScalableMeshPCH$(oext)
 DLM_OBJECT_FILES    = $(cppObjects)
+DLM_DEST            = $(o)
+DLM_SYMB_DEST       = $(o)
+DLM_EXPORT_DEST     = $(o)
+DLM_OBJECT_DEST     = $(o)
+
 
 #SCALABLE_MESH_DGN=1
 
@@ -492,8 +501,8 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)wastorage.lib \
     $(ContextSubpartsLibs)BeCurl.lib \
     $(ContextSubpartsLibs)RealityPlatformTools.lib \
-    $(ContextSubpartsLibs)ConnectClientWrapperNative.VC120.lib
-
+    $(ContextSubpartsLibs)CCApi.lib\
+    $(ContextSubpartsLibs)BeCurl.lib
 #    $(DgnPlatformV8LibDir)Bentley.lib \
 #    $(DgnPlatformV8LibDir)ECObjects.lib \
 #    $(DgnPlatformV8LibDir)BentleyGeom.lib \
@@ -516,14 +525,17 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)Imagepp.lib \
     $(ContextSubpartsLibs)$(BeJsonCppLib) \
     $(ContextSubpartsLibs)$(BentleyGeomLib) \
-    $(ContextSubpartsLibs)BeLibJpegTurbo.lib \
+    $(ContextSubpartsStaticLibs)BeLibJpegTurbo.lib \
+    $(ContextSubpartsLibs)BeJpeg.lib \
     $(ContextSubpartsLibs)DgnPlatform.lib \
     $(ContextSubpartsLibs)CloudDataSource.lib \
     $(ContextSubpartsLibs)CGAL.lib \
     $(ContextSubpartsLibs)ECObjects.lib \
     $(ContextSubpartsLibs)BePointCloud.lib \
     $(ContextSubpartsLibs)AutomaticGroundDetection.lib \
-    $(ContextSubpartsLibs)ThreeMxReader.lib
+    $(ContextSubpartsLibs)ThreeMxReaderLegacy.lib \
+    $(ContextSubpartsLibs)freeimage.lib
+
 
 %include $(sharedMki)LinkLibrary.mki
 

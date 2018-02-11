@@ -113,7 +113,7 @@ HUTDEMRasterXYZPointsExtractor*     CreateDEMExtractor                     (cons
 
     try
         {
-        return new HUTDEMRasterXYZPointsExtractor(adaptedPath, GetPoolInstance(), false);
+        return new HUTDEMRasterXYZPointsExtractor(Utf8String(adaptedPath), GetPoolInstance(), false);
         }
     catch (...) // TDORAY: Catch only IPP exceptions
         {
@@ -242,7 +242,8 @@ class DEMRasterFileSourceCreator : public LocalFileSourceCreatorBase
         {
         try
             {
-            const HFCPtr<HFCURL> urlPtr = new HFCURLFile(WString(L"file://") + pi_rSourceRef.GetPathCStr());
+            Utf8String url(WString(L"file://") + pi_rSourceRef.GetPathCStr());
+            const HFCPtr<HFCURL> urlPtr = new HFCURLFile(url);
             const HRFRasterFileCreator* foundCreatorP = HRFRasterFileFactory::GetInstance()->FindCreator(urlPtr, HFC_READ_ONLY);
             assert(0 != foundCreatorP);
             return true;
@@ -476,6 +477,8 @@ class DEMRasterElementSourceCreator : public DGNElementSourceCreatorBase
 
         BaseGCSCPtr modelCoordSysPtr(DgnGCS::FromModel(dgnRasterModelRefP, true));
         BaseGCSCPtr rasterCoordSysPtr( inheritModelGCS ? modelCoordSysPtr : GetRasterBaseGCS(dgnRasterP));
+.
+
 
         if (0 != modelCoordSysPtr.get() && inheritModelGCS)
             {
@@ -654,13 +657,13 @@ class DEMRasterPointExtractorCreator : public InputExtractorCreatorMixinBase<DEM
                                                                                     const ExtractionConfig&               config,
                                                                                     Log&                                  log) const override
         {
-        const WString DestCoordSysKeyName = L"";
+        Utf8String DestCoordSysKeyName = "";
                 
         double scaleFactor = 1;
         
         // TDORAY: CreateXYZPointsIterator should take a const WString as input but could not be changed due to 8.11.7 backward compatibility issues
         auto_ptr<HUTDEMRasterXYZPointsIterator>
-            pIterator(sourceBase.GetPointExtractor().CreateXYZPointsIteratorWithNoDataValueRemoval(const_cast<WString&>(DestCoordSysKeyName), scaleFactor));
+            pIterator(sourceBase.GetPointExtractor().CreateXYZPointsIteratorWithNoDataValueRemoval(DestCoordSysKeyName, scaleFactor));
         if (0 == pIterator.get())
             return 0;
 

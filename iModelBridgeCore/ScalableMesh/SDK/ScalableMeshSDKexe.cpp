@@ -448,7 +448,11 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
     
     void ImportThread(DgnPlatformLib::Host* hostToAdopt, BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceImporterPtr& importerPtr)
         {    
+#ifdef VANCOUVER_API
         DgnPlatformLib::AdoptHost(*hostToAdopt);
+#else
+        assert(!"No AdoptHost on BIM0200 - Untested behavior");
+#endif
 
         importerPtr->Import();
 
@@ -982,7 +986,16 @@ void GetImportRange(DRange3d& importRange, BeXmlNodeP pRootNode)
         if (status != BEXML_Success)
             {
             BeFileName name;
-            assert(BeFileNameStatus::Success == BeFileName::BeGetTempPath(name));
+            
+#ifdef VANCOUVER_API       
+            BeFileNameStatus beStatus = BeFileName::BeGetTempPath(name);
+            assert(BeFileNameStatus::Success == beStatus);
+#else        
+            DgnPlatformLib::IKnownLocationsAdmin locationAdmin(DgnPlatformLib::QueryHost()->GetIKnownLocationsAdmin());
+            name = locationAdmin.GetLocalTempDirectoryBaseName();
+            assert(!name.IsEmpty());
+#endif
+
             params.tempPath = name;
             }
         params.pRootNode = pTestNode;

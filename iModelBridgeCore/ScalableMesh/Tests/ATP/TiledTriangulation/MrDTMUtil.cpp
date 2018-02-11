@@ -2,7 +2,7 @@
 |
 |   $Source: Tests/ATP/TiledTriangulation/MrDTMUtil.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 //#include "DcStmCorePCH.h" //always first
@@ -17,7 +17,13 @@
 #undef static_assert
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+
+#ifdef VANCOUVER_API
+    USING_NAMESPACE_BENTLEY_DGNPLATFORM
+#else
+    USING_NAMESPACE_BENTLEY_DGN
+#endif
+
 
 USING_NAMESPACE_BENTLEY
 //USING_NAMESPACE_GEODTMAPP

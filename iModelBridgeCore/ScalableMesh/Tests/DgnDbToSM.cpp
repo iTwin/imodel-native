@@ -13,7 +13,13 @@ class SMNodeGroupMasterHeader;
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+
+#ifdef VANCOUVER_API
+    USING_NAMESPACE_BENTLEY_DGNPLATFORM
+#else
+    USING_NAMESPACE_BENTLEY_DGN
+#endif
+
 #include <TerrainModel/Core/bcdtmClass.h>
 #include <ScalableMesh\IScalableMesh.h>
 #undef static_assert
@@ -558,7 +564,13 @@ bool FilterElement(bool& shouldCreateGraph, bvector<bvector<DPoint3d>>& newMeshP
         else processedElems.insert(val["elementId"].asInt64());
        auto elementCP = model->FindElementById(DgnElementId((uint64_t)(val["elementId"].asInt64())));
         if (elementCP == nullptr) continue;
+
+#ifdef VANCOUVER_API
         DgnPlatformLib::AdoptHost(libHost);
+#else
+        assert(!"No AdoptHost on BIM0200 - Untested behavior");
+#endif     
+
         dgndbMutex.lock();
         if (RoadSegment::QueryClassId(*mainProject) == DgnClassId(elementCP->GetElementClass()->GetId()))
             {

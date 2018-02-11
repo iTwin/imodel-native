@@ -10,7 +10,7 @@ using namespace concurrency;
 #include <DgnPlatform\DelegatedElementECEnabler.h>
 #include <DgnPlatform\ECQuery.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+
 
 #include <DgnPlatform\DgnPlatformLib.h>
 #include <DgnPlatform\PointCloudHandler.h>
