@@ -98,6 +98,14 @@ enum class ParameterDataType
     String = 5
     };
 
+enum class NamedQuantityType
+{
+	Quantity = 1,
+	Integer  = 2,
+	String = 3
+};
+
+
 enum class RoundingType
     {
     RoundUp = 1,

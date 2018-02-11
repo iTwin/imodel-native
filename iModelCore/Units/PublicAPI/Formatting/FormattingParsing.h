@@ -24,7 +24,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(NumericAccumulator)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(NumberGrabber)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatParsingSegment)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatParsingSet)
-
+DEFINE_POINTER_SUFFIX_TYPEDEFS(NamedQuantity)
 
 struct CursorScanPoint
     {
@@ -558,15 +558,39 @@ public:
 struct NamedQuantity
 {
 private:
-	BEU::Quantity m_quant;
+	NamedQuantityType m_type;
+	BEU::Quantity m_quant;  
     Utf8String m_name;
+	Utf8String m_text;
+	int m_intVal;
 	FormatProblemDetail m_problem;
 
+	void Init(Utf8CP name, NamedQuantityType type) { m_name.assign(name);  m_problem.Reset(); m_intVal = 0; m_type = type; }
 public:
-	UNITS_EXPORT NamedQuantity(Utf8CP name, BEU::Quantity quant) { m_name.assign(name);  m_quant = quant;  m_problem.Reset(); }
+	UNITS_EXPORT NamedQuantity(Utf8CP quantName, BEU::Quantity quant) { Init(quantName, NamedQuantityType::Quantity);  m_quant = quant; }
 	UNITS_EXPORT NamedQuantity(Utf8CP quantName, double magnitude, Utf8CP unitName);
+	UNITS_EXPORT NamedQuantity(Utf8CP quantName, int ival) { Init(quantName, NamedQuantityType::Integer);  m_intVal = ival; }
+	UNITS_EXPORT NamedQuantity(Utf8CP quantName, Utf8CP text) { Init(quantName, NamedQuantityType::String);  m_text.assign(text); }
+
+
 	UNITS_EXPORT BEU::QuantityCP GetQuantity() { return &m_quant; }
+	UNITS_EXPORT Utf8CP GetString() { return m_text.c_str(); }
+	UNITS_EXPORT NamedQuantityType GetType() { return m_type; }
+	UNITS_EXPORT int GetInteger() { return m_intVal; }
 
 	UNITS_EXPORT Utf8String ToText(int prec);
 };
+
+//=======================================================================================
+// @bsiclass                                                    David.Fox-Rabinovitz
+//=======================================================================================
+struct QuantityDataSample
+{
+private:
+	bvector<NamedQuantityCP> m_quantList;
+
+public:
+	QuantityDataSample();
+};
+
 END_BENTLEY_FORMATTING_NAMESPACE

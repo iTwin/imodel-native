@@ -2534,6 +2534,7 @@ BEU::Quantity  FormatParsingSet::ComposeColonizedQuantity(Formatting::FormatSpec
 //----------------------------------------------------------------------------------------
 NamedQuantity::NamedQuantity(Utf8CP quantName, double dval, Utf8CP uom)
 	{
+	    Init(quantName, NamedQuantityType::Quantity);
 	    BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnitCI(uom);
 	    if (nullptr == unit)
 	        {
@@ -2541,7 +2542,6 @@ NamedQuantity::NamedQuantity(Utf8CP quantName, double dval, Utf8CP uom)
 	        return;
 	        }
 		m_quant = BEU::Quantity(dval, *unit);
-		m_name.assign(quantName);
 	}
 
 //----------------------------------------------------------------------------------------
