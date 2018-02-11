@@ -1685,6 +1685,31 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema(ECSchemaR refSchema)
                 if (prop->GetCategory()->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
                     return ECObjectsStatus::SchemaInUse;
                 }
+            if (prop->IsKindOfQuantityDefinedLocally())
+                {
+                if (prop->GetKindOfQuantity()->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
+                    return ECObjectsStatus::SchemaInUse;
+
+                }
+
+            ECEnumerationCP enumeration;
+            if (prop->GetIsPrimitive())
+                {
+                PrimitiveECPropertyCP primProp = prop->GetAsPrimitiveProperty();
+                enumeration = primProp->GetEnumeration();
+                }
+            else if (prop->GetIsPrimitiveArray())
+                {
+                PrimitiveArrayECPropertyCP primArrayProp = prop->GetAsPrimitiveArrayProperty();
+                enumeration = primArrayProp->GetEnumeration();
+                }
+            else
+                {
+                enumeration = nullptr;
+                }
+            if (nullptr != enumeration && enumeration->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
+                return ECObjectsStatus::SchemaInUse;
+
 
             ECClassCP typeClass;
             if (prop->GetIsStruct())
