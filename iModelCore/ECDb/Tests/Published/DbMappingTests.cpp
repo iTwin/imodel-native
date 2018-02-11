@@ -444,6 +444,61 @@ TEST_F(DbMappingTestFixture, UnionOrderBy)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Affan.Khan                          05/17
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, SubQueringEndTableRelationship)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("SubQuerignEndTableRelationship.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+                <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                <ECEntityClass typeName="Element">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                    </ECCustomAttributes>
+                </ECEntityClass>
+                <ECEntityClass typeName="ElementUniqueAspect" modifier="Abstract">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                    </ECCustomAttributes>
+                </ECEntityClass>
+                <ECRelationshipClass typeName="ElementOwnsAspect" modifier="None" strength="embedding">
+                    <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+                        <Class class="Element"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+                        <Class class="ElementUniqueAspect"/>
+                    </Target>
+                </ECRelationshipClass>
+                <ECEntityClass typeName="MyAspect">
+                    <BaseClass>ElementUniqueAspect</BaseClass>
+                    <ECProperty propertyName="AspectName" typeName="string"/>
+                </ECEntityClass>
+                <ECEntityClass typeName="MyElement">
+                    <BaseClass>Element</BaseClass>
+                    <ECProperty propertyName="ElementName" typeName="string"/>
+                </ECEntityClass>
+            </ECSchema>)xml")));
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.ElementOwnsAspect"));
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM (SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.ElementOwnsAspect)"));
+        }
+
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                          05/17
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, MultiConstraintRelationship)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("IncrementallyMapRelationship.ecdb", SchemaItem(
