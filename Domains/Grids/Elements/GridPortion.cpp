@@ -371,5 +371,15 @@ CurveVectorPtr                   ElevationGrid::GetDefaultSurface2d
     return surface;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+GridAxisCPtr                    ElevationGrid::GetAxis
+(
+) const
+    {
+    return GetDgnDb().Elements().Get<GridAxis>((*MakeAxesIterator()).GetElementId());
+    }
+
 END_GRIDS_NAMESPACE
 
