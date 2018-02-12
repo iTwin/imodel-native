@@ -717,6 +717,7 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation)
         }
 
     SaveCachedProperties(isCommit);
+    SaveCachedBlvs(isCommit);
 
     m_inCommit = true;
 
@@ -729,7 +730,7 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation)
         return  BE_SQLITE_ERROR_ChangeTrackError;
         }
 
-    // save briefcase local values only after _OnCommit. It can cause additional changes
+    // save briefcase local values again after _OnCommit. It can cause additional changes
     SaveCachedBlvs(isCommit);
 
     // attempt the commit/release or rollback
