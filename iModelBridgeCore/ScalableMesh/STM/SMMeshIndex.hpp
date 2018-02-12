@@ -726,7 +726,7 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish
             }
         }
     
-template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadIndexNodes(uint64_t& nLoaded, int level, bool headersOnly)
+template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadIndexNodes(size_t& nLoaded, int level, bool headersOnly)
     {
 
     static std::atomic<uint64_t> loadHeaderTime = 0;

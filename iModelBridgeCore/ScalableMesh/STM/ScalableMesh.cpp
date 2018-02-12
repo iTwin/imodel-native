@@ -6,7 +6,7 @@
 |       $Date: 2012/01/06 16:30:15 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
   
@@ -3604,7 +3604,7 @@ template <class POINT> __int64 ScalableMeshSingleResolutionPointIndexView<POINT>
 
 template <class POINT> uint64_t ScalableMeshSingleResolutionPointIndexView<POINT>::_GetNodeCount()
     {
-    uint64_t numNodes = 0;
+    size_t numNodes = 0;
     m_scmIndexPtr->LoadIndexNodes(numNodes, m_resolutionIndex, true);
     return numNodes;
     }
