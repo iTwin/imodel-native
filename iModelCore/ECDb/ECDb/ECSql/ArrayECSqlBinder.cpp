@@ -433,21 +433,103 @@ ECSqlStatus ArrayECSqlBinder::JsonValueBinder::FailIfTypeMismatch(ECN::Primitive
         return ECSqlStatus::Error;
         }
 
-    if (boundType == PRIMITIVETYPE_Binary)
+    //For DateTimes and Geometry column type and BindXXX type must match. All other types are implicitly
+    //converted to each other by SQLite.
+    const PrimitiveType binderDataType = m_typeInfo.GetPrimitiveType();
+    switch (binderDataType)
         {
-        if (m_typeInfo.GetPrimitiveType() != PRIMITIVETYPE_Binary && m_typeInfo.GetPrimitiveType() != PRIMITIVETYPE_IGeometry)
+            case PRIMITIVETYPE_DateTime:
             {
-            LOG.error("Type mismatch. BLOB values can only be bound to BLOB or IGeometry parameter values.");
-            return ECSqlStatus::Error;
+            if (boundType != PRIMITIVETYPE_DateTime)
+                {
+                LOG.error("Type mismatch: only BindDateTime can be called for a column of the DateTime type.");
+                return ECSqlStatus::Error;
+                }
+            else
+                break;
+            }
+            case PRIMITIVETYPE_IGeometry:
+            {
+            if (boundType != PRIMITIVETYPE_IGeometry && boundType != PRIMITIVETYPE_Binary)
+                {
+                LOG.error("Type mismatch: only BindGeometry or BindBlob can be called for a column of the IGeometry type.");
+                return ECSqlStatus::Error;
+                }
+            else
+                break;
             }
 
-        return ECSqlStatus::Success;
+            case PRIMITIVETYPE_Point2d:
+            {
+            if (boundType != PRIMITIVETYPE_Point2d)
+                {
+                LOG.error("Type mismatch: only BindPoint2d can be called for a column of the Point2d type.");
+                return ECSqlStatus::Error;
+                }
+            else
+                break;
+            }
+
+            case PRIMITIVETYPE_Point3d:
+            {
+            if (boundType != PRIMITIVETYPE_Point3d)
+                {
+                LOG.error("Type mismatch: only BindPoint3d can be called for a column of the Point3d type.");
+                return ECSqlStatus::Error;
+                }
+            else
+                break;
+            }
+
+            default:
+                break;
         }
 
-    if (boundType != m_typeInfo.GetPrimitiveType())
+    switch (boundType)
         {
-        LOG.errorv("Type mismatch. %s values cannot be bound to %s parameter values.", ExpHelper::ToString(boundType), ExpHelper::ToString(m_typeInfo.GetPrimitiveType()));
-        return ECSqlStatus::Error;
+            case PRIMITIVETYPE_DateTime:
+            {
+            if (PRIMITIVETYPE_DateTime != binderDataType)
+                {
+                LOG.error("Type mismatch: BindDateTime cannot be called for a column which is not of the DateTime type.");
+                return ECSqlStatus::Error;
+                }
+            else
+                break;
+            }
+            case PRIMITIVETYPE_IGeometry:
+            {
+            if (PRIMITIVETYPE_IGeometry != binderDataType)
+                {
+                LOG.error("Type mismatch: BindGeometry cannot be called for a column which is not of the IGeometry type.");
+                return ECSqlStatus::Error;
+                }
+            else
+                break;
+            }
+            case PRIMITIVETYPE_Point2d:
+            {
+            if (binderDataType != PRIMITIVETYPE_Point2d)
+                {
+                LOG.error("Type mismatch: BindPoint2d cannot be called for a column which is not of the Point2d type.");
+                return ECSqlStatus::Error;
+                }
+            else
+                break;
+            }
+            case PRIMITIVETYPE_Point3d:
+            {
+            if (binderDataType != PRIMITIVETYPE_Point3d)
+                {
+                LOG.error("Type mismatch: BindPoint3d cannot be called for a column which is not of the Point3d type.");
+                return ECSqlStatus::Error;
+                }
+            else
+                break;
+            }
+
+            default:
+                break;
         }
 
     return ECSqlStatus::Success;
