@@ -343,7 +343,7 @@ struct  ClipPlaneSet :  bvector <ConvexClipPlaneSet>
     //! @param maskSet [in] the negative (holes) clip set
     GEOMDLLIMPEXP static ClipPlaneContainment ClassifyPolyfaceInSetDifference
     (
-    PolyfaceHeaderCR polyface,
+    PolyfaceQueryCR polyface,
     ClipPlaneSetCR clipSet,
     ClipPlaneSetCP maskSet
     );
@@ -356,7 +356,7 @@ struct  ClipPlaneSet :  bvector <ConvexClipPlaneSet>
     //! @param outside [out] (optional) "outside" parts
     GEOMDLLIMPEXP void static ClipToSetDifference
     (
-    PolyfaceHeaderCR polyface,
+    PolyfaceQueryCR polyface,
     ClipPlaneSetCR clipSet,
     ClipPlaneSetCP maskSet,
     PolyfaceHeaderPtr *inside,
