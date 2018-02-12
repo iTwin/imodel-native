@@ -123,6 +123,10 @@ TEST(RuledBezier,Quad0)
     CheckRuledPierce (coffA, coffB, 3);
     }
 
+#ifdef TEST_QUADRATIC_BEZIER_CONSTRUCTIONS
+// EDL Feb 6, 2018
+// These consturctions build quadratic bezier triangles using vertex normals.
+// The surfaces are good for mild normals, but cannot handle inflections and strong curvature.
 //! Given the points and normals at each end of an edge, compute a point "near the mid edge" such that the quadratic bezier
 //! for the 3 points passes through the ends tangent to those planes.
 ValidatedDPoint3d ComputeMidEdgeBezierPoint (DPoint3dCR pointA, DVec3dCR _normalA, DPoint3dCR pointB, DVec3dCR _normalB)
@@ -168,9 +172,12 @@ ValidatedDPoint3d ComputeMidEdgeBezierPoint (DPoint3dCR pointA, DVec3dCR _normal
         }
     return ValidatedDPoint3d (DPoint3d::FromInterpolate (pointA, 0.5, pointB), false);
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BezierTriangle,CreateMidEdgePointsFromNormals)
     {
-    bvector<double> positiveShifts {0.1, 1,2,3};
+    bvector<double> positiveShifts {0.1, 1};
     bvector<double> mixedShifts {-1,0,1,2};
     double edgeLength = 10;
     double normalZ = 5.0;
@@ -211,8 +218,10 @@ TEST(BezierTriangle,CreateMidEdgePointsFromNormals)
         }
     Check::ClearGeometry ("BezierTriangle.CreateMidEdgePointsFromNormals");
     }
-
-TEST(BezierTriangle,CreateQuadratic)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(BezierTriangle,CreateQuadraticSurfaceFromNormals)
     {
     bvector<double> positiveShifts {1,2};
     bvector<double> mixedShifts {-1,0.5};
@@ -262,5 +271,177 @@ TEST(BezierTriangle,CreateQuadratic)
                 }
             }
         }
-    Check::ClearGeometry ("BezierTriangle.CreateQuadratic");
+    Check::ClearGeometry ("BezierTriangle.CreateQuadraticSurfaceFromNormals");
     }
+#endif
+
+//! Given the normal at one end of an edge, compute a cubbic bezier point.
+//! The point is 
+//! 1) In the plane of the edge and surface normal
+//! 2) located 1/3 the edge length along that direction.
+//
+DPoint3d CubicBezierTargetPoint(DPoint3dCR pointA, DVec3dCR normalA, DPoint3dCR pointB)
+    {
+    auto edgeVector = DVec3d::FromStartEnd (pointA, pointB);
+    auto perpVector = DVec3d::FromCrossProduct (edgeVector, normalA);
+    auto tangentVector = DVec3d::FromCrossProduct (normalA, perpVector);
+
+    auto d = edgeVector.Magnitude () / 3.0;
+
+    if (tangentVector.Normalize ())
+        {
+        return DPoint3d::FromSumOf (pointA, tangentVector, d);
+        }
+    return pointA;
+    }
+
+//! Given the normal at one end of an edge, compute a cubbic bezier point.
+//! The point is 
+//! 1) In the plane of the edge and surface normal
+//! 2) located 1/3 the edge length along that direction.
+//! returns 10 points of triangle, starting with 4 points along AB edge.
+void CubicBezierTriangleFromPointsAndNormals(bvector<DPoint3d> &bezierPoints, DPoint3dCR pointA, DVec3dCR normalA, DPoint3dCR pointB, DVec3dCR normalB, DPoint3dCR pointC, DVec3dCR normalC)
+    {
+    bezierPoints.clear ();
+    bezierPoints.push_back (pointA);
+    bezierPoints.push_back (CubicBezierTargetPoint (pointA, normalA, pointB));
+    bezierPoints.push_back (CubicBezierTargetPoint (pointB, normalB, pointA));
+    bezierPoints.push_back (pointB);
+    bezierPoints.push_back (CubicBezierTargetPoint (pointA, normalA, pointC));
+    bezierPoints.push_back (DPoint3d::FromZero ());
+    bezierPoints.push_back (CubicBezierTargetPoint (pointB, normalB, pointC));
+    bezierPoints.push_back (CubicBezierTargetPoint (pointC, normalC, pointA));
+    bezierPoints.push_back (CubicBezierTargetPoint (pointC, normalC, pointB));
+    bezierPoints.push_back (pointC);
+
+    DPoint3d centralPoint = DPoint3d::FromZero ();
+    for (size_t i : {1,2,4,6,7,8})
+        centralPoint.Add (bezierPoints[i]);
+    centralPoint.Scale (1.0 / 6.0);
+    bezierPoints[5] = centralPoint;
+    }
+void AddScaled (DPoint3dR xyz, DPoint3dCR delta, double s)
+    {
+    xyz.x += delta.x * s;
+    xyz.y += delta.y * s;
+    xyz.z += delta.z * s;
+    }
+
+// Given the control net for a bezier cubic triangle, ADD facets to mesh . . .
+void FacetCubicBezierTriangle (
+uint32_t numEdge,       //!< [in] number of facet edges along each side of the triangle.  Recommended 3 to 6.
+bvector<DPoint3d> const &bezier,    //!< [in] bezier control points, e.g. as produced by CubicBezierTriangleFromPointsAndNormals
+PolyfaceHeaderR  mesh   //!< [in/out]  mesh to receive facets.
+)
+    {
+    if (numEdge < 1)
+        return;
+    double df = 1.0 / (numEdge);
+    DPoint3d sum;
+    bvector<int> &pointIndex = mesh.PointIndex ();
+    bvector<DPoint3d> &points = mesh.Point ();
+    for (uint32_t j = 0, dropToPreviousRow = numEdge + 2; j <= numEdge; j++, dropToPreviousRow--)
+        {
+        double y = j * df;
+        for (uint32_t i = 0, numI = numEdge - i - j; i <= numI; i++)
+            {
+            double x = i * df;
+            double u = 1.0 - x - y;
+            double v = x;
+            double w = y;
+            double u2 = u * u; double u3 = u * u2;
+            double v2 = v * v; double v3 = v * v2;
+            double w2 = w * w; double w3 = w * w2;
+            sum.Zero ();
+            AddScaled (sum, bezier[0], u3);
+            AddScaled (sum, bezier[1], 3.0 * u2 * v);
+            AddScaled (sum, bezier[2], 3.0 * u * v2);
+            AddScaled (sum, bezier[3], v3);
+            AddScaled (sum, bezier[4], 3.0 * w * u2);
+            AddScaled (sum, bezier[5], 6.0 * w * u * v);
+            AddScaled (sum, bezier[6], 3.0 * w * v2);
+            AddScaled (sum, bezier[7], 3.0 * w2 * u);
+            AddScaled (sum, bezier[8], 3.0 * w2 * v);
+            AddScaled (sum, bezier[9], w3);
+            points.push_back (sum);
+            int q = (int)mesh.Point().size ();  // ONE BASED index of new point
+//
+//   *---p---q
+//   | \ | \ | \
+//   *---*---r---s
+// q is new index.
+// p=q-1
+// r=q-dropToPReviousRow
+// s=r+1
+// triangle (qpr) does "is off to the left" when q==0
+// triangle (qrs) is always there.
+            if (j > 0)
+                {
+                int p = q - 1;
+                int r = q - dropToPreviousRow;
+                int s = r + 1;
+                if (i > 0)
+                    {
+                    pointIndex.push_back (q);
+                    pointIndex.push_back (p);
+                    pointIndex.push_back (r);
+                    pointIndex.push_back (0);
+                    }
+                pointIndex.push_back (q);
+                pointIndex.push_back (r);
+                pointIndex.push_back (s);
+                pointIndex.push_back (0);
+                }
+            }
+        }
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(BezierTriangle,CreateCubicSurfaceFromNormals)
+    {
+    // non-unit normals have z=4 and all combinations of values from mixedShifts.
+    // 3 shifts ==> 9 normals at each of A,B,C ==> 9*9*9 triangles faceted.  Wow.
+    // 2 shifts ==> 9 normals at each of A,B,C ==> 4*4*4 triangles to facet.
+    double normalZ = 4.0;
+    bvector<double> mixedShifts {-1, 0.8};
+    double edgeLength = 10;
+    uint32_t numEdge = 6;
+    auto pointA = DPoint3d::From (0,0,0);
+    auto pointB = DPoint3d::From (edgeLength,0,0);
+    auto pointC = DPoint3d::From (0, 0.6 * edgeLength, 0);
+    for (auto dxA : mixedShifts)
+        {
+        for (auto dyA : mixedShifts)
+            {
+            SaveAndRestoreCheckTransform shiftA (2.0 * edgeLength, 0, 0);
+            for (auto dxB : mixedShifts)
+                {
+                for (auto dyB : mixedShifts)
+                    {
+                    SaveAndRestoreCheckTransform shiftA (0, 2.0 * edgeLength, 0);
+                    for (auto dxC : mixedShifts)
+                        {
+                        for (auto dyC : mixedShifts)
+                            {
+                            SaveAndRestoreCheckTransform shiftA (0, 0, 3.0 * edgeLength);
+                            auto normalA = DVec3d::From (-dxA, dyA, normalZ);
+                            auto normalB = DVec3d::From (dxB, dyB, normalZ);
+                            auto normalC = DVec3d::From (dxC, dyC, normalZ);
+                            bvector<DPoint3d> bezierNet;
+                            CubicBezierTriangleFromPointsAndNormals (bezierNet, pointA, normalA, pointB, normalB, pointC, normalC);
+                            auto mesh = PolyfaceHeader::CreateVariableSizeIndexed ();
+                            FacetCubicBezierTriangle (numEdge, bezierNet, *mesh);
+                            Check::SaveTransformed (bvector<DPoint3d> {
+                                pointA + normalA, pointA, pointB, pointB + normalB, pointB, pointC , pointC + normalC, pointC, pointA
+                                });
+                            Check::SaveTransformed (*mesh);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    Check::ClearGeometry ("BezierTriangle.CreateCubicSurfaceFromNormals");
+    }
+
