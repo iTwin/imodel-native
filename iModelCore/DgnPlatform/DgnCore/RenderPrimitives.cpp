@@ -2361,6 +2361,7 @@ bool MeshArgs::Init(MeshCR mesh)
     mesh.ToFeatureIndex(m_features);
 
     m_edges.m_width = mesh.GetDisplayParams().GetLineWidth();
+    m_edges.m_linePixels = mesh.GetDisplayParams().GetLinePixels();
 
     MeshEdgesCP meshEdges = mesh.GetEdges().get();
     if (nullptr == meshEdges)
