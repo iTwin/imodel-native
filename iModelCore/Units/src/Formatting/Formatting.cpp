@@ -2,7 +2,7 @@
 |
 |     $Source: src/Formatting/Formatting.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitsPCH.h>
@@ -69,6 +69,7 @@ void NumericFormatSpec::DefaultInit(size_t precision)
     m_statSeparator = '+';
     m_minWidth = 0;
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //----------------------------------------------------------------------------------------
@@ -150,13 +151,14 @@ bool NumericFormatSpec::AcceptableDifference(double dval1, double dval2, double 
     return (fabs(maxDiff) > fabs(dval1 - dval2));
     }
 
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //----------------------------------------------------------------------------------------
-NumericFormatSpec::NumericFormatSpec(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision)
+NumericFormatSpec::NumericFormatSpec(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision, Utf8CP uomSeparator)
     {
     Init(presType, signOpt, formatTraits, precision);   
+    if (uomSeparator)
+        SetUomSeparator(uomSeparator);
     }
 
 //----------------------------------------------------------------------------------------
@@ -300,6 +302,7 @@ void NumericFormatSpec::SetPrecisionByValue(int prec)
 //        temp &= ~static_cast<int>(FormatTraits::AppendUnitName);
 //    m_formatTraits = static_cast<FormatTraits>(temp);
 //    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //---------------------------------------------------------------------------------------
@@ -1003,11 +1006,12 @@ Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quan
     Utf8CP uomLabel = Utils::IsNameNullOrEmpty(useLabel) ? ((nullptr == useUnit) ? qty.GetUnitLabel() : useUnit->GetLabel()) : useLabel;
     Utf8String majT, midT, minT, subT;
 
-
     if (composite)  // procesing composite parts
         {
         CompositeValueSpecP compS = (CompositeValueSpecP)nfs.GetCompositeSpec();
         CompositeValue dval = compS->DecomposeValue(temp.GetMagnitude(), temp.GetUnit());
+		Utf8String pref = dval.GetSignPrefix();
+		Utf8String suff = dval.GetSignSuffix();
         Utf8CP spacer = Utils::IsNameNullOrEmpty(space) ? compS->GetSpacer().c_str() : space;
         // for all parts but the last one we need to format an integer 
         NumericFormatSpec fmtI = NumericFormatSpec(PresentationType::Decimal, FormatConstant::DefaultSignOption(),
@@ -1017,30 +1021,33 @@ Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quan
         switch (compS->GetType())
             {
             case CompositeSpecType::Single: // there is only one value to report
-                majT = fmtP->FormatDouble(dval.GetMajor(), prec, round);
-                majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel(nullptr).c_str(), spacer);
+                majT = pref + fmtP->FormatDouble(dval.GetMajor(), prec, round);
+                // if this composite only defines a single component then use format traits to determine if unit label is shown. This allows
+                // support for SuppressUnitLable options in DgnClientFx. Also in this single component situation use the define UomSeparator.
+                if (fmtP->IsAppendUnit())
+                    majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel(nullptr).c_str(), Utils::SubstituteNull(space, fmtP->GetUomSeparator())) + suff;
                 break;
 
             case CompositeSpecType::Double:
-                majT = fmtI.FormatDouble(dval.GetMajor(), prec, round);
+                majT = pref + fmtI.FormatDouble(dval.GetMajor(), prec, round);
                 majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel(nullptr).c_str(), spacer);
                 midT = fmtP->FormatDouble(dval.GetMiddle(), prec, round);
                 midT = Utils::AppendUnitName(midT.c_str(), compS->GetMiddleLabel(nullptr).c_str(), spacer);
-                majT += " " + midT;
+                majT += " " + midT + suff;
                 break;
 
             case CompositeSpecType::Triple:
-                majT = fmtI.FormatDouble(dval.GetMajor(), prec, round);
+                majT = pref + fmtI.FormatDouble(dval.GetMajor(), prec, round);
                 majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel(nullptr).c_str(), spacer);
                 midT = fmtI.FormatDouble(dval.GetMiddle(), prec, round);
                 midT = Utils::AppendUnitName(midT.c_str(), compS->GetMiddleLabel(nullptr).c_str(), spacer);
                 minT = fmtP->FormatDouble(dval.GetMinor(), prec, round);
                 minT = Utils::AppendUnitName(minT.c_str(), compS->GetMinorLabel(nullptr).c_str(), spacer);
-                majT += " " + midT + " " + minT;
+                majT += " " + midT + " " + minT + suff;
                 break;
 
             case CompositeSpecType::Quatro:
-                majT = fmtI.FormatDouble(dval.GetMajor(), prec, round);
+                majT = pref + fmtI.FormatDouble(dval.GetMajor(), prec, round);
                 majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel(nullptr).c_str(), spacer);
                 midT = fmtI.FormatDouble(dval.GetMiddle(), prec, round);
                 midT = Utils::AppendUnitName(midT.c_str(), compS->GetMiddleLabel(nullptr).c_str(), spacer);
@@ -1048,7 +1055,7 @@ Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quan
                 minT = Utils::AppendUnitName(minT.c_str(), compS->GetMinorLabel(nullptr).c_str(), spacer);
                 subT = fmtP->FormatDouble(dval.GetSub(), prec, round);
                 subT = Utils::AppendUnitName(subT.c_str(), compS->GetSubLabel(nullptr).c_str(), spacer);
-                majT += midT + " " + minT + " " + subT;
+                majT += midT + " " + minT + " " + subT + suff;
                 break;
             }
         }

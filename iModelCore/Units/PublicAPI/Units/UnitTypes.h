@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Units/UnitTypes.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -170,6 +170,7 @@ public:
     UNITS_EXPORT Utf8CP GetLabel() const;
     UNITS_EXPORT Utf8CP GetDescription() const;
 
+    bool IsSI() const { return m_system.Equals("SI"); }
     bool IsRegistered()    const;
     bool IsConstant() const { return m_isConstant; }
     Utf8CP GetUnitSystem() const { return m_system.c_str(); }
@@ -184,6 +185,8 @@ public:
         { return nullptr == unitA || nullptr == unitB ? false : unitA->GetId() == unitB->GetId(); }
     //! Returns true if the input units belong to the same phenomenon, false if not or one or both are null.
     UNITS_EXPORT static bool AreCompatible(UnitCP unitA, UnitCP unitB);
+    UNITS_EXPORT void AddSynonym(Utf8CP synonym) const;
+    UNITS_EXPORT size_t GetSynonymList(bvector<Utf8CP>& synonyms) const;
     };
 
 struct UnitSynonymMap
@@ -210,11 +213,13 @@ public:
     //! When the first argument contains only the name of the unit, the second argument must be a synonym
     //! Invalide names or their invalid combination will result in the empty Map
 
-    UNITS_EXPORT UnitSynonymMap(Utf8CP unitName, Utf8CP synonym = nullptr); 
+    UNITS_EXPORT UnitSynonymMap(Utf8CP unitName, Utf8CP synonym = nullptr);
+    UNITS_EXPORT UnitSynonymMap(UnitCP unit, Utf8CP synonym) :m_unit(unit), m_synonym(synonym) {}
     //UNITS_EXPORT UnitSynonymMap(Utf8CP descriptor);
     UNITS_EXPORT UnitSynonymMap(Json::Value jval);
     bool IsMapEmpty() { return (nullptr == m_unit) && m_synonym.empty(); }
     Utf8CP GetSynonym() const { return m_synonym.c_str(); }
+    Utf8CP GetUnitName() const { return m_unit->GetName(); }
     UnitCP GetUnit() const { return m_unit; }
     PhenomenonCP GetPhenomenon() const{ return (nullptr == m_unit) ? nullptr : m_unit->GetPhenomenon(); }
     UNITS_EXPORT Json::Value ToJson();
@@ -252,7 +257,9 @@ public:
     UNITS_EXPORT Utf8String GetPhenomenonSignature() const;
 
     bool HasUnits() const { return m_units.size() > 0; }
+    bool HasSynonyms() const { return m_altNames.size() > 0; }
     bvector<UnitCP> const GetUnits() const { return m_units; }
+    UnitCP GetSIUnit() const { auto it = std::find_if(m_units.begin(), m_units.end(), [](UnitCP unit) { return unit->IsSI(); });  return m_units.end() == it ? nullptr : *it; }
 
     UNITS_EXPORT bool IsCompatible(UnitCR unit) const;
     bool Equals(PhenomenonCR comparePhenomenon) const {return GetPhenomenonId() == comparePhenomenon.GetPhenomenonId();}
@@ -262,9 +269,10 @@ public:
     UNITS_EXPORT bool IsLength() const;
     UNITS_EXPORT bool IsTime() const;
     UNITS_EXPORT bool IsAngle() const;
-    UNITS_EXPORT UnitCP LookupUnit(Utf8CP unitName);
+    UNITS_EXPORT UnitCP LookupUnit(Utf8CP unitName) const;
     UNITS_EXPORT UnitCP FindSynonym(Utf8CP synonym) const;
     UNITS_EXPORT void AddSynonym(Utf8CP unitName, Utf8CP synonym);
+    UNITS_EXPORT void AddSynonym(UnitCP unitP, Utf8CP synonym) const;
     UNITS_EXPORT void AddSynonymMap(UnitSynonymMapCR map) const;
     UNITS_EXPORT void AddSynonymMaps(Json::Value jval) const;
     UNITS_EXPORT Json::Value SynonymMapToJson() const;
@@ -272,6 +280,7 @@ public:
     UNITS_EXPORT T_UnitSynonymVector* GetSynonymVector() const { return &m_altNames; }
     UNITS_EXPORT size_t GetSynonymCount() const { return m_altNames.size(); }
     UNITS_EXPORT Utf8CP GetLabel() const;
+
 };
 END_BENTLEY_UNITS_NAMESPACE
 /*__PUBLISH_SECTION_END__*/

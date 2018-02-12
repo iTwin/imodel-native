@@ -39,7 +39,6 @@ void FormattingTestFixture::SetUpL10N()
     BeTest::GetHost().GetTempDir(temporaryDirectory);
 
     BeSQLite::BeSQLiteLib::Initialize(temporaryDirectory, BeSQLite::BeSQLiteLib::LogErrors::Yes);
-    BeSQLite::L10N::Shutdown();
     BeSQLite::L10N::Initialize(BeSQLite::L10N::SqlangFiles(sqlangFile));
     }
 
@@ -122,10 +121,13 @@ void FormattingTestFixture::ShowHexDump(Utf8String str, int len)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::ShowHexDump(Utf8CP str, int len)
+void FormattingTestFixture::ShowHexDump(Utf8CP str, int len, Utf8CP message)
     {
     Utf8String hd = Utils::HexDump(str, 30);
-    LOG.infov(u8"COL: %s", hd.c_str());
+    if(nullptr == message)
+        LOG.infov(u8"COL: %s", hd.c_str());
+    else
+        LOG.infov(u8"%s => %s", message, hd.c_str());
     }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
@@ -233,7 +235,7 @@ void FormattingTestFixture::ShowQuantity(double dval, Utf8CP uom, Utf8CP fusUnit
         }
 
     Utf8String fmtQ = fus.FormatQuantity(q, space);
-    LOG.infov("===ShowQuantity: %f of %s = %s", dval, uom, fmtQ.c_str());
+    LOG.infov("\n===ShowQuantity: %f of %s = %s", dval, uom, fmtQ.c_str());
     Json::Value jval = fus.FormatQuantityJson(q, true);
     Utf8String jsonQ = jval.ToString();
     LOG.infov("JSON: %s", jsonQ.c_str());
@@ -1013,7 +1015,7 @@ void FormattingTestFixture::FormattingTraitsTest()
 
     TraitJsonKeyMap* map;
     Json::Value val;
-    FormatTraits traits = FormatTraits::DefaultZeroes;
+    FormatTraits traits = FormatTraits::DefaultTraits;
     for(int i =0; i < vec.size(); i++)
         {
          map = &vec[i];
@@ -1026,7 +1028,7 @@ void FormattingTestFixture::FormattingTraitsTest()
          EXPECT_STREQ (neg[i].c_str(), val.ToString().c_str());
          //LOG.infov("Bit %s drop: %s", map->GetKey(), val.ToString().c_str());      
          val.clear();
-         traits = FormatTraits::DefaultZeroes;
+         traits = FormatTraits::DefaultTraits;
         }
     }
 //----------------------------------------------------------------------------------------
@@ -1216,7 +1218,8 @@ void FormattingTestFixture::VerifyQuantity(Utf8CP input, Utf8CP unitName, Utf8CP
         }
     else
         {
-        BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnitCI(qtyUnitName);
+        BEU::PhenomenonCP pp = fus.GetPhenomenon();
+        BEU::UnitCP unit = (nullptr == pp) ? BEU::UnitRegistry::Instance().LookupUnitCI(qtyUnitName) : pp->LookupUnit(qtyUnitName);
         BEU::Quantity temp = BEU::Quantity(magnitude, *unit);
         bool eq = qty.IsClose(temp, 0.0001);
         EXPECT_TRUE(eq);
@@ -1228,8 +1231,88 @@ void FormattingTestFixture::VerifyQuantity(Utf8CP input, Utf8CP unitName, Utf8CP
         }
     }
 
+void FormattingTestFixture::ShowPhenomenon(BEU::PhenomenonCP phenP, bvector<BEU::PhenomenonCP>& undefPhenomena)
+    {
+    if (nullptr == phenP)
+        return;
+    if (phenP->HasUnits())
+        {
+        bvector<BEU::UnitCP> unitsV = phenP->GetUnits();
+        LOG.infov("Phenomenon %s (UOM list of %d)", phenP->GetName(), unitsV.size());
+        for (const BEU::UnitCP* up = unitsV.begin(); up != unitsV.end(); up++)
+            {
+            LOG.infov("  %s", (*up)->GetName());
+            }
+        if (phenP->HasSynonyms())
+            {
+            BEU::T_UnitSynonymVector* synV = phenP->GetSynonymVector();
+            LOG.infov("  List of %d synonyms:", synV->size());
+            for (const BEU::UnitSynonymMap* up = synV->begin(); up != synV->end(); up++)
+                {
+                LOG.infov(u8"  %s => %s", up->GetSynonym(), up->GetUnitName());
+                }
+            LOG.info("=======================================");
+            }
+        else
+            LOG.info("==== No synonyms are defined===========");
+        }
+    else
+        {
+        LOG.infov("Phenomenon: %s (no UOM defined)", phenP->GetName());
+        undefPhenomena.push_back(phenP);
+        }
+    return;
+    }
+
+void FormattingTestFixture::ShowKnownPhenomena()
+    {
+    bvector<BEU::PhenomenonCP> allPhenomena;
+    bvector<BEU::PhenomenonCP> undefPhenomena;
+    BEU::UnitRegistry::Instance().AllPhenomena(allPhenomena);
+    for (const BEU::PhenomenonCP* ph = allPhenomena.begin(); ph != allPhenomena.end(); ph++)
+        {
+        ShowPhenomenon(*ph, undefPhenomena);
+        }
+    if (undefPhenomena.size() > 0)
+        {
+        LOG.infov("\nList of %d Phenomena without UOM: ", undefPhenomena.size());
+        for (const BEU::PhenomenonCP* ph = undefPhenomena.begin(); ph != undefPhenomena.end(); ph++)
+            {
+            LOG.infov("  %s", (*ph)->GetName());
+            }
+        }
+    }
+
+void FormattingTestFixture::ShowSynonyms()
+    {
+    bvector<BEU::UnitCP> allUnits;
+    bvector<Utf8CP> synonyms;
+    WString wsyn;
+    BEU::UnitRegistry::Instance().AllUnits(allUnits);
+    for (BEU::UnitCP* un = allUnits.begin(); un != allUnits.end();un++)
+        {
+        if ((*un)->GetSynonymList(synonyms) > 0)
+            {
+            LOG.infov("Unit %s synonyms:", (*un)->GetName());
+            for (size_t i = 0; i < synonyms.size(); i++)
+                {
+                wsyn = WString(synonyms[i], true);
+                LOG.infov(L"%02d %ls", i + 1, wsyn.c_str());
+                }
+            }
+        }
+    }
 
 END_BENTLEY_FORMATTEST_NAMESPACE
+
+//WString wJson(jval.ToString().c_str(), true);
+//WString wBool(FormatConstant::BoolText(ident), true);
+////WChar outStr[258];
+////memset(outStr, 0, sizeof(outStr));
+////BeStringUtilities::Snwprintf(outStr, 256, L"UnitSynonymMap(%ls, %ls)", wName.c_str(), wSyn.c_str(), wJson.c_str(), wBool.c_str());
+////LOG.infov(L"FormattedMapString: %ls", outStr);
+//LOG.infov(L"UnitSynonymMap(%ls, %ls) => json: %ls (%ls)", wName.c_str(), wSyn.c_str(), wJson.c_str(), wBool.c_str());
+
 
 //FormattingTestFixture::
 //EXPECT_STREQ ("{\"TrailZeroes\":\"true\"}", val.ToString().c_str());

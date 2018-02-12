@@ -2,7 +2,7 @@
 |
 |     $Source: src/UnitTypes.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -132,7 +132,7 @@ Utf8CP Unit::GetLabel() const
 
         if (m_displayLabel.empty())
             {
-            LOG.errorv("Missing localized label for Unit %s", GetName());
+            LOG.errorv("Missing localized label for Unit %s", fullUnitName.c_str());
             m_displayLabel = GetName();
             }
         }
@@ -372,6 +372,28 @@ bool Unit::AreCompatible(UnitCP unitA, UnitCP unitB)
     return nullptr == unitA || nullptr == unitB ? false : Phenomenon::AreEqual(unitA->GetPhenomenon(), unitB->GetPhenomenon());
     }
 
+void Unit::AddSynonym(Utf8CP synonym) const
+    {
+    PhenomenonCP ph = GetPhenomenon();
+    UnitCP const un = this;
+    if (nullptr != ph)
+        ph->AddSynonym(un, synonym);
+    }
+
+size_t Unit::GetSynonymList(bvector<Utf8CP>& synonyms) const
+    {
+    synonyms.clear();
+    if (nullptr == m_phenomenon)
+        return 0;
+    T_UnitSynonymVector* synV = m_phenomenon->GetSynonymVector();
+    for (UnitSynonymMap* up = synV->begin(); up != synV->end(); up++)
+        {
+        if(this == up->GetUnit())
+         synonyms.push_back(up->GetSynonym());
+        }
+    return synonyms.size();
+    }
+
 Utf8String Phenomenon::GetPhenomenonSignature() const
     {
     Expression phenomenonExpression = Evaluate();
@@ -606,15 +628,23 @@ UnitCP Phenomenon::FindSynonym(Utf8CP synonym) const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
-UnitCP Phenomenon::LookupUnit(Utf8CP unitName)
+UnitCP Phenomenon::LookupUnit(Utf8CP unitName) const
     {
     UnitCP un = FindSynonym(unitName);
     if (nullptr != un)
         return un;
-    un = UnitRegistry::Instance().LookupUnitCI(unitName);
+
+    for (const UnitCP* up = m_units.begin(); up != m_units.end(); up++)
+        {
+        UnitCP const u = *up;
+        if (0 == BeStringUtilities::StricmpAscii(unitName, u->GetName()))
+            return u;
+        }
+
+    /*un = UnitRegistry::Instance().LookupUnitCI(unitName);
     PhenomenonCP ph = (nullptr == un)? nullptr : un->GetPhenomenon();
     if (this == ph)
-        return un;
+        return un;*/
 
     return nullptr;
     }
@@ -632,6 +662,21 @@ void Phenomenon::AddSynonym(Utf8CP unitName, Utf8CP synonym)
         return;
     m_altNames.push_back(map);
     }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 01/18
+//----------------------------------------------------------------------------------------
+void Phenomenon::AddSynonym(UnitCP unitP, Utf8CP synonym) const
+    {
+    if (unitP->GetPhenomenon() != this)
+        return;
+    UnitCP un = FindSynonym(synonym);
+    if (nullptr != un) // synonym is found - we don't add duplicate
+        return;
+    UnitSynonymMap map = UnitSynonymMap(unitP, synonym);
+    m_altNames.push_back(map);
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------

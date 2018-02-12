@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Formatting/FormattingApi.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -169,8 +169,13 @@ struct UIUtils
     UNITS_EXPORT static UIList GetAvailableDecimalPercisions();
     UNITS_EXPORT static UIList GetAvailableFractionalPercisions();
     UNITS_EXPORT static UIList GetAvailableSignOption();
+    UNITS_EXPORT static UIList GetAvailablePresentationTypes();
+    UNITS_EXPORT static UIList GetAvailableDecimalSeparators();
+    UNITS_EXPORT static UIList GetAvailableThousandSeparators();
+    UNITS_EXPORT static UIList GetAvailableUnitLabelSeparators();
+    UNITS_EXPORT static UIList GetAvailableTraits();
+    UNITS_EXPORT static Json::Value GetAvailableUnitLabels(Utf8CP unitName);
     };
-
 
 struct FactorPower
     {
@@ -292,7 +297,7 @@ public:
         m_fractPrecision(other.m_fractPrecision), m_decimalSeparator(other.m_decimalSeparator),
         m_thousandsSeparator(other.m_thousandsSeparator), m_barType(other.m_barType), m_uomSeparator(other.m_uomSeparator),
         m_statSeparator(other.m_statSeparator), m_minWidth(other.m_minWidth) {}
-    UNITS_EXPORT NumericFormatSpec(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision);
+    UNITS_EXPORT NumericFormatSpec(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision, Utf8CP uomSeparator=nullptr);
     UNITS_EXPORT NumericFormatSpec(Json::Value jval);
     UNITS_EXPORT NumericFormatSpec(Utf8CP jsonString);
     UNITS_EXPORT NumericFormatSpec& operator=(const NumericFormatSpec& other);
@@ -613,12 +618,17 @@ public:
 struct CompositeValue
     {
 private:
+	bool m_negative;
     double m_parts[CompositeValueSpec::indxLimit];
     FormatProblemDetail m_problem;
-
+	double GetSignFactor() { return m_negative ? -1.0 : 1.0; }
     void Init();
 public:
     UNITS_EXPORT CompositeValue();
+	void SetNegative() { m_negative = true; }
+	void SetPositive() { m_negative = false; }
+	Utf8String GetSignPrefix(bool useParenth = false) { return m_negative?  (useParenth ? "(" : "-") : ""; }
+	Utf8String GetSignSuffix(bool useParenth = false) { return m_negative ? (useParenth ? ")" : "") : ""; }
     double SetMajor(double dval)  { return m_parts[CompositeValueSpec::indxMajor] = dval; }
     double SetMiddle(double dval) { return m_parts[CompositeValueSpec::indxMiddle] = dval; }
     double SetMinor(double dval)  { return m_parts[CompositeValueSpec::indxMinor] = dval; }
@@ -674,6 +684,7 @@ public:
         Utf8CP GetAlias() const { return m_alias.c_str(); }
         UNITS_EXPORT bool HasName(Utf8CP name) const;
         UNITS_EXPORT bool HasAlias(Utf8CP name) const;
+        UNITS_EXPORT void SetSuppressUnitLabel();
         
         Utf8CP GetName() const { return m_name.c_str(); };
         Utf8CP GetDescription() const { return m_description.c_str(); };
@@ -713,8 +724,8 @@ struct FormatUnitSet
 
     public:
         UNITS_EXPORT void Init();
-        UNITS_EXPORT FormatUnitSet():m_formatSpec(nullptr), m_unit(nullptr), m_problem(FormatProblemDetail()) {}
-        UNITS_EXPORT FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, bool cloneData=false);
+        UNITS_EXPORT FormatUnitSet() :m_formatSpec(nullptr), m_unit(nullptr), m_problem(FormatProblemDetail()) {}
+        UNITS_EXPORT FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, bool cloneData = false);
         UNITS_EXPORT FormatUnitSet(Utf8CP formatName, Utf8CP unitName, bool cloneData = false);
         FormatUnitSet(FormatUnitSetCR other)
             {
@@ -757,18 +768,19 @@ struct FormatUnitSet
         FormatProblemCode GetProblemCode() const { return m_problem.GetProblemCode(); }
         Utf8String GetProblemDescription() const { return m_problem.GetProblemDescription(); }
         Utf8String GetUnitName() const { return m_unitName; };
-        UNITS_EXPORT Utf8String ToText(bool useAlias=true) const;
+        UNITS_EXPORT Utf8String ToText(bool useAlias = true) const;
         BEU::UnitCP GetUnit() const { return m_unit; }
         NamedFormatSpecCP GetNamedFormatSpec() const { return m_formatSpec; }
         UNITS_EXPORT bool IsComparable(BEU::QuantityCR qty) const;
         UNITS_EXPORT bool IsUnitComparable(Utf8CP unitName) const;
 
-        UNITS_EXPORT Json::Value ToJson(bool useAlias=true, bool verbose = false) const;
+        UNITS_EXPORT Json::Value ToJson(bool useAlias = true, bool verbose = false) const;
         UNITS_EXPORT Json::Value ToJsonVerbose(bool useAlias = true) const;
-        UNITS_EXPORT Utf8String ToJsonString(bool useAlias=true, bool verbose = false) const;
+        UNITS_EXPORT Utf8String ToJsonString(bool useAlias = true, bool verbose = false) const;
 
-        UNITS_EXPORT Json::Value FormatQuantityJson(BEU::QuantityCR qty, bool useAlias) const;
+        UNITS_EXPORT Json::Value FormatQuantityJson(BEU::QuantityCR qty, bool useAlias, Utf8CP space="") const;
         UNITS_EXPORT BEU::UnitCP ResetUnit();
+        UNITS_EXPORT BEU::PhenomenonCP GetPhenomenon() { return (nullptr == m_unit) ? nullptr : m_unit->GetPhenomenon(); }
         UNITS_EXPORT void LoadJsonData(Json::Value jval);
         UNITS_EXPORT bool IsIdentical(FormatUnitSetCR other) const;
         UNITS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, size_t start);

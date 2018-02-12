@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Formatting/FormattingEnum.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -129,36 +129,36 @@ enum class FieldAlignment
     };
 
 enum class ShowSignOption
-    {
-    NoSign = 0,
-    OnlyNegative = 1,
-    SignAlways = 2,
-    NegativeParentheses = 3
+    { 
+    NoSign = 0,              //indicates that sign should not be used at all (like absolute value) 
+    OnlyNegative = 1,        // indicates that only "-" will be used for negative numbers
+    SignAlways = 2,          // indicates that sign symbol should explicitly shown
+    NegativeParentheses = 3  // indicates that negative numbers shoul be enclosed in parenthesis
     };
 
 enum class PresentationType
     {
     Decimal = 1,
     Fractional = 2,
-    Scientific = 3,      // scientific with 1 digit before the decimal point
-    ScientificNorm = 4,   // normalized scientific when Mantissa is < 1
-    Stop100 = 5,       // special format for stations 100 feet
-    Stop1000 = 6       // special format for stations 1000 meters
+    Scientific = 3,      // scientific with 1 digit presenting the integer part
+    ScientificNorm = 4,  // normalized scientific when Mantissa is < 1
+    Stop100 = 5,         // special format for stations 100 feet
+    Stop1000 = 6         // special format for stations 1000 meters
     };
 
 enum class FormatTraits : int
     {
-    DefaultZeroes = 0,
-    LeadingZeroes = 0x1,
-    TrailingZeroes = 0x2,
-    KeepDecimalPoint = 0x4,
-    KeepSingleZero = 0x8,
-    ExponentZero = 0x10,
-    ZeroEmpty = 0x20,
-    Use1000Separator = 0x40,
-    ApplyRounding = 0x80,
+    DefaultTraits = 0,        // No special traits. This value is being used only for initializing 
+    LeadingZeroes = 0x1,      // indicates that one or more insignificant zeroes are to be added in front of digital expression
+    TrailingZeroes = 0x2,     // indicates that one or more insignificant zeroes are to be added after the last digit of the fraction
+    KeepDecimalPoint = 0x4,   // indicates that the decimal point is required when the fraction os zero
+    KeepSingleZero = 0x8,     // indicates that the fractional part of the number is required when the fraction is zero
+    ExponentZero = 0x10,      // indicates that the exponent value must be prepended by zero
+    ZeroEmpty = 0x20,         // indicates that zero value should be presented by an empty string
+    Use1000Separator = 0x40,  // indicates that thousands in the integer part of the number should be separated by a special char (. or,)
+    ApplyRounding = 0x80,     // indicates that the rounding factor should be used
     FractionDash = 0x100,      // some people prefer to insert dash between integer and fraction: 3-1/4 rather than 3 1/4
-    UseFractSymbol = 0x200,    // indicates that a limited set of fractional values can be presented by a single glyph
+    UseFractSymbol = 0x200,    // indicates that a limited set of fractional values can be presented by a single glyph (1/2, 3/4... etc)
     AppendUnitName = 0x400     // indicates that the numeric expression can be followed by the unit name
     };
 
@@ -192,13 +192,13 @@ enum class FractionalPrecision
     {
     Whole = 0,       //!< Ex. 30
     Half = 1,        //!< Ex. 30 1/2
-    Quarter = 2,      //!< Ex. 30 1/4
+    Quarter = 2,     //!< Ex. 30 1/4
     Eighth = 3,      //!< Ex. 30 1/8
-    Sixteenth = 4,      //!< Ex. 30 1/16
-    Over_32 = 5,      //!< Ex. 30 1/32
-    Over_64 = 6,      //!< Ex. 30 1/64
-    Over_128 = 7,      //!< Ex. 30 1/128
-    Over_256 = 8,      //!< Ex. 30 1/256
+    Sixteenth = 4,   //!< Ex. 30 1/16
+    Over_32 = 5,     //!< Ex. 30 1/32
+    Over_64 = 6,     //!< Ex. 30 1/64
+    Over_128 = 7,    //!< Ex. 30 1/128
+    Over_256 = 8,    //!< Ex. 30 1/256
     };
 
 enum class ParameterCategory
@@ -461,7 +461,7 @@ struct FormatConstant
         static Utf8String FPN_Stop100() { return "Stop100"; }
         static Utf8String FPN_Stop1000() { return "Stop1000"; }
         static Utf8String FPN_Binary() { return "Binary"; }
-        static Utf8String FPN_DefaultZeroes() { return "DefaultZeroes"; }
+        static Utf8String FPN_DefaultTraits() { return "DefaultTraits"; }
         static Utf8String FPN_LeadingZeroes() { return "LeadingZeroes"; }
         static Utf8String FPN_TrailingZeroes() { return "TrailingZeroes"; }
         static Utf8String FPN_KeepDecimalPoint() { return "KeepDecimalPoint"; }

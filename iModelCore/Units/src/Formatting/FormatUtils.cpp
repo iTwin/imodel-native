@@ -2,7 +2,7 @@
 |
 |     $Source: src/Formatting/FormatUtils.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitsPCH.h>
@@ -46,15 +46,16 @@ UIList UIUtils::GetAvailableFractionalPercisions()
     {
     UIList fracPercisionList;
 
-    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Whole,     UNITSL10N_GETSTRING(FractionalPrecision_Whole).c_str()));
-    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Half,      UNITSL10N_GETSTRING(FractionalPrecision_Half).c_str()));
-    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Quarter,   UNITSL10N_GETSTRING(FractionalPrecision_Quarter).c_str()));
-    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Eighth,    UNITSL10N_GETSTRING(FractionalPrecision_Eighth).c_str()));
-    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Sixteenth, UNITSL10N_GETSTRING(FractionalPrecision_Sixteenth).c_str()));
-    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Over_32,   UNITSL10N_GETSTRING(FractionalPrecision_Over_32).c_str()));
-    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Over_64,   UNITSL10N_GETSTRING(FractionalPrecision_Over_64).c_str()));
-    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Over_128,  UNITSL10N_GETSTRING(FractionalPrecision_Over_128).c_str()));
-    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Over_256,  UNITSL10N_GETSTRING(FractionalPrecision_Over_256).c_str()));
+    // See Utils::FractionalPrecisionByDenominator
+    fracPercisionList.AddListEntry(UIListEntry(1,    UNITSL10N_GETSTRING(FractionalPrecision_Whole).c_str()));
+    fracPercisionList.AddListEntry(UIListEntry(2,    UNITSL10N_GETSTRING(FractionalPrecision_Half).c_str()));
+    fracPercisionList.AddListEntry(UIListEntry(4,    UNITSL10N_GETSTRING(FractionalPrecision_Quarter).c_str()));
+    fracPercisionList.AddListEntry(UIListEntry(8,    UNITSL10N_GETSTRING(FractionalPrecision_Eighth).c_str()));
+    fracPercisionList.AddListEntry(UIListEntry(16,   UNITSL10N_GETSTRING(FractionalPrecision_Sixteenth).c_str()));
+    fracPercisionList.AddListEntry(UIListEntry(32,   UNITSL10N_GETSTRING(FractionalPrecision_Over_32).c_str()));
+    fracPercisionList.AddListEntry(UIListEntry(64,   UNITSL10N_GETSTRING(FractionalPrecision_Over_64).c_str()));
+    fracPercisionList.AddListEntry(UIListEntry(128,  UNITSL10N_GETSTRING(FractionalPrecision_Over_128).c_str()));
+    fracPercisionList.AddListEntry(UIListEntry(256,  UNITSL10N_GETSTRING(FractionalPrecision_Over_256).c_str()));
     return fracPercisionList;
     }
 
@@ -69,6 +70,112 @@ UIList UIUtils::GetAvailableSignOption()
     signOptions.AddListEntry(UIListEntry((int)ShowSignOption::SignAlways,          UNITSL10N_GETSTRING(ShowSignOption_SignAlways).c_str(), FormatConstant::FPN_SignAlways().c_str()));
     signOptions.AddListEntry(UIListEntry((int)ShowSignOption::NegativeParentheses, UNITSL10N_GETSTRING(ShowSignOption_NegativeParentheses).c_str(), FormatConstant::FPN_NegativeParenths().c_str()));
     return signOptions;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bill.Steinbock                  01/2018
+//---------------------------------------------------------------------------------------
+UIList UIUtils::GetAvailablePresentationTypes()
+    {
+    UIList presentationTypes;
+
+    presentationTypes.AddListEntry(UIListEntry((int) PresentationType::Decimal, UNITSL10N_GETSTRING(PresentationType_Decimal).c_str(), Utils::PresentationTypeName(PresentationType::Decimal).c_str()));
+    presentationTypes.AddListEntry(UIListEntry((int) PresentationType::Fractional, UNITSL10N_GETSTRING(PresentationType_Fractional).c_str(), Utils::PresentationTypeName(PresentationType::Fractional).c_str()));
+    presentationTypes.AddListEntry(UIListEntry((int) PresentationType::Scientific, UNITSL10N_GETSTRING(PresentationType_Scientific).c_str(), Utils::PresentationTypeName(PresentationType::Scientific).c_str()));
+    presentationTypes.AddListEntry(UIListEntry((int) PresentationType::ScientificNorm, UNITSL10N_GETSTRING(PresentationType_ScientificNorm).c_str(), Utils::PresentationTypeName(PresentationType::ScientificNorm).c_str()));
+    presentationTypes.AddListEntry(UIListEntry((int) PresentationType::Stop100, UNITSL10N_GETSTRING(PresentationType_Stop100).c_str(), Utils::PresentationTypeName(PresentationType::Stop100).c_str()));
+    presentationTypes.AddListEntry(UIListEntry((int) PresentationType::Stop1000, UNITSL10N_GETSTRING(PresentationType_Stop1000).c_str(), Utils::PresentationTypeName(PresentationType::Stop1000).c_str()));
+
+    return presentationTypes;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bill.Steinbock                  01/2018
+//---------------------------------------------------------------------------------------
+UIList UIUtils::GetAvailableDecimalSeparators()
+    {
+    UIList decimalSeparators;
+
+    decimalSeparators.AddListEntry(UIListEntry(0, UNITSL10N_GETSTRING(DecimalSeparator_Comma).c_str(), ","));
+    decimalSeparators.AddListEntry(UIListEntry(1, UNITSL10N_GETSTRING(DecimalSeparator_Point).c_str(), "."));
+
+    return decimalSeparators;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bill.Steinbock                  01/2018
+//---------------------------------------------------------------------------------------
+UIList UIUtils::GetAvailableThousandSeparators()
+    {
+    UIList thousandSeparators;
+
+    thousandSeparators.AddListEntry(UIListEntry(0, UNITSL10N_GETSTRING(ThousandSeparator_Comma).c_str(), ","));
+    thousandSeparators.AddListEntry(UIListEntry(1, UNITSL10N_GETSTRING(ThousandSeparator_Point).c_str(), "."));
+
+    return thousandSeparators;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bill.Steinbock                  01/2018
+//---------------------------------------------------------------------------------------
+UIList UIUtils::GetAvailableUnitLabelSeparators()
+    {
+    UIList unitLabelSeparators;
+
+    unitLabelSeparators.AddListEntry(UIListEntry(0, UNITSL10N_GETSTRING(UnitLabelSeparator_None).c_str(), ""));
+    unitLabelSeparators.AddListEntry(UIListEntry(1, UNITSL10N_GETSTRING(UnitLabelSeparator_Space).c_str(), " "));
+
+    return unitLabelSeparators;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bill.Steinbock                  01/2018
+//---------------------------------------------------------------------------------------
+UIList UIUtils::GetAvailableTraits()
+    {
+    UIList traits;
+
+    traits.AddListEntry(UIListEntry((int)FormatTraits::Use1000Separator, UNITSL10N_GETSTRING(FormatTraits_Use1000Separator).c_str(), json_Use1000Separator()));
+    traits.AddListEntry(UIListEntry((int)FormatTraits::AppendUnitName, UNITSL10N_GETSTRING(FormatTraits_Use1000Separator).c_str(), json_AppendUnitName()));
+
+   // TraitsBitToJson(jTraits, json_TrailZeroes(), FormatTraits::TrailingZeroes, &ref, verbose);
+   // TraitsBitToJson(jTraits, json_LeadZeroes(), FormatTraits::LeadingZeroes, &ref, verbose);
+   // TraitsBitToJson(jTraits, json_KeepDecPnt(), FormatTraits::KeepDecimalPoint, &ref, verbose);
+   // TraitsBitToJson(jTraits, json_KeepSingleZero(), FormatTraits::KeepSingleZero, &ref, verbose);
+   // TraitsBitToJson(jTraits, json_ExponentZero(), FormatTraits::ExponentZero, &ref, verbose);
+   // TraitsBitToJson(jTraits, json_ZeroEmpty(), FormatTraits::ZeroEmpty, &ref, verbose);
+   // TraitsBitToJson(jTraits, json_Use1000Separator(), FormatTraits::Use1000Separator, &ref, verbose);
+   // TraitsBitToJson(jTraits, json_ApplyRounding(), FormatTraits::ApplyRounding, &ref, verbose);
+   // TraitsBitToJson(jTraits, json_AppendUnitName(), FormatTraits::AppendUnitName, &ref, verbose);
+   // TraitsBitToJson(jTraits, json_UseFractSymbol(), FormatTraits::UseFractSymbol, &ref, verbose);
+   // TraitsBitToJson(jTraits, json_FractionDash(), FormatTraits::FractionDash, &ref, verbose);
+
+    return traits;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bill.Steinbock                  01/2018
+//---------------------------------------------------------------------------------------
+Json::Value UIUtils::GetAvailableUnitLabels(Utf8CP unitName)
+    {
+    if (Utf8String::IsNullOrEmpty(unitName))
+        return Json::Value(Json::nullValue);
+
+    BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnit(unitName);
+    if (nullptr == unit)
+        return Json::Value(Json::nullValue);
+
+    Json::Value labels(Json::arrayValue);
+    bvector<Utf8CP> synonyms;
+    if (unit->GetSynonymList(synonyms) > 0)
+        {
+        for (size_t i = 0; i < synonyms.size(); i++)
+            {
+            labels.append(synonyms[i]);
+            }
+        }
+
+    return labels;
     }
 
 //===================================================
@@ -855,7 +962,7 @@ int Utils::IndexOf(Utf8Char c, Utf8CP text)
  //----------------------------------------------------------------------------------------
   void FractionalNumeric::FormTextParts(bool reduce)
      {
-     NumericFormatSpec fmt =  NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, FormatTraits::DefaultZeroes, 0);
+     NumericFormatSpec fmt =  NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, FormatTraits::DefaultTraits, 0);
      size_t numer = m_numerator;
      size_t denom = m_denominator;
      if (reduce && m_gcf > 1)
@@ -1489,12 +1596,14 @@ Utf8String FormatUnitSet::FormatQuantity(BEU::QuantityCR qty, Utf8CP space) cons
     return txt;
     }
 
-Json::Value FormatUnitSet::FormatQuantityJson(BEU::QuantityCR qty, bool useAlias) const
+// Utf8String StdFormatQuantity(NamedFormatSpecCR nfs, BEU::QuantityCR qty, BEU::UnitCP useUnit = nullptr, Utf8CP space = nullptr, Utf8CP useLabel = nullptr, int prec = -1, double round = -1.0);
+
+Json::Value FormatUnitSet::FormatQuantityJson(BEU::QuantityCR qty, bool useAlias, Utf8CP space) const
     {
     Utf8String str;
     Json::Value jval = ToJson(useAlias);
     BEU::Quantity conv = qty.ConvertTo(m_unit);
-    Utf8String txt = NumericFormatSpec::StdFormatQuantity(*m_formatSpec, conv, nullptr, " ");
+    Utf8String txt = NumericFormatSpec::StdFormatQuantity(*m_formatSpec, conv, nullptr, space);
     jval[FormatConstant::FUSJsonValue()] = conv.GetMagnitude();
     jval[FormatConstant::FUSJsonDispValue()] = txt.c_str();
     return jval;
@@ -1681,6 +1790,14 @@ FormattingWord::FormattingWord(FormattingScannerCursorP cursor, Utf8CP buffer, U
 // NamedFormatSpec
 //
 //===================================================
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bill.Steinbock                  01/2018
+//---------------------------------------------------------------------------------------
+void NamedFormatSpec::SetSuppressUnitLabel()
+    {
+    m_numericSpec.SetAppendUnit(false);
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/17

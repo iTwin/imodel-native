@@ -2,7 +2,7 @@
 |
 |     $Source: src/Formatting/FormatQuantity.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitsPCH.h>
@@ -286,6 +286,11 @@ CompositeValue CompositeValueSpec::DecomposeValue(double dval, BEU::UnitCP uom)
     double rem = 0.0;;
     double majorSub = 0.0;
     double middleSub = 0.0;
+	if (dval < 0.0)
+	{
+		cv.SetNegative();
+		dval = -dval;
+	}
 
     if (NoProblem())  // don't try to decompose if the spec is not valid
         {
@@ -317,7 +322,7 @@ CompositeValue CompositeValueSpec::DecomposeValue(double dval, BEU::UnitCP uom)
                     majorMinor = (double)(m_ratio[indxMajor] * m_ratio[indxMiddle]);
                     cv.SetMajor(floor((smallQ.GetMagnitude() + FormatConstant::FPV_RoundFactor()) / majorMinor));
                     rem = smallQ.GetMagnitude() - cv.GetMajor() * majorMinor;
-                    cv.SetMiddle(floor((rem + +FormatConstant::FPV_RoundFactor()) / (double)m_ratio[indxMiddle]));
+                    cv.SetMiddle(floor((rem + FormatConstant::FPV_RoundFactor()) / (double)m_ratio[indxMiddle]));
                     cv.SetMinor(rem - cv.GetMiddle() * (double)m_ratio[indxMiddle]);
                     break;
                 case CompositeSpecType::Quatro:
@@ -352,30 +357,30 @@ Utf8String CompositeValueSpec::FormatValue(double dval, NumericFormatSpecP fmtP,
     switch (m_type)
         {
         case CompositeSpecType::Single: // there is only one value to report
-            majT = fmtP->FormatDouble(cv.GetMajor());
-            majT = Utils::AppendUnitName(majT.c_str(), GetMajorLabel(nullptr).c_str(), spacer);
+            majT = cv.GetSignPrefix() + fmtP->FormatDouble(cv.GetMajor());
+			majT = Utils::AppendUnitName(majT.c_str(), GetMajorLabel(nullptr).c_str(), spacer) + cv.GetSignSuffix();
             break;
 
         case CompositeSpecType::Double:
-            majT = fmtI.FormatDouble(cv.GetMajor());
+            majT = cv.GetSignPrefix() + fmtI.FormatDouble(cv.GetMajor());
             majT = Utils::AppendUnitName(majT.c_str(), GetMajorLabel(nullptr).c_str(), spacer);
             midT = fmtP->FormatDouble(cv.GetMajor());
             midT = Utils::AppendUnitName(midT.c_str(), GetMiddleLabel(nullptr).c_str(), spacer);
-            majT += midT;
+            majT += midT + cv.GetSignSuffix();
             break;
 
         case CompositeSpecType::Triple:
-            majT = fmtI.FormatDouble(cv.GetMajor());
+            majT = cv.GetSignPrefix() + fmtI.FormatDouble(cv.GetMajor());
             majT = Utils::AppendUnitName(majT.c_str(), GetMajorLabel(nullptr).c_str(), spacer);
             midT = fmtI.FormatDouble(cv.GetMajor());
             midT = Utils::AppendUnitName(midT.c_str(), GetMiddleLabel(nullptr).c_str(), spacer);
             minT = fmtP->FormatDouble(cv.GetMajor() );
             minT = Utils::AppendUnitName(minT.c_str(), GetMiddleLabel(nullptr).c_str(), spacer);
-            majT += midT + " " + minT;
+            majT += midT + " " + minT + cv.GetSignSuffix();
             break;
 
         case CompositeSpecType::Quatro:
-            majT = fmtI.FormatDouble(cv.GetMajor());
+            majT = cv.GetSignPrefix() + fmtI.FormatDouble(cv.GetMajor());
             majT = Utils::AppendUnitName(majT.c_str(), GetMajorLabel(nullptr).c_str(), spacer);
             midT = fmtI.FormatDouble(cv.GetMajor());
             midT = Utils::AppendUnitName(midT.c_str(), GetMiddleLabel(nullptr).c_str(), spacer);
@@ -383,7 +388,7 @@ Utf8String CompositeValueSpec::FormatValue(double dval, NumericFormatSpecP fmtP,
             minT = Utils::AppendUnitName(minT.c_str(), GetMiddleLabel(nullptr).c_str(), spacer);
             subT = fmtP->FormatDouble(cv.GetMajor());
             subT = Utils::AppendUnitName(subT.c_str(), GetMiddleLabel(nullptr).c_str(), spacer);
-            majT += midT + " " + minT + " " + subT;
+            majT += midT + " " + minT + " " + subT + cv.GetSignSuffix();
             break;
         }
     return txt;
@@ -413,6 +418,7 @@ void CompositeValue::Init()
     {
     memset(m_parts, 0, sizeof(m_parts));
     m_problem = FormatProblemDetail();
+	m_negative = false;
     }
 
 CompositeValue::CompositeValue()
@@ -565,7 +571,7 @@ Utf8String NumericTriad::FormatTriad(Utf8CP topName, Utf8CP midName, Utf8CP lowN
         }
 
     fmt.SetDecimalPrecision(DecimalPrecision::Precision0);
-    fmt.SetFormatTraits(FormatTraits::DefaultZeroes);
+    fmt.SetFormatTraits(FormatTraits::DefaultTraits);
     Utf8String top = fmt.FormatDouble(m_negative ? -m_topValue : m_topValue);
     top.append(space);
     top.append(topName);

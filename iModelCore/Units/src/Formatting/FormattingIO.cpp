@@ -44,6 +44,12 @@ size_t StdFormatSet::StdInit()
     AddFormat("Real4U", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 4), "real4u");
     AddFormat("Real6U", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 6), "real6u");
 
+    // Add options for no space between value and unit label, common for ' (ft) and " (inch)
+    AddFormat("Real2UNS", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 2, FormatConstant::EmptyString()), "real2uns");
+    AddFormat("Real3UNS", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 3, FormatConstant::EmptyString()), "real3uns");
+    AddFormat("Real4UNS", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 4, FormatConstant::EmptyString()), "real4uns");
+    AddFormat("Real6UNS", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 6, FormatConstant::EmptyString()), "real6uns");
+
     NumericFormatSpec stop = new NumericFormatSpec(PresentationType::Stop100, ShowSignOption::OnlyNegative, traitsU, 2);
     AddFormat("Stop100-2u", stop, "stop100-2u");
     stop = new NumericFormatSpec(PresentationType::Stop100, ShowSignOption::OnlyNegative, traitsU, 2);
@@ -116,33 +122,33 @@ size_t StdFormatSet::StdInit()
 
     cvs = new CompositeValueSpec("M");
     cvs->SetUnitLabels("m");
-    AddFormat("Meters4u", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 4), cvs, "meters4u");
+    AddFormat("Meters4u", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 4), cvs, "meters4u");
 
     cvs = new CompositeValueSpec("FT");
     cvs->SetUnitLabels("'");
-    AddFormat("Feet4u", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 4), cvs, "feet4u");
+    AddFormat("Feet4u", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 4, FormatConstant::EmptyString()), cvs, "feet4u");
 
     cvs = new CompositeValueSpec("IN");
     cvs->SetUnitLabels("\"");
-    AddFormat("Inches4u", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 4), cvs, "inches4u");
+    AddFormat("Inches4u", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 4, FormatConstant::EmptyString()), cvs, "inches4u");
 
     cvs = new CompositeValueSpec("IN");
     cvs->SetUnitLabels("\"");
-    AddFormat("Inches18u", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), cvs, "Inches18u");
+    AddFormat("Inches18u", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 8, FormatConstant::EmptyString()), cvs, "Inches18u");
 
     cvs = new CompositeValueSpec("ARC_DEG");
     cvs->SetUnitLabels("\xC2\xB0");
-    AddFormat("DecimalDeg4", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 4), cvs, "decimalDeg4");
+    AddFormat("DecimalDeg4", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 4, FormatConstant::EmptyString()), cvs, "decimalDeg4");
 
     cvs = new CompositeValueSpec("FT");
     cvs->SetUnitLabels("'");
-    stop = new NumericFormatSpec(PresentationType::Stop100, ShowSignOption::OnlyNegative, traits, 2);
+    stop = new NumericFormatSpec(PresentationType::Stop100, ShowSignOption::OnlyNegative, traitsU, 2, FormatConstant::EmptyString());
     stop.SetMinWidth(2);
     AddFormat("StationFt2", stop, cvs, "stationFt2");
 
     cvs = new CompositeValueSpec("M");
     cvs->SetUnitLabels("m");
-    stop = new NumericFormatSpec(PresentationType::Stop1000, ShowSignOption::OnlyNegative, traits, 2);
+    stop = new NumericFormatSpec(PresentationType::Stop1000, ShowSignOption::OnlyNegative, traitsU, 2);
     stop.SetMinWidth(4);
     AddFormat("StationM4", stop, cvs, "stationM4");
 
@@ -1008,7 +1014,7 @@ void FormatDictionary::InitLoad()
     AddParameter(FormatParameter(FormatConstant::FPN_Scientific(), ParameterCategory::Presentation, ParameterCode::Scientific, ParameterDataType::Flag));
     AddParameter(FormatParameter(FormatConstant::FPN_ScientificNorm(), ParameterCategory::Presentation, ParameterCode::ScientificNorm, ParameterDataType::Flag));
     AddParameter(FormatParameter(FormatConstant::FPN_Binary(), ParameterCategory::Presentation, ParameterCode::Binary, ParameterDataType::Flag));
-    AddParameter(FormatParameter(FormatConstant::FPN_DefaultZeroes(), ParameterCategory::Zeroes, ParameterCode::DefaultZeroes, Utils::FormatTraitsBit(FormatTraits::DefaultZeroes)));
+    AddParameter(FormatParameter(FormatConstant::FPN_DefaultTraits(), ParameterCategory::Zeroes, ParameterCode::DefaultZeroes, Utils::FormatTraitsBit(FormatTraits::DefaultTraits)));
     AddParameter(FormatParameter(FormatConstant::FPN_LeadingZeroes(), ParameterCategory::Zeroes, ParameterCode::LeadingZeroes, Utils::FormatTraitsBit(FormatTraits::LeadingZeroes)));
     AddParameter(FormatParameter(FormatConstant::FPN_TrailingZeroes(), ParameterCategory::Zeroes, ParameterCode::TrailingZeroes, Utils::FormatTraitsBit(FormatTraits::TrailingZeroes)));
     AddParameter(FormatParameter(FormatConstant::FPN_KeepDecimalPoint(), ParameterCategory::Zeroes, ParameterCode::KeepDecimalPoint, Utils::FormatTraitsBit(FormatTraits::KeepDecimalPoint)));

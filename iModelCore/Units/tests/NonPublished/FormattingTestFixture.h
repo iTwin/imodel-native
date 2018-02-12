@@ -2,7 +2,7 @@
 |
 |  $Source: tests/NonPublished/FormattingTestFixture.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -47,7 +47,7 @@ struct FormattingTestFixture
         static void SignaturePattrenCollapsing(Utf8CP txt, int tstN, bool hexDump);
         static void ShowSignature(Utf8CP txt, int tstN);
         static void ShowHexDump(Utf8String str, int len);
-        static void ShowHexDump(Utf8CP str, int len);
+        static void ShowHexDump(Utf8CP str, int len, Utf8CP message = nullptr);
         static void ShowFUS(Utf8CP koq);
         static void ShowFUG(Utf8CP name, Utf8CP fugText);
         static void TestFUS(Utf8CP fusText, Utf8CP norm, Utf8CP aliased);
@@ -92,6 +92,9 @@ struct FormattingTestFixture
         static void StandaloneFUSTest(double dval, Utf8CP unitName, Utf8CP fusUnitName, Utf8CP formatName, Utf8CP result);
         static void FormatDoubleTest(double dval, Utf8CP formatName, int prec=-1.0, double round=-1.0, Utf8CP expect=nullptr);
         static void VerifyQuantity(Utf8CP input, Utf8CP unitName, Utf8CP formatName, double magnitude, Utf8CP qtyUnitName);
+        static void ShowPhenomenon(BEU::PhenomenonCP phenP, bvector<BEU::PhenomenonCP>& undefPhenomena);
+        static void ShowKnownPhenomena();
+        static void ShowSynonyms();
         //static void LoadUnitSynonymsTest();
     };
 
