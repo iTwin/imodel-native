@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WSRepositoryClient.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -28,7 +28,10 @@ const uint32_t IWSRepositoryClient::Timeout::Transfer::LongUpload = 120;
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    julius.cepukenas 12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-IWSRepositoryClient::RequestOptions::RequestOptions() : m_transferTimeOut(IWSRepositoryClient::Timeout::Transfer::Default) {}
+IWSRepositoryClient::RequestOptions::RequestOptions() : m_transferTimeOut(IWSRepositoryClient::Timeout::Transfer::Default) 
+    {
+    m_jobOptions = std::make_shared<JobOptions>();
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
@@ -237,13 +240,29 @@ AsyncTaskPtr<WSChangesetResult> WSRepositoryClient::SendChangesetRequest
 (
 HttpBodyPtr changeset,
 Http::Request::ProgressCallbackCR uploadProgressCallback,
-ICancellationTokenPtr ct,
-RequestOptionsPtr options
+ICancellationTokenPtr ct
 ) const
     {
     return m_connection->GetWebApiAndReturnResponse<WSChangesetResult>([=] (WebApiPtr webApi)
         {
-        return webApi->SendChangesetRequest(changeset, uploadProgressCallback, ct, options);
+        return webApi->SendChangesetRequest(changeset, uploadProgressCallback, nullptr, ct);
+        }, ct);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 julius.cepukenas   02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<WSChangesetResult> WSRepositoryClient::SendChangesetRequestWithOptions
+(
+HttpBodyPtr changeset,
+Http::Request::ProgressCallbackCR uploadProgressCallback,
+RequestOptionsPtr options,
+ICancellationTokenPtr ct
+) const
+    {
+    return m_connection->GetWebApiAndReturnResponse<WSChangesetResult>([=] (WebApiPtr webApi)
+        {
+        return webApi->SendChangesetRequest(changeset, uploadProgressCallback, options, ct);
         }, ct);
     }
 
@@ -260,7 +279,25 @@ ICancellationTokenPtr ct
     {
     return m_connection->GetWebApiAndReturnResponse<WSCreateObjectResult>([=] (WebApiPtr webApi)
         {
-        return webApi->SendCreateObjectRequest(objectCreationJson, filePath, uploadProgressCallback, ct);
+        return webApi->SendCreateObjectRequest(objectCreationJson, filePath, uploadProgressCallback, nullptr, ct);
+        }, ct);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 julius.cepukenas   02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<WSCreateObjectResult> WSRepositoryClient::SendCreateObjectRequestWithOptions
+(
+JsonValueCR objectCreationJson,
+BeFileNameCR filePath,
+Http::Request::ProgressCallbackCR uploadProgressCallback,
+RequestOptionsPtr options,
+ICancellationTokenPtr ct
+) const
+    {
+    return m_connection->GetWebApiAndReturnResponse<WSCreateObjectResult>([=] (WebApiPtr webApi)
+        {
+        return webApi->SendCreateObjectRequest(objectCreationJson, filePath, uploadProgressCallback, options, ct);
         }, ct);
     }
 
@@ -278,7 +315,26 @@ ICancellationTokenPtr ct
     {
     return m_connection->GetWebApiAndReturnResponse<WSCreateObjectResult> ([=] (WebApiPtr webApi)
         {
-        return webApi->SendCreateObjectRequest (objectId, objectCreationJson, filePath, uploadProgressCallback, ct);
+        return webApi->SendCreateObjectRequest(objectId, objectCreationJson, filePath, uploadProgressCallback, nullptr, ct);
+        }, ct);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 julius.cepukenas   02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<WSCreateObjectResult> WSRepositoryClient::SendCreateObjectRequestWithOptions
+(
+ObjectIdCR objectId,
+JsonValueCR objectCreationJson,
+BeFileNameCR filePath,
+Http::Request::ProgressCallbackCR uploadProgressCallback,
+RequestOptionsPtr options,
+ICancellationTokenPtr ct
+) const
+    {
+    return m_connection->GetWebApiAndReturnResponse<WSCreateObjectResult>([=] (WebApiPtr webApi)
+        {
+        return webApi->SendCreateObjectRequest(objectId, objectCreationJson, filePath, uploadProgressCallback, options, ct);
         }, ct);
     }
 
@@ -297,7 +353,27 @@ ICancellationTokenPtr ct
     {
     return m_connection->GetWebApiAndReturnResponse<WSUpdateObjectResult>([=] (WebApiPtr webApi)
         {
-        return webApi->SendUpdateObjectRequest(objectId, propertiesJson, eTag, filePath, uploadProgressCallback, ct);
+        return webApi->SendUpdateObjectRequest(objectId, propertiesJson, eTag, filePath, uploadProgressCallback, nullptr, ct);
+        }, ct);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<WSUpdateObjectResult> WSRepositoryClient::SendUpdateObjectRequestWithOptions
+(
+ObjectIdCR objectId,
+JsonValueCR propertiesJson,
+Utf8StringCR eTag,
+BeFileNameCR filePath,
+Http::Request::ProgressCallbackCR uploadProgressCallback,
+RequestOptionsPtr options,
+ICancellationTokenPtr ct
+) const
+    {
+    return m_connection->GetWebApiAndReturnResponse<WSUpdateObjectResult>([=] (WebApiPtr webApi)
+        {
+        return webApi->SendUpdateObjectRequest(objectId, propertiesJson, eTag, filePath, uploadProgressCallback, options, ct);
         }, ct);
     }
 
@@ -312,7 +388,23 @@ ICancellationTokenPtr ct
     {
     return m_connection->GetWebApiAndReturnResponse<WSDeleteObjectResult>([=] (WebApiPtr webApi)
         {
-        return webApi->SendDeleteObjectRequest(objectId, ct);
+        return webApi->SendDeleteObjectRequest(objectId, nullptr, ct);
+        }, ct);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 julius.cepukenas   02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<WSDeleteObjectResult> WSRepositoryClient::SendDeleteObjectRequestWithOptions
+(
+ObjectIdCR objectId,
+RequestOptionsPtr options,
+ICancellationTokenPtr ct
+) const
+    {
+    return m_connection->GetWebApiAndReturnResponse<WSDeleteObjectResult>([=] (WebApiPtr webApi)
+        {
+        return webApi->SendDeleteObjectRequest(objectId, options, ct);
         }, ct);
     }
 
@@ -329,7 +421,25 @@ ICancellationTokenPtr ct
     {
     return m_connection->GetWebApiAndReturnResponse<WSUpdateFileResult>([=] (WebApiPtr webApi)
         {
-        return webApi->SendUpdateFileRequest(objectId, filePath, uploadProgressCallback, ct);
+        return webApi->SendUpdateFileRequest(objectId, filePath, uploadProgressCallback, nullptr, ct);
+        }, ct);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 julius.cepukenas   02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<WSUpdateFileResult> WSRepositoryClient::SendUpdateFileRequestWithOptions
+(
+ObjectIdCR objectId,
+BeFileNameCR filePath,
+Http::Request::ProgressCallbackCR uploadProgressCallback,
+RequestOptionsPtr options,
+ICancellationTokenPtr ct
+) const
+    {
+    return m_connection->GetWebApiAndReturnResponse<WSUpdateFileResult>([=] (WebApiPtr webApi)
+        {
+        return webApi->SendUpdateFileRequest(objectId, filePath, uploadProgressCallback, options, ct);
         }, ct);
     }
 

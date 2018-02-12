@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WebApi/WebApiV1.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -941,8 +941,8 @@ AsyncTaskPtr<WSChangesetResult> WebApiV1::SendChangesetRequest
 (
 HttpBodyPtr changeset,
 Http::Request::ProgressCallbackCR uploadProgressCallback,
-ICancellationTokenPtr ct,
-IWSRepositoryClient::RequestOptionsPtr options
+IWSRepositoryClient::RequestOptionsPtr options,
+ICancellationTokenPtr ct
 ) const
     {
     return CreateCompletedAsyncTask(WSChangesetResult::Error(WSError::CreateFunctionalityNotSupportedError()));
@@ -957,6 +957,7 @@ ObjectIdCR relatedObjectId,
 JsonValueCR objectCreationJson,
 BeFileNameCR filePath,
 Http::Request::ProgressCallbackCR uploadProgressCallback,
+IWSRepositoryClient::RequestOptionsPtr options,
 ICancellationTokenPtr ct
 ) const
     {
@@ -971,6 +972,7 @@ AsyncTaskPtr<WSCreateObjectResult> WebApiV1::SendCreateObjectRequest
 JsonValueCR objectCreationJson,
 BeFileNameCR filePath,
 Http::Request::ProgressCallbackCR uploadProgressCallback,
+IWSRepositoryClient::RequestOptionsPtr options,
 ICancellationTokenPtr ct
 ) const
     {
@@ -1012,6 +1014,7 @@ JsonValueCR propertiesJson,
 Utf8StringCR eTag,
 BeFileNameCR filePath,
 Http::Request::ProgressCallbackCR uploadProgressCallback,
+IWSRepositoryClient::RequestOptionsPtr options,
 ICancellationTokenPtr ct
 ) const
     {
@@ -1048,6 +1051,7 @@ ICancellationTokenPtr ct
 AsyncTaskPtr<WSDeleteObjectResult> WebApiV1::SendDeleteObjectRequest
 (
 ObjectIdCR objectId,
+IWSRepositoryClient::RequestOptionsPtr options,
 ICancellationTokenPtr ct
 ) const
     {
@@ -1077,6 +1081,7 @@ AsyncTaskPtr<WSUpdateFileResult> WebApiV1::SendUpdateFileRequest
 ObjectIdCR objectId,
 BeFileNameCR filePath,
 Http::Request::ProgressCallbackCR uploadProgressCallback,
+IWSRepositoryClient::RequestOptionsPtr options,
 ICancellationTokenPtr ct
 ) const
     {

@@ -146,6 +146,9 @@
     <ClCompile Include="Client\ClientInfo.cpp" />
     <ClCompile Include="Client\ClientInternal.cpp" />
     <ClCompile Include="Client\RequestOptions.cpp" />
+    <ClCompile Include="Client\WSJob.cpp" />
+    <ClCompile Include="Client\WebApi\Jobs\JobApi.cpp" />
+    <ClCompile Include="Client\WebApi\WebApiV2Utils\JobApi.cpp" />
     <ClCompile Include="Client\WSChangeset.cpp" />
     <ClCompile Include="Configuration\BuddiClient.cpp" />
     <ClCompile Include="Configuration\BuddiError.cpp" />
@@ -285,6 +288,7 @@
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV9ToV10.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV10ToV11.h" />
     <ClInclude Include="Cache\Schemas.h" />
+    <ClInclude Include="Client\WebApi\WebApiV2Utils\JobApi.h" />
     <ClInclude Include="ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGen.h" />
     <ClInclude Include="ConnectC\CWSCCBuffer.h" />
     <ClInclude Include="ConnectC\CWSCCBufferGen.h" />
@@ -299,6 +303,7 @@
     <ClInclude Include="iModelHubClient\Utils.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\SyncNotifier.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\RequestOptions.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\WSJob.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\IConnectionClientInterface.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\BaseFileInfo.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\ChangeSetCacheManager.h" />
@@ -531,6 +536,7 @@
     <None Include="Ims\Ims.mki" />
     <None Include="l10n-WSClient.mke" />
     <None Include="Licensing\Licensing.mki" />
+    <None Include="Tests\UnitTests\WSClientTests.vcxproj" />
     <None Include="UnZip.py" />
     <None Include="WebServicesCache.NuGetPackage.mke" />
     <None Include="WebServicesCache.nuspec" />

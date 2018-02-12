@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/MockWSRepositoryClient.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -112,12 +112,19 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             ICancellationTokenPtr ct
             ));
 
-        MOCK_CONST_METHOD4(SendChangesetRequest, AsyncTaskPtr<WSChangesetResult>
+        MOCK_CONST_METHOD3(SendChangesetRequest, AsyncTaskPtr<WSChangesetResult>
             (
             HttpBodyPtr changeset,
             Http::Request::ProgressCallbackCR,
-            ICancellationTokenPtr,
-            IWSRepositoryClient::RequestOptionsPtr
+            ICancellationTokenPtr
+            ));
+
+        MOCK_CONST_METHOD4(SendChangesetRequestWithOptions, AsyncTaskPtr<WSChangesetResult>
+            (
+            HttpBodyPtr changeset,
+            Http::Request::ProgressCallbackCR,
+            IWSRepositoryClient::RequestOptionsPtr,
+            ICancellationTokenPtr
             ));
 
         MOCK_CONST_METHOD4(SendCreateObjectRequest, AsyncTaskPtr<WSCreateObjectResult>
@@ -128,12 +135,31 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             ICancellationTokenPtr ct
             ));
 
+        MOCK_CONST_METHOD5(SendCreateObjectRequestWithOptions, AsyncTaskPtr<WSCreateObjectResult>
+            (
+            JsonValueCR objectCreationJson,
+            BeFileNameCR filePath,
+            Http::Request::ProgressCallbackCR uploadProgressCallback,
+            IWSRepositoryClient::RequestOptionsPtr options,
+            ICancellationTokenPtr ct
+            ));
+
         MOCK_CONST_METHOD5(SendCreateObjectRequest, AsyncTaskPtr<WSCreateObjectResult>
             (
             ObjectIdCR objectId,
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath,
             Http::Request::ProgressCallbackCR uploadProgressCallback,
+            ICancellationTokenPtr ct
+            ));
+
+        MOCK_CONST_METHOD6(SendCreateObjectRequestWithOptions, AsyncTaskPtr<WSCreateObjectResult>
+            (
+            ObjectIdCR objectId,
+            JsonValueCR objectCreationJson,
+            BeFileNameCR filePath,
+            Http::Request::ProgressCallbackCR uploadProgressCallback,
+            IWSRepositoryClient::RequestOptionsPtr options,
             ICancellationTokenPtr ct
             ));
 
@@ -147,9 +173,27 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             ICancellationTokenPtr ct
             ));
 
+        MOCK_CONST_METHOD7(SendUpdateObjectRequestWithOptions, AsyncTaskPtr<WSUpdateObjectResult>
+            (
+            ObjectIdCR objectId,
+            JsonValueCR propertiesJson,
+            Utf8StringCR eTag,
+            BeFileNameCR filePath,
+            Http::Request::ProgressCallbackCR uploadProgressCallback,
+            IWSRepositoryClient::RequestOptionsPtr options,
+            ICancellationTokenPtr ct
+            ));
+
         MOCK_CONST_METHOD2(SendDeleteObjectRequest, AsyncTaskPtr<WSDeleteObjectResult>
             (
             ObjectIdCR objectId,
+            ICancellationTokenPtr ct
+            ));
+
+        MOCK_CONST_METHOD3(SendDeleteObjectRequestWithOptions, AsyncTaskPtr<WSDeleteObjectResult>
+            (
+            ObjectIdCR objectId,
+            IWSRepositoryClient::RequestOptionsPtr options,
             ICancellationTokenPtr ct
             ));
 
@@ -158,6 +202,15 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             ObjectIdCR objectId,
             BeFileNameCR filePath,
             Http::Request::ProgressCallbackCR uploadProgressCallback,
+            ICancellationTokenPtr ct
+            ));
+
+        MOCK_CONST_METHOD5(SendUpdateFileRequestWithOptions, AsyncTaskPtr<WSUpdateFileResult>
+            (
+            ObjectIdCR objectId,
+            BeFileNameCR filePath,
+            Http::Request::ProgressCallbackCR uploadProgressCallback,
+            IWSRepositoryClient::RequestOptionsPtr options,
             ICancellationTokenPtr ct
             ));
     };
