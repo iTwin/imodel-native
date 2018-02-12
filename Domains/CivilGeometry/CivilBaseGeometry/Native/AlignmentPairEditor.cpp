@@ -180,7 +180,7 @@ DPoint3dCR AlignmentPI::GetPILocation() const
         case TYPE_Uninitialized:
         default:
             {
-            REPLACEMENT_LOG("AlignmentPI::GetPILocation - unexpected PI type");
+            CIVILBASEGEOMETRY_LOGE("AlignmentPI::GetPILocation - unexpected PI type");
             return m_noCurveInfo.piPoint;
             }
         }
@@ -217,7 +217,7 @@ bool AlignmentPI::SetPILocation(DPoint3dCR piPoint)
         case TYPE_Uninitialized:
         default:
             {
-            REPLACEMENT_LOG("AlignmentPI::SetPILocation - unexpected PI type");
+            CIVILBASEGEOMETRY_LOGE("AlignmentPI::SetPILocation - unexpected PI type");
             return false;
             }
         }
@@ -242,7 +242,7 @@ double AlignmentPI::GetPseudoTangentLength() const
         case TYPE_Uninitialized:
         default:
             {
-            REPLACEMENT_LOG("AlignmentPI::GetPseudoTangentLength - unexpected PI type");
+            CIVILBASEGEOMETRY_LOGE("AlignmentPI::GetPseudoTangentLength - unexpected PI type");
             return 0.0;
             }
         }
@@ -442,7 +442,7 @@ DPoint3dCR AlignmentPVI::GetPVCLocation() const
         case TYPE_Uninitialized:
         default:
             {
-            REPLACEMENT_LOGW("AlignmentPVI::GetPVCLocation - unexpected PVI type");
+            CIVILBASEGEOMETRY_LOGW("AlignmentPVI::GetPVCLocation - unexpected PVI type");
             return m_gradeBreakInfo.pvi;
             }
         }
@@ -463,7 +463,7 @@ DPoint3dCR AlignmentPVI::GetPVILocation() const
         case TYPE_Uninitialized:
         default:
             {
-            REPLACEMENT_LOGW("AlignmentPVI::GetPVILocation - unexpected PVI type");
+            CIVILBASEGEOMETRY_LOGW("AlignmentPVI::GetPVILocation - unexpected PVI type");
             return m_gradeBreakInfo.pvi;
             }
         }
@@ -484,7 +484,7 @@ DPoint3dCR AlignmentPVI::GetPVTLocation() const
         case TYPE_Uninitialized:
         default:
             {
-            REPLACEMENT_LOGW("AlignmentPVI::GetPVTLocation - unexpected PVI type");
+            CIVILBASEGEOMETRY_LOGW("AlignmentPVI::GetPVTLocation - unexpected PVI type");
             return m_gradeBreakInfo.pvi;
             }
         }
@@ -522,7 +522,7 @@ bool AlignmentPVI::SetPVILocation(DPoint3dCR pviPoint)
         case TYPE_Uninitialized:
         default:
             {
-            REPLACEMENT_LOG("AlignmentPVI::SetPVILocation - unexpected PVI type");
+            CIVILBASEGEOMETRY_LOGW("AlignmentPVI::SetPVILocation - unexpected PVI type");
             return false;
             }
         }
@@ -604,13 +604,13 @@ bool AlignmentPairEditor::LoadArcData(AlignmentPI::Arc& arc, ICurvePrimitiveCR p
     DEllipse3dCP pEllipse = primitiveArc.GetArcCP();
     if (pEllipse->IsFullEllipse())
         {
-        REPLACEMENT_LOG("AlignmentPairEditor::LoadArcData - arc is a full ellipse.");
+        CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::LoadArcData - arc is a full ellipse.");
         return false;
         }
 
     if (!pEllipse->IsCircularXY(arc.radius))
         {
-        REPLACEMENT_LOG("AlignmentPairEditor::LoadArcData - not a circular arc");
+        CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::LoadArcData - not a circular arc");
         return false;
         }
 
@@ -620,7 +620,7 @@ bool AlignmentPairEditor::LoadArcData(AlignmentPI::Arc& arc, ICurvePrimitiveCR p
 
     if (start.AlmostEqualXY(end))
         {
-        REPLACEMENT_LOG("AlignmentPairEditor::LoadArcData - arc has same start and end point");
+        CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::LoadArcData - arc has same start and end point");
         return false;
         }
 
@@ -856,7 +856,7 @@ bvector<AlignmentPI> AlignmentPairEditor::GetPIs() const
                 }
             default:
                 {
-                REPLACEMENT_LOG("AlignmentPairEditorTest::GetPIs - Unexpected primitive type");
+                CIVILBASEGEOMETRY_LOGW("AlignmentPairEditorTest::GetPIs - Unexpected primitive type");
                 isError = true;
                 break;
                 }
@@ -864,7 +864,7 @@ bvector<AlignmentPI> AlignmentPairEditor::GetPIs() const
 
         if (isError)
             {
-            REPLACEMENT_LOGW("AlignmentPairEditor::GetPIs - error");
+            CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::GetPIs - error");
             return bvector<AlignmentPI>();
             }
         }
@@ -901,7 +901,7 @@ ICurvePrimitivePtr AlignmentPairEditor::BuildArc(DPoint3dCR prevPI, DPoint3dCR c
     {
     if (0.0 >= radius)
         {
-        REPLACEMENT_LOGW("AlignmentPairEditor::BuildArc - null or negative radius");
+        CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::BuildArc - null or negative radius");
         return nullptr;
         }
 
@@ -913,7 +913,7 @@ ICurvePrimitivePtr AlignmentPairEditor::BuildArc(DPoint3dCR prevPI, DPoint3dCR c
     const double angle = std::abs(v0.AngleToXY(v1));
     if (0.0 == angle)
         {
-        REPLACEMENT_LOGW("AlignmentPairEditor::BuildArc - null angle");
+        CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::BuildArc - null angle");
         return nullptr;
         }
 
@@ -928,19 +928,19 @@ ICurvePrimitivePtr AlignmentPairEditor::BuildArc(DPoint3dCR prevPI, DPoint3dCR c
 
     if (tangentArcPt.DistanceSquaredXY(poi) > prevPI.DistanceSquaredXY(poi) + TOLERANCE_VALIDATION_OF_DISTANCE_SQUARED)
         {
-        REPLACEMENT_LOGW("AlignmentPairEditor::BuildArc - tangentArcPt validation failed");
+        CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::BuildArc - tangentArcPt validation failed");
         return nullptr;
         }
     if (arcTangentPt.DistanceSquaredXY(poi) > nextPI.DistanceSquaredXY(poi) + TOLERANCE_VALIDATION_OF_DISTANCE_SQUARED)
         {
-        REPLACEMENT_LOGW("AlignmentPairEditor::BuildArc - arcTangentPt validation failed");
+        CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::BuildArc - arcTangentPt validation failed");
         return nullptr;
         }
 
     DEllipse3d ellipse;
     if (!ellipse.InitFromArcCenterStartEnd(center, tangentArcPt, arcTangentPt))
         {
-        REPLACEMENT_LOGW("AlignmentPairEditor::BuildArc - failed to create arc");
+        CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::BuildArc - failed to create arc");
         return nullptr;
         }
 
@@ -966,12 +966,12 @@ CurveVectorPtr AlignmentPairEditor::BuildSCSCurve(DPoint3dCR prevPI, DPoint3dCR 
     {
     if (0.0 >= radius)
         {
-        REPLACEMENT_LOGW("AlignmentPairEditor::BuildSCSCurve - null or negative radius");
+        CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::BuildSCSCurve - null or negative radius");
         return nullptr;
         }
     if (0.0 >= spiralLength1 || 0.0 >= spiralLength2)
         {
-        REPLACEMENT_LOGW("AlignmentPairEditor::BuildSCSCurve - null or negative spiral length");
+        CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::BuildSCSCurve - null or negative spiral length");
         return nullptr;
         }
 
@@ -986,7 +986,7 @@ CurveVectorPtr AlignmentPairEditor::BuildSCSCurve(DPoint3dCR prevPI, DPoint3dCR 
     if (false == DSpiral2dBase::LineSpiralArcSpiralLineTransition(prevPI, nextPI, currPI, radius, spiralLength1, spiralLength2,
         *spiralA, *spiralB, lineToSpiralA, lineToSpiralB, spiralAToArc, spiralBToArc, arc))
         {
-        REPLACEMENT_LOGW("AlignmentPairEditor::BuildSCSCurve - failed to create SCS curve");
+        CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::BuildSCSCurve - failed to create SCS curve");
         return nullptr;
         }
 
@@ -1002,7 +1002,7 @@ CurveVectorPtr AlignmentPairEditor::BuildSCSCurve(DPoint3dCR prevPI, DPoint3dCR 
     const bool sign2 = vec1.SignedAngleTo (vec2, orientation) >= 0.0;
     if (sign0 != sign1 || sign0 != sign2)
         {
-        REPLACEMENT_LOGW("AlignmentPairEditor::BuildSCSCurve - validation of angle progression failed");
+        CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::BuildSCSCurve - validation of angle progression failed");
         return nullptr;
         
         // sdevtodo - _SolveSSPI should return false in many cases...
@@ -1012,12 +1012,12 @@ CurveVectorPtr AlignmentPairEditor::BuildSCSCurve(DPoint3dCR prevPI, DPoint3dCR 
 
     if (lineToSpiralA.DistanceSquaredXY(currPI) > prevPI.DistanceSquaredXY(currPI) + TOLERANCE_VALIDATION_OF_DISTANCE_SQUARED)
         {
-        REPLACEMENT_LOGW("AlignmentPairEditor::BuildSCSCurve - lineToSpiralA validation failed");
+        CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::BuildSCSCurve - lineToSpiralA validation failed");
         return nullptr;
         }
     if (lineToSpiralB.DistanceSquaredXY(currPI) > nextPI.DistanceSquaredXY(currPI) + TOLERANCE_VALIDATION_OF_DISTANCE_SQUARED)
         {
-        REPLACEMENT_LOGW("AlignmentPairEditor::BuildSCSCurve - lineToSpiralB validation failed");
+        CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::BuildSCSCurve - lineToSpiralB validation failed");
         return nullptr;
         }
 
@@ -1074,18 +1074,18 @@ CurveVectorPtr AlignmentPairEditor::BuildSSCurve(DPoint3dCR prevPI, DPoint3dCR c
     if (false == DSpiral2dBase::SymmetricLineSpiralSpiralLineTransition(prevPI, nextPI, currPI, spiralLength,
         *spiralA, *spiralB, lineToSpiralA, lineToSpiralB, spiralToSpiral, radius))
         {
-        REPLACEMENT_LOGW("AlignmentPairEditor::BuildSSCurve - failed to create SS curve");
+        CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::BuildSSCurve - failed to create SS curve");
         return nullptr;
         }
 
     if (lineToSpiralA.DistanceSquaredXY(currPI) > prevPI.DistanceSquaredXY(currPI) + TOLERANCE_VALIDATION_OF_DISTANCE_SQUARED)
         {
-        REPLACEMENT_LOGW("AlignmentPairEditor::BuildSSCurve - lineToSpiralA validation failed");
+        CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::BuildSSCurve - lineToSpiralA validation failed");
         return nullptr;
         }
     if (lineToSpiralB.DistanceSquaredXY(currPI) > nextPI.DistanceSquaredXY(currPI) + TOLERANCE_VALIDATION_OF_DISTANCE_SQUARED)
         {
-        REPLACEMENT_LOGW("AlignmentPairEditor::BuildSSCurve - lineToSpiralB validation failed");
+        CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::BuildSSCurve - lineToSpiralB validation failed");
         return nullptr;
         }
 
@@ -1202,7 +1202,7 @@ CurveVectorPtr AlignmentPairEditor::_BuildCurveVectorFromPIs(bvector<AlignmentPI
                 }
             default:
                 {
-                REPLACEMENT_LOG("AlignmentPairEditor::_BuildCurveVectorFromPIs - invalid PI type");
+                CIVILBASEGEOMETRY_LOGE("AlignmentPairEditor::_BuildCurveVectorFromPIs - invalid PI type");
                 return nullptr;
                 }
             }
@@ -1254,7 +1254,7 @@ bool AlignmentPairEditor::SolveSCSPI(bvector<AlignmentPI>& pis, size_t index) co
     {
     if (0 == index || index + 1 >= pis.size())
         {
-        REPLACEMENT_LOGW("AlignmentPairEditor::SolveSCSPI - Spiral PI is first or last PI");
+        CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::SolveSCSPI - Spiral PI is first or last PI");
         return false;
         }
 
@@ -1292,7 +1292,7 @@ bool AlignmentPairEditor::SolveSSPI(bvector<AlignmentPI>& pis, size_t index) con
     {
     if (0 == index || index + 1 >= pis.size())
         {
-        REPLACEMENT_LOGW("AlignmentPairEditor::SolveSSPI - Spiral PI is first or last PI");
+        CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::SolveSSPI - Spiral PI is first or last PI");
         return false;
         }
 
@@ -1301,7 +1301,7 @@ bool AlignmentPairEditor::SolveSSPI(bvector<AlignmentPI>& pis, size_t index) con
 
     if (0.0 >= pInfo->spiral1.length)
         {
-        REPLACEMENT_LOGW("AlignmentPairEditor::SolveSSPI - Null or negative spiral length");
+        CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::SolveSSPI - Null or negative spiral length");
         return false;
         }
 
@@ -1360,7 +1360,7 @@ bool AlignmentPairEditor::_SolvePI(bvector<AlignmentPI>& pis, size_t index) cons
             }
         default:
             {
-            REPLACEMENT_LOG("AlignmentPairEditor::_SolvePI - Invalid PI Type");
+            CIVILBASEGEOMETRY_LOGE("AlignmentPairEditor::_SolvePI - Invalid PI Type");
             return false;
             }
         }
@@ -1494,14 +1494,14 @@ AlignmentPairEditorPtr AlignmentPairEditor::CreateVerticalOnly(CurveVectorCR ver
     DPoint3d vStart, vEnd;
     if (!verticalAlignment.GetStartEnd(vStart, vEnd))
         {
-        REPLACEMENT_LOG("AlignmentPairEditor::CreateVerticalOnly - cannot create editor. Invalid vertical alignment.");
+        CIVILBASEGEOMETRY_LOGE("AlignmentPairEditor::CreateVerticalOnly - cannot create editor. Invalid vertical alignment.");
         return nullptr;
         }
 
     const double vtLength = vEnd.x - vStart.x;
     if (0.0 >= vtLength)
         {
-        REPLACEMENT_LOG("AlignmentPairEditor::CreateVerticalOnly - cannot create editor. Horizontal would have no length.");
+        CIVILBASEGEOMETRY_LOGE("AlignmentPairEditor::CreateVerticalOnly - cannot create editor. Horizontal would have no length.");
         return nullptr;
         }
 
@@ -1835,7 +1835,7 @@ ICurvePrimitivePtr AlignmentPairEditor::BuildVerticalArc(AlignmentPVI::ArcInfoCR
 
     if (0.0 >= info.radius)
         {
-        REPLACEMENT_LOGW("AlignmentPairEditor::BuildVerticalArc - null or negative radius");
+        CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::BuildVerticalArc - null or negative radius");
         return nullptr;
         }
 
@@ -1847,7 +1847,7 @@ ICurvePrimitivePtr AlignmentPairEditor::BuildVerticalArc(AlignmentPVI::ArcInfoCR
     const double angle = std::abs(v0.AngleToXY(v1));
     if (0.0 == angle)
         {
-        REPLACEMENT_LOGW("AlignmentPairEditor::BuildVerticalArc - null angle");
+        CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::BuildVerticalArc - null angle");
         return nullptr;
         }
 
@@ -1863,7 +1863,7 @@ ICurvePrimitivePtr AlignmentPairEditor::BuildVerticalArc(AlignmentPVI::ArcInfoCR
     DEllipse3d ellipse;
     if (!ellipse.InitFromArcCenterStartEnd(center, tangentArcPt, arcTangentPt))
         {
-        REPLACEMENT_LOGW("AlignmentPairEditor::BuildVerticalArc - failed to create arc");
+        CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::BuildVerticalArc - failed to create arc");
         return nullptr;
         }
 
@@ -1977,7 +1977,7 @@ bvector<AlignmentPVI> AlignmentPairEditor::GetPVIs() const
                 }
             default:
                 {
-                REPLACEMENT_LOG("AlignmentPairEditor::GetPVIs - unexpected primitive type");
+                CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::GetPVIs - unexpected primitive type");
                 isError = true;
                 break;
                 }
@@ -1985,7 +1985,7 @@ bvector<AlignmentPVI> AlignmentPairEditor::GetPVIs() const
 
         if (isError)
             {
-            REPLACEMENT_LOGW("AlignmentPairEditor::GetPVIs - error");
+            CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::GetPVIs - error");
             return bvector<AlignmentPVI>();
             }
         }
@@ -2075,7 +2075,7 @@ CurveVectorPtr AlignmentPairEditor::_BuildCurveVectorFromPVIs(bvector<AlignmentP
                 }
             default:
                 {
-                REPLACEMENT_LOG("AlignmentPairEditor::_BuildCurveVectorFromPVIs - invalid PVI type");
+                CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::_BuildCurveVectorFromPVIs - invalid PVI type");
                 return nullptr;
                 }
             }
@@ -2155,7 +2155,7 @@ CurveVectorPtr AlignmentPairEditor::MovePCorPT(size_t index, DPoint3dCR toPt, bo
         pArc = &pis[index].GetSCSP()->arc;
     else
         {
-        REPLACEMENT_LOGW("AlignmentPairEditor::MovePCorPT - Not an Arc or SCS transition");
+        CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::MovePCorPT - Not an Arc or SCS transition");
         return nullptr;
         }
 
@@ -2216,7 +2216,7 @@ CurveVectorPtr AlignmentPairEditor::UpdateRadius(size_t index, double radius, Al
         }
     else
         {
-        REPLACEMENT_LOGW("AlignmentPairEditor::UpdateRadius - PI is not an Arc or SCS");
+        CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::UpdateRadius - PI is not an Arc or SCS");
         return nullptr;
         }
 
@@ -2258,7 +2258,7 @@ CurveVectorPtr AlignmentPairEditor::UpdateSpiralLengths(size_t index, double spi
         }
     else
         {
-        REPLACEMENT_LOG("AlignmentPairEditor::UpdateSpiralLength - PI is not a SCS or SS");
+        CIVILBASEGEOMETRY_LOGE("AlignmentPairEditor::UpdateSpiralLength - PI is not a SCS or SS");
         return nullptr;
         }
 
@@ -2288,7 +2288,7 @@ CurveVectorPtr AlignmentPairEditor::RemoveSpirals(size_t index, AlignmentPI* pOu
 
     if (AlignmentPI::TYPE_SCS != pis[index].GetType())
         {
-        REPLACEMENT_LOGW("AlignmentPairEditor::RemoveSpirals - PI is not a SCS");
+        CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::RemoveSpirals - PI is not a SCS");
         return nullptr;
         }
 
@@ -2324,7 +2324,7 @@ CurveVectorPtr AlignmentPairEditor::AddSpirals(size_t index, double spiralLength
 
     if (AlignmentPI::TYPE_Arc != pis[index].GetType())
         {
-        REPLACEMENT_LOGW("AlignmentPairEditor::AddSpirals - PI is not a Arc");
+        CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::AddSpirals - PI is not a Arc");
         return nullptr;
         }
 
@@ -2922,7 +2922,7 @@ CurveVectorPtr AlignmentPairEditor::UpdateVerticalRadius(size_t index, double ra
     AlignmentPVIR pvi = pvis[index];
     if (AlignmentPVI::TYPE_Arc != pvi.GetType())
         {
-        REPLACEMENT_LOGW("AlignmentPairEditor::UpdateVerticalRadius - PVI is not an Arc");
+        CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::UpdateVerticalRadius - PVI is not an Arc");
         return nullptr;
         }
 
@@ -3520,7 +3520,7 @@ bool AlignmentPairEditor::_SolvePVI(bvector<AlignmentPVI>& pvis, size_t index) c
             return SolveParabolaPVI(pvis, index);
         default:
             {
-            REPLACEMENT_LOG("AlignmentPairEditor::_SolvePVI - Invalid PVI type");
+            CIVILBASEGEOMETRY_LOGW("AlignmentPairEditor::_SolvePVI - Invalid PVI type");
             return false;
             }
         }

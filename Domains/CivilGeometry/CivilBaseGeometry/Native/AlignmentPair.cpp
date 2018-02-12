@@ -25,7 +25,7 @@ bool TestLength (double a, double b)
         //swprintf (message, L"(Distance diff (%.17g)(%.17g)(%.6g)", a, b, d);
         //BentleyApi::BeAssertFunctions::PerformBeAssert(message, _CRT_WIDE(__FILE__), __LINE__);
         Utf8PrintfString message("Distance diff (%.17g)(%.17g)(%.6g)", a, b, d);
-        REPLACEMENT_LOG(message.c_str());
+        CIVILBASEGEOMETRY_LOGI(message.c_str());
         return false;
         }
 #endif
@@ -157,7 +157,7 @@ void AlignmentPair::_UpdateHorizontalCurveVector(CurveVectorCP pHorizontalAlignm
 
     if (m_horizontalCurveVector.IsValid() && CurveVector::BOUNDARY_TYPE_Open != m_horizontalCurveVector->GetBoundaryType())
         {
-        REPLACEMENT_LOGW("AlignmentPair UpdateHorizontalCurveVector - Unexpected boundary type. Set to BOUNDARY_TYPE_OPEN");
+        CIVILBASEGEOMETRY_LOGW("AlignmentPair UpdateHorizontalCurveVector - Unexpected boundary type. Set to BOUNDARY_TYPE_OPEN");
         m_horizontalCurveVector->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Open);
         }
     }
@@ -171,7 +171,7 @@ void AlignmentPair::_UpdateVerticalCurveVector(CurveVectorCP pVerticalAlignment)
 
     if (m_verticalCurveVector.IsValid() && CurveVector::BOUNDARY_TYPE_Open != m_verticalCurveVector->GetBoundaryType())
         {
-        REPLACEMENT_LOGW("AlignmentPair UpdateVerticalCurveVector - Unexpected boundary type. Set to BOUNDARY_TYPE_OPEN");
+        CIVILBASEGEOMETRY_LOGW("AlignmentPair UpdateVerticalCurveVector - Unexpected boundary type. Set to BOUNDARY_TYPE_OPEN");
         m_verticalCurveVector->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Open);
         }
     }
@@ -885,7 +885,7 @@ bvector<DPoint3d> AlignmentPair::GetStrokedAlignment(double maxEdgeLength) const
     if (!VerticalXIndexVector().IsValid())
         {
         m_horizontalCurveVector->AddStrokePoints(strokes, *options);
-        REPLACEMENT_LOGW("AlignmentPair - GetStrokedAlignment called on an alignment without vertical.");
+        CIVILBASEGEOMETRY_LOGW("AlignmentPair - GetStrokedAlignment called on an alignment without vertical.");
         }
     else
         {
@@ -977,7 +977,7 @@ void AlignmentPair::TransformCurveWithPartialCurves(CurveVectorR cv, TransformCR
             PartialCurveDetailCP pDetail = primitive->GetPartialCurveDetailCP();
             if (!pDetail->parentCurve->TransformInPlace(transform))
                 {
-                REPLACEMENT_LOG("AlignmentPair - Failed to transform partial curve with parent of type %i",
+                CIVILBASEGEOMETRY_LOGI("AlignmentPair - Failed to transform partial curve with parent of type %i",
                     static_cast<int>(pDetail->parentCurve->GetCurvePrimitiveType()));
                 }
             }
@@ -985,7 +985,7 @@ void AlignmentPair::TransformCurveWithPartialCurves(CurveVectorR cv, TransformCR
             {
             if (!primitive->TransformInPlace(transform))
                 {
-                REPLACEMENT_LOG("AlignmentPair - Failed to apply transform on primitive");
+                CIVILBASEGEOMETRY_LOGI("AlignmentPair - Failed to apply transform on primitive");
                 }
             }
         }
