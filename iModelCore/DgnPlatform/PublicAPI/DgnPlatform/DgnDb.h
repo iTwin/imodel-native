@@ -194,7 +194,7 @@ protected:
     DgnGeoLocation m_geoLocation;
     DgnCodeSpecs m_codeSpecs;
     TxnManagerPtr m_txnManager;
-    IBriefcaseManagerPtr m_briefcaseManager;
+    mutable IBriefcaseManagerPtr m_briefcaseManager;
     RefCountedPtr<IConcurrencyControl> m_concurrencyControl;
     DgnSearchableText m_searchableText;
     mutable std::unique_ptr<RevisionManager> m_revisionManager;
@@ -295,6 +295,8 @@ public:
     DGNPLATFORM_EXPORT TxnManagerR Txns();                 //!< The TxnManager for this DgnDb.
     DGNPLATFORM_EXPORT RevisionManagerR Revisions() const; //!< The RevisionManager for this DgnDb.
     DGNPLATFORM_EXPORT IBriefcaseManager& BriefcaseManager(); //!< Manages this briefcase's held locks and codes
+
+    IBriefcaseManager* GetExistingBriefcaseManager() const;
 
     //! @private
     DGNPLATFORM_EXPORT BentleyStatus SetConcurrencyControl(IConcurrencyControl*);

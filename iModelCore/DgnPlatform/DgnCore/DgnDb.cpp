@@ -293,6 +293,13 @@ IBriefcaseManagerR DgnDb::BriefcaseManager()
     return *m_briefcaseManager;
     }
 
+//-------------------------------------------------------------------------------------------
+// @bsimethod                                                 Diego.Pinate     02/18
+//-------------------------------------------------------------------------------------------
+IBriefcaseManager*  DgnDb::GetExistingBriefcaseManager() const
+    {
+    return m_briefcaseManager.IsNull() ? nullptr : m_briefcaseManager.get();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/17
