@@ -57,7 +57,7 @@ TEST_F(WPrintfStringTests, Ctor_PositionalFormatWithMixedTypes_FormattedString)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Vincas.Razma                      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-#if !defined(BENTLEYCONFIG_OS_LINUX)
+#if !defined(BENTLEYCONFIG_OS_UNIX)
 TEST_F(WPrintfStringTests, Sprintf_BadFormat_DoesNotCrash)
     {
     WCharCP a = L"a";

@@ -77,7 +77,7 @@ TEST_F(Utf8PrintfStringTests, Ctor_PositionalFormatWithMixedTypes_FormattedStrin
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Vincas.Razma                      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-#if !defined(BENTLEYCONFIG_OS_LINUX)
+#if !defined(BENTLEYCONFIG_OS_UNIX)
 TEST_F(Utf8PrintfStringTests, Sprintf_BadFormat_DoesNotCrash)
     {
     Utf8CP a = "a";
