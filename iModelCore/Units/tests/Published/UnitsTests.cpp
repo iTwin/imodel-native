@@ -153,7 +153,7 @@ TEST_F(UnitsTests, PrintOutAllUnitsGroupedByPhenonmenon)
             continue;
 
         WriteLine(file, "-Phenomenon-");
-        Utf8PrintfString line("%s,,%s,%s", phenomenon->GetName().c_str(), phenomenon->GetDefinition(), phenomenon->GetPhenomenonSignature().c_str());
+        Utf8PrintfString line("%s,,%s,%s", phenomenon->GetName().c_str(), phenomenon->GetDefinition().c_str(), phenomenon->GetPhenomenonSignature().c_str());
         WriteLine(file, line.c_str());
 
         WriteLine(file);
@@ -164,7 +164,7 @@ TEST_F(UnitsTests, PrintOutAllUnitsGroupedByPhenonmenon)
                 continue;
 
             Utf8String parsedExpression = unit->GetParsedUnitExpression();
-            line.Sprintf("%s,%s,%s,%s,%s", unit->GetName().c_str(), unit->GetUnitSystem()->GetName().c_str(), unit->GetDefinition(), unit->GetUnitSignature().c_str(), parsedExpression.c_str());
+            line.Sprintf("%s,%s,%s,%s,%s", unit->GetName().c_str(), unit->GetUnitSystem()->GetName().c_str(), unit->GetDefinition().c_str(), unit->GetUnitSignature().c_str(), parsedExpression.c_str());
 
             WriteLine(file, line.c_str());
 
@@ -189,7 +189,7 @@ TEST_F(UnitsTests, UnitNamesByReferencedComponents)
     for (auto const& unit : allUnits)
         {
         bvector<Utf8String> symbols;
-        BeStringUtilities::Split(unit->GetDefinition(), "*", symbols);
+        BeStringUtilities::Split(unit->GetDefinition().c_str(), "*", symbols);
         for (auto const& symbol : symbols)
             {
             auto index = symbol.find('(');
@@ -245,7 +245,7 @@ TEST_F(UnitsTests, TestUnitDefinitionsDoNotContainSynonyms)
     for (auto const& unit : allUnits)
         {
         bvector<Utf8String> symbols;
-        BeStringUtilities::Split(unit->GetDefinition(), "*", symbols);
+        BeStringUtilities::Split(unit->GetDefinition().c_str(), "*", symbols);
         for (auto const& symbol : symbols)
             {
             auto index = symbol.find('(');

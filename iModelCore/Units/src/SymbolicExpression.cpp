@@ -86,7 +86,7 @@ BentleyStatus Expression::GenerateConversionExpression(UnitCR from, UnitCR to, E
     if (from.GetPhenomenonId() != to.GetPhenomenonId())
         {
         LOG.errorv("Cannot convert from %s: (%s) to %s: (%s) because they are not belong to the same Phenomenon.",
-                   from.GetName().c_str(), from.GetDefinition(), to.GetName().c_str(), to.GetDefinition());
+                   from.GetName().c_str(), from.GetDefinition().c_str(), to.GetName().c_str(), to.GetDefinition().c_str());
         return BentleyStatus::ERROR;
         }
 
@@ -98,7 +98,7 @@ BentleyStatus Expression::GenerateConversionExpression(UnitCR from, UnitCR to, E
     toExpression.LogExpression(NativeLogging::SEVERITY::LOG_DEBUG, to.GetName().c_str());
 
     Expression::Copy(fromExpression, conversionExpression);
-    Expression::MergeExpressions(from.GetDefinition(), conversionExpression, to.GetDefinition(), toExpression, -1);
+    Expression::MergeExpressions(from.GetDefinition().c_str(), conversionExpression, to.GetDefinition().c_str(), toExpression, -1);
     if (LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_DEBUG))
         {
         Utf8PrintfString combinedName("%s/%s", from.GetName().c_str(), to.GetName().c_str());
@@ -197,7 +197,7 @@ BentleyStatus Expression::HandleToken(UnitsSymbolCR owner, int& depth, Expressio
 
     if (symbol->IsBaseSymbol())
         {
-        MergeSymbol(definition, expression, symbol->GetDefinition(), symbol, mergedExponent, IdsMatch);
+        MergeSymbol(definition, expression, symbol->GetDefinition().c_str(), symbol, mergedExponent, IdsMatch);
         }
     else
         {
@@ -209,7 +209,7 @@ BentleyStatus Expression::HandleToken(UnitsSymbolCR owner, int& depth, Expressio
 
         LOG.debugv("Evaluating %s", symbol->GetName().c_str());
         Expression sourceExpression = symbol->Evaluate(depth, getSymbolByName);
-        MergeExpressions(definition, expression, symbol->GetDefinition(), sourceExpression, mergedExponent);
+        MergeExpressions(definition, expression, symbol->GetDefinition().c_str(), sourceExpression, mergedExponent);
         }
 
     return BentleyStatus::SUCCESS;

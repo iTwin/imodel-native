@@ -87,6 +87,12 @@ private:
             return nullptr;
             }
 
+        if (Utf8String::IsNullOrEmpty(definition))
+            {
+            NativeLogging::LoggingManager::GetLogger(L"UnitsNative")->errorv("Cannot create Phenomenon '%s' because the definition is empty.", phenomenaName);
+            return nullptr;
+            }
+
         auto phenomena = PHENOM_TYPE::_Create(phenomenaName, definition, ' ', m_nextId);
         ++m_nextId;
 
@@ -122,6 +128,12 @@ private:
         if (nullptr == system)
             {
             NativeLogging::LoggingManager::GetLogger(L"UnitsNative")->errorv("Could not find system '%s'", systemName);
+            return nullptr;
+            }
+
+        if (Utf8String::IsNullOrEmpty(definition))
+            {
+            NativeLogging::LoggingManager::GetLogger(L"UnitsNative")->errorv("Cannot create Unit '%s' because the definition is empty.", unitName);
             return nullptr;
             }
 

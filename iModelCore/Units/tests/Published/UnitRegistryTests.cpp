@@ -52,7 +52,7 @@ struct UnitRegistryTests : UnitsTestFixture
                 Unit(unitSystem, phenomenon, name, id, definition, baseSymbol, factor, offset, isConstant) {}
 
             TestUnit(UnitCR parentUnit, Utf8CP name, uint32_t id)
-            : TestUnit(*(parentUnit.GetUnitSystem()), *(parentUnit.GetPhenomenon()), name, id, parentUnit.GetDefinition(), ' ', 0, 0, false) {}
+            : TestUnit(*(parentUnit.GetUnitSystem()), *(parentUnit.GetPhenomenon()), name, id, parentUnit.GetDefinition().c_str(), ' ', 0, 0, false) {}
 
         public:
             static TestUnit* _Create(UnitSystemCR sysName, PhenomenonCR phenomenon, Utf8CP unitName, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant)
@@ -220,7 +220,7 @@ TEST_F(UnitRegistryTests, TestAllBaseUnitSystemsAdded)
 //--------------------------------------------------------------------------------------
 TEST_F(UnitRegistryTests, TestAddingDerivedUnits)
     {
-    TestUnit const* testConstant = UnitRegistry::Instance().AddConstant<TestUnit>("ONE", "TestConstant", "", 0);
+    TestUnit const* testConstant = UnitRegistry::Instance().AddConstant<TestUnit>("ONE", "TestConstant", "ONE", 0);
     ASSERT_NE(nullptr, testConstant);
     UnitCP retrievedConstant = UnitRegistry::Instance().LookupUnit("TestConstant");
     EXPECT_EQ(retrievedConstant, testConstant);

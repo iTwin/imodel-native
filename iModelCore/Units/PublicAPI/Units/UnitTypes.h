@@ -148,12 +148,12 @@ protected:
     UNITS_EXPORT virtual ~UnitsSymbol();
 
 public:
-    Utf8StringCR  GetName() const {return m_name;}
+    Utf8StringCR GetName() const {return m_name;}
     Utf8StringCP GetNameSP() const {return &m_name;}
-    Utf8CP  GetDefinition() const {return m_definition.c_str();}
-    double  GetFactor() const {return m_factor;}
-    bool    HasOffset() const {return 0.0 != m_offset;}
-    double  GetOffset() const {return m_offset;}
+    Utf8StringCR GetDefinition() const {return m_definition;}
+    double GetFactor() const {return m_factor;}
+    bool HasOffset() const {return 0.0 != m_offset;}
+    double GetOffset() const {return m_offset;}
     void SetName(Utf8CP name) {m_name = name;}
 };
 
@@ -179,7 +179,7 @@ private:
     mutable Utf8String m_displayDescription;
 
     Unit(UnitCR parentUnit, Utf8CP name, uint32_t id)
-        : Unit(*(parentUnit.GetUnitSystem()), *(parentUnit.GetPhenomenon()), name, id, parentUnit.GetDefinition(), parentUnit.GetBaseSymbol(), 0, 0, false)
+        : Unit(*(parentUnit.GetUnitSystem()), *(parentUnit.GetPhenomenon()), name, id, parentUnit.GetDefinition().c_str(), parentUnit.GetBaseSymbol(), 0, 0, false)
         {
         m_parent = &parentUnit;
         }
