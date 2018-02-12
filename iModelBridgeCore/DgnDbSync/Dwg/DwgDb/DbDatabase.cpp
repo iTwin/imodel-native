@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgDb/DbDatabase.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DwgDbInternal.h"
@@ -66,6 +66,7 @@ DwgDbObjectId       DwgDbDatabase::GetMaterialGlobalId () const { return DWGDB_C
 DwgDbObjectId       DwgDbDatabase::GetNamedObjectsDictionaryId () const { return DWGDB_CALLSDKMETHOD(T_Super::getNamedObjectsDictionaryId(), T_Super::namedObjectsDictionaryId()); }
 DwgDbLightingUnits  DwgDbDatabase::GetLightingUnits () const { return static_cast<DwgDbLightingUnits>(DWGDB_CALLSDKMETHOD(T_Super::getLIGHTINGUNITS, T_Super::lightingUnits)()); }
 bool                DwgDbDatabase::GetLightGlyphDisplay () const { return DWGDB_CALLSDKMETHOD(T_Super::getLIGHTGLYPHDISPLAY, T_Super::lightGlyphDisplay)() != 0; }
+DwgFileVersion      DwgDbDatabase::GetFileVersion () const { return Util::GetDwgVersionFrom(T_Super::originalFileVersion()); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/17
@@ -339,4 +340,60 @@ DwgString       DwgDbDatabase::GetVersionGuid () const
         }
 #endif
     return  versionGuid;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbDatabase::SaveAs (WCharCP newFileName, DwgFileVersion version, bool createBakFile)
+    {
+    DwgDbVersion    toVersion = Util::GetDwgVersionFrom (version);
+
+    if (toVersion != DwgDbVersion::kDHL_Unknown && nullptr != newFileName && newFileName[0] != 0)
+        {
+#if DWGTOOLKIT_OpenDwg
+        T_Super::writeFile(OdString(newFileName), OdDb::SaveType::kDwg, static_cast<OdDb::DwgVersion>(version), true);
+        return  DwgDbStatus::Success;
+
+#elif DWGTOOLKIT_RealDwg
+        /*-------------------------------------------------------------------------------
+        Only the variant saveAs(const ACHAR* fileName, const SecurityParams* pSecParams = 0)
+        changes VersionGuid!  So, we have to explicitly change it here.
+        -------------------------------------------------------------------------------*/
+#ifdef _MSC_VER
+        UUID        newGuid;
+        wchar_t*    str = nullptr;
+        if (::UuidCreate(&newGuid) == RPC_S_OK && ::UuidToStringW(&newGuid, (RPC_WSTR*)&str) == RPC_S_OK)
+            {
+            T_Super::setVersionGuid (str);
+            ::RpcStringFree ((RPC_WSTR*)&str);
+            }
+#endif  // _MSC_VER
+
+        return ToDwgDbStatus (T_Super::saveAs(newFileName, createBakFile, toVersion, 0));
+#endif
+        }
+
+    return  DwgDbStatus::InvalidInput;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbDatabase::SaveAsDxf (WCharCP dxfFileName, DwgFileVersion version, int precision)
+    {
+    DwgDbVersion    toVersion = Util::GetDwgVersionFrom (version);
+
+    if (toVersion != DwgDbVersion::kDHL_Unknown && nullptr != dxfFileName && dxfFileName[0] != 0)
+        {
+#if DWGTOOLKIT_OpenDwg
+        T_Super::writeFile(OdString(dxfFileName), OdDb::SaveType::kDxf, static_cast<OdDb::DwgVersion>(version), true, precision);
+        return  DwgDbStatus::Success;
+
+#elif DWGTOOLKIT_RealDwg
+        return ToDwgDbStatus(T_Super::dxfOut(dxfFileName, precision, toVersion, true));
+#endif
+        }
+
+    return  DwgDbStatus::InvalidInput;
     }

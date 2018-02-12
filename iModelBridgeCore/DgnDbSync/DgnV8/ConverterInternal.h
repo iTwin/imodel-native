@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/ConverterInternal.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -70,6 +70,7 @@
 #include <Bentley/NonCopyableClass.h>
 
 #include <DgnDbSync/DgnV8/Converter.h>
+#include <DgnDbSync/DgnV8/LightWeightConverter.h>
 #include <DgnDbSync/DgnV8/SyncInfo.h>
 
 #include <Bentley/BeNumerical.h>

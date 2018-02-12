@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbSync/Dwg/DwgDb/DwgDbEntities.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -83,7 +83,9 @@ BEGIN_DWGDB_NAMESPACE
     /*! Can this entity receive shadows from other entities? */                         \
     DWGDB_EXPORT bool               CanReceiveShadows () const;                         \
     /*! Is this a planar entity? */                                                     \
-    DWGDB_EXPORT bool               IsPlanar () const;
+    DWGDB_EXPORT bool               IsPlanar () const;                                  \
+    /*! Transform the entity by the input matrix. */                                    \
+    DWGDB_EXPORT DwgDbStatus        TransformBy (TransformCR matrix);
 
     
 
@@ -93,7 +95,7 @@ BEGIN_DWGDB_NAMESPACE
 class DwgDbEntity : public DWGDB_EXTENDCLASS(Entity)
     {
 public:
-    DWGDB_DECLARE_COMMON_MEMBERS(Entity)
+    DWGDB_DECLARE_BASECLASS_MEMBERS(Entity)
     DWGDB_DECLARE_ENTITY_MEMBERS()
     };  // DwgDbEntity
 DWGDB_DEFINE_OBJECTPTR (Entity)
@@ -201,6 +203,11 @@ public:
     DWGDB_EXPORT double     GetTotalAngle () const;
     DWGDB_EXPORT DVec3d     GetNormal () const;
     DWGDB_EXPORT double     GetThickness () const;
+    DWGDB_EXPORT DwgDbStatus SetCenter (DPoint3dCR center);
+    DWGDB_EXPORT DwgDbStatus SetRadius (double radius);
+    DWGDB_EXPORT DwgDbStatus SetStartAngle (double radians);
+    DWGDB_EXPORT DwgDbStatus SetEndAngle (double radians);
+    DWGDB_EXPORT DwgDbStatus SetThickness (double thickness);
     };  // DwgDbArc
 DWGDB_DEFINE_OBJECTPTR (Arc)
 
@@ -217,6 +224,9 @@ public:
     DWGDB_EXPORT double     GetDiameter () const;
     DWGDB_EXPORT DVec3d     GetNormal () const;
     DWGDB_EXPORT double     GetThickness () const;
+    DWGDB_EXPORT DwgDbStatus SetCenter (DPoint3dCR center);
+    DWGDB_EXPORT DwgDbStatus SetRadius (double radius);
+    DWGDB_EXPORT DwgDbStatus SetThickness (double thickness);
     };  // DwgDbCircle
 DWGDB_DEFINE_OBJECTPTR (Circle)
 
@@ -340,6 +350,7 @@ public:
     DWGDB_EXPORT bool           GetFillMode () const;
     DWGDB_EXPORT DwgDbObjectId  GetBackground () const;
     DWGDB_EXPORT DwgDbObjectId  GetVisualStyle () const;
+    DWGDB_EXPORT DwgDbObjectId  GetSunId () const;
     DWGDB_EXPORT DVec3d         GetViewDirection () const;
     DWGDB_EXPORT DwgDbStatus    GetUcs (DPoint3dR origin, DVec3dR xAxis, DVec3d yAxis) const;
     DWGDB_EXPORT bool           IsUcsSavedWithViewport () const;
@@ -557,7 +568,7 @@ public:
     };  // IPointsFilter
 
 /*=================================================================================**//**
-*! This class is currently only supported for RealDWG.
+* This class is currently only supported for RealDWG.
 * @bsiclass                                                     Don.Fu          06/16
 +===============+===============+===============+===============+===============+======*/
 class DwgDbPointCloudEx : public DWGDB_EXTENDCLASS(PointCloudEx)

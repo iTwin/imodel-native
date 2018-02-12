@@ -2,12 +2,14 @@
 |
 |     $Source: Dwg/DwgUpdater.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DwgImportInternal.h"
 
 BEGIN_DGNDBSYNC_DWG_NAMESPACE
+
+static bset<Utf8String> s_loggedFileNames;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          03/16
@@ -59,6 +61,8 @@ void UpdaterChangeDetector::_Cleanup (DwgImporter& importer)
     m_dwgModelsSkipped.clear ();
     m_newlyDiscoveredModels.clear ();
     m_elementsDiscarded = 0;
+
+    s_loggedFileNames.clear ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -399,12 +403,23 @@ DgnDbStatus DwgImporter::UpdateResults (ElementImportResults& results, DgnElemen
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool HasFileNameBeenLogged (Utf8StringCR filename)
+    {
+    if (s_loggedFileNames.find(filename) != s_loggedFileNames.end())
+        return  true;
+    s_loggedFileNames.insert (filename);
+    return  false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool UpdaterChangeDetector::_ShouldSkipFile (DwgImporter& importer, DwgDbDatabaseCR dwg)
     {
-    // if a DWG file is changed via RealDWG or OpenDWG, its version GUID must have been changed:
-    if (!importer.GetSyncInfo().HasVersionGuidChanged(dwg))
+    // if a DWG file is changed via an AutoCAD based product, its version GUID must have been changed:
+    if (importer.GetOptions().GetSyncDwgVersionGuid() && !importer.GetSyncInfo().HasVersionGuidChanged(dwg))
         return  true;
     
     // if it hasn't changed per the "last saved time", don't bother with it.
@@ -412,7 +427,11 @@ bool UpdaterChangeDetector::_ShouldSkipFile (DwgImporter& importer, DwgDbDatabas
         return false;
 
     if (LOG_IS_SEVERITY_ENABLED(LOG_TRACE))
-        LOG.tracev("skip %s (dgnfile lastmod time unchanged)", Utf8String((WCharCP)dwg.GetFileName().c_str()).c_str());
+        {
+        Utf8String  fn(dwg.GetFileName().c_str());
+        if (!HasFileNameBeenLogged(fn))
+            LOG.tracev("skip %s (dgnfile lastmod time unchanged)", fn.c_str());
+        }
 
     return true;
     }

@@ -2,7 +2,7 @@
 #
 #     $Source: Dwg/DwgDb/DwgDbExchange.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 %include  mdl.mki
@@ -163,7 +163,7 @@ LINKER_LIBRARIES    + $(ToolkitLibs)TD_Ge$(libext)
 LINKER_LIBRARIES    + $(ToolkitLibs)TD_Gi$(libext)
 LINKER_LIBRARIES    + $(ToolkitLibs)TD_Gs$(libext)
 LINKER_LIBRARIES    + $(ToolkitLibs)TD_ExamplesCommon$(libext)
-LINKER_LIBRARIES    + crypt32.lib
+LINKER_LIBRARIES    + crypt32$(libext) Urlmon$(libext)
 
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)TD_SpatialIndex$(libext)
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)TD_AcisBuilder$(libext)
@@ -197,6 +197,9 @@ LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)acISMobj$(RealDwgSuffix)$(libext
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)acgex$(RealDwgSuffix)$(libext)
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)AcDbPointCloudObj$(libext)
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)acSceneOE$(libext)
+
+# Need UuidCreate
+LINKER_LIBRARIES_DELAYLOADED    + Rpcrt4.lib
 
 %endif  // OpenDwg or RealDwg
 

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbSync/Dwg/DwgDb/DwgDbDatabase.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -109,10 +109,14 @@ public:
     DWGDB_EXPORT DwgDbObjectId      GetObjectId (DwgDbHandleCR handle);
     DWGDB_EXPORT DwgDbLightingUnits GetLightingUnits () const;
     DWGDB_EXPORT bool               GetLightGlyphDisplay () const;
+    DWGDB_EXPORT DwgFileVersion     GetFileVersion () const;
+    DWGDB_EXPORT DwgDbStatus        SaveAs (WCharCP newFileName, DwgFileVersion ver = DwgFileVersion::Current, bool createBakFile = false);
+    DWGDB_EXPORT DwgDbStatus        SaveAsDxf (WCharCP dxfFileName, DwgFileVersion ver = DwgFileVersion::Current, int precision = 6);
     };  // DwgDbDatabase
 
 /*=================================================================================**//**
-* DwgDbDatabasePtr is a true refcounted pointer(unlike other DwgDb ptr's due to RealDWG limitation)!
+This is a true refcounted pointer, unlike other DwgDb ptr's which are inherited from the toolkits
+therefore are limited in case of RealDWG.
 * @bsiclass                                                     Don.Fu          01/16
 +===============+===============+===============+===============+===============+======*/
 class DwgDbDatabasePtr

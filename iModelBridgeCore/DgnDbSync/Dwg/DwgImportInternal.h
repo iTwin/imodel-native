@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgImportInternal.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,6 +10,7 @@
 // only include this before including OpenDWG stuff - RealDWG has an MFC dependency:
 #if defined(BENTLEY_WIN32) && defined(DWGTOOLKIT_OpenDwg)
 #include    <Windows.h>                 // LOGFONTW etc
+#include    <Shlwapi.h>                 // PathIsURL
 #endif
 
 #include <Bentley/Bentley.h>
@@ -31,6 +32,8 @@
 #include <DgnPlatform/DesktopTools/ConfigurationManager.h>
 
 #include <Raster/RasterApi.h>
+#include <ECPresentation/RulesDriven/RuleSetEmbedder.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 
 #include <DgnDbSync/Dwg/DwgDb/DwgDbCommon.h>
 #include <DgnDbSync/Dwg/DwgDb/BasicTypes.h>
@@ -73,6 +76,7 @@ using namespace BentleyApi::Dgn;
 using namespace BentleyApi::BeSQLite;
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
+USING_NAMESPACE_BENTLEY_ECPRESENTATION
 USING_NAMESPACE_BENTLEY_LOGGING
 USING_NAMESPACE_DGNDBSYNC
 USING_NAMESPACE_DWGDB
@@ -149,7 +153,7 @@ public:
     void                    Initialize (DwgImporter& importer);
     void                    NewProgressMeter ();
 
-    static DwgImportHost&   GetHost ();
+    DGNDBSYNC_EXPORT static DwgImportHost& GetHost ();
 };  // DwgImportHost
 
 /*=================================================================================**//**
@@ -245,6 +249,7 @@ private:
     DwgDbObjectId       m_clipEntityId;
     DwgDbObjectId       m_backgroundId;
     DwgDbObjectId       m_visualStyleId;
+    DwgDbObjectId       m_sunId;
     double              m_customScale;
     DwgDbObjectCP       m_inputViewport;
     // BIM members
@@ -264,6 +269,8 @@ private:
     void AddSpatialCategories (DgnDbR dgndb, Utf8StringCR viewName);
     void ApplyViewportClipping (SpatialViewDefinitionR dgnView, double frontClip, double backClip);
     bool ComputeClipperTransformation (TransformR toClipper, RotMatrixCR viewRotation);
+    void ComputeEnvironment (DisplayStyle3dR displayStyle);
+    bool FindEnvironmentImageFile (BeFileNameR filename) const;
 
 public:
     // constructor for a modelspace viewport

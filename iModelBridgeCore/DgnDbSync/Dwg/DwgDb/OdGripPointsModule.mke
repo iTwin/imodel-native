@@ -2,7 +2,7 @@
 #
 #     $Source: Dwg/DwgDb/OdGripPointsModule.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 #----------------------------------------------------------------------
@@ -42,7 +42,7 @@ cIncs + -I$(OpenDwgCore)Include/
 #----------------------------------------------------------------------
 #    OdGripPointsModule compile options
 #----------------------------------------------------------------------
-CCompOpts + -D_TOOLKIT_IN_DLL_ -DGRIPPOINTS_DLL_EXPORTS -DGripPoints_EXPORTS
+CCompOpts + -D_TOOLKIT_IN_DLL_ -DGRIPPOINTS_DLL_EXPORTS -DGripPoints_EXPORTS -DSKIP_COMPILER_ANALYZE
 CCompOpts + -wd4389 -wd4189 -wd4505
 # CCompOpts + -DODA_LINT <= debugging stuff??
 

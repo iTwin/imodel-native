@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/ConverterTestsBaseFixture.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -20,6 +20,10 @@ struct ConverterTestBaseFixture : public testing::Test
         void InitializeTheConverter();
 
         bool m_wantCleanUp = true;
+
+        ISChemaImportVerifier *m_verifier = nullptr;
+        virtual bool _ShouldImportSchema(BentleyApi::Utf8StringCR fullSchemaName, DgnV8Api::DgnModel& v8Model) { return true; }
+
     public:
     struct ConvertOptions
         {
@@ -76,6 +80,7 @@ struct ConverterTestBaseFixture : public testing::Test
     SubjectCPtr GetReferencesChildSubjectOf(SubjectCR);
 
     DefinitionModelPtr GetJobDefinitionModel(DgnDbR db);
+    bool ShouldImportSchema(BentleyApi::Utf8StringCR fullSchemaName, DgnV8Api::DgnModel& v8Model) { return _ShouldImportSchema(fullSchemaName, v8Model); }
     };
 
 struct TestRootModelCreator : RootModelConverter
@@ -87,6 +92,7 @@ struct TestRootModelCreator : RootModelConverter
     public:
         explicit TestRootModelCreator(RootModelConverter::RootModelSpatialParams& params, ConverterTestBaseFixture* fixture) : T_Super(params), m_testFixture(fixture) {}
 
+        bool _ShouldImportSchema(BentleyApi::Utf8StringCR fullSchemaName, DgnV8Api::DgnModel& v8Model) override { return m_testFixture->ShouldImportSchema(fullSchemaName, v8Model); }
 
     };
 

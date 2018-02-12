@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbSync/Dwg/DwgHelper.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -25,27 +25,6 @@ USING_NAMESPACE_DWGDB
 
 BEGIN_DGNDBSYNC_DWG_NAMESPACE
 
-enum class DwgFileVersion
-    {
-    Invalid = -2,   // Not a DWG version at all
-    Newer   = -1,   // A newer version not currently supported
-    Unknown = 0,    // An old version not known to us but can potentially open
-    R2_5    = 1,
-    R2_6    = 2,
-    R9      = 3,
-    R10     = 4,
-    R11     = 5,
-    R13     = 6,
-    R14     = 7,
-    R2000   = 8,
-    R2004   = 9,
-    R2007   = 10,
-    R2010   = 11,
-    R2013   = 12,
-    R2018   = 13,
-    MAX     = R2018
-    };  // DwgFileVersion
-
 struct DwgHelper : NonCopyableClass
     {
     DGNDBSYNC_EXPORT static StandardUnit     GetStandardUnitFromDwgUnit (DwgDbUnits const& dwgUnit);
@@ -66,6 +45,8 @@ struct DwgHelper : NonCopyableClass
     DGNDBSYNC_EXPORT static void             ValidateStyleName (Utf8String& out, DwgStringCR in);
     DGNDBSYNC_EXPORT static size_t           ConvertEscapeCodes (TextStringR text, bvector<DSegment3d>* underlines, bvector<DSegment3d>* overlines);
     DGNDBSYNC_EXPORT static ColorDef         GetColorDefFromACI (int16_t acColorIndex);
+    DGNDBSYNC_EXPORT static ColorDef         GetColorDefFromTrueColor (DwgCmEntityColorCR acColor);
+    DGNDBSYNC_EXPORT static ColorDef         GetColorDefFromTrueColor (DwgCmColorCR acColor);
     DGNDBSYNC_EXPORT static void             GetDgnGradientColor (GradientSymbR gradientOut, DwgGiGradientFillCR gradientIn);
     DGNDBSYNC_EXPORT static void             SetGradientFrom (DwgGiGradientFillR gradientOut, DwgDbHatchCR hatchIn);
     DGNDBSYNC_EXPORT static Utf8String       GetAttrdefECClassNameFromBlockName (WCharCP blockName);

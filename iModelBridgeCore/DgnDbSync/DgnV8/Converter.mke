@@ -2,7 +2,7 @@
 #
 #     $Source: DgnV8/Converter.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 
@@ -75,6 +75,8 @@ $(o)Thumbnails$(oext):  $(baseDir)Thumbnails.cpp $(DgnDbSyncDepends) ${MultiComp
 $(o)ImportConfig$(oext):  $(baseDir)ImportConfig/ImportConfig.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
 $(o)Converter$(oext):  $(baseDir)Converter.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)LightWeightConverter$(oext):  $(baseDir)LightWeightConverter.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
 $(o)SheetConverter$(oext):  $(baseDir)SheetConverter.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
@@ -152,6 +154,8 @@ $(o)DgnV8Font$(oext) : $(baseDir)DgnV8Font.cpp $(DgnV8APISrc)DgnV8Font.h $(DgnDb
 
 # Shared source from other branches, so cannot use PCH.
 $(o)V8IModelExtraFiles$(oext) : $(SrcV8IModelExtraFiles)V8IModelExtraFiles.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)ScalableMeshV8Utilities$(oext):  $(baseDir)ScalableMeshV8Utilities.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 

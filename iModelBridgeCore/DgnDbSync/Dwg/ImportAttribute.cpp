@@ -2,249 +2,16 @@
 |
 |     $Source: Dwg/ImportAttribute.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
 
-USING_NAMESPACE_BENTLEY
-USING_NAMESPACE_BENTLEY_SQLITE_EC
-USING_NAMESPACE_DWGDB
 USING_NAMESPACE_DGNDBSYNC_DWG
 
 
 static Utf8CP   s_blankTagName = "BLANKTAG";
 
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   05/15
-//=======================================================================================
-struct AspectInserter : DgnElement::AppData
-    {
-    friend struct DwgImporter;
-
-private:
-    static Key      s_key;
-    DwgImporter&    m_importer;
-    bvector<ECN::IECInstancePtr> m_aspectInstances;
-
-    DropMe _OnInserted (DgnElementCR el) override;
-    DropMe _OnUpdated (DgnElementCR modified, DgnElementCR original, bool isOriginal) override;
-
-    void Insert (DgnElementCR, ECN::IECInstanceR aspectInstance);
-    void UpdateOrInsert (DgnElementCR, ECN::IECInstanceR aspectInstance);
-    BentleyStatus TryUpdate (DgnElementCR, ECN::IECInstanceCR aspectInstance);
-
-public:
-    explicit AspectInserter(DwgImporter& in) : m_importer(in) {}
-
-    void AddAspectInstance(ECN::IECInstancePtr& aspectInstance) { m_aspectInstances.push_back(aspectInstance); }
-
-    static Key& GetKey() { return s_key; }
-    };  // AspectInserter
-
-// static value
-AspectInserter::Key     AspectInserter::s_key;
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     05/2015
-//---------------------------------------------------------------------------------------
-AspectInserter::DropMe AspectInserter::_OnInserted (DgnElementCR el)
-    {
-    for (IECInstancePtr& aspectInstance : m_aspectInstances)
-        {
-        Insert(el, *aspectInstance);
-        }
-
-    return DropMe::Yes;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     05/2015
-//---------------------------------------------------------------------------------------
-AspectInserter::DropMe AspectInserter::_OnUpdated (DgnElementCR modified, DgnElementCR original, bool isOriginal)
-    {
-    for (IECInstancePtr& aspectInstance : m_aspectInstances)
-        UpdateOrInsert(modified, *aspectInstance);
-
-    return DropMe::Yes;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Sam.Wilson     03/2015
-//---------------------------------------------------------------------------------------
-void AspectInserter::Insert (DgnElementCR el, IECInstanceR aspectInstance)
-    {
-    ECInstanceInserter const&   inserter = m_importer.GetECSqlCache().GetInserter(aspectInstance.GetClass());
-    if (!inserter.IsValid())
-        return;
-
-    DgnElementId elementId = el.GetElementId();
-    BeAssert(elementId.IsValid());
-    ECInstanceId aspectId(elementId.GetValue());
-    bool autogenerateECInstanceId = false;
-    ECInstanceId* id = &aspectId;
-
-    ECPropertyCP elementIdProp = aspectInstance.GetClass().GetPropertyP("Element");
-    BeAssert(elementIdProp != nullptr && elementIdProp->GetIsNavigation());
-    //WIP_NAV_PROP Enhance this to pass the correct subclass of the ElementOwnsMultiAspect relationship
-    ECValue elementIdVal(aspectId, elementIdProp->GetAsNavigationProperty()->GetRelationshipClass());
-    ECObjectsStatus ecstat = aspectInstance.SetValue("Element", elementIdVal);
-    if (ECObjectsStatus::Success != ecstat)
-        {
-        Utf8String error;
-        error.Sprintf("Could not set Element ECProperty in ElementMultiAspect ECInstance (ECClass: %s). ECObjectsStatus code: %d",
-                      aspectInstance.GetClass().GetFullName(), (int) ecstat);
-        m_importer.ReportIssue(DwgImporter::IssueSeverity::Fatal, DwgImporter::IssueCategory::Sync(), DwgImporter::Issue::Error(), error.c_str());
-        BeAssert(false && "Could not set Element ECProperty in ElementMultiAspect ECInstance");
-        return;
-        }
-
-    //if aspect is an item, use the id of the element. Otherwise let ECDb generate a new one.
-    autogenerateECInstanceId = true;
-    id = nullptr;
-
-    ECInstanceKey aspectKey;
-    if (BE_SQLITE_OK == inserter.Insert(aspectKey, aspectInstance, autogenerateECInstanceId, id))
-        {
-        //Set instance id on the aspect instance in case caller needs the information
-        Utf8Char idStrBuffer[BeInt64Id::ID_STRINGBUFFER_LENGTH];
-        aspectKey.GetInstanceId().ToString(idStrBuffer);
-        aspectInstance.SetInstanceId(idStrBuffer);
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Sam.Wilson     03/2015
-//---------------------------------------------------------------------------------------
-void AspectInserter::UpdateOrInsert (DgnElementCR el, IECInstanceR aspectInstance)
-    {
-    if (SUCCESS != TryUpdate(el, aspectInstance))
-        Insert(el, aspectInstance);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Sam.Wilson     03/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus AspectInserter::TryUpdate (DgnElementCR el, IECInstanceCR aspectInstance)
-    {
-    if (aspectInstance.GetInstanceId().empty())
-        return BSIERROR;
-
-    ECInstanceUpdater const&    updater = m_importer.GetECSqlCache().GetUpdater(aspectInstance.GetClass());
-    if (!updater.IsValid())
-        return BSIERROR;
-
-    return BE_SQLITE_OK == updater.Update(aspectInstance) ? BSISUCCESS : BSIERROR;
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle   02/2015
-//---------------------------------------------------------------------------------------
-DwgImporter::ECSqlCache const&  DwgImporter::GetECSqlCache () const
-    {
-    return ECSqlCache::GetCache(*const_cast<DwgImporter*>(this));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle   02/2015
-//---------------------------------------------------------------------------------------
-DwgImporter::ECSqlCache::~ECSqlCache ()
-    {
-    //we cannot use unique_ptr as the cache is public API, so we need to free the inserters/updaters manually
-    for (auto const& kvPair : m_inserterCache)
-        delete kvPair.second;
-
-    for (auto const& kvPair : m_updaterCache)
-        delete kvPair.second;
-
-    m_inserterCache.empty();
-    m_updaterCache.empty();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     02/2015
-//---------------------------------------------------------------------------------------
-DwgImporter::ECSqlCache const&  DwgImporter::ECSqlCache::GetCache (DwgImporter& importer)
-    {
-    static const BeSQLite::Db::AppData::Key s_appDataKey;
-
-    DgnDbR dgndb = importer.GetDgnDb();
-    Db::AppData* appData = dgndb.FindAppData(s_appDataKey);
-    if (nullptr == appData)
-        {
-        auto cache = new DwgImporter::ECSqlCache(importer);
-        dgndb.AddAppData(s_appDataKey, cache);
-        return *cache;
-        }
-
-    BeAssert(dynamic_cast<DwgImporter::ECSqlCache*>(appData) != nullptr);
-    return *static_cast<DwgImporter::ECSqlCache*>(appData);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     02/2015
-//---------------------------------------------------------------------------------------
-ECInstanceInserter const&   DwgImporter::ECSqlCache::GetInserter (ECClassCR ecClass) const
-    {
-    auto it = m_inserterCache.find(&ecClass);
-    if (it == m_inserterCache.end())
-        {
-        auto inserter = new ECInstanceInserter(m_importer.GetDgnDb(), ecClass, nullptr);
-
-        //just log error, we will still return the invalid inserter, and the caller will check for validity again
-        if (!inserter->IsValid())
-            {
-            Utf8String error;
-            error.Sprintf("Could not create ECInstanceInserter for ECClass '%s'. No instances of that class will be imported into the DgnDb file. Please see ECDb entries in log file for details.",
-                          Utf8String(ecClass.GetFullName()).c_str());
-            m_importer.ReportError(DwgImporter::IssueCategory::Sync(), DwgImporter::Issue::Error(), error.c_str());
-            }
-
-        m_inserterCache[&ecClass] = inserter;
-        return *inserter;
-        }
-
-    return *it->second;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     02/2015
-//---------------------------------------------------------------------------------------
-ECInstanceUpdater const&    DwgImporter::ECSqlCache::GetUpdater (ECClassCR ecClass) const
-    {
-    auto it = m_updaterCache.find(&ecClass);
-    if (it == m_updaterCache.end())
-        {
-        bvector<ECPropertyCP> propertiesToBind;
-        for (ECPropertyCP ecProperty : ecClass.GetProperties(true))
-            {
-            // Don't bind any of the dgn derived properties
-            if (ecProperty->GetClass().GetSchema().GetName().Equals("dgn"))
-                continue;
-            if (ecProperty->IsCalculated())
-                continue;
-            propertiesToBind.push_back(ecProperty);
-            }
-
-        auto updater = new BeSQLite::EC::ECInstanceUpdater(m_importer.GetDgnDb(), ecClass, nullptr, propertiesToBind, "ReadonlyPropertiesAreUpdatable");
-
-        //just log error, we will still return the invalid inserter, and the caller will check for validity again
-        if (!updater->IsValid() && propertiesToBind.size() > 0)
-            {
-            Utf8String error;
-            error.Sprintf("Could not create ECInstanceUpdater for ECClass '%s'. No instances of that class will be updated in the DgnDb file. Please see ECDb entries in log file for details.",
-                          Utf8String(ecClass.GetFullName()).c_str());
-            m_importer.ReportError(DwgImporter::IssueCategory::Sync(), DwgImporter::Issue::Error(), error.c_str());
-            }
-
-        m_updaterCache[&ecClass] = updater;
-        return *updater;
-        }
-
-    return *it->second;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/16
@@ -282,7 +49,7 @@ bool            AttributeFactory::AddPropertyOrAdhocFromAttribute (DwgDbAttribut
     if (m_ecInstance.IsValid())
         status = m_ecInstance->GetEnabler().GetPropertyIndex (propIndex, propName.c_str());
 
-    bool        propOrAdhoc;
+    bool    propOrAdhoc = false;
 
     if (ECObjectsStatus::Success == status)
         {
@@ -293,7 +60,8 @@ bool            AttributeFactory::AddPropertyOrAdhocFromAttribute (DwgDbAttribut
         propOrAdhoc = true;
         m_propertyCount++;
         }
-    else
+
+    if (ECObjectsStatus::Success != status)
         {
         // missing attrdef - create an Adhoc property
         uint32_t    count = 0;
@@ -391,7 +159,7 @@ BentleyStatus   AttributeFactory::ProcessVariableAttributes (DwgDbObjectIterator
 
         if (DwgDbStatus::Success == childInputs.m_entity.OpenStatus() && nullptr != (attrib = DwgDbAttribute::Cast(childInputs.GetEntityP())))
             {
-            // 1 - create an PhysicalElement displaying a visible attribute:
+            // 1 - create a PhysicalElement displaying the visible attribute:
             DwgString       value;
             if (!attrib->IsInvisible() && attrib->GetValueString(value) && !value.IsEmpty())
                 {
@@ -439,7 +207,7 @@ BentleyStatus   AttributeFactory::ProcessConstantAttributes (DwgDbObjectIdCR blo
             DwgString   defaultValue;
 
             // 1 - create an PhysicalElement displaying a visible attribute:
-            if (!attrdef->IsInvisible() && attrdef->GetValueString(defaultValue) && !defaultValue.IsEmpty() && nullptr != (attrib = DwgDbAttribute::StaticCreateObject()))
+            if (!attrdef->IsInvisible() && attrdef->GetValueString(defaultValue) && !defaultValue.IsEmpty() && nullptr != (attrib = DwgDbAttribute::Create()))
                 {
                 attrib->SetFrom (attrdef.get(), toBlockRef);
 
@@ -477,7 +245,7 @@ BentleyStatus   AttributeFactory::CreateElements (DwgDbBlockReferenceCR blockRef
     DwgDbObjectId   blockId = blockReference.GetBlockTableRecordId ();
     bool            hasEcInstance = BSISUCCESS == this->CreateECInstance(blockId);
 
-    // create DgnElements from variable attributes
+    // create DgnElements and collect ElementAspects from variable attributes
     BentleyStatus   status = this->ProcessVariableAttributes (iter);
 
     // if a block has no attrdef at all, which would have resulted in no ECInstance created, we are done:
@@ -487,19 +255,21 @@ BentleyStatus   AttributeFactory::CreateElements (DwgDbBlockReferenceCR blockRef
     Transform   blockRefMatrix;
     blockReference.GetBlockTransform (blockRefMatrix);
     
-    // create DgnElement's from constant attributes, if any
+    // create DgnElement's and collect ElementAspects from constant attributes, if any
     this->ProcessConstantAttributes (blockId, blockReference.GetObjectId(), blockRefMatrix);
 
-    // create an inserter such that the ElementAspect's created at above step will be post inserted along with the host element:
+    // schedule a GenericMultiAspect to be inserted or updated along with the host element:
+    status = BSIERROR;
     if (this->GetPropertyCount() > 0)
         {
-        AspectInserter* inserter = new AspectInserter (m_importer);
-
-        m_hostElement.AddAppData (AspectInserter::GetKey(), inserter);
-        inserter->AddAspectInstance (m_ecInstance);
+        if (DgnElement::GenericMultiAspect::AddAspect(m_hostElement, *m_ecInstance.get()) == DgnDbStatus::Success)
+            {
+            m_importer.AddPresentationRuleContent (m_hostElement, m_ecInstance->GetClass().GetName());
+            status = BSISUCCESS;
+            }
         }
 
-    return  this->GetTotalCount() > 0 ? BSISUCCESS : BSIERROR;
+    return  status;
     }
 
 
@@ -639,5 +409,76 @@ bool            DwgImporter::GetConstantAttrdefIdsFor (DwgDbObjectIdArray& ids, 
         }
 
     return  false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DwgImporter::AddPresentationRuleContent (DgnElementCR hostElement, Utf8StringCR attrdefName)
+    {
+    /*-----------------------------------------------------------------------------------
+    Cache PresentationRules applied in the modelspace and/or paperspaces.
+    We do this because the same attrdef may be used in the modelspace and/or a paperspace.
+    A class applied in both models will end up with two entries, one Generic:PhysicalObject
+    for the modelspace and another BisCore::DrawingGraphic for the paperspaces.
+    -----------------------------------------------------------------------------------*/
+    ECClassCP   elementClass = hostElement.GetElementClass ();
+    if (nullptr == elementClass)
+        return  BentleyStatus::SUCCESS;
+
+    PresentationRuleContent content(attrdefName, elementClass->GetName(),  elementClass->GetSchema().GetName());
+
+    auto found = std::find_if (m_presentationRuleContents.begin(), m_presentationRuleContents.end(), [&](PresentationRuleContent const& c){return c == content;});
+    if (found == m_presentationRuleContents.end())
+        m_presentationRuleContents.push_back (content);
+
+    return  BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DwgImporter::_EmbedPresentationRules ()
+    {
+    // PresentationRuleSet seems now required for ElementAspects.
+    if (m_presentationRuleContents.empty())
+        return  BentleyStatus::SUCCESS;
+
+    // db file name
+    Utf8String fileName(this->GetDgnDb().GetFileName().GetFileNameWithoutExtension().c_str());
+    // supported schemas
+    Utf8PrintfString supported("%s,Generic", SCHEMAName_AttributeDefinitions);
+    // DwgAttributeDefinition schema specific
+    Utf8PrintfString purpose("%s specific", SCHEMAName_AttributeDefinitions);
+    
+    PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance (fileName, 1, 0, true, purpose, supported, "", false);
+    if (!ruleset.IsValid())
+        return  BSIERROR;
+
+    // BisCore:ElementOwnsMultiAspects
+    Utf8PrintfString    multiAspect ("%s:%s", BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsMultiAspects);
+
+    for (auto content : m_presentationRuleContents)
+        {
+        // elements may be in the modelspace (Generic:PhysicalObject), or in a paperspace (BsiCore::DrawingGraphic)
+        ContentModifierP    modifier = new ContentModifier (content.GetHostElementSchema(), content.GetHostElementClass());
+        if (nullptr == modifier)
+            return  BSIERROR;
+
+        ruleset->AddPresentationRule (*modifier);
+
+        // relating property DwgAttributeDefinition:ECClass name from the attrdef tag:
+        Utf8PrintfString    related("%s:%s", SCHEMAName_AttributeDefinitions, content.GetAttrdefClass());
+        RelatedPropertiesSpecificationP prop = new RelatedPropertiesSpecification (RequiredRelationDirection_Forward, multiAspect, related, "", RelationshipMeaning::SameInstance);
+        if (nullptr == prop)
+            return  BSIERROR;
+
+        modifier->AddRelatedProperty (*prop);
+        }
+
+    RuleSetEmbedder embedder(this->GetDgnDb());
+    BeSQLite::DbResult  status = embedder.Embed (*ruleset);
+
+    return  static_cast<BentleyStatus>(status);
     }
 

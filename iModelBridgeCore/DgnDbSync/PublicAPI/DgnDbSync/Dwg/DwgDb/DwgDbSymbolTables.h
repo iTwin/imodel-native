@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbSync/Dwg/DwgDb/DwgDbSymbolTables.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -191,6 +191,7 @@ public:
     DWGDB_EXPORT DwgDbStatus                GetBlockReferenceIds (DwgDbObjectIdArrayR ids, bool noNested = true, bool validate = false);
     DWGDB_EXPORT DwgDbStatus                OpenSpatialIndex (DwgDbSpatialIndexPtr& indexOut, DwgDbOpenMode mode) const;
     DWGDB_EXPORT DwgDbStatus                OpenSortentsTable (DwgDbSortentsTablePtr& sortentsOut, DwgDbOpenMode mode);
+    DWGDB_EXPORT DwgDbObjectId              AppendEntity (DwgDbEntityR entity);
     };  // DwgDbBlockTableRecord
 DWGDB_DEFINE_OBJECTPTR (BlockTableRecord)
 
@@ -270,6 +271,7 @@ public:
     DWGDB_EXPORT bool                       GetFillMode () const;
     DWGDB_EXPORT DwgDbObjectId              GetBackground () const;
     DWGDB_EXPORT DwgDbObjectId              GetVisualStyle () const;
+    DWGDB_EXPORT DwgDbObjectId              GetSunId () const;
     DWGDB_EXPORT DVec3d                     GetViewDirection () const;
     DWGDB_EXPORT DwgDbStatus                GetUcs (DPoint3dR origin, DVec3dR xAxis, DVec3d yAxis) const;
     DWGDB_EXPORT bool                       IsUcsSavedWithViewport () const;

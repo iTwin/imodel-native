@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/ConverterTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -119,6 +119,29 @@ TEST_F(ConverterTests, ColorMap)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                   Carole.MacDonald            01/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+struct LightTests : public ConverterTestBaseFixture
+    {
+    DEFINE_T_SUPER(ConverterTestBaseFixture);
+    void SetUp();
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            01/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+void LightTests::SetUp()
+    {
+    T_Super::SetUp();
+    if (false == DgnV8Api::ConfigurationManager::IsVariableDefined(L"_USTN_DGNLIBLIST_SYSTEM"))
+        {
+        BentleyApi::BeFileName inFile = GetInputFileName(L"SystemCells.dgnlib");
+        WString directory = inFile.GetDirectoryName();
+        DgnV8Api::ConfigurationManager::DefineVariable(L"_USTN_DGNLIBLIST_SYSTEM", directory.c_str(), DgnV8Api::ConfigurationVariableLevel::System);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     04/10
 //---------------------------------------------------------------------------------------
 static DgnV8Api::LightElementPtr createLightElement1(bool setTypeOnly)
@@ -175,7 +198,7 @@ static DgnV8Api::LightElementPtr createLightElement1(bool setTypeOnly)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat                          05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ConverterTests, LightSetup)
+TEST_F(LightTests, LightSetup)
     {
     LineUpFiles(L"ProjectProperties.ibim", L"Test3d.dgn", false);
 
@@ -196,6 +219,72 @@ TEST_F(ConverterTests, LightSetup)
 
     // Update light 
     // Do update
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            01/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(LightTests, CreatePointLightWithECInstance)
+    {
+    LineUpFiles(L"PointLight.ibim", L"Test3d.dgn", false);
+    DgnV8Api::ElementId eidWithInst;
+
+    V8FileEditor v8editor;
+    v8editor.Open(m_v8FileName);
+    if (true)
+        {
+        // Create Light
+        DgnV8Api::LightElementPtr light = createLightElement1(false);
+        light->SetModelRef(v8editor.m_defaultModel);
+        light->Save();
+        DgnV8Api::ElementHandle eh(light->GetElementRef());
+        eidWithInst = eh.GetElementId();
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="test" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="Foo" isDomainClass="True">
+                <ECProperty propertyName="Goo" typeName="string" />
+            </ECClass>
+        </ECSchema>)xml";
+
+        ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
+        ECObjectsV8::ECSchemaPtr schema;
+        EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext));
+        EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor.m_file)));
+
+        DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
+        EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor.CreateInstanceOnElement(createdDgnECInstance, *((DgnV8Api::ElementHandle*)&eh), v8editor.m_defaultModel, L"TestSchema", L"Foo"));
+        Bentley::ECN::ECValue v;
+        v.SetUtf8CP("PointLightHandler");
+        createdDgnECInstance->SetValue(L"Goo", v);
+        createdDgnECInstance->WriteChanges();
+        v8editor.Save();
+        }
+
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+
+    if (true)
+        {
+        SyncInfoReader syncInfo;
+        syncInfo.AttachToDgnDb(m_dgnDbFileName);
+        SyncInfo::V8FileSyncInfoId editV8FileSyncInfoId;
+        syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
+        SyncInfo::V8ModelSyncInfoId editV8ModelSyncInfoId;
+        syncInfo.MustFindModelByV8ModelId(editV8ModelSyncInfoId, editV8FileSyncInfoId, v8editor.m_defaultModel->GetModelId());
+        DgnElementId dgnDbElementId;
+        syncInfo.MustFindElementByV8ElementId(dgnDbElementId, editV8ModelSyncInfoId, eidWithInst);
+
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        auto dgnDbElement = db->Elements().GetElement(dgnDbElementId);
+        ASSERT_TRUE(dgnDbElement.IsValid());
+
+        Utf8String selEcSql;
+        selEcSql.append("SELECT [Goo] FROM TestSchema.FooElementAspect WHERE [Element].[Id]=?");
+        EC::ECSqlStatement stmt;
+        stmt.Prepare(*db, selEcSql.c_str());
+        stmt.BindId(1, dgnDbElementId);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_TRUE(0 == strcmp("PointLightHandler", stmt.GetValueText(0)));
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -921,6 +1010,79 @@ TEST_F(ConverterTests, UseConverterAsLibrary)
 
     outputBim->SaveChanges();
     wprintf(L"%ls\n", outputBim->GetFileName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            01/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ConverterTests, UpdateWithDeletedParent)
+    {
+    LineUpFiles(L"UpdateWithDeletedParent.bim", L"Test3d.dgn", false);
+    V8FileEditor v8editor;
+    v8editor.Open(m_v8FileName);
+
+    BentleyStatus status = ERROR;
+    DgnV8Api::EditElementHandle arcEEH1, arcEEH2;
+    v8editor.CreateArc(arcEEH1, false, v8editor.m_defaultModel);
+    v8editor.CreateArc(arcEEH2, false, v8editor.m_defaultModel);
+
+    DgnV8Api::EditElementHandle cellEEH;
+    v8editor.CreateCell(cellEEH, L"UserCell", false, v8editor.m_defaultModel);
+
+    status = DgnV8Api::NormalCellHeaderHandler::AddChildElement(cellEEH, arcEEH1);
+    EXPECT_TRUE(SUCCESS == status);
+    status = DgnV8Api::NormalCellHeaderHandler::AddChildElement(cellEEH, arcEEH2);
+    EXPECT_TRUE(SUCCESS == status);
+    status = DgnV8Api::NormalCellHeaderHandler::AddChildComplete(cellEEH);
+    EXPECT_TRUE(SUCCESS == status);
+
+    EXPECT_TRUE(SUCCESS == cellEEH.AddToModel());
+    v8editor.Save();
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+
+    DgnElementId child1Id;
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+
+        DgnElementCPtr elem1 = FindV8ElementInDgnDb(*db, cellEEH.GetElementId());
+        ASSERT_TRUE(elem1.IsValid());
+        DgnElementIdSet children = elem1->QueryChildren();
+        EXPECT_EQ(2, (int32_t) children.size()) << "Number of child in cell are not equal";
+
+        child1Id = *children.begin();
+        DgnElementCPtr child1 = db->Elements().GetElement(child1Id);
+        ASSERT_TRUE(child1.IsValid());
+        }
+
+    DgnV8Api::DisplayHandler* dHandler = cellEEH.GetDisplayHandler();
+    ASSERT_TRUE(nullptr != dHandler);
+
+    DgnV8Api::ElementAgenda   dropAgenda;
+    DgnV8Api::DropGeometry    dropGeometry;
+
+    dropGeometry.SetOptions(DgnV8Api::DropGeometry::OPTION_Complex);
+
+    ASSERT_TRUE(SUCCESS == dHandler->Drop(cellEEH, dropAgenda, dropGeometry));
+    ASSERT_TRUE(SUCCESS == cellEEH.DeleteFromModel());
+
+    DgnV8Api::EditElementHandle* curr = dropAgenda.GetFirstP();
+    DgnV8Api::EditElementHandle* end = curr + dropAgenda.GetCount();
+
+    DgnV8Api::EditElementHandle* firstChild = dropAgenda.GetFirstP();
+    for (; curr < end; curr++)
+        curr->AddToModel();
+    v8editor.Save();
+
+    // The update will fail to insert the child elements because the code will be a duplicate of the previous children which haven't been deleted yet.
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        DgnElementCPtr child1 = FindV8ElementInDgnDb(*db, firstChild->GetElementId());
+        ASSERT_TRUE(child1.IsValid());
+        }
+
     }
 
 struct TestXDomain : XDomain

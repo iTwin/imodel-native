@@ -21,6 +21,7 @@
     <ClInclude Include="PublicAPI\DgnDbSync\DgnV8\Converter.h" />
     <ClInclude Include="PublicAPI\DgnDbSync\DgnV8\DgnV8.h" />
     <ClInclude Include="PublicAPI\DgnDbSync\DgnV8\DgnV8Font.h" />
+    <ClInclude Include="PublicAPI\DgnDbSync\DgnV8\LightWeightConverter.h" />
     <ClInclude Include="PublicAPI\DgnDbSync\DgnV8\SyncInfo.h" />
   </ItemGroup>
   <ItemGroup>
@@ -50,6 +51,7 @@
     <ClCompile Include="DgnV8\Initialize.cpp" />
     <ClCompile Include="DgnV8\Issues.cpp" />
     <ClCompile Include="DgnV8\Levels.cpp" />
+    <ClCompile Include="DgnV8\LightWeightConverter.cpp" />
     <ClCompile Include="DgnV8\LineStyleConverter.cpp" />
     <ClCompile Include="DgnV8\LinkConverter.cpp" />
     <ClCompile Include="DgnV8\MaterialConverter.cpp" />
@@ -57,6 +59,7 @@
     <ClCompile Include="DgnV8\RasterConversion.cpp" />
     <ClCompile Include="DgnV8\RootModelConverter.cpp" />
     <ClCompile Include="DgnV8\ScalableMeshConversion.cpp" />
+    <ClCompile Include="DgnV8\ScalableMeshV8Utilities.cpp" />
     <ClCompile Include="DgnV8\SheetAttachmentViewHelper.cpp" />
     <ClCompile Include="DgnV8\SheetConverter.cpp" />
     <ClCompile Include="DgnV8\ThreeMxConversion.cpp" />
@@ -111,8 +114,10 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>BentleyBuild.py -ax64 -p DgnV8ConverterDLL -f  DgnDbSync -r  DgnDbSync re DgnV8ConverterDLL   </NMakeBuildCommandLine>
-    <NMakeCleanCommandLine>BentleyBuild.py -ax64 -p DgnV8ConverterDLL -f  DgnDbSync -r  DgnDbSync re DgnV8ConverterDLL -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>bb -ax64 -p DgnV8ConverterDLL -f  DgnDbSync -r  DgnDbSync re DgnV8ConverterDLL   </NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>bb -ax64 -p DgnV8ConverterDLL -f  DgnDbSync -r  DgnDbSync re DgnV8ConverterDLL -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>bb -ax64 -p DgnV8ConverterDLL -f  DgnDbSync -r  DgnDbSync re DgnV8ConverterDLL   -c
+bb -ax64 -p DgnV8ConverterDLL -f  DgnDbSync -r  DgnDbSync re DgnV8ConverterDLL   </NMakeReBuildCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>

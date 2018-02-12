@@ -2,23 +2,29 @@
 |
 |     $Source: Dwg/DwgDb/DbObjects.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgDbInternal.h"
 
 USING_NAMESPACE_DWGDB
 
-DWGDB_OBJECT_DEFINE_MEMBERS2 (Object)
-DWGDB_OBJECT_DEFINE_MEMBERS2 (Dictionary)
+DWGDB_OBJECT_DEFINE_BASEMEMBERS (Object)
+DWGDB_OBJECT_DEFINE_BASEMEMBERS (Dictionary)
 DWGDB_OBJECT_DEFINE_MEMBERS2 (Material)
+DWGDB_OBJECT_DEFINE_MEMBERS2 (GradientBackground)
+DWGDB_OBJECT_DEFINE_MEMBERS2 (GroundPlaneBackground)
+DWGDB_OBJECT_DEFINE_MEMBERS2 (IBLBackground)
+DWGDB_OBJECT_DEFINE_MEMBERS2 (ImageBackground)
+DWGDB_OBJECT_DEFINE_MEMBERS2 (SkyBackground)
+DWGDB_OBJECT_DEFINE_MEMBERS2 (SolidBackground)
+DWGDB_OBJECT_DEFINE_MEMBERS2 (Sun)
 DWGDB_OBJECT_DEFINE_MEMBERS2 (VisualStyle)
 DWGDB_OBJECT_DEFINE_MEMBERS2 (Layout)
 DWGDB_OBJECT_DEFINE_MEMBERS2 (SpatialFilter)
 DWGDB_OBJECT_DEFINE_MEMBERS2 (SpatialIndex)
 DWGDB_OBJECT_DEFINE_MEMBERS2 (SortentsTable)
 DWGDB_OBJECT_DEFINE_MEMBERS2 (Xrecord)
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          10/15
@@ -292,6 +298,81 @@ DwgDbMaterial::FinalGatherMode        DwgDbMaterial::GetFinalGather () const { r
 DwgDbMaterial::IlluminationModel      DwgDbMaterial::GetIlluminationModel () const { return static_cast<IlluminationModel>(T_Super::illuminationModel()); }
 DwgDbMaterial::GlobalIlluminationMode DwgDbMaterial::GetGlobalIllumination () const { return static_cast<GlobalIlluminationMode>(T_Super::globalIllumination()); }
 
+DwgDbObjectId   DwgDbSkyBackground::GetSunId() const { return T_Super::sunId(); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus     DwgDbSun::GetSkyParameters (DwgGiSkyParametersR paramsOut) const
+    {
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    OdGiSkyParameters   odParams;
+    T_Super::skyParameters (odParams);
+    paramsOut = odParams;
+#elif DWGTOOLKIT_RealDwg
+    AcGiSkyParameters   acParams;
+    status = ToDwgDbStatus (T_Super::skyParameters(acParams));
+    if (DwgDbStatus::Success == status)
+        paramsOut = acParams;
+#endif
+    return  status;
+    }
+DwgDbStatus     DwgDbSun::GetShadowParameters (DwgGiShadowParametersR paramsOut) const { paramsOut = T_Super::shadowParameters(); return DwgDbStatus::Success; }
+bool            DwgDbSun::IsOn () const { return T_Super::isOn(); }
+bool            DwgDbSun::IsDayLightSavingOn () const { return T_Super::isDayLightSavingsOn(); }
+double          DwgDbSun::GetAltitude () const { return T_Super::altitude(); }
+double          DwgDbSun::GetAzimuth () const { return T_Super::azimuth(); }
+DwgDbDateCR     DwgDbSun::GetDateTime () const { return static_cast<DwgDbDateCR>(T_Super::dateTime()); }
+double          DwgDbSun::GetIntensity () const { return T_Super::intensity(); }
+DwgCmColorCR    DwgDbSun::GetSunColor () const { return static_cast<DwgCmColorCR>(T_Super::sunColor()); }
+DVec3d          DwgDbSun::GetSunDirection () const { return Util::DVec3dFrom(T_Super::sunDirection()); }
+DwgGiDrawablePtr    DwgDbSun::GetDrawable() { return new DwgGiDrawable(T_Super::drawable()); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+RgbFactor       DwgDbSun::GetSunColorPhotometric (double scale)
+    {
+#ifdef DWGTOOLKIT_OpenDwg
+    // Teigha does not have sunColorPhotometric!
+    OdCmColor color = T_Super::sunColor ();
+    return RgbFactor::From(color.red() * scale, color.green() * scale, color.blue() * scale);
+#elif DWGTOOLKIT_RealDwg
+    AcGiColorRGB  giRgb = T_Super::sunColorPhotometric (scale);
+    return RgbFactor::From(giRgb.red, giRgb.green, giRgb.blue);
+#endif
+    }
+
+DwgCmEntityColor DwgDbGroundPlaneBackground::GetColorSkyZenith () const { return T_Super::colorSkyZenith(); }
+DwgCmEntityColor DwgDbGroundPlaneBackground::GetColorSkyHorizon () const  { return T_Super::colorSkyHorizon(); }
+DwgCmEntityColor DwgDbGroundPlaneBackground::GetColorUndergroundHorizon () const { return T_Super::colorUndergroundHorizon(); }
+DwgCmEntityColor DwgDbGroundPlaneBackground::GetColorUndergroundAzimuth () const { return T_Super::colorUndergroundAzimuth(); }
+DwgCmEntityColor DwgDbGroundPlaneBackground::GetColorGroundPlaneNear () const { return T_Super::colorGroundPlaneNear(); }
+DwgCmEntityColor DwgDbGroundPlaneBackground::GetColorGroundPlaneFar () const { return T_Super::colorGroundPlaneFar(); }
+
+DwgString  DwgDbImageBackground::GetImageFileName () const { return T_Super::imageFilename(); }
+bool       DwgDbImageBackground::IsToFitScreen () const { return T_Super::fitToScreen(); }
+bool       DwgDbImageBackground::IsToMaintainAspectRatio () const { return T_Super::maintainAspectRatio(); }
+bool       DwgDbImageBackground::IsToUseTiling () const { return T_Super::useTiling(); }
+DPoint2d   DwgDbImageBackground::GetOffset () const { return DPoint2d::From(T_Super::xOffset(),T_Super::yOffset()); }
+DPoint2d   DwgDbImageBackground::GetScale () const { return DPoint2d::From(T_Super::xScale(),T_Super::yScale()); }
+
+bool       DwgDbIBLBackground::IsEnabled () const { return T_Super::enable(); }
+bool       DwgDbIBLBackground::IsImageDisplayed () const { return T_Super::displayImage(); }
+DwgString  DwgDbIBLBackground::GetIBLImageName () const { return T_Super::IBLImageName(); }
+double     DwgDbIBLBackground::GetRotation () const { return T_Super::rotation(); }
+DwgDbObjectId  DwgDbIBLBackground::GetSecondaryBackground () const { return T_Super::secondaryBackground(); }
+
+DwgCmEntityColor DwgDbGradientBackground::GetColorTop () const { return T_Super::colorTop(); }
+DwgCmEntityColor DwgDbGradientBackground::GetColorMiddle () const { return T_Super::colorMiddle(); }
+DwgCmEntityColor DwgDbGradientBackground::GetColorBottom () const { return T_Super::colorBottom(); }
+double      DwgDbGradientBackground::GetHorizon () const { return T_Super::horizon(); }
+double      DwgDbGradientBackground::GetHeight () const { return T_Super::height(); }
+double      DwgDbGradientBackground::GetRotation () const { return T_Super::rotation(); }
+
+DwgCmEntityColor DwgDbSolidBackground::GetColorSolid () const { return T_Super::colorSolid(); }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -301,9 +382,27 @@ DwgString       DwgDbVisualStyle::GetName () const
     T_Super::name (name);
     return  name;
     }
+DwgGiVisualStyle::RenderType    DwgDbVisualStyle::GetType () const { return static_cast<DwgGiVisualStyle::RenderType>(T_Super::type()); }
+DwgString       DwgDbVisualStyle::GetDescription () const { return T_Super::description(); }
+bool            DwgDbVisualStyle::GetTraitFlag (DwgGiVisualStyleProperties::Property prop, DwgDbUInt32 flags) const { return T_Super::traitFlag(CASTFROMDwgGiVisProp(prop), flags); }
 
-DwgDbVisualStyleType    DwgDbVisualStyle::GetType () const { return static_cast<DwgDbVisualStyleType>(T_Super::type()); }
-DwgString               DwgDbVisualStyle::GetDescription () const { return T_Super::description(); }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgGiVariantCR  DwgDbVisualStyle::GetTrait (DwgGiVisualStyleProperties::Property prop, DwgGiVisualStyleOperations::Operation* op) const
+    {
+#ifdef DWGTOOLKIT_OpenDwg
+    static DwgGiVariant s_variantCopy(false);
+    OdGiVariantPtr  odVar = T_Super::trait (CASTFROMDwgGiVisProp(prop), CASTFROMDwgGiVisOpP(op));
+    if (odVar.isNull())
+        BeAssert (false && "OdGiVariantPtr nullptr!");
+    else
+        s_variantCopy = *static_cast<DwgGiVariantP>(odVar.get());
+    return  s_variantCopy;
+#elif DWGTOOLKIT_RealDwg
+    return static_cast<DwgGiVariantCR>(T_Super::trait(CASTFROMDwgGiVisProp(prop), CASTFROMDwgGiVisOpP(op)));
+#endif
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          10/15

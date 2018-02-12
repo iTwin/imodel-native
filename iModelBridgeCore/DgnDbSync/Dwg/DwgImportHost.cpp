@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgImportHost.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -26,6 +26,9 @@ static WChar                s_ODBXHOSTAPPREGROOT[] = L"{285CAB69-5CB7-240B-697E-
 #elif defined (_X86_)
 static WChar                s_ODBXHOSTAPPREGROOT[] = L"{82C5BA96-C57B-42B0-96E7-996AA63B6415}";
 #endif
+// RealDwgImporter product UpgradeCode, defined in \DgnDbSync\install\RealDwgImporter.wix.xml:
+static WChar                s_realdwgImporterGuid[] = L"{990A583A-74DE-4238-9A5C-54CFC392AB7A}";
+
 static DwgImportHost*       s_dwgImportHostInstance = nullptr;
 
 /*---------------------------------------------------------------------------------**//**
@@ -325,42 +328,65 @@ WCharCP         DwgImportHost::_GetRegistryProductRootKey (RootRegistry type)
         return  nullptr;
 
     if (m_registryRootKey.empty())
-        {
-        // try to get RealDWG's HKLM root key from config var REALDWG_REGISTRY_ROOTKEY set by a consumer:
-        if (BSISUCCESS == ConfigurationManager::GetVariable(m_registryRootKey, REALDWG_REGISTRY_ROOTKEY))
-            {
-            if (LOG_IS_SEVERITY_ENABLED(NativeLogging::LOG_TRACE))
-                LOG.tracev ("Found HKLM root registry for RealDWG=%ls", m_registryRootKey.c_str());
-
-            m_registryRootKey.ReplaceI(L"HKEY_LOCAL_MACHINE\\", L"");
-            }
-        else if (m_registryRootKey.empty())
-            {
-            // try to pick up a product GUID on which the RealDWG component is installed:
-#ifdef MSI_INCLUDED
-            WString productGuid;
-
-            ConfigurationManager::GetVariable (productGuid, L"MS_PRODUCTCODEGUID");
-
-            if (!productGuid.empty())
-                {
-                WChar   productPath[1024];
-                DWORD   regLength = _countof (productPath);
-
-                // find the full registry path of the installed RealDWG on the product:
-                if (INSTALLSTATE_LOCAL == ::MsiGetComponentPath(productGuid.c_str(), s_ODBXHOSTAPPREGROOT, productPath, &regLength))
-                    {
-                    // make it a relative key path to be returned:
-                    WCharCP   relativePath = wcschr (productPath, '\\');
-                    if (NULL != relativePath && 0 != relativePath[0] && NULL != ++relativePath && 0 != relativePath[0])
-                        m_registryRootKey = wcsdup (relativePath);
-                    }
-                }
-#endif
-            }
-        }
+        m_importer->_GetRealDwgRootRegistry (m_registryRootKey);
 
     return m_registryRootKey.c_str();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    DwgImporter::_GetRealDwgRootRegistry (WStringR rootKeyOut) const
+    {
+    rootKeyOut.clear ();
+
+    // try to get RealDWG's HKLM root key from config var REALDWG_REGISTRY_ROOTKEY set by a consumer:
+    if (BSISUCCESS == ConfigurationManager::GetVariable(rootKeyOut, REALDWG_REGISTRY_ROOTKEY))
+        {
+        if (LOG_IS_SEVERITY_ENABLED(NativeLogging::LOG_TRACE))
+            LOG.tracev ("Found HKLM root registry for RealDWG=%ls", rootKeyOut.c_str());
+
+        rootKeyOut.ReplaceI (L"HKEY_LOCAL_MACHINE\\", L"");
+        }
+
+    // try to pick up a product GUID on which the RealDwgImporter is installed:
+    if (rootKeyOut.empty())
+        {
+#ifdef MSI_INCLUDED
+        WString regKey;
+        WChar   regValue[1024] = { 0 };
+        DWORD   regLength = _countof (regValue);
+
+        // find ProductCode for the installed product RealDwgImporter:
+        regKey.Sprintf (L"SOFTWARE\\Bentley\\RealDwgImporter\\%ls", s_realdwgImporterGuid);
+        if (ERROR_SUCCESS == ::SHRegGetUSValueW(regKey.c_str(), L"ProductCode", nullptr, regValue, &regLength, false, nullptr, 0))
+            {
+            regKey.assign (regValue);
+            regValue[0] = 0;
+            regLength = _countof (regValue);
+
+            // find the full registry path from the ProductCode for the installed product:
+            if (INSTALLSTATE_LOCAL == ::MsiGetComponentPath(regKey.c_str(), s_ODBXHOSTAPPREGROOT, regValue, &regLength))
+                {
+                // make it a relative key path to be returned:
+                WCharCP   relativePath = ::wcschr (regValue, '\\');
+                if (nullptr != relativePath && 0 != relativePath[0] && nullptr != ++relativePath && 0 != relativePath[0])
+                    {
+                    rootKeyOut.assign (relativePath);
+
+                    if (LOG_IS_SEVERITY_ENABLED(NativeLogging::LOG_TRACE))
+                        LOG.tracev ("Found installer registry %ls", relativePath);
+                    }
+                }
+            else if (LOG_IS_SEVERITY_ENABLED(NativeLogging::LOG_WARNING))
+                {
+                // log the potential installer error
+                LOG.warningv ("RealDwgImporter with product code %ls exits, but not found under ObjectDBX registry", regKey.c_str());
+                }
+            }
+#endif
+        }
+    return  rootKeyOut.empty() ? false : true;
     }
 
 /*---------------------------------------------------------------------------------**//**

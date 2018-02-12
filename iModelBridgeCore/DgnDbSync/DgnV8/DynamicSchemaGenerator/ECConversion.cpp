@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/DynamicSchemaGenerator/ECConversion.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -186,6 +186,10 @@ Utf8CP BisConversionRuleHelper::ToString(BisConversionRule rule)
                 return "ToPhysicalElement";
             case BisConversionRule::ToPhysicalObject:
                 return "ToPhysicalObject";
+            case BisConversionRule::ToDefaultBisBaseClass:
+                return "ToDefaultBisBaseClass";
+            case BisConversionRule::ToDefaultBisClass:
+                return "ToDefaultBisClass";
             default:
                 BeAssert(false && "Please update V8ECClassInfo::ToString for new value of the BisConversionRule enum.");
                 return "";
@@ -1148,6 +1152,8 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
      for (BECN::ECSchemaP schema : schemas)
          {
          if (schema->IsSupplementalSchema())
+             continue;
+         if (BisClassConverter::SchemaConversionContext::ExcludeSchemaFromBisification(*schema))
              continue;
          if (!ECN::ECSchemaConverter::Convert(*schema, false))
              {
@@ -2114,6 +2120,10 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::DoAnalyze(DgnV8Api::ElementHan
         if (found != s_dgnV8DeliveredSchemas.end())
             continue;
 
+        auto skipped = std::find_if(m_skippedSchemas.begin(), m_skippedSchemas.end(), [v8SchemaName] (Utf8StringCR dgnv8) ->bool { return BeStringUtilities::StricmpAscii(v8SchemaName.c_str(), dgnv8.c_str()) == 0; });
+        if (skipped != m_skippedSchemas.end())
+            continue;
+
         // We fabricate the DgnV8 Tag Set Definition schema at runtime during conversion; never allow instances of that schema to be considered primary.
         if (isPrimary && ecClass.m_schemaName.Equals(Converter::GetV8TagSetDefinitionSchemaName()))
             isPrimary = false;
@@ -2201,10 +2211,17 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConvertToBisBasedECSchemas()
     if (BisClassConverter::FinalizeConversion(context) != BentleyApi::SUCCESS)
         return BentleyApi::BSIERROR;
 
+    BisClassConverter::ECClassRemovalContext removeContext(context);
     for (BECN::ECRelationshipClassP relationshipClass : relationshipClasses)
         {
-        if (BisClassConverter::ConvertECRelationshipClass(context, *relationshipClass, m_syncReadContext.get()) != BentleyApi::SUCCESS)
+        if (BisClassConverter::ConvertECRelationshipClass(removeContext, *relationshipClass, m_syncReadContext.get()) != BentleyApi::SUCCESS)
             return BentleyApi::BSIERROR;
+        }
+
+    for (BECN::ECClassP droppedClass : removeContext.GetClasses())
+        {
+        if (BECN::ECObjectsStatus::Success != droppedClass->GetSchemaR().DeleteClass(*droppedClass))
+            return BSIERROR;
         }
 
     for (bpair<Utf8String, BECN::ECSchemaP> const& kvpair : context.GetSchemas())
@@ -2481,6 +2498,13 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::RetrieveV8ECSchemas(DgnV8Model
                        v8SchemaInfo.GetProviderName());
 
         //TODO: Need to filter out V8/MicroStation specific ECSchemas, not needed in Graphite
+
+        Utf8String fullName(schemaKey.GetFullSchemaName().c_str());
+        if (!m_converter.ShouldImportSchema(fullName, v8Model))
+            {
+            m_skippedSchemas.push_back(Utf8String(schemaKey.GetName().c_str()));
+            continue;
+            }
 
         Bentley::Utf8String schemaName(schemaKey.GetName());
 

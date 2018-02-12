@@ -93,5 +93,6 @@
     <Options>
         <OptionBool name="PreferRenderableGeometry" value="false"/> <!--"true" to tell object enablers to create renderable geometry; "false" to use the active view settings. -->
         <OptionBool name="SyncBlockChanges" value="true"/>          <!--Save & analyze DWG block contents to track changes, but with a performance pernalty -->
+        <OptionBool name="SyncDwgVersionGuid" value="false"/>       <!--Use DWG VersionGuid to tell if a file is changed. Set to "true" if AutoCAD based products are the only DWG file editors for the sake of performance. -->
     </Options>
 </ConvertConfig>

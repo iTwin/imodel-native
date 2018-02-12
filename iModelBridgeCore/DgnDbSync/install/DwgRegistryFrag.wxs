@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+#     $Source: install/DwgRegistryFrag.wxs $
+#    $RCSfile: productShortcutFrag.wxs,v $
+#   $Revision: 1.36 $
+#       $Date: 2011/08/12 12:28:22 $
+#     $Author: Vishal.Sharma $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+-->
+
+<!-- Create shortcuts. -->
+
+<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
+    <?include $(var.BBInstallSetDefinitionWxi)?>
+
+    <Fragment Id="RealDWGConverterStandardRegistry">
+        <Feature Level="1" Id="RequiredReg">
+            <ComponentRef  Id="PPRequired_InstallRegKeysBSW_0"/>
+            <ComponentRef  Id="RealDwgExtraRegistry"/>
+
+            <MergeRef Id="acatil_glob.msm" />
+            <!-- NO [ODBXHOSTAPPREGROOT]: AcAtil_Glob.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: AcAtil_Loc.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: acdbmgd.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: AcHapiGlob.msm-->
+            <MergeRef Id="acidviewobj.msm" />
+            <!-- NO [ODBXHOSTAPPREGROOT]: AcIdViewObj.msm-->
+            <MergeRef Id="acmodeldoc_glob.msm" />
+            <!-- NO [ODBXHOSTAPPREGROOT]: AcModelDoc_glob.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: AcModelDoc_loc.msm-->
+            <MergeRef Id="acmpolygonobj22.msm" />
+            <!-- NO [ODBXHOSTAPPREGROOT]: AcMPolygonObj20.msm-->
+            <MergeRef Id="acsmcomponents.msm" />
+            <!-- NO [ODBXHOSTAPPREGROOT]: AcSmComponents.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: ad20asm.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: AdSpatialReference.msm-->
+            <?if $(var.COMPONENT_WIN64)="yes"?>
+            <MergeRef Id="aecappsvr.msm" />
+            <?endif?>
+            <!-- NO [ODBXHOSTAPPREGROOT]: AecAppSvr.msm-->
+            <MergeRef Id="aecbdbx.msm" />
+            <!-- NO [ODBXHOSTAPPREGROOT]: aecbdbx.msm-->
+            <MergeRef Id="aecbdbx_ps.msm" />
+            <!-- NO [ODBXHOSTAPPREGROOT]: aecbdbx_PS.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: aecbdbx_res.msm-->
+            <MergeRef Id="aecmodeler.msm" />
+            <!-- NO [ODBXHOSTAPPREGROOT]: aecmodeler.msm-->
+            <MergeRef Id="aecres.msm" />
+            <!-- NO [ODBXHOSTAPPREGROOT]: aecres_res.msm-->
+            <MergeRef Id="aecsoa.msm" />
+            <!-- NO [ODBXHOSTAPPREGROOT]: aecsoa.msm-->
+            <MergeRef Id="aecsoa_ps.msm" />
+            <!-- NO [ODBXHOSTAPPREGROOT]: aecsoa_PS.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: aecsoa_res.msm-->
+            <MergeRef Id="aecsola.msm" />
+            <!-- NO [ODBXHOSTAPPREGROOT]: aecsola.msm-->
+            <MergeRef Id="aecsola_ps.msm" />
+            <!-- NO [ODBXHOSTAPPREGROOT]: aecsola_PS.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: aecsola_res.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: asm220_acad.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: asm220_acmessages.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: asm220_acmodlr.msm-->
+            <MergeRef Id="bimunderlayglob.msm"/>
+            <!--<MergeRef Id="dgnio_glob.msm" />-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: DGNIO_GLOB.msm-->
+            <!--<MergeRef Id="etransmitglob.msm" />-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: ETransmitGlob.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: ETransmitLoc.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: ETransmitUtility.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: LDTFonts.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: MDTSHX.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: MentorGridFiles64.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: mpolygoncom20enu.msm-->
+            <MergeRef Id="mpolygoncom22_glob.msm" />
+            <!-- NO [ODBXHOSTAPPREGROOT]: mpolygoncom20_glob.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: MPolygonObj20enu.msm-->
+            <MergeRef Id="objdbx.msm" />
+            <!-- NO [ODBXHOSTAPPREGROOT]: Objdbx.msm-->
+            <MergeRef Id="odbx22extra.msm" />
+            <!-- NO [ODBXHOSTAPPREGROOT]: Odbx20Extra.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: OdbxAsm_full20glob.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: OdbxAsm_obj20glob.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: odbxauto20enu.msm-->
+            <MergeRef Id="odbxauto22glob.msm" />
+            <!-- NO [ODBXHOSTAPPREGROOT]: odbxauto20glob.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: odbxbrep20.msm-->
+            <MergeRef Id="odbxcore22glob.msm" />
+            <!-- NO [ODBXHOSTAPPREGROOT]: OdbxCore20glob.msm-->
+            <MergeRef Id="odbxcore22glob_ps.msm" />
+            <!-- NO [ODBXHOSTAPPREGROOT]: OdbxCore20glob_PS.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: OdbxCore20loc.msm-->
+            <MergeRef Id="pointcloudglob.msm" />
+            <!-- NO [ODBXHOSTAPPREGROOT]: PointCloudGlob.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: PointCloudLoc.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: PointCloudReCapGlob.msm-->
+
+        </Feature>
+
+        <Property Id="DwgRegistryFeature" Value="1"/>
+
+        <Component Id="PPRequired_InstallRegKeysBSW_0" Guid="*" Directory="INSTALLDIR" Win64="$(var.COMPONENT_WIN64)">
+            <RegistryKey ForceDeleteOnUninstall="yes" ForceCreateOnInstall="yes" Key="SOFTWARE\Bentley\iModelBridges\RealDwgBridge" Root="HKLM">
+                <RegistryValue Name="AffinityLibraryPath"   Value="[INSTALLDIR]DwgBridge.dll" Type="string" />
+                <RegistryValue Name="BridgeLibraryPath"     Value="[INSTALLDIR]DwgBridge.dll" Type="string" />
+                <RegistryValue Name="iModelFrameWorkExe"    Value="[INSTALLDIR]iModelBridgeFwk.exe" Type="string" />
+                <RegistryValue Name="BridgeAssetsDir"       Value="[INSTALLDIR]Assets" Type="string"/>
+                <RegistryValue Name="IsPowerPlatformBased"  Value="false" Type="string"/>
+            </RegistryKey>
+        </Component>
+    </Fragment>
+
+</Wix>
+
+
+

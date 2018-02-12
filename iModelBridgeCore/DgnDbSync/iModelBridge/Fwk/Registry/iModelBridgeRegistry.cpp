@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/Fwk/Registry/iModelBridgeRegistry.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined(_WIN32)
@@ -355,6 +355,45 @@ bool iModelBridgeRegistry::_IsFileAssignedToBridge(BeFileNameCR fn, wchar_t cons
     findBridgeForDoc->BindText(1, Utf8String(fn), Statement::MakeCopy::Yes);
     findBridgeForDoc->BindText(2, Utf8String(bridgeRegSubKey), Statement::MakeCopy::Yes);
     return BE_SQLITE_ROW == findBridgeForDoc->Step();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeRegistry::_AssignFileToBridge(BeFileNameCR sourceFilePath, wchar_t const* bridgeRegSubKey)
+    {
+    auto findBridgeForDoc = m_stateDb.GetCachedStatement("SELECT b.ROWID BridgeLibraryPath FROM fwk_BridgeAssignments a, fwk_InstalledBridges b WHERE (b.ROWID = a.Bridge) AND (a.SourceFile=?)");
+    findBridgeForDoc->BindText(1, Utf8String(sourceFilePath), Statement::MakeCopy::Yes);
+    if (BE_SQLITE_ROW == findBridgeForDoc->Step())
+        {
+        LOG.errorv(L"File %ls cannot be assigned to %ls . Since it already has an assignment", sourceFilePath.c_str(), bridgeRegSubKey);
+        return ERROR;
+        }
+
+    uint64_t bestBridgeRowid = 0;
+    QueryBridgeLibraryPathByName(&bestBridgeRowid, bridgeRegSubKey);
+    if (0 == bestBridgeRowid)
+        {
+        LOG.errorv(L"Bridge %ls cannot be found in the list of installed bridges.", bridgeRegSubKey);
+        return ERROR;
+        }
+
+    auto insertAssignment = m_stateDb.GetCachedStatement("INSERT INTO fwk_BridgeAssignments (SourceFile,Bridge) VALUES(?,?)");
+    insertAssignment->BindText(1, Utf8String(sourceFilePath), Statement::MakeCopy::Yes);
+    insertAssignment->BindInt64(2, bestBridgeRowid);
+    auto rc = insertAssignment->Step();
+    if (BE_SQLITE_DONE != rc)
+        {
+        LOG.errorv(L"File %ls cannot be assigned to %ls . Error inserting into the database", sourceFilePath.c_str(), bridgeRegSubKey);
+        return ERROR;
+        }
+
+    LOG.tracev(L"File %ls assigned to %ls .", sourceFilePath.c_str(), bridgeRegSubKey);
+
+    //!Lets insert default document properties for this 
+    EnsureDocumentPropertiesFor(sourceFilePath);
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -904,8 +943,8 @@ BentleyStatus iModelBridgeRegistry::_GetDocumentProperties(iModelBridgeDocumentP
     if (!m_stateDb.TableExists("DocumentProperties"))
         return BSIERROR;
 
-    //                                               0         1           2       3              4
-    auto stmt = m_stateDb.GetCachedStatement("SELECT docGuid, DesktopURN, WebURN, AttributesJSON, SpatialRootTransformJSON FROM DocumentProperties WHERE (LocalFilePath=?)");
+    //                                               0         1           2       3              4                         5
+    auto stmt = m_stateDb.GetCachedStatement("SELECT docGuid, DesktopURN, WebURN, AttributesJSON, SpatialRootTransformJSON, ChangeHistoryJSON FROM DocumentProperties WHERE (LocalFilePath=?)");
     stmt->BindText(1, Utf8String(fn), Statement::MakeCopy::Yes);
     if (BE_SQLITE_ROW != stmt->Step())
         return BSIERROR;
@@ -926,8 +965,8 @@ BentleyStatus iModelBridgeRegistry::_GetDocumentPropertiesByGuid(iModelBridgeDoc
     if (!m_stateDb.TableExists("DocumentProperties"))
         return BSIERROR;
 
-    //                                               0               1           2       3              4
-    auto stmt = m_stateDb.GetCachedStatement("SELECT LocalFilePath, DesktopURN, WebURN, AttributesJSON, SpatialRootTransformJSON FROM DocumentProperties WHERE (docGuid=?)");
+    //                                               0               1           2       3              4                          5
+    auto stmt = m_stateDb.GetCachedStatement("SELECT LocalFilePath, DesktopURN, WebURN, AttributesJSON, SpatialRootTransformJSON, ChangeHistoryJSON FROM DocumentProperties WHERE (docGuid=?)");
 #ifdef WIP_GUID_BINARY
     stmt->BindGuid(1, docGuid);
 #else
@@ -944,6 +983,7 @@ BentleyStatus iModelBridgeRegistry::_GetDocumentPropertiesByGuid(iModelBridgeDoc
     props.m_webURN              = stmt->GetValueText(2);
     props.m_attributesJSON      = stmt->GetValueText(3);
     props.m_spatialRootTransformJSON = stmt->GetValueText(4);
+    props.m_changeHistoryJSON   = stmt->GetValueText(5);
     return BSISUCCESS;
     }
 

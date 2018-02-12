@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbSync/Dwg/DwgBridge.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -47,6 +47,8 @@ protected:
     DGNDBSYNC_EXPORT Dgn::SubjectCPtr _InitializeJob () override;
     DGNDBSYNC_EXPORT Dgn::SubjectCPtr _FindJob () override;
     DGNDBSYNC_EXPORT BentleyStatus  _ConvertToBim (Dgn::SubjectCR jobSubject) override;
+    //! Default implementation walks through DWG block section and create the DwgAttributeDefinitions schema.
+    DGNDBSYNC_EXPORT BentleyStatus  _MakeSchemaChanges () override;
     DGNDBSYNC_EXPORT BentleyStatus  _OnOpenBim (DgnDbR db) override;
     DGNDBSYNC_EXPORT void           _OnCloseBim (BentleyStatus) override;
     DGNDBSYNC_EXPORT BentleyStatus  _OpenSource () override;

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbSync/Dwg/DwgImporter.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -239,6 +239,7 @@ struct DwgImporter
     friend struct DwgSyncInfo;
     friend struct DwgImportHost;
     friend struct ViewportFactory;
+    friend struct AttributeFactory;
     friend struct MaterialFactory;
     friend class DwgProtocalExtension;
     friend class DwgRasterImageExt;
@@ -312,6 +313,7 @@ public:
         StandardUnit        m_unspecifiedBlockUnits;
         T_DwgWeightMap      m_lineweightMapping;
         bool                m_syncBlockChanges;
+        bool                m_syncDwgVersionGuid;
         bool                m_importRasters;
         bool                m_importPointClouds;
         uint16_t            m_pointCloudLevelOfDetails;
@@ -329,6 +331,7 @@ public:
             m_unspecifiedBlockUnits = StandardUnit::MetricMeters;
             m_lineweightMapping.clear ();
             m_syncBlockChanges = false;
+            m_syncDwgVersionGuid = false;
             m_importRasters = false;
             m_importPointClouds = false;
             m_pointCloudLevelOfDetails = 1;
@@ -349,6 +352,7 @@ public:
         void SetUnspecifiedBlockUnits (StandardUnit v) {m_unspecifiedBlockUnits = v;}
         void SetLineWeightMapping (T_DwgWeightMap const& map) { m_lineweightMapping = map; }
         void SetSyncBlockChanges (bool syncBlocks) { m_syncBlockChanges = syncBlocks; }
+        void SetSyncDwgVersionGuid (bool checkGuid) { m_syncDwgVersionGuid = checkGuid; }
         void SetImportRasterAttachments (bool allow) { m_importRasters = allow; }
         void SetImportPointClouds (bool allow) { m_importPointClouds = allow; }
         void SetPointCloudLevelOfDetails (uint16_t lod) { if (lod <= 100) m_pointCloudLevelOfDetails = lod; }
@@ -372,6 +376,8 @@ public:
         bool CopyLayerIfDifferent() const {return m_copyLayer == CopyLayer::IfDifferent;}
         uint32_t GetDgnLineWeight (DwgDbLineWeight dwgWeight) const;
         bool GetSyncBlockChanges () const { return m_syncBlockChanges; }
+        //! Can DWG VersionGuid be used for sync?  Recommended for DWG files changed only by AutoCAD based products.
+        bool GetSyncDwgVersionGuid () const { return m_syncDwgVersionGuid; }
         bool GetImportRasterAttachments () const { return m_importRasters; }
         bool GetImportPointClouds () const { return m_importPointClouds; }
         uint16_t GetPointCloudLevelOfDetails () const { return m_pointCloudLevelOfDetails; }
@@ -646,21 +652,24 @@ public:
     typedef bmap<DwgDbObjectId, RenderMaterialId>       T_MaterialIdMap;
     typedef bmap<Utf8String, DgnTextureId>              T_MaterialTextureIdMap;
 
-    struct ECSqlCache : BeSQLite::Db::AppData
+    //! ElementAspect's host element cache for PresentationRules
+    struct PresentationRuleContent
         {
     private:
-        DwgImporter& m_importer;
-        mutable bmap<ECN::ECClassCP, BeSQLite::EC::ECInstanceInserter*>  m_inserterCache;
-        mutable bmap<ECN::ECClassCP, BeSQLite::EC::ECInstanceUpdater*>   m_updaterCache;
-
+        Utf8String  m_attrdefClassName;
+        Utf8String  m_hostElementClass;
+        Utf8String  m_hostElementSchema;
     public:
-        explicit ECSqlCache (DwgImporter& in) : m_importer(in) {}
-        ~ECSqlCache ();
-
-        static ECSqlCache const&    GetCache (DwgImporter& in);
-        BeSQLite::EC::ECInstanceInserter const&   GetInserter (ECN::ECClassCR) const;
-        BeSQLite::EC::ECInstanceUpdater const&    GetUpdater (ECN::ECClassCR) const;
-        };  // ECSqlCache
+        explicit PresentationRuleContent (Utf8StringCR a, Utf8StringCR c, Utf8StringCR s) : m_attrdefClassName(a), m_hostElementClass(c), m_hostElementSchema(s) {}
+        Utf8StringCR    GetAttrdefClass () const { return m_attrdefClassName; }
+        Utf8StringCR    GetHostElementClass () const { return m_hostElementClass; }
+        Utf8StringCR    GetHostElementSchema () const { return m_hostElementSchema; }
+        bool operator==(PresentationRuleContent const& c) const
+            {
+            return m_attrdefClassName.Equals(c.GetAttrdefClass()) && m_hostElementClass.Equals(c.GetHostElementClass()) && m_hostElementSchema.Equals(c.GetHostElementSchema());
+            }
+        };  // PresentationRuleContent
+    typedef bvector<PresentationRuleContent>    T_PresentationRuleContents;
 
     struct ConstantBlockAttrdefs
         {
@@ -824,7 +833,8 @@ public:
         L10N_STRING(SyncInfoInconsistent)        // =="The syncInfo file [%s] is inconsistent with the project"==
         L10N_STRING(SyncInfoTooNew)              // =="Sync info was created by a later version"==
         L10N_STRING(ViewNoneFound)               // =="No view was found"==
-        L10N_STRING(WrongBriefcaseManager)        // =="You must use the UpdaterBriefcaseManager when updating a briefcase with the converter"==
+        L10N_STRING(ImageNotAJpeg)               // =="Sky box image is not a jpeg file, %s"==
+        L10N_STRING(WrongBriefcaseManager)       // =="You must use the UpdaterBriefcaseManager when updating a briefcase with the converter"==
         L10N_STRING(UpdateDoesNotChangeClass)    // =="Update cannot change the class of an element. Element: %s. Proposed class: %s."==
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
@@ -857,7 +867,7 @@ public:
     //! Miscellaneous strings needed for DwgImporter
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(DataStrings, dwg_dataStrings)
         L10N_STRING(AttrdefsSchemaDescription)         // =="Block attribute definitions created from DWG file %ls"==
-        L10N_STRING(BlockAttrdefDescription)           // =="Attribute definitions created from block %ls"==
+        L10N_STRING(BlockAttrdefDescription)           // =="Attribute definition created from DWG block %ls"==
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
     
     struct IssueReporter
@@ -953,6 +963,7 @@ protected:
     T_ConstantBlockAttrdefList  m_constantBlockAttrdefList;
     DgnModelId                  m_sheetListModelId;
     T_GeometryBuilderList       m_sharedGeometryPartList;
+    T_PresentationRuleContents  m_presentationRuleContents;
 
 private:
     void                    InitUncategorizedCategory ();
@@ -983,16 +994,22 @@ private:
     static void             RegisterProtocalExtensions ();
 
 protected:
+    //! @name  Miscellaneous
+    //! @{
     DGNDBSYNC_EXPORT virtual void       _BeginImport ();
     DGNDBSYNC_EXPORT virtual void       _FinishImport ();
     virtual void                        _OnFatalError() { m_wasAborted = true; }
     virtual GeometryOptions&            _GetCurrentGeometryOptions () { return m_currentGeometryOptions; }
     DGNDBSYNC_EXPORT virtual bool       _ArePointsValid (DPoint3dCP checkPoints, size_t numPoints, DwgDbEntityCP entity = nullptr);
     BeFileNameCR                        GetRootDwgFileName () const { return m_rootFileName; }
+    DGNDBSYNC_EXPORT bool               ValidateDwgFile (BeFileNameCR dwgdxfName);
+
+    //! @name  Change-Detection
+    //! @{
     DGNDBSYNC_EXPORT  virtual void      _SetChangeDetector (bool updating);
     virtual IDwgChangeDetector&         _GetChangeDetector () { return *m_changeDetector; }
     virtual bool                        _HaveChangeDetector () { return nullptr != m_changeDetector; }
-    DGNDBSYNC_EXPORT bool               ValidateDwgFile (BeFileNameCR dwgdxfName);
+    DGNDBSYNC_EXPORT virtual BentleyStatus _DetectDeletedDocuments();
 
     //! @name The ImportJob
     //! @{
@@ -1014,12 +1031,18 @@ protected:
     bool        IsUpdating () const { return GetOptions().IsUpdating(); }
     bool        IsCreatingNewDgnDb () { return GetOptions().IsCreatingNewDgnDb(); }
 
-    DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportSpaces ();
-    DGNDBSYNC_EXPORT virtual BentleyStatus _DetectDeletedDocuments();
+    //! @name Importing schemas
+    //! @see public method MakeSchemaChanges
+    //! @{
+    //! Cache a PresentationRule content of a host element which must be seperated from the modelspace as a PhysicalObject and a paperspace as a DrawingGraphic.
+    DGNDBSYNC_EXPORT BentleyStatus  AddPresentationRuleContent (DgnElementCR hostElement, Utf8StringCR attrdefName);
+    //! Create and embed PresentationRules for DwgAttributeDefinitions schema:
+    DGNDBSYNC_EXPORT virtual BentleyStatus  _EmbedPresentationRules ();
 
     //! @name  Creating DgnModels for DWG
     //! @{
     // Modelspace and xRef blocks as Physical Models, layout blocks as sheet models
+    DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportSpaces ();
     DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportDwgModels ();
     DGNDBSYNC_EXPORT virtual void       _SetModelUnits (GeometricModel::Formatter& displayInfo, DwgDbBlockTableRecordCR block);
     //! Get a DgnModel from the syncInfo for updating, or create a new DgnModel for importing, from a DWG model/paperspace or an xref (when xrefInsert!=nullptr & xrefDwg!=nullptr)
@@ -1072,6 +1095,8 @@ protected:
     DGNDBSYNC_EXPORT virtual BentleyStatus          _ImportMaterialSection ();
     DGNDBSYNC_EXPORT virtual BentleyStatus          _ImportMaterial (DwgDbMaterialPtr& material, Utf8StringCR paletteName, Utf8StringCR materialName);
     DGNDBSYNC_EXPORT virtual BentleyStatus          _OnUpdateMaterial (DwgSyncInfo::Material const& syncMaterial, DwgDbMaterialPtr& dwgMaterial);
+    //! Search material paths specified in the Config file.  If a match found, replace the file name.
+    DGNDBSYNC_EXPORT virtual bool                   _FindTextureFile (BeFileNameR filename) const;
     DGNDBSYNC_EXPORT bvector<BeFileName> const&     GetMaterialSearchPaths () const { return m_materialSearchPaths; }
 
     //! @name  Importing entities
@@ -1130,6 +1155,19 @@ protected:
     DGNDBSYNC_EXPORT virtual StableIdPolicy         _GetDwgFileIdPolicy () const;
     DwgSyncInfo::DwgFileId              GetDwgFileId (DwgDbDatabaseR, bool setIfNotExist = true);
 
+    //! @name  Product installations
+    //! @{
+    //! A callback method which can be overriden by a derivitive product to supply a different root registry key of ObjectDBX - required by and valid for RealDWG only.
+    //! @note A product that installs RealDWG differently than the default DwgBridge installer does, must supply the root registry path.
+    //! The default method supplies the root registry in this way:
+    //! 1) If configuration variable REALDWG_REGISTRY_ROOTKEY is set, the full root key path pointed to by it will be returned, with no validation.
+    //! 2) If "HKLM\SOFTWARE\Bentley\ObjectDBX\RealDwgImporter\<ProductCode>\" is installed by the default DwgBridge, its ObjectDBX component registry key will be returned.
+    //! 3) Otherwise, an empty root registry key will be returned in all other cases.
+    //! @return True if an ObjectDBX root registry is found; false otherwise.
+    //! @see IDwgDbHost::_GetRegistryProductRootKey
+    DGNDBSYNC_EXPORT virtual bool       _GetRealDwgRootRegistry (WStringR rootKey) const;
+    //! @}
+
 public:
     //! An app must hold and pass in the reference of a DwgImporter::Options, which may be changed after a DwgImporter is created.
     DGNDBSYNC_EXPORT DwgImporter (Options& options);
@@ -1166,7 +1204,6 @@ public:
     DgnTextureId                        GetDgnMaterialTextureFor (Utf8StringCR fileName);
     T_MaterialIdMap&                    GetImportedDgnMaterials () { return m_importedMaterials; }
     void                                AddDgnMaterialTexture (Utf8StringCR fileName, DgnTextureId texture);
-    ECSqlCache const&                   GetECSqlCache () const;
     ECN::ECSchemaCP                     GetAttributeDefinitionSchema () { return m_attributeDefinitionSchema; }
     bool                                GetConstantAttrdefIdsFor (DwgDbObjectIdArray& ids, DwgDbObjectIdCR blockId);
     DgnCategoryId                       FindCategoryFromSyncInfo (DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);
@@ -1175,6 +1212,9 @@ public:
     DgnSubCategoryId                    InsertAlternateSubCategory (DgnSubCategoryCPtr subcategory, DgnSubCategory::Appearance const& appearance, Utf8CP desiredName = nullptr);
     T_GeometryBuilderList&              GetSharedPartListR () { return m_sharedGeometryPartList; }
     T_GeometryBuilderList const&        GetSharedPartList () const { return m_sharedGeometryPartList; }
+
+    //! An iModelBridge must call this method from _MakeSchemaChanges, to create/update the stored DwgAttributeDefinitions schema.
+    DGNDBSYNC_EXPORT BentleyStatus      MakeSchemaChanges ();
 
     //! Call this once before working with DwgImporter, after initializing DgnDb's DgnPlatformLib
     //! @param toolkitDir Installed RealDWG or OpenDWG folder; default to the same folder as the EXE.

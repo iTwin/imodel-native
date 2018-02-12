@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgDb/SymbolTables.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgDbInternal.h"
@@ -356,6 +356,22 @@ DwgDbStatus     DwgDbBlockTableRecord::GetBlockReferenceIds (DwgDbObjectIdArrayR
     return  status;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbObjectId   DwgDbBlockTableRecord::AppendEntity (DwgDbEntityR entity)
+    {
+    DwgDbObjectId   entityId;
+#ifdef DWGTOOLKIT_OpenDwg
+    entityId = T_Super::appendOdDbEntity (&entity);
+#elif DWGTOOLKIT_RealDwg
+    AcDbEntity* acEntity = AcDbEntity::cast (&entity);
+    if (Acad::eOk != T_Super::appendAcDbEntity(entityId, acEntity))
+        entityId.SetNull();
+#endif
+    return  entityId;
+    }
+
 DwgDbObjectId   DwgDbBlockTableRecord::GetLayoutId () const     { return T_Super::getLayoutId(); }
 bool            DwgDbBlockTableRecord::IsExternalReference () const { return T_Super::isFromExternalReference(); }
 bool            DwgDbBlockTableRecord::IsOverlayReference () const { return T_Super::isFromOverlayReference(); }
@@ -476,6 +492,7 @@ bool           DwgDbViewportTableRecord::IsIsometricSnapEnabled () const { retur
 int16_t        DwgDbViewportTableRecord::GetGridMajor () const { return T_Super::gridMajor(); }
 double         DwgDbViewportTableRecord::GetBrightness () const { return T_Super::brightness(); }
 DwgCmColor     DwgDbViewportTableRecord::GetAmbientLightColor () const { return static_cast<DwgCmColor>(T_Super::ambientLightColor()); }
+DwgDbObjectId  DwgDbViewportTableRecord::GetSunId () const { return T_Super::sunId(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16

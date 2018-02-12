@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgDb/DbEntities.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgDbInternal.h"
@@ -10,7 +10,7 @@
 USING_NAMESPACE_DWGDB
 
 // Add entities that are sub-classed from toolkit's entity classes
-DWGDB_ENTITY_DEFINE_MEMBERS(Entity)
+DWGDB_ENTITY_DEFINE_BASEMEMBERS(Entity)
 DWGDB_ENTITY_DEFINE_MEMBERS(Line)
 DWGDB_ENTITY_DEFINE_MEMBERS(Point)
 DWGDB_ENTITY_DEFINE_MEMBERS(Arc)
@@ -229,11 +229,91 @@ double     DwgDbArc::GetTotalAngle () const
     return T_Super::totalAngle ();
 #endif
     }
+DwgDbStatus DwgDbArc::SetCenter (DPoint3dCR center)
+    {
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    T_Super::setCenter (Util::GePoint3dFrom(center));
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::setCenter(Util::GePoint3dFrom(center)));
+#endif
+    return  status;
+    }
+DwgDbStatus DwgDbArc::SetRadius (double r)
+    {
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    T_Super::setRadius (r);
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::setRadius(r));
+#endif
+    return  status;
+    }
+DwgDbStatus DwgDbArc::SetStartAngle (double radians)
+    {
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    T_Super::setStartAngle (radians);
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::setStartAngle(radians));
+#endif
+    return  status;
+    }
+DwgDbStatus DwgDbArc::SetEndAngle (double radians)
+    {
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    T_Super::setEndAngle (radians);
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::setEndAngle(radians));
+#endif
+    return  status;
+    }
+DwgDbStatus DwgDbArc::SetThickness (double thickness)
+    {
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    T_Super::setThickness (thickness);
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::setThickness(thickness));
+#endif
+    return  status;
+    }
 
 DPoint3d   DwgDbCircle::GetCenter () const { return Util::DPoint3dFrom(T_Super::center()); }
 double     DwgDbCircle::GetDiameter () const { return DWGDB_CALLSDKMETHOD(T_Super::radius() * 2, T_Super::diameter()); }
 DVec3d     DwgDbCircle::GetNormal () const { return Util::DVec3dFrom(T_Super::normal()); }
 double     DwgDbCircle::GetThickness () const { return T_Super::thickness(); }
+DwgDbStatus DwgDbCircle::SetCenter (DPoint3dCR center)
+    {
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    T_Super::setCenter (Util::GePoint3dFrom(center));
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::setCenter(Util::GePoint3dFrom(center)));
+#endif
+    return  status;
+    }
+DwgDbStatus DwgDbCircle::SetRadius (double radius)
+    {
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    T_Super::setRadius (radius);
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::setRadius(radius));
+#endif
+    return  status;
+    }
+DwgDbStatus DwgDbCircle::SetThickness (double thickness)
+    {
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    T_Super::setThickness (thickness);
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::setThickness(thickness));
+#endif
+    return  status;
+    }
 
 DPoint3d   DwgDbEllipse::GetCenter () const { return Util::DPoint3dFrom(T_Super::center()); }
 double     DwgDbEllipse::GetMajorRadius () const { return DWGDB_CALLSDKMETHOD(T_Super::majorAxis().length(), T_Super::majorRadius()); }
@@ -666,6 +746,7 @@ bool           DwgDbViewport::IsTransparentOn () const { return T_Super::isTrans
 DwgDbObjectId  DwgDbViewport::GetClipEntity () const { return T_Super::nonRectClipEntityId(); }
 DwgDbObjectId  DwgDbViewport::GetBackground () const { return T_Super::background(); }
 DwgDbObjectId  DwgDbViewport::GetVisualStyle () const { return T_Super::visualStyle(); }
+DwgDbObjectId  DwgDbViewport::GetSunId () const { return T_Super::sunId(); }
 DVec3d         DwgDbViewport::GetViewDirection () const { return Util::DVec3dFrom(T_Super::viewDirection()); }
 double         DwgDbViewport::GetHeight () const { return T_Super::height(); }
 double         DwgDbViewport::GetViewHeight () const { return T_Super::viewHeight(); }

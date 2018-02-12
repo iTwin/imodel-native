@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Initialize.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -449,7 +449,7 @@ struct ConverterV8Txn : DgnV8Api::DgnCacheTxn
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
+* @bsimethod                                    Mathieu.St-Pierre                  08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct  SMHost : ScalableMesh::ScalableMeshLib::Host
     {

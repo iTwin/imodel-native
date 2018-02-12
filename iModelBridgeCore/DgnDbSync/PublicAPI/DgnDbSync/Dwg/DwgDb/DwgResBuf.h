@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbSync/Dwg/DwgDb/DwgResBuf.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -81,22 +81,24 @@ public:
 DEFINE_NO_NAMESPACE_TYPEDEFS (DwgResBuf)
 
 /*=================================================================================**//**
-* This is a refCounted pointer that points to the header of a DwgResBuf. Example to 
-* iterate through the xdata on an entity:
-* 
-* DwgResBufIterator iter = entity.GetXData (L"MyRegapp");
-* if (iter.IsValid())
-*   {
-*   for (DwgResBufP curr = iter->Start(); curr != iter->End(); curr = curr->Next())
-*       {
-*       switch (curr->GetDataType())
-*            {
-*            case DwgResBuf::DataType::Text:
-*               DwgStringR  name = curr->GetString();
-*               ...
-*   }
-*
-* @bsiclass                                                     Don.Fu          11/15
+This is a refCounted pointer that points to the header of a DwgResBuf. Example to 
+iterate through the xdata on an entity:
+  
+@verbatim
+  DwgResBufIterator iter = entity.GetXData (L"MyRegapp");
+  if (iter.IsValid())
+    {
+    for (DwgResBufP curr = iter->Start(); curr != iter->End(); curr = curr->Next())
+        {
+        switch (curr->GetDataType())
+             {
+             case DwgResBuf::DataType::Text:
+                DwgStringR  name = curr->GetString();
+                ...
+    }
+@endverbatim
+ 
+ @bsiclass                                                     Don.Fu          11/15
 +===============+===============+===============+===============+===============+======*/
 class DwgResBufIterator
 #ifdef DWGTOOLKIT_OpenDwg
