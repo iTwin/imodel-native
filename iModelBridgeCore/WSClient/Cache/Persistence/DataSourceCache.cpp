@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/DataSourceCache.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1473,14 +1473,13 @@ ICancellationTokenPtr ct
             {
             if (nullptr == rejectedOut)
                 return CacheStatus::Error;
-
             if (SUCCESS != m_state->GetRootManager().GetInstancesByPersistence(CacheRootPersistence::Full, fullyPersistedInstances))
                 return CacheStatus::Error;
 
+            InstanceCacheHelper::QueryAnalyzer analyzer(m_state->GetECDbAdapter(), *query);
             partialCachingState = std::make_shared<InstanceCacheHelper::PartialCachingState>
                 (
-                m_state->GetECDbAdapter(),
-                *query,
+                analyzer,
                 fullyPersistedInstances,
                 *rejectedOut
                 );

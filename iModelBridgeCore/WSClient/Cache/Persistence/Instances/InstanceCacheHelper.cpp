@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Instances/InstanceCacheHelper.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -489,14 +489,19 @@ bool InstanceCacheHelper::CachedInstances::HasPartialInstances() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceCacheHelper::PartialCachingState::PartialCachingState
 (
-ECDbAdapterR dbAdapter,
-WSQueryCR query,
+QueryAnalyzer queryAnalyzer,
 const ECInstanceKeyMultiMap& fullyPersistedInstances,
 bset<ObjectId>& rejected
 ) :
-m_query(&query),
+m_queryAnalyzer(queryAnalyzer),
 m_fullyPersistedInstances(fullyPersistedInstances),
 m_rejected(rejected)
+    {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceCacheHelper::QueryAnalyzer::QueryAnalyzer(ECDbAdapterR dbAdapter, WSQueryCR query) : m_query(&query)
     {
     BuildSelectedPaths(dbAdapter, *m_query, m_allPropertiesSelectedPaths, m_idOnlySelectedPaths);
     }
@@ -504,7 +509,7 @@ m_rejected(rejected)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus InstanceCacheHelper::PartialCachingState::BuildSelectedPaths
+BentleyStatus InstanceCacheHelper::QueryAnalyzer::BuildSelectedPaths
 (
 ECDbAdapterR dbAdapter,
 WSQueryCR query,
@@ -568,7 +573,7 @@ bset<bvector<SelectPathElement>>& idOnlySelectedPathsOut
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus InstanceCacheHelper::PartialCachingState::GetSelectPathAndType
+BentleyStatus InstanceCacheHelper::QueryAnalyzer::GetSelectPathAndType
 (
 ECDbAdapterR dbAdapter,
 Utf8StringCR mainSchemaName,
@@ -662,7 +667,7 @@ SelectType& selectTypeOut
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool InstanceCacheHelper::PartialCachingState::IsClassTokenPolymorphic(Utf8StringCR classToken)
+bool InstanceCacheHelper::QueryAnalyzer::IsClassTokenPolymorphic(Utf8StringCR classToken)
     {
     return Utf8String::npos != classToken.find("!poly");
     }
@@ -670,7 +675,7 @@ bool InstanceCacheHelper::PartialCachingState::IsClassTokenPolymorphic(Utf8Strin
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void InstanceCacheHelper::PartialCachingState::GetSchemaAndClassNamesFromClassToken
+void InstanceCacheHelper::QueryAnalyzer::GetSchemaAndClassNamesFromClassToken
 (
 Utf8StringCR classToken,
 Utf8StringR schemaNameOut,
@@ -694,7 +699,7 @@ Utf8StringR classNameOut
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP InstanceCacheHelper::PartialCachingState::GetECClassFromClassToken(ECDbAdapterR dbAdapter, Utf8StringCR mainSchemaName, Utf8StringCR classToken)
+ECClassCP InstanceCacheHelper::QueryAnalyzer::GetECClassFromClassToken(ECDbAdapterR dbAdapter, Utf8StringCR mainSchemaName, Utf8StringCR classToken)
     {
     Utf8String schemaName, className;
     GetSchemaAndClassNamesFromClassToken(classToken, schemaName, className);
@@ -710,7 +715,7 @@ ECClassCP InstanceCacheHelper::PartialCachingState::GetECClassFromClassToken(ECD
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECRelatedInstanceDirection InstanceCacheHelper::PartialCachingState::GetDirection(Utf8StringCR directionString)
+ECRelatedInstanceDirection InstanceCacheHelper::QueryAnalyzer::GetDirection(Utf8StringCR directionString)
     {
     if ("forward" == directionString)
         {
@@ -758,7 +763,7 @@ const bvector<SelectPathElement>& path
 )
     {
     bool allRequired = DoesRequireAllProperties(info);
-    bool allSelected = DoesPathMatches(path, m_allPropertiesSelectedPaths);
+    bool allSelected = m_queryAnalyzer.IsSelectionAll(path);
 
     if (allRequired)
         {
@@ -766,7 +771,7 @@ const bvector<SelectPathElement>& path
             {
             return Action::CacheFull;
             }
-        bool idOnlySelected = DoesPathMatches(path, m_idOnlySelectedPaths);
+        bool idOnlySelected = m_queryAnalyzer.IsSelectionId(path);
         if (idOnlySelected)
             {
             return Action::SkipCached;
@@ -785,7 +790,7 @@ const bvector<SelectPathElement>& path
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool InstanceCacheHelper::PartialCachingState::DoesPathMatches
+bool InstanceCacheHelper::QueryAnalyzer::DoesPathMatch
 (
 const bvector<SelectPathElement>& instancePath,
 const bset<bvector<SelectPathElement>>& matchPaths
