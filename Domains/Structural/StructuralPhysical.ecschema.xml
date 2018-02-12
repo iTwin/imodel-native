@@ -1,8 +1,9 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="StructuralPhysical" alias="sp" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis" />
+    <!-- TEMPORARY COMMENTED OUT
     <ECSchemaReference name="Forms" version="01.00.00" alias="frm" />
-    <ECSchemaReference name="Profiles" version="01.00.00" alias="prf" />
+    <ECSchemaReference name="Profiles" version="01.00.00" alias="prf" /> -->
     <ECEntityClass typeName="StructuralPhysicalModel" displayLabel="Structural Physical Model">
         <BaseClass>bis:PhysicalModel</BaseClass>
         <ECCustomAttributes>
@@ -207,6 +208,7 @@
             <Class class="StructuralSubtraction"/>
         </Target>
     </ECRelationshipClass>
+    <!-- TEMPORARY COMMENTED OUT
     <ECRelationshipClass typeName="StructuralElementOwnsFormAspect" description="" modifier="None" strength="embedding">
         <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
         <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
@@ -215,7 +217,7 @@
         <Target multiplicity="(0..1)" roleLabel="is owned by" polymorphic="true">
             <Class class="frm:Form"/>
         </Target>
-    </ECRelationshipClass>
+    </ECRelationshipClass> -->
     <KindOfQuantity typeName="M_PER_L_T2" displayLabel="M_PER_L_T2" persistenceUnit="PA(DefaultReal)" relativeError="0.0001"/>
     <KindOfQuantity typeName="NONE" displayLabel="NONE" persistenceUnit="ONE(DefaultReal)" relativeError="0.0001"/>
     <KindOfQuantity typeName="K" displayLabel="K" persistenceUnit="K(DefaultReal)" relativeError="0.0001"/>

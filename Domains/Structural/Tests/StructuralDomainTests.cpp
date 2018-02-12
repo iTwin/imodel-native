@@ -68,7 +68,7 @@ TEST_F(StructuralDomainTestFixture, ValidateSchema)
     ASSERT_TRUE(ECN::ECSchemaValidator::Validate(*refSchema));
     }
 
-
+/*
 TEST_F(StructuralDomainTestFixture, CreatePhysicalPartition)
     {
     DgnDbPtr db = CreateDgnDb();
@@ -210,19 +210,6 @@ TEST_F(StructuralDomainTestFixture, WallClassTests2)
     ASSERT_TRUE(physicalModel.IsValid());
 
     Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, *physicalModel, WALL_CODE_VALUE2);
-
-
-    //newtest
-    //*ECN::ECClassCP structuralClass = db->GetClassLocater().LocateClass(BENTLEY_STRUCTURAL_PHYSICAL_SCHEMA_NAME, Wall::MyHandlerECClassName());
-    //ElementHandlerP elementHandler = dgn_ElementHandler::Element::FindHandler(*db, structuralClass->GetId());
-    //DgnElementPtr   elem = elementHandler->Create(DgnElement::CreateParams(*db, physicalModel->GetModelId(), structuralClass->GetId(), code));
-    //GeometrySourceP geomElem = elem.IsValid() ? elem->ToGeometrySourceP() : nullptr;
-
-    //Dgn::DgnCategoryId categoryId = Structural::StructuralPhysicalCategory::QueryStructuralPhysicalCategoryId(*db, structuralClass->GetDisplayLabel().c_str());
-    //geomElem->SetCategoryId(categoryId);
-
-
-
     WallPtr pw = Wall::Create(physicalModel);
     status = pw->SetCode(code);
 
@@ -315,10 +302,6 @@ TEST_F(StructuralDomainTestFixture, WallClassTests2)
     view.Insert();
     Dgn::DgnViewId viewId = view.GetViewId();
     db->SaveProperty(Dgn::DgnViewProperty::DefaultView(), &viewId, (uint32_t) sizeof(viewId));
-
-    //double queriedThickness = queriedElement->GetPropertyValueDouble("Thickness");
-
-    //ASSERT_EQ(queriedThickness, thickness);
     }
 
 #define BRACE_CODE_VALUE       "BRACE-001"
@@ -409,22 +392,6 @@ TEST_F(StructuralDomainTestFixture, SlabClassTests)
     Dgn::DgnDbStatus status;
     Dgn::DgnElementCPtr element = physicalElement->Insert(&status);
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
-
-    /*Dgn::DgnCode code2 = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, *physicalModel, "StraightExtrusionTests__1");
-
-    WallPtr pw = Wall::Create(physicalModel);
-    status = pw->SetCode(code2);
-
-    pw->Insert(&status);*/
-
-
-/*    BeSQLite::EC::ECInstanceKey key;
-    BeSQLite::DbResult sqliteStatus = StructuralDomainUtilities::InsertLinkTableRelationship(key, *db, BENTLEY_STRUCTURAL_PHYSICAL_SCHEMA_NAME, "PimpaRel", physicalElement->GetECInstanceKey(), pw->GetECInstanceKey());
-    ASSERT_TRUE(BeSQLite::DbResult::BE_SQLITE_ERROR != sqliteStatus);
-
-
-    ECN::ECRelationshipClassCP bClass = db->Schemas().GetClass(BENTLEY_STRUCTURAL_PHYSICAL_SCHEMA_NAME, "PimpaRel")->GetRelationshipClassCP();
-    status = physicalElement->SetPropertyValue("Pimpa.Id", ECN::ECValue(pw->GetElementId(), bClass));*/
 
 
     Dgn::PhysicalElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::PhysicalElement>(*physicalModel, SLAB_CODE_VALUE);
@@ -962,5 +929,5 @@ TEST_F(StructuralDomainTestFixture, EnsureCanContainAnyPhysicalElement)
     DgnElementId id = db->Elements().QueryElementIdByCode(code);
     ASSERT_TRUE(id.IsValid());
     }
-
+*/
 
