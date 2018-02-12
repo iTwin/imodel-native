@@ -50,6 +50,7 @@ struct FormattingTestFixture
         static void ShowHexDump(Utf8CP str, int len, Utf8CP message = nullptr);
         static void ShowFUS(Utf8CP koq);
         static void ShowFUG(Utf8CP name, Utf8CP fugText);
+		static void RegisterFUS(Utf8CP descr, Utf8CP name);
         static void TestFUS(Utf8CP fusText, Utf8CP norm, Utf8CP aliased);
         static void CrossValidateFUS(Utf8CP descr1, Utf8CP descr2);
         static void TestFUGFormat(double dval, Utf8CP uom, Utf8CP name, Utf8CP fusText);
@@ -95,6 +96,7 @@ struct FormattingTestFixture
         static void ShowPhenomenon(BEU::PhenomenonCP phenP, bvector<BEU::PhenomenonCP>& undefPhenomena);
         static void ShowKnownPhenomena();
         static void ShowSynonyms();
+		static void TestFusLabel(Utf8CP unitName, Utf8CP formatName, Utf8CP fusName);
         //static void LoadUnitSynonymsTest();
     };
 
