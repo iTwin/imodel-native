@@ -55,8 +55,8 @@ public:
     IPropertyCategorySupplierR GetCategorySupplier() const {return m_categorySupplier;}
     bool IsNestedContent() const {return m_isNestedContent;}
     void SetIsNestedContent(bool value) {m_isNestedContent = value;}
-    INavNodeKeysContainerCR GetInputNodeKeys() const {return *m_inputNodeKeys;}
-    void SetInputNodeKeys(INavNodeKeysContainerCR inputNodeKeys) {m_inputNodeKeys = &inputNodeKeys;}
+    INavNodeKeysContainerCR GetInputKeys() const {return *m_inputNodeKeys;}
+    void SetInputKeys(INavNodeKeysContainerCR inputNodeKeys) {m_inputNodeKeys = &inputNodeKeys;}
     
     // Selection info context
     ECPRESENTATION_EXPORT void SetSelectionInfo(SelectionInfo const& selectionInfo);
@@ -135,12 +135,12 @@ public:
 struct SpecificationContentProvider : ContentProvider
 {
 private:
-    ContentRuleSpecificationsList m_rules;
+    ContentRuleInstanceKeysList m_rules;
     mutable ContentDescriptorCPtr m_descriptor;
     mutable ContentQueryPtr m_query;
     mutable bmap<ContentRuleCP, IParsedInput const*> m_inputCache;
 private:
-    ECPRESENTATION_EXPORT SpecificationContentProvider(ContentProviderContextR, ContentRuleSpecificationsList);
+    ECPRESENTATION_EXPORT SpecificationContentProvider(ContentProviderContextR, ContentRuleInstanceKeysList);
     ECPRESENTATION_EXPORT SpecificationContentProvider(SpecificationContentProviderCR);
     ContentQueryCPtr CreateQuery(ContentDescriptorCP) const;
 protected:
@@ -149,10 +149,10 @@ protected:
     ContentProviderPtr _Clone() const override {return new SpecificationContentProvider(*this);}
     void _Reset() override;
 public:
-    static SpecificationContentProviderPtr Create(ContentProviderContextR context, ContentRuleSpecificationsList const& specs) {return new SpecificationContentProvider(context, specs);}
-    static SpecificationContentProviderPtr Create(ContentProviderContextR context, ContentRuleSpecification const& spec)
+    static SpecificationContentProviderPtr Create(ContentProviderContextR context, ContentRuleInstanceKeysList const& specs) {return new SpecificationContentProvider(context, specs);}
+    static SpecificationContentProviderPtr Create(ContentProviderContextR context, ContentRuleInstanceKeys const& spec)
         {
-        ContentRuleSpecificationsList specs;
+        ContentRuleInstanceKeysList specs;
         specs.insert(spec);
         return SpecificationContentProvider::Create(context, specs);
         }

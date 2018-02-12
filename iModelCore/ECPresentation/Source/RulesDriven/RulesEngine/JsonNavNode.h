@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/JsonNavNode.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -49,6 +49,7 @@ private:
     mutable rapidjson::Document m_json;
     BeSQLite::EC::ECDb const* m_ecdb;
     mutable RefCountedPtr<IECInstance const> m_instance;
+    NavNodeKeyCPtr m_nodeKey;
 
 private:
     void LoadECInstance() const;
@@ -63,7 +64,7 @@ protected:
     ECPRESENTATION_EXPORT uint64_t _GetParentNodeId() const override;
     ECPRESENTATION_EXPORT Utf8String _GetLabel() const override;
     ECPRESENTATION_EXPORT Utf8String _GetDescription() const override;
-    ECPRESENTATION_EXPORT virtual NavNodeKeyCPtr _CreateKey() const override;
+    ECPRESENTATION_EXPORT NavNodeKeyCPtr _GetKey() const override;
     ECPRESENTATION_EXPORT Utf8String _GetExpandedImageId() const override;
     ECPRESENTATION_EXPORT Utf8String _GetCollapsedImageId() const override;
     ECPRESENTATION_EXPORT Utf8String _GetForeColor() const override;
@@ -106,7 +107,9 @@ public:
     ECPRESENTATION_EXPORT void SetNodeId(uint64_t);
     ECPRESENTATION_EXPORT void SetParentNodeId(uint64_t);
     ECPRESENTATION_EXPORT void SetIsExpanded(bool value);
+    void SetNodeKey(NavNodeKeyCR nodeKey) {m_nodeKey = &nodeKey;}
     void SetParentNode(NavNodeCR node) {SetParentNodeId(node.GetNodeId());}
+    ECPRESENTATION_EXPORT uint64_t GetInstanceId() const;
 };
 
 /*=================================================================================**//**
@@ -158,6 +161,8 @@ public:
     ECPRESENTATION_EXPORT static void SwapData(JsonNavNode& lhs, JsonNavNode& rhs);
     static bool IsGroupingNode(NavNodeCR);
     static bool IsCustomNode(NavNodeCR node);
+    ECPRESENTATION_EXPORT static NavNodeKeyPtr CreateNodeKey(JsonNavNodeCR node, bvector<Utf8String> const& path);
+    ECPRESENTATION_EXPORT static NavNodeKeyPtr CreateNodeKey(JsonNavNodeCR node, Utf8CP pathFromRootJsonString);
 };
 
 

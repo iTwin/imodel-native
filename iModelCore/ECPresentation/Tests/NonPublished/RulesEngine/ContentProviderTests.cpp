@@ -69,12 +69,15 @@ TEST_F (ContentProviderTests, SelectedNodeInstances_AllPropertiesOfOneSelectedNo
     NavNodePtr node = TestNodesHelper::CreateInstanceNode(*instance1);
 
     NavNodeKeyList keys;
-    keys.push_back(&node->GetKey());
-    m_context->SetInputNodeKeys(*NavNodeKeyListContainer::Create(keys));
+    keys.push_back(node->GetKey());
+    m_context->SetInputKeys(*NavNodeKeyListContainer::Create(keys));
+
+    bvector<ECInstanceKey> instanceKeys;
+    instanceKeys.push_back(node->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
 
     ContentRule rule;
     rule.AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
-    SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleSpecification(rule, keys));
+    SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleInstanceKeys(rule, instanceKeys));
 
     ContentDescriptorCP descriptor = provider->GetContentDescriptor();
     ASSERT_TRUE(nullptr != descriptor);
@@ -99,13 +102,17 @@ TEST_F (ContentProviderTests, SelectedNodeInstances_AllPropertiesOfMultipleSelec
     NavNodePtr node2 = TestNodesHelper::CreateInstanceNode(*instance2);
     
     NavNodeKeyList keys;
-    keys.push_back(&node1->GetKey());
-    keys.push_back(&node2->GetKey());
-    m_context->SetInputNodeKeys(*NavNodeKeyListContainer::Create(keys));
+    keys.push_back(node1->GetKey());
+    keys.push_back(node2->GetKey());
+    m_context->SetInputKeys(*NavNodeKeyListContainer::Create(keys));
+
+    bvector<ECInstanceKey> instanceKeys;
+    instanceKeys.push_back(node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
+    instanceKeys.push_back(node2->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
     
     ContentRule rule;
     rule.AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
-    SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleSpecification(rule, keys));
+    SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleInstanceKeys(rule, instanceKeys));
 
     ContentDescriptorCP descriptor = provider->GetContentDescriptor();
     ASSERT_TRUE(nullptr != descriptor);
@@ -135,13 +142,17 @@ TEST_F (ContentProviderTests, SelectedNodeInstances_AllPropertiesOfMultipleSelec
     NavNodePtr node2 = TestNodesHelper::CreateInstanceNode(*instance2);
     
     NavNodeKeyList keys;
-    keys.push_back(&node1->GetKey());
-    keys.push_back(&node2->GetKey());
-    m_context->SetInputNodeKeys(*NavNodeKeyListContainer::Create(keys));
+    keys.push_back(node1->GetKey());
+    keys.push_back(node2->GetKey());
+    m_context->SetInputKeys(*NavNodeKeyListContainer::Create(keys));
+
+    bvector<ECInstanceKey> instanceKeys;
+    instanceKeys.push_back(node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
+    instanceKeys.push_back(node2->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
     
     ContentRule rule;
     rule.AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
-    SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleSpecification(rule, keys));
+    SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleInstanceKeys(rule, instanceKeys));
 
     ContentDescriptorCP descriptor = provider->GetContentDescriptor();
     ASSERT_TRUE(nullptr != descriptor);
@@ -164,16 +175,21 @@ TEST_F (ContentProviderTests, SelectedNodeInstances_AllPropertiesOfMultipleSelec
 TEST_F (ContentProviderTests, CreatesImageIdWhenSpecified)
     {
     IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+
+    NavNodePtr node = TestNodesHelper::CreateInstanceNode(*instance);
     
     NavNodeKeyList keys;
-    keys.push_back(ECInstanceNodeKey::Create(*instance));
-    m_context->SetInputNodeKeys(*NavNodeKeyListContainer::Create(keys));
+    keys.push_back(node->GetKey());
+    m_context->SetInputKeys(*NavNodeKeyListContainer::Create(keys));
+
+    bvector<ECInstanceKey> instanceKeys;
+    instanceKeys.push_back(node->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
     
     SelectedNodeInstancesSpecificationP spec = new SelectedNodeInstancesSpecification(1, false, "", "", false);
     spec->SetShowImages(true);
     ContentRule rule;
     rule.AddSpecification(*spec);
-    SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleSpecification(rule, keys));
+    SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleInstanceKeys(rule, instanceKeys));
 
     ContentDescriptorCP descriptor = provider->GetContentDescriptor();
     ASSERT_TRUE(nullptr != descriptor);
@@ -194,16 +210,21 @@ TEST_F (ContentProviderTests, CustomizesImageId)
     m_ruleset->AddPresentationRule(*new ImageIdOverride("ThisNode.IsInstanceNode", 1, "\"TestImageId\""));
 
     IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+
+    NavNodePtr node = TestNodesHelper::CreateInstanceNode(*instance);
     
     NavNodeKeyList keys;
-    keys.push_back(ECInstanceNodeKey::Create(*instance));
-    m_context->SetInputNodeKeys(*NavNodeKeyListContainer::Create(keys));
+    keys.push_back(node->GetKey());
+    m_context->SetInputKeys(*NavNodeKeyListContainer::Create(keys));
+
+    bvector<ECInstanceKey> instanceKeys;
+    instanceKeys.push_back(node->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
     
     SelectedNodeInstancesSpecificationP spec = new SelectedNodeInstancesSpecification(1, false, "", "", false);
     spec->SetShowImages(true);
     ContentRule rule;
     rule.AddSpecification(*spec);
-    SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleSpecification(rule, keys));
+    SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleInstanceKeys(rule, instanceKeys));
 
     ContentDescriptorCP descriptor = provider->GetContentDescriptor();
     ASSERT_TRUE(nullptr != descriptor);
@@ -223,16 +244,21 @@ TEST_F (ContentProviderTests, CreatesLabelWhenSpecified)
     {
     IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test MyID"));});
     
+    NavNodePtr node = TestNodesHelper::CreateInstanceNode(*instance);
+
     NavNodeKeyList keys;
-    keys.push_back(ECInstanceNodeKey::Create(*instance));
-    m_context->SetInputNodeKeys(*NavNodeKeyListContainer::Create(keys));
+    keys.push_back(node->GetKey());
+    m_context->SetInputKeys(*NavNodeKeyListContainer::Create(keys));
+
+    bvector<ECInstanceKey> instanceKeys;
+    instanceKeys.push_back(node->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
 
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     
     SelectedNodeInstancesSpecificationP spec = new SelectedNodeInstancesSpecification(1, false, "", "", false);
     ContentRule rule;
     rule.AddSpecification(*spec);
-    SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleSpecification(rule, keys));
+    SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleInstanceKeys(rule, instanceKeys));
 
     ContentDescriptorCP descriptor = provider->GetContentDescriptor();
     ASSERT_TRUE(nullptr != descriptor);
@@ -262,14 +288,19 @@ TEST_F (ContentProviderTests, PagingUnsortedData)
     NavNodePtr node3 = TestNodesHelper::CreateInstanceNode(*instance3);
     
     NavNodeKeyList keys;
-    keys.push_back(&node1->GetKey());
-    keys.push_back(&node2->GetKey());
-    keys.push_back(&node3->GetKey());
-    m_context->SetInputNodeKeys(*NavNodeKeyListContainer::Create(keys));
+    keys.push_back(node1->GetKey());
+    keys.push_back(node2->GetKey());
+    keys.push_back(node3->GetKey());
+    m_context->SetInputKeys(*NavNodeKeyListContainer::Create(keys));
+
+    bvector<ECInstanceKey> instanceKeys;
+    instanceKeys.push_back(node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
+    instanceKeys.push_back(node2->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
+    instanceKeys.push_back(node3->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
     
     ContentRule rule;
     rule.AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
-    SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleSpecification(rule, keys));
+    SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleInstanceKeys(rule, instanceKeys));
     provider->SetPageOptions(PageOptions(1, 5));
 
     ASSERT_EQ(2, provider->GetContentSetSize());
@@ -301,14 +332,19 @@ TEST_F (ContentProviderTests, PagingSortedData)
     NavNodePtr node3 = TestNodesHelper::CreateInstanceNode(*instance3);
     
     NavNodeKeyList keys;
-    keys.push_back(&node1->GetKey());
-    keys.push_back(&node2->GetKey());
-    keys.push_back(&node3->GetKey());
-    m_context->SetInputNodeKeys(*NavNodeKeyListContainer::Create(keys));
+    keys.push_back(node1->GetKey());
+    keys.push_back(node2->GetKey());
+    keys.push_back(node3->GetKey());
+    m_context->SetInputKeys(*NavNodeKeyListContainer::Create(keys));
+
+    bvector<ECInstanceKey> instanceKeys;
+    instanceKeys.push_back(node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
+    instanceKeys.push_back(node2->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
+    instanceKeys.push_back(node3->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
     
     ContentRule rule;
     rule.AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
-    SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleSpecification(rule, keys));
+    SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleInstanceKeys(rule, instanceKeys));
     ASSERT_TRUE(nullptr != provider->GetContentDescriptor());
 
     ContentDescriptorPtr ovr = ContentDescriptor::Create(*provider->GetContentDescriptor());
@@ -343,14 +379,19 @@ TEST_F (ContentProviderTests, PageDoesNotExceedPageSize)
     NavNodePtr node3 = TestNodesHelper::CreateInstanceNode(*instance3);
     
     NavNodeKeyList keys;
-    keys.push_back(&node1->GetKey());
-    keys.push_back(&node2->GetKey());
-    keys.push_back(&node3->GetKey());
-    m_context->SetInputNodeKeys(*NavNodeKeyListContainer::Create(keys));
+    keys.push_back(node1->GetKey());
+    keys.push_back(node2->GetKey());
+    keys.push_back(node3->GetKey());
+    m_context->SetInputKeys(*NavNodeKeyListContainer::Create(keys));
     
+    bvector<ECInstanceKey> instanceKeys;
+    instanceKeys.push_back(node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
+    instanceKeys.push_back(node2->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
+    instanceKeys.push_back(node3->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
+
     ContentRule rule;
     rule.AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
-    SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleSpecification(rule, keys));
+    SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleInstanceKeys(rule, instanceKeys));
     
     provider->SetPageOptions(PageOptions(0, 2));
     ASSERT_EQ(2, provider->GetContentSetSize());
@@ -391,7 +432,7 @@ TEST_F(ContentProviderTests, LoadsNestedContentFields)
     ContentRule rule;
     rule.AddSpecification(*spec);
 
-    SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleSpecification(rule));
+    SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleInstanceKeys(rule));
 
     ContentDescriptorCP descriptor = provider->GetContentDescriptor();
     ASSERT_TRUE(nullptr != descriptor);

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/TestHelpers/TestSelectionProvider.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,22 +21,22 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 struct TestSelectionProvider : ISelectionProvider
 {
 private:
-    bmap<ECDb const*, INavNodeKeysContainerCPtr> m_selections;
-    bmap<ECDb const*, INavNodeKeysContainerCPtr> m_subSelections;
+    bmap<ECDb const*, KeySetCPtr> m_selections;
+    bmap<ECDb const*, KeySetCPtr> m_subSelections;
 protected:
-    INavNodeKeysContainerCPtr _GetSelection(ECDbCR ecdb) const override
+    KeySetCPtr _GetSelection(ECDbCR ecdb) const override
         {
         auto iter = m_selections.find(&ecdb);
         return (m_selections.end() != iter) ? iter->second : nullptr;
         }
-    INavNodeKeysContainerCPtr _GetSubSelection(ECDbCR ecdb) const override
+    KeySetCPtr _GetSubSelection(ECDbCR ecdb) const override
         {
         auto iter = m_subSelections.find(&ecdb);
         return (m_subSelections.end() != iter) ? iter->second : nullptr;
         }
 public:
-    void SetSelection(ECDbCR ecdb, INavNodeKeysContainerCR selection) {m_selections[&ecdb] = &selection;}
-    void SetSubSelection(ECDbCR ecdb, INavNodeKeysContainerCR selection) {m_subSelections[&ecdb] = &selection;}
+    void SetSelection(ECDbCR ecdb, KeySetCR selection) {m_selections[&ecdb] = &selection;}
+    void SetSubSelection(ECDbCR ecdb, KeySetCR selection) {m_subSelections[&ecdb] = &selection;}
 };
 
 /*=================================================================================**//**
@@ -46,53 +46,47 @@ struct TestSelectionManager : ISelectionManager
 {
 private:
     IConnectionCacheCR m_connections;
-    bmap<ECDb const*, INavNodeKeysContainerCPtr> m_selections;
-    bmap<ECDb const*, INavNodeKeysContainerCPtr> m_subSelections;
+    bmap<ECDb const*, KeySetPtr> m_selections;
+    bmap<ECDb const*, KeySetPtr> m_subSelections;
     bset<ISelectionChangesListener*> m_listeners;
 protected:
-    INavNodeKeysContainerCPtr _GetSelection(ECDbCR ecdb) const override
+    KeySetCPtr _GetSelection(ECDbCR ecdb) const override
         {
         auto iter = m_selections.find(&ecdb);
         return (m_selections.end() != iter) ? iter->second : nullptr;
         }
-    INavNodeKeysContainerCPtr _GetSubSelection(ECDbCR ecdb) const override
+    KeySetCPtr _GetSubSelection(ECDbCR ecdb) const override
         {
         auto iter = m_subSelections.find(&ecdb);
         return (m_subSelections.end() != iter) ? iter->second : nullptr;
         }
     void _AddListener(ISelectionChangesListener& listener) override {m_listeners.insert(&listener);}
     void _RemoveListener(ISelectionChangesListener& listener) override {m_listeners.erase(&listener);}
-    void _AddToSelection(ECDbCR db, Utf8CP, bool isSub, INavNodeKeysContainerCR keys, RapidJsonValueCR) override
+    void _AddToSelection(ECDbCR db, Utf8CP, bool isSub, KeySetCR keys, RapidJsonValueCR) override
         {
-        INavNodeKeysContainerCPtr curr = isSub ? m_subSelections[&db] : m_selections[&db];
-        NavNodeKeySet list;
-        if (curr.IsValid())
-            {
-            for (NavNodeKeyCPtr key : *curr)
-                list.insert(key);
-            }
-        for (NavNodeKeyCPtr key : keys)
-            list.insert(key);
+        KeySetPtr curr = isSub ? m_subSelections[&db] : m_selections[&db];
+        if (curr.IsNull())
+            curr = KeySet::Create();
+
+        curr->MergeWith(keys);
         if (isSub)
-            SetSubSelection(db, *NavNodeKeySetContainer::Create(list));
+            SetSubSelection(db, *curr);
         else
-            SetSelection(db, *NavNodeKeySetContainer::Create(list));
+            SetSelection(db, *curr);
         }
-    void _RemoveFromSelection(ECDbCR db, Utf8CP, bool isSub, INavNodeKeysContainerCR keys, RapidJsonValueCR) override
+    void _RemoveFromSelection(ECDbCR db, Utf8CP, bool isSub, KeySetCR keys, RapidJsonValueCR) override
         {
-        INavNodeKeysContainerCPtr curr = isSub ? m_subSelections[&db] : m_selections[&db];
-        NavNodeKeyList list;
-        for (NavNodeKeyCPtr key : *curr)
-            {
-            if (keys.end() == keys.find(key))
-                list.push_back(key);
-            }
+        KeySetPtr curr = isSub ? m_subSelections[&db] : m_selections[&db];
+        if (curr.IsNull())
+            curr = KeySet::Create();
+
+        curr->Remove(keys);
         if (isSub)
-            SetSubSelection(db, *NavNodeKeyListContainer::Create(list));
+            SetSubSelection(db, *curr);
         else
-            SetSelection(db, *NavNodeKeyListContainer::Create(list));
+            SetSelection(db, *curr);
         }
-    void _ChangeSelection(ECDbCR db, Utf8CP, bool isSub, INavNodeKeysContainerCR keys, RapidJsonValueCR) override
+    void _ChangeSelection(ECDbCR db, Utf8CP, bool isSub, KeySetCR keys, RapidJsonValueCR) override
         {
         if (isSub)
             SetSubSelection(db, keys);
@@ -102,23 +96,24 @@ protected:
     void _ClearSelection(ECDbCR db, Utf8CP, bool isSub, RapidJsonValueCR) override
         {
         if (isSub)
-            SetSubSelection(db, *NavNodeKeyListContainer::Create());
+            SetSubSelection(db, *KeySet::Create());
         else
-            SetSelection(db, *NavNodeKeyListContainer::Create());
+            SetSelection(db, *KeySet::Create());
         }
+    void _RefreshSelection(ECDbCR, Utf8CP, bool, RapidJsonValueCR) override {}
 public:
     TestSelectionManager(IConnectionCacheCR connections) : m_connections(connections) {}
-    void SetSelection(ECDbCR ecdb, INavNodeKeysContainerCR selection)
+    void SetSelection(ECDbCR ecdb, KeySetCR selection)
         {
-        m_selections[&ecdb] = &selection;
+        m_selections[&ecdb] = const_cast<KeySetP>(&selection);
         m_subSelections.erase(&ecdb);
         IConnectionCPtr connection = m_connections.GetConnection(ecdb);
         for (ISelectionChangesListener* listener : m_listeners)
             listener->NotifySelectionChanged(SelectionChangedEvent(*connection, "TestSource", SelectionChangeType::Replace, false, selection));
         }
-    void SetSubSelection(ECDbCR ecdb, INavNodeKeysContainerCR selection)
+    void SetSubSelection(ECDbCR ecdb, KeySetCR selection)
         {
-        m_subSelections[&ecdb] = &selection;
+        m_subSelections[&ecdb] = const_cast<KeySetP>(&selection);
         IConnectionCPtr connection = m_connections.GetConnection(ecdb);
         for (ISelectionChangesListener* listener : m_listeners)
             listener->NotifySelectionChanged(SelectionChangedEvent(*connection, "TestSource", SelectionChangeType::Replace, true, selection));

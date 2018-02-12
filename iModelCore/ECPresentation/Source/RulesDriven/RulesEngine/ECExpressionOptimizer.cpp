@@ -69,16 +69,12 @@ IsOfClassOptimizedExpression::~IsOfClassOptimizedExpression()
 +---------------+---------------+---------------+---------------+---------------+--*/
 bool IsOfClassOptimizedExpression::_Value(OptimizedExpressionsParameters const& params)
     {
-    if (nullptr == params.GetInputNodeKey())
+    if (params.GetInputNodeKey().IsNull())
         return false;
 
-    NavNodeKeyCP nodeKey = params.GetInputNodeKey();
-    ECClassId lookupClassId;
-    if (nullptr != nodeKey->AsECInstanceNodeKey())
-        lookupClassId = nodeKey->AsECInstanceNodeKey()->GetECClassId();
-    else if (nullptr != nodeKey->AsECClassGroupingNodeKey())
-        lookupClassId = nodeKey->AsECClassGroupingNodeKey()->GetECClassId();
-    else
+    NavNodeKeyCPtr nodeKey = params.GetInputNodeKey();
+    ECClassId lookupClassId = nodeKey->GetECClassId();
+    if (!lookupClassId.IsValid())
         return false;
     
     auto cacheIter = m_cache.find(&params.GetConnection().GetDb());
@@ -140,16 +136,12 @@ ClassNameOptimizedExpression::~ClassNameOptimizedExpression()
 +---------------+---------------+---------------+---------------+---------------+--*/
 bool ClassNameOptimizedExpression::_Value(OptimizedExpressionsParameters const& params)
     {
-    if (nullptr == params.GetInputNodeKey())
+    if (params.GetInputNodeKey().IsNull())
         return false;
 
-    NavNodeKeyCP nodeKey = params.GetInputNodeKey();
-    ECClassId lookupClassId;
-    if (nullptr != nodeKey->AsECInstanceNodeKey())
-        lookupClassId = nodeKey->AsECInstanceNodeKey()->GetECClassId();
-    else if (nullptr != nodeKey->AsECClassGroupingNodeKey())
-        lookupClassId = nodeKey->AsECClassGroupingNodeKey()->GetECClassId();
-    else
+    NavNodeKeyCPtr nodeKey = params.GetInputNodeKey();
+    ECClassId lookupClassId = nodeKey->GetECClassId();
+    if (!lookupClassId.IsValid())
         return false;
 
     auto cacheIter = m_resultsCache.find(&params.GetConnection().GetDb());
@@ -198,7 +190,7 @@ bool ClassNameOptimizedExpression::_IsEqual(OptimizedExpression const& other) co
 +---------------+---------------+---------------+---------------+---------------+--*/
 bool InstanceIdOptimizedExpression::_Value(OptimizedExpressionsParameters const& params)
     {
-    if (nullptr == params.GetInputNodeKey() || nullptr == params.GetInputNodeKey()->AsECInstanceNodeKey())
+    if (params.GetInputNodeKey().IsNull() || nullptr == params.GetInputNodeKey()->AsECInstanceNodeKey())
         return false;
 
     ECInstanceNodeKey const& nodeKey = *params.GetInputNodeKey()->AsECInstanceNodeKey();

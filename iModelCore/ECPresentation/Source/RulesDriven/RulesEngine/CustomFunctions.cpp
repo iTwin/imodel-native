@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/CustomFunctions.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -130,6 +130,8 @@ struct GetECInstanceDisplayLabelScalar : CachingScalarFunction<bmap<ECInstanceId
                 ECClassId classId = args[0].GetValueId<ECClassId>();
                 JsonNavNodePtr thisNode = GetContext().GetNodesFactory().CreateECInstanceNode(GetContext().GetConnection(), classId, instanceId, "");
                 NavNodesHelper::AddRelatedInstanceInfo(*thisNode, args[3].GetValueText());
+                // create a temporary node key
+                thisNode->SetNodeKey(*NavNodesHelper::CreateNodeKey(*thisNode, bvector<Utf8String>()));
 
                 // look for label override
                 ECDbExpressionSymbolContext ecdbSymbols(GetContext().GetSchemaHelper().GetDb());
@@ -215,6 +217,9 @@ struct GetECClassDisplayLabelScalar : CachingScalarFunction<bmap<ECClassId, Utf8
             else
                 thisNode = GetContext().GetNodesFactory().CreateECClassGroupingNode(GetContext().GetConnection().GetId(), *ecClass, "", groupedInstanceKeys);
 
+            // create temporary key
+            thisNode->SetNodeKey(*NavNodesHelper::CreateNodeKey(*thisNode, bvector<Utf8String>()));
+
             RulesPreprocessor::CustomizationRuleParameters params(GetContext().GetConnections(), GetContext().GetConnection(), *thisNode, GetContext().GetParentNode(),
                 GetContext().GetRuleset(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache());
             LabelOverrideCP labelOverride = RulesPreprocessor::GetLabelOverride(params);
@@ -288,6 +293,8 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
         if (GetCache().end() == iter)
             {
             JsonNavNodePtr thisNode = GetContext().GetNodesFactory().CreateECInstanceNode(GetContext().GetConnection(), classId, instanceId, "");
+            // create temporary key
+            thisNode->SetNodeKey(*NavNodesHelper::CreateNodeKey(*thisNode, bvector<Utf8String>()));
             ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCalculatedPropertyContext(*thisNode, GetContext().GetUserSettings());
 
             ECValue value;
@@ -400,6 +407,8 @@ public:
             GroupedInstanceKeysList groupedInstanceKeys;
             groupedInstanceKeys.resize(groupedInstancesCount); // note: this creates a list of invalid ECInstanceKeys. but it's okay as we only need it for count
             JsonNavNodePtr thisNode = GetContext().GetNodesFactory().CreateECPropertyGroupingNode(GetContext().GetConnection().GetId(), *ecClass, *ecProperty, "", nullptr, rapidjson::Document(), false, groupedInstanceKeys);
+            // create temporary node key
+            thisNode->SetNodeKey(*NavNodesHelper::CreateNodeKey(*thisNode, bvector<Utf8String>()));
             RulesPreprocessor::CustomizationRuleParameters params(GetContext().GetConnections(), GetContext().GetConnection(), *thisNode, GetContext().GetParentNode(),
                 GetContext().GetRuleset(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache());
             LabelOverrideCP labelOverride = RulesPreprocessor::GetLabelOverride(params);

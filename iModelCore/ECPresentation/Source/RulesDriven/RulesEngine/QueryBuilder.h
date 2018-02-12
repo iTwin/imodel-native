@@ -130,13 +130,13 @@ private:
     bvector<ECClassCP> m_orderedClasses;
     bmap<ECClassCP, bvector<ECInstanceId>> m_classInput;
 private:
-    void GetNodeClasses(NavNodeKeyCR, INavNodeLocater const&, IConnectionCR, ECSchemaHelper const&);
-    void Parse(NavNodeKeyListCR, INavNodeLocater const&, IConnectionCR, ECSchemaHelper const&);
+    void GetNodeClasses(ECInstanceKeyCR, INavNodeLocater const&, IConnectionCR, ECSchemaHelper const&);
+    void Parse(bvector<ECInstanceKey> const&, INavNodeLocater const&, IConnectionCR, ECSchemaHelper const&);
 protected:
     bvector<ECClassCP> const& _GetClasses() const override {return m_orderedClasses;}
     bvector<ECInstanceId> const& _GetInstanceIds(ECClassCR selectClass) const override;
 public:
-    ParsedInput(NavNodeKeyListCR, INavNodeLocater const&, IConnectionCR, ECSchemaHelper const&);
+    ParsedInput(bvector<ECInstanceKey> const&, INavNodeLocater const&, IConnectionCR, ECSchemaHelper const&);
 };
 
 /*=================================================================================**//**

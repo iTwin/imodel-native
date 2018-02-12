@@ -122,7 +122,7 @@ void ContentProviderContext::SetPropertyFormattingContext(ContentProviderContext
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpecificationContentProvider::SpecificationContentProvider(ContentProviderContextR context, ContentRuleSpecificationsList ruleSpecs)
+SpecificationContentProvider::SpecificationContentProvider(ContentProviderContextR context, ContentRuleInstanceKeysList ruleSpecs)
     : ContentProvider(context), m_rules(ruleSpecs)
     {}
 
@@ -576,7 +576,7 @@ public:
         IECPropertyFormatter const* formatter = context.IsPropertyFormattingContext() ? &context.GetECPropertyFormatter() : nullptr;
         ILocalizationProvider const* localizationProvider = context.IsLocalizationContext() ? &context.GetLocalizationProvider() : nullptr;
         m_context = new ContentDescriptorBuilder::Context(context.GetSchemaHelper(), context.GetConnections(), context.GetConnection(), context.GetRuleset(),
-            context.GetPreferredDisplayType().c_str(), context.GetCategorySupplier(), formatter, localizationProvider, context.GetInputNodeKeys(), context.GetSelectionInfo());
+            context.GetPreferredDisplayType().c_str(), context.GetCategorySupplier(), formatter, localizationProvider, context.GetInputKeys(), context.GetSelectionInfo());
         m_descriptorBuilder = new ContentDescriptorBuilder(*m_context);
         }
     
@@ -734,9 +734,9 @@ SpecificationContentProvider::~SpecificationContentProvider()
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void VisitRuleSpecifications(ContentSpecificationsVisitor& visitor, bmap<ContentRuleCP, IParsedInput const*> inputCache,
-    ContentProviderContextCR context, ContentRuleSpecificationsList const& rules)
+    ContentProviderContextCR context, ContentRuleInstanceKeysList const& rules)
     {
-    for (ContentRuleSpecification const& rule : rules)
+    for (ContentRuleInstanceKeys const& rule : rules)
         {
         IParsedInput const* input = nullptr;
         auto inputIter = inputCache.find(&rule.GetRule());
@@ -744,7 +744,7 @@ static void VisitRuleSpecifications(ContentSpecificationsVisitor& visitor, bmap<
             {
             // note: each content rule may be based on different selected nodes, so we create a different selection context for each of them
             inputIter = inputCache.Insert(&rule.GetRule(),
-                new ParsedInput(rule.GetMatchingSelectedNodeKeys(), context.GetNodesLocater(), context.GetConnection(), context.GetSchemaHelper())).first;
+                new ParsedInput(rule.GetInstanceKeys(), context.GetNodesLocater(), context.GetConnection(), context.GetSchemaHelper())).first;
             }
         input = inputIter->second;
 

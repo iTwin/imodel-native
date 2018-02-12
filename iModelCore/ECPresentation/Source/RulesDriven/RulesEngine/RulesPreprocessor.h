@@ -56,38 +56,75 @@ typedef bvector<RootNodeRuleSpecification> RootNodeRuleSpecificationsList;
 //! @ingroup GROUP_RulesDrivenPresentation
 // @bsiclass                                    Grigas.Petraitis                04/2016
 //=======================================================================================
-struct ContentRuleSpecification
+struct ContentRuleInputKeys
 {
 protected:
     ContentRuleCP m_rule;
-    NavNodeKeyList m_matchingSelectedNodeKeys;
+    NavNodeKeyList m_matchingNodeKeys;
 public:
     //! Constructor. Creates invalid instance.
-    ContentRuleSpecification() : m_rule(nullptr) {}
+    ContentRuleInputKeys() : m_rule(nullptr) {}
 
     //! Copy constructor.
-    ContentRuleSpecification(ContentRuleSpecification const& other) : m_rule(other.m_rule), m_matchingSelectedNodeKeys(other.m_matchingSelectedNodeKeys) {}
+    ContentRuleInputKeys(ContentRuleInputKeys const& other) : m_rule(other.m_rule), m_matchingNodeKeys(other.m_matchingNodeKeys) {}
 
     //! Constructor.
     //! @param[in] rule The content rule.
-    //! @param[in] matchingSelectedNodeKeys The list of @ref NavNodeKey objects that apply for the rule.
-    ContentRuleSpecification(ContentRuleCR rule, NavNodeKeyList matchingSelectedNodeKeys = NavNodeKeyList()) : m_rule(&rule), m_matchingSelectedNodeKeys(matchingSelectedNodeKeys) {}
+    //! @param[in] matchingNodeKeys The list of @ref NavNodeKey objects that apply for the rule.
+    ContentRuleInputKeys(ContentRuleCR rule, NavNodeKeyList matchingNodeKeys = NavNodeKeyList()) : m_rule(&rule), m_matchingNodeKeys(matchingNodeKeys) {}
 
     //! Compare operator.
-    bool operator<(ContentRuleSpecification const& rhs) const {return m_rule < rhs.m_rule;}
+    bool operator<(ContentRuleInputKeys const& rhs) const {return m_rule < rhs.m_rule;}
 
     //! Get the rule.
     ContentRuleCR GetRule() const {BeAssert(nullptr != m_rule); return *m_rule;}
 
     //! Get the list of selected node keys.
-    NavNodeKeyListCR GetMatchingSelectedNodeKeys() const {return m_matchingSelectedNodeKeys;}
+    NavNodeKeyListCR GetMatchingNodeKeys() const {return m_matchingNodeKeys;}
     //! Get the list of selected node keys.
-    NavNodeKeyListR GetMatchingSelectedNodeKeys() {return m_matchingSelectedNodeKeys;}
+    NavNodeKeyListR GetMatchingNodeKeys() {return m_matchingNodeKeys;}
 
     //! Get rule priority.
     int GetPriority() const {return nullptr == m_rule ? -1 : m_rule->GetPriority();}
 };
-typedef bset<ContentRuleSpecification> ContentRuleSpecificationsList;
+typedef bset<ContentRuleInputKeys> ContentRuleInputKeysList;
+
+//=======================================================================================
+//! Holds a content rule and list of ECIntance keys objects that apply for 
+//! that rule.
+//! @ingroup GROUP_RulesDrivenPresentation
+// @bsiclass                                    Saulius.Skliutas                01/2018
+//=======================================================================================
+struct ContentRuleInstanceKeys
+{
+protected:
+    ContentRuleCP m_rule;
+    bvector<ECInstanceKey> m_instanceKeys;
+public:
+    //! Constructor. Creates invalid instance.
+    ContentRuleInstanceKeys() : m_rule(nullptr) {}
+
+    //! Copy constructor.
+    ContentRuleInstanceKeys(ContentRuleInstanceKeys const& other) : m_rule(other.m_rule), m_instanceKeys(other.m_instanceKeys) {}
+
+    //! Constructor.
+    //! @param[in] rule The content rule.
+    //! @param[in] instanceKeys The list of ECIntance keys that apply for the rule.
+    ContentRuleInstanceKeys(ContentRuleCR rule, bvector<ECInstanceKey> instanceKeys = bvector<ECInstanceKey>()) : m_rule(&rule), m_instanceKeys(instanceKeys) {}
+
+    //! Compare operator.
+    bool operator<(ContentRuleInstanceKeys const& rhs) const {return m_rule < rhs.m_rule;}
+
+    //! Get the rule.
+    ContentRuleCR GetRule() const {BeAssert(nullptr != m_rule); return *m_rule;}
+
+    //! Get the list of instance keys.
+    bvector<ECInstanceKey> const& GetInstanceKeys() const {return m_instanceKeys;}
+
+    //! Get rule priority.
+    int GetPriority() const {return nullptr == m_rule ? -1 : m_rule->GetPriority();}
+};
+typedef bset<ContentRuleInstanceKeys> ContentRuleInstanceKeysList;
 
 //=======================================================================================
 //! A class responsible for finding appropriate presentation rules based on supplied
@@ -360,7 +397,7 @@ public:
 /** @{ */
     //! Get matching content rules.
     //! @param[in] params The request parameters.
-    ECPRESENTATION_EXPORT static ContentRuleSpecificationsList GetContentSpecifications(ContentRuleParametersCR params);
+    ECPRESENTATION_EXPORT static ContentRuleInputKeysList GetContentSpecifications(ContentRuleParametersCR params);
 /** @} */
 };
 

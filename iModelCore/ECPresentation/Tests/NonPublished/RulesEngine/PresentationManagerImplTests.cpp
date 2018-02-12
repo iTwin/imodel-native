@@ -256,7 +256,7 @@ TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsConten
 
     // request and verify
     RulesDrivenECPresentationManager::ContentOptions options(m_ruleset->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = m_impl->GetContentDescriptor(*m_connection, nullptr, *NavNodeKeyListContainer::Create(), nullptr, options, *token);
+    ContentDescriptorCPtr descriptor = m_impl->GetContentDescriptor(*m_connection, nullptr, *KeySet::Create(), nullptr, options, *token);
     EXPECT_TRUE(descriptor.IsNull());
     }
 
@@ -269,7 +269,7 @@ TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsConten
     
     // get the descriptor
     RulesDrivenECPresentationManager::ContentOptions options(m_ruleset->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = m_impl->GetContentDescriptor(*m_connection, nullptr, *NavNodeKeyListContainer::Create(), nullptr, options, *token);
+    ContentDescriptorCPtr descriptor = m_impl->GetContentDescriptor(*m_connection, nullptr, *KeySet::Create(), nullptr, options, *token);
         
     // add a ruleset locater which cancels the request
     RefCountedPtr<CallbackRulesetLocater> locater = CallbackRulesetLocater::Create();
@@ -294,7 +294,7 @@ TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsConten
     
     // get the descriptor
     RulesDrivenECPresentationManager::ContentOptions options(m_ruleset->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = m_impl->GetContentDescriptor(*m_connection, nullptr, *NavNodeKeyListContainer::Create(), nullptr, options, *token);
+    ContentDescriptorCPtr descriptor = m_impl->GetContentDescriptor(*m_connection, nullptr, *KeySet::Create(), nullptr, options, *token);
         
     // add a ruleset locater which cancels the request
     RefCountedPtr<CallbackRulesetLocater> locater = CallbackRulesetLocater::Create();

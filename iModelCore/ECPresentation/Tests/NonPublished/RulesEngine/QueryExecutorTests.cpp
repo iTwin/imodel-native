@@ -130,14 +130,20 @@ TEST_F (NavigationQueryExecutorTests, GetInstanceNodes)
 
     node = executor.GetNode(0);
     ASSERT_TRUE(node.IsValid());
+    node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>()));
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, node->GetType().c_str());
-    EXPECT_EQ(*ECInstanceNodeKey::Create(*gadget), node->GetKey());
+    ECInstanceId gadgetId;
+    ECInstanceId::FromString(gadgetId, gadget->GetInstanceId().c_str());
+    EXPECT_EQ(ECInstanceKey(gadget->GetClass().GetId(), gadgetId), node->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
     EXPECT_STREQ(RulesEngineTestHelpers::GetDisplayLabel(*gadget).c_str(), node->GetLabel().c_str());
     
     node = executor.GetNode(1);
     ASSERT_TRUE(node.IsValid());
+    node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>()));
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, node->GetType().c_str());
-    EXPECT_EQ(*ECInstanceNodeKey::Create(*widget), node->GetKey());
+    ECInstanceId widgetId;
+    ECInstanceId::FromString(widgetId, widget->GetInstanceId().c_str());
+    EXPECT_EQ(ECInstanceKey(widget->GetClass().GetId(), widgetId), node->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
     EXPECT_STREQ(RulesEngineTestHelpers::GetDisplayLabel(*widget).c_str(), node->GetLabel().c_str());
     }
 
@@ -185,8 +191,11 @@ TEST_F (NavigationQueryExecutorTests, GetInstanceNodes_GroupsByInstanceKey)
 
     JsonNavNodePtr node = executor.GetNode(0);
     ASSERT_TRUE(node.IsValid());
+    node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>()));
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, node->GetType().c_str());    
-    EXPECT_EQ(*ECInstanceNodeKey::Create(*widget2), node->GetKey());
+    ECInstanceId widgetId;
+    ECInstanceId::FromString(widgetId, widget2->GetInstanceId().c_str());
+    EXPECT_EQ(ECInstanceKey(widget2->GetClass().GetId(), widgetId), node->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -331,6 +340,7 @@ TEST_F (NavigationQueryExecutorTests, GetChildNodesOfClassGroupingNode_NotGroupe
         {
         JsonNavNodePtr node = executor.GetNode(i);
         ASSERT_TRUE(node.IsValid());
+        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>()));
         EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, node->GetType().c_str());
         EXPECT_TRUE(node->GetInstance().IsValid());
         EXPECT_STREQ(widgets[i]->GetInstanceId().c_str(), node->GetInstance()->GetInstanceId().c_str());
@@ -394,6 +404,7 @@ TEST_F (NavigationQueryExecutorTests, OverridesLabel)
         {
         JsonNavNodePtr node = executor.GetNode(i);
         EXPECT_TRUE(node.IsValid());
+        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>()));
         if (m_widgetClass == &node->GetInstance()->GetClass())
             EXPECT_STREQ("NavigationQueryExecutorTests.OverridesLabel", node->GetLabel().c_str());
         else
@@ -429,6 +440,7 @@ TEST_F (NavigationQueryExecutorTests, InstanceNodesSortedAlphanumerically)
         {
         JsonNavNodePtr node = executor.GetNode(i);
         ASSERT_TRUE(node.IsValid());
+        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>()));
         RefCountedPtr<IECInstance const> instance = node->GetInstance();
         ASSERT_TRUE(instance.IsValid());
         switch (i + 1)
@@ -479,16 +491,16 @@ TEST_F (NavigationQueryExecutorTests, ClassGroupingNodesSortedByLabel)
     ASSERT_EQ(3, executor.GetNodesCount());
 
     JsonNavNodePtr node = executor.GetNode(0);
-    ASSERT_TRUE(nullptr != node->GetKey().AsECClassGroupingNodeKey());
-    ASSERT_EQ(m_gadgetClass->GetId(), node->GetKey().AsECClassGroupingNodeKey()->GetECClassId());
+    node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>()));
+    ASSERT_EQ(m_gadgetClass->GetId(), node->GetKey()->GetECClassId());
 
     node = executor.GetNode(1);
-    ASSERT_TRUE(nullptr != node->GetKey().AsECClassGroupingNodeKey());
-    ASSERT_EQ(m_sprocketClass->GetId(), node->GetKey().AsECClassGroupingNodeKey()->GetECClassId());
+    node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>()));
+    ASSERT_EQ(m_sprocketClass->GetId(), node->GetKey()->GetECClassId());
     
     node = executor.GetNode(2);
-    ASSERT_TRUE(nullptr != node->GetKey().AsECClassGroupingNodeKey());
-    ASSERT_EQ(m_widgetClass->GetId(), node->GetKey().AsECClassGroupingNodeKey()->GetECClassId());
+    node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>()));
+    ASSERT_EQ(m_widgetClass->GetId(), node->GetKey()->GetECClassId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -924,12 +936,14 @@ TEST_F(NavigationQueryExecutorTests, SetsGroupedInstanceKeysForECInstanceNodes)
     ASSERT_EQ(2, executor.GetNodesCount());
 
     JsonNavNodePtr node1 = executor.GetNode(0);
-    ASSERT_TRUE(nullptr != node1->GetKey().AsECInstanceNodeKey());
-    AssertNodeGroupsECInstance(*node1, CreateECInstanceKey(*m_widgetClass, node1->GetKey().AsECInstanceNodeKey()->GetInstanceId()));
+    node1->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node1, bvector<Utf8String>()));
+    ASSERT_TRUE(nullptr != node1->GetKey()->AsECInstanceNodeKey());
+    AssertNodeGroupsECInstance(*node1, CreateECInstanceKey(*m_widgetClass, node1->GetKey()->AsECInstanceNodeKey()->GetInstanceId()));
     
     JsonNavNodePtr node2 = executor.GetNode(1);
-    ASSERT_TRUE(nullptr != node2->GetKey().AsECInstanceNodeKey());
-    AssertNodeGroupsECInstance(*node2, CreateECInstanceKey(*m_widgetClass, node2->GetKey().AsECInstanceNodeKey()->GetInstanceId()));
+    node2->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node2, bvector<Utf8String>()));
+    ASSERT_TRUE(nullptr != node2->GetKey()->AsECInstanceNodeKey());
+    AssertNodeGroupsECInstance(*node2, CreateECInstanceKey(*m_widgetClass, node2->GetKey()->AsECInstanceNodeKey()->GetInstanceId()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1118,7 +1132,8 @@ TEST_F(NavigationQueryExecutorTests, SetsRelatedInstanceKeysForECInstanceNodes)
     ASSERT_EQ(2, executor.GetNodesCount());
 
     JsonNavNodePtr node = executor.GetNode(0);
-    ASSERT_STREQ(gadget->GetInstanceId().c_str(), node->GetKey().AsECInstanceNodeKey()->GetInstanceId().ToString().c_str());
+    node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>()));
+    ASSERT_STREQ(gadget->GetInstanceId().c_str(), node->GetKey()->AsECInstanceNodeKey()->GetInstanceId().ToString().c_str());
     bvector<NavNodeExtendedData::RelatedInstanceKey> relatedInstanceKeys = NavNodeExtendedData(*node).GetRelatedInstanceKeys();
     ASSERT_EQ(1, relatedInstanceKeys.size());
     EXPECT_STREQ("w", relatedInstanceKeys[0].GetAlias());
@@ -1126,7 +1141,8 @@ TEST_F(NavigationQueryExecutorTests, SetsRelatedInstanceKeysForECInstanceNodes)
     EXPECT_STREQ(widget->GetInstanceId().c_str(), relatedInstanceKeys[0].GetInstanceKey().GetInstanceId().ToString().c_str());
     
     node = executor.GetNode(1);
-    ASSERT_STREQ(sprocket->GetInstanceId().c_str(), node->GetKey().AsECInstanceNodeKey()->GetInstanceId().ToString().c_str());
+    node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>()));
+    ASSERT_STREQ(sprocket->GetInstanceId().c_str(), node->GetKey()->AsECInstanceNodeKey()->GetInstanceId().ToString().c_str());
     ASSERT_TRUE(NavNodeExtendedData(*node).GetRelatedInstanceKeys().empty());
     }
 

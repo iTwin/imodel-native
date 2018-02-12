@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/CustomizationHelper.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -326,6 +326,8 @@ void CustomizationHelper::Customize(ContentProviderContextCR context, ContentSet
 
     ECInstanceKeyCR itemKey = item.GetKeys().front();
     JsonNavNodePtr node = context.GetNodesFactory().CreateECInstanceNode(context.GetConnection(), itemKey.GetClassId(), itemKey.GetInstanceId(), "");
+    // create temporary key
+    node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>()));
     ContentSetItemPropertiesSetter setter(item);
     NavNodeCustomizer customizer(context, *node, nullptr, setter);
     customizer.ApplyImageIdOverride();

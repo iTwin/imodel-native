@@ -78,7 +78,7 @@ void ContentPerformanceTests::GetContentForAllGeometricElements(Utf8CP type, int
     stmt.Prepare(m_project, "SELECT ECClassId, ECInstanceId FROM [BisCore].[GeometricElement]");
     while (BeSQLite::DbResult::BE_SQLITE_ROW == stmt.Step())
         keys.push_back(ECInstanceNodeKey::Create(stmt.GetValueId<ECClassId>(0), stmt.GetValueId<ECInstanceId>(1)));
-    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
+    KeySetCPtr input = KeySet::Create(keys);
 
     // start the timer
     Timer _timer;
@@ -125,7 +125,7 @@ TEST_F(ContentPerformanceTests, GetDescriptorForAllElementSubclasses)
     for (ECClassCP ecClass : allElementClasses)
         keys.push_back(ECInstanceNodeKey::Create(ecClass->GetId(), ECInstanceId()));
 
-    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
+    KeySetCPtr input = KeySet::Create(keys);
     
     // get the descriptor
     Timer _timer;

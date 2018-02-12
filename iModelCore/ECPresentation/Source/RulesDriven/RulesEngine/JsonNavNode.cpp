@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/JsonNavNode.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -34,7 +34,7 @@ rapidjson::Document JsonNavNode::_AsJson(rapidjson::MemoryPoolAllocator<>* alloc
     rapidjson::Document json(allocator);
     json.CopyFrom(m_json, json.GetAllocator());
     json.RemoveMember(NAVNODE_ExtendedData);
-    json.AddMember(NAVNODE_Key, GetKey().AsJson(&json.GetAllocator()), json.GetAllocator());
+    json.AddMember(NAVNODE_Key, GetKey()->AsJson(&json.GetAllocator()), json.GetAllocator());
     return json;
     }
 
@@ -75,6 +75,19 @@ void JsonNavNode::SetParentNodeId(uint64_t id)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+NavNodeKeyCPtr JsonNavNode::_GetKey() const
+    {
+    if (m_nodeKey.IsNull())
+        {
+        BeAssert(false);
+        return NavNodeKey::Create("", bvector<Utf8String>());
+        }
+    return m_nodeKey;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String JsonNavNode::_GetLabel() const {return m_json.HasMember(NAVNODE_Label) ? m_json[NAVNODE_Label].GetString() : "";}
@@ -99,7 +112,7 @@ RapidJsonValueR JsonNavNode::_GetExtendedData() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 RefCountedPtr<IECInstance const> JsonNavNode::GetInstance() const
     {
-    ECInstanceNodeKey const* key = GetKey().AsECInstanceNodeKey();
+    ECInstanceNodeKey const* key = GetKey()->AsECInstanceNodeKey();
     if (nullptr == key || !key->GetInstanceKey().IsValid())
         return nullptr;
     
@@ -182,49 +195,6 @@ bool JsonNavNode::_IsCheckboxEnabled() const {return m_json.HasMember(NAVNODE_Is
 bool JsonNavNode::_IsExpanded() const {return m_json.HasMember(NAVNODE_IsExpanded) ? m_json[NAVNODE_IsExpanded].GetBool() : false;}
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeKeyCPtr JsonNavNode::_CreateKey() const
-    {
-    NavNodeExtendedData extendedData(*this);
-
-    if (GetType().Equals(NAVNODE_TYPE_ECInstanceNode))
-        {
-        BeAssert(m_json.HasMember(NAVNODE_InstanceId));
-        BeAssert(extendedData.HasECClassId());
-        return ECInstanceNodeKey::Create(extendedData.GetECClassId(), ECInstanceId(m_json[NAVNODE_InstanceId].GetUint64()));
-        }
-
-    if (GetType().Equals(NAVNODE_TYPE_ECClassGroupingNode))
-        {
-        BeAssert(extendedData.HasECClassId());
-        BeAssert(extendedData.HasGroupingType());
-        GroupingType type = (GroupingType)extendedData.GetGroupingType();
-        if (GroupingType::Class == type)
-            return ECClassGroupingNodeKey::Create(GetNodeId(), extendedData.GetECClassId());
-        else if (GroupingType::BaseClass == type)
-            return ECClassGroupingNodeKey::Create(GetNodeId(), extendedData.GetECClassId(), "BaseECClassGroupingNode");
-        else
-            {
-            BeAssert(false);
-            return nullptr;
-            }
-        }
-
-    if (GetType().Equals(NAVNODE_TYPE_ECPropertyGroupingNode))
-        {
-        BeAssert(extendedData.HasECClassId());
-        BeAssert(extendedData.HasPropertyName());
-        BeAssert(extendedData.HasPropertyValue() || extendedData.HasPropertyValueRangeIndex());        
-        return ECPropertyGroupingNodeKey::Create(GetNodeId(), extendedData.GetECClassId(), extendedData.GetPropertyName(), 
-            extendedData.GetPropertyValueRangeIndex(), extendedData.GetPropertyValue());
-        }
-
-    // for label grouping nodes and all other nodes (custom nodes) we use DisplayLabelGroupingNodeKey
-    return DisplayLabelGroupingNodeKey::Create(GetNodeId(), m_json[NAVNODE_Label].GetString(), m_json[NAVNODE_Type].GetString());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Pranciskus.Ambrazas             05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void JsonNavNode::AddMember(Utf8CP name, rapidjson::Value& value)
@@ -260,12 +230,17 @@ void JsonNavNode::LoadECInstance() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonNavNode::SetLabel(Utf8CP label) {AddMember(NAVNODE_Label, rapidjson::Value(label, m_json.GetAllocator()).Move()); InvalidateKey();}
+void JsonNavNode::SetLabel(Utf8CP label) {AddMember(NAVNODE_Label, rapidjson::Value(label, m_json.GetAllocator()).Move());}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Pranciskus.Ambrazas             05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonNavNode::SetInstanceId(uint64_t instanceId) {AddMember(NAVNODE_InstanceId, rapidjson::Value(instanceId).Move()); InvalidateKey();}
+void JsonNavNode::SetInstanceId(uint64_t instanceId) {AddMember(NAVNODE_InstanceId, rapidjson::Value(instanceId).Move());}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+uint64_t JsonNavNode::GetInstanceId() const {return m_json.HasMember(NAVNODE_InstanceId) ? m_json[NAVNODE_InstanceId].GetUint64() : 0;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2015
@@ -304,7 +279,7 @@ void JsonNavNode::SetCollapsedImageId(Utf8CP imageId) {AddMember(NAVNODE_Collaps
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Pranciskus.Ambrazas             05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonNavNode::SetType(Utf8CP type) {AddMember(NAVNODE_Type, rapidjson::Value(type, m_json.GetAllocator()).Move()); InvalidateKey();}
+void JsonNavNode::SetType(Utf8CP type) {AddMember(NAVNODE_Type, rapidjson::Value(type, m_json.GetAllocator()).Move());}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
@@ -699,13 +674,10 @@ void NavNodesHelper::SetSkippedInstanceKeys(NavNodeR node, Utf8CP serializedJson
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool NavNodesHelper::IsGroupingNode(NavNodeCR node)
     {
-    if (nullptr != node.GetKey().AsECClassGroupingNodeKey())
-        return true;
-    if (nullptr != node.GetKey().AsECPropertyGroupingNodeKey())
-        return true;
-    if (nullptr != node.GetKey().AsDisplayLabelGroupingNodeKey() && node.GetType().Equals(NAVNODE_TYPE_DisplayLabelGroupingNode))
-        return true;
-    return false;
+    return node.GetType().Equals(NAVNODE_TYPE_DisplayLabelGroupingNode)
+        || node.GetType().Equals(NAVNODE_TYPE_ECClassGroupingNode)
+        || node.GetType().Equals(NAVNODE_TYPE_ECPropertyGroupingNode)
+        || node.GetType().Equals(NAVNODE_TYPE_ECRelationshipGroupingNode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -718,4 +690,31 @@ bool NavNodesHelper::IsCustomNode(NavNodeCR node)
         && !node.GetType().Equals(NAVNODE_TYPE_ECRelationshipGroupingNode)
         && !node.GetType().Equals(NAVNODE_TYPE_ECPropertyGroupingNode)
         && !node.GetType().Equals(NAVNODE_TYPE_DisplayLabelGroupingNode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+NavNodeKeyPtr NavNodesHelper::CreateNodeKey(JsonNavNodeCR node, bvector<Utf8String> const& path)
+    {
+    if (node.GetType().Equals(NAVNODE_TYPE_ECInstanceNode))
+        return ECInstanceNodeKey::Create(NavNodeExtendedData(node).GetECClassId(), ECInstanceId(node.GetInstanceId()), path);
+    if (node.GetType().Equals(NAVNODE_TYPE_ECClassGroupingNode) || node.GetType().Equals(NAVNODE_TYPE_ECPropertyGroupingNode))
+        return NavNodeKey::Create(node.GetType(), path, NavNodeExtendedData(node).GetECClassId());
+
+    return NavNodeKey::Create(node.GetType(), path);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+NavNodeKeyPtr NavNodesHelper::CreateNodeKey(JsonNavNodeCR node, Utf8CP pathFromRootJsonString)
+    {
+    rapidjson::Document json;
+    json.Parse(pathFromRootJsonString);
+    bvector<Utf8String> path;
+    for (RapidJsonValueCR pathElement : json.GetArray())
+        path.push_back(pathElement.GetString());
+
+    return CreateNodeKey(node, path);
     }

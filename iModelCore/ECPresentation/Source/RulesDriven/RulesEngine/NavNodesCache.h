@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/NavNodesCache.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once 
@@ -180,11 +180,6 @@ private:
     bool IsUpdatesDisabled(HierarchyLevelInfo const& info) const;
     void SetIsExpanded(uint64_t nodeId, bool isExpanded) const;
     void LimitCacheSize();
-
-    JsonNavNodeCPtr LocateECInstanceNode(IConnectionCR, ECInstanceNodeKey const&) const;
-    JsonNavNodeCPtr LocateECClassGroupingNode(IConnectionCR, ECClassGroupingNodeKey const&) const;
-    JsonNavNodeCPtr LocateECPropertyGroupingNode(IConnectionCR, ECPropertyGroupingNodeKey const&) const;
-    JsonNavNodeCPtr LocateDisplayLabelGroupingNode(IConnectionCR, DisplayLabelGroupingNodeKey const&) const;
 
     void AddQuick(HierarchyLevelInfo, NavNodesProviderR);
     void RemoveQuick(HierarchyLevelInfo const&);

@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/NavNodeProviders.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -737,7 +737,10 @@ bool QueryBasedNodesProvider::HasSimilarNodeInHierarchy(JsonNavNodeCR node, uint
     NavNodeExtendedData thisNodeExtendedData(node);
     NavNodeExtendedData parentNodeExtendedData(*parentNode);
 
-    return node.Equals(*parentNode) && 0 == strcmp(thisNodeExtendedData.GetSpecificationHash(), parentNodeExtendedData.GetSpecificationHash())
+    Utf8String nodeHash = node.GetKey()->GetPathFromRoot().back();
+    Utf8String parentHash = parentNode->GetKey()->GetPathFromRoot().back();
+
+    return nodeHash.Equals(parentHash) && 0 == strcmp(thisNodeExtendedData.GetSpecificationHash(), parentNodeExtendedData.GetSpecificationHash())
         || HasSimilarNodeInHierarchy(node, parentNode->GetParentNodeId());
     }
 
@@ -796,7 +799,7 @@ private:
     NavNodeCPtr GetParentInstanceNode() const
         {
         NavNodeCPtr parentInstanceNode = m_parent;
-        while (parentInstanceNode.IsValid() && nullptr == parentInstanceNode->GetKey().AsECInstanceNodeKey())
+        while (parentInstanceNode.IsValid() && nullptr == parentInstanceNode->GetKey()->AsECInstanceNodeKey())
             parentInstanceNode = m_nodesCache.GetNode(parentInstanceNode->GetParentNodeId());
         return parentInstanceNode;
         }
@@ -817,7 +820,7 @@ protected:
             return;
         
         DataSourceFilter::RelatedInstanceInfo relationshipInfo(m_query.GetResultParameters().GetMatchingRelationshipIds(), 
-            specification.GetRequiredRelationDirection(), parent->GetKey().AsECInstanceNodeKey()->GetInstanceId());
+            specification.GetRequiredRelationDirection(), parent->GetKey()->AsECInstanceNodeKey()->GetInstanceId());
         m_filter = DataSourceFilter(relationshipInfo, nullptr);
         }
     
@@ -841,7 +844,7 @@ protected:
             return;
 
         DataSourceFilter::RelatedInstanceInfo relationshipInfo(m_query.GetResultParameters().GetMatchingRelationshipIds(), 
-            specification.GetRequiredRelationDirection(), parent->GetKey().AsECInstanceNodeKey()->GetInstanceId());
+            specification.GetRequiredRelationDirection(), parent->GetKey()->AsECInstanceNodeKey()->GetInstanceId());
         m_filter = DataSourceFilter(relationshipInfo, nullptr);
         }
     
@@ -1372,6 +1375,8 @@ void SQLiteCacheNodesProvider::InitializeNodes()
         if (!statement->IsColumnNull(1))
             NavNodeExtendedData(*node).SetVirtualParentId(statement->GetValueUInt64(1));
 
+        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, statement->GetValueText(4)));
+
         m_nodes->push_back(node);
         }
     }
@@ -1489,9 +1494,10 @@ void CachedHierarchyLevelProvider::InitDatasourceIds(uint64_t const* physicalPar
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachedStatementPtr CachedHierarchyLevelProvider::_GetNodesStatement() const
     {
-    Utf8String query = "SELECT [n].[Data], [ds].[VirtualParentNodeId], [n].[Id], [ex].[NodeId] "
+    Utf8String query = "SELECT [n].[Data], [ds].[VirtualParentNodeId], [n].[Id], [ex].[NodeId], [nk].[PathFromRoot] "
                         "  FROM [" NODESCACHE_TABLENAME_DataSources "] ds "
                         "  LEFT JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[DataSourceId] = [ds].[Id]"
+                        "  LEFT JOIN [" NODESCACHE_TABLENAME_NodeKeys "] nk ON [nk].[NodeId] = [n].[Id]"
                         "  LEFT JOIN [" NODESCACHE_TABLENAME_ExpandedNodes "] ex ON [n].[Id] = [ex].[NodeId]"
                         " WHERE NOT [n].[IsVirtual] ";
     query.append("AND [ds].[Id] IN (").append(m_datasourceIds).append(") ");
@@ -1541,9 +1547,10 @@ CachedVirtualNodeChildrenProvider::CachedVirtualNodeChildrenProvider(NavNodesPro
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachedStatementPtr CachedVirtualNodeChildrenProvider::_GetNodesStatement() const
     {
-    Utf8String query = "SELECT [n].[Data], [ds].[VirtualParentNodeId], [n].[Id], [ex].[NodeId] "
+    Utf8String query = "SELECT [n].[Data], [ds].[VirtualParentNodeId], [n].[Id], [ex].[NodeId], [nk].[PathFromRoot] "
                         "  FROM [" NODESCACHE_TABLENAME_DataSources "] ds "
                         "  LEFT JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[DataSourceId] = [ds].[Id]"
+                        "  LEFT JOIN [" NODESCACHE_TABLENAME_NodeKeys "] nk ON [nk].[NodeId] = [n].[Id]"
                         "  LEFT JOIN [" NODESCACHE_TABLENAME_ExpandedNodes "] ex ON [n].[Id] = [ex].[NodeId]"
                         " WHERE NOT [n].[IsVirtual] "
                         "       AND [ds].[VirtualParentNodeId] ";
@@ -1640,9 +1647,10 @@ CachedStatementPtr NodesWithUndeterminedChildrenProvider::_GetCountStatement() c
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachedStatementPtr NodesWithUndeterminedChildrenProvider::_GetNodesStatement() const
     {
-    Utf8String query = "   SELECT [n].[Data], [dsn].[VirtualParentNodeId], [n].[Id], [ex].[NodeId] "
+    Utf8String query = "   SELECT [n].[Data], [dsn].[VirtualParentNodeId], [n].[Id], [ex].[NodeId], [nk].[PathFromRoot] "
                        "     FROM [" NODESCACHE_TABLENAME_DataSources "] dsn "
                        "     JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[DataSourceId] = [dsn].[Id]"
+                       "LEFT JOIN [" NODESCACHE_TABLENAME_NodeKeys "] nk ON [nk].[NodeId] = [n].[Id]"
                        "LEFT JOIN [" NODESCACHE_TABLENAME_ExpandedNodes "] ex ON [n].[Id] = [ex].[NodeId]"
                        "LEFT JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[VirtualParentNodeId] = [n].[Id]"       
                        "    WHERE [ds].[VirtualParentNodeId] IS NULL AND [dsn].[ConnectionId] = ? AND [dsn].[RulesetId] = ?"; 

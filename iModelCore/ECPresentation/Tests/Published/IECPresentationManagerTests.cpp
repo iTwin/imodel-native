@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/IECPresentationManagerTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -92,6 +92,7 @@ struct IECPresentationManagerTests : ::testing::Test
             }
         TestNavNodePtr node = TestNodesHelper::CreateInstanceNode(*ecClass, instanceKey.GetInstanceId());
         node->SetNodeId(CreateNodeId());
+        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>{std::to_string(node->GetNodeId()).c_str()}));
         node->SetLabel(label);
         return node;
         }
@@ -99,11 +100,15 @@ struct IECPresentationManagerTests : ::testing::Test
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Aidas.Vaisknoras                10/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    static TestNavNodePtr CreateTreeNode(uint64_t nodeId, uint64_t parentId)
+    static TestNavNodePtr CreateTreeNode(uint64_t nodeId, NavNodeCPtr parent)
         {
         TestNavNodePtr node = TestNavNode::Create();
         node->SetNodeId(nodeId);
-        node->SetParentNodeId(parentId);
+        bvector<Utf8String> path = (parent.IsNull()) ? bvector<Utf8String>() : parent->GetKey()->GetPathFromRoot();
+        path.push_back(std::to_string(node->GetNodeId()).c_str());
+        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, path));
+        if (parent.IsValid())
+            node->SetParentNodeId(parent->GetNodeId());
         return node;
         }
 
@@ -128,6 +133,7 @@ struct IECPresentationManagerTests : ::testing::Test
             }
         TestNavNodePtr node = TestNodesHelper::CreateClassGroupingNode(*ecClass, label);
         node->SetNodeId(CreateNodeId());
+        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>{std::to_string(node->GetNodeId()).c_str()}));
         NavNodeExtendedData(*node).SetGroupedInstanceKeys(groupedKeys);
         return node;
         }
@@ -156,6 +162,7 @@ struct IECPresentationManagerTests : ::testing::Test
             groupingValue.SetInt(rangeIndex);
         TestNavNodePtr node = TestNodesHelper::CreatePropertyGroupingNode(*ecClass, *ecProperty, label, groupingValue, -1 != rangeIndex);
         node->SetNodeId(CreateNodeId());
+        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>{std::to_string(node->GetNodeId()).c_str()}));
         NavNodeExtendedData(*node).SetGroupedInstanceKeys(groupedKeys);
         return node;
         }
@@ -167,6 +174,7 @@ struct IECPresentationManagerTests : ::testing::Test
         {
         TestNavNodePtr node = TestNodesHelper::CreateLabelGroupingNode(label);
         node->SetNodeId(CreateNodeId());
+        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>{std::to_string(node->GetNodeId()).c_str()}));
         NavNodeExtendedData(*node).SetGroupedInstanceKeys(groupedKeys);
         return node;
         }
@@ -203,7 +211,7 @@ TEST_F(IECPresentationManagerTests, GetNodesPath_InstancesHierarchy)
     */
 
     // create the keys path
-    NavNodeKeyPath keysPath = {&node1->GetKey(), &node2->GetKey(), &node3->GetKey()};
+    NavNodeKeyPath keysPath = {node1->GetKey(), node2->GetKey(), node3->GetKey()};
 
     // test
     NodesPathElement path = m_manager->GetNodesPath(s_project->GetECDb(), keysPath).get();
@@ -269,7 +277,7 @@ TEST_F(IECPresentationManagerTests, GetNodesPath_InstancesHierarchyWithGroupingW
     */
 
     // create the keys path
-    NavNodeKeyPath keysPath = {&node1->GetKey(), &node2->GetKey(), &node3->GetKey(), &node4->GetKey()};
+    NavNodeKeyPath keysPath = {node1->GetKey(), node2->GetKey(), node3->GetKey(), node4->GetKey()};
 
     // test
     NodesPathElement path = m_manager->GetNodesPath(s_project->GetECDb(), keysPath).get();
@@ -352,7 +360,7 @@ TEST_F(IECPresentationManagerTests, GetNodesPath_InstancesHierarchyWithGroupingW
     m_manager->SetHierarchy(hierarchy);
 
     // create the keys path
-    NavNodeKeyPath keysPath = {&node4->GetKey()};
+    NavNodeKeyPath keysPath = {node4->GetKey()};
 
     // test
     NodesPathElement path = m_manager->GetNodesPath(s_project->GetECDb(), keysPath).get();
@@ -409,8 +417,8 @@ TEST_F(IECPresentationManagerTests, GetNodesPath_Multiple_ReturnsTwoSeparatePath
     m_manager->SetHierarchy(hierarchy);
 
     // create the key paths
-    NavNodeKeyPath keysPath1 = {&node1_1->GetKey(), &node1_2->GetKey()};
-    NavNodeKeyPath keysPath2 = {&node2_1->GetKey(), &node2_2->GetKey(), &node2_3->GetKey()};
+    NavNodeKeyPath keysPath1 = {node1_1->GetKey(), node1_2->GetKey()};
+    NavNodeKeyPath keysPath2 = {node2_1->GetKey(), node2_2->GetKey(), node2_3->GetKey()};
     bvector<NavNodeKeyPath> keysPaths = {keysPath1, keysPath2};
 
     // test
@@ -475,10 +483,10 @@ TEST_F(IECPresentationManagerTests, GetNodesPath_Multiple_ReturnsMergedPathWhenP
     m_manager->SetHierarchy(hierarchy);
 
     // create the key paths
-    NavNodeKeyPath keysPath1 = {&node1->GetKey(), &node1_2->GetKey()};
-    NavNodeKeyPath keysPath2 = {&node1->GetKey(), &node1_2->GetKey(), &node1_3->GetKey()};
-    NavNodeKeyPath keysPath3 = {&node1->GetKey(), &node2_2->GetKey(), &node21_3->GetKey()};
-    NavNodeKeyPath keysPath4 = {&node1->GetKey(), &node2_2->GetKey(), &node22_3->GetKey()};
+    NavNodeKeyPath keysPath1 = {node1->GetKey(), node1_2->GetKey()};
+    NavNodeKeyPath keysPath2 = {node1->GetKey(), node1_2->GetKey(), node1_3->GetKey()};
+    NavNodeKeyPath keysPath3 = {node1->GetKey(), node2_2->GetKey(), node21_3->GetKey()};
+    NavNodeKeyPath keysPath4 = {node1->GetKey(), node2_2->GetKey(), node22_3->GetKey()};
     bvector<NavNodeKeyPath> keysPaths = {keysPath1, keysPath2, keysPath3, keysPath4};
 
     // test
@@ -547,10 +555,10 @@ TEST_F(IECPresentationManagerTests, GetNodesPath_Multiple_MarksTheSpecifiedPath)
     m_manager->SetHierarchy(hierarchy);
 
     // create the key paths
-    NavNodeKeyPath keysPath1 = {&node1->GetKey(), &node1_2->GetKey()};
-    NavNodeKeyPath keysPath2 = {&node1->GetKey(), &node1_2->GetKey(), &node1_3->GetKey()};
-    NavNodeKeyPath keysPath3 = {&node1->GetKey(), &node2_2->GetKey(), &node21_3->GetKey()};
-    NavNodeKeyPath keysPath4 = {&node1->GetKey(), &node2_2->GetKey(), &node22_3->GetKey()};
+    NavNodeKeyPath keysPath1 = {node1->GetKey(), node1_2->GetKey()};
+    NavNodeKeyPath keysPath2 = {node1->GetKey(), node1_2->GetKey(), node1_3->GetKey()};
+    NavNodeKeyPath keysPath3 = {node1->GetKey(), node2_2->GetKey(), node21_3->GetKey()};
+    NavNodeKeyPath keysPath4 = {node1->GetKey(), node2_2->GetKey(), node22_3->GetKey()};
     bvector<NavNodeKeyPath> keysPaths = {keysPath1, keysPath2, keysPath3, keysPath4};
 
     // test
@@ -597,17 +605,17 @@ TEST_F(IECPresentationManagerTests, GetFilteredNodesPaths)
 
     */
     Hierarchy hierarchy;
-    hierarchy[nullptr].push_back(CreateTreeNode(1, 0));
+    hierarchy[nullptr].push_back(CreateTreeNode(1, nullptr));
     NavNodeCPtr node1 = hierarchy[nullptr].back();
-    hierarchy[node1].push_back(CreateTreeNode(2, 1));
-    hierarchy[node1].push_back(CreateTreeNode(3, 1));
-    hierarchy[node1].push_back(CreateTreeNode(4, 1));
+    hierarchy[node1].push_back(CreateTreeNode(2, node1));
+    hierarchy[node1].push_back(CreateTreeNode(3, node1));
+    hierarchy[node1].push_back(CreateTreeNode(4, node1));
     NavNodeCPtr node3 = *(hierarchy[node1].begin() + 1);
-    hierarchy[node3].push_back(CreateTreeNode(5, 3));
-    hierarchy[node3].push_back(CreateTreeNode(6, 3));
+    hierarchy[node3].push_back(CreateTreeNode(5, node3));
+    hierarchy[node3].push_back(CreateTreeNode(6, node3));
     NavNodeCPtr node6 = *(hierarchy[node3].begin() + 1);
-    hierarchy[node6].push_back(CreateTreeNode(7, 6));
-    hierarchy[node6].push_back(CreateTreeNode(8, 6));
+    hierarchy[node6].push_back(CreateTreeNode(7, node6));
+    hierarchy[node6].push_back(CreateTreeNode(8, node6));
     m_manager->SetHierarchy(hierarchy);
 
 

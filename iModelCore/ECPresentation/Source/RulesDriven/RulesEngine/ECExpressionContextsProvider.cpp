@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/ECExpressionContextsProvider.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -318,8 +318,8 @@ protected:
 
             if (node.GetType().Equals(NAVNODE_TYPE_ECInstanceNode))
                 {
-                BeAssert(nullptr != node.GetKey().AsECInstanceNodeKey());
-                context.AddSymbol(*ValueSymbol::Create("InstanceId", ECValue(node.GetKey().AsECInstanceNodeKey()->GetInstanceId().ToString().c_str())));
+                BeAssert(nullptr != node.GetKey()->AsECInstanceNodeKey());
+                context.AddSymbol(*ValueSymbol::Create("InstanceId", ECValue(node.GetKey()->AsECInstanceNodeKey()->GetInstanceId().ToString().c_str())));
                 context.AddSymbol(*ValueSymbol::Create("IsInstanceNode", ECValue(true)));
                 context.AddSymbol(*PropertySymbol::Create("ECInstance", *NodeECInstanceContextEvaluator::Create(node)));
                 }
@@ -368,6 +368,8 @@ public:
             {
             ECInstanceNodeKey const* instanceKey = m_key->AsECInstanceNodeKey();
             node = JsonNavNodesFactory().CreateECInstanceNode(m_connection, instanceKey->GetECClassId(), instanceKey->GetInstanceId(), "");
+            // create temporary key
+            const_cast<JsonNavNodeP>(node.get())->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>()));
             }
 
         NodeSymbolsProvider nodeSymbols(m_rootContext.AddContext(*new NodeSymbolsProvider::Context(m_connection, node.get())));

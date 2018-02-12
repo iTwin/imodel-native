@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/SelectionManager.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -26,10 +26,10 @@ struct ISelectionProvider
 {
 protected:
     //! @see GetSelection
-    virtual INavNodeKeysContainerCPtr _GetSelection(ECDbCR) const = 0;
+    virtual KeySetCPtr _GetSelection(ECDbCR) const = 0;
 
     //! @see GetSubSelection
-    virtual INavNodeKeysContainerCPtr _GetSubSelection(ECDbCR) const = 0;
+    virtual KeySetCPtr _GetSubSelection(ECDbCR) const = 0;
 
 public:
     //! Virtual destructor.
@@ -37,11 +37,11 @@ public:
 
     //! Get the main selection.
     //! @param[in] db The db to get the selection for.
-    INavNodeKeysContainerCPtr GetSelection(ECDbCR db) const {return _GetSelection(db);}
+    KeySetCPtr GetSelection(ECDbCR db) const {return _GetSelection(db);}
 
     //! Get the sub-selection.
     //! @param[in] db The db to get the sub-selection for.
-    INavNodeKeysContainerCPtr GetSubSelection(ECDbCR db) const {return _GetSubSelection(db);}
+    KeySetCPtr GetSubSelection(ECDbCR db) const {return _GetSubSelection(db);}
 };
 
 //=======================================================================================
@@ -76,11 +76,11 @@ private:
     Utf8String m_sourceName;
     SelectionChangeType m_changeType;
     bool m_isSubSelection;
-    INavNodeKeysContainerCPtr m_keys;
+    KeySetCPtr m_keys;
 
 public:
     //! Constructor. Creates the event based on the supplied parameters.
-    SelectionChangedEvent(IConnectionCR connection, Utf8String sourceName, SelectionChangeType changeType, bool isSubSelection, INavNodeKeysContainerCR keys)
+    SelectionChangedEvent(IConnectionCR connection, Utf8String sourceName, SelectionChangeType changeType, bool isSubSelection, KeySetCR keys)
         : m_connection(&connection), m_sourceName(sourceName), m_changeType(changeType), m_isSubSelection(isSubSelection), m_keys(&keys)
         {}
 
@@ -111,7 +111,7 @@ public:
     bool IsSubSelection() const {return m_isSubSelection;}
 
     //! Get the selection affected by this selection change event.
-    INavNodeKeysContainerCR GetSelectedKeys() const {return *m_keys;}
+    KeySetCR GetSelectedKeys() const {return *m_keys;}
 
     //! Serialize this event to JSON.
     ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::Document::AllocatorType* = nullptr) const;
@@ -224,21 +224,21 @@ protected:
     //! @param[in] isSubSelection A flag indicating whether to add to the sub-selection or the main selection.
     //! @param[in] keys The keys to add to selection.
     //! @see SelectionManager::AddToSelection
-    ECPRESENTATION_EXPORT void AddToSelection(ECDbCR db, bool isSubSelection, INavNodeKeysContainerCR keys);
+    ECPRESENTATION_EXPORT void AddToSelection(ECDbCR db, bool isSubSelection, KeySetCR keys);
 
     //! Remove from selection.
     //! @param[in] db The ECDb to remove the selection from.
     //! @param[in] isSubSelection A flag indicating whether to remove from the sub-selection or the main selection.
     //! @param[in] keys The keys to remove from selection.
     //! @see SelectionManager::RemoveFromSelection
-    ECPRESENTATION_EXPORT void RemoveFromSelection(ECDbCR db, bool isSubSelection, INavNodeKeysContainerCR keys);
+    ECPRESENTATION_EXPORT void RemoveFromSelection(ECDbCR db, bool isSubSelection, KeySetCR keys);
 
     //! Change selection.
     //! @param[in] db The ECDb to change the selection in.
     //! @param[in] isSubSelection A flag indicating whether to change the sub-selection or the main selection.
     //! @param[in] keys The keys indicating the new selection.
     //! @see SelectionManager::ChangeSelection
-    ECPRESENTATION_EXPORT void ChangeSelection(ECDbCR db, bool isSubSelection, INavNodeKeysContainerCR keys);
+    ECPRESENTATION_EXPORT void ChangeSelection(ECDbCR db, bool isSubSelection, KeySetCR keys);
 
     //! Clear selection.
     //! @param[in] db The ECDb to clear the selection in.
@@ -263,16 +263,19 @@ protected:
     virtual void _RemoveListener(ISelectionChangesListener&) = 0;
     
     //! @see AddToSelection
-    virtual void _AddToSelection(ECDbCR, Utf8CP source, bool isSubSelection, INavNodeKeysContainerCR, RapidJsonValueCR extendedData) = 0;
+    virtual void _AddToSelection(ECDbCR, Utf8CP source, bool isSubSelection, KeySetCR, RapidJsonValueCR extendedData) = 0;
     
     //! @see RemoveFromSelection
-    virtual void _RemoveFromSelection(ECDbCR, Utf8CP source, bool isSubSelection, INavNodeKeysContainerCR, RapidJsonValueCR extendedData) = 0;
+    virtual void _RemoveFromSelection(ECDbCR, Utf8CP source, bool isSubSelection, KeySetCR, RapidJsonValueCR extendedData) = 0;
     
     //! @see ChangeSelection
-    virtual void _ChangeSelection(ECDbCR, Utf8CP source, bool isSubSelection, INavNodeKeysContainerCR, RapidJsonValueCR extendedData) = 0;
+    virtual void _ChangeSelection(ECDbCR, Utf8CP source, bool isSubSelection, KeySetCR, RapidJsonValueCR extendedData) = 0;
     
     //! @see ClearSelection
     virtual void _ClearSelection(ECDbCR, Utf8CP source, bool isSubSelection, RapidJsonValueCR extendedData) = 0;
+
+    //! @see RefreshSelection
+    virtual void _RefreshSelection(ECDbCR, Utf8CP source, bool isSubSelection, RapidJsonValueCR extendedData) = 0;
 
 public:
     //! Register the selection changes listener.
@@ -296,7 +299,7 @@ public:
     //! @param[in] isSubSelection A flag indicating whether to add to the sub-selection or the main selection.
     //! @param[in] keys The keys to add to selection.
     //! @param[in] extendedData The extended data that should be stored in the selection change event.
-    void AddToSelection(ECDbCR db, Utf8CP source, bool isSubSelection, INavNodeKeysContainerCR keys, RapidJsonValueCR extendedData = rapidjson::Value())
+    void AddToSelection(ECDbCR db, Utf8CP source, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData = rapidjson::Value())
         {
         _AddToSelection(db, source, isSubSelection, keys, extendedData);
         }
@@ -315,7 +318,7 @@ public:
     //! @param[in] isSubSelection A flag indicating whether to remove from the sub-selection or the main selection.
     //! @param[in] keys The keys to remove from selection.
     //! @param[in] extendedData The extended data that should be stored in the selection change event.
-    void RemoveFromSelection(ECDbCR db, Utf8CP source, bool isSubSelection, INavNodeKeysContainerCR keys, RapidJsonValueCR extendedData = rapidjson::Value())
+    void RemoveFromSelection(ECDbCR db, Utf8CP source, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData = rapidjson::Value())
         {
         _RemoveFromSelection(db, source, isSubSelection, keys, extendedData);
         }
@@ -334,7 +337,7 @@ public:
     //! @param[in] isSubSelection A flag indicating whether to change the sub-selection or the main selection.
     //! @param[in] keys The keys indicating the new selection.
     //! @param[in] extendedData The extended data that should be stored in the selection change event.
-    void ChangeSelection(ECDbCR db, Utf8CP source, bool isSubSelection, INavNodeKeysContainerCR keys, RapidJsonValueCR extendedData = rapidjson::Value())
+    void ChangeSelection(ECDbCR db, Utf8CP source, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData = rapidjson::Value())
         {
         _ChangeSelection(db, source, isSubSelection, keys, extendedData);
         }
@@ -347,6 +350,16 @@ public:
     void ClearSelection(ECDbCR db, Utf8CP source, bool isSubSelection, RapidJsonValueCR extendedData = rapidjson::Value())
         {
         _ClearSelection(db, source, isSubSelection, extendedData);
+        }
+
+    //! Refresh selection.
+    //! @param[in] db The ECDb to refresh the selection in.
+    //! @param[in] source The name of the selection source that is modifying the selection.
+    //! @param[in] isSubSelection A flag indicating whether to refresh the sub-selection or the main selection.
+    //! @param[in] extendedData The extended data that should be stored in the selection change event.
+    void RefreshSelection(ECDbCR db, Utf8CP source, bool isSubSelection, RapidJsonValueCR extendedData = rapidjson::Value())
+        {
+        _RefreshSelection(db, source, isSubSelection, extendedData);
         }
 };
 
@@ -374,14 +387,14 @@ private:
     SelectionStorage& GetStorage(IConnectionCR, bool isSubSelection) const;
     NativeLogging::ILogger& GetLogger() const;
     void OnECDbClosed(ECDbCR) const;
-    void BroadcastSelectionChangedEvent(IConnectionCR, Utf8CP source, SelectionChangeType changeType, bool isSubSelection, INavNodeKeysContainerCR, RapidJsonValueCR) const;
+    void BroadcastSelectionChangedEvent(IConnectionCR, Utf8CP source, SelectionChangeType changeType, bool isSubSelection, KeySetCR, RapidJsonValueCR) const;
 
 protected:
     //! @see ISelectionProvider::GetSelection
-    ECPRESENTATION_EXPORT INavNodeKeysContainerCPtr _GetSelection(ECDbCR) const override;
+    ECPRESENTATION_EXPORT KeySetCPtr _GetSelection(ECDbCR) const override;
 
     //! @see ISelectionProvider::GetSubSelection
-    ECPRESENTATION_EXPORT INavNodeKeysContainerCPtr _GetSubSelection(ECDbCR) const override;
+    ECPRESENTATION_EXPORT KeySetCPtr _GetSubSelection(ECDbCR) const override;
 
     //! @see ISelectionManager::AddListener
     ECPRESENTATION_EXPORT void _AddListener(ISelectionChangesListener&) override;
@@ -390,16 +403,19 @@ protected:
     ECPRESENTATION_EXPORT void _RemoveListener(ISelectionChangesListener&) override;
     
     //! @see ISelectionManager::AddToSelection
-    ECPRESENTATION_EXPORT void _AddToSelection(ECDbCR, Utf8CP, bool, INavNodeKeysContainerCR, RapidJsonValueCR) override;
+    ECPRESENTATION_EXPORT void _AddToSelection(ECDbCR, Utf8CP, bool, KeySetCR, RapidJsonValueCR) override;
     
     //! @see ISelectionManager::RemoveFromSelection
-    ECPRESENTATION_EXPORT void _RemoveFromSelection(ECDbCR, Utf8CP, bool, INavNodeKeysContainerCR, RapidJsonValueCR) override;
+    ECPRESENTATION_EXPORT void _RemoveFromSelection(ECDbCR, Utf8CP, bool, KeySetCR, RapidJsonValueCR) override;
     
     //! @see ISelectionManager::ChangeSelection
-    ECPRESENTATION_EXPORT void _ChangeSelection(ECDbCR, Utf8CP, bool, INavNodeKeysContainerCR, RapidJsonValueCR) override;
+    ECPRESENTATION_EXPORT void _ChangeSelection(ECDbCR, Utf8CP, bool, KeySetCR, RapidJsonValueCR) override;
     
     //! @see ISelectionManager::ClearSelection
     ECPRESENTATION_EXPORT void _ClearSelection(ECDbCR, Utf8CP, bool, RapidJsonValueCR) override;
+
+    //! @see ISelectionManager::RefreshSelection
+    ECPRESENTATION_EXPORT void _RefreshSelection(ECDbCR, Utf8CP, bool, RapidJsonValueCR) override;
 
 public:
     SelectionManager(IConnectionCacheCR connections) : m_connections(connections) {}

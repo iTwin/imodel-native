@@ -16,60 +16,35 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ParsedInput::ParsedInput(NavNodeKeyListCR nodeKeys, INavNodeLocater const& nodesLocater, IConnectionCR connection, ECSchemaHelper const& helper)
+ParsedInput::ParsedInput(bvector<ECInstanceKey> const& instanceKeys, INavNodeLocater const& nodesLocater, IConnectionCR connection, ECSchemaHelper const& helper)
     {
-    Parse(nodeKeys, nodesLocater, connection, helper);
+    Parse(instanceKeys, nodesLocater, connection, helper);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ParsedInput::GetNodeClasses(NavNodeKeyCR nodeKey, INavNodeLocater const& nodesLocater, IConnectionCR connection, ECSchemaHelper const& helper)
+void ParsedInput::GetNodeClasses(ECInstanceKeyCR instanceKey, INavNodeLocater const& nodesLocater, IConnectionCR connection, ECSchemaHelper const& helper)
     {
-    if (nullptr != nodeKey.AsDisplayLabelGroupingNodeKey() && !nodeKey.GetType().Equals(NAVNODE_TYPE_DisplayLabelGroupingNode))
-        {
-        // Custom nodes
-        // This type of nodes don't supply any content for class-based content specifications
-        return;
-        }
-
-    if (nullptr != nodeKey.AsECInstanceNodeKey())
-        {
-        // ECInstance node
-        ECInstanceNodeKey const& instanceNodeKey = *nodeKey.AsECInstanceNodeKey();
-        ECClassCP ecClass = helper.GetECClass(instanceNodeKey.GetECClassId());
-        if (nullptr == ecClass || !ecClass->IsEntityClass())
-            {
-            BeAssert(false);
-            return;
-            }
-        if (m_classInput.end() == m_classInput.find(ecClass))
-            m_orderedClasses.push_back(ecClass);
-        m_classInput[ecClass].push_back(instanceNodeKey.GetInstanceId());
-        return;
-        }
-        
-    // Some grouping node
-    NavNodeCPtr node = nodesLocater.LocateNode(connection, nodeKey);
-    if (node.IsNull())
+    ECClassCP ecClass = helper.GetECClass(instanceKey.GetClassId());
+    if (nullptr == ecClass || !ecClass->IsEntityClass())
         {
         BeAssert(false);
         return;
         }
-
-    NavNodeExtendedData extendedData(*node);
-    bvector<ECInstanceKey> groupedInstanceKeys = extendedData.GetGroupedInstanceKeys();
-    for (ECInstanceKeyCR key : groupedInstanceKeys)
-        GetNodeClasses(*ECInstanceNodeKey::Create(key), nodesLocater, connection, helper);
+    if (m_classInput.end() == m_classInput.find(ecClass))
+        m_orderedClasses.push_back(ecClass);
+    m_classInput[ecClass].push_back(instanceKey.GetInstanceId());
+    return;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ParsedInput::Parse(NavNodeKeyListCR keys, INavNodeLocater const& nodesLocater, IConnectionCR connection, ECSchemaHelper const& helper)
+void ParsedInput::Parse(bvector<ECInstanceKey> const& keys, INavNodeLocater const& nodesLocater, IConnectionCR connection, ECSchemaHelper const& helper)
     {
-    for (NavNodeKeyCPtr const& key : keys)
-        GetNodeClasses(*key, nodesLocater, connection, helper);
+    for (ECInstanceKeyCR key : keys)
+        GetNodeClasses(key, nodesLocater, connection, helper);
     }
     
 /*---------------------------------------------------------------------------------**//**
