@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/AlternatingConvexClipTree.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -33,12 +33,11 @@ struct AlternatingConvexClipTreeNode
 bvector<DPoint3d> m_points;
 ConvexClipPlaneSet m_planes;
 bvector<AlternatingConvexClipTreeNode> m_children;
-bool m_isPositiveArea;
 size_t m_startIndex;  // first index in master array (not the local m_points)
 size_t m_numPoints;   // number of points used from master array, possibly wrapping)
 
 //! Initialize this node with index data referencing the parent polygon.
-GEOMDLLIMPEXP void InitialzeWithIndices (size_t index0, size_t numPoint, bool isPositiveArea);
+GEOMDLLIMPEXP void InitialzeWithIndices (size_t index0, size_t numPoint);
 
 //! Add a new child that has an empty plane set and given indices.
 GEOMDLLIMPEXP void AddEmptyChild (size_t index0, size_t numPoint);
