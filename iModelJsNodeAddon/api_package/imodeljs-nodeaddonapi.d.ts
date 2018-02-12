@@ -7,6 +7,11 @@ import { DbResult, DbOpcode } from "@bentley/bentleyjs-core/lib/BeSQLite";
 import { OpenMode } from "@bentley/bentleyjs-core/lib/BeSQLite";
 import { IDisposable } from "@bentley/bentleyjs-core/lib/Disposable";
 
+/* The primary key for the DGN_TABLE_Txns table. */
+interface AddonTxnId {
+    readonly _id: string;
+}
+
 /* The signature of a callback that takes two arguments, the first being the error that describes a failed outcome and the second being the data
 returned in a successful outcome. */
 interface IModelJsAddonCallback<ERROR_TYPE, SUCCESS_TYPE> {
@@ -77,84 +82,6 @@ export interface AddonBriefcaseManagerOnConflictPolicy {
     deleteVsUpdate: /*AddonBriefcaseManagerOnConflict*/number;
 }
 
-export interface AddonHeldResources {
-    /** The outcome of the query */
-    status: RepositoryStatus;
-    /** The set of locks tracked by the repository and held by the briefcase */
-    locks: string;
-    /** The set of locks tracked by the repository and unavailable for acquisition by this briefcase */
-    unavailableLocks: string;
-    /** The set of codes tracked by the repository and held by the briefcase */
-    codes: string;
-    /** The set of codes tracked by the repository and unavailable for acquisition by this briefcase */
-    unavailableCodes: string;
-}
-
-/*
-export enum AddonRepositoryManagerResponseOptions {
-    None = 0, // No special options
-    LockState = 1 << 0, // If a request to acquire locks is denied, the response will include the current lock state of each denied lock
-    CodeState = 1 << 1, // Include DgnCodeState for any codes for which the request was denied
-    RevisionIds = 1 << 2, // For locks or codes requiring a revision to be pulled, include the specific revision IDs.
-    UnlimitedReporting = 1 << 3, // Acuire all denied instances despite server side thresholds
-    All = 0xff, // Include all options
-}
-
-export enum AddonRepositoryManagerRequestPurpose {
-    Acquire,    // Attempted to acquire locks/codes
-    Query,      // Queried server for availability of locks/codes
-    FastQuery,  // Queried local cache for availability of locks/codes. Response may not include full ownership details for denied request.
-}
-*/
-
-/* Must match JSON format expected by native code. */
-export interface AddonRepositoryManagerResponse {
-    /** The outcome of the operation */
-    Status: RepositoryStatus;
-    /** The purpose of the request */
-    Purpose: number; // AddonRepositoryManagerRequestPurpose;
-    /** The options for customizing the response to this request */
-    Options: number; // AddonRepositoryManagerResponseOptions;
-    /** The states of any locks which could *not* be acquired, if ResponseOptions::LockState was specified */
-    LockStates: string;
-    /** The states of any codes which could *not* be reserved, if ResponseOptions::CodeState was specified */
-    CodeStates: string;
-}
-
-/** A request made to the IBriefcaseManager and possibly forwarded to the IRepositoryManager.
-  * Specifies a set of locks the briefcase wishes to acquire and/or a set of codes to be reserved.
-  * Must match JSON format expected by native code.
-  */
-export interface AddonRepositoryManagerRequest {
-    /** The locks to be acquired */
-    Locks: string; // DgnLockSet in JSON format
-    /** The codes to be reserved */
-    Codes: string; // CodeSet in JSON format
-    /** The options for customizing the response to this request */
-    Options: number; // AddonRepositoryManagerResponseOptions;
-}
-
-/** The interface to be implemented by a TypeScript class that functions as a RepositoryManager that native code can call on to process requests. */
-export interface AddonRepositoryManager {
-    /**
-     * Process a request.
-     * @param req The request. This will be a AddonRepositoryManagerRequest object in JSON.stringified format.
-     * @param db The DgnDb
-     * @param queryOnly Is the request only to query the locks and codes? Otherwise, the request is to acquire them.
-     * @return The server's response.
-     */
-    processRequest(req: string /*AddonRepositoryManagerRequest*/, db: AddonDgnDb, queryOnly: boolean): AddonRepositoryManagerResponse;
-
-    /**
-     * Retrieves the set of resources held by a briefcase as recorded in the repository
-     * @param db    The requesting briefcase
-     * @remarks This method shoudld only return resources tracked by the repository. It should exclude locks that are implicitly
-     * held for elements/models created locally by this briefcase and not yet committed to the repository
-     * @return the locks and codes that are held, plus a list of locks and codes that are unavailable.
-     */
-    queryHeldResources(db: AddonDgnDb): AddonHeldResources;
-}
-
 /**
  * The AddonDgnDb class that is projected by the iModelJs node addon. 
  */
@@ -188,10 +115,6 @@ declare class AddonDgnDb {
 
   /** Close this iModel. */
   closeDgnDb(): void;
-
-  /** Register a AddonRepositoryManager. This is called indirectly as a side-effect of the app calling saveChanges or briefcaseManagerEndBulkOperation. */
-  setRepositoryManager(mgr: AddonRepositoryManager): void;
-
 
   /**
    * Process change sets
@@ -467,6 +390,13 @@ declare class AddonDgnDb {
      */
     setBriefcaseManagerOptimisticConcurrencyControlPolicy(conflictPolicy: AddonBriefcaseManagerOnConflictPolicy): RepositoryStatus;
     
+
+    txnManagerQueryFirstTxnId(): AddonTxnId;
+    txnManagerQueryNextTxnId(txnId: AddonTxnId): AddonTxnId;
+    txnManagerGetCurrentTxnId(): AddonTxnId;
+    txnManagerGetTxnDescription(txnId: AddonTxnId): string;
+    txnManagerIsTxnIdValid(txnId: AddonTxnId): boolean;
+
   /**
    * Execute a test by name
    * @param testName The name of the test to execute
@@ -520,7 +450,7 @@ declare class AddonECDb implements IDisposable {
      * @param schemaPathName Path to ECSchema file on disk. All reference schema should also be present on same path. 
      * @return non-zero error status if operation failed.
      */
-    importSchema(schemaPathName:string): DbResult;    
+    importSchema(schemaPathName:string): DbResult;
 }
 
 /* The AddonECSqlStatement class that is projected by the iModelJs node addon. */

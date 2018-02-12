@@ -603,6 +603,72 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         return Napi::Number::New(Env(), (int) result);
         }
 
+    static TxnManager::TxnId TxnIdFromString(Utf8StringCR str)
+        {
+        BeInt64Id fakeId;
+        BeInt64Id::FromString(fakeId, str.c_str());
+        return TxnManager::TxnId(fakeId.GetValue());
+        }
+
+    static Utf8String TxnIdToString(TxnManager::TxnId txnId)
+        {
+        BeInt64Id fakeId(txnId.GetValue());
+        return fakeId.ToHexStr();
+        }
+
+    Napi::Value TxnManagerGetCurrentTxnId(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+
+        return Napi::String::New(Env(), TxnIdToString(m_dgndb->Txns().GetCurrentTxnId()).c_str());
+        }
+
+    Napi::Value TxnManagerQueryFirstTxnId(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+
+        TxnManager::TxnId startTxnId = m_dgndb->Txns().QueryNextTxnId(TxnManager::TxnId(0));
+
+        return Napi::String::New(Env(), TxnIdToString(startTxnId).c_str());
+        }
+
+    Napi::Value TxnManagerQueryNextTxnId(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, txnIdHexStr);
+        REQUIRE_DB_TO_BE_OPEN
+        RETURN_IF_HAD_EXCEPTION
+
+        auto next = m_dgndb->Txns().QueryNextTxnId(TxnIdFromString(txnIdHexStr));
+
+        return Napi::String::New(Env(), TxnIdToString(next).c_str());
+        }
+
+    Napi::Value TxnManagerQueryPreviousTxnId(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, txnIdHexStr);
+        REQUIRE_DB_TO_BE_OPEN
+        RETURN_IF_HAD_EXCEPTION
+
+        auto next = m_dgndb->Txns().QueryPreviousTxnId(TxnIdFromString(txnIdHexStr));
+
+        return Napi::String::New(Env(), TxnIdToString(next).c_str());
+        }
+
+    Napi::Value TxnManagerGetTxnDescription(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, txnIdHexStr);
+        REQUIRE_DB_TO_BE_OPEN
+        RETURN_IF_HAD_EXCEPTION
+
+        return Napi::String::New(Env(), m_dgndb->Txns().GetTxnDescription(TxnIdFromString(txnIdHexStr)).c_str());
+        }
+
+    Napi::Value TxnManagerIsTxnIdValid(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, txnIdHexStr);
+        return Napi::Boolean::New(Env(), TxnIdFromString(txnIdHexStr).IsValid());
+        }
+
     Napi::Value StartCreateChangeSet(const Napi::CallbackInfo& info)
         {
         REQUIRE_DB_TO_BE_OPEN
@@ -1162,6 +1228,12 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
             InstanceMethod("appendBriefcaseManagerResourcesRequest", &AddonDgnDb::AppendBriefcaseManagerResourcesRequest),
             InstanceMethod("extractBriefcaseManagerResourcesRequest", &AddonDgnDb::ExtractBriefcaseManagerResourcesRequest),
             InstanceMethod("inBulkOperation", &AddonDgnDb::InBulkOperation),
+            InstanceMethod("txnManagerQueryFirstTxnId", &AddonDgnDb::TxnManagerQueryFirstTxnId),
+            InstanceMethod("txnManagerQueryNextTxnId", &AddonDgnDb::TxnManagerQueryNextTxnId),
+            InstanceMethod("txnManagerQueryPreviousTxnId", &AddonDgnDb::TxnManagerQueryPreviousTxnId),
+            InstanceMethod("txnManagerGetCurrentTxnId", &AddonDgnDb::TxnManagerGetCurrentTxnId),
+            InstanceMethod("txnManagerGetTxnDescription", &AddonDgnDb::TxnManagerGetTxnDescription),
+            InstanceMethod("txnManagerIsTxnIdValid", &AddonDgnDb::TxnManagerIsTxnIdValid),
 						
 			// DEVELOPMENT-ONLY METHODS:
 			InstanceMethod("executeTest", &AddonDgnDb::ExecuteTest),
