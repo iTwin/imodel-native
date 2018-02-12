@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/PresentationRuleSet.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -46,6 +46,7 @@ struct PresentationRuleSet : public RefCountedBase, HashableBase
         SortingRuleList                        m_sortingRules;
         UserSettingsGroupList                  m_userSettings;
         ContentModifierList                    m_contentModifiers;
+        InstanceLabelOverrideList              m_instanceLabelOverrides;
 
     private:
         //Private constructor. This class instance should be creates using static helper methods.
@@ -210,6 +211,9 @@ struct PresentationRuleSet : public RefCountedBase, HashableBase
 
         //! Collection of rules, which should be for supplementing ruleset with additional rules
         ECPRESENTATION_EXPORT ContentModifierList const&     GetContentModifierRules(void) const;
+
+        //! Collection of rules, which should override instance label of specific class.
+        ECPRESENTATION_EXPORT InstanceLabelOverrideList const& GetInstanceLabelOverrides(void) const;
     };
 
 template<> ECPRESENTATION_EXPORT RootNodeRuleList* PresentationRuleSet::GetRules<RootNodeRule>();
@@ -224,6 +228,7 @@ template<> ECPRESENTATION_EXPORT RenameNodeRuleList* PresentationRuleSet::GetRul
 template<> ECPRESENTATION_EXPORT SortingRuleList* PresentationRuleSet::GetRules<SortingRule>();
 template<> ECPRESENTATION_EXPORT UserSettingsGroupList* PresentationRuleSet::GetRules<UserSettingsGroup>();
 template<> ECPRESENTATION_EXPORT ContentModifierList* PresentationRuleSet::GetRules<ContentModifier>();
+template<> ECPRESENTATION_EXPORT InstanceLabelOverrideList* PresentationRuleSet::GetRules<InstanceLabelOverride>();
 template<> ECPRESENTATION_EXPORT LocalizationResourceKeyDefinitionList* PresentationRuleSet::GetRules<LocalizationResourceKeyDefinition>();
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

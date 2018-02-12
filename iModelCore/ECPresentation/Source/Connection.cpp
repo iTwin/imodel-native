@@ -35,56 +35,11 @@ rapidjson::Document ConnectionEvent::AsJson(rapidjson::Document::AllocatorType* 
 
 struct ProxyConnection;
 //=======================================================================================
-// @bsiclass                                    Grigas.Petraitis                11/2017
-//=======================================================================================
-struct ThreadVerifyingConnection : IConnection
-{
-    friend struct AnyThreadConnectionAccess;
-private:
-    intptr_t m_threadId;
-    mutable BeMutex m_threadVerificationMutex;
-    mutable bool m_skipThreadVerification;
-    BeAtomic<bool> m_aa;
-protected:
-    ThreadVerifyingConnection() : m_threadId(BeThreadUtilities::GetCurrentThreadId()), m_skipThreadVerification(false) {}
-    void VerifyThread() const
-        {
-        BeMutexHolder lock(m_threadVerificationMutex);
-        if (!m_skipThreadVerification)
-            BeAssert(BeThreadUtilities::GetCurrentThreadId() == m_threadId && "Function called from invalid thread!");
-        }
-    uintptr_t GetThreadId() const {return m_threadId;}
-};
-
-//=======================================================================================
-// @bsiclass                                    Grigas.Petraitis                11/2017
-//=======================================================================================
-struct AnyThreadConnectionAccess
-{
-private:
-    ThreadVerifyingConnection const& m_connection;
-    bool m_prevValue;
-public:
-    AnyThreadConnectionAccess(ThreadVerifyingConnection const& connection)
-        : m_connection(connection)
-        {
-        BeMutexHolder lock(m_connection.m_threadVerificationMutex);
-        m_prevValue = m_connection.m_skipThreadVerification;
-        m_connection.m_skipThreadVerification = true;
-        }
-    ~AnyThreadConnectionAccess()
-        {
-        BeMutexHolder lock(m_connection.m_threadVerificationMutex);
-        m_connection.m_skipThreadVerification = m_prevValue;
-        }
-};
-
-//=======================================================================================
 //! A connection for the specified ECDb. Tracks for when the ECDb is closed and notifies
 //! ConnectionManager.
 // @bsiclass                                    Grigas.Petraitis                10/2017
 //=======================================================================================
-struct PrimaryConnection : RefCounted<ThreadVerifyingConnection>, IECDbClosedListener
+struct PrimaryConnection : RefCounted<IConnection>, IECDbClosedListener
 {
 private:
     ConnectionManager& m_manager;
@@ -105,10 +60,10 @@ private:
 
 protected:
     Utf8StringCR _GetId() const override {return m_id;}
-    ECDbR _GetECDb() const override {VerifyThread(); return m_ecdb;}
-    BeSQLite::Db& _GetDb() const override {VerifyThread(); return m_ecdb;}
-    bool _IsOpen() const override {VerifyThread(); return m_isOpen;}
-    bool _IsReadOnly() const override {VerifyThread(); return m_ecdb.IsReadonly();}
+    ECDbR _GetECDb() const override {return m_ecdb;}
+    BeSQLite::Db& _GetDb() const override {return m_ecdb;}
+    bool _IsOpen() const override {return m_isOpen;}
+    bool _IsReadOnly() const override {return m_ecdb.IsReadonly();}
     int _GetPriority() const override {return 100;}
     void _InterruptRequests() const override;
     void _OnConnectionClosed(ECDbCR db) override;
@@ -137,7 +92,7 @@ struct IProxyConnectionsTracker
 //! being used.
 // @bsiclass                                    Grigas.Petraitis                10/2017
 //=======================================================================================
-struct ProxyConnection : ThreadVerifyingConnection
+struct ProxyConnection : IConnection
 {
 private:
     IProxyConnectionsTracker* m_tracker;
@@ -155,10 +110,9 @@ private:
         : m_tracker(tracker), m_primaryConnection(primaryConnection)
         {
 #ifdef MULTIPLE_CONNECTIONS
-        AnyThreadConnectionAccess noThreadVerification(m_primaryConnection);
         m_db.OpenBeSQLiteDb(m_primaryConnection.GetDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::Readonly, DefaultTxn::No));
 #endif
-        LOG_CONNECTIONS.infov("%p ProxyConnection[%s] created on thread %d.", this, m_primaryConnection.GetId().c_str(), (int)GetThreadId());
+        LOG_CONNECTIONS.infov("%p ProxyConnection[%s] created on thread %d.", this, m_primaryConnection.GetId().c_str(), (int)BeThreadUtilities::GetCurrentThreadId());
         }
 
 protected:
@@ -170,50 +124,27 @@ protected:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            11/2017
     +---------------+---------------+---------------+---------------+-----------+------*/
-    ECDbR _GetECDb() const override
-        {
-        VerifyThread();
-        AnyThreadConnectionAccess noThreadVerification(m_primaryConnection);
-        return m_primaryConnection.GetECDb();
-        }
+    ECDbR _GetECDb() const override {return m_primaryConnection.GetECDb();}
 
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            01/2018
     +---------------+---------------+---------------+---------------+-----------+------*/
-    BeSQLite::Db& _GetDb() const override
-        {
-        VerifyThread();
-        return m_db;
-        }
+    BeSQLite::Db& _GetDb() const override {return m_db;}
 
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            11/2017
     +---------------+---------------+---------------+---------------+-----------+------*/
-    bool _IsOpen() const override
-        {
-        VerifyThread();
-        AnyThreadConnectionAccess noThreadVerification(m_primaryConnection);
-        return m_primaryConnection.IsOpen();
-        }
+    bool _IsOpen() const override {return m_primaryConnection.IsOpen();}
 
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            11/2017
     +---------------+---------------+---------------+---------------+-----------+------*/
-    bool _IsReadOnly() const override
-        {
-        VerifyThread();
-        AnyThreadConnectionAccess noThreadVerification(m_primaryConnection);
-        return m_primaryConnection.IsReadOnly();
-        }
+    bool _IsReadOnly() const override {return m_primaryConnection.IsReadOnly();}
     
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            01/2018
     +---------------+---------------+---------------+---------------+-----------+------*/
-    void _InterruptRequests() const override
-        {
-        VerifyThread();
-        m_db.Interrupt();
-        }
+    void _InterruptRequests() const override {m_db.Interrupt();}
 
 public:
     /*-----------------------------------------------------------------------------**//**
@@ -221,7 +152,6 @@ public:
     +---------------+---------------+---------------+---------------+-----------+------*/
     static RefCountedPtr<ProxyConnection> Create(IProxyConnectionsTracker* tracker, PrimaryConnection const& primaryConnection)
         {
-        AnyThreadConnectionAccess noThreadVerification(primaryConnection);
         BeAssert(primaryConnection.IsOpen());
         return new ProxyConnection(tracker, primaryConnection);
         }
@@ -281,12 +211,8 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PrimaryConnection::_InterruptRequests() const
     {
-    VerifyThread();
     for (ProxyConnection const* proxy : m_proxyConnections)
-        {
-        AnyThreadConnectionAccess noThreadVerification(*proxy);
         proxy->InterruptRequests();
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -294,7 +220,6 @@ void PrimaryConnection::_InterruptRequests() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PrimaryConnection::_OnConnectionClosed(ECDbCR db)
     {
-    VerifyThread();
     BeAssert(&db == &m_ecdb);
     if (m_isOpen)
         {
@@ -309,7 +234,6 @@ void PrimaryConnection::_OnConnectionClosed(ECDbCR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PrimaryConnection::_OnConnectionReloaded(ECDbCR db)
     {
-    VerifyThread();
     BeAssert(&db == &m_ecdb);
     if (m_isOpen)
         {
@@ -488,7 +412,6 @@ public:
         {
         for (auto pair : m_connections)
             {
-            AnyThreadConnectionAccess noThreadVerification(pair.second->GetPrimaryConnection());
             if (&pair.second->GetPrimaryConnection().GetDb() == &ecdb || &pair.second->GetConnection()->GetDb() == &ecdb)
                 return pair.second->GetConnection();
             }

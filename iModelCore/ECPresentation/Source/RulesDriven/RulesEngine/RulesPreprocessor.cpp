@@ -80,6 +80,7 @@ static void AppendRules(PresentationRuleSetR target, PresentationRuleSetCR sourc
     CopyRules(target, source.GetContentRules());
     CopyRules(target, source.GetImageIdOverrides());
     CopyRules(target, source.GetLabelOverrides());
+    CopyRules(target, source.GetInstanceLabelOverrides());
     CopyRules(target, source.GetStyleOverrides());
     CopyRules(target, source.GetGroupingRules());
     CopyRules(target, source.GetLocalizationResourceKeyDefinitions());

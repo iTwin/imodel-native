@@ -674,6 +674,7 @@ TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_Retur
 TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_ReturnsOnlySubclassesOfProvidedBaseClass)
     {
     ECEntityClassCP class1 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class1")->GetEntityClassCP();
+    // unused - ECEntityClassCP baseof2and3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "BaseOf2and3")->GetEntityClassCP();
     ECEntityClassCP class2 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class2")->GetEntityClassCP();
     ECEntityClassCP class3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class3")->GetEntityClassCP();
     ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class1HasClass2And3")->GetRelationshipClassCP();
@@ -782,69 +783,4 @@ TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_Retur
     EXPECT_EQ(class1, result[0][0].GetTargetClass());
     ASSERT_EQ(1, result[1].size());
     EXPECT_EQ(class2, result[1][0].GetTargetClass());
-    }
-
-struct IdSetHelperTests : ::testing::Test
-    {
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(IdSetHelperTests, CreatesINClauseWithZeroKeys)
-    {
-    Utf8String clause;
-    IdSetHelper::BindSetAction result = IdSetHelper::CreateInVirtualSetClause(clause, bvector<ECInstanceKey>(), "test1");
-    EXPECT_EQ(IdSetHelper::BIND_Ids, result);
-    EXPECT_STREQ("0", clause.c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(IdSetHelperTests, CreatesINClauseWithSmallEvenNumberOfKeys)
-    {
-    bvector<ECInstanceKey> keys = {
-        ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)),
-        ECInstanceKey(ECClassId((uint64_t)2), ECInstanceId((uint64_t)2)),
-        ECInstanceKey(ECClassId((uint64_t)3), ECInstanceId((uint64_t)3)),
-        ECInstanceKey(ECClassId((uint64_t)4), ECInstanceId((uint64_t)4))
-        };
-
-    Utf8String clause;
-    IdSetHelper::BindSetAction result = IdSetHelper::CreateInVirtualSetClause(clause, keys, "test1");
-    EXPECT_EQ(IdSetHelper::BIND_Ids, result);
-    EXPECT_STREQ("test1 IN (?,?,?,?)", clause.c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(IdSetHelperTests, CreatesINClauseWithSmallOddNumberOfKeys)
-    {
-    bvector<ECInstanceKey> keys = {
-        ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)),
-        ECInstanceKey(ECClassId((uint64_t)2), ECInstanceId((uint64_t)2)),
-        ECInstanceKey(ECClassId((uint64_t)3), ECInstanceId((uint64_t)3))
-        };
-
-    Utf8String clause;
-    IdSetHelper::BindSetAction result = IdSetHelper::CreateInVirtualSetClause(clause, keys, "test1");
-    EXPECT_EQ(IdSetHelper::BIND_Ids, result);
-    EXPECT_STREQ("test1 IN (?,?,?)", clause.c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(IdSetHelperTests, CreatesInVirtualSetClauseWithLargeNumberOfKeys)
-    {
-    bvector<ECInstanceKey> keys;
-    for (uint64_t i = 1; i <= 101; ++i)
-        keys.push_back(ECInstanceKey(ECClassId(i), ECInstanceId(i)));
-
-    Utf8String clause;
-    IdSetHelper::BindSetAction result = IdSetHelper::CreateInVirtualSetClause(clause, keys, "test1");
-    EXPECT_EQ(IdSetHelper::BIND_VirtualSet, result);
-    EXPECT_STREQ("InVirtualSet(?, test1)", clause.c_str());
     }

@@ -17,7 +17,7 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 Presentation rule for adding and configuring check boxes.
 * @bsiclass                                     Andrius.Zonys                   11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct CheckBoxRule : public CustomizationRule
+struct CheckBoxRule : public ConditionalCustomizationRule
     {
     private:
         Utf8String              m_propertyName;

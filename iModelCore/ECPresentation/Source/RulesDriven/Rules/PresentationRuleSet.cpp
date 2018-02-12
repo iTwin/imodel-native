@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/Rules/PresentationRuleSet.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -58,6 +58,7 @@ PresentationRuleSet::~PresentationRuleSet ()
     CommonTools::FreePresentationRules (m_renameNodeRules);
     CommonTools::FreePresentationRules (m_sortingRules);
     CommonTools::FreePresentationRules (m_contentModifiers);
+    CommonTools::FreePresentationRules (m_instanceLabelOverrides);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -153,7 +154,8 @@ bool PresentationRuleSet::ReadXml (BeXmlDomR xmlDom)
     CommonTools::LoadRulesFromXmlNode <RenameNodeRule>    (ruleSetNode, m_renameNodeRules,  RENAMENODE_RULE_XML_NODE_NAME);
     CommonTools::LoadRulesFromXmlNode <SortingRule>       (ruleSetNode, m_sortingRules,     SORTING_RULE_XML_NODE_NAME);
     CommonTools::LoadRulesFromXmlNode <ContentModifier>   (ruleSetNode, m_contentModifiers, CONTENTMODIEFIER_XML_NODE_NAME);
-
+    CommonTools::LoadRulesFromXmlNode <InstanceLabelOverride> (ruleSetNode, m_instanceLabelOverrides, INSTANCE_LABEL_OVERRIDE_XML_NODE_NAME);
+    
     return true;
     }
 
@@ -188,6 +190,7 @@ void PresentationRuleSet::WriteXml (BeXmlDomR xmlDom)
     CommonTools::WriteRulesToXmlNode<RenameNodeRule,    RenameNodeRuleList>    (ruleSetNode, m_renameNodeRules);
     CommonTools::WriteRulesToXmlNode<SortingRule,       SortingRuleList>       (ruleSetNode, m_sortingRules);
     CommonTools::WriteRulesToXmlNode<ContentModifier,   ContentModifierList>   (ruleSetNode, m_contentModifiers);
+    CommonTools::WriteRulesToXmlNode<InstanceLabelOverride,InstanceLabelOverrideList> (ruleSetNode, m_instanceLabelOverrides);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -394,6 +397,11 @@ SortingRuleList const& PresentationRuleSet::GetSortingRules (void) const      { 
 ContentModifierList const& PresentationRuleSet::GetContentModifierRules (void) const { return m_contentModifiers; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceLabelOverrideList const& PresentationRuleSet::GetInstanceLabelOverrides (void) const { return m_instanceLabelOverrides; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 MD5 PresentationRuleSet::_ComputeHash(Utf8CP) const
@@ -476,6 +484,11 @@ MD5 PresentationRuleSet::_ComputeHash(Utf8CP) const
         Utf8StringCR ruleHash = rule->GetHash(currentHash.c_str());
         md5.Add(ruleHash.c_str(), ruleHash.size());
         }
+    for (InstanceLabelOverrideP rule : m_instanceLabelOverrides)
+        {
+        Utf8StringCR ruleHash = rule->GetHash(currentHash.c_str());
+        md5.Add(ruleHash.c_str(), ruleHash.size());
+        }
     return md5;
     }
 
@@ -492,5 +505,6 @@ template<> RenameNodeRuleList* PresentationRuleSet::GetRules<RenameNodeRule>() {
 template<> SortingRuleList* PresentationRuleSet::GetRules<SortingRule>() {return &m_sortingRules;}
 template<> ContentModifierList* PresentationRuleSet::GetRules<ContentModifier>() {return &m_contentModifiers;}
 template<> UserSettingsGroupList* PresentationRuleSet::GetRules<UserSettingsGroup>() {return &m_userSettings;}
+template<> InstanceLabelOverrideList* PresentationRuleSet::GetRules<InstanceLabelOverride>() {return &m_instanceLabelOverrides;}
 template<> LocalizationResourceKeyDefinitionList* PresentationRuleSet::GetRules<LocalizationResourceKeyDefinition>() {return &m_localizationResourceKeyDefinitions;}
 END_BENTLEY_ECPRESENTATION_NAMESPACE

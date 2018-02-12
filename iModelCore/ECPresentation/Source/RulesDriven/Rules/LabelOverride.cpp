@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/Rules/LabelOverride.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -24,7 +24,7 @@ LabelOverride::LabelOverride ()
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 LabelOverride::LabelOverride (Utf8StringCR condition, int priority, Utf8StringCR label, Utf8StringCR description)
-    : CustomizationRule (condition, priority, false), m_label (label), m_description (description)
+    : ConditionalCustomizationRule (condition, priority, false), m_label (label), m_description (description)
     {
     }
 
@@ -47,7 +47,7 @@ bool LabelOverride::_ReadXml (BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_description, LABEL_OVERRIDE_XML_ATTRIBUTE_DESCRIPTION))
         m_description = "";
 
-    return PresentationRule::_ReadXml (xmlNode);
+    return ConditionalCustomizationRule::_ReadXml (xmlNode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -58,7 +58,7 @@ void LabelOverride::_WriteXml (BeXmlNodeP xmlNode) const
     xmlNode->AddAttributeStringValue (LABEL_OVERRIDE_XML_ATTRIBUTE_LABEL, m_label.c_str ());
     xmlNode->AddAttributeStringValue (LABEL_OVERRIDE_XML_ATTRIBUTE_DESCRIPTION, m_description.c_str ());
 
-    PresentationRule::_WriteXml (xmlNode);
+    ConditionalCustomizationRule::_WriteXml (xmlNode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -91,7 +91,7 @@ void LabelOverride::_Accept(CustomizationRuleVisitor& visitor) const { visitor._
 +---------------+---------------+---------------+---------------+---------------+------*/
 MD5 LabelOverride::_ComputeHash(Utf8CP parentHash) const
     {
-    MD5 md5 = CustomizationRule::_ComputeHash(parentHash);
+    MD5 md5 = ConditionalCustomizationRule::_ComputeHash(parentHash);
     md5.Add(m_label.c_str(), m_label.size());
     md5.Add(m_description.c_str(), m_description.size());
     return md5;

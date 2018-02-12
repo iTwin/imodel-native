@@ -697,7 +697,7 @@ void ContentQueryExecutor::_ReadRecord(ECSqlStatement& statement)
         for (ContentDescriptor::Field const* field : descriptor.GetAllFields())
             {
             Utf8StringCR fieldName = field->GetName();
-            if (field->IsDisplayLabelField())
+            if (field->IsDisplayLabelField() && descriptor.ShowLabels())
                 {
                 // if this is a display label field, set the display label and also append the value
                 displayLabel = statement.GetValueText(columnIndex);

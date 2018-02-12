@@ -15,7 +15,7 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 Presentation rule for configuring node rename functionality.
 * @bsiclass                                    dmitrijus.tiazlovas                11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct RenameNodeRule : public CustomizationRule
+struct RenameNodeRule : public ConditionalCustomizationRule
     {
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
@@ -38,7 +38,7 @@ struct RenameNodeRule : public CustomizationRule
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECPRESENTATION_EXPORT RenameNodeRule ();
+        RenameNodeRule() {}
 
         //! Constructor.
         ECPRESENTATION_EXPORT RenameNodeRule (Utf8StringCR condition, int priority);

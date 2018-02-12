@@ -137,10 +137,7 @@ private:
     ECClassSet GetECClasses(ECSchemaSet const& schemas) const;
     ECSchemaSet GetECSchemas(Utf8StringCR supportedSchemasStr) const;
     void GetPaths(bvector<bpair<RelatedClassPath, bool>>& paths, bmap<ECRelationshipClassCP, int>& relationshipsUseCounter, 
-        bset<RelatedClass>&, SupportedClassesResolver const&, BeSQLite::VirtualSet const& sourceClassIds, int relationshipDirection, 
-        int depth, ECEntityClassCP targetClass, bool include) const;
-    void GetPaths(bvector<bpair<RelatedClassPath, bool>>& paths, bmap<ECRelationshipClassCP, int>& relationshipsUseCounter, 
-        bset<RelatedClass>&, ECSqlStatement&, SupportedClassesResolver const&, BeSQLite::VirtualSet const& sourceClassIds, 
+        bset<RelatedClass>&, SupportedClassesResolver const&, bset<ECClassId> const& sourceClassIds, 
         int relationshipDirection, int depth, ECEntityClassCP targetClass, bool include) const;
                 
 public:
@@ -254,24 +251,6 @@ public:
     static ECValue GetValue(IConnectionCR, ECClassCR, ECInstanceId, ECPropertyCR);
     static void SetValue(IConnectionCR, ECInstanceKeyCR, Utf8CP propertyName, ECValueCR);
     static void SetValue(IConnectionCR, ECClassCR, ECInstanceId, ECPropertyCR, ECValueCR);
-};
-
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                10/2017
-+===============+===============+===============+===============+===============+======*/
-struct IdSetHelper : NonCopyableClass
-{
-    enum BindSetAction
-        {
-        BIND_VirtualSet,
-        BIND_Ids,
-        };
-
-private:
-    IdSetHelper() {}
-public:
-    ECPRESENTATION_EXPORT static BindSetAction CreateInVirtualSetClause(Utf8StringR clause, bvector<ECInstanceKey> const& keys, Utf8StringCR idFieldName);
-    ECPRESENTATION_EXPORT static BindSetAction CreateInVirtualSetClause(Utf8StringR clause, BeSQLite::IdSet<ECClassId> const& keys, Utf8StringCR idFieldName);
 };
 
 /*=================================================================================**//**

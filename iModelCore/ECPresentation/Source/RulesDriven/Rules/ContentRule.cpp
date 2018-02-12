@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/Rules/ContentRule.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -16,7 +16,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentRule::ContentRule () : PresentationRule (), m_customControl ("")
+ContentRule::ContentRule () : m_customControl ("")
     {
     }
 
@@ -24,7 +24,7 @@ ContentRule::ContentRule () : PresentationRule (), m_customControl ("")
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentRule::ContentRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled)
-    : PresentationRule (condition, priority, onlyIfNotHandled), m_customControl ("")
+    : ConditionalPresentationRule (condition, priority, onlyIfNotHandled), m_customControl ("")
     {
     }
 
@@ -32,7 +32,7 @@ ContentRule::ContentRule (Utf8StringCR condition, int priority, bool onlyIfNotHa
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentRule::ContentRule(ContentRuleCR other)
-    : PresentationRule(other), m_customControl(other.m_customControl)
+    : ConditionalPresentationRule(other), m_customControl(other.m_customControl)
     {
     CommonTools::CloneRules(m_specifications, other.m_specifications);
     }
@@ -71,7 +71,7 @@ bool ContentRule::_ReadXml (BeXmlNodeP xmlNode)
             CommonTools::LoadRuleFromXmlNode<SelectedNodeInstancesSpecification, ContentSpecificationList>(child, m_specifications);
         }
 
-    return PresentationRule::_ReadXml (xmlNode);
+    return ConditionalPresentationRule::_ReadXml (xmlNode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -83,7 +83,7 @@ void ContentRule::_WriteXml (BeXmlNodeP xmlNode) const
 
     CommonTools::WriteRulesToXmlNode<ContentSpecification, ContentSpecificationList> (xmlNode, m_specifications);
 
-    PresentationRule::_WriteXml (xmlNode);
+    ConditionalPresentationRule::_WriteXml (xmlNode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -116,7 +116,7 @@ void ContentRule::SetCustomControl (Utf8StringCR customControl)    { m_customCon
 +---------------+---------------+---------------+---------------+---------------+------*/
 MD5 ContentRule::_ComputeHash(Utf8CP parentHash) const
     {
-    MD5 md5 = PresentationRule::_ComputeHash(parentHash);
+    MD5 md5 = ConditionalPresentationRule::_ComputeHash(parentHash);
     md5.Add(m_customControl.c_str(), m_customControl.size());
 
     Utf8String currentHash = md5.GetHashString();

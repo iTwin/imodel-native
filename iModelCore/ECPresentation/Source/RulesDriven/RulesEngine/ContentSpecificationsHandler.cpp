@@ -430,6 +430,8 @@ static bset<ECClassCP> CollectContentModifiers(ECSchemaHelper const& helper, Pre
         else
             classes.insert(ecClass); 
         }
+    for (InstanceLabelOverrideCP labelOverride : ruleset.GetInstanceLabelOverrides())
+        classes.insert(helper.GetECClass(labelOverride->GetClassName().c_str())); 
     return classes;
     }
 

@@ -24,7 +24,7 @@ SortingRule::SortingRule ()
 * @bsimethod                                    Eligijus.Mauragas               11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 SortingRule::SortingRule (Utf8StringCR condition, int priority, Utf8StringCR schemaName, Utf8StringCR className, Utf8StringCR propertyName, bool sortAscending, bool doNotSort, bool isPolymorphic)
-    : CustomizationRule(condition, priority, false),
+    : ConditionalCustomizationRule(condition, priority, false),
       m_schemaName (schemaName), m_className (className), m_propertyName (propertyName), m_sortAscending (sortAscending), m_doNotSort (doNotSort), m_isPolymorphic (isPolymorphic)
     {
     }
@@ -60,7 +60,7 @@ bool SortingRule::_ReadXml (BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_isPolymorphic,  COMMON_XML_ATTRIBUTE_ISPOLYMORPHIC))
         m_isPolymorphic = false;
 
-    return PresentationRule::_ReadXml (xmlNode);
+    return ConditionalCustomizationRule::_ReadXml (xmlNode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -75,7 +75,7 @@ void SortingRule::_WriteXml (BeXmlNodeP xmlNode) const
     xmlNode->AddAttributeBooleanValue (SORTING_RULE_XML_ATTRIBUTE_DONOTSORT,      m_doNotSort);
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_ISPOLYMORPHIC,  m_isPolymorphic);
 
-    PresentationRule::_WriteXml (xmlNode);
+    ConditionalCustomizationRule::_WriteXml (xmlNode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -118,7 +118,7 @@ void SortingRule::_Accept(CustomizationRuleVisitor& visitor) const { visitor._Vi
 +---------------+---------------+---------------+---------------+---------------+------*/
 MD5 SortingRule::_ComputeHash(Utf8CP parentHash) const
     {
-    MD5 md5 = CustomizationRule::_ComputeHash(parentHash);
+    MD5 md5 = ConditionalCustomizationRule::_ComputeHash(parentHash);
     md5.Add(m_schemaName.c_str(), m_schemaName.size());
     md5.Add(m_className.c_str(), m_className.size());
     md5.Add(m_propertyName.c_str(), m_propertyName.size());

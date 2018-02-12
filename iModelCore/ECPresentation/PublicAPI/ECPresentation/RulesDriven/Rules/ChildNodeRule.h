@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/ChildNodeRule.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -73,7 +73,7 @@ struct SubCondition : HashableBase
 ChildNodeRule defines rules for generating child nodes.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct EXPORT_VTABLE_ATTRIBUTE ChildNodeRule : public PresentationRule
+struct EXPORT_VTABLE_ATTRIBUTE ChildNodeRule : public ConditionalPresentationRule
     {
     private:
         RuleTargetTree             m_targetTree;

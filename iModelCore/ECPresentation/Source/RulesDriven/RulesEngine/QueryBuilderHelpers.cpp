@@ -585,3 +585,37 @@ void RelatedClassPath::Reverse(Utf8CP firstTargetClassAlias, bool isFirstTargetP
             spec.SetTargetClassAlias(Utf8String(spec.GetTargetClass()->GetName()).ToLower());
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bmap<ECClassCP, bvector<ECPropertyCP>> QueryBuilderHelpers::GetMappedLabelOverridingProperties(ECSchemaHelper const& helper, InstanceLabelOverrideList labelOverrides)
+    {
+    std::sort(labelOverrides.begin(),labelOverrides.end(), [](InstanceLabelOverrideCP a, InstanceLabelOverrideCP b) {return a->GetPriority() > b->GetPriority();});
+    bmap<ECClassCP, bvector<ECPropertyCP>> mappedProperties;
+    for (InstanceLabelOverrideP labelOverride : labelOverrides)
+        {
+        ECClassCP ecClass = helper.GetECClass(labelOverride->GetClassName().c_str());
+        if (nullptr == ecClass)
+            {
+            BeAssert(false && "Invalid class name");
+            continue;
+            }
+        auto iter = mappedProperties.find(ecClass);
+        if (iter == mappedProperties.end())
+            iter = mappedProperties.Insert(ecClass, bvector<ECPropertyCP>()).first;
+
+        bvector<ECPropertyCP> properties;
+        for (Utf8StringCR propertyName : labelOverride->GetPropertyNames())
+            {
+            ECPropertyCP ecProperty = ecClass->GetPropertyP(propertyName);
+            if (nullptr == ecProperty)
+                {
+                BeAssert(false && "Invalid property name");
+                continue;
+                }
+            iter->second.push_back(ecProperty);
+            }
+        }
+    return mappedProperties;
+    }

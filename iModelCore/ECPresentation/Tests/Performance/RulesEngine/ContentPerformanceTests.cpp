@@ -72,14 +72,14 @@ struct ContentPerformanceTests : RulesEnginePerformanceTests
         return ruleset;
         }
 
-    void GetContent(SelectionInfo const&, Utf8CP type, int expectedContentSize, Utf8CP passName);
-    void GetContentForAllGeometricElements(Utf8CP type, int expectedContentSize);
+    void GetContent(SelectionInfo const&, Utf8CP type, int expectedContentSize, int flags, Utf8CP passName);
+    void GetContentForAllGeometricElements(Utf8CP type, int expectedContentSize, int flags);
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentPerformanceTests::GetContent(SelectionInfo const& selection, Utf8CP type, int expectedContentSize, Utf8CP passName)
+void ContentPerformanceTests::GetContent(SelectionInfo const& selection, Utf8CP type, int expectedContentSize, int flags, Utf8CP passName)
     {
     // start the timer
     Utf8PrintfString timerName("%s: %s pass", BeTest::GetNameOfCurrentTest(), passName);
@@ -89,6 +89,13 @@ void ContentPerformanceTests::GetContent(SelectionInfo const& selection, Utf8CP 
     RulesDrivenECPresentationManager::ContentOptions options = CreateContentOptions();
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, type, selection, options.GetJson()).get();
 
+    if (descriptor->GetContentFlags() != (flags | descriptor->GetContentFlags()))
+        {
+        ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
+        modifiedDescriptor->SetContentFlags(flags | descriptor->GetContentFlags());
+        descriptor = modifiedDescriptor;
+        }
+        
     // get the content
     ContentCPtr content = m_manager->GetContent(m_project, *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
@@ -100,7 +107,7 @@ void ContentPerformanceTests::GetContent(SelectionInfo const& selection, Utf8CP 
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentPerformanceTests::GetContentForAllGeometricElements(Utf8CP type, int expectedContentSize)
+void ContentPerformanceTests::GetContentForAllGeometricElements(Utf8CP type, int expectedContentSize, int flags = 0)
     {
     // getting content for all geometric elements in the dataset
     NavNodeKeyList keys;
@@ -110,8 +117,8 @@ void ContentPerformanceTests::GetContentForAllGeometricElements(Utf8CP type, int
         keys.push_back(ECInstanceNodeKey::Create(stmt.GetValueId<ECClassId>(0), stmt.GetValueId<ECInstanceId>(1)));
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
 
-    GetContent(selection, type, expectedContentSize, "First");
-    GetContent(selection, type, expectedContentSize, "Second");
+    GetContent(selection, type, expectedContentSize, flags, "First");
+    GetContent(selection, type, expectedContentSize, flags, "Second");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -202,6 +209,16 @@ TEST_F(ContentPerformanceTests, GetPropertyPaneContentForAllGeometricElements)
 
 /*---------------------------------------------------------------------------------**//**
 * The test is based on DGN view selection use case where the user uses fence selection to
+* select a bunch of elements and the rules engine has to get content for property pane
+* @betest                                       Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentPerformanceTests, GetPropertyPaneContentWithLabelsForAllGeometricElements)
+    {
+    GetContentForAllGeometricElements(ContentDisplayType::PropertyPane, 1, (int)ContentFlags::ShowLabels);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* The test is based on DGN view selection use case where the user uses fence selection to
 * select a bunch of elements and the rules engine has to get content for grid view
 * @betest                                       Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -218,4 +235,70 @@ TEST_F(ContentPerformanceTests, GetGridContentForAllGeometricElements)
 TEST_F(ContentPerformanceTests, GetGraphicsContentForAllGeometricElements)
     {
     GetContentForAllGeometricElements(ContentDisplayType::Graphics, 7414);
+    }
+
+/*=================================================================================**//**
+* @bsiclass                                     Aidas.Vaiksnoras                01/2018
++===============+===============+===============+===============+===============+======*/
+struct LabelOverrideContentPerformanceTests : ContentPerformanceTests
+    {
+    PresentationRuleSetPtr _SupplyRuleset() const override
+        {
+        PresentationRuleSetPtr ruleset = ContentPerformanceTests::_SupplyRuleset();
+        ruleset->AddPresentationRule(*new LabelOverride(R"(ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Element", "BisCore"))", 100, R"(IIF(IsNull(this.UserLabel) OR this.UserLabel="", this.CodeValue, this.UserLabel))", ""));
+        return ruleset;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* The test is based on DGN view selection use case where the user uses fence selection to
+* select a bunch of elements and the rules engine has to get content for dgn view
+* @betest                                       Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(LabelOverrideContentPerformanceTests, GetGridContentForAllGeometricElements)
+    {
+    GetContentForAllGeometricElements(ContentDisplayType::Grid, 7414);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* The test is based on DGN view selection use case where the user uses fence selection to
+* select a bunch of elements and the rules engine has to get content for property pane
+* @betest                                       Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(LabelOverrideContentPerformanceTests, GetPropertyPaneContentWithLabelsForAllGeometricElements)
+    {
+    GetContentForAllGeometricElements(ContentDisplayType::PropertyPane, 1, (int)ContentFlags::ShowLabels);
+    }
+
+/*=================================================================================**//**
+* @bsiclass                                     Aidas.Vaiksnoras                01/2018
++===============+===============+===============+===============+===============+======*/
+struct InstanceLabelOverrideContentPerformanceTests : ContentPerformanceTests
+    {
+    PresentationRuleSetPtr _SupplyRuleset() const override
+        {
+        PresentationRuleSetPtr ruleset = ContentPerformanceTests::_SupplyRuleset();
+        ruleset->AddPresentationRule(*new InstanceLabelOverride(100, true, "BisCore:Element", "CodeValue,UserLabel"));
+        return ruleset;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* The test is based on DGN view selection use case where the user uses fence selection to
+* select a bunch of elements and the rules engine has to get content for dgn view
+* @betest                                       Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(InstanceLabelOverrideContentPerformanceTests, GetGridContentForAllGeometricElements)
+    {
+    GetContentForAllGeometricElements(ContentDisplayType::Grid, 7414);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* The test is based on DGN view selection use case where the user uses fence selection to
+* select a bunch of elements and the rules engine has to get content for property pane
+* @betest                                       Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(InstanceLabelOverrideContentPerformanceTests, GetPropertyPaneContentWithLabelsForAllGeometricElements)
+    {
+    GetContentForAllGeometricElements(ContentDisplayType::PropertyPane, 1, (int)ContentFlags::ShowLabels);
     }

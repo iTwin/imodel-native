@@ -125,7 +125,7 @@ TEST_F(CustomFunctionTests, GetECInstanceDisplayLabel_UsesInstanceLabel)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CustomFunctionTests, GetECInstanceDisplayLabel_UsesClassDisplayLabel)
+TEST_F(CustomFunctionTests, GetECInstanceDisplayLabel_UsesDefaultInstanceDisplayLabel)
     {
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
@@ -134,7 +134,7 @@ TEST_F(CustomFunctionTests, GetECInstanceDisplayLabel_UsesClassDisplayLabel)
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, m_widgetInstanceId));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    ASSERT_STREQ(Utf8String(s_widgetClass->GetDisplayLabel().c_str()).c_str(), stmt.GetValueText(0));
+    ASSERT_STREQ(CommonTools::GetDefaultDisplayLabel(*m_widgetInstance).c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1227,4 +1227,40 @@ TEST_F(CustomFunctionTests, AreDoublesEqualByValue_ReturnsFalse)
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), query));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
     EXPECT_EQ(0, stmt.GetValueInt(0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CustomFunctionTests, GetDisplayLabelForInstanceInHierarchy_UsesInstanceLabelOverride)
+    {
+    m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
+
+    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *s_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("WidgetID"));});
+
+    ECInstanceId widgetInstanceID;
+    ECInstanceId::FromString(widgetInstanceID, widgetInstance->GetInstanceId().c_str());
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
+
+    ECSqlStatement stmt;
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetNavigationPropertyLabel(?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, widgetInstanceID));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    ASSERT_STREQ("WidgetID", stmt.GetValueText(0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CustomFunctionTests, GetDisplayLabelForInstanceInHierarchy_UsesClassDisplayLabelAsDefault)
+    {
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
+
+    ECSqlStatement stmt;
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetNavigationPropertyLabel(?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, m_widgetInstanceId));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    ASSERT_STREQ(CommonTools::GetDefaultDisplayLabel(s_widgetClass->GetDisplayLabel(), m_widgetInstanceId.GetValue()).c_str(), stmt.GetValueText(0));
     }
