@@ -2,13 +2,14 @@
 |
 |     $Source: Client/WebApi/WebApiV2.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
 
 #include "WebApi.h"
+#include "WebApiV2Utils/JobApi.h"
 #include <WebServices/Azure/AzureBlobStorageClient.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
@@ -24,6 +25,7 @@ struct WebApiV2 : public WebApi
     private:
         WSInfo m_info;
         IAzureBlobStorageClientPtr m_azureClient;
+        JobApiPtr m_jobApi;
 
     private:
         BeVersion GetMaxWebApiVersion() const;
@@ -57,6 +59,15 @@ struct WebApiV2 : public WebApi
             ICancellationTokenPtr ct
             ) const;
         WSFileResult ResolveFileDownloadResponse(Http::Response& response, BeFileName filePath) const;
+
+        AsyncTaskPtr<WSUpdateFileResult> WebApiV2::ResolveUpdateFileResponse
+            (
+            Http::Response& httpResponse,
+            Utf8StringCR url,
+            BeFileNameCR filePath,
+            Http::Request::ProgressCallbackCR uploadProgressCallback,
+            ICancellationTokenPtr ct
+            ) const;
 
     public:
         WebApiV2(std::shared_ptr<const ClientConfiguration> configuration, WSInfo info);
@@ -113,8 +124,8 @@ struct WebApiV2 : public WebApi
             (
             HttpBodyPtr changeset,
             Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
-            ICancellationTokenPtr ct = nullptr,
-            IWSRepositoryClient::RequestOptionsPtr options = nullptr
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
+            ICancellationTokenPtr ct = nullptr
             ) const override;
 
         virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
@@ -122,6 +133,7 @@ struct WebApiV2 : public WebApi
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
             Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
@@ -131,6 +143,7 @@ struct WebApiV2 : public WebApi
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
             Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
@@ -141,12 +154,14 @@ struct WebApiV2 : public WebApi
             Utf8StringCR eTag = nullptr,
             BeFileNameCR filePath = BeFileName(),
             Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
         virtual AsyncTaskPtr<WSDeleteObjectResult> SendDeleteObjectRequest
             (
             ObjectIdCR objectId,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
@@ -155,6 +170,7 @@ struct WebApiV2 : public WebApi
             ObjectIdCR objectId,
             BeFileNameCR filePath,
             Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
     };

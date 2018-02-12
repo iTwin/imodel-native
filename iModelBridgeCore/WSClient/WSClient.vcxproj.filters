@@ -540,6 +540,15 @@
     <ClCompile Include="iModelHubClient\FileAccessKey.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Client\WSJob.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Client\WebApi\Jobs\JobApi.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Client\WebApi\WebApiV2Utils\JobApi.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client\WebApi\WebApi.h">
@@ -1238,6 +1247,12 @@
     <ClInclude Include="PublicAPI\WebServices\Cache\SyncNotifier.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Client\WebApi\WebApiV2Utils\JobApi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Client\WSJob.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="WSClient.PartFile.xml" />
@@ -1287,6 +1302,9 @@
     <None Include="CachePrewire.mke" />
     <None Include="l10n-WSClient.mke" />
     <None Include="CacheSchemasDelivery.mke" />
+    <None Include="l10n-WSClient.mke" />
+    <None Include="Licensing\Licensing.mki" />
+    <None Include="Tests\UnitTests\WSClientTests.vcxproj" />
     <None Include="UnZip.py" />
     <None Include="ClientLibCompileOptions.mki" />
     <None Include="Azure\Azure.mki" />

@@ -2,7 +2,7 @@
  |
  |     $Source: Client/ChunkedUploadRequest.cpp $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -88,6 +88,25 @@ void ChunkedUploadRequest::SetCancellationToken(ICancellationTokenPtr token)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas 01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ChunkedUploadRequest::AddLastRequestHeadersTo(Http::RequestR request)
+    {
+    for (auto& value : GetLastRequestHeaders().GetMap())
+        {
+        request.GetHeaders().AddValue(value.first, value.second);
+        }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas 01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+HttpRequestHeadersR ChunkedUploadRequest::GetLastRequestHeaders()
+    {
+    return m_lastRequestHeaders;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ChunkedUploadRequest::SetUploadProgressCallback(Http::Request::ProgressCallbackCR onProgress)
@@ -148,6 +167,12 @@ AsyncTaskPtr<void> ChunkedUploadRequest::SendHandshakeAndContinue(std::shared_pt
         // Format based on https://www.ietf.org/rfc/rfc1806.txt, https://tools.ietf.org/html/rfc6266#ref-ISO-8859-1
         request.GetHeaders().SetContentDisposition(Utf8PrintfString("attachment; filename=\"%s\"", cuRequest->m_mainBodyFileName.c_str()));
         }
+
+    bool isOnlyHandshakeRequest = cuRequest->m_mainBody.IsNull();
+    bool isOneRequestAndNoHandshake = cuRequest->m_handshakeBody.IsNull() && !cuRequest->m_mainBody.IsNull() && DefaultChunkSize >= cuRequest->m_mainBody->GetLength();
+
+    if (isOnlyHandshakeRequest || isOneRequestAndNoHandshake)
+        cuRequest->AddLastRequestHeadersTo(request);
 
     // Setup Handshake request
     if (cuRequest->m_etag.empty())
@@ -251,6 +276,7 @@ void ChunkedUploadRequest::SendChunkAndContinue(std::shared_ptr<ChunkedUploadReq
         // TFS#636152
         request.SetRetryOptions(Http::Request::RetryOption::DontRetry);
         request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::UploadProcessing);
+        cuRequest->AddLastRequestHeadersTo(request);
         }
     else
         {

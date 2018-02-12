@@ -389,7 +389,7 @@ IWSRepositoryClient::RequestOptionsPtr requestOptions
         changeset->GetRequestOptions().SetCustomOption(ServerSchema::ExtendedParameters::DetailedError_Codes, "false");
 
     HttpStringBodyPtr request = HttpStringBody::Create(changeset->ToRequestString());
-    return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken, requestOptions)->Then<StatusResult>
+    return m_wsRepositoryClient->SendChangesetRequestWithOptions(request, nullptr, requestOptions, cancellationToken)->Then<StatusResult>
         ([=](const WSChangesetResult& result)
         {
         if (result.IsSuccess())
