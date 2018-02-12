@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/DgnImportContext_Test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -643,6 +643,82 @@ TEST_F(ImportTest, ImportElementsWithDependencies)
         TestElementDrivesElementHandler::GetHandler().Clear();
     }
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle      02/18
+//---------------------------------------------------------------------------------------
+TEST_F(ImportTest, InsertOtherElementsInElementDrivesElementOnRootChanged)
+    {
+    struct TestElementDependency final : TestElementDrivesElementHandler::Callback
+        {
+        bvector<DgnElementId> m_createdElements;
+
+        TestElementDependency() { TestElementDrivesElementHandler::SetCallback(this); }
+        ~TestElementDependency() { TestElementDrivesElementHandler::SetCallback(nullptr); }
+
+        void _OnRootChanged(DgnDbR dgndb, ECInstanceId relId, DgnElementId rootId, DgnElementId depId) override
+            {
+            auto root = dgndb.Elements().Get<TestElement>(rootId);
+            auto dep = dgndb.Elements().Get<TestElement>(depId);
+            ASSERT_TRUE(root.IsValid() && dep.IsValid());
+
+            TestElementPtr e = TestElement::Create(dgndb, dep->GetModelId(), dep->GetCategoryId(), "");
+            e->SetUserLabel("Inserted In _OnRootChanged");
+            ASSERT_TRUE(dgndb.Elements().Insert(*e).IsValid());
+            m_createdElements.push_back(e->GetElementId());
+            }
+
+        void _ProcessDeletedDependency(DgnDbR, dgn_TxnTable::ElementDep::DepRelData const&) override {}
+        };
+
+    SetupSeedProject(L"InsertOtherElementsInElementDrivesElementOnRootChanged.bim", Db::OpenMode::ReadWrite, true);
+
+    TestElementDrivesElementHandler::GetHandler().Clear();
+    TestElementDependency dep;
+
+    PhysicalModelPtr model1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "Model1");
+    DgnCategoryId gcatid = DgnDbTestUtils::GetFirstSpatialCategoryId(*m_db);
+
+    // Create 2 elements and make the first depend on the second
+    TestElementPtr e1 = TestElement::Create(*m_db, model1->GetModelId(), gcatid, "e1");
+    ASSERT_TRUE(m_db->Elements().Insert(*e1).IsValid());
+    TestElementPtr e2 = TestElement::Create(*m_db, model1->GetModelId(), gcatid, "e2");
+    ASSERT_TRUE(m_db->Elements().Insert(*e2).IsValid());
+
+    ASSERT_TRUE(dep.m_createdElements.empty());
+    ECInstanceKey edeKey = TestElementDrivesElementHandler::Insert(*m_db, e2->GetElementId(), e1->GetElementId());
+    ASSERT_TRUE(edeKey.IsValid());
+    ASSERT_EQ(0, dep.m_createdElements.size()) << "_OnRootChanged not expected to be called yet";
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
+    ASSERT_EQ(1, dep.m_createdElements.size()) << "Commit triggers _OnRootChanged which is expected to successfully create another element";
+    DgnElementId elementCreatedByDependency = dep.m_createdElements[0];
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_db, "SELECT UserLabel FROM bis.Element WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, elementCreatedByDependency));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("Inserted In _OnRootChanged", stmt.GetValueText(0));
+    }
+
+    {
+    //verify element id sequence in Db
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT CAST(Val AS INTEGER) FROM be_Local WHERE Name='bis_elementidsequence'"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(elementCreatedByDependency.GetValue(), stmt.GetValueUInt64(0));
+    stmt.Finalize();
+
+    //verify element id sequence in cache
+    size_t blvCacheIndex = 0;
+    ASSERT_TRUE(m_db->GetBLVCache().TryGetIndex(blvCacheIndex, "bis_elementidsequence"));
+    uint64_t sequenceVal = 0;
+    ASSERT_EQ(BE_SQLITE_OK, m_db->GetBLVCache().QueryValue(sequenceVal, blvCacheIndex));
+    ASSERT_EQ(elementCreatedByDependency.GetValue(), sequenceVal);
+    }
+
+    TestElementDrivesElementHandler::GetHandler().Clear();
+    }
 
 #if defined (BENTLEY_WIN32) // Relies on getting fonts from the OS; this is Windows Desktop-only.
 

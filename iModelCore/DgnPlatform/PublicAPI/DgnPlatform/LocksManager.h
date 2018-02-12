@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/LocksManager.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -341,7 +341,7 @@ public:
 
     void ExtractLockSet(DgnLockSet& locks); //!< @private
     void InsertLock(LockableId id, LockLevel level);  //!< @private
-    DGNPLATFORM_EXPORT void FromRevision(DgnRevision& revision, DgnDbCR dgndb); //!< @private
+    DGNPLATFORM_EXPORT void FromRevision(DgnRevision& revision, DgnDbCR dgndb, bool extractInserted = true); //!< @private
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
