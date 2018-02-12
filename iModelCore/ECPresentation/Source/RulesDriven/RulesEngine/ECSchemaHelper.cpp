@@ -958,45 +958,6 @@ static void AppendPath(bvector<RelatedClassPath>& paths, RelatedClassPath const&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void AppendPath(bvector<RelatedClassPath>& paths, RelatedClassPath const& path)
-    {
-    if (paths.size() > 0)
-        {
-        size_t index = paths.size();
-        while (index > 0)
-            {
-            RelatedClassPath const& includedPath = paths[index - 1];
-
-            // if path lengths are different, they can't be similar
-            if (includedPath.size() != path.size())
-                {
-                --index;
-                continue;
-                }
-
-            // the new path is already included polymorphically by another path
-            if (DoesPathContainAnotherPath(includedPath, path))
-                return;
-
-            // the new path includes another (already included) path polymorphically - 
-            // the included path must be removed
-            if (DoesPathContainAnotherPath(path, includedPath))
-                {
-                paths.erase(paths.begin() + index - 1);
-                continue;
-                }
-
-            --index;
-            }
-        }
-    
-    // did not find any similar paths - simply append the new path
-    paths.push_back(path);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                03/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
 static void AppendPath(bvector<bpair<RelatedClassPath, bool>>& paths, RelatedClassPath const& path, bool forInclude)
     {
     if (paths.size() > 0)
