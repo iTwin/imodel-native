@@ -218,6 +218,10 @@ BENTLEYDLL_EXPORT static void SetFailOnAssert (bool doFail, BeAssertFunctions::A
 //! @return true if tests will break when assertion failures are detected or false if not.
 BENTLEYDLL_EXPORT static bool GetFailOnAssert (BeAssertFunctions::AssertType atype = BeAssertFunctions::AssertType::All);
 
+//! Disable invalid printf parameter asserts in some tests that produce them to test failures.
+//! Should not be used in other cases.
+BENTLEYDLL_EXPORT static void SetFailOnInvalidParameterAssert(bool doFail);
+
 //! Returns a flag indicating the there was an assertion failure in the current test.
 BENTLEYDLL_EXPORT static bool GetAssertionFailed();
 

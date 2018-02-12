@@ -92,7 +92,7 @@ TEST (BeFileNameTests, BeFileNameSetName)
 // @betest                                      Shaun.Sewall                    10/11
 //---------------------------------------------------------------------------------------
 // Need to debug on Linux and MacOS
-#if !defined(BENTLEYCONFIG_OS_LINUX) && !defined(BENTLEYCONFIG_OS_APPLE_MACOS)
+#if !defined(BENTLEYCONFIG_OS_LINUX) && !defined(BENTLEYCONFIG_OS_APPLE_MACOS) && !defined(BENTLEYCONFIG_OS_APPLE_IOS)
 TEST (BeFileNameTests, BeFileNameSetNameUtf8)
 {
 #if defined (_WIN32)

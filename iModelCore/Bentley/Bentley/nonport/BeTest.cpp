@@ -56,6 +56,7 @@ static BeAssertFunctions::T_BeAssertHandler*    s_assertHandler;                
 static bool                                     s_assertHandlerCanBeChanged=true;   // MT: s_bentleyCS
 static bvector<BeTest::T_BeAssertListener*>     s_assertListeners;                  // MT: s_bentleyCS
 static bool                                     s_failOnAssert[(int)BeAssertFunctions::AssertType::TypeCount]; // MT: Problem! If one thread sets this, it will affect assertions that fail on other threads. *** WIP_MT make this thread-local?
+static bool                                     s_failOnInvalidParameterAssert = true;
 static bool                                     s_runningUnderGtest;                // indicates that we are running under gtest. MT: set only during initialization 
 static bool                                     s_hadAssert;
 static RefCountedPtr<BeTest::Host>              s_host;                             // MT: set only during initialization. Used on multiple threads. Must be thread-safe internally.
@@ -298,16 +299,24 @@ void            BeTest::SetFailOnAssert (bool doFail, BeAssertFunctions::AssertT
     s_bentleyCS.unlock();
     }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Taslim.Murad    01/2018
 //--------------------------------------------------------------------------------------
 void BeTest::setS_mainThreadId (intptr_t id)
-{
+    {
     s_mainThreadId = id;
     return void ();
-}
+    }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                                    01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeTest::SetFailOnInvalidParameterAssert(bool doFail)
+    {
+    BeMutexHolder lock(s_bentleyCS);
+    s_failOnInvalidParameterAssert = doFail;
+    }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1088,6 +1097,21 @@ uintptr_t pReserved
         parameterFailure.append(buf);
         }
 
+    if (parameterFailure.empty())
+        parameterFailure = L"Invalid format parameter";
+
+    bool failOnAssert;
+        {
+        BeMutexHolder holder(s_bentleyCS);
+        failOnAssert = s_failOnInvalidParameterAssert;
+        }
+
+    if (!failOnAssert)
+        {
+        BentleyApi::NativeLogging::LoggingManager::GetLogger(L"BeAssert")->infov(L"Ignoring parameter failure: %ls\n", parameterFailure.c_str());
+        return;
+        }
+    
     BentleyApi::NativeLogging::LoggingManager::GetLogger(L"BeAssert")->error(parameterFailure.c_str());
 
 #ifdef USE_GTEST

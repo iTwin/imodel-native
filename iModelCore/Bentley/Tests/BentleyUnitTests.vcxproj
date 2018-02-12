@@ -66,10 +66,12 @@
     <ClCompile Include="Published\Tasks\UniqueTaskHolderTests.cpp" />
     <ClCompile Include="Published\Tasks\UniqueTasksHolderTests.cpp" />
     <ClCompile Include="Published\Tasks\WorkerThreadTests.cpp" />
+    <ClCompile Include="Published\TimeOutSampleTest.cpp" />
     <ClCompile Include="Published\Utf8PrintfStringTests.cpp" />
     <ClCompile Include="Published\Utf8String_test.cpp" />
     <ClCompile Include="Published\valueformat_test.cpp" />
     <ClCompile Include="Published\VersionTests.cpp" />
+    <ClCompile Include="Published\WPrintfStringTests.cpp" />
     <ClCompile Include="Published\WString_test.cpp" />
   </ItemGroup>
   <ItemGroup>
