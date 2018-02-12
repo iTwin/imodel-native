@@ -1588,8 +1588,14 @@ PolyfaceHeaderPtr PrimitiveGeometry::FixPolyface(PolyfaceHeaderR geom, IFacetOpt
 void PrimitiveGeometry::AddNormals(PolyfaceHeaderR polyface, IFacetOptionsR facetOptions)
     {
     static double s_defaultCreaseRadians = Angle::DegreesToRadians(45.0);
+
+#define USE_SLOW_BUILDER            // Fast Builder WIP....
+#ifdef USE_SLOW_BUILDER
     static double s_defaultConeRadians = Angle::DegreesToRadians(90.0);
     polyface.BuildApproximateNormals(s_defaultCreaseRadians, s_defaultConeRadians, facetOptions.GetHideSmoothEdgesWhenGeneratingNormals());
+#else
+    polyface.BuildNormalsFast(s_defaultCreaseRadians);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

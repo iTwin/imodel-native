@@ -57,7 +57,7 @@ RealityData::CachePtr DgnDb::ElementTileCache() const
     {
     if (!m_elementTileCache.IsValid())
         {
-        BeFileName cacheName = TileTree::TileCache::GetCacheFileName(GetFileName().GetBaseName());
+        BeFileName cacheName = T_HOST.GetTileAdmin()._GetElementCacheFileName(*this);
         m_elementTileCache = new TileTree::TileCache(1024*1024*1024);
         if (SUCCESS != m_elementTileCache->OpenAndPrepare(cacheName))
             m_elementTileCache = nullptr;
@@ -88,6 +88,7 @@ void DgnDb::Destroy()
     m_txnManager = nullptr; // RefCountedPtr, deletes TxnManager
     m_lineStyles = nullptr;
     m_revisionManager.reset(nullptr);
+    m_cacheECInstanceInserter.clear();
     ClearECSqlCache();
     DestroyBriefcaseManager();
     }
@@ -235,6 +236,7 @@ DbResult DgnDb::_OnBriefcaseIdAssigned(BeBriefcaseId newBriefcaseId)
 //--------------------------------------------------------------------------------------
 void DgnDb::_OnAfterSchemaImport() const
     {
+    m_cacheECInstanceInserter.clear();
     ClearECSqlCache();
     Elements().ClearECCaches();
     }
@@ -393,12 +395,17 @@ DbResult DgnDb::InsertLinkTableRelationship(BeSQLite::EC::ECInstanceKey& relKey,
         }
 #endif
 
-    //WIP this might need a cache of inserters if called often
-    ECInstanceInserter inserter(*this, relClass, GetECCrudWriteToken());
-    if (!inserter.IsValid())
+    ECInstanceInserter* inserter;
+    auto itor = m_cacheECInstanceInserter.find(relClass.GetId().GetValue());
+    if (itor == m_cacheECInstanceInserter.end())
+        inserter = m_cacheECInstanceInserter.insert(std::make_pair(relClass.GetId().GetValue(), std::unique_ptr<ECInstanceInserter>(new ECInstanceInserter(*this, relClass, GetECCrudWriteToken())))).first->second.get();
+    else
+        inserter = itor->second.get();
+
+    if (!inserter || !inserter->IsValid())
         return BE_SQLITE_ERROR;
 
-    return inserter.InsertRelationship(relKey, sourceId, targetId, relInstanceProperties);
+    return inserter->InsertRelationship(relKey, sourceId, targetId, relInstanceProperties);
     }
 
 //--------------------------------------------------------------------------------------

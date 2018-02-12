@@ -461,6 +461,12 @@ public:
 
             //! Respond when a new tile is generated.
             virtual void _OnNewTileReady(DgnDbR) { }
+
+            //! Return the full path to a .tilecache file for caching generated element tiles.
+            DGNPLATFORM_EXPORT BeFileName _GetElementCacheFileName(DgnDbCR db) const;
+
+            //! Return the full path to a .tilecache file for caching downloaded reality data tiles.
+            DGNPLATFORM_EXPORT BeFileName _GetRealityDataCacheFileName(Utf8CP realityCacheName) const;
         };
 
         typedef bvector<DgnDomain*> T_RegisteredDomains;
@@ -542,6 +548,8 @@ public:
         virtual Http::HttpClient::Options* _SupplyHttpClientOptions() {return nullptr;}
   
         virtual void _OnUndisplayedSetChanged(DgnDbR) {}
+
+        virtual Sheet::Attachment::ViewportPtr _CreateSheetAttachViewport() {return nullptr;}
 
         Host()
             {
