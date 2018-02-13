@@ -23,6 +23,7 @@ private:
     IOwnedLocksIteratorPtr _GetOwnedLocks(FastQuery fast) override { return nullptr; }
     RepositoryStatus _OnFinishRevision(DgnRevision const&) override { return RepositoryStatus::Success; }
     RepositoryStatus _RefreshFromRepository() override { return RepositoryStatus::Success; }
+    RepositoryStatus _ClearUserHeldCodesLocks() override { return RepositoryStatus::Success; }
     void _OnElementInserted(DgnElementId) override { }
     void _OnModelInserted(DgnModelId) override { }
     void _StartBulkOperation() override {}
@@ -172,6 +173,13 @@ struct AddonBriefcaseManager : IBriefcaseManager, TxnMonitor
         }
 
     void _OnDgnDbDestroyed() override { m_req.Reset(); m_inBulkUpdate = false; IBriefcaseManager::_OnDgnDbDestroyed(); }
+
+    RepositoryStatus _ClearUserHeldCodesLocks() override
+        {
+        BeAssert(false && "native code should not be trying to manage locks and codes");
+        // TODO: forward to TypeScript?
+        return RepositoryStatus::Success; 
+        }
 
     RepositoryStatus _OnFinishRevision(DgnRevision const& rev) override
         {
