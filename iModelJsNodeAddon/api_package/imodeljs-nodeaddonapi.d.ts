@@ -390,11 +390,17 @@ declare class AddonDgnDb {
      */
     setBriefcaseManagerOptimisticConcurrencyControlPolicy(conflictPolicy: AddonBriefcaseManagerOnConflictPolicy): RepositoryStatus;
     
-
+    /** Query the ID of the first entry in the local Txn table, if any. */
     txnManagerQueryFirstTxnId(): AddonTxnId;
+    /** Query the ID of the entry in the local Txn table that comes after the specified Txn, if any. */
     txnManagerQueryNextTxnId(txnId: AddonTxnId): AddonTxnId;
+    /** Query the ID of the entry in the local Txn table that comes before the specified Txn, if any. */
+    txnManagerQueryPreviousTxnId(txnId: AddonTxnId): AddonTxnId;
+    /** Query the ID of the most recent entry in the local Txn table, if any. */
     txnManagerGetCurrentTxnId(): AddonTxnId;
+    /** Get the description of the specified Txn. */
     txnManagerGetTxnDescription(txnId: AddonTxnId): string;
+    /** Check if the specified TxnId is valid. The above query functions will return an invalid ID to indicate failure. */
     txnManagerIsTxnIdValid(txnId: AddonTxnId): boolean;
 
   /**
