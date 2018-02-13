@@ -10,6 +10,8 @@
 #include <queue>
 #include <thread>
 #include <iomanip>
+#include <sstream>
+#include <string>
 
 #ifdef VANCOUVER_API
 #include <ImagePP\h\hstdcpp.h>
@@ -1869,55 +1871,25 @@ void PerformDrapeLineTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         printf("ERROR : linesFileName attribute not found\r\n");
         return;
         }
-    IScalableMeshATP::StoreInt(L"nOfGraphLoadAttempts", 0);
-    IScalableMeshATP::StoreInt(L"nOfGraphStoreMisses", 0);
 
-    BeFile file;
-
-#ifndef VANCOUVER_API  
-    if (BeFileStatus::Success != file.Open(linesFileName.c_str(), BeFileAccess::Read))
-        {
-        return;
-        }
-#else 
-    if (BeFileStatus::Success != file.Open(linesFileName.c_str(), BeFileAccess::Read, BeFileSharing::None))
-        {
-        return;
-        }    
-#endif
-
-    char* linesFileBuffer = nullptr;
-    size_t fileSize;
-    file.GetSize(fileSize);
-    linesFileBuffer = new char[fileSize];
-    uint32_t bytes_read;
-    file.Read(linesFileBuffer, &bytes_read, (uint32_t)fileSize);
-    assert(bytes_read == fileSize);
-    file.Close();
-
-    Json::Reader reader;
-    Json::Value root;
-    reader.parse(linesFileBuffer, linesFileBuffer + bytes_read, root);
-    Json::Value jsonLines = root["lines"];
+    std::wstring line;
+    
+    std::wifstream infile(linesFileName.c_str());
 
     vector<vector<DPoint3d>> pts;
     vector<vector<DPoint3d>> lines;
-
-    for (const auto& line : jsonLines)
+    vector<DPoint3d> linePts(2);
+    
+    while (std::getline(infile, line))
         {
-        vector<DPoint3d> origPoints;
-        for (const auto& jsonObject : line)
-            {
-            Json::Value jsonPoint = jsonObject["point"];
-            DPoint3d point;
-            point.x = jsonPoint["x"].asDouble();
-            point.y = jsonPoint["y"].asDouble();
-            point.z = jsonPoint["z"].asDouble();
-            origPoints.push_back(point);
-            }
-        if (!origPoints.empty())
-            lines.push_back(origPoints);
+        std::wistringstream iss(line);
+        wchar_t semiColon;
+        if (!(iss >> linePts[0].x >> linePts[0].y >> linePts[0].z >> semiColon)) { break; } // error
+        if (!(iss >> linePts[1].x >> linePts[1].y >> linePts[1].z >> semiColon)) { break; } // error
+
+        lines.push_back(linePts);
         }
+
     DTMPtr dtmP = dynamic_cast<BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*>(&*stmFile->GetDTMInterface());
 
     status = DoBatchDrape(lines, dtmP, pts);
