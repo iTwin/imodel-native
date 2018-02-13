@@ -310,7 +310,7 @@ namespace Attachment
         void _ValidateChildren() const override { }
         Utf8String _GetTileCacheKey() const override { return "NotCacheable!"; }
         SelectParent _SelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args) const override;
-        TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) override {return nullptr;}
+        TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) override {return nullptr;} // implement tileloader
         double _GetMaximumSize() const override {return m_maxPixelSize;}
 
         void SetupRange();
