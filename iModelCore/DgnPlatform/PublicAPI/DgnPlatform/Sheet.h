@@ -297,8 +297,8 @@ namespace Attachment
         bool _IsInvalidated(TileTree::DirtyRangesCR) const override { return false; }
         void _UpdateRange(DRange3dCR, DRange3dCR) override { }
 
-        bool _HasChildren() const override { return false; }
-        ChildTiles const* _GetChildren(bool) const override { return nullptr; }
+        bool _HasChildren() const override; // { return false; }
+        ChildTiles const* _GetChildren(bool) const override; // { return nullptr; }
         void _ValidateChildren() const override { }
         Utf8String _GetTileCacheKey() const override { return "NotCacheable!"; }
         SelectParent _SelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args) const override;
@@ -308,7 +308,7 @@ namespace Attachment
         void SetupRange();
         TRoot& GetTree() const {return (TRoot&) m_root;}
 
-        TTile(TRoot& root) : T_Super(root, TileTree::QuadTree::TileId(0,0,0), nullptr) { }
+        TTile(TRoot& root, TTile* parent) : T_Super(root, TileTree::QuadTree::TileId(0,0,0), parent) { }
     };
 
     DEFINE_REF_COUNTED_PTR(TRoot)
