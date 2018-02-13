@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/CachingDataSourceTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -3513,6 +3513,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndRelate
                     "direction" : "backward",
                     "relatedInstance" :
                         {
+                        "changeState": "existing",
                         "schemaName" : "TestSchema",
                         "className" : "TestClass",
                         "instanceId" : "RemoteIdA"
@@ -3622,6 +3623,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V2CreatedRelatedObjectsWithFile_
                     "direction" : "backward",
                     "relatedInstance" :
                         {
+                        "changeState": "existing",
                         "schemaName" : "TestSchema",
                         "className" : "TestClass",
                         "instanceId" : "A"
@@ -3648,6 +3650,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V2CreatedRelatedObjectsWithFile_
                     "direction" : "backward",
                     "relatedInstance" :
                         {
+                        "changeState": "existing",
                         "schemaName" : "TestSchema",
                         "className" : "TestDerivedClass",
                         "instanceId" : "NewB"
@@ -3731,6 +3734,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V1CreatedRelatedObjectsWithFile_
                     "direction" : "backward",
                     "relatedInstance" :
                         {
+                        "changeState": "existing",
                         "schemaName" : "TestSchema",
                         "className" : "TestClass",
                         "instanceId" : "A"
@@ -3757,6 +3761,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V1CreatedRelatedObjectsWithFile_
                     "direction" : "backward",
                     "relatedInstance" :
                         {
+                        "changeState": "existing",
                         "schemaName" : "TestSchema",
                         "className" : "TestClass",
                         "instanceId" : "NewB"
@@ -3864,6 +3869,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithTwoRelationship
                     "direction" : "backward",
                     "relatedInstance" :
                         {
+                        "changeState" : "existing",
                         "schemaName" : "TestSchema",
                         "className" : "TestClass",
                         "instanceId" : "A"
@@ -3876,6 +3882,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithTwoRelationship
         R"( {
             "instance" :
                 {
+                "changeState" : "existing",
                 "schemaName" : "TestSchema",
                 "className" : "TestClass",
                 "instanceId" : "B",
@@ -3887,6 +3894,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithTwoRelationship
                     "direction" : "forward",
                     "relatedInstance" :
                         {
+                        "changeState" : "existing",
                         "schemaName" : "TestSchema",
                         "className" : "TestClass",
                         "instanceId" : "NewC"
