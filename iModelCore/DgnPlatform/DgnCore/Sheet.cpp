@@ -424,14 +424,14 @@ void Sheet::Attachment::TTile::SetupRange()
     double north = 0.0;
     double south = north + s_tileSize;
 
-    m_corners.m_pts[0].Init(east, north, 0.0); 
-    m_corners.m_pts[1].Init(west, north, 0.0); 
-    m_corners.m_pts[2].Init(east, south, 0.0); 
-    m_corners.m_pts[3].Init(west, south, 0.0); 
+    m_corners.m_pts[0].Init(east, north, GetTree().m_biasDistance); 
+    m_corners.m_pts[1].Init(west, north, GetTree().m_biasDistance); 
+    m_corners.m_pts[2].Init(east, south, GetTree().m_biasDistance); 
+    m_corners.m_pts[3].Init(west, south, GetTree().m_biasDistance); 
     m_range.InitFrom(m_corners.m_pts, 4);
     }
 
-#define MAX_SHEET_REFINE_DEPTH 6
+#define MAX_SHEET_REFINE_DEPTH 7
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  02/2018
@@ -459,7 +459,7 @@ TileTree::Tile::ChildTiles const* Sheet::Attachment::TTile::_GetChildren(bool lo
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void populateSheetTile(TTile* tile, uint32_t depth, SceneContextR context)
     {
-    static const uint32_t s_texSizes[] = {32, 64, 128, 256, 512, 1024};
+    static const uint32_t s_texSizes[] = {32, 64, 128, 256, 512, 1024, 2048};
     uint32_t texSize = s_texSizes[depth < MAX_SHEET_REFINE_DEPTH ? depth : MAX_SHEET_REFINE_DEPTH - 1];
 
     auto renderSys = context.GetRenderSystem();
@@ -467,6 +467,7 @@ static void populateSheetTile(TTile* tile, uint32_t depth, SceneContextR context
     Sheet::Attachment::Viewport* viewport = tree.m_viewport.get();
     UpdatePlan const& plan = context.GetUpdatePlan();
 
+    // max pixel size is half the length of the diagonal.
     tile->m_maxPixelSize = .5 * DPoint2d::FromZero().Distance(DPoint2d::From(texSize, texSize));
 
     viewport->InvalidateRenderPlan();
@@ -609,7 +610,7 @@ Tile::SelectParent TTile::_SelectTiles(bvector<TileTree::TileCPtr>& selected, Ti
     if (nullptr != childTiles && !childTiles->empty())
         {
         child = (TTile*) ((*childTiles)[0].get()); // there should only be a single child
-        if (!child->IsReady())
+        if (!child->IsReady()) // ###TODO: only populate child if about to be selected; need way to specify pixel size without making entire graphic
             {
             populateSheetTile(child, child->GetDepth(), args.m_context);
             }
@@ -633,8 +634,18 @@ Tile::SelectParent TTile::_SelectTiles(bvector<TileTree::TileCPtr>& selected, Ti
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+void TTile::_DrawGraphics(DrawArgsR args) const
+    {
+    BeAssert(IsReady());
+    if (m_graphic.IsValid())
+        args.m_graphics.Add(*m_graphic);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 TRoot::TRoot(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId attachmentId, uint32_t tileSize) : 
-                T_Super(db,Transform::FromIdentity(), nullptr, nullptr, 12, tileSize), m_attachmentId(attachmentId), m_pixels(tileSize)
+                T_Super(db,Transform::FromIdentity(), nullptr, nullptr), m_attachmentId(attachmentId), m_pixels(tileSize)
     {
     auto attach = db.Elements().Get<ViewAttachment>(attachmentId);
     if (!attach.IsValid())
@@ -683,9 +694,6 @@ TRoot::TRoot(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId att
     Frustum frust = m_viewport->GetFrustum(DgnCoordSystem::Npc).TransformBy(Transform::FromScaleFactors(m_scale.x, m_scale.y, 1.0));
     m_viewport->NpcToWorld(frust.m_pts, frust.m_pts, NPC_CORNER_COUNT);
     m_viewport->SetupFromFrustum(frust);
-
-    // max pixel size is half the length of the diagonal.
-    m_maxPixelSize = .5 * DPoint2d::FromZero().Distance(DPoint2d::From(m_pixels, m_pixels));
 
     auto& box = attach->GetPlacement().GetElementBox();
     AxisAlignedBox3d range = attach->GetPlacement().CalculateRange();
