@@ -219,7 +219,8 @@ private:
             }
 
         auto unitSystem = SYSTEM_TYPE::_Create(name);
-        m_systems.Insert(unitSystem->GetName().c_str(), unitSystem);
+        // Get the name directly to avoid calling any overrides of GetName defined in a derived class
+        m_systems.Insert(unitSystem->m_name.c_str(), unitSystem);
 
         return unitSystem;
         }
