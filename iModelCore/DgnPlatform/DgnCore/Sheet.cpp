@@ -467,6 +467,8 @@ static void populateSheetTile(TTile* tile, uint32_t depth, SceneContextR context
     Sheet::Attachment::Viewport* viewport = tree.m_viewport.get();
     UpdatePlan const& plan = context.GetUpdatePlan();
 
+    tile->m_maxPixelSize = .5 * DPoint2d::FromZero().Distance(DPoint2d::From(texSize, texSize));
+
     viewport->InvalidateRenderPlan();
     viewport->SetRect(BSIRect::From(0, 0, texSize, texSize));
     viewport->SetupFromViewController();
@@ -619,6 +621,7 @@ Tile::SelectParent TTile::_SelectTiles(bvector<TileTree::TileCPtr>& selected, Ti
         return SelectParent::No;
         }
 
+// #define DEBUG_PRINT_SHEET_TILE_SELECTION
 #if defined(DEBUG_PRINT_SHEET_TILE_SELECTION)
     DEBUG_PRINTF(" ** Selecting this tile, IsReady()=%d, depth=%d", IsReady(), GetDepth());
 #endif

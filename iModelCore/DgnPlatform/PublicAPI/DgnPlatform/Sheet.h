@@ -293,6 +293,8 @@ namespace Attachment
     {
         DEFINE_T_SUPER(Tile);
 
+        uint32_t m_maxPixelSize;
+
         void _Invalidate() override { }
         bool _IsInvalidated(TileTree::DirtyRangesCR) const override { return false; }
         void _UpdateRange(DRange3dCR, DRange3dCR) override { }
@@ -307,6 +309,8 @@ namespace Attachment
 
         void SetupRange();
         TRoot& GetTree() const {return (TRoot&) m_root;}
+
+        double _GetMaximumSize() const override {return m_maxPixelSize;}
 
         TTile(TRoot& root, TTile* parent) : T_Super(root, TileTree::QuadTree::TileId(0,0,0), parent) { }
     };
