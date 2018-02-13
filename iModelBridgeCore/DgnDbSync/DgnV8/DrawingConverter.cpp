@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/DrawingConverter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -194,7 +194,7 @@ bpair<ResolvedModelMapping,bool> Converter::Import2dModel(DgnV8ModelR v8model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverter::FindNonSpatialModel(DgnV8ModelRefR v8ModelRef, bool isRootASheet)
+void RootModelConverter::RegisterNonSpatialModel(DgnV8ModelRefR v8ModelRef, bool isRootASheet)
     {
     if (nullptr == v8ModelRef.GetDgnModelP())
         return;
@@ -240,7 +240,7 @@ void RootModelConverter::FindNonSpatialModel(DgnV8ModelRefR v8ModelRef, bool isR
         if (nullptr == attachment->GetDgnModelP())
             continue; // missing reference 
 
-        FindNonSpatialModel(*attachment, isRootASheet);
+        RegisterNonSpatialModel(*attachment, isRootASheet);
         }
     }
 
@@ -275,7 +275,7 @@ static void processModelIndex(bvector<DgnV8FileP>& filesToSearch, bvector<DgnV8F
             }
 
         filesToSearchThisTime.clear();
-        for (auto f : allV8Files)        // See if FindNonSpatialModel discovered new files while following 2-D attachments.
+        for (auto f : allV8Files)        // See if RegisterNonSpatialModel discovered new files while following 2-D attachments.
             {
             if (std::find(filesToSearch.begin(), filesToSearch.end(), f) == filesToSearch.end())
                 filesToSearchThisTime.push_back(f);
@@ -306,7 +306,7 @@ void RootModelConverter::FindV8DrawingsAndSheets()
             continue;
 
         DgnV8Api::DgnFileStatus openStatus;
-        Bentley::DgnFilePtr v8File = OpenDgnV8File(openStatus, fn); // Just open it. Don't register it in syncinfo. We'll do that in FindNonSpatialModel if we actually find a drawing or sheet in there.
+        Bentley::DgnFilePtr v8File = OpenDgnV8File(openStatus, fn); // Just open it. Don't register it in syncinfo. We'll do that in RegisterNonSpatialModel if we actually find a drawing or sheet in there.
         if (v8File.IsValid() && IsFileAssignedToBridge(*v8File))
             {
             tempKeepAlive.push_back(v8File);
@@ -318,14 +318,14 @@ void RootModelConverter::FindV8DrawingsAndSheets()
         ClassifyNormal2dModels (*fileToSearch); // This tells us whether a given 2d design model should become a drawing or a spatial model
 
     // *** EXTREMELY TRICKY: See "DgnModel objects and Sheet attachments" for why we need TWO PASSES
-    processModelIndex(filesToSearch, m_v8Files, [&](DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item) {FindSheetModel(v8File, item);});
-    processModelIndex(filesToSearch, m_v8Files, [&](DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item) {FindDrawingModel(v8File, item);});
+    processModelIndex(filesToSearch, m_v8Files, [&](DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item) {RegisterSheetModel(v8File, item);});
+    processModelIndex(filesToSearch, m_v8Files, [&](DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item) {RegisterDrawingModel(v8File, item);});
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverter::FindDrawingModel(DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item)
+void RootModelConverter::RegisterDrawingModel(DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item)
     {
     if (!IsV8DrawingModel(v8File, item))
         return;
@@ -341,8 +341,8 @@ void RootModelConverter::FindDrawingModel(DgnV8FileR v8File, DgnV8Api::ModelInde
     GetAttachments(*v8model);
     if (!ScaledCopyMarker::IsFoundOn(*v8model))
         MakeAttachmentsMatchRootAnnotationScale(*v8model);
-    SheetUnnestAttachments(*v8model);
-    FindNonSpatialModel(*v8model, false); 
+    UnnestAttachments(*v8model);
+    RegisterNonSpatialModel(*v8model, false); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -569,7 +569,7 @@ void            Converter::MakeAttachmentsMatchRootAnnotationScale(DgnModelRefR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<DgnV8Api::ElementId> Converter::SheetGetAttachmentsToBeUnnested(DgnV8ModelR sheetModel)
+bvector<DgnV8Api::ElementId> Converter::GetAttachmentsToBeUnnested(DgnV8ModelR sheetModel)
     {
     bvector<DgnV8Api::ElementId> attachmentIds;
 
@@ -593,15 +593,15 @@ bvector<DgnV8Api::ElementId> Converter::SheetGetAttachmentsToBeUnnested(DgnV8Mod
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::SheetUnnestAttachments(DgnV8ModelR sheetModel)
+void Converter::UnnestAttachments(DgnV8ModelR parentModel)
     {
-    sheetModel.SetReadOnly(false);
+    parentModel.SetReadOnly(false);
     
     //  First, unnest all 2D attachments
-    auto vg = FindFirstViewGroupShowing(sheetModel);
-    for (auto attachmentId : SheetGetAttachmentsToBeUnnested(sheetModel))
+    auto vg = FindFirstViewGroupShowing(parentModel);
+    for (auto attachmentId : GetAttachmentsToBeUnnested(parentModel))
         {
-        auto attachment = DgnV8Api::DgnAttachment::FindByElementId(&sheetModel, attachmentId);
+        auto attachment = DgnV8Api::DgnAttachment::FindByElementId(&parentModel, attachmentId);
         if (nullptr == attachment)
             {
             BeAssert(false);
@@ -613,9 +613,9 @@ void Converter::SheetUnnestAttachments(DgnV8ModelR sheetModel)
             }
         }
 
-    //  Transform sheet-sheet attachments into sheet->drawing attachments.
+    //  Transform attachments to sheets into attachments to equivalent drawings.
     // Also, make sure that each attached 2d model is classified
-    auto attachments = GetAttachments(sheetModel);
+    auto attachments = GetAttachments(parentModel);
     if (nullptr == attachments)
         return;
     for (auto attachment : *attachments)
@@ -638,7 +638,7 @@ void Converter::SheetUnnestAttachments(DgnV8ModelR sheetModel)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverter::FindSheetModel(DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item)
+void RootModelConverter::RegisterSheetModel(DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item)
     {
     if (DgnV8Api::DgnModelType::Sheet != item.GetModelType())
         return;
@@ -650,8 +650,8 @@ void RootModelConverter::FindSheetModel(DgnV8FileR v8File, DgnV8Api::ModelIndexI
     GetAttachments(*v8model); // make sure attachment hierarchy is created
     if (!ScaledCopyMarker::IsFoundOn(*v8model))
         MakeAttachmentsMatchRootAnnotationScale(*v8model);
-    SheetUnnestAttachments(*v8model);
-    FindNonSpatialModel(*v8model, true);
+    UnnestAttachments(*v8model);
+    RegisterNonSpatialModel(*v8model, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -775,7 +775,7 @@ void Converter::DrawingRegisterModelToBeMerged(bvector<ResolvedModelMapping>& tb
     if (LOG_IS_SEVERITY_ENABLED(LOG_TRACE))
         LOG.tracev("DrawingRegisterModelToBeMerged %s -> %s", IssueReporter::FmtModel(*attachedV8model).c_str(), IssueReporter::FmtModel(targetBimModel).c_str());
 
-    // recurse over nested attachments
+    // recurse over nested attachments -- NEEDS WORK: All nested attachments should have been un-nested before this function is called!
     DrawingRegisterAttachmentsToBeMerged(tbm, v8DgnAttachment, targetBimModel, refTrans);
     }
 

@@ -1349,9 +1349,6 @@ public:
     DGNDBSYNC_EXPORT virtual void _DetectDeletedExtractionGraphics(ResolvedModelMapping const& v8DrawingModel,
                                                                    SyncInfo::T_V8ElementMapOfV8ElementSourceSet const& v8OriginalElementsSeen,
                                                                    SyncInfo::T_V8ElementSourceSet const& unchangedV8attachments);
-    //! Return true if the specified drawing has any 3D attachments.
-    bool DrawingHas3DAttachment(DgnV8ModelR drawingModel);
-    bool DrawingHas3DAttachment(DgnAttachmentCR att) {return att.GetDgnModelP()? DrawingHas3DAttachment(*att.GetDgnModelP()): false;}
     //! @}
 
     //! @name Sheets
@@ -1441,28 +1438,6 @@ public:
     //! @param nvvf                 The view factory to be used in order to convert a named view. This is needed if an attachment is linked to a V8 named view.
     void SheetsConvertViewAttachments(ResolvedModelMapping const& v8SheetModelMapping, Bentley::ViewInfoCP v8SheetView, ViewFactory& nvvf);
 
-    //! Change the target of \a v8Attachment to be a copy of the original referenced model, and change the annotation scale of all annotations in the copy of that model to match \a newAnnotationScale.
-    //! @note This function also changes DgnModelType::Sheet to DgnModelType::Drawing
-    //! @note The returned model is marked as hidden
-    Bentley::RefCountedPtr<DgnV8Api::DgnModel> CopyAndChangeAnnotationScale(DgnAttachmentCR v8Attachment, double newAnnotationScale);
-
-    //! Change the target of \a v8Attachment to be a copy of the original referenced model, and change its model type from DgnModelType::Sheet to DgnModelType::Drawing
-    //! @note The returned model is marked as hidden
-    Bentley::RefCountedPtr<DgnV8Api::DgnModel> CopyAndChangeSheetToDrawing(DgnAttachmentCR v8Attachment);
-
-    //! Unnest all 2d attachements to the specified sheet and convert any attached sheets into drawings
-    void SheetUnnestAttachments(DgnV8ModelR sheetModel);
-
-    //! Get the direct attachments to the specified sheet that might need to be unnested.
-    bvector<DgnV8Api::ElementId> SheetGetAttachmentsToBeUnnested(DgnV8ModelR sheetModel);
-
-    //! Detect if the model referenced by \a v8Attachment needs to be changed to match the annotation scale specified by the (root) attachment and if so call CopyAndChangeAnnotationScale to change it. 
-    //! Calls MakeAttachmentsMatchRootAnnotationScale to do the same, recursively, to all nested attachments. This can end up creating a new set of models and a new attachment hierarchy.
-    void MakeAttachedModelMatchRootAnnotationScale(DgnAttachmentR v8Attachment);
-
-    //! Calls MakeAttachedModelMatchRootAnnotationScale to adjust the annotation scale of all 2D attachments to \a parentModel.
-    void MakeAttachmentsMatchRootAnnotationScale(DgnV8ModelRefR parentModel);
-
     //! @}
 
     //! @name Drawings
@@ -1480,6 +1455,7 @@ public:
 
     void DrawingRegisterModelToBeMerged(bvector<ResolvedModelMapping>& tbm, DgnAttachmentR v8DgnAttachment, DgnModelR targetBimModel, TransformCR transformToParent);
     void DrawingRegisterAttachmentsToBeMerged(bvector<ResolvedModelMapping>& tbm, DgnV8ModelRefR v8modelRef, DgnModelR targetBimModel, TransformCR transformToParent);
+
     //! Import the 2d models that are attached to a drawing and schedule them to be merged into the drawing.
     //! Note that \a v8modelRef may be an attachment (of a drawing) to a sheet.  
     //! @param v8modelRef The parent drawing model
@@ -1502,6 +1478,36 @@ public:
     DGNDBSYNC_EXPORT void DoConvertDrawingElement(ElementConversionResults&, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, bool isNewElement);
     //! Convert a drawing or sheet element
     void _ConvertDrawingElement(DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm);
+
+    //! @}
+
+    //! @name 2D attachments
+    //! @{
+    //! Return true if the specified drawing has any 3D attachments.
+    bool DrawingHas3DAttachment(DgnV8ModelR drawingModel);
+    bool DrawingHas3DAttachment(DgnAttachmentCR att) {return att.GetDgnModelP()? DrawingHas3DAttachment(*att.GetDgnModelP()): false;}
+
+    //! Detect if the model referenced by \a v8Attachment needs to be changed to match the annotation scale specified by the (root) attachment and if so call CopyAndChangeAnnotationScale to change it. 
+    //! Calls MakeAttachmentsMatchRootAnnotationScale to do the same, recursively, to all nested attachments. This can end up creating a new set of models and a new attachment hierarchy.
+    void MakeAttachedModelMatchRootAnnotationScale(DgnAttachmentR v8Attachment);
+
+    //! Calls MakeAttachedModelMatchRootAnnotationScale to adjust the annotation scale of all 2D attachments to \a parentModel.
+    void MakeAttachmentsMatchRootAnnotationScale(DgnV8ModelRefR parentModel);
+
+    //! Change the target of \a v8Attachment to be a copy of the original referenced model, and change the annotation scale of all annotations in the copy of that model to match \a newAnnotationScale.
+    //! @note This function also changes DgnModelType::Sheet to DgnModelType::Drawing
+    //! @note The returned model is marked as hidden
+    Bentley::RefCountedPtr<DgnV8Api::DgnModel> CopyAndChangeAnnotationScale(DgnAttachmentCR v8Attachment, double newAnnotationScale);
+
+    //! Change the target of \a v8Attachment to be a copy of the original referenced model, and change its model type from DgnModelType::Sheet to DgnModelType::Drawing
+    //! @note The returned model is marked as hidden
+    Bentley::RefCountedPtr<DgnV8Api::DgnModel> CopyAndChangeSheetToDrawing(DgnAttachmentCR v8Attachment);
+
+    //! Unnest all 2d attachements to the specified sheet and convert any attached sheets into drawings
+    void UnnestAttachments(DgnV8ModelR sheetModel);
+
+    //! Get the direct attachments to the specified sheet that might need to be unnested.
+    bvector<DgnV8Api::ElementId> GetAttachmentsToBeUnnested(DgnV8ModelR sheetModel);
 
     //! @}
 
@@ -2504,9 +2510,9 @@ protected:
 
     void FindSpatialV8Models(DgnV8ModelRefR rootModelRef, bool haveFoundSpatialRoot = false);
     void FindV8DrawingsAndSheets();
-    void FindNonSpatialModel(DgnV8ModelRefR v8ModelRef, bool isRootASheet);
-    void FindSheetModel(DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item);
-    void FindDrawingModel(DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item);
+    void RegisterNonSpatialModel(DgnV8ModelRefR v8ModelRef, bool isRootASheet);
+    void RegisterSheetModel(DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item);
+    void RegisterDrawingModel(DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item);
 
 public:
     static WCharCP GetRegistrySubKey() {return L"DgnV8Bridge";}
