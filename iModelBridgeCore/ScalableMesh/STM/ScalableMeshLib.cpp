@@ -8,7 +8,9 @@
 #include <ScalableMeshPCH.h>
 #include "ImagePPHeaders.h"
 
+#ifdef VANCOUVER_API
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
+#endif
 
 #include <ScalableMesh\ScalableMeshLib.h>
 //#include <TerrainModel/ElementHandler/DTMElementHandlerManager.h>
@@ -23,11 +25,9 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 #include <ImagePP/all/h/ImageppLib.h>
 #include <curl/curl.h>
 
-#ifdef VANCOUVER_API
+
 #include    <CCApi\CCPublic.h>
-#else
-#include <ConnectClientWrapperNative/ConnectClientWrapper.h>
-#endif
+
 #include <DgnPlatform\DgnPlatformLib.h>
 
 

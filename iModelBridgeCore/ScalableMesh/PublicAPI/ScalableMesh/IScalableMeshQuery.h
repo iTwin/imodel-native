@@ -477,7 +477,7 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         virtual IScalableMeshMeshPtr _GetMeshUnderClip(IScalableMeshMeshFlagsPtr& flags, uint64_t clip) const = 0;
 
-        virtual IScalableMeshMeshPtr _GetMeshUnderClip2(IScalableMeshMeshFlagsPtr& flags, ClipVectorPtr clips, uint64_t coverageID, bool isClipBoundary) const = 0;
+        virtual IScalableMeshMeshPtr _GetMeshUnderClip2(IScalableMeshMeshFlagsPtr& flags, CLIP_VECTOR_NAMESPACE::ClipVectorPtr clips, uint64_t coverageID, bool isClipBoundary) const = 0;
 
         virtual IScalableMeshMeshPtr _GetMeshByParts(const bset<uint64_t>& clipsToShow) const = 0;
 
@@ -561,7 +561,7 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         BENTLEY_SM_EXPORT IScalableMeshMeshPtr GetMeshUnderClip(IScalableMeshMeshFlagsPtr& flags,uint64_t clip) const;
 
-        BENTLEY_SM_EXPORT IScalableMeshMeshPtr GetMeshUnderClip2(IScalableMeshMeshFlagsPtr& flags, ClipVectorPtr clips, uint64_t coverageID, bool isClipBoundary) const;
+        BENTLEY_SM_EXPORT IScalableMeshMeshPtr GetMeshUnderClip2(IScalableMeshMeshFlagsPtr& flags, CLIP_VECTOR_NAMESPACE::ClipVectorPtr clips, uint64_t coverageID, bool isClipBoundary) const;
 
         BENTLEY_SM_EXPORT IScalableMeshMeshPtr GetMeshByParts(bset<uint64_t>& clipsToShow) const;
 
@@ -646,7 +646,7 @@ struct IScalableMeshCachedDisplayNode : public virtual IScalableMeshNode
 
         virtual StatusInt _GetCachedTextures(bvector<SmCachedDisplayTexture*>& cachedTexture, bvector<uint64_t>& textureIds) const = 0;
 
-        virtual StatusInt _GetDisplayClipVectors(bvector<ClipVectorPtr>& clipVectors) const = 0;
+        virtual StatusInt _GetDisplayClipVectors(bvector<CLIP_VECTOR_NAMESPACE::ClipVectorPtr>& clipVectors) const = 0;
 
         virtual void      _SetIsInVideoMemory(bool isInVideoMemory) = 0;
 
@@ -657,7 +657,7 @@ struct IScalableMeshCachedDisplayNode : public virtual IScalableMeshNode
 
         BENTLEY_SM_EXPORT StatusInt GetCachedTextures(bvector<SmCachedDisplayTexture*>& cachedTexture, bvector<uint64_t>& textureIds) const;
 
-        BENTLEY_SM_EXPORT StatusInt GetDisplayClipVectors(bvector<ClipVectorPtr>& clipVectors) const;
+        BENTLEY_SM_EXPORT StatusInt GetDisplayClipVectors(bvector<CLIP_VECTOR_NAMESPACE::ClipVectorPtr>& clipVectors) const;
 
         BENTLEY_SM_EXPORT void      SetIsInVideoMemory(bool isInVideoMemory);
 
@@ -764,7 +764,7 @@ struct IScalableMeshViewDependentMeshQueryParams abstract: virtual public IScala
                
         virtual const double*       _GetRootToViewMatrix() const = 0;
 
-        virtual const ClipVectorPtr _GetViewClipVector() const = 0;
+        virtual const CLIP_VECTOR_NAMESPACE::ClipVectorPtr _GetViewClipVector() const = 0;
 
         virtual bool                _IsProgressiveDisplay() const = 0;
 
@@ -778,7 +778,7 @@ struct IScalableMeshViewDependentMeshQueryParams abstract: virtual public IScala
 
         virtual StatusInt       _SetStopQueryCallback(StopQueryCallbackFP stopQueryCallbackFP) = 0;
         
-        virtual void            _SetViewClipVector(ClipVectorPtr& viewClipVector) = 0;
+        virtual void            _SetViewClipVector(CLIP_VECTOR_NAMESPACE::ClipVectorPtr& viewClipVector) = 0;
                                                   
     public : 
 
@@ -799,7 +799,7 @@ struct IScalableMeshViewDependentMeshQueryParams abstract: virtual public IScala
 
         const double*       GetRootToViewMatrix() const;
 
-        const ClipVectorPtr GetViewClipVector() const;
+        const CLIP_VECTOR_NAMESPACE::ClipVectorPtr GetViewClipVector() const;
 
         bool                IsProgressiveDisplay() const;
     
@@ -822,7 +822,7 @@ struct IScalableMeshViewDependentMeshQueryParams abstract: virtual public IScala
 
         BENTLEY_SM_EXPORT void      SetUseSplitThresholdForTileSelection(bool useSplitThreshold);    
 
-        BENTLEY_SM_EXPORT void      SetViewClipVector(ClipVectorPtr& viewClipVector);
+        BENTLEY_SM_EXPORT void      SetViewClipVector(CLIP_VECTOR_NAMESPACE::ClipVectorPtr& viewClipVector);
         
         BENTLEY_SM_EXPORT static    IScalableMeshViewDependentMeshQueryParamsPtr CreateParams();       
     };
