@@ -75,7 +75,7 @@ public:
     }; // CreateParams
 
 protected:
-    explicit HorizontalAlignmentModel(CreateParams const& params) : T_Super(params) {}
+    explicit HorizontalAlignmentModel(CreateParams const& params) : T_Super(params) { SetIsPrivate(true); }
 
 public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(HorizontalAlignmentModel)

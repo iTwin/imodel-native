@@ -480,6 +480,37 @@ AlignmentCPtr Alignment::UpdateWithMainPair(AlignmentPairCR alignmentPair, DgnDb
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Alignment::GenerateAprox3dGeom()
+    {
+    auto mainPairPtr = QueryMainPair();
+    if (mainPairPtr.IsNull())
+        return DgnDbStatus::MissingId;
+
+    DPoint3d origin = { 0, 0, 0 };
+    auto geomBuilderPtr = GeometryBuilder::Create(*GetModel(), GetCategoryId(), origin);
+
+    if (!mainPairPtr->IsValidVertical())
+        {
+        if (!geomBuilderPtr->Append(*mainPairPtr->GetHorizontalCurveVector(), GeometryBuilder::CoordSystem::World))
+            return DgnDbStatus::NoGeometry;
+        }
+    else
+        {
+        bvector<DPoint3d> strokedPoints = mainPairPtr->GetStrokedAlignment();        
+
+        if (!geomBuilderPtr->Append(*CurveVector::CreateLinear(strokedPoints), GeometryBuilder::CoordSystem::World))
+            return DgnDbStatus::NoGeometry;
+        }
+
+    if (BentleyStatus::SUCCESS != geomBuilderPtr->Finish(*this))
+        return DgnDbStatus::NoGeometry;
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode HorizontalAlignmentsPortion::CreateCode(SpatialLocationPartitionCR alignmentPartition, Utf8StringCR name)
