@@ -730,6 +730,9 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation)
         return  BE_SQLITE_ERROR_ChangeTrackError;
         }
 
+    // save briefcase local values again after _OnCommit. It can cause additional changes
+    SaveCachedBlvs(isCommit);
+
     // attempt the commit/release or rollback
     DbResult rc = BE_SQLITE_OK;
     if (trackerStat == ChangeTracker::OnCommitStatus::Continue)
@@ -4817,7 +4820,7 @@ static void caseCallback(sqlite3_context* context, int numArgs, sqlite3_value** 
     Utf16CP source = (Utf16CP)sqlite3_value_text16(args[0]);
     if (nullptr == source)
         {
-        BeAssert(false); 
+        // Columns with NULL values can still get here; don't assert, just do nothing with NULL column data.
         return;
         }
 
