@@ -6618,7 +6618,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query 
     return digDown;
     }
 
-template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::LoadIndexNodes(uint64_t& nLoaded, int level, bool headersOnly)
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::LoadIndexNodes(size_t& nLoaded, int level, bool headersOnly)
 {
     HINVARIANTS;
 
@@ -6651,7 +6651,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::LoadIn
         }
 }
 
-template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::LoadIndexNodes(uint64_t& nLoaded, int level, bool headersOnly)
+template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::LoadIndexNodes(size_t& nLoaded, int level, bool headersOnly)
 {
     if (m_pRootNode != NULL)
         {

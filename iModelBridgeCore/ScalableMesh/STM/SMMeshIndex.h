@@ -771,7 +771,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     void         SaveMeshToCloud(ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore);
 
-    virtual void LoadIndexNodes(uint64_t& nLoaded, int level, bool headersOnly) override;
+    virtual void LoadIndexNodes(size_t& nLoaded, int level, bool headersOnly) override;
 
 #ifdef INDEX_DUMPING_ACTIVATED
     virtual void         DumpOctTreeNode(FILE* pi_pOutputXmlFileStream,

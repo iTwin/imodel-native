@@ -579,7 +579,7 @@ public:
     virtual bool Destroy();
 
 
-    virtual void LoadIndexNodes(uint64_t& nLoaded, int level, bool headersOnly);
+    virtual void LoadIndexNodes(size_t& nLoaded, int level, bool headersOnly);
 
     uint32_t       GetNbObjects() const;
 
@@ -1582,7 +1582,7 @@ public:
     -----------------------------------------------------------------------------*/
     size_t              GetSplitTreshold() const;
 
-    void LoadIndexNodes(uint64_t& nLoaded, int level, bool headersOnly);
+    void LoadIndexNodes(size_t& nLoaded, int level, bool headersOnly);
     void SetGenerating(bool isGenerating)
         {
         m_isGenerating = isGenerating;

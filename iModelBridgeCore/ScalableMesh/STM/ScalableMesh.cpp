@@ -3608,7 +3608,7 @@ template <class POINT> __int64 ScalableMeshSingleResolutionPointIndexView<POINT>
 
 template <class POINT> uint64_t ScalableMeshSingleResolutionPointIndexView<POINT>::_GetNodeCount()
     {
-    uint64_t numNodes = 0;
+    size_t numNodes = 0;
     m_scmIndexPtr->LoadIndexNodes(numNodes, m_resolutionIndex, true);
     return numNodes;
     }
