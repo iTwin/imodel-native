@@ -3353,6 +3353,9 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteDataAndNotModfieid_ReturnsCached)
     EXPECT_EQ("A", result.GetValue().GetJson()["TestProperty"].asString());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObject_RemoteDataAndNotEnoughRights_RemovesInstanceFromCache)
     {
     auto ds = GetTestDataSourceV1();
@@ -3383,6 +3386,9 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteDataAndNotEnoughRights_RemovesIns
     ASSERT_TRUE(instance.isNull());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObject_RemoteDataAndInstanceNotFound_RemovesInstanceFromCache)
     {
     auto ds = GetTestDataSourceV1();
@@ -3702,6 +3708,9 @@ TEST_F(CachingDataSourceTests, GetObject_CachedOrRemoteDataAndQueryResponseNotCa
     EXPECT_EQ(ICachingDataSource::SyncStatus::NotSynced, backgroundSyncResult.GetValue());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObject_CachedOrRemoteDataRemoteInstanceNotFound_BackgroundSyncReturnSynced)
     {
     auto ds = GetTestDataSourceV1();
@@ -3732,6 +3741,9 @@ TEST_F(CachingDataSourceTests, GetObject_CachedOrRemoteDataRemoteInstanceNotFoun
     ASSERT_FALSE(instanceKey.IsValid());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObject_CachedOrRemoteDataRemoteNotEnoughRights_BackgroundSyncReturnSynced)
     {
     auto ds = GetTestDataSourceV1();
