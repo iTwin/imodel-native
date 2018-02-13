@@ -16,9 +16,9 @@ void ContentQueryBuilderTests::SetUp()
     m_connection = &ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnection();
     m_ruleset = PresentationRuleSet::CreateInstance("", 1, 0, false, "", "", "", false);
     m_schemaHelper = new ECSchemaHelper(*m_connection, nullptr, nullptr, nullptr, nullptr);
-    m_descriptorBuilder = new ContentDescriptorBuilder(*new ContentDescriptorBuilder::Context(*m_schemaHelper, m_connections,
-        *m_connection, *m_ruleset, ContentDisplayType::Undefined, m_categorySupplier, 
-        nullptr, &m_localizationProvider));
+    m_context = new ContentDescriptorBuilder::Context(*m_schemaHelper, m_connections,
+        *m_connection, *m_ruleset, ContentDisplayType::Undefined, m_categorySupplier, nullptr, &m_localizationProvider);
+    m_descriptorBuilder = new ContentDescriptorBuilder(*m_context);
     m_queryBuilder = new ContentQueryBuilder(ContentQueryBuilderParameters(*m_schemaHelper, m_connections,
         m_nodesLocater, *m_connection, *m_ruleset, m_settings, m_schemaHelper->GetECExpressionsCache(), 
         m_categorySupplier, nullptr, nullptr, &m_localizationProvider));
@@ -29,6 +29,8 @@ void ContentQueryBuilderTests::SetUp()
 //---------------------------------------------------------------------------------------
 void ContentQueryBuilderTests::TearDown()
     {
+    DELETE_AND_CLEAR(m_schemaHelper);
+    DELETE_AND_CLEAR(m_context);
     DELETE_AND_CLEAR(m_descriptorBuilder);
     DELETE_AND_CLEAR(m_queryBuilder);
     Localization::Terminate();
