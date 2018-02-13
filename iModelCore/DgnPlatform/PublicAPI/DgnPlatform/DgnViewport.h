@@ -583,6 +583,8 @@ public:
 
     DGNPLATFORM_EXPORT ColorDef GetSolidFillEdgeColor(ColorDef inColor);
 
+    DGNPLATFORM_EXPORT void ChangeActiveVolume(ClipVectorP volume);
+
     //! Read the current image from this viewport from the Rendering system. 
     //! @param[in] viewRect The area of the view to read. The origin of \a viewRect must specify the upper left corner. It is an error to specify a view rectangle that lies outside the actual view. If not specified, the entire view is captured.
     //! @param[in] targetSize The size of the Image to be returned. The size can be larger or smaller than the original view. If not specified, the returned image is full size.

@@ -88,7 +88,7 @@ public:
     void SetSummary(Utf8CP summary) { m_summary = summary; }
 
     //! Extract the set of locks which are required for this revision's changes
-    DGNPLATFORM_EXPORT void ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb, bool extractInserted = true) const;
+    DGNPLATFORM_EXPORT void ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb, bool extractInserted = true, bool avoidExclusiveModelElements = true) const;
     
     //! Extract the set of codes which were assigned to objects within this revision's changes
     DGNPLATFORM_EXPORT void ExtractCodes(DgnCodeSet& assignedCodes, DgnCodeSet& discardedCodes, DgnDbCR dgndb) const;
