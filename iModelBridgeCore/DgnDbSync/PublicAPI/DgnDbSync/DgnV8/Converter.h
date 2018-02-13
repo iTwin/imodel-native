@@ -1494,14 +1494,21 @@ public:
     //! Calls MakeAttachedModelMatchRootAnnotationScale to adjust the annotation scale of all 2D attachments to \a parentModel.
     void MakeAttachmentsMatchRootAnnotationScale(DgnV8ModelRefR parentModel);
 
-    //! Change the target of \a v8Attachment to be a copy of the original referenced model, and change the annotation scale of all annotations in the copy of that model to match \a newAnnotationScale.
+    //! Make a copy of the specified model and change the annotation scale of all annotations to match \a newAnnotationScale.
+    //! @note The name of the new model is generated and should not conflict with any existing V8 models.
     //! @note This function also changes DgnModelType::Sheet to DgnModelType::Drawing
     //! @note The returned model is marked as hidden
-    Bentley::RefCountedPtr<DgnV8Api::DgnModel> CopyAndChangeAnnotationScale(DgnAttachmentCR v8Attachment, double newAnnotationScale);
+    Bentley::RefCountedPtr<DgnV8Api::DgnModel> CopyAndChangeAnnotationScale(DgnV8ModelP, double newAnnotationScale);
 
-    //! Change the target of \a v8Attachment to be a copy of the original referenced model, and change its model type from DgnModelType::Sheet to DgnModelType::Drawing
+    //! Make a copy of the specified sheet model and change its model type from DgnModelType::Sheet to DgnModelType::Drawing.
+    //! @note The name of the new model is generated and should not conflict with any existing V8 models.
     //! @note The returned model is marked as hidden
-    Bentley::RefCountedPtr<DgnV8Api::DgnModel> CopyAndChangeSheetToDrawing(DgnAttachmentCR v8Attachment);
+    Bentley::RefCountedPtr<DgnV8Api::DgnModel> CopyAndChangeSheetToDrawing(DgnV8ModelP);
+
+    //! Make a copy of the specified model. 
+    //! @note The name of the new model is generated from the original model's file and model name, plus the specified suffix.
+    //! @note The returned model is marked as hidden
+    Bentley::RefCountedPtr<DgnV8Api::DgnModel> CopyModel(DgnV8ModelP v8Model, WCharCP newNameSuffix);
 
     //! Unnest all 2d attachements to the specified sheet and convert any attached sheets into drawings
     void UnnestAttachments(DgnV8ModelR sheetModel);

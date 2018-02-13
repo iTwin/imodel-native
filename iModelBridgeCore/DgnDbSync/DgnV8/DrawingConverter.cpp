@@ -393,11 +393,10 @@ static WString computeFullV8ModelName(DgnV8ModelR v8Model, wchar_t const* suffix
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Bentley::RefCountedPtr<DgnV8Api::DgnModel> Converter::CopyAndChangeAnnotationScale(DgnAttachmentCR v8Attachment, double newAnnotationScale)
+Bentley::RefCountedPtr<DgnV8Api::DgnModel> Converter::CopyAndChangeAnnotationScale(DgnV8ModelP v8Model, double newAnnotationScale)
     {
     DgnV8Api::DependencyManager::SetProcessingDisabled(false);   // must allow dependency mgr to "process" as that is copy V8 remaps IDs. See below.
 
-    auto v8Model = v8Attachment.GetDgnModelP();
     auto v8file = v8Model->GetDgnFileP();
 
     // Generate a new name for the model based on the attachment and the new scale
@@ -446,11 +445,53 @@ Bentley::RefCountedPtr<DgnV8Api::DgnModel> Converter::CopyAndChangeAnnotationSca
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Bentley::RefCountedPtr<DgnV8Api::DgnModel> Converter::CopyAndChangeSheetToDrawing(DgnAttachmentCR v8Attachment)
+Bentley::RefCountedPtr<DgnV8Api::DgnModel> Converter::CopyModel(DgnV8ModelP v8Model, WCharCP newNameSuffix)
     {
     DgnV8Api::DependencyManager::SetProcessingDisabled(false);   // must allow dependency mgr to "process" as that is copy V8 remaps IDs. See below.
 
-    auto v8Model = v8Attachment.GetDgnModelP();
+    auto v8file = v8Model->GetDgnFileP();
+
+    // Generate a new name for the copied model based on the attachment
+    WString newModelName = computeFullV8ModelName(*v8Model, newNameSuffix);
+
+    //  See if we already made such a copy. This can happen if the same drawing is attached to many different sheets 
+    //  or to the same sheet, each time with a different clip
+    DgnV8ModelP existingModel = v8file->FindLoadedModelById(v8file->FindModelIdByName(newModelName.c_str()));
+    if (nullptr != existingModel)
+        return existingModel;
+
+    // *** TRICKY: V8's ITxn::CreateNewModel function always sets up the new model as a rootmodel. V8 requires
+    //              that there be a non-zero refcount on a DgnFile that owns rootmodels. So, we must make sure that
+    //              there is such a ref.
+    _KeepFileAlive(*v8file);
+
+    //  Make a copy of the model
+    auto newModelInfo = v8Model->GetModelInfo().MakeCopy();
+    newModelInfo->SetName(newModelName.c_str());
+    newModelInfo->SetIsHidden(true);
+
+    DgnV8ModelP newModel = DgnV8Api::ITxnManager::GetCurrentTxn().CreateNewModel(nullptr, *v8file, *newModelInfo);
+    if (nullptr == newModel)
+        return nullptr;
+
+    v8file->CopyModelContents(*newModel, *v8Model, NULL);
+
+    SetEffectiveModelType(*newModel, newModel->GetModelType());
+
+    DgnV8Api::DependencyManager::ProcessAffected(); // remap element-element pointers and clear remap tables. If we don't do this, then second call to CopyModelContents on the same model will do nothing.
+
+    DgnV8Api::DependencyManager::SetProcessingDisabled(true);
+
+    return newModel;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Bentley::RefCountedPtr<DgnV8Api::DgnModel> Converter::CopyAndChangeSheetToDrawing(DgnV8ModelP v8Model)
+    {
+    DgnV8Api::DependencyManager::SetProcessingDisabled(false);   // must allow dependency mgr to "process" as that is copy V8 remaps IDs. See below.
+
     auto v8file = v8Model->GetDgnFileP();
 
     BeAssert(v8Model->GetModelType() == DgnV8Api::DgnModelType::Sheet);
@@ -537,7 +578,7 @@ void            Converter::MakeAttachedModelMatchRootAnnotationScale(DgnAttachme
 
     if (0 != BeNumerical::Compare(requiredEffectiveAnnotationScale, refAnnotationScale))
         {
-        auto scaledChild = CopyAndChangeAnnotationScale(ref, requiredEffectiveAnnotationScale);
+        auto scaledChild = CopyAndChangeAnnotationScale(ref.GetDgnModelP(), requiredEffectiveAnnotationScale);
         if (scaledChild.IsValid())
             {
             ref.SetDgnModel(scaledChild.get()); // v8DgnAttachment will add a reference to the new model, keeping it alive.
@@ -626,7 +667,7 @@ void Converter::UnnestAttachments(DgnV8ModelR parentModel)
         if (!attachment->IsSheet())
             continue;
 
-        auto attachedModelAsDrawing = CopyAndChangeSheetToDrawing(*attachment);
+        auto attachedModelAsDrawing = CopyAndChangeSheetToDrawing(attachment->GetDgnModelP());
         if (!attachedModelAsDrawing.IsValid())
             continue;
 
