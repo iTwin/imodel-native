@@ -203,6 +203,7 @@ public:
     struct GradeBreakInfo
     {
     DPoint3d pvi;
+    ICurvePrimitive::CurvePrimitiveType sourcePrimitiveType;
     };
     //=======================================================================================
     //=======================================================================================
@@ -254,7 +255,7 @@ private:
 
 public:
     CIVILBASEGEOMETRY_EXPORT AlignmentPVI();
-    CIVILBASEGEOMETRY_EXPORT void InitGradeBreak(DPoint3dCR pviPoint);
+    CIVILBASEGEOMETRY_EXPORT void InitGradeBreak(DPoint3dCR pviPoint, ICurvePrimitive::CurvePrimitiveType sourcePrimitiveType);
     CIVILBASEGEOMETRY_EXPORT void InitArc(DPoint3dCR pviPoint, double radius);
     // Initializes a parabola PVI.
     // @remarks when isLengthByK is true, the third parameter is the K Value, and is the length otherwise

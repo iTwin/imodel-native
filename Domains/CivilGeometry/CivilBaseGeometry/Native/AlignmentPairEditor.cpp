@@ -311,10 +311,11 @@ AlignmentPVI::AlignmentPVI()
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        11/2017
 //---------------------------------------------------------------------------------------
-void AlignmentPVI::InitGradeBreak(DPoint3dCR pviPoint)
+void AlignmentPVI::InitGradeBreak(DPoint3dCR pviPoint, ICurvePrimitive::CurvePrimitiveType sourcePrimitiveType)
     {
     GradeBreakInfo gbInfo;
     gbInfo.pvi = DPoint3d::From(pviPoint.x, 0.0, pviPoint.z);
+    gbInfo.sourcePrimitiveType = sourcePrimitiveType;
 
     m_gradeBreakInfo = gbInfo;
     m_type = TYPE_GradeBreak;
@@ -1925,19 +1926,60 @@ bvector<AlignmentPVI> AlignmentPairEditor::GetPVIs() const
                 AlignmentPVI pvi;
                 if (0 == i)
                     {
-                    pvi.InitGradeBreak(vtStart);
-                    pvis.push_back(pvi);
-                    }
-                
-                if (i + 1 < vt.size() && ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line == vt[i + 1]->GetCurvePrimitiveType())
-                    {
-                    DPoint3d start, end;
-                    vt[i]->GetStartEnd(start, end);
-                    end.y = 0.0;
-                    pvi.InitGradeBreak(end);
+                    pvi.InitGradeBreak(vtStart, ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line);
                     pvis.push_back(pvi);
                     }
 
+                if (i + 1 < vt.size())
+                    {
+                    auto nextType = vt[i + 1]->GetCurvePrimitiveType();
+                    if (nextType == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line || nextType == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString)
+                        {
+                        DPoint3d start, end;
+                        vt[i]->GetStartEnd(start, end);
+                        end.y = 0.0;
+                        pvi.InitGradeBreak(end, ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line);
+                        pvis.push_back(pvi);
+                        }
+                    }
+                break;
+                }
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
+                {
+                bvector<DPoint3d> const* pts = vt[i]->GetLineStringCP();
+                BeAssert(pts != nullptr);
+
+                //check if were the first primitive
+                if (i == 0)
+                    {
+                    AlignmentPVI pvi;
+                    pvi.InitGradeBreak(vtStart, ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString);
+                    pvis.push_back(pvi);
+                    }
+
+                //for each point in the middle of the linestring, create a pvi
+                for (int j = 1; j < pts->size() - 1; j++)
+                    {
+                    AlignmentPVI pvi;
+                    DPoint3d pviPt = pts->at(j);
+                    pviPt.y = 0.0;
+                    pvi.InitGradeBreak(pviPt, ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString);
+                    pvis.push_back(pvi);
+                    }
+
+                //for the last pt in the linestring, create a pvi if the next primitive is a line
+                if (i + 1 < vt.size())
+                    {
+                    auto nextType = vt[i + 1]->GetCurvePrimitiveType();
+                    if (nextType == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line || nextType == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString)
+                        {
+                        AlignmentPVI pvi;
+                        DPoint3d pviPt = pts->at(pts->size() - 1);
+                        pviPt.y = 0.0;
+                        pvi.InitGradeBreak(pviPt, ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString);
+                        pvis.push_back(pvi);
+                        }
+                    }
                 break;
                 }
             case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
@@ -1995,7 +2037,7 @@ bvector<AlignmentPVI> AlignmentPairEditor::GetPVIs() const
     if (!pvis.empty() && pvis.back().GetPVTLocation().x < vtEnd.x)
         {
         AlignmentPVI endPVI;
-        endPVI.InitGradeBreak(vtEnd);
+        endPVI.InitGradeBreak(vtEnd, vt.back()->GetCurvePrimitiveType());
         pvis.push_back(endPVI);
         }
 
