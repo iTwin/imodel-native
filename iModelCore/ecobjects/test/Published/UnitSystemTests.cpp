@@ -108,7 +108,7 @@ TEST_F(UnitSystemTest, StandaloneSchemaChildUnitSystem)
     ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
 
     UnitSystemP system;
-    schema->CreateUnitSystem(system, "ExampleUnitSystem");
+    schema->CreateUnitSystem(system, "ExampleUnitSystem", "ExampleUnitSystemLabel", "ExampleUnitSystemDescription");
 
     Json::Value schemaJson;
     EXPECT_EQ(SchemaWriteStatus::Success, system->WriteJson(schemaJson, true));
@@ -130,9 +130,6 @@ TEST_F(UnitSystemDeserializationTest, BasicRoundTripTest)
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
         </ECSchema>)xml";
-
-    if (Units::UnitRegistry::Instance().HasSystem("TestUnitSystem"))
-        Units::UnitRegistry::Instance().RemoveSystem("TestUnitSystem");
 
     Utf8String serializedSchemaXml;
     {

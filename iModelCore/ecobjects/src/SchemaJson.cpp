@@ -91,6 +91,32 @@ SchemaWriteStatus SchemaJsonWriter::WritePropertyCategory(PropertyCategoryCR pro
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz             11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus SchemaJsonWriter::WriteUnitSystem(UnitSystemCR unitSystem)
+    {
+    // Don't write any elements that aren't in the schema we're writing.
+    if (&(unitSystem.GetSchema()) != &m_ecSchema)
+        return SchemaWriteStatus::Success;
+
+    Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_CHILDREN_ATTRIBUTE][unitSystem.GetName()];
+    return unitSystem.WriteJson(childObj, false, false);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz             11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus SchemaJsonWriter::WritePhenomenon(PhenomenonCR phenomenon)
+    {
+    // Don't write any elements that aren't in the schema we're writing.
+    if (&(phenomenon.GetSchema()) != &m_ecSchema)
+        return SchemaWriteStatus::Success;
+
+    Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_CHILDREN_ATTRIBUTE][phenomenon.GetName()];
+    return phenomenon.WriteJson(childObj, false, false);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
 SchemaWriteStatus SchemaJsonWriter::WriteSchemaChildren()
@@ -119,6 +145,18 @@ SchemaWriteStatus SchemaJsonWriter::WriteSchemaChildren()
     for (auto const pc : m_ecSchema.GetPropertyCategories())
         {
         if (SchemaWriteStatus::Success != (status = WritePropertyCategory(*pc)))
+            return status;
+        }
+
+    for (auto const us : m_ecSchema.GetUnitSystems())
+        {
+        if (SchemaWriteStatus::Success != (status = WriteUnitSystem(*us)))
+            return status;
+        }
+
+    for (auto const ph : m_ecSchema.GetPhenomena())
+        {
+        if (SchemaWriteStatus::Success != (status = WritePhenomenon(*ph)))
             return status;
         }
 

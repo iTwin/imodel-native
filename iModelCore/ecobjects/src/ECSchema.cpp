@@ -310,6 +310,19 @@ ECSchema::~ECSchema ()
     m_unitSystemMap.clear();
     BeAssert(m_unitSystemMap.empty());
 
+    for (auto entry : m_phenomenonMap)
+        {
+        // Remove from the registry before removing from ECSchema
+        Units::UnitRegistry::Instance().RemovePhenomenon(entry.first);
+
+        // This should be the same pointer as the UnitRegistry has, so it should not matter which one is deleted.
+        auto phenomenon = entry.second;
+        delete phenomenon;
+        }
+
+    m_phenomenonMap.clear();
+    BeAssert(m_phenomenonMap.empty());
+
     m_refSchemaList.clear();
 
     memset ((void*)this, 0xececdead, 4);// Replaced sizeof(this) with 4. There is value 
@@ -597,6 +610,8 @@ Utf8CP ECSchema::SchemaElementTypeToString(ECSchemaElementType elementType)
             return PROPERTY_CATEGORY_ELEMENT;
         case ECSchemaElementType::UnitSystem:
             return UNIT_SYSTEM_ELEMENT;
+        case ECSchemaElementType::Phenomenon:
+            return PHENOMENON_ELEMENT;
         }
 
     return EMPTY_STRING;
@@ -1078,6 +1093,46 @@ ECObjectsStatus ECSchema::CreateUnitSystem(UnitSystemP& system, Utf8CP name, Utf
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus ECSchema::CreatePhenomenon(PhenomenonP& phenomenon, Utf8CP name, Utf8CP definition, Utf8CP displayLabel, Utf8CP description)
+    {
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
+
+    phenomenon = Units::UnitRegistry::Instance().AddPhenomenon<Phenomenon>(name, definition);
+    if (nullptr == phenomenon)
+        return ECObjectsStatus::Error;
+
+    phenomenon->SetSchema(*this);
+
+    ECObjectsStatus status = phenomenon->SetDisplayLabel(displayLabel);
+    if (ECObjectsStatus::Success != status)
+        {
+        Units::UnitRegistry::Instance().RemovePhenomenon(phenomenon->GetName().c_str());
+        delete phenomenon;
+        phenomenon = nullptr;
+        }
+
+    status = phenomenon->SetDescription(description);
+    if (ECObjectsStatus::Success != status)
+        {
+        Units::UnitRegistry::Instance().RemovePhenomenon(phenomenon->GetName().c_str());
+        delete phenomenon;
+        phenomenon = nullptr;
+        }
+
+    status = AddSchemaChildToMap<Phenomenon, PhenomenonMap>(phenomenon, &m_phenomenonMap, ECSchemaElementType::Phenomenon);
+    if (ECObjectsStatus::Success != status)
+        {
+        Units::UnitRegistry::Instance().RemovePhenomenon(phenomenon->GetName().c_str());
+        delete phenomenon;
+        phenomenon = nullptr;
+        }
+
+    return status;
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    01/2018
 //--------------------------------------------------------------------------------------
 template<typename T, typename T_MAP>
@@ -1107,6 +1162,7 @@ template<> ECObjectsStatus ECSchema::AddSchemaChild<ECEnumeration>(ECEnumeration
 template<> ECObjectsStatus ECSchema::AddSchemaChild<PropertyCategory>(PropertyCategoryP child, ECSchemaElementType childType) {return AddSchemaChildToMap<PropertyCategory, PropertyCategoryMap>(child, &m_propertyCategoryMap, childType);}
 template<> ECObjectsStatus ECSchema::AddSchemaChild<KindOfQuantity>(KindOfQuantityP child, ECSchemaElementType childType) {return AddSchemaChildToMap<KindOfQuantity, KindOfQuantityMap>(child, &m_kindOfQuantityMap, childType);}
 template<> ECObjectsStatus ECSchema::AddSchemaChild<UnitSystem>(UnitSystemP child, ECSchemaElementType childType) {return AddSchemaChildToMap<UnitSystem, UnitSystemMap>(child, &m_unitSystemMap, childType);}
+template<> ECObjectsStatus ECSchema::AddSchemaChild<Phenomenon>(PhenomenonP child, ECSchemaElementType childType) {return AddSchemaChildToMap<Phenomenon, PhenomenonMap>(child, &m_phenomenonMap, childType);}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    02/2018
@@ -1121,6 +1177,18 @@ ECObjectsStatus ECSchema::DeleteUnitSystem(UnitSystemR unitSystem)
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    02/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus ECSchema::DeletePhenomenon(PhenomenonR phenom)
+    {
+    // RemovePhenomenon will return nullptr if it cannot find the Phenomenon. No need
+    // to check since we still want to check the Schema for the phenomenon.
+    Units::UnitRegistry::Instance().RemovePhenomenon(phenom.GetName().c_str());
+
+    return DeleteSchemaChild<Phenomenon, PhenomenonMap>(phenom, &m_phenomenonMap);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
 bool ECSchema::NamedElementExists(Utf8CP name)
@@ -1129,7 +1197,8 @@ bool ECSchema::NamedElementExists(Utf8CP name)
         (m_enumerationMap.find(name) != m_enumerationMap.end()) ||
         (m_kindOfQuantityMap.find(name) != m_kindOfQuantityMap.end()) ||
         (m_propertyCategoryMap.find(name) != m_propertyCategoryMap.end()) ||
-        (m_unitSystemMap.find(name) != m_unitSystemMap.end());
+        (m_unitSystemMap.find(name) != m_unitSystemMap.end()) ||
+        (m_phenomenonMap.find(name) != m_phenomenonMap.end());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2770,6 +2839,17 @@ void ECSchemaElementsOrder::CreateAlphabeticalOrder(ECSchemaCR ecSchema)
             }
         else
             AddElement(unitSystem->GetName().c_str(), ECSchemaElementType::UnitSystem);
+         }
+
+    for (auto phenomenon : ecSchema.GetPhenomena())
+         {
+        if (nullptr == phenomenon)
+            {
+            BeAssert(false);
+            continue;
+            }
+        else
+            AddElement(phenomenon->GetName().c_str(), ECSchemaElementType::Phenomenon);
          }
     }
 

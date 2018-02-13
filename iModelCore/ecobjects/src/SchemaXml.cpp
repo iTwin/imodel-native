@@ -368,6 +368,41 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadUnitSystemFromXml(ECSchemaPtr& schemaO
     return status;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                  02/2018
+//---------------------------------------------------------------------------------------
+SchemaReadStatus SchemaXmlReaderImpl::ReadPhenomenonFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode)
+    {
+    SchemaReadStatus status = SchemaReadStatus::Success;
+
+    for (BeXmlNodeP candidateNode = schemaNode.GetFirstChild(); nullptr != candidateNode; candidateNode = candidateNode->GetNextSibling())
+        {
+        if (!IsSchemaChildElementNode(*candidateNode, ECSchemaElementType::Phenomenon))
+            continue;
+
+        PhenomenonP phenom;
+        status = Phenomenon::ReadXml(phenom, *candidateNode, *schemaOut, m_schemaContext);
+        if (SchemaReadStatus::Success != status)
+            {
+            // The object should never be constructed, no need to delete it.
+            phenom = nullptr;
+            return status;
+            }
+        
+        ECObjectsStatus addStatus = schemaOut->AddSchemaChild<Phenomenon>(phenom, ECSchemaElementType::Phenomenon);
+        if (ECObjectsStatus::NamedItemAlreadyExists == addStatus)
+            {
+            LOG.errorv("Duplicate %s node for %s in schema %s.", ECSchema::SchemaElementTypeToString(ECSchemaElementType::Phenomenon), phenom->GetName().c_str(), schemaOut->GetFullSchemaName().c_str());
+            Units::UnitRegistry::Instance().RemovePhenomenon(phenom->GetName().c_str());
+            delete phenom;
+            phenom = nullptr;
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
+        
+    return status;
+    }
+
 // =====================================================================================
 // SchemaXmlReader2 class
 // =====================================================================================
@@ -604,6 +639,8 @@ bool SchemaXmlReaderImpl::_IsSchemaChildElementNode(BeXmlNodeR schemaNode, ECSch
             return 0 == strcmp(PROPERTY_CATEGORY_ELEMENT, nodeName);
         case ECSchemaElementType::UnitSystem:
             return 0 == strcmp(UNIT_SYSTEM_ELEMENT, nodeName);
+        case ECSchemaElementType::Phenomenon:
+            return 0 == strcmp(PHENOMENON_ELEMENT, nodeName);
         }
 
     return false;
@@ -632,6 +669,8 @@ bool SchemaXmlReaderImpl::_IsSchemaChildElementNode(BeXmlNodeR schemaNode, ECSch
             elementOrder.AddElement(typeName.c_str(), ECSchemaElementType::PropertyCategory);
         else if (IsSchemaChildElementNode(*candidateNode, ECSchemaElementType::UnitSystem))
             elementOrder.AddElement(typeName.c_str(), ECSchemaElementType::UnitSystem);
+        else if (IsSchemaChildElementNode(*candidateNode, ECSchemaElementType::Phenomenon))
+            elementOrder.AddElement(typeName.c_str(), ECSchemaElementType::Phenomenon);
         }
     }
 
@@ -837,6 +876,19 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
 
     readingUnitSystems.Stop();
     LOG.tracev("Reading unit system elements for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingUnitSystems.GetElapsedSeconds());
+
+    // Phenomena
+    StopWatch readingPhenomena("Reading Phenomena", true);
+    status = reader->ReadPhenomenonFromXml(schemaOut, *schemaNode);
+
+    if (SchemaReadStatus::Success != status)
+        {
+        delete reader; reader = nullptr;
+        return status;
+        }
+
+    readingPhenomena.Stop();
+    LOG.tracev("Reading Phenomenon elements for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingPhenomena.GetElapsedSeconds());
 
     // KindOfQuantity
     StopWatch readingKindOfQuantities("Reading kind of quantity", true);
@@ -1096,6 +1148,12 @@ SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
             UnitSystemCP system = m_ecSchema.GetUnitSystemCP(elementName);
             if (nullptr != system)
                 WriteSchemaChild<UnitSystem>(*system);
+            }
+        else if (ECSchemaElementType::Phenomenon == elementType)
+            {
+            PhenomenonCP phenom = m_ecSchema.GetPhenomenonCP(elementName);
+            if (nullptr != phenom)
+                WriteSchemaChild<Phenomenon>(*phenom);
             }
         }
 

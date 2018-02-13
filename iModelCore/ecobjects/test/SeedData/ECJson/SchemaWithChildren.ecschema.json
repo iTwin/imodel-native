@@ -122,6 +122,17 @@
         }
       ]
     },
+    "ExampleUnitSystem": {
+      "schemaChildType": "UnitSystem",
+      "label": "ExampleUnitSystemLabel",
+      "description": "ExampleUnitSystemDescription"
+    },
+    "ExamplePhenomenon": {
+      "schemaChildType": "Phenomenon",
+      "definition": "LENGTH",
+      "label": "ExamplePhenomenonLabel",
+      "description": "ExamplePhenomenonDescription"
+    },
     "ExampleEnumeration": {
       "schemaChildType": "Enumeration",
       "backingTypeName": "int",

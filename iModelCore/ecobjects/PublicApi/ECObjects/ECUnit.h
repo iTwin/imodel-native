@@ -79,4 +79,69 @@ public:
     ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = false) const;
 };
 
+//=======================================================================================
+//! @bsistruct
+//=======================================================================================
+struct Phenomenon : Units::Phenomenon, NonCopyableClass 
+{
+DEFINE_T_SUPER(Units::Phenomenon)
+friend struct ECSchema;
+friend struct SchemaXmlWriter;
+friend struct SchemaXmlReaderImpl;
+friend struct SchemaJsonWriter;
+friend struct Units::UnitRegistry;
+
+private:
+    bool m_explicitDisplayLabel;
+    Utf8String m_description;
+    ECSchemaCP m_schema;
+
+    void SetSchema(ECSchemaCR schema) {m_schema = &schema;}
+
+    mutable Utf8String m_fullName;
+    mutable PhenomenonId m_phenomenonId;
+
+    ECObjectsStatus SetDisplayLabel(Utf8CP value);
+    ECObjectsStatus SetDescription(Utf8CP value) {m_description = value; return ECObjectsStatus::Success;}
+
+    static SchemaReadStatus ReadXml(PhenomenonP& phenomenon, BeXmlNodeR phenomenonNode, ECSchemaCR schema, ECSchemaReadContextR context);
+
+    SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
+
+    SchemaWriteStatus WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
+
+    // Should only be called by UnitRegistry
+    Phenomenon(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id) : Units::Phenomenon(name, definition, baseSymbol, id), m_explicitDisplayLabel(false) {}
+
+protected:
+    // Needed by Units::UnitRegistry to create the Phenomenon
+    ECOBJECTS_EXPORT static PhenomenonP _Create(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id);
+
+public:
+    ECSchemaCR GetSchema() const {return *m_schema;} //!< The ECSchema that this Phenomenon is defined in
+
+    //! {SchemaName}:{PhenomenonName} The pointer will remain valid as long as the Phenomenon exists.
+    ECOBJECTS_EXPORT Utf8StringCR GetFullName() const;
+    //! Gets a qualified name of the Phenomenon, prefixed by the schema alias if it does not match the primary schema.
+    ECOBJECTS_EXPORT Utf8String GetQualifiedName(ECSchemaCR primarySchema) const;
+    //! Gets the display label of this Phenomenon.  If no display label has been set explicitly, it will return the name of the Phenomenon
+    ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const;
+    bool GetIsDisplayLabelDefined() const {return m_explicitDisplayLabel;} //!< Whether the display label is explicitly defined or not
+    Utf8StringCR GetInvariantDisplayLabel() const {return Units::Phenomenon::GetInvariantLabel();} //!< Gets the invariant display label for this Phenomenon.
+
+    Utf8StringCR GetInvariantDescription() const {return m_description;} //!< Gets the invariant description for this Phenomenon.
+    ECOBJECTS_EXPORT Utf8StringCR GetDescription() const; //!< Gets the description of this Phenomenon. Returns the localized description if one exists.
+
+    //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
+    PhenomenonId GetId() const {BeAssert(HasId()); return m_phenomenonId;}
+    //! Intended to be called by ECDb or a similar system
+    void SetId(PhenomenonId id) {BeAssert(!m_phenomenonId.IsValid()); m_phenomenonId = id;}
+    bool HasId() const {return m_phenomenonId.IsValid();}
+
+    //! Write the Phenomenon as a standalone schema child in the ECSchemaJSON format.
+    //! @param[out] outValue                Json object containing the schema child Json if successfully written.
+    //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
+    ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = false) const;
+};
+
 END_BENTLEY_ECOBJECT_NAMESPACE

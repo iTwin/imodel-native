@@ -76,6 +76,7 @@
     <ClCompile Include="ExpressionContext.cpp" />
     <ClCompile Include="ExpressionHandler.cpp" />
     <ClCompile Include="ExpressionNode.cpp" />
+    <ClCompile Include="Phenomenon.cpp" />
     <ClCompile Include="PresentationMetadataHelper.cpp" />
     <ClCompile Include="PropertyCategory.cpp" />
     <ClCompile Include="SchemaComparer.cpp" />

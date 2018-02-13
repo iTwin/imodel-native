@@ -3,5 +3,7 @@
   "schema": "ExampleSchema",
   "schemaVersion": "03.01.00",
   "schemaChildType": "UnitSystem",
-  "name": "ExampleUnitSystem"
+  "name": "ExampleUnitSystem",
+  "label": "ExampleUnitSystemLabel",
+  "description": "ExampleUnitSystemDescription"
 }

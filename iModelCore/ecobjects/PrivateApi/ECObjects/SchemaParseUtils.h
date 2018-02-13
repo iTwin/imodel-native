@@ -38,6 +38,7 @@
 #define ECJSON_ENUMERATION_ELEMENT          "Enumeration"
 #define PROPERTY_CATEGORY_ELEMENT           "PropertyCategory"
 #define UNIT_SYSTEM_ELEMENT                 "UnitSystem"
+#define PHENOMENON_ELEMENT                  "Phenomenon"
 
 #define ECXML_SCHEMAREFERENCE_ELEMENT       "ECSchemaReference"
 #define ECJSON_REFERENCES_ATTRIBUTE         "references"
@@ -87,6 +88,7 @@
 #define PRIORITY_ATTRIBUTE                  "priority"
 #define READONLY_ATTRIBUTE                  "readOnly"
 #define CATEGORY_ATTRIBUTE                  "category"
+#define DEFINITION_ATTRIBUTE                "definition"
 #define TYPE_NAME_ATTRIBUTE                 "typeName"
 #define EXTENDED_TYPE_NAME_ATTRIBUTE        "extendedTypeName"
 #define ECXML_MINIMUM_VALUE_ATTRIBUTE       "minimumValue"

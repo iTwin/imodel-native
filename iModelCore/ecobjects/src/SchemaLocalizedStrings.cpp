@@ -169,6 +169,30 @@ Utf8StringCR SchemaLocalizedStrings::GetPropertyCategoryDescription(PropertyCate
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
+//--------------------------------------------------------------------------------------
+Utf8StringCR SchemaLocalizedStrings::GetPhenomenonDisplayLabel(PhenomenonCR phenomenon, Utf8StringCR invariantDisplayLabel) const
+    {
+    if (m_empty)
+        return invariantDisplayLabel;
+
+    Utf8String key = SchemaResourceKeyHelper::GetTypeDisplayLabelKey(phenomenon);
+    return GetLocalizedString(key.c_str(), invariantDisplayLabel);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
+//--------------------------------------------------------------------------------------
+Utf8StringCR SchemaLocalizedStrings::GetPhenomenonDescription(PhenomenonCR phenomenon, Utf8StringCR invariantDescription) const
+    {
+    if (m_empty)
+        return invariantDescription;
+
+    Utf8String key = SchemaResourceKeyHelper::GetTypeDescriptionKey(phenomenon);
+    return GetLocalizedString(key.c_str(), invariantDescription);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    01/2018
 //--------------------------------------------------------------------------------------
 Utf8StringCR SchemaLocalizedStrings::GetUnitSystemDisplayLabel(UnitSystemCR unitSystem, Utf8StringCR invariantDisplayLabel) const

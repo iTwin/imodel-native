@@ -145,6 +145,8 @@ $(o)SystemSymbolProvider$(oext)                            : $(baseDir)SystemSym
 
 $(o)UnitSystem$(oext)                                      : $(baseDir)UnitSystem.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
+$(o)Phenomenon$(oext)                                      : $(baseDir)Phenomenon.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
 # ECUnits
 
 $(o)Units$(oext)                                           : $(baseDir)Units/Units.cpp $(ECUnitsHeaders) ${MultiCompileDepends}

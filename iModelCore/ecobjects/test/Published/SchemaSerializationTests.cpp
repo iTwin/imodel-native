@@ -485,6 +485,12 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithChildren)
     koq->AddPresentationUnit("CM");
     koq->SetRelativeError(3);
 
+    UnitSystemP unitSystem;
+    schema->CreateUnitSystem(unitSystem, "ExampleUnitSystem", "ExampleUnitSystemLabel", "ExampleUnitSystemDescription");
+    
+    PhenomenonP phenom;
+    schema->CreatePhenomenon(phenom, "ExamplePhenomenon", "LENGTH", "ExamplePhenomenonLabel", "ExamplePhenomenonDescription");
+
     // Enumeration
     ECEnumerationP enumeration;
     schema->CreateEnumeration(enumeration, "ExampleEnumeration", PrimitiveType::PRIMITIVETYPE_Integer);

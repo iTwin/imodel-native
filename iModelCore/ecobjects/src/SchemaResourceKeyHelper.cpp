@@ -119,6 +119,20 @@ Utf8String SchemaResourceKeyHelper::GetTypeDescriptionKey(UnitSystemCR unitSyste
         unitSystem.GetInvariantDescription().c_str());
     }
 
+Utf8String SchemaResourceKeyHelper::GetTypeDisplayLabelKey(PhenomenonCR phenomenon)
+    {
+    return GetTypeDisplayLabelKey(phenomenon.GetSchema().GetName().c_str(),
+        phenomenon.GetName().c_str(),
+        phenomenon.GetInvariantDisplayLabel().c_str());
+    }
+
+Utf8String SchemaResourceKeyHelper::GetTypeDescriptionKey(PhenomenonCR phenomenon)
+    {
+    return GetTypeDescriptionKey(phenomenon.GetSchema().GetName().c_str(),
+        phenomenon.GetName().c_str(),
+        phenomenon.GetInvariantDescription().c_str());
+    }
+
 Utf8String SchemaResourceKeyHelper::GetTypeChildDisplayLabelKey(ECPropertyCR ecProperty)
     {
     return GetTypeChildDisplayLabelKey(ecProperty.GetClass().GetSchema().GetName().c_str(),
