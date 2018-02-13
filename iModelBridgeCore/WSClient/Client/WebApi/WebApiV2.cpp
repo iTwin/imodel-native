@@ -20,7 +20,7 @@
 
 #define WARNING_UrlLengthLimitations    "<Warning> Url length might be problematic as it is longer than expected"
 
-const BeVersion WebApiV2::s_maxTestedWebApi(2, 7);
+const BeVersion WebApiV2::s_maxTestedWebApi(2, 5);
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
