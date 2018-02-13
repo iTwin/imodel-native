@@ -61,7 +61,7 @@ struct JobApi
             ICancellationTokenPtr ct
             ) const;
 
-        WSCLIENT_EXPORT bool JobApi::AddJobHeaderTo
+        WSCLIENT_EXPORT bool AddJobHeaderTo
             (
             HttpRequestHeadersR headers,
             WSInfoCR info,
