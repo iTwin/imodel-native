@@ -26,7 +26,7 @@ RoadRailAlignmentDomain::RoadRailAlignmentDomain() : DgnDomain(BRRA_SCHEMA_NAME,
     RegisterHandler(AlignmentModelHandler::GetHandler());
     RegisterHandler(AlignmentHandler::GetHandler());
     RegisterHandler(HorizontalAlignmentModelHandler::GetHandler());
-    RegisterHandler(HorizontalAlignmentsPortionHandler::GetHandler());
+    RegisterHandler(HorizontalAlignmentsHandler::GetHandler());
     RegisterHandler(HorizontalAlignmentHandler::GetHandler());    
     RegisterHandler(AlignmentProfileViewDefinitionHandler::GetHandler());
     RegisterHandler(AlignmentReferentElementHandler::GetHandler());
@@ -164,7 +164,7 @@ DgnDbStatus RoadRailAlignmentDomain::SetUpModelHierarchy(SubjectCR subject, Utf8
     if (DgnDbStatus::Success != (status = alignmentModelPtr->Insert()))
         return status;
 
-    auto horizontalPartitionCPtr = HorizontalAlignmentsPortion::InsertPortion(*alignmentModelPtr);
+    auto horizontalPartitionCPtr = HorizontalAlignments::Insert(*alignmentModelPtr);
     if (horizontalPartitionCPtr.IsNull())
         return DgnDbStatus::BadModel;
 

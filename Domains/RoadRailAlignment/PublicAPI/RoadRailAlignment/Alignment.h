@@ -76,24 +76,24 @@ public:
 
 //=======================================================================================
 //! Information Content Element representing all the horizontal alignments in
-//! an Alignments portion.
+//! an Alignments model.
 //! @ingroup GROUP_RoadRailAlignment
 //=======================================================================================
-struct HorizontalAlignmentsPortion : Dgn::SpatialLocationPortion
+struct HorizontalAlignments : Dgn::SpatialLocationElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(BRRA_CLASS_HorizontalAlignmentsPortion, Dgn::SpatialLocationPortion);
-    friend struct HorizontalAlignmentsPortionHandler;
+    DGNELEMENT_DECLARE_MEMBERS(BRRA_CLASS_HorizontalAlignments, Dgn::SpatialLocationElement);
+    friend struct HorizontalAlignmentsHandler;
 
 protected:
     //! @private
-    explicit HorizontalAlignmentsPortion(CreateParams const& params) : T_Super(params) {}
+    explicit HorizontalAlignments(CreateParams const& params) : T_Super(params) {}
 
 public:
-    DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(HorizontalAlignmentsPortion)
-    ROADRAILALIGNMENT_EXPORT static HorizontalAlignmentsPortionCPtr Get(Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().Get<HorizontalAlignmentsPortion>(id); }
-    ROADRAILALIGNMENT_EXPORT static HorizontalAlignmentsPortionCPtr InsertPortion(AlignmentModelCR model);
+    DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(HorizontalAlignments)
+    ROADRAILALIGNMENT_EXPORT static HorizontalAlignmentsCPtr Get(Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().Get<HorizontalAlignments>(id); }
+    ROADRAILALIGNMENT_EXPORT static HorizontalAlignmentsCPtr Insert(AlignmentModelCR model);
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnCode CreateCode(Dgn::SpatialLocationPartitionCR alignmentPartition, Utf8StringCR name);
-}; // HorizontalAlignmentsPortion
+}; // HorizontalAlignments
 
 //=======================================================================================
 //! Horizontal piece of an Alignment.
@@ -173,12 +173,12 @@ ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_Alignment, Alignment, AlignmentHandler
 }; //AlignmentHandler
 
 //=================================================================================
-//! ElementHandler for HorizontalAlignmentsPortion Element
+//! ElementHandler for HorizontalAlignments Element
 //! @ingroup GROUP_RoadRailAlignment
 //=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE HorizontalAlignmentsPortionHandler : Dgn::dgn_ElementHandler::SpatialLocation
+struct EXPORT_VTABLE_ATTRIBUTE HorizontalAlignmentsHandler : Dgn::dgn_ElementHandler::SpatialLocation
 {
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_HorizontalAlignmentsPortion, HorizontalAlignmentsPortion, HorizontalAlignmentsPortionHandler, Dgn::dgn_ElementHandler::SpatialLocation, ROADRAILALIGNMENT_EXPORT)
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_HorizontalAlignments, HorizontalAlignments, HorizontalAlignmentsHandler, Dgn::dgn_ElementHandler::SpatialLocation, ROADRAILALIGNMENT_EXPORT)
 }; // HorizontalAlignmentsHandler
 
 //=================================================================================

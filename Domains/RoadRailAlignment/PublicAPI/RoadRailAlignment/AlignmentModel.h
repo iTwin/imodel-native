@@ -42,7 +42,7 @@ protected:
 
 public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(AlignmentModel)
-    ROADRAILALIGNMENT_EXPORT HorizontalAlignmentsPortionCPtr QueryHorizontalPartition() const;
+    ROADRAILALIGNMENT_EXPORT HorizontalAlignmentsCPtr QueryHorizontalPartition() const;
 
     ROADRAILALIGNMENT_EXPORT static AlignmentModelPtr Query(Dgn::SubjectCR parentSubject, Utf8CP modelName = nullptr);
     static AlignmentModelPtr Create(CreateParams const& params) { return new AlignmentModel(params); }

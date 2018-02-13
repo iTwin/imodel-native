@@ -68,7 +68,7 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 #define BRRA_CLASS_AlignmentStation                                 "AlignmentStation"
 #define BRRA_CLASS_AlignmentXSViewDefinition                        "AlignmentXSViewDefinition"
 #define BRRA_CLASS_HorizontalAlignment                              "HorizontalAlignment"
-#define BRRA_CLASS_HorizontalAlignmentsPortion                      "HorizontalAlignmentsPortion"
+#define BRRA_CLASS_HorizontalAlignments                             "HorizontalAlignments"
 #define BRRA_CLASS_HorizontalAlignmentModel                         "HorizontalAlignmentModel"
 #define BRRA_CLASS_VerticalAlignment                                "VerticalAlignment"
 #define BRRA_CLASS_VerticalAlignmentModel                           "VerticalAlignmentModel"
@@ -151,7 +151,7 @@ ROADRAILALIGNMENT_TYPEDEFS(AlignmentReferentElement)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentStation)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentXSViewDefinition)
 ROADRAILALIGNMENT_TYPEDEFS(HorizontalAlignment)
-ROADRAILALIGNMENT_TYPEDEFS(HorizontalAlignmentsPortion)
+ROADRAILALIGNMENT_TYPEDEFS(HorizontalAlignments)
 ROADRAILALIGNMENT_TYPEDEFS(HorizontalAlignmentModel)
 ROADRAILALIGNMENT_TYPEDEFS(VerticalAlignment)
 ROADRAILALIGNMENT_TYPEDEFS(VerticalAlignmentModel)
@@ -164,7 +164,7 @@ ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentStation)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentStationingTranslator)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentXSViewDefinition)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(HorizontalAlignment)
-ROADRAILALIGNMENT_REFCOUNTED_PTR(HorizontalAlignmentsPortion)
+ROADRAILALIGNMENT_REFCOUNTED_PTR(HorizontalAlignments)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(HorizontalAlignmentModel)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(VerticalAlignment)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(VerticalAlignmentModel)

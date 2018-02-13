@@ -31,10 +31,10 @@ AlignmentModelPtr AlignmentModel::Query(Dgn::SubjectCR parentSubject, Utf8CP mod
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-HorizontalAlignmentsPortionCPtr AlignmentModel::QueryHorizontalPartition() const
+HorizontalAlignmentsCPtr AlignmentModel::QueryHorizontalPartition() const
     {
     ECSqlStatement stmt;
-    stmt.Prepare(GetDgnDb(), "SELECT ECInstanceId FROM " BRRA_SCHEMA(BRRA_CLASS_HorizontalAlignmentsPortion) " WHERE Model.Id = ?;");
+    stmt.Prepare(GetDgnDb(), "SELECT ECInstanceId FROM " BRRA_SCHEMA(BRRA_CLASS_HorizontalAlignments) " WHERE Model.Id = ?;");
     BeAssert(stmt.IsPrepared());
 
     stmt.BindId(1, GetModelId());
@@ -42,7 +42,7 @@ HorizontalAlignmentsPortionCPtr AlignmentModel::QueryHorizontalPartition() const
     if (DbResult::BE_SQLITE_ROW != stmt.Step())
         return nullptr;
 
-    return HorizontalAlignmentsPortion::Get(GetDgnDb(), stmt.GetValueId<DgnElementId>(0));
+    return HorizontalAlignments::Get(GetDgnDb(), stmt.GetValueId<DgnElementId>(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -52,7 +52,7 @@ DgnModelId HorizontalAlignmentModel::QueryBreakDownModelId(AlignmentModelCR mode
     {
     auto stmtPtr = model.GetDgnDb().GetPreparedECSqlStatement("SELECT horizModel.ECInstanceId FROM "
         BRRA_SCHEMA(BRRA_CLASS_HorizontalAlignmentModel) " horizModel, "
-        BRRA_SCHEMA(BRRA_CLASS_HorizontalAlignmentsPortion) " horizAligns "
+        BRRA_SCHEMA(BRRA_CLASS_HorizontalAlignments) " horizAligns "
         "WHERE horizModel.ModeledElement.Id = horizAligns.ECInstanceId AND horizAligns.Model.Id = ?;");
     BeAssert(stmtPtr.IsValid());
 

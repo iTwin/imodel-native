@@ -9,7 +9,7 @@
 #include <RoadRailAlignment/Alignment.h>
 
 HANDLER_DEFINE_MEMBERS(AlignmentHandler)
-HANDLER_DEFINE_MEMBERS(HorizontalAlignmentsPortionHandler)
+HANDLER_DEFINE_MEMBERS(HorizontalAlignmentsHandler)
 HANDLER_DEFINE_MEMBERS(HorizontalAlignmentHandler)
 HANDLER_DEFINE_MEMBERS(VerticalAlignmentHandler)
 
@@ -513,7 +513,7 @@ DgnDbStatus Alignment::GenerateAprox3dGeom()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode HorizontalAlignmentsPortion::CreateCode(SpatialLocationPartitionCR alignmentPartition, Utf8StringCR name)
+DgnCode HorizontalAlignments::CreateCode(SpatialLocationPartitionCR alignmentPartition, Utf8StringCR name)
     {
     return CodeSpec::CreateCode(BRRA_CODESPEC_HorizontalAlignment, alignmentPartition, name);
     }
@@ -521,7 +521,7 @@ DgnCode HorizontalAlignmentsPortion::CreateCode(SpatialLocationPartitionCR align
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-HorizontalAlignmentsPortionCPtr HorizontalAlignmentsPortion::InsertPortion(AlignmentModelCR model)
+HorizontalAlignmentsCPtr HorizontalAlignments::Insert(AlignmentModelCR model)
     {
     if (!model.GetModelId().IsValid())
         return nullptr;
@@ -534,8 +534,8 @@ HorizontalAlignmentsPortionCPtr HorizontalAlignmentsPortion::InsertPortion(Align
     auto alignmentPartitionCode = model.GetModeledElement()->GetCode();
     createParams.m_code = CreateCode(*dynamic_cast<SpatialLocationPartitionCP>(model.GetModeledElement().get()), alignmentPartitionCode.GetValueUtf8());
 
-    HorizontalAlignmentsPortionPtr newPortionPtr(new HorizontalAlignmentsPortion(createParams));
-    return model.GetDgnDb().Elements().Insert<HorizontalAlignmentsPortion>(*newPortionPtr);
+    HorizontalAlignmentsPtr newPtr(new HorizontalAlignments(createParams));
+    return model.GetDgnDb().Elements().Insert<HorizontalAlignments>(*newPtr);
     }
 
 /*---------------------------------------------------------------------------------**//**
