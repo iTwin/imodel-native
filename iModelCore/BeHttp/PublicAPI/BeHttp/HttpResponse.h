@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/BeHttp/HttpResponse.h $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -71,8 +71,16 @@ public:
     //! Create invalid response with ConnectionStatus::None
     BEHTTP_EXPORT Response();
 
-    //! Create response
+    //! DEPRECATED- Create response
     BEHTTP_EXPORT Response(HttpResponseContentPtr responseData, Utf8CP effectiveUrl, ConnectionStatus connectionStatus, HttpStatus httpStatus);
+
+    //! Create response with ConnectionStatus
+    //! If connection status is ConnectionStatus::OK the response is not valid
+    BEHTTP_EXPORT Response(ConnectionStatus connectionStatus);
+    //! Create valid response with ConnectionStatus::OK
+    BEHTTP_EXPORT Response(HttpStatus httpStatus, Utf8String effectiveUrl, HttpResponseContentPtr responseData);
+    //! Create valid response by providing response content as string values
+    BEHTTP_EXPORT Response(HttpStatus httpStatus, Utf8String effectiveUrl, Utf8String headers, Utf8String responseContent);
 
     // Get last used url where response came from
     Utf8String GetEffectiveUrl() const {return m_effectiveUrl;}

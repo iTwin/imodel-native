@@ -2,7 +2,7 @@
  |
  |     $Source: BeHttp/HttpResponse.cpp $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #include <BeHttp/HttpResponse.h>
@@ -40,6 +40,82 @@ m_effectiveUrl(effectiveUrl),
 m_connectionStatus(connectionStatus),
 m_httpStatus(httpStatus)
     {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    09/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+Response::Response(ConnectionStatus status) : m_connectionStatus(status)
+    {
+    if (ConnectionStatus::OK != status)
+        return;
+
+    BeAssert(false && "Bad creation of HttpResponse: ConnectionStatus is ok, no other parameters given");
+    m_effectiveUrl = "";
+    m_httpStatus = HttpStatus::InternalServerError;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    09/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+Response::Response(HttpStatus httpStatus, Utf8String effectiveUrl, HttpResponseContentPtr responseData)
+    :   m_content(responseData),
+        m_effectiveUrl(effectiveUrl),
+        m_connectionStatus(ConnectionStatus::OK),
+        m_httpStatus(httpStatus)
+    {
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Response::Response(HttpStatus httpStatus, Utf8String effectiveUrl, Utf8String headers, Utf8String responseContent)
+    :
+    m_effectiveUrl(effectiveUrl),
+    m_connectionStatus(ConnectionStatus::OK),
+    m_httpStatus(httpStatus)
+    {
+    auto content = HttpResponseContent::Create(HttpStringBody::Create(responseContent));
+
+    if (!headers.empty())
+        {
+        bvector<Utf8String> headerPairs;
+        BeStringUtilities::Split(headers.c_str(), "\n", headerPairs);
+        for (auto headerPair : headerPairs)
+            {
+            bvector<Utf8String> header;
+            if (':' == headerPair[0])
+                continue;
+
+            BeStringUtilities::Split(headerPair.c_str(), ":", header);
+            if (0 == header.size() || "" == header[0])
+                continue;
+
+            if (1 == header.size())
+                {
+                content->GetHeaders().SetValue(header[0], " ");
+                continue;
+                }
+
+            if (2 == header.size())
+                {
+                content->GetHeaders().SetValue(header[0], header[1]);
+                continue;
+                }
+
+            Utf8String value = "";
+            for (int i = 1; i < header.size(); ++i)
+                {
+                value += header[i];
+                if (header.size() - 1 != i)
+                    value += ":";
+                }
+
+            content->GetHeaders().SetValue(header[0], value);
+            }
+        }
+
+    m_content = content;
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2015
