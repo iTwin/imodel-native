@@ -1934,7 +1934,6 @@ public:
     Json::Value ToJson(JsonValueCR opts = Json::Value()) const { Json::Value val; _ToJson(val, opts); return val; }
 
     void FromJson(JsonValueR props) {_FromJson(props);}
-    
     //! @}
 
     //! Make an iterator over all ElementAspects owned by this element
