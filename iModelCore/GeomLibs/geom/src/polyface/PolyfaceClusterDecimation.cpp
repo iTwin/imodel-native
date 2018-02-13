@@ -52,9 +52,6 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance)
         size_t              m_outputParamIndex;
         size_t              m_outputNormalIndex;
 
-        Cluster() { };
-        Cluster(int32_t pointIndex, int32_t normalIndex, int32_t paramIndex) : m_pointIndices(1, pointIndex), m_normalIndices(1, normalIndex), m_paramIndices(1, paramIndex) { }
-                                                                                                 
         void Add (int32_t pointIndex, int32_t normalIndex, int32_t paramIndex)
             {
             m_pointIndices.push_back(pointIndex);
@@ -169,7 +166,7 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance)
             {
             for (auto& cluster : faceClusters)
                 {
-                coordinateMap->AddPointIndex(cluster->m_outputPointIndex, true /* Visiblity???*/ );
+                coordinateMap->AddPointIndex(cluster->m_outputPointIndex, true /* Visiblity,,, TBD if necessary */ );
                 if (nullptr != normals)
                     coordinateMap->AddNormalIndex(cluster->m_outputNormalIndex);
                 if (nullptr != params)

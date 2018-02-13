@@ -2231,7 +2231,9 @@ double abstol,  //!< [in] absolute tolerance for collapsing vertices
 double rangeFractionTol //!< [in] tolerance as fraction of range of the mesh points
 );
 //!  @description Fast normal generation - used during tile generation. 
-GEOMDLLIMPEXP void BuildNormalsFast(double creaseTolerance);
+//! @param [in] creaseTolerance dihedral angle considered "smooth" for a single edge.
+//! @param[in] sizeTolerance if facet is smaller than this tolerance then expenseive shared normal calculation is omitted.
+GEOMDLLIMPEXP void BuildNormalsFast(double creaseTolerance, double sharedEdgeSizeTolerance);
 
 //! Examine vertex indices within each facet.
 //! If consecutive indices are identical, that is a short edge.
