@@ -33,7 +33,7 @@ TEST_F(UnitSystemTest, BasicUnitSystemCreation)
     auto testUnitSystem = schema->GetUnitSystemCP("TestUnitSystem");
     EXPECT_EQ(unitSystem, testUnitSystem);
 
-    auto registrySystem = Units::UnitRegistry::Instance().LookupUnitSystem("TestUnitSystem");
+    auto registrySystem = Units::UnitRegistry::Instance().LookupUnitSystem("TestSchema:TestUnitSystem");
     EXPECT_EQ(unitSystem, registrySystem);
     }
 

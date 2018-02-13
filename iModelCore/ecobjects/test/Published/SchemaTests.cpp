@@ -271,12 +271,12 @@ TEST_F(SchemaTest, DeleteUnitSystem)
     EXPECT_EQ(1, schema->GetUnitSystemCount());
     EXPECT_EQ(system, schema->GetUnitSystemCP("TestUnitSystem"));
 
-    Units::UnitSystemCP unitSystem = Units::UnitRegistry::Instance().LookupUnitSystem("TestUnitSystem");
+    Units::UnitSystemCP unitSystem = Units::UnitRegistry::Instance().LookupUnitSystem("TestSchema:TestUnitSystem");
     EXPECT_EQ(system, unitSystem);
 
     EC_EXPECT_SUCCESS(schema->DeleteUnitSystem(*system));
 
-    Units::UnitSystemCP deletedUnitSystem = Units::UnitRegistry::Instance().LookupUnitSystem("TestUnitSystem");
+    Units::UnitSystemCP deletedUnitSystem = Units::UnitRegistry::Instance().LookupUnitSystem("TestSchema:TestUnitSystem");
     EXPECT_EQ(nullptr, deletedUnitSystem);
     EXPECT_EQ(nullptr, schema->GetUnitSystemCP("TestUnitSystem"));
     }

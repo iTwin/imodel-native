@@ -26,18 +26,19 @@ friend struct SchemaJsonWriter;
 friend struct Units::UnitRegistry;
 
 private:
-    bool m_explicitDisplayLabel;
-    Utf8String m_description;
-    Utf8String m_displayLabel;
-
+    // Inside of the validatedName we are caching the name without the Schema name prepended. This allows lookups to 
+    // be done based on this name and not have to deconstruct the fullName stored in Units::UnitSystem every time.
+    ECValidatedName m_validatedName;
     ECSchemaCP m_schema;
+    Utf8String m_description;
+    mutable UnitSystemId m_unitSystemId;
+    
     void SetSchema(ECSchemaCR schema) {m_schema = &schema;}
 
-    mutable Utf8String m_fullName;
-    mutable UnitSystemId m_unitSystemId;
+    ECObjectsStatus SetName(Utf8StringCR name) {return (m_validatedName.SetValidName(name.c_str(), false)) ? ECObjectsStatus::Success : ECObjectsStatus::InvalidName;}
 
-    ECObjectsStatus SetDisplayLabel(Utf8CP value);
-    ECObjectsStatus SetDescription(Utf8CP value) {m_description = value; return ECObjectsStatus::Success;}
+    ECObjectsStatus SetDisplayLabel(Utf8StringCR value) {m_validatedName.SetDisplayLabel(value.c_str()); return ECObjectsStatus::Success;}
+    ECObjectsStatus SetDescription(Utf8StringCR value) {m_description = value; return ECObjectsStatus::Success;}
 
     static SchemaReadStatus ReadXml(UnitSystemP& system, BeXmlNodeR unitSystemNode, ECSchemaCR schema, ECSchemaReadContextR context);
     SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
@@ -45,7 +46,7 @@ private:
     SchemaWriteStatus WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
 
     // Should only be called by UnitRegistry
-    UnitSystem(Utf8CP name) : Units::UnitSystem(name), m_explicitDisplayLabel(false) {}
+    UnitSystem(Utf8CP name) : Units::UnitSystem(name) {}
 
 protected:
     // Needed by Units::UnitRegistry to create the UnitSystem
@@ -54,15 +55,17 @@ protected:
 public:
     ECSchemaCR GetSchema() const {return *m_schema;} //!< The ECSchema that this UnitSystem is defined in
 
+    Utf8StringCR GetName() const {return m_validatedName.GetName();}
+
     //! {SchemaName}:{UnitSystemName} The pointer will remain valid as long as the UnitSystem exists.
-    ECOBJECTS_EXPORT Utf8StringCR GetFullName() const;
+    ECOBJECTS_EXPORT Utf8StringCR GetFullName() const {return T_Super::GetName();}
     //! Gets a qualified name of the UnitSystem, prefixed by the schema alias if it does not match the primary schema.
     ECOBJECTS_EXPORT Utf8String GetQualifiedName(ECSchemaCR primarySchema) const;
 
     //! Gets the display label of this UnitSystem.  If no display label has been set explicitly, it will return the name of the UnitSystem
     ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const;
-    bool GetIsDisplayLabelDefined() const {return m_explicitDisplayLabel;} //!< Whether the display label is explicitly defined or not
-    Utf8StringCR GetInvariantDisplayLabel() const {return m_displayLabel;} //!< Gets the invariant display label for this UnitSystem.
+    bool GetIsDisplayLabelDefined() const {return m_validatedName.IsDisplayLabelDefined();} //!< Whether the display label is explicitly defined or not
+    Utf8StringCR GetInvariantDisplayLabel() const {return m_validatedName.GetDisplayLabel();} //!< Gets the invariant display label for this UnitSystem.
 
     Utf8StringCR GetInvariantDescription() const {return m_description;} //!< Gets the invariant description for this UnitSystem.
     ECOBJECTS_EXPORT Utf8StringCR GetDescription() const; //!< Gets the description of this UnitSystem. Returns the localized description if one exists.

@@ -16,33 +16,25 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 // static
 UnitSystemP UnitSystem::_Create(Utf8CP name)
     {
-    // Unfortunately we need to do the name encoding here instead of using the ECValidatedName struct in order to use the name required in Units::UnitSystem.
-    if (!ECNameValidation::IsValidName(name))
+    // Deconstruct the name, the format should be {SchemaName}.{UnitSystemName}
+    Utf8String schemaName;
+    Utf8String systemName;
+    ECClass::ParseClassName(schemaName, systemName, name);
+    BeAssert(!schemaName.empty());
+
+    // Check if it's a valid name here to avoid having to construct the UnitSystem unnecessarily.
+    if (!ECNameValidation::IsValidName(systemName.c_str()))
         {
-        LOG.errorv("A UnitSystem cannot be created with the name '%s' because it is not a valid ECName", name);
+        LOG.errorv("A UnitSystem cannot be created with the name '%s' because it is not a valid ECName", systemName.c_str());
         return nullptr;
         }
 
-    Utf8String encodedName;
-    ECNameValidation::EncodeToValidName(encodedName, name);
-
-    auto ptrSystem = new UnitSystem(encodedName.c_str());
-    if (nullptr == ptrSystem)
+    auto systemP = new UnitSystem(name);
+    if (nullptr == systemP)
         return nullptr;
 
-    ECNameValidation::DecodeFromValidName(ptrSystem->m_displayLabel, ptrSystem->GetName().c_str());
-
-    return ptrSystem;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    01/2018
-//--------------------------------------------------------------------------------------
-Utf8StringCR UnitSystem::GetFullName() const
-    {
-    if (m_fullName.size() == 0) 
-        m_fullName = m_schema->GetName() + ":" + GetName(); 
-    return m_fullName; 
+    systemP->SetName(systemName);
+    return systemP;
     }
 
 //--------------------------------------------------------------------------------------
@@ -63,25 +55,6 @@ Utf8String UnitSystem::GetQualifiedName(ECSchemaCR primarySchema) const
         return name;
     else
         return alias + ":" + name;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    01/2018
-//--------------------------------------------------------------------------------------
-ECObjectsStatus UnitSystem::SetDisplayLabel(Utf8CP value) 
-    {
-    if (Utf8String::IsNullOrEmpty(value))
-        {
-        m_explicitDisplayLabel = false;
-        m_displayLabel.clear();
-        ECNameValidation::DecodeFromValidName(m_displayLabel, GetName());
-        }
-    else
-        {
-        m_explicitDisplayLabel = true;
-        m_displayLabel = value;
-        }
-    return ECObjectsStatus::Success;
     }
 
 //--------------------------------------------------------------------------------------
@@ -112,7 +85,8 @@ SchemaReadStatus UnitSystem::ReadXml(UnitSystemP& system, BeXmlNodeR unitSystemN
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
-    system = Units::UnitRegistry::Instance().AddSystem<UnitSystem>(value.c_str());
+    Utf8String fullName = schema.GetName() + ":" + value;
+    system = Units::UnitRegistry::Instance().AddSystem<UnitSystem>(fullName.c_str());
     if (nullptr == system)
         return SchemaReadStatus::InvalidECSchemaXml;
 

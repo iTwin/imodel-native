@@ -300,11 +300,13 @@ ECSchema::~ECSchema ()
     for (auto entry : m_unitSystemMap)
         {
         // Remove from the registry before removing from ECSchema
-        Units::UnitRegistry::Instance().RemoveSystem(entry.first);
-
+        // In the UnitRegistry every UnitSystem is scoped by the schema name.
+        auto returnedSystem = Units::UnitRegistry::Instance().RemoveSystem(entry.second->GetFullName().c_str());
+        BeAssert(nullptr != returnedSystem);
+        
         // This should be the same pointer as the UnitRegistry has, so it should not matter which one is deleted.
-        auto unitSystem = entry.second;
-        delete unitSystem;
+        BeAssert(returnedSystem == entry.second);
+        delete entry.second;
         }
 
     m_unitSystemMap.clear();
@@ -1059,7 +1061,8 @@ ECObjectsStatus ECSchema::CreateUnitSystem(UnitSystemP& system, Utf8CP name, Utf
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
-    system = Units::UnitRegistry::Instance().AddSystem<UnitSystem>(name);
+    Utf8String fullName = GetName() + ":" + name;
+    system = Units::UnitRegistry::Instance().AddSystem<UnitSystem>(fullName.c_str());
     if (nullptr == system)
         return ECObjectsStatus::Error;
 
@@ -1169,9 +1172,8 @@ template<> ECObjectsStatus ECSchema::AddSchemaChild<Phenomenon>(PhenomenonP chil
 //--------------------------------------------------------------------------------------
 ECObjectsStatus ECSchema::DeleteUnitSystem(UnitSystemR unitSystem)
     {
-    // RemoveSystem will return nullptr if it cannot find the UnitSystem. No need
-    // to check since we still want to check the Schema for the unitSystem.
-    Units::UnitRegistry::Instance().RemoveSystem(unitSystem.GetName().c_str());
+    auto systemP = Units::UnitRegistry::Instance().RemoveSystem(unitSystem.GetFullName().c_str());
+    BeAssert(nullptr != systemP);
 
     return DeleteSchemaChild<UnitSystem, UnitSystemMap>(unitSystem, &m_unitSystemMap);
     }
