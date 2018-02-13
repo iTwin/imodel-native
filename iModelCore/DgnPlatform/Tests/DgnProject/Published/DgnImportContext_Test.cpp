@@ -693,6 +693,16 @@ TEST_F(ImportTest, InsertOtherElementsInElementDrivesElementOnRootChanged)
     ASSERT_EQ(1, dep.m_createdElements.size()) << "Commit triggers _OnRootChanged which is expected to successfully create another element";
     DgnElementId elementCreatedByDependency = dep.m_createdElements[0];
 
+    //in reality (BuildingConceptStation where this issue was reported) more changes could happen which are discarded though
+    //if the user didn't save them. This tests mimicks that by just calling AbandonChanges which would clear the cached id sequence
+    ASSERT_EQ(BE_SQLITE_OK, m_db->AbandonChanges());
+
+    //now insert another element to make sure it doesn't cause a PK violation, i.e. to make sure the sequence has been properly
+    //incremented in _OnCommit.
+    TestElementPtr e3 = TestElement::Create(*m_db, model1->GetModelId(), gcatid, "e3");
+    ASSERT_TRUE(m_db->Elements().Insert(*e3).IsValid()) << "Sequence is expected to be in sync with  anything inserted during _OnRootChanged";
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
+
     {
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_db, "SELECT UserLabel FROM bis.Element WHERE ECInstanceId=?"));
@@ -706,7 +716,7 @@ TEST_F(ImportTest, InsertOtherElementsInElementDrivesElementOnRootChanged)
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT CAST(Val AS INTEGER) FROM be_Local WHERE Name='bis_elementidsequence'"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(elementCreatedByDependency.GetValue(), stmt.GetValueUInt64(0));
+    ASSERT_EQ(e3->GetElementId().GetValue(), stmt.GetValueUInt64(0));
     stmt.Finalize();
 
     //verify element id sequence in cache
@@ -714,7 +724,7 @@ TEST_F(ImportTest, InsertOtherElementsInElementDrivesElementOnRootChanged)
     ASSERT_TRUE(m_db->GetBLVCache().TryGetIndex(blvCacheIndex, "bis_elementidsequence"));
     uint64_t sequenceVal = 0;
     ASSERT_EQ(BE_SQLITE_OK, m_db->GetBLVCache().QueryValue(sequenceVal, blvCacheIndex));
-    ASSERT_EQ(elementCreatedByDependency.GetValue(), sequenceVal);
+    ASSERT_EQ(e3->GetElementId().GetValue(), sequenceVal);
     }
 
     TestElementDrivesElementHandler::GetHandler().Clear();
