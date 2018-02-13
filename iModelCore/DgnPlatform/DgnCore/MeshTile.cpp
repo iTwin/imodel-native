@@ -1009,7 +1009,7 @@ size_t _GetFacetCount(FacetCounter& counter) const override
     // Limit polyfaces to count to 10000 facets - This may make more of them appear in leaves
     // but else they can cause overly deep trees (as their count is not dependent on tolerance).
     // Scene_3d from TFS# 805023 - XFrog trees.
-    constexpr       size_t      s_maxPolyfaceCount = 10000;
+    constexpr       size_t      s_maxPolyfaceCount = 5000;
     size_t          facetCount =  counter.GetFacetCount(*m_geometry);
 
     return (m_geometry->GetAsPolyfaceHeader().IsValid()) ? std::min(s_maxPolyfaceCount, facetCount) : facetCount;
@@ -3161,7 +3161,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
     return meshes;
     }
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/17
+* @bsimethod                                                    Paul.Connelly   02/1
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool FeatureAttributes::operator<(FeatureAttributesCR rhs) const
     {
