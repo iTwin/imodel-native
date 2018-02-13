@@ -60,7 +60,7 @@ struct WebApiV2 : public WebApi
             ) const;
         WSFileResult ResolveFileDownloadResponse(Http::Response& response, BeFileName filePath) const;
 
-        AsyncTaskPtr<WSUpdateFileResult> WebApiV2::ResolveUpdateFileResponse
+        AsyncTaskPtr<WSUpdateFileResult> ResolveUpdateFileResponse
             (
             Http::Response& httpResponse,
             Utf8StringCR url,
