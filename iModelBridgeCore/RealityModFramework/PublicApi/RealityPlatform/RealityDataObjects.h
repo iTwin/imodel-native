@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RealityPlatform/RealityDataObjects.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -381,7 +381,8 @@ enum class RealityDataField
     OwnedBy,
     Group,
     Hidden,
-    DelegatePermissions
+    DelegatePermissions,
+    ApproximateFootprint
     };
 
 
@@ -502,10 +503,6 @@ public:
     REALITYDATAPLATFORM_EXPORT bool HasDelegatePermissions() const;
     REALITYDATAPLATFORM_EXPORT void SetDelegatePermissions(bool dp);
 
-    //! Indicates if the footprint is exact or approximate.
-    REALITYDATAPLATFORM_EXPORT bool IsApproximateFootprint() const;
-    REALITYDATAPLATFORM_EXPORT void SetApproximateFootprint(bool isApproximate);
-
 protected:
     REALITYDATAPLATFORM_EXPORT RealityData();
     REALITYDATAPLATFORM_EXPORT virtual ~RealityData(){}
@@ -536,7 +533,6 @@ protected:
     bool        m_hidden;
     bool        m_delegatePermissions;
     DateTime    m_lastAccessedDate;
-    bool        m_approximateFootprint;
     };
 
 struct RealityDataExtended: public RealityData

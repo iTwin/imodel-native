@@ -703,6 +703,7 @@ TEST_F(RealityConversionTestFixture, JsonToRealityData)
     ASSERT_EQ(realityData->GetOwner(), "francis.boily@bentley.com");
     ASSERT_EQ(realityData->IsHidden(), false);
     ASSERT_EQ(realityData->HasDelegatePermissions(), false);
+    ASSERT_EQ(realityData->HasApproximateFootprint(), false);
     DRange2dCR range = realityData->GetFootprintExtent();
     ASSERT_TRUE(std::abs(range.low.x - 24.7828757) < 0.000000001);
     ASSERT_TRUE(std::abs(range.low.y - 59.9224887) < 0.000000001);
@@ -737,7 +738,7 @@ TEST_F(RealityConversionTestFixture, JsonToRealityDataExtended)
     ASSERT_EQ(realityData->IsStreamed(), false);
     ASSERT_EQ(realityData->GetRealityDataType(), "3mx");
     ASSERT_EQ(realityData->GetFootprintString(), "{\"Coordinates\": [{\"Longitude\": \"24.782875700\", \"Latitude\": \"59.922488700\"},{\"Longitude\": \"25.254484800\", \"Latitude\": \"59.922488700\"},{\"Longitude\": \"25.254484800\", \"Latitude\": \"60.297838900\"},{\"Longitude\": \"24.782875700\", \"Latitude\": \"60.297838900\"},{\"Longitude\": \"24.782875700\", \"Latitude\": \"59.922488700\"}]}");
-    ASSERT_EQ(realityData->IsApproximateFootprint(), true);
+    ASSERT_EQ(realityData->HasApproximateFootprint(), true);
     ASSERT_EQ(realityData->GetThumbnailDocument(), "Helsinki/thumbnail.jpg");
     ASSERT_EQ(realityData->GetMetadataUrl(), "www.bigTest.com");
     ASSERT_EQ(realityData->GetUltimateId(), "uId");

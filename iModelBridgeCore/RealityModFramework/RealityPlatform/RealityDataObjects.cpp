@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatform/RealityDataObjects.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -780,9 +780,6 @@ void RealityData::SetDelegatePermissions(bool dp) { m_delegatePermissions = dp; 
 
 DateTimeCR RealityData::GetLastAccessedDateTime() const { return m_lastAccessedDate; }
 void RealityData::SetLastAccessedDateTime(DateTimeCR lastAccessedDateTime) { m_lastAccessedDate = lastAccessedDateTime; }
-
-bool RealityData::IsApproximateFootprint() const { return m_approximateFootprint; }
-void RealityData::SetApproximateFootprint(bool isApproximate) { m_approximateFootprint = isApproximate; }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Alain.Robert         	    02/2017

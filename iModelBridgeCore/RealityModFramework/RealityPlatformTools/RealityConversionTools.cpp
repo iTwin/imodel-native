@@ -552,6 +552,9 @@ Utf8String RealityConversionTools::RealityDataToJson(RealityDataCR realityData, 
     if (includeUnsetProps || realityData.HasDelegatePermissions()) // Default (false) is considered unset
         properties.push_back(RealityDataField::DelegatePermissions);
 
+    if (includeUnsetProps || realityData.HasApproximateFootprint()) // Default (false) is considered unset
+        properties.push_back(RealityDataField::ApproximateFootprint);
+
     return RealityDataToJson(realityData, properties);
     }
 /*----------------------------------------------------------------------------------**//**
@@ -712,6 +715,10 @@ Utf8String RealityConversionTools::RealityDataToJson(RealityDataCR realityData, 
         case RealityDataField::DelegatePermissions:
             propertyString.append("\"DelegatePermissions\" : ");
             propertyString.append(realityData.HasDelegatePermissions() ? "true" : "false");
+            break;
+        case RealityDataField::ApproximateFootprint:
+            propertyString.append("\"ApproximateFootprint\" : ");
+            propertyString.append(realityData.HasApproximateFootprint() ? "true" : "false");
             break;
             }
         propertyVector.push_back(propertyString);

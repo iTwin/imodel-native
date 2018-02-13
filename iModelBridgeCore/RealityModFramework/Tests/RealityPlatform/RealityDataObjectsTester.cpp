@@ -732,7 +732,7 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
     EXPECT_TRUE(!myRealityData->GetLastAccessedDateTime().IsValid()); // Time not set should be invalid
     EXPECT_STREQ(myRealityData->GetGroup().c_str(), "");
     EXPECT_TRUE(!myRealityData->GetLastAccessedDateTime().IsValid());
-    EXPECT_FALSE(myRealityData->IsApproximateFootprint());
+    EXPECT_FALSE(myRealityData->HasApproximateFootprint());
 
     // Check set methods
     myRealityData->SetIdentifier("f28fdab2-c369-4913-b18a-fbe541af635c");
@@ -773,7 +773,7 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
     myRealityData->SetFootprint(myFootprint);
     EXPECT_TRUE(myRealityData->GetFootprint().size() == 5);
     myRealityData->SetApproximateFootprint(true);
-    EXPECT_FALSE(myRealityData->HasApproximateFootprint());
+    EXPECT_TRUE(myRealityData->HasApproximateFootprint());
 
     myRange = myRealityData->GetFootprintExtent();
     EXPECT_TRUE(myRange.low.x == 12.5);
