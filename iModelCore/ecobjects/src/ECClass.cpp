@@ -804,7 +804,7 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
                 {
                 if (copyReferences)
                     {
-                    auto status = this->GetSchemaR().CopyClass(destClass, structElementType);
+                    auto status = this->GetSchemaR().CopyClass(destClass, structElementType, structElementType.GetName(), copyReferences);
                     if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
                         return status;
                     destArray->SetStructElementType(*destClass->GetStructClassCP());
@@ -902,7 +902,7 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
                 {
                 if (copyReferences)
                     {
-                    auto status = this->GetSchemaR().CopyClass(destClass, sourceType);
+                    auto status = this->GetSchemaR().CopyClass(destClass, sourceType, sourceType.GetName(), copyReferences);
                     if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
                         return status;
                     destStruct->SetType(*destClass->GetStructClassCP());
@@ -933,7 +933,7 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
             ECClassP destClass = this->GetSchemaR().GetClassP(sourceRelClass->GetName().c_str());
             if (nullptr == destClass && copyReferences)
                 {
-                auto status = this->GetSchemaR().CopyClass(destClass, *sourceRelClass);
+                auto status = this->GetSchemaR().CopyClass(destClass, *sourceRelClass, sourceRelClass->GetName(), copyReferences);
                 if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
                     return status;
                 destNav->SetRelationshipClass(*destClass->GetRelationshipClassCP(), sourceNav->GetDirection());
@@ -3725,14 +3725,18 @@ SchemaWriteStatus ECRelationshipConstraint::WriteXml (BeXmlWriterR xmlWriter, Ut
     xmlWriter.WriteAttribute(POLYMORPHIC_ATTRIBUTE, this->GetIsPolymorphic());
 
     if (nullptr != m_abstractConstraint && ecXmlVersion >= ECVersion::V3_1)
-        xmlWriter.WriteAttribute(ABSTRACTCONSTRAINT_ATTRIBUTE, ECClass::GetQualifiedClassName(m_relClass->GetSchema(), *GetAbstractConstraint()).c_str());
+        {
+        Utf8String qualifiedClassName = ECClass::GetQualifiedClassName(m_relClass->GetSchema(), *GetAbstractConstraint());
+        xmlWriter.WriteAttribute(ABSTRACTCONSTRAINT_ATTRIBUTE, qualifiedClassName.c_str());
+        }
         
     WriteCustomAttributes (xmlWriter);
 
     for (const auto &constraint : m_constraintClasses)
         {
         xmlWriter.WriteElementStart(EC_CONSTRAINTCLASS_ELEMENT);
-        xmlWriter.WriteAttribute(CONSTRAINTCLASSNAME_ATTRIBUTE, ECClass::GetQualifiedClassName(m_relClass->GetSchema(), *constraint).c_str());
+        Utf8String qualifiedClassName = ECClass::GetQualifiedClassName(m_relClass->GetSchema(), *constraint);
+        xmlWriter.WriteAttribute(CONSTRAINTCLASSNAME_ATTRIBUTE, qualifiedClassName.c_str());
         xmlWriter.WriteElementEnd();
         }
 
@@ -4079,26 +4083,27 @@ ECObjectsStatus ECRelationshipConstraint::CopyTo(ECRelationshipConstraintR toRel
 
     if (IsAbstractConstraintDefined())
         {
-        if (_GetContainerSchema()->GetSchemaKey() != GetAbstractConstraint()->GetSchema().GetSchemaKey())
-            status = toRelationshipConstraint.SetAbstractConstraint(*GetAbstractConstraint());
+        ECClassCP sourceAbstractConstraint = GetAbstractConstraint();
+        if (_GetContainerSchema()->GetSchemaKey() != sourceAbstractConstraint->GetSchema().GetSchemaKey())
+            status = toRelationshipConstraint.SetAbstractConstraint(*sourceAbstractConstraint);
         else
             {
-            ECClassP destAbstractConstraint = destSchema->GetClassP(GetAbstractConstraint()->GetName().c_str());
+            ECClassP destAbstractConstraint = destSchema->GetClassP(sourceAbstractConstraint->GetName().c_str());
             if (nullptr == destAbstractConstraint)
                 {
                 if (copyReferences)
                     {
-                    status = destSchema->CopyClass(destAbstractConstraint, *GetAbstractConstraint());
+                    status = destSchema->CopyClass(destAbstractConstraint, *sourceAbstractConstraint, sourceAbstractConstraint->GetName(), copyReferences);
                     if (ECObjectsStatus::Success != status)
                         return status;
                     status = toRelationshipConstraint.SetAbstractConstraint(*destAbstractConstraint);
                     }
                 else
                     {
-                    if (!ECSchema::IsSchemaReferenced(*destSchema, GetAbstractConstraint()->GetSchema()))
+                    if (!ECSchema::IsSchemaReferenced(*destSchema, sourceAbstractConstraint->GetSchema()))
                         if (ECObjectsStatus::Success != (status = destSchema->AddReferencedSchema(m_relClass->GetSchemaR())))
                             return status;
-                    status = toRelationshipConstraint.SetAbstractConstraint(*GetAbstractConstraint());
+                    status = toRelationshipConstraint.SetAbstractConstraint(*sourceAbstractConstraint);
                     }
                 }
             else
@@ -4120,7 +4125,7 @@ ECObjectsStatus ECRelationshipConstraint::CopyTo(ECRelationshipConstraintR toRel
                 {
                 if (copyReferences)
                     {
-                    status = destSchema->CopyClass(destConstraintClass, *constraintClass);
+                    status = destSchema->CopyClass(destConstraintClass, *constraintClass, constraintClass->GetName(), copyReferences);
                     if (ECObjectsStatus::Success != status)
                         return status;
                     status = toRelationshipConstraint.AddClass(*destConstraintClass);

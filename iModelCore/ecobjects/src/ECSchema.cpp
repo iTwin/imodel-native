@@ -1382,7 +1382,7 @@ ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass
                 {
                 if (copyReferences)
                     {
-                    status = CopyClass(targetBaseClass, *baseClass);
+                    status = CopyClass(targetBaseClass, *baseClass, baseClass->GetName(), copyReferences);
                     if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
                         return status;
                     }
