@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Performance/PerformanceElementsCRUDTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceElementsCRUDTests.h"
@@ -162,6 +162,7 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Ut
         ASSERT_TRUE(m_db->IsDbOpen());
         ApplyPragmas(*m_db);
         CreateElementsAndInsert(initialInstanceCount, testClassName, "InitialInstances");
+        m_db->ExecuteSql("analyze");
         m_db->CloseDb();
         }
 
