@@ -6,7 +6,7 @@
 |       $Date: 2012/01/06 16:30:15 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
   
@@ -40,6 +40,8 @@
 #include <DgnPlatform\DgnGeoCoord.h>
 #endif
 
+#include <DgnPlatform\DgnPlatformLib.h>
+
 USING_NAMESPACE_GROUND_DETECTION
 
 /*----------------------------------------------+
@@ -50,12 +52,18 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 static int s_xyzId = 0;
 
 BeFileName GetTempXyzFilePath()
-    {
-    
+    {    
     BeFileName tempPath;
+
+#ifdef VANCOUVER_API
     BeFileNameStatus status = BeFileName::BeGetTempPath(tempPath);
     assert(status == BeFileNameStatus::Success);
-
+#else
+    DgnPlatformLib::Host::IKnownLocationsAdmin& locationAdmin(DgnPlatformLib::QueryHost()->GetIKnownLocationsAdmin());
+    tempPath = locationAdmin.GetLocalTempDirectoryBaseName();
+    assert(!tempPath.IsEmpty());
+#endif
+    
     wchar_t bufferId[10];
     _swprintf(bufferId, L"%i", s_xyzId);
     tempPath.AppendToPath(L"detectGround");

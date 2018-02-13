@@ -6,7 +6,7 @@
 |       $Date: 2012/08/20 16:31:58 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1766,3 +1766,10 @@ HFCPtr<HVEShape> CreateShapeFromClips(const HFCPtr<HVEShape>        areaShape,
     return clipShapePtr;
     }    
 
+/*---------------------------------------------------------------------------------**//**
+* Determine of the file name is an URL
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IsUrl(WCharCP filename)
+    {
+    return NULL != filename && (0 == wcsncmp(L"http:", filename, 5) || 0 == wcsncmp(L"https:", filename, 6));
+    }

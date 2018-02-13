@@ -6,7 +6,7 @@
 |       $Date: 2012/01/27 16:45:29 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -71,8 +71,6 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 #define SCALABLE_MESH_TIMINGS
 
-
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
    
 /*----------------------------------------------+

@@ -6,19 +6,15 @@
 |       $Date: 2012/01/06 16:30:15 $
 |     $Author: Richard.Bois $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
 #include "ScalableMeshRDSProvider.h"
-
+#include <CCApi\CCPublic.h>
 #include <ScalableMesh\ScalableMeshAdmin.h>
 #include <ScalableMesh\ScalableMeshLib.h>
-#ifdef VANCOUVER_API
-#include    <CCApi\CCPublic.h>
-#else
-#include <ConnectClientWrapperNative/ConnectClientWrapper.h>
-#endif
+
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -151,7 +147,12 @@ void ScalableMeshRDSProvider::InitializeRealityDataService()
         Utf8String proxyCreds = proxyInfo.m_user;
         proxyCreds.append(":");
         proxyCreds.append(proxyInfo.m_password);
+		
+        assert(!"RealityDataService::SetProxyInfo not supported on BIM02");
+#if 0 
         RealityDataService::SetProxyInfo(proxyInfo.m_serverUrl, proxyCreds);
+#endif		
+		
 #else 
         assert(!"RealityDataService::SetProxyInfo not yet available");
 #endif
@@ -211,28 +212,19 @@ void ScalableMeshRDSProvider::UpdateToken()
 Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
     {
 	WString serverUrl;
+	UINT32 bufLen;
+	CallStatus status = APIERR_SUCCESS;
 	try
 		{
-#ifdef VANCOUVER_API
-        CallStatus status = APIERR_SUCCESS;
-        WString buddiUrl;
-        UINT32 bufLen;
-
-        CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
-        wchar_t* buffer;
-        status = CCApi_GetBuddiUrl(api, L"RealityDataServices", NULL, &bufLen);
-        bufLen++;
-        buffer = (wchar_t*)calloc(1, bufLen * sizeof(wchar_t));
-        status = CCApi_GetBuddiUrl(api, L"RealityDataServices", buffer, &bufLen);
-        serverUrl.assign(buffer);
-        CCApi_FreeApi(api);
-#else
-        wstring buddiUrl;
-        Bentley::Connect::Wrapper::Native::ConnectClientWrapper connectClient;
-        connectClient.GetBuddiUrl(L"RealityDataServices", buddiUrl);
-        serverUrl = buddiUrl.c_str();
-#endif
-        }
+		CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
+		wchar_t* buffer;
+		status = CCApi_GetBuddiUrl(api, L"RealityDataServices", NULL, &bufLen);
+		bufLen++;
+		buffer = (wchar_t*) calloc(1, bufLen * sizeof(wchar_t));
+		status = CCApi_GetBuddiUrl(api, L"RealityDataServices", buffer, &bufLen);
+		serverUrl.assign(buffer);
+		CCApi_FreeApi(api);
+		}
 	catch (...)
 		{
 		}

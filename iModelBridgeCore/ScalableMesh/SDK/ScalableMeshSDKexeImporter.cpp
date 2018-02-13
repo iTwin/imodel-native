@@ -5,7 +5,13 @@
 
 #include <windows.h>   
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+#ifdef VANCOUVER_API
+    USING_NAMESPACE_BENTLEY_DGNPLATFORM
+#else
+    USING_NAMESPACE_BENTLEY_DGN
+#endif
+
+
 namespace ScalableMeshSDKexe
     {
 

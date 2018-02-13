@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/PointCloudSisterFileManager.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -17,7 +17,7 @@
 #include <ScalableMesh\ScalableMeshAdmin.h>
 
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+
 
 #include <DgnPlatform\PointCloudHandler.h>
 

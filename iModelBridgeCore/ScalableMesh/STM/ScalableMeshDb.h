@@ -68,20 +68,27 @@ public:
 };
 #endif
 
+#ifdef VANCOUVER_API
+    #define BESQL_VERSION_STRUCT SchemaVersion
+#else
+    #define BESQL_VERSION_STRUCT ProfileVersion
+#endif
+
 class ScalableMeshDb : public BeSQLite::Db
     {
     private:
         SQLDatabaseType m_type;
-        SchemaVersion GetCurrentVersion();
+        BESQL_VERSION_STRUCT GetCurrentVersion();
+
     protected:
-#ifndef VANCOUVER_API
-    virtual DbResult _VerifySchemaVersion(OpenParams const& params) override;
+#ifndef VANCOUVER_API    
+    virtual DbResult _VerifyProfileVersion(OpenParams const& params) override; 
 #endif
     virtual DbResult _OnDbCreated(CreateParams const& params) override;
 
     public:
         ScalableMeshDb(SQLDatabaseType type) : m_type(type) {}
-        static const SchemaVersion CURRENT_VERSION;
+        static const BESQL_VERSION_STRUCT CURRENT_VERSION;
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

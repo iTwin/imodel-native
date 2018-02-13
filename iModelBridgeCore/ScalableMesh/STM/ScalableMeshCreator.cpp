@@ -6,7 +6,7 @@
 |       $Date: 2012/01/27 16:45:29 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -84,7 +84,6 @@ extern bool s_inEditing = false;
 //extern DataSourceManager s_dataSourceManager;
 
 using namespace ISMStore;
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 
 /*----------------------------------------------+
@@ -448,16 +447,13 @@ StatusInt IScalableMeshCreator::Impl::GetStreamedTextureProvider(ITextureProvide
 
     //TFS# 761652 - Avoid reprojection at this stage so that the minimum pixel resolution is consistent whatever the reprojection is.
     BaseGCSCPtr cs; //(GetGCS().GetGeoRef().GetBasePtr();)
-
     DRange2d extent2d = DRange2d::From(range);
-
     HFCPtr<HRARASTER> streamingRaster(RasterUtilities::LoadRaster(url, cs, extent2d));
 
     if (streamingRaster == nullptr)
         {
         return ERROR;
         }
-
     double ratioToMeterH = GetGCS().GetHorizontalUnit().GetRatioToBase();
     double ratioToMeterV = GetGCS().GetVerticalUnit().GetRatioToBase();
 
@@ -635,7 +631,7 @@ bool DgnDbFilename(BENTLEY_NAMESPACE_NAME::WString& stmFilename)
     {
     BENTLEY_NAMESPACE_NAME::WString dgndbFilename;
     //stmFilename
-    size_t size = stmFilename.ReplaceAll(L".3sm", L".dgndb");
+    size_t size = stmFilename.ReplaceAll(L".3sm", L".bim");
     assert(size==1);
     return true;
     }

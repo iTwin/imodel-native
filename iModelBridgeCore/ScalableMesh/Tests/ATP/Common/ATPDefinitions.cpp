@@ -86,7 +86,13 @@ using namespace std;
 
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+
+#ifdef VANCOUVER_API
+    USING_NAMESPACE_BENTLEY_DGNPLATFORM
+#else
+    USING_NAMESPACE_BENTLEY_DGN
+#endif
+
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_GEOCOORDINATES
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 USING_NAMESPACE_IMAGEPP
@@ -642,7 +648,7 @@ void PerformDcGroundDetectionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                     if (saveType == SCM_SAVE_DGNDB_BLOB)
                         {
                         WString dgndbFileName(stmFileName);
-                        dgndbFileName.ReplaceAll(L".3sm", L".dgndb");
+                        dgndbFileName.ReplaceAll(L".3sm", L".bim");
 
                         FILE* f = _wfopen(dgndbFileName.c_str(), L"r");
                         assert(f != 0);

@@ -6,7 +6,7 @@
 |       $Date: 2012/11/29 17:30:53 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -26,7 +26,17 @@
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/ClipVector.h>
 #include <Bentley\bset.h>
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+
+#ifdef VANCOUVER_API
+    USING_NAMESPACE_BENTLEY_DGNPLATFORM
+#define CLIP_VECTOR_NAMESPACE BENTLEY_NAMESPACE_NAME
+#else
+    USING_NAMESPACE_BENTLEY_DGN
+#define CLIP_VECTOR_NAMESPACE BENTLEY_NAMESPACE_NAME::Dgn
+#endif
+
+
+
 //#include <Bentley/RefCounted.h>
 template<class POINT, class EXTENT> class ISMPointIndexQuery;
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
@@ -405,13 +415,17 @@ typedef size_t ScalableMeshTextureID;
 
 struct IScalableMeshMeshFlags abstract: public RefCountedBase
     {
-    protected:
+    protected:        
+
         virtual bool _ShouldLoadClips() const = 0;
         virtual bool _ShouldLoadTexture() const = 0;
         virtual bool _ShouldLoadIndices() const = 0;
         virtual bool _ShouldLoadGraph() const = 0;
         virtual bool _ShouldSaveToCache() const = 0;
         virtual bool _ShouldPrecomputeBoxes() const = 0;
+        virtual bool _ShouldUseClipsToShow() const = 0;
+        virtual bool _ShouldInvertClips() const = 0;
+        virtual void _GetClipsToShow(bset<uint64_t>& clipsToShow) const = 0;
 
         virtual void _SetLoadClips(bool loadClips) = 0;
         virtual void _SetLoadTexture(bool loadTexture) = 0;
@@ -419,6 +433,7 @@ struct IScalableMeshMeshFlags abstract: public RefCountedBase
         virtual void _SetLoadGraph(bool loadGraph) = 0;
         virtual void _SetSaveToCache(bool saveToCache) = 0;
         virtual void _SetPrecomputeBoxes(bool precomputeBoxes) = 0;
+        virtual void _SetClipsToShow(bset<uint64_t>& clipsToShow, bool shouldInvertClips) = 0;
 
     public:
         
@@ -428,6 +443,9 @@ struct IScalableMeshMeshFlags abstract: public RefCountedBase
         BENTLEY_SM_EXPORT bool ShouldLoadGraph() const;
         BENTLEY_SM_EXPORT bool ShouldSaveToCache() const;
         BENTLEY_SM_EXPORT bool ShouldPrecomputeBoxes() const;
+        BENTLEY_SM_EXPORT bool ShouldUseClipsToShow() const;
+        BENTLEY_SM_EXPORT bool ShouldInvertClips() const;
+        BENTLEY_SM_EXPORT void GetClipsToShow(bset<uint64_t>& clipsToShow) const;
 
         BENTLEY_SM_EXPORT void SetLoadClips(bool loadClips);
         BENTLEY_SM_EXPORT void SetLoadTexture(bool loadTexture);
@@ -435,6 +453,7 @@ struct IScalableMeshMeshFlags abstract: public RefCountedBase
         BENTLEY_SM_EXPORT void SetLoadGraph(bool loadGraph);
         BENTLEY_SM_EXPORT void SetSaveToCache(bool saveToCache);
         BENTLEY_SM_EXPORT void SetPrecomputeBoxes(bool precomputeBoxes);
+        BENTLEY_SM_EXPORT void SetClipsToShow(bset<uint64_t>& clipsToShow, bool shouldInvertClips);
 
         BENTLEY_SM_EXPORT static IScalableMeshMeshFlagsPtr Create();
 
@@ -516,7 +535,9 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         virtual bool _RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query) const = 0;
 
-		virtual void _ClearCachedData() = 0;
+		virtual void _ClearCachedData() = 0;      
+
+        virtual SMNodeViewStatus _IsCorrectForView(IScalableMeshViewDependentMeshQueryParamsPtr& viewDependentQueryParams) const = 0;
 
 #ifdef WIP_MESH_IMPORT
         virtual bool _IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata) = 0;
@@ -603,6 +624,8 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
 		BENTLEY_SM_EXPORT void ClearCachedData();
 
+        BENTLEY_SM_EXPORT SMNodeViewStatus IsCorrectForView(IScalableMeshViewDependentMeshQueryParamsPtr& viewDependentQueryParams) const;
+
 #ifdef WIP_MESH_IMPORT
         BENTLEY_SM_EXPORT bool IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata);
 
@@ -623,7 +646,7 @@ struct IScalableMeshCachedDisplayNode : public virtual IScalableMeshNode
 
         virtual StatusInt _GetCachedTextures(bvector<SmCachedDisplayTexture*>& cachedTexture, bvector<uint64_t>& textureIds) const = 0;
 
-        virtual StatusInt _GetDisplayClipVectors(bvector<ClipVectorPtr>& clipVectors) const = 0;       
+        virtual StatusInt _GetDisplayClipVectors(bvector<ClipVectorPtr>& clipVectors) const = 0;
 
         virtual void      _SetIsInVideoMemory(bool isInVideoMemory) = 0;
 
@@ -634,7 +657,7 @@ struct IScalableMeshCachedDisplayNode : public virtual IScalableMeshNode
 
         BENTLEY_SM_EXPORT StatusInt GetCachedTextures(bvector<SmCachedDisplayTexture*>& cachedTexture, bvector<uint64_t>& textureIds) const;
 
-        BENTLEY_SM_EXPORT StatusInt GetDisplayClipVectors(bvector<ClipVectorPtr>& clipVectors) const;         
+        BENTLEY_SM_EXPORT StatusInt GetDisplayClipVectors(bvector<ClipVectorPtr>& clipVectors) const;
 
         BENTLEY_SM_EXPORT void      SetIsInVideoMemory(bool isInVideoMemory);
 
@@ -755,7 +778,7 @@ struct IScalableMeshViewDependentMeshQueryParams abstract: virtual public IScala
 
         virtual StatusInt       _SetStopQueryCallback(StopQueryCallbackFP stopQueryCallbackFP) = 0;
         
-        virtual void            _SetViewClipVector(ClipVectorPtr& viewClipVector) = 0;            
+        virtual void            _SetViewClipVector(ClipVectorPtr& viewClipVector) = 0;
                                                   
     public : 
 
@@ -825,7 +848,7 @@ struct IScalableMeshMeshQuery abstract: RefCountedBase
                            const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const = 0;
 
         virtual int _Query(bvector<IScalableMeshNodePtr>&                       meshNodesPtr,
-                           ClipVectorCP                                        queryExtent3d,
+			CLIP_VECTOR_NAMESPACE::ClipVectorCP                      queryExtent3d,
                            const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const = 0;
         
     /*__PUBLISH_SECTION_START__*/
@@ -845,7 +868,7 @@ struct IScalableMeshMeshQuery abstract: RefCountedBase
 
 
          BENTLEY_SM_EXPORT int Query(bvector<IScalableMeshNodePtr>&                      meshNodesPtr,
-                                     ClipVectorCP                                        queryExtent3d,
+			 CLIP_VECTOR_NAMESPACE::ClipVectorCP                                        queryExtent3d,
                                      const IScalableMeshMeshQueryParamsPtr& scmQueryParamsPtr) const;
     };
 

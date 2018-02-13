@@ -11,7 +11,6 @@
 
 #pragma warning( disable : 4273 )
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
 //BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 ////FROM UstnDgnFile.cpp//////////////////////////////////////////////////
