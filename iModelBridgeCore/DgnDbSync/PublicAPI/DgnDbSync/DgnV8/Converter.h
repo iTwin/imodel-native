@@ -2520,6 +2520,8 @@ protected:
     void RegisterNonSpatialModel(DgnV8ModelRefR v8ModelRef, bool isRootASheet);
     void RegisterSheetModel(DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item);
     void RegisterDrawingModel(DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item);
+    void RegisterAndTransform2dAttachments(DgnV8ModelR v8ParentModel, bool isRootASheet);
+
 
 public:
     static WCharCP GetRegistrySubKey() {return L"DgnV8Bridge";}

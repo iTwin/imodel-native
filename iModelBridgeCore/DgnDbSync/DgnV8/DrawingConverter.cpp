@@ -338,11 +338,7 @@ void RootModelConverter::RegisterDrawingModel(DgnV8FileR v8File, DgnV8Api::Model
     if (SheetAttachmentMarker::IsFoundOn(*v8model))
         return;
 
-    GetAttachments(*v8model);
-    if (!ScaledCopyMarker::IsFoundOn(*v8model))
-        MakeAttachmentsMatchRootAnnotationScale(*v8model);
-    UnnestAttachments(*v8model);
-    RegisterNonSpatialModel(*v8model, false); 
+    RegisterAndTransform2dAttachments(*v8model, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -679,6 +675,18 @@ void Converter::UnnestAttachments(DgnV8ModelR parentModel)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+void RootModelConverter::RegisterAndTransform2dAttachments(DgnV8ModelR v8ParentModel, bool isRootASheet)
+    {
+    GetAttachments(v8ParentModel); // make sure attachment hierarchy is created
+    if (!ScaledCopyMarker::IsFoundOn(v8ParentModel))
+        MakeAttachmentsMatchRootAnnotationScale(v8ParentModel);
+    UnnestAttachments(v8ParentModel);
+    RegisterNonSpatialModel(v8ParentModel, isRootASheet);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/17
++---------------+---------------+---------------+---------------+---------------+------*/
 void RootModelConverter::RegisterSheetModel(DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item)
     {
     if (DgnV8Api::DgnModelType::Sheet != item.GetModelType())
@@ -688,11 +696,7 @@ void RootModelConverter::RegisterSheetModel(DgnV8FileR v8File, DgnV8Api::ModelIn
     if (!v8model.IsValid())
         return;
 
-    GetAttachments(*v8model); // make sure attachment hierarchy is created
-    if (!ScaledCopyMarker::IsFoundOn(*v8model))
-        MakeAttachmentsMatchRootAnnotationScale(*v8model);
-    UnnestAttachments(*v8model);
-    RegisterNonSpatialModel(*v8model, true);
+    RegisterAndTransform2dAttachments(*v8model, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
