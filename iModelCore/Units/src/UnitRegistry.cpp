@@ -227,6 +227,23 @@ UnitSystemP UnitRegistry::RemoveSystem(Utf8CP name)
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
+//--------------------------------------------------------------------------------------
+PhenomenonP UnitRegistry::RemovePhenomenon(Utf8CP name)
+    {
+    PhenomenonP ptrReturn = nullptr;
+
+    auto iter = m_phenomena.find(name);
+    if (iter != m_phenomena.end())
+        {
+        ptrReturn = iter->second;
+        m_phenomena.erase(iter);
+        }
+
+    return ptrReturn;
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                      02/2016
 //--------------------------------------------------------------------------------------
 void UnitRegistry::AllSystems(bvector<UnitSystemCP>& allUnitSystems) const

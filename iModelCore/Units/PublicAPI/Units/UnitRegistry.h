@@ -81,6 +81,12 @@ private:
             return nullptr;
             }
 
+        if (Utf8String::IsNullOrEmpty(definition))
+            {
+            NativeLogging::LoggingManager::GetLogger(L"UnitsNative")->error("Failed to create Phenomenon because definition is null");
+            return nullptr;
+            }
+
         if (HasPhenomenon(phenomenaName))
             {
             NativeLogging::LoggingManager::GetLogger(L"UnitsNative")->errorv("Cannot create Phenomenon '%s' because name is already in use", phenomenaName);
@@ -375,10 +381,15 @@ public:
     //! Indicates if the Unit is in this registry.
     bool HasUnit(Utf8CP unitName) const {return m_units.end() != m_units.find(unitName);}
 
-    //! Removes the UnitSystem from the this UnitRegistry and returns the pointer to that UnitSystem.
+    //! Removes the UnitSystem from this UnitRegistry and returns the pointer to that UnitSystem.
     //! It does not delete the UnitSystem rather just removes it from the registry.
     //! @return A pointer to the UnitSystem that is no longer within this registry.
     UNITS_EXPORT UnitSystemP RemoveSystem(Utf8CP systemName);
+    
+    //! Removes the Phenomenon from this UnitRegistry and returns the pointer to that Phenomenon.
+    //! It does not delete the Phenomenon rather just removes it from the registry.
+    //! @return A pointer to the Phenomenon that is no longer within this registry.
+    UNITS_EXPORT PhenomenonP RemovePhenomenon(Utf8CP phenomenonName);
 
     //! Gets the "new" unit name from a "old" unit name
     //! @see UnitNameMappings for information on the difference between a old and new unit name.

@@ -778,15 +778,27 @@ Json::Value Phenomenon::SynonymMapVectorToJson(bvector<UnitSynonymMap> mapV)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bill.Steinbock                  11/2017
 //---------------------------------------------------------------------------------------
-Utf8CP Phenomenon::GetLabel() const
+Utf8StringCR Phenomenon::GetLabel() const
     {
     if (m_displayLabel.empty())
         {
         Utf8PrintfString stringId("PHENOMENON_%s", GetName().c_str());
         m_displayLabel = BeSQLite::L10N::GetString(UnitsL10N::GetNameSpace(), BeSQLite::L10N::StringId(stringId.c_str()));
+        if(m_displayLabel.empty())
+            return m_name;
         }
 
-    return m_displayLabel.c_str();
+    return m_displayLabel;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
+//---------------------------------------------------------------------------------------
+Utf8StringCR Phenomenon::GetInvariantLabel() const
+    {
+    if (m_displayLabel.empty())
+        return m_name;
+    return m_displayLabel;
     }
 
 END_BENTLEY_UNITS_NAMESPACE

@@ -316,8 +316,9 @@ private:
     UNITS_EXPORT uint32_t GetPhenomenonId() const override {return GetId();}
 
 protected:
-    static PhenomenonP _Create(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id) {return new Phenomenon(name, definition, baseSymbol, id);}
-    Phenomenon(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id) : UnitsSymbol(name, definition, baseSymbol, id, 0.0, 0) {}
+    UNITS_EXPORT static PhenomenonP _Create(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id) {return new Phenomenon(name, definition, baseSymbol, id);}
+    UNITS_EXPORT Phenomenon(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id) : UnitsSymbol(name, definition, baseSymbol, id, 0.0, 0) {}
+    UNITS_EXPORT void SetLabel(Utf8CP label) {m_displayLabel = label;}
 
 public:
     UNITS_EXPORT Utf8String GetPhenomenonSignature() const;
@@ -345,7 +346,8 @@ public:
     UNITS_EXPORT static Json::Value SynonymMapVectorToJson(bvector<UnitSynonymMap> mapV);
     UNITS_EXPORT T_UnitSynonymVector* GetSynonymVector() const {return &m_altNames;}
     UNITS_EXPORT size_t GetSynonymCount() const {return m_altNames.size();}
-    UNITS_EXPORT Utf8CP GetLabel() const;
+    UNITS_EXPORT Utf8StringCR GetLabel() const;
+    UNITS_EXPORT Utf8StringCR GetInvariantLabel() const;
 };
 
 /** @endGroup */

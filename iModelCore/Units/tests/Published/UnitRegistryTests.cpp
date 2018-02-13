@@ -261,22 +261,37 @@ TEST_F(UnitRegistryTests, TestAddingDerivedUnitSystems)
 //--------------------------------------------------------------------------------------
 TEST_F(UnitRegistryTests, TestAddingDerivedPhenomenon)
     {
-    TestPhenomenon const* testSystem = UnitRegistry::Instance().AddPhenomenon<TestPhenomenon>("TestPhenomenon", "LENGTH*LENGTH");
-    ASSERT_NE(nullptr, testSystem);
-    PhenomenonCP retrievedSystem = UnitRegistry::Instance().LookupPhenomenon("TestPhenomenon");
-    ASSERT_EQ(testSystem, retrievedSystem);
+    TestPhenomenon const* testPhenom = UnitRegistry::Instance().AddPhenomenon<TestPhenomenon>("TestPhenomenon", "LENGTH*LENGTH");
+    ASSERT_NE(nullptr, testPhenom);
+    PhenomenonCP retrievedPhenom = UnitRegistry::Instance().LookupPhenomenon("TestPhenomenon");
+    ASSERT_EQ(testPhenom, retrievedPhenom);
 
-    TestPhenomenon const* retrievedTestSystem = dynamic_cast<TestPhenomenon const*>(retrievedSystem);
-    EXPECT_NE(nullptr, retrievedTestSystem);
+    TestPhenomenon const* retrievedTestPhenom = dynamic_cast<TestPhenomenon const*>(retrievedPhenom);
+    EXPECT_NE(nullptr, retrievedTestPhenom);
 
     bool hasDerivedPhenomenon = UnitRegistry::Instance().HasPhenomenon("TestPhenomenon");
     ASSERT_TRUE(hasDerivedPhenomenon);
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
+//--------------------------------------------------------------------------------------
+TEST_F(UnitRegistryTests, RemovePhenomenon)
+    {
+    PhenomenonCP testPhenom = UnitRegistry::Instance().AddPhenomenon("TestPhenomenon", "LENGTH");
+    ASSERT_NE(nullptr, testPhenom);
+
+    PhenomenonCP removedPhenom = UnitRegistry::Instance().RemovePhenomenon("TestPhenomenon");
+    ASSERT_EQ(testPhenom, removedPhenom);
+    ASSERT_FALSE(UnitRegistry::Instance().HasPhenomenon("TestPhenomenon"));
+
+    EXPECT_STREQ("TestPhenomenon", removedPhenom->GetName().c_str());
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    02/2018
 //--------------------------------------------------------------------------------------
-TEST_F(UnitRegistryTests, RemovingAUnitSystem)
+TEST_F(UnitRegistryTests, RemoveUnitSystem)
     {
     UnitSystemCP testSystem = UnitRegistry::Instance().AddSystem("TestSystem");
     ASSERT_NE(nullptr, testSystem);
