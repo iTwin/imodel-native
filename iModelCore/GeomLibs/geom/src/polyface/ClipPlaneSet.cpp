@@ -1294,7 +1294,7 @@ void ClipAndCollect (bvector<DPoint3d> &polygon, ClipPlaneSetCR clipset, BVector
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClipPlaneContainment ClipPlaneSet::ClassifyPolyfaceInSetDifference
 (
-PolyfaceHeaderCR polyface,
+PolyfaceQueryCR polyface,
 ClipPlaneSetCR clipSet,
 ClipPlaneSetCP maskSet
 )
@@ -1351,7 +1351,7 @@ static void AddPolygonsToMesh (PolyfaceHeaderPtr *mesh, BVectorCache<DPoint3d> &
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ClipPlaneSet::ClipToSetDifference
 (
-PolyfaceHeaderCR polyface,
+PolyfaceQueryCR polyface,
 ClipPlaneSetCR clipSet,
 ClipPlaneSetCP maskSet,
 PolyfaceHeaderPtr *inside,

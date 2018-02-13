@@ -2,7 +2,7 @@
 #
 #     $Source: geom/build/BentleyGeomA/BentleyGeomA.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 %include mdl.mki
@@ -89,11 +89,8 @@ DLM_OBJECT_PCH      = $(o)bsibasegeompch.obj
 DLM_EXPORT_OBJS     = $(DLM_OBJECT_FILES)
 
 DLM_CREATE_LIB_CONTEXT_LINK = 1
-DLM_NOMSBUILTINS    = 1
 DLM_NOENTRY         = 1
 dlmspecCmd          + -i$(_MakeFilePath)
-DLM_NO_DLS          = 1
-DLM_NO_DEF          = 1
 DLM_SYMB_DEST       = $(baseGeom_symbols)
 
 # Temporary while working on static; it probably shouldn't be needed.

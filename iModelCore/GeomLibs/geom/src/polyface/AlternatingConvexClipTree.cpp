@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/AlternatingConvexClipTree.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -12,11 +12,10 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AlternatingConvexClipTreeNode::InitialzeWithIndices (size_t index0, size_t numPoint, bool isPositiveArea)
+void AlternatingConvexClipTreeNode::InitialzeWithIndices (size_t index0, size_t numPoint)
     {
     m_startIndex = index0;
     m_numPoints = numPoint;
-    m_isPositiveArea = isPositiveArea;
     m_children.clear ();
     }
 
@@ -26,7 +25,7 @@ void AlternatingConvexClipTreeNode::InitialzeWithIndices (size_t index0, size_t 
 void AlternatingConvexClipTreeNode::AddEmptyChild (size_t index0, size_t numPoint)
     {
     m_children.push_back (AlternatingConvexClipTreeNode ());
-    m_children.back ().InitialzeWithIndices (index0, numPoint, !m_isPositiveArea);
+    m_children.back ().InitialzeWithIndices (index0, numPoint);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -55,20 +54,10 @@ bool AlternatingConvexClipTreeNode::IsPointOnOrInside (DPoint3d xyz) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AlternatingConvexClipTreeNode::SetAlternatingAreaFlag (bool value)
-    {
-    m_isPositiveArea = value;
-    for (auto &child : m_children)
-        child.SetAlternatingAreaFlag (!value);
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                     Earlin.Lutz  11/17
-+---------------+---------------+---------------+---------------+---------------+------*/
 void AlternatingConvexClipTreeNode::CaptureConvexClipPlaneSetAsVoid (AlternatingConvexClipTreeNode &child)
     {
     m_children.push_back (AlternatingConvexClipTreeNode ());
     std::swap (child, m_children.back ());
-    m_children.back ().SetAlternatingAreaFlag (!m_isPositiveArea);
     }
 
 
@@ -209,9 +198,9 @@ void CollectHullChain (size_t kStart, size_t numK, double sign)
 // Store the hull points in the root.
 // Add children with start and count data.
 // Recurse to children.
-bool BuildHullTree_go (AlternatingConvexClipTreeNode &root)
+bool BuildHullTree_go (AlternatingConvexClipTreeNode &root, bool thisLevelIsPositiveArea)
     {
-    CollectHullChain (root.m_startIndex, root.m_numPoints, root.m_isPositiveArea ? 1.0 : -1.0);
+    CollectHullChain (root.m_startIndex, root.m_numPoints, thisLevelIsPositiveArea ? 1.0 : -1.0);
     root.m_points.clear ();
     for (size_t i = 0; i < m_stack.size (); i++)
         {
@@ -227,7 +216,7 @@ bool BuildHullTree_go (AlternatingConvexClipTreeNode &root)
                 if (plane.IsValid ())
                     {
                     auto p = plane.Value ();
-                    if (root.m_isPositiveArea)  // Why is the clip plane backwards?
+                    if (thisLevelIsPositiveArea)  // Why is the clip plane backwards?
                         p.Negate ();
                     root.AddPlane (p);
                     }
@@ -242,7 +231,7 @@ bool BuildHullTree_go (AlternatingConvexClipTreeNode &root)
         }
     for (auto &child : root.m_children)
         {
-        BuildHullTree_go (child);
+        BuildHullTree_go (child, !thisLevelIsPositiveArea);
         }
     return true;    // ?? Are there failure modes?  What happens with crossing data?
     }
@@ -250,8 +239,8 @@ bool BuildHullTree_go (AlternatingConvexClipTreeNode &root)
 public:
 bool BuildHullTree (AlternatingConvexClipTreeNode &root)
     {
-    root.InitialzeWithIndices (IndexOfMaxX (), Period () + 1, true);
-    return BuildHullTree_go (root);
+    root.InitialzeWithIndices (IndexOfMaxX (), Period () + 1);
+    return BuildHullTree_go (root, true);
     }
 
 };
