@@ -152,7 +152,7 @@ void LockRequest::ExtractLockSet(DgnLockSet& locks)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LockRequest::FromRevision(DgnRevision& rev, DgnDbCR dgndb, bool extractInserted)
+void LockRequest::FromRevision(DgnRevision& rev, DgnDbCR dgndb, bool extractInserted, bool avoidExclusiveModelElements)
     {
-    rev.ExtractLocks(m_locks, dgndb, extractInserted);
+    rev.ExtractLocks(m_locks, dgndb, extractInserted, avoidExclusiveModelElements);
     }

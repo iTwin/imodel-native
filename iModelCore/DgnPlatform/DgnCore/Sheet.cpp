@@ -424,11 +424,71 @@ void Sheet::Attachment::TTile::SetupRange()
     double north = 0.0;
     double south = north + s_tileSize;
 
-    m_corners.m_pts[0].Init(east, north, 0.0); 
-    m_corners.m_pts[1].Init(west, north, 0.0); 
-    m_corners.m_pts[2].Init(east, south, 0.0); 
-    m_corners.m_pts[3].Init(west, south, 0.0); 
+    m_corners.m_pts[0].Init(east, north, GetTree().m_biasDistance); 
+    m_corners.m_pts[1].Init(west, north, GetTree().m_biasDistance); 
+    m_corners.m_pts[2].Init(east, south, GetTree().m_biasDistance); 
+    m_corners.m_pts[3].Init(west, south, GetTree().m_biasDistance); 
     m_range.InitFrom(m_corners.m_pts, 4);
+    }
+
+#define MAX_SHEET_REFINE_DEPTH 7
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Sheet::Attachment::TTile::_HasChildren() const // { return false; }
+    { // this method actually means "I have children I may need to create" not "I currently have children in my m_children list".
+    return GetDepth() < MAX_SHEET_REFINE_DEPTH ? true : false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TileTree::Tile::ChildTiles const* Sheet::Attachment::TTile::_GetChildren(bool load) const
+    {
+    if (GetDepth() + 1 < MAX_SHEET_REFINE_DEPTH && m_children.empty() && load)
+        {
+        TilePtr childTile = new TTile(GetTree(), (Sheet::Attachment::TTile* const)this);
+        m_children.push_back(childTile);
+        }
+    return m_children.empty() ? nullptr : &m_children;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static uint32_t querySheetTileSize(uint32_t depth)
+    {
+    static const uint32_t s_texSizes[] = {32, 64, 128, 256, 512, 1024, 2048};
+    return s_texSizes[depth < MAX_SHEET_REFINE_DEPTH ? depth : MAX_SHEET_REFINE_DEPTH - 1];
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static void populateSheetTile(TTile* tile, uint32_t depth, SceneContextR context)
+    {
+    uint32_t texSize = querySheetTileSize(depth);
+
+    auto renderSys = context.GetRenderSystem();
+    TRoot& tree = tile->GetTree();
+    Sheet::Attachment::Viewport* viewport = tree.m_viewport.get();
+    UpdatePlan const& plan = context.GetUpdatePlan();
+
+    viewport->InvalidateRenderPlan();
+    viewport->SetRect(BSIRect::From(0, 0, texSize, texSize));
+    viewport->SetupFromViewController();
+    viewport->m_renderSys = renderSys;
+    viewport->m_db = &context.GetDgnDb();
+    viewport->m_texSize = texSize;
+    viewport->_CreateScene(plan); // view controller for a drawing or spatial view, make a context in dgnview (renderthumbnail)
+    // this will sit and wait; tile will be ready when here (RenderThumbnail path)
+
+    // add texture in the tree's viewport to a graphic
+    GraphicParams gfParams = GraphicParams::FromSymbology(tree.m_tileColor, tree.m_tileColor, 0);
+    auto graphic = renderSys->_CreateTile(*viewport->m_texture, tile->m_corners, *viewport->m_db, gfParams);
+    tile->m_graphic = graphic;
+    tile->SetIsReady();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -449,9 +509,9 @@ BentleyStatus Sheet::ViewController::_CreateScene(SceneContextR context)
             Attachment& attach = m_attachments[i];
             if (!attach.m_tree.IsValid())
                 {
-                uint32_t texSize = 512;
+                const uint32_t s_texSize = 32; // based on lowest level in populateSheetTile; ###TODO: clean this up (make more common)
 
-                attach.m_tree = new TRoot(GetDgnDb(), *this, attach.m_id, texSize);
+                attach.m_tree = new TRoot(GetDgnDb(), *this, attach.m_id, s_texSize);
                 attach.m_tree->Populate();
 
                 if (!attach.m_tree.IsValid())
@@ -459,23 +519,10 @@ BentleyStatus Sheet::ViewController::_CreateScene(SceneContextR context)
                 else
                     i++;
 
-                auto renderSys = context.GetRenderSystem();
-                Sheet::Attachment::Viewport* viewport = attach.m_tree->m_viewport.get();
-
-                UpdatePlan const& plan = context.GetUpdatePlan();
-                viewport->m_renderSys = renderSys;
-                viewport->m_db = &context.GetDgnDb();
-                viewport->m_texSize = texSize;
-                viewport->_CreateScene(plan); // view controller for a drawing or spatial view, make a context in dgnview (renderthumbnail)
-                // this will sit and wait; tile will be ready when here (RenderThumbnail path)
-
-                // add texture in the tree's viewport to a graphic
                 TTile& tile = static_cast<TTile&>(*attach.m_tree->GetRootTile());
-                GraphicParams gfParams = GraphicParams::FromSymbology(attach.m_tree->m_tileColor, attach.m_tree->m_tileColor, 0);
+                uint32_t texSize = s_texSize; // ###TODO: querySheetTileSize(tile->GetDepth());
+                tile.m_maxPixelSize = .5 * DPoint2d::FromZero().Distance(DPoint2d::From(texSize, texSize));
                 tile.SetupRange(); // set up tile corners and range; uses biasDistance of tree
-                auto graphic = renderSys->_CreateTile(*viewport->m_texture, tile.m_corners, *viewport->m_db, gfParams);
-                tile.m_graphic = graphic;
-                tile.SetIsReady();
                 }
             }
 
@@ -484,7 +531,7 @@ BentleyStatus Sheet::ViewController::_CreateScene(SceneContextR context)
 
     for (auto& attach : m_attachments)
         {
-        if (!attach.m_tree.IsValid())
+        if (!attach.m_tree.IsValid())// || !attach.m_tree->GetRootTile()->IsReady())
             continue;
 
         attach.m_tree->DrawInView(context);
@@ -553,7 +600,6 @@ DgnElementId Sheet::Model::FindFirstViewOfSheet(DgnDbR db, DgnModelId mid)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Tile::SelectParent TTile::_SelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args) const
     {
-    BeAssert(nullptr == GetParent());
     BeAssert(selected.empty());
 
     Visibility vis = GetVisibility(args);
@@ -562,19 +608,62 @@ Tile::SelectParent TTile::_SelectTiles(bvector<TileTree::TileCPtr>& selected, Ti
         return SelectParent::No;
         }
 
-    selected.push_back(this);
+    bool tooCoarse = Visibility::TooCoarse == vis;
+    TileTree::Tile::ChildTiles const* childTiles = _GetChildren(true);
+
+    TTile* child = nullptr;
+
+    if (nullptr != childTiles && !childTiles->empty())
+        {
+        child = dynamic_cast<TTile*>((*childTiles)[0].get()); // there should only be a single child
+        uint32_t texSize = querySheetTileSize(child->GetDepth());
+        child->m_maxPixelSize = .5 * DPoint2d::FromZero().Distance(DPoint2d::From(texSize, texSize));
+        child->SetupRange(); // set up tile corners and range; uses biasDistance of tree
+        // child graphic not actually rendered / created (will only do this when actually selected, if not already done)
+        }
+
+    if (tooCoarse && nullptr != child)
+        {
+        child->_SelectTiles(selected, args);
+        return SelectParent::No;
+        }
+
+// #define DEBUG_PRINT_SHEET_TILE_SELECTION
+#if defined(DEBUG_PRINT_SHEET_TILE_SELECTION)
+    DEBUG_PRINTF(" ** Selecting this tile, IsReady()=%d, depth=%d", IsReady(), GetDepth());
+#endif
 
     if (!IsReady())
-        args.InsertMissing(*this);
+        {
+        populateSheetTile(const_cast<TTile*>(this), GetDepth(), args.m_context);
+        }
 
+#if defined(WIP_ASYNC_SHEET_LOADING)
+    if (!IsReady())
+        {
+        args.InsertMissing(this);
+        }
+    else
+#endif
+    selected.push_back(this);
     return SelectParent::No;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+void TTile::_DrawGraphics(DrawArgsR args) const
+    {
+    BeAssert(IsReady());
+    if (m_graphic.IsValid())
+        args.m_graphics.Add(*m_graphic);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 TRoot::TRoot(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId attachmentId, uint32_t tileSize) : 
-                T_Super(db,Transform::FromIdentity(), nullptr, nullptr, 12, tileSize), m_attachmentId(attachmentId), m_pixels(tileSize)
+                T_Super(db,Transform::FromIdentity(), nullptr, nullptr), m_attachmentId(attachmentId), m_pixels(tileSize)
     {
     auto attach = db.Elements().Get<ViewAttachment>(attachmentId);
     if (!attach.IsValid())
@@ -624,9 +713,6 @@ TRoot::TRoot(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId att
     m_viewport->NpcToWorld(frust.m_pts, frust.m_pts, NPC_CORNER_COUNT);
     m_viewport->SetupFromFrustum(frust);
 
-    // max pixel size is half the length of the diagonal.
-    m_maxPixelSize = .5 * DPoint2d::FromZero().Distance(DPoint2d::From(m_pixels, m_pixels));
-
     auto& box = attach->GetPlacement().GetElementBox();
     AxisAlignedBox3d range = attach->GetPlacement().CalculateRange();
 
@@ -657,7 +743,7 @@ TRoot::TRoot(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId att
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TRoot::Populate()
     {
-    m_rootTile = new TTile(*this);
+    m_rootTile = new TTile(*this, nullptr);
     }
 
 #if defined (DEBUG_SHEETS)
