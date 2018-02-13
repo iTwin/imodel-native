@@ -246,31 +246,25 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
         bimCode = AlignmentBim::RoadRailAlignmentDomain::CreateCode(*m_bimAlignmentModelPtr, bimAlignmentName);
 
         int32_t suffix = 0;
-        auto existingId = m_bimAlignmentModelPtr->GetDgnDb().Elements().QueryElementIdByCode(bimCode);
-        while (existingId.IsValid())
+        DgnElementId existingId;
+
+        do
             {
-            auto existingAlgCPtr = AlignmentBim::Alignment::Get(m_bimAlignmentModelPtr->GetDgnDb(), existingId);
+            BeFileName fileName(cifAlignment.GetDgnModelP()->GetDgnFileP()->GetFileName().c_str());
+            bimAlignmentName = Utf8String(fileName.GetFileNameAndExtension().c_str());
+            bimAlignmentName += "\\";
+            bimAlignmentName += Utf8String(cifAlignment.GetDgnModelP()->GetModelName());
+            bimAlignmentName += "\\";
+            bimAlignmentName += cifAlignmentName;
 
-            if (existingAlgCPtr.IsValid() && existingAlgCPtr->GetFederationGuid() == bimGuid)
-                return BentleyStatus::ERROR;
-            else
-                {
-                BeFileName fileName(cifAlignment.GetDgnModelP()->GetDgnFileP()->GetFileName().c_str());
-                bimAlignmentName = Utf8String(fileName.GetFileNameAndExtension().c_str());
-                bimAlignmentName += "\\";
-                bimAlignmentName += Utf8String(cifAlignment.GetDgnModelP()->GetModelName());
-                bimAlignmentName += "\\";
-                bimAlignmentName += cifAlignmentName;
+            if (suffix > 0)
+                bimAlignmentName += Utf8PrintfString("-%d", suffix).c_str();
 
-                if (suffix > 0)
-                    bimAlignmentName += Utf8PrintfString("-%d", suffix).c_str();
-
-                bimCode = AlignmentBim::RoadRailAlignmentDomain::CreateCode(*m_bimAlignmentModelPtr, bimAlignmentName);
-                suffix++;
-                }
+            bimCode = AlignmentBim::RoadRailAlignmentDomain::CreateCode(*m_bimAlignmentModelPtr, bimAlignmentName);
+            suffix++;
 
             existingId = m_bimAlignmentModelPtr->GetDgnDb().Elements().QueryElementIdByCode(bimCode);
-            }
+            } while (existingId.IsValid());
         }    
 
     // Create Alignment
@@ -336,6 +330,25 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
     bimHorizAlignmPtr->GenerateElementGeom();
     if (bimHorizAlignmPtr->Insert().IsNull())
         return BentleyStatus::ERROR;
+
+    auto linearEntity3dPtr = cifAlignment.GetActiveLinearEntity3d();
+    if (linearEntity3dPtr.IsValid())
+        {
+        auto cifAlignment3dGeomPtr = linearEntity3dPtr->GetGeometry();
+
+        CurveVectorPtr bimAlignment3dGeomPtr;
+        if (BentleyStatus::SUCCESS != Marshal(bimAlignment3dGeomPtr, *cifAlignment3dGeomPtr))
+            return BentleyStatus::ERROR;
+
+        auto geomBuilder = GeometryBuilder::Create(*bimAlignmentPtr);
+        if (!geomBuilder->Append(*bimAlignment3dGeomPtr, GeometryBuilder::CoordSystem::World))
+            return BentleyStatus::ERROR;
+
+        if (BentleyStatus::SUCCESS != geomBuilder->Finish(*bimAlignmentPtr))
+            return BentleyStatus::ERROR;
+        }
+    else
+        bimAlignmentPtr->GenerateAprox3dGeom();
 
     auto cifStationingPtr = cifAlignment.GetStationing();
     if (cifStationingPtr.IsValid())
@@ -1030,9 +1043,20 @@ void ORDConverter::CreateRoadRailElements()
         for (auto categoryId : categoryIdMap)
             additionalCategories.push_back(categoryId);
 
+        auto alignmentModelPtr = RoadRailAlignment::AlignmentModel::Query(GetJobSubject(), ORDBRIDGE_AlignmentModelName);
+        alignmentModelPtr->SetIsPrivate(false);
+        alignmentModelPtr->Update();
+
         auto viewId = RoadRailBim::RoadRailPhysicalDomain::SetUpDefaultViews(GetJobSubject(), ORDBRIDGE_AlignmentModelName, ORDBRIDGE_PhysicalModelName, &additionalCategories);
         if (viewId.IsValid())
+            {
             m_defaultViewId = viewId;
+
+            auto viewDefCPtr = GetDgnDb().Elements().Get<SpatialViewDefinition>(viewId);
+            auto modelSelectorPtr = GetDgnDb().Elements().GetForEdit<ModelSelector>(viewDefCPtr->GetModelSelectorId());
+            modelSelectorPtr->AddModel(alignmentModelPtr->GetModelId());
+            modelSelectorPtr->Update();
+            }
         }
     }
 
