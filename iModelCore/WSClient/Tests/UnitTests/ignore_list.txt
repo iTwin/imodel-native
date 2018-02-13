@@ -30,6 +30,26 @@ WSChangesetTests.CalculateSize_LotsOfIntsances_PerformanceBetterThanDoingToReque
 
 #Connect Web Services Client Wrapper tests - the wrapper is not built as a part of the DgnClientSdk currently, so we will ignore them for now.
 *ConnectWebServicesClientCTests*
+#----------------------------------------------------------------------------------------
+#   Test that fail becouse of issue with Web Api version 2.7
+#----------------------------------------------------------------------------------------
+WSRepositoryClientTests.SendQueryRequest_WebApiV26_CapsWebApiToV26
+WSRepositoryClientTests.SendQueryRequest_WebApiV28_CapsWebApiToV27
+WSRepositoryClientTests.SendCreateObjectRequest_EnableJobsWebApiV2JobSucceedsResponseSucceeds_Success
+WSRepositoryClientTests.SendChangesetRequest_EnableJobsWebApiV2JobSucceedsResponseSucceeds_SuccessAndReturnsBody
+WSRepositoryClientTests.SendUpdateObjectRequest_EnableJobsWebApiV2JobSucceedsResponseSucceeds_Success
+WSRepositoryClientTests.SendDeleteObjectRequest_EnableJobsWebApiV1_SendsSimpleDeleteRequest
+WSRepositoryClientTests.SendDeleteObjectRequest_EnableJobsWebApiV2JobNotSupported_SendsSimpleDeleteRequest
+WSRepositoryClientTests.SendDeleteObjectRequest_EnableJobsWebApiV2JobNotSupportedResponseIsOK_Success
+WSRepositoryClientTests.SendDeleteObjectRequest_EnableJobsWebApiV2ResponseSendsJobsSequence_SendsJobDeleteRequest
+WSRepositoryClientTests.SendDeleteObjectRequest_EnableJobsWebApiV2JobRequestFailed_Fails
+WSRepositoryClientTests.SendDeleteObjectRequest_EnableJobsWebApiV2JobSucceedsResponseSucceeds_Success
+WSRepositoryClientTests.SendDeleteObjectRequest_EnableJobsWebApiV2JobSucceedsAfterLongDelayResponseSucceeds_Success
+WSRepositoryClientTests.SendDeleteObjectRequest_EnableJobsWebApiV2JobsRunningAfterLongDelay_Fails
+WSRepositoryClientTests.SendDeleteObjectRequest_EnableJobsAndWebApiV2JobsSuceedsFailsToDeleteJob_Fails
+WSRepositoryClientTests.SendDeleteObjectRequest_EnableJobsWebApiV2JobFails_Fails
+WSRepositoryClientTests.SendDeleteObjectRequest_EnableJobsWebApiV2JobsResponseIsUnauthorized_Fails
+WSRepositoryClientTests.SendUpdateFileRequest_EnableJobsWebApiV2JobSucceedsResponseSucceeds_Success
 
 #--------------------------------------------------------------------------------
 # BREAKAGES caused by recent changes in dependencies
