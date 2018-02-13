@@ -762,29 +762,16 @@ ObjectInfoCR info,
 const bvector<SelectPathElement>& path
 )
     {
-    bool allRequired = DoesRequireAllProperties(info);
-    bool allSelected = m_queryAnalyzer.IsSelectionAll(path);
-
-    if (allRequired)
-        {
-        if (allSelected)
-            {
-            return Action::CacheFull;
-            }
-        bool idOnlySelected = m_queryAnalyzer.IsSelectionId(path);
-        if (idOnlySelected)
-            {
-            return Action::SkipCached;
-            }
-        return Action::Reject;
-        }
-
-    if (allSelected)
-        {
+    if (m_queryAnalyzer.IsSelectionAll(path))
         return Action::CacheFull;
-        }
 
-    return Action::CachePartial;
+    if (!DoesRequireAllProperties(info))
+        return Action::CachePartial;
+
+    if (m_queryAnalyzer.IsSelectionId(path))
+        return Action::SkipCached;
+
+    return Action::Reject;
     }
 
 /*--------------------------------------------------------------------------------------+
