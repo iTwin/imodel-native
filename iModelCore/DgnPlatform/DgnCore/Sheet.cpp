@@ -621,7 +621,6 @@ Tile::SelectParent TTile::_SelectTiles(bvector<TileTree::TileCPtr>& selected, Ti
         return SelectParent::No;
         }
 
-// #define DEBUG_PRINT_SHEET_TILE_SELECTION
 #if defined(DEBUG_PRINT_SHEET_TILE_SELECTION)
     DEBUG_PRINTF(" ** Selecting this tile, IsReady()=%d, depth=%d", IsReady(), GetDepth());
 #endif
