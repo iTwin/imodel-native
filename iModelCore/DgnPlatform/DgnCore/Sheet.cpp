@@ -355,6 +355,7 @@ void Sheet::ViewController::_LoadState()
 
     m_size = model->ToSheetModel()->GetSheetSize();
     m_attachments.clear();
+    m_allAttachmentsLoaded = false;
 
     auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE Model.Id=?");
     stmt->BindId(1, model->GetModelId());
@@ -475,7 +476,6 @@ static void populateSheetTile(TTile* tile, uint32_t depth, SceneContextR context
     Sheet::Attachment::Viewport* viewport = tree.m_viewport.get();
     UpdatePlan const& plan = context.GetUpdatePlan();
 
-    viewport->InvalidateRenderPlan();
     viewport->SetRect(BSIRect::From(0, 0, texSize, texSize));
     viewport->SetupFromViewController();
     viewport->m_renderSys = renderSys;
