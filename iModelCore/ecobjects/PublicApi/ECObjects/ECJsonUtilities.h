@@ -16,7 +16,7 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //=================================================================================
-//! Formatting options for ECProperty values of the type @ref ECN::PRIMITIVETYPE_Long "Long" / Int64
+//! Formatting options for ECProperty values of the type PrimitiveType::PRIMITIVETYPE_Long "Long" / Int64
 //! @remarks Because of JavaScript issues with 64 bit numbers, in many use cases Int64 values cannot be formatted as number
 //! without data loss. Using one of the other options from this enumeration allows to workaround that issue.
 // @bsienum                                                    09/2017
