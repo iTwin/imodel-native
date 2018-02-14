@@ -3980,6 +3980,63 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoForStructArrays)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  02/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, GetArrayValue)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("GetArrayValue.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+
+    ECInstanceKey key;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ecsql.PSA(I_Array,L_Array,D_Array) VALUES(?,?,?)"));
+    IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+    ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindInt(1));
+    ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindInt(2));
+    IECSqlBinder& arrayBinder2 = stmt.GetBinder(2);
+    ASSERT_EQ(ECSqlStatus::Success, arrayBinder2.AddArrayElement().BindInt64(1001));
+    ASSERT_EQ(ECSqlStatus::Success, arrayBinder2.AddArrayElement().BindInt64(1002));
+    IECSqlBinder& arrayBinder3 = stmt.GetBinder(3);
+    ASSERT_EQ(ECSqlStatus::Success, arrayBinder3.AddArrayElement().BindDouble(1.0));
+    ASSERT_EQ(ECSqlStatus::Success, arrayBinder3.AddArrayElement().BindDouble(2.0));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    }
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT I_Array,L_Array,D_Array FROM ecsql.PSA WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+    int arrayIndex = 0;
+    for (IECSqlValue const& arrayElement : stmt.GetValue(0).GetArrayIterable())
+        {
+        ASSERT_EQ(arrayIndex + 1, arrayElement.GetInt()) << "Int array element must be callable with GetInt";
+        ASSERT_EQ(arrayIndex + 1, arrayElement.GetInt64()) << "Int array element must be callable with GetInt64";
+        ASSERT_EQ(arrayIndex + 1, arrayElement.GetDouble()) << "Int array element must be callable with GetDouble";
+        arrayIndex++;
+        }
+
+    arrayIndex = 0;
+    for (IECSqlValue const& arrayElement : stmt.GetValue(1).GetArrayIterable())
+        {
+        ASSERT_EQ(arrayIndex + 1001, arrayElement.GetInt64()) << "Int64 array element must be callable with GetInt64";
+        ASSERT_DOUBLE_EQ(arrayIndex + 1001, arrayElement.GetDouble()) << "Int64 array element must be callable with GetDouble";
+        ASSERT_EQ(0, arrayElement.GetInt()) << "Int64 array element cannot be called with GetInt";
+        arrayIndex++;
+        }
+
+    arrayIndex = 0;
+    for (IECSqlValue const& arrayElement : stmt.GetValue(2).GetArrayIterable())
+        {
+        ASSERT_DOUBLE_EQ(arrayIndex + 1, arrayElement.GetDouble()) << "Double array element must be callable with GetDouble";
+        ASSERT_EQ(0, arrayElement.GetInt64()) << "Double array element cannot be called with GetInt64";
+        ASSERT_EQ(0, arrayElement.GetInt()) << "Double array element cannot be called with GetInt";
+        arrayIndex++;
+        }
+
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  12/13
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, Step)
