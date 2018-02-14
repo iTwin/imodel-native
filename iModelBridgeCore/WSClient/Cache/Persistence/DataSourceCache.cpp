@@ -1473,14 +1473,12 @@ ICancellationTokenPtr ct
             {
             if (nullptr == rejectedOut)
                 return CacheStatus::Error;
-            if (SUCCESS != m_state->GetRootManager().GetInstancesByPersistence(CacheRootPersistence::Full, fullyPersistedInstances))
-                return CacheStatus::Error;
 
             InstanceCacheHelper::QueryAnalyzer analyzer(m_state->GetECDbAdapter(), *query);
             partialCachingState = std::make_shared<InstanceCacheHelper::PartialCachingState>
                 (
                 analyzer,
-                fullyPersistedInstances,
+                m_state->GetRootManager(),
                 *rejectedOut
                 );
             }

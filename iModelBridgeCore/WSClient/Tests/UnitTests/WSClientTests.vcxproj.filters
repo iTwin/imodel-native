@@ -331,6 +331,7 @@
     <ClCompile Include="Published\WebServices\Cache\Persistence\CacheEnvironmentTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Util\ECInstanceKeyFilterTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\Response\WSUploadResponseTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\DataSourceCachePerformanceTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="dependencies.mki" />
