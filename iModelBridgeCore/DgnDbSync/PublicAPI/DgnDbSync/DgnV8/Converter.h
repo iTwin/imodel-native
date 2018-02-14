@@ -588,6 +588,8 @@ struct Converter
         bool m_skipUnchangedFiles;
         bool m_wantProvenanceInBim;
         bool m_isPowerplatformBased;
+        bool m_processAffected;
+        bool m_convertViewsOfAllDrawings;
         StableIdPolicy m_stableIdPolicy;
         BeFileName m_rootDir;           //!< Enables us to store *relative* paths to files in syncinfo
         BeFileName m_configFile;
@@ -603,7 +605,6 @@ struct Converter
         Utf8String m_pwUser;
         Utf8String m_pwPassword;
         Utf8String m_pwDataSource;
-        bool m_processAffected;
 
     public:
         Params() : m_v8sdkRelativeDir(L"DgnV8") // it's relative to the library's directory
@@ -614,6 +615,7 @@ struct Converter
             m_isPowerplatformBased = false;
             m_wantProvenanceInBim = false;
             m_processAffected = false;
+            m_convertViewsOfAllDrawings = false;
             }
 
         void SetInputRootDir(BentleyApi::BeFileNameCR fileName) {m_rootDir = fileName;}
@@ -638,6 +640,7 @@ struct Converter
         void SetProjectWisePassword(Utf8CP pwPassword) {m_pwPassword = pwPassword;}
         void SetProjectWiseDataSource(Utf8CP pwDataSource) {m_pwDataSource = pwDataSource;}
         void SetProcessAffected(bool processAffected) { m_processAffected = processAffected; }
+        void SetConvertViewsOfAllDrawings(bool b) { m_convertViewsOfAllDrawings = b;}
 
         BeFileNameCR GetInputRootDir() const {return m_rootDir;}
         BeFileNameCR GetConfigFile() const {return m_configFile;}
@@ -661,6 +664,7 @@ struct Converter
         bool GetIsPowerplatformBased() const {return m_isPowerplatformBased;}
         bool GetWantProvenanceInBim() const {return m_wantProvenanceInBim;}
         bool GetProcessAffected() const { return m_processAffected; }
+        bool GetConvertViewsOfAllDrawings() const {return m_convertViewsOfAllDrawings;}
     };
 
     //! Guides the search for attachments with proxy graphics
@@ -1510,8 +1514,15 @@ public:
     //! @note The returned model is marked as hidden
     Bentley::RefCountedPtr<DgnV8Api::DgnModel> CopyModel(DgnV8ModelP v8Model, WCharCP newNameSuffix);
 
-    //! Unnest all 2d attachements to the specified sheet and convert any attached sheets into drawings
-    void UnnestAttachments(DgnV8ModelR sheetModel);
+    //! Unnest all 2d attachements to the specified sheet.
+    void UnnestAttachments(DgnV8ModelR parentModel);
+
+    //! convert any attached sheets into drawings
+    void TransformSheetAttachmentsToDrawings(DgnV8ModelR parentModel);
+
+    //! Optionally transform attachments to 2d models into attachments to copies of those 2d models.
+    typedef std::function<bool(DgnV8Api::DgnAttachment const&)> T_AttachmentCopyFilter;
+    void TransformDrawingAttachmentsToCopies(DgnV8ModelR parentModel, T_AttachmentCopyFilter filter);
 
     //! Get the direct attachments to the specified sheet that might need to be unnested.
     bvector<DgnV8Api::ElementId> GetAttachmentsToBeUnnested(DgnV8ModelR sheetModel);
@@ -2517,10 +2528,10 @@ protected:
 
     void FindSpatialV8Models(DgnV8ModelRefR rootModelRef, bool haveFoundSpatialRoot = false);
     void FindV8DrawingsAndSheets();
-    void RegisterNonSpatialModel(DgnV8ModelRefR v8ModelRef, bool isRootASheet);
+    void RegisterNonSpatialModel(DgnV8ModelR);
     void RegisterSheetModel(DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item);
     void RegisterDrawingModel(DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item);
-    void RegisterAndTransform2dAttachments(DgnV8ModelR v8ParentModel, bool isRootASheet);
+    void Transform2dAttachments(DgnV8ModelR v8ParentModel);
 
 
 public:
