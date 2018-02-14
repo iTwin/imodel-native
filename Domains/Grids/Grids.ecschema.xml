@@ -12,6 +12,13 @@
     <ECSchemaReference name="BisCore" version="01.00" prefix="bis" />
     <ECSchemaReference name="AecUnits" version="01.00" prefix="AECU" />
 
+    <ECEntityClass typeName="GridCurvesPortion">
+      <BaseClass>bis:SpatialLocationPortion</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+    </ECEntityClass>
+
     <ECRelationshipClass typeName="GridDrivesGridSurface" strength="referencing">
       <BaseClass>bis:ElementDrivesElement</BaseClass>
       <ECCustomAttributes>

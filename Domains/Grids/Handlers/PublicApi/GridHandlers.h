@@ -13,6 +13,11 @@
 
 BEGIN_GRIDS_NAMESPACE
 
+struct GridCurvesPortionHandler : Dgn::dgn_ElementHandler::SpatialLocation
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(GRIDS_CLASS_GridCurvesPortion, GridCurvesPortion, GridCurvesPortionHandler, Dgn::dgn_ElementHandler::SpatialLocation, GRIDHANDLERS_EXPORT)
+    };
+
 struct OrthogonalAxisXHandler : Dgn::dgn_ElementHandler::Definition
     {
     ELEMENTHANDLER_DECLARE_MEMBERS(GRIDS_CLASS_OrthogonalAxisX, OrthogonalAxisX, OrthogonalAxisXHandler, Dgn::dgn_ElementHandler::Definition, GRIDHANDLERS_EXPORT)

@@ -73,7 +73,7 @@
 #define GRIDS_REL_GridHasAxes                                   "GridHasAxes"
 #define GRIDS_REL_GridAxisContainsGridSurfaces                  "GridAxisContainsGridSurfaces"
 
-#define GRIDS_CLASS_SurfaceSet                                  "SurfaceSet"
+#define GRIDS_CLASS_GridCurvesPortion                    "GridCurvesPortion"
 #define GRIDS_CLASS_Grid                                 "Grid"
 #define GRIDS_CLASS_ElevationGrid                        "ElevationGrid"
 #define GRIDS_CLASS_PlanGrid                             "PlanGrid"
@@ -93,7 +93,6 @@
 #define GRIDS_CLASS_GridSpline                                  "GridSpline"
 #define GRIDS_CLASS_GridArc                                     "GridArc"
 
-#define GRIDS_CLASS_DrivingSurface                              "DrivingSurface"
 #define GRIDS_CLASS_GridSurface                                 "GridSurface"
 #define GRIDS_CLASS_GridPlanarSurface                           "GridPlanarSurface"
 #define GRIDS_CLASS_PlanGridPlanarSurface                       "PlanGridPlanarSurface"
@@ -110,19 +109,14 @@
 #define GRIDS_CLASS_SketchSplineGridSurface                     "SketchSplineGridSurface"
 
 //Categories
-#define GRIDS_CATEGORY_CODE_IntersectionCurve                   "IntersectionCurve"
 #define GRIDS_CATEGORY_CODE_GridCurve                           "GridCurve"
-
-#define GRIDS_CATEGORY_CODE_DrivingSurface                      "DrivingSurface"
 #define GRIDS_CATEGORY_CODE_GridSurface                         "GridSurface"
-
-
 #define GRIDS_CATEGORY_CODE_Uncategorized                       "Uncategorized"
 
 //Authorities
 #define GRIDS_AUTHORITY_GridCurve                       GRIDS_CODESPEC_CODE(GRIDS_CLASS_GridCurve)
-#define GRIDS_AUTHORITY_SurfaceSet                      GRIDS_CODESPEC_CODE(GRIDS_CLASS_SurfaceSet)
-#define GRIDS_AUTHORITY_Grid                     GRIDS_CODESPEC_CODE(GRIDS_CLASS_Grid)
+#define GRIDS_AUTHORITY_Grid                            GRIDS_CODESPEC_CODE(GRIDS_CLASS_Grid)
+#define GRIDS_AUTHORITY_GridCurvesPortion               GRIDS_CODESPEC_CODE(GRIDS_CLASS_GridCurvesPortion)
 
 //-----------------------------------------------------------------------------------------
 // Define both RefCounterPtr/CPtr and (P, CP, R, CR) types

@@ -37,11 +37,11 @@ ICurvePrimitivePtr  curve
 +---------------+---------------+---------------+---------------+---------------+------*/
 GridArcPtr                 GridArc::Create 
 (
-Dgn::DgnModelCR model,
+GridCurvesPortionCR portion,
 ICurvePrimitivePtr  curve
 )
     {
-    return new GridArc (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), curve);
+    return new GridArc (CreateParamsFromModel(*portion.GetSubModel(), QueryClassId(portion.GetDgnDb())), curve);
     }
 
 /*---------------------------------------------------------------------------------**//**

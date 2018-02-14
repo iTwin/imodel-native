@@ -107,9 +107,10 @@ public:
     //---------------------------------------------------------------------------------------
     //! intersects this grid with the given surface, creates gridcurves
     //! @param[in] surface      surface to intersect
-    //! @param[in] targetModel  model to create gridcurves in
+    //! @param[in] gridCurvesPortion   portion to create new gridcurves in
     //! @return BentleyStatus for the operation result
-    GRIDELEMENTS_EXPORT BentleyStatus   IntersectGridSurface(GridSurfaceCPtr surface, Dgn::DgnModelCR targetModel) const;
+    //! @note GridCurvesPortion must be inserted
+    GRIDELEMENTS_EXPORT BentleyStatus   IntersectGridSurface(GridSurfaceCPtr surface, GridCurvesPortionCR targetPortion) const;
     };
     
 //=======================================================================================
@@ -268,5 +269,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGrid : Grid
         //! Sets default Surface2d of this ElevationGrid
         //! @param[in]   surface        curvevector in local coordinates, on zero Z plane
         GRIDELEMENTS_EXPORT void                SetDefaultSurface2d(CurveVectorPtr surface);
+
+        //! Gets default Surface2d of this ElevationGrid
+        //! @return surface of this ElevationGrid, as curvevector on zero Z plane
+        GRIDELEMENTS_EXPORT GridAxisCPtr      GetAxis() const;
     };
 END_GRIDS_NAMESPACE

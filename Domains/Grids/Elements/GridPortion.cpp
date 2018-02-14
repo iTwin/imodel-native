@@ -186,8 +186,8 @@ Dgn::DgnDbStatus Grid::_OnDelete() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   Grid::IntersectGridSurface 
 (
-GridSurfaceCPtr surface, 
-Dgn::DgnModelCR targetModel
+GridSurfaceCPtr surface,
+GridCurvesPortionCR targetPortion
 ) const
     {
     Dgn::DgnModelPtr model = GetSubModel ();
@@ -203,7 +203,7 @@ Dgn::DgnModelCR targetModel
         GridSurfaceCPtr innerSurface = db.Elements ().Get<GridSurface> (elementEntry.GetElementId ());
         if (innerSurface.IsValid())
             {
-            GridSurfaceCreatesGridCurveHandler::Insert (db, innerSurface, surface, targetModel);
+            GridSurfaceCreatesGridCurveHandler::Insert (db, innerSurface, surface, targetPortion);
             }
         }
 
@@ -369,6 +369,16 @@ CurveVectorPtr                   ElevationGrid::GetDefaultSurface2d
     CurveVectorPtr surface = geometryPtr->GetAsCurveVector ();
 
     return surface;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+GridAxisCPtr                    ElevationGrid::GetAxis
+(
+) const
+    {
+    return GetDgnDb().Elements().Get<GridAxis>((*MakeAxesIterator()).GetElementId());
     }
 
 END_GRIDS_NAMESPACE

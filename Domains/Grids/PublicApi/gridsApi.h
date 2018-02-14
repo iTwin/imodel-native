@@ -10,6 +10,7 @@
 #include "Domain/GridsDomain.h"
 #include "Domain/GridsMacros.h"
 #include "Elements/ForwardDeclarations.h"
+#include "Elements/GridCurvesPortion.h"
 #include "Elements/GridSurface.h"
 #include "Elements/GridCurve.h"
 #include "Elements/GridPortion.h"

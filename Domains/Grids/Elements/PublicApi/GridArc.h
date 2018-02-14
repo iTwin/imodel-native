@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Elements/PublicApi/GridArc.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -37,10 +37,11 @@ public:
     // Creation
     //---------------------------------------------------------------------------------------
     //! Creates a grid arc
-    //! @param[in]  model   model for the grid arc
+    //! @param[in]  gridCurvesPortion   portion for the grid arc
     //! @param[in]  curve   curve geometry
     //! @return             Grid arc
-    GRIDELEMENTS_EXPORT static GridArcPtr Create (Dgn::DgnModelCR model, ICurvePrimitivePtr curve);
+    //! @note GridCurvesPortion must be inserted
+    GRIDELEMENTS_EXPORT static GridArcPtr Create (GridCurvesPortionCR gridCurvesPortion, ICurvePrimitivePtr curve);
 };
 
 END_GRIDS_NAMESPACE
