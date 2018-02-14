@@ -10,12 +10,12 @@
 
 #include    <windows.h>
 #include    <GeoCoord/BaseGeoCoord.h>
-#include    <GeoCoord/BaseGeoCoordApi.h>
-#include    <GeoCoord/gcslibrary.h>
+#include    <GeoCoord/basegeocoordapi.h>
+#include    <GeoCoord/GCSLibrary.h>
 #include    <assert.h>
-#include    <CSMap/CS_nameMapperSupport.h>
-#include    <CSMap/cs_map.h>
-#include    <CSMap/cs_Legacy.h>
+#include    <csmap/cs_NameMapperSupport.h>
+#include    <csmap/cs_map.h>
+#include    <csmap/cs_Legacy.h>
 #include    <RmgrTools/Tools/mdlResource.h>
 #include    <RmgrTools/Tools/RscFileManager.h>
 #include    <sys/types.h>
@@ -5103,7 +5103,7 @@ StatusInt       SaveGCS
         geoTiffKeyInterpreter.ProcessProjectedCSTypeKey (projectedCSType);
 
         // add the ProjLinearUnitsGeoKey if the unit of the CGS is different than the unit of the
-        // coordinate system defined by the GCS’s EPSG code.
+        // coordinate system defined by the GCS EPSG code.
         if (geoTiffKeyInterpreter.m_csDef.unit_scl != m_inGCS.m_csParameters->csdef.unit_scl)
             SaveProjLinearUnitsKey();
 
@@ -11737,6 +11737,9 @@ double          BaseGCS::UnitsFromMeters
 (
 ) const
     {
+    if (NULL == m_csParameters)
+        return 1.0; // We return 1 in case someone tries to invert without checking against zero
+
     return m_csParameters->csdef.scale;
     }
 
@@ -12329,7 +12332,7 @@ BaseGCSCR       from,
 BaseGCSCR       to
 )
     {
-    VerticalDatumConverter* verticalDatumConverter  = GetVerticalDatumConverter (from, to);
+    VerticalDatumConverter* verticalDatumConverter = GetVerticalDatumConverter (from, to);
 
     CSDatumConvert  *datumConvert = CSMap::CS_dtcsu (from.GetCSParameters(), to.GetCSParameters());
 
@@ -12540,7 +12543,10 @@ bool            GroupEnumerator::MoveNext()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-Group*          GroupEnumerator::GetCurrent() { return m_currentGroup; }
+Group*          GroupEnumerator::GetCurrent() 
+{ 
+    return m_currentGroup; 
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   11/07
