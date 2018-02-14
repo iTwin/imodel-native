@@ -20,6 +20,7 @@ struct LineGridSurfacePlacementStrategy : public SketchGridSurfacePlacementStrat
 
     private:
         LineGridSurfaceManipulationStrategyPtr m_manipulationStrategy;
+        BBS::LinePlacementStrategyPtr m_geometryPlacementStrategy;
 
     protected:
         LineGridSurfacePlacementStrategy(BBS::LinePlacementStrategyType linePlacementStrategyType);
@@ -30,13 +31,14 @@ struct LineGridSurfacePlacementStrategy : public SketchGridSurfacePlacementStrat
         virtual LineGridSurfaceManipulationStrategyCR _GetLineGridSurfaceManipulationStrategy() const { return *m_manipulationStrategy; }
         virtual LineGridSurfaceManipulationStrategyR _GetLineGridSurfaceManipulationStrategyR() { return *m_manipulationStrategy; }
 
+        virtual BBS::GeometryPlacementStrategyCPtr _TryGetGeometryPlacementStrategy() const  const override { return m_geometryPlacementStrategy.get(); }
+        virtual BBS::GeometryPlacementStrategyPtr _TryGetGeometryPlacementStrategyP() override { return m_geometryPlacementStrategy.get(); }
+
         virtual BentleyStatus _TryGetProperty(Utf8CP key, double & value) const override;
         virtual void _SetProperty(Utf8CP key, double const & value) override;
 
     public:
         GRIDSTRATEGIES_EXPORT static LineGridSurfacePlacementStrategyPtr Create(BBS::LinePlacementStrategyType linePlacementStrategyType) { return new LineGridSurfacePlacementStrategy(linePlacementStrategyType); }
-        GRIDSTRATEGIES_EXPORT void ChangeCurrentPlacementType(BBS::LinePlacementStrategyType newLinePlacementStrategyType);
-        GRIDSTRATEGIES_EXPORT BBS::LinePlacementStrategyType GetCurrentPlacementType() const;
     };
 
 END_GRIDS_NAMESPACE

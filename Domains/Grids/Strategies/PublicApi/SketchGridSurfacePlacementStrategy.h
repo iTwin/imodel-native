@@ -29,6 +29,10 @@ struct SketchGridSurfacePlacementStrategy : public BBS::ElementPlacementStrategy
         virtual SketchGridSurfaceManipulationStrategyCR _GetSketchGridSurfaceManipulationStrategy() const = 0;
         virtual SketchGridSurfaceManipulationStrategyR _GetSketchGridSurfaceManipulationStrategyR() = 0;
 
+        virtual void _AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint);
+        virtual void _AddDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints);
+        virtual void _AddKeyPoint(DPoint3dCR newKeyPoint);
+
         virtual BentleyStatus _TryGetProperty(Utf8CP key, double & value) const override;
         virtual void _SetProperty(Utf8CP key, double const & value) override;
 
@@ -43,6 +47,9 @@ struct SketchGridSurfacePlacementStrategy : public BBS::ElementPlacementStrategy
         GRIDSTRATEGIES_EXPORT static const Utf8CP prop_Axis;
         GRIDSTRATEGIES_EXPORT static const Utf8CP prop_Name;
         GRIDSTRATEGIES_EXPORT static const Utf8CP prop_WorkingPlane;
+        GRIDSTRATEGIES_EXPORT static const Utf8CP prop_Length;
+        GRIDSTRATEGIES_EXPORT static const Utf8CP prop_Angle;
+
 
         GRIDSTRATEGIES_EXPORT Utf8String GetMessage() const;
     };

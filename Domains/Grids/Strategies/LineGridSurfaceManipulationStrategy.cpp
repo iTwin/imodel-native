@@ -13,12 +13,8 @@ USING_NAMESPACE_GRIDS
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-LineGridSurfaceManipulationStrategy::LineGridSurfaceManipulationStrategy
-(
-    LinePlacementStrategyType linePlacementStrategyType
-)
+LineGridSurfaceManipulationStrategy::LineGridSurfaceManipulationStrategy()
     : T_Super()
-    , m_currentPlacementType(linePlacementStrategyType)
     , m_geometryManipulationStrategy(LineManipulationStrategy::Create())
     , m_surface(nullptr)
     {
@@ -47,38 +43,6 @@ BentleyStatus LineGridSurfaceManipulationStrategy::_UpdateGridSurface()
 Utf8String LineGridSurfaceManipulationStrategy::_GetMessage() const
     {
     return ""; // TODO
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas              02/2018
-//---------------+---------------+---------------+---------------+---------------+------
-BBS::CurvePrimitivePlacementStrategyPtr LineGridSurfaceManipulationStrategy::_GetGeometryPlacementStrategyP()
-    {
-    return m_geometryManipulationStrategy->CreateLinePlacementStrategy(m_currentPlacementType);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas              02/2018
-//---------------+---------------+---------------+---------------+---------------+------
-BBS::CurvePrimitivePlacementStrategyCPtr LineGridSurfaceManipulationStrategy::_GetGeometryPlacementStrategy() const
-    {
-    return m_geometryManipulationStrategy->CreateLinePlacementStrategy(m_currentPlacementType).get();
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas              02/2018
-//---------------+---------------+---------------+---------------+---------------+------
-void LineGridSurfaceManipulationStrategy::ChangeCurrentPlacementType(BBS::LinePlacementStrategyType newLinePlacementStrategyType)
-    {
-    m_currentPlacementType = newLinePlacementStrategyType;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas              02/2018
-//---------------+---------------+---------------+---------------+---------------+------
-BBS::LinePlacementStrategyType LineGridSurfaceManipulationStrategy::GetCurrentPlacementType() const
-    {
-    return m_currentPlacementType;
     }
 
 //--------------------------------------------------------------------------------------
