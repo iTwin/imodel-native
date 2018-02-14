@@ -21,6 +21,7 @@ struct CurveVectorPlacementStrategy : public GeometryPlacementStrategy
 
     protected:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurveVectorPlacementStrategy();
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurveVectorPlacementStrategy(CurveVectorManipulationStrategyR manipulationStrategy);
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual CurveVectorPtr _Finish(bool connectEndStart) const;
 
@@ -33,6 +34,7 @@ struct CurveVectorPlacementStrategy : public GeometryPlacementStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurveVectorPtr Finish(bool connectEndStart = false) const;
 
         static CurveVectorPlacementStrategyPtr Create() { return new CurveVectorPlacementStrategy(); }
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static CurveVectorPlacementStrategyPtr Create(CurveVectorManipulationStrategyR manipulationStrategy) { return new CurveVectorPlacementStrategy(manipulationStrategy); }
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ChangeDefaultNewGeometryType(DefaultNewGeometryType newGeometryType);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurvePrimitivePlacementStrategyPtr GetCurrentCurvePrimitivePlacementStrategy() { return m_manipulationStrategy->GetStrategyForAppend(); }

@@ -38,8 +38,7 @@ struct LinePlacementStrategy : CurvePrimitivePlacementStrategy
         static constexpr Utf8CP prop_Length() { return "Length"; }
         static constexpr Utf8CP prop_Angle() { return "Angle"; }
 
-        static LinePlacementStrategyPtr Create(LinePlacementStrategyType strategyType);
-        static LinePlacementStrategyPtr Create(LinePlacementStrategyType strategyType, LineManipulationStrategyR manipulationStrategy);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static LinePlacementStrategyPtr Create(LinePlacementStrategyType strategyType, LineManipulationStrategyR manipulationStrategy);
     };
 
 struct LinePointsPlacementStrategy : LinePlacementStrategy

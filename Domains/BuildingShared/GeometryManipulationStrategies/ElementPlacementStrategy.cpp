@@ -31,3 +31,168 @@ DgnElementPtr ElementPlacementStrategy::FinishElement
     {
     return _FinishElement(model);
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bvector<DPoint3d> ElementPlacementStrategy::_GetKeyPoints() const
+    {
+    GeometryPlacementStrategyCPtr strategy = _TryGetGeometryPlacementStrategy();
+    if (strategy.IsNull())
+        {
+        BeAssert(false && "Invalid geometry placement strategy");
+        return bvector<DPoint3d>();
+        }
+    return strategy->GetKeyPoints();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool ElementPlacementStrategy::_IsDynamicKeyPointSet() const
+    {
+    GeometryPlacementStrategyCPtr strategy = _TryGetGeometryPlacementStrategy();
+    if (strategy.IsNull())
+        {
+        BeAssert(false && "Invalid geometry placement strategy");
+        return false;
+        }
+    return strategy->IsDynamicKeyPointSet();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ElementPlacementStrategy::_AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint)
+    {
+    GeometryPlacementStrategyPtr strategy = _TryGetGeometryPlacementStrategyP();
+    if (strategy.IsNull())
+        {
+        BeAssert(false && "Invalid geometry placement strategy");
+        return;
+        }
+
+    strategy->AddDynamicKeyPoint(newDynamicKeyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ElementPlacementStrategy::_AddDynamicKeyPoints(bvector<DPoint3d> const & newDynamicKeyPoints)
+    {
+    GeometryPlacementStrategyPtr strategy = _TryGetGeometryPlacementStrategyP();
+    if (strategy.IsNull())
+        {
+        BeAssert(false && "Invalid geometry placement strategy");
+        return;
+        }
+
+    strategy->AddDynamicKeyPoints(newDynamicKeyPoints);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ElementPlacementStrategy::_ResetDynamicKeyPoint()
+    {
+    GeometryPlacementStrategyPtr strategy = _TryGetGeometryPlacementStrategyP();
+    if (strategy.IsNull())
+        {
+        BeAssert(false && "Invalid geometry placement strategy");
+        return;
+        }
+
+    strategy->ResetDynamicKeyPoint();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ElementPlacementStrategy::_AddKeyPoint(DPoint3dCR newKeyPoint)
+    {
+    GeometryPlacementStrategyPtr strategy = _TryGetGeometryPlacementStrategyP();
+    if (strategy.IsNull())
+        {
+        BeAssert(false && "Invalid geometry placement strategy");
+        return;
+        }
+    strategy->AddKeyPoint(newKeyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ElementPlacementStrategy::_PopKeyPoint()
+    {
+    GeometryPlacementStrategyPtr strategy = _TryGetGeometryPlacementStrategyP();
+    if (strategy.IsNull())
+        {
+        BeAssert(false && "Invalid geometry placement strategy");
+        return;
+        }
+    strategy->PopKeyPoint();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool ElementPlacementStrategy::_IsComplete() const
+    {
+    GeometryPlacementStrategyCPtr strategy = _TryGetGeometryPlacementStrategy();
+    if (strategy.IsNull())
+        {
+        BeAssert(false && "Invalid geometry placement strategy");
+        return T_Super::_IsComplete();
+        }
+
+    return strategy->IsComplete() && T_Super::_IsComplete();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool ElementPlacementStrategy::_CanAcceptMorePoints() const
+    {
+    GeometryPlacementStrategyCPtr strategy = _TryGetGeometryPlacementStrategy();
+    if (strategy.IsNull())
+        {
+        BeAssert(false && "Invalid geometry placement strategy");
+        return false;
+        }
+
+    return strategy->CanAcceptMorePoints();
+    }
+
+#define EPS_PROPERTY_OVERRIDE_IMPL(value_type)                                                          \
+    void ElementPlacementStrategy::_SetProperty(Utf8CP key, value_type const& value)                    \
+        {                                                                                               \
+        _GetManipulationStrategyR().SetProperty(key, value);                                            \
+        GeometryPlacementStrategyPtr strategy = _TryGetGeometryPlacementStrategyP();                    \
+        if (strategy.IsValid())                                                                         \
+            {                                                                                           \
+            strategy->SetProperty(key, value);                                                          \
+            }                                                                                           \
+        }                                                                                               \
+    BentleyStatus ElementPlacementStrategy::_TryGetProperty(Utf8CP key, value_type& value) const        \
+        {                                                                                               \
+        GeometryPlacementStrategyCPtr strategy = _TryGetGeometryPlacementStrategy();                    \
+        if (strategy.IsValid())                                                                         \
+            {                                                                                           \
+            if ((BentleyStatus::SUCCESS == _GetManipulationStrategy().TryGetProperty(key, value)) ||    \
+                (BentleyStatus::SUCCESS == strategy->TryGetProperty(key, value)))                       \
+            return BentleyStatus::SUCCESS;                                                              \
+            }                                                                                           \
+        return _GetManipulationStrategy().TryGetProperty(key, value);                                   \
+        }
+
+EPS_PROPERTY_OVERRIDE_IMPL(bool)
+EPS_PROPERTY_OVERRIDE_IMPL(int)
+EPS_PROPERTY_OVERRIDE_IMPL(double)
+EPS_PROPERTY_OVERRIDE_IMPL(DVec3d)
+EPS_PROPERTY_OVERRIDE_IMPL(DPlane3d)
+EPS_PROPERTY_OVERRIDE_IMPL(Dgn::DgnElementId)
+EPS_PROPERTY_OVERRIDE_IMPL(Dgn::DgnElement)
+EPS_PROPERTY_OVERRIDE_IMPL(Utf8String)
+EPS_PROPERTY_OVERRIDE_IMPL(bvector<double>)
+EPS_PROPERTY_OVERRIDE_IMPL(bvector<Utf8String>)
+EPS_PROPERTY_OVERRIDE_IMPL(GeometryManipulationStrategyProperty)

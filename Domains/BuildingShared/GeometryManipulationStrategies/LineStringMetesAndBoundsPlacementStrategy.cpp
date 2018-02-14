@@ -167,7 +167,7 @@ void LineStringMetesAndBoundsPlacementStrategy::_OnPropertySet
 
         if (!_IsDynamicKeyPointSet())
             {
-            _PopKeyPoint();
+            GetLineStringManipulationStrategyR().Clear();
             _AddKeyPoint(start);
             }
         else

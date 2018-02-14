@@ -20,6 +20,19 @@ CurveVectorPlacementStrategy::CurveVectorPlacementStrategy()
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+CurveVectorPlacementStrategy::CurveVectorPlacementStrategy
+(
+    CurveVectorManipulationStrategyR manipulationStrategy
+) 
+    : T_Super()
+    , m_manipulationStrategy(&manipulationStrategy) 
+    {
+    BeAssert(m_manipulationStrategy.IsValid() && "Manipulation strategy should be valid");
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
 CurveVectorPtr CurveVectorPlacementStrategy::_Finish
