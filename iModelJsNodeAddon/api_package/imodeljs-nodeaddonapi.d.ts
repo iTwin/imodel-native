@@ -560,15 +560,11 @@ declare class AddonECSqlBinder implements IDisposable {
     bindId(hexStr: string): DbResult;
 
     /** Binds an int to the parameter represented by this binder
+     * @param val Integral value, either as number or as decimal or hexadecimal string (for the case
+     * where the integer is larger than the JS accuracy threshold)
      * @return non-zero error status in case of failure.
      */
-    bindInt(val: number): DbResult;
-
-    /** Binds an Int64 to the parameter represented by this binder.
-     * @param val Int64 value, either as number or as decimal or hexadecimal string
-     * @return non-zero error status in case of failure.
-     */
-    bindInt64(val: string | number): DbResult;
+    bindInteger(val: number | string): DbResult;
 
     /** Binds a Point2d to the parameter represented by this binder.
      * @return non-zero error status in case of failure.

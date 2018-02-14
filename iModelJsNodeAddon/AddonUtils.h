@@ -112,4 +112,22 @@ struct HexStrSqlFunction final : ScalarFunction
         static HexStrSqlFunction& GetSingleton();
     };
 
+//=======================================================================================
+//! TEXT Str(number INT)
+// @bsiclass                                                   Krischan.Eberle       02/18
+//=======================================================================================
+struct StrSqlFunction final : ScalarFunction
+    {
+    private:
+        static StrSqlFunction* s_singleton;  //no need to release a static non-POD variable (Bentley C++ coding standards)
+
+        StrSqlFunction() : ScalarFunction("Str", 1, DbValueType::TextVal) {}
+        void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
+
+    public:
+        ~StrSqlFunction() {}
+
+        static StrSqlFunction& GetSingleton();
+    };
+
 END_BENTLEY_DGN_NAMESPACE

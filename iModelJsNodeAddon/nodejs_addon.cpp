@@ -200,7 +200,10 @@ struct AddonECDb : Napi::ObjectWrap<AddonECDb>
             RETURN_IF_HAD_EXCEPTION
             const DbResult status = AddonUtils::CreateECDb(GetECDb(), BeFileName(dbName.c_str(), true));
             if (BE_SQLITE_OK == status)
+                {
                 GetECDb().AddFunction(HexStrSqlFunction::GetSingleton());
+                GetECDb().AddFunction(StrSqlFunction::GetSingleton());
+                }
 
             return Napi::Number::New(Env(), (int) status);
             }
@@ -213,7 +216,10 @@ struct AddonECDb : Napi::ObjectWrap<AddonECDb>
 
             const DbResult status = AddonUtils::OpenECDb(GetECDb(), BeFileName(dbName.c_str(), true), (Db::OpenMode) mode);
             if (BE_SQLITE_OK == status)
+                {
                 GetECDb().AddFunction(HexStrSqlFunction::GetSingleton());
+                GetECDb().AddFunction(StrSqlFunction::GetSingleton());
+                }
 
             return Napi::Number::New(Env(), (int) status);
             }
@@ -223,6 +229,7 @@ struct AddonECDb : Napi::ObjectWrap<AddonECDb>
             if (m_ecdb != nullptr)
                 {
                 m_ecdb->RemoveFunction(HexStrSqlFunction::GetSingleton());
+                m_ecdb->RemoveFunction(StrSqlFunction::GetSingleton());
                 m_ecdb->CloseDb();
                 m_ecdb = nullptr;
                 }
@@ -439,6 +446,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
 
         TearDownPresentationManager();
         m_dgndb->RemoveFunction(HexStrSqlFunction::GetSingleton());
+        m_dgndb->RemoveFunction(StrSqlFunction::GetSingleton());
         AddonUtils::CloseDgnDb(*m_dgndb);
         AddonAppData::Remove(GetDgnDb());
         m_dgndb = nullptr;
@@ -456,6 +464,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         SetupPresentationManager();
         AddonAppData::Add(*this);
         m_dgndb->AddFunction(HexStrSqlFunction::GetSingleton());
+        m_dgndb->AddFunction(StrSqlFunction::GetSingleton());
         }
 
     static AddonDgnDb* From(DgnDbR db)
@@ -1320,8 +1329,7 @@ public:
         InstanceMethod("bindDateTime", &AddonECSqlBinder::BindDateTime),
         InstanceMethod("bindDouble", &AddonECSqlBinder::BindDouble),
         InstanceMethod("bindId", &AddonECSqlBinder::BindId),
-        InstanceMethod("bindInt", &AddonECSqlBinder::BindInt),
-        InstanceMethod("bindInt64", &AddonECSqlBinder::BindInt64),
+        InstanceMethod("bindInteger", &AddonECSqlBinder::BindInteger),
         InstanceMethod("bindPoint2d", &AddonECSqlBinder::BindPoint2d),
         InstanceMethod("bindPoint3d", &AddonECSqlBinder::BindPoint3d),
         InstanceMethod("bindString", &AddonECSqlBinder::BindString),
@@ -1417,22 +1425,14 @@ public:
         return Napi::Number::New(Env(), (int) ToDbResult(stat));
         }
 
-    Napi::Value BindInt(const Napi::CallbackInfo& info)
-        {
-        REQUIRE_ARGUMENT_INTEGER(0, val);
-
-        const ECSqlStatus stat = GetBinder().BindInt((int) val);
-        return Napi::Number::New(Env(), (int) ToDbResult(stat));
-        }
-
-    Napi::Value BindInt64(const Napi::CallbackInfo& info)
+    Napi::Value BindInteger(const Napi::CallbackInfo& info)
         {
         if (info.Length() == 0)
-            Napi::TypeError::New(info.Env(), "BindInt64 expects a string or number").ThrowAsJavaScriptException();
+            Napi::TypeError::New(info.Env(), "BindInteger expects a string or number").ThrowAsJavaScriptException();
         
         Napi::Value val = info[0];
         if (!val.IsNumber() && !val.IsString())
-            Napi::TypeError::New(info.Env(), "BindInt64 expects a string or number").ThrowAsJavaScriptException();
+            Napi::TypeError::New(info.Env(), "BindInteger expects a string or number").ThrowAsJavaScriptException();
 
         int64_t int64Val;
         if (val.IsNumber())
@@ -1440,15 +1440,29 @@ public:
         else
             {
             Utf8String strVal(val.ToString().Utf8Value().c_str());
-            if (BeStringUtilities::HasHexPrefix(strVal.c_str()))
+            if (strVal.empty())
+                Napi::TypeError::New(info.Env(), "Integral string passed to BindInteger must not be empty.").ThrowAsJavaScriptException();
+
+            const bool isNegativeNumber = strVal[0] == '-';
+            Utf8CP positiveNumberStr = isNegativeNumber ? strVal.c_str() + 1 : strVal.c_str();
+            uint64_t uVal = 0;
+            if (SUCCESS != BeStringUtilities::ParseUInt64(uVal, positiveNumberStr)) //also supports hex strings
                 {
-                BentleyStatus hexParseStat = SUCCESS;
-                int64Val = (int64_t) BeStringUtilities::ParseHex(strVal.c_str(), &hexParseStat);
-                if (SUCCESS != hexParseStat)
-                    return Napi::Number::New(Env(), (int) BE_SQLITE_ERROR);
+                Utf8String error;
+                error.Sprintf("BindInteger failed. Could not parse string %s to a valid integer.", strVal.c_str());
+                Napi::TypeError::New(info.Env(), error.c_str()).ThrowAsJavaScriptException();
                 }
-            else
-                sscanf(strVal.c_str(), "%" SCNi64, &int64Val);
+
+            if (isNegativeNumber && uVal > (uint64_t) std::numeric_limits<int64_t>::max())
+                {
+                Utf8String error;
+                error.Sprintf("BindInteger failed. Number in string %s is too large to fit into a signed 64 bit integer value.", strVal.c_str());
+                Napi::TypeError::New(info.Env(), error.c_str()).ThrowAsJavaScriptException();
+                }
+
+            int64Val = uVal;
+            if (isNegativeNumber)
+                int64Val *= -1;
             }
 
         const ECSqlStatus stat = GetBinder().BindInt64(int64Val);

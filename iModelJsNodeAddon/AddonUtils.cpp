@@ -512,14 +512,59 @@ void HexStrSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
 
     if (numValue.GetValueType() != DbValueType::IntegerVal)
         {
-        ctx.SetResultError("Argument of function HexStr is expected to be a number.");
+        ctx.SetResultError("Argument of function HEXSTR is expected to be an integral number.");
+        return;
+        }
+
+    static const size_t stringBufferLength = 19;
+    Utf8Char stringBuffer[stringBufferLength];
+    BeStringUtilities::FormatUInt64(stringBuffer, stringBufferLength, numValue.GetValueUInt64(), HexFormatOptions::IncludePrefix);
+    ctx.SetResultText(stringBuffer, (int) strlen(stringBuffer), Context::CopyData::Yes);
+    }
+
+//************************************************************************************
+// StrSqlFunction
+//************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      02/18
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+StrSqlFunction* StrSqlFunction::s_singleton = nullptr;
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      02/18
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+StrSqlFunction& StrSqlFunction::GetSingleton()
+    {
+    if (s_singleton == nullptr)
+        s_singleton = new StrSqlFunction();
+
+    return *s_singleton;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      02/18
+//+---------------+---------------+---------------+---------------+---------------+------
+void StrSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
+    {
+    DbValue const& numValue = args[0];
+    if (numValue.IsNull())
+        {
+        ctx.SetResultNull();
+        return;
+        }
+
+    if (numValue.GetValueType() != DbValueType::IntegerVal)
+        {
+        ctx.SetResultError("Argument of function STR is expected to be an integral number.");
         return;
         }
 
     static const size_t stringBufferLength = std::numeric_limits<uint64_t>::digits + 1; //+1 for the trailing 0 character
 
     Utf8Char stringBuffer[stringBufferLength]; //+1 for the trailing 0 character;
-    BeStringUtilities::FormatUInt64(stringBuffer, stringBufferLength, numValue.GetValueUInt64(), (HexFormatOptions) ((int) HexFormatOptions::IncludePrefix));
-
-    ctx.SetResultText(stringBuffer, strlen(stringBuffer), Context::CopyData::Yes);
+    BeStringUtilities::FormatUInt64(stringBuffer, numValue.GetValueUInt64());
+    ctx.SetResultText(stringBuffer, (int) strlen(stringBuffer), Context::CopyData::Yes);
     }
