@@ -150,7 +150,7 @@ TEST_F(ECEnumerationTest, TestEmptyOrMissingName)
 
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                           Victor.Cushman                          01/2018
+// @bsimethod                           Victor.Cushman                          02/2018
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECEnumerationTest, TestFindEnumeratoByNameRetrievesProperEnumerator)
     {
@@ -247,25 +247,25 @@ TEST_F(ECEnumerationTest, TestFindEnumeratorRetrievesProperEnumerator)
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Victor.Cushman                          01/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECEnumerationTest, TestFindEnumeratorIsCaseInsensitiveForStringTypes)
+TEST_F(ECEnumerationTest, TestGetEnumerationIsCaseInsensitive)
     {
-    Utf8CP schemaXML = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="FoodSchema" alias="food" version="01.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEnumeration typeName="FoodType" backingTypeName="string" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
-                <ECEnumerator value="spaghetti" displayLabel="Spaghetti"/>
+                <ECEnumerator value="Spaghetti" displayLabel="spaghetti"/>
             </ECEnumeration>
         </ECSchema>)xml";
 
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema;
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::Success, status);
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext));
+    ASSERT_TRUE(schema.IsValid());
     ECEnumerationCP ecEnum = schema->GetEnumerationCP("FoodType");
     ASSERT_NE(nullptr, ecEnum);
 
-    EXPECT_NE(nullptr, ecEnum->FindEnumerator("spaghetti"));
-    EXPECT_NE(nullptr, ecEnum->FindEnumerator("Spaghetti"));
-    EXPECT_NE(nullptr, ecEnum->FindEnumerator("SPAGHETTI"));
+    EXPECT_EQ(ecEnum, schema->GetEnumerationCP("FOODTYPE"));
+    EXPECT_EQ(ecEnum, schema->GetEnumerationCP("foodtype"));
+    EXPECT_EQ(ecEnum, schema->GetEnumerationCP("FoOdTyPE"));
     EXPECT_NE(nullptr, ecEnum->FindEnumerator("SpAgHeTtI"));
     }
 

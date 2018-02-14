@@ -2,7 +2,7 @@
 |
 |     $Source: src/SupplementalSchema.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -430,7 +430,7 @@ SupplementedSchemaStatus SupplementedSchemaBuilder::MergeClassesWithEqualPrecede
     // The class doesn't already exist, we need to create a new one
     if (nullptr == mergedClass)
         {
-        if (ECObjectsStatus::Success != mergedSchema->CopyClass(mergedClass, *supplementalClass))
+        if (ECObjectsStatus::Success != mergedSchema->CopyClass(mergedClass, *supplementalClass, supplementalClass->GetName(), true))
             return SupplementedSchemaStatus::SchemaMergeException;
         return SupplementedSchemaStatus::Success;
         }
@@ -612,7 +612,7 @@ ECObjectsStatus SupplementedSchemaBuilder::SetMergedCustomAttribute(IECCustomAtt
         if (customAttributeSchema.IsSupplementalSchema())
             {
             ECClassP containerCA = nullptr;
-            containerSchema->CopyClass(containerCA, customAttributeInstance.GetClass());
+            containerSchema->CopyClass(containerCA, customAttributeInstance.GetClass(), customAttributeInstance.GetClass().GetName(), true);
             copiedInstance = customAttributeInstance.CreateCopyThroughSerialization(*containerSchema);
             }
         else if (!ECSchema::IsSchemaReferenced(*containerSchema, customAttributeSchema))
@@ -646,7 +646,7 @@ SupplementedSchemaStatus SupplementedSchemaBuilder::SupplementClass(ECSchemaR pr
     if (NULL == consolidatedECClass)
         {
         if (supplementalECClass->IsCustomAttributeClass())
-            primarySchema.CopyClass(consolidatedECClass, *supplementalECClass);
+            primarySchema.CopyClass(consolidatedECClass, *supplementalECClass, supplementalECClass->GetName(), true);
         return SupplementedSchemaStatus::Success;
         }
 

@@ -3665,7 +3665,8 @@ public:
     //! Given a source class, will copy that class into this schema if it does not already exist
     //! @param[out] targetClass If successful, will contain a new ECClass object that is a copy of the sourceClass
     //! @param[in]  sourceClass The class to copy
-    ECObjectsStatus CopyClass(ECClassP& targetClass, ECClassCR sourceClass) {return CopyClass(targetClass, sourceClass, sourceClass.GetName());}
+    //! @remarks    Will not copy references.  Use other overload if you wish to copy things referenced by the sourceClass.
+    ECOBJECTS_EXPORT ECObjectsStatus CopyClass(ECClassP& targetClass, ECClassCR sourceClass);
 
     //! Given a source class, will copy that class into this schema using the targetClassName, if it does not already exist
     //! @param[out] targetClass If successful, will contain a new ECClass object that is a copy of the sourceClass

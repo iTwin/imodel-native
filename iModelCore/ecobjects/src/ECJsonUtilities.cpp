@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECJsonUtilities.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -660,18 +660,29 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, J
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                02/2018
+//---------------------------------------------------------------------------------------
+BentleyStatus JsonECInstanceConverter::JsonToECInstance(ECN::IECInstanceR instance, Json::Value const& jsonValue, IECClassLocaterR classLocater, std::function<bool(Utf8CP)> shouldSerializeProperty)
+{
+    return JsonToECInstance(instance, jsonValue, instance.GetClass(), Utf8String(), classLocater, false, nullptr, shouldSerializeProperty);
+}
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 2/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, Json::Value const& jsonValue, ECClassCR currentClass, Utf8StringCR currentAccessString, IECClassLocaterR classLocater, bool ignoreUnknownProperties, IECSchemaRemapperCP remapper)
+BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, Json::Value const& jsonValue, ECClassCR currentClass, Utf8StringCR currentAccessString, IECClassLocaterR classLocater, bool ignoreUnknownProperties, IECSchemaRemapperCP remapper, std::function<bool(Utf8CP)> shouldSerializeProperty)
     {
     if (!jsonValue.isObject())
         return ERROR;
 
+    bool checkShouldSerializeProperty = shouldSerializeProperty != nullptr;
     for (Json::Value::iterator iter = jsonValue.begin(); iter != jsonValue.end(); iter++)
         {
         Json::Value const& childJsonValue = *iter;
         Utf8CP memberName = iter.memberName();
         if (ECJsonSystemNames::IsTopLevelSystemMember(memberName))
+            continue;
+        if (checkShouldSerializeProperty && !shouldSerializeProperty(memberName))
             continue;
 
         Utf8String remappedMemberName(memberName);

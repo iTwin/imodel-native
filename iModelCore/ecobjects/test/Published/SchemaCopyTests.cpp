@@ -196,10 +196,129 @@ TEST_F(SchemaCopyTest, TestKindOfQuantity_NoPresentationUnit)
     EXPECT_EQ(10e-3, targetKoq->GetRelativeError());
     }
 
+//---------------------------------------------------------------------------------------//
+// @bsimethod                                           Colin.Kerr                  02/2018
+//+---------------+---------------+---------------+---------------+---------------+------//
+TEST_F(SchemaCopyTest, CopySchemaWithReferencesCopiedThroughBaseClassOrRelationshipConstraints)
+    {
+    CreateTestSchema();
+
+    ECEnumerationP enumeration;
+    ECEnumeratorP enumeratorA;
+    ECEntityClassP entityClass;
+    PrimitiveECPropertyP enumProp;
+    ECRelationshipClassP relClass;
+
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateEnumeration(enumeration, "Enumeration", PrimitiveType::PRIMITIVETYPE_Integer));
+    ASSERT_TRUE(enumeration != nullptr);
+    enumeration->SetIsStrict(false);
+    enumeration->CreateEnumerator(enumeratorA, 42);
+
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateEntityClass(entityClass, "Banana"));
+    EC_ASSERT_SUCCESS(entityClass->CreatePrimitiveProperty(enumProp, "Silly", PrimitiveType::PRIMITIVETYPE_Integer));
+    EC_ASSERT_SUCCESS(enumProp->SetType(*enumeration));
+
+    // Important that this class name sorts before 'Banana' class so it is copied first
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateRelationshipClass(relClass, "ARelClass"));
+    relClass->GetSource().AddClass(*entityClass);
+    relClass->GetSource().SetRoleLabel("From Banana");
+    relClass->GetTarget().AddClass(*entityClass);
+    relClass->GetTarget().SetRoleLabel("To Banana");
+
+    ECStructClassP structClass;
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateStructClass(structClass, "Struct"));
+
+    ECEntityClassP entity2Class;
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateEntityClass(entity2Class, "Dill"));
+    StructECPropertyP structProp;
+    EC_ASSERT_SUCCESS(entity2Class->CreateStructProperty(structProp, "StructProp", *structClass));
+
+    // Important that this class name sorts before both 'Struct' and 'Dill'
+    ECEntityClassP entity3Class;
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateEntityClass(entity3Class, "BestPickleClass"));
+    entity3Class->AddBaseClass(*entity2Class);
+    
+    CopySchema();
+
+    ECEnumerationP targetEnum = m_targetSchema->GetEnumerationP("Enumeration");
+    ASSERT_TRUE(targetEnum != nullptr);
+    EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_Integer, targetEnum->GetType());
+    EXPECT_FALSE(targetEnum->GetIsStrict());
+    EXPECT_EQ(1, targetEnum->GetEnumeratorCount());
+    ECEnumeratorCP copiedEnumeratorA = targetEnum->FindEnumerator(42);
+    ASSERT_TRUE(nullptr != copiedEnumeratorA);
+    EXPECT_EQ(42, copiedEnumeratorA->GetInteger());
+
+    ECClassP targetClass = m_targetSchema->GetClassP("Banana");
+    ASSERT_NE(nullptr, targetClass);
+    ECPropertyP targetProp = targetClass->GetPropertyP("Silly");
+    ASSERT_NE(nullptr, targetProp);
+    ASSERT_TRUE(targetProp->GetIsPrimitive());
+    ECEnumerationCP targetEnumFromProp = targetProp->GetAsPrimitivePropertyP()->GetEnumeration();
+    EXPECT_NE(nullptr, targetEnumFromProp);
+    if (nullptr != targetEnumFromProp)
+        {
+        EXPECT_STREQ("Enumeration", targetEnumFromProp->GetName().c_str());
+        EXPECT_EQ(targetEnum, targetEnumFromProp) << "Should be same memory reference";
+        }
+
+    ECRelationshipClassP targetRelClass = m_targetSchema->GetClassP("ARelClass")->GetRelationshipClassP();
+    ASSERT_NE(nullptr, targetRelClass);
+    EXPECT_TRUE(targetRelClass->GetSource().SupportsClass(*targetClass));
+    EXPECT_TRUE(targetRelClass->GetTarget().SupportsClass(*targetClass));
+
+    ECClassP target2Class = m_targetSchema->GetClassP("Dill");
+    ASSERT_NE(nullptr, target2Class);
+    ECPropertyP target2Prop = target2Class->GetPropertyP("StructProp");
+    ASSERT_TRUE(target2Prop->GetIsStruct());
+    ECStructClassCR targetStructType = target2Prop->GetAsStructProperty()->GetType();
+    ASSERT_EQ(m_targetSchema->GetClassP("Struct"), &targetStructType) << "Should be same memory reference";
+    }
+
+//---------------------------------------------------------------------------------------//
+// @bsimethod                                           Colin.Kerr                  02/2018
+//+---------------+---------------+---------------+---------------+---------------+------//
+TEST_F(SchemaCopyTest, CopySchemaWithIntEnumeration)
+    {
+    CreateTestSchema();
+
+    ECEnumerationP enumeration;
+    ECEnumeratorP enumeratorA;
+    ECEnumeratorP enumeratorB;
+
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateEnumeration(enumeration, "Enumeration", PrimitiveType::PRIMITIVETYPE_Integer));
+    ASSERT_TRUE(enumeration != nullptr);
+    enumeration->SetDisplayLabel("My Display Label");
+    enumeration->SetDescription("Test Description");
+    enumeration->SetIsStrict(true);
+    enumeration->CreateEnumerator(enumeratorA, 42);
+    enumeratorA->SetDisplayLabel("The value for 42");
+    enumeration->CreateEnumerator(enumeratorB, 56);
+    enumeratorB->SetDisplayLabel("The value for 56");
+
+    CopySchema();
+
+    ECEnumerationP targetEnum = m_targetSchema->GetEnumerationP("Enumeration");
+    ASSERT_TRUE(targetEnum != nullptr);
+    EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_Integer, targetEnum->GetType());
+    EXPECT_STREQ("My Display Label", targetEnum->GetDisplayLabel().c_str());
+    EXPECT_STREQ("Test Description", targetEnum->GetDescription().c_str());
+    EXPECT_TRUE(targetEnum->GetIsStrict());
+    EXPECT_EQ(2, targetEnum->GetEnumeratorCount());
+    ECEnumeratorCP copiedEnumeratorA = targetEnum->FindEnumerator(42);
+    ASSERT_TRUE(nullptr != copiedEnumeratorA);
+    EXPECT_STREQ("The value for 42", copiedEnumeratorA->GetDisplayLabel().c_str());
+    EXPECT_EQ(42, copiedEnumeratorA->GetInteger());
+    ECEnumeratorCP copiedEnumeratorB = targetEnum->FindEnumerator(56);
+    ASSERT_TRUE(nullptr != copiedEnumeratorB);
+    EXPECT_STREQ("The value for 56", copiedEnumeratorB->GetDisplayLabel().c_str());
+    EXPECT_EQ(56, copiedEnumeratorB->GetInteger());
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Robert.Schili                      11/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaCopyTest, CopySchemaWithEnumeration)
+TEST_F(SchemaCopyTest, CopySchemaWithStringEnumeration)
     {
     CreateTestSchema();
 
