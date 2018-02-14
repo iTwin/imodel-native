@@ -142,16 +142,14 @@ struct InstanceCacheHelper::QueryAnalyzer
 
     private:
         const WSQuery* m_query;
-        bset<bvector<SelectPathElement>> m_allPropertiesSelectedPaths;
-        bset<bvector<SelectPathElement>> m_idOnlySelectedPaths;
+        bmap<SelectType, bset<bvector<SelectPathElement>>> m_selectPaths;
 
     private:
         static BentleyStatus BuildSelectedPaths
             (
             ECDbAdapterR dbAdapter,
             WSQueryCR query,
-            bset<bvector<SelectPathElement>>& allPropertiesSelectedPathsOut,
-            bset<bvector<SelectPathElement>>& m_idSelectedPaths
+            bmap<SelectType, bset<bvector<SelectPathElement>>>& selectPaths
             );
         static BentleyStatus GetSelectPathAndType
             (
@@ -171,8 +169,9 @@ struct InstanceCacheHelper::QueryAnalyzer
     public:
         QueryAnalyzer(ECDbAdapterR dbAdapter, WSQueryCR query);
 
-        bool IsSelectionAll(const bvector<SelectPathElement>& instancePath) { return DoesPathMatch(instancePath, m_allPropertiesSelectedPaths); }
-        bool IsSelectionId(const bvector<SelectPathElement>& instancePath) {return DoesPathMatch(instancePath, m_idOnlySelectedPaths); }
+        bool IsSelectionAll(const bvector<SelectPathElement>& instancePath) const;
+        bool IsSelectionId(const bvector<SelectPathElement>& instancePath) const;
+        bool HasPartialPropertiesSelected() const;
     };
 
 /*--------------------------------------------------------------------------------------+
