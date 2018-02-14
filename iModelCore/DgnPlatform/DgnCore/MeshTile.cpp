@@ -1409,9 +1409,10 @@ PolyfaceHeaderPtr PrimitiveTileGeometry::FixPolyface(PolyfaceHeaderR geom, IFace
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PrimitiveTileGeometry::AddNormals(PolyfaceHeaderR polyface, IFacetOptionsR facetOptions)
     {
-    static double s_defaultCreaseRadians = Angle::DegreesToRadians(45.0);
-    static double s_defaultConeRadians = Angle::DegreesToRadians(90.0);
-    polyface.BuildApproximateNormals(s_defaultCreaseRadians, s_defaultConeRadians, facetOptions.GetHideSmoothEdgesWhenGeneratingNormals());
+    static double   s_defaultCreaseRadians = Angle::DegreesToRadians(45.0);       
+    static double   s_sharedNormalSizeRatio = 5.0;      // Omit expensive shared normal if below this ratio of tolerance.
+
+    polyface.BuildNormalsFast(s_defaultCreaseRadians, s_sharedNormalSizeRatio * facetOptions.GetChordTolerance());
     }
 
 /*---------------------------------------------------------------------------------**//**
