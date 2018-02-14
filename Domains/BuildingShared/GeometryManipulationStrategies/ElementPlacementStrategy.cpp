@@ -141,7 +141,6 @@ bool ElementPlacementStrategy::_IsComplete() const
     GeometryPlacementStrategyCPtr strategy = _TryGetGeometryPlacementStrategy();
     if (strategy.IsNull())
         {
-        BeAssert(false && "Invalid geometry placement strategy");
         return T_Super::_IsComplete();
         }
 
@@ -156,7 +155,6 @@ bool ElementPlacementStrategy::_CanAcceptMorePoints() const
     GeometryPlacementStrategyCPtr strategy = _TryGetGeometryPlacementStrategy();
     if (strategy.IsNull())
         {
-        BeAssert(false && "Invalid geometry placement strategy");
         return false;
         }
 
