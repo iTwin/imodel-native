@@ -118,8 +118,6 @@ REM Note that you do not install the platform-specific addons in this step. They
 
 cd %ImodelJsRoot%imodeljs-core\source\backend
 call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-nodeaddonapi %OutRoot%Winx64\packages\imodeljs-nodeaddon %OutRoot%Winx64\packages\imodeljs-electronaddon
-cd %ImodelJsRoot%imodeljs-core\source\test
-call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-nodeaddonapi %OutRoot%Winx64\packages\imodeljs-nodeaddon
 cd %ImodelJsRoot%imodeljs-core\source\testbed
 call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-nodeaddonapi %OutRoot%Winx64\packages\imodeljs-electronaddon
 cd %ImodelJsRoot%imodeljs-core
@@ -141,8 +139,6 @@ cd $OutRoot/LinuxX64/packages/imodeljs-nodeaddon
 npm install --no-save  $OutRoot/LinuxX64/packages/imodeljs-nodeaddonapi $OutRoot/LinuxX64/packages/imodeljs-n_8_9-linux-x64
 cd $ImodelJsRoot/imodeljs-core/source/backend
 npm install --no-save  $OutRoot/LinuxX64/packages/imodeljs-nodeaddonapi $OutRoot/LinuxX64/packages/imodeljs-nodeaddon 
-cd $ImodelJsRoot/imodeljs-core/source/test
-npm install --no-save  $OutRoot/LinuxX64/packages/imodeljs-nodeaddonapi $OutRoot/LinuxX64/packages/imodeljs-nodeaddon
 cd $ImodelJsRoot/imodeljs-core
 
 ```
