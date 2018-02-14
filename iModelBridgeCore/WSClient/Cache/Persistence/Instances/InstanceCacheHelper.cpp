@@ -765,11 +765,11 @@ const bvector<SelectPathElement>& path
     if (m_queryAnalyzer.IsSelectionAll(path))
         return Action::CacheFull;
 
+    if (info.IsInCache() && m_queryAnalyzer.IsSelectionId(path))
+        return Action::SkipCached;
+
     if (!DoesRequireAllProperties(info))
         return Action::CachePartial;
-
-    if (m_queryAnalyzer.IsSelectionId(path))
-        return Action::SkipCached;
 
     return Action::Reject;
     }
