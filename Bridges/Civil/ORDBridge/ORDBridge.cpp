@@ -188,6 +188,9 @@ SubjectCPtr ORDBridge::_InitializeJob()
         // IMODELBRIDGE REQUIREMENT: Relate this model to the source document
         auto physicalModelPtr = RoadRailBim::RoadRailPhysicalDomain::QueryPhysicalModel(subjectCR, ORDBRIDGE_PhysicalModelName);
         InsertElementHasLinksRelationship(GetDgnDbR(), physicalModelPtr->GetModeledElementId(), m_converter->GetRepositoryLinkFromAppData(*m_converter->GetRootV8File()));
+
+        m_converter->SetUpModelFormatters(subjectCR);
+
         return &subjectCR;
         }
     else

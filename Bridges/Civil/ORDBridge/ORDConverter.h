@@ -56,6 +56,8 @@ public:
         {}
 
     void SetORDParams(Params* ordParams) { m_ordParams = ordParams; }
+
+    void SetUpModelFormatters(Dgn::SubjectCR jobSubject);
 }; // ORDConverter
 
 struct ConvertORDElementXDomain : Dgn::DgnDbSync::DgnV8::XDomain

@@ -1080,4 +1080,48 @@ bool ORDConverter::_ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR 
     return true;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2014
+//---------------------------------------------------------------------------------------
+static Dgn::UnitDefinition fromV8(DgnV8Api::UnitDefinition const& v8Def)
+    {
+    return Dgn::UnitDefinition(Dgn::UnitBase(v8Def.GetBase()), Dgn::UnitSystem(v8Def.GetSystem()), v8Def.GetNumerator(), v8Def.GetDenominator(), Utf8String(v8Def.GetLabelCP()).c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static void setUpModelFormatter(Dgn::GeometricModelR geometricModel, DgnV8Api::ModelInfo const& v8ModelInfo)
+    {
+    auto& displayInfo = geometricModel.GetFormatterR();
+
+    displayInfo.SetUnits(fromV8(v8ModelInfo.GetMasterUnit()), fromV8(v8ModelInfo.GetSubUnit()));
+    displayInfo.SetRoundoffUnit(v8ModelInfo.GetRoundoffUnit(), v8ModelInfo.GetRoundoffRatio());
+    displayInfo.SetLinearUnitMode(Dgn::DgnUnitFormat(v8ModelInfo.GetLinearUnitMode()));
+    displayInfo.SetLinearPrecision(PrecisionFormat(v8ModelInfo.GetLinearPrecision()));
+    displayInfo.SetAngularMode(Dgn::AngleMode(v8ModelInfo.GetAngularMode()));
+    displayInfo.SetAngularPrecision(Dgn::AnglePrecision(v8ModelInfo.GetAngularPrecision()));
+    displayInfo.SetDirectionMode(Dgn::DirectionMode(v8ModelInfo.GetDirectionMode()));
+    displayInfo.SetDirectionClockwise(v8ModelInfo.GetDirectionClockwise());
+    displayInfo.SetDirectionBaseDir(v8ModelInfo.GetDirectionBaseDir());
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ORDConverter::SetUpModelFormatters(Dgn::SubjectCR jobSubject)
+    {
+    auto physicalModelPtr = RoadRailBim::RoadRailPhysicalDomain::QueryPhysicalModel(jobSubject, ORDBRIDGE_PhysicalModelName);
+    auto alignmentModelPtr = RoadRailAlignment::RoadRailAlignmentDomain::QueryAlignmentModel(jobSubject, ORDBRIDGE_AlignmentModelName);
+
+    DgnV8Api::ModelInfo const& v8ModelInfo = _GetModelInfo(*GetRootModelP());
+
+    setUpModelFormatter(*alignmentModelPtr, v8ModelInfo);
+    setUpModelFormatter(*physicalModelPtr, v8ModelInfo);
+
+    alignmentModelPtr->Update();
+    physicalModelPtr->Update();
+    }
+
 END_ORDBRIDGE_NAMESPACE
