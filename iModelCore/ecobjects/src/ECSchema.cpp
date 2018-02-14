@@ -322,15 +322,15 @@ ECSchema::~ECSchema ()
 
     for (auto entry : m_phenomenonMap)
         {
-        //// Check the registry to ensure it is the correct Phenomenon one to remove.
-        //auto phenomCP = Units::UnitRegistry::Instance().LookupPhenomenon(entry.second->GetFullName().c_str());
-        //BeAssert(nullptr != phenomCP);
-        //BeAssert(entry.second == phenomCP);
-        //if (entry.second != phenomCP)
-        //    {
-        //    LOG.warningv("Cannot remove Phenomenon '%s' from the schema because the Phenomenon found in the UnitRegistry is not the same as the one located in this schema.", phenomCP->GetName().c_str());
-        //    continue;
-        //    }
+        // Check the registry to ensure it is the correct Phenomenon one to remove.
+        auto phenomCP = Units::UnitRegistry::Instance().LookupPhenomenon(entry.second->GetFullName().c_str());
+        BeAssert(nullptr != phenomCP);
+        BeAssert(entry.second == phenomCP);
+        if (entry.second != phenomCP)
+            {
+            LOG.warningv("Cannot remove Phenomenon '%s' from the schema because the Phenomenon found in the UnitRegistry is not the same as the one located in this schema.", phenomCP->GetName().c_str());
+            continue;
+            }
 
         // Remove from the registry before removing from ECSchema
         auto returnedPhenom = Units::UnitRegistry::Instance().RemovePhenomenon(entry.second->GetFullName().c_str());
@@ -1212,14 +1212,14 @@ ECObjectsStatus ECSchema::DeleteUnitSystem(UnitSystemR unitSystem)
 //--------------------------------------------------------------------------------------
 ECObjectsStatus ECSchema::DeletePhenomenon(PhenomenonR phenom)
     {
-    //auto phenomCP = Units::UnitRegistry::Instance().LookupPhenomenon(phenom.GetName().c_str());
-    //BeAssert(nullptr != phenomCP);
-    //BeAssert(&phenom == phenomCP); // This only happens if a second Phenomenon made its way into the registry.
-    //if (&phenom != phenomCP)
-    //    {
-    //    LOG.warningv("Cannot remove Phenomenon '%s' from the schema because the Phenomenon found in the UnitRegistry is not the same as the one located in this schema.", phenomCP->GetName().c_str());
-    //    return ECObjectsStatus::Error;
-    //    }
+    auto phenomCP = Units::UnitRegistry::Instance().LookupPhenomenon(phenom.GetFullName().c_str());
+    BeAssert(nullptr != phenomCP);
+    BeAssert(&phenom == phenomCP); // This only happens if a second Phenomenon made its way into the registry.
+    if (&phenom != phenomCP)
+        {
+        LOG.warningv("Cannot remove Phenomenon '%s' from the schema because the Phenomenon found in the UnitRegistry is not the same as the one located in this schema.", phenomCP->GetName().c_str());
+        return ECObjectsStatus::Error;
+        }
 
     auto returnedPhenom = Units::UnitRegistry::Instance().RemovePhenomenon(phenom.GetFullName().c_str());
     BeAssert(nullptr != returnedPhenom);
