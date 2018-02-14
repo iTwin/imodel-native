@@ -52,6 +52,7 @@ BentleyStatus ORDBridge::_Initialize(int argc, WCharCP argv[])
     GeometryModelDgnECDataBinder::GetInstance().Initialize();
 
     m_params.SetProcessAffected(true);
+    m_params.SetConvertViewsOfAllDrawings(true);
 
     m_params.SetWantThumbnails(true);
 
