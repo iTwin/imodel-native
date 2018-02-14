@@ -41,7 +41,7 @@ static Json::Value AngleInDegreesToJson(AngleInDegrees angle)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static AngleInDegrees AngleInDegreesFromJson(JsonValueCR val)
     {
-    return AngleInDegrees::FromDegrees(val[json_degrees()].asDouble());
+    return AngleInDegrees(ToAngle(val));
     }
 
 /*---------------------------------------------------------------------------------**/ /**
