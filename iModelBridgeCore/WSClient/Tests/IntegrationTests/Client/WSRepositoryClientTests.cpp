@@ -40,6 +40,9 @@ void CleanUp(std::shared_ptr<IWSRepositoryClient> client, Utf8StringCR schemaNam
         ASSERT_TRUE(client->SendDeleteObjectRequestWithOptions(inst.GetObjectId())->GetResult().IsSuccess());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    julius.cepukenas                   02/18
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, CrudObjectViaRequests_CreateObjectsWithFile_CrudSucceeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
@@ -91,6 +94,9 @@ TEST_F(WSRepositoryClientTests, CrudObjectViaRequests_CreateObjectsWithFile_Crud
     ASSERT_TRUE(client->SendDeleteObjectRequestWithOptions(objectId)->GetResult().IsSuccess());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    julius.cepukenas                   02/18
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, CrudObjectViaRequests_CreateObjectsWithFileUsingJobApi_CrudSucceeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
@@ -144,6 +150,9 @@ TEST_F(WSRepositoryClientTests, CrudObjectViaRequests_CreateObjectsWithFileUsing
     ASSERT_TRUE(client->SendDeleteObjectRequestWithOptions(objectId, options)->GetResult().IsSuccess());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    julius.cepukenas                   02/18
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendQueryRequest_ConnectGlobalProjectQueryWithConnectSignInManager_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
