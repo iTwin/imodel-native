@@ -397,6 +397,18 @@ bool ArrayECSqlField::JsonECSqlValue::CanCallGetFor(ECN::PrimitiveType getMethod
             return true;
         }
 
+    if (getMethodType == PRIMITIVETYPE_Long)
+        {
+        if (actualDataType == PRIMITIVETYPE_Long || actualDataType == PRIMITIVETYPE_Integer)
+            return true;
+        }
+
+    if (getMethodType == PRIMITIVETYPE_Double)
+        {
+        if (actualDataType == PRIMITIVETYPE_Double ||actualDataType == PRIMITIVETYPE_Long || actualDataType == PRIMITIVETYPE_Integer)
+            return true;
+        }
+
     if (actualDataType != getMethodType)
         {
         if (LOG.isSeverityEnabled(NativeLogging::LOG_ERROR))
