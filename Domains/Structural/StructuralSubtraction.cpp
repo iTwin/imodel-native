@@ -8,6 +8,8 @@
 #include "PublicAPI\StructuralPhysicalDefinitions.h"
 #include "PublicApi\StructuralSubtraction.h"
 
+#ifdef _EXCLUDED_FROM_EAP_BUILD_
+
 HANDLER_DEFINE_MEMBERS(StructuralSubtractionHandler);
 
 /*---------------------------------------------------------------------------------**//**
@@ -69,3 +71,4 @@ StructuralSubtractionCPtr StructuralSubtraction::Update(Dgn::DgnDbStatus* update
 
     return subtr;
     }
+#endif

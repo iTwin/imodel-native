@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "PublicAPI\StructuralPhysicalDefinitions.h"
 #include "PublicAPI\ConcreteMaterialProperties.h"
-
+#ifdef _EXCLUDED_FROM_EAP_BUILD_
 BEGIN_BENTLEY_STRUCTURAL_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS(ConcreteMaterialPropertiesHandler)
@@ -105,3 +105,4 @@ Dgn::DgnDbStatus ConcreteMaterialProperties::_UpdateProperties(Dgn::DgnElementCR
 
 END_BENTLEY_STRUCTURAL_NAMESPACE
 
+#endif

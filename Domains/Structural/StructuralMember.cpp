@@ -62,6 +62,7 @@ StructuralMemberCPtr StructuralMember::Update(Dgn::DgnDbStatus* updateStatusOut)
     return structMember;
     }
 
+#ifdef _EXCLUDED_FROM_EAP_BUILD_
 bool StructuralMember::IsCurveMember()
     {
     bool bRet(false);
@@ -105,4 +106,4 @@ bool StructuralMember::IsSurfaceMember()
 
     return bRet;
     }
-
+#endif

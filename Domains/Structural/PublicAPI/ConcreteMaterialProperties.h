@@ -10,6 +10,8 @@
 //__PUBLISH_SECTION_START__
 #include "StructuralPhysicalDefinitions.h"
 
+#ifdef _EXCLUDED_FROM_EAP_BUILD_
+
 BEGIN_BENTLEY_STRUCTURAL_NAMESPACE
 
 
@@ -70,3 +72,4 @@ struct EXPORT_VTABLE_ATTRIBUTE ConcreteMaterialPropertiesHandler : Dgn::dgn_Aspe
 
 END_BENTLEY_STRUCTURAL_NAMESPACE
 
+#endif

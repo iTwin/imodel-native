@@ -8,6 +8,8 @@
 #include "PublicAPI\StructuralAddition.h"
 #include "PublicAPI\StructuralPhysicalDefinitions.h"
 
+#ifdef _EXCLUDED_FROM_EAP_BUILD_
+
 HANDLER_DEFINE_MEMBERS(StructuralAdditionHandler)
 
 /*---------------------------------------------------------------------------------**//**
@@ -69,3 +71,5 @@ StructuralAdditionCPtr StructuralAddition::Update(Dgn::DgnDbStatus* updateStatus
 
     return addition;
     }
+
+#endif

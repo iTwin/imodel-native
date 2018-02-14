@@ -1,77 +1,12 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="StructuralPhysical" alias="sp" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis" />
-    <!-- TEMPORARY COMMENTED OUT
-    <ECSchemaReference name="Forms" version="01.00.00" alias="frm" />
-    <ECSchemaReference name="Profiles" version="01.00.00" alias="prf" /> -->
     <ECEntityClass typeName="StructuralPhysicalModel" displayLabel="Structural Physical Model">
         <BaseClass>bis:PhysicalModel</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="MaterialProperties" displayLabel="Material Properties">
-        <BaseClass>bis:ElementUniqueAspect</BaseClass>
-        <ECProperty propertyName="ElasticModulus" typeName="double" description="Modulus of Elasticity" displayLabel="Elastic Modulus" kindOfQuantity="M_PER_L_T2"/>
-        <ECProperty propertyName="PoissonsRatio" typeName="double" description="Poisson's Ratio" displayLabel="Poisson's Ratio" kindOfQuantity="NONE"/>
-        <ECProperty propertyName="TensileStrength" typeName="double" description="Tensile Strength" displayLabel="Tensile Strength" kindOfQuantity="M_PER_L_T2"/>
-        <ECProperty propertyName="ThermalExpansionCoefficient" typeName="double" description="Thermal Expansion Coefficient (1/deg.F) " displayLabel="Thermal Expansion Coefficient" kindOfQuantity="K"/>
-    </ECEntityClass>
-    <ECRelationshipClass typeName="PhysicalMaterialOwnsMaterialProperties" displayLabel="Physical Material Owns Material Properties" modifier="None" strength="embedding">
-        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
-        <Source multiplicity="(1..1)" roleLabel="Physical Material Owns Material Properties" polymorphic="true">
-            <Class class="bis:PhysicalMaterial"/>
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="Physical Material Owns Material Properties (Reversed)" polymorphic="true">
-            <Class class="MaterialProperties"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECEnumeration typeName="ConcretePropertyCalcType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="PerCode"/>
-        <ECEnumerator value="1" displayLabel="Specified"/>
-    </ECEnumeration>
-    <ECEnumeration typeName="CompressiveStrengthTestType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="BritishStandardsCube"/>
-        <ECEnumerator value="1" displayLabel="StandardCylinder"/>
-    </ECEnumeration>
-    <ECEntityClass typeName="ConcreteMaterialProperties" displayLabel="Concrete Material Properties">
-        <BaseClass>MaterialProperties</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.1.0"/>
-        </ECCustomAttributes>
-        <ECProperty propertyName="UnitMass" typeName="double" description="True Unit Mass (kip/in^3)" displayLabel="Unit Mass"/>
-        <ECProperty propertyName="CompressiveStrength" typeName="double" description="Compressive strength (typically at 28 days)" displayLabel="Compressive Strength" kindOfQuantity="M_PER_L_T2"/>
-        <ECProperty propertyName="TestType" typeName="CompressiveStrengthTestType"/>
-        <ECProperty propertyName="ElasticModulusCalc" typeName="ConcretePropertyCalcType"/>
-        <ECProperty propertyName="TensileStrengthCalc" typeName="ConcretePropertyCalcType"/>
-        <ECProperty propertyName="UnitMassForLoads" typeName="double" description="Unit mass of concrete for use in calculating loads. Must be non-negative. " displayLabel="Unit Mass for Loads"/>
-    </ECEntityClass>
-    <ECEntityClass typeName="SteelMaterialProperties" displayLabel="Steel Material Properties">
-        <BaseClass>MaterialProperties</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.1.0"/>
-        </ECCustomAttributes>
-        <ECProperty propertyName="ElasticModulus" typeName="double"/>
-        <ECProperty propertyName="YieldStress" typeName="double" description="Fy in AISC nomenclature" displayLabel="Yield Stress" kindOfQuantity="NONE"/>
-    </ECEntityClass>
-    <ECRelationshipClass typeName="PhysicalSteelOwnsStructuralSteelProperties" displayLabel="Physical Steel Owns Structural Steel Properties" modifier="None" strength="embedding">
-        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
-        <Source multiplicity="(1..1)" roleLabel="Physical Steel Owns Structural Steel Properties" polymorphic="true">
-            <Class class="bis:PhysicalMaterial"/>
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="Physical Steel Owns Structural Steel Properties (Reversed)" polymorphic="true">
-            <Class class="SteelMaterialProperties"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECRelationshipClass typeName="PhysicalConcreteOwnsStructuralConcreteProperties" displayLabel="Physical Concrete Owns Structural Concrete Properties" modifier="None" strength="embedding">
-        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
-        <Source multiplicity="(1..1)" roleLabel="Physical Concrete Owns Structural Concrete Properties" polymorphic="true">
-            <Class class="bis:PhysicalMaterial"/>
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="Physical Concrete Owns Structural Concrete Properties (Reversed)" polymorphic="true">
-            <Class class="ConcreteMaterialProperties"/>
-        </Target>
-    </ECRelationshipClass>
     <ECEntityClass typeName="StructuralElement" modifier="Abstract">
         <BaseClass>bis:PhysicalElement</BaseClass>
         <ECCustomAttributes>
@@ -84,65 +19,32 @@
             <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="ICurveMember" modifier="Abstract" displayLabel="Curve Member" description="An interface that indicates that this element is a CurveMember.">
-        <ECCustomAttributes>
-            <IsMixin xmlns="CoreCustomAttributes.1.0">
-                <!-- Only subclasses of StructuralMember can implement the ICurveMember interface -->
-                <AppliesToEntityClass>StructuralMember</AppliesToEntityClass>
-            </IsMixin>
-        </ECCustomAttributes>
-    </ECEntityClass>
-    <ECEntityClass typeName="ISurfaceMember" modifier="Abstract" displayLabel="Surface Member" description="An interface that indicates that this element is a SurfaceMember.">
-        <ECCustomAttributes>
-            <IsMixin xmlns="CoreCustomAttributes.1.0">
-                <!-- Only subclasses of StructuralMember can implement the ISurfaceMember interface -->
-                <AppliesToEntityClass>StructuralMember</AppliesToEntityClass>
-            </IsMixin>
-        </ECCustomAttributes>
-    </ECEntityClass>
-    <ECEntityClass displayLabel = "Structural Addition" typeName="StructuralAddition">
-        <BaseClass>StructuralElement</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00" />
-        </ECCustomAttributes>
-    </ECEntityClass>
-    <ECEntityClass displayLabel = "Structural Subtraction" typeName="StructuralSubtraction">
-        <BaseClass>bis:SpatialLocationElement</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00" />
-        </ECCustomAttributes>
-    </ECEntityClass>
     <ECEntityClass typeName="Slab" displayLabel = "Slab">
         <BaseClass>StructuralMember</BaseClass>
-        <BaseClass>ISurfaceMember</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass  typeName="Wall" displayLabel = "Wall">
         <BaseClass>StructuralMember</BaseClass>
-        <BaseClass>ISurfaceMember</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass displayLabel = "Beam" typeName="Beam">
         <BaseClass>StructuralMember</BaseClass>
-        <BaseClass>ICurveMember</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass displayLabel = "Column" typeName="Column">
         <BaseClass>StructuralMember</BaseClass>
-        <BaseClass>ICurveMember</BaseClass>        
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass displayLabel = "Brace" typeName="Brace">
         <BaseClass>StructuralMember</BaseClass>
-        <BaseClass>ICurveMember</BaseClass>        
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
@@ -155,28 +57,24 @@
     </ECEntityClass>
     <ECEntityClass typeName="StripFooting" displayLabel = "Strip Footing">
         <BaseClass>FoundationMember</BaseClass>
-        <BaseClass>ICurveMember</BaseClass>        
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="SpreadFooting" displayLabel = "Spread Footing">
         <BaseClass>FoundationMember</BaseClass>
-        <BaseClass>ISurfaceMember</BaseClass>        
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="PileCap" displayLabel = "Pile Cap" >
         <BaseClass>FoundationMember</BaseClass>
-        <BaseClass>ISurfaceMember</BaseClass>        
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="Pile" displayLabel = "Pile" >
         <BaseClass>FoundationMember</BaseClass>
-        <BaseClass>ICurveMember</BaseClass>        
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
@@ -190,35 +88,4 @@
             <Class class="bis:PhysicalMaterial"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="StructuralMemberOwnsStructuralAddition" displayLabel="StructuralMember Owns StructuralAddition Relationship" modifier="None" strength="embedding">
-        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
-        <Source multiplicity="(1..1)" roleLabel="Structural Member Owns Structural Addition" polymorphic="true">
-            <Class class="StructuralMember"/>
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="Structural Member Owns Structural Addition (Reversed)" polymorphic="true">
-            <Class class="StructuralAddition"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECRelationshipClass typeName="StructuralMemberRefersToStructuralSubtraction" displayLabel="StructuralMember refers to StructuralSubtraction" modifier="None" strength="referencing">
-        <BaseClass>bis:ElementRefersToElements</BaseClass>
-        <Source multiplicity="(0..*)" roleLabel="Structural Member Owns Structural Addition" polymorphic="true">
-            <Class class="StructuralMember"/>
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="StructuralMember refers to StructuralSubtraction (Reversed)" polymorphic="true">
-            <Class class="StructuralSubtraction"/>
-        </Target>
-    </ECRelationshipClass>
-    <!-- TEMPORARY COMMENTED OUT
-    <ECRelationshipClass typeName="StructuralElementOwnsFormAspect" description="" modifier="None" strength="embedding">
-        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
-        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
-            <Class class="StructuralElement"/>
-        </Source>
-        <Target multiplicity="(0..1)" roleLabel="is owned by" polymorphic="true">
-            <Class class="frm:Form"/>
-        </Target>
-    </ECRelationshipClass> -->
-    <KindOfQuantity typeName="M_PER_L_T2" displayLabel="M_PER_L_T2" persistenceUnit="PA(DefaultReal)" relativeError="0.0001"/>
-    <KindOfQuantity typeName="NONE" displayLabel="NONE" persistenceUnit="ONE(DefaultReal)" relativeError="0.0001"/>
-    <KindOfQuantity typeName="K" displayLabel="K" persistenceUnit="K(DefaultReal)" relativeError="0.0001"/>
 </ECSchema>

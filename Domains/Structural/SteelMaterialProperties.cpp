@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "PublicAPI\SteelMaterialProperties.h"
 
+#ifdef _EXCLUDED_FROM_EAP_BUILD_
+
 BEGIN_BENTLEY_STRUCTURAL_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS(SteelMaterialPropertiesHandler)
@@ -106,3 +108,4 @@ Dgn::DgnDbStatus SteelMaterialProperties::_LoadProperties(Dgn::DgnElementCR el)
 
 END_BENTLEY_STRUCTURAL_NAMESPACE
 
+#endif

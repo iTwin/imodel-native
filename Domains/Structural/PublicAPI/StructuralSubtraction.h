@@ -12,6 +12,8 @@
 #include "StructuralDomainApi.h"
 #include "StructuralPhysicalDefinitions.h"
 
+#ifdef _EXCLUDED_FROM_EAP_BUILD_
+
 USING_NAMESPACE_BENTLEY_STRUCTURAL
 
 BEGIN_BENTLEY_STRUCTURAL_NAMESPACE
@@ -48,3 +50,5 @@ struct EXPORT_VTABLE_ATTRIBUTE StructuralSubtractionHandler : Dgn::dgn_ElementHa
     };
 
 END_BENTLEY_STRUCTURAL_NAMESPACE
+
+#endif

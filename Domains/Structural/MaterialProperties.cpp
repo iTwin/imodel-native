@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "PublicAPI\MaterialProperties.h"
 
+#ifdef _EXCLUDED_FROM_EAP_BUILD_
+
 USING_NAMESPACE_BENTLEY_STRUCTURAL
 
 HANDLER_DEFINE_MEMBERS(MaterialPropertiesHandler);
@@ -112,3 +114,4 @@ RefCountedPtr<Dgn::DgnElement::Aspect> MaterialPropertiesHandler::_CreateInstanc
 //     {
 //     return Dgn::DgnDbStatus::Success;
 //     }
+#endif

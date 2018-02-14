@@ -59,8 +59,6 @@
 //-----------------------------------------------------------------------------------------
 #define STRUCTURAL_PHYSICAL_CLASS_StructuralElement "StructuralElement"
 #define STRUCTURAL_PHYSICAL_CLASS_StructuralMember "StructuralMember"
-#define STRUCTURAL_PHYSICAL_CLASS_StructuralSubtraction "StructuralSubtraction"
-#define STRUCTURAL_PHYSICAL_CLASS_StructuralAddition "StructuralAddition"
 #define STRUCTURAL_PHYSICAL_CLASS_Slab "Slab"
 #define STRUCTURAL_PHYSICAL_CLASS_Wall "Wall"
 #define STRUCTURAL_PHYSICAL_CLASS_Beam "Beam"
@@ -69,14 +67,17 @@
 #define STRUCTURAL_PHYSICAL_CLASS_FoundationMember "FoundationMember"
 #define STRUCTURAL_PHYSICAL_CLASS_StripFooting "StripFooting"
 #define STRUCTURAL_PHYSICAL_CLASS_SpreadFooting "SpreadFooting"
-#define STRUCTURAL_PHYSICAL_CLASS_MaterialProperties            "MaterialProperties"
-#define STRUCTURAL_PHYSICAL_CLASS_ConcreteMaterialProperties    "ConcreteMaterialProperties"
-#define STRUCTURAL_PHYSICAL_CLASS_SteelMaterialProperties       "SteelMaterialProperties"
+#ifdef _EXCLUDED_FROM_EAP_BUILD_
+    #define STRUCTURAL_PHYSICAL_CLASS_StructuralSubtraction "StructuralSubtraction"
+    #define STRUCTURAL_PHYSICAL_CLASS_StructuralAddition "StructuralAddition"
+    #define STRUCTURAL_PHYSICAL_CLASS_MaterialProperties            "MaterialProperties"
+    #define STRUCTURAL_PHYSICAL_CLASS_ConcreteMaterialProperties    "ConcreteMaterialProperties"
+    #define STRUCTURAL_PHYSICAL_CLASS_SteelMaterialProperties       "SteelMaterialProperties"
+    #define STRUCTURAL_PHYSICAL_CLASS_ICURVE_MEMBER "ICurveMember"
+    #define STRUCTURAL_PHYSICAL_CLASS_ISURFACE_MEMBER "ISurfaceMember"
+#endif
 #define STRUCTURAL_PHYSICAL_CLASS_Pile "Pile"
 #define STRUCTURAL_PHYSICAL_CLASS_PileCap "PileCap"
-#define STRUCTURAL_PHYSICAL_CLASS_ICURVE_MEMBER "ICurveMember"
-#define STRUCTURAL_PHYSICAL_CLASS_ISURFACE_MEMBER "ISurfaceMember"
-
 //-----------------------------------------------------------------------------------------
 // Define standard static QueryClass/QueryClassId methods on Elements and Aspects
 //-----------------------------------------------------------------------------------------
@@ -97,21 +98,21 @@
 STRUCTURAL_POINTER_TYPEDEFS(StructuralPhysicalModel)
 STRUCTURAL_POINTER_TYPEDEFS(StructuralElement)
 STRUCTURAL_POINTER_TYPEDEFS(StructuralMember)
-STRUCTURAL_POINTER_TYPEDEFS(SurfaceMember)
-STRUCTURAL_POINTER_TYPEDEFS(StructuralSubtraction)
-STRUCTURAL_POINTER_TYPEDEFS(StructuralAddition)
 STRUCTURAL_POINTER_TYPEDEFS(Slab)
 STRUCTURAL_POINTER_TYPEDEFS(Wall)
-STRUCTURAL_POINTER_TYPEDEFS(CurveMember)
 STRUCTURAL_POINTER_TYPEDEFS(Beam)
 STRUCTURAL_POINTER_TYPEDEFS(Column)
 STRUCTURAL_POINTER_TYPEDEFS(Brace)
 STRUCTURAL_POINTER_TYPEDEFS(FoundationMember)
 STRUCTURAL_POINTER_TYPEDEFS(StripFooting)
 STRUCTURAL_POINTER_TYPEDEFS(SpreadFooting)
-STRUCTURAL_POINTER_TYPEDEFS(MaterialProperties)
-STRUCTURAL_POINTER_TYPEDEFS(ConcreteMaterialProperties)
-STRUCTURAL_POINTER_TYPEDEFS(SteelMaterialProperties)
+#ifdef _EXCLUDED_FROM_EAP_BUILD_
+    STRUCTURAL_POINTER_TYPEDEFS(StructuralSubtraction)
+    STRUCTURAL_POINTER_TYPEDEFS(StructuralAddition)
+    STRUCTURAL_POINTER_TYPEDEFS(MaterialProperties)
+    STRUCTURAL_POINTER_TYPEDEFS(ConcreteMaterialProperties)
+    STRUCTURAL_POINTER_TYPEDEFS(SteelMaterialProperties)
+#endif
 STRUCTURAL_POINTER_TYPEDEFS(Pile)
 STRUCTURAL_POINTER_TYPEDEFS(PileCap)
 

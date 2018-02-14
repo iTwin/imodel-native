@@ -11,8 +11,9 @@
 #include "StructuralPhysicalDefinitions.h"
 #include <DgnPlatform/DgnCoreAPI.h>
 
-BEGIN_BENTLEY_STRUCTURAL_NAMESPACE
+#ifdef _EXCLUDED_FROM_EAP_BUILD_
 
+BEGIN_BENTLEY_STRUCTURAL_NAMESPACE
 
 //=======================================================================================
 //! Base class for MaterialProperties 
@@ -86,3 +87,4 @@ struct EXPORT_VTABLE_ATTRIBUTE MaterialPropertiesHandler : Dgn::dgn_AspectHandle
 
 END_BENTLEY_STRUCTURAL_NAMESPACE
 
+#endif 

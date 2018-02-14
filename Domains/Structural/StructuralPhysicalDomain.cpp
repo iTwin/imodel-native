@@ -27,8 +27,10 @@ StructuralPhysicalDomain::StructuralPhysicalDomain() : DgnDomain(BENTLEY_STRUCTU
     RegisterHandler(StripFootingHandler::GetHandler());
     RegisterHandler(SpreadFootingHandler::GetHandler());
     RegisterHandler(WallHandler::GetHandler());
+#ifdef _EXCLUDED_FROM_EAP_BUILD_
     RegisterHandler(StructuralSubtractionHandler::GetHandler());
     RegisterHandler(StructuralAdditionHandler::GetHandler());
+#endif
     RegisterHandler(PileCapHandler::GetHandler());
     RegisterHandler(PileHandler::GetHandler());
     }
