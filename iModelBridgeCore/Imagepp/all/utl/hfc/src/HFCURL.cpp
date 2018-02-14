@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCURL.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCURL
@@ -91,9 +91,6 @@ void HFCURL::RegisterCreator(Utf8StringCR schemeType, Creator* creator)
 HFCURL::HFCURL(const Utf8String& pi_SchemeType, const Utf8String& pi_SchemeSpecificPart)
     : m_SchemeType(pi_SchemeType), m_SchemeSpecificPart(pi_SchemeSpecificPart)
     {
-    FREEZE_STL_STRING(m_SchemeType);
-    FREEZE_STL_STRING(m_SchemeSpecificPart);
-
     m_UTF8URL = false;
     m_EncodedURL = false;
     }
@@ -139,9 +136,6 @@ HFCURL::HFCURL(const Utf8String& pi_URL)
         m_SchemeSpecificPart = pi_URL.substr(ColonPos+1,
                                              pi_URL.length() - ColonPos - 1);
         }
-
-    FREEZE_STL_STRING(m_SchemeType);
-    FREEZE_STL_STRING(m_SchemeSpecificPart);
 
     m_UTF8URL = false;
     m_EncodedURL = false;

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCURLFile.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCURLFile
@@ -52,8 +52,6 @@ HFCURLFile::HFCURLFile(const Utf8String& pi_Host,
     : HFCURL(s_SchemeName(), Utf8String("//") + pi_Host + pi_Path),
       m_Host(pi_Host), m_Path(pi_Path)
     {
-    FREEZE_STL_STRING(m_Host);
-    FREEZE_STL_STRING(m_Path);
     }
 
 /**----------------------------------------------------------------------------
@@ -147,9 +145,6 @@ HFCURLFile::HFCURLFile(const Utf8String& pi_URL)
                 }
             }
         }
-
-    FREEZE_STL_STRING(m_Host);
-    FREEZE_STL_STRING(m_Path);
     }
 
 /**----------------------------------------------------------------------------

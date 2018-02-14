@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAImageNearestSamplerN8.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -85,10 +85,15 @@ ImagePPStatus HRAImageNearestSamplerN8<PixelSize_T>::Stretch_T(HRAImageSampleR o
     RawBuffer_T<uint32_t, decltype(m_singleBlockAllocator)> offsets(outWidth, m_singleBlockAllocator);
     uint32_t* pPixelsOffset = &offsets.At(0);
 
+    // to fix cases where delta is 2.0 and some epsilon values in offsets prevent exact pixel match.
+    // This seems irrelevant but that may generates visible artifacts.
+    // ex:  -3.63e-12 + (0 + 0.5 * 2.0) - 0 = 0.999999999963 but we want 1.
+    static const double s_pixelEpsilon = 0.0001;    
+
     // Build the pre-computed offset array. This is the fastest technique we have so far.
     for(uint32_t w=0; w < outWidth; ++w)
         {
-        int32_t columnInSrc = (int32_t)((m_offsetX + ((w+outOffset.x+0.5)*deltaX)) - inOffset.x);
+        int32_t columnInSrc = (int32_t)(((m_offsetX + ((w+outOffset.x+0.5)*deltaX)) - inOffset.x) + s_pixelEpsilon);
         pPixelsOffset[w] = (uint32_t)((MAX(0, MIN(columnInSrc, (int32_t)(inWidth-1))))*PixelSize_T);
         }
 
@@ -96,7 +101,7 @@ ImagePPStatus HRAImageNearestSamplerN8<PixelSize_T>::Stretch_T(HRAImageSampleR o
     // Can be called by several threads.
     auto lineProcessor = [&](uint32_t row)
         {
-        int32_t rowInSrc = (int32_t)((m_offsetY + ((row+outOffset.y+0.5)*deltaY)) - inOffset.y);
+        int32_t rowInSrc = (int32_t)(((m_offsetY + ((row+outOffset.y+0.5)*deltaY)) - inOffset.y) + s_pixelEpsilon);
         uint32_t effectiveRowInSrc = MAX(0, MIN(rowInSrc, (int32_t)(inHeight-1)));
 
         Byte*       pOutBufferLine = pOutBuffer+row*outPitch;

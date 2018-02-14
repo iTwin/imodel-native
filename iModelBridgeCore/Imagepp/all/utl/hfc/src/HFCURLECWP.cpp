@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCURLECWP.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCURLECWP
@@ -93,8 +93,6 @@ HFCURLECWP::HFCURLECWP(const Utf8String& pi_User,
                            BuildURLPathString(pi_Path, pi_SearchPart)),
     m_Path(pi_Path), m_SearchPart(pi_SearchPart)
     {
-    FREEZE_STL_STRING(m_Path);
-    FREEZE_STL_STRING(m_SearchPart);
     }
 
 /**----------------------------------------------------------------------------
@@ -126,9 +124,6 @@ HFCURLECWP::HFCURLECWP(const Utf8String& pi_pURL)
         }
     else
         m_Path = GetURLPath();
-
-    FREEZE_STL_STRING(m_Path);
-    FREEZE_STL_STRING(m_SearchPart);
     }
 
 /**----------------------------------------------------------------------------

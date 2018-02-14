@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCURLEmbedFile.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCURLOracleFile
@@ -45,8 +45,6 @@ HFCURLEmbedFile::HFCURLEmbedFile(const Utf8String& pi_rURL,
 
         m_Path = SchemeSpecificPart.substr(2, SchemeSpecificPart.length());
         }
-
-    FREEZE_STL_STRING(m_Path);
     }
 
 //-----------------------------------------------------------------------------

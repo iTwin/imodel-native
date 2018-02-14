@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/h/HStlStuff.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -11,46 +11,6 @@
 #include <functional>
 
 BEGIN_IMAGEPP_NAMESPACE
-/*
-** --------------------------------------------------------------------------
-**  FREEZE_STL_STRING
-**
-**  Use to disable reference counting on strings that will be shared among
-**  many threads. RefCounting (Copy on Write) is implemented in Microsoft's
-**  STL (currently version 6.0 SP5)
-** --------------------------------------------------------------------------
-*/
-
-#if 1
-// Copy on write is not legal in C++11
-//http://stackoverflow.com/questions/12199710/legality-of-cow-stdstring-implementation-in-c11
-
-#define FREEZE_STL_STRING(x)
-
-#else
-#   define STL_STRING_DOES_REFCOUNTING
-
-// Call this macro to ensure that the specified string (STL::basic_string<>)
-//  has its private copy of the string data.
-#   define FREEZE_STL_STRING_A(x)  {const_cast<std::string&>(x).begin();}
-#   define FREEZE_STL_STRING_W(x)  {const_cast<WString&>(x).begin();}
-#   define FREEZE_STL_STRING_SEQUENCE_A(ItrBegin, ItrEnd)  { std::for_each(ItrBegin, ItrEnd, FreezeStlStringFunction_A); }
-#   define FREEZE_STL_STRING_SEQUENCE_W(ItrBegin, ItrEnd)  { std::for_each(ItrBegin, ItrEnd, FreezeStlStringFunction_W); }
-
-#       define FREEZE_STL_STRING(x) FREEZE_STL_STRING_W(x)
-#       define FREEZE_STL_STRING_SEQUENCE(ItrBegin, ItrEnd)  { std::for_each(ItrBegin, ItrEnd, FreezeStlStringFunction_W); }
-
-// To be used with STL for_each on a vector of string objects.
-inline void FreezeStlStringFunction_A(std::string& pi_rObj)
-    {
-    FREEZE_STL_STRING_A(pi_rObj)
-    }
-
-inline void FreezeStlStringFunction_W(WString& pi_rObj)
-    {
-    FREEZE_STL_STRING_W(pi_rObj)
-    }  
-#endif
 
 // TEMPLATE STRUCT less
 struct lessDoubleEpsilon

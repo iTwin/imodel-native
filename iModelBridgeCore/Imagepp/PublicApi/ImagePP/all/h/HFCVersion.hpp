@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCVersion.hpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -29,9 +29,6 @@ inline HFCVersion::HFCVersion(const Utf8String& pi_rName)
     : m_Name(pi_rName),
       m_Info("")
     {
-    FREEZE_STL_STRING(m_Name);
-    FREEZE_STL_STRING(m_Info);
-
     // Save the count of numbers
     m_NumberCount = 0;
     }
@@ -47,9 +44,6 @@ inline HFCVersion::HFCVersion(const Utf8String& pi_rName,
     : m_Name(pi_rName),
       m_Info(pi_rInfo)
     {
-    FREEZE_STL_STRING(m_Name);
-    FREEZE_STL_STRING(m_Info);
-
     size_t i;
     int32_t Num;
     va_list NumberList;
@@ -112,8 +106,6 @@ HFCVersion::operator=(const HFCVersion& pi_rObj)
         // Copy the string
         m_Name = pi_rObj.GetName();
         m_Info = pi_rObj.GetInfo();
-        FREEZE_STL_STRING(m_Name);
-        FREEZE_STL_STRING(m_Info);
 
         // release the version array
         m_pNumbers = 0;

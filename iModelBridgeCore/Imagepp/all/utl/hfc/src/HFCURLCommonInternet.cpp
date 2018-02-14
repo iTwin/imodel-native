@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCURLCommonInternet.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCURLCommonInternet
@@ -87,11 +87,6 @@ HFCURLCommonInternet::HFCURLCommonInternet(const Utf8String& pi_SchemeType,
     m_User(pi_User), m_Password(pi_Password), m_Host(pi_Host),
     m_Port(pi_Port), m_URLPath(pi_URLPath)
     {
-    FREEZE_STL_STRING(m_User);
-    FREEZE_STL_STRING(m_Password);
-    FREEZE_STL_STRING(m_Host);
-    FREEZE_STL_STRING(m_Port);
-    FREEZE_STL_STRING(m_URLPath);
     }
 
 void HFCURLCommonInternet::SplitPath(const Utf8String& pi_rURL,
@@ -356,12 +351,6 @@ HFCURLCommonInternet::HFCURLCommonInternet(const Utf8String& pi_URL)
         }
     else
         m_Host = TempString;
-
-    FREEZE_STL_STRING(m_User);
-    FREEZE_STL_STRING(m_Password);
-    FREEZE_STL_STRING(m_Host);
-    FREEZE_STL_STRING(m_Port);
-    FREEZE_STL_STRING(m_URLPath);
     }
 
 /**----------------------------------------------------------------------------

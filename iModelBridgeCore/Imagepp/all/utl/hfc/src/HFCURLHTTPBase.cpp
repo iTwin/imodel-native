@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCURLHTTPBase.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCURLHTTPBase
@@ -85,8 +85,6 @@ HFCURLHTTPBase::HFCURLHTTPBase(const Utf8String& pi_User,
     m_SearchPart(pi_SearchPart),
     m_IsHTTPURL(pi_IsHTTPURL)
     {
-    FREEZE_STL_STRING(m_Path);
-    FREEZE_STL_STRING(m_SearchPart);
     }
 
 /**----------------------------------------------------------------------------
@@ -125,9 +123,6 @@ HFCURLHTTPBase::HFCURLHTTPBase(const Utf8String& pi_pURL,
         }
     else
         m_Path = GetURLPath();
-
-    FREEZE_STL_STRING(m_Path);
-    FREEZE_STL_STRING(m_SearchPart);
     }
 
 /**----------------------------------------------------------------------------

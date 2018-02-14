@@ -76,22 +76,8 @@ HRABitmapBase::HRABitmapBase(const HRABitmapBase& pi_rBitmap)
     m_BitsAlignment = pi_rBitmap.m_BitsAlignment;
     m_XPosInRaster  = pi_rBitmap.m_XPosInRaster;
     m_YPosInRaster  = pi_rBitmap.m_YPosInRaster;
-    }
-
-//-----------------------------------------------------------------------------
-// protected
-// HRABitmapBase::operator= - Assignment operator
-//-----------------------------------------------------------------------------
-HRABitmapBase& HRABitmapBase::operator=(const HRABitmapBase& pi_rBitmap)
-    {
-    if (this != &pi_rBitmap)
-        {
-        HRAStoredRaster::operator=(pi_rBitmap);
-
-        m_BitsAlignment = pi_rBitmap.m_BitsAlignment;
-        }
-
-    return(*this);
+    m_dataWidth = pi_rBitmap.m_dataWidth;
+    m_dataHeight = pi_rBitmap.m_dataHeight;
     }
 
 //-----------------------------------------------------------------------------

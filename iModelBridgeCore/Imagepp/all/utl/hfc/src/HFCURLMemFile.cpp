@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCURLMemFile.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCURLMemFile
@@ -55,8 +55,6 @@ HFCURLMemFile::HFCURLMemFile(const Utf8String& pi_URL,
         m_Filename = GetSchemeSpecificPart().substr(2);
     else
         m_Filename = GetSchemeSpecificPart();
-
-    FREEZE_STL_STRING(m_Filename);
     }
 
 /**----------------------------------------------------------------------------

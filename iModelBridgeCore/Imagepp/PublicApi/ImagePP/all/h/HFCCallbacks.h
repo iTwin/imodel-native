@@ -2,13 +2,12 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCCallbacks.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 
 #include "HFCCallback.h"
-#include <ImagePP/h/HUncopyable.h>
 
 BEGIN_IMAGEPP_NAMESPACE
 

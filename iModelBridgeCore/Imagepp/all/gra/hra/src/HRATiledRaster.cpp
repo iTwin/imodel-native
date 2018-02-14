@@ -970,6 +970,12 @@ const HFCPtr<HRATiledRaster::HRATile> HRATiledRaster::GetTileByIndex (uint64_t p
             else
                 pTile->SetPosInRaster(0, 0);
 
+            auto tileDescriptor = GetPtrTileDescription();
+            uint64_t dataWidth = MIN(tileDescriptor->GetImageWidth() - PosX, tileDescriptor->GetTileWidth());
+            uint64_t dataHeight = MIN(tileDescriptor->GetImageHeight() - PosY, tileDescriptor->GetTileHeight());
+            if(dataWidth != tileDescriptor->GetTileWidth() || dataHeight != tileDescriptor->GetTileHeight())
+                pTile->SetTileDataSize((uint32_t)dataWidth, (uint32_t)dataHeight);
+
             if (pTileModel != 0)
                 {
                 pTile->SetTransfoModel(*pTileModel, GetCoordSys());

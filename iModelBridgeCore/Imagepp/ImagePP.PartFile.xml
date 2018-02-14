@@ -9,9 +9,7 @@
         </Bindings>
     </Part>
 
-    <!-- ////////////////////////////// IPP external libs  ////////////////////////////////////// -->
-    <Part Name="Base64Lib"  BentleyBuildMakeFile="ext/Base64/Base64.mke"> </Part>
-    
+    <!-- ////////////////////////////// IPP external libs  ////////////////////////////////////// -->   
     <Part Name="GdalLib"  BentleyBuildMakeFile="ext/gdal/gdal.mke" OnlyPlatforms="x86,x64">
         <SubPart LibType="Static" PartName="Png" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart LibType="Static" PartName="Compress" PartFile="Libsrc-Nugets" Repository="bsicommon"/>

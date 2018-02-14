@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLSql.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -25,7 +25,6 @@ public:
     // Define the Scheme label
     static const Utf8String& s_SchemeName()
         {   static const Utf8String Val("hsql");
-        FREEZE_STL_STRING(Val);
         return Val;
         }
 

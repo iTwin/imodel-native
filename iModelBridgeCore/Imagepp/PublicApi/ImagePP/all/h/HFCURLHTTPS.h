@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLHTTPS.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCURLHTTPS
@@ -54,7 +54,6 @@ public:
     // Define the Scheme label
     static const Utf8String& s_SchemeName()
         {   static const Utf8String Val("https");
-        FREEZE_STL_STRING(Val);
         return Val;
         }
 

@@ -122,7 +122,7 @@ private:
 
     HRABitmap   (const HRABitmap& pi_rObj);
 
-    HRABitmap& operator=(const HRABitmap& pi_rBitmap);
+    HRABitmap& operator=(const HRABitmap& pi_rBitmap) = delete;
 
     virtual ~HRABitmap  ();
 

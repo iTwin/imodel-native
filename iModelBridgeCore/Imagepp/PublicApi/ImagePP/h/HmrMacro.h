@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/h/HmrMacro.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -409,27 +409,6 @@ inline void RedirectedAssert(bool pi_Success, Utf8CP pi_pExpr, Utf8CP pi_pFile, 
 
 /*
 ** -----------------------------------------------------------------------
-**  HDUMP3(format, obj1, obj2, obj3)
-**
-** -----------------------------------------------------------------------
-*/
-#if !defined(__HMR_DEBUG) || !defined(__HMR_PRINTSTATE) || !defined(HDUMP_USEFILE)
-#   define HDUMP3(format, obj1, obj2, obj3)
-#else
-#   define HDUMP3(format, obj1, obj2, obj3)    { \
-                                           char HMRRESERVEDDebugText[512]; \
-                                           sprintf(HMRRESERVEDDebugText, format, obj1, obj2, obj3); \
-                                           filebuf HMRRESERVEDDUMPFile; \
-                                           HMRRESERVEDDUMPFile.open(HDUMP_FILENAME, ios::out | ios::app); \
-                                           ostream HMRRESERVEDOstream(&HMRRESERVEDDUMPFile); \
-                                           HMRRESERVEDOstream << HMRRESERVEDDebugText << endl; \
-                                           HMRRESERVEDDUMPFile.close(); \
-                                       }
-#endif
-
-
-/*
-** -----------------------------------------------------------------------
 **  HASSERTDUMP(expr, filename, obj) - ...
 **
 ** -----------------------------------------------------------------------
@@ -476,89 +455,6 @@ inline void RedirectedAssert(bool pi_Success, Utf8CP pi_pExpr, Utf8CP pi_pFile, 
 #       define HASSERTDUMP2(expr, obj1, obj2) assert(expr)
 #    endif
 #endif
-
-/*
-** -----------------------------------------------------------------------
-**  HASSERTDUMP3(expr, filename, obj1, obj2, obj3) - ...
-**
-** -----------------------------------------------------------------------
-*/
-#if !defined(__HMR_DEBUG) && !defined(HVERIFYCONTRACT)
-#   define HASSERTDUMP3(expr, obj1, obj2, obj3)
-#else
-#    ifdef __HMR_PRINTSTATE
-#       define HASSERTDUMP3(expr, obj1, obj2, obj3) if (!(expr)) \
-                                                    { \
-                                                        time_t HMRRESERVEDDegugTime_tStruct; \
-                                                        time(&HMRRESERVEDDegugTime_tStruct); \
-                                                        HDUMP1("Assertion Dump %ld\n" ,ctime(&HMRRESERVEDDegugTime_tStruct)); \
-                                                        HDUMP2("For file %s at line%d\n" ,__FILE__, __LINE__); \
-                                                        (obj1).PrintState(HDUMPDEVICE); \
-                                                        (obj2).PrintState(HDUMPDEVICE); \
-                                                        (obj3).PrintState(HDUMPDEVICE); \
-                                                        assert(expr); \
-                                                    }
-#    else
-#       define HASSERTDUMP3(expr, obj1, obj2, obj3) assert(expr)
-#    endif
-#endif
-
-/*
-** -----------------------------------------------------------------------
-**  HASSERTDUMP4(expr, filename, obj1, obj2, obj3, obj4) - ...
-**
-** -----------------------------------------------------------------------
-*/
-#if !defined(__HMR_DEBUG) && !defined(HVERIFYCONTRACT)
-#   define HASSERTDUMP4(expr, obj1, obj2, obj3, obj4)
-#else
-#    ifdef __HMR_PRINTSTATE
-#       define HASSERTDUMP4(expr, obj1, obj2, obj3, obj4) if (!(expr)) \
-                                                          { \
-                                                              time_t HMRRESERVEDDegugTime_tStruct; \
-                                                              time(&HMRRESERVEDDegugTime_tStruct); \
-                                                              HDUMP1("Assertion Dump %ld\n" ,ctime(&HMRRESERVEDDegugTime_tStruct)); \
-                                                              HDUMP2("For file %s at line%d\n" ,__FILE__, __LINE__); \
-                                                              (obj1).PrintState(HDUMPDEVICE); \
-                                                              (obj2).PrintState(HDUMPDEVICE); \
-                                                              (obj3).PrintState(HDUMPDEVICE); \
-                                                              (obj4).PrintState(HDUMPDEVICE); \
-                                                              assert(expr); \
-                                                          }
-
-#    else
-#       define HASSERTDUMP4(expr, obj1, obj2, obj3, obj4) assert(expr)
-#    endif
-#endif
-
-/*
-** -----------------------------------------------------------------------
-**  HASSERTDUMP5(expr, filename, obj1, obj2, obj3, obj4, obj5) - ...
-**
-** -----------------------------------------------------------------------
-*/
-#if !defined(__HMR_DEBUG) && !defined(HVERIFYCONTRACT)
-#   define HASSERTDUMP5(expr, obj1, obj2, obj3, obj4, obj5)
-#else
-#    ifdef __HMR_PRINTSTATE
-#       define HASSERTDUMP5(expr, obj1, obj2, obj3, obj4, obj5) if (!(expr)) \
-                                                                { \
-                                                                   time_t HMRRESERVEDDegugTime_tStruct; \
-                                                                   time(&HMRRESERVEDDegugTime_tStruct); \
-                                                                   HDUMP1("Assertion Dump %ld\n" ,ctime(&HMRRESERVEDDegugTime_tStruct)); \
-                                                                   HDUMP2("For file %s at line%d\n" ,__FILE__, __LINE__); \
-                                                                   (obj1).PrintState(HDUMPDEVICE); \
-                                                                   (obj2).PrintState(HDUMPDEVICE); \
-                                                                   (obj3).PrintState(HDUMPDEVICE); \
-                                                                   (obj4).PrintState(HDUMPDEVICE); \
-                                                                   (obj5).PrintState(HDUMPDEVICE); \
-                                                                   assert(expr); \
-                                                                }
-#    else
-#       define HASSERTDUMP5(expr, obj1, obj2, obj3, obj4, obj5)     assert(expr)
-#    endif
-#endif
-
 
 /*
 ** --------------------------------------------------------------------------

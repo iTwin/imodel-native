@@ -2,7 +2,7 @@
     //:>
     //:>     $Source: all/gra/hra/src/HRAImageBilinearSamplerN8.cpp $
     //:>
-    //:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+    //:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
     //:>
     //:>+--------------------------------------------------------------------------------------
 
@@ -163,7 +163,7 @@ template<uint32_t ChannelCount_T, typename Data_T>
 template<typename Surface_T>
 void HRAImageBilinearSamplerN8<ChannelCount_T, Data_T>::Stretch_T(HRAImageSampleR outData, PixelOffset const& outOffset, Surface_T& inData, PixelOffset const& inOffset)
     {
-    if(outData.GetPixelType().GetChannelOrg().GetChannelPtr(0)->GetNoDataValue() != NULL)
+    if(inData.GetPixelType().GetChannelOrg().GetChannelPtr(0)->GetNoDataValue() != NULL)
         Stretch_T<Surface_T, true/*AsNoData*/>(outData, outOffset, inData, inOffset);
     else
         Stretch_T<Surface_T, false/*AsNoData*/>(outData, outOffset, inData, inOffset);
@@ -176,7 +176,7 @@ template<uint32_t ChannelCount_T, typename Data_T>
 template<typename Surface_T>
 void HRAImageBilinearSamplerN8<ChannelCount_T, Data_T>::Warp_T(HRAImageSampleR outData, PixelOffset const& outOffset, Surface_T& inData, PixelOffset const& inOffset)
     {
-    if(outData.GetPixelType().GetChannelOrg().GetChannelPtr(0)->GetNoDataValue() != NULL)
+    if(inData.GetPixelType().GetChannelOrg().GetChannelPtr(0)->GetNoDataValue() != NULL)
         {
 #if defined (HAVE_CONCURRENCY_RUNTIME)
         if (m_enableMultiThreading && m_pDestToSrcTransfo->IsConvertDirectThreadSafe())

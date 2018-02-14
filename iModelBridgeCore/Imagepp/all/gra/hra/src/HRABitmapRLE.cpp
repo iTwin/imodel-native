@@ -295,26 +295,6 @@ HRABitmapRLE::HRABitmapRLE(const HRABitmapRLE& pi_rBitmap)
     }
 
 //-----------------------------------------------------------------------------
-// protected
-// HRABitmapRLE::operator= - Assignment operator
-//-----------------------------------------------------------------------------
-HRABitmapRLE& HRABitmapRLE::operator=(const HRABitmapRLE& pi_rBitmap)
-    {
-    if (this != &pi_rBitmap)
-        {
-        HRABitmapBase::operator=(pi_rBitmap);
-
-        // Delete currently allocated memory for the object
-        DeepDelete();
-
-        // Perform initialization of the object
-        DeepCopy(pi_rBitmap);
-        }
-
-    return(*this);
-    }
-
-//-----------------------------------------------------------------------------
 // public
 // CreateEditor
 //-----------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLECWP.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCURLECWP
@@ -52,8 +52,8 @@ public:
 
     // Define the Scheme label
     static const Utf8String& s_SchemeName()
-        {   static const Utf8String Val("ecwp");
-        FREEZE_STL_STRING(Val);
+        {   
+        static const Utf8String Val("ecwp");
         return Val;
         }
 

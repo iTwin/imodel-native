@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCURLSql.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCURLSql
@@ -73,7 +73,6 @@ HFCURLSql::HFCURLSql(const Utf8String& pi_rQuery)
     : HFCURL(s_SchemeName(), Utf8String("//?") + pi_rQuery),
       m_Query(pi_rQuery)
     {
-    FREEZE_STL_STRING(m_Query);
     }
 #endif
 //-----------------------------------------------------------------------------
@@ -95,8 +94,6 @@ HFCURLSql::HFCURLSql(const Utf8String& pi_rURL)
             m_Query = SchemeSpecificPart.substr(3);
             }
         }
-
-    FREEZE_STL_STRING(m_Query);
     }
 //-----------------------------------------------------------------------------
 // The destructor for this class.

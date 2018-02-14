@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCURLOracleFile.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCURLOracleFile
@@ -82,10 +82,6 @@ HFCURLOracleFile::HFCURLOracleFile(const Utf8String& pi_rSchema,
     m_DirTableName(pi_rDirTableName),
     m_Path(pi_rPath)
     {
-    FREEZE_STL_STRING(m_Host);
-    FREEZE_STL_STRING(m_Schema);
-    FREEZE_STL_STRING(m_DirTableName);
-    FREEZE_STL_STRING(m_Path);
     }
 
 //-----------------------------------------------------------------------------
@@ -103,10 +99,6 @@ HFCURLOracleFile::HFCURLOracleFile(const Utf8String& pi_rSchema,
     m_Schema(pi_rSchema),
     m_Path(pi_rPath)
     {
-    FREEZE_STL_STRING(m_Host);
-    FREEZE_STL_STRING(m_Schema);
-    FREEZE_STL_STRING(m_DirTableName);
-    FREEZE_STL_STRING(m_Path);
     }
 
 //-----------------------------------------------------------------------------
@@ -172,11 +164,6 @@ HFCURLOracleFile::HFCURLOracleFile(const Utf8String& pi_rURL)
                 }
             }
         }
-
-    FREEZE_STL_STRING(m_Host);
-    FREEZE_STL_STRING(m_Schema);
-    FREEZE_STL_STRING(m_DirTableName);
-    FREEZE_STL_STRING(m_Path);
     }
 
 //-----------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFiTiffFile.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -422,10 +422,12 @@ HRFiTiffCapabilities::HRFiTiffCapabilities()
     pPixelTypeV32Float32 = new HRFPixelTypeCapability(HFC_READ_WRITE_CREATE,
                                                       HRPPixelTypeV32Float32::CLASS_ID,
                                                       new HRFiTiffCodecFloatCapabilities());
-    pPixelTypeV32Float32->AddDownSamplingMethod(HRFDownSamplingMethod::AVERAGE);
+    // Add nearest first so we select it by default when exporting. Float pixels are usually DEM formats and usually have 
+    // unspecified/undocumented noData pixel values. Average resamping will generate unexpected values with these no data value
+    // so it is best to use nearest.
     pPixelTypeV32Float32->AddDownSamplingMethod(HRFDownSamplingMethod::NEAREST_NEIGHBOUR);
+    pPixelTypeV32Float32->AddDownSamplingMethod(HRFDownSamplingMethod::AVERAGE);
     Add((HFCPtr<HRFCapability>&)pPixelTypeV32Float32);
-
 
 
     // Transfo Model

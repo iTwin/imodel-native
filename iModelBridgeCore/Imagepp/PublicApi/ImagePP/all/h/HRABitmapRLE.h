@@ -93,7 +93,7 @@ protected:
                  const HFCPtr<HRPPixelType>&    pi_rpPixel,
                  bool                          pi_Resizable = false);
 
-    HRABitmapRLE& operator=(const HRABitmapRLE& pi_rBitmap);
+    HRABitmapRLE& operator=(const HRABitmapRLE& pi_rBitmap) = delete;
     HRABitmapRLE   (const HRABitmapRLE& pi_rObj);
 
     virtual      ~HRABitmapRLE  ();

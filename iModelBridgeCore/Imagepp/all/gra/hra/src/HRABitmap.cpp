@@ -201,26 +201,6 @@ HRABitmap::HRABitmap(const HRABitmap& pi_rBitmap)
     }
 
 //-----------------------------------------------------------------------------
-// protected
-// HRABitmap::operator= - Assignment operator
-//-----------------------------------------------------------------------------
-HRABitmap& HRABitmap::operator=(const HRABitmap& pi_rBitmap)
-    {
-    if (this != &pi_rBitmap)
-        {
-        HRABitmapBase::operator=(pi_rBitmap);
-
-        // Delete currently allocated memory for the object
-        DeepDelete();
-
-        // Perform initialization of the object
-        DeepCopy(pi_rBitmap);
-        }
-
-    return(*this);
-    }
-
-//-----------------------------------------------------------------------------
 // public
 // CreateEditor
 //
@@ -1864,8 +1844,15 @@ protected:
 
         uint64_t width64, height64;
         m_bitmap.GetSize(&width64, &height64);
-        m_physicalExtent = HGF2DExtent(0, 0, (double)width64, (double)height64, pPhysicalCoordSys);
 
+        // Border tiles coming from tiledRaster might be smaller than the block size.
+        if (0 != m_bitmap.m_dataWidth)
+            width64 = bitmap.m_dataWidth;
+        if (0 != bitmap.m_dataHeight)
+            height64 = bitmap.m_dataHeight;
+                
+        m_physicalExtent = HGF2DExtent(0, 0, (double)width64, (double)height64, pPhysicalCoordSys);
+                
         BeAssert(width64 <= UINT32_MAX && height64 <= UINT32_MAX);
         m_width = (uint32_t)width64;
         m_height = (uint32_t)height64;
