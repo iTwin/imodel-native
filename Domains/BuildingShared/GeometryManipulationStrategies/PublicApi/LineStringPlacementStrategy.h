@@ -29,9 +29,9 @@ struct LineStringPlacementStrategy : public CurvePrimitivePlacementStrategy
         LineStringPlacementStrategy() : T_Super(), m_manipulationStrategy(LineStringManipulationStrategy::Create()) {}
 
         virtual GeometryManipulationStrategyCR _GetManipulationStrategy() const override { return *m_manipulationStrategy; }
-        virtual GeometryManipulationStrategyR _GetManipulationStrategyR() override { return *m_manipulationStrategy; }
+        virtual GeometryManipulationStrategyR _GetManipulationStrategyForEdit() override { return *m_manipulationStrategy; }
         LineStringManipulationStrategyCR GetLineStringManipulationStrategy() const { return *m_manipulationStrategy; }
-        LineStringManipulationStrategyR GetLineStringManipulationStrategyR() { return *m_manipulationStrategy; }
+        LineStringManipulationStrategyR GetLineStringManipulationStrategyForEdit() { return *m_manipulationStrategy; }
 
     public:
         static LineStringPlacementStrategyPtr Create(LineStringPlacementStrategyType strategyType);

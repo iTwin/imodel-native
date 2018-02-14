@@ -41,7 +41,7 @@ struct ElementManipulationStrategy : public GeometryManipulationStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _Clear() override;
 
         virtual GeometryManipulationStrategyCR _GetGeometryManipulationStrategy() const = 0;
-        virtual GeometryManipulationStrategyR _GetGeometryManipulationStrategyR() = 0;
+        virtual GeometryManipulationStrategyR _GetGeometryManipulationStrategyForEdit() = 0;
 
         virtual Dgn::DgnElementPtr _FinishElement(Dgn::DgnModelR model) = 0;
         virtual Dgn::DgnElementPtr _FinishElement() = 0;

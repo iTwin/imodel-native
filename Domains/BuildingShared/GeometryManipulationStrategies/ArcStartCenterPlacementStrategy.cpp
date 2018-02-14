@@ -18,7 +18,7 @@ void ArcStartCenterPlacementStrategy::_AddKeyPoint
 )
     {
     BeAssert(!_IsDynamicKeyPointSet());
-    ArcManipulationStrategyR strategy = GetArcManipulationStrategyR();
+    ArcManipulationStrategyR strategy = GetArcManipulationStrategyForEdit();
 
     if (!strategy.IsStartSet())
         {
@@ -48,7 +48,7 @@ void ArcStartCenterPlacementStrategy::_AddDynamicKeyPoint
 )
     {
     BeAssert(!_IsDynamicKeyPointSet());
-    ArcManipulationStrategyR strategy = GetArcManipulationStrategyR();
+    ArcManipulationStrategyR strategy = GetArcManipulationStrategyForEdit();
 
     if (strategy.IsEndSet())
         {
@@ -76,7 +76,7 @@ void ArcStartCenterPlacementStrategy::_AddDynamicKeyPoint
 void ArcStartCenterPlacementStrategy::_PopKeyPoint()
     {
     BeAssert(!_IsDynamicKeyPointSet());
-    ArcManipulationStrategyR strategy = GetArcManipulationStrategyR();
+    ArcManipulationStrategyR strategy = GetArcManipulationStrategyForEdit();
 
     if (strategy.IsEndSet())
         {

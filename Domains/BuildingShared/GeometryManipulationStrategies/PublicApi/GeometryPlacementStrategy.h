@@ -24,7 +24,7 @@ struct GeometryPlacementStrategy : public GeometryManipulationStrategyBase
         GeometryPlacementStrategy() : T_Super() {}
 
         virtual GeometryManipulationStrategyCR _GetManipulationStrategy() const = 0;
-        virtual GeometryManipulationStrategyR _GetManipulationStrategyR() = 0;
+        virtual GeometryManipulationStrategyR _GetManipulationStrategyForEdit() = 0;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bvector<DPoint3d> _GetKeyPoints() const override;
 

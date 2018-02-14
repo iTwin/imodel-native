@@ -26,9 +26,9 @@ struct CurveVectorPlacementStrategy : public GeometryPlacementStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual CurveVectorPtr _Finish(bool connectEndStart) const;
 
         virtual GeometryManipulationStrategyCR _GetManipulationStrategy() const override { return *m_manipulationStrategy; }
-        virtual GeometryManipulationStrategyR _GetManipulationStrategyR() override { return *m_manipulationStrategy; }
+        virtual GeometryManipulationStrategyR _GetManipulationStrategyForEdit() override { return *m_manipulationStrategy; }
         CurveVectorManipulationStrategyCR GetCurveVectorManipulationStrategy() const { return *m_manipulationStrategy; }
-        CurveVectorManipulationStrategyR GetCurveVectorManipulationStrategyR() { return *m_manipulationStrategy; }
+        CurveVectorManipulationStrategyR GetCurveVectorManipulationStrategyForEdit() { return *m_manipulationStrategy; }
 
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurveVectorPtr Finish(bool connectEndStart = false) const;

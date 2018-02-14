@@ -24,10 +24,10 @@ struct ElementPlacementStrategy : public GeometryPlacementStrategy
         ElementPlacementStrategy() : T_Super() {}
 
         virtual ElementManipulationStrategyCR _GetElementManipulationStrategy() const = 0;
-        virtual ElementManipulationStrategyR _GetElementManipulationStrategyR() = 0;
+        virtual ElementManipulationStrategyR _GetElementManipulationStrategyForEdit() = 0;
 
         virtual GeometryPlacementStrategyCPtr _TryGetGeometryPlacementStrategy() const = 0;
-        virtual GeometryPlacementStrategyPtr _TryGetGeometryPlacementStrategyP() = 0;
+        virtual GeometryPlacementStrategyPtr _TryGetGeometryPlacementStrategyForEdit() = 0;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bvector<DPoint3d> _GetKeyPoints() const override;
 

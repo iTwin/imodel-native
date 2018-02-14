@@ -108,7 +108,7 @@ struct ExtrusionManipulationStrategy : public SolidPrimitiveManipulationStrategy
 
     protected:
         virtual GeometryManipulationStrategyCR _GetBaseShapeManipulationStrategy() const { return *m_baseShapeManipulationStrategy; }
-        virtual GeometryManipulationStrategyR _GetBaseShapeManipulationStrategyR() { return *m_baseShapeManipulationStrategy; }
+        virtual GeometryManipulationStrategyR _GetBaseShapeManipulationStrategyForEdit() { return *m_baseShapeManipulationStrategy; }
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AppendDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
 

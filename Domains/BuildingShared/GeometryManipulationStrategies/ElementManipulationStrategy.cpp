@@ -37,7 +37,7 @@ void ElementManipulationStrategy::_AppendDynamicKeyPoint
     DPoint3dCR newDynamicKeyPoint
 )
     {
-    _GetGeometryManipulationStrategyR().AppendDynamicKeyPoint(newDynamicKeyPoint);
+    _GetGeometryManipulationStrategyForEdit().AppendDynamicKeyPoint(newDynamicKeyPoint);
     }
 
 //--------------------------------------------------------------------------------------
@@ -48,7 +48,7 @@ void ElementManipulationStrategy::_AppendDynamicKeyPoints
     bvector<DPoint3d> const& newDynamicKeyPoints
 )
     {
-    _GetGeometryManipulationStrategyR().AppendDynamicKeyPoints(newDynamicKeyPoints);
+    _GetGeometryManipulationStrategyForEdit().AppendDynamicKeyPoints(newDynamicKeyPoints);
     }
 
 //--------------------------------------------------------------------------------------
@@ -60,7 +60,7 @@ void ElementManipulationStrategy::_InsertDynamicKeyPoint
     size_t index
 )
     {
-    _GetGeometryManipulationStrategyR().InsertDynamicKeyPoint(newDynamicKeyPoint, index);
+    _GetGeometryManipulationStrategyForEdit().InsertDynamicKeyPoint(newDynamicKeyPoint, index);
     }
 
 //--------------------------------------------------------------------------------------
@@ -72,7 +72,7 @@ void ElementManipulationStrategy::_InsertDynamicKeyPoints
     size_t index
 )
     {
-    _GetGeometryManipulationStrategyR().InsertDynamicKeyPoints(newDynamicKeyPoints, index);
+    _GetGeometryManipulationStrategyForEdit().InsertDynamicKeyPoints(newDynamicKeyPoints, index);
     }
 
 //--------------------------------------------------------------------------------------
@@ -84,7 +84,7 @@ void ElementManipulationStrategy::_UpdateDynamicKeyPoint
     size_t index
 )
     {
-    _GetGeometryManipulationStrategyR().UpdateDynamicKeyPoint(newDynamicKeyPoint, index);
+    _GetGeometryManipulationStrategyForEdit().UpdateDynamicKeyPoint(newDynamicKeyPoint, index);
     }
 
 //--------------------------------------------------------------------------------------
@@ -96,7 +96,7 @@ void ElementManipulationStrategy::_UpdateDynamicKeyPoints
     size_t index
 )
     {
-    _GetGeometryManipulationStrategyR().UpdateDynamicKeyPoints(newDynamicKeyPoints, index);
+    _GetGeometryManipulationStrategyForEdit().UpdateDynamicKeyPoints(newDynamicKeyPoints, index);
     }
 
 //--------------------------------------------------------------------------------------
@@ -108,7 +108,7 @@ void ElementManipulationStrategy::_UpsertDynamicKeyPoint
     size_t index
 )
     {
-    _GetGeometryManipulationStrategyR().UpsertDynamicKeyPoint(newDynamicKeyPoint, index);
+    _GetGeometryManipulationStrategyForEdit().UpsertDynamicKeyPoint(newDynamicKeyPoint, index);
     }
 
 //--------------------------------------------------------------------------------------
@@ -120,7 +120,7 @@ void ElementManipulationStrategy::_UpsertDynamicKeyPoints
     size_t index
 )
     {
-    _GetGeometryManipulationStrategyR().UpsertDynamicKeyPoints(newDynamicKeyPoints, index);
+    _GetGeometryManipulationStrategyForEdit().UpsertDynamicKeyPoints(newDynamicKeyPoints, index);
     }
 
 //--------------------------------------------------------------------------------------
@@ -131,7 +131,7 @@ void ElementManipulationStrategy::_AppendKeyPoint
     DPoint3dCR newKeyPoint
 )
     {
-    _GetGeometryManipulationStrategyR().AppendKeyPoint(newKeyPoint);
+    _GetGeometryManipulationStrategyForEdit().AppendKeyPoint(newKeyPoint);
     }
 
 //--------------------------------------------------------------------------------------
@@ -142,7 +142,7 @@ void ElementManipulationStrategy::_AppendKeyPoints
     bvector<DPoint3d> const& newKeyPoints
 )
     {
-    _GetGeometryManipulationStrategyR().AppendKeyPoints(newKeyPoints);
+    _GetGeometryManipulationStrategyForEdit().AppendKeyPoints(newKeyPoints);
     }
 
 //--------------------------------------------------------------------------------------
@@ -154,7 +154,7 @@ void ElementManipulationStrategy::_InsertKeyPoint
     size_t index
 )
     {
-    _GetGeometryManipulationStrategyR().InsertKeyPoint(newKeyPoint, index);
+    _GetGeometryManipulationStrategyForEdit().InsertKeyPoint(newKeyPoint, index);
     }
 
 //--------------------------------------------------------------------------------------
@@ -166,7 +166,7 @@ void ElementManipulationStrategy::_ReplaceKeyPoint
     size_t index
 )
     {
-    _GetGeometryManipulationStrategyR().ReplaceKeyPoint(newKeyPoint, index);
+    _GetGeometryManipulationStrategyForEdit().ReplaceKeyPoint(newKeyPoint, index);
     }
 
 //--------------------------------------------------------------------------------------
@@ -174,7 +174,7 @@ void ElementManipulationStrategy::_ReplaceKeyPoint
 //---------------+---------------+---------------+---------------+---------------+------
 void ElementManipulationStrategy::_PopKeyPoint()
     {
-    _GetGeometryManipulationStrategyR().PopKeyPoint();
+    _GetGeometryManipulationStrategyForEdit().PopKeyPoint();
     }
 
 //--------------------------------------------------------------------------------------
@@ -185,7 +185,7 @@ void ElementManipulationStrategy::_RemoveKeyPoint
     size_t index
 )
     {
-    _GetGeometryManipulationStrategyR().RemoveKeyPoint(index);
+    _GetGeometryManipulationStrategyForEdit().RemoveKeyPoint(index);
     }
 
 //--------------------------------------------------------------------------------------
@@ -193,13 +193,13 @@ void ElementManipulationStrategy::_RemoveKeyPoint
 //---------------+---------------+---------------+---------------+---------------+------
 void ElementManipulationStrategy::_Clear()
     {
-    _GetGeometryManipulationStrategyR().Clear();
+    _GetGeometryManipulationStrategyForEdit().Clear();
     }
 
 #define GMS_PROPERTY_OVERRIDE_IMPL(value_type) \
     void ElementManipulationStrategy::_SetProperty(Utf8CP key, value_type const& value) \
         { \
-        _GetGeometryManipulationStrategyR().SetProperty(key, value); \
+        _GetGeometryManipulationStrategyForEdit().SetProperty(key, value); \
         } \
     BentleyStatus ElementManipulationStrategy::_TryGetProperty(Utf8CP key, value_type& value) const \
         { \

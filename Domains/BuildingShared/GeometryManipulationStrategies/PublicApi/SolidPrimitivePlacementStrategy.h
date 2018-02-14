@@ -26,7 +26,7 @@ struct SolidPrimitivePlacementStrategy : public GeometryPlacementStrategy
             {}
 
         virtual GeometryManipulationStrategyCR _GetManipulationStrategy() const override { return *m_manipulationStrategy; }
-        virtual GeometryManipulationStrategyR _GetManipulationStrategyR() override { return *m_manipulationStrategy; }
+        virtual GeometryManipulationStrategyR _GetManipulationStrategyForEdit() override { return *m_manipulationStrategy; }
 
     public:
         static constexpr Utf8CP prop_BaseComplete() { return SolidPrimitiveManipulationStrategy::prop_BaseComplete(); }

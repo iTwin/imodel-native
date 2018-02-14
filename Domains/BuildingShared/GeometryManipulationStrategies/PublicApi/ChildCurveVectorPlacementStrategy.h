@@ -23,9 +23,9 @@ struct ChildCurveVectorPlacementStrategy : public GeometryPlacementStrategy
         ChildCurveVectorPlacementStrategy(ChildCurveVectorManipulationStrategyP manipulationStrategy);
 
         virtual GeometryManipulationStrategyCR _GetManipulationStrategy() const override { return *m_manipulationStrategy; }
-        virtual GeometryManipulationStrategyR _GetManipulationStrategyR() override { return *m_manipulationStrategy; }
+        virtual GeometryManipulationStrategyR _GetManipulationStrategyForEdit() override { return *m_manipulationStrategy; }
         ChildCurveVectorManipulationStrategyCR GetChildCurveVectorManipulationStrategy() const { return *m_manipulationStrategy; }
-        ChildCurveVectorManipulationStrategyR GetChildCurveVectorManipulationStrategyR() { return *m_manipulationStrategy; }
+        ChildCurveVectorManipulationStrategyR GetChildCurveVectorManipulationStrategyForEdit() { return *m_manipulationStrategy; }
     };
 
 END_BUILDING_SHARED_NAMESPACE

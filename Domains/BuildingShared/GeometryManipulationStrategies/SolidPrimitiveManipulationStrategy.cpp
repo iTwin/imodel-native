@@ -30,7 +30,7 @@ bool SolidPrimitiveManipulationStrategy::_IsDynamicKeyPointSet() const
 //---------------+---------------+---------------+---------------+---------------+------
 void SolidPrimitiveManipulationStrategy::_ResetDynamicKeyPoint()
     {
-    _GetBaseShapeManipulationStrategyR().ResetDynamicKeyPoint();
+    _GetBaseShapeManipulationStrategyForEdit().ResetDynamicKeyPoint();
     }
 
 //--------------------------------------------------------------------------------------
@@ -57,7 +57,7 @@ void SolidPrimitiveManipulationStrategy::_AppendDynamicKeyPoint
     DPoint3dCR newDynamicKeyPoint
 )
     {
-    _GetBaseShapeManipulationStrategyR().AppendDynamicKeyPoint(newDynamicKeyPoint);
+    _GetBaseShapeManipulationStrategyForEdit().AppendDynamicKeyPoint(newDynamicKeyPoint);
     }
 
 //--------------------------------------------------------------------------------------
@@ -68,7 +68,7 @@ void SolidPrimitiveManipulationStrategy::_AppendDynamicKeyPoints
     bvector<DPoint3d> const& newDynamicKeyPoints
 )
     {
-    _GetBaseShapeManipulationStrategyR().AppendDynamicKeyPoints(newDynamicKeyPoints);
+    _GetBaseShapeManipulationStrategyForEdit().AppendDynamicKeyPoints(newDynamicKeyPoints);
     }
 
 //--------------------------------------------------------------------------------------
@@ -80,7 +80,7 @@ void SolidPrimitiveManipulationStrategy::_InsertDynamicKeyPoint
     size_t index
 )
     {
-    _GetBaseShapeManipulationStrategyR().InsertDynamicKeyPoint(newDynamicKeyPoint, index);
+    _GetBaseShapeManipulationStrategyForEdit().InsertDynamicKeyPoint(newDynamicKeyPoint, index);
     }
 
 //--------------------------------------------------------------------------------------
@@ -92,7 +92,7 @@ void SolidPrimitiveManipulationStrategy::_InsertDynamicKeyPoints
     size_t index
 )
     {
-    _GetBaseShapeManipulationStrategyR().InsertDynamicKeyPoints(newDynamicKeyPoints, index);
+    _GetBaseShapeManipulationStrategyForEdit().InsertDynamicKeyPoints(newDynamicKeyPoints, index);
     }
 
 //--------------------------------------------------------------------------------------
@@ -104,7 +104,7 @@ void SolidPrimitiveManipulationStrategy::_UpdateDynamicKeyPoint
     size_t index
 )
     {
-    _GetBaseShapeManipulationStrategyR().UpdateDynamicKeyPoint(newDynamicKeyPoint, index);
+    _GetBaseShapeManipulationStrategyForEdit().UpdateDynamicKeyPoint(newDynamicKeyPoint, index);
     }
 
 //--------------------------------------------------------------------------------------
@@ -116,7 +116,7 @@ void SolidPrimitiveManipulationStrategy::_UpdateDynamicKeyPoints
     size_t index
 )
     {
-    _GetBaseShapeManipulationStrategyR().UpdateDynamicKeyPoints(newDynamicKeyPoints, index);
+    _GetBaseShapeManipulationStrategyForEdit().UpdateDynamicKeyPoints(newDynamicKeyPoints, index);
     }
 
 //--------------------------------------------------------------------------------------
@@ -128,7 +128,7 @@ void SolidPrimitiveManipulationStrategy::_UpsertDynamicKeyPoint
     size_t index
 )
     {
-    _GetBaseShapeManipulationStrategyR().UpsertDynamicKeyPoint(newDynamicKeyPoint, index);
+    _GetBaseShapeManipulationStrategyForEdit().UpsertDynamicKeyPoint(newDynamicKeyPoint, index);
     }
 
 //--------------------------------------------------------------------------------------
@@ -140,7 +140,7 @@ void SolidPrimitiveManipulationStrategy::_UpsertDynamicKeyPoints
     size_t index
 )
     {
-    _GetBaseShapeManipulationStrategyR().UpsertDynamicKeyPoints(newDynamicKeyPoints, index);
+    _GetBaseShapeManipulationStrategyForEdit().UpsertDynamicKeyPoints(newDynamicKeyPoints, index);
     }
 
 //--------------------------------------------------------------------------------------
@@ -151,7 +151,7 @@ void SolidPrimitiveManipulationStrategy::_AppendKeyPoint
     DPoint3dCR newKeyPoint
 )
     {
-    _GetBaseShapeManipulationStrategyR().AppendKeyPoint(newKeyPoint);
+    _GetBaseShapeManipulationStrategyForEdit().AppendKeyPoint(newKeyPoint);
     }
 
 //--------------------------------------------------------------------------------------
@@ -162,7 +162,7 @@ void SolidPrimitiveManipulationStrategy::_AppendKeyPoints
     bvector<DPoint3d> const& newKeyPoints
 )
     {
-    _GetBaseShapeManipulationStrategyR().AppendKeyPoints(newKeyPoints);
+    _GetBaseShapeManipulationStrategyForEdit().AppendKeyPoints(newKeyPoints);
     }
 
 //--------------------------------------------------------------------------------------
@@ -174,7 +174,7 @@ void SolidPrimitiveManipulationStrategy::_InsertKeyPoint
     size_t index
 )
     {
-    _GetBaseShapeManipulationStrategyR().InsertKeyPoint(newKeyPoint, index);
+    _GetBaseShapeManipulationStrategyForEdit().InsertKeyPoint(newKeyPoint, index);
     }
 
 //--------------------------------------------------------------------------------------
@@ -186,7 +186,7 @@ void SolidPrimitiveManipulationStrategy::_ReplaceKeyPoint
     size_t index
 )
     {
-    _GetBaseShapeManipulationStrategyR().ReplaceKeyPoint(newKeyPoint, index);
+    _GetBaseShapeManipulationStrategyForEdit().ReplaceKeyPoint(newKeyPoint, index);
     }
 
 //--------------------------------------------------------------------------------------
@@ -194,7 +194,7 @@ void SolidPrimitiveManipulationStrategy::_ReplaceKeyPoint
 //---------------+---------------+---------------+---------------+---------------+------
 void SolidPrimitiveManipulationStrategy::_PopKeyPoint()
     {
-    _GetBaseShapeManipulationStrategyR().PopKeyPoint();
+    _GetBaseShapeManipulationStrategyForEdit().PopKeyPoint();
     }
 
 //--------------------------------------------------------------------------------------
@@ -205,7 +205,7 @@ void SolidPrimitiveManipulationStrategy::_RemoveKeyPoint
     size_t index
 )
     {
-    _GetBaseShapeManipulationStrategyR().RemoveKeyPoint(index);
+    _GetBaseShapeManipulationStrategyForEdit().RemoveKeyPoint(index);
     }
 
 //--------------------------------------------------------------------------------------
@@ -213,7 +213,7 @@ void SolidPrimitiveManipulationStrategy::_RemoveKeyPoint
 //---------------+---------------+---------------+---------------+---------------+------
 void SolidPrimitiveManipulationStrategy::_Clear()
     {
-    _GetBaseShapeManipulationStrategyR().Clear();
+    _GetBaseShapeManipulationStrategyForEdit().Clear();
     }
 
 //--------------------------------------------------------------------------------------

@@ -17,7 +17,7 @@ void GeometryPlacementStrategy::_AddKeyPoint
     DPoint3dCR newKeyPoint
 )
     {
-    _GetManipulationStrategyR().AppendKeyPoint(newKeyPoint);
+    _GetManipulationStrategyForEdit().AppendKeyPoint(newKeyPoint);
     }
 
 //--------------------------------------------------------------------------------------
@@ -28,7 +28,7 @@ void GeometryPlacementStrategy::AddKeyPoint
     DPoint3dCR newKeyPoint
 )
     {
-    _GetManipulationStrategyR()._ResetDynamicKeyPoint();
+    _GetManipulationStrategyForEdit()._ResetDynamicKeyPoint();
     _AddKeyPoint(newKeyPoint);
     }
 
@@ -45,7 +45,7 @@ bvector<DPoint3d> GeometryPlacementStrategy::_GetKeyPoints() const
 //---------------+---------------+---------------+---------------+---------------+------
 void GeometryPlacementStrategy::_PopKeyPoint()
     {
-    _GetManipulationStrategyR().PopKeyPoint();
+    _GetManipulationStrategyForEdit().PopKeyPoint();
     }
 
 //--------------------------------------------------------------------------------------
@@ -53,7 +53,7 @@ void GeometryPlacementStrategy::_PopKeyPoint()
 //---------------+---------------+---------------+---------------+---------------+------
 void GeometryPlacementStrategy::PopKeyPoint()
     {
-    _GetManipulationStrategyR()._ResetDynamicKeyPoint();
+    _GetManipulationStrategyForEdit()._ResetDynamicKeyPoint();
     _PopKeyPoint();
     }
 
@@ -73,7 +73,7 @@ void GeometryPlacementStrategy::_AddDynamicKeyPoint
     DPoint3dCR newDynamicKeyPoint
 )
     {
-    _GetManipulationStrategyR().AppendDynamicKeyPoint(newDynamicKeyPoint);
+    _GetManipulationStrategyForEdit().AppendDynamicKeyPoint(newDynamicKeyPoint);
     }
 
 //--------------------------------------------------------------------------------------
@@ -84,7 +84,7 @@ void GeometryPlacementStrategy::_AddDynamicKeyPoints
     bvector<DPoint3d> const& newDynamicKeyPoints
 )
     {
-    _GetManipulationStrategyR().AppendDynamicKeyPoints(newDynamicKeyPoints);
+    _GetManipulationStrategyForEdit().AppendDynamicKeyPoints(newDynamicKeyPoints);
     }
 
 //--------------------------------------------------------------------------------------
@@ -95,7 +95,7 @@ void GeometryPlacementStrategy::AddDynamicKeyPoint
     DPoint3dCR newDynamicKeyPoint
 )
     {
-    _GetManipulationStrategyR()._ResetDynamicKeyPoint();
+    _GetManipulationStrategyForEdit()._ResetDynamicKeyPoint();
     _AddDynamicKeyPoint(newDynamicKeyPoint);
     }
 
@@ -107,7 +107,7 @@ void GeometryPlacementStrategy::AddDynamicKeyPoints
     bvector<DPoint3d> const& newDynamicKeyPoints
 )
     {
-    _GetManipulationStrategyR()._ResetDynamicKeyPoint();
+    _GetManipulationStrategyForEdit()._ResetDynamicKeyPoint();
     _AddDynamicKeyPoints(newDynamicKeyPoints);
     }
 
@@ -116,7 +116,7 @@ void GeometryPlacementStrategy::AddDynamicKeyPoints
 //---------------+---------------+---------------+---------------+---------------+------
 void GeometryPlacementStrategy::_ResetDynamicKeyPoint()
     {
-    _GetManipulationStrategyR().ResetDynamicKeyPoint();
+    _GetManipulationStrategyForEdit().ResetDynamicKeyPoint();
     }
 
 //--------------------------------------------------------------------------------------
@@ -146,7 +146,7 @@ bool GeometryPlacementStrategy::_CanAcceptMorePoints() const
 #define GMS_PROPERTY_OVERRIDE_IMPL(value_type) \
     void GeometryPlacementStrategy::_SetProperty(Utf8CP key, value_type const& value) \
         { \
-        _GetManipulationStrategyR().SetProperty(key, value); \
+        _GetManipulationStrategyForEdit().SetProperty(key, value); \
         } \
     BentleyStatus GeometryPlacementStrategy::_TryGetProperty(Utf8CP key, value_type& value) const \
         { \

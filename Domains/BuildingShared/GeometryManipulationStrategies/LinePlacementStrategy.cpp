@@ -166,7 +166,7 @@ void LinePointLengthAnglePlacementStrategy::UpdateEndPoint()
         {
         BeAssert(_GetKeyPoints().size() > 0 && "There should be at least 1 key point");
         if (!IsDynamicKeyPointSet())
-            GetLineManipulationStrategyR().ReplaceKeyPoint(endPoint, 1);
+            GetLineManipulationStrategyForEdit().ReplaceKeyPoint(endPoint, 1);
         else
             {
             DPoint3d firstPoint = _GetKeyPoints().front();
@@ -346,10 +346,10 @@ BentleyStatus LinePointsLengthPlacementStrategy::AdjustEndPoint()
     endPoint.Add(direction);
 
     if (!IsDynamicKeyPointSet())
-        GetLineManipulationStrategyR().ReplaceKeyPoint(endPoint, 1);
+        GetLineManipulationStrategyForEdit().ReplaceKeyPoint(endPoint, 1);
     else
         {
-        int dynamicCount = GetKeyPoints().size() - GetLineManipulationStrategyR().GetAcceptedKeyPoints().size();
+        int dynamicCount = GetKeyPoints().size() - GetLineManipulationStrategyForEdit().GetAcceptedKeyPoints().size();
         if (1 == dynamicCount)
             {
             T_Super::_AddDynamicKeyPoint(endPoint);
@@ -539,10 +539,10 @@ BentleyStatus LinePointsAnglePlacementStrategy::AdjustEndPoint()
     endPoint.Add(lineVec);
 
     if (!IsDynamicKeyPointSet())
-        GetLineManipulationStrategyR().ReplaceKeyPoint(endPoint, 1);
+        GetLineManipulationStrategyForEdit().ReplaceKeyPoint(endPoint, 1);
     else
         {
-        int dynamicCount = GetKeyPoints().size() - GetLineManipulationStrategyR().GetAcceptedKeyPoints().size();
+        int dynamicCount = GetKeyPoints().size() - GetLineManipulationStrategyForEdit().GetAcceptedKeyPoints().size();
         if (1 == dynamicCount)
             {
             T_Super::_AddDynamicKeyPoint(endPoint);

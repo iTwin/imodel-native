@@ -33,9 +33,9 @@ struct ArcPlacementStrategy : public CurvePrimitivePlacementStrategy
         DPoint3d CalculateVec90KeyPoint(DPoint3dCR endPoint) const;
 
         virtual GeometryManipulationStrategyCR _GetManipulationStrategy() const override { return *m_manipulationStrategy; }
-        virtual GeometryManipulationStrategyR _GetManipulationStrategyR() override { return *m_manipulationStrategy; }
+        virtual GeometryManipulationStrategyR _GetManipulationStrategyForEdit() override { return *m_manipulationStrategy; }
         ArcManipulationStrategyCR GetArcManipulationStrategy() const { return *m_manipulationStrategy; }
-        ArcManipulationStrategyR GetArcManipulationStrategyR() { return *m_manipulationStrategy; }
+        ArcManipulationStrategyR GetArcManipulationStrategyForEdit() { return *m_manipulationStrategy; }
 
     public:
         static constexpr Utf8CP prop_Normal() { return EllipseManipulationStrategy::prop_Normal(); }

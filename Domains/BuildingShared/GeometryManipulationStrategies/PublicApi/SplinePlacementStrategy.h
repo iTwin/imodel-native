@@ -32,9 +32,9 @@ struct SplineControlPointsPlacementStrategy : SplinePlacementStrategy
 
 
         virtual GeometryManipulationStrategyCR _GetManipulationStrategy() const override { return *m_manipulationStrategy; }
-        virtual GeometryManipulationStrategyR _GetManipulationStrategyR() override { return *m_manipulationStrategy; }
+        virtual GeometryManipulationStrategyR _GetManipulationStrategyForEdit() override { return *m_manipulationStrategy; }
         SplineControlPointsManipulationStrategyCR GetSplineControlPointsManipulationStrategy() const { return *m_manipulationStrategy; }
-        SplineControlPointsManipulationStrategyR GetSplineControlPointsManipulationStrategyR() { return *m_manipulationStrategy; }
+        SplineControlPointsManipulationStrategyR GetSplineControlPointsManipulationStrategyForEdit() { return *m_manipulationStrategy; }
 
         virtual void _SetProperty(Utf8CP key, const int & value) override;
         virtual BentleyStatus _TryGetProperty(Utf8CP key, int & value) const override;
@@ -64,9 +64,9 @@ struct SplineThroughPointsPlacementStrategy : SplinePlacementStrategy
         SplineThroughPointsPlacementStrategy(SplineThroughPointsManipulationStrategyR);
 
         virtual GeometryManipulationStrategyCR _GetManipulationStrategy() const override { return *m_manipulationStrategy; }
-        virtual GeometryManipulationStrategyR _GetManipulationStrategyR() override { return *m_manipulationStrategy; }
+        virtual GeometryManipulationStrategyR _GetManipulationStrategyForEdit() override { return *m_manipulationStrategy; }
         SplineThroughPointsManipulationStrategyCR GetSplineThroughPointsManipulationStrategy() const { return *m_manipulationStrategy; }
-        SplineThroughPointsManipulationStrategyR GetSplineThroughPointsManipulationStrategyR() { return *m_manipulationStrategy; }
+        SplineThroughPointsManipulationStrategyR GetSplineThroughPointsManipulationStrategyForEdit() { return *m_manipulationStrategy; }
 
         virtual void _SetStartTangent(DVec3d tangent);
         virtual void _RemoveStartTangent();

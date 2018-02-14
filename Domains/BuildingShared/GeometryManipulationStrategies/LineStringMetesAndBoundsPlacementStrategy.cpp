@@ -149,8 +149,8 @@ void LineStringMetesAndBoundsPlacementStrategy::_AddKeyPoint
     if (_IsComplete())
         return;
 
-    GetLineStringManipulationStrategyR().AppendKeyPoint(newKeyPoint);
-    GetLineStringManipulationStrategyR().AppendKeyPoints(CalculateKeyPoints());
+    GetLineStringManipulationStrategyForEdit().AppendKeyPoint(newKeyPoint);
+    GetLineStringManipulationStrategyForEdit().AppendKeyPoints(CalculateKeyPoints());
     }
 
 //--------------------------------------------------------------------------------------
@@ -167,7 +167,7 @@ void LineStringMetesAndBoundsPlacementStrategy::_OnPropertySet
 
         if (!_IsDynamicKeyPointSet())
             {
-            GetLineStringManipulationStrategyR().Clear();
+            GetLineStringManipulationStrategyForEdit().Clear();
             _AddKeyPoint(start);
             }
         else
@@ -190,9 +190,9 @@ void LineStringMetesAndBoundsPlacementStrategy::_AddDynamicKeyPoint
     if (_IsComplete())
         return;
 
-    GetLineStringManipulationStrategyR().AppendDynamicKeyPoint(newDynamicKeyPoint);
+    GetLineStringManipulationStrategyForEdit().AppendDynamicKeyPoint(newDynamicKeyPoint);
     bvector<DPoint3d> withCalculatedPoints {newDynamicKeyPoint};
     bvector<DPoint3d> calculatedPoints = CalculateKeyPoints();
     withCalculatedPoints.insert(withCalculatedPoints.end(), calculatedPoints.begin(), calculatedPoints.end());
-    GetLineStringManipulationStrategyR().AppendDynamicKeyPoints(withCalculatedPoints);
+    GetLineStringManipulationStrategyForEdit().AppendDynamicKeyPoints(withCalculatedPoints);
     }

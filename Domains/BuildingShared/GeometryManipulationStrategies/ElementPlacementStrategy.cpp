@@ -18,7 +18,7 @@ DgnElementPtr ElementPlacementStrategy::_FinishElement
     DgnModelR model
 )
     {
-    return _GetElementManipulationStrategyR().FinishElement(model);
+    return _GetElementManipulationStrategyForEdit().FinishElement(model);
     }
 
 //--------------------------------------------------------------------------------------
@@ -65,7 +65,7 @@ bool ElementPlacementStrategy::_IsDynamicKeyPointSet() const
 //---------------+---------------+---------------+---------------+---------------+------
 void ElementPlacementStrategy::_AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint)
     {
-    GeometryPlacementStrategyPtr strategy = _TryGetGeometryPlacementStrategyP();
+    GeometryPlacementStrategyPtr strategy = _TryGetGeometryPlacementStrategyForEdit();
     if (strategy.IsNull())
         {
         BeAssert(false && "Invalid geometry placement strategy");
@@ -80,7 +80,7 @@ void ElementPlacementStrategy::_AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint
 //---------------+---------------+---------------+---------------+---------------+------
 void ElementPlacementStrategy::_AddDynamicKeyPoints(bvector<DPoint3d> const & newDynamicKeyPoints)
     {
-    GeometryPlacementStrategyPtr strategy = _TryGetGeometryPlacementStrategyP();
+    GeometryPlacementStrategyPtr strategy = _TryGetGeometryPlacementStrategyForEdit();
     if (strategy.IsNull())
         {
         BeAssert(false && "Invalid geometry placement strategy");
@@ -95,7 +95,7 @@ void ElementPlacementStrategy::_AddDynamicKeyPoints(bvector<DPoint3d> const & ne
 //---------------+---------------+---------------+---------------+---------------+------
 void ElementPlacementStrategy::_ResetDynamicKeyPoint()
     {
-    GeometryPlacementStrategyPtr strategy = _TryGetGeometryPlacementStrategyP();
+    GeometryPlacementStrategyPtr strategy = _TryGetGeometryPlacementStrategyForEdit();
     if (strategy.IsNull())
         {
         BeAssert(false && "Invalid geometry placement strategy");
@@ -110,7 +110,7 @@ void ElementPlacementStrategy::_ResetDynamicKeyPoint()
 //---------------+---------------+---------------+---------------+---------------+------
 void ElementPlacementStrategy::_AddKeyPoint(DPoint3dCR newKeyPoint)
     {
-    GeometryPlacementStrategyPtr strategy = _TryGetGeometryPlacementStrategyP();
+    GeometryPlacementStrategyPtr strategy = _TryGetGeometryPlacementStrategyForEdit();
     if (strategy.IsNull())
         {
         BeAssert(false && "Invalid geometry placement strategy");
@@ -124,7 +124,7 @@ void ElementPlacementStrategy::_AddKeyPoint(DPoint3dCR newKeyPoint)
 //---------------+---------------+---------------+---------------+---------------+------
 void ElementPlacementStrategy::_PopKeyPoint()
     {
-    GeometryPlacementStrategyPtr strategy = _TryGetGeometryPlacementStrategyP();
+    GeometryPlacementStrategyPtr strategy = _TryGetGeometryPlacementStrategyForEdit();
     if (strategy.IsNull())
         {
         BeAssert(false && "Invalid geometry placement strategy");
@@ -164,8 +164,8 @@ bool ElementPlacementStrategy::_CanAcceptMorePoints() const
 #define EPS_PROPERTY_OVERRIDE_IMPL(value_type)                                                          \
     void ElementPlacementStrategy::_SetProperty(Utf8CP key, value_type const& value)                    \
         {                                                                                               \
-        _GetManipulationStrategyR().SetProperty(key, value);                                            \
-        GeometryPlacementStrategyPtr strategy = _TryGetGeometryPlacementStrategyP();                    \
+        _GetManipulationStrategyForEdit().SetProperty(key, value);                                            \
+        GeometryPlacementStrategyPtr strategy = _TryGetGeometryPlacementStrategyForEdit();                    \
         if (strategy.IsValid())                                                                         \
             {                                                                                           \
             strategy->SetProperty(key, value);                                                          \

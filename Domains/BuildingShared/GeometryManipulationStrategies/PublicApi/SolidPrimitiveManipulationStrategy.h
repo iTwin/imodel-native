@@ -47,7 +47,7 @@ struct SolidPrimitiveManipulationStrategy : public GeometryManipulationStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _Clear() override;
 
         virtual GeometryManipulationStrategyCR _GetBaseShapeManipulationStrategy() const = 0;
-        virtual GeometryManipulationStrategyR _GetBaseShapeManipulationStrategyR() = 0;
+        virtual GeometryManipulationStrategyR _GetBaseShapeManipulationStrategyForEdit() = 0;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsBaseComplete() const;
         virtual void _SetBaseComplete(bool value) {}
