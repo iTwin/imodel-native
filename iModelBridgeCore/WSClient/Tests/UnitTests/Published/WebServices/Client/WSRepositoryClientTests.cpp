@@ -1692,6 +1692,59 @@ TEST_F(WSRepositoryClientTests, SendChangesetRequest_WebApiV21AndReceives200_Suc
     EXPECT_EQ("TestChangesetResponse", result.GetValue()->AsString());
     }
 
+
+TEST_F(WSRepositoryClientTests, SendChangesetRequest_RequestOptionsNotIncluded_RequestTimeOutsAreDefaults)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi21());
+    GetHandler().ForRequest(2, [=](HttpRequestCR request)
+        {
+        EXPECT_EQ(IWSRepositoryClient::Timeout::Connection::Default, request.GetConnectionTimeoutSeconds());
+        EXPECT_EQ(IWSRepositoryClient::Timeout::Transfer::GetObject, request.GetTransferTimeoutSeconds());
+        return StubHttpResponse();
+        });
+
+    client->SendChangesetRequest(HttpStringBody::Create(""), nullptr, nullptr)->Wait();
+    }
+
+TEST_F(WSRepositoryClientTests, SendChangesetRequest_TransferTimeOutSetViaRequestOptions_RequestTrasferTimeOutIsSet)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi21());
+    GetHandler().ForRequest(2, [=](HttpRequestCR request)
+        {
+        EXPECT_EQ(IWSRepositoryClient::Timeout::Connection::Default, request.GetConnectionTimeoutSeconds());
+        EXPECT_EQ(1111, request.GetTransferTimeoutSeconds());
+        return StubHttpResponse();
+        });
+
+    auto options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->SetTransferTimeOut(1111);
+    client->SendChangesetRequestWithOptions(HttpStringBody::Create(""), nullptr, options, nullptr)->Wait();
+    }
+
+TEST_F(WSRepositoryClientTests, SendChangesetRequest_TransferTimeOutSetViaDefaultRequestOptions_RequestTrasferTimeOutIsSet)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    auto options = std::make_shared<WSRepositoryClient::RequestOptions>();
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi21());
+    GetHandler().ForRequest(2, [=](HttpRequestCR request)
+        {
+        EXPECT_EQ(IWSRepositoryClient::Timeout::Connection::Default, request.GetConnectionTimeoutSeconds());
+        EXPECT_EQ(options->GetTransferTimeOut(), request.GetTransferTimeoutSeconds());
+        EXPECT_EQ(IWSRepositoryClient::Timeout::Transfer::Default, options->GetTransferTimeOut());
+        return StubHttpResponse();
+        });
+
+    client->SendChangesetRequestWithOptions(HttpStringBody::Create(""), nullptr, options, nullptr)->Wait();
+    }
+
 TEST_F(WSRepositoryClientTests, SendChangesetRequest_EnableJobsWebApiV2JobSucceedsResponseSucceeds_SuccessAndReturnsBody)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());

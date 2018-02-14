@@ -34,7 +34,8 @@ m_url(url),
 m_handshakeBody(nullptr),
 m_mainBody(nullptr),
 
-m_chunkSizeBytes(ChunkedUploadRequest::DefaultChunkSize)
+m_chunkSizeBytes(ChunkedUploadRequest::DefaultChunkSize),
+m_uploadTransferTime(WSRepositoryClient::Timeout::Transfer::Upload)
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -101,6 +102,22 @@ void ChunkedUploadRequest::AddLastRequestHeadersTo(HttpRequestR request)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    julius.cepukenas 01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+void ChunkedUploadRequest::SetUploadTransferTime(uint32_t time)
+    {
+    m_uploadTransferTime = time;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas 01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t ChunkedUploadRequest::GetUploadTransferTime()
+    {
+    return m_uploadTransferTime;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas 01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 HttpRequestHeadersR ChunkedUploadRequest::GetLastRequestHeaders()
     {
     return m_lastRequestHeaders;
@@ -156,7 +173,7 @@ AsyncTaskPtr<void> ChunkedUploadRequest::SendHandshakeAndContinue(std::shared_pt
     HttpRequest request = cuRequest->m_handshakeRequest;
 
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
-    request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::Upload);
+    request.SetTransferTimeoutSeconds(cuRequest->GetUploadTransferTime());
 
     // Setup Query/Handshake request
     if (!cuRequest->m_mainBody.IsNull())
@@ -280,7 +297,7 @@ void ChunkedUploadRequest::SendChunkAndContinue(std::shared_ptr<ChunkedUploadReq
     else
         {
         request.SetRetryOptions(HttpRequest::RetryOption::ResetTransfer, 0);
-        request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::Upload);
+        request.SetTransferTimeoutSeconds(cuRequest->GetUploadTransferTime());
         }
 
     LOG.debugv("ChunkedUpload::SendChunk %s", cuRequest->m_etag.c_str());

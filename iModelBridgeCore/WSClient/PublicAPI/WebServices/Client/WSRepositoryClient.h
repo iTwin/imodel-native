@@ -64,6 +64,25 @@ struct IWSRepositoryClient
         WSCLIENT_EXPORT static const Utf8String InitialSkipToken;
 
     public:
+        struct Timeout
+            {
+            struct Connection
+                {
+                WSCLIENT_EXPORT static const uint32_t Default;
+                };
+            struct Transfer
+                {
+                WSCLIENT_EXPORT static const uint32_t GetObject;
+                WSCLIENT_EXPORT static const uint32_t GetObjects;
+                WSCLIENT_EXPORT static const uint32_t FileDownload;
+                WSCLIENT_EXPORT static const uint32_t Upload;
+                WSCLIENT_EXPORT static const uint32_t Default;
+                WSCLIENT_EXPORT static const uint32_t LongUpload;
+                WSCLIENT_EXPORT static const uint32_t UploadProcessing;
+                };
+            };
+
+    public:
         WSCLIENT_EXPORT virtual ~IWSRepositoryClient();
 
         virtual IWSClientPtr GetWSClient() const = 0;
@@ -332,11 +351,15 @@ struct IWSSchemaProvider
 struct IWSRepositoryClient::RequestOptions
     {
     private:
+        uint32_t m_transferTimeOut;
         JobOptionsPtr m_jobOptions;
 
     public:
-        WSCLIENT_EXPORT RequestOptions() {m_jobOptions = std::make_shared<JobOptions>(); };
-        virtual ~RequestOptions() {}
+        WSCLIENT_EXPORT RequestOptions();
+        virtual ~RequestOptions() {};
+
+        void SetTransferTimeOut(uint32_t timeOut) {m_transferTimeOut = timeOut;}
+        uint32_t GetTransferTimeOut() const {return m_transferTimeOut;}
 
         //! Retrieve options required for WSG asynchronous job operations
         //! Jobs API can be enabled through these options
@@ -402,22 +425,6 @@ struct WSRepositoryClient : public IWSRepositoryClient
         static Utf8String UrlDecode(Utf8String url);
 
     public:
-        struct Timeout
-            {
-            struct Connection
-                {
-                static const uint32_t Default;
-                };
-            struct Transfer
-                {
-                static const uint32_t GetObject;
-                static const uint32_t GetObjects;
-                static const uint32_t FileDownload;
-                static const uint32_t Upload;
-                static const uint32_t UploadProcessing;
-                };
-            };
-
         //! @param[in] serverUrl - address to supported server/site
         //! @param[in] repositoryId - repository identifier
         //! @param[in] clientInfo - client infomation for licensing and other information
