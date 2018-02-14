@@ -212,7 +212,7 @@ TEST_F(SchemaCopyTest, CopySchemaWithReferencesCopiedThroughBaseClassOrRelations
     EC_ASSERT_SUCCESS(m_sourceSchema->CreateEnumeration(enumeration, "Enumeration", PrimitiveType::PRIMITIVETYPE_Integer));
     ASSERT_TRUE(enumeration != nullptr);
     enumeration->SetIsStrict(false);
-    enumeration->CreateEnumerator(enumeratorA, 42);
+    enumeration->CreateEnumerator(enumeratorA, "enumeratorA", 42);
 
     EC_ASSERT_SUCCESS(m_sourceSchema->CreateEntityClass(entityClass, "Banana"));
     EC_ASSERT_SUCCESS(entityClass->CreatePrimitiveProperty(enumProp, "Silly", PrimitiveType::PRIMITIVETYPE_Integer));
@@ -291,9 +291,9 @@ TEST_F(SchemaCopyTest, CopySchemaWithIntEnumeration)
     enumeration->SetDisplayLabel("My Display Label");
     enumeration->SetDescription("Test Description");
     enumeration->SetIsStrict(true);
-    enumeration->CreateEnumerator(enumeratorA, 42);
+    enumeration->CreateEnumerator(enumeratorA, "enumeratorA", 42);
     enumeratorA->SetDisplayLabel("The value for 42");
-    enumeration->CreateEnumerator(enumeratorB, 56);
+    enumeration->CreateEnumerator(enumeratorB, "enumeratorB", 56);
     enumeratorB->SetDisplayLabel("The value for 56");
 
     CopySchema();
