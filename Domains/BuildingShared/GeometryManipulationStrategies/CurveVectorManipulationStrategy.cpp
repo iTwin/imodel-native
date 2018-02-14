@@ -157,6 +157,12 @@ bvector<DPoint3d> CurveVectorManipulationStrategy::_GetKeyPoints() const
     for (CurvePrimitiveManipulationStrategyPtr const& strategy : m_primitiveStrategies)
         {
         bvector<DPoint3d> const& strategyKeyPoints = strategy->GetKeyPoints();
+        if (strategyKeyPoints.empty())
+            continue;
+
+        if (!allKeyPoints.empty() && allKeyPoints.back().AlmostEqual(strategyKeyPoints.front()))
+            allKeyPoints.pop_back();
+
         allKeyPoints.insert(allKeyPoints.end(), strategyKeyPoints.begin(), strategyKeyPoints.end());
         }
 
@@ -520,7 +526,64 @@ BentleyStatus CurveVectorManipulationStrategy::_TryGetProperty
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                01/2018
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bvector<CurveVectorManipulationStrategy::PrimitiveStrategyWithKeyPointIndexRange> CurveVectorManipulationStrategy::GetPrimitiveStrategies
+(
+    size_t index
+) const
+    {
+    bvector<PrimitiveStrategyWithKeyPointIndexRange> primitiveStrategies;
+
+    size_t currentPrimitiveBeginIndex = 0;
+    DPoint3d lastPrimitiveKeyPoint;
+    for (CurvePrimitiveManipulationStrategyPtr const& primitiveStrategy : m_primitiveStrategies)
+        {
+        bvector<DPoint3d> const& keyPoints = primitiveStrategy->GetKeyPoints();
+        if (keyPoints.empty())
+            continue;
+
+        if (currentPrimitiveBeginIndex > 0 && !lastPrimitiveKeyPoint.AlmostEqual(keyPoints.front()))
+            ++currentPrimitiveBeginIndex;
+
+        size_t currentPrimitiveEndIndex = currentPrimitiveBeginIndex + keyPoints.size() - 1;
+        
+        if (index >= currentPrimitiveBeginIndex && index <= currentPrimitiveEndIndex)
+            primitiveStrategies.push_back({primitiveStrategy, {currentPrimitiveBeginIndex, currentPrimitiveEndIndex}});
+
+        lastPrimitiveKeyPoint = keyPoints.back();
+        currentPrimitiveBeginIndex = currentPrimitiveEndIndex;
+        }
+
+    return primitiveStrategies;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+template <typename T> void CurveVectorManipulationStrategy::UpdateKeyPoint
+(
+    size_t index,
+    T updateFn
+)
+    {
+    bvector<PrimitiveStrategyWithKeyPointIndexRange> primitiveStrategies = GetPrimitiveStrategies(index);
+    for (PrimitiveStrategyWithKeyPointIndexRange const& strategyWithRange : primitiveStrategies)
+        {
+        PrimitiveStrategyKeyPointIndexRange indexRange = strategyWithRange.second;
+        if (!(index >= indexRange.first && index <= indexRange.second))
+            {
+            BeAssert(false && "Bad KeyPoint index range");
+            _ResetDynamicKeyPoint();
+            return;
+            }
+
+        updateFn(strategyWithRange, index - strategyWithRange.second.first);
+        }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
 //---------------+---------------+---------------+---------------+---------------+------
 void CurveVectorManipulationStrategy::_UpdateDynamicKeyPoint
 (
@@ -528,23 +591,14 @@ void CurveVectorManipulationStrategy::_UpdateDynamicKeyPoint
     size_t index
 )
     {
-    size_t primitiveBeginIndex = 0;
-    for (CurvePrimitiveManipulationStrategyPtr const& primitiveStrategy : m_primitiveStrategies)
+    UpdateKeyPoint(index, [&] (PrimitiveStrategyWithKeyPointIndexRange const& strategyWithRange, size_t indexInPrimitive)
         {
-        bvector<DPoint3d> const& keyPoints = primitiveStrategy->GetKeyPoints();
-        size_t nextPrimitiveBeginIndex = primitiveBeginIndex + keyPoints.size();
-
-        if (index >= primitiveBeginIndex && index < nextPrimitiveBeginIndex)
-            {
-            size_t indexInPrimitive = index - primitiveBeginIndex;
-            primitiveStrategy->UpdateDynamicKeyPoint(AdjustKeyPoint(newDynamicKeyPoint), indexInPrimitive);
-            return;
-            }
-        }
+        strategyWithRange.first->UpdateDynamicKeyPoint(newDynamicKeyPoint, indexInPrimitive);
+        });
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                01/2018
+// @bsimethod                                    Mindaugas.Butkus                02/2018
 //---------------+---------------+---------------+---------------+---------------+------
 void CurveVectorManipulationStrategy::_ReplaceKeyPoint
 (
@@ -552,19 +606,10 @@ void CurveVectorManipulationStrategy::_ReplaceKeyPoint
     size_t index
 )
     {
-    size_t primitiveBeginIndex = 0;
-    for (CurvePrimitiveManipulationStrategyPtr const& primitiveStrategy : m_primitiveStrategies)
+    UpdateKeyPoint(index, [&] (PrimitiveStrategyWithKeyPointIndexRange const& strategyWithRange, size_t indexInPrimitive)
         {
-        bvector<DPoint3d> const& keyPoints = primitiveStrategy->GetKeyPoints();
-        size_t nextPrimitiveBeginIndex = primitiveBeginIndex + keyPoints.size();
-
-        if (index >= primitiveBeginIndex && index < nextPrimitiveBeginIndex)
-            {
-            size_t indexInPrimitive = index - primitiveBeginIndex;
-            primitiveStrategy->ReplaceKeyPoint(AdjustKeyPoint(newKeyPoint), indexInPrimitive);
-            return;
-            }
-        }
+        strategyWithRange.first->ReplaceKeyPoint(newKeyPoint, indexInPrimitive);
+        });
     }
 
 #define GMS_PROPERTY_OVERRIDE_IMPL(value_type) \

@@ -48,6 +48,12 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
         bool IsLastStrategyReadyForPop() const;
         void ConnectStartEnd(CurveVectorR cv) const;
 
+        template <typename T> void UpdateKeyPoint(size_t index, T updateFn);
+
+        typedef bpair<size_t, size_t> PrimitiveStrategyKeyPointIndexRange;
+        typedef bpair<CurvePrimitiveManipulationStrategyPtr, PrimitiveStrategyKeyPointIndexRange> PrimitiveStrategyWithKeyPointIndexRange;
+        bvector<PrimitiveStrategyWithKeyPointIndexRange> GetPrimitiveStrategies(size_t index) const;
+
         friend struct CurveVectorPlacementStrategy;
     protected:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurveVectorManipulationStrategy();
