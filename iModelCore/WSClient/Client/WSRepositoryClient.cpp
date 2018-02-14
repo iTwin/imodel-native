@@ -15,13 +15,23 @@ using namespace std::placeholders;
 
 const Utf8String IWSRepositoryClient::InitialSkipToken = "0";
 
-const uint32_t WSRepositoryClient::Timeout::Connection::Default = 30;
+const uint32_t IWSRepositoryClient::Timeout::Connection::Default = 30;
 
-const uint32_t WSRepositoryClient::Timeout::Transfer::GetObject = 30;
-const uint32_t WSRepositoryClient::Timeout::Transfer::GetObjects = 120; // Some repositories take a lot of time to create many full ECInstances
-const uint32_t WSRepositoryClient::Timeout::Transfer::FileDownload = 30;
-const uint32_t WSRepositoryClient::Timeout::Transfer::Upload = 30;
-const uint32_t WSRepositoryClient::Timeout::Transfer::UploadProcessing = 300; // Longer timeout for server file processing to finish
+const uint32_t IWSRepositoryClient::Timeout::Transfer::GetObject = 30;
+const uint32_t IWSRepositoryClient::Timeout::Transfer::GetObjects = 120; // Some repositories take a lot of time to create many full ECInstances
+const uint32_t IWSRepositoryClient::Timeout::Transfer::FileDownload = 30;
+const uint32_t IWSRepositoryClient::Timeout::Transfer::Upload = 30;
+const uint32_t IWSRepositoryClient::Timeout::Transfer::Default = 60;
+const uint32_t IWSRepositoryClient::Timeout::Transfer::LongUpload = 120;
+const uint32_t IWSRepositoryClient::Timeout::Transfer::UploadProcessing = 300; // Longer timeout for server file processing to finish
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas 12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+IWSRepositoryClient::RequestOptions::RequestOptions() : m_transferTimeOut(IWSRepositoryClient::Timeout::Transfer::Default) 
+    {
+    m_jobOptions = std::make_shared<JobOptions>();
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
