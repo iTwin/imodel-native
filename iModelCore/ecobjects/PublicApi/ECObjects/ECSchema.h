@@ -3378,7 +3378,7 @@ public:
 
     PhenomenonContainerCR GetPhenomena() const {return m_phenomenonContainer;} //!< Returns an iterable container of Phenomena sorted by name.
     uint32_t GetPhenomenonCount() const {return (uint32_t)m_phenomenonMap.size();} //!< Gets the number of Phenomena in the schema.
-    ECObjectsStatus DeletePhenomenon(PhenomenonR phenomenon); //!< Removes a Phenomenon from this schema.
+    ECOBJECTS_EXPORT ECObjectsStatus DeletePhenomenon(PhenomenonR phenomenon); //!< Removes a Phenomenon from this schema.
 
     //! Indicates whether this schema is a so-called @b dynamic schema by
     //! checking whether the @b DynamicSchema custom attribute from the standard schema @b CoreCustomAttributes

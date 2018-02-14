@@ -333,9 +333,8 @@ ECSchema::~ECSchema ()
         //    }
 
         // Remove from the registry before removing from ECSchema
-        auto returnedPhenom = Units::UnitRegistry::Instance().RemovePhenomenon(entry.first);
+        auto returnedPhenom = Units::UnitRegistry::Instance().RemovePhenomenon(entry.second->GetFullName().c_str());
         BeAssert(nullptr != returnedPhenom);
-
         // This should be the same pointer as the UnitRegistry has, so it should not matter which one is deleted.
         BeAssert(returnedPhenom == entry.second);
         if (returnedPhenom == entry.second)
@@ -1121,8 +1120,8 @@ ECObjectsStatus ECSchema::CreateUnitSystem(UnitSystemP& system, Utf8CP name, Utf
 ECObjectsStatus ECSchema::CreatePhenomenon(PhenomenonP& phenomenon, Utf8CP name, Utf8CP definition, Utf8CP displayLabel, Utf8CP description)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
-
-    phenomenon = Units::UnitRegistry::Instance().AddPhenomenon<Phenomenon>(name, definition);
+    Utf8String fullName = GetName() + ":" + name;
+    phenomenon = Units::UnitRegistry::Instance().AddPhenomenon<Phenomenon>(fullName.c_str(), definition);
     if (nullptr == phenomenon)
         return ECObjectsStatus::Error;
 
@@ -1209,7 +1208,7 @@ ECObjectsStatus ECSchema::DeleteUnitSystem(UnitSystemR unitSystem)
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    02/2018
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
 //--------------------------------------------------------------------------------------
 ECObjectsStatus ECSchema::DeletePhenomenon(PhenomenonR phenom)
     {
@@ -1222,7 +1221,7 @@ ECObjectsStatus ECSchema::DeletePhenomenon(PhenomenonR phenom)
     //    return ECObjectsStatus::Error;
     //    }
 
-    auto returnedPhenom = Units::UnitRegistry::Instance().RemovePhenomenon(phenom.GetName().c_str());
+    auto returnedPhenom = Units::UnitRegistry::Instance().RemovePhenomenon(phenom.GetFullName().c_str());
     BeAssert(nullptr != returnedPhenom);
     BeAssert(&phenom == returnedPhenom);
 
