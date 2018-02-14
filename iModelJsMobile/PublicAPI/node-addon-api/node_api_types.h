@@ -3,6 +3,11 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <Bentley/BentleyConfig.h>
+
+#if defined(BENTLEYCONFIG_OS_APPLE_IOS) || defined(BENTLEYCONFIG_OS_APPLE_MACOS)
+#include <JavaScriptCore/JavaScriptCore.h>
+#endif
 
 #if !defined __cplusplus || (defined(_MSC_VER) && _MSC_VER < 1900)
     typedef uint16_t char16_t;
@@ -11,7 +16,11 @@
 // JSVM API types are all opaque pointers for ABI stability
 // typedef undefined structs instead of void* for compile time type safety
 typedef struct napi_env__ *napi_env;
+#if defined(BENTLEYCONFIG_OS_APPLE_IOS) || defined(BENTLEYCONFIG_OS_APPLE_MACOS)
+typedef JSValueRef napi_value;
+#else
 typedef struct napi_value__ *napi_value;
+#endif
 typedef struct napi_ref__ *napi_ref;
 typedef struct napi_handle_scope__ *napi_handle_scope;
 typedef struct napi_escapable_handle_scope__ *napi_escapable_handle_scope;

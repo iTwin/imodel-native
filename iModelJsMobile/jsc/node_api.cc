@@ -15,7 +15,6 @@
 
 #define NAPI_VERSION  1
 
-
 #define RETURN_STATUS_IF_FALSE(env, condition, status)                  \
   do {                                                                  \
     if (!(condition)) {                                                 \
@@ -59,39 +58,103 @@ struct napi_env__ {
   napi_extended_error_info last_error;
 };
 
+static
+const char* error_messages[] = {nullptr,
+                                "Invalid argument",
+                                "An object was expected",
+                                "A string was expected",
+                                "A string or symbol was expected",
+                                "A function was expected",
+                                "A number was expected",
+                                "A boolean was expected",
+                                "An array was expected",
+                                "Unknown failure",
+                                "An exception is pending",
+                                "The async work item was cancelled",
+                                "napi_escape_handle already called on scope"};
 
-napi_status napi_set_last_error(napi_env env, napi_status error_code,
-                                uint32_t engine_error_code,
-                                void* engine_reserved)
-{
-  return error_code;
-}
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Satyakam.Khadilkar    02/2018
+//---------------------------------------------------------------------------------------
+napi_status napi_clear_last_error(napi_env env) {
+  env->last_error.error_code = napi_ok;
 
-napi_status napi_clear_last_error(napi_env env)
-{
+  // TODO(boingoing): Should this be a callback?
+  env->last_error.engine_error_code = 0;
+  env->last_error.engine_reserved = nullptr;
   return napi_ok;
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Satyakam.Khadilkar    02/2018
+//---------------------------------------------------------------------------------------
+napi_status napi_set_last_error(napi_env env, napi_status error_code,
+                                uint32_t engine_error_code,
+                                void* engine_reserved) {
+  env->last_error.error_code = error_code;
+  env->last_error.engine_error_code = engine_error_code;
+  env->last_error.engine_reserved = engine_reserved;
+  return error_code;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Satyakam.Khadilkar    02/2018
+//---------------------------------------------------------------------------------------
+napi_status napi_get_last_error_info(napi_env env,
+                                     const napi_extended_error_info** result) {
+  CHECK_ENV(env);
+  CHECK_ARG(env, result);
+
+  // you must update this assert to reference the last message
+  // in the napi_status enum each time a new error message is added.
+  // We don't have a napi_status_last as this would result in an ABI
+  // change each time a message was added.
+  static_assert(
+      node::arraysize(error_messages) == napi_escape_called_twice + 1,
+      "Count of error messages must match count of error values");
+  CHECK_LE(env->last_error.error_code, napi_escape_called_twice);
+
+  // Wait until someone requests the last error information to fetch the error
+  // message string
+  env->last_error.error_message =
+      error_messages[env->last_error.error_code];
+
+  *result = &(env->last_error);
+  return napi_ok;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Satyakam.Khadilkar    02/2018
+//---------------------------------------------------------------------------------------
 NAPI_NO_RETURN void napi_fatal_error(const char* location,
                                      size_t location_len,
                                      const char* message,
-                                     size_t message_len)
-{
+                                     size_t message_len) {
   std::string location_string;
   std::string message_string;
+
+  if (location_len != NAPI_AUTO_LENGTH) {
+    location_string.assign(
+        const_cast<char*>(location), location_len);
+  } else {
+    location_string.assign(
+        const_cast<char*>(location), strlen(location));
+  }
+
+  if (message_len != NAPI_AUTO_LENGTH) {
+    message_string.assign(
+        const_cast<char*>(message), message_len);
+  } else {
+    message_string.assign(
+        const_cast<char*>(message), strlen(message));
+  }
 
   node::FatalError(location_string.c_str(), message_string.c_str());
 }
 
-napi_status napi_get_last_error_info(napi_env env,
-                                     const napi_extended_error_info** result)
-{
-  CHECK_ENV(env);
-  CHECK_ARG(env, result);
-
-  return napi_ok;
-}
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Satyakam.Khadilkar    02/2018
+//---------------------------------------------------------------------------------------
 napi_status napi_create_function(napi_env env,
                                  const char* utf8name,
                                  size_t length,
@@ -102,11 +165,12 @@ napi_status napi_create_function(napi_env env,
   CHECK_ARG(env, result);
   CHECK_ARG(env, cb);
 
-
-
   return GET_RETURN_STATUS(env);
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Satyakam.Khadilkar    02/2018
+//---------------------------------------------------------------------------------------
 napi_status napi_define_class(napi_env env,
                               const char* utf8name,
                               size_t length,
@@ -123,6 +187,9 @@ napi_status napi_define_class(napi_env env,
   return GET_RETURN_STATUS(env);
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Satyakam.Khadilkar    02/2018
+//---------------------------------------------------------------------------------------
 napi_status napi_get_property_names(napi_env env,
                                     napi_value object,
                                     napi_value* result) {
@@ -133,6 +200,9 @@ napi_status napi_get_property_names(napi_env env,
   return GET_RETURN_STATUS(env);
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Satyakam.Khadilkar    02/2018
+//---------------------------------------------------------------------------------------
 napi_status napi_set_property(napi_env env,
                               napi_value object,
                               napi_value key,
@@ -141,10 +211,17 @@ napi_status napi_set_property(napi_env env,
   CHECK_ARG(env, key);
   CHECK_ARG(env, value);
 
+  JSContextRef ctx = env->m_jscContext;
+  JSStringRef keyString = JSValueToStringCopy (ctx, key, NULL);
+  JSObjectRef objectObject = JSValueToObject (ctx, object, NULL);
+  JSObjectSetProperty (ctx, objectObject, keyString, value, kJSPropertyAttributeNone, NULL);
 
   return GET_RETURN_STATUS(env);
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Satyakam.Khadilkar    02/2018
+//---------------------------------------------------------------------------------------
 napi_status napi_has_property(napi_env env,
                               napi_value object,
                               napi_value key,
@@ -153,10 +230,17 @@ napi_status napi_has_property(napi_env env,
   CHECK_ARG(env, result);
   CHECK_ARG(env, key);
 
+  JSContextRef ctx = env->m_jscContext;
+  JSStringRef keyString = JSValueToStringCopy (ctx, key, NULL);
+  JSObjectRef objectObject = JSValueToObject (ctx, object, NULL);
+  *result = JSObjectHasProperty(ctx, objectObject, keyString);
 
   return GET_RETURN_STATUS(env);
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Satyakam.Khadilkar    02/2018
+//---------------------------------------------------------------------------------------
 napi_status napi_get_property(napi_env env,
                               napi_value object,
                               napi_value key,
@@ -165,10 +249,17 @@ napi_status napi_get_property(napi_env env,
   CHECK_ARG(env, key);
   CHECK_ARG(env, result);
 
+  JSContextRef ctx = env->m_jscContext;
+  JSStringRef keyString = JSValueToStringCopy (ctx, key, NULL);
+  JSObjectRef objectObject = JSValueToObject (ctx, object, NULL);
+  *result = JSObjectGetProperty(ctx, objectObject, keyString, NULL);
 
   return GET_RETURN_STATUS(env);
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Satyakam.Khadilkar    02/2018
+//---------------------------------------------------------------------------------------
 napi_status napi_delete_property(napi_env env,
                                  napi_value object,
                                  napi_value key,
@@ -176,11 +267,17 @@ napi_status napi_delete_property(napi_env env,
   NAPI_PREAMBLE(env);
   CHECK_ARG(env, key);
 
-
+  JSContextRef ctx = env->m_jscContext;
+  JSStringRef keyString = JSValueToStringCopy (ctx, key, NULL);
+  JSObjectRef objectObject = JSValueToObject (ctx, object, NULL);
+  *result = JSObjectDeleteProperty(ctx, objectObject, keyString, NULL);
 
   return GET_RETURN_STATUS(env);
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Satyakam.Khadilkar    02/2018
+//---------------------------------------------------------------------------------------
 napi_status napi_has_own_property(napi_env env,
                                   napi_value object,
                                   napi_value key,
@@ -193,6 +290,9 @@ napi_status napi_has_own_property(napi_env env,
   return GET_RETURN_STATUS(env);
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Satyakam.Khadilkar    02/2018
+//---------------------------------------------------------------------------------------
 napi_status napi_set_named_property(napi_env env,
                                     napi_value object,
                                     const char* utf8name,
@@ -200,9 +300,17 @@ napi_status napi_set_named_property(napi_env env,
   NAPI_PREAMBLE(env);
   CHECK_ARG(env, value);
 
+  JSContextRef ctx = env->m_jscContext;
+  JSStringRef keyString = JSStringCreateWithUTF8CString (utf8name);
+  JSObjectRef objectObject = JSValueToObject (ctx, object, NULL);
+  JSObjectSetProperty (ctx, objectObject, keyString, value, kJSPropertyAttributeNone, NULL);
+
   return GET_RETURN_STATUS(env);
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Satyakam.Khadilkar    02/2018
+//---------------------------------------------------------------------------------------
 napi_status napi_has_named_property(napi_env env,
                                     napi_value object,
                                     const char* utf8name,
@@ -210,10 +318,17 @@ napi_status napi_has_named_property(napi_env env,
   NAPI_PREAMBLE(env);
   CHECK_ARG(env, result);
 
+  JSContextRef ctx = env->m_jscContext;
+  JSStringRef keyString = JSStringCreateWithUTF8CString (utf8name);
+  JSObjectRef objectObject = JSValueToObject (ctx, object, NULL);
+  *result = JSObjectHasProperty(ctx, objectObject, keyString);
 
   return GET_RETURN_STATUS(env);
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Satyakam.Khadilkar    02/2018
+//---------------------------------------------------------------------------------------
 napi_status napi_get_named_property(napi_env env,
                                     napi_value object,
                                     const char* utf8name,
@@ -221,9 +336,17 @@ napi_status napi_get_named_property(napi_env env,
   NAPI_PREAMBLE(env);
   CHECK_ARG(env, result);
 
+  JSContextRef ctx = env->m_jscContext;
+  JSStringRef keyString = JSStringCreateWithUTF8CString (utf8name);
+  JSObjectRef objectObject = JSValueToObject (ctx, object, NULL);
+  *result = JSObjectGetProperty(ctx, objectObject, keyString, NULL);
+
   return GET_RETURN_STATUS(env);
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Satyakam.Khadilkar    02/2018
+//---------------------------------------------------------------------------------------
 napi_status napi_set_element(napi_env env,
                              napi_value object,
                              uint32_t index,
@@ -231,9 +354,16 @@ napi_status napi_set_element(napi_env env,
   NAPI_PREAMBLE(env);
   CHECK_ARG(env, value);
 
+  JSContextRef ctx = env->m_jscContext;
+  JSObjectRef objectObject = JSValueToObject (ctx, object, NULL);
+  JSObjectSetPropertyAtIndex (ctx, objectObject, index, value, NULL);
+
   return GET_RETURN_STATUS(env);
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Satyakam.Khadilkar    02/2018
+//---------------------------------------------------------------------------------------
 napi_status napi_has_element(napi_env env,
                              napi_value object,
                              uint32_t index,
@@ -244,6 +374,9 @@ napi_status napi_has_element(napi_env env,
   return GET_RETURN_STATUS(env);
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Satyakam.Khadilkar    02/2018
+//---------------------------------------------------------------------------------------
 napi_status napi_get_element(napi_env env,
                              napi_value object,
                              uint32_t index,
@@ -251,9 +384,16 @@ napi_status napi_get_element(napi_env env,
   NAPI_PREAMBLE(env);
   CHECK_ARG(env, result);
 
+  JSContextRef ctx = env->m_jscContext;
+  JSObjectRef objectObject = JSValueToObject (ctx, object, NULL);
+  *result = JSObjectGetPropertyAtIndex(ctx, objectObject, index, NULL);
+
   return GET_RETURN_STATUS(env);
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Satyakam.Khadilkar    02/2018
+//---------------------------------------------------------------------------------------
 napi_status napi_delete_element(napi_env env,
                                 napi_value object,
                                 uint32_t index,
@@ -264,6 +404,9 @@ napi_status napi_delete_element(napi_env env,
   return GET_RETURN_STATUS(env);
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Satyakam.Khadilkar    02/2018
+//---------------------------------------------------------------------------------------
 napi_status napi_define_properties(napi_env env,
                                    napi_value object,
                                    size_t property_count,
@@ -277,6 +420,9 @@ napi_status napi_define_properties(napi_env env,
   return GET_RETURN_STATUS(env);
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Satyakam.Khadilkar    02/2018
+//---------------------------------------------------------------------------------------
 napi_status napi_is_array(napi_env env, napi_value value, bool* result) {
   CHECK_ENV(env);
   CHECK_ARG(env, value);
@@ -285,6 +431,9 @@ napi_status napi_is_array(napi_env env, napi_value value, bool* result) {
   return napi_clear_last_error(env);
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Satyakam.Khadilkar    02/2018
+//---------------------------------------------------------------------------------------
 napi_status napi_get_array_length(napi_env env,
                                   napi_value value,
                                   uint32_t* result) {
@@ -296,6 +445,9 @@ napi_status napi_get_array_length(napi_env env,
   return GET_RETURN_STATUS(env);
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Satyakam.Khadilkar    02/2018
+//---------------------------------------------------------------------------------------
 napi_status napi_strict_equals(napi_env env,
                                napi_value lhs,
                                napi_value rhs,
@@ -308,6 +460,9 @@ napi_status napi_strict_equals(napi_env env,
   return GET_RETURN_STATUS(env);
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Satyakam.Khadilkar    02/2018
+//---------------------------------------------------------------------------------------
 napi_status napi_get_prototype(napi_env env,
                                napi_value object,
                                napi_value* result) {
@@ -317,13 +472,20 @@ napi_status napi_get_prototype(napi_env env,
   return GET_RETURN_STATUS(env);
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Satyakam.Khadilkar    02/2018
+//---------------------------------------------------------------------------------------
 napi_status napi_create_object(napi_env env, napi_value* result) {
   CHECK_ENV(env);
   CHECK_ARG(env, result);
 
+  // *result = [JSValue valueWithNewObjectInContext:env->m_jscContext];
   return napi_clear_last_error(env);
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Satyakam.Khadilkar    02/2018
+//---------------------------------------------------------------------------------------
 napi_status napi_create_array(napi_env env, napi_value* result) {
   CHECK_ENV(env);
   CHECK_ARG(env, result);
@@ -331,6 +493,9 @@ napi_status napi_create_array(napi_env env, napi_value* result) {
   return napi_clear_last_error(env);
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Satyakam.Khadilkar    02/2018
+//---------------------------------------------------------------------------------------
 napi_status napi_create_array_with_length(napi_env env,
                                           size_t length,
                                           napi_value* result) {

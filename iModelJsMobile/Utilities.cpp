@@ -77,30 +77,63 @@ Runtime::EvaluateResult Runtime::EvaluateScript (Utf8CP str, Utf8CP id) {return 
 END_BENTLEY_IMODELJS_JS_NAMESPACE
 
 #if defined(BENTLEYCONFIG_OS_APPLE_IOS) || defined(BENTLEYCONFIG_OS_APPLE_MACOS)
+#include <JavaScriptCore/JavaScriptCore.h>
 
 BEGIN_BENTLEY_IMODELJS_JS_NAMESPACE
+
+// This is the JavaScriptCore-specific definition of napi_env. 
+struct napi_env__ {
+  explicit napi_env__(JSContextGroupRef jscContextGroup): m_jscContextGroup(jscContextGroup), last_error() 
+    {
+      m_jscContext = JSGlobalContextCreateInGroup(m_jscContextGroup, nullptr);
+    }
+  ~napi_env__() {}
+
+  bool IsExceptionPending() const {return false;} // TODO: m_jscContext->GetException() != nullptr;}
+
+  JSContextGroupRef m_jscContextGroup;
+  JSContextRef m_jscContext; // This is what to use when creating JS values
+  napi_extended_error_info last_error;
+};
 
 struct RuntimeInternal
     {
     friend struct Runtime;
 
 private:
+    JSContextGroupRef m_jscContext;
     Napi::Env* m_initEnv {};
 
 public:
+    // static JSContextRef GetContext (RuntimeCR runtime) { return ; }
     Napi::Env& Env() {return *m_initEnv;}
     static Runtime* s_runtime;
+
+    RuntimeInternal (RuntimeR runtime);
     };
+
+RuntimeInternal::RuntimeInternal (RuntimeR runtime)
+    {
+    s_runtime = &runtime;
+    m_jscContext = JSContextGroupCreate();
+    auto jscEnv = new napi_env__(m_jscContext);
+    m_initEnv = new Napi::Env((napi_env)jscEnv);
+    }
 
 void Runtime::Initialize()
     {
+    if (s_initialized)
+        return;
+
+    s_initialized = true;
     }
 
 Runtime::Runtime (Utf8CP name, bool startDebugger, uint16_t debuggerPort)
     : m_name     (name),
-      m_engine   (Engine::V8),
+      m_engine   (Engine::JSC),
       m_debugger (nullptr)
     {
+        m_impl = new RuntimeInternal(*this);
     }
 
 Runtime::~Runtime()
