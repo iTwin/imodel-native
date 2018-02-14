@@ -654,7 +654,7 @@ struct Frustum
     DRange3d ToRange() const {DRange3d range; range.InitFrom(m_pts, 8); return range;}
     DGNPLATFORM_EXPORT void ScaleAboutCenter(double scale);
     DGNPLATFORM_EXPORT DMap4d ToDMap4d() const;
-    DGNPLATFORM_EXPORT bool Frustum::HasMirror();
+    DGNPLATFORM_EXPORT bool HasMirror();
     void Invalidate() { memset(this, 0, sizeof(*this)); }
     bool operator==(Frustum const& rhs) const {return 0==memcmp(m_pts, rhs.m_pts, sizeof(*this));}
     bool operator!=(Frustum const& rhs) const {return !(*this == rhs);}
