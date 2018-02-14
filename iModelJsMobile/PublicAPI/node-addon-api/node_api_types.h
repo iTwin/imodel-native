@@ -121,4 +121,22 @@ typedef struct {
   const char* release;
 } napi_node_version;
 
+#if defined(BENTLEYCONFIG_OS_APPLE_IOS) || defined(BENTLEYCONFIG_OS_APPLE_MACOS)
+struct napi_env__ {
+private:
+  JSContextGroupRef m_jscContextGroup;
+  JSContextRef m_jscContext;
+
+public:
+  explicit napi_env__(JSContextGroupRef jscContextGroup): m_jscContextGroup(jscContextGroup), last_error() 
+    {
+      m_jscContext = JSGlobalContextCreateInGroup(m_jscContextGroup, nullptr);
+    }
+  ~napi_env__() {}
+  bool IsExceptionPending() const { return false;}
+  JSContextRef GetContext() const { return m_jscContext;}
+  napi_extended_error_info last_error;
+};
+#endif
+
 #endif  // SRC_NODE_API_TYPES_H_

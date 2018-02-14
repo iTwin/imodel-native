@@ -80,32 +80,14 @@ END_BENTLEY_IMODELJS_JS_NAMESPACE
 #include <JavaScriptCore/JavaScriptCore.h>
 
 BEGIN_BENTLEY_IMODELJS_JS_NAMESPACE
-
-// This is the JavaScriptCore-specific definition of napi_env. 
-struct napi_env__ {
-  explicit napi_env__(JSContextGroupRef jscContextGroup): m_jscContextGroup(jscContextGroup), last_error() 
-    {
-      m_jscContext = JSGlobalContextCreateInGroup(m_jscContextGroup, nullptr);
-    }
-  ~napi_env__() {}
-
-  bool IsExceptionPending() const {return false;} // TODO: m_jscContext->GetException() != nullptr;}
-
-  JSContextGroupRef m_jscContextGroup;
-  JSContextRef m_jscContext; // This is what to use when creating JS values
-  napi_extended_error_info last_error;
-};
-
 struct RuntimeInternal
     {
     friend struct Runtime;
 
 private:
-    JSContextGroupRef m_jscContext;
     Napi::Env* m_initEnv {};
 
 public:
-    // static JSContextRef GetContext (RuntimeCR runtime) { return ; }
     Napi::Env& Env() {return *m_initEnv;}
     static Runtime* s_runtime;
 
@@ -115,8 +97,8 @@ public:
 RuntimeInternal::RuntimeInternal (RuntimeR runtime)
     {
     s_runtime = &runtime;
-    m_jscContext = JSContextGroupCreate();
-    auto jscEnv = new napi_env__(m_jscContext);
+    auto contextGroup = JSContextGroupCreate();
+    auto jscEnv = new napi_env__(contextGroup);
     m_initEnv = new Napi::Env((napi_env)jscEnv);
     }
 
