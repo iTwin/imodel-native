@@ -565,6 +565,7 @@ declare class AddonECSqlBinder implements IDisposable {
      * @return non-zero error status in case of failure.
      */
     bindInteger(val: number | string): DbResult;
+    bindInt(val: number | string): DbResult;
 
     /** Binds a Point2d to the parameter represented by this binder.
      * @return non-zero error status in case of failure.

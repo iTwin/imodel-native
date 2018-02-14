@@ -1330,6 +1330,7 @@ public:
         InstanceMethod("bindDouble", &AddonECSqlBinder::BindDouble),
         InstanceMethod("bindId", &AddonECSqlBinder::BindId),
         InstanceMethod("bindInteger", &AddonECSqlBinder::BindInteger),
+        InstanceMethod("bindInt", &AddonECSqlBinder::BindInteger),
         InstanceMethod("bindPoint2d", &AddonECSqlBinder::BindPoint2d),
         InstanceMethod("bindPoint3d", &AddonECSqlBinder::BindPoint3d),
         InstanceMethod("bindString", &AddonECSqlBinder::BindString),
