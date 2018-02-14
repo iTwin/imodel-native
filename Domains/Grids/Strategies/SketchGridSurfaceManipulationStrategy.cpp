@@ -217,7 +217,7 @@ bool SketchGridSurfaceManipulationStrategy::_IsDynamicKeyPointSet() const
 //---------------+---------------+---------------+---------------+---------------+------
 void SketchGridSurfaceManipulationStrategy::_ResetDynamicKeyPoint()
     {
-    _GetGeometryManipulationStrategyR().ResetDynamicKeyPoint();
+    _GetGeometryManipulationStrategyForEdit().ResetDynamicKeyPoint();
     }
 
 //--------------------------------------------------------------------------------------
@@ -261,7 +261,7 @@ void SketchGridSurfaceManipulationStrategy::_SetProperty
     else if (0 == strcmp(key, prop_TopElevation))
         m_topElevation = value;
     else
-        _GetGeometryManipulationStrategyR().SetProperty(key, value);
+        _GetGeometryManipulationStrategyForEdit().SetProperty(key, value);
     }
 
 //--------------------------------------------------------------------------------------

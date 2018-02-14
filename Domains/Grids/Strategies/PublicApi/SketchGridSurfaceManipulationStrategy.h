@@ -54,7 +54,7 @@ struct SketchGridSurfaceManipulationStrategy : public BBS::ElementManipulationSt
         virtual PlanGridPlanarSurfaceCP _GetGridSurfaceCP() = 0;
         virtual PlanGridPlanarSurfaceP _GetGridSurfaceP() = 0;
         virtual BBS::CurvePrimitiveManipulationStrategyCR _GetCurvePrimitiveManipulationStrategy() const = 0;
-        virtual BBS::CurvePrimitiveManipulationStrategyR _GetCurvePrimitiveManipulationStrategyR() = 0;
+        virtual BBS::CurvePrimitiveManipulationStrategyR _GetCurvePrimitiveManipulationStrategyForEdit() = 0;
 
     public:
         Utf8String GetMessage() const;

@@ -28,7 +28,7 @@ struct LineGridSurfaceManipulationStrategy : public SketchGridSurfaceManipulatio
         // ElementManipulationStrategy
         virtual Dgn::DgnElementPtr _FinishElement(Dgn::DgnModelR model) override;
         virtual BBS::GeometryManipulationStrategyCR _GetGeometryManipulationStrategy() const override { return *m_geometryManipulationStrategy; }
-        virtual BBS::GeometryManipulationStrategyR _GetGeometryManipulationStrategyR() override { return *m_geometryManipulationStrategy; }
+        virtual BBS::GeometryManipulationStrategyR _GetGeometryManipulationStrategyForEdit() override { return *m_geometryManipulationStrategy; }
 
         // SketchGridSurfaceManipulationStrategy
         virtual BentleyStatus _UpdateGridSurface() override;
@@ -36,7 +36,7 @@ struct LineGridSurfaceManipulationStrategy : public SketchGridSurfaceManipulatio
         virtual PlanGridPlanarSurfaceCP _GetGridSurfaceCP() override { return m_surface.get(); }
         virtual PlanGridPlanarSurfaceP _GetGridSurfaceP() override { return m_surface.get(); }
         virtual BBS::CurvePrimitiveManipulationStrategyCR _GetCurvePrimitiveManipulationStrategy() const override { return *m_geometryManipulationStrategy; }
-        virtual BBS::CurvePrimitiveManipulationStrategyR _GetCurvePrimitiveManipulationStrategyR() override { return *m_geometryManipulationStrategy; }
+        virtual BBS::CurvePrimitiveManipulationStrategyR _GetCurvePrimitiveManipulationStrategyForEdit() override { return *m_geometryManipulationStrategy; }
 
     public:
         GRIDSTRATEGIES_EXPORT static LineGridSurfaceManipulationStrategyPtr Create() { return new LineGridSurfaceManipulationStrategy(); }

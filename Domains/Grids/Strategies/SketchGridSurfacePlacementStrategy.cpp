@@ -43,7 +43,7 @@ BentleyStatus SketchGridSurfacePlacementStrategy::_TryGetProperty(Utf8CP key, do
 //---------------+---------------+---------------+---------------+---------------+------
 void SketchGridSurfacePlacementStrategy::_SetProperty(Utf8CP key, double const & value)
     {
-    _GetSketchGridSurfaceManipulationStrategyR().SetProperty(key, value);
+    _GetSketchGridSurfaceManipulationStrategyForEdit().SetProperty(key, value);
     T_Super::_SetProperty(key, value);
     }
 
@@ -76,7 +76,7 @@ BentleyStatus SketchGridSurfacePlacementStrategy::_TryGetProperty(Utf8CP key, Dg
 //---------------+---------------+---------------+---------------+---------------+------
 void SketchGridSurfacePlacementStrategy::_SetProperty(Utf8CP key, Dgn::DgnElement const & value)
     {
-    _GetSketchGridSurfaceManipulationStrategyR().SetProperty(key, value);
+    _GetSketchGridSurfaceManipulationStrategyForEdit().SetProperty(key, value);
     T_Super::_SetProperty(key, value);
     }
 

@@ -22,12 +22,12 @@ struct SketchGridSurfacePlacementStrategy : public BBS::ElementPlacementStrategy
         SketchGridSurfacePlacementStrategy() {}
 
         virtual BBS::ElementManipulationStrategyCR _GetElementManipulationStrategy() const override { return _GetSketchGridSurfaceManipulationStrategy(); }
-        virtual BBS::ElementManipulationStrategyR _GetElementManipulationStrategyR() override { return _GetSketchGridSurfaceManipulationStrategyR(); }
+        virtual BBS::ElementManipulationStrategyR _GetElementManipulationStrategyForEdit() override { return _GetSketchGridSurfaceManipulationStrategyForEdit(); }
         virtual BBS::GeometryManipulationStrategyCR _GetManipulationStrategy() const override { return _GetSketchGridSurfaceManipulationStrategy(); }
-        virtual BBS::GeometryManipulationStrategyR _GetManipulationStrategyR() override { return _GetSketchGridSurfaceManipulationStrategyR(); }
+        virtual BBS::GeometryManipulationStrategyR _GetManipulationStrategyForEdit() override { return _GetSketchGridSurfaceManipulationStrategyForEdit(); }
 
         virtual SketchGridSurfaceManipulationStrategyCR _GetSketchGridSurfaceManipulationStrategy() const = 0;
-        virtual SketchGridSurfaceManipulationStrategyR _GetSketchGridSurfaceManipulationStrategyR() = 0;
+        virtual SketchGridSurfaceManipulationStrategyR _GetSketchGridSurfaceManipulationStrategyForEdit() = 0;
 
         virtual void _AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint);
         virtual void _AddDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints);
