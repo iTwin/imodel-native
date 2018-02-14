@@ -2879,6 +2879,9 @@ TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_EnableJobsWebApiV2JobReq
     EXPECT_FALSE(result.IsSuccess());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    julius.cepukenas                   02/18
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_EnableJobsWebApiV2JobSucceedsResponseSucceeds_Success)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
