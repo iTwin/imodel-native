@@ -2857,6 +2857,193 @@ TEST_F(ECSqlStatementTestFixture, Insert_BindDateTimeArray)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                    Krischan.Eberle                02/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, BindPrimitiveArrayWithDifferentTypes)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("BindPrimitiveArrayWithDifferentTypes.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "INSERT INTO ecsql.PSA(B_Array,Bi_Array,D_Array,Dt_Array,I_Array,L_Array,P2D_Array,P3D_Array,S_Array) VALUES(?,?,?,?,?,?,?,?,?)"));
+
+    const int64_t int64Val = INT64_C(123123123123);
+
+    bmap<PrimitiveType, ECValue> paramValues;
+    paramValues[PRIMITIVETYPE_Boolean] = ECValue(true);
+    paramValues[PRIMITIVETYPE_Binary] = ECValue((Byte const*) &int64Val, sizeof(int64Val));
+    paramValues[PRIMITIVETYPE_Double] = ECValue(3.0);
+    paramValues[PRIMITIVETYPE_DateTime] = ECValue(DateTime(2018,2,12));
+    paramValues[PRIMITIVETYPE_Integer] = ECValue(3);
+    paramValues[PRIMITIVETYPE_Long] = ECValue(int64Val);
+    paramValues[PRIMITIVETYPE_Point2d] = ECValue(DPoint2d::From(1.0, 1.0));
+    paramValues[PRIMITIVETYPE_Point3d] = ECValue(DPoint3d::From(1.0, 1.0, 1.0));
+    paramValues[PRIMITIVETYPE_String] = ECValue("Hello world", true);
+
+    {
+    //Boolean parameter
+    IECSqlBinder& arrayBinder = statement.GetBinder(1);
+    IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindBoolean(paramValues[PRIMITIVETYPE_Boolean].GetBoolean()));
+    size_t blobSize = 0;
+    void const* blob = paramValues[PRIMITIVETYPE_Binary].GetBinary(blobSize);
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindBlob(blob, (int) blobSize, IECSqlBinder::MakeCopy::No));
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindDouble(paramValues[PRIMITIVETYPE_Double].GetDouble()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindDateTime(paramValues[PRIMITIVETYPE_DateTime].GetDateTime()));
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindInt(paramValues[PRIMITIVETYPE_Integer].GetInteger()));
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindInt64(paramValues[PRIMITIVETYPE_Long].GetLong()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindPoint2d(paramValues[PRIMITIVETYPE_Point2d].GetPoint2d()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindPoint3d(paramValues[PRIMITIVETYPE_Point3d].GetPoint3d()));
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindText(paramValues[PRIMITIVETYPE_String].GetUtf8CP(), IECSqlBinder::MakeCopy::Yes));
+    }
+
+    {
+    //Blob parameter
+    IECSqlBinder& arrayBinder = statement.GetBinder(2);
+    IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindBoolean(paramValues[PRIMITIVETYPE_Boolean].GetBoolean()));
+    size_t blobSize = 0;
+    void const* blob = paramValues[PRIMITIVETYPE_Binary].GetBinary(blobSize);
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindBlob(blob, (int) blobSize, IECSqlBinder::MakeCopy::No));
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindDouble(paramValues[PRIMITIVETYPE_Double].GetDouble()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindDateTime(paramValues[PRIMITIVETYPE_DateTime].GetDateTime()));
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindInt(paramValues[PRIMITIVETYPE_Integer].GetInteger()));
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindInt64(paramValues[PRIMITIVETYPE_Long].GetLong()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindPoint2d(paramValues[PRIMITIVETYPE_Point2d].GetPoint2d()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindPoint3d(paramValues[PRIMITIVETYPE_Point3d].GetPoint3d()));
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindText(paramValues[PRIMITIVETYPE_String].GetUtf8CP(), IECSqlBinder::MakeCopy::Yes));
+    }
+
+    {
+    //Double parameter
+    IECSqlBinder& arrayBinder = statement.GetBinder(3);
+    IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindBoolean(paramValues[PRIMITIVETYPE_Boolean].GetBoolean()));
+    size_t blobSize = 0;
+    void const* blob = paramValues[PRIMITIVETYPE_Binary].GetBinary(blobSize);
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindBlob(blob, (int) blobSize, IECSqlBinder::MakeCopy::No));
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindDouble(paramValues[PRIMITIVETYPE_Double].GetDouble()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindDateTime(paramValues[PRIMITIVETYPE_DateTime].GetDateTime()));
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindInt(paramValues[PRIMITIVETYPE_Integer].GetInteger()));
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindInt64(paramValues[PRIMITIVETYPE_Long].GetLong()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindPoint2d(paramValues[PRIMITIVETYPE_Point2d].GetPoint2d()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindPoint3d(paramValues[PRIMITIVETYPE_Point3d].GetPoint3d()));
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindText(paramValues[PRIMITIVETYPE_String].GetUtf8CP(), IECSqlBinder::MakeCopy::Yes));
+    }
+
+    {
+    //DateTime parameter
+    IECSqlBinder& arrayBinder = statement.GetBinder(4);
+    IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindBoolean(paramValues[PRIMITIVETYPE_Boolean].GetBoolean()));
+    size_t blobSize = 0;
+    void const* blob = paramValues[PRIMITIVETYPE_Binary].GetBinary(blobSize);
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindBlob(blob, (int) blobSize, IECSqlBinder::MakeCopy::No));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindDouble(paramValues[PRIMITIVETYPE_Double].GetDouble()));
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindDateTime(paramValues[PRIMITIVETYPE_DateTime].GetDateTime()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindInt(paramValues[PRIMITIVETYPE_Integer].GetInteger()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindInt64(paramValues[PRIMITIVETYPE_Long].GetLong()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindPoint2d(paramValues[PRIMITIVETYPE_Point2d].GetPoint2d()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindPoint3d(paramValues[PRIMITIVETYPE_Point3d].GetPoint3d()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindText(paramValues[PRIMITIVETYPE_String].GetUtf8CP(), IECSqlBinder::MakeCopy::Yes));
+    }
+
+    {
+    //Int parameter
+    IECSqlBinder& arrayBinder = statement.GetBinder(5);
+    IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindBoolean(paramValues[PRIMITIVETYPE_Boolean].GetBoolean()));
+    size_t blobSize = 0;
+    void const* blob = paramValues[PRIMITIVETYPE_Binary].GetBinary(blobSize);
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindBlob(blob, (int) blobSize, IECSqlBinder::MakeCopy::No));
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindDouble(paramValues[PRIMITIVETYPE_Double].GetDouble()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindDateTime(paramValues[PRIMITIVETYPE_DateTime].GetDateTime()));
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindInt(paramValues[PRIMITIVETYPE_Integer].GetInteger()));
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindInt64(paramValues[PRIMITIVETYPE_Long].GetLong()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindPoint2d(paramValues[PRIMITIVETYPE_Point2d].GetPoint2d()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindPoint3d(paramValues[PRIMITIVETYPE_Point3d].GetPoint3d()));
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindText(paramValues[PRIMITIVETYPE_String].GetUtf8CP(), IECSqlBinder::MakeCopy::Yes));
+    }
+
+    {
+    //Int64 parameter
+    IECSqlBinder& arrayBinder = statement.GetBinder(6);
+    IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindBoolean(paramValues[PRIMITIVETYPE_Boolean].GetBoolean()));
+    size_t blobSize = 0;
+    void const* blob = paramValues[PRIMITIVETYPE_Binary].GetBinary(blobSize);
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindBlob(blob, (int) blobSize, IECSqlBinder::MakeCopy::No));
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindDouble(paramValues[PRIMITIVETYPE_Double].GetDouble()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindDateTime(paramValues[PRIMITIVETYPE_DateTime].GetDateTime()));
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindInt(paramValues[PRIMITIVETYPE_Integer].GetInteger()));
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindInt64(paramValues[PRIMITIVETYPE_Long].GetLong()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindPoint2d(paramValues[PRIMITIVETYPE_Point2d].GetPoint2d()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindPoint3d(paramValues[PRIMITIVETYPE_Point3d].GetPoint3d()));
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindText(paramValues[PRIMITIVETYPE_String].GetUtf8CP(), IECSqlBinder::MakeCopy::Yes));
+    }
+
+    {
+    //Point2d parameter
+    IECSqlBinder& arrayBinder = statement.GetBinder(7);
+    IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindBoolean(paramValues[PRIMITIVETYPE_Boolean].GetBoolean()));
+    size_t blobSize = 0;
+    void const* blob = paramValues[PRIMITIVETYPE_Binary].GetBinary(blobSize);
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindBlob(blob, (int) blobSize, IECSqlBinder::MakeCopy::No));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindDouble(paramValues[PRIMITIVETYPE_Double].GetDouble()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindDateTime(paramValues[PRIMITIVETYPE_DateTime].GetDateTime()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindInt(paramValues[PRIMITIVETYPE_Integer].GetInteger()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindInt64(paramValues[PRIMITIVETYPE_Long].GetLong()));
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindPoint2d(paramValues[PRIMITIVETYPE_Point2d].GetPoint2d()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindPoint3d(paramValues[PRIMITIVETYPE_Point3d].GetPoint3d()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindText(paramValues[PRIMITIVETYPE_String].GetUtf8CP(), IECSqlBinder::MakeCopy::Yes));
+    }
+
+    {
+    //Point3d parameter
+    IECSqlBinder& arrayBinder = statement.GetBinder(8);
+    IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindBoolean(paramValues[PRIMITIVETYPE_Boolean].GetBoolean()));
+    size_t blobSize = 0;
+    void const* blob = paramValues[PRIMITIVETYPE_Binary].GetBinary(blobSize);
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindBlob(blob, (int) blobSize, IECSqlBinder::MakeCopy::No));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindDouble(paramValues[PRIMITIVETYPE_Double].GetDouble()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindDateTime(paramValues[PRIMITIVETYPE_DateTime].GetDateTime()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindInt(paramValues[PRIMITIVETYPE_Integer].GetInteger()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindInt64(paramValues[PRIMITIVETYPE_Long].GetLong()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindPoint2d(paramValues[PRIMITIVETYPE_Point2d].GetPoint2d()));
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindPoint3d(paramValues[PRIMITIVETYPE_Point3d].GetPoint3d()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindText(paramValues[PRIMITIVETYPE_String].GetUtf8CP(), IECSqlBinder::MakeCopy::Yes));
+    }
+
+    {
+    //String parameter
+    IECSqlBinder& arrayBinder = statement.GetBinder(9);
+    IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindBoolean(paramValues[PRIMITIVETYPE_Boolean].GetBoolean()));
+    size_t blobSize = 0;
+    void const* blob = paramValues[PRIMITIVETYPE_Binary].GetBinary(blobSize);
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindBlob(blob, (int) blobSize, IECSqlBinder::MakeCopy::No));
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindDouble(paramValues[PRIMITIVETYPE_Double].GetDouble()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindDateTime(paramValues[PRIMITIVETYPE_DateTime].GetDateTime()));
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindInt(paramValues[PRIMITIVETYPE_Integer].GetInteger()));
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindInt64(paramValues[PRIMITIVETYPE_Long].GetLong()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindPoint2d(paramValues[PRIMITIVETYPE_Point2d].GetPoint2d()));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindPoint3d(paramValues[PRIMITIVETYPE_Point3d].GetPoint3d()));
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindText(paramValues[PRIMITIVETYPE_String].GetUtf8CP(), IECSqlBinder::MakeCopy::Yes));
+    }
+
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, BindPrimArrayWithOutOfBoundsLength)
