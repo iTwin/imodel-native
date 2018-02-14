@@ -338,6 +338,7 @@ ClInclude Include="Published\WebServices\Connect\MockConnectSignInManagerListene
     <ClCompile Include="Published\WebServices\Cache\Persistence\CacheEnvironmentTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Util\ECInstanceKeyFilterTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\Response\WSUploadResponseTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\DataSourceCachePerformanceTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\CachingDataSourceProgressTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\RequestOptionsTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\SyncNotifierTests.cpp" />

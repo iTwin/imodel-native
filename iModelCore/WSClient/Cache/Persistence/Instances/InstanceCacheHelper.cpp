@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Instances/InstanceCacheHelper.cpp $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -14,6 +14,7 @@
 
 #include "../Core/CacheSchema.h"
 #include "../Hierarchy/HierarchyManager.h"
+#include "../Hierarchy/RootManager.h"
 #include <WebServices/Cache/Util/JsonUtil.h>
 
 #include "../../Logging.h"
@@ -500,27 +501,59 @@ bool InstanceCacheHelper::CachedInstances::HasPartialInstances() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceCacheHelper::PartialCachingState::PartialCachingState
 (
-ECDbAdapterR dbAdapter,
-WSQueryCR query,
-const ECInstanceKeyMultiMap& fullyPersistedInstances,
+QueryAnalyzer queryAnalyzer,
+RootManager& rootManager,
 bset<ObjectId>& rejected
 ) :
-m_query(&query),
-m_fullyPersistedInstances(fullyPersistedInstances),
+m_queryAnalyzer(queryAnalyzer),
+m_rootManager(rootManager),
 m_rejected(rejected)
+    {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceCacheHelper::QueryAnalyzer::QueryAnalyzer(ECDbAdapterR dbAdapter, WSQueryCR query) : m_query(&query)
     {
-    BuildSelectedPaths(dbAdapter, *m_query, m_allPropertiesSelectedPaths, m_idOnlySelectedPaths);
+    m_selectPaths[SelectType::All] = {};
+    m_selectPaths[SelectType::Id] = {};
+    m_selectPaths[SelectType::Property] = {};
+
+    BuildSelectedPaths(dbAdapter, *m_query, m_selectPaths);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool InstanceCacheHelper::QueryAnalyzer::IsSelectionAll(const bvector<SelectPathElement>& instancePath) const 
+    { 
+    return DoesPathMatch(instancePath, m_selectPaths.find(SelectType::All)->second); 
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool InstanceCacheHelper::QueryAnalyzer::IsSelectionId(const bvector<SelectPathElement>& instancePath) const 
+    { 
+    return DoesPathMatch(instancePath, m_selectPaths.find(SelectType::Id)->second); 
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool InstanceCacheHelper::QueryAnalyzer::HasPartialPropertiesSelected() const 
+    {
+    return !m_selectPaths.find(SelectType::Property)->second.empty();
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus InstanceCacheHelper::PartialCachingState::BuildSelectedPaths
+BentleyStatus InstanceCacheHelper::QueryAnalyzer::BuildSelectedPaths
 (
 ECDbAdapterR dbAdapter,
 WSQueryCR query,
-bset<bvector<SelectPathElement>>& allPropertiesSelectedPathsOut,
-bset<bvector<SelectPathElement>>& idOnlySelectedPathsOut
+bmap<SelectType, bset<bvector<SelectPathElement>>>& selectPaths
 )
     {
     Utf8StringCR mainSchemaName = query.GetSchemaName();
@@ -528,7 +561,7 @@ bset<bvector<SelectPathElement>>& idOnlySelectedPathsOut
     Utf8String selectOption = query.GetSelect();
     if (selectOption.empty())
         {
-        allPropertiesSelectedPathsOut.insert(bvector<SelectPathElement>());
+        selectPaths[SelectType::All].insert(bvector<SelectPathElement>());
         return SUCCESS;
         }
 
@@ -562,16 +595,7 @@ bset<bvector<SelectPathElement>>& idOnlySelectedPathsOut
         }
 
     for (auto& pair : paths)
-        {
-        if (SelectType::All == pair.second)
-            {
-            allPropertiesSelectedPathsOut.insert(pair.first);
-            }
-        else if (SelectType::Id == pair.second)
-            {
-            idOnlySelectedPathsOut.insert(pair.first);
-            }
-        }
+        selectPaths[pair.second].insert(pair.first);
 
     return SUCCESS;
     }
@@ -579,7 +603,7 @@ bset<bvector<SelectPathElement>>& idOnlySelectedPathsOut
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus InstanceCacheHelper::PartialCachingState::GetSelectPathAndType
+BentleyStatus InstanceCacheHelper::QueryAnalyzer::GetSelectPathAndType
 (
 ECDbAdapterR dbAdapter,
 Utf8StringCR mainSchemaName,
@@ -673,7 +697,7 @@ SelectType& selectTypeOut
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool InstanceCacheHelper::PartialCachingState::IsClassTokenPolymorphic(Utf8StringCR classToken)
+bool InstanceCacheHelper::QueryAnalyzer::IsClassTokenPolymorphic(Utf8StringCR classToken)
     {
     return Utf8String::npos != classToken.find("!poly");
     }
@@ -681,7 +705,7 @@ bool InstanceCacheHelper::PartialCachingState::IsClassTokenPolymorphic(Utf8Strin
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void InstanceCacheHelper::PartialCachingState::GetSchemaAndClassNamesFromClassToken
+void InstanceCacheHelper::QueryAnalyzer::GetSchemaAndClassNamesFromClassToken
 (
 Utf8StringCR classToken,
 Utf8StringR schemaNameOut,
@@ -705,7 +729,7 @@ Utf8StringR classNameOut
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP InstanceCacheHelper::PartialCachingState::GetECClassFromClassToken(ECDbAdapterR dbAdapter, Utf8StringCR mainSchemaName, Utf8StringCR classToken)
+ECClassCP InstanceCacheHelper::QueryAnalyzer::GetECClassFromClassToken(ECDbAdapterR dbAdapter, Utf8StringCR mainSchemaName, Utf8StringCR classToken)
     {
     Utf8String schemaName, className;
     GetSchemaAndClassNamesFromClassToken(classToken, schemaName, className);
@@ -721,7 +745,7 @@ ECClassCP InstanceCacheHelper::PartialCachingState::GetECClassFromClassToken(ECD
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECRelatedInstanceDirection InstanceCacheHelper::PartialCachingState::GetDirection(Utf8StringCR directionString)
+ECRelatedInstanceDirection InstanceCacheHelper::QueryAnalyzer::GetDirection(Utf8StringCR directionString)
     {
     if ("forward" == directionString)
         {
@@ -768,35 +792,22 @@ ObjectInfoCR info,
 const bvector<SelectPathElement>& path
 )
     {
-    bool allRequired = DoesRequireAllProperties(info);
-    bool allSelected = DoesPathMatches(path, m_allPropertiesSelectedPaths);
-
-    if (allRequired)
-        {
-        if (allSelected)
-            {
-            return Action::CacheFull;
-            }
-        bool idOnlySelected = DoesPathMatches(path, m_idOnlySelectedPaths);
-        if (idOnlySelected)
-            {
-            return Action::SkipCached;
-            }
-        return Action::Reject;
-        }
-
-    if (allSelected)
-        {
+    if (m_queryAnalyzer.IsSelectionAll(path))
         return Action::CacheFull;
-        }
 
-    return Action::CachePartial;
+    if (info.IsInCache() && m_queryAnalyzer.IsSelectionId(path))
+        return Action::SkipCached;
+
+    if (!DoesRequireAllProperties(info))
+        return Action::CachePartial;
+
+    return Action::Reject;
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool InstanceCacheHelper::PartialCachingState::DoesPathMatches
+bool InstanceCacheHelper::QueryAnalyzer::DoesPathMatch
 (
 const bvector<SelectPathElement>& instancePath,
 const bset<bvector<SelectPathElement>>& matchPaths
@@ -850,7 +861,20 @@ bool InstanceCacheHelper::PartialCachingState::IsFullyPersisted(ObjectInfoCR inf
     if (!info.IsFullyCached())
         return false;
 
-    if (!ECDbHelper::IsInstanceInMultiMap(info.GetCachedInstanceKey(), m_fullyPersistedInstances))
+    if (nullptr == m_fullyPersistedInstances)
+        {
+        // TODO: this is very ineficient when a lot of instances are in Full persitance roots.
+        // Underlying ECIntsanceFinder is slow
+        auto instances = std::make_shared<ECInstanceKeyMultiMap>();
+        if (SUCCESS != m_rootManager.GetInstancesByPersistence(CacheRootPersistence::Full, *instances))
+            {
+            BeAssert(false);
+            return true;
+            }
+        m_fullyPersistedInstances = instances;
+        }
+
+    if (!ECDbHelper::IsInstanceInMultiMap(info.GetCachedInstanceKey(), *m_fullyPersistedInstances))
         return false;
 
     return true;

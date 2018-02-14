@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/CachingTestsHelper.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -103,6 +103,11 @@ ECInstanceKey StubInstanceInCache(
     std::map<Utf8String, Json::Value> properties = {});
 
 ECInstanceKey StubInstanceInCacheJson(IDataSourceCache& cache, ObjectIdCR objectId, JsonValueCR properties);
+
+ECInstanceKey StubPartialInstanceInCache(
+    IDataSourceCache& cache,
+    ObjectIdCR objectId = ObjectId("TestSchema.TestClass", "Foo"),
+    std::map<Utf8String, Json::Value> properties = {});
 
 ECInstanceKey StubNonExistingInstanceKey(IDataSourceCache& cache, Utf8StringCR classKey = "TestSchema.TestClass", uint64_t instanceId = 1);
 

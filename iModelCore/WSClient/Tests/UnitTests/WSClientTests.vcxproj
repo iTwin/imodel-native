@@ -199,6 +199,7 @@
     <ClCompile Include="Published\WebServices\Cache\Persistence\CacheQueryHelperTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Persistence\ChangeManagerTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Persistence\DataReadOptionsTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\DataSourceCachePerformanceTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Persistence\DataSourceCacheTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\ServerQueryHelperTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\SyncNotifierTests.cpp" />
