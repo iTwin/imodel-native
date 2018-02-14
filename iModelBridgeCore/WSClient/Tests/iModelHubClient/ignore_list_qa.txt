@@ -19,17 +19,3 @@ StatisticsTests.QueryUsersStatisticsWithAllStatistics
 StatisticsTests.QueryUsersStatisticsWithSelectedStatistics
 StatisticsTests.QueryAllUsersStatisticsWithAllStatistics
 StatisticsTests.QueryAllUsersStatisticsWithSelectedStatistics
-#----------------------------------------------------------------------------------------
-#   Tests that require seed file replacement
-#----------------------------------------------------------------------------------------
-LRPTests.InitializeFileJob
-SeedFileTests.DownloadArchivedSeedFile
-SeedFileTests.PushAndPullAfterReplacement
-SeedFileTests.ReplaceSeedFileWithLocks
-SeedFileTests.DeleteFile
-SeedFileTests.OpenBriefcaseAfterReplace
-SeedFileTests.RecoverBriefcaseAfterReplace
-SeedFileTests.CanceledFileReplaceCodesLocksChangeSets
-SeedFileTests.FileReplaceInProgressCodesLocksChangeSetsDenied
-SeedFileTests.ReplaceCodesLocksChangeSets
-SeedFileTests.EmptyFileReplaceOtherUser
