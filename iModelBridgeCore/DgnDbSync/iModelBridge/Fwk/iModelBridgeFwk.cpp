@@ -1270,9 +1270,9 @@ int iModelBridgeFwk::ProcessSchemaChange()
 Utf8String   iModelBridgeFwk::GetRevisionComment()
     {
     //Revision comment override from command line has the first priority
-    if (!m_jobEnvArgs.m_revisionComment.empty())
+    //if (!m_jobEnvArgs.m_revisionComment.empty())
         return m_jobEnvArgs.m_revisionComment;
-
+    /* Disabled until iModelHub changeset suppports a json blob property for the info below.
     bvector<BeFileName> inputFiles;
     GetRegistry()._QueryAllFilesAssignedToBridge(inputFiles, m_jobEnvArgs.m_bridgeRegSubKey.c_str());
 
@@ -1296,6 +1296,7 @@ Utf8String   iModelBridgeFwk::GetRevisionComment()
         auditArray.append(auditLogs);
         }
     return auditArray.ToString();
+    */
     }
 
 /*---------------------------------------------------------------------------------**//**
