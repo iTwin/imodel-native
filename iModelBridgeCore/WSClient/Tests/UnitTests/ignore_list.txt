@@ -50,6 +50,7 @@ WSRepositoryClientTests.SendDeleteObjectRequest_EnableJobsAndWebApiV2JobsSuceeds
 WSRepositoryClientTests.SendDeleteObjectRequest_EnableJobsWebApiV2JobFails_Fails
 WSRepositoryClientTests.SendDeleteObjectRequest_EnableJobsWebApiV2JobsResponseIsUnauthorized_Fails
 WSRepositoryClientTests.SendUpdateFileRequest_EnableJobsWebApiV2JobSucceedsResponseSucceeds_Success
+WSRepositoryClientTests.SendQueryRequest_WebApiV26_CapsWebApiToV25
 
 #--------------------------------------------------------------------------------
 # BREAKAGES caused by recent changes in dependencies
