@@ -77,7 +77,7 @@ struct WSQuery
 
         //! Set $filter option. OData expression.
         //! Spaces are not allowed - use '+' to seperate operators (example: "Property+eq+'Foo'").
-        //! Unknown string values (for example ones that are entered by user) need to be escaped using EscapeValue().
+        //! Unknown string values (for example ones that are entered by user) need to be escaped using WSQuery::EscapeValue().
         WSCLIENT_EXPORT WSQuery& SetFilter(Utf8StringCR filter);
 
         //! Add $filter $id+in+[...] using input ObjectIds that match query schema and classes.
@@ -100,7 +100,8 @@ struct WSQuery
 
         WSCLIENT_EXPORT Utf8StringCR GetFilter() const;
 
-        //! Escape parameter value in filter. Example: SetFilter ("Property+eq+'" + WSQuery::EscapeValue (userEnteredString) + "'");
+        //! Escape parameter value in filter. Handles spaces and special characters that are invalid in URLs.
+        //! Example: query.SetFilter("Property+eq+'" + WSQuery::EscapeValue (userEnteredString) + "'");
         WSCLIENT_EXPORT static Utf8String EscapeValue(Utf8String value);
 
         //! Set $order by option.
