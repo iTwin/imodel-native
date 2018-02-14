@@ -79,13 +79,4 @@
             <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECRelationshipClass typeName="StructuralElementOwnsPhysicalMaterial" displayLabel="Structural Element Owns Physical Material" modifier="None" strength="referencing">
-        <BaseClass>bis:ElementRefersToElements</BaseClass>
-        <Source multiplicity="(0..1)" roleLabel="Structural Element Owns Physical Material" polymorphic="true">
-            <Class class="StructuralElement"/>
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="Structural Element Owns Physical Material(Reversed)" polymorphic="true">
-            <Class class="bis:PhysicalMaterial"/>
-        </Target>
-    </ECRelationshipClass>
 </ECSchema>
