@@ -4270,6 +4270,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr descriptor = ContentDescriptor::Create(ContentDisplayType::Graphics);
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
         descriptor->SetContentFlags((int)ContentFlags::KeysOnly | (int)ContentFlags::NoFields);
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b1_Class1A, *query), "this");
@@ -4284,6 +4285,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr descriptor = ContentDescriptor::Create(ContentDisplayType::List);
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
         descriptor->SetContentFlags((int)ContentFlags::ShowLabels | (int)ContentFlags::NoFields);
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         
         ComplexContentQueryPtr nested = ComplexContentQuery::Create();
         nested->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b1_Class1A, *nested), "this");
