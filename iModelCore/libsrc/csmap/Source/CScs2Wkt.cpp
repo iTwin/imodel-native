@@ -903,7 +903,12 @@ int EXP_LVL3 CScs2WktEx (char *csWktBufr,size_t bufrSize,enum ErcWktFlavor flavo
 			   purposes.  It was added by the MapGuide folk in 2006. */
 			CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_PRMCOD_CNTMER,cs_def->org_lng,paramFlags);
 			break;
+#ifdef GEOCOORD_ENHANCEMENT
+        case  cs_PRJCOD_TRMER:
+        case  cs_PRJCOD_TRMERBF:
+#else
 		case  cs_PRJCOD_TRMER:
+#endif
 			CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_WKTCOD_FEAST,cs_def->x_off,paramFlags);
 			CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_WKTCOD_FNORTH,cs_def->y_off,paramFlags);
 			CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_WKTCOD_SCLRED,cs_def->scl_red,paramFlags);
@@ -1192,7 +1197,13 @@ int EXP_LVL3 CScs2WktEx (char *csWktBufr,size_t bufrSize,enum ErcWktFlavor flavo
 			CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_WKTCOD_FEAST,cs_def->x_off,paramFlags);
 			CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_WKTCOD_FNORTH,cs_def->y_off,paramFlags);
 			break;
+#ifdef GEOCOORD_ENHANCEMENT
+        case cs_PRJCOD_UTM:
+        case cs_PRJCOD_UTMZNBF:
+#else
+
 		case  cs_PRJCOD_UTM:
+#endif
 			if (flavor == wktFlvrAutodesk)
 			{
 				CSAddParamValue (parmWkt,sizeof (parmWkt),nmFlavor,cs_PRMCOD_UTMZN,cs_def->prj_prm1,paramFlags);
@@ -1248,6 +1259,21 @@ int EXP_LVL3 CScs2WktEx (char *csWktBufr,size_t bufrSize,enum ErcWktFlavor flavo
 			}
 			else
 			{
+#ifdef GEOCOORD_ENHANCEMENT
+                /* CSMAP did not extract el_def if needed
+                */
+                if (el_def == NULL)
+                {
+		            elDefPtr = CS_eldef (cs_def->elp_knm);
+		            if (elDefPtr == NULL)
+		            {
+				        /* Couldn't get an ellipsoid to reference!!! */
+				        CS_erpt (cs_NO_REFERNCE);
+				        goto error;
+		            }
+                    el_def = elDefPtr;
+                }
+#endif
 				/* Convert the parameter from CS-MAP form to EPSG form. */
 				e_sq = el_def->ecent * el_def->ecent;
 				e_rad = el_def->e_rad * cs_def->scl_red;

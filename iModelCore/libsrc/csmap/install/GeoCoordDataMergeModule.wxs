@@ -3,7 +3,7 @@
 |
 |     $Source: install/GeoCoordDataMergeModule.wxs $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-->
 
@@ -37,8 +37,12 @@
     <?define NewZealand_GUID = "{BB5A09AA-1F0F-4381-BD4E-1DD66FBB8B1E}" ?>
     <?define Spain_GUID = "{66479EBB-8844-45E1-B637-18D566A88971}" ?>
     <?define SouthAfrica_GUID = "{4C626A78-BF4E-4A7B-BCFA-0C7B8ACDC8D9}" ?>
+    <?define Venezuela_GUID = "{B2BBC001-2EF3-4ED4-92C5-F7811F43109F}" ?>
+    <?define UK_GUID = "{91B0501A-CE98-4239-9A14-1F21F9974758}" ?>
     <?define USA_GUID = "{64BF4122-25F8-401F-A883-CF00CAF6A7D7}" ?>
     <?define HARN_GUID = "{7CE208E6-7B70-40C0-935F-CBE48E8466CD}" ?>
+    <?define NSRS2007_GUID = "{08A6E1D7-1AC3-4805-AF3C-C5D8544D6EE4}" ?>
+    <?define NSRS2011_GUID = "{2F472053-B91F-42A0-8FE8-E586F5F0412E}" ?>
     <?define NADCON_GUID = "{E3AAAB27-9FBE-4999-9253-649D87B32AD8}" ?>
     <?define VERTCON_GUID = "{CD5BF430-B803-460F-9FCB-132D425D97B2}" ?>
 <?else?>
@@ -64,8 +68,12 @@
     <?define NewZealand_GUID = "{8A2F92FC-1C32-46B8-BFE2-0886CC08DEA3}" ?>
     <?define SouthAfrica_GUID = "{49DDC581-3051-4E3B-8718-BBA05F9002BD}" ?>
     <?define Spain_GUID = "{33ECC984-933D-4F6E-B60A-E72E833B47BD}" ?>
+    <?define Venezuela_GUID = "{9C361201-63FB-4D17-A6B8-65A1E1AB9B20}" ?>
+    <?define UK_GUID = "{71994BD0-F161-49AD-84B9-58048EE56F2C}" ?>
     <?define USA_GUID = "{244311A3-4EA6-445C-9FA3-435A9C7674CF}" ?>
     <?define HARN_GUID = "{D0936E1A-FA0A-4447-96DD-CF8075DCE323}" ?>
+    <?define NSRS2007_GUID = "{54A14378-0ABC-4B4C-9A79-C8C0CCD2D31C}" ?>
+    <?define NSRS2011_GUID = "{F456C2B5-E2B1-43D6-BB2D-2723783FD945}" ?>
     <?define NADCON_GUID = "{4317FFAA-F7E3-49DB-9F9D-3CAA5A9960C7}" ?>
     <?define VERTCON_GUID = "{91D982DD-85D7-42A6-958D-B691E5E15C0A}" ?>
 <?endif?>
@@ -209,6 +217,19 @@
                     </Component>
                 </Directory>
 
+                <Directory Id="_FF6ED1C5014E42C5A7C4CAF316011FDE" Name="Venezuela">
+                    <Component Id="_AAD8882B2624492BBF7DC696BDC1B1A0" Guid="$(var.Venezuela_GUID)" Win64="$(var.COMPONENT_WIN64)">
+                        <File Id="_F1710A3E18B94ABA93776FD0970CABDC" Name="canoa_wgs84_mb.gsb" KeyPath="yes" Source="$(env.GeoCoordData)Venezuela\canoa_wgs84_mb.gsb" />
+                        <File Id="_694C22C7F24E4706B7CAF082FEE61E5B" Name="description.txt" Source="$(env.GeoCoordData)Venezuela\description.txt" />
+                    </Component>
+                </Directory>
+
+                <Directory Id="_B94E56C394B14B70A2907B7D6717F77B" Name="UK">
+                    <Component Id="_48C30407E4BE4010BC40931E0309E9F8" Guid="$(var.UK_GUID)" Win64="$(var.COMPONENT_WIN64)">
+                        <File Id="_9C6494789F1E4EE8803AAE560813C93D" Name="ostn02.gsb" KeyPath="yes" Source="$(env.GeoCoordData)UK\ostn02.gsb" />
+                    </Component>
+                </Directory>
+
                 <Directory Id="_B6100F1BA3EF4270BEA52075883DEDC8" Name="USA">
                     <Component Id="_244311A34EA6445C9FA3435A9C7674CF" Guid="$(var.USA_GUID)" KeyPath="yes" Win64="$(var.COMPONENT_WIN64)">
                         <CreateFolder Directory="_B6100F1BA3EF4270BEA52075883DEDC8" />
@@ -287,6 +308,8 @@
                             <File Id="_4EB7B4887A904BD0A340B030DB76BF0F" Name="wvhpgn.los" Source="$(env.GeoCoordData)USA\HARN\wvhpgn.los" />
                             <File Id="_EB8AF0E5DBEF4177ABF44B4CCFC345A2" Name="wyhpgn.las" Source="$(env.GeoCoordData)USA\HARN\wyhpgn.las" />
                             <File Id="_C0CEE41B7D2C4EEB9E3451BA009D394B" Name="wyhpgn.los" Source="$(env.GeoCoordData)USA\HARN\wyhpgn.los" />
+                            <File Id="_0A313EE593754C14A905A42D203A699F" Name="48hpgn.las" Source="$(env.GeoCoordData)USA\HARN\48hpgn.las" />
+                            <File Id="_98CC29E437244D70860B51B46B3085DE" Name="48hpgn.los" Source="$(env.GeoCoordData)USA\HARN\48hpgn.los" />
                         </Component>
                     </Directory>    <!-- HARN -->
 
@@ -308,6 +331,35 @@
                             <File Id="_06D778E7BDEC42D5AA832EA875D5FCF7" Name="stpaul.los" Source="$(env.GeoCoordData)USA\NADCON\stpaul.los" />
                         </Component>
                     </Directory>    <!-- NADCON -->
+
+                    <Directory Id="_5173A91EFFD14FC9910ACBA7C22D013F" Name="NSRS2007">
+                        <Component Id="_DF605B2D6E6144A5A081E1DD03D7F08C" Guid="$(var.NSRS2007_GUID)" Win64="$(var.COMPONENT_WIN64)">
+                            <File Id="_E552084CB66F486B8531B719FC4F17FB" Name="dsla.b" Source="$(env.GeoCoordData)USA\NSRS2007\dsla.b" KeyPath="yes" />
+                            <File Id="_35D9C969BE37477D84E797FA623F3EB9" Name="dslaa.b" Source="$(env.GeoCoordData)USA\NSRS2007\dslaa.b" />
+                            <File Id="_165BBC307B6D4EEB9F6198B656C0E0DC" Name="dslap.b" Source="$(env.GeoCoordData)USA\NSRS2007\dslap.b" />
+                            <File Id="_E985DB087DDE4FA6A3420CA7A04B9521" Name="dslo.b" Source="$(env.GeoCoordData)USA\NSRS2007\dslo.b" />
+                            <File Id="_41E0C12B975C427CA15B78AAB7D566F8" Name="dsloa.b" Source="$(env.GeoCoordData)USA\NSRS2007\dsloa.b" />
+                            <File Id="_ACFE6BA7717048CC8C10D86512AAABC8" Name="dslop.b" Source="$(env.GeoCoordData)USA\NSRS2007\dslop.b" />
+                            <File Id="_9AF753339E1F44A9924AC9E75BCDFF72" Name="dsv.b" Source="$(env.GeoCoordData)USA\NSRS2007\dsv.b" />
+                            <File Id="_F869846B7E5E468E9BAFAFDA195EF3B9" Name="dsva.b" Source="$(env.GeoCoordData)USA\NSRS2007\dsva.b" />
+                            <File Id="_F8A1CF9F4688403A8CBCED1CABE227D4" Name="dsvp.b" Source="$(env.GeoCoordData)USA\NSRS2007\dsvp.b" />
+                        </Component>
+                    </Directory>    <!-- NSRS2007 -->
+
+                    <Directory Id="_1BA0177CCB05432F8617A5F95946E259" Name="NSRS2011">
+                        <Component Id="_2A26BB694FD9440EA989167EA8B4D08A" Guid="$(var.NSRS2011_GUID)" Win64="$(var.COMPONENT_WIN64)">
+                            <File Id="_6566E531EA76496EB30C0E2B04636593" Name="dsla11.b" Source="$(env.GeoCoordData)USA\NSRS2011\dsla11.b" KeyPath="yes" />
+                            <File Id="_11BB8A4C90AF4FA8AAB01D30948B6AE3" Name="dslaa11.b" Source="$(env.GeoCoordData)USA\NSRS2011\dslaa11.b" />
+                            <File Id="_91290AD3291349B8A85599A35D87C310" Name="dslap11.b" Source="$(env.GeoCoordData)USA\NSRS2011\dslap11.b" />
+                            <File Id="_6066AB9DAD6A4281A9CBDB8A6519B8CF" Name="dslo11.b" Source="$(env.GeoCoordData)USA\NSRS2011\dslo11.b" />
+                            <File Id="_80B8B21229D9461E89BE0E020393797C" Name="dsloa11.b" Source="$(env.GeoCoordData)USA\NSRS2011\dsloa11.b" />
+                            <File Id="_6741C6E788944155B004F587C77EA9F1" Name="dslop11.b" Source="$(env.GeoCoordData)USA\NSRS2011\dslop11.b" />
+                            <File Id="_2EA2572A9BB9454382131BEB2F1E71B1" Name="dsv11.b" Source="$(env.GeoCoordData)USA\NSRS2011\dsv11.b" />
+                            <File Id="_DAAC14809C1049DBA90FCBA620DFE7A6" Name="dsva11.b" Source="$(env.GeoCoordData)USA\NSRS2011\dsva11.b" />
+                            <File Id="_43669EFB2358404892AD2694FFEF7B31" Name="dsvp11.b" Source="$(env.GeoCoordData)USA\NSRS2011\dsvp11.b" />
+                        </Component>
+                    </Directory>    <!-- NSRS2011 -->
+
 
                     <Directory Id="_713CDE2214DC4833AA0ED4619BDD0BD1" Name="VERTCON">
                         <Component Id="_91D982DD85D742A6958DB691E5E15C0A" Guid="$(var.VERTCON_GUID)" Win64="$(var.COMPONENT_WIN64)">

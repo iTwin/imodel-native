@@ -11275,6 +11275,18 @@
                                 <KeyName>AL83/2011-W</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.AL-EF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.AL-WF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.AL-E</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.AL-W</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>EPSG:2759</KeyName>
                               </Member>
                               <Member>
@@ -11613,6 +11625,15 @@
                                 <KeyName>AZ83-WIF</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>AZ83/2011-C</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>AZ83/2011-E</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>AZ83/2011-W</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>AZ83/2011-CF</KeyName>
                               </Member>
                               <Member>
@@ -11629,6 +11650,30 @@
                               </Member>
                               <Member>
                                 <KeyName>AZ83/2011-WIF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.AZ-C</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.AZ-E</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.AZ-W</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.AZ-EF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.AZ-WF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.AZ-CIF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.AZ-EIF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.AZ-WIF</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>EPSG:2222</KeyName>
@@ -11648,15 +11693,7 @@
                               <Member>
                                 <KeyName>AZ83-W</KeyName>
                               </Member>
-                              <Member>
-                                <KeyName>AZ83/2011-C</KeyName>
-                              </Member>
-                              <Member>
-                                <KeyName>AZ83/2011-E</KeyName>
-                              </Member>
-                              <Member>
-                                <KeyName>AZ83/2011-W</KeyName>
-                              </Member>
+
                               <Member>
                                 <KeyName>HARN/AZ.AZ-CF</KeyName>
                               </Member>
@@ -11786,6 +11823,18 @@
                                 <KeyName>AR83/2011-S</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.AR-NF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.AR-SF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.AR-N</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.AR-S</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>HARN/AR.AR-NF</KeyName>
                               </Member>
                               <Member>
@@ -11870,6 +11919,9 @@
                                 <KeyName>CA-Teale</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.CA/Teale</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>CA83-IF</KeyName>
                               </Member>
                               <Member>
@@ -11904,6 +11956,24 @@
                               </Member>
                               <Member>
                                 <KeyName>CA83/2011-VIF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.CA-IF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.CA-IIF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.CA-IIIF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.CA-IVF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.CA-VF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.CA-VIF</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>EPSG:2225</KeyName>
@@ -11958,6 +12028,24 @@
                               </Member>
                               <Member>
                                 <KeyName>CA83/2011-VI</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.CA-I</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.CA-II</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.CA-III</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.CA-IV</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.CA-V</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.CA-VI</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>HARN/CA.CA-IF</KeyName>
@@ -12118,6 +12206,12 @@
                               <Member>
                                 <KeyName>EPSG:3311</KeyName>
                               </Member>
+                              <Member>
+                                <KeyName>NSRS11.SFO-CS13</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS11.SFO-CS13F</KeyName>
+                              </Member>
                             </Members>
                           </Group>
                           <Group>
@@ -12142,6 +12236,15 @@
                                 <KeyName>CO83-SF</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>CO83/2011-C</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>CO83/2011-N</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>CO83/2011-S</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>CO83/2011-CF</KeyName>
                               </Member>
                               <Member>
@@ -12149,6 +12252,24 @@
                               </Member>
                               <Member>
                                 <KeyName>CO83/2011-SF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.CO-C</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.CO-N</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.CO-S</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.CO-CF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.CO-NF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.CO-SF</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>EPSG:2231</KeyName>
@@ -12168,15 +12289,7 @@
                               <Member>
                                 <KeyName>CO83-S</KeyName>
                               </Member>
-                              <Member>
-                                <KeyName>CO83/2011-C</KeyName>
-                              </Member>
-                              <Member>
-                                <KeyName>CO83/2011-N</KeyName>
-                              </Member>
-                              <Member>
-                                <KeyName>CO83/2011-S</KeyName>
-                              </Member>
+
                               <Member>
                                 <KeyName>HARN/CO.CO-CF</KeyName>
                               </Member>
@@ -12264,6 +12377,9 @@
                                 <KeyName>CT83/2011F</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.CTF</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>EPSG:2234</KeyName>
                               </Member>
                               <Member>
@@ -12271,6 +12387,9 @@
                               </Member>
                               <Member>
                                 <KeyName>CT83/2011</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.CT</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>HARN/NewEngl.CTF</KeyName>
@@ -12312,6 +12431,9 @@
                                 <KeyName>DE83/2011F</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.DEF</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>EPSG:2235</KeyName>
                               </Member>
                               <Member>
@@ -12319,6 +12441,9 @@
                               </Member>
                               <Member>
                                 <KeyName>DE83/2011</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.DE</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>HARN/MD.DEF</KeyName>
@@ -12381,6 +12506,15 @@
                                 <KeyName>FL83/2011-WF</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.FL-EF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.FL-NF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.FL-WF</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>EPSG:2236</KeyName>
                               </Member>
                               <Member>
@@ -12406,6 +12540,15 @@
                               </Member>
                               <Member>
                                 <KeyName>FL83/2011-W</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.FL-E</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.FL-N</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.FL-W</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>HARN/FL.FL-EF</KeyName>
@@ -12448,6 +12591,9 @@
                               </Member>
                               <Member>
                                 <KeyName>NAD83/2011.FL-GDL/Alb</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.FloridaGDL/Albr</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>EPSG:3086</KeyName>
@@ -12518,6 +12664,12 @@
                                 <KeyName>GA83/2011-WF</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.GA-EF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.GA-WF</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>GA83-GeorgiaPwr</KeyName>
                               </Member>
                               <Member>
@@ -12537,6 +12689,12 @@
                               </Member>
                               <Member>
                                 <KeyName>GA83/2011-W</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.GA-E</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.GA-W</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>HARN/GA.GA-EF</KeyName>
@@ -12856,6 +13014,15 @@
                                 <KeyName>ID83/2011-WF</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.ID-CF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.ID-EF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.ID-WF</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>EPSG:2241</KeyName>
                               </Member>
                               <Member>
@@ -12881,6 +13048,15 @@
                               </Member>
                               <Member>
                                 <KeyName>ID83/2011-W</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.ID-C</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.ID-E</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.ID-W</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>HARN/MT.ID-CF</KeyName>
@@ -12996,6 +13172,18 @@
                                 <KeyName>IL83/2011-W</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.IL-EF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.IL-WF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.IL-E</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.IL-W</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>HARN/IL.IL-EF</KeyName>
                               </Member>
                               <Member>
@@ -13073,6 +13261,12 @@
                                 <KeyName>IN83/2011-WF</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.IN-EF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.IN-WF</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>EPSG:2244</KeyName>
                               </Member>
                               <Member>
@@ -13095,6 +13289,12 @@
                               </Member>
                               <Member>
                                 <KeyName>IN83/2011-W</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.IN-E</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.IN-W</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>HARN/IN.IN-EF</KeyName>
@@ -13469,6 +13669,18 @@
                                 <KeyName>IA83/2011-S</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.IA-NF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.IA-SF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.IA-N</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.IA-S</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>HARN/IA.IA-NF</KeyName>
                               </Member>
                               <Member>
@@ -13550,6 +13762,18 @@
                               </Member>
                               <Member>
                                 <KeyName>KS83/2011-S</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.KS-NF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.KS-SF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.KS-N</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.KS-S</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>HARN/KS.KS-NF</KeyName>
@@ -13695,6 +13919,15 @@
                                 <KeyName>KY83/2011-SF</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.KYF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.KY-NF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.KY-SF</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>EPSG:2246</KeyName>
                               </Member>
                               <Member>
@@ -13717,6 +13950,15 @@
                               </Member>
                               <Member>
                                 <KeyName>KY83/2011-S</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.KY</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.KY-N</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.KY-S</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>EPSG:2205</KeyName>
@@ -13847,6 +14089,24 @@
                                 <KeyName>LA83/2011-S</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.LA-NF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.LA-OF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.LA-SF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.LA-N</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.LA-O</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.LA-S</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>HARN/LA.LA-NF</KeyName>
                               </Member>
                               <Member>
@@ -13949,6 +14209,18 @@
                                     <KeyName>ME83/2011-W</KeyName>
                                   </Member>
                                   <Member>
+                                    <KeyName>NSRS07.ME-EF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>NSRS07.ME-WF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>NSRS07.ME-E</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>NSRS07.ME-W</KeyName>
+                                  </Member>
+                                  <Member>
                                     <KeyName>HARN/ME.ME-EF</KeyName>
                                   </Member>
                                   <Member>
@@ -13994,6 +14266,15 @@
                               </Member>
                               <Member>
                                 <KeyName>NAD83/2011-ME2K-W</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.ME2K-C</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.ME2K-E</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.ME2K-W</KeyName>
                               </Member>
 			                  <Member>
 			                    <KeyName>MA-IS</KeyName>
@@ -14074,6 +14355,9 @@
                               </Member>
                               <Member>
                                 <KeyName>MD83/2011F</KeyName>
+                              </Member>                              
+                              <Member>
+                                <KeyName>NSRS07.MDF</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>EPSG:2248</KeyName>
@@ -14083,6 +14367,9 @@
                               </Member>
                               <Member>
                                 <KeyName>MD83/2011</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.MD</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>HARN/MD.MDF</KeyName>
@@ -14132,6 +14419,12 @@
                                 <KeyName>MA83/2011-ISF</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.MAF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.MA-ISF</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>EPSG:2249</KeyName>
                               </Member>
                               <Member>
@@ -14148,6 +14441,12 @@
                               </Member>
                               <Member>
                                 <KeyName>MA83/2011-IS</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.MA</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.MA-IS</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>HARN/NewEngl.MAF</KeyName>
@@ -14260,6 +14559,24 @@
                                 <KeyName>MI83/2011-SIF</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.MI-CF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.MI-NF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.MI-SF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.MI-CIF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.MI-NIF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.MI-SIF</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>EPSG:2251</KeyName>
                               </Member>
                               <Member>
@@ -14287,10 +14604,22 @@
                                 <KeyName>MI83/2011-S</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.MI-C</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.MI-N</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.MI-S</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>MichiganGeoRef83</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>MichiganGeoRef83/2011</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.MichiganGeoRef</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>HARN/MI.MI-CF</KeyName>
@@ -15347,6 +15676,24 @@
                               </Member>
                               <Member>
                                 <KeyName>MN83/2011-S</KeyName>
+                              </Member>                              
+                              <Member>
+                                <KeyName>NSRS07.MN-CF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.MN-NF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.MN-SF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.MN-C</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.MN-N</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.MN-S</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>HARN/MN.MN-CF</KeyName>
@@ -15453,6 +15800,12 @@
                                 <KeyName>MS83/2011-W</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.MS-E</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.MS-W</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>EPSG:2254</KeyName>
                               </Member>
                               <Member>
@@ -15475,6 +15828,15 @@
                               </Member>
                               <Member>
                                 <KeyName>MS83/2011-TM</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.MS-EF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.MS-WF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.MS-TM</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>HARN/MS.MS-EF</KeyName>
@@ -15581,6 +15943,24 @@
                                 <KeyName>MO83/2011-WF</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.MO-C</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.MO-E</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.MO-W</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.MO-CF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.MO-EF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.MO-WF</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>HARN/MO.MO-CF</KeyName>
                               </Member>
                               <Member>
@@ -15670,6 +16050,12 @@
                                 <KeyName>MT83/2011IF</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.MTF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.MTIF</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>EPSG:2256</KeyName>
                               </Member>
                               <Member>
@@ -15677,6 +16063,9 @@
                               </Member>
                               <Member>
                                 <KeyName>MT83/2011</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.MT</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>HARN/MT.MTF</KeyName>
@@ -15739,6 +16128,12 @@
                               </Member>
                               <Member>
                                 <KeyName>NB83/2011</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.NBF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.NB</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>HARN/NB.NEF</KeyName>
@@ -15815,6 +16210,15 @@
                                 <KeyName>NV83/2011-WF</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.NV-CF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.NV-EF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.NV-WF</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>HARN/NV.NV-C</KeyName>
                               </Member>
                               <Member>
@@ -15849,6 +16253,15 @@
                               </Member>
                               <Member>
                                 <KeyName>NV83/2011-W</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.NV-C</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.NV-E</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.NV-W</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>HARN/NV.NV-CF</KeyName>
@@ -15934,6 +16347,12 @@
                                 <KeyName>NH83/2011</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.NHF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.NH</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>HARN/NewEngl.NHF</KeyName>
                               </Member>
                               <Member>
@@ -15979,6 +16398,12 @@
                               </Member>
                               <Member>
                                 <KeyName>NJ83/2011</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.NJF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.NJ</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>HARN/NJ.NJF</KeyName>
@@ -16040,6 +16465,15 @@
                                 <KeyName>NM83/2011-WF</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.NM-CF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.NM-EF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.NM-WF</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>EPSG:2257</KeyName>
                               </Member>
                               <Member>
@@ -16065,6 +16499,15 @@
                               </Member>
                               <Member>
                                 <KeyName>NM83/2011-W</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.NM-C</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.NM-E</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.NM-W</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>HARN/NM.NM-CF</KeyName>
@@ -16180,6 +16623,18 @@
                                 <KeyName>NY83/2011-WF</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.NY-CF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.NY-EF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.NY-LIF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.NY-WF</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>EPSG:2260</KeyName>
                               </Member>
                               <Member>
@@ -16214,6 +16669,18 @@
                               </Member>
                               <Member>
                                 <KeyName>NY83/2011-W</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.NY-C</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.NY-E</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.NY-LI</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.NY-W</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>HARN/NY.NY-CF</KeyName>
@@ -16335,6 +16802,12 @@
                                 <KeyName>NC83/2011</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.NCF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.NC</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>EPSG:2264</KeyName>
                               </Member>
                               <Member>
@@ -16382,6 +16855,24 @@
                                 <KeyName>ND83/2011-SF</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>ND83/2011-NIF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>ND83/2011-SIF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.ND-NF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.ND-SF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.ND-NIF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.ND-SIF</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>EPSG:2265</KeyName>
                               </Member>
                               <Member>
@@ -16398,6 +16889,12 @@
                               </Member>
                               <Member>
                                 <KeyName>ND83/2011-S</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.ND-N</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.ND-S</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>HARN/ND.ND-NF</KeyName>
@@ -16496,6 +16993,18 @@
                                 <KeyName>OH83/2011-S</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.OH-NF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.OH-SF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.OH-N</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.OH-S</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>HARN/OH.OH-NF</KeyName>
                               </Member>
                               <Member>
@@ -16573,6 +17082,12 @@
                                 <KeyName>OK83/2011-SF</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.OK-NF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.OK-SF</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>EPSG:2267</KeyName>
                               </Member>
                               <Member>
@@ -16589,6 +17104,12 @@
                               </Member>
                               <Member>
                                 <KeyName>OK83/2011-S</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.OK-N</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.OK-S</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>HARN/OK.OK-NF</KeyName>
@@ -16674,6 +17195,18 @@
                                 <KeyName>OR83/2011-SIF</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.OR-NF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.OR-SF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.OR-NIF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.OR-SIF</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>EPSG:2269</KeyName>
                               </Member>
                               <Member>
@@ -16690,6 +17223,12 @@
                               </Member>
                               <Member>
                                 <KeyName>OR83/2011-S</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.OR-N</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.OR-S</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>OR83-SSCGIS</KeyName>
@@ -16741,6 +17280,15 @@
                               </Member>
                               <Member>
                                 <KeyName>NAD83/2011.OregonLmbrt</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS11.OregonLmbrt-IF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.OregonLambert</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.OregonLambert-F</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>HARN.OregonLambert</KeyName>
@@ -16796,6 +17344,12 @@
                                 <KeyName>PA83/2011-SF</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.PA-NF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.PA-SF</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>EPSG:2271</KeyName>
                               </Member>
                               <Member>
@@ -16812,6 +17366,12 @@
                               </Member>
                               <Member>
                                 <KeyName>PA83/2011-S</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.PA-N</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.PA-S</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>HARN/PA.PA-NF</KeyName>
@@ -16882,6 +17442,12 @@
                                 <KeyName>PR83/2011</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.PRF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.PR</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>HARN/PV.PRF</KeyName>
                               </Member>
                               <Member>
@@ -16935,6 +17501,12 @@
                                 <KeyName>RI83/2011</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.RIF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.RI</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>HARN/NewEngl.RIF</KeyName>
                               </Member>
                               <Member>
@@ -16979,6 +17551,9 @@
                                 <KeyName>SC83/2011F</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.SCF</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>EPSG:2273</KeyName>
                               </Member>
                               <Member>
@@ -16991,7 +17566,16 @@
                                 <KeyName>SC83/2011IF</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.SCIF</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>SC83/2011</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.SC</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.SCIF</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>HARN/SC.SCF</KeyName>
@@ -17054,6 +17638,18 @@
                               </Member>
                               <Member>
                                 <KeyName>SD83/2011-S</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.SD-NF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.SD-SF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.SD-N</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.SD-S</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>HARN/SD.SD-NF</KeyName>
@@ -17130,6 +17726,9 @@
                                 <KeyName>TN83/2011F</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.TNF</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>EPSG:2274</KeyName>
                               </Member>
                               <Member>
@@ -17137,6 +17736,9 @@
                               </Member>
                               <Member>
                                 <KeyName>TN83/2011</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.TN</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>HARN/TN.TNF</KeyName>
@@ -17216,6 +17818,21 @@
                                 <KeyName>TX83/2011-SCF</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.TX-CF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.TX-NF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.TX-NCF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.TX-SF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.TX-SCF</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>EPSG:2275</KeyName>
                               </Member>
                               <Member>
@@ -17259,6 +17876,21 @@
                               </Member>
                               <Member>
                                 <KeyName>TX83/2011-SC</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.TX-C</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.TX-N</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.TX-NC</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.TX-S</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.TX-SC</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>TX83-DOT</KeyName>
@@ -17333,6 +17965,9 @@
                                 <KeyName>NAD83/2011.TexasLambert</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.Texas/Lambert</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>EPSG:3082</KeyName>
                               </Member>
                               <Member>
@@ -17340,6 +17975,9 @@
                               </Member>
                               <Member>
                                 <KeyName>NAD83/2011.Texas/EqArea</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.Texas/Albers</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>EPSG:3083</KeyName>
@@ -17473,6 +18111,24 @@
                                 <KeyName>UT83/2011-SIF</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.UT-CF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.UT-NF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.UT-SF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.UT-CIF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.UT-NIF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.UT-SIF</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>EPSG:2280</KeyName>
                               </Member>
                               <Member>
@@ -17498,6 +18154,15 @@
                               </Member>
                               <Member>
                                 <KeyName>UT83/2011-S</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.UT-C</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.UT-N</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.UT-S</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>HARN/UT.UT-CF</KeyName>
@@ -17617,6 +18282,12 @@
                               </Member>
                               <Member>
                                 <KeyName>VT83/2011</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.VTF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.VT</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>HARN/NewEngl.VTF</KeyName>
@@ -18276,6 +18947,12 @@
                                 <KeyName>VA83/2011-SF</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.VA-NF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.VA-SF</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>EPSG:2283</KeyName>
                               </Member>
                               <Member>
@@ -18292,6 +18969,12 @@
                               </Member>
                               <Member>
                                 <KeyName>VA83/2011-S</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.VA-N</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.VA-S</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>HARN/VA.VA-NF</KeyName>
@@ -18371,6 +19054,12 @@
                                 <KeyName>WA83/2011-SF</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.WA-NF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.WA-SF</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>EPSG:2285</KeyName>
                               </Member>
                               <Member>
@@ -18387,6 +19076,12 @@
                               </Member>
                               <Member>
                                 <KeyName>WA83/2011-S</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.WA-N</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.WA-S</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>HARN/WO.WA-NF</KeyName>
@@ -18470,6 +19165,18 @@
                               </Member>
                               <Member>
                                 <KeyName>WV83/2011-S</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.WV-NF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.WV-SF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.WV-N</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.WV-S</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>HARN/WV.WV-NF</KeyName>
@@ -18561,6 +19268,15 @@
                                   <KeyName>WI83/2011-SF</KeyName>
                                 </Member>
                                 <Member>
+                                  <KeyName>NSRS07.WI-CF</KeyName>
+                                </Member>
+                                <Member>
+                                  <KeyName>NSRS07.WI-NF</KeyName>
+                                </Member>
+                                <Member>
+                                  <KeyName>NSRS07.WI-SF</KeyName>
+                                </Member>
+                                <Member>
                                   <KeyName>EPSG:2287</KeyName>
                                 </Member>
                                 <Member>
@@ -18588,10 +19304,22 @@
                                   <KeyName>WI83/2011-S</KeyName>
                                 </Member>
                                 <Member>
+                                  <KeyName>NSRS07.WI-C</KeyName>
+                                </Member>
+                                <Member>
+                                  <KeyName>NSRS07.WI-N</KeyName>
+                                </Member>
+                                <Member>
+                                  <KeyName>NSRS07.WI-S</KeyName>
+                                </Member>
+                                <Member>
                                   <KeyName>WisconsinTM-83</KeyName>
                                 </Member>
                                 <Member>
                                   <KeyName>WisconsinTM-83/2011</KeyName>
+                                </Member>
+                                <Member>
+                                  <KeyName>NSRS07.WisconsinTM</KeyName>
                                 </Member>
                                 <Member>
                                   <KeyName>HARN/WI.WI-CF</KeyName>
@@ -20087,6 +20815,30 @@
                                 <KeyName>WY83/2011-WC</KeyName>
                               </Member>
                               <Member>
+                                <KeyName>NSRS07.WY-EF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.WY-ECF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.WY-WF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.WY-WCF</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.WY-E</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.WY-EC</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.WY-W</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.WY-WC</KeyName>
+                              </Member>
+                              <Member>
                                 <KeyName>HARN/WY.WY-EF</KeyName>
                               </Member>
                               <Member>
@@ -21016,6 +21768,33 @@
                               </Member>
                               <Member>
                                 <KeyName>UTM83/2011-60</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.UTM-10</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.UTM-11</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.UTM-12</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.UTM-13</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.UTM-14</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.UTM-15</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.UTM-16</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.UTM-17</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NSRS07.UTM-18</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>UTMHP-10F</KeyName>
@@ -33350,6 +34129,9 @@
               <Group>
                 <Name>United States of America</Name>
                 <Members>
+                  <Member>
+                    <KeyName>NSRS07.LL</KeyName>
+                  </Member>
                   <Member>
                     <KeyName>LL-HPGN</KeyName>
                   </Member>

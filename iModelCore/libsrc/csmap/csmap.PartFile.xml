@@ -39,6 +39,8 @@
             <Directory ProductDirectoryName="GeoCoordData" ProductSubDirectory="SouthAfrica" SourceName="Delivery/GeoCoordData/SouthAfrica" />
             <Directory ProductDirectoryName="GeoCoordData" ProductSubDirectory="Spain" SourceName="Delivery/GeoCoordData/Spain" />
             <Directory ProductDirectoryName="GeoCoordData" ProductSubDirectory="Switzerland" SourceName="Delivery/GeoCoordData/Switzerland" />
+            <Directory ProductDirectoryName="GeoCoordData" ProductSubDirectory="Venezuela" SourceName="Delivery/GeoCoordData/Venezuela" />
+            <Directory ProductDirectoryName="GeoCoordData" ProductSubDirectory="UK" SourceName="Delivery/GeoCoordData/UK" />
             <MergeModules ProductDirectoryName="CSMapMergeModules">Install/GeoCoordDataMergeModule.msm</MergeModules>
         </Bindings>
     </Part>

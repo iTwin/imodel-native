@@ -173,7 +173,7 @@ MultiCompileDepends=$(_MakeFileSpec)
 
     $(o)CS_csprm$(oext):              $(csSrcDir)CS_csprm.c ${MultiCompileDepends}
 
-    $(o)CS_cswktloc$(oext):           $(csSrcDir)CS_cswktloc.c ${MultiCompileDepends}
+    $(o)CS_csWktLoc$(oext):           $(csSrcDir)CS_csWktLoc.c ${MultiCompileDepends}
 
     $(o)CS_datum$(oext):              $(csSrcDir)CS_datum.c ${MultiCompileDepends}
 
@@ -355,7 +355,7 @@ MultiCompileDepends=$(_MakeFileSpec)
 
     $(o)CS_zones$(oext):              $(csSrcDir)CS_zones.c ${MultiCompileDepends}
     
-    $(o)cscscomp$(oext):              $(csSrcDir)cscscomp.c ${MultiCompileDepends}
+    $(o)CScscomp$(oext):              $(csSrcDir)CScscomp.c ${MultiCompileDepends}
 
     $(o)CSdata$(oext):                $(csSrcDir)CSdata.c ${MultiCompileDepends}
     
@@ -396,7 +396,7 @@ MultiCompileDepends=$(_MakeFileSpec)
 
 #    $(o)CS_mfc$(oext):                  $(csSrcDir)CS_mfc.cpp ${MultiCompileDepends}
 
-    $(o)CS_wellKnownText$(oext):         $(csSrcDir)CS_wellKnownText.cpp ${MultiCompileDepends}
+    $(o)CS_wellknownText$(oext):         $(csSrcDir)CS_wellknownText.cpp ${MultiCompileDepends}
 
     $(o)CS_wktObjKonstants$(oext):       $(csSrcDir)CS_wktObjKonstants.cpp ${MultiCompileDepends}
 
