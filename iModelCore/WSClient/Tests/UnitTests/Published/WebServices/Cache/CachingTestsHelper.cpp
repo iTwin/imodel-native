@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/CachingTestsHelper.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -371,6 +371,27 @@ ECInstanceKey StubInstanceInCacheJson(IDataSourceCache& cache, ObjectIdCR object
         }
 
     return StubInstanceInCache(cache, objectId, propertiesMap);
+    }
+
+ECInstanceKey StubPartialInstanceInCache(IDataSourceCache& cache, ObjectIdCR objectId, std::map<Utf8String, Json::Value> properties)
+    {
+    StubInstances instances;
+    instances.Add(objectId, properties);
+    WSQuery query(objectId.schemaName, objectId.className);
+
+    for (auto pair : properties)
+        query.AddSelect(pair.first);
+
+    auto key = StubCachedResponseKey(cache, BeGuid(true).ToString());
+
+    bset<ObjectId> rejected;
+    EXPECT_EQ(CacheStatus::OK, cache.CacheResponse(key, instances.ToWSObjectsResponse(), &rejected, &query));
+    EXPECT_EQ(0, rejected.size());
+
+    EXPECT_FALSE(cache.GetCachedObjectInfo(objectId).IsFullyCached());
+    auto instance = cache.FindInstance(objectId);
+    EXPECT_TRUE(instance.IsValid());
+    return instance;
     }
 
 CachedResponseKey StubInstancesInCache(IDataSourceCache& cache, StubInstances& instances, Utf8StringCR root, Utf8String responseName)
