@@ -9,5 +9,3 @@ WebsiteSeedFileTests.CreateSeedFile
 #----------------------------------------------------------------------------------------
 BriefcaseSchemaChangesTests.*
 SeedFileTests.ReplaceWithoutLockediModel
-LocksTests.WorkflowCreateNewElementModelExclusivelyLocked
-LocksTests.WorkflowUpdateElementWithExclusiveModelLock

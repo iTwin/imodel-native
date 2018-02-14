@@ -9,8 +9,6 @@ WebsiteSeedFileTests.CreateSeedFile
 #----------------------------------------------------------------------------------------
 BriefcaseSchemaChangesTests.*
 SeedFileTests.ReplaceWithoutLockediModel
-LocksTests.WorkflowCreateNewElementModelExclusivelyLocked
-LocksTests.WorkflowUpdateElementWithExclusiveModelLock
 
 #----------------------------------------------------------------------------------------
 #   Tests that require statistics

@@ -552,6 +552,10 @@ TEST_F(PerformanceTests, PushLocks)
     auto aspect = CreateAspect(m_model);
     auto sqlStatement = GetStatement(m_model, aspect->GetToken());
 
+    db.SaveChanges();
+    auto result = m_briefcase->PullMergeAndPush(nullptr, true)->GetResult();
+    ASSERT_SUCCESS(result);
+
     //Create and then acquire
     for (int i = 0; i < postRequestSize; i++)
         {
@@ -561,8 +565,8 @@ TEST_F(PerformanceTests, PushLocks)
 
     StopWatch timer(true);
     db.SaveChanges();
-    auto result = m_briefcase->PullMergeAndPush(nullptr, false)->GetResult();
-    ExpectLocksCount(*m_briefcase, postRequestSize + 5); // Was +6 before, changed to +5
+    result = m_briefcase->PullMergeAndPush(nullptr, false)->GetResult();
+    ExpectLocksCount(*m_briefcase, postRequestSize);
     EXPECT_SUCCESS(result);
     timer.Stop();
     LogTiming(timer, postRequestSize, result.IsSuccess());
