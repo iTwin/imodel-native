@@ -121,10 +121,12 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
             }
 
         ECN::ECClassCP targetClass = GetDgnDb().Schemas().GetClass(targetInstanceKey.GetClassId());
+        ECN::ECClassCP sourceClass = GetDgnDb().Schemas().GetClass(sourceInstanceKey.GetClassId());
         // Otherwise, the converter should have created a navigation property on the target class, so we need to set the target instance's ECValue
         ECN::ECPropertyP prop = nullptr;
         
         // If the class is an ElementOwnsMultiAspects base, then need to use the NavigationProperty 'Element' that is defined on the base MultiAspect class.
+        bool navPropOnSource = false;
         if (relClass->Is(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsMultiAspects))
             {
             prop = targetClass->GetPropertyP("Element");
@@ -134,7 +136,8 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
             prop = targetClass->GetPropertyP(relClass->GetName().c_str());
             if (nullptr == prop)
                 {
-                prop = GetDgnDb().Schemas().GetClass(sourceInstanceKey.GetClassId())->GetPropertyP(relClass->GetName().c_str());
+                prop = sourceClass->GetPropertyP(relClass->GetName().c_str());
+                navPropOnSource = true;
                 }
             }
 
@@ -182,7 +185,7 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
         ECN::ECValue val;
         val.SetNavigationInfo((BeInt64Id) targetInstanceKey.GetInstanceId().GetValue(), relClass->GetRelationshipClassCP());
 
-        if (targetClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementAspect))
+        if (targetClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementAspect) && !navPropOnSource)
             {
             DgnElementPtr element = m_dgndb->Elements().GetForEdit<DgnElement>(DgnElementId(sourceInstanceKey.GetInstanceId().GetValue()));
             if (!element.IsValid())
@@ -223,6 +226,48 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
                 }
             element->Update();
             }
+        else if (sourceClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementAspect) && navPropOnSource)
+            {
+            DgnElementPtr element = m_dgndb->Elements().GetForEdit<DgnElement>(DgnElementId(targetInstanceKey.GetInstanceId().GetValue()));
+            if (!element.IsValid())
+                continue;
+            DgnElement::MultiAspect* aspect = DgnElement::MultiAspect::GetAspectP(*element, *sourceClass, sourceInstanceKey.GetInstanceId());
+            if (nullptr == aspect)
+                {
+                Utf8String errorMsg;
+                errorMsg.Sprintf("Unable to get ElementAspect from Element."
+                                 "Failed to convert ECRelationship '%s' from element %" PRIu64 " in file '%s' "
+                                 "(Source: %s|%s (%s:%s) Target %s|%s (%s:%s)). "
+                                 "Insertion into target BIM file failed.",
+                                 v8RelFullClassName.c_str(),
+                                 v8Element.GetElementId(), Utf8String(v8Element.GetDgnFileP()->GetFileName().c_str()).c_str(),
+                                 v8SourceKey.GetClassName().GetClassFullName().c_str(), v8SourceKey.GetInstanceId(),
+                                 sourceInstanceKey.GetClassId().ToString().c_str(), sourceInstanceKey.GetInstanceId().ToString().c_str(),
+                                 v8TargetKey.GetClassName().GetClassFullName().c_str(), v8TargetKey.GetInstanceId(),
+                                 targetInstanceKey.GetClassId().ToString().c_str(), targetInstanceKey.GetInstanceId().ToString().c_str());
+                ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(),
+                            errorMsg.c_str());
+                continue;
+                }
+            if (DgnDbStatus::Success != aspect->SetPropertyValue(navProp->GetName().c_str(), val))
+                {
+                Utf8String errorMsg;
+                errorMsg.Sprintf("Failed to set NavigationECProperty on Source ElementAspect ECInstance for ECRelationship '%s' from element %" PRIu64 " in file '%s' "
+                                 "(Source: %s|%s (%s:%s) Target %s|%s (%s:%s)). ",
+                                 v8RelFullClassName.c_str(),
+                                 v8Element.GetElementId(), Utf8String(v8Element.GetDgnFileP()->GetFileName().c_str()).c_str(),
+                                 v8SourceKey.GetClassName().GetClassFullName().c_str(), v8SourceKey.GetInstanceId(),
+                                 sourceInstanceKey.GetClassId().ToString().c_str(), sourceInstanceKey.GetInstanceId().ToString().c_str(),
+                                 v8TargetKey.GetClassName().GetClassFullName().c_str(), v8TargetKey.GetInstanceId(),
+                                 targetInstanceKey.GetClassId().ToString().c_str(), targetInstanceKey.GetInstanceId().ToString().c_str());
+
+                ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(),
+                            errorMsg.c_str());
+                continue;
+                }
+            element->Update();
+            }
+
         else
             {
             DgnElementPtr element = m_dgndb->Elements().GetForEdit<DgnElement>(DgnElementId(targetInstanceKey.GetInstanceId().GetValue()));
