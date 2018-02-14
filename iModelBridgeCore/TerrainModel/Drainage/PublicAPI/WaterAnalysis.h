@@ -35,6 +35,8 @@ ADDDRAINAGETYPES(WaterAnalysisResultPond);
 
 BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 
+struct Flow;
+
 //----------------------------------------------------------------------------------------*
 // @bsistruct                                                    Daryl.Holmwood  08/17
 // +---------------+---------------+---------------+---------------+---------------+------*
@@ -126,6 +128,10 @@ struct WaterAnalysisResultGeometry : WaterAnalysisResultItem
         void AddPrimitives(CurveVectorCR source)
             {
             m_geometry->AddPrimitives(source);
+            }
+        void ConsolidateAdjacentPrimitives()
+            {
+            m_geometry->ConsolidateAdjacentPrimitives();
             }
     };
 
@@ -225,6 +231,7 @@ struct TraceFeature : RefCountedBase
 
         TraceFeatureP CreateAndAddEdge(bvector<TraceFeaturePtr>& newFeatures, long pnt1, long pnt2, DPoint3dCR pt, double m_lastAngle);
 
+        void FindFlows(bvector<Flow>& flows, long pnt, long priorPnt = -1, long nextPnt = -1, bool isFlatPond = false);
     public:
 
         void AddVolumeToProcess(double vol)
@@ -489,6 +496,7 @@ struct TraceOnPoint : public TraceFeature
             m_onHullPoint = from.m_onHullPoint;
             }
         void ProcessZSlope(bvector<TraceFeaturePtr>& newFeatures, long descentPnt1, long descentPnt2);
+
     public:
         long GetPointNum() const
             {

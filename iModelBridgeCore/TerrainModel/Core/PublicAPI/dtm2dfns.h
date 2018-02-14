@@ -2,7 +2,7 @@
 |
 |     $Source: Core/PublicAPI/dtm2dfns.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -902,6 +902,7 @@ BENTLEYDTM_Public                      int bcdtmMath_deletePolygonKnotsP3D (DPoi
 BENTLEYDTM_Public                   double bcdtmMath_distance (double X1, double Y1, double X2, double Y2);
 BENTLEYDTM_EXPORT                   double bcdtmMath_distance3D (double X1, double Y1, double Z1, double X2, double Y2, double Z2);
 BENTLEYDTM_EXPORT                   double bcdtmMath_distanceOfPointFromLine (long *LineFlag, double X1, double Y1, double X2, double Y2, double X3, double Y3, double *X4, double *Y4);
+BENTLEYDTM_EXPORT                   double bcdtmMath_distanceOfPointFromLineSquared (long *LineFlag, double X1, double Y1, double X2, double Y2, double X3, double Y3, double *X4, double *Y4);
 BENTLEYDTM_Public                   double bcdtmMath_distanceSquared (double X1, double Y1, double X2, double Y2);
 BENTLEYDTM_EXPORT                      int bcdtmMath_freeArcPoints (DPoint3d **Points);
 BENTLEYDTM_EXPORT                   double bcdtmMath_getAngle (double x1, double y1, double x2, double y2);
