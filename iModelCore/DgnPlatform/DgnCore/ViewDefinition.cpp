@@ -892,7 +892,7 @@ DgnDbStatus ViewDefinition3d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
 Json::Value ViewDefinition3d::Camera::ToJson() const 
     {
     Json::Value val; 
-    val[json_lens()] = m_lensAngle.Degrees(); 
+    val[json_lens()] = JsonUtils::FromAngle(m_lensAngle); 
     val[json_focusDist()] = m_focusDistance; 
     JsonUtils::DPoint3dToJson(val[json_eye()], m_eyePoint); 
     return val;
@@ -904,7 +904,7 @@ Json::Value ViewDefinition3d::Camera::ToJson() const
 ViewDefinition3d::Camera ViewDefinition3d::Camera::FromJson(JsonValueCR val)
     {
     Camera camera;
-    camera.SetLensAngle(Angle::FromDegrees(val[json_lens()].asDouble())); 
+    camera.SetLensAngle(JsonUtils::ToAngle(val[json_lens()])); 
     camera.SetFocusDistance(val[json_focusDist()].asDouble()); 
     JsonUtils::DPoint3dFromJson(camera.m_eyePoint, val[json_eye()]);
     return camera;
@@ -937,16 +937,16 @@ void ViewDefinition3d::_FromJson(JsonValueR val)
         m_cameraOn = val[json_cameraOn()].asBool();
 
     if (val.isMember(json_origin()))
-        JsonUtils::DPoint3dFromJson(m_origin, val[json_origin()]);
+        m_origin = JsonUtils::ToDPoint3d(val[json_origin()]);
 
     if (val.isMember(json_extents()))
-        JsonUtils::DPoint3dFromJson(m_extents, val[json_extents()]);
+        m_extents = JsonUtils::ToDVec3d(val[json_extents()]);
     
     if (val.isMember(json_angles()))
         m_rotation = JsonUtils::YawPitchRollFromJson(val[json_angles()]).ToRotMatrix();
 
     if (val.isMember(json_camera()))
-        m_cameraDef.FromJson(val[json_camera()]);
+        m_cameraDef = Camera::FromJson(val[json_camera()]);
     }
 
 /*---------------------------------------------------------------------------------**//**

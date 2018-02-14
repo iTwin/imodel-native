@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/MeshEdgeBuilder.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -19,7 +19,6 @@ USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
 struct MeshEdgesBuilder
 {
 private:
-
 
     struct  PointComparator 
         {
@@ -269,7 +268,7 @@ void BuildEdges (MeshEdgesR edges, MeshBuilder::Polyface const* builderPolyface)
         {
         if (edge.second.m_visible)
             {
-            if (nullptr == builderPolyface)
+            if (nullptr == builderPolyface || !m_options.CreateEdgeChains())
                 edges.m_visible.push_back(edge.second.m_edge);
             }
         else
@@ -283,7 +282,7 @@ void BuildEdges (MeshEdgesR edges, MeshBuilder::Polyface const* builderPolyface)
 
                 if (fabs(normal0.DotProduct(normal1)) < s_maxPlanarDot)
                     {
-                    // Potential silhouettes.
+                    // Potential silhouettes.ru
                     edges.m_silhouette.push_back(edge.second.m_edge);
                     edges.m_silhouetteNormals.push_back(OctEncodedNormalPair(OctEncodedNormal::From(normal0), OctEncodedNormal::From(normal1)));
                     }
@@ -303,7 +302,7 @@ void BuildEdges (MeshEdgesR edges, MeshBuilder::Polyface const* builderPolyface)
             for (size_t i=0; i<builderPolyface->m_polyface.GetEdgeChainCount(); i++)
                 BuildPolylineFromEdgeChain(edges, *(builderPolyface->m_polyface.GetEdgeChainCP() + i), *builderPolyface, inverseVertexIndexMap);
             }
-        else
+        else if (m_options.CreateEdgeChains())
             {
             BuildPolylineFromEdgeChain(edges, PolyfaceEdgeChain(CurveTopologyId(), builderPolyface->m_polyface), *builderPolyface, inverseVertexIndexMap);
             }
@@ -318,7 +317,7 @@ void BuildEdges (MeshEdgesR edges, MeshBuilder::Polyface const* builderPolyface)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshBuilder::BeginPolyface(PolyfaceQueryCR polyface, MeshEdgeCreationOptionsCR options) 
     { 
-    m_currentPolyface = (options.GenerateNoEdges()) ? nullptr : new Polyface (polyface, options, m_mesh->Triangles().Count()); 
+    m_currentPolyface = (options.GenerateNoEdges() && 0 == polyface.GetEdgeChainCount()) ? nullptr : new Polyface (polyface, options, m_mesh->Triangles().Count()); 
     }
 
 /*---------------------------------------------------------------------------------**//**

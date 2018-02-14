@@ -341,7 +341,7 @@ public:
 
     void ExtractLockSet(DgnLockSet& locks); //!< @private
     void InsertLock(LockableId id, LockLevel level);  //!< @private
-    DGNPLATFORM_EXPORT void FromRevision(DgnRevision& revision, DgnDbCR dgndb, bool extractInserted = true); //!< @private
+    DGNPLATFORM_EXPORT void FromRevision(DgnRevision& revision, DgnDbCR dgndb, bool extractInserted = true, bool avoidExclusiveModelElements = true); //!< @private
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

@@ -1572,7 +1572,7 @@ PolyfaceHeaderPtr PrimitiveGeometry::FixPolyface(PolyfaceHeaderR geom, IFacetOpt
         if (addFaceData)
             polyface->BuildPerFaceFaceData();
 
-        if (!geom.HasConvexFacets() && facetOptions.GetConvexFacetsRequired())
+        if (maxPerFace > 3 && !geom.HasConvexFacets() && facetOptions.GetConvexFacetsRequired())
             polyface->Triangulate(3);
 
         // Not necessary to add edges chains -- edges will be generated from visibility flags later
@@ -1587,15 +1587,10 @@ PolyfaceHeaderPtr PrimitiveGeometry::FixPolyface(PolyfaceHeaderR geom, IFacetOpt
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PrimitiveGeometry::AddNormals(PolyfaceHeaderR polyface, IFacetOptionsR facetOptions)
     {
-    static double s_defaultCreaseRadians = Angle::DegreesToRadians(45.0);
+    static double   s_defaultCreaseRadians = Angle::DegreesToRadians(45.0);       
+    static double   s_sharedNormalSizeRatio = 5.0;      // Omit expensive shared normal if below this ratio of tolerance.
 
-#define USE_SLOW_BUILDER            // Fast Builder WIP....
-#ifdef USE_SLOW_BUILDER
-    static double s_defaultConeRadians = Angle::DegreesToRadians(90.0);
-    polyface.BuildApproximateNormals(s_defaultCreaseRadians, s_defaultConeRadians, facetOptions.GetHideSmoothEdgesWhenGeneratingNormals());
-#else
-    polyface.BuildNormalsFast(s_defaultCreaseRadians);
-#endif
+    polyface.BuildNormalsFast(s_defaultCreaseRadians, s_sharedNormalSizeRatio * facetOptions.GetChordTolerance());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1603,21 +1598,7 @@ void PrimitiveGeometry::AddNormals(PolyfaceHeaderR polyface, IFacetOptionsR face
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PrimitiveGeometry::AddParams(PolyfaceHeaderR polyface, IFacetOptionsR facetOptions)
     {
-    LocalCoordinateSelect selector;
-    switch (facetOptions.GetParamMode())
-        {
-        case FACET_PARAM_01BothAxes:
-            selector = LOCAL_COORDINATE_SCALE_01RangeBothAxes;
-            break;
-        case FACET_PARAM_01LargerAxis:
-            selector = LOCAL_COORDINATE_SCALE_01RangeLargerAxis;
-            break;
-        default:
-            selector = LOCAL_COORDINATE_SCALE_UnitAxesAtLowerLeft;
-            break;
-        }
-
-    polyface.BuildPerFaceParameters(selector);
+    polyface.BuildPerFaceParameters(LOCAL_COORDINATE_SCALE_01RangeBothAxes);
     }
 
 /*---------------------------------------------------------------------------------**//**

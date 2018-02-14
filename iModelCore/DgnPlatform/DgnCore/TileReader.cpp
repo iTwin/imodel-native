@@ -620,17 +620,23 @@ MeshEdgesPtr GltfReader::ReadMeshEdges(Json::Value const& primitiveValue)
         return nullptr;
 
     MeshEdgesPtr        meshEdges = new MeshEdges();
-    bvector<uint32_t>   indices;
+    bvector<uint32_t>   silhouetteIndices, visibleIndices;
     Json::Value const&  silhouettesValue = edgesValue["silhouettes"];
+
+    if (SUCCESS == ReadIndices(visibleIndices, edgesValue, "visibles"))
+        {
+        meshEdges->m_visible.resize(visibleIndices.size()/2);
+        memcpy (meshEdges->m_visible.data(), visibleIndices.data(), visibleIndices.size() * sizeof(uint32_t));
+        }
 
     if (!silhouettesValue.isNull() &&
         SUCCESS == ReadNormalPairs(meshEdges->m_silhouetteNormals, silhouettesValue, "normalPairs") &&
-        SUCCESS == ReadIndices(indices, silhouettesValue, "indices"))
+        SUCCESS == ReadIndices(silhouetteIndices, silhouettesValue, "indices"))
         {
-        meshEdges->m_silhouette.resize(indices.size()/2);
-        memcpy (meshEdges->m_silhouette.data(), indices.data(), indices.size() * sizeof(uint32_t));
+        meshEdges->m_silhouette.resize(silhouetteIndices.size()/2);
+        memcpy (meshEdges->m_silhouette.data(), silhouetteIndices.data(), silhouetteIndices.size() * sizeof(uint32_t));
         }
-   
+
     ReadPolylines(meshEdges->m_polylines, edgesValue, "polylines", false);
 
     return meshEdges;
