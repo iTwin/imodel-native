@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Instances/InstanceCacheHelper.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -24,6 +24,8 @@ USING_NAMESPACE_EC
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
+struct RootManager;
+
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -31,6 +33,7 @@ struct InstanceCacheHelper
     {
     public:
         struct CachedInstances;
+        struct QueryAnalyzer;
         struct PartialCachingState;
         struct UpdateCachingState;
         struct SelectPathElement;
@@ -127,6 +130,53 @@ struct InstanceCacheHelper::CachedInstances
     };
 
 /*--------------------------------------------------------------------------------------+
+* @bsiclass                                                     Vincas.Razma    02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+struct InstanceCacheHelper::QueryAnalyzer
+    {
+    public:
+        enum class SelectType
+            {
+            All,
+            Id,
+            Property
+            };
+
+    private:
+        const WSQuery* m_query;
+        bmap<SelectType, bset<bvector<SelectPathElement>>> m_selectPaths;
+
+    private:
+        static BentleyStatus BuildSelectedPaths
+            (
+            ECDbAdapterR dbAdapter,
+            WSQueryCR query,
+            bmap<SelectType, bset<bvector<SelectPathElement>>>& selectPaths
+            );
+        static BentleyStatus GetSelectPathAndType
+            (
+            ECDbAdapterR dbAdapter,
+            Utf8StringCR mainSchemaName,
+            Utf8StringCR selectStr,
+            bvector<SelectPathElement>& pathOut,
+            SelectType& selectTypeOut
+            );
+
+        static bool IsClassTokenPolymorphic(Utf8StringCR classToken);
+        static void GetSchemaAndClassNamesFromClassToken(Utf8StringCR classToken, Utf8StringR schemaNameOut, Utf8StringR classNameOut);
+        static ECClassCP GetECClassFromClassToken(ECDbAdapterR dbAdapter, Utf8StringCR mainSchemaName, Utf8StringCR classToken);
+        static ECRelatedInstanceDirection GetDirection(Utf8StringCR directionString);
+        static bool DoesPathMatch(const bvector<SelectPathElement>& instancePath, const bset<bvector<SelectPathElement>>& matchPaths);
+
+    public:
+        QueryAnalyzer(ECDbAdapterR dbAdapter, WSQueryCR query);
+
+        bool IsSelectionAll(const bvector<SelectPathElement>& instancePath) const;
+        bool IsSelectionId(const bvector<SelectPathElement>& instancePath) const;
+        bool HasPartialPropertiesSelected() const;
+    };
+
+/*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct InstanceCacheHelper::PartialCachingState
@@ -141,59 +191,24 @@ struct InstanceCacheHelper::PartialCachingState
             };
 
     private:
-        enum class SelectType
-            {
-            All,
-            Id,
-            Property
-            };
+        RootManager& m_rootManager;
+        std::shared_ptr<ECInstanceKeyMultiMap> m_fullyPersistedInstances;
 
-    private:
-        const WSQuery* m_query;
-        const ECInstanceKeyMultiMap& m_fullyPersistedInstances;
         bset<ObjectId>& m_rejected;
 
-        bset<bvector<SelectPathElement>> m_allPropertiesSelectedPaths;
-        bset<bvector<SelectPathElement>> m_idOnlySelectedPaths;
-
         ECInstanceKeyMultiMap m_dataLossInstances;
+        InstanceCacheHelper::QueryAnalyzer m_queryAnalyzer;
 
     private:
         //! Check if instance is fully persited in cache and needs all properties to be selected
         bool IsFullyPersisted(ObjectInfoCR info);
         bool DoesRequireAllProperties(ObjectInfoCR info);
 
-        static BentleyStatus BuildSelectedPaths
-            (
-            ECDbAdapterR dbAdapter,
-            WSQueryCR query,
-            bset<bvector<SelectPathElement>>& allPropertiesSelectedPathsOut,
-            bset<bvector<SelectPathElement>>& m_idSelectedPaths
-            );
-
-        static BentleyStatus GetSelectPathAndType
-            (
-            ECDbAdapterR dbAdapter,
-            Utf8StringCR mainSchemaName,
-            Utf8StringCR selectStr,
-            bvector<SelectPathElement>& pathOut,
-            SelectType& selectTypeOut
-            );
-
-        static bool IsClassTokenPolymorphic(Utf8StringCR classToken);
-        static void GetSchemaAndClassNamesFromClassToken(Utf8StringCR classToken, Utf8StringR schemaNameOut, Utf8StringR classNameOut);
-        static ECClassCP GetECClassFromClassToken(ECDbAdapterR dbAdapter, Utf8StringCR mainSchemaName, Utf8StringCR classToken);
-        static ECRelatedInstanceDirection GetDirection(Utf8StringCR directionString);
-        static bool DoesPathMatches(const bvector<SelectPathElement>& instancePath, const bset<bvector<SelectPathElement>>& matchPaths);
-
     public:
-        //! param[in] query -   [optional] select options will be parsed and used to indentify if all properties were selected for given class.
-        //!                     Null will identify that not all properties were selected for all instances.
         PartialCachingState
             (
-            ECDbAdapterR dbAdapter,
-            WSQueryCR query,
-            const ECInstanceKeyMultiMap& fullyPersistedInstances,
+            InstanceCacheHelper::QueryAnalyzer queryAnalyzer,
+            RootManager& rootManager,
             bset<ObjectId>& rejected
             );
 

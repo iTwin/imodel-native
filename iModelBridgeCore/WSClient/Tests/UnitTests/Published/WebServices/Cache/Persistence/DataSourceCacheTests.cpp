@@ -2271,7 +2271,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QueryPolymorphicallySelectsNotAllProp
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
     }
 
-TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsJustIdButFromEmptySchemaAndClass_CachesInstanceAspartial)
+TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsJustIdButFromEmptySchemaAndClass_CachesInstanceAsPartial)
     {
     auto cache = GetTestCache();
 
@@ -2551,9 +2551,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedPropertyOnlyAndRel
     EXPECT_CONTAINS(rejected, ObjectId("TestSchema.TestClass", "B"));
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
 
-    Json::Value instanceJson;
-    ASSERT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "B"}, instanceJson));
-    EXPECT_EQ("OldValue", instanceJson["TestProperty"].asString());
+    EXPECT_EQ("OldValue", ReadInstance(*cache, {"TestSchema.TestClass", "B"})["TestProperty"].asString());
     }
 
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsIdOnlyWithRelated_SkipsIdOnlyInstanceAndCachesRelatedInstances)
@@ -2600,9 +2598,50 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedIdOnlyAndRelatedWa
     EXPECT_EQ(0, rejected.size());
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
 
-    Json::Value instanceJson;
-    ASSERT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "B"}, instanceJson));
-    EXPECT_EQ("OldValue", instanceJson["TestProperty"].asString());
+    EXPECT_EQ("OldValue", ReadInstance(*cache, {"TestSchema.TestClass", "B"})["TestProperty"].asString());
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedIdOnlyAndRelatedWasCachedAsPartial_TreatsIdOnlyAsReferenceAndDoesNotRejectInstance)
+    {
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
+
+    StubPartialInstanceInCache(*cache, {"TestSchema.TestClass", "B"}, {{"TestProperty", "OldValue"}});
+
+    StubInstances instances;
+    instances
+        .Add({"TestSchema.TestClass", "A"})
+        .AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"}, {}, ECRelatedInstanceDirection::Forward);
+
+    WSQuery query("TestSchema", "TestClass");
+    query.SetSelect("*,TestRelationshipClass-forward-TestClass.$id");
+
+    bset<ObjectId> rejected;
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
+    EXPECT_EQ(0, rejected.size());
+
+    EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
+    EXPECT_EQ("OldValue", ReadInstance(*cache, {"TestSchema.TestClass", "B"})["TestProperty"].asString());
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsIdOnlyForInstanceWithCachedPartialProperties_SkipsInstanceAsTreatsItAsReference)
+    {
+    auto cache = GetTestCache();
+    ObjectId objectId {"TestSchema.TestClass", "Foo"};
+    StubPartialInstanceInCache(*cache, objectId, {{"TestProperty", "OldValue"}});
+
+    StubInstances instances;
+    instances.Add(objectId);
+
+    WSQuery query("TestSchema", "TestClass");
+    query.SetSelect("$id");
+
+    bset<ObjectId> rejected;
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(StubCachedResponseKey(*cache), instances.ToWSObjectsResponse(), &rejected, &query));
+    EXPECT_EQ(0, rejected.size());
+
+    EXPECT_FALSE(cache->GetCachedObjectInfo(objectId).IsFullyCached());
+    EXPECT_EQ("OldValue", ReadInstance(*cache, cache->FindInstance(objectId))["TestProperty"].asString());
     }
 
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelationshipPolymorphicallyAndResponseHasDerivedRelationship_CachesFullInstances)
