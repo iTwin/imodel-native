@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Performance/PerformanceElementsCRUDTests.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
@@ -55,7 +55,14 @@ struct PerformanceElementsCRUDTestFixture : public PerfTestFixture
         DgnDbStatus VerifyPerfElementSub3SelectParams(DgnElementCR element);
         DgnDbStatus GetPropertyValues(DgnElementCR element, Utf8CP className);
 
-        static int DetermineElementIdIncrement(int initialInstanceCount, int opCount) { return initialInstanceCount / opCount; }
+        static int DetermineElementIdIncrement(int initialInstanceCount, int opCount, float squeeze = 0.0f)
+            {
+            float s = 1.0f - squeeze;
+            if (s <= 0.0f)
+                s = 1.0f;
+
+            return static_cast<int>((initialInstanceCount / opCount)*s);
+            }
         void ApiInsertTime(Utf8CP className, int initialInstanceCount1 = s_initialInstanceCount, int opCount = s_opCount, bool setFederationGuid = false, int idStrategy = 0);
         void ApiSelectTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);
         void ApiUpdateTime(Utf8CP className, int initialInstanceCount = s_initialInstanceCount, int opCount = s_opCount);

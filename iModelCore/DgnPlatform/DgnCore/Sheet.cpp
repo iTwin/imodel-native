@@ -355,6 +355,7 @@ void Sheet::ViewController::_LoadState()
 
     m_size = model->ToSheetModel()->GetSheetSize();
     m_attachments.clear();
+    m_allAttachmentsLoaded = false;
 
     auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE Model.Id=?");
     stmt->BindId(1, model->GetModelId());
@@ -457,20 +458,24 @@ TileTree::Tile::ChildTiles const* Sheet::Attachment::TTile::_GetChildren(bool lo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void populateSheetTile(TTile* tile, uint32_t depth, SceneContextR context)
+static uint32_t querySheetTileSize(uint32_t depth)
     {
     static const uint32_t s_texSizes[] = {32, 64, 128, 256, 512, 1024, 2048};
-    uint32_t texSize = s_texSizes[depth < MAX_SHEET_REFINE_DEPTH ? depth : MAX_SHEET_REFINE_DEPTH - 1];
+    return s_texSizes[depth < MAX_SHEET_REFINE_DEPTH ? depth : MAX_SHEET_REFINE_DEPTH - 1];
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static void populateSheetTile(TTile* tile, uint32_t depth, SceneContextR context)
+    {
+    uint32_t texSize = querySheetTileSize(depth);
 
     auto renderSys = context.GetRenderSystem();
     TRoot& tree = tile->GetTree();
     Sheet::Attachment::Viewport* viewport = tree.m_viewport.get();
     UpdatePlan const& plan = context.GetUpdatePlan();
 
-    // max pixel size is half the length of the diagonal.
-    tile->m_maxPixelSize = .5 * DPoint2d::FromZero().Distance(DPoint2d::From(texSize, texSize));
-
-    viewport->InvalidateRenderPlan();
     viewport->SetRect(BSIRect::From(0, 0, texSize, texSize));
     viewport->SetupFromViewController();
     viewport->m_renderSys = renderSys;
@@ -481,7 +486,6 @@ static void populateSheetTile(TTile* tile, uint32_t depth, SceneContextR context
 
     // add texture in the tree's viewport to a graphic
     GraphicParams gfParams = GraphicParams::FromSymbology(tree.m_tileColor, tree.m_tileColor, 0);
-    tile->SetupRange(); // set up tile corners and range; uses biasDistance of tree
     auto graphic = renderSys->_CreateTile(*viewport->m_texture, tile->m_corners, *viewport->m_db, gfParams);
     tile->m_graphic = graphic;
     tile->SetIsReady();
@@ -505,9 +509,9 @@ BentleyStatus Sheet::ViewController::_CreateScene(SceneContextR context)
             Attachment& attach = m_attachments[i];
             if (!attach.m_tree.IsValid())
                 {
-                const uint32_t texSize = 32; // based on lowest level in populateSheetTile; ###TODO: clean this up (make more common)
+                const uint32_t s_texSize = 32; // based on lowest level in populateSheetTile; ###TODO: clean this up (make more common)
 
-                attach.m_tree = new TRoot(GetDgnDb(), *this, attach.m_id, texSize);
+                attach.m_tree = new TRoot(GetDgnDb(), *this, attach.m_id, s_texSize);
                 attach.m_tree->Populate();
 
                 if (!attach.m_tree.IsValid())
@@ -516,7 +520,9 @@ BentleyStatus Sheet::ViewController::_CreateScene(SceneContextR context)
                     i++;
 
                 TTile& tile = static_cast<TTile&>(*attach.m_tree->GetRootTile());
-                populateSheetTile(&tile, tile.GetDepth(), context);
+                uint32_t texSize = s_texSize; // ###TODO: querySheetTileSize(tile->GetDepth());
+                tile.m_maxPixelSize = .5 * DPoint2d::FromZero().Distance(DPoint2d::From(texSize, texSize));
+                tile.SetupRange(); // set up tile corners and range; uses biasDistance of tree
                 }
             }
 
@@ -609,11 +615,11 @@ Tile::SelectParent TTile::_SelectTiles(bvector<TileTree::TileCPtr>& selected, Ti
 
     if (nullptr != childTiles && !childTiles->empty())
         {
-        child = (TTile*) ((*childTiles)[0].get()); // there should only be a single child
-        if (!child->IsReady()) // ###TODO: only populate child if about to be selected; need way to specify pixel size without making entire graphic
-            {
-            populateSheetTile(child, child->GetDepth(), args.m_context);
-            }
+        child = dynamic_cast<TTile*>((*childTiles)[0].get()); // there should only be a single child
+        uint32_t texSize = querySheetTileSize(child->GetDepth());
+        child->m_maxPixelSize = .5 * DPoint2d::FromZero().Distance(DPoint2d::From(texSize, texSize));
+        child->SetupRange(); // set up tile corners and range; uses biasDistance of tree
+        // child graphic not actually rendered / created (will only do this when actually selected, if not already done)
         }
 
     if (tooCoarse && nullptr != child)
@@ -626,6 +632,18 @@ Tile::SelectParent TTile::_SelectTiles(bvector<TileTree::TileCPtr>& selected, Ti
     DEBUG_PRINTF(" ** Selecting this tile, IsReady()=%d, depth=%d", IsReady(), GetDepth());
 #endif
 
+    if (!IsReady())
+        {
+        populateSheetTile(const_cast<TTile*>(this), GetDepth(), args.m_context);
+        }
+
+#if defined(WIP_ASYNC_SHEET_LOADING)
+    if (!IsReady())
+        {
+        args.InsertMissing(this);
+        }
+    else
+#endif
     selected.push_back(this);
     return SelectParent::No;
     }
