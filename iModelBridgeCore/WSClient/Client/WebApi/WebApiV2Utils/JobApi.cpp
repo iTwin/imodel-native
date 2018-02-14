@@ -103,7 +103,7 @@ ICancellationTokenPtr ct
             if (!wsJob.IsValid() && !wsJob.HasResponseContent())
                 {
                 LOG.warning("Bad response format of the successful job");
-                return HttpJobResult::Error(WSError::WSError(WSError::Id::ServerError));
+                return HttpJobResult::Error(WSError::Id::ServerError);
                 }
 
             return HttpJobResult::Success(wsJob.GetResponse());
