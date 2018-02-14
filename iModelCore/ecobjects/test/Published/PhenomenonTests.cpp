@@ -21,21 +21,21 @@ struct PhenomenonDeserializationTest : ECTestFixture {};
 TEST_F(PhenomenonTests, BasicPhenomenonCreation)
     {
     ECSchemaPtr schema;
-    PhenomenonP Phenomenon;
+    PhenomenonP phenomenon;
 
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0);
 
-    EC_EXPECT_SUCCESS(schema->CreatePhenomenon(Phenomenon, "TestPhenomenon", "LENGTH*LENGTH", "DisplayLabel", "TestDescription"));
+    EC_EXPECT_SUCCESS(schema->CreatePhenomenon(phenomenon, "TestPhenomenon", "LENGTH*LENGTH", "DisplayLabel", "TestDescription"));
 
-    EXPECT_STREQ("TestDescription", Phenomenon->GetInvariantDescription().c_str());
-    EXPECT_STREQ("DisplayLabel", Phenomenon->GetInvariantDisplayLabel().c_str());
-    EXPECT_STREQ("LENGTH*LENGTH", Phenomenon->GetDefinition().c_str());
+    EXPECT_STREQ("TestDescription", phenomenon->GetInvariantDescription().c_str());
+    EXPECT_STREQ("DisplayLabel", phenomenon->GetInvariantDisplayLabel().c_str());
+    EXPECT_STREQ("LENGTH*LENGTH", phenomenon->GetDefinition().c_str());
 
     auto testPhenomenon = schema->GetPhenomenonCP("TestPhenomenon");
-    EXPECT_EQ(Phenomenon, testPhenomenon);
+    EXPECT_EQ(phenomenon, testPhenomenon);
 
     auto registryPhenomenon = Units::UnitRegistry::Instance().LookupPhenomenon("TestPhenomenon");
-    EXPECT_EQ(Phenomenon, registryPhenomenon);
+    EXPECT_EQ(phenomenon, registryPhenomenon);
     }
 
 //---------------------------------------------------------------------------------------
