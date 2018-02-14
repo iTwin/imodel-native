@@ -239,33 +239,32 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
         auto existingCPtr = m_bimAlignmentModelPtr->GetDgnDb().Elements().QueryElementByFederationGuid(bimGuid);
         if (existingCPtr.IsValid())
             return BentleyStatus::ERROR;
+        cifAlignmentName = Utf8String(cifSyncId.c_str());
         }
-    else
+
+    Utf8String bimAlignmentName = cifAlignmentName;
+    bimCode = AlignmentBim::RoadRailAlignmentDomain::CreateCode(*m_bimAlignmentModelPtr, bimAlignmentName);
+
+    int32_t suffix = 0;
+    DgnElementId existingId;
+
+    do
         {
-        Utf8String bimAlignmentName = cifAlignmentName;
+        BeFileName fileName(cifAlignment.GetDgnModelP()->GetDgnFileP()->GetFileName().c_str());
+        bimAlignmentName = Utf8String(fileName.GetFileNameAndExtension().c_str());
+        bimAlignmentName += "\\";
+        bimAlignmentName += Utf8String(cifAlignment.GetDgnModelP()->GetModelName());
+        bimAlignmentName += "\\";
+        bimAlignmentName += cifAlignmentName;
+
+        if (suffix > 0)
+            bimAlignmentName += Utf8PrintfString("-%d", suffix).c_str();
+
         bimCode = AlignmentBim::RoadRailAlignmentDomain::CreateCode(*m_bimAlignmentModelPtr, bimAlignmentName);
+        suffix++;
 
-        int32_t suffix = 0;
-        DgnElementId existingId;
-
-        do
-            {
-            BeFileName fileName(cifAlignment.GetDgnModelP()->GetDgnFileP()->GetFileName().c_str());
-            bimAlignmentName = Utf8String(fileName.GetFileNameAndExtension().c_str());
-            bimAlignmentName += "\\";
-            bimAlignmentName += Utf8String(cifAlignment.GetDgnModelP()->GetModelName());
-            bimAlignmentName += "\\";
-            bimAlignmentName += cifAlignmentName;
-
-            if (suffix > 0)
-                bimAlignmentName += Utf8PrintfString("-%d", suffix).c_str();
-
-            bimCode = AlignmentBim::RoadRailAlignmentDomain::CreateCode(*m_bimAlignmentModelPtr, bimAlignmentName);
-            suffix++;
-
-            existingId = m_bimAlignmentModelPtr->GetDgnDb().Elements().QueryElementIdByCode(bimCode);
-            } while (existingId.IsValid());
-        }    
+        existingId = m_bimAlignmentModelPtr->GetDgnDb().Elements().QueryElementIdByCode(bimCode);
+        } while (existingId.IsValid());
 
     // Create Alignment
     auto bimAlignmentPtr = AlignmentBim::Alignment::Create(*m_bimAlignmentModelPtr);
