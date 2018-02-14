@@ -118,9 +118,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="..\ScalableMesh.PartFile.xml" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="..\ScalableMeshATPexe.mke" />
     <None Include="..\ScalableMeshATPexe.mki" />
   </ItemGroup>

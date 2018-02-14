@@ -275,8 +275,8 @@
         <ProductDirectory Name="JpegAssemblies" Deliver="false"/>
         <ProductDirectory Name="PngNativeAssemblies" Deliver="false"/>            
         <ProductDirectory Name="TiffNativeAssemblies" Deliver="false"/>      
-        <ProductDirectory Name="ZlibNativeAssemblies" Deliver="false"/>
-         <ProductDirectory Name="ZlibNativeAssemblies" LibType="static" Deliver="false"/> 
+        <ProductDirectory Name="ZlibNativeAssemblies" Deliver="true"/>
+        <ProductDirectory Name="ZlibNativeAssemblies" LibType="static" Deliver="false"/> 
         <ProductDirectory Name="Assemblies" Path="Dlls"/>
         <ProductDirectory Name="ErdasEcwJpeg2000Assemblies" Path="Dlls" />
         <ProductDirectory Name="BeOpenSSLAssemblies" Path="Dlls"/>
@@ -286,8 +286,12 @@
         <ProductDirectory Name="BeIcu4cData"       Path="Dlls" LibType="static" />
         <ProductDirectory Name="PointCloudAssemblies" Path="Dlls" Deliver="true" />
         <ProductDirectory Name="LibV8Assemblies" Path="Dlls" Deliver="true" />
+        <ProductDirectory Name="RealityAssemblies" Path="Dlls" Deliver="true" />      
         <ProductDirectory Name="ScalableMeshV8SDK"          Path="Dlls\ScalableMeshV8SDK" />
-    </ProductDirectoryList>
+        <ProductDirectory Name="BeOpenSSLAssemblies" Path="Dlls" Deliver="true" />
+        <ProductDirectory Name="BeCurlAssemblies" Path="Dlls" Deliver="true" />                                
+        <ProductDirectory Name="BentleyDesktopClientApi" Path="Dlls" Deliver="true" />      
+  </ProductDirectoryList>
     
     <Product Name="ScalableMeshATP" SaveProduct="true" >
         <SubPart PartName="ScalableMeshATPexe" />
