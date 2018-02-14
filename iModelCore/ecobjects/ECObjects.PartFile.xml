@@ -488,7 +488,7 @@
         <SubPart PartName="PointCloudPublicAPI"         PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling"/>
         <SubPart PartName="ThreeMxPublicAPI"            PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling"/>
         <SubPart PartName="PublicAPI"                   PartFile="ECDb"                 Repository="ECDb"/>
-        <SubPart PartName="ECObjectsSchema"             PartFile="iModelSchemaEditor"   Repository="iModelSchemaEditor"/>
+        <SubPart PartName="ECObjectsSchema"             PartFile="iModelSchemaEditor"   Repository="iModelSchemaEditorCore"/>
         <SubPart PartName="GridsSchema"                 PartFile="Grids"                Repository="DgnDomains-Grids" />
         <SubPart PartName="ConstraintModelSchema"       PartFile="ConstraintSystem"     Repository="DgnDomains-ConstraintSystem" />
         <SubPart PartName="SiteSchema"                  PartFile="Site"                 Repository="DgnDomains-Site" />
