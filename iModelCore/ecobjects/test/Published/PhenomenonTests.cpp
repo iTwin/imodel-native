@@ -31,8 +31,7 @@ TEST_F(PhenomenonTests, BasicPhenomenonCreation)
     EXPECT_STREQ("DisplayLabel", Phenomenon->GetInvariantDisplayLabel().c_str());
     EXPECT_STREQ("LENGTH*LENGTH", Phenomenon->GetDefinition().c_str());
 
-    Utf8String test = "TestPhenomenon";
-    auto testPhenomenon = schema->GetPhenomenonCP(test.c_str());
+    auto testPhenomenon = schema->GetPhenomenonCP("TestPhenomenon");
     EXPECT_EQ(Phenomenon, testPhenomenon);
 
     auto registryPhenomenon = Units::UnitRegistry::Instance().LookupPhenomenon("TestSchema:TestPhenomenon");

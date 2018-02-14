@@ -89,12 +89,11 @@ Utf8StringCR Phenomenon::GetDescription() const
 //--------------------------------------------------------------------------------------
 ECObjectsStatus Phenomenon::SetName(Utf8StringCR name) 
     {
-    if(ECNameValidation::IsValidName(name.c_str()))
-        {
-        m_name = name.c_str();
-        return ECObjectsStatus::Success;
-        } 
-    return ECObjectsStatus::InvalidName;
+    if(!ECNameValidation::IsValidName(name.c_str()))
+        return ECObjectsStatus::InvalidName;
+
+    m_name = name.c_str();
+    return ECObjectsStatus::Success;
     }
 
 //--------------------------------------------------------------------------------------
