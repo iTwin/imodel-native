@@ -503,7 +503,35 @@ m_rejected(rejected)
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceCacheHelper::QueryAnalyzer::QueryAnalyzer(ECDbAdapterR dbAdapter, WSQueryCR query) : m_query(&query)
     {
-    BuildSelectedPaths(dbAdapter, *m_query, m_allPropertiesSelectedPaths, m_idOnlySelectedPaths);
+    m_selectPaths[SelectType::All] = {};
+    m_selectPaths[SelectType::Id] = {};
+    m_selectPaths[SelectType::Property] = {};
+
+    BuildSelectedPaths(dbAdapter, *m_query, m_selectPaths);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool InstanceCacheHelper::QueryAnalyzer::IsSelectionAll(const bvector<SelectPathElement>& instancePath) const 
+    { 
+    return DoesPathMatch(instancePath, m_selectPaths.find(SelectType::All)->second); 
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool InstanceCacheHelper::QueryAnalyzer::IsSelectionId(const bvector<SelectPathElement>& instancePath) const 
+    { 
+    return DoesPathMatch(instancePath, m_selectPaths.find(SelectType::Id)->second); 
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool InstanceCacheHelper::QueryAnalyzer::HasPartialPropertiesSelected() const 
+    {
+    return !m_selectPaths.find(SelectType::Property)->second.empty();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -513,8 +541,7 @@ BentleyStatus InstanceCacheHelper::QueryAnalyzer::BuildSelectedPaths
 (
 ECDbAdapterR dbAdapter,
 WSQueryCR query,
-bset<bvector<SelectPathElement>>& allPropertiesSelectedPathsOut,
-bset<bvector<SelectPathElement>>& idOnlySelectedPathsOut
+bmap<SelectType, bset<bvector<SelectPathElement>>>& selectPaths
 )
     {
     Utf8StringCR mainSchemaName = query.GetSchemaName();
@@ -522,7 +549,7 @@ bset<bvector<SelectPathElement>>& idOnlySelectedPathsOut
     Utf8String selectOption = query.GetSelect();
     if (selectOption.empty())
         {
-        allPropertiesSelectedPathsOut.insert(bvector<SelectPathElement>());
+        selectPaths[SelectType::All].insert(bvector<SelectPathElement>());
         return SUCCESS;
         }
 
@@ -556,16 +583,7 @@ bset<bvector<SelectPathElement>>& idOnlySelectedPathsOut
         }
 
     for (auto& pair : paths)
-        {
-        if (SelectType::All == pair.second)
-            {
-            allPropertiesSelectedPathsOut.insert(pair.first);
-            }
-        else if (SelectType::Id == pair.second)
-            {
-            idOnlySelectedPathsOut.insert(pair.first);
-            }
-        }
+        selectPaths[pair.second].insert(pair.first);
 
     return SUCCESS;
     }
