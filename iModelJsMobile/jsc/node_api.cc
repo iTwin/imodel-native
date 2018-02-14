@@ -424,6 +424,7 @@ napi_status napi_is_array(napi_env env, napi_value value, bool* result) {
   CHECK_ARG(env, result);
 
   JSContextRef ctx = env->GetContext();
+  *result = JSValueIsArray(ctx, value);
 
   return napi_clear_last_error(env);
 }
@@ -439,6 +440,10 @@ napi_status napi_get_array_length(napi_env env,
   CHECK_ARG(env, result);
 
   JSContextRef ctx = env->GetContext();
+  JSStringRef lengthString = JSStringCreateWithUTF8CString ("length");
+  JSObjectRef valueObject = JSValueToObject (ctx, value, NULL);
+  JSValueRef lengthValue = JSObjectGetProperty(ctx, valueObject, lengthString, NULL);
+  *result = JSValueToNumber(ctx,lengthValue,NULL);
 
   return GET_RETURN_STATUS(env);
 }
@@ -482,6 +487,7 @@ napi_status napi_create_object(napi_env env, napi_value* result) {
   CHECK_ARG(env, result);
 
   JSContextRef ctx = env->GetContext();
+  *result = JSObjectMake(ctx, NULL, NULL);
 
   return napi_clear_last_error(env);
 }
@@ -494,6 +500,7 @@ napi_status napi_create_array(napi_env env, napi_value* result) {
   CHECK_ARG(env, result);
 
   JSContextRef ctx = env->GetContext();
+  *result = JSObjectMakeArray(ctx, 0, NULL, NULL);
 
   return napi_clear_last_error(env);
 }
@@ -508,6 +515,7 @@ napi_status napi_create_array_with_length(napi_env env,
   CHECK_ARG(env, result);
 
   JSContextRef ctx = env->GetContext();
+  *result = JSObjectMakeArray(ctx, length, NULL, NULL);
 
   return napi_clear_last_error(env);
 }
@@ -538,6 +546,9 @@ napi_status napi_create_string_utf8(napi_env env,
   CHECK_ARG(env, result);
 
   JSContextRef ctx = env->GetContext();
+  JSStringRef strString = JSStringCreateWithUTF8CString(str);
+  *result = JSValueMakeString(ctx, strString);
+  JSStringRelease(strString);
 
   return napi_clear_last_error(env);
 }
@@ -567,6 +578,7 @@ napi_status napi_create_double(napi_env env,
   CHECK_ARG(env, result);
 
   JSContextRef ctx = env->GetContext();
+  *result = JSValueMakeNumber(ctx, value);
 
   return napi_clear_last_error(env);
 }
@@ -621,6 +633,7 @@ napi_status napi_get_boolean(napi_env env, bool value, napi_value* result) {
   CHECK_ARG(env, result);
 
   JSContextRef ctx = env->GetContext();
+  *result = JSValueMakeBoolean(ctx, value);
 
   return napi_clear_last_error(env);
 }
@@ -712,6 +725,7 @@ napi_status napi_get_undefined(napi_env env, napi_value* result) {
   CHECK_ARG(env, result);
 
   JSContextRef ctx = env->GetContext();
+  *result = JSValueMakeUndefined(ctx);
 
   return napi_clear_last_error(env);
 }
@@ -724,6 +738,7 @@ napi_status napi_get_null(napi_env env, napi_value* result) {
   CHECK_ARG(env, result);
 
   JSContextRef ctx = env->GetContext();
+  *result = JSValueMakeNull(ctx);
 
   return napi_clear_last_error(env);
 }
@@ -791,6 +806,7 @@ napi_status napi_get_global(napi_env env, napi_value* result) {
   CHECK_ARG(env, result);
 
   JSContextRef ctx = env->GetContext();
+  *result = JSContextGetGlobalObject(ctx);
 
   return napi_clear_last_error(env);
 }
@@ -874,6 +890,7 @@ napi_status napi_get_value_double(napi_env env,
   CHECK_ARG(env, result);
 
   JSContextRef ctx = env->GetContext();
+  *result = JSValueToNumber(ctx, value, NULL);
 
   return napi_clear_last_error(env);
 }
@@ -940,6 +957,7 @@ napi_status napi_get_value_bool(napi_env env, napi_value value, bool* result) {
   CHECK_ARG(env, result);
 
   JSContextRef ctx = env->GetContext();
+  *result = JSValueToBoolean(ctx, value);
 
   return napi_clear_last_error(env);
 }
