@@ -72,6 +72,7 @@
     <ClCompile Include="NonPublished\RulesEngine\UserSettingsTests.cpp" />
     <ClCompile Include="Published\ConnectionManagerTests.cpp" />
     <ClCompile Include="Published\DefaultCategorySupplierTests.cpp" />
+    <ClCompile Include="Published\DefaultPropertyFormatterTests.cpp" />
     <ClCompile Include="Published\IECPresentationManagerTests.cpp" />
     <ClCompile Include="Published\PresentationRules\AllInstanceNodesSpecificationTests.cpp" />
     <ClCompile Include="Published\PresentationRules\AllRelatedInstanceNodesSpecificationTests.cpp" />
