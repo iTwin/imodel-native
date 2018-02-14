@@ -315,11 +315,11 @@ ECSchema::~ECSchema ()
     for (auto entry : m_phenomenonMap)
         {
         // Remove from the registry before removing from ECSchema
-        Units::UnitRegistry::Instance().RemovePhenomenon(entry.first);
-
+        auto returnedPhenom = Units::UnitRegistry::Instance().RemovePhenomenon(entry.second->GetFullName().c_str());
+        BeAssert(nullptr != returnedPhenom);
         // This should be the same pointer as the UnitRegistry has, so it should not matter which one is deleted.
-        auto phenomenon = entry.second;
-        delete phenomenon;
+        BeAssert(returnedPhenom == entry.second);
+        delete entry.second;
         }
 
     m_phenomenonMap.clear();
@@ -1101,8 +1101,8 @@ ECObjectsStatus ECSchema::CreateUnitSystem(UnitSystemP& system, Utf8CP name, Utf
 ECObjectsStatus ECSchema::CreatePhenomenon(PhenomenonP& phenomenon, Utf8CP name, Utf8CP definition, Utf8CP displayLabel, Utf8CP description)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
-
-    phenomenon = Units::UnitRegistry::Instance().AddPhenomenon<Phenomenon>(name, definition);
+    Utf8String fullName = GetName() + ":" + name;
+    phenomenon = Units::UnitRegistry::Instance().AddPhenomenon<Phenomenon>(fullName.c_str(), definition);
     if (nullptr == phenomenon)
         return ECObjectsStatus::Error;
 
@@ -1179,13 +1179,12 @@ ECObjectsStatus ECSchema::DeleteUnitSystem(UnitSystemR unitSystem)
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    02/2018
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
 //--------------------------------------------------------------------------------------
 ECObjectsStatus ECSchema::DeletePhenomenon(PhenomenonR phenom)
     {
-    // RemovePhenomenon will return nullptr if it cannot find the Phenomenon. No need
-    // to check since we still want to check the Schema for the phenomenon.
-    Units::UnitRegistry::Instance().RemovePhenomenon(phenom.GetName().c_str());
+    auto phenomP = Units::UnitRegistry::Instance().RemovePhenomenon(phenom.GetFullName().c_str());
+    BeAssert(nullptr != phenomP);
 
     return DeleteSchemaChild<Phenomenon, PhenomenonMap>(phenom, &m_phenomenonMap);
     }

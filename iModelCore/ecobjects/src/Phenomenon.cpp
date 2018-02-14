@@ -16,31 +16,25 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 // static
 PhenomenonP Phenomenon::_Create(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id)
     {
-    // Unfortunately we need to do the name encoding here instead of using the ECValidatedName struct in order to use the name required in Units::Phenomenon.
-    if (!ECNameValidation::IsValidName(name))
+    // Deconstruct the name. The format should be {SchemaName}.{PhenomenonName}
+    Utf8String schemaName;
+    Utf8String phenomName;
+    ECClass::ParseClassName(schemaName, phenomName, name);
+    BeAssert(!schemaName.empty());
+
+    // Check if it's a valid name here to avoid having to construct the Phenomenon Unnecessarily
+    if (!ECNameValidation::IsValidName(phenomName.c_str()))
         {
-        LOG.errorv("A Phenomenon cannot be created with the name '%s' because it is not a valid ECName", name);
+        LOG.errorv("A Phenomenon cannot be created with the name '%s' because it is not a valid ECName", phenomName.c_str());
         return nullptr;
         }
 
-    Utf8String encodedName;
-    ECNameValidation::EncodeToValidName(encodedName, name);
-    auto ptrPhenomenon = new Phenomenon(encodedName.c_str(), definition, baseSymbol, id);
+    auto ptrPhenomenon = new Phenomenon(name, definition, baseSymbol, id);
     if (nullptr == ptrPhenomenon)
         return nullptr;
-    // Setting this to null causes the display label to be set from the name
-    ptrPhenomenon->SetDisplayLabel(nullptr);
-    return ptrPhenomenon;
-    }
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Kyle.Abramowitz                 02/2018
-//--------------------------------------------------------------------------------------
-Utf8StringCR Phenomenon::GetFullName() const
-    {
-    if (m_fullName.size() == 0) 
-        m_fullName = m_schema->GetName() + ":" + GetName(); 
-    return m_fullName; 
+    ptrPhenomenon->SetName(phenomName.c_str());
+    return ptrPhenomenon;
     }
 
 //--------------------------------------------------------------------------------------
@@ -66,23 +60,6 @@ Utf8String Phenomenon::GetQualifiedName(ECSchemaCR primarySchema) const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 02/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus Phenomenon::SetDisplayLabel(Utf8CP value) 
-    {
-    if (Utf8String::IsNullOrEmpty(value))
-        {
-        return ECObjectsStatus::Success;
-        }
-    else
-        {
-        m_explicitDisplayLabel = true;
-        Units::Phenomenon::SetLabel(value);
-        }
-    return ECObjectsStatus::Success;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Kyle.Abramowitz                 02/2018
-//--------------------------------------------------------------------------------------
 Utf8StringCR Phenomenon::GetDisplayLabel() const 
     {
     return GetSchema().GetLocalizedStrings().GetPhenomenonDisplayLabel(*this, GetInvariantDisplayLabel());
@@ -91,9 +68,33 @@ Utf8StringCR Phenomenon::GetDisplayLabel() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 02/2018
 //--------------------------------------------------------------------------------------
+Utf8StringCR Phenomenon::GetInvariantDisplayLabel() const 
+    {
+    if(GetIsDisplayLabelDefined())
+        return Units::Phenomenon::GetInvariantLabel();
+    else
+        return GetName();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
+//--------------------------------------------------------------------------------------
 Utf8StringCR Phenomenon::GetDescription() const 
     {
     return GetSchema().GetLocalizedStrings().GetPhenomenonDescription(*this, m_description);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus Phenomenon::SetName(Utf8StringCR name) 
+    {
+    if(ECNameValidation::IsValidName(name.c_str()))
+        {
+        m_name = name.c_str();
+        return ECObjectsStatus::Success;
+        } 
+    return ECObjectsStatus::InvalidName;
     }
 
 //--------------------------------------------------------------------------------------
@@ -113,8 +114,8 @@ SchemaReadStatus Phenomenon::ReadXml(PhenomenonP& phenomenon, BeXmlNodeR Phenome
         LOG.errorv("Invalid ECSchemaXML: The %s element must contain a Definition attribute", PhenomenonNode.GetName());
         return SchemaReadStatus::InvalidECSchemaXml;
         }
-
-    phenomenon = Units::UnitRegistry::Instance().AddPhenomenon<Phenomenon>(value.c_str(), definition.c_str());
+    Utf8String fullName = schema.GetName()+ ":" + value;
+    phenomenon = Units::UnitRegistry::Instance().AddPhenomenon<Phenomenon>(fullName.c_str(), definition.c_str());
     if (nullptr == phenomenon)
         return SchemaReadStatus::InvalidECSchemaXml;
 

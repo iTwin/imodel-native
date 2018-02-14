@@ -281,6 +281,29 @@ TEST_F(SchemaTest, DeleteUnitSystem)
     EXPECT_EQ(nullptr, schema->GetUnitSystemCP("TestUnitSystem"));
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
+//--------------------------------------------------------------------------------------
+TEST_F(SchemaTest, DeletePhenomenon)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0);
+    PhenomenonP phenom;
+    EC_ASSERT_SUCCESS(schema->CreatePhenomenon(phenom, "TestPhenomenon", "LENGTH"));
+    ASSERT_NE(nullptr, phenom);
+    EXPECT_EQ(1, schema->GetPhenomenonCount());
+    EXPECT_EQ(phenom, schema->GetPhenomenonCP("TestPhenomenon"));
+
+    Units::PhenomenonCP uPhenom = Units::UnitRegistry::Instance().LookupPhenomenon("TestSchema:TestPhenomenon");
+    EXPECT_EQ(phenom, uPhenom);
+
+    EC_EXPECT_SUCCESS(schema->DeletePhenomenon(*phenom));
+
+    Units::PhenomenonCP deletedUPhenom = Units::UnitRegistry::Instance().LookupPhenomenon("TestSchema:TestPhenomenon");
+    EXPECT_EQ(nullptr, deletedUPhenom);
+    EXPECT_EQ(nullptr, schema->GetPhenomenonCP("TestPhenomenon"));
+    }
+
 //---------------------------------------------------------------------------------**//**
 // @bsimethod                                   Raimondas.Rimkus                   02/13
 // +---------------+---------------+---------------+---------------+---------------+-----

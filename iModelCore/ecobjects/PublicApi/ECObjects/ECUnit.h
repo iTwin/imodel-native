@@ -95,17 +95,17 @@ friend struct SchemaJsonWriter;
 friend struct Units::UnitRegistry;
 
 private:
-    bool m_explicitDisplayLabel;
+    Utf8String m_name;
+    bool m_isDisplayLabelExplicitlyDefined;
     Utf8String m_description;
     ECSchemaCP m_schema;
+    PhenomenonId m_phenomenonId;
 
     void SetSchema(ECSchemaCR schema) {m_schema = &schema;}
 
-    mutable Utf8String m_fullName;
-    mutable PhenomenonId m_phenomenonId;
-
-    ECObjectsStatus SetDisplayLabel(Utf8CP value);
-    ECObjectsStatus SetDescription(Utf8CP value) {m_description = value; return ECObjectsStatus::Success;}
+    ECObjectsStatus SetName(Utf8StringCR name);
+    ECObjectsStatus SetDisplayLabel(Utf8StringCR value) {Units::Phenomenon::SetLabel(value.c_str()); m_isDisplayLabelExplicitlyDefined = true; return ECObjectsStatus::Success;}
+    ECObjectsStatus SetDescription(Utf8StringCR value) {m_description = value; return ECObjectsStatus::Success;}
 
     static SchemaReadStatus ReadXml(PhenomenonP& phenomenon, BeXmlNodeR phenomenonNode, ECSchemaCR schema, ECSchemaReadContextR context);
 
@@ -114,7 +114,7 @@ private:
     SchemaWriteStatus WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
 
     // Should only be called by UnitRegistry
-    Phenomenon(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id) : Units::Phenomenon(name, definition, baseSymbol, id), m_explicitDisplayLabel(false) {}
+    Phenomenon(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id) : Units::Phenomenon(name, definition, baseSymbol, id), m_isDisplayLabelExplicitlyDefined(false) {}
 
 protected:
     // Needed by Units::UnitRegistry to create the Phenomenon
@@ -123,14 +123,16 @@ protected:
 public:
     ECSchemaCR GetSchema() const {return *m_schema;} //!< The ECSchema that this Phenomenon is defined in
 
+    Utf8StringCR GetName() const {return m_name;}
+
     //! {SchemaName}:{PhenomenonName} The pointer will remain valid as long as the Phenomenon exists.
-    ECOBJECTS_EXPORT Utf8StringCR GetFullName() const;
+    ECOBJECTS_EXPORT Utf8StringCR GetFullName() const {return T_Super::GetName();}
     //! Gets a qualified name of the Phenomenon, prefixed by the schema alias if it does not match the primary schema.
     ECOBJECTS_EXPORT Utf8String GetQualifiedName(ECSchemaCR primarySchema) const;
     //! Gets the display label of this Phenomenon.  If no display label has been set explicitly, it will return the name of the Phenomenon
     ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const;
-    bool GetIsDisplayLabelDefined() const {return m_explicitDisplayLabel;} //!< Whether the display label is explicitly defined or not
-    Utf8StringCR GetInvariantDisplayLabel() const {return Units::Phenomenon::GetInvariantLabel();} //!< Gets the invariant display label for this Phenomenon.
+    bool GetIsDisplayLabelDefined() const {return m_isDisplayLabelExplicitlyDefined;} //!< Whether the display label is explicitly defined or not
+    ECOBJECTS_EXPORT Utf8StringCR GetInvariantDisplayLabel() const; //!< Gets the invariant display label for this Phenomenon.
 
     Utf8StringCR GetInvariantDescription() const {return m_description;} //!< Gets the invariant description for this Phenomenon.
     ECOBJECTS_EXPORT Utf8StringCR GetDescription() const; //!< Gets the description of this Phenomenon. Returns the localized description if one exists.
