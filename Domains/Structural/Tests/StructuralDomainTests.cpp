@@ -7,19 +7,12 @@
 +--------------------------------------------------------------------------------------*/
 #include "StructuralDomainTestFixture.h"
 #include <StructuralDomain/StructuralDomainApi.h>
-#include <FormsDomain/FormsDomainApi.h>
-#include <FormsDomain/FormsDomainDefinitions.h>
+// #include <FormsDomain/FormsDomainApi.h>
+// #include <ProfilesDomain/ProfilesDomainApi.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <BeSQLite/BeSQLite.h>
 #include <Json/Json.h>
 #include <Bentley/BeAssert.h>
-#include <FormsDomain/Form.h>
-#include <FormsDomain/StraightExtrusion.h>
-#include <FormsDomain/CurvedExtrusion.h>
-#include <FormsDomain/CurvedProfiledExtrusion.h>
-#include <FormsDomain/StraightProfiledExtrusion.h>
-#include <ProfilesDomain\ConstantProfile.h>
-#include <ProfilesDomain/ProfilesDomainApi.h>
 #include <DgnPlatform/DgnCoreAPI.h>
 
 
@@ -45,8 +38,8 @@ TEST_F(StructuralDomainTestFixture, EnsureDomainsAreRegistered)
     DgnDomainCP structuralPhysical = db->Domains().FindDomain(Structural::StructuralPhysicalDomain::GetDomain().GetDomainName());
     ASSERT_TRUE(NULL != structuralPhysical);
 
-    DgnDomainCP formDomain = db->Domains().FindDomain(Forms::FormsDomain::GetDomain().GetDomainName());
-    ASSERT_TRUE(NULL != formDomain);
+    // DgnDomainCP formDomain = db->Domains().FindDomain(Forms::FormsDomain::GetDomain().GetDomainName());
+    // ASSERT_TRUE(NULL != formDomain);
     }
 
 BE_JSON_NAME(StructuralDomain)

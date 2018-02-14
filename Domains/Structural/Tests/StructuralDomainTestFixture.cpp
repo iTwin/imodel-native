@@ -10,8 +10,8 @@
 #include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
 #include <DgnPlatform/UnitTests/ScopedDgnHost.h>
 #include <StructuralDomain/StructuralDomainApi.h>
-#include <FormsDomain/FormsDomainApi.h>
-#include <ProfilesDomain/ProfilesDomainApi.h>
+// #include <FormsDomain/FormsDomainApi.h>
+// #include <ProfilesDomain/ProfilesDomainApi.h>
 
 
 using namespace BeSQLite;
@@ -108,8 +108,8 @@ void StructuralDomainTestFixture::SetUp_CreateNewDgnDb()
 void StructuralDomainTestFixture::SetUp()
     {
     //registration order is important. Forms must be registered before Structural, otherwise 'schema already loaded' error
-    Profiles::ProfilesDomainUtilities::RegisterDomainHandlers();
-    Forms::FormsDomainUtilities::RegisterDomainHandlers();
+    // Profiles::ProfilesDomainUtilities::RegisterDomainHandlers();
+    // Forms::FormsDomainUtilities::RegisterDomainHandlers();
     StructuralDomainUtilities::RegisterDomainHandlers();
     }
 
