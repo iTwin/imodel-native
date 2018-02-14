@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/FenceParams.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -11,22 +11,6 @@
 #define NPC_CAMERA_LIMIT    100.0
 
 BEGIN_BENTLEY_DGN_NAMESPACE
-/*=================================================================================**//**
-* @bsiclass                                                     Brien.Bastings  11/17
-+===============+===============+===============+===============+===============+======*/
-struct FencePolyfaceTester : PolyfaceQuery::IClipToPlaneSetOutput
-{
-bool m_unclipped;
-bvector<PolyfaceHeaderPtr> m_output;
-        
-FencePolyfaceTester() : m_unclipped(false) {}
-StatusInt _ProcessUnclippedPolyface(PolyfaceQueryCR) override {m_unclipped = true; return SUCCESS;}
-StatusInt _ProcessClippedPolyface(PolyfaceHeaderR mesh) override {PolyfaceHeaderPtr meshPtr = &mesh; m_output.push_back(meshPtr); return SUCCESS;}
-bool HasOverlap(PolyfaceQueryCR mesh, ClipVectorCR clip) {clip.ClipPolyface(mesh, *this, false); return !m_output.empty();}
-bool IsInside() {return m_unclipped;}
-
-}; // FencePolyfaceTester
-
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  11/17
 +===============+===============+===============+===============+===============+======*/
@@ -150,6 +134,39 @@ bool _CheckStop() override
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GetLocalClips(ClipPlaneSet& localClipPlanes, ClipPlaneSet& localClipMasks, SimplifyGraphic& graphic)
+    {
+    for (ClipPrimitivePtr const& primitive : *m_fp.GetClipVector())
+        {
+        if (CheckStop())
+            return true;
+
+        if (primitive->IsMask())
+            continue; // NEEDSWORK: Don't need to support this right now...and these don't seem to be in the form that the classify methods expect...
+
+        ClipPlaneSetCP clipPlanes = primitive->GetClipPlanes();
+
+        if (nullptr == clipPlanes)
+            continue;
+
+        for (ConvexClipPlaneSetCR convexSet : *clipPlanes)
+            localClipPlanes.push_back(convexSet);
+        }
+
+    Transform localToWorld = graphic.GetLocalToWorldTransform();
+    Transform worldToLocal;
+
+    worldToLocal.InverseOf(localToWorld);
+
+    localClipPlanes.TransformInPlace(worldToLocal);
+    localClipMasks.TransformInPlace(worldToLocal);
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/05
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ProcessPoints(DPoint3dCP points, int numPoints, SimplifyGraphic& graphic)
@@ -193,28 +210,12 @@ bool _ProcessCurvePrimitive(ICurvePrimitiveCR primitive, bool closed, bool fille
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool _ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic& graphic) override
     {
-    Transform localToWorld = graphic.GetLocalToWorldTransform();
-    Transform worldToLocal;
+    ClipPlaneSet localClipPlanes;
+    ClipPlaneSet localClipMasks;
 
-    worldToLocal.InverseOf(localToWorld);
-
-    // NEEDSWORK: Earlin will add a method to handle all clips/masks...
-    for (ClipPrimitivePtr const& primitive : *m_fp.GetClipVector())
+    if (!GetLocalClips(localClipPlanes, localClipMasks, graphic))
         {
-        if (CheckStop())
-            break;
-
-        ClipPlaneSetCP clipPlanes = primitive->GetClipPlanes();
-//        ClipPlaneSetCP clipMask = primitive->GetMaskPlanes();
-
-        if (nullptr == clipPlanes)
-            continue;
-
-        ClipPlaneSet localClipPlanes(*clipPlanes);
-
-        localClipPlanes.TransformInPlace(worldToLocal);
-
-        switch (ClipPlaneSet::ClassifyCurveVectorInSetDifference(curves, localClipPlanes, nullptr, !m_fp.IsInsideMode()))
+        switch (ClipPlaneSet::ClassifyCurveVectorInSetDifference(curves, localClipPlanes, localClipMasks.empty() ? nullptr : &localClipMasks, !m_fp.IsInsideMode()))
             {
             case ClipPlaneContainment_StronglyInside:
                 m_currentAccept = true;
@@ -228,11 +229,11 @@ bool _ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic& gra
                 break;
 
             case ClipPlaneContainment_StronglyOutside:
-                continue;
+                break;
            }
-
-        CheckCurrentAccept();
         }
+
+    CheckCurrentAccept();
 
     if (!CheckStop())
         graphic.ProcessAsCurvePrimitives(curves, filled); // Check for point strings...
@@ -269,29 +270,27 @@ bool _ProcessSurface(MSBsplineSurfaceCR surface, SimplifyGraphic& graphic) overr
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool _ProcessPolyface(PolyfaceQueryCR polyface, bool filled, SimplifyGraphic& graphic) override
     {
-    if (CheckStop())
-        return true;
+    ClipPlaneSet localClipPlanes;
+    ClipPlaneSet localClipMasks;
 
-    // NEEDSWORK: Ask Earlin if we can get containment more efficiently without creating clipped result...
-    Transform localToWorld = graphic.GetLocalToWorldTransform();
-    Transform worldToLocal;
-
-    worldToLocal.InverseOf(localToWorld);
-
-    ClipVectorPtr       localClip = m_fp.GetClipVector()->Clone(&worldToLocal);
-    FencePolyfaceTester polyfaceTester;
-
-    if (polyfaceTester.HasOverlap(polyface, *localClip))
+    if (!GetLocalClips(localClipPlanes, localClipMasks, graphic))
         {
-        if (!m_fp.IsInsideMode())
+        switch (ClipPlaneSet::ClassifyPolyfaceInSetDifference(polyface, localClipPlanes, localClipMasks.empty() ? nullptr : &localClipMasks))
             {
-            m_currentAccept = true;
-            m_fp.SetHasOverlaps(true);
+            case ClipPlaneContainment_StronglyInside:
+                m_currentAccept = true;
+                break;
+
+            case ClipPlaneContainment_Ambiguous:
+                if (m_fp.IsInsideMode())
+                    break;
+                m_currentAccept = true;
+                m_fp.SetHasOverlaps(true);
+                break;
+
+            case ClipPlaneContainment_StronglyOutside:
+                break;
             }
-        }
-    else if (polyfaceTester.IsInside())
-        {
-        m_currentAccept = true;
         }
 
     CheckCurrentAccept();
@@ -439,13 +438,8 @@ static void setFenceRangeFromInsideClip(DRange3dR fenceRange, ClipVectorCR clip,
         clipPrimitive->GetTransformFromClip()->MultiplyMatrixOnly(fenceNormal);
         }
 
-    DPoint3d    viewBox[8];
-    DRange3d    viewRange;
     Frustum     viewFrustum = vp->GetFrustum(DgnCoordSystem::World, true);
-
-    memcpy(viewBox, viewFrustum.GetPts(), sizeof (viewBox));
-    viewRange.InitFrom(viewBox, 8);
-
+    DRange3d    viewRange = viewFrustum.ToRange();
     double      minDepth, maxDepth;
 
     LegacyMath::Vec::ComputeRangeProjection(&minDepth, &maxDepth, &viewRange.low, &viewRange.high, &fenceOrigin, &fenceNormal);
@@ -482,9 +476,29 @@ StatusInt FenceParams::StoreClippingVector(ClipVectorCR clip, bool outside)
     if (!m_clip.IsValid())
         return ERROR;
 
-    m_fenceRangeNPC.Init ();
+    m_fenceRangeNPC.Init();
+
     if (!outside)
-        setFenceRangeFromInsideClip(m_fenceRangeNPC, *m_clip, m_viewport);
+        {
+        DRange3d fenceRange = DRange3d::NullRange();
+        DPoint3d corners[8];
+
+        setFenceRangeFromInsideClip(fenceRange, *m_clip, m_viewport);
+        fenceRange.Get8Corners(corners);
+
+        DMap4dCP worldToNPC = m_viewport->GetWorldToNpcMap();
+        DRange3d uvRange = DRange3d::NullRange();
+
+        for (size_t i = 0; i < 8; i++)
+            {
+            DPoint3d uvw;
+
+            worldToNPC->M0.MultiplyAndRenormalize(&uvw, &corners[i], 1);
+            uvRange.Extend(uvw.x, uvw.y, uvw.z);
+            }
+
+        m_fenceRangeNPC = uvRange;
+        }
 
     return SUCCESS;
     }
