@@ -3866,7 +3866,7 @@ void GeometricElement::_OnInserted(DgnElementP copiedFrom) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void  GeometricElement::_OnDeleted() const { T_Super::_OnDeleted(); }
+void  GeometricElement::_OnDeleted() const { T_HOST.GetTxnAdmin()._OnGraphicElementDeleted(GetDgnDb(), m_elementId); T_Super::_OnDeleted(); }
 void  GeometricElement2d::_OnDeleted() const { SetUndisplayed(false); T_Super::_OnDeleted(); }
 void  GeometricElement3d::_OnDeleted() const { SetUndisplayed(false); T_Super::_OnDeleted(); }
 
@@ -3876,6 +3876,7 @@ void  GeometricElement3d::_OnDeleted() const { SetUndisplayed(false); T_Super::_
 void GeometricElement::_OnAppliedDelete() const 
     {
     T_Super::_OnAppliedDelete();
+    T_HOST.GetTxnAdmin()._OnGraphicElementDeleted(GetDgnDb(), m_elementId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3893,7 +3894,7 @@ void GeometricElement::_OnAppliedAdd() const
 void GeometricElement::_OnUpdateFinished() const 
     {
     T_Super::_OnUpdateFinished(); 
-    T_HOST.GetTxnAdmin()._OnGraphicElementAdded(GetDgnDb(), m_elementId);
+    T_HOST.GetTxnAdmin()._OnGraphicElementModified(GetDgnDb(), m_elementId);
     }
 
 /*---------------------------------------------------------------------------------**//**

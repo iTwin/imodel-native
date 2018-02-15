@@ -36,7 +36,7 @@ struct TileContext;
 // #define DISABLE_EDGE_GENERATION
 
 // For debugging tile generation code - disables use of cached tiles.
-// #define DISABLE_TILE_CACHE
+#define DISABLE_TILE_CACHE
 
 // We used to cache GeometryLists for elements occupying a significant (25%) fraction of the total model range.
 // That can't work for BReps because they are associated with a specific thread's partition.
