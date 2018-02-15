@@ -189,6 +189,10 @@ struct ExeAdmin : BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshAdmin
         return s_activeDgnModelRefP;
         }
 
+    virtual uint64_t _GetProductId() const override
+        {
+        return 1000; //Internal application, use MicroStation as default.        
+        }    
     };
 
 struct ExeHost : BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshLib::Host

@@ -469,11 +469,18 @@ StatusInt IScalableMeshCreator::Impl::GetStreamedTextureProvider(ITextureProvide
 #endif
 
     unitTransform.Multiply(range.low, range.low);
-    unitTransform.Multiply(range.high, range.high);
+    unitTransform.Multiply(range.high, range.high);    
 
-    assert(!m_scmPtr.IsValid() || m_dataIndex.GetPtr() == ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP());
-    m_dataIndex->SetTextured(SMTextureType::Streaming);
-
+    if (m_scmPtr.IsValid())
+        { 
+        ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->SetTextured(SMTextureType::Streaming);
+        }
+    else
+        {
+        assert(m_dataIndex != nullptr);
+        m_dataIndex->SetTextured(SMTextureType::Streaming);
+        }
+        
     textureStreamProviderPtr = new StreamTextureProvider(streamingRaster, range);
 
     return SUCCESS;

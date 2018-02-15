@@ -48,6 +48,8 @@
             <Libs ProductDirectoryName="ScalableMeshLibs" Required="false">delivery/$(shlibprefix)ScalableMesh$(libext)</Libs>    
             <Assemblies ProductDirectoryName="ScalableMeshAssemblies" Required="false">delivery/$(shlibprefix)ScalableMesh$(shlibext)</Assemblies> 
             <Assemblies ProductDirectoryName="PPNativeAssemblies">delivery/$(shlibprefix)ScalableMesh$(shlibext)</Assemblies> 
+            <Files ProductDirectoryName="ScalableMeshAssemblies">delivery/ScalableMeshCacert.pem</Files>
+            <Files ProductDirectoryName="PPNativeAssemblies">delivery/ScalableMeshCacert.pem</Files>
             <PublicAPI Domain="ScalableMesh" />
         </Bindings>
     </Part>
@@ -275,7 +277,7 @@
         <ProductDirectory Name="JpegAssemblies" Deliver="false"/>
         <ProductDirectory Name="PngNativeAssemblies" Deliver="false"/>            
         <ProductDirectory Name="TiffNativeAssemblies" Deliver="false"/>      
-        <ProductDirectory Name="ZlibNativeAssemblies" Deliver="true"/>
+        <ProductDirectory Name="ZlibNativeAssemblies" Path="Dlls" Deliver="true"/>
         <ProductDirectory Name="ZlibNativeAssemblies" LibType="static" Deliver="false"/> 
         <ProductDirectory Name="Assemblies" Path="Dlls"/>
         <ProductDirectory Name="ErdasEcwJpeg2000Assemblies" Path="Dlls" />
