@@ -2,7 +2,7 @@
 |
 |     $Source: iModelHubClient/Briefcase.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/TxnManager.h>
@@ -515,6 +515,11 @@ ICancellationTokenPtr cancellationToken
                 }
             else
                 {
+                if (relinquishCodesLocks)
+                    {
+                    m_db->BriefcaseManager().ClearUserHeldCodesLocks();
+                    }
+
                 finalResult->SetSuccess(result.GetValue());
                 }
             });

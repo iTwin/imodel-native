@@ -82,6 +82,7 @@
     <ClInclude Include="Published\WebServices\Client\ClientInfoTests.h" />
     <ClInclude Include="Published\WebServices\Client\Response\WSUploadResponseTests.h" />
     <ClInclude Include="Published\WebServices\Client\WSChangesetTests.h" />
+    <ClInclude Include="Published\WebServices\Client\WSJobTests.h" />
     <ClInclude Include="Published\WebServices\Configuration\BuddiClientTests.h" />
     <ClInclude Include="Published\WebServices\Configuration\MockBuddiClient.h" />
     <ClInclude Include="Published\WebServices\Configuration\StubBuddiClient.h" />
@@ -229,6 +230,7 @@
     <ClCompile Include="Published\WebServices\Client\RequestOptionsTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\Response\WSUploadResponseTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\WSChangesetTests.cpp" />
+    <ClCompile Include="Published\WebServices\Client\WSJobTests.cpp" />
     <ClCompile Include="Published\WebServices\Configuration\BuddiClientTests.cpp" />
     <ClCompile Include="Published\WebServices\Configuration\UrlProviderTests.cpp" />
     <ClCompile Include="Published\WebServices\Connect\ConnectAuthenticationHandlerTests.cpp" />

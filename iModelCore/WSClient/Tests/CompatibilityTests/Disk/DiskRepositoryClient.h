@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/CompatibilityTests/Disk/DiskRepositoryClient.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -167,9 +167,19 @@ struct DiskRepositoryClient : public IWSRepositoryClient
         virtual AsyncTaskPtr<WSChangesetResult> SendChangesetRequest
             (
             HttpBodyPtr changeset,
-            Request::ProgressCallbackCR uploadProgressCallback = nullptr,
-            ICancellationTokenPtr ct = nullptr,
-            RequestOptionsPtr options = nullptr
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override
+            {
+            FBC_NOT_IMPLEMENTED(WSChangesetResult);
+            }
+
+        virtual AsyncTaskPtr<WSChangesetResult> SendChangesetRequestWithOptions
+            (
+            HttpBodyPtr changeset,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
+            RequestOptionsPtr options = nullptr,
+            ICancellationTokenPtr ct = nullptr
             ) const override
             {
             FBC_NOT_IMPLEMENTED(WSChangesetResult);
@@ -179,25 +189,24 @@ struct DiskRepositoryClient : public IWSRepositoryClient
             (
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
-            Request::ProgressCallbackCR uploadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override
             {
             FBC_NOT_IMPLEMENTED(WSCreateObjectResult);
             }
 
-        virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
+        virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequestWithOptions
             (
-            ObjectIdCR objectId,
             JsonValueCR objectCreationJson,
-            BeFileNameCR filePath = BeFileName (),
+            BeFileNameCR filePath = BeFileName(),
             Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
+            RequestOptionsPtr options = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override
             {
-            FBC_NOT_IMPLEMENTED (WSCreateObjectResult);
+            FBC_NOT_IMPLEMENTED(WSCreateObjectResult);
             }
-
 
         virtual AsyncTaskPtr<WSUpdateObjectResult> SendUpdateObjectRequest
             (
@@ -206,6 +215,20 @@ struct DiskRepositoryClient : public IWSRepositoryClient
             Utf8StringCR eTag = nullptr,
             BeFileNameCR filePath = BeFileName(),
             Request::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override
+            {
+            FBC_NOT_IMPLEMENTED(WSUpdateObjectResult);
+            }
+
+        virtual AsyncTaskPtr<WSUpdateObjectResult> SendUpdateObjectRequestWithOptions
+            (
+            ObjectIdCR objectId,
+            JsonValueCR propertiesJson,
+            Utf8StringCR eTag = nullptr,
+            BeFileNameCR filePath = BeFileName(),
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
+            RequestOptionsPtr options = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override
             {
@@ -221,14 +244,61 @@ struct DiskRepositoryClient : public IWSRepositoryClient
             FBC_NOT_IMPLEMENTED(WSDeleteObjectResult);
             }
 
+        virtual AsyncTaskPtr<WSDeleteObjectResult> SendDeleteObjectRequestWithOptions
+            (
+            ObjectIdCR objectId,
+            RequestOptionsPtr options = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override
+            {
+            FBC_NOT_IMPLEMENTED(WSDeleteObjectResult);
+            }
+
         virtual AsyncTaskPtr<WSUpdateFileResult> SendUpdateFileRequest
             (
             ObjectIdCR objectId,
             BeFileNameCR filePath,
-            Request::ProgressCallbackCR uploadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override
             {
             FBC_NOT_IMPLEMENTED(WSUpdateFileResult);
+            }
+
+        virtual AsyncTaskPtr<WSUpdateFileResult> SendUpdateFileRequestWithOptions
+            (
+            ObjectIdCR objectId,
+            BeFileNameCR filePath,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
+            RequestOptionsPtr options = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override
+            {
+            FBC_NOT_IMPLEMENTED(WSUpdateFileResult);
+            }
+
+        virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
+            (
+            ObjectIdCR relatedObjectId,
+            JsonValueCR objectCreationJson,
+            BeFileNameCR filePath = BeFileName(),
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override
+            {
+            FBC_NOT_IMPLEMENTED(WSCreateObjectResult);
+            }
+
+        virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequestWithOptions
+            (
+            ObjectIdCR relatedObjectId,
+            JsonValueCR objectCreationJson,
+            BeFileNameCR filePath = BeFileName(),
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
+            RequestOptionsPtr options = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override
+            {
+            FBC_NOT_IMPLEMENTED(WSCreateObjectResult);
             }
     };

@@ -8,12 +8,4 @@ WebsiteSeedFileTests.CreateSeedFile
 #   Tests that are failing
 #----------------------------------------------------------------------------------------
 BriefcaseSchemaChangesTests.*
-BriefcaseTests.UnsuccessfulRestoreBriefcase
-BriefcaseTests.QueryInformationAboutMasterBriefcase
-BriefcaseTests.QueryInformationAboutStandaloneBriefcase
-BriefcaseTests.QueryInformationAboutNonexistentBriefcase
-ChangeSetsTests.CancelDownloadChangeSets
-iModelTests.QueryNonExistentiModelByName
-iModelTests.SuccessfulCreateiModelWithASpaceInName
 SeedFileTests.ReplaceWithoutLockediModel
-SeedFileTests.QueryNonExistentSeedFile

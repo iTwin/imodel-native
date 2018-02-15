@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/MockTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -30,6 +30,9 @@
 #include "../WebServices/Connect/MockImsClient.h"
 #include "../WebServices/Connect/MockConnectionClientInterface.h"
 #include "../WebServices/Connect/MockConnectSignInManagerListener.h"
+
+// Include iModelHub to test namespace conflicts
+#include <WebServices/iModelHub/Client/FileInfo.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 /*--------------------------------------------------------------------------------------+
