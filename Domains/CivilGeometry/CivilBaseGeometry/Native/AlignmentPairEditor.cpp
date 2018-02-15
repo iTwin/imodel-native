@@ -73,11 +73,6 @@ bool AlignmentMarkerBits::GetMarkerBit(ICurvePrimitiveCR primitive, AlignmentMar
 //---------------------------------------------------------------------------------------
 AlignmentPI::AlignmentPI()
     {
-#ifndef NDEBUG
-    int size = sizeof(AlignmentPI);
-    memset(this, 0xBAADF00D, size);
-#endif
-
     m_noCurveInfo = NoCurveInfo();
     m_noCurveInfo.piPoint.InitDisconnect();
     m_type = TYPE_Uninitialized;
@@ -299,11 +294,6 @@ bool AlignmentPI::TryGetSpiralData(AlignmentPI::Spiral& spiral, bool isFirstSpir
 //---------------------------------------------------------------------------------------
 AlignmentPVI::AlignmentPVI()
     {
-#ifndef NDEBUG
-    int size = sizeof(AlignmentPVI);
-    memset(this, 0xBAADF00D, size);
-#endif
-
     m_gradeBreakInfo = GradeBreakInfo();
     m_gradeBreakInfo.pvi.InitDisconnect();
     m_type = TYPE_Uninitialized;
@@ -311,11 +301,10 @@ AlignmentPVI::AlignmentPVI()
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        11/2017
 //---------------------------------------------------------------------------------------
-void AlignmentPVI::InitGradeBreak(DPoint3dCR pviPoint, ICurvePrimitive::CurvePrimitiveType sourcePrimitiveType)
+void AlignmentPVI::InitGradeBreak(DPoint3dCR pviPoint)
     {
     GradeBreakInfo gbInfo;
     gbInfo.pvi = DPoint3d::From(pviPoint.x, 0.0, pviPoint.z);
-    gbInfo.sourcePrimitiveType = sourcePrimitiveType;
 
     m_gradeBreakInfo = gbInfo;
     m_type = TYPE_GradeBreak;
@@ -541,7 +530,36 @@ double AlignmentPVI::Slope(DPoint3dCR p0, DPoint3dCR p1)
 
     return (p0.z - p1.z) / (p0.x - p1.x);
     }
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        02/2018
+//---------------------------------------------------------------------------------------
+AlignmentPVI::Provenance::Provenance(CurveVectorCR curve) : m_curve(&curve)
+    {
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        02/2018
+//---------------------------------------------------------------------------------------
+bool AlignmentPVI::Provenance::ContainsLineString() const
+    {
+    return std::any_of(m_curve->begin(), m_curve->end(),
+        [](ICurvePrimitivePtr const& prim) { return ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString == prim->GetCurvePrimitiveType();});
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        02/2018
+//---------------------------------------------------------------------------------------
+RefCountedPtr<AlignmentPVI::Provenance> AlignmentPVI::Provenance::Create(CurveVectorCR curve)
+    {
+    return new Provenance(curve);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        02/2018
+//---------------------------------------------------------------------------------------
+RefCountedPtr<AlignmentPVI::Provenance> AlignmentPVI::Provenance::Create(ICurvePrimitiveCR primitive)
+    {
+    ICurvePrimitivePtr primitivePtr(const_cast<ICurvePrimitiveP>(&primitive));
+    CurveVectorPtr cv = CurveVector::Create(primitivePtr, CurveVector::BOUNDARY_TYPE_Open);
+    return new Provenance(*cv);
+    }
 
 
 //=======================================================================================
@@ -1926,7 +1944,8 @@ bvector<AlignmentPVI> AlignmentPairEditor::GetPVIs() const
                 AlignmentPVI pvi;
                 if (0 == i)
                     {
-                    pvi.InitGradeBreak(vtStart, ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line);
+                    pvi.InitGradeBreak(vtStart);
+                    pvi.SetProvenance(*AlignmentPVI::Provenance::Create(*vt[i]));
                     pvis.push_back(pvi);
                     }
 
@@ -1938,7 +1957,13 @@ bvector<AlignmentPVI> AlignmentPairEditor::GetPVIs() const
                         DPoint3d start, end;
                         vt[i]->GetStartEnd(start, end);
                         end.y = 0.0;
-                        pvi.InitGradeBreak(end, ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line);
+
+                        CurveVectorPtr cvProvenance = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+                        cvProvenance->push_back(vt[i]);
+                        cvProvenance->push_back(vt[i + 1]);
+
+                        pvi.InitGradeBreak(end);
+                        pvi.SetProvenance(*AlignmentPVI::Provenance::Create(*cvProvenance));
                         pvis.push_back(pvi);
                         }
                     }
@@ -1953,7 +1978,8 @@ bvector<AlignmentPVI> AlignmentPairEditor::GetPVIs() const
                 if (i == 0)
                     {
                     AlignmentPVI pvi;
-                    pvi.InitGradeBreak(vtStart, ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString);
+                    pvi.InitGradeBreak(vtStart);
+                    pvi.SetProvenance(*AlignmentPVI::Provenance::Create(*vt[i]));
                     pvis.push_back(pvi);
                     }
 
@@ -1963,7 +1989,8 @@ bvector<AlignmentPVI> AlignmentPairEditor::GetPVIs() const
                     AlignmentPVI pvi;
                     DPoint3d pviPt = pts->at(j);
                     pviPt.y = 0.0;
-                    pvi.InitGradeBreak(pviPt, ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString);
+                    pvi.InitGradeBreak(pviPt);
+                    pvi.SetProvenance(*AlignmentPVI::Provenance::Create(*vt[i]));
                     pvis.push_back(pvi);
                     }
 
@@ -1976,7 +2003,13 @@ bvector<AlignmentPVI> AlignmentPairEditor::GetPVIs() const
                         AlignmentPVI pvi;
                         DPoint3d pviPt = pts->at(pts->size() - 1);
                         pviPt.y = 0.0;
-                        pvi.InitGradeBreak(pviPt, ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString);
+
+                        CurveVectorPtr cvProvenance = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+                        cvProvenance->push_back(vt[i]);
+                        cvProvenance->push_back(vt[i + 1]);
+
+                        pvi.InitGradeBreak(pviPt);
+                        pvi.SetProvenance(*AlignmentPVI::Provenance::Create(*cvProvenance));
                         pvis.push_back(pvi);
                         }
                     }
@@ -1986,7 +2019,10 @@ bvector<AlignmentPVI> AlignmentPairEditor::GetPVIs() const
                 {
                 AlignmentPVI pvi;
                 if (LoadVerticalArcData(pvi, *vt.at(i)))
+                    {
+                    pvi.SetProvenance(*AlignmentPVI::Provenance::Create(*vt[i]));
                     pvis.push_back(pvi);
+                    }
                 else
                     isError = true;
 
@@ -2001,7 +2037,10 @@ bvector<AlignmentPVI> AlignmentPairEditor::GetPVIs() const
                 BeAssert(!"&&AG NEEDSWORK PARTIAL CURVES");
                 AlignmentPVI pvi;
                 if (LoadVerticalParabolaData(pvi, *vt[i]))
+                    {
+                    pvi.SetProvenance(*AlignmentPVI::Provenance::Create(*vt[i]));
                     pvis.push_back(pvi);
+                    }
                 else
                     isError = true;
 
@@ -2011,7 +2050,10 @@ bvector<AlignmentPVI> AlignmentPairEditor::GetPVIs() const
                 {
                 AlignmentPVI pvi;
                 if (LoadVerticalParabolaData(pvi, *vt[i]))
+                    {
+                    pvi.SetProvenance(*AlignmentPVI::Provenance::Create(*vt[i]));
                     pvis.push_back(pvi);
+                    }
                 else
                     isError = true;
 
@@ -2037,7 +2079,8 @@ bvector<AlignmentPVI> AlignmentPairEditor::GetPVIs() const
     if (!pvis.empty() && pvis.back().GetPVTLocation().x < vtEnd.x)
         {
         AlignmentPVI endPVI;
-        endPVI.InitGradeBreak(vtEnd, vt.back()->GetCurvePrimitiveType());
+        endPVI.InitGradeBreak(vtEnd);
+        endPVI.SetProvenance(*AlignmentPVI::Provenance::Create(*vt.back()));
         pvis.push_back(endPVI);
         }
 

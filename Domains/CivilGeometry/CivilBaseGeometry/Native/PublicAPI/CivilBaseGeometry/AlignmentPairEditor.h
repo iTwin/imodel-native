@@ -199,11 +199,26 @@ struct AlignmentPVI
 {
 public:
     //=======================================================================================
+    // Keeps information about the origins of the PVI
+    //=======================================================================================
+    struct Provenance : RefCountedBase, NonCopyableClass
+    {
+    protected:
+        CurveVectorCPtr m_curve;
+    protected:
+        Provenance(CurveVectorCR curve);
+    public:
+        CIVILBASEGEOMETRY_EXPORT bool ContainsLineString() const;
+        CIVILBASEGEOMETRY_EXPORT static RefCountedPtr<Provenance> Create(CurveVectorCR curve);
+        CIVILBASEGEOMETRY_EXPORT static RefCountedPtr<Provenance> Create(ICurvePrimitiveCR primitive);
+    };
+    typedef Provenance const* ProvenanceCP;
+
+    //=======================================================================================
     //=======================================================================================
     struct GradeBreakInfo
     {
     DPoint3d pvi;
-    ICurvePrimitive::CurvePrimitiveType sourcePrimitiveType;
     };
     //=======================================================================================
     //=======================================================================================
@@ -242,6 +257,9 @@ public:
     enum Type { TYPE_Uninitialized, TYPE_GradeBreak, TYPE_Arc, TYPE_Parabola };
     
 private:
+    // Holds information about the provenance of the PVI, or invalid
+    RefCountedPtr<Provenance> m_provenance;
+
     // The variable holding the current type
     Type m_type;
 
@@ -255,7 +273,7 @@ private:
 
 public:
     CIVILBASEGEOMETRY_EXPORT AlignmentPVI();
-    CIVILBASEGEOMETRY_EXPORT void InitGradeBreak(DPoint3dCR pviPoint, ICurvePrimitive::CurvePrimitiveType sourcePrimitiveType);
+    CIVILBASEGEOMETRY_EXPORT void InitGradeBreak(DPoint3dCR pviPoint);
     CIVILBASEGEOMETRY_EXPORT void InitArc(DPoint3dCR pviPoint, double radius);
     // Initializes a parabola PVI.
     // @remarks when isLengthByK is true, the third parameter is the K Value, and is the length otherwise
@@ -264,6 +282,11 @@ public:
 
     // Returns whether this PVI is initialized
     bool IsInitialized() const { return TYPE_Uninitialized != m_type; }
+
+    bool HasProvenance() const { return m_provenance.IsValid(); }
+    ProvenanceCP GetProvenance() const { return m_provenance.get(); }
+    void SetProvenance(Provenance& provenance) { m_provenance = &provenance; }
+
     // Returns the PVI type
     AlignmentPVI::Type GetType() const { return m_type; }
 

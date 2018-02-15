@@ -2305,7 +2305,10 @@ void AlignmentPairEditor_GetPVIs()
     EXPECT_EQ(0, pvis.size());
 
     // Unsupported primitive type
-    CurveVectorPtr vt = CurveVector::CreateLinear({DPoint3d::FromZero(), DPoint3d::From(10, 0, 5)});
+    CurveVectorPtr vt = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+    bvector<DPoint3d> points{ DPoint3d::FromZero(), DPoint3d::From(10, 0, 5) };
+    vt->push_back(ICurvePrimitive::CreatePointString(points));
+
     editor->UpdateVerticalCurveVector(vt.get());
     pvis = editor->GetPVIs();
     EXPECT_EQ(0, pvis.size());
