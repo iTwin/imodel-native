@@ -116,6 +116,10 @@ USING_NAMESPACE_BENTLEY_POINTCLOUD
 #include <STMInternal/Foundations/FoundationsPrivateTools.h>
 #endif 
 
+
+#include <Logging\bentleylogging.h>
+
+
 //Useful for detecting memory leak
 //#define _DEBUG
 //#include <C:\Program Files (x86)\Visual Leak Detector\include\vld.h>

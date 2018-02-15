@@ -23,7 +23,7 @@
   
     <Part Name="ScalableMeshRDSDependenciesBim02" >
     <SubPart PartName="RealityPlatformTools"                        PartFile="RealityModFramework"                      Repository="RealityModFramework"/>
-    <SubPart PartName="ConnectClientWrapperNative.VC120"            PartFile="BentleyDesktopClient"                     Repository="BentleyDesktopClient"/>
+    <SubPart PartName="CCApi"                                       PartFile="BentleyDesktopClient"                     Repository="BentleyDesktopClient"/>
   </Part>
 
     <!--<Part Name="ScalableMesh" BMakeFile="ScalableMesh.mke" ApiNumber="B02" BMakeOptions="+dENABLE_COMPILER_ANALYZE=1 +dSECURITY_ONLY_COMPILER_ANALYZE=1">-->
@@ -256,17 +256,20 @@
         <ProductDirectory Name="JpegAssemblies" Deliver="false"/>        
         <ProductDirectory Name="PngNativeAssemblies" Deliver="false"/>            
         <ProductDirectory Name="TiffNativeAssemblies" Deliver="false"/>      
-        <ProductDirectory Name="ZlibNativeAssemblies" Deliver="false"/>
+        <ProductDirectory Name="ZlibNativeAssemblies" Deliver="true" Path="Dlls"/>
         <ProductDirectory Name="Assemblies" Path="Dlls"/>
         <ProductDirectory Name="ErdasEcwJpeg2000Assemblies" Path="Dlls" />
         <ProductDirectory Name="BeOpenSSLAssemblies" Path="Dlls"/>        
         <ProductDirectory Name="BeCurlAssemblies" Path="Dlls"/>            
         <ProductDirectory Name="BeIcu4cData"       Path="Dlls" LibType="static" />
         <ProductDirectory Name="PointCloudAssemblies" Path="Dlls" Deliver="true" />
-        <ProductDirectory Name="LibV8Assemblies" Path="Dlls" Deliver="true" />        
+        <ProductDirectory Name="LibV8Assemblies" Path="Dlls" Deliver="true" />
         <ProductDirectory Name="ScalableMeshV8SDK"          Path="Dlls\ScalableMeshV8SDK" />
-        <ProductDirectory Name="Assets"          Path="Dlls\Assets" />      
-  </ProductDirectoryList>
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" Path="Dlls"/>         
+        <ProductDirectory Name="BentleyDesktopClientApi" Path="Dlls"/>
+        <ProductDirectory Name="BentleyClientSharedAssemblies" Path="Dlls"/>         
+        <ProductDirectory Name="Assets" Path="Dlls"/>         
+    </ProductDirectoryList>
 
 <ProductDirectoryList ListName="ScalableMeshLumenSdk">
         <ProductDirectory Name="TMSchemas"  Deliver="true" Path="Dlls"/>
