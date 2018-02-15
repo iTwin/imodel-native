@@ -61,7 +61,7 @@ TEST_F(StructuralDomainTestFixture, ValidateSchema)
     ASSERT_TRUE(ECN::ECSchemaValidator::Validate(*refSchema));
     }
 
-/*
+
 TEST_F(StructuralDomainTestFixture, CreatePhysicalPartition)
     {
     DgnDbPtr db = CreateDgnDb();
@@ -123,9 +123,51 @@ TEST_F(StructuralDomainTestFixture, CreatePhysicalPartition)
     ASSERT_TRUE(schema != nullptr);
 
     ASSERT_TRUE(schema->GetName() == DYNAMIC_SCHEMA_NAME);
-}
+    }
 
-#define BEAM_CODE_VALUE       "BEAM-001"
+#define STRUCTURALMEMBER_CODE_VALUE1       "STRUCTURAL_MEMBER-001"
+TEST_F(StructuralDomainTestFixture, StructuralMemberClassTest_1)
+    {
+    DgnDbPtr db = OpenDgnDb();
+    ASSERT_TRUE(db.IsValid());
+
+    Structural::StructuralPhysicalModelCPtr physicalModel = Structural::StructuralDomainUtilities::GetStructuralPhysicalModel(MODEL_TEST_NAME, *db);
+    ASSERT_TRUE(physicalModel.IsValid());
+
+    Dgn::PhysicalElementPtr physicalElement = Structural::StructuralDomainUtilities::CreatePhysicalElement(BENTLEY_STRUCTURAL_PHYSICAL_SCHEMA_NAME, STRUCTURAL_PHYSICAL_CLASS_StructuralMember, *physicalModel);
+    ASSERT_TRUE(physicalElement.IsValid());
+    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, *physicalModel, STRUCTURALMEMBER_CODE_VALUE1);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == physicalElement->SetCode(code));
+
+    Dgn::DgnDbStatus status;
+    Dgn::DgnElementCPtr element = physicalElement->Insert(&status);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    Dgn::PhysicalElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::PhysicalElement>(*physicalModel, STRUCTURALMEMBER_CODE_VALUE1);
+    ASSERT_TRUE(queriedElement.IsValid());
+    }
+
+#define STRUCTURALMEMBER_CODE_VALUE2      "STRUCTURAL_MEMBER-002"
+TEST_F(StructuralDomainTestFixture, StructuralMemberClassTest_2)
+    {
+    DgnDbPtr db = OpenDgnDb();
+    ASSERT_TRUE(db.IsValid());
+    Structural::StructuralPhysicalModelCPtr physicalModel = Structural::StructuralDomainUtilities::GetStructuralPhysicalModel(MODEL_TEST_NAME, *db);
+    ASSERT_TRUE(physicalModel.IsValid());
+    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, *physicalModel, STRUCTURALMEMBER_CODE_VALUE2);
+
+    Dgn::DgnDbStatus status;
+    StructuralMemberPtr pw = StructuralMember::Create(physicalModel);
+    status = pw->SetCode(code);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+    pw->Insert(&status);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    Dgn::PhysicalElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::PhysicalElement>(*physicalModel, STRUCTURALMEMBER_CODE_VALUE2);
+    ASSERT_TRUE(queriedElement.IsValid());
+    }
+
+/*#define BEAM_CODE_VALUE       "BEAM-001"
 
 TEST_F(StructuralDomainTestFixture, BeamClassTests)
     {
