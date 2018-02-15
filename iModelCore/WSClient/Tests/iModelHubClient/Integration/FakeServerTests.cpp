@@ -189,9 +189,10 @@ TEST_F(FakeServerFixture, CreateiModel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FakeServerFixture, DownloadiModel)
     {
+    Utf8String urlGetBriefcaseId(" https://qa-imodelhubapi.bentley.com/v2.5/Repositories/iModel--c7e9a866-426e-46de-a4cb-acd0d8c3b9a6/iModelScope/Briefcase");
 
     Utf8String url("https://imodelhubqasa01.blob.core.windows.net/imodelhub-7a03ace7-6648-434d-89b2-87f21597a7cf/BriefcaseTestsm-3a55e4a4-9357-48fc-8988-9d61435651b8.bim?sv=2016-05-31&sr=b&sig=1BI8ULlcZoN7WPnjkIfPTbLWZsz");
-
+    
     Utf8String method = "GET";
     IHttpHandlerPtr handlePtr = std::make_shared<MockIMSHttpHandler>();
     Request request(url, method, handlePtr);
@@ -258,6 +259,21 @@ TEST_F(FakeServerFixture, UpdateServerFile)
     
     Response response = request.PerformAsync()->GetResult();
     HttpBodyPtr fBody = request.GetRequestBody();*/
+    BeFileName documentsDir;
+    BeTest::GetHost().GetDocumentsRoot(documentsDir);
+    documentsDir.AppendToPath(L"ImodelHubTestData");
+    documentsDir.AppendToPath(L"iModelHubNativeTests");
+    documentsDir.AppendToPath(L"BriefcaseTests.bim");
+    HttpBodyPtr fileBody;
+    fileBody = HttpFileBody::Create(documentsDir);
+    const bmap<Utf8String, Utf8String>& headers = bmap<Utf8String, Utf8String>();
+    auto content = HttpResponseContent::Create(fileBody);
+    for (const auto& header : headers)
+        {
+        content->GetHeaders().SetValue(header.first, header.second);
+        }
+    Utf8String url("https://qa-ims.bentley.com/rest/ActiveSTSService/json/IssueEx");
+    Response resp(content, url.c_str(), ConnectionStatus::OK, HttpStatus::OK);
     }
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Farhad.Kabir    01/2018
