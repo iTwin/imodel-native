@@ -1558,10 +1558,10 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
                 BeAssert(status == SUCCESS);
                 }
 
-			DRange3d range3D2(_GetContentExtent());
+            //DRange3d range3D2(_GetContentExtent());
 
            
-          //  if (clips != nullptr && range3D2.XLength() < 150 && range3D2.YLength() < 150)
+            if (clips != nullptr /*&& range3D2.XLength() < 150 && range3D2.YLength() < 150*/)
                 {
                // static std::mutex mtx;
               //  std::lock_guard<std::mutex> lock(mtx);
@@ -1571,11 +1571,11 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
                 bvector<DPoint2d> newUvs;
                 bvector<bvector<PolyfaceHeaderPtr>> polyfaces;
                 map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
-				if (!GetRegionsFromClipVector3D(polyfaces, clips.get(), meshPtr->GetPolyfaceQuery()))
-				{
-					meshP = meshPtr.get();
-					return meshP;
-				}
+                if (!GetRegionsFromClipVector3D(polyfaces, clips.get(), meshPtr->GetPolyfaceQuery()))
+                {
+                    meshP = meshPtr.get();
+                    return meshP;
+                }
 
                 // Clear mesh
                 meshPtr = ScalableMeshMesh::Create();
