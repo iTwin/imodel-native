@@ -85,8 +85,7 @@ void SketchGridSurfacePlacementStrategy::_SetProperty(Utf8CP key, Dgn::DgnElemen
 //---------------+---------------+---------------+---------------+---------------+------
 void SketchGridSurfacePlacementStrategy::_AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint)
     {
-    DPoint3d projected = _GetSketchGridSurfaceManipulationStrategy().ProjectPoint(newDynamicKeyPoint);
-    T_Super::_AddDynamicKeyPoint(projected);
+    T_Super::_AddDynamicKeyPoint(newDynamicKeyPoint);
     }
 
 //--------------------------------------------------------------------------------------
@@ -94,11 +93,7 @@ void SketchGridSurfacePlacementStrategy::_AddDynamicKeyPoint(DPoint3dCR newDynam
 //---------------+---------------+---------------+---------------+---------------+------
 void SketchGridSurfacePlacementStrategy::_AddDynamicKeyPoints(bvector<DPoint3d> const & newDynamicKeyPoints)
     {
-    bvector<DPoint3d> projected(newDynamicKeyPoints.size());
-    SketchGridSurfaceManipulationStrategyCR manipulationStrategy = _GetSketchGridSurfaceManipulationStrategy();
-    std::transform(newDynamicKeyPoints.begin(), newDynamicKeyPoints.end(), projected.begin(), [&](DPoint3d point) { return manipulationStrategy.ProjectPoint(point); });
-
-    T_Super::_AddDynamicKeyPoints(projected);
+    T_Super::_AddDynamicKeyPoints(newDynamicKeyPoints);
     }
 
 //--------------------------------------------------------------------------------------
@@ -106,6 +101,5 @@ void SketchGridSurfacePlacementStrategy::_AddDynamicKeyPoints(bvector<DPoint3d> 
 //---------------+---------------+---------------+---------------+---------------+------
 void SketchGridSurfacePlacementStrategy::_AddKeyPoint(DPoint3dCR newKeyPoint)
     {
-    DPoint3d projected = _GetSketchGridSurfaceManipulationStrategy().ProjectPoint(newKeyPoint);
-    T_Super::_AddKeyPoint(projected);
+    T_Super::_AddKeyPoint(newKeyPoint);
     }

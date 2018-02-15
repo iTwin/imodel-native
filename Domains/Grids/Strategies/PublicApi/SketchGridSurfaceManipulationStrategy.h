@@ -42,6 +42,9 @@ struct SketchGridSurfaceManipulationStrategy : public BBS::ElementManipulationSt
         virtual BentleyStatus _TryGetProperty(Utf8CP key, Utf8String & value) const override;
         virtual BentleyStatus _TryGetProperty(Utf8CP key, DPlane3d & value) const override;
 
+        // GeometryManipulationStrategy
+        virtual DPoint3d _AdjustPoint(DPoint3d point) const override;
+
         // ElementManipulationStrategy
         virtual Dgn::DgnElementPtr _FinishElement() override;
 
@@ -66,8 +69,6 @@ struct SketchGridSurfaceManipulationStrategy : public BBS::ElementManipulationSt
         static const Utf8CP prop_WorkingPlane;
         static const Utf8CP prop_Length;
         static const Utf8CP prop_Angle;
-
-        DPoint3d ProjectPoint(DPoint3d point) const;
     };
 
 END_GRIDS_NAMESPACE

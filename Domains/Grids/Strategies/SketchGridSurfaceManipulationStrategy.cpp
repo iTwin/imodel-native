@@ -176,7 +176,7 @@ SketchGridSurfaceManipulationStrategy::SketchGridSurfaceManipulationStrategy()
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              02/2018
 //---------------+---------------+---------------+---------------+---------------+------
-DPoint3d SketchGridSurfaceManipulationStrategy::ProjectPoint
+DPoint3d SketchGridSurfaceManipulationStrategy::_AdjustPoint
 (
     DPoint3d point
 ) const
