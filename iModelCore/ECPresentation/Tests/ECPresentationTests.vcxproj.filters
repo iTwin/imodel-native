@@ -96,6 +96,7 @@
     <ClCompile Include="NonPublished\RulesEngine\NavNodeTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\OptimizedExpressionsEvaluationTests.cpp" />
     <ClCompile Include="Published\PresentationRules\InstanceLabelOverrideTests.cpp" />
+    <ClCompile Include="Published\DefaultPropertyFormatterTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECPresentation\BackDoor.h" />
