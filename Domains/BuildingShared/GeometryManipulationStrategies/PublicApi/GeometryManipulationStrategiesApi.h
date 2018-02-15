@@ -12,6 +12,7 @@
 
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(GeometryManipulationStrategyBase)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(GeometryManipulationStrategy)
+BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(NullGeometryManipulationStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(CurvePrimitiveManipulationStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(CurveVectorManipulationStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(ChildCurveVectorManipulationStrategy)
@@ -20,6 +21,7 @@ BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LineStringManipulationStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(EllipseManipulationStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(ArcManipulationStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(GeometryPlacementStrategy)
+BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(NullGeometryPlacementStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(CurveVectorPlacementStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(CurvePrimitivePlacementStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(ChildCurveVectorPlacementStrategy)
@@ -62,6 +64,7 @@ END_BUILDING_SHARED_NAMESPACE
 
 #include "GeometryManipulationStrategyBase.h"
 #include "GeometryManipulationStrategy.h"
+#include "NullGeometryManipulationStrategy.h"
 #include "CurvePrimitiveManipulationStrategy.h"
 #include "CurveVectorManipulationStrategy.h"
 #include "ChildCurveVectorManipulationStrategy.h"
@@ -71,6 +74,7 @@ END_BUILDING_SHARED_NAMESPACE
 #include "EllipseManipulationStrategy.h"
 #include "ArcManipulationStrategy.h"
 #include "GeometryPlacementStrategy.h"
+#include "NullGeometryPlacementStrategy.h"
 #include "CurveVectorPlacementStrategy.h"
 #include "CurvePrimitivePlacementStrategy.h"
 #include "ChildCurveVectorPlacementStrategy.h"

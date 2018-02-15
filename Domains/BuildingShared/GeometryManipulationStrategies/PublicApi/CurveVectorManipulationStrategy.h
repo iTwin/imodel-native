@@ -84,6 +84,8 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
         virtual void _Clear() override;
         virtual DPoint3d _AdjustPoint(DPoint3d keyPoint) const override;
 
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual IGeometryPtr _FinishGeometry() const override;
+
         CV_PROPERTY_OVERRIDE(bool)
         CV_PROPERTY_OVERRIDE(int)
         CV_PROPERTY_OVERRIDE(double)

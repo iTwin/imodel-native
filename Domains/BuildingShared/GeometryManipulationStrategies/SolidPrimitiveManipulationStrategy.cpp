@@ -285,3 +285,11 @@ ISolidPrimitivePtr SolidPrimitiveManipulationStrategy::FinishSolidPrimitive() co
     {
     return _FinishSolidPrimitive();
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+IGeometryPtr SolidPrimitiveManipulationStrategy::_FinishGeometry() const
+    {
+    return IGeometry::Create(_FinishSolidPrimitive());
+    }
