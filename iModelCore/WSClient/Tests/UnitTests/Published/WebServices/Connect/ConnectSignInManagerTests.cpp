@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/ConnectSignInManagerTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConnectSignInManagerTests.h"
@@ -91,10 +91,15 @@ TEST_F(ConnectSignInManagerTests, CheckAndUpdateToken_AfterSignInAndConfiguredTi
     EXPECT_CALL(*imsClient, RequestToken(*token, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(token))));
     ASSERT_TRUE(manager->SignInWithToken(token)->GetResult().IsSuccess());
 
-    EXPECT_CALL(*imsClient, RequestToken(*token, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(token))));
     ConnectSignInManager::Configuration config;
     config.identityTokenRefreshRate = 0;
+
+    BeThreadUtilities::BeSleep(10);
+    EXPECT_CALL(*imsClient, RequestToken(*token, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(token))));
     manager->Configure(config);
+
+    BeThreadUtilities::BeSleep(10);
+    EXPECT_CALL(*imsClient, RequestToken(*token, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(token))));
     manager->CheckAndUpdateToken();
     AsyncTasksManager::GetDefaultScheduler()->OnEmpty()->Wait();
     }
