@@ -29,7 +29,8 @@ class RequestHandler
         
         //////
         Response CreateiModel(Request req);
-        Response DownloadiModel(bvector<Utf8String> args);
+        Response GetBriefcaseId(Request req);
+        Response DownloadiModel(Request req);
         Response UploadNewSeedFile(Request req);
         Response CreateFileInstance(Request req);
         
