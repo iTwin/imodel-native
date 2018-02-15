@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/iModelHub/Client/iModelManager.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,6 +12,7 @@
 #include <DgnPlatform/RepositoryManager.h>
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
+
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 typedef RefCountedPtr<struct iModelManager> iModelManagerPtr;

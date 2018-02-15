@@ -271,10 +271,9 @@ TEST_F(SeedFileTests, PushAndPullAfterReplacement)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SeedFileTests, QueryNonExistentSeedFile)
     {
-    ASSERT_TRUE(false) << "Next line crashes tests. TFS#804292";
     FileResult result = s_connection->GetSeedFileById(BeGuid(true))->GetResult();
     ASSERT_FAILURE(result);
-    EXPECT_EQ(Error::Id::Unknown, result.GetError().GetId()); //Doesn't have an error id
+    EXPECT_EQ(Error::Id::FileDoesNotExist, result.GetError().GetId());
     }
 
 //---------------------------------------------------------------------------------------

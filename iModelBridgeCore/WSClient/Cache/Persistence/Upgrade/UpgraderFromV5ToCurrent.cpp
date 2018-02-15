@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Upgrade/UpgraderFromV5ToCurrent.cpp $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -414,7 +414,7 @@ Utf8StringCR rootName
 
     auto changeStatus = ConvertChangeStatus(instanceInfo["ChangeInfo"]["ChangeStatus"]);
 
-    if (ChangeManager::ChangeStatus::NoChange == changeStatus)
+    if (IChangeManager::ChangeStatus::NoChange == changeStatus)
         {
         bvector<RawWSObjectsReader::RawInstance> instances;
         instances.push_back(instance);
@@ -427,7 +427,7 @@ Utf8StringCR rootName
 
         return newCache.FindInstance(instance.objectId);
         }
-    else if (ChangeManager::ChangeStatus::Created == changeStatus)
+    else if (IChangeManager::ChangeStatus::Created == changeStatus)
         {
         auto syncStatus = ConvertSyncStatus(instanceInfo["ChangeInfo"]["SyncStatus"]);
         ECClassCP ecClass = m_adapter.GetECClass(instance.objectId);
@@ -462,12 +462,12 @@ ECInstanceKey& newInstanceKey
     {
     auto changeStatus = ConvertChangeStatus(instanceInfo["ChangeInfo"]["ChangeStatus"]);
 
-    if (ChangeManager::ChangeStatus::NoChange == changeStatus)
+    if (IChangeManager::ChangeStatus::NoChange == changeStatus)
         {
         return SUCCESS;
         }
 
-    if (ChangeManager::ChangeStatus::Created == changeStatus)
+    if (IChangeManager::ChangeStatus::Created == changeStatus)
         {
         auto syncStatus = ConvertSyncStatus(instanceInfo["ChangeInfo"]["SyncStatus"]);
         ECClassCP ecClass = m_adapter.GetECClass(m_adapter.GetInstanceKeyFromJsonInstance(instanceJson));
@@ -540,7 +540,7 @@ JsonValueCR fileInfo
 
     auto changeStatus = ConvertChangeStatus(fileInfo["ChangeInfo"]["ChangeStatus"]);
 
-    if (ChangeManager::ChangeStatus::NoChange == changeStatus)
+    if (IChangeManager::ChangeStatus::NoChange == changeStatus)
         {
         WSFileResponse response(absolutePath, HttpStatus::OK, eTag);
         if (SUCCESS != newCache.CacheFile(newCache.FindInstance(newInstanceKey), response, cacheLocation))
@@ -548,8 +548,8 @@ JsonValueCR fileInfo
             return ERROR;
             }
         }
-    else if (ChangeManager::ChangeStatus::Created == changeStatus ||
-             ChangeManager::ChangeStatus::Modified == changeStatus)
+    else if (IChangeManager::ChangeStatus::Created == changeStatus ||
+             IChangeManager::ChangeStatus::Modified == changeStatus)
         {
         auto syncStatus = ConvertSyncStatus(fileInfo["ChangeInfo"]["SyncStatus"]);
 

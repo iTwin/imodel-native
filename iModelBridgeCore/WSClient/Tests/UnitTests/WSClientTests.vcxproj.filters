@@ -173,8 +173,9 @@
     <ClInclude Include="Published\WebServices\Cache\BackgroundSyncNotifierTests.cpp" />
     <ClInclude Include="Published\WebServices\Cache\BackgroundSyncNotifierTests.h" />
     <ClInclude Include="Published\WebServices\Cache\SyncNotifierTests.h" />
-    <ClInclude Include="Published\WebServices\Connect\MockConnectSignInManagerListener.h" />
-  </ItemGroup>
+<ClInclude Include="Published\WebServices\Client\WSJobTests.h" />  
+ClInclude Include="Published\WebServices\Connect\MockConnectSignInManagerListener.h" />
+</ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp">
       <Filter>BackDoor</Filter>
@@ -354,6 +355,7 @@
     <ClCompile Include="Published\WebServices\Cache\CachingDataSourceProgressTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\RequestOptionsTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\SyncNotifierTests.cpp" />
+    <ClCompile Include="Published\WebServices\Client\WSJobTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTests.mke" />

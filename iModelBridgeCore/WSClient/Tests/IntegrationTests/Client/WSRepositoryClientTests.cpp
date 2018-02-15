@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/IntegrationTests/Client/WSRepositoryClientTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -28,11 +28,130 @@ void WSRepositoryClientTests::SetUp()
 
     ConnectAuthenticationPersistence::CustomInitialize(&m_localState);
     UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &m_localState);
-    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_HTTP, NativeLogging::LOG_INFO);
+    }
+
+void CleanUp(std::shared_ptr<IWSRepositoryClient> client, Utf8StringCR schemaName, Utf8StringCR className, Utf8StringCR searchProperty, Utf8StringCR searchStartWith)
+    {
+    WSQuery query(schemaName, className);
+    query.SetFilter("startswith("+searchProperty+","+searchStartWith+")");
+    auto resultq = client->SendQueryRequest(query)->GetResult();
+    auto instances = resultq.GetValue().GetInstances();
+    for (auto inst : instances)
+        ASSERT_TRUE(client->SendDeleteObjectRequestWithOptions(inst.GetObjectId())->GetResult().IsSuccess());
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsitest                                    Vincas.Razma                     12/15
+* @bsitest                                    julius.cepukenas                   02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, CrudObjectViaRequests_CreateObjectsWithFile_CrudSucceeds)
+    {
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+
+    Utf8String serverUrl = "https://bsw-wsg.bentley.com/ws26";
+    Utf8String repositoryId = "BentleyCONNECT.SampleAzureSqlDb--Main";
+    Credentials credentials("admin", "admin");
+
+    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
+    client->SetCredentials(credentials);
+
+    CleanUp(client, "AzureSqlPluginATP", "File", "FileName", "'CrudObjectViaRequests_'");
+
+    Json::Value objectCreationJson = ToJson(
+        R"( {
+            "instance" :
+                {
+                "schemaName" : "AzureSqlPluginATP",
+                "className" : "File",
+                "properties" : {"FileName": "CrudObjectViaRequests_FileOriginal"}
+                }
+            })");
+
+    auto result = client->SendCreateObjectRequest(ObjectId(), objectCreationJson, BeFileName())->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    Json::Value resultJson;
+    result.GetValue().GetJson(resultJson);
+
+    auto id = resultJson["changedInstance"]["instanceAfterChange"]["instanceId"].asCString();
+    auto objectId = ObjectId("AzureSqlPluginATP", "File", id);
+
+    auto resultGet = client->SendGetObjectRequest(objectId)->GetResult();
+    ASSERT_TRUE(resultGet.IsSuccess());
+    auto jsonGet = resultGet.GetValue().GetJsonValue()["instances"][0]["properties"]["FileName"];
+    EXPECT_EQ("CrudObjectViaRequests_FileOriginal", jsonGet);
+
+    auto result2 = client->SendUpdateObjectRequest(objectId, Json::objectValue, nullptr, StubFileWithSize(20987056, "CrudObjectViaRequests_FileModified"))->GetResult();
+    ASSERT_TRUE(result2.IsSuccess());
+
+    id = resultJson["changedInstance"]["instanceAfterChange"]["instanceId"].asCString();
+
+    resultGet = client->SendGetObjectRequest(objectId)->GetResult();
+    ASSERT_TRUE(resultGet.IsSuccess());
+    jsonGet = resultGet.GetValue().GetJsonValue()["instances"][0]["properties"]["FileName"];
+    EXPECT_STREQ("CrudObjectViaRequests_FileModified", jsonGet.asCString());
+
+    ASSERT_TRUE(client->SendUpdateFileRequest(objectId, StubFileWithSize(10, "CrudObjectViaRequests_OnlyFileModified"))->GetResult().IsSuccess());
+
+    ASSERT_TRUE(client->SendDeleteObjectRequestWithOptions(objectId)->GetResult().IsSuccess());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    julius.cepukenas                   02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, CrudObjectViaRequests_CreateObjectsWithFileUsingJobApi_CrudSucceeds)
+    {
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+
+    Utf8String serverUrl = "https://bsw-wsg.bentley.com/ws26";
+    Utf8String repositoryId = "BentleyCONNECT.SampleAzureSqlDb--Main";
+    Credentials credentials("admin", "admin");
+
+    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
+    client->SetCredentials(credentials);
+
+    CleanUp(client, "AzureSqlPluginATP", "File", "FileName", "'CrudObjectUsingJobApi_'");
+
+    Json::Value objectCreationJson = ToJson(
+        R"( {
+            "instance" :
+                {
+                "schemaName" : "AzureSqlPluginATP",
+                "className" : "File",
+                "properties" : {"FileName": "CrudObjectUsingJobApi_FileOriginal"}
+                }
+            })");
+
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetJobOptions()->EnableJobsIfPossible();
+    auto result = client->SendCreateObjectRequestWithOptions(ObjectId(), objectCreationJson, BeFileName(), nullptr, options)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    Json::Value resultJson;
+    result.GetValue().GetJson(resultJson);
+
+    auto id = resultJson["changedInstance"]["instanceAfterChange"]["instanceId"].asCString();
+    auto objectId = ObjectId("AzureSqlPluginATP", "File", id);
+
+    auto resultGet = client->SendGetObjectRequest(objectId)->GetResult();
+    ASSERT_TRUE(resultGet.IsSuccess());
+    auto jsonGet = resultGet.GetValue().GetJsonValue()["instances"][0]["properties"]["FileName"];
+    EXPECT_EQ("CrudObjectUsingJobApi_FileOriginal", jsonGet);
+
+    auto result2 = client->SendUpdateObjectRequestWithOptions(objectId, Json::objectValue, nullptr,
+                                                              StubFileWithSize(20987056, "CrudObjectUsingJobApi_FileModified"), nullptr, options)->GetResult();
+    ASSERT_TRUE(result2.IsSuccess());
+    id = resultJson["changedInstance"]["instanceAfterChange"]["instanceId"].asCString();
+
+    resultGet = client->SendGetObjectRequest(objectId)->GetResult();
+    ASSERT_TRUE(resultGet.IsSuccess());
+    jsonGet = resultGet.GetValue().GetJsonValue()["instances"][0]["properties"]["FileName"];
+    EXPECT_EQ("CrudObjectUsingJobApi_FileModified", jsonGet);
+
+    ASSERT_TRUE(client->SendUpdateFileRequestWithOptions(objectId, StubFile("CrudObjectUsingJobApi_OnlyFileModified"), nullptr, options)->GetResult().IsSuccess());
+
+    ASSERT_TRUE(client->SendDeleteObjectRequestWithOptions(objectId, options)->GetResult().IsSuccess());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    julius.cepukenas                   02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendQueryRequest_ConnectGlobalProjectQueryWithConnectSignInManager_Succeeds)
     {

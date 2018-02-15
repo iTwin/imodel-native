@@ -182,7 +182,9 @@ TEST_F(CodesLocksTests, PushAndRelinquishCodesLocks)
     db2.SaveChanges();
     ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false)); // Don't release codes and locks.
     Utf8String changeSet3 = briefcase1->GetLastChangeSetPulled();
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase2, true, true)); // Release all codes and locks.
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase2, true, false));
+    ASSERT_SUCCESS(briefcase2->GetiModelConnection().RelinquishCodesLocks(briefcase2->GetBriefcaseId())->GetResult()); // Release all codes and locks.
+
     Utf8String changeSet4 = briefcase2->GetLastChangeSetPulled();
     iModelHubHelpers::ExpectCodesCount(briefcase1, 1);
     iModelHubHelpers::ExpectCodesCount(briefcase2, 0);
@@ -200,7 +202,8 @@ TEST_F(CodesLocksTests, PushAndRelinquishCodesLocks)
     iModelHubHelpers::ExpectCodesCount(briefcase1, 2);
     ExpectCodeState(CreateCodeReserved(partition1_4->GetCode(), db1), imodelManager1);
     db1.SaveChanges();
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, true)); // Release all codes and locks.
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false));
+    ASSERT_SUCCESS(briefcase1->GetiModelConnection().RelinquishCodesLocks(briefcase1->GetBriefcaseId())->GetResult()); // Release all codes and locks.
     Utf8String changeSet5 = briefcase1->GetLastChangeSetPulled();
     iModelHubHelpers::ExpectCodesCount(briefcase1, 0);
     ExpectNoCodeWithState(CreateCodeAvailable(modelCode1_3), imodelManager1);

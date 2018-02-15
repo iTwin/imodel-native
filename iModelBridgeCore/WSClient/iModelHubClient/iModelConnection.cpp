@@ -389,7 +389,7 @@ IWSRepositoryClient::RequestOptionsPtr requestOptions
         changeset->GetRequestOptions().SetCustomOption(ServerSchema::ExtendedParameters::DetailedError_Codes, "false");
 
     HttpStringBodyPtr request = HttpStringBody::Create(changeset->ToRequestString());
-    return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken, requestOptions)->Then<StatusResult>
+    return m_wsRepositoryClient->SendChangesetRequestWithOptions(request, nullptr, requestOptions, cancellationToken)->Then<StatusResult>
         ([=](const WSChangesetResult& result)
         {
         if (result.IsSuccess())
@@ -867,13 +867,13 @@ const BeBriefcaseId briefcaseId
 //---------------------------------------------------------------------------------------
 StatusTaskPtr iModelConnection::AcquireCodesLocksInternal
 (
-    LockRequestCR                       locks,
-    DgnCodeSet                          codes,
-    BeBriefcaseId                       briefcaseId,
-    BeGuidCR                            seedFileId,
-    Utf8StringCR                        lastChangeSetId,
-    IBriefcaseManager::ResponseOptions  options,
-    ICancellationTokenPtr               cancellationToken
+LockRequestCR                       locks,
+DgnCodeSet                          codes,
+BeBriefcaseId                       briefcaseId,
+BeGuidCR                            seedFileId,
+Utf8StringCR                        lastChangeSetId,
+IBriefcaseManager::ResponseOptions  options,
+ICancellationTokenPtr               cancellationToken
 ) const
     {
     const Utf8String methodName = "iModelConnection::AcquireCodesLocksInternal";
@@ -2417,7 +2417,10 @@ FileTaskPtr iModelConnection::GetSeedFileById(BeGuidCR fileId, ICancellationToke
         if (!filesResult.IsSuccess())
             return FileResult::Error(filesResult.GetError());
 
-        return FileResult::Success(*filesResult.GetValue().begin());
+        bvector<FileInfoPtr> files = filesResult.GetValue();
+        if (files.empty())
+            return FileResult::Error(Error::Id::FileDoesNotExist);
+        return FileResult::Success(*files.begin());
         });
     }
 
@@ -2465,7 +2468,8 @@ ICancellationTokenPtr               cancellationToken
 
     //Set used locks to the ECChangeSet
     LockRequest usedLocks;
-    usedLocks.FromRevision(*changeSet, dgndb);
+    usedLocks.FromRevision(*changeSet, dgndb, !relinquishCodesLocks);
+
     BeGuid seedFileId;
     seedFileId.FromString(changeSet->GetDbGuid().c_str());
     if (!usedLocks.IsEmpty())
@@ -2893,13 +2897,13 @@ StatusTaskPtr iModelConnection::DownloadSeedFile(BeFileName localFile, Utf8Strin
 //---------------------------------------------------------------------------------------
 StatusTaskPtr iModelConnection::AcquireCodesLocks
 (
-    LockRequestCR                       locks,
-    DgnCodeSet                          codes,
-    BeBriefcaseId                       briefcaseId,
-    BeGuidCR                            seedFileId,
-    Utf8StringCR                        lastChangeSetId,
-    IBriefcaseManager::ResponseOptions  options,
-    ICancellationTokenPtr               cancellationToken
+LockRequestCR                       locks,
+DgnCodeSet                          codes,
+BeBriefcaseId                       briefcaseId,
+BeGuidCR                            seedFileId,
+Utf8StringCR                        lastChangeSetId,
+IBriefcaseManager::ResponseOptions  options,
+ICancellationTokenPtr               cancellationToken
 ) const
     {
     return ExecuteWithRetry<void>([=]() { return AcquireCodesLocksInternal(locks, codes, briefcaseId, seedFileId, lastChangeSetId, options, 
@@ -2947,6 +2951,7 @@ ICancellationTokenPtr                   cancellationToken
     {
     const Utf8String methodName = "iModelConnection::DemoteCodesLocks";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    CHECK_BRIEFCASEID(briefcaseId, StatusResult);
     //How to set description here?
     std::shared_ptr<WSChangeset> changeset(new WSChangeset());
     SetLocksJsonRequestToChangeSet(locks, briefcaseId, seedFileId, "", *changeset, WSChangeset::ChangeState::Modified);
@@ -2971,6 +2976,7 @@ ICancellationTokenPtr                   cancellationToken
     {
     const Utf8String methodName = "iModelConnection::RelinquishCodesLocks";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    CHECK_BRIEFCASEID(briefcaseId, StatusResult);
     std::shared_ptr<WSChangeset> changeset(new WSChangeset());
 
     if (static_cast<bool>(resourcesToRelinquish & IBriefcaseManager::Resources::Locks))
@@ -3014,12 +3020,7 @@ BriefcaseInfoTaskPtr iModelConnection::QueryBriefcaseInfo(BeBriefcaseId briefcas
     {
     const Utf8String methodName = "iModelConnection::QueryBriefcaseInfo";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-
-    if (!briefcaseId.IsValid())
-        {
-        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Invalid briefcaseId");
-        return CreateCompletedAsyncTask<BriefcaseInfoResult>(BriefcaseInfoResult::Error(Error::Id::InvalidBriefcase));
-        }
+    CHECK_BRIEFCASEID(briefcaseId, BriefcaseInfoResult);
 
     Utf8String briefcaseIdString;
     briefcaseIdString.Sprintf("%d", briefcaseId.GetValue());
@@ -3031,9 +3032,11 @@ BriefcaseInfoTaskPtr iModelConnection::QueryBriefcaseInfo(BeBriefcaseId briefcas
         if (!result.IsSuccess())
             {
             LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
-            return BriefcaseInfoResult::Error(result.GetError());
+            WSError error = result.GetError();
+            if (WSError::Id::InstanceNotFound == error.GetId())
+                return BriefcaseInfoResult::Error(Error(Error::Id::BriefcaseDoesNotExist, error.GetMessage(), error.GetDescription()));
+            return BriefcaseInfoResult::Error(error);
             }
-
         BriefcaseInfoPtr briefcaseInfo = BriefcaseInfo::Parse(*result.GetValue().GetInstances().begin());
         return BriefcaseInfoResult::Success(briefcaseInfo);
         });
@@ -3143,7 +3146,7 @@ LockableIdSet const& locks,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    return QueryCodesLocksById(codes, locks, BeBriefcaseId(), cancellationToken);
+    return QueryCodesLocksByIdInternal(codes, locks, BeBriefcaseId(), cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3159,7 +3162,21 @@ ICancellationTokenPtr cancellationToken
     {
     const Utf8String methodName = "iModelConnection::QueryCodesLocksById";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    CHECK_BRIEFCASEID(briefcaseId, CodeLockSetResult);
+    return QueryCodesLocksByIdInternal(codes, locks, briefcaseId, cancellationToken);
+    }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis        01/2018
+//---------------------------------------------------------------------------------------
+CodeLockSetTaskPtr iModelConnection::QueryCodesLocksByIdInternal
+(
+DgnCodeSet const& codes,
+LockableIdSet const& locks,
+BeBriefcaseId briefcaseId,
+ICancellationTokenPtr cancellationToken
+) const
+    {
     CodeLockSetResultInfoPtr finalValue = new CodeLockSetResultInfo();
     bset<StatusTaskPtr> tasks;
     
@@ -3183,6 +3200,7 @@ ICancellationTokenPtr cancellationToken
     {
     const Utf8String methodName = "iModelConnection::QueryCodesLocks";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    CHECK_BRIEFCASEID(briefcaseId, CodeLockSetResult);
 
     bset<StatusTaskPtr> tasks;
     CodeLockSetResultInfoPtr finalValue = new CodeLockSetResultInfo();
@@ -3230,7 +3248,7 @@ DgnCodeSet const& codes,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    return QueryCodesByIds(codes, BeBriefcaseId(), cancellationToken);
+    return QueryCodesByIdsInternal(codes, BeBriefcaseId(), cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3245,7 +3263,20 @@ ICancellationTokenPtr cancellationToken
     {
     const Utf8String methodName = "iModelConnection::QueryCodesByIds";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    CHECK_BRIEFCASEID(briefcaseId, CodeInfoSetResult);
+    return QueryCodesByIdsInternal(codes, briefcaseId, cancellationToken);
+    }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis        01/2018
+//---------------------------------------------------------------------------------------
+CodeInfoSetTaskPtr iModelConnection::QueryCodesByIdsInternal
+(
+DgnCodeSet const& codes,
+BeBriefcaseId briefcaseId,
+ICancellationTokenPtr cancellationToken
+) const
+    {
     CodeLockSetResultInfoPtr finalValue = new CodeLockSetResultInfo();
 
     if (0 == codes.size())
@@ -3269,6 +3300,7 @@ ICancellationTokenPtr cancellationToken
     {
     const Utf8String methodName = "iModelConnection::QueryCodesByBriefcaseId";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    CHECK_BRIEFCASEID(briefcaseId, CodeInfoSetResult);
 
     CodeLockSetResultInfoPtr finalValue = new CodeLockSetResultInfo();
 
@@ -3315,7 +3347,7 @@ LockableIdSet const& locks,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    return QueryLocksByIds(locks, BeBriefcaseId(), cancellationToken);
+    return QueryLocksByIdsInternal(locks, BeBriefcaseId(), cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3330,7 +3362,20 @@ ICancellationTokenPtr cancellationToken
     {
     const Utf8String methodName = "iModelConnection::QueryLocksByIds";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    CHECK_BRIEFCASEID(briefcaseId, LockInfoSetResult);
+    return QueryLocksByIdsInternal(locks, briefcaseId, cancellationToken);
+    }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis        01/2018
+//---------------------------------------------------------------------------------------
+LockInfoSetTaskPtr iModelConnection::QueryLocksByIdsInternal
+(
+LockableIdSet const& locks,
+BeBriefcaseId briefcaseId,
+ICancellationTokenPtr cancellationToken
+) const
+    {
     CodeLockSetResultInfoPtr finalValue = new CodeLockSetResultInfo();
 
     if (0 == locks.size())
@@ -3354,6 +3399,7 @@ ICancellationTokenPtr cancellationToken
     {
     const Utf8String methodName = "iModelConnection::QueryLocksByBriefcaseId";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    CHECK_BRIEFCASEID(briefcaseId, LockInfoSetResult);
 
     CodeLockSetResultInfoPtr finalValue = new CodeLockSetResultInfo();
 
@@ -3383,11 +3429,8 @@ ICancellationTokenPtr cancellationToken
     {
     const Utf8String methodName = "iModelConnection::QueryUnavailableCodesLocks";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    if (briefcaseId.IsMasterId() || briefcaseId.IsStandaloneId())
-        {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid briefcase.");
-        return CreateCompletedAsyncTask<CodeLockSetResult>(CodeLockSetResult::Error(Error::Id::FileIsNotBriefcase));
-        }
+    CHECK_BRIEFCASEID(briefcaseId, CodeLockSetResult);
+
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     std::shared_ptr<CodeLockSetResult> finalResult = std::make_shared<CodeLockSetResult>();
     return ExecuteWithRetry<CodeLockSetResultInfo>([=]()

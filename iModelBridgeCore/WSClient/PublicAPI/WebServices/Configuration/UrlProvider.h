@@ -127,6 +127,7 @@ struct UrlProvider
             WSCLIENT_EXPORT static const UrlDescriptor ImsActiveSTSHelperService;
             WSCLIENT_EXPORT static const UrlDescriptor ImsPassiveAuthUrl;
             WSCLIENT_EXPORT static const UrlDescriptor iModelBridgeConfiguration;
+            WSCLIENT_EXPORT static const UrlDescriptor RecommendationServiceUrl;
             };
     };
 

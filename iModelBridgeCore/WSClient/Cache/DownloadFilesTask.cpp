@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/DownloadFilesTask.cpp $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -134,10 +134,7 @@ void DownloadFilesTask::ContinueDownloadingFiles()
 
             if (!result.IsSuccess())
                 {
-                WSError::Id errorId = result.GetError().GetWSError().GetId();
-
-                if (WSError::Id::InstanceNotFound == errorId ||
-                    WSError::Id::NotEnoughRights == errorId)
+                if (result.GetError().GetWSError().IsInstanceNotAvailableError())
                     {
                     auto txn = m_ds->StartCacheTransaction();
                     AddFailedObject(txn.GetCache(), file->objectId, result.GetError());
