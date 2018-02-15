@@ -22,10 +22,8 @@
 
 #include "ScalableMeshQuery.h"
 //#include "InternalUtilityFunctions.h"
-#include <ImagePP/all/h/HPMPooledVector.h>
 #include "Edits\\ClipUtilities.h"
 #include <json/json.h>
-//#include <QuickVision\qvision.h>
 
 // This define does not work when it is set to 10000 and a dataset of 120000 is used
 #define MAX_POINTS_PER_DTM 10000
@@ -76,17 +74,6 @@ template<class EXTENT> EXTENT ScalableMeshPointQuery::GetExtentFromClipShape(con
                                     extent.GetXMax(), extent.GetYMax(), zMax);
     }
 
-template <class POINT> int ScalableMeshPointQuery::AddPoints(bvector<DPoint3d>&                   points, 
-                                                             const HPMMemoryManagedVector<POINT>& pointList) /*const*/
-    {        
-    for (auto& pt : pointList)
-        {
-        points.push_back(pt);
-        }    
-        
-    return SUCCESS;
-    }
-
 /*----------------------------------------------------------------------------+
 |ScalableMeshFullResolutionPointQuery Method Definition Section - Begin
 +----------------------------------------------------------------------------*/
@@ -116,7 +103,8 @@ template <class POINT> int ScalableMeshFullResolutionPointQuery<POINT>::_Query(b
                                                                         const IScalableMeshQueryParametersPtr& scmQueryParamsPtr) const
     {        
     assert(scmQueryParamsPtr != 0);
-    
+    assert(false);
+#if 0   
     HPMMemoryManagedVector<POINT> pointList(&s_queryMemoryManager);
 
     int         status;
@@ -224,8 +212,9 @@ template <class POINT> int ScalableMeshFullResolutionPointQuery<POINT>::_Query(b
         {
         status = AddPoints<POINT>(points, pointList);
         }
-              
     return status;
+#endif         
+    return S_SUCCESS;
     }
 
 /*----------------------------------------------------------------------------+
@@ -270,7 +259,8 @@ template <class POINT> int ScalableMeshViewDependentPointQuery<POINT>::_Query(bv
     {    
     //MST More validation is required here.
     assert(scmQueryParamsPtr != 0);
-    
+    assert(false);
+#if 0
     HPMMemoryManagedVector<POINT> pointList(&s_queryMemoryManager);    
 
     int            status;
@@ -370,8 +360,9 @@ template <class POINT> int ScalableMeshViewDependentPointQuery<POINT>::_Query(bv
         {         
         status = AddPoints(points, pointList);
         }
-                   
     return status;
+#endif                   
+    return S_SUCCESS;
     }
 
 /*----------------------------------------------------------------------------+
@@ -398,7 +389,8 @@ template <class POINT> int ScalableMeshFixResolutionViewPointQuery<POINT>::_Quer
                                                                                   const IScalableMeshQueryParametersPtr&  scmQueryParamsPtr) const
     {
     assert(scmQueryParamsPtr != 0);
-    
+    assert(false);
+#if 0   
     HPMMemoryManagedVector<POINT> pointList(&s_queryMemoryManager);   
     IScalableMeshPtr scalableMeshFixResViewPtr; 
 
@@ -451,8 +443,9 @@ template <class POINT> int ScalableMeshFixResolutionViewPointQuery<POINT>::_Quer
     IScalableMeshPointQueryPtr scalableMeshFixViewQueryPtr = scalableMeshFixResViewPtr->GetQueryInterface(SCM_QUERY_FULL_RESOLUTION);  
     IScalableMeshQueryParametersPtr queryParam((const IScalableMeshQueryParametersPtr&)IScalableMeshFullResolutionQueryParams::CreateParams());        
     int status = scalableMeshFixViewQueryPtr->Query(points, 0, 0, queryParam); 
-    
     return status;
+#endif   
+    return SUCCESS;
     }
             
 /*----------------------------------------------------------------------------+
@@ -492,7 +485,8 @@ template <class POINT> int ScalableMeshViewDependentMeshQuery<POINT>::_Query(ISc
     {    
     //MST More validation is required here.
     assert(scmQueryParamsPtr != 0);
-
+    assert(false);
+#if 0
     HPMMemoryManagedVector<POINT> pointList(&s_queryMemoryManager);    
 
     int            status;
@@ -605,9 +599,9 @@ template <class POINT> int ScalableMeshViewDependentMeshQuery<POINT>::_Query(ISc
         {
         status = ERROR;
         }
-
-    
     return status;
+#endif    
+    return S_SUCCESS;
     }
 
 
@@ -621,7 +615,8 @@ template <class POINT> int ScalableMeshViewDependentMeshQuery<POINT>::_Query(bve
     {    
     //MST More validation is required here.
     assert(scmQueryParamsPtr != 0);
-
+    assert(false);
+#if 0
     HPMMemoryManagedVector<POINT> pointList(&s_queryMemoryManager);    
 
     int            status;
@@ -774,7 +769,10 @@ template <class POINT> int ScalableMeshViewDependentMeshQuery<POINT>::_Query(bve
         status = (int)SMQueryStatus::S_ERROR;
         }
 
-    return status;    
+    return status;
+#endif
+
+    return (int)SMQueryStatus::S_ERROR;
     }
 
 /*----------------------------------------------------------------------------+
@@ -1317,23 +1315,49 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
             bool clipsLoaded = false;
             if (flags->ShouldLoadClips())
                 {
-                m_meshNode->ComputeMergedClips();
-                uint64_t clipId = 0;
-                if (m_meshNode->HasClip(clipId))
+                if (flags->ShouldUseClipsToShow())
                     {
-                    for (const auto& diffSet : *m_meshNode->GetDiffSetPtr())
-                        {
-                        if (diffSet.clientID == clipId)
+                    bset<uint64_t> clipsToShow; 
+                    
+                    flags->GetClipsToShow(clipsToShow);
+
+                    if (clipsToShow.size() > 0)
+                        { 
+                        DifferenceSet clipDiffSet;
+                        
+                        bool anythingToApply = ComputeDiffSet(clipDiffSet, clipsToShow, flags->ShouldInvertClips());
+
+                        if (anythingToApply)
                             {
-                            diffSet.ApplyClipDiffSetToMesh<DPoint3d, DPoint2d>(toLoadPoints, toLoadNbPoints, toLoadFaceIndexes, toLoadNbFaceIndexes, 
-                                                           toLoadUv, toLoadUvIndex, toLoadUvCount, 
-                                                           dataPoints.data(), dataPoints.size(),
-                                                           dataFaceIndexes.data(), dataFaceIndexes.size(),
-                                                           dataUVCoords.data(), dataUVIndexes.data(), dataUVCoords.size(), DPoint3d::From(0,0,0));
+                            clipDiffSet.ApplyClipDiffSetToMesh<DPoint3d, DPoint2d>(toLoadPoints, toLoadNbPoints, toLoadFaceIndexes, toLoadNbFaceIndexes,
+                                                                                    toLoadUv, toLoadUvIndex, toLoadUvCount,
+                                                                                    dataPoints.data(), dataPoints.size(),
+                                                                                    dataFaceIndexes.data(), dataFaceIndexes.size(),
+                                                                                    dataUVCoords.data(), dataUVIndexes.data(), dataUVCoords.size(), DPoint3d::From(0, 0, 0));
+
                             clipsLoaded = true;
+                            }                        
+                        }
+                    }
+                else
+                    {
+                    m_meshNode->ComputeMergedClips();
+                    uint64_t clipId = 0;
+                    if (m_meshNode->HasClip(clipId))
+                        {
+                        for (const auto& diffSet : *m_meshNode->GetDiffSetPtr())
+                            {
+                            if (diffSet.clientID == clipId)
+                                {
+                                diffSet.ApplyClipDiffSetToMesh<DPoint3d, DPoint2d>(toLoadPoints, toLoadNbPoints, toLoadFaceIndexes, toLoadNbFaceIndexes, 
+                                                               toLoadUv, toLoadUvIndex, toLoadUvCount, 
+                                                               dataPoints.data(), dataPoints.size(),
+                                                               dataFaceIndexes.data(), dataFaceIndexes.size(),
+                                                               dataUVCoords.data(), dataUVIndexes.data(), dataUVCoords.size(), DPoint3d::From(0,0,0));
+                                clipsLoaded = true;
+                                }
                             }
                         }
-
                     }
                 }
 
@@ -1880,125 +1904,6 @@ template <class POINT> void ScalableMeshCachedMeshNode<POINT>::LoadMesh(bool loa
     m_loadedTexture = __super::_GetTexture();                 
     }
 
-#if 0 //NEEDS_WORK_SM : Need do create a cached for texture since the same texture can pertain to more than one node
-QvCachedNodeManager::CachedNodesList QvCachedNodeManager::m_cachedNodes;
-
-QvCachedNodeManager::QvCachedNodeManager()
-    {
-    m_maxNbPoints = 3000000;
-    m_totalNbPoints = 0;
-    }
-
-void QvCachedNodeManager::AddCachedNode(__int64 nodeId, QvElem* qvElem, DTMDataRef* dtmDataRef, size_t nbPoints/*, MaterialPtr& materialPtr*/)
-    {
-    assert(qvElem != 0);
-
-    while (m_totalNbPoints + nbPoints > m_maxNbPoints)
-        {
-        assert(m_totalNbPoints >= m_cachedNodes.back().m_nbPoints);
-        m_totalNbPoints -= m_cachedNodes.back().m_nbPoints;
-        /*cachedNodeIter->*/m_cachedNodes.back().ReleaseQVisionCache(m_cachedNodes.back().m_nodeId);
-        DTMElementMeshDisplayHandler::s_materialMap.erase(m_cachedNodes.back().m_nodeId);
-        T_HOST.GetGraphicsAdmin()._DeleteQvElem (m_cachedNodes.back().m_qvElem);
-//        m_cachedNodes.back().ReleaseQVisionCache();
-        m_cachedNodes.pop_back();
-        }            
-
-    m_cachedNodes.push_front(QvCachedNode(nodeId, qvElem, dtmDataRef, nbPoints/*, materialPtr*/));
-
-    m_totalNbPoints += nbPoints;
-    }
-
-void QvCachedNodeManager::ClearCachedNodes(DTMDataRef* dtmDataRef)
-    {
-    auto cachedNodeIter(m_cachedNodes.begin());
-    auto cachedNodeIterEnd(m_cachedNodes.end());
-    
-    while (cachedNodeIter != cachedNodeIterEnd)
-        {
-        if (cachedNodeIter->m_dtmDataRef == dtmDataRef)            
-            {
-            // Delete QVCache for this particular node
-            // Delete s_material id for this node too.
-            cachedNodeIter->ReleaseQVisionCache(cachedNodeIter->m_nodeId);
-            DTMElementMeshDisplayHandler::s_materialMap.erase(cachedNodeIter->m_nodeId);
-            cachedNodeIter = m_cachedNodes.erase(cachedNodeIter);                        
-            }
-        else
-            {
-            cachedNodeIter++;
-            }        
-        }
-
-    m_totalNbPoints = 0;
-    }
-     
-//NEEDS_WORK_SM_PROGRESSIVE : Too slow, need optimization.
-QvElem* QvCachedNodeManager::FindQvElem(__int64 nodeId, DTMDataRef* dtmDataRef)
-    {
-    auto cachedNodeIter(m_cachedNodes.begin());
-    auto cachedNodeIterEnd(m_cachedNodes.end());
-
-    QvElem* foundElem = 0;
-
-    while (cachedNodeIter != cachedNodeIterEnd)
-        {
-        if ((cachedNodeIter->m_dtmDataRef == dtmDataRef) && 
-            (cachedNodeIter->m_nodeId == nodeId))
-            {
-            QvCachedNode qvCachedNode(*cachedNodeIter);
-            foundElem = cachedNodeIter->m_qvElem;
-//            cachedNodeIter->ReleaseQVisionCache();
-            m_cachedNodes.erase(cachedNodeIter);
-            m_cachedNodes.push_front(qvCachedNode);                    
-            break;
-            }
-
-        cachedNodeIter++;
-        }
-
-    return foundElem;
-    }
-/*
-MaterialPtr QvCachedNodeManager::GetMaterial(__int64 nodeId, DTMDataRef* dtmDataRef)
-{
-    auto cachedNodeIter(m_cachedNodes.begin());
-    auto cachedNodeIterEnd(m_cachedNodes.end());
-
-    //QvElem* foundElem = 0;
-
-    while (cachedNodeIter != cachedNodeIterEnd)
-    {
-        if ((cachedNodeIter->m_dtmDataRef == dtmDataRef) &&
-            (cachedNodeIter->m_nodeId == nodeId))
-        {
-            return cachedNodeIter->m_material;
-            //QvCachedNode qvCachedNode(*cachedNodeIter);
-            //foundElem = cachedNodeIter->m_qvElem;
-            //m_cachedNodes.erase(cachedNodeIter);
-            //m_cachedNodes.push_front(qvCachedNode);
-            //break;
-        }
-
-        cachedNodeIter++;
-    }
-
-    return nullptr;
-}*/
-
-QvCachedNodeManager& QvCachedNodeManager::GetManager()
-    {
-    static QvCachedNodeManager* s_manager = 0;
-
-    if (s_manager == 0)
-        {
-        s_manager = new QvCachedNodeManager();
-        }
-
-    return *s_manager;
-    }    
-#endif
-
 //typedef struct {float x, y;} FloatXY;
 //typedef struct {float x, y, z;} FloatXYZ;
 //
@@ -2446,6 +2351,8 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::GetOrLoadAllTe
         return true;
         }
     }
+
+
 
 template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool loadGraph, const bset<uint64_t>& clipsToShow, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture, bool shouldInvertClips)
     {
@@ -2896,6 +2803,10 @@ IScalableMeshNodePtr ScalableMeshNode<POINT>::_GetParentNode() const
     if (meshNode == nullptr)
         return nullptr;
     HFCPtr<SMPointIndexNode<POINT, Extent3dType>> nodePtr = meshNode->GetParentNodePtr();
+
+    if (nodePtr == nullptr)
+        return nullptr;
+
     return new ScalableMeshNode<POINT>(nodePtr);
     }
 
@@ -3004,9 +2915,15 @@ template <class POINT> DRange3d ScalableMeshNode<POINT>::_GetNodeExtent() const
 
 template <class POINT> DRange3d ScalableMeshNode<POINT>::_GetContentExtent() const
     {
-    LOAD_NODE
+    LOAD_NODE        
+
+    if (!m_node->m_nodeHeader.m_totalCountDefined)
+        { 
+        return DRange3d::NullRange();
+        }
 
     DRange3d range;
+
     Extent3dType ext = m_node->m_nodeHeader.m_contentExtent;
     range = DRange3d::From(DPoint3d::From(ExtentOp<Extent3dType>::GetXMin(ext), ExtentOp<Extent3dType>::GetYMin(ext), ExtentOp<Extent3dType>::GetZMin(ext)),
                            DPoint3d::From(ExtentOp<Extent3dType>::GetXMax(ext), ExtentOp<Extent3dType>::GetYMax(ext), ExtentOp<Extent3dType>::GetZMax(ext)));
@@ -3177,6 +3094,105 @@ template <class POINT> void ScalableMeshNode<POINT>::_ClearCachedData()
 {
 	m_node->RemoveNonDisplayPoolData();
 }
+
+static double s_minScreenPixelCorrectionFactor = 1.0;
+
+BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
+
+template <class POINT> int BuildQueryObject(//ScalableMeshQuadTreeViewDependentMeshQuery<POINT, Extent3dType>* viewDependentQueryP,
+    ISMPointIndexQuery<POINT, Extent3dType>*&                        pQueryObject,
+    const DPoint3d*                                                       pQueryExtentPts,
+    int                                                                   nbQueryExtentPts,
+    IScalableMeshViewDependentMeshQueryParamsPtr                          queryParam,
+    IScalableMesh*                                                        smP)
+    {
+    //MST More validation is required here.
+    assert(queryParam != 0);
+
+    int status = SUCCESS;
+
+    Extent3dType queryExtent;
+    /*
+    Extent3dType contentExtent(m_scmIndexPtr->GetContentExtent());
+
+    double minZ = ExtentOp<Extent3dType>::GetZMin(contentExtent);
+    double maxZ = ExtentOp<Extent3dType>::GetZMax(contentExtent);
+
+    Extent3dType queryExtent(ScalableMeshPointQuery::GetExtentFromClipShape<Extent3dType>(pQueryExtentPts,
+    nbQueryExtentPts,
+    minZ,
+    maxZ));
+    */
+    //MS Need to be removed
+    double viewportRotMatrix[3][3];
+    double rootToViewMatrix[4][4];
+
+    memcpy(rootToViewMatrix, queryParam->GetRootToViewMatrix(), sizeof(double) * 4 * 4);
+
+    bool shouldInvertClip = false;
+
+    if (smP != nullptr)
+        shouldInvertClip = smP->ShouldInvertClips();
+
+    ScalableMeshQuadTreeViewDependentMeshQuery<POINT, Extent3dType>* viewDependentQueryP = new ScalableMeshQuadTreeViewDependentMeshQuery<POINT, Extent3dType>(queryExtent,
+        rootToViewMatrix,
+        viewportRotMatrix,
+        queryParam->GetViewBox(),
+        false,
+        queryParam->GetViewClipVector(),
+        shouldInvertClip,
+        100000000);
+
+    // viewDependentQueryP->SetTracingXMLFileName(AString("E:\\MyDoc\\SS3 - Iteration 17\\STM\\Bad Resolution Selection\\visitingNodes.xml"));
+
+    viewDependentQueryP->SetMeanScreenPixelsPerPoint(queryParam->GetMinScreenPixelsPerPoint() * s_minScreenPixelCorrectionFactor);
+
+    viewDependentQueryP->SetMaxPixelError(queryParam->GetMaxPixelError());
+
+    //MS : Might need to be done at the ScalableMeshReprojectionQuery level.    
+    if ((queryParam->GetSourceGCS() != 0) && (queryParam->GetTargetGCS() != 0))
+        {
+        BaseGCSCPtr sourcePtr = queryParam->GetSourceGCS();
+        BaseGCSCPtr targetPtr = queryParam->GetTargetGCS();
+        viewDependentQueryP->SetReprojectionInfo(sourcePtr, targetPtr);
+        }
+
+    pQueryObject = (ISMPointIndexQuery<POINT, Extent3dType>*)(viewDependentQueryP);
+
+    return status;
+    }
+
+END_BENTLEY_SCALABLEMESH_NAMESPACE
+
+template <class POINT> SMNodeViewStatus ScalableMeshNode<POINT>::_IsCorrectForView(IScalableMeshViewDependentMeshQueryParamsPtr& viewDependentQueryParams) const
+    {
+    ISMPointIndexQuery<POINT, Extent3dType>* queryObjectP;
+
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::BuildQueryObject<POINT>(queryObjectP, 0/*pQueryExtentPts*/, 0/*nbQueryExtentPts*/, viewDependentQueryParams, nullptr);
+
+    HFCPtr<SMPointIndexNode<POINT, Extent3dType>> pSubNodes[1];
+    ProducedNodeContainer<POINT, Extent3dType> foundNodes;
+    
+    bool digDown = queryObjectP->Query(m_node,
+                                       pSubNodes,
+                                       0,
+                                       foundNodes);
+
+    if (digDown == true)
+        {
+        if (m_node->IsLeaf())
+            return SMNodeViewStatus::Fine;
+
+        return SMNodeViewStatus::TooCoarse;
+        }
+    else
+    if (foundNodes.GetNodes().size() > 0)
+        {
+        return SMNodeViewStatus::Fine;
+        }
+    
+    return SMNodeViewStatus::NotVisible;    
+    }
 
 template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices)
     {

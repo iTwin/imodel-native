@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/Stores/SMStreamingDataStore.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -234,7 +234,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         virtual void ComputeRasterTiles(bvector<SMRasterTile>& rasterTiles, const bvector<DRange3d>& tileRanges) override;
 
         virtual bool IsTextureAvailable() override;        
-
+        
         virtual void Register(const uint64_t& smID) override;
 
         virtual void Unregister(const uint64_t& smID) override;

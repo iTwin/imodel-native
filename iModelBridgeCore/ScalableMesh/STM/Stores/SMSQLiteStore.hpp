@@ -248,6 +248,8 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::PreloadData(const bvector<DR
 
         //HVEShape shape(total3dRange.low.x, total3dRange.low.y, total3dRange.high.x, total3dRange.high.y, m_raster->GetShape().GetCoordSys());
 
+        // NEEDS_WORK_SM : Need to merge ImagePP dgndb06dev -> topaz
+		assert(!"Imagepp needs update on bim02");
         uint32_t consumerID = BINGMAPS_MULTIPLE_SETLOOKAHEAD_MIN_CONSUMER_ID;
         m_preloadMutex.lock();
         m_raster->SetLookAhead(shape, consumerID);
@@ -333,15 +335,21 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::ComputeRasterTiles(bvector<S
         }    
     }
 
-
 template <class EXTENT> void SMSQLiteStore<EXTENT>::CancelPreloadData()
-    {    
+    {
+#if 1    
+    return;
+#else
     if (m_streamingRasterFile != nullptr)
         { 
+        // NEEDS_WORK_SM : Imagepp needs to be updated on bim02
+        assert(!"Imagepp needs to be updated on bim02");
+
         HGFTileIDList blocks;
 
         ((HRFVirtualEarthFile*)m_streamingRasterFile.GetPtr())->ForceCancelLookAhead(0);  
         }
+#endif
     }
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::IsTextureAvailable()

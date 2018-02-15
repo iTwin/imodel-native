@@ -487,12 +487,10 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 
     public:
 
-#ifdef VANCOUVER_API
         static SMNodeGroup* Create(SMGroupGlobalParameters::Ptr parameters, SMGroupCache::Ptr cache, const WString pi_pOutputDirPath, const uint32_t& pi_pGroupID, SMNodeGroupPtr parentGroup = nullptr)
             {
             return new SMNodeGroup(parameters, cache, pi_pOutputDirPath, pi_pGroupID, parentGroup);
             }
-#endif
 
         //static SMNodeGroupPtr CreateCesium3DTilesGroup(SMGroupGlobalParameters::Ptr parameters, const uint32_t groupID, bool isRootGroup = false)
         //    {

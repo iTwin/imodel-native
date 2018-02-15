@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/GTests/ScalableMeshUnitTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -198,11 +198,9 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois      10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_P(ScalableMeshTestWithParams, CanOpen)
     {
     auto typeStr = ScalableMeshGTestUtil::SMMeshType::TYPE_3SM == GetType() ? L"3sm" : L"3dTiles";
 
-    EXPECT_EQ(ScalableMeshTest::OpenMesh(m_filename).IsValid(), true ) << "\n Error opening "<< typeStr << ": " << GetFileName().c_str() << std::endl << std::endl;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -670,6 +668,7 @@ TEST_P(ScalableMeshTestDisplayQuery, ProgressiveQuery)
     [&]() { ASSERT_TRUE(isTrue); }(); \
     if (!(isTrue)) return 1; \
     }
+
 
 ///*---------------------------------------------------------------------------------**//**
 //* @bsimethod                                                    Richard.Bois      10/2017

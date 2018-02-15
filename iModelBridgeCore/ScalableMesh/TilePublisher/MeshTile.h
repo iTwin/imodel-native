@@ -2,7 +2,7 @@
 |
 |     $Source: TilePublisher/MeshTile.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,6 +13,8 @@
 //#include "SolidKernel.h"
 #include <map> // NB: Because bmap doesn't support move semantics...
 #include <ScalableMesh\GeoCoords\GCS.h>
+
+#ifdef VANCOUVER_API
 
 namespace BENTLEY_NAMESPACE_NAME
     {
@@ -104,6 +106,8 @@ namespace BENTLEY_NAMESPACE_NAME
         };
     }
 
+#endif
+
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 class XYZRangeTreeRoot;
 END_BENTLEY_GEOMETRY_NAMESPACE
@@ -165,6 +169,7 @@ enum class TileSource
 //! This class is more efficient than bvector<byte> since it does not initialize the memory to zeros.
 // @bsiclass                                                    Keith.Bentley   11/15
 //=======================================================================================
+#if 0 //NEEDS_WORK_SM_CESIUM_B0200
 struct ByteStream
     {
     private:
@@ -239,6 +244,7 @@ struct ByteStream
         uint8_t const& operator[](size_t i) const { return data()[i]; }
         uint8_t& operator[](size_t i) { return data()[i]; }
     };
+#endif
 #endif
 
 //=======================================================================================
@@ -571,7 +577,7 @@ public:
 
     void AddTriangle(PolyfaceVisitorR visitor, /*DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId,*/ bool doVertexClustering, bool duplicateTwoSidedTriangles);
     void AddPolyline (bvector<DPoint3d>const& polyline, BeInt64Id entityId, bool doVertexClustering);
-    void AddPolyface (PolyfaceQueryCR polyface, bool duplicateTwoSidedTriangles);
+    void AddPolyface(PolyfaceQueryCR polyface, bool duplicateTwoSidedTriangles);
 
     void AddTriangle(TriangleCR triangle, TileMeshCR mesh);
     void AddTriangle(TriangleCR triangle);
@@ -642,7 +648,11 @@ public:
     //! Create a TileGeometry for an IGeometry
     static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, /*TileDisplayParamsPtr& params,*/ IFacetOptionsR facetOptions, bool isCurved);
     //! Create a TileGeometry for an ISolidKernelEntity
-    static TileGeometryPtr Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, /*TileDisplayParamsPtr& params,*/ IFacetOptionsR facetOptions);
+#ifdef VANCOUVER_API
+	static TileGeometryPtr Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, /*TileDisplayParamsPtr& params,*/ IFacetOptionsR facetOptions);
+#else
+    static TileGeometryPtr Create(IBRepEntityR solid, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, /*TileDisplayParamsPtr& params,*/ IFacetOptionsR facetOptions);
+#endif
 //#endif
     };
 

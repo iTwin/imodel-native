@@ -2637,7 +2637,11 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
             catch (const HCDException& e)
                 {
                 //assert(!"There is an error decompressing texture");
-                std::wcout << L"Error: " << e.GetExceptionMessage() << std::endl;
+#ifdef VANCOUVER_API
+                std::wcout << "Error: " << e.GetExceptionMessage().c_str() << std::endl;
+#else
+				std::cout << "Error: " << e.GetExceptionMessage().c_str() << std::endl;
+#endif
                 }
             }
         }

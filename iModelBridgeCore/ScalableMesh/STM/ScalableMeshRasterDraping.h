@@ -6,7 +6,7 @@
 |       $Date: 2010/08/19 14:38:33 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -36,7 +36,6 @@
 /*----------------------------------------------------------------------+
 | Include MicroStation header files
 +----------------------------------------------------------------------*/
-#include <qvision/qvision.h>
 
 /*----------------------------------------------------------------------+
 | CONSTANT definitions                                                  |

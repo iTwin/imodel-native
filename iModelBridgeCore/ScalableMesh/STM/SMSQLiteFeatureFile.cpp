@@ -10,9 +10,9 @@
 #define READONLY Db::OpenMode::Readonly
 #define READWRITE Db::OpenMode::ReadWrite
 
-const SchemaVersion SMSQLiteFeatureFile::CURRENT_VERSION = SchemaVersion(1, 1, 0, 1);
+const BESQL_VERSION_STRUCT SMSQLiteFeatureFile::CURRENT_VERSION = BESQL_VERSION_STRUCT(1, 1, 0, 1);
 
-const SchemaVersion s_listOfReleasedSchemasFeature[2] = { SchemaVersion(1, 1, 0, 0), SchemaVersion(1, 1, 0, 1) };
+const BESQL_VERSION_STRUCT s_listOfReleasedSchemasFeature[2] = { BESQL_VERSION_STRUCT(1, 1, 0, 0), BESQL_VERSION_STRUCT(1, 1, 0, 1) };
 const size_t s_numberOfReleasedSchemasFeature = 2;
 double s_expectedTimeUpdateFeature[1] = { 1.2*1e-5 };
 std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctionsFeature[1] = {
@@ -30,7 +30,7 @@ std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctionsFeature[1] = {
         }
     };
 size_t SMSQLiteFeatureFile::GetNumberOfReleasedSchemas() { return s_numberOfReleasedSchemasFeature; }
-const SchemaVersion* SMSQLiteFeatureFile::GetListOfReleasedVersions() { return s_listOfReleasedSchemasFeature; }
+const BESQL_VERSION_STRUCT* SMSQLiteFeatureFile::GetListOfReleasedVersions() { return s_listOfReleasedSchemasFeature; }
 double* SMSQLiteFeatureFile::GetExpectedTimesForUpdateFunctions() { return s_expectedTimeUpdateFeature; }
 std::function<void(BeSQLite::Db*)>* SMSQLiteFeatureFile::GetFunctionsForAutomaticUpdate() { return s_databaseUpdateFunctionsFeature; }
 
