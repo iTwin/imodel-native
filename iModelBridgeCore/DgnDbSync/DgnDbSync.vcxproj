@@ -114,7 +114,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>bb -ax64 -p DgnV8ConverterDLL -f  DgnDbSync -r  DgnDbSync re DgnV8ConverterDLL   </NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>bb -ax64 -p DgnV8ConverterDLL -f  DgnDbSync -r  DgnDbSync re DgnV8ConverterDLL  </NMakeBuildCommandLine>
     <NMakeCleanCommandLine>bb -ax64 -p DgnV8ConverterDLL -f  DgnDbSync -r  DgnDbSync re DgnV8ConverterDLL -c</NMakeCleanCommandLine>
     <NMakeReBuildCommandLine>bb -ax64 -p DgnV8ConverterDLL -f  DgnDbSync -r  DgnDbSync re DgnV8ConverterDLL   -c
 bb -ax64 -p DgnV8ConverterDLL -f  DgnDbSync -r  DgnDbSync re DgnV8ConverterDLL   </NMakeReBuildCommandLine>

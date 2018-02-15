@@ -754,8 +754,15 @@ void ConverterTestBaseFixture::countModels(DgnDbR db, int ndrawings_expected, in
             ++nspatial;
         }
 
-    ASSERT_EQ(ndrawings_expected, ndrawings);
-    ASSERT_EQ(nspatial_expected, nspatial);
+    if (ndrawings_expected >= 0)
+        {
+        ASSERT_EQ(ndrawings_expected, ndrawings);
+        }
+
+    if (nspatial_expected >= 0)
+        {
+        ASSERT_EQ(nspatial_expected, nspatial);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
