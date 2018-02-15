@@ -5,7 +5,6 @@
 #include <ImagePP/all/h/HFCMacros.h>
 #include <ImagePP\all\h\HRFFileFormats.h>
 #include <ImagePP/all/h/HRFRasterFileFactory.h>
-#include <ImagePP/IppImaging/HRFInternetImagingFile.h>
 #include "Initialize.h"
 #include "Common/ATPUtils.h"
 #include "Common/ATPFileFinder.h"

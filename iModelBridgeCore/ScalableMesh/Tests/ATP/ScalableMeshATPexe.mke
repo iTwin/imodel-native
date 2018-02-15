@@ -2,7 +2,7 @@
 #
 #     $Source: Tests/ATP/ScalableMeshATPexe.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 baseDir         = $(_MakeFilePath)
@@ -78,10 +78,8 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)BaseGeoCoord.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)ScalableMesh.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)TerrainModelCore.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)Imagepp.lib
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)IppImaging.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(BeJsonCppLib)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BePointCloud.lib
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeLibJpegTurbo.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeJpeg.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)CloudDataSource.lib
 
