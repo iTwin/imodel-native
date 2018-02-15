@@ -432,7 +432,7 @@ void Sheet::Attachment::TTile::SetupRange()
     m_range.InitFrom(m_corners.m_pts, 4);
     }
 
-#define MAX_SHEET_REFINE_DEPTH 7
+#define MAX_SHEET_REFINE_DEPTH 8
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  02/2018
@@ -460,7 +460,8 @@ TileTree::Tile::ChildTiles const* Sheet::Attachment::TTile::_GetChildren(bool lo
 +---------------+---------------+---------------+---------------+---------------+------*/
 static uint32_t querySheetTileSize(uint32_t depth)
     {
-    static const uint32_t s_texSizes[] = {32, 64, 128, 256, 512, 1024, 2048};
+    // ###TODO: can we base this on OpenGL capabilities so we don't rely on support for larger texture sizes if that's not reasonable?
+    static const uint32_t s_texSizes[] = {32, 64, 128, 256, 512, 1024, 2048, 4096};
     return s_texSizes[depth < MAX_SHEET_REFINE_DEPTH ? depth : MAX_SHEET_REFINE_DEPTH - 1];
     }
 
@@ -637,13 +638,6 @@ Tile::SelectParent TTile::_SelectTiles(bvector<TileTree::TileCPtr>& selected, Ti
         populateSheetTile(const_cast<TTile*>(this), GetDepth(), args.m_context);
         }
 
-#if defined(WIP_ASYNC_SHEET_LOADING)
-    if (!IsReady())
-        {
-        args.InsertMissing(this);
-        }
-    else
-#endif
     selected.push_back(this);
     return SelectParent::No;
     }
