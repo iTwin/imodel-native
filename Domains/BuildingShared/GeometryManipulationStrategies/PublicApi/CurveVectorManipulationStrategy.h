@@ -84,6 +84,8 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
         virtual void _RemoveKeyPoint(size_t index) override { BeAssert(false && "Not implemented"); }
         virtual void _Clear() override;
 
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual IGeometryPtr _FinishGeometry() const override;
+
         CV_PROPERTY_OVERRIDE(bool)
         CV_PROPERTY_OVERRIDE(int)
         CV_PROPERTY_OVERRIDE(double)

@@ -47,6 +47,7 @@ struct CurvePrimitiveManipulationStrategy : public GeometryManipulationStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _Clear() override;
 
         virtual ICurvePrimitivePtr _FinishPrimitive() const = 0;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual IGeometryPtr _FinishGeometry() const override;
 
         virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() = 0;
         virtual LinePlacementStrategyPtr _CreateLinePlacementStrategy(LinePlacementStrategyType strategyType) { BeAssert(false && "This is not a LineManipulationStrategy"); return nullptr; }

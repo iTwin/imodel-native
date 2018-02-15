@@ -143,6 +143,14 @@ bool GeometryPlacementStrategy::_CanAcceptMorePoints() const
     return _GetManipulationStrategy().CanAcceptMorePoints();
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+IGeometryPtr GeometryPlacementStrategy::_FinishGeometry() const
+    {
+    return _GetManipulationStrategy().FinishGeometry();
+    }
+
 #define GMS_PROPERTY_OVERRIDE_IMPL(value_type) \
     void GeometryPlacementStrategy::_SetProperty(Utf8CP key, value_type const& value) \
         { \

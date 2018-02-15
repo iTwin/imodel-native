@@ -58,6 +58,7 @@ struct SolidPrimitiveManipulationStrategy : public GeometryManipulationStrategy
         using T_Super::_TryGetProperty;
 
         virtual ISolidPrimitivePtr _FinishSolidPrimitive() const = 0;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual IGeometryPtr _FinishGeometry() const override;
 
     public:
         static constexpr Utf8CP prop_BaseComplete() { return "BaseComplete"; }

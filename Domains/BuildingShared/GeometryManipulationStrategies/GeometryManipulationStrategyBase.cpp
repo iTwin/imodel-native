@@ -78,3 +78,11 @@ bool GeometryManipulationStrategyBase::CanAcceptMorePoints() const
     {
     return _CanAcceptMorePoints();
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+IGeometryPtr GeometryManipulationStrategyBase::FinishGeometry() const
+    {
+    return _FinishGeometry();
+    }

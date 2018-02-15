@@ -612,6 +612,14 @@ void CurveVectorManipulationStrategy::_ReplaceKeyPoint
         });
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+IGeometryPtr CurveVectorManipulationStrategy::_FinishGeometry() const
+    {
+    return IGeometry::Create(Finish());
+    }
+
 #define GMS_PROPERTY_OVERRIDE_IMPL(value_type) \
     void CurveVectorManipulationStrategy::_SetProperty(Utf8CP key, value_type const& value) \
         { \

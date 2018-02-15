@@ -448,3 +448,11 @@ bool CurvePrimitiveManipulationStrategy::IsContinious() const
     {
     return _IsContinious();
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+IGeometryPtr CurvePrimitiveManipulationStrategy::_FinishGeometry() const
+    {
+    return IGeometry::Create(_FinishPrimitive());
+    }

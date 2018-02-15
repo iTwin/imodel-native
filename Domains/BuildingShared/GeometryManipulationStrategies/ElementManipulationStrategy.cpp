@@ -196,6 +196,14 @@ void ElementManipulationStrategy::_Clear()
     _GetGeometryManipulationStrategyForEdit().Clear();
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+IGeometryPtr ElementManipulationStrategy::_FinishGeometry() const
+    {
+    return _GetGeometryManipulationStrategy().FinishGeometry();
+    }
+
 #define GMS_PROPERTY_OVERRIDE_IMPL(value_type) \
     void ElementManipulationStrategy::_SetProperty(Utf8CP key, value_type const& value) \
         { \
