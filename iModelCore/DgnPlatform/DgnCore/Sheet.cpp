@@ -342,6 +342,18 @@ AxisAlignedBox3d Sheet::Model::GetSheetExtents() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Sheet::ViewController::Attachment* Sheet::ViewController::FindAttachment(DgnElementId id)
+    {
+    for (auto& attach : m_attachments)
+        if (attach.m_id == id)
+            return &attach;
+
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Sheet::ViewController::_LoadState()
@@ -354,9 +366,8 @@ void Sheet::ViewController::_LoadState()
         }
 
     m_size = model->ToSheetModel()->GetSheetSize();
-    m_attachments.clear();
-    m_allAttachmentsLoaded = false;
 
+    bvector<Attachment> attachments;
     auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE Model.Id=?");
     stmt->BindId(1, model->GetModelId());
 
@@ -364,8 +375,25 @@ void Sheet::ViewController::_LoadState()
     while (BE_SQLITE_ROW == stmt->Step())
         {
         auto attachId = stmt->GetValueId<DgnElementId>(0);
-        m_attachments.push_back(Attachment(attachId));
+        auto tree = FindAttachment(attachId);
+
+        if (nullptr != tree)
+            {
+            attachments.push_back(*tree);
+            }
+        else
+            {
+            attachments.push_back(Attachment(attachId));
+            m_allAttachmentsLoaded = false;
+            }
         }
+
+    // save new list of attachment
+    m_attachments = std::move(attachments);
+
+#ifdef DEBUG_SHEETS
+    model->ToSheetModel()->DumpAttachments(0);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
