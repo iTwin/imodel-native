@@ -101,6 +101,7 @@ void ImporterTestBaseFixture::DoConvert(BentleyApi::BeFileNameCR outputName, Ben
     ASSERT_SUCCESS(status);
 
     m_count = importer->GetEntitiesImported ();
+    m_scaleDwgToMeters = importer->GetScaleToMeters ();
 
     db->SaveChanges();
 
@@ -139,6 +140,7 @@ void ImporterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR outputName, Bent
     ASSERT_SUCCESS(status);
 
     m_count = importer->GetEntitiesImported ();
+    m_scaleDwgToMeters = importer->GetScaleToMeters ();
 
     db->SaveChanges();
 
@@ -169,3 +171,10 @@ uint32_t ImporterTestBaseFixture::GetCount() const
     return  m_count;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+double ImporterTestBaseFixture::GetScaleDwgToMeters() const
+    {
+    return  m_scaleDwgToMeters;
+    }

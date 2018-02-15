@@ -83,7 +83,9 @@ BEGIN_DWGDB_NAMESPACE
     /*! Can this entity receive shadows from other entities? */                         \
     DWGDB_EXPORT bool               CanReceiveShadows () const;                         \
     /*! Is this a planar entity? */                                                     \
-    DWGDB_EXPORT bool               IsPlanar () const;
+    DWGDB_EXPORT bool               IsPlanar () const;                                  \
+    /*! Transform the entity by the input matrix. */                                    \
+    DWGDB_EXPORT DwgDbStatus        TransformBy (TransformCR matrix);
 
     
 

@@ -500,6 +500,13 @@ struct IFinishConversion
     virtual void _OnFinishConversion(Converter&) = 0;
 };
 
+struct ISChemaImportVerifier
+{
+    //! This is invoked by RetrieveV8ECSchemas to determine whether a given schema should be imported or not.  It is an alternative for those bridges that do not sublass
+    //! from Converter themselves, and thus cannot override the Converter::_ShouldImportSchema virtual method.
+    virtual bool _ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model) = 0;
+};
+
 //=======================================================================================
 //! Base class for V8-BIM converters. This base class functions as a library of conversion
 //! functions for a subclass to use. The subclass may convert spatial data and non-spatial (e.g., 
@@ -581,6 +588,8 @@ struct Converter
         bool m_skipUnchangedFiles;
         bool m_wantProvenanceInBim;
         bool m_isPowerplatformBased;
+        bool m_processAffected;
+        bool m_convertViewsOfAllDrawings;
         StableIdPolicy m_stableIdPolicy;
         BeFileName m_rootDir;           //!< Enables us to store *relative* paths to files in syncinfo
         BeFileName m_configFile;
@@ -596,6 +605,7 @@ struct Converter
         Utf8String m_pwUser;
         Utf8String m_pwPassword;
         Utf8String m_pwDataSource;
+
     public:
         Params() : m_v8sdkRelativeDir(L"DgnV8") // it's relative to the library's directory
             {
@@ -604,6 +614,8 @@ struct Converter
             m_skipUnchangedFiles = true;
             m_isPowerplatformBased = false;
             m_wantProvenanceInBim = false;
+            m_processAffected = false;
+            m_convertViewsOfAllDrawings = false;
             }
 
         void SetInputRootDir(BentleyApi::BeFileNameCR fileName) {m_rootDir = fileName;}
@@ -627,6 +639,8 @@ struct Converter
         void SetProjectWiseUser(Utf8CP pwUser) {m_pwUser = pwUser;}
         void SetProjectWisePassword(Utf8CP pwPassword) {m_pwPassword = pwPassword;}
         void SetProjectWiseDataSource(Utf8CP pwDataSource) {m_pwDataSource = pwDataSource;}
+        void SetProcessAffected(bool processAffected) { m_processAffected = processAffected; }
+        void SetConvertViewsOfAllDrawings(bool b) { m_convertViewsOfAllDrawings = b;}
 
         BeFileNameCR GetInputRootDir() const {return m_rootDir;}
         BeFileNameCR GetConfigFile() const {return m_configFile;}
@@ -649,6 +663,8 @@ struct Converter
         Utf8StringCR GetProjectWiseDataSource() const {return  m_pwDataSource;}
         bool GetIsPowerplatformBased() const {return m_isPowerplatformBased;}
         bool GetWantProvenanceInBim() const {return m_wantProvenanceInBim;}
+        bool GetProcessAffected() const { return m_processAffected; }
+        bool GetConvertViewsOfAllDrawings() const {return m_convertViewsOfAllDrawings;}
     };
 
     //! Guides the search for attachments with proxy graphics
@@ -965,6 +981,7 @@ protected:
     ElementConverter*   m_elementConverter = nullptr;
     ElementAspectConverter* m_elementAspectConverter;
     bvector<IFinishConversion*> m_finishers;
+    bvector<ISChemaImportVerifier*> m_schemaImportVerifiers;
     bmap<DgnClassId, bvector<ECN::ECClassId>> m_classToAspectMappings;
     DgnModelId          m_jobDefinitionModelId;
 
@@ -973,6 +990,7 @@ protected:
 
     DGNDBSYNC_EXPORT virtual SyncInfo::V8ElementMapping _FindFirstElementMappedTo(DgnV8Api::DisplayPath const& proxyPath, bool tail, IChangeDetector::T_SyncInfoElementFilter* filter = nullptr);
     virtual DgnV8Api::ModelInfo const& _GetModelInfo(DgnV8ModelCR v8Model) { return v8Model.GetModelInfo(); }
+    virtual bool _ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model) { return true; }
 
 public:
     virtual Params const& _GetParams() const = 0;
@@ -980,8 +998,12 @@ public:
 
     bool SkipECContent() const {return m_skipECContent;}
 
+    //! Add a callback to be invoked by RetrieveV8ECSchemas
+    //! @param v    Verifier to be invoked by RetrieveV8ECSchemas to determine whether a given schema should be imported
+    void AddSchemaImportVerifier(ISChemaImportVerifier& v) { m_schemaImportVerifiers.push_back(&v); }
+
     //! Allows a bridge to determine whether a particular schema should be imported or not
-    virtual bool _ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model) { return true; }
+    bool ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model);
     //! @}
 
     //! This returns false if the V8 file should not be converted by the bridge.
@@ -1331,9 +1353,6 @@ public:
     DGNDBSYNC_EXPORT virtual void _DetectDeletedExtractionGraphics(ResolvedModelMapping const& v8DrawingModel,
                                                                    SyncInfo::T_V8ElementMapOfV8ElementSourceSet const& v8OriginalElementsSeen,
                                                                    SyncInfo::T_V8ElementSourceSet const& unchangedV8attachments);
-    //! Return true if the specified drawing has any 3D attachments.
-    bool DrawingHas3DAttachment(DgnV8ModelR drawingModel);
-    bool DrawingHas3DAttachment(DgnAttachmentCR att) {return att.GetDgnModelP()? DrawingHas3DAttachment(*att.GetDgnModelP()): false;}
     //! @}
 
     //! @name Sheets
@@ -1423,28 +1442,6 @@ public:
     //! @param nvvf                 The view factory to be used in order to convert a named view. This is needed if an attachment is linked to a V8 named view.
     void SheetsConvertViewAttachments(ResolvedModelMapping const& v8SheetModelMapping, Bentley::ViewInfoCP v8SheetView, ViewFactory& nvvf);
 
-    //! Change the target of \a v8Attachment to be a copy of the original referenced model, and change the annotation scale of all annotations in the copy of that model to match \a newAnnotationScale.
-    //! @note This function also changes DgnModelType::Sheet to DgnModelType::Drawing
-    //! @note The returned model is marked as hidden
-    Bentley::RefCountedPtr<DgnV8Api::DgnModel> CopyAndChangeAnnotationScale(DgnAttachmentCR v8Attachment, double newAnnotationScale);
-
-    //! Change the target of \a v8Attachment to be a copy of the original referenced model, and change its model type from DgnModelType::Sheet to DgnModelType::Drawing
-    //! @note The returned model is marked as hidden
-    Bentley::RefCountedPtr<DgnV8Api::DgnModel> CopyAndChangeSheetToDrawing(DgnAttachmentCR v8Attachment);
-
-    //! Unnest all 2d attachements to the specified sheet and convert any attached sheets into drawings
-    void SheetUnnestAttachments(DgnV8ModelR sheetModel);
-
-    //! Get the direct attachments to the specified sheet that might need to be unnested.
-    bvector<DgnV8Api::ElementId> SheetGetAttachmentsToBeUnnested(DgnV8ModelR sheetModel);
-
-    //! Detect if the model referenced by \a v8Attachment needs to be changed to match the annotation scale specified by the (root) attachment and if so call CopyAndChangeAnnotationScale to change it. 
-    //! Calls MakeAttachmentsMatchRootAnnotationScale to do the same, recursively, to all nested attachments. This can end up creating a new set of models and a new attachment hierarchy.
-    void MakeAttachedModelMatchRootAnnotationScale(DgnAttachmentR v8Attachment);
-
-    //! Calls MakeAttachedModelMatchRootAnnotationScale to adjust the annotation scale of all 2D attachments to \a parentModel.
-    void MakeAttachmentsMatchRootAnnotationScale(DgnV8ModelRefR parentModel);
-
     //! @}
 
     //! @name Drawings
@@ -1462,6 +1459,7 @@ public:
 
     void DrawingRegisterModelToBeMerged(bvector<ResolvedModelMapping>& tbm, DgnAttachmentR v8DgnAttachment, DgnModelR targetBimModel, TransformCR transformToParent);
     void DrawingRegisterAttachmentsToBeMerged(bvector<ResolvedModelMapping>& tbm, DgnV8ModelRefR v8modelRef, DgnModelR targetBimModel, TransformCR transformToParent);
+
     //! Import the 2d models that are attached to a drawing and schedule them to be merged into the drawing.
     //! Note that \a v8modelRef may be an attachment (of a drawing) to a sheet.  
     //! @param v8modelRef The parent drawing model
@@ -1484,6 +1482,50 @@ public:
     DGNDBSYNC_EXPORT void DoConvertDrawingElement(ElementConversionResults&, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, bool isNewElement);
     //! Convert a drawing or sheet element
     void _ConvertDrawingElement(DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm);
+
+    //! @}
+
+    //! @name 2D attachments
+    //! @{
+    //! Return true if the specified drawing has any 3D attachments.
+    bool DrawingHas3DAttachment(DgnV8ModelR drawingModel);
+    bool DrawingHas3DAttachment(DgnAttachmentCR att) {return att.GetDgnModelP()? DrawingHas3DAttachment(*att.GetDgnModelP()): false;}
+
+    //! Detect if the model referenced by \a v8Attachment needs to be changed to match the annotation scale specified by the (root) attachment and if so call CopyAndChangeAnnotationScale to change it. 
+    //! Calls MakeAttachmentsMatchRootAnnotationScale to do the same, recursively, to all nested attachments. This can end up creating a new set of models and a new attachment hierarchy.
+    void MakeAttachedModelMatchRootAnnotationScale(DgnAttachmentR v8Attachment);
+
+    //! Calls MakeAttachedModelMatchRootAnnotationScale to adjust the annotation scale of all 2D attachments to \a parentModel.
+    void MakeAttachmentsMatchRootAnnotationScale(DgnV8ModelRefR parentModel);
+
+    //! Make a copy of the specified model and change the annotation scale of all annotations to match \a newAnnotationScale.
+    //! @note The name of the new model is generated and should not conflict with any existing V8 models.
+    //! @note This function also changes DgnModelType::Sheet to DgnModelType::Drawing
+    //! @note The returned model is marked as hidden
+    Bentley::RefCountedPtr<DgnV8Api::DgnModel> CopyAndChangeAnnotationScale(DgnV8ModelP, double newAnnotationScale);
+
+    //! Make a copy of the specified sheet model and change its model type from DgnModelType::Sheet to DgnModelType::Drawing.
+    //! @note The name of the new model is generated and should not conflict with any existing V8 models.
+    //! @note The returned model is marked as hidden
+    Bentley::RefCountedPtr<DgnV8Api::DgnModel> CopyAndChangeSheetToDrawing(DgnV8ModelP);
+
+    //! Make a copy of the specified model. 
+    //! @note The name of the new model is generated from the original model's file and model name, plus the specified suffix.
+    //! @note The returned model is marked as hidden
+    Bentley::RefCountedPtr<DgnV8Api::DgnModel> CopyModel(DgnV8ModelP v8Model, WCharCP newNameSuffix);
+
+    //! Unnest all 2d attachements to the specified sheet.
+    void UnnestAttachments(DgnV8ModelR parentModel);
+
+    //! convert any attached sheets into drawings
+    void TransformSheetAttachmentsToDrawings(DgnV8ModelR parentModel);
+
+    //! Optionally transform attachments to 2d models into attachments to copies of those 2d models.
+    typedef std::function<bool(DgnV8Api::DgnAttachment const&)> T_AttachmentCopyFilter;
+    void TransformDrawingAttachmentsToCopies(DgnV8ModelR parentModel, T_AttachmentCopyFilter filter);
+
+    //! Get the direct attachments to the specified sheet that might need to be unnested.
+    bvector<DgnV8Api::ElementId> GetAttachmentsToBeUnnested(DgnV8ModelR sheetModel);
 
     //! @}
 
@@ -2486,9 +2528,11 @@ protected:
 
     void FindSpatialV8Models(DgnV8ModelRefR rootModelRef, bool haveFoundSpatialRoot = false);
     void FindV8DrawingsAndSheets();
-    void FindNonSpatialModel(DgnV8ModelRefR v8ModelRef, bool isRootASheet);
-    void FindSheetModel(DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item);
-    void FindDrawingModel(DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item);
+    void RegisterNonSpatialModel(DgnV8ModelR);
+    void RegisterSheetModel(DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item);
+    void RegisterDrawingModel(DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item);
+    void Transform2dAttachments(DgnV8ModelR v8ParentModel);
+
 
 public:
     static WCharCP GetRegistrySubKey() {return L"DgnV8Bridge";}
@@ -2510,6 +2554,10 @@ public:
     //! @see SpatialParams::SetRootFileName for how the root file is specified.
     //! @see _GetRootModelId for how the root model is specified. Note that subclasses define the root model within the root file in different ways.
     DGNDBSYNC_EXPORT DgnV8Api::DgnFileStatus InitRootModel() {return _InitRootModel();}
+
+    //! Allow access for PowerProduct element handler bridge-extensions. V8Files have appdata tracing back to Repository Links (to decorate).
+    //! @return bvector with const v8Files for this converter.
+    DGNDBSYNC_EXPORT bvector<DgnV8FileP> const & GetV8Files() const { return m_v8Files; }
 
     //! Do the conversion. @see HadFatalError
     DGNDBSYNC_EXPORT BentleyStatus Process();

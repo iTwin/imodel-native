@@ -31,7 +31,7 @@ struct ScalableMeshModelInfo
     Bentley::bvector<bool>                               m_linkedModelIdResolved;
     };
 
-static bvector<ScalableMeshModelInfo> s_modelInfos;
+static std::vector<ScalableMeshModelInfo> s_modelInfos;
 
 
 void ResolveLinkedModelId(ScalableMeshModel* model, DGNV8_BENTLEY_NAMESPACE_NAME::DgnPlatform::ElementId elemId, Bentley::bvector<Bentley::bpair<uint64_t, uint64_t>>& linksToModelsV8)

@@ -1205,7 +1205,6 @@ BentleyStatus   DwgImporter::_ImportDwgModels ()
         }
 
     m_dgndb->SaveSettings ();
-    m_dgndb->SaveChanges ();
     m_syncInfo.SetValid (true);
 
     return BSISUCCESS;
@@ -1578,20 +1577,6 @@ void            DwgImporter::_FinishImport ()
         }
 
     m_dgndb->SaveSettings ();
-
-    auto rc = m_dgndb->SaveChanges();
-    if (BE_SQLITE_OK != rc)
-        {
-        ReportIssueV(IssueSeverity::Fatal, IssueCategory::DiskIO(), Issue::SaveError(), nullptr, m_dgndb->GetLastError().c_str());
-        m_dgndb->AbandonChanges();
-        return ;
-        }
-
-    if (m_config.GetOptionValueBool("CompactDatabase", true))
-        {
-        SetStepName(ProgressMessage::STEP_COMPACTING());
-        m_dgndb->CompactFile();
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1745,6 +1730,7 @@ DwgImporter::~DwgImporter ()
     m_paperspaceViews.clear ();
     m_loadedXrefFiles.clear ();
     m_presentationRuleContents.clear ();
+    m_reportedIssues.clear ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1826,6 +1812,8 @@ void            DwgImporter::ParseConfigurationFile (T_Utf8StringVectorR userObj
                 m_options.SetSyncBlockChanges (boolValue);
             else if (str.EqualsI("PreferRenderableGeometry"))
                 m_options.SetPreferRenderableGeometry (boolValue);
+            else if (str.EqualsI("SyncDwgVersionGuid"))
+                m_options.SetSyncDwgVersionGuid (boolValue);
             }
         }
 

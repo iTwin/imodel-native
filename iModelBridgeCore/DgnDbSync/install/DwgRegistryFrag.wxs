@@ -100,7 +100,7 @@
         <Property Id="DwgRegistryFeature" Value="1"/>
 
         <Component Id="PPRequired_InstallRegKeysBSW_0" Guid="*" Directory="INSTALLDIR" Win64="$(var.COMPONENT_WIN64)">
-            <RegistryKey ForceDeleteOnUninstall="yes" ForceCreateOnInstall="yes" Key="SOFTWARE\Bentley\iModelBridges\DwgBridge" Root="HKLM">
+            <RegistryKey ForceDeleteOnUninstall="yes" ForceCreateOnInstall="yes" Key="SOFTWARE\Bentley\iModelBridges\RealDwgBridge" Root="HKLM">
                 <RegistryValue Name="AffinityLibraryPath"   Value="[INSTALLDIR]DwgBridge.dll" Type="string" />
                 <RegistryValue Name="BridgeLibraryPath"     Value="[INSTALLDIR]DwgBridge.dll" Type="string" />
                 <RegistryValue Name="iModelFrameWorkExe"    Value="[INSTALLDIR]iModelBridgeFwk.exe" Type="string" />

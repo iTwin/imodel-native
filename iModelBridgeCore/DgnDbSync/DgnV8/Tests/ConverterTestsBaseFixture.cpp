@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/ConverterTestsBaseFixture.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -335,6 +335,8 @@ void ConverterTestBaseFixture::DoConvert(BentleyApi::BeFileNameCR output, Bentle
         creator.SetIsUpdating(false);
         creator.AttachSyncInfo();
         ASSERT_EQ(BentleyApi::SUCCESS, creator.InitRootModel());
+        if (nullptr != m_verifier)
+            creator.AddSchemaImportVerifier(*m_verifier);
         creator.MakeSchemaChanges();
         ASSERT_FALSE(creator.WasAborted());
         ASSERT_EQ(TestRootModelCreator::ImportJobCreateStatus::Success, creator.InitializeJob());
@@ -752,8 +754,15 @@ void ConverterTestBaseFixture::countModels(DgnDbR db, int ndrawings_expected, in
             ++nspatial;
         }
 
-    ASSERT_EQ(ndrawings_expected, ndrawings);
-    ASSERT_EQ(nspatial_expected, nspatial);
+    if (ndrawings_expected >= 0)
+        {
+        ASSERT_EQ(ndrawings_expected, ndrawings);
+        }
+
+    if (nspatial_expected >= 0)
+        {
+        ASSERT_EQ(nspatial_expected, nspatial);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

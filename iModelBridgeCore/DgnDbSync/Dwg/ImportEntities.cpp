@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/ImportEntities.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -697,7 +697,6 @@ DgnStyleId      GetDgnLineStyle (bool& isContinuous, double& effectiveScale) con
     if (effectiveLinetype.IsValid())
         return  m_dwgImporter.GetDgnLineStyleFor (effectiveLinetype);
 
-    BeDataAssert (false && "Invalid DWG linetype object ID!!");
     return  DgnStyleId();
     }
 
@@ -774,7 +773,6 @@ RenderMaterialId   GetDgnMaterial () const
     if (effectiveMaterial.IsValid())
         return  m_dwgImporter.GetDgnMaterialFor (effectiveMaterial);
 
-    BeDataAssert (false && "Invalid DWG material object ID!!");
     return  RenderMaterialId();
     }
 
@@ -1455,7 +1453,10 @@ virtual void    _Shell (size_t nPoints, DPoint3dCP points, size_t nFaceList, int
             if (nVertices > maxFaceVertices)
                 {
                 BeDataAssert (false && L"unexpected max face vertices!");
-                importer.ReportIssue (DwgImporter::IssueSeverity::Warning, DwgImporter::IssueCategory::UnexpectedData(), DwgImporter::Issue::Message(), Utf8PrintfString("skipped a shell having face vertex count of %d [expected %d]", nVertices, maxFaceVertices).c_str());
+                Utf8PrintfString msg("skipped a shell having face vertex count of %d [expected %d]", nVertices, maxFaceVertices);
+                if (m_entity != nullptr)
+                    msg += Utf8PrintfString(" ID=%ls", m_entity->GetObjectId().ToAscii().c_str());
+                importer.ReportIssue (DwgImporter::IssueSeverity::Warning, DwgImporter::IssueCategory::UnexpectedData(), DwgImporter::Issue::Message(), msg.c_str());
                 return;
                 }
 
@@ -1535,13 +1536,15 @@ BentleyStatus   SetText (Dgn::TextStringPtr& dgnText, DPoint3dCR position, DVec3
     DwgImporter&    importer = m_drawParams.GetDwgImporter ();
     if (string.IsEmpty())
         {
-        importer.ReportIssue (DwgImporter::IssueSeverity::Info, DwgImporter::IssueCategory::UnexpectedData(), DwgImporter::Issue::Message(), "skipped an empty text!");
+        Utf8PrintfString    msg ("skipped empty text entity, ID=%ls!", m_entity == nullptr ? L"?" : m_entity->GetObjectId().ToAscii().c_str());
+        importer.ReportIssue (DwgImporter::IssueSeverity::Info, DwgImporter::IssueCategory::UnexpectedData(), DwgImporter::Issue::Message(), msg.c_str());
         return  BSIERROR;
         }
 
     if (!importer.ArePointsValid(&position, 1, m_drawParams.GetSourceEntity()))
         {
-        importer.ReportIssue (DwgImporter::IssueSeverity::Info, DwgImporter::IssueCategory::UnexpectedData(), DwgImporter::Issue::InvalidRange(), "skipped a text out of range!");
+        Utf8PrintfString    msg ("skipped out of range text entity, ID=%ls!", m_entity == nullptr ? L"?" : m_entity->GetObjectId().ToAscii().c_str());
+        importer.ReportIssue (DwgImporter::IssueSeverity::Info, DwgImporter::IssueCategory::UnexpectedData(), DwgImporter::Issue::InvalidRange(), msg.c_str());
         return  BSIERROR;
         }
 
@@ -1549,7 +1552,8 @@ BentleyStatus   SetText (Dgn::TextStringPtr& dgnText, DPoint3dCR position, DVec3
     textString.Trim ();
     if (textString.empty())
         {
-        importer.ReportIssue (DwgImporter::IssueSeverity::Info, DwgImporter::IssueCategory::UnexpectedData(), DwgImporter::Issue::Message(), "skipped a text of all white spaces!");
+        Utf8PrintfString    msg ("skipped text containing all white spaces, ID=%ls!", m_entity == nullptr ? L"?" : m_entity->GetObjectId().ToAscii().c_str());
+        importer.ReportIssue (DwgImporter::IssueSeverity::Info, DwgImporter::IssueCategory::UnexpectedData(), DwgImporter::Issue::Message(), msg.c_str());
         return  BSIERROR;
         }
 
@@ -2741,7 +2745,8 @@ BentleyStatus   DwgImporter::_CreateOrUpdateElement (ElementImportResults& resul
 
         if (failed > 0)
             {
-            this->ReportError (IssueCategory::VisualFidelity(), Issue::Error(), Utf8PrintfString("%lld out of %lld individual geometry element(s) is/are not created for entity[%s, handle=%llx]!", failed, geometryBuilders.size(), label.c_str(), entityId).c_str());
+            Utf8PrintfString msg("%lld out of %lld individual geometry element(s) is/are not created for entity[%s, handle=%llx]!", failed, geometryBuilders.size(), label.c_str(), entityId);
+            this->ReportError (IssueCategory::VisualFidelity(), Issue::Error(), msg.c_str());
             if (BSISUCCESS == status)
                 status = BSIERROR;
             }
@@ -2768,7 +2773,8 @@ BentleyStatus   DwgImporter::_CreateOrUpdateElement (ElementImportResults& resul
 
         if (failed > 0)
             {
-            this->ReportError (IssueCategory::VisualFidelity(), Issue::Error(), Utf8PrintfString("%lld out of %lld shared part geometry element(s) is/are not created for entity[%s, handle=%llx]!", failed, partIndices.size(), label.c_str(), entityId).c_str());
+            Utf8PrintfString msg("%lld out of %lld shared part geometry element(s) is/are not created for entity[%s, handle=%llx]!", failed, partIndices.size(), label.c_str(), entityId);
+            this->ReportError (IssueCategory::VisualFidelity(), Issue::Error(), msg.c_str());
             if (BSISUCCESS == status)
                 status = BSIERROR;
             }
@@ -2859,7 +2865,8 @@ BentleyStatus   DwgImporter::_GetElementCreateParams (DwgImporter::ElementCreate
 
     if (!params.m_categoryId.IsValid())
         {
-        this->ReportError(IssueCategory::CorruptData(), Issue::ImportFailure(), Utf8PrintfString("[%s] - Invalid layer %llx", IssueReporter::FmtEntity(ent).c_str(), ent.GetLayerId().ToUInt64()).c_str());
+        Utf8PrintfString msg("[%s] - Invalid layer %llx", IssueReporter::FmtEntity(ent).c_str(), ent.GetLayerId().ToUInt64());
+        this->ReportError(IssueCategory::CorruptData(), Issue::ImportFailure(), msg.c_str());
         return BSIERROR;
         }
 
@@ -3597,7 +3604,8 @@ BentleyStatus   DwgImporter::InsertOrUpdateResultsInSyncInfo (ElementImportResul
     if (BSISUCCESS != status)
         {
         uint64_t    entityId = entity.GetObjectId().ToUInt64 ();
-        this->ReportError (IssueCategory::Sync(), Issue::Error(), Utf8PrintfString("failed inserting element into DwgSynchInfo for entityId=%llx!", entityId).c_str());
+        Utf8PrintfString msg("failed inserting element into DwgSynchInfo for entityId=%llx!", entityId);
+        this->ReportError (IssueCategory::Sync(), Issue::Error(), msg.c_str());
         }
 
     // insert or update children
