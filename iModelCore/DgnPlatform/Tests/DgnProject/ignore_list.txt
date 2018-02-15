@@ -633,3 +633,28 @@ DgpLiteralExpressionTests.DgnMiscSymbols
     # Which is: 2017
     # To be equal to: result.GetECValue ()->GetDateTime ().GetYear ()
     # Which is: 2018
+
+ # Crash, bim0200, NDEBUG, x64
+ VolumeElementTestFixture.QueryTest
+    # m_randerTarget is Invalid
+    # DgnPlatformB02.dll!BentleyB0200::Dgn::DgnViewport::_GetViewRect() Line 361  C++
+    # DgnPlatformB02.dll!BentleyB0200::Dgn::DgnViewport::CalcNpcToView() Line 339 C++
+    # DgnPlatformB02.dll!BentleyB0200::Dgn::DgnViewport::SetupFromViewController() Line 562   C++
+    # DgnPlatformB02.dll!BentleyB0200::Dgn::VolumeElement::CreateNonVisibleViewport(BentleyB0200::Dgn::DgnDb & project) Line 337  C++
+    # DgnPlatformB02.dll!BentleyB0200::Dgn::VolumeElement::FindElements(BentleyB0200::BeSQLite::IdSet<BentleyB0200::Dgn::DgnElementId> & elementIds, BentleyB0200::Dgn::DgnDb & dgnDb, bool allowPartialOverlaps) Line 382    C++
+    # DgnPlatformTest.exe!VolumeElementTestFixture_QueryTest_Test::TestBody() Line 168    C++
+    # DgnPlatformTest.exe!testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void>(testing::Test * object, void(testing::Test::*)() method, const char * location) Line 2446 C++
+    # DgnPlatformTest.exe!testing::internal::HandleExceptionsInMethodIfSupported<testing::Test,void>(testing::Test * object, void(testing::Test::*)() method, const char * location) Line 2497    C++
+    # DgnPlatformTest.exe!testing::Test::Run() Line 2540  C++
+    # DgnPlatformTest.exe!testing::TestInfo::Run() Line 2719  C++
+    # DgnPlatformTest.exe!testing::TestCase::Run() Line 2832  C++
+    # DgnPlatformTest.exe!testing::internal::UnitTestImpl::RunAllTests() Line 4706    C++
+    # DgnPlatformTest.exe!testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool>(testing::internal::UnitTestImpl * object, bool(testing::internal::UnitTestImpl::*)() method, const char * location) Line 2446   C++
+    # DgnPlatformTest.exe!testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool>(testing::internal::UnitTestImpl * object, bool(testing::internal::UnitTestImpl::*)() method, const char * location) Line 2497  C++
+    # DgnPlatformTest.exe!testing::UnitTest::Run() Line 4316  C++
+    # DgnPlatformTest.exe!runAllTestsWithTimeout::__l2::<lambda>() Line 355   C++
+    # DgnPlatformTest.exe!std::_LaunchPad<std::unique_ptr<std::tuple<void <lambda>(void) >,std::default_delete<std::tuple<void <lambda>(void) > > > >::_Run(std::_LaunchPad<std::unique_ptr<std::tuple<void <lambda>(void) >,std::default_delete<std::tuple<void <lambda>(void) > > > > * _Ln) Line 247   C++
+    # DgnPlatformTest.exe!std::_Pad::_Call_func(void * _Data) Line 210    C++
+    # ucrtbase.dll!00007ffb2213d885() Unknown
+    # kernel32.dll!00007ffb238e1fe4() Unknown
+    # ntdll.dll!00007ffb25d8ef91()    Unknown
