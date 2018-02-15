@@ -1457,6 +1457,34 @@ void AlignmentPVI_Tests()
     EXPECT_EQ_DOUBLE(1.0, pvi.GetStationRange().startStation);
     EXPECT_EQ_DOUBLE(1.0, pvi.GetStationRange().endStation);
     }
+//---------------------------------------------------------------------------------------
+// @betest                              Alexandre.Gagnon                        02/2018
+//---------------------------------------------------------------------------------------
+void AlignmentPVI_ProvenanceTests()
+    {
+    CurveVectorPtr cvProvenance = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+
+    AlignmentPVI pvi;
+    EXPECT_FALSE(pvi.HasProvenance());
+    EXPECT_TRUE(nullptr == pvi.GetProvenance());
+
+    RefCountedPtr<AlignmentPVI::Provenance> provenance = AlignmentPVI::Provenance::Create(*cvProvenance);
+    ASSERT_TRUE(provenance.IsValid());
+    EXPECT_FALSE(provenance->ContainsLineString());
+
+    cvProvenance->push_back(ICurvePrimitive::CreateLineString({ DPoint3d::FromZero(), DPoint3d::FromOne() }));
+    provenance = AlignmentPVI::Provenance::Create(*cvProvenance);
+    ASSERT_TRUE(provenance.IsValid());
+    EXPECT_TRUE(provenance->ContainsLineString());
+
+
+    pvi.SetProvenance(*provenance);
+    EXPECT_TRUE(pvi.HasProvenance());
+    AlignmentPVI::ProvenanceCP pProvenance = pvi.GetProvenance();
+    ASSERT_TRUE(nullptr != pProvenance);
+    EXPECT_EQ(provenance.get(), pProvenance); // We expect GetProvenance to return the same object that we set
+    }
+
 
 
 //=======================================================================================
@@ -2304,9 +2332,22 @@ void AlignmentPairEditor_GetPVIs()
     pvis = editor->GetPVIs();
     EXPECT_EQ(0, pvis.size());
 
+    // LineString
+    bvector<DPoint3d> points
+        {
+        DPoint3d::FromZero(),
+        DPoint3d::From(10, 0, 10.0),
+        DPoint3d::From(20, 0, 20.0)
+        };
+    CurveVectorPtr vt = CurveVector::CreateLinear(points);
+    vt->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::From(20, 0, 20.0), DPoint3d::From(30, 0, 30.0))));
+    editor->UpdateVerticalCurveVector(vt.get());
+    pvis = editor->GetPVIs();
+    EXPECT_EQ(4, pvis.size());
+
     // Unsupported primitive type
-    CurveVectorPtr vt = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
-    bvector<DPoint3d> points{ DPoint3d::FromZero(), DPoint3d::From(10, 0, 5) };
+    vt = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+    points = { DPoint3d::FromZero(), DPoint3d::From(10, 0, 5) };
     vt->push_back(ICurvePrimitive::CreatePointString(points));
 
     editor->UpdateVerticalCurveVector(vt.get());
@@ -3271,6 +3312,7 @@ TEST_F(CivilBaseGeometryTests, AlignmentPairTests)
 
     AlignmentPI_Tests();
     AlignmentPVI_Tests();
+    AlignmentPVI_ProvenanceTests();
     AlignmentMarkerBits_Tests();
 
     // AlignmentPairEditor tests
