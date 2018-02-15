@@ -477,17 +477,19 @@ public:
     //! Creates key set from supplied nodes key set.
     static KeySetPtr Create(NavNodeKeySet nodes) {return new KeySet(InstanceKeyMap(), nodes);}
     //! Creates key set from supplied nodes key list.
-    ECPRESENTATION_EXPORT static KeySetPtr Create(NavNodeKeyList nodeKey);
+    ECPRESENTATION_EXPORT static KeySetPtr Create(NavNodeKeyList const& nodeKey);
     //! Creates key set from supplied instance keys.
-    ECPRESENTATION_EXPORT static KeySetPtr Create(bvector<ECInstanceKey> instanceKeys);
+    ECPRESENTATION_EXPORT static KeySetPtr Create(bvector<ECInstanceKey> const& instanceKeys);
     //! Creates key set from supplied instances
-    ECPRESENTATION_EXPORT static KeySetPtr Create(bvector<IECInstancePtr> instaces);
+    ECPRESENTATION_EXPORT static KeySetPtr Create(bvector<IECInstancePtr> const& instaces);
     //! Creates key set from supplied instance.
     static KeySetPtr Create(IECInstanceR instance) {return KeySet::Create({&instance});}
     //! Creates key set from supplied node key
     static KeySetPtr Create(NavNodeKeyCR nodeKey) {return KeySet::Create({&nodeKey});}
     //! Creates a copy of provided key set.
     static KeySetPtr Create(KeySetCR other) {return new KeySet(other);}
+    //! Created key set from supplied classes.
+    ECPRESENTATION_EXPORT static KeySetPtr Create(bvector<ECClassCP> const& classes);
 
     //! Returns whether this key set is equal to the supplied one.
     bool Equals(KeySetCR other) const {return GetHash().Equals(other.GetHash());}

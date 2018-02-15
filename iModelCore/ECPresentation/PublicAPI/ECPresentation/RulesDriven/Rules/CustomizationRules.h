@@ -21,6 +21,7 @@ struct EXPORT_VTABLE_ATTRIBUTE CustomizationRuleVisitor{
     friend struct CheckBoxRule;
     friend struct RenameNodeRule;
     friend struct SortingRule;
+    friend struct InstanceLabelOverride;
 
 protected:
     virtual void _Visit(GroupingRuleCR rule) {}
@@ -30,25 +31,59 @@ protected:
     virtual void _Visit(CheckBoxRuleCR rule) {}
     virtual void _Visit(RenameNodeRuleCR rule) {}
     virtual void _Visit(SortingRuleCR rule) {}
+    virtual void _Visit(InstanceLabelOverrideCR rule) {}
     };
 
-struct EXPORT_VTABLE_ATTRIBUTE CustomizationRule : public PresentationRule {
+/*---------------------------------------------------------------------------------**//**
+* Base class for CustomizationRules.
+* @bsiclass                                     Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+struct EXPORT_VTABLE_ATTRIBUTE CustomizationRule : public PresentationRule 
+    {
 protected:
     virtual void _Accept(CustomizationRuleVisitor& visitor) const {}
 
-    //! Clones this specification.
     virtual CustomizationRule* _Clone() const = 0;
 
 public:
-    //! Constructor. It is used to initialize the rule with default settings.
     CustomizationRule() {}
 
-    CustomizationRule(Utf8StringCR condition, int priority, bool onlyIfNotHandled) : PresentationRule(condition, priority, onlyIfNotHandled) {}
+    CustomizationRule(int priority, bool onlyIfNotHandled) : PresentationRule(priority, onlyIfNotHandled) {}
 
     void Accept(CustomizationRuleVisitor& visitor) const { _Accept(visitor); }
 
-    //! Clones this specification.
     CustomizationRule* Clone() const {return _Clone();}
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* Base class for CustomizationRules with conditions.
+* @bsiclass                                     Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+struct EXPORT_VTABLE_ATTRIBUTE ConditionalCustomizationRule : public CustomizationRule
+    {
+private:
+    Utf8String m_condition;
+
+protected:
+    //! Reads rule information from XmlNode, returns true if it can read it successfully.
+    ECPRESENTATION_EXPORT virtual bool _ReadXml (BeXmlNodeP xmlNode) override;
+
+    //! Writes rule information to given XmlNode.
+    ECPRESENTATION_EXPORT virtual void _WriteXml (BeXmlNodeP xmlNode) const override;
+
+    //! Compute rule hash.
+    ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
+
+public:
+    ConditionalCustomizationRule() {}
+
+    ConditionalCustomizationRule(Utf8String condition, int priority, bool onlyIfNotHandled) 
+        : CustomizationRule(priority, onlyIfNotHandled), m_condition(condition) 
+        {}
+
+    ECPRESENTATION_EXPORT Utf8StringCR GetCondition() const;
+
+    ECPRESENTATION_EXPORT void SetCondition(Utf8String value);
     };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

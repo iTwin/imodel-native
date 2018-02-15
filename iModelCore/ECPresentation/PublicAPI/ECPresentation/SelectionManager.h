@@ -99,7 +99,7 @@ public:
     IConnectionCR GetConnection() const {return *m_connection;}
 
     //! Get the ECDb.
-    ECDbCR GetDb() const {return m_connection->GetDb();}
+    ECDbCR GetDb() const {return m_connection->GetECDb();}
 
     //! Get the selection source name.
     Utf8StringCR GetSourceName() const {return m_sourceName;}

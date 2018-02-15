@@ -2,16 +2,17 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/QueryBuilderHelpers.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 #include <ECPresentation/RulesDriven/PresentationManager.h>
-#include "QueryBuilder.h"
+#include "QueryBuilderHelpers.h"
 #include "RulesPreprocessor.h"
 #include "ECExpressionContextsProvider.h"
 #include "LocalizationHelper.h"
 #include "NavNodeProviders.h"
+#include "LoggingHelper.h"
 #include <regex>
 
 /*---------------------------------------------------------------------------------**//**
@@ -172,6 +173,183 @@ RefCountedPtr<ComplexPresentationQuery<T>> QueryBuilderHelpers::CreateComplexNes
     }
 template ComplexContentQueryPtr QueryBuilderHelpers::CreateComplexNestedQueryIfNecessary<ContentQuery>(ContentQuery&, bvector<Utf8CP> const&);
 template ComplexNavigationQueryPtr QueryBuilderHelpers::CreateComplexNestedQueryIfNecessary<NavigationQuery>(NavigationQuery&, bvector<Utf8CP> const&);
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                07/2017
++===============+===============+===============+===============+===============+======*/
+struct RecursiveQueriesHelper
+{
+private:
+    IConnectionCR m_connection;
+    InstanceFilteringParams::RecursiveQueryInfo const& m_recursiveQueryInfo;
+
+private:
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                04/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static bool IsRecursiveJoinForward(SelectClassInfo const& selectInfo)
+        {
+        if (selectInfo.GetPathToPrimaryClass().empty())
+            {
+            BeAssert(false);
+            return true;
+            }
+    
+        return !selectInfo.GetPathToPrimaryClass().back().IsForwardRelationship(); // invert direction
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                04/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static bool IsPathValidForRecursiveSelect(Utf8StringR errorMessage, RelatedClassPath const& path, ECClassCR selectClass)
+        {
+        RelatedClass const& relatedClassDef = path.front();
+        if (!selectClass.Is(relatedClassDef.GetSourceClass()))
+            {
+            errorMessage = "Using IsRecursive requires recursive relationship";
+            return false;
+            }
+        return true;
+        }
+    
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                03/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void RecursivelySelectRelatedKeys(bset<ECInstanceId>& result, Utf8StringCR baseQuery, Utf8CP idSelector, bvector<ECInstanceId> const& sourceIds)
+        {
+        IdsFilteringHelper<bvector<ECInstanceId>> filteringHelper(sourceIds);
+        Utf8String query(baseQuery);
+        query.append("WHERE ").append(filteringHelper.CreateWhereClause(idSelector));
+
+        ECSqlStatement stmt;
+        if (!stmt.Prepare(m_connection.GetECDb().Schemas(), m_connection.GetDb(), query.c_str()).IsSuccess())
+            {
+            BeAssert(false);
+            return;
+            }
+
+        BoundQueryValuesList bindings = filteringHelper.CreateBoundValues();
+        for (size_t i = 0; i < bindings.size(); ++i)
+            {
+            BoundQueryValue const* binding = bindings[i];
+            binding->Bind(stmt, (uint32_t)(i + 1));
+            }
+
+        bvector<ECInstanceId> tempIds;
+        while (BE_SQLITE_ROW == stmt.Step())
+            {
+            ECInstanceId id = stmt.GetValueId<ECInstanceId>(0);
+            result.insert(id);
+            tempIds.push_back(id);
+            }
+
+        for (BoundQueryValue const* binding : bindings)
+            delete binding;
+
+        if (!tempIds.empty())
+            RecursivelySelectRelatedKeys(result, baseQuery, idSelector, tempIds);
+        }
+    
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                02/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    bset<ECInstanceId> GetRecursiveChildrenIds(bset<ECRelationshipClassCP> const& relationships, bool isForward, bvector<ECInstanceId> const& parentIds)
+        {
+        static Utf8CP s_sourceECInstanceIdField = "SourceECInstanceId";
+        static Utf8CP s_targetECInstanceIdField = "TargetECInstanceId";
+        Utf8CP idSelector = isForward ? s_sourceECInstanceIdField : s_targetECInstanceIdField;
+
+        bool first = true;
+        Utf8String query("SELECT ");
+        query.append(isForward ? s_targetECInstanceIdField : s_sourceECInstanceIdField);
+        query.append(" FROM (");
+        for (ECRelationshipClassCP rel : relationships)
+            {
+            if (!first)
+                query.append(" UNION ALL ");
+            query.append("SELECT SourceECInstanceId, TargetECInstanceId ");            
+            query.append("FROM ").append(rel->GetECSqlName());
+            first = false;
+            }
+        query.append(") ");
+
+        bset<ECInstanceId> result;
+        RecursivelySelectRelatedKeys(result, query, idSelector, parentIds);
+        return result;
+        }
+
+public:
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                04/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    RecursiveQueriesHelper(IConnectionCR connection, InstanceFilteringParams::RecursiveQueryInfo const& recursiveQueryInfo) 
+        : m_connection(connection), m_recursiveQueryInfo(recursiveQueryInfo)
+        {}
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                04/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    bset<ECInstanceId> GetRecursiveChildrenIds(IParsedInput const& input, SelectClassInfo const& thisInfo)
+        {
+        bset<ECRelationshipClassCP> relationships;
+        for (RelatedClassPath const& path : m_recursiveQueryInfo.GetPathsToPrimary())
+            {
+            Utf8String validationErrorMessage;
+            if (!IsPathValidForRecursiveSelect(validationErrorMessage, path, *path.front().GetSourceClass()))
+                {
+                BeAssert(false);
+                LoggingHelper::LogMessage(Log::Content, validationErrorMessage.c_str(), NativeLogging::LOG_ERROR);
+                continue;
+                }
+            for (RelatedClassCR rel : path)
+                relationships.insert(rel.GetRelationship());
+            }
+        return GetRecursiveChildrenIds(relationships, IsRecursiveJoinForward(thisInfo), input.GetInstanceIds(*thisInfo.GetPrimaryClass()));
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T>
+void QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresentationQuery<T>& query, InstanceFilteringParams const& params)
+    {
+    if (nullptr != params.GetInput())
+        {
+        if (params.GetSelectInfo().GetPathToPrimaryClass().empty())
+            {
+            bvector<ECInstanceId> const& selectedInstanceIds = params.GetInput()->GetInstanceIds(params.GetSelectInfo().GetSelectClass());
+            if (!selectedInstanceIds.empty())
+                {
+                IdsFilteringHelper<bvector<ECInstanceId>> filteringHelper(selectedInstanceIds);
+                query.Where(filteringHelper.CreateWhereClause("[this].[ECInstanceId]").c_str(), filteringHelper.CreateBoundValues());
+                }
+            }
+        else
+            {
+            if (nullptr != params.GetRecursiveQueryInfo())
+                {
+                // in case of recursive query just bind the children ids
+                RecursiveQueriesHelper recursiveQueries(params.GetConnection(), *params.GetRecursiveQueryInfo());
+                bset<ECInstanceId> ids = recursiveQueries.GetRecursiveChildrenIds(*params.GetInput(), params.GetSelectInfo());
+                IdsFilteringHelper<bset<ECInstanceId>> filteringHelper(ids);
+                query.Where(filteringHelper.CreateWhereClause("[this].[ECInstanceId]").c_str(), filteringHelper.CreateBoundValues());
+                }
+            else
+                {
+                BeAssert(!params.GetSelectInfo().GetPathToPrimaryClass().empty());
+                query.Join(params.GetSelectInfo().GetPathToPrimaryClass(), false);
+                bvector<ECInstanceId> const& ids = params.GetInput()->GetInstanceIds(*params.GetSelectInfo().GetPrimaryClass());
+                IdsFilteringHelper<bvector<ECInstanceId>> filteringHelper(ids);
+                query.Where(filteringHelper.CreateWhereClause("[related].[ECInstanceId]").c_str(), filteringHelper.CreateBoundValues());
+                }
+            }
+        }
+    
+    if (params.GetInstanceFilter() && 0 != *params.GetInstanceFilter())
+        query.Where(ECExpressionsHelper(params.GetECExpressionsCache()).ConvertToECSql(params.GetInstanceFilter()).c_str(), BoundQueryValuesList());
+    }
+template void QueryBuilderHelpers::ApplyInstanceFilter<ContentQuery>(ComplexContentQuery&, InstanceFilteringParams const&);
+template void QueryBuilderHelpers::ApplyInstanceFilter<GenericQuery>(ComplexGenericQuery&, InstanceFilteringParams const&);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
@@ -345,16 +523,16 @@ ContentQueryPtr QueryBuilderHelpers::CreateMergedResultsQuery(ContentQueryR quer
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-IdSet<ECInstanceId> QueryBuilderHelpers::CreateIdSetFromJsonArray(RapidJsonValueCR json)
+IdSet<BeInt64Id> QueryBuilderHelpers::CreateIdSetFromJsonArray(RapidJsonValueCR json)
     {
-    IdSet<ECInstanceId> ids;
+    IdSet<BeInt64Id> ids;
     if (!json.IsArray())
         {
         BeAssert(false);
         return ids;
         }
     for (Json::ArrayIndex i = 0; i < json.Size(); i++)
-        ids.insert(ECInstanceId(json[i].GetUint64()));
+        ids.insert(BeInt64Id(json[i].GetUint64()));
     return ids;
     }
 
@@ -406,4 +584,38 @@ void RelatedClassPath::Reverse(Utf8CP firstTargetClassAlias, bool isFirstTargetP
         if (nullptr == spec.GetTargetClassAlias() || 0 == *spec.GetTargetClassAlias())
             spec.SetTargetClassAlias(Utf8String(spec.GetTargetClass()->GetName()).ToLower());
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bmap<ECClassCP, bvector<ECPropertyCP>> QueryBuilderHelpers::GetMappedLabelOverridingProperties(ECSchemaHelper const& helper, InstanceLabelOverrideList labelOverrides)
+    {
+    std::sort(labelOverrides.begin(),labelOverrides.end(), [](InstanceLabelOverrideCP a, InstanceLabelOverrideCP b) {return a->GetPriority() > b->GetPriority();});
+    bmap<ECClassCP, bvector<ECPropertyCP>> mappedProperties;
+    for (InstanceLabelOverrideP labelOverride : labelOverrides)
+        {
+        ECClassCP ecClass = helper.GetECClass(labelOverride->GetClassName().c_str());
+        if (nullptr == ecClass)
+            {
+            BeAssert(false && "Invalid class name");
+            continue;
+            }
+        auto iter = mappedProperties.find(ecClass);
+        if (iter == mappedProperties.end())
+            iter = mappedProperties.Insert(ecClass, bvector<ECPropertyCP>()).first;
+
+        bvector<ECPropertyCP> properties;
+        for (Utf8StringCR propertyName : labelOverride->GetPropertyNames())
+            {
+            ECPropertyCP ecProperty = ecClass->GetPropertyP(propertyName);
+            if (nullptr == ecProperty)
+                {
+                BeAssert(false && "Invalid property name");
+                continue;
+                }
+            iter->second.push_back(ecProperty);
+            }
+        }
+    return mappedProperties;
     }

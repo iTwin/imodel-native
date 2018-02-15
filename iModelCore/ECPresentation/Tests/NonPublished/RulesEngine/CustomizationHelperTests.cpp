@@ -30,6 +30,7 @@ struct CustomizationHelperTests : ::testing::Test
     IConnectionPtr m_connection;
     ECExpressionsCache m_expressionsCache;
     RelatedPathsCache m_relatedPathsCache;
+    PolymorphicallyRelatedClassesCache m_polymorphicallyRelatedClassesCache;
     ECSqlStatementCache m_statementCache;
     PresentationRuleSetPtr m_ruleset;
     NavNodesProviderContextPtr m_context;
@@ -48,11 +49,12 @@ struct CustomizationHelperTests : ::testing::Test
         if (!s_project->GetECDb().GetDefaultTransaction()->IsActive())
             s_project->GetECDb().GetDefaultTransaction()->Begin();
         
-        m_customFunctions = new CustomFunctionsInjector(m_connections, CustomizationHelperTests::s_project->GetECDb());
         m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb());
+        m_customFunctions = new CustomFunctionsInjector(m_connections, *m_connection);
         m_ruleset = PresentationRuleSet::CreateInstance("CustomizationHelperTests", 1, 0, false, "", "", "", false);
         m_context = NavNodesProviderContext::Create(*m_ruleset, true, TargetTree_Both, 0, 
-            m_settings, m_expressionsCache, m_relatedPathsCache, m_nodesFactory, m_nodesCache, m_providerFactory, nullptr);
+            m_settings, m_expressionsCache, m_relatedPathsCache, m_polymorphicallyRelatedClassesCache, 
+            m_nodesFactory, m_nodesCache, m_providerFactory, nullptr);
         m_context->SetQueryContext(m_connections, *m_connection, m_statementCache, *m_customFunctions, nullptr);
         }
 
@@ -211,9 +213,10 @@ TEST_F (CustomizationHelperTests, CustomizationExpressionContextHasParentNodeSym
 
     ChildNodeRule rule("", 1, false, RuleTargetTree::TargetTree_Both);
     NavNodesProviderContextPtr childContext = NavNodesProviderContext::Create(*m_ruleset, true, TargetTree_Both, &parentNodeId, 
-        m_settings, m_expressionsCache, m_relatedPathsCache, m_nodesFactory, m_nodesCache, m_providerFactory, nullptr);
+        m_settings, m_expressionsCache, m_relatedPathsCache, m_polymorphicallyRelatedClassesCache, 
+        m_nodesFactory, m_nodesCache, m_providerFactory, nullptr);
     childContext->SetQueryContext(*m_context);
-    childContext->SetChildNodeContext(rule, *parentNode);
+    childContext->SetChildNodeContext(&rule, *parentNode);
 
     JsonNavNodePtr thisNode = CreateNode(m_connection->GetId(), "This", "description", "imageId", "ThisType");
     NavNodeExtendedData(*thisNode).SetVirtualParentId(parentNodeId);

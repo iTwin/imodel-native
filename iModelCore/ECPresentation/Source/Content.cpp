@@ -221,7 +221,11 @@ int ContentDescriptor::GetFieldIndex(Utf8CP name) const
 bvector<ContentDescriptor::Field*> ContentDescriptor::GetVisibleFields() const
     {
     bvector<Field*> fields;
-    std::copy_if(m_fields.begin(), m_fields.end(), std::back_inserter(fields), [](Field const* f){return !f->IsSystemField();});
+    std::copy_if(m_fields.begin(), m_fields.end(), std::back_inserter(fields), [this](Field const* f) 
+        {
+        bool isHidden = (f->IsSystemField() || (f->IsDisplayLabelField() && !ShowLabels()));
+        return !isHidden;
+        });
     return fields;
     }
 /*---------------------------------------------------------------------------------**//**
@@ -404,34 +408,11 @@ void ContentDescriptor::RemoveContentFlag(ContentFlags flag)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentDescriptor::OnFlagAdded(ContentFlags flag)
-    {
-    if (ContentFlags::ShowLabels == flag)
-        {
-        Utf8String displayLabel = L10N::GetString(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel());
-        if (displayLabel.empty())
-            {
-            BeAssert(false);
-            displayLabel = "Display Label";
-            }
-        m_fields.insert(m_fields.begin(), new DisplayLabelField(displayLabel));
-        }
-    }
+void ContentDescriptor::OnFlagAdded(ContentFlags flag) {}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentDescriptor::OnFlagRemoved(ContentFlags flag)
-    {
-    if (ContentFlags::ShowLabels == flag)
-        {
-        auto iter = std::remove_if(m_fields.begin(), m_fields.end(), [](Field const* field){return field->IsDisplayLabelField();});
-        if (m_fields.end() != iter)
-            {
-            delete *iter;
-            m_fields.erase(iter);
-            }
-        }
-    }
+void ContentDescriptor::OnFlagRemoved(ContentFlags flag) {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                11/2017
@@ -903,7 +884,7 @@ void ContentDescriptor::ECPropertiesField::InitFromProperty(ECClassCR primaryCla
     IPropertyCategorySupplierP categorySupplier)
     {
     if (nullptr != categorySupplier)
-        SetCategory(categorySupplier->GetCategory(primaryClass, prop.GetRelatedClassPath(), prop.GetProperty()));
+        SetCategory(categorySupplier->GetCategory(primaryClass, prop.GetRelatedClassPath(), prop.GetProperty(), prop.GetRelationshipMeaning()));
     SetName(Utf8String(prop.GetPropertyClass().GetName()).append("_").append(prop.GetProperty().GetName()));
     SetLabel(prop.GetProperty().GetDisplayLabel());
     m_properties.push_back(prop);
@@ -912,26 +893,33 @@ void ContentDescriptor::ECPropertiesField::InitFromProperty(ECClassCR primaryCla
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<ContentDescriptor::Property const*> ContentDescriptor::ECPropertiesField::FindMatchingProperties(ECClassCP targetClass) const
+bvector<ContentDescriptor::Property const*> const& ContentDescriptor::ECPropertiesField::FindMatchingProperties(ECClassCP targetClass) const
     {
-    bvector<ContentDescriptor::Property const*> matchingProperties;
+    static bvector<ContentDescriptor::Property const*> const s_empty;
     if (m_properties.empty())
-        return matchingProperties;
+        return s_empty;
 
-    if (nullptr == targetClass)
+    auto iter = m_matchingPropertiesCache.find(targetClass);
+    if (m_matchingPropertiesCache.end() == iter)
         {
-        for (Property const& p : m_properties)
-            matchingProperties.push_back(&p);
-        }
-    else
-        {
-        for (Property const& prop : m_properties)
+        bvector<ContentDescriptor::Property const*> matchingProperties;
+        if (nullptr == targetClass)
             {
-            if (targetClass->Is(&prop.GetPropertyClass()) || prop.IsRelated() && targetClass->Is(prop.GetRelatedClassPath().front().GetTargetClass()))
-                matchingProperties.push_back(&prop);
+            for (Property const& p : m_properties)
+                matchingProperties.push_back(&p);
             }
+        else
+            {
+            for (Property const& prop : m_properties)
+                {
+                if (targetClass->Is(&prop.GetPropertyClass()) || prop.IsRelated() && targetClass->Is(prop.GetRelatedClassPath().front().GetTargetClass()))
+                    matchingProperties.push_back(&prop);
+                }
+            }
+        iter = m_matchingPropertiesCache.insert(std::make_pair(targetClass, matchingProperties)).first;
         }
-    return matchingProperties;
+
+    return iter->second;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1438,24 +1426,26 @@ BentleyStatus DefaultPropertyFormatter::_GetFormattedPropertyValue(Utf8StringR f
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DefaultPropertyFormatter::_GetFormattedPropertyLabel(Utf8StringR formattedLabel, ECPropertyCR ecProperty, ECClassCR ecClass, RelatedClassPath const& relationshipPath, RelationshipMeaning relationshipMeaning) const
     {
-    formattedLabel.clear();
-    if (!relationshipPath.empty() && RelationshipMeaning::RelatedInstance == relationshipMeaning)
-        formattedLabel.append(ecClass.GetDisplayLabel()).append(" ").append(ecProperty.GetDisplayLabel());
-    else
-        formattedLabel = ecProperty.GetDisplayLabel();
+    formattedLabel = ecProperty.GetDisplayLabel();
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentDescriptor::Category DefaultCategorySupplier::_GetCategory(ECClassCR, RelatedClassPathCR, ECPropertyCR prop)
+ContentDescriptor::Category DefaultCategorySupplier::_GetCategory(ECClassCR primaryClass, RelatedClassPathCR path, ECPropertyCR prop, RelationshipMeaning relationshipMeaning)
     {
     PropertyCategoryCP propertyCategory = prop.GetCategory();
-    if (nullptr == propertyCategory)
-        return ContentDescriptor::Category::GetDefaultCategory();
+    if (nullptr != propertyCategory)
+        {
+        return ContentDescriptor::Category(propertyCategory->GetName(), propertyCategory->GetDisplayLabel(), 
+            propertyCategory->GetDescription(), propertyCategory->GetPriority());
+        }
 
-    return ContentDescriptor::Category(propertyCategory->GetName(), propertyCategory->GetDisplayLabel(), propertyCategory->GetDescription(), propertyCategory->GetPriority());
+    if (RelationshipMeaning::RelatedInstance == relationshipMeaning)
+        return GetCategory(primaryClass, path, *path.back().GetSourceClass());
+
+    return ContentDescriptor::Category::GetDefaultCategory();
     }
 
 /*---------------------------------------------------------------------------------**//**

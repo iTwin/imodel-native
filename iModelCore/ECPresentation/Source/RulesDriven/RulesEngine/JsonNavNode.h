@@ -47,17 +47,10 @@ struct EXPORT_VTABLE_ATTRIBUTE JsonNavNode : NavNode
 private:
     rapidjson::MemoryPoolAllocator<> m_allocator;
     mutable rapidjson::Document m_json;
-    BeSQLite::EC::ECDb const* m_ecdb;
-    mutable RefCountedPtr<IECInstance const> m_instance;
     NavNodeKeyCPtr m_nodeKey;
 
 private:
-    void LoadECInstance() const;
     ECPRESENTATION_EXPORT void AddMember(Utf8CP name, rapidjson::Value& value);
-
-protected:
-    void SetECDb(ECDbCR ecdb) {m_ecdb = &ecdb;}
-    void SetInstance(IECInstanceCR instance) {m_instance = &instance;}
 
 protected:
     ECPRESENTATION_EXPORT uint64_t _GetNodeId() const override;
@@ -88,7 +81,6 @@ public:
 
     ECPRESENTATION_EXPORT RapidJsonValueCR GetJson() const;
     bool DeterminedChildren() const {return m_json.HasMember(NAVNODE_HasChildren);}
-    ECPRESENTATION_EXPORT RefCountedPtr<IECInstance const> GetInstance() const;
     
     ECPRESENTATION_EXPORT void SetLabel(Utf8CP label);
     ECPRESENTATION_EXPORT void SetImageId(Utf8CP imageId);

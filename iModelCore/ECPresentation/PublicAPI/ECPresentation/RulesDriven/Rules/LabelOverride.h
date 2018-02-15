@@ -18,7 +18,7 @@ Label and Description override rule implementation. This rule is used to overrid
 label and description generation algorithm.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct EXPORT_VTABLE_ATTRIBUTE LabelOverride : public CustomizationRule
+struct EXPORT_VTABLE_ATTRIBUTE LabelOverride : public ConditionalCustomizationRule
     {
     private:
         Utf8String m_label;

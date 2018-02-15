@@ -155,6 +155,42 @@ ContentDescriptor::Field& ExpectedQueries::AddField(ContentDescriptorR descripto
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static ContentDescriptor::Property CreateProperty(Utf8String prefix, ECClassCR propertyClass, ECPropertyCR ecProperty)
+    {
+    return ContentDescriptor::Property(prefix, propertyClass, ecProperty);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static ContentDescriptor::Property CreateProperty(Utf8String prefix, ECClassCR propertyClass, ECPropertyCR ecProperty, RelatedClassPath relatedClassPath, RelationshipMeaning relationshipMeaning)
+    {
+    ContentDescriptor::Property p = CreateProperty(prefix, propertyClass, ecProperty);
+    p.SetIsRelated(relatedClassPath, relationshipMeaning);
+    return p;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static ContentDescriptor::Property CreateProperty(Utf8String prefix, ECClassCR propertyClass, ECPropertyCR ecProperty, RelatedClass relatedClass, RelationshipMeaning relationshipMeaning)
+    {
+    RelatedClassPath path;
+    path.push_back(relatedClass);
+    return CreateProperty(prefix, propertyClass, ecProperty, path, relationshipMeaning);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static ContentDescriptor::Category CreateCategory(ECClassCR ecClass)
+    {
+    return ContentDescriptor::Category(ecClass.GetName(), ecClass.GetDisplayLabel(), ecClass.GetDescription(), DefaultCategorySupplier::NESTED_CONTENT_CATEGORY_PRIORITY);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ExpectedQueries::PrepareSchemaContext()
@@ -192,7 +228,8 @@ void ExpectedQueries::PrepareSchemaContext()
     ASSERT_TRUE(SUCCESS == m_project.GetECDb().Schemas().ImportSchemas(importSchemas));
     m_project.GetECDb().SaveChanges();
 
-    m_schemaHelper = new ECSchemaHelper(m_project.GetECDbCR(), &m_relatedPathsCache, nullptr);
+    m_connection = m_connections.NotifyConnectionOpened(m_project.GetECDb());
+    m_schemaHelper = new ECSchemaHelper(*m_connection, nullptr, nullptr, nullptr, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -393,9 +430,9 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         NavigationQueryPtr nestedQueries = RulesEngineTestHelpers::CreateECInstanceNodesQueryForClasses(expectedQueryClasses, "this", [](ComplexNavigationQuery& query)
             {
-            query.Where("InVirtualSet(?, [this].[ECInstanceId]) AND "
+            query.Where("[this].[ECInstanceId] IN (?) AND "
                 "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[DisplayLabel], '[]') = ?",
-                {new BoundQueryIdSet({ECInstanceId((uint64_t)1)}), new BoundQueryECValue(ECValue("MyLabel"))});
+                {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("MyLabel"))});
             });
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
@@ -427,9 +464,9 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
         nested->SelectContract(*contract, "this");
         nested->From(b1_Class1A, false, "this");
-        nested->Where("InVirtualSet(?, [this].[ECInstanceId]) "
-            "AND GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[DisplayLabel], '[]') = ?",
-            {new BoundQueryIdSet({ECInstanceId((uint64_t)1)}), new BoundQueryECValue(ECValue("Label Grouping Node"))});
+        nested->Where("[this].[ECInstanceId] IN (?) AND "
+            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[DisplayLabel], '[]') = ?",
+            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("Label Grouping Node"))});
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();
@@ -449,7 +486,47 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         RegisterQuery("AllInstanceNodes_RecursiveNodeRelationships", *expected);
         }
+
+    // AllInstanceNodes_InstanceLabelOverride_AppliedByPriority
+        {
+        Utf8CP queryName = "AllInstanceNodes_InstanceLabelOverride_AppliedByPriority";
+        ECClassCR class1 = *GetECClass(queryName, "Class1");
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(&class1, bvector<RelatedClass>(), {class1.GetPropertyP("Description"), class1.GetPropertyP("Code")});   
+        ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+        query->SelectContract(*contract, "this");
+        query->From(class1, true, "this");
+
+        ComplexNavigationQueryPtr sorted = ComplexNavigationQuery::Create();
+        sorted->SelectAll();
+        sorted->From(*query);
+        sorted->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
         
+        RegisterQuery(queryName, *sorted);
+        }
+
+    // AllInstanceNodes_InstanceLabelOverride_OverrideOnlySpecifiedClassInstancesLabels
+        {
+        Utf8CP queryName = "AllInstanceNodes_InstanceLabelOverride_OverrideOnlySpecifiedClassInstancesLabels";
+        ECClassCR class1 = *GetECClass(queryName, "Class1");
+        NavigationQueryContractPtr class1Contract = ECInstanceNodesQueryContract::Create(&class1, bvector<RelatedClass>(), {class1.GetPropertyP("Description"), class1.GetPropertyP("Code")});   
+        ComplexNavigationQueryPtr class1Query = ComplexNavigationQuery::Create();
+        class1Query->SelectContract(*class1Contract, "this");
+        class1Query->From(class1, true, "this");
+
+        ECClassCR class2 = *GetECClass(queryName, "Class2");
+        NavigationQueryContractPtr class2Contract = ECInstanceNodesQueryContract::Create(&class2);   
+        ComplexNavigationQueryPtr class2Query = ComplexNavigationQuery::Create();
+        class2Query->SelectContract(*class2Contract, "this");
+        class2Query->From(class2, true, "this");
+
+        ComplexNavigationQueryPtr sorted = ComplexNavigationQuery::Create();
+        sorted->SelectAll();
+        sorted->From(*UnionNavigationQuery::Create(*class1Query, *class2Query));
+        sorted->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
+        
+        RegisterQuery(queryName, *sorted);
+        }
+
     // AllRelatedInstanceNodes_NoGrouping_ForwardRelationDirection
         {
         NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(&ret_Gadget);
@@ -579,6 +656,98 @@ void ExpectedQueries::RegisterExpectedQueries()
         expected->GetResultParametersR().GetMatchingRelationshipIds().insert(ret_GadgetHasSprockets.GetId());
 
         RegisterQuery("AllRelatedInstanceNodes_NoGrouping_BothDirections", *expected);
+        }
+
+    // AllRelatedInstanceNodes_InstanceLabelOverride_AppliedByPriority
+        {
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(&ret_Gadget, bvector<RelatedClass>(), {ret_Widget.GetPropertyP("Description"), ret_Widget.GetPropertyP("MyID")});
+        
+        ComplexNavigationQueryPtr nestedQuery1 = ComplexNavigationQuery::Create();
+        nestedQuery1->SelectContract(*contract, "this");
+        nestedQuery1->From(ret_Gadget, true, "this");
+        nestedQuery1->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "related", "rel_RET_WidgetHasGadget_0"), false);
+        nestedQuery1->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
+
+        ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
+        nestedQuery2->SelectContract(*contract, "this");
+        nestedQuery2->From(ret_Gadget, true, "this");
+        nestedQuery2->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "related", "rel_RET_WidgetHasGadgets_0"), false);
+        nestedQuery2->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
+        
+        ComplexNavigationQueryPtr nestedQuery3 = ComplexNavigationQuery::Create();
+        nestedQuery3->SelectContract(*contract, "this");
+        nestedQuery3->From(ret_Gadget, true, "this");
+        nestedQuery3->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetsHaveGadgets, false, "related", "rel_RET_WidgetsHaveGadgets_0"), false);
+        nestedQuery3->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
+        
+        ComplexNavigationQueryPtr nestedQuery4 = ComplexNavigationQuery::Create();
+        nestedQuery4->SelectContract(*contract, "this");
+        nestedQuery4->From(ret_Gadget, true, "this");
+        nestedQuery4->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetsHaveGadgets2, false, "related", "rel_RET_WidgetsHaveGadgets2_0"), false);
+        nestedQuery4->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
+
+        ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
+        expected->SelectAll();
+        expected->From(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*nestedQuery1, *nestedQuery2), *nestedQuery3), *nestedQuery4));
+        expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
+
+        expected->GetResultParametersR().GetNavNodeExtendedDataR().SetParentECClassId(ret_Widget.GetId());
+        expected->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
+        expected->GetResultParametersR().GetMatchingRelationshipIds().insert(ret_WidgetHasGadget.GetId());
+        expected->GetResultParametersR().GetMatchingRelationshipIds().insert(ret_WidgetHasGadgets.GetId());
+        expected->GetResultParametersR().GetMatchingRelationshipIds().insert(ret_WidgetsHaveGadgets.GetId());
+        expected->GetResultParametersR().GetMatchingRelationshipIds().insert(ret_WidgetsHaveGadgets2.GetId());
+
+        RegisterQuery("AllRelatedInstanceNodes_InstanceLabelOverride_AppliedByPriority", *expected);
+        }
+
+    // AllRelatedInstanceNodes_InstanceLabelOverride_OverrideOnlySpecifiedClassInstancesLabels
+        {
+        ComplexNavigationQueryPtr nestedQuery1 = ComplexNavigationQuery::Create();
+        nestedQuery1->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Widget), "this");
+        nestedQuery1->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "related", "rel_RET_WidgetHasGadgets_0"), false);
+        nestedQuery1->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
+
+        ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
+        nestedQuery2->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Widget), "this");
+        nestedQuery2->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0"), false);
+        nestedQuery2->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
+
+        ComplexNavigationQueryPtr nestedQuery3 = ComplexNavigationQuery::Create();
+        nestedQuery3->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Widget), "this");
+        nestedQuery3->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets, true, "related", "rel_RET_WidgetsHaveGadgets_0"), false);
+        nestedQuery3->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
+
+        ComplexNavigationQueryPtr nestedQuery4 = ComplexNavigationQuery::Create();
+        nestedQuery4->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Widget), "this");
+        nestedQuery4->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0"), false);
+        nestedQuery4->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
+
+        ComplexNavigationQueryPtr nestedQuery5 = ComplexNavigationQuery::Create();
+        nestedQuery5->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Sprocket, bvector<RelatedClass>(), {ret_Sprocket.GetPropertyP("MyID")}), "this");
+        nestedQuery5->From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0"), false);
+        nestedQuery5->Where("[related].[ECInstanceId] = ?", { new BoundQueryId(ECInstanceId((uint64_t)123)) });
+    
+        ComplexNavigationQueryPtr nestedQuery6 = ComplexNavigationQuery::Create();
+        nestedQuery6->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Sprocket, bvector<RelatedClass>(), {ret_Sprocket.GetPropertyP("MyID")}), "this");
+        nestedQuery6->From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0"), false);
+        nestedQuery6->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
+
+        ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
+        expected->SelectAll();
+        expected->From(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*UnionNavigationQuery::Create(*nestedQuery1, *nestedQuery2), *nestedQuery3), *nestedQuery4), *nestedQuery5), *nestedQuery6));
+        expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
+
+        expected->GetResultParametersR().GetNavNodeExtendedDataR().SetParentECClassId(ret_Gadget.GetId());
+        expected->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
+        expected->GetResultParametersR().GetMatchingRelationshipIds().insert(ret_WidgetHasGadget.GetId());
+        expected->GetResultParametersR().GetMatchingRelationshipIds().insert(ret_WidgetHasGadgets.GetId());
+        expected->GetResultParametersR().GetMatchingRelationshipIds().insert(ret_WidgetsHaveGadgets.GetId());
+        expected->GetResultParametersR().GetMatchingRelationshipIds().insert(ret_WidgetsHaveGadgets2.GetId());
+        expected->GetResultParametersR().GetMatchingRelationshipIds().insert(ret_GadgetHasSprocket.GetId());
+        expected->GetResultParametersR().GetMatchingRelationshipIds().insert(ret_GadgetHasSprockets.GetId());
+
+        RegisterQuery("AllRelatedInstanceNodes_InstanceLabelOverride_OverrideOnlySpecifiedClassInstancesLabels", *expected);
         }
 
     // RelatedInstanceNodes_SkipOneRelatedLevel_WidgetToSprocket
@@ -1005,17 +1174,17 @@ void ExpectedQueries::RegisterExpectedQueries()
         nestedQuery1->SelectContract(*contract, "this");
         nestedQuery1->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprocket, true, "related", "rel_RET_GadgetHasSprocket_0"), false);
         nestedQuery1->Where("[related].[ECInstanceId] = ?", { new BoundQueryId(ECInstanceId((uint64_t)123)) });
-        nestedQuery1->Where("InVirtualSet(?, [this].[ECInstanceId]) "
-            "AND GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
-            { new BoundQueryIdSet({ ECInstanceId((uint64_t)1) }), new BoundQueryECValue(ECValue("MyLabel")) });
+        nestedQuery1->Where("[this].[ECInstanceId] IN (?) AND "
+            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
+            { new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("MyLabel")) });
 
         ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
         nestedQuery2->SelectContract(*contract, "this");
         nestedQuery2->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "related", "rel_RET_GadgetHasSprockets_0"), false);
         nestedQuery2->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
-        nestedQuery2->Where("InVirtualSet(?, [this].[ECInstanceId]) "
-            "AND GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
-            {new BoundQueryIdSet({ECInstanceId((uint64_t)1)}), new BoundQueryECValue(ECValue("MyLabel"))});
+        nestedQuery2->Where("[this].[ECInstanceId] IN (?) AND "
+            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
+            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("MyLabel"))});
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();
@@ -1079,33 +1248,33 @@ void ExpectedQueries::RegisterExpectedQueries()
         nestedQuery1->SelectContract(*contract, "this");
         nestedQuery1->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "related", "rel_RET_WidgetHasGadgets_0"), false);
         nestedQuery1->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
-        nestedQuery1->Where("InVirtualSet(?, [this].[ECInstanceId]) "
-            "AND GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
-            {new BoundQueryIdSet({ECInstanceId((uint64_t)1)}), new BoundQueryECValue(ECValue("Label Grouping Node"))});
+        nestedQuery1->Where("[this].[ECInstanceId] IN (?) AND "
+            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
+            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("Label Grouping Node"))});
     
         ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
         nestedQuery2->SelectContract(*contract, "this");
         nestedQuery2->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0"), false);
         nestedQuery2->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
-        nestedQuery2->Where("InVirtualSet(?, [this].[ECInstanceId]) "
-            "AND GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
-            {new BoundQueryIdSet({ECInstanceId((uint64_t)1)}), new BoundQueryECValue(ECValue("Label Grouping Node"))});
+        nestedQuery2->Where("[this].[ECInstanceId] IN (?) AND "
+            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
+            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("Label Grouping Node"))});
         
         ComplexNavigationQueryPtr nestedQuery3 = ComplexNavigationQuery::Create();
         nestedQuery3->SelectContract(*contract, "this");
         nestedQuery3->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets, true, "related", "rel_RET_WidgetsHaveGadgets_0"), false);
         nestedQuery3->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
-        nestedQuery3->Where("InVirtualSet(?, [this].[ECInstanceId]) "
-            "AND GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
-            {new BoundQueryIdSet({ECInstanceId((uint64_t)1)}), new BoundQueryECValue(ECValue("Label Grouping Node"))});
+        nestedQuery3->Where("[this].[ECInstanceId] IN (?) AND "
+            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
+            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("Label Grouping Node"))});
         
         ComplexNavigationQueryPtr nestedQuery4 = ComplexNavigationQuery::Create();
         nestedQuery4->SelectContract(*contract, "this");
         nestedQuery4->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0"), false);
         nestedQuery4->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
-        nestedQuery4->Where("InVirtualSet(?, [this].[ECInstanceId]) "
-            "AND GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
-            {new BoundQueryIdSet({ECInstanceId((uint64_t)1)}), new BoundQueryECValue(ECValue("Label Grouping Node"))});
+        nestedQuery4->Where("[this].[ECInstanceId] IN (?) AND "
+            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
+            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("Label Grouping Node"))});
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();
@@ -1201,9 +1370,9 @@ void ExpectedQueries::RegisterExpectedQueries()
         nestedQuery->SelectContract(*contract, "this");
         nestedQuery->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "related", "rel_RET_WidgetHasGadget"), false);
         nestedQuery->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
-        nestedQuery->Where("InVirtualSet(?, [this].[ECInstanceId]) "
-            "AND GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
-            {new BoundQueryIdSet({ECInstanceId((uint64_t)1)}), new BoundQueryECValue(ECValue("MyLabel"))});
+        nestedQuery->Where("[this].[ECInstanceId] IN (?) AND "
+            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
+            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("MyLabel"))});
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();
@@ -1225,9 +1394,9 @@ void ExpectedQueries::RegisterExpectedQueries()
         nestedQuery->SelectContract(*contract, "this");
         nestedQuery->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "related", "rel_RET_WidgetHasGadget"), false);
         nestedQuery->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
-        nestedQuery->Where("InVirtualSet(?, [this].[ECInstanceId]) "
-            "AND GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
-            {new BoundQueryIdSet({ECInstanceId((uint64_t)1)}), new BoundQueryECValue(ECValue("Label Grouping Node"))});
+        nestedQuery->Where("[this].[ECInstanceId] IN (?) AND "
+            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
+            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("Label Grouping Node"))});
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();
@@ -1599,7 +1768,51 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         RegisterQuery("RelatedInstanceNodes_InstanceFilter_IsOfClassFunction", *expected);
         }
-        
+
+    // RelatedInstanceNodes_InstanceLabelOverride_AppliedByPriority
+        {    
+        ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+        query->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Widget, bvector<RelatedClass>(), {ret_Widget.GetPropertyP("Description"), ret_Widget.GetPropertyP("MyID")}), "this");
+        query->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0"), false);
+        query->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
+    
+        ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
+        expected->SelectAll();
+        expected->From(*query);
+        expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
+
+        expected->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Backward);
+        expected->GetResultParametersR().GetNavNodeExtendedDataR().SetParentECClassId(ret_Gadget.GetId());
+        expected->GetResultParametersR().GetMatchingRelationshipIds().insert(ret_WidgetHasGadget.GetId());
+
+        RegisterQuery("RelatedInstanceNodes_InstanceLabelOverride_AppliedByPriority", *expected);
+        }
+
+    // RelatedInstanceNodes_InstanceLabelOverride_OverrideOnlySpecifiedClassInstancesLabels
+        {    
+        ComplexNavigationQueryPtr nestedQuery1 = ComplexNavigationQuery::Create();
+        nestedQuery1->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Widget, bvector<RelatedClass>(), {ret_Widget.GetPropertyP("MyID")}), "this");
+        nestedQuery1->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0"), false);
+        nestedQuery1->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
+
+        ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
+        nestedQuery2->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Sprocket), "this");
+        nestedQuery2->From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0"), false);
+        nestedQuery2->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
+    
+        ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
+        expected->SelectAll();
+        expected->From(*UnionNavigationQuery::Create(*nestedQuery1, *nestedQuery2));
+        expected->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
+
+        expected->GetResultParametersR().GetNavNodeExtendedDataR().SetParentECClassId(ret_Gadget.GetId());
+        expected->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(ECRelatedInstanceDirection::Forward);
+        expected->GetResultParametersR().GetMatchingRelationshipIds().insert(ret_WidgetHasGadget.GetId());
+        expected->GetResultParametersR().GetMatchingRelationshipIds().insert(ret_GadgetHasSprockets.GetId());
+
+        RegisterQuery("RelatedInstanceNodes_InstanceLabelOverride_OverrideOnlySpecifiedClassInstancesLabels", *expected);
+        }
+
     // InstancesOfSpecificClasses_ClassNames_NotPolymorphic
         {
         ComplexNavigationQueryPtr nestedQuery1 = ComplexNavigationQuery::Create();
@@ -1689,16 +1902,16 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr nestedQuery1 = ComplexNavigationQuery::Create();
         nestedQuery1->SelectContract(*ECInstanceNodesQueryContract::Create(&b1_Class1A), "this");
         nestedQuery1->From(b1_Class1A, false, "this");
-        nestedQuery1->Where("InVirtualSet(?, [this].[ECInstanceId]) "
-            "AND GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[DisplayLabel], '[]') = ?",
-            {new BoundQueryIdSet({ECInstanceId((uint64_t)1)}), new BoundQueryECValue(ECValue("MyLabel"))});
+        nestedQuery1->Where("[this].[ECInstanceId] IN (?) AND "
+            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[DisplayLabel], '[]') = ?",
+            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("MyLabel"))});
 
         ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
         nestedQuery2->SelectContract(*ECInstanceNodesQueryContract::Create(&b1_Class1B), "this");
         nestedQuery2->From(b1_Class1B, false, "this");
-        nestedQuery2->Where("InVirtualSet(?, [this].[ECInstanceId]) "
-            "AND GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[DisplayLabel], '[]') = ?",
-            {new BoundQueryIdSet({ECInstanceId((uint64_t)1)}), new BoundQueryECValue(ECValue("MyLabel"))});
+        nestedQuery2->Where("[this].[ECInstanceId] IN (?) AND "
+            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[DisplayLabel], '[]') = ?",
+            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("MyLabel"))});
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();
@@ -1729,9 +1942,9 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr nestedQuery = ComplexNavigationQuery::Create();
         nestedQuery->SelectContract(*contract, "this");
         nestedQuery->From(b1_Class1A, false, "this");
-        nestedQuery->Where("InVirtualSet(?, [this].[ECInstanceId]) AND "
+        nestedQuery->Where("[this].[ECInstanceId] IN (?) AND "
             "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[DisplayLabel], '[]') = ?",
-            {new BoundQueryIdSet({ECInstanceId((uint64_t)1)}), new BoundQueryECValue(ECValue("Label Grouping Node"))});
+            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("Label Grouping Node"))});
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();
@@ -1853,6 +2066,41 @@ void ExpectedQueries::RegisterExpectedQueries()
         RegisterQuery("InstancesOfSpecificClasses_InstanceFilter_ReferencingGrandParentAndParentInstance", *expected);
         }
 
+    // InstancesOfSpecificClasses_InstanceLabelOverride_OverrideOnlySpecifiedClassInstancesLabels
+        {
+        NavigationQueryContractPtr gadgetContract = ECInstanceNodesQueryContract::Create(&ret_Gadget);
+        ComplexNavigationQueryPtr gadgetQuery = ComplexNavigationQuery::Create();
+        gadgetQuery->SelectContract(*gadgetContract, "this");
+        gadgetQuery->From(ret_Gadget, false, "this");
+
+        NavigationQueryContractPtr widgetContract = ECInstanceNodesQueryContract::Create(&ret_Widget, bvector<RelatedClass>(), {ret_Widget.GetPropertyP("MyID")});   
+        ComplexNavigationQueryPtr widgetQuery = ComplexNavigationQuery::Create();
+        widgetQuery->SelectContract(*widgetContract, "this");
+        widgetQuery->From(ret_Widget, false, "this");
+
+        ComplexNavigationQueryPtr sorted = ComplexNavigationQuery::Create();
+        sorted->SelectAll();
+        sorted->From(*UnionNavigationQuery::Create(*gadgetQuery, *widgetQuery));
+        sorted->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
+        
+        RegisterQuery("InstancesOfSpecificClasses_InstanceLabelOverride_OverrideOnlySpecifiedClassInstancesLabels", *sorted);
+        }
+
+    // InstancesOfSpecificClasses_InstanceLabelOverride_AppliedByPriority
+        {
+        NavigationQueryContractPtr widgetContract = ECInstanceNodesQueryContract::Create(&ret_Widget, bvector<RelatedClass>(), {ret_Widget.GetPropertyP("Description"), ret_Widget.GetPropertyP("MyID")});   
+        ComplexNavigationQueryPtr widgetQuery = ComplexNavigationQuery::Create();
+        widgetQuery->SelectContract(*widgetContract, "this");
+        widgetQuery->From(ret_Widget, false, "this");
+
+        ComplexNavigationQueryPtr sorted = ComplexNavigationQuery::Create();
+        sorted->SelectAll();
+        sorted->From(*widgetQuery);
+        sorted->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
+        
+        RegisterQuery("InstancesOfSpecificClasses_InstanceLabelOverride_AppliedByPriority", *sorted);
+        }
+
     // SearchResultInstanceNodes_NoGrouping
         {
         StringNavigationQueryPtr searchQuery = StringNavigationQuery::Create(SEARCH_NODE_QUERY_PROCESSED);
@@ -1954,9 +2202,9 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr instancesQuery = ComplexNavigationQuery::Create();
         instancesQuery->SelectContract(*contract, "searchQuery");
         instancesQuery->From(*searchQuery, "searchQuery");
-        instancesQuery->Where("InVirtualSet(?, [searchQuery].[" SEARCH_QUERY_FIELD_ECInstanceId "]) "
-            "AND GetECInstanceDisplayLabel([searchQuery].[" SEARCH_QUERY_FIELD_ECClassId "], [searchQuery].[" SEARCH_QUERY_FIELD_ECInstanceId "], '', '[]') = ?",
-            {new BoundQueryIdSet({ECInstanceId((uint64_t)1)}), new BoundQueryECValue(ECValue("MyLabel"))});
+        instancesQuery->Where("[searchQuery].[" SEARCH_QUERY_FIELD_ECInstanceId "] IN (?) AND "
+            "GetECInstanceDisplayLabel([searchQuery].[" SEARCH_QUERY_FIELD_ECClassId "], [searchQuery].[" SEARCH_QUERY_FIELD_ECInstanceId "], '', '[]') = ?",
+            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("MyLabel"))});
 
         ComplexNavigationQueryPtr ordered = ComplexNavigationQuery::Create();
         ordered->SelectAll();
@@ -2002,9 +2250,9 @@ void ExpectedQueries::RegisterExpectedQueries()
         instancesQuery->SelectContract(*contract, "searchQuery");
         instancesQuery->From(*searchQuery, "searchQuery");
         instancesQuery->Where("[searchQuery].[" SEARCH_QUERY_FIELD_ECClassId "] = ?"
-            " AND InVirtualSet(?, [searchQuery].[" SEARCH_QUERY_FIELD_ECInstanceId "])"
+            " AND [searchQuery].[" SEARCH_QUERY_FIELD_ECInstanceId "] IN (?)"
             " AND GetECInstanceDisplayLabel([searchQuery].[" SEARCH_QUERY_FIELD_ECClassId "], [searchQuery].[" SEARCH_QUERY_FIELD_ECInstanceId "], '', '[]') = ?",
-            {new BoundQueryId(ret_Widget.GetId()), new BoundQueryIdSet({ECInstanceId((uint64_t)1)}), new BoundQueryECValue(ECValue("Label Grouping Node"))});
+            {new BoundQueryId(ret_Widget.GetId()), new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("Label Grouping Node"))});
 
         ComplexNavigationQueryPtr ordered = ComplexNavigationQuery::Create();
         ordered->SelectAll();
@@ -2032,6 +2280,59 @@ void ExpectedQueries::RegisterExpectedQueries()
         ordered->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
         
         RegisterQuery("SearchResultInstanceNodes_UsesParentPropertyValueQuery", *ordered);
+        }
+
+    // SearchResultInstanceNodes_InstanceLabelOverride_AppliedByPriority
+        {
+        StringNavigationQueryPtr searchQuery = StringNavigationQuery::Create(SEARCH_NODE_QUERY_PROCESSED);
+
+        RefCountedPtr<DisplayLabelGroupingNodesQueryContract> contract = DisplayLabelGroupingNodesQueryContract::Create(&ret_Widget, true, bvector<RelatedClass>(), {ret_Widget.GetPropertyP("IntProperty"), ret_Widget.GetPropertyP("MyID")});
+        contract->SetECClassIdFieldName(SEARCH_QUERY_FIELD_ECClassId);
+        contract->SetECInstanceIdFieldName(SEARCH_QUERY_FIELD_ECInstanceId);
+
+        ComplexNavigationQueryPtr instancesQuery = ComplexNavigationQuery::Create();
+        instancesQuery->SelectContract(*contract, "searchQuery");
+        instancesQuery->From(*searchQuery, "searchQuery");
+
+        ComplexNavigationQueryPtr ordered = ComplexNavigationQuery::Create();
+        ordered->SelectAll();
+        ordered->From(*instancesQuery);
+        ordered->GroupByContract(*contract);
+        ordered->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
+        ordered->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::DisplayLabel);
+        ordered->GetResultParametersR().GetNavNodeExtendedDataR().SetHideIfOnlyOneChild(true);
+        
+        RegisterQuery("SearchResultInstanceNodes_InstanceLabelOverride_AppliedByPriority", *ordered);
+        }
+
+    // SearchResultInstanceNodes_InstanceLabelOverride_OverrideOnlySpecifiedClassInstancesLabels
+        {
+        StringNavigationQueryPtr widgetSearchQuery = StringNavigationQuery::Create(SEARCH_NODE_QUERY_PROCESSED);
+
+        RefCountedPtr<DisplayLabelGroupingNodesQueryContract> widgetContract = DisplayLabelGroupingNodesQueryContract::Create(&ret_Widget, true, bvector<RelatedClass>(), {ret_Widget.GetPropertyP("MyID")});
+        widgetContract->SetECClassIdFieldName(SEARCH_QUERY_FIELD_ECClassId);
+        widgetContract->SetECInstanceIdFieldName(SEARCH_QUERY_FIELD_ECInstanceId);
+        ComplexNavigationQueryPtr widgetInstancesQuery = ComplexNavigationQuery::Create();
+        widgetInstancesQuery->SelectContract(*widgetContract, "searchQuery");
+        widgetInstancesQuery->From(*widgetSearchQuery, "searchQuery");
+
+        StringNavigationQueryPtr gadgetSearchQuery = StringNavigationQuery::Create("SELECT MyID, ECInstanceId AS RulesEngine_ECInstanceId, ECClassId AS RulesEngine_ECClassId FROM [RulesEngineTest].[Gadget] WHERE [Gadget].[ECInstanceId] > 0");
+        RefCountedPtr<DisplayLabelGroupingNodesQueryContract> gadgetContract = DisplayLabelGroupingNodesQueryContract::Create(&ret_Gadget);
+        gadgetContract->SetECClassIdFieldName(SEARCH_QUERY_FIELD_ECClassId);
+        gadgetContract->SetECInstanceIdFieldName(SEARCH_QUERY_FIELD_ECInstanceId);
+        ComplexNavigationQueryPtr gadgetInstancesQuery = ComplexNavigationQuery::Create();
+        gadgetInstancesQuery->SelectContract(*gadgetContract, "searchQuery");
+        gadgetInstancesQuery->From(*gadgetSearchQuery, "searchQuery");
+
+        ComplexNavigationQueryPtr ordered = ComplexNavigationQuery::Create();
+        ordered->SelectAll();
+        ordered->From(*UnionNavigationQuery::Create(*widgetInstancesQuery, *gadgetInstancesQuery));
+        ordered->GroupByContract(*gadgetContract);
+        ordered->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
+        ordered->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::DisplayLabel);
+        ordered->GetResultParametersR().GetNavNodeExtendedDataR().SetHideIfOnlyOneChild(true);
+        
+        RegisterQuery("SearchResultInstanceNodes_InstanceLabelOverride_OverrideOnlySpecifiedClassInstancesLabels", *ordered);
         }
 
     // SortingRule_SortByRulesAndLabelAndNotSorted
@@ -3053,7 +3354,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         RelatedClass relatedInstanceClass(b4_ClassB, b4_ClassC, b4_ClassBHasClassC, true, "c", "rel_b4_ClassBHasClassC_0");
         NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(&b4_ClassB, {relatedInstanceClass});
     
-        Utf8PrintfString whereClause("InVirtualSet(?, [this].[ECInstanceId]) "
+        Utf8PrintfString whereClause("[this].[ECInstanceId] IN (?) "
             "AND GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[{\"Alias\":\"c\",\"ECClassId\":' || CAST(IFNULL([c].[ECClassId], %" PRIu64 ") AS TEXT) || ',\"ECInstanceId\":' || CAST(IFNULL([c].[ECInstanceId], 0) AS TEXT) || '}]') = ? "
             "AND [c].[SomeProperty] = ? "
             "AND [this].[Description] = ? "
@@ -3065,7 +3366,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         nested->Join(relatedInstanceClass, true);
         nested->Where(whereClause.c_str(),
             {
-            new BoundQueryIdSet({ECInstanceId((uint64_t)1)}), 
+            new BoundQueryId(ECInstanceId((uint64_t)1)),
             new BoundQueryECValue(ECValue("test")),
             new BoundQueryECValue(ECValue(99)),
             new BoundQueryECValue(ECValue("TestGroupingDescription")),
@@ -3128,12 +3429,13 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
 
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
         
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b1_Class1A, *query), "this");
         query->From(b1_Class1A, false, "this");
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -3145,13 +3447,14 @@ void ExpectedQueries::RegisterExpectedQueries()
         {
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
-
+        
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
         
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b1_Class1A, *query), "this");
         query->From(b1_Class1A, false, "this");
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet(bvector<ECInstanceId>{ECInstanceId((uint64_t)123), ECInstanceId((uint64_t)125)})});
+        query->Where("[this].[ECInstanceId] IN (?,?)", {new BoundQueryId(ECInstanceId((uint64_t)123)), new BoundQueryId(ECInstanceId((uint64_t)125))});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -3164,19 +3467,20 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b2_Class2, false));
-
+        
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
         field = &AddField(*descriptor, b2_Class2, ContentDescriptor::Property("this", b2_Class2, *b2_Class2.GetPropertyP("Name")));
 
         ComplexContentQueryPtr query1 = ComplexContentQuery::Create();
         query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b1_Class1A, *query1), "this");
         query1->From(b1_Class1A, false, "this");
-        query1->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query1->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
         query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &b2_Class2, *query2), "this");
         query2->From(b2_Class2, false, "this");
-        query2->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query2->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
 #ifdef WIP_SORTING_GRID_CONTENT
@@ -3194,7 +3498,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
             {RelatedClass(b4_ClassC, b4_ClassB, b4_ClassBHasClassC, false, "nav_b4_ClassB_0", "nav_b4_ClassBHasClassC_0")}
             });
-
+        
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, b4_ClassB, ContentDescriptor::Property("this", b4_ClassB, *b4_ClassB.GetPropertyP("SomeProperty")));
         descriptor->GetAllFields().back()->AsPropertiesField()->AddProperty(ContentDescriptor::Property("this", b4_ClassC, *b4_ClassC.GetPropertyP("SomeProperty")));
         descriptor->GetAllFields().back()->SetName("ClassB_ClassC_SomeProperty");
@@ -3209,13 +3514,13 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query1 = ComplexContentQuery::Create();
         query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b4_ClassB, *query1), "this");
         query1->From(b4_ClassB, false, "this");
-        query1->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query1->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
         query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &b4_ClassC, *query2), "this");
         query2->From(b4_ClassC, false, "this");
         query2->Join(RelatedClass(b4_ClassC, b4_ClassB, b4_ClassBHasClassC, false, "nav_b4_ClassB_0", "nav_b4_ClassBHasClassC_0"), true);
-        query2->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query2->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
 #ifdef WIP_SORTING_GRID_CONTENT
@@ -3232,7 +3537,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
             {RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0")}
             });
-
+        
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, sc_Class3, ContentDescriptor::Property("this", sc_Class3, *sc_Class3.GetPropertyP("PropertyD")));
         field = &AddField(*descriptor, sc_Class3, ContentDescriptor::Property("nav_sc_Class1_0", sc_Class3, *sc_Class3.GetPropertyP("C1")));
         descriptor->AddField(new ContentDescriptor::ECNavigationInstanceIdField(*field->AsPropertiesField()));
@@ -3241,12 +3547,70 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &sc_Class3, *query), "this");
         query->From(sc_Class3, false, "this");
         query->Join(RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0"), true);
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
 
         RegisterQuery("SelectedNodeInstances_RemovesHiddenProperty", *query);
+        }
+
+    // SelectedNodeInstances_RemovesAllHiddenPropertiesWhenHidingAtSpecificationLevel
+        {
+        Utf8CP queryName = "SelectedNodeInstances_RemovesAllHiddenPropertiesWhenHidingAtSpecificationLevel";
+        ECClassCP selectClass = GetECClass(queryName, "PhysicalElement");
+
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(*selectClass, false));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+
+        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        query->SelectContract(*ContentQueryContract::Create(1, *descriptor, selectClass, *query), "this");
+        query->From(*selectClass, false, "this");
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
+#ifdef WIP_SORTING_GRID_CONTENT
+        query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
+#endif
+        RegisterQuery("SelectedNodeInstances_RemovesAllHiddenPropertiesWhenHidingAtSpecificationLevel", *query);
+        }
+
+    // SelectedNodeInstances_RemovesAllHiddenBaseClassPropertiesWhenHidingAtContentModifierLevel
+        {
+        Utf8CP queryName = "SelectedNodeInstances_RemovesAllHiddenBaseClassPropertiesWhenHidingAtContentModifierLevel";
+        ECClassCP selectClass = GetECClass(queryName, "PhysicalElement");
+
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(*selectClass, false));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        AddField(*descriptor, *selectClass, ContentDescriptor::Property("this", *selectClass , *selectClass->GetPropertyP("PhysicalProperty")));
+
+        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        query->SelectContract(*ContentQueryContract::Create(1, *descriptor, selectClass, *query), "this");
+        query->From(*selectClass, false, "this");
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
+#ifdef WIP_SORTING_GRID_CONTENT
+        query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
+#endif
+        RegisterQuery("SelectedNodeInstances_RemovesAllHiddenBaseClassPropertiesWhenHidingAtContentModifierLevel", *query);
+        }
+
+    // SelectedNodeInstances_RemovesAllHiddenDerivedClassPropertiesWhenHidingAtContentModifierLevel
+        {
+        Utf8CP queryName = "SelectedNodeInstances_RemovesAllHiddenDerivedClassPropertiesWhenHidingAtContentModifierLevel";
+        ECClassCP selectClass = GetECClass(queryName, "PhysicalElement");
+
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(*selectClass, false));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+
+        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        query->SelectContract(*ContentQueryContract::Create(1, *descriptor, selectClass, *query), "this");
+        query->From(*selectClass, false, "this");
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
+#ifdef WIP_SORTING_GRID_CONTENT
+        query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
+#endif
+        RegisterQuery("SelectedNodeInstances_RemovesAllHiddenDerivedClassPropertiesWhenHidingAtContentModifierLevel", *query);
         }
 
     // SelectedNodeInstances_RemovesMultipleHiddenProperties
@@ -3256,7 +3620,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
             {RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0")}
             });
-
+        
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, sc_Class3, ContentDescriptor::Property("nav_sc_Class1_0", sc_Class3, *sc_Class3.GetPropertyP("C1")));
         descriptor->AddField(new ContentDescriptor::ECNavigationInstanceIdField(*field->AsPropertiesField()));
 
@@ -3264,7 +3629,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &sc_Class3, *query), "this");
         query->From(sc_Class3, false, "this");
         query->Join(RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0"), true);
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -3282,7 +3647,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
             {RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_1", "nav_sc_Class1HasClass2And3_1")}
             });
-
+        
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category::GetDefaultCategory(), "Class2_Class3_C1", "C1");
         field->AsPropertiesField()->AddProperty(ContentDescriptor::Property("nav_sc_Class1_0", sc_Class2, *sc_Class2.GetPropertyP("C1")));
         field->AsPropertiesField()->AddProperty(ContentDescriptor::Property("nav_sc_Class1_1", sc_Class3, *sc_Class3.GetPropertyP("C1")));
@@ -3294,13 +3660,13 @@ void ExpectedQueries::RegisterExpectedQueries()
         query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &sc_Class2, *query1), "this");
         query1->From(sc_Class2, false, "this");
         query1->Join(RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0"), true);
-        query1->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query1->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
         query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &sc_Class3, *query2), "this");
         query2->From(sc_Class3, false, "this");
         query2->Join(RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_1", "nav_sc_Class1HasClass2And3_1"), true);
-        query2->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query2->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
 #ifdef WIP_SORTING_GRID_CONTENT
@@ -3318,7 +3684,8 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "rel_RET_Widget_1", "rel_RET_WidgetHasGadgets_0")},
             {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}
             });
-
+        
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
         
@@ -3328,8 +3695,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         auto widgetKeyField = new ContentDescriptor::ECInstanceKeyField();
         descriptor->AddField(widgetKeyField);
 
-        field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("rel_RET_Widget_1", ret_Widget, *ret_Widget.GetPropertyP("IntProperty")));
-        const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadgets_0"));
+        field = &AddField(*descriptor, ret_Gadget, CreateProperty("rel_RET_Widget_1", ret_Widget, *ret_Widget.GetPropertyP("IntProperty"),
+            RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadgets_0"), RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName("rel_Gadget_Widget_IntProperty");
         descriptor->GetAllFields().back()->SetLabel("Widget IntProperty");
         widgetKeyField->AddKeyField(*field->AsPropertiesField());
@@ -3339,7 +3706,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->From(ret_Gadget, false, "this");
         query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "rel_RET_Widget_1", "rel_RET_WidgetHasGadgets_0"), true);
         query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"), true);
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -3355,7 +3722,8 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "rel_RET_Widget_1", "rel_RET_WidgetHasGadgets_0")},
             {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}
             });
-
+        
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
         
@@ -3365,14 +3733,14 @@ void ExpectedQueries::RegisterExpectedQueries()
         auto widgetKeyField = new ContentDescriptor::ECInstanceKeyField();
         descriptor->AddField(widgetKeyField);
 
-        field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("rel_RET_Widget_1", ret_Widget, *ret_Widget.GetPropertyP("IntProperty")));
-        const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadgets_0"));
+        field = &AddField(*descriptor, ret_Gadget, CreateProperty("rel_RET_Widget_1", ret_Widget, *ret_Widget.GetPropertyP("IntProperty"),
+            RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadgets_0"), RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName("rel_Gadget_Widget_IntProperty");
         descriptor->GetAllFields().back()->SetLabel("Widget IntProperty");
         widgetKeyField->AddKeyField(*field->AsPropertiesField());
 
-        field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("rel_RET_Widget_1", ret_Widget, *ret_Widget.GetPropertyP("LongProperty")));
-        const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadgets_0"));
+        field = &AddField(*descriptor, ret_Gadget, CreateProperty("rel_RET_Widget_1", ret_Widget, *ret_Widget.GetPropertyP("LongProperty"),
+            RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadgets_0"), RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName("rel_Gadget_Widget_LongProperty");
         descriptor->GetAllFields().back()->SetLabel("Widget LongProperty");
         widgetKeyField->AddKeyField(*field->AsPropertiesField());
@@ -3382,7 +3750,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->From(ret_Gadget, false, "this");
         query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "rel_RET_Widget_1", "rel_RET_WidgetHasGadgets_0"), true);
         query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"), true);
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -3400,6 +3768,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
             });
         
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
         
@@ -3409,20 +3778,20 @@ void ExpectedQueries::RegisterExpectedQueries()
         auto gadgetKeyField = new ContentDescriptor::ECInstanceKeyField();
         descriptor->AddField(gadgetKeyField);
 
-        field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("rel_RET_Gadget_1", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
-        const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprockets_0"));
+        field = &AddField(*descriptor, ret_Sprocket, CreateProperty("rel_RET_Gadget_1", ret_Gadget, *ret_Gadget.GetPropertyP("MyID"),
+            RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprockets_0"), RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName("rel_Sprocket_Gadget_MyID");
         descriptor->GetAllFields().back()->SetLabel("Gadget MyID");
         gadgetKeyField->AddKeyField(*field->AsPropertiesField());
 
-        field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("rel_RET_Gadget_1", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
-        const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprockets_0"));
+        field = &AddField(*descriptor, ret_Sprocket, CreateProperty("rel_RET_Gadget_1", ret_Gadget, *ret_Gadget.GetPropertyP("Description"),
+            RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprockets_0"), RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName("rel_Sprocket_Gadget_Description");
         descriptor->GetAllFields().back()->SetLabel("Gadget Description");
         gadgetKeyField->AddKeyField(*field->AsPropertiesField());
         
-        field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("nav_RET_Widget_0", ret_Gadget, *ret_Gadget.GetPropertyP("Widget")));
-        const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprockets_0"));
+        field = &AddField(*descriptor, ret_Sprocket, CreateProperty("nav_RET_Widget_0", ret_Gadget, *ret_Gadget.GetPropertyP("Widget"),
+            RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprockets_0"), RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName("rel_Sprocket_Gadget_Widget");
         descriptor->GetAllFields().back()->SetLabel("Gadget Widget");
         descriptor->AddField(new ContentDescriptor::ECNavigationInstanceIdField(*field->AsPropertiesField()));
@@ -3437,7 +3806,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")
             }, true);
         query->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -3454,7 +3823,8 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "rel_sc_Class1_1", "rel_sc_Class1HasClass2And3_0")},
             {RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0")}
             });
-
+        
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, sc_Class2, ContentDescriptor::Property("this", sc_Class2, *sc_Class2.GetPropertyP("PropertyB")));
         field = &AddField(*descriptor, sc_Class2, ContentDescriptor::Property("nav_sc_Class1_0", sc_Class2, *sc_Class2.GetPropertyP("C1")));
         descriptor->AddField(new ContentDescriptor::ECNavigationInstanceIdField(*field->AsPropertiesField()));
@@ -3462,8 +3832,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         auto class1KeyField = new ContentDescriptor::ECInstanceKeyField();
         descriptor->AddField(class1KeyField);
 
-        field = &AddField(*descriptor, sc_Class2, ContentDescriptor::Property("rel_sc_Class1_1", sc_Class1, *sc_Class1.GetPropertyP("PropertyA")));
-        const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(sc_Class1, sc_Class2, sc_Class1HasClass2And3, true, "rel_sc_Class2_0", "rel_sc_Class1HasClass2And3_0"));
+        field = &AddField(*descriptor, sc_Class2, CreateProperty("rel_sc_Class1_1", sc_Class1, *sc_Class1.GetPropertyP("PropertyA"),
+            RelatedClass(sc_Class1, sc_Class2, sc_Class1HasClass2And3, true, "rel_sc_Class2_0", "rel_sc_Class1HasClass2And3_0"), RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName("rel_Class2_Class1_PropertyA");
         descriptor->GetAllFields().back()->SetLabel("Class1 PropertyA");
         class1KeyField->AddKeyField(*field->AsPropertiesField());
@@ -3473,7 +3843,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->From(sc_Class2, false, "this");
         query->Join(RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "rel_sc_Class1_1", "rel_sc_Class1HasClass2And3_0"), true);
         query->Join(RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0"), true);
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -3493,6 +3863,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}
             });
         
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
 
@@ -3502,8 +3873,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         auto widgetKeyField = new ContentDescriptor::ECInstanceKeyField();
         descriptor->AddField(widgetKeyField);
 
-        field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("rel_RET_Widget_1", ret_Widget, *ret_Widget.GetPropertyP("IntProperty")));
-        const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadget_0"));
+        field = &AddField(*descriptor, ret_Gadget, CreateProperty("rel_RET_Widget_1", ret_Widget, *ret_Widget.GetPropertyP("IntProperty"),
+            RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadget_0"), RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName("rel_Gadget_Widget_IntProperty");
         descriptor->GetAllFields().back()->SetLabel("Widget IntProperty");
         widgetKeyField->AddKeyField(*field->AsPropertiesField());
@@ -3511,8 +3882,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         auto sprocketKeyField = new ContentDescriptor::ECInstanceKeyField();
         descriptor->AddField(sprocketKeyField);
 
-        field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("nav_RET_Gadget_2", ret_Sprocket, *ret_Sprocket.GetPropertyP("Gadget")));
-        const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "rel_RET_Gadget_1", "rel_RET_GadgetHasSprocket_0"));
+        field = &AddField(*descriptor, ret_Gadget, CreateProperty("nav_RET_Gadget_2", ret_Sprocket, *ret_Sprocket.GetPropertyP("Gadget"),
+            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "rel_RET_Gadget_1", "rel_RET_GadgetHasSprocket_0"), RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName("rel_Gadget_Sprocket_Gadget");
         descriptor->GetAllFields().back()->SetLabel("Sprocket Gadget");
         descriptor->AddField(new ContentDescriptor::ECNavigationInstanceIdField(*field->AsPropertiesField()));
@@ -3532,7 +3903,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             }, true);
 
 
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -3549,7 +3920,8 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "rel_RET_Widget_2", "rel_RET_WidgetHasGadget_0")},
             {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}
             });
-
+        
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
         
@@ -3559,11 +3931,11 @@ void ExpectedQueries::RegisterExpectedQueries()
         auto widgetKeyField = new ContentDescriptor::ECInstanceKeyField();
         descriptor->AddField(widgetKeyField);
 
-        field = new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category::GetDefaultCategory(), "Widget_Description", "Description");
-        field->AsPropertiesField()->AddProperty(ContentDescriptor::Property("rel_RET_Widget_1", ret_Widget, *ret_Widget.GetPropertyP("Description")));
-        const_cast<ContentDescriptor::Property&>(field->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadgets_0"));
-        field->AsPropertiesField()->AddProperty(ContentDescriptor::Property("rel_RET_Widget_2", ret_Widget, *ret_Widget.GetPropertyP("Description")));
-        const_cast<ContentDescriptor::Property&>(field->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadgets_0"));
+        field = new ContentDescriptor::ECPropertiesField(CreateCategory(ret_Widget), "Widget_Description", "Description");
+        field->AsPropertiesField()->AddProperty(CreateProperty("rel_RET_Widget_1", ret_Widget, *ret_Widget.GetPropertyP("Description"),
+            RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadgets_0"), RelationshipMeaning::RelatedInstance));
+        field->AsPropertiesField()->AddProperty(CreateProperty("rel_RET_Widget_2", ret_Widget, *ret_Widget.GetPropertyP("Description"),
+            RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadgets_0"), RelationshipMeaning::RelatedInstance));
         descriptor->AddField(field);
         descriptor->GetAllFields().back()->SetName("rel_Gadget_Widget_Description");
         descriptor->GetAllFields().back()->SetLabel("Widget Description");
@@ -3575,7 +3947,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "rel_RET_Widget_1", "rel_RET_WidgetHasGadgets_0"), true);
         query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "rel_RET_Widget_2", "rel_RET_WidgetHasGadget_0"), true);
         query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"), true);
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
@@ -3607,7 +3979,8 @@ void ExpectedQueries::RegisterExpectedQueries()
             path2,
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
             });
-
+        
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
         
@@ -3617,11 +3990,11 @@ void ExpectedQueries::RegisterExpectedQueries()
         auto widgetKeyField = new ContentDescriptor::ECInstanceKeyField();
         descriptor->AddField(widgetKeyField);
 
-        field = new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category::GetDefaultCategory(), "Widget_IntProperty", "IntProperty");
-        field->AsPropertiesField()->AddProperty(ContentDescriptor::Property("rel_RET_Widget_0", ret_Widget, *ret_Widget.GetPropertyP("IntProperty")));
-        const_cast<ContentDescriptor::Property&>(field->AsPropertiesField()->GetProperties().back()).SetIsRelated(nestedRelatedPropertiesPath1);
-        field->AsPropertiesField()->AddProperty(ContentDescriptor::Property("rel_RET_Widget_1", ret_Widget, *ret_Widget.GetPropertyP("IntProperty")));
-        const_cast<ContentDescriptor::Property&>(field->AsPropertiesField()->GetProperties().back()).SetIsRelated(nestedRelatedPropertiesPath2);
+        field = new ContentDescriptor::ECPropertiesField(CreateCategory(ret_Widget), "Widget_IntProperty", "IntProperty");
+        field->AsPropertiesField()->AddProperty(CreateProperty("rel_RET_Widget_0", ret_Widget, *ret_Widget.GetPropertyP("IntProperty"),
+            nestedRelatedPropertiesPath1, RelationshipMeaning::RelatedInstance));
+        field->AsPropertiesField()->AddProperty(CreateProperty("rel_RET_Widget_1", ret_Widget, *ret_Widget.GetPropertyP("IntProperty"),
+            nestedRelatedPropertiesPath2, RelationshipMeaning::RelatedInstance));
         descriptor->AddField(field);
         descriptor->GetAllFields().back()->SetName("rel_Sprocket_Gadget_Widget_IntProperty");
         descriptor->GetAllFields().back()->SetLabel("Widget IntProperty");
@@ -3634,7 +4007,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->Join(path2, true);
         query->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
 
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -3657,7 +4030,8 @@ void ExpectedQueries::RegisterExpectedQueries()
             relationshipPath,
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
             });
-
+        
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
         
@@ -3667,8 +4041,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         auto widgetKeyField = new ContentDescriptor::ECInstanceKeyField();
         descriptor->AddField(widgetKeyField);
 
-        field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("rel_RET_Widget_0", ret_Widget, *ret_Widget.GetPropertyP("Description")));
-        const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(nestedRelatedPropertiesPath);
+        field = &AddField(*descriptor, ret_Sprocket, CreateProperty("rel_RET_Widget_0", ret_Widget, *ret_Widget.GetPropertyP("Description"),
+            nestedRelatedPropertiesPath, RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName("rel_Sprocket_Gadget_Widget_Description");
         descriptor->GetAllFields().back()->SetLabel("Widget Description");
         widgetKeyField->AddKeyField(*field->AsPropertiesField());
@@ -3679,7 +4053,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->Join(relationshipPath, true);
         query->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
 
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -3708,7 +4082,8 @@ void ExpectedQueries::RegisterExpectedQueries()
             gadgetRelationshipPath,
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
             });
-
+        
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
         
@@ -3718,8 +4093,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         auto gadgetKeyField = new ContentDescriptor::ECInstanceKeyField();
         descriptor->AddField(gadgetKeyField);
 
-        field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("rel_RET_Gadget_1", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
-        const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(gadgetRelatedPropertiesPath);
+        field = &AddField(*descriptor, ret_Sprocket, CreateProperty("rel_RET_Gadget_1", ret_Gadget, *ret_Gadget.GetPropertyP("Description"),
+            gadgetRelatedPropertiesPath, RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName("rel_Sprocket_Gadget_Description");
         descriptor->GetAllFields().back()->SetLabel("Gadget Description");
         gadgetKeyField->AddKeyField(*field->AsPropertiesField());
@@ -3727,8 +4102,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         auto widgetKeyField = new ContentDescriptor::ECInstanceKeyField();
         descriptor->AddField(widgetKeyField);
 
-        field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("rel_RET_Widget_0", ret_Widget, *ret_Widget.GetPropertyP("Description")));
-        const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(widgetRelatedPropertiesPath);
+        field = &AddField(*descriptor, ret_Sprocket, CreateProperty("rel_RET_Widget_0", ret_Widget, *ret_Widget.GetPropertyP("Description"),
+            widgetRelatedPropertiesPath, RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName("rel_Sprocket_Gadget_Widget_Description");
         descriptor->GetAllFields().back()->SetLabel("Widget Description");
         widgetKeyField->AddKeyField(*field->AsPropertiesField());
@@ -3740,7 +4115,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->Join(widgetRelationshipPath, true);
         query->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
 
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -3753,29 +4128,122 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->AddContentFlag(ContentFlags::DistinctValues);
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_ClassH, false));
+
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         AddField(*descriptor, ret_ClassH, ContentDescriptor::Property("this", ret_ClassH, *ret_ClassH.GetPropertyP("PointProperty")));
 
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         ContentQueryContractPtr contract = ContentQueryContract::Create(1, *descriptor, &ret_ClassH, *query);
         query->SelectContract(*contract, "this");
         query->From(ret_ClassH, false, "this");
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         query->GroupByContract(*contract);
         RegisterQuery("SelectedNodeInstances_SelectsRawValueAndGroupsByDisplayValue", *query);
         }
 
+    //SelectedNodeInstances_InstanceLabelOverride_AppliedByPriority
+        {
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Grid);
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
+
+        ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField("Label", 0);
+        bmap<ECClassCP, bvector<ECPropertyCP>> labelOverrideMap;
+        labelOverrideMap.Insert(&ret_Widget, {ret_Widget.GetPropertyP("Description"), ret_Widget.GetPropertyP("MyID")});
+        displayLabelField->SetPropertiesMap(labelOverrideMap);
+        descriptor->AddField(displayLabelField);
+        AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("Description")));
+        AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("MyID")));
+
+        descriptor->SetContentFlags((int)ContentFlags::ShowLabels);
+
+        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Widget, *query), "this");
+        query->From(ret_Widget, false, "this");
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))});
+
+        RegisterQuery("SelectedNodeInstances_InstanceLabelOverride_AppliedByPriority", *query);
+        }
+
+    //SelectedNodeInstances_InstanceLabelOverride_OverrideSpecifiedClassInstancesLabelsWhenMultipleClassesSelected
+        {
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Grid);
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, false));
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
+
+        ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField("Label", 0);
+        bmap<ECClassCP, bvector<ECPropertyCP>> labelOverrideMap;
+        labelOverrideMap.Insert(&ret_Widget, {ret_Widget.GetPropertyP("MyID")});
+        displayLabelField->SetPropertiesMap(labelOverrideMap);
+        descriptor->AddField(displayLabelField);        
+
+        field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
+        descriptor->GetAllFields().back()->AsPropertiesField()->AddProperty(ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("MyID")));
+        descriptor->GetAllFields().back()->SetName("Gadget_Widget_MyID");
+
+        descriptor->SetContentFlags((int)ContentFlags::ShowLabels);
+        
+        ComplexContentQueryPtr q1 = ComplexContentQuery::Create();
+        q1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Gadget, *q1), "this");
+        q1->From(ret_Gadget, false, "this");
+        q1->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)1))});
+        
+        ComplexContentQueryPtr q2 = ComplexContentQuery::Create();
+        q2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &ret_Widget, *q2), "this");
+        q2->From(ret_Widget, false, "this");
+        q2->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)2))});
+
+        UnionContentQueryPtr query = UnionContentQuery::Create(*q1, *q2);
+        RegisterQuery("SelectedNodeInstances_InstanceLabelOverride_OverrideSpecifiedClassInstancesLabelsWhenMultipleClassesSelected", *query);
+        }
+
+    //SelectedNodeInstances_InstanceLabelOverride_OverrideNavigationProperty
+        {
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Grid);
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, false));
+        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({{RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}});
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
+
+        ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField("Label", 0);
+        bmap<ECClassCP, bvector<ECPropertyCP>> labelOverrideMap;
+        labelOverrideMap.Insert(&ret_Widget, {ret_Widget.GetPropertyP("MyID")});
+        displayLabelField->SetPropertiesMap(labelOverrideMap);
+        descriptor->AddField(displayLabelField);
+
+        field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
+        descriptor->GetAllFields().back()->AsPropertiesField()->AddProperty(ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("MyID")));
+        descriptor->GetAllFields().back()->SetName("Gadget_Widget_MyID");
+        field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("nav_RET_Widget_0", ret_Gadget, *ret_Gadget.GetPropertyP("Widget")));
+        descriptor->AddField(new ContentDescriptor::ECNavigationInstanceIdField(*field->AsPropertiesField()));
+
+        descriptor->SetContentFlags((int)ContentFlags::ShowLabels);
+
+        ComplexContentQueryPtr q1 = ComplexContentQuery::Create();
+        q1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Gadget, *q1), "this");
+        q1->From(ret_Gadget, false, "this");
+        q1->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"), true);
+        q1->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)1))});
+
+        ComplexContentQueryPtr q2 = ComplexContentQuery::Create();
+        q2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &ret_Widget, *q2), "this");
+        q2->From(ret_Widget, false, "this");
+        q2->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)2))});
+
+        UnionContentQueryPtr query = UnionContentQuery::Create(*q1, *q2);
+        RegisterQuery("SelectedNodeInstances_InstanceLabelOverride_OverrideNavigationProperty", *query);
+        }
     // SetsShowImagesFlag
         {
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
 
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
         descriptor->SetContentFlags((int)ContentFlags::ShowImages);
 
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b1_Class1A, *query), "this");
         query->From(b1_Class1A, false, "this");
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -3788,13 +4256,14 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Grid);
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
 
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
         descriptor->SetContentFlags((int)ContentFlags::ShowLabels);
         
         ComplexContentQueryPtr nested = ComplexContentQuery::Create();
         nested->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b1_Class1A, *nested), "this");
         nested->From(b1_Class1A, false, "this");
-        nested->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        nested->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
 #ifdef WIP_SORTING_GRID_CONTENT
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
@@ -3816,7 +4285,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b1_Class1A, *query), "this");
         query->From(b1_Class1A, false, "this");
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         RegisterQuery("SetsNoFieldsAndKeysOnlyFlagForGraphicsContentType", *query);
         }
@@ -3830,7 +4299,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr nested = ComplexContentQuery::Create();
         nested->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b1_Class1A, *nested), "this");
         nested->From(b1_Class1A, false, "this");
-        nested->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        nested->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
 #ifdef WIP_SORTING_GRID_CONTENT
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
@@ -3848,6 +4317,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
 
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
         
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
@@ -3865,6 +4335,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, true));
 
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
         
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
@@ -3882,6 +4353,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b2_Class2, true));
 
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, b2_Class2, ContentDescriptor::Property("this", b2_Class2, *b2_Class2.GetPropertyP("Name")));
 
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
@@ -3899,6 +4371,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b2_Class2, true));
 
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, b2_Class2, ContentDescriptor::Property("this", b2_Class2, *b2_Class2.GetPropertyP("Name")));
         descriptor->AddField(new ContentDescriptor::CalculatedPropertyField("LabelTest_1", "CalculatedProperty_0", "\"Value\" & 1", nullptr, 1200));
         descriptor->AddField(new ContentDescriptor::CalculatedPropertyField("LabelTest_2", "CalculatedProperty_1", "this.Name & \"Test\"", nullptr, 1500));
@@ -3918,7 +4391,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1B, false));
-        
+ 
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));       
         field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
         field = &AddField(*descriptor, b1_Class1B, ContentDescriptor::Property("this", b1_Class1B, *b1_Class1B.GetPropertyP("DisplayLabel")));
         
@@ -3943,7 +4417,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b2_Class2, false));
-        
+  
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));      
         field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
         field = &AddField(*descriptor, b2_Class2, ContentDescriptor::Property("this", b2_Class2, *b2_Class2.GetPropertyP("Name")));
         
@@ -3968,6 +4443,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
 
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
         
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
@@ -3987,6 +4463,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
         
         descriptor->AddContentFlag(ContentFlags::MergeResults);
+
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
         
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
@@ -3999,6 +4477,8 @@ void ExpectedQueries::RegisterExpectedQueries()
     // ContentInstancesOfSpecificClasses_SetsMergeResultsFlagForPropertyPaneContentType2
         {
         ContentDescriptorPtr innerDescriptor = GetEmptyContentDescriptor(ContentDisplayType::PropertyPane);
+        
+        innerDescriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*innerDescriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
         field = &AddField(*innerDescriptor, b3_Class3, ContentDescriptor::Property("this", b3_Class3, *b3_Class3.GetPropertyP("SomeProperty")));
     
@@ -4013,7 +4493,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr outerDescriptor = ContentDescriptor::Create(*innerDescriptor);
         outerDescriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
         outerDescriptor->GetSelectClasses().push_back(SelectClassInfo(b3_Class3, false));
-        for (ContentDescriptor::Field* field : outerDescriptor->GetAllFields())
+        for (ContentDescriptor::Field* field : outerDescriptor->GetVisibleFields())
             {
             for (ContentDescriptor::Property const& fieldProperty : field->AsPropertiesField()->GetProperties())
                 const_cast<ContentDescriptor::Property&>(fieldProperty).SetPrefix("");
@@ -4032,6 +4512,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->AddContentFlag(ContentFlags::DistinctValues);
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_ClassH, false));
+
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         AddField(*descriptor, ret_ClassH, ContentDescriptor::Property("this", ret_ClassH, *ret_ClassH.GetPropertyP("PointProperty")));
 
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
@@ -4040,6 +4522,80 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->From(ret_ClassH, false, "this");
         query->GroupByContract(*contract);
         RegisterQuery("ContentInstancesOfSpecificClasses_SelectPointPropertyRawDataGroupedByDisplayValue", *query);
+        }
+
+     // ContentInstancesOfSpecificClasses_InstanceLabelOverride_AppliedByPriority
+        {
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
+
+        ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField("Label", 0);
+        bmap<ECClassCP, bvector<ECPropertyCP>> labelOverrideMap;
+        labelOverrideMap.Insert(&ret_Widget, {ret_Widget.GetPropertyP("Description"), ret_Widget.GetPropertyP("MyID")});
+        displayLabelField->SetPropertiesMap(labelOverrideMap);
+        descriptor->AddField(displayLabelField);
+        AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("Description")));
+        AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("MyID")));
+        descriptor->SetContentFlags((int)ContentFlags::ShowLabels);
+
+        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Widget, *query), "this");
+        query->From(ret_Widget, false, "this");
+
+        RegisterQuery("ContentInstancesOfSpecificClasses_InstanceLabelOverride_AppliedByPriority", *query);
+        }
+
+    //ContentInstancesOfSpecificClasses_InstanceLabelOverride_OverrideOnlySpecifiedClassInstancesLabels
+        {
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, false));
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
+
+        ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField("Label", 0);
+        bmap<ECClassCP, bvector<ECPropertyCP>> labelOverrideMap;
+        labelOverrideMap.Insert(&ret_Widget, {ret_Widget.GetPropertyP("MyID")});
+        displayLabelField->SetPropertiesMap(labelOverrideMap);
+        descriptor->AddField(displayLabelField);
+        field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
+        descriptor->GetAllFields().back()->AsPropertiesField()->AddProperty(ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("MyID")));
+        descriptor->GetAllFields().back()->SetName("Gadget_Widget_MyID");
+        descriptor->SetContentFlags((int)ContentFlags::ShowLabels);
+        
+        ComplexContentQueryPtr q1 = ComplexContentQuery::Create();
+        q1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Gadget, *q1), "this");
+        q1->From(ret_Gadget, false, "this");
+        
+        ComplexContentQueryPtr q2 = ComplexContentQuery::Create();
+        q2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &ret_Widget, *q2), "this");
+        q2->From(ret_Widget, false, "this");
+
+        UnionContentQueryPtr query = UnionContentQuery::Create(*q1, *q2);
+        RegisterQuery("ContentInstancesOfSpecificClasses_InstanceLabelOverride_OverrideOnlySpecifiedClassInstancesLabels", *query);
+        }
+
+    //ContentInstancesOfSpecificClasses_InstanceLabelOverride_OverrideNavigationProperty
+        {
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, false));
+        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({{RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}});
+
+        ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField("Label", 0);
+        bmap<ECClassCP, bvector<ECPropertyCP>> labelOverrideMap;
+        labelOverrideMap.Insert(&ret_Widget, {ret_Widget.GetPropertyP("MyID")});
+        displayLabelField->SetPropertiesMap(labelOverrideMap);
+        descriptor->AddField(displayLabelField);
+        field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
+        descriptor->GetAllFields().back()->AsPropertiesField()->AddProperty(ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("MyID")));
+        descriptor->GetAllFields().back()->SetName("Gadget_MyID");
+        field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("nav_RET_Widget_0", ret_Gadget, *ret_Gadget.GetPropertyP("Widget")));
+        descriptor->AddField(new ContentDescriptor::ECNavigationInstanceIdField(*field->AsPropertiesField()));
+        descriptor->SetContentFlags((int)ContentFlags::ShowLabels);
+
+        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Gadget, *query), "this");
+        query->From(ret_Gadget, false, "this");
+        query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"), true);       
+        RegisterQuery("ContentInstancesOfSpecificClasses_InstanceLabelOverride_OverrideNavigationProperty", *query);
         }
 
     // ContentRelatedInstances_ReturnsForwardRelatedInstanceQueryWhenSelectedOneInstanceNode
@@ -4060,6 +4616,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
             });
 
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("nav_RET_Gadget_0", ret_Sprocket, *ret_Sprocket.GetPropertyP("Gadget")));
@@ -4070,14 +4627,14 @@ void ExpectedQueries::RegisterExpectedQueries()
         query1->From(ret_Sprocket, true, "this");
         query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false), false);
         query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
-        query1->Where("InVirtualSet(?, [related].[ECInstanceId])", { new BoundQueryIdSet({ ECInstanceId((uint64_t)123) }) });
+        query1->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
         query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &ret_Sprocket, *query2), "this");
         query2->From(ret_Sprocket, true, "this");
         query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false), false);
         query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
-        query2->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query2->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
 #ifdef WIP_SORTING_GRID_CONTENT
@@ -4106,7 +4663,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
             RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0", false)
             });
-        
+
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));        
         field = &AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("IntProperty")));
@@ -4119,25 +4677,25 @@ void ExpectedQueries::RegisterExpectedQueries()
         query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Widget, *query1), "this");
         query1->From(ret_Widget, true, "this");
         query1->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "related", "rel_RET_WidgetHasGadgets_0", false), false);
-        query1->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query1->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
         query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &ret_Widget, *query2), "this");
         query2->From(ret_Widget, true, "this");
         query2->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0", false), false);
-        query2->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query2->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         ComplexContentQueryPtr query3 = ComplexContentQuery::Create();
         query3->SelectContract(*ContentQueryContract::Create(3, *descriptor, &ret_Widget, *query3), "this");
         query3->From(ret_Widget, true, "this");
         query3->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets, true, "related", "rel_RET_WidgetsHaveGadgets_0", false), false);
-        query3->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query3->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         ComplexContentQueryPtr query4 = ComplexContentQuery::Create();
         query4->SelectContract(*ContentQueryContract::Create(4, *descriptor, &ret_Widget, *query4), "this");
         query4->From(ret_Widget, true, "this");
         query4->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0", false), false);
-        query4->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query4->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         UnionContentQueryPtr query = UnionContentQuery::Create(*UnionContentQuery::Create(*UnionContentQuery::Create(*query1, *query2), *query3), *query4);
 #ifdef WIP_SORTING_GRID_CONTENT
@@ -4181,6 +4739,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
             });
 
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category::GetDefaultCategory(), "Widget_Sprocket_Description", "Description");
         field->AsPropertiesField()->AddProperty(ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("Description")));
         field->AsPropertiesField()->AddProperty(ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
@@ -4201,39 +4760,39 @@ void ExpectedQueries::RegisterExpectedQueries()
         query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Widget, *query1), "this");
         query1->From(ret_Widget, true, "this");
         query1->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "related", "rel_RET_WidgetHasGadgets_0", false), false);
-        query1->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query1->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
         query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &ret_Widget, *query2), "this");
         query2->From(ret_Widget, true, "this");
         query2->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0", false), false);
-        query2->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query2->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         ComplexContentQueryPtr query3 = ComplexContentQuery::Create();
         query3->SelectContract(*ContentQueryContract::Create(3, *descriptor, &ret_Widget, *query3), "this");
         query3->From(ret_Widget, true, "this");
         query3->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets, true, "related", "rel_RET_WidgetsHaveGadgets_0", false), false);
-        query3->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query3->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         ComplexContentQueryPtr query4 = ComplexContentQuery::Create();
         query4->SelectContract(*ContentQueryContract::Create(4, *descriptor, &ret_Widget, *query4), "this");
         query4->From(ret_Widget, true, "this");
         query4->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0", false), false);
-        query4->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query4->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         ComplexContentQueryPtr query5 = ComplexContentQuery::Create();
         query5->SelectContract(*ContentQueryContract::Create(5, *descriptor, &ret_Sprocket, *query5), "this");
         query5->From(ret_Sprocket, true, "this");
         query5->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false), false);
         query5->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
-        query5->Where("InVirtualSet(?, [related].[ECInstanceId])", { new BoundQueryIdSet({ ECInstanceId((uint64_t)123) }) });
+        query5->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         ComplexContentQueryPtr query6 = ComplexContentQuery::Create();
         query6->SelectContract(*ContentQueryContract::Create(6, *descriptor, &ret_Sprocket, *query6), "this");
         query6->From(ret_Sprocket, true, "this");
         query6->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false), false);
         query6->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
-        query6->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query6->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         UnionContentQueryPtr query = UnionContentQuery::Create(*UnionContentQuery::Create(*UnionContentQuery::Create(*UnionContentQuery::Create(*UnionContentQuery::Create(*query1, *query2), *query3), *query4), *query5), *query6);
 #ifdef WIP_SORTING_GRID_CONTENT
@@ -4261,6 +4820,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
             });
 
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("nav_RET_Gadget_0", ret_Sprocket, *ret_Sprocket.GetPropertyP("Gadget")));
@@ -4271,14 +4831,14 @@ void ExpectedQueries::RegisterExpectedQueries()
         query1->From(ret_Sprocket, true, "this");
         query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false), false);
         query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
-        query1->Where("InVirtualSet(?, [related].[ECInstanceId])", { new BoundQueryIdSet(bvector<ECInstanceId>{ECInstanceId((uint64_t)123), ECInstanceId((uint64_t)125)}) });
+        query1->Where("[related].[ECInstanceId] IN (?,?)", {new BoundQueryId(ECInstanceId((uint64_t)123)), new BoundQueryId(ECInstanceId((uint64_t)125))});
 
         ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
         query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &ret_Sprocket, *query2), "this");
         query2->From(ret_Sprocket, true, "this");
         query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false), false);
         query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
-        query2->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet(bvector<ECInstanceId>{ECInstanceId((uint64_t)123), ECInstanceId((uint64_t)125)})});
+        query2->Where("[related].[ECInstanceId] IN (?,?)", {new BoundQueryId(ECInstanceId((uint64_t)123)), new BoundQueryId(ECInstanceId((uint64_t)125))});
 
         UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
 #ifdef WIP_SORTING_GRID_CONTENT
@@ -4306,6 +4866,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}
             });
 
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("nav_RET_Widget_0", ret_Gadget, *ret_Gadget.GetPropertyP("Widget")));
@@ -4316,14 +4877,14 @@ void ExpectedQueries::RegisterExpectedQueries()
         query1->From(ret_Gadget, true, "this");
         query1->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "related", "rel_RET_WidgetHasGadgets_0", false), false);
         query1->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"), true);
-        query1->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query1->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
         query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &ret_Gadget, *query2), "this");
         query2->From(ret_Gadget, true, "this");
         query2->Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true , "related", "rel_RET_GadgetHasSprockets_0", false), false);
         query2->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"), true);
-        query2->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)125)})});
+        query2->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)125)})});
 
         UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
 #ifdef WIP_SORTING_GRID_CONTENT
@@ -4351,6 +4912,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
             });
 
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("nav_RET_Gadget_0", ret_Sprocket, *ret_Sprocket.GetPropertyP("Gadget")));
@@ -4361,7 +4923,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query1->From(ret_Sprocket, true, "this");
         query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false), false);
         query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), false);
-        query1->Where("InVirtualSet(?, [related].[ECInstanceId])", { new BoundQueryIdSet({ ECInstanceId((uint64_t)123) }) });
+        query1->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         query1->Where("[this].[MyID] = 'Sprocket MyID'", BoundQueryValuesList());
 
         ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
@@ -4369,7 +4931,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query2->From(ret_Sprocket, true, "this");
         query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false), false);
         query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), false);
-        query2->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query2->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         query2->Where("[this].[MyID] = 'Sprocket MyID'", BoundQueryValuesList());
 
         UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
@@ -4457,6 +5019,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
             });
 
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("nav_RET_Gadget_0", ret_Sprocket, *ret_Sprocket.GetPropertyP("Gadget")));
@@ -4467,56 +5030,56 @@ void ExpectedQueries::RegisterExpectedQueries()
         query11->From(ret_Sprocket, true, "this");
         query11->Join(relationshipPath11, false);
         query11->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
-        query11->Where("InVirtualSet(?, [related].[ECInstanceId])", { new BoundQueryIdSet({ ECInstanceId((uint64_t)123) }) });
+        query11->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         ComplexContentQueryPtr query12 = ComplexContentQuery::Create();
         query12->SelectContract(*ContentQueryContract::Create(2, *descriptor, &ret_Sprocket, *query12), "this");
         query12->From(ret_Sprocket, true, "this");
         query12->Join(relationshipPath12, false);
         query12->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
-        query12->Where("InVirtualSet(?, [related].[ECInstanceId])", { new BoundQueryIdSet({ ECInstanceId((uint64_t)123) }) });
+        query12->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         ComplexContentQueryPtr query13 = ComplexContentQuery::Create();
         query13->SelectContract(*ContentQueryContract::Create(3, *descriptor, &ret_Sprocket, *query13), "this");
         query13->From(ret_Sprocket, true, "this");
         query13->Join(relationshipPath13, false);
         query13->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
-        query13->Where("InVirtualSet(?, [related].[ECInstanceId])", { new BoundQueryIdSet({ ECInstanceId((uint64_t)123) }) });
+        query13->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         ComplexContentQueryPtr query14 = ComplexContentQuery::Create();
         query14->SelectContract(*ContentQueryContract::Create(4, *descriptor, &ret_Sprocket, *query14), "this");
         query14->From(ret_Sprocket, true, "this");
         query14->Join(relationshipPath14, false);
         query14->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
-        query14->Where("InVirtualSet(?, [related].[ECInstanceId])", { new BoundQueryIdSet({ ECInstanceId((uint64_t)123) }) });
+        query14->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         ComplexContentQueryPtr query21 = ComplexContentQuery::Create();
         query21->SelectContract(*ContentQueryContract::Create(5, *descriptor, &ret_Sprocket, *query21), "this");
         query21->From(ret_Sprocket, true, "this");
         query21->Join(relationshipPath21, false);
         query21->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
-        query21->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query21->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         ComplexContentQueryPtr query22 = ComplexContentQuery::Create();
         query22->SelectContract(*ContentQueryContract::Create(6, *descriptor, &ret_Sprocket, *query22), "this");
         query22->From(ret_Sprocket, true, "this");
         query22->Join(relationshipPath22, false);
         query22->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
-        query22->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query22->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         ComplexContentQueryPtr query23 = ComplexContentQuery::Create();
         query23->SelectContract(*ContentQueryContract::Create(7, *descriptor, &ret_Sprocket, *query23), "this");
         query23->From(ret_Sprocket, true, "this");
         query23->Join(relationshipPath23, false);
         query23->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
-        query23->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query23->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         ComplexContentQueryPtr query24 = ComplexContentQuery::Create();
         query24->SelectContract(*ContentQueryContract::Create(8, *descriptor, &ret_Sprocket, *query24), "this");
         query24->From(ret_Sprocket, true, "this");
         query24->Join(relationshipPath24, false);
         query24->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
-        query24->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query24->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         UnionContentQueryPtr query = UnionContentQuery::Create(*UnionContentQuery::Create(*UnionContentQuery::Create(*UnionContentQuery::Create(*UnionContentQuery::Create(
             *UnionContentQuery::Create(*UnionContentQuery::Create(*query11, *query12), *query13), *query14), *query21), *query22), *query23), *query24);
@@ -4541,7 +5104,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass(relationshipPath1);
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, true));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass(relationshipPath2);
-        
+     
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));   
         field = &AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("IntProperty")));
@@ -4554,13 +5118,13 @@ void ExpectedQueries::RegisterExpectedQueries()
         query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Widget, *query1), "this");
         query1->From(ret_Widget, true, "this");
         query1->Join(relationshipPath1, false);
-        query1->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query1->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
         query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &ret_Widget, *query2), "this");
         query2->From(ret_Widget, true, "this");
         query2->Join(relationshipPath2, false);
-        query2->Where("InVirtualSet(?, [related].[ECInstanceId])", { new BoundQueryIdSet({ ECInstanceId((uint64_t)123) }) });
+        query2->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
 #ifdef WIP_SORTING_GRID_CONTENT
@@ -4584,6 +5148,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0))}
             });
 
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, class_Element, ContentDescriptor::Property("this", class_Element, *class_Element.GetPropertyP("ElementProperty")));
         field = &AddField(*descriptor, class_Element, ContentDescriptor::Property(TABLE_ALIAS("nav", class_Element, 0), class_Element, *class_Element.GetPropertyP("Parent")));
         descriptor->AddField(new ContentDescriptor::ECNavigationInstanceIdField(*field->AsPropertiesField()));
@@ -4599,7 +5164,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &class_Element, *query), "this");
         query->From(class_Element, true, "this");
         query->Join(RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0)), true);
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryRecursiveChildrenIdSet(relationships, true, selectedIds)});
+        query->Where("FALSE", BoundQueryValuesList()); // note: filtering by recursive children ids (there're no children in the dataset, so the result is just "FALSE"
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -4624,6 +5189,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0))}
             });
 
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, class_Element, ContentDescriptor::Property("this", class_Element, *class_Element.GetPropertyP("ElementProperty")));
         field = &AddField(*descriptor, class_Element, ContentDescriptor::Property(TABLE_ALIAS("nav", class_Element, 0), class_Element, *class_Element.GetPropertyP("Parent")));
         descriptor->AddField(new ContentDescriptor::ECNavigationInstanceIdField(*field->AsPropertiesField()));
@@ -4637,7 +5203,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &class_Element, *query), "this");
         query->From(class_Element, true, "this");
         query->Join(RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0)), true);
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryRecursiveChildrenIdSet(relationships, true, selectedIds)});
+        query->Where("FALSE", BoundQueryValuesList()); // note: filtering by recursive children ids (there're no children in the dataset, so the result is just "FALSE"
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -4661,7 +5227,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
             {RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0))}
             });
-
+        
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, class_Element, ContentDescriptor::Property("this", class_Element, *class_Element.GetPropertyP("ElementProperty")));
         field = &AddField(*descriptor, class_Element, ContentDescriptor::Property(TABLE_ALIAS("nav", class_Element, 0), class_Element, *class_Element.GetPropertyP("Parent")));
         descriptor->AddField(new ContentDescriptor::ECNavigationInstanceIdField(*field->AsPropertiesField()));
@@ -4675,7 +5242,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &class_Element, *query), "this");
         query->From(class_Element, true, "this");
         query->Join(RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0)), true);
-        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryRecursiveChildrenIdSet(relationships, true, selectedIds)});
+        query->Where("FALSE", BoundQueryValuesList()); // note: filtering by recursive children ids (there're no children in the dataset, so the result is just "FALSE"
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
 #endif
@@ -4691,6 +5258,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
             RelatedClass(ret_ClassH, ret_ClassD, ret_ClassDHasClassE, false, "related", "rel_RET_ClassDHasClassE_0", false)
             });
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         AddField(*descriptor, ret_ClassH, ContentDescriptor::Property("this", ret_ClassH, *ret_ClassH.GetPropertyP("PointProperty")));
 
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
@@ -4698,16 +5266,99 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->SelectContract(*contract, "this");
         query->From(ret_ClassH, true, "this");
         query->Join(RelatedClass(ret_ClassH, ret_ClassD, ret_ClassDHasClassE, false, "related", "rel_RET_ClassDHasClassE_0", false), false);
-        query->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+        query->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))});
         query->GroupByContract(*contract);
 
         RegisterQuery("ContentRelatedInstances_SelectPointPropertyRawDataGroupedByDisplayValue", *query);
+        }
+
+    //ContentRelatedInstances_InstanceLabelOverride_AppliedByPriorityForSpecifiedClass
+        {
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, false));
+        descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
+            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false)
+            });
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, false));
+        descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
+            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false)
+            });
+        
+        ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField("Label", 0);
+        bmap<ECClassCP, bvector<ECPropertyCP>> labelOverrideMap;
+        labelOverrideMap.Insert(&ret_Sprocket, {ret_Sprocket.GetPropertyP("Description"), ret_Sprocket.GetPropertyP("MyID")});
+        displayLabelField->SetPropertiesMap(labelOverrideMap);
+        descriptor->AddField(displayLabelField);
+        AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
+        AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
+        descriptor->SetContentFlags((int)ContentFlags::ShowLabels);
+
+        ComplexContentQueryPtr query1 = ComplexContentQuery::Create();
+        query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Sprocket, *query1), "this");
+        query1->From(ret_Sprocket, false, "this");
+        query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false), false);
+        query1->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))});
+
+        ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
+        query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &ret_Sprocket, *query2), "this");
+        query2->From(ret_Sprocket, false, "this");
+        query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false), false);
+        query2->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))});
+
+        UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
+        RegisterQuery("ContentRelatedInstances_InstanceLabelOverride_AppliedByPriorityForSpecifiedClass", *query);
+        }
+
+    //ContentRelatedInstances_InstanceLabelOverride_OverrideNavigationProperty
+        {
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, true));
+        descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
+            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false)
+            });
+        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
+                { RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0") }
+            });
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, true));
+        descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
+            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false)
+            });
+        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
+            {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
+            });
+
+        ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField("Label", 0);
+        bmap<ECClassCP, bvector<ECPropertyCP>> labelOverrideMap;
+        labelOverrideMap.Insert(&ret_Gadget, {ret_Gadget.GetPropertyP("MyID")});
+        displayLabelField->SetPropertiesMap(labelOverrideMap);
+        descriptor->AddField(displayLabelField);
+        field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
+        field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("nav_RET_Gadget_0", ret_Sprocket, *ret_Sprocket.GetPropertyP("Gadget")));
+        descriptor->AddField(new ContentDescriptor::ECNavigationInstanceIdField(*field->AsPropertiesField()));
+
+        ComplexContentQueryPtr query1 = ComplexContentQuery::Create();
+        query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Sprocket, *query1), "this");
+        query1->From(ret_Sprocket, true, "this");
+        query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false), false);
+        query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
+        query1->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))});
+
+        ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
+        query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &ret_Sprocket, *query2), "this");
+        query2->From(ret_Sprocket, true, "this");
+        query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false), false);
+        query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
+        query2->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))});
+
+        UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
+        RegisterQuery("ContentRelatedInstances_InstanceLabelOverride_OverrideNavigationProperty", *query);
         }
 
     // NestedContentField_WithSingleStepRelationshipPath
         {
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, true));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("sprocket", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("sprocket", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
         
@@ -4723,6 +5374,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         {
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, true));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("sprocket", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("sprocket", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
         
@@ -4745,6 +5397,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, true));
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("gadget", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("gadget", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
         descriptor->AddField(new ContentDescriptor::NestedContentField(category, "sprocket_field_name", "sprocket_field_label", ret_Sprocket, "sprocket",
@@ -4772,6 +5425,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             });
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
 
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
         descriptor->GetAllFields().back()->AsPropertiesField()->AddProperty(ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("MyID")));
         descriptor->GetAllFields().back()->SetName("Gadget_Widget_MyID");
@@ -4779,8 +5433,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         auto widgetKeyField = new ContentDescriptor::ECInstanceKeyField();
         descriptor->AddField(widgetKeyField);
 
-        field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("rel_RET_Widget_0", ret_Widget, *ret_Widget.GetPropertyP("MyID")));
-        const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadgets_0"));
+        field = &AddField(*descriptor, ret_Gadget, CreateProperty("rel_RET_Widget_0", ret_Widget, *ret_Widget.GetPropertyP("MyID"),
+            RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadgets_0"), RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName("rel_Gadget_Widget_MyID");
         descriptor->GetAllFields().back()->SetLabel("Widget MyID");
         widgetKeyField->AddKeyField(*field->AsPropertiesField());
@@ -4789,12 +5443,12 @@ void ExpectedQueries::RegisterExpectedQueries()
         q1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Gadget, *q1), "this");
         q1->From(ret_Gadget, false, "this");
         q1->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "rel_RET_Widget_0", "rel_RET_WidgetHasGadgets_0"), true);
-        q1->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)1)})});
+        q1->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)1)})});
         
         ComplexContentQueryPtr q2 = ComplexContentQuery::Create();
         q2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &ret_Widget, *q2), "this");
         q2->From(ret_Widget, false, "this");
-        q2->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)2)})});
+        q2->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)2)})});
 
         UnionContentQueryPtr query = UnionContentQuery::Create(*q1, *q2);
 #ifdef WIP_SORTING_GRID_CONTENT
@@ -4816,7 +5470,8 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "rel_RET_Gadget_2", "rel_RET_GadgetHasSprockets_0")},
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_1", "nav_RET_GadgetHasSprockets_0")}
             });
-        
+
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));        
         field = &AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("Description")));
         descriptor->GetAllFields().back()->AsPropertiesField()->AddProperty(ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
         descriptor->GetAllFields().back()->SetName("Widget_Sprocket_Description");
@@ -4834,11 +5489,11 @@ void ExpectedQueries::RegisterExpectedQueries()
         auto gadgetKeyField = new ContentDescriptor::ECInstanceKeyField();
         descriptor->AddField(gadgetKeyField);
 
-        field = new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category::GetDefaultCategory(), "", "");
-        field->AsPropertiesField()->AddProperty(ContentDescriptor::Property("rel_RET_Gadget_0", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
-        const_cast<ContentDescriptor::Property&>(field->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "rel_RET_Widget_0", "rel_RET_WidgetHasGadget_0"));
-        field->AsPropertiesField()->AddProperty(ContentDescriptor::Property("rel_RET_Gadget_2", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
-        const_cast<ContentDescriptor::Property&>(field->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprockets_0"));
+        field = new ContentDescriptor::ECPropertiesField(CreateCategory(ret_Gadget), "", "");
+        field->AsPropertiesField()->AddProperty(CreateProperty("rel_RET_Gadget_0", ret_Gadget, *ret_Gadget.GetPropertyP("MyID"),
+            RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "rel_RET_Widget_0", "rel_RET_WidgetHasGadget_0"), RelationshipMeaning::RelatedInstance));
+        field->AsPropertiesField()->AddProperty(CreateProperty("rel_RET_Gadget_2", ret_Gadget, *ret_Gadget.GetPropertyP("MyID"),
+            RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprockets_0"), RelationshipMeaning::RelatedInstance));
         descriptor->AddField(field);
         descriptor->GetAllFields().back()->SetName("rel_Widget_Sprocket_Gadget_MyID");
         descriptor->GetAllFields().back()->SetLabel("Gadget MyID");
@@ -4874,7 +5529,8 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "rel_RET_Gadget_1", "rel_RET_GadgetHasSprockets_0")},
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
             });
-
+        
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0)); 
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("nav_RET_Gadget_0", ret_Sprocket, *ret_Sprocket.GetPropertyP("Gadget")));
@@ -4883,8 +5539,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         auto gadgetKeyField = new ContentDescriptor::ECInstanceKeyField();
         descriptor->AddField(gadgetKeyField);
 
-        field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("rel_RET_Gadget_1", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
-        const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprockets_0"));
+        field = &AddField(*descriptor, ret_Sprocket, CreateProperty("rel_RET_Gadget_1", ret_Gadget, *ret_Gadget.GetPropertyP("Description"),
+            RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprockets_0"), RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName("rel_Sprocket_Gadget_Description");
         descriptor->GetAllFields().back()->SetLabel("Gadget Description");
         gadgetKeyField->AddKeyField(*field->AsPropertiesField());
@@ -4910,7 +5566,8 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "rel_RET_Gadget_1", "rel_RET_GadgetHasSprockets_0")},
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
             });
-
+        
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0)); 
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("nav_RET_Gadget_0", ret_Sprocket, *ret_Sprocket.GetPropertyP("Gadget")));
@@ -4919,8 +5576,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         auto gadgetKeyField = new ContentDescriptor::ECInstanceKeyField();
         descriptor->AddField(gadgetKeyField);
 
-        field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("rel_RET_Gadget_1", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
-        const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprockets_0"));
+        field = &AddField(*descriptor, ret_Sprocket, CreateProperty("rel_RET_Gadget_1", ret_Gadget, *ret_Gadget.GetPropertyP("Description"),
+            RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprockets_0"), RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName("rel_Sprocket_Gadget_Description");
         descriptor->GetAllFields().back()->SetLabel("Gadget Description");
         gadgetKeyField->AddKeyField(*field->AsPropertiesField());
@@ -4946,7 +5603,8 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "rel_RET_Gadget_1", "rel_RET_GadgetHasSprockets_0")},
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
             });
-
+        
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0)); 
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("nav_RET_Gadget_0", ret_Sprocket, *ret_Sprocket.GetPropertyP("Gadget")));
@@ -4955,8 +5613,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         auto gadgetKeyField = new ContentDescriptor::ECInstanceKeyField();
         descriptor->AddField(gadgetKeyField);
         
-        field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("rel_RET_Gadget_1", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
-        const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprockets_0"));
+        field = &AddField(*descriptor, ret_Sprocket, CreateProperty("rel_RET_Gadget_1", ret_Gadget, *ret_Gadget.GetPropertyP("Description"),
+            RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprockets_0"), RelationshipMeaning::RelatedInstance));
         descriptor->GetAllFields().back()->SetName("rel_Sprocket_Gadget_Description");
         descriptor->GetAllFields().back()->SetLabel("Gadget Description");
         gadgetKeyField->AddKeyField(*field->AsPropertiesField());
@@ -4982,7 +5640,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
             {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}
             });
-
+        
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0)); 
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
 
@@ -5014,7 +5673,8 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
-
+        
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0)); 
         field = &AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("Description")));
         field = &AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("IntProperty")));
@@ -5052,6 +5712,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->SetFilterExpression("Widget_MyID = \"WidgetId\"");
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
+        
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0)); 
         AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("Description")));
         AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("MyID")));
         AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("IntProperty")));
@@ -5071,6 +5733,29 @@ void ExpectedQueries::RegisterExpectedQueries()
         RegisterQuery("FilterExpressionQueryTest", *query);
 
         }
+
+    //InstanceLabelOverride_AppliedByPriority
+        {
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Grid);
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
+
+        ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField("", 1000);
+        bmap<ECClassCP, bvector<ECPropertyCP>> labelOverrideMap;
+        labelOverrideMap.Insert(&ret_Widget, {ret_Widget.GetPropertyP("Description"), ret_Widget.GetPropertyP("MyID")});
+        displayLabelField->SetPropertiesMap(labelOverrideMap);
+        descriptor->AddField(displayLabelField);
+        AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("Description")));
+        AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("MyID")));
+        descriptor->SetContentFlags((int)ContentFlags::ShowLabels);
+
+        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Widget, *query), "this");
+        query->From(ret_Widget, false, "this");
+        query->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet({ECInstanceId((uint64_t)123)})});
+
+        RegisterQuery("InstanceLabelOverride_AppliedByPriority", *query);
+        }
+
         Localization::Terminate();
     }
 
@@ -5083,9 +5768,9 @@ void ExpectedQueries::RegisterExpectedQueries()
 * @bsitest                                      Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void ExecuteQueries(bmap<Utf8String, NavigationQueryCPtr> queries, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, 
-    IUserSettings const& userSettings, RelatedPathsCache& relatedPathsCache, ECExpressionsCache& ecexpressionsCache)
+    IUserSettings const& userSettings)
     {
-    ECDbR db = connection.GetDb();
+    ECDbR db = connection.GetECDb();
     for (auto pair : queries)
         {
         Utf8String const& name = pair.first;
@@ -5094,8 +5779,9 @@ static void ExecuteQueries(bmap<Utf8String, NavigationQueryCPtr> queries, IConne
         LOGI("Query: '%s'", name.c_str());
 
         JsonNavNodesFactory nodesFactory;
-        ECSchemaHelper schemaHelper(db, &relatedPathsCache, nullptr);
-        CustomFunctionsContext functionsContext(schemaHelper, connections, connection, ruleset, userSettings, nullptr, ecexpressionsCache, nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+        ECSchemaHelper schemaHelper(connection, nullptr, nullptr, nullptr, nullptr);
+        CustomFunctionsContext functionsContext(schemaHelper, connections, connection, ruleset, userSettings, nullptr, schemaHelper.GetECExpressionsCache(), 
+            nodesFactory, nullptr, nullptr, &query->GetExtendedData());
         
         Utf8String queryStr = query->ToString();
         ECSqlStatement statement;
@@ -5110,9 +5796,9 @@ static void ExecuteQueries(bmap<Utf8String, NavigationQueryCPtr> queries, IConne
 * @bsitest                                      Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void ExecuteQueries(bmap<Utf8String, ContentQueryCPtr> queries, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, 
-    IUserSettings const& userSettings, RelatedPathsCache& relatedPathsCache, ECExpressionsCache& ecexpressionsCache)
+    IUserSettings const& userSettings)
     {
-    ECDbR db = connection.GetDb();
+    ECDbR db = connection.GetECDb();
     for (auto pair : queries)
         {
         Utf8String const& name = pair.first;
@@ -5122,8 +5808,9 @@ static void ExecuteQueries(bmap<Utf8String, ContentQueryCPtr> queries, IConnecti
         LOGI("Query: '%s'", name.c_str());
         
         JsonNavNodesFactory nodesFactory;
-        ECSchemaHelper schemaHelper(db, &relatedPathsCache, nullptr);
-        CustomFunctionsContext functionsContext(schemaHelper, connections, connection, ruleset, userSettings, nullptr, ecexpressionsCache, nodesFactory, nullptr, nullptr, nullptr);
+        ECSchemaHelper schemaHelper(connection, nullptr, nullptr, nullptr, nullptr);
+        CustomFunctionsContext functionsContext(schemaHelper, connections, connection, ruleset, userSettings, nullptr, schemaHelper.GetECExpressionsCache(), 
+            nodesFactory, nullptr, nullptr, nullptr);
         
         Utf8String queryStr = query->ToString();
         ECSqlStatement statement;
@@ -5145,15 +5832,13 @@ TEST(ExpectedQueriesTest, RunAllExpectedQueries)
 
     Localization::Init();
 
-    TestConnectionManager connections;
-    IConnectionPtr connection = connections.NotifyConnectionOpened(ExpectedQueries::GetInstance(BeTest::GetHost()).GetDb());
-    ECDbR db = connection->GetDb();
+    IConnectionManagerCR connections = ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnections();
+    IConnectionCR connection = ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnection();
+    // unused - ECDbR db = connection.GetECDb();
     TestUserSettings userSettings;
-    ECExpressionsCache ecexpressionsCache;
-    RelatedPathsCache relatedPathsCache;
     PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance("test", 1, 0, false, "", "", "", false);
-    CustomFunctionsInjector customFunctions(connections, db);
+    CustomFunctionsInjector customFunctions(connections, connection);
 
-    ExecuteQueries(ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQueries(), connections, *connection, *ruleset, userSettings, relatedPathsCache, ecexpressionsCache);
-    ExecuteQueries(ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQueries(), connections, *connection, *ruleset, userSettings, relatedPathsCache, ecexpressionsCache);
+    ExecuteQueries(ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQueries(), connections, connection, *ruleset, userSettings);
+    ExecuteQueries(ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQueries(), connections, connection, *ruleset, userSettings);
     }

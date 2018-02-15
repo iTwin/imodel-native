@@ -79,6 +79,7 @@ void RulesDrivenECPresentationManagerImplTests::TearDownTestCase()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenECPresentationManagerImplTests::SetUp()
     {
+    Localization::Init();
     m_impl = new RulesDrivenECPresentationManagerImpl(RulesDrivenECPresentationManagerDependenciesFactory(), m_connections,
         RulesEngineTestHelpers::GetPaths(BeTest::GetHost()), true);
     m_impl->SetCategorySupplier(&m_categorySupplier);
@@ -98,6 +99,7 @@ void RulesDrivenECPresentationManagerImplTests::TearDown()
     {
     m_connection = nullptr;
     DELETE_AND_CLEAR(m_impl);
+    Localization::Terminate();
     }
 
 /*=================================================================================**//**
@@ -235,7 +237,7 @@ TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsConten
 
     // request and verify
     RulesDrivenECPresentationManager::ContentOptions options(m_ruleset->GetRuleSetId().c_str());
-    ECClassCP inputClass = m_connection->GetDb().Schemas().GetClass("ECDbMeta", "ECClassDef");
+    ECClassCP inputClass = m_connection->GetECDb().Schemas().GetClass("ECDbMeta", "ECClassDef");
     bvector<SelectClassInfo> contentClasses = m_impl->GetContentClasses(*m_connection, nullptr, {inputClass}, options, *token);
     EXPECT_TRUE(contentClasses.empty());
     }

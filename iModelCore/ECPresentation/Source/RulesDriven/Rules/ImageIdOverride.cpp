@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/Rules/ImageIdOverride.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -24,7 +24,7 @@ ImageIdOverride::ImageIdOverride ()
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ImageIdOverride::ImageIdOverride (Utf8StringCR condition, int priority, Utf8StringCR imageIdExpression)
-    : CustomizationRule (condition, priority, false), m_imageIdExpression (imageIdExpression)
+    : ConditionalCustomizationRule (condition, priority, false), m_imageIdExpression (imageIdExpression)
     {
     }
 
@@ -44,7 +44,7 @@ bool ImageIdOverride::_ReadXml (BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_imageIdExpression, IMAGE_ID_OVERRIDE_XML_ATTRIBUTE_IMAGEID))
         m_imageIdExpression = "";
 
-    return PresentationRule::_ReadXml (xmlNode);
+    return ConditionalCustomizationRule::_ReadXml (xmlNode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -54,7 +54,7 @@ void ImageIdOverride::_WriteXml (BeXmlNodeP xmlNode) const
     {
     xmlNode->AddAttributeStringValue (IMAGE_ID_OVERRIDE_XML_ATTRIBUTE_IMAGEID, m_imageIdExpression.c_str ());
 
-    PresentationRule::_WriteXml (xmlNode);
+    ConditionalCustomizationRule::_WriteXml (xmlNode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -77,7 +77,7 @@ void ImageIdOverride::_Accept(CustomizationRuleVisitor& visitor) const { visitor
 +---------------+---------------+---------------+---------------+---------------+------*/
 MD5 ImageIdOverride::_ComputeHash(Utf8CP parentHash) const
     {
-    MD5 md5 = CustomizationRule::_ComputeHash(parentHash);
+    MD5 md5 = ConditionalCustomizationRule::_ComputeHash(parentHash);
     md5.Add(m_imageIdExpression.c_str(), m_imageIdExpression.size());
     return md5;
     }

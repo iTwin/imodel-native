@@ -24,13 +24,13 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 struct TestECSqlStatementsCacheProvider : IECSqlStatementCacheProvider
 {
 private:
-    bmap<ECDb const*, ECSqlStatementCache*> m_cache;
+    bmap<Utf8String, ECSqlStatementCache*> m_cache;
 protected:
-    ECSqlStatementCache& _GetECSqlStatementCache(ECDbCR db) override
+    ECSqlStatementCache& _GetECSqlStatementCache(IConnectionCR connection) override
         {
-        auto iter = m_cache.find(&db);
+        auto iter = m_cache.find(connection.GetId());
         if (m_cache.end() == iter)
-            iter = m_cache.Insert(&db, new ECSqlStatementCache(10)).first;
+            iter = m_cache.Insert(connection.GetId(), new ECSqlStatementCache(10)).first;
         return *iter->second;
         }
 public:
@@ -1103,11 +1103,11 @@ TEST_F(NodesCacheTests, ReturnsDataSourcesFromValidConnections)
     // verify correct sources are returned
     NavNodesProviderPtr cached1 = m_cache->GetDataSource(rootInfo1);
     ASSERT_TRUE(cached1.IsValid());
-    EXPECT_EQ(&GetDb(), &cached1->GetContext().GetDb());
+    EXPECT_EQ(m_connection.get(), &cached1->GetContext().GetConnection());
 
     NavNodesProviderPtr cached2 = m_cache->GetDataSource(rootInfo2);
     ASSERT_TRUE(cached2.IsValid());
-    EXPECT_EQ(&project2.GetECDbCR(), &cached2->GetContext().GetDb());
+    EXPECT_EQ(connection2.get(), &cached2->GetContext().GetConnection());
 
     m_connections.NotifyConnectionClosed(*connection2);
     }

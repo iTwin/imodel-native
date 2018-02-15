@@ -144,7 +144,6 @@ private:
     bmap<Utf8String, NavigationQueryCPtr> m_navigationQueries;
     bmap<Utf8String, ContentQueryCPtr> m_contentQueries;
     ECDbTestProject m_project;
-    RelatedPathsCache m_relatedPathsCache;
     ECSchemaHelper* m_schemaHelper;
     bvector<PropertyGroupCP> m_propertyGroupsToDelete;
     DefaultCategorySupplier m_categorySupplier;
@@ -180,8 +179,8 @@ public:
     ECClassCP GetECClass(Utf8CP schemaName, Utf8CP className);
     bvector<ECClassCP> GetECClasses(Utf8CP schemaName);
     ECDbR GetDb() {return m_project.GetECDb();}
-    IConnectionManagerCR GetConnections() const {return m_connections;}
-    IConnectionCR GetConnection() const {return *m_connection;}
+    IConnectionCR GetConnection() {return *m_connection;}
+    IConnectionManagerCR GetConnections() {return m_connections;}
     };
 
 END_ECPRESENTATIONTESTS_NAMESPACE

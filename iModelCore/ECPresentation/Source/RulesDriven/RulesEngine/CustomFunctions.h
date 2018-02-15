@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/CustomFunctions.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,6 +17,7 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 #define FUNCTION_NAME_GetECInstanceDisplayLabel     "GetECInstanceDisplayLabel"
 #define FUNCTION_NAME_GetECClassDisplayLabel        "GetECClassDisplayLabel"
 #define FUNCTION_NAME_GetECPropertyDisplayLabel     "GetECPropertyDisplayLabel"
+#define FUNCTION_NAME_GetNavigationPropertyLabel    "GetNavigationPropertyLabel"
 #define FUNCTION_NAME_GetSortingValue               "GetSortingValue"
 #define FUNCTION_NAME_GetRangeIndex                 "GetRangeIndex"
 #define FUNCTION_NAME_GetRangeImageId               "GetRangeImageId"
@@ -125,25 +126,25 @@ struct CustomFunctionsInjector : IConnectionsListener
 {
 private:
     IConnectionManagerCR m_connections;
-    bset<ECDb const*> m_handledDbs;
+    bset<Utf8String> m_handledConnectionIds;
     bvector<ScalarFunction*> m_scalarFunctions;
     bvector<AggregateFunction*> m_aggregateFunctions;
 
 private:
     void CreateFunctions();
     void DestroyFunctions();
-    void RegisterInDb(ECDbCR);
-    void UnregisterFromDb(ECDbCR);
+    void Register(IConnectionCR);
+    void Unregister(IConnectionCR);
 
 protected:
     void _OnConnectionEvent(ConnectionEvent const&) override;
 
 public:
     ECPRESENTATION_EXPORT CustomFunctionsInjector(IConnectionManagerCR);
-    ECPRESENTATION_EXPORT CustomFunctionsInjector(IConnectionManagerCR, ECDbR);
+    ECPRESENTATION_EXPORT CustomFunctionsInjector(IConnectionManagerCR, IConnectionCR);
     ECPRESENTATION_EXPORT ~CustomFunctionsInjector();
-    ECPRESENTATION_EXPORT void OnConnection(ECDbCR);
-    bool Handles(ECDbCR connection) const {return m_handledDbs.end() != m_handledDbs.find(&connection);}
+    ECPRESENTATION_EXPORT void OnConnection(IConnectionCR);
+    bool Handles(IConnectionCR connection) const {return m_handledConnectionIds.end() != m_handledConnectionIds.find(connection.GetId());}
     };
 
 /*=================================================================================**//**

@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/ECExpressionContextsProvider.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -92,6 +92,21 @@ struct ECExpressionContextsProvider : NonCopyableClass
         JsonNavNodeCR GetNode() const {return m_node;}
         JsonNavNodeCP GetParentNode() const {return m_parentNode.get();}
     };
+    
+    /*=================================================================================**//**
+    * @bsiclass                                     Grigas.Petraitis                04/2016
+    +===============+===============+===============+===============+===============+======*/
+    struct CalculatedPropertyContextParameters : ContextParametersBase
+    {
+    private:
+        JsonNavNodeCR m_node;
+    public:
+        CalculatedPropertyContextParameters(JsonNavNodeCR node, IConnectionCR connection, 
+            IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener)
+            : ContextParametersBase(connection, userSettings, usedSettingsListener), m_node(node)
+            {}
+        JsonNavNodeCR GetNode() const {return m_node;}
+    };
 
 private:
     ECExpressionContextsProvider() {};
@@ -100,7 +115,7 @@ public:
     ECPRESENTATION_EXPORT static ExpressionContextPtr GetNodeRulesContext(NodeRulesContextParameters const&);
     ECPRESENTATION_EXPORT static ExpressionContextPtr GetContentRulesContext(ContentRulesContextParameters const&);
     ECPRESENTATION_EXPORT static ExpressionContextPtr GetCustomizationRulesContext(CustomizationRulesContextParameters const&);
-    ECPRESENTATION_EXPORT static ExpressionContextPtr GetCalculatedPropertyContext(JsonNavNodeCR, IUserSettings const&);
+    ECPRESENTATION_EXPORT static ExpressionContextPtr GetCalculatedPropertyContext(CalculatedPropertyContextParameters const&);
 };
 
 /*=================================================================================**//**

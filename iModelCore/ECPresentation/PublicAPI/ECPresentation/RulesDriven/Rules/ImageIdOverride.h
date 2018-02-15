@@ -18,7 +18,7 @@ ImageId override rule implementation. This rule is used to override default Imag
 generation algorithm.
 * @bsiclass                                     Eligijus.Mauragas               06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ImageIdOverride : public CustomizationRule
+struct ImageIdOverride : public ConditionalCustomizationRule
     {
     private:
         Utf8String m_imageIdExpression;

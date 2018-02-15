@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/Rules/RelatedPropertiesSpecification.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -19,7 +19,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 +---------------+---------------+---------------+---------------+---------------+------*/
 RelatedPropertiesSpecification::RelatedPropertiesSpecification ()
     : m_requiredDirection (RequiredRelationDirection_Both), m_relationshipClassNames (""), m_relatedClassNames (""), m_propertyNames (""),
-    m_relationshipMeaning(RelationshipMeaning::RelatedInstance)
+    m_relationshipMeaning(RelationshipMeaning::RelatedInstance), m_polymorphic(false)
     {
     }
 
@@ -32,12 +32,14 @@ RequiredRelationDirection  requiredDirection,
 Utf8String                 relationshipClassNames,
 Utf8String                 relatedClassNames,
 Utf8String                 propertyNames,
-RelationshipMeaning        relationshipMeaning
+RelationshipMeaning        relationshipMeaning,
+bool                       polymorphic
 ) : m_requiredDirection (requiredDirection), 
     m_relationshipClassNames (relationshipClassNames),
     m_relatedClassNames (relatedClassNames),
     m_propertyNames (propertyNames),
-    m_relationshipMeaning (relationshipMeaning)
+    m_relationshipMeaning (relationshipMeaning),
+    m_polymorphic(polymorphic)
     {
     }
 
@@ -46,7 +48,8 @@ RelationshipMeaning        relationshipMeaning
 +---------------+---------------+---------------+---------------+---------------+------*/
 RelatedPropertiesSpecification::RelatedPropertiesSpecification(RelatedPropertiesSpecification const& other)
     : m_requiredDirection(other.m_requiredDirection), m_relationshipClassNames(other.m_relationshipClassNames), 
-    m_relatedClassNames(other.m_relatedClassNames), m_propertyNames(other.m_propertyNames), m_relationshipMeaning(other.m_relationshipMeaning)
+    m_relatedClassNames(other.m_relatedClassNames), m_propertyNames(other.m_propertyNames), 
+    m_relationshipMeaning(other.m_relationshipMeaning), m_polymorphic(other.m_polymorphic)
     {
     CommonTools::CopyRules(m_nestedRelatedPropertiesSpecification, other.m_nestedRelatedPropertiesSpecification);
     }
@@ -84,7 +87,9 @@ bool RelatedPropertiesSpecification::ReadXml (BeXmlNodeP xmlNode)
         relationshipMeaningString = "";
     else
         m_relationshipMeaning = CommonTools::ParseRelationshipMeaningString(relationshipMeaningString.c_str());
-
+    
+    if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_polymorphic, COMMON_XML_ATTRIBUTE_ISPOLYMORPHIC))
+        m_polymorphic = false;
 
     CommonTools::LoadSpecificationsFromXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (xmlNode, m_nestedRelatedPropertiesSpecification, RELATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
 
@@ -103,6 +108,7 @@ void RelatedPropertiesSpecification::WriteXml (BeXmlNodeP parentXmlNode) const
     relatedPropertiesNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_PROPERTYNAMES, m_propertyNames.c_str ());
     relatedPropertiesNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_REQUIREDDIRECTION, CommonTools::FormatRequiredDirectionString (m_requiredDirection));
     relatedPropertiesNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_RELATIONSHIPMEANING, CommonTools::FormatRelationshipMeaningString(m_relationshipMeaning));
+    relatedPropertiesNode->AddAttributeBooleanValue(COMMON_XML_ATTRIBUTE_ISPOLYMORPHIC, m_polymorphic);
 
     CommonTools::WriteRulesToXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (relatedPropertiesNode, m_nestedRelatedPropertiesSpecification);
     }
@@ -173,6 +179,7 @@ MD5 RelatedPropertiesSpecification::_ComputeHash(Utf8CP parentHash) const
     md5.Add(m_relatedClassNames.c_str(), m_relatedClassNames.size());
     md5.Add(m_propertyNames.c_str(), m_propertyNames.size());
     md5.Add(&m_relationshipMeaning, sizeof(m_relationshipMeaning));
+    md5.Add(&m_polymorphic, sizeof(m_polymorphic));
     if (nullptr != parentHash)
         md5.Add(parentHash, strlen(parentHash));
 

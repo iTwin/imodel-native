@@ -26,10 +26,8 @@ void TestNavNode::InitNode(IConnectionP connection, Utf8CP type)
     extendedData.SetRulesetId("Invalid ruleset ID");
 
     if (nullptr != connection)
-        {
-        SetECDb(connection->GetDb());
         extendedData.SetConnectionId(connection->GetId());
-        }
+
     if (nullptr != type)
         {
         SetType(type);

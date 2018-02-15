@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/QueryBasedSpecificationNodesProviderTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../../../Source/RulesDriven/RulesEngine/JsonNavNode.h"
@@ -79,36 +79,32 @@ void QueryBasedSpecificationNodesProviderTests::SetUp()
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (QueryBasedSpecificationNodesProviderTests, OverridesLabel)
     {
-    LabelOverrideP labelOverride = new LabelOverride("ThisNode.IsInstanceNode AND ThisNode.ClassName=\"Widget\"", 1, "\"QueryBasedSpecificationNodesProviderTests.OverridesLabel\"", "");
-    m_ruleset->AddPresentationRule(*labelOverride);
+    LabelOverrideP widgetLabelOverride = new LabelOverride("ThisNode.IsInstanceNode AND ThisNode.ClassName=\"Widget\"", 1, "\"WidgetLabel\"", "");
+    LabelOverrideP gadgetLabelOverride = new LabelOverride("ThisNode.IsInstanceNode AND ThisNode.ClassName=\"Gadget\"", 1, "\"GadgetLabel\"", "");
+    m_ruleset->AddPresentationRule(*widgetLabelOverride);
+    m_ruleset->AddPresentationRule(*gadgetLabelOverride);
 
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);
     m_context->SetRootNodeContext(*rule);
 
-    InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget,Gadget", false);
+    InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+        "this.ECInstanceId = 1 OR this.ECInstanceId = 4", "RulesEngineTest:Widget,Gadget", false);
     rule->AddSpecification(*spec);    
 
     size_t index = 0;
-    bool checkedWidget = false;
-    bool checkedOther = false;
     JsonNavNodePtr node;
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
-    while (provider->GetNode(node, index++))
-        {
-        if (m_widgetClass == &node->GetInstance()->GetClass())
-            {
-            ASSERT_STREQ("QueryBasedSpecificationNodesProviderTests.OverridesLabel", node->GetLabel().c_str());
-            checkedWidget = true;
-            }
-        else
-            {
-            ASSERT_STRNE("QueryBasedSpecificationNodesProviderTests.OverridesLabel", node->GetLabel().c_str());
-            checkedOther = true;
-            }
-        }
-    ASSERT_TRUE(checkedWidget);
-    ASSERT_TRUE(checkedOther);
+
+    ASSERT_TRUE(provider->GetNode(node, index++));
+    ASSERT_TRUE(nullptr != node->GetKey()->AsECInstanceNodeKey());
+    EXPECT_EQ(m_gadgetClass->GetId(), node->GetKey()->AsECInstanceNodeKey()->GetECClassId());
+    EXPECT_STREQ("GadgetLabel", node->GetLabel().c_str());
+
+    ASSERT_TRUE(provider->GetNode(node, index++));
+    ASSERT_TRUE(nullptr != node->GetKey()->AsECInstanceNodeKey());
+    EXPECT_EQ(m_widgetClass->GetId(), node->GetKey()->AsECInstanceNodeKey()->GetECClassId());
+    EXPECT_STREQ("WidgetLabel", node->GetLabel().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -153,33 +149,27 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, OverridesStyle)
     m_ruleset->AddPresentationRule(*rule);
     m_context->SetRootNodeContext(*rule);
 
-    InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget,Gadget", false);
+    InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+        "this.ECInstanceId = 1 OR this.ECInstanceId = 4", "RulesEngineTest:Widget,Gadget", false);
     rule->AddSpecification(*spec); 
 
     size_t index = 0;
-    bool checkedWidget = false;
-    bool checkedOther = false;
     JsonNavNodePtr node;
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
-    while (provider->GetNode(node, index++))
-        {
-        if (m_widgetClass == &node->GetInstance()->GetClass())
-            {
-            EXPECT_STREQ("ForeColor1", node->GetForeColor().c_str());
-            EXPECT_STREQ("BackColor1", node->GetBackColor().c_str());
-            EXPECT_STREQ("FontStyle1", node->GetFontStyle().c_str());
-            checkedWidget = true;
-            }
-        else
-            {
-            EXPECT_STREQ("", node->GetForeColor().c_str());
-            EXPECT_STREQ("", node->GetBackColor().c_str());
-            EXPECT_STREQ("Regular", node->GetFontStyle().c_str());
-            checkedOther = true;
-            }
-        }
-    ASSERT_TRUE(checkedWidget);
-    ASSERT_TRUE(checkedOther);
+    
+    ASSERT_TRUE(provider->GetNode(node, index++));
+    ASSERT_TRUE(nullptr != node->GetKey()->AsECInstanceNodeKey());
+    EXPECT_EQ(m_gadgetClass->GetId(), node->GetKey()->AsECInstanceNodeKey()->GetECClassId());
+    EXPECT_STREQ("", node->GetForeColor().c_str());
+    EXPECT_STREQ("", node->GetBackColor().c_str());
+    EXPECT_STREQ("Regular", node->GetFontStyle().c_str());
+    
+    ASSERT_TRUE(provider->GetNode(node, index++));
+    ASSERT_TRUE(nullptr != node->GetKey()->AsECInstanceNodeKey());
+    EXPECT_EQ(m_widgetClass->GetId(), node->GetKey()->AsECInstanceNodeKey()->GetECClassId());
+    EXPECT_STREQ("ForeColor1", node->GetForeColor().c_str());
+    EXPECT_STREQ("BackColor1", node->GetBackColor().c_str());
+    EXPECT_STREQ("FontStyle1", node->GetFontStyle().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -529,7 +519,9 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildNodesWhenHideNode
     ASSERT_EQ(2, provider->GetNodesCount());
     while (provider->GetNode(node, index++))
         {
-        EXPECT_STREQ("Gadget", node->GetInstance()->GetClass().GetName().c_str());
+        ECInstanceNodeKey const* key = node->GetKey()->AsECInstanceNodeKey();
+        ASSERT_TRUE(nullptr != key);
+        EXPECT_EQ(m_gadgetClass->GetId(), key->GetECClassId());
         }
     ASSERT_EQ(3, index);
     }

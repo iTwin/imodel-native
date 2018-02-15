@@ -2,7 +2,7 @@
 #
 #     $Source: Source/RulesDriven/RulesEngine/Dependencies.mki $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -43,6 +43,7 @@ RulesEngineInternalHeaders    = $(RulesEngineSourceDirectory)RulesEngineTypes.h 
                                 $(RulesEngineSourceDirectory)ImageHelper.h                          \
                                 $(RulesEngineSourceDirectory)CustomizationHelper.h                  \
                                 $(RulesEngineSourceDirectory)QueryBuilder.h                         \
+                                $(RulesEngineSourceDirectory)QueryBuilderHelpers.h                  \
                                 $(RulesEngineSourceDirectory)UpdateHandler.h                        \
                                 $(RulesEngineSourceDirectory)ContentProviders.h                     \
                                 $(RulesEngineSourceDirectory)RulesDrivenProviderContext.h           \

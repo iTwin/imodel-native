@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/QueryExecutor.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -65,7 +65,7 @@ Utf8CP QueryExecutor::GetQueryString() const
 CachedECSqlStatementPtr QueryExecutor::GetStatement() const
     {
     Utf8CP query = GetQueryString();
-    return m_statementCache.GetPreparedStatement(GetDb(), query);
+    return m_statementCache.GetPreparedStatement(GetConnection().GetECDb().Schemas(), GetConnection().GetDb(), query);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -99,6 +99,7 @@ void QueryExecutor::ReadRecords(ICancelationTokenCP cancelationToken)
 
     // get the statement
     RefCountedPtr<PerformanceLogger> _l = LoggingHelper::CreatePerformanceLogger(Log::Default, "[QueryExecutor] Getting prepared statement", NativeLogging::LOG_TRACE);
+    Savepoint txn(m_connection.GetDb(), "QueryExecutor::ReadRecords");
     CachedECSqlStatementPtr statement = GetStatement();
     if (statement.IsNull())
         {
@@ -109,15 +110,15 @@ void QueryExecutor::ReadRecords(ICancelationTokenCP cancelationToken)
     
     // bind query variables
     _l = LoggingHelper::CreatePerformanceLogger(Log::Default, "[QueryExecutor] Binding query variable values", NativeLogging::LOG_TRACE);
-    bvector<BoundQueryValue const*> boundValues = m_query->GetBoundValues();
-    for (size_t i = 0; i < boundValues.size(); ++i)
-        {
-        BoundQueryValue const* value = boundValues[i];
-        ECSqlStatus status = value->Bind(*statement, (uint32_t)(i + 1));
-        BeAssert(status.IsSuccess());
-        }
+    m_query->BindValues(*statement);
     _l = nullptr;
             
+    if (nullptr != cancelationToken && cancelationToken->IsCanceled())
+        {
+        LoggingHelper::LogMessage(Log::Default, "[QueryExecutor] Records read canceled", NativeLogging::LOG_TRACE);
+        return;
+        }
+
     // read the records
     m_readStarted = true;
     _l = LoggingHelper::CreatePerformanceLogger(Log::Default, "[QueryExecutor] Reading and caching new records", NativeLogging::LOG_TRACE);
@@ -137,9 +138,18 @@ void QueryExecutor::ReadRecords(ICancelationTokenCP cancelationToken)
         }
     _l = nullptr;
 
-    BeAssert(DbResult::BE_SQLITE_DONE == result);
-    m_readFinished = true;
-    LoggingHelper::LogMessage(Log::Default, Utf8PrintfString("[QueryExecutor] Finished reading %d records", recordsRead).c_str(), NativeLogging::LOG_TRACE);
+    switch (result)
+        {
+        case BE_SQLITE_DONE:
+            m_readFinished = true;
+            LoggingHelper::LogMessage(Log::Default, Utf8PrintfString("[QueryExecutor] Finished reading %d records", recordsRead).c_str(), NativeLogging::LOG_TRACE);
+            break;
+        case BE_SQLITE_INTERRUPT:
+            LoggingHelper::LogMessage(Log::Default, "[QueryExecutor] Records read interrupted", NativeLogging::LOG_TRACE);
+            break;
+        default:
+            BeAssert(false && "Unexpected result");
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -666,7 +676,7 @@ void ContentQueryExecutor::_ReadRecord(ECSqlStatement& statement)
         }
     
     ContentValueAppender values;
-    FieldValueInstanceKeyReader fieldValueInstanceKeyReader(GetDb(), primaryRecordKeys);
+    FieldValueInstanceKeyReader fieldValueInstanceKeyReader(GetConnection().GetECDb(), primaryRecordKeys);
     Utf8String displayLabel, imageId;
     ECClassCP recordClass = nullptr;
     if (0 == ((int)ContentFlags::KeysOnly & descriptor.GetContentFlags()))
@@ -687,7 +697,7 @@ void ContentQueryExecutor::_ReadRecord(ECSqlStatement& statement)
         for (ContentDescriptor::Field const* field : descriptor.GetAllFields())
             {
             Utf8StringCR fieldName = field->GetName();
-            if (field->IsDisplayLabelField())
+            if (field->IsDisplayLabelField() && descriptor.ShowLabels())
                 {
                 // if this is a display label field, set the display label and also append the value
                 displayLabel = statement.GetValueText(columnIndex);

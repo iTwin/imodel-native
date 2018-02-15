@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/RulesDrivenProviderContext.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once 
@@ -35,6 +35,7 @@ private:
     IUserSettings const& m_userSettings;
     mutable UsedUserSettingsListener* m_usedSettingsListener;
     RelatedPathsCache& m_relatedPathsCache;
+    PolymorphicallyRelatedClassesCache& m_polymorphicallyRelatedClassesCache;
     ECExpressionsCache& m_ecexpressionsCache;
     JsonNavNodesFactory const& m_nodesFactory;
     ICancelationTokenCP m_cancelationToken;
@@ -54,7 +55,8 @@ private:
     void Init();
 
 protected:
-    ECPRESENTATION_EXPORT RulesDrivenProviderContext(PresentationRuleSetCR, bool holdRuleset, IUserSettings const&, ECExpressionsCache&, RelatedPathsCache&, JsonNavNodesFactory const&, IJsonLocalState const*);
+    ECPRESENTATION_EXPORT RulesDrivenProviderContext(PresentationRuleSetCR, bool holdRuleset, IUserSettings const&, ECExpressionsCache&, 
+        RelatedPathsCache&, PolymorphicallyRelatedClassesCache&, JsonNavNodesFactory const&, IJsonLocalState const*);
     ECPRESENTATION_EXPORT RulesDrivenProviderContext(RulesDrivenProviderContextCR other);
     
     ECPRESENTATION_EXPORT void SetQueryContext(IConnectionManagerCR, IConnectionCR, ECSqlStatementCache const&, CustomFunctionsInjector&);
@@ -84,7 +86,6 @@ public:
     bool IsQueryContext() const {return m_isQueryContext;}
     IConnectionManagerCR GetConnections() const {BeAssert(IsQueryContext()); return *m_connections;}
     IConnectionCR GetConnection() const {BeAssert(IsQueryContext()); return *m_connection;}
-    ECDbR GetDb() const {BeAssert(IsQueryContext()); return GetConnection().GetDb();}
     ECSqlStatementCache const& GetStatementCache() const {BeAssert(IsQueryContext()); return *m_statementCache;}
     ECSchemaHelper const& GetSchemaHelper() const {BeAssert(IsQueryContext()); return *m_schemaHelper;}
 };

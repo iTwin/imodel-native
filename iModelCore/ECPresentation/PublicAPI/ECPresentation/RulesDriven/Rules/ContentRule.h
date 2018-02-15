@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/ContentRule.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -19,11 +19,11 @@ typedef bvector<ContentSpecificationP> ContentSpecificationList;
 ContentRule defines rules for generating content for selected items.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ContentRule : public PresentationRule
+struct ContentRule : public ConditionalPresentationRule
     {
     private:
         ContentSpecificationList  m_specifications;
-        Utf8String                   m_customControl;
+        Utf8String                m_customControl;
 
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.

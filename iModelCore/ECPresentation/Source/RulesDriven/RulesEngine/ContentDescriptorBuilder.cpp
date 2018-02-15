@@ -134,8 +134,8 @@ private:
                 m_descriptor.AddField(m_keyField);
                 }
 
-            ECClassCR primaryClass = m_relatedClassPath.empty() ? m_actualClass : *m_relatedClassPath.front().GetSourceClass();
-            ContentDescriptor::Category fieldCategory = m_context.GetCategorySupplier().GetCategory(primaryClass, m_relatedClassPath, ecProperty);
+            ECClassCR primaryClass = m_relatedClassPath.empty() ? m_actualClass : *m_relatedClassPath.front().GetTargetClass();
+            ContentDescriptor::Category fieldCategory = m_context.GetCategorySupplier().GetCategory(primaryClass, m_relatedClassPath, ecProperty, m_relationshipMeaning);
             ContentFieldEditor const* editor = m_propertyInfos.GetPropertyEditor(ecProperty, m_actualClass);
             field = new ContentDescriptor::ECPropertiesField(fieldCategory, "", CreateFieldDisplayLabel(ecProperty), editor ? new ContentFieldEditor(*editor) : nullptr);
             }
@@ -242,7 +242,7 @@ private:
         ContentDescriptor::Property prop(propertyClassAlias, m_actualClass, p);
         // set the "related" flag, if necessary
         if (!m_relatedClassPath.empty())
-            prop.SetIsRelated(m_relatedClassPath);
+            prop.SetIsRelated(m_relatedClassPath, m_relationshipMeaning);
 
         // append the property definition
         field->AddProperty(prop);
@@ -449,6 +449,22 @@ public:
             m_descriptor->SetSelectionInfo(*GetContext().GetSelectionInfo());
         if (nullptr != m_specification)
             QueryBuilderHelpers::ApplyDefaultContentFlags(*m_descriptor, GetContext().GetPreferredDisplayType(), *m_specification);
+
+        if (!m_descriptor->HasContentFlag(ContentFlags::NoFields))
+            {
+            if (nullptr == m_descriptor->GetDisplayLabelField())
+                {
+                Utf8String displayLabel = L10N::GetString(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel());
+                if (displayLabel.empty())
+                    {
+                    BeAssert(false);
+                    displayLabel = "Display Label";
+                    }
+                m_descriptor->AddField(new ContentDescriptor::DisplayLabelField(displayLabel));
+                }
+            m_descriptor->GetDisplayLabelField()->SetPropertiesMap(QueryBuilderHelpers::GetMappedLabelOverridingProperties(GetContext().GetSchemaHelper(), GetContext().GetRuleset().GetInstanceLabelOverrides()));
+            }
+
         }
         
     /*---------------------------------------------------------------------------------**//**

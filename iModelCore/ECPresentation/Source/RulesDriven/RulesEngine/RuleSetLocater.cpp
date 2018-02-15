@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/RuleSetLocater.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -128,25 +128,18 @@ void RuleSetLocaterManager::_InvalidateCache(Utf8CP rulesetId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<PresentationRuleSetPtr> RuleSetLocaterManager::_LocateRuleSets(ECDbCR db, Utf8CP rulesetId) const
+bvector<PresentationRuleSetPtr> RuleSetLocaterManager::_LocateRuleSets(IConnectionCR connection, Utf8CP rulesetId) const
     {
-    IConnectionPtr connection = m_connections.GetConnection(db);
-    if (connection.IsNull())
-        {
-        BeAssert(false);
-        return bvector<PresentationRuleSetPtr>();
-        }
-    
     BeMutexHolder lock(m_mutex);
 
     if (nullptr != rulesetId)
         {
-        auto cacheIter = m_rulesetsCache.find(CacheKey(connection->GetId(), rulesetId));
+        auto cacheIter = m_rulesetsCache.find(CacheKey(connection.GetId(), rulesetId));
         if (m_rulesetsCache.end() != cacheIter)
             return cacheIter->second;
         }
 
-    ECSchemaHelper helper(db, nullptr, nullptr);
+    ECSchemaHelper helper(connection, nullptr, nullptr, nullptr, nullptr);
     bvector<RuleSetLocaterPtr> sortedLocaters = m_locaters;
     std::sort(sortedLocaters.begin(), sortedLocaters.end(), [](RuleSetLocaterPtr a, RuleSetLocaterPtr b)
         {
@@ -160,7 +153,7 @@ bvector<PresentationRuleSetPtr> RuleSetLocaterManager::_LocateRuleSets(ECDbCR db
     bmap<Utf8String, PresentationRuleSetPtr> locatedRulesets;
     for (RuleSetLocaterPtr& locater : sortedLocaters)
         {
-        if (nullptr != locater->GetDesignatedConnection() && &locater->GetDesignatedConnection()->GetDb() != &db)
+        if (nullptr != locater->GetDesignatedConnection() && !locater->GetDesignatedConnection()->GetId().Equals(connection.GetId()))
             continue;
 
         bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets(rulesetId);
@@ -178,7 +171,7 @@ bvector<PresentationRuleSetPtr> RuleSetLocaterManager::_LocateRuleSets(ECDbCR db
     for (auto& ruleset : locatedRulesets)
         {
         results.push_back(ruleset.second);
-        m_rulesetsCache[CacheKey(connection->GetId(), ruleset.second->GetRuleSetId())].push_back(ruleset.second);
+        m_rulesetsCache[CacheKey(connection.GetId(), ruleset.second->GetRuleSetId())].push_back(ruleset.second);
         }
 
     return results;
@@ -477,6 +470,7 @@ EmbeddedRuleSetLocater::EmbeddedRuleSetLocater(IConnectionCR connection)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void EmbeddedRuleSetLocater::LoadRuleSets() const
     {
+    Savepoint txn(m_connection.GetDb(), "EmbeddedRuleSetLocater::LoadRuleSets");
     DbEmbeddedFileTable& embeddedFiles = m_connection.GetDb().EmbeddedFiles();
     for (auto const& file : embeddedFiles.MakeIterator())
         {

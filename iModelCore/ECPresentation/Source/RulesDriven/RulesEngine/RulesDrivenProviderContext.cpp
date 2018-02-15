@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/RulesDrivenProviderContext.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -23,9 +23,10 @@ END_BENTLEY_ECPRESENTATION_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RulesDrivenProviderContext::RulesDrivenProviderContext(PresentationRuleSetCR ruleset, bool holdRuleset, IUserSettings const& settings, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, JsonNavNodesFactory const& nodesFactory, IJsonLocalState const* localState)
-    : m_ruleset(ruleset), m_holdsRuleset(holdRuleset), m_userSettings(settings), m_relatedPathsCache(relatedPathsCache), m_ecexpressionsCache(ecexpressionsCache), 
-    m_nodesFactory(nodesFactory), m_localState(localState)
+RulesDrivenProviderContext::RulesDrivenProviderContext(PresentationRuleSetCR ruleset, bool holdRuleset, IUserSettings const& settings, ECExpressionsCache& ecexpressionsCache, 
+    RelatedPathsCache& relatedPathsCache, PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache, JsonNavNodesFactory const& nodesFactory, IJsonLocalState const* localState)
+    : m_ruleset(ruleset), m_holdsRuleset(holdRuleset), m_userSettings(settings), m_relatedPathsCache(relatedPathsCache), m_polymorphicallyRelatedClassesCache(polymorphicallyRelatedClassesCache),
+    m_ecexpressionsCache(ecexpressionsCache), m_nodesFactory(nodesFactory), m_localState(localState)
     {
     if (holdRuleset)
         m_ruleset.AddRef();
@@ -37,7 +38,8 @@ RulesDrivenProviderContext::RulesDrivenProviderContext(PresentationRuleSetCR rul
 * @bsimethod                                    Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 RulesDrivenProviderContext::RulesDrivenProviderContext(RulesDrivenProviderContextCR other)
-    : m_ruleset(other.m_ruleset), m_holdsRuleset(false), m_userSettings(other.m_userSettings), m_relatedPathsCache(other.m_relatedPathsCache), m_ecexpressionsCache(other.m_ecexpressionsCache), 
+    : m_ruleset(other.m_ruleset), m_holdsRuleset(false), m_userSettings(other.m_userSettings), m_relatedPathsCache(other.m_relatedPathsCache), 
+    m_polymorphicallyRelatedClassesCache(other.m_polymorphicallyRelatedClassesCache), m_ecexpressionsCache(other.m_ecexpressionsCache), 
     m_nodesFactory(other.m_nodesFactory), m_localState(other.m_localState), m_cancelationToken(other.m_cancelationToken)
     {
     Init();
@@ -104,8 +106,8 @@ void RulesDrivenProviderContext::SetQueryContext(IConnectionManagerCR connection
     m_connections = &connections;
     m_connection = &connection;
     m_statementCache = &statementCache;
-    m_schemaHelper = new ECSchemaHelper(connection.GetDb(), &m_relatedPathsCache, m_statementCache);
-    customFunctions.OnConnection(connection.GetDb());
+    m_schemaHelper = new ECSchemaHelper(connection, &m_relatedPathsCache, &m_polymorphicallyRelatedClassesCache, m_statementCache, &m_ecexpressionsCache);
+    customFunctions.OnConnection(connection);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -118,7 +120,7 @@ void RulesDrivenProviderContext::SetQueryContext(RulesDrivenProviderContextCR ot
     m_connections = other.m_connections;
     m_connection = other.m_connection;
     m_statementCache = other.m_statementCache;
-    m_schemaHelper = new ECSchemaHelper(m_connection->GetDb(), &m_relatedPathsCache, m_statementCache);
+    m_schemaHelper = new ECSchemaHelper(*m_connection, &m_relatedPathsCache, &m_polymorphicallyRelatedClassesCache, m_statementCache, &m_ecexpressionsCache);
     }
 
 /*---------------------------------------------------------------------------------**//**

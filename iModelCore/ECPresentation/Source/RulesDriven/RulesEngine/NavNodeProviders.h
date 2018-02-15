@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/NavNodeProviders.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once 
@@ -54,14 +54,17 @@ private:
 
 private:
     void Init();
-    ECPRESENTATION_EXPORT NavNodesProviderContext(PresentationRuleSetCR, bool, RuleTargetTree, uint64_t const*, IUserSettings const&, ECExpressionsCache&, RelatedPathsCache&, JsonNavNodesFactory const&, IHierarchyCache&, INodesProviderFactoryCR, IJsonLocalState const*);
+    ECPRESENTATION_EXPORT NavNodesProviderContext(PresentationRuleSetCR, bool, RuleTargetTree, uint64_t const*, IUserSettings const&, ECExpressionsCache&, 
+        RelatedPathsCache&, PolymorphicallyRelatedClassesCache&, JsonNavNodesFactory const&, IHierarchyCache&, INodesProviderFactoryCR, IJsonLocalState const*);
     ECPRESENTATION_EXPORT NavNodesProviderContext(NavNodesProviderContextCR other);
     
 public:
     static NavNodesProviderContextPtr Create(PresentationRuleSetCR ruleset, bool holdRuleset, RuleTargetTree targetTree, uint64_t const* physicalParentId, IUserSettings const& userSettings, 
-        ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, JsonNavNodesFactory const& nodesFactory, IHierarchyCache& nodesCache, INodesProviderFactoryCR providerFactory, IJsonLocalState const* localState) 
+        ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache,
+        JsonNavNodesFactory const& nodesFactory, IHierarchyCache& nodesCache, INodesProviderFactoryCR providerFactory, IJsonLocalState const* localState) 
         {
-        return new NavNodesProviderContext(ruleset, holdRuleset, targetTree, physicalParentId, userSettings, ecexpressionsCache, relatedPathsCache, nodesFactory, nodesCache, providerFactory, localState);
+        return new NavNodesProviderContext(ruleset, holdRuleset, targetTree, physicalParentId, userSettings, ecexpressionsCache, 
+            relatedPathsCache, polymorphicallyRelatedClassesCache, nodesFactory, nodesCache, providerFactory, localState);
         }
     static NavNodesProviderContextPtr Create(NavNodesProviderContextCR other) {return new NavNodesProviderContext(other);}
     ~NavNodesProviderContext();
@@ -99,10 +102,10 @@ public:
     RootNodeRuleCR GetRootNodeRule() const {BeAssert(IsRootNodeContext()); return *m_rootNodeRule;}
 
     // child nodes context
-    ECPRESENTATION_EXPORT void SetChildNodeContext(ChildNodeRuleCR, NavNodeCR virtualParentNode);
+    ECPRESENTATION_EXPORT void SetChildNodeContext(ChildNodeRuleCP, NavNodeCR virtualParentNode);
     ECPRESENTATION_EXPORT void SetChildNodeContext(NavNodesProviderContextCR other);
     bool IsChildNodeContext() const {return m_isChildNodeContext;}
-    ChildNodeRuleCR GetChildNodeRule() const {BeAssert(IsChildNodeContext()); return *m_childNodeRule;}
+    ChildNodeRuleCP GetChildNodeRule() const {BeAssert(IsChildNodeContext()); return m_childNodeRule;}
 
     // ECDb context
     ECPRESENTATION_EXPORT void SetQueryContext(IConnectionManagerCR, IConnectionCR, ECSqlStatementCache const&, CustomFunctionsInjector&, IECDbUsedClassesListener*);

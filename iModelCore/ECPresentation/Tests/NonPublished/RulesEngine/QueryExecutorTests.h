@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/QueryExecutorTests.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -27,16 +27,14 @@ struct QueryExecutorTests : ::testing::Test
     
     TestConnectionManager m_connections;
     IConnectionPtr m_connection;
-    ECSqlStatementCache m_statementCache;
-    RelatedPathsCache m_relatedPathsCache;
-    ECExpressionsCache m_expressionsCache;
     JsonNavNodesFactory m_nodesFactory;
     TestUserSettings m_userSettings;
     PresentationRuleSetPtr m_ruleset;
     CustomFunctionsInjector* m_customFunctionsInjector;
     DefaultCategorySupplier m_categorySupplier;
     TestPropertyFormatter const* m_propertyFormatter;
-    ECSchemaHelper m_schemaHelper;
+    ECSqlStatementCache m_statementCache;
+    ECSchemaHelper* m_schemaHelper;
     
     ECEntityClassCP m_widgetClass;
     ECEntityClassCP m_gadgetClass;
@@ -46,13 +44,14 @@ struct QueryExecutorTests : ::testing::Test
     static void SetUpTestCase();
     static void TearDownTestCase();
     
-    QueryExecutorTests() : m_statementCache(1), m_schemaHelper(s_project->GetECDb(), &m_relatedPathsCache, &m_statementCache) {}
+    QueryExecutorTests() : m_statementCache(1) {}
 
     void SetUp() override
         {
         Localization::Init();
         m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb());
-        m_customFunctionsInjector = new CustomFunctionsInjector(m_connections, s_project->GetECDb());
+        m_customFunctionsInjector = new CustomFunctionsInjector(m_connections, *m_connection);
+        m_schemaHelper = new ECSchemaHelper(*m_connection, nullptr, nullptr, &m_statementCache, nullptr);
         m_ruleset = PresentationRuleSet::CreateInstance("QueryExecutorTests", 1, 0, false, "", "", "", false);
 
         m_widgetClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Widget")->GetEntityClassCP();
@@ -67,6 +66,7 @@ struct QueryExecutorTests : ::testing::Test
         s_project->GetECDb().AbandonChanges();
         delete m_customFunctionsInjector;
         delete m_propertyFormatter;
+        delete m_schemaHelper;
         Localization::Terminate();
         }
 

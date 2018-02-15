@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/PresentationRule.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -106,7 +106,6 @@ Base class for all PresentationRules.
 struct EXPORT_VTABLE_ATTRIBUTE PresentationRule : public PresentationKey
     {
 private:
-    Utf8String   m_condition;
     bool      m_onlyIfNotHandled;
 
 protected:
@@ -114,26 +113,55 @@ protected:
     ECPRESENTATION_EXPORT PresentationRule ();
 
     //! Constructor.
-    ECPRESENTATION_EXPORT PresentationRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled);
+    ECPRESENTATION_EXPORT PresentationRule (int priority, bool onlyIfNotHandled);
 
     //! Reads rule information from XmlNode, returns true if it can read it successfully.
-    ECPRESENTATION_EXPORT virtual bool           _ReadXml (BeXmlNodeP xmlNode) override;
+    ECPRESENTATION_EXPORT virtual bool _ReadXml (BeXmlNodeP xmlNode) override;
 
     //! Writes rule information to given XmlNode.
-    ECPRESENTATION_EXPORT virtual void           _WriteXml (BeXmlNodeP xmlNode) const override;
+    ECPRESENTATION_EXPORT virtual void _WriteXml (BeXmlNodeP xmlNode) const override;
+
+    //! Compute rule hash.
+    ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
+
+public:
+    //! Returns true if this rule should be executed only in the case where there are no other higher priority rules for this particular cotext.
+    ECPRESENTATION_EXPORT bool GetOnlyIfNotHandled (void) const;
+    };
+
+/*---------------------------------------------------------------------------------**//**
+Class for PresentationRules with conditions.
+* @bsiclass                                     Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+struct EXPORT_VTABLE_ATTRIBUTE ConditionalPresentationRule : public PresentationRule
+    {
+private:
+    Utf8String m_condition;
+
+protected:
+    //! Constructor. It is used to initialize the rule with default settings.
+    ConditionalPresentationRule() {}
+
+    //! Constructor.
+    ConditionalPresentationRule(Utf8String condition, int priority, bool onlyIfNotHandled) 
+        : PresentationRule(priority, onlyIfNotHandled), m_condition(condition)
+        {}
+
+    //! Reads rule information from XmlNode, returns true if it can read it successfully.
+    ECPRESENTATION_EXPORT virtual bool _ReadXml (BeXmlNodeP xmlNode) override;
+
+    //! Writes rule information to given XmlNode.
+    ECPRESENTATION_EXPORT virtual void _WriteXml (BeXmlNodeP xmlNode) const override;
 
     //! Compute rule hash.
     ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
 
 public:
     //! Condition is an ECExpression string, which will be evaluated against the given context in order to decide whether to apply this rule or not.
-    ECPRESENTATION_EXPORT Utf8StringCR              GetCondition (void) const;
+    ECPRESENTATION_EXPORT Utf8StringCR GetCondition (void) const;
 
     //! Set condition ECExpression string, which will be evaluated against the given context in order to decide whether to apply this rule or not.
-    ECPRESENTATION_EXPORT void                   SetCondition (Utf8String value);
-
-    //! Returns true if this rule should be executed only in the case where there are no other higher priority rules for this particular cotext.
-    ECPRESENTATION_EXPORT bool                   GetOnlyIfNotHandled (void) const;
+    ECPRESENTATION_EXPORT void SetCondition (Utf8String value);
     };
 
 struct PresentationRuleSpecificationVisitor;

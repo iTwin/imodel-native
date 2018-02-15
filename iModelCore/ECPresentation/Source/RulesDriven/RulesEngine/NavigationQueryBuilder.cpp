@@ -82,7 +82,7 @@ void UsedClassesHelper::NotifyListenerWithRulesetClasses(IUsedClassesListener& l
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UsedClassesHelper::NotifyListenerWithUsedClasses(IECDbUsedClassesListener& listener, ECExpressionsCache& ecexpressionsCache, IConnectionCR connection, Utf8StringCR ecexpression)
     {
-    ECSchemaHelper schemaHelper(connection.GetDb(), nullptr, nullptr);
+    ECSchemaHelper schemaHelper(connection, nullptr, nullptr, nullptr, nullptr);
     ECDbUsedClassesListenerWrapper wrapper(connection, listener);
     NotifyListenerWithUsedClasses(wrapper, schemaHelper, ecexpressionsCache, ecexpression);
     }
@@ -92,7 +92,7 @@ void UsedClassesHelper::NotifyListenerWithUsedClasses(IECDbUsedClassesListener& 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UsedClassesHelper::NotifyListenerWithRulesetClasses(IECDbUsedClassesListener& listener, ECExpressionsCache& ecexpressionsCache, IConnectionCR connection, PresentationRuleSetCR ruleset)
     {
-    ECSchemaHelper schemaHelper(connection.GetDb(), nullptr, nullptr);
+    ECSchemaHelper schemaHelper(connection, nullptr, nullptr, nullptr, nullptr);
     ECDbUsedClassesListenerWrapper wrapper(connection, listener);
     NotifyListenerWithRulesetClasses(wrapper, schemaHelper, ecexpressionsCache, ruleset);
     }
@@ -199,10 +199,12 @@ struct SelectQueryInfo
         bool m_selectPolymorphically;
         bvector<RelatedClass> m_relatedClasses;
         SelectionPurpose m_flag;
+        bvector<ECPropertyCP> m_labelOverridingProperties;
     public:
         SelectQueryInfo() : m_selectClass(nullptr) {}
-        SelectQueryInfo(ChildNodeSpecificationCR spec, ECClassCR selectClass, bool selectPolymorphically, SelectionPurpose flag = SelectionPurpose::Include, bvector<RelatedClass> relatedClasses = bvector<RelatedClass>())
-            : m_specification(&spec), m_selectClass(&selectClass), m_selectPolymorphically(selectPolymorphically), m_flag(flag), m_relatedClasses(relatedClasses)
+        SelectQueryInfo(ChildNodeSpecificationCR spec, ECClassCR selectClass, bool selectPolymorphically, 
+            SelectionPurpose flag = SelectionPurpose::Include, bvector<RelatedClass> relatedClasses = bvector<RelatedClass>(), bvector<ECPropertyCP> const& labelOverrides = bvector<ECPropertyCP>())
+            : m_specification(&spec), m_selectClass(&selectClass), m_selectPolymorphically(selectPolymorphically), m_flag(flag), m_relatedClasses(relatedClasses), m_labelOverridingProperties(labelOverrides)
             {}
         ChildNodeSpecificationCP GetSpecification() const {return m_specification;}
         void SetSpecification(ChildNodeSpecificationCR spec) {m_specification = &spec;}
@@ -231,6 +233,9 @@ struct SelectQueryInfo
                 list.push_back(relatedSelectClass.GetTargetClass());
             return list;
             }
+
+        bvector<ECPropertyCP> const& GetLabelOverrides() const {return m_labelOverridingProperties;}
+        void SetLabelOverrides(bvector<ECPropertyCP> const& overrides) {m_labelOverridingProperties = overrides;}
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -423,7 +428,7 @@ protected:
     GroupingType _GetType() const override {return GroupingType::DisplayLabel;}
     NavigationQueryContractPtr _GetContract(SelectQueryInfo const& selectInfo) const override
         {
-        return DisplayLabelGroupingNodesQueryContract::Create(selectInfo.GetSelectClass(), true, selectInfo.GetRelatedClasses());
+        return DisplayLabelGroupingNodesQueryContract::Create(selectInfo.GetSelectClass(), true, selectInfo.GetRelatedClasses(), selectInfo.GetLabelOverrides());
         }
     bool _AppliesForClass(ECClassCR, bool) const override {return true;}
     bool _IsAppliedTo(NavNodeCR node) const override {return node.GetType().Equals(NAVNODE_TYPE_DisplayLabelGroupingNode);}
@@ -457,9 +462,9 @@ protected:
     bool _ApplyFilter(ComplexNavigationQueryPtr& query, SelectQueryInfo const&, NavNodeCR filteringNode) const override
         {
         NavNodeExtendedData extendedData(filteringNode);
+        IdsFilteringHelper<IdSet<ECInstanceId>> filteringHelper(extendedData.GetGroupedInstanceIds());
         PresentationQueryContractFieldCPtr ecInstanceIdField = query->GetContract()->GetField(DisplayLabelGroupingNodesQueryContract::ECInstanceIdFieldName);
-        query->Where(Utf8PrintfString("InVirtualSet(?, %s)", ecInstanceIdField->GetSelectClause(query->GetSelectPrefix()).c_str()).c_str(),
-            {new BoundQueryIdSet(extendedData.GetGroupedInstanceIds())});
+        query->Where(filteringHelper.CreateWhereClause(ecInstanceIdField->GetSelectClause(query->GetSelectPrefix()).c_str()).c_str(), filteringHelper.CreateBoundValues());
 
         PresentationQueryContractFieldCPtr labelField = query->GetContract()->GetField(DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName);
         query->Where(Utf8PrintfString("%s = ?", labelField->GetSelectClause(query->GetSelectPrefix()).c_str()).c_str(), 
@@ -903,11 +908,18 @@ protected:
                 }
             else if (value->IsArray())
                 {
-                whereClause = Utf8String("InVirtualSet(?, ").append(whereClause).append(")");
+                // WIP: use IdsFilteringHelper
                 if (ecProperty->GetIsNavigation())
-                    whereClauseBindings.push_back(new BoundQueryIdSet(QueryBuilderHelpers::CreateIdSetFromJsonArray(*value)));                    
+                    {
+                    IdsFilteringHelper<IdSet<BeInt64Id>> helper(QueryBuilderHelpers::CreateIdSetFromJsonArray(*value));
+                    whereClause = helper.CreateWhereClause(whereClause.c_str());
+                    whereClauseBindings = helper.CreateBoundValues();
+                    }
                 else
+                    {
+                    whereClause = Utf8String("InVirtualSet(?, ").append(whereClause).append(")");
                     whereClauseBindings.push_back(new BoundRapidJsonValueSet(*value, ecProperty->GetAsPrimitiveProperty()->GetType()));
+                    }
                 }
             else
                 {
@@ -974,8 +986,8 @@ protected:
     NavigationQueryContractPtr _GetContract(SelectQueryInfo const& selectInfo) const override
         {
         if (m_groupingContract.IsNull())
-            m_groupingContract = DisplayLabelGroupingNodesQueryContract::Create(selectInfo.GetSelectClass(), false, selectInfo.GetRelatedClasses());
-        return ECInstanceNodesQueryContract::Create(selectInfo.GetSelectClass(), selectInfo.GetRelatedClasses());
+            m_groupingContract = DisplayLabelGroupingNodesQueryContract::Create(selectInfo.GetSelectClass(), false, selectInfo.GetRelatedClasses(), selectInfo.GetLabelOverrides());
+        return ECInstanceNodesQueryContract::Create(selectInfo.GetSelectClass(), selectInfo.GetRelatedClasses(), selectInfo.GetLabelOverrides());
         }
     bool _IsAppliedTo(NavNodeCR node) const override {return false;}
 
@@ -1536,7 +1548,7 @@ protected:
         {}
     NavigationQueryContractPtr _GetContract(SelectQueryInfo const& selectInfo) const override
         {
-        return ECInstanceNodesQueryContract::Create(selectInfo.GetSelectClass(), selectInfo.GetRelatedClasses());
+        return ECInstanceNodesQueryContract::Create(selectInfo.GetSelectClass(), selectInfo.GetRelatedClasses(), selectInfo.GetLabelOverrides());
         }
 };
 
@@ -2689,15 +2701,30 @@ static ComplexNavigationQueryPtr CreateQuery(NavigationQueryContract& contract, 
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 static SelectQueryInfo CreateSelectInfo(ECSchemaHelper const& helper, MultiQueryContext& ctx, ECEntityClassCR parentInstanceClass, 
-    RelatedClassPath const& path, SelectionPurpose purpose, ChildNodeSpecificationCR specification)
+    RelatedClassPath const& path, SelectionPurpose purpose, ChildNodeSpecificationCR specification, bmap<ECClassCP, bvector<ECPropertyCP>> const& labelOverridingProperties)
     {
     RelatedClassPath relatedClassPath = path;
     relatedClassPath.Reverse("related", path.back().IsPolymorphic());
 
     SelectQueryInfo selectInfo(specification, *path.back().GetTargetClass(), path.back().IsPolymorphic(), purpose);
+    auto iter = labelOverridingProperties.find(selectInfo.GetSelectClass());
+    if (iter != labelOverridingProperties.end())
+        selectInfo.SetLabelOverrides(iter->second);
     selectInfo.GetRelatedClassPath() = relatedClassPath;
     selectInfo.GetRelatedClasses() = GetRelatedInstanceClasses(helper, ctx, *selectInfo.GetSelectClass(), specification.GetRelatedInstances());
     return selectInfo;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static SelectQueryInfo CreateSelectInfo(ChildNodeSpecificationCR specification, ECClassCR selectClass, bool selectPolymorphically, bmap<ECClassCP, bvector<ECPropertyCP>> const& labelOverridingProperties)
+    {
+    SelectQueryInfo info(specification, selectClass, selectPolymorphically);
+    auto iter = labelOverridingProperties.find(info.GetSelectClass());
+    if (iter != labelOverridingProperties.end())
+        info.SetLabelOverrides(iter->second);
+    return info;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2707,12 +2734,13 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
     {
     GroupingResolver groupingResolver(m_params.GetSchemaHelper(), m_params, parentNode, specification.GetHash(), specification);
     MultiQueryContextPtr queryContext = CreateQueryContext(groupingResolver);
+    bmap<ECClassCP, bvector<ECPropertyCP>> labelOverridingProperties = QueryBuilderHelpers::GetMappedLabelOverridingProperties(m_params.GetSchemaHelper(), m_params.GetRuleset().GetInstanceLabelOverrides());
     
     // find the classes to query instances from
     bvector<SelectQueryInfo> selectInfos;
     if (groupingResolver.IsGroupedByClass())
         {
-        selectInfos.push_back(SelectQueryInfo(specification, *groupingResolver.GetGroupingClass(), false));
+        selectInfos.push_back(CreateSelectInfo(specification, *groupingResolver.GetGroupingClass(), false, labelOverridingProperties));
         }
     else
         {
@@ -2724,7 +2752,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
             }
         ECClassSet queryClasses = m_params.GetSchemaHelper().GetECClassesFromSchemaList(supportedSchemas);
         for (auto pair : queryClasses)
-            selectInfos.push_back(SelectQueryInfo(specification, *pair.first, pair.second));
+            selectInfos.push_back(CreateSelectInfo(specification, *pair.first, pair.second, labelOverridingProperties));
         }
 
     // quick return if nothing to select from
@@ -2794,6 +2822,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
         return bvector<NavigationQueryPtr>();
         }
     
+    bmap<ECClassCP, bvector<ECPropertyCP>> labelOverridingProperties = QueryBuilderHelpers::GetMappedLabelOverridingProperties(m_params.GetSchemaHelper(), m_params.GetRuleset().GetInstanceLabelOverrides());
     if (groupingResolver.IsGroupedByRelationship())
         {
         ECRelationshipClassCP groupingRelationship = groupingResolver.GetGroupingRelationship();
@@ -2807,7 +2836,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
             RelatedClassPath path;
             path.push_back(RelatedClass(*rootClass, *relationshipEnd, *groupingRelationship, isForwardJoin, nullptr, relationshipAlias.c_str()));
             SelectQueryInfo selectInfo = CreateSelectInfo(m_params.GetSchemaHelper(), *queryContext, 
-                *rootClass->GetEntityClassCP(), path, SelectionPurpose::Include, specification);
+                *rootClass->GetEntityClassCP(), path, SelectionPurpose::Include, specification, labelOverridingProperties);
 
             NavigationQueryContractPtr contract = queryContext->GetContract(selectInfo);
             if (contract.IsNull())
@@ -2843,7 +2872,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
         for (bpair<RelatedClassPath, bool> const& pair : relationshipClassPaths)
             {
             selectInfos.push_back(CreateSelectInfo(m_params.GetSchemaHelper(), *queryContext, 
-                *rootClass->GetEntityClassCP(), pair.first, pair.second ? SelectionPurpose::Include : SelectionPurpose::Exclude, specification));
+                *rootClass->GetEntityClassCP(), pair.first, pair.second ? SelectionPurpose::Include : SelectionPurpose::Exclude, specification, labelOverridingProperties));
             if (pair.second)
                 hasIncludes = true;
             }
@@ -2881,11 +2910,12 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
     GroupingResolver groupingResolver(m_params.GetSchemaHelper(), m_params, parentNode, specification.GetHash(), specification);
     MultiQueryContextPtr queryContext = CreateQueryContext(groupingResolver);
     bool areQueriesPolymorphic = specification.GetArePolymorphic() && !groupingResolver.IsGroupedByClass();
+    bmap<ECClassCP, bvector<ECPropertyCP>> labelOverridingProperties = QueryBuilderHelpers::GetMappedLabelOverridingProperties(m_params.GetSchemaHelper(), m_params.GetRuleset().GetInstanceLabelOverrides());
 
     bvector<SelectQueryInfo> selectInfos;
     if (groupingResolver.IsGroupedByClass())
         {
-        selectInfos.push_back(SelectQueryInfo(specification, *groupingResolver.GetGroupingClass(), false));
+        selectInfos.push_back(CreateSelectInfo(specification, *groupingResolver.GetGroupingClass(), false, labelOverridingProperties));
         }
     else
         {
@@ -2894,7 +2924,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
         for (SupportedEntityClassInfo const& queryClassInfo : queryClassesInfos)
             {
             bool isPolymorphic = areQueriesPolymorphic && queryClassInfo.IsPolymorphic();
-            selectInfos.push_back(SelectQueryInfo(specification, queryClassInfo.GetClass(), isPolymorphic, queryClassInfo.IsInclude() ? SelectionPurpose::Include : SelectionPurpose::Exclude));
+            selectInfos.push_back(CreateSelectInfo(specification, queryClassInfo.GetClass(), isPolymorphic, labelOverridingProperties));
             }
         }
 
@@ -2957,54 +2987,6 @@ private:
             inputUppercase = inputUppercase.erase(pos);
             }
         }
-    
-    /*-----------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis            11/2017
-    +---------------+---------------+---------------+---------------+-----------+------*/
-    ECValue GetPropertyValue(ECInstanceKeyCR instanceKey, Utf8StringCR propertyName)
-        {
-        ECClassCP ecClass = m_helper.GetECClass(instanceKey.GetClassId());
-        if (nullptr == ecClass)
-            {
-            BeAssert(false);
-            return ECValue();
-            }
-        ECPropertyCP prop = ecClass->GetPropertyP(propertyName.c_str());
-        if (nullptr == prop)
-            {
-            BeAssert(false);
-            LoggingHelper::LogMessage(Log::Navigation, "ECClass does not have a property with the specified name", NativeLogging::LOG_ERROR);
-            return ECValue();
-            }
-        if (!prop->GetIsPrimitive())
-            {
-            BeAssert(false);
-            LoggingHelper::LogMessage(Log::Navigation, "Can only get value of primitive properties", NativeLogging::LOG_ERROR);
-            return ECValue();
-            }
-
-        Utf8String query = Utf8String("SELECT ").append(prop->GetName());
-        query.append(" FROM ").append(ecClass->GetECSqlName());
-        query.append(" WHERE ECInstanceId = ?");
-        
-        ECSqlStatement stmt;
-        if (!stmt.Prepare(m_helper.GetDb(), query.c_str()).IsSuccess())
-            {
-            BeAssert(false);
-            LoggingHelper::LogMessage(Log::Navigation, "Failed to get ECProperty value for ECPropertyValueQuerySpecification", NativeLogging::LOG_ERROR);
-            return ECValue();
-            }
-        stmt.BindId(1, instanceKey.GetInstanceId());
-
-        DbResult result = stmt.Step();
-        if (BE_SQLITE_ROW != result)
-            {
-            BeAssert(false);
-            return ECValue();
-            }
-
-        return ValueHelpers::GetECValueFromSqlValue(prop->GetAsPrimitiveProperty()->GetType(), stmt.GetValue(0));
-        }
 
 protected:
     /*-----------------------------------------------------------------------------**//**
@@ -3048,7 +3030,7 @@ protected:
             return;
             }
 
-        ECValue propertyValue = GetPropertyValue(m_parentNode->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), queryProperty->GetName());
+        ECValue propertyValue = ECInstancesHelper::GetValue(m_helper.GetConnection(), m_parentNode->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), queryProperty->GetName().c_str());
         if (!propertyValue.IsString())
             {
             BeAssert(false);
@@ -3093,6 +3075,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
 
     GroupingResolver groupingResolver(m_params.GetSchemaHelper(), m_params, parentNode, specification.GetHash(), specification);
     MultiQueryContextPtr queryContext = CreateQueryContext(groupingResolver, true);
+    bmap<ECClassCP, bvector<ECPropertyCP>> labelOverridingProperties = QueryBuilderHelpers::GetMappedLabelOverridingProperties(m_params.GetSchemaHelper(), m_params.GetRuleset().GetInstanceLabelOverrides());
 
     // create a query for each class
     for (QuerySpecification* querySpecification : specification.GetQuerySpecifications())
@@ -3119,6 +3102,9 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
         SelectQueryInfo selectInfo(specification, *entityClass, true);
         selectInfo.GetRelatedClasses() = GetRelatedInstanceClasses(m_params.GetSchemaHelper(), *queryContext, 
             *selectInfo.GetSelectClass(), specification.GetRelatedInstances());
+        auto iter = labelOverridingProperties.find(selectInfo.GetSelectClass());
+        if (iter != labelOverridingProperties.end())
+            selectInfo.SetLabelOverrides(iter->second);
         
         // may need to split some base classes into their derived classes if there are customization rules that only apply for 
         // derived classes.

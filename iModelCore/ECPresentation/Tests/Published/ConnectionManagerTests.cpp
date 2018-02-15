@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/ConnectionManagerTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -94,9 +94,10 @@ TEST_F(ConnectionManagerTests, ReturnsProxyConnectionWhenRequestedByPrimaryECDbO
         IConnectionPtr proxyConnection = m_manager.GetConnection(s_project->GetECDb());
         ASSERT_TRUE(proxyConnection.IsValid());
         EXPECT_TRUE(proxyConnection->IsOpen());
-        // expect connections to be based on the same datasource
+        // expect connections to be based on the same datasource but different sqlite connections
         EXPECT_EQ(primaryConnection->GetId(), proxyConnection->GetId());
-        EXPECT_EQ(&s_project->GetECDb(), &proxyConnection->GetDb());
+        EXPECT_EQ(&s_project->GetECDb(), &proxyConnection->GetECDb());
+        EXPECT_NE(&proxyConnection->GetECDb(), &proxyConnection->GetDb());
         }).join();
     }
 
@@ -108,8 +109,8 @@ TEST_F(ConnectionManagerTests, ReturnsProxyConnectionWhenRequestedByConnectionId
     m_manager.NotifyConnectionOpened(s_project->GetECDb());
     IConnectionPtr primaryConnection = m_manager.GetConnection(s_project->GetECDb());
     ASSERT_TRUE(primaryConnection.IsValid());
-    Utf8StringCR primaryConnectionId = primaryConnection->GetId();
-    ECDbCR primaryConnectionDb = primaryConnection->GetDb();
+    // unused - Utf8StringCR primaryConnectionId = primaryConnection->GetId();
+    // unused - ECDbCR primaryConnectionDb = primaryConnection->GetECDb();
     
     std::thread([&]()
         {
@@ -117,9 +118,10 @@ TEST_F(ConnectionManagerTests, ReturnsProxyConnectionWhenRequestedByConnectionId
         IConnectionPtr proxyConnection = m_manager.GetConnection(primaryConnection->GetId().c_str());
         ASSERT_TRUE(proxyConnection.IsValid());
         EXPECT_TRUE(proxyConnection->IsOpen());
-        // expect connections to be based on the same datasource
-        EXPECT_EQ(primaryConnectionId, proxyConnection->GetId());
-        EXPECT_EQ(&primaryConnectionDb, &proxyConnection->GetDb());
+        // expect connections to be based on the same datasource but different sqlite connections
+        EXPECT_EQ(primaryConnection->GetId(), proxyConnection->GetId());
+        EXPECT_EQ(&s_project->GetECDb(), &proxyConnection->GetECDb());
+        EXPECT_NE(&proxyConnection->GetECDb(), &proxyConnection->GetDb());
         }).join();
     }
 

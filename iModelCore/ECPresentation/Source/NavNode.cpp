@@ -269,7 +269,7 @@ MD5 ECInstanceNodeKey::_ComputeHash() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-KeySetPtr KeySet::Create(NavNodeKeyList nodeKeys)
+KeySetPtr KeySet::Create(NavNodeKeyList const& nodeKeys)
     {
     NavNodeKeySet set;
     for (NavNodeKeyCPtr const& Key : nodeKeys)
@@ -280,7 +280,7 @@ KeySetPtr KeySet::Create(NavNodeKeyList nodeKeys)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-KeySetPtr KeySet::Create(bvector<ECInstanceKey> instanceKeys)
+KeySetPtr KeySet::Create(bvector<ECInstanceKey> const& instanceKeys)
     {
     InstanceKeyMap map;
     for (ECInstanceKey const& key : instanceKeys)
@@ -291,7 +291,7 @@ KeySetPtr KeySet::Create(bvector<ECInstanceKey> instanceKeys)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-KeySetPtr KeySet::Create(bvector<IECInstancePtr> instances)
+KeySetPtr KeySet::Create(bvector<IECInstancePtr> const& instances)
     {
     InstanceKeyMap map;
     for (IECInstancePtr const& instance : instances)
@@ -300,6 +300,20 @@ KeySetPtr KeySet::Create(bvector<IECInstancePtr> instances)
         ECInstanceId instanceId;
         ECInstanceId::FromString(instanceId, instance->GetInstanceId().c_str());
         map[classId].insert(instanceId);
+        }
+    return new KeySet(map, NavNodeKeySet());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+KeySetPtr KeySet::Create(bvector<ECClassCP> const& classes)
+    {
+    InstanceKeyMap map;
+    for (ECClassCP ecClass : classes)
+        {
+        ECClassId classId = ecClass->GetId();
+        map[classId].insert(ECInstanceId());
         }
     return new KeySet(map, NavNodeKeySet());
     }

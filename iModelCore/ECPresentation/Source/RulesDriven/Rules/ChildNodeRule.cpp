@@ -150,7 +150,7 @@ MD5 SubCondition::_ComputeHash(Utf8CP parentHash) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChildNodeRule::ChildNodeRule () : PresentationRule (), m_targetTree (TargetTree_MainTree), m_stopFurtherProcessing (false)
+ChildNodeRule::ChildNodeRule () : m_targetTree (TargetTree_MainTree), m_stopFurtherProcessing (false)
     {
     }
 
@@ -158,7 +158,7 @@ ChildNodeRule::ChildNodeRule () : PresentationRule (), m_targetTree (TargetTree_
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChildNodeRule::ChildNodeRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree)
-    : PresentationRule (condition, priority, onlyIfNotHandled), m_targetTree (targetTree), m_stopFurtherProcessing (false)
+    : ConditionalPresentationRule(condition, priority, onlyIfNotHandled), m_targetTree (targetTree), m_stopFurtherProcessing (false)
     {
     }
 
@@ -166,7 +166,7 @@ ChildNodeRule::ChildNodeRule (Utf8StringCR condition, int priority, bool onlyIfN
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChildNodeRule::ChildNodeRule(ChildNodeRuleCR other)
-    : PresentationRule(other), m_targetTree(other.m_targetTree), m_stopFurtherProcessing(other.m_stopFurtherProcessing)
+    : ConditionalPresentationRule(other), m_targetTree(other.m_targetTree), m_stopFurtherProcessing(other.m_stopFurtherProcessing)
     {
     CommonTools::CopyRules(m_subConditions, other.m_subConditions);
     CommonTools::CloneRules(m_specifications, other.m_specifications);
@@ -236,7 +236,7 @@ bool ChildNodeRule::_ReadXml (BeXmlNodeP xmlNode)
             CommonTools::LoadRuleFromXmlNode<ImageIdOverride, ChildNodeCustomizationRuleList>(child, m_customizationRules);
         }
 
-    return PresentationRule::_ReadXml (xmlNode);
+    return ConditionalPresentationRule::_ReadXml (xmlNode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -250,7 +250,7 @@ void ChildNodeRule::_WriteXml (BeXmlNodeP xmlNode) const
     CommonTools::WriteRulesToXmlNode<SubCondition, SubConditionList> (xmlNode, m_subConditions);
     CommonTools::WriteRulesToXmlNode<ChildNodeSpecification, ChildNodeSpecificationList> (xmlNode, m_specifications);
     CommonTools::WriteRulesToXmlNode<CustomizationRule, ChildNodeCustomizationRuleList> (xmlNode, m_customizationRules);
-    PresentationRule::_WriteXml (xmlNode);
+    ConditionalPresentationRule::_WriteXml (xmlNode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -318,7 +318,7 @@ bool ChildNodeRule::GetStopFurtherProcessing (void) const { return m_stopFurther
 +---------------+---------------+---------------+---------------+---------------+------*/
 MD5 ChildNodeRule::_ComputeHash(Utf8CP parentHash) const
     {
-    MD5 md5 = PresentationRule::_ComputeHash(parentHash);
+    MD5 md5 = ConditionalPresentationRule::_ComputeHash(parentHash);
     md5.Add(&m_targetTree, sizeof(m_targetTree));
     md5.Add(&m_stopFurtherProcessing, sizeof(m_stopFurtherProcessing));
 

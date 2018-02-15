@@ -153,9 +153,9 @@ struct RulesDrivenECPresentationManagerImpl::UsedClassesListener : IECDbUsedClas
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool IsRulesetSupported(ECDbCR connection, PresentationRuleSetCR ruleset)
+static bool IsRulesetSupported(IConnectionCR connection, PresentationRuleSetCR ruleset)
     {
-    ECSchemaHelper helper(connection, nullptr, nullptr);
+    ECSchemaHelper helper(connection, nullptr, nullptr, nullptr, nullptr);
     return helper.AreSchemasSupported(ruleset.GetSupportedSchemas());
     }
 
@@ -170,7 +170,7 @@ static PresentationRuleSetPtr FindRuleset(IRulesetLocaterManager const& locaters
         LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("Invalid ruleset ID: '%s'", rulesetId).c_str(), LOG_ERROR);
         return nullptr;
         }
-    if (!IsRulesetSupported(connection.GetDb(), *ruleset))
+    if (!IsRulesetSupported(connection, *ruleset))
         {
         LoggingHelper::LogMessage(Log::Navigation, Utf8PrintfString("Ruleset '%s' not supported by connection", rulesetId).c_str(), LOG_INFO);
         return nullptr;
@@ -211,14 +211,41 @@ public:
 };
 
 /*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                01/2017
+* @bsiclass                                     Grigas.Petraitis                02/2018
 +===============+===============+===============+===============+===============+======*/
-template<typename T, T*(*CreateFunc)()>
-struct ConnectionBasedCache : IConnectionsListener
+struct RulesDrivenECPresentationManagerImpl::ECDbCaches : IConnectionsListener, IECSqlStatementCacheProvider
 {
+    struct Caches
+        {
+        RelatedPathsCache* m_relatedPathsCache;
+        PolymorphicallyRelatedClassesCache* m_polymorphicallyRelatedClassesCache;
+        ECSqlStatementCache* m_statementsCache;
+        Caches()
+            {
+            m_relatedPathsCache = new RelatedPathsCache();
+            m_polymorphicallyRelatedClassesCache = new PolymorphicallyRelatedClassesCache();
+            m_statementsCache = new ECSqlStatementCache(50);
+            }
+        ~Caches()
+            {
+            DELETE_AND_CLEAR(m_relatedPathsCache);
+            DELETE_AND_CLEAR(m_polymorphicallyRelatedClassesCache);
+            DELETE_AND_CLEAR(m_statementsCache);
+            }
+        };
+
 private:
     IConnectionManagerCR m_connections;
-    bmap<Utf8String, T*> m_caches;
+    mutable bmap<Utf8String, Caches*> m_caches;
+    
+private:
+    Caches& GetCaches(IConnectionCR connection) const
+        {
+        auto iter = m_caches.find(connection.GetId());
+        if (m_caches.end() == iter)
+            iter = m_caches.Insert(connection.GetId(), new Caches()).first;
+        return *iter->second;
+        }
 
 protected:
     void _OnConnectionEvent(ConnectionEvent const& evt) override
@@ -230,46 +257,24 @@ protected:
             m_caches.erase(iter);
             }
         }
+    ECSqlStatementCache& _GetECSqlStatementCache(IConnectionCR connection) override {return GetStatementsCache(connection);}
 public:
-    ConnectionBasedCache(IConnectionManagerCR connections) 
+    ECDbCaches(IConnectionManagerCR connections) 
         : m_connections(connections)
         {
         m_connections.AddListener(*this);
         }
-    ~ConnectionBasedCache()
+    ~ECDbCaches()
         {
         m_connections.DropListener(*this);
         for (auto iter : m_caches)
             delete iter.second;
         }
-    T& GetCache(ECDbCR db)
-        {
-        IConnectionPtr connection = m_connections.GetConnection(db);
-        auto iter = m_caches.find(connection->GetId());
-        if (m_caches.end() == iter)
-            iter = m_caches.Insert(connection->GetId(), CreateFunc()).first;
-        return *iter->second;
-        }
+    void NotifyECInstancesChanged(IConnectionCR connection) {GetPolymorphicallyRelatedClassesCache(connection).Clear();}
+    RelatedPathsCache& GetRelatedPathsCache(IConnectionCR connection) const {return *GetCaches(connection).m_relatedPathsCache;}
+    PolymorphicallyRelatedClassesCache& GetPolymorphicallyRelatedClassesCache(IConnectionCR connection) const {return *GetCaches(connection).m_polymorphicallyRelatedClassesCache;}
+    ECSqlStatementCache& GetStatementsCache(IConnectionCR connection) const {return *GetCaches(connection).m_statementsCache;}
 };
-
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                01/2017
-+===============+===============+===============+===============+===============+======*/
-ECSqlStatementCache* CreateECSqlStatementCache() {return new ECSqlStatementCache(50);}
-struct RulesDrivenECPresentationManagerImpl::ECDbStatementsCache : ConnectionBasedCache<ECSqlStatementCache, CreateECSqlStatementCache>, IECSqlStatementCacheProvider
-    {
-    ECSqlStatementCache& _GetECSqlStatementCache(ECDbCR db) override {return ConnectionBasedCache::GetCache(db);}
-    ECDbStatementsCache(IConnectionManagerCR connections) : ConnectionBasedCache(connections) {}
-    };
-
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                01/2017
-+===============+===============+===============+===============+===============+======*/
-RelatedPathsCache* CreateRelatedPathsCache() {return new RelatedPathsCache();}
-struct RulesDrivenECPresentationManagerImpl::ECDbRelatedPathsCache : ConnectionBasedCache<RelatedPathsCache, CreateRelatedPathsCache>
-    {
-    ECDbRelatedPathsCache(IConnectionManagerCR connections) : ConnectionBasedCache(connections) {}
-    };
 
 /*=================================================================================**//**
 * @bsiclass                                     Saulius.Skliutas                01/2018
@@ -379,7 +384,11 @@ private:
                 provider = MultiSpecificationNodesProvider::Create(context, specs, *parent);
             }
         if (provider.IsNull())
+            {
+            if (nullptr != parent)
+                context.SetChildNodeContext(nullptr, *parent);
             provider = EmptyNavNodesProvider::Create(context);
+            }
         return provider;
         }
 
@@ -457,17 +466,18 @@ protected:
         // get various caches
         IUserSettings const& settings = m_manager.GetUserSettings(rulesetId);
         ECExpressionsCache& ecexpressionsCache = m_manager.m_rulesetECExpressionsCache->Get(rulesetId);
-        RelatedPathsCache& relatedPathsCache = m_manager.m_relatedPathsCache->GetCache(connection.GetDb());
-        ECSqlStatementCache& statementsCache = m_manager.m_statementCache->GetCache(connection.GetDb());
+        RelatedPathsCache& relatedPathsCache = m_manager.m_ecdbCaches->GetRelatedPathsCache(connection);
+        PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache = m_manager.m_ecdbCaches->GetPolymorphicallyRelatedClassesCache(connection);
+        ECSqlStatementCache& statementsCache = m_manager.m_ecdbCaches->GetStatementsCache(connection);
 
         // notify listener with ECClasses used in this ruleset
-        ECSchemaHelper schemaHelper(connection.GetDb(), &relatedPathsCache, &statementsCache);
+        ECSchemaHelper schemaHelper(connection, &relatedPathsCache, &polymorphicallyRelatedClassesCache, &statementsCache, &ecexpressionsCache);
         UsedClassesHelper::NotifyListenerWithRulesetClasses(*m_manager.m_usedClassesListener, ecexpressionsCache, connection, *ruleset);
 
         // set up the nodes provider context
         _l2 = LoggingHelper::CreatePerformanceLogger(Log::Navigation, "[NodesProviderContextFactory::Create] Create context", NativeLogging::LOG_TRACE);
         NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*ruleset, true, TargetTree_MainTree, parentNodeId,
-            settings, ecexpressionsCache, relatedPathsCache, *m_manager.m_nodesFactory, m_manager.GetNodesCache(),
+            settings, ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, *m_manager.m_nodesFactory, m_manager.GetNodesCache(),
             *m_manager.m_nodesProviderFactory, m_manager.GetLocalState());
         context->SetQueryContext(m_manager.m_connections, connection, statementsCache, *m_manager.m_customFunctions, m_manager.m_usedClassesListener);
         context->SetLocalizationContext(m_manager.GetLocalizationProvider());
@@ -490,14 +500,13 @@ RulesDrivenECPresentationManagerImpl::RulesDrivenECPresentationManagerImpl(IRule
     {
     m_customFunctions = new CustomFunctionsInjector(connections);
     m_rulesetECExpressionsCache = new RulesetECExpressionsCache();
-    m_statementCache = new ECDbStatementsCache(connections);
-    m_relatedPathsCache = new ECDbRelatedPathsCache(connections);
+    m_ecdbCaches = new ECDbCaches(connections);
     m_nodesProviderContextFactory = new NodesProviderContextFactory(*this);
     m_nodesProviderFactory = new NodesProviderFactory(*this);
     m_usedClassesListener = new UsedClassesListener(*this);
     m_nodesFactory = new JsonNavNodesFactory();
     m_nodesCache = new NodesCache(paths.GetTemporaryDirectory(), *m_nodesFactory, *m_nodesProviderContextFactory,
-        connections, *m_statementCache, disableDiskCache ? NodesCacheType::Memory : NodesCacheType::Disk);
+        connections, *m_ecdbCaches, disableDiskCache ? NodesCacheType::Memory : NodesCacheType::Disk);
     m_contentCache = new ContentCache();
     m_updateHandler = new UpdateHandler(m_nodesCache, m_contentCache, connections, *m_nodesProviderContextFactory,
         *m_nodesProviderFactory, *m_rulesetECExpressionsCache);
@@ -520,8 +529,7 @@ RulesDrivenECPresentationManagerImpl::~RulesDrivenECPresentationManagerImpl()
     DELETE_AND_CLEAR(m_usedClassesListener);
     DELETE_AND_CLEAR(m_nodesProviderFactory);
     DELETE_AND_CLEAR(m_nodesProviderContextFactory);
-    DELETE_AND_CLEAR(m_relatedPathsCache);
-    DELETE_AND_CLEAR(m_statementCache);
+    DELETE_AND_CLEAR(m_ecdbCaches);
     DELETE_AND_CLEAR(m_rulesetECExpressionsCache);
     DELETE_AND_CLEAR(m_customFunctions);
 
@@ -563,19 +571,20 @@ void RulesDrivenECPresentationManagerImpl::_OnConnectionEvent(ConnectionEvent co
     {
     if (evt.GetEventType() == ConnectionEventType::Opened)
         {
+#ifdef WIP_EMBEDDED_SUPPLEMENTAL_RULESETS
         RuleSetLocaterPtr locater = m_embeddedRuleSetLocaters[evt.GetConnection().GetId()] = SupplementalRuleSetLocater::Create(*EmbeddedRuleSetLocater::Create(evt.GetConnection()));
         GetLocaters().RegisterLocater(*locater);
+#endif
         }
     else if (evt.GetEventType() == ConnectionEventType::Closed)
         {
         auto iter = m_embeddedRuleSetLocaters.find(evt.GetConnection().GetId());
-        if (m_embeddedRuleSetLocaters.end() == iter)
+        if (m_embeddedRuleSetLocaters.end() != iter)
             {
-            BeAssert(false);
-            return;
+            GetLocaters().UnregisterLocater(*iter->second);
+            m_embeddedRuleSetLocaters.erase(iter);
             }
-        GetLocaters().UnregisterLocater(*iter->second);
-        m_embeddedRuleSetLocaters.erase(iter);
+        m_contentCache->ClearCache(evt.GetConnection());
         }
     }
 
@@ -608,6 +617,7 @@ void RulesDrivenECPresentationManagerImpl::_OnECInstancesChanged(ECDbCR db, bvec
     {
     IConnectionPtr connection = m_connections.GetConnection(db);
     m_updateHandler->NotifyECInstancesChanged(*connection, changes);
+    m_ecdbCaches->NotifyECInstancesChanged(*connection);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -740,7 +750,11 @@ bvector<NavNodeCPtr> RulesDrivenECPresentationManagerImpl::_GetFilteredNodes(ICo
     {
     if (!GetNodesCache().IsDataSourceCached(connection.GetId(), options.GetRulesetId()))
         GetRootNodes(connection, PageOptions(), options, cancelationToken);
+
     NavNodesProviderPtr provider = GetNodesCache().GetUndeterminedNodesProvider(connection, options.GetRulesetId(), options.GetDisableUpdates());
+    if (provider.IsNull())
+        return bvector<NavNodeCPtr>();
+
     size_t nodesCount = provider->GetNodesCount();
     for (size_t i = 0; i < nodesCount; i++)
         {
@@ -853,13 +867,14 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetConten
     ECExpressionsCache& ecexpressionsCache = m_rulesetECExpressionsCache->Get(ruleset->GetRuleSetId().c_str());
 
     // get connection-related caches
-    RelatedPathsCache& relatedPathsCache = m_relatedPathsCache->GetCache(connection.GetDb());
-    ECSqlStatementCache& statementCache = m_statementCache->GetCache(connection.GetDb());
+    RelatedPathsCache& relatedPathsCache = m_ecdbCaches->GetRelatedPathsCache(connection);
+    PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache = m_ecdbCaches->GetPolymorphicallyRelatedClassesCache(connection);
+    ECSqlStatementCache& statementsCache = m_ecdbCaches->GetStatementsCache(connection);
 
     // set up the provider context
     ContentProviderContextPtr context = ContentProviderContext::Create(*ruleset, true, key.GetPreferredDisplayType(), inputKeys, *m_nodesCache,
-        GetCategorySupplier(), settings, ecexpressionsCache, relatedPathsCache, *m_nodesFactory, GetLocalState());
-    context->SetQueryContext(m_connections, connection, statementCache, *m_customFunctions);
+        GetCategorySupplier(), settings, ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, *m_nodesFactory, GetLocalState());
+    context->SetQueryContext(m_connections, connection, statementsCache, *m_customFunctions);
     context->SetLocalizationContext(GetLocalizationProvider());
     context->SetPropertyFormattingContext(GetECPropertyFormatter());
     context->SetCancelationToken(&cancelationToken);
@@ -925,11 +940,12 @@ bvector<SelectClassInfo> RulesDrivenECPresentationManagerImpl::_GetContentClasse
     ECExpressionsCache& ecexpressionsCache = m_rulesetECExpressionsCache->Get(ruleset->GetRuleSetId().c_str());
 
     // get connection-related caches
-    RelatedPathsCache& relatedPathsCache = m_relatedPathsCache->GetCache(connection.GetDb());
-    ECSqlStatementCache& statementCache = m_statementCache->GetCache(connection.GetDb());
+    RelatedPathsCache& relatedPathsCache = m_ecdbCaches->GetRelatedPathsCache(connection);
+    PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache = m_ecdbCaches->GetPolymorphicallyRelatedClassesCache(connection);
+    ECSqlStatementCache& statementsCache = m_ecdbCaches->GetStatementsCache(connection);
 
     // locate the classes
-    ECSchemaHelper schemaHelper(connection.GetDb(), &relatedPathsCache, &statementCache);
+    ECSchemaHelper schemaHelper(connection, &relatedPathsCache, &polymorphicallyRelatedClassesCache, &statementsCache, &ecexpressionsCache);
     ContentClassesLocater::Context locaterContext(schemaHelper, m_connections, connection, *ruleset, preferredDisplayType, settings, ecexpressionsCache, *m_nodesCache);
     return ContentClassesLocater(locaterContext).Locate(classes);
     }
@@ -1068,7 +1084,7 @@ void RulesDrivenECPresentationManagerImpl::_OnNodeChecked(IConnectionCR connecti
     if (node.IsValid())
         jsonNode = GetNodesCache().GetNode(node->GetNodeId());
     if (jsonNode.IsValid())
-        CustomizationHelper::NotifyCheckedStateChanged(connection.GetDb(), *jsonNode, true);
+        CustomizationHelper::NotifyCheckedStateChanged(connection, *jsonNode, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1082,7 +1098,7 @@ void RulesDrivenECPresentationManagerImpl::_OnNodeUnchecked(IConnectionCR connec
     if (node.IsValid())
         jsonNode = GetNodesCache().GetNode(node->GetNodeId());
     if (jsonNode.IsValid())
-        CustomizationHelper::NotifyCheckedStateChanged(connection.GetDb(), *jsonNode, false);
+        CustomizationHelper::NotifyCheckedStateChanged(connection, *jsonNode, false);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -18,9 +18,10 @@
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentProviderContext::ContentProviderContext(PresentationRuleSetCR ruleset, bool holdRuleset, Utf8String preferredDisplayType, INavNodeKeysContainerCR inputKeys, INavNodeLocaterCR nodesLocater, IPropertyCategorySupplierR categorySupplier, 
-    IUserSettings const& userSettings, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, JsonNavNodesFactory const& nodesFactory, IJsonLocalState const* localState) 
-    : RulesDrivenProviderContext(ruleset, holdRuleset, userSettings, ecexpressionsCache, relatedPathsCache, nodesFactory, localState), m_preferredDisplayType(preferredDisplayType), 
-    m_nodesLocater(nodesLocater), m_categorySupplier(categorySupplier), m_inputNodeKeys(&inputKeys)
+    IUserSettings const& userSettings, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache, 
+    JsonNavNodesFactory const& nodesFactory, IJsonLocalState const* localState) 
+    : RulesDrivenProviderContext(ruleset, holdRuleset, userSettings, ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, nodesFactory, localState), 
+    m_preferredDisplayType(preferredDisplayType), m_nodesLocater(nodesLocater), m_categorySupplier(categorySupplier), m_inputNodeKeys(&inputKeys)
     {
     Init();
     }
@@ -395,8 +396,8 @@ void ContentProvider::LoadCompositePropertiesFieldValue(ContentSetItemR item, Co
             if (handledClassIds.end() != handledClassIds.find(key.GetClassId()))
                 continue;
 
-            ECClassCP keyClass = GetContext().GetDb().Schemas().GetClass(key.GetClassId());
-            bvector<ContentDescriptor::Property const*> matchingProperties = field.FindMatchingProperties(keyClass);
+            ECClassCP keyClass = GetContext().GetConnection().GetECDb().Schemas().GetClass(key.GetClassId());
+            bvector<ContentDescriptor::Property const*> const& matchingProperties = field.FindMatchingProperties(keyClass);
             BeAssert(matchingProperties.size() <= 1);
             if (matchingProperties.size() == 0)
                 {
@@ -994,20 +995,12 @@ ContentQueryCPtr NestedContentProvider::_GetQuery() const
     if (m_adjustedQuery.IsNull() && !m_mergedResults)
         {
         Utf8StringCR idFieldAlias = m_field.GetRelationshipPath().empty() ? m_field.GetContentClassAlias() : m_field.GetRelationshipPath().front().GetTargetClassAlias();
+        Utf8String idSelector = Utf8String("[").append(idFieldAlias).append("].[ECInstanceId]");
+        bvector<ECInstanceId> ids;
+        std::transform(m_primaryInstanceKeys.begin(), m_primaryInstanceKeys.end(), std::back_inserter(ids), [](ECInstanceKeyCR key){return key.GetInstanceId();});
+        IdsFilteringHelper<bvector<ECInstanceId>> idsFilteringHelper(ids);
         ContentQueryPtr query = m_query->Clone();
-
-        Utf8String whereClause;
-        BoundQueryValuesList bindings;
-        if (IdSetHelper::BIND_VirtualSet == IdSetHelper::CreateInVirtualSetClause(whereClause, m_primaryInstanceKeys, Utf8String("[").append(idFieldAlias).append("].[ECInstanceId]")))
-            {
-            bindings = {new BoundQueryIdSet(m_primaryInstanceKeys)};
-            }
-        else
-            {
-            for (ECInstanceKeyCR key : m_primaryInstanceKeys)
-                bindings.push_back(new BoundQueryId(key.GetInstanceId()));
-            }
-        QueryBuilderHelpers::Where(query, whereClause.c_str(), bindings);
+        QueryBuilderHelpers::Where(query, idsFilteringHelper.CreateWhereClause(idSelector.c_str()).c_str(), idsFilteringHelper.CreateBoundValues());
         m_adjustedQuery = query;
         }
 

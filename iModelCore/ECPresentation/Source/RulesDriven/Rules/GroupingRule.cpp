@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/Rules/GroupingRule.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -25,7 +25,7 @@ GroupingRule::GroupingRule ()
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 GroupingRule::GroupingRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled, Utf8StringCR schemaName, Utf8StringCR className, Utf8StringCR contextMenuCondition, Utf8StringCR contextMenuLabel, Utf8StringCR settingsId)
-    : CustomizationRule(condition, priority, onlyIfNotHandled),
+    : ConditionalCustomizationRule(condition, priority, onlyIfNotHandled),
       m_schemaName (schemaName), m_className (className), m_contextMenuCondition (contextMenuCondition), m_contextMenuLabel (contextMenuLabel), m_settingsId (settingsId)
     {
     }
@@ -34,7 +34,7 @@ GroupingRule::GroupingRule (Utf8StringCR condition, int priority, bool onlyIfNot
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 GroupingRule::GroupingRule(GroupingRuleCR other)
-    : CustomizationRule(other), m_schemaName(other.m_schemaName), m_className(other.m_className), m_contextMenuCondition(other.m_contextMenuCondition),
+    : ConditionalCustomizationRule(other), m_schemaName(other.m_schemaName), m_className(other.m_className), m_contextMenuCondition(other.m_contextMenuCondition),
     m_contextMenuLabel(other.m_contextMenuLabel), m_settingsId(other.m_settingsId)
     {
     CommonTools::CloneRules(m_groups, other.m_groups);
@@ -95,7 +95,7 @@ bool GroupingRule::_ReadXml (BeXmlNodeP xmlNode)
             CommonTools::LoadSpecificationFromXmlNode<SameLabelInstanceGroup, GroupList> (child, m_groups);
         }
 
-    return PresentationRule::_ReadXml (xmlNode);
+    return ConditionalCustomizationRule::_ReadXml (xmlNode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -111,7 +111,7 @@ void GroupingRule::_WriteXml (BeXmlNodeP xmlNode) const
 
     CommonTools::WriteRulesToXmlNode<GroupSpecification, GroupList> (xmlNode, m_groups);
 
-    PresentationRule::_WriteXml (xmlNode);
+    ConditionalCustomizationRule::_WriteXml (xmlNode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -169,7 +169,7 @@ void GroupingRule::AddGroup(GroupSpecificationR group)
 +---------------+---------------+---------------+---------------+---------------+------*/
 MD5 GroupingRule::_ComputeHash(Utf8CP parentHash) const
     {
-    MD5 md5 = CustomizationRule::_ComputeHash(parentHash);
+    MD5 md5 = ConditionalCustomizationRule::_ComputeHash(parentHash);
     md5.Add(m_schemaName.c_str(), m_schemaName.size());
     md5.Add(m_className.c_str(), m_className.size());
     md5.Add(m_contextMenuCondition.c_str(), m_contextMenuCondition.size());

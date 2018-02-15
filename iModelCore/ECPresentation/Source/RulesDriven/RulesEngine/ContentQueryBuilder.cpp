@@ -60,89 +60,16 @@ bvector<ECInstanceId> const& ParsedInput::_GetInstanceIds(ECClassCR selectClass)
     return s_empty;
     }
 
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                07/2017
-+===============+===============+===============+===============+===============+======*/
-struct RecursiveQueriesHelper
-{
-private:
-    ContentDescriptorCR m_descriptor;
-    BoundQueryRecursiveChildrenIdSet* m_fwdRecursiveChildrenIds;
-    BoundQueryRecursiveChildrenIdSet* m_bwdRecursiveChildrenIds;
-
-private:
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis                04/2017
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    static bool IsRecursiveJoinForward(SelectClassInfo const& selectInfo)
-        {
-        if (selectInfo.GetPathToPrimaryClass().empty())
-            {
-            BeAssert(false);
-            return true;
-            }
-    
-        return !selectInfo.GetPathToPrimaryClass().back().IsForwardRelationship(); // invert direction
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis                04/2017
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    static bool IsPathValidForRecursiveSelect(Utf8StringR errorMessage, RelatedClassPath const& path, ECClassCR selectClass)
-        {
-        RelatedClass const& relatedClassDef = path.front();
-        if (!selectClass.Is(relatedClassDef.GetSourceClass()))
-            {
-            errorMessage = "Using IsRecursive requires recursive relationship";
-            return false;
-            }
-        return true;
-        }
-
-public:
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis                04/2017
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    RecursiveQueriesHelper(ContentDescriptorCR descriptor) 
-        : m_descriptor(descriptor), m_fwdRecursiveChildrenIds(nullptr), m_bwdRecursiveChildrenIds(nullptr)
-        {}
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis                04/2017
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    ~RecursiveQueriesHelper() 
-        {
-        DELETE_AND_CLEAR(m_bwdRecursiveChildrenIds);
-        DELETE_AND_CLEAR(m_fwdRecursiveChildrenIds);
-        }
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis                04/2017
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    BoundQueryRecursiveChildrenIdSet const& GetRecursiveChildrenIds(IParsedInput const& input, SelectClassInfo const& thisInfo)
-        {
-        bool forward = IsRecursiveJoinForward(thisInfo);
-        BoundQueryRecursiveChildrenIdSet*& set = forward ? m_fwdRecursiveChildrenIds : m_bwdRecursiveChildrenIds;
-        if (nullptr == set)
-            {
-            bset<ECRelationshipClassCP> relationships;
-            for (SelectClassInfo const& selectClassInfo : m_descriptor.GetSelectClasses())
-                {
-                Utf8String validationErrorMessage;
-                if (!IsPathValidForRecursiveSelect(validationErrorMessage, selectClassInfo.GetPathToPrimaryClass(), selectClassInfo.GetSelectClass()))
-                    {
-                    BeAssert(false);
-                    LoggingHelper::LogMessage(Log::Content, validationErrorMessage.c_str(), NativeLogging::LOG_ERROR);
-                    }
-                else
-                    {
-                    for (RelatedClassCR rel : selectClassInfo.GetPathToPrimaryClass())
-                        relationships.insert(rel.GetRelationship());
-                    }
-                }
-            set = new BoundQueryRecursiveChildrenIdSet(relationships, forward, input.GetInstanceIds(*thisInfo.GetPrimaryClass()));
-            }
-        return *set;
-        }
-};
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static bvector<RelatedClassPath> GetPathsToPrimary(bvector<SelectClassInfo> const& selectInfos)
+    {
+    bvector<RelatedClassPath> paths;
+    for (SelectClassInfo const& info : selectInfos)
+        paths.push_back(info.GetPathToPrimaryClass());
+    return paths;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
@@ -167,12 +94,11 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(SelectedNodeInstancesSpecificat
         // handle related properties
         for (RelatedClassPath const& path : selectClassInfo.GetRelatedPropertyPaths())
             classQuery->Join(path, true);
-
-        // handle filtering by input
-        bvector<ECInstanceId> const& selectedInstanceIds = input.GetInstanceIds(selectClassInfo.GetSelectClass());
-        if (!selectedInstanceIds.empty())
-            classQuery->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet(std::move(selectedInstanceIds))});
-
+        
+        // handle filtering 
+        InstanceFilteringParams filteringParams(m_params.GetConnection(), m_params.GetECExpressionsCache(), &input, selectClassInfo, nullptr, nullptr);
+        QueryBuilderHelpers::ApplyInstanceFilter(*classQuery, filteringParams);
+        
         // handle selecting property for distinct values 
         if (descriptor.OnlyDistinctValues() && descriptor.GetVisibleFields().size() == 1 && nullptr != descriptor.GetVisibleFields()[0]->AsPropertiesField())
             classQuery->GroupByContract(*contract);
@@ -197,37 +123,27 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentRelatedInstancesSpecific
     if (specificationDescriptor.IsNull())
         return nullptr;
     
+    InstanceFilteringParams::RecursiveQueryInfo const* recursiveInfo = nullptr;
+    if (specification.IsRecursive())
+        recursiveInfo = new InstanceFilteringParams::RecursiveQueryInfo(GetPathsToPrimary(specificationDescriptor->GetSelectClasses()));
+
     ContentQueryPtr query;
     for (SelectClassInfo const& selectClassInfo : specificationDescriptor->GetSelectClasses())
         {
-        RecursiveQueriesHelper recursiveQueries(*specificationDescriptor);
-
         ComplexContentQueryPtr classQuery = ComplexContentQuery::Create();
         ContentQueryContractPtr contract = ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectClassInfo.GetSelectClass(), *classQuery);
         classQuery->SelectContract(*contract, "this");
         classQuery->From(selectClassInfo.GetSelectClass(), selectClassInfo.IsSelectPolymorphic(), "this");
 
-        if (specification.IsRecursive())
-            {
-            // in case of recursive query just bind the children ids
-            classQuery->Where("InVirtualSet(?, [this].[ECInstanceId])", 
-                {new BoundQueryRecursiveChildrenIdSet(recursiveQueries.GetRecursiveChildrenIds(input, selectClassInfo))});
-            }
-        else
-            {
-            BeAssert(!selectClassInfo.GetPathToPrimaryClass().empty());
-            classQuery->Join(selectClassInfo.GetPathToPrimaryClass(), false);
-            classQuery->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet(input.GetInstanceIds(*selectClassInfo.GetPrimaryClass()))});
-            }
-
         // handle related properties
         for (RelatedClassPath const& path : selectClassInfo.GetRelatedPropertyPaths())
             classQuery->Join(path, true);
+        
+        // handle filtering 
+        InstanceFilteringParams filteringParams(m_params.GetConnection(), m_params.GetECExpressionsCache(), &input, 
+            selectClassInfo, recursiveInfo, specification.GetInstanceFilter().c_str());
+        QueryBuilderHelpers::ApplyInstanceFilter(*classQuery, filteringParams);
             
-        // handle instance filtering
-        if (!specification.GetInstanceFilter().empty())
-            classQuery->Where(ECExpressionsHelper(m_params.GetECExpressionsCache()).ConvertToECSql(specification.GetInstanceFilter()).c_str(), BoundQueryValuesList());
-
         // handle selecting property for distinct values 
         if (descriptor.OnlyDistinctValues() && descriptor.GetVisibleFields().size() == 1 && nullptr != descriptor.GetVisibleFields()[0]->AsPropertiesField())
             classQuery->GroupByContract(*contract);
@@ -236,6 +152,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentRelatedInstancesSpecific
         }
 
     QueryBuilderHelpers::ApplyDescriptorOverrides(query, descriptor, m_params.GetECExpressionsCache());
+    DELETE_AND_CLEAR(recursiveInfo);
 
     return query;
     }
@@ -263,10 +180,11 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentInstancesOfSpecificClass
         // handle related properties
         for (RelatedClassPath const& path : selectClassInfo.GetRelatedPropertyPaths())
             classQuery->Join(path, true);
-
-        // handle instance filtering
-        if (!specification.GetInstanceFilter().empty())
-            classQuery->Where(ECExpressionsHelper(m_params.GetECExpressionsCache()).ConvertToECSql(specification.GetInstanceFilter()).c_str(), BoundQueryValuesList());
+        
+        // handle filtering 
+        InstanceFilteringParams filteringParams(m_params.GetConnection(), m_params.GetECExpressionsCache(), nullptr, 
+            selectClassInfo, nullptr, specification.GetInstanceFilter().c_str());
+        QueryBuilderHelpers::ApplyInstanceFilter(*classQuery, filteringParams);
 
         // handle selecting property for distinct values 
         if (descriptor.OnlyDistinctValues() && descriptor.GetVisibleFields().size() == 1 && nullptr != descriptor.GetVisibleFields()[0]->AsPropertiesField())

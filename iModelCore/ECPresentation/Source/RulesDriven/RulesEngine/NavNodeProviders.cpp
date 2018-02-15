@@ -80,9 +80,11 @@ END_BENTLEY_ECPRESENTATION_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodesProviderContext::NavNodesProviderContext(PresentationRuleSetCR ruleset, bool holdRuleset, RuleTargetTree targetTree, uint64_t const* physicalParentId, IUserSettings const& userSettings, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, JsonNavNodesFactory const& nodesFactory, IHierarchyCache& nodesCache, INodesProviderFactoryCR providerFactory, IJsonLocalState const* localState) 
-    : RulesDrivenProviderContext(ruleset, holdRuleset, userSettings, ecexpressionsCache, relatedPathsCache, nodesFactory, localState), m_targetTree(targetTree), 
-    m_nodesCache(&nodesCache), m_providerFactory(providerFactory)
+NavNodesProviderContext::NavNodesProviderContext(PresentationRuleSetCR ruleset, bool holdRuleset, RuleTargetTree targetTree, uint64_t const* physicalParentId, 
+    IUserSettings const& userSettings, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache, 
+    JsonNavNodesFactory const& nodesFactory, IHierarchyCache& nodesCache, INodesProviderFactoryCR providerFactory, IJsonLocalState const* localState) 
+    : RulesDrivenProviderContext(ruleset, holdRuleset, userSettings, ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, nodesFactory, localState), 
+    m_targetTree(targetTree), m_nodesCache(&nodesCache), m_providerFactory(providerFactory)
     {
     Init();
 
@@ -250,13 +252,13 @@ void NavNodesProviderContext::SetRootNodeContext(NavNodesProviderContextCR other
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NavNodesProviderContext::SetChildNodeContext(ChildNodeRuleCR childNodeRule, NavNodeCR virtualParentNode)
+void NavNodesProviderContext::SetChildNodeContext(ChildNodeRuleCP childNodeRule, NavNodeCR virtualParentNode)
     {
     BeAssert(!IsRootNodeContext());
     BeAssert(!IsChildNodeContext());
     m_isChildNodeContext = true;
     m_virtualParentNodeId = new uint64_t(virtualParentNode.GetNodeId());
-    m_childNodeRule = &childNodeRule;
+    m_childNodeRule = childNodeRule;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -388,7 +390,7 @@ static NavNodesProviderContextPtr CreateContextForNestedProvider(NavNodesProvide
     ctx->SetBaseProvider(baseProvider);
 
     if (baseProvider.GetContext().IsRootNodeContext())
-        ctx->SetChildNodeContext(baseProvider.GetContext().GetRootNodeRule(), virtualParent);
+        ctx->SetRootNodeContext(baseProvider.GetContext().GetRootNodeRule());
     else if (baseProvider.GetContext().IsChildNodeContext())
         ctx->SetChildNodeContext(baseProvider.GetContext().GetChildNodeRule(), virtualParent);
 
@@ -1086,13 +1088,18 @@ bvector<NavigationQueryPtr> QueryBasedSpecificationNodesProvider::CreateQueries(
 
     if (GetContext().IsChildNodeContext())
         {
+        if (nullptr == GetContext().GetChildNodeRule())
+            {
+            BeAssert(false);
+            return bvector<NavigationQueryPtr>();
+            }
         JsonNavNodeCPtr parent = GetContext().GetVirtualParentNode();
         if (parent.IsNull())
             {
             BeAssert(false);
             return bvector<NavigationQueryPtr>();
             }
-        return GetContext().GetQueryBuilder().GetQueries(GetContext().GetChildNodeRule(), specification, *parent);
+        return GetContext().GetQueryBuilder().GetQueries(*GetContext().GetChildNodeRule(), specification, *parent);
         }
 
     BeAssert(false);
@@ -1140,7 +1147,7 @@ MultiSpecificationNodesProvider::MultiSpecificationNodesProvider(NavNodesProvide
     for (ChildNodeRuleSpecification const& specification : specs)
         {
         NavNodesProviderContextPtr nestedContext = CreateContextForNestedProvider(*this, false);
-        nestedContext->SetChildNodeContext(specification.GetRule(), virtualParent);
+        nestedContext->SetChildNodeContext(&specification.GetRule(), virtualParent);
         visitor.SetContext(*nestedContext);
         specification.GetSpecification().Accept(visitor);
         }

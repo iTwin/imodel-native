@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/Rules/PresentationRuleXmlConstants.h $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -37,6 +37,7 @@
 #define COMMON_XML_ATTRIBUTE_PROPERTYNAME                                             "PropertyName"
 #define COMMON_XML_ATTRIBUTE_ONLYIFNOTHANDLED                                         "OnlyIfNotHandled"
 #define COMMON_XML_ATTRIBUTE_AREPOLYMORPHIC                                           "ArePolymorphic"
+#define COMMON_XML_ATTRIBUTE_ISPOLYMORPHIC                                            "IsPolymorphic"
 #define COMMON_XML_ATTRIBUTE_STOPFURTHERPROCESSING                                    "StopFurtherProcessing"
 #define COMMON_XML_ATTRIBUTE_RELATIONSHIPMEANING                                      "RelationshipMeaning"
 
@@ -70,6 +71,10 @@
 #define LABEL_OVERRIDE_XML_NODE_NAME                                                  "LabelOverride"
 #define LABEL_OVERRIDE_XML_ATTRIBUTE_LABEL                                            "Label"
 #define LABEL_OVERRIDE_XML_ATTRIBUTE_DESCRIPTION                                      "Description"
+
+#define INSTANCE_LABEL_OVERRIDE_XML_NODE_NAME                                          "InstanceLabelOverride"
+#define INSTANCE_LABEL_OVERRIDE_XML_ATTRIBUTE_CLASSNAME                                "ClassName"
+#define INSTANCE_LABEL_OVERRIDE_XML_ATTRIBUTE_PROPERTYNAMES                            "PropertyNames"
 
 #define STYLE_OVERRIDE_XML_NODE_NAME                                                  "StyleOverride"
 #define STYLE_OVERRIDE_XML_ATTRIBUTE_FORECOLOR                                        "ForeColor"
@@ -141,7 +146,6 @@
 #define SORTING_RULE_XML_NODE_NAME                                                    "SortingRule"
 #define SORTING_RULE_XML_ATTRIBUTE_SORTASCENDING                                      "SortAscending"
 #define SORTING_RULE_XML_ATTRIBUTE_DONOTSORT                                          "DoNotSort"
-#define SORTING_RULE_XML_ATTRIBUTE_ISPOLYMORPHIC                                      "IsPolymorphic"
 
 //ChildNodeSpecifications
 #define CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_ALWAYSRETURNSCHILDREN                  "AlwaysReturnsChildren"

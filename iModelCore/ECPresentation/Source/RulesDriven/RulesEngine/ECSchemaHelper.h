@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/ECSchemaHelper.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once 
@@ -92,7 +92,10 @@ typedef bmap<ECEntityClassCP, bool, ECClassNameComparer> ECClassSet;
 //! A set of ECClass & ECRelationshipClass pairs.
 typedef bset<RelatedClass> RelatedClassSet;
 
+struct ECExpressionsCache;
 struct RelatedPathsCache;
+struct PolymorphicallyRelatedClassesCache;
+struct InstanceFilteringParams;
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2015
 +===============+===============+===============+===============+===============+======*/
@@ -117,11 +120,15 @@ struct ECSchemaHelper : NonCopyableClass
         };
 
 private:
-    ECDbCR m_db;
+    IConnectionCR m_connection;
     RelatedPathsCache* m_relatedPathsCache;
     bool m_ownsRelatedPathsCache;
+    PolymorphicallyRelatedClassesCache* m_polymorphicallyRelatedClassesCache;
+    bool m_ownsPolymorphicallyRelatedClassesCache;
     ECSqlStatementCache const* m_statementCache;
     bool m_ownsStatementCache;
+    ECExpressionsCache* m_ecexpressionsCache;
+    bool m_ownsECExpressionsCache;
 
 private:
     void ParseECSchemaNames(bvector<Utf8String>& schemaNames, bool& exclude, Utf8StringCR commaSeparatedSchemaList) const;
@@ -130,16 +137,14 @@ private:
     ECClassSet GetECClasses(ECSchemaSet const& schemas) const;
     ECSchemaSet GetECSchemas(Utf8StringCR supportedSchemasStr) const;
     void GetPaths(bvector<bpair<RelatedClassPath, bool>>& paths, bmap<ECRelationshipClassCP, int>& relationshipsUseCounter, 
-        bset<RelatedClass>&, SupportedClassesResolver const&, BeSQLite::VirtualSet const& sourceClassIds, int relationshipDirection, 
-        int depth, ECEntityClassCP targetClass, bool include) const;
-    void GetPaths(bvector<bpair<RelatedClassPath, bool>>& paths, bmap<ECRelationshipClassCP, int>& relationshipsUseCounter, 
-        bset<RelatedClass>&, ECSqlStatement&, SupportedClassesResolver const&, BeSQLite::VirtualSet const& sourceClassIds, 
+        bset<RelatedClass>&, SupportedClassesResolver const&, bset<ECClassId> const& sourceClassIds, 
         int relationshipDirection, int depth, ECEntityClassCP targetClass, bool include) const;
                 
 public:
-    ECPRESENTATION_EXPORT ECSchemaHelper(ECDbCR db, RelatedPathsCache*, ECSqlStatementCache const*);
+    ECPRESENTATION_EXPORT ECSchemaHelper(IConnectionCR, RelatedPathsCache*, PolymorphicallyRelatedClassesCache*, ECSqlStatementCache const*, ECExpressionsCache*);
     ECPRESENTATION_EXPORT ~ECSchemaHelper();
-    ECDbCR GetDb() const {return m_db;}
+    IConnectionCR GetConnection() const {return m_connection;}
+    ECExpressionsCache& GetECExpressionsCache() const {return *m_ecexpressionsCache;}
 
     ECPRESENTATION_EXPORT ECSchemaCP GetSchema(Utf8CP schemaName) const;
     ECPRESENTATION_EXPORT ECClassCP GetECClass(Utf8CP schemaName, Utf8CP className, bool isFullSchemaName = false) const;
@@ -150,7 +155,10 @@ public:
     ECPRESENTATION_EXPORT ECClassSet GetECClassesFromSchemaList(Utf8StringCR schemaListStr) const;
     ECPRESENTATION_EXPORT SupportedEntityClassInfos GetECClassesFromClassList(Utf8StringCR classListStr, bool supportExclusion) const;
     ECPRESENTATION_EXPORT bvector<bpair<RelatedClassPath, bool>> GetRelationshipClassPaths(RelationshipClassPathOptions const&) const;
-    ECPRESENTATION_EXPORT ECRelationshipConstraintClassList GetRelationshipConstraintClasses(ECRelationshipClassCR relationship, ECRelatedInstanceDirection direction, Utf8StringCR supportedSchemas) const;
+    ECPRESENTATION_EXPORT ECRelationshipConstraintClassList GetRelationshipConstraintClasses(ECRelationshipClassCR relationship, 
+        ECRelatedInstanceDirection direction, Utf8StringCR supportedSchemas) const;
+    ECPRESENTATION_EXPORT bvector<RelatedClassPath> GetPolymorphicallyRelatedClassesWithInstances(ECClassCR sourceClass, 
+        Utf8StringCR relationshipName, ECRelatedInstanceDirection direction, Utf8StringCR baseClassName, InstanceFilteringParams const*) const;
     ECPRESENTATION_EXPORT RelatedClass GetForeignKeyClass(ECPropertyCR prop) const;
 };
 
@@ -209,6 +217,28 @@ public:
 };
 
 /*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                02/2018
++===============+===============+===============+===============+===============+======*/
+struct PolymorphicallyRelatedClassesCache
+{
+    struct Key
+        {
+        ECClassCP m_source;
+        ECRelatedInstanceDirection m_direction;
+        bvector<ECRelationshipClassCP> m_rels;
+        bool operator<(Key const&) const;
+        };
+
+private:
+    bmap<Key, bvector<RelatedClass>> m_map;
+
+public:
+    bvector<RelatedClass> const* Get(Key const&) const;
+    bvector<RelatedClass> const& Add(Key, bvector<RelatedClass>);
+    void Clear();
+};
+
+/*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                11/2016
 +===============+===============+===============+===============+===============+======*/
 struct ECInstancesHelper : NonCopyableClass
@@ -216,25 +246,11 @@ struct ECInstancesHelper : NonCopyableClass
 private:
     ECInstancesHelper() {}
 public:
-    static IECInstancePtr LoadInstance(ECDbCR db, ECInstanceKeyCR key);
-};
-
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                10/2017
-+===============+===============+===============+===============+===============+======*/
-struct IdSetHelper : NonCopyableClass
-{
-    enum BindSetAction
-        {
-        BIND_VirtualSet,
-        BIND_Ids,
-        };
-
-private:
-    IdSetHelper() {}
-public:
-    ECPRESENTATION_EXPORT static BindSetAction CreateInVirtualSetClause(Utf8StringR clause, bvector<ECInstanceKey> const& keys, Utf8StringCR idFieldName);
-    ECPRESENTATION_EXPORT static BindSetAction CreateInVirtualSetClause(Utf8StringR clause, BeSQLite::IdSet<ECClassId> const& keys, Utf8StringCR idFieldName);
+    static IECInstancePtr LoadInstance(IConnectionCR, ECInstanceKeyCR);
+    static ECValue GetValue(IConnectionCR, ECInstanceKeyCR, Utf8CP propertyName);
+    static ECValue GetValue(IConnectionCR, ECClassCR, ECInstanceId, ECPropertyCR);
+    static void SetValue(IConnectionCR, ECInstanceKeyCR, Utf8CP propertyName, ECValueCR);
+    static void SetValue(IConnectionCR, ECClassCR, ECInstanceId, ECPropertyCR, ECValueCR);
 };
 
 /*=================================================================================**//**

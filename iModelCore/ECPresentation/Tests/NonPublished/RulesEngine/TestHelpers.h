@@ -58,15 +58,15 @@ struct RulesEngineTestHelpers
 
     static Utf8String GetDisplayLabel(IECInstanceCR instance);
 
-    static IECInstancePtr InsertInstance(ECDbR, ECClassCR ecClass, std::function<void(IECInstanceR)> const& instancePreparer = nullptr);
-    static IECInstancePtr InsertInstance(ECDbR, ECInstanceInserter& inserter, ECClassCR ecClass, std::function<void(IECInstanceR)> const& instancePreparer = nullptr);
-    static ECInstanceKey InsertRelationship(ECDbR db, ECRelationshipClassCR relationship, IECInstanceCR source, IECInstanceR target, std::function<void(IECInstanceR)> const& instancePreparer = nullptr);
-    static ECInstanceKey InsertRelationship(ECDbTestProject& project, ECRelationshipClassCR relationship, IECInstanceCR source, IECInstanceR target, std::function<void(IECInstanceR)> const& instancePreparer = nullptr);
-    static void DeleteInstances(ECDbR db, ECClassCR ecClass, bool polymorphic = false);
-    static void DeleteInstance(ECDbR db, ECInstanceKeyCR key);
-    static void DeleteInstance(ECDbR db, IECInstanceCR instance);
-    static void DeleteInstance(ECDbTestProject& project, ECInstanceKeyCR key);
-    static void DeleteInstance(ECDbTestProject& project, IECInstanceCR instance);
+    static IECInstancePtr InsertInstance(ECDbR, ECClassCR ecClass, std::function<void(IECInstanceR)> const& instancePreparer = nullptr, bool commit = false);
+    static IECInstancePtr InsertInstance(ECDbR, ECInstanceInserter& inserter, ECClassCR ecClass, std::function<void(IECInstanceR)> const& instancePreparer = nullptr, bool commit = false);
+    static ECInstanceKey InsertRelationship(ECDbR db, ECRelationshipClassCR relationship, IECInstanceCR source, IECInstanceR target, std::function<void(IECInstanceR)> const& instancePreparer = nullptr, bool commit = false);
+    static ECInstanceKey InsertRelationship(ECDbTestProject& project, ECRelationshipClassCR relationship, IECInstanceCR source, IECInstanceR target, std::function<void(IECInstanceR)> const& instancePreparer = nullptr, bool commit = false);
+    static void DeleteInstances(ECDbR db, ECClassCR ecClass, bool polymorphic = false, bool commit = false);
+    static void DeleteInstance(ECDbR db, ECInstanceKeyCR key, bool commit = false);
+    static void DeleteInstance(ECDbR db, IECInstanceCR instance, bool commit = false);
+    static void DeleteInstance(ECDbTestProject& project, ECInstanceKeyCR key, bool commit = false);
+    static void DeleteInstance(ECDbTestProject& project, IECInstanceCR instance, bool commit = false);
     static IECInstancePtr GetInstance(ECDbR& project, ECClassCR ecClass, ECInstanceId id);
     static ECInstanceKey GetInstanceKey(IECInstanceCR);
 
@@ -404,7 +404,7 @@ struct TestCategorySupplier : IPropertyCategorySupplier
         : m_category(category)
         {
         }
-    ContentDescriptor::Category _GetCategory(ECClassCR, RelatedClassPathCR, ECPropertyCR) override {return m_category;}
+    ContentDescriptor::Category _GetCategory(ECClassCR, RelatedClassPathCR, ECPropertyCR, RelationshipMeaning) override {return m_category;}
     ContentDescriptor::Category _GetCategory(ECClassCR, RelatedClassPathCR, ECClassCR) override {return m_category;}
     ContentDescriptor::Category GetUsedCategory() const {return m_category;}
     void SetUsedCategory(ContentDescriptor::Category category)
@@ -421,6 +421,56 @@ struct TestPropertyFormatter : IECPropertyFormatter
     BentleyStatus _GetFormattedPropertyValue(Utf8StringR formattedValue, ECPropertyCR ecProperty, ECValueCR ecValue) const override;
     BentleyStatus _GetFormattedPropertyLabel(Utf8StringR formattedLabel, ECPropertyCR ecProperty, ECClassCR propertyClass, RelatedClassPath const& relatedClassPath, RelationshipMeaning relationshipMeaning) const override;
     };
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                07/2017
++===============+===============+===============+===============+===============+======*/
+struct TestParsedInput : IParsedInput
+{
+private:
+    bvector<ECClassCP> m_classes;
+    bmap<ECClassCP, bvector<ECInstanceId>> m_instanceIds;
+protected:
+    bvector<ECClassCP> const& _GetClasses() const override {return m_classes;}
+    bvector<ECInstanceId> const& _GetInstanceIds(ECClassCR ecClass) const override
+        {
+        auto iter = m_instanceIds.find(&ecClass);
+        if (m_instanceIds.end() != iter)
+            return iter->second;
+        static bvector<ECInstanceId> s_empty;
+        return s_empty;
+        }
+public:
+    TestParsedInput() {}
+    TestParsedInput(IECInstanceCR instance)
+        {
+        m_classes.push_back(&instance.GetClass());
+        m_instanceIds[&instance.GetClass()].push_back((ECInstanceId)ECInstanceId::FromString(instance.GetInstanceId().c_str()));
+        }
+    TestParsedInput(ECClassCR ecClass, ECInstanceId instanceId)
+        {
+        m_classes.push_back(&ecClass);
+        m_instanceIds[&ecClass].push_back(instanceId);
+        }
+    TestParsedInput(ECClassCR ecClass, bvector<ECInstanceId> instanceIds)
+        {
+        m_classes.push_back(&ecClass);
+        m_instanceIds[&ecClass] = instanceIds;
+        }
+    TestParsedInput(bvector<bpair<ECClassCP, ECInstanceId>> pairs)
+        {
+        bset<ECClassCP> used;
+        for (auto pair : pairs)
+            {
+            if (used.end() == used.find(pair.first))
+                {
+                m_classes.push_back(pair.first);
+                used.insert(pair.first);
+                }
+            m_instanceIds[pair.first].push_back(pair.second);
+            }
+        }
+};
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2016
@@ -555,6 +605,7 @@ private:
     IECDbUsedClassesListener* m_usedClassesListener;
     mutable ECExpressionsCache m_ecexpressionsCache;
     mutable RelatedPathsCache m_relatedPathsCache;
+    mutable PolymorphicallyRelatedClassesCache m_polymorphicallyRelatedClassesCache;
     mutable ECSqlStatementCache m_statementsCache;
     mutable CustomFunctionsInjector m_customFunctions;
     mutable TestNodesCache m_testNodesCache;
@@ -566,13 +617,14 @@ private:
 protected:
     NavNodesProviderContextPtr _Create(IConnectionCR connection, Utf8CP rulesetId, uint64_t const* parentNodeId, ICancelationTokenCP cancelationToken, bool disableUpdates) const override
         {
-        m_customFunctions.OnConnection(connection.GetDb());
+        m_customFunctions.OnConnection(connection);
 
         PresentationRuleSetCPtr ruleset = m_ruleset;
         if (ruleset.IsNull())
             ruleset = PresentationRuleSet::CreateInstance(rulesetId, 1, 0, false, "", "", "", false);
         NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*ruleset, true, TargetTree_MainTree, parentNodeId, 
-            m_settings, m_ecexpressionsCache, m_relatedPathsCache, m_nodesFactory, GetNodesCache(), m_providerFactory, nullptr);
+            m_settings, m_ecexpressionsCache, m_relatedPathsCache, m_polymorphicallyRelatedClassesCache, m_nodesFactory, 
+            GetNodesCache(), m_providerFactory, nullptr);
         context->SetQueryContext(m_connections, connection, m_statementsCache, m_customFunctions, m_usedClassesListener);
         context->SetIsUpdatesDisabled(disableUpdates);
         context->SetCancelationToken(cancelationToken);

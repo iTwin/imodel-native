@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/ContentProviderTests.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -35,6 +35,7 @@ struct ContentProviderTests : public ::testing::Test
     DefaultCategorySupplier m_categorySupplier;
     ECExpressionsCache m_expressionsCache;
     RelatedPathsCache m_relatedPathsCache;
+    PolymorphicallyRelatedClassesCache m_polymorphicallyRelatedClassesCache;
 
     ECClassCP m_widgetClass;
     ECClassCP m_gadgetClass;

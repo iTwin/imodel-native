@@ -9,6 +9,7 @@
 #include <ECPresentation/RulesDriven/PresentationManager.h>
 #include "PresentationManagerImpl.h"
 #include "NavNodesDataSource.h"
+#include "LoggingHelper.h"
 
 #ifdef RULES_ENGINE_FORCE_SINGLE_THREAD
 #include <folly/futures/InlineExecutor.h>
@@ -60,11 +61,13 @@ public:
 struct ICancelableTask
 {
 private:
+    Utf8String m_id;
     TaskDependencies m_dependencies;
 public:
-    ICancelableTask(TaskDependencies dependencies = TaskDependencies()) : m_dependencies(dependencies) {}
+    ICancelableTask(Utf8String id, TaskDependencies dependencies = TaskDependencies()) : m_id(id), m_dependencies(dependencies) {}
     virtual ~ICancelableTask() {}
     virtual void _Cancel() = 0;
+    Utf8StringCR GetId() const {return m_id;}
     TaskDependencies const& GetDependencies() const {return m_dependencies;}
 };
 
@@ -77,7 +80,7 @@ private:
     mutable BeMutex m_mutex;
     bset<ICancelableTask*> m_tasks;
 private:
-    void Cancel(std::function<bool(ICancelableTask const&)> predicate)
+    bool Cancel(std::function<bool(ICancelableTask const&)> predicate)
         {
         BeMutexHolder lock(m_mutex);
         bvector<ICancelableTask*> tasks;
@@ -90,7 +93,9 @@ private:
             {
             // note: the task will get removed from m_tasks when the promise actually gets canceled
             task->_Cancel();
+            LoggingHelper::LogMessage(Log::Default, Utf8PrintfString("Promise canceled: %s", task->GetId().c_str()).c_str());
             }
+        return !tasks.empty();
         }
 public:
     BeMutex& GetMutex() {return m_mutex;}
@@ -109,10 +114,33 @@ public:
         BeMutexHolder lock(m_mutex);
         m_tasks.erase(&task);
         }
-    void CancelAll() {Cancel(nullptr);}
-    void CancelSelectionDependants(Utf8StringCR connectionId) {Cancel([&](ICancelableTask const& task){return task.GetDependencies().DependsOnSelection() && task.GetDependencies().GetConnectionIdDependency().Equals(connectionId);});}
-    void CancelByConnectionId(Utf8StringCR connectionId) {Cancel([&](ICancelableTask const& task){return task.GetDependencies().GetConnectionIdDependency().Equals(connectionId);});}
-    void CancelByRulesetId(Utf8StringCR rulesetId) {Cancel([&](ICancelableTask const& task){return task.GetDependencies().GetRulesetIdDependency().Equals(rulesetId);});}
+    void CancelAll(){Cancel(nullptr);}
+    void CancelSelectionDependants(IConnectionCR connection)
+        {
+        bool didCancel = Cancel([&](ICancelableTask const& task)
+            {
+            return task.GetDependencies().DependsOnSelection() 
+                && task.GetDependencies().GetConnectionIdDependency().Equals(connection.GetId());
+            });
+        if (didCancel)
+            connection.InterruptRequests();
+        }
+    void CancelConnectionRequests(IConnectionCR connection)
+        {
+        bool didCancel = Cancel([&](ICancelableTask const& task)
+            {
+            return task.GetDependencies().GetConnectionIdDependency().Equals(connection.GetId());
+            });
+        if (didCancel)
+            connection.InterruptRequests();
+        }
+    void CancelByRulesetId(Utf8StringCR rulesetId)
+        {
+        Cancel([&](ICancelableTask const& task)
+            {
+            return task.GetDependencies().GetRulesetIdDependency().Equals(rulesetId);
+            });
+        }
 };
 
 /*=================================================================================**//**
@@ -128,8 +156,8 @@ private:
     RulesDrivenECPresentationManager::CancelableTasksStore& m_cancelableTasks;
     RefCountedPtr<CancelationToken> m_cancelationToken;
 public:
-    CancelablePromise(RulesDrivenECPresentationManager::CancelableTasksStore& cancelableTasks, TaskDependencies dependencies)
-        : ICancelableTask(dependencies), m_mutex(cancelableTasks.GetMutex()), m_cancelableTasks(cancelableTasks), m_future(T_Super::getFuture())
+    CancelablePromise(RulesDrivenECPresentationManager::CancelableTasksStore& cancelableTasks, Utf8String id, TaskDependencies dependencies)
+        : ICancelableTask(id, dependencies), m_mutex(cancelableTasks.GetMutex()), m_cancelableTasks(cancelableTasks), m_future(T_Super::getFuture())
         {
         m_cancelationToken = new CancelationToken(m_mutex);
         T_Super::setInterruptHandler([&](folly::exception_wrapper const& e)
@@ -163,9 +191,10 @@ public:
 * @bsimethod                                    Grigas.Petraitis                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T>
-static std::shared_ptr<CancelablePromise<T>> CreateCancelablePromise(RulesDrivenECPresentationManager::CancelableTasksStore& cancelableTasks, TaskDependencies dependencies = TaskDependencies())
+static std::shared_ptr<CancelablePromise<T>> CreateCancelablePromise(RulesDrivenECPresentationManager::CancelableTasksStore& cancelableTasks,
+    Utf8CP id, TaskDependencies dependencies = TaskDependencies())
     {
-    return std::make_shared<CancelablePromise<T>>(cancelableTasks, dependencies);
+    return std::make_shared<CancelablePromise<T>>(cancelableTasks, id, dependencies);
     }
 
 /*=================================================================================**//**
@@ -204,7 +233,9 @@ protected:
         folly::via(&m_executor, [&, connectionId = m_connections.GetConnection(db)->GetId(), changes]()
             {
             IConnectionPtr connection = m_connections.GetConnection(connectionId.c_str());
-            NotifyECInstancesChanged(connection->GetDb(), changes);
+            // we didn't make any changes, but need to restart the transaction so changes from other connections become visible
+            //connection->GetDb().AbandonChanges(); 
+            NotifyECInstancesChanged(connection->GetECDb(), changes);
             });
         }
 public:
@@ -248,7 +279,7 @@ protected:
         }
     void _OnSelectionChanged(SelectionChangedEventCR evt) override
         {
-        m_manager.m_cancelableTasks->CancelSelectionDependants(evt.GetConnection().GetId());
+        m_manager.m_cancelableTasks->CancelSelectionDependants(evt.GetConnection());
         folly::via(m_manager.m_executor, [&, evt]()
             {
             IConnectionPtr connection = m_manager.GetConnections().GetConnection(evt.GetConnection().GetId().c_str());
@@ -295,7 +326,7 @@ protected:
     void _OnConnectionEvent(ConnectionEvent const& evt) override
         {
         if (ConnectionEventType::Closed == evt.GetEventType())
-            m_manager.m_cancelableTasks->CancelByConnectionId(evt.GetConnection().GetId());
+            m_manager.m_cancelableTasks->CancelConnectionRequests(evt.GetConnection());
 
         folly::via(m_manager.m_executor, [&, evt, connectionId = evt.GetConnection().GetId()]()
             {
@@ -332,7 +363,7 @@ protected:
     void _InvalidateCache(Utf8CP rulesetId) override {m_wrapped.InvalidateCache(rulesetId);}
     void _RegisterLocater(RuleSetLocater& locater) override {m_wrapped.RegisterLocater(locater);}
     void _UnregisterLocater(RuleSetLocater const& locater) override {m_wrapped.UnregisterLocater(locater);}
-    bvector<PresentationRuleSetPtr> _LocateRuleSets(ECDbCR db, Utf8CP rulesetId) const override {return m_wrapped.LocateRuleSets(db, rulesetId);}
+    bvector<PresentationRuleSetPtr> _LocateRuleSets(IConnectionCR connection, Utf8CP rulesetId) const override {return m_wrapped.LocateRuleSets(connection, rulesetId);}
     bvector<Utf8String> _GetRuleSetIds() const override {return m_wrapped.GetRuleSetIds();}
 
     // IRulesetCallbacksHandler
@@ -472,7 +503,7 @@ IUserSettingsManager& RulesDrivenECPresentationManager::GetUserSettings() const 
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<NavNodesContainer> RulesDrivenECPresentationManager::_GetRootNodes(IConnectionCR primaryConnection, PageOptionsCR pageOpts, JsonValueCR jsonOptions)
     {
-    auto promise = CreateCancelablePromise<INavNodesDataSourcePtr>(*m_cancelableTasks, TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
+    auto promise = CreateCancelablePromise<INavNodesDataSourcePtr>(*m_cancelableTasks, "Root nodes", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
     folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), pageOpts, jsonOptions]()
         {
         if (promise->IsCanceled())
@@ -496,7 +527,7 @@ folly::Future<NavNodesContainer> RulesDrivenECPresentationManager::_GetRootNodes
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<size_t> RulesDrivenECPresentationManager::_GetRootNodesCount(IConnectionCR primaryConnection, JsonValueCR jsonOptions)
     {
-    auto promise = CreateCancelablePromise<size_t>(*m_cancelableTasks, TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
+    auto promise = CreateCancelablePromise<size_t>(*m_cancelableTasks, "Root nodes count", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
     folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), jsonOptions]()
         {
         if (promise->IsCanceled())
@@ -515,7 +546,7 @@ folly::Future<size_t> RulesDrivenECPresentationManager::_GetRootNodesCount(IConn
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<NavNodesContainer> RulesDrivenECPresentationManager::_GetChildren(IConnectionCR primaryConnection, NavNodeCR parent, PageOptionsCR pageOpts, JsonValueCR jsonOptions)
     {
-    auto promise = CreateCancelablePromise<INavNodesDataSourcePtr>(*m_cancelableTasks, TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
+    auto promise = CreateCancelablePromise<INavNodesDataSourcePtr>(*m_cancelableTasks, "Child nodes", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
     folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), parent = (NavNodeCPtr)&parent, pageOpts, jsonOptions]()
         {
         if (promise->IsCanceled())
@@ -539,7 +570,7 @@ folly::Future<NavNodesContainer> RulesDrivenECPresentationManager::_GetChildren(
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<size_t> RulesDrivenECPresentationManager::_GetChildrenCount(IConnectionCR primaryConnection, NavNodeCR parent, JsonValueCR jsonOptions)
     {
-    auto promise = CreateCancelablePromise<size_t>(*m_cancelableTasks, TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
+    auto promise = CreateCancelablePromise<size_t>(*m_cancelableTasks, "Child nodes count", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
     folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), parent = (NavNodeCPtr)&parent, jsonOptions]()
         {
         if (promise->IsCanceled())
@@ -558,7 +589,7 @@ folly::Future<size_t> RulesDrivenECPresentationManager::_GetChildrenCount(IConne
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<NavNodeCPtr> RulesDrivenECPresentationManager::_GetParent(IConnectionCR primaryConnection, NavNodeCR node, JsonValueCR jsonOptions)
     {
-    auto promise = CreateCancelablePromise<NavNodeCPtr>(*m_cancelableTasks, TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
+    auto promise = CreateCancelablePromise<NavNodeCPtr>(*m_cancelableTasks, "Parent node", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
     folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), node = (NavNodeCPtr)&node, jsonOptions]()
         {
         if (promise->IsCanceled())
@@ -577,7 +608,7 @@ folly::Future<NavNodeCPtr> RulesDrivenECPresentationManager::_GetParent(IConnect
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<NavNodeCPtr> RulesDrivenECPresentationManager::_GetNode(IConnectionCR primaryConnection, NavNodeKeyCR nodeKey, JsonValueCR jsonOptions)
     {
-    auto promise = CreateCancelablePromise<NavNodeCPtr>(*m_cancelableTasks, TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
+    auto promise = CreateCancelablePromise<NavNodeCPtr>(*m_cancelableTasks, "Node", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
     folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), nodeKeyPtr = NavNodeKeyCPtr(&nodeKey), jsonOptions]()
         {
         if (promise->IsCanceled())
@@ -596,7 +627,7 @@ folly::Future<NavNodeCPtr> RulesDrivenECPresentationManager::_GetNode(IConnectio
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<bvector<NavNodeCPtr>> RulesDrivenECPresentationManager::_GetFilteredNodes(IConnectionCR primaryConnection, Utf8CP filterText, JsonValueCR jsonOptions)
     {
-    auto promise = CreateCancelablePromise<bvector<NavNodeCPtr>>(*m_cancelableTasks, TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
+    auto promise = CreateCancelablePromise<bvector<NavNodeCPtr>>(*m_cancelableTasks, "Filtered nodes", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
     folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), filterText = Utf8String(filterText), jsonOptions]()
         {
         if (promise->IsCanceled())
@@ -615,7 +646,7 @@ folly::Future<bvector<NavNodeCPtr>> RulesDrivenECPresentationManager::_GetFilter
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<bool> RulesDrivenECPresentationManager::_HasChild(IConnectionCR primaryConnection, NavNodeCR parent, NavNodeKeyCR childKey, JsonValueCR jsonOptions)
     {
-    auto promise = CreateCancelablePromise<bool>(*m_cancelableTasks, TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
+    auto promise = CreateCancelablePromise<bool>(*m_cancelableTasks, "Child check", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
     folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), parent = (NavNodeCPtr)&parent, childKey = (NavNodeKeyCPtr)&childKey, jsonOptions]()
         {
         if (promise->IsCanceled())
@@ -634,7 +665,7 @@ folly::Future<bool> RulesDrivenECPresentationManager::_HasChild(IConnectionCR pr
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<bvector<SelectClassInfo>> RulesDrivenECPresentationManager::_GetContentClasses(IConnectionCR primaryConnection, Utf8CP preferredDisplayType, bvector<ECClassCP> const& classes, JsonValueCR jsonOptions)
     {
-    auto promise = CreateCancelablePromise<bvector<SelectClassInfo>>(*m_cancelableTasks, TaskDependencies(primaryConnection.GetId(), ContentOptions(jsonOptions).GetRulesetId()));
+    auto promise = CreateCancelablePromise<bvector<SelectClassInfo>>(*m_cancelableTasks, "Content classes", TaskDependencies(primaryConnection.GetId(), ContentOptions(jsonOptions).GetRulesetId()));
     folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), displayType = (Utf8String)preferredDisplayType, classes, jsonOptions]()
         {
         if (promise->IsCanceled())
@@ -654,7 +685,7 @@ folly::Future<bvector<SelectClassInfo>> RulesDrivenECPresentationManager::_GetCo
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<ContentDescriptorCPtr> RulesDrivenECPresentationManager::_GetContentDescriptor(IConnectionCR primaryConnection, Utf8CP preferredDisplayType, KeySetCR inputKeys, SelectionInfo const* selectionInfo, JsonValueCR jsonOptions)
     {
-    auto promise = CreateCancelablePromise<ContentDescriptorCPtr>(*m_cancelableTasks, TaskDependencies(primaryConnection.GetId(), ContentOptions(jsonOptions).GetRulesetId(), true));
+    auto promise = CreateCancelablePromise<ContentDescriptorCPtr>(*m_cancelableTasks, "Content descriptor", TaskDependencies(primaryConnection.GetId(), ContentOptions(jsonOptions).GetRulesetId(), true));
     folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), displayType = (Utf8String)preferredDisplayType, input = KeySetCPtr(&inputKeys), selectionInfo, jsonOptions]()
         {
         if (promise->IsCanceled())
@@ -674,7 +705,7 @@ folly::Future<ContentDescriptorCPtr> RulesDrivenECPresentationManager::_GetConte
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<ContentCPtr> RulesDrivenECPresentationManager::_GetContent(ContentDescriptorCR descriptor, PageOptionsCR pageOpts)
     {
-    auto promise = CreateCancelablePromise<ContentCPtr>(*m_cancelableTasks, TaskDependencies(descriptor.GetConnection().GetId(), ContentOptions(descriptor.GetOptions()).GetRulesetId(), true));
+    auto promise = CreateCancelablePromise<ContentCPtr>(*m_cancelableTasks, "Content", TaskDependencies(descriptor.GetConnection().GetId(), ContentOptions(descriptor.GetOptions()).GetRulesetId(), true));
     folly::via(m_executor, [&, promise, descriptor = ContentDescriptorCPtr(&descriptor), pageOpts]()
         {
         if (promise->IsCanceled())
@@ -691,7 +722,7 @@ folly::Future<ContentCPtr> RulesDrivenECPresentationManager::_GetContent(Content
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<size_t> RulesDrivenECPresentationManager::_GetContentSetSize(ContentDescriptorCR descriptor)
     {
-    auto promise = CreateCancelablePromise<size_t>(*m_cancelableTasks, TaskDependencies(descriptor.GetConnection().GetId(), ContentOptions(descriptor.GetOptions()).GetRulesetId(), true));
+    auto promise = CreateCancelablePromise<size_t>(*m_cancelableTasks, "Content set size", TaskDependencies(descriptor.GetConnection().GetId(), ContentOptions(descriptor.GetOptions()).GetRulesetId(), true));
     folly::via(m_executor, [&, promise, descriptor = ContentDescriptorCPtr(&descriptor)]()
         {
         if (promise->IsCanceled())
@@ -840,7 +871,7 @@ folly::Future<bvector<ECInstanceChangeResult>> RulesDrivenECPresentationManager:
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeChecked(IConnectionCR primaryConnection, NavNodeKeyCR nodeKey, JsonValueCR jsonOptions)
     {
-    auto promise = CreateCancelablePromise<folly::Unit>(*m_cancelableTasks, TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
+    auto promise = CreateCancelablePromise<folly::Unit>(*m_cancelableTasks, "Node checked", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
     folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), nodeKeyPtr = NavNodeKeyCPtr(&nodeKey), jsonOptions]()
         {
         if (promise->IsCanceled())
@@ -859,7 +890,7 @@ folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeChecked(ICon
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeUnchecked(IConnectionCR primaryConnection, NavNodeKeyCR nodeKey, JsonValueCR jsonOptions)
     {
-    auto promise = CreateCancelablePromise<folly::Unit>(*m_cancelableTasks, TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
+    auto promise = CreateCancelablePromise<folly::Unit>(*m_cancelableTasks, "Node unchecked", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
     folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), nodeKeyPtr = NavNodeKeyCPtr(&nodeKey), jsonOptions]()
         {
         if (promise->IsCanceled())
@@ -878,7 +909,7 @@ folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeUnchecked(IC
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeExpanded(IConnectionCR primaryConnection, NavNodeKeyCR nodeKey, JsonValueCR jsonOptions)
     {
-    auto promise = CreateCancelablePromise<folly::Unit>(*m_cancelableTasks, TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
+    auto promise = CreateCancelablePromise<folly::Unit>(*m_cancelableTasks, "Node expanded", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
     folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), nodeKeyPtr = NavNodeKeyCPtr(&nodeKey), jsonOptions]()
         {
         if (promise->IsCanceled())
@@ -897,7 +928,7 @@ folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeExpanded(ICo
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeCollapsed(IConnectionCR primaryConnection, NavNodeKeyCR nodeKey, JsonValueCR jsonOptions)
     {
-    auto promise = CreateCancelablePromise<folly::Unit>(*m_cancelableTasks, TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
+    auto promise = CreateCancelablePromise<folly::Unit>(*m_cancelableTasks, "Node collapsed", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
     folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), nodeKeyPtr = NavNodeKeyCPtr(&nodeKey), jsonOptions]()
         {
         if (promise->IsCanceled())
@@ -916,7 +947,7 @@ folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeCollapsed(IC
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnAllNodesCollapsed(IConnectionCR primaryConnection, JsonValueCR jsonOptions)
     {
-    auto promise = CreateCancelablePromise<folly::Unit>(*m_cancelableTasks);
+    auto promise = CreateCancelablePromise<folly::Unit>(*m_cancelableTasks, "All nodes collapsed");
     folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), jsonOptions]()
         {
         if (promise->IsCanceled())

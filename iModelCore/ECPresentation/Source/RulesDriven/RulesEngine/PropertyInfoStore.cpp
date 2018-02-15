@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/PropertyInfoStore.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -11,20 +11,60 @@
 #include "LoggingHelper.h"
 
 /*-----------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis            02/2018
++---------------+---------------+---------------+---------------+-----------+------*/
+bool DisplayInfo::ShouldDisplay(ECClassCR, ECPropertyCR prop) const
+    {
+    // first, look for display info specified for some property
+    auto iter = m_propertyDisplayInfos.find(PropertyDisplayInfo(prop.GetName()));
+    if (m_propertyDisplayInfos.end() != iter)
+        return iter->IsDisplayed();
+
+    // then, find a default class display info with the highest priority
+    DefaultDisplayInfo const* matchingDisplayInfo = nullptr;
+    for (auto pair : m_defaultDisplayInfos)
+        {
+        if (nullptr != pair.first && !pair.first->Is(&prop.GetClass()))
+            continue;
+
+        if (nullptr == matchingDisplayInfo || pair.second.GetPriority() > matchingDisplayInfo->GetPriority())
+            matchingDisplayInfo = &pair.second;
+        }
+    // if found, use its display flag
+    if (nullptr != matchingDisplayInfo)
+        return matchingDisplayInfo->ShouldDisplay();
+    
+    // by default - display
+    return true;
+    }
+
+/*-----------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas            07/2017
 +---------------+---------------+---------------+---------------+-----------+------*/
-void PropertyInfoStore::InsertPropertiesDisplayInfo(ECClassCP ecClass, bset<PropertiesDisplayInfo> const& source, bset<PropertiesDisplayInfo>& target)
+void DisplayInfo::Merge(DisplayInfo const& source)
     {
-    for (PropertiesDisplayInfo const& info : source)
+    for (PropertyDisplayInfo const& info : source.m_propertyDisplayInfos)
         {
-        auto iter = target.find(info);
-        if (target.end() == iter)
+        auto iter = m_propertyDisplayInfos.find(info);
+        if (m_propertyDisplayInfos.end() == iter)
+            m_propertyDisplayInfos.insert(info);
+        else if (iter->GetPriority() < info.GetPriority())
+            m_propertyDisplayInfos.insert(m_propertyDisplayInfos.erase(iter), info);
+        }
+
+    for (auto pair : source.m_defaultDisplayInfos)
+        {
+        ECClassCP key = pair.first;
+        DefaultDisplayInfo const& info = pair.second;
+
+        auto iter = m_defaultDisplayInfos.find(key);
+        if (m_defaultDisplayInfos.end() == iter)
+            m_defaultDisplayInfos.Insert(key, info);
+        else if (iter->second.GetPriority() < info.GetPriority())
             {
-            target.insert(info);
-            continue;
+            m_defaultDisplayInfos.erase(iter);
+            m_defaultDisplayInfos.Insert(key, info);
             }
-        if (iter->GetPriority() < info.GetPriority())
-            target.insert(target.erase(iter), info);
         }
     }
 
@@ -33,26 +73,33 @@ void PropertyInfoStore::InsertPropertiesDisplayInfo(ECClassCP ecClass, bset<Prop
 +---------------+---------------+---------------+---------------+-----------+------*/
 void PropertyInfoStore::CollectPropertiesDisplayRules(ECClassCP ecClass, PropertiesDisplaySpecificationCR spec)
     {
-    bset<PropertiesDisplayInfo> propertiesInfos;
-    bvector<Utf8String> propertyNamesVec;
-    BeStringUtilities::Split(spec.GetPropertyNames().c_str(), ",", propertyNamesVec);
-    for (Utf8StringR propertyName : propertyNamesVec)
+    DisplayInfo info;
+    if (spec.GetPropertyNames().Equals("*"))
         {
-        propertyName.Trim();
-        propertiesInfos.insert(PropertiesDisplayInfo(propertyName, spec.GetPriority(), spec.IsDisplayed()));
+        info.AddDefaultDisplayInfo(ecClass, DefaultDisplayInfo(spec.IsDisplayed(), spec.GetPriority()));
+        }
+    else
+        {
+        bvector<Utf8String> propertyNamesVec;
+        BeStringUtilities::Split(spec.GetPropertyNames().c_str(), ",", propertyNamesVec);
+        for (Utf8StringR propertyName : propertyNamesVec)
+            {
+            propertyName.Trim();
+            info.GetPropertyDisplayInfos().insert(PropertyDisplayInfo(propertyName, spec.GetPriority(), spec.IsDisplayed()));
+            }
         }
 
     auto iter = m_perClassPropertyDisplayInfos.find(ecClass);
     if (m_perClassPropertyDisplayInfos.end() == iter)
-        m_perClassPropertyDisplayInfos[ecClass] = propertiesInfos;
+        m_perClassPropertyDisplayInfos[ecClass] = info;
     else
-        InsertPropertiesDisplayInfo(ecClass, propertiesInfos, iter->second);
+        iter->second.Merge(info);
     }
 
 /*-----------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas            07/2017
 +---------------+---------------+---------------+---------------+-----------+------*/
-void PropertyInfoStore::InitPropertiesDisplayInfo(ContentSpecificationCP specification, ContentModifierList const& contentModifiers)
+void PropertyInfoStore::InitPropertyDisplayInfos(ContentSpecificationCP specification, ContentModifierList const& contentModifiers)
     {
     if (nullptr != specification)
         {
@@ -78,25 +125,28 @@ void PropertyInfoStore::InitPropertiesDisplayInfo(ContentSpecificationCP specifi
 /*-----------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas            07/2017
 +---------------+---------------+---------------+---------------+-----------+------*/
-bset<PropertiesDisplayInfo> const& PropertyInfoStore::GetPropertiesDisplayInfo(ECClassCR ecClass) const
+DisplayInfo const& PropertyInfoStore::GetDisplayInfo(ECClassCR ecClass) const
     {
     auto iter = m_aggregatedPropertyDisplayInfos.find(&ecClass);
     if (m_aggregatedPropertyDisplayInfos.end() == iter)
         {
-        bset<PropertiesDisplayInfo> properties;
+        DisplayInfo info;
 
+        // merge in display infos that apply for any class (defined at specification level)
         auto anyClassIter = m_perClassPropertyDisplayInfos.find(nullptr);
         if (m_perClassPropertyDisplayInfos.end() != anyClassIter)
-            InsertPropertiesDisplayInfo(&ecClass, anyClassIter->second, properties);
+            info.Merge(anyClassIter->second);
 
+        // merge in display infos that apply for supplied class (defined as content modifier)
         auto perClassIter = m_perClassPropertyDisplayInfos.find(&ecClass);
         if (m_perClassPropertyDisplayInfos.end() != perClassIter)
-            InsertPropertiesDisplayInfo(&ecClass, perClassIter->second, properties);
+            info.Merge(perClassIter->second);
 
+        // find if there's at least one spec that requires property to be displayed
         bool hasDisplayedPropertySpec = false;
-        for (PropertiesDisplayInfo const& info : properties)
+        for (PropertyDisplayInfo const& propertyDisplayInfo : info.GetPropertyDisplayInfos())
             {
-            if (info.IsDisplayed())
+            if (propertyDisplayInfo.IsDisplayed())
                 {
                 hasDisplayedPropertySpec = true;
                 break;
@@ -104,19 +154,21 @@ bset<PropertiesDisplayInfo> const& PropertyInfoStore::GetPropertiesDisplayInfo(E
             }
         if (hasDisplayedPropertySpec)
             {
-            for (ECPropertyCP prop : ecClass.GetProperties())
-                {
-                PropertiesDisplayInfo info(prop->GetName(), 0, false);
-                if (properties.end() == properties.find(info))
-                    properties.insert(info);
-                }
+            // if there's at least one spec requiring property display, it means we should hide all 
+            // others - insert hiding display infos with low priority so they don't override any
+            // explicitly specified infos
+            info.AddDefaultDisplayInfo(&ecClass, DefaultDisplayInfo(false, 0));
+            for (ECClassCP baseClass : ecClass.GetBaseClasses())
+                info.AddDefaultDisplayInfo(baseClass, DefaultDisplayInfo(false, 0));
+
             }
 
+        // merge in display infos of base class properties
         for (ECClassCP base : ecClass.GetBaseClasses())
-            InsertPropertiesDisplayInfo(base, GetPropertiesDisplayInfo(*base), properties);
+            info.Merge(GetDisplayInfo(*base));
 
 
-        iter = m_aggregatedPropertyDisplayInfos.Insert(&ecClass, properties).first;
+        iter = m_aggregatedPropertyDisplayInfos.Insert(&ecClass, info).first;
         }
     return iter->second;
     }
@@ -169,7 +221,7 @@ void PropertyInfoStore::InitPropertyEditors(ContentSpecificationCP specification
 PropertyInfoStore::PropertyInfoStore(ECSchemaHelper const& helper, PresentationRuleSetCR ruleset, ContentSpecificationCP spec)
     : m_schemaHelper(helper)
     {
-    InitPropertiesDisplayInfo(spec, ruleset.GetContentModifierRules());
+    InitPropertyDisplayInfos(spec, ruleset.GetContentModifierRules());
     InitPropertyEditors(spec, ruleset.GetContentModifierRules());
     }
 
@@ -187,15 +239,8 @@ bool PropertyInfoStore::ShouldDisplay(ECPropertyCR prop, ECClassCR ecClass) cons
             return false;
         }
 
-    bset<PropertiesDisplayInfo> const& properties = GetPropertiesDisplayInfo(ecClass);
-    if (properties.empty())
-        return true;
-
-    auto iter = properties.find(PropertiesDisplayInfo(prop.GetName()));
-    if (properties.end() != iter)
-        return iter->IsDisplayed();
-
-    return true;
+    DisplayInfo const& displayInfo = GetDisplayInfo(ecClass);
+    return displayInfo.ShouldDisplay(ecClass, prop);
     }
 
 /*-----------------------------------------------------------------------------**//**

@@ -350,14 +350,14 @@ protected:
             return bvector<IUpdateTaskPtr>();
 
         bool shouldUpdate;
-        KeySetCPtr toRemove = GetRemovedNodeKeys(*m_selectionManager.GetSelection(m_connection.GetDb()), shouldUpdate);
+        KeySetCPtr toRemove = GetRemovedNodeKeys(*m_selectionManager.GetSelection(m_connection.GetECDb()), shouldUpdate);
         if (!shouldUpdate)
             return bvector<IUpdateTaskPtr>();
 
         if (!toRemove->empty())
-            m_selectionManager.RemoveFromSelection(m_connection.GetDb(), "RefreshSelectionTask", false, *toRemove);
+            m_selectionManager.RemoveFromSelection(m_connection.GetECDb(), "RefreshSelectionTask", false, *toRemove);
         else if (shouldUpdate)
-            m_selectionManager.RefreshSelection(m_connection.GetDb(), "RefreshSelectionTask", false);
+            m_selectionManager.RefreshSelection(m_connection.GetECDb(), "RefreshSelectionTask", false);
 
         return bvector<IUpdateTaskPtr>();
         }

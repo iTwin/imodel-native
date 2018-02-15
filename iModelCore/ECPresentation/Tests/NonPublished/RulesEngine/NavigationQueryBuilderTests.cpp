@@ -14,12 +14,12 @@
 void NavigationQueryBuilderTests::SetUp()
     {
     Localization::Init();
-    IConnectionManagerCR connections = ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnections();
-    IConnectionCR connection = ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnection();
+    
+    m_connection = &ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnection();
     m_ruleset = PresentationRuleSet::CreateInstance("NavigationQueryBuilderTests", 1, 0, false, "", "", "", false);
-    m_schemaHelper = new ECSchemaHelper(ExpectedQueries::GetInstance(BeTest::GetHost()).GetDb(), &m_relatedPathsCache, nullptr);
-    m_builder = new NavigationQueryBuilder(NavigationQueryBuilderParameters(*m_schemaHelper, connections,
-        connection, *m_ruleset, m_settings, nullptr, m_expressionsCache, m_nodesCache));
+    m_schemaHelper = new ECSchemaHelper(*m_connection, nullptr, nullptr, nullptr, nullptr);
+    m_builder = new NavigationQueryBuilder(NavigationQueryBuilderParameters(*m_schemaHelper, m_connections,
+        *m_connection, *m_ruleset, m_settings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesCache));
 
     m_rootNodeRule = new RootNodeRule();
     m_childNodeRule = new ChildNodeRule();

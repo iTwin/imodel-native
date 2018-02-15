@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/Rules/CommonTools.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -95,4 +95,73 @@ Utf8CP CommonTools::FormatRelationshipMeaningString(RelationshipMeaning meaning)
     if (RelationshipMeaning::RelatedInstance == meaning)
         return COMMON_XML_ATTRIBUTE_VALUE_RELATIONSHIP_MEANING_RELATEDINSTANCE;
     return COMMON_XML_ATTRIBUTE_VALUE_RELATIONSHIP_MEANING_RELATEDINSTANCE;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<Utf8String> CommonTools::ParsePropertiesNames(Utf8StringCR properties)
+    {
+    bvector<Utf8String> propertiesNamesList;
+    BeStringUtilities::Split(properties.c_str(), ",", propertiesNamesList);
+    std::for_each(propertiesNamesList.begin(), propertiesNamesList.end(), [](Utf8StringR name){name.Trim();});
+    return propertiesNamesList;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static void ReverseString(Utf8StringR str)
+    {
+    for (size_t i = 0; i < str.size() / 2; i++)
+        std::swap(str[i], str[str.size() - i - 1]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String ToBase36String(uint64_t i)
+    {
+    static Utf8CP chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    Utf8String encoded;
+    while (i != 0)
+        {
+        encoded.push_back(chars[i % 36]);
+        i /= 36;
+        }
+    ReverseString(encoded);
+    return !encoded.empty() ? encoded : "0";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static uint64_t GetBriefcaseId(uint64_t id) {return (uint64_t)id >> 40;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static uint64_t GetLocalId(uint64_t id) {return (uint64_t)id & (((uint64_t)1 << 40) - 1);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String CommonTools::GetDefaultDisplayLabel(Utf8StringCR className, uint64_t id)
+    {
+    Utf8String label = className;
+    label.append("-");
+    label.append(ToBase36String(GetBriefcaseId(id)));
+    label.append("-");
+    label.append(ToBase36String(GetLocalId(id)));
+    return label;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String CommonTools::GetDefaultDisplayLabel(ECN::IECInstanceCR instance)
+    {
+    ECInstanceId id;
+    ECInstanceId::FromString(id, instance.GetInstanceId().c_str());
+    return GetDefaultDisplayLabel(instance.GetClass().GetDisplayLabel(), id.GetValue());
     }

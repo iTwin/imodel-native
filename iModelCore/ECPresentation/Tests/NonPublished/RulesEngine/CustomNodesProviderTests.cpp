@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/CustomNodesProviderTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -118,7 +118,7 @@ TEST_F(CustomNodesProviderTests, ReturnsValidChildNode)
     m_nodesCache.Cache(*parent, true);
 
     ChildNodeRule rule;
-    m_context->SetChildNodeContext(rule, *parent);
+    m_context->SetChildNodeContext(&rule, *parent);
 
     JsonNavNodePtr node;
     CustomNodeSpecification spec(1, false, "type", "label", "description", "imageId");

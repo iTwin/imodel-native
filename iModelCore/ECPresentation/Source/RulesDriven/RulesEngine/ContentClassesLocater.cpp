@@ -45,10 +45,10 @@ static bset<ECClassCP> CollectRuleConditionClasses(ECSchemaHelper const& schemaH
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<ECClassCP> CollectDerivedClassesWithNavigationProperties(ECDbCR connection, ECClassCR base)
+static bvector<ECClassCP> CollectDerivedClassesWithNavigationProperties(ECClassCR base, SchemaManagerCR schemas)
     {
     bvector<ECClassCP> classes;
-    for (ECClassCP derived : connection.Schemas().GetDerivedClasses(base))
+    for (ECClassCP derived : schemas.GetDerivedClasses(base))
         {
         for (ECPropertyCP prop : derived->GetProperties(false))
             {
@@ -58,7 +58,7 @@ static bvector<ECClassCP> CollectDerivedClassesWithNavigationProperties(ECDbCR c
                 break;
                 }
             }
-        bvector<ECClassCP> derivedWithNavigationProperties = CollectDerivedClassesWithNavigationProperties(connection, *derived);
+        bvector<ECClassCP> derivedWithNavigationProperties = CollectDerivedClassesWithNavigationProperties(*derived, schemas);
         std::move(derivedWithNavigationProperties.begin(), derivedWithNavigationProperties.end(), std::back_inserter(classes));
         }
     return classes;
@@ -68,7 +68,7 @@ static bvector<ECClassCP> CollectDerivedClassesWithNavigationProperties(ECDbCR c
 * @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename TList>
-static void SplitPolymorphicClassesList(bvector<ECClassCP>& result, TList const& searchList, bset<ECClassCP> const& splitClasses, ECDbCR connection)
+static void SplitPolymorphicClassesList(bvector<ECClassCP>& result, TList const& searchList, bset<ECClassCP> const& splitClasses, SchemaManagerCR schemas)
     {
     for (ECClassCP ecClass : searchList)
         {        
@@ -84,7 +84,7 @@ static void SplitPolymorphicClassesList(bvector<ECClassCP>& result, TList const&
                 }
             }
         if (checkDerivedClasses)
-            SplitPolymorphicClassesList(result, connection.Schemas().GetDerivedClasses(*ecClass), splitClasses, connection);
+            SplitPolymorphicClassesList(result, schemas.GetDerivedClasses(*ecClass), splitClasses, schemas);
         }
     }
 
@@ -106,8 +106,9 @@ protected:
         return s_empty;
         }
 public:
-    ClassInput(ECDbCR db, NavNodeKeyListCR keys)
+    ClassInput(NavNodeKeyListCR keys, SchemaManagerCR schemas)
         {
+        bset<ECClassId> classIds;
         for (NavNodeKeyCPtr const& key : keys)
             {
             if (nullptr == key->AsECInstanceNodeKey())
@@ -116,8 +117,12 @@ public:
                 continue;
                 }
             ECClassId classId = key->AsECInstanceNodeKey()->GetECClassId();
-            ECClassCP ecClass = db.Schemas().GetClass(classId);
+            if (classIds.end() != classIds.find(classId))
+                continue;
+
+            ECClassCP ecClass = schemas.GetClass(classId);
             m_classes.push_back(ecClass);
+            classIds.insert(classId);
             }
         }
 };
@@ -209,7 +214,7 @@ protected:
             {
             info.SetFlags(info.GetFlags() | CLASS_FLAG_Polymorphic);
 
-            bvector<ECClassCP> classes = CollectDerivedClassesWithNavigationProperties(GetContext().GetSchemaHelper().GetDb(), info.GetClass());
+            bvector<ECClassCP> classes = CollectDerivedClassesWithNavigationProperties(info.GetClass(), GetContext().GetSchemaHelper().GetConnection().GetECDb().Schemas());
             std::move(classes.begin(), classes.end(), std::back_inserter(navigationPropertyClasses));
             }
         for (ECClassCP ecClass : navigationPropertyClasses)
@@ -235,7 +240,7 @@ bvector<NavNodeKeyCPtr> ContentClassesLocater::GetClassKeys(bvector<ECClassCP> c
     bvector<ECClassCP> lookup = input;
     bset<ECClassCP> ruleConditionClasses = CollectRuleConditionClasses(m_context.GetSchemaHelper(), 
         m_context.GetRuleset(), m_context.GetECExpressionsCache());
-    SplitPolymorphicClassesList(lookup, input, ruleConditionClasses, m_context.GetSchemaHelper().GetDb());
+    SplitPolymorphicClassesList(lookup, input, ruleConditionClasses, m_context.GetSchemaHelper().GetConnection().GetECDb().Schemas());
 
     bvector<NavNodeKeyCPtr> keys;
     for (ECClassCP ecClass : lookup)
@@ -256,7 +261,7 @@ bvector<SelectClassInfo> ContentClassesLocater::Locate(bvector<ECClassCP> const&
     ContentClassesLocaterImpl locater(m_context);
     for (ContentRuleInputKeys const& rule : ruleSpecs)
         {
-        ClassInput input(m_context.GetConnection().GetDb(), rule.GetMatchingNodeKeys());
+        ClassInput input(rule.GetMatchingNodeKeys(), m_context.GetSchemaHelper().GetConnection().GetECDb().Schemas());
         locater.SetCurrentInput(&input);
         for (ContentSpecificationCP spec : rule.GetRule().GetSpecifications())
             spec->Accept(locater);

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/TestHelpers/TestConnectionCache.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -18,22 +18,31 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 * @bsiclass                                     Grigas.Petraitis                10/2017
 +===============+===============+===============+===============+===============+======*/
 struct TestConnection : RefCounted<IConnection>
-    {
+{
+private:
     Utf8String m_id;
     ECDbR m_db;
+    std::function<void()> m_interruptHandler;
+
+protected:
     Utf8StringCR _GetId() const override {return m_id;}
-    ECDbR _GetDb() const override {return m_db;}
+    ECDbR _GetECDb() const override {return m_db;}
+    BeSQLite::Db& _GetDb() const override {return m_db;}
     bool _IsOpen() const override {return m_db.IsDbOpen();}
     bool _IsReadOnly() const override {return m_db.IsReadonly();}
-    TestConnection(ECDbR db) : m_db(db), m_id(Utf8PrintfString("ConnectionId:%s", BeGuid(true).ToString().c_str())) {}
-    };
+    void _InterruptRequests() const override {if(m_interruptHandler){m_interruptHandler();}}
+
+public:
+    TestConnection(ECDbR db) : m_db(db), m_id(Utf8PrintfString("ConnectionId:%" PRIu64, (uint64_t)&db)) {}
+    void SetInterruptHandler(std::function<void()> handler) {m_interruptHandler = handler;}
+};
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                02/2017
 +===============+===============+===============+===============+===============+======*/
 struct TestConnectionCache : IConnectionCache
 {
-    bmap<Utf8String, IConnectionPtr> m_connections;
+    bmap<Utf8String, RefCountedPtr<TestConnection>> m_connections;
     IConnection* _GetConnection(Utf8CP connectionId) const override
         {
         auto iter = m_connections.find(connectionId);
@@ -50,7 +59,7 @@ struct TestConnectionCache : IConnectionCache
             }
         return nullptr;
         }
-    IConnectionPtr Cache(ECDbR db)
+    RefCountedPtr<TestConnection> Cache(ECDbR db)
         {
         RefCountedPtr<TestConnection> connection = new TestConnection(db);
         m_connections[connection->GetId()] = connection;
@@ -63,14 +72,14 @@ struct TestConnectionCache : IConnectionCache
 +===============+===============+===============+===============+===============+======*/
 struct TestConnectionManager : IConnectionManager
 {
-    bmap<Utf8String, IConnectionPtr> m_connections;
+    bmap<Utf8String, RefCountedPtr<TestConnection>> m_connections;
     mutable bvector<IConnectionsListener*> m_listeners;
 
     void _AddListener(IConnectionsListener& listener) const override {m_listeners.push_back(&listener);}
     void _DropListener(IConnectionsListener& listener) const override {m_listeners.erase(std::find(m_listeners.begin(), m_listeners.end(), &listener));}
     IConnectionPtr _CreateConnection(ECDbR db) override
         {
-        IConnectionPtr connection = new TestConnection(db);
+        RefCountedPtr<TestConnection> connection = new TestConnection(db);
         m_connections[connection->GetId()] = connection;
         return connection;
         }
@@ -90,9 +99,9 @@ struct TestConnectionManager : IConnectionManager
             }
         return nullptr;
         }
-    IConnectionPtr NotifyConnectionOpened(ECDbR db)
+    RefCountedPtr<TestConnection> NotifyConnectionOpened(ECDbR db)
         {
-        IConnectionPtr connection = CreateConnection(db);
+        RefCountedPtr<TestConnection> connection = dynamic_cast<TestConnection*>(CreateConnection(db).get());
         for (IConnectionsListener* listener : m_listeners)
             listener->NotifyConnectionEvent(ConnectionEvent(*connection, true, ConnectionEventType::Opened));
         return connection;

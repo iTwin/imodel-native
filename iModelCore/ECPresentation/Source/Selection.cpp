@@ -171,7 +171,7 @@ SelectionManager::SelectionStorage& SelectionManager::GetStorage(IConnectionCR c
     {
     auto iter = m_selections.find(connection.GetId());
     if (m_selections.end() == iter)
-        iter = m_selections.Insert(connection.GetId(), new ECDbSelection(*this, connection.GetDb(), GetLogger())).first;
+        iter = m_selections.Insert(connection.GetId(), new ECDbSelection(*this, connection.GetECDb(), GetLogger())).first;
     return isSubSelection ? iter->second->GetSubSelection() : iter->second->GetSelection();
     }
 
@@ -495,11 +495,11 @@ void SelectionSyncHandler::_OnSelectionChanged(SelectionChangedEventCR evt)
 
     // create the selection info
     SelectionInfo selection(*m_manager, evt);
-    KeySetCPtr inputKeys = evt.IsSubSelection() ? m_manager->GetSubSelection(evt.GetConnection().GetDb()) : m_manager->GetSelection(evt.GetConnection().GetDb());
+    KeySetCPtr inputKeys = evt.IsSubSelection() ? m_manager->GetSubSelection(evt.GetConnection().GetECDb()) : m_manager->GetSelection(evt.GetConnection().GetECDb());
     bvector<ECInstanceKey> selectedKeys;
 
     // get the default content descriptor
-    ContentDescriptorCPtr defaultDescriptor = IECPresentationManager::GetManager().GetContentDescriptor(evt.GetConnection().GetDb(), contentDisplayType, *inputKeys, &selection, contentOptions).get();
+    ContentDescriptorCPtr defaultDescriptor = IECPresentationManager::GetManager().GetContentDescriptor(evt.GetConnection().GetECDb(), contentDisplayType, *inputKeys, &selection, contentOptions).get();
     if (defaultDescriptor.IsNull())
         {
         _SelectInstances(evt, selectedKeys);

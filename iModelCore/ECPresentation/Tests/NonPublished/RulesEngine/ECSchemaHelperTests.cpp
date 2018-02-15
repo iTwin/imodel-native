@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/ECSchemaHelperTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSchemaHelperTests.h"
@@ -47,7 +47,8 @@ void ECSchemaHelperTests::TearDownTestCase()
 //---------------------------------------------------------------------------------------
 void ECSchemaHelperTests::SetUp()
     {
-    m_helper = new ECSchemaHelper(s_project->GetECDbCR(), nullptr, nullptr);
+    m_connection = new TestConnection(s_project->GetECDb());
+    m_helper = new ECSchemaHelper(*m_connection, nullptr, nullptr, nullptr, nullptr);
     }
 
 //---------------------------------------------------------------------------------------
@@ -55,6 +56,7 @@ void ECSchemaHelperTests::SetUp()
 //---------------------------------------------------------------------------------------
 void ECSchemaHelperTests::TearDown()
     {
+    s_project->GetECDb().AbandonChanges();
     DELETE_AND_CLEAR(m_helper);
     }
 
@@ -643,67 +645,142 @@ TEST_F (ECSchemaHelperTests, GetECClassesFromSchemaList_DoesNotReturnClassesFrom
     EXPECT_TRUE(classes.end() == classIter);
     }
 
-struct IdSetHelperTests : ::testing::Test
-    {
-    };
-
 /*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                10/2017
+* @bsitest                                      Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(IdSetHelperTests, CreatesINClauseWithZeroKeys)
+TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_ReturnsOnlyRelatedInstanceClasses)
     {
-    Utf8String clause;
-    IdSetHelper::BindSetAction result = IdSetHelper::CreateInVirtualSetClause(clause, bvector<ECInstanceKey>(), "test1");
-    EXPECT_EQ(IdSetHelper::BIND_Ids, result);
-    EXPECT_STREQ("0", clause.c_str());
+    ECEntityClassCP class1 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class1")->GetEntityClassCP();
+    ECEntityClassCP baseof2and3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "BaseOf2and3")->GetEntityClassCP();
+    ECEntityClassCP class2 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class2")->GetEntityClassCP();
+    ECEntityClassCP class3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class2")->GetEntityClassCP();
+    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class1HasClass2And3")->GetRelationshipClassCP();
+
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class1);
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class2);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class3);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *instance1, *instance2);
+
+    bvector<RelatedClassPath> result = m_helper->GetPolymorphicallyRelatedClassesWithInstances(*class1,
+        rel->GetFullName(), ECRelatedInstanceDirection::Forward, baseof2and3->GetFullName(), nullptr);
+    ASSERT_EQ(1, result.size());
+    ASSERT_EQ(1, result[0].size());
+    EXPECT_EQ(class2, result[0][0].GetTargetClass());
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                10/2017
+* @bsitest                                      Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(IdSetHelperTests, CreatesINClauseWithSmallEvenNumberOfKeys)
+TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_ReturnsOnlySubclassesOfProvidedBaseClass)
     {
-    bvector<ECInstanceKey> keys = {
-        ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)),
-        ECInstanceKey(ECClassId((uint64_t)2), ECInstanceId((uint64_t)2)),
-        ECInstanceKey(ECClassId((uint64_t)3), ECInstanceId((uint64_t)3)),
-        ECInstanceKey(ECClassId((uint64_t)4), ECInstanceId((uint64_t)4))
-        };
+    ECEntityClassCP class1 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class1")->GetEntityClassCP();
+    // unused - ECEntityClassCP baseof2and3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "BaseOf2and3")->GetEntityClassCP();
+    ECEntityClassCP class2 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class2")->GetEntityClassCP();
+    ECEntityClassCP class3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class3")->GetEntityClassCP();
+    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class1HasClass2And3")->GetRelationshipClassCP();
 
-    Utf8String clause;
-    IdSetHelper::BindSetAction result = IdSetHelper::CreateInVirtualSetClause(clause, keys, "test1");
-    EXPECT_EQ(IdSetHelper::BIND_Ids, result);
-    EXPECT_STREQ("test1 IN (?,?,?,?)", clause.c_str());
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class1);
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class2);
+    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class3);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *instance1, *instance2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *instance1, *instance3);
+
+    bvector<RelatedClassPath> result = m_helper->GetPolymorphicallyRelatedClassesWithInstances(*class1,
+        rel->GetFullName(), ECRelatedInstanceDirection::Forward, class2->GetFullName(), nullptr);
+    ASSERT_EQ(1, result.size());
+    ASSERT_EQ(1, result[0].size());
+    EXPECT_EQ(class2, result[0][0].GetTargetClass());
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                10/2017
+* @bsitest                                      Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(IdSetHelperTests, CreatesINClauseWithSmallOddNumberOfKeys)
+TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_ReturnsClassesOfInstancesWhichMatchInstanceFilter)
     {
-    bvector<ECInstanceKey> keys = {
-        ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)),
-        ECInstanceKey(ECClassId((uint64_t)2), ECInstanceId((uint64_t)2)),
-        ECInstanceKey(ECClassId((uint64_t)3), ECInstanceId((uint64_t)3))
-        };
+    ECEntityClassCP class1 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class1")->GetEntityClassCP();
+    ECEntityClassCP baseof2and3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "BaseOf2and3")->GetEntityClassCP();
+    ECEntityClassCP class2 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class2")->GetEntityClassCP();
+    ECEntityClassCP class3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class2")->GetEntityClassCP();
+    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class1HasClass2And3")->GetRelationshipClassCP();
+    
+    IECInstancePtr instance11 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class1);
+    IECInstancePtr instance12 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class1);
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class2);
+    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class3);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *instance11, *instance2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *instance12, *instance3);
 
-    Utf8String clause;
-    IdSetHelper::BindSetAction result = IdSetHelper::CreateInVirtualSetClause(clause, keys, "test1");
-    EXPECT_EQ(IdSetHelper::BIND_Ids, result);
-    EXPECT_STREQ("test1 IN (?,?,?)", clause.c_str());
+    SelectClassInfo selectInfo(*class1, true);
+    Utf8PrintfString instanceFilter("this.ECInstanceId = %s", instance11->GetInstanceId().c_str());
+    InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), nullptr, selectInfo, nullptr, instanceFilter.c_str());
+
+    bvector<RelatedClassPath> result = m_helper->GetPolymorphicallyRelatedClassesWithInstances(*class1,
+        rel->GetFullName(), ECRelatedInstanceDirection::Forward, baseof2and3->GetFullName(), &filteringParams);
+    ASSERT_EQ(1, result.size());
+    ASSERT_EQ(1, result[0].size());
+    EXPECT_EQ(class2, result[0][0].GetTargetClass());
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                10/2017
+* @bsitest                                      Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(IdSetHelperTests, CreatesInVirtualSetClauseWithLargeNumberOfKeys)
+TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_ReturnsClassesOfInstancesRelatedToFilteredInstances)
     {
-    bvector<ECInstanceKey> keys;
-    for (uint64_t i = 1; i <= 101; ++i)
-        keys.push_back(ECInstanceKey(ECClassId(i), ECInstanceId(i)));
+    ECEntityClassCP class1 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class1")->GetEntityClassCP();
+    ECEntityClassCP baseof2and3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "BaseOf2and3")->GetEntityClassCP();
+    ECEntityClassCP class2 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class2")->GetEntityClassCP();
+    ECEntityClassCP class3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class2")->GetEntityClassCP();
+    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class1HasClass2And3")->GetRelationshipClassCP();
+    
+    IECInstancePtr instance11 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class1);
+    IECInstancePtr instance12 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class1);
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class2);
+    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class3);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *instance11, *instance2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *instance12, *instance3);
 
-    Utf8String clause;
-    IdSetHelper::BindSetAction result = IdSetHelper::CreateInVirtualSetClause(clause, keys, "test1");
-    EXPECT_EQ(IdSetHelper::BIND_VirtualSet, result);
-    EXPECT_STREQ("InVirtualSet(?, test1)", clause.c_str());
+    SelectClassInfo selectInfo(*class1, true);
+    TestParsedInput input(*instance11);
+    InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), &input, selectInfo, nullptr, "");
+
+    bvector<RelatedClassPath> result = m_helper->GetPolymorphicallyRelatedClassesWithInstances(*class1,
+        rel->GetFullName(), ECRelatedInstanceDirection::Forward, baseof2and3->GetFullName(), &filteringParams);
+    ASSERT_EQ(1, result.size());
+    ASSERT_EQ(1, result[0].size());
+    EXPECT_EQ(class2, result[0][0].GetTargetClass());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_ReturnsRecursivelyRelatedInstanceClasses)
+    {
+    ECEntityClassCP class1 = s_project->GetECDb().Schemas().GetClass("SchemaComplex3", "Class1")->GetEntityClassCP();
+    ECEntityClassCP class2 = s_project->GetECDb().Schemas().GetClass("SchemaComplex3", "Class2")->GetEntityClassCP();
+    ECRelationshipClassCP rel1 = s_project->GetECDb().Schemas().GetClass("SchemaComplex3", "Class1HasClass1")->GetRelationshipClassCP();
+    ECRelationshipClassCP rel2 = s_project->GetECDb().Schemas().GetClass("SchemaComplex3", "Class1HasClass2")->GetRelationshipClassCP();
+    
+    IECInstancePtr instance11 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class1);
+    IECInstancePtr instance12 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class1);
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel1, *instance11, *instance12);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel2, *instance12, *instance2);
+
+    SelectClassInfo selectInfo(*class1, true);
+    InstanceFilteringParams::RecursiveQueryInfo recursiveInfo({
+        {RelatedClass(*class1, *class1, *rel1, true)},
+        {RelatedClass(*class1, *class2, *rel2, true)}
+        });
+    InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), nullptr, selectInfo, &recursiveInfo, "");
+
+    bvector<RelatedClassPath> result = m_helper->GetPolymorphicallyRelatedClassesWithInstances(*class1,
+        Utf8PrintfString("%s:%s,%s", rel1->GetSchema().GetName().c_str(), rel1->GetName().c_str(), rel2->GetName().c_str()), 
+        ECRelatedInstanceDirection::Forward, 
+        Utf8PrintfString("%s:%s,%s", class1->GetSchema().GetName().c_str(), class1->GetName().c_str(), class2->GetName().c_str()), 
+        &filteringParams);
+    ASSERT_EQ(2, result.size());
+    ASSERT_EQ(1, result[0].size());
+    EXPECT_EQ(class1, result[0][0].GetTargetClass());
+    ASSERT_EQ(1, result[1].size());
+    EXPECT_EQ(class2, result[1][0].GetTargetClass());
     }

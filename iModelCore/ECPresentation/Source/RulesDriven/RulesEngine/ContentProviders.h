@@ -37,14 +37,17 @@ private:
 
 private:
     void Init();
-    ECPRESENTATION_EXPORT ContentProviderContext(PresentationRuleSetCR, bool, Utf8String, INavNodeKeysContainerCR, INavNodeLocaterCR, IPropertyCategorySupplierR, IUserSettings const&, ECExpressionsCache&, RelatedPathsCache&, JsonNavNodesFactory const&, IJsonLocalState const*);
+    ECPRESENTATION_EXPORT ContentProviderContext(PresentationRuleSetCR, bool, Utf8String, INavNodeKeysContainerCR, INavNodeLocaterCR, IPropertyCategorySupplierR, IUserSettings const&, 
+        ECExpressionsCache&, RelatedPathsCache&, PolymorphicallyRelatedClassesCache&, JsonNavNodesFactory const&, IJsonLocalState const*);
     ECPRESENTATION_EXPORT ContentProviderContext(ContentProviderContextCR other);
     
 public:
     static ContentProviderContextPtr Create(PresentationRuleSetCR ruleset, bool holdRuleset, Utf8String preferredDisplayType, INavNodeKeysContainerCR inputKeys, INavNodeLocaterCR nodesLocater, IPropertyCategorySupplierR categorySupplier,
-        IUserSettings const& settings, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, JsonNavNodesFactory const& nodesFactory, IJsonLocalState const* localState)
+        IUserSettings const& settings, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache, 
+        JsonNavNodesFactory const& nodesFactory, IJsonLocalState const* localState)
         {
-        return new ContentProviderContext(ruleset, holdRuleset, preferredDisplayType, inputKeys, nodesLocater, categorySupplier, settings, ecexpressionsCache, relatedPathsCache, nodesFactory, localState);
+        return new ContentProviderContext(ruleset, holdRuleset, preferredDisplayType, inputKeys, nodesLocater, categorySupplier, settings, ecexpressionsCache, 
+            relatedPathsCache, polymorphicallyRelatedClassesCache, nodesFactory, localState);
         }
     static ContentProviderContextPtr Create(ContentProviderContextCR other) {return new ContentProviderContext(other);}
     ~ContentProviderContext();
