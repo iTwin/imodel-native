@@ -10,3 +10,6 @@ NavigationQueryBuilder_MultiLevelGroupingTests.RootNodesQueryReturnsRelationship
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
+
+# TFS#819769:InstanceLabelOverride is not applied for child in hierarchy
+RulesDrivenECPresentationManagerNavigationTests.AllInstanceNodesSpecification_LabelOverridesAppliedForSpecifiedClass
