@@ -153,7 +153,7 @@ ConvertToDgnDbElementExtension::Result ConvertScalableMeshAttachment::_PreConver
     bmap <uint64_t, SMModelClipInfo> clipInfoMap;
 
     for (auto& clipDefIter : clipDefs)
-        { 
+        {    
         SMModelClipInfo clipInfo;
 
         clipInfo.m_shape.resize(clipDefIter.second.second.size());
