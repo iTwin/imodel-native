@@ -321,7 +321,7 @@ void CurveVectorManipulationStrategy::_AppendKeyPoint
     DPoint3dCR newKeyPoint
 )
     {
-    GetStrategyForAppend()->AddKeyPoint(AdjustKeyPoint(newKeyPoint));
+    GetStrategyForAppend()->AddKeyPoint(newKeyPoint);
     }
 
 //--------------------------------------------------------------------------------------
@@ -332,7 +332,7 @@ void CurveVectorManipulationStrategy::_AppendDynamicKeyPoint
     DPoint3dCR newDynamicKeyPoint
 )
     {
-    GetStrategyForAppend()->AddDynamicKeyPoint(AdjustKeyPoint(newDynamicKeyPoint));
+    GetStrategyForAppend()->AddDynamicKeyPoint(newDynamicKeyPoint);
     }
 
 //--------------------------------------------------------------------------------------
@@ -472,9 +472,9 @@ void CurveVectorManipulationStrategy::ChangeDefaultPlacementStrategy
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-DPoint3d CurveVectorManipulationStrategy::AdjustKeyPoint
+DPoint3d CurveVectorManipulationStrategy::_AdjustPoint
 (
-    DPoint3dCR keyPoint
+    DPoint3d keyPoint
 ) const
     {
     DPoint3d projection;

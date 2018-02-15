@@ -72,7 +72,7 @@ void ElementPlacementStrategy::_AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint
         return;
         }
 
-    strategy->AddDynamicKeyPoint(newDynamicKeyPoint);
+    strategy->AddDynamicKeyPoint(_GetManipulationStrategyForEdit().AdjustPoint(newDynamicKeyPoint));
     }
 
 //--------------------------------------------------------------------------------------
@@ -86,8 +86,12 @@ void ElementPlacementStrategy::_AddDynamicKeyPoints(bvector<DPoint3d> const & ne
         BeAssert(false && "Invalid geometry placement strategy");
         return;
         }
-
-    strategy->AddDynamicKeyPoints(newDynamicKeyPoints);
+    bvector<DPoint3d> adjusted(newDynamicKeyPoints.size());
+    std::transform(newDynamicKeyPoints.begin(),
+                   newDynamicKeyPoints.end(),
+                   adjusted.begin(),
+                   [&](DPoint3d point) {return _GetManipulationStrategyForEdit().AdjustPoint(point); });
+    strategy->AddDynamicKeyPoints(adjusted);
     }
 
 //--------------------------------------------------------------------------------------
@@ -116,7 +120,7 @@ void ElementPlacementStrategy::_AddKeyPoint(DPoint3dCR newKeyPoint)
         BeAssert(false && "Invalid geometry placement strategy");
         return;
         }
-    strategy->AddKeyPoint(newKeyPoint);
+    strategy->AddKeyPoint(_GetManipulationStrategyForEdit().AdjustPoint(newKeyPoint));
     }
 
 //--------------------------------------------------------------------------------------

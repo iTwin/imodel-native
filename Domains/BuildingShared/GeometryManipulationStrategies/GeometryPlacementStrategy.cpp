@@ -17,7 +17,7 @@ void GeometryPlacementStrategy::_AddKeyPoint
     DPoint3dCR newKeyPoint
 )
     {
-    _GetManipulationStrategyForEdit().AppendKeyPoint(newKeyPoint);
+    _GetManipulationStrategyForEdit().AppendKeyPoint(_GetManipulationStrategyForEdit().AdjustPoint(newKeyPoint));
     }
 
 //--------------------------------------------------------------------------------------
@@ -73,7 +73,7 @@ void GeometryPlacementStrategy::_AddDynamicKeyPoint
     DPoint3dCR newDynamicKeyPoint
 )
     {
-    _GetManipulationStrategyForEdit().AppendDynamicKeyPoint(newDynamicKeyPoint);
+    _GetManipulationStrategyForEdit().AppendDynamicKeyPoint(_GetManipulationStrategyForEdit().AdjustPoint(newDynamicKeyPoint));
     }
 
 //--------------------------------------------------------------------------------------
@@ -84,7 +84,12 @@ void GeometryPlacementStrategy::_AddDynamicKeyPoints
     bvector<DPoint3d> const& newDynamicKeyPoints
 )
     {
-    _GetManipulationStrategyForEdit().AppendDynamicKeyPoints(newDynamicKeyPoints);
+    bvector<DPoint3d> adjusted(newDynamicKeyPoints.size());
+    std::transform(newDynamicKeyPoints.begin(),
+                   newDynamicKeyPoints.end(),
+                   adjusted.begin(),
+                   [&](DPoint3d point) {return _GetManipulationStrategyForEdit().AdjustPoint(point); });
+    _GetManipulationStrategyForEdit().AppendDynamicKeyPoints(adjusted);
     }
 
 //--------------------------------------------------------------------------------------
