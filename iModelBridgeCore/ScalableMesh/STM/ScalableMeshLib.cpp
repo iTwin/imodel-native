@@ -245,8 +245,8 @@ WebServiceKey GetBingKey()
     Utf8String productIdStr;
 
 #ifdef VANCOUVER_API    
-    wchar_t prodIdStr[200];
-    BeStringUtilities::FormatUInt64(prodIdStr, 200, productId, HexFormatOptions::None);
+    wchar_t prodIdStr[200];    
+    BeStringUtilities::Snwprintf(prodIdStr, 200, L"%u", productId);
     BeStringUtilities::WCharToUtf8(productIdStr, prodIdStr);
 #else
     Utf8Char prodIdStr[200];
