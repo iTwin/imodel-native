@@ -31,7 +31,7 @@ void GeometryManipulationStrategy::AppendKeyPoint
     DPoint3dCR newKeyPoint
 )
     {
-    ManipulateKeyPoint([&] { _AppendKeyPoint(newKeyPoint); });
+    ManipulateKeyPoint([&] { _AppendKeyPoint(AdjustPoint(newKeyPoint)); });
     }
 
 //--------------------------------------------------------------------------------------
@@ -42,7 +42,12 @@ void GeometryManipulationStrategy::AppendKeyPoints
     bvector<DPoint3d> const& newKeyPoints
 )
     {
-    ManipulateKeyPoint([&] { _AppendKeyPoints(newKeyPoints); });
+    bvector<DPoint3d> adjusted(newKeyPoints.size());
+    std::transform(newKeyPoints.begin(),
+                   newKeyPoints.end(),
+                   adjusted.begin(),
+                   [&](DPoint3d point) {return AdjustPoint(point); });
+    ManipulateKeyPoint([&] { _AppendKeyPoints(adjusted); });
     }
 
 //--------------------------------------------------------------------------------------
@@ -54,7 +59,7 @@ void GeometryManipulationStrategy::InsertKeyPoint
     size_t index
 )
     {
-    ManipulateKeyPoint([&] { _InsertKeyPoint(newKeyPoint, index); });
+    ManipulateKeyPoint([&] { _InsertKeyPoint(AdjustPoint(newKeyPoint), index); });
     }
 
 //--------------------------------------------------------------------------------------
@@ -66,7 +71,7 @@ void GeometryManipulationStrategy::ReplaceKeyPoint
     size_t index
 )
     {
-    ManipulateKeyPoint([&] { _ReplaceKeyPoint(newKeyPoint, index); });
+    ManipulateKeyPoint([&] { _ReplaceKeyPoint(AdjustPoint(newKeyPoint), index); });
     }
 
 //--------------------------------------------------------------------------------------
@@ -96,7 +101,7 @@ void GeometryManipulationStrategy::AppendDynamicKeyPoint
     DPoint3dCR newDynamicKeyPoint
 )
     {
-    ManipulateKeyPoint([&] { _AppendDynamicKeyPoint(newDynamicKeyPoint); });
+    ManipulateKeyPoint([&] { _AppendDynamicKeyPoint(AdjustPoint(newDynamicKeyPoint)); });
     }
 
 //--------------------------------------------------------------------------------------
@@ -107,7 +112,12 @@ void GeometryManipulationStrategy::AppendDynamicKeyPoints
     bvector<DPoint3d> const& newDynamicKeyPoints
 )
     {
-    ManipulateKeyPoint([&] { _AppendDynamicKeyPoints(newDynamicKeyPoints); });
+    bvector<DPoint3d> adjusted(newDynamicKeyPoints.size());
+    std::transform(newDynamicKeyPoints.begin(),
+                   newDynamicKeyPoints.end(),
+                   adjusted.begin(),
+                   [&](DPoint3d point) {return AdjustPoint(point); });
+    ManipulateKeyPoint([&] { _AppendDynamicKeyPoints(adjusted); });
     }
 
 //--------------------------------------------------------------------------------------
@@ -119,7 +129,7 @@ void GeometryManipulationStrategy::InsertDynamicKeyPoint
     size_t index
 )
     {
-    ManipulateKeyPoint([&] { _InsertDynamicKeyPoint(newDynamicKeyPoint, index); });
+    ManipulateKeyPoint([&] { _InsertDynamicKeyPoint(AdjustPoint(newDynamicKeyPoint), index); });
     }
 
 //--------------------------------------------------------------------------------------
@@ -131,7 +141,12 @@ void GeometryManipulationStrategy::InsertDynamicKeyPoints
     size_t index
 )
     {
-    ManipulateKeyPoint([&] { _InsertDynamicKeyPoints(newDynamicKeyPoints, index); });
+    bvector<DPoint3d> adjusted(newDynamicKeyPoints.size());
+    std::transform(newDynamicKeyPoints.begin(),
+                   newDynamicKeyPoints.end(),
+                   adjusted.begin(),
+                   [&](DPoint3d point) {return AdjustPoint(point); });
+    ManipulateKeyPoint([&] { _InsertDynamicKeyPoints(adjusted, index); });
     }
 
 //--------------------------------------------------------------------------------------
@@ -143,7 +158,7 @@ void GeometryManipulationStrategy::UpdateDynamicKeyPoint
     size_t index
 )
     {
-    ManipulateKeyPoint([&] { _UpdateDynamicKeyPoint(newDynamicKeyPoint, index); });
+    ManipulateKeyPoint([&] { _UpdateDynamicKeyPoint(AdjustPoint(newDynamicKeyPoint), index); });
     }
 
 //--------------------------------------------------------------------------------------
@@ -155,7 +170,12 @@ void GeometryManipulationStrategy::UpdateDynamicKeyPoints
     size_t index
 )
     {
-    ManipulateKeyPoint([&] { _UpdateDynamicKeyPoints(newDynamicKeyPoints, index); });
+    bvector<DPoint3d> adjusted(newDynamicKeyPoints.size());
+    std::transform(newDynamicKeyPoints.begin(),
+                   newDynamicKeyPoints.end(),
+                   adjusted.begin(),
+                   [&](DPoint3d point) {return AdjustPoint(point); });
+    ManipulateKeyPoint([&] { _UpdateDynamicKeyPoints(adjusted, index); });
     }
 
 //--------------------------------------------------------------------------------------
@@ -167,7 +187,7 @@ void GeometryManipulationStrategy::UpsertDynamicKeyPoint
     size_t index
 )
     {
-    ManipulateKeyPoint([&] { _UpsertDynamicKeyPoint(newDynamicKeyPoint, index); });
+    ManipulateKeyPoint([&] { _UpsertDynamicKeyPoint(AdjustPoint(newDynamicKeyPoint), index); });
     }
 
 //--------------------------------------------------------------------------------------
@@ -179,7 +199,12 @@ void GeometryManipulationStrategy::UpsertDynamicKeyPoints
     size_t index
 )
     {
-    ManipulateKeyPoint([&] { _UpsertDynamicKeyPoints(newDynamicKeyPoints, index); });
+    bvector<DPoint3d> adjusted(newDynamicKeyPoints.size());
+    std::transform(newDynamicKeyPoints.begin(),
+                   newDynamicKeyPoints.end(),
+                   adjusted.begin(),
+                   [&](DPoint3d point) {return AdjustPoint(point); });
+    ManipulateKeyPoint([&] { _UpsertDynamicKeyPoints(adjusted, index); });
     }
 
 //--------------------------------------------------------------------------------------
