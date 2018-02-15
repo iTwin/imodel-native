@@ -224,11 +224,3 @@ DataSourceCacheUpgradeTests.Open_CurrentVersionDb_Success
 #--------------------------------------------------------------------------------
 # NEW not reviewed issues
 #--------------------------------------------------------------------------------
-
-ConnectSignInManagerTests.CheckAndUpdateToken_AfterSignInAndConfiguredTimeout_RequestsNewToken
-    # bim0200, x64, NDEBUG
-    # [ RUN      ] ConnectSignInManagerTests.CheckAndUpdateToken_AfterSignInAndConfiguredTimeout_RequestsNewToken
-    # F:\Bim0200\src\WSClient\Tests\UnitTests\Published\WebServices\Connect\ConnectSignInManagerTests.cpp(93): error: Actual function call count doesn't match EXPECT_CALL(*imsClient, RequestToken(*token, _, _))...
-    #          Expected: to be called once
-    #            Actual: never called - unsatisfied and active
-    # [  FAILED  ] ConnectSignInManagerTests.CheckAndUpdateToken_AfterSignInAndConfiguredTimeout_RequestsNewToken (1 ms)
