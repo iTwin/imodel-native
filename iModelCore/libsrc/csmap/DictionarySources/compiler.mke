@@ -129,7 +129,7 @@ CCompPDBName   = $(appName)
                                                   $(o)CS_COMP$(oext):                $(baseDir)CS_COMP.c
 
  libraries = \
-    $(outBuildContexts)csmap\Delivery\BeCsmap.lib 
+    $(outBuildContexts)csmap\Delivery\BeCsmapStatic.lib 
 
 #--------------------------------------------------------------
 # Make the executable 
