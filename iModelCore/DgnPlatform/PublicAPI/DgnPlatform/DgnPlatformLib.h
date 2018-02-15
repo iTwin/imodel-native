@@ -553,6 +553,8 @@ public:
 
         virtual Sheet::Attachment::ViewportPtr _CreateSheetAttachViewport() {return nullptr;}
 
+        //! Given the name of a 'gated' feature, return whether or not it is enabled.
+        virtual bool _IsFeatureEnabled(Utf8CP featureName) {return true;}
         Host()
             {
             m_sessionSettingsAdmin = nullptr;
