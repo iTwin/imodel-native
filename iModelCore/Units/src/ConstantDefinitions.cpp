@@ -18,10 +18,10 @@ void UnitRegistry::AddDefaultConstants ()
     //reg.AddConstant(LENGTH, "EARTH_RAD", "M", 6.3781e6); //, "Radius Of Earth");
     //reg.AddConstant(LENGTH, "ASTRO_UNIT", "M", 1.495978707e11); //, "Distance from Sun to Earth");
     //reg.AddConstant(VELOCITY, "C", "M*S(-1)", 2.99792458e8); //, "Speed Of Light in Vaccum");
-    AddConstant(ONE, "PI", "ONE", PI); //, "Ratio of Circumference to its Diameter");
-    AddConstant(ONE, "PI/4", "[PI]", 0.25); //, "PI/4");
-    AddConstant(ONE, "PI/2", "[PI]", 0.5); //, "PI/2");
-    AddConstant(ONE, "2PI", "[PI]", 2); //, "2*PI");
+    AddConstant(LENGTH_RATIO, "PI", "ONE", PI); //, "Ratio of Circumference to its Diameter");
+    AddConstant(LENGTH_RATIO, "PI/4", "PI", 0.25); //, "PI/4");
+    AddConstant(LENGTH_RATIO, "PI/2", "PI", 0.5); //, "PI/2");
+    AddConstant(LENGTH_RATIO, "2PI", "PI", 2); //, "2*PI");
     AddConstant(ANGLE, "360DEG", "ARC_DEG", 360); //, "Full Circle");
     //reg.AddConstant(ONE, "E", "ONE", E); //, "Base of the natural logarithm");
     //reg.AddConstant(GRAVCONSTANT, "G0", "M(3)*KG(-1)*S(-2)", 6.67408e-11); //, "Gravitational constant");
@@ -71,24 +71,24 @@ void UnitRegistry::AddDefaultConstants ()
     //reg.AddConstant(PRESSURE, "GAUGE_OFFSET", "PA", 101325); // TODO: Get NIST reference, There are other standards but this is the one we used in Old units framework
 
     //Decimal multiples
-    AddConstant(ONE, "DECI", "ONE", 1.0e-1); //, "DECI-prefix");
-    AddConstant(ONE, "CENTI", "ONE", 1.0e-2); //, "CENTI-prefix");
-    AddConstant(ONE, "MILLI", "ONE", 1.0e-3); //, "MILLI-prefix");
-    AddConstant(ONE, "MICRO", "ONE", 1.0e-6); //, "MICRO-prefix");
-    AddConstant(ONE, "NANO", "ONE", 1.0e-9); //, "NANO-prefix");
-    AddConstant(ONE, "PICO", "ONE", 1.0e-12); //, "PICO-prefix");
-    AddConstant(ONE, "FEMTO", "ONE", 1.0e-15); //, "FEMTO-prefix");
-    AddConstant(ONE, "ATTO", "ONE", 1.0e-18); //, "ATTO-prefix");
-    AddConstant(ONE, "ZEPTO", "ONE", 1.0e-21); //, "ZEPTO-prefix");
-    AddConstant(ONE, "YOCTO", "ONE", 1.0e-24); //, "YOCTO-prefix");
-    AddConstant(ONE, "DEKA", "ONE", 1); //, "DEKA-prefix");
-    AddConstant(ONE, "HECTO", "ONE", 1.0e2); //, "HECTO-prefix");
-    AddConstant(ONE, "KILO", "ONE", 1.0e3); //, "KILO-prefix");
-    AddConstant(ONE, "MEGA", "ONE", 1.0e6); //, "MEGA-prefix");
-    AddConstant(ONE, "GIGA", "ONE", 1.0e9); //, "GIGA-prefix");
-    AddConstant(ONE, "TERA", "ONE", 1.0e12); //, "TERA-prefix");
-    AddConstant(ONE, "PETA", "ONE", 1.0e15); //, "PETA-prefix");
-    AddConstant(ONE, "EXA", "ONE", 1.0e18); //, "EXA-prefix");
-    AddConstant(ONE, "ZETTA", "ONE", 1.0e21); //, "ZETTA-prefix");
-    AddConstant(ONE, "YOTTA", "ONE", 1.0e24); //, "YOTTA-prefix");
+    AddConstant(METRIC_PREFIX, "DECI", "ONE", 1.0e-1); //, "DECI-prefix");
+    AddConstant(METRIC_PREFIX, "CENTI", "ONE", 1.0e-2); //, "CENTI-prefix");
+    AddConstant(METRIC_PREFIX, "MILLI", "ONE", 1.0e-3); //, "MILLI-prefix");
+    AddConstant(METRIC_PREFIX, "MICRO", "ONE", 1.0e-6); //, "MICRO-prefix");
+    AddConstant(METRIC_PREFIX, "NANO", "ONE", 1.0e-9); //, "NANO-prefix");
+    AddConstant(METRIC_PREFIX, "PICO", "ONE", 1.0e-12); //, "PICO-prefix");
+    AddConstant(METRIC_PREFIX, "FEMTO", "ONE", 1.0e-15); //, "FEMTO-prefix");
+    AddConstant(METRIC_PREFIX, "ATTO", "ONE", 1.0e-18); //, "ATTO-prefix");
+    AddConstant(METRIC_PREFIX, "ZEPTO", "ONE", 1.0e-21); //, "ZEPTO-prefix");
+    AddConstant(METRIC_PREFIX, "YOCTO", "ONE", 1.0e-24); //, "YOCTO-prefix");
+    AddConstant(METRIC_PREFIX, "DEKA", "ONE", 1); //, "DEKA-prefix");
+    AddConstant(METRIC_PREFIX, "HECTO", "ONE", 1.0e2); //, "HECTO-prefix");
+    AddConstant(METRIC_PREFIX, "KILO", "ONE", 1.0e3); //, "KILO-prefix");
+    AddConstant(METRIC_PREFIX, "MEGA", "ONE", 1.0e6); //, "MEGA-prefix");
+    AddConstant(METRIC_PREFIX, "GIGA", "ONE", 1.0e9); //, "GIGA-prefix");
+    AddConstant(METRIC_PREFIX, "TERA", "ONE", 1.0e12); //, "TERA-prefix");
+    AddConstant(METRIC_PREFIX, "PETA", "ONE", 1.0e15); //, "PETA-prefix");
+    AddConstant(METRIC_PREFIX, "EXA", "ONE", 1.0e18); //, "EXA-prefix");
+    AddConstant(METRIC_PREFIX, "ZETTA", "ONE", 1.0e21); //, "ZETTA-prefix");
+    AddConstant(METRIC_PREFIX, "YOTTA", "ONE", 1.0e24); //, "YOTTA-prefix");
     }

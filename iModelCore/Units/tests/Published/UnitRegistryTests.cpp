@@ -39,24 +39,24 @@ struct UnitRegistryTests : UnitsTestFixture
         {
         friend struct UnitRegistry;
         public:
-            TestPhenomenon(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id) : Phenomenon(name, definition, baseSymbol, id) {}
+            TestPhenomenon(Utf8CP name, Utf8CP definition, bool isBase, uint32_t id) : Phenomenon(name, definition, isBase, id) {}
         public:
-            static TestPhenomenon* _Create(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id) {return new TestPhenomenon(name, definition, baseSymbol, id);}
+            static TestPhenomenon* _Create(Utf8CP name, Utf8CP definition, bool isBase, uint32_t id) {return new TestPhenomenon(name, definition, isBase, id);}
         };
 
     struct TestUnit : Unit
         {
         friend struct UnitRegistry;
         private:
-            TestUnit(UnitSystemCR unitSystem, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant) :
-                Unit(unitSystem, phenomenon, name, id, definition, baseSymbol, factor, offset, isConstant) {}
+            TestUnit(UnitSystemCR unitSystem, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, bool isBase, double factor, double offset, bool isConstant) :
+                Unit(unitSystem, phenomenon, name, id, definition, isBase, factor, offset, isConstant) {}
 
             TestUnit(UnitCR parentUnit, Utf8CP name, uint32_t id)
-            : TestUnit(*(parentUnit.GetUnitSystem()), *(parentUnit.GetPhenomenon()), name, id, parentUnit.GetDefinition().c_str(), ' ', 0, 0, false) {}
+            : TestUnit(*(parentUnit.GetUnitSystem()), *(parentUnit.GetPhenomenon()), name, id, parentUnit.GetDefinition().c_str(), false, 0, 0, false) {}
 
         public:
-            static TestUnit* _Create(UnitSystemCR sysName, PhenomenonCR phenomenon, Utf8CP unitName, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant)
-            {return new TestUnit(sysName, phenomenon, unitName, id, definition, baseSymbol, factor, offset, isConstant);}
+            static TestUnit* _Create(UnitSystemCR sysName, PhenomenonCR phenomenon, Utf8CP unitName, uint32_t id, Utf8CP definition, bool isBase, double factor, double offset, bool isConstant)
+            {return new TestUnit(sysName, phenomenon, unitName, id, definition, isBase, factor, offset, isConstant);}
 
             static TestUnit* _Create(UnitCR parentUnit, Utf8CP unitName, uint32_t id) {return new TestUnit(parentUnit, unitName, id);}
         };
@@ -70,7 +70,7 @@ TEST_F(UnitRegistryTests, AddAndRetrieveConstant)
     // Add constant
     PhenomenonCP phen = UnitRegistry::Instance().LookupPhenomenon("LENGTH");
     ASSERT_NE(nullptr, phen) << "The Phenomenon 'Length' does not exist in the registry";
-    UnitCP createdConstant = UnitRegistry::Instance().AddConstant(phen->GetName().c_str(), "TestConstant", "ONE", 0);
+    UnitCP createdConstant = UnitRegistry::Instance().AddConstant(phen->GetName().c_str(), "TestConstant", "NUMBER", 0);
     ASSERT_NE(nullptr, createdConstant);
 
     EXPECT_TRUE(UnitRegistry::Instance().HasUnit("TestConstant"));
@@ -189,7 +189,7 @@ TEST_F(UnitRegistryTests, TestAllBasePhenomenaAdded)
     EXPECT_TRUE(UnitRegistry::Instance().HasPhenomenon("SOLIDANGLE"));
     EXPECT_TRUE(UnitRegistry::Instance().HasPhenomenon("FINANCE"));
     EXPECT_TRUE(UnitRegistry::Instance().HasPhenomenon("CAPITA"));
-    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomenon("ONE"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomenon("NUMBER"));
     }
 
 //--------------------------------------------------------------------------------------
@@ -220,14 +220,14 @@ TEST_F(UnitRegistryTests, TestAllBaseUnitSystemsAdded)
 //--------------------------------------------------------------------------------------
 TEST_F(UnitRegistryTests, TestAddingDerivedUnits)
     {
-    TestUnit const* testConstant = UnitRegistry::Instance().AddConstant<TestUnit>("ONE", "TestConstant", "ONE", 0);
+    TestUnit const* testConstant = UnitRegistry::Instance().AddConstant<TestUnit>("NUMBER", "TestConstant", "ONE", 0);
     ASSERT_NE(nullptr, testConstant);
     UnitCP retrievedConstant = UnitRegistry::Instance().LookupUnit("TestConstant");
     EXPECT_EQ(retrievedConstant, testConstant);
     TestUnit const* retrievedTestConstant = dynamic_cast<TestUnit const*>(retrievedConstant);
     EXPECT_NE(nullptr, retrievedTestConstant);
 
-    TestUnit const* testUnit = UnitRegistry::Instance().AddUnit<TestUnit>("ONE", "SI", "TestUnit", "TEST");
+    TestUnit const* testUnit = UnitRegistry::Instance().AddUnit<TestUnit>("NUMBER", "SI", "TestUnit", "TEST");
     ASSERT_NE(nullptr, testUnit);
     UnitCP retrievedUnit = UnitRegistry::Instance().LookupUnit("TestUnit");
     EXPECT_EQ(retrievedUnit, testUnit);
@@ -322,7 +322,7 @@ TEST_F(UnitRegistryTests, TestAddingBadUnits)
             {return new NotAUnit(sysName, phenomenon, unitName, id, definition, baseSymbol, factor, offset, isConstant);}
         };
 
-    UnitRegistry::Instance().AddUnit<NotAUnit>("ONE", "SI", "TestUnit", "TEST");
+    UnitRegistry::Instance().AddUnit<NotAUnit>("NUMBER", "SI", "TestUnit", "TEST");
     }
 
 //--------------------------------------------------------------------------------------

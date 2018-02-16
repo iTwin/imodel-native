@@ -537,7 +537,7 @@ void AddHeatTransfer(UnitRegistry& reg)
     {
     reg.AddUnit(HEAT_TRANSFER, SI, "W/(SQ.M*K)", "W*M(-2)*DELTA_KELVIN(-1)");
 
-    reg.AddUnit(HEAT_TRANSFER, SI, "W/(SQ.M*CELSIUS)", "W*M(-2)*DELTA_CELSIUS(-1)");
+    reg.AddUnit(HEAT_TRANSFER, METRIC, "W/(SQ.M*CELSIUS)", "W*M(-2)*DELTA_CELSIUS(-1)");
 
     reg.AddUnit(HEAT_TRANSFER, USCUSTOM, "BTU/(SQ.FT*HR*FAHRENHEIT)", "BTU*FT(-2)*HR(-1)*DELTA_FAHRENHEIT(-1)");
     }
@@ -889,23 +889,23 @@ void AddApparentPower(UnitRegistry& reg)
 void UnitRegistry::AddBaseUnits()
     {
     UnitCP un;
-    AddUnitForBasePhenomenon("M", BasePhenomena::Length)->AddSynonym("METER");
-    AddUnitForBasePhenomenon("KG", BasePhenomena::Mass);
-    AddUnitForBasePhenomenon("S", BasePhenomena::Time)->AddSynonym("SEC");
-    un = AddUnitForBasePhenomenon("K", BasePhenomena::Temperature);
+    AddUnitForBasePhenomenon("M", LENGTH)->AddSynonym("METER");
+    AddUnitForBasePhenomenon("KG", MASS);
+    AddUnitForBasePhenomenon("S", TIME)->AddSynonym("SEC");
+    un = AddUnitForBasePhenomenon("K", TEMPERATURE);
     un->AddSynonym("\xC2\xB0\x4B");
     un->AddSynonym("KELVIN");
-    AddUnitForBasePhenomenon("DELTA_KELVIN", BasePhenomena::TemperatureChange);
+    AddUnitForBasePhenomenon("DELTA_KELVIN", TEMPERATURE_CHANGE);
 
-    AddUnitForBasePhenomenon("A", BasePhenomena::ElectricCurrent);
-    AddUnitForBasePhenomenon("MOL", BasePhenomena::Mole); // Where mol is the SI gram mol or gmol.
-    AddUnitForBasePhenomenon("CD", BasePhenomena::Luminosity);
-    AddUnitForBasePhenomenon("RAD", BasePhenomena::PlaneAngle)->AddSynonym("RADIAN");
+    AddUnitForBasePhenomenon("A", CURRENT);
+    AddUnitForBasePhenomenon("MOL", MOLE); // Where mol is the SI gram mol or gmol.
+    AddUnitForBasePhenomenon("CD", LUMINOSITY);
+    AddUnitForBasePhenomenon("RAD", ANGLE)->AddSynonym("RADIAN");
 
-    AddUnitForBasePhenomenon("STERAD", BasePhenomena::SolidAngle);
-    AddUnitForBasePhenomenon("US$", BasePhenomena::Finance);
-    AddUnitForBasePhenomenon("PERSON", BasePhenomena::Capita);
-    AddUnitForBasePhenomenon("ONE", BasePhenomena::Ratio); // TODO: I don't like that Ratio has base unit of ONE and all unitless unit will have a phenomenon of Ratio ...
+    AddUnitForBasePhenomenon("STERAD", SOLIDANGLE);
+    AddUnitForBasePhenomenon("US$", FINANCE);
+    AddUnitForBasePhenomenon("PERSON", CAPITA);
+    AddUnitForBasePhenomenon("ONE", NUMBER);
     }
 
 /*--------------------------------------------------------------------------------**//**

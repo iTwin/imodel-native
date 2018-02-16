@@ -72,7 +72,7 @@ void Expression::CreateExpressionWithOnlyBaseSymbols(ExpressionCR source, Expres
     {
     for (auto symbolExp : source)
         {
-        if (symbolExp.GetSymbol()->IsBaseSymbol() && !symbolExp.GetSymbol()->IsDimensionless())
+        if (symbolExp.GetSymbol()->IsBase() && !symbolExp.GetSymbol()->IsNumber())
             {
             target.Add(symbolExp);
             }
@@ -96,6 +96,13 @@ BentleyStatus Expression::GenerateConversionExpression(UnitCR from, UnitCR to, E
 
     fromExpression.LogExpression(NativeLogging::SEVERITY::LOG_DEBUG, from.GetName().c_str());
     toExpression.LogExpression(NativeLogging::SEVERITY::LOG_DEBUG, to.GetName().c_str());
+
+    if (!Expression::SignaturesCompatible(fromExpression, toExpression))
+        {
+        LOG.errorv("Cannot convert from %s: (%s) to %s: (%s) because they are not dimensionally compatible.",
+                   from.GetName(), from.GetDefinition(), to.GetName(), to.GetDefinition());
+        return BentleyStatus::ERROR;
+        }
 
     Expression::Copy(fromExpression, conversionExpression);
     Expression::MergeExpressions(from.GetDefinition().c_str(), conversionExpression, to.GetDefinition().c_str(), toExpression, -1);
@@ -195,7 +202,7 @@ BentleyStatus Expression::HandleToken(UnitsSymbolCR owner, int& depth, Expressio
     if (owner.GetId() == symbol->GetId())
         return BentleyStatus::SUCCESS;
 
-    if (symbol->IsBaseSymbol())
+    if (symbol->IsBase())
         {
         MergeSymbol(definition, expression, symbol->GetDefinition().c_str(), symbol, mergedExponent, IdsMatch);
         }
