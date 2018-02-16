@@ -367,6 +367,9 @@ void Sheet::ViewController::_LoadState()
 
     m_size = model->ToSheetModel()->GetSheetSize();
 
+    if (!WantRenderAttachments())
+        return;
+
     bvector<Attachment> attachments;
     auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE Model.Id=?");
     stmt->BindId(1, model->GetModelId());
@@ -521,14 +524,21 @@ static void populateSheetTile(TTile* tile, uint32_t depth, SceneContextR context
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Sheet::ViewController::WantRenderAttachments()
+    {
+    return T_HOST._IsFeatureEnabled("Platform.RenderViewAttachments");
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Sheet::ViewController::_CreateScene(SceneContextR context)
     {
-    if (SUCCESS != T_Super::_CreateScene(context))
-        {
-        return ERROR;
-        }
+    auto stat = T_Super::_CreateScene(context);
+    if (SUCCESS != stat || !WantRenderAttachments())
+        return stat;
 
     if (!m_allAttachmentsLoaded)
         {
