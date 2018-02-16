@@ -279,11 +279,12 @@ private:
                 {
                 m_name.Sprintf("%s-%u", font.GetName().c_str(), glyph.GetId());
 
-                /*DgnGlyph::RasterStatus status = */ glyph.GetRaster(m_image);
-                //if (DgnGlyph::RasterStatus::Success != status)
-                //    DEBUG_PRINTF("Error %u retrieving raster", status);
-
-                //UNUSED_VARIABLE(status);
+                DgnGlyph::RasterStatus status = glyph.GetRaster(m_image);
+                if (DgnGlyph::RasterStatus::Success != status)
+                    {
+                    DEBUG_PRINTF("Error %u retrieving raster", status);
+                    return;
+                    }
 
                 DebugPrintImage();
                 DebugSaveImage();
