@@ -1373,7 +1373,7 @@ FormatUnitSet::FormatUnitSet(Utf8CP formatName, Utf8CP unitName,  bool cloneData
     if (Utils::IsNameNullOrEmpty(formatName))
         formatName = FormatConstant::DefaultFormatName();
 
-	m_formatSpec = StdFormatSet::FindFormatSpec(formatName);
+    m_formatSpec = StdFormatSet::FindFormatSpec(formatName);
     if (nullptr == m_formatSpec)
         m_problem.UpdateProblemCode(FormatProblemCode::UnknownStdFormatName);
     else
@@ -1416,22 +1416,22 @@ FormatUnitSet& FormatUnitSet::operator=(const FormatUnitSet& other)
     }
 
 FormatUnitSet::FormatUnitSet(FormatUnitSetCR other)
-{
-	m_formatSpec = other.m_formatSpec;
-	m_unitName = other.m_unitName;
-	m_fusName.clear();
-	m_unit = other.m_unit;
-	m_problem = FormatProblemDetail(other.m_problem);
-}
+    {
+    m_formatSpec = other.m_formatSpec;
+    m_unitName = other.m_unitName;
+    m_fusName.clear();
+    m_unit = other.m_unit;
+    m_problem = FormatProblemDetail(other.m_problem);
+    }
 
 FormatUnitSet::FormatUnitSet(FormatUnitSetCP other)
-{
-	m_formatSpec = other->m_formatSpec;
-	m_unitName = other->m_unitName;
-	m_fusName.clear();
-	m_unit = other->m_unit;
-	m_problem = FormatProblemDetail(other->m_problem);
-}
+    {
+    m_formatSpec = other->m_formatSpec;
+    m_unitName = other->m_unitName;
+    m_fusName.clear();
+    m_unit = other->m_unit;
+    m_problem = FormatProblemDetail(other->m_problem);
+    }
 
 
 //----------------------------------------------------------------------------------------
@@ -1582,23 +1582,23 @@ Utf8String FormatUnitSet::ToText(bool useAlias) const
     }
 
 Utf8CP FormatUnitSet::GetDefaultDisplayLabel() const
-{
-	Utf8CP fnP = (nullptr == m_formatSpec) ? "#" : m_formatSpec->GetName();
-	Utf8PrintfString lab("FUS_%s_%s", fnP, m_unitName.c_str());
-	Utf8String dispLabel = BeSQLite::L10N::GetString(UnitsL10N::GetNameSpace(), BeSQLite::L10N::StringId(lab.c_str()));
-	return dispLabel.c_str();
-}
+    {
+    Utf8CP fnP = (nullptr == m_formatSpec) ? "#" : m_formatSpec->GetName();
+    Utf8PrintfString lab("FUS_%s_%s", fnP, m_unitName.c_str());
+    Utf8String dispLabel = BeSQLite::L10N::GetString(UnitsL10N::GetNameSpace(), BeSQLite::L10N::StringId(lab.c_str()));
+    return dispLabel.c_str();
+    }
 
 Utf8CP FormatUnitSet::GetDisplayLabel(bool useDefault) const
-{
-	if (m_fusName.empty() || useDefault)
-		return GetDefaultDisplayLabel();
+    {
+    if (m_fusName.empty() || useDefault)
+        return GetDefaultDisplayLabel();
 
-	Utf8PrintfString nam("FUS_%s", m_fusName.c_str());
-	Utf8String dispLabel = BeSQLite::L10N::GetString(UnitsL10N::GetNameSpace(), BeSQLite::L10N::StringId(nam.c_str()));
+    Utf8PrintfString nam("FUS_%s", m_fusName.c_str());
+    Utf8String dispLabel = BeSQLite::L10N::GetString(UnitsL10N::GetNameSpace(), BeSQLite::L10N::StringId(nam.c_str()));
 
-	return dispLabel.c_str();
-}
+    return dispLabel.c_str();
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
@@ -2000,11 +2000,11 @@ Utf8String FormatProblemDetail::GetProblemDescription() const
         case FormatProblemCode::PS_MissingFUS: return "Cannot parse expression without FUS";
         case FormatProblemCode::PS_MissingCompositeSpec: return "Cannot parse expression without Composite Format Spec";
         case FormatProblemCode::PS_MismatchingFUS: return "FUS does not match expression";
-		case FormatProblemCode::SFS_InsertingNamelessFUS: return "FUS name is required for registering";
-		case FormatProblemCode::SFS_DuplicateFUSName: return "FUS with htis name is already has been registered";
-		case FormatProblemCode::SFS_FailedToMakeFUS: return "Invalid defintion for the FUS to be registered";
-		case FormatProblemCode::NMQ_InvalidUnitName: return "Invalid unit name in the Named Quantity";
-		case FormatProblemCode::NMQ_MissingName: return "Named Quantity requires a not-empty name";
+        case FormatProblemCode::SFS_InsertingNamelessFUS: return "FUS name is required for registering";
+        case FormatProblemCode::SFS_DuplicateFUSName: return "FUS with htis name is already has been registered";
+        case FormatProblemCode::SFS_FailedToMakeFUS: return "Invalid defintion for the FUS to be registered";
+        case FormatProblemCode::NMQ_InvalidUnitName: return "Invalid unit name in the Named Quantity";
+        case FormatProblemCode::NMQ_MissingName: return "Named Quantity requires a not-empty name";
         case FormatProblemCode::NoProblems:
         default: return "No problems";
         }

@@ -147,17 +147,16 @@ void FormattingTestFixture::ShowFUS(Utf8CP koq)
 
 
 void FormattingTestFixture::RegisterFUS(Utf8CP descr, Utf8CP name)
-{
-	FormatUnitSetCP fusP = StdFormatSet::AddFUS(descr, name);
-	if (StdFormatSet::FusRegistrationHasProblem())
-		LOG.infov("Invalid FUS definition: >%s<", descr);
-	else
-		LOG.infov("Registring FUS (%s): >%s<  Normilized: >%s< WithAlias: >%s< ", name, descr, fusP->ToText(false).c_str(), fusP->ToText(true).c_str());
-	Utf8String strA = fusP->ToJsonString(true);
-	Utf8String strN = fusP->ToJsonString(false);
-	LOG.infov("Registered FUS: %s JSON: >%s<   (aliased) >%s<", fusP->GetFusName(), strN.c_str(), strA.c_str());
-}
-
+    {
+    FormatUnitSetCP fusP = StdFormatSet::AddFUS(descr, name);
+    if (StdFormatSet::FusRegistrationHasProblem())
+        LOG.infov("Invalid FUS definition: >%s<", descr);
+    else
+        LOG.infov("Registring FUS (%s): >%s<  Normilized: >%s< WithAlias: >%s< ", name, descr, fusP->ToText(false).c_str(), fusP->ToText(true).c_str());
+    Utf8String strA = fusP->ToJsonString(true);
+    Utf8String strN = fusP->ToJsonString(false);
+    LOG.infov("Registered FUS: %s JSON: >%s<   (aliased) >%s<", fusP->GetFusName(), strN.c_str(), strA.c_str());
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/17

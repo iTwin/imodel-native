@@ -1010,8 +1010,8 @@ Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quan
         {
         CompositeValueSpecP compS = (CompositeValueSpecP)nfs.GetCompositeSpec();
         CompositeValue dval = compS->DecomposeValue(temp.GetMagnitude(), temp.GetUnit());
-		Utf8String pref = dval.GetSignPrefix();
-		Utf8String suff = dval.GetSignSuffix();
+        Utf8String pref = dval.GetSignPrefix();
+        Utf8String suff = dval.GetSignSuffix();
         Utf8CP spacer = Utils::IsNameNullOrEmpty(space) ? compS->GetSpacer().c_str() : space;
         // for all parts but the last one we need to format an integer 
         NumericFormatSpec fmtI = NumericFormatSpec(PresentationType::Decimal, FormatConstant::DefaultSignOption(),
@@ -1633,89 +1633,88 @@ Utf8String StdFormatSet::StdFormatNameList(bool useAlias)
 // @bsimethod                                                   David Fox-Rabinovitz 02/18
 //----------------------------------------------------------------------------------------
 FormatUnitSetCP StdFormatSet::FindFUS(Utf8CP fusName) const
-{
-	FormatUnitSetCP fusP;
+    {
+    FormatUnitSetCP fusP;
 
-	for (auto itr = Set()->m_fusSet.begin(); itr != Set()->m_fusSet.end(); ++itr)
-	{
-		fusP = *itr;
-		if (BeStringUtilities::StricmpAscii(fusName, fusP->GetFusName()) == 0)
-			return fusP;
-	}
-	return nullptr;
-}
+    for (auto itr = Set()->m_fusSet.begin(); itr != Set()->m_fusSet.end(); ++itr)
+        {
+        fusP = *itr;
+        if (BeStringUtilities::StricmpAscii(fusName, fusP->GetFusName()) == 0)
+            return fusP;
+        }
+    return nullptr;
+    }
 
 bool StdFormatSet::HasDuplicate(Utf8CP fusName, FormatUnitSetCP * fusOut)
-{
-	*fusOut = nullptr;
+    {
+    *fusOut = nullptr;
 
-	if (Utils::IsNameNullOrEmpty(fusName))
-	{
-		m_problem.UpdateProblemCode(FormatProblemCode::SFS_InsertingNamelessFUS);
-		return true;
-	}
-	FormatUnitSetCP fusP = FindFUS(fusName);
-	if (nullptr == fusP) // the name is not used
-		return false;
+    if (Utils::IsNameNullOrEmpty(fusName))
+        {
+        m_problem.UpdateProblemCode(FormatProblemCode::SFS_InsertingNamelessFUS);
+        return true;
+        }
+    FormatUnitSetCP fusP = FindFUS(fusName);
+    if (nullptr == fusP) // the name is not used
+        return false;
 
-	*fusOut = fusP;
-	return true;
-}
+    *fusOut = fusP;
+    return true;
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/18
 //----------------------------------------------------------------------------------------
 FormatUnitSetCP StdFormatSet::AddFUS(FormatUnitSetCR fusR, Utf8CP fusName)
-{
-	FormatUnitSetCP fusP;
-	if (Set()->HasDuplicate(fusName, &fusP))
-		return nullptr;
+    {
+    FormatUnitSetCP fusP;
+    if (Set()->HasDuplicate(fusName, &fusP))
+        return nullptr;
 
-	fusP = new FormatUnitSet(fusR); // make a clone
-	fusP->SetFusName(fusName);
-	Set()->m_fusSet.push_back(fusP);
-	return Set()->m_fusSet.back();
-}
+    fusP = new FormatUnitSet(fusR); // make a clone
+    fusP->SetFusName(fusName);
+    Set()->m_fusSet.push_back(fusP);
+    return Set()->m_fusSet.back();
+    }
 
 FormatUnitSetCP StdFormatSet::AddFUS(Utf8CP formatName, Utf8CP unitName, Utf8CP fusName, bool makeUnit)
-{
-	FormatUnitSetCP fusP;
-	if (Set()->HasDuplicate(fusName, &fusP))
-		return nullptr;
+    {
+    FormatUnitSetCP fusP;
+    if (Set()->HasDuplicate(fusName, &fusP))
+        return nullptr;
 
-	fusP = new FormatUnitSet(formatName, unitName); // make FUS
-	if (fusP->HasProblem())
-	{
-		Set()->m_problem.UpdateProblemCode(FormatProblemCode::SFS_FailedToMakeFUS);
-		return nullptr;
-	}
-	fusP->SetFusName(fusName);
-	Set()->m_fusSet.push_back(fusP);
-	return Set()->m_fusSet.back();
-}
+    fusP = new FormatUnitSet(formatName, unitName); // make FUS
+    if (fusP->HasProblem())
+        {
+        Set()->m_problem.UpdateProblemCode(FormatProblemCode::SFS_FailedToMakeFUS);
+        return nullptr;
+        }
+    fusP->SetFusName(fusName);
+    Set()->m_fusSet.push_back(fusP);
+    return Set()->m_fusSet.back();
+    }
+
 FormatUnitSetCP StdFormatSet::AddFUS(Utf8CP descriptor, Utf8CP fusName, bool makeUnit)
-{
-	FormatUnitSetCP fusP;
-	if (Set()->HasDuplicate(fusName, &fusP))
-		return nullptr;
-	fusP = new FormatUnitSet(descriptor); // make FUS
-	if (fusP->HasProblem())
-	{
-		Set()->m_problem.UpdateProblemCode(FormatProblemCode::SFS_FailedToMakeFUS);
-		return nullptr;
-	}
-	fusP->SetFusName(fusName);
-	Set()->m_fusSet.push_back(fusP);
-	return Set()->m_fusSet.back();
-}
+    {
+    FormatUnitSetCP fusP;
+    if (Set()->HasDuplicate(fusName, &fusP))
+        return nullptr;
+    fusP = new FormatUnitSet(descriptor); // make FUS
+    if (fusP->HasProblem())
+        {
+        Set()->m_problem.UpdateProblemCode(FormatProblemCode::SFS_FailedToMakeFUS);
+        return nullptr;
+        }
+    fusP->SetFusName(fusName);
+    Set()->m_fusSet.push_back(fusP);
+    return Set()->m_fusSet.back();
+    }
+
 FormatUnitSetCP StdFormatSet::LookupFUS(Utf8CP fusName)
-{
-	FormatUnitSetCP fusP = Set()->FindFUS(fusName);
-	return fusP;
-}
-
-
-
+    {
+    FormatUnitSetCP fusP = Set()->FindFUS(fusName);
+    return fusP;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16

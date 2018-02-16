@@ -115,8 +115,7 @@ size_t StdFormatSet::StdInit()
     cvs->SetUnitLabels("'", "\"");
     AddFormat("AmerFI8", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), cvs, "fi8");
     AddFormat("AmerFI16", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 16), cvs, "fi16");
-	AddFormat("AmerFI32", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 32), cvs, "fi32");
-
+    AddFormat("AmerFI32", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 32), cvs, "fi32");
 
     cvs = new CompositeValueSpec("YRD", "FT", "IN");
     cvs->SetUnitLabels("yrd(s)", "'", "\"");
@@ -878,8 +877,8 @@ void NamedFormatSpec::ReplaceLocalizables(JsonValueCR jval)
 Json::Value FormatUnitSet::ToJson(bool useAlias, bool verbose) const
     {
     Json::Value jval;
-	if (!m_fusName.empty())
-		jval[json_fusName()] = m_fusName.c_str();
+    if (!m_fusName.empty())
+        jval[json_fusName()] = m_fusName.c_str();
     jval[json_unitName()] = m_unit->GetName();
     if(verbose)
         jval[json_formatSpec()] = m_formatSpec->ToJson(true);
@@ -929,10 +928,10 @@ void FormatUnitSet::LoadJsonData(Json::Value jval)
             if (nullptr == m_formatSpec)
                 m_problem.UpdateProblemCode(FormatProblemCode::UnknownStdFormatName);
             }
-		else if (BeStringUtilities::StricmpAscii(paramName, json_fusName()) == 0)
-			{
-				m_fusName = val.asString();
-			}
+        else if (BeStringUtilities::StricmpAscii(paramName, json_fusName()) == 0)
+            {
+            m_fusName = val.asString();
+            }
         }
     }
 
