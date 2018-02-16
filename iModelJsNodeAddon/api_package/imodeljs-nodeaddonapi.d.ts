@@ -513,13 +513,6 @@ declare class AddonECSqlStatement implements IDisposable {
     * @return Returns the ECSQL value of the specified column for the current row
     */
     getColumnCount(): number;
-
-    /** @deprecated Use getValue instead
-     * Get the current row, which the most recent step reached.
-     * @return Returns the current row in JSON stringified format.
-     */
-    getRow(): string;
-
 }
 
 /* The AddonECSqlBinder class that is projected by the iModelJs node addon. */
@@ -565,7 +558,6 @@ declare class AddonECSqlBinder implements IDisposable {
      * @return non-zero error status in case of failure.
      */
     bindInteger(val: number | string): DbResult;
-    bindInt(val: number | string): DbResult;
 
     /** Binds a Point2d to the parameter represented by this binder.
      * @return non-zero error status in case of failure.

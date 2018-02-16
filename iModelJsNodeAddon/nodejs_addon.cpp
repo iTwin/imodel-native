@@ -1330,7 +1330,6 @@ public:
         InstanceMethod("bindDouble", &AddonECSqlBinder::BindDouble),
         InstanceMethod("bindId", &AddonECSqlBinder::BindId),
         InstanceMethod("bindInteger", &AddonECSqlBinder::BindInteger),
-        InstanceMethod("bindInt", &AddonECSqlBinder::BindInteger),
         InstanceMethod("bindPoint2d", &AddonECSqlBinder::BindPoint2d),
         InstanceMethod("bindPoint3d", &AddonECSqlBinder::BindPoint3d),
         InstanceMethod("bindString", &AddonECSqlBinder::BindString),
@@ -2215,8 +2214,7 @@ public:
           InstanceMethod("step", &AddonECSqlStatement::Step),
           InstanceMethod("stepForInsert", &AddonECSqlStatement::StepForInsert),
           InstanceMethod("getColumnCount", &AddonECSqlStatement::GetColumnCount),
-          InstanceMethod("getValue", &AddonECSqlStatement::GetValue),
-          InstanceMethod("getRow", &AddonECSqlStatement::GetRow),
+          InstanceMethod("getValue", &AddonECSqlStatement::GetValue)
         });
 
         exports.Set("AddonECSqlStatement", t);
@@ -2364,16 +2362,6 @@ public:
 
         IECSqlValue const& val = m_stmt->GetValue(colIndex);
         return AddonECSqlValue::New(info.Env(), val, *m_stmt->GetECDb());
-        }
-
-    //! @deprecated Use AddonECSqlStatement::GetValue instead
-    Napi::Value GetRow(const Napi::CallbackInfo& info)
-        {
-        MUST_HAVE_M_STMT;
-        Json::Value rowJson(Json::objectValue);
-        AddonUtils::GetRowAsJson(rowJson, *m_stmt);
-        // *** NEEDS WORK: Get the adapter to set the js object's properties directly
-        return Napi::String::New(Env(), rowJson.ToString().c_str());
         }
 
     static DbResult ToDbResult(ECSqlStatus status) 
