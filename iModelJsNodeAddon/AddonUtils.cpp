@@ -76,6 +76,55 @@ public:
     AddonHost() { BeAssertFunctions::SetBeAssertHandler(&AddonHost::OnAssert); }
 };
 
+
+struct AddonLoggingShim : NativeLogging::Provider::ILogProvider
+{
+    int STDCALL_ATTRIBUTE Initialize() override {return SUCCESS;}
+
+    int STDCALL_ATTRIBUTE Uninitialize() override {return SUCCESS;}
+
+    int STDCALL_ATTRIBUTE CreateLogger(WCharCP nameSpace, NativeLogging::Provider::ILogProviderContext** ppContext) override
+        {
+        *ppContext = reinterpret_cast<NativeLogging::Provider::ILogProviderContext*>(new WString(nameSpace));
+        return SUCCESS;
+        }
+
+    int STDCALL_ATTRIBUTE DestroyLogger(NativeLogging::Provider::ILogProviderContext* pContext) override
+        {
+        WString* ns = reinterpret_cast<WString*>(pContext);
+        if(nullptr != ns)
+            delete ns;
+        return SUCCESS;
+        }
+
+    void STDCALL_ATTRIBUTE LogMessage(NativeLogging::Provider::ILogProviderContext* context, NativeLogging::SEVERITY sev, WCharCP msg) override
+        {
+        LogMessage(context, sev, Utf8String(msg).c_str());
+        }
+
+    void STDCALL_ATTRIBUTE LogMessage(NativeLogging::Provider::ILogProviderContext* context, NativeLogging::SEVERITY sev, Utf8CP msg) override
+        {
+        // TODO: forward to Logger
+        }
+
+    int STDCALL_ATTRIBUTE SetOption(WCharCP attribName, WCharCP attribValue) override {BeAssert(false); return SUCCESS;}
+
+    int STDCALL_ATTRIBUTE GetOption(WCharCP attribName, WCharP attribValue, uint32_t valueSize) override {return ERROR;}
+
+    int  STDCALL_ATTRIBUTE SetSeverity(WCharCP nameSpace, NativeLogging::SEVERITY severity) override
+        {
+        // TODO: forward to Logger
+        return SUCCESS;
+        }
+
+    bool STDCALL_ATTRIBUTE IsSeverityEnabled(NativeLogging::Provider::ILogProviderContext* context, NativeLogging::SEVERITY sev) override
+        {
+        // TODO: forward to Logger
+        return true;
+        }
+
+};
+
 END_UNNAMED_NAMESPACE
 
 //---------------------------------------------------------------------------------------
@@ -83,19 +132,7 @@ END_UNNAMED_NAMESPACE
 //---------------------------------------------------------------------------------------
 void AddonUtils::InitLogging()
     {
-#if defined(BENTLEYCONFIG_OS_WINDOWS) && !defined(BENTLEYCONFIG_OS_WINRT)
-    Utf8CP configFileEnv = getenv("CONFIG_OPTION_CONFIG_FILE");
-    // don't enable logging by default. Instead clients should set up the config file if they want logging.
-    if (Utf8String::IsNullOrEmpty(configFileEnv))
-        return;
-
-    BeFileName configPathname(configFileEnv, true);
-    if (!BeFileName::DoesPathExist(configPathname.c_str()))
-        return;
-
-    NativeLogging::LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, configPathname.GetName());
-    NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
-#endif
+    NativeLogging::LoggingConfig::ActivateProvider(new AddonLoggingShim());
     }
 
 //---------------------------------------------------------------------------------------
