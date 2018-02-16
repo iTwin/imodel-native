@@ -40,7 +40,7 @@
 
     <Part Name="BackdoorForUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Backdoor">
         <SubPart PartName="RoadRailAlignment"/>
-        <SubPart PartName="UnitsDll"                     PartFile="Units"                     Repository="Units"/>
+        <SubPart PartName="UnitsNative"                     PartFile="Units"                     Repository="Units"/>
         <SubPart PartName="PrewireForUnitTests" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="RoadRailAlignment/Backdoor" SourceName="Delivery/UnitTests/Objects/Backdoor"/>
