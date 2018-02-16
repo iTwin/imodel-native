@@ -73,6 +73,9 @@ public:
         User,
         };
 
+    //! Must override this method to return true after a singleton instance is created.
+    virtual bool    _IsValid () const { return false; }
+
     // methods called from DWGTOOLKIT
     //! Find DBX, pattern, font, etc.
     virtual DwgDbStatus     _FindFile (WStringR fullpathOut, WCharCP filenameIn, DwgDbDatabaseP dwg = nullptr, AcadFileType hint = AcadFileType::Default) { return DwgDbStatus::FileNotFound; }
@@ -93,7 +96,7 @@ public:
     //! Display a message.
     virtual void            _Message (WCharCP message, int numChars) const { }
 
-    // methods used by DwgDb layer
+    // methods used by DwgDb layer and apps
     //! Display DwgDb debugging information
     virtual void            _DebugPrintf (WCharCP format, ...) const { }
     //! Read a DWG file

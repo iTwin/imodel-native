@@ -85,7 +85,51 @@ BEGIN_DWGDB_NAMESPACE
     /*! Is this a planar entity? */                                                     \
     DWGDB_EXPORT bool               IsPlanar () const;                                  \
     /*! Transform the entity by the input matrix. */                                    \
-    DWGDB_EXPORT DwgDbStatus        TransformBy (TransformCR matrix);
+    DWGDB_EXPORT DwgDbStatus TransformBy (TransformCR matrix);                          \
+    /*! Set a new color, using DwgCmColor, for the entity. */                           \
+    /*! @param[in] color The new color for the entity. */                               \
+    /*! @param[in] subents True to propagte the changes of sub-entities. */             \
+    DWGDB_EXPORT DwgDbStatus SetColor (DwgCmColorCR color, bool subents=false);         \
+    /*! Set a new color, using ACI, for the entity. */                                  \
+    /*! @param[in] color The new color for the entity. */                               \
+    /*! @param[in] subents True to propagte the changes of sub-entities. */             \
+    DWGDB_EXPORT DwgDbStatus SetColorIndex (uint16_t color, bool subents=false);        \
+    /*! Set a new line weight for the entity. */                                        \
+    /*! @param[in] weight The new line weight for the entity. */                        \
+    /*! @param[in] subents True to propagte the changes of sub-entities. */             \
+    DWGDB_EXPORT DwgDbStatus SetLineweight (DwgDbLineWeight weight, bool subents=false);\
+    /*! Set a new line type for the entity. */                                          \
+    /*! @param[in] id The new object ID of the line type for the entity. */             \
+    /*! @param[in] subents True to propagte the changes of sub-entities. */             \
+    DWGDB_EXPORT DwgDbStatus SetLinetype (DwgDbObjectId id, bool subents=false);        \
+    /*! Set a new line type scale for the entity. */                                    \
+    /*! @param[in] scale The line type scale the entity. */                             \
+    /*! @param[in] subents True to propagte the changes of sub-entities. */             \
+    DWGDB_EXPORT DwgDbStatus SetLinetypeScale (double scale, bool subents=false);       \
+    /*! Set a new layer for the entity. */                                              \
+    /*! @param[in] id The object ID of the new layer for the entity. */                 \
+    /*! @param[in] subents True to propagte the changes of sub-entities. */             \
+    /*! @param[in] allowHidden True to allow a hidden layer to be set. */               \
+    DWGDB_EXPORT DwgDbStatus SetLayer (DwgDbObjectId id, bool subents=false, bool allowHidden=false); \
+    /*! Set a new material for the entity. */                                           \
+    /*! @param[in] id The object ID of the new material for the entity. */              \
+    /*! @param[in] subents True to propagte the changes of sub-entities. */             \
+    DWGDB_EXPORT DwgDbStatus SetMaterial (DwgDbObjectId id, bool subents=false);        \
+    /*! Set a new transparency for the entity. */                                       \
+    /*! @param[in] t The new transparency for the entity. */                            \
+    /*! @param[in] subents True to propagte the changes of sub-entities. */             \
+    DWGDB_EXPORT DwgDbStatus SetTransparency (DwgTransparencyCR t, bool subents=false); \
+    /*! Set the entity to use default color, line type, line type scale, layer, weight, plot style, and visibility per database. */ \
+    /*! @param[in] dwg Source DWG database, nullptr for current database.*/             \
+    DWGDB_EXPORT void        SetDatabaseDefaults (DwgDbDatabaseP dwg = nullptr);        \
+    /*! Set the entity to cast showdows when applicable. */                             \
+    DWGDB_EXPORT void        SetCastShadows (bool castShadows);                         \
+    /*! Set the entity to receieve showdows when applicable. */                         \
+    DWGDB_EXPORT void        SetReceiveShadows (bool receiveShdows);                    \
+    /*! Set the entity visible or invisible. */                                         \
+    /*! @param[in] v The new visibility for the entity. */                              \
+    /*! @param[in] subents True to propagte the changes of sub-entities. */             \
+    DWGDB_EXPORT void        SetVisibility (DwgDbVisibility v, bool subents=false);
 
     
 
@@ -113,6 +157,10 @@ public:
     DWGDB_EXPORT DPoint3d   GetEndPoint () const;
     DWGDB_EXPORT DVec3d     GetNormal () const;
     DWGDB_EXPORT double     GetThickness () const;
+    DWGDB_EXPORT DwgDbStatus SetStartPoint (DPoint3dCR point);
+    DWGDB_EXPORT DwgDbStatus SetEndPoint (DPoint3dCR point);
+    DWGDB_EXPORT DwgDbStatus SetNormal (DVec3dCR normal);
+    DWGDB_EXPORT DwgDbStatus SetThickness (double thickness);
     };  // DwgDbLine
 DWGDB_DEFINE_OBJECTPTR (Line)
 
@@ -138,6 +186,20 @@ public:
     DWGDB_EXPORT double     GetThickness () const;
     DWGDB_EXPORT bool       HasPlinegen () const;
     DWGDB_EXPORT DVec3d     GetNormal () const;
+    DWGDB_EXPORT void       SetClosed (bool isClosed);
+    DWGDB_EXPORT DwgDbStatus SetPointAt (size_t index, DPoint2dCR point);
+    DWGDB_EXPORT DwgDbStatus AddVertexAt (size_t index, DPoint2dCR point, double bulge=0.0, double width0=-1.0, double width1=-1.0, uint32_t vertexId=0);
+    DWGDB_EXPORT DwgDbStatus SetWidthsAt (size_t index, double start, double end);
+    DWGDB_EXPORT DwgDbStatus SetWidthsAt (size_t index, DPoint2dCR startEnd);
+    DWGDB_EXPORT DwgDbStatus SetConstantWidth (double width);
+    DWGDB_EXPORT DwgDbStatus SetBulgeAt (size_t index, double buldge);
+    DWGDB_EXPORT DwgDbStatus SetThickness (double thickness);
+    DWGDB_EXPORT DwgDbStatus SetNormal (DVec3dCR normal);
+    DWGDB_EXPORT DwgDbStatus ConvertFrom (DwgDbEntityP& source, bool handIdOver=true);
+    DWGDB_EXPORT DwgDbStatus ConvertTo (DwgDb2dPolylineP& dest, bool handIdOver=true);
+    DWGDB_EXPORT void       SetElevation (double elevation);
+    DWGDB_EXPORT void       SetPlinegen (bool plinegen);
+    DWGDB_EXPORT void       Reset (bool reuse, size_t newSize);
 
 //__PUBLISH_SECTION_END__
     DwgDbStatus             SetFromGiPolyline (DWGGI_TypeCR(Polyline) giPolyline);
@@ -154,6 +216,15 @@ public:
     DWGDB_DECLARE_COMMON_MEMBERS(2dPolyline)
     DWGDB_DECLARE_ENTITY_MEMBERS()
 
+    //! same as T_Super::Poly2dType
+    enum class Type
+        {
+        Simple          = DWGDB_SDKENUM_DB(k2dSimplePoly),
+        FitCurve        = DWGDB_SDKENUM_DB(k2dFitCurvePoly),
+        QuadSpline      = DWGDB_SDKENUM_DB(k2dQuadSplinePoly),
+        CubicSpline     = DWGDB_SDKENUM_DB(k2dCubicSplinePoly),
+        };
+
     DWGDB_EXPORT bool       IsClosed () const;
     DWGDB_EXPORT size_t     GetNumPoints () const;
     DWGDB_EXPORT bool       GetConstantWidth (double& width) const;
@@ -161,7 +232,28 @@ public:
     DWGDB_EXPORT double     GetThickness () const;
     DWGDB_EXPORT bool       HasPlinegen () const;
     DWGDB_EXPORT DVec3d     GetNormal () const;
+    DWGDB_EXPORT Type       GetType () const;
     DWGDB_EXPORT DwgDbObjectIterator    GetVertexIterator () const;
+    DWGDB_EXPORT DwgDbStatus AppendVertex (DwgDbObjectIdR outId, DPoint2dCR point, DPoint2dCR widths=DPoint2d::FromZero());
+    DWGDB_EXPORT DwgDbStatus InsertVertexAt (DwgDbObjectIdR outId, DwgDbObjectIdCR atVertex, DPoint2dCR point, DPoint2dCR widths=DPoint2d::FromZero());
+    DWGDB_EXPORT DwgDbStatus SetClosed (bool isClosed);
+    DWGDB_EXPORT DwgDbStatus MakeClosed ();
+    DWGDB_EXPORT DwgDbStatus MakeOpen ();
+    DWGDB_EXPORT DwgDbStatus ConvertToType (Type newType);
+    DWGDB_EXPORT DwgDbStatus SetNormal (DVec3dCR normal);
+    DWGDB_EXPORT DwgDbStatus SetElevation (double elevation);
+    DWGDB_EXPORT DwgDbStatus SetThickness (double elevation);
+    DWGDB_EXPORT DwgDbStatus SetConstantWidth (double width);
+    DWGDB_EXPORT DwgDbStatus SetLinetypeGeneration (bool onOff);
+    DWGDB_EXPORT DwgDbStatus SetPolylineType (Type plineType);
+    DWGDB_EXPORT DwgDbStatus SplineFit ();
+    DWGDB_EXPORT DwgDbStatus SplineFit (Type splineType, uint16_t nSegs);
+    DWGDB_EXPORT DwgDbStatus Straighten ();
+
+//__PUBLISH_SECTION_END__
+private:
+    DwgDbStatus SetVertex (DWGDB_TypeP(2dVertex) vertex, DPoint2dCR point, DPoint2dCR widths);
+//__PUBLISH_SECTION_START__
     };  // DwgDb2dPolyline
 DWGDB_DEFINE_OBJECTPTR (2dPolyline)
 
@@ -174,6 +266,7 @@ public:
     DWGDB_DECLARE_COMMON_MEMBERS(3dPolyline)
     DWGDB_DECLARE_ENTITY_MEMBERS()
 
+    //! same as T_Super::Poly3dType
     enum Type
         {
         Simple      = DWGDB_SDKENUM_DB(k3dSimplePoly),
@@ -184,6 +277,18 @@ public:
     DWGDB_EXPORT Type                   GetType () const;
     DWGDB_EXPORT DwgDbObjectIterator    GetVertexIterator () const;
     DWGDB_EXPORT DwgDbStatus            Straighten ();
+    DWGDB_EXPORT DwgDbStatus SetClosed (bool isClosed);
+    DWGDB_EXPORT DwgDbStatus SetType (Type plineType);
+    DWGDB_EXPORT DwgDbStatus AppendVertex (DwgDbObjectIdR outId, DPoint3dCR point);
+    DWGDB_EXPORT DwgDbStatus InsertVertexAt (DwgDbObjectIdR outId, DwgDbObjectIdCR atVertex, DPoint3dCR point);
+    DWGDB_EXPORT DwgDbStatus MakeOpen ();
+    DWGDB_EXPORT DwgDbStatus MakeClosed ();
+    DWGDB_EXPORT DwgDbStatus SplineFit ();
+    DWGDB_EXPORT DwgDbStatus SplineFit (Type splineType, uint16_t nSegs);
+//__PUBLISH_SECTION_END__
+private:
+    DwgDbStatus SetVertex (DWGDB_TypeP(3dPolylineVertex) vertex, DPoint3dCR point);
+//__PUBLISH_SECTION_START__
     };  // DwgDb3dPolyline
 DWGDB_DEFINE_OBJECTPTR (3dPolyline)
 
@@ -207,7 +312,9 @@ public:
     DWGDB_EXPORT DwgDbStatus SetRadius (double radius);
     DWGDB_EXPORT DwgDbStatus SetStartAngle (double radians);
     DWGDB_EXPORT DwgDbStatus SetEndAngle (double radians);
+    DWGDB_EXPORT DwgDbStatus SetNormal (DVec3dCR normal);
     DWGDB_EXPORT DwgDbStatus SetThickness (double thickness);
+    DWGDB_EXPORT DwgDbStatus ReverseCurve ();
     };  // DwgDbArc
 DWGDB_DEFINE_OBJECTPTR (Arc)
 
@@ -226,6 +333,7 @@ public:
     DWGDB_EXPORT double     GetThickness () const;
     DWGDB_EXPORT DwgDbStatus SetCenter (DPoint3dCR center);
     DWGDB_EXPORT DwgDbStatus SetRadius (double radius);
+    DWGDB_EXPORT DwgDbStatus SetNormal (DVec3dCR normal);
     DWGDB_EXPORT DwgDbStatus SetThickness (double thickness);
     };  // DwgDbCircle
 DWGDB_DEFINE_OBJECTPTR (Circle)
@@ -247,6 +355,22 @@ public:
     DWGDB_EXPORT DVec3d     GetNormal () const;
     DWGDB_EXPORT double     GetStartAngle () const;
     DWGDB_EXPORT double     GetEndAngle () const;
+    DWGDB_EXPORT DwgDbStatus SetCenter (DPoint3dCR center);
+    //! Set the radius of the major axis - currently valid for RealDWG only!
+    DWGDB_EXPORT DwgDbStatus SetMajorRadius (double radius);
+    //! Set the radius of the minor axis - currently valid for RealDWG only!
+    DWGDB_EXPORT DwgDbStatus GetMinorRadius (double radius);
+    DWGDB_EXPORT DwgDbStatus SetStartAngle (double angle);
+    DWGDB_EXPORT DwgDbStatus SetEndAngle (double angle);
+    //! Set this ellipse with known parameters.
+    //! @param[in] center The center of the ellipse, in WCS.
+    //! @param[in] normal The unit vector of the normal.
+    //! @param[in] majorAxis A vector representing both direction and length of the major axis of the ellipse.
+    //! @param[in] radiusRatio The ratio of the major radius to the minor radius.
+    //! @param[in] startAngle The starting angle in radians of the ellipse.
+    //! @param[in] endAngle The ending angle in radians of the ellipse.
+    DWGDB_EXPORT DwgDbStatus Set (DPoint3dCR center, DVec3dCR normal, DVec3dCR majorAxis, double radiusRatio, double startAngle=0.0, double endAngle=Angle::TwoPi());
+    DWGDB_EXPORT DwgDbStatus ReverseCurve ();
     };  // DwgDbEllipse
 DWGDB_DEFINE_OBJECTPTR (Ellipse)
 
@@ -259,7 +383,44 @@ public:
     DWGDB_DECLARE_COMMON_MEMBERS(Spline)
     DWGDB_DECLARE_ENTITY_MEMBERS()
 
+    //! Get NURB parameters defining this Spline curve.
+    //! @param[out] degree Degrees of the NURB curve.
+    //! @param[out] rational True if the NURB curve is rational.
+    //! @param[out] closed True if the NURB curve is closed.
+    //! @param[out] periodic True is the NURB curve is periodic.
+    //! @param[out] poles Control points of the NURB curve.
+    //! @param[out] knots Array of knot values.
+    //! @param[out] weights Array of weights of control points.
+    //! @param[out] poleTol Tolerance for control points.
+    //! @param[out] knotTol Tolerance for knots.
     DWGDB_EXPORT DwgDbStatus    GetNurbsData (int16_t& degree, bool& rational, bool& closed, bool& periodic, DPoint3dArrayR poles, DwgDbDoubleArrayR knots, DwgDbDoubleArrayR weights, double& poleTol, double& knotTol) const;
+    //! Set NURB parameters defining this Spline curve.
+    //! @param[out] degree Degrees of the NURB curve.
+    //! @param[out] rational True if the NURB curve is rational.
+    //! @param[out] closed True if the NURB curve is closed.
+    //! @param[out] periodic True is the NURB curve is periodic.
+    //! @param[out] poles Control points of the NURB curve.
+    //! @param[out] knots Array of knot values.
+    //! @param[out] weights Array of weights of control points.
+    //! @param[out] poleTol Tolerance for control points.
+    //! @param[out] knotTol Tolerance for knots.
+    DWGDB_EXPORT DwgDbStatus SetNurbsData (int16_t degree, bool rational, bool closed, bool periodic, DPoint3dArrayCR poles, DwgDbDoubleArrayCR knots, DwgDbDoubleArrayCR weights, double poleTol, double knotTol);
+    DWGDB_EXPORT DwgDbStatus SetControlPointAt (int index, DPoint3dCR point);
+    DWGDB_EXPORT DwgDbStatus SetWeightAt (int index, double weight);
+    //! Get fitting data from this Spline curve.
+    //! @param[out] points The fitting points.
+    //! @param[out] degree Degrees of the NURB curve.
+    //! @param[out] tol Tolerance for the fit points.
+    //! @param[out] hasTangents True if the spline has end tangent vectors.
+    //! @param[out] startTangent Tangent vector at the start point.
+    //! @param[out] endTangent Tangent vector at the end point.
+    DWGDB_EXPORT DwgDbStatus GetFitData (DPoint3dArrayR points, int16_t& degree, double& tol, bool& hasTangents, DVec3dR startTangent, DVec3dR endTangent) const;
+    DWGDB_EXPORT bool        HasFitData () const;
+    DWGDB_EXPORT DwgDbStatus PurgeFitData ();
+    DWGDB_EXPORT DwgDbStatus SetFitData (DPoint3dArrayCR points, int16_t degree, double fitTol, DVec3dCR startTangent, DVec3dCR endTangent);
+    DWGDB_EXPORT DwgDbStatus SetFitPointAt (int index, DPoint3dCR point);
+    DWGDB_EXPORT DwgDbStatus SetFitTangents (DVec3dCR start, DVec3dCR end);
+    DWGDB_EXPORT DwgDbStatus SetFitTolerance (double tol);
     //! Stroke the Spline for sample points
     //! @param[in] fromParam    Starting parameter
     //! @param[in] toParam      Ending parameter
@@ -300,7 +461,17 @@ public:
     DWGDB_EXPORT bool       IsLocked () const;
     DWGDB_EXPORT DwgString  GetTag () const;
     DWGDB_EXPORT bool       GetValueString (DwgStringR value) const;
-    DWGDB_EXPORT DwgDbStatus    SetFrom (DwgDbAttributeDefinition const* attrdef, TransformCR toBlockRef);
+    DWGDB_EXPORT DwgDbStatus SetFrom (DwgDbAttributeDefinition const* attrdef, TransformCR toBlockRef);
+    DWGDB_EXPORT DwgDbStatus SetOrigin (DPoint3dCR origin);
+    DWGDB_EXPORT DwgDbStatus SetNormal (DVec3dCR normal);
+    DWGDB_EXPORT DwgDbStatus SetThickness (double thickness);
+    DWGDB_EXPORT DwgDbStatus SetInvisible (bool isInvisible);
+    DWGDB_EXPORT DwgDbStatus SetLockPositionInBlock (bool on);
+    DWGDB_EXPORT DwgDbStatus SetMTextAttributeConst (DwgDbMTextCP mtext);
+    DWGDB_EXPORT DwgDbStatus SetMTextAttribute (DwgDbMTextP mtext);
+    DWGDB_EXPORT DwgDbStatus SetTag (WCharCP newTag);
+    DWGDB_EXPORT DwgDbStatus SetAttributeFromBlock (TransformCR trans);
+    DWGDB_EXPORT DwgDbStatus SetAttributeFromBlock (DwgDbAttributeDefinitionCP attdef, TransformCR trans);
     };  // DwgDbAttribute
 DWGDB_DEFINE_OBJECTPTR (Attribute)
 
@@ -323,6 +494,14 @@ public:
     DWGDB_EXPORT bool       IsVerifiable () const;
     DWGDB_EXPORT DwgString  GetTag () const;
     DWGDB_EXPORT bool       GetValueString (DwgStringR value) const;
+    DWGDB_EXPORT DwgDbStatus SetOrigin (DPoint3dCR origin);
+    DWGDB_EXPORT DwgDbStatus SetNormal (DVec3dCR normal);
+    DWGDB_EXPORT DwgDbStatus SetThickness (double thickness);
+    DWGDB_EXPORT DwgDbStatus SetInvisible (bool isInvisible);
+    DWGDB_EXPORT DwgDbStatus SetLockPositionInBlock (bool on);
+    DWGDB_EXPORT DwgDbStatus SetMTextAttributeConst (DwgDbMTextCP mtext);
+    DWGDB_EXPORT DwgDbStatus SetMTextAttribute (DwgDbMTextP mtext);
+    DWGDB_EXPORT DwgDbStatus SetTag (WCharCP newTag);
     };  // DwgDbAttributeDefinition
 DWGDB_DEFINE_OBJECTPTR (AttributeDefinition)
 
@@ -347,18 +526,18 @@ public:
     DWGDB_EXPORT bool           IsPerspectiveEnabled () const;
     DWGDB_EXPORT bool           IsDefaultLightingOn () const;
     DWGDB_EXPORT bool           IsTransparentOn () const;
-    DWGDB_EXPORT bool           GetFillMode () const;
     DWGDB_EXPORT DwgDbObjectId  GetBackground () const;
     DWGDB_EXPORT DwgDbObjectId  GetVisualStyle () const;
     DWGDB_EXPORT DwgDbObjectId  GetSunId () const;
     DWGDB_EXPORT DVec3d         GetViewDirection () const;
-    DWGDB_EXPORT DwgDbStatus    GetUcs (DPoint3dR origin, DVec3dR xAxis, DVec3d yAxis) const;
+    DWGDB_EXPORT DwgDbStatus    GetUcs (DPoint3dR origin, DVec3dR xAxis, DVec3dR yAxis) const;
     DWGDB_EXPORT bool           IsUcsSavedWithViewport () const;
     DWGDB_EXPORT double         GetHeight () const;
     DWGDB_EXPORT double         GetViewHeight () const;
     DWGDB_EXPORT double         GetWidth () const;
     DWGDB_EXPORT double         GetLensLength () const;
     DWGDB_EXPORT double         GetViewTwist () const;
+    //! Get the elevation of the USE used in the viewport (==> T_Super::elevation()).
     DWGDB_EXPORT double         GetUcsElevation () const;
     DWGDB_EXPORT DPoint3d       GetCenterPoint () const;
     DWGDB_EXPORT DPoint2d       GetViewCenter () const;
@@ -367,12 +546,13 @@ public:
     DWGDB_EXPORT DwgDbStatus    SetViewCenter (DPoint2dCR center);
     DWGDB_EXPORT DwgDbStatus    SetHeight (double height);
     DWGDB_EXPORT DwgDbStatus    SetViewHeight (double height);
-    DWGDB_EXPORT DPoint2d       GetGridIncrements () const;
-    DWGDB_EXPORT DPoint2d       GetSnapIncrements () const;
+    DWGDB_EXPORT DVec2d         GetGridIncrements () const;
+    DWGDB_EXPORT DVec2d         GetSnapIncrements () const;
     DWGDB_EXPORT DPoint2d       GetSnapBase () const;
     DWGDB_EXPORT double         GetSnapAngle () const;
-    DWGDB_EXPORT SnapIsoPair    GetSnapPair () const;
+    DWGDB_EXPORT SnapIsoPair    GetSnapIsoPair () const;
     DWGDB_EXPORT bool           IsSnapEnabled () const;
+    //! DXF group code 90
     DWGDB_EXPORT bool           IsIsometricSnapEnabled () const;
     DWGDB_EXPORT int16_t        GetGridMajor () const;
     DWGDB_EXPORT DwgDbStatus    SetWidth (double width);
@@ -382,6 +562,47 @@ public:
     DWGDB_EXPORT DwgDbStatus    GetAnnotationScale (double& scale) const;
     DWGDB_EXPORT double         GetBrightness () const;
     DWGDB_EXPORT DwgCmColor     GetAmbientLightColor () const;
+    DWGDB_EXPORT DwgDbStatus    SetVisualStyle (DwgDbObjectId id);
+    //! Display the contents in the viewport or not.
+    DWGDB_EXPORT DwgDbStatus    SetIsOn (bool onOff);
+    DWGDB_EXPORT DwgDbStatus    EnableGrid (bool onOff);
+    DWGDB_EXPORT DwgDbStatus    EnableUcsIcon (bool onOff);
+    DWGDB_EXPORT DwgDbStatus    EnableFrontClip (bool onOff);
+    DWGDB_EXPORT DwgDbStatus    EnableBackClip (bool onOff);
+    DWGDB_EXPORT DwgDbStatus    EnablePerspective (bool onOff);
+    DWGDB_EXPORT DwgDbStatus    EnableSnap (bool onOff);
+    //! DXF group code 90
+    DWGDB_EXPORT DwgDbStatus    EnableIsometricSnap (bool onOff);
+    DWGDB_EXPORT DwgDbStatus    SetFrontClipAtEye (bool onOff);
+    DWGDB_EXPORT DwgDbStatus    SetFrontClipDistance (double distance);
+    DWGDB_EXPORT DwgDbStatus    SetBackClipDistance (double distance);
+    //! Set clipping entity, aka NonRectClipEntityId. Entities valid for this method: circle, polyline, 2d/3dPolyline, ellipse, region, spline, face.
+    DWGDB_EXPORT DwgDbStatus    SetClipEntity (DwgDbObjectId id);
+    DWGDB_EXPORT DwgDbStatus    SetDefaultLightingOn (bool onOff);
+    DWGDB_EXPORT DwgDbStatus    SetTransparent (bool onOff);
+    DWGDB_EXPORT DwgDbStatus    SetBackground (DwgDbObjectId id);
+    DWGDB_EXPORT DwgDbStatus    SetSun (DwgDbObjectIdR outId, DwgDbSunP inSun, bool eraseOldSun);
+    DWGDB_EXPORT DwgDbStatus    SetViewDirection (DVec3dCR direction);
+    DWGDB_EXPORT DwgDbStatus    SetUcs (DPoint3dCR origin, DVec3dCR xAxis, DVec3dCR yAxis);
+    DWGDB_EXPORT void           SetUcsPerViewport (bool onOff);
+    //! Set the elevation of the USE used in the viewport (==> T_Super::setElevation()).
+    DWGDB_EXPORT DwgDbStatus    SetUcsElevation (double elevation);
+    DWGDB_EXPORT DwgDbStatus    SetLensLength (double lensLength);
+    DWGDB_EXPORT DwgDbStatus    SetViewTwist (double twistAngle);
+    DWGDB_EXPORT DwgDbStatus    SetViewTarget (DPoint3dCR target);
+    DWGDB_EXPORT DwgDbStatus    SetGridIncrements (DVec2dCR increments);
+    DWGDB_EXPORT DwgDbStatus    SetSnapIncrements (DVec2dCR increments);
+    DWGDB_EXPORT DwgDbStatus    SetSnapBase (DPoint2dCR base);
+    DWGDB_EXPORT DwgDbStatus    SetSnapAngle (double angle);
+    DWGDB_EXPORT DwgDbStatus    SetSnapIsoPair (SnapIsoPair isoPair);
+    DWGDB_EXPORT DwgDbStatus    SetGridMajor (uint16_t space);
+    //! Set layers that should be frozen in this viewport (==> T_Super::freezeLayersInViewport()).
+    DWGDB_EXPORT DwgDbStatus    SetFrozenLayers (DwgDbObjectIdArrayCR ids);
+    DWGDB_EXPORT DwgDbStatus    SetCustomScale (double scale);
+    //! Find a matching scale object and set it to the viewport.
+    DWGDB_EXPORT DwgDbStatus    SetAnnotationScale (double scale);
+    DWGDB_EXPORT DwgDbStatus    SetBrightness (double brightness);
+    DWGDB_EXPORT DwgDbStatus    SetAmbientLightColor (DwgCmColorCR color);
     };  // DwgDbViewport
 DWGDB_DEFINE_OBJECTPTR (Viewport)
 
@@ -686,6 +907,21 @@ public:
     DWGDB_EXPORT DwgString  GetTextString () const;
     };  // DwgDbText
 DWGDB_DEFINE_OBJECTPTR (Text)
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
+class DwgDbMText : public DWGDB_EXTENDCLASS(MText)
+    {
+public:
+    DWGDB_DECLARE_COMMON_MEMBERS(MText)
+    DWGDB_DECLARE_ENTITY_MEMBERS()
+
+    DWGDB_EXPORT DPoint3d   GetPosition () const;
+    DWGDB_EXPORT DVec3d     GetNormal () const;
+    DWGDB_EXPORT DwgString  GetTextString () const;
+    };  // DwgDbMText
+DWGDB_DEFINE_OBJECTPTR (MText)
 
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          01/16

@@ -253,3 +253,49 @@ TEST_F(BasicTests, UpdateElements_DeleteMove)
         }
     EXPECT_EQ (checkCount, origins.size());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BasicTests, CreateNewDwg)
+    {
+    LineUpFilesForNewDwg(L"createNewDwgTest.ibim", L"createdfromcratch.dwg");
+
+    m_options.SetInputFileName (m_dwgFileName);
+    m_options.SetBridgeRegSubKey (DwgImporter::GetRegistrySubKey());
+    m_options.SetIsUpdating (false);
+    
+    DwgImporter*    importer = new DwgImporter(m_options);
+    ASSERT_NOT_NULL(importer);
+
+    DwgFileEditor   editor;
+    editor.CreateFile (m_dwgFileName);
+    T_EntityHandles handles;
+    editor.AddEntitiesInDefaultModel (handles);
+    editor.SaveFile ();
+
+    // try open the inpurt DWG file:
+    auto status = importer->OpenDwgFile(m_dwgFileName);
+    ASSERT_SUCCESS(status);
+
+    // open seed iModel
+    auto db = OpenExistingDgnDb(m_dgnDbFileName);
+    ASSERT_TRUE(db.IsValid());
+
+    importer->SetDgnDb(*db.get());
+    importer->AttachSyncInfo();
+
+    // start a new import job
+    ASSERT_EQ(DwgImporter::ImportJobCreateStatus::Success, importer->InitializeJob());
+
+    // ready to import DWG into iModel:
+    status = importer->Process ();
+    ASSERT_SUCCESS(status);
+
+    size_t  count = importer->GetEntitiesImported ();
+    EXPECT_EQ (handles.size(), count) << "Entities created in DWG file do not match elements imported in the DgnDb!";
+
+    db->SaveChanges();
+
+    delete importer;
+    }

@@ -26,6 +26,7 @@ DRange2d    Util::DRange2dFrom (DWGGE_TypeCR(Point2d) extents) { return DRange2d
 DWGGE_Type(Point3d)     Util::GePoint3dFrom (DPoint3dCR p) { return DWGGE_Type(Point3d)(p.x, p.y, p.z); }
 DWGGE_Type(Point2d)     Util::GePoint2dFrom (DPoint2dCR p) { return DWGGE_Type(Point2d)(p.x, p.y); }
 DWGGE_Type(Vector3d)    Util::GeVector3dFrom (DVec3dCR v) { return DWGGE_Type(Vector3d)(v.x, v.y, v.z); }
+DWGGE_Type(Vector2d)    Util::GeVector2dFrom (DVec2dCR v) { return DWGGE_Type(Vector2d)(v.x, v.y); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
@@ -76,6 +77,21 @@ size_t      Util::GetGePointArray (DWGGE_TypeR(Point2dArray) pointsOut, DPoint2d
     for (DPoint2dCR point : pointsIn)
         pointsOut.append (DWGGE_Type(Point2d)(point.x, point.y));
     return  pointsIn.size();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t      Util::GetObjectIdArray (DWGDB_TypeR(ObjectIdArray) idsOut, DwgDbObjectIdArrayCR idsIn)
+    {
+#ifdef DWGTOOLKIT_OpenDwg
+    idsOut.clear ();
+#elif DWGTOOLKIT_RealDwg
+    idsOut.removeAll ();
+#endif
+    for (auto id : idsIn)
+        idsOut.append (id);
+    return  idsOut.length ();
     }
 
 /*---------------------------------------------------------------------------------**//**

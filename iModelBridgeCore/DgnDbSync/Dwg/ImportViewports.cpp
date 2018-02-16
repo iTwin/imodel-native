@@ -1123,7 +1123,7 @@ BentleyStatus   DwgImporter::_ImportPaperspaceViewport (DgnModelR model, Transfo
     if (layout.GetViewports(viewports) == 0)
         {
         // no viewport initialized for this layout(or initialized but still returned none, a likely RealDWG bug), create a default viewport:
-        viewport.CreateObject ();
+        viewport = DwgDbViewport::Create ();
         if (!viewport.IsNull())
             {
             DRange3d    range = layout.GetExtents ();

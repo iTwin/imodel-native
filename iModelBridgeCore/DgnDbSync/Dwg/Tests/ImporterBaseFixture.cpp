@@ -164,6 +164,22 @@ void ImporterTestBaseFixture::LineUpFiles(BentleyApi::WCharCP outputDgnDbFileNam
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void ImporterTestBaseFixture::LineUpFilesForNewDwg(WCharCP outputDgnDbFileName, WCharCP inputDwgFileName)
+    {
+    // prepare DgnDb for an input DWG file to be created anew:
+    m_dwgFileName = GetOutputFileName(inputDwgFileName);
+    m_dgnDbFileName = GetOutputFileName(outputDgnDbFileName);
+    DeleteExistingDgnDb(m_dgnDbFileName);
+    MakeWritableCopyOf(m_dgnDbFileName, m_seedDgnDbFileName, m_dgnDbFileName.GetFileNameAndExtension().c_str());
+    auto syncFile(DwgSyncInfo::GetDbFileName(m_seedDgnDbFileName));
+    BentleyApi::BeFileName outSyncFile;
+    MakeWritableCopyOf(outSyncFile, syncFile, DwgSyncInfo::GetDbFileName(m_dgnDbFileName).GetFileNameAndExtension().c_str());
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t ImporterTestBaseFixture::GetCount() const
