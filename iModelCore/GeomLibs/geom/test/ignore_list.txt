@@ -57,20 +57,6 @@ Polyface.ClipSphere
     # Feb 15 11:57:08  Be[3440] <Emergency>: TestRunner: Polyface.ClipSphere FAILED
     # /Users/naveed.khan/bsi-src/bim0200dev/out/iOSARM64/static/build/GeomLibs/XCodeProject/BeTestiOSTests/UnitTests.mm:1453: error: -[GeomLibsPolyfaceTest_Polyface testClipSphere] : ((0 == BETEST_TEST_RUNNER_FUNC(Polyface,ClipSphere) ()) is true) failed
 
-DEllipse3d.IntersectPlane
-
-    # TFS#819719
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: iOSARM64, Device: ipadair2, Date: 02/15/2018
-    # 2018-02-15 11:57:14.411352+0500 BeTestiOS[3440:6191977] TestRunner: DEllipse3d.IntersectPlane
-    # Feb 15 11:57:14  Be[3440] <Info>: TestRunner: DEllipse3d.IntersectPlane
-    # ( Line offset outside)
-    # ( Line offset outside)
-    # 2018-02-15 11:57:14.411497+0500 BeTestiOS[3440:6191977] TestRunner: TRUE **!!** false @ /Users/naveed.khan/bsi-src/bim0200dev/src/GeomLibs/geom/test/src/checkers.cpp:181(null) Point distance (-1,0,3.141592653589793)(-1,-0,-3.141592653589793)
-    # Feb 15 11:57:14  Be[3440] <Emergency>: TestRunner: TRUE **!!** false @ /Users/naveed.khan/bsi-src/bim0200dev/src/GeomLibs/geom/test/src/checkers.cpp:181(null) Point distance (-1,0,3.141592653589793)(-1,-0,-3.141592653589793)
-    # 2018-02-15 11:57:14.411687+0500 BeTestiOS[3440:6191977] TestRunner: DEllipse3d.IntersectPlane FAILED
-    # Feb 15 11:57:14  Be[3440] <Emergency>: TestRunner: DEllipse3d.IntersectPlane FAILED
-    # /Users/naveed.khan/bsi-src/bim0200dev/out/iOSARM64/static/build/GeomLibs/XCodeProject/BeTestiOSTests/UnitTests.mm:2580: error: -[GeomLibsstructsTest_DEllipse3d testIntersectPlane] : ((0 == BETEST_TEST_RUNNER_FUNC(DEllipse3d,IntersectPlane) ()) is true) failed
-
 AnalyticRoots.Quartic4
 
     # TFS#819716
