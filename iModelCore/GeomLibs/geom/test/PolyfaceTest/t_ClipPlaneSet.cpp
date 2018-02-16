@@ -264,7 +264,7 @@ TEST(ClipPlaneSet,LineSelect)
     double c = 20.0;
     // make a region in the (a,a) (c,c) sqaure . . .
     auto box = CurveVector::CreateRectangle (a, a, c, c, 0.0, CurveVector::BOUNDARY_TYPE_Outer);
-    DVec3d vectorToEye = DVec3d::From (0,0,1);
+    // unused - DVec3d vectorToEye = DVec3d::From (0,0,1);
     bvector<bool> hiddenEdge {false, false, false, false};
     static double offset = -0.0001;
     for (auto yClip : {-5.0, 5.0, 25.0})
