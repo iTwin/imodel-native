@@ -73,39 +73,6 @@ bool TileGenerationCache::GetCachedGeometry(TileGeometryList& geometry, DgnEleme
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeometrySourceCP TileGenerationCache::AddCachedGeometrySource(std::unique_ptr<GeometrySource>& source, DgnElementId elemId) const
-    {
-    if (!WantCacheGeometrySources())
-        return source.get();
-
-    BeMutexHolder lock(m_mutex);
-
-    // May already exist in cache...if so we've moved from it and it will be destroyed...otherwise it's now owned by cache
-    m_geometrySources.insert(GeometrySourceMap::value_type(elemId, std::move(source)));
-
-    // Either way, we know an now exists in cache for this element
-    auto existing = GetCachedGeometrySource(elemId);
-    BeAssert(nullptr != existing);
-    return existing;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeometrySourceCP TileGenerationCache::GetCachedGeometrySource(DgnElementId elemId) const
-    {
-    if (!WantCacheGeometrySources())
-        return nullptr;
-
-    BeMutexHolder lock(m_mutex);
-    auto iter = m_geometrySources.find(elemId);
-    return m_geometrySources.end() != iter ? iter->second.get() : nullptr;
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerationCache::~TileGenerationCache()
     {
     //
@@ -2047,9 +2014,6 @@ struct TileGeometrySource3d : TileGeometrySource, GeometrySource3d
 private:
     Placement3d     m_placement;
 
-    TileGeometrySource3d(DgnCategoryId categoryId, DgnDbR db, GeomBlob const& geomBlob, Placement3dCR placement)
-        : TileGeometrySource(categoryId, db, geomBlob), m_placement(placement) { }
-
     DgnDbR _GetSourceDgnDb() const override { return m_db; }
     DgnElementCP _ToElement() const override { return nullptr; }
     GeometrySource3dCP _GetAsGeometrySource3d() const override { return this; }
@@ -2060,13 +2024,16 @@ private:
     DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
     DgnDbStatus _SetPlacement(Placement3dCR) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
 public:
-    static std::unique_ptr<GeometrySource> Create(DgnCategoryId categoryId, DgnDbR db, GeomBlob const& geomBlob, Placement3dCR placement)
+    TileGeometrySource3d(DgnCategoryId categoryId, DgnDbR db, GeomBlob const& geomBlob, Placement3dCR placement)
+        : TileGeometrySource(categoryId, db, geomBlob), m_placement(placement) { }
+
+    static std::unique_ptr<TileGeometrySource3d> Create(DgnCategoryId categoryId, DgnDbR db, GeomBlob const& geomBlob, Placement3dCR placement)
         {
-        std::unique_ptr<GeometrySource> pSrc(new TileGeometrySource3d(categoryId, db, geomBlob, placement));
-        if (!static_cast<TileGeometrySource3d const&>(*pSrc).IsGeometryValid())
+        auto src = std::make_unique<TileGeometrySource3d>(categoryId, db, geomBlob, placement);
+        if (!src->IsGeometryValid())
             return nullptr;
 
-        return pSrc;
+        return src;
         }
 };
 
@@ -2078,9 +2045,6 @@ struct TileGeometrySource2d : TileGeometrySource, GeometrySource2d
 private:
     Placement2d     m_placement;
 
-    TileGeometrySource2d(DgnCategoryId categoryId, DgnDbR db, GeomBlob const& geomBlob, Placement2dCR placement)
-        : TileGeometrySource(categoryId, db, geomBlob), m_placement(placement) { }
-
     DgnDbR _GetSourceDgnDb() const override { return m_db; }
     DgnElementCP _ToElement() const override { return nullptr; }
     GeometrySource2dCP _GetAsGeometrySource2d() const override { return this; }
@@ -2091,13 +2055,16 @@ private:
     DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
     DgnDbStatus _SetPlacement(Placement2dCR) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
 public:
-    static std::unique_ptr<GeometrySource> Create(DgnCategoryId categoryId, DgnDbR db, GeomBlob const& geomBlob, Placement2dCR placement)
+    TileGeometrySource2d(DgnCategoryId categoryId, DgnDbR db, GeomBlob const& geomBlob, Placement2dCR placement)
+        : TileGeometrySource(categoryId, db, geomBlob), m_placement(placement) { }
+
+    static std::unique_ptr<TileGeometrySource2d> Create(DgnCategoryId categoryId, DgnDbR db, GeomBlob const& geomBlob, Placement2dCR placement)
         {
-        std::unique_ptr<GeometrySource> pSrc(new TileGeometrySource2d(categoryId, db, geomBlob, placement));
-        if (!static_cast<TileGeometrySource2d const&>(*pSrc).IsGeometryValid())
+        auto src = std::make_unique<TileGeometrySource2d>(categoryId, db, geomBlob, placement);
+        if (!src->IsGeometryValid())
             return nullptr;
 
-        return pSrc;
+        return src;
         }
 };
 
@@ -2114,7 +2081,7 @@ struct GeometrySelector3d
                 BIS_TABLE(BIS_CLASS_GeometricElement3d) " WHERE ElementId=?";
         }
 
-    static std::unique_ptr<GeometrySource> ExtractGeometrySource(BeSQLite::CachedStatement& stmt, DgnDbR db)
+    static std::unique_ptr<TileGeometrySource3d> ExtractGeometrySource(BeSQLite::CachedStatement& stmt, DgnDbR db)
         {
         auto categoryId = stmt.GetValueId<DgnCategoryId>(0);
         TileGeometrySource::GeomBlob geomBlob(stmt, 1);
@@ -2144,7 +2111,7 @@ struct GeometrySelector2d
                 BIS_TABLE(BIS_CLASS_GeometricElement2d) " WHERE ElementId=?";
         }
 
-    static std::unique_ptr<GeometrySource> ExtractGeometrySource(BeSQLite::CachedStatement& stmt, DgnDbR db)
+    static std::unique_ptr<TileGeometrySource2d> ExtractGeometrySource(BeSQLite::CachedStatement& stmt, DgnDbR db)
         {
         auto categoryId = stmt.GetValueId<DgnCategoryId>(0);
         TileGeometrySource::GeomBlob geomBlob(stmt, 1);
@@ -2920,10 +2887,6 @@ template<typename T> StatusInt TileGeometryProcessorContext<T>::_VisitElement(Dg
         return SUCCESS;
 #endif
 
-    GeometrySourceCP pSrc = m_cache.GetCachedGeometrySource(elementId);
-    if (nullptr != pSrc)
-        return VisitGeometry(*pSrc);
-
     // Never load elements - but do use them if they're already loaded
     DgnElementCPtr el = GetDgnDb().Elements().FindLoadedElement(elementId);
     if (el.IsValid())
@@ -2943,15 +2906,13 @@ template<typename T> StatusInt TileGeometryProcessorContext<T>::_VisitElement(Dg
 
     if (BeSQLite::BE_SQLITE_ROW == stmt.Step() && !IsValueNull(1))
         {
-        auto geomSrcPtr = T::ExtractGeometrySource(stmt, GetDgnDb());
+        auto geomSrc = T::ExtractGeometrySource(stmt, GetDgnDb());
 
         stmt.Reset();
         m_cache.GetDbMutex().Leave();
 
-        pSrc = m_cache.AddCachedGeometrySource(geomSrcPtr, elementId);
-
-        if (nullptr != pSrc)
-            status = VisitGeometry(*pSrc);
+        if (nullptr != geomSrc)
+            status = VisitGeometry(*geomSrc);
         }
     else
         {

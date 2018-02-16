@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Performance/PerformanceElementsCRUDTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceElementsCRUDTests.h"
@@ -161,7 +161,8 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Ut
         ASSERT_EQ(SchemaStatus::Success, PerfTestDomain::GetDomain().ImportSchema(*m_db));
         ASSERT_TRUE(m_db->IsDbOpen());
         ApplyPragmas(*m_db);
-        CreateElementsAndInsert(initialInstanceCount, testClassName, "InitialInstances");
+        CreateElementsAndInsert(initialInstanceCount, testClassName, "InitialInstances");        
+        m_db->ExecuteSql("analyze");
         m_db->CloseDb();
         }
 
@@ -704,6 +705,7 @@ void PerformanceElementsCRUDTestFixture::ApiUpdateTime(Utf8CP className, int ini
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
+//
 void PerformanceElementsCRUDTestFixture::ApiDeleteTime(Utf8CP className, int initialInstanceCount, int opCount)
     {
     WPrintfString dbName(L"ElementApiDelete%ls_%d.ibim", WString(className, BentleyCharEncoding::Utf8).c_str(), opCount);
