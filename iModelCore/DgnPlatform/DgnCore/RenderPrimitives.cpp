@@ -285,32 +285,12 @@ private:
 
                 //UNUSED_VARIABLE(status);
 
-#if defined(DEBUG_PRINT_GLYPH_RASTERS)
-                uint32_t imgWidth = m_image.GetWidth();
-                uint32_t imgHeight = m_image.GetHeight();
-                int imgBytesPerPixel = m_image.GetBytesPerPixel();
-                ByteStream const& imgByteStream = m_image.GetByteStream();
-                uint8_t const* imgData = imgByteStream.GetData();
-
-                DEBUG_PRINTF("");
-                DEBUG_PRINTF("Retrieving raster for glyph %d (%dx%d)", glyph.GetId(), imgWidth, imgHeight);
-
-                for (uint32_t y = 0; y < imgHeight; y++)
-                    {
-                    std::string str = "";
-                    for (uint32_t x = 0; x < imgWidth; x++)
-                        {
-                        uint32_t imgNdx = y * imgWidth * imgBytesPerPixel + x * imgBytesPerPixel;
-                        if (imgData[imgNdx + 3] > 0)
-                            str += "X";
-                        else
-                            str += " ";
-                        }
-                    DEBUG_PRINTF("%s", str.c_str());
-                    }
-#endif
+                DebugPrintImage();
+                DebugSaveImage();
                 }
 
+            void DebugPrintImage() const;
+            void DebugSaveImage() const;
             bool IsValid() const { return m_texture.IsValid() || m_image.IsValid(); }
             TexturePtr GetTexture(SystemR system, DgnDbR db)
                 {
@@ -2331,6 +2311,72 @@ template<typename T, typename U> void GlyphCache::Glyph::GetGeometry(IFacetOptio
 
     if ((geom.IsValid() && !requestRaster) || (geom.IsValidRaster() && requestRaster))
         acceptGeom(geom);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void GlyphCache::Glyph::Raster::DebugPrintImage() const
+    {
+#if defined(DEBUG_PRINT_GLYPH_RASTERS)
+    uint32_t imgWidth = m_image.GetWidth();
+    uint32_t imgHeight = m_image.GetHeight();
+    int imgBytesPerPixel = m_image.GetBytesPerPixel();
+    ByteStream const& imgByteStream = m_image.GetByteStream();
+    uint8_t const* imgData = imgByteStream.GetData();
+
+    DEBUG_PRINTF("");
+    DEBUG_PRINTF("Retrieving raster for glyph %d (%dx%d)", glyph.GetId(), imgWidth, imgHeight);
+
+    for (uint32_t y = 0; y < imgHeight; y++)
+        {
+        std::string str = "";
+        for (uint32_t x = 0; x < imgWidth; x++)
+            {
+            uint32_t imgNdx = y * imgWidth * imgBytesPerPixel + x * imgBytesPerPixel;
+            if (imgData[imgNdx + 3] > 0)
+                str += "X";
+            else
+                str += " ";
+            }
+        DEBUG_PRINTF("%s", str.c_str());
+        }
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void GlyphCache::Glyph::Raster::DebugSaveImage() const
+    {
+//#define DEBUG_GLYPH_IMAGE_DIR L"d:\\cr\\tmp\\glyphs"
+#if defined(DEBUG_GLYPH_IMAGE_DIR)
+    if (!m_image.IsValid())
+        return;
+
+    // Image is all-white; only alpha channel differs...convert back to greyscale
+    Image image = m_image;
+    auto& bytes = image.GetByteStreamR();
+    for (size_t i = 0; i < bytes.size(); i += 4)
+        {
+        uint8_t& alpha = bytes[i+3];
+        bytes[i] = bytes[i+1] = bytes[i+2] = alpha;
+        alpha = 0xff;
+        }
+
+    BeFileName::CreateNewDirectory(DEBUG_GLYPH_IMAGE_DIR);
+    BeFileName filename(DEBUG_GLYPH_IMAGE_DIR);
+
+    WPrintfString pngName(L"%hs_%u_%u.png", m_name.c_str(), image.GetWidth(), image.GetHeight());
+    filename.AppendToPath(pngName.c_str());
+
+    BeFile file;
+    if (BeFileStatus::Success != file.Create(filename.c_str(), true))
+        return;
+
+    ImageSource src(image, ImageSource::Format::Png, 100, Image::BottomUp::Yes);
+    file.Write(nullptr, src.GetByteStream().GetData(), src.GetByteStream().GetSize());
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
