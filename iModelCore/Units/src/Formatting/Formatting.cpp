@@ -876,7 +876,7 @@ Utf8String NumericFormatSpec::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP us
     FormatDoubleBuf(temp.GetMagnitude(), buf, sizeof(buf), prec, round);
     if(nullptr == useUnit || !IsAppendUnit())
         return Utf8String(buf);
-    Utf8String txt = Utils::AppendUnitName(buf, useUnit->GetLabel(), space);
+    Utf8String txt = Utils::AppendUnitName(buf, useUnit->GetLabel().c_str(), space);
     return txt;
     }
 
@@ -1003,7 +1003,7 @@ Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quan
     NumericFormatSpecCP fmtP = nfs.GetNumericSpec();
     bool composite = nfs.HasComposite();
     BEU::Quantity temp = qty.ConvertTo(useUnit);
-    Utf8CP uomLabel = Utils::IsNameNullOrEmpty(useLabel) ? ((nullptr == useUnit) ? qty.GetUnitLabel() : useUnit->GetLabel()) : useLabel;
+    Utf8CP uomLabel = Utils::IsNameNullOrEmpty(useLabel) ? ((nullptr == useUnit) ? qty.GetUnitLabel() : useUnit->GetLabel().c_str()) : useLabel;
     Utf8String majT, midT, minT, subT;
 
     if (composite)  // procesing composite parts

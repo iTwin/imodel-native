@@ -114,7 +114,7 @@ ExpressionCR Unit::Evaluate() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bill.Steinbock                  11/2017
 //---------------------------------------------------------------------------------------
-Utf8CP Unit::GetLabel() const
+Utf8StringCR Unit::GetLabel() const
     {
     if (m_displayLabel.empty())
         {
@@ -130,7 +130,17 @@ Utf8CP Unit::GetLabel() const
             }
         }
 
-    return m_displayLabel.c_str();
+    return m_displayLabel;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
+//---------------------------------------------------------------------------------------
+Utf8StringCR Unit::GetInvariantLabel() const
+    {
+    if (m_displayLabel.empty())
+        return m_name;
+    return m_displayLabel;
     }
 
 //---------------------------------------------------------------------------------------

@@ -148,8 +148,8 @@ private:
             return nullptr;
 
         // Add the unit label as a synonym as long as it is not the same as the actual unit name
-        if (!Utf8String::IsNullOrEmpty(unit->GetLabel()) && (0 != BeStringUtilities::StricmpAscii(unit->GetLabel(), unitName)))
-            unit->AddSynonym(unit->GetLabel());
+        if (!Utf8String::IsNullOrEmpty(unit->GetLabel().c_str()) && (0 != BeStringUtilities::StricmpAscii(unit->GetLabel().c_str(), unitName)))
+            unit->AddSynonym(unit->GetLabel().c_str());
 
         phenomenon->AddUnit(*unit);
 
@@ -391,6 +391,11 @@ public:
     //! It does not delete the Phenomenon rather just removes it from the registry.
     //! @return A pointer to the Phenomenon that is no longer within this registry.
     UNITS_EXPORT PhenomenonP RemovePhenomenon(Utf8CP phenomenonName);
+
+    //! Removes the Unit from this UnitRegistry and returns the pointer to that Unit.
+    //! It does not delete the Unit rather just removes it from the registry.
+    //! @return A pointer to the Unit that is no longer within this registry.
+    UNITS_EXPORT UnitP RemoveUnit(Utf8CP unitName);
 
     //! Gets the "new" unit name from a "old" unit name
     //! @see UnitNameMappings for information on the difference between a old and new unit name.
