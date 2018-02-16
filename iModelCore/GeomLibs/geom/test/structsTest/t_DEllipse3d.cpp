@@ -755,6 +755,13 @@ TEST (DEllipse3d, GetRange)
     Check::Near (1.0, range1.high.y);
     }
 
+bool checkIsTrigPoint (DPoint3dCR xyTheta, double expectedRadians, char const *message)
+    {
+    // construct a trig point from z:
+    DPoint3dCR xyTheta1 = DPoint3d::From (cos (xyTheta.z), sin(xyTheta.z), xyTheta.z);
+    return Check::Near (xyTheta, xyTheta1, message)
+        && Check::True (Angle::NearlyEqualAllowPeriodShift (expectedRadians, xyTheta.z), message);
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -773,10 +780,20 @@ TEST (DEllipse3d, IntersectPlane)
 
     // Sept 2017 this was testing for -PI as the angle.
     // but Angle::Atan2 has been changed to force the (-PI,+PI) ambiguous value to positive.
-    Check::Near (DPoint3d::FromXYZ (-1.0, 0.0, PI), trigPoints1[0]);
+    // Feb 2018 angles at 180 degrees are still ambiguous ... do the tests with period shift ...
+    checkIsTrigPoint (trigPoints1[0], PI, "Tangency point");
     Check::Near (2, numPoints2);
-    Check::Near (DPoint3d::FromXYZ (-1.0, 0.0, PI), trigPoints2[0]);
-    Check::Near (DPoint3d::FromXYZ (0.0, -1.0, -PI/2), trigPoints2[1]);
+    // we know the angles, but order is ambiguous, so tricky test . . .
+    checkIsTrigPoint (trigPoints2[0], trigPoints2[0].z, "simple intersection trig point");
+    checkIsTrigPoint (trigPoints2[1], trigPoints2[1].z, "simple intersection trig point");
+    double q0 = PI;
+    double q1 = -0.5 * PI;
+    Check::True (
+           Angle::NearlyEqualAllowPeriodShift (q0, trigPoints2[0].z)
+        || Angle::NearlyEqualAllowPeriodShift (q1, trigPoints2[0].z), "known angle solution");
+    Check::True (
+           Angle::NearlyEqualAllowPeriodShift (q0, trigPoints2[1].z)
+        || Angle::NearlyEqualAllowPeriodShift (q1, trigPoints2[1].z), "known angle solution");
     }
 
 /*---------------------------------------------------------------------------------**//**
