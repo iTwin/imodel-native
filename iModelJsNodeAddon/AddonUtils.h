@@ -36,8 +36,9 @@ private:
     static BeSQLite::DbResult ProcessSchemaChangeSets(DgnDbPtr& dgndb, bvector<DgnRevisionCP> const& revisions, RevisionProcessOption processOption);
     static BeSQLite::DbResult ProcessDataChangeSets(DgnDbR dgndb, bvector<DgnRevisionCP> const& revisions, RevisionProcessOption processOption);
 
-public:
     static void GetRowAsJson(Json::Value &json, BeSQLite::EC::ECSqlStatement &);
+
+public:
     static void GetECValuesCollectionAsJson(Json::Value &json, ECN::ECValuesCollectionCR);
     static ECN::ECClassCP GetClassFromInstance(BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
     static BeSQLite::EC::ECInstanceId GetInstanceIdFromInstance(BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
