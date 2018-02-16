@@ -340,8 +340,6 @@ TEST(FormattingTest, FullySpecifiedFUS)
 TEST(FormattingTest, Json)
     {
    // StdFormatSetP stdSet = StdFormatSet::GetStdSet();
-    bool stdIdent = StdFormatSet::AreSetsIdentical();
-    LOG.infov("Sets are identical %s ", FormatConstant::BoolText(stdIdent));
     UnitProxy prox = UnitProxy("FT", "Feet");
     Json::Value proxV = prox.ToJson();
     LOG.infov("UnitProxy  %s ", proxV.ToString().c_str());
@@ -1139,8 +1137,6 @@ TEST(FormattingTest, DictionaryValidation)
     NamedFormatSpecCP fmtP;
     Utf8String serT;
     LOG.infov("Aliases:  %s", nameL.c_str());
-    nameL = StdFormatSet::CustomNameList(false);
-    LOG.infov("Custom:  %s", nameL.c_str());
 
 
     nameL = StdFormatSet::StdFormatNameList(false);

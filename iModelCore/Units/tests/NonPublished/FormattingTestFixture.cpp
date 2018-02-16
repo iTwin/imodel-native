@@ -291,9 +291,8 @@ void FormattingTestFixture::CustomFormatAnalyzer(double dval, Utf8CP uom, Utf8CP
     BEU::Quantity const qty = BEU::Quantity(dval, *unit);
      
     // now we need to add a new format definition from the json string
-
     FormatProblemDetail problem;
-    NamedFormatSpecCP nfs = StdFormatSet::AppendCustomFormat(jsonCustomFormat, problem);
+    NamedFormatSpecCP nfs = StdFormatSet::AddFormat(jsonCustomFormat, problem);
     if (problem.IsProblem())
         {
         LOG.infov("Invalid JSON definition. error code %d", problem.GetProblemCode());

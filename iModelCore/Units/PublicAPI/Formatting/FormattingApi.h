@@ -820,16 +820,16 @@ struct StdFormatSet
     {
 private:
     bvector<NamedFormatSpecCP> m_formatSet;    // core + app
-    bvector<NamedFormatSpecCP> m_customSet;    // user
 	bvector<FormatUnitSetCP> m_fusSet;
 	FormatProblemDetail m_problem; 
 
     NumericFormatSpecCP AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, Utf8CP alias = nullptr);
     NumericFormatSpecCP AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, CompositeValueSpecCR compS, Utf8CP alias = nullptr); 
-    UNITS_EXPORT NumericFormatSpecCP AddFormat(Utf8CP jsonString);
+    NumericFormatSpecCP AddFormat(Utf8CP jsonString);
+    NamedFormatSpecCP AddNamedFormat(Utf8CP jsonString);
 
-    UNITS_EXPORT size_t StdInit();
-    UNITS_EXPORT size_t CustomInit();
+    size_t StdInit();
+    void CustomInit();
     StdFormatSet() { m_problem = FormatProblemDetail(); }
     static StdFormatSetP Set();
     UNITS_EXPORT static bool IsFormatDefined(Utf8CP name, Utf8CP alias);
@@ -837,21 +837,15 @@ private:
 	bool HasDuplicate(Utf8CP name, FormatUnitSetCP * fusP);
 
 public:
-    UNITS_EXPORT NamedFormatSpecCP AddCustomFormat(Utf8CP jsonString);
-    UNITS_EXPORT static NamedFormatSpecCP AppendCustomFormat(Utf8CP jsonString, FormatProblemDetailR problem);
     //static StdFormatSetP GetStdSet() { return Set(); }
     UNITS_EXPORT static NumericFormatSpecCP DefaultDecimal();
     static NamedFormatSpecCP DefaultFormatSpec() { return FindFormatSpec(FormatConstant::DefaultFormatName()); }
     static size_t GetFormatSetSize() { return Set()->m_formatSet.size(); }
-    static size_t GetCustomSetSize() { return Set()->m_customSet.size(); }
-    UNITS_EXPORT static NumericFormatSpecCP GetNumericFormat(Utf8CP name, bool IncludeCustom = true);
-    UNITS_EXPORT static NamedFormatSpecCP FindFormatSpec(Utf8CP name, bool IncludeCustom = true);
+    UNITS_EXPORT static NumericFormatSpecCP GetNumericFormat(Utf8CP name);
+    UNITS_EXPORT static NamedFormatSpecCP FindFormatSpec(Utf8CP name);
     UNITS_EXPORT static bvector<Utf8CP> StdFormatNames(bool useAlias);
     UNITS_EXPORT static Utf8String StdFormatNameList(bool useAlias);
-    UNITS_EXPORT static Utf8String CustomNameList(bool useAlias);
-    UNITS_EXPORT static bool AreSetsIdentical();
     UNITS_EXPORT size_t GetFormatCount() { return m_formatSet.size(); }
-    UNITS_EXPORT size_t GetCustomCount() { return m_customSet.size(); }
     bool HasProblem() const { return m_problem.IsProblem(); }
     FormatProblemCode GetProblemCode() { return m_problem.GetProblemCode(); }
     void ResetProblemCode() { m_problem.Reset(); }
@@ -862,6 +856,9 @@ public:
 	UNITS_EXPORT static FormatUnitSetCP AddFUS(FormatUnitSetCR fusR, Utf8CP fusName);
 	UNITS_EXPORT static FormatUnitSetCP AddFUS(Utf8CP formatName, Utf8CP unitName, Utf8CP fusName, bool makeUnit = true);
 	UNITS_EXPORT static FormatUnitSetCP AddFUS(Utf8CP descriptor, Utf8CP fusName, bool makeUnit = true);
+
+    UNITS_EXPORT static NamedFormatSpecCP AddFormat(Utf8CP jsonString, FormatProblemDetailR problem);
+
 	UNITS_EXPORT static FormatUnitSetCP LookupFUS(Utf8CP fusName);
 	UNITS_EXPORT static bool FusRegistrationHasProblem() { return Set()->m_problem.IsProblem(); }
    // UNITS_EXPORT bvector<Json::Value> ToJson();
