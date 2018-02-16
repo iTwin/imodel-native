@@ -254,6 +254,60 @@ TEST(ClipPlaneSet,ClassifyRegion)
     Check::Int ((int)ClipPlaneContainment::ClipPlaneContainment_Ambiguous, (int)cCrossing, "Expect CROSSING");
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(ClipPlaneSet,LineSelect)
+    {
+    double a = 0.0;
+    double c = 20.0;
+    // make a region in the (a,a) (c,c) sqaure . . .
+    auto box = CurveVector::CreateRectangle (a, a, c, c, 0.0, CurveVector::BOUNDARY_TYPE_Outer);
+    DVec3d vectorToEye = DVec3d::From (0,0,1);
+    bvector<bool> hiddenEdge {false, false, false, false};
+    static double offset = -0.0001;
+    for (auto yClip : {-5.0, 5.0, 25.0})
+        {
+        for (auto xRange : {
+                    DSegment1d (-5,-1),
+                    DSegment1d (-5,5),
+                    DSegment1d (5,10),
+                    DSegment1d (10,30),
+                    DSegment1d (25,30)})
+            {
+            // endpoints of a select stroke ...
+            DPoint3d point0 = DPoint3d::From (xRange.GetStart (), yClip, 0);
+            DPoint3d point1 = DPoint3d::From (xRange.GetEnd (), yClip, 0);
+            // put a double-back line in the clip set, then offset it (negative!!) to create some space. . .
+            bvector<DPoint3d> strokePoints = bvector<DPoint3d> {point0, point1, point0};
+            auto convexSet = ConvexClipPlaneSet::FromXYPolyLine (strokePoints, hiddenEdge, true);
+            for (auto &plane : convexSet)
+                {
+                plane.OffsetDistance (offset);
+                }
+            // add clip planes that point back into the interior of the line . . .
+            convexSet.push_back (ClipPlane (DVec3d::FromStartEndNormalize (point0, point1), point0, 0,0));
+            convexSet.push_back (ClipPlane (DVec3d::FromStartEndNormalize (point1, point0), point1, 0,0));
+            // wrap the convex plane set in a ClipPlaneSet
+            ClipPlaneSet clipSet (convexSet);
+
+            auto cCrossing =  ClipPlaneSet::ClassifyCurveVectorInSetDifference (*box, clipSet, nullptr, true);
+            auto cExpected = ClipPlaneContainment::ClipPlaneContainment_Ambiguous;
+            if (yClip < a || yClip > c || xRange.GetEnd () < a || xRange.GetStart () > c)
+                cExpected = ClipPlaneContainment::ClipPlaneContainment_StronglyOutside;
+            Check::Int ((int)cCrossing, (int)cExpected, "containment by sliver region");
+#ifdef noisyLineSelect
+            GEOMAPI_PRINTF (" (xy0 %g,%g) (xy1 %g,%g) (offset %g) (cCrossing %d)  \n", 
+                        point0.x, point0.y,
+                        point1.x, point1.y,
+                        offset, cCrossing);
+#endif
+            }
+        }
+    }
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  11/17
 +---------------+---------------+---------------+---------------+---------------+------*/

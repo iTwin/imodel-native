@@ -119,3 +119,18 @@ TEST(DMap4d, QuadrantRotation)
     transformMap( map, pnt);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Earlin.Lutz                   02/18
+//---------------------------------------------------------------------------------------
+TEST(DMap4d, VectorFrustumExample)
+    {
+    auto origin = DPoint3d::From(111.55210256687462, -8.3610081610513802, -10.253043196228713);
+    auto uVector = DVec3d::From(62.386308713014060, -0.00000000000000000, 0.00000000000000000);
+    auto vVector = DVec3d::From(0.00000000000000000, 62.386308713014060, -0.00000000000000000);
+    auto wVector = DVec3d::From(31.041154356507047, 31.041154356507032, 31.041154356507036);
+    auto fraction = 0.0048728640349349457;
+    DMap4d map;
+    bsiDMap4d_initFromVectorFrustum(&map, &origin, &uVector, &vVector, &wVector, fraction);
+    auto product = map.M0 * map.M1;
+    Check::True (product.IsIdentity (), "Vector frustum has inverse");
+    }

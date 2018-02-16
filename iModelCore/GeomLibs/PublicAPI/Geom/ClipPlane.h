@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/ClipPlane.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -72,7 +72,7 @@ public:
         (
         bvector<DPoint3d> const &points,    //!< [in] polyline points
         DVec3d upVector,                    //!< [in] upward vector (e.g. towards eye at infinity)
-        double  distance,                    //!< [in] angle for tilt of planes.
+        double  distance,                    //!< [in] distance to offset
         bool    pointsInside                //!< [in] true to orient so the points are inside.
         );
 
