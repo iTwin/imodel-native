@@ -6413,6 +6413,98 @@ TEST_F(SchemaUpgradeTestFixture, ModifyECProperties)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                   02/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, ExtendedTypeName)
+    {
+    auto assertExtendedType = [] (ECDbCR ecdb, Utf8CP propName, Utf8CP expectedExtendedTypeName)
+        {
+        ECClassCP fooClass = ecdb.Schemas().GetClass("TestSchema", "Foo");
+        ASSERT_TRUE(fooClass != nullptr);
+        ECPropertyCP prop = fooClass->GetPropertyP(propName);
+        ASSERT_TRUE(prop != nullptr);
+        if (expectedExtendedTypeName == nullptr)
+            ASSERT_FALSE(prop->HasExtendedType()) << propName;
+        else
+            {
+            if (prop->GetIsPrimitive())
+                ASSERT_STREQ(expectedExtendedTypeName, prop->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str()) << propName;
+            else if (prop->GetIsPrimitiveArray())
+                ASSERT_STREQ(expectedExtendedTypeName, prop->GetAsPrimitiveArrayProperty()->GetExtendedTypeName().c_str()) << propName;
+            else
+                FAIL() << propName << " Expected extended type name: " << expectedExtendedTypeName;
+            }
+        };
+
+    ASSERT_EQ(SUCCESS, SetupECDb("ModifyExtendedTypeName.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8" ?>
+              <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEntityClass typeName="Foo" >
+                   <ECProperty propertyName="noext" typeName="string" />
+                   <ECProperty propertyName="ext" typeName="string" extendedTypeName="url" />
+                   <ECArrayProperty propertyName="noext_array" typeName="string"/>
+                   <ECArrayProperty propertyName="ext_array" typeName="string" extendedTypeName="email"/>
+                </ECEntityClass>
+              </ECSchema>)xml")));
+
+    assertExtendedType(m_ecdb, "noext", nullptr);
+    assertExtendedType(m_ecdb, "ext", "url");
+    assertExtendedType(m_ecdb, "noext_array", nullptr);
+    assertExtendedType(m_ecdb, "ext_array", "email");
+
+    //add extended type name
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8" ?>
+              <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEntityClass typeName="Foo" >
+                   <ECProperty propertyName="noext" typeName="string" extendedTypeName="json" />
+                   <ECProperty propertyName="ext" typeName="string" extendedTypeName="url" />
+                   <ECArrayProperty propertyName="noext_array" typeName="string" extendedTypeName="xml"/>
+                   <ECArrayProperty propertyName="ext_array" typeName="string" extendedTypeName="email"/>
+                </ECEntityClass>
+              </ECSchema>)xml")));
+
+    assertExtendedType(m_ecdb, "noext", "json");
+    assertExtendedType(m_ecdb, "ext", "url");
+    assertExtendedType(m_ecdb, "noext_array", "xml");
+    assertExtendedType(m_ecdb, "ext_array", "email");
+
+    //modify extended type name
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8" ?>
+              <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEntityClass typeName="Foo" >
+                   <ECProperty propertyName="noext" typeName="string" extendedTypeName="json" />
+                   <ECProperty propertyName="ext" typeName="string" extendedTypeName="http" />
+                   <ECArrayProperty propertyName="noext_array" typeName="string" extendedTypeName="xml"/>
+                   <ECArrayProperty propertyName="ext_array" typeName="string" extendedTypeName="mail"/>
+                </ECEntityClass>
+              </ECSchema>)xml")));
+
+    assertExtendedType(m_ecdb, "noext", "json");
+    assertExtendedType(m_ecdb, "ext", "http");
+    assertExtendedType(m_ecdb, "noext_array", "xml");
+    assertExtendedType(m_ecdb, "ext_array", "mail");
+
+    //remove extended type name
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8" ?>
+              <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEntityClass typeName="Foo" >
+                   <ECProperty propertyName="noext" typeName="string" />
+                   <ECProperty propertyName="ext" typeName="string" />
+                   <ECArrayProperty propertyName="noext_array" typeName="string"/>
+                   <ECArrayProperty propertyName="ext_array" typeName="string"/>
+                </ECEntityClass>
+              </ECSchema>)xml")));
+
+    assertExtendedType(m_ecdb, "noext", nullptr);
+    assertExtendedType(m_ecdb, "ext", nullptr);
+    assertExtendedType(m_ecdb, "noext_array", nullptr);
+    assertExtendedType(m_ecdb, "ext_array", nullptr);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaUpgradeTestFixture, ModifyNavigationProperty)
