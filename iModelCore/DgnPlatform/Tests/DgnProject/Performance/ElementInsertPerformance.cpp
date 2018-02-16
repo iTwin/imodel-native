@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Performance/ElementInsertPerformance.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceTestFixture.h"
@@ -450,4 +450,114 @@ TEST_F(PerformanceElementsTests, ServerElementsDelete)
     Execute(Op::Delete);
     }
 
+/*---------------------------------------------------------------------------------**//**
+//                                    Maha Nasir                       02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+struct PerformanceFixtureCRUD : PerformanceElementsCRUDTestFixture
+    {
+    enum class Op
+        {
+        Select,
+        Insert,
+        Update,
+        Delete
+        };
 
+    static std::vector<Utf8String> GetClasses()
+        {
+        std::vector<Utf8String> classes;
+        classes.push_back(PERF_TEST_PERFELEMENT_CLASS_NAME);
+        classes.push_back(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME);
+        classes.push_back(PERF_TEST_PERFELEMENTSUB2_CLASS_NAME);
+        classes.push_back(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME);
+        return classes;
+        }
+
+    static std::array<int, 3> GetInitalInstanceCount()
+        {
+        return{ 100000, 500000, 10000000 };
+        }
+
+    void Execute(Op op, int percentageOfInitialCount)
+        {
+        for (int initalInstanceCount : GetInitalInstanceCount())
+            {
+            if (initalInstanceCount <= 0)
+                continue;
+
+            //Calculating the %age of the initial count to be used as OperationCount
+            if (percentageOfInitialCount <= 0)
+                continue;
+
+            int opCount = initalInstanceCount * percentageOfInitialCount / 100;
+
+            for (Utf8StringCR perfClass : GetClasses())
+                {
+                if (perfClass.empty())
+                    continue;
+
+                if (op == Op::Select)
+                    ApiSelectTime(perfClass.c_str(), initalInstanceCount, opCount);
+                else if (op == Op::Insert)
+                    ApiInsertTime(perfClass.c_str(), initalInstanceCount, opCount);
+                else if (op == Op::Update)
+                    ApiUpdateTime(perfClass.c_str(), initalInstanceCount, opCount);
+                else if (op == Op::Delete)
+                    ApiDeleteTime(perfClass.c_str(), initalInstanceCount, opCount);
+                else
+                    {
+                    ASSERT_TRUE(false);
+                    }
+                }
+
+            }
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+// @betest                                     Maha Nasir                       02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PerformanceFixtureCRUD, ElementsInsert)
+    {
+    int InitialCountPercentage[] = {1,10,50};
+    for (int percentage : InitialCountPercentage)
+        {
+        Execute(Op::Insert, percentage);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @betest                                     Maha Nasir                       02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PerformanceFixtureCRUD, ElementsRead) 
+    {
+    int InitialCountPercentage[] = {1,10,50};
+    for (int percentage : InitialCountPercentage)
+        {
+        Execute(Op::Select, percentage);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @betest                                     Maha Nasir                       02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PerformanceFixtureCRUD, ElementsUpdate) 
+    {
+    int InitialCountPercentage[] = {1,10,50};
+    for (int percentage : InitialCountPercentage)
+        {
+        Execute(Op::Update, percentage);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @betest                                     Maha Nasir                       02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PerformanceFixtureCRUD, ElementsDelete) 
+    {
+    int InitialCountPercentage[] = {1,10,50};
+    for (int percentage : InitialCountPercentage)
+        {
+        Execute(Op::Delete, percentage);
+        }
+    }
