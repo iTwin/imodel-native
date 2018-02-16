@@ -751,15 +751,34 @@ napi_status napi_create_range_error(napi_env env,
 napi_status napi_typeof(napi_env env,
                         napi_value value,
                         napi_valuetype* result) {
-  // Omit NAPI_PREAMBLE and GET_RETURN_STATUS because V8 calls here cannot throw
-  // JS exceptions.
   CHECK_ENV(env);
   CHECK_ARG(env, value);
   CHECK_ARG(env, result);
 
   JSContextRef ctx = env->GetContext();
-  *result = napi_undefined;
-  // TODO
+  JSType type = JSValueGetType(ctx, value);
+
+  switch (type)
+      {
+      case kJSTypeUndefined:
+        *result = napi_undefined;
+        break;
+      case kJSTypeNull:
+        *result = napi_null;
+        break;
+      case kJSTypeBoolean:
+        *result = napi_boolean;
+        break;
+      case kJSTypeNumber:
+        *result = napi_number;
+        break;
+      case kJSTypeString:
+        *result = napi_string;
+        break;
+      case kJSTypeObject:
+        *result = napi_object;
+        break;
+      }
 
   return napi_clear_last_error(env);
 }
@@ -1068,9 +1087,17 @@ napi_status napi_get_value_string_utf8(napi_env env,
 
   JSContextRef ctx = env->GetContext();
   JSStringRef valueString = JSValueToStringCopy(ctx, value, NULL);
-  *result = JSStringGetUTF8CString(valueString, buf, bufsize);
-  JSStringRelease(valueString);
 
+  if (buf == nullptr) {
+    if (result != nullptr)
+      *result = JSStringGetLength(valueString);
+  } else {
+    size_t returnSize = JSStringGetUTF8CString(valueString, buf, bufsize);
+    if (result != nullptr)
+      *result = returnSize;
+  }
+
+  JSStringRelease(valueString);
   return napi_clear_last_error(env);
 }
 

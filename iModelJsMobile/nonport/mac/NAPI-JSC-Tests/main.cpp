@@ -10,11 +10,37 @@
 #include <iModelJs/iModelJs.h>
 
 int main(int argc, const char * argv[]) {
-    // insert code here...
-//    std::cout << "Hello, World!\n";
+    std::cout << "NAPI - JavaScriptCore Tests\n";
     
     BentleyB0200::iModelJs::Js::Runtime runtime;
     Napi::Env& env = runtime.Env();
+
+    auto u = env.Undefined();
+    assert (u.IsUndefined());
+    
+    auto n = env.Null();
+    assert (n.IsNull());
+    
+    auto o = Napi::Object::New(env);
+    assert (o.IsObject());
+    
+    auto a = Napi::Array::New(env);
+    assert (a.IsArray());
+
+    auto b = Napi::Boolean::New(env, true);
+    assert (b.IsBoolean());
+    assert (b.Value() == true);
+    
+    auto n2 = Napi::Number::New(env, 2.0);
+    assert (n2.IsNumber());
+    assert (n2.DoubleValue() == 2.0);
+    
+    auto s = Napi::String::New(env, "hello");
+    assert (s.IsString());
+    assert (s.Utf8Value() == "hello");
+    
+    auto s2 = s;
+    assert (s2.Utf8Value() == s.Utf8Value());
 
     return 0;
 }
