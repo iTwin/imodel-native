@@ -876,7 +876,7 @@ Utf8String NumericFormatSpec::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP us
     FormatDoubleBuf(temp.GetMagnitude(), buf, sizeof(buf), prec, round);
     if(nullptr == useUnit || !IsAppendUnit())
         return Utf8String(buf);
-    Utf8String txt = Utils::AppendUnitName(buf, useUnit->GetLabel(), space);
+    Utf8String txt = Utils::AppendUnitName(buf, useUnit->GetLabel().c_str(), space);
     return txt;
     }
 
@@ -1003,15 +1003,15 @@ Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quan
     NumericFormatSpecCP fmtP = nfs.GetNumericSpec();
     bool composite = nfs.HasComposite();
     BEU::Quantity temp = qty.ConvertTo(useUnit);
-    Utf8CP uomLabel = Utils::IsNameNullOrEmpty(useLabel) ? ((nullptr == useUnit) ? qty.GetUnitLabel() : useUnit->GetLabel()) : useLabel;
+    Utf8CP uomLabel = Utils::IsNameNullOrEmpty(useLabel) ? ((nullptr == useUnit) ? qty.GetUnitLabel() : useUnit->GetLabel().c_str()) : useLabel;
     Utf8String majT, midT, minT, subT;
 
     if (composite)  // procesing composite parts
         {
         CompositeValueSpecP compS = (CompositeValueSpecP)nfs.GetCompositeSpec();
         CompositeValue dval = compS->DecomposeValue(temp.GetMagnitude(), temp.GetUnit());
-		Utf8String pref = dval.GetSignPrefix();
-		Utf8String suff = dval.GetSignSuffix();
+        Utf8String pref = dval.GetSignPrefix();
+        Utf8String suff = dval.GetSignSuffix();
         Utf8CP spacer = Utils::IsNameNullOrEmpty(space) ? compS->GetSpacer().c_str() : space;
         // for all parts but the last one we need to format an integer 
         NumericFormatSpec fmtI = NumericFormatSpec(PresentationType::Decimal, FormatConstant::DefaultSignOption(),
@@ -1454,10 +1454,22 @@ NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecCR fmt
     m_formatSet.push_back(nfs);
     return nfs->GetNumericSpec();
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    02/2018
+//--------------------------------------------------------------------------------------
+NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP jsonString)
+    {
+    NamedFormatSpecCP nfs = AddNamedFormat(jsonString);
+    if (nullptr == nfs)
+        return nullptr;
+    return nfs->GetNumericSpec();
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
-NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP jsonString)
+NamedFormatSpecCP StdFormatSet::AddNamedFormat(Utf8CP jsonString)
     {
     Json::Value jval (Json::objectValue);
     Json::Reader::Parse(jsonString, jval);
@@ -1479,81 +1491,31 @@ NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP jsonString)
         return nullptr;
         }
     m_formatSet.push_back(nfs);
-    return nfs->GetNumericSpec();
+    return nfs;
     }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/16
-//---------------------------------------------------------------------------------------
-NamedFormatSpecCP StdFormatSet::AddCustomFormat(Utf8CP jsonString)
-    {
-    //Json::Value* jval = new Json::Value();
-    Json::Value jval (Json::objectValue);
-    Json::Reader::Parse(jsonString, jval);
 
-    //Json::Reader().Parse(jsonString, *jval);
-    //Json::Value jval(jsonString);
-    NamedFormatSpecP nfs = new NamedFormatSpec(jval);
-    if (nullptr == nfs)
-        return nullptr;
-
-    if(nfs->IsProblem())
-        {
-        delete nfs;
-        return nullptr;
-        }
-   /* if (IsFormatDefined(nfs->GetName(), nfs->GetAlias()))
-        {
-        m_problem.UpdateProblemCode(FormatProblemCode::NFS_DuplicateSpecNameOrAlias);
-        delete nfs;
-        return nullptr;
-        }*/
-    m_customSet.push_back(nfs);
-    return nfs;// ->GetNumericSpec();
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/16
-//---------------------------------------------------------------------------------------
-NamedFormatSpecCP StdFormatSet::AppendCustomFormat(Utf8CP jsonString, FormatProblemDetailR problem)
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    02/2018
+//--------------------------------------------------------------------------------------
+// static
+NamedFormatSpecCP StdFormatSet::AddFormat(Utf8CP jsonString, FormatProblemDetailR problem)
     {
     StdFormatSetP sp = Set();
     sp->ResetProblemCode();
-    NamedFormatSpecCP nfs = sp->AddCustomFormat(jsonString);
+    auto nfs = sp->AddNamedFormat(jsonString);
     problem.Reset();
     if (sp->HasProblem())
-        {
         problem.UpdateProblemCode(sp->GetProblemCode());
-        }
+
     return nfs;
     }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/16
-//---------------------------------------------------------------------------------------
-bool StdFormatSet::AreSetsIdentical()
-    {
-    size_t num = Set()->GetFormatCount();
-    size_t cust = Set()->GetCustomCount();
-    NamedFormatSpecCP s1, s2;
-    if(num == 0 || cust == 0 || num != cust)
-        return false;
-    for (size_t i = 0; i < num; i++)
-        {
-        s1 = Set()->m_formatSet[i];
-        s2 = Set()->m_customSet[i];
-        if (!s1->IsIdentical(*s2))
-            return false;
-        }
-    return true;
-    }
-
-
-
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
-NumericFormatSpecCP StdFormatSet::GetNumericFormat(Utf8CP name, bool IncludeCustom)
+NumericFormatSpecCP StdFormatSet::GetNumericFormat(Utf8CP name)
     {
-    NamedFormatSpecCP fmtP = FindFormatSpec(name, IncludeCustom); //  *Set()->m_formatSet.begin();
+    NamedFormatSpecCP fmtP = FindFormatSpec(name); //  *Set()->m_formatSet.begin();
     if(nullptr == fmtP)
         return nullptr;
     return fmtP->GetNumericSpec();
@@ -1570,7 +1532,7 @@ NumericFormatSpecCP StdFormatSet::GetNumericFormat(Utf8CP name, bool IncludeCust
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-NamedFormatSpecCP StdFormatSet::FindFormatSpec(Utf8CP name, bool IncludeCustom)
+NamedFormatSpecCP StdFormatSet::FindFormatSpec(Utf8CP name)
     {
     NamedFormatSpecCP fmtP = *Set()->m_formatSet.begin();
     if (Set()->m_formatSet.size() > 0)
@@ -1585,17 +1547,6 @@ NamedFormatSpecCP StdFormatSet::FindFormatSpec(Utf8CP name, bool IncludeCustom)
             }
         }
 
-    if (IncludeCustom && (Set()->m_customSet.size() > 0))
-        {
-        for (auto itr = Set()->m_customSet.begin(); itr != Set()->m_customSet.end(); ++itr)
-            {
-            fmtP = *itr;
-            if (fmtP->HasName(name) || fmtP->HasAlias(name))
-                {
-                return fmtP;
-                }
-            }
-        }
     return nullptr;
     }
 
@@ -1608,14 +1559,6 @@ bool StdFormatSet::IsFormatDefined(Utf8CP name, Utf8CP alias)
     if (Set()->m_formatSet.size() == 0)
         return false;
     for (auto itr = Set()->m_formatSet.begin(); itr != Set()->m_formatSet.end(); ++itr)
-        {
-        fmtP = *itr;
-        if (fmtP->HasName(name) || fmtP->HasAlias(name) || fmtP->HasName(alias) || fmtP->HasAlias(alias))
-            return true;
-        }
-    if (Set()->m_customSet.size() == 0)
-        return false;
-    for (auto itr = Set()->m_customSet.begin(); itr != Set()->m_customSet.end(); ++itr)
         {
         fmtP = *itr;
         if (fmtP->HasName(name) || fmtP->HasAlias(name) || fmtP->HasName(alias) || fmtP->HasAlias(alias))
@@ -1685,117 +1628,93 @@ Utf8String StdFormatSet::StdFormatNameList(bool useAlias)
         }
     return txt;
     }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//---------------------------------------------------------------------------------------
-Utf8String StdFormatSet::CustomNameList(bool useAlias)
-    {
-    Utf8String  txt;
-    NamedFormatSpecCP fmtP = *Set()->m_customSet.begin();
-    Utf8CP name;
-    int i = 0;
-    for (auto itr = Set()->m_formatSet.begin(); itr != Set()->m_formatSet.end(); ++itr)
-        {
-        fmtP = *itr;
-        if (useAlias)
-            name = fmtP->GetName();
-        else
-            name = fmtP->GetAlias();
-        if (i > 0)
-            txt += " ";
-        txt += name;
-        i++;
-        }
-    return txt;
-    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/18
 //----------------------------------------------------------------------------------------
 FormatUnitSetCP StdFormatSet::FindFUS(Utf8CP fusName) const
-{
-	FormatUnitSetCP fusP;
+    {
+    FormatUnitSetCP fusP;
 
-	for (auto itr = Set()->m_fusSet.begin(); itr != Set()->m_fusSet.end(); ++itr)
-	{
-		fusP = *itr;
-		if (BeStringUtilities::StricmpAscii(fusName, fusP->GetFusName()) == 0)
-			return fusP;
-	}
-	return nullptr;
-}
+    for (auto itr = Set()->m_fusSet.begin(); itr != Set()->m_fusSet.end(); ++itr)
+        {
+        fusP = *itr;
+        if (BeStringUtilities::StricmpAscii(fusName, fusP->GetFusName()) == 0)
+            return fusP;
+        }
+    return nullptr;
+    }
 
 bool StdFormatSet::HasDuplicate(Utf8CP fusName, FormatUnitSetCP * fusOut)
-{
-	*fusOut = nullptr;
+    {
+    *fusOut = nullptr;
 
-	if (Utils::IsNameNullOrEmpty(fusName))
-	{
-		m_problem.UpdateProblemCode(FormatProblemCode::SFS_InsertingNamelessFUS);
-		return true;
-	}
-	FormatUnitSetCP fusP = FindFUS(fusName);
-	if (nullptr == fusP) // the name is not used
-		return false;
+    if (Utils::IsNameNullOrEmpty(fusName))
+        {
+        m_problem.UpdateProblemCode(FormatProblemCode::SFS_InsertingNamelessFUS);
+        return true;
+        }
+    FormatUnitSetCP fusP = FindFUS(fusName);
+    if (nullptr == fusP) // the name is not used
+        return false;
 
-	*fusOut = fusP;
-	return true;
-}
+    *fusOut = fusP;
+    return true;
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/18
 //----------------------------------------------------------------------------------------
 FormatUnitSetCP StdFormatSet::AddFUS(FormatUnitSetCR fusR, Utf8CP fusName)
-{
-	FormatUnitSetCP fusP;
-	if (Set()->HasDuplicate(fusName, &fusP))
-		return nullptr;
+    {
+    FormatUnitSetCP fusP;
+    if (Set()->HasDuplicate(fusName, &fusP))
+        return nullptr;
 
-	fusP = new FormatUnitSet(fusR); // make a clone
-	fusP->SetFusName(fusName);
-	Set()->m_fusSet.push_back(fusP);
-	return Set()->m_fusSet.back();
-}
+    fusP = new FormatUnitSet(fusR); // make a clone
+    fusP->SetFusName(fusName);
+    Set()->m_fusSet.push_back(fusP);
+    return Set()->m_fusSet.back();
+    }
 
 FormatUnitSetCP StdFormatSet::AddFUS(Utf8CP formatName, Utf8CP unitName, Utf8CP fusName, bool makeUnit)
-{
-	FormatUnitSetCP fusP;
-	if (Set()->HasDuplicate(fusName, &fusP))
-		return nullptr;
+    {
+    FormatUnitSetCP fusP;
+    if (Set()->HasDuplicate(fusName, &fusP))
+        return nullptr;
 
-	fusP = new FormatUnitSet(formatName, unitName); // make FUS
-	if (fusP->HasProblem())
-	{
-		Set()->m_problem.UpdateProblemCode(FormatProblemCode::SFS_FailedToMakeFUS);
-		return nullptr;
-	}
-	fusP->SetFusName(fusName);
-	Set()->m_fusSet.push_back(fusP);
-	return Set()->m_fusSet.back();
-}
+    fusP = new FormatUnitSet(formatName, unitName); // make FUS
+    if (fusP->HasProblem())
+        {
+        Set()->m_problem.UpdateProblemCode(FormatProblemCode::SFS_FailedToMakeFUS);
+        return nullptr;
+        }
+    fusP->SetFusName(fusName);
+    Set()->m_fusSet.push_back(fusP);
+    return Set()->m_fusSet.back();
+    }
+
 FormatUnitSetCP StdFormatSet::AddFUS(Utf8CP descriptor, Utf8CP fusName, bool makeUnit)
-{
-	FormatUnitSetCP fusP;
-	if (Set()->HasDuplicate(fusName, &fusP))
-		return nullptr;
-	fusP = new FormatUnitSet(descriptor); // make FUS
-	if (fusP->HasProblem())
-	{
-		Set()->m_problem.UpdateProblemCode(FormatProblemCode::SFS_FailedToMakeFUS);
-		return nullptr;
-	}
-	fusP->SetFusName(fusName);
-	Set()->m_fusSet.push_back(fusP);
-	return Set()->m_fusSet.back();
-}
+    {
+    FormatUnitSetCP fusP;
+    if (Set()->HasDuplicate(fusName, &fusP))
+        return nullptr;
+    fusP = new FormatUnitSet(descriptor); // make FUS
+    if (fusP->HasProblem())
+        {
+        Set()->m_problem.UpdateProblemCode(FormatProblemCode::SFS_FailedToMakeFUS);
+        return nullptr;
+        }
+    fusP->SetFusName(fusName);
+    Set()->m_fusSet.push_back(fusP);
+    return Set()->m_fusSet.back();
+    }
+
 FormatUnitSetCP StdFormatSet::LookupFUS(Utf8CP fusName)
-{
-	FormatUnitSetCP fusP = Set()->FindFUS(fusName);
-	return fusP;
-}
-
-
-
+    {
+    FormatUnitSetCP fusP = Set()->FindFUS(fusName);
+    return fusP;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16

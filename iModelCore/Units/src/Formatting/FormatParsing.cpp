@@ -2533,27 +2533,27 @@ BEU::Quantity  FormatParsingSet::ComposeColonizedQuantity(Formatting::FormatSpec
 // @bsimethod                                                   David Fox-Rabinovitz 02/18
 //----------------------------------------------------------------------------------------
 NamedQuantity::NamedQuantity(Utf8CP quantName, double dval, Utf8CP uom)
-	{
-	    Init(quantName, NamedQuantityType::Quantity);
-	    BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnitCI(uom);
-	    if (nullptr == unit)
-	        {
-	        LOG.infov("Invalid UOM: >%s<", uom);
-	        return;
-	        }
-		m_quant = BEU::Quantity(dval, *unit);
-	}
+    {
+    Init(quantName, NamedQuantityType::Quantity);
+    BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnitCI(uom);
+    if (nullptr == unit)
+        {
+        LOG.infov("Invalid UOM: >%s<", uom);
+        return;
+        }
+    m_quant = BEU::Quantity(dval, *unit);
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/18
 //----------------------------------------------------------------------------------------
 Utf8String NamedQuantity::ToText(int prec)
-	{
-	Utf8String txt;
-	txt.Sprintf("%s = %s of %s", m_name.c_str(),  
-		         NumericFormatSpec::StdFormatDouble("real", m_quant.GetMagnitude(), prec).c_str(), m_quant.GetUnitName());
-	return txt;
-	}
+    {
+    Utf8String txt;
+    txt.Sprintf("%s = %s of %s", m_name.c_str(),  
+        NumericFormatSpec::StdFormatDouble("real", m_quant.GetMagnitude(), prec).c_str(), m_quant.GetUnitName());
+    return txt;
+    }
 
 //===================================================
 //

@@ -210,12 +210,14 @@ protected:
     UNITS_EXPORT static UnitP _Create(UnitCR parentUnit, Utf8CP unitName, uint32_t id);
 
     UNITS_EXPORT Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, bool isBase, double factor, double offset, bool isConstant);
+    UNITS_EXPORT void SetLabel(Utf8CP label) {m_displayLabel = label;}
 
 public:
     UNITS_EXPORT Utf8String GetUnitSignature() const;
     UNITS_EXPORT Utf8String GetParsedUnitExpression() const;
     UNITS_EXPORT UnitsProblemCode Convert(double& converted, double value, UnitCP toUnit) const;
-    UNITS_EXPORT Utf8CP GetLabel() const;
+    UNITS_EXPORT Utf8StringCR GetLabel() const;
+    UNITS_EXPORT Utf8StringCR GetInvariantLabel() const;
     UNITS_EXPORT Utf8CP GetDescription() const;
 
     bool IsSI() const {return 0 == strcmp(m_system->GetName().c_str(), "SI");} // TODO: Replace with something better ... SI is a known system

@@ -620,17 +620,17 @@ public:
 struct CompositeValue
     {
 private:
-	bool m_negative;
+    bool m_negative;
     double m_parts[CompositeValueSpec::indxLimit];
     FormatProblemDetail m_problem;
-	double GetSignFactor() { return m_negative ? -1.0 : 1.0; }
+    double GetSignFactor() { return m_negative ? -1.0 : 1.0; }
     void Init();
 public:
     UNITS_EXPORT CompositeValue();
-	void SetNegative() { m_negative = true; }
-	void SetPositive() { m_negative = false; }
-	Utf8String GetSignPrefix(bool useParenth = false) { return m_negative?  (useParenth ? "(" : "-") : ""; }
-	Utf8String GetSignSuffix(bool useParenth = false) { return m_negative ? (useParenth ? ")" : "") : ""; }
+    void SetNegative() { m_negative = true; }
+    void SetPositive() { m_negative = false; }
+    Utf8String GetSignPrefix(bool useParenth = false) { return m_negative?  (useParenth ? "(" : "-") : ""; }
+    Utf8String GetSignSuffix(bool useParenth = false) { return m_negative ? (useParenth ? ")" : "") : ""; }
     double SetMajor(double dval)  { return m_parts[CompositeValueSpec::indxMajor] = dval; }
     double SetMiddle(double dval) { return m_parts[CompositeValueSpec::indxMiddle] = dval; }
     double SetMinor(double dval)  { return m_parts[CompositeValueSpec::indxMinor] = dval; }
@@ -724,18 +724,18 @@ struct FormatUnitSet
         BEU::UnitCP m_unit;
         FormatProblemDetail m_problem;
         NamedFormatSpec m_localCopy;
-		mutable Utf8String  m_fusName;
+        mutable Utf8String  m_fusName;
 
-		Utf8CP GetDefaultDisplayLabel() const;
-		Utf8CP SetFusName(Utf8CP name) const { m_fusName.assign(name);  return m_fusName.c_str(); }
-		
+        Utf8CP GetDefaultDisplayLabel() const;
+        Utf8CP SetFusName(Utf8CP name) const { m_fusName.assign(name);  return m_fusName.c_str(); }
+
     public:
         UNITS_EXPORT void Init();
         UNITS_EXPORT FormatUnitSet():m_formatSpec(nullptr), m_unit(nullptr), m_localCopy(false), m_problem(FormatProblemDetail()) {}
         UNITS_EXPORT FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, bool cloneData = false);
         UNITS_EXPORT FormatUnitSet(Utf8CP formatName, Utf8CP unitName, bool cloneData = false);
-		UNITS_EXPORT FormatUnitSet(FormatUnitSetCR other);
-		UNITS_EXPORT FormatUnitSet(FormatUnitSetCP other);
+        UNITS_EXPORT FormatUnitSet(FormatUnitSetCR other);
+        UNITS_EXPORT FormatUnitSet(FormatUnitSetCP other);
         void Clone(FormatUnitSetCP other);
         UNITS_EXPORT FormatUnitSet& operator=(const FormatUnitSet& other);
 
@@ -763,9 +763,9 @@ struct FormatUnitSet
         FormatProblemCode GetProblemCode() const { return m_problem.GetProblemCode(); }
         Utf8String GetProblemDescription() const { return m_problem.GetProblemDescription(); }
         Utf8String GetUnitName() const { return m_unitName; }
-		Utf8CP GetFusName() const { return m_fusName.c_str(); }
+        Utf8CP GetFusName() const { return m_fusName.c_str(); }
 
-		UNITS_EXPORT Utf8CP GetDisplayLabel(bool useDefault=false) const;
+        UNITS_EXPORT Utf8CP GetDisplayLabel(bool useDefault=false) const;
         UNITS_EXPORT Utf8String ToText(bool useAlias = true) const;
         BEU::UnitCP GetUnit() const { return m_unit; }
         NamedFormatSpecCP GetNamedFormatSpec() const { return m_formatSpec; }
@@ -783,7 +783,7 @@ struct FormatUnitSet
         UNITS_EXPORT bool IsIdentical(FormatUnitSetCR other) const;
         UNITS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, size_t start);
         bool IsFullySpecified() { return (m_formatSpec == &m_localCopy); }
-		bool IsSetRegistered() { return !m_fusName.empty(); }
+        bool IsSetRegistered() { return !m_fusName.empty(); }
         bool HasComposite() const { return nullptr != m_formatSpec && m_formatSpec->HasComposite(); }
         size_t GetCompositeUnitCount() const { return HasComposite() ? m_formatSpec->GetCompositeUnitCount() : 0; }
         BEU::UnitCP GetCompositeMajorUnit() const { return HasComposite() ? m_formatSpec->GetCompositeMajorUnit() : nullptr; }
@@ -820,38 +820,32 @@ struct StdFormatSet
     {
 private:
     bvector<NamedFormatSpecCP> m_formatSet;    // core + app
-    bvector<NamedFormatSpecCP> m_customSet;    // user
-	bvector<FormatUnitSetCP> m_fusSet;
-	FormatProblemDetail m_problem; 
+    bvector<FormatUnitSetCP> m_fusSet;
+    FormatProblemDetail m_problem; 
 
     NumericFormatSpecCP AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, Utf8CP alias = nullptr);
     NumericFormatSpecCP AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, CompositeValueSpecCR compS, Utf8CP alias = nullptr); 
-    UNITS_EXPORT NumericFormatSpecCP AddFormat(Utf8CP jsonString);
+    NumericFormatSpecCP AddFormat(Utf8CP jsonString);
+    NamedFormatSpecCP AddNamedFormat(Utf8CP jsonString);
 
-    UNITS_EXPORT size_t StdInit();
-    UNITS_EXPORT size_t CustomInit();
+    size_t StdInit();
+    void CustomInit();
     StdFormatSet() { m_problem = FormatProblemDetail(); }
     static StdFormatSetP Set();
     UNITS_EXPORT static bool IsFormatDefined(Utf8CP name, Utf8CP alias);
-	UNITS_EXPORT FormatUnitSetCP FindFUS(Utf8CP fusName) const;
-	bool HasDuplicate(Utf8CP name, FormatUnitSetCP * fusP);
+    UNITS_EXPORT FormatUnitSetCP FindFUS(Utf8CP fusName) const;
+    bool HasDuplicate(Utf8CP name, FormatUnitSetCP * fusP);
 
 public:
-    UNITS_EXPORT NamedFormatSpecCP AddCustomFormat(Utf8CP jsonString);
-    UNITS_EXPORT static NamedFormatSpecCP AppendCustomFormat(Utf8CP jsonString, FormatProblemDetailR problem);
     //static StdFormatSetP GetStdSet() { return Set(); }
     UNITS_EXPORT static NumericFormatSpecCP DefaultDecimal();
     static NamedFormatSpecCP DefaultFormatSpec() { return FindFormatSpec(FormatConstant::DefaultFormatName()); }
     static size_t GetFormatSetSize() { return Set()->m_formatSet.size(); }
-    static size_t GetCustomSetSize() { return Set()->m_customSet.size(); }
-    UNITS_EXPORT static NumericFormatSpecCP GetNumericFormat(Utf8CP name, bool IncludeCustom = true);
-    UNITS_EXPORT static NamedFormatSpecCP FindFormatSpec(Utf8CP name, bool IncludeCustom = true);
+    UNITS_EXPORT static NumericFormatSpecCP GetNumericFormat(Utf8CP name);
+    UNITS_EXPORT static NamedFormatSpecCP FindFormatSpec(Utf8CP name);
     UNITS_EXPORT static bvector<Utf8CP> StdFormatNames(bool useAlias);
     UNITS_EXPORT static Utf8String StdFormatNameList(bool useAlias);
-    UNITS_EXPORT static Utf8String CustomNameList(bool useAlias);
-    UNITS_EXPORT static bool AreSetsIdentical();
     UNITS_EXPORT size_t GetFormatCount() { return m_formatSet.size(); }
-    UNITS_EXPORT size_t GetCustomCount() { return m_customSet.size(); }
     bool HasProblem() const { return m_problem.IsProblem(); }
     FormatProblemCode GetProblemCode() { return m_problem.GetProblemCode(); }
     void ResetProblemCode() { m_problem.Reset(); }
@@ -859,12 +853,15 @@ public:
 
     static FormatUnitSet DefaultFUS(BEU::QuantityCR qty) { return FormatUnitSet(DefaultFormatSpec(), qty.GetUnit()); }
 
-	UNITS_EXPORT static FormatUnitSetCP AddFUS(FormatUnitSetCR fusR, Utf8CP fusName);
-	UNITS_EXPORT static FormatUnitSetCP AddFUS(Utf8CP formatName, Utf8CP unitName, Utf8CP fusName, bool makeUnit = true);
-	UNITS_EXPORT static FormatUnitSetCP AddFUS(Utf8CP descriptor, Utf8CP fusName, bool makeUnit = true);
-	UNITS_EXPORT static FormatUnitSetCP LookupFUS(Utf8CP fusName);
-	UNITS_EXPORT static bool FusRegistrationHasProblem() { return Set()->m_problem.IsProblem(); }
-   // UNITS_EXPORT bvector<Json::Value> ToJson();
+    UNITS_EXPORT static FormatUnitSetCP AddFUS(FormatUnitSetCR fusR, Utf8CP fusName);
+    UNITS_EXPORT static FormatUnitSetCP AddFUS(Utf8CP formatName, Utf8CP unitName, Utf8CP fusName, bool makeUnit = true);
+    UNITS_EXPORT static FormatUnitSetCP AddFUS(Utf8CP descriptor, Utf8CP fusName, bool makeUnit = true);
+
+    UNITS_EXPORT static NamedFormatSpecCP AddFormat(Utf8CP jsonString, FormatProblemDetailR problem);
+
+    UNITS_EXPORT static FormatUnitSetCP LookupFUS(Utf8CP fusName);
+    UNITS_EXPORT static bool FusRegistrationHasProblem() { return Set()->m_problem.IsProblem(); }
+    // UNITS_EXPORT bvector<Json::Value> ToJson();
     };
 
 //=======================================================================================
@@ -1069,6 +1066,5 @@ public:
 //    int GetNextindex() { return m_startIndx + m_len; }
 //
 //    };
-
 
 END_BENTLEY_FORMATTING_NAMESPACE
