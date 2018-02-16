@@ -758,6 +758,7 @@ napi_status napi_typeof(napi_env env,
   CHECK_ARG(env, result);
 
   JSContextRef ctx = env->GetContext();
+  *result = napi_undefined;
   // TODO
 
   return napi_clear_last_error(env);
