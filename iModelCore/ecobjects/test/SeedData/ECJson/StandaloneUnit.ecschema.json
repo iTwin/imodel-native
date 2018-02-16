@@ -1,0 +1,14 @@
+﻿{
+  "$schema": "https://dev.bentley.com/json_schemas/ec/32/draft-01/schemachild",
+  "schema": "ExampleSchema",
+  "schemaVersion": "03.01.00",
+  "schemaChildType": "Unit",
+  "name": "ExampleUnit",
+  "definition": "M",
+  "label": "ExampleUnitLabel",
+  "description": "ExampleUnitDescription",
+  "factor": 10.0,
+  "offset": 1.0,
+  "phenomenon": "ExampleSchema.ExamplePhenomenon",
+  "unitSystem": "ExampleSchema.ExampleUnitSystem"
+}

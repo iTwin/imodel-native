@@ -39,6 +39,7 @@
 #define PROPERTY_CATEGORY_ELEMENT           "PropertyCategory"
 #define UNIT_SYSTEM_ELEMENT                 "UnitSystem"
 #define PHENOMENON_ELEMENT                  "Phenomenon"
+#define UNIT_ELEMENT                        "Unit"
 
 #define ECXML_SCHEMAREFERENCE_ELEMENT       "ECSchemaReference"
 #define ECJSON_REFERENCES_ATTRIBUTE         "references"
@@ -68,6 +69,12 @@
 #define ALIAS_ATTRIBUTE                     "alias"
 #define NAME_ATTRIBUTE                      "name"
 #define DESCRIPTION_ATTRIBUTE               "description"
+#define FACTOR_ATTRIBUTE                    "factor"
+#define OFFSET_ATTRIBUTE                    "offset"
+#define IS_CONSTANT_ATTRIBUTE               "isConstant"
+#define UNIT_NAME_ATTRIBUTE                 "unit"
+#define PHENOMENON_NAME_ATTRIBUTE           "phenomenon"
+#define UNIT_SYSTEM_NAME_ATTRIBUTE          "unitSystem"
 #define APPLIES_TO                          "appliesTo"
 #define CUSTOM_ATTRIBUTE_APPLIES_TO_ATTRIBUTE   APPLIES_TO
 #define MIXIN_APPLIES_TO_ATTRIBUTE              APPLIES_TO

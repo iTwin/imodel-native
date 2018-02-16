@@ -26,6 +26,7 @@ struct SchemaJsonWriter
         SchemaWriteStatus WritePropertyCategory(PropertyCategoryCR propertyCategory);
         SchemaWriteStatus WriteUnitSystem(UnitSystemCR unitSystem);
         SchemaWriteStatus WritePhenomenon(PhenomenonCR phenomenon);
+        SchemaWriteStatus WriteUnit(ECUnitCR unit);
         SchemaWriteStatus WriteSchemaChildren();
 
     public:

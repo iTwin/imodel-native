@@ -90,6 +90,7 @@
     <ClCompile Include="StandardCustomAttributeHelper.cpp" />
     <ClCompile Include="SupplementalSchema.cpp" />
     <ClCompile Include="SystemSymbolProvider.cpp" />
+    <ClCompile Include="ECUnit.cpp" />
     <ClCompile Include="UnitSystem.cpp" />
     <ClCompile Include="Units\ECUnitsClassLocater.cpp" />
     <ClCompile Include="Units\Units.cpp" />

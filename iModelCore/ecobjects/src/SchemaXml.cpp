@@ -358,7 +358,7 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadUnitSystemFromXml(ECSchemaPtr& schemaO
         if (ECObjectsStatus::NamedItemAlreadyExists == addStatus)
             {
             LOG.errorv("Duplicate %s node for %s in schema %s.", ECSchema::SchemaElementTypeToString(ECSchemaElementType::UnitSystem), unitSystem->GetName().c_str(), schemaOut->GetFullSchemaName().c_str());
-            Units::UnitRegistry::Instance().RemoveSystem(unitSystem->GetName().c_str());
+            Units::UnitRegistry::Instance().RemoveSystem(unitSystem->GetFullName().c_str());
             delete unitSystem;
             unitSystem = nullptr;
             return SchemaReadStatus::InvalidECSchemaXml;
@@ -393,9 +393,44 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadPhenomenonFromXml(ECSchemaPtr& schemaO
         if (ECObjectsStatus::NamedItemAlreadyExists == addStatus)
             {
             LOG.errorv("Duplicate %s node for %s in schema %s.", ECSchema::SchemaElementTypeToString(ECSchemaElementType::Phenomenon), phenom->GetName().c_str(), schemaOut->GetFullSchemaName().c_str());
-            Units::UnitRegistry::Instance().RemovePhenomenon(phenom->GetName().c_str());
+            Units::UnitRegistry::Instance().RemovePhenomenon(phenom->GetFullName().c_str());
             delete phenom;
             phenom = nullptr;
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
+        
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                  02/2018
+//---------------------------------------------------------------------------------------
+SchemaReadStatus SchemaXmlReaderImpl::ReadUnitFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode)
+    {
+    SchemaReadStatus status = SchemaReadStatus::Success;
+
+    for (BeXmlNodeP candidateNode = schemaNode.GetFirstChild(); nullptr != candidateNode; candidateNode = candidateNode->GetNextSibling())
+        {
+        if (!IsSchemaChildElementNode(*candidateNode, ECSchemaElementType::Unit))
+            continue;
+
+        ECUnitP unit;
+        status = ECUnit::ReadXml(unit, *candidateNode, *schemaOut, m_schemaContext);
+        if (SchemaReadStatus::Success != status)
+            {
+            // The object should never be constructed, no need to delete it.
+            unit = nullptr;
+            return status;
+            }
+        
+        ECObjectsStatus addStatus = schemaOut->AddSchemaChild<ECUnit>(unit, ECSchemaElementType::Unit);
+        if (ECObjectsStatus::NamedItemAlreadyExists == addStatus)
+            {
+            LOG.errorv("Duplicate %s node for %s in schema %s.", ECSchema::SchemaElementTypeToString(ECSchemaElementType::Unit), unit->GetName().c_str(), schemaOut->GetFullSchemaName().c_str());
+            Units::UnitRegistry::Instance().RemoveUnit(unit->GetFullName().c_str());
+            delete unit;
+            unit = nullptr;
             return SchemaReadStatus::InvalidECSchemaXml;
             }
         }
@@ -641,6 +676,8 @@ bool SchemaXmlReaderImpl::_IsSchemaChildElementNode(BeXmlNodeR schemaNode, ECSch
             return 0 == strcmp(UNIT_SYSTEM_ELEMENT, nodeName);
         case ECSchemaElementType::Phenomenon:
             return 0 == strcmp(PHENOMENON_ELEMENT, nodeName);
+        case ECSchemaElementType::Unit:
+            return 0 == strcmp(UNIT_ELEMENT, nodeName);
         }
 
     return false;
@@ -671,6 +708,8 @@ bool SchemaXmlReaderImpl::_IsSchemaChildElementNode(BeXmlNodeR schemaNode, ECSch
             elementOrder.AddElement(typeName.c_str(), ECSchemaElementType::UnitSystem);
         else if (IsSchemaChildElementNode(*candidateNode, ECSchemaElementType::Phenomenon))
             elementOrder.AddElement(typeName.c_str(), ECSchemaElementType::Phenomenon);
+        else if (IsSchemaChildElementNode(*candidateNode, ECSchemaElementType::Unit))
+            elementOrder.AddElement(typeName.c_str(), ECSchemaElementType::Unit);
         }
     }
 
@@ -889,6 +928,19 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
 
     readingPhenomena.Stop();
     LOG.tracev("Reading Phenomenon elements for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingPhenomena.GetElapsedSeconds());
+
+    // ECUnits
+    StopWatch readingUnits("Reading Units", true);
+    status = reader->ReadUnitFromXml(schemaOut, *schemaNode);
+
+    if (SchemaReadStatus::Success != status)
+        {
+        delete reader; reader = nullptr;
+        return status;
+        }
+
+    readingUnits.Stop();
+    LOG.tracev("Reading Unit elements for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingUnits.GetElapsedSeconds());
 
     // KindOfQuantity
     StopWatch readingKindOfQuantities("Reading kind of quantity", true);
@@ -1154,6 +1206,12 @@ SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
             PhenomenonCP phenom = m_ecSchema.GetPhenomenonCP(elementName);
             if (nullptr != phenom)
                 WriteSchemaChild<Phenomenon>(*phenom);
+            }
+        else if (ECSchemaElementType::Unit == elementType)
+            {
+            ECUnitCP unit = m_ecSchema.GetUnitCP(elementName);
+            if(nullptr != unit)
+                WriteSchemaChild<ECUnit>(*unit);
             }
         }
 

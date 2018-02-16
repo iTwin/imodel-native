@@ -102,7 +102,6 @@ private:
     PhenomenonId m_phenomenonId;
 
     void SetSchema(ECSchemaCR schema) {m_schema = &schema;}
-
     ECObjectsStatus SetName(Utf8StringCR name);
     ECObjectsStatus SetDisplayLabel(Utf8StringCR value) {Units::Phenomenon::SetLabel(value.c_str()); m_isDisplayLabelExplicitlyDefined = true; return ECObjectsStatus::Success;}
     ECObjectsStatus SetDescription(Utf8StringCR value) {m_description = value; return ECObjectsStatus::Success;}
@@ -149,4 +148,71 @@ public:
     ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = false) const;
 };
 
+//=======================================================================================
+//! @bsistruct
+//=======================================================================================
+struct ECUnit : Units::Unit, NonCopyableClass 
+{
+DEFINE_T_SUPER(Units::Unit)
+friend struct ECSchema;
+friend struct SchemaXmlWriter;
+friend struct SchemaXmlReaderImpl;
+friend struct SchemaJsonWriter;
+friend struct Units::UnitRegistry;
+private:
+    Utf8String m_name;
+    bool m_isDisplayLabelExplicitlyDefined;
+    Utf8String m_description;
+    ECSchemaCP m_schema;
+    UnitId m_unitId;
+
+    void SetSchema(ECSchemaCR schema) {m_schema = &schema;}
+
+    ECObjectsStatus SetName(Utf8StringCR name);
+    ECObjectsStatus SetDisplayLabel(Utf8StringCR value) {Units::Unit::SetLabel(value.c_str()); m_isDisplayLabelExplicitlyDefined = true; return ECObjectsStatus::Success;}
+    ECObjectsStatus SetDescription(Utf8StringCR value) {m_description = value; return ECObjectsStatus::Success;}
+
+    static SchemaReadStatus ReadXml(ECUnitP& unit, BeXmlNodeR unitNode, ECSchemaCR schema, ECSchemaReadContextR context);
+
+    SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
+
+    SchemaWriteStatus WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
+
+    // Should only be called by UnitRegistry
+    ECUnit(Units::UnitSystemCR unitSystem, Units::PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant) : 
+        Units::Unit(unitSystem, phenomenon, name, id, definition, dimensionSymbol, factor, offset, isConstant), m_isDisplayLabelExplicitlyDefined(false) {}
+
+protected:
+    // Needed by Units::UnitRegistry to create the ECUnit
+    ECOBJECTS_EXPORT static ECUnitP _Create(Units::UnitSystemCR unitSystem, Units::PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant);
+
+public:
+
+    ECSchemaCR GetSchema() const {return *m_schema;} //!< The ECSchema that this Unit is defined in
+
+    Utf8StringCR GetName() const {return m_name;}
+
+    //! {SchemaName}:{UnitName} The pointer will remain valid as long as the ECUnit exists.
+    ECOBJECTS_EXPORT Utf8StringCR GetFullName() const {return T_Super::GetName();}
+    //! Gets a qualified name of the ECUnit, prefixed by the schema alias if it does not match the primary schema.
+    ECOBJECTS_EXPORT Utf8String GetQualifiedName(ECSchemaCR primarySchema) const;
+    //! Gets the display label of this ECUnit.  If no display label has been set explicitly, it will return the name of the ECUnit
+    ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const;
+    bool GetIsDisplayLabelDefined() const {return m_isDisplayLabelExplicitlyDefined;} //!< Whether the display label is explicitly defined or not
+    ECOBJECTS_EXPORT Utf8StringCR GetInvariantDisplayLabel() const; //!< Gets the invariant display label for this ECUnit.
+
+    Utf8StringCR GetInvariantDescription() const {return m_description;} //!< Gets the invariant description for this ECUnit.
+    ECOBJECTS_EXPORT Utf8StringCR GetDescription() const; //!< Gets the description of this ECUnit. Returns the localized description if one exists.
+
+    //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
+    UnitId GetId() const {BeAssert(HasId()); return m_unitId;}
+    //! Intended to be called by ECDb or a similar system
+    void SetId(UnitId id) {BeAssert(!m_unitId.IsValid()); m_unitId = id;}
+    bool HasId() const {return m_unitId.IsValid();}
+
+    //! Write the ECUnit as a standalone schema child in the ECSchemaJSON format.
+    //! @param[out] outValue                Json object containing the schema child Json if successfully written.
+    //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
+    ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = false) const;
+};
 END_BENTLEY_ECOBJECT_NAMESPACE

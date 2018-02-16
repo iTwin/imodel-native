@@ -153,6 +153,9 @@
     <ClCompile Include="Phenomenon.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ECUnit.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsPch.h">

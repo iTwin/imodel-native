@@ -491,6 +491,9 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithChildren)
     PhenomenonP phenom;
     schema->CreatePhenomenon(phenom, "ExamplePhenomenon", "LENGTH", "ExamplePhenomenonLabel", "ExamplePhenomenonDescription");
 
+    ECUnitP unit;
+    schema->CreateUnit(unit, "ExampleUnit", "[MILLI]M", *phenom, *unitSystem, "ExampleUnitLabel", "ExampleUnitDescription", 10.0, 1.0);
+
     // Enumeration
     ECEnumerationP enumeration;
     schema->CreateEnumeration(enumeration, "ExampleEnumeration", PrimitiveType::PRIMITIVETYPE_Integer);

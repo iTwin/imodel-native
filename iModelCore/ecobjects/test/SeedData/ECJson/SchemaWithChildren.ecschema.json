@@ -133,6 +133,16 @@
       "label": "ExamplePhenomenonLabel",
       "description": "ExamplePhenomenonDescription"
     },
+    "ExampleUnit": {
+      "schemaChildType": "Unit",
+      "definition": "[MILLI]M",
+      "phenomenon": "ExampleSchema.ExamplePhenomenon",
+      "unitSystem": "ExampleSchema.ExampleUnitSystem",
+      "label": "ExampleUnitLabel",
+      "description": "ExampleUnitDescription",
+      "factor": 10.0,
+      "offset": 1.0
+    },
     "ExampleEnumeration": {
       "schemaChildType": "Enumeration",
       "backingTypeName": "int",

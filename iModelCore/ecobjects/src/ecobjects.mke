@@ -147,6 +147,8 @@ $(o)UnitSystem$(oext)                                      : $(baseDir)UnitSyste
 
 $(o)Phenomenon$(oext)                                      : $(baseDir)Phenomenon.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
+$(o)ECUnit$(oext)                                           : $(baseDir)ECUnit.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
 # ECUnits
 
 $(o)Units$(oext)                                           : $(baseDir)Units/Units.cpp $(ECUnitsHeaders) ${MultiCompileDepends}

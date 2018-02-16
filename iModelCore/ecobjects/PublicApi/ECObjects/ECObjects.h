@@ -63,6 +63,8 @@ EC_TYPEDEFS(PropertyCategoryContainer);
 
 EC_TYPEDEFS(Phenomenon);
 EC_TYPEDEFS(PhenomenonContainer);
+EC_TYPEDEFS(ECUnit);
+EC_TYPEDEFS(UnitContainer);
 EC_TYPEDEFS(UnitSystem);
 EC_TYPEDEFS(UnitSystemContainer);
 
@@ -571,8 +573,19 @@ struct UnitSystemId : BeInt64Id
     BEINT64_ID_DECLARE_MEMBERS(UnitSystemId, BeInt64Id)
     };
 
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
 struct PhenomenonId : BeInt64Id
     {
     BEINT64_ID_DECLARE_MEMBERS(PhenomenonId, BeInt64Id)
+    };
+
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct UnitId : BeInt64Id
+    {
+    BEINT64_ID_DECLARE_MEMBERS(UnitId, BeInt64Id)
     };
 END_BENTLEY_ECOBJECT_NAMESPACE

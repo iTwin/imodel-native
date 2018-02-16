@@ -54,6 +54,7 @@ using PropertyMap = bmap<Utf8CP, ECPropertyP, less_str>;
 using PropertyCategoryMap = bmap<Utf8CP, PropertyCategoryP, less_str>;
 using UnitSystemMap = bmap<Utf8CP, UnitSystemP, less_str>;
 using PhenomenonMap = bmap<Utf8CP, PhenomenonP, less_str>;
+using UnitMap = bmap<Utf8CP, ECUnitP, less_str>;
 
 using ECCustomAttributeCollection = bvector<IECInstancePtr>;
 struct ECCustomAttributeInstanceIterable;
@@ -2995,6 +2996,15 @@ using SchemaItemContainer<PhenomenonMap, PhenomenonP>::SchemaItemContainer;
 //=======================================================================================
 // @bsistruct
 //=======================================================================================
+struct UnitContainer : SchemaItemContainer<UnitMap, ECUnitP>
+{
+friend struct ECSchema;
+using SchemaItemContainer<UnitMap, ECUnitP>::SchemaItemContainer;
+};
+
+//=======================================================================================
+// @bsistruct
+//=======================================================================================
 struct PropertyCategoryContainer : SchemaItemContainer<PropertyCategoryMap, PropertyCategoryP>
 {
 friend struct ECSchema;
@@ -3143,6 +3153,7 @@ enum class ECSchemaElementType
     PropertyCategory,
     UnitSystem,
     Phenomenon,
+    Unit,
 };
 
 //=======================================================================================
@@ -3207,6 +3218,7 @@ private:
     PropertyCategoryContainer m_propertyCategoryContainer;
     UnitSystemContainer     m_unitSystemContainer;
     PhenomenonContainer     m_phenomenonContainer;
+    UnitContainer           m_unitContainer;
 
     ECVersion               m_ecVersion;
 
@@ -3220,6 +3232,7 @@ private:
     PropertyCategoryMap         m_propertyCategoryMap;
     UnitSystemMap               m_unitSystemMap;
     PhenomenonMap               m_phenomenonMap;
+    UnitMap                     m_unitMap;
     ECSchemaReferenceList       m_refSchemaList;
     bool                        m_isSupplemented;
     bool                        m_hasExplicitDisplayLabel;
@@ -3232,7 +3245,7 @@ private:
 
     ECSchema() : m_classContainer(m_classMap), m_enumerationContainer(m_enumerationMap), m_isSupplemented(false),
         m_hasExplicitDisplayLabel(false), m_immutable(false), m_kindOfQuantityContainer(m_kindOfQuantityMap),
-        m_propertyCategoryContainer(m_propertyCategoryMap), m_unitSystemContainer(m_unitSystemMap), m_phenomenonContainer(m_phenomenonMap)
+        m_propertyCategoryContainer(m_propertyCategoryMap), m_unitSystemContainer(m_unitSystemMap), m_phenomenonContainer(m_phenomenonMap), m_unitContainer(m_unitMap)
         { }
     virtual ~ECSchema();
 
@@ -3245,6 +3258,7 @@ private:
 
     ECObjectsStatus AddUnitSystem(UnitSystemP system);
     ECObjectsStatus AddPhenomenon(PhenomenonP phenomenon);
+    ECObjectsStatus AddUnit(ECUnitP unit);
 
     ECObjectsStatus SetVersionFromString(Utf8CP versionString);
     ECObjectsStatus CopyConstraints(ECRelationshipConstraintR toRelationshipConstraint, ECRelationshipConstraintR fromRelationshipConstraint);
@@ -3380,6 +3394,10 @@ public:
     uint32_t GetPhenomenonCount() const {return (uint32_t)m_phenomenonMap.size();} //!< Gets the number of Phenomena in the schema.
     ECOBJECTS_EXPORT ECObjectsStatus DeletePhenomenon(PhenomenonR phenomenon); //!< Removes a Phenomenon from this schema.
 
+    UnitContainer GetUnits() const {return m_unitContainer;} //!< Returns an iterable container of ECUnits sorted by name.
+    uint32_t GetUnitCount() const {return (uint32_t)m_unitMap.size();} //!< Gets the number of ECUnit in the schema.
+    ECOBJECTS_EXPORT ECObjectsStatus DeleteUnit(ECUnitR unit); //!< Removes a ECUnit from this schema.
+
     //! Indicates whether this schema is a so-called @b dynamic schema by
     //! checking whether the @b DynamicSchema custom attribute from the standard schema @b CoreCustomAttributes
     //! is assigned to the schema.
@@ -3514,6 +3532,18 @@ public:
     //! @return A status code indicating whether or not the Phenomenon was successfully created and added to the schema
     ECOBJECTS_EXPORT ECObjectsStatus CreatePhenomenon(PhenomenonP& phenomenon, Utf8CP name, Utf8CP defintion, Utf8CP label = nullptr, Utf8CP description = nullptr);
 
+    //! Creates a new ECUnit and adds it to the schema.
+    //! @param[out] unit        If successful, will contain a new ECUnit object
+    //! @param[in] name         Name of the unit to create
+    //! @param[in] definition   Definition of the unit
+    //! @param[in] phenom       Name of the phenomenon this unit is associated with
+    //! @param[in] unitSystem   Name of the unit system this unit is associated with
+    //! @param[in] label        Display label of the unit
+    //! @param[in] description  Description of the unit
+    //! @param[in] factor       Factor of this unit
+    //! @param[in] offset       Offset of this unit
+    ECOBJECTS_EXPORT ECObjectsStatus CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, Utf8CP label = nullptr, Utf8CP description = nullptr, double factor = 1.0, double offset = 0.0);
+
     //! Get a schema by alias within the context of this schema and its referenced schemas.
     //! @param[in]  alias   The alias of the schema to lookup in the context of this schema and it's references.
     //!                     Passing an empty alias will return a pointer to the current schema.
@@ -3581,10 +3611,20 @@ public:
     //! @return   A const pointer to an ECN::Phenomenon if the named phenomenon exists in within the current schema; otherwise, nullptr
     PhenomenonCP GetPhenomenonCP(Utf8CP name) const {return const_cast<ECSchemaP> (this)->GetPhenomenonP(name);}
 
-    //! Get a phenomenon by name within the context of this schema.
+    //! Get a Phenomenon by name within the context of this schema.
     //! @param[in]  name     The name of the phenomenon to lookup.  This must be an unqualified (short) name.
     //! @return   A pointer to an ECN::Phenomenon if the named phenomenon exists in within the current schema; otherwise, nullptr
     PhenomenonP GetPhenomenonP(Utf8CP name) {return GetSchemaChild<Phenomenon, PhenomenonMap>(name, &m_phenomenonMap);}
+
+    //! Get an ECUnit by name within the context of this schema.
+    //! @param[in]  name     The name of the unit to lookup.  This must be an unqualified (short) name.
+    //! @return   A const pointer to an ECN::ECUnit if the named unit exists in within the current schema; otherwise, nullptr
+    ECUnitCP GetUnitCP(Utf8CP name) const {return const_cast<ECSchemaP> (this)->GetUnitP(name);}
+
+    //! Get an ECUnit by name within the context of this schema.
+    //! @param[in]  name     The name of the unit to lookup.  This must be an unqualified (short) name.
+    //! @return   A pointer to an ECN::ECUnit if the named unit exists in within the current schema; otherwise, nullptr
+    ECUnitP GetUnitP(Utf8CP name) {return GetSchemaChild<ECUnit, UnitMap>(name, &m_unitMap);}
 
     //! Gets the other schemas that are used by classes within this schema.
     //! Referenced schemas are the schemas that contain definitions of base classes,

@@ -71,6 +71,7 @@
     <ClCompile Include="Published\ECQuantityFormattingTests.cpp" />
     <ClCompile Include="Published\ECSchemaValidatorTests.cpp" />
     <ClCompile Include="Published\ECEnumerationTests.cpp" />
+    <ClCompile Include="Published\UnitsTests.cpp" />
     <ClCompile Include="Published\ExtendedTypeTests.cpp" />
     <ClCompile Include="Published\ECRelationshipTests.cpp" />
     <ClCompile Include="Published\InstanceLabelTests.cpp" />

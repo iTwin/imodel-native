@@ -91,7 +91,7 @@ SchemaWriteStatus SchemaJsonWriter::WritePropertyCategory(PropertyCategoryCR pro
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Kyle.Abramowitz             11/2017
+// @bsimethod                                   Kyle.Abramowitz             02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 SchemaWriteStatus SchemaJsonWriter::WriteUnitSystem(UnitSystemCR unitSystem)
     {
@@ -104,7 +104,7 @@ SchemaWriteStatus SchemaJsonWriter::WriteUnitSystem(UnitSystemCR unitSystem)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Kyle.Abramowitz             11/2017
+// @bsimethod                                   Kyle.Abramowitz             02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 SchemaWriteStatus SchemaJsonWriter::WritePhenomenon(PhenomenonCR phenomenon)
     {
@@ -114,6 +114,19 @@ SchemaWriteStatus SchemaJsonWriter::WritePhenomenon(PhenomenonCR phenomenon)
 
     Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_CHILDREN_ATTRIBUTE][phenomenon.GetName()];
     return phenomenon.WriteJson(childObj, false, false);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz             02/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus SchemaJsonWriter::WriteUnit(ECUnitCR unit)
+    {
+    // Don't write any elements that aren't in the schema we're writing.
+    if (&(unit.GetSchema()) != &m_ecSchema)
+        return SchemaWriteStatus::Success;
+
+    Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_CHILDREN_ATTRIBUTE][unit.GetName()];
+    return unit.WriteJson(childObj, false, false);
     }
 
 //---------------------------------------------------------------------------------------
@@ -157,6 +170,12 @@ SchemaWriteStatus SchemaJsonWriter::WriteSchemaChildren()
     for (auto const ph : m_ecSchema.GetPhenomena())
         {
         if (SchemaWriteStatus::Success != (status = WritePhenomenon(*ph)))
+            return status;
+        }
+
+    for (auto const ecu : m_ecSchema.GetUnits())
+        {
+        if (SchemaWriteStatus::Success != (status = WriteUnit(*ecu)))
             return status;
         }
 

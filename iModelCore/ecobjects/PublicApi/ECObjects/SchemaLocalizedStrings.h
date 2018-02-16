@@ -57,6 +57,8 @@ public:
     ECOBJECTS_EXPORT Utf8StringCR GetUnitSystemDisplayLabel(UnitSystemCR unitSystem, Utf8StringCR invariantRoleLabel) const;
     ECOBJECTS_EXPORT Utf8StringCR GetUnitSystemDescription(UnitSystemCR unitSystem, Utf8StringCR invariantDescription) const;
 
+    ECOBJECTS_EXPORT Utf8StringCR GetUnitDisplayLabel(ECUnitCR unit, Utf8StringCR invariantDisplayLabel) const;
+    ECOBJECTS_EXPORT Utf8StringCR GetUnitDescription(ECUnitCR unit, Utf8StringCR invariantDescription) const;
     ECOBJECTS_EXPORT Utf8StringCR GetPhenomenonDisplayLabel(PhenomenonCR phenomenon, Utf8StringCR invariantRoleLabel) const;
     ECOBJECTS_EXPORT Utf8StringCR GetPhenomenonDescription(PhenomenonCR phenomenon, Utf8StringCR invariantDescription) const;
 

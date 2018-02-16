@@ -99,6 +99,8 @@ struct SchemaResourceKeyHelper
         ECOBJECTS_EXPORT static Utf8String GetTypeDescriptionKey(UnitSystemCR unitSystem);
         ECOBJECTS_EXPORT static Utf8String GetTypeDisplayLabelKey(PhenomenonCR phenomenon);
         ECOBJECTS_EXPORT static Utf8String GetTypeDescriptionKey(PhenomenonCR phenomenon);
+        ECOBJECTS_EXPORT static Utf8String GetTypeDisplayLabelKey(ECUnitCR unit);
+        ECOBJECTS_EXPORT static Utf8String GetTypeDescriptionKey(ECUnitCR unit);
 
         ECOBJECTS_EXPORT static Utf8String GetTypeChildDisplayLabelKey(ECPropertyCR ecProperty);
         ECOBJECTS_EXPORT static Utf8String GetTypeChildDescriptionKey(ECPropertyCR ecProperty);
