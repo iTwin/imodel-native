@@ -100,9 +100,9 @@ enum class ParameterDataType
 
 enum class NamedQuantityType
 {
-	Quantity = 1,
-	Integer  = 2,
-	String = 3
+    Quantity = 1,
+    Integer  = 2,
+    String = 3
 };
 
 
@@ -266,11 +266,11 @@ enum class FormatProblemCode
     PS_MissingFUS = 2602,
     PS_MissingCompositeSpec = 2603,
     PS_MismatchingFUS = 2604,
-	SFS_InsertingNamelessFUS = 2701,
-	SFS_DuplicateFUSName = 2702,
-	SFS_FailedToMakeFUS = 2703,
-	NMQ_InvalidUnitName = 2801,
-	NMQ_MissingName = 2802
+    SFS_InsertingNamelessFUS = 2701,
+    SFS_DuplicateFUSName = 2702,
+    SFS_FailedToMakeFUS = 2703,
+    NMQ_InvalidUnitName = 2801,
+    NMQ_MissingName = 2802
     };
 
 enum class FormatProblemLevel  // these levels should be used for assigning the Problem code

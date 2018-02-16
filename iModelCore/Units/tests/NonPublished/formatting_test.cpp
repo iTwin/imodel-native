@@ -136,15 +136,15 @@ TEST(FormattingTest, Preliminary)
     //    LOG.infov("NumAcc %d %s  (%s)", nacc.GetByteCount(), nacc.ToText().c_str());
 
 
-	FormattingTestFixture::ShowQuantity(135.191736, "ARC_DEG", "ARC_DEG", "dms8", "");
-	FormattingTestFixture::ShowQuantity(-135.191736, "ARC_DEG", "ARC_DEG", "dms8", "");
-	FormattingTestFixture::ShowQuantity(0.256, "ARC_DEG", "ARC_DEG", "dms8", "");
-	FormattingTestFixture::ShowQuantity(-0.256, "ARC_DEG", "ARC_DEG", "dms8", "");
+    FormattingTestFixture::ShowQuantity(135.191736, "ARC_DEG", "ARC_DEG", "dms8", "");
+    FormattingTestFixture::ShowQuantity(-135.191736, "ARC_DEG", "ARC_DEG", "dms8", "");
+    FormattingTestFixture::ShowQuantity(0.256, "ARC_DEG", "ARC_DEG", "dms8", "");
+    FormattingTestFixture::ShowQuantity(-0.256, "ARC_DEG", "ARC_DEG", "dms8", "");
 
     FormattingTestFixture::ShowQuantity(10.0, "M", "FT", "fi8", " ");
-	FormattingTestFixture::ShowQuantity(-10.0, "M", "FT", "fi8", " ");
+    FormattingTestFixture::ShowQuantity(-10.0, "M", "FT", "fi8", " ");
     FormattingTestFixture::ShowQuantity(10.0, "M", "FT", "fi16", "");
-	FormattingTestFixture::ShowQuantity(-10.0, "M", "FT", "fi16", "");
+    FormattingTestFixture::ShowQuantity(-10.0, "M", "FT", "fi16", "");
     FormattingTestFixture::ShowQuantity(20.0, "M", "FT", "fi8", nullptr);
 
     FormattingTestFixture::TestFUSQuantity(20.0, "M", "FT(real4)", nullptr);
@@ -300,20 +300,20 @@ TEST(FormattingTest, TestFUS)
     FormattingTestFixture::ShowQuantifiedValue("3 1/3'", "realu", "M");
     FormattingTestFixture::ShowQuantifiedValue("3 1/3'", "realu", "MM");
 
-	FormattingTestFixture::RegisterFUS("MM", "DefaultMM");
+    FormattingTestFixture::RegisterFUS("MM", "DefaultMM");
 
-	NamedQuantity nmq = NamedQuantity("PipeLength", 12.45, "FT");
-	LOG.infov("Named Qty: %s", nmq.ToText(3).c_str());
+    NamedQuantity nmq = NamedQuantity("PipeLength", 12.45, "FT");
+    LOG.infov("Named Qty: %s", nmq.ToText(3).c_str());
 
-   LOG.infov("Named Qty: %s", NumericFormatSpec::StdFormatQuantity("fi32", *nmq.GetQuantity()).c_str());
+    LOG.infov("Named Qty: %s", NumericFormatSpec::StdFormatQuantity("fi32", *nmq.GetQuantity()).c_str());
    
-   //BEU::UnitCP useUnit = nullptr, Utf8CP space = "", Utf8CP useLabel = nullptr, int prec = -1, double round = -1.0);
+    //BEU::UnitCP useUnit = nullptr, Utf8CP space = "", Utf8CP useLabel = nullptr, int prec = -1, double round = -1.0);
 
 
 
     FormattingTestFixture::TearDownL10N();
 
-LOG.infov("================  Testing FUS (end) ===========================\n");
+    LOG.infov("================  Testing FUS (end) ===========================\n");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -334,14 +334,13 @@ TEST(FormattingTest, FullySpecifiedFUS)
     FormattingTestFixture::TearDownL10N();
     LOG.infov("================  FullySpecifiedFUS (end) ===========================\n");
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            David.Fox-Rabinovitz                      08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FormattingTest, Json)
     {
    // StdFormatSetP stdSet = StdFormatSet::GetStdSet();
-    bool stdIdent = StdFormatSet::AreSetsIdentical();
-    LOG.infov("Sets are identical %s ", FormatConstant::BoolText(stdIdent));
     UnitProxy prox = UnitProxy("FT", "Feet");
     Json::Value proxV = prox.ToJson();
     LOG.infov("UnitProxy  %s ", proxV.ToString().c_str());
@@ -470,7 +469,7 @@ TEST(FormattingTest, Pasring)
     FormattingTestFixture::ParseToQuantity("2/3_FT", 0, "IN");
     FormattingTestFixture::ParseToQuantity("3_FT 1/2IN", 0, "IN");
     FormattingTestFixture::ParseToQuantity(u8"135°11'30 1/4\" ", 0, "ARC_DEG");
-	FormattingTestFixture::ParseToQuantity(u8"-135°11'30 1/4\" ", 0, "ARC_DEG");
+    FormattingTestFixture::ParseToQuantity(u8"-135°11'30 1/4\" ", 0, "ARC_DEG");
     FormattingTestFixture::ParseToQuantity(u8"135°11'30 1/4\" ", 0, "RAD");
     FormattingTestFixture::ParseToQuantity("5' 0\"", 0, "FT");
     FormattingTestFixture::ParseToQuantity("0' 3\"", 0, "FT");
@@ -1139,8 +1138,6 @@ TEST(FormattingTest, DictionaryValidation)
     NamedFormatSpecCP fmtP;
     Utf8String serT;
     LOG.infov("Aliases:  %s", nameL.c_str());
-    nameL = StdFormatSet::CustomNameList(false);
-    LOG.infov("Custom:  %s", nameL.c_str());
 
 
     nameL = StdFormatSet::StdFormatNameList(false);

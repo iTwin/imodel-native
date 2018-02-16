@@ -286,11 +286,11 @@ CompositeValue CompositeValueSpec::DecomposeValue(double dval, BEU::UnitCP uom)
     double rem = 0.0;;
     double majorSub = 0.0;
     double middleSub = 0.0;
-	if (dval < 0.0)
-	{
-		cv.SetNegative();
-		dval = -dval;
-	}
+    if (dval < 0.0)
+        {
+        cv.SetNegative();
+        dval = -dval;
+        }
 
     if (NoProblem())  // don't try to decompose if the spec is not valid
         {
@@ -358,7 +358,7 @@ Utf8String CompositeValueSpec::FormatValue(double dval, NumericFormatSpecP fmtP,
         {
         case CompositeSpecType::Single: // there is only one value to report
             majT = cv.GetSignPrefix() + fmtP->FormatDouble(cv.GetMajor());
-			majT = Utils::AppendUnitName(majT.c_str(), GetMajorLabel(nullptr).c_str(), spacer) + cv.GetSignSuffix();
+            majT = Utils::AppendUnitName(majT.c_str(), GetMajorLabel(nullptr).c_str(), spacer) + cv.GetSignSuffix();
             break;
 
         case CompositeSpecType::Double:
@@ -418,7 +418,7 @@ void CompositeValue::Init()
     {
     memset(m_parts, 0, sizeof(m_parts));
     m_problem = FormatProblemDetail();
-	m_negative = false;
+    m_negative = false;
     }
 
 CompositeValue::CompositeValue()
