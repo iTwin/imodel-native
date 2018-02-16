@@ -1191,7 +1191,7 @@ void MeshBuilder::AddTriangle(TriangleCR triangle)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR mappedTexture, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor, bool requireNormals)
     {
-    if (points.size() < 3)
+    if (visitor.Point().size() < 3)
         return;
 
     auto const&     points = visitor.Point();
