@@ -97,30 +97,31 @@ struct AddonLoggingShim : NativeLogging::Provider::ILogProvider
         return SUCCESS;
         }
 
+    int STDCALL_ATTRIBUTE SetOption(WCharCP attribName, WCharCP attribValue) override {BeAssert(false); return SUCCESS;}
+
+    int STDCALL_ATTRIBUTE GetOption(WCharCP attribName, WCharP attribValue, uint32_t valueSize) override {return ERROR;}
+
     void STDCALL_ATTRIBUTE LogMessage(NativeLogging::Provider::ILogProviderContext* context, NativeLogging::SEVERITY sev, WCharCP msg) override
         {
         LogMessage(context, sev, Utf8String(msg).c_str());
         }
 
-    void STDCALL_ATTRIBUTE LogMessage(NativeLogging::Provider::ILogProviderContext* context, NativeLogging::SEVERITY sev, Utf8CP msg) override
-        {
-        // TODO: forward to Logger
-        }
-
-    int STDCALL_ATTRIBUTE SetOption(WCharCP attribName, WCharCP attribValue) override {BeAssert(false); return SUCCESS;}
-
-    int STDCALL_ATTRIBUTE GetOption(WCharCP attribName, WCharP attribValue, uint32_t valueSize) override {return ERROR;}
-
     int  STDCALL_ATTRIBUTE SetSeverity(WCharCP nameSpace, NativeLogging::SEVERITY severity) override
         {
-        // TODO: forward to Logger
-        return SUCCESS;
+        BeAssert(false && "only the app (in TypeScript) sets severities");
+        return ERROR;
+        }
+
+    void STDCALL_ATTRIBUTE LogMessage(NativeLogging::Provider::ILogProviderContext* context, NativeLogging::SEVERITY sev, Utf8CP msg) override
+        {
+        WString* ns = reinterpret_cast<WString*>(context);
+        AddonUtils::LogMessage(Utf8String(*ns).c_str(), sev, msg);
         }
 
     bool STDCALL_ATTRIBUTE IsSeverityEnabled(NativeLogging::Provider::ILogProviderContext* context, NativeLogging::SEVERITY sev) override
         {
-        // TODO: forward to Logger
-        return true;
+        WString* ns = reinterpret_cast<WString*>(context);
+        return AddonUtils::IsSeverityEnabled(Utf8String(*ns).c_str(), sev);
         }
 
 };
