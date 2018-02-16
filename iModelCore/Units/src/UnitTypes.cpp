@@ -157,7 +157,7 @@ Utf8CP Unit::GetDescription() const
 
         if (m_displayLabel.empty())
             {
-            LOG.errorv("Missing localized description for Unit %s", GetLabel());
+            LOG.errorv("Missing localized description for Unit %s", GetLabel().c_str());
             m_displayLabel = GetName();
             }
         }
