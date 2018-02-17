@@ -220,6 +220,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
     BE_JSON_NAME(UserProps)
     BE_JSON_NAME(isPrivate)
     BE_JSON_NAME(isTemplate)
+    BE_JSON_NAME(name)
 
 private:
     template<class T> void CallAppData(T const& caller) const;
