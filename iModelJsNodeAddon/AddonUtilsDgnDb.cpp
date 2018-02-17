@@ -222,9 +222,6 @@ DgnDbStatus AddonUtils::GetElement(JsonValueR elementJson, DgnDbR dgndb, JsonVal
         return DgnDbStatus::NotFound;
 
     elementJson = elem->ToJson(inOpts);
-
-    //Utf8String elementJsonStr = Json::FastWriter::ToString(elementJson);
-    //printf("Element: %s\n", elementJsonStr.c_str());
     return DgnDbStatus::Success;
     }
 
