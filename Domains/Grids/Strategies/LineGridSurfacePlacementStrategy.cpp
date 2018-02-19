@@ -16,10 +16,12 @@ USING_NAMESPACE_GRIDS
 LineGridSurfacePlacementStrategy::LineGridSurfacePlacementStrategy
 (
     LinePlacementStrategyType linePlacementStrategyType
-) : T_Super()
-  , m_manipulationStrategy(LineGridSurfaceManipulationStrategy::Create(linePlacementStrategyType))
+)   : T_Super()
+    , m_manipulationStrategy(LineGridSurfaceManipulationStrategy::Create())
+    , m_geometryPlacementStrategy(m_manipulationStrategy->CreateLinePlacementStrategy(linePlacementStrategyType))
     {
     BeAssert(m_manipulationStrategy.IsValid() && "Manipulation strategy should be valid");
+    BeAssert(m_geometryPlacementStrategy.IsValid() && "Geometry placement strategy should be valid");
     }
 
 //--------------------------------------------------------------------------------------
@@ -27,7 +29,11 @@ LineGridSurfacePlacementStrategy::LineGridSurfacePlacementStrategy
 //---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus LineGridSurfacePlacementStrategy::_TryGetProperty(Utf8CP key, double & value) const
     {
-    return m_manipulationStrategy->TryGetProperty(key, value);
+    if (BentleyStatus::SUCCESS == _GetSketchGridSurfaceManipulationStrategy().TryGetProperty(key, value) ||
+        BentleyStatus::SUCCESS == T_Super::_TryGetProperty(key, value))
+        return BentleyStatus::SUCCESS;
+
+    return BentleyStatus::ERROR;
     }
 
 //--------------------------------------------------------------------------------------
@@ -36,12 +42,5 @@ BentleyStatus LineGridSurfacePlacementStrategy::_TryGetProperty(Utf8CP key, doub
 void LineGridSurfacePlacementStrategy::_SetProperty(Utf8CP key, double const & value)
     {
     m_manipulationStrategy->SetProperty(key, value);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas              02/2018
-//---------------+---------------+---------------+---------------+---------------+------
-void LineGridSurfacePlacementStrategy::ChangeCurrentPlacementType(BBS::LinePlacementStrategyType newLinePlacementStrategyType)
-    {
-    m_manipulationStrategy->ChangeCurrentPlacementType(newLinePlacementStrategyType);
+    T_Super::_SetProperty(key, value);
     }

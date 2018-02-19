@@ -269,5 +269,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGrid : Grid
         //! Sets default Surface2d of this ElevationGrid
         //! @param[in]   surface        curvevector in local coordinates, on zero Z plane
         GRIDELEMENTS_EXPORT void                SetDefaultSurface2d(CurveVectorPtr surface);
+
+        //! Gets default Surface2d of this ElevationGrid
+        //! @return surface of this ElevationGrid, as curvevector on zero Z plane
+        GRIDELEMENTS_EXPORT GridAxisCPtr      GetAxis() const;
     };
 END_GRIDS_NAMESPACE

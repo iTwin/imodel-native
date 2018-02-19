@@ -14,7 +14,9 @@ const Utf8CP SketchGridSurfacePlacementStrategy::prop_BottomElevation = SketchGr
 const Utf8CP SketchGridSurfacePlacementStrategy::prop_TopElevation = SketchGridSurfaceManipulationStrategy::prop_TopElevation;
 const Utf8CP SketchGridSurfacePlacementStrategy::prop_Axis = SketchGridSurfaceManipulationStrategy::prop_Axis;
 const Utf8CP SketchGridSurfacePlacementStrategy::prop_Name = SketchGridSurfaceManipulationStrategy::prop_Name;
-const Utf8CP SketchGridSurfacePlacementStrategy::prop_Grid = SketchGridSurfaceManipulationStrategy::prop_Grid;
+const Utf8CP SketchGridSurfacePlacementStrategy::prop_WorkingPlane = SketchGridSurfaceManipulationStrategy::prop_WorkingPlane;
+const Utf8CP SketchGridSurfacePlacementStrategy::prop_Length = SketchGridSurfaceManipulationStrategy::prop_Length;
+const Utf8CP SketchGridSurfacePlacementStrategy::prop_Angle = SketchGridSurfaceManipulationStrategy::prop_Angle;
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              01/2018
@@ -29,7 +31,11 @@ Utf8String SketchGridSurfacePlacementStrategy::GetMessage() const
 //---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SketchGridSurfacePlacementStrategy::_TryGetProperty(Utf8CP key, double & value) const
     {
-    return _GetSketchGridSurfaceManipulationStrategy().TryGetProperty(key, value);
+    if (BentleyStatus::SUCCESS == _GetSketchGridSurfaceManipulationStrategy().TryGetProperty(key, value) ||
+        BentleyStatus::SUCCESS == T_Super::_TryGetProperty(key, value))
+        return BentleyStatus::SUCCESS;
+
+    return BentleyStatus::ERROR;
     }
 
 //--------------------------------------------------------------------------------------
@@ -37,7 +43,8 @@ BentleyStatus SketchGridSurfacePlacementStrategy::_TryGetProperty(Utf8CP key, do
 //---------------+---------------+---------------+---------------+---------------+------
 void SketchGridSurfacePlacementStrategy::_SetProperty(Utf8CP key, double const & value)
     {
-    _GetSketchGridSurfaceManipulationStrategyR().SetProperty(key, value);
+    _GetSketchGridSurfaceManipulationStrategyForEdit().SetProperty(key, value);
+    T_Super::_SetProperty(key, value);
     }
 
 //--------------------------------------------------------------------------------------
@@ -45,7 +52,11 @@ void SketchGridSurfacePlacementStrategy::_SetProperty(Utf8CP key, double const &
 //---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SketchGridSurfacePlacementStrategy::_TryGetProperty(Utf8CP key, Utf8String & value) const
     {
-    return _GetSketchGridSurfaceManipulationStrategy().TryGetProperty(key, value);
+    if (BentleyStatus::SUCCESS == _GetSketchGridSurfaceManipulationStrategy().TryGetProperty(key, value) ||
+        BentleyStatus::SUCCESS == T_Super::_TryGetProperty(key, value))
+        return BentleyStatus::SUCCESS;
+
+    return BentleyStatus::ERROR;
     }
 
 //--------------------------------------------------------------------------------------
@@ -53,7 +64,11 @@ BentleyStatus SketchGridSurfacePlacementStrategy::_TryGetProperty(Utf8CP key, Ut
 //---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SketchGridSurfacePlacementStrategy::_TryGetProperty(Utf8CP key, Dgn::DgnElement & value) const
     {
-    return _GetSketchGridSurfaceManipulationStrategy().TryGetProperty(key, value);
+    if (BentleyStatus::SUCCESS == _GetSketchGridSurfaceManipulationStrategy().TryGetProperty(key, value) ||
+        BentleyStatus::SUCCESS == T_Super::_TryGetProperty(key, value))
+        return BentleyStatus::SUCCESS;
+
+    return BentleyStatus::ERROR;
     }
 
 //--------------------------------------------------------------------------------------
@@ -61,5 +76,30 @@ BentleyStatus SketchGridSurfacePlacementStrategy::_TryGetProperty(Utf8CP key, Dg
 //---------------+---------------+---------------+---------------+---------------+------
 void SketchGridSurfacePlacementStrategy::_SetProperty(Utf8CP key, Dgn::DgnElement const & value)
     {
-    _GetSketchGridSurfaceManipulationStrategyR().SetProperty(key, value);
+    _GetSketchGridSurfaceManipulationStrategyForEdit().SetProperty(key, value);
+    T_Super::_SetProperty(key, value);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void SketchGridSurfacePlacementStrategy::_AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint)
+    {
+    T_Super::_AddDynamicKeyPoint(newDynamicKeyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void SketchGridSurfacePlacementStrategy::_AddDynamicKeyPoints(bvector<DPoint3d> const & newDynamicKeyPoints)
+    {
+    T_Super::_AddDynamicKeyPoints(newDynamicKeyPoints);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void SketchGridSurfacePlacementStrategy::_AddKeyPoint(DPoint3dCR newKeyPoint)
+    {
+    T_Super::_AddKeyPoint(newKeyPoint);
     }

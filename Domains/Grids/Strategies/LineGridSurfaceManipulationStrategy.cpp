@@ -13,12 +13,8 @@ USING_NAMESPACE_GRIDS
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-LineGridSurfaceManipulationStrategy::LineGridSurfaceManipulationStrategy
-(
-    LinePlacementStrategyType linePlacementStrategyType
-)
+LineGridSurfaceManipulationStrategy::LineGridSurfaceManipulationStrategy()
     : T_Super()
-    , m_currentPlacementType(linePlacementStrategyType)
     , m_geometryManipulationStrategy(LineManipulationStrategy::Create())
     , m_surface(nullptr)
     {
@@ -50,30 +46,6 @@ Utf8String LineGridSurfaceManipulationStrategy::_GetMessage() const
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas              02/2018
-//---------------+---------------+---------------+---------------+---------------+------
-BBS::CurvePrimitivePlacementStrategyPtr LineGridSurfaceManipulationStrategy::_GetGeometryPlacementStrategyP()
-    {
-    return m_geometryManipulationStrategy->CreateLinePlacementStrategy(m_currentPlacementType);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas              02/2018
-//---------------+---------------+---------------+---------------+---------------+------
-BBS::CurvePrimitivePlacementStrategyCPtr LineGridSurfaceManipulationStrategy::_GetGeometryPlacementStrategy() const
-    {
-    return m_geometryManipulationStrategy->CreateLinePlacementStrategy(m_currentPlacementType).get();
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas              02/2018
-//---------------+---------------+---------------+---------------+---------------+------
-void LineGridSurfaceManipulationStrategy::ChangeCurrentPlacementType(BBS::LinePlacementStrategyType newLinePlacementStrategyType)
-    {
-    m_currentPlacementType = newLinePlacementStrategyType;
-    }
-
-//--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              01/2018
 //---------------+---------------+---------------+---------------+---------------+------
 Dgn::DgnElementPtr LineGridSurfaceManipulationStrategy::_FinishElement
@@ -88,40 +60,9 @@ Dgn::DgnElementPtr LineGridSurfaceManipulationStrategy::_FinishElement
     if (spatialModel.IsNull())
         return nullptr;
 
-    Dgn::DgnDbR db = spatialModel->GetDgnDb();
-
-    GridCPtr grid;
-    if (m_axis.IsValid())
-        {
-        // Check if grid name is the same
-        grid = db.Elements().Get<Grid>(m_axis->GetGridId());
-        if (!m_gridName.empty() && 0 != strcmp(grid->GetName(), m_gridName.c_str()))
-            return nullptr; // Grid name is incorrect
-        }
-    else if (!m_gridName.empty())
-        {
-        // Create new grid and/or axis
-        grid = Grid::TryGet(db,
-                            spatialModel->GetModeledElementId(),
-                            m_gridName.c_str()).get();
-        if (grid.IsNull())
-            {
-            SketchGridPtr sketchGrid = SketchGrid::Create(*spatialModel,
-                                            spatialModel->GetModeledElementId(),
-                                            m_gridName.c_str(),
-                                            m_bottomElevation,
-                                            m_topElevation);
-            if (sketchGrid.IsNull())
-                return nullptr; // Failed to create grid
-
-            if (sketchGrid->Insert().IsNull())
-                return nullptr;
-
-            grid = sketchGrid.get();
-            }
-        Dgn::DefinitionModelCR defModel = db.GetDictionaryModel();
-        m_axis = GeneralGridAxis::CreateAndInsert(defModel, *grid).get();
-        }
+    SketchGridCPtr grid;
+    if (BentleyStatus::ERROR == GetOrCreateGridAndAxis(grid, spatialModel))
+        return nullptr;
 
     bvector<DPoint3d> keyPoints = m_geometryManipulationStrategy->GetKeyPoints();
     if (2 != keyPoints.size())

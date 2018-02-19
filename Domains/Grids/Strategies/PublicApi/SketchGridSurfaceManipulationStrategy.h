@@ -23,6 +23,7 @@ struct SketchGridSurfaceManipulationStrategy : public BBS::ElementManipulationSt
         double m_topElevation;
         GridAxisCPtr m_axis; // TODO to Ptr
         Utf8String m_gridName;
+        DPlane3d m_workingPlane;
 
         SketchGridSurfaceManipulationStrategy();
 
@@ -35,20 +36,28 @@ struct SketchGridSurfaceManipulationStrategy : public BBS::ElementManipulationSt
         virtual void _SetProperty(Utf8CP key, double const & value) override;
         virtual void _SetProperty(Utf8CP key, Dgn::DgnElement const& value) override;
         virtual void _SetProperty(Utf8CP key, Utf8String const& value) override;
+        virtual void _SetProperty(Utf8CP key, DPlane3d const& value) override;
         virtual BentleyStatus _TryGetProperty(Utf8CP key, double & value) const override;
         virtual BentleyStatus _TryGetProperty(Utf8CP key, Dgn::DgnElement & value) const override;
         virtual BentleyStatus _TryGetProperty(Utf8CP key, Utf8String & value) const override;
+        virtual BentleyStatus _TryGetProperty(Utf8CP key, DPlane3d & value) const override;
+
+        // GeometryManipulationStrategy
+        virtual DPoint3d _AdjustPoint(DPoint3d point) const override;
 
         // ElementManipulationStrategy
         virtual Dgn::DgnElementPtr _FinishElement() override;
 
         // SketchGridSurfaceManipulationStrategy
+        DPoint3d TransformPointBetweenPlanes(DPoint3d const& point, DPlane3d const & from, DPlane3d const & to);
+        BentleyStatus GetOrCreateGridAndAxis(SketchGridCPtr& grid, Dgn::SpatialLocationModelPtr spatialModel);
+        virtual void _OnWorkingPlaneChanged(DPlane3d const & original);
         virtual BentleyStatus _UpdateGridSurface();
         virtual Utf8String _GetMessage() const = 0;
         virtual PlanGridPlanarSurfaceCP _GetGridSurfaceCP() = 0;
         virtual PlanGridPlanarSurfaceP _GetGridSurfaceP() = 0;
-        virtual BBS::CurvePrimitivePlacementStrategyPtr _GetGeometryPlacementStrategyP() = 0;
-        virtual BBS::CurvePrimitivePlacementStrategyCPtr _GetGeometryPlacementStrategy() const = 0;
+        virtual BBS::CurvePrimitiveManipulationStrategyCR _GetCurvePrimitiveManipulationStrategy() const = 0;
+        virtual BBS::CurvePrimitiveManipulationStrategyR _GetCurvePrimitiveManipulationStrategyForEdit() = 0;
 
     public:
         Utf8String GetMessage() const;
@@ -57,7 +66,9 @@ struct SketchGridSurfaceManipulationStrategy : public BBS::ElementManipulationSt
         static const Utf8CP prop_TopElevation;
         static const Utf8CP prop_Axis;
         static const Utf8CP prop_Name;
-        static const Utf8CP prop_Grid;
+        static const Utf8CP prop_WorkingPlane;
+        static const Utf8CP prop_Length;
+        static const Utf8CP prop_Angle;
     };
 
 END_GRIDS_NAMESPACE

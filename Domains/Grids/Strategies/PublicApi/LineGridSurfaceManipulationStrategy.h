@@ -19,29 +19,28 @@ struct LineGridSurfaceManipulationStrategy : public SketchGridSurfaceManipulatio
     DEFINE_T_SUPER(SketchGridSurfaceManipulationStrategy)
 
     private:
-        BBS::LinePlacementStrategyType m_currentPlacementType;
         BBS::LineManipulationStrategyPtr m_geometryManipulationStrategy;
         SketchLineGridSurfacePtr m_surface;
 
     protected:
-        LineGridSurfaceManipulationStrategy(BBS::LinePlacementStrategyType linePlacementStrategyType);
+        LineGridSurfaceManipulationStrategy();
 
         // ElementManipulationStrategy
         virtual Dgn::DgnElementPtr _FinishElement(Dgn::DgnModelR model) override;
         virtual BBS::GeometryManipulationStrategyCR _GetGeometryManipulationStrategy() const override { return *m_geometryManipulationStrategy; }
-        virtual BBS::GeometryManipulationStrategyR _GetGeometryManipulationStrategyR() override { return *m_geometryManipulationStrategy; }
+        virtual BBS::GeometryManipulationStrategyR _GetGeometryManipulationStrategyForEdit() override { return *m_geometryManipulationStrategy; }
 
         // SketchGridSurfaceManipulationStrategy
         virtual BentleyStatus _UpdateGridSurface() override;
         virtual Utf8String _GetMessage() const override;
         virtual PlanGridPlanarSurfaceCP _GetGridSurfaceCP() override { return m_surface.get(); }
         virtual PlanGridPlanarSurfaceP _GetGridSurfaceP() override { return m_surface.get(); }
-        virtual BBS::CurvePrimitivePlacementStrategyPtr _GetGeometryPlacementStrategyP() override;
-        virtual BBS::CurvePrimitivePlacementStrategyCPtr _GetGeometryPlacementStrategy() const override;
+        virtual BBS::CurvePrimitiveManipulationStrategyCR _GetCurvePrimitiveManipulationStrategy() const override { return *m_geometryManipulationStrategy; }
+        virtual BBS::CurvePrimitiveManipulationStrategyR _GetCurvePrimitiveManipulationStrategyForEdit() override { return *m_geometryManipulationStrategy; }
 
     public:
-        GRIDSTRATEGIES_EXPORT static LineGridSurfaceManipulationStrategyPtr Create(BBS::LinePlacementStrategyType linePlacementStrategyType) { return new LineGridSurfaceManipulationStrategy(linePlacementStrategyType); }
-        GRIDSTRATEGIES_EXPORT void ChangeCurrentPlacementType(BBS::LinePlacementStrategyType newLinePlacementStrategyType);
+        GRIDSTRATEGIES_EXPORT static LineGridSurfaceManipulationStrategyPtr Create() { return new LineGridSurfaceManipulationStrategy(); }
+        BBS::LinePlacementStrategyPtr CreateLinePlacementStrategy(BBS::LinePlacementStrategyType linePlacementStrategyType) {return BBS::LinePlacementStrategy::Create(linePlacementStrategyType, *m_geometryManipulationStrategy); }
     };
 
 END_GRIDS_NAMESPACE

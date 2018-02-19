@@ -6,11 +6,10 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 ======================================================================================= -->
-<ECSchema schemaName="Grids" nameSpacePrefix="grids" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.10" prefix="bsca" />
-    <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
-    <ECSchemaReference name="BisCore" version="01.00" prefix="bis" />
-    <ECSchemaReference name="AecUnits" version="01.00" prefix="AECU" />
+<ECSchema schemaName="Grids" alias="grids" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+  <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+    <ECSchemaReference name="BisCore" version="01.00" alias="bis" />
+    <ECSchemaReference name="AecUnits" version="01.00" alias="AECU" />
 
     <ECEntityClass typeName="GridCurvesPortion">
       <BaseClass>bis:SpatialLocationPortion</BaseClass>
@@ -19,33 +18,33 @@
       </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="GridDrivesGridSurface" strength="referencing">
+    <ECRelationshipClass typeName="GridDrivesGridSurface" modifier="None" strength="referencing">
       <BaseClass>bis:ElementDrivesElement</BaseClass>
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00"/>
       </ECCustomAttributes>
-      <Source multiplicity="(1..1)" polymorphic="true">
+      <Source multiplicity="(1..1)" roleLabel="drives" polymorphic="true">
         <Class class="Grid"/>
       </Source>
-      <Target multiplicity="(0..*)" polymorphic="true">
+      <Target multiplicity="(0..*)" roleLabel="is driven by" polymorphic="true">
         <Class class="GridSurface"/>
       </Target>
     </ECRelationshipClass>
   
-    <ECRelationshipClass typeName="GridSurfaceCreatesGridCurve" strength="referencing">
+    <ECRelationshipClass typeName="GridSurfaceCreatesGridCurve" modifier="None" strength="referencing">
       <BaseClass>bis:ElementDrivesElement</BaseClass>
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00"/>
       </ECCustomAttributes>
-      <Source multiplicity="(0..*)" polymorphic="true">
+      <Source multiplicity="(0..*)" roleLabel="creates" polymorphic="true">
         <Class class="GridSurface"/>
       </Source>
-      <Target multiplicity="(0..*)" polymorphic="true">
+      <Target multiplicity="(0..*)" roleLabel="is created by" polymorphic="true">
         <Class class="GridCurve"/>
       </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="GridHasAxes" strength="embedding" modifier="None">
+    <ECRelationshipClass typeName="GridHasAxes" strength="referencing" modifier="None">
       <Source multiplicity="(1..1)" roleLabel="Has Axis" polymorphic="true">
         <Class class="Grid"/>
       </Source>
@@ -54,11 +53,11 @@
       </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="GridAxisContainsGridSurfaces" strength="embedding">
-      <Source multiplicity="(1..1)" polymorphic="true">
+    <ECRelationshipClass typeName="GridAxisContainsGridSurfaces" modifier="None" strength="embedding">
+      <Source multiplicity="(1..1)" roleLabel="contains" polymorphic="true">
         <Class class="GridAxis"/>
       </Source>
-      <Target multiplicity="(0..*)" polymorphic="true">
+      <Target multiplicity="(0..*)" roleLabel="is contained in" polymorphic="true">
         <Class class="GridSurface"/>
       </Target>
     </ECRelationshipClass>
