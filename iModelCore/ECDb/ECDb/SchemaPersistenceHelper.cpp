@@ -315,6 +315,126 @@ PropertyCategoryId SchemaPersistenceHelper::GetPropertyCategoryId(ECDbCR ecdb, D
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle 02/2018
+//---------------------------------------------------------------------------------------
+//static
+UnitSystemId SchemaPersistenceHelper::GetUnitSystemId(ECDbCR ecdb, DbTableSpace const& tableSpace, Utf8CP schemaNameOrAlias, Utf8CP unitSystemName, SchemaLookupMode lookupMode)
+    {
+    Utf8String sql;
+    if (tableSpace.IsMain())
+        sql.assign("SELECT us.Id FROM main." TABLE_UnitSystem " us, main." TABLE_Schema " s");
+    else
+        sql.Sprintf("SELECT us.Id FROM [%s]." TABLE_UnitSystem " us, [%s]." TABLE_Schema " s", tableSpace.GetName().c_str(), tableSpace.GetName().c_str());
+
+    switch (lookupMode)
+        {
+            case SchemaLookupMode::ByName:
+                sql.append(" WHERE us.SchemaId=s.Id AND s.Name=?1 AND us.Name=?2");
+                break;
+
+            case SchemaLookupMode::ByAlias:
+                sql.append(" WHERE us.SchemaId=s.Id AND s.Alias=?1 AND us.Name=?2");
+                break;
+
+            default:
+                sql.append(" WHERE us.SchemaId=s.Id AND (s.Name=?1 OR s.Alias=?1) AND us.Name=?2");
+                break;
+        }
+
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(sql.c_str());
+    if (stmt == nullptr)
+        return UnitSystemId();
+
+    stmt->BindText(1, schemaNameOrAlias, Statement::MakeCopy::No);
+    stmt->BindText(2, unitSystemName, Statement::MakeCopy::No);
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        return UnitSystemId();
+
+    return stmt->GetValueId<UnitSystemId>(0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle 02/2018
+//---------------------------------------------------------------------------------------
+//static
+PhenomenonId SchemaPersistenceHelper::GetPhenomenonId(ECDbCR ecdb, DbTableSpace const& tableSpace, Utf8CP schemaNameOrAlias, Utf8CP phenomenonName, SchemaLookupMode lookupMode)
+    {
+    Utf8String sql;
+    if (tableSpace.IsMain())
+        sql.assign("SELECT ph.Id FROM main." TABLE_Unit " ph, main." TABLE_Schema " s");
+    else
+        sql.Sprintf("SELECT ph.Id FROM [%s]." TABLE_Unit " ph, [%s]." TABLE_Schema " s", tableSpace.GetName().c_str(), tableSpace.GetName().c_str());
+
+    switch (lookupMode)
+        {
+            case SchemaLookupMode::ByName:
+                sql.append(" WHERE ph.SchemaId=s.Id AND s.Name=?1 AND ph.Name=?2");
+                break;
+
+            case SchemaLookupMode::ByAlias:
+                sql.append(" WHERE ph.SchemaId=s.Id AND s.Alias=?1 AND ph.Name=?2");
+                break;
+
+            default:
+                sql.append(" WHERE ph.SchemaId=s.Id AND (s.Name=?1 OR s.Alias=?1) AND ph.Name=?2");
+                break;
+        }
+
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(sql.c_str());
+    if (stmt == nullptr)
+        return PhenomenonId();
+
+    stmt->BindText(1, schemaNameOrAlias, Statement::MakeCopy::No);
+    stmt->BindText(2, phenomenonName, Statement::MakeCopy::No);
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        return PhenomenonId();
+
+    return stmt->GetValueId<PhenomenonId>(0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle 02/2018
+//---------------------------------------------------------------------------------------
+//static
+UnitId SchemaPersistenceHelper::GetUnitId(ECDbCR ecdb, DbTableSpace const& tableSpace, Utf8CP schemaNameOrAlias, Utf8CP unitName, SchemaLookupMode lookupMode)
+    {
+    Utf8String sql;
+    if (tableSpace.IsMain())
+        sql.assign("SELECT u.Id FROM main." TABLE_Unit " u, main." TABLE_Schema " s");
+    else
+        sql.Sprintf("SELECT u.Id FROM [%s]." TABLE_Unit " u, [%s]." TABLE_Schema " s", tableSpace.GetName().c_str(), tableSpace.GetName().c_str());
+
+    switch (lookupMode)
+        {
+            case SchemaLookupMode::ByName:
+                sql.append(" WHERE u.SchemaId=s.Id AND s.Name=?1 AND u.Name=?2");
+                break;
+
+            case SchemaLookupMode::ByAlias:
+                sql.append(" WHERE u.SchemaId=s.Id AND s.Alias=?1 AND u.Name=?2");
+                break;
+
+            default:
+                sql.append(" WHERE u.SchemaId=s.Id AND (s.Name=?1 OR s.Alias=?1) AND u.Name=?2");
+                break;
+        }
+
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(sql.c_str());
+    if (stmt == nullptr)
+        return UnitId();
+
+    stmt->BindText(1, schemaNameOrAlias, Statement::MakeCopy::No);
+    stmt->BindText(2, unitName, Statement::MakeCopy::No);
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        return UnitId();
+
+    return stmt->GetValueId<UnitId>(0);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      05/2013
 //---------------------------------------------------------------------------------------
 ECPropertyId SchemaPersistenceHelper::GetPropertyId(ECDbCR ecdb, DbTableSpace const& tableSpace, ECClassId ecClassId, Utf8CP propertyName)

@@ -65,6 +65,9 @@ public:
     static ECN::ECEnumerationId GetEnumerationId(ECDbCR, DbTableSpace const&, Utf8CP schemaNameOrAlias, Utf8CP enumName, SchemaLookupMode);
     static ECN::KindOfQuantityId GetKindOfQuantityId(ECDbCR, DbTableSpace const&, Utf8CP schemaNameOrAlias, Utf8CP koqName, SchemaLookupMode);
     static ECN::PropertyCategoryId GetPropertyCategoryId(ECDbCR, DbTableSpace const&, Utf8CP schemaNameOrAlias, Utf8CP catName, SchemaLookupMode);
+    static ECN::UnitSystemId GetUnitSystemId(ECDbCR, DbTableSpace const&, Utf8CP schemaNameOrAlias, Utf8CP unitSystemName, SchemaLookupMode);
+    static ECN::PhenomenonId GetPhenomenonId(ECDbCR, DbTableSpace const&, Utf8CP schemaNameOrAlias, Utf8CP phenomenonName, SchemaLookupMode);
+    static ECN::UnitId GetUnitId(ECDbCR, DbTableSpace const&, Utf8CP schemaNameOrAlias, Utf8CP unitName, SchemaLookupMode);
     static ECN::ECPropertyId GetPropertyId(ECDbCR, DbTableSpace const&, ECN::ECClassId, Utf8CP propertyName);
     static ECN::ECPropertyId GetPropertyId(ECDbCR, DbTableSpace const&, Utf8CP schemaNameOrAlias, Utf8CP className, Utf8CP propertyName, SchemaLookupMode);
 

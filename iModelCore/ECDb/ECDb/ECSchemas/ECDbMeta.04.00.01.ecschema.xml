@@ -97,6 +97,48 @@
         <ECProperty propertyName="RelativeError" typeName="double"/>
         <ECArrayProperty propertyName="PresentationUnits" typeName="string"/>
     </ECEntityClass>
+    <ECEntityClass typeName="UnitSystemDef" description="UnitSystem" displayLabel="UnitSystem" modifier="Sealed">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>ExistingTable</MapStrategy>
+                <TableName>ec_UnitSystem</TableName>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Schema" relationshipName="SchemaOwnsUnitSystems" direction="backward"/>
+        <ECProperty propertyName="Name" typeName="string"/>
+        <ECProperty propertyName="DisplayLabel" typeName="string"/>
+        <ECProperty propertyName="Description" typeName="string"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="PhenomenonDef" description="Phenomenon" displayLabel="Phenomenon" modifier="Sealed">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>ExistingTable</MapStrategy>
+                <TableName>ec_Phenomenon</TableName>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Schema" relationshipName="SchemaOwnsPhenomena" direction="backward"/>
+        <ECProperty propertyName="Name" typeName="string"/>
+        <ECProperty propertyName="DisplayLabel" typeName="string"/>
+        <ECProperty propertyName="Description" typeName="string"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="UnitDef" description="Unit" displayLabel="Unit" modifier="Sealed">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>ExistingTable</MapStrategy>
+                <TableName>ec_Unit</TableName>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Schema" relationshipName="SchemaOwnsUnits" direction="backward"/>
+        <ECProperty propertyName="Name" typeName="string"/>
+        <ECProperty propertyName="DisplayLabel" typeName="string"/>
+        <ECProperty propertyName="Description" typeName="string"/>
+        <ECNavigationProperty propertyName="UnitSystem" relationshipName="UnitSystemHasUnits" direction="backward"/>
+        <ECNavigationProperty propertyName="Phenomenon" relationshipName="PhenomenonHasUnits" direction="backward"/>
+        <ECProperty propertyName="Definition" typeName="string"/>
+        <ECProperty propertyName="Factor" typeName="double"/>
+        <ECProperty propertyName="Offset" typeName="double"/>
+        <ECNavigationProperty propertyName="InvertsUnit" description="If this property is set, this UnitDef is the inverse unit of the unit held by the property." relationshipName="UnitHasInverseUnit" direction="backward"/>
+    </ECEntityClass>
     <ECEntityClass typeName="PropertyCategoryDef" description="PropertyCategory" displayLabel="PropertyCategory" modifier="Sealed">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
@@ -244,12 +286,60 @@
             <Class class="KindOfQuantityDef"/>
         </Target>
     </ECRelationshipClass>
+    <ECRelationshipClass typeName="SchemaOwnsUnitSystems" modifier="Sealed" strength="embedding">
+        <Source multiplicity="(1..1)" roleLabel="contains" polymorphic="false">
+            <Class class="ECSchemaDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is defined in" polymorphic="false">
+            <Class class="UnitSystemDef"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SchemaOwnsPhenomena" modifier="Sealed" strength="embedding">
+        <Source multiplicity="(1..1)" roleLabel="contains" polymorphic="false">
+            <Class class="ECSchemaDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is defined in" polymorphic="false">
+            <Class class="PhenomenonDef"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SchemaOwnsUnits" modifier="Sealed" strength="embedding">
+        <Source multiplicity="(1..1)" roleLabel="contains" polymorphic="false">
+            <Class class="ECSchemaDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is defined in" polymorphic="false">
+            <Class class="UnitDef"/>
+        </Target>
+    </ECRelationshipClass>
     <ECRelationshipClass typeName="SchemaOwnsPropertyCategories" modifier="Sealed" strength="embedding">
         <Source multiplicity="(1..1)" roleLabel="contains" polymorphic="false">
             <Class class="ECSchemaDef"/>
         </Source>
         <Target multiplicity="(0..*)" roleLabel="is defined in" polymorphic="false">
             <Class class="PropertyCategoryDef"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="UnitSystemHasUnits" modifier="Sealed" strength="referencing">
+        <Source multiplicity="(1..1)" roleLabel="has" polymorphic="false">
+            <Class class="UnitSystemDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is defined in" polymorphic="false">
+            <Class class="UnitDef"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PhenomenonHasUnits" modifier="Sealed" strength="referencing">
+        <Source multiplicity="(1..1)" roleLabel="has" polymorphic="false">
+            <Class class="PhenomenonDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is of" polymorphic="false">
+            <Class class="UnitDef"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="UnitHasInverseUnit" modifier="Sealed" strength="referencing">
+        <Source multiplicity="(0..1)" roleLabel="is inverted by" polymorphic="false">
+            <Class class="UnitDef"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is inverse of" polymorphic="false">
+            <Class class="UnitDef"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="PropertyHasEnumeration" description="ECPropertyKind::Enumeration: relates the property to its ECEnumeration." modifier="Sealed" strength="referencing">

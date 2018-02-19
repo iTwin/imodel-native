@@ -29,6 +29,9 @@ struct SchemaWriter final
         BentleyStatus ImportSchema(SchemaCompareContext&, ECN::ECSchemaCR);
         BentleyStatus ImportClass(ECN::ECClassCR);
         BentleyStatus ImportEnumeration(ECN::ECEnumerationCR);
+        BentleyStatus ImportUnitSystem(ECN::UnitSystemCR);
+        BentleyStatus ImportPhenomenon(ECN::PhenomenonCR);
+        BentleyStatus ImportUnit(ECN::ECUnitCR);
         BentleyStatus ImportKindOfQuantity(ECN::KindOfQuantityCR);
         BentleyStatus ImportPropertyCategory(ECN::PropertyCategoryCR);
         BentleyStatus ImportProperty(ECN::ECPropertyCR, int ordinal);

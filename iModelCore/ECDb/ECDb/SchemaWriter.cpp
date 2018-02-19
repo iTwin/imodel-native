@@ -120,6 +120,34 @@ BentleyStatus SchemaWriter::ImportSchema(SchemaCompareContext& compareCtx, ECN::
             }
         }
 
+    //Unit stuff must be imported before ECClasses as KOQ reference them
+    for (UnitSystemCP us : ecSchema.GetUnitSystems())
+        {
+        if (SUCCESS != ImportUnitSystem(*us))
+            {
+            Issues().ReportV("Failed to import UnitSystem '%s'.", us->GetFullName().c_str());
+            return ERROR;
+            }
+        }
+
+    for (PhenomenonCP ph : ecSchema.GetPhenomena())
+        {
+        if (SUCCESS != ImportPhenomenon(*ph))
+            {
+            Issues().ReportV("Failed to import Phenomenon '%s'.", ph->GetFullName().c_str());
+            return ERROR;
+            }
+        }
+
+    for (ECUnitCP unit : ecSchema.GetUnits())
+        {
+        if (SUCCESS != ImportUnit(*unit))
+            {
+            Issues().ReportV("Failed to import Unit '%s'.", unit->GetFullName().c_str());
+            return ERROR;
+            }
+        }
+
     //KOQs must be imported before ECClasses as properties reference KOQs
     for (KindOfQuantityCP koq : ecSchema.GetKindOfQuantities())
         {
@@ -371,6 +399,210 @@ BentleyStatus SchemaWriter::ImportEnumeration(ECEnumerationCR ecEnum)
         return ERROR;
 
     const_cast<ECEnumerationR>(ecEnum).SetId(enumId);
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::ImportUnitSystem(UnitSystemCR us)
+    {
+    if (m_ecdb.Schemas().Main().GetUnitSystemId(us).IsValid())
+        return SUCCESS;
+
+    if (!m_ecdb.Schemas().Main().GetSchemaId(us.GetSchema()).IsValid())
+        {
+        Issues().ReportV("Failed to import UnitSystem '%s'. Its ECSchema '%s' hasn't been imported yet. Check the list of ECSchemas passed to ImportSchema for missing schema references.", us.GetName().c_str(), us.GetSchema().GetFullSchemaName().c_str());
+        BeAssert(false && "Failed to import UnitSystem because its ECSchema hasn't been imported yet. The schema references of the ECSchema objects passed to ImportSchema might be corrupted.");
+        return ERROR;
+        }
+
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO main.ec_UnitSystem(SchemaId,Name,DisplayLabel,Description) VALUES(?,?,?,?)");
+    if (stmt == nullptr)
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindId(1, us.GetSchema().GetId()))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindText(2, us.GetName(), Statement::MakeCopy::No))
+        return ERROR;
+
+    if (us.GetIsDisplayLabelDefined())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(3, us.GetInvariantDisplayLabel(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+
+    if (!us.GetInvariantDescription().empty())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(4, us.GetInvariantDescription(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+
+    if (BE_SQLITE_DONE != stmt->Step())
+        return ERROR;
+
+    const UnitSystemId usId = DbUtilities::GetLastInsertedId<UnitSystemId>(m_ecdb);
+    if (!usId.IsValid())
+        return ERROR;
+
+    const_cast<UnitSystemR>(us).SetId(usId);
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::ImportPhenomenon(PhenomenonCR ph)
+    {
+    if (m_ecdb.Schemas().Main().GetPhenomenonId(ph).IsValid())
+        return SUCCESS;
+
+    if (!m_ecdb.Schemas().Main().GetSchemaId(ph.GetSchema()).IsValid())
+        {
+        Issues().ReportV("Failed to import Phenomenon '%s'. Its ECSchema '%s' hasn't been imported yet. Check the list of ECSchemas passed to ImportSchema for missing schema references.", ph.GetName().c_str(), ph.GetSchema().GetFullSchemaName().c_str());
+        BeAssert(false && "Failed to import Phenomenon because its ECSchema hasn't been imported yet. The schema references of the ECSchema objects passed to ImportSchema might be corrupted.");
+        return ERROR;
+        }
+
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO main.ec_Phenomenon(SchemaId,Name,DisplayLabel,Description) VALUES(?,?,?,?)");
+    if (stmt == nullptr)
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindId(1, ph.GetSchema().GetId()))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindText(2, ph.GetName(), Statement::MakeCopy::No))
+        return ERROR;
+
+    if (ph.GetIsDisplayLabelDefined())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(3, ph.GetInvariantDisplayLabel(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+
+    if (!ph.GetInvariantDescription().empty())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(4, ph.GetInvariantDescription(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+
+    if (BE_SQLITE_DONE != stmt->Step())
+        return ERROR;
+
+    const PhenomenonId phId = DbUtilities::GetLastInsertedId<PhenomenonId>(m_ecdb);
+    if (!phId.IsValid())
+        return ERROR;
+
+    const_cast<PhenomenonR>(ph).SetId(phId);
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::ImportUnit(ECUnitCR unit)
+    {
+    if (m_ecdb.Schemas().Main().GetUnitId(unit).IsValid())
+        return SUCCESS;
+
+    if (!m_ecdb.Schemas().Main().GetSchemaId(unit.GetSchema()).IsValid())
+        {
+        Issues().ReportV("Failed to import Unit '%s'. Its ECSchema '%s' hasn't been imported yet. Check the list of ECSchemas passed to ImportSchema for missing schema references.", unit.GetName().c_str(), unit.GetSchema().GetFullSchemaName().c_str());
+        BeAssert(false && "Failed to import Unit because its ECSchema hasn't been imported yet. The schema references of the ECSchema objects passed to ImportSchema might be corrupted.");
+        return ERROR;
+        }
+
+    /* WIP
+    if (unit.GetUnitSystem() != nullptr)
+        {
+        if (SUCCESS != ImportUnitSystem(*unit.GetUnitSystem()))
+            return ERROR;
+        }
+
+    if (unit.GetPhenomenon() != nullptr)
+        {
+        if (SUCCESS != ImportPhenomenon(*unit.GetPhenomenon()))
+            return ERROR;
+        }
+
+    if (unit.IsInverseUnit())
+        {
+        if (SUCCESS != ImportUnit(*unit.GetInvertedUnit()))
+            return ERROR;
+        }
+    */
+
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO main.ec_Unit(SchemaId,Name,DisplayLabel,Description,UnitSystemId,PhenomenonId,Definition,Factor,Offset,InverseUnitId) VALUES(?,?,?,?,?,?,?,?,?,?)");
+    if (stmt == nullptr)
+        return ERROR;
+
+    const int schemaIdParamIx = 1;
+    const int nameParamIx = 2;
+    const int labelParamIx = 3;
+    const int descParamIx = 4;
+    const int usIdParamIx = 5;
+    const int phIdParamIx = 6;
+    const int defParamIx = 7;
+    const int factorParamIx = 8;
+    const int offsetParamIx = 9;
+    const int invertedUnitIdParamIx = 10;
+
+    if (BE_SQLITE_OK != stmt->BindId(schemaIdParamIx, unit.GetSchema().GetId()))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindText(nameParamIx, unit.GetName(), Statement::MakeCopy::No))
+        return ERROR;
+
+    if (unit.GetIsDisplayLabelDefined())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(labelParamIx, unit.GetInvariantDisplayLabel(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+
+    if (!unit.GetInvariantDescription().empty())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(descParamIx, unit.GetInvariantDescription(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+
+  
+    /* WIP
+    if (BE_SQLITE_OK != stmt->BindId(usIdParamIx, unit.GetUnitSystem()->GetId()))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindId(phIdParamIx, unit.GetPhenomenon()->GetId()))
+        return ERROR;
+
+    */
+    if (BE_SQLITE_OK != stmt->BindText(defParamIx, unit.GetDefinition(), Statement::MakeCopy::No))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindDouble(factorParamIx, unit.GetFactor()))
+        return ERROR;
+
+    if (unit.HasOffset())
+        {
+        if (BE_SQLITE_OK != stmt->BindDouble(offsetParamIx, unit.GetOffset()))
+            return ERROR;
+        }
+
+    /*
+    if (unit.IsInverseUnit())
+        {
+        if (BE_SQLITE_OK != stmt->BindId(invertedUnitIdParamIx, unit.GetInvertedUnit()->GetId()))
+            return ERROR;
+        }
+    */
+
+    if (BE_SQLITE_DONE != stmt->Step())
+        return ERROR;
+
+    const UnitId unitId = DbUtilities::GetLastInsertedId<UnitId>(m_ecdb);
+    if (!unitId.IsValid())
+        return ERROR;
+
+    const_cast<ECUnitR>(unit).SetId(unitId);
     return SUCCESS;
     }
 

@@ -31,6 +31,12 @@ private:
     void AssertPropertyCategoryDef(PropertyCategoryCR expectedCat, ECSqlStatement const& actualCatDefRow);
     void AssertPropertyDefs(ECClassCR expectedClass);
     void AssertPropertyDef(ECPropertyCR expectedProp, ECSqlStatement const& actualPropertyDefRow);
+    void AssertUnitSystemDefs(ECSchemaCR expectedSchema);
+    void AssertUnitSystemDef(UnitSystemCR expected, ECSqlStatement const& actualRow);
+    void AssertPhenomenonDefs(ECSchemaCR expectedSchema);
+    void AssertPhenomenonDef(PhenomenonCR expected, ECSqlStatement const& actualRow);
+    void AssertUnitDefs(ECSchemaCR expectedSchema);
+    void AssertUnitDef(ECUnitCR expected, ECSqlStatement const& actualRow);
 
 protected:
     void AssertSchemaDefs();
@@ -351,8 +357,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertEnumerationDef(ECEnumerationCR expect
 
         if (colName.EqualsI("ECInstanceId"))
             {
-            //EnumerationId is not exposed in API. So we can only test that the actual id is generally a valid one
-            ASSERT_TRUE(val.GetId<BeInt64Id>().IsValid()) << "ECEnumerationDef.ECInstanceId";
+            ASSERT_EQ(expectedEnum.GetId().GetValue(), val.GetId<ECEnumerationId>().GetValue()) << "ECEnumerationDef.ECInstanceId";
             continue;
             }
 
@@ -535,8 +540,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertKindOfQuantityDef(KindOfQuantityCR ex
 
         if (colName.EqualsI("ECInstanceId"))
             {
-            //EnumerationId is not exposed in API. So we can only test that the actual id is generally a valid one
-            ASSERT_TRUE(val.GetId<BeInt64Id>().IsValid()) << "KindOfQuantityDef.ECInstanceId";
+            ASSERT_EQ(expectedKoq.GetId().GetValue(), val.GetId<KindOfQuantityId>().GetValue()) << "KindOfQuantityDef.ECInstanceId";
             continue;
             }
 
@@ -610,9 +614,338 @@ void ECDbMetaSchemaECSqlTestFixture::AssertKindOfQuantityDef(KindOfQuantityCR ex
 
             continue;
             }
+
+        FAIL() << "Untested KindOfQuantityDef property: " << colName.c_str() << " Please adjust the test";
         }
     }
 
+//---------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle 02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDbMetaSchemaECSqlTestFixture::AssertUnitSystemDefs(ECSchemaCR expectedSchema)
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT us.Name, us.* FROM meta.ECSchemaDef s "
+                                                      "JOIN meta.UnitSystemDef us USING meta.SchemaOwnsUnitSystems "
+                                                      "WHERE s.Name=?"));
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindText(1, expectedSchema.GetName().c_str(), IECSqlBinder::MakeCopy::No));
+
+    int actualUsCount = 0;
+    while (BE_SQLITE_ROW == statement.Step())
+        {
+        Utf8CP actualName = statement.GetValueText(0);
+        UnitSystemCP expected = expectedSchema.GetUnitSystemCP(actualName);
+        ASSERT_TRUE(expected != nullptr);
+
+        AssertUnitSystemDef(*expected, statement);
+        actualUsCount++;
+        }
+
+    ASSERT_EQ((int) expectedSchema.GetUnitSystemCount(), actualUsCount);
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle 02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDbMetaSchemaECSqlTestFixture::AssertUnitSystemDef(UnitSystemCR expected, ECSqlStatement const& actualRow)
+    {
+    const int colCount = actualRow.GetColumnCount();
+    for (int i = 0; i < colCount; i++)
+        {
+        IECSqlValue const& val = actualRow.GetValue(i);
+        ECSqlColumnInfoCR colInfo = val.GetColumnInfo();
+
+        ECPropertyCP colInfoProp = colInfo.GetProperty();
+        ASSERT_TRUE(colInfoProp != nullptr);
+
+        Utf8StringCR colName = colInfoProp->GetName();
+
+        if (colName.EqualsI("ECInstanceId"))
+            {
+            ASSERT_EQ(expected.GetId().GetValue(), val.GetId<UnitSystemId>().GetValue()) << "UnitSystemDef.ECInstanceId";
+            continue;
+            }
+
+        if (colName.EqualsI("ECClassId"))
+            {
+            ASSERT_EQ(m_ecdb.Schemas().GetClass("ECDbMeta", "UnitSystemDef")->GetId(), val.GetId<ECClassId>()) << "UnitSystemDef.ECClassId";
+            continue;
+            }
+
+        if (colName.EqualsI("Schema"))
+            {
+            ECClassId actualRelClassId;
+            ASSERT_EQ(expected.GetSchema().GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "UnitSystemDef.Schema";
+            ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "UnitSystemDef.Schema";
+            continue;
+            }
+
+        if (colName.EqualsI("Name"))
+            {
+            ASSERT_STREQ(expected.GetName().c_str(), val.GetText()) << "UnitSystemDef.Name";
+            continue;
+            }
+
+        if (colName.EqualsI("DisplayLabel"))
+            {
+            if (expected.GetIsDisplayLabelDefined())
+                ASSERT_STREQ(expected.GetInvariantDisplayLabel().c_str(), val.GetText()) << "UnitSystemDef.DisplayLabel";
+            else
+                ASSERT_TRUE(val.IsNull()) << "UnitSystemDef.DisplayLabel";
+
+            continue;
+            }
+
+        if (colName.EqualsI("Description"))
+            {
+            if (!expected.GetInvariantDescription().empty())
+                ASSERT_STREQ(expected.GetInvariantDescription().c_str(), val.GetText()) << "UnitSystemDef.Description";
+            else
+                ASSERT_TRUE(val.IsNull()) << "UnitSystemDef.Description";
+
+            continue;
+            }
+
+        FAIL() << "Untested UnitSystemDef property: " << colName.c_str() << " Please adjust the test";
+        }
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle 02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDbMetaSchemaECSqlTestFixture::AssertPhenomenonDefs(ECSchemaCR expectedSchema)
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT ph.Name, ph.* FROM meta.ECSchemaDef s "
+                                                      "JOIN meta.PhenomenonDef ph USING meta.SchemaOwnsPhenomena "
+                                                      "WHERE s.Name=?"));
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindText(1, expectedSchema.GetName().c_str(), IECSqlBinder::MakeCopy::No));
+
+    int actualCount = 0;
+    while (BE_SQLITE_ROW == statement.Step())
+        {
+        Utf8CP actualName = statement.GetValueText(0);
+        PhenomenonCP expected = expectedSchema.GetPhenomenonCP(actualName);
+        ASSERT_TRUE(expected != nullptr);
+
+        AssertPhenomenonDef(*expected, statement);
+        actualCount++;
+        }
+
+    ASSERT_EQ((int) expectedSchema.GetPhenomenonCount(), actualCount);
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle 02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDbMetaSchemaECSqlTestFixture::AssertPhenomenonDef(PhenomenonCR expected, ECSqlStatement const& actualRow)
+    {
+    const int colCount = actualRow.GetColumnCount();
+    for (int i = 0; i < colCount; i++)
+        {
+        IECSqlValue const& val = actualRow.GetValue(i);
+        ECSqlColumnInfoCR colInfo = val.GetColumnInfo();
+
+        ECPropertyCP colInfoProp = colInfo.GetProperty();
+        ASSERT_TRUE(colInfoProp != nullptr);
+
+        Utf8StringCR colName = colInfoProp->GetName();
+
+        if (colName.EqualsI("ECInstanceId"))
+            {
+            ASSERT_EQ(expected.GetId().GetValue(), val.GetId<PhenomenonId>().GetValue()) << "PhenomenonDef.ECInstanceId";
+            continue;
+            }
+
+        if (colName.EqualsI("ECClassId"))
+            {
+            ASSERT_EQ(m_ecdb.Schemas().GetClass("ECDbMeta", "PhenomenonDef")->GetId(), val.GetId<ECClassId>()) << "PhenomenonDef.ECClassId";
+            continue;
+            }
+
+        if (colName.EqualsI("Schema"))
+            {
+            ECClassId actualRelClassId;
+            ASSERT_EQ(expected.GetSchema().GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "PhenomenonDef.Schema";
+            ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "PhenomenonDef.Schema";
+            continue;
+            }
+
+        if (colName.EqualsI("Name"))
+            {
+            ASSERT_STREQ(expected.GetName().c_str(), val.GetText()) << "PhenomenonDef.Name";
+            continue;
+            }
+
+        if (colName.EqualsI("DisplayLabel"))
+            {
+            if (expected.GetIsDisplayLabelDefined())
+                ASSERT_STREQ(expected.GetInvariantDisplayLabel().c_str(), val.GetText()) << "PhenomenonDef.DisplayLabel";
+            else
+                ASSERT_TRUE(val.IsNull()) << "PhenomenonDef.DisplayLabel";
+
+            continue;
+            }
+
+        if (colName.EqualsI("Description"))
+            {
+            if (!expected.GetInvariantDescription().empty())
+                ASSERT_STREQ(expected.GetInvariantDescription().c_str(), val.GetText()) << "PhenomenonDef.Description";
+            else
+                ASSERT_TRUE(val.IsNull()) << "PhenomenonDef.Description";
+
+            continue;
+            }
+
+        FAIL() << "Untested PhenomenonDef property: " << colName.c_str() << " Please adjust the test";
+        }
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle 02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDbMetaSchemaECSqlTestFixture::AssertUnitDefs(ECSchemaCR expectedSchema)
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT u.Name, u.* FROM meta.ECSchemaDef s "
+                                                      "JOIN meta.UnitDef u USING meta.SchemaOwnsUnits "
+                                                      "WHERE s.Name=?"));
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindText(1, expectedSchema.GetName().c_str(), IECSqlBinder::MakeCopy::No));
+
+    int actualCount = 0;
+    while (BE_SQLITE_ROW == statement.Step())
+        {
+        Utf8CP actualName = statement.GetValueText(0);
+        ECUnitCP expected = expectedSchema.GetUnitCP(actualName);
+        ASSERT_TRUE(expected != nullptr);
+
+        AssertUnitDef(*expected, statement);
+        actualCount++;
+        }
+
+    ASSERT_EQ((int) expectedSchema.GetUnitCount(), actualCount);
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle 02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDbMetaSchemaECSqlTestFixture::AssertUnitDef(ECUnitCR expected, ECSqlStatement const& actualRow)
+    {
+    const int colCount = actualRow.GetColumnCount();
+    for (int i = 0; i < colCount; i++)
+        {
+        IECSqlValue const& val = actualRow.GetValue(i);
+        ECSqlColumnInfoCR colInfo = val.GetColumnInfo();
+
+        ECPropertyCP colInfoProp = colInfo.GetProperty();
+        ASSERT_TRUE(colInfoProp != nullptr);
+
+        Utf8StringCR colName = colInfoProp->GetName();
+
+        if (colName.EqualsI("ECInstanceId"))
+            {
+            ASSERT_EQ(expected.GetId().GetValue(), val.GetId<UnitId>().GetValue()) << "UnitDef.ECInstanceId";
+            continue;
+            }
+
+        if (colName.EqualsI("ECClassId"))
+            {
+            ASSERT_EQ(m_ecdb.Schemas().GetClass("ECDbMeta", "UnitDef")->GetId(), val.GetId<ECClassId>()) << "UnitDef.ECClassId";
+            continue;
+            }
+
+        if (colName.EqualsI("Schema"))
+            {
+            ECClassId actualRelClassId;
+            ASSERT_EQ(expected.GetSchema().GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "UnitDef.Schema";
+            ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "UnitDef.Schema";
+            continue;
+            }
+
+        if (colName.EqualsI("Name"))
+            {
+            ASSERT_STREQ(expected.GetName().c_str(), val.GetText()) << "UnitDef.Name";
+            continue;
+            }
+
+        if (colName.EqualsI("DisplayLabel"))
+            {
+            if (expected.GetIsDisplayLabelDefined())
+                ASSERT_STREQ(expected.GetInvariantDisplayLabel().c_str(), val.GetText()) << "UnitDef.DisplayLabel";
+            else
+                ASSERT_TRUE(val.IsNull()) << "UnitDef.DisplayLabel";
+
+            continue;
+            }
+
+        if (colName.EqualsI("Description"))
+            {
+            if (!expected.GetInvariantDescription().empty())
+                ASSERT_STREQ(expected.GetInvariantDescription().c_str(), val.GetText()) << "UnitDef.Description";
+            else
+                ASSERT_TRUE(val.IsNull()) << "UnitDef.Description";
+
+            continue;
+            }
+
+        if (colName.EqualsI("UnitSystem"))
+            {
+            /*WIP
+            ECClassId actualRelClassId;
+            ASSERT_EQ(expected.GetUnitSystem()->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "UnitDef.UnitSystem";
+            ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "UnitDef.UnitSystem";
+            */
+            continue;
+            }
+
+        if (colName.EqualsI("Phenomenon"))
+            {
+            /*WIP
+            ECClassId actualRelClassId;
+            ASSERT_EQ(expected.GetPhenomenon()->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "UnitDef.Phenomenon";
+            ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "UnitDef.Phenomenon";
+            */
+            continue;
+            }
+
+        if (colName.EqualsI("Definition"))
+            {
+            ASSERT_STREQ(expected.GetDefinition().c_str(), val.GetText()) << "UnitDef.Definition";
+            continue;
+            }
+
+        if (colName.EqualsI("Factor"))
+            {
+            ASSERT_DOUBLE_EQ(expected.GetFactor(), val.GetDouble()) << "UnitDef.Factor";
+            continue;
+            }
+
+        if (colName.EqualsI("Offset"))
+            {
+            if (expected.HasOffset())
+                ASSERT_DOUBLE_EQ(expected.GetOffset(), val.GetDouble()) << "UnitDef.Offset";
+            else
+                ASSERT_TRUE(val.IsNull()) << "UnitDef.Offset";
+
+            continue;
+            }
+
+        if (colName.EqualsI("InvertsUnit"))
+            {
+            /*WIP
+            ECClassId actualRelClassId;
+            ASSERT_EQ(expected.GetInvertsUnit()->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "UnitDef.Phenomenon";
+            ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "UnitDef.Phenomenon";
+            */
+            continue;
+            }
+
+        FAIL() << "Untested UnitDef property: " << colName.c_str() << " Please adjust the test";
+        }
+    }
 
 //---------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle 06/2017
@@ -658,8 +991,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertPropertyCategoryDef(PropertyCategoryC
 
         if (colName.EqualsI("ECInstanceId"))
             {
-            //EnumerationId is not exposed in API. So we can only test that the actual id is generally a valid one
-            ASSERT_TRUE(val.GetId<BeInt64Id>().IsValid()) << "PropertyCategoryDef.ECInstanceId";
+            ASSERT_EQ(expectedCat.GetId().GetValue(), val.GetId<PropertyCategoryId>().GetValue()) << "PropertyCategoryDef.ECInstanceId";
             continue;
             }
 

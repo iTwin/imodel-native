@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/SchemaReader.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 #pragma once
@@ -115,16 +115,23 @@ struct SchemaReader final
                 mutable std::map<ECN::ECEnumerationId, std::unique_ptr<EnumDbEntry>> m_enumCache;
                 mutable std::map<ECN::KindOfQuantityId, std::unique_ptr<KindOfQuantityDbEntry>> m_koqCache;
                 mutable std::map<ECN::PropertyCategoryId, std::unique_ptr<PropertyCategoryDbEntry>> m_propCategoryCache;
+                mutable std::map<ECN::UnitSystemId, ECN::UnitSystemCP> m_unitSystemCache;
+                mutable std::map<ECN::PhenomenonId, ECN::PhenomenonCP> m_phenomenonCache;
+                mutable std::map<ECN::UnitId, ECN::ECUnitCP> m_unitCache;
+                mutable bool m_unitsAreLoaded = false;
                 mutable bmap<Utf8String, bmap<Utf8String, ECN::ECClassId, CompareIUtf8Ascii>, CompareIUtf8Ascii> m_classIdCache;
             public:
-                explicit ReaderCache(ECDb const& ecdb):m_ecdb(ecdb)
-                    {}
+                explicit ReaderCache(ECDb const& ecdb) : m_ecdb(ecdb) {}
                 void Clear() const;
-                SchemaDbEntry* Find(ECN::ECSchemaId id) const;
-                ClassDbEntry* Find(ECN::ECClassId id) const;
-                EnumDbEntry* Find(ECN::ECEnumerationId id) const;
-                KindOfQuantityDbEntry* Find(ECN::KindOfQuantityId id) const;
-                PropertyCategoryDbEntry* Find(ECN::PropertyCategoryId id) const;
+                SchemaDbEntry* Find(ECN::ECSchemaId) const;
+                ClassDbEntry* Find(ECN::ECClassId) const;
+                EnumDbEntry* Find(ECN::ECEnumerationId) const;
+                KindOfQuantityDbEntry* Find(ECN::KindOfQuantityId) const;
+                PropertyCategoryDbEntry* Find(ECN::PropertyCategoryId) const;
+                ECN::UnitSystemCP Find(ECN::UnitSystemId id) const { auto it = m_unitSystemCache.find(id); return it != m_unitSystemCache.end() ? it->second : nullptr;}
+                ECN::PhenomenonCP Find(ECN::PhenomenonId id) const { auto it = m_phenomenonCache.find(id); return it != m_phenomenonCache.end() ? it->second : nullptr; }
+                ECN::ECUnitCP Find(ECN::UnitId id) const { auto it = m_unitCache.find(id); return it != m_unitCache.end() ? it->second : nullptr; }
+
                 ECN::ECClassId Find(Utf8StringCR schemaName, Utf8StringCR className) const;
                 bool HasClassEntry(ECN::ECClassId id) const;
                 void SetClassEntryToNull(ECN::ECClassId id) const;
@@ -134,6 +141,11 @@ struct SchemaReader final
                 bool Insert(std::unique_ptr<KindOfQuantityDbEntry> entry) const;
                 bool Insert(std::unique_ptr<PropertyCategoryDbEntry> entry) const;
                 bool Insert(Utf8StringCR schemaName, Utf8StringCR className, ECN::ECClassId id) const;
+                void Insert(ECN::UnitSystemCR us) const { m_unitSystemCache.insert(std::make_pair(us.GetId(), &us)); }
+                void Insert(ECN::PhenomenonCR ph) const { m_phenomenonCache.insert(std::make_pair(ph.GetId(), &ph)); }
+                void Insert(ECN::ECUnitCR unit) const { m_unitCache.insert(std::make_pair(unit.GetId(), &unit)); }
+                bool UnitsAreLoaded() const { return m_unitsAreLoaded; }
+                void SetUnitsAreLoaded() const { m_unitsAreLoaded = true; }
             };
 
         ReaderCache m_cache;
@@ -153,10 +165,15 @@ struct SchemaReader final
         BentleyStatus LoadRelationshipConstraintFromDb(ECN::ECRelationshipClassP&, Context&, ECN::ECClassId constraintClassId, ECN::ECRelationshipEnd) const;
         BentleyStatus LoadRelationshipConstraintClassesFromDb(ECN::ECRelationshipConstraintR, Context&, ECRelationshipConstraintId constraintId) const;
         BentleyStatus LoadSchemaDefinition(SchemaDbEntry*&, bvector<SchemaDbEntry*>& newlyLoadedSchemas, ECN::ECSchemaId) const;
+        BentleyStatus LoadUnits(Context&) const;
 
         BentleyStatus ReadSchema(SchemaDbEntry*&, Context&, ECN::ECSchemaId, bool loadSchemaEntities) const;
         BentleyStatus ReadEnumeration(ECN::ECEnumerationP&, Context&, ECN::ECEnumerationId) const;
+        
         BentleyStatus ReadKindOfQuantity(ECN::KindOfQuantityP&, Context&, ECN::KindOfQuantityId) const;
+        BentleyStatus ReadUnitSystems(Context&) const;
+        BentleyStatus ReadPhenomena(Context&) const;
+        BentleyStatus ReadUnits(Context&) const;
         BentleyStatus ReadPropertyCategory(ECN::PropertyCategoryP&, Context&, ECN::PropertyCategoryId) const;
 
         BentleyStatus EnsureDerivedClassesExist(Context&, ECN::ECClassId) const;
@@ -168,7 +185,7 @@ struct SchemaReader final
         CachedStatementPtr GetCachedStatement(Utf8CP sql) const;
 
     public:
-        SchemaReader(TableSpaceSchemaManager const& manager);
+        explicit SchemaReader(TableSpaceSchemaManager const& manager);
         ~SchemaReader() {}
 
         BentleyStatus GetSchemas(bvector<ECN::ECSchemaCP>&, bool loadSchemaEntities) const;
@@ -193,6 +210,10 @@ struct SchemaReader final
 
         ECN::ECPropertyId GetPropertyId(ECN::ECPropertyCR) const;
         ECN::ECPropertyId GetPropertyId(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, Utf8StringCR propertyName, SchemaLookupMode mode) const { return SchemaPersistenceHelper::GetPropertyId(GetECDb(), GetTableSpace(), schemaNameOrAlias.c_str(), className.c_str(), propertyName.c_str(), mode); }
+
+        ECN::UnitSystemId GetUnitSystemId(ECN::UnitSystemCR) const;
+        ECN::PhenomenonId GetPhenomenonId(ECN::PhenomenonCR) const;
+        ECN::UnitId GetUnitId(ECN::ECUnitCR) const;
 
         BentleyStatus EnsureDerivedClassesExist(ECN::ECClassId) const;
 
