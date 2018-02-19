@@ -84,9 +84,13 @@ void AddTime(UnitRegistry& reg)
 
 void AddTemperature(UnitRegistry& reg)
     {
-    reg.AddUnit(TEMPERATURE, METRIC, "CELSIUS", "K", 1.0, 273.15)->AddSynonym("\xC2\xB0\x43");
-    reg.AddUnit(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "CELSIUS", 5.0 / 9.0, -32)->AddSynonym("\xC2\xB0\x46");
-    reg.AddUnit(TEMPERATURE, USCUSTOM, "RANKINE", "K", 5.0 / 9.0)->AddSynonym("\xC2\xB0\x52");
+    UnitCP un;
+    un = reg.AddUnit(TEMPERATURE, METRIC, "CELSIUS", "K", 1.0, 273.15);
+    un->AddSynonym("\xC2\xB0\x43");
+    un = reg.AddUnit(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "CELSIUS", 5.0 / 9.0, -32);
+    un->AddSynonym("\xC2\xB0\x46");
+    un = reg.AddUnit(TEMPERATURE, USCUSTOM, "RANKINE", "K", 5.0 / 9.0);
+    un->AddSynonym("\xC2\xB0\x52");
     }
 
 void AddTemperatureChange(UnitRegistry& reg)
@@ -793,9 +797,11 @@ void AddApparentPower(UnitRegistry& reg)
 void UnitRegistry::AddBaseUnits()
     {
     UnitCP un;
-    AddUnitForBasePhenomenon("M", LENGTH)->AddSynonym("METER");
+    un = AddUnitForBasePhenomenon("M", LENGTH);
+    un->AddSynonym("METER");
     AddUnitForBasePhenomenon("KG", MASS);
-    AddUnitForBasePhenomenon("S", TIME)->AddSynonym("SEC");
+    un = AddUnitForBasePhenomenon("S", TIME);
+    un->AddSynonym("SEC");
     un = AddUnitForBasePhenomenon("K", TEMPERATURE);
     un->AddSynonym("\xC2\xB0\x4B");
     un->AddSynonym("KELVIN");
@@ -804,7 +810,8 @@ void UnitRegistry::AddBaseUnits()
     AddUnitForBasePhenomenon("A", CURRENT);
     AddUnitForBasePhenomenon("MOL", MOLE); // Where mol is the SI gram mol or gmol.
     AddUnitForBasePhenomenon("CD", LUMINOSITY);
-    AddUnitForBasePhenomenon("RAD", ANGLE)->AddSynonym("RADIAN");
+    un = AddUnitForBasePhenomenon("RAD", ANGLE);
+    un->AddSynonym("RADIAN");
 
     AddUnitForBasePhenomenon("STERAD", SOLIDANGLE);
     AddUnitForBasePhenomenon("US$", FINANCE);
