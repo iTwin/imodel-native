@@ -252,7 +252,7 @@ void AddDensity(UnitRegistry& reg)
     reg.AddUnit(DENSITY, IMPERIAL, "LBM/GALLON_IMPERIAL", "LBM*GALLON_IMPERIAL(-1)");
     reg.AddUnit(DENSITY, USCUSTOM, "LBM/CUB.IN", "LBM*IN(-3)");
 
-    reg.AddUnit(DENSITY, USCUSTOM, "LBM/MILLION_GALLON", "LBM*GALLON(-1)", 1.0e-6);
+    reg.AddUnit(DENSITY, USCUSTOM, "LBM/MILLION_GALLON", "LBM*[MEGA](-1)*GALLON(-1)");
 
     reg.AddUnit(DENSITY, USCUSTOM, "SLUG/CUB.FT", "SLUG*FT(-3)");
 
@@ -324,7 +324,7 @@ void AddEnergyDensity(UnitRegistry& reg)
 
     reg.AddUnit(ENERGY_DENSITY, USCUSTOM, "KWH/CUB.FT", "KWH*FT(-3)");
 
-    reg.AddUnit(ENERGY_DENSITY, USCUSTOM, "KWH/MILLION_GALLON", "KWH*GALLON(-1)", 1.0e-6);
+    reg.AddUnit(ENERGY_DENSITY, USCUSTOM, "KWH/MILLION_GALLON", "KWH*[MEGA](-1)*GALLON(-1)");
     }
 
 void AddHeatingValue(UnitRegistry& reg)
@@ -527,7 +527,7 @@ void AddTorque(UnitRegistry& reg)
 void AddMolarVolume(UnitRegistry& reg)
     {
     reg.AddUnit(MOLAR_VOLUME, SI, "CUB.M/MOL", "CUB.M*MOL(-1)");
-    reg.AddUnit(MOLAR_VOLUME, METRIC, "CUB.M/KMOL", "CUB.M*MOL(-1)", 1.0e-3);
+    reg.AddUnit(MOLAR_VOLUME, METRIC, "CUB.M/KMOL", "CUB.M*[KILO](-1)*MOL(-1)");
     reg.AddUnit(MOLAR_VOLUME, USCUSTOM, "CUB.FT/LB-MOL", "CUB.FT*LB-MOL(-1)");
     }
 
@@ -636,7 +636,7 @@ void AddSlope(UnitRegistry& reg)
     reg.AddUnit(SLOPE, METRIC, "CM/M", "CM*M(-1)");
     reg.AddUnit(SLOPE, METRIC, "MM/M", "MM*M(-1)");
     reg.AddUnit(SLOPE, METRIC, "M/KM", "M*KM(-1)");
-    reg.AddUnit(SLOPE, USCUSTOM, "FT/THOUSAND_FOOT", "FT*FT(-1)", 1.0e-3);
+    reg.AddUnit(SLOPE, USCUSTOM, "FT/THOUSAND_FOOT", "FT*[KILO](-1)*FT(-1)");
     reg.AddUnit(SLOPE, USCUSTOM, "FT/FT", "FT*FT(-1)");
 
     reg.AddUnit(SLOPE, USCUSTOM, "IN/FT", "IN*FT(-1)");
@@ -645,7 +645,7 @@ void AddSlope(UnitRegistry& reg)
 
     reg.AddUnit(SLOPE, INTERNATIONAL, "VERTICAL/HORIZONTAL", "M/M");
 
-    reg.AddUnit(SLOPE, INTERNATIONAL, "PERCENT_SLOPE", "M/M", 1.0e-2);
+    reg.AddUnit(SLOPE, INTERNATIONAL, "PERCENT_SLOPE", "DECIMAL_PERCENT(-1)*M/M");
 
     reg.AddInvertingUnit("VERTICAL/HORIZONTAL", "HORIZONTAL/VERTICAL");
     reg.AddInvertingUnit("FT/FT", "FT_HORIZONTAL/FT_VERTICAL");
@@ -724,7 +724,7 @@ void AddAngularVelocity(UnitRegistry& reg)
 void AddDynamicViscosity(UnitRegistry& reg)
     {
     reg.AddUnit(DYNAMIC_VISCOSITY, SI, "PA-S", "PA*S");
-    reg.AddUnit(DYNAMIC_VISCOSITY, METRIC, "POISE", "PA-S", 0.1); // Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
+    reg.AddUnit(DYNAMIC_VISCOSITY, METRIC, "POISE", "[DECI]*PA-S"); // Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
     reg.AddUnit(DYNAMIC_VISCOSITY, METRIC, "CENTIPOISE", "[CENTI]*POISE");
     reg.AddUnit(DYNAMIC_VISCOSITY, USCUSTOM, "LBM/(FT*S)", "LBM*FT(-1)*S(-1)");
     }
