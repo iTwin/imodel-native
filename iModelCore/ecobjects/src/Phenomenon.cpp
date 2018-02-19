@@ -14,7 +14,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 // @bsimethod                                   Kyle.Abramowitz                 02/2018
 //--------------------------------------------------------------------------------------
 // static
-PhenomenonP Phenomenon::_Create(Utf8CP name, Utf8CP definition, bool isBase, uint32_t id)
+PhenomenonP Phenomenon::_Create(Utf8CP name, Utf8CP definition, uint32_t id)
     {
     // Deconstruct the name. The format should be {SchemaName}.{PhenomenonName}
     Utf8String schemaName;
@@ -29,7 +29,7 @@ PhenomenonP Phenomenon::_Create(Utf8CP name, Utf8CP definition, bool isBase, uin
         return nullptr;
         }
 
-    auto ptrPhenomenon = new Phenomenon(name, definition, isBase, id);
+    auto ptrPhenomenon = new Phenomenon(name, definition, id);
     if (nullptr == ptrPhenomenon)
         return nullptr;
 

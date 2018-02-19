@@ -113,11 +113,11 @@ private:
     SchemaWriteStatus WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
 
     // Should only be called by UnitRegistry
-    Phenomenon(Utf8CP name, Utf8CP definition, bool isBase, uint32_t id) : Units::Phenomenon(name, definition, isBase, id), m_isDisplayLabelExplicitlyDefined(false) {}
+    Phenomenon(Utf8CP name, Utf8CP definition, uint32_t id) : Units::Phenomenon(name, definition, id), m_isDisplayLabelExplicitlyDefined(false) {}
 
 protected:
     // Needed by Units::UnitRegistry to create the Phenomenon
-    ECOBJECTS_EXPORT static PhenomenonP _Create(Utf8CP name, Utf8CP definition, bool isBase, uint32_t id);
+    ECOBJECTS_EXPORT static PhenomenonP _Create(Utf8CP name, Utf8CP definition, uint32_t id);
 
 public:
     ECSchemaCR GetSchema() const {return *m_schema;} //!< The ECSchema that this Phenomenon is defined in
@@ -179,12 +179,12 @@ private:
     SchemaWriteStatus WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
 
     // Should only be called by UnitRegistry
-    ECUnit(Units::UnitSystemCR unitSystem, Units::PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, bool isBase, double factor, double offset, bool isConstant) : 
-        Units::Unit(unitSystem, phenomenon, name, id, definition, isBase, factor, offset, isConstant), m_isDisplayLabelExplicitlyDefined(false) {}
+    ECUnit(Units::UnitSystemCR unitSystem, Units::PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, double factor, double offset, bool isConstant) : 
+        Units::Unit(unitSystem, phenomenon, name, id, definition, factor, offset, isConstant), m_isDisplayLabelExplicitlyDefined(false) {}
 
 protected:
     // Needed by Units::UnitRegistry to create the ECUnit
-    ECOBJECTS_EXPORT static ECUnitP _Create(Units::UnitSystemCR unitSystem, Units::PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, bool isBase, double factor, double offset, bool isConstant);
+    ECOBJECTS_EXPORT static ECUnitP _Create(Units::UnitSystemCR unitSystem, Units::PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, double factor, double offset, bool isConstant);
 
 public:
 
