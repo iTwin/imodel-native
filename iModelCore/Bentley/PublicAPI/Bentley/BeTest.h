@@ -513,7 +513,7 @@ private:
     ~PerformanceResultRecorder();
 
 public:
-    BENTLEYDLL_EXPORT static void WriteResults(Utf8CP testcaseName, Utf8CP testName, double timeInSeconds, int opCount = -1, Utf8CP testDescription = "", bool quoteTestDecription = false);
+    BENTLEYDLL_EXPORT static void WriteResults(Utf8CP testcaseName, Utf8CP testName, double timeInSeconds, int opCount = -1, Utf8CP testDescription = "", bool quoteTestDecription = false , Utf8String opType ="" , int initialCount=-1);
 };
 
 #define EXPECT_CONTAINS(container, value)                                       \
