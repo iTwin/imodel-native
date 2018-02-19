@@ -267,7 +267,7 @@ private:
             {
             if (!first)
                 query.append(" UNION ALL ");
-            query.append("SELECT SourceECInstanceId, TargetECInstanceId ");            
+            query.append("SELECT ").append(s_sourceECInstanceIdField).append(",").append(s_targetECInstanceIdField).append(" ");
             query.append("FROM ").append(rel->GetECSqlName());
             first = false;
             }
