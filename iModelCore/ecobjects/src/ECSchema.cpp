@@ -1817,27 +1817,17 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema(ECSchemaR refSchema)
                 }
             }
 
+        if (ecClass->IsEntityClass())
+            {
+            ECEntityClassCP appliesToClass = ecClass->GetEntityClassCP()->GetAppliesToClass();
+            if (nullptr != appliesToClass && appliesToClass->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
+                return ECObjectsStatus::SchemaInUse;
+            }
+
         for (auto ca : ecClass->GetCustomAttributes(false))
             {
             if (ca->GetClass().GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
                 return ECObjectsStatus::SchemaInUse;
-
-            if (ECClass::ClassesAreEqualByName(&ca->GetClass(), CoreCustomAttributeHelper::GetCustomAttributeClass("IsMixin")))
-                {
-                ECValue appliesToValue;
-                ca->GetValue(appliesToValue, "AppliesToEntityClass");
-                if (appliesToValue.IsNull() || !appliesToValue.IsString())
-                    continue;
-
-                Utf8String alias;
-                Utf8String className;
-                if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, className, appliesToValue.GetUtf8CP()))
-                    continue;
-
-                ECSchemaCP resolvedSchema = GetSchemaByAliasP(alias);
-                if (nullptr != resolvedSchema && resolvedSchema == foundSchema.get())
-                    return ECObjectsStatus::SchemaInUse;
-                }
             }
 
         // If it is a relationship class, check the constraints to make sure the constraints don't use that schema
