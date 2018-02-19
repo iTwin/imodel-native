@@ -6,14 +6,18 @@
 |       $Date: 2012/01/19 20:04:54 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
 
+#include "InternalUtilityFunctions.h"
 #include "ScalableMeshTime.h"
 
+
 using namespace std;
+
+USING_NAMESPACE_IMAGEPP
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -178,7 +182,7 @@ bool IsUndefinedModificationTime (const Time& time)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Time GetFileLastModificationTimeFor(const WChar*  filePath)
     {
-    if (BeFileName::IsUrl(filePath))
+    if (IsUrl(filePath))
         return CreateTimeFrom(0);
 
     struct _stat64 fileStats;

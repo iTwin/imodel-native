@@ -27,7 +27,6 @@ extern bool   GET_HIGHEST_RES;
 #include <STMInternal/GeoCoords/WKTUtils.h>
 #include <ScalableMesh/GeoCoords/Reprojection.h>
 
-
 #include "ScalableMeshQuery.h"
 #include "ScalableMeshSourcesPersistance.h"
 
@@ -117,7 +116,7 @@ bool s_useSQLFormat = true;
 ISMPointIndexFilter<DPoint3d, Extent3dType>* s_filterClass = nullptr;
 
 namespace {
-
+#if 0
 /*----------------------------------------------------------------------------+
 | Pool Singleton
 +----------------------------------------------------------------------------*/
@@ -127,6 +126,7 @@ template <typename POINT> static HFCPtr<HPMCountLimitedPool<POINT> > PoolSinglet
 
     return pGlobalPointPool;
     }
+#endif
 
 inline const GCS& GetDefaultGCS ()
     {
@@ -1936,8 +1936,12 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetTextureInfo(IScalableM
             {
             const IDTMSource& source = *sourceIt;
             if (source.GetSourceType() == DTM_SOURCE_DATA_IMAGE)
-                {                
-                HFCPtr<HFCURL> pImageURL(HFCURL::Instanciate(source.GetPath()));
+                {  
+#ifdef VANCOUVER_API
+				HFCPtr<HFCURL> pImageURL(HFCURL::Instanciate(source.GetPath()));
+#else
+				HFCPtr<HFCURL> pImageURL(HFCURL::Instanciate(Utf8String(source.GetPath())));
+#endif
 
                 if (HRFVirtualEarthCreator::GetInstance()->IsKindOfFile(pImageURL))
                     {                    
@@ -1951,7 +1955,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetTextureInfo(IScalableM
             } 
         }
 
-    textureInfo = IScalableMeshTextureInfoPtr(new ScalableMeshTextureInfo(m_scmIndexPtr->IsTextured(), isUsingBingMap, m_scmIndexPtr->GetDataStore()->IsTextureAvailable(), bingMapType));
+	textureInfo = IScalableMeshTextureInfoPtr(new ScalableMeshTextureInfo(m_scmIndexPtr->IsTextured(), isUsingBingMap, m_scmIndexPtr->GetDataStore()->IsTextureAvailable(), bingMapType));
 
     return SUCCESS;
     }
@@ -3613,7 +3617,7 @@ template <class POINT> __int64 ScalableMeshSingleResolutionPointIndexView<POINT>
 
 template <class POINT> uint64_t ScalableMeshSingleResolutionPointIndexView<POINT>::_GetNodeCount()
     {
-    uint64_t numNodes = 0;
+    size_t numNodes = 0;
     m_scmIndexPtr->LoadIndexNodes(numNodes, m_resolutionIndex, true);
     return numNodes;
     }

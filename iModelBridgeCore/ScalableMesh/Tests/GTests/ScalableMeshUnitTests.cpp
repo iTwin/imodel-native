@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/GTests/ScalableMeshUnitTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -121,7 +121,13 @@ class ScalableMeshTestWithParams : public ::testing::TestWithParam<BeFileName>
         virtual void TearDown() { }
         BeFileName GetFileName() { return m_filename; }
         ScalableMeshGTestUtil::SMMeshType GetType() { return ScalableMeshGTestUtil::GetFileType(m_filename); }
-
+        ScalableMesh::IScalableMeshPtr OpenMesh()
+            {
+            StatusInt status;
+            ScalableMesh::IScalableMeshPtr myScalableMesh = ScalableMesh::IScalableMesh::GetFor(m_filename, true, true, status);
+            BeAssert(status == SUCCESS);
+            return myScalableMesh;
+            }
     };
 
 
@@ -201,8 +207,7 @@ public:
 TEST_P(ScalableMeshTestWithParams, CanOpen)
     {
     auto typeStr = ScalableMeshGTestUtil::SMMeshType::TYPE_3SM == GetType() ? L"3sm" : L"3dTiles";
-
-    EXPECT_EQ(ScalableMeshTest::OpenMesh(m_filename).IsValid(), true ) << "\n Error opening "<< typeStr << ": " << GetFileName().c_str() << std::endl << std::endl;
+    EXPECT_EQ(OpenMesh().IsValid(), true) << "\n Error opening " << typeStr << ": " << GetFileName().c_str() << std::endl << std::endl;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -670,6 +675,7 @@ TEST_P(ScalableMeshTestDisplayQuery, ProgressiveQuery)
     [&]() { ASSERT_TRUE(isTrue); }(); \
     if (!(isTrue)) return 1; \
     }
+
 
 ///*---------------------------------------------------------------------------------**//**
 //* @bsimethod                                                    Richard.Bois      10/2017

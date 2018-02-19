@@ -6,7 +6,7 @@
 |       $Date: 2012/11/29 17:30:37 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -2521,6 +2521,21 @@ bool IScalableMeshMeshFlags::ShouldPrecomputeBoxes() const
     return _ShouldPrecomputeBoxes();
 }
 
+bool IScalableMeshMeshFlags::ShouldUseClipsToShow() const
+    {
+    return _ShouldUseClipsToShow();
+    }
+
+bool IScalableMeshMeshFlags::ShouldInvertClips() const
+    {
+    return _ShouldInvertClips();
+    }
+
+void IScalableMeshMeshFlags::GetClipsToShow(bset<uint64_t>& clipsToShow) const
+    {
+    _GetClipsToShow(clipsToShow);
+    }
+
 void IScalableMeshMeshFlags::SetLoadClips(bool loadClips)
     {
     _SetLoadClips(loadClips);
@@ -2547,10 +2562,14 @@ void IScalableMeshMeshFlags::SetSaveToCache(bool saveToCache)
 }
 
 void IScalableMeshMeshFlags::SetPrecomputeBoxes(bool precomputeBoxes)
-{
+    {
     _SetPrecomputeBoxes(precomputeBoxes);
-}
+    }
 
+void IScalableMeshMeshFlags::SetClipsToShow(bset<uint64_t>& clipsToShow, bool shouldInvertClips)
+    {
+    _SetClipsToShow(clipsToShow, shouldInvertClips);
+    }
 
 IScalableMeshMeshFlagsPtr IScalableMeshMeshFlags::Create()
     {
@@ -2602,6 +2621,21 @@ bool ScalableMeshMeshFlags::_ShouldPrecomputeBoxes() const
     return m_precomputeBoxes;
 }
 
+bool ScalableMeshMeshFlags::_ShouldInvertClips() const
+    {
+    return m_shouldInvertClips;
+    }
+
+bool ScalableMeshMeshFlags::_ShouldUseClipsToShow() const
+    {
+    return m_useClipsToShow;
+    }
+
+void ScalableMeshMeshFlags::_GetClipsToShow(bset<uint64_t>& clipsToShow) const
+    {    
+    clipsToShow.insert(m_clipsToShow.begin(), m_clipsToShow.end());
+    }
+
 void ScalableMeshMeshFlags::_SetLoadClips(bool loadClips)
     {
     m_loadClips = loadClips;
@@ -2631,6 +2665,13 @@ void ScalableMeshMeshFlags::_SetPrecomputeBoxes(bool precomputeBoxes)
 {
     m_precomputeBoxes = precomputeBoxes;
 }
+
+void ScalableMeshMeshFlags::_SetClipsToShow(bset<uint64_t>& clipsToShow, bool shouldInvertClips)
+    {    
+    m_useClipsToShow = true;
+    m_shouldInvertClips = shouldInvertClips;
+    m_clipsToShow.insert(clipsToShow.begin(), clipsToShow.end());
+    }
 
 bool IScalableMeshNode::ArePoints3d() const
     {
@@ -2806,9 +2847,14 @@ void IScalableMeshNode::GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes, bset<
     }
 
 void IScalableMeshNode::ClearCachedData()
-{
+    {
 	return _ClearCachedData();
-}
+    }
+
+SMNodeViewStatus IScalableMeshNode::IsCorrectForView(IScalableMeshViewDependentMeshQueryParamsPtr& viewDependentQueryParams) const
+    {
+    return _IsCorrectForView(viewDependentQueryParams);
+    }
 
 #ifdef WIP_MESH_IMPORT
 bool IScalableMeshNode::IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata)
@@ -2969,9 +3015,18 @@ template class ScalableMeshCachedMeshNode<DPoint3d>;
 
 template class ScalableMeshCachedDisplayNode<DPoint3d>;
 
-template class ScalableMeshNodeEdit<DPoint3d>;
+template class ScalableMeshNodeEdit<DPoint3d>;   
 
 template class ScalableMeshNodeWithReprojection<DPoint3d>;
+
+template int BuildQueryObject<DPoint3d>(//ScalableMeshQuadTreeViewDependentMeshQuery<POINT, Extent3dType>* viewDependentQueryP,
+    ISMPointIndexQuery<DPoint3d, Extent3dType>*&                        pQueryObject,
+    const DPoint3d*                                                       pQueryExtentPts,
+    int                                                                   nbQueryExtentPts,
+    IScalableMeshViewDependentMeshQueryParamsPtr                          queryParam,
+    IScalableMesh*                                                        smP);
+
+
 
 // reactivate warning
 //#pragma warning (restore: 4250)

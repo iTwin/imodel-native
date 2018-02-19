@@ -220,12 +220,12 @@ public:
 
     bool m_autocommit = true;    
 
-    static const SchemaVersion CURRENT_VERSION;
+    static const BESQL_VERSION_STRUCT CURRENT_VERSION;
 protected:
     ScalableMeshDb* m_database;
     std::mutex dbLock;
 
-    virtual SchemaVersion GetCurrentVersion()
+    virtual BESQL_VERSION_STRUCT GetCurrentVersion()
         {
         return SMSQLiteFile::CURRENT_VERSION;
         }
@@ -233,11 +233,16 @@ protected:
     virtual DbResult CreateTables();
 
     virtual size_t GetNumberOfReleasedSchemas();
-    virtual const SchemaVersion* GetListOfReleasedVersions();
+    virtual const BESQL_VERSION_STRUCT* GetListOfReleasedVersions();
     virtual double* GetExpectedTimesForUpdateFunctions();
     virtual std::function<void(BeSQLite::Db*)>* GetFunctionsForAutomaticUpdate();
 
 private:
+
+#ifndef VANCOUVER_API
+    //Avoid assert added on Bim02    
+    virtual uint32_t _GetExcessiveRefCountThreshold() const override { return std::numeric_limits<uint32_t>::max(); }
+#endif
 
     // string table name
     const std::string m_sMasterHeaderTable = "SMMasterHeader";

@@ -2,7 +2,7 @@
 #
 #  $Source: ScalableMesh_Vancouver.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
@@ -488,6 +488,11 @@ certDir             = $(bsiCerts)
 #----------------------------------------------------------------------
 DLM_OBJECT_PCH      = $(o)ScalableMeshPCH$(oext)
 DLM_OBJECT_FILES    = $(cppObjects)
+DLM_DEST            = $(o)
+DLM_SYMB_DEST       = $(o)
+DLM_EXPORT_DEST     = $(o)
+DLM_OBJECT_DEST     = $(o)
+
 
 #SCALABLE_MESH_DGN=1
 
@@ -505,6 +510,7 @@ LINKER_LIBRARIES_DELAYLOADED  = \
 	$(ContextSubpartsLibs)PointCloud.lib \
 	$(ContextSubpartsLibs)freeimage.lib \
     $(ContextSubpartsLibs)RealityPlatform.lib \
+    $(ContextSubpartsLibs)RealityPlatformTools.lib \
     $(ContextSubpartsLibs)CCApi.lib\
     
 #    $(ContextSubpartsLibs)cpprest120_2_6.lib \
@@ -530,7 +536,7 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)$(BeJsonCppLib) \
     $(ContextSubpartsLibs)$(BentleyGeomLib) \
     $(ContextSubpartsLibs)IppJpegLibTurbo.lib \
-	$(ContextSubpartsLibs)BeLibJpegTurbo.lib \
+    $(ContextSubpartsLibs)BeLibJpegTurbo.lib \
     $(ContextSubpartsLibs)DgnPlatform.lib \
     $(ContextSubpartsLibs)RmgrTools.lib \
     $(ContextSubpartsLibs)DgnGeoCoord.lib \
@@ -552,4 +558,14 @@ LINKER_LIBRARIES            = \
     
 
 %include $(sharedMki)LinkLibrary.mki
+
+#----------------------------------------------------------------------------------------
+# Copy the cacert.pem file for securely talk to the RealityDataS-1 server for 
+# usgs datas
+#----------------------------------------------------------------------------------------
+$(o)ScalableMeshCacert.pem: $(baseDir)ScalableMeshCacert.pem
+    $(CopyFirstDepToFirstTarget)
+
+$(ContextDeliveryDir)ScalableMeshCacert.pem : $(o)ScalableMeshCacert.pem
+        $(LinkFirstDepToFirstTarget)
 

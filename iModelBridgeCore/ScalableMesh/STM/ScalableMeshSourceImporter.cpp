@@ -72,8 +72,6 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #define SCALABLE_MESH_TIMINGS
 
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
-
    
 /*----------------------------------------------+
 | Constant definitions                          |

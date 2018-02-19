@@ -15,8 +15,6 @@
 //#include <ImagePP/all/h/IDTMTypes.h>
 //#include <ImagePP/all/h/ISMStore.h>
 
-#include <ImagePP/all/h/HPMPooledVector.h>
-
 #include <ImagePP/all/h/HGF3DCoord.h>
 #include <ImagePP/all/h/HGF2DTemplateExtent.h>
 #include <ImagePP/all/h/HVE2DSegment.h>
@@ -128,7 +126,7 @@ template <class POINT, class EXTENT> class SMPointIndexNode : public HFCShareabl
     friend class BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshProgressiveQueryEngine;
 
     //typedef OverrideSizeTypeTrait<std::is_base_of<HPMPooledVector<POINT>, HPMStoredPooledVector<POINT>>::value, HPMStoredPooledVector<POINT>> CONTAINER;
-    typedef HPMStoredPooledVector<POINT> CONTAINER;
+    //typedef HPMStoredPooledVector<POINT> CONTAINER;
 
 public:
     
@@ -581,7 +579,7 @@ public:
     virtual bool Destroy();
 
 
-    virtual void LoadIndexNodes(uint64_t& nLoaded, int level, bool headersOnly);
+    virtual void LoadIndexNodes(size_t& nLoaded, int level, bool headersOnly);
 
     BENTLEY_SM_EXPORT uint32_t       GetNbObjects() const;
 
@@ -1022,8 +1020,7 @@ protected:
 
      @return true if the process should dig down into sub-nodes and false otherwise.
      TBD Something wrong with query return value.
-    -----------------------------------------------------------------------------*/    
-    bool              Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject, HPMMemoryManagedVector<POINT>& points);
+    -----------------------------------------------------------------------------*/      
     bool              Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject, BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* mesh);
     bool              Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject, ProducedNodeContainer<POINT, EXTENT>& foundNodes, IStopQuery* stopQueryP);
     bool              Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject, vector<QueriedNode>& meshNodes);
@@ -1301,9 +1298,10 @@ public:
     /**----------------------------------------------------------------------------
      Returns the meory pool
     -----------------------------------------------------------------------------*/
+#if 0
     HFCPtr<HPMCountLimitedPool<POINT> >
     GetPool() const;
-    
+#endif
     /**----------------------------------------------------------------------------
      Returns the data store
     -----------------------------------------------------------------------------*/
@@ -1369,9 +1367,7 @@ public:
      recursively calling global pre-query, pre-query of nodes, query proper,
      node post-query then global post-filtering.
 
-    -----------------------------------------------------------------------------*/    
-    size_t              Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject,
-                               HPMMemoryManagedVector<POINT>& resultPoints);
+    -----------------------------------------------------------------------------*/       
     size_t              Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject,
                                BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* resultMesh);
     size_t              Query(ISMPointIndexQuery<POINT, EXTENT>* queryObject,
@@ -1502,6 +1498,12 @@ public:
     size_t              GetNumberOfSubNodesOnSplit() const;
 
     /**----------------------------------------------------------------------------
+    Returns the data resolution
+
+    -----------------------------------------------------------------------------*/
+    float              GetResolution() const;
+
+    /**----------------------------------------------------------------------------
     Returns the highest depth level of the index
 
     @return The highest depth level
@@ -1580,7 +1582,7 @@ public:
     -----------------------------------------------------------------------------*/
     size_t              GetSplitTreshold() const;
 
-    void LoadIndexNodes(uint64_t& nLoaded, int level, bool headersOnly);
+    void LoadIndexNodes(size_t& nLoaded, int level, bool headersOnly);
     void SetGenerating(bool isGenerating)
         {
         m_isGenerating = isGenerating;
@@ -1917,11 +1919,7 @@ public:
     ** @return true if the query must continue and false to cancle it all together. If false neither
     ** pre-query, query or post-query will be called, but the global post-query will still be callsed
     **====================================================================================================*/   
-    virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
-                                        HPMMemoryManagedVector<POINT>& points) {
-        return true;
-        };
-
+  
     virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
                                         BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* resultMesh)
         {
@@ -1963,11 +1961,7 @@ public:
     ** process will complete promptly in just a few calls.
     **
     ** Even if the query is stopped, the post-query process will be called
-    **====================================================================================================*/    
-    virtual bool        Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
-                              HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
-                               size_t numSubNodes,
-                               HPMMemoryManagedVector<POINT>& points) = 0;
+    **====================================================================================================*/      
     virtual bool        Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
                               HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                size_t numSubNodes,
@@ -2017,10 +2011,10 @@ public:
     ** @return true if the query was successful and false otherwise. This value may be returned as indication
     ** of the global success of the query
     **====================================================================================================*/    
-    virtual bool        GlobalPostQuery (SMPointIndex<POINT, EXTENT>& index,
+  /*  virtual bool        GlobalPostQuery (SMPointIndex<POINT, EXTENT>& index,
                                          HPMMemoryManagedVector<POINT>& points) {
         return true;
-        }
+        }*/
 
     virtual bool        IsVisible(const EXTENT& pi_rExtent) {
         HASSERT(!"Should be pure virtual");
@@ -2138,7 +2132,7 @@ public:
         return m_wrappedQuery->PreQuery(node, subNodes, numSubNodes);
         }
 
-    virtual bool        Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
+ /*   virtual bool        Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
                               HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                size_t numSubNodes,
                                HPMMemoryManagedVector<POINT>& points)
@@ -2168,7 +2162,7 @@ public:
 
         return status;
 
-        }
+        }*/
 
 
 
@@ -2252,7 +2246,7 @@ public:
 
                             virtual ~HGFLevelPointIndexQuery() {}
    
-    virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
+   /* virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
                                         HPMMemoryManagedVector<POINT>& points)
         {
         // Make sure the index is balanced ... we stop if it is not
@@ -2267,9 +2261,9 @@ public:
             return false;
 
         return true;
-        }   
+        }   */
 
-    virtual bool        Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
+   /* virtual bool        Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
                                HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                size_t numSubNodes,
                                HPMMemoryManagedVector<POINT>& resultPoints)
@@ -2338,7 +2332,7 @@ public:
             // level reached
             return false;
             }
-        }
+        }*/
 
     };
 
@@ -2375,7 +2369,7 @@ public:
 
     virtual ~HGFLevelPointIndexByShapeQuery() {}
     
-    virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
+ /*   virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
         HPMMemoryManagedVector<POINT>& points) 
         {
         // Make sure the index is balanced ... we stop if it is not
@@ -2390,10 +2384,10 @@ public:
             return false;
 
         return true;
-        }
+        }*/
 
 
-    // The Query process gathers points up to level depth  
+  /*  // The Query process gathers points up to level depth  
     virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
         HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
         size_t numSubNodes,
@@ -2476,7 +2470,7 @@ public:
             // level reached
             return false;
             }
-        }
+        }*/
 };
     
 /*======================================================================================================
@@ -2504,7 +2498,7 @@ public:
         }
     virtual ~HGFAutoLevelPointIndexQuery();
 
-    // The global prequery simply cleans pre-query specific structure    
+  /*  // The global prequery simply cleans pre-query specific structure    
     virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
                                         HPMMemoryManagedVector<POINT>& points)
         {
@@ -2512,7 +2506,7 @@ public:
 
         return true;
         };
-
+        */
 
 
     // The pre-query will determine the depth level to perform the query upon
@@ -2579,17 +2573,17 @@ public:
         }
 
     // The global prequery simply cleans pre-query specific structure   
-    virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
+  /*  virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
                                         HPMMemoryManagedVector<POINT>& points)
         {
         // Save the index
         m_index = &index;
         m_neighborNodes.clear();
         return true;
-        };
+        };*/
 
     // The Query process gathers points up to level depth   
-    virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
+  /*  virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
                                HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                size_t numSubNodes,
                                HPMMemoryManagedVector<POINT>& resultPoints)
@@ -2615,10 +2609,10 @@ public:
         m_neighborNodes.push_back(node);
 
         return false;
-        }  
+        }  */
 
     // The global post query releases the index pointer
-    virtual bool        GlobalPostQuery (SMPointIndex<POINT, EXTENT>& index,
+    /*virtual bool        GlobalPostQuery (SMPointIndex<POINT, EXTENT>& index,
                                          HPMMemoryManagedVector<POINT>& points)
         {
         // Save the index
@@ -2654,7 +2648,7 @@ public:
 
         m_index = NULL;
         return true;
-        };
+        };*/
     };
 
 
@@ -2726,12 +2720,12 @@ public:
         }
 
     // The global prequery simply cleans query specific structure (the list of tile breaklines)    
-    virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
+  /*  virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
                                         HPMMemoryManagedVector<POINT>& points)
         {
         m_listOfTileBreaklines.clear();        
         return true;
-        };
+        };*/
 
     virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
                                         BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* mesh)
@@ -2748,7 +2742,7 @@ public:
         };
  
 
-    virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
+   /* virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
                                HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                size_t numSubNodes,
                                HPMMemoryManagedVector<POINT>& resultPoints)
@@ -2811,7 +2805,7 @@ public:
             }
 
         return (!finalNode);
-        }
+        }*/
 
 
     virtual bool IsCorrectForCurrentView(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
@@ -2909,7 +2903,7 @@ template<class POINT, class EXTENT> class SMLeafPointIndexQuery : public ISMPoin
 
         virtual ~SMLeafPointIndexQuery() {}
       
-        virtual bool        Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
+      /*  virtual bool        Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
                                   HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                   size_t numSubNodes,
                                   HPMMemoryManagedVector<POINT>& resultPoints)
@@ -2971,7 +2965,7 @@ template<class POINT, class EXTENT> class SMLeafPointIndexQuery : public ISMPoin
                 // level reached
                 return false;
                 }
-            }
+            }*/
 
         virtual bool        Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
                                   HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],

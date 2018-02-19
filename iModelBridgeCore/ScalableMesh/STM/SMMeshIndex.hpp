@@ -563,7 +563,7 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish
                 ++nbProcessedNodes;
                 }
             };
-        distributor = new Distribution_Type(nodeDataSaver, nbThreads, maxQueueSize);
+		distributor = new Distribution_Type(nodeDataSaver, [](HFCPtr<SMMeshIndexNode<POINT, EXTENT>>& node) {return true; }, nbThreads, maxQueueSize);
         }
 
     static auto loadChildExtentHelper = [](SMPointIndexNode<POINT, EXTENT>* parent, SMPointIndexNode<POINT, EXTENT>* child) ->void
@@ -726,7 +726,7 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish
             }
         }
     
-template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadIndexNodes(uint64_t& nLoaded, int level, bool headersOnly)
+template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadIndexNodes(size_t& nLoaded, int level, bool headersOnly)
     {
 
     static std::atomic<uint64_t> loadHeaderTime = 0;
@@ -5323,7 +5323,6 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
     // Force multi file, in case the originating dataset is single file (result is intended for multi file anyway)
     oldMasterHeader.m_singleFile = false;
 
-#ifdef VANCOUVER_API
     SMGroupGlobalParameters::Ptr groupParameters = SMGroupGlobalParameters::Create(SMGroupGlobalParameters::StrategyType::CESIUM, static_cast<SMStreamingStore<EXTENT>*>(pDataStore.get())->GetDataSourceAccount());
     SMGroupCache::Ptr groupCache = nullptr;
     m_rootNodeGroup = SMNodeGroup::Create(groupParameters, groupCache, path, 0, nullptr);
@@ -5354,9 +5353,6 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
     saveGroupsThread.join();
 
     strategy->Clear();
-#else
-	assert(!"Not yet available on dgndb, missing SMNodeGroup::Create overload");
-#endif
 
 
     if (m_progress != nullptr && m_progress->IsCanceled()) return SUCCESS;

@@ -89,7 +89,6 @@ size_t s_nCreatedNodes = 0;
 //extern DataSourceManager s_dataSourceManager;
 
 using namespace ISMStore;
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 
 /*----------------------------------------------+
@@ -453,16 +452,13 @@ StatusInt IScalableMeshCreator::Impl::GetStreamedTextureProvider(ITextureProvide
 
     //TFS# 761652 - Avoid reprojection at this stage so that the minimum pixel resolution is consistent whatever the reprojection is.
     BaseGCSCPtr cs; //(GetGCS().GetGeoRef().GetBasePtr();)
-
     DRange2d extent2d = DRange2d::From(range);
-
     HFCPtr<HRARASTER> streamingRaster(RasterUtilities::LoadRaster(url, cs, extent2d));
 
     if (streamingRaster == nullptr)
         {
         return ERROR;
         }
-
     double ratioToMeterH = GetGCS().GetHorizontalUnit().GetRatioToBase();
     double ratioToMeterV = GetGCS().GetVerticalUnit().GetRatioToBase();
 
@@ -478,11 +474,18 @@ StatusInt IScalableMeshCreator::Impl::GetStreamedTextureProvider(ITextureProvide
 #endif
 
     unitTransform.Multiply(range.low, range.low);
-    unitTransform.Multiply(range.high, range.high);
+    unitTransform.Multiply(range.high, range.high);    
 
-    assert(!m_scmPtr.IsValid() || m_dataIndex.GetPtr() == ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP());
-    m_dataIndex->SetTextured(SMTextureType::Streaming);
-
+    if (m_scmPtr.IsValid())
+        { 
+        ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->SetTextured(SMTextureType::Streaming);
+        }
+    else
+        {
+        assert(m_dataIndex != nullptr);
+        m_dataIndex->SetTextured(SMTextureType::Streaming);
+        }
+        
     textureStreamProviderPtr = new StreamTextureProvider(streamingRaster, range);
 
     return SUCCESS;
@@ -562,7 +565,7 @@ bool DgnDbFilename(BENTLEY_NAMESPACE_NAME::WString& stmFilename)
     {
     BENTLEY_NAMESPACE_NAME::WString dgndbFilename;
     //stmFilename
-    size_t size = stmFilename.ReplaceAll(L".3sm", L".dgndb");
+    size_t size = stmFilename.ReplaceAll(L".3sm", L".bim");
     assert(size==1);
     return true;
     }

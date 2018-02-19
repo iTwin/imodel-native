@@ -15,10 +15,6 @@ DLM_NAME    = $(appName)
 LIB_NAME    = $(appName)
 CCompPDBName = $(appName)
 
-#This is because GMP and MPFR don't use vendor prefixes in the CGAL files
-dirToSearch=$(OutputRootDir)BuildContexts/CGAL/VendorAPI/GMP
-%include cincapnd.mki
-
 #----------------------------------------------------------
 # Preprocessor definition.
 #----------------------------------------------------------
@@ -39,10 +35,8 @@ nameToDefine = NO_IODEFS
 nameToDefine = NOMINMAX
 %include cdefapnd.mki
 
-%ifdef SCALABLE_MESH_ATP_COMPILE
-    nameToDefine=SCALABLE_MESH_ATP
-    %include cdefapnd.mki
-%endif
+nameToDefine=SCALABLE_MESH_ATP
+%include cdefapnd.mki
 
 %ifndef NDEBUG
 nameToDefine=INDEX_DUMPING_ACTIVATED

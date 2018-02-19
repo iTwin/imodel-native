@@ -17,7 +17,7 @@
     </Part>
 
     <Part Name="ScalableMeshRDSDependencies" >
-      <SubPart PartName="RealityPlatform"                             PartFile="RealityModFramework"                      Repository="RealityModFramework"/>
+      <SubPart PartName="RealityPlatformTools"                             PartFile="RealityModFramework"                      Repository="RealityModFramework"/>
       <SubPart PartName="ClientAPI"            PartFile="BentleyDesktopClient"                     Repository="BentleyDesktopClient"/>
     </Part>
 
@@ -48,6 +48,8 @@
             <Libs ProductDirectoryName="ScalableMeshLibs" Required="false">delivery/$(shlibprefix)ScalableMesh$(libext)</Libs>    
             <Assemblies ProductDirectoryName="ScalableMeshAssemblies" Required="false">delivery/$(shlibprefix)ScalableMesh$(shlibext)</Assemblies> 
             <Assemblies ProductDirectoryName="PPNativeAssemblies">delivery/$(shlibprefix)ScalableMesh$(shlibext)</Assemblies> 
+            <Files ProductDirectoryName="ScalableMeshAssemblies">delivery/ScalableMeshCacert.pem</Files>
+            <Files ProductDirectoryName="PPNativeAssemblies">delivery/ScalableMeshCacert.pem</Files>
             <PublicAPI Domain="ScalableMesh" />
         </Bindings>
     </Part>
@@ -314,8 +316,8 @@
         <ProductDirectory Name="JpegAssemblies" Deliver="false"/>
         <ProductDirectory Name="PngNativeAssemblies" Deliver="false"/>            
         <ProductDirectory Name="TiffNativeAssemblies" Deliver="false"/>      
-        <ProductDirectory Name="ZlibNativeAssemblies" Deliver="false"/>
-         <ProductDirectory Name="ZlibNativeAssemblies" LibType="static" Deliver="false"/> 
+        <ProductDirectory Name="ZlibNativeAssemblies" Path="Dlls" Deliver="true"/>
+        <ProductDirectory Name="ZlibNativeAssemblies" LibType="static" Deliver="false"/> 
         <ProductDirectory Name="Assemblies" Path="Dlls"/>
         <ProductDirectory Name="ErdasEcwJpeg2000Assemblies" Path="Dlls" />
         <ProductDirectory Name="BeOpenSSLAssemblies" Path="Dlls"/>
@@ -325,8 +327,12 @@
         <ProductDirectory Name="BeIcu4cData"       Path="Dlls" LibType="static" />
         <ProductDirectory Name="PointCloudAssemblies" Path="Dlls" Deliver="true" />
         <ProductDirectory Name="LibV8Assemblies" Path="Dlls" Deliver="true" />
+        <ProductDirectory Name="RealityAssemblies" Path="Dlls" Deliver="true" />      
         <ProductDirectory Name="ScalableMeshV8SDK"          Path="Dlls\ScalableMeshV8SDK" />
-    </ProductDirectoryList>
+        <ProductDirectory Name="BeOpenSSLAssemblies" Path="Dlls" Deliver="true" />
+        <ProductDirectory Name="BeCurlAssemblies" Path="Dlls" Deliver="true" />                                
+        <ProductDirectory Name="BentleyDesktopClientApi" Path="Dlls" Deliver="true" />      
+  </ProductDirectoryList>
     
     <Product Name="ScalableMeshATP" SaveProduct="true" >
         <SubPart PartName="ScalableMeshATPexe" />

@@ -14,13 +14,13 @@ using namespace std;
 #include <ScalableMesh\IScalableMeshMoniker.h>
 #include <ScalableMesh\IScalableMeshURL.h>
 #include <DgnPlatform/DgnPlatform.h>
-#include <DgnView/DgnViewLib.h>
 
 #ifndef VANCOUVER_API   
 #include <DgnPlatform/DgnGeoCoord.h>
-#include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
+#include <DgnPlatform\DesktopTools\KnownDesktopLocationsAdmin.h>
 #define VIEWMANAGER ViewManager
 #else 
+#include <DgnView/DgnViewLib.h>
 #define VIEWMANAGER IViewManager
 #include <DgnGeoCoord\DgnGeoCoord.h>
 #endif
@@ -35,12 +35,19 @@ using namespace std;
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+
+#ifdef VANCOUVER_API
+    USING_NAMESPACE_BENTLEY_DGNPLATFORM
+#else
+    USING_NAMESPACE_BENTLEY_DGN
+#endif
+
 using namespace BENTLEY_NAMESPACE_NAME::DgnPlatform;
 using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 
 namespace ScalableMeshATPexe
 {
+#ifdef VANCOUVER_API 
 struct AppViewManager : VIEWMANAGER
     {
     protected:
@@ -60,17 +67,21 @@ struct AppViewManager : VIEWMANAGER
         AppViewManager() {}
         ~AppViewManager() {}
     };
-
+#endif
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   01/10
 //=======================================================================================
+#ifdef VANCOUVER_API 
 class AppHost : public DgnViewLib::Host
+#else
+class AppHost : public DgnPlatformLib::Host
+#endif
     {
 
     protected:
 
-#ifndef VANCOUVER_API   
-        virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new BentleyApi::Dgn::WindowsKnownLocationsAdmin(); }
+#ifndef VANCOUVER_API               
+        virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new Dgn::KnownDesktopLocationsAdmin; }
         virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() { return BeSQLite::L10N::SqlangFiles(BeFileName()); }
         virtual void                                      _SupplyProductName(Utf8StringR name) override;
 #else
@@ -78,8 +89,11 @@ class AppHost : public DgnViewLib::Host
 #endif
 
         virtual DgnPlatformLib::Host::NotificationAdmin&  _SupplyNotificationAdmin() override;        
-        virtual DgnPlatformLib::Host::GeoCoordinationAdmin& _SupplyGeoCoordinationAdmin() override;        
-        virtual VIEWMANAGER& _SupplyViewManager() override { return *new AppViewManager(); }
+        virtual DgnPlatformLib::Host::GeoCoordinationAdmin& _SupplyGeoCoordinationAdmin() override;     
+		
+#ifdef VANCOUVER_API    	
+		virtual VIEWMANAGER& _SupplyViewManager() override { return *new AppViewManager(); }
+#endif		
 
     public:
         void Startup();
@@ -175,6 +189,10 @@ struct ExeAdmin : BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshAdmin
         return s_activeDgnModelRefP;
         }
 
+    virtual uint64_t _GetProductId() const override
+        {
+        return 1000; //Internal application, use MicroStation as default.        
+        }    
     };
 
 struct ExeHost : BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshLib::Host
@@ -197,8 +215,16 @@ void InitializeATP(DgnPlatformLib::Host& host)
     appHost.Startup();
 
     BeFileName name;
+
+#ifdef VANCOUVER_API       
     BeFileNameStatus beStatus = BeFileName::BeGetTempPath(name);
     assert(BeFileNameStatus::Success == beStatus);
+#else        
+    DgnPlatformLib::Host::IKnownLocationsAdmin& locationAdmin(DgnPlatformLib::QueryHost()->GetIKnownLocationsAdmin());
+    name = locationAdmin.GetLocalTempDirectoryBaseName();
+    assert(!name.IsEmpty());
+#endif
+    
     name.AppendToPath(L"temp.dgn");
 
     static ExeHost smHost;
