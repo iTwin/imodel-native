@@ -6,7 +6,7 @@
 |       $Date: 2011/10/26 17:55:51 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -124,25 +124,25 @@ struct IDTMSourceCollection
         IteratorBase                            _EndEditInternal       ();
 
     public:
-        explicit                                IDTMSourceCollection   ();
+        BENTLEY_SM_EXPORT  explicit                                IDTMSourceCollection   ();
 
-        void                                    RegisterEditListener   (EditListener&               listener);
-        void                                    UnregisterEditListener (const EditListener&         listener);
+        BENTLEY_SM_EXPORT void                                    RegisterEditListener   (EditListener&               listener);
+        BENTLEY_SM_EXPORT void                                    UnregisterEditListener (const EditListener&         listener);
 
         // TDORAY: Try remove need for these
         // Internal accessors. 
-        iterator                                BeginEditInternal      ();
-        iterator                                EndEditInternal        ();
+        BENTLEY_SM_EXPORT iterator                                BeginEditInternal      ();
+        BENTLEY_SM_EXPORT iterator                                EndEditInternal        ();
         void                                    AddInternal            (const IDTMSourcePtr&    sourcePtr);
 
 /*__PUBLISH_SECTION_START__*/
 
     public : 
         // Not meant to be used polymorphically
-        BENTLEY_SM_EXPORT                             ~IDTMSourceCollection  ();
+         BENTLEY_SM_EXPORT                             ~IDTMSourceCollection  ();
 
-        BENTLEY_SM_EXPORT                             IDTMSourceCollection   (const IDTMSourceCollection& rhs);
-        BENTLEY_SM_EXPORT IDTMSourceCollection&       operator=              (const IDTMSourceCollection& rhs);
+         BENTLEY_SM_EXPORT                             IDTMSourceCollection   (const IDTMSourceCollection& rhs);
+         BENTLEY_SM_EXPORT IDTMSourceCollection&       operator=              (const IDTMSourceCollection& rhs);
 
 
 

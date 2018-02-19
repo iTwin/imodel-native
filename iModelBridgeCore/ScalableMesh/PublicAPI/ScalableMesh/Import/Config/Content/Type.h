@@ -6,7 +6,7 @@
 |       $Date: 2011/11/22 21:58:02 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -23,7 +23,7 @@ struct TypeConfigImpl;
 * @description  
 * @bsiclass                                                  Raymond.Gauthier   04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct TypeConfig 
+IMPORT_DLLE struct TypeConfig
     {
 public:  // OPERATOR_NEW_KLUDGE
 

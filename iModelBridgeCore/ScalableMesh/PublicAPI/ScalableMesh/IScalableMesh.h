@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 |
 +--------------------------------------------------------------------------------------*/
@@ -112,11 +112,11 @@ protected:
     
 public:
 
-    BENTLEY_SM_EXPORT bool      IsCurrentPreviewEnough() const;
+    BENTLEY_SM_IMPORT_EXPORT bool      IsCurrentPreviewEnough() const;
 
-    BENTLEY_SM_EXPORT StatusInt UpdatePreview(PolyfaceQueryCR currentGround);
+    BENTLEY_SM_IMPORT_EXPORT StatusInt UpdatePreview(PolyfaceQueryCR currentGround);
 
-    BENTLEY_SM_EXPORT bool UpdateProgress(IScalableMeshProgress* progress);
+    BENTLEY_SM_IMPORT_EXPORT bool UpdateProgress(IScalableMeshProgress* progress);
         
 };
 

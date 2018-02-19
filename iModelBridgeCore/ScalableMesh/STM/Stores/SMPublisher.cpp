@@ -414,3 +414,5 @@ bool SM3SMPublisher::IsNodeClippedOut(IScalableMeshNodePtr sourceNode)
         }
     return false;
     }
+
+

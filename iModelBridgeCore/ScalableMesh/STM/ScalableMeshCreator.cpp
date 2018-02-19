@@ -6,7 +6,7 @@
 |       $Date: 2012/01/27 16:45:29 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -80,7 +80,12 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 //NEEDS_WORK_SM : Temp global variable probably only for debug purpose, not sure we want to know if we are in editing.
 extern bool s_inEditing = false; 
-
+bool s_useThreadsInStitching = false;
+bool s_useThreadsInMeshing = false;
+bool s_useThreadsInFiltering = false;
+bool s_useThreadsInTexturing = false;
+bool s_useSpecialTriangulationOnGrids = false;
+size_t s_nCreatedNodes = 0;
 //extern DataSourceManager s_dataSourceManager;
 
 using namespace ISMStore;
@@ -518,86 +523,7 @@ StatusInt IScalableMeshCreator::Impl::SetTextureProvider(ITextureProviderPtr pro
     }
 
 
-
-// TDORAY: This is a duplicate of version in ScalableMesh.cpp. Find a way to use the same fn.
-// TDORAY: Return a ref counted pointer
-template<class POINT, class EXTENT>
-static ISMPointIndexFilter<POINT, EXTENT>* scm_createFilterFromType (ScalableMeshFilterType filterType)
-    {
-    WString filterTypeStr;
-    
-    if (BSISUCCESS == ConfigurationManager::GetVariable(filterTypeStr, L"SM_FILTER_TYPE"))
-        {
-        ScalableMeshFilterType filterTypeOverwrite = (ScalableMeshFilterType)_wtoi(filterTypeStr.c_str());
-        if (filterTypeOverwrite >= 0 && filterTypeOverwrite < SCM_FILTER_QTY)
-            {
-            filterType = filterTypeOverwrite;
-            }
-        else
-            {
-            assert(!"Unknown filter type");
-            }        
-        }
-
-    switch (filterType)
-        {
-        case SCM_FILTER_DUMB:
-            return new ScalableMeshQuadTreeBCLIBFilter1<POINT, EXTENT>();                
-        case SCM_FILTER_PROGRESSIVE_DUMB:
-            return new ScalableMeshQuadTreeBCLIBProgressiveFilter1<POINT, EXTENT>();        
-        case SCM_FILTER_DUMB_MESH:
-            return new ScalableMeshQuadTreeBCLIBMeshFilter1<POINT, EXTENT>();        
-        case SCM_FILTER_CGAL_SIMPLIFIER:
-            return new ScalableMeshQuadTreeBCLIB_CGALMeshFilter<POINT, EXTENT>();
-        default :
-            assert(!"Not supposed to be here");
-        }
-    return 0;
-    }
-
-template<class POINT, class EXTENT>
-static ISMPointIndexMesher<POINT, EXTENT>* Create2_5dMesherFromType (ScalableMeshMesherType mesherType)
-    {    
-    //Only one 2.5d mesher
-    assert(mesherType == SCM_MESHER_2D_DELAUNAY);
-
-    return new ScalableMesh2DDelaunayMesher<POINT, EXTENT>();    
-    }
-
-
-template<class POINT, class EXTENT>
-static ISMPointIndexMesher<POINT, EXTENT>* Create3dMesherFromType (ScalableMeshMesherType mesherType)
-    {    
-    /*WString mesherTypeStr;
-
-    if (BSISUCCESS == ConfigurationManager::GetVariable(mesherTypeStr, L"SM_3D_MESHER_TYPE"))
-        {
-        ScalableMeshMesherType mesherTypeOverwrite = (ScalableMeshMesherType)_wtoi(mesherTypeStr.c_str());
-        if (mesherTypeOverwrite >= 0 && mesherTypeOverwrite < SCM_MESHER_QTY)
-            {
-            mesherType = mesherTypeOverwrite;
-            }
-        else
-            {
-            assert(!"Unknown mesher type");
-            }        
-        }*/
-
-    switch (mesherType)
-        {
-        case SCM_MESHER_2D_DELAUNAY:
-            return new ScalableMesh2DDelaunayMesher<POINT, EXTENT>();
-            /*        
-        case SCM_MESHER_3D_DELAUNAY:
-            return new ScalableMesh3DDelaunayMesher<POINT, EXTENT> (false);
-        case SCM_MESHER_TETGEN:
-            return new ScalableMesh3DDelaunayMesher<POINT, EXTENT> (true);*/
-        default:
-            assert(!"Not supposed to be here");
-        }
-    return 0;
-    }
-
+/*
 ScalableMeshFilterType scm_getFilterType ()
     {    
     //return SCM_FILTER_CGAL_SIMPLIFIER;
@@ -619,6 +545,7 @@ ScalableMeshMesherType Get3dMesherType ()
 return SCM_MESHER_2D_DELAUNAY;
 #endif
     }
+*/
 
 bool scm_isProgressiveFilter ()
     {
@@ -640,6 +567,84 @@ bool DgnDbFilename(BENTLEY_NAMESPACE_NAME::WString& stmFilename)
     return true;
     }
 
+/*---------------------------------------------------------------------------------**//**
+                                                                                      * @description
+                                                                                      * @bsimethod                                                  Raymond.Gauthier   03/2011
+                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
+SourceRef CreateSourceRefFromIDTMSource(const IDTMSource& source, const WString& stmPath)
+{
+    struct Visitor : IDTMSourceVisitor
+    {
+        auto_ptr<SourceRef>         m_sourceRefP;
+        const WString&              m_stmPath;
+
+        explicit                    Visitor(const WString&                  stmPath)
+            : m_stmPath(stmPath)
+        {
+        }
+
+        virtual void                _Visit(const IDTMLocalFileSource&  source) override
+        {
+            StatusInt status = BSISUCCESS;
+            const WChar* path = source.GetPath(status);
+            if (BSISUCCESS != status)
+                throw SourceNotFoundException();
+
+            if (0 == wcsicmp(path, m_stmPath.c_str()))
+                throw CustomException(L"STM and source are the same");
+
+            LocalFileSourceRef localSourceRef(path);
+
+            m_sourceRefP.reset(new SourceRef(localSourceRef));
+        }
+        virtual void                _Visit(const IDTMDgnLevelSource&       source) override
+        {
+            StatusInt status = BSISUCCESS;
+            if (BSISUCCESS != status)
+                throw SourceNotFoundException();
+
+            m_sourceRefP.reset(new SourceRef(DGNLevelByNameSourceRef(source.GetPath(),
+                source.GetModelName(),
+                source.GetLevelName())));
+        }
+
+        virtual void                _Visit(const IDTMDgnReferenceSource&       source) override
+        {
+            throw CustomException(L"Not supported");
+        }
+        virtual void                _Visit(const IDTMDgnReferenceLevelSource&  source) override
+        {
+            StatusInt status = BSISUCCESS;
+            if (BSISUCCESS != status)
+                throw SourceNotFoundException();
+
+            m_sourceRefP.reset(new SourceRef(DGNReferenceLevelByIDSourceRef(source.GetPath(),
+                source.GetModelID(),
+                source.GetRootToRefPersistentPath(),
+                source.GetLevelID())));
+        }
+
+        virtual void                _Visit(const IDTMDgnModelSource&            source) override
+        {
+            throw CustomException(L"Not supported");
+        }
+        virtual void                _Visit(const IDTMSourceGroup&      source) override
+        {
+      
+        }
+    };
+
+    Visitor visitor(stmPath);
+    source.Accept(visitor);
+
+    if (0 == visitor.m_sourceRefP.get())
+        throw CustomException(L"Unable to create source Ref from IDTMSource!");
+
+    visitor.m_sourceRefP->SetDtmSource(source.Clone());
+
+    return *visitor.m_sourceRefP;
+}
+
 
 int IScalableMeshCreator::Impl::CreateScalableMesh(bool isSingleFile, bool restrictLevelForPropagation, bool doPartialUpdate)
     {    
@@ -647,7 +652,10 @@ int IScalableMeshCreator::Impl::CreateScalableMesh(bool isSingleFile, bool restr
     return status;
     }
 
+void IScalableMeshCreator::Impl::ConfigureMesherFilter(ISMPointIndexFilter<PointType, PointIndexExtentType>*& pFilter, ISMPointIndexMesher<PointType, PointIndexExtentType>*& pMesher2d, ISMPointIndexMesher<PointType, PointIndexExtentType>*& pMesher3d)
+{
 
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @description
@@ -666,15 +674,20 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
     s_inEditing = false;
 
 
-    ISMPointIndexFilter<PointType, PointIndexExtentType>* pFilter = s_filter != nullptr? s_filter:
+   /* ISMPointIndexFilter<PointType, PointIndexExtentType>* pFilter = s_filter != nullptr? s_filter:
         scm_createFilterFromType<PointType, PointIndexExtentType>(scm_getFilterType());
 
     ISMPointIndexMesher<PointType, PointIndexExtentType>* pMesher2_5d =
                 Create2_5dMesherFromType<PointType, PointIndexExtentType>(Get2_5dMesherType());
 
     ISMPointIndexMesher<PointType, PointIndexExtentType>* pMesher3d =
-                Create3dMesherFromType<PointType, PointIndexExtentType>(Get3dMesherType());
-            
+                Create3dMesherFromType<PointType, PointIndexExtentType>(Get3dMesherType());*/
+       
+    ISMPointIndexFilter<PointType, PointIndexExtentType>* pFilter = nullptr;
+    ISMPointIndexMesher<PointType, PointIndexExtentType>* pMesher2_5d = nullptr;
+    ISMPointIndexMesher<PointType, PointIndexExtentType>* pMesher3d = nullptr;
+    ConfigureMesherFilter(pFilter, pMesher2_5d, pMesher3d);
+
     if (!isSingleFile)
         {
         // SM_NEEDS_WORK_STREAMING : path should not depend on path to stm file. It should be a parameter to the creation process?

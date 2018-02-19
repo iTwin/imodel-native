@@ -6,7 +6,7 @@
 |       $Date: 2012/11/29 17:30:53 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -343,7 +343,7 @@ struct IScalableMeshMesh : public RefCountedBase
 
         BENTLEY_SM_EXPORT size_t GetNbFaces() const;
 
-        DPoint3d* EditPoints();
+        BENTLEY_SM_EXPORT DPoint3d* EditPoints();
 
         BENTLEY_SM_EXPORT DTMStatusInt GetAsBcDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr& bcdtm);
 

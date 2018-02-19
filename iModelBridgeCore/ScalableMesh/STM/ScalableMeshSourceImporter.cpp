@@ -6,7 +6,7 @@
 |       $Date: 2012/01/27 16:45:29 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -879,7 +879,7 @@ int IScalableMeshSourceImporter::Impl::ImportClipMaskSource  (const IDTMSource& 
         if(0 == originalSourcePtr.get())
             return BSIERROR;
 
-        const SourcePtr sourcePtr = Configure(originalSourcePtr, dataSource.GetConfig().GetContentConfig(), GetLog());
+        const SourcePtr sourcePtr = Configure(originalSourcePtr, dataSource.GetConfig().GetContentConfig()/*, GetLog()*/);
         if(0 == sourcePtr.get())
             return BSIERROR;
 

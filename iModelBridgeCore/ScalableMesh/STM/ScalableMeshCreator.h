@@ -6,7 +6,7 @@
 |       $Date: 2011/12/21 17:04:24 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -88,7 +88,7 @@ typedef DPoint3d                          PointType;
 typedef DRange3d PointIndexExtentType;
 typedef SMMeshIndex <PointType, PointIndexExtentType> MeshIndexType;
 
-void RegisterDelayedImporters();
+BENTLEY_SM_EXPORT void RegisterDelayedImporters();
 inline bool fileExist(const WChar* fileName)
     {
     ifstream file(fileName, ios::in | ios::binary);
@@ -104,7 +104,7 @@ bool DgnDbFilename(BENTLEY_NAMESPACE_NAME::WString& stmFilename);
 * @description  
 * @bsiclass                                                  Raymond.Gauthier   06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct IScalableMeshCreator::Impl 
+struct IScalableMeshCreator::Impl
     {    
     private :
         
@@ -132,9 +132,9 @@ struct IScalableMeshCreator::Impl
 
         static DataSourceManager            s_dataSourceManager;
 
-        StatusInt                           GetStreamedTextureProvider(ITextureProviderPtr& textureStreamProviderPtr, const WString& url);
+        BENTLEY_SM_EXPORT StatusInt                           GetStreamedTextureProvider(ITextureProviderPtr& textureStreamProviderPtr, const WString& url);
 
-        StatusInt                           CreateDataIndex(HFCPtr<MeshIndexType>&                                    pDataIndex,
+        BENTLEY_SM_EXPORT StatusInt                           CreateDataIndex(HFCPtr<MeshIndexType>&                                    pDataIndex,
                                                             bool needBalancing = false);
 
 
@@ -144,16 +144,16 @@ struct IScalableMeshCreator::Impl
         static StatusInt                    AddPointOverviewOfLinears      (PointIndex&                             pointIndex,
                                                                             LinearIndex&                            linearIndex);
 
-        bool                                FileExist                      () const;
+        BENTLEY_SM_EXPORT bool                                FileExist                      () const;
 
 
         //ISMStore::File::Ptr                 GetFile(const ISMStore::AccessMode&             accessMode);
-        virtual StatusInt                           Save();
-        virtual StatusInt                           Load();
-        void                                        SetupFileForCreation();
-        SMSQLiteFilePtr                             GetFile(bool fileExists);
+        BENTLEY_SM_EXPORT virtual StatusInt                           Save();
+        BENTLEY_SM_EXPORT virtual StatusInt                           Load();
+        BENTLEY_SM_EXPORT void                                        SetupFileForCreation();
+        BENTLEY_SM_EXPORT SMSQLiteFilePtr                             GetFile(bool fileExists);
 
-        virtual bool                                IsFileDirty();
+        BENTLEY_SM_EXPORT virtual bool                                IsFileDirty();
 
         IScalableMeshProgressPtr m_progress;
 
@@ -181,23 +181,26 @@ struct IScalableMeshCreator::Impl
 
 
           HFCPtr<MeshIndexType>                   m_pDataIndex;
+
+    protected:
+        void ConfigureMesherFilter(ISMPointIndexFilter<PointType, PointIndexExtentType>*& pFilter, ISMPointIndexMesher<PointType, PointIndexExtentType>*& pMesher2d, ISMPointIndexMesher<PointType, PointIndexExtentType>*& pMesher3d);
           
     public :  
-        explicit                            Impl                           (const WChar*                          scmFileName);
-        explicit                            Impl                           (const IScalableMeshPtr&                        iDTMFilePtr);
+        BENTLEY_SM_EXPORT explicit                            Impl                           (const WChar*                          scmFileName);
+        BENTLEY_SM_EXPORT explicit                            Impl                           (const IScalableMeshPtr&                        iDTMFilePtr);
 
-                                            ~Impl                          ();
+        BENTLEY_SM_EXPORT                                    ~Impl                          ();
 
-        const GeoCoords::GCS&               GetGCS                         () const;
+        BENTLEY_SM_EXPORT const GeoCoords::GCS&               GetGCS                         () const;
 
 
-        StatusInt                           LoadGCS();
-        StatusInt                           SaveGCS();
+        BENTLEY_SM_EXPORT StatusInt                           LoadGCS();
+        BENTLEY_SM_EXPORT StatusInt                           SaveGCS();
 
-        StatusInt                           LoadFromFile                   ();
+        BENTLEY_SM_EXPORT StatusInt                           LoadFromFile                   ();
         StatusInt                           SaveToFile                     ();  
 
-        virtual StatusInt                           CreateScalableMesh                    (bool isSingleFile, bool restrictLevelForPropagation, bool doPartialUpdate);
+        BENTLEY_SM_EXPORT virtual StatusInt                           CreateScalableMesh                    (bool isSingleFile, bool restrictLevelForPropagation, bool doPartialUpdate);
 
         StatusInt  SetTextureMosaic(MOSAIC_TYPE* mosaicP);
         StatusInt  SetTextureProvider(ITextureProviderPtr provider);
@@ -205,7 +208,7 @@ struct IScalableMeshCreator::Impl
 
         StatusInt                           Filter                         ();        
 
-        IScalableMeshProgressPtr            GetProgress();
+        BENTLEY_SM_EXPORT IScalableMeshProgressPtr            GetProgress();
 
         bool                               IsCanceled();
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/SMNodeGroup.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -36,7 +36,7 @@
 //#ifndef NDEBUG
 //#define DEBUG_GROUPS
 //#define DEBUG_AZURE
-extern std::mutex s_consoleMutex;
+//extern std::mutex s_consoleMutex;
 //#endif
 
 #ifdef DEBUG_AZURE
@@ -49,10 +49,10 @@ typedef BENTLEY_NAMESPACE_NAME::RefCountedPtr<SMNodeGroup> SMNodeGroupPtr;
 
 extern bool s_stream_enable_caching;
 
-extern uint32_t s_max_number_nodes_in_group;
-extern size_t   s_max_group_size;
-extern uint32_t s_max_group_depth;
-extern uint32_t s_max_group_common_ancestor;
+BENTLEY_SM_EXPORT extern uint32_t s_max_number_nodes_in_group;
+BENTLEY_SM_EXPORT extern size_t   s_max_group_size;
+BENTLEY_SM_EXPORT extern uint32_t s_max_group_depth;
+BENTLEY_SM_EXPORT extern uint32_t s_max_group_common_ancestor;
 
 struct SMGroupGlobalParameters : public BENTLEY_NAMESPACE_NAME::RefCountedBase {
 public:
@@ -75,7 +75,7 @@ public:
     WString                 GetWellKnownText() { return m_wktStr; }
     void                    SetWellKnownText(const WString& wkt) { m_wktStr = wkt; }
 
-    static Ptr Create(StrategyType strategy, DataSourceAccount* account);
+    BENTLEY_SM_EXPORT static Ptr Create(StrategyType strategy, DataSourceAccount* account);
 
 private:
 
@@ -231,8 +231,8 @@ public:
                 return Queue::size() < capacity / 2;
                 }))
                 {
-                std::lock_guard<mutex> clk(s_consoleMutex);
-                std::cout << "\r  Speed : " << lastNumberOfItems - Queue::size() << " items/second     Remaining : " << Queue::size() << "                         ";
+               // std::lock_guard<mutex> clk(s_consoleMutex);
+               // std::cout << "\r  Speed : " << lastNumberOfItems - Queue::size() << " items/second     Remaining : " << Queue::size() << "                         ";
                 lastNumberOfItems = Queue::size();
                 }
             }
@@ -455,9 +455,9 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 
         UpAxis GetGltfUpAxis() { return m_upAxis; }
 
-        void Append3DTile(const uint64_t& nodeID, const uint64_t& parentNodeID, const Json::Value& tile);
+        BENTLEY_SM_EXPORT void Append3DTile(const uint64_t& nodeID, const uint64_t& parentNodeID, const Json::Value& tile);
 
-        void AppendChildGroup(SMNodeGroupPtr childGroup);
+        BENTLEY_SM_EXPORT void AppendChildGroup(SMNodeGroupPtr childGroup);
 
         uint32_t GetID() { return m_groupHeader->GetID(); }
 
@@ -629,7 +629,7 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
             //return node != m_groupHeader->end();
             }
 
-        void MergeChild(SMNodeGroupPtr child);
+        BENTLEY_SM_EXPORT void MergeChild(SMNodeGroupPtr child);
 
         SMNodeHeader* GetNodeHeader(const size_t& pi_pNodeHeaderID)
             {
@@ -646,7 +646,7 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
                 {
 #ifdef DEBUG_GROUPS
                         {
-                        std::lock_guard<mutex> clk(s_consoleMutex);
+                   //     std::lock_guard<mutex> clk(s_consoleMutex);
                         std::cout << "Processing... " << data.first << std::endl;
                         }
 #endif
@@ -747,7 +747,7 @@ class SMNodeGroupMasterHeader : public std::map<uint32_t, SMGroupNodeIds>, publi
             group.m_sizeOfRawHeaders += pi_pNodeHeaderSize;
             }
 
-        void SaveToFile(const WString pi_pOutputDirPath) const;
+        BENTLEY_SM_EXPORT void SaveToFile(const WString pi_pOutputDirPath) const;
 
         void SetOldMasterHeaderData(SQLiteIndexHeader pi_pOldMasterHeader)
             {

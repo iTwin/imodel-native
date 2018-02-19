@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/SMPointIndex.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -251,7 +251,7 @@ public:
     Returns the number of subnodes on split. This number can be 4 or 8
 
     -----------------------------------------------------------------------------*/
-    size_t GetNumberOfSubNodesOnSplit() const;
+    BENTLEY_SM_EXPORT size_t GetNumberOfSubNodesOnSplit() const;
 
     /**----------------------------------------------------------------------------
     Invalidate the stitching that could have been done in a node.
@@ -337,7 +337,7 @@ public:
     /**----------------------------------------------------------------------------
     Returns the depth level of a node in the index
     -----------------------------------------------------------------------------*/
-    size_t GetLevel() const;
+    BENTLEY_SM_EXPORT size_t GetLevel() const;
 
     /**----------------------------------------------------------------------------
     Decreases the level by the number of levels passed in parameter ... this decrease will propagate to all subnodes.
@@ -368,21 +368,21 @@ public:
 
     @return true if node is a leaf
     -----------------------------------------------------------------------------*/
-    bool IsLeaf() const;
+    BENTLEY_SM_EXPORT bool IsLeaf() const;
 
     /**----------------------------------------------------------------------------
     Returns node extent
 
     @return reference to extent of node
     -----------------------------------------------------------------------------*/
-    const EXTENT& GetNodeExtent() const;
+    BENTLEY_SM_EXPORT const EXTENT& GetNodeExtent() const;
 
     /**----------------------------------------------------------------------------
     Returns node content extent
 
     @return reference to extent of content of node
     -----------------------------------------------------------------------------*/
-    const EXTENT& GetContentExtent() const;
+    BENTLEY_SM_EXPORT const EXTENT& GetContentExtent() const;
 
     /**----------------------------------------------------------------------------
     Returns the number of objects in node and sub-nodes added
@@ -576,14 +576,14 @@ public:
     /**----------------------------------------------------------------------------
     This method indicates if the node is loaded or not.
     -----------------------------------------------------------------------------*/
-    bool IsLoaded() const;
+    BENTLEY_SM_EXPORT bool IsLoaded() const;
 
     virtual bool Destroy();
 
 
     virtual void LoadIndexNodes(uint64_t& nLoaded, int level, bool headersOnly);
 
-    uint32_t       GetNbObjects() const;
+    BENTLEY_SM_EXPORT uint32_t       GetNbObjects() const;
 
     uint64_t      GetNbObjectsAtLevel(size_t pi_depthLevel) const;
 
@@ -694,9 +694,9 @@ public:
     -----------------------------------------------------------------------------*/
     virtual void SplitNode(POINT splitPosition, bool propagateSplit = true);
 
-    HFCPtr<SMPointIndexNode<POINT, EXTENT> > AddChild(EXTENT newExtent, bool computeNodeId=true, uint64_t nodeId=0);
+    BENTLEY_SM_EXPORT HFCPtr<SMPointIndexNode<POINT, EXTENT> > AddChild(EXTENT newExtent, bool computeNodeId=true, uint64_t nodeId=0);
     
-    void SortSubNodes();
+    BENTLEY_SM_EXPORT void SortSubNodes();
 
     /*
     * Re-split a branched node (used to get different splits e.g. 8/4 children).
@@ -712,7 +712,7 @@ public:
 
     bool IsParentOfARealUnsplitNode() const;
 
-    HPMBlockID         GetBlockID() const;
+    BENTLEY_SM_EXPORT HPMBlockID         GetBlockID() const;
 
     size_t             GetNbPoints() const
         {
@@ -754,7 +754,7 @@ public:
     /**----------------------------------------------------------------------------
     Setup the neighbor nodes of newly creating sub-nodes after a split.
     -----------------------------------------------------------------------------*/
-    void SetupNeighborNodesAfterSplit();
+    BENTLEY_SM_EXPORT void SetupNeighborNodesAfterSplit();
 
     /**----------------------------------------------------------------------------
     Setup a neighbor relation between two nodes.
@@ -1291,12 +1291,12 @@ public:
                                    node after which the node may be split.
 
     -------------------------------------------------------------------------------------------------*/
-    SMPointIndex(ISMDataStoreTypePtr<EXTENT>& newDataStore, size_t SplitTreshold, ISMPointIndexFilter<POINT, EXTENT>* filter, bool balanced, bool propagatesDataDown, bool shouldCreateRoot = true);
+    BENTLEY_SM_EXPORT SMPointIndex(ISMDataStoreTypePtr<EXTENT>& newDataStore, size_t SplitTreshold, ISMPointIndexFilter<POINT, EXTENT>* filter, bool balanced, bool propagatesDataDown, bool shouldCreateRoot = true);
     /**----------------------------------------------------------------------------
      Destructor
      If the index has unstored nodes then those will be stored.
     -----------------------------------------------------------------------------*/
-    virtual             ~SMPointIndex();
+    BENTLEY_SM_EXPORT virtual             ~SMPointIndex();
 
     /**----------------------------------------------------------------------------
      Returns the meory pool
@@ -1307,7 +1307,7 @@ public:
     /**----------------------------------------------------------------------------
      Returns the data store
     -----------------------------------------------------------------------------*/
-    ISMDataStoreTypePtr<EXTENT> GetDataStore();
+    BENTLEY_SM_EXPORT ISMDataStoreTypePtr<EXTENT> GetDataStore();
 
     /**----------------------------------------------------------------------------
      Returns the next node id available
@@ -1332,7 +1332,7 @@ public:
      Push the data in leaf and balance the octree
     -----------------------------------------------------------------------------*/
     //NEEDS_WORK_SM : Maybe should be virtual.
-    void BalanceDown(size_t depthBeforePartialUpdate, bool keepUnbalanced = false);
+    BENTLEY_SM_EXPORT void BalanceDown(size_t depthBeforePartialUpdate, bool keepUnbalanced = false);
 
     /**----------------------------------------------------------------------------
      Remove useless root
@@ -1361,7 +1361,7 @@ public:
      node post-filtering then global post-filtering.
 
     -----------------------------------------------------------------------------*/
-    virtual void        Filter(int pi_levelToFilter);
+    BENTLEY_SM_EXPORT virtual void        Filter(int pi_levelToFilter);
 
 
     /**----------------------------------------------------------------------------
@@ -1396,9 +1396,9 @@ public:
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(EXTENT extent, bool isRootNode = false);
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(HPMBlockID blockID, bool isRootNode = false);
     
-    bool                AddArray (const POINT* pointsArray, size_t countOfPoints, bool arePoints3d, bool regularGrid=false);
+    BENTLEY_SM_EXPORT bool                AddArray (const POINT* pointsArray, size_t countOfPoints, bool arePoints3d, bool regularGrid=false);
     bool                Clear(HFCPtr<HVEShape> pi_shapeToClear);    
-    bool                RemovePoints(const EXTENT& pi_extentToClear);    
+    BENTLEY_SM_EXPORT bool                RemovePoints(const EXTENT& pi_extentToClear);
 
     StatusInt           SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirectoryName, const short& pi_pGroupMode, bool pi_pCompress = true);
     StatusInt           SavePointsToCloud(const WString& pi_pOutputDirectoryName, bool pi_pCompress = true);
@@ -1420,7 +1420,7 @@ public:
     uint64_t GetNextID() const;
 
 
-    void GatherCounts();
+    BENTLEY_SM_EXPORT void GatherCounts();
 
     /**----------------------------------------------------------------------------
     Indicates if the data is propagated toward the leaves immediately or if it is
@@ -1452,7 +1452,7 @@ public:
 
     void PushPointsToBottomNodes();
 
-    size_t GetMaxFilledLevel();
+    BENTLEY_SM_EXPORT size_t GetMaxFilledLevel();
 
     /**----------------------------------------------------------------------------
     Indicates if the node is part of a balanced index
@@ -1464,10 +1464,10 @@ public:
 
     SMTextureType       IsTextured() const;
 
-    void              SetTextured(SMTextureType textureState);
+    BENTLEY_SM_EXPORT void              SetTextured(SMTextureType textureState);
 
-    bool IsSingleFile() const;
-    void SetSingleFile(bool singleFile);
+    BENTLEY_SM_EXPORT bool IsSingleFile() const;
+    BENTLEY_SM_EXPORT void SetSingleFile(bool singleFile);
 
     bool IsFromCesium() const;
 
@@ -1507,9 +1507,9 @@ public:
     @return The highest depth level
 
     -----------------------------------------------------------------------------*/
-    size_t              GetDepth() const;
+    BENTLEY_SM_EXPORT size_t              GetDepth() const;
 
-    HFCPtr<SMPointIndexNode<POINT, EXTENT> > FindNode(EXTENT ext, size_t level, bool use2d = false) const;
+    BENTLEY_SM_EXPORT HFCPtr<SMPointIndexNode<POINT, EXTENT> > FindNode(EXTENT ext, size_t level, bool use2d = false) const;
 
     void FindNodes(bvector< HFCPtr<SMPointIndexNode<POINT, EXTENT> >>& nodes, EXTENT ext, size_t level, bool use2d = false) const;
 
@@ -1521,7 +1521,7 @@ public:
     @return The root node
 
     -----------------------------------------------------------------------------*/
-    HFCPtr<SMPointIndexNode<POINT, EXTENT> >       GetRootNode() const;    
+    BENTLEY_SM_EXPORT HFCPtr<SMPointIndexNode<POINT, EXTENT> >       GetRootNode() const;
 
     /**----------------------------------------------------------------------------
     Create the root node of the index
@@ -1529,9 +1529,9 @@ public:
     @return The root node
 
    -----------------------------------------------------------------------------*/        
-    HFCPtr<SMPointIndexNode<POINT, EXTENT> >       CreateRootNode();       
+    BENTLEY_SM_EXPORT HFCPtr<SMPointIndexNode<POINT, EXTENT> >       CreateRootNode();
 
-    HFCPtr<SMPointIndexNode<POINT, EXTENT> >       CreateRootNode(uint64_t nodeId);
+    BENTLEY_SM_EXPORT HFCPtr<SMPointIndexNode<POINT, EXTENT> >       CreateRootNode(uint64_t nodeId);
       
     /**----------------------------------------------------------------------------
     Gets the effective limiting outter extent. This extent is the node extent
@@ -1611,12 +1611,13 @@ public:
         return m_rootNodeGroup;
         }
 
-    void               SetProgressCallback(IScalableMeshProgressPtr progress);
+    BENTLEY_SM_EXPORT void               SetProgressCallback(IScalableMeshProgressPtr progress);
 
     IScalableMeshProgressPtr m_progress = nullptr;
 
     HFCPtr<SMPointIndexNode<POINT, EXTENT>> FindLoadedNode(uint64_t id) const;
 
+    uint64_t                    m_smID;
 #ifndef NDEBUG
     void                ValidateNeighbors();
 #endif
@@ -1641,7 +1642,6 @@ protected:
     ISMDataStoreTypePtr<EXTENT> m_dataStore;
     std::atomic<uint64_t>       m_nextNodeID;
 
-    uint64_t                    m_smID;
     static uint64_t             m_nextSMID;
 
     ISMPointIndexFilter<POINT, EXTENT>* m_filter;    

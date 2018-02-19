@@ -6,7 +6,7 @@
 |       $Date: 2012/01/06 16:30:13 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -121,7 +121,7 @@ public:
 
     const SMSQLiteFilePtr&              GetDbFile() const;
 
-    const WChar*                        GetPath                 () const;
+    BENTLEY_SM_EXPORT const WChar*                        GetPath                 () const;
 
     static DataSourceManager &          GetDataSourceManager    (void)                                  {return *DataSourceManager::Get();}
     void                                SetDataSourceAccount    (DataSourceAccount *dataSourceAccount)  {m_dataSourceAccount = dataSourceAccount;}
@@ -658,6 +658,9 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual void _ReFilter() override {};
            
     };
+
+   BENTLEY_SM_EXPORT void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons);
+   BENTLEY_SM_EXPORT void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(const size_t i, const bvector<DPoint3d>& element)> choosePolygonInSet, std::function<void(const bvector<DPoint3d>& element)> afterPolygonAdded);
 
 
 /*__PUBLISH_SECTION_START__*/

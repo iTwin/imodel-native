@@ -6,7 +6,7 @@
 |       $Date: 2011/12/01 18:51:33 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -92,7 +92,7 @@ private:
     SharedPtrTypeTrait<const Impl>::type    m_implP;
 
 public:
-    GEOCOORDS_DLLE explicit                 GCSFactory                         (Log&                        log = GetDefaultLog());
+    GEOCOORDS_DLLE explicit                 GCSFactory                         (/*Log&                        log = GetDefaultLog()*/);
     GEOCOORDS_DLLE                          ~GCSFactory                        ();
 
     GEOCOORDS_DLLE                          GCSFactory                         (const GCSFactory&           rhs);

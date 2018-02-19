@@ -6,7 +6,7 @@
 |       $Date: 2012/06/27 14:06:54 $
 |     $Author: Chantal.Poulin $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -22,7 +22,7 @@ void CalcNormals (DVec3d**      calculatedNormals,
                   size_t        nbFaceIndexes, 
                   int32_t*        pFaceIndexes);
 
-HFCPtr<HVE2DShape> CreateShapeFromPoints (const DPoint3d* points, size_t numberOfPoints, HFCPtr<HGF2DCoordSys> coordSys);
+BENTLEY_SM_EXPORT HFCPtr<HVE2DShape> CreateShapeFromPoints (const DPoint3d* points, size_t numberOfPoints, HFCPtr<HGF2DCoordSys> coordSys);
 
 HFCPtr<HVEShape> CreateShapeFromClips (const DRange3d&               spatialIndexRange,
                                        const IScalableMeshClipContainerPtr& clips);
@@ -67,14 +67,14 @@ HFCPtr<HVE2DShape> ReprojectShapeDomainLimited (BENTLEY_NAMESPACE_NAME::GeoCoord
                                                 const DPoint3d*   pi_pSourcePt,
                                                 size_t  pi_SourcePtQty);
 
-int SetClipToDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr,
+BENTLEY_SM_EXPORT int SetClipToDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr,
                   const DRange3d&                spatialIndexRange,
                   const HVE2DShape&              shape);
 
 int AddClipToDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&           dtmPtr,
                  const HVE2DShape& shape);
 
-struct PtToPtConverter
+struct BENTLEY_SM_EXPORT PtToPtConverter
     {        
     DPoint3d operator () (const DPoint3d& inputPt) const;
 

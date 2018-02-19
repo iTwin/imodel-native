@@ -6,7 +6,7 @@
 |       $Date: 2011/11/22 20:04:45 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -253,10 +253,10 @@ public:
 * @bsimethod                                                  Raymond.Gauthier   10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 SourcePtr Configure    (const SourcePtr&        sourcePtr,
-                        const ContentConfig&    config,
-                        Log&                    log)
+                        const ContentConfig&    config/*,
+                        Log&                    log*/)
     {
-    return Configure(sourcePtr, config, ContentConfigPolicy(), log);
+    return Configure(sourcePtr, config, ContentConfigPolicy()/*, log*/);
     }
 
 
@@ -266,8 +266,8 @@ SourcePtr Configure    (const SourcePtr&        sourcePtr,
 +---------------+---------------+---------------+---------------+---------------+------*/
 SourcePtr Configure    (const SourcePtr&                sourcePtr,
                         const ContentConfig&            config,
-                        const ContentConfigPolicy&      policy, 
-                        Log&                            log)
+                        const ContentConfigPolicy&      policy/*, 
+                        Log&                            log*/)
     {
     if (0 == sourcePtr.get())
         return 0;
@@ -276,7 +276,7 @@ SourcePtr Configure    (const SourcePtr&                sourcePtr,
         return sourcePtr; // Nothing to configure. Return original.
 
     ContentDescriptor newContentDesc(sourcePtr->GetDescriptor());
-    SMStatus status = newContentDesc.Configure(config, policy, log);
+    SMStatus status = newContentDesc.Configure(config, policy/*, log*/);
 
     if (SMStatus::S_SUCCESS != status)
         return 0;
@@ -292,12 +292,12 @@ SourcePtr Configure    (const SourcePtr&                sourcePtr,
 struct SourceFactory::Impl : public ShareableObjectTypeTrait<Impl>::type
     {
     const Registry&                                 m_registry;
-    Log&                                            m_log;
+   // Log&                                            m_log;
 
-    explicit                                        Impl                                   (const Registry&         registry,
-                                                                                            Log&                    log)
-        :   m_registry(registry),
-            m_log(log)
+    explicit                                        Impl                                   (const Registry&         registry/*,
+                                                                                            Log&                    log*/)
+        :   m_registry(registry)//,
+           // m_log(log)
         {
         }
 
@@ -319,8 +319,8 @@ struct SourceFactory::Impl : public ShareableObjectTypeTrait<Impl>::type
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SourceFactory::SourceFactory (Log& log)
-    :   m_pImpl(new Impl(Plugin::SourceRegistry::GetInstance(), log))
+SourceFactory::SourceFactory (/*Log& log*/)
+    :   m_pImpl(new Impl(Plugin::SourceRegistry::GetInstance()/*, log*/))
     {
     }
 
@@ -328,9 +328,9 @@ SourceFactory::SourceFactory (Log& log)
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SourceFactory::SourceFactory (const Registry&   registry,
-                              Log&       log)
-    :   m_pImpl(new Impl(registry, log))
+SourceFactory::SourceFactory (const Registry&   registry/*,
+                              Log&       log*/)
+    :   m_pImpl(new Impl(registry/*, log*/))
     {
     }
 
@@ -412,7 +412,7 @@ SourcePtr SourceFactory::Impl::CreateSourceFromCreator      (const CreatorT*    
     if (0 == creatorP)
         throw PluginNotFoundException();
 
-    return creatorP->Create(sourceRef, m_log);
+    return creatorP->Create(sourceRef, GetDefaultLog());
     }
 
 /*---------------------------------------------------------------------------------**//**
