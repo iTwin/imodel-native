@@ -9,51 +9,6 @@
 #include <ECPresentation/NavNode.h>
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-static int CompareRapidJsonPrimitiveValues(RapidJsonValueCR lhs, RapidJsonValueCR rhs)
-    {
-    if (lhs.GetType() != rhs.GetType())
-        return lhs.GetType() < rhs.GetType() ? -1 : 1;
-
-    if (lhs == rhs)
-        return 0;
-
-    BeAssert(lhs.IsBool() || lhs.IsNumber() || lhs.IsNull() || lhs.IsString() || lhs.IsArray());
-
-    if (lhs.IsBool())
-        return (false == lhs.GetBool()) ? -1 : 1;
-
-    if (lhs.IsInt64())
-        return (lhs.GetInt64() < rhs.GetInt64()) ? -1 : 1;
-    
-    if (lhs.IsUint64())
-        return (lhs.GetUint64() < rhs.GetUint64()) ? -1 : 1;
-    
-    if (lhs.IsDouble())
-        return (lhs.GetDouble() < rhs.GetDouble()) ? -1 : 1;
-
-    if (lhs.IsString())
-        return strcmp(lhs.GetString(), rhs.GetString());
-
-    if (lhs.IsArray())
-        {
-        if (lhs.Size() < rhs.Size())
-            return -1;
-        if (lhs.Size() > rhs.Size())
-            return 1;
-        for (rapidjson::SizeType i = 0; i < lhs.Size(); ++i)
-            {
-            int cmp = CompareRapidJsonPrimitiveValues(lhs[i], rhs[i]);
-            if (0 != cmp)
-                return cmp;
-            }
-        }
-
-    return 0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String NavNodeKey::GetNodeHash() const
