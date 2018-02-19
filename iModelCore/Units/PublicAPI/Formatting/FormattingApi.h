@@ -896,7 +896,7 @@ public:
     //! Gets the FUS from this StdFormatSet.
     //! @param[in] name Name of the FUS to retrieve.
     //! @return A pointer to the FormatUnitSet if found in this set, nullptr otherwise.
-    UNITS_EXPORT static FormatUnitSetCP LookupFUS(Utf8CP fusName);
+    UNITS_EXPORT static FormatUnitSetCP LookupFUS(Utf8CP name);
 
     //! Whether or not the StdFormatSet has a problem.
     //! @return true if the Set has a problem; false, otherwise.
