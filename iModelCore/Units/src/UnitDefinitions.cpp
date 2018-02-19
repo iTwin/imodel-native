@@ -87,19 +87,17 @@ void AddTemperature(UnitRegistry& reg)
     UnitCP un;
     un = reg.AddUnit(TEMPERATURE, METRIC, "CELSIUS", "K", 1.0, 273.15);
     un->AddSynonym("\xC2\xB0\x43");
-    un = reg.AddUnit(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "CELSIUS", 0.55555555555555558, -32);
+    un = reg.AddUnit(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "CELSIUS", 0.55555555555555558, -32); // Factor is 5/9
     un->AddSynonym("\xC2\xB0\x46");
-    un = reg.AddUnit(TEMPERATURE, USCUSTOM, "RANKINE", "K", 0.55555555555555558);
+    un = reg.AddUnit(TEMPERATURE, USCUSTOM, "RANKINE", "K", 0.55555555555555558); // Factor is 5/9
     un->AddSynonym("\xC2\xB0\x52");
     }
 
 void AddTemperatureChange(UnitRegistry& reg)
     {
     reg.AddUnit(TEMPERATURE_CHANGE, METRIC, "DELTA_CELSIUS", "DELTA_KELVIN", 1.0);
-
-    reg.AddUnit(TEMPERATURE_CHANGE, USCUSTOM, "DELTA_FAHRENHEIT", "DELTA_CELSIUS", 0.55555555555555558);
-
-    reg.AddUnit(TEMPERATURE_CHANGE, USCUSTOM, "DELTA_RANKINE", "DELTA_KELVIN", 0.55555555555555558);
+    reg.AddUnit(TEMPERATURE_CHANGE, USCUSTOM, "DELTA_FAHRENHEIT", "DELTA_CELSIUS", 0.55555555555555558); // Factor is 5/9
+    reg.AddUnit(TEMPERATURE_CHANGE, USCUSTOM, "DELTA_RANKINE", "DELTA_KELVIN", 0.55555555555555558); // Factor is 5/9
     }
 
 void AddTemperatureGradient(UnitRegistry& reg)
