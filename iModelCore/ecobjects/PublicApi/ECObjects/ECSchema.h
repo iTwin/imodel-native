@@ -3394,7 +3394,7 @@ public:
     uint32_t GetPhenomenonCount() const {return (uint32_t)m_phenomenonMap.size();} //!< Gets the number of Phenomena in the schema.
     ECOBJECTS_EXPORT ECObjectsStatus DeletePhenomenon(PhenomenonR phenomenon); //!< Removes a Phenomenon from this schema.
 
-    UnitContainer GetUnits() const {return m_unitContainer;} //!< Returns an iterable container of ECUnits sorted by name.
+    UnitContainerCR GetUnits() const {return m_unitContainer;} //!< Returns an iterable container of ECUnits sorted by name.
     uint32_t GetUnitCount() const {return (uint32_t)m_unitMap.size();} //!< Gets the number of ECUnit in the schema.
     ECOBJECTS_EXPORT ECObjectsStatus DeleteUnit(ECUnitR unit); //!< Removes a ECUnit from this schema.
 
@@ -3543,7 +3543,7 @@ public:
     //! @param[in] factor       Factor of this unit
     //! @param[in] offset       Offset of this unit
     ECOBJECTS_EXPORT ECObjectsStatus CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, Utf8CP label = nullptr, Utf8CP description = nullptr, double factor = 1.0, double offset = 0.0);
-
+    
     //! Get a schema by alias within the context of this schema and its referenced schemas.
     //! @param[in]  alias   The alias of the schema to lookup in the context of this schema and it's references.
     //!                     Passing an empty alias will return a pointer to the current schema.
