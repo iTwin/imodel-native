@@ -14,7 +14,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 // @bsimethod                                   Kyle.Abramowitz                 02/2018
 //--------------------------------------------------------------------------------------
 // static
-ECUnitP ECUnit::_Create(Units::UnitSystemCR unitSystem, Units::PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, bool isBase, double factor, double offset, bool isConstant)
+ECUnitP ECUnit::_Create(Units::UnitSystemCR unitSystem, Units::PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, double factor, double offset, bool isConstant)
     {
     // Deconstruct the name. The format should be {SchemaName}.{UnitName}
     Utf8String schemaName;
@@ -29,7 +29,7 @@ ECUnitP ECUnit::_Create(Units::UnitSystemCR unitSystem, Units::PhenomenonCR phen
         return nullptr;
         }
 
-    auto ptrUnit = new ECUnit(unitSystem, phenomenon, name, id, definition, isBase, factor, offset, isConstant);
+    auto ptrUnit = new ECUnit(unitSystem, phenomenon, name, id, definition, factor, offset, isConstant);
     if (nullptr == ptrUnit)
         return nullptr;
 
