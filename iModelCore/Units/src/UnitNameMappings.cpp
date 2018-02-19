@@ -621,6 +621,7 @@ void UnitNameMappings::AddMappings()
     AddECMapping("KGF/SQ.M", "KGF_PER_SQ_M");
     AddECMapping("KILOBTU/HR", "KILOBTU_PER_HR");
     AddECMapping("KIP/CUB.FT", "KIP_PER_CUB_FT");
+    AddECMapping("KIPF", "KPF");
     AddECMapping("KJ/(KMOL*K)", "KJ_PER_KMOL_K");
     AddECMapping("KJ/CUB.M", "KJ_PER_CUB_M");
     AddECMapping("KJ/KG", "KJ_PER_KG");

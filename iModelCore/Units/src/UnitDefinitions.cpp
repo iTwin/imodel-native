@@ -65,7 +65,7 @@ void AddMass(UnitRegistry& reg)
 
     reg.AddUnit(MASS, USCUSTOM, "SHORT_TON_MASS", "LBM", 2000); // Exact, http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
     reg.AddUnit(MASS, USCUSTOM, "LONG_TON_MASS", "LBM", 2240); // Exact, http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
-    reg.AddUnit(MASS, USCUSTOM, "KIPM", "LBM", 1000); // Exact, http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
+    reg.AddUnit(MASS, USCUSTOM, "KIPM", "[KILO]*LBM"); // Exact, http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
     reg.AddUnit(MASS, USCUSTOM, "OZM", "LBM", 1.0/16.0); // Exact, https://en.wikipedia.org/wiki/Ounce
     }
 
@@ -87,9 +87,9 @@ void AddTemperature(UnitRegistry& reg)
     UnitCP un;
     un = reg.AddUnit(TEMPERATURE, METRIC, "CELSIUS", "K", 1.0, 273.15);
     un->AddSynonym("\xC2\xB0\x43");
-    un = reg.AddUnit(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "CELSIUS", 5.0 / 9.0, -32);
+    un = reg.AddUnit(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "CELSIUS", 0.55555555555555558, -32);
     un->AddSynonym("\xC2\xB0\x46");
-    un = reg.AddUnit(TEMPERATURE, USCUSTOM, "RANKINE", "K", 5.0 / 9.0);
+    un = reg.AddUnit(TEMPERATURE, USCUSTOM, "RANKINE", "K", 0.55555555555555558);
     un->AddSynonym("\xC2\xB0\x52");
     }
 
@@ -97,9 +97,9 @@ void AddTemperatureChange(UnitRegistry& reg)
     {
     reg.AddUnit(TEMPERATURE_CHANGE, METRIC, "DELTA_CELSIUS", "DELTA_KELVIN", 1.0);
 
-    reg.AddUnit(TEMPERATURE_CHANGE, USCUSTOM, "DELTA_FAHRENHEIT", "DELTA_CELSIUS", 5.0 / 9.0);
+    reg.AddUnit(TEMPERATURE_CHANGE, USCUSTOM, "DELTA_FAHRENHEIT", "DELTA_CELSIUS", 0.55555555555555558);
 
-    reg.AddUnit(TEMPERATURE_CHANGE, USCUSTOM, "DELTA_RANKINE", "DELTA_KELVIN", 5.0 / 9.0);
+    reg.AddUnit(TEMPERATURE_CHANGE, USCUSTOM, "DELTA_RANKINE", "DELTA_KELVIN", 0.55555555555555558);
     }
 
 void AddTemperatureGradient(UnitRegistry& reg)
@@ -467,15 +467,14 @@ void AddForce(UnitRegistry& reg)
     reg.AddUnit(FORCE, METRIC, "KN", "[KILO]*N");
     reg.AddUnit(FORCE, METRIC, "MN", "[MILLI]*N");
     reg.AddUnit(FORCE, METRIC, "KGF", "[STD_G]*KG");
-    reg.AddUnit(FORCE, METRIC, "LBF", "[STD_G]*LBM");
-    reg.AddUnit(FORCE, METRIC, "OZF", "[STD_G]*OZM");
-    reg.AddUnit(FORCE, METRIC, "KPF", "[KILO]*LBF");
     reg.AddUnit(FORCE, METRIC, "DYNE", "G*CM*S(-2)");
 
     reg.AddUnit(FORCE, USCUSTOM, "PDL", "LBM*FT*S(-2)");
     reg.AddUnit(FORCE, USCUSTOM, "SHORT_TON_FORCE", "[STD_G]*SHORT_TON_MASS");
     reg.AddUnit(FORCE, USCUSTOM, "LONG_TON_FORCE", "[STD_G]*LONG_TON_MASS");
-    reg.AddUnit(FORCE, USCUSTOM, "KIPF", "[STD_G]*KIPM");
+    reg.AddUnit(FORCE, USCUSTOM, "LBF", "[STD_G]*LBM");
+    reg.AddUnit(FORCE, USCUSTOM, "OZF", "[STD_G]*OZM");
+    reg.AddUnit(FORCE, USCUSTOM, "KPF", "[KILO]*LBF");
     }
 
 void AddHeatFlux(UnitRegistry& reg)
@@ -589,14 +588,14 @@ void AddPressure(UnitRegistry& reg)
 
     reg.AddUnit(PRESSURE, METRIC, "MBAR", "[MILLI]*BAR");
 
-    reg.AddUnit(PRESSURE, METRIC, "BARYE", "DYNE*SQ.CM(-1)");
+    reg.AddUnit(PRESSURE, METRIC, "BARYE", "DYNE*CM(-2)");
 
 
     reg.AddUnit(PRESSURE, USCUSTOM, "PSI", "LBF*IN(-2)");
 
     reg.AddUnit(PRESSURE, USCUSTOM, "PSIG", "LBF*IN(-2)", 1, 14.695948775513449); // Offset is one standard atmosphere (101325 PA) converted to PSI
 
-    reg.AddUnit(PRESSURE, USCUSTOM, "KSI", "KIPF*IN(-2)");
+    reg.AddUnit(PRESSURE, USCUSTOM, "KSI", "KPF*IN(-2)");
 
     reg.AddUnit(PRESSURE, USCUSTOM, "LBF/SQ.FT", "LBF*FT(-2)");
 
