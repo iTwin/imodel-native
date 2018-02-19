@@ -114,6 +114,17 @@ BentleyStatus SketchGridSurfaceManipulationStrategy::GetOrCreateGridAndAxis(Sket
             if (sketchGrid.IsNull())
                 return BentleyStatus::ERROR; // Failed to create grid
 
+            Dgn::Placement3d planePlacement = Dgn::Placement3d();
+            planePlacement.TryApplyTransform
+            (
+                GeometryUtils::FindTransformBetweenPlanes
+                (
+                    DPlane3d::FromOriginAndNormal({ 0, 0, 0 }, DVec3d::From(0, 0, 1)),
+                    m_workingPlane
+                )
+            );
+            sketchGrid->SetPlacement(planePlacement);
+
             if (sketchGrid->Insert().IsNull())
                 return BentleyStatus::ERROR;
 
@@ -157,6 +168,24 @@ void SketchGridSurfaceManipulationStrategy::_OnWorkingPlaneChanged(DPlane3d cons
             else
                 InsertDynamicKeyPoint(replacement, i);
             }
+        }
+
+    if (m_axis.IsValid())
+        {
+        GridPtr grid = m_axis->GetDgnDb().Elements().GetForEdit<SketchGrid>(m_axis->GetGridId());
+        BeAssert(grid.IsValid() && "Axis' grid should be valid");
+
+        Dgn::Placement3d planePlacement = Dgn::Placement3d();
+        planePlacement.TryApplyTransform
+        (
+            GeometryUtils::FindTransformBetweenPlanes
+            (
+                DPlane3d::FromOriginAndNormal({ 0, 0, 0 }, DVec3d::From(0, 0, 1)),
+                m_workingPlane
+            )
+        );
+        grid->SetPlacement(planePlacement);
+        grid->Update();
         }
     }
 
