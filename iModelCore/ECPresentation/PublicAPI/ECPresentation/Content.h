@@ -1282,6 +1282,9 @@ public:
 struct DefaultPropertyFormatter : IECPropertyFormatter
 {
 protected:
+    ECPRESENTATION_EXPORT virtual BentleyStatus _ApplyEnumFormatting(Utf8StringR, ECPropertyCR, ECValueCR) const;
+    ECPRESENTATION_EXPORT virtual BentleyStatus _ApplyKoqFormatting(Utf8StringR, ECPropertyCR, ECValueCR) const;
+protected:
     ECPRESENTATION_EXPORT virtual BentleyStatus _GetFormattedPropertyValue(Utf8StringR, ECPropertyCR, ECValueCR) const override;
     ECPRESENTATION_EXPORT virtual BentleyStatus _GetFormattedPropertyLabel(Utf8StringR, ECPropertyCR, ECClassCR, RelatedClassPath const&, RelationshipMeaning) const override;
 };

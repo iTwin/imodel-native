@@ -450,21 +450,17 @@ public:
         if (nullptr != m_specification)
             QueryBuilderHelpers::ApplyDefaultContentFlags(*m_descriptor, GetContext().GetPreferredDisplayType(), *m_specification);
 
-        if (!m_descriptor->HasContentFlag(ContentFlags::NoFields))
+        if (nullptr == m_descriptor->GetDisplayLabelField())
             {
-            if (nullptr == m_descriptor->GetDisplayLabelField())
+            Utf8String displayLabel = L10N::GetString(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel());
+            if (displayLabel.empty())
                 {
-                Utf8String displayLabel = L10N::GetString(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel());
-                if (displayLabel.empty())
-                    {
-                    BeAssert(false);
-                    displayLabel = "Display Label";
-                    }
-                m_descriptor->AddField(new ContentDescriptor::DisplayLabelField(displayLabel));
+                BeAssert(false);
+                displayLabel = "Display Label";
                 }
+            m_descriptor->AddField(new ContentDescriptor::DisplayLabelField(displayLabel));
             m_descriptor->GetDisplayLabelField()->SetPropertiesMap(QueryBuilderHelpers::GetMappedLabelOverridingProperties(GetContext().GetSchemaHelper(), GetContext().GetRuleset().GetInstanceLabelOverrides()));
             }
-
         }
         
     /*---------------------------------------------------------------------------------**//**

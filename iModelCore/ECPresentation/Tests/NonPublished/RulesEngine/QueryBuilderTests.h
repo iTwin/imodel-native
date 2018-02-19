@@ -71,6 +71,7 @@ struct ContentQueryBuilderTests : ::testing::Test
     {    
     ECSchemaHelper* m_schemaHelper;
     PresentationRuleSetPtr m_ruleset;
+    ContentDescriptorBuilder::Context* m_context;
     ContentDescriptorBuilder* m_descriptorBuilder;
     ContentQueryBuilder* m_queryBuilder;
     TestUserSettings m_settings;

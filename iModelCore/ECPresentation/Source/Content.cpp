@@ -8,6 +8,8 @@
 #include <ECPresentationPch.h>
 #include <ECPresentation/Content.h>
 #include <ECPresentation/SelectionManager.h>
+#include <Units/Units.h>
+#include <ECObjects/ECQuantityFormatting.h>
 #include "ValueHelpers.h"
 #include "../Localization/Xliffs/ECPresentation.xliff.h"
 
@@ -1414,10 +1416,61 @@ bool SelectionInfo::operator<(SelectionInfo const& other) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DefaultPropertyFormatter::_ApplyEnumFormatting(Utf8StringR formattedValue, ECPropertyCR ecProperty, ECValueCR ecValue) const
+    {
+    return ValueHelpers::GetEnumPropertyDisplayValue(formattedValue, ecProperty, ecValue);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DefaultPropertyFormatter::_ApplyKoqFormatting(Utf8StringR formattedValue, ECPropertyCR ecProperty, ECValueCR ecValue) const
+    {
+    KindOfQuantityCP koq = ecProperty.GetKindOfQuantity();
+    if (nullptr == koq)
+        return ERROR;
+        
+    // currently only doubles are supported
+    if (!ecValue.IsDouble())
+        return ERROR;
+    
+    // determine the presentation unit
+    Formatting::FormatUnitSet fus = koq->GetDefaultPresentationUnit();
+    if (nullptr == fus.GetUnit() || nullptr == fus.GetNamedFormatSpec())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    // apply formatting
+    ECQuantityFormattingStatus status;
+    formattedValue = ECQuantityFormatting::FormatPersistedValue(ecValue.GetDouble(), koq, *fus.GetUnit(), *fus.GetNamedFormatSpec(), &status);
+    if (ECQuantityFormattingStatus::Success != status)
+        {
+        formattedValue.clear();
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DefaultPropertyFormatter::_GetFormattedPropertyValue(Utf8StringR formattedValue, ECPropertyCR ecProperty, ECValueCR ecValue) const
     {
-    if (SUCCESS == ValueHelpers::GetEnumPropertyDisplayValue(formattedValue, ecProperty, ecValue))
+    if (SUCCESS == _ApplyEnumFormatting(formattedValue, ecProperty, ecValue))
         return SUCCESS;
+
+    if (SUCCESS == _ApplyKoqFormatting(formattedValue, ecProperty, ecValue))
+        return SUCCESS;
+
+    if (ecValue.IsNull())
+        {
+        formattedValue.clear();
+        return SUCCESS;
+        }
+
     return ERROR;
     }
 
