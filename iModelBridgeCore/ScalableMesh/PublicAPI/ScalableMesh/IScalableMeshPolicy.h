@@ -6,7 +6,7 @@
 |       $Date: 2011/10/31 20:49:23 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -51,6 +51,6 @@ BENTLEY_SM_EXPORT const GeoCoords::ReprojectionFactory&   GetReprojectionFactory
 
 BENTLEY_SM_EXPORT const Import::SourceFactory&            GetSourceFactory                       ();
 
-const Import::ImporterFactory&                      GetImporterFactory                     ();
+BENTLEY_SM_EXPORT const Import::ImporterFactory&                      GetImporterFactory                     ();
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

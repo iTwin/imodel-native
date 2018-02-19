@@ -31,6 +31,14 @@
     #define BENTLEY_SM_EXPORT __declspec(dllimport)
 #endif
     
+
+#ifdef __BENTLEYSTMIMPORT_BUILD__ 
+#define BENTLEY_SM_IMPORT_EXPORT __declspec(dllexport)
+#else
+#define BENTLEY_SM_IMPORT_EXPORT __declspec(dllimport)
+#endif
+
+
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 enum ScalableMeshCompressionType

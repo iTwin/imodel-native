@@ -6,7 +6,7 @@
 |       $Date: 2011/10/20 18:47:55 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -565,8 +565,8 @@ SMStatus SourcesImporter::Impl::ImportSource(SourceItem&    sourceItem,
         return S_ERROR;
 
     const SourcePtr sourcePtr(Configure(originalSourcePtr, 
-                                        sourceItem.m_contentConfig,
-                                        GetLog()));
+                                        sourceItem.m_contentConfig/*,
+                                        GetLog()*/));
     if (0 == sourcePtr.get())
         return S_ERROR;
 

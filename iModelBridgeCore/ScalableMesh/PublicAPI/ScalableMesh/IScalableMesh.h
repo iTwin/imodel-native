@@ -119,11 +119,11 @@ protected:
     
 public:
 
-    BENTLEY_SM_EXPORT bool      IsCurrentPreviewEnough() const;
+    BENTLEY_SM_IMPORT_EXPORT bool      IsCurrentPreviewEnough() const;
 
-    BENTLEY_SM_EXPORT StatusInt UpdatePreview(PolyfaceQueryCR currentGround);
+    BENTLEY_SM_IMPORT_EXPORT StatusInt UpdatePreview(PolyfaceQueryCR currentGround);
 
-    BENTLEY_SM_EXPORT bool UpdateProgress(IScalableMeshProgress* progress);
+    BENTLEY_SM_IMPORT_EXPORT bool UpdateProgress(IScalableMeshProgress* progress);
         
 };
 

@@ -242,7 +242,7 @@ template <class EXTENT> class SMIndexMasterHeader
 
         SMIndexMasterHeader<EXTENT>& operator=(const SQLiteIndexHeader& indexHeader);
         
-        operator SQLiteIndexHeader();        
+        BENTLEY_SM_EXPORT operator SQLiteIndexHeader();
     };
 
 
@@ -343,17 +343,17 @@ template <class EXTENT> class SMIndexNodeHeader : public SMIndexNodeHeaderBase<E
             };
         std::vector<BlockSize>   m_blockSizes;
 
-        SMIndexNodeHeader();
-        SMIndexNodeHeader(const SMIndexNodeHeader& smNodeHeader);
+        BENTLEY_SM_EXPORT SMIndexNodeHeader();
+        BENTLEY_SM_EXPORT SMIndexNodeHeader(const SMIndexNodeHeader& smNodeHeader);
 
 
-        virtual ~SMIndexNodeHeader();
+        BENTLEY_SM_EXPORT virtual ~SMIndexNodeHeader();
              
-        SMIndexNodeHeader<EXTENT>& operator=(const SQLiteNodeHeader& nodeHeader);
+        BENTLEY_SM_EXPORT  SMIndexNodeHeader<EXTENT>& operator=(const SQLiteNodeHeader& nodeHeader);
             
-        operator SQLiteNodeHeader();
+        BENTLEY_SM_EXPORT operator SQLiteNodeHeader();
 
-        uint64_t GetBlockSize(const short& type);
+        BENTLEY_SM_EXPORT uint64_t GetBlockSize(const short& type);
            
         };
     
