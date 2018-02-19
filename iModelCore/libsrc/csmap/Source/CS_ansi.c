@@ -404,6 +404,7 @@ double EXP_LVL1 CS_ansiAtof (Const char *string)
 #endif
 char * EXP_LVL9 CS_getenv (Const char *varName)
 {
+#ifdef GEOCOORD_ENHANCEMENT
 #if defined (BENTLEY_WINRT)
 	/* There is no environment in Windows CE.  Only the registry.
 	   Thus, we simply indicate that the variable didn't exist.
@@ -413,6 +414,9 @@ char * EXP_LVL9 CS_getenv (Const char *varName)
 #else
 	return getenv (varName);
 #endif	
+#else
+	return getenv (varName);
+#endif
 }
 
 #ifdef CS_remove
