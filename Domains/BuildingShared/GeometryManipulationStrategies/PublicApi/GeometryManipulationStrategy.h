@@ -43,6 +43,8 @@ struct GeometryManipulationStrategy : public GeometryManipulationStrategyBase
         virtual void _RemoveKeyPoint(size_t index) = 0;
         virtual void _Clear() = 0;
 
+        virtual DPoint3d _AdjustPoint(DPoint3d source) const { return source; }
+
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void AppendKeyPoint(DPoint3dCR newKeyPoint);
         void AppendKeyPoints(bvector<DPoint3d> const& newKeyPoints);
@@ -60,6 +62,8 @@ struct GeometryManipulationStrategy : public GeometryManipulationStrategyBase
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void UpdateDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index);
         void UpsertDynamicKeyPoint(DPoint3d newDynamicKeyPoint, size_t index);
         void UpsertDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index);
+
+        DPoint3d AdjustPoint(DPoint3d source) const { return _AdjustPoint(source); }
     };
 
 END_BUILDING_SHARED_NAMESPACE

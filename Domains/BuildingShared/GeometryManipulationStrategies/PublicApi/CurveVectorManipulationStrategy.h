@@ -42,7 +42,6 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
        
         DPlane3d m_workingPlane;
 
-        DPoint3d AdjustKeyPoint(DPoint3dCR keyPoint) const;
         CurvePrimitivePlacementStrategyPtr GetPlacementStrategy(CurvePrimitiveManipulationStrategyR manipulationStrategy) const;
         CurvePrimitivePlacementStrategyPtr GetStrategyForAppend();
         bool IsLastStrategyReadyForPop() const;
@@ -83,6 +82,7 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
         virtual void _PopKeyPoint() override;
         virtual void _RemoveKeyPoint(size_t index) override { BeAssert(false && "Not implemented"); }
         virtual void _Clear() override;
+        virtual DPoint3d _AdjustPoint(DPoint3d keyPoint) const override;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual IGeometryPtr _FinishGeometry() const override;
 
