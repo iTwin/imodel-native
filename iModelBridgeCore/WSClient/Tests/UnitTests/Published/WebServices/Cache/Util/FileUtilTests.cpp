@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Util/FileUtilTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -84,6 +84,32 @@ TEST_F(FileUtilTests, TruncateFileNameUtf16_VariousLongNames_TruncatesNameToSame
     EXPECT_STREQ("xxxxx.test", FileUtil::TruncateFileNameUtf16(Utf8String(10000, 'x') + ".test", 10).c_str());
     EXPECT_STREQ("xxxxxxxxxx", FileUtil::TruncateFileNameUtf16(Utf8String(10000, 'x') + "." + Utf8String(10000, 'e'), 10).c_str());
     EXPECT_STREQ(".eeeeeeeee", FileUtil::TruncateFileNameUtf16("." + Utf8String(10000, 'e'), 10).c_str());
+    }
+
+TEST_F(FileUtilTests, TruncateFileNameUtf8_VariousEdgeCases_TruncatesNameToSpecification)
+    {
+    EXPECT_STREQ("f.txt", FileUtil::TruncateFileNameUtf8("foobar.txt", 5).c_str());
+    EXPECT_STREQ("foob", FileUtil::TruncateFileNameUtf8("foobar.txt", 4).c_str());
+    EXPECT_STREQ("foo", FileUtil::TruncateFileNameUtf8("foobar.txt", 3).c_str());
+    EXPECT_STREQ("f", FileUtil::TruncateFileNameUtf8("foobar.txt", 1).c_str());
+    EXPECT_STREQ("", FileUtil::TruncateFileNameUtf8("foobar.txt", 0).c_str());
+    EXPECT_STREQ("f.ba", FileUtil::TruncateFileNameUtf8("f.ba.txt", 4).c_str());
+    EXPECT_STREQ(".", FileUtil::TruncateFileNameUtf8(".", 4).c_str());
+    EXPECT_STREQ("", FileUtil::TruncateFileNameUtf8(".", 0).c_str());
+    EXPECT_STREQ("", FileUtil::TruncateFileNameUtf8("", 10).c_str());
+    }
+
+TEST_F(FileUtilTests, TruncateFileNameUtf16_VariousEdgeCases_TruncatesNameToSpecification)
+    {
+    EXPECT_STREQ("f.txt", FileUtil::TruncateFileNameUtf16("foobar.txt", 5).c_str());
+    EXPECT_STREQ("foob", FileUtil::TruncateFileNameUtf16("foobar.txt", 4).c_str());
+    EXPECT_STREQ("foo", FileUtil::TruncateFileNameUtf16("foobar.txt", 3).c_str());
+    EXPECT_STREQ("f", FileUtil::TruncateFileNameUtf16("foobar.txt", 1).c_str());
+    EXPECT_STREQ("", FileUtil::TruncateFileNameUtf16("foobar.txt", 0).c_str());
+    EXPECT_STREQ("f.ba", FileUtil::TruncateFileNameUtf16("f.ba.txt", 4).c_str());
+    EXPECT_STREQ(".", FileUtil::TruncateFileNameUtf16(".", 4).c_str());
+    EXPECT_STREQ("", FileUtil::TruncateFileNameUtf16(".", 0).c_str());
+    EXPECT_STREQ("", FileUtil::TruncateFileNameUtf16("", 10).c_str());
     }
 
 TEST_F(FileUtilTests, TruncateFileNameUtf8_UnicodeCharacterInName_TruncatesToBytes)
@@ -203,7 +229,7 @@ TEST_F(FileUtilTests, SanitizeFileName_ValidFileName_SameReturned)
 
 TEST_F(FileUtilTests, SanitizeFileName_FileNameIncludesInvalidCharacters_InvalidCharactersRemoved)
     {
-    EXPECT_STREQ("BarFoo.txt", FileUtil::SanitizeFileName(R"name(Bar<>:"/\\|?*Foo.tx<>:"/\\|?*t)name").c_str());
+    EXPECT_STREQ("BarFoo.txt", FileUtil::SanitizeFileName(R"(Bar<>:"/\\|?*Foo.tx<>:"/\\|?*t)").c_str());
     }
 
 TEST_F(FileUtilTests, SanitizeFileName_FileNameHasTrailingWhitespace_WhiteSpaceTrimmed)
