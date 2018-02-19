@@ -98,7 +98,7 @@ BE_JSON_NAME(schemaName)
 //
 // Class used to pass available values and their localized labels for use in UI.
 //
-// @bsiclass                                     		Bill.Steinbock  11/2017
+// @bsistruct                                            Bill.Steinbock  11/2017
 //=======================================================================================
 struct UIListEntry
     {
@@ -136,7 +136,7 @@ struct UIListEntry
 //
 // Class used to pass available values and their localized labels for use in UI.
 //
-// @bsiclass                                     		Bill.Steinbock  11/2017
+// @bsistruct                                            Bill.Steinbock  11/2017
 //=======================================================================================
 struct UIList
     {
@@ -160,7 +160,7 @@ struct UIList
 //
 // Class containing static methods used to populate UI.
 //
-// @bsiclass                                     		Bill.Steinbock  11/2017
+// @bsistruct                                            Bill.Steinbock  11/2017
 //=======================================================================================
 struct UIUtils
     {
@@ -175,6 +175,9 @@ struct UIUtils
     UNITS_EXPORT static Json::Value GetAvailableUnitLabels(Utf8CP unitName);
     };
 
+//=======================================================================================
+//! @bsistruct
+//=======================================================================================
 struct FactorPower
     {
 private:
@@ -194,6 +197,9 @@ public:
     UNITS_EXPORT Utf8String ToText(Utf8Char pref);
     };
 
+//=======================================================================================
+//! @bsistruct
+//=======================================================================================
 struct FactorizedNumber
     {
 private:
@@ -214,6 +220,7 @@ public:
     UNITS_EXPORT Utf8String ToText();
     UNITS_EXPORT Utf8String DebugText();
     };
+
 //=======================================================================================
 // @bsiclass                                                    David.Fox-Rabinovitz  10/2016
 //=======================================================================================
@@ -309,18 +316,16 @@ public:
     UNITS_EXPORT static FormatTraits SetTraitsBit(FormatTraits bit, FormatTraits traits, bool set);
     UNITS_EXPORT static void TraitsBitToJsonKey(JsonValueR outValue, Utf8CP bitIndex, FormatTraits bit, FormatTraits traits);
 
-    void SetKeepTrailingZeroes(bool keep) { m_formatTraits = SetTraitsBit(FormatTraits::TrailingZeroes, m_formatTraits, keep); }//SetTraitsBit(keep, FormatTraits::TrailingZeroes); }
+    void SetKeepTrailingZeroes(bool keep) {m_formatTraits = SetTraitsBit(FormatTraits::TrailingZeroes, m_formatTraits, keep);}
     bool IsKeepTrailingZeroes() const { return CheckTraitsBit(FormatTraits::TrailingZeroes);}
 
     void SetUseLeadingZeroes(bool use) { m_formatTraits = SetTraitsBit(FormatTraits::LeadingZeroes, m_formatTraits, use); }
     bool IsUseLeadingZeroes() const { return CheckTraitsBit(FormatTraits::LeadingZeroes); }
 
-    void SetKeepDecimalPoint(bool use) { m_formatTraits = SetTraitsBit(FormatTraits::KeepDecimalPoint, m_formatTraits, use);
-        }
+    void SetKeepDecimalPoint(bool use) {m_formatTraits = SetTraitsBit(FormatTraits::KeepDecimalPoint, m_formatTraits, use);}
     bool IsKeepDecimalPoint() const { return CheckTraitsBit(FormatTraits::KeepDecimalPoint); }
 
-    void SetKeepSingleZero(bool use) { m_formatTraits = SetTraitsBit(FormatTraits::KeepSingleZero, m_formatTraits, use);
-        }
+    void SetKeepSingleZero(bool use) {m_formatTraits = SetTraitsBit(FormatTraits::KeepSingleZero, m_formatTraits, use);}
     bool IsKeepSingleZero() const { return CheckTraitsBit(FormatTraits::KeepSingleZero); }
 
     void SetExponentZero(bool use) { m_formatTraits = SetTraitsBit(FormatTraits::ExponentZero, m_formatTraits, use); }
@@ -377,7 +382,7 @@ public:
     FractionBarType  GetFractionalBarType() const { return m_barType; }
     UNITS_EXPORT static double RoundDouble(double dval, double roundTo);
     UNITS_EXPORT static bool AcceptableDifference(double dval1, double dval2, double maxDiff); 
-    bool IsPrecisionZero() const {    return (m_decPrecision == DecimalPrecision::Precision0);}
+    bool IsPrecisionZero() const {return (m_decPrecision == DecimalPrecision::Precision0);}
     UNITS_EXPORT int IntPartToText(double n, Utf8P bufOut, int bufLen, bool useSeparator) const;
     
     UNITS_EXPORT int FormatInteger (int n, Utf8P bufOut, int bufLen);
@@ -554,7 +559,7 @@ protected:
     //Utf8CP m_unitLabel[indxLimit];
     FormatProblemDetail m_problem;
     CompositeSpecType m_type;
-    bool m_includeZero;
+    bool m_includeZero; // Not currently used in the formatting code.
     Utf8String m_spacer;
     void SetUnitLabel(int index, Utf8CP label);
     size_t UnitRatio(BEU::UnitCP upper, BEU::UnitCP lower);
@@ -571,7 +576,6 @@ protected:
         }
     //size_t GetRightmostRatioIndex();
     BEU::UnitCP GetSmallestUnit() const;
-    
 
 public:
     UNITS_EXPORT void Init();
@@ -611,6 +615,9 @@ public:
     UNITS_EXPORT bool IsIdentical(CompositeValueSpecCR other) const;
     };
 
+//=======================================================================================
+//! @bsistruct
+//=======================================================================================
 struct CompositeValue
     {
 private:
@@ -676,7 +683,7 @@ public:
         UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec, Utf8CP alias = nullptr);
         UNITS_EXPORT NamedFormatSpec(Json::Value jval);
         UNITS_EXPORT NamedFormatSpec(Utf8CP jsonString);
-        UNITS_EXPORT void ReplaceLocalizables(JsonValueCR jval);
+        // UNITS_EXPORT void ReplaceLocalizables(JsonValueCR jval);
         Utf8CP SetAlias(Utf8CP alias) { m_alias = alias;  return m_alias.c_str(); }
         Utf8CP GetAlias() const { return m_alias.c_str(); }
         UNITS_EXPORT bool HasName(Utf8CP name) const;
@@ -763,6 +770,7 @@ struct FormatUnitSet
         //! the long one consists of the unitName and formatSpec that contains the full description of this Spec
         UNITS_EXPORT FormatUnitSet(Utf8CP descriptor);
 
+        //! Clears this FUS and repopulates it will the json value.
         UNITS_EXPORT void LoadJson(Json::Value jval);
 
         //! Returns whether this FormatUnitSet has a problem.
@@ -800,29 +808,30 @@ struct FormatUnitSet
         BEU::UnitCP GetCompositeSubUnit() const { return HasComposite() ? m_formatSpec->GetCompositeSubUnit() : nullptr; }
     };
 
-
+//=======================================================================================
+//! @bsistruct
+//=======================================================================================
 struct FormatUnitGroup
-    {
-    private:
-        Utf8String m_name;
-        bvector<FormatUnitSet> m_group;    // the first member is a persistence FUS and the following N-1 are presentation FUS's
-        FormatProblemDetail m_problem;
-    public:
-        UNITS_EXPORT FormatUnitGroup(Utf8CP name, Utf8CP description);
-        UNITS_EXPORT FormatUnitGroup(JsonValueCR jval);
-        UNITS_EXPORT Json::Value ToJson(bool useAlias);
-        UNITS_EXPORT Utf8String ToText(bool useAlias);
-        bool HasProblem() const { return m_problem.IsProblem(); }
-        FormatProblemCode GetProblemCode() { return m_problem.GetProblemCode(); }
-        UNITS_EXPORT FormatUnitSetCP GetPersistenceFUS() const;
-        UNITS_EXPORT size_t GetPresentationFUSCount();
-        UNITS_EXPORT FormatUnitSetCP GetPresentationFUS(size_t index) const;
-        UNITS_EXPORT bool IsIdentical(FormatUnitGroupCR other) const;
-        UNITS_EXPORT  BEU::T_UnitSynonymVector* GetSynonymVector() const;
-        UNITS_EXPORT  size_t GetSynonymCount() const;
-        UNITS_EXPORT  BEU::PhenomenonCP GetPhenomenon() const;
-
-    };
+{
+private:
+    Utf8String m_name;
+    bvector<FormatUnitSet> m_group;    // the first member is a persistence FUS and the following N-1 are presentation FUS's
+    FormatProblemDetail m_problem;
+public:
+    UNITS_EXPORT FormatUnitGroup(Utf8CP name, Utf8CP description);
+    UNITS_EXPORT FormatUnitGroup(JsonValueCR jval);
+    UNITS_EXPORT Json::Value ToJson(bool useAlias);
+    UNITS_EXPORT Utf8String ToText(bool useAlias);
+    bool HasProblem() const {return m_problem.IsProblem();}
+    FormatProblemCode GetProblemCode() {return m_problem.GetProblemCode();}
+    UNITS_EXPORT FormatUnitSetCP GetPersistenceFUS() const;
+    UNITS_EXPORT size_t GetPresentationFUSCount();
+    UNITS_EXPORT FormatUnitSetCP GetPresentationFUS(size_t index) const;
+    UNITS_EXPORT bool IsIdentical(FormatUnitGroupCR other) const;
+    UNITS_EXPORT  BEU::T_UnitSynonymVector* GetSynonymVector() const;
+    UNITS_EXPORT  size_t GetSynonymCount() const;
+    UNITS_EXPORT  BEU::PhenomenonCP GetPhenomenon() const;
+};
 
 //=======================================================================================
 //! Singleton container for known NamedFormatSpecs and FormatUnitSets.
@@ -950,6 +959,9 @@ struct NumericTriad
         UNITS_EXPORT Utf8String FormatTriad(Utf8CP topName, Utf8CP midName, Utf8CP lowName, Utf8CP space, int prec, bool fract = false, bool includeZero = false);
     };
 
+//=======================================================================================
+//! @bsistruct
+//=======================================================================================
 struct QuantityTriadSpec : NumericTriad
     {
     private:
@@ -1043,6 +1055,9 @@ public:
     UNITS_EXPORT Utf8String SerializeFormatDefinition(NamedFormatSpecCP format);
     };
 
+//=======================================================================================
+//! @bsistruct
+//=======================================================================================
 struct FormatStopWatch
     {
 private:

@@ -10,7 +10,9 @@
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
-//StdFormatSet() { StdInit(); CustomInit(); }
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 StdFormatSetP StdFormatSet::Set() 
     { 
     static StdFormatSetP set = nullptr; 
@@ -157,113 +159,31 @@ size_t StdFormatSet::StdInit()
     return s;
     }
 
-//size_t StdFormatSet::StdInit()
-//    {
-//    m_formatSet.clear();
-//    m_customSet.clear();
-//    AddFormat("{\"NumericFormat\":{\"presentType\":\"Decimal\"}, \"SpecAlias\" : \"real\", \"SpecName\" : \"DefaultReal\", \"SpecType\" : \"numeric\"}");  // "Default Decimal" "Standard precision decimal
-//    AddFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"realu\", \"SpecName\" : \"DefaultRealU\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real2\", \"SpecName\" : \"Real2\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"decPrec\":3, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real3\", \"SpecName\" : \"Real3\", \"SpecType\" : \"numeric\"}"); ///
-//    AddFormat("{\"NumericFormat\":{\"decPrec\":4, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real4\", \"SpecName\" : \"Real4\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real2u\", \"SpecName\" : \"Real2U\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"decPrec\":3, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real3u\", \"SpecName\" : \"Real3U\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"decPrec\":4, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real4u\", \"SpecName\" : \"Real4U\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real6u\", \"SpecName\" : \"Real6U\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2u\", \"SpecName\" : \"Stop100-2u\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"minWidth\" : 4, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2-4u\", \"SpecName\" : \"Stop100-2-4u\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"minWidth\" : 4, \"presentType\" : \"Stop1000\"}, \"SpecAlias\" : \"stop1000-2-4u\", \"SpecName\" : \"Stop1000-2-4u\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"presentType\" : \"Stop1000\"}, \"SpecAlias\" : \"stop1000-2u\", \"SpecName\" : \"Stop1000-2u\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2\", \"SpecName\" : \"Stop100-2\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"minWidth\" : 4, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2-4\", \"SpecName\" : \"stop100-2-4\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"minWidth\" : 4, \"presentType\" : \"Stop#100\"}, \"SpecAlias\" : \"stop#100-2-4\", \"SpecName\" : \"StationFt\", \"SpecType\" : \"numeric\", \"statSeparator\":\"#\"}");
-//    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"minWidth\" : 4, \"presentType\" : \"Stop1000\"}, \"SpecAlias\" : \"stop1000-2-4\", \"SpecName\" : \"Stop1000-2-4\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"presentType\" : \"Stop1000\"}, \"SpecAlias\" : \"stop1000-2\", \"SpecName\" : \"Stop1000-2\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"presentType\":\"Decimal\", \"signOpt\" : \"SignAlways\"}, \"SpecAlias\" : \"realSign\", \"SpecName\" : \"SignedReal\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"presentType\":\"Decimal\", \"signOpt\" : \"NegativeParenths\"}, \"SpecAlias\" : \"realPth\", \"SpecName\" : \"ParenthsReal\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"presentType\":\"Fractional\"}, \"SpecAlias\" : \"fract\", \"SpecName\" : \"DefaultFractional\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fractu\", \"SpecName\" : \"DefaultFractionalU\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"presentType\":\"Fractional\", \"signOpt\" : \"SignAlways\"}, \"SpecAlias\" : \"fractSign\", \"SpecName\" : \"SignedFractional\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"presentType\":\"Scientific\"}, \"SpecAlias\" : \"sci\", \"SpecName\" : \"DefaultExp\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"presentType\":\"Scientific\", \"signOpt\" : \"SignAlways\"}, \"SpecAlias\" : \"sciSign\", \"SpecName\" : \"SignedExp\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"presentType\":\"ScientificNorm\"}, \"SpecAlias\" : \"sciN\", \"SpecName\" : \"NormalizedExp\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"presentType\":\"Decimal\", \"signOpt\" : \"SignAlways\"}, \"SpecAlias\" : \"int\", \"SpecName\" : \"DefaultInt\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"fractPrec\":4, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract4\", \"SpecName\" : \"Fractional4\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract8\", \"SpecName\" : \"Fractional8\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"fractPrec\":16, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract16\", \"SpecName\" : \"Fractional16\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"fractPrec\":32, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract32\", \"SpecName\" : \"Fractional32\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"fractPrec\":128, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract128\", \"SpecName\" : \"Fractional128\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"fractPrec\" : 4, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract4u\", \"SpecName\" : \"Fractional4U\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"fractPrec\" : 8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract8u\", \"SpecName\" : \"Fractional8U\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"fractPrec\" : 16, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract16u\", \"SpecName\" : \"Fractional16U\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"fractPrec\" : 32, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract32u\", \"SpecName\" : \"Fractional32U\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"fractPrec\" : 128, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract128u\", \"SpecName\" : \"Fractional128U\", \"SpecType\" : \"numeric\"}");
-//    AddFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"\xC2\xB0\", \"unitName\" : \"ARC_DEG\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"ARC_MINUTE\"}, \"MinorUnit\" : {\"unitLabel\":\"\x22\", \"unitName\" : \"ARC_SECOND\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":1, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"dms\",  \"SpecName\" :  \"AngleDMS\", \"SpecType\" : \"composite\"}");
-//    AddFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"\xC2\xB0\", \"unitName\" : \"ARC_DEG\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"ARC_MINUTE\"}, \"MinorUnit\" : {\"unitLabel\":\"\x22\", \"unitName\" : \"ARC_SECOND\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"dms8\", \"SpecName\" : \"AngleDMS8\", \"SpecType\" : \"composite\"}");
-//    AddFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"\xC2\xB0\", \"unitName\" : \"ARC_DEG\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"ARC_MINUTE\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"dm8\", \"SpecName\" : \"AngleDM8\", \"SpecType\" : \"composite\"}");
-//    AddFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"mile(s)\", \"unitName\" : \"MILE\"}, \"MiddleUnit\" : {\"unitLabel\":\"yrd(s)\", \"unitName\" : \"YRD\"}, \"MinorUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"FT\"}, \"SubUnit\" : {\"unitLabel\":\"\x22\", \"unitName\" : \"IN\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":4, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"myfi4\", \"SpecName\" : \"AmerMYFI4\", \"SpecType\" : \"composite\"}");
-//    AddFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"'\", \"unitName\" : \"FT\"}, \"MiddleUnit\" : {\"unitLabel\":\"\x22\", \"unitName\" : \"IN\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fi8\", \"SpecName\" : \"AmerFI8\", \"SpecType\" : \"composite\"}");
-//    AddFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"'\", \"unitName\" : \"FT\"}, \"MiddleUnit\" : {\"unitLabel\":\"\x22\", \"unitName\" : \"IN\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":16, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fi16\", \"SpecName\" : \"AmerFI16\", \"SpecType\" : \"composite\"}");
-//    AddFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"yrd(s)\", \"unitName\" : \"YRD\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"FT\"}, \"MinorUnit\" : {\"unitLabel\":\"\x22\", \"unitName\" : \"IN\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"yfi8\", \"SpecName\" : \"AmerYFI8\", \"SpecType\" : \"composite\"}");
-//    size_t s = m_formatSet.size();
-//    return s;
-//    }
-
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 void StdFormatSet::CustomInit()
     {
-    AddFormat("{\"NumericFormat\":{\"presentType\":\"Decimal\"}, \"SpecAlias\" : \"real\", \"SpecName\" : \"DefaultReal\", \"SpecType\" : \"numeric\"}");  // "Default Decimal" "Standard precision decimal
-    AddFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"realu\", \"SpecName\" : \"DefaultRealU\", \"SpecType\" : \"numeric\"}");
-    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real2\", \"SpecName\" : \"Real2\", \"SpecType\" : \"numeric\"}");
-    AddFormat("{\"NumericFormat\":{\"decPrec\":3, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real3\", \"SpecName\" : \"Real3\", \"SpecType\" : \"numeric\"}"); ///
-    AddFormat("{\"NumericFormat\":{\"decPrec\":4, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real4\", \"SpecName\" : \"Real4\", \"SpecType\" : \"numeric\"}"); 
-    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real2u\", \"SpecName\" : \"Real2U\", \"SpecType\" : \"numeric\"}");
-    AddFormat("{\"NumericFormat\":{\"decPrec\":3, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real3u\", \"SpecName\" : \"Real3U\", \"SpecType\" : \"numeric\"}");
-    AddFormat("{\"NumericFormat\":{\"decPrec\":4, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real4u\", \"SpecName\" : \"Real4U\", \"SpecType\" : \"numeric\"}");
-    AddFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real6u\", \"SpecName\" : \"Real6U\", \"SpecType\" : \"numeric\"}");
-    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2u\", \"SpecName\" : \"Stop100-2u\", \"SpecType\" : \"numeric\"}");
-
+    // Adds trailZeroes to "Stop100-2u"
     AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\",\"TrailZeroes\":\"true\"}, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2uz\", \"SpecName\" : \"Stop100-2uz\", \"SpecType\" : \"numeric\"}");
     
+    // Adds trailZeroes to "Stop100-2"
     AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"TrailZeroes\":\"true\"}, \"minWidth\" : 2, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2-2z\", \"SpecName\" : \"Stop100-2-2z\", \"SpecType\" : \"numeric\"}");
+
+    // "Stop1000-2-3z"
     AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"TrailZeroes\":\"true\"}, \"minWidth\" : 3, \"presentType\" : \"Stop1000\"}, \"SpecAlias\" : \"stop1000-2-3z\", \"SpecName\" : \"Stop1000-2-3z\", \"SpecType\" : \"numeric\"}");
 
-    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"minWidth\" : 4, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2-4u\", \"SpecName\" : \"Stop100-2-4u\", \"SpecType\" : \"numeric\"}");
-    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"minWidth\" : 4, \"presentType\" : \"Stop1000\"}, \"SpecAlias\" : \"stop1000-2-4u\", \"SpecName\" : \"Stop1000-2-4u\", \"SpecType\" : \"numeric\"}");
-    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"presentType\" : \"Stop1000\"}, \"SpecAlias\" : \"stop1000-2u\", \"SpecName\" : \"Stop1000-2u\", \"SpecType\" : \"numeric\"}");
-    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2\", \"SpecName\" : \"Stop100-2\", \"SpecType\" : \"numeric\"}");
-    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"minWidth\" : 4, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2-4\", \"SpecName\" : \"stop100-2-4\", \"SpecType\" : \"numeric\"}");
-    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"minWidth\" : 4, \"presentType\" : \"Stop1000\"}, \"SpecAlias\" : \"stop1000-2-4\", \"SpecName\" : \"Stop1000-2-4\", \"SpecType\" : \"numeric\"}");
-    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"presentType\" : \"Stop1000\"}, \"SpecAlias\" : \"stop1000-2\", \"SpecName\" : \"Stop1000-2\", \"SpecType\" : \"numeric\"}");
-    AddFormat("{\"NumericFormat\":{\"presentType\":\"Decimal\", \"signOpt\" : \"SignAlways\"}, \"SpecAlias\" : \"realSign\", \"SpecName\" : \"SignedReal\", \"SpecType\" : \"numeric\"}");
-    AddFormat("{\"NumericFormat\":{\"presentType\":\"Decimal\", \"signOpt\" : \"NegativeParenths\"}, \"SpecAlias\" : \"realPth\", \"SpecName\" : \"ParenthsReal\", \"SpecType\" : \"numeric\"}");
-    AddFormat("{\"NumericFormat\":{\"presentType\":\"Fractional\"}, \"SpecAlias\" : \"fract\", \"SpecName\" : \"DefaultFractional\", \"SpecType\" : \"numeric\"}");
-    AddFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fractu\", \"SpecName\" : \"DefaultFractionalU\", \"SpecType\" : \"numeric\"}");
-    AddFormat("{\"NumericFormat\":{\"presentType\":\"Fractional\", \"signOpt\" : \"SignAlways\"}, \"SpecAlias\" : \"fractSign\", \"SpecName\" : \"SignedFractional\", \"SpecType\" : \"numeric\"}");
-    AddFormat("{\"NumericFormat\":{\"presentType\":\"Scientific\"}, \"SpecAlias\" : \"sci\", \"SpecName\" : \"DefaultExp\", \"SpecType\" : \"numeric\"}");
-    AddFormat("{\"NumericFormat\":{\"presentType\":\"Scientific\", \"signOpt\" : \"SignAlways\"}, \"SpecAlias\" : \"sciSign\", \"SpecName\" : \"SignedExp\", \"SpecType\" : \"numeric\"}");
-    AddFormat("{\"NumericFormat\":{\"presentType\":\"ScientificNorm\"}, \"SpecAlias\" : \"sciN\", \"SpecName\" : \"NormalizedExp\", \"SpecType\" : \"numeric\"}");
-    AddFormat("{\"NumericFormat\":{\"presentType\":\"Decimal\", \"signOpt\" : \"SignAlways\"}, \"SpecAlias\" : \"int\", \"SpecName\" : \"DefaultInt\", \"SpecType\" : \"numeric\"}");
-    AddFormat("{\"NumericFormat\":{\"fractPrec\":4, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract4\", \"SpecName\" : \"Fractional4\", \"SpecType\" : \"numeric\"}");
-    AddFormat("{\"NumericFormat\":{\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract8\", \"SpecName\" : \"Fractional8\", \"SpecType\" : \"numeric\"}");
-    AddFormat("{\"NumericFormat\":{\"fractPrec\":16, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract16\", \"SpecName\" : \"Fractional16\", \"SpecType\" : \"numeric\"}");
-    AddFormat("{\"NumericFormat\":{\"fractPrec\":32, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract32\", \"SpecName\" : \"Fractional32\", \"SpecType\" : \"numeric\"}");
-    AddFormat("{\"NumericFormat\":{\"fractPrec\":128, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract128\", \"SpecName\" : \"Fractional128\", \"SpecType\" : \"numeric\"}");
-    AddFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"fractPrec\" : 4, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract4u\", \"SpecName\" : \"Fractional4U\", \"SpecType\" : \"numeric\"}");
-    AddFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"fractPrec\" : 8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract8u\", \"SpecName\" : \"Fractional8U\", \"SpecType\" : \"numeric\"}");
-    AddFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"fractPrec\" : 16, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract16u\", \"SpecName\" : \"Fractional16U\", \"SpecType\" : \"numeric\"}");
-    AddFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"fractPrec\" : 32, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract32u\", \"SpecName\" : \"Fractional32U\", \"SpecType\" : \"numeric\"}");
-    AddFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"fractPrec\" : 128, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract128u\", \"SpecName\" : \"Fractional128U\", \"SpecType\" : \"numeric\"}");
-    
-    AddFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"\xC2\xB0\", \"unitName\" : \"ARC_DEG\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"ARC_MINUTE\"}, \"MinorUnit\" : {\"unitLabel\":\"\\\"\", \"unitName\" : \"ARC_SECOND\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":1, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"cdms\", \"SpecName\" : \"CAngleDMS\", \"SpecType\" : \"composite\"}");
-    AddFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"\xC2\xB0\", \"unitName\" : \"ARC_DEG\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"ARC_MINUTE\"}, \"MinorUnit\" : {\"unitLabel\":\"\\\"\", \"unitName\" : \"ARC_SECOND\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"cdms8\", \"SpecName\" : \"CAngleDMS8\", \"SpecType\" : \"composite\"}");
-    AddFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"\xC2\xB0\", \"unitName\" : \"ARC_DEG\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"ARC_MINUTE\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"cdm8\", \"SpecName\" : \"CAngleDM8\", \"SpecType\" : \"composite\"}");
-    AddFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"mile(s)\", \"unitName\" : \"MILE\"}, \"MiddleUnit\" : {\"unitLabel\":\"yrd(s)\", \"unitName\" : \"YRD\"}, \"MinorUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"FT\"}, \"SubUnit\" : {\"unitLabel\":\"\\\"\", \"unitName\" : \"IN\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":4, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"myfi4\", \"SpecName\" : \"AmerMYFI4\", \"SpecType\" : \"composite\"}");
-    AddFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"'\", \"unitName\" : \"FT\"}, \"MiddleUnit\" : {\"unitLabel\":\"\"\", \"unitName\" : \"IN\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fi8\", \"SpecName\" : \"AmerFI8\", \"SpecType\" : \"composite\"}");
-    AddFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"'\", \"unitName\" : \"FT\"}, \"MiddleUnit\" : {\"unitLabel\":\"\"\", \"unitName\" : \"IN\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":16, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fi16\", \"SpecName\" : \"AmerFI16\", \"SpecType\" : \"composite\"}");
-    AddFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"'\", \"unitName\" : \"FT\"}, \"MiddleUnit\" : {\"unitLabel\":\"\"\", \"unitName\" : \"IN\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":32, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fi32\", \"SpecName\" : \"AmerFI32\", \"SpecType\" : \"composite\"}");
-
-    AddFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"yrd(s)\", \"unitName\" : \"YRD\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"FT\"}, \"MinorUnit\" : {\"unitLabel\":\"\"\", \"unitName\" : \"IN\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"yfi8\", \"SpecName\" : \"AmerYFI8\", \"SpecType\" : \"composite\"}");
+    // "hms"
     AddFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"hour(s)\", \"unitName\" : \"HR\"}, \"MiddleUnit\" : {\"unitLabel\":\"min\", \"unitName\" : \"MIN\"}, \"MinorUnit\" : {\"unitLabel\":\"sec\", \"unitName\" : \"S\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"decPrec\":2, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"hms\", \"SpecName\" : \"HMS\", \"SpecType\" : \"composite\"}");
+    
+    // Duplicate of "dms", just different name.
+    AddFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"\xC2\xB0\", \"unitName\" : \"ARC_DEG\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"ARC_MINUTE\"}, \"MinorUnit\" : {\"unitLabel\":\"\\\"\", \"unitName\" : \"ARC_SECOND\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":1, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"cdms\", \"SpecName\" : \"CAngleDMS\", \"SpecType\" : \"composite\"}");
+
+    // Duplicate of "dms8", just different name.
+    AddFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"\xC2\xB0\", \"unitName\" : \"ARC_DEG\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"ARC_MINUTE\"}, \"MinorUnit\" : {\"unitLabel\":\"\\\"\", \"unitName\" : \"ARC_SECOND\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"cdms8\", \"SpecName\" : \"CAngleDMS8\", \"SpecType\" : \"composite\"}");
+
+    // Duplicate of "dm8", just different name.
+    AddFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"\xC2\xB0\", \"unitName\" : \"ARC_DEG\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"ARC_MINUTE\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"cdm8\", \"SpecName\" : \"CAngleDM8\", \"SpecType\" : \"composite\"}");
     }
 
 //===================================================
@@ -275,136 +195,73 @@ void StdFormatSet::CustomInit()
 void NumericFormatSpec::LoadJson(Json::Value jval)
     {
     DefaultInit(FormatConstant::DefaultDecimalPrecisionIndex());
-    if (!jval.empty())
+    if (jval.empty())
+        return;
+
+    Utf8CP paramName;
+    Utf8String str;
+    Utf8String jStr = jval.ToString();
+    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
         {
-        Utf8CP paramName;
-        Utf8String str;
-        Utf8String jStr = jval.ToString();
-        for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
+        paramName = iter.memberName();
+        JsonValueCR val = *iter;
+        if (BeStringUtilities::StricmpAscii(paramName, json_presentType()) == 0)
             {
-            paramName = iter.memberName();
-            JsonValueCR val = *iter;
-            if (BeStringUtilities::StricmpAscii(paramName, json_presentType()) == 0)
-                {
-                m_presentationType = Utils::NameToPresentationType(val.asCString());
-                }
-            else if (BeStringUtilities::StricmpAscii(paramName, json_roundFactor()) == 0)
-                {
-                m_roundFactor = val.asDouble();
-                }
-            else if (BeStringUtilities::StricmpAscii(paramName, json_decPrec()) == 0)
-                {
-                m_decPrecision = Utils::DecimalPrecisionByIndex(val.asInt64());
-                }
-            else if (BeStringUtilities::StricmpAscii(paramName, json_fractPrec()) == 0)
-                {
-                m_fractPrecision = Utils::FractionalPrecisionByDenominator(val.asInt64());
-                }
-            else if (BeStringUtilities::StricmpAscii(paramName, json_signOpt()) == 0)
-                {
-                m_signOption = Utils::NameToSignOption(val.asCString());
-                }
-            else if (BeStringUtilities::StricmpAscii(paramName, json_barType()) == 0)
-                {
-                m_barType = Utils::NameToFractionBarType(val.asCString());
-                }
-            else if (BeStringUtilities::StricmpAscii(paramName, json_decimalSeparator()) == 0)
-                {
-                str = val.asString();
-                m_decimalSeparator = str.c_str()[0];
-                }
-            else if (BeStringUtilities::StricmpAscii(paramName, json_thousandSeparator()) == 0)
-                {
-                str = val.asString();
-                m_thousandsSeparator = str.c_str()[0];
-                }
-            else if (BeStringUtilities::StricmpAscii(paramName, json_uomSeparator()) == 0)
-                {
-                m_uomSeparator = val.asString();
-                }
-            else if (BeStringUtilities::StricmpAscii(paramName, json_statSeparator()) == 0)
-                {
-                str = val.asString();
-                m_statSeparator = str.c_str()[0];
-                }
-            else if (BeStringUtilities::StricmpAscii(paramName, json_minWidth()) == 0)
-                {
-                m_minWidth = val.asInt();
-                }
-            else if (BeStringUtilities::StricmpAscii(paramName, json_formatTraits()) == 0)
-                {
-                TraitsFromJson(val);
-                }
-            } // for
-        }// not empty
+            m_presentationType = Utils::NameToPresentationType(val.asCString());
+            }
+        else if (BeStringUtilities::StricmpAscii(paramName, json_roundFactor()) == 0)
+            {
+            m_roundFactor = val.asDouble();
+            }
+        else if (BeStringUtilities::StricmpAscii(paramName, json_decPrec()) == 0)
+            {
+            m_decPrecision = Utils::DecimalPrecisionByIndex(val.asInt64());
+            }
+        else if (BeStringUtilities::StricmpAscii(paramName, json_fractPrec()) == 0)
+            {
+            m_fractPrecision = Utils::FractionalPrecisionByDenominator(val.asInt64());
+            }
+        else if (BeStringUtilities::StricmpAscii(paramName, json_signOpt()) == 0)
+            {
+            m_signOption = Utils::NameToSignOption(val.asCString());
+            }
+        else if (BeStringUtilities::StricmpAscii(paramName, json_barType()) == 0)
+            {
+            m_barType = Utils::NameToFractionBarType(val.asCString());
+            }
+        else if (BeStringUtilities::StricmpAscii(paramName, json_decimalSeparator()) == 0)
+            {
+            str = val.asString();
+            m_decimalSeparator = str.c_str()[0];
+            }
+        else if (BeStringUtilities::StricmpAscii(paramName, json_thousandSeparator()) == 0)
+            {
+            str = val.asString();
+            m_thousandsSeparator = str.c_str()[0];
+            }
+        else if (BeStringUtilities::StricmpAscii(paramName, json_uomSeparator()) == 0)
+            {
+            m_uomSeparator = val.asString();
+            }
+        else if (BeStringUtilities::StricmpAscii(paramName, json_statSeparator()) == 0)
+            {
+            str = val.asString();
+            m_statSeparator = str.c_str()[0];
+            }
+        else if (BeStringUtilities::StricmpAscii(paramName, json_minWidth()) == 0)
+            {
+            m_minWidth = val.asInt();
+            }
+        else if (BeStringUtilities::StricmpAscii(paramName, json_formatTraits()) == 0)
+            {
+            TraitsFromJson(val);
+            }
+        } // for
     }
 
 NumericFormatSpec::NumericFormatSpec(Json::Value jval)
     {
     LoadJson(jval);
-    //DefaultInit(FormatConstant::DefaultDecimalPrecisionIndex());
-    //if (!jval.empty())
-    //    {
-    //    Utf8CP paramName;
-    //    Utf8String str;
-    //    Utf8String jStr = jval.ToString();
-    //    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
-    //        {
-    //        paramName = iter.memberName();
-    //        JsonValueCR val = *iter;
-    //        if (BeStringUtilities::StricmpAscii(paramName, json_presentType()) == 0)
-    //            {
-    //            m_presentationType = Utils::NameToPresentationType(val.asCString());
-    //            }
-    //        else if (BeStringUtilities::StricmpAscii(paramName, json_roundFactor()) == 0)
-    //            {
-    //            m_roundFactor = val.asDouble();
-    //            }
-    //        else if (BeStringUtilities::StricmpAscii(paramName, json_decPrec()) == 0)
-    //            {
-    //            m_decPrecision = Utils::DecimalPrecisionByIndex(val.asInt64());
-    //            }
-    //        else if (BeStringUtilities::StricmpAscii(paramName, json_fractPrec()) == 0)
-    //            {
-    //            m_fractPrecision = Utils::FractionalPrecisionByDenominator(val.asInt64());
-    //            }
-    //        else if (BeStringUtilities::StricmpAscii(paramName, json_signOpt()) == 0)
-    //            {
-    //            m_signOption = Utils::NameToSignOption(val.asCString());
-    //            }
-    //        else if (BeStringUtilities::StricmpAscii(paramName, json_barType()) == 0)
-    //            {
-    //            m_barType = Utils::NameToFractionBarType(val.asCString());
-    //            }
-    //        else if (BeStringUtilities::StricmpAscii(paramName, json_decimalSeparator()) == 0)
-    //            {
-    //            str = val.asString();
-    //            m_decimalSeparator = str.c_str()[0];
-    //            }
-    //        else if (BeStringUtilities::StricmpAscii(paramName, json_thousandSeparator()) == 0)
-    //            {
-    //            str = val.asString();
-    //            m_thousandsSeparator = str.c_str()[0];
-    //            }
-    //        else if (BeStringUtilities::StricmpAscii(paramName, json_uomSeparator()) == 0)
-    //            {
-    //            m_uomSeparator = val.asString();
-    //            }
-    //        else if (BeStringUtilities::StricmpAscii(paramName, json_statSeparator()) == 0)
-    //            {
-    //            str = val.asString();
-    //            m_statSeparator = str.c_str()[0];
-    //            }
-    //        else if (BeStringUtilities::StricmpAscii(paramName, json_minWidth()) == 0)
-    //            {
-    //            m_minWidth = val.asInt();
-    //            }
-    //        else if (BeStringUtilities::StricmpAscii(paramName, json_formatTraits()) == 0)
-    //            {
-    //            TraitsFromJson(val);
-    //            }
-    //        } // for
-    //    }// not empty
     }
 
 NumericFormatSpec::NumericFormatSpec(Utf8CP jsonString)
@@ -818,33 +675,6 @@ void NamedFormatSpec::LoadJson(Utf8CP jsonString)
 NamedFormatSpec::NamedFormatSpec(Json::Value jval)
     {
     LoadJson(jval);
-    //Utf8CP paramName;
-    ////Utf8String str;
-    //if (jval.empty())
-    //    {
-    //    m_problem.UpdateProblemCode(FormatProblemCode::NFS_InvalidJsonObject);
-    //    return;
-    //    }
-    ////str = jval.ToString();
-    //for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
-    //    {
-    //    paramName = iter.memberName();
-    //    JsonValueCR val = *iter;
-    //    if (BeStringUtilities::StricmpAscii(paramName, json_SpecName()) == 0)
-    //        m_name = val.asString();
-    //    else if (BeStringUtilities::StricmpAscii(paramName, json_SpecAlias()) == 0)
-    //        m_alias = val.asString();
-    //    else if (BeStringUtilities::StricmpAscii(paramName, json_SpecDescript()) == 0)
-    //        m_description = val.asString();
-    //    else if (BeStringUtilities::StricmpAscii(paramName, json_SpecLabel()) == 0)
-    //        m_displayLabel = val.asString();
-    //    else if (BeStringUtilities::StricmpAscii(paramName, json_SpecType()) == 0)
-    //        m_specType = Utils::NameToFormatSpecType(val.asCString());
-    //    else if (BeStringUtilities::StricmpAscii(paramName, json_NumericFormat()) == 0)
-    //        m_numericSpec = NumericFormatSpec(val);
-    //    else if (BeStringUtilities::StricmpAscii(paramName, json_CompositeFormat()) == 0)
-    //        m_compositeSpec.LoadJsonData(val);
-    //    }
     }
 
 //----------------------------------------------------------------------------------------
@@ -855,14 +685,6 @@ NamedFormatSpec::NamedFormatSpec(Utf8CP jsonString)
     Json::Value jval (Json::objectValue);
     Json::Reader::Parse(jsonString, jval);
     LoadJson(jval);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 05/17
-//----------------------------------------------------------------------------------------
-void NamedFormatSpec::ReplaceLocalizables(JsonValueCR jval)
-    {
-    return;
     }
 
 //===================================================

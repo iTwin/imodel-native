@@ -159,7 +159,7 @@ enum class FormatTraits : int
     DefaultTraits = 0,        // No special traits. This value is being used only for initializing 
     LeadingZeroes = 0x1,      // indicates that one or more insignificant zeroes are to be added in front of digital expression
     TrailingZeroes = 0x2,     // indicates that one or more insignificant zeroes are to be added after the last digit of the fraction
-    KeepDecimalPoint = 0x4,   // indicates that the decimal point is required when the fraction os zero
+    KeepDecimalPoint = 0x4,   // indicates that the decimal point is required when the fraction is zero
     KeepSingleZero = 0x8,     // indicates that the fractional part of the number is required when the fraction is zero
     ExponentZero = 0x10,      // indicates that the exponent value must be prepended by zero
     ZeroEmpty = 0x20,         // indicates that zero value should be presented by an empty string
@@ -372,7 +372,9 @@ enum class FormatSpecialCodes
     SignatureInvalid = 100
     };
 
-
+//=======================================================================================
+//! @bsistruct
+//=======================================================================================
 struct FormatProblemDetail
     {
     private:
@@ -396,6 +398,9 @@ struct FormatProblemDetail
         UNITS_EXPORT void Reset() { m_code = FormatProblemCode::NoProblems; }
     };
 
+//=======================================================================================
+//! @bsistruct
+//=======================================================================================
 struct Utils
     {
     UNITS_EXPORT static Utf8String ShowSignOptionName(ShowSignOption opt);

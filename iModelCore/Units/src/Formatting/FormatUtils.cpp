@@ -1888,14 +1888,9 @@ NamedFormatSpec::NamedFormatSpec()
     m_problem.UpdateProblemCode(FormatProblemCode::NFS_Undefined);
     }
 
-
- //              NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec, Utf8CP alias = nullptr);
- 
- //              NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec, Utf8CP alias = nullptr);
- //              NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8CP alias = nullptr);
- //----------------------------------------------------------------------------------------
- // @bsimethod                                                   David Fox-Rabinovitz 02/17
- //----------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//----------------------------------------------------------------------------------------
 NamedFormatSpec::NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec, Utf8CP alias)
     {
     m_specType = FormatSpecType::Undefined;
