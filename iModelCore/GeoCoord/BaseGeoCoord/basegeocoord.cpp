@@ -14,7 +14,7 @@
 #include    <GeoCoord/BaseGeoCoord.h>
 #include    <GeoCoord/basegeocoordapi.h>
 #include    <GeoCoord/GCSLibrary.h>
-#include    <CSMap/cs_NameMapperSupport.h>
+#include    <csmap/cs_NameMapperSupport.h>
 #include    <csmap/cs_map.h>
 #include    <csmap/cs_Legacy.h>
 #include    <sys/types.h>
@@ -5099,7 +5099,7 @@ StatusInt       SaveGCS
         geoTiffKeyInterpreter.ProcessProjectedCSTypeKey (projectedCSType);
 
         // add the ProjLinearUnitsGeoKey if the unit of the CGS is different than the unit of the
-        // coordinate system defined by the GCS\92s EPSG code.
+        // coordinate system defined by the GCS EPSG code.
         if (geoTiffKeyInterpreter.m_csDef.unit_scl != m_inGCS.m_csParameters->csdef.unit_scl)
             SaveProjLinearUnitsKey();
 
@@ -13505,7 +13505,7 @@ BaseGCSCR       to
     if (!from.IsValid() || !to.IsValid())
         return NULL;
 
-    VerticalDatumConverter* verticalDatumConverter  = GetVerticalDatumConverter (from, to);
+    VerticalDatumConverter* verticalDatumConverter = GetVerticalDatumConverter (from, to);
 
     CSDatumConvert  *datumConvert = CSMap::CS_dtcsu (from.GetCSParameters(), to.GetCSParameters());
 
