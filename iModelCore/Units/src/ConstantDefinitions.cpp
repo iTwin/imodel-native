@@ -33,7 +33,7 @@ void UnitRegistry::AddDefaultConstants ()
     AddConstant(METRIC_PREFIX, "ATTO", "ONE", 1.0e-18); //, "ATTO-prefix");
     AddConstant(METRIC_PREFIX, "ZEPTO", "ONE", 1.0e-21); //, "ZEPTO-prefix");
     AddConstant(METRIC_PREFIX, "YOCTO", "ONE", 1.0e-24); //, "YOCTO-prefix");
-    AddConstant(METRIC_PREFIX, "DEKA", "ONE", 1); //, "DEKA-prefix");
+    AddConstant(METRIC_PREFIX, "DECA", "ONE", 1.0e1); //, "DECA-prefix");
     AddConstant(METRIC_PREFIX, "HECTO", "ONE", 1.0e2); //, "HECTO-prefix");
     AddConstant(METRIC_PREFIX, "KILO", "ONE", 1.0e3); //, "KILO-prefix");
     AddConstant(METRIC_PREFIX, "MEGA", "ONE", 1.0e6); //, "MEGA-prefix");
