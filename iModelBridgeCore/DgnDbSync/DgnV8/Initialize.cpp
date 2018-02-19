@@ -487,7 +487,7 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
 
             virtual uint64_t _GetProductId() const override
                 {
-                return 2427;
+                return 1; //Default product Id for internal product
                 }            
             };
         return *new CsScalableMeshAdmin;
