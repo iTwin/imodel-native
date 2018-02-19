@@ -6200,6 +6200,9 @@
                     <KeyName>CzechJTSK/5b.Krovak</KeyName>
                   </Member>
                   <Member>
+                    <KeyName>Czech/JTSK.Krovak</KeyName>
+                  </Member>
+                  <Member>
                     <KeyName>Pulkovo42/83b.GK3d-3/EN</KeyName>
                   </Member>
                   <Member>
@@ -29956,9 +29959,6 @@
                   <Member>
                     <KeyName>Krovak S-JTSK/95</KeyName>
                   </Member>
-                  <Member>
-                    <KeyName>Czech/JTSK.Krovak</KeyName>
-                  </Member>
                 </Members>
               </Group>
               <Group>
@@ -33237,13 +33237,10 @@
                 <Name>Czechoslovakia</Name>
                 <Members>
                   <Member>
-                    <KeyName>EPSG:4156</KeyName>
-                  </Member>
-                  <Member>
                     <KeyName>CzechJTSK/5b.LL</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5228</KeyName>
+                    <KeyName>Czech/JTSK.LL</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -35467,6 +35464,12 @@
                 <KeyName>S-JTSK/95.LL</KeyName>
               </Member>
               <Member>
+                <KeyName>EPSG:4156</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:5228</KeyName>
+              </Member>
+              <Member>
                 <KeyName>EPSG:4217</KeyName>
               </Member>
               <Member>
@@ -35780,9 +35783,6 @@
               </Member>
               <Member>
                 <KeyName>Dominica45.LL</KeyName>
-              </Member>
-              <Member>
-                <KeyName>Czech/JTSK.LL</KeyName>
               </Member>
               <Member>
                 <KeyName>Douala48.LL</KeyName>

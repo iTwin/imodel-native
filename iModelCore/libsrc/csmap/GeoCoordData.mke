@@ -75,8 +75,8 @@ always:
 
 #    Geodetic Data Catalog files, which are used in conjunction with .las, .los files:
 always:
-    CreateSymLinks.py   -f"$(GeoCoordData)GeoidHeight.gdc=$(csDictionariesDir)GeoidHeight.gdc
-    CreateSymLinks.py   -f"$(GeoCoordData)Vertcon.gdc=$(csDictionariesDir)Vertcon.gdc
+    CreateSymLinks.py   -f"$(GeoCoordData)GeoidHeight.gdc=$(csDictionariesDir)GeoidHeight.gdc"
+    CreateSymLinks.py   -f"$(GeoCoordData)Vertcon.gdc=$(csDictionariesDir)Vertcon.gdc"
 
 always:
     CreateSymLinks.py   -f"$(GeoCoordData)coordsys.dty=$(OutputRootDir)build/csmap/coordsys.dty"
@@ -97,6 +97,7 @@ always:
     CreateSymLinks.py   -d"$(GeoCoordData)Spain=$(csDictionariesDir)Spain"
     CreateSymLinks.py   -d"$(GeoCoordData)Switzerland=$(csDictionariesDir)Switzerland"
     CreateSymLinks.py   -d"$(GeoCoordData)Venezuela=$(csDictionariesDir)Venezuela"
+    CreateSymLinks.py   -d"$(GeoCoordData)Portugal=$(csDictionariesDir)Portugal"
     CreateSymLinks.py   -d"$(GeoCoordData)UK=$(csDictionariesDir)UK"
     CreateSymLinks.py   -d"$(GeoCoordData)USA/HARN=$(csDictionariesDir)USA/HARN"
     CreateSymLinks.py   -d"$(GeoCoordData)USA/VERTCON=$(csDictionariesDir)USA/VERTCON"
