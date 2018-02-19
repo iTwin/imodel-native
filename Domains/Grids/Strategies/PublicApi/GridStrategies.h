@@ -20,7 +20,3 @@ GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS(LineGridSurfaceManipulationStrategy)
 
 #include "LineGridSurfaceManipulationStrategy.h"
 #include "LineGridSurfacePlacementStrategy.h"
-
-#include "SketchGridPlacementStrategy.h"
-#include "ArcGridPlacementStrategy.h"
-#include "LineGridPlacementStrategy.h"
