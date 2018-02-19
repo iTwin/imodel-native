@@ -1,23 +1,13 @@
 ﻿/*--------------------------------------------------------------------------------------+
 |
-|  $Source: tests/NonPublished/formatting_test.cpp $
+|  $Source: tests/Published/formatting_test.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
-#include <Bentley/BeTest.h>
-#include <BeJsonCpp/BeJsonUtilities.h>
-#include <Logging/bentleylogging.h>
-#include <Bentley/BeTimeUtilities.h>
-#include <Formatting/FormattingApi.h>
-#include <Units/UnitRegistry.h>
-#include <Units/UnitTypes.h>
-#include <Units/Quantity.h>
-#include <Units/Units.h>
-#include "FormattingTestFixture.h"
-#include <BeSQLite/L10N.h>
-
+#include "../FormattingTestsPch.h"
+#include "../TestFixture/FormattingTestFixture.h"
 
 //#define FORMAT_DEBUG_PRINT
 
@@ -32,27 +22,6 @@ BE_JSON_NAME(high)
 BE_JSON_NAME(yaw)
 BE_JSON_NAME(pitch)
 BE_JSON_NAME(roll)
-
-
-//static void SetUpL10N() 
-//    {
-//    BeFileName sqlangFile;
-//    BeTest::GetHost().GetDgnPlatformAssetsDirectory(sqlangFile);
-//    sqlangFile.AppendToPath(L"sqlang");
-//    sqlangFile.AppendToPath(L"Units_en.sqlang.db3");
-//
-//    BeFileName temporaryDirectory;
-//    BeTest::GetHost().GetTempDir(temporaryDirectory);
-//
-//    BeSQLite::BeSQLiteLib::Initialize(temporaryDirectory, BeSQLite::BeSQLiteLib::LogErrors::Yes);
-//    BeSQLite::L10N::Shutdown();
-//    BeSQLite::L10N::Initialize(BeSQLite::L10N::SqlangFiles(sqlangFile));
-//    }
-//
-//static void TearDownL10N()
-//    {
-//    BeSQLite::L10N::Shutdown();
-//    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            David.Fox-Rabinovitz                      03/17
@@ -1171,4 +1140,3 @@ TEST(FormattingTest, PhenomenaTest)
     }
 
 END_BENTLEY_FORMATTEST_NAMESPACE
-

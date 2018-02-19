@@ -1,22 +1,16 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: tests/NonPublished/FormattingTestFixture.cpp $
+|  $Source: tests/TestFixture/FormattingTestFixture.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#pragma once
+
 #if defined (BENTLEY_WIN32)
 #include <windows.h>
 #include <iostream>
 #endif
-#include "../UnitsTestsPch.h"
-#include <Formatting/FormattingApi.h>
-#include <Units/UnitRegistry.h>
-#include <Units/UnitTypes.h>
-#include <Units/Quantity.h>
-#include <Units/Units.h>
-//#include <ECObjects/ECQuantityFormatting.h>
+
 #include "FormattingTestFixture.h"
 
 USING_BENTLEY_FORMATTING
@@ -50,7 +44,6 @@ void FormattingTestFixture::TearDownL10N()
     {
     BeSQLite::L10N::Shutdown();
     }
-
 
 /*=================================================================================**//**
 * @bsiclass                                     		David Fox-Rabinovitz 06/2017
