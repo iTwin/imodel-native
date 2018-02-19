@@ -5358,3 +5358,215 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_As
     IGNORE_BE_ASSERT();
     DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(InstanceNodesOfSpecificClassesSpecification_MultipleInheritance_LabelOverridesAppliedPolymorphically, R"*(
+    <ECEntityClass typeName="ClassA1">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="CodeValue" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassA2" modifier="Abstract">
+        <ECCustomAttributes>
+            <IsMixin xmlns="CoreCustomAttributes.1.0">
+                <AppliesToEntityClass>ClassB</AppliesToEntityClass>
+            </IsMixin>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassB">
+        <BaseClass>ClassA1</BaseClass>
+        <BaseClass>ClassA2</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassC">
+        <BaseClass>ClassB</BaseClass>
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificClassesSpecification_MultipleInheritance_LabelOverridesAppliedPolymorphically)
+    {
+    // set up data set
+    ECClassCP classA1 = GetClass("ClassA1");
+    ECClassCP classC = GetClass("ClassC");
+    IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance) {instance.SetValue("CodeValue", ECValue("ClassC_CodeValue"));});
+    IECInstancePtr instanceA1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA1, [](IECInstanceR instance) {instance.SetValue("CodeValue", ECValue("ClassA1_CodeValue"));});
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, classA1->GetFullName(), "CodeValue"));
+
+    RootNodeRule* rule = new RootNodeRule();
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, true, false, false, false, "", classA1->GetFullName(), false));
+    rules->AddPresentationRule(*rule);
+
+    ChildNodeRule* childRule = new ChildNodeRule();
+    childRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", classC->GetFullName(), false));
+    rules->AddPresentationRule(*childRule);
+
+    // request for nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest(), TargetTree_MainTree);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(1, rootNodes.GetSize());
+    EXPECT_STREQ("ClassA1_CodeValue", rootNodes[0]->GetLabel().c_str());
+
+    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(1, childNodes.GetSize());
+    EXPECT_STREQ("ClassC_CodeValue", childNodes[0]->GetLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(InstanceNodesOfSpecificClassesSpecification_MultipleInheritance_LabelOverridesAppliedForSpecifiedClass, R"*(
+    <ECEntityClass typeName="ClassA1">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="CodeValue" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassA2" modifier="Abstract">
+        <ECCustomAttributes>
+            <IsMixin xmlns="CoreCustomAttributes.1.0">
+                <AppliesToEntityClass>ClassB</AppliesToEntityClass>
+            </IsMixin>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassB">
+        <BaseClass>ClassA1</BaseClass>
+        <BaseClass>ClassA2</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassC">
+        <BaseClass>ClassB</BaseClass>
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificClassesSpecification_MultipleInheritance_LabelOverridesAppliedForSpecifiedClass)
+    {
+    // set up data set
+    ECClassCP classA1 = GetClass("ClassA1");
+    ECClassCP classC = GetClass("ClassC");
+    IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance) {instance.SetValue("UserLabel", ECValue("ClassC_UserLabel"));});
+    IECInstancePtr instanceA1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA1, [](IECInstanceR instance) {instance.SetValue("CodeValue", ECValue("ClassA1_CodeValue"));});
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, classA1->GetFullName(), "CodeValue"));
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, classC->GetFullName(), "UserLabel"));
+
+    RootNodeRule* rule = new RootNodeRule();
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, true, false, false, false, "", classA1->GetFullName(), false));
+    rules->AddPresentationRule(*rule);
+
+    ChildNodeRule* childRule = new ChildNodeRule();
+    childRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", classC->GetFullName(), false));
+    rules->AddPresentationRule(*childRule);
+
+    // request for nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest(), TargetTree_MainTree);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(1, rootNodes.GetSize());
+    EXPECT_STREQ("ClassA1_CodeValue", rootNodes[0]->GetLabel().c_str());
+
+    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(1, childNodes.GetSize());
+    EXPECT_STREQ("ClassC_UserLabel", childNodes[0]->GetLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(AllInstanceNodesSpecification_LabelOverridesAppliedPolymorphically, R"*(
+    <ECEntityClass typeName="ClassA">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="CodeValue" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassB">
+        <BaseClass>ClassA</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassC">
+        <BaseClass>ClassB</BaseClass>
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodesSpecification_LabelOverridesAppliedPolymorphically)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("ClassA");
+    ECClassCP classC = GetClass("ClassC");
+    IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance) {instance.SetValue("CodeValue", ECValue("ClassC_CodeValue"));});
+    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("CodeValue", ECValue("ClassA1_CodeValue"));});
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, classA->GetFullName(), "CodeValue"));
+
+    RootNodeRule* rule = new RootNodeRule();
+    AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, BeTest::GetNameOfCurrentTest());
+    allInstanceNodesSpecification->SetDoNotSort(true);
+    rule->AddSpecification(*allInstanceNodesSpecification);
+    rules->AddPresentationRule(*rule);
+
+    // request for nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest(), TargetTree_MainTree);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(2, rootNodes.GetSize());
+    EXPECT_STREQ("ClassC_CodeValue", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("ClassA1_CodeValue", rootNodes[1]->GetLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Aidas.Vaiksnoras                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(AllInstanceNodesSpecification_LabelOverridesAppliedForSpecifiedClass, R"*(
+    <ECEntityClass typeName="ClassA">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="CodeValue" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassB">
+        <BaseClass>ClassA</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassC">
+        <BaseClass>ClassB</BaseClass>
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodesSpecification_LabelOverridesAppliedForSpecifiedClass)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("ClassA");
+    ECClassCP classC = GetClass("ClassC");
+    IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance) {instance.SetValue("UserLabel", ECValue("ClassC_UserLabel"));});
+    IECInstancePtr instanceA1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("CodeValue", ECValue("ClassA1_CodeValue"));});
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, classA->GetFullName(), "CodeValue"));
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, classC->GetFullName(), "UserLabel"));
+
+    RootNodeRule* rule = new RootNodeRule();
+    AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, BeTest::GetNameOfCurrentTest());
+    allInstanceNodesSpecification->SetDoNotSort(true);
+    rule->AddSpecification(*allInstanceNodesSpecification);
+    rules->AddPresentationRule(*rule);
+
+    // request for nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest(), TargetTree_MainTree);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(2, rootNodes.GetSize());
+    EXPECT_STREQ("ClassC_UserLabel", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("ClassA1_CodeValue", rootNodes[1]->GetLabel().c_str());
+    }

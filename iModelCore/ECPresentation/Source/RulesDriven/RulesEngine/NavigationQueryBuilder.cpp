@@ -2698,6 +2698,39 @@ static ComplexNavigationQueryPtr CreateQuery(NavigationQueryContract& contract, 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static void GetLabelOverridesForClass(bvector<ECPropertyCP>& labelProperties, ECClassCR ecClass, bmap<ECClassCP, bvector<ECPropertyCP>> const& propertiesMap)
+    {
+    auto iter = propertiesMap.find(&ecClass);
+    if (iter != propertiesMap.end())
+        labelProperties.insert(labelProperties.end(), iter->second.begin(), iter->second.end());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static void GetLabelOverridesForClassPolymorphically(bvector<ECPropertyCP>& labelProperties, ECClassCR ecClass, bmap<ECClassCP, bvector<ECPropertyCP>> const& propertiesMap)
+    {
+    GetLabelOverridesForClass(labelProperties, ecClass, propertiesMap);
+    for (ECClassCP baseClass : ecClass.GetBaseClasses())
+        GetLabelOverridesForClassPolymorphically(labelProperties, *baseClass, propertiesMap);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static SelectQueryInfo CreateSelectInfo(ChildNodeSpecificationCR specification, ECClassCR selectClass, bool selectPolymorphically, 
+    bmap<ECClassCP, bvector<ECPropertyCP>> const& labelOverridingProperties, SelectionPurpose purpose = SelectionPurpose::Include)
+    {
+    SelectQueryInfo info(specification, selectClass, selectPolymorphically, purpose);
+    bvector<ECPropertyCP> properties;
+    GetLabelOverridesForClassPolymorphically(properties, selectClass, labelOverridingProperties);
+    info.SetLabelOverrides(properties);
+    return info;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 static SelectQueryInfo CreateSelectInfo(ECSchemaHelper const& helper, MultiQueryContext& ctx, ECEntityClassCR parentInstanceClass, 
@@ -2706,25 +2739,10 @@ static SelectQueryInfo CreateSelectInfo(ECSchemaHelper const& helper, MultiQuery
     RelatedClassPath relatedClassPath = path;
     relatedClassPath.Reverse("related", path.back().IsPolymorphic());
 
-    SelectQueryInfo selectInfo(specification, *path.back().GetTargetClass(), path.back().IsPolymorphic(), purpose);
-    auto iter = labelOverridingProperties.find(selectInfo.GetSelectClass());
-    if (iter != labelOverridingProperties.end())
-        selectInfo.SetLabelOverrides(iter->second);
+    SelectQueryInfo selectInfo = CreateSelectInfo(specification, *path.back().GetTargetClass(), path.back().IsPolymorphic(), labelOverridingProperties, purpose);
     selectInfo.GetRelatedClassPath() = relatedClassPath;
     selectInfo.GetRelatedClasses() = GetRelatedInstanceClasses(helper, ctx, *selectInfo.GetSelectClass(), specification.GetRelatedInstances());
     return selectInfo;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Vaiksnoras                01/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-static SelectQueryInfo CreateSelectInfo(ChildNodeSpecificationCR specification, ECClassCR selectClass, bool selectPolymorphically, bmap<ECClassCP, bvector<ECPropertyCP>> const& labelOverridingProperties)
-    {
-    SelectQueryInfo info(specification, selectClass, selectPolymorphically);
-    auto iter = labelOverridingProperties.find(info.GetSelectClass());
-    if (iter != labelOverridingProperties.end())
-        info.SetLabelOverrides(iter->second);
-    return info;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3099,12 +3117,9 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
         if (groupingResolver.IsGroupedByClass() && !groupingResolver.GetGroupingClass()->Is(entityClass))
             continue;
 
-        SelectQueryInfo selectInfo(specification, *entityClass, true);
+        SelectQueryInfo selectInfo = CreateSelectInfo(specification, *entityClass, true, labelOverridingProperties);
         selectInfo.GetRelatedClasses() = GetRelatedInstanceClasses(m_params.GetSchemaHelper(), *queryContext, 
             *selectInfo.GetSelectClass(), specification.GetRelatedInstances());
-        auto iter = labelOverridingProperties.find(selectInfo.GetSelectClass());
-        if (iter != labelOverridingProperties.end())
-            selectInfo.SetLabelOverrides(iter->second);
         
         // may need to split some base classes into their derived classes if there are customization rules that only apply for 
         // derived classes.
