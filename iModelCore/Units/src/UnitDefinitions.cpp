@@ -565,36 +565,36 @@ void AddPower(UnitRegistry& reg)
 void AddPressure(UnitRegistry& reg)
     {
     reg.AddUnit(PRESSURE, SI, "PA", "N*M(-2)");
-    reg.AddUnit(PRESSURE, INDUSTRIAL, "PA_GAUGE", "PA", 1, 101325);  // Offset is one standard atmosphere in PA.  Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
+    reg.AddUnit(PRESSURE, INDUSTRIAL, "PA_GAUGE", "PA", 1, 101325);  // Offset is one standard atmosphere in PA.  Offset is exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
 
     reg.AddUnit(PRESSURE, METRIC, "HECTOPASCAL", "[HECTO]*PA");
 
     reg.AddUnit(PRESSURE, METRIC, "KILOPASCAL", "[KILO]*PA");
-    reg.AddUnit(PRESSURE, INDUSTRIAL, "KILOPASCAL_GAUGE", "[KILO]*PA", 1, 101325e-3);  // Offset is one standard atmosphere converted to KiloPA.  Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
+    reg.AddUnit(PRESSURE, INDUSTRIAL, "KILOPASCAL_GAUGE", "[KILO]*PA", 1, 101325e-3);  // Offset is one standard atmosphere (101325 PA) converted to kilopascal.  Offset is exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
 
     reg.AddUnit(PRESSURE, METRIC, "MEGAPASCAL", "[MEGA]*PA");
-    reg.AddUnit(PRESSURE, INDUSTRIAL, "MEGAPASCAL_GAUGE", "[MEGA]*PA", 1, 101325e-6);  // Offset is one standard atmosphere converted to MegaPA.  Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
+    reg.AddUnit(PRESSURE, INDUSTRIAL, "MEGAPASCAL_GAUGE", "[MEGA]*PA", 1, 101325e-6);  // Offset is one standard atmosphere (101325 PA) converted to megapascal.  Offset is exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
 
     UnitCP un = reg.AddUnit(PRESSURE, INTERNATIONAL, "AT", "KGF*CM(-2)");  // Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
     un->AddSynonym("ATMOSPHERE_TECHNIAL");
 
-    reg.AddUnit(PRESSURE, INDUSTRIAL, "AT_GAUGE", "AT", 1.0, 1.0332274527998859); // Offset is one standard atmosphere converted to atmosphere-technical (AT)
+    reg.AddUnit(PRESSURE, INDUSTRIAL, "AT_GAUGE", "AT", 1.0, 1.0332274527998859); // Offset is one standard atmosphere (101325 PA) converted to atmosphere-technical (AT).  Offset is exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
 
     reg.AddUnit(PRESSURE, INTERNATIONAL, "KGF/SQ.M", "KGF*M(-2)");
 
     reg.AddUnit(PRESSURE, METRIC, "ATM", "PA", 101325);  // Standard atmosphere, see AT for atmosphere-technical.  Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
 
     reg.AddUnit(PRESSURE, METRIC, "BAR", "PA", 1.0e5); // Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
-    reg.AddUnit(PRESSURE, INDUSTRIAL, "BAR_GAUGE", "PA", 1.0e5, 1.01325); // Offset is one standard atmosphere converted to BAR.  Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
+    reg.AddUnit(PRESSURE, INDUSTRIAL, "BAR_GAUGE", "PA", 1.0e5, 1.01325); // Offset is one standard atmosphere converted to BAR.  Offset is exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
 
     reg.AddUnit(PRESSURE, METRIC, "MBAR", "[MILLI]*BAR");
 
-    reg.AddUnit(PRESSURE, METRIC, "BARYE", "PA", 0.1);   // 1.0 dyn/sq.cm
+    reg.AddUnit(PRESSURE, METRIC, "BARYE", "DYNE*SQ.CM(-1)");
 
 
     reg.AddUnit(PRESSURE, USCUSTOM, "PSI", "LBF*IN(-2)");
 
-    reg.AddUnit(PRESSURE, USCUSTOM, "PSIG", "LBF*IN(-2)", 1, 14.695948775513449); // TODO: double check, used 101325 PA -> PSI conversion
+    reg.AddUnit(PRESSURE, USCUSTOM, "PSIG", "LBF*IN(-2)", 1, 14.695948775513449); // Offset is one standard atmosphere (101325 PA) converted to PSI
 
     reg.AddUnit(PRESSURE, USCUSTOM, "KSI", "KIPF*IN(-2)");
 
