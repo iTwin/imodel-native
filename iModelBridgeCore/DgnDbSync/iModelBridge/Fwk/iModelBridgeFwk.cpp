@@ -473,7 +473,17 @@ BentleyStatus iModelBridgeFwk::ParseDocProps()
         return BSISUCCESS;
 
     iModelBridgeDocumentProperties docProps;
-    _GetDocumentProperties(docProps, m_jobEnvArgs.m_inputFileName);
+
+    try
+        {
+        _GetDocumentProperties(docProps, m_jobEnvArgs.m_inputFileName);
+        }
+    catch (...)
+        {
+        fwprintf(stdout, L"Exception thrown from iModelBridgeRegistry!");
+        return BSIERROR;
+        }
+
     if (docProps.m_spatialRootTransformJSON.empty())
         return BSISUCCESS;
 

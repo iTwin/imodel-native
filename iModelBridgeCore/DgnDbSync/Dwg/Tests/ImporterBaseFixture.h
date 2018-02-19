@@ -34,6 +34,7 @@ public:
     void DoConvert(BentleyApi::BeFileNameCR output, BentleyApi::BeFileNameCR input);
     void DoUpdate(BentleyApi::BeFileNameCR output, BentleyApi::BeFileNameCR input, bool expectFailure = false);
     void SetUp_CreateNewDgnDb(); // look for name of bim to create in m_seedDgnDbFileName
+    void LineUpFilesForNewDwg(WCharCP outputDgnDbFileName, WCharCP inputDwgFileName);
     uint32_t GetCount() const;
     double GetScaleDwgToMeters() const;
 };

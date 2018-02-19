@@ -149,6 +149,7 @@ public:
     virtual void            _Alert (WCharCP message) const override;
     virtual void            _Message (WCharCP message, int numChars) const override;
     virtual void            _DebugPrintf (WCharCP format, ...) const override;
+    virtual bool            _IsValid () const override;
 
     void                    Initialize (DwgImporter& importer);
     void                    NewProgressMeter ();
