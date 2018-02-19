@@ -159,15 +159,15 @@ void SketchGridSurfaceManipulationStrategy::_OnWorkingPlaneChanged(DPlane3d cons
     if (allKeyPoints.size() != acceptedKeyPoints.size())
         {
         size_t dynamicCount = allKeyPoints.size() - acceptedKeyPoints.size();
+        
+        bvector<DPoint3d> replacements;
         for (size_t i = 0; i < dynamicCount; ++i)
             {
-
             DPoint3d replacement = TransformPointBetweenPlanes(allKeyPoints[i + acceptedKeyPoints.size()], original, m_workingPlane);
-            if (0 == acceptedKeyPoints.size())
-                UpdateDynamicKeyPoint(replacement, i);
-            else
-                InsertDynamicKeyPoint(replacement, i);
+            replacements.push_back(replacement);
             }
+
+        InsertDynamicKeyPoints(replacements, 0);
         }
 
     if (m_axis.IsValid())
