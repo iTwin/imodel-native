@@ -478,7 +478,7 @@ void PerformDrapeTestLnsFileCreation(BeXmlNodeP pTestNode, FILE* pResultFile)
     scanCriteria->SetElemRefCallback(CollectAllElmsCallback, &agenda);
     scanCriteria->Scan(NULL, NULL, NULL, NULL);
     delete scanCriteria;
-
+    
 #if 0    
     ScanCriteriaP scP = mdlScanCriteria_create();
 
@@ -524,7 +524,7 @@ void PerformDrapeTestLnsFileCreation(BeXmlNodeP pTestNode, FILE* pResultFile)
             }   
 
         if (origPoints.size() > 0)
-            {
+            {            
             lines.push_back(origPoints);
             }
         }
@@ -532,11 +532,15 @@ void PerformDrapeTestLnsFileCreation(BeXmlNodeP pTestNode, FILE* pResultFile)
     char* nameBuffer = new char[lnsFileName.GetMaxLocaleCharBytes()];
     FILE* linesFile = fopen(lnsFileName.ConvertToLocaleChars(nameBuffer), "w");
 
+    ModelInfoCR modelInfo(defaultModel->GetModelInfo());
+    double uorPerMeters = modelInfo.GetUorPerMeter();
+    assert(uorPerMeters != 0);
+
     for (auto vec : lines)
         {
         for (DPoint3d pt : vec)
             {
-            fwprintf(linesFile, L"%0.5f %0.5f %0.5f;", pt.x, pt.y, pt.z);
+            fwprintf(linesFile, L"%0.5f %0.5f %0.5f;", pt.x / uorPerMeters, pt.y / uorPerMeters, pt.z / uorPerMeters);
             }
 
         if (vec.size()>0)fwprintf(linesFile, L"\n");
@@ -1991,6 +1995,7 @@ void AddTexturesToMesh(BeXmlNodeP pTestNode, FILE* pResultFile)
 
     fflush(pResultFile);
     }
+
 void PerformDrapeLineTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
     WString stmFileName, linesFileName, name;

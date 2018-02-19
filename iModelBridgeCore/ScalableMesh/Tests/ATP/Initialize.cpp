@@ -191,7 +191,7 @@ struct ExeAdmin : BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshAdmin
 
     virtual uint64_t _GetProductId() const override
         {
-        return 1000; //Internal application, use MicroStation as default.        
+        return 1; //Product ID for internal application.        
         }    
     };
 
