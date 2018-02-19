@@ -67,7 +67,7 @@ void Expect4_jSrS(MockHttpHandler& handler)
                     "Status":"Succeeded"
                     }
                 }]
-            })", scheduleTime);
+            })", scheduleTime.c_str());
 
     handler.ForRequest(3, StubHttpResponse(HttpStatus::OK, body, headers));
     handler.ForRequest(4, StubHttpResponse(HttpStatus::OK));
@@ -2079,7 +2079,7 @@ TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_EnableJobsWebApiV2Respon
                     "Status":"NotStarted"
                     }
                 }]
-            })", scheduleTime);
+            })", scheduleTime.c_str());
 
         std::map<Utf8String, Utf8String> headers;
         return StubHttpResponse(HttpStatus::OK, body, headers);
@@ -2101,7 +2101,7 @@ TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_EnableJobsWebApiV2Respon
                     "Status":"Running"
                     }
                 }]
-            })", scheduleTime);
+            })", scheduleTime.c_str());
 
         std::map<Utf8String, Utf8String> headers;
         return StubHttpResponse(HttpStatus::OK, body, headers);
@@ -2123,7 +2123,7 @@ TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_EnableJobsWebApiV2Respon
                     "Status":"Running"
                     }
                 }]
-            })", scheduleTime);
+            })", scheduleTime.c_str());
 
         std::map<Utf8String, Utf8String> headers;
         return StubHttpResponse(HttpStatus::OK, body, headers);
@@ -2148,7 +2148,7 @@ TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_EnableJobsWebApiV2Respon
                     "Status":"Succeeded"
                     }
                 }]
-            })", scheduleTime);
+            })", scheduleTime.c_str());
 
         std::map<Utf8String, Utf8String> headers;
         return StubHttpResponse(HttpStatus::OK, body, headers);
@@ -2294,7 +2294,7 @@ TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_EnableJobsAndWebApiV2Job
                     "Status":"Succeeded"
                     }
                 }]
-            })", scheduleTime);
+            })", scheduleTime.c_str());
 
     GetHandler().ForRequest(3, StubHttpResponse(HttpStatus::OK, body, headers));
     GetHandler().ForRequest(4, StubHttpResponse(HttpStatus::OK));
@@ -2331,7 +2331,7 @@ TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_EnableJobsWebApiV2JobFai
                     "Status":"Failed"
                     }
                 }]
-            })", scheduleTime);
+            })", scheduleTime.c_str());
 
     GetHandler().ForRequest(3, StubHttpResponse(HttpStatus::OK, body, headers));
     GetHandler().ForRequest(4, StubHttpResponse(HttpStatus::OK));
