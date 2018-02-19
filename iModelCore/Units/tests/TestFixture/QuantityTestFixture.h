@@ -12,7 +12,7 @@
 BEGIN_UNITS_UNITTESTS_NAMESPACE
 
 /*=================================================================================**//**
-* @bsiclass                                     		Chris.Tartamella 02/2016
+* @bsiclass                                             Chris.Tartamella 02/2016
 +===============+===============+===============+===============+===============+======*/
 struct QuantityTestFixture : public ::testing::Test
     {

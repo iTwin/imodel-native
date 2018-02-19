@@ -22,21 +22,17 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(NumericFormatSpec)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatParameterSet)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(NumericTriad)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(QuantityTriadSpec)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(StdFormatName)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(StdFormatNameMap)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatParameter)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(CompositeValue)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(CompositeValueSpec)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatDictionary)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(StdFormatSet)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FactorPower)
-//DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatUnitSet)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatUnitGroup)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(NamedFormatSpec)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(UnitProxySet)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(UnitProxy)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(UIListEntry)
-
 
 // Json presentation
 BE_JSON_NAME(roundFactor)
@@ -392,7 +388,7 @@ public:
     UNITS_EXPORT static Utf8String StdFormatDouble(Utf8CP stdName, double dval, int prec = -1, double round = -1.0);
     UNITS_EXPORT static Utf8String StdFormatQuantity(Utf8CP stdName, BEU::QuantityCR qty, BEU::UnitCP useUnit=nullptr, Utf8CP space = "", Utf8CP useLabel = nullptr, int prec = -1, double round = -1.0); 
     UNITS_EXPORT static Utf8String StdFormatQuantity(NamedFormatSpecCR nfs, BEU::QuantityCR qty, BEU::UnitCP useUnit = nullptr, Utf8CP space = nullptr, Utf8CP useLabel = nullptr, int prec = -1, double round = -1.0);
-    UNITS_EXPORT static Utf8String StdFormatQuantity(FormatUnitSetCR fus, BEU::QuantityCR qty);
+    // UNITS_EXPORT static Utf8String StdFormatQuantity(FormatUnitSetCR fus, BEU::QuantityCR qty);
 
     UNITS_EXPORT static Utf8String StdFormatQuantityTriad(Utf8CP stdName, QuantityTriadSpecP qtr,Utf8CP space, int prec = -1, double round = -1.0);
     UNITS_EXPORT Utf8String FormatDouble(double dval, int prec = -1, double round = -1.0) const;
@@ -400,8 +396,6 @@ public:
     UNITS_EXPORT static Utf8String StdFormatPhysValue(Utf8CP stdName, double dval, Utf8CP fromUOM, Utf8CP toUOM, Utf8CP toLabel, Utf8CP space, int prec = -1, double round = -1.0);
 
     UNITS_EXPORT static const NumericFormatSpecCP DefaultFormat();
-
-    //FormatDoubleStd
 
     UNITS_EXPORT int FormatBinaryByte (unsigned char n, Utf8P bufOut, int bufLen);
     UNITS_EXPORT int FormatBinaryShort (short int n, Utf8P bufOut, int bufLen, bool useSeparator);
@@ -647,11 +641,12 @@ public:
     };
 
 //=======================================================================================
-// Container for keeping together primary numeric, composite and other types of specs
-//  and referrring them by the unique name. Name and at the valid numeric spec are required
-//   for creating a valid instance of this class. Alias and composite spec are optional at the
-// moment of creation but can be added later
-// @bsiclass                                                    David.Fox-Rabinovitz  03/2017
+//! Container for keeping together primary numeric, composite and other types of specs
+//! and referring to them by the unique name. Name and a valid numeric spec are required
+//! for creating a valid instance of this class. Alias and composite spec are optional
+//! at the moment of creation but can be added at any time.
+//!
+//! @bsistruct                                             David.Fox-Rabinovitz  03/2017
 //=======================================================================================
 struct NamedFormatSpec
     {
@@ -712,7 +707,18 @@ public:
     };
 
 //=======================================================================================
-// A pair of the unit reference and the format spec 
+//! The Format-Unit Set(FUS) has two parts describing how a Quantity transformation 
+//! between an internal form and presentation form should be handled.
+//! 
+//! The two parts:
+//! - The Unit member defines what Unit of Measurement(UOM) should be used when the format 
+//!      does not provide this information. When format refers to a Composite Format that 
+//!      provides at least one UOM, the format definition takes preference. Another 
+//!      important role of the Unit member is to help in converting a pure numeric text 
+//!      expression provided by the user input into a Quantity.
+//! - The Format member provides formatting parameters when the Quantity needs to be 
+//!      presented in the UI and it can be used as a reference for validating the complex user input
+//!
 // @bsiclass                                                    David.Fox-Rabinovitz  03/2017
 //=======================================================================================
 struct FormatUnitSet
@@ -736,7 +742,6 @@ struct FormatUnitSet
         UNITS_EXPORT FormatUnitSet(Utf8CP formatName, Utf8CP unitName, bool cloneData = false);
         UNITS_EXPORT FormatUnitSet(FormatUnitSetCR other);
         UNITS_EXPORT FormatUnitSet(FormatUnitSetCP other);
-        void Clone(FormatUnitSetCP other);
         UNITS_EXPORT FormatUnitSet& operator=(const FormatUnitSet& other);
 
         UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, Utf8CP space) const;
@@ -759,7 +764,11 @@ struct FormatUnitSet
         UNITS_EXPORT FormatUnitSet(Utf8CP descriptor);
 
         UNITS_EXPORT void LoadJson(Json::Value jval);
+
+        //! Returns whether this FormatUnitSet has a problem.
         bool HasProblem() const { return m_problem.IsProblem(); }
+
+        //! Returns the problem code for this FUS.
         FormatProblemCode GetProblemCode() const { return m_problem.GetProblemCode(); }
         Utf8String GetProblemDescription() const { return m_problem.GetProblemDescription(); }
         Utf8String GetUnitName() const { return m_unitName; }
@@ -773,12 +782,11 @@ struct FormatUnitSet
         UNITS_EXPORT bool IsUnitComparable(Utf8CP unitName) const;
 
         UNITS_EXPORT Json::Value ToJson(bool useAlias = true, bool verbose = false) const;
-        UNITS_EXPORT Json::Value ToJsonVerbose(bool useAlias = true) const;
         UNITS_EXPORT Utf8String ToJsonString(bool useAlias = true, bool verbose = false) const;
 
         UNITS_EXPORT Json::Value FormatQuantityJson(BEU::QuantityCR qty, bool useAlias, Utf8CP space="") const;
         UNITS_EXPORT BEU::UnitCP ResetUnit();
-        UNITS_EXPORT BEU::PhenomenonCP GetPhenomenon() { return (nullptr == m_unit) ? nullptr : m_unit->GetPhenomenon(); }
+        BEU::PhenomenonCP GetPhenomenon() { return (nullptr == m_unit) ? nullptr : m_unit->GetPhenomenon(); }
         UNITS_EXPORT void LoadJsonData(Json::Value jval);
         UNITS_EXPORT bool IsIdentical(FormatUnitSetCR other) const;
         UNITS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, size_t start);
@@ -816,6 +824,11 @@ struct FormatUnitGroup
 
     };
 
+//=======================================================================================
+//! Singleton container for known NamedFormatSpecs and FormatUnitSets.
+//!
+//! @bsistruct
+//=======================================================================================
 struct StdFormatSet
     {
 private:
@@ -845,7 +858,7 @@ public:
     UNITS_EXPORT static NamedFormatSpecCP FindFormatSpec(Utf8CP name);
     UNITS_EXPORT static bvector<Utf8CP> StdFormatNames(bool useAlias);
     UNITS_EXPORT static Utf8String StdFormatNameList(bool useAlias);
-    UNITS_EXPORT size_t GetFormatCount() { return m_formatSet.size(); }
+    size_t GetFormatCount() { return m_formatSet.size(); }
     bool HasProblem() const { return m_problem.IsProblem(); }
     FormatProblemCode GetProblemCode() { return m_problem.GetProblemCode(); }
     void ResetProblemCode() { m_problem.Reset(); }
@@ -853,25 +866,53 @@ public:
 
     static FormatUnitSet DefaultFUS(BEU::QuantityCR qty) { return FormatUnitSet(DefaultFormatSpec(), qty.GetUnit()); }
 
+    //! Creates a new FormatUnitSet with the provided name and FUS, and adds it to the set.
+    //! @remark There are no duplicate named FUSes allowed in a StdFormatSet.
+    //! @param[in] fusR The FUS to copy the data for the to be created FUS
+    //! @param[in] fusName Name of the FUS to create
+    //! @return A pointer to the newly created FormatUnitSet if successful; otherwise, nullptr.
     UNITS_EXPORT static FormatUnitSetCP AddFUS(FormatUnitSetCR fusR, Utf8CP fusName);
-    UNITS_EXPORT static FormatUnitSetCP AddFUS(Utf8CP formatName, Utf8CP unitName, Utf8CP fusName, bool makeUnit = true);
-    UNITS_EXPORT static FormatUnitSetCP AddFUS(Utf8CP descriptor, Utf8CP fusName, bool makeUnit = true);
 
+    //! Creates a new FormatUnitSet with the provided name using the format and unit.
+    //! @param[in] formatName Name of the NamedFormatSpec to add to the FormatUnitSet to be created.
+    //! @param[in] unitName Name of the Unit to add to the FormatUnitSet to be created.
+    //! @param[in] fusName Name of the FormatUnitSet to be created.
+    //! @return A pointer to the newly created FormatUnitSet if successful; otherwise, nullptr.
+    UNITS_EXPORT static FormatUnitSetCP AddFUS(Utf8CP formatName, Utf8CP unitName, Utf8CP fusName);
+
+    //! Creates a new FormatUnitSet with the provided name and json string describing the FUS to be
+    //! created.
+    //! @param[in] descriptor string representation of the FUS to be created.
+    //! @param[in] fusName Name of the FormatUnitSet to be created.
+    //! @return A pointer to the newly created FormatUnitSet if successful; otherwise, nullptr.
+    UNITS_EXPORT static FormatUnitSetCP AddFUS(Utf8CP descriptor, Utf8CP fusName);
+
+    //! Creates a new NamedFormatSpec with the provided JSON string representation of a NamedFormatSpec.
+    //! @param[in] jsonString string representation of the NamedFormatSpec to be created.
+    //! @param[out] problem Contains the problem code from adding the format defined in the JSON string.
+    //! @return pointer to the newly created NamedFormatSpec if successful; otherwise, nullptr.
     UNITS_EXPORT static NamedFormatSpecCP AddFormat(Utf8CP jsonString, FormatProblemDetailR problem);
 
+    //! Gets the FUS from this StdFormatSet.
+    //! @param[in] name Name of the FUS to retrieve.
+    //! @return A pointer to the FormatUnitSet if found in this set, nullptr otherwise.
     UNITS_EXPORT static FormatUnitSetCP LookupFUS(Utf8CP fusName);
-    UNITS_EXPORT static bool FusRegistrationHasProblem() { return Set()->m_problem.IsProblem(); }
-    // UNITS_EXPORT bvector<Json::Value> ToJson();
+
+    //! Whether or not the StdFormatSet has a problem.
+    //! @return true if the Set has a problem; false, otherwise.
+    UNITS_EXPORT static bool FusRegistrationHasProblem() {return Set()->HasProblem();}
     };
 
 //=======================================================================================
-//! A class for breaking a given double precision number into 2 or 3 sub-parts defined by their ratios
-//! Can be used for presenting angular measurement in the form of Degrees, Minutes and Seconds or 
-//!   length in a form of yards, feet and inches. The parts are called top, middle and low and two ratios between
-//!     top and middle and middle and low define the breakup details. The top is always supposed to be an integer
-//!  represented as double precision number. Both ratios are assumed to be positive integer numbers for avoiding incorrect
-//!   results. If a negative number is provided for either of two ratios its sign will be dropped. 
-//!  
+//! A class for breaking a given double precision number into 2 or 3 sub-parts defined 
+//! by their ratios. Can be used for presenting angular measurement in the form of 
+//! Degrees, Minutes and Seconds or length in a form of yards, feet and inches. The parts 
+//! are called top, middle and low and two ratios between top and middle and middle and low 
+//! define the breakup details. The top is always supposed to be an integer represented as 
+//! double precision number. Both ratios are assumed to be positive integer numbers for avoiding 
+//! incorrect results. If a negative number is provided for either of two ratios its sign 
+//! will be dropped. 
+//!
 // @bsiclass                                                    David.Fox-Rabinovitz  10/2016
 //=======================================================================================
 struct NumericTriad

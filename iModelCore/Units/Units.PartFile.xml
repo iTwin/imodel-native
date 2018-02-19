@@ -102,13 +102,6 @@
         </Bindings>
     </Part>
 
-    <Part Name="NonPublishedTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
-        <SubPart PartName="TestFixture"/>
-        <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="Units/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
-        </Bindings>
-    </Part>
-
     <Part Name="PublishedTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dIsPublished=1">
         <SubPart PartName="TestFixture"/>
         <Bindings>
@@ -131,7 +124,6 @@
 
     <!-- This part is the default test collection. It is included in DgnDb's aggregate test collection. -->
     <Part Name="Tests" DeferType="BuildUnitTests">
-        <SubPart PartName="NonPublishedTests" />
         <SubPart PartName="PublishedTests" />
         <SubPart PartName="PerformanceTests" />
     </Part>

@@ -54,7 +54,7 @@ $(o)PhenomenonDefinitions$(oext)    : $(srcDir)PhenomenonDefinitions.cpp ${Multi
 
 $(o)Quantity$(oext)                 : $(srcDir)Quantity.cpp ${MultiCompileDepends}
 
-$(o)UnitNameMappings$(oext)           : $(srcDir)UnitNameMappings.cpp ${MultiCompileDepends}
+$(o)UnitNameMappings$(oext)         : $(srcDir)UnitNameMappings.cpp ${MultiCompileDepends}
 
 # %message formatSrcDir ($(formatSrcDir))
 

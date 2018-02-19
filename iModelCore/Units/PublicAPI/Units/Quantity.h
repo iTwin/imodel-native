@@ -14,22 +14,17 @@ UNITS_TYPEDEFS(Quantity);
 
 BEGIN_BENTLEY_UNITS_NAMESPACE
 
-//struct Quantity;
-//typedef RefCountedPtr<Quantity> QuantityPtr;
-
 //=======================================================================================
 //! A base class for all quantities.
 // @bsiclass                                                    Chris.Tartamella   02/16
 //=======================================================================================
 struct Quantity
-    // struct Quantity : RefCountedBase
-    {
-    friend struct UnitRegistry;
+{
+friend struct UnitRegistry;
 private:
     unsigned int m_tolerance;
     double       m_magnitude;
     UnitCP       m_unit;
-
 
     //BentleyStatus ConvertTo(Utf8CP unitName, double& value) const;
     BentleyStatus ConvertTo(UnitCP unit, double& value) const;
@@ -78,7 +73,7 @@ public:
     UNITS_EXPORT Quantity Subtract (QuantityCR rhs) const;
     UNITS_EXPORT Quantity Multiply (QuantityCR rhs) const;
     UNITS_EXPORT Quantity Divide (QuantityCR rhs) const;
-    };
+};
 
 END_BENTLEY_UNITS_NAMESPACE
 
