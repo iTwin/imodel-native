@@ -9785,9 +9785,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
     ECClassCP classC = GetClass("ClassC");
     IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance) {instance.SetValue("CodeValue", ECValue("ClassC_CodeValue"));});
 
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -9801,7 +9798,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();;
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();;
     ASSERT_TRUE(descriptor.IsValid());
 
     // set the "show labels" flag
@@ -9810,7 +9807,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
     EXPECT_EQ(2, modifiedDescriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();;
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*modifiedDescriptor, PageOptions()).get();;
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -9856,9 +9853,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
     ECClassCP classC = GetClass("ClassC");
     IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance) {instance.SetValue("CodeValue", ECValue("ClassC_CodeValue"));});
 
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -9872,7 +9866,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();;
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();;
     ASSERT_TRUE(descriptor.IsValid());
 
     // set the "show labels" flag
@@ -9881,7 +9875,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
     EXPECT_EQ(3, modifiedDescriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();;
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*modifiedDescriptor, PageOptions()).get();;
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
