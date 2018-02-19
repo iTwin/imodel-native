@@ -158,7 +158,7 @@ void UnitRegistry::AddBasePhenomenon(Utf8CP basePhenomenonName)
         return;
         }
 
-    auto phenomena = new Phenomenon(basePhenomenonName, basePhenomenonName, true, m_nextId);
+    auto phenomena = new Phenomenon(basePhenomenonName, basePhenomenonName, m_nextId);
     ++m_nextId;
 
     m_phenomena.insert(bpair<Utf8String, PhenomenonP>(basePhenomenonName, phenomena));
@@ -189,7 +189,7 @@ UnitCP UnitRegistry::AddUnitForBasePhenomenon(Utf8CP unitName, Utf8CP basePhenom
         return nullptr;
         }
 
-    return AddUnitInternal<Unit>(basePhenomenonName, SI, unitName, unitName, true, 1, 0, false);
+    return AddUnitInternal<Unit>(basePhenomenonName, SI, unitName, unitName, 1, 0, false);
     }
 
 //--------------------------------------------------------------------------------------

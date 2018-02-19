@@ -19,10 +19,11 @@ BEGIN_BENTLEY_UNITS_NAMESPACE
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                      03/2016
 //--------------------------------------------------------------------------------------
-UnitsSymbol::UnitsSymbol(Utf8CP name, Utf8CP definition, bool isBaseSymbol, uint32_t id, double factor, double offset) :
-    m_name(name), m_definition(definition), m_isBaseSymbol(isBaseSymbol), m_id(id), m_factor(factor), m_offset(offset), m_evaluated(false), m_isNumber(false),
+UnitsSymbol::UnitsSymbol(Utf8CP name, Utf8CP definition, uint32_t id, double factor, double offset) :
+    m_name(name), m_definition(definition), m_id(id), m_isBaseSymbol(false), m_factor(factor), m_offset(offset), m_evaluated(false), m_isNumber(false),
     m_symbolExpression(new Expression())
     {
+    m_isBaseSymbol = m_name.EqualsI(m_definition.c_str());
     }
 
 //--------------------------------------------------------------------------------------
@@ -83,8 +84,8 @@ UnitP Unit::_Create(UnitCR parentUnit, Utf8CP unitName, uint32_t id)
     return new Unit(parentUnit, unitName, id);
     }
 
-Unit::Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, bool isBase, double factor, double offset, bool isConstant)
-    : UnitsSymbol(name, definition, isBase, id, factor, offset), m_system(&system), m_phenomenon(&phenomenon), m_parent(nullptr), m_isConstant(isConstant)
+Unit::Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, double factor, double offset, bool isConstant)
+    : UnitsSymbol(name, definition, id, factor, offset), m_system(&system), m_phenomenon(&phenomenon), m_parent(nullptr), m_isConstant(isConstant)
     {
     m_isNumber = phenomenon.IsNumber();
     }

@@ -61,7 +61,7 @@ TEST_F (UnitsTests, UnitsMapping)
         guess += i + ", ";
         }
 
-    EXPECT_EQ (97, notMapped.size() ) << guess;
+    EXPECT_EQ (106, notMapped.size() ) << guess; // Increased from 97 to 106 because THREAD_PITCH Phen removed ... units just don't fit Phen
 
     //Test that all mappings do not use synonmyms
     for(const auto& i : unitNameMap)

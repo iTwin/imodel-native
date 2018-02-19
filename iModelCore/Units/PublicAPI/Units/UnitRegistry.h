@@ -99,7 +99,7 @@ private:
             return nullptr;
             }
 
-        auto phenomena = PHENOM_TYPE::_Create(phenomenaName, definition, false, m_nextId);
+        auto phenomena = PHENOM_TYPE::_Create(phenomenaName, definition, m_nextId);
         ++m_nextId;
 
         m_phenomena.insert(bpair<Utf8String, PHENOM_TYPE*>(phenomenaName, phenomena));
@@ -108,7 +108,7 @@ private:
         }
 
     template <typename UNIT_TYPE>
-    UNIT_TYPE* AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, bool isBase, double factor, double offset, bool isConstant)
+    UNIT_TYPE* AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double factor, double offset, bool isConstant)
         {
         static_assert((std::is_base_of<Unit, UNIT_TYPE>::value), "UNIT_TYPE must derive from Units::Unit.");
         if (Utf8String::IsNullOrEmpty(unitName))
@@ -143,7 +143,7 @@ private:
             return nullptr;
             }
 
-        UNIT_TYPE* unit = UNIT_TYPE::_Create(*system, *phenomenon, unitName, m_nextId, definition, isBase, factor, offset, isConstant);
+        UNIT_TYPE* unit = UNIT_TYPE::_Create(*system, *phenomenon, unitName, m_nextId, definition, factor, offset, isConstant);
         if (nullptr == unit)
             return nullptr;
 
@@ -280,7 +280,7 @@ public:
     //! @return A UNIT_TYPE if successfully created and added to this registry, nullptr otherwise.
     template <typename UNIT_TYPE> 
     UNIT_TYPE* AddUnit(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double factor = 1, double offset = 0)
-        {return AddUnitInternal<UNIT_TYPE>(phenomName, systemName, unitName, definition, false, factor, offset, false);}
+        {return AddUnitInternal<UNIT_TYPE>(phenomName, systemName, unitName, definition, factor, offset, false);}
 
     //! Creates a Unit and adds it to the registry.
     //! @param[in] phenomName Name of the Phenomenon the Unit must be added to.
@@ -318,7 +318,7 @@ public:
     UNIT_TYPE* AddConstant(Utf8CP phenomName, Utf8CP constantName, Utf8CP definition, double factor)
         {
         // TODO: Find a way to have the CONSTANT be the staticly defined one... Maybe need to forward declare this method...
-        return AddUnitInternal<UNIT_TYPE>(phenomName, "CONSTANT", constantName, definition, false, factor, 0, true);
+        return AddUnitInternal<UNIT_TYPE>(phenomName, "CONSTANT", constantName, definition, factor, 0, true);
         }
 
     //! Creates a Constant and adds it to this registry.

@@ -141,7 +141,7 @@ private:
 
 protected:
     UNITS_EXPORT UnitsSymbol();
-    UNITS_EXPORT UnitsSymbol(Utf8CP name, Utf8CP definition, bool isBaseSymbol, uint32_t id, double factor, double offset);
+    UNITS_EXPORT UnitsSymbol(Utf8CP name, Utf8CP definition, uint32_t id, double factor, double offset);
     ExpressionCR Evaluate(int depth, std::function<UnitsSymbolCP(Utf8CP)> getSymbolByName) const;
     UNITS_EXPORT virtual ~UnitsSymbol();
 
@@ -178,7 +178,7 @@ private:
     mutable Utf8String m_displayDescription;
 
     Unit(UnitCR parentUnit, Utf8CP name, uint32_t id)
-        : Unit(*(parentUnit.GetUnitSystem()), *(parentUnit.GetPhenomenon()), name, id, parentUnit.GetDefinition().c_str(), false, 0, 0, false)
+        : Unit(*(parentUnit.GetUnitSystem()), *(parentUnit.GetPhenomenon()), name, id, parentUnit.GetDefinition().c_str(), 0, 0, false)
         {
         m_parent = &parentUnit;
         m_isNumber = m_parent->IsNumber();
@@ -201,15 +201,15 @@ private:
 
 protected:
     // Needs to be overriden by any sub class
-    static UnitP _Create(UnitSystemCR sysName, PhenomenonCR phenomenon, Utf8CP unitName, uint32_t id, Utf8CP definition, bool isBaseSymbol, double factor, double offset, bool isConstant)
+    static UnitP _Create(UnitSystemCR sysName, PhenomenonCR phenomenon, Utf8CP unitName, uint32_t id, Utf8CP definition, double factor, double offset, bool isConstant)
         {
         NativeLogging::LoggingManager::GetLogger(L"UnitsNative")->debugv("Creating unit %s  Factor: %.17g  Offset: %d", unitName, factor, offset);
-        return new Unit(sysName, phenomenon, unitName, id, definition, isBaseSymbol, factor, offset, isConstant);
+        return new Unit(sysName, phenomenon, unitName, id, definition, factor, offset, isConstant);
         }
 
     UNITS_EXPORT static UnitP _Create(UnitCR parentUnit, Utf8CP unitName, uint32_t id);
 
-    UNITS_EXPORT Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, bool isBase, double factor, double offset, bool isConstant);
+    UNITS_EXPORT Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, double factor, double offset, bool isConstant);
     UNITS_EXPORT void SetLabel(Utf8CP label) {m_displayLabel = label;}
 
 public:
@@ -316,8 +316,8 @@ private:
     UNITS_EXPORT uint32_t GetPhenomenonId() const override {return GetId();}
 
 protected:
-    UNITS_EXPORT static PhenomenonP _Create(Utf8CP name, Utf8CP definition, bool isBase, uint32_t id) {return new Phenomenon(name, definition, isBase, id);}
-    UNITS_EXPORT Phenomenon(Utf8CP name, Utf8CP definition, bool isBase, uint32_t id) : UnitsSymbol(name, definition, isBase, id, 0.0, 0) { m_isNumber = strcmp(definition, "NUMBER") == 0; }
+    UNITS_EXPORT static PhenomenonP _Create(Utf8CP name, Utf8CP definition, uint32_t id) {return new Phenomenon(name, definition, id);}
+    UNITS_EXPORT Phenomenon(Utf8CP name, Utf8CP definition, uint32_t id) : UnitsSymbol(name, definition, id, 0.0, 0) { m_isNumber = m_definition.Equals("NUMBER"); }
     UNITS_EXPORT void SetLabel(Utf8CP label) {m_displayLabel = label;}
 
 public:

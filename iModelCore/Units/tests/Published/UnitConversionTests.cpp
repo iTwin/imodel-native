@@ -483,10 +483,6 @@ TEST_F(UnitConversionTests, TestMiscConversions)
     TestUnitConversion(42.42, "CUB.M/(SQ.M*SEC)", 42.42 * 60.0 * 60.0 * 24.0, "CUB.M/(SQ.M*DAY)", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42.42, "CUB.FT/(SQ.FT*SEC)", 42.42 * 0.3048, "CUB.M/(SQ.M*SEC)", 1, loadErrors, conversionErrors, handledUnits);
 
-    //Thread Pitch
-    TestUnitConversion(42.42, "CM/REVOLUTION", 42.42e-2, "M/REVOLUTION", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(42.42, "FT/REVOLUTION", 42.42 * 0.3048 * 100.0, "CM/REVOLUTION", 1, loadErrors, conversionErrors, handledUnits);
-
     //Time
     TestUnitConversion(1.0, "WEEK", 7.0, "DAY", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(14.0, "DAY", 2.0, "WEEK", 1, loadErrors, conversionErrors, handledUnits);
@@ -827,9 +823,10 @@ TEST_F(UnitConversionTests, UnitsConversions_Complex)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UnitConversionTests, UnitsConversion_CompareToRawOutputFromOldSystem)
     {
-    TestConversionsLoadedFromCvsFile("ConversionsBetweenAllOldUnits.csv", L"TestConversionsBetweenAllOldUnits_handledUnits.csv", 103);
+    TestConversionsLoadedFromCvsFile("ConversionsBetweenAllOldUnits.csv", L"TestConversionsBetweenAllOldUnits_handledUnits.csv", 112);
     // went from 107 to 109 because work per month units were removed, back to 107 because mass ratios added
     // Down to 103 with addition of: LITRE_PER_KILOMETRE_SQUARED_PER_SECOND, VOLT_AMPERE, KILOVOLT_AMPERE and MEGAVOLT_AMPERE
+    // Up to 112 because THREAD_PITCH units removed ... units came from old system but Phen doesn't match units.
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -837,9 +834,10 @@ TEST_F(UnitConversionTests, UnitsConversion_CompareToRawOutputFromOldSystem)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UnitConversionTests, UnitsConversion)
     {
-    TestConversionsLoadedFromCvsFile("unitcomparisondata.csv", L"Testunitcomparisondata_handledUnits.csv", 90);
+    TestConversionsLoadedFromCvsFile("unitcomparisondata.csv", L"Testunitcomparisondata_handledUnits.csv", 99);
     // went from 94 to 96 because work per month units were removed, back to 94 because mass ratios added
     // Down to 90 with addition of: LITRE_PER_KILOMETRE_SQUARED_PER_SECOND, VOLT_AMPERE, KILOVOLT_AMPERE and MEGAVOLT_AMPERE
+    // Up to 99 because THREAD_PITCH units removed ... units came from old system but Phen doesn't match units.
     }
 
 //---------------------------------------------------------------------------------------//
