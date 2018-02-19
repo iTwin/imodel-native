@@ -355,6 +355,9 @@ protected:
 
     void DrawBorder(ViewContextR context) const;
     ViewController(SheetViewDefinitionCR def) : ViewController2d(def) {}  //!< Construct a new SheetViewController.
+
+    Attachment* FindAttachment(DgnElementId id);
+    static bool WantRenderAttachments();
 };
 
 //=======================================================================================
