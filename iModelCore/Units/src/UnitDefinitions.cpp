@@ -41,7 +41,7 @@ void AddLengths(UnitRegistry& reg)
     reg.AddUnit(LENGTH, USCUSTOM, "CHAIN", "FT", 66.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-8
     reg.AddUnit(LENGTH, USCUSTOM, "MILE", "YRD", 1760.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-8
 
-    reg.AddUnit(LENGTH, USSURVEY, "US_SURVEY_IN", "M", 100.0 / 3937.0); // Derived from the definition of us survey foot in terms of meters.  Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-9
+    reg.AddUnit(LENGTH, USSURVEY, "US_SURVEY_IN", "M", 0.0254000508001016); // 100/3937 Derived from the definition of us survey foot in terms of meters.  Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-9
     reg.AddUnit(LENGTH, USSURVEY, "US_SURVEY_FT", "US_SURVEY_IN", 12.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 2, Page C-4
     reg.AddUnit(LENGTH, USSURVEY, "US_SURVEY_YRD", "US_SURVEY_FT", 3.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 2, Page C-4
     reg.AddUnit(LENGTH, USSURVEY, "US_SURVEY_CHAIN", "US_SURVEY_FT", 66.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-8
@@ -66,7 +66,7 @@ void AddMass(UnitRegistry& reg)
     reg.AddUnit(MASS, USCUSTOM, "SHORT_TON_MASS", "LBM", 2000); // Exact, http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
     reg.AddUnit(MASS, USCUSTOM, "LONG_TON_MASS", "LBM", 2240); // Exact, http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
     reg.AddUnit(MASS, USCUSTOM, "KIPM", "[KILO]*LBM"); // Exact, http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
-    reg.AddUnit(MASS, USCUSTOM, "OZM", "LBM", 1.0/16.0); // Exact, https://en.wikipedia.org/wiki/Ounce
+    reg.AddUnit(MASS, USCUSTOM, "OZM", "LBM", 0.0625); // 1/16 Exact, https://en.wikipedia.org/wiki/Ounce
     }
 
 void AddTime(UnitRegistry& reg)
@@ -176,16 +176,16 @@ void AddAcceleration(UnitRegistry& reg)
 void AddPlaneAngle(UnitRegistry& reg)
     {
     UnitCP un;
-    un = reg.AddUnit(ANGLE, METRIC, "ARC_DEG", "[PI]*RAD", 1.0 / 180.0);
+    un = reg.AddUnit(ANGLE, METRIC, "ARC_DEG", "[PI]*RAD", 0.0055555555555555558); // 1/180
     un->AddSynonym("^");
     un->AddSynonym("\xC2\xB0");
 
-    un = reg.AddUnit(ANGLE, METRIC, "ARC_MINUTE", "ARC_DEG", 1.0 / 60.0);
+    un = reg.AddUnit(ANGLE, METRIC, "ARC_MINUTE", "ARC_DEG", 0.016666666666666666); // 1/60
     un->AddSynonym("'");
-    un = reg.AddUnit(ANGLE, METRIC, "ARC_SECOND", "ARC_DEG", 1.0 / 3600.0);
+    un = reg.AddUnit(ANGLE, METRIC, "ARC_SECOND", "ARC_DEG", 0.00027777777777777778); // 1/3600
     un->AddSynonym("\"");
     reg.AddUnit(ANGLE, METRIC, "ARC_QUADRANT", "[PI/2]*RAD");
-    reg.AddUnit(ANGLE, METRIC, "GRAD", "[PI]*RAD", 1.0 / 200.0);
+    reg.AddUnit(ANGLE, METRIC, "GRAD", "[PI]*RAD", 0.005000000000000000); // 1/200
     reg.AddUnit(ANGLE, METRIC, "REVOLUTION", "[2PI]*RAD");
     }
 
