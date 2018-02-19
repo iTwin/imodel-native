@@ -1,0 +1,14 @@
+{
+    "instances":[{
+        "instanceId":".AzureBlobSasUrl.Read.S3MX.RealityData.644a5765-4ad8-4491-a609-cb6a58792040",
+        "schemaName":"FileAccess",
+        "className":"FileAccessKey",
+        "properties":{
+            "Url":"https://realityblobprodeussa01.blob.core.windows.net/644a5765-4ad8-4491-a609-cb6a58792040?sv=2017-04-17&sr=c&sig=wJpmTd5CJNA1pYdupGA1cjuZgOa60t9vz7XDNo7pvUw%3D&se=2050-02-19T16%3A56%3A40Z&sp=rl",
+            "Type":"AzureBlobSasUrl",
+            "Permissions":"Read",
+            "RequiresConfirmation":false
+            },
+        "eTag":"\"mACgaDB+7qJVfqJaDjRyXsQkelc=\""
+    }]
+}

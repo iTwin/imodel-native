@@ -1850,10 +1850,17 @@ bvector<bpair<WString, uint64_t>> RealityDataService::Request(const AllRealityDa
         rawResponse.status = RequestStatus::PARAMSNOTSET;
         return documents;
         }
-    rawResponse = request.GetAzureRedirectionRequestUrl();
-    if (rawResponse.status != RequestStatus::OK)
-        return documents;
+
     int64_t timer = request.GetTokenTimer();
+    int64_t currentTime;
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(currentTime);
+    if (timer < currentTime)
+        {
+        rawResponse = request.GetAzureRedirectionRequestUrl();
+        if (rawResponse.status != RequestStatus::OK)
+            return documents;
+        timer = request.GetTokenTimer();
+        }
 
     bool nextMarker;
     WString value, fileName;
@@ -1894,7 +1901,6 @@ bvector<bpair<WString, uint64_t>> RealityDataService::Request(const AllRealityDa
                 }
             }
 
-        int64_t currentTime;
         DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(currentTime);
         if(timer < currentTime)
             {

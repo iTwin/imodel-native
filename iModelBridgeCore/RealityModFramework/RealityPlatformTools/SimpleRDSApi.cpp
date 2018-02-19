@@ -270,14 +270,11 @@ ConnectedResponse ConnectedRealityDataDocument::RetrieveAllForRealityData(bvecto
     {
     ConnectedResponse response = ConnectedResponse();
 
-    AzureHandshake* handshake = new AzureHandshake(realityDataGUID, false);
-    RawServerResponse handshakeResponse = RealityDataService::BasicRequest((RealityDataUrl*)handshake);
-    Utf8String azureServer;
-    Utf8String azureToken;
-    int64_t tokenTimer;
-    BentleyStatus handshakeStatus = handshake->ParseResponse(handshakeResponse.body, azureServer, azureToken, tokenTimer);
-    delete handshake;
-    if (handshakeStatus != BentleyStatus::SUCCESS)
+    AllRealityDataByRootId rdsRequest = AllRealityDataByRootId(realityDataGUID);
+
+    RawServerResponse handshakeResponse = rdsRequest.GetAzureRedirectionRequestUrl();
+
+    if (!rdsRequest.IsAzureBlobRedirected())
         {
         response.simpleSuccess = false;
         response.simpleMessage = "Failure retrieving Azure token\n";
@@ -286,14 +283,12 @@ ConnectedResponse ConnectedRealityDataDocument::RetrieveAllForRealityData(bvecto
         return response;
         }
 
-    AllRealityDataByRootId rdsRequest = AllRealityDataByRootId(realityDataGUID);
-
     RawServerResponse sasResponse = RawServerResponse();
     bvector<bpair<WString, uint64_t>> filesInRepo = RealityDataService::Request(rdsRequest, sasResponse);
 
     for(int i = 0; i < filesInRepo.size(); i++)
         {
-        docVector.push_back(make_bpair(Utf8PrintfString("%s/%s", realityDataGUID, filesInRepo[i].first.c_str()), filesInRepo[i].second));
+        docVector.push_back(make_bpair(Utf8PrintfString("%s/%s", realityDataGUID, Utf8String(filesInRepo[i].first.c_str())), filesInRepo[i].second));
         }
 
     response.Clone(sasResponse);

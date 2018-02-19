@@ -289,7 +289,8 @@ struct RealityDataDocumentContentByIdRequest : public RealityDataUrl
     {
 public:
     REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(Utf8StringCR identifier) : 
-        m_handshakeRequest(nullptr), m_allowAzureRedirection(true), m_AzureRedirected(false)
+        m_handshakeRequest(nullptr), m_allowAzureRedirection(true), m_AzureRedirected(false),
+        m_azureTokenTimer(-1)
         { 
         m_validRequestString = false; 
         m_id = identifier; 

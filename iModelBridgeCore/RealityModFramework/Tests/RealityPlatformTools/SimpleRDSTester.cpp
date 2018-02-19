@@ -126,6 +126,26 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataEnterpriseStatTest)
     }
 
 //=====================================================================================
+//! @bsimethod                                  Spencer.Mason                  02/2018
+//=====================================================================================
+/*TEST_F(SimpleRDSFixture, ConnectedRealityDataEnterpriseStatsTest)
+    {
+    EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([](const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+        {
+        response.status = ::OK;
+        response.responseCode = 200;
+        response.toolCode = CURLE_OK;
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\EnterpriseStat.json");
+        }));
+
+    bvector<ConnectedRealityDataEnterpriseStat> stats = bvector<ConnectedRealityDataEnterpriseStat>();
+    ConnectedResponse response = ConnectedRealityDataEnterpriseStat::GetAllStats(stats);
+
+    EXPECT_TRUE(response.simpleSuccess);
+    EXPECT_EQ(stats[0].GetUltimateId(), "e82a584b-9fae-409f-9581-fd154f7b9ef9");
+    }*/
+
+//=====================================================================================
 //! @bsimethod                                  Spencer.Mason                  10/2017
 //=====================================================================================
 TEST_F(SimpleRDSFixture, ConnectedRealityDataEnterpriseStatCloneTest)
@@ -174,6 +194,89 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataRelationshipIdRequestTest)
     }
 
 //=====================================================================================
+//! @bsimethod                                  Spencer.Mason                  02/2018
+//=====================================================================================
+TEST_F(SimpleRDSFixture, ConnectedRealityDataRelationshipIdBadRequestTest)
+    {
+    ConnectedRealityDataRelationship rel = ConnectedRealityDataRelationship();
+    bvector<ConnectedRealityDataRelationshipPtr> results;
+    ConnectedResponse response = rel.RetrieveAllForRDId(results);
+
+    EXPECT_FALSE(response.simpleSuccess);
+    EXPECT_EQ(response.simpleMessage, "must set realityData id, first");
+    }
+
+//=====================================================================================
+//! @bsimethod                                  Spencer.Mason                  02/2018
+//=====================================================================================
+TEST_F(SimpleRDSFixture, ConnectedRealityDataRelationshipProjectIdRequestTest)
+    {
+    EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([](const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+        {
+        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityDataRelationship?$filter=RelatedId+eq+'72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a6'");
+        response.status = ::OK;
+        response.responseCode = 200;
+        response.toolCode = CURLE_OK;
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\RealityDataRelationship.json");
+        }));
+
+    ConnectedRealityDataRelationship rel = ConnectedRealityDataRelationship();
+    rel.SetRelatedId("72adad30-c07c-465d-a1fe-2f2dfac950a6");
+    bvector<ConnectedRealityDataRelationshipPtr> results;
+    ConnectedResponse response = rel.RetrieveAllForProjectId(results);
+
+    EXPECT_TRUE(response.simpleSuccess);
+    EXPECT_EQ(results.size(), 2);
+    EXPECT_EQ(results[0]->GetRealityDataId(), "f4425509-55c4-4e03-932a-d67b87ace30f");
+    }
+
+//=====================================================================================
+//! @bsimethod                                  Spencer.Mason                  02/2018
+//=====================================================================================
+TEST_F(SimpleRDSFixture, ConnectedRealityDataRelationshipProjectIdBadRequestTest)
+    {
+    ConnectedRealityDataRelationship rel = ConnectedRealityDataRelationship();
+    bvector<ConnectedRealityDataRelationshipPtr> results;
+    ConnectedResponse response = rel.RetrieveAllForProjectId(results);
+
+    EXPECT_FALSE(response.simpleSuccess);
+    EXPECT_EQ(response.simpleMessage, "must set related id, first");
+    }
+
+//=====================================================================================
+//! @bsimethod                                  Spencer.Mason                  02/2018
+//=====================================================================================
+TEST_F(SimpleRDSFixture, ConnectedRealityDataRelationshipDeleteRequestTest)
+    {
+    EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([](const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+        {
+        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityDataRelationship/72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a6~2F72adad30-c07c-465d-a1fe-2f2dfac950a6");
+        response.status = ::OK;
+        response.responseCode = 200;
+        response.toolCode = CURLE_OK;
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\Deleted.json");
+        }));
+
+    ConnectedRealityDataRelationship rel = ConnectedRealityDataRelationship();
+    rel.SetRealityDataId("72adad30-c07c-465d-a1fe-2f2dfac950a6");
+    rel.SetRelatedId("72adad30-c07c-465d-a1fe-2f2dfac950a6");
+    ConnectedResponse response = rel.Delete();
+
+    EXPECT_TRUE(response.simpleSuccess);
+    }
+
+//=====================================================================================
+//! @bsimethod                                  Spencer.Mason                  02/2018
+//=====================================================================================
+TEST_F(SimpleRDSFixture, ConnectedRealityDataRelationshipDeleteBadRequestTest)
+    {
+    ConnectedRealityDataRelationship rel = ConnectedRealityDataRelationship();
+    ConnectedResponse response = rel.Delete();
+
+    EXPECT_FALSE(response.simpleSuccess);
+    }
+
+//=====================================================================================
 //! @bsimethod                                  Spencer.Mason                  10/2017
 //=====================================================================================
 TEST_F(SimpleRDSFixture, ConnectedRealityDataRelationshipCreateRequestTest)
@@ -212,7 +315,7 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataRelationshipCreateRequestTest)
 TEST_F(SimpleRDSFixture, ConnectedRealityDataDocumentTest)
     {
     EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([](const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
-       {
+        {
         EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/Document/72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a7");
         response.status = ::OK;
         response.responseCode = 200;
@@ -224,6 +327,73 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataDocumentTest)
     ConnectedRealityDataDocument doc = ConnectedRealityDataDocument("72adad30-c07c-465d-a1fe-2f2dfac950a7");
 
     EXPECT_EQ(doc.GetName(), "Production_Helsinki_3MX_ok.3mx");
+    }
+
+//=====================================================================================
+//! @bsimethod                                  Spencer.Mason                  02/2018
+//=====================================================================================
+TEST_F(SimpleRDSFixture, ConnectedRealityDataDocumentDeleteRequestTest)
+    {
+    EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(2).WillOnce(Invoke([](const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+        {
+        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/Document/72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a7");
+        response.status = ::OK;
+        response.responseCode = 200;
+        response.toolCode = CURLE_OK;
+
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\RealityDataDocument.json");
+        })).WillOnce(Invoke([](const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+        {
+        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/Document/43a4a51a%2Dbfd3%2D4271%2Da9d9%2D21db56cdcf10%7E2FScene%7E2FProduction%5FHelsinki%5F3MX%5Fok%2E3mx");
+        response.status = ::OK;
+        response.responseCode = 200;
+        response.toolCode = CURLE_OK;
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\Deleted.json");
+        }));
+
+    ConnectedRealityDataDocument doc = ConnectedRealityDataDocument("72adad30-c07c-465d-a1fe-2f2dfac950a7");
+    ConnectedResponse response = doc.Delete();
+
+    EXPECT_TRUE(response.simpleSuccess);
+    }
+
+//=====================================================================================
+//! @bsimethod                                  Spencer.Mason                  02/2018
+//=====================================================================================
+TEST_F(SimpleRDSFixture, ConnectedRealityDataAllDocumentsTest)
+    {
+    EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([](const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+        {
+        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityData/72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a7/FileAccess.FileAccessKey?$filter=Permissions+eq+'Read'&api.singleurlperinstance=true");
+        response.status = ::OK;
+        response.responseCode = 200;
+        response.toolCode = CURLE_OK;
+
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\AzureHandshake.json");
+        }));
+        
+    EXPECT_CALL(*s_mockWSGInstance, PerformAzureRequest(_, _, _, _, _)).Times(2).WillRepeatedly(Invoke([](const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+        {
+        response.status = ::OK;
+        response.responseCode = 200;
+        response.toolCode = CURLE_OK;
+        auto requestString = wsgRequest.GetHttpRequestString();
+        if (requestString.Contains("marker=Page2"))
+            {
+            response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\ListAllServerResponseSecondPage.xml");
+            }
+        else
+            {
+            response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\ListAllServerResponseFirstPage.xml");
+            }
+
+        }));
+
+    bvector<bpair<Utf8String, uint64_t>> docVector;
+
+    ConnectedResponse response = ConnectedRealityDataDocument::RetrieveAllForRealityData(docVector, "72adad30-c07c-465d-a1fe-2f2dfac950a7");
+
+    EXPECT_EQ(docVector[0].first, "72adad30-c07c-465d-a1fe-2f2dfac950a7/Folder1/File1.txt");
     }
 
 //=====================================================================================
@@ -243,6 +413,33 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataFolderTest)
     ConnectedRealityDataFolder folder = ConnectedRealityDataFolder("72adad30-c07c-465d-a1fe-2f2dfac950a7");
 
     EXPECT_EQ(folder.GetName(), "Scene123");
+    }
+
+//=====================================================================================
+//! @bsimethod                                  Spencer.Mason                  02/2018
+//=====================================================================================
+TEST_F(SimpleRDSFixture, ConnectedRealityDataFolderDeleteRequestTest)
+    {
+    EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(2).WillOnce(Invoke([](const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+        {
+        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/Folder/72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a7");
+        response.status = ::OK;
+        response.responseCode = 200;
+        response.toolCode = CURLE_OK;
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\Deleted.json");
+        })).WillOnce(Invoke([](const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+        {
+        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/Folder/72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a7");
+        response.status = ::OK;
+        response.responseCode = 200;
+        response.toolCode = CURLE_OK;
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\Deleted.json");
+        }));
+
+    ConnectedRealityDataFolder folder = ConnectedRealityDataFolder("72adad30-c07c-465d-a1fe-2f2dfac950a7");
+    ConnectedResponse response = folder.Delete();
+
+    EXPECT_TRUE(response.simpleSuccess);
     }
 
 //=====================================================================================
@@ -267,3 +464,26 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataTest)
     
     EXPECT_EQ(rd.GetName(), "Helsinki");
     }
+
+//=====================================================================================
+//! @bsimethod                                  Spencer.Mason                  10/2017
+//=====================================================================================
+/*TEST_F(SimpleRDSFixture, ConnectedRealityDataTest)
+    {
+    EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([](const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+        {
+        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityData/72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a5");
+        response.status = ::OK;
+        response.responseCode = 200;
+        response.toolCode = CURLE_OK;
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\SingleRealityData-Helsinki.json");
+        }));
+
+    ConnectedRealityData emptyRd = ConnectedRealityData();
+    emptyRd.SetIdentifier("72adad30-c07c-465d-a1fe-2f2dfac950a5");
+
+    bvector<ConnectedRealityDataPtr>& dataVector
+    ConnectedResponse response = ConnectedRealityData::RetrieveAllForUltimateId(bvector<ConnectedRealityDataPtr>& dataVector);
+
+    EXPECT_EQ(dataVector[0].GetName(), "Helsinki");
+    }*/
