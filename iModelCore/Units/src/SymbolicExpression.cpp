@@ -100,7 +100,7 @@ BentleyStatus Expression::GenerateConversionExpression(UnitCR from, UnitCR to, E
     if (!Expression::SignaturesCompatible(fromExpression, toExpression))
         {
         LOG.errorv("Cannot convert from %s: (%s) to %s: (%s) because they are not dimensionally compatible.",
-                   from.GetName(), from.GetDefinition(), to.GetName(), to.GetDefinition());
+                   from.GetName().c_str(), from.GetDefinition().c_str(), to.GetName().c_str(), to.GetDefinition().c_str());
         return BentleyStatus::ERROR;
         }
 
