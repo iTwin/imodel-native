@@ -391,6 +391,10 @@ TilesetPublisher::Status PublishChangeSets(Json::Value& revisionsJson, TilesetPu
             continue;
 
         VersionCompareChangeSummaryPtr      changeSummary = VersionCompareChangeSummary::Generate(*m_tempDb, thisRevisions, true);
+
+        if (!changeSummary.IsValid())
+            continue;
+
         DgnElementIdSet                     addedOrModifiedIds, deletedOrModifiedIds;
         Json::Value                         revisionElementsJson = GetChanges (addedOrModifiedIds, deletedOrModifiedIds, *changeSummary);
         DgnModelIdSet                       prevModelIds, postModelIds;
