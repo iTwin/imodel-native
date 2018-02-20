@@ -3386,7 +3386,7 @@ private:
     LightweightPolyfaceBuilder(PolyfaceHeaderR polyface, double pointTolerance, double normalTolerance, double paramTolerance);
 
 public:
-    static LightweightPolyfaceBuilderPtr Create(PolyfaceHeaderR polyface, double pointTolerance = 1.0E-8, double normalTolerance = 1.0E-10, double paramTolerance = 1.0E-10) { return new LightweightPolyfaceBuilder(polyface, pointTolerance, normalTolerance, paramTolerance); }
+    GEOMDLLIMPEXP static LightweightPolyfaceBuilderPtr Create(PolyfaceHeaderR polyface, double pointTolerance = 1.0E-8, double normalTolerance = 1.0E-10, double paramTolerance = 1.0E-10);
 
     //! Find or add a point.  Return the (0-based) index.
     GEOMDLLIMPEXP size_t FindOrAddPoint (DPoint3dCR point);
