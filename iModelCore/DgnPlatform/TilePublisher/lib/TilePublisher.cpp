@@ -3811,8 +3811,10 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     rootRange = DRange3d::NullRange();
     for (auto const& kvp : m_modelRanges)
         {
-        // ###TODO: Invert if already ECEF...
-        rootRange.Extend(kvp.second.m_range);
+        auto model = GetDgnDb().Models().GetModel(kvp.first);
+
+        if (model->IsSpatialModel())
+            rootRange.Extend(kvp.second.m_range);
         }
     return PublishClassifiers(viewedModels, generator, toleranceInMeters, progressMeter);
     }
