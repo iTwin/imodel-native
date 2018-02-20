@@ -2,7 +2,7 @@
 |
 |     $Source: Client/ClientConnection.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -32,15 +32,6 @@ const ClientConfiguration& ClientConnection::GetConfiguration() const
 ClientConfiguration& ClientConnection::GetConfiguration()
     {
     return *m_configuration;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                             Adam.Eichelkraut       01/2017
-* @remarks Note: Temporary until WSG defect 651740 is fixed for BIMReviewSharing
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ClientConnection::EnableWsgServerHeader(bool enable)
-    {
-    m_infoProvider->EnableWsgServerHeader(enable);
     }
 
 /*--------------------------------------------------------------------------------------+

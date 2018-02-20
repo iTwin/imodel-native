@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WSClient.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -45,15 +45,6 @@ IWSClientPtr WSClient::Create(Utf8StringCR serverUrl, ClientInfoPtr clientInfo, 
 Utf8String WSClient::GetServerUrl() const
     {
     return m_connection->GetConfiguration().GetServerUrl();
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                             Adam.Eichelkraut       01/2017
-* @remarks Note: Temporary until WSG defect 651740 is fixed for BIMReviewSharing
-+---------------+---------------+---------------+---------------+---------------+------*/
-void WSClient::EnableWsgServerHeader(bool enable)
-    {
-    m_connection->EnableWsgServerHeader(enable);
     }
 
 /*--------------------------------------------------------------------------------------+
