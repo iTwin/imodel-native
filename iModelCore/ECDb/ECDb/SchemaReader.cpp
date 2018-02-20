@@ -746,6 +746,7 @@ BentleyStatus SchemaReader::LoadUnits(Context& ctx) const
     if (m_cache.UnitsAreLoaded())
         return SUCCESS;
 
+    PERFLOG_START("ECDb", "LoadUnits");
     m_cache.SetUnitsAreLoaded();
 
     if (SUCCESS != ReadUnitSystems(ctx))
@@ -754,7 +755,11 @@ BentleyStatus SchemaReader::LoadUnits(Context& ctx) const
     if (SUCCESS != ReadPhenomena(ctx))
         return ERROR;
 
-    return ReadUnits(ctx);
+    if (SUCCESS != ReadUnits(ctx))
+        return ERROR;
+    
+    PERFLOG_FINISH("ECDb", "LoadUnits");
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
