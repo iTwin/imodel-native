@@ -438,6 +438,41 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadUnitFromXml(ECSchemaPtr& schemaOut, Be
     return status;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                  02/2018
+//---------------------------------------------------------------------------------------
+SchemaReadStatus SchemaXmlReaderImpl::ReadInvertedUnitFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode)
+    {
+    SchemaReadStatus status = SchemaReadStatus::Success;
+
+    for (BeXmlNodeP candidateNode = schemaNode.GetFirstChild(); nullptr != candidateNode; candidateNode = candidateNode->GetNextSibling())
+        {
+        if (!IsSchemaChildElementNode(*candidateNode, ECSchemaElementType::InvertedUnit))
+            continue;
+
+        ECUnitP unit;
+        status = ECUnit::ReadInvertedUnitXml(unit, *candidateNode, *schemaOut, m_schemaContext);
+        if (SchemaReadStatus::Success != status)
+            {
+            // The object should never be constructed, no need to delete it.
+            unit = nullptr;
+            return status;
+            }
+        
+        ECObjectsStatus addStatus = schemaOut->AddSchemaChild<ECUnit>(unit, ECSchemaElementType::InvertedUnit);
+        if (ECObjectsStatus::NamedItemAlreadyExists == addStatus)
+            {
+            LOG.errorv("Duplicate %s node for %s in schema %s.", ECSchema::SchemaElementTypeToString(ECSchemaElementType::InvertedUnit), unit->GetName().c_str(), schemaOut->GetFullSchemaName().c_str());
+            Units::UnitRegistry::Instance().RemoveUnit(unit->GetFullName().c_str());
+            delete unit;
+            unit = nullptr;
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
+        
+    return status;
+    }
+
 // =====================================================================================
 // SchemaXmlReader2 class
 // =====================================================================================
@@ -678,6 +713,8 @@ bool SchemaXmlReaderImpl::_IsSchemaChildElementNode(BeXmlNodeR schemaNode, ECSch
             return 0 == strcmp(PHENOMENON_ELEMENT, nodeName);
         case ECSchemaElementType::Unit:
             return 0 == strcmp(UNIT_ELEMENT, nodeName);
+        case ECSchemaElementType::InvertedUnit:
+            return 0 == strcmp(INVERTED_UNIT_ELEMENT, nodeName);
         }
 
     return false;
@@ -710,6 +747,8 @@ bool SchemaXmlReaderImpl::_IsSchemaChildElementNode(BeXmlNodeR schemaNode, ECSch
             elementOrder.AddElement(typeName.c_str(), ECSchemaElementType::Phenomenon);
         else if (IsSchemaChildElementNode(*candidateNode, ECSchemaElementType::Unit))
             elementOrder.AddElement(typeName.c_str(), ECSchemaElementType::Unit);
+        else if (IsSchemaChildElementNode(*candidateNode, ECSchemaElementType::InvertedUnit))
+            elementOrder.AddElement(typeName.c_str(), ECSchemaElementType::InvertedUnit);
         }
     }
 
@@ -942,6 +981,19 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     readingUnits.Stop();
     LOG.tracev("Reading Unit elements for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingUnits.GetElapsedSeconds());
 
+    // Inverted Units
+    StopWatch readingInvertedUnit("Reading InvertedUnits", true);
+    status = reader->ReadInvertedUnitFromXml(schemaOut, *schemaNode);
+
+    if (SchemaReadStatus::Success != status)
+        {
+        delete reader; reader = nullptr;
+        return status;
+        }
+
+    readingInvertedUnit.Stop();
+    LOG.tracev("Reading InvertedUnit elements for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingInvertedUnit.GetElapsedSeconds());
+
     // KindOfQuantity
     StopWatch readingKindOfQuantities("Reading kind of quantity", true);
     status = reader->ReadSchemaChildFromXml<KindOfQuantity>(schemaOut, *schemaNode, ECSchemaElementType::KindOfQuantity);
@@ -1165,7 +1217,7 @@ SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
     auto& serializationOrder = m_ecSchema.m_serializationOrder;
     if (!serializationOrder.GetPreserveElementOrder())
         serializationOrder.CreateAlphabeticalOrder(m_ecSchema);
-    
+
     // Serializes the Class and Enumerations in the given order...
     for (auto schemaElementEntry : serializationOrder)
         {
@@ -1212,6 +1264,16 @@ SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
             ECUnitCP unit = m_ecSchema.GetUnitCP(elementName);
             if(nullptr != unit)
                 WriteSchemaChild<ECUnit>(*unit);
+            }
+        else if (ECSchemaElementType::InvertedUnit == elementType)
+            {
+            ECUnitCP unit = m_ecSchema.GetInvertedUnitCP(elementName);
+            if(nullptr != unit)
+                {
+                if(&(unit->GetSchema()) != &m_ecSchema)
+                    return SchemaWriteStatus::Success;
+                unit->WriteInvertedUnitXml(m_xmlWriter, m_ecXmlVersion);
+                }
             }
         }
 

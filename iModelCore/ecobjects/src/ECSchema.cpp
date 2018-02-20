@@ -659,6 +659,8 @@ Utf8CP ECSchema::SchemaElementTypeToString(ECSchemaElementType elementType)
             return PHENOMENON_ELEMENT;
         case ECSchemaElementType::Unit:
             return UNIT_ELEMENT;
+        case ECSchemaElementType::InvertedUnit:
+            return INVERTED_UNIT_ELEMENT;
         }
 
     return EMPTY_STRING;
@@ -1232,6 +1234,56 @@ ECObjectsStatus ECSchema::CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definiti
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus ECSchema::CreateInvertedUnit(ECUnitP& unit, ECUnitCR parent, Utf8CP name, UnitSystemCR unitSystem, Utf8CP label, Utf8CP description)
+    {
+    ECObjectsStatus status;
+    const auto cleanupIfNecessary = [&unit, &status]() -> decltype(auto)
+        {
+        if (ECObjectsStatus::Success != status)
+            {
+            Units::UnitRegistry::Instance().RemoveInvertedUnit(unit->GetFullName().c_str());
+            delete unit;
+            unit = nullptr;
+            }
+        };
+
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
+    Utf8String fullName = GetName() + ":" + name;
+    const auto* systemSchema = &unitSystem.GetSchema();
+    const auto* parentSchema = &parent.GetSchema();
+
+    if ((this != systemSchema) && !ECSchema::IsSchemaReferenced(*this, *systemSchema))
+        {
+        LOG.errorv("UnitSystem %s with schema %s is not in this or any schema referenced by schema %s", unitSystem.GetName().c_str(), systemSchema->GetName().c_str(), this->GetName().c_str());
+        return ECObjectsStatus::NotFound;
+        }
+    if ((this != parentSchema) && !ECSchema::IsSchemaReferenced(*this, *parentSchema))
+        {
+        LOG.errorv("Unit %s with schema %s is not in this or any schema referenced by schema %s", parent.GetName().c_str(), parentSchema->GetName().c_str(), this->GetName().c_str());
+        return ECObjectsStatus::NotFound;
+        }
+
+    unit = Units::UnitRegistry::Instance().AddInvertedUnit<ECUnit>(parent.GetFullName().c_str(), fullName.c_str(), unitSystem.GetFullName().c_str());
+    if(nullptr == unit)
+        return ECObjectsStatus::Error;
+    unit->SetSchema(*this);
+
+    status = unit->SetDisplayLabel(label);
+    cleanupIfNecessary();
+    if(status != ECObjectsStatus::Success) return status;
+    status = unit->SetDescription(description);
+    cleanupIfNecessary();
+    if(status != ECObjectsStatus::Success) return status;
+    status = AddSchemaChildToMap<ECUnit, UnitMap>(unit, &m_unitMap, ECSchemaElementType::InvertedUnit);
+    cleanupIfNecessary();
+    if(status != ECObjectsStatus::Success) return status;
+
+    return status;
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    01/2018
 //--------------------------------------------------------------------------------------
 template<typename T, typename T_MAP>
@@ -1321,6 +1373,27 @@ ECObjectsStatus ECSchema::DeleteUnit(ECUnitR unit)
         }
 
     auto returnedUnit = Units::UnitRegistry::Instance().RemoveUnit(unit.GetFullName().c_str());
+    BeAssert(nullptr != returnedUnit);
+    BeAssert(&unit == returnedUnit);
+
+    return DeleteSchemaChild<ECUnit, UnitMap>(unit, &m_unitMap);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus ECSchema::DeleteInvertedUnit(ECUnitR unit)
+    {
+    auto unitCP = Units::UnitRegistry::Instance().LookupUnit(unit.GetFullName().c_str());
+    BeAssert(nullptr != unitCP);
+    BeAssert(&unit == unitCP); // This only happens if a second unit made its way into the registry.
+    if (&unit != unitCP)
+        {
+        LOG.warningv("Cannot remove Unit '%s' from the schema because the Unit found in the UnitRegistry is not the same as the one located in this schema.", unitCP->GetName().c_str());
+        return ECObjectsStatus::Error;
+        }
+
+    auto returnedUnit = Units::UnitRegistry::Instance().RemoveInvertedUnit(unit.GetFullName().c_str());
     BeAssert(nullptr != returnedUnit);
     BeAssert(&unit == returnedUnit);
 
@@ -1697,6 +1770,28 @@ ECObjectsStatus ECSchema::ResolveAlias(ECSchemaCR schema, Utf8StringR alias) con
 
     return ECObjectsStatus::SchemaNotFound;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kyle.Abramowitz                 02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ECUnitP ECSchema::GetUnitP(Utf8CP name)
+    {
+    auto u = GetSchemaChild<ECUnit, UnitMap>(name, &m_unitMap); 
+    if((nullptr != u) && !u->IsInvertedUnit()) 
+        return u; 
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kyle.Abramowitz                 02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ECUnitP ECSchema::GetInvertedUnitP(Utf8CP name)
+{
+    auto unit = GetSchemaChild<ECUnit, UnitMap>(name, &m_unitMap);
+    if((nullptr != unit) && (unit->IsInvertedUnit()))
+        return unit;
+    return nullptr;
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
@@ -3008,8 +3103,14 @@ void ECSchemaElementsOrder::CreateAlphabeticalOrder(ECSchemaCR ecSchema)
             continue;
             }
         else
-            AddElement(unit->GetName().c_str(), ECSchemaElementType::Unit);
+            { 
+            if(unit->IsInvertedUnit())
+                AddElement(unit->GetName().c_str(), ECSchemaElementType::InvertedUnit);
+            else
+                AddElement(unit->GetName().c_str(), ECSchemaElementType::Unit);
+            }
          }
+
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -130,6 +130,19 @@ SchemaWriteStatus SchemaJsonWriter::WriteUnit(ECUnitCR unit)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz             02/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus SchemaJsonWriter::WriteInvertedUnit(ECUnitCR InvertedUnit)
+    {
+    // Don't write any elements that aren't in the schema we're writing.
+    if (&(InvertedUnit.GetSchema()) != &m_ecSchema)
+        return SchemaWriteStatus::Success;
+
+    Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_CHILDREN_ATTRIBUTE][InvertedUnit.GetName()];
+    return InvertedUnit.WriteInvertedUnitJson(childObj, false, false);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
 SchemaWriteStatus SchemaJsonWriter::WriteSchemaChildren()
@@ -175,7 +188,11 @@ SchemaWriteStatus SchemaJsonWriter::WriteSchemaChildren()
 
     for (auto const ecu : m_ecSchema.GetUnits())
         {
-        if (SchemaWriteStatus::Success != (status = WriteUnit(*ecu)))
+        if(ecu->IsInvertedUnit())
+            status = WriteInvertedUnit(*ecu);
+        else
+            status = WriteUnit(*ecu);
+        if(SchemaWriteStatus::Success != status)
             return status;
         }
 

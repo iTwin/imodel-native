@@ -96,6 +96,7 @@ friend struct Units::UnitRegistry;
 
 private:
     Utf8String m_name;
+    m_name.
     bool m_isDisplayLabelExplicitlyDefined;
     Utf8String m_description;
     ECSchemaCP m_schema;
@@ -166,25 +167,28 @@ private:
     ECSchemaCP m_schema;
     UnitId m_unitId;
 
-    void SetSchema(ECSchemaCR schema) {m_schema = &schema;}
+    void SetSchema(ECSchemaCR schema) {m_schema = &schema; m_schema}
 
     ECObjectsStatus SetName(Utf8StringCR name);
     ECObjectsStatus SetDisplayLabel(Utf8StringCR value) {Units::Unit::SetLabel(value.c_str()); m_isDisplayLabelExplicitlyDefined = true; return ECObjectsStatus::Success;}
     ECObjectsStatus SetDescription(Utf8StringCR value) {m_description = value; return ECObjectsStatus::Success;}
 
     static SchemaReadStatus ReadXml(ECUnitP& unit, BeXmlNodeR unitNode, ECSchemaCR schema, ECSchemaReadContextR context);
-
+    static SchemaReadStatus ReadInvertedUnitXml(ECUnitP& invertedUnit, BeXmlNodeR, ECSchemaCR schema, ECSchemaReadContextR context);
     SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
-
+    SchemaWriteStatus WriteInvertedUnitXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
     SchemaWriteStatus WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
+    SchemaWriteStatus WriteInvertedUnitJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
 
     // Should only be called by UnitRegistry
     ECUnit(Units::UnitSystemCR unitSystem, Units::PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant) : 
         Units::Unit(unitSystem, phenomenon, name, id, definition, dimensionSymbol, factor, offset, isConstant), m_isDisplayLabelExplicitlyDefined(false) {}
+    ECUnit(Units::UnitCR parentUnit, Units::UnitSystemCR system, Utf8CP unitName, uint32_t id) : Units::Unit(parentUnit, system, unitName, id) {}
 
 protected:
     // Needed by Units::UnitRegistry to create the ECUnit
     ECOBJECTS_EXPORT static ECUnitP _Create(Units::UnitSystemCR unitSystem, Units::PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant);
+    ECOBJECTS_EXPORT static ECUnitP _Create(Units::UnitCR parentUnit, Units::UnitSystemCR unitSystem, Utf8CP unitName, uint32_t id);
 
 public:
 
@@ -214,5 +218,9 @@ public:
     //! @param[out] outValue                Json object containing the schema child Json if successfully written.
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
     ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = false) const;
+    //! Write the inverted ECUnit as a standalone schema child in the ECSchemaJSON format.
+    //! @param[out] outValue                Json object containing the schema child Json if successfully written.
+    //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
+    ECOBJECTS_EXPORT SchemaWriteStatus WriteInvertedUnitJson(Json::Value& outValue, bool includeSchemaVersion = false) const;
 };
 END_BENTLEY_ECOBJECT_NAMESPACE

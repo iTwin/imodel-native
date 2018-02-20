@@ -40,6 +40,33 @@ ECUnitP ECUnit::_Create(Units::UnitSystemCR unitSystem, Units::PhenomenonCR phen
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 02/2018
 //--------------------------------------------------------------------------------------
+// static
+ECUnitP ECUnit::_Create(Units::UnitCR parentUnit, Units::UnitSystemCR system, Utf8CP name, uint32_t id)
+    {
+    // Deconstruct the name. The format should be {SchemaName}.{UnitName}
+    Utf8String schemaName;
+    Utf8String unitName;
+    ECClass::ParseClassName(schemaName, unitName, name);
+    BeAssert(!schemaName.empty());
+
+    // Check if it's a valid name here to avoid having to construct the ECUnit Unnecessarily
+    if (!ECNameValidation::IsValidName(unitName.c_str()))
+        {
+        LOG.errorv("A Unit cannot be created with the name '%s' because it is not a valid ECName", unitName.c_str());
+        return nullptr;
+        }
+
+    auto ptrUnit = new ECUnit(parentUnit, system, name, id);
+    if (nullptr == ptrUnit)
+        return nullptr;
+
+    ptrUnit->SetName(unitName.c_str());
+    return ptrUnit;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
+//--------------------------------------------------------------------------------------
 Utf8String ECUnit::GetQualifiedName(ECSchemaCR primarySchema) const
     {
     Utf8String alias;
@@ -202,6 +229,127 @@ SchemaReadStatus ECUnit::ReadXml(ECUnitP& unit, BeXmlNodeR unitNode, ECSchemaCR 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 02/2018
 //--------------------------------------------------------------------------------------
+SchemaReadStatus ECUnit::ReadInvertedUnitXml(ECUnitP& invertedUnit, BeXmlNodeR unitNode, ECSchemaCR schema, ECSchemaReadContextR context)
+    {
+    SchemaReadStatus status;
+    auto checkRequiredAttribute = [&unitNode, &status](Utf8StringR value, Utf8CP attribute) -> decltype(auto)
+        {
+        if(BEXML_Success != unitNode.GetAttributeStringValue(value, attribute) || Utf8String::IsNullOrEmpty(value.c_str()))
+            {
+            LOG.errorv("Invalid ECSchemaXML: The %s element must contain a %s attribute", unitNode.GetName(), attribute);
+            status = SchemaReadStatus::InvalidECSchemaXml;
+            }
+        else
+            status = SchemaReadStatus::Success;
+        };
+
+    Utf8String name;
+    Utf8String invertsUnitName;
+    Utf8String unitSystemName;
+
+    checkRequiredAttribute(name, TYPE_NAME_ATTRIBUTE);
+    if(status != SchemaReadStatus::Success) return SchemaReadStatus::InvalidECSchemaXml;
+    checkRequiredAttribute(unitSystemName, UNIT_SYSTEM_NAME_ATTRIBUTE);
+    if(status != SchemaReadStatus::Success) return SchemaReadStatus::InvalidECSchemaXml;
+    checkRequiredAttribute(invertsUnitName, INVERTS_UNIT_ATTRIBUTE);
+    if(status != SchemaReadStatus::Success) return SchemaReadStatus::InvalidECSchemaXml;
+
+    Utf8String fullName = schema.GetName() + ":" + name;
+
+    Utf8String parsedUnitSchema;
+    Utf8String parsedUnitName;
+    ECClass::ParseClassName(parsedUnitSchema, parsedUnitName, invertsUnitName);
+
+    Utf8String parsedSystemSchema;
+    Utf8String parsedSystemName;
+    ECClass::ParseClassName(parsedSystemSchema, parsedSystemName, unitSystemName);
+
+    const auto& alias = schema.GetAlias();
+    const auto& referencedSchemas = schema.GetReferencedSchemas();
+
+    bool unitOk = false;
+    bool systemOk = false;
+    ECUnitCP ptrUnit = schema.GetUnitCP(invertsUnitName.c_str());
+    UnitSystemCP ptrSystem = schema.GetUnitSystemCP(parsedSystemName.c_str());
+
+    if((parsedUnitSchema.empty() || (alias == parsedUnitSchema)) && (nullptr != ptrUnit))
+        {
+        unitOk = true;
+        invertsUnitName = schema.GetName() + ":" + parsedUnitName;
+        }
+
+    if((parsedSystemSchema.empty() || (alias == parsedSystemSchema)) && (nullptr != ptrSystem))
+        { 
+        systemOk = true;
+        unitSystemName = schema.GetName() + ":" + parsedSystemName;
+        }
+
+    for(const auto& s : referencedSchemas)
+        {
+        ECUnitCP localUnitPtr;
+        UnitSystemCP localSystemPtr;
+
+        if(unitOk && systemOk)
+            break;
+        localUnitPtr = s.second->GetUnitCP(parsedUnitName.c_str());
+        if(!unitOk && (s.second->GetAlias() == parsedUnitSchema) && (nullptr != localUnitPtr))
+            { 
+            unitOk = true;
+            invertsUnitName = localUnitPtr->GetFullName();
+            }
+        localSystemPtr = s.second->GetUnitSystemCP(parsedSystemName.c_str());
+        if(!systemOk && (s.second->GetAlias() == parsedSystemSchema) && (nullptr != localSystemPtr))
+            {
+            systemOk = true;
+            unitSystemName = localSystemPtr->GetFullName();
+            }
+        }
+
+    if(!(unitOk && systemOk))
+        return SchemaReadStatus::InvalidECSchemaXml;
+       
+    invertedUnit = Units::UnitRegistry::Instance().AddInvertedUnit<ECUnit>(invertsUnitName.c_str(), fullName.c_str(), unitSystemName.c_str());
+
+    if (nullptr == invertedUnit)
+        return SchemaReadStatus::InvalidECSchemaXml;
+
+    Utf8String value;
+    READ_OPTIONAL_XML_ATTRIBUTE(unitNode, DESCRIPTION_ATTRIBUTE, invertedUnit, Description)
+    READ_OPTIONAL_XML_ATTRIBUTE(unitNode, ECXML_DISPLAY_LABEL_ATTRIBUTE, invertedUnit, DisplayLabel)
+
+    invertedUnit->SetSchema(schema);
+    return SchemaReadStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
+//--------------------------------------------------------------------------------------
+SchemaWriteStatus ECUnit::WriteInvertedUnitXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const 
+    {
+    if (ecXmlVersion < ECVersion::V3_2)
+        return SchemaWriteStatus::Success;
+
+    Utf8CP elementName = INVERTED_UNIT_ELEMENT;
+    SchemaWriteStatus status = SchemaWriteStatus::Success;
+
+    xmlWriter.WriteElementStart(elementName);
+    xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, GetName().c_str());
+    xmlWriter.WriteAttribute(INVERTS_UNIT_ATTRIBUTE, ((ECN::ECUnitCP)GetParent())->GetQualifiedName(GetSchema()).c_str());
+    if (GetIsDisplayLabelDefined())
+        xmlWriter.WriteAttribute(ECXML_DISPLAY_LABEL_ATTRIBUTE, GetInvariantDisplayLabel().c_str());
+
+    if (GetDescription().length() > 0)
+        xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, GetInvariantDescription().c_str());
+
+    xmlWriter.WriteAttribute(UNIT_SYSTEM_NAME_ATTRIBUTE, ((ECN::UnitSystemCP)GetUnitSystem())->GetQualifiedName(GetSchema()).c_str());
+
+    xmlWriter.WriteElementEnd();
+    return status;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
+//--------------------------------------------------------------------------------------
 SchemaWriteStatus ECUnit::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
     if (ecXmlVersion < ECVersion::V3_2)
@@ -209,7 +357,6 @@ SchemaWriteStatus ECUnit::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersio
 
     Utf8CP elementName = UNIT_ELEMENT;
     SchemaWriteStatus status = SchemaWriteStatus::Success;
-    //GetQualifiedClassName
     xmlWriter.WriteElementStart(elementName);
     xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, GetName().c_str());
 
@@ -242,6 +389,14 @@ SchemaWriteStatus ECUnit::WriteJson(Json::Value& outValue, bool includeSchemaVer
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 02/2018
 //--------------------------------------------------------------------------------------
+SchemaWriteStatus ECUnit::WriteInvertedUnitJson(Json::Value& outValue, bool includeSchemaVersion) const
+    {
+    return WriteInvertedUnitJson(outValue, true, includeSchemaVersion);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
+//--------------------------------------------------------------------------------------
 SchemaWriteStatus ECUnit::WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const
     {
     // Common properties to all Schema children
@@ -266,6 +421,33 @@ SchemaWriteStatus ECUnit::WriteJson(Json::Value& outValue, bool standalone, bool
         outValue[DESCRIPTION_ATTRIBUTE] = GetInvariantDescription();
     if (HasOffset())
         outValue[OFFSET_ATTRIBUTE] = GetOffset();
+
+    return SchemaWriteStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
+//--------------------------------------------------------------------------------------
+SchemaWriteStatus ECUnit::WriteInvertedUnitJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const 
+    {
+    // Common properties to all Schema children
+    if (standalone)
+        {
+        outValue[ECJSON_URI_SPEC_ATTRIBUTE] = ECJSON_SCHEMA_CHILD_URI;
+        outValue[ECJSON_PARENT_SCHEMA_ATTRIBUTE] = GetSchema().GetName();
+        if (includeSchemaVersion)
+            outValue[ECJSON_PARENT_VERSION_ATTRIBUTE] = GetSchema().GetSchemaKey().GetVersionString();
+        outValue[NAME_ATTRIBUTE] = GetName();
+        }
+
+    outValue[ECJSON_SCHEMA_CHILD_TYPE] = INVERTED_UNIT_ELEMENT;
+    outValue[INVERTS_UNIT_ATTRIBUTE] = (((ECN::ECUnitCP)GetParent())->GetSchema().GetName() + "." + ((ECN::ECUnitCP)GetParent())->GetName().c_str()).c_str();
+    outValue[UNIT_SYSTEM_NAME_ATTRIBUTE] = (((ECN::UnitSystemCP)GetUnitSystem())->GetSchema().GetName() + "." + ((ECN::UnitSystemCP)GetUnitSystem())->GetName()).c_str();
+
+    if (GetIsDisplayLabelDefined())
+        outValue[ECJSON_DISPLAY_LABEL_ATTRIBUTE] = GetInvariantDisplayLabel();
+    if (GetInvariantDescription().length())
+        outValue[DESCRIPTION_ATTRIBUTE] = GetInvariantDescription();
 
     return SchemaWriteStatus::Success;
     }

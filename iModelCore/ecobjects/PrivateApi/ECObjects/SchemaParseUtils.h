@@ -40,6 +40,7 @@
 #define UNIT_SYSTEM_ELEMENT                 "UnitSystem"
 #define PHENOMENON_ELEMENT                  "Phenomenon"
 #define UNIT_ELEMENT                        "Unit"
+#define INVERTED_UNIT_ELEMENT               "InvertedUnit"
 
 #define ECXML_SCHEMAREFERENCE_ELEMENT       "ECSchemaReference"
 #define ECJSON_REFERENCES_ATTRIBUTE         "references"
@@ -75,6 +76,7 @@
 #define UNIT_NAME_ATTRIBUTE                 "unit"
 #define PHENOMENON_NAME_ATTRIBUTE           "phenomenon"
 #define UNIT_SYSTEM_NAME_ATTRIBUTE          "unitSystem"
+#define INVERTS_UNIT_ATTRIBUTE              "invertsUnit"
 #define APPLIES_TO                          "appliesTo"
 #define CUSTOM_ATTRIBUTE_APPLIES_TO_ATTRIBUTE   APPLIES_TO
 #define MIXIN_APPLIES_TO_ATTRIBUTE              APPLIES_TO
