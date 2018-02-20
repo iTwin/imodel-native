@@ -13,6 +13,38 @@
 #define BUILDING_MODEL_NAME "SamplePlantModel"
 #define USERLABEL_NAME  "UserLabel"
 
+#define PUMP_CODE_PATTERN       "PMP####"
+#define VESSEL_CODE_PATTERN     "V####"
+#define PLANT_CODE_PATTERN      "P##"
+#define UNIT_CODE_PATTERN       "U##"
+#define SUBUNIT_CODE_PATTERN    "SU##"
+#define BUILDING_CODE_PATTERN   "BLD##"
+#define NOZZLE_CODE_PATTERN     "N##"
+#define PID_CODE_PATTERN        "PID-####"
+#define PIPELINE_CODE_PATTERN   "####"
+#define VALVE_CODE_PATTERN      "CV####"
+#define SYSTEM_CODE_PATTERN     "S##"
+#define PIPERUN_CODE_PATTERN    "PS#"
+#define AREA_CODE_PATTERN       "A##"
+#define ROOM_CODE_PATTERN       "RM###"
+#define FLOOR_CODE_PATTERN      "FL##"
+
+
+#define EQUIPMENT_CODESPEC_NAME "PlantFunctional-Equipment"
+#define NOZZLE_CODESPEC_NAME    "PlantFunctional-Nozzle"
+#define UNIT_CODESPEC_NAME      "PlantFunctional-Unit"
+#define PLANT_CODESPEC_NAME     "PlantFunctional-Plant"
+#define BUILDING_CODESPEC_NAME  "PlantFunctional-Building"
+#define SUBUNIT_CODESPEC_NAME   "PlantFunctional-SubUnit"
+#define PID_CODESPEC_NAME       "PlantFunctional-PID"
+#define PIPELINE_CODESPEC_NAME  "PlantFunctional-Pipeline"
+#define VALVE_CODESPEC_NAME     "PlantFunctional-Valve"
+#define SYSTEM_CODESPEC_NAME    "PlantFunctional-System"
+#define PIPERUN_CODESPEC_NAME   "PlantFunctional-PipeRun"
+#define AREA_CODESPEC_NAME      "PlantFunctional-Area"
+#define ROOM_CODESPEC_NAME      "PlantFunctional-Room"
+#define FLOOR_CODESPEC_NAME     "PlantFunctional-Floor"
+
 
 #ifdef USE_PROTOTYPE
     #define PIPING_DOMAIN      DOMAIN_PIPING_FUNCTIONAL
@@ -27,6 +59,7 @@
     #define PIPELINE_CLASS           PPF_Class_Pipeline
     #define NOZZLE_CLASS             PPF_Class_Nozzle
     #define UNIT_CLASS               PBF_Class_Unit
+    #define PLANT_CLASS              PBF_Class_Plant
     #define PUMP_CLASS               PEF_CLASS_CentrifugalPump
     #define DRUM_CLASS               PEF_CLASS_Drum
     #define TANK_CLASS               "Tank"
@@ -46,6 +79,7 @@
     #define PIPELINE_CLASS           "PIPING_NETWORK_SYSTEM"
     #define NOZZLE_CLASS             "NOZZLE"
     #define UNIT_CLASS               "UNIT"
+    #define PLANT_CLASS              "Plant"
     #define PUMP_CLASS               "CENTRIFUGAL_PUMP"
     #define DRUM_CLASS               "DRUM"
     #define TANK_CLASS               "TANK"
@@ -93,24 +127,53 @@ WString BimCreater::GetArgValueW(WCharCP arg)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
+Utf8String BimCreater::GetArgValueUtf8(WCharCP arg)
+    {
+    Utf8String argValue(arg);
+    argValue = argValue.substr(argValue.find_first_of('=', 0) + 1);
+    argValue.Trim("\"");
+    argValue.Trim();
+    return argValue;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
 BentleyStatus BimCreater::ParseCommandLine(int argc, WCharP argv[])
     {
    // if (argc < 2)
    //     return PrintUsage(argv[0]);
 
-    WString outputFileNameArg, currentDirectory;
+    WString outputFileNameArg, currentDirectory, workdirArg;
+    WString imodelname = L"SamplePlant";
+    Utf8String pidArg;
 
     // Setup defaults for arguments so you can run without any arguments. 
 
-    outputFileNameArg = L"SamplePlantBim.Bim"; 
-    m_overwriteExistingOutputFile = true;
+    m_iModelName = "SamplePlant"; 
+    m_overwriteExistingOutputFile = false;
+    workdirArg = L"d:\\workdir\\";
+    m_briefcaseDir = "d:\\Briefcase\\";
 
 
     for (int iArg = 1; iArg < argc; ++iArg)
         {
-        if (argv[iArg] == wcsstr(argv[iArg], L"--output=") || argv[iArg] == wcsstr(argv[iArg], L"-o="))
+        if (argv[iArg] == wcsstr(argv[iArg], L"--workdir="))
             {
-            outputFileNameArg = GetArgValueW(argv[iArg]);
+            workdirArg = GetArgValueW(argv[iArg]);
+            continue;
+            }
+
+        if (argv[iArg] == wcsstr(argv[iArg], L"--briefcasedir="))
+            {
+            m_briefcaseDir = GetArgValueUtf8(argv[iArg]);
+            continue;
+            }
+
+        if (argv[iArg] == wcsstr(argv[iArg], L"--imodelname="))
+            {
+            m_iModelName = GetArgValueUtf8(argv[iArg]).c_str();
+            imodelname = GetArgValueW(argv[iArg]);
             continue;
             }
 
@@ -120,11 +183,28 @@ BentleyStatus BimCreater::ParseCommandLine(int argc, WCharP argv[])
             continue;
             }
 
+        if (argv[iArg] == wcsstr(argv[iArg], L"--addpid="))
+            {
+            m_overwriteExistingOutputFile = false;
+            pidArg = GetArgValueUtf8(argv[iArg]).c_str();
+            m_addPid = true;
+
+            char delimeter = ',';
+
+            size_t pos = pidArg.GetNextToken(m_subUnitCode, &delimeter, 0);
+                   pos = pidArg.GetNextToken(m_systemCode,  &delimeter, pos);
+                   pos = pidArg.GetNextToken(m_areaCode,    &delimeter, pos);
+                   pos = pidArg.GetNextToken(m_roomCode,    &delimeter, pos);
+            continue;
+            }
+
         fwprintf(stderr, L"Unrecognized command line option: %ls\n", argv[iArg]);
         return PrintUsage(argv[0]);
         }
 
-    m_outputFileName = BeFileName(outputFileNameArg.c_str());
+    WString completeName = workdirArg + imodelname + L".bim";
+
+    m_outputFileName = BeFileName(completeName.c_str());
 
     if (m_outputFileName.DoesPathExist() && !m_overwriteExistingOutputFile)
         {
@@ -159,9 +239,29 @@ Dgn::CategorySelectorPtr BimCreater::CreateCategorySelector(Dgn::DefinitionModel
     // To start off, we'll create a default selector that includes the one category that we use.
     // We have to give the selector a unique name of its own. Since we are set up up a new bim, 
     // we know that we can safely choose any name.
-    auto categorySelector = new Dgn::CategorySelector(model, "Default");
-    categorySelector->AddCategory(ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingDrawingCategoryId(model.GetDgnDb(), "PidLine"));
-    return categorySelector;
+
+    Dgn::CategorySelectorPtr categorySelector = m_host->FindCategorySelector();
+
+    if (categorySelector.IsValid())
+        return categorySelector;
+
+    m_host->CreateCategorySelector();
+
+    return m_host->FindCategorySelector();
+    
+    //Dgn::DgnCode code = Dgn::CategorySelector::CreateCode(model, PLANT_HOST_PID_CATEGORY_SELECTOR_CODE_VALUE);
+
+    //Dgn::DgnElementId id = m_dgnDb->Elements().QueryElementIdByCode(code);
+
+    //if (id.IsValid())
+    //    {
+    //    Dgn::CategorySelectorPtr categorySelector = m_dgnDb->Elements().GetForEdit<Dgn::CategorySelector>(id);
+    //    return categorySelector;
+    //    }
+    //
+    //auto categorySelector = new Dgn::CategorySelector(model, "Default");
+    //categorySelector->AddCategory(ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingDrawingCategoryId(model.GetDgnDb(), PID_CATEGORY));
+    //return categorySelector;
     }
 
 //---------------------------------------------------------------------------------------
@@ -204,6 +304,16 @@ Dgn::DisplayStyle2dPtr BimCreater::CreateDisplayStyle2d(Dgn::DefinitionModelR mo
 	// DisplayStyle is a definition element that is potentially shared by many ViewDefinitions.
 	// To start off, we'll create a style that can be used as a good default for 2D views.
 	// We have to give the style a unique name of its own. Since we are setup up a new bim, we know that we can safely choose any name.
+    Dgn::DgnCode code =  Dgn::DisplayStyle2d::CreateCode(model, "Default2D");
+
+    Dgn::DgnElementId id =  m_dgnDb->Elements().QueryElementIdByCode(code);
+
+    if (id.IsValid())
+        {
+        Dgn::DisplayStyle2dPtr displayStyle = m_dgnDb->Elements().GetForEdit<Dgn::DisplayStyle2d>(id);
+        return displayStyle;
+        }
+
 	auto displayStyle = new Dgn::DisplayStyle2d(model, "Default2D");
 	displayStyle->SetBackgroundColor(Dgn::ColorDef::Black());
 	Dgn::Render::ViewFlags viewFlags = displayStyle->GetViewFlags();
@@ -217,7 +327,7 @@ Dgn::DisplayStyle2dPtr BimCreater::CreateDisplayStyle2d(Dgn::DefinitionModelR mo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-Dgn::DgnDbPtr BimCreater::CreateDgnDb(BeFileNameCR outputFileName)
+Dgn::DgnDbPtr BimCreater::CreateDgnDb(BeFileNameCR outputFileName, BeSQLite::DbResult* createStatus)
     {
     // Initialize parameters needed to create a DgnDb
     Dgn::CreateDgnDbParams createProjectParams;
@@ -226,8 +336,8 @@ Dgn::DgnDbPtr BimCreater::CreateDgnDb(BeFileNameCR outputFileName)
     createProjectParams.SetRootSubjectDescription("Sample Plant created by BimCreater app");
 
     // Create the DgnDb file. The BisCore domain schema is also imported. Note that a seed file is not required.
-    BeSQLite::DbResult createStatus;
-    Dgn::DgnDbPtr db = Dgn::DgnDb::CreateDgnDb(&createStatus, outputFileName, createProjectParams);
+    //BeSQLite::DbResult createStatus;
+    Dgn::DgnDbPtr db = Dgn::DgnDb::CreateDgnDb(createStatus, outputFileName, createProjectParams);
     if (!db.IsValid())
         return nullptr;
     return db;
@@ -303,9 +413,14 @@ PIPERUN_TYPEPTR BimCreater::CreatePipeRun(Dgn::DgnElementCPtr pipeline, Dgn::Dgn
 #endif
 
     Utf8String shortCode;
-    int        number;
+    //int        number;
 
-    SetCodeFromParent1(number, shortCode, *functionalElement, pipeline, "PS");
+    BeSQLite::BeGuidCR  pipelineGuid = pipeline->GetFederationGuid();
+
+    m_host->GetNextCodeValue(shortCode, PIPERUN_CODESPEC_NAME, pipelineGuid.ToString(), PIPERUN_CODE_PATTERN);
+
+
+   // SetCodeFromParent1(number, shortCode, *functionalElement, pipeline, "PS");
     PopulateElementProperties(functionalElement);
 
     ECN::ECClassCP relClass;
@@ -320,6 +435,9 @@ PIPERUN_TYPEPTR BimCreater::CreatePipeRun(Dgn::DgnElementCPtr pipeline, Dgn::Dgn
         functionalElement->SetParentId(pipeline->GetElementId(), relClass->GetId());
         }
 #endif
+
+    StartBulkOperation();
+    SetCodeForElement(shortCode, *functionalElement, *pipeline, PIPERUN_CODESPEC_NAME);
 
     Dgn::DgnElementCPtr fe = functionalElement->Insert();
 
@@ -352,6 +470,7 @@ PIPERUN_TYPEPTR BimCreater::CreatePipeRun(Dgn::DgnElementCPtr pipeline, Dgn::Dgn
 
     functionalElement = BuildingDomain::BuildingDomainUtilities::QueryById<PIPERUN_TYPE>(functionalModel, fe->GetElementId());
 
+    EndBulkOperation();
     return functionalElement;
 
     }
@@ -370,7 +489,9 @@ Dgn::DrawingGraphicPtr BimCreater::CreateAnnotation(Dgn::DgnCategoryId categoryI
 
     annotationGraphics->SetPlacement(placement);
 
-    GeometricTools::CreateAnnotationTextGeometry(*annotationGraphics, categoryId, text);
+    Dgn::DgnSubCategoryId subCategoryId;
+    m_host->FindOrCreateDrawingSubCategory(categoryId, subCategoryId, PID_ANNOTATION_SUBCATEGORY);
+    GeometricTools::CreateAnnotationTextGeometry(*annotationGraphics, categoryId, text, subCategoryId);
 
     Dgn::DgnElementCPtr ge = annotationGraphics->Insert();
 
@@ -384,8 +505,8 @@ Dgn::DrawingGraphicPtr BimCreater::CreateAnnotation(Dgn::DgnCategoryId categoryI
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 
-    Dgn::DrawingGraphicPtr BimCreater::CreatePipeRunGraphics(PIPERUN_TYPECPTR pipeRun, Dgn::DgnCategoryId categoryId, Dgn::DrawingModelR drawingModel, DPoint2dCP points, bvector<int> count)
-        {
+Dgn::DrawingGraphicPtr BimCreater::CreatePipeRunGraphics(PIPERUN_TYPECPTR pipeRun, Dgn::DgnCategoryId categoryId, Dgn::DrawingModelR drawingModel, DPoint2dCP points, bvector<int> count)
+    {
 
     // Now create each of the graphical line instances.
 
@@ -401,6 +522,9 @@ Dgn::DrawingGraphicPtr BimCreater::CreateAnnotation(Dgn::DgnCategoryId categoryI
 
     Dgn::DrawingGraphicPtr pipeRunGraphic;
 
+    Dgn::DgnSubCategoryId subCategoryId;
+    m_host->FindOrCreateDrawingSubCategory(categoryId, subCategoryId, PID_PIPING_SUBCATEGORY);
+
     for (int i = 0; i < count.size(); i++)
         {
         pipeRunGraphic = BuildingDomain::BuildingDomainUtilities::CreateDrawingGraphic(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic, drawingModel, categoryId);
@@ -410,7 +534,7 @@ Dgn::DrawingGraphicPtr BimCreater::CreateAnnotation(Dgn::DgnCategoryId categoryI
 
         int startIndex = 0;
         if (i > 0) startIndex = count[i-1];
-        GeometricTools::CreatePidLineGeometry(*pipeRunGraphic, drawingModel, &points[startIndex], count[i]);
+        GeometricTools::CreatePidLineGeometry(*pipeRunGraphic, drawingModel, &points[startIndex], count[i], categoryId, subCategoryId);
         pipeRunGraphic->SetPropertyValue(USERLABEL_NAME, value);
         ge = pipeRunGraphic->Insert();
         drawingModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, ge->GetElementId(), pipeRun->GetElementId());
@@ -436,31 +560,37 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateNozzle(Dgn::DgnElementId pi
     Utf8String shortCode;
     int        number;
 
-    SetCodeFromParent1(number, shortCode, *functionalElement, parentElement, "N");
-
+    Utf8String codeString = GetCodeFromParentCode(shortCode, *functionalElement, parentElement, NOZZLE_CODESPEC_NAME, NOZZLE_CODE_PATTERN);
     PopulateElementProperties(functionalElement);
+
+    StartBulkOperation();
+    SetCodeForElement(codeString, *functionalElement, NOZZLE_CODESPEC_NAME);
 
     //Create the graphics element
 
     Dgn::DrawingGraphicPtr nozzleGraphic = BuildingDomain::BuildingDomainUtilities::CreateDrawingGraphic(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic, drawingModel, categoryId);
 
     if (!nozzleGraphic.IsValid())
+        {
+        EndBulkOperation();
         return nullptr;
-
+        }
 
     nozzleGraphic->SetPlacement(placement);
+    Dgn::DgnSubCategoryId subCategoryId;
+    m_host->FindOrCreateDrawingSubCategory(categoryId, subCategoryId, PID_EQUIP_SUBCATEGORY);
+
 
     if(!isVirtual)
-        GeometricTools::CreatePidNozzleGeometry(*nozzleGraphic, categoryId);
+        GeometricTools::CreatePidNozzleGeometry(*nozzleGraphic, categoryId, subCategoryId);
     else
-        GeometricTools::CreatePidVirtualNozzleGeometry(*nozzleGraphic, categoryId);
+        GeometricTools::CreatePidVirtualNozzleGeometry(*nozzleGraphic, categoryId, subCategoryId);
 
     ECN::ECValue value;
     value.SetUtf8CP(shortCode.c_str());
     nozzleGraphic->SetPropertyValue(USERLABEL_NAME, value);
 
     Dgn::DgnElementCPtr ge = nozzleGraphic->Insert();
-
 
     ECN::ECClassCP relClass;
 #ifdef USE_PROTOTYPE
@@ -505,6 +635,7 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateNozzle(Dgn::DgnElementId pi
 
     functionalElement = BuildingDomain::BuildingDomainUtilities::QueryById<Dgn::FunctionalComponentElement>(functionalModel,fe->GetElementId());
 
+    EndBulkOperation();
     return functionalElement;
 
     }
@@ -520,20 +651,34 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateTank( Dgn::DgnElementId sub
 
     Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(EQUIPMENT_DOMAIN, TANK_CLASS, functionalModel);
     Utf8String shortCode;
-    int        number;
+    int        number = 0;
 
-    SetCodeFromParent1(number, shortCode, *functionalElement, parentElement, "T");
+    Utf8String codeString = GetCodeFromParentCode(shortCode, *functionalElement, nullptr, EQUIPMENT_CODESPEC_NAME, VESSEL_CODE_PATTERN);
+
     PopulateElementProperties(functionalElement);
     PopulateEquipmentProperties(functionalElement, "T", "Holding Tank", number);
+
+    ECN::ECClassCP relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass("ProcessEquipmentFunctional", "SubUnitOwnsEquipment");
+
+    functionalElement->SetParentId(subUnitId, relClass->GetId());
+
+    StartBulkOperation();
+    SetCodeForElement(codeString, *functionalElement, EQUIPMENT_CODESPEC_NAME);
     Dgn::DgnElementCPtr fe = functionalElement->Insert();
+
+    Dgn::DgnSubCategoryId subCategoryId;
+    m_host->FindOrCreateDrawingSubCategory(categoryId, subCategoryId, PID_EQUIP_SUBCATEGORY);
 
     Dgn::DrawingGraphicPtr tankGraphic = BuildingDomain::BuildingDomainUtilities::CreateDrawingGraphic(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic, drawingModel, categoryId);
 
     if (!tankGraphic.IsValid())
+        {
+        EndBulkOperation();
         return nullptr;
+        }
 
     tankGraphic->SetPlacement(placement);
-    GeometricTools::CreatePidTankGeometry(*tankGraphic, categoryId);
+    GeometricTools::CreatePidTankGeometry(*tankGraphic, categoryId, subCategoryId);
 
     ECN::ECValue value;
     value.SetUtf8CP(shortCode.c_str());
@@ -541,7 +686,7 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateTank( Dgn::DgnElementId sub
 
     Dgn::DgnElementCPtr ge = tankGraphic->Insert();
 
-    ECN::ECClassCP relClass;
+    //ECN::ECClassCP relClass;
     relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass("Functional", "DrawingGraphicRepresentsFunctionalElement");
     ECN::ECRelationshipClassCP relationShipClass = relClass->GetRelationshipClassCP();
     BeSQLite::EC::ECInstanceKey rkey;
@@ -552,11 +697,12 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateTank( Dgn::DgnElementId sub
 
     if (subUnitId.IsValid())
         {
-        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BREAKDOWN_DOMAIN, UNIT_HAS_PIPELINE_REL_CLASS);
-        relationShipClass = relClass->GetRelationshipClassCP();
-        functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, subUnitId, functionalElement->GetElementId());
+        //relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BREAKDOWN_DOMAIN, UNIT_HAS_PIPELINE_REL_CLASS);
+        //relationShipClass = relClass->GetRelationshipClassCP();
+        //functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, subUnitId, functionalElement->GetElementId());
         }
 
+    EndBulkOperation();
 
     return functionalElement;
 
@@ -575,11 +721,19 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateRoundTank(Dgn::DgnElementId
     Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(EQUIPMENT_DOMAIN, DRUM_CLASS, functionalModel);
 
     Utf8String shortCode;
-    int        number;
+    int        number = 0;
 
-    SetCodeFromParent1(number, shortCode, *functionalElement, parentElement, "T");
+    Utf8String codeString = GetCodeFromParentCode(shortCode, *functionalElement, nullptr, EQUIPMENT_CODESPEC_NAME, VESSEL_CODE_PATTERN);
+
     PopulateElementProperties(functionalElement);
     PopulateEquipmentProperties(functionalElement, "T", "Retaining Tank", number);
+
+    ECN::ECClassCP relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass("ProcessEquipmentFunctional", "SubUnitOwnsEquipment");
+
+    functionalElement->SetParentId(subUnitId, relClass->GetId());
+
+    StartBulkOperation();
+    SetCodeForElement(codeString, *functionalElement, EQUIPMENT_CODESPEC_NAME);
     Dgn::DgnElementCPtr fe = functionalElement->Insert();
 
     // Create the Graphic Element
@@ -587,11 +741,17 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateRoundTank(Dgn::DgnElementId
     Dgn::DrawingGraphicPtr tankGraphic = BuildingDomain::BuildingDomainUtilities::CreateDrawingGraphic(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic, drawingModel, categoryId);
 
     if (!tankGraphic.IsValid())
+        {
+        EndBulkOperation();
         return nullptr;
+        }
 
     tankGraphic->SetPlacement(placement);
 
-    GeometricTools::CreatePidRoundTankGeometry(*tankGraphic, categoryId);
+    Dgn::DgnSubCategoryId subCategoryId;
+    m_host->FindOrCreateDrawingSubCategory(categoryId, subCategoryId, PID_EQUIP_SUBCATEGORY);
+
+    GeometricTools::CreatePidRoundTankGeometry(*tankGraphic, categoryId, subCategoryId);
 
     ECN::ECValue value;
     value.SetUtf8CP(shortCode.c_str());
@@ -600,7 +760,7 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateRoundTank(Dgn::DgnElementId
     Dgn::DgnElementCPtr ge = tankGraphic->Insert();
 
 
-    ECN::ECClassCP relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass("Functional", "DrawingGraphicRepresentsFunctionalElement");
+    relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass("Functional", "DrawingGraphicRepresentsFunctionalElement");
     ECN::ECRelationshipClassCP relationShipClass = relClass->GetRelationshipClassCP();
     BeSQLite::EC::ECInstanceKey rkey;
 
@@ -610,10 +770,30 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateRoundTank(Dgn::DgnElementId
 
     if (subUnitId.IsValid())
         {
-        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BREAKDOWN_DOMAIN, UNIT_HAS_PIPELINE_REL_CLASS);
-        relationShipClass = relClass->GetRelationshipClassCP();
-        functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, subUnitId, functionalElement->GetElementId());
+       // relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BREAKDOWN_DOMAIN, UNIT_HAS_PIPELINE_REL_CLASS);
+       // relationShipClass = relClass->GetRelationshipClassCP();
+       // functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, subUnitId, functionalElement->GetElementId());
         }
+
+    if (m_room.IsValid())
+        {
+        Utf8String locationCode = m_roomShortCode + "-" + shortCode;
+        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BREAKDOWN_DOMAIN, "FunctionalBreakdownGroupsFunctionalElements");
+        relationShipClass = relClass->GetRelationshipClassCP();
+        functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, m_room->GetElementId(), fe->GetElementId());
+
+        Dgn::DgnElementPtr ele = m_dgnDb->Elements().GetForEdit<Dgn::DgnElement>(fe->GetElementId());
+
+        ECN::IECInstancePtr instance = AddAspect(functionalModel, ele, BREAKDOWN_DOMAIN, "LocationCode");
+
+        PopulateInstanceCodes(instance, ROOM_CODESPEC_NAME, "Plant:Functional", locationCode);
+
+        ele->Update();
+
+        }
+
+
+    EndBulkOperation();
 
     return functionalElement;
 
@@ -628,16 +808,22 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateVessel(Dgn::DgnElementId su
     {
 
     // Create Tank Functional Component
-    
 
     Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(EQUIPMENT_DOMAIN, VESSEL_CLASS, functionalModel);
 
     Utf8String shortCode;
-    int        number;
+    int        number = 0;
 
-    SetCodeFromParent1(number, shortCode, *functionalElement, parentElement, "V");
+    Utf8String codeString = GetCodeFromParentCode(shortCode, *functionalElement, nullptr, EQUIPMENT_CODESPEC_NAME, VESSEL_CODE_PATTERN);
+
     PopulateElementProperties(functionalElement);
     PopulateEquipmentProperties(functionalElement, "V", "Horizontal Vessel", number);
+
+    ECN::ECClassCP relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass("ProcessEquipmentFunctional", "SubUnitOwnsEquipment");
+    functionalElement->SetParentId(subUnitId, relClass->GetId());
+
+    StartBulkOperation();
+    SetCodeForElement(codeString, *functionalElement, EQUIPMENT_CODESPEC_NAME);
     Dgn::DgnElementCPtr fe = functionalElement->Insert();
 
     // Create the graphics for the Vessel
@@ -645,11 +831,16 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateVessel(Dgn::DgnElementId su
     Dgn::DrawingGraphicPtr vesselGraphic = BuildingDomain::BuildingDomainUtilities::CreateDrawingGraphic(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic, drawingModel, categoryId);
 
     if (!vesselGraphic.IsValid())
+        {
+        EndBulkOperation();
         return nullptr;
+        }
 
     vesselGraphic->SetPlacement(placement);
+    Dgn::DgnSubCategoryId subCategoryId;
+    m_host->FindOrCreateDrawingSubCategory(categoryId, subCategoryId, PID_EQUIP_SUBCATEGORY);
 
-    GeometricTools::CreatePidVesselGeometry(*vesselGraphic, categoryId);
+    GeometricTools::CreatePidVesselGeometry(*vesselGraphic, categoryId, subCategoryId);
 
     ECN::ECValue value;
     value.SetUtf8CP(shortCode.c_str());
@@ -658,7 +849,7 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateVessel(Dgn::DgnElementId su
     Dgn::DgnElementCPtr ge = vesselGraphic->Insert();
 
 
-    ECN::ECClassCP relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass("Functional", "DrawingGraphicRepresentsFunctionalElement");
+    relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass("Functional", "DrawingGraphicRepresentsFunctionalElement");
     ECN::ECRelationshipClassCP relationShipClass = relClass->GetRelationshipClassCP();
     BeSQLite::EC::ECInstanceKey rkey;
 
@@ -666,16 +857,69 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateVessel(Dgn::DgnElementId su
 
     functionalElement = BuildingDomain::BuildingDomainUtilities::QueryById<Dgn::FunctionalComponentElement>(functionalModel, fe->GetElementId());
 
-    if (subUnitId.IsValid())
+    if (m_room.IsValid())
         {
-        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BREAKDOWN_DOMAIN, UNIT_HAS_PIPELINE_REL_CLASS);
+        Utf8String locationCode = m_roomShortCode + "-" + shortCode;
+        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BREAKDOWN_DOMAIN, "FunctionalBreakdownGroupsFunctionalElements");
         relationShipClass = relClass->GetRelationshipClassCP();
-        functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, subUnitId, functionalElement->GetElementId());
+        functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, m_room->GetElementId(), fe->GetElementId());
+
+        Dgn::DgnElementPtr ele = m_dgnDb->Elements().GetForEdit<Dgn::DgnElement>(fe->GetElementId());
+
+        ECN::IECInstancePtr instance = AddAspect(functionalModel, ele, BREAKDOWN_DOMAIN, "LocationCode");
+
+        PopulateInstanceCodes(instance, ROOM_CODESPEC_NAME, "Plant:Functional", locationCode);
+
+        ele->Update();
+
         }
+
+    EndBulkOperation();
 
     return functionalElement;
 
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+ECN::IECInstancePtr BimCreater::AddAspect(Dgn::DgnModelR model, Dgn::DgnElementPtr element, Utf8StringCR schemaName, Utf8StringCR className)
+    {
+
+    // Find the class
+
+    ECN::ECClassCP aspectClassP = model.GetDgnDb().GetClassLocater().LocateClass(schemaName.c_str(), className.c_str());
+
+    if (nullptr == aspectClassP)
+        return nullptr;
+
+    // If the element is already persisted and has the Aspect class, you can't add another
+
+    if (element->GetElementId().IsValid())
+        {
+        ECN::IECInstanceCP instance = Dgn::DgnElement::GenericUniqueAspect::GetAspect(*element, *aspectClassP);
+
+        if (nullptr != instance)
+            return nullptr;
+        }
+
+    ECN::StandaloneECEnablerPtr enabler = aspectClassP->GetDefaultStandaloneEnabler();
+
+    if (!enabler.IsValid())
+        return nullptr;
+
+    ECN::IECInstancePtr instance = enabler->CreateInstance().get();
+    if (!instance.IsValid())
+        return nullptr;
+
+    Dgn::DgnDbStatus status = Dgn::DgnElement::GenericUniqueAspect::SetAspect(*element, *instance);
+
+    if (Dgn::DgnDbStatus::Success != status)
+        return nullptr;
+
+    return instance;
+    }
+
 
 
 //---------------------------------------------------------------------------------------
@@ -690,11 +934,20 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreatePump(Dgn::DgnElementId subU
     Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(EQUIPMENT_DOMAIN, PUMP_CLASS, functionalModel);
 
     Utf8String shortCode;
-    int        number;
+    int        number = 0;
 
-    SetCodeFromParent1(number, shortCode, *functionalElement, parentElement, "PMP");
+    Utf8String codeString = GetCodeFromParentCode(shortCode, *functionalElement, nullptr, EQUIPMENT_CODESPEC_NAME, PUMP_CODE_PATTERN);
+
     PopulateElementProperties(functionalElement);
     PopulateEquipmentProperties(functionalElement, "PMP", "Primary Pump", number);
+
+    ECN::ECClassCP relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass("ProcessEquipmentFunctional", "SubUnitOwnsEquipment");
+
+    functionalElement->SetParentId(subUnitId, relClass->GetId());
+
+    StartBulkOperation();
+    SetCodeForElement(codeString, *functionalElement, EQUIPMENT_CODESPEC_NAME);
+
     Dgn::DgnElementCPtr fe = functionalElement->Insert();
 
     // Create the graphics for the Pump
@@ -702,10 +955,16 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreatePump(Dgn::DgnElementId subU
     Dgn::DrawingGraphicPtr pumpGraphic = BuildingDomain::BuildingDomainUtilities::CreateDrawingGraphic(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic, drawingModel, categoryId);
 
     if (!pumpGraphic.IsValid())
+        {
+        EndBulkOperation();
         return nullptr;
+        }
 
     pumpGraphic->SetPlacement(placement);
-    GeometricTools::CreatePidPumpGeometry(*pumpGraphic, categoryId);
+    Dgn::DgnSubCategoryId subCategoryId;
+    m_host->FindOrCreateDrawingSubCategory(categoryId, subCategoryId, PID_EQUIP_SUBCATEGORY);
+
+    GeometricTools::CreatePidPumpGeometry(*pumpGraphic, categoryId, subCategoryId);
 
     ECN::ECValue value;
     value.SetUtf8CP(shortCode.c_str());
@@ -713,8 +972,7 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreatePump(Dgn::DgnElementId subU
 
     Dgn::DgnElementCPtr ge = pumpGraphic->Insert();
 
-
-    ECN::ECClassCP relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass("Functional", "DrawingGraphicRepresentsFunctionalElement");
+    relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass("Functional", "DrawingGraphicRepresentsFunctionalElement");
     ECN::ECRelationshipClassCP relationShipClass = relClass->GetRelationshipClassCP();
     BeSQLite::EC::ECInstanceKey rkey;
 
@@ -722,14 +980,24 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreatePump(Dgn::DgnElementId subU
 
     functionalElement = BuildingDomain::BuildingDomainUtilities::QueryById<Dgn::FunctionalComponentElement>(functionalModel, fe->GetElementId());
 
-    if (subUnitId.IsValid())
+    if (m_room.IsValid())
         {
-        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BREAKDOWN_DOMAIN, UNIT_HAS_PIPELINE_REL_CLASS);
+        Utf8String locationCode = m_roomShortCode + "-" + shortCode;
+        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BREAKDOWN_DOMAIN, "FunctionalBreakdownGroupsFunctionalElements");
         relationShipClass = relClass->GetRelationshipClassCP();
-        functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, subUnitId, fe->GetElementId());
+        functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, m_room->GetElementId(), fe->GetElementId());
+
+        Dgn::DgnElementPtr ele = m_dgnDb->Elements().GetForEdit<Dgn::DgnElement>(fe->GetElementId());
+
+        ECN::IECInstancePtr instance = AddAspect(functionalModel, ele, BREAKDOWN_DOMAIN, "LocationCode");
+
+        PopulateInstanceCodes(instance, ROOM_CODESPEC_NAME, "Plant:Functional", locationCode);
+
+        ele->Update();
+
         }
 
-
+    EndBulkOperation();
     return functionalElement;
 
     }
@@ -747,8 +1015,10 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateReducer(Dgn::DgnCategoryId 
         return nullptr;
 
     reducerGraphic->SetPlacement(placement);
+    Dgn::DgnSubCategoryId subCategoryId;
+    m_host->FindOrCreateDrawingSubCategory(categoryId, subCategoryId, PID_PIPING_SUBCATEGORY);
 
-    GeometricTools::CreatePidReducerGeometry(*reducerGraphic, categoryId);
+    GeometricTools::CreatePidReducerGeometry(*reducerGraphic, categoryId, subCategoryId);
 
     ECN::ECValue value;
     value.SetUtf8CP(reducerLabel.c_str());
@@ -782,7 +1052,7 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateReducer(Dgn::DgnCategoryId 
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 
-Dgn::FunctionalComponentElementPtr BimCreater::CreateGateValve(Dgn::DgnElementId pipeRunId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionalModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement)
+Dgn::FunctionalComponentElementPtr BimCreater::CreateGateValve(Dgn::DgnElementId pipeRunId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionalModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement, Dgn::DgnElementCPtr parentElement)
     {
 
     // Create the functional component for the Gate Valve
@@ -790,8 +1060,8 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateGateValve(Dgn::DgnElementId
     Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(PIPING_DOMAIN, GATE_VALVE_CLASS, functionalModel);
 
     Utf8String shortCode;
-    int        number;
-    SetCodeFromParent1(number, shortCode, *functionalElement, nullptr, "HV");
+
+    Utf8String codeString = GetCodeFromParentCode(shortCode, *functionalElement, parentElement, VALVE_CODESPEC_NAME, VALVE_CODE_PATTERN);
 
     PopulateElementProperties(functionalElement);
 
@@ -805,6 +1075,8 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateGateValve(Dgn::DgnElementId
         }
 #endif
 
+    StartBulkOperation();
+    SetCodeForElement(codeString, *functionalElement, VALVE_CODESPEC_NAME);
     Dgn::DgnElementCPtr fe = functionalElement->Insert();
 
     // Create the graphics for the valve
@@ -812,11 +1084,16 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateGateValve(Dgn::DgnElementId
     Dgn::DrawingGraphicPtr valveGraphic = BuildingDomain::BuildingDomainUtilities::CreateDrawingGraphic(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic, drawingModel, categoryId);
 
     if (!valveGraphic.IsValid())
+        {
+        EndBulkOperation();
         return nullptr;
+        }
 
     valveGraphic->SetPlacement(placement);
+    Dgn::DgnSubCategoryId subCategoryId;
+    m_host->FindOrCreateDrawingSubCategory(categoryId, subCategoryId, PID_PIPING_SUBCATEGORY);
 
-    GeometricTools::CreatePidValveGeometry(*valveGraphic, categoryId);
+    GeometricTools::CreatePidValveGeometry(*valveGraphic, categoryId, subCategoryId);
 
     ECN::ECValue value;
     value.SetUtf8CP(shortCode.c_str());
@@ -839,6 +1116,7 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateGateValve(Dgn::DgnElementId
     functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, pipeRunId, fe->GetElementId());
 #endif
 
+    EndBulkOperation();
 
     return functionalElement;
 
@@ -849,15 +1127,16 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateGateValve(Dgn::DgnElementId
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 
-Dgn::FunctionalComponentElementPtr BimCreater::CreateThreeWayValve(Dgn::DgnElementId pipeRunId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionalModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement)
+Dgn::FunctionalComponentElementPtr BimCreater::CreateThreeWayValve(Dgn::DgnElementId pipeRunId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionalModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement, Dgn::DgnElementCPtr parentElement)
     {
 
     // Create the functional component for the three way valve
     Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(PIPING_DOMAIN, THREE_WAY_VALVE_CLASS, functionalModel);
 
     Utf8String shortCode;
-    int        number;
-    SetCodeFromParent1(number, shortCode, *functionalElement, nullptr, "HV");
+    int        number = 0;
+
+    Utf8String codeString = GetCodeFromParentCode(shortCode, *functionalElement, parentElement, VALVE_CODESPEC_NAME, VALVE_CODE_PATTERN);
 
     ECN::ECClassCP relClass;
 #ifdef USE_PROTOTYPE
@@ -868,16 +1147,24 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateThreeWayValve(Dgn::DgnEleme
         }
 #endif
 
+    StartBulkOperation();
+    SetCodeForElement(codeString, *functionalElement, VALVE_CODESPEC_NAME);
+
     Dgn::DgnElementCPtr fe = functionalElement->Insert();
 
     Dgn::DrawingGraphicPtr valveGraphic = BuildingDomain::BuildingDomainUtilities::CreateDrawingGraphic(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic, drawingModel, categoryId);
 
     if (!valveGraphic.IsValid())
+        {
+        EndBulkOperation();
         return nullptr;
+        }
 
     valveGraphic->SetPlacement(placement);
+    Dgn::DgnSubCategoryId subCategoryId;
+    m_host->FindOrCreateDrawingSubCategory(categoryId, subCategoryId, PID_PIPING_SUBCATEGORY);
 
-    GeometricTools::CreatePid3WayValveGeometry(*valveGraphic, categoryId);
+    GeometricTools::CreatePid3WayValveGeometry(*valveGraphic, categoryId, subCategoryId);
 
     ECN::ECValue value;
     value.SetUtf8CP(shortCode.c_str());
@@ -900,7 +1187,7 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateThreeWayValve(Dgn::DgnEleme
     functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, pipeRunId, fe->GetElementId());
 #endif
 
-
+    EndBulkOperation();
     return functionalElement;
 
     }
@@ -912,14 +1199,22 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateThreeWayValve(Dgn::DgnEleme
 Dgn::DrawingModelPtr BimCreater::CreatePidDrawings(Dgn::DocumentListModelR docListModel, Dgn::FunctionalModelR functionalModel, Utf8StringCR drawingCode, Dgn::DgnElementCPtr subUnit )
 	{
 
+    Dgn::DgnDbR db = docListModel.GetDgnDb();
+
+    db.BriefcaseManager().StartBulkOperation();
+
 	// Create a drawing model
 
 	Dgn::DrawingModelPtr drawingModel = BuildingDomain::BuildingDomainUtilities::CreateBuildingDrawingModel(drawingCode, docListModel.GetDgnDb(), docListModel);
 
-	Dgn::DgnDbR db = drawingModel->GetDgnDb();
+//	Dgn::DgnDbR db = drawingModel->GetDgnDb();
 	Dgn::DgnModelId modelId = drawingModel->GetModelId();
 
-    Dgn::DgnCategoryId categoryId = ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingDrawingCategoryId(db, "PidLine");
+    Dgn::DgnCategoryId categoryId;
+
+    m_host->FindOrCreateDrawingCategory(*m_dgnDb, categoryId, PID_CATEGORY);
+
+    db.BriefcaseManager().EndBulkOperation();
 
     ECN::ECClassCP              relClass;
     ECN::ECRelationshipClassCP  relationShipClass;
@@ -934,8 +1229,11 @@ Dgn::DrawingModelPtr BimCreater::CreatePidDrawings(Dgn::DocumentListModelR docLi
 
     placement.GetOriginR() = DPoint2d::From(-91.256, 6.25);
     Dgn::FunctionalComponentElementCPtr tank = CreateTank(subUnit->GetElementId(), categoryId, functionalModel, *drawingModel, placement, subUnit);
+
+    StartBulkOperation();
     placement.GetOriginR() = DPoint2d::From(-75, 19.375);
     annotation = CreateAnnotation(categoryId, *drawingModel, tank->GetPropertyValueString(USERLABEL_NAME), placement);
+    EndBulkOperation();
 
     // ******* Add the Tank Nozzle *****
 
@@ -943,12 +1241,16 @@ Dgn::DrawingModelPtr BimCreater::CreatePidDrawings(Dgn::DocumentListModelR docLi
     Dgn::DgnElementId id;
     Dgn::FunctionalComponentElementPtr tankNozzle = CreateNozzle(id, tank->GetElementId(), categoryId, functionalModel, *drawingModel, placement, tank);
 
+
     // ******* Add the Pump ********
 
     placement.GetOriginR() = DPoint2d::From(0, 0);
     Dgn::FunctionalComponentElementCPtr pump = CreatePump(subUnit->GetElementId(), categoryId, functionalModel, *drawingModel, placement, subUnit);
+
+    StartBulkOperation();
     placement.GetOriginR() = DPoint2d::From(0.0, -5);
     annotation = CreateAnnotation(categoryId, *drawingModel, pump->GetPropertyValueString(USERLABEL_NAME), placement);
+    EndBulkOperation();
 
     // ****** Add Nozzle to Pump Center ******
 
@@ -960,12 +1262,16 @@ Dgn::DrawingModelPtr BimCreater::CreatePidDrawings(Dgn::DocumentListModelR docLi
     placement.GetAngleR() = AngleInDegrees::FromDegrees(0.0);
     Dgn::FunctionalComponentElementPtr pumpNozzle2 = CreateNozzle(id, pump->GetElementId(), categoryId, functionalModel, *drawingModel, placement, pump, true);
 
+
     // **** Add the Round Tank ****
 
     placement.GetOriginR() = DPoint2d::From(57.494, 26.25);
     Dgn::FunctionalComponentElementCPtr roundTank = CreateRoundTank(subUnit->GetElementId(), categoryId, functionalModel, *drawingModel, placement, subUnit);
+
+    StartBulkOperation();
     placement.GetOriginR() = DPoint2d::From(57.494, 26.25);
     annotation = CreateAnnotation(categoryId, *drawingModel, roundTank->GetPropertyValueString(USERLABEL_NAME), placement);
+    EndBulkOperation();
 
     // ****** Add Nozzle to Round Tank ******
 
@@ -973,19 +1279,25 @@ Dgn::DrawingModelPtr BimCreater::CreatePidDrawings(Dgn::DocumentListModelR docLi
     placement.GetAngleR() = AngleInDegrees::FromDegrees(180.0);
     Dgn::FunctionalComponentElementPtr roundTankNozzle = CreateNozzle(id, roundTank->GetElementId(), categoryId, functionalModel, *drawingModel, placement, roundTank);
 
+
     // **** Add the Vessel ****
 
     placement.GetOriginR() = DPoint2d::From(51.244, -20.0);
     placement.GetAngleR() = AngleInDegrees::FromDegrees(0);
     Dgn::FunctionalComponentElementCPtr vessel = CreateVessel(subUnit->GetElementId(), categoryId, functionalModel, *drawingModel, placement, subUnit);
+
+
+    StartBulkOperation();
     placement.GetOriginR() = DPoint2d::From(58.744, -20.0);
     annotation = CreateAnnotation(categoryId, *drawingModel, vessel->GetPropertyValueString(USERLABEL_NAME), placement);
+    EndBulkOperation();
 
     // ****** Add Nozzle to Vessle ******
 
     placement.GetOriginR() = DPoint2d::From(56.244, -15.0);
     placement.GetAngleR() = AngleInDegrees::FromDegrees(90.0);
     Dgn::FunctionalComponentElementPtr vesselNozzle = CreateNozzle(id, vessel->GetElementId(), categoryId, functionalModel, *drawingModel, placement, vessel);
+
 
     // Create the pipeline breakdown element. 
 
@@ -996,25 +1308,36 @@ Dgn::DrawingModelPtr BimCreater::CreatePidDrawings(Dgn::DocumentListModelR docLi
 #endif
 
     Utf8String shortCode;
-    int        number;
+//    int        number;
 
-    SetCodeFromParent1(number, shortCode, *pipeline, subUnit, "L");
+    Utf8String codeString = GetCodeFromParentCode(shortCode, *pipeline, subUnit, PIPELINE_CODESPEC_NAME, m_systemShortCode + "-" PIPELINE_CODE_PATTERN + "-CS150");
+
     PopulateElementProperties(pipeline);
 
+    relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(PIPING_DOMAIN, "SubUnitOwnsPipelines");
+    relationShipClass = relClass->GetRelationshipClassCP();
+
+    StartBulkOperation();
+    SetCodeForElement(codeString, *pipeline, PIPELINE_CODESPEC_NAME);
+    pipeline->SetParentId(subUnit->GetElementId(), relClass->GetId());
     Dgn::DgnElementCPtr pl = pipeline->Insert();
 
-    relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BREAKDOWN_DOMAIN, UNIT_HAS_PIPELINE_REL_CLASS);
+    relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BREAKDOWN_DOMAIN, "FunctionalBreakdownGroupsFunctionalElements");
     relationShipClass = relClass->GetRelationshipClassCP();
-    functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, subUnit->GetElementId(), pl->GetElementId());
-
+    functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, m_system->GetElementId(), pl->GetElementId());
+    EndBulkOperation();
 
     // **** Add the Reducer ****
 
+    StartBulkOperation();
     placement.GetOriginR() = DPoint2d::From(-30.756, 0.0);
     placement.GetAngleR() = AngleInDegrees::FromDegrees(0.0);
     Dgn::FunctionalComponentElementPtr reducer = CreateReducer(categoryId, functionalModel, *drawingModel, placement, "4x2");
+
     placement.GetOriginR() = DPoint2d::From(-30.156, -2.0);
     annotation = CreateAnnotation(categoryId, *drawingModel, "4x2", placement);
+    EndBulkOperation();
+
 
 
     // PipeRun from Tank to the reducer
@@ -1029,24 +1352,35 @@ Dgn::DrawingModelPtr BimCreater::CreatePidDrawings(Dgn::DocumentListModelR docLi
 
     PIPERUN_TYPEPTR pipeRun4 = CreatePipeRun((PIPERUN_TYPECPTR)pipeline, vesselNozzle->GetElementId(), roundTankNozzle->GetElementId(), functionalModel);
 
+
     // **** Add 3 way Valve ****
 
     placement.GetOriginR() = DPoint2d::From(28.494, 2.5);
-    Dgn::FunctionalComponentElementPtr threeWayValve = CreateThreeWayValve(pipeRun4->GetElementId(), categoryId, functionalModel, *drawingModel, placement);
+    Dgn::FunctionalComponentElementPtr threeWayValve = CreateThreeWayValve(pipeRun4->GetElementId(), categoryId, functionalModel, *drawingModel, placement, m_area);
+
+    StartBulkOperation();
     placement.GetOriginR() = DPoint2d::From(33.5, 2.5);
-    annotation = CreateAnnotation(categoryId, *drawingModel, threeWayValve->GetCode().GetValueUtf8CP(), placement);
-
-
+    annotation = CreateAnnotation(categoryId, *drawingModel, threeWayValve->GetUserLabel(), placement);
+    
     // PipeRun from Pump to the 3 way valves
 
     PIPERUN_TYPEPTR pipeRun3 = CreatePipeRun((PIPERUN_TYPECPTR)pipeline, threeWayValve->GetElementId(), pumpNozzle2->GetElementId(), functionalModel);
 
+    EndBulkOperation();
+
     // ******** Add the Gate Valve ******
 
     placement.GetOriginR() = DPoint2d::From(-48.361, 19.375);
-    Dgn::FunctionalComponentElementPtr gateValve = CreateGateValve(pipeRun1->GetElementId(), categoryId, functionalModel, *drawingModel, placement);
+    Dgn::FunctionalComponentElementPtr gateValve = CreateGateValve(pipeRun1->GetElementId(), categoryId, functionalModel, *drawingModel, placement, m_area);
+
+    StartBulkOperation();
     placement.GetOriginR() = DPoint2d::From(-46.861, 17.375);
-    annotation = CreateAnnotation(categoryId, *drawingModel, gateValve->GetCode().GetValueUtf8CP(), placement);
+    annotation = CreateAnnotation(categoryId, *drawingModel, gateValve->GetUserLabel(), placement);
+
+    relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BREAKDOWN_DOMAIN, "FunctionalBreakdownGroupsFunctionalElements");
+    relationShipClass = relClass->GetRelationshipClassCP();
+    functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, m_area->GetElementId(), gateValve->GetElementId());
+
 
     // Add the PipeRun graphics for the fist PipeRun
 
@@ -1096,68 +1430,351 @@ Dgn::DrawingModelPtr BimCreater::CreatePidDrawings(Dgn::DocumentListModelR docLi
 
     CreatePipeRunGraphics(pipeRun3, categoryId, *drawingModel, points, counts);
 
+    EndBulkOperation();
+
 	return drawingModel;
 
 	}
 
 
+BeSQLite::DbResult BimCreater::RegisterMyDomains()
+    {
+
+    if (BentleyStatus::SUCCESS != BuildingDomain::BuildingDomainUtilities::RegisterDomainHandlers())
+        return BeSQLite::DbResult::BE_SQLITE_ERROR;
+
+#ifdef USE_PROTOTYPE
+    if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(PlantPrototypeBIM::PlantBreakdownFunctionalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+        return BeSQLite::DbResult::BE_SQLITE_ERROR;
+
+    if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(PlantPrototypeBIM::ProcessEquipmentFunctionalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+        return BeSQLite::DbResult::BE_SQLITE_ERROR;
+
+
+    if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(PlantPrototypeBIM::ProcessPipingPhysicalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+        return BeSQLite::DbResult::BE_SQLITE_ERROR;
+
+    if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(PlantPrototypeBIM::ProcessPipingFunctionalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+        return BeSQLite::DbResult::BE_SQLITE_ERROR;
+#else
+    if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(PlantBIM::ProcessPlantFunctionalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+        return BeSQLite::DbResult::BE_SQLITE_ERROR;
+#endif
+
+    return BeSQLite::DbResult::BE_SQLITE_OK;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 
-BentleyStatus BimCreater::DoCreate()
+BeSQLite::DbResult BimCreater::CreateLocal(Dgn::DgnDbPtr db)
     {
 
-    if (BentleyStatus::SUCCESS != BuildingDomain::BuildingDomainUtilities::RegisterDomainHandlers())
-        return BentleyStatus::ERROR;
-#ifdef USE_PROTOTYPE
-    if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(PlantBIM::ProcessEquipmentFunctionalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
-        return BentleyStatus::ERROR;
 
-    if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(PlantBIM::PlantBreakdownFunctionalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
-        return BentleyStatus::ERROR;
+    BeSQLite::DbResult createStatus;
+//    Dgn::DgnDbPtr db = CreateDgnDb(GetOutputFileName(), &createStatus);
+//    if (!db.IsValid())
+//        return createStatus;
 
-    if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(PlantBIM::ProcessPipingPhysicalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
-        return BentleyStatus::ERROR;
+    // Create the models in the BIM file
 
-    if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(PlantBIM::ProcessPipingFunctionalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
-        return BentleyStatus::ERROR;
-#else
-    if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(PlantBIM::ProcessPlantFunctionalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
-        return BentleyStatus::ERROR;
-#endif
+    BentleyStatus status = BuildingDomain::BuildingDomainUtilities::CreateBuildingModels("Plant", *db);
 
-    if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(Building::SpacePlanning::SpacePlanningDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
-        return BentleyStatus::ERROR;
+    if (BentleyStatus::SUCCESS != status)
+        return BeSQLite::DbResult::BE_SQLITE_ERROR;
 
-    Dgn::DgnDbPtr db = CreateDgnDb(GetOutputFileName());
-    if (!db.IsValid())
-        return BentleyStatus::ERROR;
+    BuildingPhysical::BuildingPhysicalModelPtr       physicalModel       = BuildingDomain::BuildingDomainUtilities::CreateBuildingPhyicalModel("Plant", *db);
+    BuildingPhysical::BuildingTypeDefinitionModelPtr typeDefinitionModel = BuildingDomain::BuildingDomainUtilities::CreateBuildingTypeDefinitionModel("Plant", *db);
+    Dgn::DocumentListModelPtr                        docListModel        = BuildingDomain::BuildingDomainUtilities::CreateBuildingDocumentListModel("PID", *db);
+    Dgn::FunctionalModelPtr                          functionalModel     = BuildingDomain::BuildingDomainUtilities::CreateBuildingFunctionalModel("Plant", *db);
+    Dgn::DefinitionModelR                            dictionary          = db->GetDictionaryModel();
 
-	// Create the models in the BIM file
+    
 
-	BentleyStatus status = BuildingDomain::BuildingDomainUtilities::CreateBuildingModels(BUILDING_MODEL_NAME, *db);
+    Utf8String prefix     = "PlantFunctional";
+    Utf8String classScope = "Equipment";
 
-	if (BentleyStatus::SUCCESS != status)
-		return BentleyStatus::ERROR;
+    Dgn::CodeSpecPtr equipCodeSpec = Dgn::CodeSpec::Create(*db, EQUIPMENT_CODESPEC_NAME/*CreateCodeSpecName (prefix, classScope).c_str()*/, Dgn::CodeScopeSpec::CreateModelScope());
+    if (equipCodeSpec.IsValid())
+        equipCodeSpec->Insert();
 
-	BuildingPhysical::BuildingPhysicalModelPtr       physicalModel       = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel         (BUILDING_MODEL_NAME, *db);
-	BuildingPhysical::BuildingTypeDefinitionModelPtr typeDefinitionModel = BuildingDomain::BuildingDomainUtilities::GetBuildingTypeDefinitionModel  (BUILDING_MODEL_NAME, *db);
-	Dgn::DocumentListModelPtr                        docListModel        = BuildingDomain::BuildingDomainUtilities::CreateBuildingDocumentListModel (BUILDING_MODEL_NAME, *db);
-	Dgn::FunctionalModelPtr                          functionalModel     = BuildingDomain::BuildingDomainUtilities::CreateBuildingFunctionalModel   ("Functional-Tag",    *db);
+    classScope = "Nozzle";
+    Dgn::CodeSpecPtr nozzleCodeSpec = Dgn::CodeSpec::Create(*db, NOZZLE_CODESPEC_NAME/*CreateCodeSpecName (prefix, classScope).c_str()*/, Dgn::CodeScopeSpec::CreateModelScope());
+    if (nozzleCodeSpec.IsValid())
+        nozzleCodeSpec->Insert();
+
+    classScope = "Plant";
+    Dgn::CodeSpecPtr plantCodeSpec = Dgn::CodeSpec::Create(*db, PLANT_CODESPEC_NAME /*CreateCodeSpecName(prefix, classScope).c_str()*/, Dgn::CodeScopeSpec::CreateModelScope());
+    if (plantCodeSpec.IsValid())
+        plantCodeSpec->Insert();
+
+    classScope = "Unit";
+    Dgn::CodeSpecPtr unitCodeSpec = Dgn::CodeSpec::Create(*db, UNIT_CODESPEC_NAME /*CreateCodeSpecName(prefix, classScope).c_str()*/, Dgn::CodeScopeSpec::CreateModelScope());
+    if (unitCodeSpec.IsValid())
+        unitCodeSpec->Insert();
+
+    classScope = "Building";
+    Dgn::CodeSpecPtr buildignCodeSpec = Dgn::CodeSpec::Create(*db, BUILDING_CODESPEC_NAME /*CreateCodeSpecName(prefix, classScope).c_str()*/, Dgn::CodeScopeSpec::CreateModelScope());
+    if (buildignCodeSpec.IsValid())
+        buildignCodeSpec->Insert();
+
+    classScope = "Floor";
+    Dgn::CodeSpecPtr floorCodeSpec = Dgn::CodeSpec::Create(*db, FLOOR_CODESPEC_NAME /*CreateCodeSpecName(prefix, classScope).c_str()*/, Dgn::CodeScopeSpec::CreateModelScope());
+    if (floorCodeSpec.IsValid())
+        floorCodeSpec->Insert();
+
+    classScope = "Room";
+    Dgn::CodeSpecPtr roomCodeSpec = Dgn::CodeSpec::Create(*db, ROOM_CODESPEC_NAME /*CreateCodeSpecName(prefix, classScope).c_str()*/, Dgn::CodeScopeSpec::CreateModelScope());
+    if (roomCodeSpec.IsValid())
+        roomCodeSpec->Insert();
+
+    classScope = "SubUnit";
+    Dgn::CodeSpecPtr subUnitCodeSpec = Dgn::CodeSpec::Create(*db, SUBUNIT_CODESPEC_NAME /*CreateCodeSpecName(prefix, classScope).c_str()*/, Dgn::CodeScopeSpec::CreateModelScope());
+    if (subUnitCodeSpec.IsValid())
+        subUnitCodeSpec->Insert();
+
+    classScope = "PID";
+    Dgn::CodeSpecPtr pidCodeSpec = Dgn::CodeSpec::Create(*db, PID_CODESPEC_NAME /*CreateCodeSpecName(prefix, classScope).c_str()*/, Dgn::CodeScopeSpec::CreateModelScope());
+    if (pidCodeSpec.IsValid())
+        pidCodeSpec->Insert();
+
+    classScope = "Pipeline";
+    Dgn::CodeSpecPtr pipelineCodeSpec = Dgn::CodeSpec::Create(*db, PIPELINE_CODESPEC_NAME /*CreateCodeSpecName(prefix, classScope).c_str()*/, Dgn::CodeScopeSpec::CreateModelScope());
+    if (pipelineCodeSpec.IsValid())
+        pipelineCodeSpec->Insert();
+
+    classScope = "Valve";
+    Dgn::CodeSpecPtr valveCodeSpec = Dgn::CodeSpec::Create(*db, VALVE_CODESPEC_NAME /*CreateCodeSpecName(prefix, classScope).c_str()*/, Dgn::CodeScopeSpec::CreateModelScope());
+    if (valveCodeSpec.IsValid())
+        valveCodeSpec->Insert();
+
+    classScope = "System";
+    Dgn::CodeSpecPtr systemCodeSpec = Dgn::CodeSpec::Create(*db, SYSTEM_CODESPEC_NAME /*CreateCodeSpecName(prefix, classScope).c_str()*/, Dgn::CodeScopeSpec::CreateModelScope());
+    if (systemCodeSpec.IsValid())
+        systemCodeSpec->Insert();
+
+    classScope = "Area";
+    Dgn::CodeSpecPtr areaCodeSpec = Dgn::CodeSpec::Create(*db, AREA_CODESPEC_NAME /*CreateCodeSpecName(prefix, classScope).c_str()*/, Dgn::CodeScopeSpec::CreateModelScope());
+    if (areaCodeSpec.IsValid())
+        areaCodeSpec->Insert();
+
+    classScope = "PipeRun";
+    Dgn::CodeSpecPtr pipeRunCodeSpec = Dgn::CodeSpec::Create(*db, PIPERUN_CODESPEC_NAME /*CreateCodeSpecName(prefix, classScope).c_str()*/, Dgn::CodeScopeSpec::CreateRelatedElementScope());
+    if (pipeRunCodeSpec.IsValid())
+        pipeRunCodeSpec->Insert();
+
+
+    return db->SaveChanges("Initial BIM Setup");
+
+    }
+
+    
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+
+BentleyStatus BimCreater::AddPids()
+    {
+    BuildingPhysical::BuildingPhysicalModelPtr       physicalModel = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel("Plant", *m_dgnDb);
+    BuildingPhysical::BuildingTypeDefinitionModelPtr typeDefinitionModel = BuildingDomain::BuildingDomainUtilities::GetBuildingTypeDefinitionModel("Plant", *m_dgnDb);
+    Dgn::DocumentListModelPtr                        docListModel = BuildingDomain::BuildingDomainUtilities::GetBuildingDocumentListModel("PID", *m_dgnDb);
+    Dgn::FunctionalModelPtr                          functionalModel = BuildingDomain::BuildingDomainUtilities::GetBuildingFunctionalModel("Plant", *m_dgnDb);
+    Dgn::DefinitionModelR                            dictionary = m_dgnDb->GetDictionaryModel();
+
+    StartBulkOperation();
+    Dgn::CategorySelectorPtr  categorySelector = CreateCategorySelector(dictionary);
+    Dgn::DisplayStyle2dPtr    displayStyle1 = CreateDisplayStyle2d(dictionary);
+    EndBulkOperation();
+
+    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode ( ROOM_CODESPEC_NAME, *functionalModel, m_roomCode);
+
+    Dgn::DgnElementId id = m_dgnDb->Elements().QueryElementIdByCode(code);
+
+    if (id.IsValid())
+        {
+        m_room = m_dgnDb->Elements().Get<Dgn::DgnElement>(id);
+        m_roomShortCode = m_roomCode;// m_room->GetUserLabel();
+        }
+
+    code = Dgn::CodeSpec::CreateCode(SYSTEM_CODESPEC_NAME, *functionalModel, m_systemCode);
+
+    id = m_dgnDb->Elements().QueryElementIdByCode(code);
+
+    if (id.IsValid())
+        {
+        m_system = m_dgnDb->Elements().Get<Dgn::DgnElement>(id);
+        m_systemShortCode = m_system->GetUserLabel();
+        }
+
+    code = Dgn::CodeSpec::CreateCode(AREA_CODESPEC_NAME, *functionalModel,  m_areaCode);
+
+    id = m_dgnDb->Elements().QueryElementIdByCode(code);
+
+    if (id.IsValid())
+        {
+        m_area = m_dgnDb->Elements().Get<Dgn::DgnElement>(id);
+        m_areaShortCode = m_area->GetUserLabel();
+        }
+
+    code = Dgn::CodeSpec::CreateCode(SUBUNIT_CODESPEC_NAME, *functionalModel, m_subUnitCode);
+
+    id = m_dgnDb->Elements().QueryElementIdByCode(code);
+
+    if (id.IsValid())
+        {
+        m_subUnit = m_dgnDb->Elements().Get<Dgn::DgnElement>(id);
+        m_subUnitShortCode = m_subUnit->GetUserLabel();
+        }
+
+
+    int numberOfPids = 3;
+
+    for (int j = 0; j < numberOfPids; j++)
+        {
+        Utf8String pidCode;
+
+        m_host->GetNextCodeValue(pidCode, PID_CODESPEC_NAME, "Plant:Functional", PID_CODE_PATTERN);
+
+        Dgn::DrawingModelPtr drawingModel = CreatePidDrawings(*docListModel, *functionalModel, pidCode, m_subUnit);
+
+        StartBulkOperation();
+        Dgn::DgnViewId viewId = CreateView2d(dictionary, pidCode.c_str(), *categorySelector, drawingModel->GetModelId(), *displayStyle1);
+        EndBulkOperation();
+
+        if (!viewId.IsValid())
+            return BentleyStatus::ERROR;
+        }
+
+    return BentleyStatus::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+
+BentleyStatus BimCreater::DoCreate(Dgn::DgnDbPtr db, BentleyApi::PlantBIM::PlantHostP host)
+    {
+	BuildingPhysical::BuildingPhysicalModelPtr       physicalModel       = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel         ("Plant", *db);
+	BuildingPhysical::BuildingTypeDefinitionModelPtr typeDefinitionModel = BuildingDomain::BuildingDomainUtilities::GetBuildingTypeDefinitionModel  ("Plant", *db);
+	Dgn::DocumentListModelPtr                        docListModel        = BuildingDomain::BuildingDomainUtilities::GetBuildingDocumentListModel    ("PID",   *db);
+	Dgn::FunctionalModelPtr                          functionalModel     = BuildingDomain::BuildingDomainUtilities::GetBuildingFunctionalModel      ("Plant", *db);
 	Dgn::DefinitionModelR                            dictionary          = db->GetDictionaryModel();
 
-	Dgn::CategorySelectorPtr categorySelector = CreateCategorySelector(dictionary);
-	Dgn::DisplayStyle2dPtr displayStyle1 = CreateDisplayStyle2d(dictionary);
+    StartBulkOperation();
+	Dgn::CategorySelectorPtr  categorySelector = CreateCategorySelector(dictionary);
+	Dgn::DisplayStyle2dPtr    displayStyle1    = CreateDisplayStyle2d(dictionary);
+    EndBulkOperation();
 
     Utf8String shortCode;
     int        number;
 
     // This is where we create add the information to the BIM file. You can control the number of Units, SubUnits and P&ID. 
 
-    int numberOfUnits = 1;
-    int numberOfSubunits = 1;
-    int numberOfPids = 5;
+    int numberOfUnits = 2;
+    int numberOfSubunits = 2;
+    int numberOfPids = 2;
+
+    int numberOfFloors = 3;
+    int numberOfRooms = 4;
+
+    Dgn::DgnDbStatus dbStatus;
+
+#ifdef USE_PROTOTYPE
+    PIPERUN_TYPEPTR plant = BuildingDomain::BuildingDomainUtilities::CreateFunctionalBreakdownElement(BREAKDOWN_DOMAIN, PLANT_CLASS, *functionalModel);
+#else
+    PIPERUN_TYPEPTR plant = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(BREAKDOWN_DOMAIN, PLANT_CLASS, *functionalModel);
+#endif
+
+    plant->SetPropertyValue("IsTreeRoot", true);
+
+    Utf8String plantCode =  GetCodeFromParentCode(shortCode, *plant, nullptr, PLANT_CODESPEC_NAME, PLANT_CODE_PATTERN);
+
+    StartBulkOperation();
+    SetCodeForElement(plantCode, *plant, PLANT_CODESPEC_NAME);
+    Dgn::DgnElementCPtr plt = plant->Insert(&dbStatus);
+    EndBulkOperation();
+
+    PIPERUN_TYPEPTR building = BuildingDomain::BuildingDomainUtilities::CreateFunctionalBreakdownElement(BREAKDOWN_DOMAIN, "Building", *functionalModel);
+
+    building->SetPropertyValue("IsTreeRoot", true);
+
+    Utf8String buildingCode = GetCodeFromParentCode(shortCode, *building, nullptr, BUILDING_CODESPEC_NAME, BUILDING_CODE_PATTERN);
+
+    StartBulkOperation();
+    SetCodeForElement(buildingCode, *building, BUILDING_CODESPEC_NAME);
+    Dgn::DgnElementCPtr bld = building->Insert(&dbStatus);
+    EndBulkOperation();
+
+    PIPERUN_TYPEPTR system = BuildingDomain::BuildingDomainUtilities::CreateFunctionalBreakdownElement(BREAKDOWN_DOMAIN, "System", *functionalModel);
+
+    system->SetPropertyValue("IsTreeRoot", true);
+
+    Utf8String systemCode = GetCodeFromParentCode(m_systemShortCode, *system, nullptr, SYSTEM_CODESPEC_NAME, SYSTEM_CODE_PATTERN);
+
+    StartBulkOperation();
+    SetCodeForElement(systemCode, *system, SYSTEM_CODESPEC_NAME);
+    m_system = system->Insert(&dbStatus);
+    EndBulkOperation();
+
+    PIPERUN_TYPEPTR area = BuildingDomain::BuildingDomainUtilities::CreateFunctionalBreakdownElement(BREAKDOWN_DOMAIN, "PlantArea", *functionalModel);
+
+    area->SetPropertyValue("IsTreeRoot", true);
+
+    Utf8String areaCode = GetCodeFromParentCode(m_areaShortCode, *area, nullptr, AREA_CODESPEC_NAME, AREA_CODE_PATTERN);
+
+    StartBulkOperation();
+    SetCodeForElement(areaCode, *area, AREA_CODESPEC_NAME);
+    m_area = area->Insert(&dbStatus);
+    EndBulkOperation();
+
+
+    for (int floorNum = 0; floorNum < numberOfFloors; floorNum++)
+        {
+
+#ifdef USE_PROTOTYPE
+        PIPERUN_TYPEPTR floor = BuildingDomain::BuildingDomainUtilities::CreateFunctionalBreakdownElement(BREAKDOWN_DOMAIN, "Floor", *functionalModel);
+#else
+        PIPERUN_TYPEPTR unit = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(BREAKDOWN_DOMAIN, UNIT_CLASS, *functionalModel);
+#endif
+
+        ECN::ECClassCP             relClass = db->GetClassLocater().LocateClass(DOMAIN_PLANT_BREAKDOWN_FUNCTIONAL, "BuildingOwnsFloors");
+        ECN::ECRelationshipClassCP relationShipClass = relClass->GetRelationshipClassCP();
+
+        dbStatus = floor->SetParentId(bld->GetElementId(), relationShipClass->GetId());
+
+        PopulateElementProperties(floor);
+
+        Utf8String floorCode = GetCodeFromParentCode(shortCode, *floor, bld, FLOOR_CODESPEC_NAME, FLOOR_CODE_PATTERN);
+
+        StartBulkOperation();
+        SetCodeForElement(floorCode, *floor, FLOOR_CODESPEC_NAME);
+        Dgn::DgnElementCPtr fl = floor->Insert(&dbStatus);
+        EndBulkOperation();
+
+        for (int roomNum = 0; roomNum < numberOfRooms; roomNum++)
+            {
+            Dgn::FunctionalBreakdownElementPtr room = BuildingDomain::BuildingDomainUtilities::CreateFunctionalBreakdownElement(DOMAIN_PLANT_BREAKDOWN_FUNCTIONAL, "Room", *functionalModel);
+
+            ECN::ECClassCP             relClass = db->GetClassLocater().LocateClass(DOMAIN_PLANT_BREAKDOWN_FUNCTIONAL, "FloorOwnsRooms");
+            ECN::ECRelationshipClassCP relationShipClass = relClass->GetRelationshipClassCP();
+
+            dbStatus = room->SetParentId(fl->GetElementId(), relationShipClass->GetId());
+
+            Utf8String roomCode = GetCodeFromParentCode(shortCode, *room, fl, ROOM_CODESPEC_NAME, ROOM_CODE_PATTERN);
+
+            StartBulkOperation();
+            SetCodeForElement(roomCode, *room, ROOM_CODESPEC_NAME);
+
+            // SetCodeFromParent1(number, shortCode, *subUnit, un, "SU");
+
+            m_roomShortCode = roomCode;
+            m_room = room->Insert(&dbStatus);
+
+            EndBulkOperation();
+            }
+        }
+
 
     for (int unitNum = 0; unitNum < numberOfUnits; unitNum++)
         {
@@ -1168,16 +1785,25 @@ BentleyStatus BimCreater::DoCreate()
         PIPERUN_TYPEPTR unit = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(BREAKDOWN_DOMAIN, UNIT_CLASS, *functionalModel);
 #endif
 
+        ECN::ECClassCP             relClass          = db->GetClassLocater().LocateClass(DOMAIN_PLANT_BREAKDOWN_FUNCTIONAL, "PlantOwnsUnits");
+        ECN::ECRelationshipClassCP relationShipClass = relClass->GetRelationshipClassCP();
+
+        dbStatus = unit->SetParentId(plt->GetElementId(), relationShipClass->GetId());
+
         PopulateElementProperties(unit);
 
-        SetCodeFromParent1(number, shortCode, *unit, nullptr, "U");
-        Dgn::DgnElementCPtr un = unit->Insert();
+        Utf8String unitCode = GetCodeFromParentCode(shortCode, *unit, plt, UNIT_CODESPEC_NAME, UNIT_CODE_PATTERN);
 
-        ICurvePrimitivePtr buildingGeometry = GeometricTools::CreateContainmentBuildingGeometry(50, 250);
+        StartBulkOperation();
+        SetCodeForElement(unitCode, *unit, UNIT_CODESPEC_NAME);
+        Dgn::DgnElementCPtr un = unit->Insert(&dbStatus);
+        EndBulkOperation();
 
-        CurveVectorPtr a = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer);
+        //ICurvePrimitivePtr buildingGeometry = GeometricTools::CreateContainmentBuildingGeometry(50, 250);
+
+        //CurveVectorPtr a = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer);
         
-        a->Add(buildingGeometry);
+        //a->Add(buildingGeometry);
 
         //Building::SpacePlanning::BuildingPtr containmentBuilding = Building::SpacePlanning::Building::Create ( *physicalModel, a, 250.0);
 
@@ -1192,37 +1818,58 @@ BentleyStatus BimCreater::DoCreate()
 
 #ifdef USE_PROTOTYPE
             Dgn::FunctionalBreakdownElementPtr subUnit = BuildingDomain::BuildingDomainUtilities::CreateFunctionalBreakdownElement(DOMAIN_PLANT_BREAKDOWN_FUNCTIONAL, PBF_Class_SubUnit, *functionalModel);
-            SetCodeFromParent1(number, shortCode, *subUnit, un, "SU");
 
-            Dgn::DgnElementCPtr subUn = subUnit->Insert();
-            ECN::ECClassCP relClass = db->GetClassLocater().LocateClass(DOMAIN_PLANT_BREAKDOWN_FUNCTIONAL, PBF_Rel_FunctionalBreakdownGroupsFunctionalElements);
+            ECN::ECClassCP             relClass = db->GetClassLocater().LocateClass(DOMAIN_PLANT_BREAKDOWN_FUNCTIONAL, "UnitOwnsSubUnits");
             ECN::ECRelationshipClassCP relationShipClass = relClass->GetRelationshipClassCP();
-            BeSQLite::EC::ECInstanceKey rkey;
-            db->InsertLinkTableRelationship(rkey, *relationShipClass, un->GetElementId(), subUn->GetElementId());
+
+            dbStatus = subUnit->SetParentId(un->GetElementId(), relationShipClass->GetId());
+
+            Utf8String subUnitCode = GetCodeFromParentCode(shortCode, *subUnit, un, SUBUNIT_CODESPEC_NAME, SUBUNIT_CODE_PATTERN);
+
+            StartBulkOperation();
+            SetCodeForElement(subUnitCode, *subUnit, SUBUNIT_CODESPEC_NAME);
+
+            // SetCodeFromParent1(number, shortCode, *subUnit, un, "SU");
+
+            Dgn::DgnElementCPtr subUn = subUnit->Insert(&dbStatus);
+            EndBulkOperation();
+
+            //ECN::ECClassCP relClass = db->GetClassLocater().LocateClass(DOMAIN_PLANT_BREAKDOWN_FUNCTIONAL, PBF_Rel_FunctionalBreakdownGroupsFunctionalElements);
+            //ECN::ECRelationshipClassCP relationShipClass = relClass->GetRelationshipClassCP();
+            //BeSQLite::EC::ECInstanceKey rkey;
+            //db->InsertLinkTableRelationship(rkey, *relationShipClass, un->GetElementId(), subUn->GetElementId());
 #endif
 
-            static int pidNum = 1;
             for (int j = 1; j < numberOfPids; j++)
                 {
-                Utf8String pidName;
-                pidName.Sprintf("PID-%0.3d", pidNum);
-                pidNum++;
+//                Utf8String pidName;
+//                pidName.Sprintf("PID-%0.3d", pidNum);
+//                pidNum++;
+
+                Utf8String pidCode;
+
+                host->GetNextCodeValue(pidCode, PID_CODESPEC_NAME, "Plant:Functional", PID_CODE_PATTERN);
+
 
                 Dgn::DgnElementCPtr a = unit;
 #ifdef USE_PROTOTYPE
-                Dgn::DrawingModelPtr drawingModel = CreatePidDrawings(*docListModel, *functionalModel, pidName, subUn);
+                Dgn::DrawingModelPtr drawingModel = CreatePidDrawings(*docListModel, *functionalModel, pidCode, subUn);
 #else
                 Dgn::DrawingModelPtr drawingModel = CreatePidDrawings(*docListModel, *functionalModel, pidName, a);
 #endif
-
-                Dgn::DgnViewId viewId = CreateView2d(dictionary, pidName.c_str(), *categorySelector, drawingModel->GetModelId(), *displayStyle1);
+                StartBulkOperation();
+                Dgn::DgnViewId viewId = CreateView2d(dictionary, pidCode.c_str(), *categorySelector, drawingModel->GetModelId(), *displayStyle1);
+                EndBulkOperation();
 
                 if (!viewId.IsValid())
                     return BentleyStatus::ERROR;
                 }
+            host->SaveAllChanges();
+            host->SyncBriefcase();
             }
         }
 
+    db->BriefcaseManager().StartBulkOperation();
 
     // The 3D physical element will start out with some Architectural components. 
 
@@ -1238,6 +1885,8 @@ BentleyStatus BimCreater::DoCreate()
 	Dgn::DisplayStyle3dPtr displayStyle = CreateDisplayStyle3d(dictionary);
 
 	Dgn::DgnViewId viewId = CreateView(dictionary, "Building View", *categorySelector, *modelSelector, *displayStyle);
+
+    db->BriefcaseManager().EndBulkOperation();
 
     if (!viewId.IsValid())
         return BentleyStatus::ERROR;
@@ -1301,6 +1950,28 @@ Dgn::DgnViewId BimCreater::CreateView2d(Dgn::DefinitionModelR model, Utf8CP name
 	db.SaveProperty(Dgn::DgnViewProperty::DefaultView(), &viewId, (uint32_t) sizeof(viewId));
 	return viewId;
 	}
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+
+BentleyStatus BimCreater::PopulateInstanceCodes(ECN::IECInstancePtr instance, Utf8String codeSpec, Utf8String codeScope, Utf8String codeValue)
+    {
+
+    ECN::ECValue stringValue;
+
+    stringValue.SetUtf8CP(codeSpec.c_str());
+    instance->SetValue("CodeSpec", stringValue);
+
+    stringValue.SetUtf8CP(codeScope.c_str());
+    instance->SetValue("CodeScope", stringValue);
+
+    stringValue.SetUtf8CP(codeValue.c_str());
+    instance->SetValue("CodeValue", stringValue);
+
+    return BentleyStatus::SUCCESS;
+    }
 
 
 //---------------------------------------------------------------------------------------
@@ -1377,11 +2048,11 @@ BentleyStatus BimCreater::PopulateEquipmentProperties(Dgn::DgnElementPtr element
     element->SetPropertyValue("UNIT_CLASSIFICATION", stringValue);
     element->SetPropertyValue("UNIT_CODE", stringValue);
 
-    Utf8String num;
-    num.Sprintf("%.5d", number);
-    stringValue.SetUtf8CP(num.c_str());
-    element->SetPropertyValue("Number", stringValue);
-    element->SetPropertyValue("NUMBER", stringValue);
+//    Utf8String num;
+//    num.Sprintf("%.5d", number);
+ //   stringValue.SetUtf8CP(num.c_str());
+ //   element->SetPropertyValue("Number", stringValue);
+  //  element->SetPropertyValue("NUMBER", stringValue);
 
     BentleyB0200::AecUnits::AecUnitsUtilities::SetDoublePropertyUsingUnitString(*element, "Diameter", AEC_UNIT_MM, 150.0);
     BentleyB0200::AecUnits::AecUnitsUtilities::SetDoublePropertyUsingUnitString(*element, "DIAMETER", AEC_UNIT_MM, 150.0);
@@ -1487,7 +2158,7 @@ BentleyStatus BimCreater::PopulateElementProperties(Dgn::DgnElementPtr element)
         else if (typeName == "boolean")
             {
             ECN::ECValue boolValue;
-            boolValue.SetBoolean(true);
+            boolValue.SetBoolean(false);
             element->SetPropertyValue(prop->GetName().c_str(), boolValue);
             }
         i++;
@@ -1548,7 +2219,11 @@ BentleyStatus BimCreater::CreateBuilding(BuildingPhysical::BuildingPhysicalModel
 
 			Dgn::DgnDbStatus status = buildingElement->SetPlacement(placement);
 
-			GeometricTools::CreateGeometry(buildingElement, physicalModel);
+            Dgn::DgnCategoryId    categoryId;
+            m_host->FindOrCreateCategory(*m_dgnDb, categoryId, buildingElement->GetElementClass()->GetName().c_str());
+            m_host->AddCategoryToCategorySelector(categoryId);
+
+			GeometricTools::CreateGeometry(buildingElement, physicalModel, categoryId);
 
 			//ECN::IECInstancePtr instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "Classification");
 			//PopulateInstanceProperties(instance);
@@ -1618,8 +2293,11 @@ BentleyStatus BimCreater::CreateBuilding(BuildingPhysical::BuildingPhysicalModel
 			placement.GetOriginR() = DPoint3d::From(2.0 * i, .5 * j, 0.0);
 
 			Dgn::DgnDbStatus status = buildingElement->SetPlacement(placement);
+            Dgn::DgnCategoryId    categoryId;
+            m_host->FindOrCreateCategory(*m_dgnDb, categoryId, buildingElement->GetElementClass()->GetName().c_str());
+            m_host->AddCategoryToCategorySelector(categoryId);
 
-			GeometricTools::CreateGeometry(buildingElement, physicalModel);
+			GeometricTools::CreateGeometry(buildingElement, physicalModel, categoryId);
 
 			//ECN::IECInstancePtr instance = BuildingCommon::BuildingCommonDomain::AddAspect(physicalModel, buildingElement, "Classification");
 			//PopulateInstanceProperties(instance);
@@ -1809,6 +2487,57 @@ BentleyStatus BimCreater::CreateBuilding(BuildingPhysical::BuildingPhysicalModel
 //
 //    }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+
+Dgn::DgnCode BimCreater::SetCodeForElement(Utf8StringR codeString, Dgn::FunctionalElementR functionalElement, Utf8StringCR codeSpecName)
+    {
+    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(codeSpecName.c_str(), *functionalElement.GetModel(), codeString);
+    functionalElement.SetCode(code);
+    return code;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+
+Dgn::DgnCode BimCreater::SetCodeForElement(Utf8StringR codeString, Dgn::FunctionalElementR functionalElement, Dgn::DgnElementCR relatedElement, Utf8StringCR codeSpecName)
+    {
+    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(codeSpecName.c_str(), relatedElement, codeString);
+    functionalElement.SetCode(code);
+    return code;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+
+Utf8String BimCreater::GetCodeFromParentCode(Utf8StringR shortCode, Dgn::FunctionalElementR functionalElement, Dgn::DgnElementCPtr parentElement, Utf8StringCR codeSpecName, Utf8StringCR codePattern)
+    {
+    Utf8String parentCode;
+    Utf8String codeString;
+
+    if (parentElement.IsValid())
+        {
+        parentCode = parentElement->GetCode().GetValueUtf8CP();
+        m_host->GetNextCodeValue(codeString, codeSpecName.c_str(), "Plant:Functional", parentCode + "-" + codePattern);
+        shortCode = codeString.substr(parentCode.length() + 1, codeString.length() - parentCode.length() - 1);
+        }
+    else
+        {
+        m_host->GetNextCodeValue(codeString, codeSpecName.c_str(), "Plant:Functional", codePattern);
+        shortCode = codeString;
+        }
+
+    ECN::ECValue value;
+    value.SetUtf8CP(shortCode.c_str());
+    functionalElement.SetPropertyValue(USERLABEL_NAME, value);
+
+    return codeString;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
@@ -1868,15 +2597,81 @@ Dgn::DgnCode BimCreater::SetCodeFromParent1(int& number, Utf8StringR shortCode, 
 int wmain(int argc, WCharP argv[])
     {
 
+    // --workdir=d:\workdir\  --imodelname=samplePlant20 --briefcasedir=d:\briefcases\ --addpid="P01-U01-SU02,S01,A01,BLD01-FL02-RM001"
+    // --workdir=d:\workdir\  --imodelname=samplePlant20 --briefcasedir=d:\briefcases\ --overwrite
     BimCreater app;
-    Dgn::DgnPlatformLib::Initialize(app, false);
+   // Dgn::DgnPlatformLib::Initialize(app, false);
 
     //if (BentleyStatus::SUCCESS != app.ParseCommandLine(argc, argv))
     //    return BentleyStatus::ERROR;
 
     app.ParseCommandLine(argc, argv);
 
-    return app.DoCreate();
+    BentleyApi::PlantBIM::PlantHostP host = BentleyApi::PlantBIM::PlantHost::GetPlantHost();
+    BentleyApi::BeFileName assetFolder("D:\\Builds\\SourceTrees\\BuildingDomainDev\\source\\DgnDomains\\Building\\BimCreater\\x64\\Debug\\Assets\\");
+
+    int loginStatus = host->Init(assetFolder, "b564396c-bebd-464a-a839-8d5f82db5a37", "abeesh.basheer@bentley.com", "Tt2~PG[u");
+
+    app.RegisterMyDomains();
+
+    if (app.CreateNewFile())
+        {
+        Utf8String iModelName = app.iModelName();
+
+        host->DeleteiModelRepo(iModelName.c_str());
+
+        //        Dgn::DgnPlatformLib::Initialize(app, false);
+        host->CreateDgnDb(app.GetOutputFileName());
+        app.CreateLocal(host->GetDgndb());
+
+        Utf8String iModelGuid;
+        host->CreateNewRepository(iModelGuid);
+
+        host->CloseDgnDb();
+        }
+
+    //Dgn::DgnDbPtr dgnDb;
+    //dgnDb->BriefcaseManager().LockSchemas();
+    Utf8String briefcaseFile = app.BriefcaseDir() + app.iModelName() + ".bim";
+
+    BentleyApi::BeFileName briefcaseName(briefcaseFile);
+    BentleyApi::BeFileName briefcaseDir(app.BriefcaseDir());
+
+    briefcaseName.BeDeleteFile();
+
+    host->AcquireBriefcase(briefcaseName, app.iModelName().c_str() /*"148c9241-aa05-411a-a3a7-fe57dcc67b3c"*/, briefcaseDir);
+
+    BeSQLite::DbResult openStatus =  host->OpenDgnDb(briefcaseName);
+
+    Dgn::DgnDbPtr db = host->GetDgndb();
+
+    //Utf8String results;
+    //Utf8String pattern;
+    //pattern = "PMP-####";
+
+    //host->GetNextCodeValue(results, "PlantFunctional-Equipment", "Plant:Functional", pattern);
+    //host->GetNextCodeValue(results, "PlantFunctional-Equipment", "Plant:Functional", pattern);
+    //host->GetNextCodeValue(results, "PlantFunctional-Equipment", "Plant:Functional", pattern);
+
+    app.SetPlantHost(host);
+    app.SetDgnDb(db);
+
+    if (app.GetAddPids())
+        {
+        app.AddPids();
+        }
+    else
+        {
+        app.DoCreate(db, host);
+        }
+
+    host->SaveAllChanges();
+    host->SyncBriefcase();
+    host->RelinquishLocks();
+    host->CloseDgnDb();
+
+
+    return 0;
 
     }
 

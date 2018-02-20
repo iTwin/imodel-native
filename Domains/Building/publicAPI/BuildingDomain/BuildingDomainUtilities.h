@@ -40,7 +40,7 @@ namespace BuildingDomain
 	struct  BuildingDomainUtilities
 		{
 		BUILDING_DOMAIN_EXPORT static Utf8String                                       BuildPhysicalModelCode            (Utf8StringCR modelCodeName);
-		BUILDING_DOMAIN_EXPORT static Utf8String                                       BuildFucntionalModelCode          (Utf8StringCR modelCodeName);
+		BUILDING_DOMAIN_EXPORT static Utf8String                                       BuildFunctionalModelCode          (Utf8StringCR modelCodeName);
         BUILDING_DOMAIN_EXPORT static Utf8String                                       BuildSpatialLocationModelCode     (Utf8StringCR modelCodeName);
         BUILDING_DOMAIN_EXPORT static Utf8String                                       BuildDrawingModelCode             (Utf8StringCR modelCodeName);
 		BUILDING_DOMAIN_EXPORT static Utf8String                                       BuildDocumentListModelCode        (Utf8StringCR modelCodeName);
@@ -49,6 +49,8 @@ namespace BuildingDomain
 		BUILDING_DOMAIN_EXPORT static BentleyStatus                                    RegisterDomainHandlers            ();
 		BUILDING_DOMAIN_EXPORT static BentleyStatus                                    CreateBuildingModels              (Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr, bool createDynamicSchema = true, ECN::ECSchemaPtr suppliedDynamicSchema = nullptr);
 		BUILDING_DOMAIN_EXPORT static BuildingPhysical::BuildingPhysicalModelPtr       GetBuildingPhyicalModel           (Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
+        BUILDING_DOMAIN_EXPORT static Dgn::FunctionalModelPtr                          GetBuildingFunctionalModel        (Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
+        BUILDING_DOMAIN_EXPORT static Dgn::DocumentListModelPtr                        GetBuildingDocumentListModel      (Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
         BUILDING_DOMAIN_EXPORT static BuildingPhysical::BuildingTypeDefinitionModelPtr GetBuildingTypeDefinitionModel    (Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
 		BUILDING_DOMAIN_EXPORT static BuildingPhysical::BuildingPhysicalModelPtr       CreateBuildingPhyicalModel        (Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
 		BUILDING_DOMAIN_EXPORT static Dgn::DrawingModelPtr                             CreateBuildingDrawingModel        (Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::DocumentListModelCR docListModel);

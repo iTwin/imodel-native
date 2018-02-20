@@ -11,14 +11,16 @@
 
 #define USE_PROTOTYPE
 
-#ifdef USE_PROTOTYPE
-    #include <PlantPrototype\CommonEquipmentFunctional.h>
-    #include <PlantPrototype\CommonPipingFunctionalBreakdown.h>
-    #include <PlantPrototype\CommonPipingPhysical.h>
-    #include <PlantPrototype\CommonPipingFunctional.h>
-#else
-    #include <Plant\PlantDomainApi.h>
-#endif
+//#ifdef USE_PROTOTYPE
+//    #include <PlantPrototype\CommonEquipmentFunctional.h>
+//    #include <PlantPrototype\CommonPipingFunctionalBreakdown.h>
+//    #include <PlantPrototype\CommonPipingPhysical.h>
+//    #include <PlantPrototype\CommonPipingFunctional.h>
+//#else
+//    #include <Plant\PlantDomainApi.h>
+//#endif
+#include <Plant\PlantDomainApi.h>
+#include <Plantprototype\PlantprototypeDomainApi.h>
 
 #include <SpacePlanning\Domain\SpacePlanningDomain.h>
 #include <SpacePlanning\Elements\ElementsApi.h>

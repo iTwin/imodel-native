@@ -101,9 +101,9 @@ namespace BuildingDomain
 
 		// Create the partition and the BuildingPhysicalModel.
 
-		//Utf8String phyModelCode = BuildFucntionalModelCode(modelCodeName);
+		Utf8String FunctionalModelCode = BuildFunctionalModelCode(modelCodeName);
 
-		Dgn::FunctionalPartitionCPtr partition = Dgn::FunctionalPartition::CreateAndInsert(*parentSubject, modelCodeName);
+		Dgn::FunctionalPartitionCPtr partition = Dgn::FunctionalPartition::CreateAndInsert(*parentSubject, FunctionalModelCode);
 
 		if (!partition.IsValid())
 			return nullptr;
@@ -418,12 +418,48 @@ namespace BuildingDomain
     // @bsimethod                                   Bentley.Systems
     //---------------------------------------------------------------------------------------
 
+    Dgn::FunctionalModelPtr BuildingDomainUtilities::GetBuildingFunctionalModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject)
+        {
+        if (parentSubject.IsNull())
+            parentSubject = db.Elements().GetRootSubject();
+
+        Dgn::DgnCode partitionCode = Dgn::FunctionalPartition::CreateCode(*parentSubject, BuildFunctionalModelCode(modelCodeName));
+        Dgn::DgnElementId partitionId = db.Elements().QueryElementIdByCode(partitionCode);
+        Dgn::FunctionalPartitionCPtr partition = db.Elements().Get<Dgn::FunctionalPartition>(partitionId);
+        if (!partition.IsValid())
+            return nullptr;
+
+        return dynamic_cast<Dgn::FunctionalModelP>(partition->GetSubModel().get());
+        }
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Bentley.Systems
+    //---------------------------------------------------------------------------------------
+
+    Dgn::DocumentListModelPtr BuildingDomainUtilities::GetBuildingDocumentListModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject)
+        {
+        if (parentSubject.IsNull())
+            parentSubject = db.Elements().GetRootSubject();
+
+        Dgn::DgnCode partitionCode = Dgn::DocumentPartition::CreateCode(*parentSubject, BuildDocumentListModelCode(modelCodeName));
+        Dgn::DgnElementId partitionId = db.Elements().QueryElementIdByCode(partitionCode);
+        Dgn::DocumentPartitionCPtr partition = db.Elements().Get<Dgn::DocumentPartition>(partitionId);
+        if (!partition.IsValid())
+            return nullptr;
+
+        return dynamic_cast<Dgn::DocumentListModelP>(partition->GetSubModel().get());
+        }
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Bentley.Systems
+    //---------------------------------------------------------------------------------------
+
     BuildingPhysical::BuildingTypeDefinitionModelPtr BuildingDomainUtilities::GetBuildingTypeDefinitionModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject)
         {
         if (parentSubject.IsNull())
             parentSubject = db.Elements().GetRootSubject();
 
-        Dgn::DgnCode partitionCode = Dgn::PhysicalPartition::CreateCode(*parentSubject, BuildTypeDefinitionModelCode(modelCodeName));
+        Dgn::DgnCode partitionCode = Dgn::DefinitionPartition::CreateCode(*parentSubject, BuildTypeDefinitionModelCode(modelCodeName));
         Dgn::DgnElementId partitionId = db.Elements().QueryElementIdByCode(partitionCode);
         Dgn::DefinitionPartitionCPtr partition = db.Elements().Get<Dgn::DefinitionPartition>(partitionId);
         if (!partition.IsValid())
@@ -445,7 +481,7 @@ namespace BuildingDomain
 	// @bsimethod                                   Bentley.Systems
 	//---------------------------------------------------------------------------------------
 
-	Utf8String  BuildingDomainUtilities::BuildFucntionalModelCode(Utf8StringCR modelCodeName)
+	Utf8String  BuildingDomainUtilities::BuildFunctionalModelCode(Utf8StringCR modelCodeName)
 		{
 		return modelCodeName + ":Functional";
 		}

@@ -243,11 +243,11 @@ BentleyStatus GeometricTools::CreateWindowGeometry(Dgn::PhysicalElementPtr windo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-BentleyStatus GeometricTools::CreateGeometry(Dgn::PhysicalElementPtr element, BuildingPhysical::BuildingPhysicalModelR model)
+BentleyStatus GeometricTools::CreateGeometry(Dgn::PhysicalElementPtr element, BuildingPhysical::BuildingPhysicalModelR model, Dgn::DgnCategoryId categoryId)
     {
     Dgn::DgnDbR db = model.GetDgnDb();
     Dgn::DgnModelId modelId = model.GetModelId();
-    Dgn::DgnCategoryId    categoryId = ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalCategoryId(db, element->GetElementClass()->GetName().c_str());
+  //  Dgn::DgnCategoryId    categoryId = ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalCategoryId(db, element->GetElementClass()->GetName().c_str());
 
 
     Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(*element);
@@ -320,11 +320,11 @@ BentleyStatus GeometricTools::CreateGeometry(Dgn::PhysicalElementPtr element, Bu
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-BentleyStatus GeometricTools::CreatePidLineGeometry(Dgn::DrawingGraphicR element, Dgn::DrawingModelR drawingModel, DPoint2dCP points, int count)
+BentleyStatus GeometricTools::CreatePidLineGeometry(Dgn::DrawingGraphicR element, Dgn::DrawingModelR drawingModel, DPoint2dCP points, int count, Dgn::DgnCategoryId categoryId, Dgn::DgnSubCategoryId subCategoryId)
 	{
 	Dgn::DgnDbR db = drawingModel.GetDgnDb();
 	Dgn::DgnModelId modelId = drawingModel.GetModelId();
-	Dgn::DgnCategoryId    categoryId = ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingDrawingCategoryId(db, "PidLine");
+//	Dgn::DgnCategoryId    categoryId = ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingDrawingCategoryId(db, PID_CATEGORY);
 
 
 	Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(element);
@@ -337,7 +337,7 @@ BentleyStatus GeometricTools::CreatePidLineGeometry(Dgn::DrawingGraphicR element
 
 	Dgn::Render::GeometryParams params;
 	params.SetCategoryId(categoryId);
-	//params.SetSubCategoryId(windowFraneCategoryId);
+	params.SetSubCategoryId(subCategoryId);
 	// params.SetMaterialId(ToyTileMaterial::QueryColoredPlasticMaterialId(db));
 	params.SetLineColor(Dgn::ColorDef::Yellow());
 	params.SetWeight(2);
@@ -386,7 +386,7 @@ BentleyStatus GeometricTools::CreatePidLineGeometry(Dgn::DrawingGraphicR element
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-BentleyStatus GeometricTools::CreatePidValveGeometry(Dgn::DrawingGraphicR element, Dgn::DgnCategoryId categoryId)
+BentleyStatus GeometricTools::CreatePidValveGeometry(Dgn::DrawingGraphicR element, Dgn::DgnCategoryId categoryId, Dgn::DgnSubCategoryId subCategoryId)
 	{
 	
 	Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(element);
@@ -399,7 +399,8 @@ BentleyStatus GeometricTools::CreatePidValveGeometry(Dgn::DrawingGraphicR elemen
 
 	Dgn::Render::GeometryParams params;
 	params.SetCategoryId(categoryId);
-	params.SetLineColor(Dgn::ColorDef::Yellow());
+    params.SetSubCategoryId(subCategoryId);
+    params.SetLineColor(Dgn::ColorDef::Yellow());
 	params.SetWeight(2);
 	builder->Append(params);
 
@@ -426,7 +427,7 @@ BentleyStatus GeometricTools::CreatePidValveGeometry(Dgn::DrawingGraphicR elemen
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-BentleyStatus GeometricTools::CreatePidPumpGeometry(Dgn::DrawingGraphicR element, Dgn::DgnCategoryId categoryId)
+BentleyStatus GeometricTools::CreatePidPumpGeometry(Dgn::DrawingGraphicR element, Dgn::DgnCategoryId categoryId, Dgn::DgnSubCategoryId subCategoryId )
 	{
 
 	Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(element);
@@ -439,7 +440,8 @@ BentleyStatus GeometricTools::CreatePidPumpGeometry(Dgn::DrawingGraphicR element
 
 	Dgn::Render::GeometryParams params;
 	params.SetCategoryId(categoryId);
-	params.SetLineColor(Dgn::ColorDef::Red());
+    params.SetSubCategoryId(subCategoryId);
+    params.SetLineColor(Dgn::ColorDef::Red());
 	params.SetWeight(2);
 	builder->Append(params);
 
@@ -510,7 +512,7 @@ BentleyStatus GeometricTools::CreatePidPumpGeometry(Dgn::DrawingGraphicR element
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-BentleyStatus GeometricTools::CreatePidRoundTankGeometry(Dgn::DrawingGraphicR element, Dgn::DgnCategoryId categoryId)
+BentleyStatus GeometricTools::CreatePidRoundTankGeometry(Dgn::DrawingGraphicR element, Dgn::DgnCategoryId categoryId, Dgn::DgnSubCategoryId subCategoryId)
 	{
 
 	Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(element);
@@ -523,7 +525,8 @@ BentleyStatus GeometricTools::CreatePidRoundTankGeometry(Dgn::DrawingGraphicR el
 
 	Dgn::Render::GeometryParams params;
 	params.SetCategoryId(categoryId);
-	params.SetLineColor(Dgn::ColorDef::Red());
+    params.SetSubCategoryId(subCategoryId);
+    params.SetLineColor(Dgn::ColorDef::Red());
 	params.SetWeight(2);
 	builder->Append(params);
 
@@ -567,7 +570,7 @@ BentleyStatus GeometricTools::CreatePidRoundTankGeometry(Dgn::DrawingGraphicR el
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-BentleyStatus GeometricTools::CreatePidTankGeometry(Dgn::DrawingGraphicR element, Dgn::DgnCategoryId categoryId)
+BentleyStatus GeometricTools::CreatePidTankGeometry(Dgn::DrawingGraphicR element, Dgn::DgnCategoryId categoryId, Dgn::DgnSubCategoryId subCategoryId)
 	{
 
 	Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(element);
@@ -580,7 +583,8 @@ BentleyStatus GeometricTools::CreatePidTankGeometry(Dgn::DrawingGraphicR element
 
 	Dgn::Render::GeometryParams params;
 	params.SetCategoryId(categoryId);
-	params.SetLineColor(Dgn::ColorDef::Red());
+    params.SetSubCategoryId(subCategoryId);
+    params.SetLineColor(Dgn::ColorDef::Red());
 	params.SetWeight(2);
 	builder->Append(params);
 
@@ -609,7 +613,7 @@ BentleyStatus GeometricTools::CreatePidTankGeometry(Dgn::DrawingGraphicR element
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-BentleyStatus GeometricTools::CreatePidNozzleGeometry(Dgn::DrawingGraphicR element, Dgn::DgnCategoryId categoryId)
+BentleyStatus GeometricTools::CreatePidNozzleGeometry(Dgn::DrawingGraphicR element, Dgn::DgnCategoryId categoryId, Dgn::DgnSubCategoryId subCategoryId)
 	{
 
 	Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(element);
@@ -622,6 +626,7 @@ BentleyStatus GeometricTools::CreatePidNozzleGeometry(Dgn::DrawingGraphicR eleme
 
 	Dgn::Render::GeometryParams params;
 	params.SetCategoryId(categoryId);
+    params.SetSubCategoryId(subCategoryId);
 	params.SetLineColor(Dgn::ColorDef::Red());
 	params.SetWeight(2);
 	builder->Append(params);
@@ -651,7 +656,7 @@ BentleyStatus GeometricTools::CreatePidNozzleGeometry(Dgn::DrawingGraphicR eleme
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-BentleyStatus GeometricTools::CreatePidVirtualNozzleGeometry(Dgn::DrawingGraphicR element, Dgn::DgnCategoryId categoryId)
+BentleyStatus GeometricTools::CreatePidVirtualNozzleGeometry(Dgn::DrawingGraphicR element, Dgn::DgnCategoryId categoryId, Dgn::DgnSubCategoryId subCategoryId)
     {
 
     Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(element);
@@ -664,6 +669,7 @@ BentleyStatus GeometricTools::CreatePidVirtualNozzleGeometry(Dgn::DrawingGraphic
 
     Dgn::Render::GeometryParams params;
     params.SetCategoryId(categoryId);
+    params.SetSubCategoryId(subCategoryId);
     params.SetLineColor(Dgn::ColorDef::Red());
     params.SetFillColor(Dgn::ColorDef::Red());
     params.SetFillDisplay(BENTLEY_NAMESPACE_NAME::Dgn::Render::FillDisplay::Always);
@@ -693,7 +699,7 @@ BentleyStatus GeometricTools::CreatePidVirtualNozzleGeometry(Dgn::DrawingGraphic
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-BentleyStatus GeometricTools::CreatePidReducerGeometry(Dgn::DrawingGraphicR element, Dgn::DgnCategoryId categoryId)
+BentleyStatus GeometricTools::CreatePidReducerGeometry(Dgn::DrawingGraphicR element, Dgn::DgnCategoryId categoryId, Dgn::DgnSubCategoryId subCategoryId)
 	{
 
 	Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(element);
@@ -706,6 +712,7 @@ BentleyStatus GeometricTools::CreatePidReducerGeometry(Dgn::DrawingGraphicR elem
 
 	Dgn::Render::GeometryParams params;
 	params.SetCategoryId(categoryId);
+    params.SetSubCategoryId(subCategoryId);
 	params.SetLineColor(Dgn::ColorDef::Yellow());
 	params.SetWeight(2);
 	builder->Append(params);
@@ -734,7 +741,7 @@ BentleyStatus GeometricTools::CreatePidReducerGeometry(Dgn::DrawingGraphicR elem
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-BentleyStatus GeometricTools::CreatePid3WayValveGeometry(Dgn::DrawingGraphicR element, Dgn::DgnCategoryId categoryId)
+BentleyStatus GeometricTools::CreatePid3WayValveGeometry(Dgn::DrawingGraphicR element, Dgn::DgnCategoryId categoryId, Dgn::DgnSubCategoryId subCategoryId)
 	{
 
 	Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(element);
@@ -747,6 +754,7 @@ BentleyStatus GeometricTools::CreatePid3WayValveGeometry(Dgn::DrawingGraphicR el
 
 	Dgn::Render::GeometryParams params;
 	params.SetCategoryId(categoryId);
+    params.SetSubCategoryId(subCategoryId);
 	params.SetLineColor(Dgn::ColorDef::Yellow());
 	params.SetWeight(2);
 	builder->Append(params);
@@ -779,7 +787,7 @@ BentleyStatus GeometricTools::CreatePid3WayValveGeometry(Dgn::DrawingGraphicR el
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-BentleyStatus GeometricTools::CreatePidVesselGeometry(Dgn::DrawingGraphicR element, Dgn::DgnCategoryId categoryId)
+BentleyStatus GeometricTools::CreatePidVesselGeometry(Dgn::DrawingGraphicR element, Dgn::DgnCategoryId categoryId, Dgn::DgnSubCategoryId subCategoryId)
 	{
 
 	Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(element);
@@ -792,7 +800,8 @@ BentleyStatus GeometricTools::CreatePidVesselGeometry(Dgn::DrawingGraphicR eleme
 
 	Dgn::Render::GeometryParams params;
 	params.SetCategoryId(categoryId);
-	params.SetLineColor(Dgn::ColorDef::Red());
+    params.SetSubCategoryId(subCategoryId);
+    params.SetLineColor(Dgn::ColorDef::Red());
 	params.SetWeight(2);
 	builder->Append(params);
 
@@ -846,7 +855,7 @@ BentleyStatus GeometricTools::CreatePidVesselGeometry(Dgn::DrawingGraphicR eleme
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-BentleyStatus GeometricTools::CreateAnnotationTextGeometry(Dgn::DrawingGraphicR element, Dgn::DgnCategoryId categoryId, Utf8StringCR textValue)
+BentleyStatus GeometricTools::CreateAnnotationTextGeometry(Dgn::DrawingGraphicR element, Dgn::DgnCategoryId categoryId, Utf8StringCR textValue, Dgn::DgnSubCategoryId subCategoryId)
     {
 
 
@@ -860,6 +869,7 @@ BentleyStatus GeometricTools::CreateAnnotationTextGeometry(Dgn::DrawingGraphicR 
 
     Dgn::Render::GeometryParams params;
     params.SetCategoryId(categoryId);
+    params.SetSubCategoryId(subCategoryId);
     params.SetLineColor(Dgn::ColorDef::White());
     params.SetWeight(2);
     builder->Append(params);
