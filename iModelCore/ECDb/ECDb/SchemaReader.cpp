@@ -853,7 +853,7 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
     bmap<ECUnitP, UnitId> inverseUnits;
     while (BE_SQLITE_ROW == stmt->Step())
         {
-        const UnitId id = stmt->GetValueId<UnitId>(0);
+        const UnitId id = stmt->GetValueId<UnitId>(idIx);
 
         const ECSchemaId schemaId = stmt->GetValueId<ECSchemaId>(schemaIdIx);
         SchemaDbEntry* schemaKey = nullptr;

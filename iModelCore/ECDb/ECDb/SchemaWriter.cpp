@@ -586,6 +586,7 @@ BentleyStatus SchemaWriter::ImportUnit(ECUnitCR unit)
             return ERROR;
         }
 
+    stmt->BindNull(invertedUnitIdParamIx);
     /*
     if (unit.IsInverseUnit())
         {
@@ -2801,7 +2802,7 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantity(KindOfQuantityChange& change, E
     if (change.ChangesCount() > actualChanges)
         {
         Issues().ReportV("ECSchema Upgrade failed. Changing properties of KindOfQuantity '%s' is not supported except for DisplayLabel and Description.",
-                         oldVal.GetFullName());
+                         oldVal.GetFullName().c_str());
         return ERROR;
         }
 
@@ -2904,7 +2905,7 @@ BentleyStatus SchemaWriter::UpdatePropertyCategory(PropertyCategoryChange& chang
     if (change.ChangesCount() > actualChanges)
         {
         Issues().ReportV("ECSchema Upgrade failed. Changing properties of PropertyCategory '%s' is not supported except for DisplayLabel and Description.",
-                         oldVal.GetFullName());
+                         oldVal.GetFullName().c_str());
         return ERROR;
         }
 
@@ -3218,7 +3219,7 @@ BentleyStatus SchemaWriter::UpdatePhenomenon(PhenomenonChange& change, ECN::Phen
     if (change.ChangesCount() > actualChanges)
         {
         Issues().ReportV("ECSchema Upgrade failed. Changing properties of Phenomenon '%s' is not supported except for DisplayLabel and Description.",
-                         oldVal.GetFullName());
+                         oldVal.GetFullName().c_str());
         return ERROR;
         }
 
@@ -3319,7 +3320,7 @@ BentleyStatus SchemaWriter::UpdateUnitSystem(UnitSystemChange& change, ECN::Unit
     if (change.ChangesCount() > actualChanges)
         {
         Issues().ReportV("ECSchema Upgrade failed. Changing properties of UnitSystem '%s' is not supported except for DisplayLabel and Description.",
-                         oldVal.GetFullName());
+                         oldVal.GetFullName().c_str());
         return ERROR;
         }
 
@@ -3420,7 +3421,7 @@ BentleyStatus SchemaWriter::UpdateUnit(UnitChange& change, ECN::ECUnitCR oldVal,
     if (change.ChangesCount() > actualChanges)
         {
         Issues().ReportV("ECSchema Upgrade failed. Changing properties of Unit '%s' is not supported except for DisplayLabel and Description.",
-                         oldVal.GetFullName());
+                         oldVal.GetFullName().c_str());
         return ERROR;
         }
 
