@@ -69,7 +69,8 @@ DbResult ProfileUpgrader_4002::_Upgrade(ECDbCR ecdb) const
                            "SchemaId INTEGER NOT NULL REFERENCES " TABLE_Schema "(Id) ON DELETE CASCADE,"
                            "Name TEXT NOT NULL COLLATE NOCASE,"
                            "DisplayLabel TEXT,"
-                           "Description TEXT);"
+                           "Description TEXT,"
+                           "Definition TEXT NOT NULL);"
                            "CREATE INDEX ix_ec_Phenomenon_SchemaId ON " TABLE_Phenomenon "(SchemaId);"
                            "CREATE INDEX ix_ec_Phenomenon_Name ON " TABLE_Phenomenon "(Name);");
     if (BE_SQLITE_OK != stat)
@@ -85,16 +86,16 @@ DbResult ProfileUpgrader_4002::_Upgrade(ECDbCR ecdb) const
                            "Name TEXT NOT NULL COLLATE NOCASE,"
                            "DisplayLabel TEXT,"
                            "Description TEXT,"
-                           "UnitSystemId INTEGER NOT NULL REFERENCES " TABLE_UnitSystem "(Id) ON DELETE CASCADE,"
                            "PhenomenonId INTEGER NOT NULL REFERENCES " TABLE_Phenomenon "(Id) ON DELETE CASCADE,"
+                           "UnitSystemId INTEGER NOT NULL REFERENCES " TABLE_UnitSystem "(Id) ON DELETE NO ACTION,"
                            "Definition TEXT COLLATE NOCASE,"
                            "Factor REAL,"
                            "Offset REAL,"
                            "InvertsUnitId INTEGER REFERENCES " TABLE_Unit "(Id) ON DELETE SET NULL);"
                            "CREATE INDEX ix_ec_Unit_SchemaId ON " TABLE_Unit "(SchemaId);"
                            "CREATE INDEX ix_ec_Unit_Name ON " TABLE_Unit "(Name);"
-                           "CREATE INDEX ix_ec_Unit_UnitSystemId ON " TABLE_Unit "(UnitSystemId);"
                            "CREATE INDEX ix_ec_Unit_PhenomenonId ON " TABLE_Unit "(PhenomenonId);"
+                           "CREATE INDEX ix_ec_Unit_UnitSystemId ON " TABLE_Unit "(UnitSystemId);"
                            "CREATE INDEX ix_ec_Unit_InvertsUnitId ON " TABLE_Unit "(InvertsUnitId);");
     if (BE_SQLITE_OK != stat)
         {
@@ -457,7 +458,7 @@ BentleyStatus ProfileSchemaUpgrader::ReadSchemaFromDisk(ECSchemaReadContextR rea
 Utf8CP ProfileSchemaUpgrader::GetECDbSystemSchemaXml()
     {
     return "<?xml version='1.0' encoding='utf-8'?> "
-        "<ECSchema schemaName='" ECSCHEMA_ECDbSystem "' alias='" ECSCHEMA_ALIAS_ECDbSystem "' description='Helper ECSchema for ECDb internal purposes.' version='5.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "<ECSchema schemaName='" ECSCHEMA_ECDbSystem "' alias='" ECSCHEMA_ALIAS_ECDbSystem "' description='Helper ECSchema for ECDb internal purposes.' version='5.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' /> "
         "    <ECEntityClass typeName='" ECDBSYS_CLASS_ClassECSqlSystemProperties "' modifier='Abstract' description='Defines the ECSQL system properties of an ECClass in an ECSQL statement.'>"
         "       <ECCustomAttributes>"
@@ -465,8 +466,8 @@ Utf8CP ProfileSchemaUpgrader::GetECDbSystemSchemaXml()
         "                <MapStrategy>NotMapped</MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='" ECDBSYS_PROP_ECInstanceId "' typeName='long' description='Represents the Id system property in ECSQL.' />"
-        "        <ECProperty propertyName='" ECDBSYS_PROP_ECClassId "' typeName='long' readOnly='True' description='Represents the ECClassId system property in ECSQL.' />"
+        "        <ECProperty propertyName='" ECDBSYS_PROP_ECInstanceId "' typeName='long' extendedTypeName='Id' description='Represents the Id system property in ECSQL.' />"
+        "        <ECProperty propertyName='" ECDBSYS_PROP_ECClassId "' typeName='long' extendedTypeName='Id' readOnly='True' description='Represents the ECClassId system property in ECSQL.' />"
         "    </ECEntityClass> "
         "    <ECEntityClass typeName='" ECDBSYS_CLASS_RelationshipECSqlSystemProperties "' modifier='Abstract' description='Defines the ECSQL system properties of an ECRelationshipClass in an ECSQL statement.'>"
         "       <ECCustomAttributes>"
@@ -474,10 +475,10 @@ Utf8CP ProfileSchemaUpgrader::GetECDbSystemSchemaXml()
         "                <MapStrategy>NotMapped</MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='" ECDBSYS_PROP_SourceECInstanceId "' typeName='long' description='Represents the SourceId system property of an ECRelationship in ECSQL.' />"
-        "        <ECProperty propertyName='" ECDBSYS_PROP_SourceECClassId "' typeName='long' description='Represents the SourceECClassId system property of an ECRelationship in ECSQL.' />"
-        "        <ECProperty propertyName='" ECDBSYS_PROP_TargetECInstanceId "' typeName='long' description='Represents the TargetId system property of an ECRelationship in ECSQL.' />"
-        "        <ECProperty propertyName='" ECDBSYS_PROP_TargetECClassId "' typeName='long' description='Represents the TargetECClassId system property of an ECRelationship in ECSQL.' />"
+        "        <ECProperty propertyName='" ECDBSYS_PROP_SourceECInstanceId "' typeName='long' extendedTypeName='Id' description='Represents the SourceId system property of an ECRelationship in ECSQL.' />"
+        "        <ECProperty propertyName='" ECDBSYS_PROP_SourceECClassId "' typeName='long' extendedTypeName='Id' description='Represents the SourceECClassId system property of an ECRelationship in ECSQL.' />"
+        "        <ECProperty propertyName='" ECDBSYS_PROP_TargetECInstanceId "' typeName='long' extendedTypeName='Id' description='Represents the TargetId system property of an ECRelationship in ECSQL.' />"
+        "        <ECProperty propertyName='" ECDBSYS_PROP_TargetECClassId "' typeName='long' extendedTypeName='Id' description='Represents the TargetECClassId system property of an ECRelationship in ECSQL.' />"
         "    </ECEntityClass> "
         "    <ECStructClass typeName='" ECDBSYS_CLASS_PointECSqlSystemProperties "' modifier='Abstract' description='Represents the ECSQL data type of a Point property in an ECSQL statement.'>"
         "        <ECProperty propertyName='" ECDBSYS_PROP_PointX "' typeName='double' description='Represents the X component of Point2d and Point3d in ECSQL' />"
@@ -485,8 +486,8 @@ Utf8CP ProfileSchemaUpgrader::GetECDbSystemSchemaXml()
         "        <ECProperty propertyName='" ECDBSYS_PROP_PointZ "' typeName='double' description='Represents the Z component of Point3d in ECSQL' />"
         "    </ECStructClass> "
         "    <ECStructClass typeName='" ECDBSYS_CLASS_NavigationECSqlSystemProperties "' modifier='Abstract' description='Represents the ECSQL data type of a navigation property in an ECSQL statement.'>"
-        "        <ECProperty propertyName='" ECDBSYS_PROP_NavPropId "' typeName='long' description='Represents the Id system property of an NavigationProperty in ECSQL.' />"
-        "        <ECProperty propertyName='" ECDBSYS_PROP_NavPropRelECClassId "' typeName='long' description='Represents the Relationship ClassId system property of an NavigationProperty in ECSQL.' />"
+        "        <ECProperty propertyName='" ECDBSYS_PROP_NavPropId "' typeName='long' extendedTypeName='Id' description='Represents the Id system property of an NavigationProperty in ECSQL.' />"
+        "        <ECProperty propertyName='" ECDBSYS_PROP_NavPropRelECClassId "' typeName='long' extendedTypeName='Id' description='Represents the Relationship ClassId system property of an NavigationProperty in ECSQL.' />"
         "    </ECStructClass> "
         "</ECSchema>";
     }

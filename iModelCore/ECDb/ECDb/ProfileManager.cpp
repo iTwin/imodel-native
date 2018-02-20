@@ -324,7 +324,8 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
                            "SchemaId INTEGER NOT NULL REFERENCES " TABLE_Schema "(Id) ON DELETE CASCADE,"
                            "Name TEXT NOT NULL COLLATE NOCASE,"
                            "DisplayLabel TEXT,"
-                           "Description TEXT)");
+                           "Description TEXT,"
+                           "Definition TEXT NOT NULL)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -340,8 +341,8 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
                            "Name TEXT NOT NULL COLLATE NOCASE,"
                            "DisplayLabel TEXT,"
                            "Description TEXT,"
-                           "UnitSystemId INTEGER NOT NULL REFERENCES " TABLE_UnitSystem "(Id) ON DELETE CASCADE,"
                            "PhenomenonId INTEGER NOT NULL REFERENCES " TABLE_Phenomenon "(Id) ON DELETE CASCADE,"
+                           "UnitSystemId INTEGER NOT NULL REFERENCES " TABLE_UnitSystem "(Id) ON DELETE NO ACTION,"
                            "Definition TEXT COLLATE NOCASE,"
                            "Factor REAL,"
                            "Offset REAL,"
@@ -351,8 +352,8 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
 
     stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Unit_SchemaId ON " TABLE_Unit "(SchemaId);"
                            "CREATE INDEX ix_ec_Unit_Name ON " TABLE_Unit "(Name);"
-                           "CREATE INDEX ix_ec_Unit_UnitSystemId ON " TABLE_Unit "(UnitSystemId);"
                            "CREATE INDEX ix_ec_Unit_PhenomenonId ON " TABLE_Unit "(PhenomenonId);"
+                           "CREATE INDEX ix_ec_Unit_UnitSystemId ON " TABLE_Unit "(UnitSystemId);"
                            "CREATE INDEX ix_ec_Unit_InvertsUnitId ON " TABLE_Unit "(InvertsUnitId);");
     if (BE_SQLITE_OK != stat)
         return stat;

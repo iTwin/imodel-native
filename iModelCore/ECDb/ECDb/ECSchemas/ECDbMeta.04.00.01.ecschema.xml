@@ -97,6 +97,24 @@
         <ECProperty propertyName="RelativeError" typeName="double"/>
         <ECArrayProperty propertyName="PresentationUnits" typeName="string"/>
     </ECEntityClass>
+    <ECEntityClass typeName="UnitDef" description="Unit" displayLabel="Unit" modifier="Sealed">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>ExistingTable</MapStrategy>
+                <TableName>ec_Unit</TableName>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Schema" relationshipName="SchemaOwnsUnits" direction="backward"/>
+        <ECProperty propertyName="Name" typeName="string"/>
+        <ECProperty propertyName="DisplayLabel" typeName="string"/>
+        <ECProperty propertyName="Description" typeName="string"/>
+        <ECNavigationProperty propertyName="UnitSystem" relationshipName="UnitSystemHasUnits" direction="backward"/>
+        <ECNavigationProperty propertyName="Phenomenon" relationshipName="PhenomenonOwnsUnits" direction="backward"/>
+        <ECProperty propertyName="Definition" typeName="string"/>
+        <ECProperty propertyName="Factor" typeName="double"/>
+        <ECProperty propertyName="Offset" typeName="double"/>
+        <ECNavigationProperty propertyName="InvertsUnit" description="If this property is set, this UnitDef is the inverse unit of the unit held by the property." relationshipName="UnitHasInverseUnit" direction="backward"/>
+    </ECEntityClass>
     <ECEntityClass typeName="UnitSystemDef" description="UnitSystem" displayLabel="UnitSystem" modifier="Sealed">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
@@ -120,24 +138,7 @@
         <ECProperty propertyName="Name" typeName="string"/>
         <ECProperty propertyName="DisplayLabel" typeName="string"/>
         <ECProperty propertyName="Description" typeName="string"/>
-    </ECEntityClass>
-    <ECEntityClass typeName="UnitDef" description="Unit" displayLabel="Unit" modifier="Sealed">
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>ExistingTable</MapStrategy>
-                <TableName>ec_Unit</TableName>
-            </ClassMap>
-        </ECCustomAttributes>
-        <ECNavigationProperty propertyName="Schema" relationshipName="SchemaOwnsUnits" direction="backward"/>
-        <ECProperty propertyName="Name" typeName="string"/>
-        <ECProperty propertyName="DisplayLabel" typeName="string"/>
-        <ECProperty propertyName="Description" typeName="string"/>
-        <ECNavigationProperty propertyName="UnitSystem" relationshipName="UnitSystemHasUnits" direction="backward"/>
-        <ECNavigationProperty propertyName="Phenomenon" relationshipName="PhenomenonHasUnits" direction="backward"/>
         <ECProperty propertyName="Definition" typeName="string"/>
-        <ECProperty propertyName="Factor" typeName="double"/>
-        <ECProperty propertyName="Offset" typeName="double"/>
-        <ECNavigationProperty propertyName="InvertsUnit" description="If this property is set, this UnitDef is the inverse unit of the unit held by the property." relationshipName="UnitHasInverseUnit" direction="backward"/>
     </ECEntityClass>
     <ECEntityClass typeName="PropertyCategoryDef" description="PropertyCategory" displayLabel="PropertyCategory" modifier="Sealed">
         <ECCustomAttributes>
@@ -318,19 +319,19 @@
             <Class class="PropertyCategoryDef"/>
         </Target>
     </ECRelationshipClass>
+    <ECRelationshipClass typeName="PhenomenonOwnsUnits" modifier="Sealed" strength="embedding">
+        <Source multiplicity="(1..1)" roleLabel="has" polymorphic="false">
+            <Class class="PhenomenonDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is of" polymorphic="false">
+            <Class class="UnitDef"/>
+        </Target>
+    </ECRelationshipClass>
     <ECRelationshipClass typeName="UnitSystemHasUnits" modifier="Sealed" strength="referencing">
         <Source multiplicity="(1..1)" roleLabel="has" polymorphic="false">
             <Class class="UnitSystemDef"/>
         </Source>
         <Target multiplicity="(0..*)" roleLabel="is defined in" polymorphic="false">
-            <Class class="UnitDef"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECRelationshipClass typeName="PhenomenonHasUnits" modifier="Sealed" strength="referencing">
-        <Source multiplicity="(1..1)" roleLabel="has" polymorphic="false">
-            <Class class="PhenomenonDef"/>
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="is of" polymorphic="false">
             <Class class="UnitDef"/>
         </Target>
     </ECRelationshipClass>

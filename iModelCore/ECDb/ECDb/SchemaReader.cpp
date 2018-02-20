@@ -410,7 +410,7 @@ ECEnumerationCP SchemaReader::GetEnumeration(Utf8StringCR schemaNameOrAlias, Utf
 
     Context ctx;
 
-    ECEnumerationP ecEnum = nullptr;
+    ECEnumerationCP ecEnum = nullptr;
     if (SUCCESS != ReadEnumeration(ecEnum, ctx, enumId))
         return nullptr;
 
@@ -453,7 +453,7 @@ KindOfQuantityCP SchemaReader::GetKindOfQuantity(Utf8StringCR schemaNameOrAlias,
 
     Context ctx;
 
-    KindOfQuantityP koq = nullptr;
+    KindOfQuantityCP koq = nullptr;
     if (SUCCESS != ReadKindOfQuantity(koq, ctx, koqId))
         return nullptr;
 
@@ -496,7 +496,7 @@ PropertyCategoryCP SchemaReader::GetPropertyCategory(Utf8StringCR schemaNameOrAl
 
     Context ctx;
 
-    PropertyCategoryP cat = nullptr;
+    PropertyCategoryCP cat = nullptr;
     if (SUCCESS != ReadPropertyCategory(cat, ctx, catId))
         return nullptr;
 
@@ -633,7 +633,7 @@ BentleyStatus SchemaReader::EnsureDerivedClassesExist(ECClassId ecClassId) const
     {
     BeMutexHolder ecdbLock(GetECDbMutex());
     ClassDbEntry* entry = m_cache.Find(ecClassId);
-    if (entry != nullptr && entry->m_ensureDerivedClassesExist)
+    if (entry != nullptr && entry->m_derivedClassesAreLoaded)
         return SUCCESS;
 
     Context ctx;
@@ -663,7 +663,7 @@ BentleyStatus SchemaReader::EnsureDerivedClassesExist(Context& ctx, ECClassId ec
         }
 
     ClassDbEntry* entry = m_cache.Find(ecClassId);
-    entry->m_ensureDerivedClassesExist = true;
+    entry->m_derivedClassesAreLoaded = true;
 
     return SUCCESS;
     }
@@ -672,14 +672,12 @@ BentleyStatus SchemaReader::EnsureDerivedClassesExist(Context& ctx, ECClassId ec
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaReader::ReadEnumeration(ECEnumerationP& ecEnum, Context& ctx, ECEnumerationId enumId) const
+BentleyStatus SchemaReader::ReadEnumeration(ECEnumerationCP& ecEnum, Context& ctx, ECEnumerationId enumId) const
     {
     BeMutexHolder ecdbLock(GetECDbMutex());
-    if (EnumDbEntry* entry = m_cache.Find(enumId))
-        {
-        ecEnum = entry->m_cachedEnum;
+    ecEnum = m_cache.Find(enumId);
+    if (ecEnum != nullptr)
         return SUCCESS;
-        }
 
     const int schemaIdIx = 0;
     const int nameIx = 1;
@@ -711,17 +709,17 @@ BentleyStatus SchemaReader::ReadEnumeration(ECEnumerationP& ecEnum, Context& ctx
     const bool isStrict = stmt->GetValueBoolean(isStrictColIx);
     Utf8CP enumValuesJsonStr = stmt->GetValueText(valuesColIx);
 
-    ecEnum = nullptr;
-    if (ECObjectsStatus::Success != schemaKey->m_cachedSchema->CreateEnumeration(ecEnum, enumName, underlyingType))
+    ECEnumerationP newEnum = nullptr;
+    if (ECObjectsStatus::Success != schemaKey->m_cachedSchema->CreateEnumeration(newEnum, enumName, underlyingType))
         return ERROR;
 
-    ecEnum->SetId(enumId);
+    newEnum->SetId(enumId);
 
     if (displayLabel != nullptr)
-        ecEnum->SetDisplayLabel(displayLabel);
+        newEnum->SetDisplayLabel(displayLabel);
 
-    ecEnum->SetDescription(description);
-    ecEnum->SetIsStrict(isStrict);
+    newEnum->SetDescription(description);
+    newEnum->SetIsStrict(isStrict);
 
     if (Utf8String::IsNullOrEmpty(enumValuesJsonStr))
         {
@@ -729,13 +727,13 @@ BentleyStatus SchemaReader::ReadEnumeration(ECEnumerationP& ecEnum, Context& ctx
         return ERROR;
         }
 
-    if (SUCCESS != SchemaPersistenceHelper::DeserializeEnumerationValues(*ecEnum, enumValuesJsonStr))
+    if (SUCCESS != SchemaPersistenceHelper::DeserializeEnumerationValues(*newEnum, enumValuesJsonStr))
         return ERROR;
 
     //cache the enum
-    m_cache.Insert(std::unique_ptr<EnumDbEntry>(new EnumDbEntry(enumId, *ecEnum)));
-
+    m_cache.Insert(*newEnum);
     schemaKey->m_loadedTypeCount++;
+    ecEnum = newEnum;
     return SUCCESS;
     }
 
@@ -797,7 +795,7 @@ BentleyStatus SchemaReader::ReadUnitSystems(Context& ctx) const
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaReader::ReadPhenomena(Context& ctx) const
     {
-    CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT Id,SchemaId,Name,DisplayLabel,Description FROM [%s]." TABLE_Phenomenon, GetTableSpace().GetName().c_str()).c_str());
+    CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT Id,SchemaId,Name,DisplayLabel,Description,Definition FROM [%s]." TABLE_Phenomenon, GetTableSpace().GetName().c_str()).c_str());
     if (stmt == nullptr)
         return ERROR;
 
@@ -812,9 +810,10 @@ BentleyStatus SchemaReader::ReadPhenomena(Context& ctx) const
         Utf8CP name = stmt->GetValueText(2);
         Utf8CP displayLabel = stmt->IsColumnNull(3) ? nullptr : stmt->GetValueText(3);
         Utf8CP description = stmt->IsColumnNull(4) ? nullptr : stmt->GetValueText(4);
+        Utf8CP definition = stmt->IsColumnNull(5) ? nullptr : stmt->GetValueText(5);
 
         PhenomenonP ph = nullptr;
-        if (ECObjectsStatus::Success != schemaKey->m_cachedSchema->CreatePhenomenon(ph, name, displayLabel, description))
+        if (ECObjectsStatus::Success != schemaKey->m_cachedSchema->CreatePhenomenon(ph, name, definition, displayLabel, description))
             return ERROR;
 
         ph->SetId(id);
@@ -835,14 +834,14 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
     const int nameIx = 2;
     const int displayLabelColIx = 3;
     const int descriptionColIx = 4;
-    const int usIdColIx = 5;
-    const int phIdColIx = 6;
+    const int phIdColIx = 5;
+    const int usIdColIx = 6;
     const int definitionColIx = 7;
     const int factorColIx = 8;
     const int offsetColIx = 9;
     const int invertsUnitIdColIx = 10;
 
-    CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT Id,SchemaId,Name,DisplayLabel,Description,UnitSystemId,PhenomenonId,Definition,Factor,Offset,InvertsUnitId FROM [%s]." TABLE_Unit, GetTableSpace().GetName().c_str()).c_str());
+    CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT Id,SchemaId,Name,DisplayLabel,Description,PhenomenonId,UnitSystemId,Definition,Factor,Offset,InvertsUnitId FROM [%s]." TABLE_Unit, GetTableSpace().GetName().c_str()).c_str());
     if (stmt == nullptr)
         return ERROR;
 
@@ -860,14 +859,14 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
         Utf8CP displayLabel = stmt->IsColumnNull(displayLabelColIx) ? nullptr : stmt->GetValueText(displayLabelColIx);
         Utf8CP description = stmt->IsColumnNull(descriptionColIx) ? nullptr : stmt->GetValueText(descriptionColIx);
 
-        const UnitSystemId usId = stmt->GetValueId<UnitSystemId>(usIdColIx);
-        UnitSystemCP us = m_cache.Find(usId);
-        if (us == nullptr)
-            return ERROR;
-
         const PhenomenonId phId = stmt->GetValueId<PhenomenonId>(phIdColIx);
         PhenomenonCP ph = m_cache.Find(phId);
         if (ph == nullptr)
+            return ERROR;
+
+        const UnitSystemId usId = stmt->GetValueId<UnitSystemId>(usIdColIx);
+        UnitSystemCP us = m_cache.Find(usId);
+        if (us == nullptr)
             return ERROR;
 
         UnitId invertsUnitId;
@@ -931,14 +930,12 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityP& koq, Context& ctx, KindOfQuantityId koqId) const
+BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityCP& koq, Context& ctx, KindOfQuantityId koqId) const
     {
     BeMutexHolder ecdbLock(GetECDbMutex());
-    if (KindOfQuantityDbEntry* entry = m_cache.Find(koqId))
-        {
-        koq = entry->m_cachedKoq;
+    koq = m_cache.Find(koqId);
+    if (koq != nullptr)
         return SUCCESS;
-        }
 
     if (SUCCESS != LoadUnits(ctx))
         return ERROR;
@@ -974,49 +971,48 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityP& koq, Context& ct
     const double relError = stmt->GetValueDouble(relErrorColIx);
     Utf8CP presUnitsStr = stmt->IsColumnNull(presUnitColIx) ? nullptr : stmt->GetValueText(presUnitColIx);
 
-    koq = nullptr;
-    if (ECObjectsStatus::Success != schemaKey->m_cachedSchema->CreateKindOfQuantity(koq, koqName))
+    KindOfQuantityP newKoq = nullptr;
+    if (ECObjectsStatus::Success != schemaKey->m_cachedSchema->CreateKindOfQuantity(newKoq, koqName))
         return ERROR;
 
-    koq->SetId(koqId);
+    newKoq->SetId(koqId);
 
     if (displayLabel != nullptr)
-        koq->SetDisplayLabel(displayLabel);
+        newKoq->SetDisplayLabel(displayLabel);
 
-    koq->SetDescription(description);
+    newKoq->SetDescription(description);
 
     BeAssert(!Utf8String::IsNullOrEmpty(persUnitStr));
-    if (!koq->SetPersistenceUnit(Formatting::FormatUnitSet(persUnitStr)))
+    if (!newKoq->SetPersistenceUnit(Formatting::FormatUnitSet(persUnitStr)))
         {
-        BeAssert(!koq->GetPersistenceUnit().HasProblem() && "KOQ Persistence Unit could not be deserialized correctly. It has an invalid format");
+        BeAssert(!newKoq->GetPersistenceUnit().HasProblem() && "KOQ Persistence Unit could not be deserialized correctly. It has an invalid format");
         return ERROR;
         }
 
-    koq->SetRelativeError(relError);
+    newKoq->SetRelativeError(relError);
 
     if (!Utf8String::IsNullOrEmpty(presUnitsStr))
         {
-        if (SUCCESS != SchemaPersistenceHelper::DeserializeKoqPresentationUnits(*koq, presUnitsStr))
+        if (SUCCESS != SchemaPersistenceHelper::DeserializeKoqPresentationUnits(*newKoq, presUnitsStr))
             return ERROR;
         }
 
     //cache the koq
-    m_cache.Insert(std::unique_ptr<KindOfQuantityDbEntry>(new KindOfQuantityDbEntry(koqId, *koq)));
+    m_cache.Insert(*newKoq);
     schemaKey->m_loadedTypeCount++;
+    koq = newKoq;
     return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    06/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaReader::ReadPropertyCategory(PropertyCategoryP& cat, Context& ctx, PropertyCategoryId catId) const
+BentleyStatus SchemaReader::ReadPropertyCategory(PropertyCategoryCP& cat, Context& ctx, PropertyCategoryId catId) const
     {
     BeMutexHolder ecdbLock(GetECDbMutex());
-    if (PropertyCategoryDbEntry* entry = m_cache.Find(catId))
-        {
-        cat = entry->m_cachedCategory;
+    cat = m_cache.Find(catId);
+    if (cat != nullptr)
         return SUCCESS;
-        }
 
     const int schemaIdIx = 0;
     const int nameIx = 1;
@@ -1049,23 +1045,24 @@ BentleyStatus SchemaReader::ReadPropertyCategory(PropertyCategoryP& cat, Context
         prio = (uint32_t) stmt->GetValueInt64(priorityColIx);
         }
 
-    cat = nullptr;
-    if (ECObjectsStatus::Success != schemaKey->m_cachedSchema->CreatePropertyCategory(cat, catName))
+    PropertyCategoryP newCat = nullptr;
+    if (ECObjectsStatus::Success != schemaKey->m_cachedSchema->CreatePropertyCategory(newCat, catName))
         return ERROR;
 
-    cat->SetId(catId);
+    newCat->SetId(catId);
 
     if (displayLabel != nullptr)
-        cat->SetDisplayLabel(displayLabel);
+        newCat->SetDisplayLabel(displayLabel);
 
-    cat->SetDescription(description);
+    newCat->SetDescription(description);
 
     if (!prio.IsNull())
-        cat->SetPriority(prio.Value());
+        newCat->SetPriority(prio.Value());
 
     //cache the category
-    m_cache.Insert(std::unique_ptr<PropertyCategoryDbEntry>(new PropertyCategoryDbEntry(catId, *cat)));
+    m_cache.Insert(*newCat);
     schemaKey->m_loadedTypeCount++;
+    cat = newCat;
     return SUCCESS;
     }
 
@@ -1207,7 +1204,7 @@ BentleyStatus SchemaReader::LoadSchemaEntitiesFromDb(SchemaDbEntry* ecSchemaKey,
 
     while (BE_SQLITE_ROW == stmt->Step())
         {
-        ECEnumerationP ecEnum = nullptr;
+        ECEnumerationCP ecEnum = nullptr;
         if (SUCCESS != ReadEnumeration(ecEnum, ctx, stmt->GetValueId<ECEnumerationId>(0)))
             return ERROR;
 
@@ -1225,7 +1222,7 @@ BentleyStatus SchemaReader::LoadSchemaEntitiesFromDb(SchemaDbEntry* ecSchemaKey,
 
     while (BE_SQLITE_ROW == stmt->Step())
         {
-        KindOfQuantityP koq = nullptr;
+        KindOfQuantityCP koq = nullptr;
         if (SUCCESS != ReadKindOfQuantity(koq, ctx, stmt->GetValueId<KindOfQuantityId>(0)))
             return ERROR;
 
@@ -1243,7 +1240,7 @@ BentleyStatus SchemaReader::LoadSchemaEntitiesFromDb(SchemaDbEntry* ecSchemaKey,
 
     while (BE_SQLITE_ROW == stmt->Step())
         {
-        PropertyCategoryP cat = nullptr;
+        PropertyCategoryCP cat = nullptr;
         if (SUCCESS != ReadPropertyCategory(cat, ctx, stmt->GetValueId<PropertyCategoryId>(0)))
             return ERROR;
 
@@ -1657,7 +1654,7 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
 
                 if (rowInfo.m_enumId.IsValid())
                     {
-                    ECEnumerationP ecenum = nullptr;
+                    ECEnumerationCP ecenum = nullptr;
                     if (SUCCESS != ReadEnumeration(ecenum, ctx, rowInfo.m_enumId))
                         return ERROR;
 
@@ -1711,7 +1708,7 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
 
                 if (rowInfo.m_enumId.IsValid())
                     {
-                    ECEnumerationP ecenum = nullptr;
+                    ECEnumerationCP ecenum = nullptr;
                     if (SUCCESS != ReadEnumeration(ecenum, ctx, rowInfo.m_enumId))
                         return ERROR;
 
@@ -1837,7 +1834,7 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
 
         if (rowInfo.m_koqId.IsValid())
             {
-            KindOfQuantityP koq = nullptr;
+            KindOfQuantityCP koq = nullptr;
             if (SUCCESS != ReadKindOfQuantity(koq, ctx, rowInfo.m_koqId))
                 return ERROR;
 
@@ -1846,7 +1843,7 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
 
         if (rowInfo.m_catId.IsValid())
             {
-            PropertyCategoryP cat = nullptr;
+            PropertyCategoryCP cat = nullptr;
             if (SUCCESS != ReadPropertyCategory(cat, ctx, rowInfo.m_catId))
                 return ERROR;
 
@@ -2146,6 +2143,9 @@ void SchemaReader::ReaderCache::Clear() const
     m_propCategoryCache.clear();
     m_classCache.clear();
     m_schemaCache.clear();
+    m_unitSystemCache.clear();
+    m_phenomenonCache.clear();
+    m_unitCache.clear();
     m_unitsAreLoaded = false;
     }
 
@@ -2194,81 +2194,6 @@ bool SchemaReader::ReaderCache::Insert(std::unique_ptr<ClassDbEntry> entry) cons
     const ECN::ECClassId id = entry->m_classId;
     BeAssert(id.IsValid());
     auto itor = m_classCache.insert(std::make_pair(id, std::move(entry)));
-    return itor.second;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        07/2017
-//+---------------+---------------+---------------+---------------+---------------+--------
-EnumDbEntry* SchemaReader::ReaderCache::Find(ECN::ECEnumerationId id) const
-    {
-    auto itor = m_enumCache.find(id);
-    if (itor != m_enumCache.end())
-        return itor->second.get();
-
-    return nullptr;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        07/2017
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool SchemaReader::ReaderCache::Insert(std::unique_ptr<EnumDbEntry> entry) const
-    {
-    BeAssert(entry != nullptr);
-    const ECN::ECEnumerationId id = entry->m_enumId;
-    BeAssert(id.IsValid());
-
-    auto itor = m_enumCache.insert(std::make_pair(id, std::move(entry)));
-    return itor.second;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        07/2017
-//+---------------+---------------+---------------+---------------+---------------+--------
-KindOfQuantityDbEntry* SchemaReader::ReaderCache::Find(ECN::KindOfQuantityId id) const
-    {
-    auto itor = m_koqCache.find(id);
-    if (itor != m_koqCache.end())
-        return itor->second.get();
-
-    return nullptr;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        07/2017
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool SchemaReader::ReaderCache::Insert(std::unique_ptr<KindOfQuantityDbEntry> entry) const
-    {
-    BeAssert(entry != nullptr);
-    const ECN::KindOfQuantityId id = entry->m_koqId;
-    BeAssert(id.IsValid());
-
-    auto itor = m_koqCache.insert(std::make_pair(id, std::move(entry)));
-    return itor.second;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        07/2017
-//+---------------+---------------+---------------+---------------+---------------+--------
-PropertyCategoryDbEntry* SchemaReader::ReaderCache::Find(ECN::PropertyCategoryId id) const
-    {
-    auto itor = m_propCategoryCache.find(id);
-    if (itor != m_propCategoryCache.end())
-        return itor->second.get();
-
-    return nullptr;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        07/2017
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool SchemaReader::ReaderCache::Insert(std::unique_ptr<PropertyCategoryDbEntry> entry) const
-    {
-    BeAssert(entry != nullptr);
-    const ECN::PropertyCategoryId id = entry->m_categoryId;
-    BeAssert(id.IsValid());
-
-    auto itor = m_propCategoryCache.insert(std::make_pair(id, std::move(entry)));
     return itor.second;
     }
 

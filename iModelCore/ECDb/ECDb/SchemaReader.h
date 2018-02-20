@@ -38,7 +38,7 @@ struct ClassDbEntry final
     public:
         ECN::ECClassId m_classId;
         ECN::ECClassP m_cachedClass = nullptr;
-        bool m_ensureDerivedClassesExist = false;
+        bool m_derivedClassesAreLoaded = false;
 
         explicit ClassDbEntry(ECN::ECClassCR ecClass) : m_classId(ecClass.GetId()), m_cachedClass(const_cast<ECN::ECClassP> (&ecClass)) {}
     };
@@ -53,30 +53,6 @@ public:
     ECN::ECEnumerationP m_cachedEnum = nullptr;
 
     EnumDbEntry(ECN::ECEnumerationId enumId, ECN::ECEnumerationCR ecEnum) : m_enumId(enumId), m_cachedEnum(const_cast<ECN::ECEnumerationP> (&ecEnum)) {}
-    };
-
-//=======================================================================================
-// @bsiclass                                                Krischan.Eberle      06/2016
-//+===============+===============+===============+===============+===============+======
-struct KindOfQuantityDbEntry final
-    {
-public:
-    ECN::KindOfQuantityId m_koqId;
-    ECN::KindOfQuantityP m_cachedKoq = nullptr;
-
-    KindOfQuantityDbEntry(ECN::KindOfQuantityId koqId, ECN::KindOfQuantityCR koq) : m_koqId(koqId), m_cachedKoq(const_cast<ECN::KindOfQuantityP> (&koq)) {}
-    };
-
-//=======================================================================================
-// @bsiclass                                                Krischan.Eberle      06/2017
-//+===============+===============+===============+===============+===============+======
-struct PropertyCategoryDbEntry final
-    {
-    public:
-        ECN::PropertyCategoryId m_categoryId;
-        ECN::PropertyCategoryP m_cachedCategory = nullptr;
-
-        PropertyCategoryDbEntry(ECN::PropertyCategoryId id, ECN::PropertyCategoryCR cat) : m_categoryId(id), m_cachedCategory(const_cast<ECN::PropertyCategoryP> (&cat)) {}
     };
 
 struct TableSpaceSchemaManager;
@@ -112,9 +88,9 @@ struct SchemaReader final
                 ECDb const& m_ecdb;
                 mutable std::map<ECN::ECSchemaId, std::unique_ptr<SchemaDbEntry>> m_schemaCache;
                 mutable std::map<ECN::ECClassId, std::unique_ptr<ClassDbEntry>> m_classCache;
-                mutable std::map<ECN::ECEnumerationId, std::unique_ptr<EnumDbEntry>> m_enumCache;
-                mutable std::map<ECN::KindOfQuantityId, std::unique_ptr<KindOfQuantityDbEntry>> m_koqCache;
-                mutable std::map<ECN::PropertyCategoryId, std::unique_ptr<PropertyCategoryDbEntry>> m_propCategoryCache;
+                mutable std::map<ECN::ECEnumerationId, ECN::ECEnumerationCP> m_enumCache;
+                mutable std::map<ECN::KindOfQuantityId, ECN::KindOfQuantityCP> m_koqCache;
+                mutable std::map<ECN::PropertyCategoryId, ECN::PropertyCategoryCP> m_propCategoryCache;
                 mutable std::map<ECN::UnitSystemId, ECN::UnitSystemCP> m_unitSystemCache;
                 mutable std::map<ECN::PhenomenonId, ECN::PhenomenonCP> m_phenomenonCache;
                 mutable std::map<ECN::UnitId, ECN::ECUnitCP> m_unitCache;
@@ -125,9 +101,9 @@ struct SchemaReader final
                 void Clear() const;
                 SchemaDbEntry* Find(ECN::ECSchemaId) const;
                 ClassDbEntry* Find(ECN::ECClassId) const;
-                EnumDbEntry* Find(ECN::ECEnumerationId) const;
-                KindOfQuantityDbEntry* Find(ECN::KindOfQuantityId) const;
-                PropertyCategoryDbEntry* Find(ECN::PropertyCategoryId) const;
+                ECN::ECEnumerationCP Find(ECN::ECEnumerationId id) const { auto it = m_enumCache.find(id); return it != m_enumCache.end() ? it->second : nullptr; }
+                ECN::KindOfQuantityCP Find(ECN::KindOfQuantityId id) const { auto it = m_koqCache.find(id); return it != m_koqCache.end() ? it->second : nullptr; }
+                ECN::PropertyCategoryCP Find(ECN::PropertyCategoryId id) const { auto it = m_propCategoryCache.find(id); return it != m_propCategoryCache.end() ? it->second : nullptr; }
                 ECN::UnitSystemCP Find(ECN::UnitSystemId id) const { auto it = m_unitSystemCache.find(id); return it != m_unitSystemCache.end() ? it->second : nullptr;}
                 ECN::PhenomenonCP Find(ECN::PhenomenonId id) const { auto it = m_phenomenonCache.find(id); return it != m_phenomenonCache.end() ? it->second : nullptr; }
                 ECN::ECUnitCP Find(ECN::UnitId id) const { auto it = m_unitCache.find(id); return it != m_unitCache.end() ? it->second : nullptr; }
@@ -135,12 +111,12 @@ struct SchemaReader final
                 ECN::ECClassId Find(Utf8StringCR schemaName, Utf8StringCR className) const;
                 bool HasClassEntry(ECN::ECClassId id) const;
                 void SetClassEntryToNull(ECN::ECClassId id) const;
+                bool Insert(Utf8StringCR schemaName, Utf8StringCR className, ECN::ECClassId id) const;
                 bool Insert(std::unique_ptr<SchemaDbEntry> entry) const;
                 bool Insert(std::unique_ptr<ClassDbEntry> entry) const;
-                bool Insert(std::unique_ptr<EnumDbEntry> entry) const;
-                bool Insert(std::unique_ptr<KindOfQuantityDbEntry> entry) const;
-                bool Insert(std::unique_ptr<PropertyCategoryDbEntry> entry) const;
-                bool Insert(Utf8StringCR schemaName, Utf8StringCR className, ECN::ECClassId id) const;
+                void Insert(ECN::ECEnumerationCR ecEnum) const { m_enumCache.insert(std::make_pair(ecEnum.GetId(), &ecEnum)); }
+                void Insert(ECN::KindOfQuantityCR koq) const { m_koqCache.insert(std::make_pair(koq.GetId(), &koq)); }
+                void Insert(ECN::PropertyCategoryCR propCat) const { m_propCategoryCache.insert(std::make_pair(propCat.GetId(), &propCat)); }
                 void Insert(ECN::UnitSystemCR us) const { m_unitSystemCache.insert(std::make_pair(us.GetId(), &us)); }
                 void Insert(ECN::PhenomenonCR ph) const { m_phenomenonCache.insert(std::make_pair(ph.GetId(), &ph)); }
                 void Insert(ECN::ECUnitCR unit) const { m_unitCache.insert(std::make_pair(unit.GetId(), &unit)); }
@@ -168,13 +144,13 @@ struct SchemaReader final
         BentleyStatus LoadUnits(Context&) const;
 
         BentleyStatus ReadSchema(SchemaDbEntry*&, Context&, ECN::ECSchemaId, bool loadSchemaEntities) const;
-        BentleyStatus ReadEnumeration(ECN::ECEnumerationP&, Context&, ECN::ECEnumerationId) const;
+        BentleyStatus ReadEnumeration(ECN::ECEnumerationCP&, Context&, ECN::ECEnumerationId) const;
         
-        BentleyStatus ReadKindOfQuantity(ECN::KindOfQuantityP&, Context&, ECN::KindOfQuantityId) const;
+        BentleyStatus ReadKindOfQuantity(ECN::KindOfQuantityCP&, Context&, ECN::KindOfQuantityId) const;
         BentleyStatus ReadUnitSystems(Context&) const;
         BentleyStatus ReadPhenomena(Context&) const;
         BentleyStatus ReadUnits(Context&) const;
-        BentleyStatus ReadPropertyCategory(ECN::PropertyCategoryP&, Context&, ECN::PropertyCategoryId) const;
+        BentleyStatus ReadPropertyCategory(ECN::PropertyCategoryCP&, Context&, ECN::PropertyCategoryId) const;
 
         BentleyStatus EnsureDerivedClassesExist(Context&, ECN::ECClassId) const;
 

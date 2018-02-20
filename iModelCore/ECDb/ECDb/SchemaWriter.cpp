@@ -465,7 +465,7 @@ BentleyStatus SchemaWriter::ImportPhenomenon(PhenomenonCR ph)
         return ERROR;
         }
 
-    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO main.ec_Phenomenon(SchemaId,Name,DisplayLabel,Description) VALUES(?,?,?,?)");
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO main.ec_Phenomenon(SchemaId,Name,DisplayLabel,Description,Definition) VALUES(?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
@@ -486,6 +486,9 @@ BentleyStatus SchemaWriter::ImportPhenomenon(PhenomenonCR ph)
         if (BE_SQLITE_OK != stmt->BindText(4, ph.GetInvariantDescription(), Statement::MakeCopy::No))
             return ERROR;
         }
+
+    if (BE_SQLITE_OK != stmt->BindText(5, ph.GetDefinition(), Statement::MakeCopy::No))
+        return ERROR;
 
     if (BE_SQLITE_DONE != stmt->Step())
         return ERROR;
@@ -513,19 +516,17 @@ BentleyStatus SchemaWriter::ImportUnit(ECUnitCR unit)
         return ERROR;
         }
 
-    /* WIP
-    if (unit.GetUnitSystem() != nullptr)
-        {
-        if (SUCCESS != ImportUnitSystem(*unit.GetUnitSystem()))
-            return ERROR;
-        }
+    BeAssert(unit.GetPhenomenon() != nullptr && dynamic_cast<ECN::PhenomenonCP> (unit.GetPhenomenon()) != nullptr);
+    PhenomenonCP phen = static_cast<ECN::PhenomenonCP> (unit.GetPhenomenon());
+    if (SUCCESS != ImportPhenomenon(*phen))
+        return ERROR;
 
-    if (unit.GetPhenomenon() != nullptr)
-        {
-        if (SUCCESS != ImportPhenomenon(*unit.GetPhenomenon()))
-            return ERROR;
-        }
+    BeAssert(unit.GetUnitSystem() != nullptr && dynamic_cast<ECN::UnitSystemCP> (unit.GetUnitSystem()) != nullptr);
+    UnitSystemCP system = static_cast<ECN::UnitSystemCP> (unit.GetUnitSystem());
+    if (SUCCESS != ImportUnitSystem(*system))
+        return ERROR;
 
+    /*
     if (unit.IsInverseUnit())
         {
         if (SUCCESS != ImportUnit(*unit.GetInvertedUnit()))
@@ -533,7 +534,7 @@ BentleyStatus SchemaWriter::ImportUnit(ECUnitCR unit)
         }
     */
 
-    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO main.ec_Unit(SchemaId,Name,DisplayLabel,Description,UnitSystemId,PhenomenonId,Definition,Factor,Offset,InverseUnitId) VALUES(?,?,?,?,?,?,?,?,?,?)");
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO main.ec_Unit(SchemaId,Name,DisplayLabel,Description,PhenomenonId,UnitSystemId,Definition,Factor,Offset,InverseUnitId) VALUES(?,?,?,?,?,?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
@@ -541,8 +542,8 @@ BentleyStatus SchemaWriter::ImportUnit(ECUnitCR unit)
     const int nameParamIx = 2;
     const int labelParamIx = 3;
     const int descParamIx = 4;
-    const int usIdParamIx = 5;
-    const int phIdParamIx = 6;
+    const int phIdParamIx = 5;
+    const int usIdParamIx = 6;
     const int defParamIx = 7;
     const int factorParamIx = 8;
     const int offsetParamIx = 9;
@@ -566,15 +567,13 @@ BentleyStatus SchemaWriter::ImportUnit(ECUnitCR unit)
             return ERROR;
         }
 
-  
-    /* WIP
-    if (BE_SQLITE_OK != stmt->BindId(usIdParamIx, unit.GetUnitSystem()->GetId()))
+
+    if (BE_SQLITE_OK != stmt->BindId(phIdParamIx, phen->GetId()))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindId(phIdParamIx, unit.GetPhenomenon()->GetId()))
+    if (BE_SQLITE_OK != stmt->BindId(usIdParamIx, system->GetId()))
         return ERROR;
 
-    */
     if (BE_SQLITE_OK != stmt->BindText(defParamIx, unit.GetDefinition(), Statement::MakeCopy::No))
         return ERROR;
 

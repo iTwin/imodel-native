@@ -799,6 +799,12 @@ void ECDbMetaSchemaECSqlTestFixture::AssertPhenomenonDef(PhenomenonCR expected, 
             continue;
             }
 
+        if (colName.EqualsI("Definition"))
+            {
+            ASSERT_STREQ(expected.GetDefinition().c_str(), val.GetText()) << "PhenomenonDef.Definition";
+            continue;
+            }
+
         FAIL() << "Untested PhenomenonDef property: " << colName.c_str() << " Please adjust the test";
         }
     }
@@ -893,21 +899,17 @@ void ECDbMetaSchemaECSqlTestFixture::AssertUnitDef(ECUnitCR expected, ECSqlState
 
         if (colName.EqualsI("UnitSystem"))
             {
-            /*WIP
             ECClassId actualRelClassId;
-            ASSERT_EQ(expected.GetUnitSystem()->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "UnitDef.UnitSystem";
+            ASSERT_EQ(static_cast<ECN::UnitSystemCP>(expected.GetUnitSystem())->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "UnitDef.UnitSystem";
             ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "UnitDef.UnitSystem";
-            */
             continue;
             }
 
         if (colName.EqualsI("Phenomenon"))
             {
-            /*WIP
             ECClassId actualRelClassId;
-            ASSERT_EQ(expected.GetPhenomenon()->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "UnitDef.Phenomenon";
+            ASSERT_EQ(static_cast<ECN::PhenomenonCP>(expected.GetPhenomenon())->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "UnitDef.Phenomenon";
             ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "UnitDef.Phenomenon";
-            */
             continue;
             }
 
@@ -937,8 +939,8 @@ void ECDbMetaSchemaECSqlTestFixture::AssertUnitDef(ECUnitCR expected, ECSqlState
             {
             /*WIP
             ECClassId actualRelClassId;
-            ASSERT_EQ(expected.GetInvertsUnit()->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "UnitDef.Phenomenon";
-            ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "UnitDef.Phenomenon";
+            ASSERT_EQ(expected.GetInvertsUnit()->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "UnitDef.InvertsUnit";
+            ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "UnitDef.InvertsUnit";
             */
             continue;
             }

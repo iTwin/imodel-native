@@ -1359,11 +1359,18 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
 
     {
     //verify that ECDbMeta schema was upgraded to version 4.0.1
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(upgradedFile, "SELECT VersionDigit1,VersionDigit2,VersionDigit3 FROM ec_Schema WHERE Name = 'ECDbMeta'"));
+    //and ECDbSystem schema was upgraded to version 5.0.1
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(upgradedFile, "SELECT Name,VersionDigit1,VersionDigit2,VersionDigit3 FROM ec_Schema WHERE Name='ECDbMeta' OR Name='ECDbSystem' ORDER BY Name"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    EXPECT_EQ(4, stmt.GetValueInt(0));
-    EXPECT_EQ(0, stmt.GetValueInt(1));
-    EXPECT_EQ(1, stmt.GetValueInt(2));
+    EXPECT_STREQ("ECDbMeta", stmt.GetValueText(0));
+    EXPECT_EQ(4, stmt.GetValueInt(1));
+    EXPECT_EQ(0, stmt.GetValueInt(2));
+    EXPECT_EQ(1, stmt.GetValueInt(3));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    EXPECT_STREQ("ECDbSystem", stmt.GetValueText(0));
+    EXPECT_EQ(5, stmt.GetValueInt(1));
+    EXPECT_EQ(0, stmt.GetValueInt(2));
+    EXPECT_EQ(1, stmt.GetValueInt(3));
     stmt.Finalize();
     }
 
@@ -1437,6 +1444,11 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
         }
 
     ASSERT_EQ(BE_SQLITE_DONE, upgradedEnumsStmt.Step());
+
+    ASSERT_TRUE(upgradedFile.TableExists("ec_Unit"));
+    ASSERT_TRUE(upgradedFile.TableExists("ec_UnitSystem"));
+    ASSERT_TRUE(upgradedFile.TableExists("ec_Phenomenon"));
+    ASSERT_TRUE(upgradedFile.TableExists("ec_Format"));
     }
 
 
