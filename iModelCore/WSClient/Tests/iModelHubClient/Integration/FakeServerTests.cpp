@@ -223,12 +223,33 @@ TEST_F(FakeServerFixture, DownloadiModel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FakeServerFixture, DeleteiModel)
     {
-    Utf8String urlDelete("https://qa-imodelhubapi.bentley.com/v2.5/Repositories/Project--7dfb2388-92cf-4ec7-94a7-ff72853466df/ProjectScope/iModel/42074d22-a7ca-4c6f-91cc-22176e993379");
+    Utf8String urlGetInfo("https://qa-imodelhubapi.bentley.com/v2.5/Repositories/Project--7dfb2388-92cf-4ec7-94a7-ff72853466df/ProjectScope/iModel");
 
-    Utf8String method = "DELETE";
+    Utf8String method = "GET";
     IHttpHandlerPtr handlePtr = std::make_shared<MockIMSHttpHandler>();
-    Request request(urlDelete, method, handlePtr);
-    Response response = request.PerformAsync()->GetResult();
+    Request request(urlGetInfo, method, handlePtr);
+    Response responseInfo = request.PerformAsync()->GetResult();
+    HttpResponseContentPtr reqContent = responseInfo.GetContent();
+    HttpBodyPtr reqBody = reqContent->GetBody();
+
+    char readBuff[100000] ;
+    size_t buffSize = 100000;
+    reqBody->Read(readBuff, buffSize);
+    Utf8String reqBodyRead(readBuff);
+
+    Json::Reader reader;
+    Json::Value settings;
+    reader.Parse(reqBodyRead, settings);
+    BeGuid projGuid(true);
+    Utf8String iModelId = Utf8String(settings["instances"][0]["instanceId"].asString());
+
+    Utf8String urlDelete("https://qa-imodelhubapi.bentley.com/v2.5/Repositories/Project--7dfb2388-92cf-4ec7-94a7-ff72853466df/ProjectScope/iModel");
+    urlDelete += "/" + iModelId;
+
+    Utf8String methodDelete = "DELETE";
+    Request requestDelete(urlDelete, methodDelete, handlePtr);
+    Response responseDelete = requestDelete.PerformAsync()->GetResult();
+    ASSERT_EQ(HttpStatus::OK, responseDelete.GetHttpStatus());
     }
 
 TEST_F(FakeServerFixture, GetiModels)
