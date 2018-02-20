@@ -868,7 +868,7 @@ void DgnRevision::ExtractCodes(DgnCodeSet& assignedCodes, DgnCodeSet& discardedC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    11/2016
 //---------------------------------------------------------------------------------------
-void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb, bool extractInserted) const
+void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb, bool extractInserted, bool avoidExclusiveModelElements) const
     {
     LockRequest lockRequest;
 
@@ -881,6 +881,26 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb, bool extrac
 
     RevisionChangesFileReader changeStream(m_revChangesFile, dgndb);
     ChangeIterator changeIter(dgndb, changeStream);
+
+    // TFS#788401: Get the set of exclusively locked model Ids, true by default
+    DgnModelIdSet exclusiveModelIds;
+    if (avoidExclusiveModelElements)
+        {
+        IBriefcaseManager* mgr = dgndb.GetExistingBriefcaseManager();
+        IOwnedLocksIteratorPtr locksIter = (mgr != nullptr) ? mgr->GetOwnedLocks() : nullptr;
+        while(locksIter.IsValid() && locksIter->IsValid())
+            {
+            DgnLockCR lock = **locksIter;
+            if (lock.GetType() == LockableType::Model && lock.GetLevel() == LockLevel::Exclusive)
+                {
+                DgnModelId modelId(lock.GetId().GetValue());
+                exclusiveModelIds.insert(modelId);
+                lockRequest.InsertLock(LockableId(modelId), LockLevel::Exclusive);
+                }
+
+            ++(*locksIter);
+            }
+        }
 
     for (ChangeIterator::RowEntry const& entry : changeIter)
         {
@@ -910,6 +930,10 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb, bool extrac
                     break;
                     }
             }
+        
+        // TFS#788401: Avoid inserting locks if exclusively locked models
+        if (exclusiveModelIds.Contains(modelId))
+            continue;
 
         BeAssert(modelId.IsValid());
         lockRequest.InsertLock(LockableId(modelId), LockLevel::Shared);
@@ -932,7 +956,14 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb, bool extrac
 
         // TFS#788401: We don't want to extract locks for inserted models unless we set extractInserted to true
         if (primaryClass->Is(modelClass) && (extractInserted || entry.GetDbOpcode() != DbOpcode::Insert))
-            lockRequest.InsertLock(LockableId(LockableType::Model, DgnModelId(entry.GetPrimaryInstanceId().GetValueUnchecked())), LockLevel::Exclusive);
+            {
+            // Remove "Shared" if it exists
+            LockableId modelLockId(LockableType::Model, DgnModelId(entry.GetPrimaryInstanceId().GetValueUnchecked()));
+            if (lockRequest.Contains(modelLockId))
+                lockRequest.Remove(modelLockId);
+            // Insert "Exclusive"
+            lockRequest.InsertLock(modelLockId, LockLevel::Exclusive);
+            }
         // If a model is inserted, we don't want to have any locks related to it (same as inserted elements)
         else if (!extractInserted && primaryClass->Is(modelClass) && entry.GetDbOpcode() == DbOpcode::Insert)
             lockRequest.Remove(LockableId(LockableType::Model, DgnModelId(entry.GetPrimaryInstanceId().GetValueUnchecked())));

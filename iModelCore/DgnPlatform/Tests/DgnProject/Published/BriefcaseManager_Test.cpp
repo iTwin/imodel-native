@@ -1680,7 +1680,10 @@ TEST_F(SingleBriefcaseLocksTest, LocallyCreatedObjectsBulkMode)
     DgnElementCPtr newElem = CreateElement(*newModel);
     ExpectLevel(db, LockLevel::Shared);
     ExpectLevel(*newModel, LockLevel::Exclusive);
-    ExpectLevel(*newElem, LockLevel::None);
+    // TFS#788401: Since we now use model exclusive locking to know if an element is exclusively locked
+    // we will have results here that show that the new element is exclusively locked by default, even though
+    // the bulk operation hasn't occurred yet.
+    ExpectLevel(*newElem, LockLevel::Exclusive);
     ExpectLevel(*model, LockLevel::None);
     ExpectLevel(*elem, LockLevel::None);
     db.BriefcaseManager().EndBulkOperation();               // <<<<<<<< end bulk ops
@@ -2652,7 +2655,7 @@ TEST_F (FastQueryTest, CacheCodes)
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ExtractLocksTest : SingleBriefcaseLocksTest
 {
-    DgnDbStatus ExtractLocks(LockRequestR req, bool extractInserted = true)
+    DgnDbStatus ExtractLocks(LockRequestR req, bool extractInserted = true, bool avoidExclusiveModelElements = true)
         {
         if (BE_SQLITE_OK != m_db->SaveChanges())
             return DgnDbStatus::WriteError;
@@ -2672,7 +2675,7 @@ struct ExtractLocksTest : SingleBriefcaseLocksTest
                 }
             }
 
-        req.FromRevision(*rev, *m_db, extractInserted);
+        req.FromRevision(*rev, *m_db, extractInserted, avoidExclusiveModelElements);
         m_db->Revisions().AbandonCreateRevision();
         return DgnDbStatus::Success;
         }
@@ -2747,7 +2750,9 @@ TEST_F(ExtractLocksTest, UsedLocks)
 
         EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
         EXPECT_FALSE(req.IsEmpty());
-        EXPECT_EQ(3, req.Size());
+        EXPECT_EQ(4, req.Size());
+        // We add exclusive model locks even if no changes present but user has lock over it
+        EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*testModel)));
         EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(model)));
         EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*pEl)));
         EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
@@ -2766,7 +2771,7 @@ TEST_F(ExtractLocksTest, UsedLocks)
 
         EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req, false));
         // A lock for the db, a lock for the root subject which the new model is created in
-        EXPECT_EQ(2, req.Size());
+        EXPECT_EQ(3, req.Size());
         // TFS#788401: Now, we don't extract locks for inserted elements in the revision
         EXPECT_EQ(LockLevel::None, req.GetLockLevel(LockableId(*newModel)));
         EXPECT_EQ(LockLevel::None, req.GetLockLevel(LockableId(*newElem)));
@@ -2785,10 +2790,13 @@ TEST_F(ExtractLocksTest, UsedLocks)
         DgnElementCPtr newElem = CreateElement(*newModel);
 
         EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req, true));
-        EXPECT_EQ(5, req.Size());
+        EXPECT_EQ(6, req.Size());
         EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*newModel)));
-        EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*newElem)));
-        EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
+        // TFS#788401: We imply that since the new model is locked exclusively, we don't extract locks for those elements
+        // contained in a exclusively locked model, as they are exclusively locked by default
+        EXPECT_EQ(LockLevel::None, req.GetLockLevel(LockableId(*newElem)));
+        EXPECT_EQ(LockLevel::Shared, req.GetLockLevel (LockableId(db)));
+        EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*testModel)));
         }
 
     // Change reversed on exit above scope
@@ -2802,26 +2810,9 @@ TEST_F(ExtractLocksTest, UsedLocks)
 
         EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req, false));
         // Locks: Db and existing model (all shared)
-        EXPECT_EQ(2, req.Size());
+        EXPECT_EQ(4, req.Size());
         EXPECT_EQ(LockLevel::None, req.GetLockLevel(LockableId(*newElem2)));
-        EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(*testModel)));
-        EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
-        }
-
-    // Change reversed on exit above scope
-    EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
-    EXPECT_TRUE(req.IsEmpty());
-
-    // Test creating an element inside an existing model extracting inserted locks
-        {
-        UndoScope V_V_V_Undo(db);
-        DgnElementCPtr newElem2 = CreateElement(*testModel);
-
-        EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req, true));
-        // Locks: Db and existing model (all shared)
-        EXPECT_EQ(3, req.Size());
-        EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*newElem2)));
-        EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(*testModel)));
+        EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*testModel)));
         EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
         }
 
@@ -2836,10 +2827,10 @@ TEST_F(ExtractLocksTest, UsedLocks)
         LockableId testElemId (*testElem);
         EXPECT_EQ(DgnDbStatus::Success, testElem->Delete());
         EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
-        EXPECT_EQ(3, req.Size());
-        EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(*testModel)));
+        EXPECT_EQ(4, req.Size());
+        EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*testModel)));
         EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
-        EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(testElemId));
+        EXPECT_EQ(LockLevel::None, req.GetLockLevel(testElemId)); // Model is exclusive, so lock for element not present
         }
 
     // Change reversed on exit above scope
@@ -2854,10 +2845,10 @@ TEST_F(ExtractLocksTest, UsedLocks)
         EXPECT_EQ(DgnDbStatus::Success, testModel->Delete());
         EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
         // Locks for db, model, the element that was in the model, and the root where the model was
-        EXPECT_EQ(3, req.Size());
+        EXPECT_EQ(4, req.Size());
         EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
         EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(testModelId));
-        EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(testElemId));
+        EXPECT_EQ(LockLevel::None, req.GetLockLevel(testElemId)); // Model is exclusive, so lock for element not present
         }
     }
 

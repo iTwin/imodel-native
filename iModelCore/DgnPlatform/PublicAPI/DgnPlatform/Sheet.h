@@ -257,18 +257,20 @@ namespace Attachment
     };
 
     //=======================================================================================
-    // Contains a single tile which contains a texture rendering of the sheet.
+    // Contains a chain of tiles containing a texture renderings of the sheet (increasing in level of detail).
     // @bsistruct                                                   Mark.Schlosser  02/2018
     //=======================================================================================
-    struct TRoot : TileTree::QuadTree::Root
+    struct TRoot : TileTree::Root
     {
         DEFINE_T_SUPER(Root);
 
+        ColorDef m_tileColor = ColorDef::White();
         DgnElementId m_attachmentId;
         RefCountedPtr<Viewport> m_viewport;
         DPoint2d m_scale; // scale factors to make square tiles
         uint32_t m_pixels;
         double m_biasDistance;
+        ClipVectorPtr m_clip;      //! clip volume applied to tiles, in root coordinates
 
         TRoot(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId attachmentId, uint32_t tileSize);
 
@@ -289,26 +291,32 @@ namespace Attachment
     //=======================================================================================
     // @bsistruct                                                   Mark.Schlosser  02/2018
     //=======================================================================================
-    struct TTile : TileTree::QuadTree::Tile
+    struct TTile : TileTree::Tile
     {
         DEFINE_T_SUPER(Tile);
+
+        uint32_t m_maxPixelSize;
+        Render::GraphicBuilder::TileCorners m_corners; 
+        mutable Render::GraphicPtr m_graphic;
 
         void _Invalidate() override { }
         bool _IsInvalidated(TileTree::DirtyRangesCR) const override { return false; }
         void _UpdateRange(DRange3dCR, DRange3dCR) override { }
 
-        bool _HasChildren() const override { return false; }
-        ChildTiles const* _GetChildren(bool) const override { return nullptr; }
+        bool _HasChildren() const override;
+        bool _HasGraphics() const override {return IsReady() && m_graphic.IsValid();}
+        void _DrawGraphics(TileTree::DrawArgsR) const override;
+        ChildTiles const* _GetChildren(bool) const override;
         void _ValidateChildren() const override { }
         Utf8String _GetTileCacheKey() const override { return "NotCacheable!"; }
         SelectParent _SelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args) const override;
-        TileTree::TilePtr _CreateChild(TileTree::QuadTree::TileId id) const override {return nullptr;}
-        TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) override {return nullptr;}
+        TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) override {return nullptr;} // implement tileloader
+        double _GetMaximumSize() const override {return m_maxPixelSize;}
 
         void SetupRange();
         TRoot& GetTree() const {return (TRoot&) m_root;}
 
-        TTile(TRoot& root) : T_Super(root, TileTree::QuadTree::TileId(0,0,0), nullptr) { }
+        TTile(TRoot& root, TTile* parent) : T_Super(root, parent) { }
     };
 
     DEFINE_REF_COUNTED_PTR(TRoot)
@@ -347,6 +355,9 @@ protected:
 
     void DrawBorder(ViewContextR context) const;
     ViewController(SheetViewDefinitionCR def) : ViewController2d(def) {}  //!< Construct a new SheetViewController.
+
+    Attachment* FindAttachment(DgnElementId id);
+    static bool WantRenderAttachments();
 };
 
 //=======================================================================================

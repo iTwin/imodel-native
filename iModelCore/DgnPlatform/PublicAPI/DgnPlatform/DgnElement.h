@@ -1934,7 +1934,6 @@ public:
     Json::Value ToJson(JsonValueCR opts = Json::Value()) const { Json::Value val; _ToJson(val, opts); return val; }
 
     void FromJson(JsonValueR props) {_FromJson(props);}
-    
     //! @}
 
     //! Make an iterator over all ElementAspects owned by this element
@@ -2130,6 +2129,8 @@ protected:
 
     friend struct GeometricElement;
 public:
+    virtual ~GeometrySource() { }
+
     bool Is3d() const {return nullptr != _GetAsGeometrySource3d();}    //!< Determine whether this GeometrySource is 3d or not
     bool Is2d() const {return nullptr != _GetAsGeometrySource2d();}    //!< Determine whether this GeometrySource is 2d or not
     bool HasGeometry() const {return _GetGeometryStream().HasGeometry();} //!< return false if this geometry source currently has no geometry (is empty).
