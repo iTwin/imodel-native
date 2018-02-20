@@ -21,7 +21,7 @@ BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
 
 struct GCSConfigImpl;
 
-IMPORT_DLLE struct GCSConfig //: public ContentConfigComponentMixinBase<TypeConfig>
+struct GCSConfig //: public ContentConfigComponentMixinBase<TypeConfig>
     {
 
     private:
