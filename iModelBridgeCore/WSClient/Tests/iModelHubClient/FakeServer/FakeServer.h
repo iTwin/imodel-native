@@ -40,7 +40,7 @@ class FakeServer
 
         //delete an existing iModel from server
         //@iModelName  name of the imodel, to be deleted
-        static BeFileNameStatus DeleteiModel(WCharCP serverPath, WCharCP filename);
+        static BeFileNameStatus DeleteiModel(Utf8String serverPath, Utf8String filename);
         //delete all iModels from server
         static BeFileNameStatus DeleteAlliModels(WCharCP serverPath);
         //create an instance of iModel before acquiring it

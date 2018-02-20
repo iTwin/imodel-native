@@ -33,6 +33,8 @@ class RequestHandler
         Response DownloadiModel(Request req);
         Response UploadNewSeedFile(Request req);
         Response CreateFileInstance(Request req);
+        Response GetiModels(Request req);
+        Response DeleteiModels(Request req);
         
         static DbResult Initialize(BeFileName temporaryDir, BeSQLiteLib::LogErrors logSqliteErrors = BeSQLiteLib::LogErrors::No);
         void CheckDb();
