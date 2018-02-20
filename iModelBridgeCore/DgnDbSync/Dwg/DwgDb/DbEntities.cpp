@@ -9,6 +9,14 @@
 
 USING_NAMESPACE_DWGDB
 
+// a convenient macro to call a method returned void from OpenDWG and Acad::ErrorStatus from RealDWG:
+#ifdef DWGTOOLKIT_OpenDwg
+#define RETURNVOIDORSTATUS(_method_)    { ##_method_##; return DwgDbStatus::Success; }
+#elif DWGTOOLKIT_RealDwg
+#define RETURNVOIDORSTATUS(_method_)    { return ToDwgDbStatus(##_method_##); }
+#endif
+
+
 // Add entities that are sub-classed from toolkit's entity classes
 DWGDB_ENTITY_DEFINE_BASEMEMBERS(Entity)
 DWGDB_ENTITY_DEFINE_MEMBERS(Line)
@@ -28,6 +36,7 @@ DWGDB_ENTITY_DEFINE_MEMBERS(Shape)
 DWGDB_ENTITY_DEFINE_MEMBERS(Spline)
 DWGDB_ENTITY_DEFINE_MEMBERS(Trace)
 DWGDB_ENTITY_DEFINE_MEMBERS(Text)
+DWGDB_ENTITY_DEFINE_MEMBERS(MText)
 DWGDB_ENTITY_DEFINE_MEMBERS(Attribute)
 DWGDB_ENTITY_DEFINE_MEMBERS(AttributeDefinition)
 DWGDB_ENTITY_DEFINE_MEMBERS(BlockReference)
@@ -41,6 +50,10 @@ DPoint3d    DwgDbLine::GetStartPoint () const { return Util::DPoint3dFrom(T_Supe
 DPoint3d    DwgDbLine::GetEndPoint () const { return Util::DPoint3dFrom(T_Super::endPoint()); }
 DVec3d      DwgDbLine::GetNormal () const { return Util::DVec3dFrom(T_Super::normal()); }
 double      DwgDbLine::GetThickness () const { return T_Super::thickness(); }
+DwgDbStatus DwgDbLine::SetStartPoint (DPoint3dCR p) { RETURNVOIDORSTATUS(T_Super::setStartPoint(Util::GePoint3dFrom(p))); }
+DwgDbStatus DwgDbLine::SetEndPoint (DPoint3dCR p) { RETURNVOIDORSTATUS(T_Super::setEndPoint(Util::GePoint3dFrom(p))); }
+DwgDbStatus DwgDbLine::SetNormal (DVec3dCR v) { RETURNVOIDORSTATUS(T_Super::setNormal(Util::GeVector3dFrom(v))); }
+DwgDbStatus DwgDbLine::SetThickness (double t) { RETURNVOIDORSTATUS(T_Super::setThickness(t)); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
@@ -169,6 +182,36 @@ double     DwgDbPolyline::GetBulgeAt (size_t index) const
 #endif
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbPolyline::ConvertFrom (DwgDbEntityP& source, bool handIdOver)
+    {
+#ifdef DWGTOOLKIT_OpenDwg
+    return ToDwgDbStatus(T_Super::convertFrom(OdDbEntity::cast(source), handIdOver));
+#elif DWGTOOLKIT_RealDwg
+    AcDbEntity* acEntity = AcDbEntity::cast (source);
+    Acad::ErrorStatus   es = T_Super::convertFrom (acEntity, handIdOver);
+    source = DwgDbEntity::Cast (acEntity);
+    return  ToDwgDbStatus(es);
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbPolyline::ConvertTo (DwgDb2dPolylineP& dest, bool handIdOver)
+    {
+#ifdef DWGTOOLKIT_OpenDwg
+     return ToDwgDbStatus(T_Super::convertTo(OdDb2dPolyline::cast(dest), handIdOver));
+#elif DWGTOOLKIT_RealDwg
+    AcDb2dPolyline* acPline = AcDb2dPolyline::cast (dest);
+    Acad::ErrorStatus   es = T_Super::convertTo (acPline, handIdOver);
+    dest = DwgDb2dPolyline::Cast (acPline);
+    return  ToDwgDbStatus(es);
+#endif
+    }
+
 bool       DwgDbPolyline::IsClosed () const { return DWGDB_IsTrue(T_Super::isClosed()); }
 size_t     DwgDbPolyline::GetNumPoints () const { return T_Super::numVerts(); }
 bool       DwgDbPolyline::HasWidth () const { return DWGDB_IsTrue(T_Super::hasWidth()); }
@@ -177,6 +220,17 @@ double     DwgDbPolyline::GetElevation () const { return T_Super::elevation(); }
 double     DwgDbPolyline::GetThickness () const { return T_Super::thickness(); }
 bool       DwgDbPolyline::HasPlinegen () const { return DWGDB_IsTrue(T_Super::hasPlinegen()); }
 DVec3d     DwgDbPolyline::GetNormal () const { return Util::DVec3dFrom(T_Super::normal()); }
+DwgDbStatus DwgDbPolyline::SetPointAt(size_t i, DPoint2dCR p) { RETURNVOIDORSTATUS(T_Super::setPointAt((unsigned int)i, Util::GePoint2dFrom(p))); }
+DwgDbStatus DwgDbPolyline::AddVertexAt(size_t i, DPoint2dCR p, double b, double w0, double w1, uint32_t v) { RETURNVOIDORSTATUS(T_Super::addVertexAt((unsigned int)i, Util::GePoint2dFrom(p), b, w0, w1, v)); }
+DwgDbStatus DwgDbPolyline::SetWidthsAt(size_t i, double s, double e) { RETURNVOIDORSTATUS(T_Super::setWidthsAt((unsigned int)i, s, e)); }
+DwgDbStatus DwgDbPolyline::SetWidthsAt(size_t i, DPoint2dCR p) { RETURNVOIDORSTATUS(T_Super::setWidthsAt((unsigned int)i, p.x, p.y)); }
+DwgDbStatus DwgDbPolyline::SetConstantWidth(double w) { RETURNVOIDORSTATUS(T_Super::setConstantWidth(w)); }
+DwgDbStatus DwgDbPolyline::SetBulgeAt(size_t i, double b) { RETURNVOIDORSTATUS(T_Super::setBulgeAt((unsigned int)i, b)); }
+DwgDbStatus DwgDbPolyline::SetThickness(double t) { RETURNVOIDORSTATUS(T_Super::setThickness(t)); }
+void DwgDbPolyline::SetClosed (bool b) { T_Super::setClosed(b); }
+void DwgDbPolyline::SetElevation (double e) { T_Super::setElevation(e); }
+void DwgDbPolyline::SetPlinegen (bool b) { T_Super::setPlinegen(b); }
+void DwgDbPolyline::Reset (bool reuse, size_t n) { T_Super::reset(reuse, static_cast<unsigned int>(n)); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
@@ -191,12 +245,137 @@ bool       DwgDb2dPolyline::GetConstantWidth (double& width) const
 #endif
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDb2dPolyline::SetVertex (DWGDB_TypeP(2dVertex) vertex, DPoint2dCR point, DPoint2dCR widths)
+    {
+    if (nullptr == vertex)
+        return  DwgDbStatus::MemoryError;
+    vertex->copyFrom (this);
+    DWGGE_Type(Point3d) point3d(point.x, point.y, T_Super::elevation());
+    vertex->setPosition (point3d);   
+    if (widths.x > 1.e-4)
+        vertex->setStartWidth (widths.x);
+    if (widths.y > 1.e-4)
+        vertex->setStartWidth (widths.y);
+    return  DwgDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDb2dPolyline::AppendVertex (DwgDbObjectIdR outId, DPoint2dCR point, DPoint2dCR widths)
+    {
+    DwgDbStatus status;
+#ifdef DWGTOOLKIT_OpenDwg
+    OdDb2dVertexPtr newVertex = OdDb2dVertex::createObject ();
+    status = this->SetVertex (newVertex, point, widths);
+    if (status == DwgDbStatus::Success)
+        {
+        // Map OdDb::Poly2dType to OdDb::Vertex2dType - NEEDSREVIEW: remove this if Teigha handles it!
+        OdDb::Vertex2dType  vertexType;
+        switch (T_Super::polyType())
+            {
+            case OdDb::k2dFitCurvePoly:     
+                vertexType = OdDb::k2dSplineFitVertex;
+                break;
+            case OdDb::k2dQuadSplinePoly:
+            case OdDb::k2dCubicSplinePoly:
+                vertexType = OdDb::k2dSplineCtlVertex;
+                break;
+            case OdDb::k2dSimplePoly:
+            default:
+                vertexType = OdDb::k2dVertex;
+                break;
+            }
+        newVertex->setVertexType (vertexType);
+        outId = T_Super::appendVertex (newVertex);
+        return  outId.IsValid() ? DwgDbStatus::Success : DwgDbStatus::UnknownError;
+        }
+#elif DWGTOOLKIT_RealDwg
+    AcDb2dVertex*   newVertex = new AcDb2dVertex ();
+    status = this->SetVertex (newVertex, point, widths);
+    if (status == DwgDbStatus::Success)
+        status = ToDwgDbStatus (T_Super::appendVertex(outId, newVertex));
+    if (status != DwgDbStatus::Success && nullptr != newVertex && newVertex->isNewObject())
+        delete newVertex;
+#endif
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDb2dPolyline::InsertVertexAt (DwgDbObjectIdR outId, DwgDbObjectIdCR atVertex, DPoint2dCR point, DPoint2dCR widths)
+    {
+    DwgDbStatus status;
+#ifdef DWGTOOLKIT_OpenDwg
+    OdDb2dVertexPtr newVertex = OdDb2dVertex::createObject ();
+    status = this->SetVertex (newVertex, point, widths);
+    if (status == DwgDbStatus::Success)
+        {
+        outId = T_Super::insertVertexAt (atVertex, newVertex);
+        return  outId.IsValid() ? DwgDbStatus::Success : DwgDbStatus::UnknownError;
+        }
+#elif DWGTOOLKIT_RealDwg
+    AcDb2dVertex*   newVertex = new AcDb2dVertex ();
+    status = this->SetVertex (newVertex, point, widths);
+    if (status == DwgDbStatus::Success)
+        status = ToDwgDbStatus (T_Super::insertVertexAt(outId, atVertex, newVertex));
+    if (status != DwgDbStatus::Success && nullptr != newVertex && newVertex->isNewObject())
+        delete newVertex;
+#endif
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDb2dPolyline::SetClosed (bool isClosed)
+    {
+#ifdef DWGTOOLKIT_OpenDwg
+    if (isClosed)
+        T_Super::makeClosed ();
+    else
+        T_Super::makeOpen ();
+    return  DwgDbStatus::Success;
+#elif DWGTOOLKIT_RealDwg
+    return  ToDwgDbStatus(T_Super::setClosed(isClosed));
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDb2dPolyline::SetConstantWidth (double width)
+    {
+#ifdef DWGTOOLKIT_OpenDwg
+    BeAssert (false && "Teigha does not have OdDb2dPolyline::setConstantWidth!");
+    return  DwgDbStatus::NotSupported;
+#elif DWGTOOLKIT_RealDwg
+    RETURNVOIDORSTATUS(T_Super::setConstantWidth(width));
+#endif
+    }
+
 bool       DwgDb2dPolyline::IsClosed () const { return DWGDB_IsTrue(T_Super::isClosed()); }
 double     DwgDb2dPolyline::GetElevation () const { return T_Super::elevation(); }
 double     DwgDb2dPolyline::GetThickness () const { return T_Super::thickness(); }
 bool       DwgDb2dPolyline::HasPlinegen () const { return DWGDB_IsTrue(T_Super::isLinetypeGenerationOn()); }
 DVec3d     DwgDb2dPolyline::GetNormal () const { return Util::DVec3dFrom(T_Super::normal()); }
+DwgDb2dPolyline::Type   DwgDb2dPolyline::GetType () const { return DWGDB_CASTFROMENUM_DB(2dPolyline::Type)(T_Super::polyType()); }
 DwgDbObjectIterator     DwgDb2dPolyline::GetVertexIterator () const { return DwgDbObjectIterator(T_Super::vertexIterator()); }
+DwgDbStatus DwgDb2dPolyline::ConvertToType (Type t) { return ToDwgDbStatus(T_Super::convertToPolyType(DWGDB_CASTTOENUM_DB(Poly2dType)(t))); }
+DwgDbStatus DwgDb2dPolyline::MakeClosed () { RETURNVOIDORSTATUS(T_Super::makeClosed()); }
+DwgDbStatus DwgDb2dPolyline::MakeOpen () { RETURNVOIDORSTATUS(T_Super::makeOpen()); }
+DwgDbStatus DwgDb2dPolyline::SetNormal (DVec3dCR v) { RETURNVOIDORSTATUS(T_Super::setNormal(Util::GeVector3dFrom(v))); }
+DwgDbStatus DwgDb2dPolyline::SetElevation (double z) { RETURNVOIDORSTATUS(T_Super::setElevation(z)); }
+DwgDbStatus DwgDb2dPolyline::SetThickness (double t) { RETURNVOIDORSTATUS(T_Super::setThickness(t)); }
+DwgDbStatus DwgDb2dPolyline::SetLinetypeGeneration (bool onOff) { if (onOff) RETURNVOIDORSTATUS(T_Super::setLinetypeGenerationOn()) else RETURNVOIDORSTATUS(T_Super::setLinetypeGenerationOff()); }
+DwgDbStatus DwgDb2dPolyline::SetPolylineType (Type t) { RETURNVOIDORSTATUS(T_Super::setPolyType(DWGDB_CASTTOENUM_DB(Poly2dType)(t))); }
+DwgDbStatus DwgDb2dPolyline::SplineFit () { RETURNVOIDORSTATUS(T_Super::splineFit()); }
+DwgDbStatus DwgDb2dPolyline::SplineFit (Type t, uint16_t n) {  RETURNVOIDORSTATUS(T_Super::splineFit(DWGDB_CASTTOENUM_DB(Poly2dType)(t), n)); }
+DwgDbStatus DwgDb2dPolyline::Straighten () { RETURNVOIDORSTATUS(T_Super::straighten()); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          04/17
@@ -211,8 +390,104 @@ DwgDbStatus DwgDb3dPolyline::Straighten ()
 #endif
     return  status;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDb3dPolyline::SetClosed (bool isClosed)
+    {
+#ifdef DWGTOOLKIT_OpenDwg
+    if (isClosed)
+        T_Super::makeClosed ();
+    else
+        T_Super::makeOpen ();
+    return  DwgDbStatus::Success;
+#elif DWGTOOLKIT_RealDwg
+    return  ToDwgDbStatus(T_Super::setClosed(isClosed));
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDb3dPolyline::SetVertex (DWGDB_TypeP(3dPolylineVertex) vertex, DPoint3dCR point)
+    {
+    if (nullptr == vertex)
+        return  DwgDbStatus::MemoryError;
+    vertex->copyFrom (this);
+    vertex->setPosition (Util::GePoint3dFrom(point));
+    return  DwgDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDb3dPolyline::AppendVertex (DwgDbObjectIdR outId, DPoint3dCR point)
+    {
+    DwgDbStatus status;
+#ifdef DWGTOOLKIT_OpenDwg
+    OdDb3dPolylineVertexPtr newVertex = OdDb3dPolylineVertex::createObject ();
+    status = this->SetVertex (newVertex, point);
+    if (status == DwgDbStatus::Success)
+        {
+        // Map OdDb::Poly3dType to OdDb::Vertex3dType - NEEDSREVIEW: remove this if Teigha handles it!
+        OdDb::Vertex3dType  vertexType;
+        switch (T_Super::polyType())
+            {
+            case OdDb::k3dQuadSplinePoly:
+            case OdDb::k3dCubicSplinePoly:
+                vertexType = OdDb::k3dControlVertex;
+                break;
+            case OdDb::k2dSimplePoly:
+            default:
+                vertexType = OdDb::k3dSimpleVertex;
+                break;
+            }
+        newVertex->setVertexType (vertexType);
+        outId = T_Super::appendVertex (newVertex);
+        return  outId.IsValid() ? DwgDbStatus::Success : DwgDbStatus::UnknownError;
+        }
+#elif DWGTOOLKIT_RealDwg
+    AcDb3dPolylineVertex*   newVertex = new AcDb3dPolylineVertex ();
+    status = this->SetVertex (newVertex, point);
+    if (status == DwgDbStatus::Success)
+        status = ToDwgDbStatus (T_Super::appendVertex(outId, newVertex));
+    if (status != DwgDbStatus::Success && nullptr != newVertex && newVertex->isNewObject())
+        delete newVertex;
+#endif
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDb3dPolyline::InsertVertexAt (DwgDbObjectIdR outId, DwgDbObjectIdCR atVertex, DPoint3dCR point)
+    {
+    DwgDbStatus status;
+#ifdef DWGTOOLKIT_OpenDwg
+    OdDb3dPolylineVertexPtr newVertex = OdDb3dPolylineVertex::createObject ();
+    status = this->SetVertex (newVertex, point);
+    if (status == DwgDbStatus::Success)
+        {
+        outId = T_Super::insertVertexAt (atVertex, newVertex);
+        return  outId.IsValid() ? DwgDbStatus::Success : DwgDbStatus::UnknownError;
+        }
+#elif DWGTOOLKIT_RealDwg
+    AcDb3dPolylineVertex*   newVertex = new AcDb3dPolylineVertex ();
+    status = this->SetVertex (newVertex, point);
+    if (status == DwgDbStatus::Success)
+        status = ToDwgDbStatus (T_Super::insertVertexAt(outId, atVertex, newVertex));
+    if (status != DwgDbStatus::Success && nullptr != newVertex && newVertex->isNewObject())
+        delete newVertex;
+#endif
+    return  status;
+    }
 DwgDb3dPolyline::Type   DwgDb3dPolyline::GetType () const { return DWGDB_CASTFROMENUM_DB(3dPolyline::Type)(T_Super::polyType()); }
 DwgDbObjectIterator     DwgDb3dPolyline::GetVertexIterator () const { return DwgDbObjectIterator(T_Super::vertexIterator()); }
+DwgDbStatus DwgDb3dPolyline::MakeOpen () { RETURNVOIDORSTATUS(T_Super::makeOpen()); }
+DwgDbStatus DwgDb3dPolyline::MakeClosed () { RETURNVOIDORSTATUS(T_Super::makeClosed()); }
+DwgDbStatus DwgDb3dPolyline::SplineFit () { RETURNVOIDORSTATUS(T_Super::splineFit()); }
+DwgDbStatus DwgDb3dPolyline::SplineFit (Type t, uint16_t n) {  RETURNVOIDORSTATUS(T_Super::splineFit(DWGDB_CASTTOENUM_DB(Poly3dType)(t), n)); }
 
 DPoint3d   DwgDbArc::GetCenter () const { return Util::DPoint3dFrom(T_Super::center()); }
 double     DwgDbArc::GetRadius () const { return T_Super::radius(); }
@@ -279,6 +554,8 @@ DwgDbStatus DwgDbArc::SetThickness (double thickness)
 #endif
     return  status;
     }
+DwgDbStatus DwgDbArc::SetNormal (DVec3dCR v) { RETURNVOIDORSTATUS(T_Super::setNormal(Util::GeVector3dFrom(v))); }
+DwgDbStatus DwgDbArc::ReverseCurve () { RETURNVOIDORSTATUS(T_Super::reverseCurve()); }
 
 DPoint3d   DwgDbCircle::GetCenter () const { return Util::DPoint3dFrom(T_Super::center()); }
 double     DwgDbCircle::GetDiameter () const { return DWGDB_CALLSDKMETHOD(T_Super::radius() * 2, T_Super::diameter()); }
@@ -323,6 +600,33 @@ DVec3d     DwgDbEllipse::GetMinorAxis () const { return Util::DVec3dFrom(T_Super
 DVec3d     DwgDbEllipse::GetNormal () const { return Util::DVec3dFrom(T_Super::normal()); }
 double     DwgDbEllipse::GetStartAngle () const { return T_Super::startAngle(); }
 double     DwgDbEllipse::GetEndAngle () const { return T_Super::endAngle(); }
+DwgDbStatus DwgDbEllipse::SetCenter (DPoint3dCR p) { RETURNVOIDORSTATUS(T_Super::setCenter(Util::GePoint3dFrom(p))); }
+DwgDbStatus DwgDbEllipse::SetStartAngle (double a) { RETURNVOIDORSTATUS(T_Super::setStartAngle(a)); }
+DwgDbStatus DwgDbEllipse::SetEndAngle (double a) { RETURNVOIDORSTATUS(T_Super::setEndAngle(a)); }
+DwgDbStatus DwgDbEllipse::Set (DPoint3dCR c, DVec3dCR n, DVec3dCR m, double r, double a1, double a2) { RETURNVOIDORSTATUS(T_Super::set(Util::GePoint3dFrom(c), Util::GeVector3dFrom(n), Util::GeVector3dFrom(m), r, a1, a2)); }
+DwgDbStatus DwgDbEllipse::ReverseCurve () { RETURNVOIDORSTATUS(T_Super::reverseCurve()); }
+DwgDbStatus DwgDbEllipse::SetMajorRadius (double radius)
+    {
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    BeAssert (false && "Missing method OdDbEllipse::setMajorRadius() in Teigha!");
+    status = DwgDbStatus::NotSupported;
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::setMajorRadius(radius));
+#endif
+    return  status;
+    }
+DwgDbStatus DwgDbEllipse::GetMinorRadius (double radius)
+    {
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    BeAssert (false && "Missing method OdDbEllipse::setMinorRadius() in Teigha!");
+    status = DwgDbStatus::NotSupported;
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::setMinorRadius(radius));
+#endif
+    return  status;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          04/17
@@ -355,6 +659,85 @@ DwgDbStatus     DwgDbSpline::GetNurbsData (int16_t& degree, bool& rational, bool
 
     return  status;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbSpline::SetNurbsData (int16_t degree, bool rational, bool closed, bool periodic, DPoint3dArrayCR poles, DwgDbDoubleArrayCR knots, DwgDbDoubleArrayCR weights, double poleTol, double knotTol)
+    {
+    DWGGE_Type(Point3dArray)    gePoles;
+    Util::GetGePointArray (gePoles, poles);
+
+    DWGGE_Type(DoubleArray) geKnots;
+    for (auto knot : knots)
+        geKnots.append (knot);
+    
+    DWGGE_Type(DoubleArray) geWeights;
+    for (auto weight : weights)
+        geWeights.append (weight);
+
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    T_Super::setNurbsData (degree, rational, closed, periodic, gePoles, geKnots, geWeights, poleTol, knotTol);
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (
+    T_Super::setNurbsData (degree, rational, closed, periodic, gePoles, geKnots, geWeights, poleTol, knotTol));
+#endif
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbSpline::GetFitData (DPoint3dArrayR points, int16_t& degree, double& tol, bool& hasTangents, DVec3dR startTangent, DVec3dR endTangent) const
+    {
+    DWGGE_Type(Point3dArray)    gePoints;
+    DWGGE_Type(Vector3d)    geTangent0, geTangent1;
+    int d = 0;
+
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    T_Super::getFitData (gePoints, d, tol, hasTangents, geTangent0, geTangent1);
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::getFitData(gePoints, d, tol, hasTangents, geTangent0, geTangent1));
+#endif
+    if (status == DwgDbStatus::Success)
+        {
+        degree = static_cast <int16_t> (d);
+        Util::GetPointArray (points, gePoints);
+        startTangent = Util::DVec3dFrom (geTangent0);
+        endTangent = Util::DVec3dFrom (geTangent1);
+        }
+
+    return  status;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbSpline::SetFitData (DPoint3dArrayCR points, int16_t degree, double fitTol, DVec3dCR startTangent, DVec3dCR endTangent)
+    {
+    DWGGE_Type(Point3dArray)    gePoints;
+    Util::GetGePointArray (gePoints, points);
+
+    DWGGE_Type(Vector3d)    geTangent0 = Util::GeVector3dFrom (startTangent);
+    DWGGE_Type(Vector3d)    geTangent1 = Util::GeVector3dFrom (endTangent);
+    
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    T_Super::setFitData (gePoints, degree, fitTol, geTangent0, geTangent1);
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (
+    T_Super::setFitData (gePoints, degree, fitTol, geTangent0, geTangent1));
+#endif
+    return  status;
+    }
+DwgDbStatus DwgDbSpline::SetControlPointAt(int i, DPoint3dCR p) { RETURNVOIDORSTATUS(T_Super::setControlPointAt(i,Util::GePoint3dFrom(p))); }
+DwgDbStatus DwgDbSpline::SetWeightAt (int i, double w) { RETURNVOIDORSTATUS(T_Super::setWeightAt(i,w)); }
+bool        DwgDbSpline::HasFitData () const { return T_Super::hasFitData(); }
+DwgDbStatus DwgDbSpline::PurgeFitData () { RETURNVOIDORSTATUS(T_Super::purgeFitData()); }
+DwgDbStatus DwgDbSpline::SetFitPointAt (int i, DPoint3dCR p) { RETURNVOIDORSTATUS(T_Super::setFitPointAt(i, Util::GePoint3dFrom(p))); }
+DwgDbStatus DwgDbSpline::SetFitTangents (DVec3dCR v1, DVec3dCR v2) { RETURNVOIDORSTATUS(T_Super::setFitTangents(Util::GeVector3dFrom(v1), Util::GeVector3dFrom(v2))); }
+DwgDbStatus DwgDbSpline::SetFitTolerance (double t) { RETURNVOIDORSTATUS(T_Super::setFitTol(t)); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          11/17
@@ -520,6 +903,20 @@ DwgDbStatus     DwgDbAttribute::SetFrom (DwgDbAttributeDefinition const* attrdef
     return  ToDwgDbStatus(status);
 #endif
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbAttribute::SetMTextAttributeConst (DwgDbMTextCP mtext)
+    {
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    // Teigha does not have OdDbAttribute::setMTextAttributeConst!!
+    T_Super::setMTextAttribute (dynamic_cast<OdDbMText*>(const_cast<DwgDbMTextP>(mtext)));
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::setMTextAttributeConst(dynamic_cast<AcDbMText const*>(mtext)));
+#endif
+    return  status;
+    }
 DPoint3d   DwgDbAttribute::GetOrigin () const { return Util::DPoint3dFrom(T_Super::position()); }
 DVec3d     DwgDbAttribute::GetNormal () const { return Util::DVec3dFrom(T_Super::normal()); }
 double     DwgDbAttribute::GetThickness () const { return T_Super::thickness(); }
@@ -530,6 +927,15 @@ bool       DwgDbAttribute::IsPreset () const { return T_Super::isPreset(); }
 bool       DwgDbAttribute::IsVerifiable () const { return T_Super::isVerifiable(); }
 bool       DwgDbAttribute::IsLocked () const { return DWGDB_CALLSDKMETHOD(false,T_Super::isReallyLocked()); }
 DwgString  DwgDbAttribute::GetTag () const { return DWGDB_CALLSDKMETHOD(T_Super::tag(),T_Super::tagConst()); }
+DwgDbStatus DwgDbAttribute::SetOrigin (DPoint3dCR p) { RETURNVOIDORSTATUS(T_Super::setPosition(Util::GePoint3dFrom(p))); }
+DwgDbStatus DwgDbAttribute::SetNormal (DVec3dCR n) { RETURNVOIDORSTATUS(T_Super::setNormal(Util::GeVector3dFrom(n))); }
+DwgDbStatus DwgDbAttribute::SetThickness (double t) { RETURNVOIDORSTATUS(T_Super::setThickness(t)); }
+DwgDbStatus DwgDbAttribute::SetInvisible (bool on) { RETURNVOIDORSTATUS(T_Super::setInvisible(on)); }
+DwgDbStatus DwgDbAttribute::SetLockPositionInBlock (bool on) { RETURNVOIDORSTATUS(T_Super::setLockPositionInBlock(on)); }
+DwgDbStatus DwgDbAttribute::SetMTextAttribute (DwgDbMTextP mt) { RETURNVOIDORSTATUS(T_Super::setMTextAttribute(DWGDB_DOWNWARDCAST(MText*)(mt))); }
+DwgDbStatus DwgDbAttribute::SetTag (WCharCP t) { RETURNVOIDORSTATUS(T_Super::setTag(t)); }
+DwgDbStatus DwgDbAttribute::SetAttributeFromBlock (TransformCR t) { DWGGE_Type(Matrix3d) m; Util::GetGeMatrix(m,t); RETURNVOIDORSTATUS(T_Super::setAttributeFromBlock(m)); }
+DwgDbStatus DwgDbAttribute::SetAttributeFromBlock (DwgDbAttributeDefinitionCP at, TransformCR t) { DWGGE_Type(Matrix3d) m; Util::GetGeMatrix(m,t); RETURNVOIDORSTATUS(T_Super::setAttributeFromBlock(dynamic_cast<DWGDB_TypeCP(AttributeDefinition)>(at),m)); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/16
@@ -575,6 +981,20 @@ bool            DwgDbAttributeDefinition::GetValueString (DwgStringR value) cons
 #endif
     return  !value.IsEmpty();
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbAttributeDefinition::SetMTextAttributeConst (DwgDbMTextCP mtext)
+    {
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    // Teigha does not have OdDbAttributeDefinition::setMTextAttributeConst!!
+    T_Super::setMTextAttributeDefinition (dynamic_cast<OdDbMText*>(const_cast<DwgDbMTextP>(mtext)));
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::setMTextAttributeDefinitionConst(dynamic_cast<AcDbMText const*>(mtext)));
+#endif
+    return  status;
+    }
 DPoint3d   DwgDbAttributeDefinition::GetOrigin () const { return Util::DPoint3dFrom(T_Super::position()); }
 DVec3d     DwgDbAttributeDefinition::GetNormal () const { return Util::DVec3dFrom(T_Super::normal()); }
 double     DwgDbAttributeDefinition::GetThickness () const { return T_Super::thickness(); }
@@ -584,11 +1004,18 @@ bool       DwgDbAttributeDefinition::IsMTextAttributeDefinition () const { retur
 bool       DwgDbAttributeDefinition::IsPreset () const { return T_Super::isPreset(); }
 bool       DwgDbAttributeDefinition::IsVerifiable () const { return T_Super::isVerifiable(); }
 DwgString  DwgDbAttributeDefinition::GetTag () const { return DWGDB_CALLSDKMETHOD(T_Super::tag(),T_Super::tagConst()); }
+DwgDbStatus DwgDbAttributeDefinition::SetOrigin (DPoint3dCR p) { RETURNVOIDORSTATUS(T_Super::setPosition(Util::GePoint3dFrom(p))); }
+DwgDbStatus DwgDbAttributeDefinition::SetNormal (DVec3dCR n) { RETURNVOIDORSTATUS(T_Super::setNormal(Util::GeVector3dFrom(n))); }
+DwgDbStatus DwgDbAttributeDefinition::SetThickness (double t) { RETURNVOIDORSTATUS(T_Super::setThickness(t)); }
+DwgDbStatus DwgDbAttributeDefinition::SetInvisible (bool on) { RETURNVOIDORSTATUS(T_Super::setInvisible(on)); }
+DwgDbStatus DwgDbAttributeDefinition::SetLockPositionInBlock (bool on) { RETURNVOIDORSTATUS(T_Super::setLockPositionInBlock(on)); }
+DwgDbStatus DwgDbAttributeDefinition::SetMTextAttribute (DwgDbMTextP mt) { RETURNVOIDORSTATUS(T_Super::setMTextAttributeDefinition(DWGDB_DOWNWARDCAST(MText*)(mt))); }
+DwgDbStatus DwgDbAttributeDefinition::SetTag (WCharCP t) { RETURNVOIDORSTATUS(T_Super::setTag(t)); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DwgDbStatus     DwgDbViewport::GetUcs (DPoint3dR origin, DVec3dR xAxis, DVec3d yAxis) const
+DwgDbStatus     DwgDbViewport::GetUcs (DPoint3dR origin, DVec3dR xAxis, DVec3dR yAxis) const
     { 
     DWGGE_Type(Point3d)     geOrigin;
     DWGGE_Type(Vector3d)    xDir, yDir;
@@ -696,6 +1123,24 @@ DwgDbStatus    DwgDbViewport::GetFrozenLayers (DwgDbObjectIdArrayR idsOut) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbViewport::SetFrozenLayers (DwgDbObjectIdArrayCR idsIn)
+    {
+    DwgDbStatus status = DwgDbStatus::Success;
+    DWGDB_Type(ObjectIdArray)   idArray;
+    Util::GetObjectIdArray (idArray, idsIn);
+
+#ifdef DWGTOOLKIT_OpenDwg
+    T_Super::freezeLayersInViewport (idArray);
+    status = idArray.length() > 0 ? DwgDbStatus::Success : DwgDbStatus::UnknownError;
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::freezeLayersInViewport(idArray));
+#endif
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          12/16
++---------------+---------------+---------------+---------------+---------------+------*/
 DwgDbStatus     DwgDbViewport::GetAnnotationScale (double& scale) const
     {
 #ifdef DWGTOOLKIT_OpenDwg
@@ -719,6 +1164,60 @@ DwgDbStatus     DwgDbViewport::GetAnnotationScale (double& scale) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus     DwgDbViewport::SetAnnotationScale (double scale)
+    {
+    // database residency a prerequisite
+    DWGDB_TypeP(Database) dwg = T_Super::database ();
+    if (nullptr == dwg)
+        DwgDbStatus::NotPersistentObject;
+
+    DwgDbStatus status = DwgDbStatus::UnknownError;
+    DWGDB_TypeP(ObjectContextManager) contextManager = dwg->objectContextManager ();
+    if (nullptr == contextManager)
+        return  status;
+
+    DWGDB_TypeCP(ObjectContextCollection) contextCollection = contextManager->contextCollection(DWGSTR_NAME(ANNOTATIONSCALES_COLLECTION));
+    if (nullptr == contextCollection)
+        return  status;
+
+    DWGDB_TypeP(ObjectContextCollectionIterator) iter = contextCollection->newIterator ();
+    if (nullptr == iter)
+        return  status;
+
+    for (iter->start(); !iter->done(); iter->next())
+        {
+#ifdef DWGTOOLKIT_OpenDwg
+        OdDbObjectContextPtr objectContext = iter->getContext ();
+        if (!objectContext.isNull())
+#elif DWGTOOLKIT_RealDwg
+        AcDbObjectContext*  objectContext = nullptr;
+        if (Acad::eOk == iter->getContext(objectContext))
+#endif
+            {
+            bool    matchFound = false;
+            double  checkScale = 1.0;
+
+            DWGDB_TypeP(AnnotationScale) annoScale = DWGDB_Type(AnnotationScale)::cast (objectContext);
+            if (nullptr != annoScale && ToDwgDbStatus(annoScale->getScale(checkScale)) == DwgDbStatus::Success)
+                matchFound = fabs(checkScale - scale) < 1.0e-5;
+
+            if (matchFound)
+                status = ToDwgDbStatus (T_Super::setAnnotationScale(annoScale));
+
+#ifdef DWGTOOLKIT_RealDwg
+            delete objectContext;
+#endif
+            if (DwgDbStatus::Success == status)
+                break;
+            }
+        }
+
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DwgDbStatus    DwgDbViewport::SetWidth (double width)
@@ -730,6 +1229,37 @@ DwgDbStatus    DwgDbViewport::SetWidth (double width)
     status = ToDwgDbStatus (T_Super::setWidth(width));
 #endif
     return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbViewport::SetTransparent (bool onOff)
+    {
+    DwgDbStatus status = DwgDbStatus::NotSupported;
+#ifdef DWGTOOLKIT_OpenDwg
+    T_Super::setTransparent ();
+    BeAssert (false && "OdDbViewport::setTransparent() not implemented!");
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::setTransparent(onOff));
+#endif
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbViewport::SetSun (DwgDbObjectIdR id, DwgDbSunP sun, bool b) 
+    {
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    id = T_Super::setSun (sun);
+    if (!id.IsValid())
+        status = DwgDbStatus::UnknownError;
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::setSun(id, sun, b));
+#endif
+    return status;
     }
 bool           DwgDbViewport::IsOn () const { return T_Super::isOn(); }
 bool           DwgDbViewport::IsGridEnabled () const { return T_Super::isGridOn(); }
@@ -757,11 +1287,11 @@ double         DwgDbViewport::GetUcsElevation () const { return T_Super::elevati
 DPoint3d       DwgDbViewport::GetCenterPoint () const { return Util::DPoint3dFrom(T_Super::centerPoint()); }
 DPoint2d       DwgDbViewport::GetViewCenter () const { return Util::DPoint2dFrom(T_Super::viewCenter()); }
 DPoint3d       DwgDbViewport::GetViewTarget () const { return Util::DPoint3dFrom(T_Super::viewTarget()); }
-DPoint2d       DwgDbViewport::GetGridIncrements () const { return Util::DPoint2dFrom(T_Super::gridIncrement()); }
-DPoint2d       DwgDbViewport::GetSnapIncrements () const { return Util::DPoint2dFrom(T_Super::snapIncrement()); }
+DVec2d         DwgDbViewport::GetGridIncrements () const { return Util::DVec2dFrom(T_Super::gridIncrement()); }
+DVec2d         DwgDbViewport::GetSnapIncrements () const { return Util::DVec2dFrom(T_Super::snapIncrement()); }
 DPoint2d       DwgDbViewport::GetSnapBase () const { return Util::DPoint2dFrom(T_Super::snapBasePoint()); }
 double         DwgDbViewport::GetSnapAngle () const { return T_Super::snapAngle(); }
-SnapIsoPair    DwgDbViewport::GetSnapPair () const { return static_cast<SnapIsoPair>(T_Super::snapIsoPair()); }
+SnapIsoPair    DwgDbViewport::GetSnapIsoPair () const { return static_cast<SnapIsoPair>(T_Super::snapIsoPair()); }
 bool           DwgDbViewport::IsSnapEnabled () const { return T_Super::isSnapOn(); }
 bool           DwgDbViewport::IsIsometricSnapEnabled () const { return T_Super::isSnapIsometric(); }
 int16_t        DwgDbViewport::GetGridMajor () const { return gridMajor(); }
@@ -769,6 +1299,37 @@ bool           DwgDbViewport::IsLayerFrozen (DwgDbObjectIdCR layerId) const { re
 double         DwgDbViewport::GetCustomScale () const { return T_Super::customScale(); }
 double         DwgDbViewport::GetBrightness () const { return T_Super::brightness(); }
 DwgCmColor     DwgDbViewport::GetAmbientLightColor () const { return static_cast<DwgCmColor>(T_Super::ambientLightColor()); }
+DwgDbStatus    DwgDbViewport::SetVisualStyle (DwgDbObjectId id) { DwgDbStatus s=DwgDbStatus::Success; DWGDB_CALLSDKMETHOD(T_Super::setVisualStyle(id), s=ToDwgDbStatus(T_Super::setVisualStyle(id))); return s; }
+DwgDbStatus DwgDbViewport::SetIsOn (bool b) { if(b) RETURNVOIDORSTATUS(T_Super::setOn()) else RETURNVOIDORSTATUS(T_Super::setOff()); }
+DwgDbStatus DwgDbViewport::EnableGrid (bool b) { if(b) RETURNVOIDORSTATUS(T_Super::setGridOn()) else RETURNVOIDORSTATUS(T_Super::setGridOff()); }
+DwgDbStatus DwgDbViewport::EnableSnap (bool b) { if(b) RETURNVOIDORSTATUS(T_Super::setSnapOn()) else RETURNVOIDORSTATUS(T_Super::setSnapOff()); }
+DwgDbStatus DwgDbViewport::EnableIsometricSnap (bool b) { if(b) RETURNVOIDORSTATUS(T_Super::setSnapIsometric()) else RETURNVOIDORSTATUS(T_Super::setSnapStandard()); }
+DwgDbStatus DwgDbViewport::EnableUcsIcon (bool b) { if(b) RETURNVOIDORSTATUS(T_Super::setUcsIconVisible()) else RETURNVOIDORSTATUS(T_Super::setUcsIconInvisible()); }
+DwgDbStatus DwgDbViewport::EnableFrontClip (bool b) { if(b) RETURNVOIDORSTATUS(T_Super::setFrontClipOn()) else RETURNVOIDORSTATUS(T_Super::setFrontClipOff()); }
+DwgDbStatus DwgDbViewport::EnableBackClip (bool b) { if(b) RETURNVOIDORSTATUS(T_Super::setBackClipOn()) else RETURNVOIDORSTATUS(T_Super::setBackClipOff()); }
+DwgDbStatus DwgDbViewport::EnablePerspective (bool b) { if(b) RETURNVOIDORSTATUS(T_Super::setPerspectiveOn()) else RETURNVOIDORSTATUS(T_Super::setPerspectiveOff()); }
+DwgDbStatus DwgDbViewport::SetFrontClipAtEye (bool b) { if(b) RETURNVOIDORSTATUS(T_Super::setFrontClipAtEyeOn()) else RETURNVOIDORSTATUS(T_Super::setFrontClipAtEyeOff()); }
+DwgDbStatus DwgDbViewport::SetFrontClipDistance (double d) { RETURNVOIDORSTATUS(T_Super::setFrontClipDistance(d)); }
+DwgDbStatus DwgDbViewport::SetBackClipDistance (double d) { RETURNVOIDORSTATUS(T_Super::setBackClipDistance(d)); }
+DwgDbStatus DwgDbViewport::SetBackground (DwgDbObjectId id) { RETURNVOIDORSTATUS(T_Super::setBackground(id)); }
+DwgDbStatus DwgDbViewport::SetClipEntity (DwgDbObjectId id) { RETURNVOIDORSTATUS(T_Super::setNonRectClipEntityId(id)); }
+DwgDbStatus DwgDbViewport::SetDefaultLightingOn (bool b) { RETURNVOIDORSTATUS(T_Super::setDefaultLightingOn(b)); }
+DwgDbStatus DwgDbViewport::SetViewDirection (DVec3dCR v) { RETURNVOIDORSTATUS(T_Super::setViewDirection(Util::GeVector3dFrom(v))); }
+void        DwgDbViewport::SetUcsPerViewport (bool b) { T_Super::setUcsPerViewport(b); }
+DwgDbStatus DwgDbViewport::SetUcs (DPoint3dCR o, DVec3dCR x, DVec3dCR y) { RETURNVOIDORSTATUS(T_Super::setUcs(Util::GePoint3dFrom(o),Util::GeVector3dFrom(x),Util::GeVector3dFrom(y))); }
+DwgDbStatus DwgDbViewport::SetUcsElevation (double e) { RETURNVOIDORSTATUS(T_Super::setElevation(e)); }
+DwgDbStatus DwgDbViewport::SetLensLength (double l) { RETURNVOIDORSTATUS(T_Super::setLensLength(l)); }
+DwgDbStatus DwgDbViewport::SetViewTwist (double a) { RETURNVOIDORSTATUS(T_Super::setTwistAngle(a)); }
+DwgDbStatus DwgDbViewport::SetViewTarget (DPoint3dCR t) { RETURNVOIDORSTATUS(T_Super::setViewTarget(Util::GePoint3dFrom(t))); }
+DwgDbStatus DwgDbViewport::SetGridIncrements (DVec2dCR v) { RETURNVOIDORSTATUS(T_Super::setGridIncrement(Util::GeVector2dFrom(v))); }
+DwgDbStatus DwgDbViewport::SetSnapIncrements (DVec2dCR v) { RETURNVOIDORSTATUS(T_Super::setSnapIncrement(Util::GeVector2dFrom(v))); }
+DwgDbStatus DwgDbViewport::SetSnapBase (DPoint2dCR p) { RETURNVOIDORSTATUS(T_Super::setSnapBasePoint(Util::GePoint2dFrom(p))); }
+DwgDbStatus DwgDbViewport::SetSnapAngle (double a) { RETURNVOIDORSTATUS(T_Super::setSnapAngle(a)); }
+DwgDbStatus DwgDbViewport::SetSnapIsoPair (SnapIsoPair s) { RETURNVOIDORSTATUS(T_Super::setSnapIsoPair(static_cast<DwgDbUInt16>(s))); }
+DwgDbStatus DwgDbViewport::SetGridMajor (uint16_t i) { RETURNVOIDORSTATUS(T_Super::setGridMajor(i)); }
+DwgDbStatus DwgDbViewport::SetCustomScale (double s) { RETURNVOIDORSTATUS(T_Super::setCustomScale(s)); }
+DwgDbStatus DwgDbViewport::SetBrightness (double b) { RETURNVOIDORSTATUS(T_Super::setBrightness(b)); }
+DwgDbStatus DwgDbViewport::SetAmbientLightColor (DwgCmColorCR c) { RETURNVOIDORSTATUS(T_Super::setAmbientLightColor(c)); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          02/16
@@ -1234,6 +1795,10 @@ DPoint3d        DwgDbText::GetPosition () const { return Util::DPoint3dFrom(T_Su
 DVec3d          DwgDbText::GetNormal () const { return Util::DVec3dFrom(T_Super::normal()); }
 double          DwgDbText::GetThickness () const { return T_Super::thickness(); }
 DwgString       DwgDbText::GetTextString () const { return DWGDB_CALLSDKMETHOD(T_Super::textString(),T_Super::textStringConst()); }
+
+DPoint3d DwgDbMText::GetPosition () const { return Util::DPoint3dFrom(T_Super::location()); }
+DVec3d   DwgDbMText::GetNormal () const { return Util::DVec3dFrom(T_Super::normal()); }
+DwgString DwgDbMText::GetTextString () const { return T_Super::contents(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          11/17

@@ -57,6 +57,7 @@ void            RegisterDwgDbObjectExtensions (bool beforeValidation)
     DwgDbShape::rxInit ();
     DwgDbSolid::rxInit ();
     DwgDbSpline::rxInit ();
+    DwgDbMText::rxInit ();
     DwgDbText::rxInit ();
     DwgDbTrace::rxInit ();
 
@@ -165,6 +166,7 @@ void            UnRegisterDwgDbObjectExtensions ()
     DwgDbShape::rxUninit ();
     DwgDbSolid::rxUninit ();
     DwgDbSpline::rxUninit ();
+    DwgDbMText::rxUninit ();
     DwgDbText::rxUninit ();
     DwgDbTrace::rxUninit ();
 
