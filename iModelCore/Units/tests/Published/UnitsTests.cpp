@@ -103,6 +103,19 @@ TEST_F(UnitsTests, PhenomenonAndUnitSignaturesMatch)
         }
     }
 
+//---------------------------------------------------------------------------------------//
+// @bsimethod                            Colin.Kerr                                 02/18
+//+---------------+---------------+---------------+---------------+---------------+------//
+TEST_F(UnitsTests, EveryPhenomenonHasAtleastOneUnit)
+    {
+    bvector<PhenomenonCP> allPhenomena;
+    UnitRegistry::Instance().AllPhenomena(allPhenomena);
+    for (auto const& phenomenon : allPhenomena)
+        {
+        EXPECT_NE(0, phenomenon->GetUnits().size()) << "The Phenomenon '" << phenomenon->GetName().c_str() << "' has no units.";
+        }
+    }
+
 //void ReadFile(Utf8CP path, std::function<void(Utf8CP)> lineProcessor)
 //    {
 //    std::ifstream ifs(path, std::ifstream::in);

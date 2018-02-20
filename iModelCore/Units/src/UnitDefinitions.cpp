@@ -415,11 +415,6 @@ void AddSurfaceFlowRate(UnitRegistry& reg)
     reg.AddUnit(SURFACE_FLOW_RATE, USCUSTOM, "GALLON/(SQ.MILE*DAY)", "GALLON*DAY(-1)*MILE(-2)");
     }
 
-void AddSurfacePowerDensity(UnitRegistry& reg)
-    {
-    reg.AddUnit(SURFACE_POWER_DENSITY, SI, "WATT/SQ.M", "W*M(2)");
-    }
-
 void AddMassRatio(UnitRegistry& reg)
     {
     reg.AddUnit(MASS_RATIO, SI, "KG/KG", "KG*KG(-1)");

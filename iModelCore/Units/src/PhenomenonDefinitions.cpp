@@ -166,16 +166,13 @@ void UnitRegistry::AddDefaultPhenomena ()
     AddPhenomenon(AREA, "LENGTH(2)");
     AddPhenomenon(VOLUME, "LENGTH(3)");
     AddPhenomenon(VELOCITY, "LENGTH*TIME(-1)");
-    AddPhenomenon(MOMENTUM, "MASS*VELOCITY");
     AddPhenomenon(ANGULAR_VELOCITY, "ANGLE*TIME(-1)");
     AddPhenomenon(ACCELERATION, "LENGTH*TIME(-2)");
-    AddPhenomenon(ANGULAR_ACCELERATION, "ANGLE*TIME(-2)");
     AddPhenomenon(FORCE, "MASS*ACCELERATION");
     AddPhenomenon(PRESSURE, "FORCE*AREA(-1)");
     AddPhenomenon(FORCE_DENSITY, "FORCE*VOLUME(-1)");
     AddPhenomenon(PRESSURE_GRADIENT, "PRESSURE*LENGTH(-1)");
     AddPhenomenon(TORQUE, "FORCE*LENGTH*ANGLE(-1)");
-    AddPhenomenon(MOMENT_INERTIA, "MASS*LENGTH(2)");
     AddPhenomenon(AREA_MOMENT_INERTIA, "LENGTH(4)");
     AddPhenomenon(MASS_RATIO, "MASS*MASS(-1)");
     AddPhenomenon(DENSITY, "MASS*VOLUME(-1)");
@@ -186,18 +183,12 @@ void UnitRegistry::AddDefaultPhenomena ()
     AddPhenomenon(POWER, "WORK*TIME(-1)");
     AddPhenomenon(FLOW, "VOLUME*TIME(-1)");
     AddPhenomenon(SURFACE_FLOW_RATE, "FLOW*AREA(-1)");
-    AddPhenomenon(SURFACE_POWER_DENSITY, "POWER*AREA(-1)");
     AddPhenomenon(MASS_FLOW, "MASS*TIME(-1)");
     AddPhenomenon(PARTICLE_FLOW, "MOLE*TIME(-1)");
     AddPhenomenon(DYNAMIC_VISCOSITY, "PRESSURE*TIME"); // TODO: Check
     AddPhenomenon(KINEMATIC_VISCOSITY, "FORCE*DYNAMIC_VISCOSITY(-1)"); // TODO: Check
     AddPhenomenon(ELECTRIC_CHARGE, "CURRENT*TIME");
     AddPhenomenon(ELECTRIC_POTENTIAL, "POWER*CURRENT(-1)");
-    AddPhenomenon(ELECTRIC_RESISTANCE, "ELECTRIC_POTENTIAL*CURRENT(-1)");
-    AddPhenomenon(CAPACITANCE, "ELECTRIC_CHARGE*ELECTRIC_POTENTIAL(-1)");
-    AddPhenomenon(MAGNETIC_FLUX, "ELECTRIC_POTENTIAL*TIME");
-    AddPhenomenon(MAGNETIC_FLUX_DENSITY, "MAGNETIC_FLUX*LENGTH(-2)");
-    AddPhenomenon(INDUCTANCE, "MAGNETIC_FLUX*CURRENT(-1)");
     AddPhenomenon(LUMINOUS_FLUX, "LUMINOSITY*SOLIDANGLE"); // TODO: Check
     AddPhenomenon(ILLUMINANCE, "LUMINOUS_FLUX*LENGTH(-2)");
     AddPhenomenon(ROTATIONAL_SPRING_CONSTANT, "TORQUE*ANGLE(-1)");
@@ -218,7 +209,6 @@ void UnitRegistry::AddDefaultPhenomena ()
 
     AddPhenomenon(ENERGY_DENSITY, "WORK*VOLUME(-1)");
     AddPhenomenon(SPECIFIC_ENERGY, "WORK*MASS(-1)");
-    AddPhenomenon(HEATING_VALUE_MOLE, "WORK*MOLE(-1)");
     AddPhenomenon(SPECIFIC_HEAT_CAPACITY, "WORK*MASS(-1)*TEMPERATURE_CHANGE(-1)");
     AddPhenomenon(SPECIFIC_HEAT_CAPACITY_MOLAR, "WORK*MOLE(-1)*TEMPERATURE_CHANGE(-1)");
     AddPhenomenon(PERCENTAGE, NUMBER);
