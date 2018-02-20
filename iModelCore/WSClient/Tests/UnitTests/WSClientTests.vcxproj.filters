@@ -173,8 +173,8 @@
     <ClInclude Include="Published\WebServices\Cache\BackgroundSyncNotifierTests.cpp" />
     <ClInclude Include="Published\WebServices\Cache\BackgroundSyncNotifierTests.h" />
     <ClInclude Include="Published\WebServices\Cache\SyncNotifierTests.h" />
-<ClInclude Include="Published\WebServices\Client\WSJobTests.h" />  
-ClInclude Include="Published\WebServices\Connect\MockConnectSignInManagerListener.h" />
+    <ClInclude Include="Published\WebServices\Client\WSJobTests.h" />  
+    <ClInclude Include="Published\WebServices\Connect\MockConnectSignInManagerListener.h" />
 </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp">
