@@ -491,10 +491,39 @@ int main(int argc, char **argv)
 #endif
     int errors = 0;
     if (check == 0)
-        {//  Run the tests
+    {//  Run the tests
        // errors = RUN_ALL_TESTS(); 
-        errors = runAllTestsWithTimeout (1800); //30/*min*/ * 60/*sec/min*/);
+        int timeoutInSeconds = 1800;
+        bool timeOutStatus = false;
+        for (int i = 1; i < no; i++)
+        {
+            Utf8String utf8Str (argv[i]);
+            if (utf8Str.Contains ("--timeout"))
+            {
+                timeOutStatus = true;
+                bvector<Utf8String> tokens;
+                BeStringUtilities::Split (argv[i], "=", nullptr, tokens);
+                timeoutInSeconds = atoi (tokens[1].c_str ());
+                if (timeoutInSeconds == -1)
+                {
+                    //run tests without timeout 
+                     errors = RUN_ALL_TESTS ();
+                }
+                else
+                {
+                    //run tests with specified time out value
+                     errors = runAllTestsWithTimeout (timeoutInSeconds);
+                }
+            }
         }
+        if (timeOutStatus == false)
+        {
+            //run tests with default time out value which is 30 minutes
+            errors = runAllTestsWithTimeout (timeoutInSeconds);
+        }
+
+    }
+
 #if defined(BENTLEY_WIN32)
     if (umdh_Use(argc, argv))
         {
