@@ -120,8 +120,8 @@ struct IDTMSourceCollection
         
         void                                    _OnPublicEdit          ();
 
-        IteratorBase                            _BeginEditInternal     ();
-        IteratorBase                            _EndEditInternal       ();
+        BENTLEY_SM_EXPORT IteratorBase          _BeginEditInternal     ();
+        BENTLEY_SM_EXPORT IteratorBase          _EndEditInternal       ();
 
     public:
         BENTLEY_SM_EXPORT  explicit                                IDTMSourceCollection   ();
