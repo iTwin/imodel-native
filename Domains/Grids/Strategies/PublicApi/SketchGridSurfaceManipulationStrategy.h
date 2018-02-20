@@ -34,11 +34,11 @@ struct SketchGridSurfaceManipulationStrategy : public BBS::ElementManipulationSt
         virtual bool _IsComplete() const override;
         virtual bool _CanAcceptMorePoints() const override;
         virtual void _SetProperty(Utf8CP key, double const & value) override;
-        virtual void _SetProperty(Utf8CP key, Dgn::DgnElement const& value) override;
+        virtual void _SetProperty(Utf8CP key, Dgn::DgnElementCP const& value) override;
         virtual void _SetProperty(Utf8CP key, Utf8String const& value) override;
         virtual void _SetProperty(Utf8CP key, DPlane3d const& value) override;
         virtual BentleyStatus _TryGetProperty(Utf8CP key, double & value) const override;
-        virtual BentleyStatus _TryGetProperty(Utf8CP key, Dgn::DgnElement & value) const override;
+        virtual BentleyStatus _TryGetProperty(Utf8CP key, Dgn::DgnElementCP & value) const override;
         virtual BentleyStatus _TryGetProperty(Utf8CP key, Utf8String & value) const override;
         virtual BentleyStatus _TryGetProperty(Utf8CP key, DPlane3d & value) const override;
 

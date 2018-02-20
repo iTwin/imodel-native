@@ -306,7 +306,7 @@ BentleyStatus SketchGridSurfaceManipulationStrategy::_TryGetProperty
 BentleyStatus SketchGridSurfaceManipulationStrategy::_TryGetProperty
 (
     Utf8CP key, 
-    Dgn::DgnElement & value
+    Dgn::DgnElementCP & value
 ) const
     {
     /*if (0 == strcmp(key, prop_Axis))
@@ -325,11 +325,11 @@ BentleyStatus SketchGridSurfaceManipulationStrategy::_TryGetProperty
 void SketchGridSurfaceManipulationStrategy::_SetProperty
 (
     Utf8CP key, 
-    Dgn::DgnElement const & value
+    Dgn::DgnElementCP const & value
 )
     {
     if (0 == strcmp(key, prop_Axis))
-        m_axis = dynamic_cast<GridAxisCP>(&value);
+        m_axis = dynamic_cast<GridAxisCP>(value);
     }
 
 //--------------------------------------------------------------------------------------
