@@ -234,7 +234,7 @@ TEST_F(UnitRegistryTests, TestAddingDerivedUnits)
     TestUnit const* retrievedTestUnit = dynamic_cast<TestUnit const*>(retrievedUnit);
     EXPECT_NE(nullptr, retrievedTestUnit);
 
-    TestUnit const* testInverseUnit = UnitRegistry::Instance().AddInvertingUnit<TestUnit>("TestUnit", "InverseTestUnit");
+    TestUnit const* testInverseUnit = UnitRegistry::Instance().AddInvertedUnit<TestUnit>("TestUnit", "InverseTestUnit");
     ASSERT_NE(nullptr, testInverseUnit);
     UnitCP retrievedInverseUnit = UnitRegistry::Instance().LookupUnit("InverseTestUnit");
     EXPECT_EQ(retrievedInverseUnit, testInverseUnit);

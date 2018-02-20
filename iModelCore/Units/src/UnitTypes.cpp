@@ -67,21 +67,21 @@ ExpressionCR UnitsSymbol::Evaluate(int depth, std::function<UnitsSymbolCP(Utf8CP
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                      03/2016
 //--------------------------------------------------------------------------------------
-UnitP Unit::_Create(UnitCR parentUnit, Utf8CP unitName, uint32_t id)
+UnitP Unit::_Create(UnitCR parentUnit, UnitSystemCR system, Utf8CP unitName, uint32_t id)
     {
     if (parentUnit.HasOffset())
         {
-        LOG.errorv("Cannot create inverting unit %s with parent %s because parent has an offset.", unitName, parentUnit.GetName().c_str());
+        LOG.errorv("Cannot create inverted unit %s with parent %s because parent has an offset.", unitName, parentUnit.GetName().c_str());
         return nullptr;
         }
-    if (parentUnit.IsInverseUnit())
+    if (parentUnit.IsInvertedUnit())
         {
-        LOG.errorv("Cannot create inverting unit %s with parent %s because parent is an inverting unit", unitName, parentUnit.GetName().c_str());
+        LOG.errorv("Cannot create inverted unit %s with parent %s because parent is an inverted unit", unitName, parentUnit.GetName().c_str());
         return nullptr;
         }
 
-    LOG.debugv("Creating inverting unit %s with parent unit %s", unitName, parentUnit.GetName().c_str());
-    return new Unit(parentUnit, unitName, id);
+    LOG.debugv("Creating inverted unit %s with parent unit %s", unitName, parentUnit.GetName().c_str());
+    return new Unit(parentUnit, system, unitName, id);
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -105,7 +105,7 @@ uint32_t Unit::GetPhenomenonId() const
 //--------------------------------------------------------------------------------------
 ExpressionCR Unit::Evaluate() const
     {
-    if (IsInverseUnit())
+    if (IsInvertedUnit())
         return m_parent->Evaluate();
 
     return T_Super::Evaluate(0, [] (Utf8CP unitName) { return UnitRegistry::Instance().LookupUnit(unitName); });
@@ -191,7 +191,7 @@ UnitsProblemCode Unit::Convert(double& converted, double value, UnitCP toUnit) c
         return UnitsProblemCode::UncomparableUnits;
         }
 
-    if (IsInverseUnit() && toUnit->IsInverseUnit() || !(IsInverseUnit() || toUnit->IsInverseUnit()))
+    if (IsInvertedUnit() && toUnit->IsInvertedUnit() || !(IsInvertedUnit() || toUnit->IsInvertedUnit()))
         return DoNumericConversion(converted, value, *toUnit);
 
     // TODO: Do better check here
@@ -199,7 +199,7 @@ UnitsProblemCode Unit::Convert(double& converted, double value, UnitCP toUnit) c
     //    return 0.0;
     double temp;
     UnitsProblemCode prob;
-    if (IsInverseUnit())
+    if (IsInvertedUnit())
         {
         if (IsNegligible(value))
             {

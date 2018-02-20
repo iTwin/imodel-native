@@ -261,6 +261,24 @@ UnitP UnitRegistry::RemoveUnit(Utf8CP name)
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
+//--------------------------------------------------------------------------------------
+UnitP UnitRegistry::RemoveInvertedUnit(Utf8CP name)
+    {
+    UnitP ptrReturn = nullptr;
+
+    auto iter = m_units.find(name);
+    if (iter != m_units.end() && iter->second->IsInvertedUnit())
+        {
+        ptrReturn = iter->second;
+        m_units.erase(iter);
+        }
+
+    return ptrReturn;
+    }
+
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                      02/2016
 //--------------------------------------------------------------------------------------
 void UnitRegistry::AllSystems(bvector<UnitSystemCP>& allUnitSystems) const

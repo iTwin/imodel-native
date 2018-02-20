@@ -724,9 +724,9 @@ void AddSlope(UnitRegistry& reg)
 
     reg.AddUnit(SLOPE, INTERNATIONAL, "PERCENT_SLOPE", "M/M", 1.0e-2);
 
-    reg.AddInvertingUnit("VERTICAL/HORIZONTAL", "HORIZONTAL/VERTICAL");
-    reg.AddInvertingUnit("FT/FT", "FT_HORIZONTAL/FT_VERTICAL");
-    reg.AddInvertingUnit("M/M", "M_HORIZONTAL/M_VERTICAL");
+    reg.AddInvertedUnit("VERTICAL/HORIZONTAL", "HORIZONTAL/VERTICAL", INTERNATIONAL);
+    reg.AddInvertedUnit("FT/FT", "FT_HORIZONTAL/FT_VERTICAL", USCUSTOM);
+    reg.AddInvertedUnit("M/M", "M_HORIZONTAL/M_VERTICAL", SI);
     }
 
 void AddSurfaceDensity(UnitRegistry& reg)

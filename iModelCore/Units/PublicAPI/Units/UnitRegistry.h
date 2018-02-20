@@ -161,7 +161,7 @@ private:
         }
 
     template<typename UNIT_TYPE>
-    UNIT_TYPE* AddInvertingUnitInternal(Utf8CP parentUnitName, Utf8CP unitName)
+    UNIT_TYPE* AddInvertedUnitInternal(Utf8CP parentUnitName, Utf8CP unitName, Utf8CP unitSystemName)
         {
         static_assert((std::is_base_of<Unit, UNIT_TYPE>::value), "UNIT_TYPE must derive from Units::Unit.");
         if (Utf8String::IsNullOrEmpty(unitName))
@@ -176,10 +176,23 @@ private:
             return nullptr;
             }
 
+        if (Utf8String::IsNullOrEmpty(unitSystemName))
+            {
+            NativeLogging::LoggingManager::GetLogger(L"UnitsNative")->errorv("Cannot create unit %s because it's unit system name is null", unitName);
+            return nullptr;
+            }
+
         UnitCP parentUnit = LookupUnit(parentUnitName);
         if (nullptr == parentUnit)
             {
             NativeLogging::LoggingManager::GetLogger(L"UnitsNative")->errorv("Cannot create unit %s because it's parent unit %s cannot be found", unitName, parentUnitName);
+            return nullptr;
+            }
+
+        UnitSystemCP unitSystem = LookupUnitSystem(unitSystemName);
+        if (nullptr == unitSystem)
+            {
+            NativeLogging::LoggingManager::GetLogger(L"UnitsNative")->errorv("Cannot create unit %s because it's unit system %s cannot be found", unitName, unitSystemName);
             return nullptr;
             }
 
@@ -189,7 +202,7 @@ private:
             return nullptr;
             }
 
-        auto unit = UNIT_TYPE::_Create(*parentUnit, unitName, m_nextId);
+        auto unit = UNIT_TYPE::_Create(*parentUnit, *unitSystem, unitName, m_nextId);
         if (nullptr == unit)
             return nullptr;
 
@@ -293,19 +306,21 @@ public:
     UnitCP AddUnit(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double factor = 1, double offset = 0) 
         {return AddUnit<Unit>(phenomName, systemName, unitName, definition, factor, offset);}
 
-    //! Creates an Inverting Unit, of the provided UNIT_TYPE, for the parent Unit and adds it to this registry.
-    //! @param[in] parentUnitName Name of the Unit we are creating the Inverting Unit for
+    //! Creates an inverted Unit, of the provided UNIT_TYPE, for the parent Unit and adds it to this registry.
+    //! @param[in] parentUnitName Name of the Unit we are creating the inverted Unit for
     //! @param[in] unitName Name of the Inversting Unit to be created
+    //! @param[in] unitSystemName Name of the unit system this inverted unit belongs to
     //! @note The UNIT_TYPE provided must derive from Units::Unit
-    //! @return An Inverting UNIT_TYPE if successfully created and added to this registry, nullptr otherwise.
+    //! @return An inverted UNIT_TYPE if successfully created and added to this registry, nullptr otherwise.
     template<typename UNIT_TYPE>
-    UNIT_TYPE* AddInvertingUnit(Utf8CP parentUnitName, Utf8CP unitName) {return AddInvertingUnitInternal<UNIT_TYPE>(parentUnitName, unitName);}
+    UNIT_TYPE* AddInvertedUnit(Utf8CP parentUnitName, Utf8CP unitName, Utf8CP unitSystemName) {return AddInvertedUnitInternal<UNIT_TYPE>(parentUnitName, unitName, unitSystemName);}
 
-    //! Creates an Inverting Unit for the parent Unit and adds it to this registry.
-    //! @param[in] parentUnitName Name of the Unit we are creating the Inverting Unit for
+    //! Creates an inverted Unit for the parent Unit and adds it to this registry.
+    //! @param[in] parentUnitName Name of the Unit we are creating the inverted Unit for
     //! @param[in] unitName Name of the Inversting Unit to be created
-    //! @return An inverting Unit if successfully created and added to this registry, nullptr otherwise.
-    UnitCP AddInvertingUnit(Utf8CP parentUnitName, Utf8CP unitName) {return AddInvertingUnit<Unit>(parentUnitName, unitName);}
+    //! @param[in] unitSystemName Name of the unit system this inverted unit belongs to
+    //! @return An inverted Unit if successfully created and added to this registry, nullptr otherwise.
+    UnitCP AddInvertedUnit(Utf8CP parentUnitName, Utf8CP unitName, Utf8CP unitSystemName) {return AddInvertedUnit<Unit>(parentUnitName, unitName, unitSystemName);}
 
     //! Creates a Constant, of the provided UNIT_TYPE, and adds it to this registry.
     //! @param[in] phenomName Name of the Phenomenon the new Constant is needs to be added to
@@ -396,6 +411,11 @@ public:
     //! It does not delete the Unit rather just removes it from the registry.
     //! @return A pointer to the Unit that is no longer within this registry.
     UNITS_EXPORT UnitP RemoveUnit(Utf8CP unitName);
+
+    //! Removes the Unit from this UnitRegistry and returns the pointer to that Unit.
+    //! It does not delete the Unit rather just removes it from the registry.
+    //! @return A pointer to the Unit that is no longer within this registry.
+    UNITS_EXPORT UnitP RemoveInvertedUnit(Utf8CP unitName);
 
     //! Gets the "new" unit name from a "old" unit name
     //! @see UnitNameMappings for information on the difference between a old and new unit name.
