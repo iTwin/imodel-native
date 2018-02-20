@@ -362,22 +362,22 @@ PhenomenonId SchemaPersistenceHelper::GetPhenomenonId(ECDbCR ecdb, DbTableSpace 
     {
     Utf8String sql;
     if (tableSpace.IsMain())
-        sql.assign("SELECT ph.Id FROM main." TABLE_Unit " ph, main." TABLE_Schema " s");
+        sql.assign("SELECT phen.Id FROM main." TABLE_Phenomenon " phen, main." TABLE_Schema " s");
     else
-        sql.Sprintf("SELECT ph.Id FROM [%s]." TABLE_Unit " ph, [%s]." TABLE_Schema " s", tableSpace.GetName().c_str(), tableSpace.GetName().c_str());
+        sql.Sprintf("SELECT phen.Id FROM [%s]." TABLE_Phenomenon " phen, [%s]." TABLE_Schema " s", tableSpace.GetName().c_str(), tableSpace.GetName().c_str());
 
     switch (lookupMode)
         {
             case SchemaLookupMode::ByName:
-                sql.append(" WHERE ph.SchemaId=s.Id AND s.Name=?1 AND ph.Name=?2");
+                sql.append(" WHERE phen.SchemaId=s.Id AND s.Name=?1 AND phen.Name=?2");
                 break;
 
             case SchemaLookupMode::ByAlias:
-                sql.append(" WHERE ph.SchemaId=s.Id AND s.Alias=?1 AND ph.Name=?2");
+                sql.append(" WHERE phen.SchemaId=s.Id AND s.Alias=?1 AND phen.Name=?2");
                 break;
 
             default:
-                sql.append(" WHERE ph.SchemaId=s.Id AND (s.Name=?1 OR s.Alias=?1) AND ph.Name=?2");
+                sql.append(" WHERE phen.SchemaId=s.Id AND (s.Name=?1 OR s.Alias=?1) AND phen.Name=?2");
                 break;
         }
 

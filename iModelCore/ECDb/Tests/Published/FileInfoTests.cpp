@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/FileInfoTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -101,7 +101,7 @@ TEST_F(FileInfoTestFixture, SubclassingExternalFileInfo)
     ASSERT_EQ(SUCCESS, SetupECDb("subclassingexternalfileinfo.ecdb",
                                  SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
             <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                <ECSchemaReference name="ECDbFileInfo" version="02.00" alias="ecdbf"/>
+                <ECSchemaReference name="ECDbFileInfo" version="02.01" alias="ecdbf"/>
                 <ECEntityClass typeName="MyExternalFileInfo" modifier="Sealed">
                     <BaseClass>ecdbf:ExternalFileInfo</BaseClass>
                     <ECProperty propertyName="MyExtraInformation" typeName="string" />

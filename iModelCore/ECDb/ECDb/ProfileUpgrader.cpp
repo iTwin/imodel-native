@@ -391,7 +391,7 @@ DbResult ProfileSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
     if (SUCCESS != ReadECDbSystemSchema(*context, ecdb.GetDbFileName()))
         return BE_SQLITE_ERROR;
 
-    SchemaKey schemaKey("ECDbFileInfo", 2, 0, 0);
+    SchemaKey schemaKey("ECDbFileInfo", 2, 0, 1);
     if (SUCCESS != ReadSchemaFromDisk(*context, schemaKey, ecdb.GetDbFileName()))
         return BE_SQLITE_ERROR;
 

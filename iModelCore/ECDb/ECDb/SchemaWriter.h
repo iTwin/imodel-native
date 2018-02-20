@@ -65,7 +65,15 @@ struct SchemaWriter final
         BentleyStatus VerifyEnumeratorChanges(ECN::ECEnumerationCR oldEnum, ECN::ECEnumeratorChanges&) const;
 
         BentleyStatus UpdateKindOfQuantities(ECN::KindOfQuantityChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
+        BentleyStatus UpdateKindOfQuantity(ECN::KindOfQuantityChange&, ECN::KindOfQuantityCR oldVal, ECN::KindOfQuantityCR newVal);
         BentleyStatus UpdatePropertyCategories(ECN::PropertyCategoryChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
+        BentleyStatus UpdatePropertyCategory(ECN::PropertyCategoryChange&, ECN::PropertyCategoryCR oldVal, ECN::PropertyCategoryCR newVal);
+        BentleyStatus UpdatePhenomena(ECN::PhenomenonChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
+        BentleyStatus UpdatePhenomenon(ECN::PhenomenonChange&, ECN::PhenomenonCR oldVal, ECN::PhenomenonCR newVal);
+        BentleyStatus UpdateUnitSystems(ECN::UnitSystemChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
+        BentleyStatus UpdateUnitSystem(ECN::UnitSystemChange&, ECN::UnitSystemCR oldVal, ECN::UnitSystemCR newVal);
+        BentleyStatus UpdateUnits(ECN::UnitChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
+        BentleyStatus UpdateUnit(ECN::UnitChange&, ECN::ECUnitCR oldVal, ECN::ECUnitCR newVal);
 
         BentleyStatus UpdateProperties(ECN::ECPropertyChanges&, ECN::ECClassCR oldClass, ECN::ECClassCR newClass);
 
