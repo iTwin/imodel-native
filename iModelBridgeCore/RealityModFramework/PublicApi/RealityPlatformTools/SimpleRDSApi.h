@@ -47,7 +47,7 @@ public:
     REALITYDATAPLATFORM_EXPORT ConnectedRealityDataEnterpriseStat(const RealityDataEnterpriseStat& stat);
 private:
     REALITYDATAPLATFORM_EXPORT void Clone(const RealityDataEnterpriseStat& stat);
-    REALITYDATAPLATFORM_EXPORT static ConnectedResponse GetAllStats(bvector<ConnectedRealityDataEnterpriseStat>& statVec);
+    //REALITYDATAPLATFORM_EXPORT static ConnectedResponse GetAllStats(bvector<ConnectedRealityDataEnterpriseStat>& statVec);
     };
 
 //=====================================================================================

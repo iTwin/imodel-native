@@ -360,6 +360,30 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataDocumentDeleteRequestTest)
 //=====================================================================================
 //! @bsimethod                                  Spencer.Mason                  02/2018
 //=====================================================================================
+TEST_F(SimpleRDSFixture, ConnectedRealityDataDocumentDeleteBadRequestTest)
+    {
+    ConnectedRealityDataDocument doc = ConnectedRealityDataDocument();
+    ConnectedResponse response = doc.Delete();
+
+    EXPECT_FALSE(response.simpleSuccess);
+    EXPECT_EQ(response.simpleMessage, "must set server path to document (id), first");
+    }
+
+//=====================================================================================
+//! @bsimethod                                  Spencer.Mason                  02/2018
+//=====================================================================================
+TEST_F(SimpleRDSFixture, ConnectedRealityDataDocumentGetInfoBadRequestTest)
+    {
+    ConnectedRealityDataDocument doc = ConnectedRealityDataDocument();
+    ConnectedResponse response = doc.GetInfo();
+
+    EXPECT_FALSE(response.simpleSuccess);
+    EXPECT_EQ(response.simpleMessage, "must set server path to document (id), first");
+    }
+
+//=====================================================================================
+//! @bsimethod                                  Spencer.Mason                  02/2018
+//=====================================================================================
 TEST_F(SimpleRDSFixture, ConnectedRealityDataAllDocumentsTest)
     {
     EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([](const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
@@ -394,6 +418,27 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataAllDocumentsTest)
     ConnectedResponse response = ConnectedRealityDataDocument::RetrieveAllForRealityData(docVector, "72adad30-c07c-465d-a1fe-2f2dfac950a7");
 
     EXPECT_EQ(docVector[0].first, "72adad30-c07c-465d-a1fe-2f2dfac950a7/Folder1/File1.txt");
+    }
+
+//=====================================================================================
+//! @bsimethod                                  Spencer.Mason                  02/2018
+//=====================================================================================
+TEST_F(SimpleRDSFixture, ConnectedRealityDataAllDocumentsBadTest)
+    {
+    EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([](const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+        {
+        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityData/72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a7/FileAccess.FileAccessKey?$filter=Permissions+eq+'Read'&api.singleurlperinstance=true");
+        response.status = ::BADREQ;
+        response.responseCode = 404;
+        response.toolCode = 55;
+        }));
+
+    bvector<bpair<Utf8String, uint64_t>> docVector;
+
+    ConnectedResponse response = ConnectedRealityDataDocument::RetrieveAllForRealityData(docVector, "72adad30-c07c-465d-a1fe-2f2dfac950a7");
+
+    EXPECT_FALSE(response.simpleSuccess);
+    EXPECT_EQ(response.simpleMessage, "Failure retrieving Azure token\n");
     }
 
 //=====================================================================================
@@ -443,6 +488,30 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataFolderDeleteRequestTest)
     }
 
 //=====================================================================================
+//! @bsimethod                                  Spencer.Mason                  02/2018
+//=====================================================================================
+TEST_F(SimpleRDSFixture, ConnectedRealityDataFolderDeleteBadRequestTest)
+    {
+    ConnectedRealityDataFolder folder = ConnectedRealityDataFolder();
+    ConnectedResponse response = folder.Delete();
+
+    EXPECT_FALSE(response.simpleSuccess);
+    EXPECT_EQ(response.simpleMessage, "must set server path to document (id), first");
+    }
+
+//=====================================================================================
+//! @bsimethod                                  Spencer.Mason                  02/2018
+//=====================================================================================
+TEST_F(SimpleRDSFixture, ConnectedRealityDataFolderGetInfoBadRequestTest)
+    {
+    ConnectedRealityDataFolder folder = ConnectedRealityDataFolder();
+    ConnectedResponse response = folder.Delete();
+
+    EXPECT_FALSE(response.simpleSuccess);
+    EXPECT_EQ(response.simpleMessage, "must set server path to document (id), first");
+    }
+
+//=====================================================================================
 //! @bsimethod                                  Spencer.Mason                  10/2017
 //=====================================================================================
 TEST_F(SimpleRDSFixture, ConnectedRealityDataTest)
@@ -468,22 +537,70 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataTest)
 //=====================================================================================
 //! @bsimethod                                  Spencer.Mason                  10/2017
 //=====================================================================================
-/*TEST_F(SimpleRDSFixture, ConnectedRealityDataTest)
+TEST_F(SimpleRDSFixture, ConnectedRealityDataGetInfoBadTest)
+    {
+    ConnectedRealityData emptyRd = ConnectedRealityData();
+    ConnectedResponse response = emptyRd.GetInfo();
+
+    EXPECT_FALSE(response.simpleSuccess);
+    EXPECT_EQ(response.simpleMessage, "must set ultimate id, first");
+    }
+
+//=====================================================================================
+//! @bsimethod                                  Spencer.Mason                  10/2017
+//=====================================================================================
+TEST_F(SimpleRDSFixture, ConnectedRealityDataUpdateBadTest)
+    {
+    ConnectedRealityData emptyRd = ConnectedRealityData();
+    ConnectedResponse response = emptyRd.UpdateInfo();
+
+    EXPECT_FALSE(response.simpleSuccess);
+    EXPECT_EQ(response.simpleMessage, "must set ultimate id, first");
+    }
+
+//=====================================================================================
+//! @bsimethod                                  Spencer.Mason                  10/2017
+//=====================================================================================
+TEST_F(SimpleRDSFixture, ConnectedRealityDataDeleteBadTest)
+    {
+    ConnectedRealityData emptyRd = ConnectedRealityData();
+    ConnectedResponse response = emptyRd.Delete();
+
+    EXPECT_FALSE(response.simpleSuccess);
+    EXPECT_EQ(response.simpleMessage, "must set server path to document (id), first");
+    }
+
+//=====================================================================================
+//! @bsimethod                                  Spencer.Mason                  10/2017
+//=====================================================================================
+TEST_F(SimpleRDSFixture, ConnectedRealityDataForAllUltTest)
     {
     EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([](const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
         {
-        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityData/72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a5");
         response.status = ::OK;
         response.responseCode = 200;
         response.toolCode = CURLE_OK;
-        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\SingleRealityData-Helsinki.json");
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\MultipleRealityData.json");
         }));
 
     ConnectedRealityData emptyRd = ConnectedRealityData();
-    emptyRd.SetIdentifier("72adad30-c07c-465d-a1fe-2f2dfac950a5");
+    emptyRd.SetUltimateId("72adad30-c07c-465d-a1fe-2f2dfac950a5");
 
-    bvector<ConnectedRealityDataPtr>& dataVector
-    ConnectedResponse response = ConnectedRealityData::RetrieveAllForUltimateId(bvector<ConnectedRealityDataPtr>& dataVector);
+    bvector<ConnectedRealityDataPtr> dataVector;
+    ConnectedResponse response = emptyRd.RetrieveAllForUltimateId(dataVector);
 
-    EXPECT_EQ(dataVector[0].GetName(), "Helsinki");
-    }*/
+    EXPECT_EQ(dataVector[0]->GetName(), "Helsinki");
+    }
+
+//=====================================================================================
+//! @bsimethod                                  Spencer.Mason                  10/2017
+//=====================================================================================
+TEST_F(SimpleRDSFixture, ConnectedRealityDataForAllUltBadTest)
+    {
+    bvector<ConnectedRealityDataPtr> dataVector;
+    ConnectedRealityData emptyRd = ConnectedRealityData();
+    ConnectedResponse response = emptyRd.RetrieveAllForUltimateId(dataVector);
+
+    EXPECT_FALSE(response.simpleSuccess);
+    EXPECT_EQ(response.simpleMessage, "must set ultimate id, first");
+    }

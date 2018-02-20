@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatformTools/Example/SimpleRDSApiExample.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -141,7 +141,14 @@ Utf8String CreateUpload()
     crd.SetRealityDataType("S3MX");
     crd.SetVisibility(RealityDataBase::Visibility::ENTERPRISE);
     crd.SetRootDocument("DummyRootDocument.json");
-
+    crd.SetOrganizationId("72adad30-c07c-465d-a1fe-2f2dfac950d7");
+    crd.SetUltimateId("72adad30-c07c-465d-a1fe-2f2dfac950d8");
+    crd.SetUltimateSite("72adad30-c07c-465d-a1fe-2f2dfac950d9");
+    crd.SetContainerName("72adad30-c07c-465d-a1fe-2f2dfac950da");
+    crd.SetDataLocationGuid("72adad30-c07c-465d-a1fe-2f2dfac950db");
+    crd.SetDataset("SRTM1");
+    crd.SetDescription("example upload for SimpleRDSApi");
+    
     Utf8String empty = "";
 
     ConnectedResponse response = crd.Upload(dummyRoot, empty);
@@ -153,6 +160,68 @@ Utf8String CreateUpload()
         }
 
     return crd.GetIdentifier();
+    }
+
+void FolderOperations(Utf8String guid)
+    {
+    Utf8String folderGuid = Utf8PrintfString("%s/%s", guid, "DummySubFolder");
+    ConnectedRealityDataFolder crdf = ConnectedRealityDataFolder(folderGuid);
+
+    WChar exePath[MAX_PATH];
+    GetModuleFileNameW(NULL, exePath, MAX_PATH);
+    WString exeDir = exePath;
+    size_t pos = exeDir.find_last_of(L"/\\");
+    exeDir = exeDir.substr(0, pos + 1);
+    BeFileName outDir = BeFileName(exeDir);
+    outDir.AppendToPath(L"SimpleRDSApiTestDirectory");
+    WString directory(outDir);
+
+    BeFileName dummyRoot = BeFileName(directory.c_str());
+    dummyRoot.AppendToPath(L"DummyFolderDownFolder");
+
+    crdf.Download(dummyRoot, folderGuid);
+
+    folderGuid.append("2");
+    ConnectedResponse response = crdf.Upload(dummyRoot, folderGuid);
+
+    if (!response.simpleSuccess)
+        {
+        std::cout << response.simpleMessage << std::endl;
+        return;
+        }
+
+    BeFileName::EmptyAndRemoveDirectory(dummyRoot.c_str());
+    }
+
+void DocumentOperations(Utf8String guid)
+    {
+    Utf8String documentGuid = Utf8PrintfString("%s/%s", guid, "DummyRootDocument.json");
+    ConnectedRealityDataDocument crdf = ConnectedRealityDataDocument(documentGuid);
+
+    WChar exePath[MAX_PATH];
+    GetModuleFileNameW(NULL, exePath, MAX_PATH);
+    WString exeDir = exePath;
+    size_t pos = exeDir.find_last_of(L"/\\");
+    exeDir = exeDir.substr(0, pos + 1);
+    BeFileName outDir = BeFileName(exeDir);
+    outDir.AppendToPath(L"SimpleRDSApiTestDirectory");
+    WString directory(outDir);
+
+    BeFileName dummyRoot = BeFileName(directory.c_str());
+    dummyRoot.AppendToPath(L"DummyFolderDownDocument");
+
+    crdf.Download(dummyRoot, documentGuid);
+
+    documentGuid.append("2");
+    ConnectedResponse response = crdf.Upload(dummyRoot, documentGuid);
+
+    if (!response.simpleSuccess)
+        {
+        std::cout << response.simpleMessage << std::endl;
+        return;
+        }
+
+    BeFileName::EmptyAndRemoveDirectory(dummyRoot.c_str());
     }
 
 void DownloadModify(Utf8String guid)
@@ -204,6 +273,8 @@ int main(int argc, char *argv[])
     Utf8String guid = CreateUpload();
     if(guid.empty())
         return 1;
+    FolderOperations(guid);
+    DocumentOperations(guid);
     DownloadModify(guid);
     Delete(guid);
 

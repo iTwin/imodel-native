@@ -97,7 +97,7 @@ ConnectedRealityDataEnterpriseStat::ConnectedRealityDataEnterpriseStat(const Rea
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
-ConnectedResponse ConnectedRealityDataEnterpriseStat::GetAllStats(bvector<ConnectedRealityDataEnterpriseStat>& statVec)
+/*ConnectedResponse ConnectedRealityDataEnterpriseStat::GetAllStats(bvector<ConnectedRealityDataEnterpriseStat>& statVec)
     {
     ConnectedResponse response = ConnectedResponse();
     RawServerResponse rawResponse = RawServerResponse();
@@ -111,7 +111,7 @@ ConnectedResponse ConnectedRealityDataEnterpriseStat::GetAllStats(bvector<Connec
     response.Clone(rawResponse);
 
     return response;
-    }
+    }*/
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
@@ -697,7 +697,11 @@ ConnectedResponse ConnectedRealityData::RetrieveAllForUltimateId(bvector<Connect
     while (ultimateResponse.status == RequestStatus::OK)
         {//When LASTPAGE has been added, loop will exit
         partialVec = RealityDataService::Request(ultimateReq, ultimateResponse);
-        dataVector.insert(dataVector.end(), dataVector.begin(), dataVector.end());
+        for (RealityDataPtr rdPtr : partialVec)
+            {
+            ConnectedRealityDataPtr tempPtr = new ConnectedRealityData(rdPtr.get());
+            dataVector.push_back(tempPtr);
+            }
         }
 
     response.Clone(ultimateResponse);
