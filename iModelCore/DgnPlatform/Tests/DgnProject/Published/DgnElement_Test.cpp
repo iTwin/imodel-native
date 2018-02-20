@@ -2351,6 +2351,7 @@ TEST_F(DgnElementTests, CreateSubjectChildElemet)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                   02/2018
 //---------------+---------------+---------------+---------------+---------------+--------
+#if !defined(BENTLEYCONFIG_OS_LINUX) // TFS#821136
 TEST_F(DgnElementTests, FromJson)
     {
     SetupSeedProject();
@@ -2557,6 +2558,7 @@ TEST_F(DgnElementTests, FromJson)
 
     m_db->CloseDb();
 }
+#endif
 
 //----------------------------------------------------------------------------------------
 // @bsiclass                                                    Sam.Wilson      10/17
