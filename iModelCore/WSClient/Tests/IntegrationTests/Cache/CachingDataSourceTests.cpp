@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/IntegrationTests/Cache/CachingDataSourceTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -378,9 +378,6 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectBIMReviewShare_Succeed
     auto authHandler = manager->GetAuthenticationHandler(serverUrl, proxy);
 
     auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, authHandler);
-
-    // * @remarks Note: Temporary until WSG defect 651740 is fixed for BIMReviewSharing
-    client->GetWSClient()->EnableWsgServerHeader(true);
 
     auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
     ASSERT_FALSE(nullptr == result.GetValue());

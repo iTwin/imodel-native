@@ -64,13 +64,6 @@ struct DiskClient : public IWSClient
             {
             FBC_NOT_IMPLEMENTED(WSRepositoriesResult);
             }
-
-        //! Note: Temporary until WSG defect 651740 is fixed for BIMReviewSharing
-        virtual void EnableWsgServerHeader
-            (
-            bool enable
-            ) override
-            { }
     };
 
 /*--------------------------------------------------------------------------------------+

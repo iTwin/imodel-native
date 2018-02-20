@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Client/WSClient.h $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -47,10 +47,7 @@ struct IWSClient
         WSCLIENT_EXPORT virtual ~IWSClient();
 
         virtual Utf8String GetServerUrl() const = 0;
-        
-        //! Note: Temporary until WSG defect 651740 is fixed for BIMReviewSharing
-        virtual void EnableWsgServerHeader(bool enable) = 0;
-        
+
         //! Register for ServerInfo received events
         virtual void RegisterServerInfoListener(std::weak_ptr<IServerInfoListener> listener) = 0;
 
@@ -107,9 +104,6 @@ struct WSClient : public IWSClient, public std::enable_shared_from_this<WSClient
             );
 
         WSCLIENT_EXPORT Utf8String GetServerUrl() const override;
-
-        //! Note: Temporary until WSG defect 651740 is fixed for BIMReviewSharing
-        WSCLIENT_EXPORT void EnableWsgServerHeader(bool enable) override;
 
         WSCLIENT_EXPORT void RegisterServerInfoListener(std::weak_ptr<IServerInfoListener> listener) override;
         WSCLIENT_EXPORT void UnregisterServerInfoListener(std::weak_ptr<IServerInfoListener> listener) override;

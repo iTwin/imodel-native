@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Client/WSInfo.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -40,8 +40,7 @@ struct WSInfo
         BeVersion m_webApiVersion;
 
     private:
-        //! Note: Temporary useWsgVersionHeader until WSG defect 651740 is fixed for BIMReviewSharing
-        static void ParseHeaders(HttpResponseHeadersCR headers, bool useWsgVersionHeader, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut);
+        static void ParseHeaders(HttpResponseHeadersCR headers, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut);
         static void ParseInfoPage(Http::ResponseCR response, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut);
         static void ParseAboutPage(Http::ResponseCR response, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut);
         static BeVersion DeduceWebApiVersion(BeVersionCR serverVersion);
@@ -55,8 +54,7 @@ struct WSInfo
         WSCLIENT_EXPORT WSInfo(BeVersion serverVersion, BeVersion webApiVersion, Type serverType);
 
         //! Create info from server response
-        //! Note: Temporary useWsgVersionHeader until WSG defect 651740 is fixed for BIMReviewSharing
-        WSCLIENT_EXPORT WSInfo(Http::ResponseCR response, bool useWsgVersionHeader = false);
+        WSCLIENT_EXPORT WSInfo(Http::ResponseCR response);
         
         //! Deserialize string info
         WSCLIENT_EXPORT WSInfo(Utf8StringCR serialized);

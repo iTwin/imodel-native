@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/WSInfoTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <WebServices/Client/WSInfo.h>
@@ -220,20 +220,6 @@ TEST_F(WSInfoTests, GetVersion_ValidServerVersionInBodyButHttpStatusNonOk_Return
 TEST_F(WSInfoTests, GetVersion_SuccessResponseWithWSGServerHeader_ReadsVersionsFromheaderAndSetsBentleyWSGType)
     {
     WSInfo info(StubHttpResponse(HttpStatus::OK, "{}", {{"Server", "Bentley-WSG/02.03.04.05, Bentley-WebAPI/06.07"}}));
-
-    EXPECT_TRUE(info.IsValid());
-    EXPECT_EQ(BeVersion(2, 3, 4, 5), info.GetVersion());
-    EXPECT_EQ(BeVersion(6, 7), info.GetWebApiVersion());
-    EXPECT_EQ(WSInfo::Type::BentleyWSG, info.GetType());
-    }
-
-//! NOTE: Temporary test until WsgServer header can be removed from BIM Review Sharing...
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    01/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSInfoTests, GetWsgServer_SuccessResponseWithWSGServerHeader_ReadsVersionsFromheaderAndSetsBentleyWSGType)
-    {
-    WSInfo info(StubHttpResponse(HttpStatus::OK, "{}", {{"WsgServer", "Bentley-WSG/02.03.04.05, Bentley-WebAPI/06.07"}}), true);
 
     EXPECT_TRUE(info.IsValid());
     EXPECT_EQ(BeVersion(2, 3, 4, 5), info.GetVersion());
