@@ -15,6 +15,10 @@ int main(int argc, const char * argv[]) {
     BentleyB0200::iModelJs::Js::Runtime runtime;
     Napi::Env& env = runtime.Env();
 
+    auto result = runtime.EvaluateScript ("1 + 1");
+    assert (result.status == BentleyB0200::iModelJs::Js::EvaluateStatus::Success);
+    assert (result.value.As<Napi::Number>().DoubleValue() == 2.0);
+
     auto u = env.Undefined();
     assert (u.IsUndefined());
     

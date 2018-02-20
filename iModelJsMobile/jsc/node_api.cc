@@ -1952,7 +1952,8 @@ napi_status napi_run_script(napi_env env,
   CHECK_ARG(env, result);
 
   JSContextRef ctx = env->GetContext();
-  // TODO
+  JSStringRef scriptString = JSValueToStringCopy (ctx, script, NULL);
+  *result = JSEvaluateScript(ctx,scriptString,NULL,NULL,0,NULL);
   
   return GET_RETURN_STATUS(env);
 }

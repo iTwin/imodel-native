@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2603BFF4203CA3880005C3ED /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2603BFF3203CA3880005C3ED /* CoreFoundation.framework */; };
+		2603BFF8203CA4D10005C3ED /* libBeIcu4c.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2603BFF7203CA4D10005C3ED /* libBeIcu4c.a */; };
 		2620C70020376222007AA668 /* libiModelJs.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2620C6FF20376222007AA668 /* libiModelJs.a */; };
 		2620C7022037622A007AA668 /* JavaScriptCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2620C7012037622A007AA668 /* JavaScriptCore.framework */; };
 		2620C7042037629E007AA668 /* libBentley.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2620C7032037629E007AA668 /* libBentley.a */; };
@@ -26,10 +28,13 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		2603BFF3203CA3880005C3ED /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
+		2603BFF5203CA4990005C3ED /* libBeXml.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeXml.a; sourceTree = "<group>"; };
+		2603BFF7203CA4D10005C3ED /* libBeIcu4c.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeIcu4c.a; sourceTree = "<group>"; };
 		2620C6FD203760B7007AA668 /* NAPI-JSC-Tests.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = "NAPI-JSC-Tests.xcconfig"; sourceTree = SOURCE_ROOT; };
-		2620C6FF20376222007AA668 /* libiModelJs.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libiModelJs.a; sourceTree = "<group>"; };
+		2620C6FF20376222007AA668 /* libiModelJs.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libiModelJs.a; sourceTree = "<group>"; };
 		2620C7012037622A007AA668 /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
-		2620C7032037629E007AA668 /* libBentley.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBentley.a; sourceTree = "<group>"; };
+		2620C7032037629E007AA668 /* libBentley.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libBentley.a; sourceTree = "<group>"; };
 		26DF23B02037601A001FE257 /* NAPI-JSC-Tests */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "NAPI-JSC-Tests"; sourceTree = BUILT_PRODUCTS_DIR; };
 		26DF23B32037601A001FE257 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -39,6 +44,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2603BFF8203CA4D10005C3ED /* libBeIcu4c.a in Frameworks */,
+				2603BFF4203CA3880005C3ED /* CoreFoundation.framework in Frameworks */,
 				2620C7022037622A007AA668 /* JavaScriptCore.framework in Frameworks */,
 				2620C7042037629E007AA668 /* libBentley.a in Frameworks */,
 				2620C70020376222007AA668 /* libiModelJs.a in Frameworks */,
@@ -51,6 +58,9 @@
 		2620C6FE20376222007AA668 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				2603BFF7203CA4D10005C3ED /* libBeIcu4c.a */,
+				2603BFF5203CA4990005C3ED /* libBeXml.a */,
+				2603BFF3203CA3880005C3ED /* CoreFoundation.framework */,
 				2620C7032037629E007AA668 /* libBentley.a */,
 				2620C7012037622A007AA668 /* JavaScriptCore.framework */,
 				2620C6FF20376222007AA668 /* libiModelJs.a */,
@@ -266,6 +276,7 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJs/Delivery/",
 					"$(OutRoot)$(BuildArchitecture)/static/BuildContexts/Bentley/Delivery/",
+					"$(OutRoot)$(BuildArchitecture)/static/BuildContexts/Libsrc-Nugets/Delivery/IcuNuget/",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -280,6 +291,7 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJs/Delivery/",
 					"$(OutRoot)$(BuildArchitecture)/static/BuildContexts/Bentley/Delivery/",
+					"$(OutRoot)$(BuildArchitecture)/static/BuildContexts/Libsrc-Nugets/Delivery/IcuNuget/",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
