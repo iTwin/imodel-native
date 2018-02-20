@@ -207,7 +207,15 @@ DgnModelIdSet   GetElementModelIds(DgnElementIdSet const& elementIds)
 
     for (auto& elementId : elementIds)
         {
-        auto modelId = m_tempDb->Elements().Get<DgnElement>(elementId)->GetModelId();
+        auto    element = m_tempDb->Elements().Get<DgnElement>(elementId);
+        
+        if (!element.IsValid())
+            {
+            BeAssert(false);
+            continue;
+            }
+         
+        auto modelId = element->GetModelId();
 
         if (modelIds.find(modelId) == modelIds.end())
             {
