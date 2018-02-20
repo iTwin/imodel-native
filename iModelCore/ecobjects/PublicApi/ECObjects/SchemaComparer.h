@@ -25,6 +25,9 @@ struct ECObjectChange;
 struct ClassTypeChange;
 struct KindOfQuantityChange;
 struct PropertyCategoryChange;
+struct PhenomenonChange;
+struct UnitSystemChange;
+struct UnitChange;
 
 //=======================================================================================
 // @bsienum                                                Affan.Khan            03/2016
@@ -100,6 +103,9 @@ enum class SystemId
     Navigation,
     OriginalECXmlVersionMajor,
     OriginalECXmlVersionMinor,
+    Phenomena,
+    Phenomenon,
+    PhenomenonDefinition,
     Properties,
     Property,
     PropertyCategories,
@@ -122,6 +128,13 @@ enum class SystemId
     String,
     Target,
     TypeName,
+    Unit,
+    UnitDefinition,
+    UnitFactor,
+    UnitOffset,
+    Units,
+    UnitSystem,
+    UnitSystems,
     VersionRead,
     VersionMinor,
     VersionWrite
@@ -248,6 +261,7 @@ struct ECObjectChange : ECChange
             {}
 
         virtual ~ECObjectChange() {}
+        size_t ChangesCount() const { return m_changes.size(); }
     };
 
 //=======================================================================================
@@ -421,6 +435,48 @@ struct PropertyCategoryChanges final : ECChangeArray<PropertyCategoryChange>
             BeAssert(systemId == GetSystemId());
             }
         ~PropertyCategoryChanges() {}
+    };
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle       02/2018
+//+===============+===============+===============+===============+===============+======
+struct PhenomenonChanges final : ECChangeArray<PhenomenonChange>
+    {
+    public:
+        PhenomenonChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECChangeArray<PhenomenonChange>(state, SystemId::Phenomena, parent, customId, SystemId::Phenomenon)
+            {
+            BeAssert(systemId == GetSystemId());
+            }
+        ~PhenomenonChanges() {}
+    };
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle       02/2018
+//+===============+===============+===============+===============+===============+======
+struct UnitSystemChanges final : ECChangeArray<UnitSystemChange>
+    {
+    public:
+        UnitSystemChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECChangeArray<UnitSystemChange>(state, SystemId::UnitSystems, parent, customId, SystemId::UnitSystem)
+            {
+            BeAssert(systemId == GetSystemId());
+            }
+        ~UnitSystemChanges() {}
+    };
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle       02/2018
+//+===============+===============+===============+===============+===============+======
+struct UnitChanges final : ECChangeArray<UnitChange>
+    {
+    public:
+        UnitChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECChangeArray<UnitChange>(state, SystemId::Units, parent, customId, SystemId::Unit)
+            {
+            BeAssert(systemId == GetSystemId());
+            }
+        ~UnitChanges() {}
     };
 
 //=======================================================================================
@@ -897,6 +953,9 @@ struct SchemaChange final : ECObjectChange
         ECInstanceChanges& CustomAttributes() { return Get<ECInstanceChanges>(SystemId::CustomAttributes); }
         KindOfQuantityChanges& KindOfQuantities() { return Get<KindOfQuantityChanges>(SystemId::KindOfQuantities); }
         PropertyCategoryChanges& PropertyCategories() { return Get<PropertyCategoryChanges>(SystemId::PropertyCategories); }
+        PhenomenonChanges& Phenomena() { return Get<PhenomenonChanges>(SystemId::Phenomena); }
+        UnitSystemChanges& UnitSystems() { return Get<UnitSystemChanges>(SystemId::UnitSystems); }
+        UnitChanges& Units() { return Get<UnitChanges>(SystemId::Units); }
     };
 
 //=======================================================================================
@@ -1086,6 +1145,63 @@ struct PropertyCategoryChange final : ECObjectChange
         StringChange& GetDisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
         StringChange& GetDescription() { return Get<StringChange>(SystemId::Description); }
         UInt32Change& GetPriority() { return Get<UInt32Change>(SystemId::PropertyCategoryPriority); }
+    };
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle       02/2018
+//+===============+===============+===============+===============+===============+======
+struct PhenomenonChange final : ECObjectChange
+    {
+    public:
+        PhenomenonChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECObjectChange(state, SystemId::Phenomenon, parent, customId)
+            {
+            BeAssert(systemId == GetSystemId());
+            }
+        ~PhenomenonChange() {}
+        StringChange& GetName() { return Get<StringChange>(SystemId::Name); }
+        StringChange& GetDisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
+        StringChange& GetDescription() { return Get<StringChange>(SystemId::Description); }
+        StringChange& GetDefinition() { return Get<StringChange>(SystemId::PhenomenonDefinition); }
+    };
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle       02/2018
+//+===============+===============+===============+===============+===============+======
+struct UnitSystemChange final : ECObjectChange
+    {
+    public:
+        UnitSystemChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECObjectChange(state, SystemId::UnitSystem, parent, customId)
+            {
+            BeAssert(systemId == GetSystemId());
+            }
+        ~UnitSystemChange() {}
+        StringChange& GetName() { return Get<StringChange>(SystemId::Name); }
+        StringChange& GetDisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
+        StringChange& GetDescription() { return Get<StringChange>(SystemId::Description); }
+    };
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle       02/2018
+//+===============+===============+===============+===============+===============+======
+struct UnitChange final : ECObjectChange
+    {
+    public:
+        UnitChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECObjectChange(state, SystemId::Unit, parent, customId)
+            {
+            BeAssert(systemId == GetSystemId());
+            }
+        ~UnitChange() {}
+        StringChange& GetName() { return Get<StringChange>(SystemId::Name); }
+        StringChange& GetDisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
+        StringChange& GetDescription() { return Get<StringChange>(SystemId::Description); }
+        StringChange& GetDefinition() { return Get<StringChange>(SystemId::UnitDefinition); }
+        StringChange& GetPhenomenon() { return Get<StringChange>(SystemId::Phenomenon); }
+        StringChange& GetUnitSystem() { return Get<StringChange>(SystemId::UnitSystem); }
+        DoubleChange& GetFactor() { return Get<DoubleChange>(SystemId::UnitFactor); }
+        DoubleChange& GetOffset() { return Get<DoubleChange>(SystemId::UnitOffset); }
     };
 
 //=======================================================================================
@@ -1298,6 +1414,15 @@ private :
     BentleyStatus AppendPropertyCategory(PropertyCategoryChanges&, ECN::PropertyCategoryCR, ValueId appendType);
     BentleyStatus ComparePropertyCategory(PropertyCategoryChange&, ECN::PropertyCategoryCR, ECN::PropertyCategoryCR);
     BentleyStatus ComparePropertyCategories(PropertyCategoryChanges&, ECN::PropertyCategoryContainerCR, ECN::PropertyCategoryContainerCR);
+    BentleyStatus ComparePhenomena(PhenomenonChanges&, ECN::PhenomenonContainerCR, ECN::PhenomenonContainerCR);
+    BentleyStatus ComparePhenomenon(PhenomenonChange&, ECN::PhenomenonCR, ECN::PhenomenonCR);
+    BentleyStatus AppendPhenomenon(PhenomenonChanges&, ECN::PhenomenonCR, ValueId appendType);
+    BentleyStatus CompareUnitSystems(UnitSystemChanges&, ECN::UnitSystemContainerCR, ECN::UnitSystemContainerCR);
+    BentleyStatus CompareUnitSystem(UnitSystemChange&, ECN::UnitSystemCR, ECN::UnitSystemCR);
+    BentleyStatus AppendUnitSystem(UnitSystemChanges&, ECN::UnitSystemCR, ValueId appendType);
+    BentleyStatus CompareUnits(UnitChanges&, ECN::UnitContainerCR, ECN::UnitContainerCR);
+    BentleyStatus CompareUnit(UnitChange&, ECN::ECUnitCR, ECN::ECUnitCR);
+    BentleyStatus AppendUnit(UnitChanges&, ECN::ECUnitCR, ValueId appendType);
 
 public:
     SchemaComparer(){}
