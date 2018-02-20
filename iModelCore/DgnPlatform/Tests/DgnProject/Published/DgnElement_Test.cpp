@@ -2351,7 +2351,7 @@ TEST_F(DgnElementTests, CreateSubjectChildElemet)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                   02/2018
 //---------------+---------------+---------------+---------------+---------------+--------
-#if !defined(BENTLEYCONFIG_OS_LINUX) // TFS#821136
+#if !defined(BENTLEYCONFIG_OS_LINUX) && !defined(BENTLEYCONFIG_OS_APPLE_MACOS) // TFS#821136
 TEST_F(DgnElementTests, FromJson)
     {
     SetupSeedProject();
