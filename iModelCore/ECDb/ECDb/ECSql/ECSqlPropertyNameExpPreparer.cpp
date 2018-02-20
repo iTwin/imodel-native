@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlPropertyNameExpPreparer.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -237,16 +237,21 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
             case Exp::Type::PropertyName:
             {
             PropertyNameExp const& referencedPropertyNameExp = referencedValueExp->GetAs<PropertyNameExp>();
-            if (!referencedPropertyNameExp.IsPropertyRef())
-                {
+            if (!referencedPropertyNameExp.IsPropertyRef())                {
+
                 if (!propertyRef->WasToNativeSqlCalled())
                     {
                     PropertyMap const& propertyMap = referencedPropertyNameExp.GetPropertyMap();
-                    ToSqlPropertyMapVisitor sqlVisitor(propertyMap.GetClassMap().GetJoinedOrPrimaryTable(), ToSqlPropertyMapVisitor::ECSqlScope::Select);
-                    propertyMap.AcceptVisitor(sqlVisitor);
                     NativeSqlBuilder::List snippets;
-                    for (ToSqlPropertyMapVisitor::Result const& r : sqlVisitor.GetResultSet())
-                        snippets.push_back(r.GetSqlBuilder());
+                    if (propertyMap.GetType() == PropertyMap::Type::ConstraintECClassId)
+                        snippets.push_back(NativeSqlBuilder(propertyMap.GetAccessString().c_str()));
+                    else
+                        {
+                        ToSqlPropertyMapVisitor sqlVisitor(propertyMap.GetClassMap().GetJoinedOrPrimaryTable(), ToSqlPropertyMapVisitor::ECSqlScope::Select);
+                        propertyMap.AcceptVisitor(sqlVisitor);
+                        for (ToSqlPropertyMapVisitor::Result const& r : sqlVisitor.GetResultSet())
+                            snippets.push_back(r.GetSqlBuilder());
+                        }
 
                     if (SUCCESS != propertyRef->ToNativeSql(snippets))
                         return ECSqlStatus::Error;

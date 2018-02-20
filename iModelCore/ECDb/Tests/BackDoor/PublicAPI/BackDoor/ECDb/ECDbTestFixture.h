@@ -136,7 +136,11 @@ protected:
     BentleyStatus ImportSchemas(std::vector<SchemaItem> const& schemas) { EXPECT_TRUE(m_ecdb.IsDbOpen());  return GetHelper().ImportSchemas(schemas); }
 
     BentleyStatus GetInstances(bvector<ECN::IECInstancePtr>& instances, Utf8CP schemaName, Utf8CP className);
-
+    ECSqlStatus PrepareECSql(Utf8CP ecsql)
+        {
+        ECSqlStatement stmt;
+        return stmt.Prepare(m_ecdb, ecsql);
+        }
     TestHelper const& GetHelper() const { return m_ecdb.GetTestHelper(); }
 
 public:
