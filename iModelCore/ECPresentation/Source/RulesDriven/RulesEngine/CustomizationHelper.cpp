@@ -164,9 +164,9 @@ bool NavNodeCustomizer::ApplyCheckboxRules()
             
     bool isChecked = false;
     bool isReadOnly = false;
-    if (!rule->GetPropertyName().empty() && nullptr != m_node.GetKey().AsECInstanceNodeKey())
+    if (!rule->GetPropertyName().empty() && nullptr != m_node.GetKey()->AsECInstanceNodeKey())
         {
-        ECClassCP boundPropertyClass = m_context.GetConnection().GetECDb().Schemas().GetClass(m_node.GetKey().AsECInstanceNodeKey()->GetECClassId());
+        ECClassCP boundPropertyClass = m_context.GetConnection().GetECDb().Schemas().GetClass(m_node.GetKey()->AsECInstanceNodeKey()->GetECClassId());
         if (nullptr == boundPropertyClass || !boundPropertyClass->IsEntityClass())
             {
             BeAssert(false);
@@ -178,7 +178,7 @@ bool NavNodeCustomizer::ApplyCheckboxRules()
             BeAssert(false);
             return false;
             }
-        ECValue boundValue = ECInstancesHelper::GetValue(m_context.GetConnection(), *boundPropertyClass, m_node.GetKey().AsECInstanceNodeKey()->GetInstanceId(), *boundProperty);
+        ECValue boundValue = ECInstancesHelper::GetValue(m_context.GetConnection(), *boundPropertyClass, m_node.GetKey()->AsECInstanceNodeKey()->GetInstanceId(), *boundProperty);
         if (!boundValue.IsBoolean())
             {
             BeAssert(false);
@@ -316,6 +316,8 @@ void CustomizationHelper::Customize(ContentProviderContextCR context, ContentSet
 
     ECInstanceKeyCR itemKey = item.GetKeys().front();
     JsonNavNodePtr node = context.GetNodesFactory().CreateECInstanceNode(context.GetConnection(), itemKey.GetClassId(), itemKey.GetInstanceId(), "");
+    // create temporary key
+    node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>()));
     ContentSetItemPropertiesSetter setter(item);
     NavNodeCustomizer customizer(context, *node, nullptr, setter);
     customizer.ApplyImageIdOverride();
@@ -334,7 +336,7 @@ void CustomizationHelper::NotifyCheckedStateChanged(IConnectionCR connection, Js
         if (extendedData.IsCheckboxBoundPropertyInversed())
             isChecked = !isChecked;
         
-        ECClassCP boundPropertyClass = connection.GetECDb().Schemas().GetClass(node.GetKey().AsECInstanceNodeKey()->GetECClassId());
+        ECClassCP boundPropertyClass = connection.GetECDb().Schemas().GetClass(node.GetKey()->AsECInstanceNodeKey()->GetECClassId());
         if (nullptr == boundPropertyClass || !boundPropertyClass->IsEntityClass())
             {
             BeAssert(false);
@@ -351,7 +353,7 @@ void CustomizationHelper::NotifyCheckedStateChanged(IConnectionCR connection, Js
         BeAssert(!connection.IsReadOnly());
         BeAssert(!connection.GetECDb().GetECDbSettings().RequiresECCrudWriteToken());
 
-        ECInstancesHelper::SetValue(connection, *boundPropertyClass, node.GetKey().AsECInstanceNodeKey()->GetInstanceId(),
+        ECInstancesHelper::SetValue(connection, *boundPropertyClass, node.GetKey()->AsECInstanceNodeKey()->GetInstanceId(),
             *boundProperty, ECValue(isChecked));
 
         connection.GetECDb().SaveChanges();

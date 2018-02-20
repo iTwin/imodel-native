@@ -13,7 +13,7 @@
 TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_ReturnsNullDescriptorWhenNoSelectedNodes)
     {
     ContentRelatedInstancesSpecification spec(1, 0, false, "", RequiredRelationDirection_Both, "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Gadget");
-    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, TestParsedSelectionInfo());
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, TestParsedInput());
     ASSERT_TRUE(descriptor.IsNull());
     }
 
@@ -25,7 +25,7 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_ReturnsForwardRelatedI
     ECClassCP ecClass = GetECClass("RulesEngineTest", "Gadget");
     ContentRelatedInstancesSpecification spec(1, 0, false, "", RequiredRelationDirection_Forward, "", "RulesEngineTest:Widget,Sprocket");
         
-    TestParsedSelectionInfo info(*ecClass, ECInstanceId((uint64_t)123));
+    TestParsedInput info(*ecClass, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
 
@@ -47,7 +47,7 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_ReturnsBackwardRelated
     ECClassCP ecClass = GetECClass("RulesEngineTest", "Gadget");
     ContentRelatedInstancesSpecification spec(1, 0, false, "", RequiredRelationDirection_Backward, "", "RulesEngineTest:Widget,Sprocket");
     
-    TestParsedSelectionInfo info(*ecClass, ECInstanceId((uint64_t)123));
+    TestParsedInput info(*ecClass, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
 
@@ -69,7 +69,7 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_ReturnsBothDirectionsR
     ECClassCP ecClass = GetECClass("RulesEngineTest", "Gadget");
     ContentRelatedInstancesSpecification spec(1, 0, false, "", RequiredRelationDirection_Both, "", "RulesEngineTest:Widget,Sprocket");
     
-    TestParsedSelectionInfo info(*ecClass, ECInstanceId((uint64_t)123));
+    TestParsedInput info(*ecClass, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
 
@@ -91,7 +91,7 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_ReturnsRelatedInstance
     ECClassCP ecClass = GetECClass("RulesEngineTest", "Gadget");
     ContentRelatedInstancesSpecification spec(1, 0, false, "", RequiredRelationDirection_Forward, "", "RulesEngineTest:Sprocket");
     
-    TestParsedSelectionInfo info(*ecClass, {ECInstanceId((uint64_t)123), ECInstanceId((uint64_t)125)});
+    TestParsedInput info(*ecClass, {ECInstanceId((uint64_t)123), ECInstanceId((uint64_t)125)});
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
 
@@ -115,7 +115,7 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_ReturnsRelatedInstance
     ContentRelatedInstancesSpecification spec(1, 0, false, "", RequiredRelationDirection_Both, 
         "RulesEngineTest:WidgetHasGadgets,GadgetHasSprockets", "RulesEngineTest:Gadget");
     
-    TestParsedSelectionInfo info({
+    TestParsedInput info({
         bpair<ECClassCP, ECInstanceId>(ecClass1, {ECInstanceId((uint64_t)123)}), 
         bpair<ECClassCP, ECInstanceId>(ecClass2, {ECInstanceId((uint64_t)125)}), 
         });
@@ -140,7 +140,7 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_AppliesInstanceFilter)
     ECClassCP ecClass = GetECClass("RulesEngineTest", "Gadget");
     ContentRelatedInstancesSpecification spec(1, 0, false, "this.MyID = \"Sprocket MyID\"", RequiredRelationDirection_Forward, "", "RulesEngineTest:Sprocket");
     
-    TestParsedSelectionInfo info(*ecClass, ECInstanceId((uint64_t)123));
+    TestParsedInput info(*ecClass, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
 
@@ -162,7 +162,7 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_SkipsRelatedLevel)
     ECClassCP ecClass = GetECClass("RulesEngineTest", "Widget");
     ContentRelatedInstancesSpecification spec(1, 1, false, "", RequiredRelationDirection_Forward, "", "RulesEngineTest:Sprocket");
     
-    TestParsedSelectionInfo info(*ecClass, ECInstanceId((uint64_t)123));
+    TestParsedInput info(*ecClass, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
 
@@ -184,7 +184,7 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_SkipsRelatedLevelWithS
     ECClassCP ecClass = GetECClass("RulesEngineTest", "Sprocket");
     ContentRelatedInstancesSpecification spec(1, 1, false, "", RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget");
     
-    TestParsedSelectionInfo info(*ecClass, ECInstanceId((uint64_t)123));
+    TestParsedInput info(*ecClass, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
 
@@ -221,7 +221,7 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_CreatesRecursiveQuery)
     ECClassCP ecClass = GetECClass("Element");
     ContentRelatedInstancesSpecification spec(1, 0, true, "", RequiredRelationDirection_Forward, rel->GetFullName(), ecClass->GetFullName());
     
-    TestParsedSelectionInfo info(*ecClass, {ECInstanceId((uint64_t)123), ECInstanceId((uint64_t)456)});
+    TestParsedInput info(*ecClass, {ECInstanceId((uint64_t)123), ECInstanceId((uint64_t)456)});
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
 
@@ -270,7 +270,7 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_CreatesRecursiveQueryW
     ECClassCP rel = GetECClass("ElementOwnsChildElements");
     ContentRelatedInstancesSpecification spec(1, 0, true, "", RequiredRelationDirection_Forward, rel->GetFullName(), baseClass->GetFullName());
     
-    TestParsedSelectionInfo info(*derivedClass, ECInstanceId((uint64_t)123));
+    TestParsedInput info(*derivedClass, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
 
@@ -321,7 +321,7 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_DoesntSplitRecursiveQu
     ContentRelatedInstancesSpecification spec(1, 0, true, "", RequiredRelationDirection_Forward, rel->GetFullName(), baseClass->GetFullName());
     m_ruleset->AddPresentationRule(*new ContentModifier(GetECSchema()->GetName(), derivedClass->GetName()));
     
-    TestParsedSelectionInfo info(*derivedClass, ECInstanceId((uint64_t)123));
+    TestParsedInput info(*derivedClass, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
 
@@ -346,7 +346,7 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_SelectPointPropertyRaw
     ContentRelatedInstancesSpecification spec(1, 0, false, "", RequiredRelationDirection_Forward, "RulesEngineTest:ClassDHasClassE", "RulesEngineTest:ClassH");
     spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("PointProperty", 1000, true));
 
-    TestParsedSelectionInfo info(*ecClass, ECInstanceId((uint64_t)123));
+    TestParsedInput info(*ecClass, ECInstanceId((uint64_t)123));
     ContentDescriptorPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
     descriptor->AddContentFlag(ContentFlags::DistinctValues);
@@ -374,7 +374,7 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_InstanceLabelOverride_
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Sprocket", "MyID"));
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(2, true, "RulesEngineTest:Sprocket", "Description"));      
 
-    TestParsedSelectionInfo info(*ecClass, ECInstanceId((uint64_t)123));
+    TestParsedInput info(*ecClass, ECInstanceId((uint64_t)123));
     ContentDescriptorPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
     descriptor->AddContentFlag(ContentFlags::ShowLabels);
@@ -400,7 +400,7 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_InstanceLabelOverride_
     spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID,Gadget", 1000, true));   
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Gadget", "MyID"));    
 
-    TestParsedSelectionInfo info(*ecClass, ECInstanceId((uint64_t)123));
+    TestParsedInput info(*ecClass, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
 

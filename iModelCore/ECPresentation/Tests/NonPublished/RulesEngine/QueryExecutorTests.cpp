@@ -130,13 +130,19 @@ TEST_F (NavigationQueryExecutorTests, GetInstanceNodes)
 
     node = executor.GetNode(0);
     ASSERT_TRUE(node.IsValid());
+    node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>()));
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, node->GetType().c_str());
-    EXPECT_EQ(*ECInstanceNodeKey::Create(*gadget), node->GetKey());
+    ECInstanceId gadgetId;
+    ECInstanceId::FromString(gadgetId, gadget->GetInstanceId().c_str());
+    EXPECT_EQ(ECInstanceKey(gadget->GetClass().GetId(), gadgetId), node->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
     
     node = executor.GetNode(1);
     ASSERT_TRUE(node.IsValid());
+    node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>()));
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, node->GetType().c_str());
-    EXPECT_EQ(*ECInstanceNodeKey::Create(*widget), node->GetKey());
+    ECInstanceId widgetId;
+    ECInstanceId::FromString(widgetId, widget->GetInstanceId().c_str());
+    EXPECT_EQ(ECInstanceKey(widget->GetClass().GetId(), widgetId), node->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -183,8 +189,11 @@ TEST_F (NavigationQueryExecutorTests, GetInstanceNodes_GroupsByInstanceKey)
 
     JsonNavNodePtr node = executor.GetNode(0);
     ASSERT_TRUE(node.IsValid());
+    node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>()));
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, node->GetType().c_str());    
-    EXPECT_EQ(*ECInstanceNodeKey::Create(*widget2), node->GetKey());
+    ECInstanceId widgetId;
+    ECInstanceId::FromString(widgetId, widget2->GetInstanceId().c_str());
+    EXPECT_EQ(ECInstanceKey(widget2->GetClass().GetId(), widgetId), node->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -383,9 +392,10 @@ TEST_F (NavigationQueryExecutorTests, GetChildNodesOfClassGroupingNode_NotGroupe
         {
         JsonNavNodePtr node = executor.GetNode(i);
         ASSERT_TRUE(node.IsValid());
+        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>()));
         EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, node->GetType().c_str());
-        ASSERT_TRUE(nullptr != node->GetKey().AsECInstanceNodeKey());
-        EXPECT_STREQ(widgets[i]->GetInstanceId().c_str(), node->GetKey().AsECInstanceNodeKey()->GetInstanceId().ToString().c_str());
+        ASSERT_TRUE(nullptr != node->GetKey()->AsECInstanceNodeKey());
+        EXPECT_STREQ(widgets[i]->GetInstanceId().c_str(), node->GetKey()->AsECInstanceNodeKey()->GetInstanceId().ToString().c_str());
         }
     }
 
@@ -446,8 +456,9 @@ TEST_F (NavigationQueryExecutorTests, OverridesLabel)
         {
         JsonNavNodePtr node = executor.GetNode(i);
         ASSERT_TRUE(node.IsValid());
-        ASSERT_TRUE(nullptr != node->GetKey().AsECInstanceNodeKey());
-        if (m_widgetClass->GetId() == node->GetKey().AsECInstanceNodeKey()->GetECClassId())
+        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>()));
+        ASSERT_TRUE(nullptr != node->GetKey()->AsECInstanceNodeKey());
+        if (m_widgetClass->GetId() == node->GetKey()->AsECInstanceNodeKey()->GetECClassId())
             EXPECT_STREQ("NavigationQueryExecutorTests.OverridesLabel", node->GetLabel().c_str());
         else
             EXPECT_STRNE("NavigationQueryExecutorTests.OverridesLabel", node->GetLabel().c_str());
@@ -482,7 +493,8 @@ TEST_F (NavigationQueryExecutorTests, InstanceNodesSortedAlphanumerically)
         {
         JsonNavNodePtr node = executor.GetNode(i);
         ASSERT_TRUE(node.IsValid());
-        EXPECT_TRUE(nullptr != node->GetKey().AsECInstanceNodeKey());
+        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>()));
+        EXPECT_TRUE(nullptr != node->GetKey()->AsECInstanceNodeKey());
         switch (i + 1)
             {
             case 1: EXPECT_STREQ("Widget9A9", node->GetLabel().c_str()); break;
@@ -520,7 +532,8 @@ TEST_F (NavigationQueryExecutorTests, InstanceNodesSortedAlphanumerically_Instan
         {
         JsonNavNodePtr node = executor.GetNode(i);
         ASSERT_TRUE(node.IsValid());
-        EXPECT_TRUE(nullptr != node->GetKey().AsECInstanceNodeKey());
+        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>()));
+        EXPECT_TRUE(nullptr != node->GetKey()->AsECInstanceNodeKey());
         switch (i + 1)
             {
             case 1: ASSERT_STREQ("Widget9A9", node->GetLabel().c_str()); break;
@@ -569,16 +582,16 @@ TEST_F (NavigationQueryExecutorTests, ClassGroupingNodesSortedByLabel)
     ASSERT_EQ(3, executor.GetNodesCount());
 
     JsonNavNodePtr node = executor.GetNode(0);
-    ASSERT_TRUE(nullptr != node->GetKey().AsECClassGroupingNodeKey());
-    ASSERT_EQ(m_gadgetClass->GetId(), node->GetKey().AsECClassGroupingNodeKey()->GetECClassId());
+    node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>()));
+    ASSERT_EQ(m_gadgetClass->GetId(), node->GetKey()->GetECClassId());
 
     node = executor.GetNode(1);
-    ASSERT_TRUE(nullptr != node->GetKey().AsECClassGroupingNodeKey());
-    ASSERT_EQ(m_sprocketClass->GetId(), node->GetKey().AsECClassGroupingNodeKey()->GetECClassId());
+    node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>()));
+    ASSERT_EQ(m_sprocketClass->GetId(), node->GetKey()->GetECClassId());
     
     node = executor.GetNode(2);
-    ASSERT_TRUE(nullptr != node->GetKey().AsECClassGroupingNodeKey());
-    ASSERT_EQ(m_widgetClass->GetId(), node->GetKey().AsECClassGroupingNodeKey()->GetECClassId());
+    node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>()));
+    ASSERT_EQ(m_widgetClass->GetId(), node->GetKey()->GetECClassId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1155,12 +1168,14 @@ TEST_F(NavigationQueryExecutorTests, SetsGroupedInstanceKeysForECInstanceNodes)
     ASSERT_EQ(2, executor.GetNodesCount());
 
     JsonNavNodePtr node1 = executor.GetNode(0);
-    ASSERT_TRUE(nullptr != node1->GetKey().AsECInstanceNodeKey());
-    AssertNodeGroupsECInstance(*node1, CreateECInstanceKey(*m_widgetClass, node1->GetKey().AsECInstanceNodeKey()->GetInstanceId()));
+    node1->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node1, bvector<Utf8String>()));
+    ASSERT_TRUE(nullptr != node1->GetKey()->AsECInstanceNodeKey());
+    AssertNodeGroupsECInstance(*node1, CreateECInstanceKey(*m_widgetClass, node1->GetKey()->AsECInstanceNodeKey()->GetInstanceId()));
     
     JsonNavNodePtr node2 = executor.GetNode(1);
-    ASSERT_TRUE(nullptr != node2->GetKey().AsECInstanceNodeKey());
-    AssertNodeGroupsECInstance(*node2, CreateECInstanceKey(*m_widgetClass, node2->GetKey().AsECInstanceNodeKey()->GetInstanceId()));
+    node2->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node2, bvector<Utf8String>()));
+    ASSERT_TRUE(nullptr != node2->GetKey()->AsECInstanceNodeKey());
+    AssertNodeGroupsECInstance(*node2, CreateECInstanceKey(*m_widgetClass, node2->GetKey()->AsECInstanceNodeKey()->GetInstanceId()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1350,7 +1365,8 @@ TEST_F(NavigationQueryExecutorTests, SetsRelatedInstanceKeysForECInstanceNodes)
     ASSERT_EQ(2, executor.GetNodesCount());
 
     JsonNavNodePtr node = executor.GetNode(0);
-    ASSERT_STREQ(gadget->GetInstanceId().c_str(), node->GetKey().AsECInstanceNodeKey()->GetInstanceId().ToString().c_str());
+    node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>()));
+    ASSERT_STREQ(gadget->GetInstanceId().c_str(), node->GetKey()->AsECInstanceNodeKey()->GetInstanceId().ToString().c_str());
     bvector<NavNodeExtendedData::RelatedInstanceKey> relatedInstanceKeys = NavNodeExtendedData(*node).GetRelatedInstanceKeys();
     ASSERT_EQ(1, relatedInstanceKeys.size());
     EXPECT_STREQ("w", relatedInstanceKeys[0].GetAlias());
@@ -1358,7 +1374,8 @@ TEST_F(NavigationQueryExecutorTests, SetsRelatedInstanceKeysForECInstanceNodes)
     EXPECT_STREQ(widget->GetInstanceId().c_str(), relatedInstanceKeys[0].GetInstanceKey().GetInstanceId().ToString().c_str());
     
     node = executor.GetNode(1);
-    ASSERT_STREQ(sprocket->GetInstanceId().c_str(), node->GetKey().AsECInstanceNodeKey()->GetInstanceId().ToString().c_str());
+    node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>()));
+    ASSERT_STREQ(sprocket->GetInstanceId().c_str(), node->GetKey()->AsECInstanceNodeKey()->GetInstanceId().ToString().c_str());
     ASSERT_TRUE(NavNodeExtendedData(*node).GetRelatedInstanceKeys().empty());
     }
 
@@ -1381,7 +1398,8 @@ TEST_F(ContentQueryExecutorTests, HandlesUnionSelectionFromClassWithPointPropert
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classH);
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE);
 
-    ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+    RulesDrivenECPresentationManager::ContentOptions options(m_ruleset->GetRuleSetId());
+    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
     AddField(*descriptor, *classH, ContentDescriptor::Property("h", *classH, *classH->GetPropertyP("PointProperty")->GetAsPrimitiveProperty()));
     AddField(*descriptor, *classE, ContentDescriptor::Property("e", *classE, *classE->GetPropertyP("IntProperty")->GetAsPrimitiveProperty()));
 
@@ -1421,7 +1439,8 @@ TEST_F(ContentQueryExecutorTests, HandlesResultsMergingFromOneClass)
     Utf8String localizationId = PRESENTATION_LOCALIZEDSTRING(RulesEngineL10N::GetNameSpace().m_namespace, RulesEngineL10N::LABEL_General_Varies().m_str);
     Utf8PrintfString formattedVariesStr(CONTENTRECORD_MERGED_VALUE_FORMAT, localizationId.c_str());
 
-    ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+    RulesDrivenECPresentationManager::ContentOptions options(m_ruleset->GetRuleSetId());
+    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
     AddField(*descriptor, *m_gadgetClass, ContentDescriptor::Property("gadget", *m_gadgetClass, *m_gadgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
     AddField(*descriptor, *m_gadgetClass, ContentDescriptor::Property("gadget", *m_gadgetClass, *m_gadgetClass->GetPropertyP("Description")->GetAsPrimitiveProperty()));
     descriptor->AddContentFlag(ContentFlags::MergeResults);
@@ -1472,7 +1491,8 @@ TEST_F(ContentQueryExecutorTests, HandlesResultsMergingFromMultipleClasses)
     Utf8String localizationId = PRESENTATION_LOCALIZEDSTRING(RulesEngineL10N::GetNameSpace().m_namespace, RulesEngineL10N::LABEL_General_Varies().m_str);
     Utf8PrintfString formattedVariesStr(CONTENTRECORD_MERGED_VALUE_FORMAT, localizationId.c_str());
 
-    ContentDescriptorPtr innerDescriptor = ContentDescriptor::Create();
+    RulesDrivenECPresentationManager::ContentOptions options(m_ruleset->GetRuleSetId());
+    ContentDescriptorPtr innerDescriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
     AddField(*innerDescriptor, *m_gadgetClass, ContentDescriptor::Property("gadget", *m_gadgetClass, *m_gadgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
     AddField(*innerDescriptor, *m_widgetClass, ContentDescriptor::Property("widget", *m_widgetClass, *m_widgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
     ContentDescriptor::Field* field = new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category("Misc.", "Misc.", "", 0), "Description", "Description");
@@ -1533,7 +1553,8 @@ TEST_F(ContentQueryExecutorTests, HandlesStructProperties)
         instance.SetValue("StructProperty.StructProperty.StringProperty", ECValue("4"));
         });
 
-    ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+    RulesDrivenECPresentationManager::ContentOptions options(m_ruleset->GetRuleSetId());
+    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
     AddField(*descriptor, *classI, ContentDescriptor::Property("this", *classI, *classI->GetPropertyP("StringProperty")));
     AddField(*descriptor, *classI, ContentDescriptor::Property("this", *classI, *classI->GetPropertyP("StructProperty")));
 
@@ -1597,7 +1618,8 @@ TEST_F(ContentQueryExecutorTests, HandlesArrayProperties)
         instance.SetValue("StructsArray", structValue2, 1);
         });
 
-    ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+    RulesDrivenECPresentationManager::ContentOptions options(m_ruleset->GetRuleSetId());
+    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
     AddField(*descriptor, *classR, ContentDescriptor::Property("this", *classR, *classR->GetPropertyP("IntsArray")));
     AddField(*descriptor, *classR, ContentDescriptor::Property("this", *classR, *classR->GetPropertyP("StructsArray")));
 
@@ -1643,7 +1665,8 @@ TEST_F(ContentQueryExecutorTests, SelectsRelatedProperties)
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test Widget"));});
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgetsRelationship, *widget, *gadget);
 
-    ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+    RulesDrivenECPresentationManager::ContentOptions options(m_ruleset->GetRuleSetId());
+    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
     AddField(*descriptor, *m_gadgetClass, ContentDescriptor::Property("this", *m_gadgetClass, *m_gadgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
     AddField(*descriptor, *m_gadgetClass, ContentDescriptor::Property("rel_RET_Widget_0", *m_widgetClass, *m_widgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
     const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(*m_widgetClass, *m_gadgetClass, *widgetHasGadgetsRelationship, true), RelationshipMeaning::RelatedInstance);
@@ -1690,7 +1713,8 @@ TEST_F(ContentQueryExecutorTests, SelectsRelatedPropertiesFromOnlySingleClassWhe
     IECInstancePtr fInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), classF, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(22));});
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), classDHasClassERelationship, *dInstance, *eInstance);
 
-    ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+    RulesDrivenECPresentationManager::ContentOptions options(m_ruleset->GetRuleSetId());
+    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
     AddField(*descriptor, classE, ContentDescriptor::Property("this", classE, *classE.GetPropertyP("IntProperty")->GetAsPrimitiveProperty()));
     AddField(*descriptor, classE, ContentDescriptor::Property("rel_RET_ClassD_0", classD, *classD.GetPropertyP("StringProperty")->GetAsPrimitiveProperty()));
     const_cast<ContentDescriptor::Property&>(descriptor->GetAllFields().back()->AsPropertiesField()->GetProperties().back()).SetIsRelated(RelatedClass(classD, classE, classDHasClassERelationship, true), RelationshipMeaning::RelatedInstance);
@@ -1761,7 +1785,8 @@ TEST_F(ContentQueryExecutorTests, UsesSuppliedECPropertyFormatterToFormatPrimiti
         instance.SetValue("DoubleProperty", ECValue(4.0));
         });
 
-    ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+    RulesDrivenECPresentationManager::ContentOptions options(m_ruleset->GetRuleSetId());
+    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
     AddField(*descriptor, *m_widgetClass, ContentDescriptor::Property("widget", *m_widgetClass, *m_widgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
     AddField(*descriptor, *m_widgetClass, ContentDescriptor::Property("widget", *m_widgetClass, *m_widgetClass->GetPropertyP("Description")->GetAsPrimitiveProperty()));
     AddField(*descriptor, *m_widgetClass, ContentDescriptor::Property("widget", *m_widgetClass, *m_widgetClass->GetPropertyP("IntProperty")->GetAsPrimitiveProperty()));
@@ -1805,7 +1830,8 @@ TEST_F(QueryExecutorTests, GetDistinctStringValuesFromPropertyField)
     IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
     IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test2"));});
 
-    ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+    RulesDrivenECPresentationManager::ContentOptions options(m_ruleset->GetRuleSetId());
+    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
     AddField(*descriptor, *m_widgetClass, ContentDescriptor::Property("widget", *m_widgetClass, *m_widgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
     descriptor->AddContentFlag(ContentFlags::DistinctValues);
 
@@ -1846,7 +1872,8 @@ TEST_F(ContentQueryExecutorTests, GetDistinctValuesFromCalculatedPropertyField)
     IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
     IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test2"));});
 
-    ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+    RulesDrivenECPresentationManager::ContentOptions options(m_ruleset->GetRuleSetId());
+    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
 
     descriptor->AddField(new ContentDescriptor::CalculatedPropertyField("label", "MyID", "this.MyID", nullptr));
     descriptor->AddContentFlag(ContentFlags::DistinctValues);
@@ -1888,7 +1915,8 @@ TEST_F(QueryExecutorTests, GetDistinctStringValuesFromMergedECPropertyField)
     IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget1"));});
     IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Gadget1"));});
 
-    ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+    RulesDrivenECPresentationManager::ContentOptions options(m_ruleset->GetRuleSetId());
+    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
     ContentDescriptor::Field* field = new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category("Misc.", "Misc.", 0, false), "MyID", "MyID");
     field->AsPropertiesField()->AddProperty(ContentDescriptor::Property("widget", *m_widgetClass, *m_widgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
     field->AsPropertiesField()->AddProperty(ContentDescriptor::Property("gadget", *m_gadgetClass, *m_gadgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
@@ -1941,7 +1969,8 @@ TEST_F(QueryExecutorTests, GetDistinctPointValuesFromPropertiesField)
     IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classH, [](IECInstanceR instance){instance.SetValue("PointProperty", ECValue(DPoint3d::From(1.1234566666, 2.0, 3.0)));});
     IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classH, [](IECInstanceR instance){instance.SetValue("PointProperty", ECValue(DPoint3d::From(1.1234567777, 2.0, 3.0)));});
 
-    ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+    RulesDrivenECPresentationManager::ContentOptions options(m_ruleset->GetRuleSetId());
+    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
     descriptor->AddContentFlag(ContentFlags::DistinctValues);
     AddField(*descriptor, *classH, ContentDescriptor::Property("h", *classH, *classH->GetPropertyP("PointProperty")->GetAsPrimitiveProperty()));
 

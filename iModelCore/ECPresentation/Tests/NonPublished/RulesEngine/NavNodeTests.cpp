@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/NavNodeTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -50,6 +50,7 @@ TEST_F(NavNodeTests, ECInstanceNodeKey_RapidJsonSerializationRoundtrip)
     // Validate
     EXPECT_EQ(key1->GetECClassId(), key2->GetECClassId());
     EXPECT_EQ(key1->GetInstanceId(), key2->GetInstanceId());
+    EXPECT_EQ(key1->GetPathFromRoot(), key2->GetPathFromRoot());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -62,6 +63,7 @@ TEST_F(NavNodeTests, ECInstanceNodeKey_JsonValueDeserialization)
     json["Type"] = "ECInstanceNode";
     json["ECClassId"] = 123;
     json["ECInstanceId"] = 456;
+    json["PathFromRoot"][0] = "789";
     // Deserialize
     NavNodeKeyPtr navNodeKey = NavNodeKey::FromJson(json);
     ASSERT_TRUE(navNodeKey.IsValid());
@@ -70,131 +72,43 @@ TEST_F(NavNodeTests, ECInstanceNodeKey_JsonValueDeserialization)
     // Validate
     EXPECT_EQ(123, key->GetECClassId().GetValue());
     EXPECT_EQ(456, key->GetInstanceId().GetValue());
+    ASSERT_EQ(1, key->GetPathFromRoot().size());
+    EXPECT_STREQ("789", key->GetPathFromRoot()[0].c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Aidas.Vaiksnoras                12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(NavNodeTests, ECClassGroupingNodeKey_RapidJsonSerializationRoundtrip)
+TEST_F(NavNodeTests, NavNodeKey_RapidJsonSerializationRoundtrip)
     {
     // Serialize
-    RefCountedPtr<ECClassGroupingNodeKey> key1 = ECClassGroupingNodeKey::Create(123, ECClassId());
+    RefCountedPtr<NavNodeKey> key1 = NavNodeKey::Create("Type", {"123"});
     rapidjson::Document json = key1->AsJson();
     // Deserialize
     NavNodeKeyPtr navNodeKey = NavNodeKey::FromJson(json);
     ASSERT_TRUE(navNodeKey.IsValid());
-    ECClassGroupingNodeKey const* key2 = navNodeKey->AsECClassGroupingNodeKey();
-    ASSERT_NE(nullptr, key2);
     // Validate
-    EXPECT_EQ(key1->GetECClassId(), key2->GetECClassId());
-    EXPECT_EQ(key1->GetNodeId(), key2->GetNodeId());
+    EXPECT_EQ(key1->GetECClassId(), navNodeKey->GetECClassId());
+    EXPECT_EQ(key1->GetPathFromRoot(), navNodeKey->GetPathFromRoot());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Aidas.Vaiksnoras                12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(NavNodeTests, ECClassGroupingNodeKey_JsonValueDeserialization)
+TEST_F(NavNodeTests, NavNodeKey_JsonValueDeserialization)
     {
     // SetUp json
     Json::Value json;
     json["Type"] = "ECClassGroupingNode";
-    json["NodeId"] = 123;
     json["ECClassId"] = 456;
+    json["PathFromRoot"][0] = "123";
     // Deserialize
     NavNodeKeyPtr navNodeKey = NavNodeKey::FromJson(json);
     ASSERT_TRUE(navNodeKey.IsValid());
-    ECClassGroupingNodeKey const* key = navNodeKey->AsECClassGroupingNodeKey();
-    ASSERT_NE(nullptr, key);
     // Validate
-    EXPECT_EQ(123, key->GetNodeId());
-    EXPECT_EQ(456, key->GetECClassId().GetValue());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Aidas.Vaiksnoras                12/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(NavNodeTests, ECPropertyGroupingNodeKey_RapidJsonSerializationRoundtrip)
-    {
-    // Serialize
-    RefCountedPtr<ECPropertyGroupingNodeKey> key1 = ECPropertyGroupingNodeKey::Create(123, ECClassId(), "testProperty", 2, nullptr);
-    rapidjson::Document json = key1->AsJson();
-    // Deserialize
-    NavNodeKeyPtr navNodeKey = NavNodeKey::FromJson(json);
-    ASSERT_TRUE(navNodeKey.IsValid());
-    ECPropertyGroupingNodeKey const* key2 = navNodeKey->AsECPropertyGroupingNodeKey();
-    ASSERT_NE(nullptr, key2);
-    // Validate
-    EXPECT_EQ(key1->GetECClassId(), key2->GetECClassId());
-    EXPECT_EQ(key1->GetNodeId(), key2->GetNodeId());
-    EXPECT_STREQ(key1->GetPropertyName().c_str(), key2->GetPropertyName().c_str());
-    EXPECT_EQ(key1->GetGroupingRangeIndex(), key2->GetGroupingRangeIndex());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Aidas.Vaiksnoras                12/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(NavNodeTests, ECPropertyGroupingNodeKey_JsonValueDeserialization)
-    {
-    // SetUp json
-    Json::Value json;
-    json["Type"] = "ECPropertyGroupingNode";
-    json["ECClassId"] = 123;
-    json["NodeId"] = 456;
-    json["PropertyName"] = "propertyName";
-    json["RangeIndex"] = 1;
-    Json::Value groupingJson;
-    groupingJson["Value"] = "value";
-    json["GroupingValue"] = groupingJson;
-    // Deserialize
-    NavNodeKeyPtr navNodeKey = NavNodeKey::FromJson(json);
-    ASSERT_TRUE(navNodeKey.IsValid());
-    ECPropertyGroupingNodeKey const* key = navNodeKey->AsECPropertyGroupingNodeKey();
-    ASSERT_NE(nullptr, key);
-    // Validate
-    EXPECT_EQ(123, key->GetECClassId().GetValue());
-    EXPECT_EQ(456, key->GetNodeId());
-    EXPECT_STREQ("propertyName", key->GetPropertyName().c_str());
-    EXPECT_EQ(1, key->GetGroupingRangeIndex());
-    ASSERT_NE(nullptr, key->GetGroupingValue());
-    EXPECT_STREQ("value", key->GetGroupingValue()->FindMember("Value")->value.GetString());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Aidas.Vaiksnoras                12/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(NavNodeTests, DisplayLabelGroupingNodeKey_RapidJsonSerializationRoundtrip)
-    {
-    // Serialize
-    RefCountedPtr<DisplayLabelGroupingNodeKey> key1 = DisplayLabelGroupingNodeKey::Create(123, "label");
-    rapidjson::Document json = key1->AsJson();
-    // Deserialize
-    NavNodeKeyPtr navNodeKey = NavNodeKey::FromJson(json);
-    ASSERT_TRUE(navNodeKey.IsValid());
-    DisplayLabelGroupingNodeKey const* key2 = navNodeKey->AsDisplayLabelGroupingNodeKey();
-    ASSERT_NE(nullptr, key2);
-    // Validate
-    EXPECT_EQ(key1->GetNodeId(), key2->GetNodeId());
-    EXPECT_STREQ(key1->GetLabel().c_str(), key2->GetLabel().c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Aidas.Vaiksnoras                12/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(NavNodeTests, DisplayLabelGroupingNodeKey_JsonValueDeserialization)
-    {
-    // SetUp json
-    Json::Value json;
-    json["Type"] = "";
-    json["NodeId"] = 123;
-    json["DisplayLabel"] = "label";
-    // Deserialize
-    NavNodeKeyPtr navNodeKey = NavNodeKey::FromJson(json);
-    ASSERT_TRUE(navNodeKey.IsValid());
-    DisplayLabelGroupingNodeKey const* key2 = navNodeKey->AsDisplayLabelGroupingNodeKey();
-    ASSERT_NE(nullptr, key2);
-    // Validate
-    EXPECT_EQ(123, key2->GetNodeId());
-    EXPECT_STREQ("label", key2->GetLabel().c_str());
+    EXPECT_EQ(456, navNodeKey->GetECClassId().GetValue());
+    ASSERT_EQ(1, navNodeKey->GetPathFromRoot().size());
+    EXPECT_STREQ("123", navNodeKey->GetPathFromRoot()[0].c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

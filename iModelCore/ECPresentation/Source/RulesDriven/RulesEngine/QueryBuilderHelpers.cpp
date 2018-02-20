@@ -267,7 +267,7 @@ private:
             {
             if (!first)
                 query.append(" UNION ALL ");
-            query.append("SELECT ").append(s_sourceECInstanceIdField).append(",").append(s_targetECInstanceIdField).append(" ");            
+            query.append("SELECT ").append(s_sourceECInstanceIdField).append(",").append(s_targetECInstanceIdField).append(" ");
             query.append("FROM ").append(rel->GetECSqlName());
             first = false;
             }
@@ -288,7 +288,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                04/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    bset<ECInstanceId> GetRecursiveChildrenIds(IParsedSelectionInfo const& selection, SelectClassInfo const& thisInfo)
+    bset<ECInstanceId> GetRecursiveChildrenIds(IParsedInput const& input, SelectClassInfo const& thisInfo)
         {
         bset<ECRelationshipClassCP> relationships;
         for (RelatedClassPath const& path : m_recursiveQueryInfo.GetPathsToPrimary())
@@ -303,7 +303,7 @@ public:
             for (RelatedClassCR rel : path)
                 relationships.insert(rel.GetRelationship());
             }
-        return GetRecursiveChildrenIds(relationships, IsRecursiveJoinForward(thisInfo), selection.GetInstanceIds(*thisInfo.GetPrimaryClass()));
+        return GetRecursiveChildrenIds(relationships, IsRecursiveJoinForward(thisInfo), input.GetInstanceIds(*thisInfo.GetPrimaryClass()));
         }
 };
 
@@ -313,11 +313,11 @@ public:
 template<typename T>
 void QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresentationQuery<T>& query, InstanceFilteringParams const& params)
     {
-    if (nullptr != params.GetSelection())
+    if (nullptr != params.GetInput())
         {
         if (params.GetSelectInfo().GetPathToPrimaryClass().empty())
             {
-            bvector<ECInstanceId> const& selectedInstanceIds = params.GetSelection()->GetInstanceIds(params.GetSelectInfo().GetSelectClass());
+            bvector<ECInstanceId> const& selectedInstanceIds = params.GetInput()->GetInstanceIds(params.GetSelectInfo().GetSelectClass());
             if (!selectedInstanceIds.empty())
                 {
                 IdsFilteringHelper<bvector<ECInstanceId>> filteringHelper(selectedInstanceIds);
@@ -330,7 +330,7 @@ void QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresentationQuery<T>& query
                 {
                 // in case of recursive query just bind the children ids
                 RecursiveQueriesHelper recursiveQueries(params.GetConnection(), *params.GetRecursiveQueryInfo());
-                bset<ECInstanceId> ids = recursiveQueries.GetRecursiveChildrenIds(*params.GetSelection(), params.GetSelectInfo());
+                bset<ECInstanceId> ids = recursiveQueries.GetRecursiveChildrenIds(*params.GetInput(), params.GetSelectInfo());
                 IdsFilteringHelper<bset<ECInstanceId>> filteringHelper(ids);
                 query.Where(filteringHelper.CreateWhereClause("[this].[ECInstanceId]").c_str(), filteringHelper.CreateBoundValues());
                 }
@@ -338,7 +338,7 @@ void QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresentationQuery<T>& query
                 {
                 BeAssert(!params.GetSelectInfo().GetPathToPrimaryClass().empty());
                 query.Join(params.GetSelectInfo().GetPathToPrimaryClass(), false);
-                bvector<ECInstanceId> const& ids = params.GetSelection()->GetInstanceIds(*params.GetSelectInfo().GetPrimaryClass());
+                bvector<ECInstanceId> const& ids = params.GetInput()->GetInstanceIds(*params.GetSelectInfo().GetPrimaryClass());
                 IdsFilteringHelper<bvector<ECInstanceId>> filteringHelper(ids);
                 query.Where(filteringHelper.CreateWhereClause("[related].[ECInstanceId]").c_str(), filteringHelper.CreateBoundValues());
                 }

@@ -181,11 +181,6 @@ private:
     void SetIsExpanded(uint64_t nodeId, bool isExpanded) const;
     void LimitCacheSize();
 
-    JsonNavNodeCPtr LocateECInstanceNode(IConnectionCR, ECInstanceNodeKey const&) const;
-    JsonNavNodeCPtr LocateECClassGroupingNode(IConnectionCR, ECClassGroupingNodeKey const&) const;
-    JsonNavNodeCPtr LocateECPropertyGroupingNode(IConnectionCR, ECPropertyGroupingNodeKey const&) const;
-    JsonNavNodeCPtr LocateDisplayLabelGroupingNode(IConnectionCR, DisplayLabelGroupingNodeKey const&) const;
-
     void AddQuick(HierarchyLevelInfo, NavNodesProviderR);
     void RemoveQuick(HierarchyLevelInfo const&);
     NavNodesProviderPtr GetQuick(HierarchyLevelInfo const&) const;

@@ -20,13 +20,13 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2017
 +===============+===============+===============+===============+===============+======*/
-struct IParsedSelectionInfo
+struct IParsedInput
 {
 protected:
     virtual bvector<ECClassCP> const& _GetClasses() const = 0;
     virtual bvector<BeSQLite::EC::ECInstanceId> const& _GetInstanceIds(ECClassCR) const = 0;
 public:
-    virtual ~IParsedSelectionInfo() {}
+    virtual ~IParsedInput() {}
     bvector<ECClassCP> const& GetClasses() const {return _GetClasses();}
     bvector<BeSQLite::EC::ECInstanceId> const& GetInstanceIds(ECClassCR selectClass) const {return _GetInstanceIds(selectClass);}
 };
@@ -94,8 +94,8 @@ private:
     mutable bset<ECClassCP> const* m_modifierClasses;
 
 private:
-    void AppendClass(ECClassCR, ContentSpecificationCR, bool isSpecificationPolymorphic, IParsedSelectionInfo const*, Utf8StringCR instanceFilter);
-    void AppendClassPaths(bvector<RelatedClassPath> const&, ECClassCR primaryClass, ContentRelatedInstancesSpecificationCR, IParsedSelectionInfo const&);
+    void AppendClass(ECClassCR, ContentSpecificationCR, bool isSpecificationPolymorphic, IParsedInput const*, Utf8StringCR instanceFilter);
+    void AppendClassPaths(bvector<RelatedClassPath> const&, ECClassCR primaryClass, ContentRelatedInstancesSpecificationCR, IParsedInput const&);
     bvector<RelatedClassPath> AppendRelatedProperties(AppendRelatedPropertyParams const&);
     bvector<RelatedClassPath> AppendRelatedProperties(AppendRelatedPropertiesParams const&, bool isNested);
     void AppendRelatedProperties(bvector<RelatedClassPath>&, AppendRelatedPropertiesParams const&);
@@ -115,8 +115,8 @@ protected:
     virtual ~ContentSpecificationsHandler() {DELETE_AND_CLEAR(m_modifierClasses);}
     Context& GetContext() {return m_context;}
     Context const& GetContext() const {return m_context;}
-    ECPRESENTATION_EXPORT void HandleSpecification(SelectedNodeInstancesSpecificationCR, IParsedSelectionInfo const&);
-    ECPRESENTATION_EXPORT void HandleSpecification(ContentRelatedInstancesSpecificationCR, IParsedSelectionInfo const&);
+    ECPRESENTATION_EXPORT void HandleSpecification(SelectedNodeInstancesSpecificationCR, IParsedInput const&);
+    ECPRESENTATION_EXPORT void HandleSpecification(ContentRelatedInstancesSpecificationCR, IParsedInput const&);
     ECPRESENTATION_EXPORT void HandleSpecification(ContentInstancesOfSpecificClassesSpecificationCR);
 };
 

@@ -97,13 +97,13 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, OverridesLabel)
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
 
     ASSERT_TRUE(provider->GetNode(node, index++));
-    ASSERT_TRUE(nullptr != node->GetKey().AsECInstanceNodeKey());
-    EXPECT_EQ(m_gadgetClass->GetId(), node->GetKey().AsECInstanceNodeKey()->GetECClassId());
+    ASSERT_TRUE(nullptr != node->GetKey()->AsECInstanceNodeKey());
+    EXPECT_EQ(m_gadgetClass->GetId(), node->GetKey()->AsECInstanceNodeKey()->GetECClassId());
     EXPECT_STREQ("GadgetLabel", node->GetLabel().c_str());
 
     ASSERT_TRUE(provider->GetNode(node, index++));
-    ASSERT_TRUE(nullptr != node->GetKey().AsECInstanceNodeKey());
-    EXPECT_EQ(m_widgetClass->GetId(), node->GetKey().AsECInstanceNodeKey()->GetECClassId());
+    ASSERT_TRUE(nullptr != node->GetKey()->AsECInstanceNodeKey());
+    EXPECT_EQ(m_widgetClass->GetId(), node->GetKey()->AsECInstanceNodeKey()->GetECClassId());
     EXPECT_STREQ("WidgetLabel", node->GetLabel().c_str());
     }
 
@@ -158,15 +158,15 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, OverridesStyle)
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
     
     ASSERT_TRUE(provider->GetNode(node, index++));
-    ASSERT_TRUE(nullptr != node->GetKey().AsECInstanceNodeKey());
-    EXPECT_EQ(m_gadgetClass->GetId(), node->GetKey().AsECInstanceNodeKey()->GetECClassId());
+    ASSERT_TRUE(nullptr != node->GetKey()->AsECInstanceNodeKey());
+    EXPECT_EQ(m_gadgetClass->GetId(), node->GetKey()->AsECInstanceNodeKey()->GetECClassId());
     EXPECT_STREQ("", node->GetForeColor().c_str());
     EXPECT_STREQ("", node->GetBackColor().c_str());
     EXPECT_STREQ("Regular", node->GetFontStyle().c_str());
     
     ASSERT_TRUE(provider->GetNode(node, index++));
-    ASSERT_TRUE(nullptr != node->GetKey().AsECInstanceNodeKey());
-    EXPECT_EQ(m_widgetClass->GetId(), node->GetKey().AsECInstanceNodeKey()->GetECClassId());
+    ASSERT_TRUE(nullptr != node->GetKey()->AsECInstanceNodeKey());
+    EXPECT_EQ(m_widgetClass->GetId(), node->GetKey()->AsECInstanceNodeKey()->GetECClassId());
     EXPECT_STREQ("ForeColor1", node->GetForeColor().c_str());
     EXPECT_STREQ("BackColor1", node->GetBackColor().c_str());
     EXPECT_STREQ("FontStyle1", node->GetFontStyle().c_str());
@@ -519,7 +519,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildNodesWhenHideNode
     ASSERT_EQ(2, provider->GetNodesCount());
     while (provider->GetNode(node, index++))
         {
-        ECInstanceNodeKey const* key = node->GetKey().AsECInstanceNodeKey();
+        ECInstanceNodeKey const* key = node->GetKey()->AsECInstanceNodeKey();
         ASSERT_TRUE(nullptr != key);
         EXPECT_EQ(m_gadgetClass->GetId(), key->GetECClassId());
         }

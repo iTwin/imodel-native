@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/TestHelpers/TestECPresentationManager.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECPresentationTest.h"
@@ -75,12 +75,12 @@ private:
     std::function<bool(IConnectionCR, NavNodeCR parentNode, NavNodeKeyCR childNodeKey, JsonValueCR)> m_hasChildHandler;
     std::function<bvector<NavNodeCPtr>(IConnectionCR, Utf8CP, JsonValueCR)> m_getFilteredNodesPathsHandler;
     std::function<bvector<ECInstanceChangeResult>(IConnectionCR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR, JsonValueCR)> m_saveValueChangeHandler;
-    std::function<ContentDescriptorCPtr(IConnectionCR, Utf8CP, SelectionInfo const&, JsonValueCR)> m_contentDescriptorHandler;
-    std::function<ContentCPtr(IConnectionCR, ContentDescriptorCR, SelectionInfo const&, PageOptionsCR, JsonValueCR)> m_contentHandler;
-    std::function<void(IConnectionCR, uint64_t)> m_onNodeCheckedHandler;
-    std::function<void(IConnectionCR, uint64_t)> m_onNodeUncheckedHandler;
-    std::function<void(IConnectionCR, uint64_t)> m_onNodeExpandedHandler;
-    std::function<void(IConnectionCR, uint64_t)> m_onNodeCollapsedHandler;
+    std::function<ContentDescriptorCPtr(IConnectionCR, Utf8CP, KeySetCR, SelectionInfo const*, JsonValueCR)> m_contentDescriptorHandler;
+    std::function<ContentCPtr(ContentDescriptorCR, PageOptionsCR)> m_contentHandler;
+    std::function<void(IConnectionCR, NavNodeKeyCR, JsonValueCR)> m_onNodeCheckedHandler;
+    std::function<void(IConnectionCR, NavNodeKeyCR, JsonValueCR)> m_onNodeUncheckedHandler;
+    std::function<void(IConnectionCR, NavNodeKeyCR, JsonValueCR)> m_onNodeExpandedHandler;
+    std::function<void(IConnectionCR, NavNodeKeyCR, JsonValueCR)> m_onNodeCollapsedHandler;
     std::function<void(IConnectionCR, JsonValueCR)> m_onAllNodesCollapseHandler;
 
 private:
@@ -108,12 +108,12 @@ protected:
         auto iter = m_parentship.find(&node);
         return (m_parentship.end() != iter) ? iter->second : nullptr;
         }
-    folly::Future<NavNodeCPtr> _GetNode(IConnectionCR, uint64_t id) override
+    folly::Future<NavNodeCPtr> _GetNode(IConnectionCR, NavNodeKeyCR nodeKey, JsonValueCR) override
         {
         for (auto pair : m_hierarchy)
             {
             NavNodeCP node = pair.first.get();
-            if (nullptr != node && node->GetNodeId() == id)
+            if (nullptr != node && node->GetKey()->GetNodeHash().Equals(nodeKey.GetNodeHash()))
                 return node;
             }
         return NavNodeCPtr(nullptr);
@@ -129,7 +129,7 @@ protected:
 
         bvector<NavNodeCPtr> const& children = iter->second;
         return children.end() != std::find_if(children.begin(), children.end(),
-            [&childNodeKey](NavNodeCPtr const& child){return 0 == child->GetKey().Compare(childNodeKey);});
+            [&childNodeKey](NavNodeCPtr const& child){return 0 == child->GetKey()->Compare(childNodeKey);});
         }
     folly::Future<bvector<NavNodeCPtr>> _GetFilteredNodes(IConnectionCR connection, Utf8CP filterText, JsonValueCR options) override 
         {
@@ -137,28 +137,28 @@ protected:
             return m_getFilteredNodesPathsHandler(connection, filterText, options);
         return bvector<NavNodeCPtr>();
         }
-    folly::Future<folly::Unit> _OnNodeChecked(IConnectionCR db, uint64_t nodeId) override
+    folly::Future<folly::Unit> _OnNodeChecked(IConnectionCR db, NavNodeKeyCR nodeKey, JsonValueCR options) override
         {
         if (nullptr != m_onNodeCheckedHandler) 
-            m_onNodeCheckedHandler(db, nodeId);
+            m_onNodeCheckedHandler(db, nodeKey, options);
         return folly::unit;
         }
-    folly::Future<folly::Unit> _OnNodeUnchecked(IConnectionCR db, uint64_t nodeId) override 
+    folly::Future<folly::Unit> _OnNodeUnchecked(IConnectionCR db, NavNodeKeyCR nodeKey, JsonValueCR options) override
         {
         if (nullptr != m_onNodeUncheckedHandler) 
-            m_onNodeUncheckedHandler(db, nodeId);
+            m_onNodeUncheckedHandler(db, nodeKey, options);
         return folly::unit;
         }
-    folly::Future<folly::Unit> _OnNodeExpanded(IConnectionCR db, uint64_t nodeId) override 
+    folly::Future<folly::Unit> _OnNodeExpanded(IConnectionCR db, NavNodeKeyCR nodeKey, JsonValueCR options) override
         {
         if (nullptr != m_onNodeExpandedHandler) 
-            m_onNodeExpandedHandler(db, nodeId);
+            m_onNodeExpandedHandler(db, nodeKey, options);
         return folly::unit;
         }
-    folly::Future<folly::Unit> _OnNodeCollapsed(IConnectionCR db, uint64_t nodeId) override 
+    folly::Future<folly::Unit> _OnNodeCollapsed(IConnectionCR db, NavNodeKeyCR nodeKey, JsonValueCR options) override
         {
         if (nullptr != m_onNodeCollapsedHandler) 
-            m_onNodeCollapsedHandler(db, nodeId);
+            m_onNodeCollapsedHandler(db, nodeKey, options);
         return folly::unit;
         }
     folly::Future<folly::Unit> _OnAllNodesCollapsed(IConnectionCR connection, JsonValueCR options) override
@@ -173,19 +173,19 @@ protected:
         {
         return bvector<SelectClassInfo>();
         }
-    folly::Future<ContentDescriptorCPtr> _GetContentDescriptor(IConnectionCR db, Utf8CP preferredDisplayType, SelectionInfo const& selectionInfo, JsonValueCR options) override 
+    folly::Future<ContentDescriptorCPtr> _GetContentDescriptor(IConnectionCR db, Utf8CP preferredDisplayType, KeySetCR input, SelectionInfo const* selectionInfo, JsonValueCR options) override 
         {
         if (nullptr != m_contentDescriptorHandler)
-            return m_contentDescriptorHandler(db, preferredDisplayType, selectionInfo, options);
-        return ContentDescriptor::Create();
+            return m_contentDescriptorHandler(db, preferredDisplayType, input, selectionInfo, options);
+        return ContentDescriptor::Create(db, options, *NavNodeKeyListContainer::Create());
         }
-    folly::Future<ContentCPtr> _GetContent(IConnectionCR db, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, PageOptionsCR pageOptions, JsonValueCR options) override 
+    folly::Future<ContentCPtr> _GetContent(ContentDescriptorCR descriptor, PageOptionsCR pageOptions) override 
         {
         if (nullptr != m_contentHandler)
-            return m_contentHandler(db, descriptor, selectionInfo, pageOptions, options);
+            return m_contentHandler(descriptor, pageOptions);
         return Content::Create(descriptor, *TestDataSource::Create());
         }
-    folly::Future<size_t> _GetContentSetSize(IConnectionCR, ContentDescriptorCR, SelectionInfo const&, JsonValueCR) override
+    folly::Future<size_t> _GetContentSetSize(ContentDescriptorCR) override
         {
         return 0;
         }
@@ -218,12 +218,12 @@ public:
     void SetHasChildHandler(std::function<bool(IConnectionCR, NavNodeCR, NavNodeKeyCR, JsonValueCR)> handler) {m_hasChildHandler = handler;}
     void SetGetFilteredNodesPathsHandler(std::function<bvector<NavNodeCPtr>(IConnectionCR, Utf8CP, JsonValueCR)> handler) {m_getFilteredNodesPathsHandler = handler;}
     void SetSaveValueChangeHandler(std::function<bvector<ECInstanceChangeResult>(IConnectionCR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR, JsonValueCR)> handler) {m_saveValueChangeHandler = handler;}
-    void SetContentDescriptorHandler(std::function<ContentDescriptorCPtr(IConnectionCR, Utf8CP, SelectionInfo const&, JsonValueCR)> handler){m_contentDescriptorHandler = handler;}
-    void SetContentHandler(std::function<ContentCPtr(IConnectionCR, ContentDescriptorCR, SelectionInfo const&, PageOptionsCR, JsonValueCR)> handler){m_contentHandler = handler;}
-    void SetOnNodeCheckedHandler(std::function<void(IConnectionCR, uint64_t)> handler) {m_onNodeCheckedHandler = handler;}
-    void SetOnNodeUncheckedHandler(std::function<void(IConnectionCR, uint64_t)> handler) {m_onNodeUncheckedHandler = handler;}
-    void SetOnNodeExpandedHandler(std::function<void(IConnectionCR, uint64_t)> handler) {m_onNodeExpandedHandler = handler;}
-    void SetOnNodeCollapsedHandler(std::function<void(IConnectionCR, uint64_t)> handler) {m_onNodeCollapsedHandler = handler;}
+    void SetContentDescriptorHandler(std::function<ContentDescriptorCPtr(IConnectionCR, Utf8CP, KeySetCR, SelectionInfo const*, JsonValueCR)> handler){m_contentDescriptorHandler = handler;}
+    void SetContentHandler(std::function<ContentCPtr(ContentDescriptorCR, PageOptionsCR)> handler){m_contentHandler = handler;}
+    void SetOnNodeCheckedHandler(std::function<void(IConnectionCR, NavNodeKeyCR, JsonValueCR)> handler) {m_onNodeCheckedHandler = handler;}
+    void SetOnNodeUncheckedHandler(std::function<void(IConnectionCR, NavNodeKeyCR, JsonValueCR)> handler) {m_onNodeUncheckedHandler = handler;}
+    void SetOnNodeExpandedHandler(std::function<void(IConnectionCR, NavNodeKeyCR, JsonValueCR)> handler) {m_onNodeExpandedHandler = handler;}
+    void SetOnNodeCollapsedHandler(std::function<void(IConnectionCR, NavNodeKeyCR, JsonValueCR)> handler) {m_onNodeCollapsedHandler = handler;}
     void SetOnCollapseAllNodesHandler(std::function<void(IConnectionCR, JsonValueCR)> handler) {m_onAllNodesCollapseHandler = handler;}
     };
 

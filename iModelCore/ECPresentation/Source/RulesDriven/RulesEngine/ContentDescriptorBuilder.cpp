@@ -442,42 +442,42 @@ public:
         : ContentSpecificationsHandler(context), m_specification(specification), m_isRecursiveSpecification(false),
         m_propertyInfos(GetContext().GetSchemaHelper(), GetContext().GetRuleset(), specification)
         {
-        m_descriptor = ContentDescriptor::Create(GetContext().GetPreferredDisplayType());
+        RulesDrivenECPresentationManager::ContentOptions options(GetContext().GetRuleset().GetRuleSetId());
+        m_descriptor = ContentDescriptor::Create(GetContext().GetConnection(), options.GetJson(), GetContext().GetInputKeys(), GetContext().GetPreferredDisplayType());
+
+        if (nullptr != GetContext().GetSelectionInfo())
+            m_descriptor->SetSelectionInfo(*GetContext().GetSelectionInfo());
         if (nullptr != m_specification)
             QueryBuilderHelpers::ApplyDefaultContentFlags(*m_descriptor, GetContext().GetPreferredDisplayType(), *m_specification);
 
-        if (!m_descriptor->HasContentFlag(ContentFlags::NoFields))
+        if (nullptr == m_descriptor->GetDisplayLabelField())
             {
-            if (nullptr == m_descriptor->GetDisplayLabelField())
+            Utf8String displayLabel = L10N::GetString(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel());
+            if (displayLabel.empty())
                 {
-                Utf8String displayLabel = L10N::GetString(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel());
-                if (displayLabel.empty())
-                    {
-                    BeAssert(false);
-                    displayLabel = "Display Label";
-                    }
-                m_descriptor->AddField(new ContentDescriptor::DisplayLabelField(displayLabel));
+                BeAssert(false);
+                displayLabel = "Display Label";
                 }
+            m_descriptor->AddField(new ContentDescriptor::DisplayLabelField(displayLabel));
             m_descriptor->GetDisplayLabelField()->SetPropertiesMap(QueryBuilderHelpers::GetMappedLabelOverridingProperties(GetContext().GetSchemaHelper(), GetContext().GetRuleset().GetInstanceLabelOverrides()));
             }
-
         }
         
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                10/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void HandleSpecification(SelectedNodeInstancesSpecificationCR spec, IParsedSelectionInfo const& selection)
+    void HandleSpecification(SelectedNodeInstancesSpecificationCR spec, IParsedInput const& input)
         {
-        ContentSpecificationsHandler::HandleSpecification(spec, selection);
+        ContentSpecificationsHandler::HandleSpecification(spec, input);
         }
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                10/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void HandleSpecification(ContentRelatedInstancesSpecificationCR spec, IParsedSelectionInfo const& selection)
+    void HandleSpecification(ContentRelatedInstancesSpecificationCR spec, IParsedInput const& input)
         {
         m_isRecursiveSpecification = spec.IsRecursive();
-        ContentSpecificationsHandler::HandleSpecification(spec, selection);
+        ContentSpecificationsHandler::HandleSpecification(spec, input);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -538,20 +538,20 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentDescriptorPtr ContentDescriptorBuilder::CreateDescriptor(SelectedNodeInstancesSpecificationCR specification, IParsedSelectionInfo const& selection) const
+ContentDescriptorPtr ContentDescriptorBuilder::CreateDescriptor(SelectedNodeInstancesSpecificationCR specification, IParsedInput const& input) const
     {
     ContentDescriptorBuilderImpl builder(m_context, &specification);
-    builder.HandleSpecification(specification, selection);
+    builder.HandleSpecification(specification, input);
     return builder.GetDescriptor();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentDescriptorPtr ContentDescriptorBuilder::CreateDescriptor(ContentRelatedInstancesSpecificationCR specification, IParsedSelectionInfo const& selection) const
+ContentDescriptorPtr ContentDescriptorBuilder::CreateDescriptor(ContentRelatedInstancesSpecificationCR specification, IParsedInput const& input) const
     {
     ContentDescriptorBuilderImpl builder(m_context, &specification);
-    builder.HandleSpecification(specification, selection);
+    builder.HandleSpecification(specification, input);
     return builder.GetDescriptor();
     }
 

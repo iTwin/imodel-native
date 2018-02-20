@@ -87,7 +87,7 @@ void ContentPerformanceTests::GetContent(SelectionInfo const& selection, Utf8CP 
 
     // get the descriptor
     RulesDrivenECPresentationManager::ContentOptions options = CreateContentOptions();
-    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, type, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, type, *input, nullptr, options.GetJson()).get();
 
     if (descriptor->GetContentFlags() != (flags | descriptor->GetContentFlags()))
         {
@@ -97,7 +97,7 @@ void ContentPerformanceTests::GetContent(SelectionInfo const& selection, Utf8CP 
         }
         
     // get the content
-    ContentCPtr content = m_manager->GetContent(m_project, *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
     EXPECT_EQ(expectedContentSize, content->GetContentSet().GetSize());
     for (ContentSetItemCPtr record : content->GetContentSet())
@@ -147,12 +147,16 @@ TEST_F(ContentPerformanceTests, GetDescriptorForAllElementSubclasses)
     ECClassCP elementClass = m_project.Schemas().GetClass("BisCore", "Element");
     bset<ECClassCP> allElementClassesSet = GetDerivedClasses(m_project, *elementClass);
     bvector<ECClassCP> allElementClasses(allElementClassesSet.begin(), allElementClassesSet.end());
-    SelectionInfo selection(allElementClasses);
+    NavNodeKeyList keys;
+    for (ECClassCP ecClass : allElementClasses)
+        keys.push_back(ECInstanceNodeKey::Create(ecClass->GetId(), ECInstanceId()));
+
+    KeySetCPtr input = KeySet::Create(keys);
     
     // get the descriptor
     Utf8PrintfString timerName1("%s: First pass", BeTest::GetNameOfCurrentTest());
     Timer _timer1(timerName1.c_str());
-    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, ContentDisplayType::PropertyPane, selection, CreateContentOptions().GetJson()).get();
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, ContentDisplayType::PropertyPane, *input, nullptr, CreateContentOptions().GetJson()).get();
     EXPECT_TRUE(descriptor.IsValid());
     _timer1.Finish();
 
@@ -161,7 +165,7 @@ TEST_F(ContentPerformanceTests, GetDescriptorForAllElementSubclasses)
 
     Utf8PrintfString timerName2("%s: Second pass", BeTest::GetNameOfCurrentTest());
     Timer _timer2(timerName2.c_str());
-    descriptor = m_manager->GetContentDescriptor(m_project, ContentDisplayType::PropertyPane, selection, CreateContentOptions().GetJson()).get();
+    descriptor = m_manager->GetContentDescriptor(m_project, ContentDisplayType::PropertyPane, *input, nullptr, CreateContentOptions().GetJson()).get();
     EXPECT_TRUE(descriptor.IsValid());
     }
 

@@ -402,7 +402,7 @@ ChildNodeRuleSpecificationsList RulesPreprocessor::GetChildNodeSpecifications(Ch
         ECExpressionContextsProvider::NodeRulesContextParameters contextParams(&params.GetParentNode(), params.GetConnection(), params.GetUserSettings(), params.GetUsedUserSettingsListener());
         return ECExpressionContextsProvider::GetNodeRulesContext(contextParams);
         };
-    OptimizedExpressionsParameters optParams(params.GetConnections(), params.GetConnection(), &params.GetParentNode().GetKey(), "");
+    OptimizedExpressionsParameters optParams(params.GetConnections(), params.GetConnection(), params.GetParentNode().GetKey(), "");
 
     NavNodeExtendedData parentNodeExtendedData(params.GetParentNode());
     if (parentNodeExtendedData.HasSpecificationHash())
@@ -454,7 +454,7 @@ LabelOverrideCP RulesPreprocessor::GetLabelOverride(CustomizationRuleParametersC
         return ECExpressionContextsProvider::GetCustomizationRulesContext(contextParams);
         };
     bset<CustomizationRuleOrder<CustomizationRule>> customizationRules;
-    OptimizedExpressionsParameters optParams(params.GetConnections(), params.GetConnection(), &params.GetNode().GetKey(), "");
+    OptimizedExpressionsParameters optParams(params.GetConnections(), params.GetConnection(), params.GetNode().GetKey(), "");
 
     //Finds nested customization rules
     NavNodeExtendedData nodeExtendedData(params.GetNode());
@@ -494,7 +494,7 @@ StyleOverrideCP RulesPreprocessor::GetStyleOverride(CustomizationRuleParametersC
         return ECExpressionContextsProvider::GetCustomizationRulesContext(contextParams);
         };
     bset<CustomizationRuleOrder<CustomizationRule>> customizationRules;
-    OptimizedExpressionsParameters optParams(params.GetConnections(), params.GetConnection(), &params.GetNode().GetKey(), "");
+    OptimizedExpressionsParameters optParams(params.GetConnections(), params.GetConnection(), params.GetNode().GetKey(), "");
 
     //Finds nested customization rules
     NavNodeExtendedData nodeExtendedData(params.GetNode());
@@ -529,7 +529,7 @@ bvector<GroupingRuleCP> RulesPreprocessor::GetGroupingRules(AggregateCustomizati
         ECExpressionContextsProvider::NodeRulesContextParameters contextParams(params.GetParentNode(), params.GetConnection(), params.GetUserSettings(), params.GetUsedUserSettingsListener());
         return ECExpressionContextsProvider::GetNodeRulesContext(contextParams);
         };
-    OptimizedExpressionsParameters optParams(params.GetConnections(), params.GetConnection(), nullptr == params.GetParentNode() ? nullptr : &params.GetParentNode()->GetKey(), "");
+    OptimizedExpressionsParameters optParams(params.GetConnections(), params.GetConnection(), nullptr == params.GetParentNode() ? nullptr : params.GetParentNode()->GetKey(), "");
 
     //Finds nested customization rules
     bset<CustomizationRuleOrder<CustomizationRule>> customizationRules = GetNestedCustomizationRules(params.GetRuleset(), params.GetSpecificationHash().c_str());
@@ -566,7 +566,7 @@ bvector<SortingRuleCP> RulesPreprocessor::GetSortingRules(AggregateCustomization
         ECExpressionContextsProvider::NodeRulesContextParameters contextParams(params.GetParentNode(), params.GetConnection(), params.GetUserSettings(), params.GetUsedUserSettingsListener());
         return ECExpressionContextsProvider::GetNodeRulesContext(contextParams);
         };
-    OptimizedExpressionsParameters optParams(params.GetConnections(), params.GetConnection(), nullptr == params.GetParentNode() ? nullptr : &params.GetParentNode()->GetKey(), "");
+    OptimizedExpressionsParameters optParams(params.GetConnections(), params.GetConnection(), nullptr == params.GetParentNode() ? nullptr : params.GetParentNode()->GetKey(), "");
 
     //Finds nested customization rules
     bset<CustomizationRuleOrder<CustomizationRule>> customizationRules = GetNestedCustomizationRules(params.GetRuleset(), params.GetSpecificationHash().c_str());
@@ -617,7 +617,7 @@ ImageIdOverrideCP RulesPreprocessor::GetImageIdOverride(CustomizationRuleParamet
         };
     bset<CustomizationRuleOrder<CustomizationRule>> customizationRules;  
     NavNodeExtendedData nodeExtendedData(params.GetNode());
-    OptimizedExpressionsParameters optParams(params.GetConnections(), params.GetConnection(), &params.GetNode().GetKey(), "");
+    OptimizedExpressionsParameters optParams(params.GetConnections(), params.GetConnection(), params.GetNode().GetKey(), "");
 
     //Finds nested customization rules
     if (nodeExtendedData.HasSpecificationHash())
@@ -654,7 +654,7 @@ CheckBoxRuleCP RulesPreprocessor::GetCheckboxRule(CustomizationRuleParametersCR 
         };
     bset<CustomizationRuleOrder<CustomizationRule>> customizationRules;
     NavNodeExtendedData nodeExtendedData(params.GetNode());
-    OptimizedExpressionsParameters optParams(params.GetConnections(), params.GetConnection(), &params.GetNode().GetKey(), "");
+    OptimizedExpressionsParameters optParams(params.GetConnections(), params.GetConnection(), params.GetNode().GetKey(), "");
 
     //Adds nested customization rules
     if (nodeExtendedData.HasSpecificationHash())
@@ -681,42 +681,41 @@ CheckBoxRuleCP RulesPreprocessor::GetCheckboxRule(CustomizationRuleParametersCR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentRuleSpecificationsList RulesPreprocessor::GetContentSpecifications(ContentRuleParametersCR params)
+ContentRuleInputKeysList RulesPreprocessor::GetContentSpecifications(ContentRuleParametersCR params)
     {
     ECDbExpressionSymbolContext ecdbExpressionContext(params.GetConnection().GetECDb());
 
-    ContentRuleSpecificationsList specs;
+    ContentRuleInputKeysList specs;
     bset<NavNodeKeyCP> handledNodes;
 
-    if (params.HasSelectionInfo())
+
+    for (NavNodeKeyCPtr const& inputNodeKey : params.GetInputNodeKeys())
         {
-        for (NavNodeKeyCPtr const& selectedNodeKey : params.GetSelectedNodeKeys())
+        std::function<ExpressionContextPtr()> contextPreparer = [&]()
             {
-            std::function<ExpressionContextPtr()> contextPreparer = [&]()
+            ECExpressionContextsProvider::ContentRulesContextParameters contextParams(params.GetPreferredDisplayType().c_str(), params.GetSelectionProviderName(),
+                params.IsSubSelection(), params.GetConnection(), params.GetNodeLocater(), inputNodeKey.get(), params.GetUserSettings(), params.GetUsedUserSettingsListener());
+            return ECExpressionContextsProvider::GetContentRulesContext(contextParams);
+            };
+        OptimizedExpressionsParameters optimizedParams(params.GetConnections(), params.GetConnection(), inputNodeKey.get(), params.GetPreferredDisplayType().c_str());
+
+        for (ContentRuleCP rule : params.GetRuleset().GetContentRules())
+            {
+            if (rule->GetOnlyIfNotHandled() && handledNodes.end() != handledNodes.find(inputNodeKey.get()))
+                continue;
+
+            if (rule->GetCondition().empty() || VerifyCondition(rule->GetCondition().c_str(), params.GetECExpressionsCache(), &optimizedParams, contextPreparer))
                 {
-                ECExpressionContextsProvider::ContentRulesContextParameters contextParams(params.GetPreferredDisplayType().c_str(), params.GetSelectionProviderName().c_str(),
-                    params.IsSubSelection(), params.GetConnection(), params.GetNodeLocater(), selectedNodeKey.get(), params.GetUserSettings(), params.GetUsedUserSettingsListener());
-                return ECExpressionContextsProvider::GetContentRulesContext(contextParams);
-                };
-            OptimizedExpressionsParameters optimizedParams(params.GetConnections(), params.GetConnection(), selectedNodeKey.get(), params.GetPreferredDisplayType().c_str());
+                auto iter = specs.find(*rule);
+                if (specs.end() == iter)
+                    iter = specs.insert(*rule).first;
 
-            for (ContentRuleCP rule : params.GetRuleset().GetContentRules())
-                {
-                if (rule->GetOnlyIfNotHandled() && handledNodes.end() != handledNodes.find(selectedNodeKey.get()))
-                    continue;
-
-                if (rule->GetCondition().empty() || VerifyCondition(rule->GetCondition().c_str(), params.GetECExpressionsCache(), &optimizedParams, contextPreparer))
-                    {
-                    auto iter = specs.find(*rule);
-                    if (specs.end() == iter)
-                        iter = specs.insert(*rule).first;
-
-                    iter->GetMatchingSelectedNodeKeys().push_back(selectedNodeKey);
-                    handledNodes.insert(selectedNodeKey.get());
-                    }
+                iter->GetMatchingNodeKeys().push_back(inputNodeKey);
+                handledNodes.insert(inputNodeKey.get());
                 }
             }
         }
+        
     std::function<ExpressionContextPtr()> contextPreparer = [&]() 
         {
         ECExpressionContextsProvider::ContentRulesContextParameters contextParams(params.GetPreferredDisplayType().c_str(), "", false,

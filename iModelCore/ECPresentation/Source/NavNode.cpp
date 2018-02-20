@@ -2,55 +2,25 @@
 |
 |     $Source: Source/NavNode.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 #include <ECPresentation/NavNode.h>
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2016
+* @bsimethod                                    Saulius.Skliutas                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int CompareRapidJsonPrimitiveValues(RapidJsonValueCR lhs, RapidJsonValueCR rhs)
+Utf8String NavNodeKey::GetNodeHash() const
     {
-    if (lhs.GetType() != rhs.GetType())
-        return lhs.GetType() < rhs.GetType() ? -1 : 1;
-
-    if (lhs == rhs)
-        return 0;
-
-    BeAssert(lhs.IsBool() || lhs.IsNumber() || lhs.IsNull() || lhs.IsString() || lhs.IsArray());
-
-    if (lhs.IsBool())
-        return (false == lhs.GetBool()) ? -1 : 1;
-
-    if (lhs.IsInt64())
-        return (lhs.GetInt64() < rhs.GetInt64()) ? -1 : 1;
+    if (m_pathFromRoot.empty())
+        return "";
     
-    if (lhs.IsUint64())
-        return (lhs.GetUint64() < rhs.GetUint64()) ? -1 : 1;
-    
-    if (lhs.IsDouble())
-        return (lhs.GetDouble() < rhs.GetDouble()) ? -1 : 1;
+    MD5 h;
+    for (Utf8StringCR pathElement : m_pathFromRoot)
+        h.Add(pathElement.c_str(), pathElement.SizeInBytes());
 
-    if (lhs.IsString())
-        return strcmp(lhs.GetString(), rhs.GetString());
-
-    if (lhs.IsArray())
-        {
-        if (lhs.Size() < rhs.Size())
-            return -1;
-        if (lhs.Size() > rhs.Size())
-            return 1;
-        for (rapidjson::SizeType i = 0; i < lhs.Size(); ++i)
-            {
-            int cmp = CompareRapidJsonPrimitiveValues(lhs[i], rhs[i]);
-            if (0 != cmp)
-                return cmp;
-            }
-        }
-
-    return 0;
+    return h.GetHashString();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -62,13 +32,8 @@ NavNodeKeyPtr NavNodeKey::FromJson(RapidJsonValueCR json)
     Utf8CP type = json["Type"].GetString();
     if (0 == strcmp(NAVNODE_TYPE_ECInstanceNode, type))
         return ECInstanceNodeKey::Create(json);
-    if (0 == strcmp(NAVNODE_TYPE_ECClassGroupingNode, type))
-        return ECClassGroupingNodeKey::Create(json);
-    if (0 == strcmp(NAVNODE_TYPE_ECPropertyGroupingNode, type))
-        return ECPropertyGroupingNodeKey::Create(json);
-    
-    // custom nodes are just like display label nodes
-    return DisplayLabelGroupingNodeKey::Create(json);
+
+    return NavNodeKey::Create(json);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -91,13 +56,34 @@ NavNodeKeyPtr NavNodeKey::FromJson(JsonValueCR json)
 
     if (0 == strcmp(NAVNODE_TYPE_ECInstanceNode, type))
         return ECInstanceNodeKey::Create(json);
-    if (0 == strcmp(NAVNODE_TYPE_ECClassGroupingNode, type))
-        return ECClassGroupingNodeKey::Create(json);
-    if (0 == strcmp(NAVNODE_TYPE_ECPropertyGroupingNode, type))
-        return ECPropertyGroupingNodeKey::Create(json);
 
-    // custom nodes are just like display label nodes
-    return DisplayLabelGroupingNodeKey::Create(json);
+    return NavNodeKey::Create(json);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+NavNodeKeyPtr NavNodeKey::Create(JsonValueCR json)
+    {
+    bvector<Utf8String> path;
+    for (JsonValueCR pathElement : json["PathFromRoot"])
+        path.push_back(pathElement.asString());
+    Utf8CP type = json["Type"].asCString();
+    uint64_t classId = json["ECClassId"].asUInt64();
+    return Create(type, path, ECClassId(classId));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+NavNodeKeyPtr NavNodeKey::Create(RapidJsonValueCR json)
+    {
+    bvector<Utf8String> path;
+    for (RapidJsonValueCR pathElement : json["PathFromRoot"].GetArray())
+        path.push_back(pathElement.GetString());
+    Utf8CP type = json["Type"].GetString();
+    uint64_t classId = json["ECClassId"].GetUint64();
+    return Create(type, path, ECClassId(classId));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -108,6 +94,12 @@ rapidjson::Document NavNodeKey::_AsJson(rapidjson::MemoryPoolAllocator<>* alloca
     rapidjson::Document json(allocator);
     json.SetObject();
     json.AddMember("Type", rapidjson::Value(m_type.c_str(), json.GetAllocator()), json.GetAllocator());
+
+    rapidjson::Value pathJson(rapidjson::kArrayType);
+    for (Utf8StringCR pathElement : m_pathFromRoot)
+        pathJson.PushBack(rapidjson::Value(pathElement.c_str(), json.GetAllocator()), json.GetAllocator());
+    json.AddMember("PathFromRoot", pathJson, json.GetAllocator());
+    json.AddMember("ECClassId", m_classId.GetValueUnchecked(), json.GetAllocator());
     return json;
     }
 
@@ -118,6 +110,8 @@ MD5 NavNodeKey::_ComputeHash() const
     {
     MD5 h;
     h.Add(m_type.c_str(), m_type.SizeInBytes());
+    for (Utf8StringCR pathElement : m_pathFromRoot)
+        h.Add(pathElement.c_str(), pathElement.SizeInBytes());
     return h;
     }
 
@@ -126,152 +120,25 @@ MD5 NavNodeKey::_ComputeHash() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR NavNodeKey::GetHash() const
     {
-    if (m_hash.empty())
-        m_hash = _ComputeHash().GetHashString();
-    return m_hash;
+    if (m_keyHash.empty())
+        m_keyHash = _ComputeHash().GetHashString();
+    return m_keyHash;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                03/2017
+* @bsimethod                                    Saulius.Skliutas                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-int GroupingNodeKey::_Compare(NavNodeKey const& other) const
+int NavNodeKey::_Compare(NavNodeKey const& other) const
     {
-    int baseCmp = NavNodeKey::_Compare(other);
-    if (0 != baseCmp)
-        return baseCmp;
-    
-    BeAssert(nullptr != dynamic_cast<GroupingNodeKey const*>(&other));
-    GroupingNodeKey const& otherKey = static_cast<GroupingNodeKey const&>(other);
+    int typeCompareResult = m_type.compare(other.m_type);
+    if (0 != typeCompareResult)
+        return typeCompareResult;
 
-    if (m_nodeId < otherKey.m_nodeId)
+    if (m_pathFromRoot < other.m_pathFromRoot)
         return -1;
-    if (m_nodeId > otherKey.m_nodeId)
+    if (m_pathFromRoot > other.m_pathFromRoot)
         return 1;
     return 0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                03/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document GroupingNodeKey::_AsJson(rapidjson::MemoryPoolAllocator<>* allocator) const
-    {
-    rapidjson::Document json = NavNodeKey::_AsJson(allocator);
-    json.AddMember("NodeId", m_nodeId, json.GetAllocator());
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-MD5 GroupingNodeKey::_ComputeHash() const
-    {
-    MD5 h = NavNodeKey::_ComputeHash();
-    h.Add(&m_nodeId, sizeof(uint64_t));
-    return h;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<ECClassGroupingNodeKey> ECClassGroupingNodeKey::Create(JsonValueCR json)
-    {
-    uint64_t nodeId = BeJsonUtilities::UInt64FromValue(json["NodeId"]);
-    ECClassId classId(BeJsonUtilities::UInt64FromValue(json["ECClassId"]));
-    return Create(nodeId, classId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<ECClassGroupingNodeKey> ECClassGroupingNodeKey::Create(RapidJsonValueCR json)
-    {
-    uint64_t nodeId = BeRapidJsonUtilities::UInt64FromValue(json["NodeId"]);
-    ECClassId classId(BeRapidJsonUtilities::UInt64FromValue(json["ECClassId"]));
-    return Create(nodeId, classId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECClassGroupingNodeKey::_IsSimilar(NavNodeKey const& other) const
-    {
-    if (!GroupingNodeKey::_IsSimilar(other))
-        return false;
-    
-    BeAssert(nullptr != dynamic_cast<ECClassGroupingNodeKey const*>(&other));
-    ECClassGroupingNodeKey const& otherKey = static_cast<ECClassGroupingNodeKey const&>(other);
-    return m_classId == otherKey.m_classId;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document ECClassGroupingNodeKey::_AsJson(rapidjson::MemoryPoolAllocator<>* allocator) const
-    {
-    rapidjson::Document json = GroupingNodeKey::_AsJson(allocator);
-    json.AddMember("ECClassId", rapidjson::Value(m_classId.ToString().c_str(), json.GetAllocator()), json.GetAllocator());
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<ECPropertyGroupingNodeKey> ECPropertyGroupingNodeKey::Create(JsonValueCR json)
-    {
-    uint64_t nodeId = BeJsonUtilities::UInt64FromValue(json["NodeId"]);
-    ECClassId classId(BeJsonUtilities::UInt64FromValue(json["ECClassId"]));
-    Utf8CP propertyName = json["PropertyName"].asCString();
-    int rangeIndex = json["RangeIndex"].asInt();
-    if (!json.isMember("GroupingValue"))
-        return Create(nodeId, classId, propertyName, rangeIndex, nullptr);
-
-    rapidjson::Document groupingValue;
-    groupingValue.Parse(Json::FastWriter().write(json["GroupingValue"]).c_str());
-    return Create(nodeId, classId, propertyName, rangeIndex, &groupingValue);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<ECPropertyGroupingNodeKey> ECPropertyGroupingNodeKey::Create(RapidJsonValueCR json)
-    {
-    uint64_t nodeId = BeRapidJsonUtilities::UInt64FromValue(json["NodeId"]);
-    ECClassId classId(BeRapidJsonUtilities::UInt64FromValue(json["ECClassId"]));
-    Utf8CP propertyName = json["PropertyName"].GetString();
-    int rangeIndex = json["RangeIndex"].GetInt();
-    rapidjson::Value const* groupingValue = nullptr;
-    if (json.HasMember("GroupingValue"))
-        groupingValue = &json["GroupingValue"];
-    return Create(nodeId, classId, propertyName, rangeIndex, groupingValue);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECPropertyGroupingNodeKey::_IsSimilar(NavNodeKey const& other) const
-    {
-    if (!GroupingNodeKey::_IsSimilar(other))
-        return false;
-    
-    BeAssert(nullptr != dynamic_cast<ECPropertyGroupingNodeKey const*>(&other));
-    ECPropertyGroupingNodeKey const& otherKey = static_cast<ECPropertyGroupingNodeKey const&>(other);
-    return m_rangeIndex == otherKey.m_rangeIndex
-        && m_propertyName == otherKey.m_propertyName
-        && (m_value == otherKey.m_value
-            || nullptr != m_value && nullptr != otherKey.m_value && 0 == CompareRapidJsonPrimitiveValues(*m_value, *otherKey.m_value));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document ECPropertyGroupingNodeKey::_AsJson(rapidjson::MemoryPoolAllocator<>* allocator) const
-    {
-    rapidjson::Document json = ECClassGroupingNodeKey::_AsJson(allocator);
-    json.AddMember("PropertyName", rapidjson::Value(m_propertyName.c_str(), json.GetAllocator()), json.GetAllocator());
-    json.AddMember("RangeIndex", m_rangeIndex, json.GetAllocator());
-    if (nullptr != m_value)
-        json.AddMember("GroupingValue", rapidjson::Value(*m_value, json.GetAllocator()), json.GetAllocator());
-    return json;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -281,7 +148,10 @@ RefCountedPtr<ECInstanceNodeKey> ECInstanceNodeKey::Create(JsonValueCR json)
     {
     ECClassId classId(BeJsonUtilities::UInt64FromValue(json["ECClassId"]));
     ECInstanceId instanceId(BeJsonUtilities::UInt64FromValue(json["ECInstanceId"]));
-    return Create(classId, instanceId);
+    bvector<Utf8String> path;
+    for (JsonValueCR pathElement : json["PathFromRoot"])
+        path.push_back(pathElement.asString());
+    return Create(classId, instanceId, path);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -291,7 +161,10 @@ RefCountedPtr<ECInstanceNodeKey> ECInstanceNodeKey::Create(RapidJsonValueCR json
     {
     ECClassId classId(BeRapidJsonUtilities::UInt64FromValue(json["ECClassId"]));
     ECInstanceId instanceId(BeRapidJsonUtilities::UInt64FromValue(json["ECInstanceId"]));
-    return Create(classId, instanceId);
+    bvector<Utf8String> path;
+    for (RapidJsonValueCR pathElement : json["PathFromRoot"].GetArray())
+        path.push_back(pathElement.GetString());
+    return Create(classId, instanceId, path);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -347,55 +220,213 @@ MD5 ECInstanceNodeKey::_ComputeHash() const
     return h;
     }
 
+
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                09/2016
+* @bsimethod                                    Saulius.Skliutas                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<DisplayLabelGroupingNodeKey> DisplayLabelGroupingNodeKey::Create(JsonValueCR json)
+KeySetPtr KeySet::Create(NavNodeKeyList const& nodeKeys)
     {
-    uint64_t nodeId = BeJsonUtilities::UInt64FromValue(json["NodeId"]);
-    return Create(nodeId, json["DisplayLabel"].asCString(), json["Type"].asCString());
+    NavNodeKeySet set;
+    for (NavNodeKeyCPtr const& Key : nodeKeys)
+        set.insert(Key);
+    return new KeySet(InstanceKeyMap(), set);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                09/2016
+* @bsimethod                                    Saulius.Skliutas                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<DisplayLabelGroupingNodeKey> DisplayLabelGroupingNodeKey::Create(RapidJsonValueCR json)
+KeySetPtr KeySet::Create(bvector<ECInstanceKey> const& instanceKeys)
     {
-    uint64_t nodeId = BeRapidJsonUtilities::UInt64FromValue(json["NodeId"]);
-    return Create(nodeId, json["DisplayLabel"].GetString(), json["Type"].GetString());
+    InstanceKeyMap map;
+    for (ECInstanceKey const& key : instanceKeys)
+        map[key.GetClassId()].insert(key.GetInstanceId());
+    return new KeySet(map, NavNodeKeySet());
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2016
+* @bsimethod                                    Saulius.Skliutas                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DisplayLabelGroupingNodeKey::_IsSimilar(NavNodeKey const& other) const
+KeySetPtr KeySet::Create(bvector<IECInstancePtr> const& instances)
     {
-    if (!GroupingNodeKey::_IsSimilar(other))
+    InstanceKeyMap map;
+    for (IECInstancePtr const& instance : instances)
+        {
+        ECClassId classId = instance->GetClass().GetId();
+        ECInstanceId instanceId;
+        ECInstanceId::FromString(instanceId, instance->GetInstanceId().c_str());
+        map[classId].insert(instanceId);
+        }
+    return new KeySet(map, NavNodeKeySet());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+KeySetPtr KeySet::Create(bvector<ECClassCP> const& classes)
+    {
+    InstanceKeyMap map;
+    for (ECClassCP ecClass : classes)
+        {
+        ECClassId classId = ecClass->GetId();
+        map[classId].insert(ECInstanceId());
+        }
+    return new KeySet(map, NavNodeKeySet());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+INavNodeKeysContainerCPtr KeySet::GetAllNavNodeKeys() const
+    {
+    if (m_nodesContainer.IsNull())
+        {
+        NavNodeKeyList keys;
+        std::copy(m_nodes.begin(), m_nodes.end(), std::back_inserter(keys));
+        for (auto& pair : m_instances)
+            {
+            ECClassId classId = pair.first;
+            for (ECInstanceId const& instanceId : pair.second)
+                keys.push_back(ECInstanceNodeKey::Create(classId, instanceId));
+            }
+        m_nodesContainer = NavNodeKeyListContainer::Create(keys);
+        }
+    return m_nodesContainer;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool KeySet::Contains(ECClassId classId, ECInstanceId instanceId) const
+    {
+    auto iter = m_instances.find(classId);
+    return m_instances.end() != iter && iter->second.end() != iter->second.find(instanceId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+uint64_t KeySet::MergeWith(KeySetCR other)
+    {
+    if (Equals(other))
+        return 0;
+
+    uint64_t inserted = 0;
+    for (auto& pair : other.m_instances)
+        {
+        ECClassId classId = pair.first;
+        bset<ECInstanceId> const& instances = pair.second;
+        for (ECInstanceId instanceId : instances)
+            {
+            if (Add(classId, instanceId))
+                inserted++;
+            }
+        }
+
+    for (NavNodeKeyCPtr const& nodeKey : other.m_nodes)
+        {
+        if (Add(*nodeKey))
+            inserted++;
+        }
+
+    return inserted;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool KeySet::Remove(ECClassId classId, ECInstanceId instanceId)
+    {
+    auto classIter = m_instances.find(classId);
+    if (m_instances.end() == classIter)
         return false;
-    
-    BeAssert(nullptr != dynamic_cast<DisplayLabelGroupingNodeKey const*>(&other));
-    DisplayLabelGroupingNodeKey const& otherKey = static_cast<DisplayLabelGroupingNodeKey const&>(other);
-    return m_label.Equals(otherKey.m_label);
+
+    bset<ECInstanceId>& instanceIds = classIter->second;
+    if (0 == instanceIds.erase(instanceId))
+        return false;
+
+    InvalidateNodesContainer();
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                09/2016
+* @bsimethod                                    Saulius.Skliutas                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document DisplayLabelGroupingNodeKey::_AsJson(rapidjson::MemoryPoolAllocator<>* allocator) const
+uint64_t KeySet::Remove(KeySetCR toRemove)
     {
-    rapidjson::Document json = GroupingNodeKey::_AsJson(allocator);
-    json.AddMember("DisplayLabel", rapidjson::Value(m_label.c_str(), json.GetAllocator()), json.GetAllocator());
+    uint64_t removed = 0;
+    for (auto& pair : toRemove.m_instances)
+        {
+        ECClassId classId = pair.first;
+        bset<ECInstanceId> const& instances = pair.second;
+        for (ECInstanceId instanceId : instances)
+            {
+            if (Remove(classId, instanceId))
+                removed++;
+            }
+        }
+
+    for (NavNodeKeyCPtr const& nodeKey : toRemove.m_nodes)
+        {
+        if (Remove(*nodeKey))
+            removed++;
+        }
+
+    return removed;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document KeySet::AsJson(rapidjson::Document::AllocatorType* allocator) const
+    {
+    rapidjson::Document json(allocator);
+    json.SetObject();  
+    rapidjson::Value instances(rapidjson::kObjectType);
+    for (auto& pair : m_instances)
+        {
+        ECClassId classId = pair.first;
+        rapidjson::Value instanceIds(rapidjson::kArrayType);
+        for (ECInstanceId const& instanceId : pair.second)
+            instanceIds.PushBack(instanceId.GetValueUnchecked(), json.GetAllocator());
+        instances.AddMember(rapidjson::Value(classId.ToString().c_str(), json.GetAllocator()), instanceIds, json.GetAllocator());
+        }
+
+    rapidjson::Value nodeKeys(rapidjson::kArrayType);
+    for (NavNodeKeyCPtr const& key : m_nodes)
+        nodeKeys.PushBack(key->AsJson(&json.GetAllocator()), json.GetAllocator());
+
+    json.AddMember("InstanceKeys", instances, json.GetAllocator());
+    json.AddMember("NodeKeys", nodeKeys, json.GetAllocator());
+
     return json;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2016
+* @bsimethod                                    Saulius.Skliutas                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeKeyCR NavNode::GetKey() const
+KeySetPtr KeySet::FromJson(JsonValueCR json)
     {
-    if (m_key.IsNull())
-        m_key = _CreateKey();
-    return *m_key;
+    InstanceKeyMap instanceKeys;
+    JsonValueCR instanceKey = json["InstanceKeys"];
+    bvector<Utf8String> classIds = instanceKey.getMemberNames();
+    for (Utf8StringCR classIdString : classIds)
+        {
+        bset<ECInstanceId> instanceIdSet;
+        for (JsonValueCR instanceIdJson : instanceKey[classIdString.c_str()])
+            {
+            uint64_t instanceId = BeJsonUtilities::UInt64FromValue(instanceIdJson);
+            instanceIdSet.insert(ECInstanceId(instanceId));
+            }
+        ECClassId ecClassId;
+        ECClassId::FromString(ecClassId, classIdString.c_str());
+        instanceKeys[ecClassId] = instanceIdSet;
+        }
+
+    NavNodeKeySet nodeKeys;
+    for (JsonValueCR nodeKeyJson : json["NodeKeys"])
+        nodeKeys.insert(NavNodeKey::FromJson(nodeKeyJson));
+
+    return KeySet::Create(instanceKeys, nodeKeys);
     }
 
 /*---------------------------------------------------------------------------------**//**

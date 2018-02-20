@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/ECPresentationTypes.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -32,6 +32,9 @@ ECPRESENTATION_REFCOUNTED_PTR(Content)
 ECPRESENTATION_REFCOUNTED_PTR(ISerializable)
 ECPRESENTATION_REFCOUNTED_PTR(ContentSetItem)
 ECPRESENTATION_REFCOUNTED_PTR(ContentDescriptor)
+
+ECPRESENTATION_TYPEDEFS(KeySet)
+ECPRESENTATION_REFCOUNTED_PTR(KeySet)
 
 ECPRESENTATION_TYPEDEFS(ISelectionProvider)
 ECPRESENTATION_TYPEDEFS(SelectionManager)

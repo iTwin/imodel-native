@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/RulesPreprocessor.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once 
@@ -56,38 +56,75 @@ typedef bvector<RootNodeRuleSpecification> RootNodeRuleSpecificationsList;
 //! @ingroup GROUP_RulesDrivenPresentation
 // @bsiclass                                    Grigas.Petraitis                04/2016
 //=======================================================================================
-struct ContentRuleSpecification
+struct ContentRuleInputKeys
 {
 protected:
     ContentRuleCP m_rule;
-    NavNodeKeyList m_matchingSelectedNodeKeys;
+    NavNodeKeyList m_matchingNodeKeys;
 public:
     //! Constructor. Creates invalid instance.
-    ContentRuleSpecification() : m_rule(nullptr) {}
+    ContentRuleInputKeys() : m_rule(nullptr) {}
 
     //! Copy constructor.
-    ContentRuleSpecification(ContentRuleSpecification const& other) : m_rule(other.m_rule), m_matchingSelectedNodeKeys(other.m_matchingSelectedNodeKeys) {}
+    ContentRuleInputKeys(ContentRuleInputKeys const& other) : m_rule(other.m_rule), m_matchingNodeKeys(other.m_matchingNodeKeys) {}
 
     //! Constructor.
     //! @param[in] rule The content rule.
-    //! @param[in] matchingSelectedNodeKeys The list of @ref NavNodeKey objects that apply for the rule.
-    ContentRuleSpecification(ContentRuleCR rule, NavNodeKeyList matchingSelectedNodeKeys = NavNodeKeyList()) : m_rule(&rule), m_matchingSelectedNodeKeys(matchingSelectedNodeKeys) {}
+    //! @param[in] matchingNodeKeys The list of @ref NavNodeKey objects that apply for the rule.
+    ContentRuleInputKeys(ContentRuleCR rule, NavNodeKeyList matchingNodeKeys = NavNodeKeyList()) : m_rule(&rule), m_matchingNodeKeys(matchingNodeKeys) {}
 
     //! Compare operator.
-    bool operator<(ContentRuleSpecification const& rhs) const {return m_rule < rhs.m_rule;}
+    bool operator<(ContentRuleInputKeys const& rhs) const {return m_rule < rhs.m_rule;}
 
     //! Get the rule.
     ContentRuleCR GetRule() const {BeAssert(nullptr != m_rule); return *m_rule;}
 
     //! Get the list of selected node keys.
-    NavNodeKeyListCR GetMatchingSelectedNodeKeys() const {return m_matchingSelectedNodeKeys;}
+    NavNodeKeyListCR GetMatchingNodeKeys() const {return m_matchingNodeKeys;}
     //! Get the list of selected node keys.
-    NavNodeKeyListR GetMatchingSelectedNodeKeys() {return m_matchingSelectedNodeKeys;}
+    NavNodeKeyListR GetMatchingNodeKeys() {return m_matchingNodeKeys;}
 
     //! Get rule priority.
     int GetPriority() const {return nullptr == m_rule ? -1 : m_rule->GetPriority();}
 };
-typedef bset<ContentRuleSpecification> ContentRuleSpecificationsList;
+typedef bset<ContentRuleInputKeys> ContentRuleInputKeysList;
+
+//=======================================================================================
+//! Holds a content rule and list of ECIntance keys objects that apply for 
+//! that rule.
+//! @ingroup GROUP_RulesDrivenPresentation
+// @bsiclass                                    Saulius.Skliutas                01/2018
+//=======================================================================================
+struct ContentRuleInstanceKeys
+{
+protected:
+    ContentRuleCP m_rule;
+    bvector<ECInstanceKey> m_instanceKeys;
+public:
+    //! Constructor. Creates invalid instance.
+    ContentRuleInstanceKeys() : m_rule(nullptr) {}
+
+    //! Copy constructor.
+    ContentRuleInstanceKeys(ContentRuleInstanceKeys const& other) : m_rule(other.m_rule), m_instanceKeys(other.m_instanceKeys) {}
+
+    //! Constructor.
+    //! @param[in] rule The content rule.
+    //! @param[in] instanceKeys The list of ECIntance keys that apply for the rule.
+    ContentRuleInstanceKeys(ContentRuleCR rule, bvector<ECInstanceKey> instanceKeys = bvector<ECInstanceKey>()) : m_rule(&rule), m_instanceKeys(instanceKeys) {}
+
+    //! Compare operator.
+    bool operator<(ContentRuleInstanceKeys const& rhs) const {return m_rule < rhs.m_rule;}
+
+    //! Get the rule.
+    ContentRuleCR GetRule() const {BeAssert(nullptr != m_rule); return *m_rule;}
+
+    //! Get the list of instance keys.
+    bvector<ECInstanceKey> const& GetInstanceKeys() const {return m_instanceKeys;}
+
+    //! Get rule priority.
+    int GetPriority() const {return nullptr == m_rule ? -1 : m_rule->GetPriority();}
+};
+typedef bset<ContentRuleInstanceKeys> ContentRuleInstanceKeysList;
 
 //=======================================================================================
 //! A class responsible for finding appropriate presentation rules based on supplied
@@ -251,42 +288,39 @@ struct RulesPreprocessor
     {
     private:
         INavNodeLocaterCR m_nodeLocater;
-        INavNodeKeysContainerCPtr m_selectedNodeKeys;
+        INavNodeKeysContainerCPtr m_inputNodeKeys;
         Utf8StringCR m_preferredContentDisplayType;
-        Utf8StringCR m_selectionProviderName;
-        bool m_isSubSelection;
+        SelectionInfo const* m_selectionInfo;
     public:
         //! Constructor.
         //! @param[in] connections The connections manager.
         //! @param[in] connection The connection used for evaluating ECDb-based ECExpressions
-        //! @param[in] selectedNodeKeys A container of selected nodes.
+        //! @param[in] inputNodeKeys A container of input nodes.
         //! @param[in] preferredContentDisplayType Type of content display that the content is going to be displayed in.
-        //! @param[in] selectionProviderName Name of the last selection source.
-        //! @param[in] isSubSelection Did the last selection event happen in sub-selection.
+        //! @param[in] selectionInfo Info about last selection.
         //! @param[in] ruleset The ruleset that contains the presentation rules.
         //! @param[in] settings The user settings object.
         //! @param[in] ecexpressionsCache ECExpressions cache that should be used by preprocessor.
         //! @param[in] nodeLocater Nodes locater.
-        ContentRuleParameters(IConnectionManagerCR connections, IConnectionCR connection, INavNodeKeysContainerCR selectedNodeKeys, Utf8StringCR preferredContentDisplayType,
-            Utf8StringCR selectionProviderName, bool isSubSelection, PresentationRuleSetCR ruleset, IUserSettings const& settings, IUsedUserSettingsListener* settingsListener,
+        ContentRuleParameters(IConnectionManagerCR connections, IConnectionCR connection, INavNodeKeysContainerCR inputNodeKeys, Utf8StringCR preferredContentDisplayType,
+            SelectionInfo const* selectionInfo, PresentationRuleSetCR ruleset, IUserSettings const& settings, IUsedUserSettingsListener* settingsListener,
             ECExpressionsCache& ecexpressionsCache, INavNodeLocaterCR nodeLocater)
-            : PreprocessorParameters(connections, connection, ruleset, settings, settingsListener, ecexpressionsCache), m_selectedNodeKeys(&selectedNodeKeys), 
-            m_preferredContentDisplayType(preferredContentDisplayType), m_selectionProviderName(selectionProviderName), m_nodeLocater(nodeLocater)
+            : PreprocessorParameters(connections, connection, ruleset, settings, settingsListener, ecexpressionsCache), m_inputNodeKeys(&inputNodeKeys), 
+            m_preferredContentDisplayType(preferredContentDisplayType), m_selectionInfo(selectionInfo), m_nodeLocater(nodeLocater)
             {
-            m_isSubSelection = isSubSelection;
             }
-        //! Do these parameters contain any selection.
-        bool HasSelectionInfo() const {return m_selectedNodeKeys.IsValid();}
+        //! Do these parameters contain selection info.
+        bool HasSelectionInfo() const {return nullptr != m_selectionInfo;}
         //! Get the nodes locater.
         INavNodeLocaterCR GetNodeLocater() const {return m_nodeLocater;}
         //! Get selected node keys.
-        INavNodeKeysContainerCR GetSelectedNodeKeys() const {return *m_selectedNodeKeys;}
+        INavNodeKeysContainerCR GetInputNodeKeys() const {return *m_inputNodeKeys;}
         //! Get preferred display type.
         Utf8StringCR GetPreferredDisplayType() const {return m_preferredContentDisplayType;}
         //! Get the name of the last selection source.
-        Utf8StringCR GetSelectionProviderName() const {return m_selectionProviderName;}
+        Utf8CP GetSelectionProviderName() const {return HasSelectionInfo() ? m_selectionInfo->GetSelectionProviderName().c_str() : nullptr;}
         //! Did the last selection event happen in sub-selection.
-        bool IsSubSelection() const {return m_isSubSelection;}
+        bool IsSubSelection() const {return HasSelectionInfo() ? m_selectionInfo->IsSubSelection() : false;}
     };
     
     typedef RootNodeRuleParameters const&               RootNodeRuleParametersCR;
@@ -363,7 +397,7 @@ public:
 /** @{ */
     //! Get matching content rules.
     //! @param[in] params The request parameters.
-    ECPRESENTATION_EXPORT static ContentRuleSpecificationsList GetContentSpecifications(ContentRuleParametersCR params);
+    ECPRESENTATION_EXPORT static ContentRuleInputKeysList GetContentSpecifications(ContentRuleParametersCR params);
 /** @} */
 };
 

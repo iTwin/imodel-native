@@ -257,19 +257,19 @@ private:
     bvector<ISelectionChangesListener*> m_listeners;
 
 protected:
-    INavNodeKeysContainerCPtr _GetSelection(ECDbCR ecdb) const override {return m_wrapped.GetSelection(ecdb);}
-    INavNodeKeysContainerCPtr _GetSubSelection(ECDbCR ecdb) const override {return m_wrapped.GetSubSelection(ecdb);}
+    KeySetCPtr _GetSelection(ECDbCR ecdb) const override {return m_wrapped.GetSelection(ecdb);}
+    KeySetCPtr _GetSubSelection(ECDbCR ecdb) const override {return m_wrapped.GetSubSelection(ecdb);}
     void _AddListener(ISelectionChangesListener& listener) override {m_listeners.push_back(&listener);}
     void _RemoveListener(ISelectionChangesListener& listener) override {m_listeners.erase(std::remove(m_listeners.begin(), m_listeners.end(), &listener));}
-    void _AddToSelection(ECDbCR db, Utf8CP source, bool isSubSelection, INavNodeKeysContainerCR keys, RapidJsonValueCR extendedData) override
+    void _AddToSelection(ECDbCR db, Utf8CP source, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData) override
         {
         m_wrapped.AddToSelection(db, source, isSubSelection, keys, extendedData);
         }
-    void _RemoveFromSelection(ECDbCR db, Utf8CP source, bool isSubSelection, INavNodeKeysContainerCR keys, RapidJsonValueCR extendedData) override
+    void _RemoveFromSelection(ECDbCR db, Utf8CP source, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData) override
         {
         m_wrapped.RemoveFromSelection(db, source, isSubSelection, keys, extendedData);
         }
-    void _ChangeSelection(ECDbCR db, Utf8CP source, bool isSubSelection, INavNodeKeysContainerCR keys, RapidJsonValueCR extendedData) override
+    void _ChangeSelection(ECDbCR db, Utf8CP source, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData) override
         {
         m_wrapped.ChangeSelection(db, source, isSubSelection, keys, extendedData);
         }
@@ -289,6 +289,10 @@ protected:
             for (ISelectionChangesListener* listener : m_listeners)
                 listener->NotifySelectionChanged(evtForThisThread);
             });
+        }
+    void _RefreshSelection(ECDbCR db, Utf8CP source, bool isSubSelection, RapidJsonValueCR extendedData) override
+        {
+        m_wrapped.RefreshSelection(db, source, isSubSelection, extendedData);
         }
 
 public:
@@ -602,16 +606,17 @@ folly::Future<NavNodeCPtr> RulesDrivenECPresentationManager::_GetParent(IConnect
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<NavNodeCPtr> RulesDrivenECPresentationManager::_GetNode(IConnectionCR primaryConnection, uint64_t nodeId)
+folly::Future<NavNodeCPtr> RulesDrivenECPresentationManager::_GetNode(IConnectionCR primaryConnection, NavNodeKeyCR nodeKey, JsonValueCR jsonOptions)
     {
-    auto promise = CreateCancelablePromise<NavNodeCPtr>(*m_cancelableTasks, "Node", TaskDependencies(primaryConnection.GetId()));
-    folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), nodeId]()
+    auto promise = CreateCancelablePromise<NavNodeCPtr>(*m_cancelableTasks, "Node", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
+    folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), nodeKeyPtr = NavNodeKeyCPtr(&nodeKey), jsonOptions]()
         {
         if (promise->IsCanceled())
             return;
 
+        NavigationOptions options(jsonOptions);
         IConnectionPtr connection = GetConnections().GetConnection(connectionId.c_str());
-        NavNodeCPtr node = m_impl->GetNode(*connection, nodeId, promise->GetCancelationToken());
+        NavNodeCPtr node = m_impl->GetNode(*connection, *nodeKeyPtr, options, promise->GetCancelationToken());
         promise->SetValue(node);
         });
     return promise->GetFuture();
@@ -678,17 +683,17 @@ folly::Future<bvector<SelectClassInfo>> RulesDrivenECPresentationManager::_GetCo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<ContentDescriptorCPtr> RulesDrivenECPresentationManager::_GetContentDescriptor(IConnectionCR primaryConnection, Utf8CP preferredDisplayType, SelectionInfo const& selectionInfo, JsonValueCR jsonOptions)
+folly::Future<ContentDescriptorCPtr> RulesDrivenECPresentationManager::_GetContentDescriptor(IConnectionCR primaryConnection, Utf8CP preferredDisplayType, KeySetCR inputKeys, SelectionInfo const* selectionInfo, JsonValueCR jsonOptions)
     {
     auto promise = CreateCancelablePromise<ContentDescriptorCPtr>(*m_cancelableTasks, "Content descriptor", TaskDependencies(primaryConnection.GetId(), ContentOptions(jsonOptions).GetRulesetId(), true));
-    folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), displayType = (Utf8String)preferredDisplayType, selectionInfo, jsonOptions]()
+    folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), displayType = (Utf8String)preferredDisplayType, input = KeySetCPtr(&inputKeys), selectionInfo, jsonOptions]()
         {
         if (promise->IsCanceled())
             return;
 
         ContentOptions options(jsonOptions);
         IConnectionPtr connection = GetConnections().GetConnection(connectionId.c_str());
-        ContentDescriptorCPtr descriptor = m_impl->GetContentDescriptor(*connection, displayType.c_str(), selectionInfo, options, promise->GetCancelationToken());
+        ContentDescriptorCPtr descriptor = m_impl->GetContentDescriptor(*connection, displayType.c_str(), *input, selectionInfo, options, promise->GetCancelationToken());
         promise->SetValue(descriptor);
         });
 
@@ -698,17 +703,15 @@ folly::Future<ContentDescriptorCPtr> RulesDrivenECPresentationManager::_GetConte
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<ContentCPtr> RulesDrivenECPresentationManager::_GetContent(IConnectionCR primaryConnection, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, PageOptionsCR pageOpts, JsonValueCR jsonOptions)
+folly::Future<ContentCPtr> RulesDrivenECPresentationManager::_GetContent(ContentDescriptorCR descriptor, PageOptionsCR pageOpts)
     {
-    auto promise = CreateCancelablePromise<ContentCPtr>(*m_cancelableTasks, "Content", TaskDependencies(primaryConnection.GetId(), ContentOptions(jsonOptions).GetRulesetId(), true));
-    folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), descriptor = ContentDescriptorCPtr(&descriptor), selectionInfo, pageOpts, jsonOptions]()
+    auto promise = CreateCancelablePromise<ContentCPtr>(*m_cancelableTasks, "Content", TaskDependencies(descriptor.GetConnection().GetId(), ContentOptions(descriptor.GetOptions()).GetRulesetId(), true));
+    folly::via(m_executor, [&, promise, descriptor = ContentDescriptorCPtr(&descriptor), pageOpts]()
         {
         if (promise->IsCanceled())
             return;
 
-        ContentOptions options(jsonOptions);
-        IConnectionPtr connection = GetConnections().GetConnection(connectionId.c_str());
-        ContentCPtr content = m_impl->GetContent(*connection, *descriptor, selectionInfo, pageOpts, options, promise->GetCancelationToken());
+        ContentCPtr content = m_impl->GetContent(*descriptor, pageOpts, promise->GetCancelationToken());
         promise->SetValue(content);
         });
     return promise->GetFuture();
@@ -717,17 +720,15 @@ folly::Future<ContentCPtr> RulesDrivenECPresentationManager::_GetContent(IConnec
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<size_t> RulesDrivenECPresentationManager::_GetContentSetSize(IConnectionCR primaryConnection, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, JsonValueCR jsonOptions)
+folly::Future<size_t> RulesDrivenECPresentationManager::_GetContentSetSize(ContentDescriptorCR descriptor)
     {
-    auto promise = CreateCancelablePromise<size_t>(*m_cancelableTasks, "Content set size", TaskDependencies(primaryConnection.GetId(), ContentOptions(jsonOptions).GetRulesetId(), true));
-    folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), descriptor = ContentDescriptorCPtr(&descriptor), selectionInfo, jsonOptions]()
+    auto promise = CreateCancelablePromise<size_t>(*m_cancelableTasks, "Content set size", TaskDependencies(descriptor.GetConnection().GetId(), ContentOptions(descriptor.GetOptions()).GetRulesetId(), true));
+    folly::via(m_executor, [&, promise, descriptor = ContentDescriptorCPtr(&descriptor)]()
         {
         if (promise->IsCanceled())
             return;
 
-        ContentOptions options(jsonOptions);
-        IConnectionPtr connection = GetConnections().GetConnection(connectionId.c_str());
-        size_t size = m_impl->GetContentSetSize(*connection, *descriptor, selectionInfo, options, promise->GetCancelationToken());
+        size_t size = m_impl->GetContentSetSize(*descriptor, promise->GetCancelationToken());
         promise->SetValue(size);
         });
     return promise->GetFuture();
@@ -868,16 +869,17 @@ folly::Future<bvector<ECInstanceChangeResult>> RulesDrivenECPresentationManager:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeChecked(IConnectionCR primaryConnection, uint64_t nodeId)
+folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeChecked(IConnectionCR primaryConnection, NavNodeKeyCR nodeKey, JsonValueCR jsonOptions)
     {
-    auto promise = CreateCancelablePromise<folly::Unit>(*m_cancelableTasks, "Node checked");
-    folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), nodeId]()
+    auto promise = CreateCancelablePromise<folly::Unit>(*m_cancelableTasks, "Node checked", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
+    folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), nodeKeyPtr = NavNodeKeyCPtr(&nodeKey), jsonOptions]()
         {
         if (promise->IsCanceled())
             return;
 
+        NavigationOptions options(jsonOptions);
         IConnectionPtr connection = GetConnections().GetConnection(connectionId.c_str());
-        m_impl->NotifyNodeChecked(*connection, nodeId, promise->GetCancelationToken());
+        m_impl->NotifyNodeChecked(*connection, *nodeKeyPtr, options, promise->GetCancelationToken());
         promise->SetValue();
         });
     return promise->GetFuture();
@@ -886,16 +888,17 @@ folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeChecked(ICon
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeUnchecked(IConnectionCR primaryConnection, uint64_t nodeId)
+folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeUnchecked(IConnectionCR primaryConnection, NavNodeKeyCR nodeKey, JsonValueCR jsonOptions)
     {
-    auto promise = CreateCancelablePromise<folly::Unit>(*m_cancelableTasks, "Node unchecked");
-    folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), nodeId]()
+    auto promise = CreateCancelablePromise<folly::Unit>(*m_cancelableTasks, "Node unchecked", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
+    folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), nodeKeyPtr = NavNodeKeyCPtr(&nodeKey), jsonOptions]()
         {
         if (promise->IsCanceled())
             return;
 
+        NavigationOptions options(jsonOptions);
         IConnectionPtr connection = GetConnections().GetConnection(connectionId.c_str());
-        m_impl->NotifyNodeUnchecked(*connection, nodeId, promise->GetCancelationToken());
+        m_impl->NotifyNodeUnchecked(*connection, *nodeKeyPtr, options, promise->GetCancelationToken());
         promise->SetValue();
         });
     return promise->GetFuture();
@@ -904,16 +907,17 @@ folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeUnchecked(IC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeExpanded(IConnectionCR primaryConnection, uint64_t nodeId)
+folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeExpanded(IConnectionCR primaryConnection, NavNodeKeyCR nodeKey, JsonValueCR jsonOptions)
     {
-    auto promise = CreateCancelablePromise<folly::Unit>(*m_cancelableTasks, "Node expanded");
-    folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), nodeId]()
+    auto promise = CreateCancelablePromise<folly::Unit>(*m_cancelableTasks, "Node expanded", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
+    folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), nodeKeyPtr = NavNodeKeyCPtr(&nodeKey), jsonOptions]()
         {
         if (promise->IsCanceled())
             return;
 
+        NavigationOptions options(jsonOptions);
         IConnectionPtr connection = GetConnections().GetConnection(connectionId.c_str());
-        m_impl->NotifyNodeExpanded(*connection, nodeId, promise->GetCancelationToken());
+        m_impl->NotifyNodeExpanded(*connection, *nodeKeyPtr, options, promise->GetCancelationToken());
         promise->SetValue();
         });
     return promise->GetFuture();
@@ -922,16 +926,17 @@ folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeExpanded(ICo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeCollapsed(IConnectionCR primaryConnection, uint64_t nodeId)
+folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeCollapsed(IConnectionCR primaryConnection, NavNodeKeyCR nodeKey, JsonValueCR jsonOptions)
     {
-    auto promise = CreateCancelablePromise<folly::Unit>(*m_cancelableTasks, "Node collapsed");
-    folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), nodeId]()
+    auto promise = CreateCancelablePromise<folly::Unit>(*m_cancelableTasks, "Node collapsed", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
+    folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), nodeKeyPtr = NavNodeKeyCPtr(&nodeKey), jsonOptions]()
         {
         if (promise->IsCanceled())
             return;
 
+        NavigationOptions options(jsonOptions);
         IConnectionPtr connection = GetConnections().GetConnection(connectionId.c_str());
-        m_impl->NotifyNodeCollapsed(*connection, nodeId, promise->GetCancelationToken());
+        m_impl->NotifyNodeCollapsed(*connection, *nodeKeyPtr, options, promise->GetCancelationToken());
         promise->SetValue();
         });
     return promise->GetFuture();

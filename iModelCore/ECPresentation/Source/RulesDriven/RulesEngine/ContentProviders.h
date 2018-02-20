@@ -25,8 +25,9 @@ private:
     IPropertyCategorySupplierR m_categorySupplier;
     bool m_isNestedContent;
     bool m_createFields;
+    INavNodeKeysContainerCPtr m_inputNodeKeys;
 
-    // Selection context
+    // Selection info context
     bool m_isSelectionContext;
     SelectionInfo const* m_selectionInfo;
     bool m_ownsSelectionInfo;
@@ -36,16 +37,16 @@ private:
 
 private:
     void Init();
-    ECPRESENTATION_EXPORT ContentProviderContext(PresentationRuleSetCR, bool, Utf8String, INavNodeLocaterCR, IPropertyCategorySupplierR, IUserSettings const&, 
+    ECPRESENTATION_EXPORT ContentProviderContext(PresentationRuleSetCR, bool, Utf8String, INavNodeKeysContainerCR, INavNodeLocaterCR, IPropertyCategorySupplierR, IUserSettings const&, 
         ECExpressionsCache&, RelatedPathsCache&, PolymorphicallyRelatedClassesCache&, JsonNavNodesFactory const&, IJsonLocalState const*);
     ECPRESENTATION_EXPORT ContentProviderContext(ContentProviderContextCR other);
     
 public:
-    static ContentProviderContextPtr Create(PresentationRuleSetCR ruleset, bool holdRuleset, Utf8String preferredDisplayType, INavNodeLocaterCR nodesLocater, IPropertyCategorySupplierR categorySupplier,
+    static ContentProviderContextPtr Create(PresentationRuleSetCR ruleset, bool holdRuleset, Utf8String preferredDisplayType, INavNodeKeysContainerCR inputKeys, INavNodeLocaterCR nodesLocater, IPropertyCategorySupplierR categorySupplier,
         IUserSettings const& settings, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache, 
         JsonNavNodesFactory const& nodesFactory, IJsonLocalState const* localState)
         {
-        return new ContentProviderContext(ruleset, holdRuleset, preferredDisplayType, nodesLocater, categorySupplier, settings, ecexpressionsCache, 
+        return new ContentProviderContext(ruleset, holdRuleset, preferredDisplayType, inputKeys, nodesLocater, categorySupplier, settings, ecexpressionsCache, 
             relatedPathsCache, polymorphicallyRelatedClassesCache, nodesFactory, localState);
         }
     static ContentProviderContextPtr Create(ContentProviderContextCR other) {return new ContentProviderContext(other);}
@@ -57,13 +58,15 @@ public:
     IPropertyCategorySupplierR GetCategorySupplier() const {return m_categorySupplier;}
     bool IsNestedContent() const {return m_isNestedContent;}
     void SetIsNestedContent(bool value) {m_isNestedContent = value;}
+    INavNodeKeysContainerCR GetInputKeys() const {return *m_inputNodeKeys;}
+    void SetInputKeys(INavNodeKeysContainerCR inputNodeKeys) {m_inputNodeKeys = &inputNodeKeys;}
     
-    // Selected nodes context
-    ECPRESENTATION_EXPORT void SetSelectionContext(SelectionInfo const& selectionInfo);
-    ECPRESENTATION_EXPORT void SetSelectionContext(SelectionInfo&& selectionInfo);
-    ECPRESENTATION_EXPORT void SetSelectionContext(ContentProviderContextCR);
+    // Selection info context
+    ECPRESENTATION_EXPORT void SetSelectionInfo(SelectionInfo const& selectionInfo);
+    ECPRESENTATION_EXPORT void SetSelectionInfo(SelectionInfo&& selectionInfo);
+    ECPRESENTATION_EXPORT void SetSelectionInfo(ContentProviderContextCR);
     bool IsSelectionContext() const {return m_isSelectionContext;}
-    SelectionInfo const& GetSelectionInfo() const {BeAssert(IsSelectionContext()); return *m_selectionInfo;}
+    SelectionInfo const* GetSelectionInfo() const {return m_selectionInfo;}
     
     // Property formatting context
     ECPRESENTATION_EXPORT void SetPropertyFormattingContext(IECPropertyFormatter const&);
@@ -135,12 +138,12 @@ public:
 struct SpecificationContentProvider : ContentProvider
 {
 private:
-    ContentRuleSpecificationsList m_rules;
+    ContentRuleInstanceKeysList m_rules;
     mutable ContentDescriptorCPtr m_descriptor;
     mutable ContentQueryPtr m_query;
-    mutable bmap<ContentRuleCP, IParsedSelectionInfo const*> m_parsedSelectionsCache;
+    mutable bmap<ContentRuleCP, IParsedInput const*> m_inputCache;
 private:
-    ECPRESENTATION_EXPORT SpecificationContentProvider(ContentProviderContextR, ContentRuleSpecificationsList);
+    ECPRESENTATION_EXPORT SpecificationContentProvider(ContentProviderContextR, ContentRuleInstanceKeysList);
     ECPRESENTATION_EXPORT SpecificationContentProvider(SpecificationContentProviderCR);
     ContentQueryCPtr CreateQuery(ContentDescriptorCP) const;
 protected:
@@ -149,10 +152,10 @@ protected:
     ContentProviderPtr _Clone() const override {return new SpecificationContentProvider(*this);}
     void _Reset() override;
 public:
-    static SpecificationContentProviderPtr Create(ContentProviderContextR context, ContentRuleSpecificationsList const& specs) {return new SpecificationContentProvider(context, specs);}
-    static SpecificationContentProviderPtr Create(ContentProviderContextR context, ContentRuleSpecification const& spec)
+    static SpecificationContentProviderPtr Create(ContentProviderContextR context, ContentRuleInstanceKeysList const& specs) {return new SpecificationContentProvider(context, specs);}
+    static SpecificationContentProviderPtr Create(ContentProviderContextR context, ContentRuleInstanceKeys const& spec)
         {
-        ContentRuleSpecificationsList specs;
+        ContentRuleInstanceKeysList specs;
         specs.insert(spec);
         return SpecificationContentProvider::Create(context, specs);
         }

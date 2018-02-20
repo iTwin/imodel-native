@@ -309,7 +309,7 @@ static bvector<RelatedClassPath> GetRelatedClassPaths(ECSchemaHelper const& help
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentSpecificationsHandler::AppendClass(ECClassCR ecClass, ContentSpecificationCR spec, bool isSpecificationPolymorphic, IParsedSelectionInfo const* selection, Utf8StringCR instanceFilter)
+void ContentSpecificationsHandler::AppendClass(ECClassCR ecClass, ContentSpecificationCR spec, bool isSpecificationPolymorphic, IParsedInput const* input, Utf8StringCR instanceFilter)
     {
     if (GetContext().IsClassHandled(ecClass))
         return;
@@ -325,7 +325,7 @@ void ContentSpecificationsHandler::AppendClass(ECClassCR ecClass, ContentSpecifi
     if (_ShouldIncludeRelatedProperties())
         {
         InstanceFilteringParams filteringParams(GetContext().GetConnection(), GetContext().GetSchemaHelper().GetECExpressionsCache(),
-            selection, info, nullptr, instanceFilter.c_str());
+            input, info, nullptr, instanceFilter.c_str());
         AppendRelatedPropertiesParams params(s_emptyRelationshipPath, ecClass, "this", spec.GetRelatedProperties(), filteringParams);
         bvector<RelatedClassPath> relatedPropertyPaths = AppendRelatedProperties(params, false);
         for (RelatedClassCR navigationPropertyPath : navigationPropertiesPaths)
@@ -340,7 +340,7 @@ void ContentSpecificationsHandler::AppendClass(ECClassCR ecClass, ContentSpecifi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentSpecificationsHandler::AppendClassPaths(bvector<RelatedClassPath> const& paths, ECClassCR nodeClass, ContentRelatedInstancesSpecificationCR spec, IParsedSelectionInfo const& selection)
+void ContentSpecificationsHandler::AppendClassPaths(bvector<RelatedClassPath> const& paths, ECClassCR nodeClass, ContentRelatedInstancesSpecificationCR spec, IParsedInput const& input)
     {
     InstanceFilteringParams::RecursiveQueryInfo const* recursiveInfo = nullptr;
     if (spec.IsRecursive())
@@ -373,7 +373,7 @@ void ContentSpecificationsHandler::AppendClassPaths(bvector<RelatedClassPath> co
         if (_ShouldIncludeRelatedProperties())
             {
             InstanceFilteringParams filteringParams(GetContext().GetConnection(), GetContext().GetSchemaHelper().GetECExpressionsCache(),
-                &selection, appendInfo, recursiveInfo, spec.GetInstanceFilter().c_str());
+                &input, appendInfo, recursiveInfo, spec.GetInstanceFilter().c_str());
             AppendRelatedPropertiesParams params(s_emptyRelationshipPath, selectClass, "this", spec.GetRelatedProperties(), filteringParams);
             bvector<RelatedClassPath> relatedPropertyPaths = AppendRelatedProperties(params, false);
             for (RelatedClassCR navigationPropertyPath : navigationPropertiesPaths)
@@ -544,16 +544,16 @@ void ContentSpecificationsHandler::_OnBeforeAppendClassPaths(bvector<RelatedClas
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentSpecificationsHandler::HandleSpecification(SelectedNodeInstancesSpecificationCR specification, IParsedSelectionInfo const& selection)
+void ContentSpecificationsHandler::HandleSpecification(SelectedNodeInstancesSpecificationCR specification, IParsedInput const& input)
     {
-    if (selection.GetClasses().empty())
+    if (input.GetClasses().empty())
         return;
     
     bvector<SupportedEntityClassInfo> classInfos;
-    for (ECClassCP selectedClass : selection.GetClasses())
+    for (ECClassCP inputClass : input.GetClasses())
         {
-        if (selectedClass->IsEntityClass())
-            classInfos.push_back(SupportedEntityClassInfo(*selectedClass->GetEntityClassCP()));
+        if (inputClass->IsEntityClass())
+            classInfos.push_back(SupportedEntityClassInfo(*inputClass->GetEntityClassCP()));
         }
     _OnBeforeAppendClassInfos(classInfos);
     
@@ -562,23 +562,23 @@ void ContentSpecificationsHandler::HandleSpecification(SelectedNodeInstancesSpec
         if (!IsECClassAccepted(specification, classInfo.GetClass()))
             continue;
         
-        AppendClass(classInfo.GetClass(), specification, classInfo.IsPolymorphic(), &selection, "");
+        AppendClass(classInfo.GetClass(), specification, classInfo.IsPolymorphic(), &input, "");
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentSpecificationsHandler::HandleSpecification(ContentRelatedInstancesSpecificationCR specification, IParsedSelectionInfo const& selection)
+void ContentSpecificationsHandler::HandleSpecification(ContentRelatedInstancesSpecificationCR specification, IParsedInput const& input)
     {
-    if (selection.GetClasses().empty())
+    if (input.GetClasses().empty())
         return;
 
-    for (ECClassCP ecClass : selection.GetClasses())
+    for (ECClassCP ecClass : input.GetClasses())
         {
         bvector<RelatedClassPath> paths = GetRelatedClassPaths(GetContext().GetSchemaHelper(), GetContext(), *ecClass, specification, GetContext().GetRuleset());
         _OnBeforeAppendClassPaths(paths);
-        AppendClassPaths(paths, *ecClass, specification, selection);
+        AppendClassPaths(paths, *ecClass, specification, input);
         }
     }
     

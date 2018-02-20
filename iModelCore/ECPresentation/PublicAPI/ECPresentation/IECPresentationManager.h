@@ -62,23 +62,23 @@ protected:
     //! @see GetParent
     virtual folly::Future<NavNodeCPtr> _GetParent(IConnectionCR, NavNodeCR, JsonValueCR) = 0;
 
-    //! Retrieves a node by ID.
+    //! Retrieves a node by node key.
     //! @see GetNode
-    virtual folly::Future<NavNodeCPtr> _GetNode(IConnectionCR, uint64_t) = 0;
+    virtual folly::Future<NavNodeCPtr> _GetNode(IConnectionCR, NavNodeKeyCR, JsonValueCR) = 0;
 
     //! Retrieves filtered Node paths.
     //! @see GetFilteredNodes
     virtual folly::Future<bvector<NavNodeCPtr>> _GetFilteredNodes(IConnectionCR, Utf8CP, JsonValueCR) = 0;
 
     //! @see NotifyNodeChecked
-    virtual folly::Future<folly::Unit> _OnNodeChecked(IConnectionCR, uint64_t nodeId) = 0;
+    virtual folly::Future<folly::Unit> _OnNodeChecked(IConnectionCR, NavNodeKeyCR, JsonValueCR) = 0;
     //! @see NotifyNodeUnchecked
-    virtual folly::Future<folly::Unit> _OnNodeUnchecked(IConnectionCR, uint64_t nodeId) = 0;
+    virtual folly::Future<folly::Unit> _OnNodeUnchecked(IConnectionCR, NavNodeKeyCR, JsonValueCR) = 0;
 
     //! @see NotifyNodeExpanded
-    virtual folly::Future<folly::Unit> _OnNodeExpanded(IConnectionCR, uint64_t nodeId) = 0;
+    virtual folly::Future<folly::Unit> _OnNodeExpanded(IConnectionCR, NavNodeKeyCR, JsonValueCR) = 0;
     //! @see NotifyNodeCollapsed
-    virtual folly::Future<folly::Unit> _OnNodeCollapsed(IConnectionCR, uint64_t nodeId) = 0;
+    virtual folly::Future<folly::Unit> _OnNodeCollapsed(IConnectionCR, NavNodeKeyCR, JsonValueCR) = 0;
     //! @see NotifyAllNodesCollapsed
     virtual folly::Future<folly::Unit> _OnAllNodesCollapsed(IConnectionCR, JsonValueCR) = 0;
 /** @} */
@@ -91,15 +91,15 @@ protected:
 
     //! Get the content descriptor based on the supplied parameters.
     //! @see GetContentDescriptor
-    virtual folly::Future<ContentDescriptorCPtr> _GetContentDescriptor(IConnectionCR, Utf8CP, SelectionInfo const&, JsonValueCR) = 0;
+    virtual folly::Future<ContentDescriptorCPtr> _GetContentDescriptor(IConnectionCR, Utf8CP, KeySetCR, SelectionInfo const*, JsonValueCR) = 0;
 
     //! Get the content.
     //! @see GetContent
-    virtual folly::Future<ContentCPtr> _GetContent(IConnectionCR, ContentDescriptorCR, SelectionInfo const&, PageOptionsCR, JsonValueCR) = 0;
+    virtual folly::Future<ContentCPtr> _GetContent(ContentDescriptorCR, PageOptionsCR) = 0;
 
     //! Get the content set size. 
     //! @see GetContentSetSize
-    virtual folly::Future<size_t> _GetContentSetSize(IConnectionCR, ContentDescriptorCR, SelectionInfo const&, JsonValueCR) = 0;
+    virtual folly::Future<size_t> _GetContentSetSize(ContentDescriptorCR) = 0;
 /** @} */
     
 /** @name Updating
@@ -174,10 +174,11 @@ public:
     //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
     ECPRESENTATION_EXPORT folly::Future<NavNodeCPtr> GetParent(ECDbCR db, NavNodeCR childNode, JsonValueCR extendedOptions = Json::Value());
 
-    //! Retrieves the node with the specified node ID.
+    //! Retrieves the node with the specified node key.
     //! @param[in] db The db to use for getting the node.
-    //! @param[in] nodeId ID of the node to get. See @ref NavNode::GetNodeId()
-    ECPRESENTATION_EXPORT folly::Future<NavNodeCPtr> GetNode(ECDbCR db, uint64_t nodeId);
+    //! @param[in] nodeKey Key of the node to get. @ref NavNodeKey
+    //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
+    ECPRESENTATION_EXPORT folly::Future<NavNodeCPtr> GetNode(ECDbCR db, NavNodeKeyCR nodeKey, JsonValueCR extendedOptions = Json::Value());
     
     //! Provided a path of node keys, returns a path of nodes.
     //! @param[in] db The db to use for getting the nodes path.
@@ -198,15 +199,15 @@ public:
     //! @param[in] options Additional options which depend on the implementation of @ref IECPresentationManager.
     ECPRESENTATION_EXPORT folly::Future<bvector<NodesPathElement>> GetFilteredNodesPaths(ECDbCR db, Utf8CP filterText, JsonValueCR options = Json::Value());
     
-    //! Mark node with the specified ID as checked.
-    ECPRESENTATION_EXPORT folly::Future<folly::Unit> NotifyNodeChecked(ECDbCR, uint64_t nodeId);
-    //! Mark node with the specified ID as not checked.
-    ECPRESENTATION_EXPORT folly::Future<folly::Unit> NotifyNodeUnchecked(ECDbCR, uint64_t nodeId);
+    //! Mark node with the specified node key as checked.
+    ECPRESENTATION_EXPORT folly::Future<folly::Unit> NotifyNodeChecked(ECDbCR, NavNodeKeyCR nodeKey, JsonValueCR extendedOptions = Json::Value());
+    //! Mark node with the specified node key as not checked.
+    ECPRESENTATION_EXPORT folly::Future<folly::Unit> NotifyNodeUnchecked(ECDbCR, NavNodeKeyCR nodeKey, JsonValueCR extendedOptions = Json::Value());
 
-    //! Mark node with the specified ID as expanded.
-    ECPRESENTATION_EXPORT folly::Future<folly::Unit> NotifyNodeExpanded(ECDbCR, uint64_t nodeId);
-    //! Mark node with the specified ID as collapsed.
-    ECPRESENTATION_EXPORT folly::Future<folly::Unit> NotifyNodeCollapsed(ECDbCR, uint64_t nodeId);
+    //! Mark node with the specified node key as expanded.
+    ECPRESENTATION_EXPORT folly::Future<folly::Unit> NotifyNodeExpanded(ECDbCR, NavNodeKeyCR nodeKey, JsonValueCR extendedOptions = Json::Value());
+    //! Mark node with the specified node key as collapsed.
+    ECPRESENTATION_EXPORT folly::Future<folly::Unit> NotifyNodeCollapsed(ECDbCR, NavNodeKeyCR nodeKey, JsonValueCR extendedOptions = Json::Value());
     //! Collapse all expanded nodes
     ECPRESENTATION_EXPORT folly::Future<folly::Unit> NotifyAllNodesCollapsed(ECDbCR, JsonValueCR options = Json::Value());
 /** @} */
@@ -223,26 +224,21 @@ public:
     //! Get the content descriptor based on the supplied parameters.
     //! @param[in] db The db to use for getting the content.
     //! @param[in] preferredDisplayType The display type that the content will be displayed in. See @ref ContentDisplayType.
+    //! @param[in] inputKeys The keys set to get content descriptor for.
     //! @param[in] selectionInfo Info about the selection.
     //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
-    ECPRESENTATION_EXPORT folly::Future<ContentDescriptorCPtr> GetContentDescriptor(ECDbCR db, Utf8CP preferredDisplayType, SelectionInfo const& selectionInfo, JsonValueCR extendedOptions = Json::Value());
+    ECPRESENTATION_EXPORT folly::Future<ContentDescriptorCPtr> GetContentDescriptor(ECDbCR db, Utf8CP preferredDisplayType, KeySetCR inputKeys, SelectionInfo const* selectionInfo, JsonValueCR extendedOptions = Json::Value());
 
     //! Get the content.
-    //! @param[in] db The db to use for getting the content.
     //! @param[in] descriptor The content descriptor which describes what should be included in the content and how
     //!            it should be formatted. To get the default descriptor, use @ref GetContentDescriptor.
-    //! @param[in] selectionInfo Info about the selection.
     //! @param[in] pageOptions Info about the requested page of data.
-    //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
-    ECPRESENTATION_EXPORT folly::Future<ContentCPtr> GetContent(ECDbCR db, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, PageOptionsCR pageOptions, JsonValueCR extendedOptions = Json::Value());
+    ECPRESENTATION_EXPORT folly::Future<ContentCPtr> GetContent(ContentDescriptorCR descriptor, PageOptionsCR pageOptions);
 
     //! Get the content set size.
-    //! @param[in] db The db to use for getting the content.
     //! @param[in] descriptor The content descriptor which describes what should be included in the content and how
     //!            it should be formatted. To get the default descriptor, use @ref GetContentDescriptor.
-    //! @param[in] selectionInfo Info about the selection.
-    //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
-    ECPRESENTATION_EXPORT folly::Future<size_t> GetContentSetSize(ECDbCR db, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, JsonValueCR extendedOptions = Json::Value());
+    ECPRESENTATION_EXPORT folly::Future<size_t> GetContentSetSize(ContentDescriptorCR descriptor);
 /** @} */
     
 /** @name Updating
