@@ -150,12 +150,10 @@ ConvertToDgnDbElementExtension::Result ConvertScalableMeshAttachment::_PreConver
 
     Bentley::BentleyStatus clipInfoStatus(ExtractClipDefinitionsInfo(&clipDefs, v8el));
     
-    assert(clipInfoStatus == SUCCESS);
-
     bmap <uint64_t, SMModelClipInfo> clipInfoMap;
 
     for (auto& clipDefIter : clipDefs)
-        { 
+        {    
         SMModelClipInfo clipInfo;
 
         clipInfo.m_shape.resize(clipDefIter.second.second.size());

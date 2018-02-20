@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/DrawingConverter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -68,6 +68,19 @@ struct SheetAttachmentMarker : DgnV8Api::DgnModelAppData
     };
 
 SheetAttachmentMarker::Key SheetAttachmentMarker::s_key;
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct ConverterMadeCopyMarker : DgnV8Api::DgnModelAppData
+    {
+    static Key s_key;
+    void _OnCleanup (DgnV8ModelR host) override {delete this;}
+    static bool IsFoundOn(DgnV8ModelCR model) {return nullptr != model.FindAppData(s_key);}
+    static void AddTo(DgnV8ModelR model) {model.AddAppData(s_key, new ConverterMadeCopyMarker);}
+    };
+
+ConverterMadeCopyMarker::Key ConverterMadeCopyMarker::s_key;
 
 /*=================================================================================**//**
 * @bsiclass
@@ -194,29 +207,18 @@ bpair<ResolvedModelMapping,bool> Converter::Import2dModel(DgnV8ModelR v8model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverter::FindNonSpatialModel(DgnV8ModelRefR v8ModelRef, bool isRootASheet)
+void RootModelConverter::RegisterNonSpatialModel(DgnV8ModelR thisV8Model)
     {
-    if (nullptr == v8ModelRef.GetDgnModelP())
-        return;
-
-    DgnV8FileR thisV8File = *v8ModelRef.GetDgnFileP();
+    DgnV8FileR thisV8File = *thisV8Model.GetDgnFileP();
 
     if (!IsFileAssignedToBridge(thisV8File))
         return;
-
-    DgnV8ModelR thisV8Model = *v8ModelRef.GetDgnModelP();
 
     if (ShouldConvertToPhysicalModel(thisV8Model))          // Not going to convert this to a sheet or drawing?
         return;
 
     if (!m_nonSpatialModelsSeen.insert(&thisV8Model).second)   // Already seen this model?
         return;
-
-    if (&thisV8Model != GetRootModelP())                        // Except in the special case where a drawing is the root model,
-        {
-        if (isRootASheet && v8ModelRef.IsDgnAttachment())       // Mark 2-D models that are attached to a sheet, so that we can handle them specially later on.
-            SheetAttachmentMarker::AddTo(thisV8Model);
-        }
 
     // Build up a list of non-spatial models in the order in which they were found. This is 
     // so that we will (later) import those models in that same order. That is necessary so that
@@ -230,17 +232,6 @@ void RootModelConverter::FindNonSpatialModel(DgnV8ModelRefR v8ModelRef, bool isR
         {
         GetV8FileSyncInfoId(thisV8File); // populates m_v8files
         _KeepFileAlive(thisV8File);     // keep the file alive
-        }
-
-    if (nullptr == v8ModelRef.GetDgnAttachmentsP())
-        return;
-
-    for (DgnV8Api::DgnAttachment* attachment : *v8ModelRef.GetDgnAttachmentsP())
-        {                  
-        if (nullptr == attachment->GetDgnModelP())
-            continue; // missing reference 
-
-        FindNonSpatialModel(*attachment, isRootASheet);
         }
     }
 
@@ -275,7 +266,7 @@ static void processModelIndex(bvector<DgnV8FileP>& filesToSearch, bvector<DgnV8F
             }
 
         filesToSearchThisTime.clear();
-        for (auto f : allV8Files)        // See if FindNonSpatialModel discovered new files while following 2-D attachments.
+        for (auto f : allV8Files)        // See if RegisterNonSpatialModel discovered new files while following 2-D attachments.
             {
             if (std::find(filesToSearch.begin(), filesToSearch.end(), f) == filesToSearch.end())
                 filesToSearchThisTime.push_back(f);
@@ -306,7 +297,7 @@ void RootModelConverter::FindV8DrawingsAndSheets()
             continue;
 
         DgnV8Api::DgnFileStatus openStatus;
-        Bentley::DgnFilePtr v8File = OpenDgnV8File(openStatus, fn); // Just open it. Don't register it in syncinfo. We'll do that in FindNonSpatialModel if we actually find a drawing or sheet in there.
+        Bentley::DgnFilePtr v8File = OpenDgnV8File(openStatus, fn); // Just open it. Don't register it in syncinfo. We'll do that in RegisterNonSpatialModel if we actually find a drawing or sheet in there.
         if (v8File.IsValid() && IsFileAssignedToBridge(*v8File))
             {
             tempKeepAlive.push_back(v8File);
@@ -318,14 +309,14 @@ void RootModelConverter::FindV8DrawingsAndSheets()
         ClassifyNormal2dModels (*fileToSearch); // This tells us whether a given 2d design model should become a drawing or a spatial model
 
     // *** EXTREMELY TRICKY: See "DgnModel objects and Sheet attachments" for why we need TWO PASSES
-    processModelIndex(filesToSearch, m_v8Files, [&](DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item) {FindSheetModel(v8File, item);});
-    processModelIndex(filesToSearch, m_v8Files, [&](DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item) {FindDrawingModel(v8File, item);});
+    processModelIndex(filesToSearch, m_v8Files, [&](DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item) {RegisterSheetModel(v8File, item);});
+    processModelIndex(filesToSearch, m_v8Files, [&](DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item) {RegisterDrawingModel(v8File, item);});
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverter::FindDrawingModel(DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item)
+void RootModelConverter::RegisterDrawingModel(DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item)
     {
     if (!IsV8DrawingModel(v8File, item))
         return;
@@ -338,11 +329,21 @@ void RootModelConverter::FindDrawingModel(DgnV8FileR v8File, DgnV8Api::ModelInde
     if (SheetAttachmentMarker::IsFoundOn(*v8model))
         return;
 
-    GetAttachments(*v8model);
-    if (!ScaledCopyMarker::IsFoundOn(*v8model))
-        MakeAttachmentsMatchRootAnnotationScale(*v8model);
-    SheetUnnestAttachments(*v8model);
-    FindNonSpatialModel(*v8model, false); 
+    Transform2dAttachments(*v8model);
+
+    RegisterNonSpatialModel(*v8model);
+
+    if (GetAttachments(*v8model))
+        {
+        for (auto attachment : *GetAttachments(*v8model))
+            {
+            auto attachedModel = attachment->GetDgnModelP();
+            if (nullptr == attachedModel)
+                continue;
+
+            RegisterNonSpatialModel(*attachedModel);
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -393,11 +394,10 @@ static WString computeFullV8ModelName(DgnV8ModelR v8Model, wchar_t const* suffix
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Bentley::RefCountedPtr<DgnV8Api::DgnModel> Converter::CopyAndChangeAnnotationScale(DgnAttachmentCR v8Attachment, double newAnnotationScale)
+Bentley::RefCountedPtr<DgnV8Api::DgnModel> Converter::CopyAndChangeAnnotationScale(DgnV8ModelP v8Model, double newAnnotationScale)
     {
-    DgnV8Api::DependencyManager::SetProcessingDisabled(false);   // must allow dependency mgr to "process" as that is copy V8 remaps IDs. See below.
+    DgnV8Api::DependencyManager::SetProcessingDisabled(false);   // must allow dependency mgr to "process" as that is how V8 remaps IDs. See below.
 
-    auto v8Model = v8Attachment.GetDgnModelP();
     auto v8file = v8Model->GetDgnFileP();
 
     // Generate a new name for the model based on the attachment and the new scale
@@ -405,9 +405,12 @@ Bentley::RefCountedPtr<DgnV8Api::DgnModel> Converter::CopyAndChangeAnnotationSca
 
     //  See if we already made such a copy. This can happen if the same drawing is attached to many different sheets 
     //  or to the same sheet, each time with a different clip
-    DgnV8ModelP existingModel = v8file->FindLoadedModelById(v8file->FindModelIdByName(newModelName.c_str()));
-    if (nullptr != existingModel)
-        return existingModel;
+    if (true)
+        {
+        DgnV8ModelP existingModel = v8file->FindLoadedModelById(v8file->FindModelIdByName(newModelName.c_str()));
+        if (nullptr != existingModel)
+            return existingModel;
+        }
 
     // *** TRICKY: V8's ITxn::CreateNewModel function always sets up the new model as a rootmodel. V8 requires
     //              that there be a non-zero refcount on a DgnFile that owns rootmodels. So, we must make sure that
@@ -437,6 +440,7 @@ Bentley::RefCountedPtr<DgnV8Api::DgnModel> Converter::CopyAndChangeAnnotationSca
     changeContext.DoChange();
 
     ScaledCopyMarker::AddTo(*newModel);
+    ConverterMadeCopyMarker::AddTo(*newModel);
 
     DgnV8Api::DependencyManager::ProcessAffected(); // remap element-element pointers and clear remap tables. If we don't do this, then second call to CopyModelContents on the same model will do nothing.
 
@@ -446,11 +450,58 @@ Bentley::RefCountedPtr<DgnV8Api::DgnModel> Converter::CopyAndChangeAnnotationSca
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Bentley::RefCountedPtr<DgnV8Api::DgnModel> Converter::CopyAndChangeSheetToDrawing(DgnAttachmentCR v8Attachment)
+Bentley::RefCountedPtr<DgnV8Api::DgnModel> Converter::CopyModel(DgnV8ModelP v8Model, WCharCP newNameSuffix)
     {
-    DgnV8Api::DependencyManager::SetProcessingDisabled(false);   // must allow dependency mgr to "process" as that is copy V8 remaps IDs. See below.
+    DgnV8Api::DependencyManager::SetProcessingDisabled(false);   // must allow dependency mgr to "process" as that is how V8 remaps IDs. See below.
 
-    auto v8Model = v8Attachment.GetDgnModelP();
+    auto v8file = v8Model->GetDgnFileP();
+
+    // Generate a new name for the copied model based on the attachment
+    WString newModelName = computeFullV8ModelName(*v8Model, newNameSuffix);
+
+    //  See if we already made such a copy. This can happen if the same drawing is attached to many different sheets 
+    //  or to the same sheet, each time with a different clip
+    if (true)
+        {
+        DgnV8ModelP existingModel = v8file->FindLoadedModelById(v8file->FindModelIdByName(newModelName.c_str()));
+        if (nullptr != existingModel)
+            return existingModel;
+        }
+
+    // *** TRICKY: V8's ITxn::CreateNewModel function always sets up the new model as a rootmodel. V8 requires
+    //              that there be a non-zero refcount on a DgnFile that owns rootmodels. So, we must make sure that
+    //              there is such a ref.
+    _KeepFileAlive(*v8file);
+
+    //  Make a copy of the model
+    auto newModelInfo = v8Model->GetModelInfo().MakeCopy();
+    newModelInfo->SetName(newModelName.c_str());
+    newModelInfo->SetIsHidden(true);
+
+    DgnV8ModelP newModel = DgnV8Api::ITxnManager::GetCurrentTxn().CreateNewModel(nullptr, *v8file, *newModelInfo);
+    if (nullptr == newModel)
+        return nullptr;
+
+    v8file->CopyModelContents(*newModel, *v8Model, NULL);
+
+    CopyEffectiveModelType(*newModel, *v8Model);
+
+    DgnV8Api::DependencyManager::ProcessAffected(); // remap element-element pointers and clear remap tables. If we don't do this, then second call to CopyModelContents on the same model will do nothing.
+
+    DgnV8Api::DependencyManager::SetProcessingDisabled(true);
+
+    ConverterMadeCopyMarker::AddTo(*newModel);
+
+    return newModel;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Bentley::RefCountedPtr<DgnV8Api::DgnModel> Converter::CopyAndChangeSheetToDrawing(DgnV8ModelP v8Model)
+    {
+    DgnV8Api::DependencyManager::SetProcessingDisabled(false);   // must allow dependency mgr to "process" as that is how V8 remaps IDs. See below.
+
     auto v8file = v8Model->GetDgnFileP();
 
     BeAssert(v8Model->GetModelType() == DgnV8Api::DgnModelType::Sheet);
@@ -460,9 +511,12 @@ Bentley::RefCountedPtr<DgnV8Api::DgnModel> Converter::CopyAndChangeSheetToDrawin
 
     //  See if we already made such a copy. This can happen if the same drawing is attached to many different sheets 
     //  or to the same sheet, each time with a different clip
-    DgnV8ModelP existingModel = v8file->FindLoadedModelById(v8file->FindModelIdByName(newModelName.c_str()));
-    if (nullptr != existingModel)
-        return existingModel;
+    if (true)
+        {
+        DgnV8ModelP existingModel = v8file->FindLoadedModelById(v8file->FindModelIdByName(newModelName.c_str()));
+        if (nullptr != existingModel)
+            return existingModel;
+        }
 
     // *** TRICKY: V8's ITxn::CreateNewModel function always sets up the new model as a rootmodel. V8 requires
     //              that there be a non-zero refcount on a DgnFile that owns rootmodels. So, we must make sure that
@@ -486,6 +540,8 @@ Bentley::RefCountedPtr<DgnV8Api::DgnModel> Converter::CopyAndChangeSheetToDrawin
     DgnV8Api::DependencyManager::ProcessAffected(); // remap element-element pointers and clear remap tables. If we don't do this, then second call to CopyModelContents on the same model will do nothing.
 
     DgnV8Api::DependencyManager::SetProcessingDisabled(true);
+
+    ConverterMadeCopyMarker::AddTo(*newModel);
 
     return newModel;
     }
@@ -537,7 +593,7 @@ void            Converter::MakeAttachedModelMatchRootAnnotationScale(DgnAttachme
 
     if (0 != BeNumerical::Compare(requiredEffectiveAnnotationScale, refAnnotationScale))
         {
-        auto scaledChild = CopyAndChangeAnnotationScale(ref, requiredEffectiveAnnotationScale);
+        auto scaledChild = CopyAndChangeAnnotationScale(ref.GetDgnModelP(), requiredEffectiveAnnotationScale);
         if (scaledChild.IsValid())
             {
             ref.SetDgnModel(scaledChild.get()); // v8DgnAttachment will add a reference to the new model, keeping it alive.
@@ -569,7 +625,7 @@ void            Converter::MakeAttachmentsMatchRootAnnotationScale(DgnModelRefR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<DgnV8Api::ElementId> Converter::SheetGetAttachmentsToBeUnnested(DgnV8ModelR sheetModel)
+bvector<DgnV8Api::ElementId> Converter::GetAttachmentsToBeUnnested(DgnV8ModelR sheetModel)
     {
     bvector<DgnV8Api::ElementId> attachmentIds;
 
@@ -593,15 +649,15 @@ bvector<DgnV8Api::ElementId> Converter::SheetGetAttachmentsToBeUnnested(DgnV8Mod
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::SheetUnnestAttachments(DgnV8ModelR sheetModel)
+void Converter::UnnestAttachments(DgnV8ModelR parentModel)
     {
-    sheetModel.SetReadOnly(false);
+    parentModel.SetReadOnly(false);
     
     //  First, unnest all 2D attachments
-    auto vg = FindFirstViewGroupShowing(sheetModel);
-    for (auto attachmentId : SheetGetAttachmentsToBeUnnested(sheetModel))
+    auto vg = FindFirstViewGroupShowing(parentModel);
+    for (auto attachmentId : GetAttachmentsToBeUnnested(parentModel))
         {
-        auto attachment = DgnV8Api::DgnAttachment::FindByElementId(&sheetModel, attachmentId);
+        auto attachment = DgnV8Api::DgnAttachment::FindByElementId(&parentModel, attachmentId);
         if (nullptr == attachment)
             {
             BeAssert(false);
@@ -613,22 +669,37 @@ void Converter::SheetUnnestAttachments(DgnV8ModelR sheetModel)
             }
         }
 
-    //  Transform sheet-sheet attachments into sheet->drawing attachments.
-    // Also, make sure that each attached 2d model is classified
-    auto attachments = GetAttachments(sheetModel);
+    auto attachments = GetAttachments(parentModel);
     if (nullptr == attachments)
         return;
+
+    // Make sure all (new) attachments are classified.
     for (auto attachment : *attachments)
         {
         if (attachment->GetDgnModelP())
             Classify2dModelIfNormal(*attachment->GetDgnModelP(), nullptr);
+        }
+    }
 
-        if (!attachment->IsSheet())
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::TransformSheetAttachmentsToDrawings(DgnV8ModelR parentModel)
+    {
+    auto attachments = GetAttachments(parentModel);
+    if (nullptr == attachments)
+        return;
+
+    for (auto attachment : *attachments)
+        {
+        if ((nullptr == attachment->GetDgnModelP()) || !attachment->IsSheet())
             continue;
 
-        auto attachedModelAsDrawing = CopyAndChangeSheetToDrawing(*attachment);
+        auto attachedModelAsDrawing = CopyAndChangeSheetToDrawing(attachment->GetDgnModelP());
         if (!attachedModelAsDrawing.IsValid())
             continue;
+
+        parentModel.SetReadOnly(false);
 
         attachment->SetDgnModel(attachedModelAsDrawing.get()); // attachment will add a reference to the new model, keeping it alive.
         GetAttachments(*attachment); // SetDgnModel deleted the nested attachment array. Rebuild it.
@@ -636,9 +707,63 @@ void Converter::SheetUnnestAttachments(DgnV8ModelR sheetModel)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::TransformDrawingAttachmentsToCopies(DgnV8ModelR parentModel, T_AttachmentCopyFilter filter)
+    {
+    auto attachments = GetAttachments(parentModel);
+    if (nullptr == attachments)
+        return;
+
+    for (auto attachment : *attachments)
+        {
+        auto v8Model = attachment->GetDgnModelP();
+        if (nullptr == v8Model)
+            continue;
+
+        // We only make private copies of attached drawings, not spatial/3d models!
+        if (ShouldConvertToPhysicalModel(*v8Model))
+            continue;
+            
+        // If this is a model that we already copied in a previous step (or for another sheet), there is no need to copy it again.
+        if (ConverterMadeCopyMarker::IsFoundOn(*v8Model))
+            continue;
+
+        // See if the caller really wants me to make a copy of this particular attachment
+        if (!filter(*attachment))
+            continue;
+
+        // Give the parent a hidden copy of the attached model.
+        auto copyOfAttached = CopyModel(attachment->GetDgnModelP(), L" (attachment) DgnV8Converter");
+        if (!copyOfAttached.IsValid())
+            continue;
+
+        parentModel.SetReadOnly(false);
+
+        attachment->SetDgnModel(copyOfAttached.get()); // attachment will add a reference to the new model, keeping it alive.
+        GetAttachments(*attachment); // SetDgnModel deleted the nested attachment array. Rebuild it.
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverter::FindSheetModel(DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item)
+void RootModelConverter::Transform2dAttachments(DgnV8ModelR v8ParentModel)
+    {
+    GetAttachments(v8ParentModel); // make sure attachment hierarchy is created
+    
+    if (!ScaledCopyMarker::IsFoundOn(v8ParentModel))    // *** NEEDS WORK: not sure why we need this check
+        MakeAttachmentsMatchRootAnnotationScale(v8ParentModel);
+    
+    UnnestAttachments(v8ParentModel);
+    
+    TransformSheetAttachmentsToDrawings(v8ParentModel);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void RootModelConverter::RegisterSheetModel(DgnV8FileR v8File, DgnV8Api::ModelIndexItem const& item)
     {
     if (DgnV8Api::DgnModelType::Sheet != item.GetModelType())
         return;
@@ -647,11 +772,31 @@ void RootModelConverter::FindSheetModel(DgnV8FileR v8File, DgnV8Api::ModelIndexI
     if (!v8model.IsValid())
         return;
 
-    GetAttachments(*v8model); // make sure attachment hierarchy is created
-    if (!ScaledCopyMarker::IsFoundOn(*v8model))
-        MakeAttachmentsMatchRootAnnotationScale(*v8model);
-    SheetUnnestAttachments(*v8model);
-    FindNonSpatialModel(*v8model, true);
+    Transform2dAttachments(*v8model);
+
+    TransformDrawingAttachmentsToCopies(*v8model, [this] (DgnV8Api::DgnAttachment const& attachment)    // See "Why do sheet need to make copies of their attachments?"
+        {
+        if (this->_GetParams().GetConvertViewsOfAllDrawings())          // 
+            return true;
+        return (attachment.GetDgnModelP() == this->GetRootModelP());
+        });
+
+    RegisterNonSpatialModel(*v8model);
+
+    if (GetAttachments(*v8model))
+        {
+        for (auto attachment : *GetAttachments(*v8model))
+            {
+            auto attachedModel = attachment->GetDgnModelP();
+            if (nullptr == attachedModel)
+                continue;
+
+            RegisterNonSpatialModel(*attachedModel);
+    
+            // Mark the sheet's attachments. This will tell downstream conversion logic: "hands off!"
+            SheetAttachmentMarker::AddTo(*attachedModel);
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -775,7 +920,7 @@ void Converter::DrawingRegisterModelToBeMerged(bvector<ResolvedModelMapping>& tb
     if (LOG_IS_SEVERITY_ENABLED(LOG_TRACE))
         LOG.tracev("DrawingRegisterModelToBeMerged %s -> %s", IssueReporter::FmtModel(*attachedV8model).c_str(), IssueReporter::FmtModel(targetBimModel).c_str());
 
-    // recurse over nested attachments
+    // recurse over nested attachments -- NEEDS WORK: All nested attachments should have been un-nested before this function is called!
     DrawingRegisterAttachmentsToBeMerged(tbm, v8DgnAttachment, targetBimModel, refTrans);
     }
 
@@ -959,3 +1104,20 @@ END_DGNDBSYNC_DGNV8_NAMESPACE
 // 	DgnV8ConverterB02.dll!BentleyB0200::Dgn::DgnDbSync::DgnV8::Converter::SheetsConvertModelAndViews(const BentleyB0200::Dgn::DgnDbSync::DgnV8::ResolvedModelMapping & v8mm, BentleyB0200::Dgn::DgnDbSync::DgnV8::ViewFactory & nvvf) Line 123	C++
 // 	DgnV8ConverterB02.dll!BentleyB0200::Dgn::DgnDbSync::DgnV8::RootModelConverter::_ConvertSheets() Line 74	C++
 // 	DgnV8ConverterB02.dll!BentleyB0200::Dgn::DgnDbSync::DgnV8::RootModelConverter::Process() Line 2135	C++
+
+
+// "Why do sheet need to make copies of their attachments?"
+// Some of the cases are explained above, for example, when a sheet needs a re-scaled copy of a drawing.
+//
+// Why in other cases? To avoid duplicate graphics in the case where a drawing has nested attachments of its own.
+// When a drawing is attached to a sheet, the nested attachments are un-nested and become direct attachments of the sheet. 
+// When a drawing is displayed in its own right in its own view, then its nested attachments must be merged into it.
+// So, obviously, the bridge can apply those two different transformations to the same model. (Note that these transformations are done on the V8 models (in memory) before the conversion really starts.)
+//
+// There's another issue. Sheets always assert ownership over the drawings that are attached to them. By default such drawings are not considered to have
+// an independent existence. So, the converter will not converter views of such drawings. If that is not what we want for a given drawing (or for all drawings),
+// then we have to tell sheets to make their own private copies and assert ownership over them, so that the original drawings and their will be converted independently of the sheets.
+//
+// Finally, one more issue: If the root model is a drawing, then we must not fail to convert views of it. We cannot allow a sheet to assert private ownership over it.
+// Therefore, sheets that attach a drawing that is the root model must attach a copy of it.
+// 

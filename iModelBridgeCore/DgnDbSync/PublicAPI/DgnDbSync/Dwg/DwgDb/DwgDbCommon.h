@@ -99,6 +99,7 @@
     #define DWGDB_Type(_dbType_)            OdDb##_dbType_
     #define DWGGE_Type(_geomType_)          OdGe##_geomType_
     #define DWGGI_Type(_giType_)            OdGi##_giType_
+    #define DWGSTR_NAME(_name_)             ODDB_##_name_
 
     // call OpenDwg method
     #define DWGDB_CALLSDKMETHOD(_opendwgMethod_, _realdwgMethod_) _opendwgMethod_
@@ -157,6 +158,7 @@
     #define DWGDB_Type(_dbType_)            AcDb##_dbType_
     #define DWGGE_Type(_geomType_)          AcGe##_geomType_
     #define DWGGI_Type(_giType_)            AcGi##_giType_
+    #define DWGSTR_NAME(_name_)             ACDB_##_name_
 
     // call RealDwg method
     #define DWGDB_CALLSDKMETHOD(_opendwgMethod_, _realdwgMethod_) _realdwgMethod_
@@ -211,13 +213,14 @@
     virtual DwgDbStatus _OpenObject(DwgDbObjectId id,DwgDbOpenMode mode,bool openErased=false, bool openLocked=false) override; \
     virtual DwgDbStatus _AcquireObject (Dwg##_classSuffix_## *& obj) override;                                                  \
     virtual DwgDbStatus _CreateObject () override;                                                                              \
-    virtual DwgDbStatus _CloseObject () override;                                                                               \
+    virtual DwgDbStatus _CloseObject () override;
+
+#define DWGDB_PUBLIC_SMARTPTR_METHODS(_classSuffix_)                                                                            \
     DWGDB_EXPORT bool IsNull () const;                                                                                          \
     DWGDB_EXPORT Dwg##_classSuffix_##CP get () const;                                                                           \
     DWGDB_EXPORT Dwg##_classSuffix_##P get ();                                                                                  \
     DWGDB_EXPORT DwgDbStatus OpenObject (DwgDbObjectId id,DwgDbOpenMode mode,bool openErased=false, bool openLocked=false);     \
     DWGDB_EXPORT DwgDbStatus AcquireObject (Dwg##_classSuffix_## *& obj);                                                       \
-    DWGDB_EXPORT DwgDbStatus CreateObject ();                                                                                   \
     DWGDB_EXPORT DwgDbStatus CloseObject ();
 
 // declare common methods of a DbObject derivative which may be used by our consumers:
@@ -256,9 +259,12 @@
 #define DWGDB_DEFINE_OBJECTPTR(_classSuffix_)                                                                                           \
     class DwgDb##_classSuffix_##Ptr : public DWGDB_EXTENDSMARTPTR(Db##_classSuffix_##), public IDwgDbSmartPtr<DwgDb##_classSuffix_##>   \
         {                                                                                                                               \
-        public:                                                                                                                         \
-        DWGDB_ADD_SMARTPTR_CONSTRUCTORS (Db##_classSuffix_##)                                                                           \
+        friend class DwgDbObjectId;                                                                                                     \
+        protected:                                                                                                                      \
         DWGDB_OVERRIDE_SMARTPTR_INTERFACE (Db##_classSuffix_##)                                                                         \
+        public:                                                                                                                         \
+        DWGDB_PUBLIC_SMARTPTR_METHODS (Db##_classSuffix_##)                                                                             \
+        DWGDB_ADD_SMARTPTR_CONSTRUCTORS (Db##_classSuffix_##)                                                                           \
         DWGDB_EXPORT DwgDb##_classSuffix_##Ptr (DwgDbObjectId id, DwgDbOpenMode mode = DwgDbOpenMode::ForRead, bool openErased = false, \
                                                 bool openLocked = false);                                                               \
         DWGDB_EXPORT DwgDb##_classSuffix_##Ptr (DwgDb##_classSuffix_##* obj);                                                           \
@@ -398,6 +404,7 @@ enum class DwgDbStatus
     FilerError,
     NotSupported,
     UrlCacheError,
+    NotPersistentObject,
     };
 #define ToDwgDbStatus(status)   static_cast<DwgDbStatus> (##status)
 
