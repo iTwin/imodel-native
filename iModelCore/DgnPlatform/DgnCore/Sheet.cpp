@@ -723,21 +723,19 @@ TRoot::TRoot(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId att
     m_viewport->SetRect(BSIRect::From(0, 0, m_pixels, m_pixels));
     m_viewport->ChangeViewController(*view);
 
-#if 0 // ###TODO - needed?
-    auto& def = view->GetViewDefinition();
+    auto& def = view->GetViewDefinitionR();
     auto& style = def.GetDisplayStyle();
 
     // override the background color. This is to match V8, but there should probably be an option in the "Details" about whether to do this or not.
-    style.SetBackgroundColor(sheetController.GetViewDefinition().GetDisplayStyle().GetBackgroundColor());
+    style.SetBackgroundColor(sheetController.GetViewDefinitionR().GetDisplayStyle().GetBackgroundColor());
 
-    SpatialViewDefinitionP spatial=def.ToSpatialViewP();
+    SpatialViewDefinitionP spatial = def.ToSpatialViewP();
     if (spatial)
         {
         auto& env = spatial->GetDisplayStyle3d().GetEnvironmentDisplayR();
         env.m_groundPlane.m_enabled = false;
         env.m_skybox.m_enabled = false;
         }
-#endif
 
     m_viewport->SetupFromViewController();
     Frustum frust = m_viewport->GetFrustum(DgnCoordSystem::Npc).TransformBy(Transform::FromScaleFactors(m_scale.x, m_scale.y, 1.0));
