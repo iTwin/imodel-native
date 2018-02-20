@@ -342,27 +342,38 @@ int WinSetEnv(const char * name, const char * value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Taslim.Murad    01/2018
 //---------------------------------------------------------------------------------------
-static int runAllTestsWithTimeout (uint64_t timeoutInSeconds)
-{
-    int tempStatus = 1;
+static int runAllTestsWithTimeout(uint64_t timeoutInSeconds)
+    {
     std::promise<bool> promisedFinished;
-    auto futureResult = promisedFinished.get_future ();
+    auto futureResult = promisedFinished.get_future();
     int testResult = 0;
+    bool didComplete = false;
+    
     std::thread ([&]()
-    {
-        BeTest::setS_mainThreadId (BeThreadUtilities::GetCurrentThreadId ());
-        testResult = RUN_ALL_TESTS ();
-        tempStatus = testResult;        
-        promisedFinished.set_value (true);
-    }).detach ();
-    EXPECT_TRUE (std::future_status::ready == futureResult.wait_for (std::chrono::seconds (timeoutInSeconds)));
-    if (tempStatus == 1)
-    {
-        printf ("%s", "Test Is Aborted Because Timeout Duration Is Reached");
-    }
+        {
+        BeTest::setS_mainThreadId(BeThreadUtilities::GetCurrentThreadId());
+        testResult = RUN_ALL_TESTS();
+        didComplete = true;        
+        promisedFinished.set_value(true);
+        }).detach();
+    
+    EXPECT_TRUE(std::future_status::ready == futureResult.wait_for(std::chrono::seconds(timeoutInSeconds)));
+    
+    if (!didComplete)
+        {
+        printf("\n");
+        printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+        printf("ERROR: Test suite exceeded %" PRIu64 " second(s) and was aborted.\n", timeoutInSeconds);
+        printf("       Errors reported above may either be due to the termination of the test,\n");
+        printf("       or may be clues for the hang and/or deadlock.\n");
+        printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+        printf("\n");
+        
+        return 1;
+        }
+    
     return testResult;
-}
-
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/2011
