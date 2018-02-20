@@ -13,12 +13,12 @@
 BEGIN_BENTLEY_UNITS_NAMESPACE
 //! @addtogroup UnitsGroup
 //! @beginGroup
+
 //=======================================================================================
 //! A central place to store registered units with the system.  Users interact
 //! with the units system here.
 // @bsiclass                                                    Chris.Tartamella   02/16
 //=======================================================================================
-
 struct UnitRegistry
 {
 friend struct Unit;
