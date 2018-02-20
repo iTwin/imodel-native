@@ -22,7 +22,9 @@
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="DgnGeoCoord" SubPartDirectory="GeoCoordData">
                 Delivery/GeoCoordData/coordsys.dty.xml
+                Delivery/GeoCoordData/UserOverrideGeodeticTransformSeed.asc
             </Files>
+
 <!--             <MergeModules ProductDirectoryName="CSMapMergeModules">Install/GeoCoordDataMergeModule.msm</MergeModules> -->
         </Bindings>
     </Part>
