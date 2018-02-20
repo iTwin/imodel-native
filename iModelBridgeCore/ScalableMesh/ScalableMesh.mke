@@ -76,12 +76,14 @@ CCompOpts + -wd4172
 
 CCompOpts + -wd4002
 
+CCompOpts + -wd4091
+
 #----------------------------------------------------------------------
 #   Build precompiled header
 #----------------------------------------------------------------------
 PchCompiland = $(stmDir)ScalableMeshPCH.cpp
 PchOutputDir = $(o)
-PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTM_BUILD__ -DSCALABLE_MESH_DGN -DNOMINMAX 
+PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTM_BUILD__ -D__BENTLEYSTMIMPORT_BUILD__ -DSCALABLE_MESH_DGN -DNOMINMAX 
 CompileOptionsMki =  $(SrcRoot)ScalableMesh/mki/ScalableMeshPolicy.mki
 %include $(SharedMki)PreCompileHeader.mki
 

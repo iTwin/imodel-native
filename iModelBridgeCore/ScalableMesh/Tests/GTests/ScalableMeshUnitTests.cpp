@@ -121,7 +121,13 @@ class ScalableMeshTestWithParams : public ::testing::TestWithParam<BeFileName>
         virtual void TearDown() { }
         BeFileName GetFileName() { return m_filename; }
         ScalableMeshGTestUtil::SMMeshType GetType() { return ScalableMeshGTestUtil::GetFileType(m_filename); }
-
+        ScalableMesh::IScalableMeshPtr OpenMesh()
+            {
+            StatusInt status;
+            ScalableMesh::IScalableMeshPtr myScalableMesh = ScalableMesh::IScalableMesh::GetFor(m_filename, true, true, status);
+            BeAssert(status == SUCCESS);
+            return myScalableMesh;
+            }
     };
 
 
@@ -198,9 +204,10 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois      10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, CanOpen)
     {
     auto typeStr = ScalableMeshGTestUtil::SMMeshType::TYPE_3SM == GetType() ? L"3sm" : L"3dTiles";
-
+    EXPECT_EQ(OpenMesh().IsValid(), true) << "\n Error opening " << typeStr << ": " << GetFileName().c_str() << std::endl << std::endl;
     }
 
 /*---------------------------------------------------------------------------------**//**

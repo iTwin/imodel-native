@@ -58,8 +58,6 @@ $(o)Initialize$(oext): $(baseDir)Initialize.cpp ${MultiCompileDepends}
 $(o)ScalableMeshATPexe$(oext): $(baseDir)ScalableMeshATPexe.cpp ${MultiCompileDepends}
 
 
-
-
 %include MultiCppCompileGo.mki
 
 #----------------------------------------------------------------------

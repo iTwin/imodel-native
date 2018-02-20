@@ -6,7 +6,7 @@
 |       $Date: 2015/07/15 11:02:24 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -101,6 +101,10 @@ struct IScalableMeshSourceCreator::Impl : public IScalableMeshCreator::Impl, pub
 
 
         void InitSources();
+
+    protected:
+
+        void ConfigureMesherFilter(ISMPointIndexFilter<PointType, PointIndexExtentType>*& pFilter, ISMPointIndexMesher<PointType, PointIndexExtentType>*& pMesher2d, ISMPointIndexMesher<PointType, PointIndexExtentType>*& pMesher3d);
 
     public:
         explicit                            Impl(const WChar*                          scmFileName);

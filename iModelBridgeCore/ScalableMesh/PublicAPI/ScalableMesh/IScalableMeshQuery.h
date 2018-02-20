@@ -353,7 +353,7 @@ struct IScalableMeshMesh : public RefCountedBase
 
         BENTLEY_SM_EXPORT size_t GetNbFaces() const;
 
-        DPoint3d* EditPoints();
+        BENTLEY_SM_EXPORT DPoint3d* EditPoints();
 
         BENTLEY_SM_EXPORT DTMStatusInt GetAsBcDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr& bcdtm);
 

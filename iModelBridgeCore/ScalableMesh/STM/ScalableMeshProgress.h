@@ -6,7 +6,7 @@
 |       $Date: 2011/12/21 17:04:24 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -20,7 +20,7 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 * @description
 * @bsiclass                                               Elenie.Godzaridis   01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ScalableMeshProgress : public IScalableMeshProgress
+BENTLEY_SM_EXPORT struct ScalableMeshProgress : public IScalableMeshProgress
     {
 
     private:
@@ -61,10 +61,10 @@ struct ScalableMeshProgress : public IScalableMeshProgress
         virtual std::atomic<int>& _ProgressStepIndex() override;
 
     public:
-        ScalableMeshProgress();
-        ScalableMeshProgress(const ScalableMeshProcessType& processType, IScalableMeshPtr smPtr);
+        BENTLEY_SM_EXPORT  ScalableMeshProgress();
+        BENTLEY_SM_EXPORT ScalableMeshProgress(const ScalableMeshProcessType& processType, IScalableMeshPtr smPtr);
 
-        void SetCurrentIteration(const uint64_t& iteration);
+        BENTLEY_SM_EXPORT void SetCurrentIteration(const uint64_t& iteration);
     };
 
 

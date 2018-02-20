@@ -17,7 +17,9 @@
 #define VIEWMANAGER ViewManager
 #else
 #define VIEWMANAGER IViewManager
+#include <DgnView\IViewManager.h>
 #include <DgnGeoCoord/DgnGeoCoord.h>
+#include <DgnView\DgnViewLib.h>
 
 using namespace Bentley::GeoCoordinates;
 #endif

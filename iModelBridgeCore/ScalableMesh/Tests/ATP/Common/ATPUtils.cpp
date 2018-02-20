@@ -176,6 +176,8 @@ bool ParseTestType(BeXmlNodeP pRootNode, TestType& t)
             t = TEST_SQL_FILE_UPDATE;        
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"textureStreaming"))
             t = TEST_MAPBOX;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"drapeTestlnsFileCreation"))
+            t = DRAPE_TEST_LNS_FILE_CREATION;
         else return false;
         }
     else return false;
@@ -353,6 +355,9 @@ bool RunTestPlan(BeFileName& testPlanPath)
             case TEST_MAPBOX:
                 PerformMapboxTest(pTestNode, pResultFile);
                 break;
+            case DRAPE_TEST_LNS_FILE_CREATION:
+                PerformDrapeTestLnsFileCreation(pTestNode, pResultFile);
+                break;                
                
             default: break;
             }

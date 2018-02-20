@@ -6,7 +6,7 @@
 |       $Date: 2011/11/18 15:51:23 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -76,12 +76,12 @@ public:
     IMPORT_DLLE                                 ContentDescriptor                  (const ContentDescriptor&            rhs);
     IMPORT_DLLE ContentDescriptor&              operator=                          (const ContentDescriptor&            rhs);
 
-    IMPORT_DLLE SMStatus                          Configure(const ContentConfig&                config,
-                                                                                    Log&                                log = GetDefaultLog());
+    IMPORT_DLLE SMStatus                          Configure(const ContentConfig&                config/*,
+                                                                                    Log&                                log = GetDefaultLog()*/);
 
     IMPORT_DLLE SMStatus                          Configure                          (const ContentConfig&                config,
-                                                                                    const ContentConfigPolicy&          policy,
-                                                                                    Log&                                log = GetDefaultLog());
+                                                                                    const ContentConfigPolicy&          policy/*,
+                                                                                    Log&                                log = GetDefaultLog()*/);
 
     IMPORT_DLLE void                            Add                                (const RefCountedPtr<ILayerDescriptor>&              layer);
     IMPORT_DLLE void                            push_back(const RefCountedPtr<ILayerDescriptor>&              layer);

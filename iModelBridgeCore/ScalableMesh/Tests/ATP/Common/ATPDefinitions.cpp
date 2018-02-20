@@ -10,6 +10,8 @@
 #include <queue>
 #include <thread>
 #include <iomanip>
+#include <sstream>
+#include <string>
 
 #ifdef VANCOUVER_API
 #include <ImagePP\h\hstdcpp.h>
@@ -401,7 +403,151 @@ void PerformDcGroundDetectionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         fflush(pResultFile);            
     }
 
-    void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
+int CollectAllElmsCallback(ElementRefP elemRef, CallbackArgP callbackArg, ScanCriteriaP scP)
+    {
+    //DgnModelRefP modelP(mdlScanCriteria_getModel(scP));
+    ElementAgenda* agendaP = reinterpret_cast<ElementAgenda*>(callbackArg);
+    agendaP->Insert(elemRef, scP->GetModelRef());
+    return SUCCESS;
+    }
+
+void PerformDrapeTestLnsFileCreation(BeXmlNodeP pTestNode, FILE* pResultFile)
+    {
+
+#ifndef VANCOUVER_API      
+    assert(!"ERROR : DRAPE_TEST_LNS_FILE_CREATION only available on Vancouver");
+    return;
+
+#else
+    WString lnsFileName;
+    BeXmlStatus status;
+
+    status = pTestNode->GetAttributeStringValue(lnsFileName, "lnsFileName");
+
+    if (status != BEXML_Success)
+        {
+        printf("ERROR : lnsFileName attribute not found\r\n");
+        return;
+        }
+
+    WString dgnFileName;
+
+    status = pTestNode->GetAttributeStringValue(dgnFileName, "dgnFileName");
+
+    if (status != BEXML_Success)
+        {
+        printf("ERROR : dgnFileName attribute not found\r\n");
+        return;
+        }
+
+
+    DgnFilePtr meshFile = DgnFile::Create(*DgnDocument::CreateForLocalFile(dgnFileName.c_str()), DgnFileOpenMode::ReadOnly);
+
+    if (meshFile != nullptr && meshFile->LoadDgnFile(nullptr) != DGNFILE_STATUS_Success)
+        return;
+
+/*
+    DgnFileStatus fileOpenStatus;
+    DgnDocumentPtr lineDoc = DgnDocument::CreateFromFileName(fileOpenStatus, dgnFileName.c_str(), NULL, DEFDGNFILE_ID, DgnDocument::FetchMode::Read);
+
+    DgnModelRefP model = mdlModelRef_getActive();
+*/
+
+    DgnModelPtr defaultModel = meshFile->LoadModelById(meshFile->GetDefaultModelId());
+    meshFile->FillAllLoadedModels();
+/*
+    DgnAttachment* newAttachment;
+    defaultModel->CreateDgnAttachment(newAttachment, *lineDoc->GetMonikerPtr(), L"");
+*/
+    ElementAgenda agenda;
+    LevelCache& levelCache = defaultModel->GetLevelCacheR();
+
+    LevelHandle level = levelCache.GetLevelByName(L"toDrape", false);
+    LevelId levelId = level.GetLevelId();
+    //collect all elements from level
+
+
+///d:\BSI\Topaz3\out\Debug\Winx64\BuildContexts\ScalableMeshCore\PublicAPI\DgnPlatform\ScanCriteria.h
+
+    ScanCriteria* scanCriteria = new ScanCriteria();
+    scanCriteria->AddSingleLevelTest(levelId);
+    //scanCriteria->SetPropertiesTest(0, ELEINVISIBLE);
+    scanCriteria->SetModelRef(defaultModel.get());
+    scanCriteria->SetReturnType(MSSCANCRIT_ITERATE_ELMREF, false, false);
+
+    scanCriteria->SetElemRefCallback(CollectAllElmsCallback, &agenda);
+    scanCriteria->Scan(NULL, NULL, NULL, NULL);
+    delete scanCriteria;
+
+#if 0    
+    ScanCriteriaP scP = mdlScanCriteria_create();
+
+    mdlScanCriteria_setModel(scP, newAttachment);
+    mdlScanCriteria_setReturnType(scP, MSSCANCRIT_ITERATE_ELMREF, false, true);
+    mdlScanCriteria_setElemRefCallback(scP, CollectAllElmsCallback, &agenda);
+    BitMaskP  levelBitMask;
+    mdlBitMask_create(&levelBitMask, false);
+    mdlBitMask_setBit(levelBitMask, levelId - 1, 1);
+    mdlScanCriteria_setLevelTest(scP, levelBitMask, false, false);
+
+    mdlScanCriteria_scan(scP, NULL, NULL, NULL);
+
+    mdlScanCriteria_free(scP);
+#endif
+
+    bvector<bvector<DPoint3d>> pts;
+    bvector<bvector<DPoint3d>> lines;
+    EditElementHandleP    curr = agenda.GetFirstP();
+    EditElementHandleP end = curr + agenda.GetCount();
+
+    for (; curr < end; curr++) //For each valid element we do the draping
+        {
+        ElementHandle elemHandle = *curr;
+        bvector<DPoint3d> origPoints;
+        MSElementCP element = elemHandle.GetElementCP();
+        switch (elemHandle.GetElementType())
+            {
+            case LINE_ELM:
+                {
+                origPoints.push_back(element->line_3d.start);
+                origPoints.push_back(element->line_3d.end);
+                break;
+                }
+            case LINE_STRING_ELM:
+                {
+                origPoints.resize(element->point_string_3d.numpts);
+                memcpy(&origPoints[0], &element->point_string_3d.point[0], element->point_string_3d.numpts * sizeof(DPoint3d));
+                break;
+                }
+            default:
+                break;
+            }   
+
+        if (origPoints.size() > 0)
+            {
+            lines.push_back(origPoints);
+            }
+        }
+
+    char* nameBuffer = new char[lnsFileName.GetMaxLocaleCharBytes()];
+    FILE* linesFile = fopen(lnsFileName.ConvertToLocaleChars(nameBuffer), "w");
+
+    for (auto vec : lines)
+        {
+        for (DPoint3d pt : vec)
+            {
+            fwprintf(linesFile, L"%0.5f %0.5f %0.5f;", pt.x, pt.y, pt.z);
+            }
+
+        if (vec.size()>0)fwprintf(linesFile, L"\n");
+        }
+
+    fclose(linesFile);
+#endif
+    }
+
+
+void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
     BeXmlStatus status;
     WString stmFileName;
@@ -1875,55 +2021,25 @@ void PerformDrapeLineTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         printf("ERROR : linesFileName attribute not found\r\n");
         return;
         }
-    IScalableMeshATP::StoreInt(L"nOfGraphLoadAttempts", 0);
-    IScalableMeshATP::StoreInt(L"nOfGraphStoreMisses", 0);
 
-    BeFile file;
-
-#ifndef VANCOUVER_API  
-    if (BeFileStatus::Success != file.Open(linesFileName.c_str(), BeFileAccess::Read))
-        {
-        return;
-        }
-#else 
-    if (BeFileStatus::Success != file.Open(linesFileName.c_str(), BeFileAccess::Read, BeFileSharing::None))
-        {
-        return;
-        }    
-#endif
-
-    char* linesFileBuffer = nullptr;
-    size_t fileSize;
-    file.GetSize(fileSize);
-    linesFileBuffer = new char[fileSize];
-    uint32_t bytes_read;
-    file.Read(linesFileBuffer, &bytes_read, (uint32_t)fileSize);
-    assert(bytes_read == fileSize);
-    file.Close();
-
-    Json::Reader reader;
-    Json::Value root;
-    reader.parse(linesFileBuffer, linesFileBuffer + bytes_read, root);
-    Json::Value jsonLines = root["lines"];
+    std::wstring line;
+    
+    std::wifstream infile(linesFileName.c_str());
 
     vector<vector<DPoint3d>> pts;
     vector<vector<DPoint3d>> lines;
-
-    for (const auto& line : jsonLines)
+    vector<DPoint3d> linePts(2);
+    
+    while (std::getline(infile, line))
         {
-        vector<DPoint3d> origPoints;
-        for (const auto& jsonObject : line)
-            {
-            Json::Value jsonPoint = jsonObject["point"];
-            DPoint3d point;
-            point.x = jsonPoint["x"].asDouble();
-            point.y = jsonPoint["y"].asDouble();
-            point.z = jsonPoint["z"].asDouble();
-            origPoints.push_back(point);
-            }
-        if (!origPoints.empty())
-            lines.push_back(origPoints);
+        std::wistringstream iss(line);
+        wchar_t semiColon;
+        if (!(iss >> linePts[0].x >> linePts[0].y >> linePts[0].z >> semiColon)) { break; } // error
+        if (!(iss >> linePts[1].x >> linePts[1].y >> linePts[1].z >> semiColon)) { break; } // error
+
+        lines.push_back(linePts);
         }
+
     DTMPtr dtmP = dynamic_cast<BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*>(&*stmFile->GetDTMInterface());
 
     status = DoBatchDrape(lines, dtmP, pts);

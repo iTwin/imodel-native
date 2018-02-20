@@ -6,7 +6,7 @@
 |       $Date: 2011/11/18 15:50:49 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -29,20 +29,20 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 struct IDTMSourceCollection;
 struct DocumentEnv;
 
-bool                            SaveSources                        (const IDTMSourceCollection&         sources,
+BENTLEY_SM_EXPORT bool                            SaveSources                        (const IDTMSourceCollection&         sources,
                                                                     SourcesDataSQLite&                  sourcesData,
                                                                     const DocumentEnv&                  sourceEnv);
 
-bool                            LoadSources                        (IDTMSourceCollection&               sources,
+BENTLEY_SM_EXPORT bool                            LoadSources                        (IDTMSourceCollection&               sources,
                                                                     SourcesDataSQLite&                  sourcesData,
                                                                     const DocumentEnv&                  sourceEnv);
 
 
-bool                            SaveSources                        (const IDTMSourceCollection&         sources,
+BENTLEY_SM_EXPORT bool                            SaveSources                        (const IDTMSourceCollection&         sources,
                                                                     IScalableMeshSourceImporterStoragePtr&     sourceImporterStoragePtr,
                                                                     const DocumentEnv&                  sourceEnv);
 
-bool                            LoadSources                        (IDTMSourceCollection&               sources,
+BENTLEY_SM_EXPORT bool                            LoadSources                        (IDTMSourceCollection&               sources,
                                                                     IScalableMeshSourceImporterStoragePtr&     sourceImporterStoragePtr,
                                                                     const DocumentEnv&                  sourceEnv);
 

@@ -6,7 +6,7 @@
 |       $Date: 2012/01/06 16:30:11 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -404,8 +404,8 @@ SourceDescriptorCPtr SourceDescriptor::CreateFor (const IDTMSource& source,
 
         SourceRef sourceRef(CreateSourceRefFromIDTMSource(source, L""));
         const SourcePtr sourcePtr(Configure(SOURCE_FACTORY.Create(sourceRef, factoryStatus, statusEx), 
-                                            source.GetConfig().GetContentConfig(),
-                                            GetLog()));
+                                            source.GetConfig().GetContentConfig()/*,
+                                            GetLog()*/));
 
         status = MapStatus(factoryStatus);
 
@@ -485,7 +485,7 @@ SourcePtr SourceDescriptor::CreateOriginalSourceFor (const IDTMSource&      sour
 SourcePtr SourceDescriptor::ConfigureSource (const Import::SourcePtr&    sourcePtr,
                                                     const SourceImportConfig&   config)
     {
-    return Configure(sourcePtr, config.GetContentConfig(), GetLog());
+    return Configure(sourcePtr, config.GetContentConfig()/*, GetLog()*/);
     }
 
 /*---------------------------------------------------------------------------------**//**

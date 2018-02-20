@@ -6,7 +6,7 @@
 |       $Date: 2011/11/22 21:58:01 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,7 +21,7 @@ BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
 
 struct GCSConfigImpl;
 
-struct GCSConfig //: public ContentConfigComponentMixinBase<TypeConfig>
+IMPORT_DLLE struct GCSConfig //: public ContentConfigComponentMixinBase<TypeConfig>
     {
 
     private:

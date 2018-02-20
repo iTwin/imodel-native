@@ -236,7 +236,7 @@ WebServiceKey GetBingKey()
     UINT32 bufLen;
     CallStatus status = APIERR_SUCCESS;
     try
-    {
+        {
         char tempBuffer[100000];
 
     CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
@@ -246,23 +246,28 @@ WebServiceKey GetBingKey()
         sprintf(tempBuffer, "user Session Active status: %ld Active: %ld", status, sessionActive ? 1 : 0);
         logger->debug(tempBuffer);
 
-    wchar_t* buffer;
-    status = CCApi_GetBuddiUrl(api, L"ContextServices", NULL, &bufLen);
+        wchar_t* buffer;
+        status = CCApi_GetBuddiUrl(api, L"ContextServices", NULL, &bufLen);
+        if (APIERR_SUCCESS != status)
+            {
+            sprintf(tempBuffer, "1st GetBuddiURL status : %ld", status);
+            logger->error(tempBuffer);
+        }
 
         bufLen++;
-        buffer = (wchar_t*)calloc(1, bufLen * sizeof(wchar_t));
+        buffer = (wchar_t*) calloc(1, bufLen * sizeof(wchar_t));
         status = CCApi_GetBuddiUrl(api, L"ContextServices", buffer, &bufLen);
         if (APIERR_SUCCESS != status)
             {
-            char tempBuffer[100000];
-            sprintf(tempBuffer, "2nd GetBuddiURL status: %ld", status);
+            char tempBuffer2[100000];
+            sprintf(tempBuffer2, "2nd GetBuddiURL status: %ld", status);
             logger->error(tempBuffer);
             }
         serverUrl.assign(buffer);
         CCApi_FreeApi(api);
-    }
+        }
     catch (...)
-    {
+        {
         logger->error("CC exception caught");
         return WebServiceKey();
     }
@@ -272,13 +277,13 @@ WebServiceKey GetBingKey()
     Utf8String contextServiceURL;
     contextServiceURL.assign(Utf8String(serverUrl.c_str()).c_str());
 
-
     uint64_t productId(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProductId());
+
     Utf8String productIdStr;
 
 #ifdef VANCOUVER_API    
-    wchar_t prodIdStr[200];
-    BeStringUtilities::FormatUInt64(prodIdStr, 200, productId, HexFormatOptions::None);
+    wchar_t prodIdStr[200];    
+    BeStringUtilities::Snwprintf(prodIdStr, 200, L"%u", productId);
     BeStringUtilities::WCharToUtf8(productIdStr, prodIdStr);
 #else
     Utf8Char prodIdStr[200];
@@ -297,7 +302,7 @@ WebServiceKey GetBingKey()
     CURLcode result = PerformCurl(bingKeyUrl, &readBuffer, nullptr, postFields);
 
     if (CURLE_OK != result)
-        { 
+        {
         logger->error("curl failed, returning empty key");
         return WebServiceKey();
         }

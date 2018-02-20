@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/SMNodeGroup.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -13,7 +13,7 @@
 #include <ScalableMesh/IScalableMeshPolicy.h>
 
 //#ifndef NDEBUG
-std::mutex s_consoleMutex;
+//std::mutex s_consoleMutex;
 //#endif
 
 
@@ -504,7 +504,7 @@ void SMNodeGroup::LoadGroupParallel()
 #ifdef DEBUG_GROUPS
         static uint64_t s_numProcessedNodeId = 0;
         {
-        std::lock_guard<mutex> lk(s_consoleMutex);
+        //std::lock_guard<mutex> lk(s_consoleMutex);
         std::cout << "[" << std::this_thread::get_id() << "," << group->GetID() << "] Distributing... " << std::endl;
         }
 #endif
@@ -525,7 +525,7 @@ void SMNodeGroup::LoadGroupParallel()
             });
 #ifdef DEBUG_GROUPS
         {
-        std::lock_guard<mutex> lk(s_consoleMutex);
+       // std::lock_guard<mutex> lk(s_consoleMutex);
         s_numProcessedNodeId += group->m_groupHeader->size();
         std::cout << "[" << std::this_thread::get_id() << "," << group->GetID() << "] " << group->m_groupHeader->size() << " nodes (total " << s_numProcessedNodeId << ")" << std::endl;
         }
