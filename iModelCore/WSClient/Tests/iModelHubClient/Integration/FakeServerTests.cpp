@@ -138,7 +138,7 @@ Json::Value iModelCreationJson(Utf8StringCR iModelName, Utf8StringCR description
 TEST_F(FakeServerFixture, CreateiModel)
     {
 
-    Utf8String iModelName("BriefcaseNo000200006");
+    Utf8String iModelName("BriefcaseTest");
     Utf8String description("This is a test uploadfile2");
     Json::Value objectCreationJson = iModelCreationJson(iModelName, description);
 
@@ -189,18 +189,85 @@ TEST_F(FakeServerFixture, CreateiModel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FakeServerFixture, DownloadiModel)
     {
-    Utf8String urlGetBriefcaseId(" https://qa-imodelhubapi.bentley.com/v2.5/Repositories/iModel--c7e9a866-426e-46de-a4cb-acd0d8c3b9a6/iModelScope/Briefcase");
+    Utf8String urlGetInfo("https://qa-imodelhubapi.bentley.com/v2.5/Repositories/Project--7dfb2388-92cf-4ec7-94a7-ff72853466df/ProjectScope/iModel");
 
-    Utf8String url("https://imodelhubqasa01.blob.core.windows.net/imodelhub-7a03ace7-6648-434d-89b2-87f21597a7cf/BriefcaseTestsm-3a55e4a4-9357-48fc-8988-9d61435651b8.bim?sv=2016-05-31&sr=b&sig=1BI8ULlcZoN7WPnjkIfPTbLWZsz");
-    
     Utf8String method = "GET";
     IHttpHandlerPtr handlePtr = std::make_shared<MockIMSHttpHandler>();
-    Request request(url, method, handlePtr);
+    Request request(urlGetInfo, method, handlePtr);
+    Response responseInfo = request.PerformAsync()->GetResult();
+    HttpResponseContentPtr reqContent = responseInfo.GetContent();
+    HttpBodyPtr reqBody = reqContent->GetBody();
+
+    char readBuff[100000] ;
+    size_t buffSize = 100000;
+    reqBody->Read(readBuff, buffSize);
+    Utf8String reqBodyRead(readBuff);
+
+    Json::Reader reader;
+    Json::Value settings;
+    reader.Parse(reqBodyRead, settings);
+    BeGuid projGuid(true);
+    Utf8String iModelId = Utf8String(settings["instances"][0]["instanceId"].asString());
+
+
+    Utf8String urlGetBriefcaseId(" https://qa-imodelhubapi.bentley.com/v2.5/Repositories/iModel--c7e9a866-426e-46de-a4cb-acd0d8c3b9a6/iModelScope/Briefcase");
+
+    Utf8String url("https://imodelhubqasa01.blob.core.windows.net/imodelhub-");
+    url += iModelId + "/BriefcaseTestsm-3a55e4a4-9357-48fc-8988-9d61435651b8.bim?sv=2016-05-31&sr=b&sig=1BI8ULlcZoN7WPnjkIfPTbLWZsz";
+    Request requestDownload(url, method, handlePtr);
+    Response response = requestDownload.PerformAsync()->GetResult();
+    ASSERT_EQ(HttpStatus::OK, response.GetHttpStatus());
+    }
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(FakeServerFixture, DeleteiModel)
+    {
+    Utf8String urlDelete("https://qa-imodelhubapi.bentley.com/v2.5/Repositories/Project--7dfb2388-92cf-4ec7-94a7-ff72853466df/ProjectScope/iModel/42074d22-a7ca-4c6f-91cc-22176e993379");
+
+    Utf8String method = "DELETE";
+    IHttpHandlerPtr handlePtr = std::make_shared<MockIMSHttpHandler>();
+    Request request(urlDelete, method, handlePtr);
     Response response = request.PerformAsync()->GetResult();
+    }
+
+TEST_F(FakeServerFixture, GetiModels)
+    {
+    Utf8String urlGetInfo("https://qa-imodelhubapi.bentley.com/v2.5/Repositories/Project--7dfb2388-92cf-4ec7-94a7-ff72853466df/ProjectScope/iModel");
+
+    Utf8String method = "GET";
+    IHttpHandlerPtr handlePtr = std::make_shared<MockIMSHttpHandler>();
+    Request request(urlGetInfo, method, handlePtr);
+    Response response = request.PerformAsync()->GetResult();
+    ASSERT_EQ(HttpStatus::OK, response.GetHttpStatus());
+    HttpResponseContentPtr reqContent = response.GetContent();
+    HttpBodyPtr reqBody = reqContent->GetBody();
+
+
+/*
+    Utf8String url2("https://qa-imodelhubapi.bentley.com/v2.5/Repositories/Project--1b2b32312-3222-3212-63d3-12312d4rr4/ProjectScope/iModel");
+    Utf8String method2 = "POST";
+    Request request2(url2, method2, handlePtr);
+    request2.SetRequestBody(reqBody);
+    request2.PerformAsync()->GetResult();
+*/
+
+    char readBuff[100000] ;
+    size_t buffSize = 100000;
+    reqBody->Read(readBuff, buffSize);
+    Utf8String reqBodyRead(readBuff);
+
+    Json::Reader reader;
+    Json::Value settings;
+    reader.Parse(reqBodyRead, settings);
+    BeGuid projGuid(true);
+    Utf8String name = Utf8String(settings["instances"][0]["className"].asString());
+
     }
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Farhad.Kabir    01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+
 TEST_F(FakeServerFixture, CheckPluginsRequests)
     {
     Utf8String url("https://qa-imodelhubapi.bentley.com/v2.0/Plugins");
@@ -209,21 +276,18 @@ TEST_F(FakeServerFixture, CheckPluginsRequests)
     IHttpHandlerPtr handlePtr = std::make_shared<MockIMSHttpHandler>();
     Request request(url, method, handlePtr);
     Response response = request.PerformAsync()->GetResult();
-    printf("%s\n", response.GetHeaders().GetValue("Mas-Server"));
+    /*printf("%s\n", response.GetHeaders().GetValue("Mas-Server"));*/
     }
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Farhad.Kabir    02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FakeServerFixture, UpdateServerFile)
     {
-    /* Utf8String url("https://imodelhubqasa01.blob.core.windows.net/imodelhub-3e7ce8fe-aa5e-4ee0-959c-6708d8fc365d/BriefcaseTestsu-bd997d8f-e7f7-4a8b-ad27-785e99f866f0.bim?sv=2016-05-31&sr=b&sig=%2BW0sVgxmBQGzim82S9LwRH4ao");
+    /*Utf8String url("https://imodelhubqasa01.blob.core.windows.net/imodelhub-3e7ce8fe-aa5e-4ee0-959c-6708d8fc365d/BriefcaseTestsu-bd997d8f-e7f7-4a8b-ad27-785e99f866f0.bim?sv=2016-05-31&sr=b&sig=%2BW0sVgxmBQGzim82S9LwRH4ao");
 
     Utf8String method = "PUT";
-
-
     IHttpHandlerPtr handlePtr = std::make_shared<MockIMSHttpHandler>();
     
-
     BeFileName filePath("E:\\out\\Test_Seed.bim");
     BeFile file;
     file.Open(filePath, BeFileAccess::Read);
@@ -256,7 +320,6 @@ TEST_F(FakeServerFixture, UpdateServerFile)
     request.GetHeaders().SetValue("x-ms-blob-type", "BlockBlob");
     request.SetRequestBody(HttpRangeBody::Create(body, chunkSize * chunkNumber, bytesTo));
 
-    
     Response response = request.PerformAsync()->GetResult();
     HttpBodyPtr fBody = request.GetRequestBody();*/
     BeFileName documentsDir;

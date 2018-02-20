@@ -122,7 +122,7 @@ DbResult RequestHandler::Initialize(BeFileName temporaryDir, BeSQLiteLib::LogErr
     return stat;
     }
 
-void RequestHandler::CheckDb() 
+void RequestHandler::CheckDb()
     {
     BentleyB0200::BeSQLite::Db m_db;
     BeFileName dbName("ServerRepo.db");
@@ -189,7 +189,6 @@ Response RequestHandler::CreateiModel(Request req)
     Json::Value settings;
     reader.Parse(reqBodyRead, settings);
     BeGuid projGuid(true);
-    
 
     bvector<Utf8String> input = {   projGuid.ToString(),  
         settings["instance"]["className"].asString(),
@@ -200,28 +199,30 @@ Response RequestHandler::CreateiModel(Request req)
     Utf8String fileName(settings["instance"]["properties"]["Name"].asString());
     BeFileName fileToCreate(fileName);
     BeFileName servPath(serverPath);
+    servPath.AppendToPath(BeFileName(projGuid.ToString()));
     if (BeFileNameStatus::Success == FakeServer::CreateiModel(servPath, fileToCreate.GetWCharCP()))
         {
         CheckDb();
         Insert(input);
 
+        Json::Value iModelCreation(Json::objectValue);
+        JsonValueR changedInstance = iModelCreation[ServerSchema::ChangedInstance] = Json::objectValue;
+        changedInstance["change"] = "Created";
+        JsonValueR InstanceAfterChange = changedInstance[ServerSchema::InstanceAfterChange] = Json::objectValue;
+        InstanceAfterChange[ServerSchema::InstanceId] = projGuid.ToString();
+        InstanceAfterChange[ServerSchema::SchemaName] = ServerSchema::Schema::Project;
+        InstanceAfterChange[ServerSchema::ClassName] = ServerSchema::Class::iModel;
+        JsonValueR properties = InstanceAfterChange[ServerSchema::Properties] = Json::objectValue;
+        properties[ServerSchema::Property::Description] = settings["instance"]["properties"]["Description"].asString();
+        properties[ServerSchema::Property::Name] = settings["instance"]["properties"]["Name"].asString();
+        properties[ServerSchema::Property::UserCreated] = "";
+
+
+        Utf8String contentToWrite(Json::FastWriter().write(iModelCreation));
+
+        return StubJsonHttpResponse(HttpStatus::Created, req.GetUrl().c_str(), contentToWrite);
         }
-    Json::Value iModelCreation(Json::objectValue);
-    JsonValueR changedInstance = iModelCreation[ServerSchema::ChangedInstance] = Json::objectValue;
-    changedInstance["change"] = "Created";
-    JsonValueR InstanceAfterChange = changedInstance[ServerSchema::InstanceAfterChange] = Json::objectValue;
-    InstanceAfterChange[ServerSchema::InstanceId] = projGuid.ToString();
-    InstanceAfterChange[ServerSchema::SchemaName] = ServerSchema::Schema::Project;
-    InstanceAfterChange[ServerSchema::ClassName] = ServerSchema::Class::iModel;
-    JsonValueR properties = InstanceAfterChange[ServerSchema::Properties] = Json::objectValue;
-    properties[ServerSchema::Property::Description] = settings["instance"]["properties"]["Description"].asString();
-    properties[ServerSchema::Property::Name] = settings["instance"]["properties"]["Name"].asString();
-    properties[ServerSchema::Property::UserCreated] = "";
-
-
-    Utf8String contentToWrite(Json::FastWriter().write(iModelCreation));
-
-    return StubJsonHttpResponse(HttpStatus::Created, req.GetUrl().c_str(), contentToWrite);
+    return Response();
     }
 
 Response RequestHandler::UploadNewSeedFile(Request req) 
@@ -282,22 +283,23 @@ Response RequestHandler::DownloadiModel(Request req)
         BeTest::GetHost().GetOutputRoot(downloadFilePath);
         downloadFilePath.AppendToPath(L"BriefcaseTests");
         downloadFilePath.AppendToPath(BeFileName(instanceid));
-        downloadFilePath.AppendToPath(BeFileName(L"50"));
+        downloadFilePath.AppendToPath(BeFileName(L"2"));
         
+        BeFileName serverFilePath(serverPath);
+        serverFilePath.AppendToPath(BeFileName(instanceid));
+        if (FakeServer::DownloadiModel(downloadFilePath, serverFilePath.GetNameUtf8().c_str(), filetoDownload) == BeFileNameStatus::Success)
+            {
+            BeFileName temp(filetoDownload);
+            downloadFilePath.AppendToPath(temp);
+            downloadFilePath.append(L".bim");
 
-        if (FakeServer::DownloadiModel(downloadFilePath, serverPath.c_str(), filetoDownload) != BeFileNameStatus::Success)
-            return Response();
-        
-        BeFileName temp(filetoDownload);
-        downloadFilePath.AppendToPath(temp);
-        downloadFilePath.append(L".bim");
-        
-        HttpFileBodyPtr fileBody;
-        fileBody = HttpFileBody::Create(downloadFilePath);
-        auto content = HttpResponseContent::Create(fileBody);
-        
-        st.Finalize();
-        return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
+            HttpFileBodyPtr fileBody;
+            fileBody = HttpFileBody::Create(downloadFilePath);
+            auto content = HttpResponseContent::Create(fileBody);
+
+            st.Finalize();
+            return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
+            }
         }
 
     return Response();
@@ -363,11 +365,92 @@ Response RequestHandler::GetBriefcaseId(Request req)
         Utf8String contentToWrite(Json::FastWriter().write(instanceCreation));
         printf("%s\n", contentToWrite.c_str());
         st.Finalize();
-
         auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
         return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
         }
     
+    }
+Response RequestHandler::GetiModels(Request req) 
+    {
+    bvector<Utf8String> args = ParseUrl(req);
+    BeFileName dbName("ServerRepo.db");
+    BeFileName dbPath(serverPath);
+    dbPath.AppendToPath(dbName);
+    BentleyB0200::BeSQLite::Db m_db;
+
+    if (DbResult::BE_SQLITE_OK != m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
+        {
+        return Response();
+        }
+    else
+        {
+        Statement st;
+        printf("%d\n", st.Prepare(m_db, "Select * from instances"));
+        /*printf("%d\n", st.Step());
+        printf("%s\n", st.GetValueText(0));
+        printf("%s\n", st.GetValueText(1));*/
+        DbResult result  = DbResult::BE_SQLITE_ROW;
+        Json::Value instancesinfo(Json::objectValue);
+        JsonValueR instanceArray = instancesinfo[ServerSchema::Instances] = Json::arrayValue;
+        for (int i = 0; result == DbResult::BE_SQLITE_ROW; i++)
+            {
+            result = st.Step();
+            
+            JsonValueR instance = instanceArray[i] = Json::objectValue;
+            instance[ServerSchema::InstanceId] = st.GetValueText(0);
+            instance[ServerSchema::SchemaName] = st.GetValueText(1);
+            instance[ServerSchema::ClassName] = st.GetValueText(2);
+            JsonValueR properties = instance[ServerSchema::Properties] = Json::objectValue;
+            properties[ServerSchema::Property::Description] = st.GetValueText(3);
+            properties[ServerSchema::Property::Name] = st.GetValueText(4);
+            properties[ServerSchema::Property::UserCreated] = "";
+            properties[ServerSchema::Property::CreatedDate] = "";
+            properties[ServerSchema::Property::Initialized] = "";
+            }
+        st.Finalize();
+        Utf8String contentToWrite(Json::FastWriter().write(instancesinfo));
+        //printf("%s\n", contentToWrite.c_str());
+        auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
+        return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
+        }
+    }
+Response RequestHandler::DeleteiModels(Request req)
+    {
+    bvector<Utf8String> args = ParseUrl(req);
+    Utf8String iModelId = args[7];
+    BeFileName dbName("ServerRepo.db");
+    BeFileName dbPath(serverPath);
+    dbPath.AppendToPath(dbName);
+    BentleyB0200::BeSQLite::Db m_db;
+
+    if (DbResult::BE_SQLITE_OK != m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
+        {
+        return Response();
+        }
+    
+    if (BeFileNameStatus::Success == FakeServer::DeleteiModel(serverPath, iModelId))
+        {
+        Statement stDelete;
+        printf("%d\n", stDelete.Prepare(m_db, "Delete from instances where instanceid = ?"));
+        printf("%d\n", stDelete.BindText(1, iModelId, Statement::MakeCopy::No));
+        printf("%d\n", stDelete.Step());
+        stDelete.Finalize();
+
+        Json::Value instanceDeletion(Json::objectValue);
+        JsonValueR changedInstance = instanceDeletion[ServerSchema::ChangedInstance] = Json::objectValue;
+        changedInstance["change"] = "Deleted";
+        JsonValueR instanceAfterChange = changedInstance[ServerSchema::InstanceAfterChange] = Json::objectValue;
+        instanceAfterChange[ServerSchema::InstanceId] = iModelId;
+        instanceAfterChange[ServerSchema::SchemaName] = ServerSchema::Schema::Project;
+        instanceAfterChange[ServerSchema::ClassName] = ServerSchema::Class::iModel;
+        JsonValueR properties = instanceAfterChange[ServerSchema::Properties] = Json::objectValue;
+
+        Utf8String contentToWrite(Json::FastWriter().write(instanceDeletion));
+        printf("%s\n", contentToWrite.c_str());
+        auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
+        return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
+        }
+    return Response();
     }
 
 Response RequestHandler::CreateFileInstance(Request req) 
@@ -387,6 +470,8 @@ Response RequestHandler::PerformGetRequest(Request req)
     resp = GetProjectSchema(args);*/
     if (!req.GetUrl().CompareTo(urlExpected))
         return RequestHandler::PluginRequest(req);
+    if (req.GetUrl().Contains("Repositories/Project") && req.GetUrl().Contains("ProjectScope/iModel"))
+        return RequestHandler::GetiModels(req);
     if (req.GetUrl().Contains("https://imodelhubqasa01.blob.core.windows.net/imodelhub"))//detect imodelhub
         return DownloadiModel(req);
     //get request with iModel--Nr
@@ -406,7 +491,11 @@ Response RequestHandler::PerformOtherRequest(Request req)
         return RequestHandler::ImsTokenRequest(req);
 
     if (req.GetUrl().Contains("Repositories/Project") && req.GetUrl().Contains("ProjectScope/iModel"))
+        {
+        if (req.GetMethod().Equals("DELETE"))
+            return RequestHandler::DeleteiModels(req);
         return RequestHandler::CreateiModel(req);
+        }
     if (req.GetUrl().Contains("Repositories/iModel") && req.GetUrl().Contains("iModelScope/SeedFile"))
         return RequestHandler::CreateFileInstance(req);
     if (req.GetUrl().Contains("Repositories/iModel") && req.GetUrl().Contains("iModelScope/Briefcase"))
