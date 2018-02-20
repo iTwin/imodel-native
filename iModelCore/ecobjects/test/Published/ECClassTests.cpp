@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/ECClassTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -51,6 +51,57 @@ struct PropertyCopyTest : ECTestFixture
 
     void CopyProperty(bool copyReferences = true);
     };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Victor.Cushman                          02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ClassTest, TestGetClassIsCaseInsensitive)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="CoreCustomAttributes" version="1.00.00" alias="CoreCA"/>
+            <ECEntityClass typeName="TestClass">
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext));
+    ASSERT_TRUE(schema.IsValid());
+    ECClassCP ecClass = schema->GetClassCP("TestClass");
+    ASSERT_NE(nullptr, ecClass);
+
+    EXPECT_EQ(ecClass, schema->GetClassCP("TESTCLASS"));
+    EXPECT_EQ(ecClass, schema->GetClassCP("testclass"));
+    EXPECT_EQ(ecClass, schema->GetClassCP("TeStClAsS"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Victor.Cushman                          02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ClassTest, TestGetPropertyIsCaseInsensitive)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="CoreCustomAttributes" version="1.00.00" alias="CoreCA"/>
+            <ECEntityClass typeName="TestClass">
+                <ECProperty propertyName="TestProp" typeName="int" displayLabel="TestProp" description="This is a property."/>
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext));
+    ASSERT_TRUE(schema.IsValid());
+    ECClassCP ecClass = schema->GetClassCP("TestClass");
+    ASSERT_NE(nullptr, ecClass);
+    ECPropertyCP classProp = ecClass->GetPropertyP("TestProp");
+    ASSERT_NE(nullptr, classProp);
+
+    ASSERT_EQ(classProp, ecClass->GetPropertyP("TESTPROP"));
+    ASSERT_EQ(classProp, ecClass->GetPropertyP("testprop"));
+    ASSERT_EQ(classProp, ecClass->GetPropertyP("TeStPrOp"));
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                              Caleb.Shafer                          01/2017
