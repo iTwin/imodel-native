@@ -82,8 +82,10 @@ HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
             }
     #endif
         }
-    catch (HFCException& )
+    catch (HFCException& e)
         {
+        BENTLEY_NAMESPACE_NAME::NativeLogging::ILogger*   logger = BENTLEY_NAMESPACE_NAME::NativeLogging::LoggingManager::GetLogger("ScalableMesh");
+        logger->debugv(e.GetExceptionMessage().c_str());
         pRasterFile = nullptr;
         }
 
