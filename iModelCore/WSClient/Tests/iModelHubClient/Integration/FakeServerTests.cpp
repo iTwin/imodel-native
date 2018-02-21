@@ -16,29 +16,12 @@ USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_IMODELHUB
 
 
-class FakeServerFixture : public testing::Test //: public IntegrationTestsBase
+class FakeServerFixture : public testing::Test
     {
     public:
 
         BeFileName outPath;
         BeFileName m_seed;
-        BeFileName GetOutputDirectory()
-            {
-            BeFileName outputDir;
-            BeTest::GetHost().GetOutputRoot(outputDir);
-            outputDir.AppendToPath(L"iModelHub");
-            return outputDir;
-            }
-        BeFileNameStatus CreateFakeServer(WCharCP path)
-            {
-            if (BeFileName::DoesPathExist(path))
-                return BeFileNameStatus::AlreadyExists;
-            if (BeFileNameStatus::Success != BeFileName::CreateNewDirectory(path))
-                return BeFileNameStatus::CantCreate;
-            if (!BeFileName::IsDirectory(path))
-                return BeFileNameStatus::IllegalName;
-            return BeFileNameStatus::Success;
-            }
         void Initialize()
             {
             static bool s_initialized = false;
@@ -75,16 +58,9 @@ class FakeServerFixture : public testing::Test //: public IntegrationTestsBase
             Initialize();
             CreateInitialSeedDb();
 
-
             BeTest::GetHost().GetOutputRoot(outPath);
             BeFileName seedFilePath = outPath;
-            //outPath.AppendToPath(L"Server");
             seedFilePath.AppendToPath(L"iModelHub");
-            //WCharCP serverPath = outPath.GetWCharCP();
-            //BeFileNameStatus stat = CreateFakeServer(serverPath);
-            //EXPECT_EQ(stat, BeFileNameStatus::Success);
-
-            //RequestHandler::Initialize(outPath);
             }
         virtual void TearDown()
             {
@@ -93,32 +69,6 @@ class FakeServerFixture : public testing::Test //: public IntegrationTestsBase
             }
     };
 
-Utf8String GetUrlWithoutLengthWarning(Utf8StringCR path, Utf8StringCR queryString)
-    {
-    Utf8String url("https://qa-imodelhubapi.bentley.com/v2.5");
-
-    if (!path.empty())
-        {
-        url += "/" + path;
-        }
-
-    if (!queryString.empty())
-        {
-        url += "?" + queryString;
-        }
-
-    return url;
-    }
-Utf8String GetUrl(Utf8StringCR path, Utf8StringCR queryString = nullptr)
-    {
-    Utf8String url = GetUrlWithoutLengthWarning(path, queryString);
-    return url;
-    }
-
-Utf8String CreateClassSubPath(Utf8StringCR schemaName, Utf8StringCR className)
-    {
-    return schemaName + "/" + className;
-    }
 Json::Value iModelCreationJson(Utf8StringCR iModelName, Utf8StringCR description)
     {
     Json::Value iModelCreation(Json::objectValue);
@@ -137,32 +87,18 @@ Json::Value iModelCreationJson(Utf8StringCR iModelName, Utf8StringCR description
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FakeServerFixture, CreateiModel)
     {
-
     Utf8String iModelName("BriefcaseTest");
     Utf8String description("This is a test uploadfile2");
     Json::Value objectCreationJson = iModelCreationJson(iModelName, description);
 
-
     Utf8String url("https://qa-imodelhubapi.bentley.com/v2.5/Repositories/Project--1b2b32312-3222-3212-63d3-12312d4rr4/ProjectScope/iModel");
     Utf8String urlUpdate("https://qa-imodelhubapi.bentley.com/v2.5/Repositories/iModel--1b2b32312-3222-3212-63d3-12312d4rr4/iModelScope/SeedFile");
-    {
-    ObjectId objectId;
-    Utf8String schemaName = objectCreationJson["instance"]["schemaName"].asString();
-    Utf8String className = objectCreationJson["instance"]["className"].asString();
-    Utf8String instanceId = objectCreationJson["instance"]["instanceId"].asString();
-
-    /*url = GetUrl(CreateClassSubPath(schemaName, className));
-    if (!instanceId.empty() && objectCreationJson["instance"]["changeState"].asString() != "new")
-        url += "/" + instanceId;*/
-    }
-
-
+    
     Utf8String method = "POST";
     IHttpHandlerPtr handlePtr = std::make_shared<MockIMSHttpHandler>();
     Request request(url, method, handlePtr);
     request.SetRequestBody(HttpStringBody::Create(Json::FastWriter().write(objectCreationJson)));
     Response response = request.PerformAsync()->GetResult();
-
 
     HttpResponseContentPtr reqContent = response.GetContent();
     HttpBodyPtr reqBody = reqContent->GetBody();
@@ -174,7 +110,6 @@ TEST_F(FakeServerFixture, CreateiModel)
     Json::Reader reader;
     Json::Value settings;
     reader.Parse(reqBodyRead, settings);
-
 
     //Now download the iModel
     Utf8String url2("https://imodelhubqasa01.blob.core.windows.net/imodelhub-63849383-f51a-4e4d-b4c9-70640578663a/BriefcaseTestsm-3a55e4a4-9357-48fc-8988-9d61435651b8.bim?sv=2016-05-31&sr=b&sig=1BI8ULlcZoN7WPnjkIfPTbLWZsz");
@@ -208,7 +143,6 @@ TEST_F(FakeServerFixture, DownloadiModel)
     reader.Parse(reqBodyRead, settings);
     BeGuid projGuid(true);
     Utf8String iModelId = Utf8String(settings["instances"][0]["instanceId"].asString());
-
 
     Utf8String urlGetBriefcaseId(" https://qa-imodelhubapi.bentley.com/v2.5/Repositories/iModel--c7e9a866-426e-46de-a4cb-acd0d8c3b9a6/iModelScope/Briefcase");
 
@@ -252,6 +186,9 @@ TEST_F(FakeServerFixture, DeleteiModel)
     ASSERT_EQ(HttpStatus::OK, responseDelete.GetHttpStatus());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FakeServerFixture, GetiModels)
     {
     Utf8String urlGetInfo("https://qa-imodelhubapi.bentley.com/v2.5/Repositories/Project--7dfb2388-92cf-4ec7-94a7-ff72853466df/ProjectScope/iModel");
@@ -264,15 +201,6 @@ TEST_F(FakeServerFixture, GetiModels)
     HttpResponseContentPtr reqContent = response.GetContent();
     HttpBodyPtr reqBody = reqContent->GetBody();
 
-
-/*
-    Utf8String url2("https://qa-imodelhubapi.bentley.com/v2.5/Repositories/Project--1b2b32312-3222-3212-63d3-12312d4rr4/ProjectScope/iModel");
-    Utf8String method2 = "POST";
-    Request request2(url2, method2, handlePtr);
-    request2.SetRequestBody(reqBody);
-    request2.PerformAsync()->GetResult();
-*/
-
     char readBuff[100000] ;
     size_t buffSize = 100000;
     reqBody->Read(readBuff, buffSize);
@@ -283,12 +211,10 @@ TEST_F(FakeServerFixture, GetiModels)
     reader.Parse(reqBodyRead, settings);
     BeGuid projGuid(true);
     Utf8String name = Utf8String(settings["instances"][0]["className"].asString());
-
     }
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Farhad.Kabir    01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-
 TEST_F(FakeServerFixture, CheckPluginsRequests)
     {
     Utf8String url("https://qa-imodelhubapi.bentley.com/v2.0/Plugins");
@@ -304,60 +230,69 @@ TEST_F(FakeServerFixture, CheckPluginsRequests)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FakeServerFixture, UpdateServerFile)
     {
-    /*Utf8String url("https://imodelhubqasa01.blob.core.windows.net/imodelhub-3e7ce8fe-aa5e-4ee0-959c-6708d8fc365d/BriefcaseTestsu-bd997d8f-e7f7-4a8b-ad27-785e99f866f0.bim?sv=2016-05-31&sr=b&sig=%2BW0sVgxmBQGzim82S9LwRH4ao");
+    //Utf8String url("https://imodelhubqasa01.blob.core.windows.net/imodelhub-3e7ce8fe-aa5e-4ee0-959c-6708d8fc365d/BriefcaseTestsu-bd997d8f-e7f7-4a8b-ad27-785e99f866f0.bim?sv=2016-05-31&sr=b&sig=%2BW0sVgxmBQGzim82S9LwRH4ao");
 
-    Utf8String method = "PUT";
-    IHttpHandlerPtr handlePtr = std::make_shared<MockIMSHttpHandler>();
-    
-    BeFileName filePath("E:\\out\\Test_Seed.bim");
-    BeFile file;
-    file.Open(filePath, BeFileAccess::Read);
+    //Utf8String method = "PUT";
+    //IHttpHandlerPtr handlePtr = std::make_shared<MockIMSHttpHandler>();
+    //
+    //BeFileName filePath("E:\\out\\Test_Seed.bim");
+    //BeFile file;
+    //file.Open(filePath, BeFileAccess::Read);
 
-    uint64_t fileSize;
-    ASSERT_EQ(BeFileStatus::Success, file.GetSize(fileSize));
-    
-    file.Close();
+    //uint64_t fileSize;
+    //ASSERT_EQ(BeFileStatus::Success, file.GetSize(fileSize));
+    //
+    //file.Close();
 
-    uint64_t chunkSize = 4 * 1024 * 1024;   // Max 4MB.
+    //uint64_t chunkSize = 4 * 1024 * 1024;   // Max 4MB.
 
-    HttpBodyPtr body = HttpFileBody::Create(filePath);
-    Utf8String blockIds = "";
-    int chunkNumber = 0;
-    uint64_t bytesTo = chunkSize * chunkNumber + chunkSize - 1; // -1 because ranges are inclusive.
-    if (bytesTo >= fileSize)
-        bytesTo = fileSize - 1;
+    //HttpBodyPtr body = HttpFileBody::Create(filePath);
+    //Utf8String blockIds = "";
+    //int chunkNumber = 0;
+    //uint64_t bytesTo = chunkSize * chunkNumber + chunkSize - 1; // -1 because ranges are inclusive.
+    //if (bytesTo >= fileSize)
+    //    bytesTo = fileSize - 1;
 
-    std::stringstream blockIdStream;
-    blockIdStream << std::setw(5) << std::setfill('0') << chunkNumber;
-    std::string blockId = blockIdStream.str();
-    Utf8String encodedBlockId = Base64Utilities::Encode(blockId.c_str()).c_str();
-    blockIds += Utf8PrintfString("<Latest>%s</Latest>", encodedBlockId.c_str());
+    //std::stringstream blockIdStream;
+    //blockIdStream << std::setw(5) << std::setfill('0') << chunkNumber;
+    //std::string blockId = blockIdStream.str();
+    //Utf8String encodedBlockId = Base64Utilities::Encode(blockId.c_str()).c_str();
+    //blockIds += Utf8PrintfString("<Latest>%s</Latest>", encodedBlockId.c_str());
 
-    // Update URL
-    Utf8String blockUrl = Utf8PrintfString("%s&comp=block&blockid=%s", url.c_str(), encodedBlockId.c_str());
+    //// Update URL
+    //Utf8String blockUrl = Utf8PrintfString("%s&comp=block&blockid=%s", url.c_str(), encodedBlockId.c_str());
 
-    Request request(blockUrl, method, handlePtr);
+    //Request request(blockUrl, method, handlePtr);
 
-    request.GetHeaders().SetValue("x-ms-blob-type", "BlockBlob");
-    request.SetRequestBody(HttpRangeBody::Create(body, chunkSize * chunkNumber, bytesTo));
+    //request.GetHeaders().SetValue("x-ms-blob-type", "BlockBlob");
+    //request.SetRequestBody(HttpRangeBody::Create(body, chunkSize * chunkNumber, bytesTo));
 
-    Response response = request.PerformAsync()->GetResult();
-    HttpBodyPtr fBody = request.GetRequestBody();*/
-    BeFileName documentsDir;
-    BeTest::GetHost().GetDocumentsRoot(documentsDir);
-    documentsDir.AppendToPath(L"ImodelHubTestData");
-    documentsDir.AppendToPath(L"iModelHubNativeTests");
-    documentsDir.AppendToPath(L"BriefcaseTests.bim");
-    HttpBodyPtr fileBody;
-    fileBody = HttpFileBody::Create(documentsDir);
-    const bmap<Utf8String, Utf8String>& headers = bmap<Utf8String, Utf8String>();
-    auto content = HttpResponseContent::Create(fileBody);
-    for (const auto& header : headers)
-        {
-        content->GetHeaders().SetValue(header.first, header.second);
-        }
-    Utf8String url("https://qa-ims.bentley.com/rest/ActiveSTSService/json/IssueEx");
-    Response resp(content, url.c_str(), ConnectionStatus::OK, HttpStatus::OK);
+    //Response response = request.PerformAsync()->GetResult();
+    //HttpBodyPtr fBody = request.GetRequestBody();
+    //BeFileName documentsDir;
+    //BeTest::GetHost().GetDocumentsRoot(documentsDir);
+    //documentsDir.AppendToPath(L"ImodelHubTestData");
+    //documentsDir.AppendToPath(L"iModelHubNativeTests");
+    //documentsDir.AppendToPath(L"BriefcaseTests.bim");
+    //HttpBodyPtr fileBody;
+    //fileBody = HttpFileBody::Create(documentsDir);
+    //const bmap<Utf8String, Utf8String>& headers = bmap<Utf8String, Utf8String>();
+    //auto content = HttpResponseContent::Create(fileBody);
+    //for (const auto& header : headers)
+    //    {
+    //    content->GetHeaders().SetValue(header.first, header.second);
+    //    }
+    //Utf8String url2("https://qa-ims.bentley.com/rest/ActiveSTSService/json/IssueEx");
+    //Response resp(content, url2.c_str(), ConnectionStatus::OK, HttpStatus::OK);
+    //HttpBodyPtr body2 = request.GetRequestBody();
+    ////auto nnn = static_cast<HttpBodyPtr>(body2.get());
+    //auto unk = body2.get();
+    //HttpFileBody nnn2 = dynamic_cast<HttpBody>(unk);
+    //auto nnn = (HttpFileBody*)unk;
+    ////auto nnn = HttpFileBodyPtr(body2);
+    //BeFileName fileIs(nnn->GetFilePath());
+    //printf("Update File %ls\n", fileIs.GetWCharCP());
+
     }
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Farhad.Kabir    01/2018
