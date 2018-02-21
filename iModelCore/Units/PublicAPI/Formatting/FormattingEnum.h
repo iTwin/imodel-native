@@ -21,6 +21,9 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatProblemDetail)
 //
 //===================================================
 
+//=======================================================================================
+// @bsienum
+//=======================================================================================
 enum class ParameterCode
     {
     FormatName = 50,   
@@ -88,6 +91,10 @@ enum class ParameterCode
     MapName = 651,
     };
 
+//=======================================================================================
+//! Testing
+// @bsienum
+//=======================================================================================
 enum class ParameterDataType
     {
     Flag = 0,
@@ -98,6 +105,9 @@ enum class ParameterDataType
     String = 5
     };
 
+//=======================================================================================
+// @bsienum
+//=======================================================================================
 enum class NamedQuantityType
 {
     Quantity = 1,
@@ -105,7 +115,9 @@ enum class NamedQuantityType
     String = 3
 };
 
-
+//=======================================================================================
+// @bsienum
+//=======================================================================================
 enum class RoundingType
     {
     RoundUp = 1,
@@ -114,6 +126,9 @@ enum class RoundingType
     RoundAwayFrom0 = 4
     };
 
+//=======================================================================================
+// @bsienum
+//=======================================================================================
 enum class FractionBarType
     {
     None = 0,
@@ -122,6 +137,9 @@ enum class FractionBarType
     Diagonal = 3
     };
 
+//=======================================================================================
+// @bsienum
+//=======================================================================================
 enum class AngleFormatType
     {
     AngleRegular = 0,
@@ -129,6 +147,9 @@ enum class AngleFormatType
     AngleDegMinSec = 2
     };
 
+//=======================================================================================
+// @bsienum
+//=======================================================================================
 enum class FieldAlignment
     {
     Center = 0,
@@ -136,6 +157,9 @@ enum class FieldAlignment
     Right = 2
     };
 
+//=======================================================================================
+// @bsienum
+//=======================================================================================
 enum class ShowSignOption
     { 
     NoSign = 0,              //indicates that sign should not be used at all (like absolute value) 
@@ -144,6 +168,9 @@ enum class ShowSignOption
     NegativeParentheses = 3  // indicates that negative numbers shoul be enclosed in parenthesis
     };
 
+//=======================================================================================
+// @bsienum
+//=======================================================================================
 enum class PresentationType
     {
     Decimal = 1,
@@ -154,6 +181,9 @@ enum class PresentationType
     Stop1000 = 6         // special format for stations 1000 meters
     };
 
+//=======================================================================================
+// @bsienum
+//=======================================================================================
 enum class FormatTraits : int
     {
     DefaultTraits = 0,        // No special traits. This value is being used only for initializing 
@@ -170,6 +200,9 @@ enum class FormatTraits : int
     AppendUnitName = 0x400     // indicates that the numeric expression can be followed by the unit name
     };
 
+//=======================================================================================
+// @bsienum
+//=======================================================================================
 enum class NumSequenceTraits
     {
     None = 0,
@@ -179,6 +212,9 @@ enum class NumSequenceTraits
     Uom = 0x8
     };
 
+//=======================================================================================
+// @bsienum
+//=======================================================================================
 enum class DecimalPrecision
     {
     Precision0 = 0,
@@ -196,6 +232,9 @@ enum class DecimalPrecision
     Precision12 = 12
     };
 
+//=======================================================================================
+// @bsienum
+//=======================================================================================
 enum class FractionalPrecision
     {
     Whole = 0,       //!< Ex. 30
@@ -209,6 +248,9 @@ enum class FractionalPrecision
     Over_256 = 8,    //!< Ex. 30 1/256
     };
 
+//=======================================================================================
+// @bsienum
+//=======================================================================================
 enum class ParameterCategory
     {
     DataType = 1,
@@ -226,6 +268,9 @@ enum class ParameterCategory
     Mapping = 14
     };
 
+//=======================================================================================
+// @bsienum
+//=======================================================================================
 enum class ScannerCursorStatus
     {
     Success = 0,
@@ -234,7 +279,10 @@ enum class ScannerCursorStatus
     NoEnclosure = 3
     };
 
+//=======================================================================================
 //! Codes of problems might help in finding the source of the problem
+// @bsienum
+//=======================================================================================
 enum class FormatProblemCode
     {
     NoProblems = 0,
@@ -273,7 +321,11 @@ enum class FormatProblemCode
     NMQ_MissingName = 2802
     };
 
-enum class FormatProblemLevel  // these levels should be used for assigning the Problem code
+//=======================================================================================
+//! these levels should be used for assigning the Problem code
+// @bsienum
+//=======================================================================================
+enum class FormatProblemLevel
     {
     Undefined = 0,
     Notice = 1,
@@ -281,6 +333,9 @@ enum class FormatProblemLevel  // these levels should be used for assigning the 
     Critical = 20000
     };
 
+//=======================================================================================
+// @bsienum
+//=======================================================================================
 enum class CodepointSize
     {
     Zero = 0,
@@ -289,16 +344,22 @@ enum class CodepointSize
     Quatro = 4
     };
 
+//=======================================================================================
 //! Type of the ComboSpec describes one of allowable value transformations
+// @bsienum
+//=======================================================================================
 enum class CompositeSpecType
     {
-    Undefined = 0, //!< program failes to infer the type (default)
+    Undefined = 0, //!< program fails to infer the type (default)
     Single = 1,    //!< trivial case when Combo effectively is not used - not prohibited though
     Double = 2,    //!< indicates of using 2 levels: Major and Middle
     Triple = 3,    //!< indicates of using 3 levels: Major, Middle and Minor UOM's
     Quatro = 4     //!< indicates of using 4 levels: Major, Middle, Minor and SubUnit UOM's
     };
 
+//=======================================================================================
+// @bsienum
+//=======================================================================================
 enum class FormatSpecType
     {
     Undefined = 0,
@@ -306,6 +367,9 @@ enum class FormatSpecType
     Composite = 2      // a composite spec is also defined (numeric spec is implied)
     };
 
+//=======================================================================================
+// @bsienum
+//=======================================================================================
 enum class AccumulatorState
     {
     Init = 0,
@@ -318,6 +382,9 @@ enum class AccumulatorState
     RejectedSymbol = 11
     };
 
+//=======================================================================================
+// @bsienum
+//=======================================================================================
 enum class ParsingSegmentType
     {
     Integer = 1,
@@ -327,6 +394,9 @@ enum class ParsingSegmentType
     EndOfLine = 11
     };
 
+//=======================================================================================
+// @bsienum
+//=======================================================================================
 enum class CursorSectionState
     {
     Success = 0,
@@ -336,6 +406,9 @@ enum class CursorSectionState
     Undefined = 20
     };
 
+//=======================================================================================
+// @bsienum
+//=======================================================================================
 enum class CursorSectionType
     {
     Undefined = 0,
@@ -343,6 +416,9 @@ enum class CursorSectionType
     Numeric = 2
     };
 
+//=======================================================================================
+// @bsienum
+//=======================================================================================
 enum class FormatSpecialCodes
     {
     SignatureNull = 0,
@@ -453,7 +529,7 @@ struct Utils
 
 // A collection of important "global" constants that are used across the whole formatting domain
 //=======================================================================================
-// @bsiclass                                                    David.Fox-Rabinovitz  11/2016                                                
+// @bsistruct                                                    David.Fox-Rabinovitz  11/2016
 //=======================================================================================
 struct FormatConstant
     {
