@@ -140,59 +140,21 @@ void UnitRegistry::AddBaseSystems()
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    01/2018
 //--------------------------------------------------------------------------------------
-Utf8CP BasePhenomena::GetBasePhenomenonName(Utf8Char baseSymbol)
-    {
-    switch (baseSymbol)
-        {
-        case BasePhenomena::Capita:
-            return CAPITA;
-        case BasePhenomena::ElectricCurrent:
-            return CURRENT;
-        case BasePhenomena::Finance:
-            return FINANCE;
-        case BasePhenomena::Length:
-            return LENGTH;
-        case BasePhenomena::Luminosity:
-            return LUMINOSITY;
-        case BasePhenomena::Mass:
-            return MASS;
-        case BasePhenomena::Mole:
-            return MOLE;
-        case BasePhenomena::PlaneAngle:
-            return ANGLE;
-        case BasePhenomena::Ratio:
-            return ONE;
-        case BasePhenomena::SolidAngle:
-            return SOLIDANGLE;
-        case BasePhenomena::Temperature:
-            return TEMPERATURE;
-        case BasePhenomena::TemperatureChange:
-            return TEMPERATURE_CHANGE;
-        case BasePhenomena::Time:
-            return TIME;
-        default:
-            return EMPTY_STRING;
-        }
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    01/2018
-//--------------------------------------------------------------------------------------
 void UnitRegistry::AddBasePhenomena()
     {
-    AddBasePhenomenon(BasePhenomena::Length);
-    AddBasePhenomenon(BasePhenomena::Mass);
-    AddBasePhenomenon(BasePhenomena::Time);
-    AddBasePhenomenon(BasePhenomena::Temperature);
-    AddBasePhenomenon(BasePhenomena::TemperatureChange);
-    AddBasePhenomenon(BasePhenomena::ElectricCurrent);
-    AddBasePhenomenon(BasePhenomena::Mole);
-    AddBasePhenomenon(BasePhenomena::Luminosity);
-    AddBasePhenomenon(BasePhenomena::PlaneAngle);
-    AddBasePhenomenon(BasePhenomena::SolidAngle);
-    AddBasePhenomenon(BasePhenomena::Finance);
-    AddBasePhenomenon(BasePhenomena::Capita);
-    AddBasePhenomenon(BasePhenomena::Ratio);
+    AddBasePhenomenon(LENGTH);
+    AddBasePhenomenon(MASS);
+    AddBasePhenomenon(TIME);
+    AddBasePhenomenon(TEMPERATURE);
+    AddBasePhenomenon(TEMPERATURE_CHANGE);
+    AddBasePhenomenon(CURRENT);
+    AddBasePhenomenon(MOLE);
+    AddBasePhenomenon(LUMINOSITY);
+    AddBasePhenomenon(ANGLE);
+    AddBasePhenomenon(SOLIDANGLE);
+    AddBasePhenomenon(FINANCE);
+    AddBasePhenomenon(CAPITA);
+    AddBasePhenomenon(NUMBER);
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -212,7 +174,7 @@ void UnitRegistry::AddDefaultPhenomena ()
     AddPhenomenon(PRESSURE, "FORCE*AREA(-1)");
     AddPhenomenon(FORCE_DENSITY, "FORCE*VOLUME(-1)");
     AddPhenomenon(PRESSURE_GRADIENT, "PRESSURE*LENGTH(-1)");
-    AddPhenomenon(TORQUE, "FORCE*LENGTH*ANGLE");
+    AddPhenomenon(TORQUE, "FORCE*LENGTH*ANGLE(-1)");
     AddPhenomenon(MOMENT_INERTIA, "MASS*LENGTH(2)");
     AddPhenomenon(AREA_MOMENT_INERTIA, "LENGTH(4)");
     AddPhenomenon(MASS_RATIO, "MASS*MASS(-1)");
@@ -238,42 +200,34 @@ void UnitRegistry::AddDefaultPhenomena ()
     AddPhenomenon(INDUCTANCE, "MAGNETIC_FLUX*CURRENT(-1)");
     AddPhenomenon(LUMINOUS_FLUX, "LUMINOSITY*SOLIDANGLE"); // TODO: Check
     AddPhenomenon(ILLUMINANCE, "LUMINOUS_FLUX*LENGTH(-2)");
-    AddPhenomenon(ROTATIONAL_SPRING_CONSTANT, "FORCE*LENGTH*ANGLE(-1)");  // TODO: Is this correct?  Should it be TORQUE/ANGLE?
+    AddPhenomenon(ROTATIONAL_SPRING_CONSTANT, "TORQUE*ANGLE(-1)");
     AddPhenomenon(LINEAR_ROTATIONAL_SPRING_CONSTANT, "FORCE*ANGLE(-1)"); // TODO: Understand this phenomenon instead of just copying from old units.
-    //AddPhenomenon(RADIATION)
-    //AddPhenomenon(RADEXPOSURE)
-    //AddPhenomenon(RADABSORBDOSE, "WORK*MASS(-1)");
-    //AddPhenomenon(RADEQUDOSE, "WORK*MASS(-1)");
     AddPhenomenon(SIZE_LENGTH_RATE, "LENGTH*LENGTH"); // TODO: ?
     AddPhenomenon(THERMAL_CONDUCTIVITY, "POWER*LENGTH(-1)*TEMPERATURE_CHANGE(-1)");
     AddPhenomenon(THERMAL_RESISTANCE, "AREA*TEMPERATURE_CHANGE*POWER(-1)");
-    //AddPhenomenon(THERMAL_TRANSMITTANCE, "POWER*AREA(-1)*TEMPERATURE_CHANGE(-1)");
     AddPhenomenon(TEMPERATURE_GRADIENT, "TEMPERATURE_CHANGE*LENGTH(-1)");
     AddPhenomenon(MOLAR_VOLUME, "VOLUME*MOLE(-1)");
     AddPhenomenon(MOLAR_CONCENTRATION, "MOLE*VOLUME(-1)");
     AddPhenomenon(SLOPE, "LENGTH*LENGTH(-1)");
-    AddPhenomenon(GRAVCONSTANT, "LENGTH(3)*MASS(-1)*TIME(-2)"); // TODO: Check
-    AddPhenomenon(THREAD_PITCH, "LENGTH*ANGLE(-1)"); // TODO: What about rotation portion?
     AddPhenomenon(HEAT_TRANSFER, "POWER*AREA(-1)*TEMPERATURE_CHANGE(-1)"); // https://en.wikipedia.org/wiki/Heat_transfer_coefficient
     AddPhenomenon(HEAT_FLUX_DENSITY, "POWER*AREA(-1)"); // https://en.wikipedia.org/wiki/Heat_flux  see description of heat flux density
     AddPhenomenon(TORSIONAL_WARPING_CONSTANT, "LENGTH(6)"); // TODO: Could also be buckling resistance ... are we missing some angular portion to this unit?
     AddPhenomenon(POPULATION_DENSITY, "CAPITA*AREA(-1)");
     AddPhenomenon(FREQUENCY, "TIME(-1)");
     AddPhenomenon(LINEAR_LOAD, "FORCE*LENGTH(-1)");
-    //AddPhenomenon(AREA_LOAD, );
-    AddPhenomenon(ENERGY_DENSITY, "WORK*VOLUME(-1)"); // TODO: Check
+
+    AddPhenomenon(ENERGY_DENSITY, "WORK*VOLUME(-1)");
     AddPhenomenon(SPECIFIC_ENERGY, "WORK*MASS(-1)");
     AddPhenomenon(HEATING_VALUE_MOLE, "WORK*MOLE(-1)");
     AddPhenomenon(SPECIFIC_HEAT_CAPACITY, "WORK*MASS(-1)*TEMPERATURE_CHANGE(-1)");
     AddPhenomenon(SPECIFIC_HEAT_CAPACITY_MOLAR, "WORK*MOLE(-1)*TEMPERATURE_CHANGE(-1)");
-    AddPhenomenon(PERCENTAGE, "RATIO");
-    AddPhenomenon(LINEAR_COST, "FINANCE*LENGTH(-1)");
-    AddPhenomenon(LINEAR_RATE, "RATIO*LENGTH(-1)");
+    AddPhenomenon(PERCENTAGE, NUMBER);
+    AddPhenomenon(LINEAR_RATE, "NUMBER*LENGTH(-1)");
 
     AddPhenomenon(LINEAR_COEFFICIENT_OF_THERMAL_EXPANSION, "LENGTH*LENGTH(-1)*TEMPERATURE_CHANGE(-1)");
-    //AddPhenomenon(AREA_COEFFICIENT_OF_THERMAL_EXPANSION, "AREA*AREA(-1)*TEMPERATURE_CHANGE(-1)");
-    //AddPhenomenon(VOLUMETRIC_COEFFICIENT_OF_THERMAL_EXPANSION, "VOLUME*VOLUME(-1)*TEMPERATURE_CHANGE(-1)");
-    //AddPhenomenon(ACTION, "WORK*TIME");
 
     AddPhenomenon(VOLUME_RATIO, "VOLUME*VOLUME(-1)");
+
+    AddPhenomenon(LENGTH_RATIO, "LENGTH*LENGTH(-1)");
+    AddPhenomenon(METRIC_PREFIX, "NUMBER");
     }

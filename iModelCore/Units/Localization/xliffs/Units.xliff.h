@@ -20,7 +20,8 @@ BENTLEY_TRANSLATABLE_STRINGS_START(UnitsL10N,units_msg)
     L10N_STRING(PHENOMENON_CURRENT)                                     // =="Current"==                                     
     L10N_STRING(PHENOMENON_MOLE)                                        // =="Mole"==                                        
     L10N_STRING(PHENOMENON_LUMINOSITY)                                  // =="Luminosity"==                                  
-    L10N_STRING(PHENOMENON_ONE)                                         // =="One"==                                         
+    L10N_STRING(PHENOMENON_NUMBER)                                      // =="Number"==                                      
+    L10N_STRING(PHENOMENON_METRIC_PREFIX)                               // =="Metric Prefix"==                                      
     L10N_STRING(PHENOMENON_ANGLE)                                       // =="Angle"==                                       
     L10N_STRING(PHENOMENON_SOLIDANGLE)                                  // =="Solid Angle"==                                  
     L10N_STRING(PHENOMENON_APPARENT_POWER)                              // =="Apparent Power"==                              

@@ -162,11 +162,6 @@ NumericFormatSpec::NumericFormatSpec(PresentationType presType, ShowSignOption s
     }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 03/17
-//----------------------------------------------------------------------------------------
-
-
-//----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //----------------------------------------------------------------------------------------
 void NumericFormatSpec::SetPrecisionByValue(int prec)
@@ -1665,6 +1660,7 @@ bool StdFormatSet::HasDuplicate(Utf8CP fusName, FormatUnitSetCP * fusOut)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/18
 //----------------------------------------------------------------------------------------
+// static
 FormatUnitSetCP StdFormatSet::AddFUS(FormatUnitSetCR fusR, Utf8CP fusName)
     {
     FormatUnitSetCP fusP;
@@ -1677,7 +1673,11 @@ FormatUnitSetCP StdFormatSet::AddFUS(FormatUnitSetCR fusR, Utf8CP fusName)
     return Set()->m_fusSet.back();
     }
 
-FormatUnitSetCP StdFormatSet::AddFUS(Utf8CP formatName, Utf8CP unitName, Utf8CP fusName, bool makeUnit)
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/18
+//----------------------------------------------------------------------------------------
+// static
+FormatUnitSetCP StdFormatSet::AddFUS(Utf8CP formatName, Utf8CP unitName, Utf8CP fusName)
     {
     FormatUnitSetCP fusP;
     if (Set()->HasDuplicate(fusName, &fusP))
@@ -1694,7 +1694,7 @@ FormatUnitSetCP StdFormatSet::AddFUS(Utf8CP formatName, Utf8CP unitName, Utf8CP 
     return Set()->m_fusSet.back();
     }
 
-FormatUnitSetCP StdFormatSet::AddFUS(Utf8CP descriptor, Utf8CP fusName, bool makeUnit)
+FormatUnitSetCP StdFormatSet::AddFUS(Utf8CP descriptor, Utf8CP fusName)
     {
     FormatUnitSetCP fusP;
     if (Set()->HasDuplicate(fusName, &fusP))

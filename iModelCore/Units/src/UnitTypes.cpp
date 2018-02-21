@@ -19,11 +19,11 @@ BEGIN_BENTLEY_UNITS_NAMESPACE
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                      03/2016
 //--------------------------------------------------------------------------------------
-UnitsSymbol::UnitsSymbol(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id, double factor, double offset) :
-    m_name(name), m_definition(definition), m_baseSymbol(baseSymbol), m_id(id), m_factor(factor), m_offset(offset), m_evaluated(false), 
+UnitsSymbol::UnitsSymbol(Utf8CP name, Utf8CP definition, uint32_t id, double factor, double offset) :
+    m_name(name), m_definition(definition), m_id(id), m_isBaseSymbol(false), m_factor(factor), m_offset(offset), m_evaluated(false), m_isNumber(false),
     m_symbolExpression(new Expression())
     {
-    m_dimensionless = strcmp("ONE", m_definition.c_str()) == 0;
+    m_isBaseSymbol = m_name.EqualsI(m_definition.c_str());
     }
 
 //--------------------------------------------------------------------------------------
@@ -34,10 +34,10 @@ UnitsSymbol::UnitsSymbol() // creates a default - invalid - Symbol
     m_name = nullptr;
     m_definition = nullptr;
     m_id = 0;
-    m_baseSymbol = '\0';
+    m_isBaseSymbol = false;
     m_factor = 0.0;
     m_offset = 0.0;
-    m_dimensionless = true;
+    m_isNumber = true;
     m_evaluated = false;
     }
 
@@ -82,6 +82,12 @@ UnitP Unit::_Create(UnitCR parentUnit, UnitSystemCR system, Utf8CP unitName, uin
 
     LOG.debugv("Creating inverted unit %s with parent unit %s", unitName, parentUnit.GetName().c_str());
     return new Unit(parentUnit, system, unitName, id);
+    }
+
+Unit::Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, double factor, double offset, bool isConstant)
+    : UnitsSymbol(name, definition, id, factor, offset), m_system(&system), m_phenomenon(&phenomenon), m_parent(nullptr), m_isConstant(isConstant)
+    {
+    m_isNumber = phenomenon.IsNumber();
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -194,9 +200,6 @@ UnitsProblemCode Unit::Convert(double& converted, double value, UnitCP toUnit) c
     if (IsInvertedUnit() && toUnit->IsInvertedUnit() || !(IsInvertedUnit() || toUnit->IsInvertedUnit()))
         return DoNumericConversion(converted, value, *toUnit);
 
-    // TODO: Do better check here
-    //if (value == 0.0)
-    //    return 0.0;
     double temp;
     UnitsProblemCode prob;
     if (IsInvertedUnit())

@@ -485,3 +485,98 @@ YARD,yd,yards
 YARD_CUBED,yd³,yards cubed
 YARD_SQUARED,yd²,yards squared
 YEAR,years,years
+MOL,mol,mol
+CD,cd,cd
+STERAD,sterad,sterad
+CHAIN,chain,chain
+US_SURVEY_YRD,yrd (US Survey),yrd (US Survey)
+US_SURVEY_CHAIN,chain (US Survey),chain (US Survey)
+NAUT_MILE,nmi,nautical mile (International)
+NG,ng,nanogram
+TONNE,tonne,tonne
+SLUG,slug,slug
+WEEK,week,week
+YEAR_SIDEREAL,Year (Sidereal),Year (Sidereal)
+YEAR_TROPICAL,Year (Tropical),Year (Tropical)
+MKS,µs,µs
+KMOL,kmol,kmol
+LB-MOL,lb-mol,lb-mol
+M/SEC.SQ,m/sec²,m/sec²
+CM/SEC.SQ,cm/sec²,cm/sec²
+FT/SEC.SQ,ft/sec²,ft/sec²
+SQ.MU,mu²,mu²
+SQ.DM,dm²,dm²
+ARE,are,are
+SQ.CHAIN,chain²,chain²
+SQ.US_SURVEY_IN,in² (US Survey),in² (US Survey)
+SQ.US_SURVEY_FT,ft² (US Survey),ft² (US Survey)
+SQ.US_SURVEY_YRD,yrd² (US Survey),yrd² (US Survey)
+SQ.US_SURVEY_MILE,mile² (US Survey),mile² (US Survey)
+SQ.US_SURVEY_CHAIN,chain² (US Survey),chain² (US Survey)
+US_SURVEY_ACRE,acre (US Survey),acre (US Survey)
+N/CUB.FT,N/ft³,N/ft³
+MILLIAMPERE,mA,mA
+MICROAMPERE,µA,µA
+COULOMB,C,C
+J/KG,J/kg,J/kg
+J/(MOL*K),J/(mol*K),J/(mol*K)
+CUB.IN/SEC,in³/sec,in³/sec
+CUB.IN/MIN,in³/min,in³/min
+ACRE_IN/DAY,acre_in/day,acre_in/day
+KHZ,KHz,KHz
+MHZ,MHz,MHz
+CUB.M/(SQ.M*SEC),m³/(m²*sec),m³/(m²*sec)
+OZF,ozf,ozf
+OZM,oz,oz
+PDL,pdl,pdl
+KIPF,kipf,kipf
+KIPM,kipm,kipm
+W/SQ.M,W/m²,W/m²
+N_CM,N·cm,N·cm
+MOL/CUB.DM,mol/dm³,mol/dm³
+MICROMOL/CUB.DM,µmol/dm³,µmol/dm³
+NMOL/CUB.DM,nmol/dm³,nmol/dm³
+PICOMOL/CUB.DM,picomol/dm³,picomol/dm³
+MOL/CUB.FT,mol/ft³,mol/ft³
+PA_GAUGE,Pa (gauge),Pa (gauge)
+KSI,ksi,ksi
+CM/REVOLUTION,cm/rev,cm/rev
+MM/SEC,mm/sec,mm/sec
+KM/SEC,km/sec,km/sec
+YRD/SEC,yrd/sec,yrd/sec
+POISE,poise,poise
+LBM/(FT*S),lbm/(ft*s),lbm/(ft*s)
+CUB.MU,mu³,mu³
+CUB.MM,mm³,mm³
+CUB.DM,dm³,dm³
+CUB.KM,km³,km³
+MICROLITRE,µliter,µliter
+CUB.MILE,mile³,mile³
+CUB.M/CUB.M,m³/m³,m³/m³
+LITRE/LITRE,liter/liter,liter/liter
+PI,Pi,Pi
+PI/4,Pi/4,Pi/4
+PI/2,Pi/2,Pi/2
+2PI,2Pi,2Pi
+360DEG,360°,360°
+STD_G,ɡ0,ɡ0
+DECI,deci,deci
+CENTI,centi,centi
+MILLI,milli,milli
+MICRO,micro,micro
+NANO,nano,nano
+PICO,pico,pico
+FEMTO,femto,femto
+ATTO,atto,atto
+ZEPTO,zepto,zepto
+YOCTO,yocto,yocto
+DEKA,deka,deka
+HECTO,hecto,hecto
+KILO,kilo,kilo
+MEGA,mega,mega
+GIGA,giga,giga
+TERA,tera,tera
+PETA,peta,peta
+EXA,exa,exa
+ZETTA,zetta,zetta
+YOTTA,yotta,yotta

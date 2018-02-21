@@ -290,14 +290,12 @@ void UnitNameMappings::AddMappings()
     AddMapping("KILOWATT", "KW");
     AddMapping("MEGAWATT", "MEGAW");
     AddMapping("GIGAWATT", "GW");
-    //AddMapping("BTU_PER_MONTH", "BTU/MONTH");
     AddMapping("BTU_PER_HOUR", "BTU/HR");
     AddMapping("KILOBTU_PER_HOUR", "KILOBTU/HR");
     AddMapping("HORSEPOWER", "HP");
-    //AddMapping("GIGAJOULE_PER_MONTH", "GJ/MONTH");
     AddMapping("PASCAL", "PA");
     AddMapping("NEWTON_PER_METRE_SQUARED", "PA");
-    AddMapping("NEWTON_PER_MILLIMETRE_SQUARED", "N/SQ.MM");
+    AddMapping("NEWTON_PER_MILLIMETRE_SQUARED", "MEGAPASCAL");
     AddMapping("KILOGRAM_FORCE_PER_CENTIMETRE_SQUARED", "AT");
     AddMapping("KILOGRAM_FORCE_PER_CENTIMETRE_SQUARED_GAUGE", "AT_GAUGE");
     AddMapping("KILOGRAM_FORCE_PER_METRE_SQUARED", "KGF/SQ.M");
@@ -623,6 +621,7 @@ void UnitNameMappings::AddMappings()
     AddECMapping("KGF/SQ.M", "KGF_PER_SQ_M");
     AddECMapping("KILOBTU/HR", "KILOBTU_PER_HR");
     AddECMapping("KIP/CUB.FT", "KIP_PER_CUB_FT");
+    AddECMapping("KIPF", "KPF");
     AddECMapping("KJ/(KMOL*K)", "KJ_PER_KMOL_K");
     AddECMapping("KJ/CUB.M", "KJ_PER_CUB_M");
     AddECMapping("KJ/KG", "KJ_PER_KG");
@@ -701,7 +700,7 @@ void UnitNameMappings::AddMappings()
     AddECMapping("N/M", "N_PER_M");
     AddECMapping("N/MM", "N_PER_MM");
     AddECMapping("N/RAD", "N_PER_RAD");
-    AddECMapping("N/SQ.MM", "N_PER_SQ_MM");
+    AddECMapping("N/SQ.MM", "MEGAPASCAL");
     AddECMapping("NMOL/CUB.DM", "NMOL_PER_CUB_DM");
     AddECMapping("PA-S", "PA_S");
     AddECMapping("PA/M", "PA_PER_M");

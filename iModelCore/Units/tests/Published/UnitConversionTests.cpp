@@ -20,7 +20,7 @@ struct UnitConversionTests : UnitsTestFixture
 {
     static bool TestUnitConversion(double fromVal, Utf8CP fromUnitName, double expectedVal, Utf8CP targetUnitName, int ulp,
                                     bvector<Utf8String>& loadErrors, bvector<Utf8String>& conversionErrors, bvector<bpair<Utf8String, Utf8String>>& handledUnits,
-                                    bool useLegacyNames = false, bool showDetailLogs = false);
+                                    bool useLegacyNames = false, bool showDetailLogs = false, UnitsProblemCode expectCode = UnitsProblemCode::NoProblem);
     static void TestConversionsLoadedFromCvsFile(Utf8CP fileName, WCharCP outputFileName, int expectedMissingUnits);
 
     static double GetDouble(Utf8StringR doubleVal)
@@ -39,12 +39,18 @@ struct UnitConversionTests : UnitsTestFixture
         }
 };
 
+static Utf8CP UnitsProblemCodeToString(UnitsProblemCode code)
+    {
+    return UnitsProblemCode::NoProblem == code ? "NoProblem" :
+        UnitsProblemCode::InvalidUnitName == code ? "InvalidUnitName" : UnitsProblemCode::UncomparableUnits == code ? "UncomparableUnits" : "InvertingZero";
+    }
+
 /*---------------------------------------------------------------------------------**//**
 // @bsiclass                                     Basanta.Kharel                 12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool UnitConversionTests::TestUnitConversion (double fromVal, Utf8CP fromUnitName, double expectedVal, Utf8CP targetUnitName, int ulp,
                                      bvector<Utf8String>& missingUnits, bvector<Utf8String>& conversionErrors, bvector<bpair<Utf8String,Utf8String>>& handledUnits,
-                                     bool useLegacyNames, bool showDetailLogs)
+                                     bool useLegacyNames, bool showDetailLogs, UnitsProblemCode expectedCode)
     {
     //if either units are not in the library conversion is not possible
     //UnitsMapping test checks if all units are there and fails when a unit is not found
@@ -75,28 +81,32 @@ bool UnitConversionTests::TestUnitConversion (double fromVal, Utf8CP fromUnitNam
     PERFORMANCELOG.debugv("About to try to convert %.16g %s to %s", fromVal, fromUnit->GetName().c_str(), targetUnit->GetName().c_str());
 
     double convertedVal;
-    fromUnit->Convert(convertedVal, fromVal, targetUnit);
-
-    //QuantityP q = SimpleQuantity(fromVal, fromUnitName);
-    //if (nullptr == q)
-    //    {
-    //    Utf8PrintfString error("%s with Value %lf", fromUnitName, fromVal);
-    //    loadErrors.push_back(error);
-    //    return;
-    //    }
-
-    //double convertedVal = q->Value(targetUnitName);
-    PERFORMANCELOG.debugv("Converted %s to %s.  Expected: %.17g  Actual: %.17g", fromUnit->GetName().c_str(), targetUnit->GetName().c_str(), expectedVal, convertedVal);
-    //if (fabs(convertedVal - expectedVal) > tolerance)
-    if(!almost_equal<double>(expectedVal, convertedVal, ulp))
+    UnitsProblemCode actualCode = fromUnit->Convert(convertedVal, fromVal, targetUnit);
+    if (UnitsProblemCode::NoProblem != actualCode)
         {
-        Utf8PrintfString formattedText("Conversion from %s (%s) to %s (%s). Input: %.17g \nOutput:   %.17g \nExpected: %.17g \nDiff:     %.17g   Diff/Exp: %.17g   ULP: %d\n", 
-                                       fromUnitName, fromUnit->GetName().c_str(), targetUnitName, targetUnit->GetName().c_str(), fromVal, convertedVal, expectedVal, convertedVal - expectedVal, (convertedVal - expectedVal)/expectedVal, ulp);
+        PERFORMANCELOG.debugv("Failed to convert from %s to %s because %s", fromUnit->GetName().c_str(), targetUnit->GetName().c_str(), UnitsProblemCodeToString(actualCode));
+        }
+
+    if (expectedCode != actualCode)
+        {
+        Utf8PrintfString formattedText("Conversion from %s (%s) to %s (%s) returned unexpected code.  Expected: %s  Actual:  %s.", 
+                                       fromUnitName, fromUnit->GetName().c_str(), targetUnitName, targetUnit->GetName().c_str(),
+                                       UnitsProblemCodeToString(expectedCode), UnitsProblemCodeToString(actualCode));
+        EXPECT_EQ(expectedCode, actualCode) << formattedText;
+        conversionErrors.push_back(formattedText);
+        }
+
+    PERFORMANCELOG.debugv("Converted %s to %s.  Expected: %.17g  Actual: %.17g", fromUnit->GetName().c_str(), targetUnit->GetName().c_str(), expectedVal, convertedVal);
+
+    if (!almost_equal<double>(expectedVal, convertedVal, ulp))
+        {
+        Utf8PrintfString formattedText("Conversion from %s (%s) to %s (%s). Input: %.17g \nOutput:   %.17g \nExpected: %.17g \nDiff:     %.17g   Diff/Exp: %.17g   ULP: %d\n",
+                                        fromUnitName, fromUnit->GetName().c_str(), targetUnitName, targetUnit->GetName().c_str(), fromVal, convertedVal, expectedVal, convertedVal - expectedVal, (convertedVal - expectedVal) / expectedVal, ulp);
         conversionErrors.push_back(formattedText);
         EXPECT_FALSE(true) << formattedText;
         }
     EXPECT_FALSE(BeNumerical::BeIsnan(convertedVal) || !BeNumerical::BeFinite(convertedVal)) << "Conversion from " << fromUnitName << " to " << targetUnitName << " resulted in an invalid number";
-    //EXPECT_NEAR(expectedVal, convertedVal, tolerance)<<  "Conversion from "<< fromUnitName << " to " << targetUnitName <<". Input : " << fromVal << ", Output : " << convertedVal << ", ExpectedOutput : " << expectedVal << " Tolerance : " << tolerance<< "\n";
+
     handledUnits.push_back(make_bpair(fromUnit->GetName(), targetUnit->GetName()));
     if (showDetailLogs)
         {
@@ -298,7 +308,7 @@ TEST_F(UnitConversionTests, TestInvertedSlopeUnits)
     bvector<Utf8String> conversionErrors;
     bvector<bpair<Utf8String, Utf8String>> handledUnits;
     TestUnitConversion(42.42, "HORIZONTAL/VERTICAL", 1.0 / 42.42, "VERTICAL/HORIZONTAL", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0.0, "HORIZONTAL/VERTICAL", 0.0, "VERTICAL/HORIZONTAL", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0.0, "HORIZONTAL/VERTICAL", 0.0, "VERTICAL/HORIZONTAL", 1, loadErrors, conversionErrors, handledUnits, false, false, UnitsProblemCode::InvertingZero);
     ASSERT_EQ(0, loadErrors.size()) << BeStringUtilities::Join(loadErrors, ", ");
     ASSERT_EQ(0, conversionErrors.size()) << BeStringUtilities::Join(conversionErrors, ", ");
     Utf8String fileName = UnitsTestFixture::GetOutputDataPath(L"TestInvertedSlopeUnits_handledUnits.csv");
@@ -472,10 +482,6 @@ TEST_F(UnitConversionTests, TestMiscConversions)
     // Surface Flow Rate
     TestUnitConversion(42.42, "CUB.M/(SQ.M*SEC)", 42.42 * 60.0 * 60.0 * 24.0, "CUB.M/(SQ.M*DAY)", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42.42, "CUB.FT/(SQ.FT*SEC)", 42.42 * 0.3048, "CUB.M/(SQ.M*SEC)", 1, loadErrors, conversionErrors, handledUnits);
-
-    //Thread Pitch
-    TestUnitConversion(42.42, "CM/REVOLUTION", 42.42e-2, "M/REVOLUTION", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(42.42, "FT/REVOLUTION", 42.42 * 0.3048 * 100.0, "CM/REVOLUTION", 1, loadErrors, conversionErrors, handledUnits);
 
     //Time
     TestUnitConversion(1.0, "WEEK", 7.0, "DAY", 1, loadErrors, conversionErrors, handledUnits);
@@ -817,9 +823,10 @@ TEST_F(UnitConversionTests, UnitsConversions_Complex)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UnitConversionTests, UnitsConversion_CompareToRawOutputFromOldSystem)
     {
-    TestConversionsLoadedFromCvsFile("ConversionsBetweenAllOldUnits.csv", L"TestConversionsBetweenAllOldUnits_handledUnits.csv", 103);
+    TestConversionsLoadedFromCvsFile("ConversionsBetweenAllOldUnits.csv", L"TestConversionsBetweenAllOldUnits_handledUnits.csv", 112);
     // went from 107 to 109 because work per month units were removed, back to 107 because mass ratios added
     // Down to 103 with addition of: LITRE_PER_KILOMETRE_SQUARED_PER_SECOND, VOLT_AMPERE, KILOVOLT_AMPERE and MEGAVOLT_AMPERE
+    // Up to 112 because THREAD_PITCH units removed ... units came from old system but Phen doesn't match units.
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -827,9 +834,10 @@ TEST_F(UnitConversionTests, UnitsConversion_CompareToRawOutputFromOldSystem)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UnitConversionTests, UnitsConversion)
     {
-    TestConversionsLoadedFromCvsFile("unitcomparisondata.csv", L"Testunitcomparisondata_handledUnits.csv", 90);
+    TestConversionsLoadedFromCvsFile("unitcomparisondata.csv", L"Testunitcomparisondata_handledUnits.csv", 99);
     // went from 94 to 96 because work per month units were removed, back to 94 because mass ratios added
     // Down to 90 with addition of: LITRE_PER_KILOMETRE_SQUARED_PER_SECOND, VOLT_AMPERE, KILOVOLT_AMPERE and MEGAVOLT_AMPERE
+    // Up to 99 because THREAD_PITCH units removed ... units came from old system but Phen doesn't match units.
     }
 
 //---------------------------------------------------------------------------------------//
@@ -869,6 +877,19 @@ TEST_F(UnitConversionTests, VolumeRatio_Conversions)
     Utf8String fileName = UnitsTestFixture::GetOutputDataPath(L"TestUsCustomaryLengths_handledUnits.csv");
     WriteToFile(fileName.c_str(), handledUnits);
     }
+
+//TEST_F(UnitConversionTests, Money_Conversions)
+//    {
+//    bvector<Utf8String> loadErrors;
+//    bvector<Utf8String> conversionErrors;
+//    bvector<bpair<Utf8String, Utf8String>> handledUnits;
+//    TestUnitConversion(1.0, "US$", 0.0, "Euro", 1, loadErrors, conversionErrors, handledUnits, false, false, UnitsProblemCode::UncomparableUnits);
+//    TestUnitConversion(1.0, "Euro", 0.0, "US$", 1, loadErrors, conversionErrors, handledUnits, false, false, UnitsProblemCode::UncomparableUnits);
+//    TestUnitConversion(1.0, "US$", 1.0, "US$", 1, loadErrors, conversionErrors, handledUnits);
+//    TestUnitConversion(1.0, "Euro", 1.0, "Euro", 1, loadErrors, conversionErrors, handledUnits);
+//    ASSERT_EQ(0, loadErrors.size()) << BeStringUtilities::Join(loadErrors, ", ");
+//    ASSERT_EQ(0, conversionErrors.size()) << BeStringUtilities::Join(conversionErrors, ", ");
+//    }
 
 // TODO: Make this test pass when conversions fail and add more conversions to test a wide spectrum of dimenions.
 //TEST_F(UnitConversionTests, TestConversionsThatShouldFail)

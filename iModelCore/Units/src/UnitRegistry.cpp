@@ -147,28 +147,27 @@ void UnitRegistry::AllUnits(bvector<UnitCP>& allUnits) const
 //-------------------------------------------------------------------------------------//
 // @bsimethod                                              Colin.Kerr     02/16
 //+---------------+---------------+---------------+---------------+---------------+----//
-void UnitRegistry::AddBasePhenomenon(Utf8Char baseSymbol)
+void UnitRegistry::AddBasePhenomenon(Utf8CP basePhenomenonName)
     {
-    Utf8CP phenomName = BasePhenomena::GetBasePhenomenonName(baseSymbol);
-    if (Utf8String::IsNullOrEmpty(phenomName))
+    if (Utf8String::IsNullOrEmpty(basePhenomenonName))
         return;
 
-    if (HasPhenomenon(phenomName))
+    if (HasPhenomenon(basePhenomenonName))
         {
-        LOG.errorv("Cannot create Base Phenomenon '%s' because name is already in use", phenomName);
+        LOG.errorv("Cannot create Base Phenomenon '%s' because name is already in use", basePhenomenonName);
         return;
         }
 
-    auto phenomena = new Phenomenon(phenomName, phenomName, baseSymbol, m_nextId);
+    auto phenomena = new Phenomenon(basePhenomenonName, basePhenomenonName, m_nextId);
     ++m_nextId;
 
-    m_phenomena.insert(bpair<Utf8String, PhenomenonP>(phenomName, phenomena));
+    m_phenomena.insert(bpair<Utf8String, PhenomenonP>(basePhenomenonName, phenomena));
     }
 
 //---------------------------------------------------------------------------------------//
 // @bsimethod                                              Colin.Kerr           02/16
 //+---------------+---------------+---------------+---------------+---------------+------//
-UnitCP UnitRegistry::AddUnitForBasePhenomenon(Utf8CP unitName, Utf8Char baseSymbol)
+UnitCP UnitRegistry::AddUnitForBasePhenomenon(Utf8CP unitName, Utf8CP basePhenomenonName)
     {
     if (Utf8String::IsNullOrEmpty(unitName))
         {
@@ -176,14 +175,21 @@ UnitCP UnitRegistry::AddUnitForBasePhenomenon(Utf8CP unitName, Utf8Char baseSymb
         return nullptr;
         }
 
-    Utf8CP phenomenonName = BasePhenomena::GetBasePhenomenonName(baseSymbol);
-    if (Utf8String::IsNullOrEmpty(phenomenonName))
+    if (Utf8String::IsNullOrEmpty(basePhenomenonName))
         {
-        LOG.errorv("Cannot create base unit '%s' because the input base symbol '%c' does not map to a base phenomenon", unitName, baseSymbol);
+        LOG.errorv("Cannot create base unit '%s' because the input base phenomenon name is null", unitName);
         return nullptr;
         }
 
-    return AddUnitInternal<Unit>(phenomenonName, SI, unitName, unitName, baseSymbol, 1, 0, false);
+    PhenomenonCP basePhen = LookupPhenomenon(basePhenomenonName);
+
+    if (nullptr == basePhen || !basePhen->IsBase())
+        {
+        LOG.errorv("Cannot create base unit '%s' because the input base phenomenon name '%s' does not map to a base phenomenon", unitName, basePhenomenonName);
+        return nullptr;
+        }
+
+    return AddUnitInternal<Unit>(basePhenomenonName, SI, unitName, unitName, 1, 0, false);
     }
 
 //--------------------------------------------------------------------------------------

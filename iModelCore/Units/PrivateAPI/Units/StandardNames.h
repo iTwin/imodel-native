@@ -50,7 +50,7 @@ static Utf8CP const TEMPERATURE_CHANGE = "TEMPERATURE_CHANGE";
 static Utf8CP const CURRENT = "CURRENT";
 static Utf8CP const MOLE = "MOLE";
 static Utf8CP const LUMINOSITY = "LUMINOSITY";
-static Utf8CP const ONE = "ONE";
+static Utf8CP const NUMBER = "NUMBER";
 static Utf8CP const ANGLE = "ANGLE";
 static Utf8CP const SOLIDANGLE = "SOLIDANGLE";
 
@@ -104,10 +104,8 @@ static Utf8CP const THERMAL_RESISTANCE = "THERMAL_RESISTANCE";
 static Utf8CP const TEMPERATURE_GRADIENT = "TEMPERATURE_GRADIENT";
 static Utf8CP const MOLAR_VOLUME = "MOLAR_VOLUME";
 static Utf8CP const MOLAR_CONCENTRATION = "MOLAR_CONCENTRATION";
-//static Utf8CP const FINANCE = "FINANCE";
 static Utf8CP const SLOPE = "SLOPE";
 static Utf8CP const GRAVCONSTANT = "GRAVCONSTANT";
-static Utf8CP const THREAD_PITCH = "THREAD_PITCH";
 static Utf8CP const HEAT_TRANSFER = "HEAT_TRANSFER";
 static Utf8CP const HEAT_FLUX_DENSITY = "HEAT_FLUX_DENSITY";
 static Utf8CP const TORSIONAL_WARPING_CONSTANT = "TORSIONAL_WARPING_CONSTANT";
@@ -123,8 +121,9 @@ static Utf8CP const SPECIFIC_HEAT_CAPACITY_MOLAR = "SPECIFIC_HEAT_CAPACITY_MOLAR
 static Utf8CP const ROTATIONAL_SPRING_CONSTANT = "ROTATIONAL_SPRING_CONSTANT";
 static Utf8CP const LINEAR_ROTATIONAL_SPRING_CONSTANT = "LINEAR_ROTATIONAL_SPRING_CONSTANT";
 static Utf8CP const PERCENTAGE = "PERCENTAGE";
-static Utf8CP const LINEAR_COST = "LINEAR_COST";
 static Utf8CP const LINEAR_RATE = "LINEAR_RATE";
+static Utf8CP const LENGTH_RATIO = "LENGTH_RATIO";
+static Utf8CP const METRIC_PREFIX = "METRIC_PREFIX";
 
 static Utf8CP const LINEAR_COEFFICIENT_OF_THERMAL_EXPANSION = "LINEAR_COEFFICIENT_OF_THERMAL_EXPANSION";
 static Utf8CP const AREA_COEFFICIENT_OF_THERMAL_EXPANSION = "AREA_COEFFICIENT_OF_THERMAL_EXPANSION";
@@ -135,28 +134,5 @@ static Utf8CP const VOLUME_RATIO = "VOLUME_RATIO";
 //static Utf8CP const ACTION = "ACTION";
 static Utf8CP const TBD = "TBD";
 static Utf8CP const EMPTY_STRING = "";
-
-struct BasePhenomena
-{
-private:
-    BasePhenomena();
-
-public:
-    static const Utf8Char Length = 'L';
-    static const Utf8Char Mass = 'M';
-    static const Utf8Char Time = 'T';
-    static const Utf8Char Temperature = 'K';
-    static const Utf8Char TemperatureChange = 'D';
-    static const Utf8Char ElectricCurrent = 'I';
-    static const Utf8Char Mole = 'N';
-    static const Utf8Char Luminosity = 'J';
-    static const Utf8Char PlaneAngle = 'A';
-    static const Utf8Char SolidAngle = 'S';
-    static const Utf8Char Finance = '$';
-    static const Utf8Char Capita = 'X';
-    static const Utf8Char Ratio = 'R';
-
-    static Utf8CP GetBasePhenomenonName(Utf8Char baseSymbol);
-};
 
 END_BENTLEY_UNITS_NAMESPACE
