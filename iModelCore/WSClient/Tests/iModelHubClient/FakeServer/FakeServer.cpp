@@ -1,13 +1,13 @@
 #include "FakeServer.h"
 
 
-BeFileNameStatus FakeServer::CreateiModelFromSeed(WCharCP seedFilePath, WCharCP serverPath, WCharP seedFile)
+BeFileNameStatus FakeServer::CreateiModelFromSeed(WCharCP seedFilePath, WCharCP serverPath)
     {
     //here place the seed file on mockserver and return a mock response
     BeFileName seedPathFile(seedFilePath);
+    WCharCP fileName = BeFileName::GetFileNameAndExtension(seedFilePath).c_str();
     BeFileName servPathFile(serverPath);
-    seedPathFile.AppendToPath(seedFile);
-    servPathFile.AppendToPath(seedFile);
+    servPathFile.AppendToPath(fileName);
     BeFileNameStatus stat = BeFileName::BeCopyFile(seedPathFile, servPathFile);
     if (BeFileNameStatus::Success != stat)
         return BeFileNameStatus::UnknownError;

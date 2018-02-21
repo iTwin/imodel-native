@@ -230,27 +230,54 @@ Response RequestHandler::UploadNewSeedFile(Request req)
     bvector<Utf8String> args = ParseUrl(req);
     Utf8String instanceid = GetInstanceid(args[2]);
 
-    //req.GetRequestBody()->GetFilePath();
+    HttpBodyPtr body = req.GetRequestBody();
+    auto ptr1 = body.get();
+    HttpRangeBody* rangeBody = dynamic_cast<HttpRangeBody*>(ptr1);
+    HttpBodyPtr bodyOfRange = rangeBody->GetBody();
+    auto ptr2 = bodyOfRange.get();
+    HttpFileBody* fileBody = dynamic_cast<HttpFileBody*>(ptr2);
+    BeFileName filePath(fileBody->GetFilePath());
 
     BeFileName dbName("ServerRepo.db");
     BeFileName dbPath(serverPath);
     dbPath.AppendToPath(dbName);
 
     BentleyB0200::BeSQLite::Db m_db;
-    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
+    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
         {
-        size_t count;
-        Statement st;
-        st.Prepare(m_db, "Select COUNT(*) from instances where instanceid = ?");
-        st.BindText(1, instanceid, Statement::MakeCopy::No);
+        BeFileName serverFilePath(serverPath);
+        serverFilePath.AppendToPath(BeFileName(instanceid).GetWCharCP());
 
-        printf("%d\n", st.Step());
-        
-        /*if (!st.GetValueInt(0))
-            FakeServer::CreateiModelFromSeed(downloadPath, serverPath.c_str(), filetoDownload);*/
-        st.Finalize();
+
+        if (BeFileNameStatus::Success == FakeServer::CreateiModelFromSeed(filePath.GetWCharCP(), serverFilePath.GetWCharCP()))
+            {
+            Statement st;
+            st.Prepare(m_db, "Select Name from instances where instanceid = ?");
+            st.BindText(1, instanceid, Statement::MakeCopy::No);
+
+            printf("%d\n", st.Step());
+            Utf8String fileToDelete(st.GetValueText(0));
+            fileToDelete += ".bim";
+            BeFileName fileDelete(serverFilePath);
+            fileDelete.AppendToPath(BeFileName(fileToDelete));
+            printf("%d\n", fileDelete.BeDeleteFile());
+
+            st.Finalize();
+            
+            Statement stUpdate;
+            stUpdate.Prepare(m_db, "UPDATE instances SET Name = ? where instanceid = ?");
+            WString fileName = BeFileName(BeFileName::GetFileNameAndExtension(filePath)).GetFileNameWithoutExtension();
+            Utf8String name = BeFileName(fileName).GetNameUtf8();
+            stUpdate.BindText(1, name, Statement::MakeCopy::No);
+            stUpdate.BindText(2, instanceid, Statement::MakeCopy::No);
+
+            printf("%d\n", stUpdate.Step());
+            stUpdate.Finalize();
+            Utf8String contentEmpty("");
+            auto content = HttpResponseContent::Create(HttpStringBody::Create(contentEmpty));
+            return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::Created);
+            }
         }
-    m_db.CloseDb();
 
     return Response();
     }
@@ -496,5 +523,7 @@ Response RequestHandler::PerformOtherRequest(Request req)
         return RequestHandler::CreateFileInstance(req);
     if (req.GetUrl().Contains("Repositories/iModel") && req.GetUrl().Contains("iModelScope/Briefcase"))
         return RequestHandler::GetBriefcaseId(req);
-    return RequestHandler::UploadNewSeedFile(req);
+    if (req.GetMethod().Equals("PUT"))
+        return RequestHandler::UploadNewSeedFile(req);
+    return Response();
     }
