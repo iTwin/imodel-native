@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Elements/PublicApi/GridCurve.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -34,6 +34,8 @@ protected:
     static  GRIDELEMENTS_EXPORT Dgn::GeometricElement3d::CreateParams        CreateParamsFromModel (Dgn::DgnModelCR model, Dgn::DgnClassId classId);
 
     virtual bool            _ValidateGeometry(ICurvePrimitivePtr curve) const { return true; };
+
+    GRIDELEMENTS_EXPORT Dgn::DgnDbStatus CheckDependancyToModel() const;
 
     //! Called when an element is about to be inserted into the DgnDb.
     //! @return DgnDbStatus::Success to allow the insert, otherwise it will fail with the returned status.

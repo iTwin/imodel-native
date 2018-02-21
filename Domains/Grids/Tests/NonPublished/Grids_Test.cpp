@@ -3155,7 +3155,7 @@ TEST_F(GridsTestFixture, GridSpline_Created)
     ASSERT_TRUE(arcSpline->Insert().IsNull()) << "Should not be able to insert GridSpline with invalid geometry";
 
     /////////////////////////////////////////////////////////////
-    // Try setting a valid GridLine with invalid geometry
+    // Try setting a valid GridSpline with invalid geometry
     /////////////////////////////////////////////////////////////
     gridSpline->SetCurve(arcCurve);
     ASSERT_TRUE(gridSpline->Update().IsNull()) << "Should not be able to update GridSpline with invalid geometry";
@@ -3397,4 +3397,85 @@ TEST_F(GridsTestFixture, GridSurfacesTests)
     ASSERT_TRUE(old.IsValid()) << "Failed to get existing curve vector";
     }
     db.SaveChanges();
+    }
+    //---------------------------------------------------------------------------------------
+    // @betest                                      Martynas.Saulius                02/2018
+    //--------------+---------------+---------------+---------------+---------------+-------- 
+    TEST_F(GridsTestFixture, GridCurvesPortionTests) {
+        { //Creation, Insertion, Update validity
+            GridCurvesPortionPtr portion = GridCurvesPortion::Create(*m_model);
+            ASSERT_TRUE(portion.IsValid()) << "Failed to create grid curves portion";
+            ASSERT_TRUE(portion->Insert().IsValid()) << "Failed to insert grid curves portion";
+            DgnDbStatus stat;
+            portion->Update(&stat);
+            ASSERT_EQ(DgnDbStatus::Success, stat) << "Failed to update inserted grid curves portion";
+        }
+        DgnDbR db = *DgnClientApp::App().Project();
+
+        DgnCategoryId categoryId = SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), GRIDS_CATEGORY_CODE_Uncategorized);
+        { // Check grid curves portion created from handler
+            GridCurvesPortionHandler& portionHandler = GridCurvesPortionHandler::GetHandler();
+            DgnClassId portionClassId = db.Domains().GetClassId(portionHandler);
+            DgnElement::CreateParams portionParams(db, m_model->GetModelId(), portionClassId);
+
+            GridCurvesPortionPtr invalidGridCurvesPortion_FromHandler = dynamic_cast<GridCurvesPortion *>(portionHandler.Create(portionParams).get());
+            ASSERT_TRUE(invalidGridCurvesPortion_FromHandler.IsValid()) << "Grid curves portion element created from handler shouldn't be a nullptr";
+
+
+            invalidGridCurvesPortion_FromHandler->SetCategoryId(categoryId);
+            ASSERT_TRUE(invalidGridCurvesPortion_FromHandler->Insert().IsValid()) << "Grid curves portion element via handler insertion failed";
+
+            ASSERT_TRUE(invalidGridCurvesPortion_FromHandler->GetElementId().IsValid()) << "Grid curves portion element id via handler is invalid";
+        }
+        db.SaveChanges();
+    }
+    //---------------------------------------------------------------------------------------
+    // @betest                                      Martynas.Saulius                02/2018
+    //--------------+---------------+---------------+---------------+---------------+-------- 
+    TEST_F(GridsTestFixture, GridCurveDependancyFromPortionsTest) {
+        DgnDbR db = *DgnClientApp::App().Project();
+
+        DgnCategoryId categoryId = SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), GRIDS_CATEGORY_CODE_Uncategorized);
+        { // Check grid line created from handler
+            GridLineHandler& lineHandler = GridLineHandler::GetHandler();
+            DgnClassId lineClassId = db.Domains().GetClassId(lineHandler);
+            DgnElement::CreateParams lineParams(db, m_model->GetModelId(), lineClassId);
+
+            GridLinePtr invalidGridLine_FromHandler = dynamic_cast<GridLine *>(lineHandler.Create(lineParams).get());
+            ICurvePrimitivePtr lineCurve = ICurvePrimitive::CreateLine({ 0, 0, 0 }, { 5, 0, 0 });
+            invalidGridLine_FromHandler->SetCategoryId(categoryId);
+            invalidGridLine_FromHandler->SetCurve(lineCurve);
+            DgnDbStatus stat;
+            invalidGridLine_FromHandler->Insert(&stat);
+            ASSERT_EQ(DgnDbStatus::ValidationFailed, stat) << "Grid Line was inserted into wrong model sucessfully";
+        }
+        { // Check grid arc created from handler
+            GridArcHandler& arcHandler = GridArcHandler::GetHandler();
+            DgnClassId arcClassId = db.Domains().GetClassId(arcHandler);
+            DgnElement::CreateParams arcParams(db, m_model->GetModelId(), arcClassId);
+
+            GridArcPtr invalidGridArc_FromHandler = dynamic_cast<GridArc *>(arcHandler.Create(arcParams).get());
+            ICurvePrimitivePtr arcCurve = GeometryUtils::CreateArc({ 0, 0, 0 }, { 5, 0, 0 }, { 0, 5, 0 }, true);
+            invalidGridArc_FromHandler->SetCategoryId(categoryId);
+            invalidGridArc_FromHandler->SetCurve(arcCurve);
+            DgnDbStatus stat;
+            invalidGridArc_FromHandler->Insert(&stat);
+            ASSERT_EQ(DgnDbStatus::ValidationFailed, stat) << "Grid Arc was inserted into wrong model sucessfully";
+        }
+        { // Check grid spline created from handler
+            GridSplineHandler& splineHandler = GridSplineHandler::GetHandler();
+            DgnClassId splineClassId = db.Domains().GetClassId(splineHandler);
+            DgnElement::CreateParams splineParams(db, m_model->GetModelId(), splineClassId);
+
+            GridSplinePtr invalidGridSpline_FromHandler = dynamic_cast<GridSpline *>(splineHandler.Create(splineParams).get());
+            bvector<double> splineWeights = { 1.0, 1.0, 1.0 };
+            bvector<double> splineKnots = { 0, 1, 2, 3, 4, 5 };
+            ICurvePrimitivePtr splineCurve = ICurvePrimitive::CreateBsplineCurve(MSBsplineCurve::CreateFromPolesAndOrder({ { 0, 0, 0 },{ 10, 0, 0 },{ 0, 10, 0 } }, &splineWeights, &splineKnots, 3, false, false));
+            invalidGridSpline_FromHandler->SetCategoryId(categoryId);
+            invalidGridSpline_FromHandler->SetCurve(splineCurve);
+            DgnDbStatus stat;
+            invalidGridSpline_FromHandler->Insert(&stat);
+            ASSERT_EQ(DgnDbStatus::ValidationFailed, stat) << "Grid Spline was inserted into wrong model sucessfully";
+        }
+        db.SaveChanges();
     }
