@@ -391,11 +391,23 @@ public:
     //! Finds transform from one plane to another
     BUILDINGSHAREDUTILS_EXPORT static Transform FindTransformBetweenPlanes(DPlane3d const& source, DPlane3d const& target);
 
+    //! Finds rotation transform from one plane to another
+    BUILDINGSHAREDUTILS_EXPORT static Transform FindRotationTransformBetweenPlanes(DPlane3d const & source, DPlane3d const & target);
+
     //! Transforms vector from XY plane onto a given one
     //! @param[out] transformed transformed vector
     //! @param[in]  vector      vector to transform
     //! @param[in]  plane       plane to transform vector on
-    BUILDINGSHAREDUTILS_EXPORT static BentleyStatus TransformVectorOnPlane(DVec3dR transformed, DVec3d vector, DPlane3d plane);
+    BUILDINGSHAREDUTILS_EXPORT static void TransformVectorOnPlane(DVec3dR transformed, DVec3d vector, DPlane3d plane);
+
+    //! Transforms vector from XY plane onto a given one using only rotation
+    //! @param[out] transformed transformed vector
+    //! @param[in]  vector      vector to transform
+    //! @param[in]  plane       plane to transform vector on
+    BUILDINGSHAREDUTILS_EXPORT static void RotationTransformVectorOnPlane(DVec3dR transformed, DVec3d vector, DPlane3d plane);
+
+    //! Rotates line point around plane normal by given angle
+    BUILDINGSHAREDUTILS_EXPORT static void RotateLineEndPointToAngleOnPlane(DPoint3dR rotatedEndPoint, DPoint3dCR fixedEndPoint, double angle, DPlane3d plane);
 };
 
 END_BUILDING_SHARED_NAMESPACE
