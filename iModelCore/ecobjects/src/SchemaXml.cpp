@@ -463,7 +463,42 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadInvertedUnitFromXml(ECSchemaPtr& schem
         if (ECObjectsStatus::NamedItemAlreadyExists == addStatus)
             {
             LOG.errorv("Duplicate %s node for %s in schema %s.", ECSchema::SchemaElementTypeToString(ECSchemaElementType::InvertedUnit), unit->GetName().c_str(), schemaOut->GetFullSchemaName().c_str());
-            Units::UnitRegistry::Instance().RemoveUnit(unit->GetFullName().c_str());
+            Units::UnitRegistry::Instance().RemoveInvertedUnit(unit->GetFullName().c_str());
+            delete unit;
+            unit = nullptr;
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
+        
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                  02/2018
+//---------------------------------------------------------------------------------------
+SchemaReadStatus SchemaXmlReaderImpl::ReadConstantFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode)
+    {
+    SchemaReadStatus status = SchemaReadStatus::Success;
+
+    for (BeXmlNodeP candidateNode = schemaNode.GetFirstChild(); nullptr != candidateNode; candidateNode = candidateNode->GetNextSibling())
+        {
+        if (!IsSchemaChildElementNode(*candidateNode, ECSchemaElementType::Constant))
+            continue;
+
+        ECUnitP unit;
+        status = ECUnit::ReadConstantXml(unit, *candidateNode, *schemaOut, m_schemaContext);
+        if (SchemaReadStatus::Success != status)
+            {
+            // The object should never be constructed, no need to delete it.
+            unit = nullptr;
+            return status;
+            }
+        
+        ECObjectsStatus addStatus = schemaOut->AddSchemaChild<ECUnit>(unit, ECSchemaElementType::Constant);
+        if (ECObjectsStatus::NamedItemAlreadyExists == addStatus)
+            {
+            LOG.errorv("Duplicate %s node for %s in schema %s.", ECSchema::SchemaElementTypeToString(ECSchemaElementType::Constant), unit->GetName().c_str(), schemaOut->GetFullSchemaName().c_str());
+            Units::UnitRegistry::Instance().RemoveConstant(unit->GetFullName().c_str());
             delete unit;
             unit = nullptr;
             return SchemaReadStatus::InvalidECSchemaXml;
@@ -715,6 +750,8 @@ bool SchemaXmlReaderImpl::_IsSchemaChildElementNode(BeXmlNodeR schemaNode, ECSch
             return 0 == strcmp(UNIT_ELEMENT, nodeName);
         case ECSchemaElementType::InvertedUnit:
             return 0 == strcmp(INVERTED_UNIT_ELEMENT, nodeName);
+        case ECSchemaElementType::Constant:
+            return 0 == strcmp(CONSTANT_ELEMENT, nodeName);
         }
 
     return false;
@@ -749,6 +786,8 @@ bool SchemaXmlReaderImpl::_IsSchemaChildElementNode(BeXmlNodeR schemaNode, ECSch
             elementOrder.AddElement(typeName.c_str(), ECSchemaElementType::Unit);
         else if (IsSchemaChildElementNode(*candidateNode, ECSchemaElementType::InvertedUnit))
             elementOrder.AddElement(typeName.c_str(), ECSchemaElementType::InvertedUnit);
+        else if (IsSchemaChildElementNode(*candidateNode, ECSchemaElementType::Constant))
+            elementOrder.AddElement(typeName.c_str(), ECSchemaElementType::Constant);
         }
     }
 
@@ -993,6 +1032,19 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
 
     readingInvertedUnit.Stop();
     LOG.tracev("Reading InvertedUnit elements for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingInvertedUnit.GetElapsedSeconds());
+
+    // Constants
+    StopWatch readConstants("Reading constants", true);
+    status = reader->ReadConstantFromXml(schemaOut, *schemaNode);
+
+    if (SchemaReadStatus::Success != status)
+        {
+        delete reader; reader = nullptr;
+        return status;
+        }
+
+    readConstants.Stop();
+    LOG.tracev("Reading Constant elements for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readConstants.GetElapsedSeconds());
 
     // KindOfQuantity
     StopWatch readingKindOfQuantities("Reading kind of quantity", true);
@@ -1273,6 +1325,16 @@ SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
                 if(&(unit->GetSchema()) != &m_ecSchema)
                     return SchemaWriteStatus::Success;
                 unit->WriteInvertedUnitXml(m_xmlWriter, m_ecXmlVersion);
+                }
+            }
+        else if (ECSchemaElementType::Constant == elementType)
+            {
+            ECUnitCP unit = m_ecSchema.GetConstantCP(elementName);
+            if(nullptr != unit)
+                {
+                if(&(unit->GetSchema()) != &m_ecSchema)
+                    return SchemaWriteStatus::Success;
+                unit->WriteConstantXml(m_xmlWriter, m_ecXmlVersion);
                 }
             }
         }

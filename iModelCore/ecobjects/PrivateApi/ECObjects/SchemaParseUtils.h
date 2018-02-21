@@ -41,6 +41,7 @@
 #define PHENOMENON_ELEMENT                  "Phenomenon"
 #define UNIT_ELEMENT                        "Unit"
 #define INVERTED_UNIT_ELEMENT               "InvertedUnit"
+#define CONSTANT_ELEMENT                    "Constant"
 
 #define ECXML_SCHEMAREFERENCE_ELEMENT       "ECSchemaReference"
 #define ECJSON_REFERENCES_ATTRIBUTE         "references"

@@ -1,0 +1,13 @@
+﻿{
+  "$schema": "https://dev.bentley.com/json_schemas/ec/32/draft-01/schemachild",
+  "schema": "ExampleSchema",
+  "schemaVersion": "03.01.00",
+  "schemaChildType": "Constant",
+  "name": "ExampleConstant",
+  "definition": "M",
+  "label": "ExampleConstantLabel",
+  "description": "ExampleConstantDescription",
+  "factor": 10.0,
+  "phenomenon": "ExampleSchema.ExamplePhenomenon",
+  "unitSystem": "ExampleSchema.ExampleUnitSystem"
+}

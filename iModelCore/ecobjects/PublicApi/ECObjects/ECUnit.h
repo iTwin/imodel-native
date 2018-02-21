@@ -174,11 +174,13 @@ private:
 
     static SchemaReadStatus ReadXml(ECUnitP& unit, BeXmlNodeR unitNode, ECSchemaCR schema, ECSchemaReadContextR context);
     static SchemaReadStatus ReadInvertedUnitXml(ECUnitP& invertedUnit, BeXmlNodeR, ECSchemaCR schema, ECSchemaReadContextR context);
+    static SchemaReadStatus ReadConstantXml(ECUnitP& constant, BeXmlNodeR, ECSchemaCR schema, ECSchemaReadContextR context);
     SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
     SchemaWriteStatus WriteInvertedUnitXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
+    SchemaWriteStatus WriteConstantXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
     SchemaWriteStatus WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
     SchemaWriteStatus WriteInvertedUnitJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
-
+    SchemaWriteStatus WriteConstantJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
     // Should only be called by UnitRegistry
     ECUnit(Units::UnitSystemCR unitSystem, Units::PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, double factor, double offset, bool isConstant) : 
         Units::Unit(unitSystem, phenomenon, name, id, definition, factor, offset, isConstant), m_isDisplayLabelExplicitlyDefined(false) {}
@@ -220,5 +222,9 @@ public:
     //! @param[out] outValue                Json object containing the schema child Json if successfully written.
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
     ECOBJECTS_EXPORT SchemaWriteStatus WriteInvertedUnitJson(Json::Value& outValue, bool includeSchemaVersion = false) const;
+    //! Write the constant ECUnit as a standalone schema child in the ECSchemaJSON format.
+    //! @param[out] outValue                Json object containing the schema child Json if successfully written.
+    //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
+    ECOBJECTS_EXPORT SchemaWriteStatus WriteConstantJson(Json::Value& outValue, bool includeSchemaVersion = false) const;
 };
 END_BENTLEY_ECOBJECT_NAMESPACE

@@ -3154,7 +3154,8 @@ enum class ECSchemaElementType
     UnitSystem,
     Phenomenon,
     Unit,
-    InvertedUnit
+    InvertedUnit,
+    Constant
 };
 
 //=======================================================================================
@@ -3410,6 +3411,7 @@ public:
     uint32_t GetUnitCount() const {return (uint32_t)m_unitMap.size();} //!< Gets the number of ECUnit in the schema.
     ECOBJECTS_EXPORT ECObjectsStatus DeleteUnit(ECUnitR unit); //!< Removes a ECUnit from this schema.
     ECOBJECTS_EXPORT ECObjectsStatus DeleteInvertedUnit(ECUnitR unit); //!< Removes an inverted ECUnit from this schema.
+    ECOBJECTS_EXPORT ECObjectsStatus DeleteConstant(ECUnitR constant); //!< Removes a constant from this schema.
 
     //! Indicates whether this schema is a so-called @b dynamic schema by
     //! checking whether the @b DynamicSchema custom attribute from the standard schema @b CoreCustomAttributes
@@ -3566,6 +3568,17 @@ public:
     //! @param[in] description  Description of the unit
     ECOBJECTS_EXPORT ECObjectsStatus CreateInvertedUnit(ECUnitP& unit, ECUnitCR parent, Utf8CP name, UnitSystemCR unitSystem, Utf8CP label = nullptr, Utf8CP description = nullptr);
 
+    //! Creates a new constant ECUnit and adds it to the schema.
+    //! @param[out] constant    If successful, will contain a new constant ECUnit object
+    //! @param[in] name         Name of the constant to create
+    //! @param[in] definition   Definition of the constant
+    //! @param[in] phenom       Name of the phenomenon this constant is associated with
+    //! @param[in] unitSystem   Name of the unit system this constant is associated with
+    //! @param[in] factor       Factor of this constant
+    //! @param[in] label        Display label of the constant
+    //! @param[in] description  Description of the constant
+    ECOBJECTS_EXPORT ECObjectsStatus CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, double factor, Utf8CP label = nullptr, Utf8CP description = nullptr);
+
     //! Get a schema by alias within the context of this schema and its referenced schemas.
     //! @param[in]  alias   The alias of the schema to lookup in the context of this schema and it's references.
     //!                     Passing an empty alias will return a pointer to the current schema.
@@ -3657,6 +3670,16 @@ public:
     //! @param[in]  name     The name of the unit to lookup.  This must be an unqualified (short) name.
     //! @return   A pointer to an ECN::ECUnit if the named unit exists in within the current schema; otherwise, nullptr
     ECOBJECTS_EXPORT ECUnitP GetInvertedUnitP(Utf8CP name);
+
+    //! Get an constant ECUnit by name within the context of this schema.
+    //! @param[in]  name     The name of the unit to lookup.  This must be an unqualified (short) name.
+    //! @return   A const pointer to an ECN::ECUnit if the named unit exists in within the current schema; otherwise, nullptr
+    ECUnitCP GetConstantCP(Utf8CP name) const {return const_cast<ECSchemaP> (this)->GetConstantP(name);}
+
+    //! Get an constant ECUnit by name within the context of this schema.
+    //! @param[in]  name     The name of the constant to lookup.  This must be an unqualified (short) name.
+    //! @return   A pointer to a ECN::ECUnit if the named constant exists in within the current schema; otherwise, nullptr
+    ECOBJECTS_EXPORT ECUnitP GetConstantP(Utf8CP name);
 
     //! Gets the other schemas that are used by classes within this schema.
     //! Referenced schemas are the schemas that contain definitions of base classes,

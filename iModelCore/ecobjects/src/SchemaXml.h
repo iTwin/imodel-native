@@ -72,6 +72,7 @@ public:
     SchemaReadStatus ReadPhenomenonFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode);
     SchemaReadStatus ReadUnitFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode);
     SchemaReadStatus ReadInvertedUnitFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode);
+    SchemaReadStatus ReadConstantFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode);
     void PopulateSchemaElementOrder(ECSchemaElementsOrder& elementOrder, BeXmlNodeR schemaNode);
     virtual bool IsSchemaChildElementNode(BeXmlNodeR schemaNode, ECSchemaElementType childType) {return _IsSchemaChildElementNode(schemaNode, childType);}
 };
