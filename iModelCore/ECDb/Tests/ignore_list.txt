@@ -11,7 +11,3 @@ SchemaManagerTests.ImportMultipleSupplementalSchemas
 
 #Report()
 ECSqlSelectPrepareTests.LikeOperator
-
-#TFS#817274 Should be removed once the tfs item is fixed. Current
-#the test would fail to capture the usecase described in the the tfs item
-DbMappingTestFixture.SubQueringEndTableRelationship
