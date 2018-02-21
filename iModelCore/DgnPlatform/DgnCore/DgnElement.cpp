@@ -1185,7 +1185,9 @@ Json::Value DgnElement::RelatedElement::ToJson(DgnDbR db) const
     {
     Json::Value val;
     val[json_id()] = m_id.ToHexStr();
-    val[json_relClassName()] = db.Schemas().GetClass(m_relClassId)->GetName();
+    auto relClass = db.Schemas().GetClass(m_relClassId);
+    if (relClass != nullptr)
+        val[json_relClassName()] = relClass->GetName();
     return val;
     }
 

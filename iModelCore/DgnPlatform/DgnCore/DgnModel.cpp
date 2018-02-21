@@ -749,6 +749,8 @@ void DgnModel::_ToJson(JsonValueR val, JsonValueCR opts) const
 
     if (!m_jsonProperties.empty())
         val[json_jsonProperties()] = m_jsonProperties;
+    
+    val[json_name()] = GetName();
 
     if (m_isPrivate)
         val[json_isPrivate()] = true;
