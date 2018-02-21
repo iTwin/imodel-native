@@ -909,6 +909,8 @@ void HierarchyUpdater::Update(bvector<IUpdateTaskPtr>& subTasks, UpdateContext& 
     context.GetHandledHierarchies().insert(oldInfo);
     context.GetHandledHierarchies().insert(newInfo);
 
+    Savepoint txn(connection.GetDb(), "Update");
+
     if (IsHierarchyRemoved(context, oldInfo))
         {
         // no need to update this data source since it's already removed
