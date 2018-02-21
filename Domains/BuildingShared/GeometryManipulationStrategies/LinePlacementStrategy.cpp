@@ -144,16 +144,11 @@ BentleyStatus LinePointLengthAnglePlacementStrategy::CalculateEndPoint(DPoint3dR
     if (0 == _GetKeyPoints().size())
         return BentleyStatus::ERROR;
 
-    DVec3d lineVec = DVec3d::From(m_length, 0, 0);
-    lineVec.RotateXY(m_angle);
+    DPoint3d startPoint = _GetKeyPoints().front();
+    endPoint = startPoint;
+    endPoint.x += m_length; // Set correct distance between points;
 
-    if (BentleyStatus::ERROR == GeometryUtils::TransformVectorOnPlane(lineVec, lineVec, m_workingPlane))
-        return BentleyStatus::ERROR;
-
-    lineVec.Subtract(DVec3d::From(m_workingPlane.origin)); // Subtract working plane origin because points already have correct translation
-
-    endPoint = _GetKeyPoints().front();
-    endPoint.Add(lineVec);
+    GeometryUtils::RotateLineEndPointToAngleOnPlane(endPoint, startPoint, m_angle, m_workingPlane);
     
     return BentleyStatus::SUCCESS;
     }
@@ -470,6 +465,8 @@ void LinePointsAnglePlacementStrategy::_SetProperty(Utf8CP key, const double & v
     {
     if (0 == strcmp(prop_Angle(), key))
         SetAngle(value);
+    else
+        return;
 
     AdjustEndPoint();
     }
@@ -552,10 +549,6 @@ void LinePointsAnglePlacementStrategy::_AddKeyPoint(DPoint3dCR newKeyPoint)
     if (_GetKeyPoints().size() < 2)
         T_Super::_AddKeyPoint(newKeyPoint);
 
-    bvector<DPoint3d> points = _GetKeyPoints();
-    if (2 == points.size())
-        m_distance = points[0].Distance(points[1]);
-
     AdjustEndPoint();
     }
 
@@ -567,10 +560,6 @@ void LinePointsAnglePlacementStrategy::_AddDynamicKeyPoint(DPoint3dCR newDynamic
     if ((!IsDynamicKeyPointSet() && _GetKeyPoints().size() < 2) ||
         (IsDynamicKeyPointSet() && _GetKeyPoints().size() <= 2))
         T_Super::_AddDynamicKeyPoint(newDynamicKeyPoint);
-
-    bvector<DPoint3d> points = _GetKeyPoints();
-    if (2 == points.size())
-        m_distance = points[0].Distance(points[1]);
 
     AdjustEndPoint();
     }
@@ -597,18 +586,9 @@ BentleyStatus LinePointsAnglePlacementStrategy::AdjustEndPoint()
         return BentleyStatus::SUCCESS;
 
     DPoint3d startPoint = points.front();
-    DPoint3d endPoint;
+    DPoint3d endPoint = points.back();
 
-    DVec3d lineVec = DVec3d::From(m_distance, 0, 0);
-    lineVec.RotateXY(m_angle);
-
-    if (BentleyStatus::ERROR == GeometryUtils::TransformVectorOnPlane(lineVec, lineVec, m_workingPlane)) 
-        return BentleyStatus::ERROR;
-
-    lineVec.Subtract(DVec3d::From(m_workingPlane.origin)); // Remove working plane's origin, because points already have correct translation
-
-    endPoint = startPoint;
-    endPoint.Add(lineVec);
+    GeometryUtils::RotateLineEndPointToAngleOnPlane(endPoint, startPoint, m_angle, m_workingPlane);
 
     if (!IsDynamicKeyPointSet())
         GetLineManipulationStrategyForEdit().ReplaceKeyPoint(endPoint, 1);

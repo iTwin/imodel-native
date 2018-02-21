@@ -192,7 +192,6 @@ struct LinePointsAnglePlacementStrategy : LinePlacementStrategy
 
     private:
         double m_angle = 0;
-        double m_distance = 0;
         DPlane3d m_workingPlane;
 
     protected:
