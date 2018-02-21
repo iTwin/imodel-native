@@ -1280,8 +1280,14 @@ int iModelBridgeFwk::ProcessSchemaChange()
 Utf8String   iModelBridgeFwk::GetRevisionComment()
     {
     //Revision comment override from command line has the first priority
+    Utf8String trunCastedCommentString;
     //if (!m_jobEnvArgs.m_revisionComment.empty())
-        return m_jobEnvArgs.m_revisionComment;
+        trunCastedCommentString = m_jobEnvArgs.m_revisionComment;
+
+    //See TFS#819945: IMBridgeFwk - must truncate changeset description < 400 chars
+    if (trunCastedCommentString.size() > 399)
+        trunCastedCommentString.erase(399, std::string::npos);
+    return trunCastedCommentString;
     /* Disabled until iModelHub changeset suppports a json blob property for the info below.
     bvector<BeFileName> inputFiles;
     GetRegistry()._QueryAllFilesAssignedToBridge(inputFiles, m_jobEnvArgs.m_bridgeRegSubKey.c_str());
