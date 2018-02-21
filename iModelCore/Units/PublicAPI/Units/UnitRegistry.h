@@ -323,26 +323,25 @@ public:
     UnitCP AddInvertedUnit(Utf8CP parentUnitName, Utf8CP unitName, Utf8CP unitSystemName) {return AddInvertedUnit<Unit>(parentUnitName, unitName, unitSystemName);}
 
     //! Creates a Constant, of the provided UNIT_TYPE, and adds it to this registry.
-    //! @param[in] phenomName Name of the Phenomenon the new Constant is needs to be added to
+    //! @param[in] phenomName Name of the Phenomenon the new Constant needs to be added to
+    //! @param[in] systemName Name of the UnitSystem the new Constant belongs to
     //! @param[in] constantName Name of the Constant to be created
     //! @param[in] definition
     //! @param[in] factor
     //! @note The UNIT_TYPE provided must derive from Units::Unit
     //! @return A constant UNIT_TYPE if successfully created and added to the registry, nullptr otherwise.
     template <typename UNIT_TYPE>
-    UNIT_TYPE* AddConstant(Utf8CP phenomName, Utf8CP constantName, Utf8CP definition, double factor)
-        {
-        // TODO: Find a way to have the CONSTANT be the staticly defined one... Maybe need to forward declare this method...
-        return AddUnitInternal<UNIT_TYPE>(phenomName, "CONSTANT", constantName, definition, factor, 0, true);
-        }
+    UNIT_TYPE* AddConstant(Utf8CP phenomName, Utf8CP systemName, Utf8CP constantName, Utf8CP definition, double factor) 
+        {return AddUnitInternal<UNIT_TYPE>(phenomName, systemName, constantName, definition, factor, 0, true);}
 
     //! Creates a Constant and adds it to this registry.
     //! @param[in] phenomName Name of the Phenomenon the new Constant is needs to be added to
+    //! @param[in] systemName Name of the UnitSystem the new Constant belongs to
     //! @param[in] constantName Name of the Constant to be created
     //! @param[in] definition
     //! @param[in] factor
     //! @return A constant Unit if successfully created and added to the registry, nullptr otherwise.
-    UnitCP AddConstant(Utf8CP phenomName, Utf8CP constantName, Utf8CP definition, double factor) {return AddConstant<Unit>(phenomName, constantName, definition, factor);}
+    UnitCP AddConstant(Utf8CP phenomName, Utf8CP systemName, Utf8CP constantName, Utf8CP definition, double factor) {return AddConstant<Unit>(phenomName, systemName, constantName, definition, factor);}
 
     //! Creates a Phenomenon and adds it to this registry.
     //! @param[in] name Name of the Phenomenon to be created.
@@ -416,6 +415,11 @@ public:
     //! It does not delete the Unit rather just removes it from the registry.
     //! @return A pointer to the Unit that is no longer within this registry.
     UNITS_EXPORT UnitP RemoveInvertedUnit(Utf8CP unitName);
+
+    //! Removes the constant from this UnitRegistry and returns the pointer to that constant.
+    //! It does not delete the constant rather just removes it from the registry.
+    //! @return A pointer to the constant that is no longer within this registry.
+    UNITS_EXPORT UnitP RemoveConstant(Utf8CP constantName);
 
     //! Gets the "new" unit name from a "old" unit name
     //! @see UnitNameMappings for information on the difference between a old and new unit name.
