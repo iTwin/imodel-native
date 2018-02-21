@@ -70,7 +70,7 @@ TEST_F(UnitRegistryTests, AddAndRetrieveConstant)
     // Add constant
     PhenomenonCP phen = UnitRegistry::Instance().LookupPhenomenon("LENGTH");
     ASSERT_NE(nullptr, phen) << "The Phenomenon 'Length' does not exist in the registry";
-    UnitCP createdConstant = UnitRegistry::Instance().AddConstant(phen->GetName().c_str(), "TestConstant", "NUMBER", 0);
+    UnitCP createdConstant = UnitRegistry::Instance().AddConstant(phen->GetName().c_str(), "SI", "TestConstant", "NUMBER", 0);
     ASSERT_NE(nullptr, createdConstant);
 
     EXPECT_TRUE(UnitRegistry::Instance().HasUnit("TestConstant"));
@@ -247,7 +247,7 @@ TEST_F(UnitRegistryTests, TestAllBaseUnitSystemsAdded)
 //--------------------------------------------------------------------------------------
 TEST_F(UnitRegistryTests, TestAddingDerivedUnits)
     {
-    TestUnit const* testConstant = UnitRegistry::Instance().AddConstant<TestUnit>("NUMBER", "TestConstant", "ONE", 42);
+    TestUnit const* testConstant = UnitRegistry::Instance().AddConstant<TestUnit>("NUMBER", "SI", "TestConstant", "ONE", 42);
     ASSERT_NE(nullptr, testConstant);
     UnitCP retrievedConstant = UnitRegistry::Instance().LookupUnit("TestConstant");
     EXPECT_EQ(retrievedConstant, testConstant);
