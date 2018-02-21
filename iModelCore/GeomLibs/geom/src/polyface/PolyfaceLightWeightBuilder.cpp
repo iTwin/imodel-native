@@ -23,6 +23,14 @@ LightweightPolyfaceBuilder::LightweightPolyfaceBuilder(PolyfaceHeaderR polyface,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+LightweightPolyfaceBuilderPtr LightweightPolyfaceBuilder::Create(PolyfaceHeaderR polyface, double pointTolerance, double normalTolerance, double paramTolerance)
+    {
+        return new LightweightPolyfaceBuilder(polyface, pointTolerance, normalTolerance, paramTolerance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 LightweightPolyfaceBuilder::QPoint3d::QPoint3d(DPoint3dCR point, double tol)
     {
     m_x = (int64_t) (point.x / tol);
