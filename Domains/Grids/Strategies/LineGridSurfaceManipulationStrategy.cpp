@@ -32,6 +32,8 @@ BentleyStatus LineGridSurfaceManipulationStrategy::_UpdateGridSurface()
     if (2 != keyPoints.size())
         return BentleyStatus::ERROR;
 
+    TransformPointsOnXYPlane(keyPoints);
+
     m_surface->SetBaseLine(DPoint2d::From(keyPoints[0]), DPoint2d::From(keyPoints[1]));
 
     return BentleyStatus::SUCCESS;
@@ -70,6 +72,8 @@ Dgn::DgnElementPtr LineGridSurfaceManipulationStrategy::_FinishElement
 
     if (m_surface.IsValid())
         return T_Super::_FinishElement();
+
+    TransformPointsOnXYPlane(keyPoints);
 
     SketchLineGridSurface::CreateParams params
     (

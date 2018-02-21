@@ -59,6 +59,7 @@ struct SketchGridSurfaceManipulationStrategy : public BBS::ElementManipulationSt
         virtual BBS::CurvePrimitiveManipulationStrategyCR _GetCurvePrimitiveManipulationStrategy() const = 0;
         virtual BBS::CurvePrimitiveManipulationStrategyR _GetCurvePrimitiveManipulationStrategyForEdit() = 0;
 
+        void TransformPointsOnXYPlane(bvector<DPoint3d>& points);
     public:
         Utf8String GetMessage() const;
 

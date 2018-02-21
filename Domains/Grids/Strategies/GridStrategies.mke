@@ -40,18 +40,6 @@ $(o)LineGridSurfaceManipulationStrategy$(oext)        : $(_MakeFilePath)LineGrid
                                           $(_MakeFilePath)PublicApi/LineGridSurfaceManipulationStrategy.h \
                                           ${MultiCompileDepends}
 
-$(o)SketchGridPlacementStrategy$(oext)        : $(_MakeFilePath)SketchGridPlacementStrategy.cpp \
-                                          $(_MakeFilePath)PublicApi/SketchGridPlacementStrategy.h \
-                                          ${MultiCompileDepends}
-
-$(o)LineGridPlacementStrategy$(oext)        : $(_MakeFilePath)LineGridPlacementStrategy.cpp \
-                                          $(_MakeFilePath)PublicApi/LineGridPlacementStrategy.h \
-                                          ${MultiCompileDepends}
-
-$(o)ArcGridPlacementStrategy$(oext)        : $(_MakeFilePath)ArcGridPlacementStrategy.cpp \
-                                          $(_MakeFilePath)PublicApi/ArcGridPlacementStrategy.h \
-                                          ${MultiCompileDepends}
-
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)
 

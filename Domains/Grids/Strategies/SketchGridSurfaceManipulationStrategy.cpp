@@ -114,6 +114,17 @@ BentleyStatus SketchGridSurfaceManipulationStrategy::GetOrCreateGridAndAxis(Sket
             if (sketchGrid.IsNull())
                 return BentleyStatus::ERROR; // Failed to create grid
 
+            Dgn::Placement3d planePlacement = Dgn::Placement3d();
+            planePlacement.TryApplyTransform
+            (
+                GeometryUtils::FindTransformBetweenPlanes
+                (
+                    DPlane3d::FromOriginAndNormal({ 0, 0, 0 }, DVec3d::From(0, 0, 1)),
+                    m_workingPlane
+                )
+            );
+            sketchGrid->SetPlacement(planePlacement);
+
             if (sketchGrid->Insert().IsNull())
                 return BentleyStatus::ERROR;
 
@@ -148,15 +159,33 @@ void SketchGridSurfaceManipulationStrategy::_OnWorkingPlaneChanged(DPlane3d cons
     if (allKeyPoints.size() != acceptedKeyPoints.size())
         {
         size_t dynamicCount = allKeyPoints.size() - acceptedKeyPoints.size();
+        
+        bvector<DPoint3d> replacements;
         for (size_t i = 0; i < dynamicCount; ++i)
             {
-
             DPoint3d replacement = TransformPointBetweenPlanes(allKeyPoints[i + acceptedKeyPoints.size()], original, m_workingPlane);
-            if (0 == acceptedKeyPoints.size())
-                UpdateDynamicKeyPoint(replacement, i);
-            else
-                InsertDynamicKeyPoint(replacement, i);
+            replacements.push_back(replacement);
             }
+
+        InsertDynamicKeyPoints(replacements, 0);
+        }
+
+    if (m_axis.IsValid())
+        {
+        GridPtr grid = m_axis->GetDgnDb().Elements().GetForEdit<SketchGrid>(m_axis->GetGridId());
+        BeAssert(grid.IsValid() && "Axis' grid should be valid");
+
+        Dgn::Placement3d planePlacement = Dgn::Placement3d();
+        planePlacement.TryApplyTransform
+        (
+            GeometryUtils::FindTransformBetweenPlanes
+            (
+                DPlane3d::FromOriginAndNormal({ 0, 0, 0 }, DVec3d::From(0, 0, 1)),
+                m_workingPlane
+            )
+        );
+        grid->SetPlacement(planePlacement);
+        grid->Update();
         }
     }
 
@@ -357,6 +386,22 @@ void SketchGridSurfaceManipulationStrategy::_SetProperty(Utf8CP key, DPlane3d co
         DPlane3d originalPlane = m_workingPlane;
         m_workingPlane = value;
         _OnWorkingPlaneChanged(originalPlane);
+        }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void SketchGridSurfaceManipulationStrategy::TransformPointsOnXYPlane(bvector<DPoint3d>& points)
+    {
+    DPlane3d xyPlane = DPlane3d::FromOriginAndNormal({ 0, 0, 0 }, DVec3d::From(0, 0, 1));
+    Transform toWorkingPlane = GeometryUtils::FindTransformBetweenPlanes(xyPlane, m_workingPlane);
+    Transform toXY = Transform::FromIdentity();
+    toXY.InverseOf(toWorkingPlane);
+
+    for (DPoint3dR point : points)
+        {
+        toXY.Multiply(point);
         }
     }
 
