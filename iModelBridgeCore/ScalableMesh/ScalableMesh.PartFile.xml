@@ -72,6 +72,15 @@
        </Bindings>
     </Part>
 
+    <Part Name="ScalableMeshATPUtilies" BMakeFile=".\Tests\ATPUtilities\ScalableMeshAtpUtilities.mke">
+        <SubPart PartName="GeomDlls" PartFile="geomlibs" Repository="GeomLibs"/>
+        <Bindings>
+            <Libs ProductDirectoryName="ScalableMeshLibs" Required="false">delivery/$(shlibprefix)ScalableMeshAtpUtilities$(libext)</Libs>
+            <Assemblies ProductDirectoryName="ScalableMeshAssemblies" Required="false">delivery/$(shlibprefix)ScalableMeshAtpUtilities$(shlibext)</Assemblies>       
+            <PublicAPI Domain="ScalableMeshATPUtilities" />
+        </Bindings>
+    </Part>
+
     <Part Name="ScalableMeshATPexe" BentleyBuildMakeFile="Tests/ATP/ScalableMeshATPexe.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
         <SubPart PartName="ScalableMesh"  PartFile="ScalableMesh" Repository="ScalableMesh" />
         <SubPart PartName="RasterSchema"            PartFile="RealityModeling"          Repository="DgnDomains-RealityModeling" />
