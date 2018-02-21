@@ -99,10 +99,24 @@ TEST_F(FakeServerFixture, CreateiModel)
     Request request(url, method, handlePtr);
     request.SetRequestBody(HttpStringBody::Create(Json::FastWriter().write(objectCreationJson)));
     Response response = request.PerformAsync()->GetResult();
+    ASSERT_EQ(HttpStatus::Created ,  response.GetHttpStatus());
+    }
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(FakeServerFixture, UpdateServerFile)
+    {
 
-    HttpResponseContentPtr reqContent = response.GetContent();
+    Utf8String urlGetInfo("https://qa-imodelhubapi.bentley.com/v2.5/Repositories/Project--7dfb2388-92cf-4ec7-94a7-ff72853466df/ProjectScope/iModel");
+
+    Utf8String method = "GET";
+    IHttpHandlerPtr handlePtr = std::make_shared<MockIMSHttpHandler>();
+    Request request(urlGetInfo, method, handlePtr);
+    Response responseInfo = request.PerformAsync()->GetResult();
+    HttpResponseContentPtr reqContent = responseInfo.GetContent();
     HttpBodyPtr reqBody = reqContent->GetBody();
-    char readBuff[1000];
+
+    char readBuff[100000] ;
     size_t buffSize = 100000;
     reqBody->Read(readBuff, buffSize);
     Utf8String reqBodyRead(readBuff);
@@ -110,15 +124,56 @@ TEST_F(FakeServerFixture, CreateiModel)
     Json::Reader reader;
     Json::Value settings;
     reader.Parse(reqBodyRead, settings);
+    BeGuid projGuid(true);
+    Utf8String iModelId = Utf8String(settings["instances"][0]["instanceId"].asString());
 
-    //Now download the iModel
-    Utf8String url2("https://imodelhubqasa01.blob.core.windows.net/imodelhub-63849383-f51a-4e4d-b4c9-70640578663a/BriefcaseTestsm-3a55e4a4-9357-48fc-8988-9d61435651b8.bim?sv=2016-05-31&sr=b&sig=1BI8ULlcZoN7WPnjkIfPTbLWZsz");
 
-    Utf8String method2 = "GET";
-    Request request2(url2, method2, handlePtr);
-    Response response2 = request2.PerformAsync()->GetResult();
+    Utf8String url("https://imodelhubqasa01.blob.core.windows.net/imodelhub-");
+    url += iModelId + "/BriefcaseTestsu-bd997d8f-e7f7-4a8b-ad27-785e99f866f0.bim?sv=2016-05-31&sr=b&sig=%2BW0sVgxmBQGzim82S9LwRH4ao";
+
+    Utf8String methodPut = "PUT";
+
+    BeFileName fileToUpload;
+    BeTest::GetHost().GetOutputRoot(fileToUpload);
+    fileToUpload.AppendToPath(L"iModelHub");
+    fileToUpload.AppendToPath(L"UploadFile.bim");
+    CreateDgnDbParams params("MockServerFile");
+    DbResult res;
+    DgnDb::CreateDgnDb(&res, fileToUpload, params);
+    ASSERT_EQ(res, DbResult::BE_SQLITE_OK);
+
+    BeFile file;
+    file.Open(fileToUpload, BeFileAccess::Read);
+
+    uint64_t fileSize;
+    ASSERT_EQ(BeFileStatus::Success, file.GetSize(fileSize));
+
+    file.Close();
+    uint64_t chunkSize = 4 * 1024 * 1024;   // Max 4MB.
+    HttpBodyPtr body = HttpFileBody::Create(fileToUpload);
+    Utf8String blockIds = "";
+    int chunkNumber = 0;
+    uint64_t bytesTo = chunkSize * chunkNumber + chunkSize - 1; // -1 because ranges are inclusive.
+    if (bytesTo >= fileSize)
+        bytesTo = fileSize - 1;
+
+    std::stringstream blockIdStream;
+    blockIdStream << std::setw(5) << std::setfill('0') << chunkNumber;
+    std::string blockId = blockIdStream.str();
+    Utf8String encodedBlockId = Base64Utilities::Encode(blockId.c_str()).c_str();
+    blockIds += Utf8PrintfString("<Latest>%s</Latest>", encodedBlockId.c_str());
+
+    // Update URL
+    Utf8String blockUrl = Utf8PrintfString("%s&comp=block&blockid=%s", url.c_str(), encodedBlockId.c_str());
+
+    Request requestUpload(blockUrl, methodPut, handlePtr);
+
+    requestUpload.GetHeaders().SetValue("x-ms-blob-type", "BlockBlob");
+    requestUpload.SetRequestBody(HttpRangeBody::Create(body, chunkSize * chunkNumber, bytesTo));
+
+    Response responseUpload = requestUpload.PerformAsync()->GetResult();
+    ASSERT_EQ(HttpStatus::Created ,  responseUpload.GetHttpStatus());
     }
-
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Farhad.Kabir    01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -152,6 +207,7 @@ TEST_F(FakeServerFixture, DownloadiModel)
     Response response = requestDownload.PerformAsync()->GetResult();
     ASSERT_EQ(HttpStatus::OK, response.GetHttpStatus());
     }
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Farhad.Kabir    02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -225,75 +281,7 @@ TEST_F(FakeServerFixture, CheckPluginsRequests)
     Response response = request.PerformAsync()->GetResult();
     /*printf("%s\n", response.GetHeaders().GetValue("Mas-Server"));*/
     }
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Farhad.Kabir    02/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(FakeServerFixture, UpdateServerFile)
-    {
-    //Utf8String url("https://imodelhubqasa01.blob.core.windows.net/imodelhub-3e7ce8fe-aa5e-4ee0-959c-6708d8fc365d/BriefcaseTestsu-bd997d8f-e7f7-4a8b-ad27-785e99f866f0.bim?sv=2016-05-31&sr=b&sig=%2BW0sVgxmBQGzim82S9LwRH4ao");
 
-    //Utf8String method = "PUT";
-    //IHttpHandlerPtr handlePtr = std::make_shared<MockIMSHttpHandler>();
-    //
-    //BeFileName filePath("E:\\out\\Test_Seed.bim");
-    //BeFile file;
-    //file.Open(filePath, BeFileAccess::Read);
-
-    //uint64_t fileSize;
-    //ASSERT_EQ(BeFileStatus::Success, file.GetSize(fileSize));
-    //
-    //file.Close();
-
-    //uint64_t chunkSize = 4 * 1024 * 1024;   // Max 4MB.
-
-    //HttpBodyPtr body = HttpFileBody::Create(filePath);
-    //Utf8String blockIds = "";
-    //int chunkNumber = 0;
-    //uint64_t bytesTo = chunkSize * chunkNumber + chunkSize - 1; // -1 because ranges are inclusive.
-    //if (bytesTo >= fileSize)
-    //    bytesTo = fileSize - 1;
-
-    //std::stringstream blockIdStream;
-    //blockIdStream << std::setw(5) << std::setfill('0') << chunkNumber;
-    //std::string blockId = blockIdStream.str();
-    //Utf8String encodedBlockId = Base64Utilities::Encode(blockId.c_str()).c_str();
-    //blockIds += Utf8PrintfString("<Latest>%s</Latest>", encodedBlockId.c_str());
-
-    //// Update URL
-    //Utf8String blockUrl = Utf8PrintfString("%s&comp=block&blockid=%s", url.c_str(), encodedBlockId.c_str());
-
-    //Request request(blockUrl, method, handlePtr);
-
-    //request.GetHeaders().SetValue("x-ms-blob-type", "BlockBlob");
-    //request.SetRequestBody(HttpRangeBody::Create(body, chunkSize * chunkNumber, bytesTo));
-
-    //Response response = request.PerformAsync()->GetResult();
-    //HttpBodyPtr fBody = request.GetRequestBody();
-    //BeFileName documentsDir;
-    //BeTest::GetHost().GetDocumentsRoot(documentsDir);
-    //documentsDir.AppendToPath(L"ImodelHubTestData");
-    //documentsDir.AppendToPath(L"iModelHubNativeTests");
-    //documentsDir.AppendToPath(L"BriefcaseTests.bim");
-    //HttpBodyPtr fileBody;
-    //fileBody = HttpFileBody::Create(documentsDir);
-    //const bmap<Utf8String, Utf8String>& headers = bmap<Utf8String, Utf8String>();
-    //auto content = HttpResponseContent::Create(fileBody);
-    //for (const auto& header : headers)
-    //    {
-    //    content->GetHeaders().SetValue(header.first, header.second);
-    //    }
-    //Utf8String url2("https://qa-ims.bentley.com/rest/ActiveSTSService/json/IssueEx");
-    //Response resp(content, url2.c_str(), ConnectionStatus::OK, HttpStatus::OK);
-    //HttpBodyPtr body2 = request.GetRequestBody();
-    ////auto nnn = static_cast<HttpBodyPtr>(body2.get());
-    //auto unk = body2.get();
-    //HttpFileBody nnn2 = dynamic_cast<HttpBody>(unk);
-    //auto nnn = (HttpFileBody*)unk;
-    ////auto nnn = HttpFileBodyPtr(body2);
-    //BeFileName fileIs(nnn->GetFilePath());
-    //printf("Update File %ls\n", fileIs.GetWCharCP());
-
-    }
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Farhad.Kabir    01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/

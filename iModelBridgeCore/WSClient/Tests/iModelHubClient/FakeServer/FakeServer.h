@@ -35,7 +35,7 @@ class FakeServer
 
         //create an iModel from an already existing seed file
         //@iModelName  indicates path for seed file
-        static BeFileNameStatus CreateiModelFromSeed(WCharCP seedFilePath, WCharCP serverPath, WCharP seedFile);
+        static BeFileNameStatus CreateiModelFromSeed(WCharCP seedFilePath, WCharCP serverPath);
         static BeFileNameStatus CreateiModel(BeFileName serverPath, WCharCP seedFile);
 
         //delete an existing iModel from server
