@@ -98,7 +98,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Retu
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementOwnsUniqueAspectRelationship, *element, *aspect);
     
     // set up selection
-    SelectionInfo selection({elementClass});
+    KeySetPtr input = KeySet::Create({elementClass});
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
@@ -112,7 +112,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Retu
 
     // validate descriptor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
 
     ASSERT_EQ(1, descriptor->GetSelectClasses().size());
