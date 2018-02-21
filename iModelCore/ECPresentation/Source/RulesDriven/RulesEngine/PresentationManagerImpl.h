@@ -67,20 +67,20 @@ protected:
     virtual size_t _GetChildrenCount(IConnectionCR, NavNodeCR, NavigationOptions const&, ICancelationTokenCR) = 0;
     virtual bool _HasChild(IConnectionCR, NavNodeCR, NavNodeKeyCR, NavigationOptions const&, ICancelationTokenCR) = 0;
     virtual NavNodeCPtr _GetParent(IConnectionCR, NavNodeCR, NavigationOptions const&, ICancelationTokenCR) = 0;
-    virtual NavNodeCPtr _GetNode(IConnectionCR, uint64_t nodeId, ICancelationTokenCR) = 0;
+    virtual NavNodeCPtr _GetNode(IConnectionCR, NavNodeKeyCR, NavigationOptions const&, ICancelationTokenCR) = 0;
     virtual bvector<NavNodeCPtr> _GetFilteredNodes(IConnectionCR, Utf8CP, NavigationOptions const&, ICancelationTokenCR) = 0;
-    virtual void _OnNodeChecked(IConnectionCR, uint64_t nodeId, ICancelationTokenCR) = 0;
-    virtual void _OnNodeUnchecked(IConnectionCR, uint64_t nodeId, ICancelationTokenCR) = 0;
-    virtual void _OnNodeExpanded(IConnectionCR, uint64_t nodeId, ICancelationTokenCR) = 0;
-    virtual void _OnNodeCollapsed(IConnectionCR, uint64_t nodeId, ICancelationTokenCR) = 0;
+    virtual void _OnNodeChecked(IConnectionCR, NavNodeKeyCR, NavigationOptions const&, ICancelationTokenCR) = 0;
+    virtual void _OnNodeUnchecked(IConnectionCR, NavNodeKeyCR, NavigationOptions const&, ICancelationTokenCR) = 0;
+    virtual void _OnNodeExpanded(IConnectionCR, NavNodeKeyCR, NavigationOptions const&, ICancelationTokenCR) = 0;
+    virtual void _OnNodeCollapsed(IConnectionCR, NavNodeKeyCR, NavigationOptions const&, ICancelationTokenCR) = 0;
     virtual void _OnAllNodesCollapsed(IConnectionCR, NavigationOptions const&, ICancelationTokenCR) = 0;
 /** @} */
 
 /** @name IECPresentationManager: Content */
     virtual bvector<SelectClassInfo> _GetContentClasses(IConnectionCR, Utf8CP, bvector<ECClassCP> const&, ContentOptions const&, ICancelationTokenCR) = 0;
-    virtual ContentDescriptorCPtr _GetContentDescriptor(IConnectionCR, Utf8CP, SelectionInfo const&, ContentOptions const&, ICancelationTokenCR) = 0;
-    virtual ContentCPtr _GetContent(IConnectionCR, ContentDescriptorCR, SelectionInfo const&, PageOptionsCR, ContentOptions const&, ICancelationTokenCR) = 0;
-    virtual size_t _GetContentSetSize(IConnectionCR, ContentDescriptorCR, SelectionInfo const&, ContentOptions const&, ICancelationTokenCR) = 0;
+    virtual ContentDescriptorCPtr _GetContentDescriptor(IConnectionCR, Utf8CP, KeySetCR, SelectionInfo const*, ContentOptions const&, ICancelationTokenCR) = 0;
+    virtual ContentCPtr _GetContent(ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR) = 0;
+    virtual size_t _GetContentSetSize(ContentDescriptorCR, ICancelationTokenCR) = 0;
 /** @} */
 
 /** @name IECPresentationManager: Updating */
@@ -153,20 +153,20 @@ public:
     size_t GetChildrenCount(IConnectionCR connection, NavNodeCR parentNode, NavigationOptions const& options, ICancelationTokenCR cancelationToken) {return _GetChildrenCount(connection, parentNode, options, cancelationToken);}
     bool HasChild(IConnectionCR connection, NavNodeCR parentNode, NavNodeKeyCR childNodeKey, NavigationOptions const& options, ICancelationTokenCR cancelationToken) {return _HasChild(connection, parentNode, childNodeKey, options, cancelationToken);}
     NavNodeCPtr GetParent(IConnectionCR connection, NavNodeCR childNode, NavigationOptions const& options, ICancelationTokenCR cancelationToken) {return _GetParent(connection, childNode, options, cancelationToken);}
-    NavNodeCPtr GetNode(IConnectionCR connection, uint64_t nodeId, ICancelationTokenCR cancelationToken) {return _GetNode(connection, nodeId, cancelationToken);}
+    NavNodeCPtr GetNode(IConnectionCR connection, NavNodeKeyCR nodeKey, NavigationOptions const& options, ICancelationTokenCR cancelationToken) {return _GetNode(connection, nodeKey, options, cancelationToken);}
     bvector<NavNodeCPtr> GetFilteredNodes(IConnectionCR connection, Utf8CP filterText, NavigationOptions const& options, ICancelationTokenCR cancelationToken) {return _GetFilteredNodes(connection, filterText, options, cancelationToken);}
-    void NotifyNodeChecked(IConnectionCR connection, uint64_t nodeId, ICancelationTokenCR cancelationToken) {_OnNodeChecked(connection, nodeId, cancelationToken);}
-    void NotifyNodeUnchecked(IConnectionCR connection, uint64_t nodeId, ICancelationTokenCR cancelationToken) {_OnNodeUnchecked(connection, nodeId, cancelationToken);}
-    void NotifyNodeExpanded(IConnectionCR connection, uint64_t nodeId, ICancelationTokenCR cancelationToken) {_OnNodeExpanded(connection, nodeId, cancelationToken);}
-    void NotifyNodeCollapsed(IConnectionCR connection, uint64_t nodeId, ICancelationTokenCR cancelationToken) {_OnNodeCollapsed(connection, nodeId, cancelationToken);}
+    void NotifyNodeChecked(IConnectionCR connection, NavNodeKeyCR nodeKey, NavigationOptions const& options, ICancelationTokenCR cancelationToken) {_OnNodeChecked(connection, nodeKey, options, cancelationToken);}
+    void NotifyNodeUnchecked(IConnectionCR connection, NavNodeKeyCR nodeKey, NavigationOptions const& options, ICancelationTokenCR cancelationToken) {_OnNodeUnchecked(connection, nodeKey, options, cancelationToken);}
+    void NotifyNodeExpanded(IConnectionCR connection, NavNodeKeyCR nodeKey, NavigationOptions const& options, ICancelationTokenCR cancelationToken) {_OnNodeExpanded(connection, nodeKey, options, cancelationToken);}
+    void NotifyNodeCollapsed(IConnectionCR connection, NavNodeKeyCR nodeKey, NavigationOptions const& options, ICancelationTokenCR cancelationToken) {_OnNodeCollapsed(connection, nodeKey, options, cancelationToken);}
     void NotifyAllNodesCollapsed(IConnectionCR connection, NavigationOptions const& options, ICancelationTokenCR cancelationToken) {_OnAllNodesCollapsed(connection, options, cancelationToken);}
 /** @} */
 
 /** @name IECPresentationManager: Content */
     bvector<SelectClassInfo> GetContentClasses(IConnectionCR connection, Utf8CP preferredDisplayType, bvector<ECClassCP> const& inputClasses, ContentOptions const& options, ICancelationTokenCR cancelationToken) {return _GetContentClasses(connection, preferredDisplayType, inputClasses, options, cancelationToken);}
-    ContentDescriptorCPtr GetContentDescriptor(IConnectionCR connection, Utf8CP preferredDisplayType, SelectionInfo const& selectionInfo, ContentOptions const& options, ICancelationTokenCR cancelationToken) {return _GetContentDescriptor(connection, preferredDisplayType, selectionInfo, options, cancelationToken);}
-    ContentCPtr GetContent(IConnectionCR connection, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, PageOptionsCR pageOptions, ContentOptions const& options, ICancelationTokenCR cancelationToken) {return _GetContent(connection, descriptor, selectionInfo, pageOptions, options, cancelationToken);}
-    size_t GetContentSetSize(IConnectionCR connection, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, ContentOptions const& options, ICancelationTokenCR cancelationToken) {return _GetContentSetSize(connection, descriptor, selectionInfo, options, cancelationToken);}
+    ContentDescriptorCPtr GetContentDescriptor(IConnectionCR connection, Utf8CP preferredDisplayType, KeySetCR inputKeys, SelectionInfo const* selectionInfo, ContentOptions const& options, ICancelationTokenCR cancelationToken) {return _GetContentDescriptor(connection, preferredDisplayType, inputKeys, selectionInfo, options, cancelationToken);}
+    ContentCPtr GetContent(ContentDescriptorCR descriptor, PageOptionsCR pageOptions, ICancelationTokenCR cancelationToken) {return _GetContent(descriptor, pageOptions, cancelationToken);}
+    size_t GetContentSetSize(ContentDescriptorCR descriptor, ICancelationTokenCR cancelationToken) {return _GetContentSetSize(descriptor, cancelationToken);}
 /** @} */
 
 /** @name IECPresentationManager: Updating */
@@ -203,8 +203,8 @@ private:
 private:
     INavNodesDataSourcePtr GetCachedDataSource(IConnectionCR, ICancelationTokenCR, NavigationOptions const&);
     INavNodesDataSourcePtr GetCachedDataSource(IConnectionCR, ICancelationTokenCR, NavNodeCR parent, NavigationOptions const&);
-    SpecificationContentProviderCPtr GetContentProvider(IConnectionCR, ICancelationTokenCR, ContentProviderKey const&, SelectionInfo const&, ContentOptions const&);
-    SpecificationContentProviderPtr GetContentProvider(IConnectionCR, ICancelationTokenCR, ContentDescriptorCR, SelectionInfo const&, ContentOptions const&);
+    SpecificationContentProviderCPtr GetContentProvider(IConnectionCR, ICancelationTokenCR, ContentProviderKey const&, INavNodeKeysContainerCR, SelectionInfo const*, ContentOptions const&);
+    SpecificationContentProviderPtr GetContentProvider(IConnectionCR, ICancelationTokenCR, ContentDescriptorCR, INavNodeKeysContainerCR, SelectionInfo const*, ContentOptions const&);
         
 protected:
     // IRulesetCallbacksHandler
@@ -230,19 +230,19 @@ protected:
     ECPRESENTATION_EXPORT size_t _GetChildrenCount(IConnectionCR, NavNodeCR, NavigationOptions const&, ICancelationTokenCR) override;
     ECPRESENTATION_EXPORT bool _HasChild(IConnectionCR, NavNodeCR, NavNodeKeyCR, NavigationOptions const&, ICancelationTokenCR) override;
     ECPRESENTATION_EXPORT NavNodeCPtr _GetParent(IConnectionCR, NavNodeCR, NavigationOptions const&, ICancelationTokenCR) override;
-    ECPRESENTATION_EXPORT NavNodeCPtr _GetNode(IConnectionCR, uint64_t nodeId, ICancelationTokenCR) override;
+    ECPRESENTATION_EXPORT NavNodeCPtr _GetNode(IConnectionCR, NavNodeKeyCR, NavigationOptions const&, ICancelationTokenCR) override;
     ECPRESENTATION_EXPORT bvector<NavNodeCPtr> _GetFilteredNodes(IConnectionCR, Utf8CP, NavigationOptions const&, ICancelationTokenCR) override;
-    ECPRESENTATION_EXPORT void _OnNodeChecked(IConnectionCR, uint64_t nodeId, ICancelationTokenCR) override;
-    ECPRESENTATION_EXPORT void _OnNodeUnchecked(IConnectionCR, uint64_t nodeId, ICancelationTokenCR) override;
-    ECPRESENTATION_EXPORT void _OnNodeExpanded(IConnectionCR, uint64_t nodeId, ICancelationTokenCR) override;
-    ECPRESENTATION_EXPORT void _OnNodeCollapsed(IConnectionCR, uint64_t nodeId, ICancelationTokenCR) override;
+    ECPRESENTATION_EXPORT void _OnNodeChecked(IConnectionCR, NavNodeKeyCR, NavigationOptions const&, ICancelationTokenCR) override;
+    ECPRESENTATION_EXPORT void _OnNodeUnchecked(IConnectionCR, NavNodeKeyCR, NavigationOptions const&, ICancelationTokenCR) override;
+    ECPRESENTATION_EXPORT void _OnNodeExpanded(IConnectionCR, NavNodeKeyCR, NavigationOptions const&, ICancelationTokenCR) override;
+    ECPRESENTATION_EXPORT void _OnNodeCollapsed(IConnectionCR, NavNodeKeyCR, NavigationOptions const&, ICancelationTokenCR) override;
     ECPRESENTATION_EXPORT void _OnAllNodesCollapsed(IConnectionCR, NavigationOptions const&, ICancelationTokenCR) override;
 
     // RulesDrivenECPresentationManager::Impl: Content
     ECPRESENTATION_EXPORT bvector<SelectClassInfo> _GetContentClasses(IConnectionCR, Utf8CP, bvector<ECClassCP> const&, ContentOptions const&, ICancelationTokenCR) override;
-    ECPRESENTATION_EXPORT ContentDescriptorCPtr _GetContentDescriptor(IConnectionCR, Utf8CP, SelectionInfo const&, ContentOptions const&, ICancelationTokenCR) override;
-    ECPRESENTATION_EXPORT ContentCPtr _GetContent(IConnectionCR, ContentDescriptorCR, SelectionInfo const&, PageOptionsCR, ContentOptions const&, ICancelationTokenCR) override;
-    ECPRESENTATION_EXPORT size_t _GetContentSetSize(IConnectionCR, ContentDescriptorCR, SelectionInfo const&, ContentOptions const&, ICancelationTokenCR) override;
+    ECPRESENTATION_EXPORT ContentDescriptorCPtr _GetContentDescriptor(IConnectionCR, Utf8CP, KeySetCR, SelectionInfo const*, ContentOptions const&, ICancelationTokenCR) override;
+    ECPRESENTATION_EXPORT ContentCPtr _GetContent(ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR) override;
+    ECPRESENTATION_EXPORT size_t _GetContentSetSize(ContentDescriptorCR, ICancelationTokenCR) override;
 
     // RulesDrivenECPresentationManager::Impl: Updating
     ECPRESENTATION_EXPORT bvector<ECInstanceChangeResult> _SaveValueChange(IConnectionCR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR) override;

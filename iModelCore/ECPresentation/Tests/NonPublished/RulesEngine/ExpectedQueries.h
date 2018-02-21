@@ -143,12 +143,12 @@ struct ExpectedQueries
 private:
     bmap<Utf8String, NavigationQueryCPtr> m_navigationQueries;
     bmap<Utf8String, ContentQueryCPtr> m_contentQueries;
-    TestConnectionManager m_connections;
     ECDbTestProject m_project;
-    IConnectionPtr m_connection;
     ECSchemaHelper* m_schemaHelper;
     bvector<PropertyGroupCP> m_propertyGroupsToDelete;
     DefaultCategorySupplier m_categorySupplier;
+    TestConnectionManager m_connections;
+    IConnectionPtr m_connection;
 
 private:
     ExpectedQueries(BeTest::Host& host)
@@ -173,6 +173,7 @@ public:
     ContentQueryCPtr GetContentQuery(Utf8CP name) const;
     bmap<Utf8String, NavigationQueryCPtr> const& GetNavigationQueries() const;
     bmap<Utf8String, ContentQueryCPtr> const& GetContentQueries() const;
+    ContentDescriptorPtr GetEmptyContentDescriptor(Utf8CP displayType) const;
 
     ECClassP GetECClassP(Utf8CP schemaName, Utf8CP className);
     ECClassCP GetECClass(Utf8CP schemaName, Utf8CP className);

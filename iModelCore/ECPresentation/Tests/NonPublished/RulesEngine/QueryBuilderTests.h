@@ -38,7 +38,7 @@ struct NavigationQueryBuilderTests : ::testing::Test
     TestNodesCache m_nodesCache;
 
     NavigationQueryBuilderTests() 
-        : m_builder(nullptr), m_locaterManager(m_connections)
+        : m_builder(nullptr), m_locaterManager(ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnections())
         {}
     
     void SetUp() override;
@@ -71,18 +71,17 @@ struct ContentQueryBuilderTests : ::testing::Test
     {    
     ECSchemaHelper* m_schemaHelper;
     PresentationRuleSetPtr m_ruleset;
+    ContentDescriptorBuilder::Context* m_context;
     ContentDescriptorBuilder* m_descriptorBuilder;
     ContentQueryBuilder* m_queryBuilder;
     TestUserSettings m_settings;
-    TestConnectionManager m_connections;
-    IConnectionCPtr m_connection;
     RuleSetLocaterManager m_locaterManager;
     TestNodeLocater m_nodesLocater;
     TestLocalizationProvider m_localizationProvider;
     DefaultCategorySupplier m_categorySupplier;
 
     ContentQueryBuilderTests() 
-        : m_descriptorBuilder(nullptr), m_queryBuilder(nullptr), m_locaterManager(m_connections)
+        : m_descriptorBuilder(nullptr), m_queryBuilder(nullptr), m_locaterManager(ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnections())
         {}
     
     void SetUp() override;

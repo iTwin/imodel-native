@@ -138,6 +138,15 @@ bvector<ECClassCP> ExpectedQueries::GetECClasses(Utf8CP schemaName)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentDescriptorPtr ExpectedQueries::GetEmptyContentDescriptor(Utf8CP displayType = ContentDisplayType::Undefined) const
+    {
+    RulesDrivenECPresentationManager::ContentOptions options("");
+    return ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create(), displayType);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptor::Field& ExpectedQueries::AddField(ContentDescriptorR descriptor, ECClassCR primaryClass, ContentDescriptor::Property prop)
@@ -187,6 +196,7 @@ static ContentDescriptor::Category CreateCategory(ECClassCR ecClass)
 void ExpectedQueries::PrepareSchemaContext()
     {
     m_project.Create("ExpectedQueries", "RulesEngineTest.01.00.ecschema.xml");
+    m_connection = m_connections.NotifyConnectionOpened(m_project.GetECDb());
 
     bvector<ECSchemaPtr> schemas;
     schemas.resize(6);
@@ -227,6 +237,7 @@ void ExpectedQueries::PrepareSchemaContext()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ExpectedQueries::RegisterExpectedQueries()
     {
+    Localization::Init();
     static Utf8PrintfString ecInstanceNodesQuerySortedDisplayLabel("%s(%s)", FUNCTION_NAME_GetSortingValue, ECInstanceNodesQueryContract::DisplayLabelFieldName);
     static Utf8PrintfString ecClassGroupingNodesQuerySortedDisplayLabel("%s(%s)", FUNCTION_NAME_GetSortingValue, ECClassGroupingNodesQueryContract::DisplayLabelFieldName);
     static Utf8PrintfString baseClassGroupingNodesQuerySortedDisplayLabel("%s(%s)", FUNCTION_NAME_GetSortingValue, BaseECClassGroupingNodesQueryContract::DisplayLabelFieldName);
@@ -3415,7 +3426,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // SelectedNodeInstances_ReturnsInstanceQueryWhenSelectedOneInstanceNode
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
 
         descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
@@ -3434,7 +3445,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // SelectedNodeInstances_ReturnsInstanceQueryWhenSelectedMultipleInstanceNodesOfTheSameClass
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
         
         descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
@@ -3453,7 +3464,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         
     // SelectedNodeInstances_ReturnsInstanceQueryWhenSelectedMultipleInstanceNodesOfDifferentClasses
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b2_Class2, false));
         
@@ -3481,7 +3492,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // SelectedNodeInstances_FiltersSelectedNodesByClassNamePolymorphically
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b4_ClassB, false));
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b4_ClassC, false));
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
@@ -3521,7 +3532,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // SelectedNodeInstances_RemovesHiddenProperty
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(sc_Class3, false));
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
             {RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0")}
@@ -3549,7 +3560,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         Utf8CP queryName = "SelectedNodeInstances_RemovesAllHiddenPropertiesWhenHidingAtSpecificationLevel";
         ECClassCP selectClass = GetECClass(queryName, "PhysicalElement");
 
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(*selectClass, false));
         descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
 
@@ -3568,7 +3579,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         Utf8CP queryName = "SelectedNodeInstances_RemovesAllHiddenBaseClassPropertiesWhenHidingAtContentModifierLevel";
         ECClassCP selectClass = GetECClass(queryName, "PhysicalElement");
 
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(*selectClass, false));
         descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         AddField(*descriptor, *selectClass, ContentDescriptor::Property("this", *selectClass , *selectClass->GetPropertyP("PhysicalProperty")));
@@ -3588,7 +3599,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         Utf8CP queryName = "SelectedNodeInstances_RemovesAllHiddenDerivedClassPropertiesWhenHidingAtContentModifierLevel";
         ECClassCP selectClass = GetECClass(queryName, "PhysicalElement");
 
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(*selectClass, false));
         descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
 
@@ -3604,7 +3615,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // SelectedNodeInstances_RemovesMultipleHiddenProperties
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(sc_Class3, false));
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
             {RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0")}
@@ -3627,7 +3638,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // SelectedNodeInstances_RemovesMultipleHiddenPropertiesOfDifferentClasses
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(sc_Class2, false));
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
             {RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0")}
@@ -3667,7 +3678,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // SelectedNodeInstances_AddsSingleRelatedProperty
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, false));
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
             {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "rel_RET_Widget_1", "rel_RET_WidgetHasGadgets_0")},
@@ -3705,7 +3716,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // SelectedNodeInstances_AddsMultipleRelatedProperties
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, false));
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
             {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "rel_RET_Widget_1", "rel_RET_WidgetHasGadgets_0")},
@@ -3749,7 +3760,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // SelectedNodeInstances_AddsAllRelatedProperties
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, false));
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "rel_RET_Gadget_1", "rel_RET_GadgetHasSprockets_0")},
@@ -3806,7 +3817,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // SelectedNodeInstances_AddsBackwardRelatedProperties
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(sc_Class2, false));
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
             {RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "rel_sc_Class1_1", "rel_sc_Class1HasClass2And3_0")},
@@ -3842,7 +3853,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // SelectedNodeInstances_AddsBothDirectionsRelatedProperties
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, false));
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
             {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "rel_RET_Widget_1", "rel_RET_WidgetHasGadget_0")},
@@ -3902,7 +3913,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // SelectedNodeInstances_AddsPropertiesOfTheSameClassFoundByFollowingDifferentRelationships
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, false));
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
             {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "rel_RET_Widget_1", "rel_RET_WidgetHasGadgets_0")},
@@ -3961,7 +3972,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         path2.push_back(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "rel_RET_Gadget_1", "rel_RET_GadgetHasSprockets_0"));
         path2.push_back(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "rel_RET_Widget_1", "rel_RET_WidgetHasGadget_0"));
         
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, false));
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
             path1, 
@@ -4013,7 +4024,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         relationshipPath.push_back(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "rel_RET_Gadget_1", "rel_RET_GadgetHasSprockets_0"));
         relationshipPath.push_back(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "rel_RET_Widget_0", "rel_RET_WidgetHasGadget_0"));
 
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, false));
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
             relationshipPath,
@@ -4064,7 +4075,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         widgetRelationshipPath.push_back(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "rel_RET_Gadget_1", "rel_RET_GadgetHasSprockets_0"));
         widgetRelationshipPath.push_back(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "rel_RET_Widget_0", "rel_RET_WidgetHasGadget_0"));
 
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, false));
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
             widgetRelationshipPath, 
@@ -4114,7 +4125,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // SelectedNodeInstances_SelectsRawValueAndGroupsByDisplayValue   
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->AddContentFlag(ContentFlags::DistinctValues);
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_ClassH, false));
 
@@ -4132,7 +4143,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     //SelectedNodeInstances_InstanceLabelOverride_AppliedByPriority
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create(ContentDisplayType::Grid);
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Grid);
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
 
         ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField("Label", 0);
@@ -4155,7 +4166,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     //SelectedNodeInstances_InstanceLabelOverride_OverrideSpecifiedClassInstancesLabelsWhenMultipleClassesSelected
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create(ContentDisplayType::Grid);
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Grid);
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, false));
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
 
@@ -4187,7 +4198,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     //SelectedNodeInstances_InstanceLabelOverride_OverrideNavigationProperty
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create(ContentDisplayType::Grid);
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Grid);
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, false));
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({{RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}});
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
@@ -4222,7 +4233,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         }
     // SetsShowImagesFlag
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
 
         descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
@@ -4242,7 +4253,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // SetsShowLabelsFlagForGridContentType
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create(ContentDisplayType::Grid);
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Grid);
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
 
         descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
@@ -4267,9 +4278,10 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // SetsNoFieldsAndKeysOnlyFlagForGraphicsContentType
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create(ContentDisplayType::Graphics);
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Graphics);
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
         descriptor->SetContentFlags((int)ContentFlags::KeysOnly | (int)ContentFlags::NoFields);
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b1_Class1A, *query), "this");
@@ -4281,9 +4293,10 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // SetsNoFieldsAndShowLabelsFlagsForListContentType
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create(ContentDisplayType::List);
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::List);
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
         descriptor->SetContentFlags((int)ContentFlags::ShowLabels | (int)ContentFlags::NoFields);
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         
         ComplexContentQueryPtr nested = ComplexContentQuery::Create();
         nested->SelectContract(*ContentQueryContract::Create(1, *descriptor, &b1_Class1A, *nested), "this");
@@ -4303,7 +4316,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // ContentInstancesOfSpecificClasses_ReturnsQueryBasedOnSingleClass
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
 
         descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
@@ -4321,7 +4334,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // ContentInstancesOfSpecificClasses_ReturnsQueryBasedOnSingleClassPolymorphically
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, true));
 
         descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
@@ -4339,7 +4352,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // ContentInstancesOfSpecificClasses_ReturnsQueryWithNotIncludedHiddenProperty
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b2_Class2, true));
 
         descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
@@ -4357,7 +4370,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     //  ContentInstacesOfSpecificClasses_ReturnsQueryWithCalculatedProperties
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b2_Class2, true));
 
         descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
@@ -4377,7 +4390,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // ContentInstancesOfSpecificClasses_ReturnsQueryBasedOnMultipleClasses
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1B, false));
  
@@ -4403,7 +4416,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // ContentInstancesOfSpecificClasses_ReturnsQueryBasedOnMultipleSchemaClasses
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b2_Class2, false));
   
@@ -4429,7 +4442,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // ContentInstancesOfSpecificClasses_AppliesInstanceFilter
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
 
         descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
@@ -4448,7 +4461,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // ContentInstancesOfSpecificClasses_SetsMergeResultsFlagForPropertyPaneContentType1
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create(ContentDisplayType::PropertyPane);
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::PropertyPane);
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b1_Class1A, false));
         
         descriptor->AddContentFlag(ContentFlags::MergeResults);
@@ -4465,7 +4478,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // ContentInstancesOfSpecificClasses_SetsMergeResultsFlagForPropertyPaneContentType2
         {
-        ContentDescriptorPtr innerDescriptor = ContentDescriptor::Create(ContentDisplayType::PropertyPane);
+        ContentDescriptorPtr innerDescriptor = GetEmptyContentDescriptor(ContentDisplayType::PropertyPane);
         
         innerDescriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*innerDescriptor, b1_Class1A, ContentDescriptor::Property("this", b1_Class1A, *b1_Class1A.GetPropertyP("DisplayLabel")));
@@ -4498,7 +4511,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
      // ContentInstancesOfSpecificClasses_SelectPointPropertyRawDataGroupedByDisplayValue
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->AddContentFlag(ContentFlags::DistinctValues);
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_ClassH, false));
 
@@ -4515,7 +4528,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
      // ContentInstancesOfSpecificClasses_InstanceLabelOverride_AppliedByPriority
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
 
         ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField("Label", 0);
@@ -4536,7 +4549,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     //ContentInstancesOfSpecificClasses_InstanceLabelOverride_OverrideOnlySpecifiedClassInstancesLabels
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, false));
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
 
@@ -4564,7 +4577,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     //ContentInstancesOfSpecificClasses_InstanceLabelOverride_OverrideNavigationProperty
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, false));
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({{RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}});
 
@@ -4589,7 +4602,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // ContentRelatedInstances_ReturnsForwardRelatedInstanceQueryWhenSelectedOneInstanceNode
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, true));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
             RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false)
@@ -4635,7 +4648,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // ContentRelatedInstances_ReturnsBackwardRelatedInstanceQueryWhenSelectedOneInstanceNode
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, true));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
             RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "related", "rel_RET_WidgetHasGadgets_0", false)
@@ -4696,7 +4709,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // ContentRelatedInstances_ReturnsBothDirectionsRelatedInstanceQueryWhenSelectedOneInstanceNode
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, true));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
             RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "related", "rel_RET_WidgetHasGadgets_0", false)
@@ -4793,7 +4806,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // ContentRelatedInstances_ReturnsRelatedInstanceQueryWhenSelectedMultipleInstanceNodesOfTheSameClass
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, true));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
             RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false)
@@ -4839,7 +4852,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // ContentRelatedInstances_ReturnsRelatedInstanceQueryWhenSelectedMultipleInstanceNodesOfDifferentClasses
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, true));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
             RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "related", "rel_RET_WidgetHasGadgets_0", false)
@@ -4885,7 +4898,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // ContentRelatedInstances_AppliesInstanceFilter
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, true));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
             RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false)
@@ -4966,7 +4979,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             RelatedClass(ret_Gadget, ret_Widget, ret_WidgetsHaveGadgets2, false, "related", "rel_RET_WidgetsHaveGadgets2_0", false)
             };
 
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, true));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass(relationshipPath11);
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
@@ -5088,7 +5101,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         relationshipPath2.push_back(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "gadget", "rel_RET_WidgetHasGadgets_0"));
         relationshipPath2.push_back(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "related", "rel_RET_GadgetHasSprockets_0", false));
 
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, true));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass(relationshipPath1);
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, true));
@@ -5128,7 +5141,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ECClassCR class_Element = *GetECClass("ContentRelatedInstances_CreatesRecursiveQuery", "Element");
         ECRelationshipClassCR class_ElementOwnsChildElements = *GetECClass("ContentRelatedInstances_CreatesRecursiveQuery", "ElementOwnsChildElements")->GetRelationshipClassCP();
 
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(class_Element, true));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
             RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, "related", TABLE_ALIAS("rel", class_ElementOwnsChildElements, 0), false)
@@ -5169,7 +5182,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ECClassCR class_Sheet = *GetECClass(queryName, "Sheet");
         ECRelationshipClassCR class_ElementOwnsChildElements = *GetECClass(queryName, "ElementOwnsChildElements")->GetRelationshipClassCP();
 
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(class_Element, true));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
             RelatedClass(class_Element, class_Sheet, class_ElementOwnsChildElements, false, "related", TABLE_ALIAS("rel", class_ElementOwnsChildElements, 0), false)
@@ -5208,7 +5221,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ECClassCR class_Sheet = *GetECClass(queryName, "Sheet");
         ECRelationshipClassCR class_ElementOwnsChildElements = *GetECClass(queryName, "ElementOwnsChildElements")->GetRelationshipClassCP();
 
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(class_Element, true));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
             RelatedClass(class_Element, class_Sheet, class_ElementOwnsChildElements, false, "related", TABLE_ALIAS("rel", class_ElementOwnsChildElements, 0), false)
@@ -5241,7 +5254,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // ContentRelatedInstances_SelectPointPropertyRawDataGroupedByDisplayValue
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->AddContentFlag(ContentFlags::DistinctValues);
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_ClassH, true));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
@@ -5263,7 +5276,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     //ContentRelatedInstances_InstanceLabelOverride_AppliedByPriorityForSpecifiedClass
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, false));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
             RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false)
@@ -5300,7 +5313,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     //ContentRelatedInstances_InstanceLabelOverride_OverrideNavigationProperty
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, true));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
             RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false)
@@ -5345,7 +5358,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // NestedContentField_WithSingleStepRelationshipPath
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, true));
         descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("sprocket", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
@@ -5361,7 +5374,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // NestedContentField_WithMultiStepRelationshipPath
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, true));
         descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("sprocket", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
@@ -5384,7 +5397,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         {
         ContentDescriptor::Category category("name", "label", "", 1);
 
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, true));
         descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("gadget", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
@@ -5407,7 +5420,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // FieldNamesDontCollideWhenSelectingInstanceAndRelatedPropertyOfTheSameClass
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, false));
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
             {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "rel_RET_Widget_0", "rel_RET_WidgetHasGadgets_0")}
@@ -5449,7 +5462,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // FieldNamesContainNamesOfAllRelatedClassesWhenSelectingMultipleClassesWithSameRelatedProperty
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
             {RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadget_0")}
@@ -5512,7 +5525,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // AppliesRelatedPropertiesSpecificationFromContentModifier
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, false));
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "rel_RET_Gadget_1", "rel_RET_GadgetHasSprockets_0")},
@@ -5549,7 +5562,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // DoesntApplyRelatedPropertiesSpecificationFromContentModifierToNestedRelatedClasses
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, false));
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "rel_RET_Gadget_1", "rel_RET_GadgetHasSprockets_0")},
@@ -5586,7 +5599,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // RelatedPropertiesAreAppendedCorrectlyWhenUsingCustomDescriptor
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, false));
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "rel_RET_Gadget_1", "rel_RET_GadgetHasSprockets_0")},
@@ -5624,7 +5637,7 @@ void ExpectedQueries::RegisterExpectedQueries()
     // CreatesContentFieldsForXToManyRelatedInstanceProperties
         {
         ContentDescriptor::Category sprocketCategory(ret_Sprocket.GetName(), ret_Sprocket.GetDisplayLabel(), "", DefaultCategorySupplier::NESTED_CONTENT_CATEGORY_PRIORITY);
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, false));
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
             {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}
@@ -5660,7 +5673,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptor::Category gadgetCategory(ret_Gadget.GetName(), ret_Gadget.GetDisplayLabel(), "", DefaultCategorySupplier::NESTED_CONTENT_CATEGORY_PRIORITY);
         ContentDescriptor::Category sprocketCategory(ret_Sprocket.GetName(), ret_Sprocket.GetDisplayLabel(), "", DefaultCategorySupplier::NESTED_CONTENT_CATEGORY_PRIORITY);
 
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
         
         descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0)); 
@@ -5698,7 +5711,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // FilterExpressionQueryTest
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->SetFilterExpression("Widget_MyID = \"WidgetId\"");
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
         
@@ -5725,7 +5738,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     //InstanceLabelOverride_AppliedByPriority
         {
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create(ContentDisplayType::Grid);
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Grid);
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
 
         ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField("", 1000);
@@ -5744,6 +5757,8 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         RegisterQuery("InstanceLabelOverride_AppliedByPriority", *query);
         }
+
+        Localization::Terminate();
     }
 
 #define LOGD(...) NativeLogging::LoggingManager::GetLogger("ExpectedQueriesTest")->debugv(__VA_ARGS__)

@@ -69,16 +69,12 @@ IsOfClassOptimizedExpression::~IsOfClassOptimizedExpression()
 +---------------+---------------+---------------+---------------+---------------+--*/
 bool IsOfClassOptimizedExpression::_Value(OptimizedExpressionsParameters const& params)
     {
-    if (nullptr == params.GetSelectedNodeKey())
+    if (params.GetInputNodeKey().IsNull())
         return false;
 
-    NavNodeKeyCP nodeKey = params.GetSelectedNodeKey();
-    ECClassId lookupClassId;
-    if (nullptr != nodeKey->AsECInstanceNodeKey())
-        lookupClassId = nodeKey->AsECInstanceNodeKey()->GetECClassId();
-    else if (nullptr != nodeKey->AsECClassGroupingNodeKey())
-        lookupClassId = nodeKey->AsECClassGroupingNodeKey()->GetECClassId();
-    else
+    NavNodeKeyCPtr nodeKey = params.GetInputNodeKey();
+    ECClassId lookupClassId = nodeKey->GetECClassId();
+    if (!lookupClassId.IsValid())
         return false;
     
     auto cacheIter = m_cache.find(&params.GetConnection().GetECDb());
@@ -140,16 +136,12 @@ ClassNameOptimizedExpression::~ClassNameOptimizedExpression()
 +---------------+---------------+---------------+---------------+---------------+--*/
 bool ClassNameOptimizedExpression::_Value(OptimizedExpressionsParameters const& params)
     {
-    if (nullptr == params.GetSelectedNodeKey())
+    if (params.GetInputNodeKey().IsNull())
         return false;
 
-    NavNodeKeyCP nodeKey = params.GetSelectedNodeKey();
-    ECClassId lookupClassId;
-    if (nullptr != nodeKey->AsECInstanceNodeKey())
-        lookupClassId = nodeKey->AsECInstanceNodeKey()->GetECClassId();
-    else if (nullptr != nodeKey->AsECClassGroupingNodeKey())
-        lookupClassId = nodeKey->AsECClassGroupingNodeKey()->GetECClassId();
-    else
+    NavNodeKeyCPtr nodeKey = params.GetInputNodeKey();
+    ECClassId lookupClassId = nodeKey->GetECClassId();
+    if (!lookupClassId.IsValid())
         return false;
 
     auto cacheIter = m_resultsCache.find(&params.GetConnection().GetECDb());
@@ -198,10 +190,10 @@ bool ClassNameOptimizedExpression::_IsEqual(OptimizedExpression const& other) co
 +---------------+---------------+---------------+---------------+---------------+--*/
 bool InstanceIdOptimizedExpression::_Value(OptimizedExpressionsParameters const& params)
     {
-    if (nullptr == params.GetSelectedNodeKey() || nullptr == params.GetSelectedNodeKey()->AsECInstanceNodeKey())
+    if (params.GetInputNodeKey().IsNull() || nullptr == params.GetInputNodeKey()->AsECInstanceNodeKey())
         return false;
 
-    ECInstanceNodeKey const& nodeKey = *params.GetSelectedNodeKey()->AsECInstanceNodeKey();
+    ECInstanceNodeKey const& nodeKey = *params.GetInputNodeKey()->AsECInstanceNodeKey();
     return nodeKey.GetInstanceId() == m_instanceId;
     }
 

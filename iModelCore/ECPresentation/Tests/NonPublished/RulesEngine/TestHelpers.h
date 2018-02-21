@@ -181,7 +181,7 @@ protected:
 public:
     TestNodeLocater() {}
     TestNodeLocater(JsonNavNodeCR node) {AddNode(node);}
-    void AddNode(JsonNavNodeCR node) {m_nodes[&node.GetKey()] = &node;}
+    void AddNode(JsonNavNodeCR node) {m_nodes[node.GetKey().get()] = &node;}
 };
 
 /*=================================================================================**//**
@@ -332,6 +332,11 @@ protected:
         uint64_t nodeId = ++m_nodeIds;
         node.SetNodeId(nodeId);
         m_nodes[nodeId] = &node;
+
+        uint64_t const* parentId = GetDataSourceInfo(node).GetVirtualParentNodeId();
+        bvector<Utf8String> pathFromRoot = (nullptr == parentId || 0 == *parentId) ? bvector<Utf8String>() : m_nodes[*parentId]->GetKey()->GetPathFromRoot();
+        pathFromRoot.push_back(std::to_string(nodeId).c_str());
+        node.SetNodeKey(*NavNodesHelper::CreateNodeKey(node, pathFromRoot));
         m_physicalHierarchy[GetHierarchyLevelInfo(node)].push_back(&node);
         m_virtualHierarchy[GetDataSourceInfo(node)].push_back(&node);
 
@@ -366,7 +371,6 @@ protected:
             return m_locateNodeHandler(connection, key);
         return nullptr;
         }
-    
     IHierarchyCache::SavepointPtr _CreateSavepoint() override {return new Savepoint(*this);}
 
 public:
@@ -421,7 +425,7 @@ struct TestPropertyFormatter : IECPropertyFormatter
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2017
 +===============+===============+===============+===============+===============+======*/
-struct TestParsedSelectionInfo : IParsedSelectionInfo
+struct TestParsedInput : IParsedInput
 {
 private:
     bvector<ECClassCP> m_classes;
@@ -437,23 +441,23 @@ protected:
         return s_empty;
         }
 public:
-    TestParsedSelectionInfo() {}
-    TestParsedSelectionInfo(IECInstanceCR instance)
+    TestParsedInput() {}
+    TestParsedInput(IECInstanceCR instance)
         {
         m_classes.push_back(&instance.GetClass());
         m_instanceIds[&instance.GetClass()].push_back((ECInstanceId)ECInstanceId::FromString(instance.GetInstanceId().c_str()));
         }
-    TestParsedSelectionInfo(ECClassCR ecClass, ECInstanceId instanceId)
+    TestParsedInput(ECClassCR ecClass, ECInstanceId instanceId)
         {
         m_classes.push_back(&ecClass);
         m_instanceIds[&ecClass].push_back(instanceId);
         }
-    TestParsedSelectionInfo(ECClassCR ecClass, bvector<ECInstanceId> instanceIds)
+    TestParsedInput(ECClassCR ecClass, bvector<ECInstanceId> instanceIds)
         {
         m_classes.push_back(&ecClass);
         m_instanceIds[&ecClass] = instanceIds;
         }
-    TestParsedSelectionInfo(bvector<bpair<ECClassCP, ECInstanceId>> pairs)
+    TestParsedInput(bvector<bpair<ECClassCP, ECInstanceId>> pairs)
         {
         bset<ECClassCP> used;
         for (auto pair : pairs)

@@ -30,19 +30,19 @@ private:
     IConnectionCR m_connection;
     ECExpressionsCache& m_ecexpressionsCache;
     SelectClassInfo const& m_selectInfo;
-    IParsedSelectionInfo const* m_selection;
+    IParsedInput const* m_selection;
     RecursiveQueryInfo const* m_recursiveQueryInfo;
     Utf8CP m_instanceFilter;
 
 public:
-    InstanceFilteringParams(IConnectionCR connection, ECExpressionsCache& ecexpressionsCache, IParsedSelectionInfo const* selection,
+    InstanceFilteringParams(IConnectionCR connection, ECExpressionsCache& ecexpressionsCache, IParsedInput const* selection,
         SelectClassInfo const& selectInfo, RecursiveQueryInfo const* recursiveQueryInfo, Utf8CP instanceFilter)
         : m_connection(connection), m_ecexpressionsCache(ecexpressionsCache), m_selection(selection), m_selectInfo(selectInfo), 
         m_recursiveQueryInfo(recursiveQueryInfo), m_instanceFilter(instanceFilter)
         {}
     IConnectionCR GetConnection() const {return m_connection;}
     ECExpressionsCache& GetECExpressionsCache() const {return m_ecexpressionsCache;}
-    IParsedSelectionInfo const* GetSelection() const {return m_selection;}
+    IParsedInput const* GetInput() const {return m_selection;}
     SelectClassInfo const& GetSelectInfo() const {return m_selectInfo;}
     RecursiveQueryInfo const* GetRecursiveQueryInfo() const {return m_recursiveQueryInfo;}
     Utf8CP GetInstanceFilter() const {return m_instanceFilter;}

@@ -196,7 +196,7 @@ TEST_F(CheckboxRuleTests, CustomizationHelper_NotifyCheckedStateChanged)
     EXPECT_TRUE(node->IsCheckboxEnabled());
     EXPECT_TRUE(node->IsChecked());
 
-    ECInstanceNodeKey const* key = node->GetKey().AsECInstanceNodeKey();
+    ECInstanceNodeKey const* key = node->GetKey()->AsECInstanceNodeKey();
 
     ECValue value;
     EXPECT_EQ(ECObjectsStatus::Success, RulesEngineTestHelpers::GetInstance(s_project->GetECDb(), *m_widgetClass, key->GetInstanceId())->GetValue(value, "BoolProperty"));

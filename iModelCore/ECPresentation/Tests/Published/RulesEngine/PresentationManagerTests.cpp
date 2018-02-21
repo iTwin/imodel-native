@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/RulesEngine/PresentationManagerTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PresentationManagerTests.h"
@@ -487,16 +487,16 @@ TEST_F(RulesDrivenECPresentationManagerTests, NotifyNodeExpanded_NotifyNodeColla
     EXPECT_FALSE(node->IsExpanded());
 
     // tell the node was expanded
-    m_manager->NotifyNodeExpanded(s_project->GetECDb(), node->GetNodeId()).wait();
+    m_manager->NotifyNodeExpanded(s_project->GetECDb(), *node->GetKey(), options.GetJson()).wait();
 
     // verify
-    node = m_manager->GetNode(s_project->GetECDb(), node->GetNodeId()).get();
+    node = m_manager->GetNode(s_project->GetECDb(), *node->GetKey(), options.GetJson()).get();
     EXPECT_TRUE(node->IsExpanded());
 
     // tell the node was collapsed
-    m_manager->NotifyNodeCollapsed(s_project->GetECDb(), node->GetNodeId()).wait();
+    m_manager->NotifyNodeCollapsed(s_project->GetECDb(), *node->GetKey(), options.GetJson()).wait();
     
     // verify
-    node = m_manager->GetNode(s_project->GetECDb(), node->GetNodeId()).get();
+    node = m_manager->GetNode(s_project->GetECDb(), *node->GetKey(), options.GetJson()).get();
     EXPECT_FALSE(node->IsExpanded());
     }

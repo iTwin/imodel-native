@@ -1098,7 +1098,7 @@ private:
         m_groupingClass = nullptr;
         m_groupingRelationship = nullptr;
 
-        while (m_parentInstanceNode.IsValid() && nullptr == m_parentInstanceNode->GetKey().AsECInstanceNodeKey())
+        while (m_parentInstanceNode.IsValid() && nullptr == m_parentInstanceNode->GetKey()->AsECInstanceNodeKey())
             {
             uint64_t parentId = NavNodeExtendedData(*m_parentInstanceNode).GetVirtualParentId();
             if (0 == parentId)
@@ -2605,13 +2605,13 @@ static BentleyStatus AppendParents(ComplexNavigationQuery& query, bset<unsigned>
     for (unsigned targetLevel : usedParents)
         {
         NavNodeCPtr parent = GetParentNodeByLevel(params.GetNodesCache(), *previousParent, previousLevel, targetLevel);
-        if (parent.IsNull() || nullptr == parent->GetKey().AsECInstanceNodeKey())
+        if (parent.IsNull() || nullptr == parent->GetKey()->AsECInstanceNodeKey())
             {
             BeAssert(false);
             return ERROR;
             }
 
-        ECInstanceNodeKey const& parentNodeKey = *parent->GetKey().AsECInstanceNodeKey();
+        ECInstanceNodeKey const& parentNodeKey = *parent->GetKey()->AsECInstanceNodeKey();
         ECClassCP parentNodeClass = params.GetSchemaHelper().GetECClass(parentNodeKey.GetECClassId());
         if (nullptr == parentNodeClass)
             {
@@ -2668,7 +2668,7 @@ static ComplexNavigationQueryPtr CreateQuery(NavigationQueryContract& contract, 
     NavigationQueryBuilderParameters const& params, NavNodeCR parentInstanceNode, Utf8StringCR instanceFilter,
     bool groupByContract)
     {
-    ECInstanceKeyCR parentInstanceKey = parentInstanceNode.GetKey().AsECInstanceNodeKey()->GetInstanceKey();
+    ECInstanceKeyCR parentInstanceKey = parentInstanceNode.GetKey()->AsECInstanceNodeKey()->GetInstanceKey();
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->SelectContract(contract, "this");
@@ -2822,7 +2822,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
     MultiQueryContextPtr queryContext = CreateQueryContext(groupingResolver);
 
     // this specification can be used only if parent node is ECInstance node
-    if (nullptr == groupingResolver.GetParentInstanceNode() || nullptr == groupingResolver.GetParentInstanceNode()->GetKey().AsECInstanceNodeKey())
+    if (nullptr == groupingResolver.GetParentInstanceNode() || nullptr == groupingResolver.GetParentInstanceNode()->GetKey()->AsECInstanceNodeKey())
         {
         LoggingHelper::LogMessage(Log::Navigation, "AllRelatedInstanceNodes and RelatedInstanceNodes specifications can only be used "
             "if parent node or any of of its ancestor nodes is an ECInstance node", NativeLogging::LOG_ERROR);
@@ -2830,7 +2830,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
         }
 
     // get the root instance key
-    ECInstanceKeyCR rootInstanceKey = groupingResolver.GetParentInstanceNode()->GetKey().AsECInstanceNodeKey()->GetInstanceKey();
+    ECInstanceKeyCR rootInstanceKey = groupingResolver.GetParentInstanceNode()->GetKey()->AsECInstanceNodeKey()->GetInstanceKey();
 
     // get the root instance class
     ECClassCP rootClass = m_params.GetSchemaHelper().GetECClass(rootInstanceKey.GetClassId());
@@ -3021,14 +3021,14 @@ protected:
     +---------------+---------------+---------------+---------------+-----------+------*/
     void _Visit(ECPropertyValueQuerySpecificationCR spec) override
         {
-        if (nullptr == m_parentNode || nullptr == m_parentNode->GetKey().AsECInstanceNodeKey())
+        if (nullptr == m_parentNode || nullptr == m_parentNode->GetKey()->AsECInstanceNodeKey())
             {
             LoggingHelper::LogMessage(Log::Navigation, "ECPropertyValueQuerySpecification can only be used when there is a parent ECInstance "
                 "node up in the hierarchy", NativeLogging::LOG_ERROR);
             return;
             }
 
-        ECInstanceNodeKey const& key = *m_parentNode->GetKey().AsECInstanceNodeKey();
+        ECInstanceNodeKey const& key = *m_parentNode->GetKey()->AsECInstanceNodeKey();
         ECClassCP parentClass = m_helper.GetECClass(key.GetECClassId());
         BeAssert(parentClass->IsEntityClass());
 
@@ -3048,7 +3048,7 @@ protected:
             return;
             }
 
-        ECValue propertyValue = ECInstancesHelper::GetValue(m_helper.GetConnection(), m_parentNode->GetKey().AsECInstanceNodeKey()->GetInstanceKey(), queryProperty->GetName().c_str());
+        ECValue propertyValue = ECInstancesHelper::GetValue(m_helper.GetConnection(), m_parentNode->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), queryProperty->GetName().c_str());
         if (!propertyValue.IsString())
             {
             BeAssert(false);

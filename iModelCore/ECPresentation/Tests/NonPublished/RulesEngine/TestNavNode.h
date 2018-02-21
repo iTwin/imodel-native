@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/TestNavNode.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -28,12 +28,10 @@ friend struct TestNodesHelper;
 private:
     ECClassId m_classId;
 private:
-    TestNavNode(IConnectionP connection) {InitNode(connection);}
-    void InitNode(IConnectionP);
-protected:
-    NavNodeKeyCPtr _CreateKey() const override;
+    TestNavNode(IConnectionP connection, Utf8CP type) {InitNode(connection, type);}
+    void InitNode(IConnectionP, Utf8CP);
 public:
-    static RefCountedPtr<TestNavNode> Create(IConnectionP connection = nullptr) {return new TestNavNode(connection);}
+    static RefCountedPtr<TestNavNode> Create(IConnectionP connection = nullptr, Utf8CP type = nullptr) {return new TestNavNode(connection, type);}
     Utf8CP GetRulesetId() const {return NavNodeExtendedData(*this).GetRulesetId();}
     Utf8CP GetConnectionId() const {return NavNodeExtendedData(*this).GetConnectionId();}
 };

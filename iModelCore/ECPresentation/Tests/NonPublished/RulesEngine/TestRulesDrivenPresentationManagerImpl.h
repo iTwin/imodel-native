@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/NonPublished/RulesEngine/TestRulesDrivenPresentationManagerImpl.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitTests/BackDoor/ECPresentation/ECPresentationTest.h>
@@ -25,18 +25,18 @@ struct TestRulesDrivenECPresentationManagerImpl : RulesDrivenECPresentationManag
     typedef std::function<size_t(IConnectionCR, NavNodeCR, NavigationOptions const&, ICancelationTokenCR)> Handler_GetChildNodesCount;
     typedef std::function<bool(IConnectionCR, NavNodeCR, NavNodeKeyCR, NavigationOptions const&, ICancelationTokenCR)> Handler_HasChild;
     typedef std::function<NavNodeCPtr(IConnectionCR, NavNodeCR, NavigationOptions const&, ICancelationTokenCR)> Handler_GetParent;
-    typedef std::function<NavNodeCPtr(IConnectionCR, uint64_t nodeId, ICancelationTokenCR)> Handler_GetNode;
+    typedef std::function<NavNodeCPtr(IConnectionCR, NavNodeKeyCR, NavigationOptions const&, ICancelationTokenCR)> Handler_GetNode;
     typedef std::function<bvector<NavNodeCPtr>(IConnectionCR, Utf8CP, NavigationOptions const&, ICancelationTokenCR)> Handler_GetFilteredNodes;
-    typedef std::function<void(IConnectionCR, uint64_t nodeId, ICancelationTokenCR)> Handler_OnNodeChecked;
-    typedef std::function<void(IConnectionCR, uint64_t nodeId, ICancelationTokenCR)> Handler_OnNodeUnchecked;
-    typedef std::function<void(IConnectionCR, uint64_t nodeId, ICancelationTokenCR)> Handler_OnNodeExpanded;
-    typedef std::function<void(IConnectionCR, uint64_t nodeId, ICancelationTokenCR)> Handler_OnNodeCollapsed;
+    typedef std::function<void(IConnectionCR, NavNodeKeyCR, NavigationOptions const&, ICancelationTokenCR)> Handler_OnNodeChecked;
+    typedef std::function<void(IConnectionCR, NavNodeKeyCR, NavigationOptions const&, ICancelationTokenCR)> Handler_OnNodeUnchecked;
+    typedef std::function<void(IConnectionCR, NavNodeKeyCR, NavigationOptions const&, ICancelationTokenCR)> Handler_OnNodeExpanded;
+    typedef std::function<void(IConnectionCR, NavNodeKeyCR, NavigationOptions const&, ICancelationTokenCR)> Handler_OnNodeCollapsed;
     typedef std::function<void(IConnectionCR, NavigationOptions const&, ICancelationTokenCR)> Handler_OnAllNodesCollapsed;
     
     typedef std::function<bvector<SelectClassInfo>(IConnectionCR, Utf8CP, bvector<ECClassCP> const&, ContentOptions const&, ICancelationTokenCR)> Handler_GetContentClasses;
-    typedef std::function<ContentDescriptorCPtr(IConnectionCR, Utf8CP, SelectionInfo const&, ContentOptions const&, ICancelationTokenCR)> Handler_GetContentDescriptor;
-    typedef std::function<ContentCPtr(IConnectionCR, ContentDescriptorCR, SelectionInfo const&, PageOptionsCR, ContentOptions const&, ICancelationTokenCR)> Handler_GetContent;
-    typedef std::function<size_t(IConnectionCR, ContentDescriptorCR, SelectionInfo const&, ContentOptions const&, ICancelationTokenCR)> Handler_GetContentSetSize;
+    typedef std::function<ContentDescriptorCPtr(IConnectionCR, Utf8CP, KeySetCR, SelectionInfo const*, ContentOptions const&, ICancelationTokenCR)> Handler_GetContentDescriptor;
+    typedef std::function<ContentCPtr(ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR)> Handler_GetContent;
+    typedef std::function<size_t(ContentDescriptorCR, ICancelationTokenCR)> Handler_GetContentSetSize;
     
     typedef std::function<bvector<ECInstanceChangeResult>(IConnectionCR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR)> Handler_SaveValueChange;
     
@@ -111,10 +111,10 @@ protected:
             return m_getParentHandler(connection, child, options, cancelationToken);
         return nullptr;
         }
-    NavNodeCPtr _GetNode(IConnectionCR connection, uint64_t nodeId, ICancelationTokenCR cancelationToken) override 
+    NavNodeCPtr _GetNode(IConnectionCR connection, NavNodeKeyCR nodeKey, NavigationOptions const& options, ICancelationTokenCR cancelationToken) override
         {
         if (m_getNodeHandler)
-            return m_getNodeHandler(connection, nodeId, cancelationToken);
+            return m_getNodeHandler(connection, nodeKey, options, cancelationToken);
         return nullptr;
         }
     bvector<NavNodeCPtr> _GetFilteredNodes(IConnectionCR connection, Utf8CP filterText, NavigationOptions const& options, ICancelationTokenCR cancelationToken) override 
@@ -123,25 +123,25 @@ protected:
             return m_filteredNodesHandler(connection, filterText, options, cancelationToken);
         return bvector<NavNodeCPtr>();
         }
-    void _OnNodeChecked(IConnectionCR connection, uint64_t nodeId, ICancelationTokenCR cancelationToken) override 
+    void _OnNodeChecked(IConnectionCR connection, NavNodeKeyCR nodeKey, NavigationOptions const& options, ICancelationTokenCR cancelationToken) override
         {
         if (m_nodeCheckedHandler)
-            return m_nodeCheckedHandler(connection, nodeId, cancelationToken);
+            return m_nodeCheckedHandler(connection, nodeKey, options, cancelationToken);
         }
-    void _OnNodeUnchecked(IConnectionCR connection, uint64_t nodeId, ICancelationTokenCR cancelationToken) override 
+    void _OnNodeUnchecked(IConnectionCR connection, NavNodeKeyCR nodeKey, NavigationOptions const& options, ICancelationTokenCR cancelationToken) override
         {
         if (m_nodeUncheckedHandler)
-            return m_nodeUncheckedHandler(connection, nodeId, cancelationToken);
+            return m_nodeUncheckedHandler(connection, nodeKey, options, cancelationToken);
         }
-    void _OnNodeExpanded(IConnectionCR connection, uint64_t nodeId, ICancelationTokenCR cancelationToken) override 
+    void _OnNodeExpanded(IConnectionCR connection, NavNodeKeyCR nodeKey, NavigationOptions const& options, ICancelationTokenCR cancelationToken) override
         {
         if (m_nodeExpandedHandler)
-            return m_nodeExpandedHandler(connection, nodeId, cancelationToken);
+            return m_nodeExpandedHandler(connection, nodeKey, options, cancelationToken);
         }
-    void _OnNodeCollapsed(IConnectionCR connection, uint64_t nodeId, ICancelationTokenCR cancelationToken) override 
+    void _OnNodeCollapsed(IConnectionCR connection, NavNodeKeyCR nodeKey, NavigationOptions const& options, ICancelationTokenCR cancelationToken) override
         {
         if (m_nodeCollapsedHandler)
-            return m_nodeCollapsedHandler(connection, nodeId, cancelationToken);
+            return m_nodeCollapsedHandler(connection, nodeKey, options, cancelationToken);
         }
     void _OnAllNodesCollapsed(IConnectionCR connection, NavigationOptions const& options, ICancelationTokenCR cancelationToken) override 
         {
@@ -155,22 +155,22 @@ protected:
             return m_contentClassesHandler(connection, displayType, inputClasses, options, cancelationToken);
         return bvector<SelectClassInfo>();
         }
-    ContentDescriptorCPtr _GetContentDescriptor(IConnectionCR connection, Utf8CP displayType, SelectionInfo const& selectionInfo, ContentOptions const& options, ICancelationTokenCR cancelationToken) override 
+    ContentDescriptorCPtr _GetContentDescriptor(IConnectionCR connection, Utf8CP displayType, KeySetCR inputKeys, SelectionInfo const* selectionInfo, ContentOptions const& options, ICancelationTokenCR cancelationToken) override
         {
         if (m_contentDescriptorHandler)
-            return m_contentDescriptorHandler(connection, displayType, selectionInfo, options, cancelationToken);
+            return m_contentDescriptorHandler(connection, displayType, inputKeys, selectionInfo, options, cancelationToken);
         return nullptr;
         }
-    ContentCPtr _GetContent(IConnectionCR connection, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, PageOptionsCR pageOptions, ContentOptions const& options, ICancelationTokenCR cancelationToken) override 
+    ContentCPtr _GetContent(ContentDescriptorCR descriptor, PageOptionsCR pageOptions, ICancelationTokenCR cancelationToken) override
         {
         if (m_contentHandler)
-            return m_contentHandler(connection, descriptor, selectionInfo, pageOptions, options, cancelationToken);
+            return m_contentHandler(descriptor, pageOptions, cancelationToken);
         return nullptr;
         }
-    size_t _GetContentSetSize(IConnectionCR connection, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, ContentOptions const& options, ICancelationTokenCR cancelationToken) override 
+    size_t _GetContentSetSize(ContentDescriptorCR descriptor, ICancelationTokenCR cancelationToken) override
         {
         if (m_contentSetSizeHandler)
-            return m_contentSetSizeHandler(connection, descriptor, selectionInfo, options, cancelationToken);
+            return m_contentSetSizeHandler(descriptor, cancelationToken);
         return 0;
         }
 

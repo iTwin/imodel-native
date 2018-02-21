@@ -740,8 +740,8 @@ TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_Retur
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *instance12, *instance3);
 
     SelectClassInfo selectInfo(*class1, true);
-    TestParsedSelectionInfo selectionInfo(*instance11);
-    InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), &selectionInfo, selectInfo, nullptr, "");
+    TestParsedInput input(*instance11);
+    InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), &input, selectInfo, nullptr, "");
 
     bvector<RelatedClassPath> result = m_helper->GetPolymorphicallyRelatedClassesWithInstances(*class1,
         rel->GetFullName(), ECRelatedInstanceDirection::Forward, baseof2and3->GetFullName(), &filteringParams);

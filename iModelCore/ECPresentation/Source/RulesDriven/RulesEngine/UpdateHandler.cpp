@@ -320,72 +320,51 @@ struct RefreshSelectionTask : IUpdateTask
 {
 private:
     ISelectionManager& m_selectionManager;
-    bmap<uint64_t, uint64_t>& m_remapInfo;
+    bmap<Utf8String, ChangeType>& m_changedNodes;
     IConnectionCR m_connection;
 
 private:
-    INavNodeKeysContainerCPtr GetNewKeys(INavNodeKeysContainerCR selection)
+    KeySetCPtr GetRemovedNodeKeys(KeySetCR selection, bool& shouldUpdate)
         {
-        NavNodeKeyList newKeys;
-        for (NavNodeKeyCPtr key : selection)
+        NavNodeKeySet removedKeys;
+        shouldUpdate = false;
+        for (NavNodeKeyCPtr key : selection.GetNavNodeKeys())
             {
-            if (nullptr != key->AsECPropertyGroupingNodeKey())
-                {
-                ECPropertyGroupingNodeKey const* groupKey = key->AsECPropertyGroupingNodeKey();
-                auto remapIter = m_remapInfo.find(groupKey->GetNodeId());
-                if (m_remapInfo.end() != remapIter)
-                    {
-                    newKeys.push_back(ECPropertyGroupingNodeKey::Create(remapIter->second, groupKey->GetECClassId(), groupKey->GetPropertyName(),
-                        groupKey->GetGroupingRangeIndex(), groupKey->GetGroupingValue()));
-                    continue;
-                    }
-                }
-            else if (nullptr != key->AsECClassGroupingNodeKey())
-                {
-                ECClassGroupingNodeKey const* groupKey = key->AsECClassGroupingNodeKey();
-                auto remapIter = m_remapInfo.find(groupKey->GetNodeId());
-                if (m_remapInfo.end() != remapIter)
-                    {
-                    newKeys.push_back(ECClassGroupingNodeKey::Create(remapIter->second, groupKey->GetECClassId(), groupKey->GetType()));
-                    continue;
-                    }
-                }
-            else if (nullptr != key->AsDisplayLabelGroupingNodeKey())
-                {
-                DisplayLabelGroupingNodeKey const* groupKey = key->AsDisplayLabelGroupingNodeKey();
-                auto remapIter = m_remapInfo.find(groupKey->GetNodeId());
-                if (m_remapInfo.end() != remapIter)
-                    {
-                    newKeys.push_back(DisplayLabelGroupingNodeKey::Create(remapIter->second, groupKey->GetLabel(), groupKey->GetType()));
-                    continue;
-                    }
-                }
+            Utf8String nodeHash = key->GetNodeHash();
 
-            newKeys.push_back(key);
+            auto iter = m_changedNodes.find(nodeHash);
+            if (m_changedNodes.end() != iter)
+                {
+                shouldUpdate = true;
+                if (ChangeType::Delete == iter->second)
+                    removedKeys.insert(key);
+                }
             }
-        return NavNodeKeyListContainer::Create(newKeys);
+        return KeySet::Create(removedKeys);
         }
 protected:
     uint32_t _GetPriority() const override {return TASK_PRIORITY_RefreshSelection;}
     bvector<IUpdateTaskPtr> _Perform() override 
         {
-        if (m_remapInfo.empty())
+        if (m_changedNodes.empty())
             return bvector<IUpdateTaskPtr>();
 
-        INavNodeKeysContainerCPtr selectionKeys = GetNewKeys(*m_selectionManager.GetSelection(m_connection.GetECDb()));
-        if (0 != selectionKeys->size())
-            m_selectionManager.ChangeSelection(m_connection.GetECDb(), "RefreshSelectionTask", false, *selectionKeys);
+        bool shouldUpdate;
+        KeySetCPtr toRemove = GetRemovedNodeKeys(*m_selectionManager.GetSelection(m_connection.GetECDb()), shouldUpdate);
+        if (!shouldUpdate)
+            return bvector<IUpdateTaskPtr>();
 
-        INavNodeKeysContainerCPtr subSelectionKeys = GetNewKeys(*m_selectionManager.GetSubSelection(m_connection.GetECDb()));
-        if (0 != subSelectionKeys->size())
-            m_selectionManager.ChangeSelection(m_connection.GetECDb(), "RefreshSelectionTask", true, *subSelectionKeys);
+        if (!toRemove->empty())
+            m_selectionManager.RemoveFromSelection(m_connection.GetECDb(), "RefreshSelectionTask", false, *toRemove);
+        else if (shouldUpdate)
+            m_selectionManager.RefreshSelection(m_connection.GetECDb(), "RefreshSelectionTask", false);
 
         return bvector<IUpdateTaskPtr>();
         }
     Utf8String _GetPrintStr() const override {return "[RefreshSelectionTask]";}
 public:
-    RefreshSelectionTask(ISelectionManager& manager, IConnectionCR connection, bmap<uint64_t, uint64_t>& remapInfo)
-        : m_selectionManager(manager), m_remapInfo(remapInfo), m_connection(connection)
+    RefreshSelectionTask(ISelectionManager& manager, IConnectionCR connection, bmap<Utf8String, ChangeType>& changedNodes)
+        : m_selectionManager(manager), m_changedNodes(changedNodes), m_connection(connection)
         {}
 };
 
@@ -459,12 +438,12 @@ IUpdateTaskPtr UpdateTasksFactory::CreateReportTask(FullUpdateRecord record) con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-IUpdateTaskPtr UpdateTasksFactory::CreateRefreshSelectionTask(IConnectionCR connection, bmap<uint64_t, uint64_t>& remap) const
+IUpdateTaskPtr UpdateTasksFactory::CreateRefreshSelectionTask(IConnectionCR connection, bmap<Utf8String, ChangeType>& changedNodes) const
     {
     if (nullptr == m_selectionManager)
         return nullptr;
 
-    return new RefreshSelectionTask(*m_selectionManager, connection, remap);
+    return new RefreshSelectionTask(*m_selectionManager, connection, changedNodes);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -567,7 +546,7 @@ void UpdateHandler::AddTasksForAffectedHierarchies(bvector<IUpdateTaskPtr>& task
         }
 
     for (IConnectionCP connection : affectedConnections)
-        AddTask(tasks, *m_tasksFactory.CreateRefreshSelectionTask(*connection, updateContext.GetRemapInfo()));
+        AddTask(tasks, *m_tasksFactory.CreateRefreshSelectionTask(*connection, updateContext.GetChangedNodesInfo()));
 
     AddTask(tasks, *m_tasksFactory.CreateRemapNodeIdsTask(updateContext.GetRemapInfo()));
     }
@@ -745,7 +724,7 @@ void HierarchyUpdater::SynchronizeLists(NavNodesDataSource const& oldDs, size_t&
             JsonNavNodeCPtr oldNode = oldDs.GetNode(oldIndex);
             JsonNavNodePtr newNode = newDs.GetNode(newIndex);
             CustomizeNode(oldNode.get(), *newNode, *newDs.GetProvider());
-            if (oldNode->GetKey().IsSimilar(newNode->GetKey()))
+            if (oldNode->GetKey()->IsSimilar(*newNode->GetKey()))
                 {
                 found = true;
                 break;
@@ -781,6 +760,7 @@ void HierarchyUpdater::CompareDataSources(bvector<IUpdateTaskPtr>& subTasks, Upd
             NavNodePtr node = oldDs->GetNode(i);
             subTasks.push_back(m_tasksFactory.CreateReportTask(UpdateRecord(*node)));
             context.GetRemovedNodeIds().insert(node->GetNodeId());
+            context.GetChangedNodesInfo()[node->GetKey()->GetNodeHash()] = ChangeType::Delete;
             }
 
         // insert added nodes
@@ -794,7 +774,7 @@ void HierarchyUpdater::CompareDataSources(bvector<IUpdateTaskPtr>& subTasks, Upd
         // now the lists are synchronized - iterate over both of them at the same time
         JsonNavNodePtr oldNode, newNode;
         while (oldIndex < oldDs->GetSize() && newIndex < newDs->GetSize() 
-            && (oldNode = oldDs->GetNode(oldIndex))->GetKey().IsSimilar((newNode = newDs->GetNode(newIndex))->GetKey()))
+            && (oldNode = oldDs->GetNode(oldIndex))->GetKey()->IsSimilar(*(newNode = newDs->GetNode(newIndex))->GetKey()))
             {
             CompareNodes(subTasks, context, *oldNode, newProvider, *newNode);
             ++oldIndex;
@@ -808,6 +788,7 @@ void HierarchyUpdater::CompareDataSources(bvector<IUpdateTaskPtr>& subTasks, Upd
         NavNodePtr node = oldDs->GetNode(i);
         subTasks.push_back(m_tasksFactory.CreateReportTask(UpdateRecord(*node)));
         context.GetRemovedNodeIds().insert(node->GetNodeId());
+        context.GetChangedNodesInfo()[node->GetKey()->GetNodeHash()] = ChangeType::Delete;
         }
 
     // insert added nodes
@@ -827,7 +808,10 @@ void HierarchyUpdater::CompareNodes(bvector<IUpdateTaskPtr>& subTasks, UpdateCon
     CustomizeNode(&oldNode, newNode, newProvider);
     
     if (oldNode.GetNodeId() != newNode.GetNodeId())
+        {
         context.GetRemapInfo()[oldNode.GetNodeId()] = newNode.GetNodeId();
+        context.GetChangedNodesInfo()[newNode.GetKey()->GetNodeHash()] = ChangeType::Update;
+        }
     
     bvector<JsonChange> changes = NavNodesHelper::GetChanges(oldNode, newNode);
     if (!changes.empty())

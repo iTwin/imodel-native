@@ -15,9 +15,7 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ISelectionManager::AddToSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, NavNodeKeyCR key, RapidJsonValueCR extendedData)
     {
-    NavNodeKeyList list;
-    list.push_back(&key);
-    AddToSelection(ecdb, source, isSubSelection, *NavNodeKeyListContainer::Create(&list), extendedData);
+    AddToSelection(ecdb, source, isSubSelection, *KeySet::Create(key), extendedData);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -25,9 +23,7 @@ void ISelectionManager::AddToSelection(ECDbCR ecdb, Utf8CP source, bool isSubSel
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ISelectionManager::RemoveFromSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, NavNodeKeyCR key, RapidJsonValueCR extendedData)
     {
-    NavNodeKeyList list;
-    list.push_back(&key);
-    RemoveFromSelection(ecdb, source, isSubSelection, *NavNodeKeyListContainer::Create(&list), extendedData);
+    RemoveFromSelection(ecdb, source, isSubSelection, *KeySet::Create(key), extendedData);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -35,9 +31,7 @@ void ISelectionManager::RemoveFromSelection(ECDbCR ecdb, Utf8CP source, bool isS
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ISelectionManager::ChangeSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, NavNodeKeyCR key, RapidJsonValueCR extendedData)
     {
-    NavNodeKeyList list;
-    list.push_back(&key);
-    ChangeSelection(ecdb, source, isSubSelection, *NavNodeKeyListContainer::Create(&list), extendedData);
+    ChangeSelection(ecdb, source, isSubSelection, *KeySet::Create(key), extendedData);
     }
 
 //=======================================================================================
@@ -47,19 +41,19 @@ struct SelectionManager::SelectionStorage
 {
 private:
     NativeLogging::ILogger* m_logger;
-    NavNodeKeySet m_keys;
+    KeySetPtr m_keys;
     Utf8String m_lastSource;
 
 public:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            08/2016
     +---------------+---------------+---------------+---------------+-----------+------*/
-    SelectionStorage(NativeLogging::ILogger* logger) : m_logger(logger) {}
+    SelectionStorage(NativeLogging::ILogger* logger) : m_logger(logger) {m_keys = KeySet::Create();}
 
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            08/2016
     +---------------+---------------+---------------+---------------+-----------+------*/
-    INavNodeKeysContainerCPtr GetSelection() const {return NavNodeKeySetContainer::Create(&m_keys);}
+    KeySetCPtr GetSelection() const {return m_keys;}
 
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            08/2016
@@ -69,14 +63,13 @@ public:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            08/2016
     +---------------+---------------+---------------+---------------+-----------+------*/
-    bool AddToSelection(Utf8CP source, INavNodeKeysContainerCR keys)
+    bool AddToSelection(Utf8CP source, KeySetCR keys)
         {
-        size_t size = m_keys.size();
-        m_keys.insert(keys.begin(), keys.end());
-        if (size != m_keys.size())
+        uint64_t inserted = m_keys->MergeWith(keys);
+        if (0 != inserted)
             {
             if (nullptr != m_logger)
-                m_logger->debugv("%s added %" PRIu64 " nodes to selection set", source, (uint64_t)(m_keys.size() - size));
+                m_logger->debugv("%s added %" PRIu64 " nodes to selection set", source, inserted);
             m_lastSource = source;
             return true;
             }
@@ -86,16 +79,13 @@ public:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            08/2016
     +---------------+---------------+---------------+---------------+-----------+------*/
-    bool RemoveFromSelection(Utf8CP source, INavNodeKeysContainerCR keys)
+    bool RemoveFromSelection(Utf8CP source, KeySetCR keys)
         {
-        size_t size = m_keys.size();
-        for (NavNodeKeyCPtr const& key : keys)
-            m_keys.erase(key);
-
-        if (size != m_keys.size())
+        uint64_t removed = m_keys->Remove(keys);
+        if (0 != removed)
             {
             if (nullptr != m_logger)
-                m_logger->debugv("%s removed %" PRIu64 " nodes from selection set", source, (uint64_t)(size - m_keys.size()));
+                m_logger->debugv("%s removed %" PRIu64 " nodes from selection set", source, removed);
             m_lastSource = source;
             return true;
             }
@@ -105,32 +95,16 @@ public:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            08/2016
     +---------------+---------------+---------------+---------------+-----------+------*/
-    bool ChangeSelection(Utf8CP source, INavNodeKeysContainerCR keys)
+    bool ChangeSelection(Utf8CP source, KeySetCR keys)
         {
-        if (m_keys.size() == keys.size())
+        if (m_keys->Equals(keys))
             {
-            bool setsEqual = true;
-            for (NavNodeKeyCPtr const& key : keys)
-                {
-                if (m_keys.end() == m_keys.find(key))
-                    {
-                    setsEqual = false;
-                    break;
-                    }
-                }
-            if (setsEqual)
-                {
-                if (nullptr != m_logger)
-                    m_logger->debugv("%s did not change selection because the sets are equal", source);
-                return false;
-                }
-
-            if (nullptr != m_logger)
-                m_logger->debugv("%s changed selection from %" PRIu64 " nodes to %" PRIu64 " nodes", source, (uint64_t)m_keys.size(), (uint64_t)keys.size());
+            // sets are equal
+            return false;
             }
 
-        m_keys.clear();
-        m_keys.insert(keys.begin(), keys.end());
+        m_keys->Clear();
+        m_keys->MergeWith(keys);
         m_lastSource = source;
         return true;
         }
@@ -140,13 +114,13 @@ public:
     +---------------+---------------+---------------+---------------+-----------+------*/
     bool ClearSelection(Utf8CP source)
         {
-        if (m_keys.empty())
+        if (m_keys->empty())
             return false;
 
         if (nullptr != m_logger)
-            m_logger->debugv("%s cleared selection (was %" PRIu64 " nodes)", source, m_keys.size());
+            m_logger->debugv("%s cleared selection (was %" PRIu64 " nodes)", source, m_keys->size());
 
-        m_keys.clear();
+        m_keys->Clear();
         m_lastSource = source;
         return true;
         }
@@ -257,7 +231,7 @@ void  SelectionManager::RemoveSyncHandler(SelectionSyncHandlerR handler)
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SelectionManager::BroadcastSelectionChangedEvent(IConnectionCR connection, Utf8CP source, SelectionChangeType changeType, bool isSubSelection, INavNodeKeysContainerCR keys, RapidJsonValueCR extendedData) const
+void SelectionManager::BroadcastSelectionChangedEvent(IConnectionCR connection, Utf8CP source, SelectionChangeType changeType, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData) const
     {
     // create the selection changed event
     SelectionChangedEvent evt(connection, source, changeType, isSubSelection, keys);
@@ -272,7 +246,7 @@ void SelectionManager::BroadcastSelectionChangedEvent(IConnectionCR connection, 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SelectionManager::_AddToSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, INavNodeKeysContainerCR keys, RapidJsonValueCR extendedData)
+void SelectionManager::_AddToSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData)
     {
     IConnectionPtr connection = m_connections.GetConnection(ecdb);
     if (connection.IsNull())
@@ -297,7 +271,7 @@ void SelectionManager::_AddToSelection(ECDbCR ecdb, Utf8CP source, bool isSubSel
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SelectionManager::_RemoveFromSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, INavNodeKeysContainerCR keys, RapidJsonValueCR extendedData)
+void SelectionManager::_RemoveFromSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData)
     {
     IConnectionPtr connection = m_connections.GetConnection(ecdb);
     if (connection.IsNull())
@@ -322,7 +296,7 @@ void SelectionManager::_RemoveFromSelection(ECDbCR ecdb, Utf8CP source, bool isS
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SelectionManager::_ChangeSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, INavNodeKeysContainerCR keys, RapidJsonValueCR extendedData)
+void SelectionManager::_ChangeSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData)
     {
     IConnectionPtr connection = m_connections.GetConnection(ecdb);
     if (connection.IsNull())
@@ -367,19 +341,34 @@ void SelectionManager::_ClearSelection(ECDbCR ecdb, Utf8CP source, bool isSubSel
         }
     
     lock.unlock();
-    BroadcastSelectionChangedEvent(*connection, source, SelectionChangeType::Clear, isSubSelection, *NavNodeKeyListContainer::Create(), extendedData);
+    BroadcastSelectionChangedEvent(*connection, source, SelectionChangeType::Clear, isSubSelection, *KeySet::Create(), extendedData);
     }
 
 /*---------------------------------------------------------------------------------**//**
-// @bsimethod                                    Grigas.Petraitis                08/2016
+// @bsimethod                                    Saulius.Skliutas                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-INavNodeKeysContainerCPtr SelectionManager::_GetSelection(ECDbCR ecdb) const
+void SelectionManager::_RefreshSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, RapidJsonValueCR extendedData)
     {
     IConnectionPtr connection = m_connections.GetConnection(ecdb);
     if (connection.IsNull())
         {
         BeAssert(false);
-        return NavNodeKeyListContainer::Create();
+        return;
+        }
+    KeySetCPtr keys = isSubSelection ? GetSubSelection(ecdb) : GetSelection(ecdb);
+    BroadcastSelectionChangedEvent(*connection, source, SelectionChangeType::Replace, isSubSelection, *keys, extendedData);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Grigas.Petraitis                08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+KeySetCPtr SelectionManager::_GetSelection(ECDbCR ecdb) const
+    {
+    IConnectionPtr connection = m_connections.GetConnection(ecdb);
+    if (connection.IsNull())
+        {
+        BeAssert(false);
+        return KeySet::Create();
         }
     BeMutexHolder lock(m_mutex);
     return GetStorage(*connection, false).GetSelection();
@@ -388,13 +377,13 @@ INavNodeKeysContainerCPtr SelectionManager::_GetSelection(ECDbCR ecdb) const
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-INavNodeKeysContainerCPtr SelectionManager::_GetSubSelection(ECDbCR ecdb) const
+KeySetCPtr SelectionManager::_GetSubSelection(ECDbCR ecdb) const
     {
     IConnectionPtr connection = m_connections.GetConnection(ecdb);
     if (connection.IsNull())
         {
         BeAssert(false);
-        return NavNodeKeyListContainer::Create();
+        return KeySet::Create();
         }
     BeMutexHolder lock(m_mutex);
     return GetStorage(*connection, true).GetSelection();
@@ -420,10 +409,7 @@ rapidjson::Document SelectionChangedEvent::AsJson(rapidjson::Document::Allocator
     json.AddMember(rapidjson::StringRef(JSON_MEMBER_Source), rapidjson::StringRef(m_sourceName.c_str()), json.GetAllocator());
     json.AddMember(rapidjson::StringRef(JSON_MEMBER_IsSubSelection), m_isSubSelection, json.GetAllocator());
     json.AddMember(rapidjson::StringRef(JSON_MEMBER_ChangeType), (int)m_changeType, json.GetAllocator());
-    rapidjson::Value nodeKeysJson(rapidjson::kArrayType);
-    for (NavNodeKeyCPtr const& nodeKey : *m_keys)
-        nodeKeysJson.PushBack(nodeKey->AsJson(&json.GetAllocator()), json.GetAllocator());
-    json.AddMember(rapidjson::StringRef(JSON_MEMBER_Keys), nodeKeysJson, json.GetAllocator());
+    json.AddMember(rapidjson::StringRef(JSON_MEMBER_Keys), m_keys->AsJson(&json.GetAllocator()), json.GetAllocator());
     json.AddMember(rapidjson::StringRef(JSON_MEMBER_ExtendedData), rapidjson::Value(GetExtendedData(), json.GetAllocator()), json.GetAllocator());
 
     return json;
@@ -452,19 +438,8 @@ SelectionChangedEvent::SelectionChangedEvent(IConnectionCacheCR connectionCache,
     if (json.isMember(JSON_MEMBER_Keys))
         {
         JsonValueCR keysJson = json[JSON_MEMBER_Keys];
-        BeAssert(keysJson.isArray());
-        for (Json::ArrayIndex i = 0; i < keysJson.size(); ++i)
-            {
-            NavNodeKeyPtr key = NavNodeKey::FromJson(keysJson[i]);
-            if (key.IsNull())
-                {
-                BeAssert(false);
-                continue;
-                }
-            keys.insert(key);
-            }
+        m_keys = KeySet::FromJson(keysJson);
         }
-    m_keys = NavNodeKeySetContainer::Create(keys);
 
     if (json.isMember(JSON_MEMBER_ExtendedData) && json[JSON_MEMBER_ExtendedData].isObject() && !json[JSON_MEMBER_ExtendedData].empty())
         {
@@ -520,10 +495,11 @@ void SelectionSyncHandler::_OnSelectionChanged(SelectionChangedEventCR evt)
 
     // create the selection info
     SelectionInfo selection(*m_manager, evt);
+    KeySetCPtr inputKeys = evt.IsSubSelection() ? m_manager->GetSubSelection(evt.GetConnection().GetECDb()) : m_manager->GetSelection(evt.GetConnection().GetECDb());
     bvector<ECInstanceKey> selectedKeys;
 
     // get the default content descriptor
-    ContentDescriptorCPtr defaultDescriptor = IECPresentationManager::GetManager().GetContentDescriptor(evt.GetConnection().GetECDb(), contentDisplayType, selection, contentOptions).get();
+    ContentDescriptorCPtr defaultDescriptor = IECPresentationManager::GetManager().GetContentDescriptor(evt.GetConnection().GetECDb(), contentDisplayType, *inputKeys, &selection, contentOptions).get();
     if (defaultDescriptor.IsNull())
         {
         _SelectInstances(evt, selectedKeys);
@@ -535,7 +511,7 @@ void SelectionSyncHandler::_OnSelectionChanged(SelectionChangedEventCR evt)
     descriptor->AddContentFlag(ContentFlags::KeysOnly);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(evt.GetConnection().GetECDb(), *descriptor, selection, PageOptions(), contentOptions).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     if (content.IsNull())
         {
         _SelectInstances(evt, selectedKeys);
@@ -551,7 +527,7 @@ void SelectionSyncHandler::_OnSelectionChanged(SelectionChangedEventCR evt)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Grigas.Petraitis    08/2016
 //---------------------------------------------------------------------------------------
-void SelectionSyncHandler::AddToSelection(ECDbCR ecdb, bool isSubSelection, INavNodeKeysContainerCR keys)
+void SelectionSyncHandler::AddToSelection(ECDbCR ecdb, bool isSubSelection, KeySetCR keys)
     {
     if (nullptr == m_manager)
         {
@@ -566,7 +542,7 @@ void SelectionSyncHandler::AddToSelection(ECDbCR ecdb, bool isSubSelection, INav
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Grigas.Petraitis    08/2016
 //---------------------------------------------------------------------------------------
-void SelectionSyncHandler::RemoveFromSelection(ECDbCR ecdb, bool isSubSelection, INavNodeKeysContainerCR keys)
+void SelectionSyncHandler::RemoveFromSelection(ECDbCR ecdb, bool isSubSelection, KeySetCR keys)
     {
     if (nullptr == m_manager)
         {
@@ -581,7 +557,7 @@ void SelectionSyncHandler::RemoveFromSelection(ECDbCR ecdb, bool isSubSelection,
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Grigas.Petraitis    08/2016
 //---------------------------------------------------------------------------------------
-void SelectionSyncHandler::ChangeSelection(ECDbCR ecdb, bool isSubSelection, INavNodeKeysContainerCR keys)
+void SelectionSyncHandler::ChangeSelection(ECDbCR ecdb, bool isSubSelection, KeySetCR keys)
     {
     if (nullptr == m_manager)
         {
@@ -613,7 +589,7 @@ void SelectionSyncHandler::ClearSelection(ECDbCR ecdb, bool isSubSelection)
 //---------------------------------------------------------------------------------------
 void SelectionSyncHandler::HandleSelectionChangeEvent(SelectionChangedEventCR evt)
     {
-    INavNodeKeysContainerCPtr container = &evt.GetSelectedKeys();
+    KeySetCPtr container = &evt.GetSelectedKeys();
     switch (evt.GetChangeType())
         {
         case SelectionChangeType::Add:

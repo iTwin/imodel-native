@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/UpdateHandler.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -62,11 +62,13 @@ struct UpdateContext
 {
 private:
     bmap<uint64_t, uint64_t> m_remapInfo;
+    bmap<Utf8String, ChangeType> m_changedNodesInfo;
     bset<uint64_t> m_removedNodeIds;
     bset<HierarchyLevelInfo> m_handledHierarchies;
     bset<Utf8String> m_reportedContentRulesetIds;
 public:
     bmap<uint64_t, uint64_t>& GetRemapInfo() {return m_remapInfo;}
+    bmap<Utf8String, ChangeType>& GetChangedNodesInfo() {return m_changedNodesInfo;}
     bset<uint64_t>& GetRemovedNodeIds() {return m_removedNodeIds;}
     bset<uint64_t> const& GetRemovedNodeIds() const {return m_removedNodeIds;}
     bset<HierarchyLevelInfo>& GetHandledHierarchies() {return m_handledHierarchies;}
@@ -133,7 +135,7 @@ public:
     ECPRESENTATION_EXPORT IUpdateTaskPtr CreateReportTask(FullUpdateRecord) const;
 
     // selection-related tasks
-    ECPRESENTATION_EXPORT IUpdateTaskPtr CreateRefreshSelectionTask(IConnectionCR, bmap<uint64_t, uint64_t>&) const;
+    ECPRESENTATION_EXPORT IUpdateTaskPtr CreateRefreshSelectionTask(IConnectionCR, bmap<Utf8String, ChangeType>&) const;
 };
 
 /*=================================================================================**//**
