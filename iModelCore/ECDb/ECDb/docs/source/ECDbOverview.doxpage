@@ -247,6 +247,12 @@
         - @b Add a new @ref BentleyApi::ECN::KindOfQuantity "KindOfQuantity"
     - @ref BentleyApi::ECN::ECSchema::GetPropertyCategories "PropertyCategories"
         - @b Add a new @ref BentleyApi::ECN::PropertyCategory "PropertyCategory"
+    - @ref BentleyApi::ECN::ECSchema::GetPhenomena "Phenomena"
+        - @b Add a new @ref BentleyApi::ECN::Phenomenon "Phenomenon"
+    - @ref BentleyApi::ECN::ECSchema::GetUnitSystems "UnitSystems"
+        - @b Add a new @ref BentleyApi::ECN::UnitSystem "UnitSystem"
+    - @ref BentleyApi::ECN::ECSchema::GetUnits "Units"
+        - @b Add a new @ref BentleyApi::ECN::ECUnit "ECUnit"
     - @b CustomAttributes on the ECSchema
         - @b Add, @b delete, @b modify
 
@@ -286,6 +292,31 @@
     - @b Modify 
         - @ref BentleyApi::ECN::ECEnumerator::GetDisplayLabel "DisplayLabel"
         - @ref BentleyApi::ECN::ECEnumerator::GetDescription "Description"
+
+    ### PropertyCategory
+    - @b Modify 
+        - @ref BentleyApi::ECN::PropertyCategory::GetDisplayLabel "DisplayLabel"
+        - @ref BentleyApi::ECN::PropertyCategory::GetDescription "Description"
+
+    ### KindOfQuantity
+    - @b Modify 
+        - @ref BentleyApi::ECN::KindOfQuantity::GetDisplayLabel "DisplayLabel"
+        - @ref BentleyApi::ECN::KindOfQuantity::GetDescription "Description"
+
+    ### Phenomenon
+    - @b Modify 
+        - @ref BentleyApi::ECN::Phenomenon::GetDisplayLabel "DisplayLabel"
+        - @ref BentleyApi::ECN::Phenomenon::GetDescription "Description"
+
+    ### UnitSystem
+    - @b Modify 
+        - @ref BentleyApi::ECN::UnitSystem::GetDisplayLabel "DisplayLabel"
+        - @ref BentleyApi::ECN::UnitSystem::GetDescription "Description"
+
+    ### Unit
+    - @b Modify 
+        - @ref BentleyApi::ECN::ECUnit::GetDisplayLabel "DisplayLabel"
+        - @ref BentleyApi::ECN::ECUnit::GetDescription "Description"
 
     ### ECProperty
     - @b Modify 
