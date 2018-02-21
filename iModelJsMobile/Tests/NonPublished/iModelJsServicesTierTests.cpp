@@ -95,7 +95,8 @@ private:
         auto evaluateResult = runtime.EvaluateScript (u8R"(
             (function() {
                 let require = bentley.imodeljs.servicesTier.require;
-                let addon = require ("@bentley/imodeljs-mobile");
+                // let addon = require ("@bentley/imodeljs-mobile");
+                let addon = self.imodeljsMobile.imodeljsNative;
                 BeAssert (addon !== undefined);
            })();
         )", "iModelJsServicesTierTests:///Addon.Test1.js");

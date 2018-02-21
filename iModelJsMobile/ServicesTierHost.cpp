@@ -10,6 +10,8 @@
 #include <Bentley/BeDirectoryIterator.h>
 #include <Bentley/Desktop/FileSystem.h>
 
+extern "C" void imodeljs_addon_entry_point();
+
 static std::vector<BentleyApi::iModelJs::ServicesTier::Extension::InstallCallback_T> s_extensionsQueue;
 
 //---------------------------------------------------------------------------------------
@@ -32,6 +34,66 @@ static uv_mutex_t* getExtensionsQueueMutex()
     }
 
 BEGIN_BENTLEY_IMODELJS_SERVICES_TIER_NAMESPACE
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson  02/18
+//=======================================================================================
+struct NapiAddonExtension // : public ServicesTier::Extension
+    {
+    Utf8String m_name;
+    Napi::ModuleRegisterCallback m_func;
+    // Utf8CP SupplyName() const override { return m_name.c_str(); }
+    Napi::Value ExportJsModule (Js::RuntimeR runtime) // override
+        {
+        auto env = runtime.Env();
+        // NEEDS WORK: The (JS) caller should pass 'module' and 'exports' objects into me
+        auto exports = Napi::Object::New(env);
+        return m_func(env, exports);
+        }
+    NapiAddonExtension(Utf8StringCR name, Napi::ModuleRegisterCallback func) : m_name(name), m_func(func) {;}
+    };
+
+static NapiAddonExtension* s_imodelJsNative;
+
+/*
+"@bentley/imodeljs-nodeaddon"
+
+->
+
+_register_
+__napi_ ## regfunc
+
+
+AddonUtils, registerModule
+
+
+// Intercepts the Node-V8 module registration callback. Converts parameters
+// to NAPI equivalents and then calls the registration callback specified
+// by the NAPI module.
+void napi_module_register_cb(v8::Local<v8::Object> exports,
+                             v8::Local<v8::Value> module,
+                             v8::Local<v8::Context> context,
+                             void* priv) {
+  napi_module* mod = static_cast<napi_module*>(priv);
+
+  // Create a new napi_env for this module or reference one if a pre-existing
+  // one is found.
+  napi_env env = v8impl::GetEnv(context);
+
+  napi_value _exports =
+      mod->nm_register_func(env, v8impl::JsValueFromV8LocalValue(exports));
+
+  // If register function returned a non-null exports object different from
+  // the exports object we passed it, set that as the "exports" property of
+  // the module.
+  if (_exports != nullptr &&
+      _exports != v8impl::JsValueFromV8LocalValue(exports)) {
+    napi_value _module = v8impl::JsValueFromV8LocalValue(module);
+    napi_set_named_property(env, _module, "exports", _exports);
+  }
+}
+
+*/
 
 //=======================================================================================
 // Projects the ECSqlStatement class into JS.
@@ -513,6 +575,8 @@ void Host::SetupJsRuntime()
     auto& env = Env();
     Napi::HandleScope scope(env);
 
+    imodeljs_addon_entry_point(); // tell the addon (which is actually linked in) to install itself as a module.
+
     try
         {   // must process Napi/JS errors before we destroy the HandleScope
 
@@ -545,6 +609,11 @@ void Host::SetupJsRuntime()
         auto imodeljsMobile = Napi::Object::New(env);
 
         imodeljsMobile.Set("knownLocations", knownLocations);
+
+        if (s_imodelJsNative)
+            imodeljsMobile.Set("imodeljsNative", s_imodelJsNative->ExportJsModule(runtime));
+        else
+            fprintf(stderr, "no addon??\n");
 
         env.Global().Set("imodeljsMobile", imodeljsMobile);
 
@@ -800,3 +869,18 @@ void Host::PerformInstall(Extension::InstallCallback_T const& callback)
 std::atomic<HostP> Host::s_instance;
 
 END_BENTLEY_IMODELJS_SERVICES_TIER_NAMESPACE
+
+using namespace BentleyApi::iModelJs::ServicesTier;
+
+//---------------------------------------------------------------------------------------
+//
+// The addon (which is linked into this library) calls this to register itself as a module.
+//
+// @bsimethod                                Sam.Wilson                     01/2018
+//---------------------------------------------------------------------------------------
+extern "C" void imodeljs_register_addon(char const* addonName, Napi::ModuleRegisterCallback regFunc)
+    {
+    //if (0==strcmp(addonName, "at_bentley_imodeljs_nodeaddon"))
+    //    Extension::Install ([=]() { return new NapiAddonExtension("@bentley/imodeljs-mobile", regFunc); });
+    s_imodelJsNative = new NapiAddonExtension("@bentley/imodeljs-mobile", regFunc);
+    }
