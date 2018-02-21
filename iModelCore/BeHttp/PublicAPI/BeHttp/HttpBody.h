@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/BeHttp/HttpBody.h $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -268,6 +268,7 @@ public:
     uint64_t GetLength() {return m_bytesTo - m_bytesFrom + 1;}
 
     BEHTTP_EXPORT Utf8String AsString() const;
+    BEHTTP_EXPORT HttpBodyPtr GetBody() {return m_body;}
 };
 
 /*--------------------------------------------------------------------------------------+
