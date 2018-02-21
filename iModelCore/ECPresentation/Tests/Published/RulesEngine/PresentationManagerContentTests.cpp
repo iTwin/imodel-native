@@ -69,6 +69,65 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Retu
     }
 
 /*---------------------------------------------------------------------------------**//**
+// @betest                                       Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(SelectedNodeInstances_ReturnsValidDescriptorBasedOnSelectedClassesWhenJoiningPolymorphicallyRelatedProperties, R"*(
+    <ECEntityClass typeName="Element">
+    </ECEntityClass>
+    <ECEntityClass typeName="ElementUniqueAspect">
+        <ECProperty propertyName="AspectName" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsUniqueAspect" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="ElementUniqueAspect"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_ReturnsValidDescriptorBasedOnSelectedClassesWhenJoiningPolymorphicallyRelatedProperties)
+    {    
+    ECEntityClassCP elementClass = GetClass("Element")->GetEntityClassCP();
+    ECEntityClassCP aspectClass = GetClass("ElementUniqueAspect")->GetEntityClassCP();
+    ECRelationshipClassCP elementOwnsUniqueAspectRelationship = GetClass("ElementOwnsUniqueAspect")->GetRelationshipClassCP();
+
+    // set up dataset
+    IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    IECInstancePtr aspect = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementOwnsUniqueAspectRelationship, *element, *aspect);
+    
+    // set up selection
+    SelectionInfo selection({elementClass});
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", true));
+    rule->GetSpecifications().back()->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, 
+        elementOwnsUniqueAspectRelationship->GetFullName(), aspectClass->GetFullName(), "", RelationshipMeaning::SameInstance, true));
+    rules->AddPresentationRule(*rule);
+
+    // validate descriptor
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+
+    ASSERT_EQ(1, descriptor->GetSelectClasses().size());
+    EXPECT_EQ(elementClass, &descriptor->GetSelectClasses()[0].GetSelectClass());
+
+    bvector<ContentDescriptor::Field*> fields = descriptor->GetVisibleFields();
+    ASSERT_EQ(1, fields.size());
+    ASSERT_TRUE(fields.front()->IsNestedContentField());
+    EXPECT_STREQ("Element_ElementUniqueAspect", fields.front()->GetName().c_str());
+    ContentDescriptor::NestedContentField const* field = fields.front()->AsNestedContentField();
+    ASSERT_EQ(1, field->GetFields().size());
+    EXPECT_STREQ("ElementUniqueAspect_AspectName", field->GetFields().front()->GetName().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 // @betest                                       Grigas.Petraitis                05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_AllPropertiesOfOneSelectedNode)

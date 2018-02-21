@@ -45,7 +45,8 @@ void ParsedSelectionInfo::GetNodeClasses(NavNodeKeyCR nodeKey, INavNodeLocater c
             }
         if (m_classSelection.end() == m_classSelection.find(ecClass))
             m_orderedClasses.push_back(ecClass);
-        m_classSelection[ecClass].push_back(instanceNodeKey.GetInstanceId());
+        if (instanceNodeKey.GetInstanceId().IsValid())
+            m_classSelection[ecClass].push_back(instanceNodeKey.GetInstanceId());
         return;
         }
         
