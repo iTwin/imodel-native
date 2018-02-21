@@ -173,7 +173,7 @@ TEST_F(CurveStrategyTests, LinePointAngleLengthTests)
         DVec3d::From(1, 0, 0)
     );
 
-    strategy->SetWorkingPlane(otherPlane);
+    strategy->SetProperty(strategy->prop_WorkingPlane(), otherPlane);
     TestUtils::ComparePoints({ { 1, 2, 3 },{ 1, 2 + sqrt(25.0 / 2.0), 3 - sqrt(25.0 / 2.0) } }, strategy->GetKeyPoints());
 
     createdCurve = strategy->FinishPrimitive();
@@ -329,7 +329,7 @@ TEST_F(CurveStrategyTests, LinePointsAngleTests)
         DVec3d::From(1, 0, 0)
     );
 
-    strategy->SetWorkingPlane(otherPlane);
+    strategy->SetProperty(strategy->prop_WorkingPlane(), otherPlane);
     TestUtils::ComparePoints({ { 1, 2, 3 },{ 1, 3, 2 } }, strategy->GetKeyPoints());
 
     createdCurve = strategy->FinishPrimitive();
