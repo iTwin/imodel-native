@@ -288,6 +288,15 @@ BentleyStatus SchemaComparer::CompareECSchema(SchemaChange& change, ECSchemaCR a
     if (ComparePropertyCategories(change.PropertyCategories(), a.GetPropertyCategories(), b.GetPropertyCategories()) != SUCCESS)
         return ERROR;
 
+    if (ComparePhenomena(change.Phenomena(), a.GetPhenomena(), b.GetPhenomena()) != SUCCESS)
+        return ERROR;
+
+    if (CompareUnitSystems(change.UnitSystems(), a.GetUnitSystems(), b.GetUnitSystems()) != SUCCESS)
+        return ERROR;
+
+    if (CompareUnits(change.Units(), a.GetUnits(), b.GetUnits()) != SUCCESS)
+        return ERROR;
+
     if (CompareReferences(change.References(), a.GetReferencedSchemas(), b.GetReferencedSchemas()) != SUCCESS)
         return ERROR;
 
@@ -949,6 +958,155 @@ BentleyStatus SchemaComparer::ComparePropertyCategories(PropertyCategoryChanges&
     return SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaComparer::ComparePhenomena(PhenomenonChanges& changes, PhenomenonContainerCR oldValues, PhenomenonContainerCR newValues)
+    {
+    std::map<Utf8CP, PhenomenonCP, CompareIUtf8Ascii> oldMap, newMap, allMap;
+    for (PhenomenonCP ph : oldValues)
+        oldMap[ph->GetName().c_str()] = ph;
+
+    for (PhenomenonCP ph : newValues)
+        newMap[ph->GetName().c_str()] = ph;
+
+    allMap.insert(oldMap.cbegin(), oldMap.cend());
+    allMap.insert(newMap.cbegin(), newMap.cend());
+
+    for (auto& kvPair : allMap)
+        {
+        Utf8CP name = kvPair.first;
+        auto oldIt = oldMap.find(name);
+        auto newIt = newMap.find(name);
+
+        const bool existInOld = oldIt != oldMap.end();
+        const bool existInNew = newIt != newMap.end();
+        if (existInOld && existInNew)
+            {
+            PhenomenonChange& change = changes.Add(ChangeState::Modified, name);
+            if (SUCCESS != ComparePhenomenon(change, *oldIt->second, *newIt->second))
+                return ERROR;
+
+            continue;
+            }
+
+        if (existInOld && !existInNew)
+            {
+            if (SUCCESS != AppendPhenomenon(changes, *oldIt->second, ValueId::Deleted))
+                return ERROR;
+
+            continue;
+            }
+
+        if (!existInOld && existInNew)
+            {
+            if (SUCCESS != AppendPhenomenon(changes, *newIt->second, ValueId::New))
+                return ERROR;
+            }
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaComparer::CompareUnitSystems(UnitSystemChanges& changes, UnitSystemContainerCR oldValues, UnitSystemContainerCR newValues)
+    {
+    std::map<Utf8CP, UnitSystemCP, CompareIUtf8Ascii> oldMap, newMap, allMap;
+    for (UnitSystemCP ph : oldValues)
+        oldMap[ph->GetName().c_str()] = ph;
+
+    for (UnitSystemCP ph : newValues)
+        newMap[ph->GetName().c_str()] = ph;
+
+    allMap.insert(oldMap.cbegin(), oldMap.cend());
+    allMap.insert(newMap.cbegin(), newMap.cend());
+
+    for (auto& kvPair : allMap)
+        {
+        Utf8CP name = kvPair.first;
+        auto oldIt = oldMap.find(name);
+        auto newIt = newMap.find(name);
+
+        const bool existInOld = oldIt != oldMap.end();
+        const bool existInNew = newIt != newMap.end();
+        if (existInOld && existInNew)
+            {
+            UnitSystemChange& change = changes.Add(ChangeState::Modified, name);
+            if (SUCCESS != CompareUnitSystem(change, *oldIt->second, *newIt->second))
+                return ERROR;
+
+            continue;
+            }
+
+        if (existInOld && !existInNew)
+            {
+            if (SUCCESS != AppendUnitSystem(changes, *oldIt->second, ValueId::Deleted))
+                return ERROR;
+
+            continue;
+            }
+
+        if (!existInOld && existInNew)
+            {
+            if (SUCCESS != AppendUnitSystem(changes, *newIt->second, ValueId::New))
+                return ERROR;
+            }
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaComparer::CompareUnits(UnitChanges& changes, UnitContainerCR oldValues, UnitContainerCR newValues)
+    {
+    std::map<Utf8CP, ECUnitCP, CompareIUtf8Ascii> oldMap, newMap, allMap;
+    for (ECUnitCP ph : oldValues)
+        oldMap[ph->GetName().c_str()] = ph;
+
+    for (ECUnitCP ph : newValues)
+        newMap[ph->GetName().c_str()] = ph;
+
+    allMap.insert(oldMap.cbegin(), oldMap.cend());
+    allMap.insert(newMap.cbegin(), newMap.cend());
+
+    for (auto& kvPair : allMap)
+        {
+        Utf8CP name = kvPair.first;
+        auto oldIt = oldMap.find(name);
+        auto newIt = newMap.find(name);
+
+        const bool existInOld = oldIt != oldMap.end();
+        const bool existInNew = newIt != newMap.end();
+        if (existInOld && existInNew)
+            {
+            UnitChange& change = changes.Add(ChangeState::Modified, name);
+            if (SUCCESS != CompareUnit(change, *oldIt->second, *newIt->second))
+                return ERROR;
+
+            continue;
+            }
+
+        if (existInOld && !existInNew)
+            {
+            if (SUCCESS != AppendUnit(changes, *oldIt->second, ValueId::Deleted))
+                return ERROR;
+
+            continue;
+            }
+
+        if (!existInOld && existInNew)
+            {
+            if (SUCCESS != AppendUnit(changes, *newIt->second, ValueId::New))
+                return ERROR;
+            }
+        }
+
+    return SUCCESS;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
@@ -1273,6 +1431,105 @@ BentleyStatus SchemaComparer::ComparePropertyCategory(PropertyCategoryChange& ch
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                 Krischan.Eberle  02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaComparer::ComparePhenomenon(PhenomenonChange& change, PhenomenonCR oldVal, PhenomenonCR newVal)
+    {
+    if (!oldVal.GetName().EqualsIAscii(newVal.GetName()))
+        change.GetName().SetValue(oldVal.GetName(), newVal.GetName());
+
+    if (oldVal.GetIsDisplayLabelDefined() && !newVal.GetIsDisplayLabelDefined())
+        change.GetDisplayLabel().SetValue(ValueId::Deleted, oldVal.GetInvariantDisplayLabel());
+    else if (!oldVal.GetIsDisplayLabelDefined() && newVal.GetIsDisplayLabelDefined())
+        change.GetDisplayLabel().SetValue(ValueId::New, newVal.GetInvariantDisplayLabel());
+    else if (oldVal.GetIsDisplayLabelDefined() && newVal.GetIsDisplayLabelDefined())
+        {
+        if (!oldVal.GetInvariantDisplayLabel().EqualsIAscii(newVal.GetInvariantDisplayLabel()))
+            change.GetDisplayLabel().SetValue(oldVal.GetInvariantDisplayLabel(), newVal.GetInvariantDisplayLabel());
+        }
+
+    if (!oldVal.GetInvariantDescription().EqualsIAscii(newVal.GetInvariantDescription()))
+        change.GetDescription().SetValue(oldVal.GetInvariantDescription(), newVal.GetInvariantDescription());
+
+    if (!oldVal.GetDefinition().EqualsIAscii(newVal.GetDefinition()))
+        change.GetDefinition().SetValue(oldVal.GetDefinition(), newVal.GetDefinition());
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Krischan.Eberle  02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaComparer::CompareUnitSystem(UnitSystemChange& change, UnitSystemCR oldVal, UnitSystemCR newVal)
+    {
+    if (!oldVal.GetName().EqualsIAscii(newVal.GetName()))
+        change.GetName().SetValue(oldVal.GetName(), newVal.GetName());
+
+    if (oldVal.GetIsDisplayLabelDefined() && !newVal.GetIsDisplayLabelDefined())
+        change.GetDisplayLabel().SetValue(ValueId::Deleted, oldVal.GetInvariantDisplayLabel());
+    else if (!oldVal.GetIsDisplayLabelDefined() && newVal.GetIsDisplayLabelDefined())
+        change.GetDisplayLabel().SetValue(ValueId::New, newVal.GetInvariantDisplayLabel());
+    else if (oldVal.GetIsDisplayLabelDefined() && newVal.GetIsDisplayLabelDefined())
+        {
+        if (!oldVal.GetInvariantDisplayLabel().EqualsIAscii(newVal.GetInvariantDisplayLabel()))
+            change.GetDisplayLabel().SetValue(oldVal.GetInvariantDisplayLabel(), newVal.GetInvariantDisplayLabel());
+        }
+
+    if (!oldVal.GetInvariantDescription().EqualsIAscii(newVal.GetInvariantDescription()))
+        change.GetDescription().SetValue(oldVal.GetInvariantDescription(), newVal.GetInvariantDescription());
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Krischan.Eberle  02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaComparer::CompareUnit(UnitChange& change, ECUnitCR oldVal, ECUnitCR newVal)
+    {
+    if (!oldVal.GetName().EqualsIAscii(newVal.GetName()))
+        change.GetName().SetValue(oldVal.GetName(), newVal.GetName());
+
+    if (oldVal.GetIsDisplayLabelDefined() && !newVal.GetIsDisplayLabelDefined())
+        change.GetDisplayLabel().SetValue(ValueId::Deleted, oldVal.GetInvariantDisplayLabel());
+    else if (!oldVal.GetIsDisplayLabelDefined() && newVal.GetIsDisplayLabelDefined())
+        change.GetDisplayLabel().SetValue(ValueId::New, newVal.GetInvariantDisplayLabel());
+    else if (oldVal.GetIsDisplayLabelDefined() && newVal.GetIsDisplayLabelDefined())
+        {
+        if (!oldVal.GetInvariantDisplayLabel().EqualsIAscii(newVal.GetInvariantDisplayLabel()))
+            change.GetDisplayLabel().SetValue(oldVal.GetInvariantDisplayLabel(), newVal.GetInvariantDisplayLabel());
+        }
+
+    if (!oldVal.GetInvariantDescription().EqualsIAscii(newVal.GetInvariantDescription()))
+        change.GetDescription().SetValue(oldVal.GetInvariantDescription(), newVal.GetInvariantDescription());
+
+    if (!oldVal.GetDefinition().EqualsIAscii(newVal.GetDefinition()))
+        change.GetDefinition().SetValue(oldVal.GetDefinition(), newVal.GetDefinition());
+
+    if (!oldVal.GetDefinition().EqualsIAscii(newVal.GetDefinition()))
+        change.GetDefinition().SetValue(oldVal.GetDefinition(), newVal.GetDefinition());
+
+    if (oldVal.GetFactor() != newVal.GetFactor())
+        change.GetFactor().SetValue(oldVal.GetFactor(), newVal.GetFactor());
+
+    if (oldVal.GetOffset() != newVal.GetOffset())
+        change.GetOffset().SetValue(oldVal.GetOffset(), newVal.GetOffset());
+
+    BeAssert(dynamic_cast<PhenomenonCP> (oldVal.GetPhenomenon()) != nullptr && dynamic_cast<PhenomenonCP> (newVal.GetPhenomenon()));
+    PhenomenonCP oldPhen = static_cast<PhenomenonCP> (oldVal.GetPhenomenon());
+    PhenomenonCP newPhen = static_cast<PhenomenonCP> (newVal.GetPhenomenon());
+    if (!oldPhen->GetFullName().EqualsIAscii(newPhen->GetFullName()))
+        change.GetPhenomenon().SetValue(oldPhen->GetFullName(), newPhen->GetFullName());
+
+    BeAssert(dynamic_cast<UnitSystemCP> (oldVal.GetUnitSystem()) != nullptr && dynamic_cast<PhenomenonCP> (newVal.GetUnitSystem()));
+    UnitSystemCP oldSystem = static_cast<UnitSystemCP> (oldVal.GetUnitSystem());
+    UnitSystemCP newSystem = static_cast<UnitSystemCP> (newVal.GetUnitSystem());
+    if (!oldSystem->GetFullName().EqualsIAscii(newSystem->GetFullName()))
+        change.GetUnitSystem().SetValue(oldSystem->GetFullName(), newSystem->GetFullName());
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaComparer::CompareBaseClasses(BaseClassChanges& changes, ECBaseClassesList const& a, ECBaseClassesList const& b)
@@ -1529,6 +1786,61 @@ BentleyStatus SchemaComparer::AppendPropertyCategory(PropertyCategoryChanges& ch
     catChange.GetDisplayLabel().SetValue(appendType, cat.GetDisplayLabel());
     catChange.GetDescription().SetValue(appendType, cat.GetDescription());
     catChange.GetPriority().SetValue(appendType, cat.GetPriority());
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Krischan.Eberle  02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaComparer::AppendPhenomenon(PhenomenonChanges& changes, PhenomenonCR phen, ValueId appendType)
+    {
+    ChangeState state = appendType == ValueId::New ? ChangeState::New : ChangeState::Deleted;
+    PhenomenonChange& change = changes.Add(state, phen.GetName().c_str());
+    if (phen.GetIsDisplayLabelDefined())
+        change.GetDisplayLabel().SetValue(appendType, phen.GetInvariantDisplayLabel());
+
+    change.GetDescription().SetValue(appendType, phen.GetInvariantDescription());
+    change.GetDefinition().SetValue(appendType, phen.GetDefinition());
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Krischan.Eberle  02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaComparer::AppendUnitSystem(UnitSystemChanges& changes, UnitSystemCR system, ValueId appendType)
+    {
+    ChangeState state = appendType == ValueId::New ? ChangeState::New : ChangeState::Deleted;
+    UnitSystemChange& change = changes.Add(state, system.GetName().c_str());
+    if (system.GetIsDisplayLabelDefined())
+        change.GetDisplayLabel().SetValue(appendType, system.GetInvariantDisplayLabel());
+
+    change.GetDescription().SetValue(appendType, system.GetInvariantDescription());
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Krischan.Eberle  02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaComparer::AppendUnit(UnitChanges& changes, ECUnitCR unit, ValueId appendType)
+    {
+    ChangeState state = appendType == ValueId::New ? ChangeState::New : ChangeState::Deleted;
+    UnitChange& change = changes.Add(state, unit.GetName().c_str());
+    if (unit.GetIsDisplayLabelDefined())
+        change.GetDisplayLabel().SetValue(appendType, unit.GetInvariantDisplayLabel());
+
+    change.GetDescription().SetValue(appendType, unit.GetInvariantDescription());
+    change.GetDefinition().SetValue(appendType, unit.GetDefinition());
+    change.GetFactor().SetValue(appendType, unit.GetFactor());
+    change.GetOffset().SetValue(appendType, unit.GetOffset());
+
+    BeAssert(dynamic_cast<PhenomenonCP> (unit.GetPhenomenon()) != nullptr);
+    PhenomenonCP phen = static_cast<PhenomenonCP> (unit.GetPhenomenon());
+    change.GetPhenomenon().SetValue(appendType, phen->GetFullName());
+
+    BeAssert(dynamic_cast<UnitSystemCP> (unit.GetUnitSystem()) != nullptr);
+    UnitSystemCP system = static_cast<UnitSystemCP> (unit.GetUnitSystem());
+    change.GetUnitSystem().SetValue(appendType, system->GetFullName());
+
     return SUCCESS;
     }
 
@@ -1822,8 +2134,10 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::KoqPersistenceUnit: return "KoqPersistenceUnit";
             case SystemId::KoqPresentationUnitList: return "KoqPresentationUnitList";
             case SystemId::KoqRelativeError: return "KoqRelativeError";
+            case SystemId::MaximumLength: return "MaximumLength";
             case SystemId::MaximumValue: return "MaximumValue";
             case SystemId::MaxOccurs: return "MaxOccurs";
+            case SystemId::MinimumLength: return "MinimumLength";
             case SystemId::MinimumValue: return "MinimumValue";
             case SystemId::MinOccurs: return "MinOccurs";
             case SystemId::Multiplicity: return "Multiplicity";
@@ -1831,6 +2145,9 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::Navigation: return "Navigation";
             case SystemId::OriginalECXmlVersionMajor: return "OriginalECXmlVersionMajor";
             case SystemId::OriginalECXmlVersionMinor: return "OriginalECXmlVersionMinor";
+            case SystemId::Phenomena: return "Phenomena";
+            case SystemId::Phenomenon: return "Phenomenon";
+            case SystemId::PhenomenonDefinition: return "PhenomenonDefinition";
             case SystemId::Properties: return "Properties";
             case SystemId::Property: return "Property";
             case SystemId::PropertyCategories: return "PropertyCategories";
@@ -1853,11 +2170,16 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::String: return "String";
             case SystemId::Target: return "Target";
             case SystemId::TypeName: return "TypeName";
+            case SystemId::UnitSystem: return "UnitSystem";
+            case SystemId::UnitSystems: return "UnitSystems";
+            case SystemId::Unit: return "Unit";
+            case SystemId::UnitDefinition: return "UnitDefinition";
+            case SystemId::UnitFactor: return "UnitFactor";
+            case SystemId::UnitOffset: return "UnitOffset";
+            case SystemId::Units: return "Units";
             case SystemId::VersionRead: return "VersionRead";
             case SystemId::VersionMinor: return "VersionMinor";
             case SystemId::VersionWrite: return "VersionWrite";
-            case SystemId::MinimumLength: return "MinimumLength";
-            case SystemId::MaximumLength: return "MaximumLength";
         }
 
     BeAssert(false && "Unhandled SystemId");

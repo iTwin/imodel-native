@@ -1121,6 +1121,7 @@ ECObjectsStatus ECSchema::CreateUnitSystem(UnitSystemP& system, Utf8CP name, Utf
         Units::UnitRegistry::Instance().RemoveSystem(system->GetName().c_str());
         delete system;
         system = nullptr;
+        return status;
         }
 
     status = system->SetDescription(description);
@@ -1129,6 +1130,7 @@ ECObjectsStatus ECSchema::CreateUnitSystem(UnitSystemP& system, Utf8CP name, Utf
         Units::UnitRegistry::Instance().RemoveSystem(system->GetName().c_str());
         delete system;
         system = nullptr;
+        return status;
         }
 
     status = AddSchemaChildToMap<UnitSystem, UnitSystemMap>(system, &m_unitSystemMap, ECSchemaElementType::UnitSystem);
@@ -1161,6 +1163,7 @@ ECObjectsStatus ECSchema::CreatePhenomenon(PhenomenonP& phenomenon, Utf8CP name,
         Units::UnitRegistry::Instance().RemovePhenomenon(phenomenon->GetName().c_str());
         delete phenomenon;
         phenomenon = nullptr;
+        return status;
         }
 
     status = phenomenon->SetDescription(description);
@@ -1169,6 +1172,7 @@ ECObjectsStatus ECSchema::CreatePhenomenon(PhenomenonP& phenomenon, Utf8CP name,
         Units::UnitRegistry::Instance().RemovePhenomenon(phenomenon->GetName().c_str());
         delete phenomenon;
         phenomenon = nullptr;
+        return status;
         }
 
     status = AddSchemaChildToMap<Phenomenon, PhenomenonMap>(phenomenon, &m_phenomenonMap, ECSchemaElementType::Phenomenon);
@@ -1912,27 +1916,17 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema(ECSchemaR refSchema)
                 }
             }
 
+        if (ecClass->IsEntityClass())
+            {
+            ECEntityClassCP appliesToClass = ecClass->GetEntityClassCP()->GetAppliesToClass();
+            if (nullptr != appliesToClass && appliesToClass->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
+                return ECObjectsStatus::SchemaInUse;
+            }
+
         for (auto ca : ecClass->GetCustomAttributes(false))
             {
             if (ca->GetClass().GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
                 return ECObjectsStatus::SchemaInUse;
-
-            if (ECClass::ClassesAreEqualByName(&ca->GetClass(), CoreCustomAttributeHelper::GetCustomAttributeClass("IsMixin")))
-                {
-                ECValue appliesToValue;
-                ca->GetValue(appliesToValue, "AppliesToEntityClass");
-                if (appliesToValue.IsNull() || !appliesToValue.IsString())
-                    continue;
-
-                Utf8String alias;
-                Utf8String className;
-                if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, className, appliesToValue.GetUtf8CP()))
-                    continue;
-
-                ECSchemaCP resolvedSchema = GetSchemaByAliasP(alias);
-                if (nullptr != resolvedSchema && resolvedSchema == foundSchema.get())
-                    return ECObjectsStatus::SchemaInUse;
-                }
             }
 
         // If it is a relationship class, check the constraints to make sure the constraints don't use that schema
@@ -3051,65 +3045,13 @@ void ECSchemaElementsOrder::CreateAlphabeticalOrder(ECSchemaCR ecSchema)
     for (ECClassP pClass : sortedClasses)
         AddElement(pClass->GetName().c_str(), ECSchemaElementType::ECClass);
 
-    for (auto pKindOfQuantity : ecSchema.GetKindOfQuantities())
-        {
-        if (nullptr == pKindOfQuantity)
-            {
-            BeAssert(false);
-            continue;
-            }
-        else
-            AddElement(pKindOfQuantity->GetName().c_str(), ECSchemaElementType::KindOfQuantity);
-        }
+    AddElements<KindOfQuantity, KindOfQuantityContainer>(ecSchema.GetKindOfQuantities(), ECSchemaElementType::KindOfQuantity);
+    AddElements<PropertyCategory, PropertyCategoryContainer>(ecSchema.GetPropertyCategories(), ECSchemaElementType::PropertyCategory);
+    AddElements<UnitSystem, UnitSystemContainer>(ecSchema.GetUnitSystems(), ECSchemaElementType::UnitSystem);
+    AddElements<Phenomenon, PhenomenonContainer>(ecSchema.GetPhenomena(), ECSchemaElementType::Phenomenon);
+    AddElements<ECUnit, UnitContainer>(ecSchema.GetUnits(), ECSchemaElementType::Unit);
+    AddElements<ECUnit, UnitContainer>(ecSchema.GetUnits(), ECSchemaElementType::InvertedUnit);
 
-    for (auto pPropertyCategory : ecSchema.GetPropertyCategories())
-        {
-        if (nullptr == pPropertyCategory)
-            {
-            BeAssert(false);
-            continue;
-            }
-        else
-            AddElement(pPropertyCategory->GetName().c_str(), ECSchemaElementType::PropertyCategory);
-        }
-
-    for (auto unitSystem : ecSchema.GetUnitSystems())
-         {
-        if (nullptr == unitSystem)
-            {
-            BeAssert(false);
-            continue;
-            }
-        else
-            AddElement(unitSystem->GetName().c_str(), ECSchemaElementType::UnitSystem);
-         }
-
-    for (auto phenomenon : ecSchema.GetPhenomena())
-         {
-        if (nullptr == phenomenon)
-            {
-            BeAssert(false);
-            continue;
-            }
-        else
-            AddElement(phenomenon->GetName().c_str(), ECSchemaElementType::Phenomenon);
-         }
-
-    for (auto unit : ecSchema.GetUnits())
-         {
-        if (nullptr == unit)
-            {
-            BeAssert(false);
-            continue;
-            }
-        else
-            { 
-            if(unit->IsInvertedUnit())
-                AddElement(unit->GetName().c_str(), ECSchemaElementType::InvertedUnit);
-            else
-                AddElement(unit->GetName().c_str(), ECSchemaElementType::Unit);
-            }
-         }
 
     }
 

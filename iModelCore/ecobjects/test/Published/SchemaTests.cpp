@@ -1017,7 +1017,7 @@ TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveReferencedSchemaWithIsMixin)
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
 
     ECSchemaPtr refSchema;
-    ECSchema::CreateSchema(refSchema, "RefSchema", "ts", 5, 0, 5);
+    ECSchema::CreateSchema(refSchema, "RefSchema", "rs", 5, 0, 5);
 
     ECEntityClassP entityClass;
     ECEntityClassP mixinClass;

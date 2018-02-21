@@ -314,7 +314,7 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadSchemaChildFromXml(ECSchemaPtr& schema
             return status;
             }
 
-        ECObjectsStatus addStatus = schemaOut->AddSchemaChild<T>(schemaChild, childType);        
+        ECObjectsStatus addStatus = schemaOut->AddSchemaChild<T>(schemaChild, childType);
         if (ECObjectsStatus::NamedItemAlreadyExists == addStatus)
             {
             LOG.errorv("Duplicate %s node for %s in schema %s.", ECSchema::SchemaElementTypeToString(childType), schemaChild->GetName().c_str(), schemaOut->GetFullSchemaName().c_str());
@@ -353,7 +353,7 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadUnitSystemFromXml(ECSchemaPtr& schemaO
             unitSystem = nullptr;
             return status;
             }
-        
+
         ECObjectsStatus addStatus = schemaOut->AddSchemaChild<UnitSystem>(unitSystem, ECSchemaElementType::UnitSystem);
         if (ECObjectsStatus::NamedItemAlreadyExists == addStatus)
             {
@@ -388,7 +388,7 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadPhenomenonFromXml(ECSchemaPtr& schemaO
             phenom = nullptr;
             return status;
             }
-        
+
         ECObjectsStatus addStatus = schemaOut->AddSchemaChild<Phenomenon>(phenom, ECSchemaElementType::Phenomenon);
         if (ECObjectsStatus::NamedItemAlreadyExists == addStatus)
             {
@@ -423,7 +423,7 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadUnitFromXml(ECSchemaPtr& schemaOut, Be
             unit = nullptr;
             return status;
             }
-        
+
         ECObjectsStatus addStatus = schemaOut->AddSchemaChild<ECUnit>(unit, ECSchemaElementType::Unit);
         if (ECObjectsStatus::NamedItemAlreadyExists == addStatus)
             {
