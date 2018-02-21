@@ -1220,7 +1220,7 @@ void RealityDataConsole::Upload()
         }
     else
         {
-        guid = m_currentNode->node.GetInstanceId();
+        guid = m_currentNode->node.GetNavString();
         }
 
     RealityDataServiceUpload upload = RealityDataServiceUpload(fileName, guid, propertyString, true, true, statusFunc);

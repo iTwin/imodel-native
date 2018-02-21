@@ -1054,6 +1054,10 @@ void RealityDataFileUpload::_PrepareHttpRequestStringAndPayload() const
     EncodeId();
     addon.append(m_encodedFileUrl);
     addon.append("?");
+    addon.ReplaceAll("//", "/");
+
+    if(m_httpRequestString.EndsWith("/") && addon.StartsWith("/"))
+        addon.Trim("/");
 
     m_httpRequestString.append(addon);
     m_validRequestString = true;
@@ -1294,7 +1298,8 @@ BentleyStatus RealityDataServiceUpload::CreateUpload(Utf8String properties)
         }
     else
         {
-        RealityDataByIdRequest* getRequest = new RealityDataByIdRequest(m_id);
+        //RealityDataByIdRequest* getRequest = new RealityDataByIdRequest(m_id);
+        WSGNavNodeRequest* getRequest = new WSGNavNodeRequest(RealityDataService::GetServerName(), RealityDataService::GetWSGProtocol(), RealityDataService::GetRepoName(), m_id);
         RawServerResponse idResponse;
         if ((idResponse = RealityDataService::BasicRequest((RealityDataUrl*)getRequest)).status == RequestStatus::BADREQ) //file does not exist, need POST Create
             {
@@ -1444,6 +1449,24 @@ Utf8String RealityDataServiceTransfer::GetAzureToken()
     }
 
 //=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2018
+//=====================================================================================
+Utf8String RealityDataServiceUpload::GetAzureToken()
+    {
+    int64_t currentTime;
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(currentTime);
+    if ((m_azureTokenTimer - currentTime) < (0))
+        {
+        RawServerResponse rawResponse = RealityDataService::BasicRequest((RealityDataUrl*)m_handshakeRequest);
+        if (m_handshakeRequest->ParseResponse(rawResponse.body, m_azureServer, m_azureToken, m_azureTokenTimer) != BentleyStatus::SUCCESS)
+            ReportStatus(0, nullptr, -1, "Failure retrieving Azure token\n");
+        else
+            m_azureServer.append(m_serverPath);
+        }
+    return m_azureToken;
+    }
+
+//=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
 bool RealityDataServiceTransfer::UpdateTransferAmount(int64_t transferedAmount)
@@ -1486,6 +1509,7 @@ RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8St
     m_fullTransferSize = 0;
     m_handshakeRequest = nullptr;
     m_pStatusFunc = pi_func;
+    m_serverPath = "";
 
     if (proxyUrl.length() > 0)
         SetProxyUrlAndCredentials(proxyUrl, proxyCreds);
@@ -1505,6 +1529,35 @@ RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8St
 
     if (CreateUpload(properties) != BentleyStatus::SUCCESS)
         return;
+
+    if(m_id.length() > 36) // if m_id is a navString instead of a guid
+        {
+        Utf8String guid;
+        bvector<Utf8String> parts = bvector<Utf8String>();
+        BeStringUtilities::Split(m_id.c_str(), "~", parts);
+        guid = parts[0];
+        if(parts.size() > 1)
+            {
+            m_serverPath = m_id;
+            m_serverPath.ReplaceAll(guid.c_str(),"");
+            m_serverPath.ReplaceAll("~2F", "/");
+            }
+
+        parts.clear();
+        BeStringUtilities::Split(guid.c_str(), "-", parts);
+
+        bvector<Utf8String> guidParts = bvector<Utf8String>();
+        for(size_t i = parts.size() - 1; i > 0; i--)
+            {
+            if(parts[i].length() > 0)
+                guidParts.push_back(parts[i]);
+            if(guidParts.size() >= 5)
+                break;
+            }
+
+        m_id = Utf8PrintfString("%s-%s-%s-%s-%s", guidParts[4], guidParts[3], guidParts[2], guidParts[1], guidParts[0]);
+        }
+
     m_handshakeRequest = new AzureHandshake(m_id, true);
     GetAzureToken();
 

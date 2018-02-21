@@ -840,7 +840,7 @@ protected:
     void SetupRequestforFile(RealityDataUrl* upload, bool verifyPeer);
     bool SetupNextEntry();
     void ReportStatus(int index, void *pClient, int ErrorCode, const char* pMsg);
-    Utf8String GetAzureToken();
+    REALITYDATAPLATFORM_EXPORT virtual Utf8String GetAzureToken();
     void InitTool();
 
     AzureHandshake*             m_handshakeRequest;
@@ -929,9 +929,11 @@ struct RealityDataServiceUpload : public RealityDataServiceTransfer
     REALITYDATAPLATFORM_EXPORT RealityDataServiceUpload(BeFileName uploadPath, Utf8String properties, bool overwrite = false, RealityDataServiceTransfer_StatusCallBack pi_func = nullptr, bvector<BeFileName> colorList = bvector<BeFileName>(), bool isBlackList = true, Utf8String proxyUrl = "", Utf8String proxyCreds = "");
 protected:
     BentleyStatus CreateUpload(Utf8String properties);
+    Utf8String GetAzureToken() override;
 
 private:
     bool                        m_overwrite;
+    Utf8String                  m_serverPath;
     };
 
 //=====================================================================================

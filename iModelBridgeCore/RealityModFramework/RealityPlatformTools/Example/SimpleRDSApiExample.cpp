@@ -164,7 +164,7 @@ Utf8String CreateUpload()
 
 void FolderOperations(Utf8String guid)
     {
-    Utf8String folderGuid = Utf8PrintfString("%s/%s", guid, "DummySubFolder");
+    Utf8String folderGuid = Utf8PrintfString("%s~2F%s", guid, "DummySubFolder");
     ConnectedRealityDataFolder crdf = ConnectedRealityDataFolder(folderGuid);
 
     WChar exePath[MAX_PATH];
@@ -181,7 +181,6 @@ void FolderOperations(Utf8String guid)
 
     crdf.Download(dummyRoot, folderGuid);
 
-    folderGuid.append("2");
     ConnectedResponse response = crdf.Upload(dummyRoot, folderGuid);
 
     if (!response.simpleSuccess)
@@ -195,7 +194,7 @@ void FolderOperations(Utf8String guid)
 
 void DocumentOperations(Utf8String guid)
     {
-    Utf8String documentGuid = Utf8PrintfString("%s/%s", guid, "DummyRootDocument.json");
+    Utf8String documentGuid = Utf8PrintfString("%s~2F%s", guid, "DummyRootDocument.json");
     ConnectedRealityDataDocument crdf = ConnectedRealityDataDocument(documentGuid);
 
     WChar exePath[MAX_PATH];
@@ -212,7 +211,6 @@ void DocumentOperations(Utf8String guid)
 
     crdf.Download(dummyRoot, documentGuid);
 
-    documentGuid.append("2");
     ConnectedResponse response = crdf.Upload(dummyRoot, documentGuid);
 
     if (!response.simpleSuccess)

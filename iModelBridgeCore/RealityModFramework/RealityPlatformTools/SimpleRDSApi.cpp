@@ -359,7 +359,9 @@ ConnectedResponse ConnectedRealityDataDocument::Upload(BeFileName filePath, Utf8
     {
     ConnectedResponse response = ConnectedResponse();
 
-    RealityDataServiceUpload upload = RealityDataServiceUpload(filePath, serverPath, "", true, true);
+    NavNode node = NavNode(RealityDataService::GetSchemaName(), serverPath, "ECObjects", "RealityData");
+
+    RealityDataServiceUpload upload = RealityDataServiceUpload(filePath, node.GetNavString(), "", true);
     if (upload.IsValidTransfer())
         {
         upload.OnlyReportErrors(true);
@@ -518,7 +520,9 @@ ConnectedResponse ConnectedRealityDataFolder::Upload(BeFileName filePath, Utf8St
             }
         }
 
-    RealityDataServiceUpload upload = RealityDataServiceUpload(filePath, serverPath);
+    NavNode node = NavNode(RealityDataService::GetSchemaName(), serverPath, "ECObjects", "RealityData");
+
+    RealityDataServiceUpload upload = RealityDataServiceUpload(filePath, node.GetNavString(), "", true);
     if (upload.IsValidTransfer())
         {
         upload.OnlyReportErrors(true);
