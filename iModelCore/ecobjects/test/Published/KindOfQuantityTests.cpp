@@ -71,8 +71,10 @@ TEST_F(KindOfQuantityTest, AddRemovePresentationUnits)
     EXPECT_EQ(ECObjectsStatus::Success, kindOfQuantity->SetDescription("Kind of a Description here"));
     EXPECT_EQ(ECObjectsStatus::Success, kindOfQuantity->SetDisplayLabel("best quantity of all times"));
     EXPECT_TRUE(kindOfQuantity->SetPersistenceUnit("CM"));
+    EXPECT_FALSE(kindOfQuantity->SetPersistenceUnit("PI"));
     kindOfQuantity->SetRelativeError(10e-3);
     EXPECT_TRUE(kindOfQuantity->SetDefaultPresentationUnit("FT"));
+    EXPECT_FALSE(kindOfQuantity->AddPresentationUnit("PI"));
     EXPECT_TRUE(kindOfQuantity->AddPresentationUnit("IN"));
     EXPECT_TRUE(kindOfQuantity->AddPresentationUnit("MILLIINCH"));
     }
@@ -275,6 +277,38 @@ TEST_F(KindOfQuantityDeserializationTest, TestEmptyOrMissingPersistenceUnit)
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
     }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Kyle.Abramowitz      02/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(KindOfQuantityDeserializationTest, TestConstantAsPersistanceUnit)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
+                displayLabel="best quantity of all times" persistenceUnit="PI" relativeError="10e-3"/>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Kyle.Abramowitz      02/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(KindOfQuantityDeserializationTest, TestConstantAsPresentationUnit)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
+                displayLabel="best quantity of all times" persistenceUnit="M" presentationUnits="PI" relativeError="10e-3"/>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
     }
 
 //---------------------------------------------------------------------------------------

@@ -35,6 +35,12 @@ bool KindOfQuantity::Verify() const
                    GetFullName().c_str(), m_persistenceFUS.GetProblemDescription().c_str());
         isValid = false;
         }
+
+    if ((nullptr != m_persistenceFUS.GetUnit()) && m_persistenceFUS.GetUnit()->IsConstant())
+        {
+        LOG.errorv("Validation Error - KindOfQuantity '%s' persistence FormatUnitSet unit is a constant", GetFullName().c_str());
+        isValid = false;
+        }
     
     for (Formatting::FormatUnitSetCR presFUS : m_presentationFUS)
         {
@@ -44,6 +50,13 @@ bool KindOfQuantity::Verify() const
                 GetFullName().c_str(), presFUS.GetProblemDescription().c_str());
             isValid = false;
             }
+
+        if (nullptr != presFUS.GetUnit() && presFUS.GetUnit()->IsConstant())
+            {
+            LOG.errorv("Validation Error - KindOfQuantity '%s' presentation FormatUnitSet unit is a constant", GetFullName().c_str());
+            isValid = false;
+            }
+
         else if ((!m_persistenceFUS.HasProblem() && !Units::Unit::AreCompatible(presFUS.GetUnit(), m_persistenceFUS.GetUnit())))
             {
             LOG.errorv("Validation Error - KindOfQuantity '%s' presentation FormatUnitSet conflicts with the persistence FormatUnitSet %s.",
@@ -141,7 +154,7 @@ Utf8StringCR KindOfQuantity::GetDescription() const
 //---------------+---------------+---------------+---------------+---------------+-------
 bool KindOfQuantity::SetPersistenceUnit(Formatting::FormatUnitSet persistenceFUS)
     {
-    if (persistenceFUS.HasProblem() || (!GetDefaultPresentationUnit().HasProblem() && !Units::Unit::AreCompatible(persistenceFUS.GetUnit(), GetDefaultPresentationUnit().GetUnit())))
+    if (persistenceFUS.HasProblem() || ((nullptr != persistenceFUS.GetUnit()) && persistenceFUS.GetUnit()->IsConstant()) || (!GetDefaultPresentationUnit().HasProblem() && !Units::Unit::AreCompatible(persistenceFUS.GetUnit(), GetDefaultPresentationUnit().GetUnit())))
         return false;
 
     m_persistenceFUS = persistenceFUS;
@@ -153,7 +166,7 @@ bool KindOfQuantity::SetPersistenceUnit(Formatting::FormatUnitSet persistenceFUS
 //---------------+---------------+---------------+---------------+---------------+-------
 bool KindOfQuantity::AddPresentationUnit(Formatting::FormatUnitSet presentationFUS)
     {
-    if (presentationFUS.HasProblem() || (!m_persistenceFUS.HasProblem() && !Units::Unit::AreCompatible(presentationFUS.GetUnit(), m_persistenceFUS.GetUnit()))
+    if (presentationFUS.HasProblem() ||((nullptr != presentationFUS.GetUnit()) && presentationFUS.GetUnit()->IsConstant()) || (!m_persistenceFUS.HasProblem() && !Units::Unit::AreCompatible(presentationFUS.GetUnit(), m_persistenceFUS.GetUnit()))
         || (!GetDefaultPresentationUnit().HasProblem() && !Units::Unit::AreCompatible(presentationFUS.GetUnit(), GetDefaultPresentationUnit().GetUnit())))
         return false;
 
@@ -303,6 +316,13 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
     if (persistenceFUS.HasProblem())
         LOG.warningv("Persistence FormatUnitSet: '%s' on KindOfQuantity '%s' has problem '%s'.  Continuing to load but schema will not pass validation.",
                      value.c_str(), kindOfQuantityNode.GetName(), persistenceFUS.GetProblemDescription().c_str());
+
+    if ((nullptr != persistenceFUS.GetUnit()) && persistenceFUS.GetUnit()->IsConstant())
+        { 
+        LOG.errorv("Persistence FormatUnitSet: '%s' on KindOfQuanity '%s' has a Constant as a persistence unit", value.c_str(), kindOfQuantityNode.GetName());
+        return SchemaReadStatus::InvalidECSchemaXml;
+        }
+
     SetPersistenceUnit(persistenceFUS);
 
     double relError;
@@ -323,6 +343,12 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
             if (presFUS.HasProblem())
                 LOG.warningv("Presentation FormatUnitSet: '%s' on KindOfQuantity '%s' has problem '%s'.  Continuing to load but schema will not pass validation.",
                              presUnit.c_str(), kindOfQuantityNode.GetName(), presFUS.GetProblemDescription().c_str());
+
+            if (nullptr != presFUS.GetUnit() && presFUS.GetUnit()->IsConstant())
+                { 
+                LOG.errorv("Presentation FormatUnitSet: '%s' on KindOfQuantity '%s' has constant as a presentation unit", presUnit.c_str(), kindOfQuantityNode.GetName());
+                return SchemaReadStatus::InvalidECSchemaXml;
+                }
             m_presentationFUS.push_back(presFUS);
             }
         }
