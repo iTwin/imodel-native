@@ -132,14 +132,27 @@ SchemaWriteStatus SchemaJsonWriter::WriteUnit(ECUnitCR unit)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz             02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus SchemaJsonWriter::WriteInvertedUnit(ECUnitCR InvertedUnit)
+SchemaWriteStatus SchemaJsonWriter::WriteInvertedUnit(ECUnitCR invertedUnit)
     {
     // Don't write any elements that aren't in the schema we're writing.
-    if (&(InvertedUnit.GetSchema()) != &m_ecSchema)
+    if (&(invertedUnit.GetSchema()) != &m_ecSchema)
         return SchemaWriteStatus::Success;
 
-    Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_CHILDREN_ATTRIBUTE][InvertedUnit.GetName()];
-    return InvertedUnit.WriteInvertedUnitJson(childObj, false, false);
+    Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_CHILDREN_ATTRIBUTE][invertedUnit.GetName()];
+    return invertedUnit.WriteInvertedUnitJson(childObj, false, false);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz             02/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus SchemaJsonWriter::WriteConstant(ECUnitCR constant)
+    {
+    // Don't write any elements that aren't in the schema we're writing.
+    if (&(constant.GetSchema()) != &m_ecSchema)
+        return SchemaWriteStatus::Success;
+
+    Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_CHILDREN_ATTRIBUTE][constant.GetName()];
+    return constant.WriteConstantJson(childObj, false, false);
     }
 
 //---------------------------------------------------------------------------------------
@@ -188,8 +201,10 @@ SchemaWriteStatus SchemaJsonWriter::WriteSchemaChildren()
 
     for (auto const ecu : m_ecSchema.GetUnits())
         {
-        if(ecu->IsInvertedUnit())
+        if (ecu->IsInvertedUnit())
             status = WriteInvertedUnit(*ecu);
+        else if (ecu->IsConstant())
+            status = WriteConstant(*ecu);
         else
             status = WriteUnit(*ecu);
         if(SchemaWriteStatus::Success != status)

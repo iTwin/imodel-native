@@ -661,6 +661,8 @@ Utf8CP ECSchema::SchemaElementTypeToString(ECSchemaElementType elementType)
             return UNIT_ELEMENT;
         case ECSchemaElementType::InvertedUnit:
             return INVERTED_UNIT_ELEMENT;
+        case ECSchemaElementType::Constant:
+            return CONSTANT_ELEMENT;
         }
 
     return EMPTY_STRING;
@@ -1191,6 +1193,7 @@ ECObjectsStatus ECSchema::CreatePhenomenon(PhenomenonP& phenomenon, Utf8CP name,
 //--------------------------------------------------------------------------------------
 ECObjectsStatus ECSchema::CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, Utf8CP label, Utf8CP description, double factor, double offset)
     {
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
     ECObjectsStatus status;
     const auto cleanupIfNecessary = [&unit, &status]() -> decltype(auto)
         {
@@ -1202,7 +1205,6 @@ ECObjectsStatus ECSchema::CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definiti
             }
         };
 
-    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
     Utf8String fullName = GetName() + ":" + name;
     const auto* phenomSchema = &phenom.GetSchema();
     const auto* systemSchema = &unitSystem.GetSchema();
@@ -1242,6 +1244,8 @@ ECObjectsStatus ECSchema::CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definiti
 //--------------------------------------------------------------------------------------
 ECObjectsStatus ECSchema::CreateInvertedUnit(ECUnitP& unit, ECUnitCR parent, Utf8CP name, UnitSystemCR unitSystem, Utf8CP label, Utf8CP description)
     {
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
+
     ECObjectsStatus status;
     const auto cleanupIfNecessary = [&unit, &status]() -> decltype(auto)
         {
@@ -1253,7 +1257,6 @@ ECObjectsStatus ECSchema::CreateInvertedUnit(ECUnitP& unit, ECUnitCR parent, Utf
             }
         };
 
-    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
     Utf8String fullName = GetName() + ":" + name;
     const auto* systemSchema = &unitSystem.GetSchema();
     const auto* parentSchema = &parent.GetSchema();
@@ -1281,6 +1284,57 @@ ECObjectsStatus ECSchema::CreateInvertedUnit(ECUnitP& unit, ECUnitCR parent, Utf
     cleanupIfNecessary();
     if(status != ECObjectsStatus::Success) return status;
     status = AddSchemaChildToMap<ECUnit, UnitMap>(unit, &m_unitMap, ECSchemaElementType::InvertedUnit);
+    cleanupIfNecessary();
+    if(status != ECObjectsStatus::Success) return status;
+
+    return status;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus ECSchema::CreateConstant(ECUnitP& unit, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, double factor, Utf8CP label, Utf8CP description)
+    {
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
+
+    ECObjectsStatus status;
+    const auto cleanupIfNecessary = [&unit, &status]() -> decltype(auto)
+        {
+        if (ECObjectsStatus::Success != status)
+            {
+            Units::UnitRegistry::Instance().RemoveConstant(unit->GetFullName().c_str());
+            delete unit;
+            unit = nullptr;
+            }
+        };
+
+    Utf8String fullName = GetName() + ":" + name;
+    const auto* systemSchema = &unitSystem.GetSchema();
+    const auto* phenomSchema = &phenom.GetSchema();
+
+    if ((this != systemSchema) && !ECSchema::IsSchemaReferenced(*this, *systemSchema))
+        {
+        LOG.errorv("UnitSystem %s with schema %s is not in this or any schema referenced by schema %s", unitSystem.GetName().c_str(), systemSchema->GetName().c_str(), this->GetName().c_str());
+        return ECObjectsStatus::NotFound;
+        }
+    if ((this != phenomSchema) && !ECSchema::IsSchemaReferenced(*this, *phenomSchema))
+        {
+        LOG.errorv("Phenomenon %s with schema %s is not in this or any schema referenced by schema %s", phenom.GetName().c_str(), phenomSchema->GetName().c_str(), this->GetName().c_str());
+        return ECObjectsStatus::NotFound;
+        }
+
+    unit = Units::UnitRegistry::Instance().AddConstant<ECUnit>(phenom.GetFullName().c_str(), unitSystem.GetFullName().c_str(), fullName.c_str(),definition, factor);
+    if(nullptr == unit)
+        return ECObjectsStatus::Error;
+    unit->SetSchema(*this);
+
+    status = unit->SetDisplayLabel(label);
+    cleanupIfNecessary();
+    if(status != ECObjectsStatus::Success) return status;
+    status = unit->SetDescription(description);
+    cleanupIfNecessary();
+    if(status != ECObjectsStatus::Success) return status;
+    status = AddSchemaChildToMap<ECUnit, UnitMap>(unit, &m_unitMap, ECSchemaElementType::Constant);
     cleanupIfNecessary();
     if(status != ECObjectsStatus::Success) return status;
 
@@ -1388,6 +1442,9 @@ ECObjectsStatus ECSchema::DeleteUnit(ECUnitR unit)
 //--------------------------------------------------------------------------------------
 ECObjectsStatus ECSchema::DeleteInvertedUnit(ECUnitR unit)
     {
+    if(!unit.IsInvertedUnit())
+        return ECObjectsStatus::Error;
+
     auto unitCP = Units::UnitRegistry::Instance().LookupUnit(unit.GetFullName().c_str());
     BeAssert(nullptr != unitCP);
     BeAssert(&unit == unitCP); // This only happens if a second unit made its way into the registry.
@@ -1398,6 +1455,30 @@ ECObjectsStatus ECSchema::DeleteInvertedUnit(ECUnitR unit)
         }
 
     auto returnedUnit = Units::UnitRegistry::Instance().RemoveInvertedUnit(unit.GetFullName().c_str());
+    BeAssert(nullptr != returnedUnit);
+    BeAssert(&unit == returnedUnit);
+
+    return DeleteSchemaChild<ECUnit, UnitMap>(unit, &m_unitMap);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus ECSchema::DeleteConstant(ECUnitR unit)
+    {
+    if(!unit.IsConstant())
+        return ECObjectsStatus::Error;
+
+    auto unitCP = Units::UnitRegistry::Instance().LookupUnit(unit.GetFullName().c_str());
+    BeAssert(nullptr != unitCP);
+    BeAssert(&unit == unitCP); // This only happens if a second unit made its way into the registry.
+    if (&unit != unitCP)
+        {
+        LOG.warningv("Cannot remove Constant '%s' from the schema because the Constant found in the UnitRegistry is not the same as the one located in this schema.", unitCP->GetName().c_str());
+        return ECObjectsStatus::Error;
+        }
+
+    auto returnedUnit = Units::UnitRegistry::Instance().RemoveConstant(unit.GetFullName().c_str());
     BeAssert(nullptr != returnedUnit);
     BeAssert(&unit == returnedUnit);
 
@@ -1796,6 +1877,17 @@ ECUnitP ECSchema::GetInvertedUnitP(Utf8CP name)
         return unit;
     return nullptr;
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kyle.Abramowitz                 02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ECUnitP ECSchema::GetConstantP(Utf8CP name)
+    {
+    auto unit = GetSchemaChild<ECUnit, UnitMap>(name, &m_unitMap);
+    if((nullptr != unit) && (unit->IsConstant()))
+        return unit;
+    return nullptr;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
@@ -3049,10 +3141,20 @@ void ECSchemaElementsOrder::CreateAlphabeticalOrder(ECSchemaCR ecSchema)
     AddElements<PropertyCategory, PropertyCategoryContainer>(ecSchema.GetPropertyCategories(), ECSchemaElementType::PropertyCategory);
     AddElements<UnitSystem, UnitSystemContainer>(ecSchema.GetUnitSystems(), ECSchemaElementType::UnitSystem);
     AddElements<Phenomenon, PhenomenonContainer>(ecSchema.GetPhenomena(), ECSchemaElementType::Phenomenon);
-    AddElements<ECUnit, UnitContainer>(ecSchema.GetUnits(), ECSchemaElementType::Unit);
-    AddElements<ECUnit, UnitContainer>(ecSchema.GetUnits(), ECSchemaElementType::InvertedUnit);
-
-
+    for (const auto u: ecSchema.GetUnits())
+        {
+        if (nullptr == u)
+            {
+            BeAssert(false);
+            continue;
+            }
+        if (u->IsConstant())
+            AddElement(u->GetName().c_str(), ECSchemaElementType::Constant);
+        else if (u->IsInvertedUnit())
+            AddElement(u->GetName().c_str(), ECSchemaElementType::InvertedUnit);
+        else
+            AddElement(u->GetName().c_str(), ECSchemaElementType::Unit);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

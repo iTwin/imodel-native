@@ -28,6 +28,7 @@ struct SchemaJsonWriter
         SchemaWriteStatus WritePhenomenon(PhenomenonCR phenomenon);
         SchemaWriteStatus WriteUnit(ECUnitCR unit);
         SchemaWriteStatus WriteInvertedUnit(ECUnitCR invertedUnit);
+        SchemaWriteStatus WriteConstant(ECUnitCR constant);
         SchemaWriteStatus WriteSchemaChildren();
 
     public:
