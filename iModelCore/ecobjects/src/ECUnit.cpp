@@ -412,8 +412,8 @@ SchemaWriteStatus ECUnit::WriteJson(Json::Value& outValue, bool standalone, bool
     outValue[ECJSON_SCHEMA_CHILD_TYPE] = UNIT_ELEMENT;
     outValue[DEFINITION_ATTRIBUTE] = GetDefinition();
     outValue[FACTOR_ATTRIBUTE] = GetFactor();
-    outValue[PHENOMENON_NAME_ATTRIBUTE] = (((ECN::PhenomenonCP)GetPhenomenon())->GetSchema().GetName() + "." + ((ECN::PhenomenonCP)GetPhenomenon())->GetName()).c_str();
-    outValue[UNIT_SYSTEM_NAME_ATTRIBUTE] = (((ECN::UnitSystemCP)GetUnitSystem())->GetSchema().GetName() + "." + ((ECN::UnitSystemCP)GetUnitSystem())->GetName()).c_str();
+    outValue[PHENOMENON_NAME_ATTRIBUTE] = ECJsonUtilities::ECNameToJsonName(*(ECN::PhenomenonCP)GetPhenomenon());
+    outValue[UNIT_SYSTEM_NAME_ATTRIBUTE] = ECJsonUtilities::ECNameToJsonName(*(ECN::UnitSystemCP)GetUnitSystem());
 
     if (GetIsDisplayLabelDefined())
         outValue[ECJSON_DISPLAY_LABEL_ATTRIBUTE] = GetInvariantDisplayLabel();
@@ -441,8 +441,8 @@ SchemaWriteStatus ECUnit::WriteInvertedUnitJson(Json::Value& outValue, bool stan
         }
 
     outValue[ECJSON_SCHEMA_CHILD_TYPE] = INVERTED_UNIT_ELEMENT;
-    outValue[INVERTS_UNIT_ATTRIBUTE] = (((ECN::ECUnitCP)GetParent())->GetSchema().GetName() + "." + ((ECN::ECUnitCP)GetParent())->GetName().c_str()).c_str();
-    outValue[UNIT_SYSTEM_NAME_ATTRIBUTE] = (((ECN::UnitSystemCP)GetUnitSystem())->GetSchema().GetName() + "." + ((ECN::UnitSystemCP)GetUnitSystem())->GetName()).c_str();
+    outValue[INVERTS_UNIT_ATTRIBUTE] = ECJsonUtilities::ECNameToJsonName(*(ECN::ECUnitCP)GetParent());
+    outValue[UNIT_SYSTEM_NAME_ATTRIBUTE] = ECJsonUtilities::ECNameToJsonName(*(ECN::UnitSystemCP)GetUnitSystem());
 
     if (GetIsDisplayLabelDefined())
         outValue[ECJSON_DISPLAY_LABEL_ATTRIBUTE] = GetInvariantDisplayLabel();

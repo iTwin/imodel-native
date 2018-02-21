@@ -254,7 +254,7 @@ TEST_F(UnitsDeserializationTests, RoundTripWithReferencedSchemaForPhenomenonAndU
         </ECSchema>)xml";
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-        <ECSchemaReference name="refSchema" version="01.00" alias="rs"/>
+            <ECSchemaReference name="refSchema" version="01.00" alias="rs"/>
             <Unit typeName="TestUnit" phenomenon="rs:TestPhenomenon" unitSystem="rs:TestUnitSystem" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
         </ECSchema>)xml";
 
@@ -310,7 +310,7 @@ TEST_F(UnitsDeserializationTests, ShouldFailWithoutAliasesForPhenomenonAndUnitSy
         </ECSchema>)xml";
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-        <ECSchemaReference name="refSchema" version="01.00" alias="rs"/>
+            <ECSchemaReference name="refSchema" version="01.00" alias="rs"/>
             <Unit typeName="TestUnit" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
         </ECSchema>)xml";
 
@@ -460,7 +460,10 @@ TEST_F(UnitsDeserializationTests, MissingOrEmptyDefinition)
     ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml2, *context));
     }
     }
-// Inverted Units tests
+
+//=======================================================================================
+//! InvertedUnitsTests
+//=======================================================================================
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                  02/2018
@@ -499,7 +502,7 @@ TEST_F(InvertedUnitsDeserializationTests, InvertedUnitRoundTripWithReferencedSch
         </ECSchema>)xml";
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-        <ECSchemaReference name="refSchema" version="01.00" alias="rs"/>
+            <ECSchemaReference name="refSchema" version="01.00" alias="rs"/>
             <InvertedUnit typeName="TestInvertedUnit" invertsUnit="rs:TestUnit" unitSystem="rs:TestUnitSystem" displayLabel="InvertedUnitLabel" description="InvertedUnitDescription"/>
         </ECSchema>)xml";
 
@@ -613,7 +616,7 @@ TEST_F(InvertedUnitsDeserializationTests, ShouldFailWithoutAliasesForInvertsUnit
         </ECSchema>)xml";
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-        <ECSchemaReference name="refSchema" version="01.00" alias="rs"/>
+            <ECSchemaReference name="refSchema" version="01.00" alias="rs"/>
             <InvertedUnit typeName="TestInvertedUnit" invertsUnit="TestUnit" unitSystem="TestUnitSystem" displayLabel="InvertedUnitLabel" description="InvertedUnitDescription"/>
         </ECSchema>)xml";
 

@@ -214,6 +214,16 @@ public:
     //! @return SUCCESS or ERROR
     static void ClassNameToJson(Json::Value& json, ECClassCR ecClass) { json = FormatClassName(ecClass); }
 
+    //! Returns a fully qualified name of any SchemaChild
+    //! Type must have both GetName() and GetSchema() methods
+    //! @param[in] ec The schema child to extract name from
+    //! return A string containing the fully qualified name
+    template<typename T>
+    static Utf8String ECNameToJsonName(T const& ec)
+        {
+        return ec.GetSchema().GetName() + "." + ec.GetName();
+        }
+
     //! Looks up an ECClass from a JSON string containing the fully qualified class name
     //! @param[in] json JSON containing the class name
     //! @param[in] locater Class locater to look up the class from the name
