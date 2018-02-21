@@ -45,18 +45,6 @@ void FormattingTestFixture::TearDownL10N()
     BeSQLite::L10N::Shutdown();
     }
 
-/*=================================================================================**//**
-* @bsiclass                                     		David Fox-Rabinovitz 06/2017
-+===============+===============+===============+===============+===============+======*/
-
-void FormattingTestFixture::LogMessage(Utf8CP format, va_list argptr)
-    {
-    /*WChar buf[512];
-    WString::VSprintf(WCharCP format, va_list argptr)
-    WCharP wp = BeStringUtilities::Utf8ToWChar(buf, txt, sizeof(buf));
-    LOG.infov("Signature Test%02d  >%s<================", tstN, txt);*/
-    }
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
@@ -64,6 +52,7 @@ void FormattingTestFixture::StdFormattingTest(Utf8CP formatName, double dval, Ut
     {
     EXPECT_STREQ (expectedValue, NumericFormatSpec::StdFormatDouble(formatName, dval).c_str());
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
@@ -112,6 +101,7 @@ void FormattingTestFixture::ShowHexDump(Utf8String str, int len)
     Utf8String hd = Utils::HexDump(str.c_str(), 30);
     LOG.infov(u8"COL: %s", hd.c_str());
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
@@ -188,6 +178,7 @@ void FormattingTestFixture::TestFUS(Utf8CP fusText, Utf8CP norm, Utf8CP aliased)
     fus1.LoadJsonData(jval);
     EXPECT_TRUE(fus.IsIdentical(fus1));
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
@@ -202,25 +193,6 @@ void FormattingTestFixture::TestFUG(Utf8CP name, Utf8CP fusText, Utf8CP norm, Ut
     EXPECT_TRUE(fug.IsIdentical(fug1));
     //LOG.infov("restored FUS Group: %s identical: %s", fug1.ToText(true).c_str(), FormatConstant::BoolText(fug.IsIdentical(fug1)));
     }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/17
-//----------------------------------------------------------------------------------------
-//static void TestFUGFormat(double dval, Utf8CP uom, Utf8CP name, Utf8CP fusText)
-//    {
-//    FormatUnitGroup fug = FormatUnitGroup(name, fusText);
-//    BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnitCI(uom);
-//    if (nullptr == unit)
-//        {
-//        LOG.infov("Invalid UOM: >%s<", uom);
-//        return;
-//        }
-//    BEU::Quantity qty = BEU::Quantity(dval, *unit);
-//    ECN::ECQuantityFormattingStatus status;
-//    Utf8String str = ECN::ECQuantityFormatting::FormatQuantity(qty, &fug, 0, &status);
-//
-//    }
-
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
@@ -302,10 +274,10 @@ NumericAccumulator* FormattingTestFixture::NumericAccState(NumericAccumulator* n
     if (nullptr == nacc)
     return nacc;
     while (nacc->CanTakeNext(txt))
-    {
-    LOG.infov("Added[%d] %c  state %s", nacc->GetByteCount(), *txt, Utils::AccumulatorStateName(nacc->AddSymbol((size_t)*txt)).c_str());
-    ++txt;
-    }
+        {
+        LOG.infov("Added[%d] %c  state %s", nacc->GetByteCount(), *txt, Utils::AccumulatorStateName(nacc->AddSymbol((size_t)*txt)).c_str());
+        ++txt;
+        }
     nacc->SetComplete();
     return nacc;
     }
@@ -1209,7 +1181,6 @@ void FormattingTestFixture::FormatDoubleTest(double dval, Utf8CP fmtName, int pr
        LOG.infov("%f formatted: %s (%d)", dval, txt.c_str(), txt.size());
     else
         EXPECT_STREQ (expect, txt.c_str());
-
     }
 
 void FormattingTestFixture::VerifyQuantity(Utf8CP input, Utf8CP unitName, Utf8CP formatName, double magnitude, Utf8CP qtyUnitName)
@@ -1308,13 +1279,6 @@ void FormattingTestFixture::ShowSynonyms()
             }
         }
     }
-
-void FormattingTestFixture::TestFusLabel(Utf8CP fusFormat, Utf8CP fusUnit, Utf8CP fusName)
-{
-	FormatUnitSet fus = FormatUnitSet(fusFormat, fusUnit);
-
-
-}
 
 END_BENTLEY_FORMATTEST_NAMESPACE
 

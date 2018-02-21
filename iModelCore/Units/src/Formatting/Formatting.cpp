@@ -993,7 +993,6 @@ Utf8String NumericFormatSpec::StdFormatQuantity(Utf8CP stdName, BEU::QuantityCR 
 
 Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space, Utf8CP useLabel, int prec, double round)
     {
-    //NamedFormatSpecP namF = StdFormatSet::FindFormatSpec(stdName);
     // there are two major options here: the format is a pure Numeric or it has a composite specification
     NumericFormatSpecCP fmtP = nfs.GetNumericSpec();
     bool composite = nfs.HasComposite();
@@ -1112,9 +1111,6 @@ const NumericFormatSpecCP NumericFormatSpec::DefaultFormat()
     static NumericFormatSpec nfs = NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, FormatConstant::DefaultFormatTraits(), FormatConstant::DefaultDecimalPrecisionIndex());
     return &nfs;
     }
-
-
-
 
 Utf8String NumericFormatSpec::StdFormatQuantityTriad(Utf8CP stdName, QuantityTriadSpecP qtr, Utf8CP space, int prec, double round)
     {
@@ -1508,20 +1504,13 @@ NamedFormatSpecCP StdFormatSet::AddFormat(Utf8CP jsonString, FormatProblemDetail
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
+// static
 NumericFormatSpecCP StdFormatSet::GetNumericFormat(Utf8CP name)
     {
-    NamedFormatSpecCP fmtP = FindFormatSpec(name); //  *Set()->m_formatSet.begin();
+    NamedFormatSpecCP fmtP = FindFormatSpec(name);
     if(nullptr == fmtP)
         return nullptr;
     return fmtP->GetNumericSpec();
-   /* for (auto itr = Set()->m_formatSet.begin(); itr != Set()->m_formatSet.end(); ++itr)
-        {
-        fmtP = *itr;
-        if (fmtP->HasName(name) || fmtP->HasAlias(name))
-            {
-            return fmtP->GetNumericSpec();
-            }
-        }*/
     }
 
 //---------------------------------------------------------------------------------------
@@ -1576,7 +1565,7 @@ bvector<Utf8CP> StdFormatSet::StdFormatNames(bool useAlias)
         {
         fmtP = *itr;
         if (useAlias)
-            name = fmtP->GetName(); 
+            name = fmtP->GetName();
         else
             name = fmtP->GetAlias();
         vec.push_back(name);

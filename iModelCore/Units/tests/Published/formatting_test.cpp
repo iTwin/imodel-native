@@ -9,8 +9,6 @@
 #include "../FormattingTestsPch.h"
 #include "../TestFixture/FormattingTestFixture.h"
 
-//#define FORMAT_DEBUG_PRINT
-
 USING_BENTLEY_FORMATTING
 
 BEGIN_BENTLEY_FORMATTEST_NAMESPACE
@@ -88,22 +86,29 @@ TEST(FormattingTest, Preliminary)
         LOG.info("Test Data File is not available");
 
     LOG.info("\n=============== Testing default format ==================");
-    LOG.infov("(real) 215.9 = %s", NumericFormatSpec::StdFormatDouble("real", 215.90000000000001).c_str());
-    LOG.infov("(DefaultReal) 215.9 = %s", NumericFormatSpec::StdFormatDouble("DefaultReal", 215.90000000000001).c_str());
-    LOG.infov("(stop100-2u)98765.4321 = %s", NumericFormatSpec::StdFormatDouble("stop100-2u", 98765.4321).c_str());
-    LOG.infov("(stop100-2u)98765 = %s", NumericFormatSpec::StdFormatDouble("stop100-2u", 98765.0).c_str());
-    LOG.infov("(stop100-2uz)98765 = %s", NumericFormatSpec::StdFormatDouble("stop100-2uz", 98765.0).c_str());
+
+    Utf8String testDefaultFormat;
+    testDefaultFormat = NumericFormatSpec::StdFormatDouble("real", 215.90000000000001);
+    LOG.infov("(real) 215.9 = %s", testDefaultFormat.c_str());
+    EXPECT_STREQ("215.9", testDefaultFormat.c_str());
+
+    testDefaultFormat = NumericFormatSpec::StdFormatDouble("DefaultReal", 215.90000000000001);
+    LOG.infov("(DefaultReal) 215.9 = %s", testDefaultFormat.c_str());
+    EXPECT_STREQ("215.9", testDefaultFormat.c_str());
+
+    testDefaultFormat = NumericFormatSpec::StdFormatDouble("stop100-2u", 98765.4321);
+    LOG.infov("(stop100-2u)98765.4321 = %s", testDefaultFormat.c_str());
+    EXPECT_STREQ("987+65.43", testDefaultFormat.c_str());
+
+    testDefaultFormat = NumericFormatSpec::StdFormatDouble("stop100-2u", 98765.0);
+    LOG.infov("(stop100-2u)98765 = %s", testDefaultFormat.c_str());
+    EXPECT_STREQ("987+65", testDefaultFormat.c_str());
+
+    testDefaultFormat = NumericFormatSpec::StdFormatDouble("stop100-2uz", 98765.0);
+    LOG.infov("(stop100-2uz)98765 = %s", testDefaultFormat.c_str());
+    EXPECT_STREQ("987+65.00", testDefaultFormat.c_str());
+
     LOG.info("=============== Testing default format (end) ==================\n");
-    //{\"NumericFormat\":{\"decPrec\":2, \"minWidth\" : 3, \"presentType\" : \"Stop1000\", \"statSeparator\":\"+\", \"TrailZeroes\":\"true\"}, \"SpecAlias\" : \"StationM\", \"SpecName\" : \"StationM\", \"SpecType\" : \"numeric\"} Call with Diego Diaz (diego.diaz@bentley.com) has ended. 7 minutes  
-
-    NumericAccumulator nacc = NumericAccumulator();
-    //LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'-')).c_str());
-    //LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.SetComplete()).c_str());
-    //if(nacc.HasProblem())
-    //    LOG.infov("NumAcc problem (%s)", nacc.GetProblemDescription().c_str());
-    //else
-    //    LOG.infov("NumAcc %d %s  (%s)", nacc.GetByteCount(), nacc.ToText().c_str());
-
 
     FormattingTestFixture::ShowQuantity(135.191736, "ARC_DEG", "ARC_DEG", "dms8", "");
     FormattingTestFixture::ShowQuantity(-135.191736, "ARC_DEG", "ARC_DEG", "dms8", "");
@@ -152,6 +157,7 @@ TEST(FormattingTest, Preliminary)
 
     LOG.info("\n========Using Dynamic Formats================ (end) \n");
 
+    NumericAccumulator nacc = NumericAccumulator();
     FormattingTestFixture::NumericAccState (&nacc, "-23.45E-03_MM");
     if (nacc.HasProblem())
         LOG.infov("NumAcc problem (%s)", nacc.GetProblemDescription().c_str());
@@ -713,7 +719,6 @@ TEST(FormattingTest, PhysValues)
     EXPECT_STREQ ("546yrd(s) 2' 5\"", NumericFormatSpec::StdFormatQuantity("yfi8", distM).c_str());
     EXPECT_STREQ ("1640' 5\"", NumericFormatSpec::StdFormatQuantity("fi8", distM).c_str());
 
-  
     BEU::Quantity ang90 = BEU::Quantity(89.9999999986, *degUOM);
     LOG.infov("DMS-90 %s", NumericFormatSpec::StdFormatQuantity("AngleDMS", ang90).c_str());
 
