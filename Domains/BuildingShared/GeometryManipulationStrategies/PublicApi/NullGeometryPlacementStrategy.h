@@ -19,9 +19,12 @@ struct NullGeometryPlacementStrategy final : public GeometryPlacementStrategy
     private:
         NullGeometryManipulationStrategyPtr m_manipulationStrategy;
 
-        NullGeometryPlacementStrategy() 
+        NullGeometryPlacementStrategy(NullGeometryManipulationStrategyR manipulationStrategy)
             : T_Super()
-            , m_manipulationStrategy(NullGeometryManipulationStrategy::Create())
+            , m_manipulationStrategy(&manipulationStrategy)
+            {}
+        NullGeometryPlacementStrategy() 
+            : NullGeometryPlacementStrategy(*NullGeometryManipulationStrategy::Create())
             {}
 
     protected:
@@ -43,6 +46,7 @@ struct NullGeometryPlacementStrategy final : public GeometryPlacementStrategy
 
     public:
         static NullGeometryPlacementStrategyPtr Create() { return new NullGeometryPlacementStrategy(); }
+        static NullGeometryPlacementStrategyPtr Create(NullGeometryManipulationStrategyR manipulationStrategy) { return new NullGeometryPlacementStrategy(manipulationStrategy); }
     };
 
 END_BUILDING_SHARED_NAMESPACE
