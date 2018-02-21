@@ -1338,7 +1338,7 @@ public:
     ECSchemaCR GetSchema() const {return m_schema;}
     //! The name of this Enumeration
     Utf8StringCR GetName() const {return m_validatedName.GetName();}
-    //! {SchemaName}:{EnumerationName} The pointer will remain valid as long as the ECEnumeration exists.
+    //! The fully qualified name of this ECEnumeration in the format {SchemaName}:{EnumerationName}.
     ECOBJECTS_EXPORT Utf8StringCR GetFullName() const;
     //! Given a schema and an enumeration, will return the fully qualified name.  If the enumeration is part of the passed in schema, there
     //! is no alias.  Otherwise, the enumeration's schema must be a referenced schema in the passed in schema
@@ -1458,7 +1458,7 @@ public:
     //! The name of this KindOfQuantity
     Utf8StringCR GetName() const {return m_validatedName.GetName();}
 
-    //! {SchemaName}:{KindOfQuantityName} The pointer will remain valid as long as the KindOfQuantity exists.
+    //! The fully qualified name of this KindOfQuantity in the format {SchemaName}:{KindOfQuantityName}.
     ECOBJECTS_EXPORT Utf8StringCR GetFullName() const;
     //! Given a qualified enum name, will parse out the schema's alias and the kind of quantity name.
     //! @param[out] alias               The alias of the schema
@@ -1592,7 +1592,7 @@ public:
 
     //! The name of this PropertyCategory
     Utf8StringCR GetName() const {return m_validatedName.GetName();}
-    //! The fully qualified name of this PropertyCategory the following format, {SchemaName}:{PropertyCategoryName}.
+    //! The fully qualified name of this PropertyCategory in the format {SchemaName}:{PropertyCategoryName}.
     ECOBJECTS_EXPORT Utf8StringCR GetFullName() const;
     //! Gets a qualified name of the PropertyCategory, prefixed by the schema alias if it does not match the primary schema.
     ECOBJECTS_EXPORT Utf8String GetQualifiedName(ECSchemaCR primarySchema) const;
@@ -3164,6 +3164,22 @@ struct ECSchemaElementsOrder : NonCopyableClass
 private:
     bvector<bpair<Utf8String, ECSchemaElementType>> m_elementVector;
     bool m_preserveElementOrder;
+
+    template <typename T, typename T_Container>
+    void AddElements(T_Container const& container, ECSchemaElementType elementType)
+        {
+        for (T* schemaChild : container)
+            {
+            if (nullptr == schemaChild)
+                {
+                BeAssert(false);
+                continue;
+                }
+            else
+                AddElement(schemaChild->GetName().c_str(), elementType);
+            }
+        }
+
 public:
     ECSchemaElementsOrder() : m_preserveElementOrder(false) {}
 
@@ -3256,12 +3272,7 @@ private:
     bool NamedElementExists(Utf8CP name);
     ECObjectsStatus AddClass(ECClassP pClass, bool resolveConflicts = false);
 
-    ECObjectsStatus AddUnitSystem(UnitSystemP system);
-    ECObjectsStatus AddPhenomenon(PhenomenonP phenomenon);
-    ECObjectsStatus AddUnit(ECUnitP unit);
-
     ECObjectsStatus SetVersionFromString(Utf8CP versionString);
-    ECObjectsStatus CopyConstraints(ECRelationshipConstraintR toRelationshipConstraint, ECRelationshipConstraintR fromRelationshipConstraint);
     ECObjectsStatus SetECVersion(ECVersion ecVersion);
 
     void SetSupplementalSchemaInfo(SupplementalSchemaInfo* info);
@@ -3371,7 +3382,7 @@ public:
     ECVersion GetECVersion() const {return m_ecVersion;} //!< Gets the EC Version of the schema.
     bool IsECVersion(ECVersion ecVersion) const {return m_ecVersion == ecVersion;} //!< Returns true if this schema's EC version matches the given ECVersion
 
-    ECClassContainerCR GetClasses() const {return m_classContainer;} //!< Returns an iterable container of ECClasses sorted by name.                                 
+    ECClassContainerCR GetClasses() const {return m_classContainer;} //!< Returns an iterable container of ECClasses sorted by name.
     uint32_t GetClassCount() const {return (uint32_t) m_classMap.size();} //!< Gets the number of classes in the schema
 
     ECEnumerationContainerCR GetEnumerations() const {return m_enumerationContainer;} //!< Returns an iterable container of ECEnumerations sorted by name.
@@ -3635,7 +3646,7 @@ public:
     //! It is necessary to add any ECSchema as a referenced schema that will be used when adding a base
     //! class from a different schema, or custom attributes from a different schema.
     //! @param[in]  refSchema   The schema to add as a referenced schema
-    ECObjectsStatus AddReferencedSchema(ECSchemaR refSchema) {return AddReferencedSchema (refSchema, refSchema.GetAlias());}
+    ECObjectsStatus AddReferencedSchema(ECSchemaR refSchema) {return AddReferencedSchema(refSchema, refSchema.GetAlias());}
 
     //! Adds an ECSchema as a referenced schema in this schema.
     //! It is necessary to add any ECSchema as a referenced schema that will be used when adding a base
@@ -3675,13 +3686,6 @@ public:
     //! @param[in]  utf16           'false' (the default) to use utf-8 encoding
     //! @return A status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the file pointed to by ecSchemaXmlFile will contain the serialized schema.  Otherwise, the file will be unmodified
     ECOBJECTS_EXPORT SchemaWriteStatus WriteToXmlFile(WCharCP ecSchemaXmlFile, ECVersion ecXmlVersion = ECVersion::Latest, bool utf16 = false) const;
-
-    //! Writes an ECXML schema to an IStream
-    //! @param[in]  ecSchemaXmlStream   The IStream to write the serialized XML to
-    //! @param[in]  ecXmlVersion        The version of the ECXml spec to be used for serializing this schema
-    //! @param[in]  utf16               'false' (the default) to use utf-8 encoding
-    //! @return A status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the IStream will contain the serialized schema.
-    ECOBJECTS_EXPORT SchemaWriteStatus WriteToXmlStream(IStreamP ecSchemaXmlStream, ECVersion ecXmlVersion = ECVersion::Latest, bool utf16 = false);
 
     //! Writes a schema to a Json::Value
     //! @param[out] ecSchemaJsonValue Json::Value the schema is serialized to on success.
@@ -3918,14 +3922,6 @@ public:
     //! @return   A status code indicating whether the schema was successfully read.  If SUCCESS is returned then schemaOut will
     //!           contain the read schema.  Otherwise schemaOut will be unmodified.
     ECOBJECTS_EXPORT static SchemaReadStatus ReadFromXmlString(ECSchemaPtr& schemaOut, WCharCP ecSchemaXml, ECSchemaReadContextR schemaContext);
-
-    //! Writes an ECSchema from an ECSchemaXML-formatted string in an IStream.
-    //! @param[out]   schemaOut           The read schema
-    //! @param[in]    ecSchemaXmlStream   The IStream containing ECSchemaXML to write
-    //! @param[in]    schemaContext       Required to create schemas
-    //! @return   A status code indicating whether the schema was successfully read.  If SUCCESS is returned then schemaOut will
-    //!           contain the read schema.  Otherwise schemaOut will be unmodified.
-    ECOBJECTS_EXPORT static SchemaReadStatus ReadFromXmlStream(ECSchemaPtr& schemaOut, IStreamP ecSchemaXmlStream, ECSchemaReadContextR schemaContext);
 
     //! Serializes the schema as EC2 Xml with the standard EC3 attributes converted to EC2 standard custom attributes.  
     //! @param[out] ec2SchemaXml        The string containing the EC2 Xml for the input schema
