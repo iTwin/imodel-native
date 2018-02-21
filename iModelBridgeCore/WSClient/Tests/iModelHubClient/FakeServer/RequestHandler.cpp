@@ -252,9 +252,7 @@ Response RequestHandler::UploadNewSeedFile(Request req)
         }
     m_db.CloseDb();
 
-
-    Response resp;
-    return resp;
+    return Response();
     }
 Response RequestHandler::DownloadiModel(Request req)
     {
@@ -277,7 +275,6 @@ Response RequestHandler::DownloadiModel(Request req)
         printf("%d\n", st.Step());
         
         filetoDownload = st.GetValueText(0);
-        //printf("%s\n", filetoDownload);
 
         BeFileName downloadFilePath;
         BeTest::GetHost().GetOutputRoot(downloadFilePath);
@@ -368,7 +365,6 @@ Response RequestHandler::GetBriefcaseId(Request req)
         auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
         return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
         }
-    
     }
 Response RequestHandler::GetiModels(Request req) 
     {
