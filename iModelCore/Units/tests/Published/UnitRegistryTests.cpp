@@ -51,14 +51,14 @@ struct UnitRegistryTests : UnitsTestFixture
             TestUnit(UnitSystemCR unitSystem, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, double factor, double offset, bool isConstant) :
                 Unit(unitSystem, phenomenon, name, id, definition, factor, offset, isConstant) {}
 
-            TestUnit(UnitCR parentUnit, Utf8CP name, uint32_t id)
-            : TestUnit(*(parentUnit.GetUnitSystem()), *(parentUnit.GetPhenomenon()), name, id, parentUnit.GetDefinition().c_str(), 0, 0, false) {}
+            TestUnit(UnitCR parentUnit, UnitSystemCR system, Utf8CP name, uint32_t id)
+            : TestUnit(system, *(parentUnit.GetPhenomenon()), name, id, parentUnit.GetDefinition().c_str(), 0, 0, false) {}
 
         public:
             static TestUnit* _Create(UnitSystemCR sysName, PhenomenonCR phenomenon, Utf8CP unitName, uint32_t id, Utf8CP definition, double factor, double offset, bool isConstant)
             {return new TestUnit(sysName, phenomenon, unitName, id, definition, factor, offset, isConstant);}
 
-            static TestUnit* _Create(UnitCR parentUnit, Utf8CP unitName, uint32_t id) {return new TestUnit(parentUnit, unitName, id);}
+            static TestUnit* _Create(UnitCR parentUnit, UnitSystemCR system, Utf8CP unitName, uint32_t id) {return new TestUnit(parentUnit, system, unitName, id);}
         };
     };
 
@@ -261,26 +261,26 @@ TEST_F(UnitRegistryTests, TestAddingDerivedUnits)
     TestUnit const* retrievedSmootAsTestUnit = dynamic_cast<TestUnit const*>(retrievedSmoot);
     EXPECT_NE(nullptr, retrievedSmootAsTestUnit);
     
-    TestUnit const* testUnit = UnitRegistry::Instance().AddUnit<TestUnit>("ONE", "SI", "TestUnit", "TEST");
+    TestUnit const* testUnit = UnitRegistry::Instance().AddUnit<TestUnit>("LENGTH", "SI", "TestUnit", "ONE");
     ASSERT_NE(nullptr, testUnit);
     UnitCP retrievedUnit = UnitRegistry::Instance().LookupUnit("TestUnit");
     EXPECT_EQ(retrievedUnit, testUnit);
     TestUnit const* retrievedTestUnit = dynamic_cast<TestUnit const*>(retrievedUnit);
     EXPECT_NE(nullptr, retrievedTestUnit);
 
-    TestUnit const* testInverseUnit = UnitRegistry::Instance().AddInvertedUnit<TestUnit>("TestUnit", "InverseTestUnit");
+    TestUnit const* testInverseUnit = UnitRegistry::Instance().AddInvertedUnit<TestUnit>("TestUnit", "InverseTestUnit", "SI");
     ASSERT_NE(nullptr, testInverseUnit);
     UnitCP retrievedInverseUnit = UnitRegistry::Instance().LookupUnit("InverseTestUnit");
     EXPECT_EQ(retrievedInverseUnit, testInverseUnit);
     TestUnit const* retrievedInverseTestUnit = dynamic_cast<TestUnit const*>(retrievedInverseUnit);
     EXPECT_NE(nullptr, retrievedInverseTestUnit);
 
-    TestUnit const* smootPerSmoot = UnitRegistry::Instance().AddUnit<TestUnit>("SLOPE", "USCUstom", "SmootPerSmoot", "Smoot*Smoot(-1)");
+    TestUnit const* smootPerSmoot = UnitRegistry::Instance().AddUnit<TestUnit>("SLOPE", "USCustom", "SmootPerSmoot", "Smoot*Smoot(-1)");
     ASSERT_NE(nullptr, smootPerSmoot);
     UnitCP retrievedSmootPerSmoot = UnitRegistry::Instance().LookupUnit("SmootPerSmoot");
     EXPECT_EQ(retrievedSmootPerSmoot, smootPerSmoot);
 
-    TestUnit const* inverseSmootPerSmoot = UnitRegistry::Instance().AddInvertingUnit<TestUnit>("SmootPerSmoot", "InverseSmootPerSmoot");
+    TestUnit const* inverseSmootPerSmoot = UnitRegistry::Instance().AddInvertedUnit<TestUnit>("SmootPerSmoot", "InverseSmootPerSmoot", "USCustom");
     ASSERT_NE(nullptr, inverseSmootPerSmoot);
     UnitCP retrievedInverseSmootPerSmoot = UnitRegistry::Instance().LookupUnit("InverseSmootPerSmoot");
     EXPECT_EQ(retrievedInverseSmootPerSmoot, inverseSmootPerSmoot);
