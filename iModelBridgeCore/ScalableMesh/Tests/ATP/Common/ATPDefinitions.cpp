@@ -2010,6 +2010,18 @@ void PerformDrapeLineTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     StatusInt status;
     IScalableMeshPtr stmFile = IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
 
+    //Line in lns file are in meters, apply scaling if required.    
+    double ratioToMeter = stmFile->GetGCS().GetHorizontalUnit().GetRatioToBase();
+    
+    if (ratioToMeter != 1.0)
+        {
+        GeoCoordinates::BaseGCSPtr targetGcs(GeoCoordinates::BaseGCS::CreateGCS());                
+        Transform approximateTransform(Transform::FromIdentity());
+        approximateTransform.form3d[0][0] = approximateTransform.form3d[1][1] = approximateTransform.form3d[2][2] = ratioToMeter;
+        BentleyStatus status = stmFile->SetReprojection(*targetGcs, approximateTransform);
+        assert(status == SUCCESS);
+        }
+    
     uint64_t pointCount = 0;
     WString result;
 

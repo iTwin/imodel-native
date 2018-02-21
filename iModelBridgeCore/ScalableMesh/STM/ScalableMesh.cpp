@@ -3358,12 +3358,11 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_SetReprojection(GeoC
     m_reprojectionTransform = approximateTransform;
     for (size_t i = 0; i < DTMAnalysisType::Qty; ++i)
         {
-
         auto mat4d = DMatrix4d::From(approximateTransform);
         m_scalableMeshDTM[i]->SetStorageToUors(mat4d);
         }
 
-    return ERROR;
+    return SUCCESS;
     }
 
 #ifdef VANCOUVER_API
