@@ -57,19 +57,6 @@ Polyface.ClipSphere
     # Feb 15 11:57:08  Be[3440] <Emergency>: TestRunner: Polyface.ClipSphere FAILED
     # /Users/naveed.khan/bsi-src/bim0200dev/out/iOSARM64/static/build/GeomLibs/XCodeProject/BeTestiOSTests/UnitTests.mm:1453: error: -[GeomLibsPolyfaceTest_Polyface testClipSphere] : ((0 == BETEST_TEST_RUNNER_FUNC(Polyface,ClipSphere) ()) is true) failed
 
-AnalyticRoots.Quartic4
-
-    # TFS#819716
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: iOSARM64, Device: ipadair2, Date: 02/15/2018
-    # 2018-02-15 11:57:14.069058+0500 BeTestiOS[3440:6191977] TestRunner: AnalyticRoots.Quartic4
-    # Feb 15 11:57:14  Be[3440] <Info>: TestRunner: AnalyticRoots.Quartic4
-    # ( Line offset outside)
-    # 2018-02-15 11:57:14.069194+0500 BeTestiOS[3440:6191977] TestRunner: TRUE **!!** false @ /Users/naveed.khan/bsi-src/bim0200dev/src/GeomLibs/geom/test/src/checkers.cpp:181quartic root count
-    # Feb 15 11:57:14  Be[3440] <Emergency>: TestRunner: TRUE **!!** false @ /Users/naveed.khan/bsi-src/bim0200dev/src/GeomLibs/geom/test/src/checkers.cpp:181quartic root count
-    # 2018-02-15 11:57:14.069445+0500 BeTestiOS[3440:6191977] TestRunner: AnalyticRoots.Quartic4 FAILED
-    # Feb 15 11:57:14  Be[3440] <Emergency>: TestRunner: AnalyticRoots.Quartic4 FAILED
-    # /Users/naveed.khan/bsi-src/bim0200dev/out/iOSARM64/static/build/GeomLibs/XCodeProject/BeTestiOSTests/UnitTests.mm:33: error: -[GeomLibsbezierTest_AnalyticRoots testQuartic4] : ((0 == BETEST_TEST_RUNNER_FUNC(AnalyticRoots,Quartic4) ()) is true) failed
-
 Geometry.ConvexHullManyPoints
 
     # TFS#819723
