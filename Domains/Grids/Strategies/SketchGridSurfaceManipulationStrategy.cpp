@@ -390,6 +390,22 @@ void SketchGridSurfaceManipulationStrategy::_SetProperty(Utf8CP key, DPlane3d co
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void SketchGridSurfaceManipulationStrategy::TransformPointsOnXYPlane(bvector<DPoint3d>& points)
+    {
+    DPlane3d xyPlane = DPlane3d::FromOriginAndNormal({ 0, 0, 0 }, DVec3d::From(0, 0, 1));
+    Transform toWorkingPlane = GeometryUtils::FindTransformBetweenPlanes(xyPlane, m_workingPlane);
+    Transform toXY = Transform::FromIdentity();
+    toXY.InverseOf(toWorkingPlane);
+
+    for (DPoint3dR point : points)
+        {
+        toXY.Multiply(point);
+        }
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              01/2018
 //---------------+---------------+---------------+---------------+---------------+------
 Utf8String SketchGridSurfaceManipulationStrategy::GetMessage() const

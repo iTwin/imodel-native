@@ -32,16 +32,9 @@ BentleyStatus LineGridSurfaceManipulationStrategy::_UpdateGridSurface()
     if (2 != keyPoints.size())
         return BentleyStatus::ERROR;
 
-    DPlane3d xyPlane = DPlane3d::FromOriginAndNormal({ 0, 0, 0 }, DVec3d::From(0, 0, 1));
-    Transform toWorkingPlane = GeometryUtils::FindTransformBetweenPlanes(xyPlane, m_workingPlane);
-    Transform toXY = Transform::FromIdentity();
-    toXY.InverseOf(toWorkingPlane);
+    TransformPointsOnXYPlane(keyPoints);
 
-    DPoint3d startPoint, endPoint;
-    toXY.Multiply(startPoint, keyPoints[0]);
-    toXY.Multiply(endPoint, keyPoints[1]);
-
-    m_surface->SetBaseLine(DPoint2d::From(startPoint), DPoint2d::From(endPoint));
+    m_surface->SetBaseLine(DPoint2d::From(keyPoints[0]), DPoint2d::From(keyPoints[1]));
 
     return BentleyStatus::SUCCESS;
     }
@@ -80,14 +73,7 @@ Dgn::DgnElementPtr LineGridSurfaceManipulationStrategy::_FinishElement
     if (m_surface.IsValid())
         return T_Super::_FinishElement();
 
-    DPlane3d xyPlane = DPlane3d::FromOriginAndNormal({ 0, 0, 0 }, DVec3d::From(0, 0, 1));
-    Transform toWorkingPlane = GeometryUtils::FindTransformBetweenPlanes(xyPlane, m_workingPlane);
-    Transform toXY = Transform::FromIdentity();
-    toXY.InverseOf(toWorkingPlane);
-
-    DPoint3d startPoint, endPoint;
-    toXY.Multiply(startPoint, keyPoints[0]);
-    toXY.Multiply(endPoint, keyPoints[1]);
+    TransformPointsOnXYPlane(keyPoints);
 
     SketchLineGridSurface::CreateParams params
     (
@@ -95,8 +81,8 @@ Dgn::DgnElementPtr LineGridSurfaceManipulationStrategy::_FinishElement
         *m_axis,
         m_bottomElevation,
         m_topElevation,
-        DPoint2d::From(startPoint),
-        DPoint2d::From(endPoint)
+        DPoint2d::From(keyPoints[0]),
+        DPoint2d::From(keyPoints[1])
     );
 
     m_surface = SketchLineGridSurface::Create(params);
