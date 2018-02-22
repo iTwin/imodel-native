@@ -22,6 +22,10 @@ DwgImporterLib  = $(BuildContext)Delivery/$(DWGTOOLKIT)$(VendorVersion)Importer/
 
 %include $(baseDir)../DwgCompileOptions.mki
 
+#ifdef PRG
+    CCompOpts +% -DPRG=1
+#endif
+
 # We don't want to run the test from the build location because the dependencies are not there.
 GUNITTEST_NOEXEC = 1
 

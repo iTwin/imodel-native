@@ -473,7 +473,7 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
                 }
 
             virtual Utf8String _GetProjectID() const override
-                {
+                {             
                 Utf8String projectGUID("95b8160c-8df9-437b-a9bf-22ad01fecc6b");
 
                 Bentley::WString projectGUIDw;
@@ -484,6 +484,11 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
                     }
                 return projectGUID;
                 }
+
+            virtual uint64_t _GetProductId() const override
+                {
+                return 1; //Default product Id for internal product
+                }            
             };
         return *new CsScalableMeshAdmin;
         };

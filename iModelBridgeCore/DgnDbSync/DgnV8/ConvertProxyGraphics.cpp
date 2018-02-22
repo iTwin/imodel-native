@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/ConvertProxyGraphics.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -45,17 +45,17 @@ DgnAttachmentArrayP Converter::GetAttachments(DgnV8ModelRefR v8Model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Converter::HasProxyGraphicsCache(DgnAttachmentR attachment)
+bool Converter::HasProxyGraphicsCache(DgnAttachmentR attachment, ViewportP vp)
     {
     ProxyDisplayCacheBaseP proxyCache;
     ProxyDgnAttachmentHandlerCP handler = attachment.FindProxyHandler(&proxyCache, nullptr);
-    return (nullptr != handler) && (nullptr != proxyCache);
+    return (nullptr != handler) && (nullptr != proxyCache) && (nullptr == vp || proxyCache->IsValidForViewport(*vp));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Converter::HasProxyGraphicsCache(DgnV8ModelR v8Model)
+bool Converter::HasProxyGraphicsCache(DgnV8ModelR v8Model, ViewportP vp)
     {
     auto attachments = GetAttachments(v8Model);
 
@@ -64,7 +64,7 @@ bool Converter::HasProxyGraphicsCache(DgnV8ModelR v8Model)
 
     for (DgnV8Api::DgnAttachment* attachment : *attachments)
         {
-        if (HasProxyGraphicsCache(*attachment))
+        if (HasProxyGraphicsCache(*attachment, vp))
             return true;
         }
     return false;
@@ -413,7 +413,7 @@ static StatusInt generateCve (DgnAttachmentP refP, ViewportP viewport, CachedVis
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnAttachmentP Converter::GetFirstNeedingCve(ResolvedModelMapping const& parentModel, ProxyGraphicsDetector& proxyDetector, bset<DgnV8Api::ElementId> const& ignoreList)
+DgnAttachmentP Converter::GetFirstNeedingCve(ResolvedModelMapping const& parentModel, ProxyGraphicsDetector& proxyDetector, ViewportP vp, bset<DgnV8Api::ElementId> const& ignoreList)
     {
     for (DgnAttachmentP attachment : *parentModel.GetV8Model().GetDgnAttachmentsP())
         {
@@ -434,7 +434,7 @@ DgnAttachmentP Converter::GetFirstNeedingCve(ResolvedModelMapping const& parentM
             BeAssert(false && "the proxyDetector is confused if it thinks that it will get proxy graphics for an attached drawing or sheet.");
             continue;
             }
-        if (HasProxyGraphicsCache(*attachment))
+        if (HasProxyGraphicsCache(*attachment, vp))
             continue;
         if (nullptr == attachment->GetDgnModelP())  // We can't generate proxy graphics unless we get to the original model's elements
             continue;
@@ -464,7 +464,7 @@ void Converter::_GenerateProxyGraphics(ResolvedModelMapping const& v8ModelMappin
         {
         GetAttachments(v8Model); // make sure attachments are loaded and caches are filled
 
-        DgnAttachmentP attachment = GetFirstNeedingCve(v8ModelMapping, proxyDetector, failed);
+        DgnAttachmentP attachment = GetFirstNeedingCve(v8ModelMapping, proxyDetector, &vp, failed);
         if (nullptr == attachment)
             break;
 

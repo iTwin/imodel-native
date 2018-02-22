@@ -53,9 +53,11 @@ public:
     static DWGGE_Type(Point3d)  GePoint3dFrom (DPoint3dCR p);
     static DWGGE_Type(Point2d)  GePoint2dFrom (DPoint2dCR p);
     static DWGGE_Type(Vector3d) GeVector3dFrom (DVec3dCR v);
+    static DWGGE_Type(Vector2d) GeVector2dFrom (DVec2dCR v);
     static void                 GetGeMatrix (DWGGE_TypeR(Matrix3d) matrix, TransformCR trans);
     static size_t               GetGePointArray (DWGGE_TypeR(Point3dArray) pointsOut, DPoint3dArrayCR pointsIn);
     static size_t               GetGePointArray (DWGGE_TypeR(Point2dArray) pointsOut, DPoint2dArrayCR pointsIn);
+    static size_t       GetObjectIdArray (DWGDB_TypeR(ObjectIdArray) idsOut, DwgDbObjectIdArrayCR idsIn);
 
     static DwgFileVersion   GetDwgVersionFrom (DwgDbVersion dwgVersion);
     static DwgDbVersion     GetDwgVersionFrom (DwgFileVersion dwgVersion);

@@ -21,7 +21,11 @@
 #ifdef DWGTOOLKIT_OpenDwg
 
 #include    <Teigha/Drawing/Include/DbAnnotationScale.h>
+#include    <Teigha/Drawing/Include/DbObjectContextCollection.h>
+#include    <Teigha/Drawing/Include/DbObjectContextManager.h>
+#include    <Teigha/Drawing/Include/DbObjectContextInterface.h>
 #include    <Teigha/Drawing/Include/OdFileDepMgr.h>
+#include    <Teigha/Drawing/Include/DbSymUtl.h>
 
 #include    <Teigha/Kernel/Include/Ge/GeCircArc2d.h>
 #include    <Teigha/Kernel/Include/Ge/GeCircArc3d.h>
@@ -50,6 +54,10 @@
 
 #include    <RealDwg/Base/rxregsvc.h>
 #include    <RealDwg/Base/acestext.h>
+#include    <RealDwg/Base/dbAnnotationScale.h>
+#include    <RealDwg/Base/dbObjectContextCollection.h>
+#include    <RealDwg/Base/dbObjectContextManager.h>
+#include    <RealDwg/Base/dbObjectContextInterface.h>
 
 // AcGe modules
 #include    <RealDwg/base/gemat3d.h>
@@ -71,7 +79,6 @@
 #include    <RealDwg/base/gesphere.h>
 #include    <RealDwg/base/getorus.h>
 #include    <RealDwg/base/gexbndsf.h>
-#include    <RealDwg/base/dbAnnotationScale.h>
 
 // Util modules
 #include    <RealDwg/base/dbxutil.h>
@@ -495,7 +502,6 @@ END_DWGDB_NAMESPACE
         {                                                                                                                       \
         return  this->_OpenObject(id, mode, openErased, openLocked);                                                            \
         }                                                                                                                       \
-    DwgDbStatus DwgDb##_classSuffix_##Ptr::CreateObject() { return this->_CreateObject(); }                                     \
     DwgDbStatus DwgDb##_classSuffix_##Ptr::AcquireObject(DwgDb##_classSuffix_## *& obj) { return this->_AcquireObject(obj); }   \
     DwgDbStatus DwgDb##_classSuffix_##Ptr::CloseObject() { return this->_CloseObject(); }                                       \
     DwgDb##_classSuffix_##Ptr::DwgDb##_classSuffix_##Ptr (DwgDb##_classSuffix_##* obj)                                          \
@@ -577,11 +583,23 @@ END_DWGDB_NAMESPACE
     DwgDbVisibility     DwgDb##_classSuffix_##::GetVisibility () const { return static_cast<DwgDbVisibility>(T_Super::visibility()); }     \
     void                DwgDb##_classSuffix_##::List () const { T_Super::list(); }                                                         \
     DwgGiDrawablePtr    DwgDb##_classSuffix_##::GetDrawable () { return new DwgGiDrawable(T_Super::drawable()); }                          \
-    bool                DwgDb##_classSuffix_##::CanCastShadows () const { return T_Super::castShadows(); }                                       \
-    bool                DwgDb##_classSuffix_##::CanReceiveShadows () const { return T_Super::receiveShadows(); }                                 \
-    bool                DwgDb##_classSuffix_##::IsPlanar () const { return T_Super::isPlanar(); }                                                \
+    bool                DwgDb##_classSuffix_##::CanCastShadows () const { return T_Super::castShadows(); }                                 \
+    bool                DwgDb##_classSuffix_##::CanReceiveShadows () const { return T_Super::receiveShadows(); }                           \
+    bool                DwgDb##_classSuffix_##::IsPlanar () const { return T_Super::isPlanar(); }                                          \
     void DwgDb##_classSuffix_##::GetEcs(TransformR ecs) const { DWGGE_Type(Matrix3d) m; DWGDB_CALLSDKMETHOD(m=T_Super::getEcs(), T_Super::getEcs(m)); return Util::GetTransform(ecs, m); } \
-    DwgDbStatus         DwgDb##_classSuffix_##::TransformBy (TransformCR t) { DWGGE_Type(Matrix3d) m; Util::GetGeMatrix(m, t); return ToDwgDbStatus(T_Super::transformBy(m)); }
+    DwgDbStatus DwgDb##_classSuffix_##::TransformBy (TransformCR t) { DWGGE_Type(Matrix3d) m; Util::GetGeMatrix(m, t); return ToDwgDbStatus(T_Super::transformBy(m)); } \
+    DwgDbStatus DwgDb##_classSuffix_##::SetColor (DwgCmColorCR c, bool s) { return ToDwgDbStatus(T_Super::setColor(static_cast<DWGCM_TypeCR(Color)>(c), s)); } \
+    DwgDbStatus DwgDb##_classSuffix_##::SetColorIndex (uint16_t c, bool s) { return ToDwgDbStatus(T_Super::setColorIndex(c, s)); }         \
+    DwgDbStatus DwgDb##_classSuffix_##::SetLinetype (DwgDbObjectId id, bool s) { return ToDwgDbStatus(T_Super::setLinetype(DWGDB_DOWNWARDCAST(ObjectId)(id), s)); } \
+    DwgDbStatus DwgDb##_classSuffix_##::SetLinetypeScale (double scale, bool s) { return  ToDwgDbStatus(T_Super::setLinetypeScale(scale, s)); } \
+    DwgDbStatus DwgDb##_classSuffix_##::SetLineweight (DwgDbLineWeight w, bool s) { return ToDwgDbStatus(T_Super::setLineWeight(DWGDB_CASTTOENUM_DB(LineWeight)(w), s)); } \
+    DwgDbStatus DwgDb##_classSuffix_##::SetLayer (DwgDbObjectId id, bool s, bool h) { return ToDwgDbStatus(T_Super::setLayer(DWGDB_DOWNWARDCAST(ObjectId)(id), s, h)); } \
+    DwgDbStatus DwgDb##_classSuffix_##::SetMaterial (DwgDbObjectId id, bool s) { return ToDwgDbStatus(T_Super::setMaterial(DWGDB_DOWNWARDCAST(ObjectId)(id), s)); } \
+    DwgDbStatus DwgDb##_classSuffix_##::SetTransparency (DwgTransparencyCR t, bool s) { return ToDwgDbStatus(T_Super::setTransparency(static_cast<DWGCM_TypeCR(Transparency)>(t), s)); } \
+    void DwgDb##_classSuffix_##::SetDatabaseDefaults (DwgDbDatabaseP dwg) { T_Super::setDatabaseDefaults(dwg); } \
+    void DwgDb##_classSuffix_##::SetCastShadows (bool c) { T_Super::setCastShadows(c); } \
+    void DwgDb##_classSuffix_##::SetReceiveShadows (bool r) { T_Super::setReceiveShadows(r); } \
+    void DwgDb##_classSuffix_##::SetVisibility (DwgDbVisibility v, bool s) { T_Super::setVisibility(DWGDB_CASTTOENUM_DB(Visibility)(v), s); }
 
 // define common methods for DbEntity as above, plus an object Create method
 #define DWGDB_ENTITY_DEFINE_MEMBERS(_classSuffix_)                  \
