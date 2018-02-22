@@ -23,17 +23,13 @@ const Utf8CP SketchGridSurfaceManipulationStrategy::prop_Angle = "Angle";
 //---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SketchGridSurfaceManipulationStrategy::_UpdateGridSurface()
     {
-    PlanGridPlanarSurfacePtr surface = _GetGridSurfaceP();
-
-    if (m_axis.IsNull() || surface.IsNull())
+    IPlanGridSurface* surface = _GetPlanGridSurfaceP();
+    if (nullptr == surface)
         return BentleyStatus::ERROR;
-
-    if (m_axis->GetElementId() != surface->GetAxisId())
-        surface->SetAxisId(m_axis->GetElementId());
 
     if (surface->GetStartElevation() != m_bottomElevation)
         surface->SetStartElevation(m_bottomElevation);
-    
+
     if (surface->GetEndElevation() != m_topElevation)
         surface->SetEndElevation(m_topElevation);
 
@@ -45,23 +41,23 @@ BentleyStatus SketchGridSurfaceManipulationStrategy::_UpdateGridSurface()
 //---------------+---------------+---------------+---------------+---------------+------
 Dgn::DgnElementPtr SketchGridSurfaceManipulationStrategy::_FinishElement()
     {
-    PlanGridPlanarSurfacePtr surface = _GetGridSurfaceP();
-    BeAssert(surface.IsValid() && "Shouldn't be called with invalid surface");
+    IPlanGridSurface* surface = _GetPlanGridSurfaceP();
+    BeAssert(nullptr != surface && "Shouldn't be called with invalid surface");
     
-    if (surface.IsNull() || !IsComplete())
+    if (nullptr == surface || !IsComplete())
         return nullptr;
 
     if (BentleyStatus::ERROR == _UpdateGridSurface())
         return nullptr;
 
-    if (!surface->GetDgnDb().Txns().InDynamicTxn())
-        if (Dgn::RepositoryStatus::Success != BuildingLocks_LockElementForOperation(*surface, BeSQLite::DbOpcode::Update, "Update Grid Surface"))
+    if (!surface->GetThisElem().GetDgnDb().Txns().InDynamicTxn())
+        if (Dgn::RepositoryStatus::Success != BuildingLocks_LockElementForOperation(surface->GetThisElem(), BeSQLite::DbOpcode::Update, "Update Grid Surface"))
             return nullptr;
 
-    if (surface->Update().IsNull())
+    if (surface->GetThisElemR().Update().IsNull())
         return nullptr;
 
-    return surface;
+    return &surface->GetThisElemR();
     }
 
 //--------------------------------------------------------------------------------------

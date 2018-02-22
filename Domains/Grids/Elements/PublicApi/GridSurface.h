@@ -192,6 +192,9 @@ protected:
     IPlanGridSurface (Dgn::DgnElementR thisElem, CreateParams const& params, Dgn::DgnClassId classId);
 public:
 
+    Dgn::DgnElementCR GetThisElem() const { return m_thisElem; }
+    Dgn::DgnElementR GetThisElemR() const { return m_thisElem; }
+
     //! Gets start elevation of this IPlanGridSurface
     //! @return StartElevation of this RadialGrid
     GRIDELEMENTS_EXPORT double      GetStartElevation () const { return m_thisElem.GetPropertyValueDouble (prop_StartElevation ()); }

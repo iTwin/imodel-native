@@ -53,9 +53,9 @@ struct SketchGridSurfaceManipulationStrategy : public BBS::ElementManipulationSt
         BentleyStatus GetOrCreateGridAndAxis(SketchGridCPtr& grid, Dgn::SpatialLocationModelPtr spatialModel);
         virtual void _OnWorkingPlaneChanged(DPlane3d const & original);
         virtual BentleyStatus _UpdateGridSurface();
+        virtual IPlanGridSurface const* _GetPlanGridSurfaceCP() const = 0;
+        virtual IPlanGridSurface* _GetPlanGridSurfaceP() const = 0;
         virtual Utf8String _GetMessage() const = 0;
-        virtual PlanGridPlanarSurfaceCP _GetGridSurfaceCP() = 0;
-        virtual PlanGridPlanarSurfaceP _GetGridSurfaceP() = 0;
         virtual BBS::CurvePrimitiveManipulationStrategyCR _GetCurvePrimitiveManipulationStrategy() const = 0;
         virtual BBS::CurvePrimitiveManipulationStrategyR _GetCurvePrimitiveManipulationStrategyForEdit() = 0;
 

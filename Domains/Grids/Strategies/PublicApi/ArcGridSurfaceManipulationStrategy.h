@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Grids/Strategies/PublicApi/LineGridSurfaceManipulationStrategy.h $
+|     $Source: Grids/Strategies/PublicApi/ArcGridSurfaceManipulationStrategy.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -12,37 +12,35 @@ BEGIN_GRIDS_NAMESPACE
 namespace BBS = BENTLEY_BUILDING_SHARED_NAMESPACE_NAME;
 
 //=======================================================================================
-// @bsiclass                                     Haroldas.Vitunskas             01/2018
+// @bsiclass                                     Mindaugas.Butkus               02/2018
 //=======================================================================================
-struct LineGridSurfaceManipulationStrategy : public GridPlanarSurfaceManipulationStrategy
+struct ArcGridSurfaceManipulationStrategy : public SketchGridSurfaceManipulationStrategy
     {
-    DEFINE_T_SUPER(GridPlanarSurfaceManipulationStrategy)
+    DEFINE_T_SUPER(SketchGridSurfaceManipulationStrategy)
 
     private:
-        BBS::LineManipulationStrategyPtr m_geometryManipulationStrategy;
-        SketchLineGridSurfacePtr m_surface;
+        BBS::ArcManipulationStrategyPtr m_geometryManipulationStrategy;
+        SketchArcGridSurfacePtr m_surface;
 
     protected:
-        LineGridSurfaceManipulationStrategy();
+        ArcGridSurfaceManipulationStrategy();
 
         // ElementManipulationStrategy
         virtual Dgn::DgnElementPtr _FinishElement(Dgn::DgnModelR model) override;
         virtual BBS::GeometryManipulationStrategyCR _GetGeometryManipulationStrategy() const override { return *m_geometryManipulationStrategy; }
         virtual BBS::GeometryManipulationStrategyR _GetGeometryManipulationStrategyForEdit() override { return *m_geometryManipulationStrategy; }
 
-        // GridPlanarSurfaceManipulationStrategy
-        virtual PlanGridPlanarSurfaceCP _GetPlanGridPlanarSurfaceCP() const override { return m_surface.get(); }
-        virtual PlanGridPlanarSurfaceP _GetPlanGridPlanarSurfaceP() const override { return m_surface.get(); }
-
         // SketchGridSurfaceManipulationStrategy
         virtual BentleyStatus _UpdateGridSurface() override;
-        virtual Utf8String _GetMessage() const override;
+        virtual Utf8String _GetMessage() const override { return ""; }
+        virtual IPlanGridSurface const* _GetPlanGridSurfaceCP() const override { return m_surface.get(); }
+        virtual IPlanGridSurface* _GetPlanGridSurfaceP() const override { return m_surface.get(); }
         virtual BBS::CurvePrimitiveManipulationStrategyCR _GetCurvePrimitiveManipulationStrategy() const override { return *m_geometryManipulationStrategy; }
         virtual BBS::CurvePrimitiveManipulationStrategyR _GetCurvePrimitiveManipulationStrategyForEdit() override { return *m_geometryManipulationStrategy; }
 
     public:
-        GRIDSTRATEGIES_EXPORT static LineGridSurfaceManipulationStrategyPtr Create() { return new LineGridSurfaceManipulationStrategy(); }
-        BBS::LinePlacementStrategyPtr CreateLinePlacementStrategy(BBS::LinePlacementStrategyType linePlacementStrategyType) {return BBS::LinePlacementStrategy::Create(linePlacementStrategyType, *m_geometryManipulationStrategy); }
+        GRIDSTRATEGIES_EXPORT static ArcGridSurfaceManipulationStrategyPtr Create() { return new ArcGridSurfaceManipulationStrategy(); }
+        BBS::ArcPlacementStrategyPtr CreateArcPlacementStrategy(BBS::ArcPlacementStrategyType arcPlacementStrategyType) { return BBS::ArcPlacementStrategy::Create(arcPlacementStrategyType, *m_geometryManipulationStrategy); }
     };
 
 END_GRIDS_NAMESPACE

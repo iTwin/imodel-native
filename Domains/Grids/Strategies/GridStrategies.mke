@@ -32,6 +32,10 @@ $(o)SketchGridSurfaceManipulationStrategy$(oext)        : $(_MakeFilePath)Sketch
                                           $(_MakeFilePath)PublicApi/SketchGridSurfaceManipulationStrategy.h \
                                           ${MultiCompileDepends}
 
+$(o)GridPlanarSurfaceManipulationStrategy$(oext) : $(_MakeFilePath)GridPlanarSurfaceManipulationStrategy.cpp \
+                                                   $(_MakeFilePath)PublicApi/GridPlanarSurfaceManipulationStrategy.h \
+                                                   ${MultiCompileDepends}
+
 $(o)LineGridSurfacePlacementStrategy$(oext)        : $(_MakeFilePath)LineGridSurfacePlacementStrategy.cpp \
                                           $(_MakeFilePath)PublicApi/LineGridSurfacePlacementStrategy.h \
                                           ${MultiCompileDepends}
@@ -39,6 +43,14 @@ $(o)LineGridSurfacePlacementStrategy$(oext)        : $(_MakeFilePath)LineGridSur
 $(o)LineGridSurfaceManipulationStrategy$(oext)        : $(_MakeFilePath)LineGridSurfaceManipulationStrategy.cpp \
                                           $(_MakeFilePath)PublicApi/LineGridSurfaceManipulationStrategy.h \
                                           ${MultiCompileDepends}
+
+$(o)ArcGridSurfaceManipulationStrategy$(oext) : $(_MakeFilePath)ArcGridSurfaceManipulationStrategy.cpp \
+                                                $(_MakeFilePath)PublicApi/ArcGridSurfaceManipulationStrategy.h \
+                                                ${MultiCompileDepends}
+
+$(o)ArcGridSurfacePlacementStrategy$(oext) : $(_MakeFilePath)ArcGridSurfacePlacementStrategy.cpp \
+                                             $(_MakeFilePath)PublicApi/ArcGridSurfacePlacementStrategy.h \
+                                             ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)
