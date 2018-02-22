@@ -869,23 +869,20 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
             return CreateBentleyReturnErrorObject(DgnDbStatus::SQLiteError);
 
         ECClassId ecclassId = stmt->GetValueId<ECClassId>(0);
-        ECInstanceNodeKeyPtr nodeKey = ECInstanceNodeKey::Create(ecclassId, elemId);
-        NavNodeKeyList keyList;
-        keyList.push_back(nodeKey);
-        INavNodeKeysContainerCPtr selectedNodeKeys = NavNodeKeyListContainer::Create(keyList);
-        SelectionInfo selection ("iModelJS", false, *selectedNodeKeys);
+        ECInstanceKey instanceKey = ECInstanceKey(ecclassId, elemId);
+        KeySetPtr input = KeySet::Create({instanceKey});
         RulesDrivenECPresentationManager::ContentOptions options ("Items");
         if ( m_presentationManager == nullptr)
             return CreateBentleyReturnErrorObject(DgnDbStatus::BadArg);
         
-        ContentDescriptorCPtr descriptor = m_presentationManager->GetContentDescriptor(GetDgnDb(), ContentDisplayType::PropertyPane, selection, options.GetJson()).get();
+        ContentDescriptorCPtr descriptor = m_presentationManager->GetContentDescriptor(GetDgnDb(), ContentDisplayType::PropertyPane, *input, nullptr, options.GetJson()).get();
         if (descriptor.IsNull())
             return CreateBentleyReturnErrorObject(DgnDbStatus::BadArg);
 
         PageOptions pageOptions;
         pageOptions.SetPageStart(0);
         pageOptions.SetPageSize(0);
-        ContentCPtr content = m_presentationManager->GetContent(GetDgnDb(), *descriptor, selection, pageOptions, options.GetJson()).get();
+        ContentCPtr content = m_presentationManager->GetContent(*descriptor, pageOptions).get();
         if (content.IsNull())
             return CreateBentleyReturnErrorObject(DgnDbStatus::BadArg);
 
