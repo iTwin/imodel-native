@@ -11,10 +11,10 @@ BEGIN_BUILDING_SHARED_NAMESPACE
 
 enum class ArcPlacementStrategyType
     {
-    CenterStart = 0,
-    StartCenter,
-    StartMidEnd,
-    StartEndMid
+    StartCenter = 0,
+    CenterStart = 1,
+    StartMidEnd = 2,
+    StartEndMid = 3
     };
 
 //=======================================================================================
