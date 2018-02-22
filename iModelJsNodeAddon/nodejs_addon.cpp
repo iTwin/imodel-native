@@ -679,6 +679,11 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         return Napi::Boolean::New(Env(), TxnIdFromString(txnIdHexStr).IsValid());
         }
 
+    Napi::Value TxnManagerHasUnsavedChanges(const Napi::CallbackInfo& info)
+        {
+        return Napi::Boolean::New(Env(), m_dgndb->Txns().HasChanges());
+        }
+
     Napi::Value StartCreateChangeSet(const Napi::CallbackInfo& info)
         {
         REQUIRE_DB_TO_BE_OPEN
@@ -1244,6 +1249,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
             InstanceMethod("txnManagerGetCurrentTxnId", &AddonDgnDb::TxnManagerGetCurrentTxnId),
             InstanceMethod("txnManagerGetTxnDescription", &AddonDgnDb::TxnManagerGetTxnDescription),
             InstanceMethod("txnManagerIsTxnIdValid", &AddonDgnDb::TxnManagerIsTxnIdValid),
+            InstanceMethod("txnManagerHasUnsavedChanges", &AddonDgnDb::TxnManagerHasUnsavedChanges),
 						
 			// DEVELOPMENT-ONLY METHODS:
 			InstanceMethod("executeTest", &AddonDgnDb::ExecuteTest),

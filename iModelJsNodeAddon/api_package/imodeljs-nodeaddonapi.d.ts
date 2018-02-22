@@ -402,6 +402,8 @@ declare class AddonDgnDb {
     txnManagerGetTxnDescription(txnId: AddonTxnId): string;
     /** Check if the specified TxnId is valid. The above query functions will return an invalid ID to indicate failure. */
     txnManagerIsTxnIdValid(txnId: AddonTxnId): boolean;
+    /** Check if there are un-saved changes in memory. */
+    txnManagerHasUnsavedChanges(): boolean;
 
   /**
    * Execute a test by name
