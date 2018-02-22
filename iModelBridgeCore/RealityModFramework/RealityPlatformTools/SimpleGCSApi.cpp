@@ -6,7 +6,6 @@
 #include <RealityPlatform/SpatioTemporalData.h>
 #include <RealityPlatformTools/RealityDataDownload.h>
 #include <RealityPlatformTools/RealityConversionTools.h>
-#include <RealityPlatformTools/md5.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 

@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatformTools/Example/DownloadEngineExample.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -13,7 +13,7 @@
 
 #include <RealityPlatformTools/RealityDataDownload.h>
 #include <RealityPlatform/RealityDataPackage.h>
-#include <RealityPlatformTools/md5.h>
+#include <Bentley/md5.h>
 
 #include <stdio.h>
 #include <conio.h>
@@ -87,23 +87,21 @@ static WString createDirWithHash(Utf8StringCR uri, WStringCR tempPath, uint64_t 
     WString filenameTemp = filenameComponents[0];
 
     // Creating the MD5 hash
-    MD5Context md5c;
-    MD5Init(&md5c);
+    MD5 md5;
 
     //Adding the filesize to the hash
     Utf8String hashWithFilesize = uri;
     hashWithFilesize.append(Utf8PrintfString("%d", filesize));
 
     // Append that data to the MD5 buffer 
-    MD5Update(&md5c, (const unsigned char*)hashWithFilesize.c_str(), (int)strlen(uri.c_str()));
+    md5((const unsigned char*)hashWithFilesize.c_str(), (int)strlen(uri.c_str()));
     // Calculate the hash of the current fragment
-    unsigned char signature[16];
-    MD5Final(signature, &md5c);
+    Utf8String signature = md5.GetHashString();
 
     WString finalHashValue;
     char tempHashFragment[3];
     // Write the resulting hashed strings in the result vector
-    for (int j = 0; j < sizeof signature; ++j)
+    for (int j = 0; j < signature.length(); ++j)
         {
         // Bytes are written one by one (one byte equals 2 hex characters)
         sprintf_s(tempHashFragment, sizeof(tempHashFragment), "%02X", signature[j]);

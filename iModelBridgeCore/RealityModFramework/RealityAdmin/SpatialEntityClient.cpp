@@ -2,7 +2,7 @@
 |
 |     $Source: RealityAdmin/SpatialEntityClient.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -69,42 +69,6 @@ SpatialEntityHandlerStatus SpatialEntityClient::DownloadContent(Utf8CP outputDir
     for (size_t i = 0; i < fileList.size(); ++i)
     {
         // The local filename is created by appending the working dir, the SpatialEntity main url and the filename.        
-
-
-#if (0)
-    BeFileName separatedDirectoryForZip(tempPath);
-    WString filenameTemp = filenameComponents[0];
-
-    // Creating the MD5 hash
-    MD5Context md5c;
-    MD5Init(&md5c);
-
-    //Adding the filesize to the hash
-    Utf8String hashWithFilesize = uri;
-    hashWithFilesize.append(Utf8PrintfString("%d", filesize));
-
-    // Append that data to the MD5 buffer 
-    MD5Update(&md5c, (const unsigned char*)hashWithFilesize.c_str(), (int)strlen(uri.c_str()));
-    // Calculate the hash of the current fragment
-    unsigned char signature[16];
-    MD5Final(signature, &md5c);
-
-    WString finalHashValue;
-    char tempHashFragment[3];
-    // Write the resulting hashed strings in the result vector
-    for (int j = 0; j < sizeof signature; ++j)
-    {
-        // Bytes are written one by one (one byte equals 2 hex characters)
-        sprintf_s(tempHashFragment, sizeof(tempHashFragment), "%02X", signature[j]);
-        finalHashValue.AppendA(tempHashFragment);
-    }
-
-    // Appending the hash to the current directory
-    filenameTemp.AppendUtf8("_");
-    filenameTemp.append(finalHashValue.c_str());
-    separatedDirectoryForZip.AppendToPath(filenameTemp.c_str());
-    separatedDirectoryForZip.AppendSeparator();
-#endif
         WString SpatialEntityUrl(fileList[i].c_str(), BentleyCharEncoding::Utf8);
         size_t pos = SpatialEntityUrl.find(L"//") + 2;
         size_t len = SpatialEntityUrl.find(L'/', pos) - pos;

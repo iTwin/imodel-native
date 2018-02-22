@@ -48,8 +48,6 @@ nameToDefine=__WMSPARSER_BUILD__
 MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)md5$(oext) : $(baseDir)md5.cpp $(PublicApiDir)md5.h ${MultiCompileDepends}
-
 $(o)RealityConversionTools$(oext) : $(baseDir)RealityConversionTools.cpp $(PublicApiDir)RealityConversionTools.h ${MultiCompileDepends}
 
 $(o)RealityDataDownload$(oext) : $(childDir)RealityDataDownload.cpp $(PublicApiDir)RealityDataDownload.h ${MultiCompileDepends}
