@@ -16,6 +16,10 @@ RulesDrivenECPresentationManager* ECPresentationUtils::CreatePresentationManager
     BeFileName tempDir = locations.GetLocalTempDirectoryBaseName();
     RulesDrivenECPresentationManager::Paths paths(assetsDir, tempDir);
     RulesDrivenECPresentationManager* manager = new RulesDrivenECPresentationManager(connections, paths);
+
+    BeFileName supplementalsDirectory = BeFileName(assetsDir).AppendToPath(L"PresentationRules");
+    manager->GetLocaters().RegisterLocater(*SupplementalRuleSetLocater::Create(*DirectoryRuleSetLocater::Create(supplementalsDirectory.GetNameUtf8().c_str())));
+
     return manager;
     }
 
