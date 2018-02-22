@@ -89,7 +89,7 @@ constexpr double s_spatialRangeMultiplier = 1.0001; // must be > 1.0 - need to e
 constexpr uint32_t s_hardMaxFeaturesPerTile = 2048*1024;
 constexpr double s_maxLeafTolerance = 1.0; // the maximum tolerance at which we will stop subdividing tiles, regardless of # of elements contained or whether curved geometry exists.
 
-static Root::DebugOptions s_globalDebugOptions = Root::DebugOptions::None;
+static Root::DebugOptions s_globalDebugOptions = Root::DebugOptions::ShowBoundingVolume;
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   11/16
