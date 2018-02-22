@@ -171,6 +171,48 @@ void ECPresentationUtils::GetNodePaths(IECPresentationManagerR manager, ECDbR db
     BeAssert(false);
     }
 
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                02/2018
++===============+===============+===============+===============+===============+======*/
+struct DescriptorOverrideHelper
+{
+private:
+    JsonValueCR m_overridesJson;
+private:
+    Utf8CP GetSortingFieldName() const { return m_overridesJson["sortingFieldName"].asCString(); }
+    SortDirection GetSortDirection() const { return (SortDirection)m_overridesJson["sortDirection"].asInt(); }
+    int GetContentFlags() const { return m_overridesJson["contentFlags"].asInt(); }
+    Utf8CP GetFilterExpression() const { return m_overridesJson["filterExpression"].isNull() ? "" : m_overridesJson["filterExpression"].asCString(); }
+    bvector<Utf8String> GetHiddenFieldNames() const
+        {
+        bvector<Utf8String> names;
+        JsonValueCR arr = m_overridesJson["hiddenFieldNames"];
+        for (Json::ArrayIndex i = 0; i < arr.size(); ++i)
+            names.push_back(arr[i].asCString());
+        return names;
+        }
+public:
+    DescriptorOverrideHelper(JsonValueCR json) : m_overridesJson(json) {}
+    Utf8CP GetDisplayType() const { return m_overridesJson["displayType"].asCString(); }
+    ContentDescriptorCPtr GetOverridenDescriptor(ContentDescriptorCR defaultDescriptor) const
+        {
+        if (!defaultDescriptor.GetPreferredDisplayType().Equals(GetDisplayType()))
+            {
+            BeAssert(false);
+            return &defaultDescriptor;
+            }
+        ContentDescriptorPtr descriptorCopy = ContentDescriptor::Create(defaultDescriptor);
+        descriptorCopy->SetSortingField(GetSortingFieldName());
+        descriptorCopy->SetSortDirection(GetSortDirection());
+        descriptorCopy->SetContentFlags(GetContentFlags());
+        descriptorCopy->SetFilterExpression(GetFilterExpression());
+        bvector<Utf8String> hiddenFieldNames = GetHiddenFieldNames();
+        for (Utf8StringCR name : hiddenFieldNames)
+            descriptorCopy->RemoveField(name.c_str());
+        return descriptorCopy;
+        }
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -194,11 +236,13 @@ void ECPresentationUtils::GetContentDescriptor(IECPresentationManagerR manager, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECPresentationUtils::GetContent(IECPresentationManagerR manager, ECDbR db, JsonValueCR params, rapidjson::Document& response)
     {
-    ContentDescriptorCPtr descriptor = manager.GetContentDescriptor(db, GetDisplayType(params), *GetKeys(params), nullptr, GetManagerOptions(params)).get();
+    DescriptorOverrideHelper helper(params["descriptorOverrides"]);
+    ContentDescriptorCPtr descriptor = manager.GetContentDescriptor(db, helper.GetDisplayType(), *GetKeys(params), nullptr, GetManagerOptions(params)).get();
     if (descriptor.IsNull())
         return;
 
-    ContentCPtr content = manager.GetContent(*descriptor, GetPageOptions(params)).get();
+    ContentDescriptorCPtr overridenDescriptor = helper.GetOverridenDescriptor(*descriptor);
+    ContentCPtr content = manager.GetContent(*overridenDescriptor, GetPageOptions(params)).get();
     response = content->AsJson();
     }
 
@@ -207,11 +251,13 @@ void ECPresentationUtils::GetContent(IECPresentationManagerR manager, ECDbR db, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECPresentationUtils::GetContentSetSize(IECPresentationManagerR manager, ECDbR db, JsonValueCR params, rapidjson::Document& response)
     {
-    ContentDescriptorCPtr descriptor = manager.GetContentDescriptor(db, GetDisplayType(params), *GetKeys(params), nullptr, GetManagerOptions(params)).get();
+    DescriptorOverrideHelper helper(params["descriptorOverrides"]);
+    ContentDescriptorCPtr descriptor = manager.GetContentDescriptor(db, helper.GetDisplayType(), *GetKeys(params), nullptr, GetManagerOptions(params)).get();
     if (descriptor.IsNull())
         return;
 
-    size_t size = manager.GetContentSetSize(*descriptor).get();
+    ContentDescriptorCPtr overridenDescriptor = helper.GetOverridenDescriptor(*descriptor);
+    size_t size = manager.GetContentSetSize(*overridenDescriptor).get();
     response.SetUint64(size);
     }
 
