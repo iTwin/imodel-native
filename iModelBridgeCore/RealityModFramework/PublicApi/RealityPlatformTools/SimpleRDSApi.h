@@ -105,7 +105,7 @@ public:
 
     //! Server request
     //! Will upload the document to the server. Ideally used to replace an existing document, in a reality data
-    REALITYDATAPLATFORM_EXPORT ConnectedResponse Upload(BeFileName filePath, Utf8String serverPath);
+    REALITYDATAPLATFORM_EXPORT ConnectedResponse Upload(BeFileName filePath, Utf8String serverPath, bool overwrite = true, bool listable = true);
 
     //! Server request
     //! Will download this document to the file path specified
@@ -138,7 +138,7 @@ public:
 
     //! Server request
     //! Will upload everything contained in the folder (at the specified file path) to the server.
-    REALITYDATAPLATFORM_EXPORT ConnectedResponse Upload(BeFileName filePath, Utf8String serverPath);
+    REALITYDATAPLATFORM_EXPORT ConnectedResponse Upload(BeFileName filePath, Utf8String serverPath, bool overwrite = true, bool listable = true);
 
     //! Server request
     //! Will download everything contained in the folder (at the specified file path) to the server.
@@ -184,7 +184,7 @@ public:
     //! If serverPath is an empty string, a new reality data entry will be created on the server
     //! and the auto-generated guid will be assigned to the serverPath variable
     //! If a new entry is created, any properties set on this object will be set on the server
-    REALITYDATAPLATFORM_EXPORT ConnectedResponse Upload(BeFileName filePath, Utf8StringR serverPath);
+    REALITYDATAPLATFORM_EXPORT ConnectedResponse Upload(BeFileName filePath, Utf8StringR serverPath, bool overwrite = true, bool listable = true);
 
     //! Server request
     //! Will download the reality data to the specified file path, from the specified server path (GUID)

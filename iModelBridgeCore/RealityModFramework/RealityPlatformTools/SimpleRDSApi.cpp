@@ -355,13 +355,13 @@ ConnectedResponse ConnectedRealityDataDocument::GetInfo()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
-ConnectedResponse ConnectedRealityDataDocument::Upload(BeFileName filePath, Utf8String serverPath)
+ConnectedResponse ConnectedRealityDataDocument::Upload(BeFileName filePath, Utf8String serverPath, bool overwrite, bool listable)
     {
     ConnectedResponse response = ConnectedResponse();
 
     NavNode node = NavNode(RealityDataService::GetSchemaName(), serverPath, "ECObjects", "RealityData");
 
-    RealityDataServiceUpload upload = RealityDataServiceUpload(filePath, node.GetNavString(), "", true);
+    RealityDataServiceUpload upload = RealityDataServiceUpload(filePath, node.GetNavString(), "", overwrite, listable);
     if (upload.IsValidTransfer())
         {
         upload.OnlyReportErrors(true);
@@ -506,7 +506,7 @@ ConnectedResponse ConnectedRealityDataFolder::GetInfo()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
-ConnectedResponse ConnectedRealityDataFolder::Upload(BeFileName filePath, Utf8String serverPath)
+ConnectedResponse ConnectedRealityDataFolder::Upload(BeFileName filePath, Utf8String serverPath, bool overwrite, bool listable)
     {
     ConnectedResponse response = ConnectedResponse();
 
@@ -522,7 +522,7 @@ ConnectedResponse ConnectedRealityDataFolder::Upload(BeFileName filePath, Utf8St
 
     NavNode node = NavNode(RealityDataService::GetSchemaName(), serverPath, "ECObjects", "RealityData");
 
-    RealityDataServiceUpload upload = RealityDataServiceUpload(filePath, node.GetNavString(), "", true);
+    RealityDataServiceUpload upload = RealityDataServiceUpload(filePath, node.GetNavString(), "", overwrite, listable);
     if (upload.IsValidTransfer())
         {
         upload.OnlyReportErrors(true);
@@ -809,7 +809,7 @@ ConnectedResponse ConnectedRealityData::UpdateInfo()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
-ConnectedResponse ConnectedRealityData::Upload(BeFileName filePath, Utf8StringR serverPath)
+ConnectedResponse ConnectedRealityData::Upload(BeFileName filePath, Utf8StringR serverPath, bool overwrite, bool listable)
     {
     m_identifier = serverPath;
 
@@ -873,7 +873,7 @@ ConnectedResponse ConnectedRealityData::Upload(BeFileName filePath, Utf8StringR 
 
     Utf8String propertyString = RealityDataServiceUpload::PackageProperties(properties);
 
-    RealityDataServiceUpload upload = RealityDataServiceUpload(filePath, m_identifier, propertyString);
+    RealityDataServiceUpload upload = RealityDataServiceUpload(filePath, m_identifier, propertyString, overwrite, listable);
     if (upload.IsValidTransfer())
         {
         m_identifier = upload.GetRealityDataId();
