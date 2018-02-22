@@ -74,6 +74,11 @@ iModelHubHost& iModelHubHost::Instance()
     return s_instance;
     }
 
+void iModelHubHost::SetCustomOutputDir(BeFileName outputDir)
+    {
+    m_customOutputDir = outputDir;
+    }
+
 void iModelHubHost::SetRepositoryAdmin(DgnPlatformLib::Host::RepositoryAdmin* admin)
     {
     m_pimpl->SetRepositoryAdmin(admin);
@@ -125,9 +130,16 @@ BeFileName iModelHubHost::GetTempDirectory()
 
 BeFileName iModelHubHost::GetOutputDirectory()
     {
+    if (!m_customOutputDir.IsEmpty())
+        return m_customOutputDir;
+
     BeFileName outputDir;
     BeTest::GetHost().GetOutputRoot(outputDir);
     outputDir.AppendToPath(L"iModelHub");
+
+    if (!BeFileName::DoesPathExist(outputDir))
+        BeFileName::CreateNewDirectory(outputDir);
+
     return outputDir;
     }
 

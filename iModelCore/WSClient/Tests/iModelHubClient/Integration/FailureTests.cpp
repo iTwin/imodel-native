@@ -21,37 +21,90 @@ USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_IMODELHUB_UNITTESTS
 
 #if defined (ENABLE_IMODELHUB_CRASH_TESTS)
+
+static const wchar_t* s_briefcasePathFileName = L"BreakTestPath.txt";
+
 //---------------------------------------------------------------------------------------
 //@bsiclass                                     Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-struct FailureTests : public iModelTestsBase
+struct FailureTests : public IntegrationTestsBase
     {
     iModelInfoPtr m_info = nullptr;
     iModelConnectionPtr m_connection = nullptr;
-    const wchar_t*  m_briefcasePathFileName = L"BreakTestPath.txt";
+
+    /*--------------------------------------------------------------------------------------+
+    //@bsimethod                                   Algirdas.Mikoliunas             02/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static void SetUpTestCase()
+        {
+        BeFileName customOutputDir = GetCustomOutputDirectory();
+        iModelHubHost& host = iModelHubHost::Instance();
+        host.SetCustomOutputDir(customOutputDir);
+
+        IntegrationTestsBase::SetUpTestCase();
+        }
+    
+    /*--------------------------------------------------------------------------------------+
+    //@bsimethod                                   Algirdas.Mikoliunas             02/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static void TearDownTestCase()
+        {
+        iModelTestsBase::TearDownTestCase();
+
+        iModelHubHost& host = iModelHubHost::Instance();
+        host.SetCustomOutputDir(BeFileName());
+        }
     
     //---------------------------------------------------------------------------------------
     //@bsimethod                                   Algirdas.Mikoliunas             10/2016
     //---------------------------------------------------------------------------------------
     virtual void SetUp() override
         {
+        m_imodelName = GetFailureTestiModelName();
         IntegrationTestsBase::SetUp();
         }
 
     //---------------------------------------------------------------------------------------
-    //@bsimethod                                   Algirdas.Mikoliunas             10/2016
+    //@bsimethod                                   Algirdas.Mikoliunas             02/2018
     //---------------------------------------------------------------------------------------
-    virtual void TearDown() override
+    static BeFileName GetCustomOutputDirectory()
         {
-        if (m_info.IsValid())
-            {
-            m_info = nullptr;
-            }
-        if (m_connection.IsValid())
-            {
-            m_connection = nullptr;
-            }
-        IntegrationTestsBase::TearDown();
+        BeFileName outputDir;
+        BeTest::GetHost().GetOutputRoot(outputDir);
+        outputDir.AppendToPath(L"../FailureTests");
+
+        if (!BeFileName::DoesPathExist(outputDir))
+            BeFileName::CreateNewDirectory(outputDir);
+
+        return outputDir;
+        }
+
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Karolis.Dziedzelis              11/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static Utf8String GetFailureTestiModelName()
+        {
+        return Utf8PrintfString("Failure-%s", GetTestInfo().name());
+        }
+
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Karolis.Dziedzelis              11/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static void AcquireAndOpenBriefcase(BriefcasePtr& briefcase, iModelInfoPtr info, bool pull)
+        {
+        BriefcaseResult briefcaseResult = iModelHubHelpers::AcquireAndOpenBriefcase(s_client, info, pull);
+        ASSERT_SUCCESS(briefcaseResult);
+        briefcase = briefcaseResult.GetValue();
+        }
+
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Karolis.Dziedzelis              11/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    BriefcasePtr AcquireAndOpenBriefcase()
+        {
+        BriefcasePtr briefcase;
+        AcquireAndOpenBriefcase(briefcase, m_info, true);
+        return briefcase;
         }
 
     //---------------------------------------------------------------------------------------
@@ -59,27 +112,15 @@ struct FailureTests : public iModelTestsBase
     //---------------------------------------------------------------------------------------
     void InitializeContinueTestCase()
         {
-        DgnDbPtr db = CreateTestDb(TestCaseiModelName());
+        iModelHubHelpers::DeleteiModelByName(s_client, m_imodelName);
+        
+        DgnDbPtr db = CreateTestDb(m_imodelName);
         iModelResult createResult = CreateiModel(db);
         ASSERT_SUCCESS(createResult);
         m_info = createResult.GetValue();
 
         m_connection = CreateiModelConnection(m_info);
         SaveString(m_info->GetName());
-        }
-
-    //---------------------------------------------------------------------------------------
-    //@bsimethod                                   Algirdas.Mikoliunas             10/2016
-    //---------------------------------------------------------------------------------------
-    void InitializeCrashTestCase()
-        {
-        auto imodelsIterator = s_client->GetiModels(s_projectId)->GetResult().GetValue();
-        auto imodelName = ReadString();
-        for (auto imodelIterator = imodelsIterator.begin(); imodelIterator != imodelsIterator.end(); ++imodelIterator)
-            {
-            if ((*imodelIterator)->GetName().Equals(imodelName))
-                m_info = *imodelIterator;
-            }
         }
 
     //---------------------------------------------------------------------------------------
@@ -99,7 +140,7 @@ struct FailureTests : public iModelTestsBase
         {
         auto path = GetExePath();
         Utf8String command;
-        command.Sprintf("%s\\iModelHubNativeTests.exe --gtest_catch_exceptions=0 --gtest_filter=FailureTests.%s", path.c_str(), crashTestCaseName.c_str());
+        command.Sprintf("%s\\iModelHubNativeTests.exe --gtest_catch_exceptions=0 --gtest_filter=CrashTests.%s", path.c_str(), crashTestCaseName.c_str());
         int result = system(command.c_str());
         EXPECT_TRUE(1 == result || 3 == result);
         }
@@ -115,7 +156,7 @@ struct FailureTests : public iModelTestsBase
     //---------------------------------------------------------------------------------------
     //@bsimethod                                   Algirdas.Mikoliunas             10/2016
     //---------------------------------------------------------------------------------------
-    void SaveBriefcasePath(BeFileName briefcasePath)
+    static void SaveBriefcasePath(BeFileName briefcasePath)
         {
         SaveString(briefcasePath.GetNameUtf8());
         }
@@ -125,7 +166,7 @@ struct FailureTests : public iModelTestsBase
     //---------------------------------------------------------------------------------------
     Utf8String ReadString()
         {
-        BeFileName path = OutputDir().AppendToPath(m_briefcasePathFileName);
+        BeFileName path = OutputDir().AppendToPath(s_briefcasePathFileName);
 
         BeFile file;
         if (BeFileStatus::Success != file.Open(path.c_str(), BeFileAccess::Read))
@@ -144,13 +185,14 @@ struct FailureTests : public iModelTestsBase
     //---------------------------------------------------------------------------------------
     //@bsimethod                                   Algirdas.Mikoliunas             10/2016
     //---------------------------------------------------------------------------------------
-    void SaveString(Utf8String savedString)
+    static void SaveString(Utf8String savedString)
         {
-        BeFileName path = OutputDir().AppendToPath(m_briefcasePathFileName);
+        BeFileName path = OutputDir().AppendToPath(s_briefcasePathFileName);
 
         BeFile file;
         if (BeFileStatus::Success != file.Create(path.c_str(), true))
             return;
+        file.Close();
 
         if (BeFileStatus::Success != file.Open(path.c_str(), BeFileAccess::Write))
             return;
@@ -160,26 +202,6 @@ struct FailureTests : public iModelTestsBase
             return;
 
         file.Close();
-        }
-
-    //---------------------------------------------------------------------------------------
-    //@bsimethod                                   Algirdas.Mikoliunas             10/2016
-    //---------------------------------------------------------------------------------------
-    void CrashPullMergeAndPush(Breakpoints breakpoint)
-        {
-        InitializeCrashTestCase();
-
-        //Prapare imodel and acquire briefcases
-        auto briefcase1 = AcquireAndOpenBriefcase();
-
-        //Create model in briefcase 1. This should also acquire locks automatically.
-        auto model1 = CreateModel("Model1", briefcase1->GetDgnDb());
-        briefcase1->GetDgnDb().SaveChanges();
-        SaveBriefcasePath(briefcase1->GetDgnDb().GetFileName());
-
-        // Break PullMergeAndPush
-        BreakHelper::SetBreakpoint(breakpoint);
-        auto pushResult = briefcase1->PullMergeAndPush(nullptr, false)->GetResult();
         }
 
     //---------------------------------------------------------------------------------------
@@ -214,28 +236,8 @@ struct FailureTests : public iModelTestsBase
     //---------------------------------------------------------------------------------------
     //@bsimethod                                   Algirdas.Mikoliunas             10/2016
     //---------------------------------------------------------------------------------------
-    void CrashiModelCreateTestCase(Breakpoints breakpoint)
-        {
-        InitializeCrashTestCase();
-
-        //Create the seed file
-        DgnDbPtr db = CreateTestDb("");
-        EXPECT_TRUE(db.IsValid());
-
-        SaveBriefcasePath(db->GetFileName());
-        BreakHelper::SetBreakpoint(breakpoint);
-
-        //Upload the seed file to the server
-        auto createResult = s_client->CreateNewiModel(s_projectId, *db)->GetResult();
-        }
-    
-    //---------------------------------------------------------------------------------------
-    //@bsimethod                                   Algirdas.Mikoliunas             10/2016
-    //---------------------------------------------------------------------------------------
     void ContinueAfteriModelCrash(Utf8String crashTestCaseName)
         {
-        InitializeContinueTestCase();
-
         // Run test that crashes
         RunCrashTestCase(crashTestCaseName);
 
@@ -256,56 +258,11 @@ struct FailureTests : public iModelTestsBase
         return FileInfo::Create(db, ::testing::UnitTest::GetInstance()->current_test_info()->name());
         }
 
-    /*--------------------------------------------------------------------------------------+
-    * @bsimethod                                    Karolis.Dziedzelis              11/2017
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    void ReplaceSeedFile(iModelConnectionCR connection)
-        {
-        DgnDbPtr db = CreateTestDb(GetTestiModelName().append("2"));
-        FileInfoPtr fileInfo = CreateFileInfo(db);
-        FileResult uploadResult = connection.UploadNewSeedFile(db->GetFileName(), *fileInfo, true)->GetResult();
-        ASSERT_SUCCESS(uploadResult);
-        }
-
-    //---------------------------------------------------------------------------------------
-    //@bsimethod                                   Algirdas.Mikoliunas             10/2016
-    //---------------------------------------------------------------------------------------
-    void CrashRecoverBriefcase(Breakpoints breakpoint)
-        {
-        InitializeCrashTestCase();
-
-        // Create imodel and acquire a briefcase
-        m_imodelName = GetTestiModelName().append("2");
-        auto db = CreateTestDb(m_imodelName);
-        iModelResult createResult = CreateiModel(db);
-        ASSERT_SUCCESS(createResult);
-        iModelInfoPtr imodelInfo = createResult.GetValue();
-
-        auto imodelConnection = CreateiModelConnection(imodelInfo);
-        auto briefcase = AcquireAndOpenBriefcase();
-
-        // ReplaceSeedFile
-        ReplaceSeedFile(imodelConnection);
-
-        // Open briefcase should fail without refresh
-        auto briefcaseName = briefcase->GetDgnDb().GetFileName();
-        briefcase->GetDgnDb().CloseDb();
-        auto db2 = DgnDb::OpenDgnDb(nullptr, briefcaseName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
-
-        SaveBriefcasePath(db2->GetFileName());
-        BreakHelper::SetBreakpoint(breakpoint);
-
-        // Refresh briefcase
-        auto refreshResult = s_client->RecoverBriefcase(db2, false)->GetResult();
-        }
-
     //---------------------------------------------------------------------------------------
     //@bsimethod                                   Algirdas.Mikoliunas             10/2016
     //---------------------------------------------------------------------------------------
     void ContinueAfterRecoverBriefcaseCrash(Utf8String crashTestCaseName)
         {
-        InitializeContinueTestCase();
-
         // Run test that crashes
         RunCrashTestCase(crashTestCaseName);
 
@@ -335,17 +292,6 @@ struct FailureTests : public iModelTestsBase
     //---------------------------------------------------------------------------------------
     //@bsimethod                                   Algirdas.Mikoliunas             10/2016
     //---------------------------------------------------------------------------------------
-    void CrashAcquireBriefcase(Breakpoints breakpoint)
-        {
-        InitializeCrashTestCase();
-
-        BreakHelper::SetBreakpoint(breakpoint);
-        auto briefcase1 = AcquireAndOpenBriefcase();
-        }
-
-    //---------------------------------------------------------------------------------------
-    //@bsimethod                                   Algirdas.Mikoliunas             10/2016
-    //---------------------------------------------------------------------------------------
     void ContinueAfterAcquireBriefcaseCrash(Utf8String crashTestCaseName)
         {
         InitializeContinueTestCase();
@@ -364,182 +310,261 @@ struct FailureTests : public iModelTestsBase
         auto pushResult = briefcase1->PullMergeAndPush(nullptr, false)->GetResult();
         EXPECT_SUCCESS(pushResult);
         }
-    //---------------------------------------------------------------------------------------
-    //@bsimethod                                   Algirdas.Mikoliunas             10/2016
-    //---------------------------------------------------------------------------------------
-    void CrashSeedFileReplace(Breakpoints breakpoint)
-        {
-        InitializeCrashTestCase();
-
-        auto imodelConnection = CreateiModelConnection(m_info);
-        auto briefcase = AcquireAndOpenBriefcase();
-        DgnDbR db = briefcase->GetDgnDb();
-
-        SaveBriefcasePath(db.GetFileName());
-        BreakHelper::SetBreakpoint(breakpoint);
-
-        // ReplaceSeedFile
-        ReplaceSeedFile(imodelConnection);
-        }
-
-    //---------------------------------------------------------------------------------------
-    //@bsimethod                                   Algirdas.Mikoliunas             10/2016
-    //---------------------------------------------------------------------------------------
-    void ContinueAfterCrashSeedFileReplace(Utf8String crashTestCaseName)
-        {
-        InitializeContinueTestCase();
-
-        // Run test that crashes
-        RunCrashTestCase(crashTestCaseName);
-
-        // Open dgndb
-        BeFileName filename = ReadBriefcaseName();
-        DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, filename, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
-        EXPECT_TRUE(db.IsValid());
-        
-        // ReplaceSeedFile
-        auto connectionResult = s_client->ConnectToiModel(s_projectId, m_info->GetId())->GetResult();
-        EXPECT_SUCCESS(connectionResult);
-        auto imodelConnection = connectionResult.GetValue();
-        ReplaceSeedFile(imodelConnection);
-        }
     };
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(FailureTests, ContinueExceptionAfterDownloadChangeSets)
+TEST_F(FailureTests, AfterDownloadChangeSets)
     {
-    ContinueAfterCrashPullMergeAndPush("CrashAfterDownloadChangeSets");
+    ContinueAfterCrashPullMergeAndPush("AfterDownloadChangeSets");
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(FailureTests, ContinueExceptionBeforeStartCreateChangeSet)
+TEST_F(FailureTests, BeforeStartCreateChangeSet)
     {
-    ContinueAfterCrashPullMergeAndPush("CrashBeforeStartCreateChangeSet");
+    ContinueAfterCrashPullMergeAndPush("BeforeStartCreateChangeSet");
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(FailureTests, ContinueExceptionAfterStartCreateChangeSet)
+TEST_F(FailureTests, AfterStartCreateChangeSet)
     {
-    ContinueAfterCrashPullMergeAndPush("CrashAfterStartCreateChangeSet");
+    ContinueAfterCrashPullMergeAndPush("AfterStartCreateChangeSet");
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(FailureTests, ContinueExceptionBeforePushChangeSetToServer)
+TEST_F(FailureTests, BeforePushChangeSetToServer)
     {
-    ContinueAfterCrashPullMergeAndPush("CrashBeforePushChangeSetToServer");
+    ContinueAfterCrashPullMergeAndPush("BeforePushChangeSetToServer");
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(FailureTests, ContinueExceptionAfterPushChangeSetToServer)
+TEST_F(FailureTests, AfterPushChangeSetToServer)
     {
-    ContinueAfterCrashPullMergeAndPush("CrashAfterPushChangeSetToServer");
+    ContinueAfterCrashPullMergeAndPush("AfterPushChangeSetToServer");
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(FailureTests, ContinueExceptionAfterFinishCreateChangeSet)
+TEST_F(FailureTests, AfterFinishCreateChangeSet)
     {
-    ContinueAfterCrashPullMergeAndPush("CrashAfterFinishCreateChangeSet");
+    ContinueAfterCrashPullMergeAndPush("AfterFinishCreateChangeSet");
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(FailureTests, ContinueClient_AfterCreateRequest)
+TEST_F(FailureTests, AfterCreateRequest)
     {
-    ContinueAfteriModelCrash("CrashClient_AfterCreateRequest");
+    ContinueAfteriModelCrash("AfterCreateRequest");
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(FailureTests, ContinueClient_AfterDownloadBriefcaseFile)
+TEST_F(FailureTests, AfterDownloadBriefcaseFile)
     {
-    ContinueAfterRecoverBriefcaseCrash("CrashClient_AfterDownloadBriefcaseFile");
+    ContinueAfterRecoverBriefcaseCrash("AfterDownloadBriefcaseFile");
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(FailureTests, ContinueClient_AfterDeleteBriefcase)
+TEST_F(FailureTests, AfterDeleteBriefcase)
     {
-    ContinueAfterRecoverBriefcaseCrash("CrashClient_AfterDeleteBriefcase");
+    ContinueAfterRecoverBriefcaseCrash("AfterDeleteBriefcase");
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(FailureTests, ContinueClient_AfterOpenBriefcaseForMerge)
+TEST_F(FailureTests, AfterOpenBriefcaseForMerge)
     {
-    ContinueAfterAcquireBriefcaseCrash("CrashClient_AfterOpenBriefcaseForMerge");
+    ContinueAfterAcquireBriefcaseCrash("AfterOpenBriefcaseForMerge");
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(FailureTests, ContinueClient_AfterMergeChangeSets)
+TEST_F(FailureTests, AfterMergeChangeSets)
     {
-    ContinueAfterAcquireBriefcaseCrash("CrashClient_AfterMergeChangeSets");
+    ContinueAfterAcquireBriefcaseCrash("AfterMergeChangeSets");
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(FailureTests, ContinueClient_AfterCreateBriefcaseInstance)
+TEST_F(FailureTests, AfterCreateBriefcaseInstance)
     {
-    ContinueAfterAcquireBriefcaseCrash("CrashClient_AfterCreateBriefcaseInstance");
+    ContinueAfterAcquireBriefcaseCrash("AfterCreateBriefcaseInstance");
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(FailureTests, ContinueiModelConnection_AfterCreateNewServerFile)
+TEST_F(FailureTests, AfterWriteiModelInfo)
     {
-    ContinueAfterCrashSeedFileReplace("CrashiModelConnection_AfterCreateNewServerFile");
+    ContinueAfterRecoverBriefcaseCrash("AfterWriteiModelInfo");
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(FailureTests, ContinueiModelConnection_AfterUploadServerFile)
+TEST_F(FailureTests, AfterCreateChangeSetRequest)
     {
-    ContinueAfterCrashSeedFileReplace("CrashiModelConnection_AfterUploadServerFile");
+    ContinueAfterCrashPullMergeAndPush("AfterCreateChangeSetRequest");
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(FailureTests, ContinueiModelConnection_AfterWriteiModelInfo)
+TEST_F(FailureTests, AfterUploadChangeSetFile)
     {
-    ContinueAfterRecoverBriefcaseCrash("CrashiModelConnection_AfterWriteiModelInfo");
+    ContinueAfterCrashPullMergeAndPush("AfterUploadChangeSetFile");
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                   Algirdas.Mikoliunas             10/2016
+//@bsiclass                                     Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(FailureTests, ContinueiModelConnection_AfterCreateChangeSetRequest)
+struct CrashTests : public IntegrationTestsBase
     {
-    ContinueAfterCrashPullMergeAndPush("CrashiModelConnection_AfterCreateChangeSetRequest");
-    }
+    iModelInfoPtr m_info = nullptr;
 
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Algirdas.Mikoliunas             10/2016
-//---------------------------------------------------------------------------------------
-TEST_F(FailureTests, ContinueiModelConnection_AfterUploadChangeSetFile)
-    {
-    ContinueAfterCrashPullMergeAndPush("CrashiModelConnection_AfterUploadChangeSetFile");
-    }
+    /*--------------------------------------------------------------------------------------+
+    //@bsimethod                                   Algirdas.Mikoliunas             02/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static void SetUpTestCase()
+        {
+        BeFileName customOutputDir = FailureTests::GetCustomOutputDirectory();
+        iModelHubHost& host = iModelHubHost::Instance();
+        host.SetCustomOutputDir(customOutputDir);
+
+        IntegrationTestsBase::SetUpTestCase();
+        }
+
+    /*--------------------------------------------------------------------------------------+
+    //@bsimethod                                   Algirdas.Mikoliunas             02/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static void TearDownTestCase()
+        {
+        iModelTestsBase::TearDownTestCase();
+
+        iModelHubHost& host = iModelHubHost::Instance();
+        host.SetCustomOutputDir(BeFileName());
+        }
+    
+    //---------------------------------------------------------------------------------------
+    //@bsimethod                                   Algirdas.Mikoliunas             10/2016
+    //---------------------------------------------------------------------------------------
+    void InitializeCrashTestCase()
+        {
+        auto iModelName = FailureTests::GetFailureTestiModelName();
+        auto iModelInfoResult = s_client->GetiModelByName(s_projectId, iModelName)->GetResult();
+        if (iModelInfoResult.IsSuccess())
+            m_info = iModelInfoResult.GetValue();
+        }
+
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Karolis.Dziedzelis              11/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    BriefcasePtr AcquireAndOpenBriefcase()
+        {
+        BriefcasePtr briefcase;
+        FailureTests::AcquireAndOpenBriefcase(briefcase, m_info, true);
+        return briefcase;
+        }
+
+    //---------------------------------------------------------------------------------------
+    //@bsimethod                                   Algirdas.Mikoliunas             10/2016
+    //---------------------------------------------------------------------------------------
+    void CrashPullMergeAndPush(Breakpoints breakpoint)
+        {
+        InitializeCrashTestCase();
+
+        //Prapare imodel and acquire briefcases
+        auto briefcase1 = AcquireAndOpenBriefcase();
+
+        //Create model in briefcase 1. This should also acquire locks automatically.
+        auto model1 = CreateModel("Model1", briefcase1->GetDgnDb());
+        briefcase1->GetDgnDb().SaveChanges();
+        FailureTests::SaveBriefcasePath(briefcase1->GetDgnDb().GetFileName());
+
+        // Break PullMergeAndPush
+        BreakHelper::SetBreakpoint(breakpoint);
+        auto pushResult = briefcase1->PullMergeAndPush(nullptr, false)->GetResult();
+        }
+    
+    //---------------------------------------------------------------------------------------
+    //@bsimethod                                   Algirdas.Mikoliunas             10/2016
+    //---------------------------------------------------------------------------------------
+    void CrashiModelCreateTestCase(Breakpoints breakpoint)
+        {
+        InitializeCrashTestCase();
+
+        //Create the seed file
+        auto imodelName = FailureTests::GetFailureTestiModelName();
+        iModelHubHelpers::DeleteiModelByName(s_client, imodelName);
+        DgnDbPtr db = CreateTestDb(imodelName);
+        EXPECT_TRUE(db.IsValid());
+
+        FailureTests::SaveBriefcasePath(db->GetFileName());
+        BreakHelper::SetBreakpoint(breakpoint);
+
+        //Upload the seed file to the server
+        auto createResult = s_client->CreateNewiModel(s_projectId, *db)->GetResult();
+        }
+    
+    //---------------------------------------------------------------------------------------
+    //@bsimethod                                   Algirdas.Mikoliunas             10/2016
+    //---------------------------------------------------------------------------------------
+    void CrashRecoverBriefcase(Breakpoints breakpoint)
+        {
+        InitializeCrashTestCase();
+
+        // Create imodel and acquire a briefcase
+        auto imodelName = FailureTests::GetFailureTestiModelName();
+        iModelHubHelpers::DeleteiModelByName(s_client, imodelName);
+
+        auto db = CreateTestDb(imodelName);
+        iModelResult createResult = CreateiModel(db);
+        ASSERT_SUCCESS(createResult);
+        m_info = createResult.GetValue();
+
+        auto imodelConnection = CreateiModelConnection(m_info);
+        auto briefcase = AcquireAndOpenBriefcase();
+
+        // Open briefcase should fail without refresh
+        auto briefcaseName = briefcase->GetDgnDb().GetFileName();
+        briefcase->GetDgnDb().CloseDb();
+        auto db2 = DgnDb::OpenDgnDb(nullptr, briefcaseName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+
+        FailureTests::SaveBriefcasePath(db2->GetFileName());
+        BreakHelper::SetBreakpoint(breakpoint);
+
+        // Refresh briefcase
+        auto refreshResult = s_client->RecoverBriefcase(db2, false)->GetResult();
+        }
+    
+    //---------------------------------------------------------------------------------------
+    //@bsimethod                                   Algirdas.Mikoliunas             10/2016
+    //---------------------------------------------------------------------------------------
+    void CrashAcquireBriefcase(Breakpoints breakpoint)
+        {
+        InitializeCrashTestCase();
+
+        BreakHelper::SetBreakpoint(breakpoint);
+        auto briefcase1 = AcquireAndOpenBriefcase();
+        }
+    };
 
 //---------------------------------------------------------------------------------------
 // Following test cases are used by other test cases to imitate crashed application
@@ -548,7 +573,7 @@ TEST_F(FailureTests, ContinueiModelConnection_AfterUploadChangeSetFile)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(FailureTests, CrashAfterDownloadChangeSets)
+TEST_F(CrashTests, AfterDownloadChangeSets)
     {
     CrashPullMergeAndPush(Breakpoints::AfterDownloadChangeSets);
     }
@@ -556,7 +581,7 @@ TEST_F(FailureTests, CrashAfterDownloadChangeSets)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(FailureTests, CrashBeforeStartCreateChangeSet)
+TEST_F(CrashTests, BeforeStartCreateChangeSet)
     {
     CrashPullMergeAndPush(Breakpoints::BeforeStartCreateChangeSet);
     }
@@ -564,7 +589,7 @@ TEST_F(FailureTests, CrashBeforeStartCreateChangeSet)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(FailureTests, CrashAfterStartCreateChangeSet)
+TEST_F(CrashTests, AfterStartCreateChangeSet)
     {
     CrashPullMergeAndPush(Breakpoints::AfterStartCreateChangeSet);
     }
@@ -572,7 +597,7 @@ TEST_F(FailureTests, CrashAfterStartCreateChangeSet)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(FailureTests, CrashBeforePushChangeSetToServer)
+TEST_F(CrashTests, BeforePushChangeSetToServer)
     {
     CrashPullMergeAndPush(Breakpoints::BeforePushChangeSetToServer);
     }
@@ -580,7 +605,7 @@ TEST_F(FailureTests, CrashBeforePushChangeSetToServer)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(FailureTests, CrashAfterPushChangeSetToServer)
+TEST_F(CrashTests, AfterPushChangeSetToServer)
     {
     CrashPullMergeAndPush(Breakpoints::AfterPushChangeSetToServer);
     }
@@ -588,7 +613,7 @@ TEST_F(FailureTests, CrashAfterPushChangeSetToServer)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(FailureTests, CrashAfterFinishCreateChangeSet)
+TEST_F(CrashTests, AfterFinishCreateChangeSet)
     {
     CrashPullMergeAndPush(Breakpoints::AfterFinishCreateChangeSet);
     }
@@ -596,7 +621,7 @@ TEST_F(FailureTests, CrashAfterFinishCreateChangeSet)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(FailureTests, CrashClient_AfterCreateRequest)
+TEST_F(CrashTests, AfterCreateRequest)
     {
     CrashiModelCreateTestCase(Breakpoints::Client_AfterCreateRequest);
     }
@@ -604,7 +629,7 @@ TEST_F(FailureTests, CrashClient_AfterCreateRequest)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(FailureTests, CrashClient_AfterDownloadBriefcaseFile)
+TEST_F(CrashTests, AfterDownloadBriefcaseFile)
     {
     CrashRecoverBriefcase(Breakpoints::Client_AfterDownloadBriefcaseFile);
     }
@@ -612,7 +637,7 @@ TEST_F(FailureTests, CrashClient_AfterDownloadBriefcaseFile)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(FailureTests, CrashClient_AfterDeleteBriefcase)
+TEST_F(CrashTests, AfterDeleteBriefcase)
     {
     CrashRecoverBriefcase(Breakpoints::Client_AfterDeleteBriefcase);
     }
@@ -620,7 +645,7 @@ TEST_F(FailureTests, CrashClient_AfterDeleteBriefcase)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(FailureTests, CrashClient_AfterOpenBriefcaseForMerge)
+TEST_F(CrashTests, AfterOpenBriefcaseForMerge)
     {
     CrashAcquireBriefcase(Breakpoints::Client_AfterOpenBriefcaseForMerge);
     }
@@ -628,7 +653,7 @@ TEST_F(FailureTests, CrashClient_AfterOpenBriefcaseForMerge)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(FailureTests, CrashClient_AfterMergeChangeSets)
+TEST_F(CrashTests, AfterMergeChangeSets)
     {
     CrashAcquireBriefcase(Breakpoints::Client_AfterMergeChangeSets);
     }
@@ -636,7 +661,7 @@ TEST_F(FailureTests, CrashClient_AfterMergeChangeSets)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(FailureTests, CrashClient_AfterCreateBriefcaseInstance)
+TEST_F(CrashTests, AfterCreateBriefcaseInstance)
     {
     CrashAcquireBriefcase(Breakpoints::Client_AfterCreateBriefcaseInstance);
     }
@@ -644,23 +669,7 @@ TEST_F(FailureTests, CrashClient_AfterCreateBriefcaseInstance)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(FailureTests, CrashiModelConnection_AfterCreateNewServerFile)
-    {
-    CrashSeedFileReplace(Breakpoints::iModelConnection_AfterCreateNewServerFile);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             10/2016
-//---------------------------------------------------------------------------------------
-TEST_F(FailureTests, CrashiModelConnection_AfterUploadServerFile)
-    {
-    CrashSeedFileReplace(Breakpoints::iModelConnection_AfterUploadServerFile);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             10/2016
-//---------------------------------------------------------------------------------------
-TEST_F(FailureTests, CrashiModelConnection_AfterWriteiModelInfo)
+TEST_F(CrashTests, AfterWriteiModelInfo)
     {
     CrashRecoverBriefcase(Breakpoints::iModelConnection_AfterWriteiModelInfo);
     }
@@ -668,7 +677,7 @@ TEST_F(FailureTests, CrashiModelConnection_AfterWriteiModelInfo)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(FailureTests, CrashiModelConnection_AfterCreateChangeSetRequest)
+TEST_F(CrashTests, AfterCreateChangeSetRequest)
     {
     CrashPullMergeAndPush(Breakpoints::iModelConnection_AfterCreateChangeSetRequest);
     }
@@ -676,7 +685,7 @@ TEST_F(FailureTests, CrashiModelConnection_AfterCreateChangeSetRequest)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(FailureTests, CrashiModelConnection_AfterUploadChangeSetFile)
+TEST_F(CrashTests, AfterUploadChangeSetFile)
     {
     CrashPullMergeAndPush(Breakpoints::iModelConnection_AfterUploadChangeSetFile);
     }

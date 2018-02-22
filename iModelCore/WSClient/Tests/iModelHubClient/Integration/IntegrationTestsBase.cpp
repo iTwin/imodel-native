@@ -61,7 +61,6 @@ void InitializeTests()
     InitLogging();
 
     iModelHubHost& host = iModelHubHost::Instance();
-    host.CleanOutputDirectory();
     BeFileName temp = host.GetTempDirectory();
     BeFileName assets = host.GetDgnPlatformAssetsDirectory();
     BeSQLite::BeSQLiteLib::Initialize(temp);
@@ -186,12 +185,10 @@ Utf8String IntegrationTestsBase::GetTestiModelName()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Karolis.Dziedzelis              11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName IntegrationTestsBase::OutputDir() const
+BeFileName IntegrationTestsBase::OutputDir()
     {
-    BeFileName outputDir;
-    BeTest::GetHost().GetOutputRoot(outputDir);
-    outputDir = outputDir.AppendToPath(BeFileName(GetTestInfo().test_case_name()));
-    return outputDir;
+    iModelHubHost& host = iModelHubHost::Instance();
+    return host.GetOutputDirectory();
     }
 
 /*--------------------------------------------------------------------------------------+
