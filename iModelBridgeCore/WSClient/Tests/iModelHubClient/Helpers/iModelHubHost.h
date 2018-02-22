@@ -15,6 +15,7 @@ struct iModelHubHost
     {
     private:
         iModelHubHostImpl* m_pimpl;
+        BeFileName m_customOutputDir;
         iModelHubHost();
         ~iModelHubHost();
     public:
@@ -28,6 +29,7 @@ struct iModelHubHost
         BeFileName BuildDbFileName(Utf8StringCR baseName);
         Dgn::DgnDbPtr CreateTestDb(Utf8StringCR baseName);
 
+        void SetCustomOutputDir(BeFileName outputDir);
         void SetRepositoryAdmin(Dgn::DgnPlatformLib::Host::RepositoryAdmin* admin);
     };
 END_BENTLEY_IMODELHUB_UNITTESTS_NAMESPACE

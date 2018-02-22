@@ -20,6 +20,9 @@ iModelInfoPtr iModelTestsBase::s_info = nullptr;
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelTestsBase::SetUpTestCase()
     {
+    iModelHubHost& host = iModelHubHost::Instance();
+    host.CleanOutputDirectory();
+
     IntegrationTestsBase::SetUpTestCase();
     ASSERT_SUCCESS(iModelHubHelpers::DeleteiModelByName(s_client, TestCaseiModelName()));
 

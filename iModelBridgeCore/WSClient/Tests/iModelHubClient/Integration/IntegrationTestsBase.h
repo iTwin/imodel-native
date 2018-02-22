@@ -36,7 +36,7 @@ struct IntegrationTestsBase : public ::testing::Test
 
         virtual Utf8String GetTestiModelName();
         Dgn::DgnDbPtr CreateTestDb();
-        BeFileName OutputDir() const;
+        static BeFileName OutputDir();
         Utf8String TestCodeName(int number = 0) const;
         ClientPtr CreateNonAdminClient() const;
         static IRepositoryManagerP _GetRepositoryManager(DgnDbR db);
