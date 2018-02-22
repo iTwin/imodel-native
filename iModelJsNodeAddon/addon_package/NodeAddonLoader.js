@@ -1,5 +1,5 @@
 /*---------------------------------------------------------------------------------------------
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  *--------------------------------------------------------------------------------------------*/
 /** Loads the appropriate version of the default imodeljs-node addon. In order to use this class, an app must have an NPM dependency
  * on this package (imodeljs-nodeaddon). This package, in turn, depends on various versions of the default addon. When the app is NPM-installed,
@@ -10,7 +10,7 @@ class NodeAddonLoader {
 
     /** Loads the appropriate version of the addon
      * KEEP THIS CONSISTENT WITH ../MakePackages.py
-     * AND WITH imodeljs-core/source/backend/NodeAddonRegistry.ts.
+     * AND WITH imodeljs-core/source/backend/AddonRegistry.ts.
      */
     static loadAddon() {
 

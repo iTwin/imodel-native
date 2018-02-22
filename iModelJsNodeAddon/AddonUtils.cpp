@@ -76,6 +76,56 @@ public:
     AddonHost() { BeAssertFunctions::SetBeAssertHandler(&AddonHost::OnAssert); }
 };
 
+
+struct AddonLoggingShim : NativeLogging::Provider::ILogProvider
+{
+    int STDCALL_ATTRIBUTE Initialize() override {return SUCCESS;}
+
+    int STDCALL_ATTRIBUTE Uninitialize() override {return SUCCESS;}
+
+    int STDCALL_ATTRIBUTE CreateLogger(WCharCP nameSpace, NativeLogging::Provider::ILogProviderContext** ppContext) override
+        {
+        *ppContext = reinterpret_cast<NativeLogging::Provider::ILogProviderContext*>(new WString(nameSpace));
+        return SUCCESS;
+        }
+
+    int STDCALL_ATTRIBUTE DestroyLogger(NativeLogging::Provider::ILogProviderContext* pContext) override
+        {
+        WString* ns = reinterpret_cast<WString*>(pContext);
+        if(nullptr != ns)
+            delete ns;
+        return SUCCESS;
+        }
+
+    int STDCALL_ATTRIBUTE SetOption(WCharCP attribName, WCharCP attribValue) override {BeAssert(false); return SUCCESS;}
+
+    int STDCALL_ATTRIBUTE GetOption(WCharCP attribName, WCharP attribValue, uint32_t valueSize) override {return ERROR;}
+
+    void STDCALL_ATTRIBUTE LogMessage(NativeLogging::Provider::ILogProviderContext* context, NativeLogging::SEVERITY sev, WCharCP msg) override
+        {
+        LogMessage(context, sev, Utf8String(msg).c_str());
+        }
+
+    int  STDCALL_ATTRIBUTE SetSeverity(WCharCP nameSpace, NativeLogging::SEVERITY severity) override
+        {
+        BeAssert(false && "only the app (in TypeScript) sets severities");
+        return ERROR;
+        }
+
+    void STDCALL_ATTRIBUTE LogMessage(NativeLogging::Provider::ILogProviderContext* context, NativeLogging::SEVERITY sev, Utf8CP msg) override
+        {
+        WString* ns = reinterpret_cast<WString*>(context);
+        AddonUtils::LogMessage(Utf8String(*ns).c_str(), sev, msg);
+        }
+
+    bool STDCALL_ATTRIBUTE IsSeverityEnabled(NativeLogging::Provider::ILogProviderContext* context, NativeLogging::SEVERITY sev) override
+        {
+        WString* ns = reinterpret_cast<WString*>(context);
+        return AddonUtils::IsSeverityEnabled(Utf8String(*ns).c_str(), sev);
+        }
+
+};
+
 END_UNNAMED_NAMESPACE
 
 //---------------------------------------------------------------------------------------
@@ -83,19 +133,7 @@ END_UNNAMED_NAMESPACE
 //---------------------------------------------------------------------------------------
 void AddonUtils::InitLogging()
     {
-#if defined(BENTLEYCONFIG_OS_WINDOWS) && !defined(BENTLEYCONFIG_OS_WINRT)
-    Utf8CP configFileEnv = getenv("CONFIG_OPTION_CONFIG_FILE");
-    // don't enable logging by default. Instead clients should set up the config file if they want logging.
-    if (Utf8String::IsNullOrEmpty(configFileEnv))
-        return;
-
-    BeFileName configPathname(configFileEnv, true);
-    if (!BeFileName::DoesPathExist(configPathname.c_str()))
-        return;
-
-    NativeLogging::LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, configPathname.GetName());
-    NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
-#endif
+    NativeLogging::LoggingConfig::ActivateProvider(new AddonLoggingShim());
     }
 
 //---------------------------------------------------------------------------------------
@@ -512,14 +550,59 @@ void HexStrSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
 
     if (numValue.GetValueType() != DbValueType::IntegerVal)
         {
-        ctx.SetResultError("Argument of function HexStr is expected to be a number.");
+        ctx.SetResultError("Argument of function HEXSTR is expected to be an integral number.");
+        return;
+        }
+
+    static const size_t stringBufferLength = 19;
+    Utf8Char stringBuffer[stringBufferLength];
+    BeStringUtilities::FormatUInt64(stringBuffer, stringBufferLength, numValue.GetValueUInt64(), HexFormatOptions::IncludePrefix);
+    ctx.SetResultText(stringBuffer, (int) strlen(stringBuffer), Context::CopyData::Yes);
+    }
+
+//************************************************************************************
+// StrSqlFunction
+//************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      02/18
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+StrSqlFunction* StrSqlFunction::s_singleton = nullptr;
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      02/18
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+StrSqlFunction& StrSqlFunction::GetSingleton()
+    {
+    if (s_singleton == nullptr)
+        s_singleton = new StrSqlFunction();
+
+    return *s_singleton;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      02/18
+//+---------------+---------------+---------------+---------------+---------------+------
+void StrSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
+    {
+    DbValue const& numValue = args[0];
+    if (numValue.IsNull())
+        {
+        ctx.SetResultNull();
+        return;
+        }
+
+    if (numValue.GetValueType() != DbValueType::IntegerVal)
+        {
+        ctx.SetResultError("Argument of function STR is expected to be an integral number.");
         return;
         }
 
     static const size_t stringBufferLength = std::numeric_limits<uint64_t>::digits + 1; //+1 for the trailing 0 character
 
     Utf8Char stringBuffer[stringBufferLength]; //+1 for the trailing 0 character;
-    BeStringUtilities::FormatUInt64(stringBuffer, stringBufferLength, numValue.GetValueUInt64(), (HexFormatOptions) ((int) HexFormatOptions::IncludePrefix));
-
-    ctx.SetResultText(stringBuffer, strlen(stringBuffer), Context::CopyData::Yes);
+    BeStringUtilities::FormatUInt64(stringBuffer, numValue.GetValueUInt64());
+    ctx.SetResultText(stringBuffer, (int) strlen(stringBuffer), Context::CopyData::Yes);
     }

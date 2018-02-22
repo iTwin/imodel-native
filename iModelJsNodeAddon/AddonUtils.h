@@ -36,8 +36,9 @@ private:
     static BeSQLite::DbResult ProcessSchemaChangeSets(DgnDbPtr& dgndb, bvector<DgnRevisionCP> const& revisions, RevisionProcessOption processOption);
     static BeSQLite::DbResult ProcessDataChangeSets(DgnDbR dgndb, bvector<DgnRevisionCP> const& revisions, RevisionProcessOption processOption);
 
-public:
     static void GetRowAsJson(Json::Value &json, BeSQLite::EC::ECSqlStatement &);
+
+public:
     static void GetECValuesCollectionAsJson(Json::Value &json, ECN::ECValuesCollectionCR);
     static ECN::ECClassCP GetClassFromInstance(BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
     static BeSQLite::EC::ECInstanceId GetInstanceIdFromInstance(BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
@@ -92,6 +93,9 @@ public:
     static void ThrowJsException(Utf8CP msg);
     static Json::Value ExecuteTest(DgnDbR, Utf8StringCR testName, Utf8StringCR params);
     static NativeLogging::ILogger &GetLogger();
+
+    static void LogMessage(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg);
+    static bool IsSeverityEnabled(Utf8CP category, NativeLogging::SEVERITY sev);
 };
 
 //=======================================================================================
@@ -110,6 +114,24 @@ struct HexStrSqlFunction final : ScalarFunction
         ~HexStrSqlFunction() {}
 
         static HexStrSqlFunction& GetSingleton();
+    };
+
+//=======================================================================================
+//! TEXT Str(number INT)
+// @bsiclass                                                   Krischan.Eberle       02/18
+//=======================================================================================
+struct StrSqlFunction final : ScalarFunction
+    {
+    private:
+        static StrSqlFunction* s_singleton;  //no need to release a static non-POD variable (Bentley C++ coding standards)
+
+        StrSqlFunction() : ScalarFunction("Str", 1, DbValueType::TextVal) {}
+        void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
+
+    public:
+        ~StrSqlFunction() {}
+
+        static StrSqlFunction& GetSingleton();
     };
 
 END_BENTLEY_DGN_NAMESPACE

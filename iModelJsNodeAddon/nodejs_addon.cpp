@@ -21,6 +21,7 @@
 #include <rapidjson/rapidjson.h>
 #include "ECPresentationUtils.h"
 #include <Bentley/Desktop/FileSystem.h>
+#include <Bentley/BeThread.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -200,7 +201,10 @@ struct AddonECDb : Napi::ObjectWrap<AddonECDb>
             RETURN_IF_HAD_EXCEPTION
             const DbResult status = AddonUtils::CreateECDb(GetECDb(), BeFileName(dbName.c_str(), true));
             if (BE_SQLITE_OK == status)
+                {
                 GetECDb().AddFunction(HexStrSqlFunction::GetSingleton());
+                GetECDb().AddFunction(StrSqlFunction::GetSingleton());
+                }
 
             return Napi::Number::New(Env(), (int) status);
             }
@@ -213,7 +217,10 @@ struct AddonECDb : Napi::ObjectWrap<AddonECDb>
 
             const DbResult status = AddonUtils::OpenECDb(GetECDb(), BeFileName(dbName.c_str(), true), (Db::OpenMode) mode);
             if (BE_SQLITE_OK == status)
+                {
                 GetECDb().AddFunction(HexStrSqlFunction::GetSingleton());
+                GetECDb().AddFunction(StrSqlFunction::GetSingleton());
+                }
 
             return Napi::Number::New(Env(), (int) status);
             }
@@ -223,6 +230,7 @@ struct AddonECDb : Napi::ObjectWrap<AddonECDb>
             if (m_ecdb != nullptr)
                 {
                 m_ecdb->RemoveFunction(HexStrSqlFunction::GetSingleton());
+                m_ecdb->RemoveFunction(StrSqlFunction::GetSingleton());
                 m_ecdb->CloseDb();
                 m_ecdb = nullptr;
                 }
@@ -439,6 +447,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
 
         TearDownPresentationManager();
         m_dgndb->RemoveFunction(HexStrSqlFunction::GetSingleton());
+        m_dgndb->RemoveFunction(StrSqlFunction::GetSingleton());
         AddonUtils::CloseDgnDb(*m_dgndb);
         AddonAppData::Remove(GetDgnDb());
         m_dgndb = nullptr;
@@ -456,6 +465,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         SetupPresentationManager();
         AddonAppData::Add(*this);
         m_dgndb->AddFunction(HexStrSqlFunction::GetSingleton());
+        m_dgndb->AddFunction(StrSqlFunction::GetSingleton());
         }
 
     static AddonDgnDb* From(DgnDbR db)
@@ -1317,8 +1327,7 @@ public:
         InstanceMethod("bindDateTime", &AddonECSqlBinder::BindDateTime),
         InstanceMethod("bindDouble", &AddonECSqlBinder::BindDouble),
         InstanceMethod("bindId", &AddonECSqlBinder::BindId),
-        InstanceMethod("bindInt", &AddonECSqlBinder::BindInt),
-        InstanceMethod("bindInt64", &AddonECSqlBinder::BindInt64),
+        InstanceMethod("bindInteger", &AddonECSqlBinder::BindInteger),
         InstanceMethod("bindPoint2d", &AddonECSqlBinder::BindPoint2d),
         InstanceMethod("bindPoint3d", &AddonECSqlBinder::BindPoint3d),
         InstanceMethod("bindString", &AddonECSqlBinder::BindString),
@@ -1414,22 +1423,14 @@ public:
         return Napi::Number::New(Env(), (int) ToDbResult(stat));
         }
 
-    Napi::Value BindInt(const Napi::CallbackInfo& info)
-        {
-        REQUIRE_ARGUMENT_INTEGER(0, val);
-
-        const ECSqlStatus stat = GetBinder().BindInt((int) val);
-        return Napi::Number::New(Env(), (int) ToDbResult(stat));
-        }
-
-    Napi::Value BindInt64(const Napi::CallbackInfo& info)
+    Napi::Value BindInteger(const Napi::CallbackInfo& info)
         {
         if (info.Length() == 0)
-            Napi::TypeError::New(info.Env(), "BindInt64 expects a string or number").ThrowAsJavaScriptException();
+            Napi::TypeError::New(info.Env(), "BindInteger expects a string or number").ThrowAsJavaScriptException();
         
         Napi::Value val = info[0];
         if (!val.IsNumber() && !val.IsString())
-            Napi::TypeError::New(info.Env(), "BindInt64 expects a string or number").ThrowAsJavaScriptException();
+            Napi::TypeError::New(info.Env(), "BindInteger expects a string or number").ThrowAsJavaScriptException();
 
         int64_t int64Val;
         if (val.IsNumber())
@@ -1437,15 +1438,29 @@ public:
         else
             {
             Utf8String strVal(val.ToString().Utf8Value().c_str());
-            if (BeStringUtilities::HasHexPrefix(strVal.c_str()))
+            if (strVal.empty())
+                Napi::TypeError::New(info.Env(), "Integral string passed to BindInteger must not be empty.").ThrowAsJavaScriptException();
+
+            const bool isNegativeNumber = strVal[0] == '-';
+            Utf8CP positiveNumberStr = isNegativeNumber ? strVal.c_str() + 1 : strVal.c_str();
+            uint64_t uVal = 0;
+            if (SUCCESS != BeStringUtilities::ParseUInt64(uVal, positiveNumberStr)) //also supports hex strings
                 {
-                BentleyStatus hexParseStat = SUCCESS;
-                int64Val = (int64_t) BeStringUtilities::ParseHex(strVal.c_str(), &hexParseStat);
-                if (SUCCESS != hexParseStat)
-                    return Napi::Number::New(Env(), (int) BE_SQLITE_ERROR);
+                Utf8String error;
+                error.Sprintf("BindInteger failed. Could not parse string %s to a valid integer.", strVal.c_str());
+                Napi::TypeError::New(info.Env(), error.c_str()).ThrowAsJavaScriptException();
                 }
-            else
-                sscanf(strVal.c_str(), "%" SCNi64, &int64Val);
+
+            if (isNegativeNumber && uVal > (uint64_t) std::numeric_limits<int64_t>::max())
+                {
+                Utf8String error;
+                error.Sprintf("BindInteger failed. Number in string %s is too large to fit into a signed 64 bit integer value.", strVal.c_str());
+                Napi::TypeError::New(info.Env(), error.c_str()).ThrowAsJavaScriptException();
+                }
+
+            int64Val = uVal;
+            if (isNegativeNumber)
+                int64Val *= -1;
             }
 
         const ECSqlStatus stat = GetBinder().BindInt64(int64Val);
@@ -2197,8 +2212,7 @@ public:
           InstanceMethod("step", &AddonECSqlStatement::Step),
           InstanceMethod("stepForInsert", &AddonECSqlStatement::StepForInsert),
           InstanceMethod("getColumnCount", &AddonECSqlStatement::GetColumnCount),
-          InstanceMethod("getValue", &AddonECSqlStatement::GetValue),
-          InstanceMethod("getRow", &AddonECSqlStatement::GetRow),
+          InstanceMethod("getValue", &AddonECSqlStatement::GetValue)
         });
 
         exports.Set("AddonECSqlStatement", t);
@@ -2348,16 +2362,6 @@ public:
         return AddonECSqlValue::New(info.Env(), val, *m_stmt->GetECDb());
         }
 
-    //! @deprecated Use AddonECSqlStatement::GetValue instead
-    Napi::Value GetRow(const Napi::CallbackInfo& info)
-        {
-        MUST_HAVE_M_STMT;
-        Json::Value rowJson(Json::objectValue);
-        AddonUtils::GetRowAsJson(rowJson, *m_stmt);
-        // *** NEEDS WORK: Get the adapter to set the js object's properties directly
-        return Napi::String::New(Env(), rowJson.ToString().c_str());
-        }
-
     static DbResult ToDbResult(ECSqlStatus status) 
         {
         if (status.IsSuccess())
@@ -2475,6 +2479,10 @@ struct AddonECPresentationManager : Napi::ObjectWrap<AddonECPresentationManager>
     };
 
 static Napi::Env* s_env;
+static Napi::ObjectReference s_logger;
+static intptr_t s_mainThreadId;
+struct LogMessage {Utf8String m_category; Utf8String m_message; NativeLogging::SEVERITY m_severity;};
+static bvector<LogMessage>* s_deferredLogging;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
@@ -2484,8 +2492,146 @@ static void ThrowJsExceptionOnAssert(WCharCP msg, WCharCP file, unsigned line, B
     Napi::Error::New(*s_env, Utf8PrintfString("Assertion Failure: %ls (%ls:%d)\n", msg, file, line).c_str()).ThrowAsJavaScriptException();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static Napi::Value GetLogger(Napi::CallbackInfo const& info)
+    {
+    return s_logger.Value();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void SetLogger(Napi::CallbackInfo const& info)
+    {
+    s_logger = Napi::ObjectReference::New(info[0].ToObject());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void logMessageToJs(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg)
+    {
+    auto env = IModelJsAddon::s_logger.Env();
+    Napi::HandleScope scope(env);
+
+    Utf8CP fname = (sev <= NativeLogging::LOG_TRACE)?   "logTrace": 
+                   (sev == NativeLogging::LOG_INFO)?    "logInfo":
+                   (sev == NativeLogging::LOG_WARNING)? "logWarning":
+                                                        "logError";
+
+    auto method = IModelJsAddon::s_logger.Get(fname).As<Napi::Function>();
+    if (method == env.Undefined())
+        {
+        Napi::Error::New(*IModelJsAddon::s_env, "Invalid Logger").ThrowAsJavaScriptException();
+        return;
+        }
+
+    auto catJS = Napi::String::New(env, category);
+    auto msgJS = Napi::String::New(env, msg);
+
+    method({catJS, msgJS});
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool callIsLogLevelEnabledJs(Utf8CP category, NativeLogging::SEVERITY sev)
+    {
+    auto env = IModelJsAddon::s_logger.Env();
+    Napi::HandleScope scope(env);
+
+    auto method = IModelJsAddon::s_logger.Get("isEnabled").As<Napi::Function>();
+    if (method == env.Undefined())
+        {
+        Napi::Error::New(*IModelJsAddon::s_env, "Invalid Logger").ThrowAsJavaScriptException();
+        return true;
+        }
+    
+    auto catJS = Napi::String::New(env, category);
+
+    int llevel = (sev <= NativeLogging::LOG_TRACE)?   0: 
+                 (sev == NativeLogging::LOG_INFO)?    1:
+                 (sev == NativeLogging::LOG_WARNING)? 2:
+                                                      3;
+
+    auto levelJS = Napi::Number::New(env, llevel);
+
+    return method({catJS, levelJS}).ToBoolean();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void deferLogging(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg)
+    {
+    BeSystemMutexHolder ___;
+
+    if (!s_deferredLogging)
+        s_deferredLogging = new bvector<LogMessage>();
+
+    LogMessage lm;
+    lm.m_category = category;
+    lm.m_message = msg;
+    lm.m_severity = sev;
+    s_deferredLogging->push_back(lm);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void doDeferredLogging()
+    {
+    BeSystemMutexHolder ___;
+    if (!s_deferredLogging)
+        return;
+
+    for (auto const& lm : *s_deferredLogging)
+        {
+        logMessageToJs(lm.m_category.c_str(), lm.m_severity, lm.m_message.c_str());
+        }
+
+    delete s_deferredLogging;
+    s_deferredLogging = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isMainThread()
+    {
+    return BeThreadUtilities::GetCurrentThreadId() == IModelJsAddon::s_mainThreadId;
+    }
+
 } // namespace IModelJsAddon
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void AddonUtils::LogMessage(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg)
+    {
+    if (IModelJsAddon::s_logger.IsEmpty() || !IModelJsAddon::isMainThread())
+        {
+        IModelJsAddon::deferLogging(category, sev, msg);
+        return;
+        }
+    
+    IModelJsAddon::doDeferredLogging();
+    IModelJsAddon::logMessageToJs(category, sev, msg);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AddonUtils::IsSeverityEnabled(Utf8CP category, NativeLogging::SEVERITY sev)
+    {
+    if (IModelJsAddon::s_logger.IsEmpty() || !IModelJsAddon::isMainThread())
+        return true;
+    
+    IModelJsAddon::doDeferredLogging();
+    return IModelJsAddon::callIsLogLevelEnabledJs(category, sev);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      01/18
@@ -2506,6 +2652,8 @@ static Napi::Object iModelJsAddonRegisterModule(Napi::Env env, Napi::Object expo
 
     BeFileName addondir = Desktop::FileSystem::GetLibraryDir();
 
+    IModelJsAddon::s_mainThreadId = BeThreadUtilities::GetCurrentThreadId();
+
     AddonUtils::Initialize(addondir, IModelJsAddon::ThrowJsExceptionOnAssert);
     IModelJsAddon::AddonDgnDb::Init(env, exports);
     IModelJsAddon::AddonECDb::Init(env, exports);
@@ -2520,6 +2668,7 @@ static Napi::Object iModelJsAddonRegisterModule(Napi::Env env, Napi::Object expo
     exports.DefineProperties(
         {
         Napi::PropertyDescriptor::Value("version", Napi::String::New(env, PACKAGE_VERSION), PROPERTY_ATTRIBUTES),
+        Napi::PropertyDescriptor::Accessor("logger", &IModelJsAddon::GetLogger, &IModelJsAddon::SetLogger),
         });
 
     return exports;

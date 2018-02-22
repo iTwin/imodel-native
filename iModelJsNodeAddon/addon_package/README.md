@@ -8,7 +8,7 @@ An app that depends on and uses imodeljs-backenod must load the addon and then r
 
 ``` ts
 import { NodeAddonLoader } from "@bentley/imodeljs-nodeaddon/NodeAddonLoader";
-import { NodeAddonRegistry } from "@bentley/imodeljs-backend/lib/backend/NodeAddonRegistry";
+import { AddonRegistry } from "@bentley/imodeljs-backend/lib/backend/AddonRegistry";
 
-NodeAddonRegistry.registerAddon(NodeAddonLoader.loadAddon());
+AddonRegistry.registerAddon(NodeAddonLoader.loadAddon());
 ```

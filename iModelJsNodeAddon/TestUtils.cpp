@@ -9,8 +9,16 @@
 
 BEGIN_UNNAMED_NAMESPACE
 
-static Json::Value lookAtVolume(DgnDbR db, Utf8String params)
+struct TestViewport : DgnViewport
 {
+	BSIRect m_rect;
+	BSIRect _GetViewRect() const override { return m_rect; }
+	TestViewport(BSIRect rect) : DgnViewport(nullptr) { m_rect = rect; }
+	double _GetCameraFrustumNearScaleLimit() const override { return 0.003; }
+};
+
+static Json::Value lookAtVolume(DgnDbR db, Utf8String params)
+	{
 	auto props = Json::Value::From(params);
 	auto viewProps = props["view"];
 	auto idJsonVal = viewProps[DgnElement::json_id()];
@@ -25,68 +33,77 @@ static Json::Value lookAtVolume(DgnDbR db, Utf8String params)
 
 	view->LookAtVolume(JsonUtils::ToDRange3d(props["volume"]), &aspect, &margin);
 	return view->ToJson();
-}
-
-static Json::Value lookAtUsingLensAngle(DgnDbR db, Utf8String params)
-{
-	auto props = Json::Value::From(params);
-	auto viewProps = props["view"];
-	auto idJsonVal = viewProps[DgnElement::json_id()];
-	DgnElementId vId(BeInt64Id::FromString(idJsonVal.asCString()).GetValue());
-	auto viewOrig = db.Elements().Get<SpatialViewDefinition>(vId);
-	auto view = viewOrig->MakeCopy<SpatialViewDefinition>();
-	view->FromJson(viewProps);
-
-	auto eye = JsonUtils::ToDPoint3d(props["eye"]);
-	auto target = JsonUtils::ToDPoint3d(props["target"]);
-	auto up = JsonUtils::ToDVec3d(props["up"]);
-	auto lens = JsonUtils::ToAngle(props["lens"]);
-	double front = props["front"].asDouble();
-	double back = props["back"].asDouble();
-
-	view->LookAtUsingLensAngle(eye, target, up, lens, &front, &back);
-	return view->ToJson();
-}
-
-static Json::Value rotateCameraLocal(DgnDbR db, Utf8String params)
-{
-	auto props = Json::Value::From(params);
-	auto viewProps = props["view"];
-	auto idJsonVal = viewProps[DgnElement::json_id()];
-	DgnElementId vId(BeInt64Id::FromString(idJsonVal.asCString()).GetValue());
-	auto viewOrig = db.Elements().Get<SpatialViewDefinition>(vId);
-	auto view = viewOrig->MakeCopy<SpatialViewDefinition>();
-	view->FromJson(viewProps);
-
-	auto angle = props["angle"].asDouble();
-	auto axis  = JsonUtils::ToDVec3d(props["axis"]);
-	DPoint3d about;
-	DPoint3dP aboutP = nullptr;
-	if (props.isMember("about")){
-		about = JsonUtils::ToDPoint3d(props["about"]);
-		aboutP = &about;
 	}
 
-	view->RotateCameraLocal(angle, axis, aboutP);
-	return view->ToJson();
-}
+static Json::Value lookAtUsingLensAngle(DgnDbR db, Utf8String params)
+	{
+		auto props = Json::Value::From(params);
+		auto viewProps = props["view"];
+		auto idJsonVal = viewProps[DgnElement::json_id()];
+		DgnElementId vId(BeInt64Id::FromString(idJsonVal.asCString()).GetValue());
+		auto viewOrig = db.Elements().Get<SpatialViewDefinition>(vId);
+		auto view = viewOrig->MakeCopy<SpatialViewDefinition>();
+		view->FromJson(viewProps);
 
-static Json::Value turnCameraOn(DgnDbR db, Utf8String params)
-{
-	auto props = Json::Value::From(params);
-	auto viewProps = props["view"];
-	auto idJsonVal = viewProps[DgnElement::json_id()];
-	DgnViewId vId(BeInt64Id::FromString(idJsonVal.asCString()).GetValue());
-	auto controller = ViewDefinition::LoadViewController(vId, db);
+		auto eye = JsonUtils::ToDPoint3d(props["eye"]);
+		auto target = JsonUtils::ToDPoint3d(props["target"]);
+		auto up = JsonUtils::ToDVec3d(props["up"]);
+		auto lens = JsonUtils::ToAngle(props["lens"]);
+		double front = props["front"].asDouble();
+		double back = props["back"].asDouble();
 
-	SpatialViewDefinitionR view = (SpatialViewDefinitionR) controller->GetViewDefinitionR();
-	view.FromJson(viewProps);
-	auto spatialView = controller->ToSpatialViewP();
-	spatialView->TurnCameraOn(view.GetCamera().GetLensAngle());
-	return view.ToJson();
-}
+		view->LookAtUsingLensAngle(eye, target, up, lens, &front, &back);
+		return view->ToJson();
+	}
 
-Json::Value deserializeGeometryStream(DgnDbR dbin, Utf8String params)
+	static Json::Value rotateCameraLocal(DgnDbR db, Utf8String params)
+	{
+		auto props = Json::Value::From(params);
+		auto viewProps = props["view"];
+		auto idJsonVal = viewProps[DgnElement::json_id()];
+		DgnElementId vId(BeInt64Id::FromString(idJsonVal.asCString()).GetValue());
+		auto viewOrig = db.Elements().Get<SpatialViewDefinition>(vId);
+		auto view = viewOrig->MakeCopy<SpatialViewDefinition>();
+		view->FromJson(viewProps);
+
+		auto angle = props["angle"].asDouble();
+		auto axis = JsonUtils::ToDVec3d(props["axis"]);
+		DPoint3d about;
+		DPoint3dP aboutP = nullptr;
+		if (props.isMember("about"))
+			{
+			about = JsonUtils::ToDPoint3d(props["about"]);
+			aboutP = &about;
+			}
+
+		view->RotateCameraLocal(angle, axis, aboutP);
+		return view->ToJson();
+	}
+
+	static Json::Value turnCameraOn(DgnDbR db, Utf8String params)
+	{
+		auto props = Json::Value::From(params);
+		auto viewProps = props["view"];
+		auto idJsonVal = viewProps[DgnElement::json_id()];
+		DgnViewId vId(BeInt64Id::FromString(idJsonVal.asCString()).GetValue());
+		auto controller = ViewDefinition::LoadViewController(vId, db);
+		auto inRect = props["rect"];
+		BSIRect rect;
+		rect.Init(inRect["left"].asInt(), inRect["bottom"].asInt(), inRect["right"].asInt(), inRect["top"].asInt());
+		TestViewport vp(rect);
+		vp.ChangeViewController(*controller.get());
+		
+		SpatialViewDefinitionR view = (SpatialViewDefinitionR)controller->GetViewDefinitionR();
+		view.FromJson(viewProps);
+		vp.SetupFromViewController();
+
+		auto spatialView = controller->ToSpatialViewP();
+		spatialView->TurnCameraOn(view.GetCamera().GetLensAngle());
+		vp.SynchWithViewController(true);
+		return view.ToJson();
+	}
+
+	Json::Value deserializeGeometryStream(DgnDbR dbin, Utf8String params)
 	{
 		Json::Value props(Json::Value::From(params));
 		if (!props.isMember("geom") ||
