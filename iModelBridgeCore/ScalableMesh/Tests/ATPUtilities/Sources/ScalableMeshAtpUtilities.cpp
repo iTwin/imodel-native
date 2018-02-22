@@ -14,15 +14,16 @@
 #include <GeomSerialization\GeomLibsFlatBufferApi.h>
 
 
-void IScalableMeshAtpUtilities::StoreVolumeTest(uint64_t elementId, bvector<PolyfaceHeaderPtr> const& candidateMeshes, double expectedCutTotal, double expectedFillTotal)
+void IScalableMeshAtpUtilities::StoreVolumeTestCase(const Utf8String& volumeTestCaseFile, uint64_t elementId, bvector<PolyfaceHeaderPtr> const& candidateMeshes, double expectedCutTotal, double expectedFillTotal)
     {
-    FILE* file = fopen("D:\\MyDoc\\RMA Iter 11\\AddNewTestCases\\Volume\\test.3smvatp", "ab+");
+    FILE* file = fopen(volumeTestCaseFile.c_str(), "a+b");
 
     fwrite(&elementId, sizeof(elementId), 1, file);
     fwrite(&expectedCutTotal, sizeof(expectedCutTotal), 1, file);
     fwrite(&expectedFillTotal, sizeof(expectedFillTotal), 1, file);
 
     uint64_t nbMeshes = candidateMeshes.size();
+
 
     fwrite(&nbMeshes, sizeof(nbMeshes), 1, file);
 

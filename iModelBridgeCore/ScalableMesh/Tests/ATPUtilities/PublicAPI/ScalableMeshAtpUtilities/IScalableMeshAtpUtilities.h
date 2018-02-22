@@ -25,5 +25,5 @@ struct IScalableMeshAtpUtilities
        
     public:
        
-        BENTLEY_SM_ATPUTIL_EXPORT static void StoreVolumeTest(uint64_t elementId, bvector<PolyfaceHeaderPtr> const& candidateMeshes, double expectedCutTotal, double expectedFillTotal);
+        BENTLEY_SM_ATPUTIL_EXPORT static void StoreVolumeTestCase(const Utf8String& volumeTestCaseFile, uint64_t elementId, bvector<PolyfaceHeaderPtr> const& candidateMeshes, double expectedCutTotal, double expectedFillTotal);
     };
