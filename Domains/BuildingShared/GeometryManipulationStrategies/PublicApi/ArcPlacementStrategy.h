@@ -41,7 +41,7 @@ struct ArcPlacementStrategy : public CurvePrimitivePlacementStrategy
         static constexpr Utf8CP prop_Normal() { return EllipseManipulationStrategy::prop_Normal(); }
 
         static ArcPlacementStrategyPtr Create(ArcPlacementStrategyType strategyType);
-        static ArcPlacementStrategyPtr Create(ArcPlacementStrategyType strategyType, ArcManipulationStrategyR manipulationStrategy);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static ArcPlacementStrategyPtr Create(ArcPlacementStrategyType strategyType, ArcManipulationStrategyR manipulationStrategy);
     };
 
 END_BUILDING_SHARED_NAMESPACE
