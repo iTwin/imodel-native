@@ -28,6 +28,7 @@ void QueryBuilderHelpers::SetOrUnion(RefCountedPtr<T>& target, T& source)
     }
 template void QueryBuilderHelpers::SetOrUnion<ContentQuery>(ContentQueryPtr&, ContentQuery&);
 template void QueryBuilderHelpers::SetOrUnion<NavigationQuery>(NavigationQueryPtr&, NavigationQuery&);
+template void QueryBuilderHelpers::SetOrUnion<GenericQuery>(GenericQueryPtr&, GenericQuery&);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                05/2016
@@ -49,6 +50,7 @@ void QueryBuilderHelpers::Where(RefCountedPtr<T>& query, Utf8CP clause, BoundQue
     }
 template void QueryBuilderHelpers::Where<ContentQuery>(ContentQueryPtr&, Utf8CP, BoundQueryValuesListCR);
 template void QueryBuilderHelpers::Where<NavigationQuery>(NavigationQueryPtr&, Utf8CP, BoundQueryValuesListCR);
+template void QueryBuilderHelpers::Where<GenericQuery>(GenericQueryPtr&, Utf8CP, BoundQueryValuesListCR);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
@@ -67,6 +69,7 @@ void QueryBuilderHelpers::Order(T& query, Utf8CP clause)
     }
 template void QueryBuilderHelpers::Order<ContentQuery>(ContentQuery&, Utf8CP);
 template void QueryBuilderHelpers::Order<NavigationQuery>(NavigationQuery&, Utf8CP);
+template void QueryBuilderHelpers::Order<GenericQuery>(GenericQuery&, Utf8CP);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                05/2016
@@ -85,6 +88,7 @@ void QueryBuilderHelpers::Limit(T& query, uint64_t limit, uint64_t offset)
     }
 template void QueryBuilderHelpers::Limit<ContentQuery>(ContentQuery&, uint64_t, uint64_t);
 template void QueryBuilderHelpers::Limit<NavigationQuery>(NavigationQuery&, uint64_t, uint64_t);
+template void QueryBuilderHelpers::Limit<GenericQuery>(GenericQuery&, uint64_t, uint64_t);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
@@ -108,6 +112,7 @@ RefCountedPtr<ComplexPresentationQuery<T>> QueryBuilderHelpers::CreateNestedQuer
     }
 template ComplexContentQueryPtr QueryBuilderHelpers::CreateNestedQuery<ContentQuery>(ContentQuery&);
 template ComplexNavigationQueryPtr QueryBuilderHelpers::CreateNestedQuery<NavigationQuery>(NavigationQuery&);
+template ComplexGenericQueryPtr QueryBuilderHelpers::CreateNestedQuery<GenericQuery>(GenericQuery&);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
@@ -146,6 +151,7 @@ bool QueryBuilderHelpers::NeedsNestingToUseAlias(T const& query, bvector<Utf8CP>
     }
 template bool QueryBuilderHelpers::NeedsNestingToUseAlias<ContentQuery>(ContentQuery const&, bvector<Utf8CP> const&);
 template bool QueryBuilderHelpers::NeedsNestingToUseAlias<NavigationQuery>(NavigationQuery const&, bvector<Utf8CP> const&);
+template bool QueryBuilderHelpers::NeedsNestingToUseAlias<GenericQuery>(GenericQuery const&, bvector<Utf8CP> const&);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
@@ -159,6 +165,7 @@ RefCountedPtr<T> QueryBuilderHelpers::CreateNestedQueryIfNecessary(T& query, bve
     }
 template ContentQueryPtr QueryBuilderHelpers::CreateNestedQueryIfNecessary<ContentQuery>(ContentQuery&, bvector<Utf8CP> const&);
 template NavigationQueryPtr QueryBuilderHelpers::CreateNestedQueryIfNecessary<NavigationQuery>(NavigationQuery&, bvector<Utf8CP> const&);
+template GenericQueryPtr QueryBuilderHelpers::CreateNestedQueryIfNecessary<GenericQuery>(GenericQuery&, bvector<Utf8CP> const&);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
@@ -173,6 +180,7 @@ RefCountedPtr<ComplexPresentationQuery<T>> QueryBuilderHelpers::CreateComplexNes
     }
 template ComplexContentQueryPtr QueryBuilderHelpers::CreateComplexNestedQueryIfNecessary<ContentQuery>(ContentQuery&, bvector<Utf8CP> const&);
 template ComplexNavigationQueryPtr QueryBuilderHelpers::CreateComplexNestedQueryIfNecessary<NavigationQuery>(NavigationQuery&, bvector<Utf8CP> const&);
+template ComplexGenericQueryPtr QueryBuilderHelpers::CreateComplexNestedQueryIfNecessary<GenericQuery>(GenericQuery&, bvector<Utf8CP> const&);
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2017

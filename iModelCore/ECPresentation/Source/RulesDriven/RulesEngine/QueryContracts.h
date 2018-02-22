@@ -36,15 +36,14 @@ private:
     Utf8String m_defaultName;
     Utf8String m_name;
     Utf8String m_groupingClause;
-    bool m_isDistinct;
     bool m_allowsPrefix;
     bool m_isAggregateField;
     FieldVisibility m_fieldVisibility;
     Utf8String m_prefixOverride;
  
 protected:
-    PresentationQueryContractField(Utf8CP defaultName, bool allowsPrefix, bool isDistinct, bool isAggregateField, FieldVisibility fieldVisibility) 
-        : m_defaultName(defaultName), m_allowsPrefix(allowsPrefix), m_isAggregateField(isAggregateField), m_fieldVisibility(fieldVisibility), m_isDistinct(isDistinct) {}
+    PresentationQueryContractField(Utf8CP defaultName, bool allowsPrefix, bool isAggregateField, FieldVisibility fieldVisibility) 
+        : m_defaultName(defaultName), m_allowsPrefix(allowsPrefix), m_isAggregateField(isAggregateField), m_fieldVisibility(fieldVisibility) {}
     ~PresentationQueryContractField() {}
     bool AllowsPrefix() const {return m_allowsPrefix;}
     virtual Utf8String _GetSelectClause(Utf8CP prefix, bool useFieldNames) const = 0;
@@ -60,7 +59,6 @@ public:
     void       SetGroupingClause(Utf8String name) {m_groupingClause = name;}
     bool       IsAggregateField() const {return m_isAggregateField;}
     FieldVisibility GetVisibility() const {return m_fieldVisibility;}
-    bool       IsDistinct() const {return m_isDistinct;}
     void       SetPrefixOverride(Utf8String prefix) {m_prefixOverride = prefix;}
     Utf8String GetSelectClause(Utf8CP prefix = nullptr, bool useFieldNames = false) const {return _GetSelectClause(m_prefixOverride.empty() ? prefix : m_prefixOverride.c_str(), useFieldNames);}
 
@@ -80,8 +78,8 @@ private:
     Utf8String m_selectClause;
 
 private:
-    PresentationQueryContractSimpleField(Utf8CP name, Utf8CP selectClause, bool allowsPrefix, bool isDistinct, bool isAggregateField, FieldVisibility fieldVisibility) 
-        : PresentationQueryContractField(name, allowsPrefix, isDistinct, isAggregateField, fieldVisibility), m_selectClause(selectClause)
+    PresentationQueryContractSimpleField(Utf8CP name, Utf8CP selectClause, bool allowsPrefix, bool isAggregateField, FieldVisibility fieldVisibility) 
+        : PresentationQueryContractField(name, allowsPrefix, isAggregateField, fieldVisibility), m_selectClause(selectClause)
         {}
 
 protected:
@@ -89,9 +87,9 @@ protected:
     PresentationQueryContractSimpleField* _AsPresentationQueryContractSimpleField() override {return this;}
 
 public:
-    static RefCountedPtr<PresentationQueryContractSimpleField> Create(Utf8CP name, Utf8CP selectClause, bool allowsPrefix = true, bool isDistinct = false, bool isAggregateField = false, FieldVisibility fieldVisibility = FieldVisibility::Both)
+    static RefCountedPtr<PresentationQueryContractSimpleField> Create(Utf8CP name, Utf8CP selectClause, bool allowsPrefix = true, bool isAggregateField = false, FieldVisibility fieldVisibility = FieldVisibility::Both)
         {
-        return new PresentationQueryContractSimpleField(name, selectClause, allowsPrefix, isDistinct, isAggregateField, fieldVisibility);
+        return new PresentationQueryContractSimpleField(name, selectClause, allowsPrefix, isAggregateField, fieldVisibility);
         }
     void SetClause(Utf8CP clause) {m_selectClause = clause;}
 };
@@ -106,16 +104,18 @@ private:
     bvector<RefCountedPtr<PresentationQueryContractField>> m_parameters;
 
 protected:
-    PresentationQueryContractFunctionField(Utf8CP name, Utf8CP functionName, bvector<RefCountedPtr<PresentationQueryContractField>> const& parameters, bool allowsPrefix, bool isDistinct, bool isAggregateField, FieldVisibility fieldVisibility) 
-        : PresentationQueryContractField(name, allowsPrefix, isDistinct, isAggregateField, fieldVisibility), m_functionName(functionName), m_parameters(parameters)
+    PresentationQueryContractFunctionField(Utf8CP name, Utf8CP functionName, bvector<RefCountedPtr<PresentationQueryContractField>> const& parameters, bool allowsPrefix, 
+        bool isAggregateField, FieldVisibility fieldVisibility) 
+        : PresentationQueryContractField(name, allowsPrefix, isAggregateField, fieldVisibility), m_functionName(functionName), m_parameters(parameters)
         {}
     virtual ECPRESENTATION_EXPORT Utf8String _GetSelectClause(Utf8CP prefix, bool) const override;
     PresentationQueryContractFunctionField* _AsPresentationQueryContractFunctionField() override {return this;}
 
 public:
-    static RefCountedPtr<PresentationQueryContractFunctionField> Create(Utf8CP name, Utf8CP functionName, bvector<RefCountedPtr<PresentationQueryContractField>> const& functionParameters, bool allowsPrefix = true, bool isDistinct = false, bool isAggregateField = false, FieldVisibility fieldVisibility = FieldVisibility::Both)
+    static RefCountedPtr<PresentationQueryContractFunctionField> Create(Utf8CP name, Utf8CP functionName, bvector<RefCountedPtr<PresentationQueryContractField>> const& functionParameters, bool allowsPrefix = true, 
+        bool isAggregateField = false, FieldVisibility fieldVisibility = FieldVisibility::Both)
         {
-        return new PresentationQueryContractFunctionField(name, functionName, functionParameters, allowsPrefix, isDistinct, isAggregateField, fieldVisibility);
+        return new PresentationQueryContractFunctionField(name, functionName, functionParameters, allowsPrefix, isAggregateField, fieldVisibility);
         }
 
     bvector<RefCountedPtr<PresentationQueryContractField>>& GetFunctionParametersR() {return m_parameters;}
@@ -131,17 +131,17 @@ private:
     std::function<Utf8String(Utf8CP)> m_getSelectClauseHandler;
 
 private:
-    PresentationQueryContractDynamicField(Utf8CP name, std::function<Utf8String(Utf8CP)> handler, bool allowsPrefix, bool isDistinct, bool isAggregateField, FieldVisibility fieldVisibility) 
-        : PresentationQueryContractField(name, allowsPrefix, isDistinct, isAggregateField, fieldVisibility), m_getSelectClauseHandler(handler)
+    PresentationQueryContractDynamicField(Utf8CP name, std::function<Utf8String(Utf8CP)> handler, bool allowsPrefix, bool isAggregateField, FieldVisibility fieldVisibility) 
+        : PresentationQueryContractField(name, allowsPrefix, isAggregateField, fieldVisibility), m_getSelectClauseHandler(handler)
         {}
 
 protected:
     ECPRESENTATION_EXPORT Utf8String _GetSelectClause(Utf8CP prefix, bool) const override;
 
 public:
-    static RefCountedPtr<PresentationQueryContractDynamicField> Create(Utf8CP name, std::function<Utf8String(Utf8CP)> handler, bool allowsPrefix = true, bool isDistinct = false, bool isAggregateField = false, FieldVisibility fieldVisibility = FieldVisibility::Both)
+    static RefCountedPtr<PresentationQueryContractDynamicField> Create(Utf8CP name, std::function<Utf8String(Utf8CP)> handler, bool allowsPrefix = true, bool isAggregateField = false, FieldVisibility fieldVisibility = FieldVisibility::Both)
         {
-        return new PresentationQueryContractDynamicField(name, handler, allowsPrefix, isDistinct, isAggregateField, fieldVisibility);
+        return new PresentationQueryContractDynamicField(name, handler, allowsPrefix, isAggregateField, fieldVisibility);
         }
 };
 
@@ -155,8 +155,8 @@ private:
     Utf8String m_mergedValueResult;
 
 private:
-    PresentationQueryMergeField(Utf8CP name, PresentationQueryContractFieldCR mergedField, Utf8String mergedValueResult, bool allowsPrefix, bool isDistinct, bool isAggregateField, FieldVisibility fieldVisibility) 
-        : PresentationQueryContractField(name, allowsPrefix, isDistinct, isAggregateField, fieldVisibility), m_mergedField(&mergedField), m_mergedValueResult(mergedValueResult)
+    PresentationQueryMergeField(Utf8CP name, PresentationQueryContractFieldCR mergedField, Utf8String mergedValueResult, bool allowsPrefix, bool isAggregateField, FieldVisibility fieldVisibility) 
+        : PresentationQueryContractField(name, allowsPrefix, isAggregateField, fieldVisibility), m_mergedField(&mergedField), m_mergedValueResult(mergedValueResult)
         {}
 
 protected:
@@ -164,9 +164,9 @@ protected:
 
 public:
     static RefCountedPtr<PresentationQueryMergeField> Create(Utf8CP name, PresentationQueryContractFieldCR mergedField, Utf8String mergedValueResult = Utf8String(),
-        bool allowsPrefix = true, bool isDistinct = false, bool isAggregateField = false, FieldVisibility fieldVisibility = FieldVisibility::Both)
+        bool allowsPrefix = true, bool isAggregateField = false, FieldVisibility fieldVisibility = FieldVisibility::Both)
         {
-        return new PresentationQueryMergeField(name, mergedField, mergedValueResult, allowsPrefix, isDistinct, isAggregateField, fieldVisibility);
+        return new PresentationQueryMergeField(name, mergedField, mergedValueResult, allowsPrefix, isAggregateField, fieldVisibility);
         }
 };
 
@@ -191,7 +191,6 @@ public:
     void SetECInstanceIdFieldName(Utf8CP name) {_SetECInstanceIdFieldName(name);}
     void SetECClassIdFieldName(Utf8CP name) {_SetECClassIdFieldName(name);}
     ECPRESENTATION_EXPORT bool IsAggregating() const;
-    ECPRESENTATION_EXPORT bool IsGettingUniqueValues() const;
     ECPRESENTATION_EXPORT bool HasInnerFields() const;
     ECPRESENTATION_EXPORT bvector<PresentationQueryContractFieldCPtr> GetFields() const;
     ECPRESENTATION_EXPORT PresentationQueryContractFieldCPtr GetField(Utf8CP name) const;

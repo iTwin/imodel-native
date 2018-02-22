@@ -1338,13 +1338,15 @@ bvector<RelatedClassPath> ECSchemaHelper::GetPolymorphicallyRelatedClassesWithIn
     bvector<RelatedClassPath> paths;
     for (RelatedClass const& relatedClass : *polymorphicallyRelatedClasses)
         {
-        PresentationQueryContractPtr contract = SimpleQueryContract::Create(*PresentationQueryContractSimpleField::Create("RelatedClassId", "ECClassId", true, true));
+        PresentationQueryContractPtr contract = SimpleQueryContract::Create(*PresentationQueryContractSimpleField::Create("RelatedClassId", "ECClassId", true));
         ComplexGenericQueryPtr query = ComplexGenericQuery::Create();
         query->SelectContract(*contract, relatedClass.GetTargetClassAlias());
         query->From(sourceClass, true, "this");
         query->Join(relatedClass, false);
         if (nullptr != filteringParams)
             QueryBuilderHelpers::ApplyInstanceFilter(*query, *filteringParams);
+        query = QueryBuilderHelpers::CreateComplexNestedQueryIfNecessary<GenericQuery>(*query, {"RelatedClassId"});
+        query->GroupByContract(*contract);
                 
         CachedECSqlStatementPtr stmt = m_statementCache->GetPreparedStatement(m_connection.GetECDb().Schemas(),
             m_connection.GetDb(), query->ToString().c_str());

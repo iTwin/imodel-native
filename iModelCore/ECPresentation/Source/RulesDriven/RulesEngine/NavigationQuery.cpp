@@ -302,7 +302,7 @@ bool ComplexPresentationQuery<TBase>::HasClause(PresentationQueryClauses clauses
         return nullptr != m_limit;
         
     if (CLAUSE_GroupBy == (CLAUSE_GroupBy & clauses))
-        return m_groupingContract.IsValid() && ((m_groupingContract->IsAggregating() && ContractHasNonAggregateFields(*m_groupingContract)) || m_groupingContract->IsGettingUniqueValues());
+        return m_groupingContract.IsValid() && ContractHasNonAggregateFields(*m_groupingContract);
     
     if (CLAUSE_Having == (CLAUSE_Having & clauses))
         return !m_havingClause.empty();
@@ -708,15 +708,11 @@ Utf8String ComplexPresentationQuery<TBase>::CreateGroupByClause() const
     if (m_groupingContract.IsNull())
         return "";
 
-    bool isContractAggregating = m_groupingContract->IsAggregating();
-    if (!isContractAggregating && !m_groupingContract->IsGettingUniqueValues())
-        return "";
-
     Utf8String groupByClause;
     bvector<PresentationQueryContractFieldCPtr> fields = m_groupingContract->GetFields();
     for (PresentationQueryContractFieldCPtr const& field : fields)
         {
-        if (field->IsAggregateField() || FieldVisibility::Both != field->GetVisibility() || (!isContractAggregating && !field->IsDistinct()))
+        if (field->IsAggregateField() || FieldVisibility::Both != field->GetVisibility())
             continue;
 
         if (!groupByClause.empty())
