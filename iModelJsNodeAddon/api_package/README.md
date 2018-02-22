@@ -124,10 +124,6 @@ xcopy /Y /Q %OutRoot%Winx64\packages\imodeljs-electronaddon\*.*         %ImodelJ
 xcopy /Y /Q %OutRoot%Winx64\packages\imodeljs-n_8_9-win32-x64\addon\*.* %ImodelJsRoot%imodeljs-core\common\temp\node_modules\@bentley\imodeljs-n_8_9-win32-x64\addon
 xcopy /Y /Q %OutRoot%Winx64\packages\imodeljs-e_1_6_11-win32-x64\addon\*.* %ImodelJsRoot%imodeljs-core\common\temp\node_modules\@bentley\imodeljs-e_1_6_11-win32-x64\addon
 
-REM cd %ImodelJsRoot%imodeljs-core\source\backend
-REM call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-nodeaddonapi %OutRoot%Winx64\packages\imodeljs-nodeaddon %OutRoot%Winx64\packages\imodeljs-electronaddon
-REM cd %ImodelJsRoot%imodeljs-core\source\testbed
-REM call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-nodeaddonapi %OutRoot%Winx64\packages\imodeljs-electronaddon
 cd %ImodelJsRoot%imodeljs-core
 
 goto :xit
@@ -146,9 +142,16 @@ export ImodelJsRoot=<The parent directory of imodeljs-core>
 cd $OutRoot/LinuxX64/packages/imodeljs-nodeaddon
 npm install --no-save  $OutRoot/LinuxX64/packages/imodeljs-nodeaddonapi $OutRoot/LinuxX64/packages/imodeljs-n_8_9-linux-x64
 cd $ImodelJsRoot/imodeljs-core/source/backend
-npm install --no-save  $OutRoot/LinuxX64/packages/imodeljs-nodeaddonapi $OutRoot/LinuxX64/packages/imodeljs-nodeaddon 
+cp $OutRoot/LinuxX64/packages/imodeljs-nodeaddonapi/*      $ImodelJsRoot/imodeljs-core/common/temp/node_modules/@bentley/imodeljs-nodeaddonapi
+cp $OutRoot/LinuxX64/packages/imodeljs-nodeaddon/*         $ImodelJsRoot/imodeljs-core/common/temp/node_modules/@bentley/imodeljs-nodeaddon
+cp -r $OutRoot/LinuxX64/packages/imodeljs-n_8_9-linux-x64  $ImodelJsRoot/imodeljs-core/common/temp/node_modules/@bentley
 cd $ImodelJsRoot/imodeljs-core
 
+```
+
+Note: to get back to a clean install, do this:
+```
+rush install -c
 ```
 
 To test other platforms or other versions, use the names of the generated packages that are displayed by the MakePackages part.
