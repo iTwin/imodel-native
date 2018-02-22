@@ -1333,15 +1333,15 @@ public:
     //! @name Extracted drawing graphics
     //! @{
     DGNDBSYNC_EXPORT bool _UseProxyGraphicsFor(DgnAttachmentCR ref);
-    DgnAttachmentP GetFirstNeedingCve(ResolvedModelMapping const&, ProxyGraphicsDetector&, bset<DgnV8Api::ElementId> const& ignoreList);
+    DgnAttachmentP GetFirstNeedingCve(ResolvedModelMapping const&, ProxyGraphicsDetector&, ViewportP vp, bset<DgnV8Api::ElementId> const& ignoreList);
     DgnCategoryId GetExtractionCategoryId(V8NamedViewType);
     DGNDBSYNC_EXPORT virtual DgnCategoryId _GetExtractionCategoryId(DgnAttachmentCR);
     DGNDBSYNC_EXPORT virtual DgnSubCategoryId _GetExtractionSubCategoryId(DgnCategoryId, DgnV8Api::ClipVolumePass pass,
                                                                           DgnV8Api::ProxyGraphicsType gtype);
     DGNDBSYNC_EXPORT void ConvertExtractionAttachments(ResolvedModelMapping const&, ProxyGraphicsDrawingFactory&, Bentley::ViewInfoCP);
     DGNDBSYNC_EXPORT virtual void _TurnOnExtractionCategories(CategorySelectorR);
-    bool HasProxyGraphicsCache(DgnV8ModelR);
-    bool HasProxyGraphicsCache(DgnAttachmentR);
+    bool HasProxyGraphicsCache(DgnV8ModelR, ViewportP vp=nullptr);
+    bool HasProxyGraphicsCache(DgnAttachmentR, ViewportP vp=nullptr);
     //! Make sure that all attachments that need proxy graphics have them computed.
     //! @param parentModel  The model that has attachments to be checked
     //! @param viewOfParentModel A V8 view of the parent model - determines the visibility and appearance of generated proxy graphics

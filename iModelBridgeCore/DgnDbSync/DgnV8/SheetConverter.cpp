@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/SheetConverter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -146,7 +146,7 @@ double Converter::SheetsComputeScale(DgnV8ModelCR v8SheetModel)
             }
         else
             {
-            if (!HasProxyGraphicsCache(*v8DgnAttachment))
+            if (!HasProxyGraphicsCache(*v8DgnAttachment, nullptr))
                 continue;
             }
 
