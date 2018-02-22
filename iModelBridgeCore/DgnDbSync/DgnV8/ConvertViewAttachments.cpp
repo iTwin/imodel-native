@@ -499,6 +499,7 @@ void Converter::SheetsConvertViewAttachments(ResolvedModelMapping const& v8Sheet
         auto it = updSeq.find(v8DgnAttachment);
         int seq = it == updSeq.end() ? 0 : it->second;
         SheetsConvertViewAttachment(v8SheetModelMapping, *v8DgnAttachment, proxyModel, nvvf, v8SheetView, seq);
+        _OnSheetsConvertViewAttachment(v8SheetModelMapping, *v8DgnAttachment);
         }
     }
 

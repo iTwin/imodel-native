@@ -991,6 +991,7 @@ protected:
     DGNDBSYNC_EXPORT virtual SyncInfo::V8ElementMapping _FindFirstElementMappedTo(DgnV8Api::DisplayPath const& proxyPath, bool tail, IChangeDetector::T_SyncInfoElementFilter* filter = nullptr);
     virtual DgnV8Api::ModelInfo const& _GetModelInfo(DgnV8ModelCR v8Model) { return v8Model.GetModelInfo(); }
     virtual bool _ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model) { return true; }
+    virtual void _OnSheetsConvertViewAttachment(ResolvedModelMapping const& v8SheetModelMapping, DgnAttachmentR v8DgnAttachment) {}
 
 public:
     virtual Params const& _GetParams() const = 0;
