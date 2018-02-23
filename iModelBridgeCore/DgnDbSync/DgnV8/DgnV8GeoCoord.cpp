@@ -2,7 +2,7 @@
 |
 |   $Source: DgnV8/DgnV8GeoCoord.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -454,6 +454,16 @@ bool            SolveAnalytically (bool localTransformDifferent)
 };
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool haveAnySpatialData(DgnDbR db)
+    {
+    BeSQLite::EC::ECSqlStatement stmt;
+    stmt.Prepare(db, "SELECT * FROM BisCore.GeometricElement3d LIMIT 1");
+    return BeSQLite::BE_SQLITE_ROW == stmt.Step();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            SpatialConverterBase::ComputeTransformAndGlobalOriginFromRootModel (DgnV8ModelCR rootModel)
@@ -471,7 +481,7 @@ void            SpatialConverterBase::ComputeTransformAndGlobalOriginFromRootMod
     // Get Source global origin in meters
     m_rootTrans.Multiply (sourceGlobalOrigin);
 
-    if (IsCreatingNewDgnDb())
+    if (IsCreatingNewDgnDb() || !haveAnySpatialData(GetDgnDb()))
         {
         // If we are creating a new BIM file, we set the scaling and set the BIM's file to the DgnV8 model's (scaled) global origin.
         GetDgnDb().GeoLocation().SetGlobalOrigin(sourceGlobalOrigin);
