@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/ECExpressionsToECSqlConverterTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -221,4 +221,16 @@ TEST_F(ECExpressionsToECSqlConverterTests, UserSettingIntValuesSpecialCase)
 
     ecsql = m_helper.ConvertToECSql("GetUserSettingIntValues(\"setting_id\").AnyMatch(x => this.SomeProperty = x)");
     EXPECT_STREQ(FUNCTION_NAME_InSettingIntValues "('setting_id', [this].[SomeProperty])", ecsql.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionsToECSqlConverterTests, ValueSetAnyMatchSpecialCase)
+    {
+    Utf8String ecsql = m_helper.ConvertToECSql("Set(1, 2, 3, \"4\").AnyMatch(x => x = this.SomeProperty.Id)");
+    EXPECT_STREQ("[this].[SomeProperty].[Id] IN (1, 2, 3, '4')", ecsql.c_str());
+
+    ecsql = m_helper.ConvertToECSql("Set(1, 2, 3, \"4\").AnyMatch(x => this.SomeProperty.Id = x)");
+    EXPECT_STREQ("[this].[SomeProperty].[Id] IN (1, 2, 3, '4')", ecsql.c_str());
     }

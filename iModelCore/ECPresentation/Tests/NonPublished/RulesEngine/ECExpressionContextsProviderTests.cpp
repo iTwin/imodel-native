@@ -799,3 +799,25 @@ TEST_F(ECExpressionContextsProviderTests, GetContentRulesContext_IsSubSelectionM
     ASSERT_TRUE(resultValue.IsBoolean());
     ASSERT_TRUE(resultValue.GetBoolean());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECExpressionContextsProviderTests, Common_Set)
+    {
+    ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(nullptr, *s_connection, m_userSettings, nullptr));
+
+    EvaluationResult valueResult;
+    RefCountedPtr<IValueListResult const> result = EvaluateAndGetValueListResult("Set(1, \"2\")", *ctx);
+    ASSERT_EQ(2, result->GetCount());
+
+    EXPECT_EQ(ExpressionStatus::Success, result->GetValueAt(valueResult, 0));
+    ASSERT_TRUE(valueResult.IsECValue());
+    EXPECT_TRUE(valueResult.GetECValue()->IsInteger());
+    EXPECT_EQ(1, valueResult.GetECValue()->GetInteger());
+    
+    EXPECT_EQ(ExpressionStatus::Success, result->GetValueAt(valueResult, 1));
+    ASSERT_TRUE(valueResult.IsECValue());
+    EXPECT_TRUE(valueResult.GetECValue()->IsString());
+    EXPECT_STREQ("2", valueResult.GetECValue()->GetUtf8CP());
+    }
