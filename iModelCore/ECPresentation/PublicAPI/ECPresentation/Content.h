@@ -747,6 +747,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         Utf8StringCR GetContentClassAlias() const {return m_contentClassAlias;}
         
         //! Path from the @e "content class" to the primary instance class.
+        RelatedClassPath& GetRelationshipPath() {return m_relationshipPath;}
         RelatedClassPath const& GetRelationshipPath() const {return m_relationshipPath;}
 
         //! A list of fields which this field consists from.
