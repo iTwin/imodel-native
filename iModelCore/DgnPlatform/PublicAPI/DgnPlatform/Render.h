@@ -3229,6 +3229,9 @@ struct System
     //! Create a point cloud primitive
     virtual GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb) const = 0;
 
+    //! Create a sheet tile primitive
+    DGNPLATFORM_EXPORT bvector<GraphicPtr> _CreateSheetTile(TextureCR tile, GraphicBuilder::TileCorners const& corners, DgnDbR dgndb, GraphicParamsCR params, ClipVectorCP clip) const;
+
     //! Create a tile primitive
     DGNPLATFORM_EXPORT GraphicPtr _CreateTile(TextureCR tile, GraphicBuilder::TileCorners const& corners, DgnDbR dgndb, GraphicParamsCR params) const;
 
