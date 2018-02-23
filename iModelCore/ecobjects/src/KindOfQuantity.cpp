@@ -321,7 +321,7 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
         return buf;
         };
 
-    auto getResolvedName = [&concatenateName](const ECSchemaCR schema, Utf8StringCR value)
+    auto getResolvedName = [&concatenateName](ECSchemaCR schema, Utf8StringCR value)
         {
         Utf8String resolvedName;
         Utf8String unitName;
@@ -337,7 +337,7 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
             if(alias.empty() || alias == schema.GetAlias())
                 {
                 if(schema.GetUnitCP(name.c_str()))
-                    resolvedName = std::move(concatenateName(schema.GetName(), name, format));
+                    resolvedName = concatenateName(schema.GetName(), name, format);
                 }
             else
                 {
@@ -346,7 +346,7 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
                     auto const& refSchema = s.second;
                     if((refSchema->GetAlias() == alias) && (nullptr != refSchema->GetUnitCP(name.c_str())))
                         {
-                        resolvedName = std::move(concatenateName(refSchema->GetName(), name, format));
+                        resolvedName = concatenateName(refSchema->GetName(), name, format);
                         break;
                         }
                     }
@@ -358,7 +358,7 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
             if(Units::UnitRegistry::Instance().HasUnit(unitName.c_str()))
                 resolvedName = value.c_str();
             }
-        return std::move(resolvedName);
+        return resolvedName;
         };
 
     auto resolvedName = getResolvedName(GetSchema(), value);
