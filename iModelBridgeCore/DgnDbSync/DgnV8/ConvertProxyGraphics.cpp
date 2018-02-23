@@ -330,84 +330,78 @@ static StatusInt generateCve (DgnAttachmentP refP, ViewportP viewport, CachedVis
 
     BeAssert (refP->IsDisplayedInViewport (*viewport, true));
 
-    if (NULL == refP->FindProxyHandler (NULL, viewport))
+    DgnV8Api::CachedVisibleEdgeOptions    options;
+
+    // if we got options passed in, we use those.
+    DgnV8Api::Tcb const* tcb = modelRef->GetDgnFileP()->GetPersistentTcb();
+    if (NULL == pInputOptions)
         {
-        DgnV8Api::CachedVisibleEdgeOptions    options;
-
-        // if we got options passed in, we use those.
-        DgnV8Api::Tcb const* tcb = modelRef->GetDgnFileP()->GetPersistentTcb();
-        if (NULL == pInputOptions)
-            {
-            if (NULL == currentCache)
-                options = DgnV8Api::CachedVisibleEdgeOptions (*tcb, modelRef);
-            else
-                options = currentCache->GetOptions();
-            }
+        if (NULL == currentCache)
+            options = DgnV8Api::CachedVisibleEdgeOptions (*tcb, modelRef);
         else
-            {
-            options = *pInputOptions;
-            }
-
-        DgnV8Api::VisibleEdgeCache*           proxyCache = DgnV8Api::VisibleEdgeCache::Create (modelRef, options);
-        //CacheLoadPreviewContext*    previewContext = NULL;
-
-        // when setAlwaysValid is true, neither the originating view nor the CurrentViewGroup is not useful.
-        //if (!setAlwaysValid) 
-        //    {
-        //    proxyCache->SetOriginatingView (viewport->GetViewNumber());
-        //    proxyCache->SetOriginatingViewGroup (getCurrentViewGroup());
-        //    }
-
-                                       
-        //if (doPreview)
-        //    {
-        //    updateExceptReference (modelRef, viewport);
-        //    proxyCache->SetLoadPreviewer (previewContext = new CacheLoadPreviewContext (*viewport, *proxyCache, NULL));       
-        //    }
-        //
-        //ustnmdl_callRefProxyHooks (refP, REFPROXYEVENT_BeforeProxyCacheCalculation, ProxyCachingOption::Cached);
-
-        //CompletionBarVisibleEdgesProgressMeter       progressMeter;
-
-        StatusInt   status =createProxyCache (*proxyCache, NULL, modelRef, viewport, meter);
-
-        //ustnmdl_callRefProxyHooks (refP, REFPROXYEVENT_AfterProxyCacheCalculation, ProxyCachingOption::Cached);
-
-        //DELETE_AND_CLEAR (previewContext);
-
-        //if ((SUCCESS != status) && doPreview)
-        //    {
-        //    reference_updateReferenceInView (modelRef, DRAW_MODE_Normal, viewport->GetViewNumber());  
-        //    delete proxyCache;
-        //    return status;
-        //    }
-        proxyCache->Resolve ();
-       
-        // Calculate the hash and find the newest element for the proxyCache we just created. Originally, we tried to do this while calculating hidden lines, but it
-        //  wasn't reliable to do it that way because of the complexity of tiling, etc., that hidden line requires.
-        // The "setAlwaysValid" flag is used when creating iModels. In that case, we create the cache from the actual elements, but later the elements are turned into XGraphics.
-        //  The process of creating XGraphics sometimes invalidates the hash, and we would thus conclude that the cache wasn't valid. We want it to be considered always valid.
-        if (!setAlwaysValid)
-            proxyCache->ComputeHash (modelRef, viewport);
-        else
-            proxyCache->ClearElementModifiedTimes (false);
-            
-
-        // it's valid for the view we created it for. It might be valid for other views, depending on what levels, etc., they are displaying. We have to run the test.
-        //UInt32  thisView = viewport->GetViewNumber();
-        UInt32  thisView = 0; // *** we always use a fake view
-        proxyCache->SetValidForView (thisView, true);
-
-        refP->SetProxyCache (proxyCache, DgnV8Api::ProxyDgnAttachmentHandlerManager::GetManager().GetHandler (DgnV8Api::CachedVisibleEdgeHandlerId()));
-
-        // write the proxy cache as XAttributes to the reference element.
-        return proxyCache->Save (modelRef);
-
-        // Note: It is up to the caller to make sure that the reference element itself is saved.
+            options = currentCache->GetOptions();
         }
-    
+    else
+        {
+        options = *pInputOptions;
+        }
 
-    return SUCCESS;
+    DgnV8Api::VisibleEdgeCache*           proxyCache = DgnV8Api::VisibleEdgeCache::Create (modelRef, options);
+    //CacheLoadPreviewContext*    previewContext = NULL;
+
+    // when setAlwaysValid is true, neither the originating view nor the CurrentViewGroup is not useful.
+    //if (!setAlwaysValid)
+    //    {
+    //    proxyCache->SetOriginatingView (viewport->GetViewNumber());
+    //    proxyCache->SetOriginatingViewGroup (getCurrentViewGroup());
+    //    }
+
+
+    //if (doPreview)
+    //    {
+    //    updateExceptReference (modelRef, viewport);
+    //    proxyCache->SetLoadPreviewer (previewContext = new CacheLoadPreviewContext (*viewport, *proxyCache, NULL));
+    //    }
+    //
+    //ustnmdl_callRefProxyHooks (refP, REFPROXYEVENT_BeforeProxyCacheCalculation, ProxyCachingOption::Cached);
+
+    //CompletionBarVisibleEdgesProgressMeter       progressMeter;
+
+    StatusInt   status =createProxyCache (*proxyCache, NULL, modelRef, viewport, meter);
+
+    //ustnmdl_callRefProxyHooks (refP, REFPROXYEVENT_AfterProxyCacheCalculation, ProxyCachingOption::Cached);
+
+    //DELETE_AND_CLEAR (previewContext);
+
+    //if ((SUCCESS != status) && doPreview)
+    //    {
+    //    reference_updateReferenceInView (modelRef, DRAW_MODE_Normal, viewport->GetViewNumber());
+    //    delete proxyCache;
+    //    return status;
+    //    }
+    proxyCache->Resolve ();
+
+    // Calculate the hash and find the newest element for the proxyCache we just created. Originally, we tried to do this while calculating hidden lines, but it
+    //  wasn't reliable to do it that way because of the complexity of tiling, etc., that hidden line requires.
+    // The "setAlwaysValid" flag is used when creating iModels. In that case, we create the cache from the actual elements, but later the elements are turned into XGraphics.
+    //  The process of creating XGraphics sometimes invalidates the hash, and we would thus conclude that the cache wasn't valid. We want it to be considered always valid.
+    if (!setAlwaysValid)
+        proxyCache->ComputeHash (modelRef, viewport);
+    else
+        proxyCache->ClearElementModifiedTimes (false);
+
+
+    // it's valid for the view we created it for. It might be valid for other views, depending on what levels, etc., they are displaying. We have to run the test.
+    //UInt32  thisView = viewport->GetViewNumber();
+    UInt32  thisView = 0; // *** we always use a fake view
+    proxyCache->SetValidForView (thisView, true);
+
+    refP->SetProxyCache (proxyCache, DgnV8Api::ProxyDgnAttachmentHandlerManager::GetManager().GetHandler (DgnV8Api::CachedVisibleEdgeHandlerId()));
+
+    // write the proxy cache as XAttributes to the reference element.
+    return proxyCache->Save (modelRef);
+
+    // Note: It is up to the caller to make sure that the reference element itself is saved.
     }
 
 /*---------------------------------------------------------------------------------**//**
