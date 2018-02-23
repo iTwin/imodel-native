@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/SMNodeGroup.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -280,7 +280,7 @@ DataSource * SMNodeGroup::InitializeDataSource(std::unique_ptr<DataSource::Buffe
 
                                                      // Get the thread's DataSource or create a new one
     DataSource *dataSource = nullptr;
-    if ((dataSource = this->GetDataSourceAccount()->getOrCreateThreadDataSource()) == nullptr)
+    if ((dataSource = this->GetDataSourceAccount()->getOrCreateThreadDataSource(GetDataSourceClientID())) == nullptr)
         {
         assert(!"Could not initialize data source");
         return nullptr;
@@ -621,6 +621,14 @@ DataSourceAccount * SMNodeGroup::GetDataSourceAccount(void)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Lee.Bull         03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DataSource::ClientID SMNodeGroup::GetDataSourceClientID(void)
+    {
+    return m_parametersPtr->GetDataSourceClientID();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SMNodeGroup::DownloadCesiumTileset(const DataSourceURL & url, Json::Value & tileset)
@@ -874,9 +882,10 @@ SMGroupCache::Ptr SMGroupCache::Create(node_header_cache* nodeCache)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SMGroupGlobalParameters::SMGroupGlobalParameters(StrategyType strategy, DataSourceAccount* account)
+SMGroupGlobalParameters::SMGroupGlobalParameters(StrategyType strategy, DataSourceAccount* account, DataSource::ClientID client)
     : m_strategyType(strategy),
-      m_account(account)
+      m_account(account),
+      m_clientID(client)
     {}
 
 /*---------------------------------------------------------------------------------**//**
@@ -888,10 +897,18 @@ DataSourceAccount * SMGroupGlobalParameters::GetDataSourceAccount()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Lee.Bull        02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DataSource::ClientID SMGroupGlobalParameters::GetDataSourceClientID()
+    {
+    return m_clientID;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SMGroupGlobalParameters::Ptr SMGroupGlobalParameters::Create(StrategyType strategy, DataSourceAccount * account)
+SMGroupGlobalParameters::Ptr SMGroupGlobalParameters::Create(StrategyType strategy, DataSourceAccount * account, DataSource::ClientID client)
     {
-    return new SMGroupGlobalParameters(strategy, account);
+    return new SMGroupGlobalParameters(strategy, account, client);
     }
 

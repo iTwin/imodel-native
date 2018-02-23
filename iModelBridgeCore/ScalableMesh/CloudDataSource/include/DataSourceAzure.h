@@ -31,7 +31,7 @@ protected:
 
 public:
 
-                                DataSourceAzure         (DataSourceAccount *sourceAccount);
+                                DataSourceAzure         (DataSourceAccount *sourceAccount, ClientID client);
                                ~DataSourceAzure         (void);
 
     DataSourceStatus            open                    (const DataSourceURL &sourceURL, DataSourceMode mode);

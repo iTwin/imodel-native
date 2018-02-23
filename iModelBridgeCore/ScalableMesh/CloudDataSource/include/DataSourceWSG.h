@@ -25,7 +25,7 @@ protected:
 
 public:
 
-                                DataSourceWSG         (DataSourceAccount *sourceAccount);
+                                DataSourceWSG         (DataSourceAccount *sourceAccount, ClientID client);
                                ~DataSourceWSG         (void);
 
     DataSourceStatus            open                    (const DataSourceURL &sourceURL, DataSourceMode mode);

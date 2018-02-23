@@ -62,8 +62,8 @@ public:
 
         DataSourceStatus                    setAccount                          (const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
 
-        DataSource                   *      createDataSource                    (void);
-        //DataSourceStatus                    destroyDataSource                   (DataSource *dataSource);
+        DataSource                   *      createDataSource                    (DataSource::ClientID client);
+      //DataSourceStatus                    destroyDataSource                   (DataSource *dataSource);
 
         AzureContainer                      initializeContainer                 (const DataSourceURL &containerName, DataSourceMode mode);
 

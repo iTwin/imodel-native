@@ -11,12 +11,10 @@ protected:
 
     DataSourceAccount        *      m_cacheAccount;
     DataSourceURL                   m_cacheRoot;
-    DataSource               *      m_cacheDataSource;
 
 protected:
 
-        void                        setCacheDataSource            (DataSource *dataSource);
-        DataSource           *      getCacheDataSource            (void);
+        DataSource           *      getCacheDataSource            (ClientID client);
 
 public:
 

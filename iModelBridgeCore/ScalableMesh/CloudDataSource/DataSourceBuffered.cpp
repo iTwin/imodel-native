@@ -5,7 +5,7 @@
 #include "include\DataSourceBuffered.h"
 
 
-DataSourceBuffered::DataSourceBuffered(DataSourceAccount *sourceAccount) : Super(sourceAccount)
+DataSourceBuffered::DataSourceBuffered(DataSourceAccount *sourceAccount, ClientID client) : Super(sourceAccount, client)
 {
                                                             // Default segment size is zero until initialized
     setSegmentSize(0);

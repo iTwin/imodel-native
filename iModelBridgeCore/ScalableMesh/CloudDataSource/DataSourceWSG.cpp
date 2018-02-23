@@ -3,7 +3,7 @@
 #include "DataSourceAccountWSG.h"
 #include <assert.h>
 
-DataSourceWSG::DataSourceWSG(DataSourceAccount * sourceAccount) : DataSourceCloud(sourceAccount)
+DataSourceWSG::DataSourceWSG(DataSourceAccount * sourceAccount, ClientID client) : DataSourceCloud(sourceAccount, client)
 {
     setBuffer(nullptr);
 }

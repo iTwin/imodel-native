@@ -150,19 +150,19 @@ void DataSourceAccount::SetSASTokenGetterCallback(const std::function<std::strin
     // Nothing to do
     }
 
-DataSource * DataSourceAccount::createDataSource(const DataSourceManager::DataSourceName &name)
+DataSource * DataSourceAccount::createDataSource(const DataSourceManager::DataSourceName &name, DataSource::ClientID client)
     {
-    return getDataSourceManager().createDataSource(name, *this);
+    return getDataSourceManager().createDataSource(name, *this, client);
     }
 
 
-DataSource * DataSourceAccount::getOrCreateDataSource(const DataSourceManager::DataSourceName &name, bool *created)
+DataSource * DataSourceAccount::getOrCreateDataSource(const DataSourceManager::DataSourceName &name, DataSource::ClientID client, bool *created)
     {
     return getDataSourceManager().getOrCreateDataSource(name, *this, created);
     }
 
 
-DataSource * DataSourceAccount::getOrCreateThreadDataSource(bool *created)
+DataSource * DataSourceAccount::getOrCreateThreadDataSource(DataSource::ClientID client, bool *created)
 {
     std::wstringstream      name;
     DataSource::Name        dataSourceName;
@@ -172,7 +172,7 @@ DataSource * DataSourceAccount::getOrCreateThreadDataSource(bool *created)
 
     dataSourceName = getAccountName() + L"_thread-" + name.str();
 
-    return getDataSourceManager().getOrCreateDataSource(dataSourceName, *this, created);
+    return getDataSourceManager().getOrCreateDataSource(dataSourceName, *this, client, created);
     }
 
 

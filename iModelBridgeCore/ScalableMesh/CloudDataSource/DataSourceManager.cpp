@@ -55,7 +55,7 @@ DataSourceManager::~DataSourceManager(void)
     
 }
 
-DataSource * DataSourceManager::createDataSource(const DataSourceName & name, const DataSourceAccount::AccountName & accountName, const DataSourceStoreConfig * config)
+DataSource * DataSourceManager::createDataSource(const DataSourceName & name, const DataSourceAccount::AccountName & accountName, DataSource::ClientID client, const DataSourceStoreConfig * config)
 {
     (void)                   config;
 
@@ -64,17 +64,17 @@ DataSource * DataSourceManager::createDataSource(const DataSourceName & name, co
     if ((account = DataSourceServiceManager::getAccount(accountName)) == NULL)
         return nullptr;
 
-    return createDataSource(name, *account, config);
+    return createDataSource(name, *account, client, config);
 }
 
 
-DataSource * DataSourceManager::createDataSource(const DataSourceName &name, DataSourceAccount &account, const DataSourceStoreConfig * config)
+DataSource * DataSourceManager::createDataSource(const DataSourceName &name, DataSourceAccount &account, DataSource::ClientID client, const DataSourceStoreConfig * config)
 {
     (void)config;
 
-    DataSource                *    source = nullptr;
+    DataSource *source = nullptr;
 
-    if ((source = account.createDataSource()) == nullptr)
+    if ((source = account.createDataSource(client)) == nullptr)
         return nullptr;
 
     if (Manager<DataSource, true>::create(name, source) == NULL)
@@ -86,7 +86,7 @@ DataSource * DataSourceManager::createDataSource(const DataSourceName &name, Dat
     return source;
 }
 
-DataSource *DataSourceManager::getOrCreateDataSource(const DataSourceName &name, DataSourceAccount &account, bool *created)
+DataSource *DataSourceManager::getOrCreateDataSource(const DataSourceName &name, DataSourceAccount &account, DataSource::ClientID client, bool *created)
 {
     DataSource *    dataSource;
                                                             // Attempt to get the named DataSource
@@ -104,7 +104,7 @@ DataSource *DataSourceManager::getOrCreateDataSource(const DataSourceName &name,
     if (created)
         *created = true;
                                                             // Otherwise, create it
-    return createDataSource(name, account);
+    return createDataSource(name, account, client);
 }
 
 
@@ -166,6 +166,50 @@ DataSourceStatus DataSourceManager::destroyDataSources(DataSourceAccount * dataS
         deleted = false;
                                                             // Delete account's DataSources
         Manager<DataSource, true>::apply(deleteFirstAccountDataSource);
+
+    } while (deleted);
+
+
+    return DataSourceStatus();
+}
+
+
+DataSourceStatus DataSourceManager::destroyDataSources(DataSource::ClientID client)
+{
+    if (client == nullptr)
+        return DataSourceStatus(DataSourceStatus::Status_Error);
+
+    bool deleted;
+
+    Manager<DataSource, false>::ApplyFunction deleteFirstClientDataSource = [this, client, &deleted](Manager<DataSource, false>::Iterator it) -> bool
+    {
+        if (it->second)
+        {
+                                                            // If DataSource belongs to Client
+            if (it->second->getClientID() == client)
+            {
+                                                            // Destroy the DataSource
+                destroyDataSource(it->second);
+                                                            // Return deleted
+                deleted = true;
+                                                            // Return don't traverse any more
+                return false;
+            }
+        }
+                                                            // Not found, so return not deleted
+        deleted = false;
+                                                            // Return continue traversing
+        return true;
+    };
+                                                            // Iteratively delete the first found DataSource belonging to the given Client
+                                                            // IMPORTANT;
+                                                            // This is done this way for container safety, because due to the recursive nature of
+                                                            // Deleting DataSource objects, multiple deletions may occur
+    do
+    {
+        deleted = false;
+                                                            // Delete account's DataSources
+        Manager<DataSource, true>::apply(deleteFirstClientDataSource);
 
     } while (deleted);
 

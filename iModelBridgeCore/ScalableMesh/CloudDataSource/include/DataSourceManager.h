@@ -9,7 +9,8 @@ class DataSourceManager : public Manager<DataSource, true>, public DataSourceSer
 {
 public:
 
-    typedef DataSource::Name    DataSourceName;
+    typedef DataSource::Name                    DataSourceName;
+    typedef DataSource::ClientID                ClientID;
 
 protected:
 
@@ -26,13 +27,14 @@ public:
     bool                                        destroyAll              (void);
 
 
-    DataSource                              *   createDataSource		(const DataSourceName &name, const DataSourceAccount::AccountName &account, const DataSourceStoreConfig *config = nullptr);
-	DataSource                              *   createDataSource		(const DataSourceName &name, DataSourceAccount &account, const DataSourceStoreConfig *config = nullptr);
+    DataSource                              *   createDataSource		(const DataSourceName &name, const DataSourceAccount::AccountName &account, DataSource::ClientID clientID, const DataSourceStoreConfig *config = nullptr);
+	DataSource                              *   createDataSource		(const DataSourceName &name, DataSourceAccount &account, DataSource::ClientID clientID, const DataSourceStoreConfig *config = nullptr);
 
-	DataSource                              *	getOrCreateDataSource	(const DataSourceName &name, DataSourceAccount &account, bool *created = nullptr);
+	DataSource                              *	getOrCreateDataSource	(const DataSourceName &name, DataSourceAccount &account, DataSource::ClientID clientID, bool *created = nullptr);
 
 	CLOUD_EXPORT DataSourceStatus               destroyDataSource		(DataSource *dataSource);
     DataSourceStatus							destroyDataSources		(DataSourceAccount *dataSourceAccount);
+    DataSourceStatus							destroyDataSources      (DataSource::ClientID client);
 
 	DataSourceAccount                       *	initializeAzureTest		(void);
 

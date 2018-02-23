@@ -19,9 +19,9 @@ unsigned int DataSourceAccountFile::getDefaultNumTransferTasks(void)
     }
 
 
-DataSource * DataSourceAccountFile::createDataSource(void)
+DataSource * DataSourceAccountFile::createDataSource(DataSource::ClientID client)
     {
-    return new DataSourceFile(this);
+    return new DataSourceFile(this, client);
     }
 
 DataSourceStatus DataSourceAccountFile::destroyDataSource(DataSource * dataSource)

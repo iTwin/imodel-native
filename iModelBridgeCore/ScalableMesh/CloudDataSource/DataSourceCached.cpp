@@ -3,7 +3,7 @@
 #include "DataSourceAccount.h"
 
 
-DataSourceCached::DataSourceCached(DataSourceAccount * account) : Super(account)
+DataSourceCached::DataSourceCached(DataSourceAccount * account, ClientID client) : Super(account, client)
 {
                                                             // Initially caching is disabled by default
     setCachingEnabled(false);
@@ -30,8 +30,9 @@ bool DataSourceCached::isCached(void)
 
 DataSourceStatus DataSourceCached::readFromCache(DataSourceBuffer::BufferData *dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)
 {
-    DataSource                        *    dataSource;
-    DataSourceStatus                    statusNotFound(DataSourceStatus::Status_Not_Found);
+/*
+    DataSource           *  dataSource;
+    DataSourceStatus        statusNotFound(DataSourceStatus::Status_Not_Found);
 
     (void) destSize;
 
@@ -59,8 +60,9 @@ DataSourceStatus DataSourceCached::readFromCache(DataSourceBuffer::BufferData *d
 
     if (size > 0 && readSize != size)
         return DataSourceStatus(DataSourceStatus::Status_Error_EOF);
-
+*/
     return DataSourceStatus();
+
 }
 
 DataSourceStatus DataSourceCached::writeToCache(DataSourceBuffer::BufferData *dest, DataSourceBuffer::BufferSize size)

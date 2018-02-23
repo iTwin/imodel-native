@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/SMNodeGroup.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -70,22 +70,24 @@ public:
 public:
 
     DataSourceAccount*      GetDataSourceAccount();
+    DataSource::ClientID    GetDataSourceClientID();
     StrategyType            GetStrategyType() { return m_strategyType; }
     uint32_t                GetNextNodeID() { return m_nextNodeID++; }
     WString                 GetWellKnownText() { return m_wktStr; }
     void                    SetWellKnownText(const WString& wkt) { m_wktStr = wkt; }
 
-    static Ptr Create(StrategyType strategy, DataSourceAccount* account);
+    static Ptr Create(StrategyType strategy, DataSourceAccount* account, DataSource::ClientID client);
 
 private:
 
     //SMGroupGlobalParameters() = delete;
-    SMGroupGlobalParameters(StrategyType strategy, DataSourceAccount* account);
+    SMGroupGlobalParameters(StrategyType strategy, DataSourceAccount* account, DataSource::ClientID client);
 
 private:
 
     StrategyType          m_strategyType = NORMAL;
     DataSourceAccount*    m_account = nullptr;
+    DataSource::ClientID  m_clientID = nullptr;
     std::atomic<uint32_t> m_nextNodeID = 0;
     WString               m_wktStr;
     };
@@ -568,7 +570,8 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 
         bool IsRoot() { return m_isRoot; }
 
-        DataSourceAccount *GetDataSourceAccount(void);
+        DataSourceAccount   *   GetDataSourceAccount(void);
+        DataSource::ClientID    GetDataSourceClientID(void);
 
         template<class EXTENT> SMGroupingStrategy<EXTENT>* GetStrategy()
             {

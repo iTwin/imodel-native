@@ -15,12 +15,12 @@ DataSourceAccountWSG::DataSourceAccountWSG(const ServiceName & name, const Accou
     setAccount(name, identifier, key);
     }
 
-DataSource * DataSourceAccountWSG::createDataSource(void)
+DataSource * DataSourceAccountWSG::createDataSource(DataSource::ClientID client)
 {
                                                             // NOTE: This method is for internal use only, don't call this directly.
     DataSourceWSG *   dataSourceWSG;
                                                             // Create a new DataSourceAzure
-    dataSourceWSG = new DataSourceWSG(this);
+    dataSourceWSG = new DataSourceWSG(this, client);
     if (dataSourceWSG == nullptr)
         return nullptr;
                                                             // Set the timeout from the account's default (which comes from the Service's default)

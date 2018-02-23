@@ -73,12 +73,12 @@ void DataSourceAccountCURL::setCertificateAuthoritiesUrl(const Utf8String& certi
     certificateAuthoritiesUrl = certificateAuthoritiesUrlIn;
     }
 
-DataSource * DataSourceAccountCURL::createDataSource(void)
+DataSource * DataSourceAccountCURL::createDataSource(DataSource::ClientID client)
 {
                                                             // NOTE: This method is for internal use only, don't call this directly.
     DataSourceCURL *   dataSourceCURL;
                                                             // Create a new DataSourceAzure
-    dataSourceCURL = new DataSourceCURL(this);
+    dataSourceCURL = new DataSourceCURL(this, client);
     if (dataSourceCURL == nullptr)
         return nullptr;
                                                             // Set the timeout from the account's default (which comes from the Service's default)

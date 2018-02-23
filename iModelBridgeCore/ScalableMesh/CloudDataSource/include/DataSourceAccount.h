@@ -21,6 +21,7 @@ public:
     typedef std::wstring                AccountIdentifier;
     typedef std::wstring                AccountKey;
     typedef std::string                 AccountSSLCertificatePath;
+    typedef void *                      ClientID;
 
 protected:
 
@@ -71,11 +72,11 @@ public:
     CLOUD_EXPORT virtual void           setWSGTokenGetterCallback       (const std::function<std::string(void)>& tokenGetter);
     CLOUD_EXPORT virtual void           SetSASTokenGetterCallback       (const std::function<std::string(const Utf8String& docGuid)>& tokenGetter);
 
-    virtual      DataSource       *     createDataSource                (void) = 0;
-    CLOUD_EXPORT DataSource       *     createDataSource                (const DataSource::Name &name);
+    virtual      DataSource       *     createDataSource                (DataSource::ClientID client) = 0;
+    CLOUD_EXPORT DataSource       *     createDataSource                (const DataSource::Name &name, DataSource::ClientID client);
 
-    CLOUD_EXPORT DataSource       *     getOrCreateDataSource           (const DataSource::Name &name, bool *created = nullptr);
-    CLOUD_EXPORT DataSource       *     getOrCreateThreadDataSource     (bool *created = nullptr);
+    CLOUD_EXPORT DataSource       *     getOrCreateDataSource           (const DataSource::Name &name, DataSource::ClientID client, bool *created = nullptr);
+    CLOUD_EXPORT DataSource       *     getOrCreateThreadDataSource     (DataSource::ClientID client, bool *created = nullptr);
 
             bool                        destroyAll                      (void);
 

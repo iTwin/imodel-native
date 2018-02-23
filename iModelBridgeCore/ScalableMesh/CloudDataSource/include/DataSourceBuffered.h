@@ -9,29 +9,29 @@ class DataSourceBuffered : public DataSource
 
 protected:
 
-    typedef DataSource          Super;
+    typedef DataSource                          Super;
 
-    DataSourceBuffer        *   buffer;
-    DataSize                    segmentSize;
+    DataSourceBuffer                        *   buffer;
+    DataSize                                    segmentSize;
 
 protected:
 
-    DataSourceStatus            initializeBuffer        (DataSourceBuffer::BufferSize size = 0, DataSource::Buffer * existingBuffer = nullptr, bool segmented = false);
+    DataSourceStatus                            initializeBuffer        (DataSourceBuffer::BufferSize size = 0, DataSource::Buffer * existingBuffer = nullptr, bool segmented = false);
 
 public:
-                                DataSourceBuffered      (DataSourceAccount *sourceAccount);
-                                ~DataSourceBuffered      (void);
+                                                DataSourceBuffered      (DataSourceAccount *sourceAccount, ClientID client);
+                                                ~DataSourceBuffered     (void);
 
-    bool                        isValid                 (void);
-    bool                        isEmpty                 (void);
+    bool                                        isValid                 (void);
+    bool                                        isEmpty                 (void);
 
-    DataSourceStatus            open                    (const DataSourceURL & sourceURL, DataSourceMode sourceMode);
-    DataSourceStatus            close                   (void);
+    DataSourceStatus                            open                    (const DataSourceURL & sourceURL, DataSourceMode sourceMode);
+    DataSourceStatus                            close                   (void);
 
-    DataSourceStatus            read                    (Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size = 0);
-    DataSourceStatus            write                   (const Buffer * source, DataSize size);
+    DataSourceStatus                            read                    (Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size = 0);
+    DataSourceStatus                            write                   (const Buffer * source, DataSize size);
 
-    DataSourceStatus            flush                   (void);
+    DataSourceStatus                            flush                   (void);
 
                     void                        setBuffer               (DataSourceBuffer *newBuffer);
     CLOUD_EXPORT    DataSourceBuffer        *   getBuffer               (void);

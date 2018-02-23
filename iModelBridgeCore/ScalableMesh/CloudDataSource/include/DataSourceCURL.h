@@ -25,7 +25,7 @@ protected:
 
 public:
 
-                                DataSourceCURL         (DataSourceAccount *sourceAccount);
+                                DataSourceCURL         (DataSourceAccount *sourceAccount, ClientID client);
                                ~DataSourceCURL         (void);
 
     DataSourceStatus            open                    (const DataSourceURL &sourceURL, DataSourceMode mode);

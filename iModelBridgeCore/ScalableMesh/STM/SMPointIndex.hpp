@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/SMPointIndex.hpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -7892,7 +7892,7 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveG
     oldMasterHeader.m_singleFile = false;
 
 #ifdef VANCOUVER_API
-    SMGroupGlobalParameters::Ptr groupParameters = SMGroupGlobalParameters::Create(SMGroupGlobalParameters::StrategyType(pi_pGroupMode), dataSourceAccount);
+    SMGroupGlobalParameters::Ptr groupParameters = SMGroupGlobalParameters::Create(SMGroupGlobalParameters::StrategyType(pi_pGroupMode), dataSourceAccount, this->GetDataStore().get());
     SMGroupCache::Ptr groupCache = nullptr;
     SMNodeGroupPtr group = SMNodeGroup::Create(groupParameters, groupCache, pi_pOutputDirPath, 0, nullptr);
 

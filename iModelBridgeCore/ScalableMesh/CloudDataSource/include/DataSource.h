@@ -2,7 +2,7 @@
 |
 |  $Source: CloudDataSource/include/DataSource.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -57,6 +57,7 @@ public:
 
 protected:
 
+
     Timeout                                         timeout;
 
 protected:
@@ -64,9 +65,11 @@ protected:
     void                                            setStoreConfig      (DataSourceStoreConfig *newConfig);
     DataSourceStoreConfig                      *    getStoreConfig      (void);
 
+
+
 public:
 
-                                                    DataSource          (DataSourceAccount *sourceAccount);
+                                                    DataSource          (DataSourceAccount *sourceAccount, ClientID client);
     virtual                                        ~DataSource          (void);
 
     DataSourceService                           *   getService          (void);

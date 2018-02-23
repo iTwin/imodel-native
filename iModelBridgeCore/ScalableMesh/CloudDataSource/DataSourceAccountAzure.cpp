@@ -71,12 +71,12 @@ DataSourceAccountAzure::AzureBlobClient &DataSourceAccountAzure::getBlobClient(v
     return blobClient;
 }
 
-DataSource * DataSourceAccountAzure::createDataSource(void)
+DataSource * DataSourceAccountAzure::createDataSource(DataSource::ClientID client)
 {
                                                             // NOTE: This method is for internal use only, don't call this directly.
     DataSourceAzure *   dataSourceAzure;
                                                             // Create a new DataSourceAzure
-    dataSourceAzure = new DataSourceAzure(this);
+    dataSourceAzure = new DataSourceAzure(this, client);
     if (dataSourceAzure == nullptr)
         return nullptr;
                                                             // Set the timeout from the account's default (which comes from the Service's default)

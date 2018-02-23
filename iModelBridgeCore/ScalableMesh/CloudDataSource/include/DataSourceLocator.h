@@ -11,10 +11,15 @@ class DataSourceAccount;
 class DataSourceLocator
 {
 
+public:
+
+    typedef const void *                    ClientID;
+
 protected:
 
     DataSourceService                    *  m_service;
     DataSourceAccount                    *  m_account;
+    ClientID                                m_clientID;
 
     DataSourceURL                           m_prefixPath;
     DataSourceURL                           m_subPath;
@@ -43,18 +48,23 @@ public:
     void                                    setAccount              (DataSourceAccount *sourceAccount);
     DataSourceAccount                  *    getAccount              (void) const;
 
+    void                                    setClientID             (ClientID client);
+    ClientID                                getClientID             (void);
+
 
     void                                    setPrefixPath           (const DataSourceURL &path);
-    const DataSourceURL                &    getPrefixPath           (void);
+    const DataSourceURL                &    getPrefixPath           (void) const;
 
     void                                    setSubPath              (const DataSourceURL &path);
-    const DataSourceURL                &    getSubPath              (void);
+    const DataSourceURL                &    getSubPath              (void) const;
 
-    void                                    setSegmentName          (DataSourceURL &segmentName);
+    void                                    setSegmentName          (const DataSourceURL &segmentName);
     const DataSourceURL                &    getSegmentName          (void) const;
 
     void                                    setMode                 (DataSourceMode sourceMode);
     DataSourceMode                          getMode                 (void) const;
+
+    DataSourceLocator &                     operator=               (const DataSourceLocator &other);
 
 };
 

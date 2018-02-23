@@ -6,16 +6,29 @@ DataSourceLocator::DataSourceLocator(void)
 {
     setService(nullptr);
     setAccount(nullptr);
+    setClientID(nullptr);
 }
 
 DataSourceLocator::DataSourceLocator(DataSourceLocator & locator)
 {
-    setPrefixPath(locator.getPrefixPath());
-    setSubPath(locator.getSubPath());
-    setService(locator.getService());
-    setAccount(locator.getAccount());
+    *this = locator;
 }
 
+
+DataSourceLocator &DataSourceLocator::operator=(const DataSourceLocator &locator)
+    {
+    setService(const_cast<DataSourceLocator &>(locator).getService());
+    setAccount(locator.getAccount());
+    setClientID(const_cast<DataSourceLocator &>(locator).getClientID());
+
+    setPrefixPath(locator.getPrefixPath());
+    setSubPath(locator.getSubPath());
+    setSegmentName(locator.getSegmentName());
+
+    setMode(locator.getMode());
+
+    return *this;
+    }
 
 void DataSourceLocator::getURL(DataSourceURL &url)
 {
@@ -44,12 +57,22 @@ DataSourceAccount * DataSourceLocator::getAccount(void) const
     return m_account;
 }
 
+void DataSourceLocator::setClientID(ClientID client)
+    {
+    m_clientID = client;
+    }
+
+DataSourceLocator::ClientID DataSourceLocator::getClientID(void)
+    {
+    return m_clientID;
+    }
+
 void DataSourceLocator::setPrefixPath(const DataSourceURL & path)
 {
     m_prefixPath = path;
 }
 
-const DataSourceURL & DataSourceLocator::getPrefixPath(void)
+const DataSourceURL & DataSourceLocator::getPrefixPath(void) const
 {
     return m_prefixPath;
 }
@@ -59,12 +82,12 @@ void DataSourceLocator::setSubPath(const DataSourceURL & path)
     m_subPath = path;
 }
 
-const DataSourceURL & DataSourceLocator::getSubPath(void)
+const DataSourceURL & DataSourceLocator::getSubPath(void) const
 {
     return m_subPath;
 }
 
-void DataSourceLocator::setSegmentName(DataSourceURL & name)
+void DataSourceLocator::setSegmentName(const DataSourceURL & name)
 {
     m_segmentName = name;
 }

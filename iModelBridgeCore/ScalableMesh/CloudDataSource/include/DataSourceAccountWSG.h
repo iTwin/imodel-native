@@ -61,7 +61,7 @@ public:
 
         virtual void                        setPrefixPath                       (const DataSourceURL &prefix) override;
 
-        DataSource                   *      createDataSource                    (void);
+        DataSource                   *      createDataSource                    (DataSource::ClientID client);
         DataSourceStatus                    destroyDataSource                   (DataSource *dataSource);
 
         DataSourceStatus                    downloadBlobSync                    (DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize);
