@@ -2,7 +2,7 @@
 |
 |     $Source: serialization/src/FlatBuffer/FixedStructs.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -19,6 +19,62 @@ void HelloBGFB ()
     DPoint3d xyz = DPoint3d::From (0,sqrt(2.0),Angle::FromDegrees (90).Radians ());
     printf (" xyz (%g,%g,%g)\n", xyz.x, xyz.y, xyz.z);
     }
+
+// move blocks of 8 doubles between the flat array  FacetFaceData structure arrays.
+// (The flat array is memory compatible for PolyfaceQueryCarrier)
+bool unpackFaceData
+(
+double *doubles,
+size_t numDoubles,
+BlockedVector<FacetFaceData> &faceData
+)
+    {
+    faceData.clear ();
+    if (numDoubles > 0)
+        {
+        size_t numFaceData = numDoubles / 8;
+        for (size_t i = 0, faceIndex = 0; faceIndex < numFaceData; faceIndex++)
+            {
+            FacetFaceData data;
+            data.m_paramDistanceRange.low.x = doubles[i++];
+            data.m_paramDistanceRange.low.y = doubles[i++];
+            data.m_paramDistanceRange.high.x = doubles[i++];
+            data.m_paramDistanceRange.high.y = doubles[i++];
+
+            data.m_paramRange.low.x = doubles[i++];
+            data.m_paramRange.low.y = doubles[i++];
+            data.m_paramRange.high.x = doubles[i++];
+            data.m_paramRange.high.y = doubles[i++];
+            // Face indices filled with zeros by ctor !!!
+            faceData.push_back (data);
+            }
+        return true;
+        }
+    return false;
+    }
+
+ // For FacetFaceData, only store param mapping controls in m_paramDistanceRange and m_paramRange.
+void packFaceData
+(
+bvector<FacetFaceData> &faceData,
+bvector<double> &packedData
+)
+    {
+    packedData.clear ();
+    for (auto &f : faceData)
+        {
+        packedData.push_back (f.m_paramDistanceRange.low.x);
+        packedData.push_back (f.m_paramDistanceRange.low.y);
+        packedData.push_back (f.m_paramDistanceRange.high.x);
+        packedData.push_back (f.m_paramDistanceRange.high.y);
+
+        packedData.push_back (f.m_paramRange.low.x);
+        packedData.push_back (f.m_paramRange.low.y);
+        packedData.push_back (f.m_paramRange.high.x);
+        packedData.push_back (f.m_paramRange.high.y);
+        }
+    }
+
 
 // s_prefixBuffer is placed at the front of the flatbuffer block ...    
 static const Byte s_prefixBuffer[] =
@@ -595,7 +651,6 @@ flatbuffers::Offset<flatbuffers::Vector<TScalar>> WriteOptionalVector (TBlocked 
     return 0;
     }
 
-
  template<typename T>
  bool IsWritten (const flatbuffers::Offset<flatbuffers::Vector<T>> offset)
     {
@@ -625,7 +680,6 @@ flatbuffers::Offset<BGFB::VariantGeometry> WriteAsVariantGeometry (bvector<IGeom
         );                         
     }
 
-
 flatbuffers::Offset<BGFB::Polyface> WriteAsFBPolyface (PolyfaceHeaderR parent)
     {
     int32_t numPerFace = parent.GetNumPerFace ();
@@ -642,7 +696,17 @@ flatbuffers::Offset<BGFB::Polyface> WriteAsFBPolyface (PolyfaceHeaderR parent)
     const flatbuffers::Offset<flatbuffers::Vector<int32_t>> paramIndex = WriteOptionalVector<int, int, 1>(parent.ParamIndex ());
     const flatbuffers::Offset<flatbuffers::Vector<int32_t>> normalIndex = WriteOptionalVector<int, int, 1>(parent.NormalIndex ());
     const flatbuffers::Offset<flatbuffers::Vector<int32_t>> colorIndex = WriteOptionalVector<int, int, 1>(parent.ColorIndex ());
+    const flatbuffers::Offset<flatbuffers::Vector<int32_t>> faceIndex = WriteOptionalVector<int, int, 1>(parent.FaceIndex ());
 
+    auto numFaceData = parent.FaceData ().size ();
+    flatbuffers::Offset<flatbuffers::Vector<double>> faceData = 0;
+    if (numFaceData > 0)
+        {
+        // We pack m_paramDistance range and m_paramRange into flat array of doubles . . .
+        bvector<double> packedFaceData;
+        packFaceData (parent.FaceData (), packedFaceData);
+        faceData = WriteOptionalVector<double, double, 1>(packedFaceData);
+        }
 //    const flatbuffers::Offset<flatbuffers::Vector<int32_t>> colorTable = WriteOptionalVector<uint32_t, int, 1>(parent.ColorTable());
     const flatbuffers::Offset<flatbuffers::Vector<int32_t>> intColor = WriteOptionalVector<uint32_t, int, 1>(parent.IntColor ());
 
@@ -675,6 +739,10 @@ flatbuffers::Offset<BGFB::Polyface> WriteAsFBPolyface (PolyfaceHeaderR parent)
 //    if (IsWritten (colorTable))
 //        builder.add_colorTable (colorTable);
 
+    if (IsWritten (faceIndex))
+        builder.add_faceIndex (faceIndex);
+    if (IsWritten (faceData))
+        builder.add_faceData (faceData);
     return builder.Finish ();
     }
 
@@ -1021,6 +1089,26 @@ static PolyfaceHeaderPtr ReadPolyfaceHeaderDirect (const BGFB::Polyface *fbPolyf
                 (size_t)fbData->Length ()
                 );
         }
+    if (fbPolyface->has_faceIndex ())
+        {
+        auto fbData = fbPolyface->faceIndex ();
+        LoadBlockedVector<BlockedVectorIntR, int> (
+                polyface->FaceIndex (),
+                (int*)fbData->GetStructFromOffset(0),
+                (size_t)fbData->Length ()
+                );
+        }
+
+    if (fbPolyface->has_faceData ())
+        {
+        auto fbFaceData = fbPolyface->faceData ();
+        auto pFaceDataDoubles = (double*)fbFaceData->GetStructFromOffset(0);
+        //int numFaceData = (size_t)(fbFaceData->Length () / 8);
+        if (unpackFaceData (pFaceDataDoubles, (size_t)fbFaceData->Length (), polyface->FaceData ()))
+            {
+            polyface->FaceData().SetTags (1,1,0,0,0, true);
+            }
+        }
 
     if (fbPolyface->has_intColor ())
         {
@@ -1053,16 +1141,19 @@ static bool ReadPolyfaceQueryCarrierDirect (const BGFB::Polyface *fbPolyface, Po
     uint32_t meshStyle    = (uint32_t)fbPolyface->meshStyle ();
     bool twoSided       = 0 != fbPolyface->twoSided ();
 
-    size_t numPoint = 0, numParam = 0, numNormal = 0, numColor = 0; //numDoubleColor = 0, numIntColor = 0, numColorTable = 0;
-    size_t numPointIndex = 0, numParamIndex = 0, numNormalIndex = 0, numColorIndex = 0;
+    size_t numPoint = 0, numParam = 0, numNormal = 0, numColor = 0, numFace = 0; //numDoubleColor = 0, numIntColor = 0, numColorTable = 0;
+    size_t numPointIndex = 0, numParamIndex = 0, numNormalIndex = 0, numColorIndex = 0, numFaceIndex;
     int32_t const * pPointIndex = nullptr;
     int32_t const * pNormalIndex = nullptr;
     int32_t const * pParamIndex = nullptr;
     int32_t const * pColorIndex = nullptr;
+    int32_t const * pFaceIndex = nullptr;
+
     
     DPoint3dCP pPoints = nullptr;
     DPoint2dCP pParams = nullptr;
     DVec3dCP   pNormals = nullptr;
+    FacetFaceDataCP pFaceData = nullptr;
 //    RgbFactor const* pDoubleColor = nullptr;
     uint32_t const* pIntColor = nullptr;
 //    uint32_t const* pColorTable = nullptr;
@@ -1135,6 +1226,19 @@ static bool ReadPolyfaceQueryCarrierDirect (const BGFB::Polyface *fbPolyface, Po
         numColor = (size_t)fbData->Length ();
         }
 
+    if (fbPolyface->has_faceIndex ())
+        {
+        auto fbData = fbPolyface->faceIndex ();
+        pFaceIndex = (int*)fbData->GetStructFromOffset(0);
+        numFaceIndex = (size_t)fbData->Length ();
+        }
+
+    if (fbPolyface->has_faceData ())
+        {
+        auto fbData = fbPolyface->faceData();
+        pIntColor = (uint32_t*)fbData->GetStructFromOffset(0);
+        numFace = (size_t)fbData->Length ();
+        }
 //    if (fbPolyface->has_colorTable ())
 //        {
 //        auto fbData = fbPolyface->colorTable ();
@@ -1167,6 +1271,9 @@ static bool ReadPolyfaceQueryCarrierDirect (const BGFB::Polyface *fbPolyface, Po
         pIlluminationName,
         meshStyle, numPerRow
         );
+
+    carrier.SetFacetFaceData (pFaceData, numFace);
+    carrier.SetFaceIndex (pFaceIndex);
     return true;
     }
 

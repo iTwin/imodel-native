@@ -126,6 +126,21 @@ void DoRoundTrip (IGeometryPtr g0, bool emitGeometry)
         DoRoundTrip (g0, emitGeometry, 1);
     }
 
+void DoRoundTripMeshedSolid (IGeometryPtr g0, bool emitGeometry)
+    {
+    auto solid = g0->GetAsISolidPrimitive ();
+    if (solid.IsValid ())
+        {
+        IFacetOptionsPtr options = IFacetOptions::Create ();
+        options->SetParamsRequired (true);
+        IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
+        if (Check::True (builder->AddSolidPrimitive (*solid), "DoRoundTrip"))
+            {
+            auto gMesh = IGeometry::Create (builder->GetClientMeshPtr ());
+            DoRoundTrip (gMesh, emitGeometry);
+            }
+        }
+    }
   
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
@@ -173,14 +188,17 @@ TEST(BGFB,HelloWorld)
     DgnConeDetail coneDetail (DPoint3d::From (1,2,2), DPoint3d::From (3,2,1), 1, 2, true);
     ISolidPrimitivePtr cone = ISolidPrimitive::CreateDgnCone (coneDetail);
     DoRoundTrip (IGeometry::Create (cone), s_emitGeometry);
+    DoRoundTripMeshedSolid (IGeometry::Create (cone), s_emitGeometry);
     
     DgnBoxDetail boxDetail = DgnBoxDetail::InitFromCenterAndSize (DPoint3d::From (2,2,2), DPoint3d::From (3,4,5), false);
     ISolidPrimitivePtr Box = ISolidPrimitive::CreateDgnBox (boxDetail);
     DoRoundTrip (IGeometry::Create (Box), s_emitGeometry);
-    
+    DoRoundTripMeshedSolid (IGeometry::Create (Box), s_emitGeometry);
+
     DgnSphereDetail sphereDetail (DPoint3d::From (2,2,2), 6);
-    ISolidPrimitivePtr Sphere = ISolidPrimitive::CreateDgnSphere (sphereDetail);
-    DoRoundTrip (IGeometry::Create (Sphere), s_emitGeometry);
+    ISolidPrimitivePtr sphere = ISolidPrimitive::CreateDgnSphere (sphereDetail);
+    DoRoundTrip (IGeometry::Create (sphere), s_emitGeometry);
+    DoRoundTripMeshedSolid (IGeometry::Create (sphere), s_emitGeometry);
     
     DgnTorusPipeDetail torusPipeDetail (
                 DPoint3d::From (2,2,2),
@@ -193,6 +211,7 @@ TEST(BGFB,HelloWorld)
                 );
     ISolidPrimitivePtr torusPipe = ISolidPrimitive::CreateDgnTorusPipe (torusPipeDetail);
     DoRoundTrip (IGeometry::Create (torusPipe), s_emitGeometry);
+    DoRoundTripMeshedSolid (IGeometry::Create (torusPipe), s_emitGeometry);
 
     CurveVectorPtr unitSquare = CurveVector::CreateRectangle (0.0, 0.0,    1.0,1.0,   0.0);
     DgnExtrusionDetail extrusionDetail (unitSquare, DVec3d::From (0,0,2), true);

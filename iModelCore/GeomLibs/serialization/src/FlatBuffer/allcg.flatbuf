@@ -88,7 +88,6 @@ azz:double;
 azw:double;
 }
 
-
 struct DgnBoxDetail
     {
     baseOriginX: double;
@@ -326,6 +325,8 @@ table Polyface
     numPerRow   : int;
     meshStyle   : int;
     twoSided    : bool;
+    faceIndex   : [int];
+    faceData   : [double];
     }    
 
 struct TransitionSpiralDetail

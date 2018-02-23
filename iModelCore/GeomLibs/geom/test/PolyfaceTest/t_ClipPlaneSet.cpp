@@ -851,7 +851,22 @@ TEST(RecursiveClipSets,LineClip0)
                 Check::SaveTransformed (polygon);
                 ClipAndSave (root, *cpBCurve);
 
-
+                Check::Shift (0,5,0);
+                Check::SaveTransformed (polygon);
+                auto cpLineString = ICurvePrimitive::CreateLineString (
+                bvector<DPoint3d>{
+                      DPoint3d::From(0, -0.2),
+                      DPoint3d::From(1, 0.3),
+                      DPoint3d::From(1.2, 0.8),
+                      DPoint3d::From(0.5, 1.0),
+                      DPoint3d::From(-0.3, 0.1),
+                      DPoint3d::From(0, 0.8),
+                      DPoint3d::From(0.5, 1.3)}
+                    );
+                Check::SaveTransformed (*cpLineString);
+                Check::Shift (0,4,0);
+                Check::SaveTransformed (polygon);
+                ClipAndSave (root, *cpLineString);
                 }
             }
         }

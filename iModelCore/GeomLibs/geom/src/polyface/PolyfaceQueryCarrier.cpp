@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/PolyfaceQueryCarrier.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -58,5 +58,20 @@ PolyfaceQueryCarrier::PolyfaceQueryCarrier (
 +--------------------------------------------------------------------------------------*/
 void PolyfaceQueryCarrier::SetTextureId (uintptr_t id) {m_textureId = id;}
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz  02/18
++--------------------------------------------------------------------------------------*/
+void PolyfaceQueryCarrier::SetFacetFaceData (FacetFaceDataCP facetFaceData, size_t n)
+    {
+    m_faceDataPtr = facetFaceData;
+    m_faceCount = n;
+    }
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz  02/18
++--------------------------------------------------------------------------------------*/
+void PolyfaceQueryCarrier::SetFaceIndex (int32_t const *indexArray)
+    {
+    m_faceIndexPtr = indexArray;
+    }
  
 END_BENTLEY_GEOMETRY_NAMESPACE
