@@ -518,8 +518,7 @@ static void populateSheetTile(TTile* tile, uint32_t depth, SceneContextR context
 
     // add texture in the tree's viewport to a graphic
     GraphicParams gfParams = GraphicParams::FromSymbology(tree.m_tileColor, tree.m_tileColor, 0);
-    auto graphic = renderSys->_CreateTile(*viewport->m_texture, tile->m_corners, *viewport->m_db, gfParams);
-    tile->m_graphic = graphic;
+    tile->m_graphics = renderSys->_CreateSheetTile(*viewport->m_texture, tile->m_corners, *viewport->m_db, gfParams, tree.GetClipVector());
     tile->SetIsReady();
     }
 
@@ -686,8 +685,13 @@ Tile::SelectParent TTile::_SelectTiles(bvector<TileTree::TileCPtr>& selected, Ti
 void TTile::_DrawGraphics(DrawArgsR args) const
     {
     BeAssert(IsReady());
-    if (m_graphic.IsValid())
-        args.m_graphics.Add(*m_graphic);
+    for (auto& graphic : m_graphics)
+        {
+        if (graphic.IsValid())
+            {
+            args.m_graphics.Add(*graphic);
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

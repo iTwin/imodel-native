@@ -279,6 +279,7 @@ namespace Attachment
         void _OnUpdateRangeIndex(DRange3dCR, DRange3dCR, DgnElementId) override { }
         void _OnProjectExtentsChanged(AxisAlignedBox3dCR) override { }
         Utf8CP _GetName() const override {return "SheetTile";}
+        ClipVectorCP _GetClipVector() const override { return m_clip.get(); } // clip vector used by DrawArgs when rendering
 
         void LoadRootTile(DRange3dCR tileRange, GeometricModelR model);
         void Draw(SceneContextR);
@@ -297,14 +298,14 @@ namespace Attachment
 
         uint32_t m_maxPixelSize;
         Render::GraphicBuilder::TileCorners m_corners; 
-        mutable Render::GraphicPtr m_graphic;
+        bvector<Render::GraphicPtr> m_graphics;
 
         void _Invalidate() override { }
         bool _IsInvalidated(TileTree::DirtyRangesCR) const override { return false; }
         void _UpdateRange(DRange3dCR, DRange3dCR) override { }
 
         bool _HasChildren() const override;
-        bool _HasGraphics() const override {return IsReady() && m_graphic.IsValid();}
+        bool _HasGraphics() const override {return IsReady()/*###TODO: && m_graphic.IsValid()*/;}
         void _DrawGraphics(TileTree::DrawArgsR) const override;
         ChildTiles const* _GetChildren(bool) const override;
         void _ValidateChildren() const override { }
