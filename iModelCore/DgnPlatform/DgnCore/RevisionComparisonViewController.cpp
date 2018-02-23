@@ -25,9 +25,9 @@ void Symbology::InitializeDefaults()
     updated.SetAlpha(0);
     inserted.SetAlpha(0);
     deleted.SetAlpha(0);
-    // ###TODO update.SetMaterial(nullptr);
-    // ###TODO inserted.SetMaterial(nullptr);
-    // ###TODO deleted.SetMaterial(nullptr);
+    updated.SetIgnoresMaterial(true);
+    inserted.SetIgnoresMaterial(true);
+    deleted.SetIgnoresMaterial(true);
 
     m_current.SetAppearance(DbOpcode::Insert, inserted);
     m_current.SetAppearance(DbOpcode::Update, updated);
@@ -40,7 +40,7 @@ void Symbology::InitializeDefaults()
     m_target.SetAppearance(DbOpcode::Update, updated);
     m_target.SetAppearance(DbOpcode::Delete, deleted);
 
-    // ###TODO m_untouched.SetMaterial(nullptr);
+    m_untouched.SetIgnoresMaterial(true);
     m_untouched.SetRgb(ColorDef::VersionCompareBackground());
     Byte bTransparency = (Byte) s_backgroundElementTransparency;
     m_untouched.SetAlpha(bTransparency);

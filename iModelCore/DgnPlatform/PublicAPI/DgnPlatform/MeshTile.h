@@ -818,10 +818,6 @@ public:
     DRange3dCR GetRange() const { return m_range; }
     DgnModelR GetModel() const { return *m_model; }
 
-    bool WantCacheGeometrySources() const { return Options::CacheGeometrySources == m_options; }
-    GeometrySourceCP GetCachedGeometrySource(DgnElementId elementId) const;
-    GeometrySourceCP AddCachedGeometrySource(std::unique_ptr<GeometrySource>& source, DgnElementId elementId) const;
-
     bool WantCacheGeometry() const { return Options::CacheGeometryLists == m_options; }
     bool GetCachedGeometry(TileGeometryList& geometry, DgnElementId elementId) const;
     void AddCachedGeometry(DgnElementId elementId, TileGeometryList&& geometry) const;

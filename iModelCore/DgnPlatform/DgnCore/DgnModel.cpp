@@ -749,6 +749,8 @@ void DgnModel::_ToJson(JsonValueR val, JsonValueCR opts) const
 
     if (!m_jsonProperties.empty())
         val[json_jsonProperties()] = m_jsonProperties;
+    
+    val[json_name()] = GetName();
 
     if (m_isPrivate)
         val[json_isPrivate()] = true;
@@ -2055,7 +2057,7 @@ void GeometricModel::InitLastElementModifiedTime()
     constexpr Utf8CP ecsql = "SELECT MAX(LastMod) FROM " BIS_SCHEMA(BIS_CLASS_Element) " WHERE Model.Id=?";
     auto stmt = GetDgnDb().GetPreparedECSqlStatement(ecsql);
     stmt->BindId(1, GetModelId());
-    if (BE_SQLITE_ROW == stmt->Step())
+    if (BE_SQLITE_ROW == stmt->Step() && !stmt->IsValueNull(0))
         {
         DateTime dt = stmt->GetValueDateTime(0);
         int64_t unixMillis;

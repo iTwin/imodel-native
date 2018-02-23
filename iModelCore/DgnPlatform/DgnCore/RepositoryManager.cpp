@@ -290,6 +290,7 @@ IBriefcaseManagerPtr DgnPlatformLib::Host::RepositoryAdmin::_CreateBriefcaseMana
 #define STMT_SelectUnavailableCodesInSet "SELECT " CODE_Columns " FROM " TABLE_UnavailableCodes " WHERE InVirtualSet(@vset," CODE_Columns ")"
 #define STMT_DeleteCodesInSet "DELETE FROM " TABLE_Codes " WHERE InVirtualSet(@vset," CODE_Columns ")"
 #define STMT_SelectCode "SELECT * FROM " TABLE_Codes " WHERE " CODE_CodeSpecId "=? AND " CODE_Scope "=? AND " CODE_Value "=?"
+#define STMT_ModelIdFromElement "SELECT ModelId FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?"
 
 enum CodeColumn { CodeSpec=0, Scope, Value };
 
@@ -1099,7 +1100,7 @@ ReleaseContext::ReleaseContext(DgnDbR db, bool wantLocks, bool wantCodes) : m_db
     if (rev.IsValid())
         {
         if (wantLocks)
-            m_usedLocks.FromRevision(*rev, db);
+            m_usedLocks.FromRevision(*rev, db, true, false);
 
         if (wantCodes)
             {
@@ -1365,6 +1366,34 @@ RepositoryStatus BriefcaseManagerBase::_QueryLockLevels(DgnLockSet& levels, Lock
         LockableId id(static_cast<LockableType>(stmt->GetValueInt(0)), BeInt64Id(stmt->GetValueUInt64(1)));
         ids.erase(ids.find(id));
         levels.insert(DgnLock(id, static_cast<LockLevel>(stmt->GetValueInt(2))));
+        }
+
+    // We are avoiding obtaining locks for elements inside a exclusively locked model, so account for those here
+    if (!ids.empty())
+        {
+        stmt = GetDgnDb().GetCachedStatement(STMT_ModelIdFromElement);
+        for (auto iter = ids.begin(); iter != ids.end(); )
+            {
+            LockableId id = *iter;
+            if (id.GetType() == LockableType::Element)
+                {
+                stmt->BindId(1, id.GetId());
+                stmt->Step();
+                DgnModelId modelId = stmt->GetValueId<DgnModelId>(0);
+                stmt->Reset();
+                LockLevel modelLockLevel;
+                _QueryLockLevel(modelLockLevel, LockableId(modelId));
+                if (modelLockLevel == LockLevel::Exclusive)
+                    {
+                    levels.insert(DgnLock(id, LockLevel::Exclusive));
+                    iter = ids.erase(iter);
+                    }
+                else
+                    ++iter;
+                }
+            else
+                ++iter;
+            }
         }
 
     // Any not found are not locked by us

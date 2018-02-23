@@ -3853,21 +3853,10 @@ BentleyStatus GeometrySource::_StrokeHit(DecorateContextR context, HitDetailCR h
     if (0 == elemEntryId.GetIndex())
         return ERROR;
 
-    SubSelectionMode subMode = hit.GetSubSelectionMode();
-
-    switch (subMode)
+    switch (hit.GetSubSelectionMode())
         {
-        case SubSelectionMode::Part:
-            {
-            if (elemEntryId.GetGeometryPartId().IsValid())
-                break;
-
-            return ERROR;
-            }
-
-        case SubSelectionMode::Primitive:
-            break;
-
+        // NOTE: Just do normal flash of entire element unless it's segment mode. Can't get something that looks ok for solids and 
+        //       doesn't interfer with sub-entity selection and other tool decorations, mostly care about locate filter anyway...
         case SubSelectionMode::Segment:
             {
             if (nullptr != hit.GetGeomDetail().GetCurvePrimitive())
@@ -3882,8 +3871,6 @@ BentleyStatus GeometrySource::_StrokeHit(DecorateContextR context, HitDetailCR h
 
     // Get the GeometryParams for this hit from the GeometryStream...
     GeometryCollection collection(*this);
-    Render::GraphicBuilderPtr builder;
-    Render::GraphicPtr graphic;
 
     for (auto iter : collection)
         {
@@ -3891,143 +3878,61 @@ BentleyStatus GeometrySource::_StrokeHit(DecorateContextR context, HitDetailCR h
         if (elemEntryId != iter.GetGeometryStreamEntryId())
             continue;
 
-        switch (subMode)
+        GeometryParams geomParams(iter.GetGeometryParams()); // NOTE: Used for weight. A part can store weights in it's GeometryStream too, but this is probably good enough...
+        GraphicParams  graphicParams;
+
+        context.CookGeometryParams(geomParams, graphicParams); // Don't activate yet...need to tweak...
+        graphicParams.SetWidth(graphicParams.GetWidth()+2);
+        graphicParams.SetLineTransparency(25);
+
+        bool isSnap = (hit.GetHitType() >= HitDetailType::Snap);
+        bool doSegmentFlash = false;
+
+        if (isSnap)
             {
-            case SubSelectionMode::Part:
-                {
-                GeometryParams geomParams(iter.GetGeometryParams());
-
-                builder = context.CreateSceneGraphic(iter.GetSourceToWorld());
-                context.AddSubGraphic(*builder, iter.GetGeometryPartId(), iter.GetGeometryToSource(), geomParams);
-
-                graphic = builder->Finish();
-                break;
-                }
-
-            case SubSelectionMode::Segment:
-                {
-                GeometryParams geomParams(iter.GetGeometryParams()); // NOTE: Used for weight. A part can store weights in it's GeometryStream too, but this is probably good enough...
-                GraphicParams  graphicParams;
-
-                context.CookGeometryParams(geomParams, graphicParams); // Don't activate yet...need to tweak...
-                graphicParams.SetWidth(graphicParams.GetWidth()+2);
-                graphicParams.SetLineTransparency(25);
-
-                bool isSnap = (hit.GetHitType() >= HitDetailType::Snap);
-                bool doSegmentFlash = false;
-
-                if (isSnap)
-                    {
-                    SnapDetailCR snap = static_cast<SnapDetailCR>(hit);
+            SnapDetailCR snap = static_cast<SnapDetailCR>(hit);
                     
-                    if (!snap.IsHot())
-                        graphicParams.SetLineTransparency(150);
+            if (!snap.IsHot())
+                graphicParams.SetLineTransparency(150);
 
-                    switch (snap.GetSnapMode())
-                        {
-                        case SnapMode::Center:
-                        case SnapMode::Origin:
-                        case SnapMode::Bisector:
-                            break; // Snap point for these is computed using entire linestring, not just the hit segment...
-
-                        default:
-                            doSegmentFlash = true;
-                            break;
-                        }
-                    }
-
-                builder = context.CreateWorldOverlay();
-                builder->ActivateGraphicParams(graphicParams);
-
-                DSegment3d      segment;
-                CurveVectorPtr  curve;
-
-                // Flash only the selected segment of linestrings/shapes based on snap mode...
-                if (doSegmentFlash && hit.GetGeomDetail().GetSegment(segment))
-                    curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateLine(segment));
-                else
-                    curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, hit.GetGeomDetail().GetCurvePrimitive()->Clone());
-
-                builder->AddCurveVectorR(*curve, false);
-
-                graphic = builder->Finish();
-                break;
-                }
-
-            case SubSelectionMode::Primitive:
+            switch (snap.GetSnapMode())
                 {
-                GeometricPrimitivePtr geom = iter.GetGeometryPtr();
+                case SnapMode::Center:
+                case SnapMode::Origin:
+                case SnapMode::Bisector:
+                    break; // Snap point for these is computed using entire linestring, not just the hit segment...
 
-                if (geom.IsValid())
-                    {
-                    if (!builder.IsValid())
-                        builder = context.CreateSceneGraphic(iter.GetGeometryToWorld());
-
-                    GeometryParams geomParams(iter.GetGeometryParams());
-
-                    context.CookGeometryParams(geomParams, *builder);
-                    geom->AddToGraphic(*builder);
-
-                    if (!iter.IsBRepPolyface()) // NOTE: multi-symb BRep is Polyface per-symbology...need to draw all matching geometry...
-                        graphic = builder->Finish();
+                default:
+                    doSegmentFlash = true;
                     break;
-                    }
-
-                DgnGeometryPartCPtr geomPart = iter.GetGeometryPartCPtr();
-
-                if (!geomPart.IsValid())
-                    return ERROR; // Shouldn't happen...
-
-                GeometryCollection partCollection(geomPart->GetGeometryStream(), context.GetDgnDb());
-
-                partCollection.SetNestedIteratorContext(iter); // Iterate part GeomStream in context of parent...
-
-                GeometryStreamEntryId partEntryId = hit.GetGeomDetail().GetGeometryStreamEntryId(true); // pass true to compare part geometry index...
-
-                for (auto partIter : partCollection)
-                    {
-                    // Quick exclude of part geometry that didn't generate the hit...
-                    if (partEntryId != partIter.GetGeometryStreamEntryId())
-                        continue;
-
-                    GeometricPrimitivePtr partGeom = partIter.GetGeometryPtr();
-
-                    if (!partGeom.IsValid())
-                        continue;
-
-                    if (!builder.IsValid())
-                        builder = context.CreateSceneGraphic(partIter.GetGeometryToWorld());
-
-                    GeometryParams geomParams(partIter.GetGeometryParams());
-
-                    context.CookGeometryParams(geomParams, *builder);
-                    partGeom->AddToGraphic(*builder);
-
-                    if (!partIter.IsBRepPolyface()) // NOTE: multi-symb BRep is Polyface per-symbology...need to draw all matching geometry...
-                        break;
-                    }
-
-                graphic = builder->Finish();
-                break;
                 }
             }
 
-        if (builder.IsValid() && !builder->IsOpen())
-            break;
-        }
+        DSegment3d      segment;
+        CurveVectorPtr  curve;
 
-    if (!graphic.IsValid())
-        {
-        if (builder.IsValid())
-            graphic = builder->Finish();
+        // Flash only the selected segment of linestrings/shapes based on snap mode...
+        if (doSegmentFlash && hit.GetGeomDetail().GetSegment(segment))
+            curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateLine(segment));
+        else
+            curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, hit.GetGeomDetail().GetCurvePrimitive()->Clone());
+
+        Render::GraphicBuilderPtr builder = context.CreateWorldOverlay();
+
+        builder->ActivateGraphicParams(graphicParams);
+        builder->AddCurveVectorR(*curve, false);
+
+        Render::GraphicPtr graphic = builder->Finish();
 
         if (!graphic.IsValid())
             return ERROR;
+
+        hit.FlashGraphic(*graphic, context);
+
+        return SUCCESS;
         }
 
-    hit.FlashGraphic(*graphic, context);
-
-    return SUCCESS;
+    return ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**

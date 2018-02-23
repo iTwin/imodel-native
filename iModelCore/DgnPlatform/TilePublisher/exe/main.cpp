@@ -498,7 +498,8 @@ public:
     static void EnsureAssertHandler()
         {
         // Stupid Raster creates its own Host for ImagePP, which replaces the stupid static BeAssertHandler, replacing our Host's _OnAssert()...
-        BeAssertFunctions::SetBeAssertHandler(&Host::OnAssert); }
+        BeAssertFunctions::SetBeAssertHandler(&Host::OnAssert);
+        }
 };
 
 

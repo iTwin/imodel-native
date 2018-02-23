@@ -251,7 +251,7 @@ StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double& frustFrac
         double zDelta = delta.z;
         double zBack  = eyeToOrigin.z;                                                   // Distance from eye to back clip plane.
         double zFront = zBack + zDelta;                                                  // Distance from eye to front clip plane.
-        double minimumFrontToBackClipRatio = GetRenderTarget()->_GetCameraFrustumNearScaleLimit();
+        double minimumFrontToBackClipRatio = _GetCameraFrustumNearScaleLimit();
 
         if (zFront / zBack < minimumFrontToBackClipRatio)
             {
@@ -555,9 +555,6 @@ ViewportStatus DgnViewport::SetupFromViewController()
     m_viewOrg   = origin;
     m_viewDelta = delta;
 
-    if (!m_renderTarget.IsValid())
-        return ViewportStatus::InvalidViewport;
-
     if (SUCCESS != RootToNpcFromViewDef(m_rootToNpc, m_frustFraction, IsCameraOn() ? &m_camera : nullptr, m_viewOrg, m_viewDelta, m_rotMatrix))
         return  ViewportStatus::InvalidViewport;
 
@@ -571,24 +568,34 @@ ViewportStatus DgnViewport::SetupFromViewController()
     return ViewportStatus::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* determine whether the points in the given polyhedron are in the correct order or are inside out. If not, reverse sense
+/*---------------------------------------------------------------------------------**/ /**
+* determine whether the points in the given polyhedron are in the correct order
 * @bsimethod                                    Keith.Bentley                   04/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::FixFrustumOrder(Frustum& frustum)
+bool Frustum::HasMirror()
     {
-    DPoint3dP polyhedron = frustum.GetPtsP();
+    DPoint3dP polyhedron = GetPtsP();
 
     DVec3d u, v, w;
     u.DifferenceOf(polyhedron[NPC_001], polyhedron[NPC_000]);
     v.DifferenceOf(polyhedron[NPC_010], polyhedron[NPC_000]);
     w.DifferenceOf(polyhedron[NPC_100], polyhedron[NPC_000]);
 
-    if (u.TripleProduct(v, w) <= 0)
+    return u.TripleProduct(v, w) > 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* determine whether the points in the given polyhedron are in the correct order or are inside out. If not, reverse sense
+* @bsimethod                                    Keith.Bentley                   04/05
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnViewport::FixFrustumOrder(Frustum& frustum)
+    {
+    if (!frustum.HasMirror())
         return;
 
     // frustum has mirroring, reverse points
-    for (int i=0; i<8; i+=2)
+    DPoint3dP polyhedron = frustum.GetPtsP();
+    for (int i = 0; i < 8; i += 2)
         {
         DPoint3d tmpPoint = polyhedron[i];
         polyhedron[i] = polyhedron[i+1];
@@ -1192,6 +1199,20 @@ void DgnViewport::SetFlashed(DgnElementId id, double duration)
         }
 
     m_flashDuration = duration;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnViewport::ChangeActiveVolume(ClipVectorP volume)
+    {
+    auto& vc = GetViewControllerR();
+    vc.AssignActiveVolume(volume);
+    auto& style = vc.GetViewDefinitionR().GetDisplayStyle();
+    auto vf = style.GetViewFlags();
+    vf.SetShowClipVolume(nullptr != volume);
+    style.SetViewFlags(vf);
+    InvalidateRenderPlan();
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -204,6 +204,7 @@ protected:
     DGNPLATFORM_EXPORT void DestroyViewport();
     DGNPLATFORM_EXPORT void SuspendViewport();
     DGNPLATFORM_EXPORT virtual void _AdjustZPlanes(DPoint3dR origin, DVec3dR delta) const;
+    virtual double _GetCameraFrustumNearScaleLimit() const {return GetRenderTarget()->_GetCameraFrustumNearScaleLimit();}
     virtual bool _IsVisible() const {return true;}
     DGNPLATFORM_EXPORT virtual void _CallDecorators(DecorateContextR);
     virtual Render::Plan::AntiAliasPref _WantAntiAliasLines() const {return Render::Plan::AntiAliasPref::Off;}
@@ -582,6 +583,8 @@ public:
     DGNPLATFORM_EXPORT void RemoveAnimator();
 
     DGNPLATFORM_EXPORT ColorDef GetSolidFillEdgeColor(ColorDef inColor);
+
+    DGNPLATFORM_EXPORT void ChangeActiveVolume(ClipVectorP volume);
 
     //! Read the current image from this viewport from the Rendering system. 
     //! @param[in] viewRect The area of the view to read. The origin of \a viewRect must specify the upper left corner. It is an error to specify a view rectangle that lies outside the actual view. If not specified, the entire view is captured.

@@ -279,38 +279,19 @@ private:
                 {
                 m_name.Sprintf("%s-%u", font.GetName().c_str(), glyph.GetId());
 
-                /*DgnGlyph::RasterStatus status = */ glyph.GetRaster(m_image);
-                //if (DgnGlyph::RasterStatus::Success != status)
-                //    DEBUG_PRINTF("Error %u retrieving raster", status);
-
-                //UNUSED_VARIABLE(status);
-
-#if defined(DEBUG_PRINT_GLYPH_RASTERS)
-                uint32_t imgWidth = m_image.GetWidth();
-                uint32_t imgHeight = m_image.GetHeight();
-                int imgBytesPerPixel = m_image.GetBytesPerPixel();
-                ByteStream const& imgByteStream = m_image.GetByteStream();
-                uint8_t const* imgData = imgByteStream.GetData();
-
-                DEBUG_PRINTF("");
-                DEBUG_PRINTF("Retrieving raster for glyph %d (%dx%d)", glyph.GetId(), imgWidth, imgHeight);
-
-                for (uint32_t y = 0; y < imgHeight; y++)
+                DgnGlyph::RasterStatus status = glyph.GetRaster(m_image);
+                if (DgnGlyph::RasterStatus::Success != status)
                     {
-                    std::string str = "";
-                    for (uint32_t x = 0; x < imgWidth; x++)
-                        {
-                        uint32_t imgNdx = y * imgWidth * imgBytesPerPixel + x * imgBytesPerPixel;
-                        if (imgData[imgNdx + 3] > 0)
-                            str += "X";
-                        else
-                            str += " ";
-                        }
-                    DEBUG_PRINTF("%s", str.c_str());
+                    DEBUG_PRINTF("Error %u retrieving raster", status);
+                    return;
                     }
-#endif
+
+                DebugPrintImage();
+                DebugSaveImage();
                 }
 
+            void DebugPrintImage() const;
+            void DebugSaveImage() const;
             bool IsValid() const { return m_texture.IsValid() || m_image.IsValid(); }
             TexturePtr GetTexture(SystemR system, DgnDbR db)
                 {
@@ -1188,6 +1169,9 @@ void MeshBuilder::AddTriangle(TriangleCR triangle)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR mappedTexture, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor, bool requireNormals)
     {
+    if (visitor.Point().size() < 3)
+        return;
+
     auto const&     points = visitor.Point();
     bool const*     visitorVisibility = visitor.GetVisibleCP();
     size_t          nTriangles = points.size() - 2;
@@ -1550,7 +1534,7 @@ PolyfaceHeaderPtr PrimitiveGeometry::FixPolyface(PolyfaceHeaderR geom, IFacetOpt
         if (addFaceData)
             polyface->BuildPerFaceFaceData();
 
-        if (!geom.HasConvexFacets() && facetOptions.GetConvexFacetsRequired())
+        if (maxPerFace > 3 && !geom.HasConvexFacets() && facetOptions.GetConvexFacetsRequired())
             polyface->Triangulate(3);
 
         // Not necessary to add edges chains -- edges will be generated from visibility flags later
@@ -1565,15 +1549,10 @@ PolyfaceHeaderPtr PrimitiveGeometry::FixPolyface(PolyfaceHeaderR geom, IFacetOpt
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PrimitiveGeometry::AddNormals(PolyfaceHeaderR polyface, IFacetOptionsR facetOptions)
     {
-    static double s_defaultCreaseRadians = Angle::DegreesToRadians(45.0);
+    static double   s_defaultCreaseRadians = Angle::DegreesToRadians(45.0);       
+    static double   s_sharedNormalSizeRatio = 5.0;      // Omit expensive shared normal if below this ratio of tolerance.
 
-#define USE_SLOW_BUILDER            // Fast Builder WIP....
-#ifdef USE_SLOW_BUILDER
-    static double s_defaultConeRadians = Angle::DegreesToRadians(90.0);
-    polyface.BuildApproximateNormals(s_defaultCreaseRadians, s_defaultConeRadians, facetOptions.GetHideSmoothEdgesWhenGeneratingNormals());
-#else
-    polyface.BuildNormalsFast(s_defaultCreaseRadians);
-#endif
+    polyface.BuildNormalsFast(s_defaultCreaseRadians, s_sharedNormalSizeRatio * facetOptions.GetChordTolerance());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1581,21 +1560,7 @@ void PrimitiveGeometry::AddNormals(PolyfaceHeaderR polyface, IFacetOptionsR face
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PrimitiveGeometry::AddParams(PolyfaceHeaderR polyface, IFacetOptionsR facetOptions)
     {
-    LocalCoordinateSelect selector;
-    switch (facetOptions.GetParamMode())
-        {
-        case FACET_PARAM_01BothAxes:
-            selector = LOCAL_COORDINATE_SCALE_01RangeBothAxes;
-            break;
-        case FACET_PARAM_01LargerAxis:
-            selector = LOCAL_COORDINATE_SCALE_01RangeLargerAxis;
-            break;
-        default:
-            selector = LOCAL_COORDINATE_SCALE_UnitAxesAtLowerLeft;
-            break;
-        }
-
-    polyface.BuildPerFaceParameters(selector);
+    polyface.BuildPerFaceParameters(LOCAL_COORDINATE_SCALE_01RangeBothAxes);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2335,6 +2300,72 @@ template<typename T, typename U> void GlyphCache::Glyph::GetGeometry(IFacetOptio
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void GlyphCache::Glyph::Raster::DebugPrintImage() const
+    {
+#if defined(DEBUG_PRINT_GLYPH_RASTERS)
+    uint32_t imgWidth = m_image.GetWidth();
+    uint32_t imgHeight = m_image.GetHeight();
+    int imgBytesPerPixel = m_image.GetBytesPerPixel();
+    ByteStream const& imgByteStream = m_image.GetByteStream();
+    uint8_t const* imgData = imgByteStream.GetData();
+
+    DEBUG_PRINTF("");
+    DEBUG_PRINTF("Retrieving raster for glyph %d (%dx%d)", glyph.GetId(), imgWidth, imgHeight);
+
+    for (uint32_t y = 0; y < imgHeight; y++)
+        {
+        std::string str = "";
+        for (uint32_t x = 0; x < imgWidth; x++)
+            {
+            uint32_t imgNdx = y * imgWidth * imgBytesPerPixel + x * imgBytesPerPixel;
+            if (imgData[imgNdx + 3] > 0)
+                str += "X";
+            else
+                str += " ";
+            }
+        DEBUG_PRINTF("%s", str.c_str());
+        }
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void GlyphCache::Glyph::Raster::DebugSaveImage() const
+    {
+//#define DEBUG_GLYPH_IMAGE_DIR L"d:\\cr\\tmp\\glyphs"
+#if defined(DEBUG_GLYPH_IMAGE_DIR)
+    if (!m_image.IsValid())
+        return;
+
+    // Image is all-white; only alpha channel differs...convert back to greyscale
+    Image image = m_image;
+    auto& bytes = image.GetByteStreamR();
+    for (size_t i = 0; i < bytes.size(); i += 4)
+        {
+        uint8_t& alpha = bytes[i+3];
+        bytes[i] = bytes[i+1] = bytes[i+2] = alpha;
+        alpha = 0xff;
+        }
+
+    BeFileName::CreateNewDirectory(DEBUG_GLYPH_IMAGE_DIR);
+    BeFileName filename(DEBUG_GLYPH_IMAGE_DIR);
+
+    WPrintfString pngName(L"%hs_%u_%u.png", m_name.c_str(), image.GetWidth(), image.GetHeight());
+    filename.AppendToPath(pngName.c_str());
+
+    BeFile file;
+    if (BeFileStatus::Success != file.Create(filename.c_str(), true))
+        return;
+
+    ImageSource src(image, ImageSource::Format::Png, 100, Image::BottomUp::Yes);
+    file.Write(nullptr, src.GetByteStream().GetData(), src.GetByteStream().GetSize());
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool MeshArgs::Init(MeshCR mesh)
@@ -2480,6 +2511,91 @@ void GeometryListBuilder::_ActivateGraphicParams(GraphicParamsCR gfParams, Geome
         m_geometryParams = *geomParams;
     else
         m_geometryParams = GeometryParams();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<GraphicPtr> System::_CreateSheetTile(TextureCR tile, GraphicBuilder::TileCorners const& corners, DgnDbR db, GraphicParamsCR params, ClipVectorCP clip) const
+    {
+    bvector<GraphicPtr> sheetTileGraphics;
+
+    if (nullptr != clip)
+        {
+        TriMeshArgs clippedTile;
+
+        bvector<DPoint3d> quadPts;
+        quadPts.push_back(corners.m_pts[0]); // need to order these strangely to account for the way TileCorners arranges vertices 
+        quadPts.push_back(corners.m_pts[1]);
+        quadPts.push_back(corners.m_pts[3]);
+        quadPts.push_back(corners.m_pts[2]);
+
+        IFacetOptionsPtr facetOptions = IFacetOptions::Create();
+        facetOptions->SetParamsRequired(true);
+        IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create(*facetOptions);
+        builder->AddTriangulation(quadPts);
+        PolyfaceHeaderPtr pfHdr = builder->GetClientMeshPtr();
+
+        GeometryClipper::PolyfaceClipper pfClipper;
+        pfClipper.ClipPolyface(*pfHdr, clip, true);
+        if (pfClipper.HasOutput())
+            {
+            bvector<PolyfaceQueryCP>& clippedPolyfaceQueries = pfClipper.GetOutput();
+
+            for (auto& clippedPolyfaceQuery : clippedPolyfaceQueries)
+                {
+#if 0 // ###TODO: necessary? 
+                if (!clippedPolyfaceQuery->IsTriangulated())
+                    const_cast<PolyfaceHeaderP>(dynamic_cast<PolyfaceHeaderCP>(clippedPolyfaceQuery))->Triangulate();
+#endif
+
+                DPoint3dCP pts = clippedPolyfaceQuery->GetPointCP();
+                uint32_t numPts = clippedPolyfaceQuery->GetPointCount();
+
+                clippedTile.m_pointParams = QPoint3d::Params(DRange3d::From(pts, numPts)); // use these point params
+
+                bvector<QPoint3d> qVerts; // output these points to clippedTile
+                for (uint32_t i = 0; i < numPts; i++)
+                    {
+                    qVerts.push_back(QPoint3d(pts[i], clippedTile.m_pointParams));
+                    }
+                clippedTile.m_points = &qVerts[0];
+                clippedTile.m_numPoints = numPts;
+
+                const DPoint2d* rawParams = clippedPolyfaceQuery->GetParamCP();
+                bvector<FPoint2d> uv; // output these uv coordinates to clippedTile
+                for (uint32_t i = 0; i < numPts; i++)
+                    {
+                    FPoint2d fpt;  fpt.x = rawParams[i].x;  fpt.y = rawParams[i].y;
+                    uv.push_back(fpt);
+                    }
+                clippedTile.m_textureUV = &uv[0];
+
+                bvector<uint32_t> indices;
+                PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*clippedPolyfaceQuery, true);
+                for (visitor->Reset(); visitor->AdvanceToNextFace();)
+                    {
+                    indices.push_back(visitor->GetClientPointIndexCP()[0]);
+                    indices.push_back(visitor->GetClientPointIndexCP()[1]);
+                    indices.push_back(visitor->GetClientPointIndexCP()[2]);
+                    }
+                clippedTile.m_numIndices = indices.size();
+                clippedTile.m_vertIndex = &indices[0];
+
+                clippedTile.m_texture = const_cast<Render::Texture*>(&tile);
+                clippedTile.m_material = params.GetMaterial();
+                clippedTile.m_isPlanar = true;
+
+                sheetTileGraphics.push_back(_CreateTriMesh(clippedTile, db));
+                }
+            }
+        }
+    else // not clipped
+        {
+        sheetTileGraphics.push_back(_CreateTile(tile, corners, db, params));
+        }
+
+    return sheetTileGraphics;
     }
 
 /*---------------------------------------------------------------------------------**//**

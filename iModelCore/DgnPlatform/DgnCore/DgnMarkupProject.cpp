@@ -761,7 +761,7 @@ RedlineViewDefinitionPtr RedlineViewDefinition::Create(DgnDbStatus* outCreateSta
     RefCountedPtr<DisplayStyle2d> displayStyle = new DisplayStyle2d(dictionary);
     displayStyle->SetBackgroundColor(ColorDef::White());
     RedlineViewDefinitionPtr view = new RedlineViewDefinition(dictionary, redline->GetCode().GetValueUtf8().c_str(), 
-                                                              model.GetModelId(), *new CategorySelector(dictionary, ""), *displayStyle);
+                                                              model.GetModelId(), *new CategorySelector(dictionary, redline->GetCode().GetValueUtf8().c_str()), *displayStyle);
 
     //  The view always has the same name as the redline and its model
     DgnCode code = CreateCode(dictionary, redline->GetCode().GetValueUtf8());

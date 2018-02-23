@@ -207,7 +207,15 @@ DgnModelIdSet   GetElementModelIds(DgnElementIdSet const& elementIds)
 
     for (auto& elementId : elementIds)
         {
-        auto modelId = m_tempDb->Elements().Get<DgnElement>(elementId)->GetModelId();
+        auto    element = m_tempDb->Elements().Get<DgnElement>(elementId);
+        
+        if (!element.IsValid())
+            {
+            BeAssert(false);
+            continue;
+            }
+         
+        auto modelId = element->GetModelId();
 
         if (modelIds.find(modelId) == modelIds.end())
             {
@@ -383,6 +391,10 @@ TilesetPublisher::Status PublishChangeSets(Json::Value& revisionsJson, TilesetPu
             continue;
 
         VersionCompareChangeSummaryPtr      changeSummary = VersionCompareChangeSummary::Generate(*m_tempDb, thisRevisions, true);
+
+        if (!changeSummary.IsValid())
+            continue;
+
         DgnElementIdSet                     addedOrModifiedIds, deletedOrModifiedIds;
         Json::Value                         revisionElementsJson = GetChanges (addedOrModifiedIds, deletedOrModifiedIds, *changeSummary);
         DgnModelIdSet                       prevModelIds, postModelIds;

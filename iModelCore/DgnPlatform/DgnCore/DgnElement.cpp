@@ -1185,7 +1185,9 @@ Json::Value DgnElement::RelatedElement::ToJson(DgnDbR db) const
     {
     Json::Value val;
     val[json_id()] = m_id.ToHexStr();
-    val[json_relClassName()] = db.Schemas().GetClass(m_relClassId)->GetName();
+    auto relClass = db.Schemas().GetClass(m_relClassId);
+    if (relClass != nullptr)
+        val[json_relClassName()] = relClass->GetName();
     return val;
     }
 
@@ -1233,279 +1235,6 @@ static void autoHandlePropertiesToJson(JsonValueR elementJson, DgnElementCR elem
         
     JsonECSqlSelectAdapter adapter(*stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsHexadecimalString));
     adapter.GetRow(elementJson, true);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static BentleyStatus convertJsonToECValue(ECN::ECValue& v, Json::Value const& jsonValue, ECN::PrimitiveType typeRequired)
-    {
-    if (jsonValue.isBool())
-        v = ECN::ECValue(jsonValue.asBool());
-    else if (jsonValue.isIntegral())
-        v = ECN::ECValue(jsonValue.asInt64());
-    else if (jsonValue.isDouble())
-        v = ECN::ECValue(jsonValue.asDouble());
-    else if (jsonValue.isString())
-        {
-        if (ECN::PRIMITIVETYPE_DateTime == typeRequired)
-            {
-            DateTime dt;
-            if (BSISUCCESS == DateTime::FromString(dt, jsonValue.asCString()))
-                v = ECN::ECValue(dt);
-            else
-                v.SetIsNull(true);
-            }
-        else if (ECN::PRIMITIVETYPE_Binary == typeRequired)
-            {
-            // *** TBD: need extended type to recognize GUID
-            // *** TBD: buffer = base64-decode(jsonValue.asCString());
-            // *** TBD: v = ECN::ECValue(buffer, buffersize);
-            v.SetIsNull(true);
-            }
-        else
-            {
-            v = ECN::ECValue(jsonValue.asCString());
-            }
-        }
-    else if (jsonValue.isObject())
-        {
-        if (ECN::PRIMITIVETYPE_Point3d == typeRequired)
-            {
-            v = ECN::ECValue(DPoint3d::From(jsonValue["x"].asDouble(), jsonValue["y"].asDouble(), jsonValue["z"].asDouble()));
-            }
-        else if (ECN::PRIMITIVETYPE_Point2d == typeRequired)
-            {
-            v = ECN::ECValue(DPoint2d::From(jsonValue["x"].asDouble(), jsonValue["y"].asDouble()));
-            }
-        else
-            {
-            v.SetIsNull(true);
-            }
-        }
-    else if (jsonValue.isArray())
-        {
-        if (ECN::PRIMITIVETYPE_Point3d == typeRequired)
-            {
-            v = ECN::ECValue(DPoint3d::From(jsonValue[0].asDouble(), jsonValue[1].asDouble(), jsonValue[2].asDouble()));
-            }
-        else if (ECN::PRIMITIVETYPE_Point2d == typeRequired)
-            {
-            v = ECN::ECValue(DPoint2d::From(jsonValue[0].asDouble(), jsonValue[1].asDouble()));
-            }
-        else
-            {
-            v.SetIsNull(true);
-            }
-        }
-    else
-        {
-        v.SetIsNull(true);
-        }
-
-    if (!v.IsNull() && !v.ConvertToPrimitiveType(typeRequired))
-        v.SetIsNull(true);
-
-    return v.IsNull()? BSIERROR: BSISUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                  06/17
-//---------------------------------------------------------------------------------------
-#ifdef WIP_STRUCT_ARRAY
-static ECN::IECInstancePtr ecStructInstanceFromJson(ECN::ECClassCR eclass, JsonValueCR structJson)
-    {
-    auto inst = eclass.GetDefaultStandaloneEnabler()->CreateInstance();
-
-    for (auto const& jsPropName : structJson.getMemberNames())
-        {
-        }
-
-    return inst;
-    }
-#endif
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                  06/17
-//---------------------------------------------------------------------------------------
-static BentleyStatus setPropertyFromJson(ElementECPropertyAccessor& propAccessor, ValueKind itemKind, PrimitiveType primitiveItemType, JsonValueCR jsonProp, PropertyArrayIndex arrayIdx = PropertyArrayIndex())
-    {
-    if (jsonProp.isNull())
-        {
-        ECN::ECValue nullValue;
-        nullValue.SetToNull();
-        return (DgnDbStatus::Success == propAccessor.SetPropertyValue(nullValue, arrayIdx))? BSISUCCESS: BSIERROR;
-        }
-
-    //  ----------------------------------------------------
-    if (ECN::VALUEKIND_Primitive == itemKind)
-        {
-        ECN::ECValue ecvalue;
-        if (BSISUCCESS != convertJsonToECValue(ecvalue, jsonProp, primitiveItemType))
-            {
-            BeAssert(false && "unsupported property type");
-            return BSIERROR;
-            }
-
-        if (DgnDbStatus::Success != propAccessor.SetPropertyValue(ecvalue, arrayIdx))
-            {
-            BeAssert(false && "SetPropertyValue failed!?");
-            return BSIERROR;
-            }
-
-        return BSISUCCESS;
-        }
-
-    //  ----------------------------------------------------
-    if (ECN::VALUEKIND_Navigation == itemKind)
-        {
-        BeInt64Id id;
-        ECRelationshipClassCP relClass = nullptr;
-        if (jsonProp.isObject())
-            {
-            id = BeInt64Id::FromString(jsonProp[DgnElement::RelatedElement::json_id()].asCString());
-            bvector<Utf8String> classNameParts;
-            BeStringUtilities::Split(jsonProp[DgnElement::RelatedElement::json_relClassName()].asCString(), ":", classNameParts);
-            auto cls = propAccessor.GetElement().GetDgnDb().Schemas().GetClass(classNameParts[0], classNameParts[1]);
-            if (nullptr == cls || nullptr == cls->GetRelationshipClassCP())
-                {
-                BeDataAssert(false);
-                return BSIERROR;
-                }
-            relClass = cls->GetRelationshipClassCP();
-            }
-        else
-            {
-            id = BeInt64Id::FromString(jsonProp.asCString());
-            }
-        ECN::ECValue nav;
-        nav.SetNavigationInfo(id, relClass);
-        return (DgnDbStatus::Success == propAccessor.SetPropertyValue(nav, arrayIdx))? BSISUCCESS: BSIERROR;
-        }
-
-    //  ----------------------------------------------------
-    if (ECN::VALUEKIND_Struct == itemKind)
-        {
-        if (!jsonProp.isObject())
-            {
-            BeAssert(false && "must have a json struct value for a struct-valued ECProperty");
-            return BSIERROR;
-            }
-
-        for (auto const& jsPropName: jsonProp.getMemberNames())
-            {
-            Utf8String accessString(propAccessor.GetAccessString());
-            Utf8String ecStructPropName(jsPropName);
-            ecStructPropName[0] = (char)toupper(ecStructPropName[0]);
-            accessString.append(".").append(ecStructPropName.c_str());
-
-            ElementECPropertyAccessor structPropAccessor(propAccessor.GetElement(), accessString.c_str());
-            if (!structPropAccessor.IsValid())
-                {
-                BeAssert(false);
-                continue;
-                }
-
-            ECN::PropertyLayoutCP memberPropLayout = structPropAccessor.GetPropertyLayout();
-            auto memberTdesc = memberPropLayout->GetTypeDescriptor();
-
-            if (BSISUCCESS != setPropertyFromJson(structPropAccessor, memberTdesc.GetTypeKind(), memberTdesc.GetPrimitiveType(), jsonProp[jsPropName], arrayIdx))
-                return BSIERROR;
-            }
-
-        return BSISUCCESS;
-        }
-
-    //  ----------------------------------------------------
-    if (ECN::VALUEKIND_Array == itemKind)
-        {
-        if (!jsonProp.isArray())
-            {
-            BeAssert(false);
-            return BSIERROR;
-            }
-
-        ECN::PropertyLayoutCP propLayout = propAccessor.GetPropertyLayout();
-        auto tdesc = propLayout->GetTypeDescriptor();
-    
-        if (DgnDbStatus::Success != propAccessor.GetElement().AddPropertyArrayItems(propAccessor.GetPropertyIndex(), jsonProp.size()))
-            {
-            BeAssert(false);
-            return BSIERROR;
-            }
-
-        for (Json::ArrayIndex i = 0; i < jsonProp.size(); ++i)
-            {
-            if (ECN::ARRAYKIND_Struct == tdesc.GetArrayKind())
-                {
-#ifdef WIP_STRUCT_ARRAY
-                ECN::ECClassCP structECClass = propAccessor.GetElement().GetDgnDb().Schemas().GetECClass(
-                auto structInstance = ecStructInstanceFromJson(*..., jsonProp[i]);
-                ECN::ECValue value;
-                value.SetStruct(structInstance.get());
-                propAccessor.SetPropertValue(value, PropertyArrayIndex(i));
-#else
-                BeAssert(false && "WIP_STRUCT_ARRAY");
-#endif
-                }
-            else
-                {
-                if (BSISUCCESS != setPropertyFromJson(propAccessor, ECN::VALUEKIND_Primitive, tdesc.GetPrimitiveType(), jsonProp[i], PropertyArrayIndex(i)))
-                    return BSIERROR;
-                }
-            }
-
-        return BSISUCCESS;
-        }
-
-    BeAssert(false && "unrecognized kind");
-    return BSIERROR;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                  06/17
-//---------------------------------------------------------------------------------------
-static bool isDefinitelyNotAutoHandled(Utf8CP jsPropName)
-    {
-    // *** NEEDS WORK: We have defined a bunch of special properties in our element wire format
-    // ***              That are not in the biscore ECSchema. So, we have no way of checking
-    // ***              if they are auto-handled or not using metadata. Only some _FromJson method somewhere
-    // ***              knows what these properties are. Here, I check for the few special properties
-    // ***              that I happen to know about by looking at the code.
-
-    switch (jsPropName[0])
-        {
-        case 'i': return 0==strcmp(jsPropName, "id");
-        case 'c': return 0==strcmp(jsPropName, "classFullName") || 0==strcmp(jsPropName, "code");
-        case 'p': return 0==strcmp(jsPropName, "placement");
-        }
-    return false;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                  06/17
-//---------------------------------------------------------------------------------------
-static void autoHandlePropertiesFromJson(DgnElementR elem, JsonValueCR elementJson)
-    {
-    // I will loop over the props passed in, rather than the auto-handled properties that are defined for this element class.
-    // The caller will typically set only a small subset of the properties.
-    for (auto const& jsPropName : elementJson.getMemberNames())
-        {
-        if (isDefinitelyNotAutoHandled(jsPropName.c_str()))  // filter out some special properties that are not actually in the ECSChema (and are certainly not auto-handled)
-            continue;
-
-        ElementECPropertyAccessor propAccessor(elem, jsPropName.c_str());
-        if (!propAccessor.IsValid())
-            continue;   // Don't assert. We have no reliable way of knowing if this is one of those special fake properties that are recognized by _FromJson methods.
-            
-        if (!propAccessor.IsAutoHandled())
-            continue;
-
-        //  This is an auto-handled property. Set it.
-        ECN::PropertyLayoutCP propLayout = propAccessor.GetPropertyLayout();
-        auto tdesc = propLayout->GetTypeDescriptor();
-        setPropertyFromJson(propAccessor, tdesc.GetTypeKind(), tdesc.GetPrimitiveType(), elementJson[jsPropName]);
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1561,7 +1290,35 @@ void DgnElement::_FromJson(JsonValueR props)
         _OnLoadedJsonProperties();
         }
 
-    autoHandlePropertiesFromJson(*this, props);
+    static auto const isDefinitelyNotAutoHandled = [](Utf8CP propName) -> bool
+        {
+        // *** NEEDS WORK:  We have defined a bunch of special properties in our element wire format
+        // ***              That are not in the biscore ECSchema. So, we have no way of checking
+        // ***              if they are auto-handled or not using metadata. Only some _FromJson method somewhere
+        // ***              knows what these properties are. Here, I check for the few special properties
+        // ***              that I happen to know about by looking at the code.
+        switch (propName[0])
+            {
+            case 'i': return 0==strcmp(propName, "id");
+            case 'c': return 0==strcmp(propName, "classFullName") || 0==strcmp(propName, "code");
+            case 'p': return 0==strcmp(propName, "placement");
+            }
+        return false;
+        };
+
+    ElementAutoHandledPropertiesECInstanceAdapter ec(*this, true);
+    std::function<bool(Utf8CP)> shouldSerializeProperty = [this](Utf8CP propName)
+        {
+        if (isDefinitelyNotAutoHandled(propName))
+            return false;
+
+        if (ECJsonSystemNames::IsTopLevelSystemMember(propName))
+            return false;
+
+        ElementECPropertyAccessor const accessor(*this, propName);
+        return accessor.IsValid() && accessor.IsAutoHandled();
+        };
+    ECN::JsonECInstanceConverter::JsonToECInstance(ec, props, GetDgnDb().GetClassLocater(), shouldSerializeProperty);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4111,7 +3868,7 @@ void GeometricElement::_OnInserted(DgnElementP copiedFrom) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void  GeometricElement::_OnDeleted() const { T_Super::_OnDeleted(); }
+void  GeometricElement::_OnDeleted() const { T_HOST.GetTxnAdmin()._OnGraphicElementDeleted(GetDgnDb(), m_elementId); T_Super::_OnDeleted(); }
 void  GeometricElement2d::_OnDeleted() const { SetUndisplayed(false); T_Super::_OnDeleted(); }
 void  GeometricElement3d::_OnDeleted() const { SetUndisplayed(false); T_Super::_OnDeleted(); }
 
@@ -4121,6 +3878,7 @@ void  GeometricElement3d::_OnDeleted() const { SetUndisplayed(false); T_Super::_
 void GeometricElement::_OnAppliedDelete() const 
     {
     T_Super::_OnAppliedDelete();
+    T_HOST.GetTxnAdmin()._OnGraphicElementDeleted(GetDgnDb(), m_elementId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4138,7 +3896,7 @@ void GeometricElement::_OnAppliedAdd() const
 void GeometricElement::_OnUpdateFinished() const 
     {
     T_Super::_OnUpdateFinished(); 
-    T_HOST.GetTxnAdmin()._OnGraphicElementAdded(GetDgnDb(), m_elementId);
+    T_HOST.GetTxnAdmin()._OnGraphicElementModified(GetDgnDb(), m_elementId);
     }
 
 /*---------------------------------------------------------------------------------**//**

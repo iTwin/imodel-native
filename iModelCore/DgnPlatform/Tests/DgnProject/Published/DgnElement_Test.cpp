@@ -692,6 +692,7 @@ TEST_F(DgnElementTests, TestAutoHandledPropertiesCA)
     ECN::ECValue checkValue;
     EXPECT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue, "TestIntegerProperty1"));
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ridha.Malik      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2346,6 +2347,218 @@ TEST_F(DgnElementTests, CreateSubjectChildElemet)
     info = m_db->Elements().Get<Subject>(subele2->GetElementId());
     ASSERT_EQ(info->GetDescription(), "Child2");
     }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                   02/2018
+//---------------+---------------+---------------+---------------+---------------+--------
+#if !defined(BENTLEYCONFIG_OS_LINUX) && !defined(BENTLEYCONFIG_OS_APPLE_MACOS) // TFS#821136
+TEST_F(DgnElementTests, FromJson)
+    {
+    SetupSeedProject();
+
+    DgnClassId classId(m_db->Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
+    TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
+    ECN::ECValue checkValue;
+    ECN::IECInstancePtr checkInstance = nullptr;
+    DgnElementId elementId;
+
+    bool const b = false;
+    double const d = 3.14;
+    int32_t const i = 50;
+    int64_t const l = 100;
+    DateTime const dt(2018, 2, 4);
+    DateTime const dtUtc(2018, 2, 5);
+    auto const p2d = DPoint2d::From(3, 5);
+    auto const p3d = DPoint3d::From(3, 5, 7);
+    Utf8String const s("test string");
+
+    Utf8String const invalidProp("this should not be converted");
+    Utf8String const customHandledProp("and neither should this");
+
+    // Create JSON and set properties
+    {
+    TestElement el(params);
+
+    Json::Value json(Json::ValueType::objectValue);
+    json["b"] = b;
+    json["d"] = d;
+    json["i"] = i;
+    ECN::ECJsonUtilities::Int64ToJson(json["l"], l);
+
+    ECN::ECJsonUtilities::DateTimeToJson(json["dt"], dt);
+    ECN::ECJsonUtilities::DateTimeToJson(json["dtUtc"], dtUtc);
+
+    ECN::ECJsonUtilities::Point2dToJson(json["p2d"], p2d);
+    ECN::ECJsonUtilities::Point3dToJson(json["p3d"], p3d);
+
+    json["s"] = s;
+
+    json["ArrayOfStructs"] = Json::Value(Json::ValueType::arrayValue);
+    Utf8String tmp;
+    Json::Value extonOffice(Json::ValueType::objectValue);
+    ASSERT_TRUE(ECN::ECValue("690 Pennsylvania Drive").ConvertPrimitiveToString(tmp));
+    extonOffice["Street"] = tmp;
+    ASSERT_TRUE(ECN::ECValue("Exton").ConvertPrimitiveToString(tmp));
+    extonOffice["City"] = Json::Value(Json::ValueType::objectValue);
+    extonOffice["City"]["Name"] = tmp;
+    ASSERT_TRUE(ECN::ECValue("PA").ConvertPrimitiveToString(tmp));
+    extonOffice["City"]["State"] = tmp;
+    ASSERT_TRUE(ECN::ECValue("US").ConvertPrimitiveToString(tmp));
+    extonOffice["City"]["Country"] = tmp;
+    ASSERT_TRUE(ECN::ECValue(19341).ConvertPrimitiveToString(tmp));
+    extonOffice["City"]["Zip"] = tmp;
+    json["ArrayOfStructs"][0u] = extonOffice;
+    Json::Value phillyOffice(Json::ValueType::objectValue);
+    ASSERT_TRUE(ECN::ECValue("1601 Cherry Street").ConvertPrimitiveToString(tmp));
+    phillyOffice["Street"] = tmp;
+    ASSERT_TRUE(ECN::ECValue("Philadelphia").ConvertPrimitiveToString(tmp));
+    phillyOffice["City"]["Name"] = tmp;
+    ASSERT_TRUE(ECN::ECValue("PA").ConvertPrimitiveToString(tmp));
+    phillyOffice["City"]["State"] = tmp;
+    ASSERT_TRUE(ECN::ECValue("US").ConvertPrimitiveToString(tmp));
+    phillyOffice["City"]["Country"] = tmp;
+    ASSERT_TRUE(ECN::ECValue(19102).ConvertPrimitiveToString(tmp));
+    phillyOffice["City"]["Zip"] = tmp;
+    json["ArrayOfStructs"][1u] = phillyOffice;
+
+    ASSERT_FALSE(ElementECPropertyAccessor(el, "invalidProp").IsValid());
+    ASSERT_FALSE(ElementECPropertyAccessor(el, "invalidProp").IsAutoHandled());
+    json["invalidProp"] = invalidProp;
+
+    ASSERT_TRUE(ElementECPropertyAccessor(el, "TestElementProperty").IsValid());
+    ASSERT_FALSE(ElementECPropertyAccessor(el, "TestElementProperty").IsAutoHandled());
+    json["TestElementProperty"] = customHandledProp;
+
+    // Populate element with json
+    el.FromJson(json);
+
+    // Insert the element
+    DgnDbStatus stat;
+    DgnElementCPtr persistentEl = el.Insert(&stat);
+    ASSERT_EQ(DgnDbStatus::Success, stat);
+    ASSERT_TRUE(persistentEl.IsValid());
+
+    // Check in-memory Element that will be persisted
+    // Test persisted values
+    EXPECT_EQ(b, persistentEl->GetPropertyValueBoolean("b"));
+    EXPECT_DOUBLE_EQ(d, persistentEl->GetPropertyValueDouble("d"));
+    EXPECT_EQ(i, persistentEl->GetPropertyValueInt32("i"));
+    ECN::ECValue longVal;
+    persistentEl->GetPropertyValue(longVal, "l");
+    ASSERT_TRUE(longVal.IsLong());
+    EXPECT_EQ(l, longVal.GetLong());
+    EXPECT_TRUE(persistentEl->GetPropertyValueDateTime("dt").Equals(dt, true));
+    EXPECT_TRUE(persistentEl->GetPropertyValueDateTime("dtUtc").Equals(dtUtc, true));
+    EXPECT_EQ(p2d, persistentEl->GetPropertyValueDPoint2d("p2d"));
+    EXPECT_EQ(p3d, persistentEl->GetPropertyValueDPoint3d("p3d"));
+    EXPECT_STREQ(s.c_str(), persistentEl->GetPropertyValueString("s").c_str());
+
+    checkValue.Clear();
+    persistentEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(0u));
+    ASSERT_FALSE(checkValue.IsNull());
+    ASSERT_TRUE(checkValue.IsStruct());
+    checkInstance = nullptr;
+    checkInstance = checkValue.GetStruct();
+    checkInstance->GetValue(checkValue, "Street");
+    EXPECT_STREQ("690 Pennsylvania Drive", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Name");
+    EXPECT_STREQ("Exton", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.State");
+    EXPECT_STREQ("PA", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Country");
+    EXPECT_STREQ("US", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Zip");
+    EXPECT_EQ(19341, checkValue.GetInteger());
+
+    checkValue.Clear();
+    persistentEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(1u));
+    ASSERT_FALSE(checkValue.IsNull());
+    ASSERT_TRUE(checkValue.IsStruct());
+    checkInstance = nullptr;
+    checkInstance = checkValue.GetStruct();
+    checkInstance->GetValue(checkValue, "Street");
+    EXPECT_STREQ("1601 Cherry Street", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Name");
+    EXPECT_STREQ("Philadelphia", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.State");
+    EXPECT_STREQ("PA", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Country");
+    EXPECT_STREQ("US", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Zip");
+    EXPECT_EQ(19102, checkValue.GetInteger());
+
+    checkValue.Clear();
+    persistentEl->GetPropertyValue(checkValue, "invalidProp");
+    EXPECT_TRUE(checkValue.IsNull());
+
+    checkValue.Clear();
+    persistentEl->GetPropertyValue(checkValue, "TestElementProperty");
+    EXPECT_STREQ("", checkValue.GetUtf8CP());
+
+    // Get Persistent ElementId and save to db
+    elementId = persistentEl->GetElementId();
+    m_db->SaveChanges();
+    }
+
+    BeFileName fileName = m_db->GetFileName();
+    m_db->CloseDb();
+    m_db = nullptr;
+    OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
+
+    // Retrieve properties
+    {
+    TestElementCPtr retrievedElement = m_db->Elements().Get<TestElement>(elementId);
+
+    EXPECT_EQ(b, retrievedElement->GetPropertyValueBoolean("b"));
+    EXPECT_DOUBLE_EQ(d, retrievedElement->GetPropertyValueDouble("d"));
+    EXPECT_TRUE(retrievedElement->GetPropertyValueDateTime("dt").Equals(dt, true));
+    EXPECT_TRUE(retrievedElement->GetPropertyValueDateTime("dtUtc").Equals(dtUtc, true));
+    EXPECT_EQ(p2d, retrievedElement->GetPropertyValueDPoint2d("p2d"));
+    EXPECT_EQ(p3d, retrievedElement->GetPropertyValueDPoint3d("p3d"));
+    EXPECT_STREQ(s.c_str(), retrievedElement->GetPropertyValueString("s").c_str());
+
+    checkValue.Clear();
+    retrievedElement->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(0u));
+    ASSERT_FALSE(checkValue.IsNull());
+    ASSERT_TRUE(checkValue.IsStruct());
+    checkInstance = nullptr;
+    checkInstance = checkValue.GetStruct();
+    checkInstance->GetValue(checkValue, "Street");
+    EXPECT_STREQ("690 Pennsylvania Drive", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Name");
+    EXPECT_STREQ("Exton", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.State");
+    EXPECT_STREQ("PA", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Country");
+    EXPECT_STREQ("US", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Zip");
+    EXPECT_EQ(19341, checkValue.GetInteger());
+
+    checkValue.Clear();
+    retrievedElement->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(1u));
+    ASSERT_FALSE(checkValue.IsNull());
+    ASSERT_TRUE(checkValue.IsStruct());
+    checkInstance = nullptr;
+    checkInstance = checkValue.GetStruct();
+    checkInstance->GetValue(checkValue, "Street");
+    EXPECT_STREQ("1601 Cherry Street", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Name");
+    EXPECT_STREQ("Philadelphia", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.State");
+    EXPECT_STREQ("PA", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Country");
+    EXPECT_STREQ("US", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Zip");
+    EXPECT_EQ(19102, checkValue.GetInteger());
+
+    checkValue.Clear();
+    checkInstance->GetValue(checkValue, "TestElementProperty");
+    EXPECT_TRUE(checkValue.IsNull());
+    }
+
+    m_db->CloseDb();
+}
+#endif
 
 //----------------------------------------------------------------------------------------
 // @bsiclass                                                    Sam.Wilson      10/17

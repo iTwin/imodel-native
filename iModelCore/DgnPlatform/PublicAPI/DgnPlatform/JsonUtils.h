@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/JsonUtils.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,6 +24,7 @@ struct JsonUtils
     BE_JSON_NAME(pitch)
     BE_JSON_NAME(roll)
     BE_JSON_NAME(degrees)
+    BE_JSON_NAME(radians)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
@@ -40,10 +41,32 @@ static Json::Value AngleInDegreesToJson(AngleInDegrees angle)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static AngleInDegrees AngleInDegreesFromJson(JsonValueCR val)
     {
-    return AngleInDegrees::FromDegrees(val[json_degrees()].asDouble());
+    return AngleInDegrees(ToAngle(val));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static Json::Value FromAngle(Angle angle)
+    {
+    Json::Value val;
+    val[json_degrees()] = angle.Degrees();
+    return val;
+    }
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static Angle ToAngle(JsonValueCR val)
+    {
+    if (val.isMember(json_degrees())) 
+        return Angle::FromDegrees(val[json_degrees()].asDouble());
+    if (val.isMember(json_radians())) 
+        return Angle::FromRadians(val[json_radians()].asDouble());
+    return Angle::FromDegrees(val.asDouble());
+    }
+
+/*---------------------------------------------------------------------------------**/ /**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 static Json::Value YawPitchRollToJson(YawPitchRollAngles angles)
@@ -69,12 +92,17 @@ static YawPitchRollAngles YawPitchRollFromJson(JsonValueCR val)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-static void DPoint3dFromJson(DPoint3dR point, Json::Value const& inValue)
+static DPoint3d ToDPoint3d(JsonValueCR inValue) 
     {
+    DPoint3d point;
     point.x = inValue[0].asDouble();
     point.y = inValue[1].asDouble();
     point.z = inValue[2].asDouble();
+    return point;
     }
+
+static void DPoint3dFromJson(DPoint3dR point, Json::Value const& inValue) {point = ToDPoint3d(inValue);}
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
@@ -138,12 +166,14 @@ static void DVec2dToJson(JsonValueR outValue, DVec2dCR vec)
     DPoint2dToJson(outValue, (DPoint2dCR)vec);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   MattGooding     09/12
-//---------------------------------------------------------------------------------------
-static void DVec3dFromJson(DVec3dR vec, JsonValueCR inValue)
+static void DVec3dFromJson(DVec3dR vec, JsonValueCR inValue)  {DPoint3dFromJson((DPoint3dR)vec, inValue);}
+static DVec3d ToDVec3d(JsonValueCR inValue) 
     {
-    DPoint3dFromJson((DPoint3dR)vec, inValue);
+    DVec3d vec;
+    vec.x = inValue[0].asDouble();
+    vec.y = inValue[1].asDouble();
+    vec.z = inValue[2].asDouble();
+    return vec;
     }
 
 //---------------------------------------------------------------------------------------
@@ -157,11 +187,15 @@ static void DVec3dToJson(JsonValueR outValue, DVec3dCR vec)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-static void DRange3dFromJson(DRange3dR range, JsonValueCR inValue)
+static DRange3d ToDRange3d(JsonValueCR inValue)
     {
+    DRange3d range;
     DPoint3dFromJson(range.low, inValue[json_low()]);
     DPoint3dFromJson(range.high, inValue[json_high()]);
+    return range;
     }
+static void DRange3dFromJson(DRange3dR range, JsonValueCR inValue) {range = ToDRange3d(inValue);}
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
@@ -212,11 +246,16 @@ static void MatrixRowToJson(JsonValueR outValue, double const* row)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-static void RotMatrixFromJson(RotMatrixR rotation, JsonValueCR inValue)
+static RotMatrix ToRotMatrix(JsonValueCR inValue) 
     {
+    RotMatrix rotation;
     for (int x = 0; x < 3; ++x)
         MatrixRowFromJson(rotation.form3d[x], inValue[x]);
+    return rotation;
     }
+
+static void RotMatrixFromJson(RotMatrixR rotation, JsonValueCR inValue) {rotation = ToRotMatrix(inValue);}
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12

@@ -15,7 +15,7 @@
 #include "RealityDataCache.h"
 #include <Bentley/BeFileName.h>
 #include <BeSQLite/BeBriefcaseBasedIdSequence.h>
-
+#include <unordered_map>
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
@@ -194,12 +194,13 @@ protected:
     DgnGeoLocation m_geoLocation;
     DgnCodeSpecs m_codeSpecs;
     TxnManagerPtr m_txnManager;
-    IBriefcaseManagerPtr m_briefcaseManager;
+    mutable IBriefcaseManagerPtr m_briefcaseManager;
     RefCountedPtr<IConcurrencyControl> m_concurrencyControl;
     DgnSearchableText m_searchableText;
     mutable std::unique_ptr<RevisionManager> m_revisionManager;
     mutable BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
     mutable RealityData::CachePtr m_elementTileCache;
+    mutable std::unordered_map<uint64_t, std::unique_ptr<BeSQLite::EC::ECInstanceInserter>> m_cacheECInstanceInserter;
 
     DGNPLATFORM_EXPORT BeSQLite::DbResult _VerifyProfileVersion(BeSQLite::Db::OpenParams const& params) override;
     DGNPLATFORM_EXPORT void _OnDbClose() override;
@@ -222,7 +223,6 @@ protected:
     BeSQLite::DbResult InitializeDgnDb(CreateDgnDbParams const& params); //!< @private
     BeSQLite::DbResult SaveDgnDbProfileVersion(DgnDbProfileVersion version=DgnDbProfileVersion::GetCurrent()); //!< @private
     BeSQLite::DbResult DoOpenDgnDb(BeFileNameCR projectNameIn, OpenParams const&); //!< @private
-
 public:
     DgnDb();
     virtual ~DgnDb();
@@ -295,6 +295,8 @@ public:
     DGNPLATFORM_EXPORT TxnManagerR Txns();                 //!< The TxnManager for this DgnDb.
     DGNPLATFORM_EXPORT RevisionManagerR Revisions() const; //!< The RevisionManager for this DgnDb.
     DGNPLATFORM_EXPORT IBriefcaseManager& BriefcaseManager(); //!< Manages this briefcase's held locks and codes
+
+    IBriefcaseManager* GetExistingBriefcaseManager() const;
 
     //! @private
     DGNPLATFORM_EXPORT BentleyStatus SetConcurrencyControl(IConcurrencyControl*);

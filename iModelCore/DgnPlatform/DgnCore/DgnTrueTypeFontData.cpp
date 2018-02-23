@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |     $Source: DgnCore/DgnTrueTypeFontData.cpp $
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 +--------------------------------------------------------------------------------------*/
 
 #if defined (BENTLEY_WIN32)
@@ -135,7 +135,7 @@ FreeTypeFace FreeTypeFace::CreateAndConfigFace(FT_Long faceIndex, Utf8CP path, B
         return nullptr;
         }
 
-    return FreeTypeFace(face);
+    return FreeTypeFace(face, pixelScale);
     }
 
 /*---------------------------------------------------------------------------------**//**

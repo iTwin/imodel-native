@@ -3207,10 +3207,11 @@ struct MeshEdgeCreationOptions
     {
     enum    Options
         {
-        NoEdges                 = 0x0000,
+        NoEdges                 = 0x0000,          
         SheetEdges              = 0x0001 << 0, 
         CreaseEdges             = 0x0001 << 1, 
         SmoothEdges             = 0x0001 << 2,
+        CreateChains            = 0x0001 << 3,
         DefaultEdges            = CreaseEdges | SheetEdges,
         AllEdges                = CreaseEdges | SheetEdges | SmoothEdges
         };
@@ -3225,6 +3226,7 @@ struct MeshEdgeCreationOptions
     bool GenerateNoEdges() const     { return m_options == NoEdges;   }
     bool GenerateSheetEdges() const  { return 0 != (m_options & SheetEdges); }
     bool GenerateCreaseEdges() const { return 0 != (m_options & CreaseEdges); } 
+    bool CreateEdgeChains() const    { return 0 != (m_options & CreateChains); }     // Create edge chains for polyfaces that do not already have them.
     };
 
 //=======================================================================================
@@ -3273,6 +3275,9 @@ struct System
 
     //! Create a point cloud primitive
     virtual GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb) const = 0;
+
+    //! Create a sheet tile primitive
+    DGNPLATFORM_EXPORT bvector<GraphicPtr> _CreateSheetTile(TextureCR tile, GraphicBuilder::TileCorners const& corners, DgnDbR dgndb, GraphicParamsCR params, ClipVectorCP clip) const;
 
     //! Create a tile primitive
     DGNPLATFORM_EXPORT GraphicPtr _CreateTile(TextureCR tile, GraphicBuilder::TileCorners const& corners, DgnDbR dgndb, GraphicParamsCR params) const;

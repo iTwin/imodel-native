@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnCore.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -412,6 +412,15 @@ DgnPlatformLib::Host::GeoCoordinationAdmin& DgnPlatformLib::Host::_SupplyGeoCoor
 void DgnPlatformLib::ForwardAssertionFailures(BeAssertFunctions::T_BeAssertHandler* h)
     {
     BeAssertFunctions::SetBeAssertHandler(h);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnPlatformLib::Host::_IsFeatureEnabled(Utf8CP featureName)
+    {
+    // Applications must opt-in to gated features
+    return false;
     }
 
 //---------------------------------------------------------------------------------------
