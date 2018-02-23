@@ -1495,6 +1495,58 @@ void FormatUnitSet::LoadJson(Json::Value jval)
 
 //----------------------------------------------------------------------------------------
 //  The text string has format <unitName>(<formatName>)
+// @bsimethod                                                   Kyle.Abramowitz    02/2018
+//----------------------------------------------------------------------------------------
+void FormatUnitSet::ParseUnitFormatDescriptor(Utf8StringR unitName, Utf8StringR formatString, Utf8CP description)
+    {
+    FormattingScannerCursor curs = FormattingScannerCursor(description, -1, FormatConstant::FUSDividers());
+    FormattingWord fnam;
+    FormattingWord unit;
+    FormatDividerInstance fdt;
+    FormatDividerInstance fdi = FormatDividerInstance(description, '|'); // check if this is a new format
+    int n = fdi.GetDivCount();
+    if (n == 2 && fdi.IsDivLast())
+        {
+        fnam = curs.ExtractLastEnclosure();
+        unit = curs.ExtractBeforeEnclosure();
+        }
+    else if (n == 1 && !fdi.IsDivLast())
+        {
+        int loc = fdi.GetFirstLocation();
+        if (loc > 0)
+            {
+            unit = curs.ExtractSegment(0, (size_t)loc - 1);
+            fnam = curs.ExtractSegment((size_t)loc + 1, curs.GetTotalLength());
+            }
+        }
+    else
+        {
+        fdi = FormatDividerInstance(description, '(');
+        n = fdi.GetDivCount();
+        if (n == 0)
+            unit = curs.ExtractSegment(0, curs.GetTotalLength());
+        if (fdi.BracketsMatched() && fdi.IsDivLast()) // there is a candidate for the format in parethesis
+            {
+            unit = curs.ExtractLastEnclosure();
+            fdt = FormatDividerInstance(unit.GetText(), "/*");
+            if (fdt.GetDivCount() == 0) // it can be a format name
+                {
+                fnam = unit;
+                unit = curs.ExtractBeforeEnclosure();
+                }
+            else
+                {
+                unit = curs.ExtractSegment(0, curs.GetTotalLength());
+                }
+            }
+        // dividers are not found - we assume a Unit name only
+        }
+    formatString = fnam.GetText();
+    unitName = unit.GetText();
+    }
+
+//----------------------------------------------------------------------------------------
+//  The text string has format <unitName>(<formatName>)
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
 FormatUnitSet::FormatUnitSet(Utf8CP description)
@@ -1509,54 +1561,14 @@ FormatUnitSet::FormatUnitSet(Utf8CP description)
         }
     else
         {
-        FormattingScannerCursor curs = FormattingScannerCursor(description, -1, FormatConstant::FUSDividers());
-        FormattingWord fnam;
-        FormattingWord unit;
-        FormatDividerInstance fdt;
-        FormatDividerInstance fdi = FormatDividerInstance(description, '|'); // check if this is a new format
-        int n = fdi.GetDivCount();
-        if (n == 2 && fdi.IsDivLast())
-            {
-            fnam = curs.ExtractLastEnclosure();
-            unit = curs.ExtractBeforeEnclosure();
-            }
-        else if (n == 1 && !fdi.IsDivLast())
-            {
-            int loc = fdi.GetFirstLocation();
-            if (loc > 0)
-                {
-                unit = curs.ExtractSegment(0, (size_t)loc - 1);
-                fnam = curs.ExtractSegment((size_t)loc + 1, curs.GetTotalLength());
-                }
-            }
-        else
-            {
-            fdi = FormatDividerInstance(description, '(');
-            n = fdi.GetDivCount();
-            if (n == 0)
-                unit = curs.ExtractSegment(0, curs.GetTotalLength());
-            if (fdi.BracketsMatched() && fdi.IsDivLast()) // there is a candidate for the format in parethesis
-                {
-                unit = curs.ExtractLastEnclosure();
-                fdt = FormatDividerInstance(unit.GetText(), "/*");
-                if (fdt.GetDivCount() == 0) // it can be a format name
-                    {
-                    fnam = unit;
-                    unit = curs.ExtractBeforeEnclosure();
-                    }
-                else
-                    {
-                    unit = curs.ExtractSegment(0, curs.GetTotalLength());
-                    }
-                }
-            // dividers are not found - we assume a Unit name only
-            }
-
-        if (Utf8String::IsNullOrEmpty(fnam.GetText()))
+        Utf8String fnam;
+        Utf8String unit;
+        ParseUnitFormatDescriptor(unit, fnam, description);
+        if (Utf8String::IsNullOrEmpty(fnam.c_str()))
             m_formatSpec = StdFormatSet::FindFormatSpec("DefaultReal");
         else
-            m_formatSpec = StdFormatSet::FindFormatSpec(fnam.GetText());
-        m_unit = BEU::UnitRegistry::Instance().LookupUnitCI(unit.GetText());
+            m_formatSpec = StdFormatSet::FindFormatSpec(fnam.c_str());
+        m_unit = BEU::UnitRegistry::Instance().LookupUnit(unit.c_str());
         if (nullptr == m_formatSpec)
             m_problem.UpdateProblemCode(FormatProblemCode::UnknownStdFormatName);
         else

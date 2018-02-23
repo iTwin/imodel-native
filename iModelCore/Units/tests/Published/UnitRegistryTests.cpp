@@ -371,6 +371,43 @@ TEST_F(UnitRegistryTests, RemoveUnitSystem)
     }
 
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
+//--------------------------------------------------------------------------------------
+TEST_F(UnitRegistryTests, TestCaseInsensitiveLookup)
+    {
+    UnitSystemCP testSystem = UnitRegistry::Instance().AddSystem("TestSystem");
+    ASSERT_NE(nullptr, testSystem);
+    UnitSystemCP retrievedSystem = UnitRegistry::Instance().LookupUnitSystem("testSYSTEM");
+    ASSERT_EQ(retrievedSystem, testSystem);
+
+    PhenomenonCP testPhenom = UnitRegistry::Instance().AddPhenomenon("TestPhenomenon", "LENGTH");
+    ASSERT_NE(nullptr, testPhenom);
+    PhenomenonCP retrievedPhenomenon = UnitRegistry::Instance().LookupPhenomenon("TESTPHENOMENOn");
+    ASSERT_EQ(retrievedPhenomenon, testPhenom);
+
+    TestUnit const* testConstant = UnitRegistry::Instance().AddConstant<TestUnit>("NUMBER", "SI", "TestConstant", "ONE", 42);
+    ASSERT_NE(nullptr, testConstant);
+    UnitCP retrievedConstant = UnitRegistry::Instance().LookupUnit("testconstant");
+    EXPECT_EQ(retrievedConstant, testConstant);
+
+    TestUnit const* smoot = UnitRegistry::Instance().AddUnit<TestUnit>("LENGTH", "USCustom", "Smoot", "M", 1.7);
+    ASSERT_NE(nullptr, smoot);
+    UnitCP retrievedSmoot = UnitRegistry::Instance().LookupUnit("SmOoT");
+    EXPECT_EQ(retrievedSmoot, smoot);
+
+    TestUnit const* smootPerSmoot = UnitRegistry::Instance().AddUnit<TestUnit>("SLOPE", "USCustom", "SmootPerSmoot", "Smoot*Smoot(-1)");
+    ASSERT_NE(nullptr, smootPerSmoot);
+    UnitCP retrievedSmootPerSmoot = UnitRegistry::Instance().LookupUnit("SmootPerSmoot");
+    EXPECT_EQ(retrievedSmootPerSmoot, smootPerSmoot);
+
+    TestUnit const* inverseSmootPerSmoot = UnitRegistry::Instance().AddInvertedUnit<TestUnit>("SmootPerSmoot", "InverseSmootPerSmoot", "USCustom");
+    ASSERT_NE(nullptr, inverseSmootPerSmoot);
+    UnitCP retrievedInverseSmootPerSmoot = UnitRegistry::Instance().LookupUnit("INVERSESMOOTPERSMOOT");
+    EXPECT_EQ(retrievedInverseSmootPerSmoot, inverseSmootPerSmoot);
+    }
+
+
 // TODO: find a way to test compile time assertions.. Interesting talk on it, https://www.youtube.com/watch?time_continue=2105&v=zxDzMjfsgjg. Maybe try to use this style? 
 #if 0
 //--------------------------------------------------------------------------------------

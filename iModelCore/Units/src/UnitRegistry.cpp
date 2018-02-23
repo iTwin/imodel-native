@@ -127,7 +127,7 @@ void UnitRegistry::AllUnitNames(bvector<Utf8String>& allUnitNames, bool includeS
     {
     for (auto const& unitAndName : m_units)
         {
-        if (includeSynonyms || unitAndName.first.Equals(unitAndName.second->GetName()))
+        if (includeSynonyms)
             allUnitNames.push_back(unitAndName.first);
         }
     }
@@ -138,10 +138,7 @@ void UnitRegistry::AllUnitNames(bvector<Utf8String>& allUnitNames, bool includeS
 void UnitRegistry::AllUnits(bvector<UnitCP>& allUnits) const
     {
     for (auto const& unitAndName : m_units)
-        {
-        if (unitAndName.first.Equals(unitAndName.second->GetName()))
-            allUnits.push_back(unitAndName.second);
-        }
+        allUnits.push_back(unitAndName.second);
     }
 
 //-------------------------------------------------------------------------------------//
@@ -161,7 +158,7 @@ void UnitRegistry::AddBasePhenomenon(Utf8CP basePhenomenonName)
     auto phenomena = new Phenomenon(basePhenomenonName, basePhenomenonName, m_nextId);
     ++m_nextId;
 
-    m_phenomena.insert(bpair<Utf8String, PhenomenonP>(basePhenomenonName, phenomena));
+    m_phenomena.insert(bpair<Utf8CP, PhenomenonP>(basePhenomenonName, phenomena));
     }
 
 //---------------------------------------------------------------------------------------//

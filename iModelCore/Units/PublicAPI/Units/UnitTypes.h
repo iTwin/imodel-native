@@ -117,6 +117,7 @@ public:
 //=======================================================================================
 struct UnitsSymbol
 {
+friend struct UnitRegistry;
 friend struct ExpressionSymbol;
 friend struct Expression;
 friend struct Unit;

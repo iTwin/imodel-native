@@ -34,7 +34,7 @@ private:
         {
         bool operator()(Utf8CP s1, Utf8CP s2) const
             {
-            if (BeStringUtilities::StricmpAscii(s1, s2) < 0)
+            if (BeStringUtilities::Stricmp(s1, s2) < 0)
                 return true;
 
             return false;
@@ -44,8 +44,8 @@ private:
     uint32_t m_nextId = 0;
 
     bmap<Utf8CP, UnitSystemP, less_str> m_systems;
-    bmap<Utf8String, PhenomenonP> m_phenomena;
-    bmap<Utf8String, UnitP> m_units;
+    bmap<Utf8CP, PhenomenonP, less_str> m_phenomena;
+    bmap<Utf8CP, UnitP, less_str> m_units;
 
     bmap<uint64_t, Conversion> m_conversions;
 
@@ -102,7 +102,7 @@ private:
         auto phenomena = PHENOM_TYPE::_Create(phenomenaName, definition, m_nextId);
         ++m_nextId;
 
-        m_phenomena.insert(bpair<Utf8String, PHENOM_TYPE*>(phenomenaName, phenomena));
+        m_phenomena.insert(bpair<Utf8CP, PHENOM_TYPE*>(phenomena->m_name.c_str(), phenomena));
 
         return phenomena;
         }
@@ -155,7 +155,7 @@ private:
 
         ++m_nextId;
 
-        m_units.insert(bpair<Utf8String, UnitP>(unitName, (UnitP) unit));
+        m_units.insert(bpair<Utf8CP, UnitP>(unit->m_name.c_str(), (UnitP) unit));
 
         return unit;
         }
@@ -211,7 +211,7 @@ private:
 
         ++m_nextId;
 
-        m_units.insert(bpair<Utf8String, UnitP>(unitName, (UnitP) unit));
+        m_units.insert(bpair<Utf8CP, UnitP>(unit->m_name.c_str(), (UnitP) unit));
 
         return unit;
         }
