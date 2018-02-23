@@ -1564,7 +1564,7 @@ ECObjectsStatus ECSchema::CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR sche
 
     return ECObjectsStatus::Success;
     }
-	
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2168,7 +2168,7 @@ void ECSchema::SetSupplementalSchemaInfo(SupplementalSchemaInfo* info)
     m_supplementalSchemaInfo = info;
     if (nullptr == info)
         this->RemoveCustomAttribute(SupplementalSchemaInfo::GetCustomAttributeSchemaName(), 
-		                            SupplementalSchemaInfo::GetCustomAttributeAccessor());
+                                    SupplementalSchemaInfo::GetCustomAttributeAccessor());
     else
         {
         IECInstancePtr attribute = info->CreateCustomAttribute();

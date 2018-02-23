@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/BuildInstanceAndSerializeToXML.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -24,7 +24,7 @@ struct BasicTest : ECTestFixture {};
 * Specify the ECSchema that contains all the class/struct definitions
 * @bsimethod                                                    BillSteinbock   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECSchemaPtr       CreateTestSchema ()
+static ECSchemaPtr CreateTestSchema()
     {
     Utf8Char schemaXML[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                     "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
@@ -171,7 +171,7 @@ TEST_F(BasicTest, BuildInstanceAndSerializeToXML)
     for (int i=0; i<5; i++)
         {
         SampleData sampleData (i, (uint32_t)(i%2)*3);
-        ECN::StandaloneECInstancePtr testInstance = instanceManager.CreateInstance (sampleData);
+        StandaloneECInstancePtr testInstance = instanceManager.CreateInstance (sampleData);
         ASSERT_TRUE (testInstance.IsValid());
 
         InstanceWriteStatus status2 = testInstance->WriteToXmlString(ecInstanceXml, true, false);
@@ -180,6 +180,5 @@ TEST_F(BasicTest, BuildInstanceAndSerializeToXML)
 
     //CoUninitialize();
     }
-
 
 END_BENTLEY_ECN_TEST_NAMESPACE

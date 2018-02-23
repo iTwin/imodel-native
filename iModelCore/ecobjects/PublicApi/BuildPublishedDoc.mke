@@ -2,11 +2,15 @@
 #
 #     $Source: PublicApi/BuildPublishedDoc.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include    mdl.mki
-%include    $(SharedMki)HtmlHelp.mki
+
+%if !defined (NO_CHM)
+    %include $(SharedMki)HtmlHelp.mki
+%endif
+
 %include    $(SrcRoot)ecobjects/mki/ECObjects.mki
 
 OutputName     = ECObjectsAPI

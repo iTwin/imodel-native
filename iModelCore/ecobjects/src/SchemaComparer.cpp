@@ -34,8 +34,8 @@ BentleyStatus Binary::Resize(size_t len)
         m_len = len;
         return SUCCESS;
         }
-		
-	m_buff=nullptr;
+
+    m_buff=nullptr;
     BeAssert(false && "_resize() failed");
     return ERROR;
     }
