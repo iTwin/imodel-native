@@ -114,7 +114,7 @@ void PropertyInfoStore::InitPropertyDisplayInfos(ContentSpecificationCP specific
             ECClassCP ecClass = m_schemaHelper.GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
             if (nullptr == ecClass)
                 {
-                BeAssert(false);
+                //BeAssert(false);
                 continue;
                 }
             CollectPropertiesDisplayRules(ecClass, *displaySpec);
@@ -206,7 +206,7 @@ void PropertyInfoStore::InitPropertyEditors(ContentSpecificationCP specification
             ECClassCP ecClass = m_schemaHelper.GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
             if (nullptr == ecClass)
                 {
-                BeAssert(false);
+                //BeAssert(false);
                 continue;
                 }
             bmap<Utf8String, ContentFieldEditor const*>& editors = m_propertyEditors[ecClass];
