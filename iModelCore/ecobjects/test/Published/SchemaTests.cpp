@@ -48,71 +48,40 @@ TEST_F(SchemaTest, AddAndRemoveEnumerations)
 
     //Create Enumeration
     auto status = schema->CreateEnumeration(enumeration, "Enumeration", PrimitiveType::PRIMITIVETYPE_Integer);
-    ASSERT_TRUE(enumeration != nullptr);
-    ASSERT_TRUE(status == ECObjectsStatus::Success);
+    ASSERT_NE(nullptr, enumeration);
+    EC_ASSERT_SUCCESS(status);
 
     status = schema->CreateEnumeration(enumeration2, "Enumeration", PrimitiveType::PRIMITIVETYPE_String);
-    ASSERT_TRUE(enumeration2 == nullptr);
-    ASSERT_TRUE(status == ECObjectsStatus::NamedItemAlreadyExists);
+    ASSERT_EQ(nullptr, enumeration2);
+    ASSERT_EQ(ECObjectsStatus::NamedItemAlreadyExists, status);
 
     status = schema->CreateEntityClass(domainClass, "Enumeration");
-    ASSERT_TRUE(domainClass == nullptr);
-    ASSERT_TRUE(status == ECObjectsStatus::NamedItemAlreadyExists);
+    ASSERT_EQ(nullptr, domainClass);
+    ASSERT_EQ(ECObjectsStatus::NamedItemAlreadyExists, status);
 
     enumeration2 = schema->GetEnumerationP("Enumeration");
-    ASSERT_TRUE(enumeration2 != nullptr);
-    ASSERT_TRUE(enumeration2 == enumeration);
+    ASSERT_NE(nullptr, enumeration2);
+    ASSERT_EQ(enumeration2, enumeration);
 
     int i = 0;
     for (auto p : schema->GetEnumerations())
         {
         i++;
-        ASSERT_TRUE(p != nullptr);
-        ASSERT_TRUE(p == enumeration);
+        ASSERT_NE(nullptr, p);
+        ASSERT_EQ(enumeration, p);
         }
 
-    ASSERT_TRUE(i == 1);
+    ASSERT_EQ(1, i);
 
-    ASSERT_TRUE(schema->GetEnumerationCount() == 1);
+    ASSERT_EQ(1, schema->GetEnumerationCount());
 
-    ASSERT_TRUE(schema->DeleteEnumeration(*enumeration) == ECObjectsStatus::Success);
+    EC_ASSERT_SUCCESS(schema->DeleteEnumeration(*enumeration));
 
     enumeration2 = nullptr;
     enumeration2 = schema->GetEnumerationP("Enumeration");
-    ASSERT_TRUE(enumeration2 == nullptr);
+    ASSERT_EQ(nullptr, enumeration2);
 
-    ASSERT_TRUE(schema->GetEnumerationCount() == 0);
-    }
-
-bool CompareFiles(Utf8StringCP lFileName, Utf8StringCP rFileName)
-    {
-    BeFile lFile;
-    BeFileStatus lStatus = lFile.Open(*lFileName, BeFileAccess::Read);
-
-    EXPECT_EQ(BeFileStatus::Success, lStatus) << "Could not open " << *lFileName << " for verification";
-
-    BeFile rFile;
-    BeFileStatus rStatus = rFile.Open(*rFileName, BeFileAccess::Read);
-    EXPECT_EQ(BeFileStatus::Success, lStatus) << "Could not open " << *rFileName << " for verification";
-
-    ByteStream lStream;
-    ByteStream rStream;
-    lStatus = lFile.ReadEntireFile(lStream);
-    rStatus = rFile.ReadEntireFile(rStream);
-
-    if (lStream.GetSize() != rStream.GetSize())
-        return false;
-
-    const uint8_t *lBuffer = lStream.GetData();
-    const uint8_t *rBuffer = rStream.GetData();
-    for (uint32_t i = 0; i < lStream.GetSize(); i++)
-        {
-        if (lBuffer[i] != rBuffer[i])
-            return false;
-        }
-    lFile.Close();
-    rFile.Close();
-    return true;
+    ASSERT_EQ(0, schema->GetEnumerationCount());
     }
 
 //---------------------------------------------------------------------------------------
@@ -120,30 +89,19 @@ bool CompareFiles(Utf8StringCP lFileName, Utf8StringCP rFileName)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaTest, CreateDynamicSchema)
     {
-    //Load Bentley_Standard_CustomAttributes
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    SearchPathSchemaFileLocaterPtr schemaLocater;
-    bvector<WString> searchPaths;
-    searchPaths.push_back(ECTestFixture::GetTestDataPath(L""));
-    schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
-    schemaContext->AddSchemaLocater(*schemaLocater);
-
-    SchemaKey schemaKey("CoreCustomAttributes", 1, 0);
-    ECSchemaPtr standardCASchema = schemaContext->LocateSchema(schemaKey, SchemaMatchType::Latest);
-    EXPECT_TRUE(standardCASchema.IsValid());
-
-    IECInstancePtr dynamicSchemaCA = standardCASchema->GetClassCP("DynamicSchema")->GetDefaultStandaloneEnabler()->CreateInstance();
+    auto dynamicClass = CoreCustomAttributeHelper::GetCustomAttributeClass("DynamicSchema");
+    IECInstancePtr dynamicSchemaCA = dynamicClass->GetDefaultStandaloneEnabler()->CreateInstance();
     ECSchemaCachePtr cache = ECSchemaCache::Create();
+    
     ECSchemaPtr schema;
-
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 2, 0, 1);
-    schema->AddReferencedSchema(*standardCASchema);
-    ASSERT_EQ(ECObjectsStatus::Success, schema->SetCustomAttribute(*dynamicSchemaCA));
+    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema());
+    EC_ASSERT_SUCCESS(schema->SetCustomAttribute(*dynamicSchemaCA));
     
 
     ASSERT_EQ(ECObjectsStatus::Success, cache->AddSchema(*schema));
     ECSchemaP retrievedSchema = cache->GetSchema(SchemaKey("TestSchema", 2, 1), SchemaMatchType::Exact);
-    ASSERT_TRUE(retrievedSchema != NULL);
+    ASSERT_NE(nullptr, retrievedSchema);
 
     ASSERT_TRUE(retrievedSchema->IsDynamicSchema());
     }
@@ -153,9 +111,7 @@ TEST_F(SchemaTest, CreateDynamicSchema)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaTest, TryRenameECClass)
     {
-    ECSchemaCachePtr cache = ECSchemaCache::Create();
     ECSchemaPtr schema;
-
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
 
     ECEntityClassP entityClass1;
@@ -163,27 +119,19 @@ TEST_F(SchemaTest, TryRenameECClass)
     schema->CreateEntityClass(entityClass1, "ClassA");
     schema->CreateEntityClass(entityClass2, "ClassB");
 
-    ASSERT_EQ(ECObjectsStatus::Success, cache->AddSchema(*schema));
-    ECSchemaP retrievedSchema = cache->GetSchema(SchemaKey("TestSchema", 5, 5), SchemaMatchType::Exact);
-    ASSERT_TRUE(retrievedSchema != NULL);
-
     // rename classes
-    ASSERT_EQ(ECObjectsStatus::Success, retrievedSchema->RenameClass(*retrievedSchema->GetClassP("ClassA"), "ClassA1"));
-    ASSERT_EQ(ECObjectsStatus::Success, retrievedSchema->RenameClass(*retrievedSchema->GetClassP("ClassB"), "ClassB1"));
+    EC_ASSERT_SUCCESS(schema->RenameClass(*schema->GetClassP("ClassA"), "ClassA1"));
+    EC_ASSERT_SUCCESS(schema->RenameClass(*schema->GetClassP("ClassB"), "ClassB1"));
 
     // try to get classes with old names
-    ASSERT_TRUE(nullptr == retrievedSchema->GetClassCP("ClassA"));
-    ASSERT_TRUE(nullptr == retrievedSchema->GetClassCP("ClassB"));
+    ASSERT_EQ(nullptr, schema->GetClassCP("ClassA"));
+    ASSERT_EQ(nullptr, schema->GetClassCP("ClassB"));
 
     // Get classes with new names
-    ECClassP classA1 = retrievedSchema->GetClassP("ClassA1");
-    ECClassP classB1 = retrievedSchema->GetClassP("ClassB1");
-    ASSERT_TRUE(nullptr != classA1);
-    ASSERT_TRUE(nullptr != classB1);
-
-    // Delete Classes
-    ASSERT_EQ(ECObjectsStatus::Success, retrievedSchema->DeleteClass(*classA1));
-    ASSERT_EQ(ECObjectsStatus::Success, retrievedSchema->DeleteClass(*classB1));
+    ECClassP classA1 = schema->GetClassP("ClassA1");
+    ECClassP classB1 = schema->GetClassP("ClassB1");
+    ASSERT_NE(nullptr, classA1);
+    ASSERT_NE(nullptr, classB1);
     }
 
 //---------------------------------------------------------------------------------------
@@ -317,9 +265,9 @@ TEST_F(SchemaTest, TestCircularReference)
     schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater (searchPaths);
     schemaContext = ECSchemaReadContext::CreateContext ();
     schemaContext->AddSchemaLocater (*schemaLocater);
-    SchemaKey key ("CircleSchema", 01, 00);
-    testSchema = schemaContext->LocateSchema (key, SchemaMatchType::Latest);
-    EXPECT_FALSE (testSchema.IsValid ());
+    SchemaKey key("CircleSchema", 01, 00);
+    testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Latest);
+    EXPECT_FALSE(testSchema.IsValid ());
     }
 
 //---------------------------------------------------------------------------------**//**
@@ -709,10 +657,10 @@ TEST_F(SchemaNameParsingTest, ParseFullSchemaName)
     ValidateSchemaNameParsing("TestName.16.18", false, "TestName", 16, 0, 18);
     ValidateSchemaNameParsing("TestName.126.128", false, "TestName", 126, 0, 128);
     ValidateSchemaNameParsing("TestName.1267.128", false, "TestName", 1267, 0, 128);
-    ValidateSchemaNameParsing("TestName.1267", true, NULL, 0, 0, 0);
-    ValidateSchemaNameParsing("TestName", true, NULL, 0, 0, 0);
-    ValidateSchemaNameParsing("", true, NULL, 0, 0, 0);
-    ValidateSchemaNameParsing("12.18", true, NULL, 0, 0, 0);
+    ValidateSchemaNameParsing("TestName.1267", true, nullptr, 0, 0, 0);
+    ValidateSchemaNameParsing("TestName", true, nullptr, 0, 0, 0);
+    ValidateSchemaNameParsing("", true, nullptr, 0, 0, 0);
+    ValidateSchemaNameParsing("12.18", true, nullptr, 0, 0, 0);
     }
 
 //=======================================================================================
@@ -1190,7 +1138,7 @@ TEST_F(SchemaReferenceTest, FindClassInReferenceList)
 
     ECSchemaReferenceListCR refList = schema->GetReferencedSchemas();
 
-    EXPECT_TRUE(refList.FindClassP(SchemaNameClassNamePair("RefSchema", "Source")) != NULL);
+    EXPECT_NE(nullptr, refList.FindClassP(SchemaNameClassNamePair("RefSchema", "Source")));
     }
 
 //---------------------------------------------------------------------------------------
@@ -1540,10 +1488,10 @@ TEST_F(SchemaCreationTest, CreatingASchemaWithOldVersionStillSetsLatestOriginalX
 ECPropertyP GetPropertyByName(ECClassCR ecClass, Utf8CP name, bool expectExists = true)
     {
     ECPropertyP prop = ecClass.GetPropertyP(name);
-    EXPECT_EQ(expectExists, NULL != prop);
+    EXPECT_EQ(expectExists, nullptr != prop);
     Utf8String utf8(name);
     prop = ecClass.GetPropertyP(utf8.c_str());
-    EXPECT_EQ(expectExists, NULL != prop);
+    EXPECT_EQ(expectExists, nullptr != prop);
     return prop;
     }
 
@@ -1567,7 +1515,7 @@ struct ECNameValidationTest : ECTestFixture
         Utf8String schemaXml;
         EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(schemaXml, ECVersion::V2_0));
 
-        schema = NULL;
+        schema = nullptr;
         ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
         EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *context));
 
@@ -1672,7 +1620,7 @@ TEST_F(ECNameValidationTest, DisplayLabels)
         "__xTTTT__", "__xTTTT__",
         "__x####__", "__x__x0023____x0023____x0023____x0023____",
         (Utf8CP) s_chineseUtf8, "__x822C____x6A21____x578B__",
-        NULL, NULL
+        nullptr, nullptr
         };
 
     for (Utf8CP const* cur = s_testValues; *cur; cur += 2)
@@ -1694,7 +1642,7 @@ TEST_F(ECNameValidationTest, Validate)
     EXPECT_VALIDATION_RESULT(Valid, "A123");
 
     EXPECT_VALIDATION_RESULT(NullOrEmpty, "");
-    EXPECT_VALIDATION_RESULT(NullOrEmpty, NULL);
+    EXPECT_VALIDATION_RESULT(NullOrEmpty, nullptr);
 
     EXPECT_VALIDATION_RESULT(BeginsWithDigit, "1_C");
 
@@ -1824,30 +1772,30 @@ TEST_F(SchemaCacheTest, FilterSchema)
     ECSchema::CreateSchema(schema1, "Widget", "ts", 5, 0, 1);
     ECSchema::CreateSchema(schema2, "BaseSchema1", "ts", 2, 0, 0);
     ECSchema::CreateSchema(schema3, "BaseSchema2", "ts", 5, 0, 5);
+    
+    EC_EXPECT_SUCCESS(cache->AddSchema(*schema1));
+    EC_EXPECT_SUCCESS(cache->AddSchema(*schema2));
+    EC_EXPECT_SUCCESS(cache->AddSchema(*schema3));
 
-    EXPECT_TRUE(cache->AddSchema(*schema1) == ECObjectsStatus::Success);
-    EXPECT_TRUE(cache->AddSchema(*schema2) == ECObjectsStatus::Success);
-    EXPECT_TRUE(cache->AddSchema(*schema3) == ECObjectsStatus::Success);
+    EXPECT_NE(nullptr, cache->GetSchema(SchemaKey("BaseSchema1", 2, 0), SchemaMatchType::Exact));
+    EXPECT_EQ(nullptr, cache->GetSchema(SchemaKey("BaseZchema1", 2, 0), SchemaMatchType::Exact));
+    EXPECT_EQ(nullptr, cache->GetSchema(SchemaKey("BaseSchema1", 3, 0), SchemaMatchType::Exact));
+    EXPECT_EQ(nullptr, cache->GetSchema(SchemaKey("BaseSchema1", 2, 1), SchemaMatchType::Exact));
 
-    EXPECT_TRUE(cache->GetSchema(SchemaKey("BaseSchema1", 2, 0), SchemaMatchType::Exact) != NULL);
-    EXPECT_TRUE(cache->GetSchema(SchemaKey("BaseZchema1", 2, 0), SchemaMatchType::Exact) == NULL);
-    EXPECT_TRUE(cache->GetSchema(SchemaKey("BaseSchema1", 3, 0), SchemaMatchType::Exact) == NULL);
-    EXPECT_TRUE(cache->GetSchema(SchemaKey("BaseSchema1", 2, 1), SchemaMatchType::Exact) == NULL);
+    EXPECT_NE(nullptr, cache->GetSchema(SchemaKey("BaseSchema1", 2, 0), SchemaMatchType::Identical));
+    EXPECT_EQ(nullptr, cache->GetSchema(SchemaKey("BaseZchema1", 2, 0), SchemaMatchType::Identical));
+    EXPECT_EQ(nullptr, cache->GetSchema(SchemaKey("BaseSchema1", 3, 0), SchemaMatchType::Identical));
+    EXPECT_EQ(nullptr, cache->GetSchema(SchemaKey("BaseSchema1", 2, 1), SchemaMatchType::Identical));
 
-    EXPECT_TRUE(cache->GetSchema(SchemaKey("BaseSchema1", 2, 0), SchemaMatchType::Identical) != NULL);
-    EXPECT_TRUE(cache->GetSchema(SchemaKey("BaseZchema1", 2, 0), SchemaMatchType::Identical) == NULL);
-    EXPECT_TRUE(cache->GetSchema(SchemaKey("BaseSchema1", 3, 0), SchemaMatchType::Identical) == NULL);
-    EXPECT_TRUE(cache->GetSchema(SchemaKey("BaseSchema1", 2, 1), SchemaMatchType::Identical) == NULL);
+    EXPECT_NE(nullptr, cache->GetSchema(SchemaKey("BaseSchema1", 2, 0), SchemaMatchType::Latest));
+    EXPECT_EQ(nullptr, cache->GetSchema(SchemaKey("BaseZchema1", 2, 0), SchemaMatchType::Latest));
+    EXPECT_NE(nullptr, cache->GetSchema(SchemaKey("BaseSchema1", 3, 0), SchemaMatchType::Latest));
+    EXPECT_NE(nullptr, cache->GetSchema(SchemaKey("BaseSchema1", 2, 1), SchemaMatchType::Latest));
 
-    EXPECT_TRUE(cache->GetSchema(SchemaKey("BaseSchema1", 2, 0), SchemaMatchType::Latest) != NULL);
-    EXPECT_TRUE(cache->GetSchema(SchemaKey("BaseZchema1", 2, 0), SchemaMatchType::Latest) == NULL);
-    EXPECT_TRUE(cache->GetSchema(SchemaKey("BaseSchema1", 3, 0), SchemaMatchType::Latest) != NULL);
-    EXPECT_TRUE(cache->GetSchema(SchemaKey("BaseSchema1", 2, 1), SchemaMatchType::Latest) != NULL);
-
-    EXPECT_TRUE(cache->GetSchema(SchemaKey("BaseSchema2", 5, 5), SchemaMatchType::LatestWriteCompatible) != NULL);
-    EXPECT_TRUE(cache->GetSchema(SchemaKey("BaseZchema2", 5, 5), SchemaMatchType::LatestWriteCompatible) == NULL);
-    EXPECT_TRUE(cache->GetSchema(SchemaKey("BaseSchema2", 3, 5), SchemaMatchType::LatestWriteCompatible) == NULL);
-    EXPECT_TRUE(cache->GetSchema(SchemaKey("BaseSchema2", 5, 3), SchemaMatchType::LatestWriteCompatible) != NULL);
+    EXPECT_NE(nullptr, cache->GetSchema(SchemaKey("BaseSchema2", 5, 5), SchemaMatchType::LatestWriteCompatible));
+    EXPECT_EQ(nullptr, cache->GetSchema(SchemaKey("BaseZchema2", 5, 5), SchemaMatchType::LatestWriteCompatible));
+    EXPECT_EQ(nullptr, cache->GetSchema(SchemaKey("BaseSchema2", 3, 5), SchemaMatchType::LatestWriteCompatible));
+    EXPECT_NE(nullptr, cache->GetSchema(SchemaKey("BaseSchema2", 5, 3), SchemaMatchType::LatestWriteCompatible));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1918,12 +1866,12 @@ TEST_F(SchemaImmutableTest, SetImmutable)
 
     schema->SetImmutable();
 
-    ECEntityClassP class1 = NULL;
+    ECEntityClassP class1 = nullptr;
     ECClassP class2 = schema->GetClassP("ecProject");
     ECRelationshipClassP relationshipClass;
     ECClassP base = (ECClassP) class1;
     EXPECT_EQ(schema->CreateEntityClass(class1, "TestClass"), ECObjectsStatus::SchemaIsImmutable);
-    EXPECT_TRUE(class1 == NULL);
+    EXPECT_TRUE(class1 == nullptr);
     EXPECT_EQ(schema->CopyClass(base, *class2), ECObjectsStatus::SchemaIsImmutable);
     EXPECT_EQ(schema->CreateRelationshipClass(relationshipClass, "RelationshipClass"), ECObjectsStatus::SchemaIsImmutable);
     EXPECT_EQ(schema->SetName("Some new name"), ECObjectsStatus::SchemaIsImmutable);

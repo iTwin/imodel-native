@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECCustomAttribute.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -897,7 +897,7 @@ ECCustomAttributeInstanceIterable::IteratorState::~IteratorState()
     {
     delete m_customAttributes;
     }
-			
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -921,7 +921,7 @@ bool IECCustomAttributeContainer::IsDefined (Utf8StringCR className) const
         }
     return false;
     }
-		
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -968,14 +968,11 @@ bool      includeSupplementalAttributes
         }
     return result;
     }
-		
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Colin.Kerr                      05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr IECCustomAttributeContainer::GetLocalAttributeAsSupplemented
-(
-Utf8StringCR className
-)
+IECInstancePtr IECCustomAttributeContainer::GetLocalAttributeAsSupplemented(Utf8StringCR className)
     {
     for(auto const& caIter : m_supplementedCustomAttributes)
         {
@@ -983,7 +980,7 @@ Utf8StringCR className
         if (0 == className.compare(caClass.GetName()))
             return caIter;
         }
-    
+
     IECInstancePtr customAttribute;
     for(auto const& caIter : m_primaryCustomAttributes)
         {
@@ -1028,21 +1025,15 @@ Utf8StringCR className
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Casey.Mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr IECCustomAttributeContainer::GetCustomAttributeLocal
-(
-Utf8StringCR className
-) const
+IECInstancePtr IECCustomAttributeContainer::GetCustomAttributeLocal(Utf8StringCR className) const
     {
     return GetCustomAttributeInternal(className, false, true);
     }
-		
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool IECCustomAttributeContainer::RemoveCustomAttribute
-(
-Utf8StringCR className
-)
+bool IECCustomAttributeContainer::RemoveCustomAttribute(Utf8StringCR className)
     {
     ECCustomAttributeCollection::iterator iter;
     for (iter = m_primaryCustomAttributes.begin(); iter != m_primaryCustomAttributes.end(); iter++)
@@ -1054,7 +1045,7 @@ Utf8StringCR className
             return true;
             }
         }
-
     return false;
     }
+
 END_BENTLEY_ECOBJECT_NAMESPACE

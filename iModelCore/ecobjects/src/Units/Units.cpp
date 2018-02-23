@@ -2,7 +2,7 @@
 |
 |     $Source: src/Units/Units.cpp $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -252,7 +252,7 @@ bool UnitLocater::LocateUnitBySpecification (UnitR unit, Utf8CP propName, Utf8CP
         {
         ECSchemaPtr refSchema = refSchemaEntry.second;
         if (refSchema->GetCustomAttribute (UNIT_ATTRIBUTES, IS_UNIT_SYSTEM_SCHEMA).IsValid() && 
-		   (specsAttr = refSchema->GetCustomAttribute (UNIT_ATTRIBUTES,UNIT_SPECIFICATIONS)).IsValid())
+           (specsAttr = refSchema->GetCustomAttribute (UNIT_ATTRIBUTES,UNIT_SPECIFICATIONS)).IsValid())
             return GetUnitFromSpecifications (unit, propName, propValue, *specsAttr);
         }
 

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/SupplementalSchema.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -129,7 +129,7 @@ public:
     //! Returns the string used to get the SupplementalSchema custom attribute.
     ECOBJECTS_EXPORT static Utf8CP GetCustomAttributeAccessor();
 
-	//! Returns the string used to get the SupplementalSchema custom attribute schema name.
+    //! Returns the string used to get the SupplementalSchema custom attribute schema name.
     ECOBJECTS_EXPORT static Utf8CP GetCustomAttributeSchemaName();
 
     //! Returns the string used to access the PrimarySchemaReference.SchemaName property on the SupplementalSchema custom attribute.
@@ -378,7 +378,7 @@ private:
     Utf8String     m_supplementedKey;
     SchemaNamePurposeMap  m_supplementalSchemaNamesAndPurpose;
     static Utf8CP s_customAttributeAccessor;
-	static Utf8CP s_customAttributeSchemaName;
+    static Utf8CP s_customAttributeSchemaName;
 
 public:
     //! Constructs an instance of the SupplementalSchemaInfo class
@@ -423,6 +423,6 @@ public:
     static Utf8CP GetCustomAttributeSchemaName();
 
     };
-/** @endGroup */	
+/** @endGroup */
 END_BENTLEY_ECOBJECT_NAMESPACE
 

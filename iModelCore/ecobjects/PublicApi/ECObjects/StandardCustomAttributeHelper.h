@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/StandardCustomAttributeHelper.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -128,9 +128,5 @@ struct ConversionCustomAttributeHelper final
         ECOBJECTS_EXPORT static void Reset();
     };
 
-
-	
 /** @endGroup */
 END_BENTLEY_ECOBJECT_NAMESPACE
-
-
