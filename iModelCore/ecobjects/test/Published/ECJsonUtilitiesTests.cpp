@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/ECJsonUtilitiesTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -500,6 +500,95 @@ TEST_F(ECJsonUtilitiesTestFixture, BinaryToJson)
     EXPECT_STRCASEEQ(expectedBase64Str.c_str(), rapidJson.GetString()) << expectedBase64Str;
     EXPECT_EQ(SUCCESS, ECJsonUtilities::BinaryToJson(rapidJson, byteStream.GetData(), byteStream.GetSize(), rapidJson.GetAllocator())) << expectedBase64Str;
     EXPECT_STRCASEEQ(expectedBase64Str.c_str(), rapidJson.GetString()) << expectedBase64Str;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                02/2018
+//---------------------------------------------------------------------------------------
+TEST_F(ECJsonUtilitiesTestFixture, JsonToPoint2d)
+    {
+    double x = 3.14;
+    double y = -101.0;
+    DPoint2d point2d = DPoint2d::From(x, y);
+
+    Json::Value objJson(Json::ValueType::objectValue);
+    objJson["x"] = x;
+    objJson["y"] = y;
+    DPoint2d convertedObjJson;
+    ASSERT_EQ(SUCCESS, ECJsonUtilities::JsonToPoint2d(convertedObjJson, objJson));
+    EXPECT_EQ(point2d, convertedObjJson);
+
+    Json::Value arrJsonValid(Json::ValueType::arrayValue);
+    arrJsonValid[0u] = x;
+    arrJsonValid[1u] = y;
+    DPoint2d convertedArrJsonValid;
+    ASSERT_EQ(SUCCESS, ECJsonUtilities::JsonToPoint2d(convertedArrJsonValid, arrJsonValid));
+    EXPECT_EQ(point2d, convertedArrJsonValid);
+
+    // Json arrays with length != 2 should fail.
+    Json::Value arrJsonLenTooShort(Json::ValueType::arrayValue);
+    arrJsonLenTooShort[0u] = x;
+    DPoint2d convertedArrJsonLenTooShort;
+    ASSERT_NE(SUCCESS, ECJsonUtilities::JsonToPoint2d(convertedArrJsonLenTooShort, arrJsonLenTooShort));
+
+    // Json arrays with length != 2 should fail.
+    Json::Value arrJsonLenTooLong(Json::ValueType::arrayValue);
+    arrJsonLenTooLong[0u] = x;
+    arrJsonLenTooLong[1u] = y;
+    arrJsonLenTooLong[2u] = (double)0xBAD;
+    DPoint2d convertedArrJsonLenTooLong;
+    ASSERT_NE(SUCCESS, ECJsonUtilities::JsonToPoint2d(convertedArrJsonLenTooLong, arrJsonLenTooLong));
+
+    Json::Value nullJson(Json::nullValue);
+    DPoint2d convertedNullJson;
+    EXPECT_NE(SUCCESS, ECJsonUtilities::JsonToPoint2d(convertedNullJson, nullJson));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                02/2018
+//---------------------------------------------------------------------------------------
+TEST_F(ECJsonUtilitiesTestFixture, JsonToPoint3d)
+    {
+    double x = 3.14;
+    double y = -101.0;
+    double z = 0.25;
+    DPoint3d point3d = DPoint3d::From(x, y, z);
+
+    Json::Value objJson(Json::ValueType::objectValue);
+    objJson["x"] = x;
+    objJson["y"] = y;
+    objJson["z"] = z;
+    DPoint3d convertedObjJson;
+    ASSERT_EQ(SUCCESS, ECJsonUtilities::JsonToPoint3d(convertedObjJson, objJson));
+    EXPECT_EQ(point3d, convertedObjJson);
+
+    Json::Value arrJson(Json::ValueType::arrayValue);
+    arrJson[0u] = x;
+    arrJson[1u] = y;
+    arrJson[2u] = z;
+    DPoint3d convertedArrJson;
+    ASSERT_EQ(SUCCESS, ECJsonUtilities::JsonToPoint3d(convertedArrJson, arrJson));
+    EXPECT_EQ(point3d, convertedArrJson);
+
+    // Json arrays with length != 3 should fail.
+    Json::Value arrJsonLenTooShort(Json::ValueType::arrayValue);
+    arrJsonLenTooShort[0u] = x;
+    arrJsonLenTooShort[1u] = y;
+    DPoint3d convertedArrJsonLenTooShort;
+    ASSERT_NE(SUCCESS, ECJsonUtilities::JsonToPoint3d(convertedArrJsonLenTooShort, arrJsonLenTooShort));
+
+    // Json arrays with length != 3 should fail.
+    Json::Value arrJsonLenTooLong(Json::ValueType::arrayValue);
+    arrJsonLenTooLong[0u] = x;
+    arrJsonLenTooLong[1u] = y;
+    arrJsonLenTooLong[2u] = y;
+    arrJsonLenTooLong[3u] = (double)0xBAD;
+    DPoint3d convertedArrJsonLenTooLong;
+    ASSERT_NE(SUCCESS, ECJsonUtilities::JsonToPoint3d(convertedArrJsonLenTooLong, arrJsonLenTooLong));
+
+    Json::Value nullJson(Json::nullValue);
+    DPoint3d convertedNullJson;
+    EXPECT_NE(SUCCESS, ECJsonUtilities::JsonToPoint3d(convertedNullJson, nullJson));
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
