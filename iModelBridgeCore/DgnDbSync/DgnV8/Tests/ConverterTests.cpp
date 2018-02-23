@@ -580,7 +580,7 @@ static void ValidateModelRange (DgnDbR db, Utf8Char* modelName, double x0, doubl
 * @bsimethod                                    Barry Bentley                   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 // We start with a DGN file that has the PA State Plane North GCS with a Helmert transform and a global origin.
-// We pull in five different DGN fileeach of which has the same Lat/Long data.
+// We pull in five different DGN files, each of which has the same Lat/Long data.
 // The first three are PA State Plane North, but with different combinations of global origins and Helmert Transforms
 //  (the objective for these first three is to make sure that we are correctly calculating the linear transform to use in these cases).
 // The last two have a different GCS (including a different Dataum). They are reprojected, and because of the datum difference, the range is slightly different.
@@ -622,15 +622,13 @@ TEST_F(ConverterTests, GCSMultiFilesGOAndHelmert)
     // Compare model ranges
     DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
     ASSERT_TRUE (db->IsDbOpen());
+    ValidateModelRange (*db.get(), "WithGOAndHelmert", 174588.644, -357775.920, -0.0005, 289574.018, -230337.770, 0.0005);
+    ValidateModelRange (*db.get(), "CenterGO", 174588.644, -357775.920, -0.0005, 289574.018, -230337.770, 0.0005);
+    ValidateModelRange (*db.get(), "WithGO", 174588.644, -357775.920, -0.0005, 289574.018, -230337.770, 0.0005);
+    ValidateModelRange (*db.get(), "CenterGOWithHelmert", 174588.644, -357775.920, -0.0005, 289574.018, -230337.770, 0.0005);
 
-    ValidateModelRange (*db.get(), "WithGOAndHelmert", 774588.644, -357775.920, -0.0005, 889574.017, -230337.770, 0.0005);
-    ValidateModelRange (*db.get(), "CenterGO", 774588.644, -357775.920, -0.0005, 889574.017, -230337.770, 0.0005);
-    ValidateModelRange (*db.get(), "WithGO", 774588.644, -357775.920, -0.0005, 889574.017, -230337.770, 0.0005);
-    ValidateModelRange (*db.get(), "CenterGOWithHelmert", 774588.644, -357775.920, -0.0005, 889574.017, -230337.770, 0.0005);
-
-
-    ValidateModelRange (*db.get(), "SouthCenterGO", 774669.782, -357771.034, -0.0005, 889552.579, -230329.427, 0.0005);
-    ValidateModelRange (*db.get(), "SouthWithGO", 774669.782, -357771.034, -0.0005, 889552.579, -230329.427, 0.0005);
+    ValidateModelRange (*db.get(), "SouthCenterGO", 174669.782, -357771.034, -0.0005, 289552.579, -230329.427, 0.0005);
+    ValidateModelRange (*db.get(), "SouthWithGO", 174669.782, -357771.034, -0.0005, 289552.579, -230329.427, 0.0005);
     }
 
 /*---------------------------------------------------------------------------------**//**
