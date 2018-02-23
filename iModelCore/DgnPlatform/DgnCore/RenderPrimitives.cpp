@@ -2597,6 +2597,91 @@ void GeometryListBuilder::_ActivateGraphicParams(GraphicParamsCR gfParams, Geome
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<GraphicPtr> System::_CreateSheetTile(TextureCR tile, GraphicBuilder::TileCorners const& corners, DgnDbR db, GraphicParamsCR params, ClipVectorCP clip) const
+    {
+    bvector<GraphicPtr> sheetTileGraphics;
+
+    if (nullptr != clip)
+        {
+        TriMeshArgs clippedTile;
+
+        bvector<DPoint3d> quadPts;
+        quadPts.push_back(corners.m_pts[0]); // need to order these strangely to account for the way TileCorners arranges vertices 
+        quadPts.push_back(corners.m_pts[1]);
+        quadPts.push_back(corners.m_pts[3]);
+        quadPts.push_back(corners.m_pts[2]);
+
+        IFacetOptionsPtr facetOptions = IFacetOptions::Create();
+        facetOptions->SetParamsRequired(true);
+        IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create(*facetOptions);
+        builder->AddTriangulation(quadPts);
+        PolyfaceHeaderPtr pfHdr = builder->GetClientMeshPtr();
+
+        GeometryClipper::PolyfaceClipper pfClipper;
+        pfClipper.ClipPolyface(*pfHdr, clip, true);
+        if (pfClipper.HasOutput())
+            {
+            bvector<PolyfaceQueryCP>& clippedPolyfaceQueries = pfClipper.GetOutput();
+
+            for (auto& clippedPolyfaceQuery : clippedPolyfaceQueries)
+                {
+#if 0 // ###TODO: necessary? 
+                if (!clippedPolyfaceQuery->IsTriangulated())
+                    const_cast<PolyfaceHeaderP>(dynamic_cast<PolyfaceHeaderCP>(clippedPolyfaceQuery))->Triangulate();
+#endif
+
+                DPoint3dCP pts = clippedPolyfaceQuery->GetPointCP();
+                uint32_t numPts = clippedPolyfaceQuery->GetPointCount();
+
+                clippedTile.m_pointParams = QPoint3d::Params(DRange3d::From(pts, numPts)); // use these point params
+
+                bvector<QPoint3d> qVerts; // output these points to clippedTile
+                for (uint32_t i = 0; i < numPts; i++)
+                    {
+                    qVerts.push_back(QPoint3d(pts[i], clippedTile.m_pointParams));
+                    }
+                clippedTile.m_points = &qVerts[0];
+                clippedTile.m_numPoints = numPts;
+
+                const DPoint2d* rawParams = clippedPolyfaceQuery->GetParamCP();
+                bvector<FPoint2d> uv; // output these uv coordinates to clippedTile
+                for (uint32_t i = 0; i < numPts; i++)
+                    {
+                    FPoint2d fpt;  fpt.x = rawParams[i].x;  fpt.y = rawParams[i].y;
+                    uv.push_back(fpt);
+                    }
+                clippedTile.m_textureUV = &uv[0];
+
+                bvector<uint32_t> indices;
+                PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*clippedPolyfaceQuery, true);
+                for (visitor->Reset(); visitor->AdvanceToNextFace();)
+                    {
+                    indices.push_back(visitor->GetClientPointIndexCP()[0]);
+                    indices.push_back(visitor->GetClientPointIndexCP()[1]);
+                    indices.push_back(visitor->GetClientPointIndexCP()[2]);
+                    }
+                clippedTile.m_numIndices = indices.size();
+                clippedTile.m_vertIndex = &indices[0];
+
+                clippedTile.m_texture = const_cast<Render::Texture*>(&tile);
+                clippedTile.m_material = params.GetMaterial();
+                clippedTile.m_isPlanar = true;
+
+                sheetTileGraphics.push_back(_CreateTriMesh(clippedTile, db));
+                }
+            }
+        }
+    else // not clipped
+        {
+        sheetTileGraphics.push_back(_CreateTile(tile, corners, db, params));
+        }
+
+    return sheetTileGraphics;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 GraphicPtr System::_CreateTile(TextureCR tile, GraphicBuilder::TileCorners const& corners, DgnDbR db, GraphicParamsCR params) const
