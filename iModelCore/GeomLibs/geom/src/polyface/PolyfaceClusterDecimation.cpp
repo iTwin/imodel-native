@@ -55,7 +55,9 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance)
         void Add (int32_t pointIndex, int32_t normalIndex, int32_t paramIndex)
             {
             m_pointIndices.push_back(pointIndex);
-            m_normalIndices.push_back(normalIndex);                                                          }
+            m_normalIndices.push_back(normalIndex);                                                          
+            m_paramIndices.push_back(paramIndex);
+            }
         };
     
     bmap<size_t, RefCountedPtr<Cluster>> clusters;
