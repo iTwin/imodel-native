@@ -53,29 +53,6 @@ BlockedVector<FacetFaceData> &faceData
     return false;
     }
 
- // For FacetFaceData, only store param mapping controls in m_paramDistanceRange and m_paramRange.
-void packFaceData
-(
-bvector<FacetFaceData> &faceData,
-bvector<double> &packedData
-)
-    {
-    packedData.clear ();
-    for (auto &f : faceData)
-        {
-        packedData.push_back (f.m_paramDistanceRange.low.x);
-        packedData.push_back (f.m_paramDistanceRange.low.y);
-        packedData.push_back (f.m_paramDistanceRange.high.x);
-        packedData.push_back (f.m_paramDistanceRange.high.y);
-
-        packedData.push_back (f.m_paramRange.low.x);
-        packedData.push_back (f.m_paramRange.low.y);
-        packedData.push_back (f.m_paramRange.high.x);
-        packedData.push_back (f.m_paramRange.high.y);
-        }
-    }
-
-
 // s_prefixBuffer is placed at the front of the flatbuffer block ...    
 static const Byte s_prefixBuffer[] =
     {
@@ -690,6 +667,8 @@ flatbuffers::Offset<BGFB::Polyface> WriteAsFBPolyface (PolyfaceHeaderR parent)
     const flatbuffers::Offset<flatbuffers::Vector<double>> point = WriteOptionalVector<DPoint3d, double, 3>(parent.Point ());
     const flatbuffers::Offset<flatbuffers::Vector<double>> param = WriteOptionalVector<DPoint2d, double, 2>(parent.Param ());
     const flatbuffers::Offset<flatbuffers::Vector<double>> normal = WriteOptionalVector<DVec3d, double, 3>(parent.Normal ());
+    const flatbuffers::Offset<flatbuffers::Vector<double>> faceData = WriteOptionalVector<FacetFaceData, double, 8>(parent.FaceData ());
+
 //    const flatbuffers::Offset<flatbuffers::Vector<double>> doubleColor = WriteOptionalVector<RgbFactor, double, 3>(parent.DoubleColor ());
 
     const flatbuffers::Offset<flatbuffers::Vector<int32_t>> pointIndex = WriteOptionalVector<int, int, 1>(parent.PointIndex ());
@@ -698,15 +677,6 @@ flatbuffers::Offset<BGFB::Polyface> WriteAsFBPolyface (PolyfaceHeaderR parent)
     const flatbuffers::Offset<flatbuffers::Vector<int32_t>> colorIndex = WriteOptionalVector<int, int, 1>(parent.ColorIndex ());
     const flatbuffers::Offset<flatbuffers::Vector<int32_t>> faceIndex = WriteOptionalVector<int, int, 1>(parent.FaceIndex ());
 
-    auto numFaceData = parent.FaceData ().size ();
-    flatbuffers::Offset<flatbuffers::Vector<double>> faceData = 0;
-    if (numFaceData > 0)
-        {
-        // We pack m_paramDistance range and m_paramRange into flat array of doubles . . .
-        bvector<double> packedFaceData;
-        packFaceData (parent.FaceData (), packedFaceData);
-        faceData = WriteOptionalVector<double, double, 1>(packedFaceData);
-        }
 //    const flatbuffers::Offset<flatbuffers::Vector<int32_t>> colorTable = WriteOptionalVector<uint32_t, int, 1>(parent.ColorTable());
     const flatbuffers::Offset<flatbuffers::Vector<int32_t>> intColor = WriteOptionalVector<uint32_t, int, 1>(parent.IntColor ());
 
@@ -756,12 +726,15 @@ flatbuffers::Offset<BGFB::Polyface> WriteAsFBPolyface (PolyfaceQueryCR parent)
     const flatbuffers::Offset<flatbuffers::Vector<double>> point = WriteOptionalVector<DPoint3d, double, 3>(parent.GetPointCP (), parent.GetPointCount ());
     const flatbuffers::Offset<flatbuffers::Vector<double>> param = WriteOptionalVector<DPoint2d, double, 2>(parent.GetParamCP (), parent.GetParamCount ());
     const flatbuffers::Offset<flatbuffers::Vector<double>> normal = WriteOptionalVector<DVec3d, double, 3>(parent.GetNormalCP (), parent.GetNormalCount ());
+    const flatbuffers::Offset<flatbuffers::Vector<double>> faceData = WriteOptionalVector<FacetFaceData, double, 8>(parent.GetFaceDataCP (), parent.GetFaceCount ());
+
 //    const flatbuffers::Offset<flatbuffers::Vector<double>> doubleColor = WriteOptionalVector<RgbFactor, double, 3>(parent.GetDoubleColorCP (), parent.GetColorCount ());
 
     const flatbuffers::Offset<flatbuffers::Vector<int32_t>> pointIndex = WriteOptionalVector<int, int, 1>(parent.GetPointIndexCP (), parent.GetPointIndexCount ());
     const flatbuffers::Offset<flatbuffers::Vector<int32_t>> paramIndex = WriteOptionalVector<int, int, 1>(parent.GetParamIndexCP (), parent.GetPointIndexCount ());
     const flatbuffers::Offset<flatbuffers::Vector<int32_t>> normalIndex = WriteOptionalVector<int, int, 1>(parent.GetNormalIndexCP (), parent.GetPointIndexCount ());
     const flatbuffers::Offset<flatbuffers::Vector<int32_t>> colorIndex = WriteOptionalVector<int, int, 1>(parent.GetColorIndexCP (), parent.GetPointIndexCount ());
+    const flatbuffers::Offset<flatbuffers::Vector<int32_t>> faceIndex = WriteOptionalVector<int, int, 1>(parent.GetFaceIndexCP (), parent.GetPointIndexCount ());
 
 //    const flatbuffers::Offset<flatbuffers::Vector<int32_t>> colorTable = WriteOptionalVector<uint32_t, int, 1>(parent.GetColorTableCP (), parent.GetColorCount ());
     const flatbuffers::Offset<flatbuffers::Vector<int32_t>> intColor = WriteOptionalVector<uint32_t, int, 1>(parent.GetIntColorCP (), parent.GetColorCount ());
@@ -794,6 +767,11 @@ flatbuffers::Offset<BGFB::Polyface> WriteAsFBPolyface (PolyfaceQueryCR parent)
         builder.add_intColor (intColor);
 //    if (IsWritten (colorTable))
 //        builder.add_colorTable (colorTable);
+
+    if (IsWritten (faceIndex))
+        builder.add_faceIndex (faceIndex);
+    if (IsWritten (faceData))
+        builder.add_faceData (faceData);
 
     return builder.Finish ();
     }
