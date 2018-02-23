@@ -50,14 +50,12 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance)
         bvector<int32_t>    m_paramIndices;
         size_t              m_outputPointIndex;
         size_t              m_outputParamIndex;
-        size_t              m_outputNormalIndex;
+        DVec3d              m_outputNormal;
 
         void Add (int32_t pointIndex, int32_t normalIndex, int32_t paramIndex)
             {
             m_pointIndices.push_back(pointIndex);
-            m_normalIndices.push_back(normalIndex);
-            m_paramIndices.push_back(paramIndex);
-            }
+            m_normalIndices.push_back(normalIndex);                                                          }
         };
     
     bmap<size_t, RefCountedPtr<Cluster>> clusters;
@@ -109,14 +107,13 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance)
         return nullptr;     // No Clusters found.
 
     PolyfaceHeaderPtr                   decimatedPolyface = PolyfaceHeader::CreateVariableSizeIndexed();
-    LightweightPolyfaceBuilderPtr   coordinateMap = LightweightPolyfaceBuilder::Create(*decimatedPolyface);
+    LightweightPolyfaceBuilderPtr       coordinateMap = LightweightPolyfaceBuilder::Create(*decimatedPolyface);
 
     // Build clustered points.
     for (auto& pair : clusters)
         {
         auto const& cluster = pair.second;
         DPoint3d    point  = DPoint3d::FromZero();
-        DVec3d      normal = DVec3d::From(0.0, 0.0, 0.0);
         DPoint2d    param  = DPoint2d::FromZero();
         double      scale = 1.0 / (double) cluster->m_pointIndices.size();
 
@@ -128,11 +125,12 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance)
 
         if (doNormals)
             {
+            cluster->m_outputNormal = DVec3d::FromZero();
+
             for (auto& normalIndex : cluster->m_normalIndices)
-                normal.Add(normals[normalIndex]);
+                cluster->m_outputNormal.Add(normals[normalIndex]);
         
-            normal.Normalize();
-            cluster->m_outputNormalIndex = coordinateMap->FindOrAddNormal(normal);
+            cluster->m_outputNormal.Normalize();
             }
         if (doParams)
             {
@@ -146,8 +144,9 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance)
 
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*this); visitor->AdvanceToNextFace(); )
         {
-        bset<Cluster*>       unique;
-        bvector<Cluster*>   faceClusters;
+        bset<Cluster*>          unique;
+        bvector<Cluster*>       faceClusters;
+        bvector<DPoint3d>       faceVertices;
 
         for (size_t i=0, count = visitor->NumEdgesThisFace(); i<count; i++)
             {
@@ -160,22 +159,34 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance)
             auto            insert = unique.insert(cluster);
 
             if (insert.second)
+                {
                 faceClusters.push_back(cluster);
+                faceVertices.push_back(decimatedPolyface->GetPointCP()[cluster->m_outputPointIndex]);
+                }
             }
         if (faceClusters.size() > 2)                                                                                       
             {
             for (auto& cluster : faceClusters)
                 {
                 coordinateMap->AddPointIndex(cluster->m_outputPointIndex, true /* Visiblity,,, TBD if necessary */ );
-                if (nullptr != normals)
-                    coordinateMap->AddNormalIndex(cluster->m_outputNormalIndex);
-                if (nullptr != params)
+                if (doParams)
                     coordinateMap->AddParamIndex(cluster->m_outputParamIndex);
+
+                if (doNormals)
+                    {
+                    DVec3d                  faceNormal;
+                    constexpr double        s_minClusterNormalDot = .7;
+
+                    bsiPolygon_polygonNormalAndArea(&faceNormal, nullptr, faceVertices.data(), (int) faceVertices.size());
+
+                    DVec3dCR                normal = cluster->m_outputNormal.DotProduct (faceNormal) > s_minClusterNormalDot ? cluster->m_outputNormal : faceNormal;
+                    coordinateMap->AddNormalIndex(coordinateMap->FindOrAddNormal(normal));
+                    }
                 }
             coordinateMap->AddPointIndexTerminator();
-            if (nullptr != normals)
+            if (doNormals)
                 coordinateMap->AddNormalIndexTerminator();
-            if (nullptr != params)
+            if (doParams)
                 coordinateMap->AddParamIndexTerminator();
             }
         }

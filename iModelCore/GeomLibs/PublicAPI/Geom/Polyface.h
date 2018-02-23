@@ -42,6 +42,7 @@ struct FacetFaceData
 DRange2d m_paramDistanceRange;
 //! Range that parameters actually span in their stored form.
 DRange2d m_paramRange;
+#ifdef FACET_FACE_DATA_NOT_USED
 //! xyz data range in vertices of the face.
 DRange3d m_xyzRange;
 //! normal range in normals referenced by the face.
@@ -49,10 +50,12 @@ DRange3d m_normalRange;
 
 //! Defined only by CALLER of IPolyfaceConstruction.
 size_t m_sourceIndex;
+
 //! Defined SolidPrimitive faceters
 SolidLocationDetail::FaceIndices m_faceIndices;
 //! Maintained modally by IPolyfaceConstruction.
 //! range that parameters would span if scaled as distances.
+#endif
 
 //! construct with null ranges, 0 indices.
 GEOMDLLIMPEXP FacetFaceData ();

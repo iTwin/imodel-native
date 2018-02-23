@@ -2,7 +2,7 @@
 |
 |  $Source: geom/src/funcs/CGWriter.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -392,6 +392,7 @@ static void WriteDRange2d (CGWriter &writer, wchar_t const *name, DRange2dCR dat
         }
     }
 
+#ifdef FACET_FACE_DATA_NOT_USED
 static void WriteDRange3d (CGWriter &writer, wchar_t const *name, DRange3dCR data)
     {
     if (!data.IsNull ())
@@ -412,20 +413,25 @@ static void WriteDRange3d (CGWriter &writer, wchar_t const *name, DRange3dCR dat
         writer.WriteEndTag   (name);
         }
     }
+#endif
 
 static void EmitFaceData (CGWriter &writer, wchar_t const *name, FacetFaceDataCR data)
     {
     writer.StartTag (name);
+#ifdef FACET_FACE_DATA_NOT_USED
         writer.EmitSize (L"sourceIndex", data.m_sourceIndex);
         writer.WriteStartTag (L"FaceIndex");
         writer.WriteInt ((int)data.m_faceIndices.Index0 ()); writer.Write (L",");
         writer.WriteInt ((int)data.m_faceIndices.Index1 ()); writer.Write (L",");
         writer.WriteInt ((int)data.m_faceIndices.Index2 ());
         writer.WriteEndTag (L"FaceIndex");
+#endif
         WriteDRange2d (writer, L"distanceRange", data.m_paramDistanceRange);
         WriteDRange2d (writer, L"paramRange", data.m_paramRange);
+#ifdef FACET_FACE_DATA_NOT_USED
         WriteDRange3d (writer, L"xyzRange", data.m_xyzRange);
         WriteDRange3d (writer, L"normalRange", data.m_normalRange);
+#endif
     writer.EndTag ();
     }
 

@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/Polyface.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -1372,9 +1372,6 @@ void    PolyfaceHeader::SetNewFaceData (FacetFaceData* faceDataP, size_t endInde
     // use it. 
     bool       setParamRange = faceData.m_paramRange.IsNull() && NULL != GetParamCP();
 
-    faceData.m_xyzRange.Init ();
-    faceData.m_normalRange.Init ();
-
     PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*this, true);
 
     if (!visitor->MoveToFacetByReadIndex (m_faceIndex.size()))
@@ -1386,12 +1383,6 @@ void    PolyfaceHeader::SetNewFaceData (FacetFaceData* faceDataP, size_t endInde
         {
         for (size_t i=0; i< visitor->NumEdgesThisFace(); i++)
             {
-            if (NULL != visitor->GetPointCP())
-                faceData.m_xyzRange.Extend (visitor->GetPointCP()[i]);
-
-            if (NULL != visitor->GetNormalCP())
-                faceData.m_normalRange.Extend (visitor->GetNormalCP()[i]);
-
             if (setParamRange && nullptr != visitor->GetParamCP())
                 faceData.m_paramRange.Extend (visitor->GetParamCP()[i]);
             }

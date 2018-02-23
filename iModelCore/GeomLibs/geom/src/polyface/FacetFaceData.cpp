@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/FacetFaceData.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -20,12 +20,7 @@ FacetFaceData::FacetFaceData(){Init ();}
 +--------------------------------------------------------------------------------------*/
 void FacetFaceData::Init ()
     {
-    m_sourceIndex = 0;
-    m_faceIndices.Set (0,0, -1);
     m_paramRange.Init ();
-    m_paramDistanceRange.Init ();
-    m_xyzRange.Init ();
-    m_normalRange.Init ();
     m_paramDistanceRange.Init ();
     }
 
