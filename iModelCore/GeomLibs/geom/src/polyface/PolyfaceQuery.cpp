@@ -1133,6 +1133,35 @@ static bool SameIndexArray (int const *dataA, size_t numA, int const * dataB, si
         }
     return true;
     }
+
+#define SAME_FIELDREF(fieldName) (fabs (dataA[i].fieldName - dataB[i].fieldName) <= tolerance)
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      02/2018
++--------------------------------------------------------------------------------------*/
+bool AlmostEqualFaceDataParams
+(
+FacetFaceDataCP dataA,
+size_t numA,
+FacetFaceDataCP dataB,
+size_t numB,
+double tolerance
+)
+    {
+    if (numA != numB)
+        return false;
+    for (size_t i = 0; i < numA; i++)
+        {
+        if (!SAME_FIELDREF (m_paramDistanceRange.low.x))
+            return false;
+        if (!SAME_FIELDREF (m_paramDistanceRange.low.y))
+            return false;
+        if (!SAME_FIELDREF (m_paramDistanceRange.high.x))
+            return false;
+        if (!SAME_FIELDREF (m_paramDistanceRange.high.y))
+            return false;
+        }
+    return true;
+    }
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      09/2014
 +--------------------------------------------------------------------------------------*/
@@ -1169,6 +1198,10 @@ bool PolyfaceQuery::IsSameStructureAndGeometry (PolyfaceQueryCR other, double to
     static double s_normalTolerance = 1.0e-8;
     if (!DVec3dOps::AlmostEqual (
           GetNormalCP (), GetNormalCount (), other.GetNormalCP (), other.GetNormalCount (), s_normalTolerance))
+        return false;
+    static double s_faceDataTolerance = 1.0e-8;
+    if (!AlmostEqualFaceDataParams (
+          GetFaceDataCP (), GetFaceCount (), other.GetFaceDataCP (), other.GetFaceCount (), s_faceDataTolerance))
         return false;
 
     size_t numA = GetPointIndexCount ();

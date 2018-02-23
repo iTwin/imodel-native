@@ -42,20 +42,6 @@ struct FacetFaceData
 DRange2d m_paramDistanceRange;
 //! Range that parameters actually span in their stored form.
 DRange2d m_paramRange;
-#ifdef FACET_FACE_DATA_NOT_USED
-//! xyz data range in vertices of the face.
-DRange3d m_xyzRange;
-//! normal range in normals referenced by the face.
-DRange3d m_normalRange;
-
-//! Defined only by CALLER of IPolyfaceConstruction.
-size_t m_sourceIndex;
-
-//! Defined SolidPrimitive faceters
-SolidLocationDetail::FaceIndices m_faceIndices;
-//! Maintained modally by IPolyfaceConstruction.
-//! range that parameters would span if scaled as distances.
-#endif
 
 //! construct with null ranges, 0 indices.
 GEOMDLLIMPEXP FacetFaceData ();
@@ -1594,7 +1580,7 @@ private:
     int32_t const*      m_paramIndexPtr;
     int32_t const*      m_colorIndexPtr;
     int32_t const*      m_faceIndexPtr;
-    FacetFaceDataP      m_faceDataPtr;
+    FacetFaceDataCP      m_faceDataPtr;
     wchar_t const*      m_illuminationNamePtr;
     PolyfaceEdgeChainCP m_edgeChainsPtr;
 
@@ -1630,6 +1616,12 @@ GEOMDLLIMPEXP PolyfaceQueryCarrier (
     uint32_t                meshStyle = 1,       // MESH_ELM_STYLE_INDEXED_FACE_LOOPS
     uint32_t                numPerRow = 0       // only needed for QUAD_GRID and TRIANGLE_GRID
     );
+
+
+//! set FacetFaceData array and count.
+GEOMDLLIMPEXP void SetFacetFaceData (FacetFaceDataCP facetFaceData, size_t n);
+//! set face index pointer in the carrier.  Note that the number of entries must match all other index arrays (point, normal, param, collor)
+GEOMDLLIMPEXP void SetFaceIndex (int32_t const *indexArray);
 
 GEOMDLLIMPEXP void SetIlluminationName (wchar_t const *name);
 GEOMDLLIMPEXP void SetTextureId (uintptr_t id);
