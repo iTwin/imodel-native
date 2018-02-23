@@ -1214,7 +1214,7 @@ static bool ReadPolyfaceQueryCarrierDirect (const BGFB::Polyface *fbPolyface, Po
     if (fbPolyface->has_faceData ())
         {
         auto fbData = fbPolyface->faceData();
-        pIntColor = (uint32_t*)fbData->GetStructFromOffset(0);
+		pFaceData = (FacetFaceDataCP)fbData->GetStructFromOffset(0);
         numFace = (size_t)fbData->Length ();
         }
 //    if (fbPolyface->has_colorTable ())
