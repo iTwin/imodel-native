@@ -37,7 +37,7 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
 
         CurvePrimitivePlacementStrategyPtr ResetCurrentManipulationStrategy();
         LinePlacementStrategyType m_defaultLinePlacementStrategyType;
-        ArcPlacementStrategyType m_defaultArcPlacementStrategyType;
+        ArcPlacementMethod m_defaultArcPlacementMethod;
         LineStringPlacementStrategyType m_defaultLineStringPlacementStrategyType;
        
         DPlane3d m_workingPlane;
@@ -111,7 +111,7 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
         bool FinishContiniousPrimitive();
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ChangeDefaultPlacementStrategy(LinePlacementStrategyType newPlacementStrategyType);
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ChangeDefaultPlacementStrategy(ArcPlacementStrategyType newPlacementStrategyType);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ChangeDefaultPlacementStrategy(ArcPlacementMethod method);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ChangeDefaultPlacementStrategy(LineStringPlacementStrategyType newPlacementStrategyType);
 
         DPlane3dCR GetWorkingPlane() const { return m_workingPlane; }

@@ -61,7 +61,7 @@ USING_NAMESPACE_BUILDING_SHARED
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ArcStartCenterPlacementStrategyTests, KeyPointManipulation)
     {
-    ArcPlacementStrategyPtr sut = ArcStartCenterPlacementStrategy::Create();
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartCenter);
     ASSERT_TRUE(sut.IsValid());
     ArcManipulationStrategyCR manipSut = dynamic_cast<ArcManipulationStrategyCR>(sut->GetManipulationStrategy());
 
@@ -133,7 +133,7 @@ TEST_F(ArcStartCenterPlacementStrategyTests, KeyPointManipulation)
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_CreatesCircularArc)
     {
-    CurvePrimitivePlacementStrategyPtr sut = ArcStartCenterPlacementStrategy::Create();
+    CurvePrimitivePlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartCenter);
     ASSERT_TRUE(sut.IsValid());
 
     sut->AddKeyPoint({2,0,0});
@@ -153,7 +153,7 @@ TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_CreatesCircularArc)
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_SweepDeterminedByThe3rdPoint_CCW)
     {
-    CurvePrimitivePlacementStrategyPtr sut = ArcStartCenterPlacementStrategy::Create();
+    CurvePrimitivePlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartCenter);
     ASSERT_TRUE(sut.IsValid());
 
     sut->AddKeyPoint({2,0,0});
@@ -175,7 +175,7 @@ TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_SweepDeterminedByTh
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_SweepDeterminedByThe3rdPoint_CW)
     {
-    CurvePrimitivePlacementStrategyPtr sut = ArcStartCenterPlacementStrategy::Create();
+    CurvePrimitivePlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartCenter);
     ASSERT_TRUE(sut.IsValid());
 
     sut->AddKeyPoint({2,0,0});
@@ -197,7 +197,7 @@ TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_SweepDeterminedByTh
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_CanSweepMoreThanPI)
     {
-    CurvePrimitivePlacementStrategyPtr sut = ArcStartCenterPlacementStrategy::Create();
+    CurvePrimitivePlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartCenter);
     ASSERT_TRUE(sut.IsValid());
 
     sut->AddKeyPoint({2,0,0});
@@ -224,7 +224,7 @@ TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_CanSweepMoreThanPI)
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_StartCenterEndInline_EndBetweenStartCenter)
     {
-    ArcPlacementStrategyPtr sut = ArcStartCenterPlacementStrategy::Create();
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartCenter);
     ASSERT_TRUE(sut.IsValid());
 
     sut->AddKeyPoint({2,0,0});
@@ -258,7 +258,7 @@ TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_StartCenterEndInlin
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_StartCenterEndInline_HalfSweepCCW)
     {
-    ArcPlacementStrategyPtr sut = ArcStartCenterPlacementStrategy::Create();
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartCenter);
     ASSERT_TRUE(sut.IsValid());
 
     sut->AddKeyPoint({2,0,0});
@@ -291,7 +291,7 @@ TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_StartCenterEndInlin
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_StartCenterEndInline_HalfSweepCW)
     {
-    ArcPlacementStrategyPtr sut = ArcStartCenterPlacementStrategy::Create();
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartCenter);
     ASSERT_TRUE(sut.IsValid());
 
     DVec3d normal;
@@ -330,7 +330,7 @@ TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_StartCenterEndInlin
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ArcCenterStartPlacementStrategyTests, KeyPointManipulation)
     {
-    ArcPlacementStrategyPtr sut = ArcCenterStartPlacementStrategy::Create();
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::CenterStart);
     ASSERT_TRUE(sut.IsValid());
     ArcManipulationStrategyCR manipSut = dynamic_cast<ArcManipulationStrategyCR>(sut->GetManipulationStrategy());
 
@@ -382,7 +382,7 @@ TEST_F(ArcCenterStartPlacementStrategyTests, KeyPointManipulation)
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ArcCenterStartPlacementStrategyTests, FinishPrimitive_3KeyPointsNeededForPrimitiveToBeValid)
     {
-    ArcPlacementStrategyPtr sut = ArcCenterStartPlacementStrategy::Create();
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::CenterStart);
     ASSERT_TRUE(sut.IsValid());
 
     ASSERT_FALSE(sut->FinishPrimitive().IsValid()) << "IsValid with 0 key points";
@@ -417,7 +417,7 @@ TEST_F(ArcCenterStartPlacementStrategyTests, FinishPrimitive_3KeyPointsNeededFor
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ArcStartMidEndPlacementStrategyTests, KeyPointManipulation)
     {
-    ArcPlacementStrategyPtr sut = ArcStartMidEndPlacementStrategy::Create();
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartMidEnd);
     ASSERT_TRUE(sut.IsValid());
     ArcManipulationStrategyCR manipSut = dynamic_cast<ArcManipulationStrategyCR>(sut->GetManipulationStrategy());
 
@@ -469,7 +469,7 @@ TEST_F(ArcStartMidEndPlacementStrategyTests, KeyPointManipulation)
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ArcStartMidEndPlacementStrategyTests, FinishPrimitive_3KeyPointsNeededForPrimitiveToBeValid)
     {
-    ArcPlacementStrategyPtr sut = ArcStartMidEndPlacementStrategy::Create();
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartMidEnd);
     ASSERT_TRUE(sut.IsValid());
 
     ASSERT_FALSE(sut->FinishPrimitive().IsValid()) << "IsValid with 0 key points";
@@ -504,7 +504,7 @@ TEST_F(ArcStartMidEndPlacementStrategyTests, FinishPrimitive_3KeyPointsNeededFor
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ArcStartEndMidPlacementStrategyTests, KeyPointManipulation)
     {
-    ArcPlacementStrategyPtr sut = ArcStartEndMidPlacementStrategy::Create();
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartEndMid);
     ASSERT_TRUE(sut.IsValid());
     ArcManipulationStrategyCR manipSut = dynamic_cast<ArcManipulationStrategyCR>(sut->GetManipulationStrategy());
 
@@ -556,7 +556,7 @@ TEST_F(ArcStartEndMidPlacementStrategyTests, KeyPointManipulation)
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ArcStartEndMidPlacementStrategyTests, FinishPrimitive_3KeyPointsNeededForPrimitiveToBeValid)
     {
-    ArcPlacementStrategyPtr sut = ArcStartEndMidPlacementStrategy::Create();
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartEndMid);
     ASSERT_TRUE(sut.IsValid());
 
     ASSERT_FALSE(sut->FinishPrimitive().IsValid()) << "IsValid with 0 key points";

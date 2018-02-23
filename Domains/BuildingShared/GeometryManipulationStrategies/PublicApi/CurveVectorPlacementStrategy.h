@@ -42,7 +42,7 @@ struct CurveVectorPlacementStrategy : public GeometryPlacementStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bool FinishContiniousPrimitive();
         
         void ChangeDefaultPlacementStrategy(LinePlacementStrategyType newPlacementStrategyType);
-        void ChangeDefaultPlacementStrategy(ArcPlacementStrategyType newPlacementStrategyType);
+        void ChangeDefaultPlacementStrategy(ArcPlacementMethod method);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ChangeDefaultPlacementStrategy(LineStringPlacementStrategyType newPlacementStrategyType);
     };
 

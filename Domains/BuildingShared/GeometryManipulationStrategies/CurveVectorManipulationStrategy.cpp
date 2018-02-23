@@ -63,7 +63,7 @@ CurveVectorManipulationStrategy::CurveVectorManipulationStrategy()
     : T_Super()
     , m_defaultNewGeometryType(DefaultNewGeometryType::Line)
     , m_defaultLinePlacementStrategyType(LinePlacementStrategyType::Points)
-    , m_defaultArcPlacementStrategyType(ArcPlacementStrategyType::StartMidEnd)
+    , m_defaultArcPlacementMethod(ArcPlacementMethod::StartMidEnd)
     , m_defaultLineStringPlacementStrategyType(LineStringPlacementStrategyType::Points)
     , m_workingPlane(DPlane3d::FromOriginAndNormal({0,0,0}, DVec3d::From(0, 0, 1)))
     {}
@@ -291,7 +291,7 @@ CurvePrimitivePlacementStrategyPtr CurveVectorManipulationStrategy::GetPlacement
     switch (m_defaultNewGeometryType)
         {
         case DefaultNewGeometryType::Arc:
-            return manipulationStrategy.CreateArcPlacementStrategy(m_defaultArcPlacementStrategyType);
+            return manipulationStrategy.CreateArcPlacementStrategy(m_defaultArcPlacementMethod);
         case DefaultNewGeometryType::Line:
             return manipulationStrategy.CreateLinePlacementStrategy(m_defaultLinePlacementStrategyType);
         case DefaultNewGeometryType::LineString:
@@ -446,13 +446,13 @@ void CurveVectorManipulationStrategy::ChangeDefaultPlacementStrategy
 //---------------+---------------+---------------+---------------+---------------+------
 void CurveVectorManipulationStrategy::ChangeDefaultPlacementStrategy
 (
-    ArcPlacementStrategyType newPlacementStrategyType
+    ArcPlacementMethod method
 )
     {
-    if (m_defaultArcPlacementStrategyType == newPlacementStrategyType)
+    if (m_defaultArcPlacementMethod == method)
         return;
 
-    m_defaultArcPlacementStrategyType = newPlacementStrategyType;
+    m_defaultArcPlacementMethod = method;
     }
 
 //--------------------------------------------------------------------------------------

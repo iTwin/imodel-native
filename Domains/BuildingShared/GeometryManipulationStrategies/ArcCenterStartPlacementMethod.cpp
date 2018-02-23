@@ -1,24 +1,33 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: GeometryManipulationStrategies/ArcStartEndMidPlacementStrategy.cpp $
+|     $Source: GeometryManipulationStrategies/ArcCenterStartPlacementMethod.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
+#include <limits>
+
+#define INVALID_POINT DPoint3d::From(std::numeric_limits<double>::max(), std::numeric_limits<double>::max(), std::numeric_limits<double>::max())
 
 USING_NAMESPACE_BUILDING_SHARED
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-void ArcStartEndMidPlacementStrategy::_AddKeyPoint
+void ArcCenterStartPlacementMethod::_AddKeyPoint
 (
     DPoint3dCR newKeyPoint
 )
     {
-    BeAssert(!_IsDynamicKeyPointSet());
+    BeAssert(!GetArcManipulationStrategy().IsDynamicKeyPointSet());
     ArcManipulationStrategyR strategy = GetArcManipulationStrategyForEdit();
+
+    if (!strategy.IsCenterSet())
+        {
+        strategy.SetCenter(newKeyPoint);
+        return;
+        }
 
     if (!strategy.IsStartSet())
         {
@@ -31,27 +40,46 @@ void ArcStartEndMidPlacementStrategy::_AddKeyPoint
         strategy.SetEnd(newKeyPoint);
         return;
         }
-
-    if (!strategy.IsMidSet())
-        {
-        strategy.SetMid(newKeyPoint);
-        return;
-        }
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-void ArcStartEndMidPlacementStrategy::_PopKeyPoint()
+void ArcCenterStartPlacementMethod::_AddDynamicKeyPoint
+(
+    DPoint3dCR newDynamicKeyPoint
+)
     {
-    BeAssert(!_IsDynamicKeyPointSet());
+    BeAssert(!GetArcManipulationStrategy().IsDynamicKeyPointSet());
     ArcManipulationStrategyR strategy = GetArcManipulationStrategyForEdit();
 
-    if (strategy.IsMidSet())
+    if (strategy.IsEndSet())
         {
-        strategy.ResetMid();
         return;
         }
+
+    if (strategy.IsStartSet())
+        {
+        strategy.SetDynamicEnd(newDynamicKeyPoint);
+        return;
+        }
+
+    if (strategy.IsCenterSet())
+        {
+        strategy.SetDynamicStart(newDynamicKeyPoint);
+        return;
+        }
+
+    strategy.SetDynamicCenter(newDynamicKeyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcCenterStartPlacementMethod::_PopKeyPoint()
+    {
+    BeAssert(!GetArcManipulationStrategy().IsDynamicKeyPointSet());
+    ArcManipulationStrategyR strategy = GetArcManipulationStrategyForEdit();
 
     if (strategy.IsEndSet())
         {
@@ -64,35 +92,10 @@ void ArcStartEndMidPlacementStrategy::_PopKeyPoint()
         strategy.ResetStart();
         return;
         }
-    }
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                12/2017
-//---------------+---------------+---------------+---------------+---------------+------
-void ArcStartEndMidPlacementStrategy::_AddDynamicKeyPoint
-(
-    DPoint3dCR newDynamicKeyPoint
-)
-    {
-    BeAssert(!_IsDynamicKeyPointSet());
-    ArcManipulationStrategyR strategy = GetArcManipulationStrategyForEdit();
-
-    if (strategy.IsMidSet())
+    if (strategy.IsCenterSet())
         {
+        strategy.ResetCenter();
         return;
         }
-
-    if (strategy.IsEndSet())
-        {
-        strategy.SetDynamicMid(newDynamicKeyPoint);
-        return;
-        }
-
-    if (strategy.IsStartSet())
-        {
-        strategy.SetDynamicEnd(newDynamicKeyPoint);
-        return;
-        }
-
-    strategy.SetDynamicStart(newDynamicKeyPoint);
     }

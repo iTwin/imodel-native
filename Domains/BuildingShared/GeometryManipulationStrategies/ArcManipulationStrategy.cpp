@@ -116,7 +116,7 @@ bool ArcManipulationStrategy::_IsComplete() const
 //---------------+---------------+---------------+---------------+---------------+------
 CurvePrimitivePlacementStrategyPtr ArcManipulationStrategy::_CreateDefaultPlacementStrategy()
     {
-    return ArcStartMidEndPlacementStrategy::Create(this);
+    return ArcPlacementStrategy::Create(ArcPlacementMethod::StartMidEnd, *this);
     }
 
 //--------------------------------------------------------------------------------------
@@ -187,8 +187,8 @@ CurvePrimitiveManipulationStrategyPtr ArcManipulationStrategy::_Clone() const
 //---------------+---------------+---------------+---------------+---------------+------
 ArcPlacementStrategyPtr ArcManipulationStrategy::_CreateArcPlacementStrategy
 (
-    ArcPlacementStrategyType strategyType
+    ArcPlacementMethod method
 )
     {
-    return ArcPlacementStrategy::Create(strategyType, *this);
+    return ArcPlacementStrategy::Create(method, *this);
     }

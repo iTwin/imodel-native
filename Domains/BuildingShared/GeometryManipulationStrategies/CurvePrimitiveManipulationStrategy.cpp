@@ -413,10 +413,10 @@ LinePlacementStrategyPtr CurvePrimitiveManipulationStrategy::CreateLinePlacement
 //---------------+---------------+---------------+---------------+---------------+------
 ArcPlacementStrategyPtr CurvePrimitiveManipulationStrategy::CreateArcPlacementStrategy
 (
-    ArcPlacementStrategyType strategyType
+    ArcPlacementMethod method
 )
     {
-    return _CreateArcPlacementStrategy(strategyType);
+    return _CreateArcPlacementStrategy(method);
     }
 
 //--------------------------------------------------------------------------------------

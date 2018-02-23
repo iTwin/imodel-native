@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: GeometryManipulationStrategies/PublicApi/ArcStartEndMidPlacementStrategy.h $
+|     $Source: GeometryManipulationStrategies/PublicApi/ArcStartMidEndPlacementMethod.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -12,14 +12,12 @@ BEGIN_BUILDING_SHARED_NAMESPACE
 //=======================================================================================
 // @bsiclass                                     Mindaugas.Butkus               12/2017
 //=======================================================================================
-struct ArcStartEndMidPlacementStrategy : public ArcPlacementStrategy
+struct ArcStartMidEndPlacementMethod : RefCounted<IArcPlacementMethod>
     {
-    DEFINE_T_SUPER(ArcPlacementStrategy)
+    DEFINE_T_SUPER(RefCounted<IArcPlacementMethod>)
 
     private:
-        ArcStartEndMidPlacementStrategy()
-            : T_Super(ArcManipulationStrategy::Create().get())
-            {}
+        ArcStartMidEndPlacementMethod(ArcManipulationStrategyR manipulationStrategy) : T_Super(manipulationStrategy) {}
 
     protected:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddKeyPoint(DPoint3dCR newKeyPoint) override;
@@ -28,7 +26,7 @@ struct ArcStartEndMidPlacementStrategy : public ArcPlacementStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
 
     public:
-        static ArcStartEndMidPlacementStrategyPtr Create() { return new ArcStartEndMidPlacementStrategy(); }
+        static ArcStartMidEndPlacementMethodPtr Create(ArcManipulationStrategyR manipulationStrategy) { return new ArcStartMidEndPlacementMethod(manipulationStrategy); }
     };
 
 END_BUILDING_SHARED_NAMESPACE

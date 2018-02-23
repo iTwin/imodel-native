@@ -1,37 +1,34 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: GeometryManipulationStrategies/ArcCenterStartPlacementStrategy.cpp $
+|     $Source: GeometryManipulationStrategies/ArcStartCenterPlacementMethod.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
-#include <limits>
-
-#define INVALID_POINT DPoint3d::From(std::numeric_limits<double>::max(), std::numeric_limits<double>::max(), std::numeric_limits<double>::max())
 
 USING_NAMESPACE_BUILDING_SHARED
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-void ArcCenterStartPlacementStrategy::_AddKeyPoint
+void ArcStartCenterPlacementMethod::_AddKeyPoint
 (
     DPoint3dCR newKeyPoint
 )
     {
-    BeAssert(!_IsDynamicKeyPointSet());
+    BeAssert(!GetArcManipulationStrategy().IsDynamicKeyPointSet());
     ArcManipulationStrategyR strategy = GetArcManipulationStrategyForEdit();
-
-    if (!strategy.IsCenterSet())
-        {
-        strategy.SetCenter(newKeyPoint);
-        return;
-        }
 
     if (!strategy.IsStartSet())
         {
         strategy.SetStart(newKeyPoint);
+        return;
+        }
+
+    if (!strategy.IsCenterSet())
+        {
+        strategy.SetCenter(newKeyPoint);
         return;
         }
 
@@ -45,12 +42,12 @@ void ArcCenterStartPlacementStrategy::_AddKeyPoint
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-void ArcCenterStartPlacementStrategy::_AddDynamicKeyPoint
+void ArcStartCenterPlacementMethod::_AddDynamicKeyPoint
 (
     DPoint3dCR newDynamicKeyPoint
 )
     {
-    BeAssert(!_IsDynamicKeyPointSet());
+    BeAssert(!GetArcManipulationStrategy().IsDynamicKeyPointSet());
     ArcManipulationStrategyR strategy = GetArcManipulationStrategyForEdit();
 
     if (strategy.IsEndSet())
@@ -58,27 +55,27 @@ void ArcCenterStartPlacementStrategy::_AddDynamicKeyPoint
         return;
         }
 
-    if (strategy.IsStartSet())
+    if (strategy.IsCenterSet())
         {
         strategy.SetDynamicEnd(newDynamicKeyPoint);
         return;
         }
 
-    if (strategy.IsCenterSet())
+    if (strategy.IsStartSet())
         {
-        strategy.SetDynamicStart(newDynamicKeyPoint);
+        strategy.SetDynamicCenter(newDynamicKeyPoint);
         return;
         }
 
-    strategy.SetDynamicCenter(newDynamicKeyPoint);
+    strategy.SetDynamicStart(newDynamicKeyPoint);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-void ArcCenterStartPlacementStrategy::_PopKeyPoint()
+void ArcStartCenterPlacementMethod::_PopKeyPoint()
     {
-    BeAssert(!_IsDynamicKeyPointSet());
+    BeAssert(!GetArcManipulationStrategy().IsDynamicKeyPointSet());
     ArcManipulationStrategyR strategy = GetArcManipulationStrategyForEdit();
 
     if (strategy.IsEndSet())
@@ -87,15 +84,15 @@ void ArcCenterStartPlacementStrategy::_PopKeyPoint()
         return;
         }
 
-    if (strategy.IsStartSet())
-        {
-        strategy.ResetStart();
-        return;
-        }
-
     if (strategy.IsCenterSet())
         {
         strategy.ResetCenter();
+        return;
+        }
+
+    if (strategy.IsStartSet())
+        {
+        strategy.ResetStart();
         return;
         }
     }
