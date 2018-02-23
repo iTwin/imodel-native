@@ -12,7 +12,10 @@ USING_NAMESPACE_BUILDING_SHARED
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                02/2018
 //---------------+---------------+---------------+---------------+---------------+------
-void IArcPlacementMethod::AddKeyPoint(DPoint3dCR newKeyPoint)
+void IArcPlacementMethod::AddKeyPoint
+(
+    DPoint3dCR newKeyPoint
+)
     {
     _AddKeyPoint(newKeyPoint);
     }
@@ -28,9 +31,20 @@ void IArcPlacementMethod::PopKeyPoint()
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                02/2018
 //---------------+---------------+---------------+---------------+---------------+------
-void IArcPlacementMethod::AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint)
+void IArcPlacementMethod::AddDynamicKeyPoint
+(
+    DPoint3dCR newDynamicKeyPoint
+)
     {
     _AddDynamicKeyPoint(newDynamicKeyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ArcPlacementMethod IArcPlacementMethod::GetMethod() const
+    {
+    return _GetMethod();
     }
 
 //--------------------------------------------------------------------------------------
@@ -165,4 +179,27 @@ void ArcPlacementStrategy::_AddDynamicKeyPoint
 )
     {
     m_placementMethod->AddDynamicKeyPoint(newDynamicKeyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcPlacementStrategy::SetPlacementMethod
+(
+    ArcPlacementMethod method
+)
+    {
+    if (m_placementMethod->GetMethod() == method)
+        return;
+
+    m_manipulationStrategy->Clear();
+    m_placementMethod = CreatePlacementMethod(method, *m_manipulationStrategy);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ArcPlacementMethod ArcPlacementStrategy::GetPlacementMethod() const
+    {
+    return m_placementMethod->GetMethod();
     }

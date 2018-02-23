@@ -192,3 +192,14 @@ ArcPlacementStrategyPtr ArcManipulationStrategy::_CreateArcPlacementStrategy
     {
     return ArcPlacementStrategy::Create(method, *this);
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcManipulationStrategy::_Clear()
+    {
+    ResetCenter();
+    ResetEnd();
+    ResetMid();
+    ResetStart();
+    }

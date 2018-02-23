@@ -29,6 +29,7 @@ struct IArcPlacementMethod : IRefCounted
         IArcPlacementMethod(ArcManipulationStrategyR manipulationStrategy)
             : m_manipulationStrategy(manipulationStrategy)
             {}
+        virtual ~IArcPlacementMethod() {}
 
         ArcManipulationStrategyR GetArcManipulationStrategyForEdit() { return m_manipulationStrategy; }
         ArcManipulationStrategyCR GetArcManipulationStrategy() const { return m_manipulationStrategy; }
@@ -36,11 +37,13 @@ struct IArcPlacementMethod : IRefCounted
         virtual void _AddKeyPoint(DPoint3dCR newKeyPoint) = 0;
         virtual void _PopKeyPoint() = 0;
         virtual void _AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) = 0;
+        virtual ArcPlacementMethod _GetMethod() const = 0;
 
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void AddKeyPoint(DPoint3dCR newKeyPoint);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void PopKeyPoint();
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ArcPlacementMethod GetMethod() const;
     };
 
 //=======================================================================================
@@ -72,6 +75,9 @@ struct ArcPlacementStrategy : public CurvePrimitivePlacementStrategy
 
     public:
         static constexpr Utf8CP prop_Normal() { return EllipseManipulationStrategy::prop_Normal(); }
+
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void SetPlacementMethod(ArcPlacementMethod method);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ArcPlacementMethod GetPlacementMethod() const;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static ArcPlacementStrategyPtr Create(ArcPlacementMethod method);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static ArcPlacementStrategyPtr Create(ArcPlacementMethod method, ArcManipulationStrategyR manipulationStrategy);

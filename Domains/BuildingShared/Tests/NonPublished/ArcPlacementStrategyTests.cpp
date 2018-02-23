@@ -12,6 +12,10 @@
 
 BEGIN_BUILDING_SHARED_NAMESPACE
 
+struct ArcPlacementStrategyTestFixture : BuildingSharedTestFixtureBase
+    {
+    };
+
 struct ArcStartCenterPlacementStrategyTests : public BuildingSharedTestFixtureBase
     {
     };
@@ -53,6 +57,29 @@ void assertKeyPoints(ArcManipulationStrategyCR sut, bool startSet, bool endSet, 
 
 END_BUILDING_SHARED_NAMESPACE
 USING_NAMESPACE_BUILDING_SHARED
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ArcPlacementStrategyTestFixture, SetPlacementMethod_ClearsKeyPoints)
+    {
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartMidEnd);
+    ASSERT_TRUE(sut.IsValid());
+    ArcManipulationStrategyCR manipSut = dynamic_cast<ArcManipulationStrategyCR>(sut->GetManipulationStrategy());
+    ASSERT_EQ(ArcPlacementMethod::StartMidEnd, sut->GetPlacementMethod());
+
+    sut->AddKeyPoint({0,0,0});
+    sut->AddKeyPoint({1,1,0});
+    assertKeyPoints(manipSut, true, false, true, false, "Before SetPlacementMethod");
+
+    sut->SetPlacementMethod(ArcPlacementMethod::StartMidEnd);
+    ASSERT_EQ(ArcPlacementMethod::StartMidEnd, sut->GetPlacementMethod());
+    assertKeyPoints(manipSut, true, false, true, false, "Setting the same PlacementMethod does nothing");
+
+    sut->SetPlacementMethod(ArcPlacementMethod::StartEndMid);
+    ASSERT_EQ(ArcPlacementMethod::StartEndMid, sut->GetPlacementMethod());
+    assertKeyPoints(manipSut, false, false, false, false, "Setting new PlacementMethod clears KeyPoints");
+    }
 
 #pragma region Arc_StartCenter_PlacementStrategy
 
