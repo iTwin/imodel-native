@@ -15,6 +15,10 @@
 #include <VersionedDgnV8Api/GeoCoord/GCSLibrary.h>
 #include <VersionedDgnV8Api/Mstn/RealDWG/DwgPlatformHost.h>
 
+#include <VersionedDgnV8Api/VisEdgesLib/VisEdgeslib.h>
+#include <VersionedDgnV8Api/DgnPlatform/CveHandler.h>
+
+
 #include <ScalableMesh/ScalableMeshLib.h>
 #include <RealityPlatformTools/RealityDataService.h>
 
@@ -45,6 +49,23 @@ protected:
 public:
     V8ViewManager(ConverterV8Host& host);
 };
+
+
+/*=================================================================================**//**
+* @bsiclass                                     Ray.Bentley                     02/2018
++===============+===============+===============+===============+===============+======*/
+struct ConverterDgnAttachmentAdmin : DgnV8Api::DgnPlatformLib::Host::DgnAttachmentAdmin
+{
+    virtual StatusInt _ComputeCachedVisibleEdgeHash (CachedVisibleEdgeHashParamsR params, DgnAttachmentR dgnAttachment) override
+        {
+        // By default this was routed through UstnRefAdmin --- this is needed to  make sure that CVE caches are properly generated only when out of date.
+        return VisibleEdgesLib::ComputeCurrentProxyHash (params.m_hash, params.m_newestElement, dgnAttachment, params.m_viewport, params.m_options, params.m_stopIfNewer, params.m_cryptographer);
+        }
+};
+
+
+
+
 
 /*=================================================================================**//**
 * @bsiclass                                     Sam.Wilson                      07/14
@@ -110,6 +131,8 @@ protected:
     GeoCoordinationAdmin&   _SupplyGeoCoordinationAdmin() override {return *Bentley::GeoCoordinates::DgnGeoCoordinationAdmin::Create(NULL, *m_acsManager);} 
     RasterAttachmentAdmin&  _SupplyRasterAttachmentAdmin() override { return DgnV8Api::Raster::RasterCoreLib::GetDefaultRasterAttachmentAdmin(); }
     GraphicsAdmin&          _SupplyGraphicsAdmin() override {return *new NulGraphics;}
+    DgnAttachmentAdmin&     _SupplyDgnAttachmentAdmin() override {return *new ConverterDgnAttachmentAdmin();}
+
 
     // Overrides for DgnV8Api::DgnViewLib::Host
     virtual void                    _SupplyProductName (Bentley::WStringR name) override {name.assign(L"DgnV8Converter");}
