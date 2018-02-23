@@ -237,7 +237,7 @@ TEST_F(SchemaTest, DeleteKOQ)
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <KindOfQuantity typeName='MyKindOfQuantity' description='My KindOfQuantity'"
         "                    displayLabel='My KindOfQuantity' persistenceUnit='CM' relativeError='10e-3'"
-        "                    presentationUnits='FT;INCH;YARD' />"
+        "                    presentationUnits='FT;IN;YRD' />"
         "    <ECEntityClass typeName='Foo' >"
         "        <ECProperty propertyName='Length' typeName='double'  kindOfQuantity='MyKindOfQuantity' />" // kindOfQuantity='s1:MyKindOfQuantity'
         "        <ECArrayProperty propertyName='AlternativeLengths' typeName='double' minOccurs='0' maxOccurs='unbounded' kindOfQuantity = 'MyKindOfQuantity'/>" // kindOfQuantity='s1:MyKindOfQuantity'

@@ -312,6 +312,75 @@ TEST_F(KindOfQuantityDeserializationTest, TestConstantAsPresentationUnit)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                              Kyle.Abramowitz      02/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(KindOfQuantityDeserializationTest, TestUnitInSchemaAsPresentationAndPersistenceUnit)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
+            <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
+            <Unit typeName="TestUnit" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
+            <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
+                displayLabel="best quantity of all times" persistenceUnit="ts:TestUnit(real4u)" presentationUnits="ts:TestUnit(real4u)" relativeError="10e-3"/>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    auto unit = schema->GetUnitCP("TestUnit");
+    auto koq = schema->GetKindOfQuantityCP("MyKindOfQuantity");
+    auto koqPerUnit = koq->GetPersistenceUnit().GetUnit();
+    ASSERT_EQ(unit, koqPerUnit);
+    ASSERT_EQ(unit, koq->GetDefaultPresentationUnit().GetUnit());
+    ASSERT_STREQ(koq->GetPersistenceUnit().GetNamedFormatSpec()->GetName(), "Real4U");
+    ASSERT_STREQ(koq->GetDefaultPresentationUnit().GetNamedFormatSpec()->GetName(), "Real4U");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Kyle.Abramowitz      02/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(KindOfQuantityDeserializationTest, TestUnitInReferencedSchemaAsPresentationAndPersistenceUnit)
+    {
+    Utf8CP refXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="refSchema" version="01.00" alias="rs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
+            <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
+        </ECSchema>)xml";
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="refSchema" version="01.00" alias="rs"/>
+            <Unit typeName="TestUnit" phenomenon="rs:TestPhenomenon" unitSystem="rs:TestUnitSystem" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
+            <Unit typeName="Smoot" phenomenon="rs:TestPhenomenon" unitSystem="rs:TestUnitSystem" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
+        </ECSchema>)xml";
+    Utf8CP koqSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="koqSchema" alias="ks" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="testSchema" version="01.00" alias="ts"/>
+            <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
+                displayLabel="best quantity of all times" persistenceUnit="ts:TestUnit" presentationUnits="ts:Smoot" relativeError="10e-3"/>
+        </ECSchema>)xml";
+
+    Utf8String serializedSchemaXml;
+    Utf8String serializedRefSchemaXml;
+    ECSchemaPtr schema;
+    ECSchemaPtr refSchema;
+    ECSchemaPtr koqSchema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(refSchema, refXml, *context));
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(koqSchema, koqSchemaXml, *context));
+    auto koq = koqSchema->GetKindOfQuantityCP("MyKindOfQuantity");
+    ASSERT_NE(nullptr, koq);
+    auto unit = schema->GetUnitCP("TestUnit");
+    auto smoot = schema->GetUnitCP("Smoot");
+    auto koqPerUnit = koq->GetPersistenceUnit();
+    ASSERT_EQ(unit, koqPerUnit.GetUnit());
+    auto koqPresUnit = koq->GetDefaultPresentationUnit();
+    ASSERT_EQ(smoot, koqPresUnit.GetUnit());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    08/2017
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(KindOfQuantityDeserializationTest, TestIncompatiblePersistenceAndPresentationUnits)

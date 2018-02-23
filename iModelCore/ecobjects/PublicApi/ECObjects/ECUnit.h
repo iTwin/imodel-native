@@ -95,7 +95,8 @@ friend struct SchemaJsonWriter;
 friend struct Units::UnitRegistry;
 
 private:
-    Utf8String m_name;
+    // Full name is on base units phenomenon
+    Utf8String m_unqualifiedName;
     bool m_isDisplayLabelExplicitlyDefined;
     Utf8String m_description;
     ECSchemaCP m_schema;
@@ -122,7 +123,7 @@ protected:
 public:
     ECSchemaCR GetSchema() const {return *m_schema;} //!< The ECSchema that this Phenomenon is defined in.
 
-    Utf8StringCR GetName() const {return m_name;} //!< The name of this Phenomenon.
+    Utf8StringCR GetName() const {return m_unqualifiedName;} //!< The name of this Phenomenon.
 
     //! The fully qualified name of this UnitFormat in the format {SchemaName}:{PhenomenonName}.
     ECOBJECTS_EXPORT Utf8StringCR GetFullName() const {return T_Super::GetName();}
@@ -160,7 +161,7 @@ friend struct SchemaXmlReaderImpl;
 friend struct SchemaJsonWriter;
 friend struct Units::UnitRegistry;
 private:
-    Utf8String m_name;
+    Utf8String m_unqualifiedName;
     bool m_isDisplayLabelExplicitlyDefined;
     Utf8String m_description;
     ECSchemaCP m_schema;
@@ -194,7 +195,7 @@ protected:
 public:
     ECSchemaCR GetSchema() const {return *m_schema;} //!< The ECSchema that this Unit is defined in.
 
-    Utf8StringCR GetName() const {return m_name;} //!< The name of this ECUnit.
+    Utf8StringCR GetName() const {return m_unqualifiedName;} //!< The name of this ECUnit.
 
     //! The fully qualified name of this ECUnit in the format {SchemaName}:{UnitFormatName}.
     ECOBJECTS_EXPORT Utf8StringCR GetFullName() const {return T_Super::GetName();}

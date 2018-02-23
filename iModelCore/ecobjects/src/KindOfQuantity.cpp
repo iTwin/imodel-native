@@ -312,7 +312,61 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
-    Formatting::FormatUnitSet persistenceFUS(value.c_str());
+    auto concatenateName = [](Utf8StringCR schemaName, Utf8StringCR unit, Utf8StringCR format)
+        {
+        auto totalLen = schemaName.length() + unit.length() + format.length() + 4;
+        auto buf = Utf8String();
+        buf.resize(totalLen);
+        BeStringUtilities::Snprintf((Utf8P)buf.c_str(), totalLen, "%s:%s(%s)", schemaName.c_str(), unit.c_str(), format.c_str());
+        return buf;
+        };
+
+    auto getResolvedName = [&concatenateName](const ECSchemaCR schema, Utf8StringCR value)
+        {
+        Utf8String resolvedName;
+        Utf8String unitName;
+        Utf8String format;
+        Formatting::FormatUnitSet::ParseUnitFormatDescriptor(unitName, format, value.c_str());
+        if(schema.GetOriginalECXmlVersionMajor() <= 3 && schema.GetOriginalECXmlVersionMinor() < 2)
+            resolvedName = Units::UnitNameMappings::TryGetECNameFromNewName(unitName.c_str());
+        else
+            { 
+            Utf8String alias;
+            Utf8String name;
+            ECClass::ParseClassName(alias, name, unitName);
+            if(alias.empty() || alias == schema.GetAlias())
+                {
+                if(schema.GetUnitCP(name.c_str()))
+                    resolvedName = std::move(concatenateName(schema.GetName(), name, format));
+                }
+            else
+                {
+                for (const auto& s : schema.GetReferencedSchemas())
+                    {
+                    auto const& refSchema = s.second;
+                    if((refSchema->GetAlias() == alias) && (nullptr != refSchema->GetUnitCP(name.c_str())))
+                        {
+                        resolvedName = std::move(concatenateName(refSchema->GetName(), name, format));
+                        break;
+                        }
+                    }
+                }
+            }
+        if(resolvedName.empty())
+            {
+            // HACK because we don't have base units in a schema yet, can't fully qualify them
+            if(Units::UnitRegistry::Instance().HasUnit(unitName.c_str()))
+                resolvedName = value.c_str();
+            }
+        return std::move(resolvedName);
+        };
+
+    auto resolvedName = getResolvedName(GetSchema(), value);
+    if(resolvedName.empty())
+        return SchemaReadStatus::InvalidECSchemaXml;
+
+    Formatting::FormatUnitSet persistenceFUS(resolvedName.c_str());
+
     if (persistenceFUS.HasProblem())
         LOG.warningv("Persistence FormatUnitSet: '%s' on KindOfQuantity '%s' has problem '%s'.  Continuing to load but schema will not pass validation.",
                      value.c_str(), kindOfQuantityNode.GetName(), persistenceFUS.GetProblemDescription().c_str());
@@ -331,6 +385,7 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
         LOG.errorv("Invalid ECSchemaXML: %s element must contain a %s attribute", kindOfQuantityNode.GetName(), ECXML_RELATIVE_ERROR_ATTRIBUTE);
         return SchemaReadStatus::InvalidECSchemaXml;
         }
+
     SetRelativeError(relError);
 
     if (BEXML_Success == kindOfQuantityNode.GetAttributeStringValue(value, PRESENTATION_UNITS_ATTRIBUTE))
@@ -339,7 +394,11 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
         BeStringUtilities::Split(value.c_str(), ";", presentationUnits);
         for(auto const& presUnit : presentationUnits)
             {
-            Formatting::FormatUnitSet presFUS(presUnit.c_str());
+            auto resolvedName = getResolvedName(GetSchema(), presUnit);
+            if(resolvedName.empty())
+                return SchemaReadStatus::InvalidECSchemaXml;
+
+            Formatting::FormatUnitSet presFUS(resolvedName.c_str());
             if (presFUS.HasProblem())
                 LOG.warningv("Presentation FormatUnitSet: '%s' on KindOfQuantity '%s' has problem '%s'.  Continuing to load but schema will not pass validation.",
                              presUnit.c_str(), kindOfQuantityNode.GetName(), presFUS.GetProblemDescription().c_str());
