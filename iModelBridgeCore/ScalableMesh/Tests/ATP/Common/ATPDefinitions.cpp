@@ -2622,30 +2622,23 @@ void PerformDrapeLineTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 //
 //    }
 
-bool LoadVolumeTestCase(bvector<PolyfaceHeaderPtr>& candidateMeshes, double& expectedCutTotal, double& expectedFillTotal, const WString& volumeTestCaseFileName)
-    {
-    FILE* file = _wfopen(volumeTestCaseFileName.c_str(), L"rb");    
-
-    if (file == nullptr)
-        {        
-        printf("ERROR : cannot open volumeTestCaseFileName file %s\r\n", Utf8String(volumeTestCaseFileName).c_str());
-        return false;
-        }
-
-    fread(&expectedCutTotal, sizeof(expectedCutTotal), 1, file);
-    fread(&expectedFillTotal, sizeof(expectedFillTotal), 1, file);
+bool LoadVolumeTestCase(uint64_t& meshElementId, bvector<PolyfaceHeaderPtr>& candidateMeshes, double& expectedCutTotal, double& expectedFillTotal, FILE* testCaseFile)
+    {    
+    fread(&meshElementId, sizeof(meshElementId), 1, testCaseFile);
+    fread(&expectedCutTotal, sizeof(expectedCutTotal), 1, testCaseFile);
+    fread(&expectedFillTotal, sizeof(expectedFillTotal), 1, testCaseFile);
 
     uint64_t nbMeshes;
 
-    fread(&nbMeshes, sizeof(nbMeshes), 1, file);
+    fread(&nbMeshes, sizeof(nbMeshes), 1, testCaseFile);
 
     for (uint64_t meshInd = 0; meshInd < nbMeshes; meshInd++)
         {              
         uint64_t nbBytes;
-        fread(&nbBytes, sizeof(nbBytes), 1, file);
+        fread(&nbBytes, sizeof(nbBytes), 1, testCaseFile);
 
         bvector<Byte> buffer(nbBytes);     
-        fread(&buffer[0], nbBytes, 1, file);
+        fread(&buffer[0], nbBytes, 1, testCaseFile);
 
         IGeometryPtr geomPtr(BentleyGeometryFlatBuffer::BytesToGeometry(&buffer[0]));
         PolyfaceHeaderPtr polyfaceHeaderPtr(geomPtr->GetAsPolyfaceHeader());
@@ -2655,7 +2648,6 @@ bool LoadVolumeTestCase(bvector<PolyfaceHeaderPtr>& candidateMeshes, double& exp
         candidateMeshes.push_back(polyfaceHeaderPtr);
         }
 
-    fclose(file);
     return true;
     }
 
@@ -2672,6 +2664,7 @@ static bool AllOtherArraysEmpty(bvector<bvector<T>> &data, size_t index)
     }
 
 #define MAX_CUT_FILL_ERROR_PERCENT 0.001 
+#define DIVIDE_BY_ZERO_GUARD_EPSILON 0.0000000001
 
 void PerformVolumeTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
@@ -2704,81 +2697,139 @@ void PerformVolumeTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         return;
         }
 
-    bvector<PolyfaceHeaderPtr> candidateMeshes;
-    double expectedCutTotal; 
-    double expectedFillTotal;
+    FILE* file = _wfopen(volumeTestCaseFileName.c_str(), L"rb");
 
-    if (LoadVolumeTestCase(candidateMeshes, expectedCutTotal, expectedFillTotal, volumeTestCaseFileName) == false)
-        return;    
+    if (file == nullptr)
+        {
+        printf("ERROR : cannot open volumeTestCaseFileName file %s\r\n", Utf8String(volumeTestCaseFileName).c_str());
+        return;
+        }
+
+    bvector<double> expectedCutTotals;
+    bvector<double> expectedFillTotals;
+    bvector<double> cutTotals;
+    bvector<double> fillTotals;
+    bvector<uint64_t> meshElemIds;
 
     TerrainModel::IDTM* dtmP = stmFile->GetDTMInterface(DTMAnalysisType::Precise);
 
-    //TerrainModel::DTMPtr dtmP = stmFile->GetDTM();
-    //dtmP->GetDTMVolume()->RestrictVolumeToRegion(elm.GetElementId().GetValue());
+    clock_t totalTime = 0;
+    fseek(file, 0, SEEK_END);
+    int endPos = ftell(file);
+    fseek(file, 0, SEEK_SET);
 
-    double cutTotal = 0.0;
-    double fillTotal = 0.0;
-    DVec3d top = DVec3d::From(0.0, 0.0, 1.0);
+    while (ftell(file) < endPos)
+        {         
+        bvector<PolyfaceHeaderPtr> candidateMeshes;
 
-    clock_t timer = clock();
-    
-    //Based on IElementQuantitiesExtension::ComputeTerrainCutFillSurfaceMeshes used by OpenRoads ConceptStation (ConceptDataAccess\ConstructionCosts.cpp).
-    for (auto const& mesh : candidateMeshes)
-        {
-        // for each mesh...      
-        bvector<bvector<ptrdiff_t>> readIndices;
-        if (mesh->PartitionReadIndicesByNormal(top, readIndices))
+        uint64_t meshElementId;
+        double expectedCutTotal;
+        double expectedFillTotal;
+  
+        if (LoadVolumeTestCase(meshElementId, candidateMeshes, expectedCutTotal, expectedFillTotal, file) == false)
+            return;    
+      
+        meshElemIds.push_back(meshElementId);
+        expectedCutTotals.push_back(expectedCutTotal);
+        expectedFillTotals.push_back(expectedFillTotal);
+               
+        //TerrainModel::DTMPtr dtmP = stmFile->GetDTM();
+        //dtmP->GetDTMVolume()->RestrictVolumeToRegion(elm.GetElementId().GetValue());
+
+        double cutTotal = 0.0;
+        double fillTotal = 0.0;
+        DVec3d top = DVec3d::From(0.0, 0.0, 1.0);
+
+        clock_t timer = clock();
+            
+        //Based on IElementQuantitiesExtension::ComputeTerrainCutFillSurfaceMeshes used by OpenRoads ConceptStation (ConceptDataAccess\ConstructionCosts.cpp).
+        for (auto const& mesh : candidateMeshes)
             {
-            double cutVolume = 0.0;
-            double fillVolume = 0.0;
-
-            if (AllOtherArraysEmpty(readIndices, 0)     // All down
-                || AllOtherArraysEmpty(readIndices, 1)     // All up
-                )
-                {               
-                dtmP->GetDTMVolume()->ComputeCutFillVolume(&cutVolume, &fillVolume, nullptr, mesh.get());             
-                cutTotal += cutVolume;
-                fillTotal += fillVolume;
-                }
-            else if (readIndices[0].size() > 0)
+            // for each mesh...      
+            bvector<bvector<ptrdiff_t>> readIndices;
+            if (mesh->PartitionReadIndicesByNormal(top, readIndices))
                 {
-                bvector<PolyfaceHeaderPtr> submeshArray;
-                if (mesh->CopyPartitions(readIndices, submeshArray))   // only use the downs.
-                    {                    
-                    dtmP->GetDTMVolume()->ComputeCutFillVolume(&cutVolume, &fillVolume, nullptr, submeshArray[0].get());                    
+                double cutVolume = 0.0;
+                double fillVolume = 0.0;
+
+                if (AllOtherArraysEmpty(readIndices, 0)     // All down
+                    || AllOtherArraysEmpty(readIndices, 1)     // All up
+                    )
+                    {               
+                    dtmP->GetDTMVolume()->ComputeCutFillVolume(&cutVolume, &fillVolume, nullptr, mesh.get());             
                     cutTotal += cutVolume;
                     fillTotal += fillVolume;
                     }
-                }
-            else
-                {
-                // Sometimes happens with wall end condition meshes
-                continue;
-                }
-            }        
+                else if (readIndices[0].size() > 0)
+                    {
+                    bvector<PolyfaceHeaderPtr> submeshArray;
+                    if (mesh->CopyPartitions(readIndices, submeshArray))   // only use the downs.
+                        {                    
+                        dtmP->GetDTMVolume()->ComputeCutFillVolume(&cutVolume, &fillVolume, nullptr, submeshArray[0].get());                    
+                        cutTotal += cutVolume;
+                        fillTotal += fillVolume;
+                        }
+                    }
+                else
+                    {
+                    // Sometimes happens with wall end condition meshes
+                    continue;
+                    }
+                }        
+            }       
+
+        totalTime += (clock() - timer);
+
+        cutTotals.push_back(cutTotal);
+        fillTotals.push_back(fillTotal);
         }
     
-    timer = clock() - timer;
-    double totalTimeSeconds = ((double)timer) / CLOCKS_PER_SEC;
+   
+    double totalTimeSeconds = ((double)totalTime) / CLOCKS_PER_SEC;
 
-    double cutError = (fabs(expectedCutTotal - cutTotal) == 0) ? 0 : fabs(expectedCutTotal - cutTotal) / expectedCutTotal * 100;
-    double fillError = (fabs(expectedFillTotal - fillTotal) == 0) ? 0 : fabs(expectedFillTotal - fillTotal) / expectedFillTotal * 100;
-     
-    //return L"Test Case, Result, Cut, Fill, Expected Cut, Expected Fill, Cut Error (%%), Fill Error (%%), Total time (s)\n";
+    WString errorInfo;
+    double cutErrorAllMeshes = 0;
+    double fillErrorAllMeshes = 0;
+    double cutAllMeshes = 0;
+    double fillAllMeshes = 0;
+    double expectedCutAllMeshes = 0;
+    double expectedFillAllMeshes = 0;
 
-    fwprintf(pResultFile, L"%s", smFileName.c_str());
 
-    if (cutError < MAX_CUT_FILL_ERROR_PERCENT && fillError < MAX_CUT_FILL_ERROR_PERCENT)
+    for (size_t ind = 0; ind < cutTotals.size(); ind++)
+        {
+        double cutError = (fabs(expectedCutTotals[ind] - cutTotals[ind]) == 0) ? 0 : fabs(expectedCutTotals[ind] - cutTotals[ind]) / (expectedCutTotals[ind] + DIVIDE_BY_ZERO_GUARD_EPSILON) * 100;
+        double fillError = (fabs(expectedFillTotals[ind] - fillTotals[ind]) == 0) ? 0 : fabs(expectedFillTotals[ind] - fillTotals[ind]) / (expectedFillTotals[ind] + DIVIDE_BY_ZERO_GUARD_EPSILON) * 100;
+
+        if (cutError > MAX_CUT_FILL_ERROR_PERCENT || fillError > MAX_CUT_FILL_ERROR_PERCENT)
+            {
+            WPrintfString caseError(L"MeshElemId %u : cutError %.5f, fillError %.5f;", meshElemIds[ind], cutError, fillError);
+            errorInfo += caseError;
+            }
+        
+        cutErrorAllMeshes += cutError;
+        fillErrorAllMeshes += fillError;
+        cutAllMeshes += cutTotals[ind];
+        fillAllMeshes += fillTotals[ind];
+        expectedCutAllMeshes += expectedCutTotals[ind];
+        expectedFillAllMeshes += expectedFillTotals[ind];
+        }
+   
+    //return L"Test Case, Nb Design Meshes, Result, Cut, Fill, Expected Cut, Expected Fill, Cut Error (%%), Fill Error (%%), Total time (s)\n";
+
+    fwprintf(pResultFile, L"%s,%i", smFileName.c_str(), (int)cutTotals.size());
+
+    if (errorInfo.length() == 0)
         {
         fwprintf(pResultFile, L",SUCCESS");
         }
     else
         {
-        fwprintf(pResultFile, L",ERROR");
+        fwprintf(pResultFile, L",ERROR : %s", errorInfo.c_str());
         }
     
-    fwprintf(pResultFile, L",%.5f,%.5f,%.5f,%.5f", cutTotal, fillTotal, expectedCutTotal, expectedFillTotal);
-    fwprintf(pResultFile, L",%.5f,%.5f,%.5f\n", cutError, fillError, totalTimeSeconds);
+    fwprintf(pResultFile, L",%.5f,%.5f,%.5f,%.5f", cutAllMeshes, fillAllMeshes, expectedCutAllMeshes, expectedFillAllMeshes);
+    fwprintf(pResultFile, L",%.5f,%.5f,%.5f\n", cutErrorAllMeshes, fillErrorAllMeshes, totalTimeSeconds);
 
     fflush(pResultFile);
     }

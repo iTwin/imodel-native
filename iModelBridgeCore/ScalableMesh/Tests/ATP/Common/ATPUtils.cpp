@@ -30,7 +30,7 @@ WString GetHeaderForTestType(TestType t)
             return L"Test Case, Result, NOfPoints, NOfLines, NOfLinesSucceeded,NOfFullLines,Rate of partial drapes(%%), Length of partial drapes (%% of full length), Graph Store Misses (%%), NOfFailedDrapes, Error Rate (%%),Total time (s), Time per drape (s), Number of output points in lines, Time per output point (ms)\n";
             break;
         case TEST_VOLUME:
-            return L"Test Case, Result, Cut, Fill, Expected Cut, Expected Fill, Cut Error (%%), Fill Error (%%), Total time (s)\n";
+            return L"Test Case, Nb Design Meshes, Result, Cut, Fill, Expected Cut, Expected Fill, Cut Error (%%), Fill Error (%%), Total time (s)\n";
             break;
         case TEST_SELF_CONTAINED_IMPORTER:
             return  L"Nb Imported Points,Duration (minutes)\n";
