@@ -56,6 +56,20 @@ bool DisplayTypeOptimizedExpression::_IsEqual(OptimizedExpression const& other) 
     }
 
 /*-----------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis            02/2018
++---------------+---------------+---------------+---------------+---------------+--*/
+static ECClassId GetClassId(NavNodeKeyCR key)
+    {
+    if (key.AsECInstanceNodeKey())
+        return key.AsECInstanceNodeKey()->GetECClassId();
+    if (key.AsECClassGroupingNodeKey())
+        return key.AsECClassGroupingNodeKey()->GetECClassId();
+    if (key.AsECPropertyGroupingNodeKey())
+        return key.AsECPropertyGroupingNodeKey()->GetECClassId();
+    return ECClassId();
+    }
+
+/*-----------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis            11/2017
 +---------------+---------------+---------------+---------------+---------------+--*/
 IsOfClassOptimizedExpression::~IsOfClassOptimizedExpression()
@@ -73,7 +87,7 @@ bool IsOfClassOptimizedExpression::_Value(OptimizedExpressionsParameters const& 
         return false;
 
     NavNodeKeyCPtr nodeKey = params.GetInputNodeKey();
-    ECClassId lookupClassId = nodeKey->GetECClassId();
+    ECClassId lookupClassId = GetClassId(*nodeKey);
     if (!lookupClassId.IsValid())
         return false;
     
@@ -140,7 +154,7 @@ bool ClassNameOptimizedExpression::_Value(OptimizedExpressionsParameters const& 
         return false;
 
     NavNodeKeyCPtr nodeKey = params.GetInputNodeKey();
-    ECClassId lookupClassId = nodeKey->GetECClassId();
+    ECClassId lookupClassId = GetClassId(*nodeKey);
     if (!lookupClassId.IsValid())
         return false;
 

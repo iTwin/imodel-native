@@ -657,11 +657,15 @@ bool NavNodesHelper::IsCustomNode(NavNodeCR node)
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodeKeyPtr NavNodesHelper::CreateNodeKey(JsonNavNodeCR node, bvector<Utf8String> const& path)
     {
+    NavNodeExtendedData extendedData(node);
     if (node.GetType().Equals(NAVNODE_TYPE_ECInstanceNode))
-        return ECInstanceNodeKey::Create(NavNodeExtendedData(node).GetECClassId(), ECInstanceId(node.GetInstanceId()), path);
-    if (node.GetType().Equals(NAVNODE_TYPE_ECClassGroupingNode) || node.GetType().Equals(NAVNODE_TYPE_ECPropertyGroupingNode))
-        return NavNodeKey::Create(node.GetType(), path, NavNodeExtendedData(node).GetECClassId());
-
+        return ECInstanceNodeKey::Create(extendedData.GetECClassId(), ECInstanceId(node.GetInstanceId()), path);
+    if (node.GetType().Equals(NAVNODE_TYPE_ECClassGroupingNode))
+        return ECClassGroupingNodeKey::Create(extendedData.GetECClassId(), path);
+    if (node.GetType().Equals(NAVNODE_TYPE_ECPropertyGroupingNode))
+        return ECPropertyGroupingNodeKey::Create(extendedData.GetECClassId(), extendedData.GetPropertyName(), extendedData.GetPropertyValue(), path);
+    if (node.GetType().Equals(NAVNODE_TYPE_DisplayLabelGroupingNode))
+        return LabelGroupingNodeKey::Create(node.GetLabel(), path);
     return NavNodeKey::Create(node.GetType(), path);
     }
 

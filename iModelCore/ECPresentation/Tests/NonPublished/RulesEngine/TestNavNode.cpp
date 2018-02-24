@@ -31,7 +31,11 @@ void TestNavNode::InitNode(IConnectionP connection, Utf8CP type)
     if (nullptr != type)
         {
         SetType(type);
-        extendedData.SetECClassId(ECClassId((uint64_t)1));
+
+        if (0 == strcmp(NAVNODE_TYPE_ECInstanceNode, type) || 0 == strcmp(NAVNODE_TYPE_ECClassGroupingNode, type) || 0 == strcmp(NAVNODE_TYPE_ECPropertyGroupingNode, type))
+            extendedData.SetECClassId(ECClassId((uint64_t)1));
+        if (0 == strcmp(NAVNODE_TYPE_ECPropertyGroupingNode, type))
+            extendedData.SetPropertyName("SomePropertyName");
         }
 
     SetNodeKey(*NavNodesHelper::CreateNodeKey(*this, bvector<Utf8String>()));

@@ -49,8 +49,8 @@ TEST_F(OptimizedExpressionsEvaluationTests, EvaluateClassNameOptimizedExpression
     {
     OptimizedExpressionPtr expression = ClassNameOptimizedExpression::Create("Widget");
 
-    NavNodeKeyPtr widgetKey = NavNodeKey::Create(NAVNODE_TYPE_ECPropertyGroupingNode, {"1"}, m_widgetClass->GetId());
-    NavNodeKeyPtr gadgetKey = NavNodeKey::Create(NAVNODE_TYPE_ECPropertyGroupingNode, {"2"}, m_gadgetClass->GetId());
+    NavNodeKeyPtr widgetKey = ECPropertyGroupingNodeKey::Create(m_widgetClass->GetId(), "W", nullptr, {"1"});
+    NavNodeKeyPtr gadgetKey = ECPropertyGroupingNodeKey::Create(m_gadgetClass->GetId(), "G", nullptr, {"2"});
 
     OptimizedExpressionsParameters widgetParams(m_connections, *m_connection, widgetKey.get(), "");
     OptimizedExpressionsParameters gadgetParams(m_connections, *m_connection, gadgetKey.get(), "");
@@ -65,8 +65,8 @@ TEST_F(OptimizedExpressionsEvaluationTests, EvaluateIsOfClassOptimizedExpression
     {
     OptimizedExpressionPtr expression = IsOfClassOptimizedExpression::Create("RulesEngineTest", "Widget");
 
-    NavNodeKeyPtr widgetKey = NavNodeKey::Create(NAVNODE_TYPE_ECPropertyGroupingNode, {"1"}, m_widgetClass->GetId());
-    NavNodeKeyPtr gadgetKey = NavNodeKey::Create(NAVNODE_TYPE_ECPropertyGroupingNode, {"2"}, m_gadgetClass->GetId());
+    NavNodeKeyPtr widgetKey = ECPropertyGroupingNodeKey::Create(m_widgetClass->GetId(), "W", nullptr, {"1"});
+    NavNodeKeyPtr gadgetKey = ECPropertyGroupingNodeKey::Create(m_gadgetClass->GetId(), "G", nullptr, {"2"});
 
     OptimizedExpressionsParameters widgetParams(m_connections, *m_connection, widgetKey.get(), "");
     OptimizedExpressionsParameters gadgetParams(m_connections, *m_connection, gadgetKey.get(), "");

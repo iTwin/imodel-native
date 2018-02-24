@@ -111,7 +111,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_Groupe
     ASSERT_EQ(2, nodes.GetSize());
 
     EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, nodes[0]->GetType().c_str());
-    EXPECT_EQ(m_gadgetClass->GetId(), nodes[0]->GetKey()->GetECClassId());
+    EXPECT_EQ(m_gadgetClass->GetId(), nodes[0]->GetKey()->AsECClassGroupingNodeKey()->GetECClassId());
     DataContainer<NavNodeCPtr> gadgetNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options.GetJson()).get();
     ASSERT_EQ(1, gadgetNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, gadgetNodes[0]->GetType().c_str());
@@ -119,7 +119,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_Groupe
     EXPECT_EQ(gadgetInstance->GetInstanceId(), gadgetNodes[0]->GetKey()->AsECInstanceNodeKey()->GetInstanceId().ToString());
 
     EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, nodes[1]->GetType().c_str());
-    EXPECT_EQ(m_widgetClass->GetId(), nodes[1]->GetKey()->GetECClassId());
+    EXPECT_EQ(m_widgetClass->GetId(), nodes[1]->GetKey()->AsECClassGroupingNodeKey()->GetECClassId());
     DataContainer<NavNodeCPtr> widgetNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[1], PageOptions(), options.GetJson()).get();
     ASSERT_EQ(1, widgetNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, widgetNodes[0]->GetType().c_str());

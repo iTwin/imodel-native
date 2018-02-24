@@ -88,7 +88,7 @@ TEST_F(NavNodeTests, NavNodeKey_RapidJsonSerializationRoundtrip)
     NavNodeKeyPtr navNodeKey = NavNodeKey::FromJson(json);
     ASSERT_TRUE(navNodeKey.IsValid());
     // Validate
-    EXPECT_EQ(key1->GetECClassId(), navNodeKey->GetECClassId());
+    EXPECT_EQ(key1->GetType(), navNodeKey->GetType());
     EXPECT_EQ(key1->GetPathFromRoot(), navNodeKey->GetPathFromRoot());
     }
 
@@ -105,8 +105,9 @@ TEST_F(NavNodeTests, NavNodeKey_JsonValueDeserialization)
     // Deserialize
     NavNodeKeyPtr navNodeKey = NavNodeKey::FromJson(json);
     ASSERT_TRUE(navNodeKey.IsValid());
+    ASSERT_TRUE(nullptr != navNodeKey->AsECClassGroupingNodeKey());
     // Validate
-    EXPECT_EQ(456, navNodeKey->GetECClassId().GetValue());
+    EXPECT_EQ(456, navNodeKey->AsECClassGroupingNodeKey()->GetECClassId().GetValue());
     ASSERT_EQ(1, navNodeKey->GetPathFromRoot().size());
     EXPECT_STREQ("123", navNodeKey->GetPathFromRoot()[0].c_str());
     }

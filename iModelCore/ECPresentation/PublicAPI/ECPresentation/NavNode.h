@@ -25,7 +25,9 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 #define NAVNODE_TYPE_DisplayLabelGroupingNode   "DisplayLabelGroupingNode"
 
 struct ECInstanceNodeKey;
-
+struct ECClassGroupingNodeKey;
+struct ECPropertyGroupingNodeKey;
+struct LabelGroupingNodeKey;
 //=======================================================================================
 //! Base class for a @ref NavNode key which identifies similar nodes.
 //! @ingroup GROUP_Presentation_Navigation
@@ -36,21 +38,25 @@ struct EXPORT_VTABLE_ATTRIBUTE NavNodeKey : RefCountedBase
 private:
     Utf8String m_type;
     bvector<Utf8String> m_pathFromRoot;
-    ECClassId m_classId;
     mutable Utf8String m_keyHash;
 
 protected:
-    NavNodeKey(Utf8String type, bvector<Utf8String> path, ECClassId classId) : m_type(type), m_pathFromRoot(path), m_classId(classId) {}
+    NavNodeKey(Utf8String type, bvector<Utf8String> path) : m_type(type), m_pathFromRoot(path) {}
     virtual ~NavNodeKey() {}
     ECPRESENTATION_EXPORT virtual int _Compare(NavNodeKey const& other) const;
     virtual bool _IsSimilar(NavNodeKey const& other) const {return m_type.Equals(other.m_type);}
     virtual ECInstanceNodeKey const* _AsECInstanceNodeKey() const {return nullptr;}
+    virtual ECClassGroupingNodeKey const* _AsECClassGroupingNodeKey() const {return nullptr;}
+    virtual ECPropertyGroupingNodeKey const* _AsECPropertyGroupingNodeKey() const {return nullptr;}
+    virtual LabelGroupingNodeKey const* _AsLabelGroupingNodeKey() const {return nullptr;}
     ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(rapidjson::MemoryPoolAllocator<>*) const;
     ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const;
 
 public:
-    //! Try to get this key as a @ref ECInstanceNodeKey.
     ECInstanceNodeKey const* AsECInstanceNodeKey() const {return _AsECInstanceNodeKey();}
+    ECClassGroupingNodeKey const* AsECClassGroupingNodeKey() const {return _AsECClassGroupingNodeKey();}
+    ECPropertyGroupingNodeKey const* AsECPropertyGroupingNodeKey() const {return _AsECPropertyGroupingNodeKey();}
+    LabelGroupingNodeKey const* AsLabelGroupingNodeKey() const {return _AsLabelGroupingNodeKey();}
 
     //! Get the node hash.
     ECPRESENTATION_EXPORT Utf8String GetNodeHash() const;
@@ -72,8 +78,6 @@ public:
 
     //! Get the type of the @ref NavNode.
     Utf8StringCR GetType() const {return m_type;}
-    //! Get ECClass ID.
-    ECClassId GetECClassId() const {return m_classId;}
     
     //! Serialize this key to JSON.
     rapidjson::Document AsJson(rapidjson::MemoryPoolAllocator<>* allocator = nullptr) const {return _AsJson(allocator);}
@@ -83,10 +87,7 @@ public:
     //! Create an @ref NavNodeKey from a JSON object.
     ECPRESENTATION_EXPORT static NavNodeKeyPtr Create(RapidJsonValueCR);
     //! Create a new key.
-    static NavNodeKeyPtr Create(Utf8String type, bvector<Utf8String> path, ECClassId classId = ECClassId())
-        {
-        return new NavNodeKey(type, path, classId);
-        }
+    static NavNodeKeyPtr Create(Utf8String type, bvector<Utf8String> path) {return new NavNodeKey(type, path);}
     //! Create a key from the supplied JSON.
     ECPRESENTATION_EXPORT static NavNodeKeyPtr FromJson(JsonValueCR);
     //! Create a key from the supplied JSON.
@@ -135,10 +136,9 @@ private:
     ECInstanceKey m_instanceKey;
 private:
     ECInstanceNodeKey(bvector<Utf8String> path, ECClassId classId, ECInstanceId instanceId) 
-        : NavNodeKey(NAVNODE_TYPE_ECInstanceNode, path, classId), m_instanceKey(classId, instanceId)
+        : NavNodeKey(NAVNODE_TYPE_ECInstanceNode, path), m_instanceKey(classId, instanceId)
         {}
 protected:
-    ECPRESENTATION_EXPORT int _Compare(NavNodeKey const& other) const override;
     ECPRESENTATION_EXPORT bool _IsSimilar(NavNodeKey const& other) const override;
     ECInstanceNodeKey const* _AsECInstanceNodeKey() const override {return this;}
     ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::MemoryPoolAllocator<>*) const override;
@@ -172,10 +172,124 @@ public:
         ECInstanceId::FromString(instanceId, instance.GetInstanceId().c_str());
         return Create(instance.GetClass().GetId(), instanceId, path);
         }
+    //! Get the ECClass ID.
+    ECClassId GetECClassId() const {return m_instanceKey.GetClassId();}
     //! Get the ECInstance ID.
     ECInstanceId GetInstanceId() const {return m_instanceKey.GetInstanceId();}
     //! Get the ECInstance key.
     ECInstanceKeyCR GetInstanceKey() const {return m_instanceKey;}
+};
+
+//=======================================================================================
+//! NavNodeKey for ECClass grouping nodes.
+//! @ingroup GROUP_Presentation_Navigation
+// @bsiclass                                    Grigas.Petraitis                08/2016
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE ECClassGroupingNodeKey : NavNodeKey
+{
+private:
+    ECClassId m_classId;
+private:
+    ECClassGroupingNodeKey(bvector<Utf8String> path, ECClassId classId) 
+        : NavNodeKey(NAVNODE_TYPE_ECClassGroupingNode, path), m_classId(classId)
+        {}
+protected:
+    //ECPRESENTATION_EXPORT int _Compare(NavNodeKey const& other) const override;
+    ECClassGroupingNodeKey const* _AsECClassGroupingNodeKey() const override {return this;}
+    ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::MemoryPoolAllocator<>*) const override;
+    ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
+public:
+    //! Create an @ref ECClassGroupingNodeKey from a JSON object.
+    ECPRESENTATION_EXPORT static RefCountedPtr<ECClassGroupingNodeKey> Create(JsonValueCR);
+    //! Create an @ref ECClassGroupingNodeKey from a JSON object.
+    ECPRESENTATION_EXPORT static RefCountedPtr<ECClassGroupingNodeKey> Create(RapidJsonValueCR);
+    //! Create an @ref ECClassGroupingNodeKey using supplied parameters.
+    //! @param[in] classId The ID of the class.
+    //! @param[in] path The hashes which describe path from root node to this node.
+    static RefCountedPtr<ECClassGroupingNodeKey> Create(ECClassId classId, bvector<Utf8String> path = bvector<Utf8String>())
+        {
+        return new ECClassGroupingNodeKey(path, classId);
+        }
+    //! Get the ECClass ID.
+    ECClassId GetECClassId() const {return m_classId;}
+};
+
+//=======================================================================================
+//! NavNodeKey for ECProperty grouping nodes.
+//! @ingroup GROUP_Presentation_Navigation
+// @bsiclass                                    Grigas.Petraitis                08/2016
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE ECPropertyGroupingNodeKey : NavNodeKey
+{
+private:
+    ECClassId m_classId;
+    Utf8String m_propertyName;
+    rapidjson::Document const* m_groupingValue;
+private:
+    ECPropertyGroupingNodeKey(bvector<Utf8String> path, ECClassId classId, Utf8String propertyName, rapidjson::Value const* groupingValue) 
+        : NavNodeKey(NAVNODE_TYPE_ECPropertyGroupingNode, path), m_classId(classId), m_propertyName(propertyName), m_groupingValue(nullptr)
+        {
+        if (nullptr != groupingValue)
+            {
+            rapidjson::Document* doc = new rapidjson::Document();
+            doc->CopyFrom(*groupingValue, doc->GetAllocator());
+            m_groupingValue = doc;
+            }
+        }
+    ~ECPropertyGroupingNodeKey() {DELETE_AND_CLEAR(m_groupingValue);}
+protected:
+    ECPropertyGroupingNodeKey const* _AsECPropertyGroupingNodeKey() const override {return this;}
+    ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::MemoryPoolAllocator<>*) const override;
+    ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
+public:
+    //! Create an @ref ECPropertyGroupingNodeKey from a JSON object.
+    ECPRESENTATION_EXPORT static RefCountedPtr<ECPropertyGroupingNodeKey> Create(JsonValueCR);
+    //! Create an @ref ECPropertyGroupingNodeKey from a JSON object.
+    ECPRESENTATION_EXPORT static RefCountedPtr<ECPropertyGroupingNodeKey> Create(RapidJsonValueCR);
+    //! Create an @ref ECPropertyGroupingNodeKey using supplied parameters.
+    //! @param[in] classId The ID of the class.
+    //! @param[in] propertyName Name of the grouping property
+    //! @param[in] groupingValue The grouping value.
+    //! @param[in] path The hashes which describe path from root node to this node.
+    static RefCountedPtr<ECPropertyGroupingNodeKey> Create(ECClassId classId, Utf8String propertyName, rapidjson::Value const* groupingValue, bvector<Utf8String> path = bvector<Utf8String>())
+        {
+        return new ECPropertyGroupingNodeKey(path, classId, propertyName, groupingValue);
+        }
+    ECClassId GetECClassId() const {return m_classId;}
+    Utf8StringCR GetPropertyName() const {return m_propertyName;}
+    rapidjson::Value const* GetGroupingValue() const {return m_groupingValue;}
+};
+
+//=======================================================================================
+//! NavNodeKey for display label grouping nodes.
+//! @ingroup GROUP_Presentation_Navigation
+// @bsiclass                                    Grigas.Petraitis                08/2016
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE LabelGroupingNodeKey : NavNodeKey
+{
+private:
+    Utf8String m_label;
+private:
+    LabelGroupingNodeKey(bvector<Utf8String> path, Utf8String label) 
+        : NavNodeKey(NAVNODE_TYPE_DisplayLabelGroupingNode, path), m_label(label)
+        {}
+protected:
+    LabelGroupingNodeKey const* _AsLabelGroupingNodeKey() const override {return this;}
+    ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::MemoryPoolAllocator<>*) const override;
+    ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
+public:
+    //! Create an @ref LabelGroupingNodeKey from a JSON object.
+    ECPRESENTATION_EXPORT static RefCountedPtr<LabelGroupingNodeKey> Create(JsonValueCR);
+    //! Create an @ref LabelGroupingNodeKey from a JSON object.
+    ECPRESENTATION_EXPORT static RefCountedPtr<LabelGroupingNodeKey> Create(RapidJsonValueCR);
+    //! Create an @ref LabelGroupingNodeKey using supplied parameters.
+    //! @param[in] label Label of grouped nodes.
+    //! @param[in] path The hashes which describe path from root node to this node.
+    static RefCountedPtr<LabelGroupingNodeKey> Create(Utf8String label, bvector<Utf8String> path = bvector<Utf8String>())
+        {
+        return new LabelGroupingNodeKey(path, label);
+        }
+    Utf8StringCR GetLabel() const {return m_label;}
 };
 
 //=======================================================================================

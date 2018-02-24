@@ -27,9 +27,7 @@ struct TestNodeKey : NavNodeKey
 private:
     Utf8String m_label;
 private:
-    TestNodeKey(Utf8CP type) 
-        : NavNodeKey(type, {std::to_string(++s_keyIdCounter).c_str()}, ECClassId())
-        {}
+    TestNodeKey(Utf8CP type) : NavNodeKey(type, {std::to_string(++s_keyIdCounter).c_str()}) {}
 public:
     static RefCountedPtr<TestNodeKey> Create(Utf8CP type = "Test") {return new TestNodeKey(type);}
 };

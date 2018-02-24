@@ -1315,7 +1315,7 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECClassGroupingNode)
     ASSERT_TRUE(node1->Equals(*locatedNode));
 
     // verify the node is not found when node hash doesnt match
-    locatedNode = m_cache->LocateNode(*m_connection, *NavNodeKey::Create(NAVNODE_TYPE_ECClassGroupingNode, {"different hash"}, widgetClass1->GetId()));
+    locatedNode = m_cache->LocateNode(*m_connection, *ECClassGroupingNodeKey::Create(widgetClass1->GetId(), {"different hash"}));
     ASSERT_TRUE(locatedNode.IsNull());
     }
 
@@ -1350,7 +1350,7 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECPropertyValueGroupingNode)
     ASSERT_TRUE(node1->Equals(*locatedNode));
 
     // verify the node is not found when node hash doesnt match
-    locatedNode = m_cache->LocateNode(*m_connection, *NavNodeKey::Create(NAVNODE_TYPE_ECPropertyGroupingNode, {"different hash"}, widgetClass1->GetId()));
+    locatedNode = m_cache->LocateNode(*m_connection, *ECPropertyGroupingNodeKey::Create(widgetClass1->GetId(), "IntProperty", &groupingValue, {"different hash"}));
     ASSERT_TRUE(locatedNode.IsNull());
     }
 
@@ -1385,7 +1385,7 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECPropertyRangeGroupingNode)
     ASSERT_TRUE(node1->Equals(*locatedNode));
 
     // verify the node is not found when node hash doesnt match
-    locatedNode = m_cache->LocateNode(*m_connection, *NavNodeKey::Create(NAVNODE_TYPE_ECPropertyGroupingNode, {"different hash"}, widgetClass1->GetId()));
+    locatedNode = m_cache->LocateNode(*m_connection, *ECPropertyGroupingNodeKey::Create(widgetClass1->GetId(), "IntProperty", &groupingValue, {"different hash"}));
     ASSERT_TRUE(locatedNode.IsNull());
     }
 

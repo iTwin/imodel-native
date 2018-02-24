@@ -583,15 +583,15 @@ TEST_F (NavigationQueryExecutorTests, ClassGroupingNodesSortedByLabel)
 
     JsonNavNodePtr node = executor.GetNode(0);
     node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>()));
-    ASSERT_EQ(m_gadgetClass->GetId(), node->GetKey()->GetECClassId());
+    ASSERT_EQ(m_gadgetClass->GetId(), node->GetKey()->AsECClassGroupingNodeKey()->GetECClassId());
 
     node = executor.GetNode(1);
     node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>()));
-    ASSERT_EQ(m_sprocketClass->GetId(), node->GetKey()->GetECClassId());
+    ASSERT_EQ(m_sprocketClass->GetId(), node->GetKey()->AsECClassGroupingNodeKey()->GetECClassId());
     
     node = executor.GetNode(2);
     node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>()));
-    ASSERT_EQ(m_widgetClass->GetId(), node->GetKey()->GetECClassId());
+    ASSERT_EQ(m_widgetClass->GetId(), node->GetKey()->AsECClassGroupingNodeKey()->GetECClassId());
     }
 
 /*---------------------------------------------------------------------------------**//**
