@@ -610,8 +610,7 @@ TEST_F(InstanceSerializationTest, TestInstanceConversionOfPointxdWorksOnStructAn
     EC_ASSERT_SUCCESS(ecClass->CreatePrimitiveProperty(propPoint3dArr, "point3dArr", PRIMITIVETYPE_Point3d));
     IECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
 
-
-    static auto const shouldSerializeProperty = [](Utf8CP) -> bool {return true;};
+    static std::function<bool(Utf8CP)> const shouldSerializeProperty = [](Utf8CP) -> bool {return true;};
     ASSERT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*instance, json, classLocater, shouldSerializeProperty));
 
     ECValue point2dObjVal;
