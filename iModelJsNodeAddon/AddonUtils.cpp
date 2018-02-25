@@ -235,13 +235,12 @@ DbResult AddonUtils::OpenDgnDb(DgnDbPtr& db, BeFileNameCR fileOrPathname, DgnDb:
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 01/18
 //---------------------------------------------------------------------------------------
-DbResult AddonUtils::ReadChangeSets(bvector<DgnRevisionPtr>& revisionPtrs, bool& containsSchemaChanges, DgnDbR dgndb, JsonValueCR changeSetTokens)
+DbResult AddonUtils::ReadChangeSets(bvector<DgnRevisionPtr>& revisionPtrs, bool& containsSchemaChanges, Utf8StringCR dbGuid, JsonValueCR changeSetTokens)
     {
     revisionPtrs.clear();
     containsSchemaChanges = false;
     PRECONDITION(!changeSetTokens.isNull() && changeSetTokens.isArray(), BE_SQLITE_ERROR);
 
-    Utf8String dbGuid = dgndb.GetDbGuid().ToString();
     for (uint32_t ii = 0; ii < changeSetTokens.size(); ii++)
         {
         JsonValueCR changeSetToken = changeSetTokens[ii];
@@ -272,13 +271,11 @@ DbResult AddonUtils::ReadChangeSets(bvector<DgnRevisionPtr>& revisionPtrs, bool&
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 01/18
 //---------------------------------------------------------------------------------------
-DbResult AddonUtils::ProcessSchemaChangeSets(DgnDbPtr& dgndb, bvector<DgnRevisionCP> const& revisions, RevisionProcessOption processOption)
+DbResult AddonUtils::ProcessSchemaChangeSets(bvector<DgnRevisionCP> const& revisions, RevisionProcessOption processOption, BeFileNameCR dbFileName)
     {
-    PRECONDITION(!dgndb->IsDbOpen() && "Expected briefcase to be closed when merging schema changes", BE_SQLITE_ERROR);
-        
     DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(revisions, processOption));
     DbResult result;
-    dgndb = DgnDb::OpenDgnDb(&result, dgndb->GetFileName(), openParams);
+    DgnDbPtr dgndb = DgnDb::OpenDgnDb(&result, dbFileName, openParams);
     POSTCONDITION(result == BE_SQLITE_OK, result);
 
     dgndb->CloseDb();
@@ -301,11 +298,11 @@ DbResult AddonUtils::ProcessDataChangeSets(DgnDbR dgndb, bvector<DgnRevisionCP> 
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 01/18
 //---------------------------------------------------------------------------------------
-DbResult AddonUtils::ProcessChangeSets(DgnDbPtr& dgndb, JsonValueCR changeSetTokens, RevisionProcessOption processOption)
+DbResult AddonUtils::ProcessChangeSets(DgnDbPtr dgndb, JsonValueCR changeSetTokens, RevisionProcessOption processOption, Utf8StringCR dbGuid, BeFileNameCR dbFileName)
     {
     bvector<DgnRevisionPtr> revisionPtrs;
     bool containsSchemaChanges;
-    DbResult result = ReadChangeSets(revisionPtrs, containsSchemaChanges, *dgndb, changeSetTokens);
+    DbResult result = ReadChangeSets(revisionPtrs, containsSchemaChanges, dbGuid, changeSetTokens);
     if (BE_SQLITE_OK != result)
         return result;
 
@@ -313,7 +310,7 @@ DbResult AddonUtils::ProcessChangeSets(DgnDbPtr& dgndb, JsonValueCR changeSetTok
     for (uint32_t ii = 0; ii < revisionPtrs.size(); ii++)
         revisions.push_back(revisionPtrs[ii].get());
 
-    return containsSchemaChanges ? ProcessSchemaChangeSets(dgndb, revisions, processOption) : ProcessDataChangeSets(*dgndb, revisions, processOption);
+    return containsSchemaChanges ? ProcessSchemaChangeSets(revisions, processOption, dbFileName) : ProcessDataChangeSets(*dgndb, revisions, processOption);
     }
 
 //---------------------------------------------------------------------------------------

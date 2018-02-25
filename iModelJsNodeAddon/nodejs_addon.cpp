@@ -89,6 +89,19 @@ USING_NAMESPACE_BENTLEY_EC
     }\
     bool var = info[i].As<Napi::Boolean>().Value();
 
+#define OPTIONAL_ARGUMENT_BOOL(i, var, default)\
+    bool var;\
+    if (info.Length() <= (i) || info[i].IsUndefined()) {\
+        var = (default);\
+    }\
+    else if (info[i].IsBoolean()) {\
+        var = info[i].As<Napi::Boolean>().Value();\
+    }\
+    else {\
+        var = (default);\
+        Napi::TypeError::New(Env(), "Argument " #i " must be an boolean").ThrowAsJavaScriptException();\
+    }
+
 #define OPTIONAL_ARGUMENT_INTEGER(i, var, default)\
     int var;\
     if (info.Length() <= (i) || info[i].IsUndefined()) {\
@@ -605,11 +618,32 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         {
         REQUIRE_ARGUMENT_STRING(0, changeSetTokens);
         REQUIRE_ARGUMENT_INTEGER(1, processOptions);
+        REQUIRE_ARGUMENT_BOOL(2, containsSchemaChanges);
+
         RETURN_IF_HAD_EXCEPTION
 
         Json::Value jsonChangeSetTokens = Json::Value::From(changeSetTokens);
 
-        DbResult result = AddonUtils::ProcessChangeSets(m_dgndb, jsonChangeSetTokens, (RevisionProcessOption) processOptions);
+        bool isReadonly = false;
+        Utf8String dbGuid;
+        BeFileName dbFileName;
+        if (containsSchemaChanges)
+            {
+            isReadonly = m_dgndb->IsReadonly();
+            dbGuid = m_dgndb->GetDbGuid().ToString();
+            dbFileName.SetNameUtf8(m_dgndb->GetDbFileName());
+            CloseDgnDb();
+            }
+            
+        DbResult result = AddonUtils::ProcessChangeSets(m_dgndb, jsonChangeSetTokens, (RevisionProcessOption)processOptions, dbGuid, dbFileName);
+        if (BE_SQLITE_OK == result && containsSchemaChanges)
+            {
+            DgnDbPtr db;
+            result = AddonUtils::OpenDgnDb(db, dbFileName, isReadonly ? Db::OpenMode::Readonly : Db::OpenMode::ReadWrite);
+            if (BE_SQLITE_OK == result)
+                OnDgnDbOpened(db.get());
+            }
+
         return Napi::Number::New(Env(), (int) result);
         }
 

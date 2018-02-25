@@ -120,7 +120,7 @@ declare class AddonDgnDb {
    * Process change sets
    * @param cachePath Path to the root of the disk cache
    */
-  processChangeSets(changeSets: string, processOptions: ChangeSetProcessOption): DbResult;
+  processChangeSets(changeSets: string, processOptions: ChangeSetProcessOption, containsSchemaChanges: boolean): DbResult;
 
   /**
    * Start creating a new change set with local changes
