@@ -30,9 +30,12 @@ struct SplineManipulationStrategy : public CurvePrimitiveManipulationStrategy
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsContinious() const override { return true; }
 
+        virtual SplinePlacementStrategyType _GetType() const = 0;
+
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static SplineManipulationStrategyPtr Create(SplinePlacementStrategyType placementStrategy);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT SplinePlacementStrategyPtr CreatePlacement();
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT SplinePlacementStrategyType GetType() const;
     };
 
 //=======================================================================================
@@ -55,12 +58,14 @@ struct SplineControlPointsManipulationStrategy : public SplineManipulationStrate
         int _GetOrder() const { return m_order; }
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurvePrimitiveManipulationStrategyPtr _Clone() const override { return new SplineControlPointsManipulationStrategy(*this); };
+
+        virtual SplinePlacementStrategyType _GetType() const override {return SplinePlacementStrategyType::ControlPoints;}
     public:
         static SplineControlPointsManipulationStrategyPtr Create(int order) { return new SplineControlPointsManipulationStrategy(order); }
 
         void SetOrder(int order) { _SetOrder(order); }
         int GetOrder() const { return _GetOrder(); }
-
+        
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static const int default_Order;
     };
 
@@ -88,6 +93,8 @@ struct SplineThroughPointsManipulationStrategy : public SplineManipulationStrate
         void _SetEndTangent(DVec3d endTangent) { m_endTangent = endTangent; }
         void _RemoveEndTangent() { m_endTangent.Zero(); m_endTangent.Normalize(); }
         DVec3d _GetEndTangent() const { return m_endTangent; }
+
+        virtual SplinePlacementStrategyType _GetType() const override { return SplinePlacementStrategyType::ThroughPoints; }
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurvePrimitiveManipulationStrategyPtr _Clone() const override { return new SplineThroughPointsManipulationStrategy(*this); };
 

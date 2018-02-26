@@ -44,10 +44,18 @@ SplinePlacementStrategyPtr SplineManipulationStrategy::CreatePlacement()
     return strategy;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+SplinePlacementStrategyType SplineManipulationStrategy::GetType() const 
+    {
+        return _GetType();
+    }
+
 /////////////////////////////////////////////////////////////////////////////////////////
 // SplineControlPointsManipulationStrategy
 /////////////////////////////////////////////////////////////////////////////////////////
-//const int SplineControlPointsManipulationStrategy::default_Order = 3; Why would you need this here?
+const int SplineControlPointsManipulationStrategy::default_Order = 3;
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas             01/2018

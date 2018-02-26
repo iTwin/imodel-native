@@ -15,6 +15,9 @@ struct SplinePlacementStrategy : CurvePrimitivePlacementStrategy
 
     protected:
         SplinePlacementStrategy() : T_Super() {}
+        virtual SplinePlacementStrategyType _GetType() const = 0;
+    public:
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT SplinePlacementStrategyType GetType() const;
     };
 
 struct SplineControlPointsPlacementStrategy : SplinePlacementStrategy
@@ -38,6 +41,8 @@ struct SplineControlPointsPlacementStrategy : SplinePlacementStrategy
 
         virtual void _SetProperty(Utf8CP key, const int & value) override;
         virtual BentleyStatus _TryGetProperty(Utf8CP key, int & value) const override;
+
+        virtual SplinePlacementStrategyType _GetType() const override { return SplinePlacementStrategyType::ControlPoints; }
 
         void _SetOrder(int const & order);
         int _GetOrder() const;
@@ -67,6 +72,8 @@ struct SplineThroughPointsPlacementStrategy : SplinePlacementStrategy
         virtual GeometryManipulationStrategyR _GetManipulationStrategyForEdit() override { return *m_manipulationStrategy; }
         SplineThroughPointsManipulationStrategyCR GetSplineThroughPointsManipulationStrategy() const { return *m_manipulationStrategy; }
         SplineThroughPointsManipulationStrategyR GetSplineThroughPointsManipulationStrategyForEdit() { return *m_manipulationStrategy; }
+
+        virtual SplinePlacementStrategyType _GetType() const override { return SplinePlacementStrategyType::ThroughPoints; }
 
         virtual void _SetStartTangent(DVec3d tangent);
         virtual void _RemoveStartTangent();
