@@ -40,7 +40,7 @@
 //  cs_NameMapper.hpp includes cs_CsvFileSupport.hpp
 //  cs_NameMapper.hpp includes csNameMapperSupport.hpp
 #include "cs_WktObject.hpp"
-#include CS_wkt.h
+#include "CS_wkt.h"
 
 extern TrcWktEleTypeMap KrcWktEleTypeMap [];
 extern TrcWktAxisValueMap KrcWktAxisValueMap [];

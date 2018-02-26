@@ -37,7 +37,7 @@
 //  cs_NameMapper.hpp includes cs_CsvFileSupport.hpp
 //  cs_NameMapper.hpp includes csNameMapperSupport.hpp
 #include "cs_WktObject.hpp"
-#include CS_wkt.h
+#include "CS_wkt.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // This array associates the WKT type enumerator with the identifying text

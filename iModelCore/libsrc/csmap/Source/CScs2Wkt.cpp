@@ -36,7 +36,7 @@
 //  cs_NameMapper.hpp includes cs_CsvFileSupport.hpp
 //  cs_NameMapper.hpp includes csNameMapperSupport.hpp
 #include "cs_WktObject.hpp"
-#include CS_wkt.h
+#include "CS_wkt.h"
 
 bool EXP_LVL3 CSgetParamNm (char* paramName,size_t paramSize,EcsNameFlavor nmFlavor,int paramCode);
 bool EXP_LVL3 CSAddParamValue (char* wktBufr,size_t bufrSize,EcsNameFlavor nmFlavor,int paramCode,double paramValue,unsigned paramFlags);
