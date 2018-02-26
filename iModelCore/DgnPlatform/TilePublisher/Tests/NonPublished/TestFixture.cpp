@@ -646,8 +646,6 @@ protected:
     GraphicPtr _CreateViewlet(GraphicBranch& branch, PlanCR, ViewletPosition const&) const { BeAssert(false); return nullptr; }
     GraphicPtr _CreateTriMesh(TriMeshArgsCR args, DgnDbR dgndb) const { return nullptr; }
     GraphicPtr _CreateIndexedPolylines(IndexedPolylineArgsCR args, DgnDbR dgndb) const { return nullptr; }
-    GraphicPtr _CreateVisibleEdges(MeshEdgeArgsCR args, DgnDbR dgndb) const { return nullptr; }
-    GraphicPtr _CreateSilhouetteEdges(SilhouetteEdgeArgsCR args, DgnDbR dgndb) const { return nullptr; }
     GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb) const { return nullptr; }
     GraphicPtr _CreateGraphicList(bvector<GraphicPtr>&& primitives, DgnDbR dgndb) const { return nullptr; }
     GraphicPtr _CreateBranch(GraphicBranch&& branch, DgnDbR dgndb, TransformCR transform, ClipVectorCP clips) const { return nullptr; }

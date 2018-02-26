@@ -1032,11 +1032,15 @@ BentleyStatus Loader::_LoadTile()
         return ERROR;
         }
 
-    GetMeshGraphicsArgs             args;
-    bvector<Render::GraphicPtr>     graphics;
+    MeshGraphicArgs args;
+    bvector<Render::GraphicPtr> graphics;
 
     for (auto const& mesh : geometry.Meshes())
-        mesh->GetGraphics (graphics, *system, args, root.GetDgnDb());
+        {
+        auto meshGraphic = mesh->GetGraphics(args, *system, root.GetDgnDb());
+        if (meshGraphic.IsValid())
+            graphics.push_back(meshGraphic);
+        }
 
     GraphicPtr batch;
     if (!graphics.empty())
