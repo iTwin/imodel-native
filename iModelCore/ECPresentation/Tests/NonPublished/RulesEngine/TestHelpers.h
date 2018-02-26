@@ -333,12 +333,13 @@ protected:
         node.SetNodeId(nodeId);
         m_nodes[nodeId] = &node;
 
-        uint64_t const* parentId = GetDataSourceInfo(node).GetVirtualParentNodeId();
+        DataSourceInfo dsInfo = GetDataSourceInfo(node);
+        uint64_t const* parentId = dsInfo.GetVirtualParentNodeId();
         bvector<Utf8String> pathFromRoot = (nullptr == parentId || 0 == *parentId) ? bvector<Utf8String>() : m_nodes[*parentId]->GetKey()->GetPathFromRoot();
         pathFromRoot.push_back(std::to_string(nodeId).c_str());
         node.SetNodeKey(*NavNodesHelper::CreateNodeKey(node, pathFromRoot));
         m_physicalHierarchy[GetHierarchyLevelInfo(node)].push_back(&node);
-        m_virtualHierarchy[GetDataSourceInfo(node)].push_back(&node);
+        m_virtualHierarchy[dsInfo].push_back(&node);
 
         if (m_cacheNodeHandler)
             m_cacheNodeHandler(node, isVirtual);

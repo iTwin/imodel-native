@@ -92,11 +92,7 @@ struct UpdateTests : ::testing::Test
         }
 
     void TearDown() override
-        {        
-        m_manager->SetCategorySupplier(nullptr);
-        m_manager->SetUpdateRecordsHandler(nullptr);
-        m_manager->UnregisterECInstanceChangeEventSource(*m_eventsSource);
-        m_manager->GetLocaters().UnregisterLocater(*m_locater);
+        {
         IECPresentationManager::RegisterImplementation(nullptr);
         delete m_manager;
 
