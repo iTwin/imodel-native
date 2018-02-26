@@ -584,15 +584,33 @@ BentleyStatus ECJsonUtilities::Point2dToJson(RapidJsonValueR json, DPoint2d pt, 
 //static
 BentleyStatus ECJsonUtilities::JsonToPoint2d(DPoint2d& pt, RapidJsonValueCR json)
     {
-    if (json.IsNull() || !json.IsObject())
+    if (json.IsNull())
         return ERROR;
 
     double x = 0.0;
     double y = 0.0;
 
-    if (SUCCESS != PointCoordinateFromJson(x, json, ECJsonSystemNames::Point::X()) ||
-        SUCCESS != PointCoordinateFromJson(y, json, ECJsonSystemNames::Point::Y()))
-        return ERROR;
+    switch (json.GetType())
+        {
+        case rapidjson::Type::kObjectType:
+            {
+            if (SUCCESS != PointCoordinateFromJson(x, json, ECJsonSystemNames::Point::X()) ||
+                SUCCESS != PointCoordinateFromJson(y, json, ECJsonSystemNames::Point::Y()))
+                return ERROR;
+            }
+            break;
+        case rapidjson::Type::kArrayType:
+            {
+            // Must be equal to the length of a valid DPoint2d array.
+            if (2 != json.Size())
+                return ERROR;
+            x = json.GetArray()[0u].GetDouble();
+            y = json.GetArray()[1u].GetDouble();
+            }
+            break;
+        default:
+            return ERROR;
+        }
 
     pt = DPoint2d::From(x, y);
     return SUCCESS;
@@ -620,17 +638,36 @@ BentleyStatus ECJsonUtilities::Point3dToJson(RapidJsonValueR json, DPoint3d pt, 
 //static
 BentleyStatus ECJsonUtilities::JsonToPoint3d(DPoint3d& pt, RapidJsonValueCR json)
     {
-    if (json.IsNull() || !json.IsObject())
+    if (json.IsNull())
         return ERROR;
 
     double x = 0.0;
     double y = 0.0;
     double z = 0.0;
 
-    if (SUCCESS != PointCoordinateFromJson(x, json, ECJsonSystemNames::Point::X()) ||
-        SUCCESS != PointCoordinateFromJson(y, json, ECJsonSystemNames::Point::Y()) ||
-        SUCCESS != PointCoordinateFromJson(z, json, ECJsonSystemNames::Point::Z()))
-        return ERROR;
+    switch (json.GetType())
+        {
+        case rapidjson::Type::kObjectType:
+            {
+            if (SUCCESS != PointCoordinateFromJson(x, json, ECJsonSystemNames::Point::X()) ||
+                SUCCESS != PointCoordinateFromJson(y, json, ECJsonSystemNames::Point::Y()) ||
+                SUCCESS != PointCoordinateFromJson(z, json, ECJsonSystemNames::Point::Z()))
+                return ERROR;
+            }
+            break;
+        case rapidjson::Type::kArrayType:
+            {
+            // Must be equal to the length of a valid DPoint3d array.
+            if (3 != json.Size())
+                return ERROR;
+            x = json.GetArray()[0u].GetDouble();
+            y = json.GetArray()[1u].GetDouble();
+            z = json.GetArray()[2u].GetDouble();
+            }
+            break;
+        default:
+            return ERROR;
+        }
 
     pt = DPoint3d::From(x, y, z);
     return SUCCESS;
