@@ -15,7 +15,7 @@ USING_NAMESPACE_GRIDS
 //---------------+---------------+---------------+---------------+---------------+------
 ArcGridSurfacePlacementStrategy::ArcGridSurfacePlacementStrategy
 (
-    BBS::ArcPlacementStrategyType arcPlacementStrategyType
+    BBS::ArcPlacementMethod arcPlacementStrategyType
 )
     : T_Super()
     , m_manipulationStrategy(ArcGridSurfaceManipulationStrategy::Create())
@@ -23,4 +23,59 @@ ArcGridSurfacePlacementStrategy::ArcGridSurfacePlacementStrategy
     {
     BeAssert(m_manipulationStrategy.IsValid());
     BeAssert(m_geometryPlacementStrategy.IsValid());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcGridSurfacePlacementStrategy::SetPlacementMethod
+(
+    BBS::ArcPlacementMethod method
+)
+    {
+    m_geometryPlacementStrategy->SetPlacementMethod(method);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcGridSurfacePlacementStrategy::SetUseSweep
+(
+    bool useSweep
+)
+    {
+    m_geometryPlacementStrategy->SetUseSweep(useSweep);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcGridSurfacePlacementStrategy::SetSweep
+(
+    double sweep
+)
+    {
+    m_geometryPlacementStrategy->SetSweep(sweep);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcGridSurfacePlacementStrategy::SetUseRadius
+(
+    bool useRadius
+)
+    {
+    m_geometryPlacementStrategy->SetUseRadius(useRadius);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcGridSurfacePlacementStrategy::SetRadius
+(
+    double radius
+)
+    {
+    m_geometryPlacementStrategy->SetRadius(radius);
     }

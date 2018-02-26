@@ -14,7 +14,7 @@ namespace BBS = BENTLEY_BUILDING_SHARED_NAMESPACE_NAME;
 //=======================================================================================
 // @bsiclass                                     Mindaugas.Butkus               02/2018
 //=======================================================================================
-struct ArcGridSurfacePlacementStrategy : public SketchGridSurfacePlacementStrategy
+struct ArcGridSurfacePlacementStrategy : public SketchGridSurfacePlacementStrategy, BBS::IArcPlacementStrategy
     {
     DEFINE_T_SUPER(SketchGridSurfacePlacementStrategy)
 
@@ -23,7 +23,7 @@ struct ArcGridSurfacePlacementStrategy : public SketchGridSurfacePlacementStrate
         BBS::ArcPlacementStrategyPtr m_geometryPlacementStrategy;
 
     protected:
-        ArcGridSurfacePlacementStrategy(BBS::ArcPlacementStrategyType arcPlacementStrategyType);
+        ArcGridSurfacePlacementStrategy(BBS::ArcPlacementMethod arcPlacementStrategyType);
 
         virtual SketchGridSurfaceManipulationStrategyCR _GetSketchGridSurfaceManipulationStrategy() const { return *m_manipulationStrategy; }
         virtual SketchGridSurfaceManipulationStrategyR _GetSketchGridSurfaceManipulationStrategyForEdit() { return *m_manipulationStrategy; }
@@ -35,7 +35,14 @@ struct ArcGridSurfacePlacementStrategy : public SketchGridSurfacePlacementStrate
         virtual BBS::GeometryPlacementStrategyPtr _TryGetGeometryPlacementStrategyForEdit() override { return m_geometryPlacementStrategy.get(); }
 
     public:
-        GRIDSTRATEGIES_EXPORT static ArcGridSurfacePlacementStrategyPtr Create(BBS::ArcPlacementStrategyType arcPlacementStrategyType) { return new ArcGridSurfacePlacementStrategy(arcPlacementStrategyType); }
+        GRIDSTRATEGIES_EXPORT static ArcGridSurfacePlacementStrategyPtr Create(BBS::ArcPlacementMethod arcPlacementStrategyType) { return new ArcGridSurfacePlacementStrategy(arcPlacementStrategyType); }
+    
+        // IArcPlacementStrategy
+        void SetPlacementMethod(BBS::ArcPlacementMethod method);
+        void SetUseSweep(bool useSweep);
+        void SetSweep(double sweep);
+        void SetUseRadius(bool useRadius);
+        void SetRadius(double radius);
     };
 
 END_GRIDS_NAMESPACE

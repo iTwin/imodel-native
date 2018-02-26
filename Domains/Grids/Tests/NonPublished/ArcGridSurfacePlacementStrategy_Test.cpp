@@ -62,7 +62,7 @@ void ArcGridSurfacePlacementStrategyTestFixture::TearDown()
 //--------------+---------------+---------------+---------------+---------------+-------- 
 TEST_F(ArcGridSurfacePlacementStrategyTestFixture, CreateSketchArcGridSurface)
     {
-    ArcGridSurfacePlacementStrategyPtr sut = ArcGridSurfacePlacementStrategy::Create(ArcPlacementStrategyType::StartMidEnd);
+    ArcGridSurfacePlacementStrategyPtr sut = ArcGridSurfacePlacementStrategy::Create(ArcPlacementMethod::StartMidEnd);
     ASSERT_TRUE(sut.IsValid());
 
     sut->SetProperty(SketchGridSurfacePlacementStrategy::prop_BottomElevation, 0.0);

@@ -40,7 +40,7 @@ struct ArcGridSurfaceManipulationStrategy : public SketchGridSurfaceManipulation
 
     public:
         GRIDSTRATEGIES_EXPORT static ArcGridSurfaceManipulationStrategyPtr Create() { return new ArcGridSurfaceManipulationStrategy(); }
-        BBS::ArcPlacementStrategyPtr CreateArcPlacementStrategy(BBS::ArcPlacementStrategyType arcPlacementStrategyType) { return BBS::ArcPlacementStrategy::Create(arcPlacementStrategyType, *m_geometryManipulationStrategy); }
+        BBS::ArcPlacementStrategyPtr CreateArcPlacementStrategy(BBS::ArcPlacementMethod arcPlacementStrategyType) { return BBS::ArcPlacementStrategy::Create(arcPlacementStrategyType, *m_geometryManipulationStrategy); }
     };
 
 END_GRIDS_NAMESPACE
