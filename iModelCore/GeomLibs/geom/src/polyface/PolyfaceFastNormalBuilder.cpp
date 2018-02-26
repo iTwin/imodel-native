@@ -78,7 +78,7 @@ void PolyfaceHeader::BuildNormalsFast (double creaseTolerance, double sizeTolera
 
     for (size_t i=0, indexCount = GetPointIndexCount(); i < indexCount; i++)
         {
-        int32_t const pointIndex = GetPointIndexCP()[i];
+        int32_t const pointIndex = abs(GetPointIndexCP()[i]);
 
         if (0 == pointIndex)
             {
@@ -90,7 +90,7 @@ void PolyfaceHeader::BuildNormalsFast (double creaseTolerance, double sizeTolera
             }
         else
             {
-            int32_t             zeroBasedIndex = abs(pointIndex) - 1;
+            int32_t             zeroBasedIndex = pointIndex - 1;
             VertexFacets        facets;
 
             facePoints.push_back(points[zeroBasedIndex]);
@@ -105,7 +105,7 @@ void PolyfaceHeader::BuildNormalsFast (double creaseTolerance, double sizeTolera
 
     for (size_t i=0, indexCount = GetPointIndexCount(); i < indexCount; i++)
         {
-        int32_t const   pointIndex = GetPointIndexCP()[i];
+        int32_t const   pointIndex = abs(GetPointIndexCP()[i]);
         
         if (0 == pointIndex)
             {
