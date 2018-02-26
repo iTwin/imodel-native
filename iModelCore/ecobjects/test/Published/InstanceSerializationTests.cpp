@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/InstanceSerializationTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -576,6 +576,62 @@ TEST_F(InstanceDeserializationTest, DeserializeManagedXmlWithBinary)
         }
 
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                02/2018
+//---------------------------------------------------------------------------------------
+TEST_F(InstanceSerializationTest, TestInstanceConversionOfPointxdWorksOnStructAndArrayJsonProperties)
+    {
+    DPoint2d const point2d = DPoint2d::From(42, -300);
+    DPoint3d const point3d = DPoint3d::From(3, 777, 101);
+    Json::Value json(Json::ValueType::objectValue);
+    ECJsonUtilities::Point2dToJson(json["point2dObj"], point2d);
+    ECJsonUtilities::Point3dToJson(json["point3dObj"], point3d);
+    json["point2dArr"] = Json::Value(Json::ValueType::arrayValue);
+    json["point2dArr"][0u] = point2d.x;
+    json["point2dArr"][1u] = point2d.y;
+    json["point3dArr"] = Json::Value(Json::ValueType::arrayValue);
+    json["point3dArr"][0u] = point3d.x;
+    json["point3dArr"][1u] = point3d.y;
+    json["point3dArr"][2u] = point3d.z;
+
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5, ECVersion::Latest);
+    ECEntityClassP ecClass;
+    EC_ASSERT_SUCCESS(schema->CreateEntityClass(ecClass, "TestClass"));
+    InSchemaClassLocater classLocater(*schema);
+    PrimitiveECPropertyP propPoint2dObj;
+    EC_ASSERT_SUCCESS(ecClass->CreatePrimitiveProperty(propPoint2dObj, "point2dObj", PRIMITIVETYPE_Point2d));
+    PrimitiveECPropertyP propPoint3dObj;
+    EC_ASSERT_SUCCESS(ecClass->CreatePrimitiveProperty(propPoint3dObj, "point3dObj", PRIMITIVETYPE_Point3d));
+    PrimitiveECPropertyP propPoint2dArr;
+    EC_ASSERT_SUCCESS(ecClass->CreatePrimitiveProperty(propPoint2dArr, "point2dArr", PRIMITIVETYPE_Point2d));
+    PrimitiveECPropertyP propPoint3dArr;
+    EC_ASSERT_SUCCESS(ecClass->CreatePrimitiveProperty(propPoint3dArr, "point3dArr", PRIMITIVETYPE_Point3d));
+    IECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    static std::function<bool(Utf8CP)> const shouldSerializeProperty = [](Utf8CP) -> bool {return true;};
+    ASSERT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*instance, json, classLocater, shouldSerializeProperty));
+
+    ECValue point2dObjVal;
+    EC_ASSERT_SUCCESS(instance->GetValue(point2dObjVal, "point2dObj"));
+    ASSERT_TRUE(point2dObjVal.IsPoint2d());
+    ASSERT_EQ(point2d, point2dObjVal.GetPoint2d());
+    ECValue point3dObjVal;
+    EC_ASSERT_SUCCESS(instance->GetValue(point3dObjVal, "point3dObj"));
+    ASSERT_TRUE(point3dObjVal.IsPoint3d());
+    ASSERT_EQ(point3d, point3dObjVal.GetPoint3d());
+
+    ECValue point2dArrVal;
+    EC_ASSERT_SUCCESS(instance->GetValue(point2dArrVal, "point2dArr"));
+    ASSERT_TRUE(point2dArrVal.IsPoint2d());
+    ASSERT_EQ(point2d, point2dArrVal.GetPoint2d());
+    ECValue point3dArrVal;
+    EC_ASSERT_SUCCESS(instance->GetValue(point3dArrVal, "point3dObj"));
+    ASSERT_TRUE(point3dArrVal.IsPoint3d());
+    ASSERT_EQ(point3d, point3dArrVal.GetPoint3d());
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/

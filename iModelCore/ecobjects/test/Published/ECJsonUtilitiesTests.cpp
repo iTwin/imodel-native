@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/ECJsonUtilitiesTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -500,6 +500,163 @@ TEST_F(ECJsonUtilitiesTestFixture, BinaryToJson)
     EXPECT_STRCASEEQ(expectedBase64Str.c_str(), rapidJson.GetString()) << expectedBase64Str;
     EXPECT_EQ(SUCCESS, ECJsonUtilities::BinaryToJson(rapidJson, byteStream.GetData(), byteStream.GetSize(), rapidJson.GetAllocator())) << expectedBase64Str;
     EXPECT_STRCASEEQ(expectedBase64Str.c_str(), rapidJson.GetString()) << expectedBase64Str;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                02/2018
+//---------------------------------------------------------------------------------------
+TEST_F(ECJsonUtilitiesTestFixture, JsonToPoint2d)
+    {
+    double x = 3.14;
+    double y = -101.0;
+    DPoint2d point2d = DPoint2d::From(x, y);
+
+    // JSON Objects
+    {
+    Json::Value objJsonCpp(Json::ValueType::objectValue);
+    objJsonCpp[ECJsonSystemNames::Point::X()] = x;
+    objJsonCpp[ECJsonSystemNames::Point::Y()] = y;
+    DPoint2d convertedObjJsonCpp;
+    ASSERT_EQ(SUCCESS, ECJsonUtilities::JsonToPoint2d(convertedObjJsonCpp, objJsonCpp));
+    EXPECT_EQ(point2d, convertedObjJsonCpp);
+
+    rapidjson::Document objRapidJson(rapidjson::Type::kObjectType);
+    objRapidJson.AddMember(rapidjson::StringRef(ECJsonSystemNames::Point::X()), x, objRapidJson.GetAllocator());
+    objRapidJson.AddMember(rapidjson::StringRef(ECJsonSystemNames::Point::Y()), y, objRapidJson.GetAllocator());
+    DPoint2d convertedObjRapidJson;
+    ASSERT_EQ(SUCCESS, ECJsonUtilities::JsonToPoint2d(convertedObjRapidJson, objRapidJson));
+    EXPECT_EQ(point2d, convertedObjRapidJson);
+    }
+
+    // JSON Arrays
+    {
+    Json::Value arrJsonCppValid(Json::ValueType::arrayValue);
+    arrJsonCppValid[0u] = x;
+    arrJsonCppValid[1u] = y;
+    DPoint2d convertedArrJsonCppValid;
+    ASSERT_EQ(SUCCESS, ECJsonUtilities::JsonToPoint2d(convertedArrJsonCppValid, arrJsonCppValid));
+    EXPECT_EQ(point2d, convertedArrJsonCppValid);
+
+    rapidjson::Document arrRapidJsonValid(rapidjson::Type::kArrayType);
+    arrRapidJsonValid.PushBack(x, arrRapidJsonValid.GetAllocator());
+    arrRapidJsonValid.PushBack(y, arrRapidJsonValid.GetAllocator());
+    DPoint2d convertedArrRapidJsonValid;
+    ASSERT_EQ(SUCCESS, ECJsonUtilities::JsonToPoint2d(convertedArrRapidJsonValid, arrRapidJsonValid));
+    EXPECT_EQ(point2d, convertedArrRapidJsonValid);
+
+    // Json arrays with length != 2 should fail.
+    Json::Value arrJsonCppLenTooShort(Json::ValueType::arrayValue);
+    arrJsonCppLenTooShort[0u] = x;
+    DPoint2d convertedArrJsonCppLenTooShort;
+    ASSERT_NE(SUCCESS, ECJsonUtilities::JsonToPoint2d(convertedArrJsonCppLenTooShort, arrJsonCppLenTooShort));
+
+    rapidjson::Document arrRapidJsonLenTooShort(rapidjson::Type::kArrayType);
+    arrRapidJsonLenTooShort.PushBack(x, arrRapidJsonLenTooShort.GetAllocator());
+    DPoint2d convertedArrRapidJsonLenTooShort;
+    ASSERT_NE(SUCCESS, ECJsonUtilities::JsonToPoint2d(convertedArrRapidJsonLenTooShort, arrRapidJsonLenTooShort));
+
+    // Json arrays with length != 2 should fail.
+    Json::Value arrJsonCppLenTooLong(Json::ValueType::arrayValue);
+    arrJsonCppLenTooLong[0u] = x;
+    arrJsonCppLenTooLong[1u] = y;
+    arrJsonCppLenTooLong[2u] = (double)0xBAD;
+    DPoint2d convertedArrJsonCppLenTooLong;
+    ASSERT_NE(SUCCESS, ECJsonUtilities::JsonToPoint2d(convertedArrJsonCppLenTooLong, arrJsonCppLenTooLong));
+
+    rapidjson::Document arrRapidJsonLenTooLong(rapidjson::Type::kArrayType);
+    arrRapidJsonLenTooLong.PushBack(x, arrRapidJsonLenTooLong.GetAllocator());
+    arrRapidJsonLenTooLong.PushBack(y, arrRapidJsonLenTooLong.GetAllocator());
+    arrRapidJsonLenTooLong.PushBack((double)0xBAD, arrRapidJsonLenTooLong.GetAllocator());
+    DPoint2d convertedArrRapidJsonLenTooLong;
+    ASSERT_NE(SUCCESS, ECJsonUtilities::JsonToPoint2d(convertedArrRapidJsonLenTooLong, arrRapidJsonLenTooLong));
+
+    // null values should fail.
+    Json::Value nullJsonCpp(Json::nullValue);
+    DPoint2d convertedNullJsonCpp;
+    EXPECT_NE(SUCCESS, ECJsonUtilities::JsonToPoint2d(convertedNullJsonCpp, nullJsonCpp));
+
+    rapidjson::Document nullRapidJson(rapidjson::Type::kNullType);
+    DPoint2d convertedNullRapidJson;
+    ASSERT_NE(SUCCESS, ECJsonUtilities::JsonToPoint2d(convertedNullRapidJson, nullRapidJson));
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                02/2018
+//---------------------------------------------------------------------------------------
+TEST_F(ECJsonUtilitiesTestFixture, JsonToPoint3d)
+    {
+    double x = 3.14;
+    double y = -101.0;
+    double z = 0.25;
+    DPoint3d point3d = DPoint3d::From(x, y, z);
+
+    // JSON Objects
+    {
+    Json::Value objJsonCpp(Json::ValueType::objectValue);
+    objJsonCpp[ECJsonSystemNames::Point::X()] = x;
+    objJsonCpp[ECJsonSystemNames::Point::Y()] = y;
+    objJsonCpp[ECJsonSystemNames::Point::Z()] = z;
+    DPoint3d convertedObjJsonCpp;
+    ASSERT_EQ(SUCCESS, ECJsonUtilities::JsonToPoint3d(convertedObjJsonCpp, objJsonCpp));
+    EXPECT_EQ(point3d, convertedObjJsonCpp);
+
+    rapidjson::Document objRapidJson(rapidjson::Type::kObjectType);
+    objRapidJson.AddMember(rapidjson::StringRef(ECJsonSystemNames::Point::X()), x, objRapidJson.GetAllocator());
+    objRapidJson.AddMember(rapidjson::StringRef(ECJsonSystemNames::Point::Y()), y, objRapidJson.GetAllocator());
+    objRapidJson.AddMember(rapidjson::StringRef(ECJsonSystemNames::Point::Z()), z, objRapidJson.GetAllocator());
+    DPoint3d convertedObjRapidJson;
+    ASSERT_EQ(SUCCESS, ECJsonUtilities::JsonToPoint3d(convertedObjRapidJson, objRapidJson));
+    EXPECT_EQ(point3d, convertedObjRapidJson);
+    }
+
+    // JSON Arrays
+    {
+    Json::Value arrJsonCpp(Json::ValueType::arrayValue);
+    arrJsonCpp[0u] = x;
+    arrJsonCpp[1u] = y;
+    arrJsonCpp[2u] = z;
+    DPoint3d convertedArrJsonCpp;
+    ASSERT_EQ(SUCCESS, ECJsonUtilities::JsonToPoint3d(convertedArrJsonCpp, arrJsonCpp));
+    EXPECT_EQ(point3d, convertedArrJsonCpp);
+
+    // Json arrays with length != 3 should fail.
+    Json::Value arrJsonCppLenTooShort(Json::ValueType::arrayValue);
+    arrJsonCppLenTooShort[0u] = x;
+    arrJsonCppLenTooShort[1u] = y;
+    DPoint3d convertedArrJsonCppLenTooShort;
+    ASSERT_NE(SUCCESS, ECJsonUtilities::JsonToPoint3d(convertedArrJsonCppLenTooShort, arrJsonCppLenTooShort));
+
+    rapidjson::Document arrRapidJsonValid(rapidjson::Type::kArrayType);
+    arrRapidJsonValid.PushBack(x, arrRapidJsonValid.GetAllocator());
+    arrRapidJsonValid.PushBack(y, arrRapidJsonValid.GetAllocator());
+    arrRapidJsonValid.PushBack(z, arrRapidJsonValid.GetAllocator());
+    DPoint3d convertedArrRapidJsonValid;
+    ASSERT_EQ(SUCCESS, ECJsonUtilities::JsonToPoint3d(convertedArrRapidJsonValid, arrRapidJsonValid));
+    EXPECT_EQ(point3d, convertedArrRapidJsonValid);
+
+    // Json arrays with length != 3 should fail.
+    Json::Value arrJsonCppLenTooLong(Json::ValueType::arrayValue);
+    arrJsonCppLenTooLong[0u] = x;
+    arrJsonCppLenTooLong[1u] = y;
+    arrJsonCppLenTooLong[2u] = y;
+    arrJsonCppLenTooLong[3u] = (double)0xBAD;
+    DPoint3d convertedArrJsonCppLenTooLong;
+    ASSERT_NE(SUCCESS, ECJsonUtilities::JsonToPoint3d(convertedArrJsonCppLenTooLong, arrJsonCppLenTooLong));
+
+    rapidjson::Document arrRapidJsonLenTooLong(rapidjson::Type::kArrayType);
+    arrRapidJsonLenTooLong.PushBack(x, arrRapidJsonLenTooLong.GetAllocator());
+    arrRapidJsonLenTooLong.PushBack(y, arrRapidJsonLenTooLong.GetAllocator());
+    arrRapidJsonLenTooLong.PushBack(z, arrRapidJsonLenTooLong.GetAllocator());
+    arrRapidJsonLenTooLong.PushBack((double)0xBAD, arrRapidJsonLenTooLong.GetAllocator());
+    DPoint3d convertedArrRapidJsonLenTooLong;
+    ASSERT_NE(SUCCESS, ECJsonUtilities::JsonToPoint3d(convertedArrRapidJsonLenTooLong, arrRapidJsonLenTooLong));
+
+    // null values should fail.
+    Json::Value nullJsonCpp(Json::nullValue);
+    DPoint3d convertedNullJsonCpp;
+    EXPECT_NE(SUCCESS, ECJsonUtilities::JsonToPoint3d(convertedNullJsonCpp, nullJsonCpp));
+    }
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

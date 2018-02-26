@@ -236,12 +236,33 @@ BentleyStatus ECJsonUtilities::Point2dToJson(Json::Value& json, DPoint2d pt)
 //static
 BentleyStatus ECJsonUtilities::JsonToPoint2d(DPoint2d& pt, Json::Value const& json)
     {
+    if (json.isNull())
+        return ERROR;
+
     double x = 0.0;
     double y = 0.0;
 
-    if (SUCCESS != PointCoordinateFromJson(x, json, json_x()) ||
-        SUCCESS != PointCoordinateFromJson(y, json, json_y()))
-        return ERROR;
+    switch (json.type())
+        {
+        case Json::ValueType::objectValue:
+            {
+            if (SUCCESS != PointCoordinateFromJson(x, json, json_x()) ||
+                SUCCESS != PointCoordinateFromJson(y, json, json_y()))
+                return ERROR;
+            }
+            break;
+        case Json::ValueType::arrayValue:
+            {
+            // Must be equal to the length of a valid DPoint2d array.
+            if (2 != json.size())
+                return ERROR;
+            x = json[0u].asDouble();
+            y = json[1u].asDouble();
+            }
+            break;
+        default:
+            return ERROR;
+        }
 
     pt = DPoint2d::From(x, y);
     return SUCCESS;
@@ -266,14 +287,36 @@ BentleyStatus ECJsonUtilities::Point3dToJson(Json::Value& json, DPoint3d pt)
 //static
 BentleyStatus ECJsonUtilities::JsonToPoint3d(DPoint3d& pt, Json::Value const& json)
     {
+    if (json.isNull())
+        return ERROR;
+
     double x = 0.0;
     double y = 0.0;
     double z = 0.0;
 
-    if (SUCCESS != PointCoordinateFromJson(x, json, json_x()) ||
-        SUCCESS != PointCoordinateFromJson(y, json, json_y()) ||
-        SUCCESS != PointCoordinateFromJson(z, json, json_z()))
-        return ERROR;
+    switch (json.type())
+        {
+        case Json::ValueType::objectValue:
+            {
+            if (SUCCESS != PointCoordinateFromJson(x, json, json_x()) ||
+                SUCCESS != PointCoordinateFromJson(y, json, json_y()) ||
+                SUCCESS != PointCoordinateFromJson(z, json, json_z()))
+                return ERROR;
+            }
+            break;
+        case Json::ValueType::arrayValue:
+            {
+            // Must be equal to the length of a valid DPoint3d array.
+            if (3 != json.size())
+                return ERROR;
+            x = json[0u].asDouble();
+            y = json[1u].asDouble();
+            z = json[2u].asDouble();
+            }
+            break;
+        default:
+            return ERROR;
+        }
 
     pt = DPoint3d::From(x, y, z);
     return SUCCESS;
@@ -541,15 +584,33 @@ BentleyStatus ECJsonUtilities::Point2dToJson(RapidJsonValueR json, DPoint2d pt, 
 //static
 BentleyStatus ECJsonUtilities::JsonToPoint2d(DPoint2d& pt, RapidJsonValueCR json)
     {
-    if (json.IsNull() || !json.IsObject())
+    if (json.IsNull())
         return ERROR;
 
     double x = 0.0;
     double y = 0.0;
 
-    if (SUCCESS != PointCoordinateFromJson(x, json, ECJsonSystemNames::Point::X()) ||
-        SUCCESS != PointCoordinateFromJson(y, json, ECJsonSystemNames::Point::Y()))
-        return ERROR;
+    switch (json.GetType())
+        {
+        case rapidjson::Type::kObjectType:
+            {
+            if (SUCCESS != PointCoordinateFromJson(x, json, ECJsonSystemNames::Point::X()) ||
+                SUCCESS != PointCoordinateFromJson(y, json, ECJsonSystemNames::Point::Y()))
+                return ERROR;
+            }
+            break;
+        case rapidjson::Type::kArrayType:
+            {
+            // Must be equal to the length of a valid DPoint2d array.
+            if (2 != json.Size())
+                return ERROR;
+            x = json.GetArray()[0u].GetDouble();
+            y = json.GetArray()[1u].GetDouble();
+            }
+            break;
+        default:
+            return ERROR;
+        }
 
     pt = DPoint2d::From(x, y);
     return SUCCESS;
@@ -577,17 +638,36 @@ BentleyStatus ECJsonUtilities::Point3dToJson(RapidJsonValueR json, DPoint3d pt, 
 //static
 BentleyStatus ECJsonUtilities::JsonToPoint3d(DPoint3d& pt, RapidJsonValueCR json)
     {
-    if (json.IsNull() || !json.IsObject())
+    if (json.IsNull())
         return ERROR;
 
     double x = 0.0;
     double y = 0.0;
     double z = 0.0;
 
-    if (SUCCESS != PointCoordinateFromJson(x, json, ECJsonSystemNames::Point::X()) ||
-        SUCCESS != PointCoordinateFromJson(y, json, ECJsonSystemNames::Point::Y()) ||
-        SUCCESS != PointCoordinateFromJson(z, json, ECJsonSystemNames::Point::Z()))
-        return ERROR;
+    switch (json.GetType())
+        {
+        case rapidjson::Type::kObjectType:
+            {
+            if (SUCCESS != PointCoordinateFromJson(x, json, ECJsonSystemNames::Point::X()) ||
+                SUCCESS != PointCoordinateFromJson(y, json, ECJsonSystemNames::Point::Y()) ||
+                SUCCESS != PointCoordinateFromJson(z, json, ECJsonSystemNames::Point::Z()))
+                return ERROR;
+            }
+            break;
+        case rapidjson::Type::kArrayType:
+            {
+            // Must be equal to the length of a valid DPoint3d array.
+            if (3 != json.Size())
+                return ERROR;
+            x = json.GetArray()[0u].GetDouble();
+            y = json.GetArray()[1u].GetDouble();
+            z = json.GetArray()[2u].GetDouble();
+            }
+            break;
+        default:
+            return ERROR;
+        }
 
     pt = DPoint3d::From(x, y, z);
     return SUCCESS;
@@ -663,9 +743,9 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, J
 // @bsimethod                                    Victor.Cushman                02/2018
 //---------------------------------------------------------------------------------------
 BentleyStatus JsonECInstanceConverter::JsonToECInstance(ECN::IECInstanceR instance, Json::Value const& jsonValue, IECClassLocaterR classLocater, std::function<bool(Utf8CP)> shouldSerializeProperty)
-{
+    {
     return JsonToECInstance(instance, jsonValue, instance.GetClass(), Utf8String(), classLocater, false, nullptr, shouldSerializeProperty);
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 2/2013
