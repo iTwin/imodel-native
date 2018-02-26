@@ -95,14 +95,22 @@ static YawPitchRollAngles YawPitchRollFromJson(JsonValueCR val)
 static DPoint3d ToDPoint3d(JsonValueCR inValue) 
     {
     DPoint3d point;
-    point.x = inValue[0].asDouble();
-    point.y = inValue[1].asDouble();
-    point.z = inValue[2].asDouble();
+    if (inValue.isArray())
+        {
+        point.x = inValue[0].asDouble();
+        point.y = inValue[1].asDouble();
+        point.z = inValue[2].asDouble();
+        }
+    else
+        {
+        point.x = inValue["x"].asDouble();
+        point.y = inValue["y"].asDouble();
+        point.z = inValue["z"].asDouble();
+        }
     return point;
     }
 
 static void DPoint3dFromJson(DPoint3dR point, Json::Value const& inValue) {point = ToDPoint3d(inValue);}
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
@@ -119,8 +127,16 @@ static void DPoint3dToJson(JsonValueR outValue, DPoint3dCR point)
 //---------------------------------------------------------------------------------------
 static void Point2dFromJson(Point2dR point, JsonValueCR inValue)
     {
-    point.x = inValue[0].asInt();
-    point.y = inValue[1].asInt();
+    if (inValue.isArray())
+        {
+        point.x = inValue[0].asInt();
+        point.y = inValue[1].asInt();
+        }
+    else
+        {
+        point.x = inValue["x"].asInt();
+        point.y = inValue["y"].asInt();
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -137,8 +153,16 @@ static void Point2dToJson(JsonValueR outValue, Point2dCR point)
 //---------------------------------------------------------------------------------------
 static void DPoint2dFromJson(DPoint2dR point, JsonValueCR inValue)
     {
-    point.x = inValue[0].asDouble();
-    point.y = inValue[1].asDouble();
+    if (inValue.isArray())
+        {
+        point.x = inValue[0].asDouble();
+        point.y = inValue[1].asDouble();
+        }
+    else
+        {
+        point.x = inValue["x"].asDouble();
+        point.y = inValue["y"].asDouble();
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -170,9 +194,18 @@ static void DVec3dFromJson(DVec3dR vec, JsonValueCR inValue)  {DPoint3dFromJson(
 static DVec3d ToDVec3d(JsonValueCR inValue) 
     {
     DVec3d vec;
-    vec.x = inValue[0].asDouble();
-    vec.y = inValue[1].asDouble();
-    vec.z = inValue[2].asDouble();
+    if (inValue.isArray())
+        {
+        vec.x = inValue[0].asDouble();
+        vec.y = inValue[1].asDouble();
+        vec.z = inValue[2].asDouble();
+        }
+    else
+        {
+        vec.x = inValue["x"].asDouble();
+        vec.y = inValue["y"].asDouble();
+        vec.z = inValue["z"].asDouble();
+        }
     return vec;
     }
 

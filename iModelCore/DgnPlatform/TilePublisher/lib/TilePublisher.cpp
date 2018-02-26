@@ -19,7 +19,7 @@ USING_NAMESPACE_TILETREE_IO
 
 // Vector classifiers are original implementation -- we'll continue to write them until
 // the batched model classifiers are functional and merged into master.
-static bool s_writeVectorClassifier = true;
+static bool s_writeVectorClassifier = false;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
@@ -3799,7 +3799,7 @@ void    PublisherContext::GetViewedModelsFromView (DgnModelIdSet& viewedModels, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR generator, DRange3dR rootRange, double toleranceInMeters, bool surfacesOnly, ITileGenerationProgressMonitorR progressMeter)
     {
-    DgnModelIdSet viewedModels, classifierModels;
+    DgnModelIdSet viewedModels;
 
     for (auto const& viewId : m_viewIds)
         GetViewedModelsFromView (viewedModels, viewId);

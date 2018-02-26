@@ -518,8 +518,7 @@ static void populateSheetTile(TTile* tile, uint32_t depth, SceneContextR context
 
     // add texture in the tree's viewport to a graphic
     GraphicParams gfParams = GraphicParams::FromSymbology(tree.m_tileColor, tree.m_tileColor, 0);
-    auto graphic = renderSys->_CreateTile(*viewport->m_texture, tile->m_corners, *viewport->m_db, gfParams);
-    tile->m_graphic = graphic;
+    tile->m_graphics = renderSys->_CreateSheetTile(*viewport->m_texture, tile->m_corners, *viewport->m_db, gfParams, tree.m_graphicsClip.get());
     tile->SetIsReady();
     }
 
@@ -686,8 +685,13 @@ Tile::SelectParent TTile::_SelectTiles(bvector<TileTree::TileCPtr>& selected, Ti
 void TTile::_DrawGraphics(DrawArgsR args) const
     {
     BeAssert(IsReady());
-    if (m_graphic.IsValid())
-        args.m_graphics.Add(*m_graphic);
+    for (auto& graphic : m_graphics)
+        {
+        if (graphic.IsValid())
+            {
+            args.m_graphics.Add(*graphic);
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -745,8 +749,11 @@ TRoot::TRoot(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId att
     auto& box = attach->GetPlacement().GetElementBox();
     AxisAlignedBox3d range = attach->GetPlacement().CalculateRange();
 
+    int32_t biasDistance = Render::Target::DepthFromDisplayPriority(attach->GetDisplayPriority());
+    m_biasDistance = double(biasDistance);
     DPoint3d org = range.low;
-    org.z = 0.0;
+
+    org.z = 0.0; // ###TODO m_biasDistance;?
     Transform trans = Transform::From(org);
     trans.ScaleMatrixColumns(box.GetWidth() * m_scale.x, box.GetHeight() * m_scale.y, 1.0);
     SetLocation(trans);
@@ -759,8 +766,10 @@ TRoot::TRoot(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId att
     if (!m_clip.IsValid())
         m_clip = new ClipVector(ClipPrimitive::CreateFromShape(RectanglePoints(range.low.x, range.low.y, range.high.x, range.high.y), 5, false, nullptr, nullptr, nullptr).get());
 
-	int32_t biasDistance = Render::Target::DepthFromDisplayPriority(attach->GetDisplayPriority());
-	m_biasDistance = double(biasDistance);
+    Transform fromParent;
+    fromParent.InverseOf(m_viewport->m_toParent);
+    m_graphicsClip = m_clip->Clone(&fromParent);
+
     m_viewport->m_clips = m_clip;
 
     SetExpirationTime(BeDuration::Seconds(5)); // only save unused sheet tiles for 5 seconds
