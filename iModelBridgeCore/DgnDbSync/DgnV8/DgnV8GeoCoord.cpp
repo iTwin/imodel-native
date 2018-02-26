@@ -466,7 +466,7 @@ static bool haveAnySpatialData(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            SpatialConverterBase::ComputeTransformAndGlobalOriginFromRootModel (DgnV8ModelCR rootModel)
+void            SpatialConverterBase::ComputeTransformAndGlobalOriginFromRootModel (DgnV8ModelCR rootModel, bool adoptSourceGoIfBimIsEmpty)
     {
     double scaleFactor = ComputeUnitsScaleFactor (rootModel);
 
@@ -481,7 +481,7 @@ void            SpatialConverterBase::ComputeTransformAndGlobalOriginFromRootMod
     // Get Source global origin in meters
     m_rootTrans.Multiply (sourceGlobalOrigin);
 
-    if (IsCreatingNewDgnDb() || !haveAnySpatialData(GetDgnDb()))
+    if (IsCreatingNewDgnDb() || (adoptSourceGoIfBimIsEmpty && !haveAnySpatialData(GetDgnDb())))
         {
         // If we are creating a new BIM file, we set the scaling and set the BIM's file to the DgnV8 model's (scaled) global origin.
         GetDgnDb().GeoLocation().SetGlobalOrigin(sourceGlobalOrigin);
@@ -572,7 +572,7 @@ DgnV8Api::DgnFileStatus SpatialConverterBase::_ComputeCoordinateSystemTransform(
     if (!m_outputDgnGcs.IsValid())
         {
         // We don't have an existing GCS transform to worry about. Compute the transform and set the Global Origin if it's a new GCS.
-        ComputeTransformAndGlobalOriginFromRootModel (*rootModel);
+        ComputeTransformAndGlobalOriginFromRootModel (*rootModel, true);
 
         // If the root DGN model DOES have a GCS, it becomes the BIM files's GCS. This is a common case.
         if (sourceGcs.IsValid())             
@@ -588,7 +588,7 @@ DgnV8Api::DgnFileStatus SpatialConverterBase::_ComputeCoordinateSystemTransform(
     if (!sourceGcs.IsValid())             
         {
         // No sourceGcs from either the model or command line. We must assume that root DGN model's origin lines up with 0,0,0 of the BIM file. Just apply units scaling.
-        ComputeTransformAndGlobalOriginFromRootModel (*rootModel);
+        ComputeTransformAndGlobalOriginFromRootModel (*rootModel, true);
 /*<==*/ return DgnV8Api::DGNFILE_STATUS_Success;
         }
     
@@ -677,7 +677,7 @@ DgnV8Api::DgnFileStatus SpatialConverterBase::_ComputeCoordinateSystemTransform(
     rootModel->ReloadNestedDgnAttachments (true);
 
     // We have reprojected the root model to the correct GCS, but we still have to account for the global origin and scaling.
-    ComputeTransformAndGlobalOriginFromRootModel (*rootModel);
+    ComputeTransformAndGlobalOriginFromRootModel (*rootModel, false);
 
     return DgnV8Api::DGNFILE_STATUS_Success;
     }

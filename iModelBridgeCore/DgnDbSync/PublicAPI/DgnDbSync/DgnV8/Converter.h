@@ -1219,7 +1219,7 @@ public:
     //! convert the grids for a view
     void ConvertViewGrids(ViewDefinitionPtr view, DgnV8ViewInfoCR viewInfo, DgnV8ModelR v8Model, double toMeters);
     //! convert the auxiliary coordinate system for a view
-    void ConvertViewACS(ViewDefinitionPtr view, DgnV8ViewInfoCR viewInfo, DgnV8ModelR v8Model, double toMeters, Utf8StringCR);
+    void ConvertViewACS(ViewDefinitionPtr view, DgnV8ViewInfoCR viewInfo, DgnV8ModelR v8Model, TransformCR, Utf8StringCR);
 
     //! Convert a View
     BentleyStatus ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo, Utf8StringCR defaultName, Utf8StringCR defaultDescription, BentleyApi::TransformCR, ViewFactory&);
@@ -2328,7 +2328,7 @@ public:
     DGNDBSYNC_EXPORT virtual DgnV8Api::DgnFileStatus _ComputeCoordinateSystemTransform();
 
     //! Called from to compute the transform and global origin from the source root model to the BIM file's coordinates.
-    DGNDBSYNC_EXPORT void ComputeTransformAndGlobalOriginFromRootModel(DgnV8ModelCR rootModel);
+    DGNDBSYNC_EXPORT void ComputeTransformAndGlobalOriginFromRootModel(DgnV8ModelCR rootModel, bool adoptSourceGoIfBimIsEmpty);
 
     DgnGCS* GetDgnGcs() {return m_outputDgnGcs.get();}
     //! @}

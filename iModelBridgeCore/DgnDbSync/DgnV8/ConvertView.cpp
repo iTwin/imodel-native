@@ -488,7 +488,7 @@ void Converter::ConvertViewGrids(ViewDefinitionPtr view, DgnV8ViewInfoCR viewInf
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::ConvertViewACS(ViewDefinitionPtr view, DgnV8ViewInfoCR viewInfo, DgnV8ModelR v8Model, double toMeters, Utf8StringCR name)
+void Converter::ConvertViewACS(ViewDefinitionPtr view, DgnV8ViewInfoCR viewInfo, DgnV8ModelR v8Model, TransformCR toMeters, Utf8StringCR name)
     {
     // Set ACS from V8 view if it's not just the default ACS...
     DgnV8Api::IAuxCoordSys* v8acs = viewInfo.GetAuxCoordinateSystem();
@@ -513,10 +513,11 @@ void Converter::ConvertViewACS(ViewDefinitionPtr view, DgnV8ViewInfoCR viewInfo,
 
             v8acs->GetRotation(acsRMatrix);
             v8acs->GetOrigin(acsOrigin);
-            acsOrigin.Scale(acsOrigin, toMeters); // Account for uor->meter scale...
+            DPoint3d acsOriginMeters;
+            toMeters.Multiply(acsOriginMeters, (DPoint3dCR)acsOrigin); // Account for uor->meter scale, global origin differences, GCS transform, ...
 
             acsElm->SetType((ACSType) v8acs->GetType());
-            acsElm->SetOrigin((DPoint3dCR) acsOrigin);
+            acsElm->SetOrigin(acsOriginMeters);
             acsElm->SetRotation((RotMatrixCR) acsRMatrix);
 
             Bentley::WString acsDescrV8 = v8acs->GetDescription();
@@ -623,18 +624,13 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
         }
 
     // View geometry
-    double toMeters = ComputeUnitsScaleFactor(*v8Model);
-    BeAssert(0.0 < toMeters);
-    parms.m_origin = DPoint3d::FromScale((DPoint3dCR)viewInfo.GetOrigin(), toMeters);
+    trans.Multiply(parms.m_origin, (DPoint3dCR)viewInfo.GetOrigin());
 
     // TFS#341830 - Some DgnV8 files have views that claim to be both defined and on, however have unusable geominfo. Attempt to detect and inject something that won't cause crashes later.
-    Bentley::DPoint3d delta = viewInfo.GetDelta();
-    if (delta.Magnitude() < mgds_fc_epsilon)
-        delta.Init(DgnUnits::OneMeter(), DgnUnits::OneMeter(), DgnUnits::OneMeter());
+    if (viewInfo.GetDelta().Magnitude() < mgds_fc_epsilon)
+        parms.m_extents.Init(DgnUnits::OneMeter(), DgnUnits::OneMeter(), DgnUnits::OneMeter());
     else
-        delta = Bentley::DPoint3d::FromScale(delta, toMeters);
-
-    parms.m_extents = (DVec3dCR)delta;
+        trans.Multiply(parms.m_extents, (DVec3dCR)viewInfo.GetDelta());
 
     Bentley::RotMatrix v8Rotation = viewInfo.GetRotation();
     if (v8Rotation.MaxAbs() < mgds_fc_epsilon)
@@ -647,8 +643,8 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
         return BSIERROR;
 
     ConvertViewClips(view, viewInfo, *v8Model, trans);
-    ConvertViewGrids(view, viewInfo, *v8Model, toMeters);
-    ConvertViewACS(view, viewInfo, *v8Model, toMeters, name);
+    ConvertViewGrids(view, viewInfo, *v8Model, ComputeUnitsScaleFactor(*v8Model));
+    ConvertViewACS(view, viewInfo, *v8Model, trans, name);
 
     if (!view->Insert().IsValid())
         {
