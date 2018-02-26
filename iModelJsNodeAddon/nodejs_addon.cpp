@@ -624,16 +624,11 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
 
         Json::Value jsonChangeSetTokens = Json::Value::From(changeSetTokens);
 
-        bool isReadonly = false;
-        Utf8String dbGuid;
-        BeFileName dbFileName;
+        bool isReadonly = m_dgndb->IsReadonly();
+        Utf8String dbGuid = m_dgndb->GetDbGuid().ToString();;
+        BeFileName dbFileName(m_dgndb->GetDbFileName(), true);
         if (containsSchemaChanges)
-            {
-            isReadonly = m_dgndb->IsReadonly();
-            dbGuid = m_dgndb->GetDbGuid().ToString();
-            dbFileName.SetNameUtf8(m_dgndb->GetDbFileName());
             CloseDgnDb();
-            }
             
         DbResult result = AddonUtils::ProcessChangeSets(m_dgndb, jsonChangeSetTokens, (RevisionProcessOption)processOptions, dbGuid, dbFileName);
         if (BE_SQLITE_OK == result && containsSchemaChanges)
