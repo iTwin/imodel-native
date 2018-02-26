@@ -211,6 +211,103 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasWithDeletedPropertyPassedToDat
     EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("UpdateSchema"));
     }
 
+ECSchemaPtr CreateSchema(Utf8StringR schemaXml, ECSchemaReadContextR context)
+    {
+    ECSchemaPtr schemaOut;
+    ECSchema::ReadFromXmlString(schemaOut, schemaXml.c_str(), context);
+    return schemaOut;
+    }
+
+BeFileName GetSchemaPath(Utf8StringR schemaXml, WCharCP fileName, ECSchemaReadContextR context)
+    {
+    BeFileName schemaPath(GetTestsTempDir().AppendToPath(fileName));
+    SchemaWriteStatus status = CreateSchema(schemaXml, context)->WriteToXmlFile(schemaPath);
+    EXPECT_EQ(SCHEMA_WRITE_STATUS_Success, status); 
+    return schemaPath;
+    }
+
+SchemaReadStatus LoadSchema(std::shared_ptr<DataSourceCache> cache, BeFileNameCR schemaPath, ECSchemaPtr& loadedSchemaOut)
+    {
+    auto context = ECSchemaReadContext::CreateContext();
+    context->AddSchemaPath(schemaPath.GetDirectoryName());
+    context->AddSchemaLocater(cache->GetAdapter().GetECDb().GetEC().GetSchemaLocater());
+
+    SchemaReadStatus status = ECSchema::ReadFromXmlFile(loadedSchemaOut, schemaPath.GetName(), *context);
+    return status;
+    }
+
+TEST_F(DataSourceCacheTests, UpdateSchemas_DerivedSchemasWithAddedPropertyPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable_KnownIssue)
+    {
+    auto cache = GetTestCache();
+    auto context = ECSchemaReadContext::CreateContext();
+    
+    //Add Base Class Schema and Derived Class Schema
+    Utf8String baseSchemaXml =
+        R"xml(<ECSchema schemaName="BaseSchema" nameSpacePrefix="Base" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName = "TestClass">
+                <ECProperty propertyName = "A" typeName = "string" />
+            </ECClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr baseSchema;
+    auto baseSchemaPath = GetSchemaPath(baseSchemaXml, L"BaseSchema", *context);
+    ASSERT_EQ(SCHEMA_READ_STATUS_Success, LoadSchema(cache, baseSchemaPath, baseSchema));
+    ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {baseSchema}));
+    ASSERT_TRUE(nullptr != cache->GetAdapter().GetECSchema("BaseSchema"));
+
+    Utf8String derivedSchema1Xml =
+        R"xml(<ECSchema schemaName="DynamicSchema" nameSpacePrefix="Dynamic" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="BaseSchema" version="01.00" prefix="Base" />
+            <ECClass typeName = "TestSubClass">
+                <BaseClass>Base:TestClass</BaseClass>
+                <ECProperty propertyName = "B" typeName = "string" />
+                <ECProperty propertyName = "C" typeName = "string" />
+            </ECClass>
+    </ECSchema>)xml";
+
+    ECSchemaPtr derivedSchema;
+    auto derivedSchemaPath = GetSchemaPath(derivedSchema1Xml, L"DynamicSchema", *context);
+    ASSERT_EQ(SCHEMA_READ_STATUS_Success, LoadSchema(cache, derivedSchemaPath, derivedSchema));
+    ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {derivedSchema}));
+    ASSERT_TRUE(nullptr != cache->GetAdapter().GetECSchema("DynamicSchema"));
+    
+    //Add object with Derived Schema class
+    StubInstances instances;
+    instances.Add({ "DynamicSchema.TestSubClass", "Foo" }, { { "A", "ValueA" }, { "B", "ValueB" }, { "C", "ValueC" } });
+    ASSERT_EQ(SUCCESS, cache->CacheInstanceAndLinkToRoot({ "DynamicSchema.TestSubClass", "Foo" }, instances.ToWSObjectsResponse(), "foo_root"));
+    EXPECT_TRUE(cache->GetCachedObjectInfo({ "DynamicSchema.TestSubClass", "Foo" }).IsFullyCached());
+    ASSERT_TRUE(cache->FindInstance({ "DynamicSchema.TestSubClass", "Foo" }).IsValid());
+    instances.Clear();
+
+    //Add property to Schema class (Update Dynamic Schema)
+    Utf8String derivedSchema2Xml =
+        R"xml(<ECSchema schemaName="DynamicSchema" nameSpacePrefix="Dynamic" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        <ECSchemaReference name="BaseSchema" version="01.00" prefix="Base" />
+        <ECClass typeName = "TestSubClass">
+            <BaseClass>Base:TestClass</BaseClass>
+            <ECProperty propertyName = "B" typeName = "string" />
+            <ECProperty propertyName = "C" typeName = "string" />
+            <ECProperty propertyName = "D" typeName = "string" />
+        </ECClass>
+    </ECSchema>)xml";
+    
+    ECSchemaPtr derivedSchema2;
+    auto derivedSchema2Path = GetSchemaPath(derivedSchema2Xml, L"DynamicSchema", *context);
+    ASSERT_EQ(SCHEMA_READ_STATUS_Success, LoadSchema(cache, derivedSchema2Path, derivedSchema2));
+    ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {derivedSchema2}));
+    EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("DynamicSchema"));
+    
+    //Update object with new property 
+    instances.Add({ "DynamicSchema.TestSubClass", "Foo" }, { { "A", "ValueA" }, { "B", "ValueB" }, { "C", "ValueC" }, { "D", "ValueD" } });
+    ASSERT_EQ(CacheStatus::OK, cache->UpdateInstance({ "DynamicSchema.TestSubClass", "Foo" }, instances.ToWSObjectsResponse()));
+    EXPECT_TRUE(cache->GetCachedObjectInfo({ "DynamicSchema.TestSubClass", "Foo" }).IsFullyCached());
+    ASSERT_TRUE(cache->FindInstance({ "DynamicSchema.TestSubClass", "Foo" }).IsValid());
+
+    ECInstanceKeyMultiMap instancesOut;
+    cache->ReadInstancesLinkedToRoot("foo_root", instancesOut);
+    ASSERT_EQ(instancesOut.size(), 1);
+    }
+
 TEST_F(DataSourceCacheTests, UpdateSchemas_NewSchemaWithECDbMapSharedTableCA_SuccessAndSchemasAccessable_Graphite0505OnlyTest)
     {
     // Verify if schema prepared for BIM02 ECDb can be consumed by Graphite0505 ECDb as well
