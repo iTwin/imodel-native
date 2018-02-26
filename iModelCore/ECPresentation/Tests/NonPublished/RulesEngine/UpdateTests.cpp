@@ -42,11 +42,11 @@ public:
 struct UpdateTests : ::testing::Test
 {
     static BeFileName s_seedProjectPath;
-    static TestRuleSetLocaterPtr s_locater;
-    static StubLocalState s_localState;
-    static ConnectionManager s_connections;
-    static RulesDrivenECPresentationManager* s_manager;
-    static RefCountedPtr<TestECInstanceChangeEventsSource> s_eventsSource;
+    TestRuleSetLocaterPtr m_locater;
+    StubLocalState m_localState;
+    ConnectionManager m_connections;
+    RulesDrivenECPresentationManager* m_manager;
+    RefCountedPtr<TestECInstanceChangeEventsSource> m_eventsSource;
     ECDb m_db;
     RefCountedPtr<TestUpdateRecordsHandler> m_updateRecordsHandler;
     
@@ -56,11 +56,10 @@ struct UpdateTests : ::testing::Test
     ECClassCP m_sprocketClass;
 
     static void SetUpTestCase();
-    static void TearDownTestCase();
-
+    
     void SetUp() override
         {
-        s_localState.GetStubMap().clear();
+        m_localState.GetStubMap().clear();
         
         BeAssert(s_seedProjectPath.DoesPathExist());
         BeFileName projectPath = BeFileName(s_seedProjectPath)
@@ -71,10 +70,18 @@ struct UpdateTests : ::testing::Test
         BeFileName::BeCopyFile(s_seedProjectPath, projectPath, true);
         m_db.OpenBeSQLiteDb(projectPath, Db::OpenParams(Db::OpenMode::ReadWrite));
 
-        s_connections.NotifyConnectionOpened(m_db);
-
+        m_locater = TestRuleSetLocater::Create();
         m_updateRecordsHandler = TestUpdateRecordsHandler::Create();
-        s_manager->SetUpdateRecordsHandler(m_updateRecordsHandler.get());
+        m_eventsSource = TestECInstanceChangeEventsSource::Create();
+
+        m_manager = new RulesDrivenECPresentationManager(m_connections, RulesEngineTestHelpers::GetPaths(BeTest::GetHost()));
+        m_manager->SetLocalState(&m_localState);
+        m_manager->GetLocaters().RegisterLocater(*m_locater);
+        m_manager->RegisterECInstanceChangeEventSource(*m_eventsSource);
+        m_manager->SetUpdateRecordsHandler(m_updateRecordsHandler.get());
+        IECPresentationManager::RegisterImplementation(m_manager);
+
+        m_connections.NotifyConnectionOpened(m_db);
 
         m_schema = m_db.Schemas().GetSchema("RulesEngineTest");
         m_widgetClass = m_schema->GetClassCP("Widget");
@@ -86,9 +93,15 @@ struct UpdateTests : ::testing::Test
 
     void TearDown() override
         {        
-        s_manager->SetCategorySupplier(nullptr);
-        s_manager->SetUpdateRecordsHandler(nullptr);
-        s_locater->Clear();
+        m_manager->SetCategorySupplier(nullptr);
+        m_manager->SetUpdateRecordsHandler(nullptr);
+        m_manager->UnregisterECInstanceChangeEventSource(*m_eventsSource);
+        m_manager->GetLocaters().UnregisterLocater(*m_locater);
+        IECPresentationManager::RegisterImplementation(nullptr);
+        delete m_manager;
+
+        m_locater->Clear();
+        m_locater = nullptr;
         
         Localization::Terminate();
         }
@@ -102,11 +115,6 @@ struct UpdateTests : ::testing::Test
         return Utf8String(instance.GetClass().GetDisplayLabel().c_str());
         }
 };
-TestRuleSetLocaterPtr UpdateTests::s_locater;
-StubLocalState UpdateTests::s_localState;
-ConnectionManager UpdateTests::s_connections;
-RulesDrivenECPresentationManager* UpdateTests::s_manager = nullptr;
-RefCountedPtr<TestECInstanceChangeEventsSource> UpdateTests::s_eventsSource = TestECInstanceChangeEventsSource::Create();
 BeFileName UpdateTests::s_seedProjectPath;
 
 /*---------------------------------------------------------------------------------**//**
@@ -120,27 +128,6 @@ void UpdateTests::SetUpTestCase()
     ECDbTestProject seedProject;
     seedProject.Create("UpdateTests", "RulesEngineTest.01.00.ecschema.xml");
     s_seedProjectPath = BeFileName(seedProject.GetECDbPath());
-
-    s_locater = TestRuleSetLocater::Create();
-    
-    s_manager = new RulesDrivenECPresentationManager(s_connections, RulesEngineTestHelpers::GetPaths(BeTest::GetHost()));
-    s_manager->SetLocalState(&s_localState);
-    s_manager->GetLocaters().RegisterLocater(*s_locater);
-    s_manager->RegisterECInstanceChangeEventSource(*s_eventsSource);
-    IECPresentationManager::RegisterImplementation(s_manager);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                07/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void UpdateTests::TearDownTestCase()
-    {
-    s_manager->UnregisterECInstanceChangeEventSource(*s_eventsSource);
-    s_manager->GetLocaters().UnregisterLocater(*s_locater);
-    IECPresentationManager::RegisterImplementation(nullptr);
-    delete s_manager;
-
-    s_locater = nullptr;
     }
 
 /*=================================================================================**//**
@@ -152,7 +139,7 @@ struct HierarchyUpdateTests : UpdateTests
         {
         JsonNavNodeCR jsonNode = static_cast<JsonNavNodeCR>(node);
         const_cast<JsonNavNodeR>(jsonNode).SetIsExpanded(true);
-        static_cast<RulesDrivenECPresentationManagerImpl&>(s_manager->GetImpl()).GetNodesCache().Update(jsonNode.GetNodeId(), jsonNode);
+        static_cast<RulesDrivenECPresentationManagerImpl&>(m_manager->GetImpl()).GetNodesCache().Update(jsonNode.GetNodeId(), jsonNode);
         }
     };
 
@@ -167,7 +154,7 @@ TEST_F (HierarchyUpdateTests, RemovesECInstanceNodeAfterECInstanceDelete)
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RemovesECInstanceNodeAfterECInstanceDelete", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, false, "RulesEngineTest"));
@@ -186,7 +173,7 @@ TEST_F (HierarchyUpdateTests, RemovesECInstanceNodeAfterECInstanceDelete)
 
     // delete one of the instances
     RulesEngineTestHelpers::DeleteInstance(m_db, *widget1, true);
-    s_eventsSource->NotifyECInstanceDeleted(m_db, *widget1);
+    m_eventsSource->NotifyECInstanceDeleted(m_db, *widget1);
     
     // expect 1 node
     nodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -214,7 +201,7 @@ TEST_F (HierarchyUpdateTests, UpdatesECClassGroupingNodeChildrenAfterECInstanceD
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesECClassGroupingNodeChildrenAfterECInstanceDeleteWhenInstancesLeft", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, true, false, "RulesEngineTest"));
@@ -245,7 +232,7 @@ TEST_F (HierarchyUpdateTests, UpdatesECClassGroupingNodeChildrenAfterECInstanceD
 
     // delete one of the instances
     RulesEngineTestHelpers::DeleteInstance(m_db, *widget1, true);
-    s_eventsSource->NotifyECInstanceDeleted(m_db, *widget1);
+    m_eventsSource->NotifyECInstanceDeleted(m_db, *widget1);
 
     // expect the same one class grouping node
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -284,7 +271,7 @@ TEST_F (HierarchyUpdateTests, RemovesECClassGroupingNodeAfterECInstanceDeleteWhe
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RemovesECClassGroupingNodeAfterECInstanceDeleteWhenNoECInstancesLeft_WhenChildrenCached", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, true, false, "RulesEngineTest"));
@@ -327,7 +314,7 @@ TEST_F (HierarchyUpdateTests, RemovesECClassGroupingNodeAfterECInstanceDeleteWhe
     bvector<IECInstanceCP> deletedInstances;
     deletedInstances.push_back(widget1.get());
     deletedInstances.push_back(widget2.get());
-    s_eventsSource->NotifyECInstancesDeleted(m_db, deletedInstances);
+    m_eventsSource->NotifyECInstancesDeleted(m_db, deletedInstances);
 
     // expect the class grouping node to be gone as there're no instances left to group
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -350,7 +337,7 @@ TEST_F (HierarchyUpdateTests, RemovesECClassGroupingNodeAfterECInstanceDeleteWhe
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RemovesECClassGroupingNodeAfterECInstanceDeleteWhenNoECInstancesLeft_WhenChildrenNotCached", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, true, false, "RulesEngineTest"));
@@ -375,7 +362,7 @@ TEST_F (HierarchyUpdateTests, RemovesECClassGroupingNodeAfterECInstanceDeleteWhe
     bvector<IECInstanceCP> deletedInstances;
     deletedInstances.push_back(widget1.get());
     deletedInstances.push_back(widget2.get());
-    s_eventsSource->NotifyECInstancesDeleted(m_db, deletedInstances);
+    m_eventsSource->NotifyECInstancesDeleted(m_db, deletedInstances);
 
     // expect the class grouping node to be gone as there're no instances left to group
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -400,7 +387,7 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeChildrenAfterECInst
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RemovesDisplayLabelGroupingNodeChildrenAfterECInstanceDeleteWhenInstancesLeft", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
@@ -437,7 +424,7 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeChildrenAfterECInst
 
     // delete one of the instances
     RulesEngineTestHelpers::DeleteInstance(m_db, *widget1, true);
-    s_eventsSource->NotifyECInstanceDeleted(m_db, *widget1);
+    m_eventsSource->NotifyECInstanceDeleted(m_db, *widget1);
 
     // expect the display label grouping node to be gone (single instance is not grouped under a display label grouping node)
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -473,7 +460,7 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeAfterECInstanceDele
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RemovesDisplayLabelGroupingNodeAfterECInstanceDeleteWhenNoInstancesLeft_WhenChildrenCached", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
@@ -520,7 +507,7 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeAfterECInstanceDele
     bvector<IECInstanceCP> deletedInstances;
     deletedInstances.push_back(widget1.get());
     deletedInstances.push_back(widget2.get());
-    s_eventsSource->NotifyECInstancesDeleted(m_db, deletedInstances);
+    m_eventsSource->NotifyECInstancesDeleted(m_db, deletedInstances);
 
     // expect the display label grouping node to be gone as there're no instances left to group
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -551,7 +538,7 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeAfterECInstanceDele
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RemovesDisplayLabelGroupingNodeAfterECInstanceDeleteWhenNoInstancesLeft_WhenChildrenNotCached", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
@@ -578,7 +565,7 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeAfterECInstanceDele
     bvector<IECInstanceCP> deletedInstances;
     deletedInstances.push_back(widget1.get());
     deletedInstances.push_back(widget2.get());
-    s_eventsSource->NotifyECInstancesDeleted(m_db, deletedInstances);
+    m_eventsSource->NotifyECInstancesDeleted(m_db, deletedInstances);
 
     // expect the display label grouping node to be gone as there're no instances left to group
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -609,7 +596,7 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeAfterECInstanceLabe
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RemovesDisplayLabelGroupingNodeAfterECInstanceLabelChange", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
@@ -645,7 +632,7 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeAfterECInstanceLabe
     ECInstanceUpdater updater(m_db, *widget1, nullptr);
     updater.Update(*widget1);
     m_db.SaveChanges();
-    s_eventsSource->NotifyECInstanceUpdated(m_db, *widget1);
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *widget1);
 
     // expect the display label grouping node to be gone (single instance is not grouped under a display label grouping node)
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -682,7 +669,7 @@ TEST_F (HierarchyUpdateTests, SetsCorrectInsertPositionWhenMultipleSpecification
     {    
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SetsCorrectInsertPositionWhenMultipleSpecificationsUsedAtTheSameLevel1", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));  
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
@@ -699,7 +686,7 @@ TEST_F (HierarchyUpdateTests, SetsCorrectInsertPositionWhenMultipleSpecification
     
     // create a widget
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));}, true);
-    s_eventsSource->NotifyECInstanceInserted(m_db, *widget);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *widget);
 
     // expect one widget instance node
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -727,7 +714,7 @@ TEST_F (HierarchyUpdateTests, SetsCorrectInsertPositionWhenMultipleSpecification
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SetsCorrectInsertPositionWhenMultipleSpecificationsUsedAtTheSameLevel2", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
@@ -744,7 +731,7 @@ TEST_F (HierarchyUpdateTests, SetsCorrectInsertPositionWhenMultipleSpecification
     
     // create a widget
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));}, true);
-    s_eventsSource->NotifyECInstanceInserted(m_db, *widget);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *widget);
 
     // expect one additional widget instance node
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -779,7 +766,7 @@ TEST_F (HierarchyUpdateTests, CreatesDisplayLabelGroupingNodeAfterECInstanceLabe
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("CreatesDisplayLabelGroupingNodeAfterECInstanceLabelChange", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
@@ -808,7 +795,7 @@ TEST_F (HierarchyUpdateTests, CreatesDisplayLabelGroupingNodeAfterECInstanceLabe
     ECInstanceUpdater updater(m_db, *widget1, nullptr);
     updater.Update(*widget1);
     m_db.SaveChanges();
-    s_eventsSource->NotifyECInstanceUpdated(m_db, *widget1);
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *widget1);
 
     // expect the display label grouping node to be created
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -848,7 +835,7 @@ TEST_F (HierarchyUpdateTests, CreatesDisplayLabelGroupingNodeAfterECInstanceInse
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("CreatesDisplayLabelGroupingNodeAfterECInstanceLabelChange", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
@@ -872,7 +859,7 @@ TEST_F (HierarchyUpdateTests, CreatesDisplayLabelGroupingNodeAfterECInstanceInse
     
     // change the label of one of the instances
     IECInstancePtr widget3 = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Label 2"));}, true);
-    s_eventsSource->NotifyECInstanceInserted(m_db, *widget3);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *widget3);
 
     // expect the display label grouping node to be created
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -910,7 +897,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDisplayLabelGroupingNodeAfterECInstanceInse
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("CreatesDisplayLabelGroupingNodeAfterECInstanceLabelChange", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
@@ -937,7 +924,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDisplayLabelGroupingNodeAfterECInstanceInse
     
     // change the label of one of the instances
     IECInstancePtr widget4 = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Label 1"));}, true);
-    s_eventsSource->NotifyECInstanceInserted(m_db, *widget4);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *widget4);
 
     // expect the display label grouping node to have 3 children now
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -980,7 +967,7 @@ TEST_F (HierarchyUpdateTests, UpdatesVirtualDisplayLabelGroupingNodeAfterECInsta
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesVirtualDisplayLabelGroupingNodeAfterECInstanceInsert", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
@@ -1000,7 +987,7 @@ TEST_F (HierarchyUpdateTests, UpdatesVirtualDisplayLabelGroupingNodeAfterECInsta
     
     // insert another widget
     IECInstancePtr widget3 = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Label 1"));}, true);
-    s_eventsSource->NotifyECInstanceInserted(m_db, *widget3);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *widget3);
 
     // expect 3 root nodes now
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -1038,7 +1025,7 @@ TEST_F (HierarchyUpdateTests, UpdatesVirtualDisplayLabelGroupingNodeAfterECInsta
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesVirtualDisplayLabelGroupingNodeAfterECInstanceInsert", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
@@ -1059,7 +1046,7 @@ TEST_F (HierarchyUpdateTests, UpdatesVirtualDisplayLabelGroupingNodeAfterECInsta
     
     // delete one of the instances
     RulesEngineTestHelpers::DeleteInstance(m_db, *widget2, true);
-    s_eventsSource->NotifyECInstanceDeleted(m_db, *widget2);
+    m_eventsSource->NotifyECInstanceDeleted(m_db, *widget2);
 
     // expect 2 root nodes now
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -1093,7 +1080,7 @@ TEST_F (HierarchyUpdateTests, UpdatesECInstanceNodeAfterECInstanceChange)
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesECInstanceNodeAfterECInstanceChange", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
@@ -1118,7 +1105,7 @@ TEST_F (HierarchyUpdateTests, UpdatesECInstanceNodeAfterECInstanceChange)
     ECInstanceUpdater updater(m_db, *widget1, nullptr);
     updater.Update(*widget1);
     m_db.SaveChanges();
-    s_eventsSource->NotifyECInstanceUpdated(m_db, *widget1);
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *widget1);
 
     // expect the label of the node to be changed
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -1143,7 +1130,7 @@ TEST_F (HierarchyUpdateTests, UpdatesRootDataSourceAfterECInstanceInsert_AllInst
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesRootDataSourceAfterECInstanceInsert_AllInstanceNodesSpecification", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
@@ -1160,7 +1147,7 @@ TEST_F (HierarchyUpdateTests, UpdatesRootDataSourceAfterECInstanceInsert_AllInst
 
     // insert another instance
     IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("2"));}, true);
-    s_eventsSource->NotifyECInstanceInserted(m_db, *widget2);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *widget2);
 
     // expect 2 nodes now
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -1193,7 +1180,7 @@ TEST_F (HierarchyUpdateTests, UpdatesRootDataSourceAfterECInstanceInsert_Instanc
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesRootDataSourceAfterECInstanceInsert_InstancesOfSpecificClassesSpecification", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
@@ -1210,7 +1197,7 @@ TEST_F (HierarchyUpdateTests, UpdatesRootDataSourceAfterECInstanceInsert_Instanc
 
     // insert another instance
     IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("2"));}, true);
-    s_eventsSource->NotifyECInstanceInserted(m_db, *widget2);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *widget2);
 
     // expect 2 nodes now
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -1246,7 +1233,7 @@ TEST_F (HierarchyUpdateTests, UpdatesRootDataSourceAfterECInstanceInsert_Instanc
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesRootDataSourceAfterECInstanceInsert_InstancesOfSpecificClassesSpecification_NonPolymorphicMatch", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:ClassE", false));
@@ -1261,7 +1248,7 @@ TEST_F (HierarchyUpdateTests, UpdatesRootDataSourceAfterECInstanceInsert_Instanc
 
     // insert F instance
     IECInstancePtr instanceF = RulesEngineTestHelpers::InsertInstance(m_db, *classF, nullptr, true);
-    s_eventsSource->NotifyECInstanceInserted(m_db, *instanceF);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *instanceF);
 
     // still expect 1 node
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -1286,7 +1273,7 @@ TEST_F (HierarchyUpdateTests, UpdatesRootDataSourceAfterECInstanceInsert_Instanc
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesRootDataSourceAfterECInstanceInsert_InstancesOfSpecificClassesSpecification_NonPolymorphicMatch", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:ClassE", true));
@@ -1301,7 +1288,7 @@ TEST_F (HierarchyUpdateTests, UpdatesRootDataSourceAfterECInstanceInsert_Instanc
 
     // insert F instance
     IECInstancePtr instanceF = RulesEngineTestHelpers::InsertInstance(m_db, *classF, nullptr, true);
-    s_eventsSource->NotifyECInstanceInserted(m_db, *instanceF);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *instanceF);
 
     // expect 2 nodes now
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -1328,7 +1315,7 @@ TEST_F (HierarchyUpdateTests, DoesntUpdateRootDataSourceAfterECInstanceInsertIfC
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("DoesntUpdateRootDataSourceAfterECInstanceInsertIfClassDoesntMatch_InstancesOfSpecificClassesSpecification", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
@@ -1343,7 +1330,7 @@ TEST_F (HierarchyUpdateTests, DoesntUpdateRootDataSourceAfterECInstanceInsertIfC
 
     // insert a gadget instance
     IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(m_db, *m_gadgetClass, nullptr, true);
-    s_eventsSource->NotifyECInstanceInserted(m_db, *gadget);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *gadget);
 
     // still expect 1 node
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -1367,7 +1354,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterECInstanceInsert_RelatedInst
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesDataSourceAfterECInstanceInsert_RelatedInstancesSpecification", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Gadget", "MyID"));
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
@@ -1397,7 +1384,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterECInstanceInsert_RelatedInst
     // insert a gadget instance
     IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(m_db, *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("GadgetID"));});
     RulesEngineTestHelpers::InsertRelationship(m_db, *widgetHasGadgetsRelationshipClass, *widget, *gadget, nullptr, true);
-    s_eventsSource->NotifyECInstanceInserted(m_db, *gadget);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *gadget);
 
     // expect 1 node now
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -1427,7 +1414,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterECInstanceInsert_SearchResul
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesDataSourceAfterECInstanceInsert_SearchResultInstanceNodesSpecificationWithSingleQuerySpecification", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rules->AddPresentationRule(*rule);
@@ -1445,7 +1432,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterECInstanceInsert_SearchResul
 
     // insert another instance
     IECInstancePtr widget3 = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(32));}, true);
-    s_eventsSource->NotifyECInstanceInserted(m_db, *widget3);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *widget3);
     ECValue v;
 
     // expect 3 nodes now
@@ -1477,7 +1464,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterECInstanceInsert_SearchResul
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesDataSourceAfterECInstanceInsert_SearchResultInstanceNodesSpecificationWithMultipleQuerySpecifications", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rules->AddPresentationRule(*rule);
@@ -1496,7 +1483,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterECInstanceInsert_SearchResul
 
     // insert another instance
     IECInstancePtr widget3 = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(32));}, true);
-    s_eventsSource->NotifyECInstanceInserted(m_db, *widget3);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *widget3);
     ECValue v;
     
     // expect 3 nodes now
@@ -1530,7 +1517,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterECInstanceInsert_SearchResul
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesDataSourceAfterECInstanceInsert_SearchResultInstanceNodesSpecification_Polymorphic", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rules->AddPresentationRule(*rule);
@@ -1548,7 +1535,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterECInstanceInsert_SearchResul
 
     // insert ClassF instance
     IECInstancePtr instanceF = RulesEngineTestHelpers::InsertInstance(m_db, *classF, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(32));}, true);
-    s_eventsSource->NotifyECInstanceInserted(m_db, *instanceF);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *instanceF);
     ECValue v;
     
     // expect 2 nodes now
@@ -1589,7 +1576,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterParentECInstanceUpdate_Searc
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesDataSourceAfterParentECInstanceUpdate_SearchResultInstanceNodesSpecification", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
@@ -1624,7 +1611,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterParentECInstanceUpdate_Searc
     ECInstanceUpdater updater(m_db, *m_widgetClass, nullptr);
     updater.Update(*widget);
     m_db.SaveChanges();
-    s_eventsSource->NotifyECInstanceUpdated(m_db, *widget);
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *widget);
     ECValue v;
     
     // expect 1 child node now
@@ -1655,7 +1642,7 @@ TEST_F (HierarchyUpdateTests, CreatesNodeAfterECInstanceInsertWhenPreviouslyNotC
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("CreatesNodeAfterECInstanceInsertWhenPreviouslyNotCreatedDueToHideIfNoChildrenFlag", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
 
@@ -1682,7 +1669,7 @@ TEST_F (HierarchyUpdateTests, CreatesNodeAfterECInstanceInsertWhenPreviouslyNotC
 
     // insert a gadget
     IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(m_db, *m_gadgetClass, nullptr, true);
-    s_eventsSource->NotifyECInstanceInserted(m_db, *gadget);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *gadget);
 
     // expect 1 node now
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -1709,7 +1696,7 @@ TEST_F (HierarchyUpdateTests, SameLabelInstanceGroupIsCreatedWhenAdditionalInsta
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SameLabelInstanceGroupIsCreatedWhenAdditionalInstancesAreInserted", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
@@ -1731,7 +1718,7 @@ TEST_F (HierarchyUpdateTests, SameLabelInstanceGroupIsCreatedWhenAdditionalInsta
 
     // insert another widget
     IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));}, true);
-    s_eventsSource->NotifyECInstanceInserted(m_db, *widget2);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *widget2);
 
     // still expect 1 node
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -1763,7 +1750,7 @@ TEST_F (HierarchyUpdateTests, BaseClassGroupIsUpdatedWhenAdditionalInstancesAreI
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("BaseClassGroupIsUpdatedWhenAdditionalInstancesAreInserted", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:ClassE", true));
@@ -1790,7 +1777,7 @@ TEST_F (HierarchyUpdateTests, BaseClassGroupIsUpdatedWhenAdditionalInstancesAreI
         
     // insert a derived instance
     IECInstancePtr instanceF = RulesEngineTestHelpers::InsertInstance(m_db, *classF, nullptr, true);
-    s_eventsSource->NotifyECInstanceInserted(m_db, *instanceF);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *instanceF);
 
     // still expect 1 ECClassGrouping node
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -1826,7 +1813,7 @@ TEST_F (HierarchyUpdateTests, ValuePropertyGroupIsUpdatedWhenAdditionalInstances
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ValuePropertyGroupIsUpdatedWhenAdditionalInstancesAreInserted", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
@@ -1853,7 +1840,7 @@ TEST_F (HierarchyUpdateTests, ValuePropertyGroupIsUpdatedWhenAdditionalInstances
         
     // insert another widget
     IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(8));}, true);
-    s_eventsSource->NotifyECInstanceInserted(m_db, *widget2);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *widget2);
 
     // still expect 1 ECProperty grouping node
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -1889,7 +1876,7 @@ TEST_F (HierarchyUpdateTests, RangePropertyGroupIsUpdatedWhenAdditionalInstances
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RangePropertyGroupIsUpdatedWhenAdditionalInstancesAreInserted", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
@@ -1919,7 +1906,7 @@ TEST_F (HierarchyUpdateTests, RangePropertyGroupIsUpdatedWhenAdditionalInstances
 
     // insert another widget
     IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(10));}, true);
-    s_eventsSource->NotifyECInstanceInserted(m_db, *widget2);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *widget2);
 
     // still expect 1 ECProperty grouping node
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -1956,7 +1943,7 @@ TEST_F (HierarchyUpdateTests, PropertyGroupIsCreatedWhenInstanceValuesChange)
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ValuePropertyGroupIsCreatedWhenInstanceValuesChange", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
@@ -1988,7 +1975,7 @@ TEST_F (HierarchyUpdateTests, PropertyGroupIsCreatedWhenInstanceValuesChange)
     ECInstanceUpdater updater(m_db, *widget2, nullptr);
     updater.Update(*widget2);
     m_db.SaveChanges();
-    s_eventsSource->NotifyECInstanceUpdated(m_db, *widget2);
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *widget2);
 
     // expect 2 ECProperty grouping nodes now
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -2032,7 +2019,7 @@ TEST_F (HierarchyUpdateTests, PropertyGroupIsCreatedWhenInstanceValuesChangeWith
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("PropertyGroupIsCreatedWhenInstanceValuesChangeWithCreateGroupForSingleItemFalse", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
@@ -2056,7 +2043,7 @@ TEST_F (HierarchyUpdateTests, PropertyGroupIsCreatedWhenInstanceValuesChangeWith
     ECInstanceUpdater updater(m_db, *widget2, nullptr);
     updater.Update(*widget2);
     m_db.SaveChanges();
-    s_eventsSource->NotifyECInstanceUpdated(m_db, *widget2);
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *widget2);
 
     // expect 1 ECProperty grouping node now
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -2089,7 +2076,7 @@ TEST_F (HierarchyUpdateTests, UpdatesCustomNodeWithHideIfNoChildrenFlagWhenNothi
     {
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesCustomNodeWithHideIfNoChildrenFlagWhenNoChanges", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
 
@@ -2107,7 +2094,7 @@ TEST_F (HierarchyUpdateTests, UpdatesCustomNodeWithHideIfNoChildrenFlagWhenNothi
     
     // insert a widget to force custom spec update
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));}, true);
-    s_eventsSource->NotifyECInstanceInserted(m_db, *widget);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *widget);
 
     // expect 1 root node now (still no custom node)
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -2130,7 +2117,7 @@ TEST_F (HierarchyUpdateTests, UpdatesCustomNodeWithHideIfNoChildrenFlagWhenChild
     {
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesCustomNodeWithHideIfNoChildrenFlagWhenChildrenAdded", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
 
@@ -2152,7 +2139,7 @@ TEST_F (HierarchyUpdateTests, UpdatesCustomNodeWithHideIfNoChildrenFlagWhenChild
     
     // insert a widget to force custom spec update
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));}, true);
-    s_eventsSource->NotifyECInstanceInserted(m_db, *widget);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *widget);
 
     // expect 2 root nodes now (including the custom node)
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -2184,7 +2171,7 @@ TEST_F (HierarchyUpdateTests, UpdatesCustomNodeWithHideIfNoChildrenFlagWhenChild
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesCustomNodeWithHideIfNoChildrenFlagWhenChildrenRemoved", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest"));
@@ -2205,7 +2192,7 @@ TEST_F (HierarchyUpdateTests, UpdatesCustomNodeWithHideIfNoChildrenFlagWhenChild
     
     // insert a widget to force custom spec update
     RulesEngineTestHelpers::DeleteInstance(m_db, *widget, true);
-    s_eventsSource->NotifyECInstanceDeleted(m_db, *widget);
+    m_eventsSource->NotifyECInstanceDeleted(m_db, *widget);
 
     // expect 0 root nodes now
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -2233,7 +2220,7 @@ TEST_F (HierarchyUpdateTests, HidesDisplayLabelGroupingNodeWhenSiblingIsRemovedF
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("HidesDisplayLabelGroupingNodeWhenSiblingIsRemovedFromCustomNode", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Gadget", "MyID"));
@@ -2273,7 +2260,7 @@ TEST_F (HierarchyUpdateTests, HidesDisplayLabelGroupingNodeWhenSiblingIsRemovedF
     
     // delete the widget
     RulesEngineTestHelpers::DeleteInstance(m_db, *gadget, true);
-    s_eventsSource->NotifyECInstanceDeleted(m_db, *gadget);
+    m_eventsSource->NotifyECInstanceDeleted(m_db, *gadget);
 
     // expect 2 children now
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -2317,7 +2304,7 @@ TEST_F (HierarchyUpdateTests, HidesDisplayLabelGroupingNodeWhenSiblingIsRemovedF
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("HidesDisplayLabelGroupingNodeWhenSiblingIsRemovedFromGroupingNode", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "Description,MyID"));
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
@@ -2355,7 +2342,7 @@ TEST_F (HierarchyUpdateTests, HidesDisplayLabelGroupingNodeWhenSiblingIsRemovedF
     
     // delete the widget
     RulesEngineTestHelpers::DeleteInstance(m_db, *differentWidget, true);
-    s_eventsSource->NotifyECInstanceDeleted(m_db, *differentWidget);
+    m_eventsSource->NotifyECInstanceDeleted(m_db, *differentWidget);
 
     // expect 2 children now
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -2400,7 +2387,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyForwar
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RelatedInstanceNodesAreUpdatedAfterOneToManyForwardRelationshipInsert", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Gadget", "MyID"));
@@ -2428,7 +2415,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyForwar
 
     // relate the instances
     RulesEngineTestHelpers::InsertRelationship(m_db, *relationshipClass, *widget, *gadget, nullptr, true);
-    s_eventsSource->NotifyECInstanceUpdated(m_db, *gadget); // gadget is notified because it has a WidgetId property
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget); // gadget is notified because it has a WidgetId property
 
     // expect 1 child node now
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -2461,7 +2448,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyBackwa
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RelatedInstanceNodesAreUpdatedAfterOneToManyBackwardRelationshipInsert", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Gadget", "MyID"));
@@ -2489,7 +2476,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyBackwa
 
     // relate the instances
     RulesEngineTestHelpers::InsertRelationship(m_db, *relationshipClass, *widget, *gadget, nullptr, true);
-    s_eventsSource->NotifyECInstanceUpdated(m_db, *gadget); // gadget is notified because it has a WidgetId property
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget); // gadget is notified because it has a WidgetId property
 
     // expect 1 child node now
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -2523,7 +2510,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyForwar
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RelatedInstanceNodesAreUpdatedAfterOneToManyForwardRelationshipDelete", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Gadget", "MyID"));
@@ -2554,7 +2541,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyForwar
 
     // unrelate the instances
     RulesEngineTestHelpers::DeleteInstance(m_db, relationshipKey, true);
-    s_eventsSource->NotifyECInstanceUpdated(m_db, *gadget); // gadget is notified because it has a WidgetId property
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget); // gadget is notified because it has a WidgetId property
 
     // expect 0 children now
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -2585,7 +2572,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyBackwa
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RelatedInstanceNodesAreUpdatedAfterOneToManyBackwardRelationshipDelete", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Gadget", "MyID"));
@@ -2616,7 +2603,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyBackwa
 
     // unrelate the instances
     RulesEngineTestHelpers::DeleteInstance(m_db, relationshipKey, true);
-    s_eventsSource->NotifyECInstanceUpdated(m_db, *gadget); // gadget is notified because it has a WidgetId property
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget); // gadget is notified because it has a WidgetId property
 
     // expect 0 children now
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -2646,7 +2633,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyForwa
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RelatedInstanceNodesAreUpdatedAfterManyToManyForwardRelationshipInsert", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Gadget", "MyID"));
@@ -2677,7 +2664,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyForwa
     bvector<IECInstanceCP> instances;
     instances.push_back(widget.get());
     instances.push_back(gadget.get());
-    s_eventsSource->NotifyECInstancesChanged(m_db, instances, ChangeType::Update); // both instances are notified in many-to-many relationship case
+    m_eventsSource->NotifyECInstancesChanged(m_db, instances, ChangeType::Update); // both instances are notified in many-to-many relationship case
 
     // expect 1 child node now
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -2710,7 +2697,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyBackw
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RelatedInstanceNodesAreUpdatedAfterManyToManyBackwardRelationshipInsert", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Gadget", "MyID"));
@@ -2741,7 +2728,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyBackw
     bvector<IECInstanceCP> instances;
     instances.push_back(widget.get());
     instances.push_back(gadget.get());
-    s_eventsSource->NotifyECInstancesChanged(m_db, instances, ChangeType::Update); // both instances are notified in many-to-many relationship case
+    m_eventsSource->NotifyECInstancesChanged(m_db, instances, ChangeType::Update); // both instances are notified in many-to-many relationship case
 
     // expect 1 child node now
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -2775,7 +2762,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyForwa
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RelatedInstanceNodesAreUpdatedAfterManyToManyForwardRelationshipDelete", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Gadget", "MyID"));
@@ -2809,7 +2796,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyForwa
     bvector<IECInstanceCP> instances;
     instances.push_back(widget.get());
     instances.push_back(gadget.get());
-    s_eventsSource->NotifyECInstancesChanged(m_db, instances, ChangeType::Update); // both instances are notified in many-to-many relationship case
+    m_eventsSource->NotifyECInstancesChanged(m_db, instances, ChangeType::Update); // both instances are notified in many-to-many relationship case
 
     // expect 0 children now
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -2840,7 +2827,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyBackw
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RelatedInstanceNodesAreUpdatedAfterManyToManyBackwardRelationshipDelete", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Gadget", "MyID"));
@@ -2874,7 +2861,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyBackw
     bvector<IECInstanceCP> instances;
     instances.push_back(widget.get());
     instances.push_back(gadget.get());
-    s_eventsSource->NotifyECInstancesChanged(m_db, instances, ChangeType::Update); // both instances are notified in many-to-many relationship case
+    m_eventsSource->NotifyECInstancesChanged(m_db, instances, ChangeType::Update); // both instances are notified in many-to-many relationship case
 
     // expect 0 children now
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -2904,7 +2891,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipInsertWhenBackwar
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("InstanceNodesOfSpecificClassesAreUpdatedAfterRelationshipInsertWhenBackwardHasRelatedInstanceECExpressionIsUsedInInstanceFilter", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Gadget", "MyID"));
 
@@ -2923,7 +2910,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipInsertWhenBackwar
     bvector<IECInstanceCP> instances;
     instances.push_back(widget.get());
     instances.push_back(gadget.get());
-    s_eventsSource->NotifyECInstancesChanged(m_db, instances, ChangeType::Update); // both instances are notified in many-to-many relationship case
+    m_eventsSource->NotifyECInstancesChanged(m_db, instances, ChangeType::Update); // both instances are notified in many-to-many relationship case
 
     // expect 1 root node now
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -2953,7 +2940,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipInsertWhenForward
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("InstanceNodesOfSpecificClassesAreUpdatedAfterRelationshipInsertWhenForwardHasRelatedInstanceECExpressionIsUsedInInstanceFilter", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
 
@@ -2972,7 +2959,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipInsertWhenForward
     bvector<IECInstanceCP> instances;
     instances.push_back(widget.get());
     instances.push_back(gadget.get());
-    s_eventsSource->NotifyECInstancesChanged(m_db, instances, ChangeType::Update); // both instances are notified in many-to-many relationship case
+    m_eventsSource->NotifyECInstancesChanged(m_db, instances, ChangeType::Update); // both instances are notified in many-to-many relationship case
 
     // expect 1 root node now
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -3003,7 +2990,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipDeleteWhenBackwar
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("InstanceNodesOfSpecificClassesAreUpdatedAfterRelationshipInsertWhenBackwardHasRelatedInstanceECExpressionIsUsedInInstanceFilter", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
     
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Gadget", "MyID"));
 
@@ -3024,7 +3011,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipDeleteWhenBackwar
     bvector<IECInstanceCP> instances;
     instances.push_back(widget.get());
     instances.push_back(gadget.get());
-    s_eventsSource->NotifyECInstancesChanged(m_db, instances, ChangeType::Update); // both instances are notified in many-to-many relationship case
+    m_eventsSource->NotifyECInstancesChanged(m_db, instances, ChangeType::Update); // both instances are notified in many-to-many relationship case
 
     // expect 0 root nodes now
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -3052,7 +3039,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipDeleteWhenForward
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("InstanceNodesOfSpecificClassesAreUpdatedAfterRelationshipInsertWhenForwardHasRelatedInstanceECExpressionIsUsedInInstanceFilter", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
 
@@ -3073,7 +3060,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipDeleteWhenForward
     bvector<IECInstanceCP> instances;
     instances.push_back(widget.get());
     instances.push_back(gadget.get());
-    s_eventsSource->NotifyECInstancesChanged(m_db, instances, ChangeType::Update); // both instances are notified in many-to-many relationship case
+    m_eventsSource->NotifyECInstancesChanged(m_db, instances, ChangeType::Update); // both instances are notified in many-to-many relationship case
 
     // expect 0 root nodes now
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -3100,7 +3087,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipInsertWhenBackward
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("InstanceNodesOfSpecificClassesAreUpdatedAfterRelationshipInsertWhenBackwardHasRelatedInstanceECExpressionIsUsedInInstanceFilter", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Gadget", "MyID"));
 
@@ -3116,7 +3103,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipInsertWhenBackward
     
     // relate the instances
     RulesEngineTestHelpers::InsertRelationship(m_db, *relationshipClass, *widget, *gadget, nullptr, true);
-    s_eventsSource->NotifyECInstanceUpdated(m_db, *gadget); // gadget is notified because it has a WidgetId property
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget); // gadget is notified because it has a WidgetId property
 
     // expect 1 root node now
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -3146,7 +3133,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipInsertWhenForwardH
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("InstanceNodesOfSpecificClassesAreUpdatedAfterRelationshipInsertWhenForwardHasRelatedInstanceECExpressionIsUsedInInstanceFilter", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
 
@@ -3162,7 +3149,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipInsertWhenForwardH
     
     // relate the instances
     RulesEngineTestHelpers::InsertRelationship(m_db, *relationshipClass, *widget, *gadget, nullptr, true);
-    s_eventsSource->NotifyECInstanceUpdated(m_db, *gadget); // gadget is notified because it has a WidgetId property
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget); // gadget is notified because it has a WidgetId property
 
     // expect 1 root node now
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -3193,7 +3180,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipDeleteWhenBackward
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("InstanceNodesOfSpecificClassesAreUpdatedAfterRelationshipInsertWhenBackwardHasRelatedInstanceECExpressionIsUsedInInstanceFilter", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Gadget", "MyID"));
 
@@ -3211,7 +3198,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipDeleteWhenBackward
     
     // unrelate the instances
     RulesEngineTestHelpers::DeleteInstance(m_db, relationshipKey, true);
-    s_eventsSource->NotifyECInstanceUpdated(m_db, *gadget); // gadget is notified because it has a WidgetId property
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget); // gadget is notified because it has a WidgetId property
 
     // expect 0 root nodes now
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -3239,7 +3226,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipDeleteWhenForwardH
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("InstanceNodesOfSpecificClassesAreUpdatedAfterRelationshipInsertWhenForwardHasRelatedInstanceECExpressionIsUsedInInstanceFilter", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
 
@@ -3257,7 +3244,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipDeleteWhenForwardH
     
     // relate the instances
     RulesEngineTestHelpers::DeleteInstance(m_db, relationshipKey, true);
-    s_eventsSource->NotifyECInstanceUpdated(m_db, *gadget); // gadget is notified because it has a WidgetId property
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget); // gadget is notified because it has a WidgetId property
 
     // expect 0 root nodes now
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -3290,7 +3277,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipRelatedInstanceUp
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("InstanceNodesOfSpecificClassesAreUpdatedAfterRelatedInstanceUpdateWhenGetRelatedValueECExpressionIsUsedInInstanceFilter", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
     
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
 
@@ -3308,7 +3295,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipRelatedInstanceUp
     ECInstanceUpdater updater(m_db, *gadget, nullptr);
     updater.Update(*gadget);
     m_db.SaveChanges();
-    s_eventsSource->NotifyECInstanceUpdated(m_db, *gadget);
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget);
 
     // expect 1 root node now
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -3342,7 +3329,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterSkippedOneToManyRelationshipInsert)
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdateAfterSkippedOneToManyRelationshipInsert", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
@@ -3367,7 +3354,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterSkippedOneToManyRelationshipInsert)
     
     // relate widget to gadget
     RulesEngineTestHelpers::InsertRelationship(m_db, *relationshipClassWG, *widget, *gadget, nullptr, true);
-    s_eventsSource->NotifyECInstanceUpdated(m_db, *gadget);
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget);
 
     // expect 1 root node with no children
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -3406,7 +3393,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterSkippedOneToManyRelationshipDelete)
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdateAfterSkippedOneToManyRelationshipDelete", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
@@ -3431,7 +3418,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterSkippedOneToManyRelationshipDelete)
     NavNodeCPtr deletedNode = childNodes[0];
     
     RulesEngineTestHelpers::DeleteInstance(m_db, relWGKey, true);
-    s_eventsSource->NotifyECInstanceUpdated(m_db, *gadget);
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget);
 
     // expect 1 root node with no children
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -3466,7 +3453,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterSkippedManyToManyRelationshipInsert)
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdateAfterSkippedManyToManyRelationshipInsert", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
@@ -3492,7 +3479,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterSkippedManyToManyRelationshipInsert)
     
     // insert the relationship
     RulesEngineTestHelpers::InsertRelationship(m_db, *relationshipClass2, *widget2, *gadget, nullptr, true);
-    s_eventsSource->NotifyECInstancesUpdated(m_db, {widget2.get(), gadget.get()});
+    m_eventsSource->NotifyECInstancesUpdated(m_db, {widget2.get(), gadget.get()});
 
     // expect the child node to exist now
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -3526,7 +3513,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterRelatedInstanceInsert)
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdateAfterRelatedInstanceInsert", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
@@ -3546,7 +3533,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterRelatedInstanceInsert)
     
     // relate the instances
     RulesEngineTestHelpers::InsertRelationship(m_db, *relationshipClass, *widget, *gadget, nullptr, true);
-    s_eventsSource->NotifyECInstanceUpdated(m_db, *gadget);
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget);
 
     // still expect 1 root node
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -3578,7 +3565,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterRelatedInstanceDelete)
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdateAfterRelatedInstanceDelete", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
@@ -3597,8 +3584,8 @@ TEST_F (HierarchyUpdateTests, UpdateAfterRelatedInstanceDelete)
     EXPECT_STREQ("Gadget_1", rootNodes[0]->GetLabel().c_str());
 
     RulesEngineTestHelpers::DeleteInstance(m_db, *widget, true);
-    s_eventsSource->NotifyECInstanceDeleted(m_db, *widget);
-    s_eventsSource->NotifyECInstanceUpdated(m_db, *gadget);
+    m_eventsSource->NotifyECInstanceDeleted(m_db, *widget);
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *gadget);
 
     // still expect 1 root node
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -3630,7 +3617,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterRelatedInstanceUpdate)
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdateAfterRelatedInstanceDelete", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, 
@@ -3651,7 +3638,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterRelatedInstanceUpdate)
     widget->SetValue("IntProperty", ECValue(2));
     ECInstanceUpdater(m_db, *widget, nullptr).Update(*widget);
     m_db.SaveChanges();
-    s_eventsSource->NotifyECInstanceUpdated(m_db, *widget);
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *widget);
 
     // still expect 1 root node
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -3677,21 +3664,21 @@ TEST_F (HierarchyUpdateTests, UpdatesAllAffectedRootHierarchies)
     
     // create 3 rulesets
     PresentationRuleSetPtr rules1 = PresentationRuleSet::CreateInstance("UpdatesAllAffectedRootHierarchies_1", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules1);
+    m_locater->AddRuleSet(*rules1);
     RootNodeRule* rule1 = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule1->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules1->AddPresentationRule(*rule1);
     rules1->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     
     PresentationRuleSetPtr rules2 = PresentationRuleSet::CreateInstance("UpdatesAllAffectedRootHierarchies_2", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules2);
+    m_locater->AddRuleSet(*rules2);
     RootNodeRule* rule2 = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule2->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules2->AddPresentationRule(*rule2);
     rules2->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     
     PresentationRuleSetPtr rules3 = PresentationRuleSet::CreateInstance("UpdatesAllAffectedRootHierarchies_3", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules3);
+    m_locater->AddRuleSet(*rules3);
     RootNodeRule* rule3 = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule3->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false));
     rules3->AddPresentationRule(*rule3);
@@ -3714,7 +3701,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAllAffectedRootHierarchies)
     ECInstanceUpdater updater(m_db, *widget, nullptr);
     updater.Update(*widget);
     m_db.SaveChanges();
-    s_eventsSource->NotifyECInstanceUpdated(m_db, *widget);
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *widget);
 
     // verify expected results
     rootNodes1 = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), RulesDrivenECPresentationManager::NavigationOptions("UpdatesAllAffectedRootHierarchies_1", TargetTree_Both).GetJson()).get();
@@ -3748,7 +3735,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAllAffectedChildHierarchies)
     
     // create 3 rulesets
     PresentationRuleSetPtr rules1 = PresentationRuleSet::CreateInstance("UpdatesAllAffectedChildHierarchies_1", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules1);
+    m_locater->AddRuleSet(*rules1);
     rules1->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     RootNodeRule* rootRule1 = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rootRule1->AddSpecification(*new CustomNodeSpecification(1, false, "TEST_Type", "Root", "descr", "imageid"));
@@ -3758,7 +3745,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAllAffectedChildHierarchies)
     rules1->AddPresentationRule(*childRule1);
     
     PresentationRuleSetPtr rules2 = PresentationRuleSet::CreateInstance("UpdatesAllAffectedChildHierarchies_2", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules2);
+    m_locater->AddRuleSet(*rules2);
     rules2->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     RootNodeRule* rootRule2 = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rootRule2->AddSpecification(*new CustomNodeSpecification(1, false, "TEST_Type", "Root", "descr", "imageid"));
@@ -3768,7 +3755,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAllAffectedChildHierarchies)
     rules2->AddPresentationRule(*childRule2);
     
     PresentationRuleSetPtr rules3 = PresentationRuleSet::CreateInstance("UpdatesAllAffectedChildHierarchies_3", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules3);
+    m_locater->AddRuleSet(*rules3);
     rules3->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     RootNodeRule* rootRule3 = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rootRule3->AddSpecification(*new CustomNodeSpecification(1, false, "TEST_Type", "Root", "descr", "imageid"));
@@ -3811,7 +3798,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAllAffectedChildHierarchies)
     ECInstanceUpdater updater(m_db, *widget, nullptr);
     updater.Update(*widget);
     m_db.SaveChanges();
-    s_eventsSource->NotifyECInstanceUpdated(m_db, *widget);
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *widget);
 
     // verify expected results
     rootNodes1 = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), RulesDrivenECPresentationManager::NavigationOptions("UpdatesAllAffectedChildHierarchies_1", TargetTree_Both).GetJson()).get();
@@ -3845,7 +3832,7 @@ TEST_F (HierarchyUpdateTests, UpdatesParentsHasChildrenFlagWhenChildNodeIsInsert
     {
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesParentsHasChildrenFlagWhenChildNodeIsInserted_WhenParentIsRoot", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, TargetTree_Both, false);
     CustomNodeSpecification* rootSpec = new CustomNodeSpecification(1, false, "custom", "custom", "custom", "custom");
@@ -3870,7 +3857,7 @@ TEST_F (HierarchyUpdateTests, UpdatesParentsHasChildrenFlagWhenChildNodeIsInsert
         
     // insert a widget
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, nullptr, true);
-    s_eventsSource->NotifyECInstanceInserted(m_db, *widget);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *widget);
 
     // expect the root node to have a "has children" flag set to "true"
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -3902,7 +3889,7 @@ TEST_F (HierarchyUpdateTests, UpdatesParentsHasChildrenFlagWhenChildNodeIsInsert
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesParentsHasChildrenFlagWhenChildNodeIsInserted_WhenParentIsNotRoot", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule1 = new RootNodeRule();
     rule1->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
@@ -3934,7 +3921,7 @@ TEST_F (HierarchyUpdateTests, UpdatesParentsHasChildrenFlagWhenChildNodeIsInsert
         
     // insert another gadget
     IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(m_db, *m_gadgetClass, [](IECInstanceR g){g.SetValue("Description", ECValue("3"));}, true);
-    s_eventsSource->NotifyECInstanceInserted(m_db, *gadget);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *gadget);
 
     // expect the middle child node to have a "has children" flag set to "true"
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -3970,7 +3957,7 @@ TEST_F (HierarchyUpdateTests, UpdatesParentsHasChildrenFlagWhenChildNodeIsDelete
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesParentsHasChildrenFlagWhenChildNodeIsDeleted", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, TargetTree_Both, false);
     CustomNodeSpecification* rootSpec = new CustomNodeSpecification(1, false, "custom", "custom", "custom", "custom");
@@ -3996,7 +3983,7 @@ TEST_F (HierarchyUpdateTests, UpdatesParentsHasChildrenFlagWhenChildNodeIsDelete
         
     // delete the widget
     RulesEngineTestHelpers::DeleteInstance(m_db, *widget, true);
-    s_eventsSource->NotifyECInstanceDeleted(m_db, *widget);
+    m_eventsSource->NotifyECInstanceDeleted(m_db, *widget);
 
     // expect the root node to have a "has children" flag set to "false"
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -4022,7 +4009,7 @@ TEST_F (HierarchyUpdateTests, ShowsParentNodeWithHideIfNoChildrenFlagWhenChildNo
     {
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ShowsParentNodeWithHideIfNoChildrenFlagWhenChildNodeIsInserted", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, TargetTree_Both, false);
     CustomNodeSpecification* rootSpec = new CustomNodeSpecification(1, true, "custom", "custom", "custom", "custom");
@@ -4042,7 +4029,7 @@ TEST_F (HierarchyUpdateTests, ShowsParentNodeWithHideIfNoChildrenFlagWhenChildNo
         
     // insert a widget
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, nullptr, true);
-    s_eventsSource->NotifyECInstanceInserted(m_db, *widget);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *widget);
 
     // expect the root node to get inserted
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -4067,7 +4054,7 @@ TEST_F (HierarchyUpdateTests, RemovesParentNodeWithHideIfNoChildrenFlagWhenTheLa
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RemovesParentNodeWithHideIfNoChildrenFlagWhenTheLastChildNodeIsDeleted", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, TargetTree_Both, false);
     CustomNodeSpecification* rootSpec = new CustomNodeSpecification(1, true, "custom", "custom", "custom", "custom");
@@ -4095,7 +4082,7 @@ TEST_F (HierarchyUpdateTests, RemovesParentNodeWithHideIfNoChildrenFlagWhenTheLa
         
     // delete the widget
     RulesEngineTestHelpers::DeleteInstance(m_db, *widget, true);
-    s_eventsSource->NotifyECInstanceDeleted(m_db, *widget);
+    m_eventsSource->NotifyECInstanceDeleted(m_db, *widget);
 
     // expect the root node to be gone
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -4121,7 +4108,7 @@ TEST_F (HierarchyUpdateTests, DoesNotUpdateChildHierarchyIfParentIsRemoved)
     
     // create the ruleset
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("DoesNotUpdateChildHierarchyIfParentIsRemoved", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
 
@@ -4160,7 +4147,7 @@ TEST_F (HierarchyUpdateTests, DoesNotUpdateChildHierarchyIfParentIsRemoved)
 
     // delete the widget
     RulesEngineTestHelpers::DeleteInstance(m_db, *widget, true);
-    s_eventsSource->NotifyECInstanceDeleted(m_db, *widget);
+    m_eventsSource->NotifyECInstanceDeleted(m_db, *widget);
 
     // verify expected results
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -4180,7 +4167,7 @@ TEST_F (HierarchyUpdateTests, CustomizesInsertedNodes)
     {
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesCustomNodeWithHideIfNoChildrenFlagWhenNothingChanges", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
 
@@ -4195,7 +4182,7 @@ TEST_F (HierarchyUpdateTests, CustomizesInsertedNodes)
     
     // insert a widget 
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));}, true);
-    s_eventsSource->NotifyECInstanceInserted(m_db, *widget);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *widget);
 
     // expect 1 root node now 
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -4220,7 +4207,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_Used
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesAffectedBranchesWhenUserSettingChanges_UsedInRuleCondition", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
 
@@ -4234,7 +4221,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_Used
     ASSERT_EQ(0, rootNodes.GetSize());
     
     // change a setting
-    s_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("test", 1);
+    m_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("test", 1);
 
     // expect 1 root node now 
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -4259,7 +4246,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_Used
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesAffectedBranchesWhenUserSettingChanges_UsedInInstanceFilter", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
 
@@ -4274,7 +4261,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_Used
     ASSERT_EQ(0, rootNodes.GetSize());
     
     // change a setting
-    s_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("test", 1);
+    m_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("test", 1);
 
     // expect 1 root node now 
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -4300,7 +4287,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_Used
     ECInstanceId::FromString(widgetId, widget->GetInstanceId().c_str());
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesAffectedBranchesWhenUserSettingChanges_UsedInCustomizationRuleCondition", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
@@ -4315,7 +4302,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_Used
     EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(m_widgetClass->GetDisplayLabel(), widgetId.GetValue()).c_str(), rootNodes[0]->GetLabel().c_str());
 
     // change a setting
-    s_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("test", 1);
+    m_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("test", 1);
 
     // still expect 1 root node
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -4341,7 +4328,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_Used
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesAffectedBranchesWhenUserSettingChanges_UsedInCustomizationRuleExpression", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
@@ -4356,7 +4343,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_Used
     EXPECT_STREQ("test0", rootNodes[0]->GetLabel().c_str());
 
     // change a setting
-    s_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("test", 1);
+    m_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("test", 1);
 
     // still expect 1 root node
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -4388,7 +4375,7 @@ TEST_F (HierarchyUpdateTests, UpdatesGroupingBranchesUnderHiddenLevelsWhenUserSe
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesGroupingBranchesWhenUserSettingChanges", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, true, false, false, false, false,
@@ -4401,7 +4388,7 @@ TEST_F (HierarchyUpdateTests, UpdatesGroupingBranchesUnderHiddenLevelsWhenUserSe
     rules->AddPresentationRule(*childRule);
 
     // set initial setting value
-    s_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("test", 1);
+    m_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("test", 1);
 
     /* hierarchy before update:
     
@@ -4424,7 +4411,7 @@ TEST_F (HierarchyUpdateTests, UpdatesGroupingBranchesUnderHiddenLevelsWhenUserSe
     NavNodeCPtr deletedNode = childNodes[0];
 
     // change a setting
-    s_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("test", 2);
+    m_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("test", 2);
 
     /* hierarchy after update:
     
@@ -4463,7 +4450,7 @@ TEST_F (HierarchyUpdateTests, UpdatesLocalizedCustomNodesOnUserSettingChange)
     {
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesLocalizedCustomNodesOnUserSettingChange", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule->AddSpecification(*new CustomNodeSpecification(1, false, "Custom", "Label", "Description", "ImageId"));
@@ -4478,7 +4465,7 @@ TEST_F (HierarchyUpdateTests, UpdatesLocalizedCustomNodesOnUserSettingChange)
     EXPECT_STREQ("0", rootNodes[0]->GetDescription().c_str());
 
     // change a setting
-    s_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("counter", 1);
+    m_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("counter", 1);
 
     // still expect 1 root node
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -4510,7 +4497,7 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenNodeRemovedFromCollapsedH
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("DoesNotUpdateHierarchyWhenNodeRemovedFromCollapsedHierarchy", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Gadget", "MyID"));
@@ -4541,7 +4528,7 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenNodeRemovedFromCollapsedH
 
     // delete one gadget
     RulesEngineTestHelpers::DeleteInstance(m_db, *gadget2, true);
-    s_eventsSource->NotifyECInstanceDeleted(m_db, *gadget2);
+    m_eventsSource->NotifyECInstanceDeleted(m_db, *gadget2);
 
     // expect no updates
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords().size());
@@ -4571,7 +4558,7 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenNodeInsertedIntoCollapsed
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("DoesNotUpdateHierarchyWhenNodeInsertedIntoCollapsedHierarchy", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Gadget", "MyID"));
@@ -4601,7 +4588,7 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenNodeInsertedIntoCollapsed
 
     // relate second gadget
     RulesEngineTestHelpers::InsertRelationship(m_db, *widgetHasGadgetsClass, *widget, *gadget2, nullptr, true);
-    s_eventsSource->NotifyECInstanceInserted(m_db, *gadget2);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *gadget2);
 
     // expect no updates
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords().size());
@@ -4631,7 +4618,7 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenNodeUpdatedInCollapsedHie
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("DoesNotUpdateHierarchyWhenNodeUpdatedInCollapsedHierarchy", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID,Description"));
@@ -4665,7 +4652,7 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenNodeUpdatedInCollapsedHie
     ECInstanceUpdater updater(m_db, *widget, nullptr);
     updater.Update(*widget);
     m_db.SaveChanges();
-    s_eventsSource->NotifyECInstanceUpdated(m_db, *widget);
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *widget);
 
     // expect no updates
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords().size());
@@ -4698,7 +4685,7 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenAnyParentUpTheHierarchyIs
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("DoesNotUpdateHierarchyWhenAnyParentUpTheHierarchyIsCollapsed", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Gadget", "MyID"));
@@ -4745,7 +4732,7 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenAnyParentUpTheHierarchyIs
 
     // relate second sprocket to gadget
     RulesEngineTestHelpers::InsertRelationship(m_db, *gadgetHasSprocketsClass, *gadget, *sprocket2, nullptr, true);
-    s_eventsSource->NotifyECInstanceInserted(m_db, *sprocket2);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *sprocket2);
 
     // expect no updates, because widget was collapsed
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords().size());
@@ -4780,7 +4767,7 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyWhenLastNodeRemovedFromCollapsedHier
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdateHierarchyWhenLastNodeRemovedFromCollapsedHierarchy", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Gadget", "MyID"));
@@ -4811,7 +4798,7 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyWhenLastNodeRemovedFromCollapsedHier
 
     // delete gadget
     RulesEngineTestHelpers::DeleteInstance(m_db, *gadget, true);
-    s_eventsSource->NotifyECInstanceDeleted(m_db, *gadget);
+    m_eventsSource->NotifyECInstanceDeleted(m_db, *gadget);
 
     // make sure we still have 1 root node
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -4841,7 +4828,7 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyWhenNodeInsertedIntoEmptyCollapsedHi
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdateHierarchyWhenNodeInsertedIntoEmptyCollapsedHierarchy", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Gadget", "MyID"));
@@ -4871,7 +4858,7 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyWhenNodeInsertedIntoEmptyCollapsedHi
 
     // relate gadget
     RulesEngineTestHelpers::InsertRelationship(m_db, *widgetHasGadgetClass, *widget, *gadget, nullptr, true);
-    s_eventsSource->NotifyECInstanceDeleted(m_db, *gadget);
+    m_eventsSource->NotifyECInstanceDeleted(m_db, *gadget);
 
     // make sure we still have 1 root node
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -4903,7 +4890,7 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyWhenLastGroupedNodeDeletedFromCollap
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdateHierarchyWhenLastGroupedNodeDeletedFromCollapsedHierarchy", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Gadget", "MyID"));
@@ -4940,7 +4927,7 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyWhenLastGroupedNodeDeletedFromCollap
 
     // delete gadget
     RulesEngineTestHelpers::DeleteInstance(m_db, *gadget, true);
-    s_eventsSource->NotifyECInstanceDeleted(m_db, *gadget);
+    m_eventsSource->NotifyECInstanceDeleted(m_db, *gadget);
 
     // make sure we still have 1 root node
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -4968,7 +4955,7 @@ TEST_F(HierarchyUpdateTests, DoesNotCollapseParentNodeAfterChildNodeIsInserted)
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("DoesNotCollapseParentNodeAfterChildNodeIsInserted", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
 
@@ -4996,7 +4983,7 @@ TEST_F(HierarchyUpdateTests, DoesNotCollapseParentNodeAfterChildNodeIsInserted)
 
     // insert second widget
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));}, true);
-    s_eventsSource->NotifyECInstanceInserted(m_db, *widget);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *widget);
 
     // make sure we still have 1 root node
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -5033,7 +5020,7 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateFixedHierarchyWhenNodeIsInserted)
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("DoesNotUpdateFixedHierarchyWhenNodeIsInserted", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
 
@@ -5049,7 +5036,7 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateFixedHierarchyWhenNodeIsInserted)
 
     // insert second widget
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, nullptr, true);
-    s_eventsSource->NotifyECInstanceInserted(m_db, *widget);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *widget);
 
     // expect no updates
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords().size());
@@ -5065,7 +5052,7 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateFixedHierarchyWhenNodeIsUpdated)
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("DoesNotUpdateFixedHierarchyWhenNodeIsUpdated", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
@@ -5085,7 +5072,7 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateFixedHierarchyWhenNodeIsUpdated)
     ECInstanceUpdater updater(m_db, *widget, nullptr);
     updater.Update(*widget);
     m_db.SaveChanges();
-    s_eventsSource->NotifyECInstanceUpdated(m_db, *widget);
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *widget);
 
     // expect no updates
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords().size());
@@ -5102,7 +5089,7 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateFixedHierarchyWhenChildIsInserted)
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("DoesNotUpdateFixedHierarchyWhenChildIsInserted", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
 
@@ -5128,7 +5115,7 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateFixedHierarchyWhenChildIsInserted)
     // relate gadget to widget
     IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(m_db, *m_gadgetClass);
     RulesEngineTestHelpers::InsertRelationship(m_db, *widgetHasGadgetsClass, *widget, *gadget, nullptr, true);
-    s_eventsSource->NotifyECInstanceInserted(m_db, *gadget);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *gadget);
 
     // expect no updates
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords().size());
@@ -5147,7 +5134,7 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateFixedHierarchyWhenChildIsDeleted)
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("DoesNotUpdateFixedHierarchyWhenChildIsDeleted", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Gadget", "MyID"));
@@ -5177,7 +5164,7 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateFixedHierarchyWhenChildIsDeleted)
 
     // delete gadget
     RulesEngineTestHelpers::DeleteInstance(m_db, *gadget, true);
-    s_eventsSource->NotifyECInstanceDeleted(m_db, *gadget);
+    m_eventsSource->NotifyECInstanceDeleted(m_db, *gadget);
 
     // expect no updates
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords().size());
@@ -5188,12 +5175,13 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateFixedHierarchyWhenChildIsDeleted)
 +===============+===============+===============+===============+===============+======*/
 struct TempSelectionManager : SelectionManager
     {
-    TempSelectionManager()
-        : SelectionManager(HierarchyUpdateTests::s_manager->GetConnections())
+    RulesDrivenECPresentationManager& m_mgr;
+    TempSelectionManager(RulesDrivenECPresentationManager& mgr)
+        : SelectionManager(mgr.GetConnections()), m_mgr(mgr)
         {
-        HierarchyUpdateTests::s_manager->GetImpl().SetSelectionManager(this);
+        m_mgr.GetImpl().SetSelectionManager(this);
         }
-    ~TempSelectionManager() {HierarchyUpdateTests::s_manager->GetImpl().SetSelectionManager(nullptr);}
+    ~TempSelectionManager() {m_mgr.GetImpl().SetSelectionManager(nullptr);}
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -5206,7 +5194,7 @@ TEST_F (HierarchyUpdateTests, RemapsECInstanceNodeKeysWhenNodeIdsChangeAfterUpda
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RemapsECInstanceNodeKeysWhenNodeIdsChangeAfterUpdate", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
     
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, false, "RulesEngineTest"));
@@ -5221,13 +5209,13 @@ TEST_F (HierarchyUpdateTests, RemapsECInstanceNodeKeysWhenNodeIdsChangeAfterUpda
     NavNodeKeyCPtr keyBefore = rootNodes[0]->GetKey();
 
     // add the node to selection
-    TempSelectionManager selectionManager;
+    TempSelectionManager selectionManager(*m_manager);
     KeySetPtr input = KeySet::Create(*keyBefore);
     selectionManager.AddToSelection(m_db, "", false, *input);
     EXPECT_TRUE(selectionManager.GetSelection(m_db)->Contains(keyBefore));
 
     // send update notification
-    s_eventsSource->NotifyECInstanceUpdated(m_db, *widget1);
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *widget1);
 
     // get updated hierarchy
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -5249,7 +5237,7 @@ TEST_F (HierarchyUpdateTests, RemapsECClassGroupingNodeKeysWhenNodeIdsChangeAfte
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RemapsECClassGroupingNodeKeysWhenNodeIdsChangeAfterUpdate", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
     
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, true, false, "RulesEngineTest"));
@@ -5264,13 +5252,13 @@ TEST_F (HierarchyUpdateTests, RemapsECClassGroupingNodeKeysWhenNodeIdsChangeAfte
     NavNodeKeyCPtr keyBefore = rootNodes[0]->GetKey();
 
     // add the node to selection
-    TempSelectionManager selectionManager;
+    TempSelectionManager selectionManager(*m_manager);
     KeySetPtr input = KeySet::Create(*keyBefore);
     selectionManager.AddToSelection(m_db, "", false, *input);
     EXPECT_TRUE(selectionManager.GetSelection(m_db)->Contains(keyBefore));
 
     // send update notification
-    s_eventsSource->NotifyECInstanceUpdated(m_db, *widget1);
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *widget1);
 
     // get updated hierarchy
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -5292,7 +5280,7 @@ TEST_F (HierarchyUpdateTests, RemapsECPropertyGroupingNodeKeysWhenNodeIdsChangeA
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RemapsECPropertyGroupingNodeKeysWhenNodeIdsChangeAfterUpdate", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
     
     rules->AddPresentationRule(*new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", ""));
     PropertyGroupP groupSpec = new PropertyGroup("", "", true, "Description");
@@ -5312,13 +5300,13 @@ TEST_F (HierarchyUpdateTests, RemapsECPropertyGroupingNodeKeysWhenNodeIdsChangeA
     NavNodeKeyCPtr keyBefore = rootNodes[0]->GetKey();
 
     // add the node to selection
-    TempSelectionManager selectionManager;
+    TempSelectionManager selectionManager(*m_manager);
     KeySetPtr input = KeySet::Create(*keyBefore);
     selectionManager.AddToSelection(m_db, "", false, *input);
     EXPECT_TRUE(selectionManager.GetSelection(m_db)->Contains(keyBefore));
 
     // send update notification
-    s_eventsSource->NotifyECInstanceUpdated(m_db, *widget1);
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *widget1);
 
     // get updated hierarchy
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -5342,7 +5330,7 @@ TEST_F (HierarchyUpdateTests, RemapsDisplayLabelGroupingNodeKeysWhenNodeIdsChang
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RemapsDisplayLabelGroupingNodeKeysWhenNodeIdsChangeAfterUpdate", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
     
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName=\"Widget\"", 1, "this.MyID", ""));
 
@@ -5359,13 +5347,13 @@ TEST_F (HierarchyUpdateTests, RemapsDisplayLabelGroupingNodeKeysWhenNodeIdsChang
     NavNodeKeyCPtr keyBefore = rootNodes[0]->GetKey();
 
     // add the node to selection
-    TempSelectionManager selectionManager;
+    TempSelectionManager selectionManager(*m_manager);
     KeySetPtr input = KeySet::Create(*keyBefore);
     selectionManager.AddToSelection(m_db, "", false, *input);
     EXPECT_TRUE(selectionManager.GetSelection(m_db)->Contains(keyBefore));
 
     // send update notification
-    s_eventsSource->NotifyECInstanceUpdated(m_db, *widget1);
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *widget1);
 
     // get updated hierarchy
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -5388,7 +5376,7 @@ TEST_F(HierarchyUpdateTests, UpdatesSelectionWhenNodeIsInsertedIntoSelectedGroup
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesSelectionWhenNodeIsInsertedIntoSelectedGroup", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRuleP rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_MainTree, false);
     GroupingRuleP grouping = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
@@ -5408,14 +5396,14 @@ TEST_F(HierarchyUpdateTests, UpdatesSelectionWhenNodeIsInsertedIntoSelectedGroup
     NavNodeKeyCPtr keyBefore = rootNodes[0]->GetKey();
 
     // add node to selection
-    TempSelectionManager selectionManager;
+    TempSelectionManager selectionManager(*m_manager);
     KeySetPtr input = KeySet::Create(*keyBefore);
     selectionManager.AddToSelection(m_db, "", false, *input);
     EXPECT_TRUE(selectionManager.GetSelection(m_db)->Contains(keyBefore));
 
     // insert new instance
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("IntProperty", ECValue(2));}, true);
-    s_eventsSource->NotifyECInstanceInserted(m_db, *widget);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *widget);
 
     // get updated hierarchy
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -5437,7 +5425,7 @@ TEST_F (HierarchyUpdateTests, UpdatesSelectionWhenUserSettingChanges_UsedInCusto
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesSelectionWhenUserSettingChanges_UsedInCustomizationRuleCondition", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, true, false, "RulesEngineTest"));
@@ -5454,13 +5442,13 @@ TEST_F (HierarchyUpdateTests, UpdatesSelectionWhenUserSettingChanges_UsedInCusto
     NavNodeKeyCPtr keyBefore = rootNodes[0]->GetKey();
 
     // add node to selection
-    TempSelectionManager selectionManager;
+    TempSelectionManager selectionManager(*m_manager);
     KeySetPtr input = KeySet::Create(*keyBefore);
     selectionManager.AddToSelection(m_db, "", false, *input);
     EXPECT_TRUE(selectionManager.GetSelection(m_db)->Contains(keyBefore));
     
     // change a setting
-    s_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("test", 1);
+    m_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("test", 1);
 
     // get updated hierarchy
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
@@ -5490,7 +5478,7 @@ TEST_F (ContentUpdateTests, UpdatesContentAfterECInstanceInsert)
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesContentAfterECInstanceInsert", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     ContentRule* rule = new ContentRule("", 1, false);
     rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
@@ -5507,7 +5495,7 @@ TEST_F (ContentUpdateTests, UpdatesContentAfterECInstanceInsert)
     
     // insert one more instance
     IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, nullptr, true);
-    s_eventsSource->NotifyECInstanceInserted(m_db, *widget2);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *widget2);
 
     // expect 2 records
     content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
@@ -5531,7 +5519,7 @@ TEST_F (ContentUpdateTests, UpdatesContentAfterECInstanceUpdate)
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesContentAfterECInstanceUpdate", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     ContentRule* rule = new ContentRule("", 1, false);
     rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
@@ -5547,7 +5535,7 @@ TEST_F (ContentUpdateTests, UpdatesContentAfterECInstanceUpdate)
     ASSERT_TRUE(content->GetContentSet()[0].IsValid());
     
     // notify about an update (even though we didn't change anything)
-    s_eventsSource->NotifyECInstanceUpdated(m_db, *widget);
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *widget);
 
     // expect 1 record
     content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
@@ -5571,7 +5559,7 @@ TEST_F(ContentUpdateTests, UpdatesContentAfterECInstanceDeleteWhenMoreInstancesE
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesContentAfterECInstanceDeleteWhenMoreInstancesExist", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     ContentRule* rule = new ContentRule("", 1, false);
     rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
@@ -5589,7 +5577,7 @@ TEST_F(ContentUpdateTests, UpdatesContentAfterECInstanceDeleteWhenMoreInstancesE
     
     // delete one of the instances
     RulesEngineTestHelpers::DeleteInstance(m_db, *widget1, true);
-    s_eventsSource->NotifyECInstanceDeleted(m_db, *widget1);
+    m_eventsSource->NotifyECInstanceDeleted(m_db, *widget1);
 
     // expect 1 record
     content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
@@ -5612,7 +5600,7 @@ TEST_F (ContentUpdateTests, UpdatesContentAfterECInstanceDeleteWhenNoMoreInstanc
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesContentAfterECInstanceDeleteWhenNoMoreInstancesExist", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     ContentRule* rule = new ContentRule("", 1, false);
     rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
@@ -5629,7 +5617,7 @@ TEST_F (ContentUpdateTests, UpdatesContentAfterECInstanceDeleteWhenNoMoreInstanc
     
     // delete the instance
     RulesEngineTestHelpers::DeleteInstance(m_db, *widget, true);
-    s_eventsSource->NotifyECInstanceDeleted(m_db, *widget);
+    m_eventsSource->NotifyECInstanceDeleted(m_db, *widget);
 
     // expect 0 records
     content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
@@ -5651,7 +5639,7 @@ TEST_F (ContentUpdateTests, UpdatesAllContentBasedOnOneRulesetButSendsOnlyOneNot
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesAllContentBasedOnOneRulesetButSendsOnlyOneNotification_WithNoContent", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     ContentRule* rule = new ContentRule("", 1, false);
     rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
@@ -5666,7 +5654,7 @@ TEST_F (ContentUpdateTests, UpdatesAllContentBasedOnOneRulesetButSendsOnlyOneNot
 
     // delete the instance
     RulesEngineTestHelpers::DeleteInstance(m_db, *widget, true);
-    s_eventsSource->NotifyECInstanceDeleted(m_db, *widget);
+    m_eventsSource->NotifyECInstanceDeleted(m_db, *widget);
 
     // still expect no content
     descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(m_db, ContentDisplayType::Graphics, *KeySet::Create(), nullptr, options.GetJson()).get();
@@ -5695,7 +5683,7 @@ TEST_F (ContentUpdateTests, UpdatesAllContentBasedOnOneRulesetButSendsOnlyOneNot
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesAllContentBasedOnOneRulesetButSendsOnlyOneNotification_WithContent", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     ContentRule* rule = new ContentRule("", 1, false);
     rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
@@ -5716,7 +5704,7 @@ TEST_F (ContentUpdateTests, UpdatesAllContentBasedOnOneRulesetButSendsOnlyOneNot
 
     // delete the instance
     RulesEngineTestHelpers::DeleteInstance(m_db, *widget, true);
-    s_eventsSource->NotifyECInstanceDeleted(m_db, *widget);
+    m_eventsSource->NotifyECInstanceDeleted(m_db, *widget);
     inputKeys = KeySet::Create();
 
     // expect no content in both cases
@@ -5737,11 +5725,11 @@ TEST_F (ContentUpdateTests, UpdatesAllContentBasedOnOneRulesetButSendsOnlyOneNot
 TEST_F (ContentUpdateTests, UpdatesContentAfterCategoriesChange)
     {
     TestCategorySupplier supplier;
-    s_manager->SetCategorySupplier(&supplier);
+    m_manager->SetCategorySupplier(&supplier);
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesContentAfterCategoriesChange", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     ContentRule* rule = new ContentRule("", 1, false);
     rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
@@ -5760,7 +5748,7 @@ TEST_F (ContentUpdateTests, UpdatesContentAfterCategoriesChange)
     
     // change supplied category
     supplier.SetUsedCategory(ContentDescriptor::Category::GetFavoriteCategory());
-    s_manager->NotifyCategoriesChanged();
+    m_manager->NotifyCategoriesChanged();
 
     // expect the fields to have the new supplied category
     descriptor = IECPresentationManager::GetManager().GetContentDescriptor(m_db, nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
@@ -5785,7 +5773,7 @@ TEST_F (ContentUpdateTests, InvalidatesWhenUserSettingChanges_UsedInRuleConditio
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("InvalidatesWhenUserSettingChanges_UsedInRuleCondition", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
     
     ContentRule* rule = new ContentRule("1 = GetSettingIntValue(\"test\")", 1, false);
     rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
@@ -5799,7 +5787,7 @@ TEST_F (ContentUpdateTests, InvalidatesWhenUserSettingChanges_UsedInRuleConditio
     ASSERT_TRUE(descriptor.IsNull());
         
     // change a setting
-    s_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("test", 1);
+    m_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("test", 1);
     
     // expect 1 content item
     descriptor = IECPresentationManager::GetManager().GetContentDescriptor(m_db, nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
@@ -5822,7 +5810,7 @@ TEST_F (ContentUpdateTests, InvalidatesWhenUserSettingChanges_UsedInInstanceFilt
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("InvalidatesWhenUserSettingChanges_UsedInInstanceFilter", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
     
     ContentRule* rule = new ContentRule("", 1, false);
     rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "1 = GetSettingIntValue(\"test\")", "RulesEngineTest:Widget", false));
@@ -5837,7 +5825,7 @@ TEST_F (ContentUpdateTests, InvalidatesWhenUserSettingChanges_UsedInInstanceFilt
     ASSERT_EQ(0, content->GetContentSet().GetSize());
         
     // change a setting
-    s_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("test", 1);
+    m_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("test", 1);
 
     // expect 1 content item
     content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
@@ -5858,7 +5846,7 @@ TEST_F (ContentUpdateTests, DoesNotInvalidateWhenUnusedUserSettingChanges)
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("DoesNotInvalidateWhenUnusedUserSettingChanges", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
     
     ContentRule* rule = new ContentRule("", 1, false);
     rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false));
@@ -5873,7 +5861,7 @@ TEST_F (ContentUpdateTests, DoesNotInvalidateWhenUnusedUserSettingChanges)
     ASSERT_EQ(1, content->GetContentSet().GetSize());
         
     // change a setting
-    s_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("test", 1);
+    m_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("test", 1);
 
     // expect the content to be the same
     content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
@@ -5894,7 +5882,7 @@ TEST_F (HierarchyUpdateTests, DoesNotCollapseNodeIfItWasExpandedAndLastChildrenW
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("DoesNotCollapseNodeIfItWasExpandedAndLastChildrenWasRemoved", 1, 0, false, "", "", "", false);
-    s_locater->AddRuleSet(*rules);
+    m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
@@ -5923,7 +5911,7 @@ TEST_F (HierarchyUpdateTests, DoesNotCollapseNodeIfItWasExpandedAndLastChildrenW
 
     // delete child
     RulesEngineTestHelpers::DeleteInstance(m_db, *gadget, true);
-    s_eventsSource->NotifyECInstanceDeleted(m_db, *gadget);
+    m_eventsSource->NotifyECInstanceDeleted(m_db, *gadget);
     
     // expect root node to be expanded but without children
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();

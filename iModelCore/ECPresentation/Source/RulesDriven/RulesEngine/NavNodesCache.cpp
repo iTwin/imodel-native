@@ -18,7 +18,7 @@
 USING_NAMESPACE_BENTLEY_LOGGING
 
 #define NAVNODES_CACHE_DB_NAME          L"HierarchyCache.db"
-#define NAVNODES_CACHE_DB_VERSION_MAJOR 5
+#define NAVNODES_CACHE_DB_VERSION_MAJOR 6
 #define NAVNODES_CACHE_DB_VERSION_MINOR 0
 //#define NAVNODES_CACHE_DEBUG
 
@@ -358,11 +358,11 @@ void NodesCache::Initialize(BeFileNameCR tempDirectory)
     if (!m_db.TableExists(NODESCACHE_TABLENAME_Connections))
         {
         Utf8CP ddl = "[ConnectionId] TEXT PRIMARY KEY NOT NULL, "
-                     "[DbGuid] GUID NOT NULL, "
+                     "[DbPath] TEXT NOT NULL, "
                      "[LastModTime] INTEGER NOT NULL, "
                      "[LastUsedTime] INTEGER NOT NULL";
         m_db.CreateTable(NODESCACHE_TABLENAME_Connections, ddl);
-        m_db.ExecuteSql("CREATE INDEX [IX_Connections_DbGuid] ON [" NODESCACHE_TABLENAME_Connections "]([DbGuid])");
+        m_db.ExecuteSql("CREATE INDEX [IX_Connections_DbPath] ON [" NODESCACHE_TABLENAME_Connections "]([DbPath])");
         }
     if (!m_db.TableExists(NODESCACHE_TABLENAME_Rulesets))
         {
@@ -424,34 +424,34 @@ void NodesCache::OnFirstConnection(IConnectionCR connection)
     BeFileName(connection.GetDb().GetDbFileName()).GetFileTime(nullptr, nullptr, &fileModTime);
 
     // delete connections whose modification times don't match file modification time
-    Utf8CP deleteQuery = "DELETE FROM [" NODESCACHE_TABLENAME_Connections "] WHERE [DbGuid] = ? AND [LastModTime] <> ?";
+    Utf8CP deleteQuery = "DELETE FROM [" NODESCACHE_TABLENAME_Connections "] WHERE [DbPath] = ? AND [LastModTime] <> ?";
     CachedStatementPtr deleteStmt;
     if (BE_SQLITE_OK != m_statements.GetPreparedStatement(deleteStmt, *m_db.GetDbFile(), deleteQuery))
         {
         BeAssert(false);
         return;
         }
-    deleteStmt->BindGuid(1, connection.GetDb().GetDbGuid());
+    deleteStmt->BindText(1, connection.GetDb().GetDbFileName(), Statement::MakeCopy::No);
     deleteStmt->BindInt64(2, (int64_t)fileModTime);
     DbResult deleteResult = deleteStmt->Step();
     BeAssert(BE_SQLITE_DONE == deleteResult);
 
     // either update existing ECDb's connection id or insert a new one
-    Utf8CP selectQuery = "SELECT * FROM [" NODESCACHE_TABLENAME_Connections "] WHERE [DbGuid] = ?";
+    Utf8CP selectQuery = "SELECT * FROM [" NODESCACHE_TABLENAME_Connections "] WHERE [DbPath] = ?";
     CachedStatementPtr selectStmt;
     if (BE_SQLITE_OK != m_statements.GetPreparedStatement(selectStmt, *m_db.GetDbFile(), selectQuery))
         {
         BeAssert(false);
         return;
         }
-    selectStmt->BindGuid(1, connection.GetDb().GetDbGuid());
+    selectStmt->BindText(1, connection.GetDb().GetDbFileName(), Statement::MakeCopy::No);
     DbResult selectResult = selectStmt->Step();
     if (BE_SQLITE_ROW == selectResult)
         {
         BeAssert(BE_SQLITE_DONE == selectStmt->Step() && "Don't expect more than one row");
 
         // update existing connection id
-        Utf8CP updateQuery = "UPDATE [" NODESCACHE_TABLENAME_Connections "] SET [ConnectionId] = ?, [LastUsedTime] = ? WHERE [DbGuid] = ?";
+        Utf8CP updateQuery = "UPDATE [" NODESCACHE_TABLENAME_Connections "] SET [ConnectionId] = ?, [LastUsedTime] = ? WHERE [DbPath] = ?";
         CachedStatementPtr updateStmt;
         if (BE_SQLITE_OK != m_statements.GetPreparedStatement(updateStmt, *m_db.GetDbFile(), updateQuery))
             {
@@ -460,14 +460,14 @@ void NodesCache::OnFirstConnection(IConnectionCR connection)
             }
         updateStmt->BindText(1, connection.GetId().c_str(), Statement::MakeCopy::No);
         updateStmt->BindUInt64(2, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
-        updateStmt->BindGuid(3, connection.GetDb().GetDbGuid());
+        updateStmt->BindText(3, connection.GetDb().GetDbFileName(), Statement::MakeCopy::No);
         DbResult updateResult = updateStmt->Step();
         BeAssert(BE_SQLITE_DONE == updateResult);
         }
     else
         {
         // insert a new connection
-        Utf8CP insertQuery = "INSERT INTO [" NODESCACHE_TABLENAME_Connections "] ([ConnectionId], [DbGuid], [LastModTime], [LastUsedTime]) VALUES (?, ?, ?, ?)";
+        Utf8CP insertQuery = "INSERT INTO [" NODESCACHE_TABLENAME_Connections "] ([ConnectionId], [DbPath], [LastModTime], [LastUsedTime]) VALUES (?, ?, ?, ?)";
         CachedStatementPtr insertStmt;
         if (BE_SQLITE_OK != m_statements.GetPreparedStatement(insertStmt, *m_db.GetDbFile(), insertQuery))
             {
@@ -475,7 +475,7 @@ void NodesCache::OnFirstConnection(IConnectionCR connection)
             return;
             }
         insertStmt->BindText(1, connection.GetId().c_str(), Statement::MakeCopy::No);
-        insertStmt->BindGuid(2, connection.GetDb().GetDbGuid());
+        insertStmt->BindText(2, connection.GetDb().GetDbFileName(), Statement::MakeCopy::No);
         insertStmt->BindInt64(3, (int64_t)fileModTime);
         insertStmt->BindUInt64(4, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
         DbResult insertResult = insertStmt->Step();
