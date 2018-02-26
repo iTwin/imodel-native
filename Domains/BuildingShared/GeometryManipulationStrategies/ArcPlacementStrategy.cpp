@@ -203,3 +203,47 @@ ArcPlacementMethod ArcPlacementStrategy::GetPlacementMethod() const
     {
     return m_placementMethod->GetMethod();
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcPlacementStrategy::SetUseSweep
+(
+    bool useSweep
+)
+    {
+    _SetProperty(prop_UseSweep(), useSweep);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcPlacementStrategy::SetSweep
+(
+    double sweep
+)
+    {
+    _SetProperty(prop_Sweep(), sweep);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcPlacementStrategy::SetUseRadius
+(
+    bool useRadius
+)
+    {
+    _SetProperty(prop_UseRadius(), useRadius);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcPlacementStrategy::SetRadius
+(
+    double radius
+)
+    {
+    _SetProperty(prop_Radius(), radius);
+    }

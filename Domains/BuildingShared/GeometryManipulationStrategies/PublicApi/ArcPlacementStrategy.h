@@ -47,9 +47,27 @@ struct IArcPlacementMethod : IRefCounted
     };
 
 //=======================================================================================
+// @bsiclass                                     Mindaugas.Butkus               02/2018
+//=======================================================================================
+struct IArcPlacementStrategy
+    {
+    protected:
+        virtual ~IArcPlacementStrategy() {}
+
+    public:
+        virtual void SetPlacementMethod(ArcPlacementMethod method) = 0;
+
+        virtual void SetUseSweep(bool useSweep) = 0;
+        virtual void SetSweep(double sweep) = 0;
+
+        virtual void SetUseRadius(bool useRadius) = 0;
+        virtual void SetRadius(double radius) = 0;
+    };
+
+//=======================================================================================
 // @bsiclass                                     Mindaugas.Butkus               12/2017
 //=======================================================================================
-struct ArcPlacementStrategy : public CurvePrimitivePlacementStrategy
+struct ArcPlacementStrategy : public CurvePrimitivePlacementStrategy, IArcPlacementStrategy
     {
     DEFINE_T_SUPER(CurvePrimitivePlacementStrategy)
 
@@ -76,8 +94,19 @@ struct ArcPlacementStrategy : public CurvePrimitivePlacementStrategy
     public:
         static constexpr Utf8CP prop_Normal() { return EllipseManipulationStrategy::prop_Normal(); }
 
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void SetPlacementMethod(ArcPlacementMethod method);
+        static constexpr Utf8CP prop_UseSweep() { return "UseSweep"; }
+        static constexpr Utf8CP prop_Sweep() { return "Sweep"; }
+        static constexpr Utf8CP prop_UseRadius() { return "UseRadius"; }
+        static constexpr Utf8CP prop_Radius() { return "Radius"; }
+
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ArcPlacementMethod GetPlacementMethod() const;
+
+        // IArcPlacementStrategy
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void SetPlacementMethod(ArcPlacementMethod method);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void SetUseSweep(bool useSweep);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void SetSweep(double sweep);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void SetUseRadius(bool useRadius);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void SetRadius(double radius);
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static ArcPlacementStrategyPtr Create(ArcPlacementMethod method);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static ArcPlacementStrategyPtr Create(ArcPlacementMethod method, ArcManipulationStrategyR manipulationStrategy);
