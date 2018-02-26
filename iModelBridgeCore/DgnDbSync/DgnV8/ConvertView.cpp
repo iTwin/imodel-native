@@ -630,7 +630,12 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
     if (viewInfo.GetDelta().Magnitude() < mgds_fc_epsilon)
         parms.m_extents.Init(DgnUnits::OneMeter(), DgnUnits::OneMeter(), DgnUnits::OneMeter());
     else
-        trans.Multiply(parms.m_extents, (DVec3dCR)viewInfo.GetDelta());
+        {
+        auto viewCornerSrc = Bentley::DPoint3d::FromSumOf(viewInfo.GetOrigin(), viewInfo.GetDelta());  // corner of view (source coordinates)
+        DPoint3d viewCorner;
+        trans.Multiply(viewCorner, (DPoint3dCR)viewCornerSrc); // corner of view (BIM coordinates)
+        parms.m_extents = DVec3d::FromStartEnd(parms.m_origin, viewCorner);
+        }
 
     Bentley::RotMatrix v8Rotation = viewInfo.GetRotation();
     if (v8Rotation.MaxAbs() < mgds_fc_epsilon)
