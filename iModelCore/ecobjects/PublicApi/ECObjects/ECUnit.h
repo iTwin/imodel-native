@@ -215,6 +215,9 @@ public:
     void SetId(UnitId id) {BeAssert(!m_unitId.IsValid()); m_unitId = id;}
     bool HasId() const {return m_unitId.IsValid();}
 
+    //! If this unit is an inverted unit, the method returns the unit, this inverted unit inverts.
+    ECUnitCP GetInvertingUnit() const { BeAssert(IsInvertedUnit()); return (ECUnitCP) GetParent(); }
+
     //! Write the ECUnit as a standalone schema child in the ECSchemaJSON format.
     //! @param[out] outValue                Json object containing the schema child Json if successfully written.
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
