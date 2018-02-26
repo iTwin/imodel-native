@@ -1949,6 +1949,42 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
     ASSERT_EQ(1, related.size());
     EXPECT_EQ(related[0], info);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(NodesCacheTests, AllowsUsingMultipleConnectionsToTheSameDbAtDifferentPaths)
+    {
+    // copy the dataset
+    BeFileName name1(s_project->GetECDb().GetDbFileName(), true);
+    BeFileName name2 = BeFileName(name1).AppendExtension(L"copy");
+    name2.BeDeleteFile();
+    BeFileName::BeCopyFile(name1.c_str(), name2.c_str());
+
+    // make sure both datasets have the same mod time
+    time_t fileModTime;
+    name1.GetFileTime(nullptr, nullptr, &fileModTime);
+    name2.SetFileTime(nullptr, &fileModTime);
+
+    // open the second project
+    ECDbTestProject project2;
+    ASSERT_EQ(BE_SQLITE_OK, project2.Open(name2.GetNameUtf8().c_str()));
+    IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project2.GetECDb());
+
+    // cache root data source for the first connection
+    DataSourceInfo info1(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
+    m_cache->Cache(info1, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+
+    // cache root data source for the second connection
+    DataSourceInfo info2(connection2->GetId(), "ruleset_id", nullptr, nullptr);
+    m_cache->Cache(info2, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+
+    // verify both data sources got cached
+    EXPECT_TRUE(m_cache->IsDataSourceCached(m_connection->GetId(), "ruleset_id"));
+    EXPECT_TRUE(m_cache->IsDataSourceCached(connection2->GetId(), "ruleset_id"));
+
+    m_connections.NotifyConnectionClosed(*connection2);
+    }
     
 /*=================================================================================**//**
 * @bsiclass                                     Saulius.Skliutas                09/2017

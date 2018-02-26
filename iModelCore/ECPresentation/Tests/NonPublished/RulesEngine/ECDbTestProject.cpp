@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/ECDbTestProject.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -343,7 +343,9 @@ void ECDbTestProject::CreateEmpty (Utf8CP ecdbFileName)
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDbTestProject::Open (Utf8CP ecdbFileName, ECDb::OpenParams openParams)
     {
-    BeFileName ecdbFilePath = ECDbTestUtility::BuildECDbPath(ecdbFileName);
+    BeFileName ecdbFilePath(ecdbFileName);
+    if (!ecdbFilePath.IsAbsolutePath())
+        ecdbFilePath = ECDbTestUtility::BuildECDbPath(ecdbFileName);
     m_ecdb->RemoveIssueListener();
     return m_ecdb->OpenBeSQLiteDb (ecdbFilePath, openParams);
     }
