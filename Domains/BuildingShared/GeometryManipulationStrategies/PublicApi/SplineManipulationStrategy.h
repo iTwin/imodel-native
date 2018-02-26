@@ -12,6 +12,12 @@ BEGIN_BUILDING_SHARED_NAMESPACE
 //=======================================================================================
 // @bsiclass                                     Haroldas.Vitunskas             01/2018
 //=======================================================================================
+enum class SplinePlacementStrategyType
+{
+    ControlPoints = 0,
+    ThroughPoints
+};
+
 struct SplineManipulationStrategy : public CurvePrimitiveManipulationStrategy
     {
     DEFINE_T_SUPER(CurvePrimitiveManipulationStrategy)
@@ -23,6 +29,10 @@ struct SplineManipulationStrategy : public CurvePrimitiveManipulationStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _CanAcceptMorePoints() const override { return true; }
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsContinious() const override { return true; }
+
+    public:
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static SplineManipulationStrategyPtr Create(SplinePlacementStrategyType placementStrategy);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT SplinePlacementStrategyPtr CreatePlacement();
     };
 
 //=======================================================================================

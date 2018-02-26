@@ -9,14 +9,45 @@
 
 USING_NAMESPACE_BUILDING_SHARED
 
+#define DEFAULT_ORDER 3
+
 /////////////////////////////////////////////////////////////////////////////////////////
 // SplineManipulationStrategy
 /////////////////////////////////////////////////////////////////////////////////////////
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+SplineManipulationStrategyPtr SplineManipulationStrategy::Create
+(
+    SplinePlacementStrategyType placementStrategy
+)
+    {
+    switch (placementStrategy)
+        {
+        case SplinePlacementStrategyType::ControlPoints:
+            return SplineControlPointsManipulationStrategy::Create(DEFAULT_ORDER);
+        case SplinePlacementStrategyType::ThroughPoints:
+            return SplineThroughPointsManipulationStrategy::Create();
+        default:
+            BeAssert(false);
+            return nullptr;
+        }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+SplinePlacementStrategyPtr SplineManipulationStrategy::CreatePlacement()
+    {
+    SplinePlacementStrategyPtr strategy = dynamic_cast<SplinePlacementStrategyP>(_CreateDefaultPlacementStrategy().get());
+    BeAssert(strategy.IsValid());
+    return strategy;
+    }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // SplineControlPointsManipulationStrategy
 /////////////////////////////////////////////////////////////////////////////////////////
-const int SplineControlPointsManipulationStrategy::default_Order = 3;
+//const int SplineControlPointsManipulationStrategy::default_Order = 3; Why would you need this here?
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas             01/2018
