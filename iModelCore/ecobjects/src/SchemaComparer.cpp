@@ -1526,6 +1526,19 @@ BentleyStatus SchemaComparer::CompareUnit(UnitChange& change, ECUnitCR oldVal, E
     if (!oldSystem->GetFullName().EqualsIAscii(newSystem->GetFullName()))
         change.GetUnitSystem().SetValue(oldSystem->GetFullName(), newSystem->GetFullName());
 
+    if (oldVal.IsConstant() != newVal.IsConstant())
+        change.GetIsConstant().SetValue(oldVal.IsConstant(), newVal.IsConstant());
+
+    Nullable<Utf8String> oldInvertingUnitName = oldVal.IsInvertedUnit() ? oldVal.GetInvertingUnit()->GetFullName() : nullptr;
+    Nullable<Utf8String> newInvertingUnitName = newVal.IsInvertedUnit() ? newVal.GetInvertingUnit()->GetFullName() : nullptr;
+
+    if (oldInvertingUnitName != nullptr && newInvertingUnitName == nullptr)
+        change.GetInvertingUnit().SetValue(ValueId::Deleted, oldInvertingUnitName.Value());
+    else if (oldInvertingUnitName == nullptr && newInvertingUnitName != nullptr)
+        change.GetInvertingUnit().SetValue(ValueId::New, newInvertingUnitName.Value());
+    else if (!oldInvertingUnitName.Value().EqualsIAscii(newInvertingUnitName.Value()))
+        change.GetInvertingUnit().SetValue(std::move(oldInvertingUnitName), std::move(newInvertingUnitName));
+
     return SUCCESS;
     }
 
@@ -1840,6 +1853,14 @@ BentleyStatus SchemaComparer::AppendUnit(UnitChanges& changes, ECUnitCR unit, Va
     BeAssert(dynamic_cast<UnitSystemCP> (unit.GetUnitSystem()) != nullptr);
     UnitSystemCP system = static_cast<UnitSystemCP> (unit.GetUnitSystem());
     change.GetUnitSystem().SetValue(appendType, system->GetFullName());
+
+    change.GetIsConstant().SetValue(appendType, unit.IsConstant());
+
+    if (unit.IsInvertedUnit())
+        {
+        Nullable<Utf8String> invertingUnitName = unit.GetInvertingUnit() != nullptr ? unit.GetInvertingUnit()->GetFullName() : nullptr;
+        change.GetInvertingUnit().SetValue(appendType, std::move(invertingUnitName));
+        }
 
     return SUCCESS;
     }
@@ -2175,6 +2196,8 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::Unit: return "Unit";
             case SystemId::UnitDefinition: return "UnitDefinition";
             case SystemId::UnitFactor: return "UnitFactor";
+            case SystemId::UnitInvertingUnit: return "UnitInvertingUnit";
+            case SystemId::UnitIsConstant: return "UnitIsConstant";
             case SystemId::UnitOffset: return "UnitOffset";
             case SystemId::Units: return "Units";
             case SystemId::VersionRead: return "VersionRead";
