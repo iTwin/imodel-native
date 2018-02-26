@@ -182,18 +182,18 @@ public:
             {}
         };
 private:
-    Dgn::DgnElementR m_thisElem;
+    GridSurfaceR m_thisElem;
 protected:
 
     BE_PROP_NAME (StartElevation)
     BE_PROP_NAME (EndElevation)
 
     //! initialized this mixin with element reference (pass *this)
-    IPlanGridSurface (Dgn::DgnElementR thisElem, CreateParams const& params, Dgn::DgnClassId classId);
+    IPlanGridSurface (GridSurfaceR thisElem, CreateParams const& params, Dgn::DgnClassId classId);
 public:
 
-    Dgn::DgnElementCR GetThisElem() const { return m_thisElem; }
-    Dgn::DgnElementR GetThisElemR() const { return m_thisElem; }
+    GridSurfaceCR GetThisElem() const { return m_thisElem; }
+    GridSurfaceR GetThisElemR() const { return m_thisElem; }
 
     //! Gets start elevation of this IPlanGridSurface
     //! @return StartElevation of this RadialGrid

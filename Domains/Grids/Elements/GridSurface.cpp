@@ -413,7 +413,7 @@ Dgn::ElementIterator GridSurface::MakeCreatedCurvesIterator() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 IPlanGridSurface::IPlanGridSurface 
 (
-Dgn::DgnElementR thisElem,
+GridSurfaceR thisElem,
 CreateParams const& params,
 Dgn::DgnClassId classId
 ) :m_thisElem(thisElem)

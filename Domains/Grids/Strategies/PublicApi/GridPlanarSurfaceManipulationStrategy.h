@@ -21,7 +21,6 @@ struct GridPlanarSurfaceManipulationStrategy : public SketchGridSurfaceManipulat
     protected:
         GridPlanarSurfaceManipulationStrategy() : T_Super() {}
 
-        virtual BentleyStatus _UpdateGridSurface() override;
         virtual PlanGridPlanarSurfaceCP _GetPlanGridPlanarSurfaceCP() const = 0;
         virtual PlanGridPlanarSurfaceP _GetPlanGridPlanarSurfaceP() const = 0;
         virtual IPlanGridSurface const* _GetPlanGridSurfaceCP() const override { return _GetPlanGridPlanarSurfaceCP(); }

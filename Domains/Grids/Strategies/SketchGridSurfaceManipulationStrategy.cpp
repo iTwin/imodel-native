@@ -27,6 +27,9 @@ BentleyStatus SketchGridSurfaceManipulationStrategy::_UpdateGridSurface()
     if (nullptr == surface)
         return BentleyStatus::ERROR;
 
+    if (surface->GetThisElem().GetAxisId() != m_axis->GetElementId())
+        surface->GetThisElemR().SetAxisId(m_axis->GetElementId());
+
     if (surface->GetStartElevation() != m_bottomElevation)
         surface->SetStartElevation(m_bottomElevation);
 
