@@ -8,8 +8,6 @@
      
 baseDir         = $(_MakeFilePath)
 
-
-
 %include  mdl.mki
 %include $(SrcRoot)ScalableMesh/mki/ScalableMeshLibName.mki
 %include $(SrcRoot)ScalableMesh/mki/ScalableMeshPolicy.mki
