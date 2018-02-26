@@ -351,7 +351,7 @@ CCompOpts + -D__CPP__
 
     $(o)CS_zones$(oext):              $(csSrcDir)CS_zones.c ${MultiCompileDepends}
     
-    $(o)CScscomp$(oext):              $(csSrcDir)CScscomp.c ${MultiCompileDepends}
+    $(o)cscscomp$(oext):              $(csSrcDir)cscscomp.c ${MultiCompileDepends}
 
     $(o)CSdata$(oext):                $(csSrcDir)CSdata.c ${MultiCompileDepends}
     
