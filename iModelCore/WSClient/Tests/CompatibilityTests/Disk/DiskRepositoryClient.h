@@ -47,6 +47,11 @@ struct DiskClient : public IWSClient
             return GetServerInfo(ct);
             }
 
+        virtual AsyncTaskPtr<WSVoidResult> VerifyConnection() const override
+            {
+            return CreateCompletedAsyncTask(WSVoidResult::Success());
+            }
+
         virtual AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
             (
             ICancellationTokenPtr ct = nullptr

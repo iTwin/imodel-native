@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/WSClientTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <WebServices/Client/WSClient.h>
@@ -34,6 +34,49 @@ TEST_F(WSClientTests, SendGetInfoRequest_Called_SendsGetPluginsUrl)
         });
 
     client->SendGetInfoRequest()->Wait();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                julius.cepukenas    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSClientTests, VerifyConnetction_Called_SendsGetRequestToMainUrl)
+    {
+    auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
+
+    GetHandler().ExpectOneRequest().ForAnyRequest([=] (Http::RequestCR request)
+        {
+        EXPECT_STREQ("GET", request.GetMethod().c_str());
+        EXPECT_STREQ("https://srv.com/ws", request.GetUrl().c_str());
+        return StubWSErrorHttpResponse(HttpStatus::OK);
+        });
+
+    client->VerifyConnection()->Wait();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                julius.cepukenas    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSClientTests, VerifyConnetction_ConnectionOK_Succeeds)
+    {
+    auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSErrorHttpResponse(HttpStatus::OK));
+
+    EXPECT_TRUE(client->VerifyConnection()->GetResult().IsSuccess());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                julius.cepukenas    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSClientTests, VerifyConnetction_CouldNotConnect_Fails)
+    {
+    auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSErrorHttpResponse(HttpStatus::None));
+
+    EXPECT_FALSE(client->VerifyConnection()->GetResult().IsSuccess());
     }
 
 /*--------------------------------------------------------------------------------------+

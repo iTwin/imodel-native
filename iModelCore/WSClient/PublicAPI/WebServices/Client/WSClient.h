@@ -29,6 +29,7 @@ typedef std::shared_ptr<struct IWSClient>           IWSClientPtr;
 
 typedef AsyncResult<struct WSInfo, WSError>         WSInfoResult;
 typedef AsyncResult<bvector<WSRepository>, WSError> WSRepositoriesResult;
+typedef AsyncResult<void, WSError>                  WSVoidResult;
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    08/2014
@@ -53,6 +54,9 @@ struct IWSClient
 
         //! Unregister from ServerInfo received events
         virtual void UnregisterServerInfoListener(std::weak_ptr<IServerInfoListener> listener) = 0;
+
+        //! @return true if there is a proper conectivity with the server
+        virtual AsyncTaskPtr<WSVoidResult> VerifyConnection() const = 0;
 
         //! Returns server information or queries server if needs updating
         virtual AsyncTaskPtr<WSInfoResult> GetServerInfo
@@ -107,6 +111,8 @@ struct WSClient : public IWSClient, public std::enable_shared_from_this<WSClient
 
         WSCLIENT_EXPORT void RegisterServerInfoListener(std::weak_ptr<IServerInfoListener> listener) override;
         WSCLIENT_EXPORT void UnregisterServerInfoListener(std::weak_ptr<IServerInfoListener> listener) override;
+
+        WSCLIENT_EXPORT AsyncTaskPtr<WSVoidResult> VerifyConnection() const override;
 
         WSCLIENT_EXPORT AsyncTaskPtr<WSInfoResult> GetServerInfo
             (
