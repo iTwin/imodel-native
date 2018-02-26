@@ -189,7 +189,7 @@ UnitCP UnitRegistry::AddUnitForBasePhenomenon(Utf8CP unitName, Utf8CP basePhenom
         return nullptr;
         }
 
-    return AddUnitInternal<Unit>(basePhenomenonName, SI, unitName, unitName, 1, 0, false);
+    return AddUnitInternal<Unit>(basePhenomenonName, SI, unitName, unitName, 1, 1, 0, false);
     }
 
 //--------------------------------------------------------------------------------------

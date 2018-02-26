@@ -332,14 +332,20 @@ Utf8String ExpressionSymbol::ToString(bool includeFactors) const
 
     if (GetSymbol()->HasOffset())
         {
-        if (GetSymbol()->GetFactor() == 1.0)
+        if (GetSymbol()->GetNumerator() == 1.0 && GetSymbol()->GetDenominator() == 1.0)
             return Utf8PrintfString("(%s + %.15g)^%d", GetSymbol()->GetName().c_str(), GetSymbol()->GetOffset(), GetExponent());
 
-        return Utf8PrintfString("%.15g(%s + %.15g)^%d", GetSymbol()->GetFactor(), GetSymbol()->GetName().c_str(), GetSymbol()->GetOffset(), GetExponent());
+        if (GetSymbol()->GetDenominator() == 1.0)
+            return Utf8PrintfString("%.15g(%s + %.15g)^%d", GetSymbol()->GetNumerator(), GetSymbol()->GetName().c_str(), GetSymbol()->GetOffset(), GetExponent());
+
+        return Utf8PrintfString("(%.15g / %.15g)(%s + %.15g)^%d", GetSymbol()->GetNumerator(), GetSymbol()->GetDenominator(), GetSymbol()->GetName().c_str(), GetSymbol()->GetOffset(), GetExponent());
         }
 
-    if (GetSymbol()->GetFactor() == 1.0)
+    if (GetSymbol()->GetNumerator() == 1.0 && GetSymbol()->GetDenominator() == 1.0)
         return Utf8PrintfString("%s^%d", GetSymbol()->GetName().c_str(), GetExponent());
 
-    return Utf8PrintfString("%.15g[%s]^%d", GetSymbol()->GetFactor(), GetSymbol()->GetName().c_str(), GetExponent());
+    if (GetSymbol()->GetDenominator() == 1.0)
+        return Utf8PrintfString("%.15g[%s]^%d", GetSymbol()->GetNumerator(), GetSymbol()->GetName().c_str(), GetExponent());
+
+    return Utf8PrintfString("(%.15g / %.15g)[%s]^%d", GetSymbol()->GetNumerator(), GetSymbol()->GetDenominator(), GetSymbol()->GetName().c_str(), GetExponent());
     }

@@ -179,21 +179,21 @@ void UnitRegistry::AddDefaultPhenomena ()
     AddPhenomenon(SPECIFIC_VOLUME, "VOLUME*MASS(-1)");
     AddPhenomenon(LINEAR_DENSITY, "MASS*LENGTH(-1)");
     AddPhenomenon(SURFACE_DENSITY, "MASS*AREA(-1)");
-    AddPhenomenon(WORK, "FORCE*LENGTH"); // TODO: Multiple phenomemon equations: PRESSURE*VOLUME, POWER*TIME, ELECTRIC_CURRENT*TIME*ELECTRIC_POTENTIAL
+    AddPhenomenon(WORK, "FORCE*LENGTH");
     AddPhenomenon(POWER, "WORK*TIME(-1)");
     AddPhenomenon(FLOW, "VOLUME*TIME(-1)");
     AddPhenomenon(SURFACE_FLOW_RATE, "FLOW*AREA(-1)");
     AddPhenomenon(MASS_FLOW, "MASS*TIME(-1)");
     AddPhenomenon(PARTICLE_FLOW, "MOLE*TIME(-1)");
-    AddPhenomenon(DYNAMIC_VISCOSITY, "PRESSURE*TIME"); // TODO: Check
-    AddPhenomenon(KINEMATIC_VISCOSITY, "FORCE*DYNAMIC_VISCOSITY(-1)"); // TODO: Check
+    AddPhenomenon(DYNAMIC_VISCOSITY, "PRESSURE*TIME");
+    AddPhenomenon(KINEMATIC_VISCOSITY, "FORCE*DYNAMIC_VISCOSITY(-1)");
     AddPhenomenon(ELECTRIC_CHARGE, "CURRENT*TIME");
     AddPhenomenon(ELECTRIC_POTENTIAL, "POWER*CURRENT(-1)");
-    AddPhenomenon(LUMINOUS_FLUX, "LUMINOSITY*SOLIDANGLE"); // TODO: Check
+    AddPhenomenon(LUMINOUS_FLUX, "LUMINOSITY*SOLIDANGLE");
     AddPhenomenon(ILLUMINANCE, "LUMINOUS_FLUX*LENGTH(-2)");
     AddPhenomenon(ROTATIONAL_SPRING_CONSTANT, "TORQUE*ANGLE(-1)");
-    AddPhenomenon(LINEAR_ROTATIONAL_SPRING_CONSTANT, "FORCE*ANGLE(-1)"); // TODO: Understand this phenomenon instead of just copying from old units.
-    AddPhenomenon(SIZE_LENGTH_RATE, "LENGTH*LENGTH"); // TODO: ?
+    AddPhenomenon(LINEAR_ROTATIONAL_SPRING_CONSTANT, "FORCE*ANGLE(-1)");
+    AddPhenomenon(SIZE_LENGTH_RATE, "LENGTH*LENGTH");
     AddPhenomenon(THERMAL_CONDUCTIVITY, "POWER*LENGTH(-1)*TEMPERATURE_CHANGE(-1)");
     AddPhenomenon(THERMAL_RESISTANCE, "AREA*TEMPERATURE_CHANGE*POWER(-1)");
     AddPhenomenon(TEMPERATURE_GRADIENT, "TEMPERATURE_CHANGE*LENGTH(-1)");
@@ -201,8 +201,8 @@ void UnitRegistry::AddDefaultPhenomena ()
     AddPhenomenon(MOLAR_CONCENTRATION, "MOLE*VOLUME(-1)");
     AddPhenomenon(SLOPE, "LENGTH*LENGTH(-1)");
     AddPhenomenon(HEAT_TRANSFER, "POWER*AREA(-1)*TEMPERATURE_CHANGE(-1)"); // https://en.wikipedia.org/wiki/Heat_transfer_coefficient
-    AddPhenomenon(HEAT_FLUX_DENSITY, "POWER*AREA(-1)"); // https://en.wikipedia.org/wiki/Heat_flux  see description of heat flux density
-    AddPhenomenon(TORSIONAL_WARPING_CONSTANT, "LENGTH(6)"); // TODO: Could also be buckling resistance ... are we missing some angular portion to this unit?
+    AddPhenomenon(HEAT_FLUX_DENSITY, "POWER*AREA(-1)"); // https://en.wikipedia.org/wiki/Heat_flux see description of heat flux density
+    AddPhenomenon(TORSIONAL_WARPING_CONSTANT, "LENGTH(6)");
     AddPhenomenon(POPULATION_DENSITY, "CAPITA*AREA(-1)");
     AddPhenomenon(FREQUENCY, "TIME(-1)");
     AddPhenomenon(LINEAR_LOAD, "FORCE*LENGTH(-1)");

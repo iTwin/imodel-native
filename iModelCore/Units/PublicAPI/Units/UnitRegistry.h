@@ -108,7 +108,7 @@ private:
         }
 
     template <typename UNIT_TYPE>
-    UNIT_TYPE* AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double factor, double offset, bool isConstant)
+    UNIT_TYPE* AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant)
         {
         static_assert((std::is_base_of<Unit, UNIT_TYPE>::value), "UNIT_TYPE must derive from Units::Unit.");
         if (Utf8String::IsNullOrEmpty(unitName))
@@ -143,7 +143,7 @@ private:
             return nullptr;
             }
 
-        UNIT_TYPE* unit = UNIT_TYPE::_Create(*system, *phenomenon, unitName, m_nextId, definition, factor, offset, isConstant);
+        UNIT_TYPE* unit = UNIT_TYPE::_Create(*system, *phenomenon, unitName, m_nextId, definition, numerator, denominator, offset, isConstant);
         if (nullptr == unit)
             return nullptr;
 
@@ -274,24 +274,26 @@ public:
     //! @param[in] systemName Name of the UnitSystem the Unit must be added to.
     //! @param[in] unitName Name of the Unit to be created.
     //! @param[in] definition
-    //! @param[in] factor
+    //! @param[in] numerator    Numerator for factor
+    //! @param[in] denominator  Denominator for factor
     //! @param[in] offset
     //! @note The UNIT_TYPE provided must derive from Units::Unit
     //! @return A UNIT_TYPE if successfully created and added to this registry, nullptr otherwise.
     template <typename UNIT_TYPE> 
-    UNIT_TYPE* AddUnit(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double factor = 1, double offset = 0)
-        {return AddUnitInternal<UNIT_TYPE>(phenomName, systemName, unitName, definition, factor, offset, false);}
+    UNIT_TYPE* AddUnit(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double numerator = 1, double denominator = 1, double offset = 0)
+        {return AddUnitInternal<UNIT_TYPE>(phenomName, systemName, unitName, definition, numerator, denominator, offset, false);}
 
     //! Creates a Unit and adds it to the registry.
     //! @param[in] phenomName Name of the Phenomenon the Unit must be added to.
     //! @param[in] systemName Name of the UnitSystem the Unit must be added to.
     //! @param[in] unitName Name of the Unit to be created.
     //! @param[in] definition
-    //! @param[in] factor
+    //! @param[in] numerator    Numerator for factor
+    //! @param[in] denominator  Denominator for factor
     //! @param[in] offset
     //! @return A Unit if successfully created and added to this registry, nullptr otherwise.
-    UnitCP AddUnit(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double factor = 1, double offset = 0) 
-        {return AddUnit<Unit>(phenomName, systemName, unitName, definition, factor, offset);}
+    UnitCP AddUnit(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double numerator = 1, double denominator = 1, double offset = 0) 
+        {return AddUnit<Unit>(phenomName, systemName, unitName, definition, numerator, denominator, offset);}
 
     //! Creates an Inverting Unit, of the provided UNIT_TYPE, for the parent Unit and adds it to this registry.
     //! @param[in] parentUnitName Name of the Unit we are creating the Inverting Unit for
@@ -311,23 +313,26 @@ public:
     //! @param[in] phenomName Name of the Phenomenon the new Constant is needs to be added to
     //! @param[in] constantName Name of the Constant to be created
     //! @param[in] definition
-    //! @param[in] factor
+    //! @param[in] numerator    Numerator for factor
+    //! @param[in] denominator  Denominator for factor
     //! @note The UNIT_TYPE provided must derive from Units::Unit
     //! @return A constant UNIT_TYPE if successfully created and added to the registry, nullptr otherwise.
     template <typename UNIT_TYPE>
-    UNIT_TYPE* AddConstant(Utf8CP phenomName, Utf8CP constantName, Utf8CP definition, double factor)
+    UNIT_TYPE* AddConstant(Utf8CP phenomName, Utf8CP constantName, Utf8CP definition, double numerator, double denominator = 1)
         {
         // TODO: Find a way to have the CONSTANT be the staticly defined one... Maybe need to forward declare this method...
-        return AddUnitInternal<UNIT_TYPE>(phenomName, "CONSTANT", constantName, definition, factor, 0, true);
+        return AddUnitInternal<UNIT_TYPE>(phenomName, "CONSTANT", constantName, definition, numerator, denominator, 0, true);
         }
 
     //! Creates a Constant and adds it to this registry.
     //! @param[in] phenomName Name of the Phenomenon the new Constant is needs to be added to
     //! @param[in] constantName Name of the Constant to be created
     //! @param[in] definition
-    //! @param[in] factor
+    //! @param[in] numerator    Numerator for factor
+    //! @param[in] denominator  Denominator for factor
     //! @return A constant Unit if successfully created and added to the registry, nullptr otherwise.
-    UnitCP AddConstant(Utf8CP phenomName, Utf8CP constantName, Utf8CP definition, double factor) {return AddConstant<Unit>(phenomName, constantName, definition, factor);}
+    UnitCP AddConstant(Utf8CP phenomName, Utf8CP constantName, Utf8CP definition, double numerator, double denominator = 1) 
+        {return AddConstant<Unit>(phenomName, constantName, definition, numerator, denominator);}
 
     //! Creates a Phenomenon and adds it to this registry.
     //! @param[in] name Name of the Phenomenon to be created.

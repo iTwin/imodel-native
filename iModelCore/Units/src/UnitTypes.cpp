@@ -19,8 +19,8 @@ BEGIN_BENTLEY_UNITS_NAMESPACE
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                      03/2016
 //--------------------------------------------------------------------------------------
-UnitsSymbol::UnitsSymbol(Utf8CP name, Utf8CP definition, uint32_t id, double factor, double offset) :
-    m_name(name), m_definition(definition), m_id(id), m_isBaseSymbol(false), m_factor(factor), m_offset(offset), m_evaluated(false), m_isNumber(false),
+UnitsSymbol::UnitsSymbol(Utf8CP name, Utf8CP definition, uint32_t id, double numerator, double denominator, double offset) :
+    m_name(name), m_definition(definition), m_id(id), m_isBaseSymbol(false), m_numerator(numerator), m_denominator(denominator), m_offset(offset), m_evaluated(false), m_isNumber(false),
     m_symbolExpression(new Expression())
     {
     m_isBaseSymbol = m_name.EqualsI(m_definition.c_str());
@@ -35,7 +35,8 @@ UnitsSymbol::UnitsSymbol() // creates a default - invalid - Symbol
     m_definition = nullptr;
     m_id = 0;
     m_isBaseSymbol = false;
-    m_factor = 0.0;
+    m_numerator = 0.0;
+    m_denominator = 1.0;
     m_offset = 0.0;
     m_isNumber = true;
     m_evaluated = false;
@@ -84,8 +85,8 @@ UnitP Unit::_Create(UnitCR parentUnit, Utf8CP unitName, uint32_t id)
     return new Unit(parentUnit, unitName, id);
     }
 
-Unit::Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, double factor, double offset, bool isConstant)
-    : UnitsSymbol(name, definition, id, factor, offset), m_system(&system), m_phenomenon(&phenomenon), m_parent(nullptr), m_isConstant(isConstant)
+Unit::Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, double nominator, double denominator, double offset, bool isConstant)
+    : UnitsSymbol(name, definition, id, nominator, denominator, offset), m_system(&system), m_phenomenon(&phenomenon), m_parent(nullptr), m_isConstant(isConstant)
     {
     m_isNumber = phenomenon.IsNumber();
     }
@@ -241,8 +242,8 @@ bool Unit::GenerateConversion(UnitCR toUnit, Conversion& conversion) const
         if (toUnitExp.GetExponent() == 0)
             continue;
 
-        LOG.infov("Adding unit %s^%d to the conversion.  Factor: %.17g  Offset:%.17g", toUnitExp.GetSymbol()->GetName().c_str(),
-                  toUnitExp.GetExponent(), toUnitExp.GetSymbolFactor(), toUnitExp.GetSymbol()->GetOffset());
+        LOG.infov("Adding unit %s^%d to the conversion.  Factor: %.17g / %.17g  Offset:%.17g", toUnitExp.GetSymbol()->GetName().c_str(),
+                  toUnitExp.GetExponent(), toUnitExp.GetSymbol()->GetNumerator(), toUnitExp.GetSymbol()->GetDenominator(), toUnitExp.GetSymbol()->GetOffset());
         double unitFactor = FastIntegerPower(toUnitExp.GetSymbolFactor(), abs(toUnitExp.GetExponent()));
         if (toUnitExp.GetExponent() > 0)
             {
@@ -251,7 +252,7 @@ bool Unit::GenerateConversion(UnitCR toUnit, Conversion& conversion) const
             LOG.infov("New factor %.17g", conversion.Factor);
             if (toUnitExp.GetSymbol()->HasOffset())
                 {
-                double unitOffset = toUnitExp.GetSymbol()->GetOffset() * toUnitExp.GetSymbol()->GetFactor();
+                double unitOffset = toUnitExp.GetSymbol()->GetOffset() * toUnitExp.GetSymbolFactor();
                 LOG.infov("Adding %.17g to existing offset %.17g.", unitOffset, conversion.Offset);
                 conversion.Offset += unitOffset;
                 LOG.infov("New offset %.17g", conversion.Offset);
@@ -270,7 +271,7 @@ bool Unit::GenerateConversion(UnitCR toUnit, Conversion& conversion) const
             LOG.infov("New factor %.17g", conversion.Factor);
             if (toUnitExp.GetSymbol()->HasOffset())
                 {
-                double unitOffset = toUnitExp.GetSymbol()->GetOffset() * toUnitExp.GetSymbol()->GetFactor();
+                double unitOffset = toUnitExp.GetSymbol()->GetOffset() * toUnitExp.GetSymbolFactor();
                 LOG.infov("Subtracting %.17g from existing offset %.17g.", unitOffset, conversion.Offset);
                 conversion.Offset -= unitOffset;
                 LOG.infov("New offset %l.17g", conversion.Offset);

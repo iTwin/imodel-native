@@ -108,7 +108,7 @@ public:
 
     Utf8CP GetName() const {return m_symbol->GetName().c_str();}
     UnitsSymbolCP GetSymbol() const {return m_symbol;}
-    double GetSymbolFactor() const {return m_symbol->GetFactor();}
+    double GetSymbolFactor() const {return m_symbol->GetNumerator() / m_symbol->GetDenominator();}
 
     int GetExponent() const {return m_exponent;}
     void AddToExponent(int toAdd) {m_exponent += toAdd;}

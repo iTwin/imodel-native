@@ -41,7 +41,7 @@ void AddLengths(UnitRegistry& reg)
     reg.AddUnit(LENGTH, USCUSTOM, "CHAIN", "FT", 66.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-8
     reg.AddUnit(LENGTH, USCUSTOM, "MILE", "YRD", 1760.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-8
 
-    reg.AddUnit(LENGTH, USSURVEY, "US_SURVEY_IN", "M", 0.0254000508001016); // 100/3937 Derived from the definition of us survey foot in terms of meters.  Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-9
+    reg.AddUnit(LENGTH, USSURVEY, "US_SURVEY_IN", "M", 100.0, 3937.0); // 100/3937 Derived from the definition of us survey foot in terms of meters.  Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-9
     reg.AddUnit(LENGTH, USSURVEY, "US_SURVEY_FT", "US_SURVEY_IN", 12.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 2, Page C-4
     reg.AddUnit(LENGTH, USSURVEY, "US_SURVEY_YRD", "US_SURVEY_FT", 3.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 2, Page C-4
     reg.AddUnit(LENGTH, USSURVEY, "US_SURVEY_CHAIN", "US_SURVEY_FT", 66.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-8
@@ -61,12 +61,12 @@ void AddMass(UnitRegistry& reg)
 
     reg.AddUnit(MASS, USCUSTOM, "LBM", "KG", 0.45359237); // Is Avoirdupois Pound.  Exact, http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B. Footnote 22
     reg.AddUnit(MASS, USCUSTOM, "SLUG", "LBF*S(2)*FT(-1)");
-    reg.AddUnit(MASS, USCUSTOM, "GRM", "LBM", 1.0 / 7000.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix B. Section 3.2, Page B-10
+    reg.AddUnit(MASS, USCUSTOM, "GRM", "LBM", 1.0, 7000.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix B. Section 3.2, Page B-10
 
     reg.AddUnit(MASS, USCUSTOM, "SHORT_TON_MASS", "LBM", 2000); // Exact, http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
     reg.AddUnit(MASS, USCUSTOM, "LONG_TON_MASS", "LBM", 2240); // Exact, http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
     reg.AddUnit(MASS, USCUSTOM, "KIPM", "[KILO]*LBM"); // Exact, http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
-    reg.AddUnit(MASS, USCUSTOM, "OZM", "LBM", 0.0625); // 1/16 Exact, https://en.wikipedia.org/wiki/Ounce
+    reg.AddUnit(MASS, USCUSTOM, "OZM", "LBM", 1.0, 16.0); // 1/16 Exact, https://en.wikipedia.org/wiki/Ounce
     }
 
 void AddTime(UnitRegistry& reg)
@@ -85,19 +85,19 @@ void AddTime(UnitRegistry& reg)
 void AddTemperature(UnitRegistry& reg)
     {
     UnitCP un;
-    un = reg.AddUnit(TEMPERATURE, METRIC, "CELSIUS", "K", 1.0, 273.15);
+    un = reg.AddUnit(TEMPERATURE, METRIC, "CELSIUS", "K", 1.0, 1.0, 273.15);
     un->AddSynonym("\xC2\xB0\x43");
-    un = reg.AddUnit(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "CELSIUS", 0.55555555555555558, -32); // Factor is 5/9
+    un = reg.AddUnit(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "CELSIUS", 5.0, 9.0, -32); // Factor is 5/9
     un->AddSynonym("\xC2\xB0\x46");
-    un = reg.AddUnit(TEMPERATURE, USCUSTOM, "RANKINE", "K", 0.55555555555555558); // Factor is 5/9
+    un = reg.AddUnit(TEMPERATURE, USCUSTOM, "RANKINE", "K", 5.0, 9.0); // Factor is 5/9
     un->AddSynonym("\xC2\xB0\x52");
     }
 
 void AddTemperatureChange(UnitRegistry& reg)
     {
     reg.AddUnit(TEMPERATURE_CHANGE, METRIC, "DELTA_CELSIUS", "DELTA_KELVIN", 1.0);
-    reg.AddUnit(TEMPERATURE_CHANGE, USCUSTOM, "DELTA_FAHRENHEIT", "DELTA_CELSIUS", 0.55555555555555558); // Factor is 5/9
-    reg.AddUnit(TEMPERATURE_CHANGE, USCUSTOM, "DELTA_RANKINE", "DELTA_KELVIN", 0.55555555555555558); // Factor is 5/9
+    reg.AddUnit(TEMPERATURE_CHANGE, USCUSTOM, "DELTA_FAHRENHEIT", "DELTA_CELSIUS", 5.0, 9.0); // Factor is 5/9
+    reg.AddUnit(TEMPERATURE_CHANGE, USCUSTOM, "DELTA_RANKINE", "DELTA_KELVIN", 5.0, 9.0); // Factor is 5/9
     }
 
 void AddTemperatureGradient(UnitRegistry& reg)
@@ -176,16 +176,16 @@ void AddAcceleration(UnitRegistry& reg)
 void AddPlaneAngle(UnitRegistry& reg)
     {
     UnitCP un;
-    un = reg.AddUnit(ANGLE, METRIC, "ARC_DEG", "[PI]*RAD", 0.0055555555555555558); // 1/180
+    un = reg.AddUnit(ANGLE, METRIC, "ARC_DEG", "[PI]*RAD", 1.0, 180.0 ); // 1/180
     un->AddSynonym("^");
     un->AddSynonym("\xC2\xB0");
 
-    un = reg.AddUnit(ANGLE, METRIC, "ARC_MINUTE", "ARC_DEG", 0.016666666666666666); // 1/60
+    un = reg.AddUnit(ANGLE, METRIC, "ARC_MINUTE", "ARC_DEG", 1.0, 60.0); // 1/60
     un->AddSynonym("'");
-    un = reg.AddUnit(ANGLE, METRIC, "ARC_SECOND", "ARC_DEG", 0.00027777777777777778); // 1/3600
+    un = reg.AddUnit(ANGLE, METRIC, "ARC_SECOND", "ARC_DEG", 1.0, 3600.0); // 1/3600
     un->AddSynonym("\"");
     reg.AddUnit(ANGLE, METRIC, "ARC_QUADRANT", "[PI/2]*RAD");
-    reg.AddUnit(ANGLE, METRIC, "GRAD", "[PI]*RAD", 0.005000000000000000); // 1/200
+    reg.AddUnit(ANGLE, METRIC, "GRAD", "[PI]*RAD", 1.0, 200.0); // 1/200
     reg.AddUnit(ANGLE, METRIC, "REVOLUTION", "[2PI]*RAD");
     }
 
@@ -557,27 +557,27 @@ void AddPower(UnitRegistry& reg)
 void AddPressure(UnitRegistry& reg)
     {
     reg.AddUnit(PRESSURE, SI, "PA", "N*M(-2)");
-    reg.AddUnit(PRESSURE, INDUSTRIAL, "PA_GAUGE", "PA", 1, 101325);  // Offset is one standard atmosphere in PA.  Offset is exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
+    reg.AddUnit(PRESSURE, INDUSTRIAL, "PA_GAUGE", "PA", 1, 1.0, 101325);  // Offset is one standard atmosphere in PA.  Offset is exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
 
     reg.AddUnit(PRESSURE, METRIC, "HECTOPASCAL", "[HECTO]*PA");
 
     reg.AddUnit(PRESSURE, METRIC, "KILOPASCAL", "[KILO]*PA");
-    reg.AddUnit(PRESSURE, INDUSTRIAL, "KILOPASCAL_GAUGE", "[KILO]*PA", 1, 101325e-3);  // Offset is one standard atmosphere (101325 PA) converted to kilopascal.  Offset is exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
+    reg.AddUnit(PRESSURE, INDUSTRIAL, "KILOPASCAL_GAUGE", "[KILO]*PA", 1, 1.0, 101325e-3);  // Offset is one standard atmosphere (101325 PA) converted to kilopascal.  Offset is exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
 
     reg.AddUnit(PRESSURE, METRIC, "MEGAPASCAL", "[MEGA]*PA");
-    reg.AddUnit(PRESSURE, INDUSTRIAL, "MEGAPASCAL_GAUGE", "[MEGA]*PA", 1, 101325e-6);  // Offset is one standard atmosphere (101325 PA) converted to megapascal.  Offset is exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
+    reg.AddUnit(PRESSURE, INDUSTRIAL, "MEGAPASCAL_GAUGE", "[MEGA]*PA", 1, 1.0, 101325e-6);  // Offset is one standard atmosphere (101325 PA) converted to megapascal.  Offset is exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
 
     UnitCP un = reg.AddUnit(PRESSURE, INTERNATIONAL, "AT", "KGF*CM(-2)");  // Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
     un->AddSynonym("ATMOSPHERE_TECHNIAL");
 
-    reg.AddUnit(PRESSURE, INDUSTRIAL, "AT_GAUGE", "AT", 1.0, 1.0332274527998859); // Offset is one standard atmosphere (101325 PA) converted to atmosphere-technical (AT).  Offset is exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
+    reg.AddUnit(PRESSURE, INDUSTRIAL, "AT_GAUGE", "AT", 1.0, 1.0, 1.0332274527998859); // Offset is one standard atmosphere (101325 PA) converted to atmosphere-technical (AT).  Offset is exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
 
     reg.AddUnit(PRESSURE, INTERNATIONAL, "KGF/SQ.M", "KGF*M(-2)");
 
     reg.AddUnit(PRESSURE, METRIC, "ATM", "PA", 101325);  // Standard atmosphere, see AT for atmosphere-technical.  Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
 
     reg.AddUnit(PRESSURE, METRIC, "BAR", "PA", 1.0e5); // Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
-    reg.AddUnit(PRESSURE, INDUSTRIAL, "BAR_GAUGE", "PA", 1.0e5, 1.01325); // Offset is one standard atmosphere converted to BAR.  Offset is exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
+    reg.AddUnit(PRESSURE, INDUSTRIAL, "BAR_GAUGE", "PA", 1.0e5, 1.0, 1.01325); // Offset is one standard atmosphere converted to BAR.  Offset is exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
 
     reg.AddUnit(PRESSURE, METRIC, "MBAR", "[MILLI]*BAR");
 
@@ -586,13 +586,13 @@ void AddPressure(UnitRegistry& reg)
 
     reg.AddUnit(PRESSURE, USCUSTOM, "PSI", "LBF*IN(-2)");
 
-    reg.AddUnit(PRESSURE, USCUSTOM, "PSIG", "LBF*IN(-2)", 1, 14.695948775513449); // Offset is one standard atmosphere (101325 PA) converted to PSI
+    reg.AddUnit(PRESSURE, USCUSTOM, "PSIG", "LBF*IN(-2)", 1, 1.0, 14.695948775513449); // Offset is one standard atmosphere (101325 PA) converted to PSI
 
     reg.AddUnit(PRESSURE, USCUSTOM, "KSI", "KPF*IN(-2)");
 
     reg.AddUnit(PRESSURE, USCUSTOM, "LBF/SQ.FT", "LBF*FT(-2)");
 
-    reg.AddUnit(PRESSURE, USCUSTOM, "TORR", "PA", 101325.0 / 760.0);   // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B. for approx conversion and Table 11 for a reference to the exact conversion
+    reg.AddUnit(PRESSURE, USCUSTOM, "TORR", "PA", 101325.0, 760.0);   // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B. for approx conversion and Table 11 for a reference to the exact conversion
 
     // TODO: Go back to density conversion once we have verified sources for those values
     reg.AddUnit(PRESSURE, METRIC, "M_H2O", "[KILO]*MM_H2O"); // Meter of H2O Conventional

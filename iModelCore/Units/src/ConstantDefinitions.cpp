@@ -16,8 +16,8 @@ USING_NAMESPACE_BENTLEY_UNITS
 void UnitRegistry::AddDefaultConstants ()
     {
     AddConstant(LENGTH_RATIO, "PI", "ONE", PI); //, "Ratio of Circumference to its Diameter");
-    AddConstant(LENGTH_RATIO, "PI/4", "PI", 0.25); //, "PI/4");
-    AddConstant(LENGTH_RATIO, "PI/2", "PI", 0.5); //, "PI/2");
+    AddConstant(LENGTH_RATIO, "PI/4", "PI", 1.0, 4.0); //, "PI/4");
+    AddConstant(LENGTH_RATIO, "PI/2", "PI", 1.0, 2.0); //, "PI/2");
     AddConstant(LENGTH_RATIO, "2PI", "PI", 2); //, "2*PI");
     AddConstant(ANGLE, "360DEG", "ARC_DEG", 360); //, "Full Circle");
     AddConstant(ACCELERATION, "STD_G", "M*S(-2)", 9.80665); //, "Standard Gravity");

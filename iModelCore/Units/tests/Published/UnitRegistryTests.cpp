@@ -48,15 +48,15 @@ struct UnitRegistryTests : UnitsTestFixture
         {
         friend struct UnitRegistry;
         private:
-            TestUnit(UnitSystemCR unitSystem, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, double factor, double offset, bool isConstant) :
-                Unit(unitSystem, phenomenon, name, id, definition, factor, offset, isConstant) {}
+            TestUnit(UnitSystemCR unitSystem, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant) :
+                Unit(unitSystem, phenomenon, name, id, definition, numerator, denominator, offset, isConstant) {}
 
             TestUnit(UnitCR parentUnit, Utf8CP name, uint32_t id)
-            : TestUnit(*(parentUnit.GetUnitSystem()), *(parentUnit.GetPhenomenon()), name, id, parentUnit.GetDefinition().c_str(), 0, 0, false) {}
+            : TestUnit(*(parentUnit.GetUnitSystem()), *(parentUnit.GetPhenomenon()), name, id, parentUnit.GetDefinition().c_str(), 0, 0, 0, false) {}
 
         public:
-            static TestUnit* _Create(UnitSystemCR sysName, PhenomenonCR phenomenon, Utf8CP unitName, uint32_t id, Utf8CP definition, double factor, double offset, bool isConstant)
-            {return new TestUnit(sysName, phenomenon, unitName, id, definition, factor, offset, isConstant);}
+            static TestUnit* _Create(UnitSystemCR sysName, PhenomenonCR phenomenon, Utf8CP unitName, uint32_t id, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant)
+            {return new TestUnit(sysName, phenomenon, unitName, id, definition, numerator, denominator, offset, isConstant);}
 
             static TestUnit* _Create(UnitCR parentUnit, Utf8CP unitName, uint32_t id) {return new TestUnit(parentUnit, unitName, id);}
         };
@@ -70,7 +70,7 @@ TEST_F(UnitRegistryTests, AddAndRetrieveConstant)
     // Add constant
     PhenomenonCP phen = UnitRegistry::Instance().LookupPhenomenon("LENGTH");
     ASSERT_NE(nullptr, phen) << "The Phenomenon 'Length' does not exist in the registry";
-    UnitCP createdConstant = UnitRegistry::Instance().AddConstant(phen->GetName().c_str(), "TestConstant", "NUMBER", 0);
+    UnitCP createdConstant = UnitRegistry::Instance().AddConstant(phen->GetName().c_str(), "TestConstant", "NUMBER", 42.0);
     ASSERT_NE(nullptr, createdConstant);
 
     EXPECT_TRUE(UnitRegistry::Instance().HasUnit("TestConstant"));
