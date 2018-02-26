@@ -38,7 +38,6 @@ typedef AsyncResult<HttpBodyPtr, WSError>               WSChangesetResult;
 typedef AsyncResult<WSUploadResponse, WSError>          WSUpdateObjectResult;
 typedef AsyncResult<WSUploadResponse, WSError>          WSUpdateFileResult;
 typedef AsyncResult<void, WSError>                      WSDeleteObjectResult;
-typedef AsyncResult<void, WSError>                      WSVoidResult;
 
 #define WSQuery_CustomParameter_NavigationParentId      "navigationParentId"
 
