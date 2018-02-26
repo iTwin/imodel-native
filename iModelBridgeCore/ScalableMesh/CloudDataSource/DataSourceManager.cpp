@@ -108,6 +108,12 @@ DataSource *DataSourceManager::getOrCreateDataSource(const DataSourceName &name,
 }
 
 
+DataSource * DataSourceManager::getOrCreateThreadDataSource(DataSourceAccount &account, DataSource::ClientID client, bool * created)
+    {
+    return account.getOrCreateThreadDataSource(client, created);
+    }
+
+
 DataSourceStatus DataSourceManager::destroyDataSource(DataSource * dataSource)
 {
     if (dataSource == nullptr)

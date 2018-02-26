@@ -30,6 +30,8 @@ bool DataSourceCached::isCached(void)
 
 DataSourceStatus DataSourceCached::readFromCache(DataSourceBuffer::BufferData *dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)
 {
+//NEEDS_WORK_SM : Reinstate this to support caching
+
 /*
     DataSource           *  dataSource;
     DataSourceStatus        statusNotFound(DataSourceStatus::Status_Not_Found);

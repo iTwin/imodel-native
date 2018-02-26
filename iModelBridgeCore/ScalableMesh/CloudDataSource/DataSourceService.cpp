@@ -46,6 +46,16 @@ DataSourceStatus DataSourceService::destroyAccount(const AccountName & accountNa
     return DataSourceStatus(DataSourceStatus::Status_Error);
 }
 
+DataSourceAccount * DataSourceService::getOrCreateAccount(const AccountName & accountName, const DataSourceAccount::AccountIdentifier identifier, const DataSourceAccount::AccountKey & key)
+    {
+    DataSourceAccount *account;
+
+    if ((account = getAccount(accountName)) != nullptr)
+        return account;
+
+    return createAccount(accountName, identifier, key);
+    }
+
 DataSourceAccount * DataSourceService::getAccount(const AccountName & accountName)
 {
     return get(accountName);

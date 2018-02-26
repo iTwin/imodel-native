@@ -140,6 +140,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         SMStreamingSettingsPtr m_settings;
         FormatType m_formatType = FormatType::Binary;
         DataSourceAccount* m_dataSourceAccount;
+        DataSource::ClientID m_dataSourceClientID;
         WString m_rootDirectory;
         WString m_masterFileName;
         DataSourceURL m_pathToHeaders;
@@ -189,9 +190,12 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
 
         DataSource *InitializeDataSource(std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const;
 
+        void SetDataSourceAccount(DataSourceAccount *dataSourceAccount);
         DataSourceAccount *GetDataSourceAccount(void) const;
 
-        void SetDataSourceAccount(DataSourceAccount *dataSourceAccount);
+        void SetDataSourceClientID(DataSource::ClientID client);
+        DataSource::ClientID GetDataSourceClientID(void) const;
+
 
         void SetDataFormatType(FormatType formatType);
 
@@ -411,6 +415,9 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
         SMStoreDataType               m_dataType;
 
         uint64_t GetBlockSizeFromNodeHeader() const;
+
+        DataSourceAccount   *   GetDataSourceAccount(void)  { return m_dataSourceAccount; }
+        DataSource::ClientID    GetDataSourceClientID(void) { return m_dataSourceClientID; }
     };
 
 
@@ -425,7 +432,7 @@ struct StreamingTextureBlock : public StreamingDataBlock
 
         void Load(DataSourceAccount *dataSourceAccount, DataSource::ClientID client, uint64_t blockSizeKnown = uint64_t(-1));
 
-        void Store(DataSourceAccount *dataSourceAccount, uint8_t* DataTypeArray, size_t countData, const HPMBlockID& blockID);
+        void Store(DataSourceAccount *dataSourceAccount, DataSource::ClientID client, uint8_t* DataTypeArray, size_t countData, const HPMBlockID& blockID);
 
         size_t GetWidth() { return m_Width; }
         size_t GetHeight() { return m_Height; }

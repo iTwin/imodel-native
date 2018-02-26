@@ -276,11 +276,11 @@ StatusInt SMNodeGroup::SaveTileToCache(Json::Value & tile, uint64_t tileID)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DataSource * SMNodeGroup::InitializeDataSource(std::unique_ptr<DataSource::Buffer[]>& dest, DataSourceBuffer::BufferSize destSize)
     {
-    assert(this->GetDataSourceAccount() != nullptr); // The data source account must be set
+    assert(GetDataSourceAccount() != nullptr);      // The data source account must be set
 
                                                      // Get the thread's DataSource or create a new one
-    DataSource *dataSource = nullptr;
-    if ((dataSource = this->GetDataSourceAccount()->getOrCreateThreadDataSource(GetDataSourceClientID())) == nullptr)
+    DataSource *dataSource;
+    if ((dataSource = DataSourceManager::Get()->getOrCreateThreadDataSource(*GetDataSourceAccount(), GetDataSourceClientID())) == nullptr)
         {
         assert(!"Could not initialize data source");
         return nullptr;

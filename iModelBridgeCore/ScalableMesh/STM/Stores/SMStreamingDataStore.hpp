@@ -100,7 +100,9 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(const WString
      m_pathToHeaders(headers_path.c_str()),
      m_use_node_header_grouping(areNodeHeadersGrouped),
      m_use_virtual_grouping(isVirtualGrouping),
-     m_formatType(formatType)
+     m_formatType(formatType),
+     m_dataSourceAccount(nullptr),
+     m_dataSourceClientID(nullptr)
     {
     assert(!"Must not use this constructor");
     //InitializeDataSourceAccount(dataSourceManager, path);
@@ -136,7 +138,9 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(const WString
 template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(const SMStreamingSettingsPtr& settings, IScalableMeshRDSProviderPtr smRDSProvider)
     : SMSQLiteSisterFile(nullptr),
       m_settings(settings),
-      m_smRDSProvider(smRDSProvider)
+      m_smRDSProvider(smRDSProvider),
+      m_dataSourceAccount(nullptr),
+      m_dataSourceClientID(nullptr)
     {
     m_transform.InitIdentity();
 
@@ -242,13 +246,12 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         assert(!"Unknown server type for streaming");
         }
 
-    account_name.append(L"_" + std::to_wstring(settings->GetSMID()));
 
     if ((service = dataSourceManager.getService(service_name)) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
 
-    // Create an account on the file service streaming
-    if ((account = service->createAccount(account_name, account_identifier, account_key)) == nullptr)
+    // Get or Create an account on the file service streaming
+    if ((account = service->getOrCreateAccount(account_name, account_identifier, account_key)) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
     
     ScalableMeshAdmin::ProxyInfo proxyInfo(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProxyInfo());
@@ -286,7 +289,8 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         account->setCaching(*accountCaching, DataSourceURL());
         }
 
-    this->SetDataSourceAccount(account);
+    SetDataSourceAccount(account);
+    SetDataSourceClientID(this);
 
     return DataSourceStatus();
     }
@@ -477,7 +481,8 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
 
         dataSource->close();
 
-        this->GetDataSourceAccount()->destroyDataSource(dataSource);
+//      this->GetDataSourceAccount()->destroyDataSource(dataSource);
+
         if (isGrouped)
             {
             // initialize codec
@@ -1004,7 +1009,14 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::StoreNodeHeader(SMIndex
     DataSourceURL dataSourceURL = m_pathToHeaders;
     dataSourceURL.append(DataSourceURL(L"n_" + std::to_wstring(blockID.m_integerID) + extension));
 
-    DataSource *dataSource = this->GetDataSourceAccount()->createDataSource(this); //NEEDS_WORK_SM : Create using DataSourceManager
+                                                            // DataSourceAccount must be set up
+    if (GetDataSourceAccount() == nullptr)
+        {
+        assert(false);
+        return 0;
+        }
+
+    DataSource *dataSource = DataSourceManager::Get()->getOrCreateThreadDataSource(*GetDataSourceAccount(), GetDataSourceClientID());
     if (dataSource == nullptr)
         {
         assert(false); // problem creating new datasource
@@ -1034,7 +1046,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::StoreNodeHeader(SMIndex
         return 0;
         }
 
-    this->GetDataSourceAccount()->destroyDataSource(dataSource);
+//  this->GetDataSourceAccount()->destroyDataSource(dataSource);
 
     //{
     //std::lock_guard<mutex> clk(s_consoleMutex);
@@ -1214,11 +1226,16 @@ template<class EXTENT> void SMStreamingStore<EXTENT>::Register(const uint64_t & 
 
 template<class EXTENT> void SMStreamingStore<EXTENT>::Unregister(const uint64_t & smID)
     {
+/*
     auto const& account = GetDataSourceAccount();
     if (account)
         {
         DataSourceManager::Get()->getService(account->getServiceName())->destroyAccount(account->getAccountName());
         }
+*/
+
+                                                            // Destroy all existing DataSources associated with this SM store
+    DataSourceManager::Get()->destroyDataSources(this);
     }
 
 template <class EXTENT> SMNodeGroupPtr SMStreamingStore<EXTENT>::FindGroup(HPMBlockID blockID)
@@ -1728,7 +1745,9 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const
         assert(buffer);
         assert(readSize > 0);
         }  
-    this->GetDataSourceAccount()->destroyDataSource(dataSource);
+
+//  this->GetDataSourceAccount()->destroyDataSource(dataSource);
+
     }
 
 
@@ -1867,7 +1886,7 @@ template <class EXTENT> DataSource* SMStreamingStore<EXTENT>::InitializeDataSour
     if (this->GetDataSourceAccount() == nullptr)
         return nullptr;
                                                     // Get the thread's DataSource or create a new one
-    DataSource *dataSource = m_dataSourceAccount->createDataSource(this);   //NEEDS_WORK_SM Create from DataSourceManager
+    DataSource *dataSource = DataSourceManager::Get()->getOrCreateThreadDataSource(*GetDataSourceAccount(), GetDataSourceClientID());
     if (dataSource == nullptr)
         return nullptr;
                                                     // Make sure caching is enabled for this DataSource
@@ -1878,14 +1897,24 @@ template <class EXTENT> DataSource* SMStreamingStore<EXTENT>::InitializeDataSour
     return dataSource;
     }
 
+template <class EXTENT> void SMStreamingStore<EXTENT>::SetDataSourceAccount(DataSourceAccount *dataSourceAccount)
+    {
+    m_dataSourceAccount = dataSourceAccount;
+    }
+
 template <class EXTENT> DataSourceAccount* SMStreamingStore<EXTENT>::GetDataSourceAccount(void) const
     {
     return m_dataSourceAccount;
     }
 
-template <class EXTENT> void SMStreamingStore<EXTENT>::SetDataSourceAccount(DataSourceAccount *dataSourceAccount)
+template <class EXTENT> void SMStreamingStore<EXTENT>::SetDataSourceClientID(DataSource::ClientID client)
     {
-    m_dataSourceAccount = dataSourceAccount;
+    m_dataSourceClientID = client;
+    }
+
+template <class EXTENT> DataSource::ClientID SMStreamingStore<EXTENT>::GetDataSourceClientID(void) const
+    {
+    return m_dataSourceClientID;
     }
 
 template <class EXTENT> void SMStreamingStore<EXTENT>::SetDataFormatType(FormatType formatType)
@@ -2032,7 +2061,7 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
         DataSourceURL url (m_dataSourceURL);
         url.append(L"p_" + std::to_wstring(blockID.m_integerID) + extension);
 
-        DataSource *dataSource = m_dataSourceAccount->createDataSource(this);   //NEEDS_WORK_SM : Create using DataSourceManager
+        DataSource *dataSource = DataSourceManager::Get()->getOrCreateThreadDataSource(*GetDataSourceAccount(), GetDataSourceClientID());
         assert(dataSource != nullptr); // problem creating a new DataSource
 
         writeStatus = dataSource->open(url, DataSourceMode_Write);
@@ -2044,7 +2073,7 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
         writeStatus = dataSource->close();
         assert(writeStatus.isOK()); // problem closing a DataSource
 
-        m_dataSourceAccount->destroyDataSource(dataSource);
+//      m_dataSourceAccount->destroyDataSource(dataSource);
 
         if (mustCleanup)
             {
@@ -2185,7 +2214,7 @@ template <class DATATYPE, class EXTENT> StreamingDataBlock& SMStreamingNodeDataS
             block->SetDataSourceExtension(s_stream_using_cesium_3d_tiles_format ? L".b3dm" : L".bin");
             block->SetTransform(m_transform);
             block->SetGltfUpAxis(m_nodeGroup->GetGltfUpAxis());
-            block->Load(m_dataSourceAccount, this, m_dataType, m_nodeHeader->GetBlockSize((short)m_dataType));
+            block->Load(m_dataSourceAccount, m_dataSourceClientID, m_dataType, m_nodeHeader->GetBlockSize((short)m_dataType));
             }
         }
     //assert(block->GetID() == blockID.m_integerID);
@@ -2230,7 +2259,7 @@ DataSource* StreamingDataBlock::initializeDataSource(DataSourceAccount *dataSour
     if (dataSourceAccount == nullptr)
         return nullptr;
                                                         // Get the thread's DataSource or create a new one
-    DataSource *dataSource = dataSourceAccount->createDataSource(client);
+    DataSource *dataSource = DataSourceManager::Get()->getOrCreateThreadDataSource(*dataSourceAccount, client);
     if (dataSource == nullptr)
         return nullptr;
                                                         // Make sure caching is enabled for this DataSource
@@ -2431,7 +2460,7 @@ inline DataSource::DataSize StreamingDataBlock::LoadDataBlock(DataSourceAccount 
     if (dataSource->close().isFailed())
         return 0;
 
-    dataSourceAccount->destroyDataSource(dataSource);
+//  DataSourceManager::Get()->destroyDataSource(dataSource);
 
     return readSize;
     }
@@ -2776,7 +2805,7 @@ template <class DATATYPE, class EXTENT> HPMBlockID StreamingNodeTextureStore<DAT
     // The data block starts with 12 bytes of metadata (texture header), followed by pixel data
     StreamingTextureBlock texture(((int*)DataTypeArray)[0], ((int*)DataTypeArray)[1], ((int*)DataTypeArray)[2]);
     texture.SetDataSourceURL(m_dataSourceURL);
-    texture.Store(m_dataSourceAccount, DataTypeArray + 3 * sizeof(int), countData - 3 * sizeof(int), blockID);
+    texture.Store(GetDataSourceAccount(), GetDataSourceClientID(), DataTypeArray + 3 * sizeof(int), countData - 3 * sizeof(int), blockID);
 
     return blockID;
     }
@@ -2789,7 +2818,7 @@ template <class DATATYPE, class EXTENT> HPMBlockID StreamingNodeTextureStore<DAT
     DataSourceURL    url(m_dataSourceURL);
     url.append(L"t_" + std::to_wstring(blockID.m_integerID) + L".bin");
 
-    DataSource *dataSource = this->GetDataSourceAccount()->createDataSource(GetDataSourceClientID());
+    DataSource *dataSource = DataSourceManager::Get()->getOrCreateThreadDataSource(*GetDataSourceAccount(), GetDataSourceClientID());
     assert(dataSource != nullptr);
     //{
     //std::lock_guard<mutex> clk(s_consoleMutex);
@@ -2809,7 +2838,7 @@ template <class DATATYPE, class EXTENT> HPMBlockID StreamingNodeTextureStore<DAT
     //std::lock_guard<mutex> clk(s_consoleMutex);
     //std::cout << "[" << std::this_thread::get_id() << "] Thread DataSource finished" << std::endl;
     //}
-    this->GetDataSourceAccount()->destroyDataSource(dataSource);
+//  this->GetDataSourceAccount()->destroyDataSource(dataSource);
 
     return HPMBlockID(blockID.m_integerID);
     }
@@ -2883,7 +2912,7 @@ inline StreamingTextureBlock::StreamingTextureBlock(const int & width, const int
     this->SetDataSourcePrefix(L"t_");
     }
 
-inline void StreamingTextureBlock::Store(DataSourceAccount * dataSourceAccount, uint8_t * DataTypeArray, size_t countData, const HPMBlockID & blockID)
+inline void StreamingTextureBlock::Store(DataSourceAccount *dataSourceAccount, DataSource::ClientID client, uint8_t * DataTypeArray, size_t countData, const HPMBlockID & blockID)
     {
     // First, compress the texture
     HCDPacket pi_uncompressedPacket, pi_compressedPacket;
@@ -2907,7 +2936,7 @@ inline void StreamingTextureBlock::Store(DataSourceAccount * dataSourceAccount, 
     DataSourceURL    url(m_pDataSourceURL);
     url.append(L"t_" + std::to_wstring(blockID.m_integerID) + L".bin");
 
-    DataSource *dataSource = dataSourceAccount->createDataSource(this); //NEEDS_WORK_SM : Create using DataSourceManager
+    DataSource *dataSource = DataSourceManager::Get()->getOrCreateThreadDataSource(*dataSourceAccount, client);
     assert(dataSource != nullptr);
     //{
     //std::lock_guard<mutex> clk(s_consoleMutex);
@@ -2927,7 +2956,7 @@ inline void StreamingTextureBlock::Store(DataSourceAccount * dataSourceAccount, 
                                 //std::lock_guard<mutex> clk(s_consoleMutex);
                                 //std::cout << "[" << std::this_thread::get_id() << "] Thread DataSource finished" << std::endl;
                                 //}
-    dataSourceAccount->destroyDataSource(dataSource);
+//  dataSourceAccount->destroyDataSource(dataSource);
     }
 
 inline void StreamingTextureBlock::Load(DataSourceAccount * dataSourceAccount, DataSource::ClientID client, uint64_t blockSizeKnown)
