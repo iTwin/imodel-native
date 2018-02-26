@@ -805,14 +805,7 @@ void UnitRegistry::AddBaseUnits()
 
     AddUnitForBasePhenomenon("STERAD", SOLIDANGLE);
     AddUnitForBasePhenomenon("US$", FINANCE);
-    un = AddUnitForBasePhenomenon("PERSON", CAPITA);
-    un->AddSynonym("CUSTOMER");
-    un->AddSynonym("PASSENGER");
-    un->AddSynonym("EMPLOYEE");
-    un->AddSynonym("STUDENT");
-    un->AddSynonym("GUEST");
-    un->AddSynonym("RESIDENT");
-    un->AddSynonym("CAPITA");
+    AddUnitForBasePhenomenon("PERSON", CAPITA);
 
     AddUnitForBasePhenomenon("ONE", NUMBER);
     }
