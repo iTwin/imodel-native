@@ -27,6 +27,40 @@ struct ProviderContext
     };
 
 //=======================================================================================
+// @bsiclass                                                Grigas.Petraitis    02/2018
+//=======================================================================================
+struct CommonRulesEngineSymbolsProvider : IECSymbolProvider
+{
+private:
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                02/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static ExpressionStatus CreateSet(EvaluationResult& evalResult, void*, EvaluationResultVector& args)
+        {
+        bvector<EvaluationResult> values;
+        for (EvaluationResultCR arg : args)
+            {
+            if (!arg.IsECValue())
+                {
+                BeAssert(false);
+                continue;
+                }
+            values.push_back(arg);
+            }
+        evalResult.SetValueList(*IValueListResult::Create(values));
+        return ExpressionStatus::Success;
+        }
+protected:
+    Utf8CP _GetName() const override {return "CommonRulesEngineSymbols";}
+    void _PublishSymbols(SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const override
+        {
+        context.AddSymbol(*MethodSymbol::Create("Set", &CommonRulesEngineSymbolsProvider::CreateSet, nullptr, nullptr));
+        }
+public:
+    CommonRulesEngineSymbolsProvider() {}
+};
+
+//=======================================================================================
 // @bsiclass                                                Grigas.Petraitis    01/2017
 //=======================================================================================
 struct RulesEngineRootSymbolsContext : ExpressionContext
@@ -40,6 +74,9 @@ private:
         : ExpressionContext(nullptr)
         {
         m_internalContext = SymbolExpressionContext::Create(bvector<Utf8String>(), nullptr);
+
+        CommonRulesEngineSymbolsProvider commonSymbols;
+        commonSymbols.PublishSymbols(*m_internalContext, bvector<Utf8String>());
         }
 
 protected:
@@ -491,7 +528,7 @@ private:
         {
         if (1 != arguments.size())
             {
-            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("UserSettingsSymbolsProvider::GetSettingIntValues: WrongNumberOfArguments. Expected 1, actually: %" PRIu64, (uint64_t)arguments.size()).c_str());
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("UserSettingsSymbolsProvider::GetSettingBoolValue: WrongNumberOfArguments. Expected 1, actually: %" PRIu64, (uint64_t)arguments.size()).c_str());
             return ExpressionStatus::WrongNumberOfArguments;
             }
 
@@ -1026,6 +1063,16 @@ private:
         }
     
     /*-----------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis            02/2018
+    +---------------+---------------+---------------+---------------+---------------+--*/
+    bool HandleValueListMethodSpecialCase(CallNodeCR node)
+        {
+        m_currentValueListMethodNode = &node;
+        m_ignoreArguments = true;
+        return true;
+        }
+    
+    /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            03/2017
     +---------------+---------------+---------------+---------------+---------------+--*/
     bool HandleGetUserSettingIntValuesSpecialCase(CallNodeCR node)
@@ -1063,6 +1110,13 @@ private:
             BeAssert(false && "Only a single lambda function is supported as an argument for AnyMatch function");
             return false;
             }
+        
+        bool isGetUserSettingIntValuesSpecialCase = (0 == strcmp("GetUserSettingIntValues", m_currentValueListMethodNode->GetMethodName()));
+        if (!isGetUserSettingIntValuesSpecialCase)
+            {
+            m_ignoreArguments = true;
+            args->Traverse(*this);
+            }
 
         m_inArguments = true;
         return true;
@@ -1084,6 +1138,8 @@ private:
             return;
         if (0 == strcmp("GetUserSettingIntValues", node.GetMethodName()) && HandleGetUserSettingIntValuesSpecialCase(node))
             return;
+        if (0 == strcmp("Set", node.GetMethodName()) && HandleValueListMethodSpecialCase(node))
+            return;
         if (0 == strcmp("AnyMatch", node.GetMethodName()) && HandleAnyMatchSpecialCase(node))
             return;
 
@@ -1096,6 +1152,12 @@ private:
     +---------------+---------------+---------------+---------------+---------------+--*/
     void HandleLambdaNode(LambdaNodeCR node)
         {
+        if (!m_currentValueListMethodNode)
+            {
+            BeAssert(false && "Lamba node is only expected after a value list node");
+            return;
+            }
+
         Utf8CP symbolName = node.GetSymbolName();
         ComparisonNodeCP expressionNode = dynamic_cast<ComparisonNodeCP>(&node.GetExpression());
         if (nullptr == expressionNode || TOKEN_Equal != expressionNode->GetOperation())
@@ -1103,6 +1165,8 @@ private:
             BeAssert(false && "Only an EQUALS operation is allowed in lambda expression");
             return;
             }
+
+        bool isGetUserSettingIntValuesSpecialCase = (0 == strcmp("GetUserSettingIntValues", m_currentValueListMethodNode->GetMethodName()));
 
         NodeCP propertyAccessNode;
         if (expressionNode->GetLeftCP()->ToExpressionString().Equals(symbolName))
@@ -1115,9 +1179,23 @@ private:
             return;
             }
 
-        Comma();
+        if (isGetUserSettingIntValuesSpecialCase)
+            Comma();
+
         propertyAccessNode->Traverse(*this);
-        EndArguments(*m_currentValueListMethodNode->GetArguments());
+        HandleScopeEnd();
+
+        if (isGetUserSettingIntValuesSpecialCase)
+            {
+            EndArguments(*m_currentValueListMethodNode->GetArguments());
+            }
+        else
+            {
+            Append("IN ");
+            m_inArguments = false;
+            StartArguments(*m_currentValueListMethodNode);
+            m_currentValueListMethodNode->GetArguments()->Traverse(*this);
+            }
 
         m_currentValueListMethodNode = nullptr;
         m_inArguments = true;
