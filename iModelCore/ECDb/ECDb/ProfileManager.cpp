@@ -346,7 +346,8 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
                            "Definition TEXT COLLATE NOCASE,"
                            "Factor REAL,"
                            "Offset REAL,"
-                           "InvertsUnitId INTEGER REFERENCES " TABLE_Unit "(Id) ON DELETE SET NULL)");
+                           "IsConstant BOLLEAN,"
+                           "InvertingUnitId INTEGER REFERENCES " TABLE_Unit "(Id) ON DELETE SET NULL)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -354,7 +355,7 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
                            "CREATE INDEX ix_ec_Unit_Name ON " TABLE_Unit "(Name);"
                            "CREATE INDEX ix_ec_Unit_PhenomenonId ON " TABLE_Unit "(PhenomenonId);"
                            "CREATE INDEX ix_ec_Unit_UnitSystemId ON " TABLE_Unit "(UnitSystemId);"
-                           "CREATE INDEX ix_ec_Unit_InvertsUnitId ON " TABLE_Unit "(InvertsUnitId);");
+                           "CREATE INDEX ix_ec_Unit_InvertingUnitId ON " TABLE_Unit "(InvertingUnitId);");
     if (BE_SQLITE_OK != stat)
         return stat;
 

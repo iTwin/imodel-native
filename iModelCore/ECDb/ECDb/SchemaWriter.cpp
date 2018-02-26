@@ -526,15 +526,17 @@ BentleyStatus SchemaWriter::ImportUnit(ECUnitCR unit)
     if (SUCCESS != ImportUnitSystem(*system))
         return ERROR;
 
-    /*
-    if (unit.IsInverseUnit())
+    ECUnitCP invertingUnit = nullptr;
+    if (unit.IsInvertedUnit())
         {
-        if (SUCCESS != ImportUnit(*unit.GetInvertedUnit()))
+        invertingUnit = unit.GetInvertingUnit();
+        BeAssert(invertingUnit != nullptr);
+        if (SUCCESS != ImportUnit(*invertingUnit))
             return ERROR;
         }
-    */
+    
 
-    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO main.ec_Unit(SchemaId,Name,DisplayLabel,Description,PhenomenonId,UnitSystemId,Definition,Factor,Offset,InvertsUnitId) VALUES(?,?,?,?,?,?,?,?,?,?)");
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO main.ec_Unit(SchemaId,Name,DisplayLabel,Description,PhenomenonId,UnitSystemId,Definition,Factor,Offset,IsConstant,InvertingUnitId) VALUES(?,?,?,?,?,?,?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
@@ -547,7 +549,8 @@ BentleyStatus SchemaWriter::ImportUnit(ECUnitCR unit)
     const int defParamIx = 7;
     const int factorParamIx = 8;
     const int offsetParamIx = 9;
-    const int invertedUnitIdParamIx = 10;
+    const int isConstantParamIx = 10;
+    const int invertingUnitIdParamIx = 11;
 
     if (BE_SQLITE_OK != stmt->BindId(schemaIdParamIx, unit.GetSchema().GetId()))
         return ERROR;
@@ -586,14 +589,14 @@ BentleyStatus SchemaWriter::ImportUnit(ECUnitCR unit)
             return ERROR;
         }
 
-    stmt->BindNull(invertedUnitIdParamIx);
-    /*
-    if (unit.IsInverseUnit())
+    if (BE_SQLITE_OK != stmt->BindBoolean(isConstantParamIx, unit.IsConstant()))
+        return ERROR;
+
+    if (invertingUnit != nullptr)
         {
-        if (BE_SQLITE_OK != stmt->BindId(invertedUnitIdParamIx, unit.GetInvertedUnit()->GetId()))
+        if (BE_SQLITE_OK != stmt->BindId(invertingUnitIdParamIx, invertingUnit->GetId()))
             return ERROR;
         }
-    */
 
     if (BE_SQLITE_DONE != stmt->Step())
         return ERROR;

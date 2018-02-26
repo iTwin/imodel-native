@@ -844,13 +844,14 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
     const int definitionColIx = 7;
     const int factorColIx = 8;
     const int offsetColIx = 9;
-    const int invertsUnitIdColIx = 10;
+    const int isConstantColIx = 10;
+    const int invertingUnitIdColIx = 11;
 
-    CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT Id,SchemaId,Name,DisplayLabel,Description,PhenomenonId,UnitSystemId,Definition,Factor,Offset,InvertsUnitId FROM [%s]." TABLE_Unit, GetTableSpace().GetName().c_str()).c_str());
+    CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT Id,SchemaId,Name,DisplayLabel,Description,PhenomenonId,UnitSystemId,Definition,Factor,Offset,IsConstant,InvertingUnitId FROM [%s]." TABLE_Unit, GetTableSpace().GetName().c_str()).c_str());
     if (stmt == nullptr)
         return ERROR;
 
-    bmap<ECUnitP, UnitId> inverseUnits;
+    std::vector<std::tuple<UnitId, UnitId, SchemaDbEntry*, Utf8String, Utf8String, Utf8String, UnitSystemCP>> invertedUnits;
     while (BE_SQLITE_ROW == stmt->Step())
         {
         const UnitId id = stmt->GetValueId<UnitId>(idIx);
@@ -860,7 +861,7 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
         if (SUCCESS != ReadSchema(schemaKey, ctx, schemaId, false))
             return ERROR;
 
-        Utf8CP usName = stmt->GetValueText(nameIx);
+        Utf8CP name = stmt->GetValueText(nameIx);
         Utf8CP displayLabel = stmt->IsColumnNull(displayLabelColIx) ? nullptr : stmt->GetValueText(displayLabelColIx);
         Utf8CP description = stmt->IsColumnNull(descriptionColIx) ? nullptr : stmt->GetValueText(descriptionColIx);
 
@@ -874,14 +875,19 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
         if (us == nullptr)
             return ERROR;
 
-        UnitId invertsUnitId;
-        if (!stmt->IsColumnNull(invertsUnitIdColIx))
-            invertsUnitId = stmt->GetValueId<UnitId>(invertsUnitIdColIx);
+        const bool isConstant = stmt->GetValueBoolean(isConstantColIx);
 
-        const bool isInverseUnit = invertsUnitId.IsValid();
-        if (isInverseUnit)
+        UnitId invertingUnitId;
+        if (!stmt->IsColumnNull(invertingUnitIdColIx))
+            invertingUnitId = stmt->GetValueId<UnitId>(invertingUnitIdColIx);
+
+        const bool isInvertedUnit = invertingUnitId.IsValid();
+        if (isInvertedUnit)
             {
-            BeAssert(stmt->IsColumnNull(definitionColIx) && stmt->IsColumnNull(factorColIx) && stmt->IsColumnNull(offsetColIx));
+            //cache inverted units as they need their inverting unit to be exist before
+            BeAssert(!isConstant && stmt->IsColumnNull(definitionColIx) && stmt->IsColumnNull(factorColIx) && stmt->IsColumnNull(offsetColIx));
+            invertedUnits.push_back(std::make_tuple(id, invertingUnitId, schemaKey, Utf8String(name), Utf8String(displayLabel), Utf8String(description), us));
+            continue;
             }
         else
             {
@@ -896,37 +902,52 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
         if (!stmt->IsColumnNull(offsetColIx))
             offset = stmt->GetValueDouble(offsetColIx);
 
+        ECSchemaR schema = *schemaKey->m_cachedSchema;
         ECUnitP unit = nullptr;
-        if (offset != nullptr)
+        if (isConstant)
             {
-            if (ECObjectsStatus::Success != schemaKey->m_cachedSchema->CreateUnit(unit, usName, definition, *ph, *us, displayLabel, description, factor, offset.Value()))
+            if (ECObjectsStatus::Success != schema.CreateConstant(unit, name, definition, *ph, *us, factor, displayLabel, description))
+                return ERROR;
+            }
+        else if (offset != nullptr)
+            {
+            if (ECObjectsStatus::Success != schema.CreateUnit(unit, name, definition, *ph, *us, displayLabel, description, factor, offset.Value()))
                 return ERROR;
             }
         else
             {
-            if (ECObjectsStatus::Success != schemaKey->m_cachedSchema->CreateUnit(unit, usName, definition, *ph, *us, displayLabel, description, factor))
+            if (ECObjectsStatus::Success != schema.CreateUnit(unit, name, definition, *ph, *us, displayLabel, description, factor))
                 return ERROR;
             }
 
         unit->SetId(id);
-        if (isInverseUnit)
-            inverseUnits[unit] = invertsUnitId;
-
+        m_cache.Insert(*unit);
         schemaKey->m_loadedTypeCount++;
         }
 
-    //now complete inverse units by setting the units they invert in them
-    for (bpair<ECUnitP, UnitId> const& kvPair : inverseUnits)
+    //now create inverted units
+    for (auto const& tuple : invertedUnits)
         {
-        ECUnitCP invertsUnit = m_cache.Find(kvPair.second);
-        if (invertsUnit == nullptr)
+        UnitId id = std::get<0>(tuple);
+        UnitId invertingUnitId = std::get<1>(tuple);
+        ECUnitCP invertingUnit = m_cache.Find(invertingUnitId);
+        if (invertingUnit == nullptr)
             {
             BeAssert(false);
             return ERROR;
             }
 
-        //WIP
-        //kvPair.first->SetInvertsUnit(*invertsUnit);
+        SchemaDbEntry* schemaKey = std::get<2>(tuple);
+        Utf8CP name = std::get<3>(tuple).c_str();
+        Utf8CP displayLabel = std::get<4>(tuple).empty() ? "" : std::get<4>(tuple).c_str();
+        Utf8CP descr = std::get<5>(tuple).empty() ? "" : std::get<5>(tuple).c_str();
+        ECUnitP invertedUnit = nullptr;
+        if (ECObjectsStatus::Success != schemaKey->m_cachedSchema->CreateInvertedUnit(invertedUnit, *invertingUnit, name, *std::get<6>(tuple), displayLabel, descr))
+            return ERROR;
+
+        invertedUnit->SetId(id);
+        m_cache.Insert(*invertedUnit);
+        schemaKey->m_loadedTypeCount++;
         }
 
     return SUCCESS;
