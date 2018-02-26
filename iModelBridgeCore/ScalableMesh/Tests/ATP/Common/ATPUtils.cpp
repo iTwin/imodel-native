@@ -178,6 +178,8 @@ bool ParseTestType(BeXmlNodeP pRootNode, TestType& t)
             t = TEST_MAPBOX;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"drapeTestlnsFileCreation"))
             t = DRAPE_TEST_LNS_FILE_CREATION;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"3mxTo3smConversion"))
+            t = TEST_3MX_TO_3SM_CONVERSION;        
         else return false;
         }
     else return false;
@@ -358,7 +360,9 @@ bool RunTestPlan(BeFileName& testPlanPath)
             case DRAPE_TEST_LNS_FILE_CREATION:
                 PerformDrapeTestLnsFileCreation(pTestNode, pResultFile);
                 break;                
-               
+            case TEST_3MX_TO_3SM_CONVERSION:
+                Perform3MxTo3SmTest(pTestNode, pResultFile);
+                break;                              
             default: break;
             }
         pTestNode = pTestNode->GetNextSibling();

@@ -1998,6 +1998,22 @@ void AddTexturesToMesh(BeXmlNodeP pTestNode, FILE* pResultFile)
     fflush(pResultFile);
     }
 
+
+void SetReprojectionMatrixForMeterData(IScalableMeshPtr& stmFile)
+    {
+    double ratioToMeter = stmFile->GetGCS().GetHorizontalUnit().GetRatioToBase();
+
+    if (ratioToMeter != 1.0)
+        {
+        GeoCoordinates::BaseGCSPtr targetGcs(GeoCoordinates::BaseGCS::CreateGCS());
+        Transform approximateTransform(Transform::FromIdentity());
+        approximateTransform.form3d[0][0] = approximateTransform.form3d[1][1] = approximateTransform.form3d[2][2] = ratioToMeter;
+        BentleyStatus status = stmFile->SetReprojection(*targetGcs, approximateTransform);
+        assert(status == SUCCESS);
+        }
+    }
+
+
 void PerformDrapeLineTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
     WString stmFileName, linesFileName, name;
@@ -2011,17 +2027,8 @@ void PerformDrapeLineTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     IScalableMeshPtr stmFile = IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
 
     //Line in lns file are in meters, apply scaling if required.    
-    double ratioToMeter = stmFile->GetGCS().GetHorizontalUnit().GetRatioToBase();
-    
-    if (ratioToMeter != 1.0)
-        {
-        GeoCoordinates::BaseGCSPtr targetGcs(GeoCoordinates::BaseGCS::CreateGCS());                
-        Transform approximateTransform(Transform::FromIdentity());
-        approximateTransform.form3d[0][0] = approximateTransform.form3d[1][1] = approximateTransform.form3d[2][2] = ratioToMeter;
-        BentleyStatus status = stmFile->SetReprojection(*targetGcs, approximateTransform);
-        assert(status == SUCCESS);
-        }
-    
+    SetReprojectionMatrixForMeterData(stmFile);
+        
     uint64_t pointCount = 0;
     WString result;
 
@@ -2663,6 +2670,13 @@ static bool AllOtherArraysEmpty(bvector<bvector<T>> &data, size_t index)
     return true;
     }
 
+
+void Perform3MxTo3SmTest(BeXmlNodeP pTestNode, FILE* pResultFile)
+    {
+    
+    
+    }
+
 #define MAX_CUT_FILL_ERROR_PERCENT 0.001 
 #define DIVIDE_BY_ZERO_GUARD_EPSILON 0.0000000001
 
@@ -2677,6 +2691,10 @@ void PerformVolumeTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         }
     StatusInt status;
     IScalableMeshPtr stmFile = IScalableMesh::GetFor(smFileName.c_str(), true, true, status);
+
+    //Volume meshes and in meters
+    SetReprojectionMatrixForMeterData(stmFile);
+
 
     int64_t pointCount = 0;
     WString result;
