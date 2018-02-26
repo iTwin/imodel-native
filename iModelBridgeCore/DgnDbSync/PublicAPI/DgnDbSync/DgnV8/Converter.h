@@ -991,6 +991,7 @@ protected:
     DGNDBSYNC_EXPORT virtual SyncInfo::V8ElementMapping _FindFirstElementMappedTo(DgnV8Api::DisplayPath const& proxyPath, bool tail, IChangeDetector::T_SyncInfoElementFilter* filter = nullptr);
     virtual DgnV8Api::ModelInfo const& _GetModelInfo(DgnV8ModelCR v8Model) { return v8Model.GetModelInfo(); }
     virtual bool _ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model) { return true; }
+    virtual void _OnSheetsConvertViewAttachment(ResolvedModelMapping const& v8SheetModelMapping, DgnAttachmentR v8DgnAttachment) {}
 
 public:
     virtual Params const& _GetParams() const = 0;
@@ -1218,7 +1219,7 @@ public:
     //! convert the grids for a view
     void ConvertViewGrids(ViewDefinitionPtr view, DgnV8ViewInfoCR viewInfo, DgnV8ModelR v8Model, double toMeters);
     //! convert the auxiliary coordinate system for a view
-    void ConvertViewACS(ViewDefinitionPtr view, DgnV8ViewInfoCR viewInfo, DgnV8ModelR v8Model, double toMeters, Utf8StringCR);
+    void ConvertViewACS(ViewDefinitionPtr view, DgnV8ViewInfoCR viewInfo, DgnV8ModelR v8Model, TransformCR, Utf8StringCR);
 
     //! Convert a View
     BentleyStatus ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo, Utf8StringCR defaultName, Utf8StringCR defaultDescription, BentleyApi::TransformCR, ViewFactory&);
@@ -1332,15 +1333,15 @@ public:
     //! @name Extracted drawing graphics
     //! @{
     DGNDBSYNC_EXPORT bool _UseProxyGraphicsFor(DgnAttachmentCR ref);
-    DgnAttachmentP GetFirstNeedingCve(ResolvedModelMapping const&, ProxyGraphicsDetector&, bset<DgnV8Api::ElementId> const& ignoreList);
+    DgnAttachmentP GetFirstNeedingCve(ResolvedModelMapping const&, ProxyGraphicsDetector&, ViewportP vp, bset<DgnV8Api::ElementId> const& ignoreList);
     DgnCategoryId GetExtractionCategoryId(V8NamedViewType);
     DGNDBSYNC_EXPORT virtual DgnCategoryId _GetExtractionCategoryId(DgnAttachmentCR);
     DGNDBSYNC_EXPORT virtual DgnSubCategoryId _GetExtractionSubCategoryId(DgnCategoryId, DgnV8Api::ClipVolumePass pass,
                                                                           DgnV8Api::ProxyGraphicsType gtype);
     DGNDBSYNC_EXPORT void ConvertExtractionAttachments(ResolvedModelMapping const&, ProxyGraphicsDrawingFactory&, Bentley::ViewInfoCP);
     DGNDBSYNC_EXPORT virtual void _TurnOnExtractionCategories(CategorySelectorR);
-    bool HasProxyGraphicsCache(DgnV8ModelR);
-    bool HasProxyGraphicsCache(DgnAttachmentR);
+    bool HasProxyGraphicsCache(DgnV8ModelR, ViewportP vp=nullptr);
+    bool HasProxyGraphicsCache(DgnAttachmentR, ViewportP vp=nullptr);
     //! Make sure that all attachments that need proxy graphics have them computed.
     //! @param parentModel  The model that has attachments to be checked
     //! @param viewOfParentModel A V8 view of the parent model - determines the visibility and appearance of generated proxy graphics
@@ -2327,7 +2328,7 @@ public:
     DGNDBSYNC_EXPORT virtual DgnV8Api::DgnFileStatus _ComputeCoordinateSystemTransform();
 
     //! Called from to compute the transform and global origin from the source root model to the BIM file's coordinates.
-    DGNDBSYNC_EXPORT void ComputeTransformAndGlobalOriginFromRootModel(DgnV8ModelCR rootModel);
+    DGNDBSYNC_EXPORT void ComputeTransformAndGlobalOriginFromRootModel(DgnV8ModelCR rootModel, bool adoptSourceGoIfBimIsEmpty);
 
     DgnGCS* GetDgnGcs() {return m_outputDgnGcs.get();}
     //! @}

@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
+#include <VersionedDgnV8Api/PSolid/PSolidCore.h>
 
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 
@@ -159,12 +160,19 @@ void RootModelConverter::_ConvertDrawings()
 
     AddTasks((uint32_t)drawings.size());
 
+    // Just in case the session hasn't started
+    if (!DgnV8Api::PSolidKernelManager::IsSessionStarted())
+        DgnV8Api::PSolidKernelManager::StartSession();
+
     for (auto v8mm : drawings)
         {
         SetTaskName(Converter::ProgressMessage::TASK_CONVERTING_MODEL(), v8mm.GetDgnModel().GetName().c_str());
-    
         DrawingsConvertModelAndViews(v8mm);
+        // TFS#661407: Reset parasolid session to avoid running out of tags on long processing of VisEdgesLib
+        DgnV8Api::PSolidKernelManager::StopSession();
+        DgnV8Api::PSolidKernelManager::StartSession();
         }
+
     }
 
 /*---------------------------------------------------------------------------------**//**

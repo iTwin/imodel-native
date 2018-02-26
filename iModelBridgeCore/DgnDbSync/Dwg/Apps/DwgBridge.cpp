@@ -392,11 +392,14 @@ BentleyStatus iModelBridge_releaseInstance(iModelBridge* bridgeInstance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridge_getAffinity(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel, WCharCP affinityLibPath, WCharCP dwgdxfName)
     {
+    // default the affinity to None:
+    affinityLevel = BentleyApi::Dgn::iModelBridge::Affinity::None;
+
     // A generic DwgBridge supports any valid DWG, DXF and DXB file type.
     BeFileName  filename(dwgdxfName);
     if (DwgHelper::SniffDwgFile(filename) || DwgHelper::SniffDxfFile(filename))
         {
-        affinityLevel = BentleyApi::Dgn::iModelBridge::Affinity::Low;
+        affinityLevel = BentleyApi::Dgn::iModelBridge::Affinity::Medium;
         BeStringUtilities::Wcsncpy(buffer, bufferSize, s_dwgBridgeRegKey);
         }
     }
