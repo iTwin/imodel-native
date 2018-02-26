@@ -43,7 +43,6 @@ struct FormattingTestFixture
         static void SetUpL10N();
         static void TearDownL10N();
 
-        static void LogMessage(Utf8CP format, va_list argptr);
         static void SignaturePattrenCollapsing(Utf8CP txt, int tstN, bool hexDump);
         static void ShowSignature(Utf8CP txt, int tstN);
         static void ShowHexDump(Utf8String str, int len);
@@ -53,7 +52,6 @@ struct FormattingTestFixture
         static void RegisterFUS(Utf8CP descr, Utf8CP name);
         static void TestFUS(Utf8CP fusText, Utf8CP norm, Utf8CP aliased);
         static void CrossValidateFUS(Utf8CP descr1, Utf8CP descr2);
-        static void TestFUGFormat(double dval, Utf8CP uom, Utf8CP name, Utf8CP fusText);
         static void TestFUG(Utf8CP name, Utf8CP fusText, Utf8CP norm, Utf8CP aliased);
         static void ShowQuantity(double dval, Utf8CP uom, Utf8CP fusUnit, Utf8CP fusFormat, Utf8CP space);
         static void ShowQuantityS(Utf8CP descr);
@@ -96,8 +94,6 @@ struct FormattingTestFixture
         static void ShowPhenomenon(BEU::PhenomenonCP phenP, bvector<BEU::PhenomenonCP>& undefPhenomena);
         static void ShowKnownPhenomena();
         static void ShowSynonyms();
-        static void TestFusLabel(Utf8CP unitName, Utf8CP formatName, Utf8CP fusName);
-        //static void LoadUnitSynonymsTest();
     };
 
 END_BENTLEY_FORMATTEST_NAMESPACE

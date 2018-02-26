@@ -127,7 +127,7 @@ void UnitRegistry::AllUnitNames(bvector<Utf8String>& allUnitNames, bool includeS
     {
     for (auto const& unitAndName : m_units)
         {
-        if (includeSynonyms || unitAndName.first.Equals(unitAndName.second->GetName()))
+        if (includeSynonyms)
             allUnitNames.push_back(unitAndName.first);
         }
     }
@@ -138,10 +138,7 @@ void UnitRegistry::AllUnitNames(bvector<Utf8String>& allUnitNames, bool includeS
 void UnitRegistry::AllUnits(bvector<UnitCP>& allUnits) const
     {
     for (auto const& unitAndName : m_units)
-        {
-        if (unitAndName.first.Equals(unitAndName.second->GetName()))
-            allUnits.push_back(unitAndName.second);
-        }
+        allUnits.push_back(unitAndName.second);
     }
 
 //-------------------------------------------------------------------------------------//
@@ -161,7 +158,7 @@ void UnitRegistry::AddBasePhenomenon(Utf8CP basePhenomenonName)
     auto phenomena = new Phenomenon(basePhenomenonName, basePhenomenonName, m_nextId);
     ++m_nextId;
 
-    m_phenomena.insert(bpair<Utf8String, PhenomenonP>(basePhenomenonName, phenomena));
+    m_phenomena.insert(bpair<Utf8CP, PhenomenonP>(basePhenomenonName, phenomena));
     }
 
 //---------------------------------------------------------------------------------------//
@@ -258,6 +255,40 @@ UnitP UnitRegistry::RemoveUnit(Utf8CP name)
 
     auto iter = m_units.find(name);
     if (iter != m_units.end())
+        {
+        ptrReturn = iter->second;
+        m_units.erase(iter);
+        }
+
+    return ptrReturn;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
+//--------------------------------------------------------------------------------------
+UnitP UnitRegistry::RemoveInvertedUnit(Utf8CP name)
+    {
+    UnitP ptrReturn = nullptr;
+
+    auto iter = m_units.find(name);
+    if (iter != m_units.end() && iter->second->IsInvertedUnit())
+        {
+        ptrReturn = iter->second;
+        m_units.erase(iter);
+        }
+
+    return ptrReturn;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
+//--------------------------------------------------------------------------------------
+UnitP UnitRegistry::RemoveConstant(Utf8CP name)
+    {
+    UnitP ptrReturn = nullptr;
+
+    auto iter = m_units.find(name);
+    if (iter != m_units.end() && iter->second->IsConstant())
         {
         ptrReturn = iter->second;
         m_units.erase(iter);

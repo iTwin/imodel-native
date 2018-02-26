@@ -665,10 +665,7 @@ private:
         NumericFormatSpec  m_numericSpec;
         CompositeValueSpec m_compositeSpec;
         FormatSpecType     m_specType;
-        FormatProblemDetail m_problem;  
-
-        /*BEU::UnitCP GetCompositeUnit(size_t indx) const 
-            { return HasComposite()? m_compositeSpec.GetUnit(indx); }*/
+        FormatProblemDetail m_problem;
 
 public:
         UNITS_EXPORT void Init(FormatProblemCode prob = FormatProblemCode::NoProblems);
@@ -678,18 +675,20 @@ public:
 
         UNITS_EXPORT void LoadJson(Json::Value jval);
         UNITS_EXPORT void LoadJson(Utf8CP jsonString);
-        UNITS_EXPORT NamedFormatSpec();
+
+        //! Creates a new NamedFormatSpec with default values.
+        NamedFormatSpec() : m_specType(FormatSpecType::Undefined) {m_problem.UpdateProblemCode(FormatProblemCode::NFS_Undefined);}
         UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8CP alias = nullptr);
         UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec, Utf8CP alias = nullptr);
         UNITS_EXPORT NamedFormatSpec(Json::Value jval);
         UNITS_EXPORT NamedFormatSpec(Utf8CP jsonString);
-        // UNITS_EXPORT void ReplaceLocalizables(JsonValueCR jval);
+
         Utf8CP SetAlias(Utf8CP alias) { m_alias = alias;  return m_alias.c_str(); }
         Utf8CP GetAlias() const { return m_alias.c_str(); }
         UNITS_EXPORT bool HasName(Utf8CP name) const;
         UNITS_EXPORT bool HasAlias(Utf8CP name) const;
-        UNITS_EXPORT void SetSuppressUnitLabel();
-        
+        void SetSuppressUnitLabel() {m_numericSpec.SetAppendUnit(false);}
+
         Utf8CP GetName() const { return m_name.c_str(); };
         Utf8CP GetDescription() const { return m_description.c_str(); };
         Utf8CP SetDescription(Utf8CP descr) { m_description = descr;  return m_description.c_str(); };
@@ -730,7 +729,7 @@ public:
 //=======================================================================================
 struct FormatUnitSet
     {
-	friend struct StdFormatSet;
+    friend struct StdFormatSet;
     private:
         NamedFormatSpecCP m_formatSpec;
         Utf8String  m_unitName;
@@ -770,7 +769,28 @@ struct FormatUnitSet
         //! the long one consists of the unitName and formatSpec that contains the full description of this Spec
         UNITS_EXPORT FormatUnitSet(Utf8CP descriptor);
 
-        //! Clears this FUS and repopulates it will the json value.
+        //! Resets this FUS to its initial state and populates it will the json value.
+        //!
+        //! Supported JSON format:
+        //!     <code>
+        //!     {
+        //!         unitName: "",
+        //!         formatName: "",
+        //!         cloneData: true,
+        //!         formatSpec: { }
+        //!     }
+        //!     </code>
+        //!
+        //! Potential problem codes:
+        //!     - FormatProblemCode::NFS_InvalidJsonObject,
+        //!         - When Json value is empty
+        //!     - FormatProblemCode::UnknownUnitName
+        //!         - If the unitName is provided but cannot be found in the UnitRegistry
+        //!
+        //! @note If a formatName or formatSpec is not defined in the JSON value the FormatConstant::DefaultFormatName is used.
+        //! @note If a formatName and formatSpec are provided in the JSON the last will be used.
+        //!
+        //! @param[in] jval Json to use to populate this.
         UNITS_EXPORT void LoadJson(Json::Value jval);
 
         //! Returns whether this FormatUnitSet has a problem.
@@ -795,9 +815,28 @@ struct FormatUnitSet
         UNITS_EXPORT Json::Value FormatQuantityJson(BEU::QuantityCR qty, bool useAlias, Utf8CP space="") const;
         UNITS_EXPORT BEU::UnitCP ResetUnit();
         BEU::PhenomenonCP GetPhenomenon() { return (nullptr == m_unit) ? nullptr : m_unit->GetPhenomenon(); }
+
+        //! Populates this FormatUnitSet with the provided Json data. 
+        //! 
+        //! Supported JSON format is:
+        //!     <code>
+        //!     {
+        //!         fusName: "SampleFUS"
+        //!         unitName: "SampleUnit"
+        //!         formatName: "SampleFormat"
+        //!     }
+        //!     </code>
+        //!
+        //! Potential problem code:
+        //!     - FormatProblemCode::UnknownUnitName
+        //!         - If an unitName is provided but cannot be found in the UnitRegistry
+        //!     - FormatProblemCode::UnknownStdFormatName
+        //!         - If a formatName is provided but cannot be found in the StdFormatSet
+        //!
+        //! @param[in] jval Json to use to populate this.
         UNITS_EXPORT void LoadJsonData(Json::Value jval);
         UNITS_EXPORT bool IsIdentical(FormatUnitSetCR other) const;
-        UNITS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, size_t start);
+        
         bool IsFullySpecified() { return (m_formatSpec == &m_localCopy); }
         bool IsSetRegistered() { return !m_fusName.empty(); }
         bool HasComposite() const { return nullptr != m_formatSpec && m_formatSpec->HasComposite(); }
@@ -806,6 +845,8 @@ struct FormatUnitSet
         BEU::UnitCP GetCompositeMiddleUnit() const { return HasComposite() ? m_formatSpec->GetCompositeMiddleUnit() : nullptr; }
         BEU::UnitCP GetCompositeMinorUnit() const { return HasComposite() ? m_formatSpec->GetCompositeMinorUnit() : nullptr; }
         BEU::UnitCP GetCompositeSubUnit() const { return HasComposite() ? m_formatSpec->GetCompositeSubUnit() : nullptr; }
+
+        UNITS_EXPORT static void ParseUnitFormatDescriptor(Utf8StringR unitName, Utf8StringR formatString, Utf8CP description);
     };
 
 //=======================================================================================

@@ -15,9 +15,9 @@
 #include <chrono>
 #include <math.h>
 
-/** @namespace BentleyApi::Planning %Planning data types */
 #define BEGIN_BENTLEY_FORMATTING_NAMESPACE BEGIN_BENTLEY_NAMESPACE namespace Formatting {
-#define END_BENTLEY_FORMATTING_NAMESPACE   } }
+#define END_BENTLEY_FORMATTING_NAMESPACE } END_BENTLEY_NAMESPACE
+
 #define USING_BENTLEY_FORMATTING using namespace BENTLEY_NAMESPACE_NAME::Formatting;
 
 #define FORMATTING_TYPEDEFS(_structname_) \

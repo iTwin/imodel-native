@@ -1495,6 +1495,58 @@ void FormatUnitSet::LoadJson(Json::Value jval)
 
 //----------------------------------------------------------------------------------------
 //  The text string has format <unitName>(<formatName>)
+// @bsimethod                                                   Kyle.Abramowitz    02/2018
+//----------------------------------------------------------------------------------------
+void FormatUnitSet::ParseUnitFormatDescriptor(Utf8StringR unitName, Utf8StringR formatString, Utf8CP description)
+    {
+    FormattingScannerCursor curs = FormattingScannerCursor(description, -1, FormatConstant::FUSDividers());
+    FormattingWord fnam;
+    FormattingWord unit;
+    FormatDividerInstance fdt;
+    FormatDividerInstance fdi = FormatDividerInstance(description, '|'); // check if this is a new format
+    int n = fdi.GetDivCount();
+    if (n == 2 && fdi.IsDivLast())
+        {
+        fnam = curs.ExtractLastEnclosure();
+        unit = curs.ExtractBeforeEnclosure();
+        }
+    else if (n == 1 && !fdi.IsDivLast())
+        {
+        int loc = fdi.GetFirstLocation();
+        if (loc > 0)
+            {
+            unit = curs.ExtractSegment(0, (size_t)loc - 1);
+            fnam = curs.ExtractSegment((size_t)loc + 1, curs.GetTotalLength());
+            }
+        }
+    else
+        {
+        fdi = FormatDividerInstance(description, '(');
+        n = fdi.GetDivCount();
+        if (n == 0)
+            unit = curs.ExtractSegment(0, curs.GetTotalLength());
+        if (fdi.BracketsMatched() && fdi.IsDivLast()) // there is a candidate for the format in parethesis
+            {
+            unit = curs.ExtractLastEnclosure();
+            fdt = FormatDividerInstance(unit.GetText(), "/*");
+            if (fdt.GetDivCount() == 0) // it can be a format name
+                {
+                fnam = unit;
+                unit = curs.ExtractBeforeEnclosure();
+                }
+            else
+                {
+                unit = curs.ExtractSegment(0, curs.GetTotalLength());
+                }
+            }
+        // dividers are not found - we assume a Unit name only
+        }
+    formatString = fnam.GetText();
+    unitName = unit.GetText();
+    }
+
+//----------------------------------------------------------------------------------------
+//  The text string has format <unitName>(<formatName>)
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
 FormatUnitSet::FormatUnitSet(Utf8CP description)
@@ -1509,54 +1561,14 @@ FormatUnitSet::FormatUnitSet(Utf8CP description)
         }
     else
         {
-        FormattingScannerCursor curs = FormattingScannerCursor(description, -1, FormatConstant::FUSDividers());
-        FormattingWord fnam;
-        FormattingWord unit;
-        FormatDividerInstance fdt;
-        FormatDividerInstance fdi = FormatDividerInstance(description, '|'); // check if this is a new format
-        int n = fdi.GetDivCount();
-        if (n == 2 && fdi.IsDivLast())
-            {
-            fnam = curs.ExtractLastEnclosure();
-            unit = curs.ExtractBeforeEnclosure();
-            }
-        else if (n == 1 && !fdi.IsDivLast())
-            {
-            int loc = fdi.GetFirstLocation();
-            if (loc > 0)
-                {
-                unit = curs.ExtractSegment(0, (size_t)loc - 1);
-                fnam = curs.ExtractSegment((size_t)loc + 1, curs.GetTotalLength());
-                }
-            }
-        else
-            {
-            fdi = FormatDividerInstance(description, '(');
-            n = fdi.GetDivCount();
-            if (n == 0)
-                unit = curs.ExtractSegment(0, curs.GetTotalLength());
-            if (fdi.BracketsMatched() && fdi.IsDivLast()) // there is a candidate for the format in parethesis
-                {
-                unit = curs.ExtractLastEnclosure();
-                fdt = FormatDividerInstance(unit.GetText(), "/*");
-                if (fdt.GetDivCount() == 0) // it can be a format name
-                    {
-                    fnam = unit;
-                    unit = curs.ExtractBeforeEnclosure();
-                    }
-                else
-                    {
-                    unit = curs.ExtractSegment(0, curs.GetTotalLength());
-                    }
-                }
-            // dividers are not found - we assume a Unit name only
-            }
-
-        if (Utf8String::IsNullOrEmpty(fnam.GetText()))
+        Utf8String fnam;
+        Utf8String unit;
+        ParseUnitFormatDescriptor(unit, fnam, description);
+        if (Utf8String::IsNullOrEmpty(fnam.c_str()))
             m_formatSpec = StdFormatSet::FindFormatSpec("DefaultReal");
         else
-            m_formatSpec = StdFormatSet::FindFormatSpec(fnam.GetText());
-        m_unit = BEU::UnitRegistry::Instance().LookupUnitCI(unit.GetText());
+            m_formatSpec = StdFormatSet::FindFormatSpec(fnam.c_str());
+        m_unit = BEU::UnitRegistry::Instance().LookupUnit(unit.c_str());
         if (nullptr == m_formatSpec)
             m_problem.UpdateProblemCode(FormatProblemCode::UnknownStdFormatName);
         else
@@ -1581,6 +1593,9 @@ Utf8String FormatUnitSet::ToText(bool useAlias) const
     return buf;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//----------------------------------------------------------------------------------------
 Utf8CP FormatUnitSet::GetDefaultDisplayLabel() const
     {
     Utf8CP fnP = (nullptr == m_formatSpec) ? "#" : m_formatSpec->GetName();
@@ -1589,6 +1604,9 @@ Utf8CP FormatUnitSet::GetDefaultDisplayLabel() const
     return dispLabel.c_str();
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//----------------------------------------------------------------------------------------
 Utf8CP FormatUnitSet::GetDisplayLabel(bool useDefault) const
     {
     if (m_fusName.empty() || useDefault)
@@ -1608,26 +1626,34 @@ bool FormatUnitSet::IsComparable(BEU::QuantityCR qty) const
     return Utils::AreUnitsComparable(qty.GetUnit(), m_unit);
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//----------------------------------------------------------------------------------------
 bool FormatUnitSet::IsUnitComparable(Utf8CP unitName) const
     {
      BEU::UnitCP unit =  BEU::UnitRegistry::Instance().LookupUnitCI(unitName);
      return Utils::AreUnitsComparable(unit, m_unit);
     }
 
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//----------------------------------------------------------------------------------------
 BEU::UnitCP FormatUnitSet::ResetUnit()
     {
     m_unit = BEU::UnitRegistry::Instance().LookupUnitCI(m_unitName.c_str());
     return m_unit;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//----------------------------------------------------------------------------------------
 bool FormatUnitSet::IsIdentical(FormatUnitSetCR other) const
     {
-     if(m_formatSpec != other.m_formatSpec) return false;
-     if(strcmp(m_unitName.c_str(), other.m_unitName.c_str()) != 0) return false;
-     if(m_unit != other.m_unit) return false;
-     if(m_problem.GetProblemCode() != other.m_problem.GetProblemCode()) return false;
-     return true;
+    if(m_formatSpec != other.m_formatSpec) return false;
+    if(strcmp(m_unitName.c_str(), other.m_unitName.c_str()) != 0) return false;
+    if(m_unit != other.m_unit) return false;
+    if(m_problem.GetProblemCode() != other.m_problem.GetProblemCode()) return false;
+    return true;
     }
 
 //----------------------------------------------------------------------------------------
@@ -1639,7 +1665,9 @@ Utf8String FormatUnitSet::FormatQuantity(BEU::QuantityCR qty, Utf8CP space) cons
     return txt;
     }
 
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//----------------------------------------------------------------------------------------
 Json::Value FormatUnitSet::FormatQuantityJson(BEU::QuantityCR qty, bool useAlias, Utf8CP space) const
     {
     Utf8String str;
@@ -1650,7 +1678,6 @@ Json::Value FormatUnitSet::FormatQuantityJson(BEU::QuantityCR qty, bool useAlias
     jval[FormatConstant::FUSJsonDispValue()] = txt.c_str();
     return jval;
     }
-
 
 //===================================================
 //
@@ -1832,15 +1859,6 @@ FormattingWord::FormattingWord(FormattingScannerCursorP cursor, Utf8CP buffer, U
 // NamedFormatSpec
 //
 //===================================================
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bill.Steinbock                  01/2018
-//---------------------------------------------------------------------------------------
-void NamedFormatSpec::SetSuppressUnitLabel()
-    {
-    m_numericSpec.SetAppendUnit(false);
-    }
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/17
 //----------------------------------------------------------------------------------------
@@ -1871,21 +1889,14 @@ void NamedFormatSpec::Clone(NamedFormatSpecCP other)
     m_problem.UpdateProblemCode(other->m_problem.GetProblemCode());
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/17
+//----------------------------------------------------------------------------------------
 NamedFormatSpec& NamedFormatSpec::operator=(const NamedFormatSpec& other)
     {
     if (this != &other)
         Clone(other);
-        
     return *this;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/17
-//----------------------------------------------------------------------------------------
-NamedFormatSpec::NamedFormatSpec()
-    {
-    m_specType = FormatSpecType::Undefined;
-    m_problem.UpdateProblemCode(FormatProblemCode::NFS_Undefined);
     }
 
 //----------------------------------------------------------------------------------------
@@ -1914,7 +1925,6 @@ NamedFormatSpec::NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8C
     m_name = name;
     m_numericSpec = NumericFormatSpec(numSpec);
     m_specType = FormatSpecType::Numeric;
-    //m_compositeSpec(); // = CompositeValueSpec();
     m_problem = FormatProblemDetail();
     if (Utils::IsNameNullOrEmpty(name))
         m_problem.UpdateProblemCode(FormatProblemCode::NFS_InvalidSpecName);
@@ -1963,6 +1973,10 @@ bool NamedFormatSpec::HasAlias(Utf8CP name) const
 // FormatProblemDetail
 //
 //===================================================
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//----------------------------------------------------------------------------------------
 Utf8String FormatProblemDetail::GetProblemDescription() const
     {
     switch (m_code)
@@ -2005,20 +2019,9 @@ Utf8String FormatProblemDetail::GetProblemDescription() const
         }
     }
 
-
-/*
-
-FUS_InvalidSyntax = 20151,
-NFS_InvalidSpecName = 20161,
-NFS_DuplicateSpecName = 20162,
-DIV_UnknownDivider = 25001,
-NA_InvalidSign = 25101,             // Numeric Accumulator problems
-NA_InvalidPoint = 25102,
-NA_InvalidExponent = 25103
-};
-
-*/
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//----------------------------------------------------------------------------------------
 bool FormatProblemDetail::UpdateProblemCode(FormatProblemCode code)
     {
     if (m_code == FormatProblemCode::NoProblems)
@@ -2094,7 +2097,4 @@ bool FormatProblemDetail::UpdateProblemCode(FormatProblemCode code)
 //        }
 //    }
 
-
 END_BENTLEY_FORMATTING_NAMESPACE
-
-

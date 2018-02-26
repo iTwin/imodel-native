@@ -117,6 +117,7 @@ public:
 //=======================================================================================
 struct UnitsSymbol
 {
+friend struct UnitRegistry;
 friend struct ExpressionSymbol;
 friend struct Expression;
 friend struct Unit;
@@ -179,16 +180,11 @@ private:
     mutable Utf8String m_displayLabel;
     mutable Utf8String m_displayDescription;
 
-    Unit(UnitCR parentUnit, Utf8CP name, uint32_t id)
-        : Unit(*(parentUnit.GetUnitSystem()), *(parentUnit.GetPhenomenon()), name, id, parentUnit.GetDefinition().c_str(), 0, 0, 0, false)
-        {
-        m_parent = &parentUnit;
-        m_isNumber = m_parent->IsNumber();
-        }
+    
 
     Unit() :UnitsSymbol(), m_system(nullptr), m_phenomenon(nullptr), m_parent(nullptr), m_isConstant(true) {}
-    // Lifecycle is managed by the UnitRegistry so we don't allow copies or assignments.
 
+    // Lifecycle is managed by the UnitRegistry so we don't allow copies or assignments.
     Unit(UnitCR unit) = delete;
     UnitR operator=(UnitCR unit) = delete;
 
@@ -196,7 +192,6 @@ private:
 
     UNITS_EXPORT uint32_t GetPhenomenonId() const override;
     UnitCP CombineWithUnit(UnitCR rhs, int factor) const;
-    bool IsInverseUnit() const {return nullptr != m_parent;}
 
     UnitsProblemCode DoNumericConversion(double& converted, double value, UnitCR toUnit) const;
     bool GenerateConversion(UnitCR toUnit, Conversion& conversion) const;
@@ -214,10 +209,18 @@ protected:
         return new Unit(sysName, phenomenon, unitName, id, definition, numerator, denominator, offset, isConstant);
         }
 
-    UNITS_EXPORT static UnitP _Create(UnitCR parentUnit, Utf8CP unitName, uint32_t id);
+    UNITS_EXPORT static UnitP _Create(UnitCR parentUnit, UnitSystemCR system, Utf8CP unitName, uint32_t id);
 
     UNITS_EXPORT Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant);
-    UNITS_EXPORT void SetLabel(Utf8CP label) {m_displayLabel = label;}
+
+    Unit(UnitCR parentUnit, UnitSystemCR system, Utf8CP name, uint32_t id)
+        : Unit(system, *(parentUnit.GetPhenomenon()), name, id, parentUnit.GetDefinition().c_str(), 0, 0, 0, false)
+        {
+        m_parent = &parentUnit;
+        m_isNumber = m_parent->IsNumber();
+        }
+    UnitCP GetParent() const {return m_parent;}
+    void SetLabel(Utf8CP label) {m_displayLabel = label;}
 
 public:
     UNITS_EXPORT Utf8String GetUnitSignature() const;
@@ -229,6 +232,7 @@ public:
 
     bool IsSI() const {return 0 == strcmp(m_system->GetName().c_str(), "SI");} // TODO: Replace with something better ... SI is a known system
 
+    bool IsInvertedUnit() const {return nullptr != m_parent;} //!< Indicates if this unit is an InverseUnit or not
     bool IsRegistered() const; //!< Indicates if this Unit is in the UnitRegistry singleton
     bool IsConstant() const {return m_isConstant;} //!< Indicates if this Unit is constant.
     UnitSystemCP GetUnitSystem() const {return m_system;} //!< Gets the UnitSystem for this Unit.
