@@ -72,16 +72,16 @@ static folly::Future<NavNodeCPtr> GetNode(IECPresentationManager& mgr, ECDbR ecd
     bvector<Utf8String> path;
     for (JsonValueCR pathElement : json["pathFromRoot"])
         path.push_back(pathElement.asString());
-    ECClassId classId = ECClassId(BeJsonUtilities::UInt64FromValue(json["classId"]));
     NavNodeKeyCPtr key;
     if (0 == strcmp(NAVNODE_TYPE_ECInstanceNode, type))
         {
+        ECClassId classId = ECClassId(BeJsonUtilities::UInt64FromValue(json["classId"]));
         ECInstanceId instanceId = ECInstanceId(BeJsonUtilities::UInt64FromValue(json["instanceId"]));
         key = ECInstanceNodeKey::Create(classId, instanceId, path);
         }
     else
         {
-        key = NavNodeKey::Create(type, path, classId);
+        key = NavNodeKey::Create(type, path);
         }
     return mgr.GetNode(ecdb, *key);
 #endif
