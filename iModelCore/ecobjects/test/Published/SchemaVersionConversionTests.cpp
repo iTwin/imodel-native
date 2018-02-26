@@ -175,18 +175,17 @@ TEST_F(SchemaVersionConversionTests, CanLoadMetaSchemaWithDeliveredConversionSch
     expectedClasses.push_back(ExpectedClassMetaData("ECRelationshipSourceDef", ECClassType::Entity, ECClassModifier::None));
     expectedClasses.push_back(ExpectedClassMetaData("ECRelationshipTargetDef", ECClassType::Entity, ECClassModifier::None));
     expectedClasses.push_back(ExpectedClassMetaData("ECSchemaDef", ECClassType::Entity, ECClassModifier::None));
-    expectedClasses.push_back(ExpectedClassMetaData("ECSupplementalClassDef", ECClassType::Entity, ECClassModifier::None));
-    expectedClasses.push_back(ExpectedClassMetaData("ECSupplementalPropertyDef", ECClassType::Entity, ECClassModifier::None));
-    expectedClasses.push_back(ExpectedClassMetaData("ECSupplementalRelationshipClassDef", ECClassType::Entity, ECClassModifier::None));
-    expectedClasses.push_back(ExpectedClassMetaData("ECSupplementalRelationshipConstraintDef", ECClassType::Entity, ECClassModifier::None));
-    expectedClasses.push_back(ExpectedClassMetaData("ECSupplementalRelationshipSourceDef", ECClassType::Entity, ECClassModifier::None));
-    expectedClasses.push_back(ExpectedClassMetaData("ECSupplementalRelationshipTargetDef", ECClassType::Entity, ECClassModifier::None));
-    expectedClasses.push_back(ExpectedClassMetaData("ECSupplementalSchemaDef", ECClassType::Entity, ECClassModifier::None));
-    expectedClasses.push_back(ExpectedClassMetaData("SupplementalCustomAttributeDef", ECClassType::Entity, ECClassModifier::None));
 
     bvector<Utf8CP> unexpectedClasses;
     unexpectedClasses.push_back("CustomAttributeContainerHasCustomAttribute");
-    unexpectedClasses.push_back("CustomAttributeContainerHasLocalCustomAttribute");
+    unexpectedClasses.push_back("ECSupplementalClassDef");
+    unexpectedClasses.push_back("ECSupplementalPropertyDef");
+    unexpectedClasses.push_back("ECSupplementalRelationshipClassDef");
+    unexpectedClasses.push_back("ECSupplementalRelationshipConstraintDef");
+    unexpectedClasses.push_back("ECSupplementalRelationshipSourceDef");
+    unexpectedClasses.push_back("ECSupplementalRelationshipTargetDef");
+    unexpectedClasses.push_back("ECSupplementalSchemaDef");
+    unexpectedClasses.push_back("SupplementalCustomAttributeDef");
 
     VerifySchema(schema, expectedClasses, unexpectedClasses);
     }
