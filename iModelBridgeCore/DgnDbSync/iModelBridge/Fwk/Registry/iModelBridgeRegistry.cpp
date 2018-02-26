@@ -393,6 +393,8 @@ BentleyStatus iModelBridgeRegistry::_AssignFileToBridge(BeFileNameCR sourceFileP
     //!Lets insert default document properties for this 
     EnsureDocumentPropertiesFor(sourceFilePath);
 
+    m_stateDb.SaveChanges();
+
     return SUCCESS;
     }
 
