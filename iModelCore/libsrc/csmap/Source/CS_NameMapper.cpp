@@ -42,7 +42,7 @@
 //  cs_NameMapper.hpp includes cs_CsvFileSupport.hpp
 //  cs_NameMapper.hpp includes csNameMapperSupport.hpp
 #include "cs_WktObject.hpp"
-#include "cs_wkt.h"
+#include CS_wkt.h
 
 #include <fstream>
 #include <sstream>
