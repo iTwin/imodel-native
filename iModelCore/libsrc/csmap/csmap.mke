@@ -410,9 +410,9 @@ CCompOpts + -D__CPP__
 
     $(o)CS_wktObject$(oext):           $(csSrcDir)CS_wktObject.cpp ${MultiCompileDepends}
 
-    $(o)CS_nameMapper$(oext):          $(csSrcDir)CS_nameMapper.cpp ${MultiCompileDepends}
+    $(o)CS_NameMapper$(oext):          $(csSrcDir)CS_NameMapper.cpp ${MultiCompileDepends}
 
-    $(o)CS_nameMapperSupport$(oext):   $(csSrcDir)CS_nameMapperSupport.cpp ${MultiCompileDepends}
+    $(o)CS_NameMapperSupport$(oext):   $(csSrcDir)CS_NameMapperSupport.cpp ${MultiCompileDepends}
 
     $(o)csIoUtil$(oext):              $(csSrcDir)csIoUtil.cpp ${MultiCompileDepends}
 
