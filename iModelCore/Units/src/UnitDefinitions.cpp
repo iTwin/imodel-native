@@ -136,17 +136,10 @@ void AddMole(UnitRegistry& reg)
     reg.AddUnit(MOLE, USCUSTOM, "LB-MOL", "MOL", 453.59237); // ASTM SI 10 standard SI1-.phhc8328.pdf page 29, 35 and http://en.wikipedia.org/wiki/Mole_%28unit%29
     }
 
-void AddCapita(UnitRegistry& reg)
+void AddPerson(UnitRegistry& reg)
     {
-    reg.AddUnit(CAPITA, STATISTICS, "CAPITA", "PERSON");
-    reg.AddUnit(CAPITA, STATISTICS, "CUSTOMER", "PERSON");
-    reg.AddUnit(CAPITA, STATISTICS, "PASSENGER", "PERSON");
-    reg.AddUnit(CAPITA, STATISTICS, "EMPLOYEE", "PERSON");
-    reg.AddUnit(CAPITA, STATISTICS, "STUDENT", "PERSON");
-    reg.AddUnit(CAPITA, STATISTICS, "GUEST", "PERSON");
-    reg.AddUnit(CAPITA, STATISTICS, "RESIDENT", "PERSON");
-    reg.AddUnit(CAPITA, STATISTICS, "HUNDRED_CAPITA", "[HECTO]*PERSON");
-    reg.AddUnit(CAPITA, STATISTICS, "THOUSAND_CAPITA", "[KILO]*PERSON");
+    reg.AddUnit(CAPITA, STATISTICS, "HUNDRED_PERSON", "[HECTO]*PERSON");
+    reg.AddUnit(CAPITA, STATISTICS, "THOUSAND_PERSON", "[KILO]*PERSON");
     }
 
 void AddFinance(UnitRegistry& reg)
@@ -812,7 +805,15 @@ void UnitRegistry::AddBaseUnits()
 
     AddUnitForBasePhenomenon("STERAD", SOLIDANGLE);
     AddUnitForBasePhenomenon("US$", FINANCE);
-    AddUnitForBasePhenomenon("PERSON", CAPITA);
+    un = AddUnitForBasePhenomenon("PERSON", CAPITA);
+    un->AddSynonym("CUSTOMER");
+    un->AddSynonym("PASSENGER");
+    un->AddSynonym("EMPLOYEE");
+    un->AddSynonym("STUDENT");
+    un->AddSynonym("GUEST");
+    un->AddSynonym("RESIDENT");
+    un->AddSynonym("CAPITA");
+
     AddUnitForBasePhenomenon("ONE", NUMBER);
     }
 
@@ -831,7 +832,7 @@ void UnitRegistry::AddDefaultUnits()
     AddIlluminance(*this);
     AddLuminosity(*this);
     AddMole(*this);
-    AddCapita(*this);
+    AddPerson(*this);
     AddFinance(*this);
     AddRatio(*this);
     AddRotationalSpringConstant(*this);

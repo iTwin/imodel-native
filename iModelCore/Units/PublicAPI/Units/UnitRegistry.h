@@ -87,7 +87,7 @@ private:
             return nullptr;
             }
 
-        if (HasPhenomenon(phenomenaName))
+        if (NamedItemExists(phenomenaName))
             {
             NativeLogging::LoggingManager::GetLogger(L"UnitsNative")->errorv("Cannot create Phenomenon '%s' because name is already in use", phenomenaName);
             return nullptr;
@@ -225,7 +225,7 @@ private:
             NativeLogging::LoggingManager::GetLogger(L"UnitsNative")->error("Cannot create UnitSystem because name is null");
             return nullptr;
             }
-        if (HasSystem(name))
+        if (NamedItemExists(name))
             {
             NativeLogging::LoggingManager::GetLogger(L"UnitsNative")->errorv("Cannot create UnitSystem '%s' because that name is already in use.", name);
             return nullptr;
@@ -242,9 +242,7 @@ private:
     UnitP LookupUnitP(Utf8CP name) const {auto val_iter = m_units.find(name); return val_iter == m_units.end() ? nullptr : (*val_iter).second; }
     UnitSystemP LookupUnitSystemP(Utf8CP name) const {auto val_iter = m_systems.find(name); return val_iter == m_systems.end() ? nullptr : (*val_iter).second;}
 
-    // TFS#814870 There are currently conflicts with the supported Units, check the TFS item for more details
-    //bool NamedItemExists(Utf8CP name) {return HasUnit(name) || HasPhenomenon(name) || HasSystem(name);}
-    bool NamedItemExists(Utf8CP name) {return HasUnit(name);}
+    bool NamedItemExists(Utf8CP name) {return HasUnit(name) || HasPhenomenon(name) || HasSystem(name);}
 
     bool TryGetConversion(uint64_t index, Conversion& conversion);
     void AddConversion(uint64_t index, Conversion& conversion) {m_conversions.Insert(index, conversion);}

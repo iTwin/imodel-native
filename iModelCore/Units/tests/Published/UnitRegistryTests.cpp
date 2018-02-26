@@ -370,6 +370,49 @@ TEST_F(UnitRegistryTests, RemoveUnitSystem)
     EXPECT_STREQ("TestSystem", removedSystem->GetName().c_str());
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    02/2018
+//--------------------------------------------------------------------------------------
+TEST_F(UnitRegistryTests, AddDuplicateItems)
+    {
+    UnitSystemCP testSystem = UnitRegistry::Instance().AddSystem("TestSystem");
+    ASSERT_NE(nullptr, testSystem);
+
+    PhenomenonCP testPhenom = UnitRegistry::Instance().AddPhenomenon("TestPhenomenon", "LENGTH");
+    ASSERT_NE(nullptr, testPhenom);
+
+    UnitCP testUnit = UnitRegistry::Instance().AddUnit<Unit>("TestPhenomenon", "TestSystem", "TestUnit", "M");
+    ASSERT_NE(nullptr, testUnit);
+
+    UnitCP testConstant = UnitRegistry::Instance().AddConstant<Unit>("NUMBER", "SI", "TestConstant", "ONE", 42);
+    ASSERT_NE(nullptr, testConstant);
+
+    UnitCP testInvUnit = UnitRegistry::Instance().AddInvertedUnit<Unit>("TestUnit", "TestInvertedUnit", "TestSystem");
+    ASSERT_NE(nullptr, testInvUnit);
+
+    auto names = {"TestSystem", "TestPhenomenon", "TestUnit", "TestConstant", "TestInvertedUnit"};
+    for(const auto& name : names)
+        {
+        ASSERT_EQ(nullptr, UnitRegistry::Instance().AddUnit("TestPhenomenon","TestSystem", name, "M"));
+        }
+    for(const auto& name : names)
+        {
+        ASSERT_EQ(nullptr, UnitRegistry::Instance().AddConstant("TestPhenomenon","TestSystem", name, "M", 10.0));
+        }
+    for(const auto& name : names)
+        {
+        ASSERT_EQ(nullptr, UnitRegistry::Instance().AddInvertedUnit("TestUnit", name, "TestSystem"));
+        }
+    for(const auto& name : names)
+        {
+        ASSERT_EQ(nullptr, UnitRegistry::Instance().AddSystem(name));
+        }
+    for(const auto& name : names)
+        {
+        ASSERT_EQ(nullptr, UnitRegistry::Instance().AddPhenomenon(name, "LENGTH"));
+        }
+    }
+
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 02/2018
