@@ -113,7 +113,8 @@
         <ECProperty propertyName="Definition" typeName="string"/>
         <ECProperty propertyName="Factor" typeName="double"/>
         <ECProperty propertyName="Offset" typeName="double"/>
-        <ECNavigationProperty propertyName="InvertsUnit" description="If this property is set, this UnitDef is the inverse unit of the unit held by the property." relationshipName="UnitHasInverseUnit" direction="backward"/>
+        <ECProperty propertyName="IsConstant" typeName="boolean"/>
+        <ECNavigationProperty propertyName="InvertingUnit" description="If this property is set, this UnitDef is an inverted unit. It inverts the unit specified by this property." relationshipName="UnitHasInvertedUnit" direction="backward"/>
     </ECEntityClass>
     <ECEntityClass typeName="UnitSystemDef" description="UnitSystem" displayLabel="UnitSystem" modifier="Sealed">
         <ECCustomAttributes>
@@ -335,11 +336,11 @@
             <Class class="UnitDef"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="UnitHasInverseUnit" modifier="Sealed" strength="referencing">
+    <ECRelationshipClass typeName="UnitHasInvertedUnit" modifier="Sealed" strength="referencing">
         <Source multiplicity="(0..1)" roleLabel="is inverted by" polymorphic="false">
             <Class class="UnitDef"/>
         </Source>
-        <Target multiplicity="(0..1)" roleLabel="is inverse of" polymorphic="false">
+        <Target multiplicity="(0..1)" roleLabel="inverts" polymorphic="false">
             <Class class="UnitDef"/>
         </Target>
     </ECRelationshipClass>
