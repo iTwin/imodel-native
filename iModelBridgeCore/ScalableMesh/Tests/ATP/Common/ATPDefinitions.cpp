@@ -2803,7 +2803,7 @@ void PerformVolumeTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
         if (cutError > MAX_CUT_FILL_ERROR_PERCENT || fillError > MAX_CUT_FILL_ERROR_PERCENT)
             {
-            WPrintfString caseError(L"MeshElemId %u : cutError %.5f, fillError %.5f __ ", meshElemIds[ind], cutError, fillError);
+            WPrintfString caseError(L"MeshElemId %u : cutError %.5f fillError %.5f    ", meshElemIds[ind], cutError, fillError);
             errorInfo += caseError;
             }
         
