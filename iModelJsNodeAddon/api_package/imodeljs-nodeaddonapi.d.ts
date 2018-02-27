@@ -725,3 +725,34 @@ declare class AddonECPresentationManager {
      */
     setupRulesetDirectories(directories: string[]): void;
 }
+
+/* Some types used by the AddonECSchemaXmlContext class. */
+declare namespace AddonECSchemaXmlContext {
+    interface SchemaKey {
+        name: string;
+        readVersion: number;
+        writeVersion: number;
+        minorVersion: number;
+    }
+
+    const enum SchemaMatchType {
+        Identical = 0,               // Find exact VersionRead, VersionWrite, VersionMinor match as well as Data
+        Exact = 1,                   // Find exact VersionRead, VersionWrite, VersionMinor match.
+        LatestWriteCompatible = 2,   // Find latest version with matching VersionRead and VersionWrite
+        Latest = 3,                  // Find latest version.
+        LatestReadCompatible = 4,    // Find latest version with matching VersionRead
+    }
+
+    interface SchemaLocaterCallback {
+        (key: SchemaKey, matchType: SchemaMatchType): string | undefined | void;
+    }
+}
+
+/* The AddonECSchemaXmlContext class that is projected by the iModelJs node addon. */
+declare class AddonECSchemaXmlContext {
+    constructor();
+
+    addSchemaPath(path: string): void;
+    setSchemaLocater(locater: AddonECSchemaXmlContext.SchemaLocaterCallback): void;
+    readSchemaFromXmlFile(filePath: string): ErrorStatusOrResult<BentleyStatus, string>;
+}

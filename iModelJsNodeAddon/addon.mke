@@ -67,6 +67,8 @@ $(o)AddonUtilsBriefcaseManager$(oext) : $(baseDir)AddonUtilsBriefcaseManager.cpp
 
 $(o)ECPresentationUtils$(oext) : $(baseDir)ECPresentationUtils.cpp $(baseDir)ECPresentationUtils.h ${MultiCompileDepends} 
 
+$(o)ECSchemaXmlContextUtils$(oext) : $(baseDir)ECSchemaXmlContextUtils.cpp $(baseDir)ECSchemaXmlContextUtils.h ${MultiCompileDepends} 
+
 %include MultiCppCompileGo.mki
 
 %if defined(BUILD_FOR_IMODELJS_MOBILE)
