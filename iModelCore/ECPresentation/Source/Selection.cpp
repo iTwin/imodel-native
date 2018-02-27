@@ -19,6 +19,14 @@ void ISelectionManager::AddToSelection(ECDbCR ecdb, Utf8CP source, bool isSubSel
     }
 
 /*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ISelectionManager::AddToSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECInstanceKeyCR key, RapidJsonValueCR extendedData)
+    {
+    AddToSelection(ecdb, source, isSubSelection, *KeySet::Create({key}), extendedData);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ISelectionManager::RemoveFromSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, NavNodeKeyCR key, RapidJsonValueCR extendedData)
@@ -27,11 +35,27 @@ void ISelectionManager::RemoveFromSelection(ECDbCR ecdb, Utf8CP source, bool isS
     }
 
 /*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ISelectionManager::RemoveFromSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECInstanceKeyCR key, RapidJsonValueCR extendedData)
+    {
+    RemoveFromSelection(ecdb, source, isSubSelection, *KeySet::Create({key}), extendedData);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ISelectionManager::ChangeSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, NavNodeKeyCR key, RapidJsonValueCR extendedData)
     {
     ChangeSelection(ecdb, source, isSubSelection, *KeySet::Create(key), extendedData);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ISelectionManager::ChangeSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECInstanceKeyCR key, RapidJsonValueCR extendedData)
+    {
+    ChangeSelection(ecdb, source, isSubSelection, *KeySet::Create({key}), extendedData);
     }
 
 //=======================================================================================

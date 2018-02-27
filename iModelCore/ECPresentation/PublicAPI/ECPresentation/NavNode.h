@@ -152,21 +152,21 @@ public:
     //! @param[in] classId The ID of the ECInstance class.
     //! @param[in] instanceId The ECInstance ID.
     //! @param[in] path The hashes which describe path from root node to this node.
-    static RefCountedPtr<ECInstanceNodeKey> Create(ECClassId classId, ECInstanceId instanceId, bvector<Utf8String> path = bvector<Utf8String>())
+    static RefCountedPtr<ECInstanceNodeKey> Create(ECClassId classId, ECInstanceId instanceId, bvector<Utf8String> path)
         {
         return new ECInstanceNodeKey(path, classId, instanceId);
         }
     //! Create an @ref ECInstanceNodeKey using supplied parameters.
     //! @param[in] key The ECInstance key.
     //! @param[in] path The hashes which describe path from root node to this node.
-    static RefCountedPtr<ECInstanceNodeKey> Create(ECInstanceKeyCR key, bvector<Utf8String> path = bvector<Utf8String>())
+    static RefCountedPtr<ECInstanceNodeKey> Create(ECInstanceKeyCR key, bvector<Utf8String> path)
         {
         return new ECInstanceNodeKey(path, key.GetClassId(), key.GetInstanceId());
         }
     //! Create an @ref ECInstanceNodeKey using supplied parameters.
     //! @param[in] instance The ECInstance.
     //! @param[in] path The hashes which describe path from root node to this node.
-    static RefCountedPtr<ECInstanceNodeKey> Create(IECInstanceCR instance, bvector<Utf8String> path = bvector<Utf8String>())
+    static RefCountedPtr<ECInstanceNodeKey> Create(IECInstanceCR instance, bvector<Utf8String> path)
         {
         ECInstanceId instanceId;
         ECInstanceId::FromString(instanceId, instance.GetInstanceId().c_str());
