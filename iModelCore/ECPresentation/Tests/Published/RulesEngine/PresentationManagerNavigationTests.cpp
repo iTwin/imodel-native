@@ -3630,7 +3630,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // expect 1 ClassS node
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_EQ(ECInstanceNodeKey::Create(*instanceS)->AsECInstanceNodeKey()->GetInstanceKey(), rootNodes[0]->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceS), rootNodes[0]->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
 
     // request for children
     DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
@@ -3645,7 +3645,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // expect 1 grandchild instance node
     ASSERT_EQ(1, grandchildNodes.GetSize());
-    EXPECT_EQ(ECInstanceNodeKey::Create(*instanceT)->AsECInstanceNodeKey()->GetInstanceKey(), grandchildNodes[0]->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceT), grandchildNodes[0]->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
     }
 
 /*---------------------------------------------------------------------------------**//**

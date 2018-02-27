@@ -4478,9 +4478,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetNav
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
     EXPECT_STREQ("WidgetID", displayValues["Gadget_Widget"].GetString());
 
-    ECInstanceNodeKeyPtr widgetKey = ECInstanceNodeKey::Create(*widgetInstance);
     RapidJsonValueCR values = recordJson["Values"];
-    EXPECT_EQ(widgetKey->GetInstanceId().GetValue(), values["Gadget_Widget"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widgetInstance).GetInstanceId().GetValue(), values["Gadget_Widget"].GetInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4524,9 +4523,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetNav
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
     EXPECT_STREQ("WidgetID", displayValues["Gadget_Widget"].GetString());
 
-    ECInstanceNodeKeyPtr widgetKey = ECInstanceNodeKey::Create(*widgetInstance);
     RapidJsonValueCR values = recordJson["Values"];
-    EXPECT_EQ(widgetKey->GetInstanceId().GetValue(), values["Gadget_Widget"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widgetInstance).GetInstanceId().GetValue(), values["Gadget_Widget"].GetInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4569,20 +4567,18 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetOne
 
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(2, contentSet.GetSize());
-
-    ECInstanceNodeKeyPtr classAKey = ECInstanceNodeKey::Create(*instanceA);
-
+    
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
     EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*instanceA).c_str(), displayValues["ClassB_ClassC_A"].GetString());
     RapidJsonValueCR values = recordJson["Values"];
-    EXPECT_EQ(classAKey->GetInstanceId().GetValue(), values["ClassB_ClassC_A"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceA).GetInstanceId().GetValue(), values["ClassB_ClassC_A"].GetInt64());
 
     rapidjson::Document recordJson1 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR displayValues1 = recordJson1["DisplayValues"];
     EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*instanceA).c_str(), displayValues1["ClassB_ClassC_A"].GetString());
     RapidJsonValueCR values1 = recordJson1["Values"];
-    EXPECT_EQ(classAKey->GetInstanceId().GetValue(), values1["ClassB_ClassC_A"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceA).GetInstanceId().GetValue(), values1["ClassB_ClassC_A"].GetInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4623,16 +4619,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetDif
 
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(2, contentSet.GetSize());
-
-    ECInstanceNodeKeyPtr widgetKey = ECInstanceNodeKey::Create(*widgetInstance);
-    ECInstanceNodeKeyPtr gadgetKey = ECInstanceNodeKey::Create(*gadgetInstance);
-
+    
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
     EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*widgetInstance).c_str(), displayValues["Gadget_Widget"].GetString());
     EXPECT_TRUE(displayValues["Sprocket_Gadget"].IsNull());
     RapidJsonValueCR values = recordJson["Values"];
-    EXPECT_EQ(widgetKey->GetInstanceId().GetValue(), values["Gadget_Widget"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widgetInstance).GetInstanceId().GetValue(), values["Gadget_Widget"].GetInt64());
     EXPECT_TRUE(values["Sprocket_Gadget"].IsNull());
 
     rapidjson::Document recordJson1 = contentSet.Get(1)->AsJson();
@@ -4640,7 +4633,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetDif
     EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*gadgetInstance).c_str(), displayValues1["Sprocket_Gadget"].GetString());
     EXPECT_TRUE(displayValues1["Gadget_Widget"].IsNull());
     RapidJsonValueCR values1 = recordJson1["Values"];
-    EXPECT_EQ(gadgetKey->GetInstanceId().GetValue(), values1["Sprocket_Gadget"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*gadgetInstance).GetInstanceId().GetValue(), values1["Sprocket_Gadget"].GetInt64());
     EXPECT_TRUE(values1["Gadget_Widget"].IsNull());
     }
 
@@ -4689,20 +4682,17 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetCor
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(2, contentSet.GetSize());
 
-    ECInstanceNodeKeyPtr instanceAKey = ECInstanceNodeKey::Create(*instanceA);
-    ECInstanceNodeKeyPtr instanceA2BaseKey = ECInstanceNodeKey::Create(*instanceA2Base);
-
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
     EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*instanceA2Base).c_str(), displayValues["ClassB2_ClassB_A"].GetString());
     RapidJsonValueCR values = recordJson["Values"];
-    EXPECT_EQ(instanceA2BaseKey->GetInstanceId().GetValue(), values["ClassB2_ClassB_A"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceA2Base).GetInstanceId().GetValue(), values["ClassB2_ClassB_A"].GetInt64());
 
     rapidjson::Document recordJson1 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR displayValues1 = recordJson1["DisplayValues"];
     EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*instanceA).c_str(), displayValues1["ClassB2_ClassB_A"].GetString());
     RapidJsonValueCR values1 = recordJson1["Values"];
-    EXPECT_EQ(instanceAKey->GetInstanceId().GetValue(), values1["ClassB2_ClassB_A"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceA).GetInstanceId().GetValue(), values1["ClassB2_ClassB_A"].GetInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4743,13 +4733,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetDer
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    ECInstanceNodeKeyPtr instanceA2Key = ECInstanceNodeKey::Create(*instanceA2);
-
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
     EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*instanceA2).c_str(), displayValues["ClassB2_A"].GetString());
     RapidJsonValueCR values = recordJson["Values"];
-    EXPECT_EQ(instanceA2Key->GetInstanceId().GetValue(), values["ClassB2_A"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceA2).GetInstanceId().GetValue(), values["ClassB2_A"].GetInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4791,14 +4779,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetCor
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    ECInstanceNodeKeyPtr widgetKey = ECInstanceNodeKey::Create(*widget);
-
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
     EXPECT_STREQ("WidgetID", displayValues["Gadget_Widget"].GetString());
 
     RapidJsonValueCR values = recordJson["Values"];
-    EXPECT_EQ(widgetKey->GetInstanceId().GetValue(), values["Gadget_Widget"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widget).GetInstanceId().GetValue(), values["Gadget_Widget"].GetInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4840,14 +4826,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetCor
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    ECInstanceNodeKeyPtr widgetKey = ECInstanceNodeKey::Create(*widget);
-
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
     EXPECT_STREQ("WidgetID", displayValues["Gadget_Widget"].GetString());
 
     RapidJsonValueCR values = recordJson["Values"];
-    EXPECT_EQ(widgetKey->GetInstanceId().GetValue(), values["Gadget_Widget"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widget).GetInstanceId().GetValue(), values["Gadget_Widget"].GetInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4887,14 +4871,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Get
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    ECInstanceNodeKeyPtr widgetKey = ECInstanceNodeKey::Create(*widget);
-
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
     EXPECT_STREQ("WidgetID", displayValues["Gadget_Widget"].GetString());
 
     RapidJsonValueCR values = recordJson["Values"];
-    EXPECT_EQ(widgetKey->GetInstanceId().GetValue(), values["Gadget_Widget"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widget).GetInstanceId().GetValue(), values["Gadget_Widget"].GetInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4933,15 +4915,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Get
 
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
-
-    ECInstanceNodeKeyPtr widgetKey = ECInstanceNodeKey::Create(*widget);
-
+    
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
     EXPECT_STREQ("WidgetID", displayValues["Gadget_Widget"].GetString());
 
     RapidJsonValueCR values = recordJson["Values"];
-    EXPECT_EQ(widgetKey->GetInstanceId().GetValue(), values["Gadget_Widget"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widget).GetInstanceId().GetValue(), values["Gadget_Widget"].GetInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -8390,15 +8370,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetsContentDescriptorWithNa
     // validate content
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(2, contentSet.GetSize());
-
-    ECInstanceNodeKeyPtr widgetKey = ECInstanceNodeKey::Create(*widget);
-    ECInstanceNodeKeyPtr gadgetKey = ECInstanceNodeKey::Create(*gadget);
-
+    
     RapidJsonValueCR jsonValues = contentSet.Get(0)->GetValues();
-    EXPECT_EQ(widgetKey->GetInstanceId().GetValue(), jsonValues["Gadget_Widget"].GetUint64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widget).GetInstanceId().GetValue(), jsonValues["Gadget_Widget"].GetUint64());
     EXPECT_TRUE(jsonValues["Sprocket_Gadget"].IsNull());
+
     RapidJsonValueCR jsonValues2 = contentSet.Get(1)->GetValues();
-    EXPECT_EQ(gadgetKey->GetInstanceId().GetValue(), jsonValues2["Sprocket_Gadget"].GetUint64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*gadget).GetInstanceId().GetValue(), jsonValues2["Sprocket_Gadget"].GetUint64());
     EXPECT_TRUE(jsonValues2["Gadget_Widget"].IsNull());
     }
 
