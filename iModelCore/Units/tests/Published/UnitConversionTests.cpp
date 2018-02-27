@@ -878,6 +878,30 @@ TEST_F(UnitConversionTests, VolumeRatio_Conversions)
     WriteToFile(fileName.c_str(), handledUnits);
     }
 
+double pi = 3.1415926535897932;
+//---------------------------------------------------------------------------------------//
+// @bsimethod                            Colin.Kerr                                  02/18
+//+---------------+---------------+---------------+---------------+---------------+------//
+TEST_F(UnitConversionTests, AngularVelocity_Conversions)
+    {
+    bvector<Utf8String> loadErrors;
+    bvector<Utf8String> conversionErrors;
+    bvector<bpair<Utf8String, Utf8String>> handledUnits;
+    TestUnitConversion(1.0, "RAD/SEC", 60.0, "RAD/MIN", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "RAD/MIN", 60.0, "RAD/HR", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "RAD/HR", 1.0 / (2.0 * pi * 60.0 * 60.0), "RPS", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "RPS", 60.0, "RPM", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "RPM", 60.0, "RPH", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "RPH", 360.0 / (60.0 * 60.0), "DEG/SEC", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "DEG/SEC", 60.0, "DEG/MIN", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "DEG/MIN", 60.0, "DEG/HR", 1, loadErrors, conversionErrors, handledUnits);
+
+    ASSERT_EQ(0, loadErrors.size()) << BeStringUtilities::Join(loadErrors, ", ");
+    ASSERT_EQ(0, conversionErrors.size()) << BeStringUtilities::Join(conversionErrors, ", ");
+    Utf8String fileName = UnitsTestFixture::GetOutputDataPath(L"TestUsCustomaryLengths_handledUnits.csv");
+    WriteToFile(fileName.c_str(), handledUnits);
+    }
+
 //TEST_F(UnitConversionTests, Money_Conversions)
 //    {
 //    bvector<Utf8String> loadErrors;
