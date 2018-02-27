@@ -2805,9 +2805,7 @@ void PerformVolumeTest(BeXmlNodeP pTestNode, FILE* pResultFile)
    
     double totalTimeSeconds = ((double)totalTime) / CLOCKS_PER_SEC;
 
-    WString errorInfo;
-    double cutErrorAllMeshes = 0;
-    double fillErrorAllMeshes = 0;
+    WString errorInfo;    
     double cutAllMeshes = 0;
     double fillAllMeshes = 0;
     double expectedCutAllMeshes = 0;
@@ -2821,12 +2819,10 @@ void PerformVolumeTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
         if (cutError > MAX_CUT_FILL_ERROR_PERCENT || fillError > MAX_CUT_FILL_ERROR_PERCENT)
             {
-            WPrintfString caseError(L"MeshElemId %u : cutError %.5f fillError %.5f    ", meshElemIds[ind], cutError, fillError);
+            WPrintfString caseError(L"MeshElemId %u : cutError(%%) %.5f fillError(%%) %.5f    ", meshElemIds[ind], cutError, fillError);
             errorInfo += caseError;
             }
-        
-        cutErrorAllMeshes += cutError;
-        fillErrorAllMeshes += fillError;
+                
         cutAllMeshes += cutTotals[ind];
         fillAllMeshes += fillTotals[ind];
         expectedCutAllMeshes += expectedCutTotals[ind];
@@ -2845,6 +2841,9 @@ void PerformVolumeTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         {
         fwprintf(pResultFile, L",ERROR : %s", errorInfo.c_str());
         }
+
+    double cutErrorAllMeshes = (fabs(expectedCutAllMeshes - cutAllMeshes) == 0) ? 0 : fabs(expectedCutAllMeshes - cutAllMeshes) / (expectedCutAllMeshes + DIVIDE_BY_ZERO_GUARD_EPSILON) * 100;
+    double fillErrorAllMeshes = (fabs(expectedFillAllMeshes - fillAllMeshes) == 0) ? 0 : fabs(expectedFillAllMeshes - fillAllMeshes) / (expectedFillAllMeshes + DIVIDE_BY_ZERO_GUARD_EPSILON) * 100;
     
     fwprintf(pResultFile, L",%.5f,%.5f,%.5f,%.5f", cutAllMeshes, fillAllMeshes, expectedCutAllMeshes, expectedFillAllMeshes);
     fwprintf(pResultFile, L",%.5f,%.5f,%.5f\n", cutErrorAllMeshes, fillErrorAllMeshes, totalTimeSeconds);
