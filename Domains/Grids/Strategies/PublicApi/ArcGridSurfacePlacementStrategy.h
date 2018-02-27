@@ -20,7 +20,6 @@ struct ArcGridSurfacePlacementStrategy : public SketchGridSurfacePlacementStrate
 
     private:
         ArcGridSurfaceManipulationStrategyPtr m_manipulationStrategy;
-        BBS::ArcPlacementStrategyPtr m_geometryPlacementStrategy;
 
     protected:
         ArcGridSurfacePlacementStrategy(BBS::ArcPlacementMethod arcPlacementStrategyType);
@@ -31,8 +30,8 @@ struct ArcGridSurfacePlacementStrategy : public SketchGridSurfacePlacementStrate
         virtual ArcGridSurfaceManipulationStrategyCR _GetArcGridSurfaceManipulationStrategy() const { return *m_manipulationStrategy; }
         virtual ArcGridSurfaceManipulationStrategyR _GetArcGridSurfaceManipulationStrategyForEdit() { return *m_manipulationStrategy; }
 
-        virtual BBS::GeometryPlacementStrategyCPtr _TryGetGeometryPlacementStrategy() const  const override { return m_geometryPlacementStrategy.get(); }
-        virtual BBS::GeometryPlacementStrategyPtr _TryGetGeometryPlacementStrategyForEdit() override { return m_geometryPlacementStrategy.get(); }
+        BBS::ArcPlacementStrategyCPtr GetArcPlacementStrategy() const;
+        BBS::ArcPlacementStrategyPtr GetArcPlacementStrategyForEdit();
 
     public:
         GRIDSTRATEGIES_EXPORT static ArcGridSurfacePlacementStrategyPtr Create(BBS::ArcPlacementMethod arcPlacementStrategyType) { return new ArcGridSurfacePlacementStrategy(arcPlacementStrategyType); }

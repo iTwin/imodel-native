@@ -20,6 +20,7 @@ struct LineGridSurfaceManipulationStrategy : public GridPlanarSurfaceManipulatio
 
     private:
         BBS::LineManipulationStrategyPtr m_geometryManipulationStrategy;
+        BBS::LinePlacementStrategyPtr m_geometryPlacementStrategy;
         SketchLineGridSurfacePtr m_surface;
 
     protected:
@@ -29,6 +30,8 @@ struct LineGridSurfaceManipulationStrategy : public GridPlanarSurfaceManipulatio
         virtual Dgn::DgnElementPtr _FinishElement(Dgn::DgnModelR model) override;
         virtual BBS::GeometryManipulationStrategyCR _GetGeometryManipulationStrategy() const override { return *m_geometryManipulationStrategy; }
         virtual BBS::GeometryManipulationStrategyR _GetGeometryManipulationStrategyForEdit() override { return *m_geometryManipulationStrategy; }
+        virtual BBS::GeometryPlacementStrategyCPtr _TryGetGeometryPlacementStrategy() const  const override { return m_geometryPlacementStrategy; }
+        virtual BBS::GeometryPlacementStrategyPtr _TryGetGeometryPlacementStrategyForEdit() override { return m_geometryPlacementStrategy; }
 
         // GridPlanarSurfaceManipulationStrategy
         virtual PlanGridPlanarSurfaceCP _GetPlanGridPlanarSurfaceCP() const override { return m_surface.get(); }
@@ -42,7 +45,7 @@ struct LineGridSurfaceManipulationStrategy : public GridPlanarSurfaceManipulatio
 
     public:
         GRIDSTRATEGIES_EXPORT static LineGridSurfaceManipulationStrategyPtr Create() { return new LineGridSurfaceManipulationStrategy(); }
-        BBS::LinePlacementStrategyPtr CreateLinePlacementStrategy(BBS::LinePlacementStrategyType linePlacementStrategyType) {return BBS::LinePlacementStrategy::Create(linePlacementStrategyType, *m_geometryManipulationStrategy); }
+        static LineGridSurfaceManipulationStrategyPtr Create(BBS::LinePlacementStrategyType linePlacementStrategyType);
     };
 
 END_GRIDS_NAMESPACE

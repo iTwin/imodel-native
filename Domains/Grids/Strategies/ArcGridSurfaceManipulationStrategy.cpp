@@ -23,6 +23,26 @@ ArcGridSurfaceManipulationStrategy::ArcGridSurfaceManipulationStrategy()
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                02/2018
 //---------------+---------------+---------------+---------------+---------------+------
+ArcGridSurfaceManipulationStrategyPtr ArcGridSurfaceManipulationStrategy::Create
+(
+    BBS::ArcPlacementMethod arcPlacementMethod
+)
+    {
+    ArcGridSurfaceManipulationStrategyPtr strategy = Create();
+    if (strategy.IsNull())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    strategy->m_geometryPlacementStrategy = ArcPlacementStrategy::Create(arcPlacementMethod, *strategy->m_geometryManipulationStrategy);
+    BeAssert(strategy->m_geometryPlacementStrategy.IsValid());
+    return strategy;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ArcGridSurfaceManipulationStrategy::_UpdateGridSurface()
     {
     BentleyStatus superStatus = T_Super::_UpdateGridSurface();

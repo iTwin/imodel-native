@@ -20,6 +20,7 @@ struct ArcGridSurfaceManipulationStrategy : public SketchGridSurfaceManipulation
 
     private:
         BBS::ArcManipulationStrategyPtr m_geometryManipulationStrategy;
+        BBS::ArcPlacementStrategyPtr m_geometryPlacementStrategy;
         SketchArcGridSurfacePtr m_surface;
 
     protected:
@@ -29,6 +30,8 @@ struct ArcGridSurfaceManipulationStrategy : public SketchGridSurfaceManipulation
         virtual Dgn::DgnElementPtr _FinishElement(Dgn::DgnModelR model) override;
         virtual BBS::GeometryManipulationStrategyCR _GetGeometryManipulationStrategy() const override { return *m_geometryManipulationStrategy; }
         virtual BBS::GeometryManipulationStrategyR _GetGeometryManipulationStrategyForEdit() override { return *m_geometryManipulationStrategy; }
+        virtual BBS::GeometryPlacementStrategyCPtr _TryGetGeometryPlacementStrategy() const  const override { return m_geometryPlacementStrategy; }
+        virtual BBS::GeometryPlacementStrategyPtr _TryGetGeometryPlacementStrategyForEdit() override { return m_geometryPlacementStrategy; }
 
         // SketchGridSurfaceManipulationStrategy
         virtual BentleyStatus _UpdateGridSurface() override;
@@ -40,7 +43,7 @@ struct ArcGridSurfaceManipulationStrategy : public SketchGridSurfaceManipulation
 
     public:
         GRIDSTRATEGIES_EXPORT static ArcGridSurfaceManipulationStrategyPtr Create() { return new ArcGridSurfaceManipulationStrategy(); }
-        BBS::ArcPlacementStrategyPtr CreateArcPlacementStrategy(BBS::ArcPlacementMethod arcPlacementStrategyType) { return BBS::ArcPlacementStrategy::Create(arcPlacementStrategyType, *m_geometryManipulationStrategy); }
+        static ArcGridSurfaceManipulationStrategyPtr Create(BBS::ArcPlacementMethod arcPlacementMethod);
     };
 
 END_GRIDS_NAMESPACE

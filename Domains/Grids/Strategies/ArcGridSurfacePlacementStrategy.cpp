@@ -18,11 +18,25 @@ ArcGridSurfacePlacementStrategy::ArcGridSurfacePlacementStrategy
     BBS::ArcPlacementMethod arcPlacementStrategyType
 )
     : T_Super()
-    , m_manipulationStrategy(ArcGridSurfaceManipulationStrategy::Create())
-    , m_geometryPlacementStrategy(m_manipulationStrategy->CreateArcPlacementStrategy(arcPlacementStrategyType))
+    , m_manipulationStrategy(ArcGridSurfaceManipulationStrategy::Create(arcPlacementStrategyType))
     {
     BeAssert(m_manipulationStrategy.IsValid());
-    BeAssert(m_geometryPlacementStrategy.IsValid());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ArcPlacementStrategyCPtr ArcGridSurfacePlacementStrategy::GetArcPlacementStrategy() const
+    {
+    return dynamic_cast<ArcPlacementStrategyCP>(TryGetGeometryPlacementStrategy().get());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ArcPlacementStrategyPtr ArcGridSurfacePlacementStrategy::GetArcPlacementStrategyForEdit()
+    {
+    return dynamic_cast<ArcPlacementStrategyP>(TryGetGeometryPlacementStrategyForEdit().get());
     }
 
 //--------------------------------------------------------------------------------------
@@ -33,7 +47,7 @@ void ArcGridSurfacePlacementStrategy::SetPlacementMethod
     BBS::ArcPlacementMethod method
 )
     {
-    m_geometryPlacementStrategy->SetPlacementMethod(method);
+    GetArcPlacementStrategyForEdit()->SetPlacementMethod(method);
     }
 
 //--------------------------------------------------------------------------------------
@@ -44,7 +58,7 @@ void ArcGridSurfacePlacementStrategy::SetUseSweep
     bool useSweep
 )
     {
-    m_geometryPlacementStrategy->SetUseSweep(useSweep);
+    GetArcPlacementStrategyForEdit()->SetUseSweep(useSweep);
     }
 
 //--------------------------------------------------------------------------------------
@@ -55,7 +69,7 @@ void ArcGridSurfacePlacementStrategy::SetSweep
     double sweep
 )
     {
-    m_geometryPlacementStrategy->SetSweep(sweep);
+    GetArcPlacementStrategyForEdit()->SetSweep(sweep);
     }
 
 //--------------------------------------------------------------------------------------
@@ -66,7 +80,7 @@ void ArcGridSurfacePlacementStrategy::SetUseRadius
     bool useRadius
 )
     {
-    m_geometryPlacementStrategy->SetUseRadius(useRadius);
+    GetArcPlacementStrategyForEdit()->SetUseRadius(useRadius);
     }
 
 //--------------------------------------------------------------------------------------
@@ -77,5 +91,5 @@ void ArcGridSurfacePlacementStrategy::SetRadius
     double radius
 )
     {
-    m_geometryPlacementStrategy->SetRadius(radius);
+    GetArcPlacementStrategyForEdit()->SetRadius(radius);
     }

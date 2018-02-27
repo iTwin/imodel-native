@@ -22,6 +22,26 @@ LineGridSurfaceManipulationStrategy::LineGridSurfaceManipulationStrategy()
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+LineGridSurfaceManipulationStrategyPtr LineGridSurfaceManipulationStrategy::Create
+(
+    BBS::LinePlacementStrategyType linePlacementStrategyType
+)
+    {
+    LineGridSurfaceManipulationStrategyPtr strategy = Create();
+    if (strategy.IsNull())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    strategy->m_geometryPlacementStrategy = LinePlacementStrategy::Create(linePlacementStrategyType, *strategy->m_geometryManipulationStrategy);
+    BeAssert(strategy->m_geometryPlacementStrategy.IsValid());
+    return strategy;
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              01/2018
 //---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus LineGridSurfaceManipulationStrategy::_UpdateGridSurface()
