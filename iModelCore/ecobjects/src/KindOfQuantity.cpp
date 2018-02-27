@@ -2,7 +2,7 @@
 |
 |     $Source: src/KindOfQuantity.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -55,7 +55,6 @@ bool KindOfQuantity::Verify() const
 
     return isValid;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Robert.Schili                  02/2016
@@ -223,8 +222,7 @@ SchemaWriteStatus KindOfQuantity::WriteXml (BeXmlWriterR xmlWriter, ECVersion ec
             }
         xmlWriter.WriteAttribute(PRESENTATION_UNITS_ATTRIBUTE, presentationUnitString.c_str());
         }
-    
-    //WriteCustomAttributes (xmlWriter);
+
     xmlWriter.WriteElementEnd();
     return status;
     }
@@ -296,20 +294,24 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
 
     if (BEXML_Success != kindOfQuantityNode.GetAttributeStringValue(value, PERSISTENCE_UNIT_ATTRIBUTE) || Utf8String::IsNullOrEmpty(value.c_str()))
         {
-        LOG.errorv("Invalid ECSchemaXML: %s element must contain a %s attribute", kindOfQuantityNode.GetName(), PERSISTENCE_UNIT_ATTRIBUTE);
+        LOG.errorv("Invalid ECSchemaXML: KindOfQuantity %s must contain a %s attribute", GetFullName().c_str(), PERSISTENCE_UNIT_ATTRIBUTE);
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
-    Formatting::FormatUnitSet persistenceFUS(value.c_str());
-    if (persistenceFUS.HasProblem())
-        LOG.warningv("Persistence FormatUnitSet: '%s' on KindOfQuantity '%s' has problem '%s'.  Continuing to load but schema will not pass validation.",
-                     value.c_str(), kindOfQuantityNode.GetName(), persistenceFUS.GetProblemDescription().c_str());
+    bool ecSchemaXmlGreaterThen31 = GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::V3_1);
+
+    Formatting::FormatUnitSet persistenceFUS;
+    bool invalidUnit = false;
+    ECObjectsStatus status = ParseFUSDescriptor(persistenceFUS, invalidUnit, value.c_str(), *this, !ecSchemaXmlGreaterThen31, !ecSchemaXmlGreaterThen31);
+    if (ECObjectsStatus::Success != status)
+        return SchemaReadStatus::InvalidECSchemaXml;
+
     SetPersistenceUnit(persistenceFUS);
 
     double relError;
     if (BEXML_Success != kindOfQuantityNode.GetAttributeDoubleValue(relError, ECXML_RELATIVE_ERROR_ATTRIBUTE))
         {
-        LOG.errorv("Invalid ECSchemaXML: %s element must contain a %s attribute", kindOfQuantityNode.GetName(), ECXML_RELATIVE_ERROR_ATTRIBUTE);
+        LOG.errorv("Invalid ECSchemaXML: KindOfQuantity %s must contain a %s attribute", GetFullName().c_str(), ECXML_RELATIVE_ERROR_ATTRIBUTE);
         return SchemaReadStatus::InvalidECSchemaXml;
         }
     SetRelativeError(relError);
@@ -318,16 +320,96 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
         {
         bvector<Utf8String> presentationUnits;
         BeStringUtilities::Split(value.c_str(), ";", presentationUnits);
-        for(auto const& presUnit : presentationUnits)
+        for(auto const& presValue : presentationUnits)
             {
-            Formatting::FormatUnitSet presFUS(presUnit.c_str());
-            if (presFUS.HasProblem())
-                LOG.warningv("Presentation FormatUnitSet: '%s' on KindOfQuantity '%s' has problem '%s'.  Continuing to load but schema will not pass validation.",
-                             presUnit.c_str(), kindOfQuantityNode.GetName(), presFUS.GetProblemDescription().c_str());
+            Formatting::FormatUnitSet presFUS;
+            bool invalidUnit = false;
+            ECObjectsStatus status = ParseFUSDescriptor(presFUS, invalidUnit, presValue.c_str(), *this, true, !ecSchemaXmlGreaterThen31);
+            if (ECObjectsStatus::Success != status || invalidUnit)
+                {
+                if (ecSchemaXmlGreaterThen31)
+                    {
+                    LOG.warningv("Presentation FormatUnitSet '%s' on KindOfQuantity '%s' is being dropped.",
+                        presValue.c_str(), GetFullName().c_str());
+                    continue; // Drop the presentation FUS
+                    }
+
+                LOG.warningv("Presentation FormatUnitSet '%s' on KindOfQuantity '%s' has problem '%s'.  Continuing to load but schema will not pass validation.",
+                    presValue.c_str(), GetFullName().c_str(), presFUS.GetProblemDescription().c_str());
+                }
+
             m_presentationFUS.push_back(presFUS);
             }
         }
     return SchemaReadStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    02/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus KindOfQuantity::ParseFUSDescriptor(Formatting::FormatUnitSet& fus, bool& hasInvalidUnit, Utf8CP descriptor, KindOfQuantityCR koq, bool strictUnit, bool strictFUS)
+    {
+    Utf8String unitName;
+    Utf8String format;
+    Formatting::FormatUnitSet::ParseUnitFormatDescriptor(unitName, format, descriptor);
+
+    Formatting::NamedFormatSpecCP nfs = nullptr;
+    if (Utf8String::IsNullOrEmpty(format.c_str()))
+        // Need to keep the default without a Unit for backwards compatibility.
+        nfs = Formatting::StdFormatSet::FindFormatSpec("DefaultReal");
+    else
+        {
+        nfs = Formatting::StdFormatSet::FindFormatSpec(format.c_str());
+        if (nullptr == nfs)
+            {
+            if (strictFUS)
+                {
+                LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has an invalid FUS, '%s'.",
+                    descriptor, koq.GetFullName().c_str(), format.c_str());
+                return ECObjectsStatus::Error;
+                }
+            else
+                {
+                // Assuming since there was previously a format that it should contain the Unit with it.
+                nfs = Formatting::StdFormatSet::FindFormatSpec("DefaultRealU");
+                LOG.warningv("Setting format to DefaultRealU for FormatUnitSet '%s' on KindOfQuantity '%s'.",
+                    descriptor, koq.GetFullName().c_str());
+                }
+            }
+        }
+
+    Units::UnitCP unit = Units::UnitRegistry::Instance().LookupUnit(unitName.c_str());
+    if (nullptr == unit)
+        {
+        if (strictUnit)
+            {
+            LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has an invalid Unit, '%s'.",
+                descriptor, koq.GetFullName().c_str(), unitName.c_str());
+            return ECObjectsStatus::Error;
+            }
+
+        unit = Units::UnitRegistry::Instance().AddDummyUnit(unitName.c_str());
+        if (nullptr == unit)
+            return ECObjectsStatus::Error;
+
+        LOG.warningv("Adding dummy unit %s for FormatUnitSet '%s' on KindOfQuantity '%s'.",
+            unitName.c_str(), descriptor, koq.GetFullName().c_str());
+        hasInvalidUnit = true;
+        }
+    else if (!unit->IsValid())
+        {
+        LOG.warningv("FormatUnitSet '%s' on KindOfQuantity '%s' has a dummy unit, %s.",
+            descriptor, koq.GetFullName().c_str(), unitName.c_str());
+        hasInvalidUnit = true;
+        }
+
+    fus = Formatting::FormatUnitSet(nfs, unit);
+
+    if (fus.HasProblem())
+        LOG.warningv("FormatUnitSet '%s' on KindOfQuantity '%s' has problem '%s'.  Continuing to load but schema will not pass validation.",
+            descriptor, koq.GetFullName().c_str(), fus.GetProblemDescription().c_str());
+
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
