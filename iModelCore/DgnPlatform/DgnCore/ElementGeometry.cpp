@@ -826,12 +826,9 @@ bool GeometryStreamIO::Operation::IsGeometryOp() const
         case OpCode::CurvePrimitive:
         case OpCode::SolidPrimitive:
         case OpCode::BsplineSurface:
-#if defined (BENTLEYCONFIG_PARASOLID)
         case OpCode::ParasolidBRep:
-#else
         case OpCode::BRepPolyface:
         case OpCode::BRepCurveVector:
-#endif
         case OpCode::TextString:
         case OpCode::Image:
             return true;
@@ -4283,23 +4280,24 @@ void GeometryCollection::Iterator::ToNext()
 
             default:
                 {
-#if defined (BENTLEYCONFIG_PARASOLID)
                 if (!m_egOp.IsGeometryOp())
                     break;
 
+#if defined (BENTLEYCONFIG_PARASOLID)
+                if (GeometryStreamIO::OpCode::BRepPolyface == m_egOp.m_opCode || GeometryStreamIO::OpCode::BRepCurveVector == m_egOp.m_opCode)
+                    break; // Ignore backup geometry when Parasolid is available...
+
                 m_state->m_geomStreamEntryId.Increment();
 #else
-                if (!m_egOp.IsGeometryOp())
+                if (GeometryStreamIO::OpCode::ParasolidBRep == m_egOp.m_opCode)
                     {
-                    if (GeometryStreamIO::OpCode::ParasolidBRep == m_egOp.m_opCode)
-                        m_state->m_geomStreamEntryId.Increment(); // NOTE: Only update GeometryStreamEntryId from ParasolidBRep...could have multiple polyface if BRep had face attachments...
+                    m_state->m_geomStreamEntryId.Increment(); // NOTE: Only update GeometryStreamEntryId from ParasolidBRep...could have multiple polyface if BRep had face attachments...
                     break;
                     }
 
                 if (!(GeometryStreamIO::OpCode::BRepPolyface == m_egOp.m_opCode || GeometryStreamIO::OpCode::BRepCurveVector == m_egOp.m_opCode))
                     m_state->m_geomStreamEntryId.Increment();
 #endif
-
                 m_state->m_geometry = nullptr; // Defer extract until asked...
 
                 if (m_state->m_geomParams.GetCategoryId().IsValid())
@@ -4393,8 +4391,10 @@ GeometryStreamEntryId GeometryBuilder::GetGeometryStreamEntryId() const
                 if (!egOp.IsGeometryOp())
                     break;
 
-                entryId.SetGeometryPartId(DgnGeometryPartId());
-                entryId.SetIndex(entryId.GetIndex()+1);
+                if (GeometryStreamIO::OpCode::BRepPolyface == egOp.m_opCode || GeometryStreamIO::OpCode::BRepCurveVector == egOp.m_opCode)
+                    break; // NOTE: Only update GeometryStreamEntryId from ParasolidBRep...could have multiple polyface if BRep had face attachments...
+
+                entryId.Increment();
                 break;
                 }
             }
