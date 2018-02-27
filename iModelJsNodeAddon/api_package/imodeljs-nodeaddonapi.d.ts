@@ -549,6 +549,11 @@ declare class AddonECSqlBinder implements IDisposable {
      */
     bindDouble(val: number): DbResult;
 
+    /** Binds an Guid, formatted as GUID string, to the parameter represented by this binder
+     * @return non-zero error status in case of failure.
+     */
+    bindGuid(guidStr: string): DbResult;
+
     /** Binds an Id, formatted as hexadecimal string, to the parameter represented by this binder
      * @return non-zero error status in case of failure.
      */
@@ -631,14 +636,16 @@ declare class AddonECSqlColumnInfo {
     /** Gets the table space in which this root class is persisted.
      * @remarks for classes in the primary file the table space is MAIN. For classes in attached
      * files, the table space is the name by which the file was attached (see BentleyApi::BeSQLite::Db::AttachDb)
-     * For generated properties the table space is empty */
+     * For generated properties the table space is empty
+     */
     getRootClassTableSpace(): string;
 
     /** Gets the fully qualified name of the ECClass of the top-level ECProperty backing this column. */
     getRootClassName(): string;
 
     /** Gets the class alias of the root class to which the column refers to.
-     * @returns Returns the alias of root class the column refers to or an empty string if no class alias was specified in the select clause */
+     * @returns Returns the alias of root class the column refers to or an empty string if no class alias was specified in the select clause
+     */
     getRootClassAlias(): string;
 }
 
@@ -662,6 +669,8 @@ declare class AddonECSqlValue implements IDisposable {
     getDouble(): number;
     /** Get value as IGeometry formatted as JSON. */
     getGeometry(): string;
+    /** Get value as GUID, formatted as GUID string. */
+    getGuid(): string;
     /** Get value as id, formatted as hexadecimal string. */
     getId(): string;
     /** If this ECSqlValue represents a class id, this method returns the fully qualified class name. */
