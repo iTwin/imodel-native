@@ -415,7 +415,7 @@ INavNodeKeysContainerCPtr KeySet::GetAllNavNodeKeys() const
             {
             ECClassId classId = pair.first;
             for (ECInstanceId const& instanceId : pair.second)
-                keys.push_back(ECInstanceNodeKey::Create(classId, instanceId));
+                keys.push_back(ECInstanceNodeKey::Create(classId, instanceId, bvector<Utf8String>()));
             }
         m_nodesContainer = NavNodeKeyListContainer::Create(keys);
         }

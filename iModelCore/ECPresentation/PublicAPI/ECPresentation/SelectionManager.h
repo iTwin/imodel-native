@@ -292,6 +292,14 @@ public:
     //! @param[in] key The key to add to selection.
     //! @param[in] extendedData The extended data that should be stored in the selection change event.
     ECPRESENTATION_EXPORT void AddToSelection(ECDbCR db, Utf8CP source, bool isSubSelection, NavNodeKeyCR key, RapidJsonValueCR extendedData = rapidjson::Value());
+    
+    //! Add to selection.
+    //! @param[in] db The ECDb to add the selection to.
+    //! @param[in] source The name of the selection source that is modifying the selection.
+    //! @param[in] isSubSelection A flag indicating whether to add to the sub-selection or the main selection.
+    //! @param[in] key The key to add to selection.
+    //! @param[in] extendedData The extended data that should be stored in the selection change event.
+    ECPRESENTATION_EXPORT void AddToSelection(ECDbCR db, Utf8CP source, bool isSubSelection, ECInstanceKeyCR key, RapidJsonValueCR extendedData = rapidjson::Value());
 
     //! Add to selection.
     //! @param[in] db The ECDb to add the selection to.
@@ -316,6 +324,14 @@ public:
     //! @param[in] db The ECDb to remove the selection from.
     //! @param[in] source The name of the selection source that is modifying the selection.
     //! @param[in] isSubSelection A flag indicating whether to remove from the sub-selection or the main selection.
+    //! @param[in] key The key to remove from selection.
+    //! @param[in] extendedData The extended data that should be stored in the selection change event.
+    ECPRESENTATION_EXPORT void RemoveFromSelection(ECDbCR db, Utf8CP source, bool isSubSelection, ECInstanceKeyCR key, RapidJsonValueCR extendedData = rapidjson::Value());
+
+    //! Remove from selection.
+    //! @param[in] db The ECDb to remove the selection from.
+    //! @param[in] source The name of the selection source that is modifying the selection.
+    //! @param[in] isSubSelection A flag indicating whether to remove from the sub-selection or the main selection.
     //! @param[in] keys The keys to remove from selection.
     //! @param[in] extendedData The extended data that should be stored in the selection change event.
     void RemoveFromSelection(ECDbCR db, Utf8CP source, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData = rapidjson::Value())
@@ -330,6 +346,14 @@ public:
     //! @param[in] key The key indicating the new selection.
     //! @param[in] extendedData The extended data that should be stored in the selection change event.
     ECPRESENTATION_EXPORT void ChangeSelection(ECDbCR db, Utf8CP source, bool isSubSelection, NavNodeKeyCR key, RapidJsonValueCR extendedData = rapidjson::Value());
+
+    //! Change selection.
+    //! @param[in] db The ECDb to change the selection in.
+    //! @param[in] source The name of the selection source that is modifying the selection.
+    //! @param[in] isSubSelection A flag indicating whether to change the sub-selection or the main selection.
+    //! @param[in] key The key indicating the new selection.
+    //! @param[in] extendedData The extended data that should be stored in the selection change event.
+    ECPRESENTATION_EXPORT void ChangeSelection(ECDbCR db, Utf8CP source, bool isSubSelection, ECInstanceKeyCR key, RapidJsonValueCR extendedData = rapidjson::Value());
 
     //! Change selection.
     //! @param[in] db The ECDb to change the selection in.
