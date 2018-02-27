@@ -20,6 +20,7 @@
 #include <ECObjects/ECSchema.h>
 #include <rapidjson/rapidjson.h>
 #include "ECPresentationUtils.h"
+#include "ECSchemaXmlContextUtils.h"
 #include <Bentley/Desktop/FileSystem.h>
 #include <Bentley/BeThread.h>
 
@@ -296,6 +297,89 @@ struct AddonECDb : Napi::ObjectWrap<AddonECDb>
             s_constructor.SuppressDestruct();
             }
     };
+
+//=======================================================================================
+// Projects the AddonECSchemaXmlContext class into JS
+//! @bsiclass
+//=======================================================================================
+struct AddonECSchemaXmlContext : Napi::ObjectWrap<AddonECSchemaXmlContext>
+    {
+    private:
+        static Napi::FunctionReference s_constructor;
+        ECSchemaReadContextPtr m_context;
+        ECSchemaXmlContextUtils::LocaterCallbackUPtr m_locater;
+
+    public:
+        AddonECSchemaXmlContext(const Napi::CallbackInfo& info) : Napi::ObjectWrap<AddonECSchemaXmlContext>(info)
+            {
+            m_context = ECSchemaXmlContextUtils::CreateSchemaReadContext(T_HOST.GetIKnownLocationsAdmin());
+            }
+
+        // Check if val is really a AddonECSchemaXmlContext peer object
+        static bool HasInstance(Napi::Value val) {
+            if (!val.IsObject())
+                return false;
+            Napi::Object obj = val.As<Napi::Object>();
+            return obj.InstanceOf(s_constructor.Value());
+            }
+
+        Napi::Value SetSchemaLocater(const Napi::CallbackInfo& info)
+            {
+            REQUIRE_ARGUMENT_FUNCTION(0, locaterCallback);
+            RETURN_IF_HAD_EXCEPTION
+            ECSchemaXmlContextUtils::SetSchemaLocater(*m_context, m_locater, Napi::Persistent(locaterCallback));
+            return Env().Undefined();
+            }
+
+        Napi::Value AddSchemaPath(const Napi::CallbackInfo& info)
+            {
+            REQUIRE_ARGUMENT_STRING(0, schemaPath);
+            RETURN_IF_HAD_EXCEPTION
+            ECSchemaXmlContextUtils::AddSchemaPath(*m_context, schemaPath);
+            return Env().Undefined();
+            }
+
+        Napi::Value ReadSchemaFromXmlFile(const Napi::CallbackInfo& info)
+            {
+            REQUIRE_ARGUMENT_STRING(0, filePath);
+            RETURN_IF_HAD_EXCEPTION
+            Json::Value schemaJson;
+            auto status = ECSchemaXmlContextUtils::ConvertECSchemaXmlToJson(schemaJson, *m_context, filePath);
+
+            if (ECSchemaXmlContextUtils::SchemaConversionStatus::Success == status)
+                return NapiUtils::CreateBentleyReturnSuccessObject(Napi::String::New(Env(), schemaJson.ToString().c_str()), Env());
+
+            return NapiUtils::CreateBentleyReturnErrorObject(BentleyStatus::ERROR, ECSchemaXmlContextUtils::SchemaConversionStatusToString(status), Env());
+            }
+
+        //  Add a reference to this wrapper object, keeping it and its peer JS object alive.
+        void AddRef() { this->Ref(); }
+
+        //  Remove a reference from this wrapper object and its peer JS object .
+        void Release() { this->Unref(); }
+
+        static void Init(Napi::Env env, Napi::Object exports)
+            {
+            // ***
+            // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
+            // ***
+            Napi::HandleScope scope(env);
+            Napi::Function t = DefineClass(env, "AddonECSchemaXmlContext", {
+                InstanceMethod("addSchemaPath", &AddonECSchemaXmlContext::AddSchemaPath),
+                InstanceMethod("readSchemaFromXmlFile", &AddonECSchemaXmlContext::ReadSchemaFromXmlFile),
+                InstanceMethod("setSchemaLocater", &AddonECSchemaXmlContext::SetSchemaLocater)
+            });
+
+            exports.Set("AddonECSchemaXmlContext", t);
+
+            s_constructor = Napi::Persistent(t);
+            // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
+            // from running at program shutdown time, which would attempt to reset the reference when
+            // the environment is no longer valid.
+            s_constructor.SuppressDestruct();
+            }
+    };
+
 
 //=======================================================================================
 // SimpleRulesetLocater
@@ -2708,6 +2792,7 @@ static Napi::Object iModelJsAddonRegisterModule(Napi::Env env, Napi::Object expo
     IModelJsAddon::AddonECSqlValueIterator::Init(env, exports);
     IModelJsAddon::AddonBriefcaseManagerResourcesRequest::Init(env, exports);
     IModelJsAddon::AddonECPresentationManager::Init(env, exports);
+    IModelJsAddon::AddonECSchemaXmlContext::Init(env, exports);
 
     exports.DefineProperties(
         {
@@ -2727,5 +2812,6 @@ Napi::FunctionReference IModelJsAddon::AddonECSqlValueIterator::s_constructor;
 Napi::FunctionReference IModelJsAddon::AddonDgnDb::s_constructor;
 Napi::FunctionReference IModelJsAddon::AddonECPresentationManager::s_constructor;
 Napi::FunctionReference IModelJsAddon::AddonECDb::s_constructor;
+Napi::FunctionReference IModelJsAddon::AddonECSchemaXmlContext::s_constructor;
 
 NODE_API_MODULE(at_bentley_imodeljs_nodeaddon, iModelJsAddonRegisterModule)
