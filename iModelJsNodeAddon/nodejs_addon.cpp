@@ -1332,6 +1332,7 @@ public:
         InstanceMethod("bindBoolean", &AddonECSqlBinder::BindBoolean),
         InstanceMethod("bindDateTime", &AddonECSqlBinder::BindDateTime),
         InstanceMethod("bindDouble", &AddonECSqlBinder::BindDouble),
+        InstanceMethod("bindGuid", &AddonECSqlBinder::BindGuid),
         InstanceMethod("bindId", &AddonECSqlBinder::BindId),
         InstanceMethod("bindInteger", &AddonECSqlBinder::BindInteger),
         InstanceMethod("bindPoint2d", &AddonECSqlBinder::BindPoint2d),
@@ -1414,6 +1415,18 @@ public:
         {
         REQUIRE_ARGUMENT_NUMBER(0, val);
         const ECSqlStatus stat = GetBinder().BindDouble(val.DoubleValue());
+        return Napi::Number::New(Env(), (int) ToDbResult(stat));
+        }
+
+    Napi::Value BindGuid(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, guidString);
+
+        BeGuid guid;
+        if (SUCCESS != guid.FromString(guidString.c_str()))
+            return Napi::Number::New(Env(), (int) BE_SQLITE_ERROR);
+
+        const ECSqlStatus stat = GetBinder().BindGuid(guid, IECSqlBinder::MakeCopy::Yes);
         return Napi::Number::New(Env(), (int) ToDbResult(stat));
         }
 
@@ -1557,16 +1570,17 @@ struct AddonECSqlColumnInfo : Napi::ObjectWrap<AddonECSqlColumnInfo>
             DateTime = 3,
             Double = 4,
             Geometry = 5,
-            Id = 6,
-            Int = 7,
-            Int64 = 8,
-            Point2d = 9,
-            Point3d = 10,
-            String = 11,
-            Navigation = 12,
-            Struct = 13,
-            PrimitiveArray = 14,
-            StructArray = 15
+            Guid = 6,
+            Id = 7,
+            Int = 8,
+            Int64 = 9,
+            Point2d = 10,
+            Point3d = 11,
+            String = 12,
+            Navigation = 13,
+            Struct = 14,
+            PrimitiveArray = 15,
+            StructArray = 16
             };
 
         static Napi::FunctionReference s_constructor;
@@ -1654,8 +1668,22 @@ struct AddonECSqlColumnInfo : Napi::ObjectWrap<AddonECSqlColumnInfo>
                 switch (dataType.GetPrimitiveType())
                     {
                         case PRIMITIVETYPE_Binary:
-                            type = Type::Blob;
-                            break;
+                        {
+                        ECPropertyCP prop = GetColInfo().GetProperty();
+                        if (prop->HasExtendedType())
+                            {
+                            BeAssert(prop->GetIsPrimitive());
+                            Utf8StringCR extendedTypeName = prop->GetAsPrimitiveProperty()->GetExtendedTypeName();
+                            if (extendedTypeName.EqualsIAscii("Guid") || extendedTypeName.EqualsIAscii("BeGuid"))
+                                {
+                                type = Type::Guid;
+                                break;
+                                }
+                            }
+
+                        type = Type::Blob;
+                        break;
+                        }
                         case PRIMITIVETYPE_Boolean:
                             type = Type::Boolean;
                             break;
@@ -1846,6 +1874,7 @@ public:
         InstanceMethod("getDateTime", &AddonECSqlValue::GetDateTime),
         InstanceMethod("getDouble", &AddonECSqlValue::GetDouble),
         InstanceMethod("getGeometry", &AddonECSqlValue::GetGeometry),
+        InstanceMethod("getGuid", &AddonECSqlValue::GetGuid),
         InstanceMethod("getId", &AddonECSqlValue::GetId),
         InstanceMethod("getClassNameForClassId", &AddonECSqlValue::GetClassNameForClassId),
         InstanceMethod("getInt", &AddonECSqlValue::GetInt),
@@ -1947,6 +1976,15 @@ public:
             Napi::TypeError::New(info.Env(), "Could not convert IGeometry to JSON.").ThrowAsJavaScriptException();
 
         return Napi::String::New(Env(), json.ToString().c_str());
+        }
+
+    Napi::Value GetGuid(const Napi::CallbackInfo& info)
+        {
+        if (info.Length() != 0)
+            Napi::TypeError::New(info.Env(), "GetGuid must not have arguments").ThrowAsJavaScriptException();
+
+        BeGuid guid = GetECSqlValue().GetGuid();
+        return Napi::String::New(Env(), guid.ToString().c_str());
         }
 
     Napi::Value GetId(const Napi::CallbackInfo& info)
