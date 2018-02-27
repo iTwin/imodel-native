@@ -4420,7 +4420,7 @@ TEST_F (HierarchyUpdateTests, UpdatesGroupingBranchesUnderHiddenLevelsWhenUserSe
     SetNodeExpanded(*rootNodes[0]);
     DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get();
     ASSERT_EQ(1, childNodes.GetSize());
-    EXPECT_EQ(ECInstanceNodeKey::Create(*gadget1)->GetInstanceKey(), childNodes[0]->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*gadget1), childNodes[0]->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
     NavNodeCPtr deletedNode = childNodes[0];
 
     // change a setting
@@ -4440,7 +4440,7 @@ TEST_F (HierarchyUpdateTests, UpdatesGroupingBranchesUnderHiddenLevelsWhenUserSe
     
     childNodes = IECPresentationManager::GetManager().GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get();
     ASSERT_EQ(1, childNodes.GetSize());
-    EXPECT_EQ(ECInstanceNodeKey::Create(*gadget2)->GetInstanceKey(), childNodes[0]->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*gadget2), childNodes[0]->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
 
     // expect 3 update records
     ASSERT_EQ(3, m_updateRecordsHandler->GetRecords().size());
@@ -5689,9 +5689,7 @@ TEST_F (ContentUpdateTests, UpdatesAllContentBasedOnOneRulesetButSendsOnlyOneNot
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, nullptr, true);
 
     // set up selection
-    NavNodeKeySet keys;
-    keys.insert(ECInstanceNodeKey::Create(*widget));
-    KeySetPtr inputKeys = KeySet::Create(keys);
+    KeySetPtr inputKeys = KeySet::Create({RulesEngineTestHelpers::GetInstanceKey(*widget)});
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("UpdatesAllContentBasedOnOneRulesetButSendsOnlyOneNotification_WithContent", 1, 0, false, "", "", "", false);

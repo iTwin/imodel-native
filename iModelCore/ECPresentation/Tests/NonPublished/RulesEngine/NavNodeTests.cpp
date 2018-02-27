@@ -40,7 +40,7 @@ ECDbTestProject* NavNodeTests::s_project = nullptr;
 TEST_F(NavNodeTests, ECInstanceNodeKey_RapidJsonSerializationRoundtrip)
     {
     // Serialize
-    RefCountedPtr<ECInstanceNodeKey> key1 = ECInstanceNodeKey::Create(ECClassId(), ECInstanceId(BeInt64Id(123)));
+    RefCountedPtr<ECInstanceNodeKey> key1 = ECInstanceNodeKey::Create(ECClassId(), ECInstanceId(BeInt64Id(123)), {"a", "b"});
     rapidjson::Document json = key1->AsJson();
     // Deserialize
     NavNodeKeyPtr navNodeKey = NavNodeKey::FromJson(json);
