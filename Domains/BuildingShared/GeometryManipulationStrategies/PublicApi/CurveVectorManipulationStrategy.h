@@ -19,6 +19,44 @@ enum class DefaultNewGeometryType
     InterpolationCurve
     };
 
+typedef bpair<size_t, size_t> PrimitiveStrategyKeyPointIndexRange;
+typedef bpair<CurvePrimitiveManipulationStrategyPtr, PrimitiveStrategyKeyPointIndexRange> PrimitiveStrategyWithKeyPointIndexRange;
+
+//=======================================================================================
+// @bsiclass                                     Mindaugas.Butkus               02/2018
+//=======================================================================================
+struct CurvePrimitiveStrategyContainer
+    {
+    private:
+        bvector<CurvePrimitiveManipulationStrategyPtr> m_primitiveManipulationStrategies;
+        bvector<CurvePrimitivePlacementStrategyPtr> m_primitivePlacementStrategies;
+
+        DefaultNewGeometryType m_defaultNewGeometryType;
+        LinePlacementStrategyType m_defaultLinePlacementStrategyType;
+        ArcPlacementMethod m_defaultArcPlacementMethod;
+        LineStringPlacementStrategyType m_defaultLineStringPlacementStrategyType;
+
+    public:
+        CurvePrimitiveStrategyContainer();
+
+        void SetDefaultNewGeometryType(DefaultNewGeometryType);
+        void SetDefaultPlacementStrategy(LinePlacementStrategyType);
+        void SetDefaultPlacementStrategy(ArcPlacementMethod);
+        void SetDefaultPlacementStrategy(LineStringPlacementStrategyType);
+
+        void Clear();
+        void Pop();
+        void AddNext();
+        void Append(CurvePrimitiveManipulationStrategyR);
+        bool IsEmpty() const;
+        bool IsComplete() const;
+        bool CanAcceptMorePoints() const;
+        
+        bvector<PrimitiveStrategyWithKeyPointIndexRange> GetStrategies(size_t keyPointIndex) const;
+        bvector<CurvePrimitiveManipulationStrategyPtr> const& GetManipulationStrategies() const { return m_primitiveManipulationStrategies; }
+        bvector<CurvePrimitivePlacementStrategyPtr> const& GetPlacementStrategies() const { return m_primitivePlacementStrategies; }
+    };
+
 #define CV_PROPERTY_OVERRIDE(value_type) \
     GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _SetProperty(Utf8CP key, value_type const& value) override; \
     GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual BentleyStatus _TryGetProperty(Utf8CP key, value_type& value) const override;
@@ -31,26 +69,17 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
     DEFINE_T_SUPER(GeometryManipulationStrategy)
 
     private:
-        bvector<CurvePrimitiveManipulationStrategyPtr> m_primitiveStrategies;
-        
-        DefaultNewGeometryType m_defaultNewGeometryType;
-
-        CurvePrimitivePlacementStrategyPtr ResetCurrentManipulationStrategy();
-        LinePlacementStrategyType m_defaultLinePlacementStrategyType;
-        ArcPlacementMethod m_defaultArcPlacementMethod;
-        LineStringPlacementStrategyType m_defaultLineStringPlacementStrategyType;
+        CurvePrimitiveStrategyContainer m_primitiveStrategyContainer;
        
         DPlane3d m_workingPlane;
 
-        CurvePrimitivePlacementStrategyPtr GetPlacementStrategy(CurvePrimitiveManipulationStrategyR manipulationStrategy) const;
-        CurvePrimitivePlacementStrategyPtr GetStrategyForAppend();
+        CurvePrimitivePlacementStrategyR GetStrategyForAppend();
+        CurvePrimitivePlacementStrategyR GetStrategyForSetProperty();
         bool IsLastStrategyReadyForPop() const;
         void ConnectStartEnd(CurveVectorR cv) const;
 
         template <typename T> void UpdateKeyPoint(size_t index, T updateFn);
 
-        typedef bpair<size_t, size_t> PrimitiveStrategyKeyPointIndexRange;
-        typedef bpair<CurvePrimitiveManipulationStrategyPtr, PrimitiveStrategyKeyPointIndexRange> PrimitiveStrategyWithKeyPointIndexRange;
         bvector<PrimitiveStrategyWithKeyPointIndexRange> GetPrimitiveStrategies(size_t index) const;
 
         friend struct CurveVectorPlacementStrategy;

@@ -83,6 +83,9 @@ void CurvePrimitiveManipulationStrategy::_ReplaceKeyPoint
 //---------------+---------------+---------------+---------------+---------------+------
 void CurvePrimitiveManipulationStrategy::_PopKeyPoint()
     {
+    if (m_keyPoints.empty())
+        return;
+
     m_keyPoints.pop_back();
     }
 

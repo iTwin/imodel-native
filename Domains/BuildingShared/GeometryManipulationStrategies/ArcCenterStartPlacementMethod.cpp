@@ -99,3 +99,21 @@ void ArcCenterStartPlacementMethod::_PopKeyPoint()
         return;
         }
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bvector<DPoint3d> ArcCenterStartPlacementMethod::_GetKeyPoints() const
+    {
+    ArcManipulationStrategyCR strategy = GetArcManipulationStrategy();
+
+    bvector<DPoint3d> keyPoints;
+    if (strategy.IsCenterSet())
+        keyPoints.push_back(strategy.GetCenter());
+    if (strategy.IsStartSet())
+        keyPoints.push_back(strategy.GetStart());
+    if (strategy.IsEndSet())
+        keyPoints.push_back(strategy.GetEnd());
+
+    return keyPoints;
+    }

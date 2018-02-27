@@ -48,6 +48,14 @@ ArcPlacementMethod IArcPlacementMethod::GetMethod() const
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bvector<DPoint3d> IArcPlacementMethod::GetKeyPoints() const
+    {
+    return _GetKeyPoints();
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
 ArcPlacementStrategy::ArcPlacementStrategy
@@ -202,6 +210,14 @@ void ArcPlacementStrategy::SetPlacementMethod
 ArcPlacementMethod ArcPlacementStrategy::GetPlacementMethod() const
     {
     return m_placementMethod->GetMethod();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bvector<DPoint3d> ArcPlacementStrategy::_GetKeyPoints() const
+    {
+    return m_placementMethod->GetKeyPoints();
     }
 
 //--------------------------------------------------------------------------------------

@@ -96,3 +96,21 @@ void ArcStartEndMidPlacementMethod::_AddDynamicKeyPoint
 
     strategy.SetDynamicStart(newDynamicKeyPoint);
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bvector<DPoint3d> ArcStartEndMidPlacementMethod::_GetKeyPoints() const
+    {
+    ArcManipulationStrategyCR strategy = GetArcManipulationStrategy();
+
+    bvector<DPoint3d> keyPoints;
+    if (strategy.IsStartSet())
+        keyPoints.push_back(strategy.GetStart());
+    if (strategy.IsEndSet())
+        keyPoints.push_back(strategy.GetEnd());
+    if (strategy.IsMidSet())
+        keyPoints.push_back(strategy.GetMid());
+
+    return keyPoints;
+    }
