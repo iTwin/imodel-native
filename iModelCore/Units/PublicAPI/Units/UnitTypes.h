@@ -151,7 +151,9 @@ public:
     Utf8StringCR GetName() const {return m_name;}
     Utf8StringCP GetNameSP() const {return &m_name;}
     Utf8StringCR GetDefinition() const {return m_definition;}
+    bool HasNumerator() const {return 1.0 != m_numerator;}
     double GetNumerator() const {return m_numerator;}
+    bool HasDenominator() const {return 1.0 != m_denominator;}
     double GetDenominator() const { return m_denominator; }
     bool HasOffset() const {return 0.0 != m_offset;}
     double GetOffset() const {return m_offset;}
