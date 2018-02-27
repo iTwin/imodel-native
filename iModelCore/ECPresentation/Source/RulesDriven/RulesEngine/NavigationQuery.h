@@ -326,7 +326,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ComplexPresentationQuery : TBase
         };
 
 private:
-    Utf8String m_havingClause;
     Utf8String m_orderByClause;
     bvector<FromClause> m_from;
     RefCountedPtr<TBase const> m_nestedQuery;
@@ -338,6 +337,8 @@ private:
     Utf8String m_selectPrefix;
     bool m_isSelectAll;
     RefCountedPtr<Contract const> m_groupingContract;
+    Utf8String m_havingClause;
+    BoundQueryValuesList m_havingClauseBindings;
     BoundQueryECValue const* m_limit;
     BoundQueryECValue const* m_offset;
 
@@ -369,6 +370,8 @@ protected:
         {
         for (BoundQueryValue const* value : m_whereClauseBindings)
             DELETE_AND_CLEAR(value);
+        for (BoundQueryValue const* value : m_havingClauseBindings)
+            DELETE_AND_CLEAR(value);
         DELETE_AND_CLEAR(m_limit);
         DELETE_AND_CLEAR(m_offset);
         }
@@ -397,7 +400,7 @@ public:
     ECPRESENTATION_EXPORT ThisType& Join(RelatedClassPath const& path, bool isOuter, bool append = true);
     ECPRESENTATION_EXPORT ThisType& OrderBy(Utf8CP orderByClause);
     ECPRESENTATION_EXPORT ThisType& GroupByContract(Contract const& contract);
-    ECPRESENTATION_EXPORT ThisType& Having(Utf8CP havingClause);
+    ECPRESENTATION_EXPORT ThisType& Having(Utf8CP havingClause, BoundQueryValuesListCR);
     ECPRESENTATION_EXPORT ThisType& Limit(uint64_t limit, uint64_t offset = 0);
 };
 

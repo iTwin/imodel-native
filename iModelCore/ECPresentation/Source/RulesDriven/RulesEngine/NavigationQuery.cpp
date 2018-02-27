@@ -231,6 +231,8 @@ void ComplexPresentationQuery<TBase>::CopyBindings(ComplexPresentationQuery<TBas
         m_offset = new BoundQueryECValue(*other.m_offset);
     for (BoundQueryValue const* whereClauseBinding : other.m_whereClauseBindings)
         m_whereClauseBindings.push_back(whereClauseBinding->Clone());
+    for (BoundQueryValue const* havingClauseBinding : other.m_havingClauseBindings)
+        m_havingClauseBindings.push_back(havingClauseBinding->Clone());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -726,9 +728,12 @@ Utf8String ComplexPresentationQuery<TBase>::CreateGroupByClause() const
 // @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename TBase>
-ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Having(Utf8CP havingClause) 
+ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Having(Utf8CP havingClause, BoundQueryValuesListCR bindings) 
     {
     TBase::InvalidateQueryString();
+    for (BoundQueryValue const* value : m_havingClauseBindings)
+        DELETE_AND_CLEAR(value);
+    m_havingClauseBindings = bindings;
     m_havingClause = havingClause; 
     return *this;
     }
@@ -1380,6 +1385,7 @@ BoundQueryValuesList ComplexPresentationQuery<TBase>::_GetBoundValues() const
         values.insert(values.end(), nestedValues.begin(), nestedValues.end());
         }
     values.insert(values.end(), m_whereClauseBindings.begin(), m_whereClauseBindings.end());
+    values.insert(values.end(), m_havingClauseBindings.begin(), m_havingClauseBindings.end());
     if (nullptr != m_limit)
         values.push_back(m_limit);
     if (nullptr != m_offset)
