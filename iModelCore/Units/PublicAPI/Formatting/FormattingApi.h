@@ -761,7 +761,7 @@ struct FormatUnitSet
 		
     public:
         UNITS_EXPORT void Init();
-        UNITS_EXPORT FormatUnitSet():m_formatSpec(nullptr), m_unit(nullptr), m_localCopy(false), m_problem(FormatProblemDetail()) {}
+        UNITS_EXPORT FormatUnitSet():m_formatSpec(nullptr), m_unit(nullptr), m_localCopy(false), m_problem(FormatProblemDetail(FormatProblemCode::NotInitialized)) {}
         UNITS_EXPORT FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, bool cloneData = false);
         UNITS_EXPORT FormatUnitSet(Utf8CP formatName, Utf8CP unitName, bool cloneData = false);
 		UNITS_EXPORT FormatUnitSet(FormatUnitSetCR other);
@@ -820,6 +820,8 @@ struct FormatUnitSet
         BEU::UnitCP GetCompositeMiddleUnit() const { return HasComposite() ? m_formatSpec->GetCompositeMiddleUnit() : nullptr; }
         BEU::UnitCP GetCompositeMinorUnit() const { return HasComposite() ? m_formatSpec->GetCompositeMinorUnit() : nullptr; }
         BEU::UnitCP GetCompositeSubUnit() const { return HasComposite() ? m_formatSpec->GetCompositeSubUnit() : nullptr; }
+
+        UNITS_EXPORT static void ParseUnitFormatDescriptor(Utf8StringR unitName, Utf8StringR formatString, Utf8CP description);
     };
 
 

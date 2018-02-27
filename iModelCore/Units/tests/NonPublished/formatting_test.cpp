@@ -207,13 +207,6 @@ TEST(FormattingTest, Preliminary)
     else
         LOG.infov("NumAcc %d %s", nacc.GetByteCount(), nacc.ToText().c_str(), nacc.GetProblemDescription().c_str());
 
-    FormattingTestFixture::FormattingTestFixture::RegistryLookupUnitCITest("arc_deg");
-    FormattingTestFixture::FormattingTestFixture::RegistryLookupUnitCITest("ARC_DEG");
-    FormattingTestFixture::FormattingTestFixture::RegistryLookupUnitCITest("FT");
-    FormattingTestFixture::FormattingTestFixture::RegistryLookupUnitCITest("ft");
-    FormattingTestFixture::FormattingTestFixture::RegistryLookupUnitCITest("IN");
-    FormattingTestFixture::FormattingTestFixture::RegistryLookupUnitCITest("in");
-
     EXPECT_TRUE( Utils::IsJsonCandidate("   {bbb}  "));
     EXPECT_FALSE(Utils::IsJsonCandidate("   bbb   "));
     EXPECT_FALSE(Utils::IsJsonCandidate("  {bbb  "));
@@ -649,7 +642,7 @@ TEST(FormattingTest, Pasring)
     FormattingTestFixture::SignaturePattrenCollapsing("125.43ARC_DEG", 24, false);
     FormattingTestFixture::SignaturePattrenCollapsing("1.3RAD", 24, false);*/
    
-    //BEU::UnitCP thUOM = BEU::UnitRegistry::Instance().LookupUnitCI("TONNE/HR");
+    //BEU::UnitCP thUOM = BEU::UnitRegistry::Instance().LookupUnit("TONNE/HR");
     //Utf8CP sysN = (nullptr == thUOM) ? "Unknown System" : thUOM->GetUnitSystem();
     //LOG.infov("TONNE_PER_HR-System  %s", sysN);
     }
@@ -691,20 +684,20 @@ TEST(FormattingTest, PhysValues)
     // preparing pointers to various Unit definitions used in the following tests
     //  adding practically convenient aliases/synonyms to selected Units
 
-    BEU::UnitCP yrdUOM = BEU::UnitRegistry::Instance().LookupUnitCI("YRD");
+    BEU::UnitCP yrdUOM = BEU::UnitRegistry::Instance().LookupUnit("YRD");
     BEU::UnitRegistry::Instance().AddSynonym("YRD", "YARD");
-    BEU::UnitCP yardUOM = BEU::UnitRegistry::Instance().LookupUnitCI("YARD");
+    BEU::UnitCP yardUOM = BEU::UnitRegistry::Instance().LookupUnit("YARD");
     BEU::UnitRegistry::Instance().AddSynonym("YARD", "YRDS");
-    BEU::UnitCP yrdsdUOM = BEU::UnitRegistry::Instance().LookupUnitCI("YRDS");
+    BEU::UnitCP yrdsdUOM = BEU::UnitRegistry::Instance().LookupUnit("YRDS");
   
-    BEU::UnitCP ftUOM = BEU::UnitRegistry::Instance().LookupUnitCI("FT");
+    BEU::UnitCP ftUOM = BEU::UnitRegistry::Instance().LookupUnit("FT");
     BEU::UnitRegistry::Instance().AddSynonym("FT", "FOOT");
     BEU::UnitRegistry::Instance().AddSynonym("IN", "INCH");
-    BEU::UnitCP inUOM = BEU::UnitRegistry::Instance().LookupUnitCI("IN");
-    BEU::UnitCP degUOM = BEU::UnitRegistry::Instance().LookupUnitCI("ARC_DEG");
-    BEU::UnitCP minUOM = BEU::UnitRegistry::Instance().LookupUnitCI("ARC_MINUTE");
-    BEU::UnitCP secUOM = BEU::UnitRegistry::Instance().LookupUnitCI("ARC_SECOND");
-    BEU::UnitCP metrUOM = BEU::UnitRegistry::Instance().LookupUnitCI("M");
+    BEU::UnitCP inUOM = BEU::UnitRegistry::Instance().LookupUnit("IN");
+    BEU::UnitCP degUOM = BEU::UnitRegistry::Instance().LookupUnit("ARC_DEG");
+    BEU::UnitCP minUOM = BEU::UnitRegistry::Instance().LookupUnit("ARC_MINUTE");
+    BEU::UnitCP secUOM = BEU::UnitRegistry::Instance().LookupUnit("ARC_SECOND");
+    BEU::UnitCP metrUOM = BEU::UnitRegistry::Instance().LookupUnit("M");
     // creating several quantites of various kinds using two different constructors:
     //  one with the Uint Name and another with the pointer to a Unit definition
     BEU::UnitCP defUom = BEU::UnitRegistry::Instance().GetPlatformLengthUnit();

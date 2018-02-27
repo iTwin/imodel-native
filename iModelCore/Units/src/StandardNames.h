@@ -2,7 +2,7 @@
 |
 |     $Source: src/StandardNames.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -41,6 +41,7 @@ static Utf8CP const STATISTICS = "STATISTICS";
 static Utf8CP const CUSTOMARY = "CUSTOMARY";
 static Utf8CP const FINANCE = "FINANCE";
 static Utf8CP const CONSTANT = "CONSTANT";
+static Utf8CP const DUMMY = "DUMMY";
 
 static Utf8CP const LENGTH = "LENGTH";
 static Utf8CP const MASS = "MASS";

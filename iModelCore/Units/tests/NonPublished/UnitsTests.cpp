@@ -2,7 +2,7 @@
 |
 |  $Source: tests/NonPublished/UnitsTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1098,6 +1098,58 @@ TEST_F(UnitsTests, VolumeRatio_Conversions)
     ASSERT_EQ(0, conversionErrors.size()) << BeStringUtilities::Join(conversionErrors, ", ");
     Utf8String fileName = UnitsTestFixture::GetOutputDataPath(L"TestUsCustomaryLengths_handledUnits.csv");
     WriteToFile(fileName.c_str(), handledUnits);
+    }
+
+//---------------------------------------------------------------------------------------//
+// @bsimethod                            Colin.Kerr                                  11/17
+//+---------------+---------------+---------------+---------------+---------------+------//
+TEST_F(UnitsTests, DummmyUnitsAreNotConvertableToAnyOtherUnit)
+    {
+    UnitCP bananaDummy = UnitRegistry::Instance().AddDummyUnit("BANANA");
+    UnitCP appleDummy = UnitRegistry::Instance().AddDummyUnit("APPLE");
+    UnitCP inchReal = UnitRegistry::Instance().LookupUnit("IN");
+    UnitCP percentReal = UnitRegistry::Instance().LookupUnit("PERCENT");
+    UnitCP oneReal = UnitRegistry::Instance().LookupUnit("ONE");
+
+    EXPECT_FALSE(Unit::AreCompatible(bananaDummy, appleDummy));
+    EXPECT_FALSE(Unit::AreCompatible(bananaDummy, oneReal));
+    EXPECT_FALSE(Unit::AreCompatible(bananaDummy, inchReal));
+    EXPECT_FALSE(Unit::AreCompatible(appleDummy, percentReal));
+    double converted;
+    EXPECT_EQ(UnitsProblemCode::UncomparableUnits, bananaDummy->Convert(converted, 42.42, appleDummy));
+    EXPECT_EQ(UnitsProblemCode::UncomparableUnits, bananaDummy->Convert(converted, 42.42, oneReal));
+    EXPECT_EQ(UnitsProblemCode::UncomparableUnits, oneReal->Convert(converted, 42.42, appleDummy));
+    EXPECT_EQ(UnitsProblemCode::UncomparableUnits, appleDummy->Convert(converted, 42.42, inchReal));
+    EXPECT_EQ(UnitsProblemCode::UncomparableUnits, appleDummy->Convert(converted, 42.42, percentReal));
+    EXPECT_EQ(UnitsProblemCode::UncomparableUnits, percentReal->Convert(converted, 42.42, bananaDummy));
+    }
+
+void LookUpUnitWithCaseDifferences(Utf8CP exactName, Utf8CP caseIncorrectName)
+    {
+    UnitCP caseIncorrect = UnitRegistry::Instance().LookupUnit(caseIncorrectName);
+    ASSERT_NE(nullptr, caseIncorrect) << caseIncorrectName;
+    UnitCP exact = UnitRegistry::Instance().LookupUnit(exactName);
+    ASSERT_NE(nullptr, exact) << exactName;
+    ASSERT_TRUE(Unit::AreEqual(caseIncorrect, exact));
+    }
+
+//---------------------------------------------------------------------------------------//
+// @bsimethod                            Colin.Kerr                                  09/17
+//+---------------+---------------+---------------+---------------+---------------+------//
+TEST_F(UnitsTests, UnitsLookupIsCaseInsensitive)
+    {
+    LookUpUnitWithCaseDifferences("IN", "in");
+    LookUpUnitWithCaseDifferences("FT", "ft");
+    LookUpUnitWithCaseDifferences("ARC_DEG", "arc_DeG");
+    }
+
+//---------------------------------------------------------------------------------------//
+// @bsimethod                            Colin.Kerr                                  09/17
+//+---------------+---------------+---------------+---------------+---------------+------//
+TEST_F(UnitsTests, CannotAddUnitWhichOnlyDiffersByCaseFromExistingUnit)
+    {
+    ASSERT_EQ(nullptr, UnitRegistry::Instance().AddUnit("LENGTH", "USCUSTOM", "in", "MM", 25.4));
+    ASSERT_EQ(nullptr, UnitRegistry::Instance().AddUnit("LENGTH", "USCUSTOM", "In", "MM", 25.4));
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -578,7 +578,7 @@ UnitProxy::UnitProxy(Json::Value jval)
             m_unitLabel = val.asString();
         }
     if(!m_unitName.empty())
-         m_unit = BEU::UnitRegistry::Instance().LookupUnitCI(m_unitName.c_str());
+         m_unit = BEU::UnitRegistry::Instance().LookupUnit(m_unitName.c_str());
     }
 
 
@@ -602,7 +602,7 @@ void UnitProxy::LoadJson(Json::Value jval) const
             m_unitLabel = val.asString();
         }
     if (!m_unitName.empty())
-        m_unit = BEU::UnitRegistry::Instance().LookupUnitCI(m_unitName.c_str());
+        m_unit = BEU::UnitRegistry::Instance().LookupUnit(m_unitName.c_str());
     }
 
 //===================================================
@@ -735,7 +735,7 @@ void CompositeValueSpec::LoadJsonData(JsonValueCR jval)
     //SetUnitNames(Utils::GetCharsOrNull(major), Utils::GetCharsOrNull(middle), Utils::GetCharsOrNull(minor), Utils::GetCharsOrNull(sub));
     if (!input.empty())
         {
-        BEU::UnitCP inputUnit = BEU::UnitRegistry::Instance().LookupUnitCI(input.c_str());
+        BEU::UnitCP inputUnit = BEU::UnitRegistry::Instance().LookupUnit(input.c_str());
         SetInputUnit(inputUnit);
         }
     SetUnitRatios();
@@ -928,7 +928,7 @@ void FormatUnitSet::LoadJsonData(Json::Value jval)
         if (BeStringUtilities::StricmpAscii(paramName, json_unitName()) == 0)
             {
             m_unitName = val.asString();
-            m_unit = BEU::UnitRegistry::Instance().LookupUnitCI(m_unitName.c_str());
+            m_unit = BEU::UnitRegistry::Instance().LookupUnit(m_unitName.c_str());
             if (nullptr == m_unit)
                 m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
             }

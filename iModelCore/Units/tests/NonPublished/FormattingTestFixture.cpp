@@ -235,7 +235,7 @@ void FormattingTestFixture::TestFUG(Utf8CP name, Utf8CP fusText, Utf8CP norm, Ut
 //----------------------------------------------------------------------------------------
 void FormattingTestFixture::ShowQuantity(double dval, Utf8CP uom, Utf8CP fusUnit, Utf8CP fusFormat, Utf8CP space)
     {
-    BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnitCI(uom);
+    BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnit(uom);
     if (nullptr == unit)
         {
         LOG.infov("Invalid UOM: >%s<", uom);
@@ -282,7 +282,7 @@ void FormattingTestFixture::ShowQuantityS(Utf8CP descr)
 
 void FormattingTestFixture::CustomFormatAnalyzer(double dval, Utf8CP uom, Utf8CP jsonCustomFormat)
 {
-    BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnitCI(uom);
+    BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnit(uom);
     if (nullptr == unit)
         {
         LOG.infov("Invalid UOM: >%s<", uom);
@@ -323,7 +323,7 @@ NumericAccumulator* FormattingTestFixture::NumericAccState(NumericAccumulator* n
 //----------------------------------------------------------------------------------------
 void FormattingTestFixture::TestFUSQuantity(double dval, Utf8CP uom, Utf8CP fusDesc, Utf8CP space)
     {
-    BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnitCI(uom);
+    BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnit(uom);
     BEU::Quantity q = BEU::Quantity(dval, *unit);
     FormatUnitSet fus = FormatUnitSet(fusDesc);
     LOG.infov("Testing FUS->Q  %s", fus.FormatQuantity(q, space).c_str());
@@ -546,7 +546,7 @@ bool FormattingTestFixture::ValidateSchemaUnitNames(char* schemaPath, Utf8CP tok
         tokVal8 = ExtractTokenValue(locW, tokW, tokSymb);
         if (!tokVal8.empty())
             {
-            unitP = BEU::UnitRegistry::Instance().LookupUnitCI(tokVal8.c_str());
+            unitP = BEU::UnitRegistry::Instance().LookupUnit(tokVal8.c_str());
             oldP = nullptr;
             if (nullptr == unitP)
                 oldP = BEU::UnitRegistry::Instance().LookupUnitUsingOldName(tokVal8.c_str());
@@ -756,7 +756,7 @@ void FormattingTestFixture::ParseToQuantity(Utf8CP input, size_t start, Utf8CP u
     else
         {
         LOG.infov("Unit: %s Magnitude %.6f", qty.GetUnitName(), qty.GetMagnitude());
-        BEU::UnitCP un1 = BEU::UnitRegistry::Instance().LookupUnitCI(unitName);
+        BEU::UnitCP un1 = BEU::UnitRegistry::Instance().LookupUnit(unitName);
         BEU::Quantity q1 = qty.ConvertTo(un1);
         if (q1.IsNullQuantity())
             LOG.infov("Invalid alternative Unit: %s", unitName);
@@ -1121,20 +1121,6 @@ void FormattingTestFixture::UnitSynonymMapTest(Utf8CP unitName, Utf8CP synonym)
     //LOG.infov(L"UnitSynonymMap(%ls, %ls) => json: %ls (%ls)", unitName, synonym, jval.ToString().c_str(), FormatConstant::BoolText(ident));
     }
 
-void FormattingTestFixture::RegistryLookupUnitCITest(Utf8CP unitName)
-    {
-    BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnitCI(unitName);
-    if (nullptr == unit)
-        {
-        LOG.infov("Unit Name %s is not defined", unitName);
-        return;
-        }
-    int diff = BeStringUtilities::StricmpAscii(unitName, unit->GetName());
-    EXPECT_TRUE(diff == 0);
-    if(!diff)
-        LOG.infov("Unit Name %s is not canonical %s", unitName, unit->GetName());
-    }
-
 void FormattingTestFixture::StandaloneNamedFormatTest(Utf8CP jsonFormat, bool doPrint)
     {
     NamedFormatSpec nfs = NamedFormatSpec(jsonFormat);
@@ -1162,7 +1148,7 @@ void FormattingTestFixture::StandaloneNamedFormatTest(Utf8CP jsonFormat, bool do
 void FormattingTestFixture::StandaloneFUSTest(double dval, Utf8CP unitName, Utf8CP fusUnitName, Utf8CP formatName, Utf8CP result)
     {
     LOG.info("\n=========== StandaloneFUSTest=============");
-    BEU::UnitCP uom = BEU::UnitRegistry::Instance().LookupUnitCI(unitName);
+    BEU::UnitCP uom = BEU::UnitRegistry::Instance().LookupUnit(unitName);
     if (nullptr == uom)
         {
         LOG.infov("Invalid Unit Name %s", unitName);
@@ -1173,7 +1159,7 @@ void FormattingTestFixture::StandaloneFUSTest(double dval, Utf8CP unitName, Utf8
         LOG.infov("Missing FUS Unit Name");
         return;
         }
-    BEU::UnitCP fusUOM = BEU::UnitRegistry::Instance().LookupUnitCI(fusUnitName);
+    BEU::UnitCP fusUOM = BEU::UnitRegistry::Instance().LookupUnit(fusUnitName);
     if (nullptr == uom)
         {
         LOG.infov("Invalid FUS Unit Name %s", fusUnitName);
@@ -1234,7 +1220,7 @@ void FormattingTestFixture::VerifyQuantity(Utf8CP input, Utf8CP unitName, Utf8CP
     else
         {
         BEU::PhenomenonCP pp = fus.GetPhenomenon();
-        BEU::UnitCP unit = (nullptr == pp) ? BEU::UnitRegistry::Instance().LookupUnitCI(qtyUnitName) : pp->LookupUnit(qtyUnitName);
+        BEU::UnitCP unit = (nullptr == pp) ? BEU::UnitRegistry::Instance().LookupUnit(qtyUnitName) : pp->LookupUnit(qtyUnitName);
         BEU::Quantity temp = BEU::Quantity(magnitude, *unit);
         bool eq = qty.IsClose(temp, 0.0001);
         EXPECT_TRUE(eq);

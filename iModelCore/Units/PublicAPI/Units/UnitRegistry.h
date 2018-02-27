@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Units/UnitRegistry.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -11,6 +11,23 @@
 #include <Units/Units.h>
 
 BEGIN_BENTLEY_UNITS_NAMESPACE
+
+//=======================================================================================
+//! Comparison function that is used within various schema related data structures
+//! for string comparison in STL collections.
+// @bsistruct
+//=======================================================================================
+struct less_str
+{
+bool operator()(Utf8String s1, Utf8String s2) const
+    {
+    if (BeStringUtilities::Stricmp(s1.c_str(), s2.c_str()) < 0)
+        return true;
+
+    return false;
+    }
+};
+
 //=======================================================================================
 //! A central place to store registered units with the system.  Users interact
 //! with the units system here.
@@ -23,8 +40,8 @@ private:
     static UnitRegistry * s_instance;
 
     Utf8Vector m_systems;
-    bmap<Utf8String, PhenomenonP> m_phenomena;
-    bmap<Utf8String, UnitP> m_units;
+    bmap<Utf8String, PhenomenonP, less_str> m_phenomena;
+    bmap<Utf8String, UnitP, less_str> m_units;
     bmap<uint64_t, Conversion> m_conversions;
     uint32_t m_nextId = 0;
     bmap<Utf8String, Utf8String> m_oldNameNewNameMapping;
@@ -59,6 +76,7 @@ private:
 
     void AddMapping(Utf8CP oldName, Utf8CP newName);
     bool HasConstant (Utf8CP constantName) const;
+    UnitCP CreateDummyUnit(Utf8CP unitName);
 public:
     UNITS_EXPORT static UnitRegistry & Instance();
     UNITS_EXPORT static void Clear(); // TODO: Remove or hide so cannot be called from public API, only needed for performance testing
@@ -68,13 +86,16 @@ public:
     UNITS_EXPORT void AllPhenomena(bvector<PhenomenonCP>& allPhenomena) const;
     
     // Register methods.
-    UNITS_EXPORT UnitCP AddDummyUnit(Utf8CP unitName);
-    UnitCP AddUnit(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double factor = 1, double offset = 0);
+
+    //! Creates an invalid, "dummy", Unit with the provided name.
+    //! @param[in] unitName Name of the dummy unit to be created.
+    UNITS_EXPORT UnitCP AddDummyUnit(Utf8CP unitName) {return CreateDummyUnit(unitName);}
+    UNITS_EXPORT UnitCP AddUnit(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double factor = 1, double offset = 0);
     UnitCP AddInvertingUnit(Utf8CP parentUnitName, Utf8CP unitName);
     UnitCP AddConstant(Utf8CP phenomName, Utf8CP constantName, Utf8CP definition, double factor);
     UNITS_EXPORT BentleyStatus AddSynonym(UnitCP unit, Utf8CP synonymName);
     UNITS_EXPORT BentleyStatus AddSynonym(Utf8CP unitName, Utf8CP synonymName);
-    
+
     // Lookup methods
     UNITS_EXPORT UnitCP LookupUnit(Utf8CP name) const;
     UNITS_EXPORT UnitCP LookupConstant(Utf8CP name) const;
@@ -93,7 +114,6 @@ public:
     UNITS_EXPORT size_t LoadSynonyms(Json::Value jval) const;
     UNITS_EXPORT PhenomenonCP LoadSynonym(Utf8CP unitName, Utf8CP synonym) const;
     UNITS_EXPORT Json::Value SynonymsToJson() const;
-    UNITS_EXPORT UnitCP LookupUnitCI(Utf8CP name) const;
     };
 
 END_BENTLEY_UNITS_NAMESPACE

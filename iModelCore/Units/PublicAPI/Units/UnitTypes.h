@@ -140,6 +140,7 @@ private:
     PhenomenonCP    m_phenomenon;
     UnitCP          m_parent;
     bool            m_isConstant;
+    bool            m_dummyUnit;
     mutable Utf8String m_displayLabel;
     mutable Utf8String m_displayDescription;
 
@@ -148,7 +149,7 @@ private:
 
     Unit (Utf8CP system, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant);
     Unit(UnitCR parentUnit, Utf8CP name, uint32_t id);
-    Unit() :UnitsSymbol(), m_system(""), m_phenomenon(nullptr), m_parent(nullptr), m_isConstant(true) {}
+    Unit() :UnitsSymbol(), m_system(""), m_phenomenon(nullptr), m_parent(nullptr), m_isConstant(true), m_dummyUnit(false) {}
     // Lifecycle is managed by the UnitRegistry so we don't allow copies or assignments.
 
     Unit (UnitCR unit) = delete;
@@ -174,6 +175,8 @@ public:
     bool IsRegistered()    const;
     bool IsConstant() const { return m_isConstant; }
     Utf8CP GetUnitSystem() const { return m_system.c_str(); }
+    //! Returns true if the unit is just a place holder for a real unit, invalid units are not convertible into any other unit.
+    bool IsValid() const {return !m_dummyUnit;}
 
     PhenomenonCP GetPhenomenon()   const { return m_phenomenon; }
 
