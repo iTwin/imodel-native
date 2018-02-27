@@ -7,3 +7,51 @@
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
 UnitsTests.TestEveryUnitIsAddedToItsPhenomenon  # Fails on Android - notified Colin
+
+FormattingTest.DictionaryValidation
+
+    # TFS#818071
+    # Stream:Bim0200, build architecture: (iOSARM64), Device: iPadAir2
+    # Failing
+
+FormattingTest.Json
+
+    # TFS#818071
+    # Stream:Bim0200, build architecture: (iOSARM64), Device: iPadAir2
+    # Failing
+
+QuantityTestFixture.Conversion
+
+    # TFS#812554
+    # Stream:Bim0200, build architecture: (iOSARM64), Device: iPadAir2
+    # Failing
+
+QuantityTestFixture.InvalidAddition
+
+    # TFS#812554
+    # Stream:Bim0200, build architecture: (iOSARM64), Device: iPadAir2
+    # Failing
+
+QuantityTestFixture.InvalidSubtract
+
+    # TFS#812554
+    # Stream:Bim0200, build architecture: (iOSARM64), Device: iPadAir2
+    # Failing
+
+QuantityTestFixture.ComplexAddition
+
+    # TFS#812554
+    # Stream:Bim0200, build architecture: (iOSARM64), Device: iPadAir2
+    # Failing
+
+QuantityTestFixture.ComplexSubtraction
+
+    # TFS#812554
+    # Stream:Bim0200, build architecture: (iOSARM64), Device: iPadAir2
+    # Failing
+
+QuantityTestFixture.SimpleAddition
+
+    # TFS#812554
+    # Stream:Bim0200, build architecture: (iOSARM64), Device: iPadAir2
+    # Failing

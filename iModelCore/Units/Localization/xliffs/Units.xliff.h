@@ -143,7 +143,7 @@ BENTLEY_TRANSLATABLE_STRINGS_START(UnitsL10N,units_msg)
     L10N_STRING(UnitLabelSeparator_Space)                               // =="Space"==
 
     L10N_STRING(FormatTraits_Use1000Separator)                          // =="Use Thousands Separator"==
-    L10N_STRING(FormatTraits_AppendUnitName)                            // =="Append Unit Name"==
+    L10N_STRING(FormatTraits_AppendUnitName)                            // =="Append Unit Label"==
     L10N_STRING(FormatTraits_LeadingZeroes)                            // =="Show Leading Zeroes"==
     L10N_STRING(FormatTraits_TrailingZeroes)                            // =="Show Trailing Zeroes"==
     L10N_STRING(FormatTraits_KeepDecimalPoint)                          // =="Keep Decimal Point"==

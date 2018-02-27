@@ -139,20 +139,21 @@ UIList UIUtils::GetAvailableTraits()
 
     traits.AddListEntry(UIListEntry((int) FormatTraits::AppendUnitName, UNITSL10N_GETSTRING(FormatTraits_AppendUnitName).c_str(), json_AppendUnitName()));
     traits.AddListEntry(UIListEntry((int)FormatTraits::Use1000Separator, UNITSL10N_GETSTRING(FormatTraits_Use1000Separator).c_str(), json_Use1000Separator()));
+    traits.AddListEntry(UIListEntry((int) FormatTraits::TrailingZeroes, UNITSL10N_GETSTRING(FormatTraits_TrailingZeroes).c_str(), json_TrailZeroes()));
     // only used when width is set, so let's ignore for now since users won't likely be setting width.
     //traits.AddListEntry(UIListEntry((int)FormatTraits::LeadingZeroes, UNITSL10N_GETSTRING(FormatTraits_LeadingZeroes).c_str(), json_LeadZeroes()));
-    traits.AddListEntry(UIListEntry((int)FormatTraits::KeepDecimalPoint, UNITSL10N_GETSTRING(FormatTraits_KeepDecimalPoint).c_str(), json_KeepDecPnt()));
 
-    // TraitsBitToJson(jTraits, json_KeepDecPnt(), FormatTraits::KeepDecimalPoint, &ref, verbose);
+    // the following trait does not seem to do anything.
+    //traits.AddListEntry(UIListEntry((int)FormatTraits::KeepDecimalPoint, UNITSL10N_GETSTRING(FormatTraits_KeepDecimalPoint).c_str(), json_KeepDecPnt()));
 
-   // TraitsBitToJson(jTraits, json_TrailZeroes(), FormatTraits::TrailingZeroes, &ref, verbose);
-   // TraitsBitToJson(jTraits, json_LeadZeroes(), FormatTraits::LeadingZeroes, &ref, verbose);
    // TraitsBitToJson(jTraits, json_KeepDecPnt(), FormatTraits::KeepDecimalPoint, &ref, verbose);
    // TraitsBitToJson(jTraits, json_KeepSingleZero(), FormatTraits::KeepSingleZero, &ref, verbose);
    // TraitsBitToJson(jTraits, json_ExponentZero(), FormatTraits::ExponentZero, &ref, verbose);
    // TraitsBitToJson(jTraits, json_ZeroEmpty(), FormatTraits::ZeroEmpty, &ref, verbose);
+
+   // DFR said not to show Rounding option to user
    // TraitsBitToJson(jTraits, json_ApplyRounding(), FormatTraits::ApplyRounding, &ref, verbose);
-   // TraitsBitToJson(jTraits, json_AppendUnitName(), FormatTraits::AppendUnitName, &ref, verbose);
+
    // TraitsBitToJson(jTraits, json_UseFractSymbol(), FormatTraits::UseFractSymbol, &ref, verbose);
    // TraitsBitToJson(jTraits, json_FractionDash(), FormatTraits::FractionDash, &ref, verbose);
 
