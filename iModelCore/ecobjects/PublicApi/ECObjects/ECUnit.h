@@ -183,13 +183,13 @@ private:
     SchemaWriteStatus WriteInvertedUnitJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
     SchemaWriteStatus WriteConstantJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
     // Should only be called by UnitRegistry
-    ECUnit(Units::UnitSystemCR unitSystem, Units::PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, double factor, double offset, bool isConstant) : 
-        Units::Unit(unitSystem, phenomenon, name, id, definition, factor, offset, isConstant), m_isDisplayLabelExplicitlyDefined(false) {}
+    ECUnit(Units::UnitSystemCR unitSystem, Units::PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant) : 
+        Units::Unit(unitSystem, phenomenon, name, id, definition, numerator, denominator, offset, isConstant), m_isDisplayLabelExplicitlyDefined(false) {}
     ECUnit(Units::UnitCR parentUnit, Units::UnitSystemCR system, Utf8CP unitName, uint32_t id) : Units::Unit(parentUnit, system, unitName, id) {}
 
 protected:
     // Needed by Units::UnitRegistry to create the ECUnit
-    ECOBJECTS_EXPORT static ECUnitP _Create(Units::UnitSystemCR unitSystem, Units::PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, double factor, double offset, bool isConstant);
+    ECOBJECTS_EXPORT static ECUnitP _Create(Units::UnitSystemCR unitSystem, Units::PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant);
     ECOBJECTS_EXPORT static ECUnitP _Create(Units::UnitCR parentUnit, Units::UnitSystemCR unitSystem, Utf8CP unitName, uint32_t id);
 
 public:

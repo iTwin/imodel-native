@@ -1508,8 +1508,11 @@ BentleyStatus SchemaComparer::CompareUnit(UnitChange& change, ECUnitCR oldVal, E
     if (!oldVal.GetDefinition().EqualsIAscii(newVal.GetDefinition()))
         change.GetDefinition().SetValue(oldVal.GetDefinition(), newVal.GetDefinition());
 
-    if (oldVal.GetFactor() != newVal.GetFactor())
-        change.GetFactor().SetValue(oldVal.GetFactor(), newVal.GetFactor());
+    if (oldVal.GetNumerator() != newVal.GetNumerator())
+        change.GetNumerator().SetValue(oldVal.GetNumerator(), newVal.GetNumerator());
+
+    if (oldVal.GetDenominator() != newVal.GetDenominator())
+        change.GetDenominator().SetValue(oldVal.GetDenominator(), newVal.GetDenominator());
 
     if (oldVal.GetOffset() != newVal.GetOffset())
         change.GetOffset().SetValue(oldVal.GetOffset(), newVal.GetOffset());
@@ -1843,7 +1846,8 @@ BentleyStatus SchemaComparer::AppendUnit(UnitChanges& changes, ECUnitCR unit, Va
 
     change.GetDescription().SetValue(appendType, unit.GetInvariantDescription());
     change.GetDefinition().SetValue(appendType, unit.GetDefinition());
-    change.GetFactor().SetValue(appendType, unit.GetFactor());
+    change.GetNumerator().SetValue(appendType, unit.GetNumerator());
+    change.GetDenominator().SetValue(appendType, unit.GetDenominator());
     change.GetOffset().SetValue(appendType, unit.GetOffset());
 
     BeAssert(dynamic_cast<PhenomenonCP> (unit.GetPhenomenon()) != nullptr);
@@ -2195,7 +2199,8 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::UnitSystems: return "UnitSystems";
             case SystemId::Unit: return "Unit";
             case SystemId::UnitDefinition: return "UnitDefinition";
-            case SystemId::UnitFactor: return "UnitFactor";
+            case SystemId::UnitNumerator: return "UnitNumerator";
+            case SystemId::UnitDenominator: return "UnitDenominator";
             case SystemId::UnitInvertingUnit: return "UnitInvertingUnit";
             case SystemId::UnitIsConstant: return "UnitIsConstant";
             case SystemId::UnitOffset: return "UnitOffset";

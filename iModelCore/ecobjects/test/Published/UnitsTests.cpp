@@ -32,7 +32,7 @@ TEST_F(UnitsTests, BasicECUnitCreation)
     UnitSystemP system;
     schema->CreatePhenomenon(phenom, "ExamplePhenomenon", "LENGTH");
     schema->CreateUnitSystem(system, "ExampleUnitSystem");
-    EC_EXPECT_SUCCESS(schema->CreateUnit(unit, "ExampleUnit", "M", *phenom, *system, "ExampleUnitLabel", "ExampleUnitDescription", 10.0, 1.0)); 
+    EC_EXPECT_SUCCESS(schema->CreateUnit(unit, "ExampleUnit", "M", *phenom, *system, "ExampleUnitLabel", "ExampleUnitDescription", 10.0, 1.0, 1.0)); 
     
     EXPECT_STREQ("ExampleUnitDescription", unit->GetInvariantDescription().c_str());
     EXPECT_STREQ("ExampleUnitLabel", unit->GetInvariantDisplayLabel().c_str());
@@ -40,7 +40,8 @@ TEST_F(UnitsTests, BasicECUnitCreation)
     EXPECT_STREQ("ExampleUnit", unit->GetName().c_str());
     EXPECT_EQ(phenom, unit->GetPhenomenon());
     EXPECT_EQ(system, unit->GetUnitSystem());
-    EXPECT_EQ(10.0, unit->GetFactor());
+    EXPECT_EQ(10.0, unit->GetNumerator());
+    EXPECT_EQ(1.0, unit->GetDenominator());
     EXPECT_EQ(1.0, unit->GetOffset());
 
     auto testECUnit = schema->GetUnitCP("ExampleUnit");
@@ -89,7 +90,7 @@ TEST_F(UnitsTests, ECUnitContainerTest)
     }
     {
     ECUnitP constant;
-    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateConstant(constant, "Constant", "M", *phenom, *system, 10.0, "Constant", "Constant"));
+    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateConstant(constant, "Constant", "M", *phenom, *system, 10.0, 1.0, "Constant", "Constant"));
     EXPECT_TRUE(nullptr != constant);
     }
 
@@ -108,7 +109,8 @@ TEST_F(UnitsTests, ECUnitContainerTest)
                 EXPECT_STREQ("M", unit->GetDefinition().c_str());
                 EXPECT_EQ(phenom, unit->GetPhenomenon());
                 EXPECT_EQ(system, unit->GetUnitSystem());
-                EXPECT_DOUBLE_EQ(10.0, unit->GetFactor());
+                EXPECT_DOUBLE_EQ(10.0, unit->GetNumerator());
+                EXPECT_DOUBLE_EQ(1.0, unit->GetDenominator());
                 break;
             case 1:
                 EXPECT_STREQ("ExampleUnitDescription1", unit->GetInvariantDescription().c_str());
@@ -117,7 +119,8 @@ TEST_F(UnitsTests, ECUnitContainerTest)
                 EXPECT_STREQ("ExampleUnit1", unit->GetName().c_str());
                 EXPECT_EQ(phenom, unit->GetPhenomenon());
                 EXPECT_EQ(system, unit->GetUnitSystem());
-                EXPECT_EQ(1.0, unit->GetFactor());
+                EXPECT_EQ(1.0, unit->GetNumerator());
+                EXPECT_EQ(1.0, unit->GetDenominator());
                 EXPECT_EQ(0.0, unit->GetOffset());
                 break;
             case 2:
@@ -127,7 +130,8 @@ TEST_F(UnitsTests, ECUnitContainerTest)
                 EXPECT_STREQ("ExampleUnit2", unit->GetName().c_str());
                 EXPECT_EQ(phenom, unit->GetPhenomenon());
                 EXPECT_EQ(system, unit->GetUnitSystem());
-                EXPECT_EQ(1.0, unit->GetFactor());
+                EXPECT_EQ(1.0, unit->GetNumerator());
+                EXPECT_EQ(1.0, unit->GetDenominator());
                 EXPECT_EQ(0.0, unit->GetOffset());
                 break;
             case 3:
@@ -137,7 +141,8 @@ TEST_F(UnitsTests, ECUnitContainerTest)
                 EXPECT_STREQ("ExampleUnit3", unit->GetName().c_str());
                 EXPECT_EQ(phenom, unit->GetPhenomenon());
                 EXPECT_EQ(system, unit->GetUnitSystem());
-                EXPECT_EQ(1.0, unit->GetFactor());
+                EXPECT_EQ(1.0, unit->GetNumerator());
+                EXPECT_EQ(1.0, unit->GetDenominator());
                 EXPECT_EQ(0.0, unit->GetOffset());
                 break;
             case 4:
@@ -147,7 +152,8 @@ TEST_F(UnitsTests, ECUnitContainerTest)
                 EXPECT_STREQ("ExampleUnit4", unit->GetName().c_str());
                 EXPECT_EQ(phenom, unit->GetPhenomenon());
                 EXPECT_EQ(system, unit->GetUnitSystem());
-                EXPECT_EQ(1.0, unit->GetFactor());
+                EXPECT_EQ(1.0, unit->GetNumerator());
+                EXPECT_EQ(1.0, unit->GetDenominator());
                 EXPECT_EQ(0.0, unit->GetOffset());
                 break;
             case 5:
@@ -175,7 +181,7 @@ TEST_F(UnitsTests, StandaloneSchemaChildECUnit)
     schema->CreatePhenomenon(phenom, "ExamplePhenomenon", "LENGTH");
     schema->CreateUnitSystem(system, "ExampleUnitSystem");
     ECUnitP unit;
-    schema->CreateUnit(unit, "ExampleUnit", "M", *phenom, *system, "ExampleUnitLabel", "ExampleUnitDescription", 10.0, 1.0);
+    schema->CreateUnit(unit, "ExampleUnit", "M", *phenom, *system, "ExampleUnitLabel", "ExampleUnitDescription", 10.0, 1.0, 1.0);
 
     Json::Value schemaJson;
     EXPECT_EQ(SchemaWriteStatus::Success, unit->WriteJson(schemaJson, true));
@@ -468,7 +474,7 @@ TEST_F(InvertedUnitsTests, BasicInvertedUnitCreation)
     UnitSystemP system;
     schema->CreatePhenomenon(phenom, "ExamplePhenomenon", "LENGTH");
     schema->CreateUnitSystem(system, "ExampleUnitSystem");
-    EC_EXPECT_SUCCESS(schema->CreateUnit(unit, "ExampleUnit", "M", *phenom, *system, "ExampleUnitLabel", "ExampleUnitDescription", 10.0, 1.0)); 
+    EC_EXPECT_SUCCESS(schema->CreateUnit(unit, "ExampleUnit", "M", *phenom, *system, "ExampleUnitLabel", "ExampleUnitDescription", 10.0, 1.0, 1.0)); 
     ECUnitP InvertedUnit;
     EC_EXPECT_SUCCESS(schema->CreateInvertedUnit(InvertedUnit, *unit, "ExampleInvertedUnit", *system, "ExampleInvertedUnitLabel", "ExampleInvertedUnitDescription"));
     auto testECUnit = schema->GetUnitCP("ExampleUnit");
@@ -491,7 +497,7 @@ TEST_F(InvertedUnitsTests, StandaloneSchemaChildInvertedUnit)
     schema->CreatePhenomenon(phenom, "ExamplePhenomenon", "LENGTH");
     schema->CreateUnitSystem(system, "ExampleUnitSystem");
     ECUnitP unit;
-    schema->CreateUnit(unit, "ExampleUnit", "M", *phenom, *system, "ExampleUnitLabel", "ExampleUnitDescription", 10.0, 1.0);
+    schema->CreateUnit(unit, "ExampleUnit", "M", *phenom, *system, "ExampleUnitLabel", "ExampleUnitDescription", 10.0, 1.0, 1.0);
     ECUnitP invUnit;
     schema->CreateInvertedUnit(invUnit, *unit, "ExampleInvertedUnit", *system, "ExampleUnitLabel", "ExampleUnitDescription");
 
@@ -702,7 +708,7 @@ TEST_F(ConstantTests, StandaloneSchemaChild)
     schema->CreatePhenomenon(phenom, "ExamplePhenomenon", "LENGTH");
     schema->CreateUnitSystem(system, "ExampleUnitSystem");
     ECUnitP unit;
-    schema->CreateConstant(unit, "ExampleConstant", "M", *phenom, *system, 10.0, "ExampleConstantLabel", "ExampleConstantDescription");
+    schema->CreateConstant(unit, "ExampleConstant", "M", *phenom, *system, 10.0, 1.0, "ExampleConstantLabel", "ExampleConstantDescription");
 
     Json::Value schemaJson;
     EXPECT_EQ(SchemaWriteStatus::Success, unit->WriteConstantJson(schemaJson, true));
@@ -725,7 +731,7 @@ TEST_F(ConstantDeserializationTests, BasicRoundTripTest)
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
             <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
-            <Constant typeName="TestConstant" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" definition="M" description="This is an awesome new Constant" factor="10.0"/>
+            <Constant typeName="TestConstant" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" definition="M" description="This is an awesome new Constant" numerator="10.0" denominator="1.0" />
         </ECSchema>)xml";
 
     Utf8String serializedSchemaXml;
@@ -742,7 +748,8 @@ TEST_F(ConstantDeserializationTests, BasicRoundTripTest)
     EXPECT_STREQ("Constant", unit->GetInvariantDisplayLabel().c_str());
     EXPECT_STREQ("This is an awesome new Constant", unit->GetInvariantDescription().c_str());
     EXPECT_STREQ("M", unit->GetDefinition().c_str());
-    EXPECT_DOUBLE_EQ(10.0, unit->GetFactor());
+    EXPECT_DOUBLE_EQ(10.0, unit->GetNumerator());
+    EXPECT_DOUBLE_EQ(1.0, unit->GetDenominator());
 
     EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serializedSchemaXml));
     }
@@ -759,7 +766,8 @@ TEST_F(ConstantDeserializationTests, BasicRoundTripTest)
     EXPECT_STREQ("Constant", serializedECUnit->GetInvariantDisplayLabel().c_str());
     EXPECT_STREQ("This is an awesome new Constant", serializedECUnit->GetInvariantDescription().c_str());
     EXPECT_STREQ("M", serializedECUnit->GetDefinition().c_str());
-    EXPECT_DOUBLE_EQ(10.0, serializedECUnit->GetFactor());
+    EXPECT_DOUBLE_EQ(10.0, serializedECUnit->GetNumerator());
+    EXPECT_DOUBLE_EQ(1.0, serializedECUnit->GetDenominator());
     }
     }
 
@@ -776,7 +784,7 @@ TEST_F(ConstantDeserializationTests, RoundTripWithReferencedSchemaForPhenomenonA
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="refSchema" version="01.00" alias="rs"/>
-            <Constant typeName="TestConstant" phenomenon="rs:TestPhenomenon" unitSystem="rs:TestUnitSystem" displayLabel="Constant" definition="M" description="This is an awesome new Constant" factor="10.0"/>
+            <Constant typeName="TestConstant" phenomenon="rs:TestPhenomenon" unitSystem="rs:TestUnitSystem" displayLabel="Constant" definition="M" description="This is an awesome new Constant" numerator="10.0"/>
         </ECSchema>)xml";
 
     Utf8String serializedSchemaXml;
@@ -816,6 +824,8 @@ TEST_F(ConstantDeserializationTests, RoundTripWithReferencedSchemaForPhenomenonA
     EXPECT_STREQ("M", serializedUnit->GetDefinition().c_str());
     EXPECT_STREQ("LENGTH*LENGTH", serializedUnit->GetPhenomenon()->GetDefinition().c_str());
     EXPECT_STREQ("Unit System", ((ECN::UnitSystemCP)serializedUnit->GetUnitSystem())->GetInvariantDisplayLabel().c_str());
+    EXPECT_DOUBLE_EQ(10.0, serializedUnit->GetNumerator());
+    EXPECT_DOUBLE_EQ(1.0, serializedUnit->GetDenominator());
     }
     }
 
@@ -832,7 +842,7 @@ TEST_F(ConstantDeserializationTests, ShouldFailWithoutAliases)
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="refSchema" version="01.00" alias="rs"/>
-            <Constant typeName="TestConstant" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" definition="M" description="This is an awesome new Constant" factor="10.0"/>
+            <Constant typeName="TestConstant" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" definition="M" description="This is an awesome new Constant" numerator="10.0"/>
         </ECSchema>)xml";
 
     Utf8String serializedSchemaXml;
@@ -853,7 +863,7 @@ TEST_F(ConstantDeserializationTests, ShouldFailWithoutPhenomenonAndUnitSystemBei
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <Constant typeName="TestConstant" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" definition="M" description="This is an awesome new Constant"  factor="10.0"/>
+            <Constant typeName="TestConstant" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" definition="M" description="This is an awesome new Constant"  numerator="10.0"/>
         </ECSchema>)xml";
 
     Utf8String serializedSchemaXml;
@@ -873,8 +883,8 @@ TEST_F(ConstantDeserializationTests, DuplicateConstantNames)
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
             <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
-            <Constant typeName="TestConstant" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" definition="M" description="This is an awesome new Constant" factor="10.0"/>
-            <Constant typeName="TestConstant" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" definition="M" description="This is an awesome new Constant" factor="10.0"/>
+            <Constant typeName="TestConstant" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" definition="M" description="This is an awesome new Constant" numerator="10.0"/>
+            <Constant typeName="TestConstant" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" definition="M" description="This is an awesome new Constant" numerator="10.0"/>
         </ECSchema>)xml";
 
     Utf8String serializedSchemaXml;
@@ -924,7 +934,7 @@ TEST_F(ConstantDeserializationTests, MissingOrInvalidName)
     <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
         <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
-        <Constant phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" definition="M" description="This is an awesome new Constant" factor="10.0"/>
+        <Constant phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" definition="M" description="This is an awesome new Constant" numerator="10.0"/>
     </ECSchema>)xml";
 
     ECSchemaPtr schema;
@@ -936,7 +946,7 @@ TEST_F(ConstantDeserializationTests, MissingOrInvalidName)
     <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
         <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
-        <Constant typeName="" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" definition="M" description="This is an awesome new Constant" factor="10.0"/>
+        <Constant typeName="" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" definition="M" description="This is an awesome new Constant" numerator="10.0"/>
     </ECSchema>)xml";
 
     ECSchemaPtr schema;
@@ -954,7 +964,7 @@ TEST_F(ConstantDeserializationTests, MissingDisplayLabel)
     <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
         <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
-        <Constant typeName="TestConstant" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" definition="M" description="This is an awesome new Constant" factor="10.0"/>
+        <Constant typeName="TestConstant" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" definition="M" description="This is an awesome new Constant" numerator="10.0"/>
     </ECSchema>)xml";
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
@@ -974,7 +984,7 @@ TEST_F(ConstantDeserializationTests, MissingOrEmptyDefinition)
     <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
         <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
-        <Constant typeName="TestConstant" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" description="This is an awesome new Constant" factor="10.0"/>
+        <Constant typeName="TestConstant" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" description="This is an awesome new Constant" numerator="10.0"/>
     </ECSchema>)xml";
     {
     ECSchemaPtr schema;
@@ -985,7 +995,7 @@ TEST_F(ConstantDeserializationTests, MissingOrEmptyDefinition)
     <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
         <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
-        <Constant typeName="TestConstant" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" definition="" description="This is an awesome new Constant" factor="10.0"/>
+        <Constant typeName="TestConstant" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" definition="" description="This is an awesome new Constant" numerator="10.0"/>
     </ECSchema>)xml";
     {
     ECSchemaPtr schema;

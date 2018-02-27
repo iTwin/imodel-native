@@ -140,7 +140,8 @@
       "unitSystem": "ExampleSchema.ExampleUnitSystem",
       "label": "ExampleUnitLabel",
       "description": "ExampleUnitDescription",
-      "factor": 10.0,
+      "numerator": 10.0,
+      "denominator": 1.0,
       "offset": 1.0
     },
     "ExampleEnumeration": {

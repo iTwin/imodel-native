@@ -130,7 +130,8 @@ enum class SystemId
     TypeName,
     Unit,
     UnitDefinition,
-    UnitFactor,
+    UnitNumerator,
+    UnitDenominator,
     UnitInvertingUnit,
     UnitIsConstant,
     UnitOffset,
@@ -1202,7 +1203,8 @@ struct UnitChange final : ECObjectChange
         StringChange& GetDefinition() { return Get<StringChange>(SystemId::UnitDefinition); }
         StringChange& GetPhenomenon() { return Get<StringChange>(SystemId::Phenomenon); }
         StringChange& GetUnitSystem() { return Get<StringChange>(SystemId::UnitSystem); }
-        DoubleChange& GetFactor() { return Get<DoubleChange>(SystemId::UnitFactor); }
+        DoubleChange& GetNumerator() { return Get<DoubleChange>(SystemId::UnitNumerator); }
+        DoubleChange& GetDenominator() { return Get<DoubleChange>(SystemId::UnitDenominator); }
         DoubleChange& GetOffset() { return Get<DoubleChange>(SystemId::UnitOffset); }
         BooleanChange& GetIsConstant() { return Get<BooleanChange>(SystemId::UnitIsConstant); }
         StringChange& GetInvertingUnit() { return Get<StringChange>(SystemId::UnitInvertingUnit); }

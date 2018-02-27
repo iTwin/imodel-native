@@ -3555,9 +3555,10 @@ public:
     //! @param[in] unitSystem   Name of the unit system this unit is associated with
     //! @param[in] label        Display label of the unit
     //! @param[in] description  Description of the unit
-    //! @param[in] factor       Factor of this unit
+    //! @param[in] numerator    Numerator for unit factor
+    //! @param[in] denominator  Denominator for unit factor
     //! @param[in] offset       Offset of this unit
-    ECOBJECTS_EXPORT ECObjectsStatus CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, Utf8CP label = nullptr, Utf8CP description = nullptr, double factor = 1.0, double offset = 0.0);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, Utf8CP label = nullptr, Utf8CP description = nullptr, double numerator = 1.0, double denominator = 1.0, double offset = 0.0);
     
     //! Creates a new inverted ECUnit and adds it to the schema.
     //! @param[out] unit        If successful, will contain a new inverted ECUnit object
@@ -3574,10 +3575,11 @@ public:
     //! @param[in] definition   Definition of the constant
     //! @param[in] phenom       Name of the phenomenon this constant is associated with
     //! @param[in] unitSystem   Name of the unit system this constant is associated with
-    //! @param[in] factor       Factor of this constant
+    //! @param[in] numerator    Numerator for unit factor
+    //! @param[in] denominator  Denominator for unit factor
     //! @param[in] label        Display label of the constant
     //! @param[in] description  Description of the constant
-    ECOBJECTS_EXPORT ECObjectsStatus CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, double factor, Utf8CP label = nullptr, Utf8CP description = nullptr);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, double numerator, double denominator = 1.0, Utf8CP label = nullptr, Utf8CP description = nullptr);
 
     //! Get a schema by alias within the context of this schema and its referenced schemas.
     //! @param[in]  alias   The alias of the schema to lookup in the context of this schema and it's references.

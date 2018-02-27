@@ -1191,7 +1191,7 @@ ECObjectsStatus ECSchema::CreatePhenomenon(PhenomenonP& phenomenon, Utf8CP name,
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 02/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus ECSchema::CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, Utf8CP label, Utf8CP description, double factor, double offset)
+ECObjectsStatus ECSchema::CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, Utf8CP label, Utf8CP description, double numerator, double denominator, double offset)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
     ECObjectsStatus status;
@@ -1221,7 +1221,7 @@ ECObjectsStatus ECSchema::CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definiti
         return ECObjectsStatus::NotFound;
         }
 
-    unit = Units::UnitRegistry::Instance().AddUnit<ECUnit>(phenom.GetFullName().c_str(), unitSystem.GetFullName().c_str(), fullName.c_str(), definition, factor, offset);
+    unit = Units::UnitRegistry::Instance().AddUnit<ECUnit>(phenom.GetFullName().c_str(), unitSystem.GetFullName().c_str(), fullName.c_str(), definition, numerator, denominator, offset);
     if(nullptr == unit)
         return ECObjectsStatus::Error;
     unit->SetSchema(*this);
@@ -1293,7 +1293,7 @@ ECObjectsStatus ECSchema::CreateInvertedUnit(ECUnitP& unit, ECUnitCR parent, Utf
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 02/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus ECSchema::CreateConstant(ECUnitP& unit, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, double factor, Utf8CP label, Utf8CP description)
+ECObjectsStatus ECSchema::CreateConstant(ECUnitP& unit, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, double numerator, double denominator, Utf8CP label, Utf8CP description)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
@@ -1323,7 +1323,7 @@ ECObjectsStatus ECSchema::CreateConstant(ECUnitP& unit, Utf8CP name, Utf8CP defi
         return ECObjectsStatus::NotFound;
         }
 
-    unit = Units::UnitRegistry::Instance().AddConstant<ECUnit>(phenom.GetFullName().c_str(), unitSystem.GetFullName().c_str(), fullName.c_str(),definition, factor);
+    unit = Units::UnitRegistry::Instance().AddConstant<ECUnit>(phenom.GetFullName().c_str(), unitSystem.GetFullName().c_str(), fullName.c_str(), definition, numerator, denominator);
     if(nullptr == unit)
         return ECObjectsStatus::Error;
     unit->SetSchema(*this);
