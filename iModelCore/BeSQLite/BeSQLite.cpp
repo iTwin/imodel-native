@@ -4819,15 +4819,14 @@ static void caseCallback(sqlite3_context* context, int numArgs, sqlite3_value** 
 
     Utf16CP source = (Utf16CP)sqlite3_value_text16(args[0]);
     if (nullptr == source)
-        {
-        // Columns with NULL values can still get here; don't assert, just do nothing with NULL column data.
         return;
-        }
 
-    int sourceSize = (size_t)sqlite3_value_bytes16(args[0]);
+    int sourceSize = sqlite3_value_bytes16(args[0]);
+    if (sourceSize <= 0)
+        return;
+    
     int resultSize = (2 * sourceSize) * sizeof(uint16_t);
-
-    Utf16P result = (Utf16P)sqlite3_malloc((int)resultSize);
+    Utf16P result = (Utf16P)sqlite3_malloc(resultSize);
     if (nullptr == result)
         {
         BeAssert(false); 
