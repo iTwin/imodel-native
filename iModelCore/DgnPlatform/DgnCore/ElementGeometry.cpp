@@ -4382,7 +4382,7 @@ GeometryStreamEntryId GeometryBuilder::GetGeometryStreamEntryId() const
                 auto ppfb = flatbuffers::GetRoot<FB::GeometryPart>(egOp.m_data);
 
                 entryId.SetGeometryPartId(DgnGeometryPartId((uint64_t)ppfb->geomPartId()));
-                entryId.SetIndex(entryId.GetIndex()+1);
+                entryId.IncrementIndex();
                 break;
                 }
 
@@ -4394,7 +4394,8 @@ GeometryStreamEntryId GeometryBuilder::GetGeometryStreamEntryId() const
                 if (GeometryStreamIO::OpCode::BRepPolyface == egOp.m_opCode || GeometryStreamIO::OpCode::BRepCurveVector == egOp.m_opCode)
                     break; // NOTE: Only update GeometryStreamEntryId from ParasolidBRep...could have multiple polyface if BRep had face attachments...
 
-                entryId.Increment();
+                entryId.SetGeometryPartId(DgnGeometryPartId());
+                entryId.IncrementIndex();
                 break;
                 }
             }
