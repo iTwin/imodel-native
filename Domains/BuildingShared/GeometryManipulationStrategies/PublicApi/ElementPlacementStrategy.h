@@ -26,8 +26,8 @@ struct ElementPlacementStrategy : public GeometryPlacementStrategy
         virtual ElementManipulationStrategyCR _GetElementManipulationStrategy() const = 0;
         virtual ElementManipulationStrategyR _GetElementManipulationStrategyForEdit() = 0;
 
-        virtual GeometryPlacementStrategyCPtr _TryGetGeometryPlacementStrategy() const = 0;
-        virtual GeometryPlacementStrategyPtr _TryGetGeometryPlacementStrategyForEdit() = 0;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT GeometryPlacementStrategyCPtr TryGetGeometryPlacementStrategy() const;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT GeometryPlacementStrategyPtr TryGetGeometryPlacementStrategyForEdit();
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bvector<DPoint3d> _GetKeyPoints() const override;
 

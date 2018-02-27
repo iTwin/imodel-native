@@ -37,7 +37,7 @@ DgnElementPtr ElementPlacementStrategy::FinishElement
 //---------------+---------------+---------------+---------------+---------------+------
 bvector<DPoint3d> ElementPlacementStrategy::_GetKeyPoints() const
     {
-    GeometryPlacementStrategyCPtr strategy = _TryGetGeometryPlacementStrategy();
+    GeometryPlacementStrategyCPtr strategy = TryGetGeometryPlacementStrategy();
     if (strategy.IsNull())
         {
         BeAssert(false && "Invalid geometry placement strategy");
@@ -51,7 +51,7 @@ bvector<DPoint3d> ElementPlacementStrategy::_GetKeyPoints() const
 //---------------+---------------+---------------+---------------+---------------+------
 bool ElementPlacementStrategy::_IsDynamicKeyPointSet() const
     {
-    GeometryPlacementStrategyCPtr strategy = _TryGetGeometryPlacementStrategy();
+    GeometryPlacementStrategyCPtr strategy = TryGetGeometryPlacementStrategy();
     if (strategy.IsNull())
         {
         BeAssert(false && "Invalid geometry placement strategy");
@@ -65,7 +65,7 @@ bool ElementPlacementStrategy::_IsDynamicKeyPointSet() const
 //---------------+---------------+---------------+---------------+---------------+------
 void ElementPlacementStrategy::_AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint)
     {
-    GeometryPlacementStrategyPtr strategy = _TryGetGeometryPlacementStrategyForEdit();
+    GeometryPlacementStrategyPtr strategy = TryGetGeometryPlacementStrategyForEdit();
     if (strategy.IsNull())
         {
         BeAssert(false && "Invalid geometry placement strategy");
@@ -80,7 +80,7 @@ void ElementPlacementStrategy::_AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint
 //---------------+---------------+---------------+---------------+---------------+------
 void ElementPlacementStrategy::_AddDynamicKeyPoints(bvector<DPoint3d> const & newDynamicKeyPoints)
     {
-    GeometryPlacementStrategyPtr strategy = _TryGetGeometryPlacementStrategyForEdit();
+    GeometryPlacementStrategyPtr strategy = TryGetGeometryPlacementStrategyForEdit();
     if (strategy.IsNull())
         {
         BeAssert(false && "Invalid geometry placement strategy");
@@ -99,7 +99,7 @@ void ElementPlacementStrategy::_AddDynamicKeyPoints(bvector<DPoint3d> const & ne
 //---------------+---------------+---------------+---------------+---------------+------
 void ElementPlacementStrategy::_ResetDynamicKeyPoint()
     {
-    GeometryPlacementStrategyPtr strategy = _TryGetGeometryPlacementStrategyForEdit();
+    GeometryPlacementStrategyPtr strategy = TryGetGeometryPlacementStrategyForEdit();
     if (strategy.IsNull())
         {
         BeAssert(false && "Invalid geometry placement strategy");
@@ -114,7 +114,7 @@ void ElementPlacementStrategy::_ResetDynamicKeyPoint()
 //---------------+---------------+---------------+---------------+---------------+------
 void ElementPlacementStrategy::_AddKeyPoint(DPoint3dCR newKeyPoint)
     {
-    GeometryPlacementStrategyPtr strategy = _TryGetGeometryPlacementStrategyForEdit();
+    GeometryPlacementStrategyPtr strategy = TryGetGeometryPlacementStrategyForEdit();
     if (strategy.IsNull())
         {
         BeAssert(false && "Invalid geometry placement strategy");
@@ -128,7 +128,7 @@ void ElementPlacementStrategy::_AddKeyPoint(DPoint3dCR newKeyPoint)
 //---------------+---------------+---------------+---------------+---------------+------
 void ElementPlacementStrategy::_PopKeyPoint()
     {
-    GeometryPlacementStrategyPtr strategy = _TryGetGeometryPlacementStrategyForEdit();
+    GeometryPlacementStrategyPtr strategy = TryGetGeometryPlacementStrategyForEdit();
     if (strategy.IsNull())
         {
         BeAssert(false && "Invalid geometry placement strategy");
@@ -142,7 +142,7 @@ void ElementPlacementStrategy::_PopKeyPoint()
 //---------------+---------------+---------------+---------------+---------------+------
 bool ElementPlacementStrategy::_IsComplete() const
     {
-    GeometryPlacementStrategyCPtr strategy = _TryGetGeometryPlacementStrategy();
+    GeometryPlacementStrategyCPtr strategy = TryGetGeometryPlacementStrategy();
     if (strategy.IsNull())
         {
         return T_Super::_IsComplete();
@@ -156,7 +156,7 @@ bool ElementPlacementStrategy::_IsComplete() const
 //---------------+---------------+---------------+---------------+---------------+------
 bool ElementPlacementStrategy::_CanAcceptMorePoints() const
     {
-    GeometryPlacementStrategyCPtr strategy = _TryGetGeometryPlacementStrategy();
+    GeometryPlacementStrategyCPtr strategy = TryGetGeometryPlacementStrategy();
     if (strategy.IsNull())
         {
         return false;
@@ -165,11 +165,27 @@ bool ElementPlacementStrategy::_CanAcceptMorePoints() const
     return strategy->CanAcceptMorePoints();
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+GeometryPlacementStrategyCPtr ElementPlacementStrategy::TryGetGeometryPlacementStrategy() const
+    {
+    return _GetElementManipulationStrategy()._TryGetGeometryPlacementStrategy();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+GeometryPlacementStrategyPtr ElementPlacementStrategy::TryGetGeometryPlacementStrategyForEdit()
+    {
+    return _GetElementManipulationStrategyForEdit()._TryGetGeometryPlacementStrategyForEdit();
+    }
+
 #define EPS_PROPERTY_OVERRIDE_IMPL(value_type)                                                          \
     void ElementPlacementStrategy::_SetProperty(Utf8CP key, value_type const& value)                    \
         {                                                                                               \
         _GetManipulationStrategyForEdit().SetProperty(key, value);                                            \
-        GeometryPlacementStrategyPtr strategy = _TryGetGeometryPlacementStrategyForEdit();                    \
+        GeometryPlacementStrategyPtr strategy = TryGetGeometryPlacementStrategyForEdit();                    \
         if (strategy.IsValid())                                                                         \
             {                                                                                           \
             strategy->SetProperty(key, value);                                                          \
@@ -177,7 +193,7 @@ bool ElementPlacementStrategy::_CanAcceptMorePoints() const
         }                                                                                               \
     BentleyStatus ElementPlacementStrategy::_TryGetProperty(Utf8CP key, value_type& value) const        \
         {                                                                                               \
-        GeometryPlacementStrategyCPtr strategy = _TryGetGeometryPlacementStrategy();                    \
+        GeometryPlacementStrategyCPtr strategy = TryGetGeometryPlacementStrategy();                    \
         if (strategy.IsValid())                                                                         \
             {                                                                                           \
             if ((BentleyStatus::SUCCESS == _GetManipulationStrategy().TryGetProperty(key, value)) ||    \
