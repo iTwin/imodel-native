@@ -94,12 +94,14 @@ size_t StdFormatSet::StdInit()
     AddFormat("Fractional8", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), "fract8");
     AddFormat("Fractional16", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 16), "fract16");
     AddFormat("Fractional32", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 32), "fract32");
+	AddFormat("Fractional32", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 64), "fract64");
     AddFormat("Fractional128", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 128), "fract128");
 
     AddFormat("Fractional4U", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 4), "fract4u");
     AddFormat("Fractional8U", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 8), "fract8u");
     AddFormat("Fractional16U", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 16), "fract16u");
     AddFormat("Fractional32U", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 32), "fract32u");
+	AddFormat("Fractional32U", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 64), "fract64u");
     AddFormat("Fractional128U", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 128), "fract128u");
 
     CompositeValueSpecP cvs = new CompositeValueSpec("ARC_DEG", "ARC_MINUTE", "ARC_SECOND", nullptr);
@@ -251,12 +253,14 @@ size_t StdFormatSet::CustomInit()
     AddCustomFormat("{\"NumericFormat\":{\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract8\", \"SpecName\" : \"Fractional8\", \"SpecType\" : \"numeric\"}");
     AddCustomFormat("{\"NumericFormat\":{\"fractPrec\":16, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract16\", \"SpecName\" : \"Fractional16\", \"SpecType\" : \"numeric\"}");
     AddCustomFormat("{\"NumericFormat\":{\"fractPrec\":32, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract32\", \"SpecName\" : \"Fractional32\", \"SpecType\" : \"numeric\"}");
-    AddCustomFormat("{\"NumericFormat\":{\"fractPrec\":128, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract128\", \"SpecName\" : \"Fractional128\", \"SpecType\" : \"numeric\"}");
+	AddCustomFormat("{\"NumericFormat\":{\"fractPrec\":64, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract64\", \"SpecName\" : \"Fractional64\", \"SpecType\" : \"numeric\"}");
+	AddCustomFormat("{\"NumericFormat\":{\"fractPrec\":128, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract128\", \"SpecName\" : \"Fractional128\", \"SpecType\" : \"numeric\"}");
     AddCustomFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"fractPrec\" : 4, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract4u\", \"SpecName\" : \"Fractional4U\", \"SpecType\" : \"numeric\"}");
     AddCustomFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"fractPrec\" : 8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract8u\", \"SpecName\" : \"Fractional8U\", \"SpecType\" : \"numeric\"}");
     AddCustomFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"fractPrec\" : 16, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract16u\", \"SpecName\" : \"Fractional16U\", \"SpecType\" : \"numeric\"}");
-    AddCustomFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"fractPrec\" : 32, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract32u\", \"SpecName\" : \"Fractional32U\", \"SpecType\" : \"numeric\"}");
-    AddCustomFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"fractPrec\" : 128, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract128u\", \"SpecName\" : \"Fractional128U\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"fractPrec\" : 32, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract32u\", \"SpecName\" : \"Fractional64U\", \"SpecType\" : \"numeric\"}");
+	AddCustomFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"fractPrec\" : 64, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract64u\", \"SpecName\" : \"Fractional32U\", \"SpecType\" : \"numeric\"}");
+	AddCustomFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"fractPrec\" : 128, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fract128u\", \"SpecName\" : \"Fractional128U\", \"SpecType\" : \"numeric\"}");
     
     AddCustomFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"\xC2\xB0\", \"unitName\" : \"ARC_DEG\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"ARC_MINUTE\"}, \"MinorUnit\" : {\"unitLabel\":\"\\\"\", \"unitName\" : \"ARC_SECOND\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":1, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"cdms\", \"SpecName\" : \"CAngleDMS\", \"SpecType\" : \"composite\"}");
     AddCustomFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"\xC2\xB0\", \"unitName\" : \"ARC_DEG\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"ARC_MINUTE\"}, \"MinorUnit\" : {\"unitLabel\":\"\\\"\", \"unitName\" : \"ARC_SECOND\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"cdms8\", \"SpecName\" : \"CAngleDMS8\", \"SpecType\" : \"composite\"}");

@@ -60,6 +60,9 @@ TEST(FormattingTest, Preliminary)
     {
     FormattingTestFixture::SetUpL10N();
     LOG.infov("================  Formatting Log ===========================");
+
+	FormattingTestFixture::SetLocale("en-US");
+	FormattingTestFixture::SetLocale("de-DE");
     //FormattingDividers fdiv = FormattingDividers("()[]{}");
     //const char *uni = u8"         ЯABГCDE   型号   sautéςερ   τcañón    ";
 
@@ -145,6 +148,22 @@ TEST(FormattingTest, Preliminary)
     FormattingTestFixture::ShowQuantity(10.0, "M", "FT", "fi16", "");
 	FormattingTestFixture::ShowQuantity(-10.0, "M", "FT", "fi16", "");
     FormattingTestFixture::ShowQuantity(20.0, "M", "FT", "fi8", nullptr);
+
+	LOG.info("Gauges:");
+	FormattingTestFixture::ShowQuantity(1.7859375, "MM", "IN", "fract16", nullptr);
+	FormattingTestFixture::ShowQuantity(1.7859375, "MM", "IN", "fract32", nullptr);
+	FormattingTestFixture::ShowQuantity(1.7859375, "MM", "IN", "fract64", nullptr);
+	FormattingTestFixture::ShowQuantity(1.7859375, "MM", "IN", "fract128", nullptr);
+	FormattingTestFixture::ShowQuantity(1.7859375, "MM", "IN", "fract16u", nullptr);
+	FormattingTestFixture::ShowQuantity(1.7859375, "MM", "IN", "fract32u", nullptr);
+	FormattingTestFixture::ShowQuantity(1.7859375, "MM", "IN", "fract64u", nullptr);
+	FormattingTestFixture::ShowQuantity(1.7859375, "MM", "IN", "fract128u", nullptr);
+
+	FormattingTestFixture::ShowQuantity(419.1, "MM", "FT", "fract8", nullptr);
+	FormattingTestFixture::ShowQuantity(419.1, "MM", "FT", "fract16", nullptr);
+	FormattingTestFixture::ShowQuantity(3.042, "FT", "FT", "fract16", nullptr);
+	FormattingTestFixture::ShowQuantity(3.042, "FT", "FT", "fract32", nullptr);
+	LOG.info("End Of Gauges:");
 
     FormattingTestFixture::TestFUSQuantity(20.0, "M", "FT(real4)", nullptr);
     FormattingTestFixture::TestFUSQuantity(20.0, "M", "FT(real4u)", nullptr);
@@ -1156,6 +1175,43 @@ TEST(FormattingTest, DictionaryValidation)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                            David.Fox-Rabinovitz                      02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(FormattingTest, LocaleTest)
+{
+
+	LOG.infov("\n================  Locale Test ===========================");
+	
+	LocaleProperties lop = LocaleProperties::DefaultAmerican();
+	Json::Value jval = lop.ToJson();
+	LOG.infov("American Default %s", jval.ToString().c_str());
+	LocaleProperties lop1 = LocaleProperties(jval);
+	LOG.infov("American Default origin %s", lop.ToText().c_str());
+	LOG.infov("American Default restor %s", lop1.ToText().c_str());
+
+
+	lop = LocaleProperties::DefaultEuropean();
+	jval = lop.ToJson();
+	LOG.infov("European Default %s", jval.ToString().c_str());
+	lop1 = LocaleProperties(jval);
+	LOG.infov("European Default origin %s", lop.ToText().c_str());
+	LOG.infov("European Default restor %s", lop1.ToText().c_str());
+
+	lop = LocaleProperties::DefaultEuropean(true);
+	jval = lop.ToJson();
+	LOG.infov("European1 Default %s", jval.ToString().c_str());
+	lop1 = LocaleProperties(jval);
+	LOG.infov("European1 Default origin %s", lop.ToText().c_str());
+	LOG.infov("European1 Default restor %s", lop1.ToText().c_str());
+
+	LOG.infov("================  Locale Test (end) ===========================\n");
+
+
+	LOG.infov("================  Formatting Log (completed) ===========================\n\n\n");
+}
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                            David.Fox-Rabinovitz                      01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FormattingTest, PhenomenaTest)
@@ -1169,8 +1225,11 @@ TEST(FormattingTest, PhenomenaTest)
     FormattingTestFixture::ShowSynonyms();
     LOG.infov("================  Synonyms Test (end) ===========================\n");
 
-    LOG.infov("================  Formatting Log (completed) ===========================\n\n\n");
+
     }
+
+
+
 
 END_BENTLEY_FORMATTEST_NAMESPACE
 

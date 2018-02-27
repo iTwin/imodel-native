@@ -1,13 +1,15 @@
-/*--------------------------------------------------------------------------------------+
+﻿/*--------------------------------------------------------------------------------------+
 |
 |     $Source: src/Formatting/Formatting.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#pragma once
 #include <UnitsPCH.h>
+#include <locale>
 #include <Formatting/FormattingApi.h>
-
+#include <BeSQLite/L10N.h>
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
 
@@ -44,6 +46,89 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 //    
 //    }
 
+
+//===================================================
+//
+// LocaleProperties
+//
+//===================================================
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/18
+//----------------------------------------------------------------------------------------
+LocaleProperties::LocaleProperties(Utf8CP localeName)
+{
+	std::locale loc = std::locale(localeName);
+	const std::numpunct<char>& myfacet(std::use_facet < std::numpunct<char> >(loc));
+
+	m_decimalSeparator = myfacet.decimal_point();
+	m_thousandsSeparator = myfacet.thousands_sep();
+}
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/18
+//----------------------------------------------------------------------------------------
+LocaleProperties LocaleProperties::DefaultAmerican()
+{
+	return LocaleProperties('.',',');
+}
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/18
+//----------------------------------------------------------------------------------------
+LocaleProperties LocaleProperties::DefaultEuropean(bool useBlank)
+{
+	return LocaleProperties(',', (useBlank? ' ' : ','));
+}
+
+LocaleProperties::LocaleProperties(Json::Value jval)
+{
+	if (!jval.empty())
+	{
+		Utf8CP paramName;
+		Utf8String str;
+		Utf8String jStr = jval.ToString();
+		for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
+		{
+			paramName = iter.memberName();
+			JsonValueCR val = *iter;
+			if (BeStringUtilities::StricmpAscii(paramName, json_decimalSeparator()) == 0)
+			{
+				str = val.asString();
+				m_decimalSeparator = str.c_str()[0];
+			}
+			else if (BeStringUtilities::StricmpAscii(paramName, json_thousandSeparator()) == 0)
+			{
+				str = val.asString();
+				m_thousandsSeparator = str.c_str()[0];
+			}
+		}
+	}
+	else
+	{
+		m_decimalSeparator = '.';
+		m_thousandsSeparator = '\0';
+	}
+}
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/18
+//----------------------------------------------------------------------------------------
+Json::Value LocaleProperties::ToJson()
+{
+	Json::Value jval;
+	jval[json_decimalSeparator()] = Utils::CharToString(m_decimalSeparator);
+	jval[json_thousandSeparator()] = Utils::CharToString(m_thousandsSeparator);
+	return jval;
+}
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/18
+//----------------------------------------------------------------------------------------
+Utf8String LocaleProperties::ToText()
+{
+   return Utf8PrintfString("Separators: decimal |%c| thousands |%c|", m_decimalSeparator, m_thousandsSeparator);
+}
+
 //===================================================
 //
 // NumericFormatSpec Methods
@@ -63,12 +148,37 @@ void NumericFormatSpec::DefaultInit(size_t precision)
     m_decPrecision = Utils::DecimalPrecisionByIndex(precision);
     m_fractPrecision = FormatConstant::DefaultFractionalPrecision();
     m_barType = FractionBarType::Diagonal;
-    m_decimalSeparator = FormatConstant::FPV_DecimalSeparator();
-    m_thousandsSeparator = FormatConstant::FPV_ThousandSeparator();
+    //m_decimalSeparator = FormatConstant::FPV_DecimalSeparator();
+    //m_thousandsSeparator = FormatConstant::FPV_ThousandSeparator();
+	ImbueLocale("");
     m_uomSeparator = FormatConstant::BlankString();
     m_statSeparator = '+';
     m_minWidth = 0;
     }
+
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/18
+//----------------------------------------------------------------------------------------
+bool NumericFormatSpec::ImbueLocale(Utf8CP name) // en-US en-UK   en-GB
+{
+	std::locale loc = std::locale(name);
+	const std::numpunct<char>& myfacet(std::use_facet < std::numpunct<char> >(loc));
+
+	m_decimalSeparator = myfacet.decimal_point();
+	m_thousandsSeparator = myfacet.thousands_sep(); 
+	return true;
+}
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/18
+//----------------------------------------------------------------------------------------
+bool NumericFormatSpec::ImbueLocaleProperties(LocalePropertiesCR locProp)
+{
+	m_decimalSeparator = locProp.GetDecimalSeparator();
+	m_thousandsSeparator = locProp.GetThousandSeparator();
+	return true;
+}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
@@ -92,8 +202,9 @@ void NumericFormatSpec::Init(PresentationType presType, ShowSignOption signOpt, 
         m_fractPrecision = FormatConstant::DefaultFractionalPrecision();
         }
 
-    m_decimalSeparator = FormatConstant::FPV_DecimalSeparator();
-    m_thousandsSeparator = FormatConstant::FPV_ThousandSeparator();
+   /* m_decimalSeparator = FormatConstant::FPV_DecimalSeparator();
+    m_thousandsSeparator = FormatConstant::FPV_ThousandSeparator();*/
+	ImbueLocale("");
     m_uomSeparator = FormatConstant::BlankString();
     m_statSeparator = '+';
     m_minWidth = 0;
@@ -101,19 +212,19 @@ void NumericFormatSpec::Init(PresentationType presType, ShowSignOption signOpt, 
 
 void NumericFormatSpec::Clone(NumericFormatSpecCR other)
     {
-    m_roundFactor = other.m_roundFactor;
-    m_presentationType = other.m_presentationType;
-    m_signOption = other.m_signOption;  
-    m_formatTraits = other.m_formatTraits;
-    m_decPrecision = other.m_decPrecision;     
-    m_fractPrecision = other.m_fractPrecision;
-    m_barType = other.m_barType;
+	m_roundFactor = other.m_roundFactor;
+	m_presentationType = other.m_presentationType;
+	m_signOption = other.m_signOption;  
+	m_formatTraits = other.m_formatTraits;
+	m_decPrecision = other.m_decPrecision;     
+	m_fractPrecision = other.m_fractPrecision;
+	m_barType = other.m_barType;
 
-    m_decimalSeparator = other.m_decimalSeparator;
-     m_thousandsSeparator = other.m_thousandsSeparator;
-     m_uomSeparator = other.m_uomSeparator;  
-     m_statSeparator = other.m_statSeparator;
-     m_minWidth = other.m_minWidth;
+	m_decimalSeparator = other.m_decimalSeparator;
+	m_thousandsSeparator = other.m_thousandsSeparator;
+	m_uomSeparator = other.m_uomSeparator;  
+	m_statSeparator = other.m_statSeparator;
+	m_minWidth = other.m_minWidth;
     }
 
 //----------------------------------------------------------------------------------------
@@ -344,6 +455,18 @@ void NumericFormatSpec::SetPrecisionByValue(int prec)
 //        temp &= ~static_cast<int>(FormatTraits::ExponentZero);
 //    m_formatTraits = static_cast<FormatTraits>(temp);
 //    }
+
+//void NumericFormatSpec::DefaultSeparators()
+//{
+//	Utf8String sep = Utils::GetCurrentDecimalSeparator();
+//	m_decimalSeparator = *sep.c_str();
+//	sep = Utils::GetCurrentThousandSeparator();
+//	if (!sep.empty())
+//	{
+//		m_thousandsSeparator = *sep.c_str();
+//		SetUse1000Separator(true);
+//	}
+//}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16

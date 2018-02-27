@@ -8,6 +8,8 @@
 #include <UnitsPCH.h>
 #include <map>
 #include <Formatting/FormattingApi.h>
+#include <iostream>
+#include <locale>
 #include "../../Localization/xliffs/Units.xliff.h"
 #include <BeSQLite/L10N.h>
 
@@ -444,6 +446,49 @@ Utf8String Utils::AccumulatorStateName(AccumulatorState state)
         default: return "???";
         }
     }
+
+Utf8String Utils::GetCurrentDecimalSeparator()
+{
+	struct lconv *lc = localeconv();
+	Utf8String sep;
+	if (*(lc->decimal_point) != '\0')
+		sep.assign(lc->decimal_point);
+	return sep;
+}
+
+Utf8String Utils::GetCurrentGrouping()
+{
+#define UGCG_BUFLEN 10
+	struct lconv *lc = localeconv();
+	Utf8Char buf[UGCG_BUFLEN + 2];
+	memset(buf, 0, sizeof(buf));
+	Utf8CP p = (lc->grouping);
+	for (int i = 0; i < UGCG_BUFLEN && *p != '\0'; i++, p++)
+	{
+		if ((*p & 0x40) != 0)
+		{
+			buf[i] = '0';
+			break;
+		}
+		else
+		 buf[i] = '0' + *p;
+	}
+	Utf8String sep;
+	if (buf[0] != '\0')
+		sep.assign(buf);
+	return sep;
+}
+
+
+Utf8String Utils::GetCurrentThousandSeparator()
+{
+	struct lconv *lc = localeconv();
+	Utf8String sep;
+	if (*(lc->thousands_sep) != '\0')
+		sep.assign(lc->thousands_sep);
+	return sep;
+}
+
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16

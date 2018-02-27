@@ -97,6 +97,7 @@ struct FormattingTestFixture
         static void ShowKnownPhenomena();
         static void ShowSynonyms();
 		static void TestFusLabel(Utf8CP unitName, Utf8CP formatName, Utf8CP fusName);
+		static Utf8String SetLocale(Utf8CP name);
         //static void LoadUnitSynonymsTest();
     };
 

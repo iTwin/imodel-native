@@ -165,9 +165,10 @@ enum class FormatTraits : int
     ZeroEmpty = 0x20,         // indicates that zero value should be presented by an empty string
     Use1000Separator = 0x40,  // indicates that thousands in the integer part of the number should be separated by a special char (. or,)
     ApplyRounding = 0x80,     // indicates that the rounding factor should be used
-    FractionDash = 0x100,      // some people prefer to insert dash between integer and fraction: 3-1/4 rather than 3 1/4
-    UseFractSymbol = 0x200,    // indicates that a limited set of fractional values can be presented by a single glyph (1/2, 3/4... etc)
-    AppendUnitName = 0x400     // indicates that the numeric expression can be followed by the unit name
+    FractionDash = 0x100,     // some people prefer to insert dash between integer and fraction: 3-1/4 rather than 3 1/4
+    UseFractSymbol = 0x200,   // indicates that a limited set of fractional values can be presented by a single glyph (1/2, 3/4... etc)
+    AppendUnitName = 0x400   // indicates that the numeric expression can be followed by the unit name
+	//UseLocale = 0x800         // indicates that separator char's should be obtained from the current locale
     };
 
 enum class NumSequenceTraits
@@ -443,6 +444,9 @@ struct Utils
     UNITS_EXPORT static Utf8Char GetFirstSignificantChar(Utf8CP str);
     UNITS_EXPORT static Utf8Char GetLastSignificantChar(Utf8CP str);
     UNITS_EXPORT static bool IsJsonCandidate(Utf8CP str);
+	UNITS_EXPORT static Utf8String GetCurrentThousandSeparator();
+	UNITS_EXPORT static Utf8String GetCurrentDecimalSeparator();
+	UNITS_EXPORT static Utf8String GetCurrentGrouping();
     //#endif
     };
 

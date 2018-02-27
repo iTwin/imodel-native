@@ -10,6 +10,7 @@
 #include <windows.h>
 #include <iostream>
 #endif
+#include <locale>
 #include "UnitsTests.h"
 #include <Formatting/FormattingApi.h>
 #include <Units/UnitRegistry.h>
@@ -1322,6 +1323,29 @@ void FormattingTestFixture::TestFusLabel(Utf8CP fusFormat, Utf8CP fusUnit, Utf8C
 	FormatUnitSet fus = FormatUnitSet(fusFormat, fusUnit);
 
 
+}
+
+Utf8String FormattingTestFixture::SetLocale(Utf8CP name)
+{
+	Utf8String locName;
+	//const std::locale& loc = *(locale::global); // (name);
+	std::locale currLoc("");
+
+	std::locale loc(name);
+	const std::numpunct<char>& myfacet = std::use_facet < numpunct<char> >(loc);
+	Utf8Char buf[3];
+	buf[0] = myfacet.decimal_point();
+	buf[1] = myfacet.thousands_sep();
+	buf[2] = 0;
+	locName.assign(buf);
+	LOG.infov("Current system locale decpnt= %s name %s   switched from %s", locName.c_str(), loc.name().c_str(), currLoc.name().c_str());
+
+	//locName.assign(setlocale(LC_ALL, ""));
+	//setlocale(LC_ALL, name);
+	/*LOG.infov("Locale changed from %s to %s >>> DecimalPoint %s 100Separator %s Grouping %s", locName.c_str(), Utils::SubstituteNull(name, "<empty>"),
+		                              Utils::GetCurrentDecimalSeparator().c_str(), Utils::GetCurrentThousandSeparator().c_str(),
+	                                  Utils::GetCurrentGrouping().c_str());*/
+	return locName;
 }
 
 END_BENTLEY_FORMATTEST_NAMESPACE
