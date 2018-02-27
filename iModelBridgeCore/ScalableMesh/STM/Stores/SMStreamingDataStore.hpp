@@ -1257,7 +1257,7 @@ template <class EXTENT> SMNodeGroupPtr SMStreamingStore<EXTENT>::GetGroup(HPMBlo
         static std::atomic<uint64_t> s_NbAlreadyLoadedNodes = 0;
         s_NbAlreadyLoadedNodes += 1;
         {
-        std::lock_guard<mutex> clk(s_consoleMutex);
+       // std::lock_guard<mutex> clk(s_consoleMutex);
         std::cout << "[" << blockID.m_integerID << ", " << group->GetID() << "] already loaded in temporary streaming data cache!" << std::endl;
         }
         }

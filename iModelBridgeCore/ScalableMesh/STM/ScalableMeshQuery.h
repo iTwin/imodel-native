@@ -604,7 +604,7 @@ class ScalableMeshMesh : public IScalableMeshMesh
               size_t GetNbFaceIndexes() const {return m_nbFaceIndexes;}
         const int32_t* GetFaceIndexes() const {return m_faceIndexes;}
 
-        int AppendMesh(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, const int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, size_t uvCount, const DPoint2d* pUv, const int32_t* pUvIndex);
+        BENTLEY_SM_EXPORT int AppendMesh(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, const int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, size_t uvCount, const DPoint2d* pUv, const int32_t* pUvIndex);
 
         void ApplyDifferenceSet(const DifferenceSet& d);
 
@@ -906,7 +906,7 @@ struct ScalableMeshMeshQueryParams : public IScalableMeshMeshQueryParams
             {}
     };
 
-int draw(DTMFeatureType dtmFeatureType,int numTriangles, int numMeshPts,DPoint3d *meshPtsP,DPoint3d *meshVectorsP,int numMeshFaces, long *meshFacesP,void *userP);
+//int draw(DTMFeatureType dtmFeatureType,int numTriangles, int numMeshPts,DPoint3d *meshPtsP,DPoint3d *meshVectorsP,int numMeshFaces, long *meshFacesP,void *userP);
 
 template <class POINT> class ScalableMeshFullResolutionMeshQuery : public IScalableMeshMeshQuery
     {   
@@ -1422,10 +1422,10 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
             return new ScalableMeshNode<POINT>(nodePtr);
             }
 #endif
-        ScalableMeshNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr);
-        ScalableMeshNode() {};
+        BENTLEY_SM_EXPORT ScalableMeshNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr);
+        BENTLEY_SM_EXPORT ScalableMeshNode() {};
 
-        ~ScalableMeshNode() { m_node = nullptr; }
+        BENTLEY_SM_EXPORT ~ScalableMeshNode() { m_node = nullptr; }
 
         HFCPtr<SMPointIndexNode<POINT, Extent3dType>> GetNodePtr()
             {
@@ -1651,8 +1651,8 @@ template<class POINT> class ScalableMeshNodeEdit : public IScalableMeshNodeEdit,
         virtual IScalableMeshNodeEditPtr _EditParentNode() override;
 
     public:
-        ScalableMeshNodeEdit(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr);
-        ScalableMeshNodeEdit() {};
+        BENTLEY_SM_EXPORT ScalableMeshNodeEdit(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr);
+        BENTLEY_SM_EXPORT ScalableMeshNodeEdit() {};
 
         HFCPtr<SMPointIndexNode<POINT, Extent3dType>> GetNodePtr()
             {

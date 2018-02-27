@@ -52,7 +52,7 @@ extern bool s_useSpecialTriangulationOnGrids;
  -----------------------------------------------------------------------------*/
 bool firstTile = false;
 
-
+int draw(DTMFeatureType dtmFeatureType, int numTriangles, int numMeshPts, DPoint3d *meshPtsP, DPoint3d *meshVectorsP, int numMeshFaces, long *meshFacesP, void *userP);
 
 template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXTENT>::Mesh(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const
     {

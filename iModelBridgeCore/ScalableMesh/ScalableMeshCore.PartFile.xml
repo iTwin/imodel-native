@@ -63,6 +63,45 @@
 
         </Bindings>
     </Part>-->
+	
+    <Part Name="ScalableMeshCoreLib" BMakeFile="ScalableMeshCoreLib_Vancouver.mke">
+        <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"                          Repository="DgnPlatform" />
+		<SubPart PartName="Acute3d"        PartFile="DgnDisplay"                                  Repository="DgnDisplay"/>
+      <SubPart PartName="FreeImage"       PartFile="${SrcBsiCommon}CvsPartfiles/freeimage" Repository="Bin-FreeImage"/>    
+        <SubPart PartName="GeomDlls"        PartFile="geomlibs"                             Repository="GeomLibs"/>        
+        <SubPart PartName="ImagePP"         PartFile="ImagePP"                              Repository="ImagePP" />
+        <!--<SubPart PartName="GdalLib"         PartFile="ImagePP"                                  Repository="ImagePP"/>-->
+        <SubPart PartName="Core"            PartFile="TerrainModel"                         Repository="TerrainModel"/>
+        <SubPart PartName="Formats"         PartFile="TerrainModel"                         Repository="TerrainModel"/>
+        <SubPart PartName="CloudDataSource_Vancouver" PartFile="CloudDataSource"                      Repository="ScalableMesh"/>
+        <SubPart PartName="BeCurl"          PartFile="BeCurl"                                   Repository="Libsrc-Curl"/>
+       <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
+        <!-- For Importer-->
+        <SubPart PartName="DgnGeoCoord"     PartFile="GeoCoord"                             Repository="GeoCoord" />
+        <SubPart PartName="ScalableMeshRDSDependencies"/>
+		<Bindings>
+            <Libs ProductDirectoryName="ScalableMeshLibs" Required="false">delivery/$(shlibprefix)ScalableMeshCoreLib$(libext)</Libs>    
+            <Assemblies ProductDirectoryName="ScalableMeshAssemblies" Required="false">delivery/$(shlibprefix)ScalableMeshCoreLib$(shlibext)</Assemblies> 
+            <Assemblies ProductDirectoryName="PPNativeAssemblies">delivery/$(shlibprefix)ScalableMeshCoreLib$(shlibext)</Assemblies> 
+            <PublicAPI Domain="ScalableMesh" />
+        </Bindings>
+    </Part>
+	
+	    <Part Name="ScalableMeshImportersLib" BMakeFile="ScalableMeshImportersLib_Vancouver.mke">
+		        <SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
+        <SubPart PartName="DgnGeoCoord"     PartFile="GeoCoord"                             Repository="GeoCoord" />
+        <SubPart PartName="RasterCore"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
+		        <SubPart PartName="AutomaticGroundDetection" PartFile="TerrainModel"                         Repository="TerrainModel"/>
+        <SubPart PartName="PointCloud"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
+       <SubPart PartName="CGALHeaders" PartFile="CGAL" Repository="Libsrc-CGAL" />
+        <SubPart PartName="ScalableMeshCoreLib"/>
+		<Bindings>
+            <Libs ProductDirectoryName="ScalableMeshLibs" Required="false">delivery/$(shlibprefix)ScalableMeshImportersLib$(libext)</Libs>    
+            <Assemblies ProductDirectoryName="ScalableMeshAssemblies" Required="false">delivery/$(shlibprefix)ScalableMeshImportersLib$(shlibext)</Assemblies> 
+            <Assemblies ProductDirectoryName="PPNativeAssemblies">delivery/$(shlibprefix)ScalableMeshImportersLib$(shlibext)</Assemblies> 
+            <PublicAPI Domain="ScalableMesh" />
+        </Bindings>
+    </Part>
 
     <Part Name="ScalableMeshATPexe" BentleyBuildMakeFile="Tests/ATP/ScalableMeshATPexe_Vancouver.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
         <SubPart PartName="ScalableMesh"  PartFile="ScalableMeshCore" Repository="ScalableMesh" />        

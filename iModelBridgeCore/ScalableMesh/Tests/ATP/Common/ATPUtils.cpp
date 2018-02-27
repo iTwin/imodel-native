@@ -30,7 +30,7 @@ WString GetHeaderForTestType(TestType t)
             return L"Test Case, Result, NOfPoints, NOfLines, NOfLinesSucceeded,NOfFullLines,Rate of partial drapes(%%), Length of partial drapes (%% of full length), Graph Store Misses (%%), NOfFailedDrapes, Error Rate (%%),Total time (s), Time per drape (s), Number of output points in lines, Time per output point (ms)\n";
             break;
         case TEST_VOLUME:
-            return L"Test Case, Result, NOfPoints, NOfTriangleInCorridor, Cut, Fill, Volume, NOfTilesUsed, Cut (all tiles), Fill(all tiles), Volume (all tiles), Cut Error (%%), Fill Error (%%), Volume Error (%%), Total time (s), Avg Error (%%), Time for cut+fill (all tiles)(s),Cut (fully connected), Fill(fully connected), Volume (fully connected), Cut [Stitching] Error (%%), Fill [Stitching] Error (%%), Volume [Stitching] Error (%%) \n";
+            return L"Test Case, Nb Design Meshes, Result, Cut, Fill, Expected Cut, Expected Fill, Cut Error (%%), Fill Error (%%), Total time (s)\n";
             break;
         case TEST_SELF_CONTAINED_IMPORTER:
             return  L"Nb Imported Points,Duration (minutes)\n";
@@ -176,6 +176,10 @@ bool ParseTestType(BeXmlNodeP pRootNode, TestType& t)
             t = TEST_SQL_FILE_UPDATE;        
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"textureStreaming"))
             t = TEST_MAPBOX;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"drapeTestlnsFileCreation"))
+            t = DRAPE_TEST_LNS_FILE_CREATION;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"3mxTo3smConversion"))
+            t = TEST_3MX_TO_3SM_CONVERSION;        
         else return false;
         }
     else return false;
@@ -353,7 +357,12 @@ bool RunTestPlan(BeFileName& testPlanPath)
             case TEST_MAPBOX:
                 PerformMapboxTest(pTestNode, pResultFile);
                 break;
-               
+            case DRAPE_TEST_LNS_FILE_CREATION:
+                PerformDrapeTestLnsFileCreation(pTestNode, pResultFile);
+                break;                
+            case TEST_3MX_TO_3SM_CONVERSION:
+                Perform3MxTo3SmTest(pTestNode, pResultFile);
+                break;                              
             default: break;
             }
         pTestNode = pTestNode->GetNextSibling();

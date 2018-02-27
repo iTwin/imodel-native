@@ -6,14 +6,14 @@
 |       $Date: 2011/11/23 21:47:18 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
 #include "../STM/ImagePPHeaders.h"
-#include <ScalableMesh/Foundations/Log.h>
-#include <ScalableMesh/Foundations/Warning.h>
-#include <ScalableMesh/Foundations/Error.h>
+//#include <ScalableMesh/Foundations/Log.h>
+//#include <ScalableMesh/Foundations/Warning.h>
+//#include <ScalableMesh/Foundations/Error.h>
 
 #include <ScalableMesh/GeoCoords/GCS.h>
 #include <ScalableMesh/GeoCoords/Reprojection.h>
@@ -41,13 +41,13 @@ namespace { // BEGIN unnamed namespace
 /*
  * Reprojection warnings
  */
-struct ReprojectionWarning : public WarningMixinBase<ReprojectionWarning>
+/*struct ReprojectionWarning : public WarningMixinBase<ReprojectionWarning>
     {
     explicit    ReprojectionWarning                    (StatusInt               errorCode)   
         :   super_class(L"Reprojection warning!", LEVEL_0, errorCode) {}
-    };
+    };*/
 
-const ReprojectionWarning DEFAULT_REPROJECTION_WARNING(BSIERROR);
+//const ReprojectionWarning DEFAULT_REPROJECTION_WARNING(BSIERROR);
 
 
 static_assert(SMStatus::S_QTY == SMStatus::S_QTY, "Reprojection status must correspond transfo model status");
@@ -114,7 +114,7 @@ struct TransfoModelReprojecting : public TransfoModelMixinBase<TransfoModelRepro
 private:
     const BaseGCSCPtr                       m_sourceGCSP;
     const BaseGCSCPtr                       m_targetGCSP;
-    Log&                                    m_warningLog;
+    //Log&                                    m_warningLog;
 
     // TDORAY: Maybe need  to store the target content extent here. In lat long??
 
@@ -134,7 +134,7 @@ private:
         switch (csMapStatus)
             {
         case CSMAPCONV_S_USFL: // TDORAY: Find meaning of that. Ask Alain Robert.
-            m_warningLog.Add(DEFAULT_REPROJECTION_WARNING);
+          //  m_warningLog.Add(DEFAULT_REPROJECTION_WARNING);
             return SMStatus::S_SUCCESS;
         case CSMAPCONV_S_DOMN:
             return SMStatus::S_ERROR_DOES_NOT_FIT_MATHEMATICAL_DOMAIN;
@@ -240,21 +240,21 @@ private:
         }
 
     explicit                                TransfoModelReprojecting   (const GCS&                      sourceGCS,
-                                                                        const GCS&                      targetGCS,
-                                                                        Log&                            log)
+                                                                        const GCS&                      targetGCS
+                                                                      /*  Log&                            log*/)
         :   m_sourceGCSP(sourceGCS.GetGeoRef().GetBasePtr()),
-            m_targetGCSP(targetGCS.GetGeoRef().GetBasePtr()),
-            m_warningLog(log)
+            m_targetGCSP(targetGCS.GetGeoRef().GetBasePtr())
+           // m_warningLog(log)
         {
         
         }
 
 public:
     static TransfoModelReprojecting*            CreateFrom             (const GCS&                      sourceGCS,
-                                                                        const GCS&                      targetGCS,
-                                                                        Log&                            log)
+                                                                        const GCS&                      targetGCS
+                                                                      /*  Log&                            log*/)
         {
-        return new TransfoModelReprojecting(sourceGCS, targetGCS, log);
+        return new TransfoModelReprojecting(sourceGCS, targetGCS/*, log*/);
         }
     };
 
@@ -308,7 +308,7 @@ struct ReprojectionFactory::Impl : public ShareableObjectTypeTrait<Impl>::type
     {
     friend struct ReprojectionFactory;
 
-    Log&                        m_warningLog;
+   // Log&                        m_warningLog;
 
     struct Policy
         {
@@ -335,21 +335,21 @@ struct ReprojectionFactory::Impl : public ShareableObjectTypeTrait<Impl>::type
         assert(BSISUCCESS != status);
 
         // TDORAY: Evaluate different statuses
-        CustomError error(L"Error creating reprojection!");
-        if (m_policy.throwOnUnhandledErrors)
-            throw error;
-        else
-            m_warningLog.Add(error);
+      //  CustomError error(L"Error creating reprojection!");
+       // if (m_policy.throwOnUnhandledErrors)
+       //     throw error;
+       // else
+            //m_warningLog.Add(error);
         }
 
-    explicit                    Impl                       (Log&                     log) 
-        :   m_warningLog(log),
+    explicit                    Impl                       (/*Log&                     log*/) 
+        :   //m_warningLog(log),
             m_policy(ReprojectionPolicy())
         {
         }
-    explicit                    Impl                       (const ReprojectionPolicy&       policy,
-                                                            Log&                            log)
-        :   m_warningLog(log),
+    explicit                    Impl                       (const ReprojectionPolicy&       policy/*,
+                                                            Log&                            log*/)
+        :   //m_warningLog(log),
             m_policy(policy)
         {
         }
@@ -365,8 +365,8 @@ struct ReprojectionFactory::Impl : public ShareableObjectTypeTrait<Impl>::type
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ReprojectionFactory::ReprojectionFactory (Log& log)
-    :   m_implP(new Impl(log))
+ReprojectionFactory::ReprojectionFactory (/*Log& log*/)
+    :   m_implP(new Impl(/*log*/))
     {
     }
 
@@ -374,9 +374,9 @@ ReprojectionFactory::ReprojectionFactory (Log& log)
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ReprojectionFactory::ReprojectionFactory (const ReprojectionPolicy&         policy,
-                                          Log&                              log)
-    :   m_implP(new Impl(policy, log))
+ReprojectionFactory::ReprojectionFactory (const ReprojectionPolicy&         policy/*,
+                                          Log&                              log*/)
+    :   m_implP(new Impl(policy/*, log*/))
     {
     }
 
@@ -415,7 +415,7 @@ Reprojection ReprojectionFactory::Impl::Create (const GCS&      sourceGCS,
 
     if (sourceGCS.HasGeoRef() && targetGCS.HasGeoRef())
         {
-        return Reprojection(TransfoModelReprojecting::CreateFrom(sourceGCS, targetGCS, m_warningLog));
+        return Reprojection(TransfoModelReprojecting::CreateFrom(sourceGCS, targetGCS/*, m_warningLog*/));
         }
     else if (!sourceGCS.IsNull() && !targetGCS.IsNull())
         {

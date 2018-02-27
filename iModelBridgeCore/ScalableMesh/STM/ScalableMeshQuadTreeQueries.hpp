@@ -6,7 +6,7 @@
 //:>       $Date: 2012/11/29 17:30:34 $
 //:>     $Author: Mathieu.St-Pierre $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -243,7 +243,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelMeshIndexQuery
                                                                                                    size_t                                   numSubNodes,
                                                                                                    vector<typename SMPointIndexNode<POINT, EXTENT>::QueriedNode>& meshNodes)
     {
-    assert(node->GetFilter()->IsProgressiveFilter() == false);
+    assert(node->GetFilter() == nullptr || node->GetFilter()->IsProgressiveFilter() == false);
 
     // Before we make sure requested level is appropriate
     if (m_requestedLevel < 0)
@@ -876,7 +876,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
     // Obtain objects from subnodes (if any)              
     if (finalNode == true || node->IsLeaf())                             
         {                                       
-        assert(node->GetFilter()->IsProgressiveFilter() == false);
+        assert(node->GetFilter()==nullptr || node->GetFilter()->IsProgressiveFilter() == false);
                     
         if (!node->IsEmpty()/*node->m_nodeHeader.m_nodeCount > 0*/)
             {         

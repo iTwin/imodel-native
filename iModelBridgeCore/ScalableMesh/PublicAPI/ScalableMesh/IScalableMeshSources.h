@@ -6,7 +6,7 @@
 |       $Date: 2011/12/01 18:51:39 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -134,7 +134,7 @@ struct IDTMSource : public RefCountedBase
 
         bool                                IsPartOfCollection         () const;
 
-        StatusInt                           InternalUpdateLastModified ();
+        BENTLEY_SM_EXPORT StatusInt                           InternalUpdateLastModified ();
 
     private:        
         std::auto_ptr<Impl>                 m_implP;

@@ -21,6 +21,9 @@ CCompPDBName = $(appName)
 nameToDefine = __BENTLEYSTM_BUILD__
 %include cdefapnd.mki
 
+nameToDefine = __BENTLEYSTMIMPORT_BUILD__
+%include cdefapnd.mki
+
 nameToDefine = NO_IODEFS
 %include cdefapnd.mki
 

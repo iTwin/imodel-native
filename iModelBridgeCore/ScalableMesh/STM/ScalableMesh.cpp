@@ -1079,7 +1079,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
         // bool hasPoints = m_smSQLitePtr->HasPoints();                 
         //if (hasPoints || !isSingleFile)
             {    
-            auto_ptr<ISMMeshIndexFilter<POINT, Extent3dType>> filterP(s_filterClass != nullptr ? (ISMMeshIndexFilter<POINT, Extent3dType>*)s_filterClass : new ScalableMeshQuadTreeBCLIBMeshFilter1<POINT, Extent3dType>());
+            ISMMeshIndexFilter<POINT, Extent3dType>* filterP = nullptr;//(s_filterClass != nullptr ? (ISMMeshIndexFilter<POINT, Extent3dType>*)s_filterClass : new ScalableMeshQuadTreeBCLIBMeshFilter1<POINT, Extent3dType>());
 
             ISMDataStoreTypePtr<Extent3dType> dataStore;
             if (!isSingleFile)
@@ -1205,7 +1205,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                 m_scmIndexPtr = new MeshIndexType(dataStore,
                     ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),
                     10000,
-                    filterP.get(),
+                    filterP,
                     this->m_needsNeighbors,
                     false,
                     false,
@@ -1243,7 +1243,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                 m_scmIndexPtr = new MeshIndexType(dataStore,
                     ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),
                     10000,
-                    filterP.get(),
+                    filterP,
                     this->m_needsNeighbors,
                     false,
                     false,
@@ -1274,7 +1274,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                       m_scmTerrainIndexPtr = dynamic_cast<ScalableMesh<DPoint3d>*>(m_terrainP.get())->GetMainIndexP();
                       }
                   }*/
-            filterP.release();
+            //filterP.release();
 
 #ifdef INDEX_DUMPING_ACTIVATED
             if (s_dropNodes)
@@ -1287,7 +1287,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 #endif
         }
 
-#ifndef NDEBUG
+#if 0
 
         if (s_checkHybridNodeState)
         {
@@ -3035,6 +3035,7 @@ template <class POINT> bool ScalableMesh<POINT>::_IsShareable() const
 +----------------------------------------------------------------------------*/
 template <class POINT> StatusInt ScalableMesh<POINT>::_SaveAs(const WString& destination, ClipVectorPtr clips, IScalableMeshProgressPtr progress)
     {
+#if NEED_SAVE_AS_IN_IMPORT_DLL
     // Create Scalable Mesh at output path
     StatusInt status;
     IScalableMeshNodeCreatorPtr scMeshDestination = IScalableMeshNodeCreator::GetFor(destination.c_str(), status);
@@ -3088,7 +3089,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_SaveAs(const WString& des
         if (SUCCESS != destMeshSourceEdit->SaveToFile())
             return ERROR;
         }
-
+#endif
     return SUCCESS;
     }
 
@@ -3097,6 +3098,8 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_SaveAs(const WString& des
 +----------------------------------------------------------------------------*/
 template <class POINT> StatusInt ScalableMesh<POINT>::_Generate3DTiles(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, ClipVectorPtr clips, uint64_t coverageId) const
     {
+
+#if NEED_SAVE_AS_IN_IMPORT_DLL
     if (m_scmIndexPtr == nullptr) return ERROR;
 
     StatusInt status;
@@ -3225,10 +3228,15 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_Generate3DTiles(const WSt
     // Force save of root tileset and take into account coverages
     rootTileset->Close<Extent3dType>();
     return status;
+#endif
+
+    return SUCCESS;
     }
 
 template <class POINT>  SMStatus                      ScalableMesh<POINT>::_DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr& destinationGcs, bool limitResolution)
     {    
+
+#if NEED_SAVE_AS_IN_IMPORT_DLL
     BeFileName terrainAbsName;
 
     Utf8String coverageName(createdTerrain);
@@ -3280,6 +3288,7 @@ template <class POINT>  SMStatus                      ScalableMesh<POINT>::_Dete
 
 
     createdTerrain = terrainAbsName;
+#endif
 	return SMStatus::S_SUCCESS;
     }
 
@@ -3349,12 +3358,11 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_SetReprojection(GeoC
     m_reprojectionTransform = approximateTransform;
     for (size_t i = 0; i < DTMAnalysisType::Qty; ++i)
         {
-
         auto mat4d = DMatrix4d::From(approximateTransform);
         m_scalableMeshDTM[i]->SetStorageToUors(mat4d);
         }
 
-    return ERROR;
+    return SUCCESS;
     }
 
 #ifdef VANCOUVER_API
@@ -3978,6 +3986,341 @@ void edgeCollapseShowMesh(WCharCP param, PolyfaceQueryP& outMesh)
     for (size_t i = 0; i < npts; ++i) pts[i].Scale(10000);
     outMesh = new PolyfaceQueryCarrier(3, false, indices.size(), npts, pts,indicesArray);
     }
+
+void AddLoopsFromShape(bvector<bvector<DPoint3d>>& polygons, const HGF2DShape* shape, std::function<void(const bvector<DPoint3d>& element)> afterPolygonAdded)
+{
+
+    if (shape->IsComplex())
+    {
+        for (auto& elem : shape->GetShapeList())
+        {
+            AddLoopsFromShape(polygons, elem, afterPolygonAdded);
+        }
+    }
+    else if (!shape->IsEmpty())
+    {
+        HGF2DPositionCollection thePoints;
+        shape->Drop(&thePoints, shape->GetTolerance());
+
+        bvector<DPoint3d> vec(thePoints.size());
+
+        for (size_t idx = 0; idx < thePoints.size(); idx++)
+        {
+            vec[idx].x = thePoints[idx].GetX();
+            vec[idx].y = thePoints[idx].GetY();
+            vec[idx].z = 0; // As mentionned below the Z is disregarded
+        }
+
+        polygons.push_back(vec);
+        afterPolygonAdded(vec);
+    }
+}
+
+void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons)
+{
+    return MergePolygonSets(polygons, [](const size_t i, const bvector<DPoint3d>& element)
+    {
+        return true;
+    }, [](const bvector<DPoint3d>&element) {});
+}
+
+void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(const size_t i, const bvector<DPoint3d>& element)> choosePolygonInSet, std::function<void(const bvector<DPoint3d>& element)> afterPolygonAdded)
+{
+    bvector<bvector<DPoint3d>> newUnifiedPoly;
+    HFCPtr<HGF2DCoordSys>   coordSysPtr(new HGF2DCoordSys());
+    HFCPtr<HVEShape> allPolyShape = new HVEShape(coordSysPtr);
+    bvector<bool> used(polygons.size(), false);
+
+    bvector<bool> available(polygons.size(), false);
+    for (auto& poly : polygons)
+    {
+        available[&poly - &polygons.front()] = choosePolygonInSet(&poly - &polygons.front(), poly);
+    }
+
+    //Apparently, intersection on a single vertex, even though it has no bearing on the "inside" section of voids, trips up the Civil triangulation.
+    //So we find out and disconnect single vertex intersections first, since they cannot be unified.
+    for (auto& poly : polygons)
+    {
+        if (!available[&poly - &polygons.front()]) continue;
+        DRange3d range = DRange3d::From(poly);
+        if (poly.empty()) continue;
+        bvector<DPoint3d> poly_2d = poly;
+        for (auto&pt : poly_2d) pt.z = 0;
+        for (auto& poly2 : polygons)
+        {
+            if (!available[&poly2 - &polygons.front()]) continue;
+            if (&poly == &poly2) continue;
+            if (poly2.empty()) continue;
+            if (!DRange3d::From(poly2).IntersectsWith(range)) continue;
+            bvector<DPoint3d> poly2_2d = poly2;
+            for (auto&pt : poly2_2d) pt.z = 0;
+
+            //There are cases where the clash functions on non-coplanar 3d polygons says 2 polygons which share a vertex don't clash.
+            if (bsiDPoint3dArray_polygonClashXYZ(&poly.front(), (int)poly.size(), &poly2.front(), (int)poly2.size()) ||
+                bsiDPoint3dArray_polygonClashXYZ(&poly_2d.front(), (int)poly_2d.size(), &poly2_2d.front(), (int)poly2_2d.size()))
+            {
+                VuPolygonClassifier vu(1e-8, 0);
+                vu.ClassifyAUnionB(poly, poly2);
+                bvector<DPoint3d> xyz;
+                bvector<bvector<DPoint3d>> faces;
+                for (; vu.GetFace(xyz);)
+                {
+                    if (bsiGeom_getXYPolygonArea(&xyz[0], (int)xyz.size()) < 0) continue;
+                    else
+                    {
+                        //  postFeatureBoundary.push_back(xyz);
+                        faces.push_back(xyz);
+
+                    }
+
+                }
+                if (faces.size() == 1)
+                    continue;
+                //compute intersects on single vertices
+                bmap<DPoint3d, size_t, DPoint3dZYXTolerancedSortComparison> setOfPts(DPoint3dZYXTolerancedSortComparison(1e-8, 0));
+                bvector<DPoint3d> intersectingVertices;
+                bvector<bpair<bpair<DSegment3d, DSegment3d>, bpair<DSegment3d, DSegment3d>>> intersectingContext;
+                int minConsecutiveIntersectingVertices = INT_MAX;
+                int consecutiveIntersectingVertices = 0;
+                int nPtsSeen = 0;
+                int loopNPts = 0;
+                for (auto pt : poly)
+                {
+                    pt.z = 0;
+                    setOfPts.insert(make_bpair(pt, &pt - &poly[0]));
+                }
+                for (auto& pt : poly2)
+                {
+                    ++nPtsSeen;
+                    DPoint3d pt2d = pt;
+                    pt2d.z = 0;
+                    if (setOfPts.count(pt2d))
+                    {
+                        DSegment3d lastSegOn1, nextSegOn1, lastSegOn2, nextSegOn2;
+                        lastSegOn1 = DSegment3d::From(setOfPts[pt2d] == 0 ? poly[poly.size() - 2] : poly[setOfPts[pt2d] - 1], poly[setOfPts[pt2d]]);
+                        nextSegOn1 = DSegment3d::From(poly[setOfPts[pt2d]], setOfPts[pt2d] == poly.size() - 1 ? poly[1] : poly[setOfPts[pt2d] + 1]);
+                        lastSegOn2 = DSegment3d::From(nPtsSeen == 1 ? poly2[poly2.size() - 2] : poly2[nPtsSeen - 2], poly2[nPtsSeen - 1]);
+                        nextSegOn2 = DSegment3d::From(poly2[nPtsSeen - 1], nPtsSeen == poly2.size() ? poly2[1] : poly2[nPtsSeen]);
+
+                        intersectingVertices.push_back(pt);
+                        intersectingContext.push_back(make_bpair(make_bpair(lastSegOn1, nextSegOn1), make_bpair(lastSegOn2, nextSegOn2)));
+                        consecutiveIntersectingVertices++;
+                    }
+                    else
+                    {
+                        if (nPtsSeen == 2)
+                        {
+                            loopNPts = consecutiveIntersectingVertices;
+                        }
+                        else if (nPtsSeen != 2 && consecutiveIntersectingVertices > 0)
+                            minConsecutiveIntersectingVertices = std::min(consecutiveIntersectingVertices, minConsecutiveIntersectingVertices);
+                        if (consecutiveIntersectingVertices > 1)
+                        {
+                            intersectingVertices.resize(intersectingVertices.size() - consecutiveIntersectingVertices);
+                            intersectingContext.resize(intersectingContext.size() - consecutiveIntersectingVertices);
+                        }
+                        consecutiveIntersectingVertices = 0;
+                    }
+                }
+
+                if (loopNPts != 0)
+                {
+                    consecutiveIntersectingVertices += loopNPts - 1;
+                    if (consecutiveIntersectingVertices > 0)
+                        minConsecutiveIntersectingVertices = std::min(consecutiveIntersectingVertices, minConsecutiveIntersectingVertices);
+                    consecutiveIntersectingVertices = 0;
+                }
+
+                //No single vertex intersection
+                if (minConsecutiveIntersectingVertices > 1) continue;
+                if (!intersectingVertices.empty())
+                {
+                    size_t nColinear = 0;
+                    for (size_t i = 0; i < intersectingVertices.size(); ++i)
+                    {
+                        std::vector<DPoint3d> pts = { intersectingContext[i].first.first.point[0],intersectingContext[i].first.first.point[1], intersectingContext[i].second.first.point[0] };
+                        if (bsiGeom_isDPoint3dArrayColinear(pts.data(), (int)pts.size(), 1e-8))
+                        {
+                            nColinear++;
+                            continue;
+                        }
+                        pts = { intersectingContext[i].first.first.point[0],intersectingContext[i].first.first.point[1], intersectingContext[i].second.second.point[1] };
+                        if (bsiGeom_isDPoint3dArrayColinear(pts.data(), (int)pts.size(), 1e-8))
+                        {
+                            nColinear++;
+                            continue;
+                        }
+                        pts = { intersectingContext[i].first.second.point[0],intersectingContext[i].first.second.point[1], intersectingContext[i].second.first.point[0] };
+                        if (bsiGeom_isDPoint3dArrayColinear(pts.data(), (int)pts.size(), 1e-8))
+                        {
+                            nColinear++;
+                            continue;
+                        }
+                        pts = { intersectingContext[i].first.second.point[0],intersectingContext[i].first.second.point[1], intersectingContext[i].second.second.point[1] };
+                        if (bsiGeom_isDPoint3dArrayColinear(pts.data(), (int)pts.size(), 1e-8))
+                        {
+                            nColinear++;
+                            continue;
+                        }
+
+                    }
+                    if (nColinear == intersectingVertices.size())
+                        continue;
+                    bvector<DPoint3d> withoutIntersect;
+                    if (poly.size() < poly2.size())
+                    {
+                        for (auto& pt : poly)
+                        {
+                            bool insert = true;
+                            for (auto& ptB : intersectingVertices)
+                                if (bsiDPoint3d_pointEqualTolerance(&pt, &ptB, 1e-8)) insert = false;
+                            if (insert) withoutIntersect.push_back(pt);
+                        }
+                    }
+                    else
+                    {
+                        for (auto& pt : poly2)
+                        {
+                            bool insert = true;
+                            for (auto& ptB : intersectingVertices)
+                                if (bsiDPoint3d_pointEqualTolerance(&pt, &ptB, 1e-8)) insert = false;
+                            if (insert) withoutIntersect.push_back(pt);
+                        }
+                    }
+                    if (poly.size() < poly2.size())
+                    {
+                        poly = poly2;
+                        poly_2d = poly2_2d;
+                        range = DRange3d::From(poly);
+                    }
+                    if (!withoutIntersect.empty() && !bsiDPoint3d_pointEqualTolerance(&withoutIntersect.front(), &withoutIntersect.back(), 1e-8)) withoutIntersect.push_back(withoutIntersect.front());
+                    if (withoutIntersect.size() > 4)
+                    {
+                        poly2 = withoutIntersect;
+                    }
+                    else poly2.clear();
+
+                }
+            }
+        }
+    }
+
+    for (auto& poly : polygons)
+    {
+        if (!available[&poly - &polygons.front()]) continue;
+        if (used[&poly - &polygons[0]]) continue;
+        if (poly.empty()) continue;
+        bvector<DPoint3d> poly_2d = poly;
+        for (auto&pt : poly_2d) pt.z = 0;
+
+        //pre-compute the union of polys with this function because apparently sometimes Unify hangs
+        for (auto& poly2 : polygons)
+        {
+            if (!available[&poly2 - &polygons.front()]) continue;
+            if (&poly == &poly2) continue;
+            if (poly2.empty()) continue;
+            if (used[&poly2 - &polygons[0]]) continue;
+
+            bvector<DPoint3d> poly2_2d = poly2;
+            for (auto&pt : poly2_2d) pt.z = 0;
+
+            if (bsiDPoint3dArray_polygonClashXYZ(&poly.front(), (int)poly.size(), &poly2.front(), (int)poly2.size())
+                || bsiDPoint3dArray_polygonClashXYZ(&poly_2d.front(), (int)poly_2d.size(), &poly2_2d.front(), (int)poly2_2d.size()))
+            {
+                VuPolygonClassifier vu(1e-8, 0);
+                vu.ClassifyAUnionB(poly, poly2);
+                bvector<DPoint3d> xyz;
+                bvector<bvector<DPoint3d>> faces;
+                for (; vu.GetFace(xyz);)
+                {
+                    if (bsiGeom_getXYPolygonArea(&xyz[0], (int)xyz.size()) < 0) continue;
+                    else
+                    {
+                        //  postFeatureBoundary.push_back(xyz);
+                        faces.push_back(xyz);
+
+                    }
+
+                }
+                if (faces.size() == 1)
+                {
+                    poly = faces.front();
+                    used[&poly2 - &polygons[0]] = true;
+                }
+                /*	else
+                {
+                //compute intersects on vertices
+                bset<DPoint3d, DPoint3dZYXTolerancedSortComparison> setOfPts(DPoint3dZYXTolerancedSortComparison(1e-8, 0));
+                bvector<DPoint3d> intersectingVertices;
+                for (auto& pt : poly)
+                setOfPts.insert(pt);
+                for (auto& pt : poly2)
+                if (setOfPts.count(pt))
+                intersectingVertices.push_back(pt);
+                if (!intersectingVertices.empty())
+                {
+                bvector<DPoint3d> withoutIntersect;
+                if (poly.size() < poly2.size())
+                {
+                for (auto& pt : poly)
+                {
+                bool insert = true;
+                for (auto& ptB : intersectingVertices)
+                if (bsiDPoint3d_pointEqualTolerance(&pt, &ptB, 1e-8)) insert = false;
+                if(insert) withoutIntersect.push_back(pt);
+                }
+                }
+                else
+                {
+                for (auto& pt : poly2)
+                {
+                bool insert = true;
+                for (auto& ptB : intersectingVertices)
+                if (bsiDPoint3d_pointEqualTolerance(&pt, &ptB, 1e-8)) insert = false;
+                if (insert) withoutIntersect.push_back(pt);
+                }
+                }
+                if (poly.size() < poly2.size()) poly = poly2;
+
+                if (!withoutIntersect.empty() && !bsiDPoint3d_pointEqualTolerance(&withoutIntersect.front(), &withoutIntersect.back(), 1e-8)) withoutIntersect.push_back(withoutIntersect.front());
+                if (withoutIntersect.size() > 4)
+                {
+                poly2 = withoutIntersect;
+                }
+                else used[&poly2 - &polygons[0]] = true;
+                }
+                }*/
+            }
+
+        }
+    }
+
+    for (auto& poly : polygons)
+    {
+        if (!available[&poly - &polygons.front()]) continue;
+        if (used[&poly - &polygons[0]]) continue;
+        if (poly.empty()) continue;
+
+        UntieLoopsFromPolygon(poly);
+        HArrayAutoPtr<double> tempBuffer(new double[poly.size() * 2]);
+
+        int bufferInd = 0;
+
+        for (size_t pointInd = 0; pointInd < poly.size(); pointInd++)
+        {
+            tempBuffer[bufferInd * 2] = poly[pointInd].x;
+            tempBuffer[bufferInd * 2 + 1] = poly[pointInd].y;
+            bufferInd++;
+        }
+        HVE2DPolygonOfSegments polygon(poly.size() * 2, tempBuffer, coordSysPtr);
+
+        HFCPtr<HVEShape> subShapePtr = new HVEShape(polygon);
+        allPolyShape->Unify(*subShapePtr);
+    }
+
+    AddLoopsFromShape(newUnifiedPoly, allPolyShape->GetLightShape(), afterPolygonAdded);
+    polygons = newUnifiedPoly;
+}
 
 void IScalableMeshMemoryCounts::SetMaximumMemoryUsage(size_t maxNumberOfBytes)
 {
