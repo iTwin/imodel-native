@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/BeFileListIterator.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
@@ -155,11 +155,6 @@ public:
         {
         Clear ();
 
-        // pathconf(..._PC_NAME_MAX) lies on iOS (255 vs. 1024)... since we use MAX_PATH for other fixed-size buffers, that seems like a safe enough bet here.
-        size_t len = offsetof(struct dirent, d_name) + MAX_PATH + 1;
-
-        m__dp = (struct dirent*) malloc(len);
-
         // We used to use the thread-safe readdir_r, but that was deprecated in glibc 2.24.
         // While readdir is the recommended replacement, there is no guidance on how to make it thread-safe (as it "may" internally use a static buffer).
         // I'm hoping we can just get away with the trivial recommended replacement...
@@ -167,7 +162,8 @@ public:
         if (nullptr == result)
             return ERROR;
 
-        memcpy (m__dp, result, len);
+        m__dp = (struct dirent*) malloc(result->d_reclen);
+        memcpy (m__dp, result, result->d_reclen);
 
         return SUCCESS;
         }
