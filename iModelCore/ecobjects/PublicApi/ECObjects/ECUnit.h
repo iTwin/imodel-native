@@ -67,6 +67,7 @@ public:
     bool GetIsDisplayLabelDefined() const {return m_validatedName.IsDisplayLabelDefined();} //!< Whether the display label is explicitly defined or not.
     Utf8StringCR GetInvariantDisplayLabel() const {return m_validatedName.GetDisplayLabel();} //!< Gets the invariant display label for this UnitSystem.
 
+    bool GetIsDescriptionDefined() const {return !m_description.empty();} //!< Whether the description is explitly defined
     Utf8StringCR GetInvariantDescription() const {return m_description;} //!< Gets the invariant description for this UnitSystem.
     ECOBJECTS_EXPORT Utf8StringCR GetDescription() const; //!< Gets the description of this UnitSystem. Returns the localized description if one exists.
 
@@ -134,6 +135,7 @@ public:
     bool GetIsDisplayLabelDefined() const {return m_isDisplayLabelExplicitlyDefined;} //!< Whether the display label is explicitly defined or not.
     ECOBJECTS_EXPORT Utf8StringCR GetInvariantDisplayLabel() const; //!< Gets the invariant display label for this Phenomenon.
 
+    bool GetIsDescriptionDefined() const {return !m_description.empty();} //!< Whether the description is explitly defined
     Utf8StringCR GetInvariantDescription() const {return m_description;} //!< Gets the invariant description for this Phenomenon.
     ECOBJECTS_EXPORT Utf8StringCR GetDescription() const; //!< Gets the description of this Phenomenon. Returns the localized description if one exists.
 
@@ -206,6 +208,7 @@ public:
     bool GetIsDisplayLabelDefined() const {return m_isDisplayLabelExplicitlyDefined;} //!< Whether the display label is explicitly defined or not.
     ECOBJECTS_EXPORT Utf8StringCR GetInvariantDisplayLabel() const; //!< Gets the invariant display label for this ECUnit.
 
+    bool GetIsDescriptionDefined() const {return !m_description.empty();} //!< Whether the description is explitly defined
     Utf8StringCR GetInvariantDescription() const {return m_description;} //!< Gets the invariant description for this ECUnit.
     ECOBJECTS_EXPORT Utf8StringCR GetDescription() const; //!< Gets the description of this ECUnit. Returns the localized description if one exists.
 

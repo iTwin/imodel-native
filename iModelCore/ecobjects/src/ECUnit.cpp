@@ -471,7 +471,7 @@ SchemaWriteStatus ECUnit::WriteInvertedUnitXml(BeXmlWriterR xmlWriter, ECVersion
     if (GetIsDisplayLabelDefined())
         xmlWriter.WriteAttribute(ECXML_DISPLAY_LABEL_ATTRIBUTE, GetInvariantDisplayLabel().c_str());
 
-    if (GetDescription().length() > 0)
+    if (GetIsDescriptionDefined())
         xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, GetInvariantDescription().c_str());
 
     xmlWriter.WriteAttribute(UNIT_SYSTEM_NAME_ATTRIBUTE, ((ECN::UnitSystemCP)GetUnitSystem())->GetQualifiedName(GetSchema()).c_str());
@@ -496,7 +496,7 @@ SchemaWriteStatus ECUnit::WriteConstantXml(BeXmlWriterR xmlWriter, ECVersion ecX
     if (GetIsDisplayLabelDefined())
         xmlWriter.WriteAttribute(ECXML_DISPLAY_LABEL_ATTRIBUTE, GetInvariantDisplayLabel().c_str());
 
-    if (GetDescription().length() > 0)
+    if (GetIsDescriptionDefined())
         xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, GetInvariantDescription().c_str());
 
     xmlWriter.WriteAttribute(PHENOMENON_NAME_ATTRIBUTE, ((ECN::PhenomenonCP)GetPhenomenon())->GetQualifiedName(GetSchema()).c_str());
@@ -525,7 +525,7 @@ SchemaWriteStatus ECUnit::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersio
     if (GetIsDisplayLabelDefined())
         xmlWriter.WriteAttribute(ECXML_DISPLAY_LABEL_ATTRIBUTE, GetInvariantDisplayLabel().c_str());
 
-    if (GetDescription().length() > 0)
+    if (GetIsDescriptionDefined())
         xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, GetInvariantDescription().c_str());
 
     xmlWriter.WriteAttribute(PHENOMENON_NAME_ATTRIBUTE, ((ECN::PhenomenonCP)GetPhenomenon())->GetQualifiedName(GetSchema()).c_str());
@@ -589,7 +589,7 @@ SchemaWriteStatus ECUnit::WriteJson(Json::Value& outValue, bool standalone, bool
 
     if (GetIsDisplayLabelDefined())
         outValue[ECJSON_DISPLAY_LABEL_ATTRIBUTE] = GetInvariantDisplayLabel();
-    if (GetInvariantDescription().length())
+    if (GetIsDescriptionDefined())
         outValue[DESCRIPTION_ATTRIBUTE] = GetInvariantDescription();
     if (HasOffset())
         outValue[OFFSET_ATTRIBUTE] = GetOffset();
@@ -618,7 +618,7 @@ SchemaWriteStatus ECUnit::WriteInvertedUnitJson(Json::Value& outValue, bool stan
 
     if (GetIsDisplayLabelDefined())
         outValue[ECJSON_DISPLAY_LABEL_ATTRIBUTE] = GetInvariantDisplayLabel();
-    if (GetInvariantDescription().length())
+    if (GetIsDescriptionDefined())
         outValue[DESCRIPTION_ATTRIBUTE] = GetInvariantDescription();
 
     return SchemaWriteStatus::Success;
@@ -648,7 +648,7 @@ SchemaWriteStatus ECUnit::WriteConstantJson(Json::Value& outValue, bool standalo
 
     if (GetIsDisplayLabelDefined())
         outValue[ECJSON_DISPLAY_LABEL_ATTRIBUTE] = GetInvariantDisplayLabel();
-    if (GetInvariantDescription().length())
+    if (GetIsDescriptionDefined())
         outValue[DESCRIPTION_ATTRIBUTE] = GetInvariantDescription();
 
     return SchemaWriteStatus::Success;

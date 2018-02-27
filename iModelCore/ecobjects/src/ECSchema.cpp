@@ -1191,7 +1191,7 @@ ECObjectsStatus ECSchema::CreatePhenomenon(PhenomenonP& phenomenon, Utf8CP name,
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 02/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus ECSchema::CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, Utf8CP label, Utf8CP description, double numerator, double denominator, double offset)
+ECObjectsStatus ECSchema::CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, Nullable<double> numerator, Nullable<double> denominator, Nullable<double> offset, Nullable<Utf8CP> label, Nullable<Utf8CP> description)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
     ECObjectsStatus status;
@@ -1220,18 +1220,26 @@ ECObjectsStatus ECSchema::CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definiti
         LOG.errorv("UnitSystem %s with schema %s is not in this or any schema referenced by schema %s", unitSystem.GetName().c_str(), systemSchema->GetName().c_str(), this->GetName().c_str());
         return ECObjectsStatus::NotFound;
         }
-
-    unit = Units::UnitRegistry::Instance().AddUnit<ECUnit>(phenom.GetFullName().c_str(), unitSystem.GetFullName().c_str(), fullName.c_str(), definition, numerator, denominator, offset);
+    double localNumerator = numerator.IsValid() ? numerator.Value() : 1.0;
+    double localDenominator = denominator.IsValid() ? denominator.Value() : 1.0;
+    double localOffset = offset.IsValid() ? offset.Value() : 0.0;
+    unit = Units::UnitRegistry::Instance().AddUnit<ECUnit>(phenom.GetFullName().c_str(), unitSystem.GetFullName().c_str(), fullName.c_str(), definition, localNumerator, localDenominator, localOffset);
     if(nullptr == unit)
         return ECObjectsStatus::Error;
     unit->SetSchema(*this);
+    if(label.IsValid())
+        {
+        status = unit->SetDisplayLabel(label.Value());
+        cleanupIfNecessary();
+        if(status != ECObjectsStatus::Success) return status;
+        } 
+    if(label.IsValid())
+        { 
+        status = unit->SetDescription(description.Value());
+        cleanupIfNecessary();
+        if(status != ECObjectsStatus::Success) return status;
+        }
 
-    status = unit->SetDisplayLabel(label);
-    cleanupIfNecessary();
-    if(status != ECObjectsStatus::Success) return status;
-    status = unit->SetDescription(description);
-    cleanupIfNecessary();
-    if(status != ECObjectsStatus::Success) return status;
     status = AddSchemaChildToMap<ECUnit, UnitMap>(unit, &m_unitMap, ECSchemaElementType::Unit);
     cleanupIfNecessary();
     if(status != ECObjectsStatus::Success) return status;
@@ -1293,18 +1301,18 @@ ECObjectsStatus ECSchema::CreateInvertedUnit(ECUnitP& unit, ECUnitCR parent, Utf
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 02/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus ECSchema::CreateConstant(ECUnitP& unit, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, double numerator, double denominator, Utf8CP label, Utf8CP description)
+ECObjectsStatus ECSchema::CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, double numerator, Nullable<double> denominator, Nullable<Utf8CP> label, Nullable<Utf8CP> description)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     ECObjectsStatus status;
-    const auto cleanupIfNecessary = [&unit, &status]() -> decltype(auto)
+    const auto cleanupIfNecessary = [&constant, &status]() -> decltype(auto)
         {
         if (ECObjectsStatus::Success != status)
             {
-            Units::UnitRegistry::Instance().RemoveConstant(unit->GetFullName().c_str());
-            delete unit;
-            unit = nullptr;
+            Units::UnitRegistry::Instance().RemoveConstant(constant->GetFullName().c_str());
+            delete constant;
+            constant = nullptr;
             }
         };
 
@@ -1323,18 +1331,26 @@ ECObjectsStatus ECSchema::CreateConstant(ECUnitP& unit, Utf8CP name, Utf8CP defi
         return ECObjectsStatus::NotFound;
         }
 
-    unit = Units::UnitRegistry::Instance().AddConstant<ECUnit>(phenom.GetFullName().c_str(), unitSystem.GetFullName().c_str(), fullName.c_str(), definition, numerator, denominator);
-    if(nullptr == unit)
+    double localDenominator = denominator.IsValid() ? denominator.Value() : 1.0;
+    constant = Units::UnitRegistry::Instance().AddConstant<ECUnit>(phenom.GetFullName().c_str(), unitSystem.GetFullName().c_str(), fullName.c_str(), definition, numerator, localDenominator);
+    if(nullptr == constant)
         return ECObjectsStatus::Error;
-    unit->SetSchema(*this);
+    constant->SetSchema(*this);
 
-    status = unit->SetDisplayLabel(label);
-    cleanupIfNecessary();
-    if(status != ECObjectsStatus::Success) return status;
-    status = unit->SetDescription(description);
-    cleanupIfNecessary();
-    if(status != ECObjectsStatus::Success) return status;
-    status = AddSchemaChildToMap<ECUnit, UnitMap>(unit, &m_unitMap, ECSchemaElementType::Constant);
+    if (label.IsValid())
+        { 
+        status = constant->SetDisplayLabel(label.Value());
+        cleanupIfNecessary();
+        if(status != ECObjectsStatus::Success) return status;
+        }
+
+    if (description.IsValid())
+        {
+        status = constant->SetDescription(description.Value());
+        cleanupIfNecessary();
+        if(status != ECObjectsStatus::Success) return status;
+        }
+    status = AddSchemaChildToMap<ECUnit, UnitMap>(constant, &m_unitMap, ECSchemaElementType::Constant);
     cleanupIfNecessary();
     if(status != ECObjectsStatus::Success) return status;
 

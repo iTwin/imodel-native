@@ -17,6 +17,7 @@
 #include <Bentley/bvector.h>
 #include <Bentley/bmap.h>
 #include <Bentley/BeFileName.h>
+#include <Bentley/Nullable.h>
 #include <Logging/bentleylogging.h>
 #include <Formatting/FormattingApi.h>
 
@@ -3553,12 +3554,34 @@ public:
     //! @param[in] definition   Definition of the unit
     //! @param[in] phenom       Name of the phenomenon this unit is associated with
     //! @param[in] unitSystem   Name of the unit system this unit is associated with
-    //! @param[in] label        Display label of the unit
-    //! @param[in] description  Description of the unit
     //! @param[in] numerator    Numerator for unit factor
     //! @param[in] denominator  Denominator for unit factor
     //! @param[in] offset       Offset of this unit
-    ECOBJECTS_EXPORT ECObjectsStatus CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, Utf8CP label = nullptr, Utf8CP description = nullptr, double numerator = 1.0, double denominator = 1.0, double offset = 0.0);
+    //! @param[in] label        Display label of the unit
+    //! @param[in] description  Description of the unit
+    ECOBJECTS_EXPORT ECObjectsStatus CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, Nullable<double> numerator, Nullable<double> denominator, Nullable<double> offset, Nullable<Utf8CP> label = nullptr, Nullable<Utf8CP> description = nullptr);
+
+    //! Creates a new ECUnit and adds it to the schema.
+    //! @param[out] unit        If successful, will contain a new ECUnit object
+    //! @param[in] name         Name of the unit to create
+    //! @param[in] definition   Definition of the unit
+    //! @param[in] phenom       Name of the phenomenon this unit is associated with
+    //! @param[in] unitSystem   Name of the unit system this unit is associated with
+    //! @param[in] label        Display label of the unit
+    //! @param[in] description  Description of the unit
+    ECOBJECTS_EXPORT ECObjectsStatus CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, Nullable<Utf8CP> label = nullptr, Nullable<Utf8CP> description = nullptr) 
+        {return CreateUnit(unit, name, definition, phenom, unitSystem, nullptr, nullptr, nullptr, label, description);}
+
+    //! Creates a new ECUnit and adds it to the schema.
+    //! @param[out] unit        If successful, will contain a new ECUnit object
+    //! @param[in] name         Name of the unit to create
+    //! @param[in] definition   Definition of the unit
+    //! @param[in] phenom       Name of the phenomenon this unit is associated with
+    //! @param[in] unitSystem   Name of the unit system this unit is associated with
+    //! @param[in] numerator    Numerator for unit factor
+    //! @param[in] label        Display label of the unit
+    //! @param[in] description  Description of the unit
+    ECOBJECTS_EXPORT ECObjectsStatus CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, Nullable<double> numerator, Nullable<Utf8CP> label = nullptr, Nullable<Utf8CP> description = nullptr) {return CreateUnit(unit, name, definition, phenom, unitSystem, numerator, nullptr, nullptr, label, description);}
     
     //! Creates a new inverted ECUnit and adds it to the schema.
     //! @param[out] unit        If successful, will contain a new inverted ECUnit object
@@ -3579,7 +3602,18 @@ public:
     //! @param[in] denominator  Denominator for unit factor
     //! @param[in] label        Display label of the constant
     //! @param[in] description  Description of the constant
-    ECOBJECTS_EXPORT ECObjectsStatus CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, double numerator, double denominator = 1.0, Utf8CP label = nullptr, Utf8CP description = nullptr);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, double numerator, Nullable<double> denominator, Nullable<Utf8CP> label = nullptr, Nullable<Utf8CP> description = nullptr);
+
+    //! Creates a new constant ECUnit and adds it to the schema.
+    //! @param[out] constant    If successful, will contain a new constant ECUnit object
+    //! @param[in] name         Name of the constant to create
+    //! @param[in] definition   Definition of the constant
+    //! @param[in] phenom       Name of the phenomenon this constant is associated with
+    //! @param[in] unitSystem   Name of the unit system this constant is associated with
+    //! @param[in] numerator    Numerator for unit factor
+    //! @param[in] label        Display label of the constant
+    //! @param[in] description  Description of the constant
+    ECOBJECTS_EXPORT ECObjectsStatus CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, double numerator, Nullable<Utf8CP> label = nullptr, Nullable<Utf8CP> description = nullptr) {return CreateConstant(constant, name, definition, phenom, unitSystem, numerator, nullptr, label, description);}
 
     //! Get a schema by alias within the context of this schema and its referenced schemas.
     //! @param[in]  alias   The alias of the schema to lookup in the context of this schema and it's references.
