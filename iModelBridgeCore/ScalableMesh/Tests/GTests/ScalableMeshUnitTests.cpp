@@ -8,7 +8,6 @@
 
 #include <Bentley/BeTest.h>
 #include "SMUnitTestUtil.h"
-#include <ScalableMesh/IScalableMeshProgress.h>
 #include <ScalableMesh/ScalableMeshDefs.h>
 #include <TerrainModel/Core/IDTM.h>
 #include <DgnPlatform/ClipPrimitive.h>

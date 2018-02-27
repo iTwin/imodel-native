@@ -38,7 +38,7 @@ using namespace Bentley::GeoCoordinates;
 
 #include <ScalableMesh/IScalableMesh.h>
 #include <ScalableMesh/ScalableMeshLib.h>
-//#include <ScalableMesh/IScalableMeshProgress.h>
+#include <ScalableMesh/IScalableMeshProgress.h>
 //#include <iostream>
 
 namespace ScalableMeshGTestUtil
@@ -104,15 +104,5 @@ namespace ScalableMeshGTestUtil
         };
 
     bool InitScalableMesh();
-
-    //struct TestProgressListener : ScalableMesh::IScalableMeshProgressListener
-    //    {
-    //    virtual void CheckContinueOnProgress(ScalableMesh::IScalableMeshProgress* progress) const override
-    //        {
-    //        auto progress_percent = progress->GetProgress() * 100;
-    //        std::cout << "\r" << progress_percent <<"%";
-    //        if (progress_percent >= 100) std::cout << std::endl;
-    //        };
-    //    };
 
     }

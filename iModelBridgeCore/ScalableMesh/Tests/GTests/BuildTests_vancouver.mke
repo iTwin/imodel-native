@@ -28,6 +28,8 @@ $(o)SMUnitTestDisplayQuery.obj   : $(_MakeFilePath)/SMUnitTestDisplayQuery.cpp $
 
 $(o)SMUnitTestUtil.obj   : $(_MakeFilePath)/SMUnitTestUtil.cpp $(_MakeFilePath)/SMUnitTestUtil.h ${MultiCompileDepends}
 
+$(o)SMUnitTestProgress.obj   : $(_MakeFilePath)/SMUnitTestProgress.cpp ${MultiCompileDepends}
+
 
 libsUsed = \
         $(BuildContext)SubParts/Libs/Bentley.lib \
