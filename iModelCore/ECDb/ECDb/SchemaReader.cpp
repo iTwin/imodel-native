@@ -842,12 +842,13 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
     const int phIdColIx = 5;
     const int usIdColIx = 6;
     const int definitionColIx = 7;
-    const int factorColIx = 8;
-    const int offsetColIx = 9;
-    const int isConstantColIx = 10;
-    const int invertingUnitIdColIx = 11;
+    const int numeratorColIx = 8;
+    const int denominatorColIx = 9;
+    const int offsetColIx = 10;
+    const int isConstantColIx = 11;
+    const int invertingUnitIdColIx = 12;
 
-    CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT Id,SchemaId,Name,DisplayLabel,Description,PhenomenonId,UnitSystemId,Definition,Factor,Offset,IsConstant,InvertingUnitId FROM [%s]." TABLE_Unit, GetTableSpace().GetName().c_str()).c_str());
+    CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT Id,SchemaId,Name,DisplayLabel,Description,PhenomenonId,UnitSystemId,Definition,Numerator,Denominator,Offset,IsConstant,InvertingUnitId FROM [%s]." TABLE_Unit, GetTableSpace().GetName().c_str()).c_str());
     if (stmt == nullptr)
         return ERROR;
 
@@ -885,7 +886,7 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
         if (isInvertedUnit)
             {
             //cache inverted units as they need their inverting unit to be exist before
-            BeAssert(!isConstant && stmt->IsColumnNull(definitionColIx) && stmt->IsColumnNull(factorColIx) && stmt->IsColumnNull(offsetColIx));
+            BeAssert(!isConstant && stmt->IsColumnNull(definitionColIx) && stmt->IsColumnNull(numeratorColIx) && stmt->IsColumnNull(denominatorColIx) && stmt->IsColumnNull(offsetColIx));
             invertedUnits.push_back(std::make_tuple(id, invertingUnitId, schemaKey, Utf8String(name), Utf8String(displayLabel), Utf8String(description), us));
             continue;
             }
@@ -895,10 +896,14 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
             }
 
         Utf8CP definition = stmt->IsColumnNull(definitionColIx) ? nullptr : stmt->GetValueText(definitionColIx);
-        BeAssert(!stmt->IsColumnNull(factorColIx));
-        const double factor = stmt->GetValueDouble(factorColIx);
+        BeAssert(!stmt->IsColumnNull(numeratorColIx));
+        const double numerator = stmt->GetValueDouble(numeratorColIx);
 
-        Nullable<double> offset;
+        double denominator = 1.0;
+        if (!stmt->IsColumnNull(denominatorColIx))
+            denominator = stmt->GetValueDouble(denominatorColIx);
+
+        double offset = 1.0;
         if (!stmt->IsColumnNull(offsetColIx))
             offset = stmt->GetValueDouble(offsetColIx);
 
@@ -906,17 +911,12 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
         ECUnitP unit = nullptr;
         if (isConstant)
             {
-            if (ECObjectsStatus::Success != schema.CreateConstant(unit, name, definition, *ph, *us, factor, displayLabel, description))
-                return ERROR;
-            }
-        else if (offset != nullptr)
-            {
-            if (ECObjectsStatus::Success != schema.CreateUnit(unit, name, definition, *ph, *us, displayLabel, description, factor, offset.Value()))
-                return ERROR;
+            if (ECObjectsStatus::Success != schema.CreateConstant(unit, name, definition, *ph, *us, numerator, denominator, displayLabel, description))
+                    return ERROR;
             }
         else
             {
-            if (ECObjectsStatus::Success != schema.CreateUnit(unit, name, definition, *ph, *us, displayLabel, description, factor))
+            if (ECObjectsStatus::Success != schema.CreateUnit(unit, name, definition, *ph, *us, displayLabel, description, numerator, denominator, offset))
                 return ERROR;
             }
 

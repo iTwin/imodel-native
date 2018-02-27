@@ -344,9 +344,10 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
                            "PhenomenonId INTEGER NOT NULL REFERENCES " TABLE_Phenomenon "(Id) ON DELETE CASCADE,"
                            "UnitSystemId INTEGER NOT NULL REFERENCES " TABLE_UnitSystem "(Id) ON DELETE NO ACTION,"
                            "Definition TEXT COLLATE NOCASE,"
-                           "Factor REAL,"
+                           "Numerator REAL,"
+                           "Denominator REAL,"
                            "Offset REAL,"
-                           "IsConstant BOLLEAN,"
+                           "IsConstant BOOLEAN,"
                            "InvertingUnitId INTEGER REFERENCES " TABLE_Unit "(Id) ON DELETE SET NULL)");
     if (BE_SQLITE_OK != stat)
         return stat;

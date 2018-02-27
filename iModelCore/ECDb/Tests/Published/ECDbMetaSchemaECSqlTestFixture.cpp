@@ -919,9 +919,15 @@ void ECDbMetaSchemaECSqlTestFixture::AssertUnitDef(ECUnitCR expected, ECSqlState
             continue;
             }
 
-        if (colName.EqualsI("Factor"))
+        if (colName.EqualsI("Numerator"))
             {
-            ASSERT_DOUBLE_EQ(expected.GetFactor(), val.GetDouble()) << "UnitDef.Factor";
+            ASSERT_DOUBLE_EQ(expected.GetNumerator(), val.GetDouble()) << "UnitDef.Numerator";
+            continue;
+            }
+
+        if (colName.EqualsI("Denominator"))
+            {
+            ASSERT_DOUBLE_EQ(expected.GetDenominator(), val.GetDouble()) << "UnitDef.Denominator";
             continue;
             }
 
@@ -935,13 +941,12 @@ void ECDbMetaSchemaECSqlTestFixture::AssertUnitDef(ECUnitCR expected, ECSqlState
             continue;
             }
 
-        if (colName.EqualsI("InvertsUnit"))
+        if (colName.EqualsI("InvertingUnit"))
             {
-            /*WIP
+            ASSERT_TRUE(expected.GetInvertingUnit() != nullptr);
             ECClassId actualRelClassId;
-            ASSERT_EQ(expected.GetInvertsUnit()->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "UnitDef.InvertsUnit";
+            ASSERT_EQ(expected.GetInvertingUnit()->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "UnitDef.InvertingUnit";
             ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "UnitDef.InvertsUnit";
-            */
             continue;
             }
 

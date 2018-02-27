@@ -9261,8 +9261,8 @@ TEST_F(SchemaUpgradeTestFixture, Units)
                                         <UnitSystem typeName="METRIC" displayLabel="Metric" description="Metric Units of measure" />
                                         <UnitSystem typeName="IMPERIAL" displayLabel="Imperial" description="Units of measure from the British Empire" />
                                         <Phenomenon typeName="AREA" displayLabel="Area" definition="LENGTH(2)" />
-                                        <Unit typeName="SquareM" displayLabel="Square Meter" definition="M*M" factor="1.0" phenomenon="AREA" unitSystem="METRIC" />
-                                        <Unit typeName="SquareFt" displayLabel="Square Feet" definition="Ft*Ft" factor="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
+                                        <Unit typeName="SquareM" displayLabel="Square Meter" definition="M*M" numerator="1.0" phenomenon="AREA" unitSystem="METRIC" />
+                                        <Unit typeName="SquareFt" displayLabel="Square Feet" definition="Ft*Ft" numerator="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
                                     </ECSchema>)xml")));
 
     auto assertPhenomenon = [] (ECSchemaCR schema, Utf8CP name, Utf8CP displayLabel, Utf8CP description, Utf8CP definition)
@@ -9284,7 +9284,7 @@ TEST_F(SchemaUpgradeTestFixture, Units)
         ASSERT_STREQ(description, system->GetDescription().c_str()) << name;
         };
 
-    auto assertUnit = [] (ECSchemaCR schema, Utf8CP name, Utf8CP displayLabel, Utf8CP description, Utf8CP definition, double factor, double offset, Utf8CP phenomenon, Utf8CP unitSystem)
+    auto assertUnit = [] (ECSchemaCR schema, Utf8CP name, Utf8CP displayLabel, Utf8CP description, Utf8CP definition, double numerator, double denominator, double offset, Utf8CP phenomenon, Utf8CP unitSystem)
         {
         ECUnitCP unit = schema.GetUnitCP(name);
         ASSERT_TRUE(unit != nullptr) << name;
@@ -9292,7 +9292,8 @@ TEST_F(SchemaUpgradeTestFixture, Units)
         ASSERT_STREQ(definition, unit->GetDefinition().c_str()) << name;
         ASSERT_STREQ(displayLabel, unit->GetDisplayLabel().c_str()) << name;
         ASSERT_STREQ(description, unit->GetDescription().c_str()) << name;
-        ASSERT_DOUBLE_EQ(factor, unit->GetFactor()) << name;
+        ASSERT_DOUBLE_EQ(numerator, unit->GetNumerator()) << name;
+        ASSERT_DOUBLE_EQ(denominator, unit->GetDenominator()) << name;
         ASSERT_DOUBLE_EQ(offset, unit->GetOffset()) << name;
         ASSERT_TRUE(dynamic_cast<PhenomenonCP> (unit->GetPhenomenon()) != nullptr);
         ASSERT_TRUE(dynamic_cast<UnitSystemCP> (unit->GetUnitSystem()) != nullptr);
@@ -9307,8 +9308,8 @@ TEST_F(SchemaUpgradeTestFixture, Units)
     assertPhenomenon(*schema, "AREA", "Area", nullptr, "LENGTH(2)");
     assertUnitSystem(*schema, "METRIC", "Metric", "Metric Units of measure");
     assertUnitSystem(*schema, "IMPERIAL", "Imperial", "Units of measure from the British Empire");
-    assertUnit(*schema, "SquareM", "Square Meter", nullptr, "M*M", 1.0, 0.0, "AREA", "METRIC");
-    assertUnit(*schema, "SquareFt", "Square Feet", nullptr, "Ft*Ft", 10.0, 0.4, "AREA", "IMPERIAL");
+    assertUnit(*schema, "SquareM", "Square Meter", nullptr, "M*M", 1.0, 1.0, 0.0, "AREA", "METRIC");
+    assertUnit(*schema, "SquareFt", "Square Feet", nullptr, "Ft*Ft", 10.0, 1.0, 0.4, "AREA", "IMPERIAL");
 
     }
 
@@ -9317,23 +9318,23 @@ TEST_F(SchemaUpgradeTestFixture, Units)
                                         <UnitSystem name="METRIC" displayLabel="Metric" description="Metric Units of measure" />
                                         <UnitSystem name="IMPERIAL" displayLabel="Imperial" description="Units of measure from the British Empire" />
                                         <Phenomenon name="AREA" displayLabel="Area" definition="LENGTH(2)" />
-                                        <Unit name="SquareFt" displayLabel="Square Feet" definition="Ft*Ft" factor="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
+                                        <Unit name="SquareFt" displayLabel="Square Feet" definition="Ft*Ft" numerator="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
                                     </ECSchema>)xml"))) << "Deleting a unit is not supported";
 
     ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                     <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                         <UnitSystem name="IMPERIAL" displayLabel="Imperial" description="Units of measure from the British Empire" />
                                         <Phenomenon name="AREA" displayLabel="Area" definition="LENGTH(2)" />
-                                        <Unit name="SquareM" displayLabel="Square Meter" definition="M*M" factor="1.0" phenomenon="AREA" unitSystem="METRIC" />
-                                        <Unit name="SquareFt" displayLabel="Square Feet" definition="Ft*Ft" factor="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
+                                        <Unit name="SquareM" displayLabel="Square Meter" definition="M*M" numerator="1.0" phenomenon="AREA" unitSystem="METRIC" />
+                                        <Unit name="SquareFt" displayLabel="Square Feet" definition="Ft*Ft" numerator="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
                                     </ECSchema>)xml"))) << "Deleting a unit system is not supported";
 
     ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                     <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                         <UnitSystem name="METRIC" displayLabel="Metric" description="Metric Units of measure" />
                                         <UnitSystem name="IMPERIAL" displayLabel="Imperial" description="Units of measure from the British Empire" />
-                                        <Unit name="SquareM" displayLabel="Square Meter" definition="M*M" factor="1.0" phenomenon="AREA" unitSystem="METRIC" />
-                                        <Unit name="SquareFt" displayLabel="Square Feet" definition="Ft*Ft" factor="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
+                                        <Unit name="SquareM" displayLabel="Square Meter" definition="M*M" numerator="1.0" phenomenon="AREA" unitSystem="METRIC" />
+                                        <Unit name="SquareFt" displayLabel="Square Feet" definition="Ft*Ft" numerator="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
                                     </ECSchema>)xml"))) << "Deleting a phenomenon is not supported";
 
     ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -9341,8 +9342,8 @@ TEST_F(SchemaUpgradeTestFixture, Units)
                                         <UnitSystem name="METRICAL" displayLabel="Metric" description="Metric Units of measure" />
                                         <UnitSystem name="IMPERIAL" displayLabel="Imperial" description="Units of measure from the British Empire" />
                                         <Phenomenon name="AREA" displayLabel="Area" definition="LENGTH(2)" />
-                                        <Unit name="SquareM" displayLabel="Square Meter" definition="M*M" factor="1.0" phenomenon="AREA" unitSystem="METRIC" />
-                                        <Unit name="SquareFt" displayLabel="Square Feet" definition="Ft*Ft" factor="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
+                                        <Unit name="SquareM" displayLabel="Square Meter" definition="M*M" numerator="1.0" phenomenon="AREA" unitSystem="METRIC" />
+                                        <Unit name="SquareFt" displayLabel="Square Feet" definition="Ft*Ft" numerator="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
                                     </ECSchema>)xml"))) << "Renaming a UnitSystem is not supported";
 
     ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -9350,8 +9351,8 @@ TEST_F(SchemaUpgradeTestFixture, Units)
                                         <UnitSystem name="METRIC" displayLabel="Metric" description="Metric Units of measure" />
                                         <UnitSystem name="IMPERIAL" displayLabel="Imperial" description="Units of measure from the British Empire" />
                                         <Phenomenon name="AREAL" displayLabel="Area" definition="LENGTH(2)" />
-                                        <Unit name="SquareM" displayLabel="Square Meter" definition="M*M" factor="1.0" phenomenon="AREA" unitSystem="METRIC" />
-                                        <Unit name="SquareFt" displayLabel="Square Feet" definition="Ft*Ft" factor="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
+                                        <Unit name="SquareM" displayLabel="Square Meter" definition="M*M" numerator="1.0" phenomenon="AREA" unitSystem="METRIC" />
+                                        <Unit name="SquareFt" displayLabel="Square Feet" definition="Ft*Ft" numerator="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
                                     </ECSchema>)xml"))) << "Renaming a Phenomenon is not supported";
 
     ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -9359,8 +9360,8 @@ TEST_F(SchemaUpgradeTestFixture, Units)
                                         <UnitSystem name="METRIC" displayLabel="Metric" description="Metric Units of measure" />
                                         <UnitSystem name="IMPERIAL" displayLabel="Imperial" description="Units of measure from the British Empire" />
                                         <Phenomenon name="AREA" displayLabel="Area" definition="LENGTH(2)" />
-                                        <Unit name="SquareMeter" displayLabel="Square Meter" definition="M*M" factor="1.0" phenomenon="AREA" unitSystem="METRIC" />
-                                        <Unit name="SquareFt" displayLabel="Square Feet" definition="Ft*Ft" factor="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
+                                        <Unit name="SquareMeter" displayLabel="Square Meter" definition="M*M" numerator="1.0" phenomenon="AREA" unitSystem="METRIC" />
+                                        <Unit name="SquareFt" displayLabel="Square Feet" definition="Ft*Ft" numerator="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
                                     </ECSchema>)xml"))) << "Renaming a Unit is not supported";
 
     ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -9368,8 +9369,8 @@ TEST_F(SchemaUpgradeTestFixture, Units)
                                         <UnitSystem typeName="METRIC" displayLabel="Metric" description="Metric Units of measure" />
                                         <UnitSystem typeName="IMPERIAL" displayLabel="Imperial" description="Units of measure from the British Empire" />
                                         <Phenomenon typeName="AREA" displayLabel="Area" definition="LENGTH(3)" />
-                                        <Unit typeName="SquareM" displayLabel="Square Meter" definition="M*M" factor="1.0" phenomenon="AREA" unitSystem="METRIC" />
-                                        <Unit typeName="SquareFt" displayLabel="Square Feet" definition="Ft*Ft" factor="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
+                                        <Unit typeName="SquareM" displayLabel="Square Meter" definition="M*M" numerator="1.0" phenomenon="AREA" unitSystem="METRIC" />
+                                        <Unit typeName="SquareFt" displayLabel="Square Feet" definition="Ft*Ft" numerator="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
                                     </ECSchema>)xml"))) << "Modifying Phenomenon.Definition is not supported";
 
     ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -9377,8 +9378,8 @@ TEST_F(SchemaUpgradeTestFixture, Units)
                                         <UnitSystem typeName="METRIC" displayLabel="Metric" description="Metric Units of measure" />
                                         <UnitSystem typeName="IMPERIAL" displayLabel="Imperial" description="Units of measure from the British Empire" />
                                         <Phenomenon typeName="AREA" displayLabel="Area" definition="LENGTH(2)" />
-                                        <Unit typeName="SquareM" displayLabel="Square Meter" definition="M*M*" factor="1.0" phenomenon="AREA" unitSystem="METRIC" />
-                                        <Unit typeName="SquareFt" displayLabel="Square Feet" definition="Ft*Ft" factor="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
+                                        <Unit typeName="SquareM" displayLabel="Square Meter" definition="M*M*" numerator="1.0" phenomenon="AREA" unitSystem="METRIC" />
+                                        <Unit typeName="SquareFt" displayLabel="Square Feet" definition="Ft*Ft" numerator="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
                                     </ECSchema>)xml"))) << "Modifying Unit.Definition is not supported";
 
     ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -9386,17 +9387,26 @@ TEST_F(SchemaUpgradeTestFixture, Units)
                                         <UnitSystem typeName="METRIC" displayLabel="Metric" description="Metric Units of measure" />
                                         <UnitSystem typeName="IMPERIAL" displayLabel="Imperial" description="Units of measure from the British Empire" />
                                         <Phenomenon typeName="AREA" displayLabel="Area" definition="LENGTH(2)" />
-                                        <Unit typeName="SquareM" displayLabel="Square Meter" definition="M*M" factor="1.5" phenomenon="AREA" unitSystem="METRIC" />
-                                        <Unit typeName="SquareFt" displayLabel="Square Feet" definition="Ft*Ft" factor="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
-                                    </ECSchema>)xml"))) << "Modifying Unit.Factor is not supported";
+                                        <Unit typeName="SquareM" displayLabel="Square Meter" definition="M*M" numerator="1.5" phenomenon="AREA" unitSystem="METRIC" />
+                                        <Unit typeName="SquareFt" displayLabel="Square Feet" definition="Ft*Ft" numerator="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
+                                    </ECSchema>)xml"))) << "Modifying Unit.Numerator is not supported";
 
     ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                     <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                         <UnitSystem typeName="METRIC" displayLabel="Metric" description="Metric Units of measure" />
                                         <UnitSystem typeName="IMPERIAL" displayLabel="Imperial" description="Units of measure from the British Empire" />
                                         <Phenomenon typeName="AREA" displayLabel="Area" definition="LENGTH(2)" />
-                                        <Unit typeName="SquareM" displayLabel="Square Meter" definition="M*M" factor="1.0" offset="1.0" phenomenon="AREA" unitSystem="METRIC" />
-                                        <Unit typeName="SquareFt" displayLabel="Square Feet" definition="Ft*Ft" factor="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
+                                        <Unit typeName="SquareM" displayLabel="Square Meter" definition="M*M" numerator="1.0" denominator="2.0" phenomenon="AREA" unitSystem="METRIC" />
+                                        <Unit typeName="SquareFt" displayLabel="Square Feet" definition="Ft*Ft" numerator="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
+                                    </ECSchema>)xml"))) << "Modifying Unit.Denominator is not supported";
+
+    ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                        <UnitSystem typeName="METRIC" displayLabel="Metric" description="Metric Units of measure" />
+                                        <UnitSystem typeName="IMPERIAL" displayLabel="Imperial" description="Units of measure from the British Empire" />
+                                        <Phenomenon typeName="AREA" displayLabel="Area" definition="LENGTH(2)" />
+                                        <Unit typeName="SquareM" displayLabel="Square Meter" definition="M*M" numerator="1.0" offset="1.0" phenomenon="AREA" unitSystem="METRIC" />
+                                        <Unit typeName="SquareFt" displayLabel="Square Feet" definition="Ft*Ft" numerator="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
                                     </ECSchema>)xml"))) << "Modifying Unit.Offset is not supported";
 
     ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -9404,8 +9414,8 @@ TEST_F(SchemaUpgradeTestFixture, Units)
                                         <UnitSystem typeName="METRIC" displayLabel="Metric" description="Metric Units of measure" />
                                         <UnitSystem typeName="IMPERIAL" displayLabel="Imperial" description="Units of measure from the British Empire" />
                                         <Phenomenon typeName="AREA" displayLabel="Area" definition="LENGTH(2)" />
-                                        <Unit typeName="SquareM" displayLabel="Square Meter" definition="M*M" factor="1.0" phenomenon="AREA" unitSystem="IMPERIAL" />
-                                        <Unit typeName="SquareFt" displayLabel="Square Feet" definition="Ft*Ft" factor="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
+                                        <Unit typeName="SquareM" displayLabel="Square Meter" definition="M*M" numerator="1.0" phenomenon="AREA" unitSystem="IMPERIAL" />
+                                        <Unit typeName="SquareFt" displayLabel="Square Feet" definition="Ft*Ft" numerator="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
                                     </ECSchema>)xml"))) << "Modifying Unit.UnitSystem is not supported";
 
     ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -9414,8 +9424,8 @@ TEST_F(SchemaUpgradeTestFixture, Units)
                                         <UnitSystem typeName="IMPERIAL" displayLabel="Imperial" description="Units of measure from the British Empire" />
                                         <Phenomenon typeName="AREA" displayLabel="Area" definition="LENGTH(2)" />
                                         <Phenomenon typeName="AREA2" displayLabel="Area" definition="LENGTH(2)" />
-                                        <Unit typeName="SquareM" displayLabel="Square Meter" definition="M*M" factor="1.0" phenomenon="AREA2" unitSystem="METRIC" />
-                                        <Unit typeName="SquareFt" displayLabel="Square Feet" definition="Ft*Ft" factor="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
+                                        <Unit typeName="SquareM" displayLabel="Square Meter" definition="M*M" numerator="1.0" phenomenon="AREA2" unitSystem="METRIC" />
+                                        <Unit typeName="SquareFt" displayLabel="Square Feet" definition="Ft*Ft" numerator="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
                                     </ECSchema>)xml"))) << "Modifying Unit.Phenomenon is not supported";
 
     {
@@ -9426,8 +9436,8 @@ TEST_F(SchemaUpgradeTestFixture, Units)
                                         <UnitSystem typeName="IMPERIAL" displayLabel="ImperialSystem" description="Units of measure from the British Empire." />
                                         <UnitSystem typeName="MyLocalOne" displayLabel="My Local on"  />
                                         <Phenomenon typeName="AREA" displayLabel="Area" definition="LENGTH(2)" />
-                                        <Unit typeName="SquareM" displayLabel="Square Meter" definition="M*M" factor="1.0" phenomenon="AREA" unitSystem="METRIC" />
-                                        <Unit typeName="SquareFt" displayLabel="Square Feet" definition="Ft*Ft" factor="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
+                                        <Unit typeName="SquareM" displayLabel="Square Meter" definition="M*M" numerator="1.0" phenomenon="AREA" unitSystem="METRIC" />
+                                        <Unit typeName="SquareFt" displayLabel="Square Feet" definition="Ft*Ft" numerator="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
                                     </ECSchema>)xml"))) << "Adding a unit system, modifying display label and description of unit system, removing display label and description of unit system";
     ECSchemaCP schema = m_ecdb.Schemas().GetSchema("Schema1");
     ASSERT_TRUE(schema != nullptr);
@@ -9436,8 +9446,8 @@ TEST_F(SchemaUpgradeTestFixture, Units)
     assertUnitSystem(*schema, "METRIC", nullptr, nullptr);
     assertUnitSystem(*schema, "IMPERIAL", "ImperialSystem", "Units of measure from the British Empire.");
     assertUnitSystem(*schema, "MyLocalOne", "My Local on", nullptr);
-    assertUnit(*schema, "SquareM", "Square Meter", nullptr, "M*M", 1.0, 0.0, "AREA", "METRIC");
-    assertUnit(*schema, "SquareFt", "Square Feet", nullptr, "Ft*Ft", 10.0, 0.4, "AREA", "IMPERIAL");
+    assertUnit(*schema, "SquareM", "Square Meter", nullptr, "M*M", 1.0, 1.0, 0.0, "AREA", "METRIC");
+    assertUnit(*schema, "SquareFt", "Square Feet", nullptr, "Ft*Ft", 10.0, 1.0, 0.4, "AREA", "IMPERIAL");
     sp.Cancel();
     }
 
@@ -9449,8 +9459,8 @@ TEST_F(SchemaUpgradeTestFixture, Units)
                                         <UnitSystem typeName="IMPERIAL" displayLabel="Imperial" description="Units of measure from the British Empire" />
                                         <Phenomenon typeName="AREA" displayLabel="Areal" description="Area" definition="LENGTH(2)" />
                                         <Phenomenon typeName="VOLUME" displayLabel="Volume" definition="LENGTH(3)" />
-                                        <Unit typeName="SquareM" displayLabel="Square Meter" definition="M*M" factor="1.0" phenomenon="AREA" unitSystem="METRIC" />
-                                        <Unit typeName="SquareFt" displayLabel="Square Feet" definition="Ft*Ft" factor="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
+                                        <Unit typeName="SquareM" displayLabel="Square Meter" definition="M*M" numerator="1.0" phenomenon="AREA" unitSystem="METRIC" />
+                                        <Unit typeName="SquareFt" displayLabel="Square Feet" definition="Ft*Ft" numerator="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
                                     </ECSchema>)xml"))) << "Adding a phenomenon, modifying display label and description of phenomenon";
     ECSchemaCP schema = m_ecdb.Schemas().GetSchema("Schema1");
     ASSERT_TRUE(schema != nullptr);
@@ -9459,8 +9469,8 @@ TEST_F(SchemaUpgradeTestFixture, Units)
     assertPhenomenon(*schema, "VOLUME", "Volume", nullptr, "LENGTH(3)");
     assertUnitSystem(*schema, "METRIC", "Metric", "Metric Units of measure");
     assertUnitSystem(*schema, "IMPERIAL", "Imperial", "Units of measure from the British Empire");
-    assertUnit(*schema, "SquareM", "Square Meter", nullptr, "M*M", 1.0, 0.0, "AREA", "METRIC");
-    assertUnit(*schema, "SquareFt", "Square Feet", nullptr, "Ft*Ft", 10.0, 0.4, "AREA", "IMPERIAL");
+    assertUnit(*schema, "SquareM", "Square Meter", nullptr, "M*M", 1.0, 1.0, 0.0, "AREA", "METRIC");
+    assertUnit(*schema, "SquareFt", "Square Feet", nullptr, "Ft*Ft", 10.0, 1.0, 0.4, "AREA", "IMPERIAL");
     sp.Cancel();
     }
 
@@ -9472,9 +9482,9 @@ TEST_F(SchemaUpgradeTestFixture, Units)
                                         <UnitSystem typeName="IMPERIAL" displayLabel="Imperial" description="Units of measure from the British Empire" />
                                         <Phenomenon typeName="AREA" displayLabel="Area" definition="LENGTH(2)" />
                                         <Phenomenon typeName="VOLUME" displayLabel="Volume" definition="LENGTH(3)" />
-                                        <Unit typeName="SquareM" displayLabel="Square Metre" description="Square Metre" definition="M*M" factor="1.0" phenomenon="AREA" unitSystem="METRIC" />
-                                        <Unit typeName="SquareFt" definition="Ft*Ft" factor="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
-                                        <Unit typeName="CubicM" displayLabel="Cubic Meter" description="Cubic Meter" definition="M*M*M" factor="1.0" phenomenon="VOLUME" unitSystem="METRIC" />
+                                        <Unit typeName="SquareM" displayLabel="Square Metre" description="Square Metre" definition="M*M" numerator="1.0" phenomenon="AREA" unitSystem="METRIC" />
+                                        <Unit typeName="SquareFt" definition="Ft*Ft" numerator="10.0" offset="0.4" phenomenon="AREA" unitSystem="IMPERIAL" />
+                                        <Unit typeName="CubicM" displayLabel="Cubic Meter" description="Cubic Meter" definition="M*M*M" numerator="1.0" phenomenon="VOLUME" unitSystem="METRIC" />
                                     </ECSchema>)xml"))) << "Adding a unit, modifying display label and description of unit, removing display label of unit";
     ECSchemaCP schema = m_ecdb.Schemas().GetSchema("Schema1");
     ASSERT_TRUE(schema != nullptr);
@@ -9482,9 +9492,9 @@ TEST_F(SchemaUpgradeTestFixture, Units)
     assertPhenomenon(*schema, "AREA", "Area", nullptr, "LENGTH(2)");
     assertUnitSystem(*schema, "METRIC", "Metric", "Metric Units of measure");
     assertUnitSystem(*schema, "IMPERIAL", "ImperialSystem", "Units of measure from the British Empire.");
-    assertUnit(*schema, "SquareM", "Square Metre", "Square Metre", "M*M", 1.0, 0.0, "AREA", "METRIC");
-    assertUnit(*schema, "SquareFt", nullptr, nullptr, "Ft*Ft", 10.0, 0.4, "AREA", "IMPERIAL");
-    assertUnit(*schema, "CubicM", "Cubic Feet", "Cubic Meter", "M*M*M", 1.0, 0.0, "VOLUMNE", "METRIC");
+    assertUnit(*schema, "SquareM", "Square Metre", "Square Metre", "M*M", 1.0, 1.0, 0.0, "AREA", "METRIC");
+    assertUnit(*schema, "SquareFt", nullptr, nullptr, "Ft*Ft", 10.0, 1.0, 0.4, "AREA", "IMPERIAL");
+    assertUnit(*schema, "CubicM", "Cubic Feet", "Cubic Meter", "M*M*M", 1.0, 1.0, 0.0, "VOLUMNE", "METRIC");
     sp.Cancel();
     }
 

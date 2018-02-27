@@ -111,7 +111,8 @@
         <ECNavigationProperty propertyName="UnitSystem" relationshipName="UnitSystemHasUnits" direction="backward"/>
         <ECNavigationProperty propertyName="Phenomenon" relationshipName="PhenomenonOwnsUnits" direction="backward"/>
         <ECProperty propertyName="Definition" typeName="string"/>
-        <ECProperty propertyName="Factor" typeName="double"/>
+        <ECProperty propertyName="Numerator" typeName="double"/>
+        <ECProperty propertyName="Denominator" typeName="double"/>
         <ECProperty propertyName="Offset" typeName="double"/>
         <ECProperty propertyName="IsConstant" typeName="boolean"/>
         <ECNavigationProperty propertyName="InvertingUnit" description="If this property is set, this UnitDef is an inverted unit. It inverts the unit specified by this property." relationshipName="UnitHasInvertedUnit" direction="backward"/>

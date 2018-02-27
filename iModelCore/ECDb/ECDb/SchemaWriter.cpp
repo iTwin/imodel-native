@@ -536,7 +536,7 @@ BentleyStatus SchemaWriter::ImportUnit(ECUnitCR unit)
         }
     
 
-    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO main.ec_Unit(SchemaId,Name,DisplayLabel,Description,PhenomenonId,UnitSystemId,Definition,Factor,Offset,IsConstant,InvertingUnitId) VALUES(?,?,?,?,?,?,?,?,?,?,?)");
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO main.ec_Unit(SchemaId,Name,DisplayLabel,Description,PhenomenonId,UnitSystemId,Definition,Numerator,Denominator,Offset,IsConstant,InvertingUnitId) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
@@ -547,10 +547,11 @@ BentleyStatus SchemaWriter::ImportUnit(ECUnitCR unit)
     const int phIdParamIx = 5;
     const int usIdParamIx = 6;
     const int defParamIx = 7;
-    const int factorParamIx = 8;
-    const int offsetParamIx = 9;
-    const int isConstantParamIx = 10;
-    const int invertingUnitIdParamIx = 11;
+    const int numeratorParamIx = 8;
+    const int denominatorParamIx = 9;
+    const int offsetParamIx = 10;
+    const int isConstantParamIx = 11;
+    const int invertingUnitIdParamIx = 12;
 
     if (BE_SQLITE_OK != stmt->BindId(schemaIdParamIx, unit.GetSchema().GetId()))
         return ERROR;
@@ -580,7 +581,10 @@ BentleyStatus SchemaWriter::ImportUnit(ECUnitCR unit)
     if (BE_SQLITE_OK != stmt->BindText(defParamIx, unit.GetDefinition(), Statement::MakeCopy::No))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindDouble(factorParamIx, unit.GetFactor()))
+    if (BE_SQLITE_OK != stmt->BindDouble(numeratorParamIx, unit.GetNumerator()))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindDouble(denominatorParamIx, unit.GetDenominator()))
         return ERROR;
 
     if (unit.HasOffset())
