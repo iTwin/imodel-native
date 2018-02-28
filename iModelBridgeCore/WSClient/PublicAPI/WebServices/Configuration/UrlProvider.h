@@ -97,7 +97,7 @@ struct UrlProvider
         WSCLIENT_EXPORT static void CleanUpUrlCache();
 
         //! Get Available Urls
-        WSCLIENT_EXPORT static const bset<UrlProvider::UrlDescriptor*> UrlProvider::GerUrlRegistry();
+        WSCLIENT_EXPORT static const bset<UrlProvider::UrlDescriptor*> GerUrlRegistry();
 
         //! Available URLs
         struct Urls
