@@ -152,7 +152,7 @@ void UnitRegistry::AddBasePhenomena()
     AddBasePhenomenon(LUMINOSITY);
     AddBasePhenomenon(ANGLE);
     AddBasePhenomenon(SOLIDANGLE);
-    AddBasePhenomenon(FINANCE);
+    AddBasePhenomenon(CURRENCY);
     AddBasePhenomenon(CAPITA);
     AddBasePhenomenon(NUMBER);
     }

@@ -141,26 +141,6 @@ void UnitRegistry::AllUnits(bvector<UnitCP>& allUnits) const
         allUnits.push_back(unitAndName.second);
     }
 
-//-------------------------------------------------------------------------------------//
-// @bsimethod                                              Colin.Kerr     02/16
-//+---------------+---------------+---------------+---------------+---------------+----//
-void UnitRegistry::AddBasePhenomenon(Utf8CP basePhenomenonName)
-    {
-    if (Utf8String::IsNullOrEmpty(basePhenomenonName))
-        return;
-
-    if (HasPhenomenon(basePhenomenonName))
-        {
-        LOG.errorv("Cannot create Base Phenomenon '%s' because name is already in use", basePhenomenonName);
-        return;
-        }
-
-    auto phenomena = new Phenomenon(basePhenomenonName, basePhenomenonName, m_nextId);
-    ++m_nextId;
-
-    m_phenomena.insert(bpair<Utf8CP, PhenomenonP>(basePhenomenonName, phenomena));
-    }
-
 //---------------------------------------------------------------------------------------//
 // @bsimethod                                              Colin.Kerr           02/16
 //+---------------+---------------+---------------+---------------+---------------+------//

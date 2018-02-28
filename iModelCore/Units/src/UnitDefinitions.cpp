@@ -799,7 +799,7 @@ void UnitRegistry::AddBaseUnits()
     un->AddSynonym("RADIAN");
 
     AddUnitForBasePhenomenon("STERAD", SOLIDANGLE);
-    AddUnitForBasePhenomenon("US$", FINANCE);
+    AddUnitForBasePhenomenon("US$", CURRENCY);
     AddUnitForBasePhenomenon("PERSON", CAPITA);
 
     AddUnitForBasePhenomenon("ONE", NUMBER);

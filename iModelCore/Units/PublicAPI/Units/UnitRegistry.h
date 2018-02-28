@@ -68,7 +68,7 @@ private:
     
     void AddSystem(UnitSystemR unitSystem); // Used for creating the static definitions.
     
-    void AddBasePhenomenon(Utf8CP basePhenomenonName);
+    void AddBasePhenomenon(Utf8CP basePhenomenonName) {AddPhenomenon(basePhenomenonName, basePhenomenonName);}
     UnitCP AddUnitForBasePhenomenon(Utf8CP unitName, Utf8CP basePhenomenonName);
 
     template <typename PHENOM_TYPE>

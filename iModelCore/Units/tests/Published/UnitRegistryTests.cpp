@@ -200,7 +200,7 @@ TEST_F(UnitRegistryTests, TestAllBasePhenomenaAdded)
     EXPECT_TRUE(UnitRegistry::Instance().HasPhenomenon("LUMINOSITY"));
     EXPECT_TRUE(UnitRegistry::Instance().HasPhenomenon("ANGLE"));
     EXPECT_TRUE(UnitRegistry::Instance().HasPhenomenon("SOLIDANGLE"));
-    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomenon("FINANCE"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasPhenomenon("CURRENCY"));
     EXPECT_TRUE(UnitRegistry::Instance().HasPhenomenon("CAPITA"));
     EXPECT_TRUE(UnitRegistry::Instance().HasPhenomenon("NUMBER"));
 
@@ -214,7 +214,7 @@ TEST_F(UnitRegistryTests, TestAllBasePhenomenaAdded)
     EXPECT_TRUE(UnitRegistry::Instance().LookupPhenomenon("LUMINOSITY")->IsBase());
     EXPECT_TRUE(UnitRegistry::Instance().LookupPhenomenon("ANGLE")->IsBase());
     EXPECT_TRUE(UnitRegistry::Instance().LookupPhenomenon("SOLIDANGLE")->IsBase());
-    EXPECT_TRUE(UnitRegistry::Instance().LookupPhenomenon("FINANCE")->IsBase());
+    EXPECT_TRUE(UnitRegistry::Instance().LookupPhenomenon("CURRENCY")->IsBase());
     EXPECT_TRUE(UnitRegistry::Instance().LookupPhenomenon("CAPITA")->IsBase());
     EXPECT_TRUE(UnitRegistry::Instance().LookupPhenomenon("NUMBER")->IsBase());
     }

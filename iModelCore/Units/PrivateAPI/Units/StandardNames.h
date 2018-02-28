@@ -40,6 +40,7 @@ static Utf8CP const STATISTICS = "STATISTICS";
 //static Utf8CP const BENTLEY = "BENTLEY";
 static Utf8CP const CUSTOMARY = "CUSTOMARY";
 static Utf8CP const FINANCE = "FINANCE";
+static Utf8CP const CURRENCY = "CURRENCY";
 static Utf8CP const CONSTANT = "CONSTANT";
 
 static Utf8CP const LENGTH = "LENGTH";

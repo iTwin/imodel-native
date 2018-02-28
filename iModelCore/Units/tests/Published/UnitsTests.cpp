@@ -463,7 +463,7 @@ TEST_F(UnitsTests, CreateUnitsSchemaFromFiles)
         bvector<Utf8String> tokens;
         BeStringUtilities::Split(line.c_str(), ";", tokens);
         ASSERT_EQ(3, tokens.size()) << line.c_str();
-        Utf8PrintfString phenString("<Phenomenon name=%s definition=%s", tokens[0].c_str(), tokens[1].c_str());
+        Utf8PrintfString phenString("<Phenomenon typeName=%s definition=%s", tokens[0].c_str(), tokens[1].c_str());
         tokens[0].ReplaceAll("\"", "");
         PhenomenonCP phen = UnitRegistry::Instance().LookupPhenomenon(tokens[0].c_str());
         if (nullptr != phen)
@@ -505,7 +505,7 @@ TEST_F(UnitsTests, CreateUnitsSchemaFromFiles)
             Utf8PrintfString oldNewName("%s;%s", tokens[2].c_str(), unitName.c_str());
             nameMapping.push_back(oldNewName);
             Utf8String unitDefinition = cleanUnitDefinition(tokens[3].c_str());
-            Utf8PrintfString unitString("<Unit name=%s phenomenon=%s unitSystem=%s definition=%s", unitName.c_str(), tokens[0].c_str(), tokens[1].c_str(), unitDefinition.c_str());
+            Utf8PrintfString unitString("<Unit typeName=%s phenomenon=%s unitSystem=%s definition=%s", unitName.c_str(), tokens[0].c_str(), tokens[1].c_str(), unitDefinition.c_str());
             if(!tokens[4].Equals("\"1.0\""))
                 {
                 unitString.append(" numerator=");
@@ -546,7 +546,7 @@ TEST_F(UnitsTests, CreateUnitsSchemaFromFiles)
             Utf8PrintfString oldNewName("%s;%s", tokens[1].c_str(), unitName.c_str());
             nameMapping.push_back(oldNewName);
             Utf8String unitDefinition = cleanUnitName(tokens[0].c_str());
-            Utf8PrintfString invertedUnitString("<InvertedUnit name=%s invertsUnit=%s unitSystem=%s />", unitName.c_str(), unitDefinition.c_str(), tokens[2].c_str());
+            Utf8PrintfString invertedUnitString("<InvertedUnit typeName=%s invertsUnit=%s unitSystem=%s />", unitName.c_str(), unitDefinition.c_str(), tokens[2].c_str());
             WriteLine(unitOutFile, invertedUnitString.c_str());
             }
         else// if (tokens.size() != 0)
@@ -572,7 +572,7 @@ TEST_F(UnitsTests, CreateUnitsSchemaFromFiles)
             Utf8PrintfString oldNewName("%s;%s", tokens[2].c_str(), unitName.c_str());
             nameMapping.push_back(oldNewName);
             Utf8String unitDefinition = cleanUnitDefinition(tokens[3].c_str());
-            Utf8PrintfString constString("<Constant name=%s phenomenon=%s unitSystem=%s definition=%s numerator=%s", unitName.c_str(), tokens[0].c_str(), tokens[1].c_str(), unitDefinition.c_str(), tokens[4].c_str());
+            Utf8PrintfString constString("<Constant typeName=%s phenomenon=%s unitSystem=%s definition=%s numerator=%s", unitName.c_str(), tokens[0].c_str(), tokens[1].c_str(), unitDefinition.c_str(), tokens[4].c_str());
             if (!tokens[5].Equals("\"1.0\""))
                 {
                 constString.append(" denominator=");
