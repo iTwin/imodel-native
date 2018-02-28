@@ -2965,6 +2965,7 @@ StatusInt SetParameterToCoordSys (WStringR parameterName, WStringR parameterStri
             (BaseGCS::pcvLambertEquidistantAzimuthal == coordinateSystem.GetProjectionCode()) ||
             (BaseGCS::pcvPolarStereographic == coordinateSystem.GetProjectionCode()) ||
             (BaseGCS::pcvBonne == coordinateSystem.GetProjectionCode()) ||
+            (BaseGCS::pcvCzechKrovak == coordinateSystem.GetProjectionCode()) ||
             (BaseGCS::pcvLambertEqualAreaAzimuthal == coordinateSystem.GetProjectionCode()) ||
             (BaseGCS::pcvAlbersEqualArea == coordinateSystem.GetProjectionCode()) )
             {
