@@ -8,6 +8,7 @@
 #pragma once
 
 #include "WebServicesUnitTests.h"
+#include "ValuePrinter.h"
 
 #include <Bentley/BeDebugLog.h>
 #include <Bentley/BeTimeUtilities.h>
@@ -19,7 +20,6 @@
 #include "../WebServices/Connect/StubLocalState.h"
 #include "../WebServices/Configuration/StubBuddiClient.h"
 
-#include "ValuePrinter.h"
 #include "AsyncTestCheckpoint.h"
 #include "StubInstances.h"
 #include "WSClientBaseTest.h"

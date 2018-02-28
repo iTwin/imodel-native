@@ -275,6 +275,13 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::RecommendationServiceUrl(
     "https://connect-recommendation.bentley.com",
     &s_urlRegistry
     );
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                julius.cepukenas   11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+const bset<UrlProvider::UrlDescriptor*> UrlProvider::GerUrlRegistry()
+    {
+    return s_urlRegistry;
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Brad.Hadden   11/2014

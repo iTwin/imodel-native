@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/ValuePrinter.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -16,6 +16,7 @@
 #include <BeHttp/HttpResponse.h>
 #include <BeHttp/HttpStatus.h>
 #include <Bentley/Tasks/AsyncTask.h>
+#include <WebServices/Configuration/UrlProvider.h>
 #include <WebServices/Cache/CachingDataSource.h>
 #include <WebServices/Cache/Util/ECDbHelper.h>
 #include <WebServices/Client/ObjectId.h>
@@ -53,6 +54,12 @@ std::ostream& operator << (std::ostream &o, SchemaReadStatus value);
 
 std::ostream& operator << (std::ostream &o, BeFileNameStatus value);
 std::ostream& operator << (std::ostream &o, BeFileStatus value);
+
+BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
+void PrintTo(const UrlProvider::Environment& value, ::std::ostream* os);
+void PrintTo(const UrlProvider::UrlDescriptor& value, ::std::ostream* os);
+void PrintTo(UrlProvider::UrlDescriptor* const value, ::std::ostream* os);
+END_BENTLEY_WEBSERVICES_NAMESPACE
 
 namespace rapidjson
     {

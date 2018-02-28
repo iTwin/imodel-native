@@ -46,7 +46,7 @@ struct UrlProvider
                 ~UrlDescriptor();
 
                 //! Get URL name used to identify it
-                Utf8StringCR GetName() const;
+                WSCLIENT_EXPORT Utf8StringCR GetName() const;
 
                 //! Retrieve cached, server configured or default configured URL.
                 //! Will update URL in cache periodically in background.
@@ -95,6 +95,9 @@ struct UrlProvider
 
         //! Clear local URL cache
         WSCLIENT_EXPORT static void CleanUpUrlCache();
+
+        //! Get Available Urls
+        WSCLIENT_EXPORT static const bset<UrlProvider::UrlDescriptor*> UrlProvider::GerUrlRegistry();
 
         //! Available URLs
         struct Urls
