@@ -88,7 +88,7 @@ static const int TransitionType_Australian          = 52; // IMPLEMENTED 01/18
 static const int TransitionType_Italian             = 53; // NOT IMPLEMENTED
 static const int TransitionType_PolishCubic         = 54; // NOT IMPLEMENTED
 static const int TransitionType_AremaCubic          = 55; // NOT IMPLEMENTED
-static const int TransitionType_MXCubic             = 56; // NOT IMPLEMENTED
+static const int TransitionType_MXCubic             = 56; // IMPLEMENTED 01/18
 static const int TransitionType_MXCubicArc          = 57; // NOT IMPLEMENTED
 
 //! invoke appropriate concrete class constructor ...
@@ -726,6 +726,40 @@ bool EvaluateAtDistance
     DVec2dP d2XY,   //!< [out] second derivative wrt distance
     DVec2dP d3XY   //!< [out] third derivative wrt distance
     ) const override;
+//! Evaluate at distance a spiral in standard orientation -- zero curvature at origin.
+static bool EvaluateAtDistanceInStandardOrientation
+    (
+    double s,           //!< [in] distance for evaluation
+    double length,      //! [in] strictly nonzero length along spiral.
+    double curvature1,  //! [in] strictly nonzero exit curvature
+    DPoint2dR xy,      //!< [out] coordinates on spiral
+    DVec2dP d1XY,   //!< [out] first derivative wrt distance
+    DVec2dP d2XY,   //!< [out] second derivative wrt distance
+    DVec2dP d3XY   //!< [out] third derivative wrt distance
+    );
+};
+
+
+// Italian Spiral
+
+
+struct GEOMDLLIMPEXP DSpiral2dItalian : DSpiral2dDirectEvaluation
+{
+    DECLARE_DSPIRAL2DBASE_DIRECT_EVALUATION_OVERRIDES
+public:
+    DSpiral2dItalian ();
+
+//! Evaluate the spiral and optional derivatives at specified distance along.
+//! return true if valid evaluation.
+bool EvaluateAtDistance
+    (
+    double distanceAlong, //!< [in] distance for evaluation
+    DPoint2dR xyz,          //!< [out] coordinates on spiral
+    DVec2dP d1XYZ,   //!< [out] first derivative wrt distance
+    DVec2dP d2XYZ,   //!< [out] second derivative wrt distance
+    DVec2dP d3XYZ   //!< [out] third derivative wrt distance
+    ) const override;
+
 //! Evaluate at distance a spiral in standard orientation -- zero curvature at origin.
 static bool EvaluateAtDistanceInStandardOrientation
     (
