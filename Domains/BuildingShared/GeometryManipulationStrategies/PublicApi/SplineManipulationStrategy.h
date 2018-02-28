@@ -31,6 +31,7 @@ struct SplineManipulationStrategy : public CurvePrimitiveManipulationStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsContinious() const override { return true; }
 
         virtual SplinePlacementStrategyType _GetType() const = 0;
+        virtual SplinePlacementStrategyPtr _CreatePlacement() = 0;
 
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static SplineManipulationStrategyPtr Create(SplinePlacementStrategyType placementStrategy);
@@ -60,6 +61,8 @@ struct SplineControlPointsManipulationStrategy : public SplineManipulationStrate
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurvePrimitiveManipulationStrategyPtr _Clone() const override { return new SplineControlPointsManipulationStrategy(*this); };
 
         virtual SplinePlacementStrategyType _GetType() const override {return SplinePlacementStrategyType::ControlPoints;}
+
+        virtual SplinePlacementStrategyPtr _CreatePlacement() override;
     public:
         static SplineControlPointsManipulationStrategyPtr Create(int order) { return new SplineControlPointsManipulationStrategy(order); }
 
@@ -94,9 +97,11 @@ struct SplineThroughPointsManipulationStrategy : public SplineManipulationStrate
         void _RemoveEndTangent() { m_endTangent.Zero(); m_endTangent.Normalize(); }
         DVec3d _GetEndTangent() const { return m_endTangent; }
 
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurvePrimitiveManipulationStrategyPtr _Clone() const override { return new SplineThroughPointsManipulationStrategy(*this); };
+
         virtual SplinePlacementStrategyType _GetType() const override { return SplinePlacementStrategyType::ThroughPoints; }
 
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurvePrimitiveManipulationStrategyPtr _Clone() const override { return new SplineThroughPointsManipulationStrategy(*this); };
+        virtual SplinePlacementStrategyPtr _CreatePlacement() override;
 
     public:
         static SplineThroughPointsManipulationStrategyPtr Create() { return new SplineThroughPointsManipulationStrategy(); }

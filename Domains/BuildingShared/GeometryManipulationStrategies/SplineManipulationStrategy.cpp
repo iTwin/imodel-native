@@ -39,9 +39,7 @@ SplineManipulationStrategyPtr SplineManipulationStrategy::Create
 //---------------+---------------+---------------+---------------+---------------+------
 SplinePlacementStrategyPtr SplineManipulationStrategy::CreatePlacement()
     {
-    SplinePlacementStrategyPtr strategy = dynamic_cast<SplinePlacementStrategyP>(_CreateDefaultPlacementStrategy().get());
-    BeAssert(strategy.IsValid());
-    return strategy;
+    return _CreatePlacement();
     }
 
 //--------------------------------------------------------------------------------------
@@ -87,6 +85,14 @@ ICurvePrimitivePtr SplineControlPointsManipulationStrategy::_FinishPrimitive() c
 CurvePrimitivePlacementStrategyPtr SplineControlPointsManipulationStrategy::_CreateDefaultPlacementStrategy() 
     {
     return SplineControlPointsPlacementStrategy::Create(*this); 
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+SplinePlacementStrategyPtr SplineControlPointsManipulationStrategy::_CreatePlacement()
+    {
+    return SplineControlPointsPlacementStrategy::Create(*this);
     }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -137,4 +143,12 @@ void SplineThroughPointsManipulationStrategy::SetEndTangent(DVec3d endTangent)
     { 
     endTangent.Normalize();
     _SetEndTangent(endTangent); 
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+SplinePlacementStrategyPtr SplineThroughPointsManipulationStrategy::_CreatePlacement()
+    {
+    return SplineThroughPointsPlacementStrategy::Create(*this);
     }
