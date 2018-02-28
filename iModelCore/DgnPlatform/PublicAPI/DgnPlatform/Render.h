@@ -273,6 +273,7 @@ struct Task : RefCounted<NonCopyableClass>
         ChangeScene,
         DefineGeometryTexture,
         DestroyTarget,
+        Idle,
         Initialize,
         OnResized,
         OverrideFeatureSymbology,
@@ -300,7 +301,7 @@ struct Task : RefCounted<NonCopyableClass>
     {
         uint32_t m_value;
         static Priority Highest() {return Priority(0);}
-        static Priority Lowest() {return Priority(0xffff);}
+        static Priority Lowest() {return Priority(0xffff);} // Reserved for the 'idle' task
         Priority& operator++() {++m_value; return *this;}
         explicit Priority(uint32_t val=0) : m_value(val) {}
     };
@@ -1893,6 +1894,7 @@ struct FeatureIndex
 
     constexpr bool IsUniform() const { return Type::Uniform == m_type; }
     constexpr bool IsEmpty() const { return Type::Empty == m_type; }
+    constexpr bool IsNonUniform() const { return Type::NonUniform == m_type; }
 
     void Reset() { *this = FeatureIndex(); }
 };
@@ -2349,29 +2351,28 @@ enum class FillFlags : uint8_t
 ENUM_IS_FLAGS(FillFlags);
 
 //=======================================================================================
-//! Information needed to draw a triangle mesh
-// @bsiclass                                                    Keith.Bentley   06/16
+// @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
-struct TriMeshArgs
+struct MeshPolyline
 {
-    uint32_t            m_numIndices = 0;
-    uint32_t const*     m_vertIndex = nullptr;
-    uint32_t            m_numPoints = 0;
-    uint32_t            m_edgeWidth = 0;
-    QPoint3dCP          m_points= nullptr;
-    OctEncodedNormalCP  m_normals = nullptr;
-    FPoint2d const*     m_textureUV= nullptr;
-    uint8_t const*      m_edgeFlags = nullptr;
-    TexturePtr          m_texture;
-    ColorIndex          m_colors;
-    FeatureIndex        m_features;
-    QPoint3d::Params    m_pointParams;
-    MaterialPtr         m_material;
-    FillFlags           m_fillFlags = FillFlags::None;
-    bool                m_isPlanar = false;
+private:
+    bvector<uint32_t>   m_indices;
+    DPoint3d            m_rangeCenter;
+    double              m_startDistance;
 
-    DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
-};
+public:
+    MeshPolyline () : m_startDistance(0.0) { }
+    MeshPolyline (double startDistance, DPoint3dCR rangeCenter) : m_startDistance(startDistance), m_rangeCenter(rangeCenter) { }
+    MeshPolyline (double startDistance, DPoint3dCR rangeCenter, bvector<uint32_t>&& indices) : m_startDistance(startDistance), m_rangeCenter(rangeCenter), m_indices(std::move(indices)) { }
+
+    bvector<uint32_t> const& GetIndices() const { return m_indices; }
+    bvector<uint32_t>& GetIndices() { return m_indices; }
+    double GetStartDistance() const { return m_startDistance; }
+    DPoint3dCR GetRangeCenter() const { return m_rangeCenter; }
+    
+    void AddIndex(uint32_t index)  { if (m_indices.empty() || m_indices.back() != index) m_indices.push_back(index); }
+    void Clear() { m_indices.clear(); }
+ };
 
 //=======================================================================================
 //! Information needed to draw a set of indexed polylines using a shared vertex buffer.
@@ -2389,6 +2390,17 @@ struct IndexedPolylineArgs
 
         Polyline() { }
         Polyline(uint32_t const* indices, uint32_t numIndices, double startDistance, DPoint3dCR rangeCenter) : m_vertIndex(indices), m_numIndices(numIndices), m_startDistance(startDistance), m_rangeCenter(rangeCenter) { }
+
+        bool IsValid() const { return 0 < m_numIndices; }
+        void Reset() { m_numIndices = 0; m_vertIndex = nullptr; m_startDistance = 0.0; }
+        bool Init(MeshPolylineCR polyline)
+            {
+            m_numIndices = static_cast<uint32_t>(polyline.GetIndices().size());
+            m_vertIndex = 0 < m_numIndices ? polyline.GetIndices().data() : nullptr;
+            m_startDistance = polyline.GetStartDistance();
+            m_rangeCenter = polyline.GetRangeCenter();
+            return IsValid();
+            }
     };
 
     QPoint3dCP          m_points = nullptr;
@@ -2401,7 +2413,6 @@ struct IndexedPolylineArgs
     uint32_t            m_width = 0;
     LinePixels          m_linePixels = LinePixels::Solid;
     bool                m_disjoint = false;
-    bool                m_isEdge = false;
     bool                m_is2d = false;
     bool                m_isPlanar = false;
 
@@ -2424,35 +2435,22 @@ struct  MeshEdge
     uint32_t                m_indices[2];
 
     MeshEdge() { }
-    MeshEdge(uint32_t index0, uint32_t index1);
+    MeshEdge(uint32_t index0, uint32_t index1)
+        {
+        if (index0 < index1)
+            {
+            m_indices[0] = index0;
+            m_indices[1] = index1;
+            }
+        else
+            {
+            m_indices[0] = index1;
+            m_indices[1] = index0;
+            }
+        }
 
     bool operator < (MeshEdge const& rhs) const;
     };                 
-
-
-//=======================================================================================
-// @bsistruct                                                   Paul.Connelly   12/16
-//=======================================================================================
-struct MeshPolyline
-{
-private:
-    bvector<uint32_t>   m_indices;
-    double              m_startDistance;
-    DPoint3d            m_rangeCenter;
-
-public:
-    MeshPolyline () : m_startDistance(0.0) { }
-    MeshPolyline (double startDistance, DPoint3dCR rangeCenter) : m_startDistance(startDistance), m_rangeCenter(rangeCenter) { }
-    MeshPolyline (double startDistance, DPoint3dCR rangeCenter, bvector<uint32_t>&& indices) : m_startDistance(startDistance), m_rangeCenter(rangeCenter), m_indices(std::move(indices)) { }
-
-    bvector<uint32_t> const& GetIndices() const { return m_indices; }
-    bvector<uint32_t>& GetIndices() { return m_indices; }
-    double GetStartDistance() const { return m_startDistance; }
-    DPoint3dCR GetRangeCenter() const { return m_rangeCenter; }
-    
-    void AddIndex(uint32_t index)  { if (m_indices.empty() || m_indices.back() != index) m_indices.push_back(index); }
-    void Clear() { m_indices.clear(); }
-};
 
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     05/2017
@@ -2470,32 +2468,88 @@ struct MeshEdges : RefCountedBase
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     04/2017
 //=======================================================================================
-struct MeshEdgeArgs
+struct EdgeArgs
 {
-    MeshEdgeCP                  m_edges;
-    uint32_t                    m_numEdges;
-    QPoint3dCP                  m_points = nullptr;
-    FeatureIndex                m_features;
-    ColorIndex                  m_colors;
-    QPoint3d::Params            m_pointParams;
-    uint32_t                    m_width = 0;
-    LinePixels                  m_linePixels = LinePixels::Solid;
-    bool                        m_isPlanar = false;
+    MeshEdgeCP          m_edges = nullptr;
+    uint32_t            m_numEdges = 0;
 
-    DGNPLATFORM_EXPORT bool Init(MeshEdgesCR meshEdges, QPoint3dCP points, QPoint3d::ParamsCR pointParams, bool isPlanar);
-}; 
+    void Clear() { *this = EdgeArgs(); }
+    bool Init(MeshEdgesCR meshEdges);
+    bool IsValid() const { BeAssert((nullptr == m_edges) == (0 == m_numEdges)); return nullptr != m_edges; }
+};
 
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     04/2017
 //=======================================================================================
-struct SilhouetteEdgeArgs   : MeshEdgeArgs
+struct SilhouetteEdgeArgs : EdgeArgs
 {
-    // two normals per edge - define the triangle normals for silhouette calculation.
-    OctEncodedNormalPairCP  m_normals;
+    OctEncodedNormalPairCP  m_normals = nullptr;
 
-    DGNPLATFORM_EXPORT bool Init(MeshEdgesCR meshEdges, QPoint3dCP points, QPoint3d::ParamsCR pointParams);
-};  
+    void Clear() { *this = SilhouetteEdgeArgs(); }
+    bool Init(MeshEdgesCR);
+};
 
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   11/17
+//=======================================================================================
+struct PolylineEdgeArgs
+ {
+    using Polyline = IndexedPolylineArgs::Polyline;
+
+    Polyline const*     m_lines = nullptr;
+    uint32_t            m_numLines = 0;
+
+    PolylineEdgeArgs() = default;
+    PolylineEdgeArgs(Polyline const* lines, uint32_t numLines) : m_lines(lines), m_numLines(numLines) { }
+
+    bool IsValid() const { BeAssert((nullptr == m_lines) == (0 == m_numLines)); return nullptr != m_lines; }
+    void Clear() { *this = PolylineEdgeArgs(); }
+    bool Init(bvector<Polyline> const& polylines)
+        {
+        m_numLines = static_cast<uint32_t>(polylines.size());
+        m_lines = 0 < m_numLines ? polylines.data() : nullptr;
+        return IsValid();
+        }
+};
+
+//=======================================================================================
+//! Information needed to draw a triangle mesh and its edges.
+// @bsiclass                                                    Keith.Bentley   06/16
+//=======================================================================================
+struct TriMeshArgs
+{
+    // The vertices of the edges are shared with those of the surface
+    struct Edges
+    {
+        EdgeArgs            m_edges;
+        SilhouetteEdgeArgs  m_silhouettes;
+        PolylineEdgeArgs    m_polylines;
+        uint32_t            m_width = 0;
+        LinePixels          m_linePixels = LinePixels::Solid;
+
+        void Clear() { *this = Edges(); }
+        bool IsValid() const { return m_edges.IsValid() || m_silhouettes.IsValid() || m_polylines.IsValid(); }
+    };
+
+    Edges               m_edges;
+    uint32_t            m_numIndices = 0;
+    uint32_t const*     m_vertIndex = nullptr;
+    uint32_t            m_numPoints = 0;
+    QPoint3dCP          m_points= nullptr;
+    OctEncodedNormalCP  m_normals = nullptr;
+    FPoint2d const*     m_textureUV= nullptr;
+    TexturePtr          m_texture;
+    ColorIndex          m_colors;
+    FeatureIndex        m_features;
+    QPoint3d::Params    m_pointParams;
+    MaterialPtr         m_material;
+    FillFlags           m_fillFlags = FillFlags::None;
+    bool                m_isPlanar = false;
+    bool                m_is2d = false;
+
+    DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
+};
+ 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   03/17
 //=======================================================================================
@@ -3220,12 +3274,6 @@ struct System
     //! Create an indexed polyline primitive
     virtual GraphicPtr _CreateIndexedPolylines(IndexedPolylineArgsCR args, DgnDbR dgndb) const = 0;
 
-    //! Create visible mesh edges primitive
-    virtual GraphicPtr _CreateVisibleEdges(MeshEdgeArgsCR args, DgnDbR dgndb) const = 0;
-
-    //! Create silhouette mesh edges primitive  - these edges are displayed only if they become silhouettes.
-    virtual GraphicPtr _CreateSilhouetteEdges(SilhouetteEdgeArgsCR args, DgnDbR dgndb) const = 0;
-
     //! Create a point cloud primitive
     virtual GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb) const = 0;
 
@@ -3243,7 +3291,6 @@ struct System
 
     //! Create a Graphic consisting of a list of Graphics, with optional transform, clip, and view flag overrides applied to the list
     virtual GraphicPtr _CreateBranch(GraphicBranch&& branch, DgnDbR dgndb, TransformCR transform, ClipVectorCP clips) const = 0;
-
 
     //! Return the maximum number of Features allowed within a Batch.
     virtual uint32_t _GetMaxFeaturesPerBatch() const = 0;
@@ -3274,6 +3321,10 @@ struct System
 
     //! Create a Light from Light::Parameters
     virtual LightPtr _CreateLight(Lighting::Parameters const&, DVec3dCP direction, DPoint3dCP location) const = 0;
+
+    //! Perform some small unit of work (or do nothing) during an idle frame.
+    //! An idle frame is classified one tick of the render loop during which no viewports are open and the render queue is empty.
+    virtual void _Idle() { }
 };
 
 //=======================================================================================
