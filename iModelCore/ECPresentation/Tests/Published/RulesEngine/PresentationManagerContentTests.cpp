@@ -2945,6 +2945,94 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, UsesSuppliedECPropertyForma
     EXPECT_STREQ("_2017-05-30T00:00:00.000Z_", displayValues[fieldName].GetString());
     }
 
+DEFINE_SCHEMA(UsesSuppliedECPropertyFormatterToFormatNestedContentValue, R"*(
+    <ECEntityClass typeName="Element">
+    </ECEntityClass>
+    <ECEntityClass typeName="ElementUniqueAspect">
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsUniqueAspect" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="ElementUniqueAspect"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, UsesSuppliedECPropertyFormatterToFormatNestedContentValue)
+    {
+    TestPropertyFormatter formatter;
+    m_manager->SetECPropertyFormatter(&formatter);
+
+    ECClassCP elementClass = GetClass("Element");
+    ECClassCP aspectClass = GetClass("ElementUniqueAspect");
+    ECRelationshipClassCP rel = GetClass("ElementOwnsUniqueAspect")->GetRelationshipClassCP();
+
+    IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    IECInstancePtr aspect = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectClass, [](IECInstanceR instance)
+        {
+        instance.SetValue("StringProperty", ECValue("Test"));
+        });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *element, *aspect);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", 
+        elementClass->GetFullName(), false);
+    rule->AddSpecification(*spec);
+
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward,
+        rel->GetFullName(), aspectClass->GetFullName(), "", RelationshipMeaning::SameInstance));
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    // set the "merge results" flag
+    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
+    modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*modifiedDescriptor, PageOptions()).get();
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(R"({
+        "Element_ElementUniqueAspect": [{
+            "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
+            "Values": {
+                "ElementUniqueAspect_StringProperty": "Test"
+                },
+            "DisplayValues": {
+                "ElementUniqueAspect_StringProperty": "_Test_"
+                }
+            }]
+        })");
+    expectedValues["Element_ElementUniqueAspect"][0]["PrimaryKeys"][0]["ECClassId"].SetString(aspectClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
+    expectedValues["Element_ElementUniqueAspect"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(aspect->GetInstanceId().c_str(), expectedValues.GetAllocator());
+    EXPECT_EQ(expectedValues, recordJson["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -5551,7 +5639,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
 
     ContentSetItemCPtr record = contentSet.Get(0);
     rapidjson::Document recordJson = record->AsJson();
-    EXPECT_STREQ(varies_string.c_str(), recordJson["Values"]["MyClass_ArrayProperty"].GetString());
+    EXPECT_TRUE(recordJson["Values"]["MyClass_ArrayProperty"].IsNull());
+    EXPECT_STREQ(varies_string.c_str(), recordJson["DisplayValues"]["MyClass_ArrayProperty"].GetString());
     EXPECT_TRUE(record->IsMerged("MyClass_ArrayProperty"));
     }
 
@@ -5613,7 +5702,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
 
     ContentSetItemCPtr record = contentSet.Get(0);
     rapidjson::Document recordJson = record->AsJson();
-    EXPECT_STREQ(varies_string.c_str(), recordJson["Values"]["MyClass_ArrayProperty"].GetString());
+    EXPECT_TRUE(recordJson["Values"]["MyClass_ArrayProperty"].IsNull());
+    EXPECT_STREQ(varies_string.c_str(), recordJson["DisplayValues"]["MyClass_ArrayProperty"].GetString());
     EXPECT_TRUE(record->IsMerged("MyClass_ArrayProperty"));
     }
 
@@ -6247,7 +6337,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValuesW
 
     ContentSetItemCPtr record = contentSet.Get(0);
     rapidjson::Document recordJson = record->AsJson();
-    EXPECT_STREQ(varies_string.c_str(), recordJson["Values"]["MyClass_StructProperty"].GetString());
+    EXPECT_TRUE(recordJson["Values"]["MyClass_StructProperty"].IsNull());
+    EXPECT_STREQ(varies_string.c_str(), recordJson["DisplayValues"]["MyClass_StructProperty"].GetString());
     EXPECT_TRUE(record->IsMerged("MyClass_StructProperty"));
     }
 
@@ -6877,7 +6968,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
 
     ContentSetItemCPtr record = contentSet.Get(0);
     rapidjson::Document recordJson = record->AsJson();
-    EXPECT_STREQ(varies_string.c_str(), recordJson["Values"]["MyClass_StructArrayProperty"].GetString());
+    EXPECT_TRUE(recordJson["Values"]["MyClass_StructArrayProperty"].IsNull());
+    EXPECT_STREQ(varies_string.c_str(), recordJson["DisplayValues"]["MyClass_StructArrayProperty"].GetString());
     EXPECT_TRUE(record->IsMerged("MyClass_StructArrayProperty"));
     }
 
@@ -6954,7 +7046,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
 
     ContentSetItemCPtr record = contentSet.Get(0);
     rapidjson::Document recordJson = record->AsJson();
-    EXPECT_STREQ(varies_string.c_str(), recordJson["Values"]["MyClass_StructArrayProperty"].GetString());
+    EXPECT_TRUE(recordJson["Values"]["MyClass_StructArrayProperty"].IsNull());
+    EXPECT_STREQ(varies_string.c_str(), recordJson["DisplayValues"]["MyClass_StructArrayProperty"].GetString());
     EXPECT_TRUE(record->IsMerged("MyClass_StructArrayProperty"));
     }
 
@@ -7167,8 +7260,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, FormatsPrimitiveArrayProper
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
 
+    // set the "merge results" flag
+    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
+    modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
+
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*modifiedDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -7229,8 +7326,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, FormatsStructPropertyValues
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
 
+    // set the "merge results" flag
+    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
+    modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
+
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*modifiedDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -7248,6 +7349,105 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, FormatsStructPropertyValues
     EXPECT_EQ(expectedDisplayValues, recordJson["DisplayValues"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["DisplayValues"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(FormatsNestedStructPropertyValues, R"*(
+    <ECStructClass typeName="MyStruct">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECStructClass>
+    <ECEntityClass typeName="Element">
+    </ECEntityClass>
+    <ECEntityClass typeName="ElementUniqueAspect">
+        <ECStructProperty propertyName="StructProperty" typeName="MyStruct" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsUniqueAspect" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="ElementUniqueAspect"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, FormatsNestedStructPropertyValues)
+    {
+    TestPropertyFormatter formatter;
+    m_manager->SetECPropertyFormatter(&formatter);
+
+    // set up data set
+    ECClassCP elementClass = GetClass("Element");
+    ECClassCP aspectClass = GetClass("ElementUniqueAspect");
+    ECRelationshipClassCP rel = GetClass("ElementOwnsUniqueAspect")->GetRelationshipClassCP();
+
+    IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    IECInstancePtr aspect = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectClass, [](IECInstanceR instance)
+        {
+        instance.SetValue("StructProperty.IntProperty", ECValue(123));
+        instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
+        });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *element, *aspect);
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", elementClass->GetFullName(), false);
+    rule->AddSpecification(*spec);
+    
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward,
+        rel->GetFullName(), aspectClass->GetFullName(), "", RelationshipMeaning::SameInstance));
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(1, descriptor->GetVisibleFields().size());
+
+    // set the "merge results" flag
+    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
+    modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*modifiedDescriptor, PageOptions()).get();
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(R"({
+        "Element_ElementUniqueAspect": [{
+            "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
+            "Values": {
+                "ElementUniqueAspect_StructProperty": {
+                    "IntProperty": 123,
+                    "StringProperty": "abc"
+                    }
+                },
+            "DisplayValues": {
+                "ElementUniqueAspect_StructProperty": {
+                    "IntProperty": "_123_",
+                    "StringProperty": "_abc_"
+                    }
+                }
+            }]
+        })");
+    expectedValues["Element_ElementUniqueAspect"][0]["PrimaryKeys"][0]["ECClassId"].SetString(aspectClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
+    expectedValues["Element_ElementUniqueAspect"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(aspect->GetInstanceId().c_str(), expectedValues.GetAllocator());
+    EXPECT_EQ(expectedValues, recordJson["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -7762,9 +7962,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
         })");
     expectedValues["ClassD_ClassE"].SetString(varies_string.c_str(), expectedValues.GetAllocator());
 
-    EXPECT_EQ(expectedValues, recordJson["Values"])
+    EXPECT_EQ(expectedValues, recordJson["DisplayValues"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
-        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["DisplayValues"]);
     EXPECT_TRUE(contentSet.Get(0)->IsMerged("ClassD_ClassE"));
     }
 
@@ -7878,9 +8078,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
         })");
     expectedValues["ClassD_ClassE"].SetString(varies_string.c_str(), expectedValues.GetAllocator());
 
-    EXPECT_EQ(expectedValues, recordJson["Values"])
+    EXPECT_EQ(expectedValues, recordJson["DisplayValues"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
-        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["DisplayValues"]);
     EXPECT_TRUE(contentSet.Get(0)->IsMerged("ClassD_ClassE"));
     }
 

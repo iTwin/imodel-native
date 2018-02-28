@@ -328,20 +328,22 @@ void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentD
         {
         // if records are merged, have to query nested content for each merged record individually 
         // and merge them one after one
-        rapidjson::Document content;
+        rapidjson::Document contentValues, contentDisplayValues;
         for (ECInstanceKeyCR key : item.GetKeys())
             {
             if (!isRelatedContent && field.GetContentClass().GetId() != key.GetClassId())
                 continue;
 
             provider->SetPrimaryInstanceKey(key);
-            rapidjson::Document instanceContent = GetNestedContent(*provider, ContentRequest::Values, true, GetContext().IsNestedContent(), isRelatedContent);
-            if (content.IsNull())
+            rapidjson::Document instanceValues = GetNestedContent(*provider, ContentRequest::Values, true, GetContext().IsNestedContent(), isRelatedContent);
+            rapidjson::Document instanceDisplayValues = GetNestedContent(*provider, ContentRequest::DisplayValues, true, GetContext().IsNestedContent(), isRelatedContent);
+            if (contentValues.IsNull())
                 {
                 // first pass - save the instance content
-                content = std::move(instanceContent);
+                contentValues = std::move(instanceValues);
+                contentDisplayValues = std::move(instanceDisplayValues);
                 }
-            else if (MergeContent(content, content, instanceContent, isRelatedContent, GetContext().GetLocalizationProvider()))
+            else if (MergeContent(contentValues, contentDisplayValues, instanceValues, isRelatedContent, GetContext().GetLocalizationProvider()))
                 {
                 // if detected different values during merge, stop
                 item.GetMergedFieldNames().push_back(fieldName);
@@ -353,16 +355,16 @@ void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentD
             RapidJsonValueR values = item.GetValues()[fieldName];
             RapidJsonValueR displayValues = item.GetDisplayValues()[fieldName];
             bool areValuesDifferent = MergeContent(values, item.GetValues().GetAllocator(), displayValues, item.GetDisplayValues().GetAllocator(),
-                content, isRelatedContent, GetContext().GetLocalizationProvider());
+                contentValues, isRelatedContent, GetContext().GetLocalizationProvider());
             if (areValuesDifferent)
                 item.GetMergedFieldNames().push_back(fieldName);
             }
         else
             {
             item.GetDisplayValues().AddMember(rapidjson::Value(fieldName, item.GetDisplayValues().GetAllocator()),
-                rapidjson::Value(content, item.GetDisplayValues().GetAllocator()), item.GetDisplayValues().GetAllocator());
+                rapidjson::Value(contentDisplayValues, item.GetDisplayValues().GetAllocator()), item.GetDisplayValues().GetAllocator());
             item.GetValues().AddMember(rapidjson::Value(fieldName, item.GetValues().GetAllocator()),
-                rapidjson::Value(content, item.GetValues().GetAllocator()), item.GetValues().GetAllocator());
+                rapidjson::Value(contentValues, item.GetValues().GetAllocator()), item.GetValues().GetAllocator());
             }
         }
     else
