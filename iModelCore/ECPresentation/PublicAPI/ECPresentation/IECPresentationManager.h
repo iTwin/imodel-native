@@ -34,7 +34,7 @@ private:
     static IECPresentationManager* s_instance;
     
 private:
-    folly::Future<NodesPathElement> FindNode(ECDbCR, NavNodeCP, NavNodeKeyCR, JsonValueCR);
+    folly::Future<NodesPathElement> FindNode(ECDbCR, NavNodeCP, ECInstanceKeyCR, JsonValueCR);
 
 //__PUBLISH_SECTION_START__
 private:
@@ -55,8 +55,8 @@ protected:
     //! @see GetChildrenCount
     virtual folly::Future<size_t> _GetChildrenCount(IConnectionCR, NavNodeCR, JsonValueCR) = 0;
     
-    //! @see HasChild
-    virtual folly::Future<bool> _HasChild(IConnectionCR, NavNodeCR, NavNodeKeyCR, JsonValueCR) = 0;
+    //! Checks if node has a child with specified ECInstanceKey.
+    virtual folly::Future<bool> _HasChild(IConnectionCR, NavNodeCR, ECInstanceKeyCR, JsonValueCR) = 0;
 
     //! Retrieves the parent node of the specified node.
     //! @see GetParent
@@ -161,13 +161,6 @@ public:
     //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
     ECPRESENTATION_EXPORT folly::Future<size_t> GetChildrenCount(ECDbCR db, NavNodeCR parentNode, JsonValueCR extendedOptions = Json::Value());
     
-    //! Checks whether the specified parent node has the specified child node as its children.
-    //! @param[in] db The db to use for checking.
-    //! @param[in] parentNode The parent node whose children should be checked.
-    //! @param[in] childNodeKey Key of the child node to look for.
-    //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
-    ECPRESENTATION_EXPORT folly::Future<bool> HasChild(ECDbCR db, NavNodeCR parentNode, NavNodeKeyCR childNodeKey, JsonValueCR extendedOptions = Json::Value());
-
     //! Retrieves the parent node of the specified node.
     //! @param[in] db The db to use for getting the node.
     //! @param[in] childNode The child node to get the parent for.
@@ -182,16 +175,16 @@ public:
     
     //! Provided a path of node keys, returns a path of nodes.
     //! @param[in] db The db to use for getting the nodes path.
-    //! @param[in] keyPath Node keys path describing the path from the root node down to the target node.
+    //! @param[in] keyPath ECInstanceKey path describing the path from the root node down to the target node.
     //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
-    ECPRESENTATION_EXPORT folly::Future<NodesPathElement> GetNodesPath(ECDbCR db, NavNodeKeyPath const& keyPath, JsonValueCR extendedOptions = Json::Value());
+    ECPRESENTATION_EXPORT folly::Future<NodesPathElement> GetNodesPath(ECDbCR db, bvector<ECInstanceKey> const& keyPath, JsonValueCR extendedOptions = Json::Value());
 
     //! Returns node paths from the provided node key paths.
     //! @param[in] db The db to use for getting the nodes path.
-    //! @param[in] keyPaths Node key paths describing the path from the root node down to the target nodes.
+    //! @param[in] keyPaths ECInstanceKey paths describing paths from the root node down to the target nodes.
     //! @param[in] markedIndex Index of the path which will be marked in the resulting path's list.
     //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
-    ECPRESENTATION_EXPORT folly::Future<bvector<NodesPathElement>> GetNodesPath(ECDbCR db, bvector<NavNodeKeyPath> const& keyPaths, int64_t markedIndex, JsonValueCR extendedOptions = Json::Value());
+    ECPRESENTATION_EXPORT folly::Future<bvector<NodesPathElement>> GetNodesPath(ECDbCR db, bvector<bvector<ECInstanceKey>> const& keyPaths, int64_t markedIndex, JsonValueCR extendedOptions = Json::Value());
     
     //! Returns filtered nodes paths
     //! @param[in] db The db to use for getting the nodes path.

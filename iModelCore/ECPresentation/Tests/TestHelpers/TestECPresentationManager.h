@@ -72,7 +72,7 @@ struct TestECPresentationManager : IECPresentationManager
 private:
     Hierarchy m_hierarchy; // parent -> children
     bmap<NavNodeCP, NavNodeCP> m_parentship; // child -> parent
-    std::function<bool(IConnectionCR, NavNodeCR parentNode, NavNodeKeyCR childNodeKey, JsonValueCR)> m_hasChildHandler;
+    std::function<bool(IConnectionCR, NavNodeCR parentNode, ECInstanceKeyCR childNodeKey, JsonValueCR)> m_hasChildHandler;
     std::function<bvector<NavNodeCPtr>(IConnectionCR, Utf8CP, JsonValueCR)> m_getFilteredNodesPathsHandler;
     std::function<bvector<ECInstanceChangeResult>(IConnectionCR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR, JsonValueCR)> m_saveValueChangeHandler;
     std::function<ContentDescriptorCPtr(IConnectionCR, Utf8CP, KeySetCR, SelectionInfo const*, JsonValueCR)> m_contentDescriptorHandler;
@@ -118,18 +118,20 @@ protected:
             }
         return NavNodeCPtr(nullptr);
         }
-    folly::Future<bool> _HasChild(IConnectionCR db, NavNodeCR parentNode, NavNodeKeyCR childNodeKey, JsonValueCR options) override
+    folly::Future<bool> _HasChild(IConnectionCR db, NavNodeCR parentNode, ECInstanceKeyCR childKey, JsonValueCR options) override
         {
         if (nullptr != m_hasChildHandler)
-            return m_hasChildHandler(db, parentNode, childNodeKey, options);
+            return m_hasChildHandler(db, parentNode, childKey, options);
 
         auto iter = m_hierarchy.find(&parentNode);
         if (m_hierarchy.end() == iter)
             return false;
 
         bvector<NavNodeCPtr> const& children = iter->second;
-        return children.end() != std::find_if(children.begin(), children.end(),
-            [&childNodeKey](NavNodeCPtr const& child){return 0 == child->GetKey()->Compare(childNodeKey);});
+        return children.end() != std::find_if(children.begin(), children.end(), [&childKey](NavNodeCPtr const& child)
+            {
+            return (child->GetKey()->AsECInstanceNodeKey() && child->GetKey()->AsECInstanceNodeKey()->GetInstanceKey() == childKey);
+            });
         }
     folly::Future<bvector<NavNodeCPtr>> _GetFilteredNodes(IConnectionCR connection, Utf8CP filterText, JsonValueCR options) override 
         {
@@ -215,7 +217,7 @@ public:
             }
         }
     
-    void SetHasChildHandler(std::function<bool(IConnectionCR, NavNodeCR, NavNodeKeyCR, JsonValueCR)> handler) {m_hasChildHandler = handler;}
+    void SetHasChildHandler(std::function<bool(IConnectionCR, NavNodeCR, ECInstanceKeyCR, JsonValueCR)> handler) {m_hasChildHandler = handler;}
     void SetGetFilteredNodesPathsHandler(std::function<bvector<NavNodeCPtr>(IConnectionCR, Utf8CP, JsonValueCR)> handler) {m_getFilteredNodesPathsHandler = handler;}
     void SetSaveValueChangeHandler(std::function<bvector<ECInstanceChangeResult>(IConnectionCR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR, JsonValueCR)> handler) {m_saveValueChangeHandler = handler;}
     void SetContentDescriptorHandler(std::function<ContentDescriptorCPtr(IConnectionCR, Utf8CP, KeySetCR, SelectionInfo const*, JsonValueCR)> handler){m_contentDescriptorHandler = handler;}

@@ -222,34 +222,20 @@ folly::Future<folly::Unit> IECPresentationManager::NotifyAllNodesCollapsed(ECDbC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<bool> IECPresentationManager::HasChild(ECDbCR db, NavNodeCR parentNode, NavNodeKeyCR childNodeKey, JsonValueCR extendedOptions) 
+folly::Future<NodesPathElement> IECPresentationManager::FindNode(ECDbCR db, NavNodeCP parentNode, ECInstanceKeyCR lookupKey, JsonValueCR extendedOptions)
     {
-    IConnectionCPtr connection = GetConnections().GetConnection(db);
-    if (connection.IsNull())
-        {
-        BeAssert(false && "Unknown connection");
-        return false;
-        }
-    return _HasChild(*connection, parentNode, childNodeKey, extendedOptions);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                12/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<NodesPathElement> IECPresentationManager::FindNode(ECDbCR db, NavNodeCP parentNode, NavNodeKeyCR lookupKey, JsonValueCR extendedOptions)
-    {
-    NavNodeKeyCPtr lookupKeyPtr = &lookupKey;
     folly::Future<DataContainer<NavNodeCPtr>> nodesFuture = (nullptr == parentNode)
         ? GetRootNodes(db, PageOptions(), extendedOptions)
         : GetChildren(db, *parentNode, PageOptions(), extendedOptions);
-    return nodesFuture.then([this, &db, lookupKeyPtr, extendedOptions](DataContainer<NavNodeCPtr> nodes) -> NodesPathElement
+    return nodesFuture.then([this, &db, lookupKey, extendedOptions](DataContainer<NavNodeCPtr> nodes) -> NodesPathElement
         {
+        IConnectionCPtr connection = GetConnections().GetConnection(db);
         for (size_t i = 0; i < nodes.GetSize(); ++i)
             {
             NavNodeCPtr node = nodes[i];
-            if (0 == node->GetKey()->Compare(*lookupKeyPtr))
+            if (node->GetKey()->AsECInstanceNodeKey() && node->GetKey()->AsECInstanceNodeKey()->GetInstanceKey() == lookupKey)
                 return NodesPathElement(*node, i);
-            if (HasChild(db, *node, *lookupKeyPtr, extendedOptions).get())
+            if (_HasChild(*connection, *node, lookupKey, extendedOptions).get())
                 return NodesPathElement(*node, i);
             }
         return NodesPathElement();
@@ -274,7 +260,7 @@ static NodesPathElement* AddToPath(NodesPathElement& path, NodesPathElement&& el
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<NodesPathElement> IECPresentationManager::GetNodesPath(ECDbCR db, NavNodeKeyPath const& keyPath, JsonValueCR extendedOptions)
+folly::Future<NodesPathElement> IECPresentationManager::GetNodesPath(ECDbCR db, bvector<ECInstanceKey> const& keyPath, JsonValueCR extendedOptions)
     {
     NodesPathElement path;
     NodesPathElement* curr = &path;
@@ -283,7 +269,7 @@ folly::Future<NodesPathElement> IECPresentationManager::GetNodesPath(ECDbCR db, 
         {
         while (true)
             {
-            NavNodeKeyCR key = *keyPath[i];
+            ECInstanceKeyCR key = keyPath[i];
             NodesPathElement el = FindNode(db, parent, key, extendedOptions).get();
             if (!el.GetNode().IsValid())
                 {
@@ -294,7 +280,7 @@ folly::Future<NodesPathElement> IECPresentationManager::GetNodesPath(ECDbCR db, 
             parent = el.GetNode().get();
             curr = AddToPath(*curr, std::move(el));
 
-            if (0 == parent->GetKey()->Compare(key))
+            if (parent->GetKey()->AsECInstanceNodeKey() && parent->GetKey()->AsECInstanceNodeKey()->GetInstanceKey() == key)
                 break;
             }
         }
@@ -350,12 +336,12 @@ static void MarkLeaves(NodesPathElement& path)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<bvector<NodesPathElement>> IECPresentationManager::GetNodesPath(ECDbCR db, bvector<NavNodeKeyPath> const& keyPaths, int64_t markedIndex, JsonValueCR extendedOptions)
+folly::Future<bvector<NodesPathElement>> IECPresentationManager::GetNodesPath(ECDbCR db, bvector<bvector<ECInstanceKey>> const& keyPaths, int64_t markedIndex, JsonValueCR extendedOptions)
     {
     bvector<folly::Future<NodesPathElement>> pathFutures;
     for (size_t i = 0; i < keyPaths.size(); ++i)
         {
-        NavNodeKeyPath const& keyPath = keyPaths[i];
+        bvector<ECInstanceKey> const& keyPath = keyPaths[i];
         pathFutures.push_back(GetNodesPath(db, keyPath, extendedOptions));
         }
     return folly::collect(pathFutures).then([markedIndex](std::vector<NodesPathElement> paths) -> bvector<NodesPathElement>
