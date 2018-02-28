@@ -65,7 +65,7 @@ protected:
     virtual size_t _GetRootNodesCount(IConnectionCR, NavigationOptions const&, ICancelationTokenCR) = 0;
     virtual INavNodesDataSourcePtr _GetChildren(IConnectionCR, NavNodeCR, PageOptionsCR, NavigationOptions const&, ICancelationTokenCR) = 0;
     virtual size_t _GetChildrenCount(IConnectionCR, NavNodeCR, NavigationOptions const&, ICancelationTokenCR) = 0;
-    virtual bool _HasChild(IConnectionCR, NavNodeCR, NavNodeKeyCR, NavigationOptions const&, ICancelationTokenCR) = 0;
+    virtual bool _HasChild(IConnectionCR, NavNodeCR, ECInstanceKeyCR, NavigationOptions const&, ICancelationTokenCR) = 0;
     virtual NavNodeCPtr _GetParent(IConnectionCR, NavNodeCR, NavigationOptions const&, ICancelationTokenCR) = 0;
     virtual NavNodeCPtr _GetNode(IConnectionCR, NavNodeKeyCR, NavigationOptions const&, ICancelationTokenCR) = 0;
     virtual bvector<NavNodeCPtr> _GetFilteredNodes(IConnectionCR, Utf8CP, NavigationOptions const&, ICancelationTokenCR) = 0;
@@ -151,7 +151,7 @@ public:
     size_t GetRootNodesCount(IConnectionCR connection, NavigationOptions const& options, ICancelationTokenCR cancelationToken) {return _GetRootNodesCount(connection, options, cancelationToken);}
     INavNodesDataSourcePtr GetChildren(IConnectionCR connection, NavNodeCR parentNode, PageOptionsCR pageOptions, NavigationOptions const& options, ICancelationTokenCR cancelationToken) {return _GetChildren(connection, parentNode, pageOptions, options, cancelationToken);}
     size_t GetChildrenCount(IConnectionCR connection, NavNodeCR parentNode, NavigationOptions const& options, ICancelationTokenCR cancelationToken) {return _GetChildrenCount(connection, parentNode, options, cancelationToken);}
-    bool HasChild(IConnectionCR connection, NavNodeCR parentNode, NavNodeKeyCR childNodeKey, NavigationOptions const& options, ICancelationTokenCR cancelationToken) {return _HasChild(connection, parentNode, childNodeKey, options, cancelationToken);}
+    bool HasChild(IConnectionCR connection, NavNodeCR parentNode, ECInstanceKeyCR childKey, NavigationOptions const& options, ICancelationTokenCR cancelationToken) {return _HasChild(connection, parentNode, childKey, options, cancelationToken);}
     NavNodeCPtr GetParent(IConnectionCR connection, NavNodeCR childNode, NavigationOptions const& options, ICancelationTokenCR cancelationToken) {return _GetParent(connection, childNode, options, cancelationToken);}
     NavNodeCPtr GetNode(IConnectionCR connection, NavNodeKeyCR nodeKey, NavigationOptions const& options, ICancelationTokenCR cancelationToken) {return _GetNode(connection, nodeKey, options, cancelationToken);}
     bvector<NavNodeCPtr> GetFilteredNodes(IConnectionCR connection, Utf8CP filterText, NavigationOptions const& options, ICancelationTokenCR cancelationToken) {return _GetFilteredNodes(connection, filterText, options, cancelationToken);}
@@ -228,7 +228,7 @@ protected:
     ECPRESENTATION_EXPORT size_t _GetRootNodesCount(IConnectionCR, NavigationOptions const&, ICancelationTokenCR) override;
     ECPRESENTATION_EXPORT INavNodesDataSourcePtr _GetChildren(IConnectionCR, NavNodeCR, PageOptionsCR, NavigationOptions const&, ICancelationTokenCR) override;
     ECPRESENTATION_EXPORT size_t _GetChildrenCount(IConnectionCR, NavNodeCR, NavigationOptions const&, ICancelationTokenCR) override;
-    ECPRESENTATION_EXPORT bool _HasChild(IConnectionCR, NavNodeCR, NavNodeKeyCR, NavigationOptions const&, ICancelationTokenCR) override;
+    ECPRESENTATION_EXPORT bool _HasChild(IConnectionCR, NavNodeCR, ECInstanceKeyCR, NavigationOptions const&, ICancelationTokenCR) override;
     ECPRESENTATION_EXPORT NavNodeCPtr _GetParent(IConnectionCR, NavNodeCR, NavigationOptions const&, ICancelationTokenCR) override;
     ECPRESENTATION_EXPORT NavNodeCPtr _GetNode(IConnectionCR, NavNodeKeyCR, NavigationOptions const&, ICancelationTokenCR) override;
     ECPRESENTATION_EXPORT bvector<NavNodeCPtr> _GetFilteredNodes(IConnectionCR, Utf8CP, NavigationOptions const&, ICancelationTokenCR) override;

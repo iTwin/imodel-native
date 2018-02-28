@@ -122,8 +122,6 @@ typedef NavNodeKeyList* NavNodeKeyListP, &NavNodeKeyListR;
 typedef NavNodeKeyList const* NavNodeKeyListCP;
 typedef NavNodeKeyList const& NavNodeKeyListCR;
 
-typedef NavNodeKeyList NavNodeKeyPath;
-
 typedef RefCountedPtr<ECInstanceNodeKey>  ECInstanceNodeKeyPtr;
 //=======================================================================================
 //! NavNodeKey for ECInstance nodes.
