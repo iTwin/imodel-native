@@ -197,6 +197,11 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::SetProjectFilesPath(BeFileNa
     return SMSQLiteSisterFile::SetProjectFilesPath(projectFilesPath);
     }    
 
+template <class EXTENT> bool SMSQLiteStore<EXTENT>::SetUseTempPath(bool useTempPath)
+    {
+    return SMSQLiteSisterFile::SetUseTempPath(useTempPath);
+    }    
+
 template <class EXTENT> void SMSQLiteStore<EXTENT>::SaveProjectFiles()
     {
     __super::SaveSisterFiles();
@@ -439,7 +444,7 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetSisterNodeDataStore(ISDif
     if (!IsProjectFilesPathSet())
         return false; 
 
-    SMSQLiteFilePtr sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::DiffSet, createSisterFile);
+    SMSQLiteFilePtr sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::DiffSet, createSisterFile, IsUsingTempPath());
 
     if (!sqliteFilePtr.IsValid())
         return false;
@@ -461,7 +466,7 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMInt32Dat
 
     if (dataType == SMStoreDataType::LinearFeature)
         {
-        sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::LinearFeature, true);            
+        sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::LinearFeature, true, true);            
         assert(sqliteFilePtr.IsValid() == true);
         }
     else
@@ -479,7 +484,7 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMMTGGraph
     SMSQLiteFilePtr sqliteFilePtr;
 
 
-    sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::Graph, true);
+    sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::Graph, true, true);
     assert(sqliteFilePtr.IsValid() == true);
 
 
@@ -539,7 +544,7 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetSisterNodeDataStore(ISMCo
 
     SMSQLiteFilePtr sqlFilePtr;
     
-    sqlFilePtr = GetSisterSQLiteFile(SMStoreDataType::CoverageName, createSisterFile);
+    sqlFilePtr = GetSisterSQLiteFile(SMStoreDataType::CoverageName, createSisterFile, IsUsingTempPath());
 
     if (!sqlFilePtr.IsValid())
         return false;
@@ -560,7 +565,7 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetSisterNodeDataStore(ISM3D
 		return true;
 	}
 
-    SMSQLiteFilePtr sqlFilePtr = GetSisterSQLiteFile(dataType, createSisterFile);
+    SMSQLiteFilePtr sqlFilePtr = GetSisterSQLiteFile(dataType, createSisterFile, IsUsingTempPath());
 
     if (!sqlFilePtr.IsValid())
         return false;

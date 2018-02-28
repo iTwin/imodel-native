@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/Stores/SMSQLiteSisterFile.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -70,7 +70,8 @@ SMSQLiteSisterFile::SMSQLiteSisterFile(SMSQLiteFilePtr sqliteFile)
     : m_smSQLiteFile(sqliteFile),
       m_smFeatureSQLiteFile(nullptr),
       m_smClipSQLiteFile(nullptr),
-      m_smClipDefinitionSQLiteFile(nullptr)
+      m_smClipDefinitionSQLiteFile(nullptr), 
+      m_useTempPath(true)
     {
     }
 
@@ -234,6 +235,12 @@ bool SMSQLiteSisterFile::SetProjectFilesPath(BeFileName & projectFilesPath)
     return true;
     }
 
+bool SMSQLiteSisterFile::SetUseTempPath(bool useTempPath)
+    {    
+    m_useTempPath = useTempPath;  
+    return true;
+    }
+
 void SMSQLiteSisterFile::SaveSisterFiles()
     {
     if (m_smFeatureSQLiteFile.IsValid())
@@ -274,4 +281,9 @@ void SMSQLiteSisterFile::Compact()
 bool SMSQLiteSisterFile::IsProjectFilesPathSet() const
     {
     return !m_projectFilesPath.empty();
+    }
+
+bool SMSQLiteSisterFile::IsUsingTempPath() const
+    {    
+    return m_useTempPath;
     }

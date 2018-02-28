@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/Stores/SMStreamingDataStore.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -222,6 +222,8 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         virtual size_t LoadNodeHeader(SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID) override;            
 
         virtual bool SetProjectFilesPath(BeFileName& projectFilesPath) override;
+
+        virtual bool SetUseTempPath(bool useTempPath) override;
 
         virtual void SaveProjectFiles() override;
 
