@@ -172,6 +172,69 @@ private:
         }
 
     /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Mantas.Kontrimas                02/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static bool StartsWithSameRelatedClass(RelatedClassPathCR path, RelatedClassPathCR fieldPath)
+        {
+        return fieldPath[0].GetRelationship() == path[0].GetRelationship() &&
+            ((fieldPath[0].IsForwardRelationship() && fieldPath[0].GetTargetClass() == path[0].GetTargetClass()) ||
+             (!fieldPath[0].IsForwardRelationship() && fieldPath[0].GetSourceClass() == path[0].GetSourceClass()));
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Mantas.Kontrimas                02/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static void GetAllBaseClasses(ECClassCP ecClass, bset<ECClassCP>& baseClasses)
+        {
+        for (ECClassCP base : ecClass->GetBaseClasses())
+            {
+            baseClasses.insert(base);
+            GetAllBaseClasses(base, baseClasses);
+            }
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Mantas.Kontrimas                02/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static ECClassCP FindCommonClassForRelationshipEnd(ECClassCP rhs, bset<ECClassCP>& lhsAllBaseClasses,
+        ECRelationshipConstraintClassList const& constraintClasses)
+        {
+        for (ECClassCP rhsBaseClass : rhs->GetBaseClasses())
+            {
+            if (lhsAllBaseClasses.end() != lhsAllBaseClasses.find(rhsBaseClass))
+                {
+                for (ECClassCP constraintClass : constraintClasses)
+                    {
+                    if (rhsBaseClass->Is(constraintClass))
+                        return rhsBaseClass;
+                    }
+                }
+
+            ECClassCP foundClass = FindCommonClassForRelationshipEnd(rhsBaseClass, lhsAllBaseClasses, constraintClasses);
+            if (nullptr != foundClass)
+                return foundClass;
+            }
+
+        return nullptr;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Mantas.Kontrimas                02/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static ECClassCP GetNearestCommonRelationshipEndClass(ECClassCP lhsClass, ECClassCP rhsClass,
+        ECRelationshipConstraintClassList const& constraintClasses)
+        {
+        bset<ECClassCP> lhsAllBaseClasses;
+        lhsAllBaseClasses.insert(lhsClass);
+        GetAllBaseClasses(lhsClass, lhsAllBaseClasses);
+
+        if (lhsAllBaseClasses.end() != lhsAllBaseClasses.find(rhsClass))
+            return rhsClass;
+
+        return FindCommonClassForRelationshipEnd(rhsClass, lhsAllBaseClasses, constraintClasses);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                07/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
     ContentDescriptor::NestedContentField* GetXToManyNestedContentField(Utf8CP classAlias)
@@ -192,6 +255,31 @@ private:
                     nestingField = descriptorField->AsNestedContentField();
                     relationshipPath = GetPathDifference(m_relatedClassPath, descriptorField->AsNestedContentField()->GetRelationshipPath());
                     break;
+                    }
+                else if (StartsWithSameRelatedClass(m_relatedClassPath, descriptorField->AsNestedContentField()->GetRelationshipPath()))
+                    {
+                    RelatedClass lhsRelated = m_relatedClassPath[0];
+                    RelatedClass rhsRelated = descriptorField->AsNestedContentField()->GetRelationshipPath()[0];
+                    ECRelationshipConstraintClassList constraintClasses = rhsRelated.IsForwardRelationship() ?
+                        rhsRelated.GetRelationship()->GetTarget().GetConstraintClasses() :
+                        rhsRelated.GetRelationship()->GetSource().GetConstraintClasses();
+                    ECClassCP lhsClass = lhsRelated.IsForwardRelationship() ? lhsRelated.GetSourceClass() : lhsRelated.GetTargetClass();
+                    ECClassCP rhsClass = rhsRelated.IsForwardRelationship() ? rhsRelated.GetSourceClass() : rhsRelated.GetTargetClass();
+
+                    ECClassCP commonBaseClass = GetNearestCommonRelationshipEndClass(lhsClass, rhsClass, constraintClasses);
+                    if (nullptr == commonBaseClass)
+                        {
+                        BeAssert(false);
+                        continue;
+                        }
+
+                    m_nestedContentField = descriptorField->AsNestedContentField();
+                    if (rhsRelated.IsForwardRelationship())
+                        m_nestedContentField->GetRelationshipPath()[0].SetSourceClass(*commonBaseClass);
+                    else
+                        m_nestedContentField->GetRelationshipPath()[0].SetTargetClass(*commonBaseClass);
+                    m_nestedContentField->SetName(CreateNestedContentFieldName(m_nestedContentField->GetRelationshipPath()));
+                    return m_nestedContentField;
                     }
                 }
         
@@ -269,9 +357,14 @@ private:
         if (nullptr == field)
             return false;
 
-        ContentDescriptor::ECPropertiesField* propertyField = new ContentDescriptor::ECPropertiesField(m_actualClass, 
-            ContentDescriptor::Property(propertyClassAlias, m_actualClass, p));
-        field->GetFields().push_back(propertyField);
+        ContentDescriptor::ECPropertiesField propertyField(m_actualClass, ContentDescriptor::Property(propertyClassAlias, m_actualClass, p));
+        for (ContentDescriptor::Field* nestedField : field->GetFields())
+            {
+            if (*nestedField == propertyField)
+                return false;
+            }
+
+        field->GetFields().push_back(new ContentDescriptor::ECPropertiesField(propertyField));
         return false;
         }
 
