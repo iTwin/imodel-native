@@ -76,7 +76,7 @@ LocaleProperties LocaleProperties::DefaultAmerican()
 //----------------------------------------------------------------------------------------
 LocaleProperties LocaleProperties::DefaultEuropean(bool useBlank)
 {
-	return LocaleProperties(',', (useBlank? ' ' : ','));
+	return LocaleProperties(',', (useBlank? ' ' : '.'));
 }
 
 LocaleProperties::LocaleProperties(Json::Value jval)
@@ -201,9 +201,7 @@ void NumericFormatSpec::Init(PresentationType presType, ShowSignOption signOpt, 
         m_fractPrecision = FormatConstant::DefaultFractionalPrecision();
         }
 
-   /* m_decimalSeparator = FormatConstant::FPV_DecimalSeparator();
-    m_thousandsSeparator = FormatConstant::FPV_ThousandSeparator();*/
-	ImbueLocale("");
+	ImbueLocaleProperties(LocaleProperties::DefaultAmerican());
     m_uomSeparator = FormatConstant::BlankString();
     m_statSeparator = '+';
     m_minWidth = 0;
