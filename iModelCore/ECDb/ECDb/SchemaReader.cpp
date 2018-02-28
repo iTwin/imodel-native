@@ -916,7 +916,7 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
             }
         else
             {
-            if (ECObjectsStatus::Success != schema.CreateUnit(unit, name, definition, *ph, *us, displayLabel, description, numerator, denominator, offset))
+            if (ECObjectsStatus::Success != schema.CreateUnit(unit, name, definition, *ph, *us, numerator, denominator, offset, displayLabel, description))
                 return ERROR;
             }
 
