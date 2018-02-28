@@ -454,6 +454,7 @@ LINKER_LIBRARIES_DELAYLOADED  = \
 	$(ContextSubpartsLibs)acute3dio.lib \
 	$(ContextSubpartsLibs)freeimage.lib \
     $(ContextSubpartsLibs)RealityPlatform.lib \
+	$(ContextSubpartsLibs)RealityPlatformTools.lib \
     $(ContextSubpartsLibs)CCApi.lib\
 
 LINKER_LIBRARIES            = \

@@ -119,7 +119,7 @@ struct ScalableMeshBase : public RefCounted<IScalableMesh>
 
 public:
 
-    const SMSQLiteFilePtr&              GetDbFile() const;
+    BENTLEY_SM_EXPORT const SMSQLiteFilePtr&              GetDbFile() const;
 
     BENTLEY_SM_EXPORT const WChar*                        GetPath                 () const;
 

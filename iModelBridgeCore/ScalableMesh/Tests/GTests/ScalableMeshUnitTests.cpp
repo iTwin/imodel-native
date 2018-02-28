@@ -9,6 +9,7 @@
 #include <Bentley/BeTest.h>
 #include "SMUnitTestUtil.h"
 #include <ScalableMesh/ScalableMeshDefs.h>
+#include <ScalableMesh/IScalableMeshSaveAs.h>
 #include <TerrainModel/Core/IDTM.h>
 #include <DgnPlatform/ClipPrimitive.h>
 #include <DgnPlatform/ClipVector.h>
@@ -266,7 +267,8 @@ TEST_P(ScalableMeshTestWithParams, CanGenerate3DTiles)
     BeFileNameStatus statusFile = BeFileName::CreateNewDirectory(tempPath.c_str());
     ASSERT_EQ(statusFile == BeFileNameStatus::Success || statusFile == BeFileNameStatus::AlreadyExists, true);
 
-    auto ret = myScalableMesh->Generate3DTiles(tempPath);
+    auto ret = IScalableMeshSaveAs::Generate3DTiles(myScalableMesh, tempPath, L"", SMCloudServerType::LocalDisk, nullptr, nullptr, (uint64_t)-1);
+    //auto ret = myScalableMesh->Generate3DTiles(tempPath);
 
     ASSERT_TRUE(SUCCESS == ret);
     
@@ -507,7 +509,7 @@ TEST_F(ScalableMeshTest, SaveAsWithClipBoundary)
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
     BeFileName destination = ScalableMeshGTestUtil::GetUserSMTempDir();
-    destination.append(testFile.c_str());
+    destination.AppendToPath(testFile.c_str());
 
     if (BeFileName::DoesPathExist(destination.c_str()))
         ASSERT_TRUE(BeFileNameStatus::Success == BeFileName::BeDeleteFile(destination.c_str()));
@@ -528,7 +530,8 @@ TEST_F(ScalableMeshTest, SaveAsWithClipBoundary)
 
     auto clip = DgnPlatform::ClipVector::CreateFromPrimitive(clipPrimitive);
 
-    auto ret = myScalableMesh->SaveAs(destination, clip, nullptr/*progressSM*/);
+    auto ret = IScalableMeshSaveAs::DoSaveAs(myScalableMesh, destination, clip, nullptr/*progressSM*/);
+    //auto ret = myScalableMesh->SaveAs(destination, clip, nullptr/*progressSM*/);
 
     EXPECT_EQ(SUCCESS == ret && BeFileName::DoesPathExist(destination.c_str()), true) << "\n Error saving to new 3sm" << std::endl << std::endl;
 
@@ -555,7 +558,7 @@ TEST_F(ScalableMeshTest, SaveAsWithClipMask)
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
     BeFileName destination = ScalableMeshGTestUtil::GetUserSMTempDir();
-    destination.append(testFile.c_str());
+    destination.AppendToPath(testFile.c_str());
 
     if (BeFileName::DoesPathExist(destination.c_str()))
         ASSERT_TRUE(BeFileNameStatus::Success == BeFileName::BeDeleteFile(destination.c_str()));
@@ -576,7 +579,8 @@ TEST_F(ScalableMeshTest, SaveAsWithClipMask)
 
     auto clip = DgnPlatform::ClipVector::CreateFromPrimitive(clipPrimitive);
 
-    auto ret = myScalableMesh->SaveAs(destination, clip, nullptr/*progressSM*/);
+    auto ret = IScalableMeshSaveAs::DoSaveAs(myScalableMesh, destination, clip, nullptr/*progressSM*/);
+    //auto ret = myScalableMesh->SaveAs(destination, clip, nullptr/*progressSM*/);
 
     EXPECT_EQ(SUCCESS == ret && BeFileName::DoesPathExist(destination.c_str()), true) << "\n Error saving to new 3sm" << std::endl << std::endl;
 

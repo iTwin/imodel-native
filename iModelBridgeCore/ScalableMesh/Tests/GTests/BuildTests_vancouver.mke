@@ -33,7 +33,8 @@ $(o)SMUnitTestProgress.obj   : $(_MakeFilePath)/SMUnitTestProgress.cpp ${MultiCo
 
 libsUsed = \
         $(BuildContext)SubParts/Libs/Bentley.lib \
-        $(BuildContext)SubParts/Libs/ScalableMesh.lib \
+        $(BuildContext)SubParts/Libs/ScalableMeshCoreLib.lib \
+		$(BuildContext)SubParts/Libs/ScalableMeshImportersLib.lib \
 		$(BuildContext)SubParts/Libs/BaseGeoCoord.lib \
 		$(BuildContext)SubParts/Libs/BentleyGeom.lib \
 		$(BuildContext)SubParts/Libs/TerrainModelCore.lib \

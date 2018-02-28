@@ -153,7 +153,7 @@ bool Publish3DTile(IScalableMeshNodePtr& node, ISMDataStoreTypePtr<DRange3d>& pi
                 ++nbProcessedNodes;
             }
         };
-        distributor = new Distribution_Type(nodeDataSaver, nbThreads, maxQueueSize);
+        distributor = new Distribution_Type(nodeDataSaver, [](IScalableMeshNodePtr& node) {return true; }, nbThreads, maxQueueSize);
     }
 
     static auto loadChildExtentHelper = [](IScalableMeshNode* parent, IScalableMeshNode* child) ->void
