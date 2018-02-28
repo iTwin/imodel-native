@@ -104,13 +104,13 @@ SchemaReadStatus Phenomenon::ReadXml(PhenomenonP& phenomenon, BeXmlNodeR Phenome
     Utf8String value;
     if (BEXML_Success != PhenomenonNode.GetAttributeStringValue(value, TYPE_NAME_ATTRIBUTE) || Utf8String::IsNullOrEmpty(value.c_str()))
         {
-        LOG.errorv("Invalid ECSchemaXML: The %s element must contain a Name attribute", PhenomenonNode.GetName());
+        LOG.errorv("Invalid ECSchemaXML: The %s element must contain a %s attribute", PhenomenonNode.GetName(), TYPE_NAME_ATTRIBUTE);
         return SchemaReadStatus::InvalidECSchemaXml;
         }
     Utf8String definition;
     if (BEXML_Success != PhenomenonNode.GetAttributeStringValue(definition, DEFINITION_ATTRIBUTE) || Utf8String::IsNullOrEmpty(definition.c_str()))
         {
-        LOG.errorv("Invalid ECSchemaXML: The %s element must contain a Definition attribute", PhenomenonNode.GetName());
+        LOG.errorv("Invalid ECSchemaXML: The %s element must contain a %s attribute", PhenomenonNode.GetName(), DEFINITION_ATTRIBUTE);
         return SchemaReadStatus::InvalidECSchemaXml;
         }
     Utf8String fullName = schema.GetName()+ ":" + value;

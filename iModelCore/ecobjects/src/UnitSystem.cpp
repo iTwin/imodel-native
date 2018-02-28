@@ -81,7 +81,7 @@ SchemaReadStatus UnitSystem::ReadXml(UnitSystemP& system, BeXmlNodeR unitSystemN
     Utf8String value;
     if (BEXML_Success != unitSystemNode.GetAttributeStringValue(value, TYPE_NAME_ATTRIBUTE) || Utf8String::IsNullOrEmpty(value.c_str()))
         {
-        LOG.errorv("Invalid ECSchemaXML: The %s element must contain a Name attribute", unitSystemNode.GetName());
+        LOG.errorv("Invalid ECSchemaXML: The %s element must contain a %s attribute", unitSystemNode.GetName(), TYPE_NAME_ATTRIBUTE);
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
