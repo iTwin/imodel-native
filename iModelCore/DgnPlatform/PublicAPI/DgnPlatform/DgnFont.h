@@ -28,10 +28,11 @@ struct FreeTypeFace
 {
 private:
     FT_Face m_face;
+    unsigned int m_pixelScale;
 
     DGNPLATFORM_EXPORT static BeMutex& GetMutex(); // => DgnFonts::GetMutex()
 
-    explicit FreeTypeFace(FT_Face face) : m_face(face) { }
+    explicit FreeTypeFace(FT_Face face, unsigned int pixelScale) : m_face(face), m_pixelScale(pixelScale) { }
 
     DGNPLATFORM_EXPORT static void DestroyFace(FT_Face&);
 public:
@@ -48,6 +49,7 @@ public:
         }
 
     bool IsValid() const { return nullptr != m_face; }
+    unsigned int GetPixelScale() const { return m_pixelScale; }
 
     bool operator==(FreeTypeFaceCR rhs) const { return m_face == rhs.m_face; }
     bool operator!=(FreeTypeFaceCR rhs) const { return !(*this == rhs); }
