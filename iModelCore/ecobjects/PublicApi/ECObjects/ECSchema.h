@@ -1453,15 +1453,13 @@ private:
     SchemaWriteStatus WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
 
 public:
-    //! The ECSchema that this kind of quantity is defined in
-    ECSchemaCR GetSchema() const {return m_schema;}
+    ECSchemaCR GetSchema() const {return m_schema;} //!< The ECSchema that this kind of quantity is defined in.
 
-    //! The name of this KindOfQuantity
-    Utf8StringCR GetName() const {return m_validatedName.GetName();}
+    Utf8StringCR GetName() const {return m_validatedName.GetName();} //!< The name of this KindOfQuantity
 
     //! The fully qualified name of this KindOfQuantity in the format {SchemaName}:{KindOfQuantityName}.
     ECOBJECTS_EXPORT Utf8StringCR GetFullName() const;
-    //! Given a qualified enum name, will parse out the schema's alias and the kind of quantity name.
+    //! Given a qualified KindOfQuantity name, will parse out the schema's alias and the kind of quantity name.
     //! @param[out] alias               The alias of the schema
     //! @param[out] kindOfQuantityName  The name of the KindOfQuantity
     //! @param[in]  stringToParse  The qualified name, in the format of {SchemaName}:{KindOfQuantityName}
@@ -1471,9 +1469,6 @@ public:
     //! Gets a qualified name of the enumeration, prefixed by the schema alias if it does not match the primary schema.
     ECOBJECTS_EXPORT Utf8String GetQualifiedName(ECSchemaCR primarySchema) const;
 
-    //! Whether the display label is explicitly defined or not
-    bool GetIsDisplayLabelDefined() const {return m_validatedName.IsDisplayLabelDefined();}
-        
     //! Sets the display label of this KindOfQuantity
     //! @param[in]  value  The new value to apply
     ECOBJECTS_EXPORT ECObjectsStatus SetDisplayLabel(Utf8CP value);
@@ -1483,16 +1478,13 @@ public:
 
     //! Gets the display label of this KindOfQuantity.  If no display label has been set explicitly, it will return the name of the KindOfQuantity
     ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const;
+    bool GetIsDisplayLabelDefined() const {return m_validatedName.IsDisplayLabelDefined();} //!< Whether the display label is explicitly defined or not
 
     //! Sets the description of this KindOfQuantity
     //! @param[in]  value  The new value to apply
     ECObjectsStatus SetDescription(Utf8CP value) {m_description = value; return ECObjectsStatus::Success;}
-
-    //! Gets the invariant description of this KindOfQuantity.
-    Utf8StringCR GetInvariantDescription() const {return m_description;}
-
-    //! Get the description of this KindOfQuantity
-    ECOBJECTS_EXPORT Utf8StringCR GetDescription() const;
+    Utf8StringCR GetInvariantDescription() const {return m_description;} //!< Gets the invariant description of this KindOfQuantity.
+    ECOBJECTS_EXPORT Utf8StringCR GetDescription() const; //!< Get the description of this KindOfQuantity
 
     //! Sets the Unit of measurement used for persisting the information
     //! @param[in]  value  The new value to apply
@@ -1504,15 +1496,17 @@ public:
     //! Sets the Precision used for persisting the information. A precision of zero indicates that a default will be used.
     //! @param[in]  value  The new value to apply
     void SetRelativeError(double value) {m_relativeError = value;}
-    //! Gets the precision used for persisting the information. A precision of zero indicates that a default will be used.
-    double GetRelativeError() const {return m_relativeError;};
+    double GetRelativeError() const {return m_relativeError;}; //!< Gets the precision used for persisting the information. A precision of zero indicates that a default will be used.
         
     //! Sets the default presentation Unit of this KindOfQuantity
     //! @param[in]  value  The new value to apply
     //! @return true if the presentation FormatUnitSet is valid, false if not.
     bool SetDefaultPresentationUnit(Formatting::FormatUnitSet value) {m_presentationFUS.insert(m_presentationFUS.begin(), value); return !value.HasProblem();}
-    //! Gets the default presentation Unit of this KindOfQuantity.
+    //! Gets the default presentation FormatUnitSet of this KindOfQuantity.
     Formatting::FormatUnitSet GetDefaultPresentationUnit() const {return m_presentationFUS.size() > 0 ? *(m_presentationFUS.begin()) : m_persistenceFUS;}
+    //! Gets a specific presentation FormatUnitSet from this.
+    //! @param[in] indx The indx of the 
+    //! @return A const pointer to the FormatUnitSet at the specified index if it exists; otherwise, nullptr.
     ECOBJECTS_EXPORT Formatting::FormatUnitSetCP GetPresentationFUS(size_t indx) const;
 
     //! Gets the specified FormatUnitSet to use to format the Quantity.
@@ -1521,7 +1515,7 @@ public:
     //! @return pointer to FormatUnitSet if found else nullptr is returned.
     ECOBJECTS_EXPORT Formatting::FormatUnitSetCP GetPresentationFUS(Utf8CP fusId, bool useAlias) const;
 
-    ECOBJECTS_EXPORT Utf8String GetPresentationFUSDescriptor(size_t indx, bool useAlias) const;
+    Utf8String GetPresentationFUSDescriptor(size_t indx, bool useAlias) const {return GetPresentationFUS(indx)->ToText(useAlias);}
 
     //! Adds the FormatUnitSet to the list of presentation Units.
     //! @param[in]  value  The new FormatUnitSet to add to the list of presentation units
@@ -1704,13 +1698,14 @@ private:
     static bool     AddUniquePropertiesToList(ECClassCP crrentBaseClass, const void * arg);
     bool            TraverseBaseClasses(TraversalDelegate traverseMethod, bool recursive, const void * arg) const;
 
-    static bool     ConvertPropertyToPrimitveArray(ECClassP thisClass, ECClassCP startingClass, Utf8String propName, bool includeDerivedClasses = false);
-    ECObjectsStatus FixArrayPropertyOverrides();
-    ECObjectsStatus CanPropertyBeOverridden(ECPropertyCR baseProperty, ECPropertyCR newProperty, Utf8StringR errMsg) const;
-    void            AddDerivedClass(ECClassCR derivedClass) const;
+    void            AddDerivedClass(ECClassCR derivedClass) const {m_derivedClasses.push_back((ECClassP) &derivedClass);}
     void            RemoveDerivedClass(ECClassCR derivedClass) const;
     void            RemoveDerivedClasses();
     static void     SetErrorHandling(bool doAssert);
+
+    static bool     ConvertPropertyToPrimitveArray(ECClassP thisClass, ECClassCP startingClass, Utf8String propName, bool includeDerivedClasses = false);
+    ECObjectsStatus FixArrayPropertyOverrides();
+    ECObjectsStatus CanPropertyBeOverridden(ECPropertyCR baseProperty, ECPropertyCR newProperty, Utf8StringR errMsg) const;
     ECObjectsStatus CopyPropertyForSupplementation(ECPropertyP& destProperty, ECPropertyCP sourceProperty, bool copyCustomAttributes);
     ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, Utf8CP destPropertyName, bool copyCustomAttributes, bool andAddProperty = true, bool copyReferences = false);
 
@@ -1730,8 +1725,8 @@ protected:
     virtual ECObjectsStatus _RemoveBaseClass(ECClassCR baseClass);
 
     void _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
-    ECSchemaCP _GetContainerSchema() const override;
-    Utf8CP _GetContainerName() const override { return GetFullName(); }
+    ECSchemaCP _GetContainerSchema() const override {return &m_schema;}
+    Utf8CP _GetContainerName() const override {return GetFullName();}
 
     virtual ECObjectsStatus GetProperties(bool includeBaseProperties, PropertyList* propertyList) const;
     // schemas index class by name so publicly name can not be reset
@@ -1779,64 +1774,48 @@ protected:
 
     void InvalidateDefaultStandaloneEnabler() const;
 public:
-    ECOBJECTS_EXPORT ECPropertyP GetPropertyByIndex (uint32_t index) const;
-    ECOBJECTS_EXPORT ECPropertyP GetBaseClassPropertyP (Utf8CP name) const;
-    ECOBJECTS_EXPORT ECObjectsStatus RenameProperty (ECPropertyR ecProperty, Utf8CP newName);
-    ECOBJECTS_EXPORT ECObjectsStatus ReplaceProperty (ECPropertyP& newProperty, ValueKind valueKind, ECPropertyR propertyToRemove);
-    ECOBJECTS_EXPORT ECObjectsStatus DeleteProperty (ECPropertyR ecProperty);
+    ECSchemaCR GetSchema() const {return m_schema;} //!< The ECSchema that this class is defined in
     ECSchemaR GetSchemaR() {return const_cast<ECSchemaR>(m_schema);}
 
+    //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
+    ECClassId GetId() const {BeAssert(HasId()); return m_ecClassId;}
     //! Intended to be called by ECDb or a similar system
     void SetId(ECClassId id) {BeAssert(!m_ecClassId.IsValid()); m_ecClassId = id;}
     bool HasId() const {return m_ecClassId.IsValid();}
 
-    //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
-    ECOBJECTS_EXPORT ECClassId GetId() const;
     //! Returns the StandaloneECEnabler for this class
     ECOBJECTS_EXPORT StandaloneECEnablerP GetDefaultStandaloneEnabler() const;
 
-    //! The type of derived ECClass this is
-    ECOBJECTS_EXPORT ECClassType GetClassType() const;
+    ECClassType GetClassType() const {return _GetClassType();} //!< The type of derived ECClass this is
 
-    //! Is the class an entity class
-    bool IsEntityClass() const {return ECClassType::Entity == GetClassType();}
-
-    //! Is the class a struct class
-    bool IsStructClass() const {return ECClassType::Struct == GetClassType();}
-
-    //! Is the class a custom attribute class
-    bool IsCustomAttributeClass() const {return ECClassType::CustomAttribute == GetClassType();}
-
-    //! Is the class a relationship class
-    bool IsRelationshipClass() const {return ECClassType::Relationship == GetClassType();}
+    bool IsEntityClass() const {return ECClassType::Entity == GetClassType();} //!< Is the class an entity class
+    bool IsStructClass() const {return ECClassType::Struct == GetClassType();} //!< Is the class a struct class
+    bool IsCustomAttributeClass() const {return ECClassType::CustomAttribute == GetClassType();} //!< Is the class a custom attribute class
+    bool IsRelationshipClass() const {return ECClassType::Relationship == GetClassType();} //!< Is the class a relationship class
 
     //! Used to avoid dynamic_cast
-    ECOBJECTS_EXPORT ECRelationshipClassCP GetRelationshipClassCP() const;
+    ECRelationshipClassCP GetRelationshipClassCP() const {return _GetRelationshipClassCP();}
     //! Used to avoid dynamic_cast
-    ECOBJECTS_EXPORT ECRelationshipClassP GetRelationshipClassP();
+    ECRelationshipClassP GetRelationshipClassP() {return _GetRelationshipClassP();}
 
     //! Used to avoid dynamic_cast
-    ECOBJECTS_EXPORT ECEntityClassCP GetEntityClassCP() const;
+    ECEntityClassCP GetEntityClassCP() const {return _GetEntityClassCP();}
     //! Used to avoid dynamic_cast
-    ECOBJECTS_EXPORT ECEntityClassP GetEntityClassP();
+    ECEntityClassP GetEntityClassP() {return _GetEntityClassP();}
 
     //! Used to avoid dynamic_cast
-    ECOBJECTS_EXPORT ECCustomAttributeClassCP GetCustomAttributeClassCP() const;
+    ECCustomAttributeClassCP GetCustomAttributeClassCP() const {return _GetCustomAttributeClassCP();}
     //! Used to avoid dynamic_cast
-    ECOBJECTS_EXPORT ECCustomAttributeClassP GetCustomAttributeClassP();
+    ECCustomAttributeClassP GetCustomAttributeClassP() {return _GetCustomAttributeClassP();}
 
     //! Used to avoid dynamic_cast
-    ECOBJECTS_EXPORT ECStructClassCP GetStructClassCP() const;
+    ECStructClassCP GetStructClassCP() const {return _GetStructClassCP();}
     //! Used to avoid dynamic_cast
-    ECOBJECTS_EXPORT ECStructClassP GetStructClassP();
+    ECStructClassP GetStructClassP() {return _GetStructClassP();}
 
-    //! Returns the class modifier
-    ECOBJECTS_EXPORT ECClassModifier GetClassModifier() const;
-    //! Sets the class modifier
-    ECOBJECTS_EXPORT void SetClassModifier(ECClassModifier modifier);
+    ECClassModifier GetClassModifier() const {return m_modifier;} //!< Returns the class modifier
+    void SetClassModifier(ECClassModifier modifier) {m_modifier = modifier;} //!< Sets the class modifier
 
-    //! The ECSchema that this class is defined in
-    ECOBJECTS_EXPORT ECSchemaCR GetSchema() const;
     // schemas index class by name so publicly name can not be reset
     //! The name of this ECClass
     ECOBJECTS_EXPORT Utf8StringCR GetName() const;
@@ -1845,21 +1824,12 @@ public:
     //! Formats the class name for use in an ECSQL statement: [{SchemaName}].[{ClassName}]
     //! @remarks The pointer will remain valid as long as the ECClass exists.
     ECOBJECTS_EXPORT Utf8StringCR GetECSqlName() const;
-    //! Returns an iterable of all the ECProperties defined on this class
-    ECOBJECTS_EXPORT ECPropertyIterable GetProperties() const;
-    //! Returns the number of ECProperties in this class
-    ECOBJECTS_EXPORT size_t GetPropertyCount (bool includeBaseProperties = true) const;
-    //! Returns a list of the classes this ECClass is derived from
-    ECOBJECTS_EXPORT const ECBaseClassesList& GetBaseClasses() const;
-    //! Returns a list of the classes that derive from this class.
-    ECOBJECTS_EXPORT const ECDerivedClassesList& GetDerivedClasses() const;
 
-    //! Sets the description of this ECClass
-    ECOBJECTS_EXPORT ECObjectsStatus SetDescription(Utf8StringCR description);
+    ECOBJECTS_EXPORT ECObjectsStatus SetDescription(Utf8StringCR description) {m_description = description; return ECObjectsStatus::Success;} //!< Sets the description of this ECClass
+    Utf8StringCR GetInvariantDescription() const {return m_description;} //!< Gets the invariant description for this ECClass.
     //! Gets the description of this ECClass.  Returns the localized description if one exists.
     ECOBJECTS_EXPORT Utf8StringCR GetDescription() const;
-    //! Gets the invariant description for this ECClass.
-    ECOBJECTS_EXPORT Utf8StringCR GetInvariantDescription() const;
+
     //! Sets the display label of this ECClass
     ECOBJECTS_EXPORT ECObjectsStatus SetDisplayLabel(Utf8StringCR displayLabel);
     //! Whether the display label is explicitly defined or not
@@ -1868,18 +1838,6 @@ public:
     ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const;
     //! Gets the invariant display label for this ECClass.
     ECOBJECTS_EXPORT Utf8StringCR GetInvariantDisplayLabel() const;
-
-    //! Returns a list of properties for this class.
-    //! @param[in]  includeBaseProperties If true, then will return properties that are contained in this class's base class(es)
-    //! @return     An iterable container of ECProperties
-    ECOBJECTS_EXPORT ECPropertyIterable GetProperties(bool includeBaseProperties) const;
-
-    //! Renames a property (and potentially all derived properties) if its name conflicts.  A new name is automatically generated.
-    //! Note: This does not do any checks to determine if the give property's name does actually conflict.  It will always rename the property.
-    //! @param[in]  conflictProperty    The property whose name conflicts with either a base class property or a reserved system property name
-    //! @param[in]  renameDerivedProperties Whether to also rename derived properties
-    //! @param[out] renamedProperty         The renamed property
-    ECOBJECTS_EXPORT ECObjectsStatus RenameConflictProperty(ECPropertyP conflictProperty, bool renameDerivedProperties, ECPropertyP& renamedProperty);
 
     //! Adds a base class
     //! You cannot add a base class if it creates a cycle. For example, if A is a base class
@@ -1903,18 +1861,15 @@ public:
     //! @param[in] resolveConflicts if true, will automatically resolve conflicts with property names by renaming the property in the current (and derived) class
     //!                             false if @p baseClass is added to the end of the list
     //! @param[in] validate if true, will validate the class hierarchy
-    ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false, bool validate=true);
-    
-    //! Returns whether there are any base classes for this class
-    ECOBJECTS_EXPORT bool HasBaseClasses() const;
-    //! Returns whether there are any derived classes for this class
-    bool HasDerivedClasses() const { return m_derivedClasses.size() > 0; }
+    ECObjectsStatus AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false, bool validate = true) {return _AddBaseClass(baseClass, insertAtBeginning, resolveConflicts, validate);}
 
-    //! Removes a base class.
-    ECOBJECTS_EXPORT ECObjectsStatus RemoveBaseClass(ECClassCR baseClass);
+    bool HasBaseClasses() const { return m_baseClasses.size() > 0; } //!< Returns whether there are any base classes for this class
+    const ECBaseClassesList& GetBaseClasses() const {return m_baseClasses;} //!< Returns a list of the classes this ECClass is derived from
+    ECObjectsStatus RemoveBaseClass(ECClassCR baseClass) {return _RemoveBaseClass(baseClass);} //!< Removes the provided base class.
+    ECOBJECTS_EXPORT void RemoveBaseClasses(); //!< Removes all base classes
 
-    //! Removes all base classes
-    ECOBJECTS_EXPORT void RemoveBaseClasses();
+    bool HasDerivedClasses() const { return m_derivedClasses.size() > 0; } //!< Returns whether there are any derived classes for this class
+    const ECDerivedClassesList& GetDerivedClasses() const {return m_derivedClasses;} //!< Returns a list of the classes that derive from this class.
 
     //! Returns true if the class is the type specified or derived from it.
     ECOBJECTS_EXPORT bool Is(ECClassCP targetClass) const;
@@ -1946,6 +1901,21 @@ public:
     //! If the given name is valid, creates a primitive property object with the given enumeration type
     ECOBJECTS_EXPORT ECObjectsStatus CreateEnumerationProperty(PrimitiveECPropertyP& ecProperty, Utf8StringCR name, ECEnumerationCR enumerationType);
 
+    ECOBJECTS_EXPORT size_t GetPropertyCount(bool includeBaseProperties = true) const; //!< Returns the number of ECProperties in this class
+    ECOBJECTS_EXPORT ECPropertyIterable GetProperties() const; //!< Returns an iterable of all the ECProperties defined on this class, including inherited properties.
+
+    //! Returns a list of properties for this class.
+    //! @param[in]  includeBaseProperties If true, then will return properties that are contained in this class's base class(es)
+    //! @return     An iterable container of ECProperties
+    ECOBJECTS_EXPORT ECPropertyIterable GetProperties(bool includeBaseProperties) const;
+
+    //! Renames a property (and potentially all derived properties) if its name conflicts.  A new name is automatically generated.
+    //! Note: This does not do any checks to determine if the give property's name does actually conflict.  It will always rename the property.
+    //! @param[in]  conflictProperty    The property whose name conflicts with either a base class property or a reserved system property name
+    //! @param[in]  renameDerivedProperties Whether to also rename derived properties
+    //! @param[out] renamedProperty         The renamed property
+    ECOBJECTS_EXPORT ECObjectsStatus RenameConflictProperty(ECPropertyP conflictProperty, bool renameDerivedProperties, ECPropertyP& renamedProperty);
+
     //! Remove the specified property property
     //! @param[in] name The name of the property to be removed
     ECOBJECTS_EXPORT ECObjectsStatus RemoveProperty(Utf8StringCR name);
@@ -1956,26 +1926,34 @@ public:
     //! @param[in]  name     The name of the property to lookup.
     //! @param[in]  includeBaseClasses  Whether to look on base classes of the current class for the named property
     //! @return   A pointer to an ECN::ECProperty if the named property exists within the current class; otherwise, NULL
-    ECOBJECTS_EXPORT ECPropertyP GetPropertyP (WCharCP name, bool includeBaseClasses=true) const;
+    ECOBJECTS_EXPORT ECPropertyP GetPropertyP(WCharCP name, bool includeBaseClasses=true) const;
 
     //! Get a property by name within the context of this class and its base classes.
     //! The pointer returned by this method is valid until the ECClass containing the property is destroyed or the property
     //! is removed from the class.
     //! @param[in]  name     The name of the property to lookup.
     //! @param[in]  includeBaseClasses  Whether to look on base classes of the current class for the named property
-    //! @return   A pointer to an ECN::ECProperty if the named property exists within the current class; otherwise, NULL
-    ECOBJECTS_EXPORT ECPropertyP GetPropertyP (Utf8StringCR name, bool includeBaseClasses=true) const;
+    //! @return   A pointer to an ECN::ECProperty if the named property exists within the current class; otherwise, nullptr.
+    ECPropertyP GetPropertyP(Utf8StringCR name, bool includeBaseClasses = true) const {return GetPropertyP(name.c_str(), includeBaseClasses);}
 
     //! Get a property by name within the context of this class and its base classes.
     //! The pointer returned by this method is valid until the ECClass containing the property is destroyed or the property
     //! is removed from the class.
     //! @param[in]  name     The name of the property to lookup.
     //! @param[in]  includeBaseClasses  Whether to look on base classes of the current class for the named property
-    //! @return   A pointer to an ECN::ECProperty if the named property exists within the current class; otherwise, NULL
-    ECOBJECTS_EXPORT ECPropertyP GetPropertyP (Utf8CP name, bool includeBaseClasses=true) const;
+    //! @return   A pointer to an ECN::ECProperty if the named property exists within the current class; otherwise, nullptr.
+    ECOBJECTS_EXPORT ECPropertyP GetPropertyP(Utf8CP name, bool includeBaseClasses=true) const;
+
+    //! Gets a property by name from the base classes of this class.
+    ECOBJECTS_EXPORT ECPropertyP GetBaseClassPropertyP(Utf8CP name) const;
+
+    ECOBJECTS_EXPORT ECPropertyP GetPropertyByIndex(uint32_t index) const;
+    ECOBJECTS_EXPORT ECObjectsStatus RenameProperty(ECPropertyR ecProperty, Utf8CP newName);
+    ECOBJECTS_EXPORT ECObjectsStatus ReplaceProperty(ECPropertyP& newProperty, ValueKind valueKind, ECPropertyR propertyToRemove);
+    ECOBJECTS_EXPORT ECObjectsStatus DeleteProperty(ECPropertyR ecProperty);
     
     //! Get the property that stores the instance label for the class.
-    //! @return A pointer to ECN::ECProperty if the instance label has been specified; otherwise, NULL
+    //! @return A pointer to ECN::ECProperty if the instance label has been specified; otherwise, nullptr.
     ECOBJECTS_EXPORT ECPropertyP GetInstanceLabelProperty() const;
 
     //! Copies the sourceProperty, adds it to the current class and outputs the copied property if the copy was successful
@@ -2004,7 +1982,7 @@ public:
     //! @param[out] className   The name of the class
     //! @param[in]  qualifiedClassName  The qualified name of the class, in the format of ns:className
     //! @return A status code indicating whether the qualified name was successfully parsed or not
-    ECOBJECTS_EXPORT static ECObjectsStatus ParseClassName (Utf8StringR alias, Utf8StringR className, Utf8StringCR qualifiedClassName);
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseClassName(Utf8StringR alias, Utf8StringR className, Utf8StringCR qualifiedClassName);
 
     //! Given a schema and a class, will return the fully qualified class name.  If the class is part of the passed in schema, there
     //! is no alias.  Otherwise, the class's schema must be a referenced schema in the passed in schema
@@ -2138,7 +2116,7 @@ private:
     ECStructClass(ECSchemaCR schema) : ECClass(schema) {}
     virtual ~ECStructClass () {}
 
-    bool _Validate() const override { return true; }
+    bool _Validate() const override {return true;}
 
 protected:
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
@@ -2730,13 +2708,13 @@ public:
     Utf8String m_className;
 
     //! Constructs a SchemaNameClassNamePair from the specified schema and class names
-    SchemaNameClassNamePair (Utf8StringCR schemaName, Utf8StringCR className) : m_schemaName (schemaName), m_className  (className) {}
+    SchemaNameClassNamePair(Utf8StringCR schemaName, Utf8StringCR className) : m_schemaName (schemaName), m_className  (className) {}
     //! Constructs a SchemaNameClassNamePair from the specified schema and class names
-    SchemaNameClassNamePair (Utf8CP schemaName, Utf8CP className) : m_schemaName (schemaName), m_className  (className) {}
+    SchemaNameClassNamePair(Utf8CP schemaName, Utf8CP className) : m_schemaName (schemaName), m_className  (className) {}
     //! Constructs an empty SchemaNameClassNamePair
     SchemaNameClassNamePair() { }
     //! Constructs a SchemaNameClassNamePair from a string of the format "SCHEMANAME:CLASSNAME"
-    SchemaNameClassNamePair (Utf8StringCR schemaAndClassNameSeparatedByColon)
+    SchemaNameClassNamePair(Utf8StringCR schemaAndClassNameSeparatedByColon)
         {
         BeAssert(Utf8String::npos != schemaAndClassNameSeparatedByColon.find (':'));
         Parse (schemaAndClassNameSeparatedByColon);
@@ -2745,7 +2723,7 @@ public:
     //! Attempts to populate this SchemaNameClassNamePair from a string of the format "SCHEMANAME:CLASSNAME"
     //! @param[in]      schemaAndClassNameSeparatedByColon a string of the format "SCHEMANAME:CLASSNAME"
     //! @return true if the string was successfully parsed, false otherwise. If it returns false, this SchemaNameClassNamePair will not be modified.
-    bool Parse (Utf8StringCR schemaAndClassNameSeparatedByColon)
+    bool Parse(Utf8StringCR schemaAndClassNameSeparatedByColon)
         {
         size_t pos = schemaAndClassNameSeparatedByColon.find (':');
         if (Utf8String::npos != pos)
@@ -2782,15 +2760,15 @@ public:
 
     //! Concatenates the schema and class names into a single colon-separated string of the format "SCHEMANAME:CLASSNAME"
     //! @return a string of the format "SCHEMANAME:CLASSNAME"
-    Utf8String     ToColonSeparatedString() const
+    Utf8String ToColonSeparatedString() const
         {
         Utf8String str;
-        str.Sprintf ("%s:%s", m_schemaName.c_str(), m_className.c_str());
+        str.Sprintf("%s:%s", m_schemaName.c_str(), m_className.c_str());
         return str;
         }
 
     //!<@private
-    ECOBJECTS_EXPORT bool   Remap (ECSchemaCR pre, ECSchemaCR post, IECSchemaRemapperCR remapper);
+    ECOBJECTS_EXPORT bool Remap(ECSchemaCR pre, ECSchemaCR post, IECSchemaRemapperCR remapper);
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -2801,9 +2779,9 @@ public:
 struct QualifiedECAccessor
 {
 protected:
-    Utf8String         m_schemaName;
-    Utf8String         m_className;
-    Utf8String         m_accessString;
+    Utf8String m_schemaName;
+    Utf8String m_className;
+    Utf8String m_accessString;
 public:
     //! Constructs an empty QualifiedECAccessor
     QualifiedECAccessor() { }
@@ -2812,40 +2790,40 @@ public:
         : m_schemaName(schemaName), m_className(className), m_accessString(accessString) { }
 
     //! Returns the name of the schema containing the ECClass
-    Utf8CP GetSchemaName() const           { return m_schemaName.c_str(); }
+    Utf8CP GetSchemaName() const {return m_schemaName.c_str();}
     //! Returns the name of the ECClass (or subclass thereof) containing the ECProperty
-    Utf8CP     GetClassName() const            { return m_className.c_str(); }
+    Utf8CP GetClassName() const {return m_className.c_str();}
     //! Returns the access string identifying the ECProperty within the ECClass
-    Utf8CP     GetAccessString() const         { return m_accessString.c_str(); }
+    Utf8CP GetAccessString() const {return m_accessString.c_str();}
 
     //! Sets the name of the schema containing the ECClass
-    void        SetSchemaName (Utf8CP name)    { m_schemaName = name; }
+    void SetSchemaName(Utf8CP name) {m_schemaName = name;}
     //! Sets the name of the ECClass (or subclass thereof) containing the ECProperty
-    void        SetClassName (Utf8CP name)     { m_className = name; }
+    void SetClassName(Utf8CP name) {m_className = name;}
     //! Sets the access string identifying the ECProperty within the ECClass
-    void        SetAccessString (Utf8CP acStr) { m_accessString = acStr; }
+    void SetAccessString(Utf8CP acStr) {m_accessString = acStr;}
 
     //! Returns a colon-separated string of the format "Schema:Class:AccessString"
-    ECOBJECTS_EXPORT Utf8String    ToString() const;
+    ECOBJECTS_EXPORT Utf8String ToString() const;
     //! Attempts to initialize this QualifiedECAccessor from a colon-separated string. If the string cannot be parsed, this QualifiedECAccessor will not be modified
     //! @param[in]      str A string of the format "Schema:Class:AccessString"
     //! @return true if the string was successfully parsed
-    ECOBJECTS_EXPORT bool       FromString (Utf8CP str);
+    ECOBJECTS_EXPORT bool FromString (Utf8CP str);
 
     //! Attempts to initialize this QualifiedECAccessor from an access string identifying a property of the specified ECEnabler.
     //! If the ECProperty cannot be found within the ECEnabler, this QualifiedECAccessor will not be modified
     //! @param[in]      rootEnabler  The ECEnabler containing the desired ECProperty
     //! @param[in]      accessString The access string identifying the ECProperty within the ECEnabler
     //! @return true if the access string identifies a valid ECProperty within the ECEnabler
-    ECOBJECTS_EXPORT bool       FromAccessString (ECN::ECEnablerCR rootEnabler, Utf8CP accessString);
+    ECOBJECTS_EXPORT bool FromAccessString(ECN::ECEnablerCR rootEnabler, Utf8CP accessString);
     //!<@private
-    ECOBJECTS_EXPORT bool       Remap (ECSchemaCR pre, ECSchemaCR post, IECSchemaRemapperCR remapper);
+    ECOBJECTS_EXPORT bool Remap(ECSchemaCR pre, ECSchemaCR post, IECSchemaRemapperCR remapper);
     //!<@private
-    Utf8StringR                    GetSchemaNameR()    { return m_schemaName; }
+    Utf8StringR GetSchemaNameR() {return m_schemaName;}
     //!<@private
-    Utf8StringR                    GetClassNameR()     { return m_className; }
+    Utf8StringR GetClassNameR() {return m_className;}
     //!<@private
-    Utf8StringR                    GetAccessStringR()  { return m_accessString; }
+    Utf8StringR GetAccessStringR() {return m_accessString;}
 };
 
 typedef bvector<QualifiedECAccessor> QualifiedECAccessorList;
@@ -2871,7 +2849,7 @@ struct SchemaMapExact:bmap<SchemaKey, ECSchemaPtr, SchemaKeyLessThan <SchemaMatc
     //! Get a class by name within the context of this list.
     //! @param[in]  classNamePair     The name of the class and schema to lookup.  This must be an unqualified (short) class name.
     //! @return   A pointer to an ECN::ECClass if the named class exists in within the current list; otherwise, NULL
-    ECOBJECTS_EXPORT ECClassP  FindClassP (ECN::SchemaNameClassNamePair const& classNamePair) const;
+    ECOBJECTS_EXPORT ECClassP  FindClassP(ECN::SchemaNameClassNamePair const& classNamePair) const;
 };
 
 typedef SchemaMapExact                  ECSchemaReferenceList;
@@ -3022,14 +3000,14 @@ private:
     DECLARE_KEY_METHOD
 
 protected:
-    virtual    StandaloneECEnablerPtr  _LocateStandaloneEnabler (SchemaKeyCR schemaKey, Utf8CP className) = 0;
+    virtual StandaloneECEnablerPtr  _LocateStandaloneEnabler(SchemaKeyCR schemaKey, Utf8CP className) = 0;
 
 public:
     //! Given a SchemaKey and a className, tries to locate the StandaloneEnabler for the ECClass
     //! @param[in] schemaKey    SchemaKey fully describing the schema that the class belongs to
     //! @param[in] className    The name of the class to find the enabler for
     //! @returns A valid StandaloneECEnabler, if one was located
-    ECOBJECTS_EXPORT StandaloneECEnablerPtr  LocateStandaloneEnabler (SchemaKeyCR schemaKey, Utf8CP className);
+    ECOBJECTS_EXPORT StandaloneECEnablerPtr  LocateStandaloneEnabler(SchemaKeyCR schemaKey, Utf8CP className);
 };
 
 
@@ -3076,24 +3054,24 @@ public:
     //! Adds a schema to the cache
     //! @param[in] schema   The ECSchema to add to the cache
     //! @returns ECObjectsStatus::DuplicateSchema is the schema is already in the cache, otherwise ECObjectsStatus::Success
-    ECOBJECTS_EXPORT ECObjectsStatus AddSchema   (ECSchemaR schema);
+    ECOBJECTS_EXPORT ECObjectsStatus AddSchema(ECSchemaR schema);
 
-    //! Removes the specified schema from the cache
+    //! Removes the specified schema from this cache
     //! @param[in] key  The SchemaKey fully describing the schema that should be removed from the cache
     //! @returns ECObjectsStatus::SchemaNotFound is the schema was not found in the cache, otherwise ECObjectsStatus::Success
-    ECOBJECTS_EXPORT ECObjectsStatus DropSchema  (SchemaKeyCR key );
+    ECOBJECTS_EXPORT ECObjectsStatus DropSchema(SchemaKeyCR key );
 
-    //! Get the requested schema from the cache
+    //! Get the requested schema from this cache
     //! @param[in] key  The SchemaKey fully describing the schema to be retrieved
     //! @returns The ECSchema if it is contained in the cache, NULL otherwise
     //! @remarks This will do an Identical match type for the requested schema
     ECSchemaP GetSchema(SchemaKeyCR key) const {return GetSchema(key, SchemaMatchType::Identical);}
 
-    //! Get the requested schema from the cache
+    //! Get the requested schema from this cache.
     //! @param[in] key  The SchemaKey fully describing the schema to be retrieved
     //! @param[in] matchType    The SchemaMatchType defining how exact of a match for the located schema is tolerated
-    //! @returns The ECSchema if it is contained in the cache, NULL otherwise
-    ECOBJECTS_EXPORT ECSchemaP       GetSchema   (SchemaKeyCR key, SchemaMatchType matchType) const;
+    //! @returns The ECSchema if it is contained in the cache; otherise nullptr.
+    ECOBJECTS_EXPORT ECSchemaP GetSchema(SchemaKeyCR key, SchemaMatchType matchType) const;
 
     virtual ~ECSchemaCache() {m_schemas.clear();} //!< Destructor
     static ECSchemaCachePtr Create() {return new ECSchemaCache;}; //!< Creates an ECSchemaCachePtr
@@ -3102,7 +3080,7 @@ public:
     IECSchemaLocater& GetSchemaLocater() {return *this;} //!< Returns the SchemaCache as an IECSchemaLocater
     ECOBJECTS_EXPORT bvector<ECSchemaCP> GetSchemas() const;
     ECOBJECTS_EXPORT size_t GetSchemas (bvector<ECSchemaP>& schemas) const;
-    ECOBJECTS_EXPORT void   GetSupplementalSchemasFor(Utf8CP schemaName, bvector<ECSchemaP>& supplementalSchemas) const;
+    ECOBJECTS_EXPORT void GetSupplementalSchemasFor(Utf8CP schemaName, bvector<ECSchemaP>& supplementalSchemas) const;
 };
 
 //=======================================================================================

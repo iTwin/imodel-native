@@ -5,7 +5,6 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
 #include "ECObjectsPch.h"
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
@@ -22,7 +21,6 @@ ECObjectsStatus KindOfQuantity::SetName(Utf8CP name)
     return ECObjectsStatus::Success;
     }
 
-//TODO: add string representation for FUS once we can call ToText on invalid FUS.
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                03/2017
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -68,7 +66,6 @@ bool KindOfQuantity::Verify() const
     return isValid;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Robert.Schili                  02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -76,7 +73,7 @@ Utf8StringCR KindOfQuantity::GetFullName() const
     {
     if (m_fullName.size() == 0)
         m_fullName = GetSchema().GetName() + ":" + GetName();
-        
+
     return m_fullName;
     }
 
@@ -100,15 +97,18 @@ Utf8String KindOfQuantity::GetQualifiedName(ECSchemaCR primarySchema) const
         return alias + ":" + name;
     }
 
-//Following two methods need to be exported as the ValidatedName struct does not export its methods.
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    02/2018
+//--------------------------------------------------------------------------------------
 ECObjectsStatus KindOfQuantity::SetDisplayLabel(Utf8CP value) {m_validatedName.SetDisplayLabel(value); return ECObjectsStatus::Success;}
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    02/2018
+//--------------------------------------------------------------------------------------
 ECObjectsStatus KindOfQuantity::ParseName(Utf8StringR alias, Utf8StringR kindOfQuantityName, Utf8StringCR stringToParse)
     {
     if (0 == stringToParse.length())
-        {
         return ECObjectsStatus::ParseError;
-        }
 
     Utf8String::size_type colonIndex = stringToParse.find(':');
     if (Utf8String::npos == colonIndex)
@@ -119,9 +119,7 @@ ECObjectsStatus KindOfQuantity::ParseName(Utf8StringR alias, Utf8StringR kindOfQ
         }
 
     if (stringToParse.length() == colonIndex + 1)
-        {
         return ECObjectsStatus::ParseError;
-        }
 
     if (0 == colonIndex)
         alias.clear();
@@ -189,16 +187,15 @@ void KindOfQuantity::RemovePresentationUnit(Formatting::FormatUnitSet presentati
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus KindOfQuantity::WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
+    //will only be serialized in 3.0 and later
     if (ecXmlVersion < ECVersion::V3_0)
-        { //will only be serialized in 3.0 and later
         return SchemaWriteStatus::Success;
-        }
 
     Utf8CP elementName = KIND_OF_QUANTITY_ELEMENT;
     SchemaWriteStatus status = SchemaWriteStatus::Success;
-    
+
     xmlWriter.WriteElementStart(elementName);
-    
+
     xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, GetName().c_str());
     xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, GetInvariantDescription().c_str());
     auto& displayLabel = GetInvariantDisplayLabel();
@@ -210,6 +207,7 @@ SchemaWriteStatus KindOfQuantity::WriteXml (BeXmlWriterR xmlWriter, ECVersion ec
         LOG.errorv("Failed to write schema because persistance FUS for KindOfQuantity '%s' has problem: '%s'", GetName().c_str(), GetPersistenceUnit().GetProblemDescription().c_str());
         return SchemaWriteStatus::FailedToSaveXml;
         }
+
     Utf8String persistenceUnitString = GetPersistenceUnit().ToText(false);
     xmlWriter.WriteAttribute(PERSISTENCE_UNIT_ATTRIBUTE, persistenceUnitString.c_str());
 
@@ -235,8 +233,7 @@ SchemaWriteStatus KindOfQuantity::WriteXml (BeXmlWriterR xmlWriter, ECVersion ec
             }
         xmlWriter.WriteAttribute(PRESENTATION_UNITS_ATTRIBUTE, presentationUnitString.c_str());
         }
-    
-    //WriteCustomAttributes (xmlWriter);
+
     xmlWriter.WriteElementEnd();
     return status;
     }
@@ -420,9 +417,7 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
 Formatting::FormatUnitSetCP KindOfQuantity::GetPresentationFUS(size_t indx) const
     { 
     if (m_presentationFUS.size() > 0)
-        {
         return (indx < m_presentationFUS.size())? &m_presentationFUS[indx] :  m_presentationFUS.begin();
-        }
     else
         return &m_persistenceFUS;
     }
@@ -449,21 +444,6 @@ Formatting::FormatUnitSetCP KindOfQuantity::GetPresentationFUS(Utf8CP inFusId, b
         return &m_persistenceFUS;
 
     return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-@bsimethod                                David.Fox-Rabinovitz      06/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String KindOfQuantity::GetPresentationFUSDescriptor(size_t indx, bool useAlias) const
-    {
-    Formatting::FormatUnitSetCP fusP;
-    if (m_presentationFUS.size() > 0)
-        {
-        fusP = (indx < m_presentationFUS.size()) ? &m_presentationFUS[indx] : m_presentationFUS.begin();
-        }
-    else
-        fusP = &m_persistenceFUS;
-    return fusP->ToText(useAlias);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -496,6 +476,7 @@ Json::Value KindOfQuantity::GetPresentationsJson(bool useAlias) const
         }
     return arrayObj;
     }
+
 /*---------------------------------------------------------------------------------**//**
 @bsimethod                                David.Fox-Rabinovitz      08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -509,22 +490,30 @@ Json::Value KindOfQuantity::ToJson(bool useAlias) const
     return jval;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                David.Fox-Rabinovitz      08/2017
+//---------------------------------------------------------------------------------------
 BEU::T_UnitSynonymVector* KindOfQuantity::GetSynonymVector() const
     {
     BEU::PhenomenonCP php = GetPhenomenon();
     return (nullptr == php) ? nullptr : php->GetSynonymVector();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                David.Fox-Rabinovitz      08/2017
+//---------------------------------------------------------------------------------------
 size_t KindOfQuantity::GetSynonymCount() const
     {
     BEU::PhenomenonCP php = GetPhenomenon();
     return (nullptr == php) ? 0 : php->GetSynonymCount();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                David.Fox-Rabinovitz      08/2017
+//---------------------------------------------------------------------------------------
 BEU::PhenomenonCP KindOfQuantity::GetPhenomenon() const
     {
-    Formatting::FormatUnitSet fus = GetPersistenceUnit();
-    BEU::UnitCP un = fus.GetUnit();
+    BEU::UnitCP un = GetPersistenceUnit().GetUnit();
     BEU::PhenomenonCP php = (nullptr == un)? nullptr : un->GetPhenomenon();
     return php;
     }
