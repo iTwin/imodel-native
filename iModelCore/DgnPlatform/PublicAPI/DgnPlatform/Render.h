@@ -285,7 +285,6 @@ struct Task : RefCounted<NonCopyableClass>
         ResetTarget,
         SetFlash,
         SetHiliteSet,
-        StartUp, // Invoked asynchronously immediately after Initialize to do background initialization while application is starting up
     };
 
     //! The outcome of the processing of a Task.
@@ -3248,9 +3247,6 @@ struct System
     
     //! Initialize the rendering system. Return a non-zero value in case of error. The client thread waits for the result.
     virtual int _Initialize(void* systemWindow, bool swRendering) = 0;
-
-    //! Perform any startup work after successful initialization. The client thread does not wait for the result.
-    virtual void _StartUp() { }
 
     //! Create a render target.
     virtual Render::TargetPtr _CreateTarget(Render::Device& device, double tileSizeModifier) = 0;
