@@ -22,6 +22,7 @@ struct ORDConverter : Dgn::DgnDbSync::DgnV8::RootModelConverter
 protected:
     virtual void _OnConversionComplete() override;
     virtual bool _ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model) override;
+    virtual void _OnSheetsConvertViewAttachment(Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const& v8SheetModelMapping, DgnAttachmentR v8DgnAttachment) override;
 
 public:
     struct Params

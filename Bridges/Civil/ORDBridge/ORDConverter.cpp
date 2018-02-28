@@ -103,7 +103,11 @@ struct ORDAlignmentsConverter: RefCountedBase
         Utf8String _GetHash() override
             {
             auto alignmentCP = dynamic_cast<AlignmentCP>(m_entity);
-            auto horizCurveVectorPtr = alignmentCP->GetGeometry();
+            auto linearGeomPtr = alignmentCP->GetLinearGeometry();
+
+            Bentley::CurveVectorPtr horizCurveVectorPtr;
+            if (linearGeomPtr.IsValid())
+                linearGeomPtr->GetCurveVector(horizCurveVectorPtr);
 
             Bentley::bvector<Byte> buffer;
             Bentley::BentleyGeometryFlatBuffer::GeometryToBytes(*horizCurveVectorPtr, buffer);
@@ -333,18 +337,25 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
     auto linearEntity3dPtr = cifAlignment.GetActiveLinearEntity3d();
     if (linearEntity3dPtr.IsValid())
         {
-        auto cifAlignment3dGeomPtr = linearEntity3dPtr->GetGeometry();
+        linearGeomPtr = linearEntity3dPtr->GetLinearGeometry();
+        if (linearGeomPtr.IsValid())
+            {
+            Bentley::CurveVectorPtr cifAlignment3dGeomPtr;
+            linearGeomPtr->GetCurveVector(cifAlignment3dGeomPtr);
 
-        CurveVectorPtr bimAlignment3dGeomPtr;
-        if (BentleyStatus::SUCCESS != Marshal(bimAlignment3dGeomPtr, *cifAlignment3dGeomPtr))
-            return BentleyStatus::ERROR;
+            CurveVectorPtr bimAlignment3dGeomPtr;
+            if (BentleyStatus::SUCCESS != Marshal(bimAlignment3dGeomPtr, *cifAlignment3dGeomPtr))
+                return BentleyStatus::ERROR;
 
-        auto geomBuilder = GeometryBuilder::Create(*bimAlignmentPtr);
-        if (!geomBuilder->Append(*bimAlignment3dGeomPtr, GeometryBuilder::CoordSystem::World))
-            return BentleyStatus::ERROR;
+            auto geomBuilder = GeometryBuilder::Create(*bimAlignmentPtr);
+            if (!geomBuilder->Append(*bimAlignment3dGeomPtr, GeometryBuilder::CoordSystem::World))
+                return BentleyStatus::ERROR;
 
-        if (BentleyStatus::SUCCESS != geomBuilder->Finish(*bimAlignmentPtr))
-            return BentleyStatus::ERROR;
+            if (BentleyStatus::SUCCESS != geomBuilder->Finish(*bimAlignmentPtr))
+                return BentleyStatus::ERROR;
+            }
+        else
+            bimAlignmentPtr->GenerateAprox3dGeom();
         }
     else
         bimAlignmentPtr->GenerateAprox3dGeom();
@@ -435,8 +446,6 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimVerticalAlignment(ProfileCR ci
 BentleyStatus ORDAlignmentsConverter::UpdateBimAlignment(AlignmentCR cifAlignment,
     iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ChangeDetector::Results const& change, DgnCategoryId targetCategoryId)
     {
-    auto horizGeometryPtr = cifAlignment.GetGeometry();
-
     auto alignmentCPtr = AlignmentBim::Alignment::Get(changeDetector.GetDgnDb(), change.GetSyncInfoRecord().GetDgnElementId());
     AlignmentBim::HorizontalAlignmentPtr horizAlignmentPtr = 
         dynamic_cast<AlignmentBim::HorizontalAlignmentP>(alignmentCPtr->QueryHorizontal()->CopyForEdit().get());
@@ -445,6 +454,12 @@ BentleyStatus ORDAlignmentsConverter::UpdateBimAlignment(AlignmentCR cifAlignmen
         horizAlignmentPtr->SetCategoryId(targetCategoryId);
 
     CurveVectorPtr bimHorizGeometryPtr;
+    auto linearGeomPtr = cifAlignment.GetLinearGeometry();
+
+    Bentley::CurveVectorPtr horizGeometryPtr;
+    if (linearGeomPtr.IsValid())
+        linearGeomPtr->GetCurveVector(horizGeometryPtr);
+
     if (BentleyStatus::SUCCESS != Marshal(bimHorizGeometryPtr, *horizGeometryPtr))
         return BentleyStatus::ERROR;
 
@@ -1122,6 +1137,39 @@ void ORDConverter::SetUpModelFormatters(Dgn::SubjectCR jobSubject)
 
     alignmentModelPtr->Update();
     physicalModelPtr->Update();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ORDConverter::_OnSheetsConvertViewAttachment(Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const& v8SheetModelMapping, DgnAttachmentR v8DgnAttachment)
+    {
+    if (v8DgnAttachment.IsAssociatedToNamedView())
+        {
+        EditElementHandle namedViewEeh;
+        if (v8DgnAttachment.GetNamedViewElement(namedViewEeh))
+            {
+            auto namedViewPtr = DgnV8Api::NamedView::Create(namedViewEeh);
+
+            EditElementHandle clipEeh;
+            if (SUCCESS == namedViewPtr->GetClipElement(clipEeh))
+                {
+                DgnElementId bimClipElmId;
+                if (GetSyncInfo().TryFindElement(bimClipElmId, clipEeh))
+                    {
+                    auto bimClipElmCPtr = v8SheetModelMapping.GetDgnModel().GetDgnDb().Elements().GetElement(bimClipElmId);
+                    if (bimClipElmCPtr->IsGeometricElement())
+                        {
+                        auto bimSheetElmCPtr = v8SheetModelMapping.GetDgnModel().GetModeledElement();
+
+                        RoadRailBim::RoadRailPhysicalDomain::SetGeometricElementAsBoundingContentForSheet(
+                            *dynamic_cast<GeometricElementCP>(bimClipElmCPtr.get()), 
+                            *dynamic_cast<Sheet::ElementCP>(bimSheetElmCPtr.get()));
+                        }
+                    }
+                }
+            }
+        }
     }
 
 END_ORDBRIDGE_NAMESPACE
