@@ -190,6 +190,9 @@ SubjectCPtr ORDBridge::_InitializeJob()
         auto physicalModelPtr = RoadRailBim::RoadRailPhysicalDomain::QueryPhysicalModel(subjectCR, ORDBRIDGE_PhysicalModelName);
         InsertElementHasLinksRelationship(GetDgnDbR(), physicalModelPtr->GetModeledElementId(), m_converter->GetRepositoryLinkFromAppData(*m_converter->GetRootV8File()));
 
+        auto alignmentModelPtr = RoadRailAlignment::RoadRailAlignmentDomain::QueryAlignmentModel(subjectCR, ORDBRIDGE_AlignmentModelName);
+        InsertElementHasLinksRelationship(GetDgnDbR(), alignmentModelPtr->GetModeledElementId(), m_converter->GetRepositoryLinkFromAppData(*m_converter->GetRootV8File()));
+
         m_converter->SetUpModelFormatters(subjectCR);
 
         return &subjectCR;
