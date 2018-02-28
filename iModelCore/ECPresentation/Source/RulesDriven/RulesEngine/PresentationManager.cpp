@@ -644,17 +644,17 @@ folly::Future<bvector<NavNodeCPtr>> RulesDrivenECPresentationManager::_GetFilter
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<bool> RulesDrivenECPresentationManager::_HasChild(IConnectionCR primaryConnection, NavNodeCR parent, NavNodeKeyCR childKey, JsonValueCR jsonOptions)
+folly::Future<bool> RulesDrivenECPresentationManager::_HasChild(IConnectionCR primaryConnection, NavNodeCR parent, ECInstanceKeyCR childKey, JsonValueCR jsonOptions)
     {
     auto promise = CreateCancelablePromise<bool>(*m_cancelableTasks, "Child check", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
-    folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), parent = (NavNodeCPtr)&parent, childKey = (NavNodeKeyCPtr)&childKey, jsonOptions]()
+    folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), parent = (NavNodeCPtr)&parent, childKey, jsonOptions]()
         {
         if (promise->IsCanceled())
             return;
 
         NavigationOptions options(jsonOptions);
         IConnectionPtr connection = GetConnections().GetConnection(connectionId.c_str());
-        bool result = m_impl->HasChild(*connection, *parent, *childKey, options, promise->GetCancelationToken());
+        bool result = m_impl->HasChild(*connection, *parent, childKey, options, promise->GetCancelationToken());
         promise->SetValue(result);
         });
     return promise->GetFuture();

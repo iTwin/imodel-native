@@ -211,7 +211,12 @@ TEST_F(IECPresentationManagerTests, GetNodesPath_InstancesHierarchy)
     */
 
     // create the keys path
-    NavNodeKeyPath keysPath = {node1->GetKey(), node2->GetKey(), node3->GetKey()};
+    bvector<ECInstanceKey> keysPath = 
+        {
+        node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
+        node2->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
+        node3->GetKey()->AsECInstanceNodeKey()->GetInstanceKey()
+        };
 
     // test
     NodesPathElement path = m_manager->GetNodesPath(s_project->GetECDb(), keysPath).get();
@@ -238,88 +243,13 @@ TEST_F(IECPresentationManagerTests, GetNodesPath_InstancesHierarchy)
 //---------------------------------------------------------------------------------------
 // @betest                                      Grigas.Petraitis                12/2016
 //---------------------------------------------------------------------------------------
-TEST_F(IECPresentationManagerTests, GetNodesPath_InstancesHierarchyWithGroupingWhenPathContainsGroupingNodes)
-    {
-    ECInstanceKey instanceKey1(m_widgetClassId, ECInstanceId((uint64_t)3));
-    ECInstanceKey instanceKey2(m_widgetClassId, ECInstanceId((uint64_t)4));
-    ECInstanceKey instanceKey3(m_gadgetClassId, ECInstanceId((uint64_t)1));
-    ECInstanceKey instanceKey4(m_widgetClassId, ECInstanceId((uint64_t)5));
-    ECInstanceKey instanceKey5(m_widgetClassId, ECInstanceId((uint64_t)6));
-    ECInstanceKey instanceKey6(m_widgetClassId, ECInstanceId((uint64_t)7));
-
-    // create the hierarchy
-    Hierarchy hierarchy;
-    hierarchy[nullptr].push_back(CreateClassGroupingNode(m_widgetClassId, "A", {instanceKey1, instanceKey2}));
-    hierarchy[nullptr].push_back(CreateClassGroupingNode(m_gadgetClassId, "B", {instanceKey3}));
-    NavNodeCPtr node1 = hierarchy[nullptr].front();
-    hierarchy[node1].push_back(CreatePropertyGroupingNode(m_widgetClassId, "IntProperty", "A_1", 1, nullptr, {instanceKey4}));
-    hierarchy[node1].push_back(CreatePropertyGroupingNode(m_widgetClassId, "BoolProperty", "A_2", 2, nullptr, {instanceKey1, instanceKey2}));
-    hierarchy[node1].push_back(CreatePropertyGroupingNode(m_widgetClassId, "DoubleProperty", "A_3", 3, nullptr, {instanceKey5}));
-    NavNodeCPtr node2 = *(hierarchy[node1].begin() + 1);
-    hierarchy[node2].push_back(CreateLabelGroupingNode("A_2_1", {instanceKey6}));
-    hierarchy[node2].push_back(CreateLabelGroupingNode("A_2_2", {instanceKey1, instanceKey2}));
-    NavNodeCPtr node3 = hierarchy[node2].back();
-    hierarchy[node3].push_back(CreateInstanceNode(instanceKey1, "A_2_2_1"));
-    hierarchy[node3].push_back(CreateInstanceNode(instanceKey2, "A_2_2_2"));
-    NavNodeCPtr node4 = hierarchy[node3].front();
-    m_manager->SetHierarchy(hierarchy);
-    
-    /*
-    A (w3, w4)                  *   class grouping node
-        A_1 (w5)                    property grouping node
-        A_2 (w3, w4)            *   property grouping node
-            A_2_1 (w7)              label grouping node
-            A_2_2 (w3, w4)      *   label grouping node
-                A_2_2_1 (w3)    *   instance node
-                A_2_2_2 (w4)        instance node
-        A_3 (w6)                    property grouping node
-    B (g1)                          class grouping node
-    */
-
-    // create the keys path
-    NavNodeKeyPath keysPath = {node1->GetKey(), node2->GetKey(), node3->GetKey(), node4->GetKey()};
-
-    // test
-    NodesPathElement path = m_manager->GetNodesPath(s_project->GetECDb(), keysPath).get();
-
-    NodesPathElement const* curr = &path;
-    EXPECT_EQ(0, curr->GetIndex());
-    ASSERT_TRUE(curr->GetNode().IsValid());
-    EXPECT_STREQ("A", curr->GetNode()->GetLabel().c_str());
-    ASSERT_EQ(1, curr->GetChildren().size());
-    
-    curr = &curr->GetChildren().front();
-    EXPECT_EQ(1, curr->GetIndex());
-    ASSERT_TRUE(curr->GetNode().IsValid());
-    EXPECT_STREQ("A_2", curr->GetNode()->GetLabel().c_str());
-    ASSERT_EQ(1, curr->GetChildren().size());
-    
-    curr = &curr->GetChildren().front();
-    EXPECT_EQ(1, curr->GetIndex());
-    ASSERT_TRUE(curr->GetNode().IsValid());
-    EXPECT_STREQ("A_2_2", curr->GetNode()->GetLabel().c_str());
-    ASSERT_EQ(1, curr->GetChildren().size());
-    
-    curr = &curr->GetChildren().front();
-    EXPECT_EQ(0, curr->GetIndex());
-    ASSERT_TRUE(curr->GetNode().IsValid());
-    EXPECT_STREQ("A_2_2_1", curr->GetNode()->GetLabel().c_str());
-    ASSERT_EQ(0, curr->GetChildren().size());
-    }
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Grigas.Petraitis                12/2016
-//---------------------------------------------------------------------------------------
-TEST_F(IECPresentationManagerTests, GetNodesPath_InstancesHierarchyWithGroupingWhenPathContainsOnlyInstanceNodes)
+TEST_F(IECPresentationManagerTests, GetNodesPath_InstancesHierarchyWithGrouping)
     {
     // need to override HasChild function to get this working
-    m_manager->SetHasChildHandler([](IConnectionCR, NavNodeCR parent, NavNodeKeyCR childKey, JsonValueCR) -> bool
+    m_manager->SetHasChildHandler([](IConnectionCR, NavNodeCR parent, ECInstanceKeyCR childKey, JsonValueCR) -> bool
         {
-        if (nullptr == childKey.AsECInstanceNodeKey())
-            return false;
-
         bvector<ECInstanceKey> keys = NavNodeExtendedData(parent).GetGroupedInstanceKeys();
-        return keys.end() != std::find(keys.begin(), keys.end(), childKey.AsECInstanceNodeKey()->GetInstanceKey());
+        return keys.end() != std::find(keys.begin(), keys.end(), childKey);
         });
 
     ECInstanceKey instanceKey1(m_widgetClassId, ECInstanceId((uint64_t)3));
@@ -360,7 +290,7 @@ TEST_F(IECPresentationManagerTests, GetNodesPath_InstancesHierarchyWithGroupingW
     m_manager->SetHierarchy(hierarchy);
 
     // create the keys path
-    NavNodeKeyPath keysPath = {node4->GetKey()};
+    bvector<ECInstanceKey> keysPath = {node4->GetKey()->AsECInstanceNodeKey()->GetInstanceKey()};
 
     // test
     NodesPathElement path = m_manager->GetNodesPath(s_project->GetECDb(), keysPath).get();
@@ -417,9 +347,18 @@ TEST_F(IECPresentationManagerTests, GetNodesPath_Multiple_ReturnsTwoSeparatePath
     m_manager->SetHierarchy(hierarchy);
 
     // create the key paths
-    NavNodeKeyPath keysPath1 = {node1_1->GetKey(), node1_2->GetKey()};
-    NavNodeKeyPath keysPath2 = {node2_1->GetKey(), node2_2->GetKey(), node2_3->GetKey()};
-    bvector<NavNodeKeyPath> keysPaths = {keysPath1, keysPath2};
+    bvector<ECInstanceKey> keysPath1 = 
+        {
+        node1_1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
+        node1_2->GetKey()->AsECInstanceNodeKey()->GetInstanceKey()
+        };
+    bvector<ECInstanceKey> keysPath2 = 
+        {
+        node2_1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
+        node2_2->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
+        node2_3->GetKey()->AsECInstanceNodeKey()->GetInstanceKey()
+        };
+    bvector<bvector<ECInstanceKey>> keysPaths = {keysPath1, keysPath2};
 
     // test
     bvector<NodesPathElement> paths = m_manager->GetNodesPath(s_project->GetECDb(), keysPaths, -1).get();
@@ -483,11 +422,30 @@ TEST_F(IECPresentationManagerTests, GetNodesPath_Multiple_ReturnsMergedPathWhenP
     m_manager->SetHierarchy(hierarchy);
 
     // create the key paths
-    NavNodeKeyPath keysPath1 = {node1->GetKey(), node1_2->GetKey()};
-    NavNodeKeyPath keysPath2 = {node1->GetKey(), node1_2->GetKey(), node1_3->GetKey()};
-    NavNodeKeyPath keysPath3 = {node1->GetKey(), node2_2->GetKey(), node21_3->GetKey()};
-    NavNodeKeyPath keysPath4 = {node1->GetKey(), node2_2->GetKey(), node22_3->GetKey()};
-    bvector<NavNodeKeyPath> keysPaths = {keysPath1, keysPath2, keysPath3, keysPath4};
+    bvector<ECInstanceKey> keysPath1 = 
+        {
+        node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
+        node1_2->GetKey()->AsECInstanceNodeKey()->GetInstanceKey()
+        };
+    bvector<ECInstanceKey> keysPath2 = 
+        {
+        node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
+        node1_2->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
+        node1_3->GetKey()->AsECInstanceNodeKey()->GetInstanceKey()
+        };
+    bvector<ECInstanceKey> keysPath3 = 
+        {
+        node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
+        node2_2->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
+        node21_3->GetKey()->AsECInstanceNodeKey()->GetInstanceKey()
+        };
+    bvector<ECInstanceKey> keysPath4 = 
+        {
+        node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
+        node2_2->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
+        node22_3->GetKey()->AsECInstanceNodeKey()->GetInstanceKey()
+        };
+    bvector<bvector<ECInstanceKey>> keysPaths = {keysPath1, keysPath2, keysPath3, keysPath4};
 
     // test
     bvector<NodesPathElement> paths = m_manager->GetNodesPath(s_project->GetECDb(), keysPaths, -1).get();
@@ -555,11 +513,30 @@ TEST_F(IECPresentationManagerTests, GetNodesPath_Multiple_MarksTheSpecifiedPath)
     m_manager->SetHierarchy(hierarchy);
 
     // create the key paths
-    NavNodeKeyPath keysPath1 = {node1->GetKey(), node1_2->GetKey()};
-    NavNodeKeyPath keysPath2 = {node1->GetKey(), node1_2->GetKey(), node1_3->GetKey()};
-    NavNodeKeyPath keysPath3 = {node1->GetKey(), node2_2->GetKey(), node21_3->GetKey()};
-    NavNodeKeyPath keysPath4 = {node1->GetKey(), node2_2->GetKey(), node22_3->GetKey()};
-    bvector<NavNodeKeyPath> keysPaths = {keysPath1, keysPath2, keysPath3, keysPath4};
+    bvector<ECInstanceKey> keysPath1 = 
+        {
+        node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
+        node1_2->GetKey()->AsECInstanceNodeKey()->GetInstanceKey()
+        };
+    bvector<ECInstanceKey> keysPath2 = 
+        {
+        node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
+        node1_2->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
+        node1_3->GetKey()->AsECInstanceNodeKey()->GetInstanceKey()
+        };
+    bvector<ECInstanceKey> keysPath3 = 
+        {
+        node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
+        node2_2->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
+        node21_3->GetKey()->AsECInstanceNodeKey()->GetInstanceKey()
+        };
+    bvector<ECInstanceKey> keysPath4 = 
+        {
+        node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
+        node2_2->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(), 
+        node22_3->GetKey()->AsECInstanceNodeKey()->GetInstanceKey()
+        };
+    bvector<bvector<ECInstanceKey>> keysPaths = {keysPath1, keysPath2, keysPath3, keysPath4};
 
     // test
     bvector<NodesPathElement> paths = m_manager->GetNodesPath(s_project->GetECDb(), keysPaths, 2).get();

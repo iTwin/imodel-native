@@ -158,7 +158,7 @@ protected:
     ECPRESENTATION_EXPORT virtual folly::Future<size_t> _GetRootNodesCount(IConnectionCR, JsonValueCR) override;
     ECPRESENTATION_EXPORT virtual folly::Future<NavNodesContainer> _GetChildren(IConnectionCR, NavNodeCR, PageOptionsCR, JsonValueCR) override;
     ECPRESENTATION_EXPORT virtual folly::Future<size_t> _GetChildrenCount(IConnectionCR, NavNodeCR, JsonValueCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<bool> _HasChild(IConnectionCR, NavNodeCR, NavNodeKeyCR, JsonValueCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<bool> _HasChild(IConnectionCR, NavNodeCR, ECInstanceKeyCR, JsonValueCR) override;
     ECPRESENTATION_EXPORT virtual folly::Future<NavNodeCPtr> _GetParent(IConnectionCR, NavNodeCR, JsonValueCR) override;
     ECPRESENTATION_EXPORT virtual folly::Future<NavNodeCPtr> _GetNode(IConnectionCR, NavNodeKeyCR, JsonValueCR) override;
     ECPRESENTATION_EXPORT virtual folly::Future<bvector<NavNodeCPtr>> _GetFilteredNodes(IConnectionCR, Utf8CP filterText, JsonValueCR) override;

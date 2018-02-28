@@ -768,19 +768,14 @@ bvector<NavNodeCPtr> RulesDrivenECPresentationManagerImpl::_GetFilteredNodes(ICo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RulesDrivenECPresentationManagerImpl::_HasChild(IConnectionCR, NavNodeCR parent, NavNodeKeyCR childKey, NavigationOptions const&, ICancelationTokenCR)
+bool RulesDrivenECPresentationManagerImpl::_HasChild(IConnectionCR, NavNodeCR parent, ECInstanceKeyCR childKey, NavigationOptions const&, ICancelationTokenCR)
     {
-    ECInstanceNodeKey const* key = childKey.AsECInstanceNodeKey();
-    if (nullptr == key)
-        return false;
-
-    ECInstanceKey instanceKey(key->GetECClassId(), key->GetInstanceId());
     NavNodeExtendedData extendedData(parent);
     if (!extendedData.HasGroupingType())
         return false;
 
     bvector<ECInstanceKey> groupedKeys = extendedData.GetGroupedInstanceKeys();
-    auto iter = std::find(groupedKeys.begin(), groupedKeys.end(), instanceKey);
+    auto iter = std::find(groupedKeys.begin(), groupedKeys.end(), childKey);
     return (groupedKeys.end() != iter);
     }
 

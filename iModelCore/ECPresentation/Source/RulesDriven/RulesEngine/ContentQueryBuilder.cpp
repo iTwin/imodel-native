@@ -112,6 +112,29 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(SelectedNodeInstancesSpecificat
     return query;
     }
 
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                02/2018
++===============+===============+===============+===============+===============+======*/
+struct HandledRecursiveClassesKey
+    {
+    ECClassCP m_source;
+    ECClassCP m_target;
+    bool m_isForward;
+    HandledRecursiveClassesKey() : m_source(nullptr), m_target(nullptr), m_isForward(false) {}
+    HandledRecursiveClassesKey(SelectClassInfo const& info)
+        {
+        m_source = &info.GetSelectClass();
+        m_target = info.GetPathToPrimaryClass().back().GetTargetClass();
+        m_isForward = info.GetPathToPrimaryClass().back().IsForwardRelationship();
+        }
+    bool operator<(HandledRecursiveClassesKey const& other) const
+        {
+        return m_source < other.m_source
+            || m_source == other.m_source && m_target < other.m_target
+            || m_source == other.m_source && m_target == other.m_target && m_isForward < other.m_isForward;
+        }
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -128,9 +151,18 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentRelatedInstancesSpecific
     if (specification.IsRecursive())
         recursiveInfo = new InstanceFilteringParams::RecursiveQueryInfo(GetPathsToPrimary(specificationDescriptor->GetSelectClasses()));
 
+    bset<HandledRecursiveClassesKey> recursiverlyHandledClasses;
     ContentQueryPtr query;
     for (SelectClassInfo const& selectClassInfo : specificationDescriptor->GetSelectClasses())
         {
+        if (specification.IsRecursive())
+            {
+            HandledRecursiveClassesKey key(selectClassInfo);
+            if (recursiverlyHandledClasses.end() != recursiverlyHandledClasses.find(key))
+                continue;
+            recursiverlyHandledClasses.insert(key);
+            }
+
         ComplexContentQueryPtr classQuery = ComplexContentQuery::Create();
         ContentQueryContractPtr contract = ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectClassInfo.GetSelectClass(), *classQuery);
         classQuery->SelectContract(*contract, "this");

@@ -291,27 +291,6 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsChild
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsHasChildRequestOnECPresentationThread)
-    {
-    BeAtomic<bool> wasCalled(false);
-    uintptr_t mainThreadId = BeThreadUtilities::GetCurrentThreadId();
-    m_impl->SetHasChildHandler([&](IConnectionCR, NavNodeCR, NavNodeKeyCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
-        {
-        wasCalled.store(true);
-        VERIFY_THREAD_NE(mainThreadId);
-        return false;
-        });
-
-    // request and verify
-    TestNavNodePtr parentNode = TestNavNode::Create();
-    RulesDrivenECPresentationManager::NavigationOptions options("doesnt matter", TargetTree_Both);
-    m_manager->HasChild(s_project->GetECDb(), *parentNode, *NavNodeKey::Create("type", {"1"}), options.GetJson()).wait();
-    EXPECT_TRUE(wasCalled.load());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Grigas.Petraitis                11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsNodeRequestOnECPresentationThread)
     {
     BeAtomic<bool> wasCalled(false);
@@ -911,66 +890,6 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsChildNode
     RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
     BlockECPresentationThread();
     DoRequest(m_manager->GetChildren(s_project->GetECDb(), *parentNode, PageOptions(), options.GetJson()));
-    DisposeRulesetAndVerifyResult();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Grigas.Petraitis                11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsHasChildRequestWhenManagerIsTerminated)
-    {
-    // set the request handler
-    m_impl->SetHasChildHandler([&](IConnectionCR, NavNodeCR, NavNodeKeyCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
-        {
-        m_didGetHit.store(true);
-        return false;
-        });
-
-    // request and verify
-    TestNavNodePtr parentNode = TestNavNode::Create();
-    RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
-    BlockECPresentationThread();
-    DoRequest(m_manager->HasChild(s_project->GetECDb(), *parentNode, *NavNodeKey::Create("type", {"1"}), options.GetJson()));
-    TerminateAndVerifyResult();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Grigas.Petraitis                11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsHasChildRequestWhenConnectionIsClosed)
-    {
-    // set the request handler
-    m_impl->SetHasChildHandler([&](IConnectionCR, NavNodeCR, NavNodeKeyCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
-        {
-        m_didGetHit.store(true);
-        return false;
-        });
-
-    // request and verify
-    TestNavNodePtr parentNode = TestNavNode::Create();
-    RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
-    BlockECPresentationThread();
-    DoRequest(m_manager->HasChild(s_project->GetECDb(), *parentNode, *NavNodeKey::Create("type", {"1"}), options.GetJson()));
-    CloseConnectionAndVerifyResult();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Grigas.Petraitis                11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsHasChildRequestWhenRulesetIsDisposed)
-    {
-    // set the request handler
-    m_impl->SetHasChildHandler([&](IConnectionCR, NavNodeCR, NavNodeKeyCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
-        {
-        m_didGetHit.store(true);
-        return false;
-        });
-
-    // request and verify
-    TestNavNodePtr parentNode = TestNavNode::Create();
-    RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
-    BlockECPresentationThread();
-    DoRequest(m_manager->HasChild(s_project->GetECDb(), *parentNode, *NavNodeKey::Create("type", {"1"}), options.GetJson()));
     DisposeRulesetAndVerifyResult();
     }
 

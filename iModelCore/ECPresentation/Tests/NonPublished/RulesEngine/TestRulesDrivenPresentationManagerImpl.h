@@ -23,7 +23,7 @@ struct TestRulesDrivenECPresentationManagerImpl : RulesDrivenECPresentationManag
     typedef std::function<size_t(IConnectionCR, NavigationOptions const&, ICancelationTokenCR)> Handler_GetRootNodesCount;
     typedef std::function<INavNodesDataSourcePtr(IConnectionCR, NavNodeCR, PageOptionsCR, NavigationOptions const&, ICancelationTokenCR)> Handler_GetChildNodes;
     typedef std::function<size_t(IConnectionCR, NavNodeCR, NavigationOptions const&, ICancelationTokenCR)> Handler_GetChildNodesCount;
-    typedef std::function<bool(IConnectionCR, NavNodeCR, NavNodeKeyCR, NavigationOptions const&, ICancelationTokenCR)> Handler_HasChild;
+    typedef std::function<bool(IConnectionCR, NavNodeCR, ECInstanceKeyCR, NavigationOptions const&, ICancelationTokenCR)> Handler_HasChild;
     typedef std::function<NavNodeCPtr(IConnectionCR, NavNodeCR, NavigationOptions const&, ICancelationTokenCR)> Handler_GetParent;
     typedef std::function<NavNodeCPtr(IConnectionCR, NavNodeKeyCR, NavigationOptions const&, ICancelationTokenCR)> Handler_GetNode;
     typedef std::function<bvector<NavNodeCPtr>(IConnectionCR, Utf8CP, NavigationOptions const&, ICancelationTokenCR)> Handler_GetFilteredNodes;
@@ -99,7 +99,7 @@ protected:
             return m_childNodesCountHandler(connection, parent, options, cancelationToken);
         return 0;
         }
-    bool _HasChild(IConnectionCR connection, NavNodeCR parent, NavNodeKeyCR childKey, NavigationOptions const& options, ICancelationTokenCR cancelationToken) override 
+    bool _HasChild(IConnectionCR connection, NavNodeCR parent, ECInstanceKeyCR childKey, NavigationOptions const& options, ICancelationTokenCR cancelationToken) override 
         {
         if (m_hasChildHandler)
             return m_hasChildHandler(connection, parent, childKey, options, cancelationToken);
