@@ -278,8 +278,19 @@ DataSourceStatus DataSourceAccountAzure::uploadBlobSync(const DataSourceURL &url
 }
 
 DataSourceAccountAzureCURL::DataSourceAccountAzureCURL(const AccountName & account, const AccountIdentifier & identifier, const AccountKey & key)
-    : SuperCURL(account, identifier, key)
     {
+    setAccount(account, identifier, key);
+                                                            // Default size is set by Service on creation
+    setDefaultSegmentSize(0);
+
+                                                            // Multi-threaded segmented transfers used for Azure, so initialize it
+    getTransferScheduler()->initializeTransferTasks(getDefaultNumTransferTasks());
+
+    curl_global_init(CURL_GLOBAL_ALL);
+
+    OpenSSLMutexes::CreateInstance(CRYPTO_num_locks());
+
+    CRYPTO_set_locking_callback(CURLHandle::OpenSSLLockingFunction);
     }
 
 DataSourceStatus DataSourceAccountAzureCURL::setAccount(const AccountName & account, const AccountIdentifier & identifier, const AccountKey & key)

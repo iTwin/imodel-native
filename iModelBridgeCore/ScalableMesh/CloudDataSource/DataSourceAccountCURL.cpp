@@ -45,9 +45,9 @@ OpenSSLMutexes * OpenSSLMutexes::Instance()
     return s_instance;
     }
 
-DataSourceAccountCURL::DataSourceAccountCURL(const ServiceName & name, const AccountIdentifier & identifier, const AccountKey & key)
+DataSourceAccountCURL::DataSourceAccountCURL(const AccountName & account, const AccountIdentifier & identifier, const AccountKey & key)
 {
-    setAccount(name, identifier, key);
+    setAccount(account, identifier, key);
                                                             // Default size is set by Service on creation
     setDefaultSegmentSize(0);
 

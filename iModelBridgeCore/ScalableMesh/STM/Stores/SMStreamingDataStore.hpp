@@ -1226,16 +1226,16 @@ template<class EXTENT> void SMStreamingStore<EXTENT>::Register(const uint64_t & 
 
 template<class EXTENT> void SMStreamingStore<EXTENT>::Unregister(const uint64_t & smID)
     {
-/*
     auto const& account = GetDataSourceAccount();
     if (account)
         {
-        DataSourceManager::Get()->getService(account->getServiceName())->destroyAccount(account->getAccountName());
-        }
-*/
-
                                                             // Destroy all existing DataSources associated with this SM store
-    DataSourceManager::Get()->destroyDataSources(this);
+        DataSourceManager::Get()->destroyDataSources(this);
+                                                            // Release account usage for this SM
+        DataSourceManager::Get()->getService(account->getServiceName())->releaseAccount(account->getAccountName());
+        SetDataSourceAccount(nullptr);
+        }
+
     }
 
 template <class EXTENT> SMNodeGroupPtr SMStreamingStore<EXTENT>::FindGroup(HPMBlockID blockID)

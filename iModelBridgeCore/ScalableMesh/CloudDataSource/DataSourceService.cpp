@@ -21,7 +21,7 @@ void DataSourceService::setDataSourceManager(DataSourceManager &manager)
     dataSourceManager = &manager;
 }
 
-void DataSourceService::createAccount(DataSourceManager & manager, DataSourceAccount &account)
+void DataSourceService::createAccount(DataSourceManager &manager, DataSourceAccount &account)
 {
     account.setDataSourceManager(manager);
 }
@@ -36,27 +36,54 @@ const DataSourceService::ServiceName & DataSourceService::getServiceName(void)
     return serviceName;
 }
 
-DataSourceStatus DataSourceService::destroyAccount(const AccountName & accountName)
-{
-    if (destroy(accountName))
-    {
-        return DataSourceStatus();
-    }
-
-    return DataSourceStatus(DataSourceStatus::Status_Error);
-}
 
 DataSourceAccount * DataSourceService::getOrCreateAccount(const AccountName & accountName, const DataSourceAccount::AccountIdentifier identifier, const DataSourceAccount::AccountKey & key)
     {
+    std::lock_guard<std::mutex> lock(accountMutex);
+
     DataSourceAccount *account;
 
-    if ((account = getAccount(accountName)) != nullptr)
-        return account;
+    if ((account = getAccount(accountName)) == nullptr)
+        {
+        if ((account = createAccount(accountName, identifier, key)) == nullptr)
+            return nullptr;
+        }
+                                                            // Note: Reference counted only on getOrCreate and release
+    account->incrementReferenceCounter();
 
-    return createAccount(accountName, identifier, key);
+    return account;
+
     }
 
 DataSourceAccount * DataSourceService::getAccount(const AccountName & accountName)
 {
     return get(accountName);
 }
+
+
+bool DataSourceService::releaseAccount(const AccountName & accountName)
+    {
+    std::lock_guard<std::mutex> lock(accountMutex);
+
+    DataSourceAccount *account = getAccount(accountName);
+
+    if (account)
+        {
+        if (account->decrementReferenceCounter() == 0)
+            {
+            return destroyAccount(accountName).isOK();
+            }
+        }
+
+    return false;
+    }
+
+DataSourceStatus DataSourceService::destroyAccount(const AccountName & accountName)
+    {
+    if (destroy(accountName))
+        {
+        return DataSourceStatus();
+        }
+
+    return DataSourceStatus(DataSourceStatus::Status_Error);
+    }

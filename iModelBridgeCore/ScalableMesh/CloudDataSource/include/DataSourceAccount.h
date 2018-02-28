@@ -22,8 +22,11 @@ public:
     typedef std::wstring                AccountKey;
     typedef std::string                 AccountSSLCertificatePath;
     typedef void *                      ClientID;
+    typedef unsigned int                ReferenceCounter;
 
 protected:
+
+    ReferenceCounter                    referenceCounter;
 
     DataSourceManager *                 dataSourceManager;
     DataSourceTransferScheduler::Ptr    dataSourceTransferScheduler;
@@ -42,6 +45,13 @@ protected:
     virtual unsigned int                getDefaultNumTransferTasks      (void);
 
 public:
+
+    void                                setReferenceCounter             (ReferenceCounter value) {referenceCounter = value;}
+    ReferenceCounter                    getReferenceCounter             (void) const             {return referenceCounter;}
+    ReferenceCounter                    incrementReferenceCounter       (void)                   { setReferenceCounter(getReferenceCounter() + 1); return getReferenceCounter(); }
+    ReferenceCounter                    decrementReferenceCounter       (void)                   { setReferenceCounter(getReferenceCounter() - 1); return getReferenceCounter(); }
+
+public:
     CLOUD_EXPORT                        DataSourceAccount               (void);
     CLOUD_EXPORT                        DataSourceAccount               (const ServiceName &service, const AccountName &account);
     CLOUD_EXPORT                        DataSourceAccount               (const ServiceName &service, const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
@@ -51,8 +61,9 @@ public:
     void                                setDataSourceManager            (DataSourceManager &manager);
     DataSourceManager &                 getDataSourceManager            (void);
 
-    virtual DataSourceStatus            setAccount                      (const ServiceName &service, const AccountName &accountName, const AccountIdentifier &identifier, const AccountKey &key);
-            
+    virtual DataSourceStatus            setAccount                      (const AccountName &accountName, const AccountIdentifier &identifier, const AccountKey &key);
+    DataSourceStatus                    setAccount                      (const ServiceName &service, const AccountName &accountName, const AccountIdentifier &identifier, const AccountKey &key);
+
     void                                setServiceName                  (const ServiceName &name);
     CLOUD_EXPORT    const ServiceName & getServiceName                  (void) const;
 

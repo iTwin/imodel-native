@@ -120,8 +120,9 @@ protected:
     void setupCertificateAuthorities(CURL* curl);
 
 public:
-                                            DataSourceAccountCURL                (const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
-        virtual                            ~DataSourceAccountCURL                (void);
+                                            DataSourceAccountCURL               (void) {}
+                                            DataSourceAccountCURL               (const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
+        virtual                            ~DataSourceAccountCURL               (void);
 
         void                                setDefaultSegmentSize               (DataSourceBuffer::BufferSize size);
         DataSourceBuffer::BufferSize        getDefaultSegmentSize               (void);

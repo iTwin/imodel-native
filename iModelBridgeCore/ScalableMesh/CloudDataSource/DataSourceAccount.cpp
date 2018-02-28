@@ -21,12 +21,13 @@ unsigned int DataSourceAccount::getDefaultNumTransferTasks(void)
 
 DataSourceAccount::DataSourceAccount(void) : dataSourceManager(nullptr)
     {
-
+    setReferenceCounter(0);
     }
 
 DataSourceAccount::~DataSourceAccount(void)
     {
                                                             // Note: Call destroyAll() before deletion
+    assert(getReferenceCounter() == 0);
     }
 
 bool DataSourceAccount::destroyAll(void)
@@ -61,24 +62,32 @@ DataSourceManager & DataSourceAccount::getDataSourceManager(void)
     return *dataSourceManager;
     }
 
-DataSourceAccount::DataSourceAccount(const ServiceName & service, const AccountName &account)
+DataSourceAccount::DataSourceAccount(const ServiceName & service, const AccountName &account) : DataSourceAccount()
     {
     setServiceName(service);
 
     setAccountName(account);
     }
 
-DataSourceAccount::DataSourceAccount(const ServiceName & service, const AccountName &account, const AccountIdentifier & identifier, const AccountKey & key)
+DataSourceAccount::DataSourceAccount(const ServiceName & service, const AccountName &account, const AccountIdentifier & identifier, const AccountKey & key) : DataSourceAccount()
     {
     setAccount(service, account, identifier, key);
     }
 
 DataSourceStatus DataSourceAccount::setAccount(const ServiceName &service, const AccountName &account, const AccountIdentifier & identifier, const AccountKey & key)
     {
-    if (service.length() == 0 || account.length() == 0)
+    if (service.length() == 0)
         return DataSourceStatus(DataSourceStatus::Status_Error);
 
     setServiceName(service);
+
+    return DataSourceAccount::setAccount(account, identifier, key);
+    }
+
+DataSourceStatus DataSourceAccount::setAccount(const AccountName &account, const AccountIdentifier & identifier, const AccountKey & key)
+    {
+    if (account.length() == 0)
+        return DataSourceStatus(DataSourceStatus::Status_Error);
 
     setAccountName(account);
 
