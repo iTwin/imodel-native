@@ -273,6 +273,7 @@ struct Task : RefCounted<NonCopyableClass>
         ChangeScene,
         DefineGeometryTexture,
         DestroyTarget,
+        Idle,
         Initialize,
         OnResized,
         OverrideFeatureSymbology,
@@ -300,7 +301,7 @@ struct Task : RefCounted<NonCopyableClass>
     {
         uint32_t m_value;
         static Priority Highest() {return Priority(0);}
-        static Priority Lowest() {return Priority(0xffff);}
+        static Priority Lowest() {return Priority(0xffff);} // Reserved for the 'idle' task
         Priority& operator++() {++m_value; return *this;}
         explicit Priority(uint32_t val=0) : m_value(val) {}
     };
@@ -3317,6 +3318,10 @@ struct System
 
     //! Create a Light from Light::Parameters
     virtual LightPtr _CreateLight(Lighting::Parameters const&, DVec3dCP direction, DPoint3dCP location) const = 0;
+
+    //! Perform some small unit of work (or do nothing) during an idle frame.
+    //! An idle frame is classified one tick of the render loop during which no viewports are open and the render queue is empty.
+    virtual void _Idle() { }
 };
 
 //=======================================================================================
