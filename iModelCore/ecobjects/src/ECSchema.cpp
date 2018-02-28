@@ -1871,7 +1871,7 @@ void ECSchema::SetSupplementalSchemaInfo(SupplementalSchemaInfo* info)
     m_supplementalSchemaInfo = info;
     if (nullptr == info)
         this->RemoveCustomAttribute(SupplementalSchemaInfo::GetCustomAttributeSchemaName(), 
-		                            SupplementalSchemaInfo::GetCustomAttributeAccessor());
+                                    SupplementalSchemaInfo::GetCustomAttributeAccessor());
     else
         {
         IECInstancePtr attribute = info->CreateCustomAttribute();
