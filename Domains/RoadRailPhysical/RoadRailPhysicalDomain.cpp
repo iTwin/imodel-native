@@ -283,3 +283,52 @@ DgnViewId RoadRailPhysicalDomain::SetUpDefaultViews(SubjectCR subject, Utf8CP al
     return create3dView(dgnDb.GetDictionaryModel(), view3dName.GetUtf8CP(),
         *spatialCategorySelectorPtr, *model3dSelectorPtr, *displayStyle3dPtr);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus RoadRailPhysicalDomain::SetGeometricElementAsBoundingContentForSheet(GeometricElementCR boundingElm, Sheet::ElementCR sheet)
+    {
+    if (!boundingElm.GetElementId().IsValid() || !sheet.GetElementId().IsValid())
+        return DgnDbStatus::BadArg;
+
+    ECInstanceKey insKey;
+    if (DbResult::BE_SQLITE_OK != boundingElm.GetDgnDb().InsertLinkTableRelationship(insKey,
+        *boundingElm.GetDgnDb().Schemas().GetClass(BRRP_SCHEMA_NAME, BRRP_REL_GeometricElementBoundsContentForSheet)->GetRelationshipClassCP(),
+        ECInstanceId(boundingElm.GetElementId().GetValue()), ECInstanceId(sheet.GetElementId().GetValue())))
+        return DgnDbStatus::WriteError;
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementIdSet RoadRailPhysicalDomain::QueryElementIdsBoundingContentForSheets(DgnDbCR dgnDb)
+    {
+    auto stmtPtr = dgnDb.GetPreparedECSqlStatement("SELECT DISTINCT SourceECInstanceId FROM "
+        BRRP_SCHEMA(BRRP_REL_GeometricElementBoundsContentForSheet) " WHERE TargetECInstanceId NOT IS NULL;");
+    BeAssert(stmtPtr.IsValid());
+
+    DgnElementIdSet retVal;
+    while (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
+        retVal.insert(stmtPtr->GetValueId<DgnElementId>(0));
+
+    return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId RoadRailPhysicalDomain::QuerySheetIdBoundedBy(GeometricElementCR boundingElm)
+    {
+    auto stmtPtr = boundingElm.GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM "
+        BRRP_SCHEMA(BRRP_REL_GeometricElementBoundsContentForSheet) " WHERE SourceECInstanceId = ?;");
+    BeAssert(stmtPtr.IsValid());
+
+    stmtPtr->BindId(1, boundingElm.GetElementId());
+    if (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
+        return stmtPtr->GetValueId<DgnElementId>(0);
+
+    return DgnElementId();
+    }

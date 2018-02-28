@@ -32,6 +32,10 @@ public:
     ROADRAILPHYSICAL_EXPORT static Dgn::PhysicalModelPtr QueryPhysicalModel(Dgn::SubjectCR parentSubject, Utf8CP modelName);
     static Utf8CP GetDefaultPhysicalPartitionName() { return "Roads/Rail Physical"; }
 
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetGeometricElementAsBoundingContentForSheet(Dgn::GeometricElementCR boundingElm, Dgn::Sheet::ElementCR sheet);
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnElementIdSet QueryElementIdsBoundingContentForSheets(Dgn::DgnDbCR dgnDb);
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnElementId QuerySheetIdBoundedBy(Dgn::GeometricElementCR boundingElm);
+
 private:
     WCharCP _GetSchemaRelativePath() const override { return BRRP_SCHEMA_PATH; }
 }; // RoadRailPhysicalDomain

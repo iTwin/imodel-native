@@ -62,6 +62,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
 // Relationships
 #define BRRP_REL_DrawingGraphicRepresentsPathway                    "DrawingGraphicRepresentsPathway"
+#define BRRP_REL_GeometricElementBoundsContentForSheet              "GeometricElementBoundsContentForSheet"
 #define BRRP_REL_GraphicalElement3dRepresentsPathway                "GraphicalElement3dRepresentsPathway"
 #define BRRP_REL_PathwayRefersToMainAlignment                       "PathwayRefersToMainAlignment"
 
