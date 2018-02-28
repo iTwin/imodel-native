@@ -21,6 +21,7 @@
 #include <rapidjson/rapidjson.h>
 #include "ECPresentationUtils.h"
 #include <Bentley/Desktop/FileSystem.h>
+#include <Bentley/BeThread.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -2481,6 +2482,10 @@ struct AddonECPresentationManager : Napi::ObjectWrap<AddonECPresentationManager>
     };
 
 static Napi::Env* s_env;
+static Napi::ObjectReference s_logger;
+static intptr_t s_mainThreadId;
+struct LogMessage {Utf8String m_category; Utf8String m_message; NativeLogging::SEVERITY m_severity;};
+static bvector<LogMessage>* s_deferredLogging;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
@@ -2490,8 +2495,146 @@ static void ThrowJsExceptionOnAssert(WCharCP msg, WCharCP file, unsigned line, B
     Napi::Error::New(*s_env, Utf8PrintfString("Assertion Failure: %ls (%ls:%d)\n", msg, file, line).c_str()).ThrowAsJavaScriptException();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static Napi::Value GetLogger(Napi::CallbackInfo const& info)
+    {
+    return s_logger.Value();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void SetLogger(Napi::CallbackInfo const& info)
+    {
+    s_logger = Napi::ObjectReference::New(info[0].ToObject());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void logMessageToJs(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg)
+    {
+    auto env = IModelJsAddon::s_logger.Env();
+    Napi::HandleScope scope(env);
+
+    Utf8CP fname = (sev <= NativeLogging::LOG_TRACE)?   "logTrace": 
+                   (sev == NativeLogging::LOG_INFO)?    "logInfo":
+                   (sev == NativeLogging::LOG_WARNING)? "logWarning":
+                                                        "logError";
+
+    auto method = IModelJsAddon::s_logger.Get(fname).As<Napi::Function>();
+    if (method == env.Undefined())
+        {
+        Napi::Error::New(*IModelJsAddon::s_env, "Invalid Logger").ThrowAsJavaScriptException();
+        return;
+        }
+
+    auto catJS = Napi::String::New(env, category);
+    auto msgJS = Napi::String::New(env, msg);
+
+    method({catJS, msgJS});
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool callIsLogLevelEnabledJs(Utf8CP category, NativeLogging::SEVERITY sev)
+    {
+    auto env = IModelJsAddon::s_logger.Env();
+    Napi::HandleScope scope(env);
+
+    auto method = IModelJsAddon::s_logger.Get("isEnabled").As<Napi::Function>();
+    if (method == env.Undefined())
+        {
+        Napi::Error::New(*IModelJsAddon::s_env, "Invalid Logger").ThrowAsJavaScriptException();
+        return true;
+        }
+    
+    auto catJS = Napi::String::New(env, category);
+
+    int llevel = (sev <= NativeLogging::LOG_TRACE)?   0: 
+                 (sev == NativeLogging::LOG_INFO)?    1:
+                 (sev == NativeLogging::LOG_WARNING)? 2:
+                                                      3;
+
+    auto levelJS = Napi::Number::New(env, llevel);
+
+    return method({catJS, levelJS}).ToBoolean();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void deferLogging(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg)
+    {
+    BeSystemMutexHolder ___;
+
+    if (!s_deferredLogging)
+        s_deferredLogging = new bvector<LogMessage>();
+
+    LogMessage lm;
+    lm.m_category = category;
+    lm.m_message = msg;
+    lm.m_severity = sev;
+    s_deferredLogging->push_back(lm);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void doDeferredLogging()
+    {
+    BeSystemMutexHolder ___;
+    if (!s_deferredLogging)
+        return;
+
+    for (auto const& lm : *s_deferredLogging)
+        {
+        logMessageToJs(lm.m_category.c_str(), lm.m_severity, lm.m_message.c_str());
+        }
+
+    delete s_deferredLogging;
+    s_deferredLogging = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isMainThread()
+    {
+    return BeThreadUtilities::GetCurrentThreadId() == IModelJsAddon::s_mainThreadId;
+    }
+
 } // namespace IModelJsAddon
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void AddonUtils::LogMessage(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg)
+    {
+    if (IModelJsAddon::s_logger.IsEmpty() || !IModelJsAddon::isMainThread())
+        {
+        IModelJsAddon::deferLogging(category, sev, msg);
+        return;
+        }
+    
+    IModelJsAddon::doDeferredLogging();
+    IModelJsAddon::logMessageToJs(category, sev, msg);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AddonUtils::IsSeverityEnabled(Utf8CP category, NativeLogging::SEVERITY sev)
+    {
+    if (IModelJsAddon::s_logger.IsEmpty() || !IModelJsAddon::isMainThread())
+        return true;
+    
+    IModelJsAddon::doDeferredLogging();
+    return IModelJsAddon::callIsLogLevelEnabledJs(category, sev);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      01/18
@@ -2512,6 +2655,8 @@ static Napi::Object iModelJsAddonRegisterModule(Napi::Env env, Napi::Object expo
 
     BeFileName addondir = Desktop::FileSystem::GetLibraryDir();
 
+    IModelJsAddon::s_mainThreadId = BeThreadUtilities::GetCurrentThreadId();
+
     AddonUtils::Initialize(addondir, IModelJsAddon::ThrowJsExceptionOnAssert);
     IModelJsAddon::AddonDgnDb::Init(env, exports);
     IModelJsAddon::AddonECDb::Init(env, exports);
@@ -2526,6 +2671,7 @@ static Napi::Object iModelJsAddonRegisterModule(Napi::Env env, Napi::Object expo
     exports.DefineProperties(
         {
         Napi::PropertyDescriptor::Value("version", Napi::String::New(env, PACKAGE_VERSION), PROPERTY_ATTRIBUTES),
+        Napi::PropertyDescriptor::Accessor("logger", &IModelJsAddon::GetLogger, &IModelJsAddon::SetLogger),
         });
 
     return exports;

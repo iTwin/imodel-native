@@ -172,7 +172,7 @@ Note: imodeljs-backend depends on imodeljs-nodeaddon and imodeljs-nodeaddonapi i
 
 ### How imodeljs-backend Checks Version Compatibility
 
-imodeljs-core/backend/NodeAddonRegistry.registerAddon verifies that the loaded addon implements the api that imodeljs-backend expects. There are three tests: 1) The addon and the api must be the same generation (same major version). 2) The addon must include all of the classes and methods that the backend expects and may include new classes that the backend is not yet using (same or greater minor version). And, 3) the addon must include all required bug fixes and may include more recent bug fixes (same or higher patch version). 
+imodeljs-core/backend/AddonRegistry.registerAddon verifies that the loaded addon implements the api that imodeljs-backend expects. There are three tests: 1) The addon and the api must be the same generation (same major version). 2) The addon must include all of the classes and methods that the backend expects and may include new classes that the backend is not yet using (same or greater minor version). And, 3) the addon must include all required bug fixes and may include more recent bug fixes (same or higher patch version). 
 
 # APPENDIX: How to Move to a New Version of Node
 

@@ -93,6 +93,9 @@ public:
     static void ThrowJsException(Utf8CP msg);
     static Json::Value ExecuteTest(DgnDbR, Utf8StringCR testName, Utf8StringCR params);
     static NativeLogging::ILogger &GetLogger();
+
+    static void LogMessage(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg);
+    static bool IsSeverityEnabled(Utf8CP category, NativeLogging::SEVERITY sev);
 };
 
 //=======================================================================================
