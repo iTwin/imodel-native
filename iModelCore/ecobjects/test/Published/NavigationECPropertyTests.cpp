@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/NavigationECPropertyTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1148,11 +1148,97 @@ TEST_F(NavigationPropertyValueTests, JsonRelatedInstanceIdSerialization)
     Json::Value jsonValue;
     StatusInt jsonWriteStatus = JsonEcInstanceWriter::WriteInstanceToJson(jsonValue, *sourceInstance, "Source", true);
     ASSERT_EQ(0, jsonWriteStatus) << "Failed to serialize an instance to Json with a nav property";
-    
+
     ASSERT_TRUE(jsonValue.isObject());
     ASSERT_TRUE(jsonValue["Source"].isObject());
     ASSERT_TRUE(jsonValue["Source"]["MyTarget"].isObject());
     EXPECT_STREQ(navId.ToHexStr().c_str(), jsonValue["Source"]["MyTarget"][ECJsonUtilities::json_navId()].asString().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Victor.Cushman     02/2018
+//---------------------------------------------------------------------------------------
+TEST_F(NavigationPropertyValueTests, TestRelClassNameJsonNotSerializedForRelationshipClassesWithSealedModifier)
+    {
+    Utf8CP const sourceStr = "Source";
+    Utf8CP const targetStr = "Target";
+    Utf8CP const navPropStr = "NavProp";
+
+    static auto const ValidateTestNavProp = [&](ECEntityClassP const& sourceClass, ECRelationshipClassP const& navPropRelClass, bool shouldRelClassNameBeSerialized) -> void
+        {
+        StandaloneECInstancePtr instance = sourceClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        BeInt64Id navId(42);
+        ECValue navPropValue;
+        navPropValue.SetNavigationInfo(navId, navPropRelClass);
+        EC_ASSERT_SUCCESS(instance->SetValue(navPropStr, navPropValue));
+        EC_ASSERT_SUCCESS(instance->GetValue(navPropValue, navPropStr));
+        ASSERT_FALSE(navPropValue.IsNull());
+        ASSERT_TRUE(navPropValue.IsNavigation());
+
+        Json::Value json;
+        ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(json, *instance, "Source", true));
+        ASSERT_TRUE(json.isObject());
+        ASSERT_TRUE(json[sourceStr].isObject());
+        ASSERT_TRUE(json[sourceStr][navPropStr].isObject());
+        auto const& membs = json[sourceStr][navPropStr].getMemberNames();
+        EXPECT_TRUE((membs.end() == std::find_if(
+            membs.begin(),
+            membs.end(),
+            [](Utf8StringCR _) -> bool {return _ == ECJsonSystemNames::Navigation::RelClassName();}
+        )) == !shouldRelClassNameBeSerialized);
+        };
+
+    static auto const ValidateShouldRelClassNameSerialized_NonInherited = [&](ECClassModifier modifier, bool shouldRelClassNameBeSerialized) -> void
+        {
+        ECSchemaPtr schema;
+        ECEntityClassP sourceClass;
+        ECEntityClassP targetClass;
+        ECRelationshipClassP relClass;
+        NavigationECPropertyP navProp;
+
+        ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5, ECVersion::Latest);
+        EC_ASSERT_SUCCESS(schema->CreateEntityClass(sourceClass, sourceStr));
+        EC_ASSERT_SUCCESS(schema->CreateEntityClass(targetClass, targetStr));
+        EC_ASSERT_SUCCESS(schema->CreateRelationshipClass(relClass, "TestRelClass", *sourceClass, sourceStr, *targetClass, targetStr));
+        relClass->SetClassModifier(modifier);
+        relClass->SetId(ECClassId((uint64_t)101));
+        CreateNavProp(sourceClass, navPropStr, *relClass, ECRelatedInstanceDirection::Forward, navProp);
+        ValidateTestNavProp(sourceClass, relClass, shouldRelClassNameBeSerialized);
+        };
+
+    static auto const ValidateShouldRelClassNameSerialized_Inherited = [&](ECClassModifier childModifier, bool shouldRelClassNameBeSerialized) -> void
+        {
+        ECSchemaPtr schema;
+        ECEntityClassP sourceClass;
+        ECEntityClassP targetClass;
+        ECRelationshipClassP parentRelClass;
+        ECRelationshipClassP childRelClass;
+        NavigationECPropertyP navProp;
+
+        ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5, ECVersion::Latest);
+        EC_ASSERT_SUCCESS(schema->CreateEntityClass(sourceClass, sourceStr));
+        EC_ASSERT_SUCCESS(schema->CreateEntityClass(targetClass, targetStr));
+        EC_ASSERT_SUCCESS(schema->CreateRelationshipClass(parentRelClass, "TestParentRelClass", *sourceClass, sourceStr, *targetClass, targetStr));
+        parentRelClass->SetClassModifier(ECClassModifier::Abstract);
+        parentRelClass->SetId(ECClassId((uint64_t)101));
+        EC_ASSERT_SUCCESS(schema->CreateRelationshipClass(childRelClass, "TestChildRelClass", *sourceClass, sourceStr, *targetClass, targetStr));
+        childRelClass->SetClassModifier(childModifier);
+        childRelClass->SetId(ECClassId((uint64_t)102));
+        childRelClass->AddBaseClass(*parentRelClass);
+        CreateNavProp(sourceClass, navPropStr, *parentRelClass, ECRelatedInstanceDirection::Forward, navProp);
+        ValidateTestNavProp(sourceClass, parentRelClass, shouldRelClassNameBeSerialized);
+        };
+
+    // Test Non Inherited Relationship Classes.
+    ValidateShouldRelClassNameSerialized_NonInherited(ECClassModifier::None, true);
+    ValidateShouldRelClassNameSerialized_NonInherited(ECClassModifier::Abstract, true);
+    ValidateShouldRelClassNameSerialized_NonInherited(ECClassModifier::Sealed, false);
+
+    // Test Relationship Class Deriving from another relationship class.
+    ValidateShouldRelClassNameSerialized_Inherited(ECClassModifier::None, true);
+    ValidateShouldRelClassNameSerialized_Inherited(ECClassModifier::Abstract, true);
+    ValidateShouldRelClassNameSerialized_Inherited(ECClassModifier::Sealed, true);
+
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
