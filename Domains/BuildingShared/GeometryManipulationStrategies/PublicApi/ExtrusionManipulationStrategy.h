@@ -23,8 +23,8 @@ struct BaseShapeStrategyChangeProperty : public GeometryManipulationStrategyProp
         LinePlacementStrategyType m_defaultLinePlacementStrategyType;
         bool m_defaultLinePlacementStrategyTypeSet = false;
 
-        ArcPlacementStrategyType m_defaultArcPlacementStrategyType;
-        bool m_defaultArcPlacementStrategyTypeSet = false;
+        ArcPlacementMethod m_defaultArcPlacementMethod;
+        bool m_defaultArcPlacementMethodSet = false;
 
         LineStringPlacementStrategyType m_defaultLineStringPlacementStrategyType;
         bool m_defaultLineStringPlacementStrategyTypeSet = false;
@@ -40,10 +40,10 @@ struct BaseShapeStrategyChangeProperty : public GeometryManipulationStrategyProp
             , m_defaultLinePlacementStrategyType(linePlacementStrategyType)
             , m_defaultLinePlacementStrategyTypeSet(true)
             {}
-        BaseShapeStrategyChangeProperty(ArcPlacementStrategyType arcPlacementStrategyType)
+        BaseShapeStrategyChangeProperty(ArcPlacementMethod method)
             : T_Super()
-            , m_defaultArcPlacementStrategyType(arcPlacementStrategyType)
-            , m_defaultArcPlacementStrategyTypeSet(true)
+            , m_defaultArcPlacementMethod(method)
+            , m_defaultArcPlacementMethodSet(true)
             {}
         BaseShapeStrategyChangeProperty(LineStringPlacementStrategyType lineStringPlacementStrategyType)
             : T_Super()
@@ -57,8 +57,8 @@ struct BaseShapeStrategyChangeProperty : public GeometryManipulationStrategyProp
         bool IsDefaultLinePlacementStrategyTypeSet() const { return m_defaultLinePlacementStrategyTypeSet; }
         LinePlacementStrategyType GetDefaultLinePlacementStrategyType() const { BeAssert(m_defaultLinePlacementStrategyTypeSet); return m_defaultLinePlacementStrategyType; }
 
-        bool IsDefaultArcPlacementStrategyTypeSet() const { return m_defaultArcPlacementStrategyTypeSet; }
-        ArcPlacementStrategyType GetDefaultArcPlacementStrategyType() const { BeAssert(m_defaultArcPlacementStrategyTypeSet); return m_defaultArcPlacementStrategyType; }
+        bool IsDefaultArcPlacementStrategyTypeSet() const { return m_defaultArcPlacementMethodSet; }
+        ArcPlacementMethod GetDefaultArcPlacementStrategyType() const { BeAssert(m_defaultArcPlacementMethodSet); return m_defaultArcPlacementMethod; }
 
         bool IsDefaultLineStringPlacementStrategyTypeSet() const { return m_defaultLineStringPlacementStrategyTypeSet; }
         LineStringPlacementStrategyType GetDefaultLineStringPlacementStrategyType() const { BeAssert(m_defaultLineStringPlacementStrategyTypeSet); return m_defaultLineStringPlacementStrategyType; }

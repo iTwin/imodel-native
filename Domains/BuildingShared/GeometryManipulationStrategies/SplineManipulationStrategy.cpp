@@ -56,6 +56,14 @@ SplinePlacementStrategyType SplineManipulationStrategy::GetType() const
 const int SplineControlPointsManipulationStrategy::default_Order = 3;
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool SplineControlPointsManipulationStrategy::_IsComplete() const
+    {
+    return _GetKeyPoints().size() >= m_order;
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas             01/2018
 //---------------+---------------+---------------+---------------+---------------+------
 ICurvePrimitivePtr SplineControlPointsManipulationStrategy::_FinishPrimitive() const
@@ -98,6 +106,14 @@ SplinePlacementStrategyPtr SplineControlPointsManipulationStrategy::_CreatePlace
 /////////////////////////////////////////////////////////////////////////////////////////
 // SplineThroughPointsManipulationStrategy
 /////////////////////////////////////////////////////////////////////////////////////////
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool SplineThroughPointsManipulationStrategy::_IsComplete() const
+    {
+    return _GetKeyPoints().size() >= 2;
+    }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas             01/2018
 //---------------+---------------+---------------+---------------+---------------+------

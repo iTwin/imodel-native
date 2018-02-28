@@ -70,7 +70,7 @@ TEST_F(SolidPrimitivePlacementStrategyTests, CreateExtrusion_BaseContainsArc)
     sut->AddKeyPoint({200,100,0});
     sut->SetProperty(ExtrusionPlacementStrategy::prop_ContinuousBaseShapePrimitiveComplete(), true);
     sut->SetProperty(ExtrusionPlacementStrategy::prop_BaseShapeStrategy(), BaseShapeStrategyChangeProperty(DefaultNewGeometryType::Arc));
-    sut->SetProperty(ExtrusionPlacementStrategy::prop_BaseShapeStrategy(), BaseShapeStrategyChangeProperty(ArcPlacementStrategyType::StartMidEnd));
+    sut->SetProperty(ExtrusionPlacementStrategy::prop_BaseShapeStrategy(), BaseShapeStrategyChangeProperty(ArcPlacementMethod::StartMidEnd));
     sut->AddKeyPoint({150,150,0});
     sut->AddKeyPoint({100,100,0});
 

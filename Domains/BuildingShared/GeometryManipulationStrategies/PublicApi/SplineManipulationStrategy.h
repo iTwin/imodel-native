@@ -25,7 +25,6 @@ struct SplineManipulationStrategy : public CurvePrimitiveManipulationStrategy
     protected:
         SplineManipulationStrategy() : T_Super() {}
 
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsComplete() const override { return false; }
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _CanAcceptMorePoints() const override { return true; }
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsContinious() const override { return true; }
@@ -54,6 +53,7 @@ struct SplineControlPointsManipulationStrategy : public SplineManipulationStrate
     protected:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ICurvePrimitivePtr _FinishPrimitive() const override;
         virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() override;
+        virtual bool _IsComplete() const override;
 
         void _SetOrder(int order) { m_order = order; }
         int _GetOrder() const { return m_order; }
@@ -88,6 +88,7 @@ struct SplineThroughPointsManipulationStrategy : public SplineManipulationStrate
     protected:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ICurvePrimitivePtr _FinishPrimitive() const override;
         virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() override;
+        virtual bool _IsComplete() const override;
 
         void _SetStartTangent(DVec3d startTangent) { m_startTangent = startTangent; }
         void _RemoveStartTangent() { m_startTangent.Zero(); m_startTangent.Normalize(); }

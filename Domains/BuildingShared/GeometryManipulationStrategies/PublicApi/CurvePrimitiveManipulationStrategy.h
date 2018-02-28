@@ -51,7 +51,7 @@ struct CurvePrimitiveManipulationStrategy : public GeometryManipulationStrategy
 
         virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() = 0;
         virtual LinePlacementStrategyPtr _CreateLinePlacementStrategy(LinePlacementStrategyType strategyType) { BeAssert(false && "This is not a LineManipulationStrategy"); return nullptr; }
-        virtual ArcPlacementStrategyPtr _CreateArcPlacementStrategy(ArcPlacementStrategyType strategyType) { BeAssert(false && "This is not an ArcManipulationStrategy"); return nullptr; }
+        virtual ArcPlacementStrategyPtr _CreateArcPlacementStrategy(ArcPlacementMethod method) { BeAssert(false && "This is not an ArcManipulationStrategy"); return nullptr; }
         virtual LineStringPlacementStrategyPtr _CreateLineStringPlacementStrategy(LineStringPlacementStrategyType strategyType) { BeAssert(false && "This is not a LineStringManipulationStrategy"); return nullptr; }
         virtual SplinePlacementStrategyPtr _CreateSplinePlacementStrategy(SplinePlacementStrategyType strategyType) { BeAssert(false && "This is not a SplineControlPointsManipulationStrategy"); return nullptr; }
         
@@ -69,7 +69,7 @@ struct CurvePrimitiveManipulationStrategy : public GeometryManipulationStrategy
         
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurvePrimitivePlacementStrategyPtr CreateDefaultPlacementStrategy();
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT LinePlacementStrategyPtr CreateLinePlacementStrategy(LinePlacementStrategyType strategyType);
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ArcPlacementStrategyPtr CreateArcPlacementStrategy(ArcPlacementStrategyType strategyType);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ArcPlacementStrategyPtr CreateArcPlacementStrategy(ArcPlacementMethod strategyType);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT LineStringPlacementStrategyPtr CreateLineStringPlacementStrategy(LineStringPlacementStrategyType strategyType);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT SplinePlacementStrategyPtr CreateSplinePlacementStrategy(SplinePlacementStrategyType strategyType);
         
