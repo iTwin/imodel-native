@@ -1191,7 +1191,7 @@ ECObjectsStatus ECSchema::CreatePhenomenon(PhenomenonP& phenomenon, Utf8CP name,
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 02/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus ECSchema::CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, Nullable<double> numerator, Nullable<double> denominator, Nullable<double> offset, Nullable<Utf8CP> label, Nullable<Utf8CP> description)
+ECObjectsStatus ECSchema::CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, Nullable<double> numerator, Nullable<double> denominator, Nullable<double> offset, Utf8CP label, Utf8CP description)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
     ECObjectsStatus status;
@@ -1227,15 +1227,15 @@ ECObjectsStatus ECSchema::CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definiti
     if(nullptr == unit)
         return ECObjectsStatus::Error;
     unit->SetSchema(*this);
-    if(label.IsValid())
+    if(nullptr != label)
         {
-        status = unit->SetDisplayLabel(label.Value());
+        status = unit->SetDisplayLabel(label);
         cleanupIfNecessary();
         if(status != ECObjectsStatus::Success) return status;
         } 
-    if(label.IsValid())
+    if(nullptr != label)
         { 
-        status = unit->SetDescription(description.Value());
+        status = unit->SetDescription(description);
         cleanupIfNecessary();
         if(status != ECObjectsStatus::Success) return status;
         }
@@ -1301,7 +1301,7 @@ ECObjectsStatus ECSchema::CreateInvertedUnit(ECUnitP& unit, ECUnitCR parent, Utf
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 02/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus ECSchema::CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, double numerator, Nullable<double> denominator, Nullable<Utf8CP> label, Nullable<Utf8CP> description)
+ECObjectsStatus ECSchema::CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, double numerator, Nullable<double> denominator, Utf8CP label, Utf8CP description)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
@@ -1337,16 +1337,16 @@ ECObjectsStatus ECSchema::CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP 
         return ECObjectsStatus::Error;
     constant->SetSchema(*this);
 
-    if (label.IsValid())
+    if (nullptr != label)
         { 
-        status = constant->SetDisplayLabel(label.Value());
+        status = constant->SetDisplayLabel(label);
         cleanupIfNecessary();
         if(status != ECObjectsStatus::Success) return status;
         }
 
-    if (description.IsValid())
+    if (nullptr != description)
         {
-        status = constant->SetDescription(description.Value());
+        status = constant->SetDescription(description);
         cleanupIfNecessary();
         if(status != ECObjectsStatus::Success) return status;
         }

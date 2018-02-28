@@ -157,12 +157,24 @@ SchemaReadStatus ECUnit::ReadXml(ECUnitP& unit, BeXmlNodeR unitNode, ECSchemaCR 
     double numerator;
     double denominator;
     double offset;
+
     auto xmlStatus = unitNode.GetAttributeDoubleValue(numerator, NUMERATOR_ATTRIBUTE);
-    if (BEXML_Success != xmlStatus) numerator = 1.0;
+    if (BeXmlStatus::BEXML_AttributeNotFound == xmlStatus) 
+        numerator = 1.0;
+    else if (BeXmlStatus::BEXML_Success != xmlStatus)
+        return SchemaReadStatus::InvalidECSchemaXml;
+
     xmlStatus = unitNode.GetAttributeDoubleValue(denominator, DENOMINATOR_ATTRIBUTE);
-    if (BEXML_Success != xmlStatus) denominator = 1.0;
+    if (BeXmlStatus::BEXML_AttributeNotFound == xmlStatus) 
+        denominator = 1.0;
+    else if (BeXmlStatus::BEXML_Success != xmlStatus)
+        return SchemaReadStatus::InvalidECSchemaXml;
+
     xmlStatus = unitNode.GetAttributeDoubleValue(offset, OFFSET_ATTRIBUTE);
-    if (BEXML_Success != xmlStatus) offset = 0.0;
+    if (BeXmlStatus::BEXML_AttributeNotFound == xmlStatus)
+        offset = 0.0;
+    else if (BeXmlStatus::BEXML_Success != xmlStatus)
+        return SchemaReadStatus::InvalidECSchemaXml;
 
     Utf8String parsedPhenomSchema;
     Utf8String parsedPhenomName;
@@ -374,11 +386,16 @@ SchemaReadStatus ECUnit::ReadConstantXml(ECUnitP& constant, BeXmlNodeR unitNode,
     
     double numerator;
     double denominator;
+
     auto xmlStatus = unitNode.GetAttributeDoubleValue(numerator, NUMERATOR_ATTRIBUTE);
     if (BEXML_Success != xmlStatus)
         return SchemaReadStatus::InvalidECSchemaXml;
+
     xmlStatus = unitNode.GetAttributeDoubleValue(denominator, DENOMINATOR_ATTRIBUTE);
-    if (BEXML_Success != xmlStatus) denominator = 1.0;
+    if (BeXmlStatus::BEXML_AttributeNotFound == xmlStatus) 
+        denominator = 1.0;
+    else if (BeXmlStatus::BEXML_Success != xmlStatus)
+        return SchemaReadStatus::InvalidECSchemaXml;
 
     Utf8String parsedPhenomSchema;
     Utf8String parsedPhenomName;
