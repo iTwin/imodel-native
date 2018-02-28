@@ -20,6 +20,7 @@
     <ClCompile Include="Client\WSClientTests.cpp" />
     <ClCompile Include="Client\WSRepositoryClientTests.cpp" />
     <ClCompile Include="ConnectC\ConnectWebServicesClientCTests.cpp" />
+    <ClCompile Include="Configuration\UrlProviderTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Cache\CachingDataSourceTests.h" />
@@ -41,6 +42,7 @@
     <ClInclude Include="Ims\SolrClientTests.h" />
     <ClInclude Include="TestUtils\WSClientIntegrationTestsHost.h" />
     <ClInclude Include="ConnectC\ConnectWebServicesClientCTests.h" />
+    <ClInclude Include="Configuration\UrlProviderTests.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="IntegrationTests.mke" />

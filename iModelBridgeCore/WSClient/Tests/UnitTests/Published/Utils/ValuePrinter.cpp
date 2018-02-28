@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/ValuePrinter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ValuePrinter.h"
@@ -406,6 +406,32 @@ std::ostream& operator << (std::ostream &o, BeFileStatus errorId)
 
     return o;
     }
+
+BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
+void PrintTo(const UrlProvider::Environment& value, ::std::ostream* os)
+    {
+    static std::map<UrlProvider::Environment, Utf8String> names
+        {
+        TO_VALUE_STRING_PAIR(UrlProvider::Environment::Dev),
+        TO_VALUE_STRING_PAIR(UrlProvider::Environment::Qa),
+        TO_VALUE_STRING_PAIR(UrlProvider::Environment::Release)
+        };
+
+    Utf8String name = names[value];
+    BeAssert(!name.empty() && "Add missing value");
+    *os << name;
+    }
+
+void PrintTo(const UrlProvider::UrlDescriptor& value, ::std::ostream* os)
+    {
+    *os << value.GetName();
+    }
+
+void PrintTo(UrlProvider::UrlDescriptor* const value, ::std::ostream* os)
+    {
+    *os << value->GetName();
+    }
+END_BENTLEY_WEBSERVICES_NAMESPACE
 
 namespace rapidjson
     {
