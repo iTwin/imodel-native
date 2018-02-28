@@ -42,6 +42,7 @@
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge" Repository="DgnDbSync" />
         <SubPart PartName="DgnV8ConverterDLL" Repository="DgnDbSync" PartFile="DgnDbSync"/>
         <SubPart PartName="RoadRailPhysical" PartFile="RoadRailPhysical" Repository="DgnDomains-RoadRailPhysical"/>
+        <SubPart PartName="DgnV8ConverterSqlang" PartFile="DgnDbSync" Repository="DgnDbSync" />
         <Bindings>
             <Libs Required="false">Delivery/$(libprefix)ORDBridge$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)ORDBridge$(shlibext)</Assemblies>
