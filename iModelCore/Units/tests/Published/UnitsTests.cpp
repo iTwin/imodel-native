@@ -405,89 +405,205 @@ TEST_F(UnitsTests, ExportDisplayLabelsFromOldSystem)
     file.Close();
     }
 
-//TEST_F(UnitsTests, CreateUnitsSchemaFromFiles)
-//    {
-//    BeFile phenOutFile;
-//    EXPECT_EQ(phenOutFile.Create("C:\\Source\\BIM0200Dev_ec32\\PhenomenonDefs_out.xml", true), BeFileStatus::Success);
-//    Utf8String phenPath("C:\\Source\\BIM0200Dev_ec32\\PhenomenonDefs.csv");
-//    std::ifstream phenIfs(phenPath.begin(), std::ifstream::in);
-//    std::string line;
-//    while(std::getline(phenIfs, line))
-//        {
-//        bvector<Utf8String> tokens;
-//        BeStringUtilities::Split(line.c_str(), ";", tokens);
-//        ASSERT_EQ(3, tokens.size()) << line.c_str();
-//        if (tokens[2].Equals("\"\""))
-//            {
-//            Utf8PrintfString phenString("<Phenomenon name=%s definition=%s />", tokens[0].c_str(), tokens[1].c_str());
-//            WriteLine(phenOutFile, phenString.c_str());
-//            }
-//        else
-//            {
-//            Utf8PrintfString phenString("<Phenomenon name=%s definition=%s description=%s/>", tokens[0].c_str(), tokens[1].c_str(), tokens[2].c_str());
-//            WriteLine(phenOutFile, phenString.c_str());
-//            }
-//        }
-//    phenOutFile.Close();
-//
-//    
-//    BeFile unitOutFile;
-//    EXPECT_EQ(unitOutFile.Create("C:\\Source\\BIM0200Dev_ec32\\UnitDefs_out.xml", true), BeFileStatus::Success);
-//    Utf8String unitPath("C:\\Source\\BIM0200Dev_ec32\\UnitDefs.csv");
-//    std::ifstream unitsIfs(unitPath.begin(), std::ifstream::in);
-//    while(std::getline(unitsIfs, line))
-//        {
-//        bvector<Utf8String> tokens;
-//        BeStringUtilities::Split(line.c_str(), ";", tokens);
-//        if(tokens.size() == 7)
-//            {
-//            Utf8PrintfString unitString("<Unit name=%s phenomenon=%s unitSystem=%s definition=%s", tokens[2].c_str(), tokens[0].c_str(), tokens[1].c_str(), tokens[3].c_str());
-//            if(!tokens[4].Equals("\"1.0\""))
-//                {
-//                unitString.append(" factor=");
-//                unitString.append(tokens[4].c_str());
-//                }
-//            if(!tokens[5].Equals("\"0.0\""))
-//                {
-//                unitString.append(" offset=");
-//                unitString.append(tokens[5].c_str());
-//                }
-//            if (!tokens[6].Equals("\"\""))
-//                {
-//                unitString.append(" description=");
-//                unitString.append(tokens[6].c_str());
-//                }
-//            unitString.append(" />");
-//            WriteLine(unitOutFile, unitString.c_str());
-//            }
-//        else if(tokens.size() == 3)
-//            {
-//            Utf8PrintfString invertedUnitString("<InvertedUnit name=%s invertsUnit=%s unitSystem=%s />", tokens[1].c_str(), tokens[0].c_str(), tokens[2].c_str());
-//            WriteLine(unitOutFile, invertedUnitString.c_str());
-//            }
-//        else// if (tokens.size() != 0)
-//            {
-//            ASSERT_TRUE(false) << tokens.size() << " " << line.c_str();
-//            }
-//        }
-//    unitOutFile.Close();
-//
-//    BeFile constantOutFile;
-//    EXPECT_EQ(constantOutFile.Create("C:\\Source\\BIM0200Dev_ec32\\ConstantDefs_out.xml", true), BeFileStatus::Success);
-//    Utf8String constantPath("C:\\Source\\BIM0200Dev_ec32\\ConstantDefs.csv");
-//    std::ifstream constantIfs(constantPath.begin(), std::ifstream::in);
-//    while (std::getline(constantIfs, line))
-//        {
-//        bvector<Utf8String> tokens;
-//        BeStringUtilities::Split(line.c_str(), ";", tokens);
-//        if (tokens.size() == 7)
-//            {
-//            Utf8PrintfString constString("<Constant name=%s phenomenon=%s unitSystem=%s definition=%s factor=%s />", tokens[2].c_str(), tokens[0].c_str(), tokens[1].c_str(), tokens[3].c_str(), tokens[4].c_str());
-//            WriteLine(constantOutFile, constString.c_str());
-//            }
-//        }
-//    constantOutFile.Close();
-//
-//    }
+//#define CONVERT_TO_SCHEMA
+#ifdef CONVERT_TO_SCHEMA
+Utf8String cleanUnitName(Utf8CP nameToClean)
+    {
+    Utf8String unitName(nameToClean);
+    unitName.ReplaceAll("(", "");
+    unitName.ReplaceAll(")", "");
+    unitName.ReplaceAll("PI/4", "QUARTER_PI");
+    unitName.ReplaceAll("PI/2", "HALF_PI");
+    unitName.ReplaceAll("/", "_PER_");
+    unitName.ReplaceAll(".", "_");
+    unitName.ReplaceAll("*", "_");
+    unitName.ReplaceAll("-", "_");
+    unitName.ReplaceAll("^4", "_TO_THE_FOURTH");
+    unitName.ReplaceAll("^6", "_TO_THE_SIXTH");
+    unitName.ReplaceAll("@", "_AT_");
+    unitName.ReplaceAll("$", "_DOLLAR");
+    unitName.ReplaceAll("2PI", "TWO_PI");
+    unitName.ReplaceAll("360DEG", "DEG360");
+    return unitName;
+    }
+
+Utf8String cleanUnitDefinition(Utf8CP definitionToClean)
+    {
+    bvector<Utf8String> origSymbols;
+    bvector<Utf8String> cleanedSymbols;
+    BeStringUtilities::Split(definitionToClean, "*", origSymbols);
+    for (auto const& symbol : origSymbols)
+        {
+        bvector<Utf8String> nameAndExponent;
+        // Definitions could not reference unit names with ( or ) in the name so this safely splits into name and exponent
+        BeStringUtilities::Split(symbol.c_str(), "(", nameAndExponent);
+        EXPECT_TRUE(nameAndExponent.size() <= 2) << definitionToClean;
+        Utf8String unitName = cleanUnitName(nameAndExponent[0].c_str());
+        if (nameAndExponent.size() == 2)
+            {
+            unitName.append("(");
+            unitName.append(nameAndExponent[1].c_str());
+            }
+        cleanedSymbols.push_back(unitName);
+        }
+    return BeStringUtilities::Join(cleanedSymbols, "*");
+    }
+
+TEST_F(UnitsTests, CreateUnitsSchemaFromFiles)
+    {
+    BeFile phenOutFile;
+    EXPECT_EQ(phenOutFile.Create("C:\\Source\\BIM0200Dev_ec32\\PhenomenonDefs2_out.xml", true), BeFileStatus::Success);
+    Utf8String phenPath("C:\\Source\\BIM0200Dev_ec32\\PhenomenonDefs2.csv");
+    std::ifstream phenIfs(phenPath.begin(), std::ifstream::in);
+    std::string line;
+    while(std::getline(phenIfs, line))
+        {
+        if (Utf8String::IsNullOrEmpty(line.c_str()))
+            continue;
+        bvector<Utf8String> tokens;
+        BeStringUtilities::Split(line.c_str(), ";", tokens);
+        ASSERT_EQ(3, tokens.size()) << line.c_str();
+        Utf8PrintfString phenString("<Phenomenon name=%s definition=%s", tokens[0].c_str(), tokens[1].c_str());
+        tokens[0].ReplaceAll("\"", "");
+        PhenomenonCP phen = UnitRegistry::Instance().LookupPhenomenon(tokens[0].c_str());
+        if (nullptr != phen)
+            {
+            Utf8StringCR phenLabel = phen->GetLabel();
+            if (!tokens[0].Equals(phenLabel))
+                {
+                Utf8PrintfString phenDisplayLabel(" displayLabel=\"%s\"", phenLabel.c_str());
+                phenString.append(phenDisplayLabel.c_str());
+                }
+            }
+        
+        if (!tokens[2].Equals("\"\""))
+            {
+            phenString.append(" description=");
+            phenString.append(tokens[2].c_str());
+            }
+        phenString.append(" />");
+        WriteLine(phenOutFile, phenString.c_str());
+        }
+    phenOutFile.Close();
+
+    
+    BeFile unitOutFile;
+    EXPECT_EQ(unitOutFile.Create("C:\\Source\\BIM0200Dev_ec32\\UnitDefs2_out.xml", true), BeFileStatus::Success);
+    Utf8String unitPath("C:\\Source\\BIM0200Dev_ec32\\UnitDefs2.csv");
+    bvector<Utf8String> nameMapping;
+    std::ifstream unitsIfs(unitPath.begin(), std::ifstream::in);
+    while(std::getline(unitsIfs, line))
+        {
+        if (Utf8String::IsNullOrEmpty(line.c_str()))
+            continue;
+        bvector<Utf8String> tokens;
+        BeStringUtilities::Split(line.c_str(), ";", tokens);
+        
+        if(tokens.size() == 8)
+            {
+            Utf8String unitName = cleanUnitName(tokens[2].c_str());
+            Utf8PrintfString oldNewName("%s;%s", tokens[2].c_str(), unitName.c_str());
+            nameMapping.push_back(oldNewName);
+            Utf8String unitDefinition = cleanUnitDefinition(tokens[3].c_str());
+            Utf8PrintfString unitString("<Unit name=%s phenomenon=%s unitSystem=%s definition=%s", unitName.c_str(), tokens[0].c_str(), tokens[1].c_str(), unitDefinition.c_str());
+            if(!tokens[4].Equals("\"1.0\""))
+                {
+                unitString.append(" numerator=");
+                unitString.append(tokens[4].c_str());
+                }
+            if (!tokens[5].Equals("\"1.0\""))
+                {
+                unitString.append(" denominator=");
+                unitString.append(tokens[5].c_str());
+                }
+            if(!tokens[6].Equals("\"0.0\""))
+                {
+                unitString.append(" offset=");
+                unitString.append(tokens[6].c_str());
+                }
+            tokens[2].ReplaceAll("\"", "");
+            UnitCP unit = UnitRegistry::Instance().LookupUnit(tokens[2].c_str());
+            if (nullptr != unit)
+                {
+                Utf8StringCR unitLabel = unit->GetLabel();
+                if (!tokens[2].Equals(unitLabel.c_str()))
+                    {
+                    Utf8PrintfString unitDisplayLabel(" displayLabel=\"%s\"", unitLabel.c_str());
+                    unitString.append(unitDisplayLabel.c_str());
+                    }
+                }
+            if (!tokens[7].Equals("\"\""))
+                {
+                unitString.append(" description=");
+                unitString.append(tokens[7].c_str());
+                }
+            unitString.append(" />");
+            WriteLine(unitOutFile, unitString.c_str());
+            }
+        else if(tokens.size() == 3)
+            {
+            Utf8String unitName = cleanUnitName(tokens[1].c_str());
+            Utf8PrintfString oldNewName("%s;%s", tokens[1].c_str(), unitName.c_str());
+            nameMapping.push_back(oldNewName);
+            Utf8String unitDefinition = cleanUnitName(tokens[0].c_str());
+            Utf8PrintfString invertedUnitString("<InvertedUnit name=%s invertsUnit=%s unitSystem=%s />", unitName.c_str(), unitDefinition.c_str(), tokens[2].c_str());
+            WriteLine(unitOutFile, invertedUnitString.c_str());
+            }
+        else// if (tokens.size() != 0)
+            {
+            ASSERT_TRUE(false) << tokens.size() << " " << line.c_str();
+            }
+        }
+    unitOutFile.Close();
+
+    BeFile constantOutFile;
+    EXPECT_EQ(constantOutFile.Create("C:\\Source\\BIM0200Dev_ec32\\ConstantDefs2_out.xml", true), BeFileStatus::Success);
+    Utf8String constantPath("C:\\Source\\BIM0200Dev_ec32\\ConstantDefs2.csv");
+    std::ifstream constantIfs(constantPath.begin(), std::ifstream::in);
+    while (std::getline(constantIfs, line))
+        {
+        if (Utf8String::IsNullOrEmpty(line.c_str()))
+            continue;
+        bvector<Utf8String> tokens;
+        BeStringUtilities::Split(line.c_str(), ";", tokens);
+        if (tokens.size() == 8)
+            {
+            Utf8String unitName = cleanUnitName(tokens[2].c_str());
+            Utf8PrintfString oldNewName("%s;%s", tokens[2].c_str(), unitName.c_str());
+            nameMapping.push_back(oldNewName);
+            Utf8String unitDefinition = cleanUnitDefinition(tokens[3].c_str());
+            Utf8PrintfString constString("<Constant name=%s phenomenon=%s unitSystem=%s definition=%s numerator=%s", unitName.c_str(), tokens[0].c_str(), tokens[1].c_str(), unitDefinition.c_str(), tokens[4].c_str());
+            if (!tokens[5].Equals("\"1.0\""))
+                {
+                constString.append(" denominator=");
+                constString.append(tokens[5].c_str());
+                }
+            tokens[2].ReplaceAll("\"", "");
+            UnitCP unit = UnitRegistry::Instance().LookupUnit(tokens[2].c_str());
+            if (nullptr != unit)
+                {
+                Utf8StringCR unitLabel = unit->GetLabel();
+                if (!tokens[2].Equals(unitLabel.c_str()))
+                    {
+                    Utf8PrintfString unitDisplayLabel(" displayLabel=\"%s\"", unitLabel.c_str());
+                    constString.append(unitDisplayLabel.c_str());
+                    }
+                }
+            constString.append("/>");
+            WriteLine(constantOutFile, constString.c_str());
+            }
+        }
+    constantOutFile.Close();
+
+    BeFile unitMapOutFile;
+    EXPECT_EQ(unitMapOutFile.Create("C:\\Source\\BIM0200Dev_ec32\\UnitMap.csv", true), BeFileStatus::Success);
+    for(auto const&map : nameMapping)
+        {
+        WriteLine(unitMapOutFile, map.c_str());
+        }
+    unitMapOutFile.Close();
+
+    }
+#endif
 
 END_UNITS_UNITTESTS_NAMESPACE
