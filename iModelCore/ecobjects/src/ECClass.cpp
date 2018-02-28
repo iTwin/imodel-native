@@ -64,15 +64,6 @@ Utf8StringCR ECClass::GetName () const
     return m_validatedName.GetName();
     }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                      Affan.Khan        12/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECClassId ECClass::GetId () const
-    {
-    BeAssert (HasId());
-    return m_ecClassId;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -116,23 +107,6 @@ Utf8StringCR ECClass::GetDescription () const
     return GetSchema().GetLocalizedStrings().GetClassDescription(this, m_description);
     }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ECClass::GetInvariantDescription () const
-    {
-    return m_description;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::SetDescription (Utf8StringCR description)
-    {        
-    m_description = description;
-    return ECObjectsStatus::Success;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -164,102 +138,6 @@ ECObjectsStatus ECClass::SetDisplayLabel (Utf8StringCR displayLabel)
 bool ECClass::GetIsDisplayLabelDefined () const
     {
     return m_validatedName.IsDisplayLabelDefined();
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCR ECClass::GetSchema () const
-    {
-    return m_schema;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            10/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-ECClassType ECClass::GetClassType() const
-    {
-    return _GetClassType();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            10/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-ECEntityClassCP ECClass::GetEntityClassCP() const
-    {
-    return _GetEntityClassCP();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            10/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-ECEntityClassP ECClass::GetEntityClassP()
-    {
-    return _GetEntityClassP();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            10/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-ECCustomAttributeClassCP ECClass::GetCustomAttributeClassCP() const
-    {
-    return _GetCustomAttributeClassCP();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            10/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-ECCustomAttributeClassP ECClass::GetCustomAttributeClassP()
-    {
-    return _GetCustomAttributeClassP();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            10/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-ECStructClassCP ECClass::GetStructClassCP() const
-    {
-    return _GetStructClassCP();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            10/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-ECStructClassP ECClass::GetStructClassP()
-    {
-    return _GetStructClassP();
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipClassCP ECClass::GetRelationshipClassCP() const
-    {
-    return _GetRelationshipClassCP();
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipClassP ECClass::GetRelationshipClassP()
-    {
-    return _GetRelationshipClassP();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            10/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-ECClassModifier ECClass::GetClassModifier() const
-    {
-    return m_modifier;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            10/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-void ECClass::SetClassModifier(ECClassModifier modifier)
-    {
-    m_modifier = modifier;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -489,7 +367,7 @@ void ECClass::AddPropertyMapping(Utf8CP originalName, Utf8CP newName)
 ECPropertyP ECClass::GetPropertyByIndex (uint32_t index) const
     {
     if (index >= (uint32_t)m_propertyList.size())
-        return NULL;
+        return nullptr;
 
     return m_propertyList[index];
     }
@@ -1046,12 +924,7 @@ ECPropertyP ECClass::GetPropertyP(WCharCP propertyName, bool includeBaseClasses)
     {
     Utf8String propName;
     BeStringUtilities::WCharToUtf8(propName, propertyName);
-    PropertyMap::const_iterator  propertyIterator = m_propertyMap.find (propName.c_str());
-    
-    if (propertyIterator != m_propertyMap.end())
-        return propertyIterator->second;
-    else
-        return includeBaseClasses ? GetBaseClassPropertyP (propName.c_str()) : NULL;
+    return GetPropertyP(propName.c_str(), includeBaseClasses);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1059,22 +932,14 @@ ECPropertyP ECClass::GetPropertyP(WCharCP propertyName, bool includeBaseClasses)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyP ECClass::GetBaseClassPropertyP (Utf8CP propertyName) const
     {
-    for (const ECClassP& baseClass: m_baseClasses)
+    for (const ECClassP& baseClass : m_baseClasses)
         {
         ECPropertyP baseProperty = baseClass->GetPropertyP (propertyName);
-        if (NULL != baseProperty)
+        if (nullptr != baseProperty)
             return baseProperty;
         }
 
-    return NULL;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------+---------------+---------------+---------------+---------------+-------
-ECPropertyP ECClass::GetPropertyP(Utf8StringCR propertyName, bool includeBaseClasses) const
-    {
-    return GetPropertyP(propertyName.c_str(), includeBaseClasses);
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1084,20 +949,9 @@ ECPropertyP ECClass::GetPropertyP(Utf8CP name, bool includeBaseClasses) const
     {
     PropertyMap::const_iterator found = m_propertyMap.find(name);
     if (m_propertyMap.end() != found)
-        {
         return found->second;
-        }
-    else if (includeBaseClasses)
-        {
-        for (ECClassCP ecClass: m_baseClasses)
-            {
-            ECPropertyP prop = ecClass->GetPropertyP (name, true);
-            if (NULL != prop)
-                return prop;
-            }
-        }
-
-    return NULL;
+    else
+        return includeBaseClasses ? GetBaseClassPropertyP(name) : nullptr;
     }
 
 static const Utf8CP s_schemasThatAllowOverridingArrays[] =
@@ -1493,14 +1347,6 @@ ECObjectsStatus ECClass::CreateStructArrayProperty (StructArrayECPropertyP &ecPr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    ECClass::AddDerivedClass (ECClassCR derivedClass) const
-    {
-    m_derivedClasses.push_back((ECClassP) &derivedClass);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
 void ECClass::RemoveDerivedClass (ECClassCR derivedClass) const
     {
     ECDerivedClassesList::iterator derivedClassIterator;
@@ -1527,33 +1373,17 @@ void ECClass::RemoveDerivedClasses ()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-const ECDerivedClassesList& ECClass::GetDerivedClasses () const
-    {
-    return m_derivedClasses;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECClass::CheckBaseClassCycles (ECClassCP thisClass, const void * arg)
     {
     ECClassCP proposedParent = static_cast<ECClassCP>(arg);
-    if (NULL == proposedParent)
+    if (nullptr == proposedParent)
         return true;
         
     if (thisClass == proposedParent || ClassesAreEqualByName(thisClass, arg))
         return true;
     return false;
-    }
-
-//-------------------------------------------------------------------------------------
-//* @bsimethod                                              
-//+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECClass::AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts, bool validate)
-    {
-    return _AddBaseClass(baseClass, insertAtBeginning, resolveConflicts, validate);
     }
 
 //-------------------------------------------------------------------------------------
@@ -1698,13 +1528,6 @@ ECObjectsStatus ECClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginni
 
     return ECObjectsStatus::Success;
     }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECClass::HasBaseClasses () const
-    {
-    return (m_baseClasses.size() > 0);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   10/15
@@ -1745,15 +1568,7 @@ bool ECClass::IsSingularlyDerivedFrom(ECClassCR baseClass) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::RemoveBaseClass(ECClassCR baseClass)
-    {
-    return _RemoveBaseClass(baseClass);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                03/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::_RemoveBaseClass (ECClassCR baseClass)
+ECObjectsStatus ECClass::_RemoveBaseClass(ECClassCR baseClass)
     {
     bool baseClassRemoved = false;
 
@@ -1767,13 +1582,13 @@ ECObjectsStatus ECClass::_RemoveBaseClass (ECClassCR baseClass)
             break;
             }
         }
-        
+
     if (!baseClassRemoved)
         {
         LOG.errorv("Class '%s' is not a base class of class '%s'", baseClass.GetName().c_str(), GetName().c_str());
         return ECObjectsStatus::ClassNotFound;
         }
-        
+
     baseClass.RemoveDerivedClass(*this);
 
     InvalidateDefaultStandaloneEnabler();
@@ -1820,7 +1635,7 @@ bool ECClass::Is(Utf8CP schemaname, Utf8CP classname) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECClass::Is(ECClassCP targetClass) const
     {
-    if (NULL == targetClass)
+    if (nullptr == targetClass)
         return false;
     
     if (ClassesAreEqualByName(this, targetClass))
@@ -1848,7 +1663,7 @@ bool ECClass::ClassesAreEqualByName(ECClassCP thisClass, const void * arg)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
+* @bsimethod                                    Carole.MacDonald                04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyIterable ECClass::GetProperties() const
     {
@@ -2191,7 +2006,7 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaR
         return SchemaReadStatus::Success;
 
     ECSchemaCP resolvedSchema = GetSchema().GetSchemaByAliasP (alias);
-    if (NULL == resolvedSchema)
+    if (nullptr == resolvedSchema)
         {
         LOG.errorv("Invalid ECSchemaXML: The ECClass '%s' contains a %s element with the alias '%s' that can not be resolved to a referenced schema.",
             GetName().c_str(), ECXML_BASE_CLASS_ELEMENT, alias.c_str());
@@ -2446,9 +2261,7 @@ SchemaWriteStatus ECClass::_WriteJson(Json::Value& outValue, bool standalone, bo
         {
         auto& baseClasses = GetBaseClasses();
         if (0 != baseClasses.size())
-            {
             outValue[ECJSON_BASE_CLASS_ELEMENT] = ECJsonUtilities::FormatClassName(*(baseClasses.at(0)));
-            }
         }
 
     SchemaWriteStatus status;
@@ -2555,14 +2368,6 @@ Utf8String ECClass::GetQualifiedClassName(ECSchemaCR primarySchema, ECClassCR ec
     else
         return alias + ":" + ecClass.GetName();
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------+---------------+---------------+---------------+---------------+-------
-const ECBaseClassesList& ECClass::GetBaseClasses() const
-    {
-    return m_baseClasses;
-    }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
@@ -2572,15 +2377,6 @@ void ECClass::_GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnLi
     for (ECClassP baseClass: m_baseClasses)
         returnList.push_back(baseClass);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                06/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCP ECClass::_GetContainerSchema() const
-    {
-    return &m_schema;
-    }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/13
