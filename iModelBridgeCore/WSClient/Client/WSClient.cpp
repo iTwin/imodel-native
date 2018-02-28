@@ -69,7 +69,9 @@ void WSClient::UnregisterServerInfoListener(std::weak_ptr<IServerInfoListener> l
 AsyncTaskPtr<WSVoidResult> WSClient::VerifyConnection() const
     {
     Http::Request request = m_connection->GetConfiguration().GetHttpClient().CreateGetJsonRequest(GetServerUrl());
+#if defined(BUSTED)
     request.SetResponseBody(Http::HttpDummyBody::Create());
+#endif
     return request.PerformAsync()->Then<WSVoidResult>([] (Http::ResponseCR response)
         {
         if (response.GetConnectionStatus() != ConnectionStatus::OK)

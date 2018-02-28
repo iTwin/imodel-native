@@ -36,6 +36,7 @@ TEST_F(WSClientTests, SendGetInfoRequest_Called_SendsGetPluginsUrl)
     client->SendGetInfoRequest()->Wait();
     }
 
+#if defined(BUSTED)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                julius.cepukenas    02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -78,6 +79,7 @@ TEST_F(WSClientTests, VerifyConnetction_CouldNotConnect_Fails)
 
     EXPECT_FALSE(client->VerifyConnection()->GetResult().IsSuccess());
     }
+#endif
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
