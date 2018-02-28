@@ -432,37 +432,6 @@ private:
     ContentDescriptorBuilder::Context& GetContext() {return static_cast<ContentDescriptorBuilder::Context&>(ContentSpecificationsHandler::GetContext());}
 
     /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis                10/2017
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    static bool IsRecursiveSelect(SelectClassInfo const& classInfo)
-        {
-        if (classInfo.GetPathToPrimaryClass().empty())
-            return false;
-
-        RelatedClassCR relationshipInfo = classInfo.GetPathToPrimaryClass().front();
-        return relationshipInfo.GetSourceClass() == relationshipInfo.GetTargetClass();
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis                04/2017
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    static bool CanMergeSelectClasses(SelectClassInfo const& lhs, SelectClassInfo const& rhs)
-        {
-        if (&lhs.GetSelectClass() != &rhs.GetSelectClass())
-            return false;
-
-        if (!lhs.GetPathToPrimaryClass().empty() && !rhs.GetPathToPrimaryClass().empty())
-            {
-            RelatedClassCR lhsRelated = lhs.GetPathToPrimaryClass().front();
-            RelatedClassCR rhsRelated = rhs.GetPathToPrimaryClass().front();
-            if (lhsRelated.IsForwardRelationship() != rhsRelated.IsForwardRelationship())
-                return false;
-            }
-        
-        return true;
-        }
-
-    /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Aidas.Vaiksnoras                06/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
     void AddCalculatedFieldsFromContentModifiers(ECClassCR ecClass)
@@ -512,15 +481,6 @@ protected:
     +---------------+---------------+---------------+---------------+---------------+------*/
     void _AppendClass(SelectClassInfo const& classInfo) override
         {
-        if (IsRecursiveSelect(classInfo))
-            {
-            for (SelectClassInfo& selectClassInfoIter : m_descriptor->GetSelectClasses())
-                {
-                if (CanMergeSelectClasses(selectClassInfoIter, classInfo))
-                    return;
-                }
-            }
-
         m_descriptor->GetSelectClasses().push_back(classInfo);
 
         if (!m_descriptor->HasContentFlag(ContentFlags::NoFields))

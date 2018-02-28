@@ -5190,6 +5190,14 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
             {RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0))}
             });
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(class_Element, true));
+        descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
+            RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, "element", TABLE_ALIAS("rel", class_ElementOwnsChildElements, 2), true),
+            RelatedClass(class_Element, class_Sheet, class_ElementOwnsChildElements, false, "related", TABLE_ALIAS("rel", class_ElementOwnsChildElements, 0), false)
+            });
+        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
+            {RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0))}
+            });
 
         descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, class_Element, ContentDescriptor::Property("this", class_Element, *class_Element.GetPropertyP("ElementProperty")));
@@ -5229,6 +5237,14 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
             {RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0))}
             });
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(class_Element, true));
+        descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
+            RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, "element", TABLE_ALIAS("rel", class_ElementOwnsChildElements, 2), true),
+            RelatedClass(class_Element, class_Sheet, class_ElementOwnsChildElements, false, "related", TABLE_ALIAS("rel", class_ElementOwnsChildElements, 0), false)
+            });
+        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
+            {RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0))}
+            });
         
         descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         field = &AddField(*descriptor, class_Element, ContentDescriptor::Property("this", class_Element, *class_Element.GetPropertyP("ElementProperty")));
@@ -5244,6 +5260,39 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &class_Element, *query), "this");
         query->From(class_Element, true, "this");
         query->Join(RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0)), true);
+        query->Where("FALSE", BoundQueryValuesList()); // note: filtering by recursive children ids (there're no children in the dataset, so the result is just "FALSE"
+#ifdef WIP_SORTING_GRID_CONTENT
+        query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
+#endif
+
+        RegisterQuery(queryName, *query);
+        }
+
+    // ContentRelatedInstances_DoesntDuplicateRecursiveQueryClasses
+        {
+        Utf8CP queryName = "ContentRelatedInstances_DoesntDuplicateRecursiveQueryClasses";
+
+        ECClassCR class_Element = *GetECClass(queryName, "Element");
+        ECRelationshipClassCR class_ElementOwnsChildElements = *GetECClass(queryName, "ElementOwnsChildElements")->GetRelationshipClassCP();
+        ECRelationshipClassCR class_ElementRefersToElements = *GetECClass(queryName, "ElementRefersToElements")->GetRelationshipClassCP();
+
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(class_Element, true));
+        descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
+            RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, "related", TABLE_ALIAS("rel", class_ElementOwnsChildElements, 0), false)
+            });
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(class_Element, true));
+        descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
+            RelatedClass(class_Element, class_Element, class_ElementRefersToElements, false, "related", TABLE_ALIAS("rel", class_ElementRefersToElements, 0), false)
+            });
+        
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        
+        bvector<ECInstanceId> selectedIds = {ECInstanceId((uint64_t)123)};
+        
+        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &class_Element, *query), "this");
+        query->From(class_Element, true, "this");
         query->Where("FALSE", BoundQueryValuesList()); // note: filtering by recursive children ids (there're no children in the dataset, so the result is just "FALSE"
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
@@ -5319,7 +5368,7 @@ void ExpectedQueries::RegisterExpectedQueries()
             RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false)
             });
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-                { RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0") }
+            {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
             });
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, true));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
