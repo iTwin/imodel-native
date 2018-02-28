@@ -47,19 +47,43 @@ USING_NAMESPACE_BENTLEY_ORDBRIDGE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-extern "C" void iModelBridge_getAffinity(BentleyApi::Dgn::iModelBridge::BridgeAffinity& bridgeAffinity, BentleyApi::BeFileName const& affinityLibraryPath, BentleyApi::BeFileName const& sourceFileName)
+extern "C" void iModelBridge_getAffinity(WCharP buffer, const size_t bufferSize, BentleyApi::Dgn::iModelBridgeAffinityLevel& affinityLevel,
+    WCharCP affinityLibraryPath, WCharCP sourceFileName)
     {
-    bridgeAffinity.m_affinity = iModelBridge::Affinity::None;
+    BentleyApi::BeFileName originalPath(::_wgetenv(L"PATH"));
+
+    BentleyApi::BeFileName dirPath(BentleyApi::BeFileName::DevAndDir, affinityLibraryPath);
+
+    BentleyApi::WString path(L"PATH=");
+    path.append(dirPath);
+    path.append(L";");
+    path.append(::_wgetenv(L"PATH"));
+    _wputenv(path.c_str());
+
+    ORDBridge::AppendCifSdkToDllSearchPath(dirPath);
+
+    BentleyApi::BeFileName v8Path = dirPath;
+    v8Path.AppendToPath(L"DgnV8");
+
+    path = L"PATH=";
+    path.append(v8Path);
+    path.append(L";");
+    path.append(::_wgetenv(L"PATH"));
+    _wputenv(path.c_str());    
+
+    affinityLevel = BentleyApi::Dgn::iModelBridgeAffinityLevel::None;
+
+    DgnV8Api::DgnPlatformLib::Host* threadHost = nullptr;
 
     try
-        {
+        {        
         static AffinityHost host;
-        DgnV8Api::DgnPlatformLib::Host* threadHost = DgnV8Api::DgnPlatformLib::QueryHost();
-        if (NULL == threadHost)
+        threadHost = DgnV8Api::DgnPlatformLib::QueryHost();
+        if (nullptr == threadHost)
             DgnV8Api::DgnPlatformLib::Initialize(host, false);
 
         DgnFileStatus status;
-        DgnDocumentPtr doc = DgnDocument::CreateForLocalFile(sourceFileName.c_str());
+        DgnDocumentPtr doc = DgnDocument::CreateForLocalFile(sourceFileName);
         if (doc.IsNull())
             return;
 
@@ -81,6 +105,10 @@ extern "C" void iModelBridge_getAffinity(BentleyApi::Dgn::iModelBridge::BridgeAf
         if (!rootModelP)
             return;
 
+        // Initialize Cif SDK
+        DgnPlatformCivilLib::InitializeWithDefaultHost();
+        GeometryModelDgnECDataBinder::GetInstance().Initialize();        
+
         auto cifConnPtr = ConsensusConnection::Create(*rootModelP);
         auto cifModelPtr = ConsensusModel::Create(*cifConnPtr);
         if (cifModelPtr.IsValid())
@@ -89,17 +117,27 @@ extern "C" void iModelBridge_getAffinity(BentleyApi::Dgn::iModelBridge::BridgeAf
             while (geomModelsPtr.IsValid() && geomModelsPtr->MoveNext())
                 {
                 // At least one CIF geometric model found...
-                bridgeAffinity.m_bridgeRegSubKey = ORDBridge::GetRegistrySubKey();
-                bridgeAffinity.m_affinity = iModelBridgeAffinityLevel::ExactMatch;
-                return;
+                BeStringUtilities::Wcsncpy(buffer, bufferSize, ORDBridge::GetRegistrySubKey());
+                affinityLevel = BentleyApi::Dgn::iModelBridgeAffinityLevel::ExactMatch;
                 }
             }
 
-        bridgeAffinity.m_bridgeRegSubKey = L"MicroStation";
-        bridgeAffinity.m_affinity = iModelBridge::Affinity::Low;
+        cifConnPtr = nullptr;
+        dgnFilePtr = nullptr;
+
+        if (BentleyApi::Dgn::iModelBridgeAffinityLevel::None == affinityLevel)
+            {
+            BeStringUtilities::Wcsncpy(buffer, bufferSize, L"MicroStation");
+            affinityLevel = BentleyApi::Dgn::iModelBridgeAffinityLevel::Low;
+            }
         }
     catch (...)
         {
-        return; 
-        }
+        }    
+
+    DgnPlatformCivilLib::Unload();
+    if (nullptr == threadHost)
+        DgnV8Api::DgnPlatformLib::ForgetHost();
+
+    _wputenv(originalPath.c_str());
     }

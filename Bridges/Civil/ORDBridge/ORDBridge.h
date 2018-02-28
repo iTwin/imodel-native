@@ -19,8 +19,7 @@ struct ORDBridge : Dgn::iModelBridgeWithSyncInfoBase
 {
     DEFINE_T_SUPER(Dgn::iModelBridgeWithSyncInfoBase)
 
-private:
-    static void AppendCifSdkToDllSearchPath(BeFileNameCR libraryDir);
+private:    
     BentleyStatus CreateSyncInfoIfNecessary();
 
     Dgn::DgnDbSync::DgnV8::RootModelConverter::RootModelSpatialParams m_params;
@@ -59,6 +58,7 @@ public:
     virtual BentleyStatus _DetectDeletedDocuments() override;
 
     static WCharCP GetRegistrySubKey() { return L"OpenRoads Designer Bridge"; }
+    static void AppendCifSdkToDllSearchPath(BeFileNameCR libraryDir);
 
     ORDBridge() {}
 };

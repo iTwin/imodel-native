@@ -28,6 +28,11 @@ static int runBridge(int argc, WCharCP argv[])
 
     iModelBridgeSacAdapter::InitializeHost(*iModelBridgeP);
 
+    // Testing affinity interface
+    WChar buffer[_MAX_PATH];
+    iModelBridgeAffinityLevel affinityLevel;    
+    iModelBridge_getAffinity(buffer, _MAX_PATH, affinityLevel, BeFileName(argv[0]).GetDirectoryName(), iModelBridgeP->_GetParams().GetInputFileName());
+
     if (BSISUCCESS != iModelBridgeP->_Initialize(argc, argv))
         {
         fprintf(stderr, "_Initialize failed\n");
@@ -36,11 +41,7 @@ static int runBridge(int argc, WCharCP argv[])
 
     saparams.Initialize();
 
-    // Testing affinity interface
-    iModelBridgeWithAffinity affinity;
-    iModelBridge_getAffinity(affinity, BeFileName(), iModelBridgeP->_GetParams().GetInputFileName());
-
-    if (affinity.m_affinity != iModelBridgeAffinityLevel::ExactMatch)
+    if (affinityLevel != iModelBridgeAffinityLevel::ExactMatch)
         {
         fprintf(stderr, "Affinity-check failed\n");
         return BentleyStatus::ERROR;

@@ -20,8 +20,8 @@ extern "C"
     {
     ORDBRIDGE_EXPORT BentleyApi::Dgn::iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeName);
     ORDBRIDGE_EXPORT BentleyStatus iModelBridge_releaseInstance(BentleyApi::Dgn::iModelBridge* bridge);
-    ORDBRIDGE_EXPORT void iModelBridge_getAffinity(BentleyApi::Dgn::iModelBridge::BridgeAffinity& bridgeAffinity,
-        BentleyApi::BeFileName const& affinityLibraryPath, BentleyApi::BeFileName const& sourceFileName);
+    ORDBRIDGE_EXPORT void iModelBridge_getAffinity(WCharP buffer, const size_t bufferSize, BentleyApi::Dgn::iModelBridgeAffinityLevel& affinityLevel,
+        WCharCP affinityLibraryPath, WCharCP sourceFileName);
     ORDBRIDGE_EXPORT wchar_t const* iModelBridge_getRegistrySubKey();
     }
 
