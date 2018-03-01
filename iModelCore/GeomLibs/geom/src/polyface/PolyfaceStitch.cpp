@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/PolyfaceStitch.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -532,6 +532,221 @@ MeshAnnotationVector &messages//!< [out] array of status messages
         return false;
     return enforcer.Go ();
     }
+
+// context for choosing a facet order to eliminate long edges and excavate inlets into facets.
+// The objective is to produce a facet order so that the last facets are the first to be removed (e.g. from a convex hull)
+// in an excavation that removes long exterior edges first, leading to inlets and possibly islands.
+struct LongEdgeExcavactionContext
+{
+HalfEdgeArray m_halfEdges;
+PolyfaceHeaderR m_facets;       // supplied by caller
+bvector<size_t> &m_readIndexSequence;
+bvector<size_t> m_readIndexToHalfEdge;
+
+MinimumValuePriorityQueue<size_t> m_heap;
+
+
+double m_maxEdgeLength;
+static const int UNORDERED = INT_MAX;
+static const size_t NO_HALF_EDGE = SIZE_MAX;
+LongEdgeExcavactionContext
+(
+PolyfaceHeaderR facets,
+bvector<size_t> &readIndexSequence,
+double maxEdgeLength
+)
+    : m_facets(facets),
+    m_halfEdges (&facets),
+    m_readIndexSequence (readIndexSequence),
+    m_maxEdgeLength (maxEdgeLength)
+    {
+    }
+// Build the half edge array.
+// Sort so shared half edges are contiguous
+// build the m_readIndexToHalfEdge array.
+bool DoSetup ()
+    {
+    m_halfEdges.BuildArray (m_facets, false, false);
+    m_halfEdges.SortForEdgeMatching ();
+    auto numHalfEdge = m_halfEdges.size ();
+    auto numReadIndex = m_facets.PointIndex().size ();
+    for (size_t i = 0; i < numReadIndex; i++)
+        m_readIndexToHalfEdge.push_back (NO_HALF_EDGE);
+    for (size_t i = 0; i < numHalfEdge; i++)
+        m_readIndexToHalfEdge [m_halfEdges[i].m_readIndex] = i;
+    return true;
+    }
+double HeapValue (size_t heIndex)
+    {
+    size_t vertex0 = m_halfEdges[heIndex].m_vertex0 - 1;
+    size_t vertex1 = m_halfEdges[heIndex].m_vertex1 - 1;
+    return -m_facets.Point()[vertex0].Distance (m_facets.Point()[vertex1]);
+    }
+
+void InsertHalfEdgeInHeap (size_t i)
+    {
+    m_heap.Insert (i, HeapValue(i));
+    }
+
+
+bool IsUnordered (size_t heIndex)
+    {
+    return m_halfEdges[heIndex].m_nodeId == UNORDERED;
+    }
+bool IsCrossableEdge (size_t he)
+    {
+    return fabs (HeapValue (he)) > m_maxEdgeLength;
+    }
+size_t NextHalfEdgeAroundFacet (size_t halfEdgeIndex)
+    {
+    return m_readIndexToHalfEdge[m_halfEdges[halfEdgeIndex].m_faceSuccessorReadIndex];
+    }
+
+bvector<size_t> m_facetReadIndices;    // scratch space to simplify reversal.
+// Walk around the half edges of a facet.
+// record the facet id in each half edge.
+// push SIZE_MAX on the m_readIndexSequence
+// record the (reversed) readIndex sequence in m_readIndexSequence.
+// 
+void AssignIdAroundFacet (size_t seed, int id, bool saveToOutput)
+    {
+    // assign the count around the facet ..
+    GEOMAPI_PRINTF (" (ID %d) (", (int)seed);
+    m_facetReadIndices.clear ();
+    for (auto he = seed;;)
+        {
+        GEOMAPI_PRINTF ("(he %d ri %d)", (int)he, (int)m_halfEdges[he].m_readIndex);
+        m_facetReadIndices.push_back (m_halfEdges[he].m_readIndex);
+        m_halfEdges[he].m_nodeId = id;
+        he = NextHalfEdgeAroundFacet (he);
+        if (he == seed)
+            break;
+        }
+    GEOMAPI_PRINTF (")\n");
+
+    if (saveToOutput)
+        {
+        m_readIndexSequence.push_back (SIZE_MAX);
+        for (size_t i = m_facetReadIndices.size (); i-- > 0;)
+            m_readIndexSequence.push_back(m_facetReadIndices[i]);
+        }
+    }
+
+void EnqueueNeighbors (size_t seed)
+    {
+    // assign the count around the facet ..
+    for (auto he = seed;;)
+        {
+        // visit all edge mates:
+        auto range = m_halfEdges.MateRange (he);
+        for (size_t i = range.m_dataA; i < range.m_dataB; i++)
+            {
+            if (IsUnordered (i) && IsCrossableEdge (i))
+                InsertHalfEdgeInHeap (i);
+            }
+        he = NextHalfEdgeAroundFacet (he);
+        if (he == seed)
+            break;
+        }
+    }
+// m_nodeId = order of removal.  INT_MAX is unremoved
+bool Go ()
+    {
+    m_heap.Clear ();
+    m_readIndexSequence.clear ();
+    // mark all as unordered ..
+    for (auto &he : m_halfEdges)
+        he.m_nodeId = INT_MAX;
+
+    // All non-paired halfedges are seeds .  .
+    Size2 range (0);
+    for (size_t i = 0; i < m_halfEdges.size (); i = range.m_dataB)
+        {
+        range = m_halfEdges.MateRange (i);
+        size_t numInRange = range.NumInRange ();
+        // unconditionally insert all exteriors and fans
+        if (numInRange != 2 && IsCrossableEdge (i))
+            for (size_t j = range.m_dataA; j < range.m_dataB; j++)
+                InsertHalfEdgeInHeap (j);
+        }
+    
+    size_t candidate;
+    double edgeLength;
+    int currentId = 0;
+    while (m_heap.RemoveMin (candidate, edgeLength))
+        {
+        if (IsUnordered (candidate))
+            {
+            GEOMAPI_PRINTF (" (candidate %d) (L %g)\n", (int)candidate, -edgeLength);
+            AssignIdAroundFacet (candidate, currentId, false);
+            EnqueueNeighbors (candidate);
+            currentId++;
+            }
+        }
+
+// assign ids to everything else ..
+    for (size_t he = 0; he < m_halfEdges.size (); he++)
+        {
+        if (IsUnordered (he))
+            AssignIdAroundFacet (he, currentId, true);
+        }
+    std::reverse (m_readIndexSequence.begin (), m_readIndexSequence.end ());
+    return m_readIndexSequence.size () > 0;
+    }
+};
+
+
+bool PolyfaceHeader::ConstructOrderingForLongEdgeRemoval
+(
+bvector<size_t> &readIndexSequence,
+double maxEdgeLength
+)
+    {
+    if (PointIndex ().size () == 0)
+        return false;
+    LongEdgeExcavactionContext context (*this, readIndexSequence, maxEdgeLength);
+    if (!context.DoSetup ())
+        return false;
+    bool stat =  context.Go ();
+    for (auto ri : readIndexSequence)
+        {
+        if (ri == SIZE_MAX)
+            GEOMAPI_PRINTF ("\n");
+        else
+            GEOMAPI_PRINTF (" %d", (int)ri);
+        }
+    return stat;
+    }
+
+void RemapReadIndices (bvector<size_t> &readIndexSequence, bvector<int> &data, bvector<int> &work)
+    {
+    work = data;
+    data.clear ();
+    for (auto ri : readIndexSequence)
+        {
+        if (ri == SIZE_MAX)
+            data.push_back(0);
+        else
+            data.push_back(work[ri]);
+        }
+    }
+bool PolyfaceHeader::ExcavateFacetsWithLongBoundaryEdges (double maxEdgeLength)
+    {
+    if (PointIndex ().size () == 0)
+        return false;
+        bvector<size_t> newReadIndexOrder;
+    bool stat = ConstructOrderingForLongEdgeRemoval (newReadIndexOrder, maxEdgeLength);
+    if (stat)
+        {
+        bvector<int> work;
+        RemapReadIndices (newReadIndexOrder, m_pointIndex, work);
+        RemapReadIndices (newReadIndexOrder, m_paramIndex, work);
+        RemapReadIndices (newReadIndexOrder, m_normalIndex, work);
+        RemapReadIndices (newReadIndexOrder, m_colorIndex, work);
+        }
+    return stat;
+    }
+
 
 
 END_BENTLEY_GEOMETRY_NAMESPACE

@@ -2123,7 +2123,6 @@ GEOMDLLIMPEXP static PolyfaceHeaderPtr CreateUnifiedIndexMesh (PolyfaceQueryCR s
 //!<li>Quiet warning of change trigger: "vertex normal has both positive and negative incident facets.  A new negated normal is introduced"
 //!<li>Quiet warning of change trigger: "All incident facets normals are reverse of vertex normal -- normal is negated"
 //!<li>Quiet warning, not a change trigger: "unused normal coordinates"
-//!<li>
 //!</ul>
 GEOMDLLIMPEXP bool FixupVertexNormalDirectionToFaceOrientation
 (
@@ -2136,6 +2135,35 @@ GEOMDLLIMPEXP bool OrientAndCollectManifoldComponents
 bvector<bvector<size_t>> &componentReadIndices, //!< [out] arrays of read indices gathered per component
 MeshAnnotationVector &messages  //!< [out] array of status messages
 );
+
+//! Determine a facet order such that the LAST facets are the first to be removed when applying the logic
+//! "Remove the longest exterior edge first"
+//!<ul>
+//!<li> If this is applied to facets of a triangulation (whose outer boundary is convex), the successive outer boundaries
+//! are polygons that contain short edges and have inlets where there are long edges on the outside.
+//! The readIndexSequence contains sequences of readIndices for the shuffled facets.
+//! <li>  Suppose a facet
+//!    <ul>
+//!    <li>initially has vertices, params, normals, and colors indicated at (consecutive) readIndices [a b c]
+//!    <li> the edges from b to c is chosen for removal
+//!    <ul>
+//! <li>That facet will appear as [b c a SIZE_MAX].
+//!</ul>
+GEOMDLLIMPEXP bool ConstructOrderingForLongEdgeRemoval
+(
+bvector<size_t> &readIndexSequence,    //!< [out] read indices in order described above.
+double maxEdgeLength = 0.0  //!< [in] exclude facets whose edge length is larger than this.  Use 0.0 to include all facets.
+);
+
+//!
+//! <ul>
+//! <li> Find facets with boundary edges longer than maxEdgeLength.
+//! <li> Remove the facets.
+//! <li> Continue searching for long edges in the newly exposed facets.
+//! <li> If the initial facets are an xy triangulation of points (with the convex hull outer boundary),
+//!      the first removals creates a non-convex  outer boundary.  Later removals can create islands of facets.
+//! <ul>
+GEOMDLLIMPEXP bool PolyfaceHeader::ExcavateFacetsWithLongBoundaryEdges (double maxEdgeLength = 0.0);
 
 //! Add Edge Chains
 GEOMDLLIMPEXP BentleyStatus AddEdgeChains (size_t drawMethodIndex);

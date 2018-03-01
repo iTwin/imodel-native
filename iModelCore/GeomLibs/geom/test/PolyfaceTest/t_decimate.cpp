@@ -127,3 +127,110 @@ TEST(CPP,ScopeTester)
     printf ("ENDSCOPES\n");
     }
 #endif
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(Polyface,SortForLongEdgeRemovalA)
+    {
+    bvector<DPoint3d> points
+        {
+        // a sqaure
+        DPoint3d::From (0,0,0),
+        DPoint3d::From (1,0,0),
+        DPoint3d::From (0,1,0),
+        DPoint3d::From (1,1,0),
+        // a tall rectangle stacked
+        DPoint3d::From (0,4,0),
+        DPoint3d::From (1,4,0),
+        // a square above that
+        DPoint3d::From (0,5,0),
+        DPoint3d::From (1,5,0),
+        };
+//   7---8
+//   | / |
+//   5---6
+//   |  /|
+//   | / |
+//   |/  |
+//   3---4
+//   | / |
+//   1---2
+    bvector<int> indices
+        {
+        1,2,4,0,
+        1,4,3,0,
+        3,4,6,0,
+        3,6,5,0,
+        5,6,8,0,
+        5,8,7,0
+        };
+    static bool s_print = false;
+    auto polyface = PolyfaceHeader::CreateIndexedMesh (0, points, indices);
+    bvector<size_t> smallToLargeReadIndices;
+    polyface->ConstructOrderingForLongEdgeRemoval (smallToLargeReadIndices);
+    Check::SaveTransformed (*polyface);
+    polyface->ReorderFacetsByRemovingLongBoundaryEdges (1.5);
+    Check::Shift (0,10,0);
+    Check::SaveTransformed (*polyface);
+    Check::ClearGeometry ("Polyface.SortForLongEdgeRemovalA");
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(Polyface,SortForLongEdgeRemovalB)
+    {
+    bvector<DPoint3d> points;
+    bvector<int> indices;
+//   D1--D2-----D3--D4
+//   | / |   /  | / |
+//   C1--C2-----C3--C4
+//   |  /|    / |  /|
+//   | / |   /  | / |
+//   |/  |  /   |/  |
+//   B1--B2-----B3--B4
+//   | / |   /  | / |
+//   A1--A2-----A3--A4
+    DVec3d bilinearShift = DVec3d::From (3, 8, 0);
+// x and y grid values to create isolated smallish triangles in the corners
+    bvector<double> xx {0,0.5,1,3,4, 6,7,8,11};
+    bvector<double> yy {0,1,4,5};
+    for (auto y : yy)
+        for (auto x : xx)
+            {
+            double u = x / xx.back ();
+            double v = y / yy.back ();
+            points.push_back (DPoint3d::From (x,y) + u * v * bilinearShift);
+            }
+    size_t nx = xx.size ();
+    // triangles moving across the rows ...
+    for (size_t iy = 0; iy + 1 < yy.size (); iy++)
+        {
+        int leftPointIndex = (int)(1 + iy * nx);    // ONE BASED point index at left of row
+        for (size_t ix = 0; ix + 1 < xx.size (); ix++)
+            {
+            int i00 = leftPointIndex + (int)ix;
+            int i10 = i00 + 1;
+            int i01 = i00 + (int)nx;
+            int i11 = i01 + 1;
+            indices.push_back (i00); indices.push_back (i10); indices.push_back (i11); indices.push_back (0);
+            indices.push_back (i00); indices.push_back (i11); indices.push_back (i01); indices.push_back (0);
+            }
+        }
+    auto polyface = PolyfaceHeader::CreateIndexedMesh (0, points, indices);
+    bvector<size_t> smallToLargeReadIndices;
+    polyface->ConstructOrderingForLongEdgeRemoval (smallToLargeReadIndices);
+    Check::SaveTransformed (*polyface);
+    for (auto maxEdgeLength : {4.0, 3.0, 2.0, 1.1, 0.75})
+        {
+        auto mesh1 = polyface->Clone ();
+        Check::Shift (0,20,0);
+        if (mesh1->ReorderFacetsByRemovingLongBoundaryEdges (maxEdgeLength))
+            Check::SaveTransformed (*mesh1);
+
+        }
+    Check::ClearGeometry ("Polyface.SortForLongEdgeRemovalB");
+    }
