@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="Generic" alias="generic" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+<ECSchema schemaName="Generic" alias="generic" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
 
     <ECSchemaReference name="BisCore" version="01.00" alias="bis"/>
     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
@@ -135,6 +135,11 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Document" modifier="Sealed">
+        <BaseClass>bis:Document</BaseClass>
+        <ECProperty propertyName="Url" displayLabel="URL" typeName="string" extendedTypeName="Url"/>
     </ECEntityClass>
 
 </ECSchema>
