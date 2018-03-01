@@ -1166,6 +1166,21 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         REQUIRE_ARGUMENT_STRING(0, newExtentsJson)
         return Napi::Number::New(Env(), (int)AddonUtils::UpdateProjectExtents(GetDgnDb(), Json::Value::From(newExtentsJson)));
         }
+    Napi::Value ReadFontMap(const Napi::CallbackInfo& info) 
+        {
+        auto fontMap = GetDgnDb().Fonts().FontMap();
+        Json::Value fonts(Json::arrayValue);
+        for (auto font : fonts )
+            {
+            auto thisFont = Json::Value();
+            thisFont[DgnFonts::json_id()] = (int)font.first.GetValue();
+            thisFont[DgnFonts::json_type()] = (int)font.second->GetType();
+            thisFont[DgnFonts::json_name()];
+            fonts.append(thisFont);
+            }
+        fonts[DgnFonts::json_fonts()] = fonts;
+        return Napi::String::New(Env(), fonts.ToString().c_str());
+        }
 
 	// ========================================================================================
 	// Test method handler
@@ -1244,6 +1259,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
             InstanceMethod("txnManagerGetCurrentTxnId", &AddonDgnDb::TxnManagerGetCurrentTxnId),
             InstanceMethod("txnManagerGetTxnDescription", &AddonDgnDb::TxnManagerGetTxnDescription),
             InstanceMethod("txnManagerIsTxnIdValid", &AddonDgnDb::TxnManagerIsTxnIdValid),
+            InstanceMethod("readFontMap", &AddonDgnDb::ReadFontMap),
 						
 			// DEVELOPMENT-ONLY METHODS:
 			InstanceMethod("executeTest", &AddonDgnDb::ExecuteTest),
