@@ -28,8 +28,6 @@
 #include "..\Initialize.h"
 #include "..\TiledTriangulation\ITiledTriangulatorValidator.h"
 
-
-
 using namespace std;
 
 #include <ScalableMesh/IScalableMesh.h>
@@ -42,6 +40,7 @@ using namespace std;
 #include <ScalableMesh/GeoCoords/GCS.h>
 #include <ScalableMesh/ScalableMeshUtilityFunctions.h>
 #include <ScalableMesh/IScalableMeshProgress.h>
+#include <ScalableMesh/ScalableMeshFrom3MX.h>
 
 #include <GeomSerialization\GeomLibsFlatBufferApi.h>
 
@@ -2673,8 +2672,78 @@ static bool AllOtherArraysEmpty(bvector<bvector<T>> &data, size_t index)
 
 void Perform3MxTo3SmTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
+
+    WString threeMxFileName, smFileName;
+    // Parses the test(s) definition:
+    if (pTestNode->GetAttributeStringValue(smFileName, "smFileName") != BEXML_Success)
+        {
+        printf("ERROR : smFileName attribute not found\r\n");
+        return;
+        }
     
+    if (pTestNode->GetAttributeStringValue(threeMxFileName, "threeMxFileName") != BEXML_Success)
+        {
+        printf("ERROR : threeMxFileName attribute not found\r\n");
+        return;
+        }
     
+/*
+    SMImport3mxProgressListener progressListener;
+
+    auto progressSM = IScalableMeshProgress::Create();
+    if (!progressSM->AddListener(progressListener))
+        {
+        assert(!"Error");
+        return false;
+        }
+  */  
+    // Import the 3mx
+
+    IScalableMeshProgressPtr   noProgressHandler;
+    GeoCoordinates::BaseGCSPtr noGCS;
+    SMFrom3MXWarnings warnings;
+
+    clock_t totalTime = clock();
+
+    SMFrom3MXStatus status = createScalableMeshFrom3MX(BeFileName(threeMxFileName.c_str()), BeFileName(smFileName.c_str()), noGCS, noProgressHandler, warnings);
+
+    totalTime = clock() - totalTime;
+
+    //L"InputFileName, OutputFileName, Result, Duration (minutes)\n";
+            
+    fwprintf(pResultFile, L"%s,%s", threeMxFileName.c_str(), smFileName.c_str());
+    
+    if (SMFrom3MXStatus::Success == status)
+        {
+        fwprintf(pResultFile, L",SUCCESS");
+        }
+    else
+        {
+        WString errorStr;
+
+        switch (status)
+            {
+            case SMFrom3MXStatus::Canceled: errorStr.AssignOrClear(L"Cancelled during processing"); break;
+            case SMFrom3MXStatus::Read3MXError: errorStr.AssignOrClear(L"Error while reading the master 3MX file"); break;
+            case SMFrom3MXStatus::Read3MXBError: errorStr.AssignOrClear(L"Error while reading a 3MXB file"); break;
+            case SMFrom3MXStatus::ReadJPEGError: errorStr.AssignOrClear(L"Error while reading a JPEG texture resource"); break;
+            case SMFrom3MXStatus::GCSError: errorStr.AssignOrClear(L"Error related to GCS"); break;
+            case SMFrom3MXStatus::ScalableMeshSDKError: errorStr.AssignOrClear(L"Error related to ScalableMeshSDK"); break;
+            case SMFrom3MXStatus::ReprojectionError: errorStr.AssignOrClear(L"Error encountered in reprojection (most likely due to a 3D point out of bounds)"); break;
+            case SMFrom3MXStatus::SeveralLayersError: errorStr.AssignOrClear(L"Special case not handled by the converter: 3MX with several layers"); break;
+            case SMFrom3MXStatus::SeveralGeometriesError: errorStr.AssignOrClear(L"Special case not handled by the converter: node with several geometries"); break;
+            default:
+                assert("Unexpected SMFrom3MXStatus");
+                errorStr.AssignOrClear(L"Unknown error");            
+            }
+
+        fwprintf(pResultFile, L",ERROR : %s", errorStr.c_str());
+        }
+
+    fwprintf(pResultFile, L",%.5f\n", totalTime / CLOCKS_PER_SEC / 60.0);
+
+    fflush(pResultFile);    
+
     }
 
 #define MAX_CUT_FILL_ERROR_PERCENT 0.001 

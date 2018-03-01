@@ -89,6 +89,9 @@ WString GetHeaderForTestType(TestType t)
         case TEST_SQL_FILE_UPDATE:
             return L"File name, Duration (seconds)\n";
             break;
+        case TEST_3MX_TO_3SM_CONVERSION:
+            return L"InputFileName, OutputFileName, Result, Duration (minutes)\n";
+            break;
 
         default: break;
         }
