@@ -593,11 +593,9 @@ bool Sheet::ViewController::WantRenderAttachments()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Sheet::ViewController::_CreateScene(SceneContextR context)
     {
-#if 0
     auto stat = T_Super::_CreateScene(context);
     if (SUCCESS != stat || !WantRenderAttachments())
         return stat;
-#endif
 
     if (!m_allAttachmentsLoaded)
         {
