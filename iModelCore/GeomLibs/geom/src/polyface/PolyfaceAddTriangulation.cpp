@@ -435,7 +435,7 @@ static double   s_graphRelTol = 1.0e-9;
 //! @param [in] fringeExpansionFactor fractional factor (usually 0.10 to 0.20) for defining a surrounding rectangle.  The z of this triangle is
 //!     at the low z of all the points.
 //! @param [in] retainFringeTriangles true to keep the fringe triangles.  If false, any edge that reaches the outer rectangle is deleted.
-PolyfaceHeaderPtr PolyfaceHeader::CreateXYTriangulation (bvector <DPoint3d> const &points, double fringeExpansionFactor, bool retainFringeTriangles)
+PolyfaceHeaderPtr PolyfaceHeader::CreateXYTriangulation (bvector <DPoint3d> const &points, double fringeExpansionFactor, bool retainFringeTriangles, bool convexHull)
     {
     //static int          s_noisy = 0;
 
@@ -448,7 +448,7 @@ PolyfaceHeaderPtr PolyfaceHeader::CreateXYTriangulation (bvector <DPoint3d> cons
     size_t numPoint = points.size ();
     bvector<DPoint3d> localPointA;
     bvector<DPoint3d> localPointB;
-
+    bvector<DPoint3d> hullPoints;
     DRange3d worldRange = DRange3d::From (points);
     DPoint3d localOrigin = DPoint3d::FromInterpolate (worldRange.low, 0.5, worldRange.high);
     for (size_t i = 0; i < numPoint; i++)
@@ -464,6 +464,8 @@ PolyfaceHeaderPtr PolyfaceHeader::CreateXYTriangulation (bvector <DPoint3d> cons
 
     if (localPointB.size () < 3)
         return NULL;
+
+
         
     VuSetP graph = vu_newVuSet (0);
     vu_setTol (graph, s_graphAbsTol, s_graphRelTol);
@@ -472,6 +474,18 @@ PolyfaceHeaderPtr PolyfaceHeader::CreateXYTriangulation (bvector <DPoint3d> cons
     DRange3d localRange = worldRange;
     localRange.low.Subtract (localOrigin);
     localRange.high.Subtract (localOrigin);
+    if (convexHull)
+        {
+        int numHullPoints;
+        hullPoints.resize ( localPointB.size () + 1);
+        bsiDPoint3dArray_convexHullXY (&hullPoints.front(), &numHullPoints, &localPointB.front (), (int)localPointB.size ());
+        hullPoints.resize ((size_t)numHullPoints);
+        for (size_t i = 0; i < hullPoints.size (); i++)
+            {
+            AddEdge (graph, hullPoints[i], hullPoints[(i+1) % numHullPoints], VU_RULE_EDGE);
+            }
+        }
+    
     AddExpandedRangeEdges (graph, localRange, s_expansionFraction, numPoint);
     vu_mergeOrUnionLoops (graph, VUUNION_UNION);
     vu_regularizeGraph (graph);     // It's just a rectangle -- should do nothing?

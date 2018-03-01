@@ -234,3 +234,67 @@ TEST(Polyface,SortForLongEdgeRemovalB)
         }
     Check::ClearGeometry ("Polyface.SortForLongEdgeRemovalB");
     }
+
+
+
+void AddArcPoints (bvector<DPoint3d> &points, DEllipse3dCR arc, size_t numPoints)
+    {
+    double du = 1.0 / ((double)numPoints - 1);
+    for (size_t i = 0; i < numPoints; i++)
+        points.push_back (arc.FractionToPoint (i * du));
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(Polyface,SortForLongEdgeRemovalC)
+    {
+    bvector<DPoint3d> points;
+
+    // Make some arcs that cross each other.
+    // put points along each, and along similar ones offset towards their centers.
+    double edgeTarget = 3.0;        // approximate length of many edges.
+    for (auto arc1 : {
+        DEllipse3d::From (
+            0,0,0,
+            10,0,0,
+            0,12,0,
+            0.0,
+            Angle::DegreesToRadians (235.0)),
+        DEllipse3d::From (
+            10,2,0,
+            10,10,0,
+            -5,5,0,
+            Angle::DegreesToRadians (140.0),
+            Angle::DegreesToRadians (-120.0)),
+        DEllipse3d::FromPointsOnArc (
+                DPoint3d::From (-10,10,0),
+                DPoint3d::From (-20,12,0),
+                DPoint3d::From (-30,8.0)),
+            })
+        {
+        auto length = arc1.ArcLength ();
+        size_t numEval = (size_t)(length / edgeTarget);
+         for (double f : {1.0, 0.9, 1.1, 1.23})
+            {
+            auto arc = arc1;
+            arc.vector0.Scale (f);
+            arc.vector90.Scale (f);
+            AddArcPoints (points, arc, (size_t) (numEval * f * f));
+            }
+        }
+
+    auto range = DRange3d::From (points);
+    auto polyface = PolyfaceHeader::CreateXYTriangulation (points);
+    Check::SaveTransformed (*polyface);
+    for (auto maxEdgeLength : {8.0, 6.0, 4.0, 3.0, 2.0})
+        {
+        Check::Shift (0,2.0 * range.YLength(), 0);
+        auto mesh1 = polyface->Clone ();
+        auto circle = DEllipse3d::FromCenterRadiusXY (range.low, maxEdgeLength / 2.0);
+        Check::SaveTransformed (circle);
+        if (mesh1->ExcavateFacetsWithLongBoundaryEdges (maxEdgeLength))
+            Check::SaveTransformed (*mesh1);
+
+        }
+    Check::ClearGeometry ("Polyface.SortForLongEdgeRemovalC");
+    }
