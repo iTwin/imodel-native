@@ -29,7 +29,9 @@ USING_NAMESPACE_TILETREE
 // Second version: Same primary key as tile data table.
 #define TABLE_NAME_TileTreeCreateTime "TileTreeCreateTime2"
 
-#define JOIN_TileTreeTables TABLE_NAME_TileTree " JOIN " TABLE_NAME_TileTreeCreateTime " ON " TABLE_NAME_TileTree ".FileName=" TABLE_NAME_TileTreeCreateTime ".FileName "
+#define COLUMN_TileTree_FileName TABLE_NAME_TileTree ".FileName"
+#define COLUMN_TileTreeCreateTime_FileName TABLE_NAME_TileTreeCreateTime ".FileName"
+#define JOIN_TileTreeTables TABLE_NAME_TileTree " JOIN " TABLE_NAME_TileTreeCreateTime " ON " COLUMN_TileTree_FileName "=" COLUMN_TileTreeCreateTime_FileName
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   06/15
@@ -204,7 +206,7 @@ BentleyStatus TileLoader::DoReadFromDb()
         enum Column : int {Data,DataSize,ContentType,Expires,Created,Rowid};
         CachedStatementPtr stmt;
         constexpr Utf8CP selectSql = "SELECT Data,DataSize,ContentType,Expires,Created," TABLE_NAME_TileTree ".ROWID as TileRowId"
-            " FROM " JOIN_TileTreeTables " WHERE FileName=?";
+            " FROM " JOIN_TileTreeTables " WHERE " COLUMN_TileTree_FileName "=?";
 
         if (BE_SQLITE_OK != cache->GetDb().GetCachedStatement(stmt, selectSql))
             {
@@ -388,7 +390,7 @@ BentleyStatus TileLoader::DoSaveToDb()
 
     stmt->BindText(1, m_cacheKey, Statement::MakeCopy::No);
     stmt->BindInt64(2, _GetCreateTime());
-    if (BE_SQLITE_ROW != stmt->Step())
+    if (BE_SQLITE_DONE != stmt->Step())
         {
         BeAssert(false);
         return ERROR;
@@ -503,16 +505,17 @@ BentleyStatus TileCache::_Prepare() const
         return SUCCESS;
         }
         
-    // Drop leftover tables from previous versions...
+    // Drop leftover tables from previous versions
     m_db.DropTableIfExists(TABLE_NAME_TileTree1);
     m_db.DropTableIfExists(TABLE_NAME_TileTree2);
     m_db.DropTableIfExists(TABLE_NAME_TileTreeCreateTime1);
 
-    // Create the tables
-    if (BE_SQLITE_OK != m_db.CreateTable(TABLE_NAME_TileTreeCreateTime, "Filename CHAR PRIMARY KEY,Created BIGINT"))
-        return ERROR;
+    // Drop leftover 'tile data' table - otherwise the existing rows will lack corresponding 'create time' rows
+    m_db.DropTableIfExists(TABLE_NAME_TileTree);
 
-    return BE_SQLITE_OK == m_db.CreateTable(TABLE_NAME_TileTree,
+    // Create the tables
+    return BE_SQLITE_OK == m_db.CreateTable(TABLE_NAME_TileTreeCreateTime, "Filename CHAR PRIMARY KEY,Created BIGINT")
+        && BE_SQLITE_OK == m_db.CreateTable(TABLE_NAME_TileTree,
         "Filename CHAR PRIMARY KEY,Data BLOB,DataSize BIGINT,ContentType TEXT,Expires BIGINT") ? SUCCESS : ERROR;
     }
 
