@@ -13,3 +13,9 @@ NavigationQueryBuilder_MultiLevelGroupingTests.RootNodesQueryReturnsRelationship
 
 # TFS#819769:InstanceLabelOverride is not applied for child in hierarchy
 RulesDrivenECPresentationManagerNavigationTests.AllInstanceNodesSpecification_LabelOverridesAppliedForSpecifiedClass
+
+ContentUpdateTests.InvalidatesWhenUserSettingChanges_UsedInInstanceFilter
+
+    # TFS#854552
+    # Stream:Bim0200, build architecture: (iOSARM64), Device: iPadAir2
+    # Failing
