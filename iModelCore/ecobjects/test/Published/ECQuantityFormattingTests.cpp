@@ -6,44 +6,28 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
+#include "../TestFixture/TestFixture.h"
+
+#include "ECObjects/ECQuantityFormatting.h"
 #include <Formatting/FormattingApi.h>
-#include <ECObjects/ECSchema.h>
-#include <ECObjects/ECQuantityFormatting.h>
 #include <BeSQLite/L10N.h>
 
 namespace BEU = BentleyApi::Units;
 namespace BEF = BentleyApi::Formatting;
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
+USING_NAMESPACE_BENTLEY_EC
 
-static void SetUpL10N() 
-    {
-    BeFileName sqlangFile;
-    BeTest::GetHost().GetDgnPlatformAssetsDirectory(sqlangFile);
-    sqlangFile.AppendToPath(L"sqlang");
-    sqlangFile.AppendToPath(L"Units_en.sqlang.db3");
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
-    BeFileName temporaryDirectory;
-    BeTest::GetHost().GetTempDir(temporaryDirectory);
-
-    BeSQLite::BeSQLiteLib::Initialize(temporaryDirectory, BeSQLite::BeSQLiteLib::LogErrors::Yes);
-    BeSQLite::L10N::Shutdown();
-    BeSQLite::L10N::Initialize(BeSQLite::L10N::SqlangFiles(sqlangFile));
-    }
-
-static void TearDownL10N()
-    {
-    BeSQLite::L10N::Shutdown();
-    }
+struct ECQuantityFormattingTests : ECTestFixture {};
 
 static void ShowQuantifiedValue(Utf8CP input, Utf8CP formatName, Utf8CP fusUnit, Utf8CP spacer=nullptr)
     {
     BEF::FormatUnitSet fus = BEF::FormatUnitSet(formatName, fusUnit);
+    EXPECT_FALSE(fus.HasProblem()) << "FUS-Problem: %s" << fus.GetProblemDescription().c_str();
     if (fus.HasProblem())
-        {
-        LOG.errorv("FUS-problem: %s", fus.GetProblemDescription().c_str());
         return;
-        }
+
     BEF::FormatUnitSet fus0 = BEF::FormatUnitSet("real4u", fusUnit);
     BEU::Quantity qty = ECQuantityFormatting::CreateQuantity(input, 0, fus);
     Utf8String qtyT = fus.FormatQuantity(qty, spacer);
@@ -55,12 +39,9 @@ static void ShowQuantifiedValue(Utf8CP input, Utf8CP formatName, Utf8CP fusUnit,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             David.Fox-Rabinovitz                    06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ECQuantityFormattingTests, Preliminary)
+TEST_F(ECQuantityFormattingTests, Preliminary)
     {
-    SetUpL10N();
     LOG.error("================  Quantity Formatting Log ===========================");
-
-    BEF::FormatUnitSet fus = BEF::FormatUnitSet("realu", "IN");
 
     ShowQuantifiedValue("3' 4\"", "real", "IN");
     ShowQuantifiedValue("3' 4\"", "realu", "IN", "_");
@@ -82,7 +63,6 @@ TEST(ECQuantityFormattingTests, Preliminary)
     ShowQuantifiedValue(":6", "fi8", "IN");
     ShowQuantifiedValue("135:23:11", "dms8", "ARC_DEG");
     LOG.error("================  End of Quantity Formatting Log  ===========================");
-    TearDownL10N();
     }
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECN_TEST_NAMESPACE

@@ -2414,7 +2414,7 @@ public:
     ECRelationshipConstraintR GetTarget() const {return *m_target;} //!< Gets the ECRelationshipConstraint at the target end of the relationship
 
     //! Sets the ::StrengthType of this relationship. 
-    //! @remarks The ::StrengthType must be consisten with its base class's strength type. If it is not, Verify() will return false.
+    //! @remarks The ::StrengthType must be consistent with its base class's strength type. If it is not, Verify() will return false.
     //! @return ::Success if the strength is set, otherwise ::RelationshipConstraintsNotCompatible.
     ECOBJECTS_EXPORT ECObjectsStatus SetStrength(StrengthType value); 
     StrengthType GetStrength() const {return m_strength;} //!< Gets the ::StrengthType of this ECRelationshipClass.
@@ -3349,6 +3349,8 @@ public:
     bool OriginalECXmlVersionAtLeast(ECVersion version) const {return ((m_originalECXmlVersionMajor << 16) | m_originalECXmlVersionMinor) >= static_cast<uint32_t>(version);}
     //! Returns true if the original xml version is less than the input ECVersion
     bool OriginalECXmlVersionLessThan(ECVersion version) const {return ((m_originalECXmlVersionMajor << 16) | m_originalECXmlVersionMinor) < static_cast<uint32_t>(version);}
+    //! Returns true if the original xml version is greater than the input ECVersion
+    bool OriginalECXmlVersionGreaterThan(ECVersion version) const {return ((m_originalECXmlVersionMajor << 16) | m_originalECXmlVersionMinor) > static_cast<uint32_t>(version);}
 
     uint32_t GetOriginalECXmlVersionMajor() const {return m_originalECXmlVersionMajor;} //!< Gets the original major xml version.
     uint32_t GetOriginalECXmlVersionMinor() const {return m_originalECXmlVersionMinor;} //!< Gets the original minor xml version.

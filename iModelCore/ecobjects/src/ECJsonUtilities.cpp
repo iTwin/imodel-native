@@ -1729,14 +1729,14 @@ StatusInt JsonEcInstanceWriter::WriteNavigationPropertyValue(Json::Value& valueT
         AppendAccessString(thisAccessString, *baseAccessString, navName);
     else
         thisAccessString = navName.c_str();
-        
+
     ECValue value;
     if (ECObjectsStatus::Success != ecInstance.GetValue(value, thisAccessString.c_str()))
         return BSIERROR;
 
     if (!value.IsNavigation())
         BeAssert(false);
-    
+
     if (value.IsNull())
         {
         if (serializeNullValues)
@@ -1747,10 +1747,10 @@ StatusInt JsonEcInstanceWriter::WriteNavigationPropertyValue(Json::Value& valueT
     auto& navObj = valueToPopulate[navName.c_str()] = Json::objectValue;
 
     ECValue::NavigationInfo const& navInfo = value.GetNavigationInfo();
-    
+
     navObj[ECJsonUtilities::json_navId()] = navInfo.GetId<BeInt64Id>().ToHexStr();
 
-    if (navInfo.GetRelationshipClass() != nullptr)
+    if (nullptr != navInfo.GetRelationshipClass() && ECClassModifier::Sealed != navigationProperty.GetRelationshipClass()->GetClassModifier())
         ECJsonUtilities::ClassNameToJson(navObj[ECJsonUtilities::json_navRelClassName()], *navInfo.GetRelationshipClass());
 
     return BSISUCCESS;
