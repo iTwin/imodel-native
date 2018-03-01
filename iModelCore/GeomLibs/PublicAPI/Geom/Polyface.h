@@ -2164,7 +2164,7 @@ double maxEdgeLength = 0.0  //!< [in] exclude facets whose edge length is larger
 //! <li> If the initial facets are an xy triangulation of points (with the convex hull outer boundary),
 //!      the first removals creates a non-convex  outer boundary.  Later removals can create islands of facets.
 //! <ul>
-GEOMDLLIMPEXP bool PolyfaceHeader::ExcavateFacetsWithLongBoundaryEdges (double maxEdgeLength = 0.0);
+GEOMDLLIMPEXP bool ExcavateFacetsWithLongBoundaryEdges (double maxEdgeLength = 0.0);
 
 //! Add Edge Chains
 GEOMDLLIMPEXP BentleyStatus AddEdgeChains (size_t drawMethodIndex);
