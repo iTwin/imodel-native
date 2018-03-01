@@ -404,7 +404,7 @@ static double Evaluate40R2L2Map (double alpha, double R, double L, double u, dou
 //! <li>In use case with {alpha = positive one}, return value is (approximate) distance along spiral and u is distance along axis.
 //! <li>In use case with (alpha = negative one}, u is distance along spiral and the return value is (approximate) distance along axis.
 //! </ul>
-static double ClothoidCosineApproximation::EvaluateItalianCzechR2L2Map (double alpha, double R, double L, double u);
+static double EvaluateItalianCzechR2L2Map (double alpha, double R, double L, double u);
 
 //! @returns Given target value f, return u so {u(1 + alpha * u^4/ (10 (4 R R - L L)  L L) = f}
 //! <ul>
