@@ -402,7 +402,8 @@ TEST_F(CurveVectorPlacementStrategyTests, ChangeFromArcToSplineToInterpolationCu
 
     CurveVectorPtr expectedCV0 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { TestUtils::CreateSpline({{1, 2, 0}, {5, 6, 0}}, 3)});
     CurveVectorPtr expectedCV1 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { TestUtils::CreateInterpolationCurve({{1, 2, 0}, {5, 6, 0}}, DVec3d::From(0, 0, 0), DVec3d::From(5, 2, 7)) });
-    CurveVectorPtr expectedCV2 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { ICurvePrimitive::CreateLine({1, 2, 0}, {4, 2, 0}) });
+    CurveVectorPtr expectedCV2 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { TestUtils::CreateInterpolationCurve({{1, 2, 0}, {5, 6, 0}}, DVec3d::From(0, 0, 0), DVec3d::From(5, 2, 7)),
+                                                                                        ICurvePrimitive::CreateLine({5, 6, 0}, {4, 2, 0})});
 
     strategy->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Arc);
     ASSERT_TRUE(strategy->Finish().IsNull()) << "Arc should not be created with less than 3 points";
@@ -425,7 +426,9 @@ TEST_F(CurveVectorPlacementStrategyTests, ChangeFromArcToSplineToInterpolationCu
     ASSERT_TRUE(cv1->IsSameStructureAndGeometry(*expectedCV1)) << "Curve vector is incorrect";
 
     strategy->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Line);
-    ASSERT_TRUE(strategy->Finish().IsNull()) << "Line should not be created with less than 2 points";
+    CurveVectorPtr cv1_2 = strategy->Finish();
+    ASSERT_TRUE(cv1_2.IsValid());
+    ASSERT_TRUE(cv1_2->IsSameStructureAndGeometry(*expectedCV1));
     
     strategy->AddKeyPoint({ 4, 2, 1 });
     CurveVectorPtr cv2 = strategy->Finish();

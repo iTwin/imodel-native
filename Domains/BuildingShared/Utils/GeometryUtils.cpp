@@ -2587,7 +2587,17 @@ bool GeometryUtils::IsSameGeometry
 //---------------+---------------+---------------+---------------+---------------+------
 Transform GeometryUtils::FindTransformBetweenPlanes(DPlane3d const & source, DPlane3d const & target)
     {
-    // Find rotation transform
+    Transform transform = FindRotationTransformBetweenPlanes(source, target);
+    transform.SetTranslation(DVec3d::FromStartEnd(source.origin, target.origin));
+
+    return transform;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+Transform GeometryUtils::FindRotationTransformBetweenPlanes(DPlane3d const & source, DPlane3d const & target)
+    {
     Transform transform = Transform::FromIdentity();
     if (!target.normal.IsPositiveParallelTo(source.normal)) // check if rotation is needed
         {
@@ -2596,25 +2606,47 @@ Transform GeometryUtils::FindTransformBetweenPlanes(DPlane3d const & source, DPl
         // Cross product will never be invalid because normals aren't parallel 
         DVec3d rotationAxis = DVec3d::FromCrossProduct(source.normal, target.normal);
 
-        transform = Transform::FromAxisAndRotationAngle(DRay3d::FromOriginAndVector(target.origin, rotationAxis),
-                                                                rotationAngle);
+        transform = Transform::FromAxisAndRotationAngle(DRay3d::FromOriginAndVector({0, 0, 0}, rotationAxis),
+                                                        rotationAngle);
         }
-    transform.SetTranslation(DVec3d::FromStartEnd(source.origin, target.origin));
-
     return transform;
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus GeometryUtils::TransformVectorOnPlane(DVec3dR transformed, DVec3d vector, DPlane3d plane)
+void GeometryUtils::TransformVectorOnPlane(DVec3dR transformed, DVec3d vector, DPlane3d plane)
     {
     Transform transform = FindTransformBetweenPlanes(DPlane3d::FromOriginAndNormal(DPoint3d::From(0, 0, 0),
                                                                     DVec3d::From(0, 0, 1)), /*XY plane*/
                                                      plane);
     transform.Multiply(transformed, vector);
+    }
 
-    return BentleyStatus::SUCCESS;
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryUtils::RotationTransformVectorOnPlane(DVec3dR transformed, DVec3d vector, DPlane3d plane)
+    {
+    Transform transform = FindRotationTransformBetweenPlanes(DPlane3d::FromOriginAndNormal(plane.origin,
+                                                                                           DVec3d::From(0, 0, 1)), /*XY plane*/
+                                                             plane);
+    transform.Multiply(transformed, vector);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryUtils::RotateLineEndPointToAngleOnPlane(DPoint3dR rotatedEndPoint, DPoint3dCR fixedEndPoint, double angle, DPlane3d plane)
+    {
+    DVec3d lineVec = DVec3d::From(rotatedEndPoint.Distance(fixedEndPoint), 0, 0);
+    lineVec.RotateXY(angle);
+
+    GeometryUtils::RotationTransformVectorOnPlane(lineVec, lineVec, plane);
+
+    rotatedEndPoint = fixedEndPoint;
+    rotatedEndPoint.Add(lineVec);
+
     }
 
 END_BUILDING_SHARED_NAMESPACE

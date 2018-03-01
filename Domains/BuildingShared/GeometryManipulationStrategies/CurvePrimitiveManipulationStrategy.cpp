@@ -83,6 +83,9 @@ void CurvePrimitiveManipulationStrategy::_ReplaceKeyPoint
 //---------------+---------------+---------------+---------------+---------------+------
 void CurvePrimitiveManipulationStrategy::_PopKeyPoint()
     {
+    if (m_keyPoints.empty())
+        return;
+
     m_keyPoints.pop_back();
     }
 
@@ -413,10 +416,10 @@ LinePlacementStrategyPtr CurvePrimitiveManipulationStrategy::CreateLinePlacement
 //---------------+---------------+---------------+---------------+---------------+------
 ArcPlacementStrategyPtr CurvePrimitiveManipulationStrategy::CreateArcPlacementStrategy
 (
-    ArcPlacementStrategyType strategyType
+    ArcPlacementMethod method
 )
     {
-    return _CreateArcPlacementStrategy(strategyType);
+    return _CreateArcPlacementStrategy(method);
     }
 
 //--------------------------------------------------------------------------------------

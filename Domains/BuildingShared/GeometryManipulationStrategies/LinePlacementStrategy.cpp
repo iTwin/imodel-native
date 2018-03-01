@@ -144,14 +144,11 @@ BentleyStatus LinePointLengthAnglePlacementStrategy::CalculateEndPoint(DPoint3dR
     if (0 == _GetKeyPoints().size())
         return BentleyStatus::ERROR;
 
-    DVec3d lineVec = DVec3d::From(m_length, 0, 0);
-    lineVec.RotateXY(m_angle);
+    DPoint3d startPoint = _GetKeyPoints().front();
+    endPoint = startPoint;
+    endPoint.x += m_length; // Set correct distance between points;
 
-    if (BentleyStatus::ERROR == GeometryUtils::TransformVectorOnPlane(lineVec, lineVec, m_workingPlane))
-        return BentleyStatus::ERROR;
-
-    endPoint = _GetKeyPoints().front();
-    endPoint.Add(lineVec);
+    GeometryUtils::RotateLineEndPointToAngleOnPlane(endPoint, startPoint, m_angle, m_workingPlane);
     
     return BentleyStatus::SUCCESS;
     }
@@ -231,6 +228,37 @@ BentleyStatus LinePointLengthAnglePlacementStrategy::_TryGetProperty(Utf8CP key,
         return BentleyStatus::ERROR;
 
     return BentleyStatus::SUCCESS;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void LinePointLengthAnglePlacementStrategy::_SetProperty
+(
+    Utf8CP key, 
+    DPlane3d const & value
+)
+    {
+    if (0 == strcmp(LinePlacementStrategy::prop_WorkingPlane(), key))
+        _SetWorkingPlane(value);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus LinePointLengthAnglePlacementStrategy::_TryGetProperty
+(
+    Utf8CP key, 
+    DPlane3d & value
+) const
+    {
+    if (0 == strcmp(LinePlacementStrategy::prop_WorkingPlane(), key))
+        {
+        value = _GetWorkingPlane();
+        return BentleyStatus::SUCCESS;
+        }
+
+    return BentleyStatus::ERROR;
     }
 
 //--------------------------------------------------------------------------------------
@@ -437,6 +465,8 @@ void LinePointsAnglePlacementStrategy::_SetProperty(Utf8CP key, const double & v
     {
     if (0 == strcmp(prop_Angle(), key))
         SetAngle(value);
+    else
+        return;
 
     AdjustEndPoint();
     }
@@ -452,6 +482,37 @@ BentleyStatus LinePointsAnglePlacementStrategy::_TryGetProperty(Utf8CP key, doub
         return BentleyStatus::ERROR;
 
     return BentleyStatus::SUCCESS;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void LinePointsAnglePlacementStrategy::_SetProperty
+(
+    Utf8CP key,
+    DPlane3d const & value
+)
+    {
+    if (0 == strcmp(LinePlacementStrategy::prop_WorkingPlane(), key))
+        _SetWorkingPlane(value);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus LinePointsAnglePlacementStrategy::_TryGetProperty
+(
+    Utf8CP key,
+    DPlane3d & value
+) const
+    {
+    if (0 == strcmp(LinePlacementStrategy::prop_WorkingPlane(), key))
+        {
+        value = _GetWorkingPlane();
+        return BentleyStatus::SUCCESS;
+        }
+
+    return BentleyStatus::ERROR;
     }
 
 //--------------------------------------------------------------------------------------
@@ -527,16 +588,7 @@ BentleyStatus LinePointsAnglePlacementStrategy::AdjustEndPoint()
     DPoint3d startPoint = points.front();
     DPoint3d endPoint = points.back();
 
-    double length = startPoint.Distance(endPoint);
-
-    DVec3d lineVec = DVec3d::From(length, 0, 0);
-    lineVec.RotateXY(m_angle);
-
-    if (BentleyStatus::ERROR == GeometryUtils::TransformVectorOnPlane(lineVec, lineVec, m_workingPlane))
-        return BentleyStatus::ERROR;
-
-    endPoint = startPoint;
-    endPoint.Add(lineVec);
+    GeometryUtils::RotateLineEndPointToAngleOnPlane(endPoint, startPoint, m_angle, m_workingPlane);
 
     if (!IsDynamicKeyPointSet())
         GetLineManipulationStrategyForEdit().ReplaceKeyPoint(endPoint, 1);

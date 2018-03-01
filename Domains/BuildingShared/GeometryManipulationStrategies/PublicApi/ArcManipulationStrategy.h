@@ -36,7 +36,7 @@ struct ArcManipulationStrategy : public EllipseManipulationStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ICurvePrimitivePtr _FinishPrimitive() const override;
 
         virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() override;
-        virtual ArcPlacementStrategyPtr _CreateArcPlacementStrategy(ArcPlacementStrategyType strategyType) override;
+        virtual ArcPlacementStrategyPtr _CreateArcPlacementStrategy(ArcPlacementMethod method) override;
 
 
         virtual void _OnKeyPointsChanged() override;
@@ -47,6 +47,7 @@ struct ArcManipulationStrategy : public EllipseManipulationStrategy
         virtual bool _IsSingleKeyPointLeft() const override;
         virtual DPoint3d _GetLastKeyPoint() const override;
         virtual DPoint3d _GetFirstKeyPoint() const override;
+        virtual void _Clear() override;
 
         CurvePrimitiveManipulationStrategyPtr _Clone() const override;
 

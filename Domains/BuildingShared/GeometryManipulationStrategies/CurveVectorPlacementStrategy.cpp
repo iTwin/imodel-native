@@ -90,10 +90,10 @@ void CurveVectorPlacementStrategy::ChangeDefaultPlacementStrategy
 //---------------+---------------+---------------+---------------+---------------+------
 void CurveVectorPlacementStrategy::ChangeDefaultPlacementStrategy
 (
-    ArcPlacementStrategyType newPlacementStrategyType
+    ArcPlacementMethod method
 )
     {
-    m_manipulationStrategy->ChangeDefaultPlacementStrategy(newPlacementStrategyType);
+    m_manipulationStrategy->ChangeDefaultPlacementStrategy(method);
     }
 
 //--------------------------------------------------------------------------------------

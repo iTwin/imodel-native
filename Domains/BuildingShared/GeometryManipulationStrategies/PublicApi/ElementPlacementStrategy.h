@@ -26,8 +26,8 @@ struct ElementPlacementStrategy : public GeometryPlacementStrategy
         virtual ElementManipulationStrategyCR _GetElementManipulationStrategy() const = 0;
         virtual ElementManipulationStrategyR _GetElementManipulationStrategyForEdit() = 0;
 
-        virtual GeometryPlacementStrategyCPtr _TryGetGeometryPlacementStrategy() const = 0;
-        virtual GeometryPlacementStrategyPtr _TryGetGeometryPlacementStrategyForEdit() = 0;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT GeometryPlacementStrategyCPtr TryGetGeometryPlacementStrategy() const;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT GeometryPlacementStrategyPtr TryGetGeometryPlacementStrategyForEdit();
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bvector<DPoint3d> _GetKeyPoints() const override;
 
@@ -50,7 +50,7 @@ struct ElementPlacementStrategy : public GeometryPlacementStrategy
         EPS_PROPERTY_OVERRIDE(DVec3d)
         EPS_PROPERTY_OVERRIDE(DPlane3d)
         EPS_PROPERTY_OVERRIDE(Dgn::DgnElementId)
-        EPS_PROPERTY_OVERRIDE(Dgn::DgnElement)
+        EPS_PROPERTY_OVERRIDE(Dgn::DgnElementCP)
         EPS_PROPERTY_OVERRIDE(Utf8String)
         EPS_PROPERTY_OVERRIDE(bvector<double>)
         EPS_PROPERTY_OVERRIDE(bvector<Utf8String>)
