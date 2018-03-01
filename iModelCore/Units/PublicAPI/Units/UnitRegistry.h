@@ -15,6 +15,21 @@ BEGIN_BENTLEY_UNITS_NAMESPACE
 //! @beginGroup
 
 //=======================================================================================
+//! Comparison function that is used within various schema related data structures
+//! for string comparison in STL collections.
+// @bsistruct
+//=======================================================================================
+struct less_str
+{
+bool operator()(Utf8String s1, Utf8String s2) const
+    {
+    if (BeStringUtilities::Stricmp(s1.c_str(), s2.c_str()) < 0)
+        return true;
+    return false;
+    }
+};
+
+//=======================================================================================
 //! A central place to store registered units with the system.  Users interact
 //! with the units system here.
 // @bsiclass                                                    Chris.Tartamella   02/16
@@ -25,21 +40,8 @@ friend struct Unit;
 private:
     static UnitRegistry * s_instance;
 
-    //=====================================================================================//
-    // Comparison function that is used within various data structures
-    // for string comparison in STL collections.
-    // @bsistruct
-    //+===============+===============+===============+===============+===============+====//
-    struct less_str
-        {
-        bool operator()(Utf8CP s1, Utf8CP s2) const
-            {
-            if (BeStringUtilities::Stricmp(s1, s2) < 0)
-                return true;
 
-            return false;
-            }
-        };
+
 
     uint32_t m_nextId = 0;
 
@@ -247,6 +249,7 @@ private:
     bool TryGetConversion(uint64_t index, Conversion& conversion);
     void AddConversion(uint64_t index, Conversion& conversion) {m_conversions.Insert(index, conversion);}
 
+    UnitCP CreateDummyUnit(Utf8CP unitName);
 public:
     //! Returns a pointer to the singleton instance of the UnitRegistry
     //!
@@ -275,10 +278,10 @@ public:
     //! @param[out] allUnitSystems The vector to populate with the unit systems
     UNITS_EXPORT void AllSystems(bvector<UnitSystemCP>& allUnitSystems) const;
 
-    //! Creates a dummy unit with the given name and add 
-    //! @param[in] unitName Name of the dummy Unit to be created.
+    //! Creates an invalid, "dummy", Unit with the provided name.
+    //! @param[in] unitName Name of the dummy unit to be created.
     //! @return A dummy Unit if successfully created and added to this registry, nullptr otherwise.
-    UNITS_EXPORT UnitCP AddDummyUnit(Utf8CP unitName);
+    UNITS_EXPORT UnitCP AddDummyUnit(Utf8CP unitName) {return CreateDummyUnit(unitName);}
 
     //! Creates a Unit, of the provided UNIT_TYPE, and adds it to the registry.
     //! @param[in] phenomName Name of the Phenomenon the Unit must be added to.
@@ -453,7 +456,6 @@ public:
     UNITS_EXPORT size_t LoadSynonyms(Json::Value jval) const;
     UNITS_EXPORT PhenomenonCP LoadSynonym(Utf8CP unitName, Utf8CP synonym) const;
     UNITS_EXPORT Json::Value SynonymsToJson() const;
-    UNITS_EXPORT UnitCP LookupUnitCI(Utf8CP name) const;
 };
 
 /** @endGroup */

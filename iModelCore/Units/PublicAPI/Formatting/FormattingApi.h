@@ -33,6 +33,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(NamedFormatSpec)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(UnitProxySet)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(UnitProxy)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(UIListEntry)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(LocaleProperties)
 
 // Json presentation
 BE_JSON_NAME(roundFactor)
@@ -50,6 +51,7 @@ BE_JSON_NAME(ApplyRounding)
 BE_JSON_NAME(FractionDash)
 BE_JSON_NAME(UseFractSymbol)
 BE_JSON_NAME(AppendUnitName)
+//BE_JSON_NAME(UseLocale)
 BE_JSON_NAME(decPrec)
 BE_JSON_NAME(fractPrec)
 BE_JSON_NAME(barType)
@@ -255,6 +257,31 @@ public:
     };
 
 //=======================================================================================
+// @bsiclass                                                    David.Fox-Rabinovitz  02/2018
+// implemented in Formatting.cpp      
+//=======================================================================================
+struct LocaleProperties
+{
+private:
+	Utf8Char            m_decimalSeparator;      // DecimalComma, DecimalPoint, DecimalSeparator
+	Utf8Char            m_thousandsSeparator;    // ThousandSepComma, ThousandSepPoint, ThousandsSeparartor
+public:
+
+	UNITS_EXPORT LocaleProperties(Json::Value jval);
+	UNITS_EXPORT LocaleProperties(Utf8Char decimal, Utf8Char thousand) : m_decimalSeparator(decimal), m_thousandsSeparator(thousand) {}
+	UNITS_EXPORT LocaleProperties(Utf8CP localeName = nullptr);
+	UNITS_EXPORT static LocaleProperties DefaultAmerican();
+	UNITS_EXPORT static LocaleProperties DefaultEuropean(bool useBlank = false);
+
+	Utf8Char SetDecimalSeparator(Utf8Char sep) { return m_decimalSeparator = sep; }
+	Utf8Char GetDecimalSeparator() const { return m_decimalSeparator; }
+	Utf8Char SetThousandSeparator(char sep) { return m_thousandsSeparator = sep; }
+	Utf8Char GetThousandSeparator() const { return m_thousandsSeparator; }
+	UNITS_EXPORT Json::Value ToJson();
+	UNITS_EXPORT Utf8String ToText();
+};
+
+//=======================================================================================
 // @bsiclass                                                    David.Fox-Rabinovitz  10/2016
 //=======================================================================================
 struct NumericFormatSpec
@@ -284,8 +311,11 @@ private:
     UNITS_EXPORT double RoundedValue(double dval, double round) const;
     UNITS_EXPORT int TrimTrailingZeroes(Utf8P buf, int index) const;
     UNITS_EXPORT size_t InsertChar(Utf8P buf, size_t index, char c, int num) const;
+
     void LoadJson(Json::Value jval);
 public:
+	UNITS_EXPORT bool ImbueLocale(Utf8CP localeName);
+	UNITS_EXPORT bool ImbueLocaleProperties(LocalePropertiesCR locProp);
     UNITS_EXPORT void DefaultInit(size_t precision);
     UNITS_EXPORT void Clone(NumericFormatSpecCR other);
     NumericFormatSpec() { DefaultInit( FormatConstant::DefaultDecimalPrecisionIndex()); }
@@ -743,7 +773,7 @@ struct FormatUnitSet
 
     public:
         UNITS_EXPORT void Init();
-        UNITS_EXPORT FormatUnitSet():m_formatSpec(nullptr), m_unit(nullptr), m_localCopy(false), m_problem(FormatProblemDetail()) {}
+        UNITS_EXPORT FormatUnitSet():m_formatSpec(nullptr), m_unit(nullptr), m_localCopy(false), m_problem(FormatProblemDetail(FormatProblemCode::NotInitialized)) {}
         UNITS_EXPORT FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, bool cloneData = false);
         UNITS_EXPORT FormatUnitSet(Utf8CP formatName, Utf8CP unitName, bool cloneData = false);
         UNITS_EXPORT FormatUnitSet(FormatUnitSetCR other);

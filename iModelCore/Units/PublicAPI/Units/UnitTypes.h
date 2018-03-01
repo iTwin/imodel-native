@@ -179,12 +179,13 @@ private:
 
     UnitCP          m_parent;
     bool            m_isConstant;
+    bool            m_dummyUnit;
     mutable Utf8String m_displayLabel;
     mutable Utf8String m_displayDescription;
 
     
 
-    Unit() :UnitsSymbol(), m_system(nullptr), m_phenomenon(nullptr), m_parent(nullptr), m_isConstant(true) {}
+    Unit() :UnitsSymbol(), m_system(nullptr), m_phenomenon(nullptr), m_parent(nullptr), m_isConstant(true), m_dummyUnit(false) {}
 
     // Lifecycle is managed by the UnitRegistry so we don't allow copies or assignments.
     Unit(UnitCR unit) = delete;
@@ -238,6 +239,8 @@ public:
     bool IsRegistered() const; //!< Indicates if this Unit is in the UnitRegistry singleton
     bool IsConstant() const {return m_isConstant;} //!< Indicates if this Unit is constant.
     UnitSystemCP GetUnitSystem() const {return m_system;} //!< Gets the UnitSystem for this Unit.
+    //! Returns true if the unit is just a place holder for a real unit, invalid units are not convertible into any other unit.
+    bool IsValid() const {return !m_dummyUnit;}
     PhenomenonCP GetPhenomenon() const {return m_phenomenon;} //!< Gets the Phenomenon for this Unit.
 
     UnitCP MultiplyUnit(UnitCR rhs) const;

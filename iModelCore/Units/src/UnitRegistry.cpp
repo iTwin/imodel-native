@@ -92,22 +92,6 @@ bool UnitRegistry::TryGetConversion(uint64_t index, Conversion& conversion)
     return false;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              David.Fox-Rabinovitz    02/17
-//---------------------------------------------------------------------------------------
-PUSH_MSVC_IGNORE(6385 6386)
-UnitCP UnitRegistry::LookupUnitCI (Utf8CP name) const
-    {
-    size_t len = (nullptr == name) ? 0 : strlen(name);
-    if (len == 0)
-        return nullptr;
-    Utf8P temp = (Utf8P)alloca(len + 2);
-    memset(temp, 0, len + 2);
-    memcpy(temp, name, len);
-    Utf8CP uppName = BeStringUtilities::Strupr(temp);
-    return LookupUnitP(uppName);
-    }
-POP_MSVC_IGNORE
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                              Chris.Tartamella       02/16
@@ -366,7 +350,7 @@ PhenomenonCP UnitRegistry::LoadSynonym(Utf8CP unitName, Utf8CP synonym) const
     {
     if (Utf8String::IsNullOrEmpty(unitName) || Utf8String::IsNullOrEmpty(synonym))
         return nullptr;
-    UnitCP unit = UnitRegistry::Instance().LookupUnitCI(unitName);
+    UnitCP unit = UnitRegistry::Instance().LookupUnit(unitName);
     PhenomenonCP ph = (nullptr == unit)? nullptr : unit->GetPhenomenon();
     if (nullptr != ph)
         {

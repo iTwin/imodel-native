@@ -475,7 +475,7 @@ bool Phenomenon::IsAngle() const { return m_name.Equals(ANGLE); }
 //----------------------------------------------------------------------------------------
 void UnitSynonymMap::Init(Utf8CP unitName, Utf8CP synonym)
     {
-    m_unit = (nullptr == unitName)? nullptr : UnitRegistry::Instance().LookupUnitCI(unitName);
+    m_unit = (nullptr == unitName)? nullptr : UnitRegistry::Instance().LookupUnit(unitName);
     if (nullptr == m_unit)
         m_synonym.clear();
     else

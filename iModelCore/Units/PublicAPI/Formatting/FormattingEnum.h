@@ -195,9 +195,10 @@ enum class FormatTraits : int
     ZeroEmpty = 0x20,         // indicates that zero value should be presented by an empty string
     Use1000Separator = 0x40,  // indicates that thousands in the integer part of the number should be separated by a special char (. or,)
     ApplyRounding = 0x80,     // indicates that the rounding factor should be used
-    FractionDash = 0x100,      // some people prefer to insert dash between integer and fraction: 3-1/4 rather than 3 1/4
-    UseFractSymbol = 0x200,    // indicates that a limited set of fractional values can be presented by a single glyph (1/2, 3/4... etc)
-    AppendUnitName = 0x400     // indicates that the numeric expression can be followed by the unit name
+    FractionDash = 0x100,     // some people prefer to insert dash between integer and fraction: 3-1/4 rather than 3 1/4
+    UseFractSymbol = 0x200,   // indicates that a limited set of fractional values can be presented by a single glyph (1/2, 3/4... etc)
+    AppendUnitName = 0x400   // indicates that the numeric expression can be followed by the unit name
+	//UseLocale = 0x800         // indicates that separator char's should be obtained from the current locale
     };
 
 //=======================================================================================
@@ -288,6 +289,7 @@ enum class FormatProblemCode
     NoProblems = 0,
     UnknownStdFormatName = 20011,
     UnknownUnitName = 20012,
+    NotInitialized = 20013,
     CNS_InconsistentFactorSet = 20051,  //!< All ratio factors between units must be bigger than one
     CNS_InconsistentUnitSet = 20052,    //!< Each pair of UOM's for parts of combo-numbers should yeild a ratio > 1
     CNS_UncomparableUnits = 20053,      //!< Units provided on the argument list are not comparable
@@ -524,6 +526,9 @@ struct Utils
     UNITS_EXPORT static Utf8Char GetFirstSignificantChar(Utf8CP str);
     UNITS_EXPORT static Utf8Char GetLastSignificantChar(Utf8CP str);
     UNITS_EXPORT static bool IsJsonCandidate(Utf8CP str);
+	UNITS_EXPORT static Utf8String GetCurrentThousandSeparator();
+	UNITS_EXPORT static Utf8String GetCurrentDecimalSeparator();
+	UNITS_EXPORT static Utf8String GetCurrentGrouping();
     //#endif
     };
 

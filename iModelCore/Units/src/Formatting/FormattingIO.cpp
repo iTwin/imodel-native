@@ -95,12 +95,14 @@ size_t StdFormatSet::StdInit()
     AddFormat("Fractional8", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), "fract8");
     AddFormat("Fractional16", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 16), "fract16");
     AddFormat("Fractional32", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 32), "fract32");
+	AddFormat("Fractional32", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 64), "fract64");
     AddFormat("Fractional128", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 128), "fract128");
 
     AddFormat("Fractional4U", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 4), "fract4u");
     AddFormat("Fractional8U", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 8), "fract8u");
     AddFormat("Fractional16U", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 16), "fract16u");
     AddFormat("Fractional32U", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 32), "fract32u");
+	AddFormat("Fractional32U", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 64), "fract64u");
     AddFormat("Fractional128U", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 128), "fract128u");
 
     CompositeValueSpecP cvs = new CompositeValueSpec("ARC_DEG", "ARC_MINUTE", "ARC_SECOND", nullptr);
@@ -424,7 +426,7 @@ UnitProxy::UnitProxy(Json::Value jval)
             m_unitLabel = val.asString();
         }
     if(!m_unitName.empty())
-         m_unit = BEU::UnitRegistry::Instance().LookupUnitCI(m_unitName.c_str());
+         m_unit = BEU::UnitRegistry::Instance().LookupUnit(m_unitName.c_str());
     }
 
 
@@ -448,7 +450,7 @@ void UnitProxy::LoadJson(Json::Value jval) const
             m_unitLabel = val.asString();
         }
     if (!m_unitName.empty())
-        m_unit = BEU::UnitRegistry::Instance().LookupUnitCI(m_unitName.c_str());
+        m_unit = BEU::UnitRegistry::Instance().LookupUnit(m_unitName.c_str());
     }
 
 //===================================================
@@ -581,7 +583,7 @@ void CompositeValueSpec::LoadJsonData(JsonValueCR jval)
     //SetUnitNames(Utils::GetCharsOrNull(major), Utils::GetCharsOrNull(middle), Utils::GetCharsOrNull(minor), Utils::GetCharsOrNull(sub));
     if (!input.empty())
         {
-        BEU::UnitCP inputUnit = BEU::UnitRegistry::Instance().LookupUnitCI(input.c_str());
+        BEU::UnitCP inputUnit = BEU::UnitRegistry::Instance().LookupUnit(input.c_str());
         SetInputUnit(inputUnit);
         }
     SetUnitRatios();
@@ -739,7 +741,7 @@ void FormatUnitSet::LoadJsonData(Json::Value jval)
         if (BeStringUtilities::StricmpAscii(paramName, json_unitName()) == 0)
             {
             m_unitName = val.asString();
-            m_unit = BEU::UnitRegistry::Instance().LookupUnitCI(m_unitName.c_str());
+            m_unit = BEU::UnitRegistry::Instance().LookupUnit(m_unitName.c_str());
             if (nullptr == m_unit)
                 m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
             }
