@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECValue.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -1426,6 +1426,9 @@ BentleyStatus ECValue::SetUtf16CP(Utf16CP string, bool holdADuplicate)
 IGeometryPtr ECValue::GetIGeometry() const
     {
     PRECONDITION(IsIGeometry() && "Tried to get an IGeometry from an ECN::ECValue that is not geometry", NULL);
+    if (IsNull())
+        return nullptr;
+
     bvector<Byte> geomBuffer;
     geomBuffer.resize(m_binaryInfo.m_size);
     memcpy(&geomBuffer[0], m_binaryInfo.m_data, m_binaryInfo.m_size);
@@ -1439,6 +1442,8 @@ IGeometryPtr ECValue::GetIGeometry() const
 const Byte * ECValue::GetIGeometry(size_t& size) const
     {
     PRECONDITION(IsIGeometry() && "Tried to get binarydata from an ECN::ECValue that is not binary.", NULL);
+    if (IsNull())
+        return nullptr;
     size = m_binaryInfo.m_size;
     return m_binaryInfo.m_data;
     };
@@ -1489,6 +1494,8 @@ BentleyStatus ECValue::SetIGeometry(IGeometryCR geometry)
 const Byte * ECValue::GetBinary(size_t& size) const
     {
     PRECONDITION((IsBinary() || IsIGeometry()) && "Tried to get binarydata from an ECN::ECValue that is not binary.", NULL);
+    if (IsNull())
+        return nullptr;
     size = m_binaryInfo.m_size;
     return m_binaryInfo.m_data;
     };
