@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/DPoint3dOps.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -1853,7 +1853,8 @@ struct MinimumValuePriorityQueue
     void Insert (T data, double value)
         {
         //! place at the very back of the array -- this is unlikely to be its final position!!!
-        m_heap.push_back (Entry (data, value));
+        Entry entry (data, value);
+        m_heap.push_back (entry);
         size_t child = m_heap.size () - 1;
         //! bubble up until the heap conditions are satisfied.
         while (child > 0)

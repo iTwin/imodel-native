@@ -419,6 +419,78 @@ DSpiral2dBaseP DSpiral2dMXCubic::Clone () const
     return pClone;
     }
 
+// Specialize spiral for Italian ....
+DSpiral2dItalian::DSpiral2dItalian () : DSpiral2dDirectEvaluation () {}
+// STATIC method
+bool DSpiral2dItalian::EvaluateAtDistanceInStandardOrientation
+    (
+    double s, //!< [in] distance for evaluation
+    double length,  //!< [in] nominal length.   ASSUMED NONZERO
+    double curvature1, //!< [in] exit curvature.  ASSUMED NONZERO
+    DPoint2dR xy,          //!< [out] coordinates on spiral
+    DVec2dP d1XY,   //!< [out] first derivative wrt distance
+    DVec2dP d2XY,   //!< [out] second derivative wrt distance
+    DVec2dP d3XY   //!< [out] third derivative wrt distance
+    )
+    {
+    double alpha = -curvature1 * curvature1;
+    double axisLength = ClothoidCosineApproximation::Evaluate40R2L2Map (alpha, 1.0, length, length);
+    double dx1, dx2, dx3;   // derivatives of x wrt s.
+    double x = ClothoidCosineApproximation::Evaluate40R2L2Map (alpha, 1.0, length, s, dx1, dx2, dx3);
+
+    double x2 = x * x;
+    double x3 = x2 * x;
+
+    double factorY = curvature1 / (6.0 * axisLength);   // axisLength here is unique feature of MX?
+    xy.Init (x, x3 * factorY);
+
+    if (d1XY || d2XY || d3XY)
+        {
+        // derivatives of y wrt x (feed to derivatives wrt via chain rule)
+        double dy1 = 3.0 * factorY * x2;
+        double dy2 = 6.0 * factorY * x;
+        double dy3 = 6.0 * factorY;
+        if (d1XY)
+            d1XY->Init (dx1, dy1 * dx1);
+
+        if (d2XY)
+            d2XY->Init (dx2, dy2 * dx1 * dx1 + dy1 * dx2);
+
+        if (d3XY)
+            d3XY->Init (dx3,  dy3 * dx1 * dx1 * dx1 + 3.0 * dy2 * dx1 * dx2 + dy1 * dx3);
+        }
+    return true;
+    }
+
+bool DSpiral2dItalian::EvaluateAtDistance
+    (
+    double s, //!< [in] distance for evaluation
+    DPoint2dR xy,          //!< [out] coordinates on spiral
+    DVec2dP d1XY,   //!< [out] first derivative wrt distance
+    DVec2dP d2XY,   //!< [out] second derivative wrt distance
+    DVec2dP d3XY   //!< [out] third derivative wrt distance
+    ) const
+    {
+    if (mCurvature0 == 0.0)
+        {
+        static bool s_applyRotation = true;
+        bool stat = EvaluateAtDistanceInStandardOrientation (s, mLength, mCurvature1, xy, d1XY, d2XY, d3XY);
+        if (stat && s_applyRotation)
+            ApplyCCWRotation (mTheta0, xy, d1XY, d2XY, d3XY);;
+        return stat;
+        }
+    return false;
+    }
+DSpiral2dBaseP DSpiral2dItalian::Clone () const
+    {
+    DSpiral2dItalian *pClone = new DSpiral2dItalian ();
+    pClone->CopyBaseParameters (this);
+    return pClone;
+    }
+
+
+
+
 //********************************************************************************************
 // ClothoidCosineApproximation -- support for approximating the cosine series in a clothoid.
 size_t ClothoidCosineApproximation::s_evaluationCount = 0;
@@ -464,6 +536,42 @@ double ClothoidCosineApproximation::Evaluate40R2L2Map (double alpha, double R, d
     {
     double u2 = u * u;
     return u * (1.0 + alpha * u2 * u2 / (40.0 * R * R * L * L));
+    }
+
+//! @returns {f(u) = u * (1 + alpha * u^4/ (10 (4 R R - L L)  L L)}
+//! <ul>
+//! <li>In use case with {alpha = positive one}, return value is (approximate) distance along spiral and u is distance along axis.
+//! <li>In use case with (alpha = negative one}, u is distance along spiral and the return value is (approximate) distance along axis.
+//! </ul>
+double ClothoidCosineApproximation::EvaluateItalianCzechR2L2Map (double alpha, double R, double L, double u)
+    {
+    double u2 = u * u;
+    double L2 = L * L;
+    double Q = 4.0 * R * R - L2;
+    return u * (1.0 + alpha * u2 * u2 / (10.0 * Q * Q * L2));
+    }
+
+//! @returns Given target value f, return u so {u(1 + alpha * u^4/ (10 (4 R R - L L)  L L) = f}
+//! <ul>
+//! <li>In use case with {alpha = positive one}, f is distance along spiral and the return value is (approximate) distance along axis.
+//! <li>In use case with (alpha = negative one}, f is distance along axis and the return value is (approximate) distance along spiral.
+//! </ul>
+ValidatedDouble ClothoidCosineApproximation::InvertItalianCzechR2L2Map (double alpha, double R, double L, double f)
+    {
+    s_evaluationCount = 0;
+    double L2 = L * L;
+    double Q = 4.0 * R * R - L2;
+    ClothoidCosineApproximation callback (f,alpha / (10.0 * Q * Q * L2));
+    NewtonIterationsRRToRR newton (1.0e-12);
+    // use the target f as the initial guess
+    bool stat = newton.RunNewton (f, callback);
+    return ValidatedDouble (f, stat);
+    }
+
+//! return the czech/italian gamma factor {2R/ sqrt(4 R R - L L)}
+double ClothoidCosineApproximation::CzechGamma (double R, double L)
+    {
+    return 2.0 * R / sqrt (4.0 * R * R - L * L);
     }
 
 //! @returns {f(u) = u * (1 + alpha * u^4/ (40 R R L L)}, along with 3 derivatives as return parameters.

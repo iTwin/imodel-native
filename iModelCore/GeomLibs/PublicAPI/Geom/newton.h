@@ -398,6 +398,24 @@ static double Evaluate40R2L2Map (double alpha, double R, double L, double u);
 //! <li>In use case with (alpha = negative one}, u is distance along spiral and the return value is (approximate) distance along axis.
 //! </ul>
 static double Evaluate40R2L2Map (double alpha, double R, double L, double u, double &dfdu, double &d2fdu2, double &d3fdu3);
+
+//! @returns {f(u) = u * (1 + alpha * u^4/ (10 (4 R R - L L)  L L)}
+//! <ul>
+//! <li>In use case with {alpha = positive one}, return value is (approximate) distance along spiral and u is distance along axis.
+//! <li>In use case with (alpha = negative one}, u is distance along spiral and the return value is (approximate) distance along axis.
+//! </ul>
+static double ClothoidCosineApproximation::EvaluateItalianCzechR2L2Map (double alpha, double R, double L, double u);
+
+//! @returns Given target value f, return u so {u(1 + alpha * u^4/ (10 (4 R R - L L)  L L) = f}
+//! <ul>
+//! <li>In use case with {alpha = positive one}, f is distance along spiral and the return value is (approximate) distance along axis.
+//! <li>In use case with (alpha = negative one}, f is distance along axis and the return value is (approximate) distance along spiral.
+//! <li>For L/R < 0.1, the demoniator differs from {40 R R L L} by (only!) 0.25%.
+//! </ul>
+static ValidatedDouble InvertItalianCzechR2L2Map (double alpha, double R, double L, double f);
+
+//! return the czech/italian gamma factor {2R/ sqrt(4 R R - L L)}
+static double CzechGamma (double R, double L);
 };
 
 #endif
