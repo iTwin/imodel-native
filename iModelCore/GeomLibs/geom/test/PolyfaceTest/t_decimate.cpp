@@ -171,7 +171,7 @@ TEST(Polyface,SortForLongEdgeRemovalA)
     bvector<size_t> smallToLargeReadIndices;
     polyface->ConstructOrderingForLongEdgeRemoval (smallToLargeReadIndices);
     Check::SaveTransformed (*polyface);
-    polyface->ReorderFacetsByRemovingLongBoundaryEdges (1.5);
+    polyface->ExcavateFacetsWithLongBoundaryEdges (1.5);
     Check::Shift (0,10,0);
     Check::SaveTransformed (*polyface);
     Check::ClearGeometry ("Polyface.SortForLongEdgeRemovalA");
@@ -228,7 +228,7 @@ TEST(Polyface,SortForLongEdgeRemovalB)
         {
         auto mesh1 = polyface->Clone ();
         Check::Shift (0,20,0);
-        if (mesh1->ReorderFacetsByRemovingLongBoundaryEdges (maxEdgeLength))
+        if (mesh1->ExcavateFacetsWithLongBoundaryEdges (maxEdgeLength))
             Check::SaveTransformed (*mesh1);
 
         }

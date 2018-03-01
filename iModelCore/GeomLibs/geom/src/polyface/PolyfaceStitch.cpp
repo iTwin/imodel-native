@@ -611,18 +611,24 @@ bvector<size_t> m_facetReadIndices;    // scratch space to simplify reversal.
 void AssignIdAroundFacet (size_t seed, int id, bool saveToOutput)
     {
     // assign the count around the facet ..
+#ifdef NOISY_EDGE_REMOVAL
     GEOMAPI_PRINTF (" (ID %d) (", (int)seed);
+#endif
     m_facetReadIndices.clear ();
     for (auto he = seed;;)
         {
+#ifdef NOISY_EDGE_REMOVAL
         GEOMAPI_PRINTF ("(he %d ri %d)", (int)he, (int)m_halfEdges[he].m_readIndex);
+#endif
         m_facetReadIndices.push_back (m_halfEdges[he].m_readIndex);
         m_halfEdges[he].m_nodeId = id;
         he = NextHalfEdgeAroundFacet (he);
         if (he == seed)
             break;
         }
+#ifdef NOISY_EDGE_REMOVAL
     GEOMAPI_PRINTF (")\n");
+#endif
 
     if (saveToOutput)
         {
@@ -677,7 +683,9 @@ bool Go ()
         {
         if (IsUnordered (candidate))
             {
+#ifdef NOISY_EDGE_REMOVAL
             GEOMAPI_PRINTF (" (candidate %d) (L %g)\n", (int)candidate, -edgeLength);
+#endif
             AssignIdAroundFacet (candidate, currentId, false);
             EnqueueNeighbors (candidate);
             currentId++;
@@ -708,6 +716,7 @@ double maxEdgeLength
     if (!context.DoSetup ())
         return false;
     bool stat =  context.Go ();
+#ifdef NOISY_EDGE_REMOVAL
     for (auto ri : readIndexSequence)
         {
         if (ri == SIZE_MAX)
@@ -715,6 +724,7 @@ double maxEdgeLength
         else
             GEOMAPI_PRINTF (" %d", (int)ri);
         }
+#endif
     return stat;
     }
 
