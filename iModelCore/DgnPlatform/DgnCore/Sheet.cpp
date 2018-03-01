@@ -463,7 +463,7 @@ void Sheet::Attachment::TTile::SetupRange()
     m_range.InitFrom(m_corners.m_pts, 4);
     }
 
-#define MAX_SHEET_REFINE_DEPTH 8
+#define MAX_SHEET_REFINE_DEPTH 6
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  02/2018
@@ -489,10 +489,31 @@ TileTree::Tile::ChildTiles const* Sheet::Attachment::TTile::_GetChildren(bool lo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+static void repairSheetPolyUVs(bvector<PolyfaceHeaderPtr> polys, DRange3d polysRange)
+    {
+    double oldRangeX = polysRange.high.x - polysRange.low.x;
+    double oldRangeY = polysRange.high.y - polysRange.low.y;
+    double newRangeX = 1.0;
+    double newRangeY = 1.0;
+    for (auto& polyface : polys) // repair UVs in each poly so they are placed in 0 to 1 space based on polysRange (range of entire list of polys)
+        {
+        BlockedVectorDPoint2dR params = polyface->Param();
+        for (auto& uv : params)
+            {
+            uv.x = ((uv.x - polysRange.low.x) * newRangeX) / oldRangeX;
+            uv.y = ((uv.y - polysRange.low.y) * newRangeY) / oldRangeY;
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 static uint32_t querySheetTileSize(uint32_t depth)
     {
     // ###TODO: can we base this on OpenGL capabilities so we don't rely on support for larger texture sizes if that's not reasonable?
-    static const uint32_t s_texSizes[] = {32, 64, 128, 256, 512, 1024, 2048, 4096};
+    //static const uint32_t s_texSizes[] = {32, 64, 128, 256, 512, 1024, 2048, 4096};
+    static const uint32_t s_texSizes[] = {32, 64, 128, 256, 512, 1024};
     return s_texSizes[depth < MAX_SHEET_REFINE_DEPTH ? depth : MAX_SHEET_REFINE_DEPTH - 1];
     }
 
@@ -508,17 +529,52 @@ static void populateSheetTile(TTile* tile, uint32_t depth, SceneContextR context
     Sheet::Attachment::Viewport* viewport = tree.m_viewport.get();
     UpdatePlan const& plan = context.GetUpdatePlan();
 
+    // first create the polys for the tile so we can get the range (create graphics from polys later)
+    DRange3d polysRange;
+    bvector<PolyfaceHeaderPtr> polys = renderSys->_CreateSheetTilePolys(tile->m_corners, tree.m_graphicsClip.get(), polysRange);
+    //repairSheetPolyUVs(polys, polysRange);
+
     viewport->SetRect(BSIRect::From(0, 0, texSize, texSize));
     viewport->SetupFromViewController();
     viewport->m_renderSys = renderSys;
     viewport->m_db = &context.GetDgnDb();
     viewport->m_texSize = texSize;
+
+    polysRange.low.z  = 0.0;                // make sure entire z range.
+    polysRange.high.z = 1.0;
+
+    // Make the range lengths match (in order to make the aspect ratio square).
+    double xLength = polysRange.XLength();
+    double yLength = polysRange.YLength();
+    if (xLength > yLength)
+        {
+        polysRange.high.y = polysRange.low.y + xLength;
+        }
+    else if (xLength < yLength)
+        {
+        polysRange.high.x = polysRange.low.x + yLength;
+        }
+
+    // scale the UVs into the new (clipped) space so they still are in 0 to 1 range
+    repairSheetPolyUVs(polys, polysRange);
+
+    // Change frustum so it looks at only the visible (after clipping) portion of the scene.
+    // Base this on polysRange calculated by _CreateSheetTilePolys().
+    Frustum frust = viewport->GetFrustum(DgnCoordSystem::Npc);
+    DPoint3dP frustPts = frust.GetPtsP();
+    polysRange.Get8Corners(frustPts);
+    DMap4dCP rootToNpc = viewport->GetWorldToNpcMap();
+    rootToNpc->M1.MultiplyAndRenormalize(frustPts, frustPts, NPC_CORNER_COUNT);
+    viewport->SetupFromFrustum(frust);
+
+    // Render the offscreen texture.
     viewport->_CreateScene(plan); // view controller for a drawing or spatial view, make a context in dgnview (renderthumbnail)
     // this will sit and wait; tile will be ready when here (RenderThumbnail path)
 
-    // add texture in the tree's viewport to a graphic
+    // create graphics from the polys and the rendered texture
+    // ###TODO: must determine whether to do this at all if there were no poly results
     GraphicParams gfParams = GraphicParams::FromSymbology(tree.m_tileColor, tree.m_tileColor, 0);
-    tile->m_graphics = renderSys->_CreateSheetTile(*viewport->m_texture, tile->m_corners, *viewport->m_db, gfParams, tree.m_graphicsClip.get());
+    tile->m_graphics = renderSys->_CreateSheetTile(*viewport->m_texture, polys, *viewport->m_db, gfParams);
     tile->SetIsReady();
     }
 
@@ -716,12 +772,18 @@ TRoot::TRoot(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId att
     if (!view.IsValid())
         return;
 
+    m_viewport->SetupFromViewController();
+
     // we use square tiles. If the view's aspect ratio isn't square, expand the short side in tile (NPC) space. We'll clip out the extra area below.
-    double aspect = view->GetViewDefinition().GetAspectRatio();
+    double aspect = view->GetViewDefinition().GetAspectRatio(); // double GetAspectRatio() const {return XLength() / YLength();}
     if (aspect<1.0)
+        {
         m_scale.Init(1.0/aspect, 1.0);
+        }
     else
+        {
         m_scale.Init(1.0, aspect);
+        }
 
     // now expand the frustum in one direction so that the view is square (so we can use square tiles)
     m_viewport->SetRect(BSIRect::From(0, 0, m_pixels, m_pixels));
@@ -741,10 +803,9 @@ TRoot::TRoot(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId att
         env.m_skybox.m_enabled = false;
         }
 
-    m_viewport->SetupFromViewController();
-    Frustum frust = m_viewport->GetFrustum(DgnCoordSystem::Npc).TransformBy(Transform::FromScaleFactors(m_scale.x, m_scale.y, 1.0));
-    m_viewport->NpcToWorld(frust.m_pts, frust.m_pts, NPC_CORNER_COUNT);
-    m_viewport->SetupFromFrustum(frust);
+    Frustum frustInNpc = m_viewport->GetFrustum(DgnCoordSystem::Npc).TransformBy(Transform::FromScaleFactors(m_scale.x, m_scale.y, 1.0));
+    m_viewport->NpcToWorld(frustInNpc.m_pts, frustInNpc.m_pts, NPC_CORNER_COUNT);
+    m_viewport->SetupFromFrustum(frustInNpc);
 
     auto& box = attach->GetPlacement().GetElementBox();
     AxisAlignedBox3d range = attach->GetPlacement().CalculateRange();

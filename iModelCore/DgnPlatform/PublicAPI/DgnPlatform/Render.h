@@ -3277,8 +3277,11 @@ struct System
     //! Create a point cloud primitive
     virtual GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb) const = 0;
 
-    //! Create a sheet tile primitive
-    DGNPLATFORM_EXPORT bvector<GraphicPtr> _CreateSheetTile(TextureCR tile, GraphicBuilder::TileCorners const& corners, DgnDbR dgndb, GraphicParamsCR params, ClipVectorCP clip) const;
+    // ! Create polygons on a range for a sheet tile
+    DGNPLATFORM_EXPORT bvector<PolyfaceHeaderPtr> _CreateSheetTilePolys(GraphicBuilder::TileCorners const& corners, ClipVectorCP clip, DRange3dR rangeOut) const;
+
+    //! Create a sheet tile primitive from polys
+    DGNPLATFORM_EXPORT bvector<GraphicPtr> _CreateSheetTile(TextureCR tile, bvector<PolyfaceHeaderPtr>& polys, DgnDbR dgndb, GraphicParamsCR params) const;
 
     //! Create a tile primitive
     DGNPLATFORM_EXPORT GraphicPtr _CreateTile(TextureCR tile, GraphicBuilder::TileCorners const& corners, DgnDbR dgndb, GraphicParamsCR params) const;

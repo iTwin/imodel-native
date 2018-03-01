@@ -3103,7 +3103,6 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
                                           basePoint ? colors0 : colors1,
                                           rangeCenter);
                     }
-            
                 if (jointAt0)
                     tesselation.AddJointTriangles(baseIndex, length0, p0, prevDir0, nextDir0, attributes0, colors0, 2.0, rangeCenter);
 
@@ -3303,11 +3302,7 @@ PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFil
     m_outputDir.AppendSeparator();
     m_dataDir = m_outputDir;
 
-#if defined(WIP_MESHTILE_3SM)
-    m_isEcef = true; // ###TODO: Remove after YII...
-#else
     m_isEcef = false;
-#endif
 
     // ###TODO: Probably want a separate db-to-tile per model...will differ for non-spatial models...
     DPoint3d        origin = m_projectExtents.GetCenter();
@@ -3345,9 +3340,26 @@ PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFil
         north.y += 100.0;
 
         dgnGCS->LatLongFromUors (originLatLong, origin);
-        dgnGCS->XYZFromLatLong(ecfOrigin, originLatLong);
-
         dgnGCS->LatLongFromUors (northLatLong, north);
+
+
+        // If the current GCS does not use WGS84, need to convert as XYZFromLatLong expects WGS84 Lat/Long... (TFS# 799148). 
+        if (0 != wcscmp (dgnGCS->GetDatumName(), L"WGS84"))
+            {
+            auto        wgs84Datum = GeoCoordinates::Datum::CreateDatum (L"WGS84");
+            auto        thisDatum = GeoCoordinates::Datum::CreateDatum(dgnGCS->GetDatumName());
+            auto        datumConverter = GeoCoordinates::DatumConverter::Create (*thisDatum, *wgs84Datum);
+            GeoPoint    wgsOrigin, wgsNorth;
+
+            datumConverter->ConvertLatLong3D(wgsOrigin, originLatLong);
+            datumConverter->ConvertLatLong3D(wgsNorth, northLatLong);
+
+            originLatLong = wgsOrigin;
+            northLatLong  = wgsNorth;
+            }
+
+
+        dgnGCS->XYZFromLatLong(ecfOrigin, originLatLong);
         dgnGCS->XYZFromLatLong(ecfNorth, northLatLong);
         }
 
