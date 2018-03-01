@@ -62,7 +62,7 @@ BentleyStatus SketchGridSurfacePlacementStrategy::_TryGetProperty(Utf8CP key, Ut
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SketchGridSurfacePlacementStrategy::_TryGetProperty(Utf8CP key, Dgn::DgnElement & value) const
+BentleyStatus SketchGridSurfacePlacementStrategy::_TryGetProperty(Utf8CP key, Dgn::DgnElementCP & value) const
     {
     if (BentleyStatus::SUCCESS == _GetSketchGridSurfaceManipulationStrategy().TryGetProperty(key, value) ||
         BentleyStatus::SUCCESS == T_Super::_TryGetProperty(key, value))
@@ -74,7 +74,7 @@ BentleyStatus SketchGridSurfacePlacementStrategy::_TryGetProperty(Utf8CP key, Dg
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-void SketchGridSurfacePlacementStrategy::_SetProperty(Utf8CP key, Dgn::DgnElement const & value)
+void SketchGridSurfacePlacementStrategy::_SetProperty(Utf8CP key, Dgn::DgnElementCP const & value)
     {
     _GetSketchGridSurfaceManipulationStrategyForEdit().SetProperty(key, value);
     T_Super::_SetProperty(key, value);

@@ -23,17 +23,16 @@ const Utf8CP SketchGridSurfaceManipulationStrategy::prop_Angle = "Angle";
 //---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SketchGridSurfaceManipulationStrategy::_UpdateGridSurface()
     {
-    PlanGridPlanarSurfacePtr surface = _GetGridSurfaceP();
-
-    if (m_axis.IsNull() || surface.IsNull())
+    IPlanGridSurface* surface = _GetPlanGridSurfaceP();
+    if (nullptr == surface)
         return BentleyStatus::ERROR;
 
-    if (m_axis->GetElementId() != surface->GetAxisId())
-        surface->SetAxisId(m_axis->GetElementId());
+    if (surface->GetThisElem().GetAxisId() != m_axis->GetElementId())
+        surface->GetThisElemR().SetAxisId(m_axis->GetElementId());
 
     if (surface->GetStartElevation() != m_bottomElevation)
         surface->SetStartElevation(m_bottomElevation);
-    
+
     if (surface->GetEndElevation() != m_topElevation)
         surface->SetEndElevation(m_topElevation);
 
@@ -45,23 +44,23 @@ BentleyStatus SketchGridSurfaceManipulationStrategy::_UpdateGridSurface()
 //---------------+---------------+---------------+---------------+---------------+------
 Dgn::DgnElementPtr SketchGridSurfaceManipulationStrategy::_FinishElement()
     {
-    PlanGridPlanarSurfacePtr surface = _GetGridSurfaceP();
-    BeAssert(surface.IsValid() && "Shouldn't be called with invalid surface");
+    IPlanGridSurface* surface = _GetPlanGridSurfaceP();
+    BeAssert(nullptr != surface && "Shouldn't be called with invalid surface");
     
-    if (surface.IsNull() || !IsComplete())
+    if (nullptr == surface || !IsComplete())
         return nullptr;
 
     if (BentleyStatus::ERROR == _UpdateGridSurface())
         return nullptr;
 
-    if (!surface->GetDgnDb().Txns().InDynamicTxn())
-        if (Dgn::RepositoryStatus::Success != BuildingLocks_LockElementForOperation(*surface, BeSQLite::DbOpcode::Update, "Update Grid Surface"))
+    if (!surface->GetThisElem().GetDgnDb().Txns().InDynamicTxn())
+        if (Dgn::RepositoryStatus::Success != BuildingLocks_LockElementForOperation(surface->GetThisElem(), BeSQLite::DbOpcode::Update, "Update Grid Surface"))
             return nullptr;
 
-    if (surface->Update().IsNull())
+    if (surface->GetThisElemR().Update().IsNull())
         return nullptr;
 
-    return surface;
+    return &surface->GetThisElemR();
     }
 
 //--------------------------------------------------------------------------------------
@@ -114,6 +113,17 @@ BentleyStatus SketchGridSurfaceManipulationStrategy::GetOrCreateGridAndAxis(Sket
             if (sketchGrid.IsNull())
                 return BentleyStatus::ERROR; // Failed to create grid
 
+            Dgn::Placement3d planePlacement = Dgn::Placement3d();
+            planePlacement.TryApplyTransform
+            (
+                GeometryUtils::FindTransformBetweenPlanes
+                (
+                    DPlane3d::FromOriginAndNormal({ 0, 0, 0 }, DVec3d::From(0, 0, 1)),
+                    m_workingPlane
+                )
+            );
+            sketchGrid->SetPlacement(planePlacement);
+
             if (sketchGrid->Insert().IsNull())
                 return BentleyStatus::ERROR;
 
@@ -148,15 +158,33 @@ void SketchGridSurfaceManipulationStrategy::_OnWorkingPlaneChanged(DPlane3d cons
     if (allKeyPoints.size() != acceptedKeyPoints.size())
         {
         size_t dynamicCount = allKeyPoints.size() - acceptedKeyPoints.size();
+        
+        bvector<DPoint3d> replacements;
         for (size_t i = 0; i < dynamicCount; ++i)
             {
-
             DPoint3d replacement = TransformPointBetweenPlanes(allKeyPoints[i + acceptedKeyPoints.size()], original, m_workingPlane);
-            if (0 == acceptedKeyPoints.size())
-                UpdateDynamicKeyPoint(replacement, i);
-            else
-                InsertDynamicKeyPoint(replacement, i);
+            replacements.push_back(replacement);
             }
+
+        InsertDynamicKeyPoints(replacements, 0);
+        }
+
+    if (m_axis.IsValid())
+        {
+        GridPtr grid = m_axis->GetDgnDb().Elements().GetForEdit<SketchGrid>(m_axis->GetGridId());
+        BeAssert(grid.IsValid() && "Axis' grid should be valid");
+
+        Dgn::Placement3d planePlacement = Dgn::Placement3d();
+        planePlacement.TryApplyTransform
+        (
+            GeometryUtils::FindTransformBetweenPlanes
+            (
+                DPlane3d::FromOriginAndNormal({ 0, 0, 0 }, DVec3d::From(0, 0, 1)),
+                m_workingPlane
+            )
+        );
+        grid->SetPlacement(planePlacement);
+        grid->Update();
         }
     }
 
@@ -306,7 +334,7 @@ BentleyStatus SketchGridSurfaceManipulationStrategy::_TryGetProperty
 BentleyStatus SketchGridSurfaceManipulationStrategy::_TryGetProperty
 (
     Utf8CP key, 
-    Dgn::DgnElement & value
+    Dgn::DgnElementCP & value
 ) const
     {
     /*if (0 == strcmp(key, prop_Axis))
@@ -325,11 +353,11 @@ BentleyStatus SketchGridSurfaceManipulationStrategy::_TryGetProperty
 void SketchGridSurfaceManipulationStrategy::_SetProperty
 (
     Utf8CP key, 
-    Dgn::DgnElement const & value
+    Dgn::DgnElementCP const & value
 )
     {
     if (0 == strcmp(key, prop_Axis))
-        m_axis = dynamic_cast<GridAxisCP>(&value);
+        m_axis = dynamic_cast<GridAxisCP>(value);
     }
 
 //--------------------------------------------------------------------------------------
@@ -357,6 +385,22 @@ void SketchGridSurfaceManipulationStrategy::_SetProperty(Utf8CP key, DPlane3d co
         DPlane3d originalPlane = m_workingPlane;
         m_workingPlane = value;
         _OnWorkingPlaneChanged(originalPlane);
+        }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void SketchGridSurfaceManipulationStrategy::TransformPointsOnXYPlane(bvector<DPoint3d>& points)
+    {
+    DPlane3d xyPlane = DPlane3d::FromOriginAndNormal({ 0, 0, 0 }, DVec3d::From(0, 0, 1));
+    Transform toWorkingPlane = GeometryUtils::FindTransformBetweenPlanes(xyPlane, m_workingPlane);
+    Transform toXY = Transform::FromIdentity();
+    toXY.InverseOf(toWorkingPlane);
+
+    for (DPoint3dR point : points)
+        {
+        toXY.Multiply(point);
         }
     }
 
