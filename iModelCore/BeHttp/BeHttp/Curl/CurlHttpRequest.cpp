@@ -2,7 +2,7 @@
 |
 |     $Source: BeHttp/Curl/CurlHttpRequest.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -856,7 +856,6 @@ ConnectionStatus CurlHttpRequest::ResolveConnectionStatus(CURLcode curlStatus)
             return ConnectionStatus::OK;
         case CURLE_COULDNT_CONNECT:
         case CURLE_COULDNT_RESOLVE_HOST:
-        case CURLE_SSL_CONNECT_ERROR:                       // Something wrong with server SSL configuration
             return ConnectionStatus::CouldNotConnect;
         case CURLE_COULDNT_RESOLVE_PROXY:                   // TODO: In some cases CURLE_RECV_ERROR is returned when proxy password is wrong and HTTPS URL was accessed
             return ConnectionStatus::CouldNotResolveProxy;
@@ -870,6 +869,7 @@ ConnectionStatus CurlHttpRequest::ResolveConnectionStatus(CURLcode curlStatus)
             return ConnectionStatus::ConnectionLost;
         case CURLE_SSL_CACERT:
         case CURLE_PEER_FAILED_VERIFICATION:
+        case CURLE_SSL_CONNECT_ERROR:                       // Something wrong with server SSL configuration. WinSSL error when certificate is not valid.
             return ConnectionStatus::CertificateError;      // Server uses invalid certificate or one that we cannot validate
         default:
             LOG.errorv("* HTTP #%lld CURL status '%d' not handled: '%s'", GetNumber(), curlStatus, curl_easy_strerror(curlStatus));
