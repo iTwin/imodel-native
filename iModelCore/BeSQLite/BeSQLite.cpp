@@ -2140,7 +2140,7 @@ DbResult Db::CreateTable(Utf8CP tableName, Utf8CP ddl) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::DropTable(Utf8CP tableName) const
+DbResult Db::DropTable(Utf8CP tableName, bool requireExists) const
     {
     ChangeTracker* tracker = m_dbFile->m_tracker.get();
     if (tracker && tracker->IsTracking() && isMainTableOrIndex(tableName))
@@ -2150,6 +2150,9 @@ DbResult Db::DropTable(Utf8CP tableName) const
         }
 
     DbResult rc = TryExecuteSql(SqlPrintfString("DROP TABLE %s", tableName));
+    if (!requireExists && BE_SQLITE_ERROR == rc)
+        rc = BE_SQLITE_OK;
+
     BeAssert(rc == BE_SQLITE_OK);
     return rc;
     }
