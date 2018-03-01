@@ -1952,7 +1952,7 @@ GEOMDLLIMPEXP static PolyfaceHeaderPtr CreateTriangleGrid (int numPerRow);
 //! @param [in] fringeExpansionFactor fractional factor (usually 0.10 to 0.20) for defining a surrounding rectangle.  The z of this triangle is
 //!     at the low z of all the points.
 //! @param [in] retainFringeTriangles true to keep the fringe triangles.  If false, any edge that reaches the outer rectangle is deleted.
-//! @praam [in] convexHull if true, force the convex hull to be part of the triangulation.
+//! @param [in] convexHull if true, force the convex hull to be part of the triangulation.
 GEOMDLLIMPEXP static PolyfaceHeaderPtr CreateXYTriangulation (bvector <DPoint3d> const &points, double fringeExpansionFactor = 0.10, bool retainFringeTriangles = false, bool convexHull = true);
 
 //! Create a Delauney triangulation of points as viewed in xy.  Return the triangulation and its Voronoi dual as separate polyfaces.
@@ -2147,7 +2147,7 @@ MeshAnnotationVector &messages  //!< [out] array of status messages
 //!    <ul>
 //!    <li>initially has vertices, params, normals, and colors indicated at (consecutive) readIndices [a b c]
 //!    <li> the edges from b to c is chosen for removal
-//!    <ul>
+//!    </ul>
 //! <li>That facet will appear as [b c a SIZE_MAX].
 //!</ul>
 GEOMDLLIMPEXP bool ConstructOrderingForLongEdgeRemoval
@@ -2163,7 +2163,7 @@ double maxEdgeLength = 0.0  //!< [in] exclude facets whose edge length is larger
 //! <li> Continue searching for long edges in the newly exposed facets.
 //! <li> If the initial facets are an xy triangulation of points (with the convex hull outer boundary),
 //!      the first removals creates a non-convex  outer boundary.  Later removals can create islands of facets.
-//! <ul>
+//! </ul>
 GEOMDLLIMPEXP bool PolyfaceHeader::ExcavateFacetsWithLongBoundaryEdges (double maxEdgeLength = 0.0);
 
 //! Add Edge Chains
