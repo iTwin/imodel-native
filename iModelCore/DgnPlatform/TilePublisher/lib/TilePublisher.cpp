@@ -3337,7 +3337,7 @@ PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFil
         GeoPoint        originLatLong, northLatLong;
         DPoint3d        north = origin;
     
-        north.y += 1.0;
+        north.y += 100.0;
 
         dgnGCS->LatLongFromUors (originLatLong, origin);
         dgnGCS->LatLongFromUors (northLatLong, north);
