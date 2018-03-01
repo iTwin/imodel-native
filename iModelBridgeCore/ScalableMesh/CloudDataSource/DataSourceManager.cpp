@@ -55,7 +55,7 @@ DataSourceManager::~DataSourceManager(void)
     
 }
 
-DataSource * DataSourceManager::createDataSource(const DataSourceName & name, const DataSourceAccount::AccountName & accountName, DataSource::ClientID client, const DataSourceStoreConfig * config)
+DataSource * DataSourceManager::createDataSource(const DataSourceName & name, const DataSourceAccount::AccountName & accountName, const SessionName &session, const DataSourceStoreConfig * config)
 {
     (void)                   config;
 
@@ -64,17 +64,17 @@ DataSource * DataSourceManager::createDataSource(const DataSourceName & name, co
     if ((account = DataSourceServiceManager::getAccount(accountName)) == NULL)
         return nullptr;
 
-    return createDataSource(name, *account, client, config);
+    return createDataSource(name, *account, session, config);
 }
 
 
-DataSource * DataSourceManager::createDataSource(const DataSourceName &name, DataSourceAccount &account, DataSource::ClientID client, const DataSourceStoreConfig * config)
+DataSource * DataSourceManager::createDataSource(const DataSourceName &name, DataSourceAccount &account, const SessionName &session, const DataSourceStoreConfig * config)
 {
     (void)config;
 
     DataSource *source = nullptr;
 
-    if ((source = account.createDataSource(client)) == nullptr)
+    if ((source = account.createDataSource(session)) == nullptr)
         return nullptr;
 
     if (Manager<DataSource, true>::create(name, source) == NULL)
@@ -86,7 +86,7 @@ DataSource * DataSourceManager::createDataSource(const DataSourceName &name, Dat
     return source;
 }
 
-DataSource *DataSourceManager::getOrCreateDataSource(const DataSourceName &name, DataSourceAccount &account, DataSource::ClientID client, bool *created)
+DataSource *DataSourceManager::getOrCreateDataSource(const DataSourceName &name, DataSourceAccount &account, const SessionName &session, bool *created)
 {
     DataSource *    dataSource;
                                                             // Attempt to get the named DataSource
@@ -96,6 +96,8 @@ DataSource *DataSourceManager::getOrCreateDataSource(const DataSourceName &name,
                                                             // If requested, flag that the DataSource existed and was not created
         if (created)
             *created = false;
+                                                            // Set up DataSource for use with the given Session
+        dataSource->setSessionName(session);
                                                             // Return the found DataSource
         //assert(!dataSource->isValid() || dataSource->isEmpty());
         return dataSource;
@@ -104,13 +106,13 @@ DataSource *DataSourceManager::getOrCreateDataSource(const DataSourceName &name,
     if (created)
         *created = true;
                                                             // Otherwise, create it
-    return createDataSource(name, account, client);
+    return createDataSource(name, account, session);
 }
 
 
-DataSource * DataSourceManager::getOrCreateThreadDataSource(DataSourceAccount &account, DataSource::ClientID client, bool * created)
+DataSource * DataSourceManager::getOrCreateThreadDataSource(DataSourceAccount &account, const SessionName &session, bool * created)
     {
-    return account.getOrCreateThreadDataSource(client, created);
+    return account.getOrCreateThreadDataSource(session, created);
     }
 
 
@@ -180,19 +182,16 @@ DataSourceStatus DataSourceManager::destroyDataSources(DataSourceAccount * dataS
 }
 
 
-DataSourceStatus DataSourceManager::destroyDataSources(DataSource::ClientID client)
+DataSourceStatus DataSourceManager::destroyDataSources(const SessionName &session)
 {
-    if (client == nullptr)
-        return DataSourceStatus(DataSourceStatus::Status_Error);
-
     bool deleted;
 
-    Manager<DataSource, false>::ApplyFunction deleteFirstClientDataSource = [this, client, &deleted](Manager<DataSource, false>::Iterator it) -> bool
+    Manager<DataSource, false>::ApplyFunction deleteFirstClientDataSource = [this, session, &deleted](Manager<DataSource, false>::Iterator it) -> bool
     {
         if (it->second)
         {
                                                             // If DataSource belongs to Client
-            if (it->second->getClientID() == client)
+            if (it->second->getSessionName() == session)
             {
                                                             // Destroy the DataSource
                 destroyDataSource(it->second);

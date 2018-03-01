@@ -53,8 +53,6 @@ public:
     typedef DataSourceBuffer::TimeoutStatus         TimeoutStatus;
     typedef DataSourceBuffer::Timeout               Timeout;
 
-    typedef std::wstring                            Name;
-
 protected:
 
 
@@ -69,7 +67,7 @@ protected:
 
 public:
 
-                                                    DataSource          (DataSourceAccount *sourceAccount, ClientID client);
+                                                    DataSource          (DataSourceAccount *sourceAccount, const SessionName &session);
     virtual                                        ~DataSource          (void);
 
     DataSourceService                           *   getService          (void);

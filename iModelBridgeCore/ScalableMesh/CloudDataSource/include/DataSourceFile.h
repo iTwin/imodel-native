@@ -19,7 +19,7 @@ protected:
 
 public:
 
-                                    DataSourceFile          (DataSourceAccount *sourceAccount, ClientID client);
+                                    DataSourceFile          (DataSourceAccount *sourceAccount, const SessionName &session);
                                    ~DataSourceFile          (void);
 
         DataSourceStatus            open                    (const DataSourceURL &sourceURL, DataSourceMode mode);

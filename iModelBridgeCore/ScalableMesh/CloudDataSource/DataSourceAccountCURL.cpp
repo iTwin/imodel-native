@@ -73,12 +73,12 @@ void DataSourceAccountCURL::setCertificateAuthoritiesUrl(const Utf8String& certi
     certificateAuthoritiesUrl = certificateAuthoritiesUrlIn;
     }
 
-DataSource * DataSourceAccountCURL::createDataSource(DataSource::ClientID client)
+DataSource * DataSourceAccountCURL::createDataSource(const SessionName &session)
 {
                                                             // NOTE: This method is for internal use only, don't call this directly.
     DataSourceCURL *   dataSourceCURL;
                                                             // Create a new DataSourceAzure
-    dataSourceCURL = new DataSourceCURL(this, client);
+    dataSourceCURL = new DataSourceCURL(this, session);
     if (dataSourceCURL == nullptr)
         return nullptr;
                                                             // Set the timeout from the account's default (which comes from the Service's default)
@@ -152,10 +152,10 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSource &dataSource,
 
     dataSource.getURL(url);
 
-    return downloadBlobSync(url, dest, readSize, destSize);
+    return downloadBlobSync(url, dest, readSize, destSize, dataSource.getSessionName());
 }
 
-DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)
+DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size, const DataSource::SessionName &session)
     {
     DataSourceStatus status;
     if (isLocalOrNetworkAccount)

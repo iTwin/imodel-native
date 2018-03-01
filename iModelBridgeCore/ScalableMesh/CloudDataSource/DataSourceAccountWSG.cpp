@@ -15,12 +15,12 @@ DataSourceAccountWSG::DataSourceAccountWSG(const ServiceName & name, const Accou
     setAccount(name, identifier, key);
     }
 
-DataSource * DataSourceAccountWSG::createDataSource(DataSource::ClientID client)
+DataSource * DataSourceAccountWSG::createDataSource(const SessionName &session)
 {
                                                             // NOTE: This method is for internal use only, don't call this directly.
     DataSourceWSG *   dataSourceWSG;
                                                             // Create a new DataSourceAzure
-    dataSourceWSG = new DataSourceWSG(this, client);
+    dataSourceWSG = new DataSourceWSG(this, session);
     if (dataSourceWSG == nullptr)
         return nullptr;
                                                             // Set the timeout from the account's default (which comes from the Service's default)
@@ -93,10 +93,10 @@ DataSourceStatus DataSourceAccountWSG::downloadBlobSync(DataSource &dataSource, 
 
     dataSource.getURL(url);
 
-    return downloadBlobSync(url, dest, readSize, destSize);
+    return downloadBlobSync(url, dest, readSize, destSize, dataSource.getSessionName());
 }
 
-DataSourceStatus DataSourceAccountWSG::downloadBlobSync(DataSourceURL &url, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)
+DataSourceStatus DataSourceAccountWSG::downloadBlobSync(DataSourceURL &url, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size, const DataSource::SessionName &session)
 {
     CURLHandle* curl_handle = m_CURLManager.getOrCreateThreadCURLHandle();
 
@@ -130,7 +130,7 @@ DataSourceStatus DataSourceAccountWSG::downloadBlobSync(DataSourceURL &url, Data
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_handle->get_headers());
     curl_easy_setopt(curl, CURLOPT_CAINFO,     this->getAccountSSLCertificatePath().c_str());
 
-    return Super::downloadBlobSync(url, dest, readSize, size);
+    return Super::downloadBlobSync(url, dest, readSize, size, session);
 }
 
 DataSourceStatus DataSourceAccountWSG::uploadBlobSync(DataSourceURL &url, const std::wstring &filename, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size)
@@ -332,7 +332,9 @@ void DataSourceAccountWSG::updateToken(const WSGToken & newToken, DataSourceURL 
     DataSourceBuffer::BufferData* dest = new DataSourceBuffer::BufferData[10000];
     DataSourceBuffer::BufferSize readSize = 0;
     DataSourceBuffer::BufferSize size = 10000;
-    DataSourceStatus result = Super::downloadBlobSync(url, dest, readSize, size);
+
+    DataSource::SessionName session;
+    DataSourceStatus result = Super::downloadBlobSync(url, dest, readSize, size, session);
     assert(result.isOK());
     Json::Reader    reader;
     Json::Value     result_json;
@@ -358,7 +360,9 @@ WSGServer::organizationID DataSourceAccountWSG::getOrganizationID(const DataSour
     DataSourceBuffer::BufferData* dest = new DataSourceBuffer::BufferData[10000];
     DataSourceBuffer::BufferSize readSize = 0;
     DataSourceBuffer::BufferSize size = 10000;
-    DataSourceStatus result = Super::downloadBlobSync(navNodesURL, dest, readSize, size);
+
+    DataSource::SessionName session;
+    DataSourceStatus result = Super::downloadBlobSync(navNodesURL, dest, readSize, size, session);
     assert(result.isOK());
     Json::Reader    reader;
     Json::Value     result_json;

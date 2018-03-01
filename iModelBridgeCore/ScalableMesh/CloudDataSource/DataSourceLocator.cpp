@@ -1,12 +1,102 @@
 #include "stdafx.h"
 #include "DataSourceLocator.h"
 #include "include\DataSourceLocator.h"
+#include "DataSourceAccount.h"
+
+DataSourceSession::SessionInstance DataSourceSession::instanceCounter = 0;
+
+
+DataSourceSession::DataSourceSession(void)
+    {
+    sessionInstance = 0;
+    }
+
+DataSourceSession::DataSourceSession(const SessionKey &key)
+    {
+    setSessionKey(key);
+    }
+
+void DataSourceSession::initializeInstance(void)
+    {
+    setInstanceCounter(getInstanceCounter() + 1);
+
+    setSessionInstance(getInstanceCounter());
+    }
+
+void DataSourceSession::setSessionInstance(SessionInstance instance)
+    {
+    sessionInstance = instance;
+    }
+
+DataSourceSession::SessionInstance DataSourceSession::getSessionInstance(void) const
+    {
+    return sessionInstance;
+    }
+
+void DataSourceSession::setSessionKey(const SessionKey &key)
+    {
+    initializeInstance();
+
+    sessionKey = key;
+    }
+
+const DataSourceSession::SessionKey &DataSourceSession::getSessionKey(void) const
+    {
+    return sessionKey;
+    }
+
+void DataSourceSession::setInstanceCounter(SessionInstance value)
+    {
+    instanceCounter = value;
+    }
+
+DataSourceSession::SessionInstance DataSourceSession::getInstanceCounter(void)
+    {
+    return instanceCounter;
+    }
+
+DataSourceSession &DataSourceSession::operator=(const DataSourceSession &other)
+    {
+    sessionKey = other.getSessionKey();
+
+    setSessionInstance(other.getSessionInstance());
+
+    return *this;
+    }
+
+DataSourceSession &DataSourceSession::operator=(const SessionKey &key)
+    {
+    setSessionKey(key);
+
+    return *this;
+    }
+
+DataSourceSession &DataSourceSession::operator=(const wchar_t *key)
+    {
+    if (key)
+        {
+        SessionKey k(key);
+
+        setSessionKey(k);
+        }
+
+    return *this;
+    }
+
+bool DataSourceSession::operator==(const DataSourceSession &other) const
+    {
+    return (getSessionInstance() == other.getSessionInstance() && getSessionKey() == other.getSessionKey());
+    }
+
+
+
+// *************************************************************************************************
+
 
 DataSourceLocator::DataSourceLocator(void)
 {
     setService(nullptr);
     setAccount(nullptr);
-    setClientID(nullptr);
 }
 
 DataSourceLocator::DataSourceLocator(DataSourceLocator & locator)
@@ -19,7 +109,7 @@ DataSourceLocator &DataSourceLocator::operator=(const DataSourceLocator &locator
     {
     setService(const_cast<DataSourceLocator &>(locator).getService());
     setAccount(locator.getAccount());
-    setClientID(const_cast<DataSourceLocator &>(locator).getClientID());
+    setSessionName(locator.getSessionName());
 
     setPrefixPath(locator.getPrefixPath());
     setSubPath(locator.getSubPath());
@@ -32,7 +122,27 @@ DataSourceLocator &DataSourceLocator::operator=(const DataSourceLocator &locator
 
 void DataSourceLocator::getURL(DataSourceURL &url)
 {
-    url = getPrefixPath();
+    DataSourceAccount * account;
+
+    if (account = getAccount())
+        {
+        switch (account->getPrefixPathType())
+            {
+            case PrefixPathSession:
+                url = getSessionName().getSessionKey();
+                break;
+
+            case PrefixPathAccount:
+            default:
+                url = getPrefixPath();
+                break;
+            }
+        }
+    else
+        {
+                                                            // Use account prefix. This shouldn't happen (because Account should always be set)
+        url = getPrefixPath();
+        }
 
     url.append(getSubPath());
 }
@@ -57,14 +167,14 @@ DataSourceAccount * DataSourceLocator::getAccount(void) const
     return m_account;
 }
 
-void DataSourceLocator::setClientID(ClientID client)
+void DataSourceLocator::setSessionName(const SessionName &session)
     {
-    m_clientID = client;
+    m_session = session;
     }
 
-DataSourceLocator::ClientID DataSourceLocator::getClientID(void)
+const DataSourceLocator::SessionName &DataSourceLocator::getSessionName(void) const
     {
-    return m_clientID;
+    return m_session;
     }
 
 void DataSourceLocator::setPrefixPath(const DataSourceURL & path)

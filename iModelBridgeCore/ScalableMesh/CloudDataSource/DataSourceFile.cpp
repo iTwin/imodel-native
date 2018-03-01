@@ -3,7 +3,7 @@
 #include "DataSourceAccount.h"
 
 
-DataSourceFile::DataSourceFile(DataSourceAccount *sourceAccount, ClientID client) : DataSource(sourceAccount, client)
+DataSourceFile::DataSourceFile(DataSourceAccount *sourceAccount, const SessionName &session) : DataSource(sourceAccount, session)
 {
 
 }

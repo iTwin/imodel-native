@@ -11,17 +11,11 @@ class DataSourceManager;
 unsigned int const DATA_SOURCE_SERVICE_DEFAULT_TRANSFER_TASKS = 16;
 
 
-class DataSourceAccount
+class DataSourceAccount : public DataSourceTypes
 {
 
 public:
 
-    typedef std::wstring                ServiceName;
-    typedef std::wstring                AccountName;
-    typedef std::wstring                AccountIdentifier;
-    typedef std::wstring                AccountKey;
-    typedef std::string                 AccountSSLCertificatePath;
-    typedef void *                      ClientID;
     typedef unsigned int                ReferenceCounter;
 
 protected:
@@ -37,12 +31,15 @@ protected:
     AccountKey                          accountKey;
     AccountSSLCertificatePath           accountSSLCertificatePath;
     DataSourceURL                       prefixPath;
+    PrefixPathType                      prefixPathType;
 
 protected:
 
     DataSourceTransferScheduler::Ptr    getTransferScheduler            (void);
 
     virtual unsigned int                getDefaultNumTransferTasks      (void);
+
+    void                                setPrefixPathType               (PrefixPathType type);
 
 public:
 
@@ -83,11 +80,11 @@ public:
     CLOUD_EXPORT virtual void           setWSGTokenGetterCallback       (const std::function<std::string(void)>& tokenGetter);
     CLOUD_EXPORT virtual void           SetSASTokenGetterCallback       (const std::function<std::string(const Utf8String& docGuid)>& tokenGetter);
 
-    virtual      DataSource       *     createDataSource                (DataSource::ClientID client) = 0;
-    CLOUD_EXPORT DataSource       *     createDataSource                (const DataSource::Name &name, DataSource::ClientID client);
+    virtual      DataSource       *     createDataSource                (const SessionName &session) = 0;
+    CLOUD_EXPORT DataSource       *     createDataSource                (const DataSourceName &name, const SessionName &session);
 
-    CLOUD_EXPORT DataSource       *     getOrCreateDataSource           (const DataSource::Name &name, DataSource::ClientID client, bool *created = nullptr);
-    CLOUD_EXPORT DataSource       *     getOrCreateThreadDataSource     (DataSource::ClientID client, bool *created = nullptr);
+    CLOUD_EXPORT DataSource       *     getOrCreateDataSource           (const DataSourceName &name, const SessionName &session, bool *created = nullptr);
+    CLOUD_EXPORT DataSource       *     getOrCreateThreadDataSource     (const SessionName &session, bool *created = nullptr);
 
             bool                        destroyAll                      (void);
 
@@ -101,7 +98,7 @@ public:
             DataSourceStatus            download                        (DataSource & dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize & readSize);
 
     virtual DataSourceStatus            downloadBlobSync                (DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize);
-    virtual DataSourceStatus            downloadBlobSync                (DataSourceURL &blobPath, DataSourceBuffer::BufferData *dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size);
+    virtual DataSourceStatus            downloadBlobSync                (DataSourceURL &blobPath, DataSourceBuffer::BufferData *dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size, const DataSource::SessionName &session);
     virtual DataSourceStatus            uploadBlobSync                  (DataSource &dataSource, DataSourceBuffer::BufferData *source, DataSourceBuffer::BufferSize size);
     virtual DataSourceStatus            uploadBlobSync                  (DataSourceURL &dataSource, const std::wstring& filename, DataSourceBuffer::BufferData *source, DataSourceBuffer::BufferSize size);
     virtual DataSourceStatus            uploadBlobSync                  (const DataSourceURL &blobPath, DataSourceBuffer::BufferData *source, DataSourceBuffer::BufferSize size);
@@ -114,6 +111,8 @@ public:
 
     CLOUD_EXPORT virtual void           setPrefixPath                   (const DataSourceURL &url);
     CLOUD_EXPORT const   DataSourceURL  getPrefixPath                   (void) const;
+
+            PrefixPathType              getPrefixPathType               (void) const;
 
     virtual DataSourceStatus            getFormattedCacheURL            (const DataSourceURL &sourceURL, DataSourceURL &fullCacheURL);
 

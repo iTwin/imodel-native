@@ -69,27 +69,27 @@ public:
 
 public:
 
-    DataSourceAccount*      GetDataSourceAccount();
-    DataSource::ClientID    GetDataSourceClientID();
-    StrategyType            GetStrategyType() { return m_strategyType; }
-    uint32_t                GetNextNodeID() { return m_nextNodeID++; }
-    WString                 GetWellKnownText() { return m_wktStr; }
-    void                    SetWellKnownText(const WString& wkt) { m_wktStr = wkt; }
+    DataSourceAccount*                  GetDataSourceAccount();
+    const DataSource::SessionName &     GetDataSourceSessionName();
+    StrategyType                        GetStrategyType() { return m_strategyType; }
+    uint32_t                            GetNextNodeID() { return m_nextNodeID++; }
+    WString                             GetWellKnownText() { return m_wktStr; }
+    void                                SetWellKnownText(const WString& wkt) { m_wktStr = wkt; }
 
-    static Ptr Create(StrategyType strategy, DataSourceAccount* account, DataSource::ClientID client);
+    static Ptr                          Create(StrategyType strategy, DataSourceAccount* account, const DataSource::SessionName &session);
 
 private:
 
     //SMGroupGlobalParameters() = delete;
-    SMGroupGlobalParameters(StrategyType strategy, DataSourceAccount* account, DataSource::ClientID client);
+    SMGroupGlobalParameters(StrategyType strategy, DataSourceAccount* account, const DataSource::SessionName &session);
 
 private:
 
-    StrategyType          m_strategyType = NORMAL;
-    DataSourceAccount*    m_account = nullptr;
-    DataSource::ClientID  m_clientID = nullptr;
-    std::atomic<uint32_t> m_nextNodeID = 0;
-    WString               m_wktStr;
+    StrategyType                m_strategyType = NORMAL;
+    DataSourceAccount*          m_dataSourceAccount = nullptr;
+    DataSource::SessionName     m_dataSourceSessionName;
+    std::atomic<uint32_t>       m_nextNodeID = 0;
+    WString                     m_wktStr;
     };
 
 struct SMGroupCache : public BENTLEY_NAMESPACE_NAME::RefCountedBase 
@@ -570,8 +570,8 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 
         bool IsRoot() { return m_isRoot; }
 
-        DataSourceAccount   *   GetDataSourceAccount(void);
-        DataSource::ClientID    GetDataSourceClientID(void);
+        DataSourceAccount   *           GetDataSourceAccount(void);
+        const DataSource::SessionName & GetDataSourceSessionName(void);
 
         template<class EXTENT> SMGroupingStrategy<EXTENT>* GetStrategy()
             {

@@ -8,18 +8,76 @@ class DataSourceService;
 class DataSourceAccount;
 
 
-class DataSourceLocator
+class DataSourceSession
+    {
+    public:
+
+        typedef int64_t         SessionInstance;
+        typedef std::wstring    SessionKey;
+
+    protected:
+
+        static SessionInstance  instanceCounter;
+
+        SessionInstance         sessionInstance;
+        SessionKey              sessionKey;
+
+
+    protected:
+
+        void                                    setSessionInstance          (SessionInstance instance);
+
+        void                                    setInstanceCounter          (SessionInstance value);
+        SessionInstance                         getInstanceCounter          (void);
+
+        void                                    initializeInstance          (void);
+
+    public:
+
+        CLOUD_EXPORT                            DataSourceSession           (void);
+        CLOUD_EXPORT                            DataSourceSession           (const SessionKey &key);
+
+        CLOUD_EXPORT    void                    setSessionKey               (const SessionKey &key);
+        CLOUD_EXPORT    const SessionKey &      getSessionKey               (void) const;
+
+        CLOUD_EXPORT    SessionInstance         getSessionInstance          (void) const;
+
+        CLOUD_EXPORT    DataSourceSession &     operator=                   (const DataSourceSession &other);
+        CLOUD_EXPORT    DataSourceSession &     operator=                   (const SessionKey &key);
+        CLOUD_EXPORT    DataSourceSession &     operator=                   (const wchar_t *key);
+
+        CLOUD_EXPORT    bool                    operator==                  (const DataSourceSession &other) const;
+    };
+
+
+class DataSourceTypes
+    {
+    public:
+
+    typedef std::wstring                ServiceName;
+    typedef std::wstring                AccountName;
+    typedef DataSourceSession           SessionName;
+    typedef std::wstring                DataSourceName;
+    typedef std::wstring                AccountIdentifier;
+    typedef std::wstring                AccountKey;
+    typedef std::string                 AccountSSLCertificatePath;
+
+    enum PrefixPathType
+        {
+        PrefixPathAccount,
+        PrefixPathSession
+        };
+
+    };
+
+class DataSourceLocator : public DataSourceTypes
 {
-
-public:
-
-    typedef const void *                    ClientID;
 
 protected:
 
     DataSourceService                    *  m_service;
     DataSourceAccount                    *  m_account;
-    ClientID                                m_clientID;
+    SessionName                             m_session;
 
     DataSourceURL                           m_prefixPath;
     DataSourceURL                           m_subPath;
@@ -48,9 +106,8 @@ public:
     void                                    setAccount              (DataSourceAccount *sourceAccount);
     DataSourceAccount                  *    getAccount              (void) const;
 
-    void                                    setClientID             (ClientID client);
-    ClientID                                getClientID             (void);
-
+    void                                    setSessionName          (const SessionName &session);
+    const SessionName                   &   getSessionName          (void) const;
 
     void                                    setPrefixPath           (const DataSourceURL &path);
     const DataSourceURL                &    getPrefixPath           (void) const;

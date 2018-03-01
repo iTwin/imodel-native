@@ -13,7 +13,7 @@ DataSourceAccountCached::~DataSourceAccountCached(void)
 }
 
 
-DataSource *DataSourceAccountCached::getCacheDataSource(ClientID client)
+DataSource *DataSourceAccountCached::getCacheDataSource(SessionName &session)
 {
     //NEEDS_WORK_SM : Multiple cahce DataSources needed
     return nullptr;
@@ -48,7 +48,8 @@ DataSourceStatus DataSourceAccountCached::setCaching(DataSourceAccount & cacheAc
                                                             // Get a DataSource for caching from the given caching account
 
                                                             //NEEDS_WORK_SM : Multiple CacheDataSources required
-    if ((dataSource = cacheAccount.createDataSource(nullptr)) == nullptr)
+    SessionName nullSession;
+    if ((dataSource = cacheAccount.createDataSource(nullSession)) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Create_DataSource);
                                                             // Set the cache DataSource
 //  setCacheDataSource(dataSource);

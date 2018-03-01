@@ -37,7 +37,7 @@ protected:
     DataSource                *     getCacheDataSource      (void);
 
 public:
-                                    DataSourceCached        (DataSourceAccount *account, ClientID client);
+                                    DataSourceCached        (DataSourceAccount *account, const SessionName &session);
 
     void                            setCachingEnabled       (bool enabled);
     bool                            getCachingEnabled       (void);

@@ -11,5 +11,5 @@ protected:
 
 public:
 
-            DataSourceCloud        (DataSourceAccount *sourceAccount, ClientID client);
+            DataSourceCloud        (DataSourceAccount *sourceAccount, const SessionName &session);
 };

@@ -294,7 +294,7 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
 #endif
 
                     // Attempt to download a single segment
-                    if ((status = account->downloadBlobSync(segmentName, segmentBuffer, readSize, segmentSize)).isFailed())
+                    if ((status = account->downloadBlobSync(segmentName, segmentBuffer, readSize, segmentSize, locator.getSessionName())).isFailed())
                         {
                         buffer->setTransferStatus(DataSourceStatus::Status_Error_Failed_To_Download);
                         }

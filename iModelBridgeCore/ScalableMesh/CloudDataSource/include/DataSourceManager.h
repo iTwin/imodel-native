@@ -5,12 +5,8 @@
 #include "DataSourceServiceManager.h"
 
 
-class DataSourceManager : public Manager<DataSource, true>, public DataSourceServiceManager
+class DataSourceManager : public Manager<DataSource, true>, public DataSourceServiceManager, public DataSourceTypes
 {
-public:
-
-    typedef DataSource::Name                    DataSourceName;
-    typedef DataSource::ClientID                ClientID;
 
 protected:
 
@@ -26,15 +22,15 @@ public:
 
     bool                                        destroyAll                      (void);
 
-    DataSource                              *   createDataSource		        (const DataSourceName &name, const DataSourceAccount::AccountName &account, DataSource::ClientID clientID, const DataSourceStoreConfig *config = nullptr);
-	DataSource                              *   createDataSource		        (const DataSourceName &name, DataSourceAccount &account, DataSource::ClientID clientID, const DataSourceStoreConfig *config = nullptr);
+    DataSource                              *   createDataSource		        (const DataSourceName &name, const AccountName &account, const SessionName &session, const DataSourceStoreConfig *config = nullptr);
+	DataSource                              *   createDataSource		        (const DataSourceName &name, DataSourceAccount &account, const SessionName &session, const DataSourceStoreConfig *config = nullptr);
 
-    CLOUD_EXPORT DataSource                 *	getOrCreateDataSource	        (const DataSourceName &name, DataSourceAccount &account, DataSource::ClientID clientID, bool *created = nullptr);
-    CLOUD_EXPORT DataSource                 *	getOrCreateThreadDataSource     (DataSourceAccount &account, DataSource::ClientID client, bool *created = nullptr);
+    CLOUD_EXPORT DataSource                 *	getOrCreateDataSource	        (const DataSourceName &name, DataSourceAccount &account, const SessionName &session, bool *created = nullptr);
+    CLOUD_EXPORT DataSource                 *	getOrCreateThreadDataSource     (DataSourceAccount &account, const SessionName &session, bool *created = nullptr);
 
 	CLOUD_EXPORT DataSourceStatus               destroyDataSource		        (DataSource *dataSource);
     CLOUD_EXPORT DataSourceStatus		        destroyDataSources		        (DataSourceAccount *dataSourceAccount);
-    CLOUD_EXPORT DataSourceStatus				destroyDataSources              (DataSource::ClientID client);
+    CLOUD_EXPORT DataSourceStatus				destroyDataSources              (const SessionName &session);
 
 	DataSourceAccount                       *	initializeAzureTest		        (void);
 

@@ -3,7 +3,7 @@
 #include "DataSourceAccount.h"
 
 
-DataSourceCached::DataSourceCached(DataSourceAccount * account, ClientID client) : Super(account, client)
+DataSourceCached::DataSourceCached(DataSourceAccount * account, const SessionName &session) : Super(account, session)
 {
                                                             // Initially caching is disabled by default
     setCachingEnabled(false);

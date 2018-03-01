@@ -140,7 +140,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         SMStreamingSettingsPtr m_settings;
         FormatType m_formatType = FormatType::Binary;
         DataSourceAccount* m_dataSourceAccount;
-        DataSource::ClientID m_dataSourceClientID;
+        DataSource::SessionName m_dataSourceSessionName;
         WString m_rootDirectory;
         WString m_masterFileName;
         DataSourceURL m_pathToHeaders;
@@ -193,9 +193,8 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         void SetDataSourceAccount(DataSourceAccount *dataSourceAccount);
         DataSourceAccount *GetDataSourceAccount(void) const;
 
-        void SetDataSourceClientID(DataSource::ClientID client);
-        DataSource::ClientID GetDataSourceClientID(void) const;
-
+        void SetDataSourceSessionName(const DataSource::SessionName &session);
+        const DataSource::SessionName & GetDataSourceSessionName(void) const;
 
         void SetDataFormatType(FormatType formatType);
 
@@ -296,9 +295,9 @@ struct StreamingDataBlock : public bvector<uint8_t>
 
         void SetLoading();
 
-        DataSource *initializeDataSource(DataSourceAccount *dataSourceAccount, DataSource::ClientID client, std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize);
+        DataSource *initializeDataSource(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize);
 
-        void Load(DataSourceAccount *dataSourceAccount, DataSource::ClientID client, SMStoreDataType dataType, uint64_t dataSize = uint64_t(-1));
+        void Load(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, SMStoreDataType dataType, uint64_t dataSize = uint64_t(-1));
 
         void UnLoad();
 
@@ -334,7 +333,7 @@ struct StreamingDataBlock : public bvector<uint8_t>
 
     protected:
 
-        DataSource::DataSize LoadDataBlock(DataSourceAccount *dataSourceAccount, DataSource::ClientID client, std::unique_ptr<DataSource::Buffer[]>& destination, uint64_t dataSizeKnown);
+        DataSource::DataSize LoadDataBlock(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, std::unique_ptr<DataSource::Buffer[]>& destination, uint64_t dataSizeKnown);
 
     protected:
 
@@ -373,9 +372,9 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
 
     public:
 
-        SMStreamingNodeDataStore(DataSourceAccount *dataSourceAccount, DataSource::ClientID client, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool isPublishing = false, SMNodeGroupPtr nodeGroup = nullptr, bool compress = true);
+        SMStreamingNodeDataStore(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool isPublishing = false, SMNodeGroupPtr nodeGroup = nullptr, bool compress = true);
 
-        SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, DataSource::ClientID client, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Value& header, Transform& transform, SMNodeGroupPtr nodeGroup = nullptr, bool isPublishing = false, bool compress = true);
+        SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, const DataSource::SessionName &session, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Value& header, Transform& transform, SMNodeGroupPtr nodeGroup = nullptr, bool isPublishing = false, bool compress = true);
         
         virtual ~SMStreamingNodeDataStore();
 
@@ -398,7 +397,7 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
         SMIndexNodeHeader<EXTENT>*    m_nodeHeader;
         const Json::Value*            m_jsonHeader;
         DataSourceAccount*            m_dataSourceAccount;
-        DataSource::ClientID          m_dataSourceClientID;
+        DataSource::SessionName       m_dataSourceSessionName;
         DataSourceURL                 m_dataSourceURL;
         Transform                     m_transform;
 
@@ -416,8 +415,8 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
 
         uint64_t GetBlockSizeFromNodeHeader() const;
 
-        DataSourceAccount   *   GetDataSourceAccount(void)  { return m_dataSourceAccount; }
-        DataSource::ClientID    GetDataSourceClientID(void) { return m_dataSourceClientID; }
+        DataSourceAccount               *   GetDataSourceAccount        (void)  { return m_dataSourceAccount; }
+        const DataSource::SessionName   &   GetDataSourceSessionName    (void)  { return m_dataSourceSessionName; }
     };
 
 
@@ -430,9 +429,9 @@ struct StreamingTextureBlock : public StreamingDataBlock
 
         StreamingTextureBlock(const int& width, const int& height, const int& numChannels);
 
-        void Load(DataSourceAccount *dataSourceAccount, DataSource::ClientID client, uint64_t blockSizeKnown = uint64_t(-1));
+        void Load(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, uint64_t blockSizeKnown = uint64_t(-1));
 
-        void Store(DataSourceAccount *dataSourceAccount, DataSource::ClientID client, uint8_t* DataTypeArray, size_t countData, const HPMBlockID& blockID);
+        void Store(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, uint8_t* DataTypeArray, size_t countData, const HPMBlockID& blockID);
 
         size_t GetWidth() { return m_Width; }
         size_t GetHeight() { return m_Height; }
@@ -458,7 +457,7 @@ template <class DATATYPE, class EXTENT> class StreamingNodeTextureStore : public
 
         StreamingTextureBlock& GetTexture(HPMBlockID blockID) const;
             
-        StreamingNodeTextureStore(DataSourceAccount *dataSourceAccount, DataSource::ClientID client, SMIndexNodeHeader<EXTENT>* nodeHeader);
+        StreamingNodeTextureStore(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, SMIndexNodeHeader<EXTENT>* nodeHeader);
 
         virtual bool DestroyBlock(HPMBlockID blockID) override;            
                         
@@ -478,11 +477,11 @@ template <class DATATYPE, class EXTENT> class StreamingNodeTextureStore : public
                             
         virtual size_t LoadBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID) override;
             
-        void                    SetDataSourceAccount    (DataSourceAccount *dataSourceAccount);
-        DataSourceAccount *     GetDataSourceAccount    (void) const;
+        void                            SetDataSourceAccount    (DataSourceAccount *dataSourceAccount);
+        DataSourceAccount *             GetDataSourceAccount    (void) const;
 
-        void                    SetDataSourceClientID   (DataSource::ClientID client);
-        DataSource::ClientID    GetDataSourceClientID   (void) const;
+        void                            SetDataSourceSessionName(const DataSource::SessionName &session);
+        const DataSource::SessionName & GetDataSourceSessionName(void) const;
 
     private:
 

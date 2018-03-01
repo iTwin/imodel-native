@@ -25,8 +25,8 @@ protected:
 
 public:
 
-                                DataSourceCURL         (DataSourceAccount *sourceAccount, ClientID client);
-                               ~DataSourceCURL         (void);
+                                DataSourceCURL          (DataSourceAccount *sourceAccount, const SessionName &session);
+                               ~DataSourceCURL          (void);
 
     DataSourceStatus            open                    (const DataSourceURL &sourceURL, DataSourceMode mode);
     DataSourceStatus            read                    (Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size);

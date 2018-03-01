@@ -280,7 +280,7 @@ DataSource * SMNodeGroup::InitializeDataSource(std::unique_ptr<DataSource::Buffe
 
                                                      // Get the thread's DataSource or create a new one
     DataSource *dataSource;
-    if ((dataSource = DataSourceManager::Get()->getOrCreateThreadDataSource(*GetDataSourceAccount(), GetDataSourceClientID())) == nullptr)
+    if ((dataSource = DataSourceManager::Get()->getOrCreateThreadDataSource(*GetDataSourceAccount(), GetDataSourceSessionName())) == nullptr)
         {
         assert(!"Could not initialize data source");
         return nullptr;
@@ -621,11 +621,11 @@ DataSourceAccount * SMNodeGroup::GetDataSourceAccount(void)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Lee.Bull         03/2016
+* @bsimethod                                                    Lee.Bull         02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DataSource::ClientID SMNodeGroup::GetDataSourceClientID(void)
+const DataSource::SessionName &SMNodeGroup::GetDataSourceSessionName(void)
     {
-    return m_parametersPtr->GetDataSourceClientID();
+    return m_parametersPtr->GetDataSourceSessionName();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -882,10 +882,10 @@ SMGroupCache::Ptr SMGroupCache::Create(node_header_cache* nodeCache)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SMGroupGlobalParameters::SMGroupGlobalParameters(StrategyType strategy, DataSourceAccount* account, DataSource::ClientID client)
+SMGroupGlobalParameters::SMGroupGlobalParameters(StrategyType strategy, DataSourceAccount* account, const DataSource::SessionName &session)
     : m_strategyType(strategy),
-      m_account(account),
-      m_clientID(client)
+      m_dataSourceAccount(account),
+      m_dataSourceSessionName(session)
     {}
 
 /*---------------------------------------------------------------------------------**//**
@@ -893,22 +893,22 @@ SMGroupGlobalParameters::SMGroupGlobalParameters(StrategyType strategy, DataSour
 +---------------+---------------+---------------+---------------+---------------+------*/
 DataSourceAccount * SMGroupGlobalParameters::GetDataSourceAccount()
     {
-    return m_account;
+    return m_dataSourceAccount;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Lee.Bull        02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DataSource::ClientID SMGroupGlobalParameters::GetDataSourceClientID()
+const DataSource::SessionName &SMGroupGlobalParameters::GetDataSourceSessionName()
     {
-    return m_clientID;
+    return m_dataSourceSessionName;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SMGroupGlobalParameters::Ptr SMGroupGlobalParameters::Create(StrategyType strategy, DataSourceAccount * account, DataSource::ClientID client)
+SMGroupGlobalParameters::Ptr SMGroupGlobalParameters::Create(StrategyType strategy, DataSourceAccount * account, const DataSource::SessionName &session)
     {
-    return new SMGroupGlobalParameters(strategy, account, client);
+    return new SMGroupGlobalParameters(strategy, account, session);
     }
 

@@ -19,9 +19,22 @@ unsigned int DataSourceAccount::getDefaultNumTransferTasks(void)
     return 0;
 }
 
+void DataSourceAccount::setPrefixPathType(PrefixPathType type)
+    {
+    prefixPathType = type;
+    }
+
+
+DataSourceAccount::PrefixPathType DataSourceAccount::getPrefixPathType(void) const
+    {
+    return prefixPathType;
+    }
+
 DataSourceAccount::DataSourceAccount(void) : dataSourceManager(nullptr)
     {
     setReferenceCounter(0);
+                                                            // Default to using Account level prefix paths. Derived accounts should set this if necessary.
+    setPrefixPathType(PrefixPathAccount);
     }
 
 DataSourceAccount::~DataSourceAccount(void)
@@ -159,29 +172,29 @@ void DataSourceAccount::SetSASTokenGetterCallback(const std::function<std::strin
     // Nothing to do
     }
 
-DataSource * DataSourceAccount::createDataSource(const DataSourceManager::DataSourceName &name, DataSource::ClientID client)
+DataSource * DataSourceAccount::createDataSource(const DataSourceName &name, const SessionName &session)
     {
-    return getDataSourceManager().createDataSource(name, *this, client);
+    return getDataSourceManager().createDataSource(name, *this, session);
     }
 
 
-DataSource * DataSourceAccount::getOrCreateDataSource(const DataSourceManager::DataSourceName &name, DataSource::ClientID client, bool *created)
+DataSource * DataSourceAccount::getOrCreateDataSource(const DataSourceName &name, const SessionName &session, bool *created)
     {
-    return getDataSourceManager().getOrCreateDataSource(name, *this, created);
+    return getDataSourceManager().getOrCreateDataSource(name, *this, session, created);
     }
 
 
-DataSource * DataSourceAccount::getOrCreateThreadDataSource(DataSource::ClientID client, bool *created)
+DataSource * DataSourceAccount::getOrCreateThreadDataSource(const SessionName &session, bool *created)
 {
     std::wstringstream      name;
-    DataSource::Name        dataSourceName;
+    DataSourceName          dataSourceName;
                                                             // Get thread ID and use as DataSource name
     std::thread::id threadID = std::this_thread::get_id();
     name << threadID;
 
     dataSourceName = getAccountName() + L"_thread-" + name.str();
 
-    return getDataSourceManager().getOrCreateDataSource(dataSourceName, *this, client, created);
+    return getDataSourceManager().getOrCreateDataSource(dataSourceName, *this, session, created);
     }
 
 
@@ -243,7 +256,7 @@ DataSourceStatus DataSourceAccount::downloadBlobSync(DataSource &dataSource, Dat
     return DataSourceStatus(DataSourceStatus::Status_Error_Not_Supported);
     }
 
-DataSourceStatus DataSourceAccount::downloadBlobSync(DataSourceURL &segmentName, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)
+DataSourceStatus DataSourceAccount::downloadBlobSync(DataSourceURL &segmentName, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size, const DataSource::SessionName &sessionName)
     {
     (void)segmentName;
     (void)dest;

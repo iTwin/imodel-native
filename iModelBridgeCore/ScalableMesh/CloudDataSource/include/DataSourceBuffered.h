@@ -19,7 +19,7 @@ protected:
     DataSourceStatus                            initializeBuffer        (DataSourceBuffer::BufferSize size = 0, DataSource::Buffer * existingBuffer = nullptr, bool segmented = false);
 
 public:
-                                                DataSourceBuffered      (DataSourceAccount *sourceAccount, ClientID client);
+                                                DataSourceBuffered      (DataSourceAccount *sourceAccount, const SessionName &session);
                                                 ~DataSourceBuffered     (void);
 
     bool                                        isValid                 (void);

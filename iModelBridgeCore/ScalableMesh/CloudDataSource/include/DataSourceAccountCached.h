@@ -14,7 +14,7 @@ protected:
 
 protected:
 
-        DataSource           *      getCacheDataSource            (ClientID client);
+        DataSource           *      getCacheDataSource            (SessionName &session);
 
 public:
 

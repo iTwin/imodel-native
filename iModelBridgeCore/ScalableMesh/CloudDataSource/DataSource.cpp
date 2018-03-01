@@ -3,13 +3,13 @@
 #include "include\DataSource.h"
 #include "DataSourceAccount.h"
 
-DataSource::DataSource(DataSourceAccount *sourceAccount, ClientID client)
+DataSource::DataSource(DataSourceAccount *sourceAccount, const SessionName &session)
 {
     setService(nullptr);
 
     setAccount(sourceAccount);
 
-    setClientID(client);
+    setSessionName(session);
 
     setTimeout(DataSource::Timeout(0));
 

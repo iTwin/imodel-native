@@ -25,8 +25,8 @@ protected:
 
 public:
 
-                                DataSourceWSG         (DataSourceAccount *sourceAccount, ClientID client);
-                               ~DataSourceWSG         (void);
+                                DataSourceWSG           (DataSourceAccount *sourceAccount, const SessionName &session);
+                               ~DataSourceWSG           (void);
 
     DataSourceStatus            open                    (const DataSourceURL &sourceURL, DataSourceMode mode);
     DataSourceStatus            read                    (Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size);

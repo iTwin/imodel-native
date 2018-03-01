@@ -71,12 +71,12 @@ DataSourceAccountAzure::AzureBlobClient &DataSourceAccountAzure::getBlobClient(v
     return blobClient;
 }
 
-DataSource * DataSourceAccountAzure::createDataSource(DataSource::ClientID client)
+DataSource * DataSourceAccountAzure::createDataSource(const SessionName &session)
 {
                                                             // NOTE: This method is for internal use only, don't call this directly.
     DataSourceAzure *   dataSourceAzure;
                                                             // Create a new DataSourceAzure
-    dataSourceAzure = new DataSourceAzure(this, client);
+    dataSourceAzure = new DataSourceAzure(this, session);
     if (dataSourceAzure == nullptr)
         return nullptr;
                                                             // Set the timeout from the account's default (which comes from the Service's default)
@@ -163,12 +163,12 @@ DataSourceStatus DataSourceAccountAzure::downloadBlobSync(DataSource &dataSource
 
     dataSource.getURL(url);
 
-    return downloadBlobSync(url, dest, readSize, destSize);
+    return downloadBlobSync(url, dest, readSize, destSize, dataSource.getSessionName());
 }
 
-DataSourceStatus DataSourceAccountAzure::downloadBlobSync(DataSourceURL &url, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)
+DataSourceStatus DataSourceAccountAzure::downloadBlobSync(DataSourceURL &url, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size, const DataSource::SessionName &session)
 {
-    DataSourceStatus    status;
+    DataSourceStatus     status;
     DataSourceURL        containerName;
     DataSourceURL        blobPath;
 
@@ -238,10 +238,10 @@ DataSourceStatus DataSourceAccountAzure::uploadBlobSync(DataSource & dataSource,
     DataSourceURL    url;
     dataSource.getURL(url);
 
-    return uploadBlobSync(url, source, size);
+    return uploadBlobSync(url, source, size, dataSource.getSessionName());
     }
 
-DataSourceStatus DataSourceAccountAzure::uploadBlobSync(const DataSourceURL &url, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size)
+DataSourceStatus DataSourceAccountAzure::uploadBlobSync(const DataSourceURL &url, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size, const DataSource::SessionName &session)
 {
     DataSourceURL        containerName;
     DataSourceURL        blobPath;
@@ -279,6 +279,9 @@ DataSourceStatus DataSourceAccountAzure::uploadBlobSync(const DataSourceURL &url
 
 DataSourceAccountAzureCURL::DataSourceAccountAzureCURL(const AccountName & account, const AccountIdentifier & identifier, const AccountKey & key)
     {
+                                                            // Paths to data need to use session key as prefix (rather than account)
+    setPrefixPathType(PrefixPathSession);
+
     setAccount(account, identifier, key);
                                                             // Default size is set by Service on creation
     setDefaultSegmentSize(0);
@@ -295,7 +298,7 @@ DataSourceAccountAzureCURL::DataSourceAccountAzureCURL(const AccountName & accou
 
 DataSourceStatus DataSourceAccountAzureCURL::setAccount(const AccountName & account, const AccountIdentifier & identifier, const AccountKey & key)
     {
-    if (account.length() == 0 || identifier.length() == 0 || key.length() == 0)
+    if (account.length() == 0 || identifier.length() == 0)
         return DataSourceStatus(DataSourceStatus::Status_Error_Bad_Parameters);
                                                                                         // Set details in base class
     DataSourceAccount::setAccount(ServiceName(L"DataSourceServiceAzureCURL"), account, identifier, key);
@@ -319,10 +322,12 @@ void DataSourceAccountAzureCURL::SetSASTokenGetterCallback(const std::function<s
     m_getSASToken = tokenGetter;
     }
 
-DataSourceStatus DataSourceAccountAzureCURL::downloadBlobSync(DataSourceURL & blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize & readSize, DataSourceBuffer::BufferSize size)
+DataSourceStatus DataSourceAccountAzureCURL::downloadBlobSync(DataSourceURL & blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize & readSize, DataSourceBuffer::BufferSize size, const DataSource::SessionName &session)
     {
     auto uriEncodedBlobUrl = BeStringUtilities::UriEncode(Utf8String(blobPath.c_str()).c_str());
-    auto azureToken = this->m_getSASToken(Utf8String(this->getAccountKey().c_str()));
+
+    auto azureToken = this->m_getSASToken(Utf8String(session.getSessionKey().c_str()));
+
     if (!azureToken.empty()) uriEncodedBlobUrl += ("?" + azureToken).c_str();
     DataSourceURL url(L"https://" + this->getAccountIdentifier() + L".blob.core.windows.net/" + DataSourceURL(WString(uriEncodedBlobUrl.c_str(), BentleyCharEncoding::Utf8).c_str()));
 
@@ -331,7 +336,7 @@ DataSourceStatus DataSourceAccountAzureCURL::downloadBlobSync(DataSourceURL & bl
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0/*1*/);  // &&RB TODO : Ask Francis.Boily about his server certificate
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0/*1*/);  // At some point we will have a valid CONNECT certificate and we'll need to reactivate OpenSSL
 
-    return SuperCURL::downloadBlobSync(url, source, readSize, size);
+    return SuperCURL::downloadBlobSync(url, source, readSize, size, session);
     }
 
 DataSourceStatus DataSourceAccountAzureCURL::uploadBlobSync(DataSourceURL &blobPath, const std::wstring &filename, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size)
