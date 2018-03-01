@@ -13,3 +13,44 @@ NavigationQueryBuilder_MultiLevelGroupingTests.RootNodesQueryReturnsRelationship
 
 # TFS#819769:InstanceLabelOverride is not applied for child in hierarchy
 RulesDrivenECPresentationManagerNavigationTests.AllInstanceNodesSpecification_LabelOverridesAppliedForSpecifiedClass
+
+RulesDrivenECPresentationManagerContentTests.LoadsRelatedPropertiesForMultipleInstancesOfDifferentClasses
+
+    # TFS#854507
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 03/01/2018
+    # c:\build\src\mds06t\ECPresentation\Tests\Published\RulesEngine\PresentationManagerContentTests.cpp(11126): error:       Expected: expectedValues
+    # Which is: 96-byte object <01-00 00-00 01-00 00-00 18-4B 83-0E D6-01 03-00 10-20 3B-0B D6-01 00-00 10-20 3B-0B D6-01 00-00 30-79 05-0B D6-01 00-00 30-79 05-0B D6-01 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-04 00-00 00-00 00-00 00-00 00-00 FF-FF FF-FF 00-00 00-00 00-00 00-00>
+    # To be equal to: recordJson["Values"]
+    # Which is: 16-byte object <01-00 00-00 01-00 00-00 D8-EC 59-0B D6-01 03-00>
+    # Expected:
+    # {
+    # "Element_ElementMultiAspect": [
+    # {
+    # "PrimaryKeys": [
+    # {
+    # "ECClassId": "173",
+    # "ECInstanceId": "2"
+    # },
+    # {
+    # "ECClassId": "173",
+    # "ECInstanceId": "5"
+    # }
+    # ],
+    # "Values": {
+    # "ElementMultiAspect_IntProperty": 123,
+    # "ElementMultiAspect_StringProperty": null
+    # },
+    # "DisplayValues": {
+    # "ElementMultiAspect_IntProperty": 123,
+    # "ElementMultiAspect_StringProperty": "*** Varies ***"
+    # },
+    # "MergedFieldNames": [
+    # "ElementMultiAspect_StringProperty"
+    # ]
+    # }
+    # ]
+    # }
+    # Actual:
+    # {
+    # "MyElementB_ElementMultiAspect": "*** Varies ***"
+    # }
