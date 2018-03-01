@@ -705,7 +705,11 @@ void CurveVectorManipulationStrategy::_ReplaceKeyPoint
 //---------------+---------------+---------------+---------------+---------------+------
 IGeometryPtr CurveVectorManipulationStrategy::_FinishGeometry() const
     {
-    return IGeometry::Create(Finish());
+    CurveVectorPtr geometry = Finish();
+    if (geometry.IsNull())
+        return nullptr;
+
+    return IGeometry::Create(geometry);
     }
 
 #define GMS_PROPERTY_OVERRIDE_IMPL(value_type) \
