@@ -3358,9 +3358,9 @@ PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFil
             northLatLong  = wgsNorth;
             }
 
-
-        dgnGCS->XYZFromLatLong(ecfOrigin, originLatLong);
-        dgnGCS->XYZFromLatLong(ecfNorth, northLatLong);
+        /// Note we used to call dgnGCS->XYZFromLatLong to do the ECEF conversion - but that seems unreliable when datum is not WGS84 (TFS# 799148).
+        ecfOrigin = cartesianFromRadians (originLatLong.longitude * msGeomConst_radiansPerDegree, originLatLong.latitude * msGeomConst_radiansPerDegree);
+        ecfNorth  = cartesianFromRadians (northLatLong.longitude * msGeomConst_radiansPerDegree, 1.0E-4 + northLatLong.latitude * msGeomConst_radiansPerDegree);
         }
 
     RotMatrix   rMatrix;
