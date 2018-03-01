@@ -2516,19 +2516,25 @@ void GeometryListBuilder::_ActivateGraphicParams(GraphicParamsCR gfParams, Geome
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<GraphicPtr> System::_CreateSheetTile(TextureCR tile, GraphicBuilder::TileCorners const& corners, DgnDbR db, GraphicParamsCR params, ClipVectorCP clip) const
+bvector<PolyfaceHeaderPtr> System::_CreateSheetTilePolys(GraphicBuilder::TileCorners const& corners, ClipVectorCP clip, DRange3dR rangeOut) const
     {
-    bvector<GraphicPtr> sheetTileGraphics;
+    bvector<PolyfaceHeaderPtr> sheetTilePolys;
 
+    rangeOut.Init();
     if (nullptr != clip)
         {
-        TriMeshArgs clippedTile;
+        // need to order these strangely to account for the way TileCorners arranges vertices 
+        const double scaleAmt = 1.0; // placeholder
+        DPoint3d pt0 = DPoint3d::FromXYZ(corners.m_pts[0].x, corners.m_pts[0].y, corners.m_pts[0].z);  pt0.Scale(scaleAmt);
+        DPoint3d pt1 = DPoint3d::FromXYZ(corners.m_pts[1].x, corners.m_pts[1].y, corners.m_pts[1].z);  pt1.Scale(scaleAmt);
+        DPoint3d pt2 = DPoint3d::FromXYZ(corners.m_pts[3].x, corners.m_pts[3].y, corners.m_pts[3].z);  pt2.Scale(scaleAmt);
+        DPoint3d pt3 = DPoint3d::FromXYZ(corners.m_pts[2].x, corners.m_pts[2].y, corners.m_pts[2].z);  pt3.Scale(scaleAmt);
 
         bvector<DPoint3d> quadPts;
-        quadPts.push_back(corners.m_pts[0]); // need to order these strangely to account for the way TileCorners arranges vertices 
-        quadPts.push_back(corners.m_pts[1]);
-        quadPts.push_back(corners.m_pts[3]);
-        quadPts.push_back(corners.m_pts[2]);
+        quadPts.push_back(pt0);
+        quadPts.push_back(pt1);
+        quadPts.push_back(pt2);
+        quadPts.push_back(pt3);
 
         IFacetOptionsPtr facetOptions = IFacetOptions::Create();
         facetOptions->SetParamsRequired(true);
@@ -2544,55 +2550,80 @@ bvector<GraphicPtr> System::_CreateSheetTile(TextureCR tile, GraphicBuilder::Til
 
             for (auto& clippedPolyfaceQuery : clippedPolyfaceQueries)
                 {
-#if 0 // ###TODO: necessary? 
-                if (!clippedPolyfaceQuery->IsTriangulated())
-                    const_cast<PolyfaceHeaderP>(dynamic_cast<PolyfaceHeaderCP>(clippedPolyfaceQuery))->Triangulate();
-#endif
-
                 DPoint3dCP pts = clippedPolyfaceQuery->GetPointCP();
                 uint32_t numPts = clippedPolyfaceQuery->GetPointCount();
-
-                clippedTile.m_pointParams = QPoint3d::Params(DRange3d::From(pts, numPts)); // use these point params
-
-                bvector<QPoint3d> qVerts; // output these points to clippedTile
+                sheetTilePolys.push_back(clippedPolyfaceQuery->Clone());
                 for (uint32_t i = 0; i < numPts; i++)
                     {
-                    qVerts.push_back(QPoint3d(pts[i], clippedTile.m_pointParams));
+                    rangeOut.Extend(pts[i]);
                     }
-                clippedTile.m_points = &qVerts[0];
-                clippedTile.m_numPoints = numPts;
-
-                const DPoint2d* rawParams = clippedPolyfaceQuery->GetParamCP();
-                bvector<FPoint2d> uv; // output these uv coordinates to clippedTile
-                for (uint32_t i = 0; i < numPts; i++)
-                    {
-                    FPoint2d fpt;  fpt.x = rawParams[i].x;  fpt.y = rawParams[i].y;
-                    uv.push_back(fpt);
-                    }
-                clippedTile.m_textureUV = &uv[0];
-
-                bvector<uint32_t> indices;
-                PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*clippedPolyfaceQuery, true);
-                for (visitor->Reset(); visitor->AdvanceToNextFace();)
-                    {
-                    indices.push_back(visitor->GetClientPointIndexCP()[0]);
-                    indices.push_back(visitor->GetClientPointIndexCP()[1]);
-                    indices.push_back(visitor->GetClientPointIndexCP()[2]);
-                    }
-                clippedTile.m_numIndices = indices.size();
-                clippedTile.m_vertIndex = &indices[0];
-
-                clippedTile.m_texture = const_cast<Render::Texture*>(&tile);
-                clippedTile.m_material = params.GetMaterial();
-                clippedTile.m_isPlanar = true;
-
-                sheetTileGraphics.push_back(_CreateTriMesh(clippedTile, db));
                 }
             }
+        // else if no output, still will try to use _CreateTile, which is wrong.  Need to address this.
         }
-    else // not clipped
+    else // not clipped.  return empty vector which signifies a need to use _CreateTile.  range is still updated.
         {
-        sheetTileGraphics.push_back(_CreateTile(tile, corners, db, params));
+        for (int i = 0; i < 4; i++)
+            rangeOut.Extend(corners.m_pts[i]);
+        }
+
+    return sheetTilePolys;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<GraphicPtr> System::_CreateSheetTile(TextureCR tile, bvector<PolyfaceHeaderPtr>& polys, DgnDbR dgndb, GraphicParamsCR params) const
+    {
+    bvector<GraphicPtr> sheetTileGraphics;
+
+    for (auto& polyface : polys)
+        {
+        TriMeshArgs polyTile;
+
+#if 0 // ###TODO: necessary? 
+        if (!clippedPolyfaceQuery->IsTriangulated())
+            const_cast<PolyfaceHeaderP>(dynamic_cast<PolyfaceHeaderCP>(clippedPolyfaceQuery))->Triangulate();
+#endif
+
+        DPoint3dCP pts = polyface->GetPointCP();
+        uint32_t numPts = polyface->GetPointCount();
+
+        polyTile.m_pointParams = QPoint3d::Params(DRange3d::From(pts, numPts)); // use these point params
+
+        bvector<QPoint3d> qVerts; // output these points to clippedTile
+        for (uint32_t i = 0; i < numPts; i++)
+            {
+            qVerts.push_back(QPoint3d(pts[i], polyTile.m_pointParams));
+            }
+        polyTile.m_points = &qVerts[0];
+        polyTile.m_numPoints = numPts;
+
+        const DPoint2d* rawParams = polyface->GetParamCP();
+        bvector<FPoint2d> uv; // output these uv coordinates to clippedTile
+        for (uint32_t i = 0; i < numPts; i++)
+            {
+            FPoint2d fpt;  fpt.x = rawParams[i].x;  fpt.y = rawParams[i].y;
+            uv.push_back(fpt);
+            }
+        polyTile.m_textureUV = &uv[0];
+
+        bvector<uint32_t> indices;
+        PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface, true);
+        for (visitor->Reset(); visitor->AdvanceToNextFace();)
+            {
+            indices.push_back(visitor->GetClientPointIndexCP()[0]);
+            indices.push_back(visitor->GetClientPointIndexCP()[1]);
+            indices.push_back(visitor->GetClientPointIndexCP()[2]);
+            }
+        polyTile.m_numIndices = indices.size();
+        polyTile.m_vertIndex = &indices[0];
+
+        polyTile.m_texture = const_cast<Render::Texture*>(&tile);
+        polyTile.m_material = params.GetMaterial();
+        polyTile.m_isPlanar = true;
+
+        sheetTileGraphics.push_back(_CreateTriMesh(polyTile, dgndb));
         }
 
     return sheetTileGraphics;
