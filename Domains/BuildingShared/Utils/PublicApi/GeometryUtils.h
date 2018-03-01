@@ -333,11 +333,11 @@ public:
 
 
     //! slice the body by Z elevations
-    //! @param[out] slicedGeometry      solid slices paired with corresponding bottom planes of the cuts
+    //! @param[out] slicedGeometry      solid slices paired with corresponding z elevations of the cuts
     //! @param[in]  geometryToSlice     geometry to slice
     //! @param[in]  zElevationVector    vector of Z elevations to slice at
     //! @return                         solid slices paired with corresponding bottom planes of the cuts
-    BUILDINGSHAREDUTILS_EXPORT static BentleyStatus    SliceBodyByZElevations (bvector<bpair<Dgn::IBRepEntityPtr, Dgn::IBRepEntityPtr>>& slicedGeometry, Dgn::IBRepEntityCR geometryToSlice, bvector<double>& zElevationVector);
+    BUILDINGSHAREDUTILS_EXPORT static BentleyStatus    SliceBodyByZElevations (bvector<bpair<Dgn::IBRepEntityPtr, double>>& slicedGeometry, Dgn::IBRepEntityCR geometryToSlice, bvector<double>& zElevationVector);
     
     //! Adds vertex to a curve vector.
     //! @param[in/out] cv     CurveVector to add the vertex to

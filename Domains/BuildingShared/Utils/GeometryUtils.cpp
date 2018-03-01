@@ -280,7 +280,7 @@ CurveVectorPtr GeometryUtils::ExtractXYProfileFromSolid(IBRepEntityCR solid, Cur
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus GeometryUtils::SliceBodyByZElevations
 (
-bvector<bpair<Dgn::IBRepEntityPtr, Dgn::IBRepEntityPtr>>& slicedGeometry,
+bvector<bpair<Dgn::IBRepEntityPtr, double>>& slicedGeometry,
 IBRepEntityCR geometryToSlice,
 bvector<double>& zElevationVector
 )
@@ -305,30 +305,36 @@ bvector<double>& zElevationVector
 
     bvector<IBRepEntityPtr> cutSheetBodies;
 
-    Transform transform = Transform::FromIdentity ();
+    Transform transformBottom = Transform::FromIdentity ();
+    Transform transformTop = Transform::FromIdentity();
     DPoint3d translation = { 0.0, 0.0, 0.0 };
 
     for (bvector<double>::iterator pIter = zElevationVector.begin (); pIter != zElevationVector.end (); ++pIter)
         {
+        IBRepEntityPtr slice = geometryToSlice.Clone();
+
         translation.z = *pIter;
-        transform.SetTranslation (translation);
+        transformBottom.SetTranslation(translation);
+        IBRepEntityPtr elevatedSheetBodyBottom = sheetBody->Clone();
+        elevatedSheetBodyBottom->ApplyTransform(transformBottom);
 
-        IBRepEntityPtr elevatedSheetBody = sheetBody->Clone ();
-        elevatedSheetBody->ApplyTransform (transform);
+        BRepUtil::Modify::BooleanCut(slice, *elevatedSheetBodyBottom, BRepUtil::Modify::CutDirectionMode::Backward, BRepUtil::Modify::CutDepthMode::All, 0.0, true);
+        if ((pIter + 1) == zElevationVector.end())
+            {
+            slicedGeometry.push_back({ slice, *pIter });
+            break;
+            }
 
-        cutSheetBodies.push_back (elevatedSheetBody);
-        }
 
+        translation.z = *(pIter + 1);
+        transformTop.SetTranslation(translation);
 
-    //TODO: move to a different method..
-    //slice the body by sheets
-    for (bvector<IBRepEntityPtr>::iterator pSheetIter = cutSheetBodies.begin (); (pSheetIter+1) != cutSheetBodies.end (); ++pSheetIter)
-        {
-        IBRepEntityPtr nextSheetPtr = *(pSheetIter + 1);
-        IBRepEntityPtr slice = geometryToSlice.Clone ();
-        BRepUtil::Modify::BooleanCut (slice, *(*pSheetIter), BRepUtil::Modify::CutDirectionMode::Backward, BRepUtil::Modify::CutDepthMode::All, 0.0, true);
-        BRepUtil::Modify::BooleanCut (slice, *nextSheetPtr, BRepUtil::Modify::CutDirectionMode::Forward, BRepUtil::Modify::CutDepthMode::All, 0.0, true);
-        slicedGeometry.push_back ({ slice, *pSheetIter });
+        IBRepEntityPtr elevatedSheetBodyTop = sheetBody->Clone();
+        elevatedSheetBodyTop->ApplyTransform(transformTop);
+
+        BRepUtil::Modify::BooleanCut(slice, *elevatedSheetBodyTop, BRepUtil::Modify::CutDirectionMode::Forward, BRepUtil::Modify::CutDepthMode::All, 0.0, true);
+
+        slicedGeometry.push_back({ slice, *pIter });
         }
 
     return BSISUCCESS;
