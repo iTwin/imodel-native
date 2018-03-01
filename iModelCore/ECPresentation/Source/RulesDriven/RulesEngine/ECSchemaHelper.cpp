@@ -1336,8 +1336,8 @@ bvector<RelatedClassPath> ECSchemaHelper::GetPolymorphicallyRelatedClassesWithIn
         ComplexGenericQueryPtr query = ComplexGenericQuery::Create();
         query->SelectAll();
         query->From(*nestedQuery);
+        query->Where(Utf8String("[SourceInstanceId] IN (").append(filteringQuery->ToString()).append(")").c_str(), filterBindingsCopy);
         query->GroupByContract(*SimpleQueryContract::Create(*PresentationQueryContractSimpleField::Create("RelatedClassId", "RelatedClassId")));
-        query->Having(Utf8String("[SourceInstanceId] IN (").append(filteringQuery->ToString()).append(")").c_str(), filterBindingsCopy);
         
         CachedECSqlStatementPtr stmt = m_statementCache->GetPreparedStatement(m_connection.GetECDb().Schemas(),
             m_connection.GetDb(), query->ToString().c_str());
