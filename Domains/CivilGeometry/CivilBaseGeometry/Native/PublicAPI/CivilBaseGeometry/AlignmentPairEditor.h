@@ -116,7 +116,14 @@ public:
     DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(SSInfo)
 
     // Possible PI types
-    enum Type { TYPE_Uninitialized, TYPE_NoCurve, TYPE_Arc, TYPE_SCS, TYPE_SS };
+    enum Type
+        {
+        TYPE_Uninitialized  = 0,
+        TYPE_NoCurve        = 1,
+        TYPE_Arc            = 2,
+        TYPE_SCS            = 3,
+        TYPE_SS             = 4
+        };
     
 private:
     // The variable holding the current type
@@ -254,7 +261,13 @@ public:
     DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(ParabolaInfo)
 
     // Possible PVI types
-    enum Type { TYPE_Uninitialized, TYPE_GradeBreak, TYPE_Arc, TYPE_Parabola };
+    enum Type
+        {
+        TYPE_Uninitialized  = 0,
+        TYPE_GradeBreak     = 1,
+        TYPE_Arc            = 2,
+        TYPE_Parabola       = 3
+        };
     
 private:
     // Holds information about the provenance of the PVI, or invalid
