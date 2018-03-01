@@ -120,7 +120,7 @@ declare class AddonDgnDb {
    * Process change sets
    * @param cachePath Path to the root of the disk cache
    */
-  processChangeSets(changeSets: string, processOptions: ChangeSetProcessOption): DbResult;
+  processChangeSets(changeSets: string, processOptions: ChangeSetProcessOption, containsSchemaChanges: boolean): DbResult;
 
   /**
    * Start creating a new change set with local changes
@@ -402,6 +402,8 @@ declare class AddonDgnDb {
     txnManagerGetTxnDescription(txnId: AddonTxnId): string;
     /** Check if the specified TxnId is valid. The above query functions will return an invalid ID to indicate failure. */
     txnManagerIsTxnIdValid(txnId: AddonTxnId): boolean;
+    /** Check if there are un-saved changes in memory. */
+    txnManagerHasUnsavedChanges(): boolean;
 
   /**
    * Execute a test by name
@@ -547,6 +549,11 @@ declare class AddonECSqlBinder implements IDisposable {
      */
     bindDouble(val: number): DbResult;
 
+    /** Binds an Guid, formatted as GUID string, to the parameter represented by this binder
+     * @return non-zero error status in case of failure.
+     */
+    bindGuid(guidStr: string): DbResult;
+
     /** Binds an Id, formatted as hexadecimal string, to the parameter represented by this binder
      * @return non-zero error status in case of failure.
      */
@@ -629,14 +636,16 @@ declare class AddonECSqlColumnInfo {
     /** Gets the table space in which this root class is persisted.
      * @remarks for classes in the primary file the table space is MAIN. For classes in attached
      * files, the table space is the name by which the file was attached (see BentleyApi::BeSQLite::Db::AttachDb)
-     * For generated properties the table space is empty */
+     * For generated properties the table space is empty
+     */
     getRootClassTableSpace(): string;
 
     /** Gets the fully qualified name of the ECClass of the top-level ECProperty backing this column. */
     getRootClassName(): string;
 
     /** Gets the class alias of the root class to which the column refers to.
-     * @returns Returns the alias of root class the column refers to or an empty string if no class alias was specified in the select clause */
+     * @returns Returns the alias of root class the column refers to or an empty string if no class alias was specified in the select clause
+     */
     getRootClassAlias(): string;
 }
 
@@ -660,6 +669,8 @@ declare class AddonECSqlValue implements IDisposable {
     getDouble(): number;
     /** Get value as IGeometry formatted as JSON. */
     getGeometry(): string;
+    /** Get value as GUID, formatted as GUID string. */
+    getGuid(): string;
     /** Get value as id, formatted as hexadecimal string. */
     getId(): string;
     /** If this ECSqlValue represents a class id, this method returns the fully qualified class name. */
@@ -713,4 +724,35 @@ declare class AddonECPresentationManager {
      * @param directories Ruleset locations
      */
     setupRulesetDirectories(directories: string[]): void;
+}
+
+/* Some types used by the AddonECSchemaXmlContext class. */
+declare namespace AddonECSchemaXmlContext {
+    interface SchemaKey {
+        name: string;
+        readVersion: number;
+        writeVersion: number;
+        minorVersion: number;
+    }
+
+    const enum SchemaMatchType {
+        Identical = 0,               // Find exact VersionRead, VersionWrite, VersionMinor match as well as Data
+        Exact = 1,                   // Find exact VersionRead, VersionWrite, VersionMinor match.
+        LatestWriteCompatible = 2,   // Find latest version with matching VersionRead and VersionWrite
+        Latest = 3,                  // Find latest version.
+        LatestReadCompatible = 4,    // Find latest version with matching VersionRead
+    }
+
+    interface SchemaLocaterCallback {
+        (key: SchemaKey, matchType: SchemaMatchType): string | undefined | void;
+    }
+}
+
+/* The AddonECSchemaXmlContext class that is projected by the iModelJs node addon. */
+declare class AddonECSchemaXmlContext {
+    constructor();
+
+    addSchemaPath(path: string): void;
+    setSchemaLocater(locater: AddonECSchemaXmlContext.SchemaLocaterCallback): void;
+    readSchemaFromXmlFile(filePath: string): ErrorStatusOrResult<BentleyStatus, string>;
 }

@@ -20,6 +20,7 @@
 #include <ECObjects/ECSchema.h>
 #include <rapidjson/rapidjson.h>
 #include "ECPresentationUtils.h"
+#include "ECSchemaXmlContextUtils.h"
 #include <Bentley/Desktop/FileSystem.h>
 #include <Bentley/BeThread.h>
 
@@ -88,6 +89,19 @@ USING_NAMESPACE_BENTLEY_EC
         Napi::TypeError::New(Env(), "Argument " #i " must be a boolean").ThrowAsJavaScriptException();\
     }\
     bool var = info[i].As<Napi::Boolean>().Value();
+
+#define OPTIONAL_ARGUMENT_BOOL(i, var, default)\
+    bool var;\
+    if (info.Length() <= (i) || info[i].IsUndefined()) {\
+        var = (default);\
+    }\
+    else if (info[i].IsBoolean()) {\
+        var = info[i].As<Napi::Boolean>().Value();\
+    }\
+    else {\
+        var = (default);\
+        Napi::TypeError::New(Env(), "Argument " #i " must be an boolean").ThrowAsJavaScriptException();\
+    }
 
 #define OPTIONAL_ARGUMENT_INTEGER(i, var, default)\
     int var;\
@@ -296,6 +310,89 @@ struct AddonECDb : Napi::ObjectWrap<AddonECDb>
             s_constructor.SuppressDestruct();
             }
     };
+
+//=======================================================================================
+// Projects the AddonECSchemaXmlContext class into JS
+//! @bsiclass
+//=======================================================================================
+struct AddonECSchemaXmlContext : Napi::ObjectWrap<AddonECSchemaXmlContext>
+    {
+    private:
+        static Napi::FunctionReference s_constructor;
+        ECSchemaReadContextPtr m_context;
+        ECSchemaXmlContextUtils::LocaterCallbackUPtr m_locater;
+
+    public:
+        AddonECSchemaXmlContext(const Napi::CallbackInfo& info) : Napi::ObjectWrap<AddonECSchemaXmlContext>(info)
+            {
+            m_context = ECSchemaXmlContextUtils::CreateSchemaReadContext(T_HOST.GetIKnownLocationsAdmin());
+            }
+
+        // Check if val is really a AddonECSchemaXmlContext peer object
+        static bool HasInstance(Napi::Value val) {
+            if (!val.IsObject())
+                return false;
+            Napi::Object obj = val.As<Napi::Object>();
+            return obj.InstanceOf(s_constructor.Value());
+            }
+
+        Napi::Value SetSchemaLocater(const Napi::CallbackInfo& info)
+            {
+            REQUIRE_ARGUMENT_FUNCTION(0, locaterCallback);
+            RETURN_IF_HAD_EXCEPTION
+            ECSchemaXmlContextUtils::SetSchemaLocater(*m_context, m_locater, Napi::Persistent(locaterCallback));
+            return Env().Undefined();
+            }
+
+        Napi::Value AddSchemaPath(const Napi::CallbackInfo& info)
+            {
+            REQUIRE_ARGUMENT_STRING(0, schemaPath);
+            RETURN_IF_HAD_EXCEPTION
+            ECSchemaXmlContextUtils::AddSchemaPath(*m_context, schemaPath);
+            return Env().Undefined();
+            }
+
+        Napi::Value ReadSchemaFromXmlFile(const Napi::CallbackInfo& info)
+            {
+            REQUIRE_ARGUMENT_STRING(0, filePath);
+            RETURN_IF_HAD_EXCEPTION
+            Json::Value schemaJson;
+            auto status = ECSchemaXmlContextUtils::ConvertECSchemaXmlToJson(schemaJson, *m_context, filePath);
+
+            if (ECSchemaXmlContextUtils::SchemaConversionStatus::Success == status)
+                return NapiUtils::CreateBentleyReturnSuccessObject(Napi::String::New(Env(), schemaJson.ToString().c_str()), Env());
+
+            return NapiUtils::CreateBentleyReturnErrorObject(BentleyStatus::ERROR, ECSchemaXmlContextUtils::SchemaConversionStatusToString(status), Env());
+            }
+
+        //  Add a reference to this wrapper object, keeping it and its peer JS object alive.
+        void AddRef() { this->Ref(); }
+
+        //  Remove a reference from this wrapper object and its peer JS object .
+        void Release() { this->Unref(); }
+
+        static void Init(Napi::Env env, Napi::Object exports)
+            {
+            // ***
+            // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
+            // ***
+            Napi::HandleScope scope(env);
+            Napi::Function t = DefineClass(env, "AddonECSchemaXmlContext", {
+                InstanceMethod("addSchemaPath", &AddonECSchemaXmlContext::AddSchemaPath),
+                InstanceMethod("readSchemaFromXmlFile", &AddonECSchemaXmlContext::ReadSchemaFromXmlFile),
+                InstanceMethod("setSchemaLocater", &AddonECSchemaXmlContext::SetSchemaLocater)
+            });
+
+            exports.Set("AddonECSchemaXmlContext", t);
+
+            s_constructor = Napi::Persistent(t);
+            // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
+            // from running at program shutdown time, which would attempt to reset the reference when
+            // the environment is no longer valid.
+            s_constructor.SuppressDestruct();
+            }
+    };
+
 
 //=======================================================================================
 // SimpleRulesetLocater
@@ -605,11 +702,27 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         {
         REQUIRE_ARGUMENT_STRING(0, changeSetTokens);
         REQUIRE_ARGUMENT_INTEGER(1, processOptions);
+        REQUIRE_ARGUMENT_BOOL(2, containsSchemaChanges);
+
         RETURN_IF_HAD_EXCEPTION
 
         Json::Value jsonChangeSetTokens = Json::Value::From(changeSetTokens);
 
-        DbResult result = AddonUtils::ProcessChangeSets(m_dgndb, jsonChangeSetTokens, (RevisionProcessOption) processOptions);
+        bool isReadonly = m_dgndb->IsReadonly();
+        Utf8String dbGuid = m_dgndb->GetDbGuid().ToString();;
+        BeFileName dbFileName(m_dgndb->GetDbFileName(), true);
+        if (containsSchemaChanges)
+            CloseDgnDb();
+            
+        DbResult result = AddonUtils::ProcessChangeSets(m_dgndb, jsonChangeSetTokens, (RevisionProcessOption)processOptions, dbGuid, dbFileName);
+        if (BE_SQLITE_OK == result && containsSchemaChanges)
+            {
+            DgnDbPtr db;
+            result = AddonUtils::OpenDgnDb(db, dbFileName, isReadonly ? Db::OpenMode::Readonly : Db::OpenMode::ReadWrite);
+            if (BE_SQLITE_OK == result)
+                OnDgnDbOpened(db.get());
+            }
+
         return Napi::Number::New(Env(), (int) result);
         }
 
@@ -677,6 +790,11 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         {
         REQUIRE_ARGUMENT_STRING(0, txnIdHexStr);
         return Napi::Boolean::New(Env(), TxnIdFromString(txnIdHexStr).IsValid());
+        }
+
+    Napi::Value TxnManagerHasUnsavedChanges(const Napi::CallbackInfo& info)
+        {
+        return Napi::Boolean::New(Env(), m_dgndb->Txns().HasChanges());
         }
 
     Napi::Value StartCreateChangeSet(const Napi::CallbackInfo& info)
@@ -864,23 +982,20 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
             return CreateBentleyReturnErrorObject(DgnDbStatus::SQLiteError);
 
         ECClassId ecclassId = stmt->GetValueId<ECClassId>(0);
-        ECInstanceNodeKeyPtr nodeKey = ECInstanceNodeKey::Create(ecclassId, elemId);
-        NavNodeKeyList keyList;
-        keyList.push_back(nodeKey);
-        INavNodeKeysContainerCPtr selectedNodeKeys = NavNodeKeyListContainer::Create(keyList);
-        SelectionInfo selection ("iModelJS", false, *selectedNodeKeys);
+        ECInstanceKey instanceKey = ECInstanceKey(ecclassId, elemId);
+        KeySetPtr input = KeySet::Create({instanceKey});
         RulesDrivenECPresentationManager::ContentOptions options ("Items");
         if ( m_presentationManager == nullptr)
             return CreateBentleyReturnErrorObject(DgnDbStatus::BadArg);
         
-        ContentDescriptorCPtr descriptor = m_presentationManager->GetContentDescriptor(GetDgnDb(), ContentDisplayType::PropertyPane, selection, options.GetJson()).get();
+        ContentDescriptorCPtr descriptor = m_presentationManager->GetContentDescriptor(GetDgnDb(), ContentDisplayType::PropertyPane, *input, nullptr, options.GetJson()).get();
         if (descriptor.IsNull())
             return CreateBentleyReturnErrorObject(DgnDbStatus::BadArg);
 
         PageOptions pageOptions;
         pageOptions.SetPageStart(0);
         pageOptions.SetPageSize(0);
-        ContentCPtr content = m_presentationManager->GetContent(GetDgnDb(), *descriptor, selection, pageOptions, options.GetJson()).get();
+        ContentCPtr content = m_presentationManager->GetContent(*descriptor, pageOptions).get();
         if (content.IsNull())
             return CreateBentleyReturnErrorObject(DgnDbStatus::BadArg);
 
@@ -1260,6 +1375,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
             InstanceMethod("txnManagerGetTxnDescription", &AddonDgnDb::TxnManagerGetTxnDescription),
             InstanceMethod("txnManagerIsTxnIdValid", &AddonDgnDb::TxnManagerIsTxnIdValid),
             InstanceMethod("readFontMap", &AddonDgnDb::ReadFontMap),
+            InstanceMethod("txnManagerHasUnsavedChanges", &AddonDgnDb::TxnManagerHasUnsavedChanges),
 						
 			// DEVELOPMENT-ONLY METHODS:
 			InstanceMethod("executeTest", &AddonDgnDb::ExecuteTest),
@@ -1345,6 +1461,7 @@ public:
         InstanceMethod("bindBoolean", &AddonECSqlBinder::BindBoolean),
         InstanceMethod("bindDateTime", &AddonECSqlBinder::BindDateTime),
         InstanceMethod("bindDouble", &AddonECSqlBinder::BindDouble),
+        InstanceMethod("bindGuid", &AddonECSqlBinder::BindGuid),
         InstanceMethod("bindId", &AddonECSqlBinder::BindId),
         InstanceMethod("bindInteger", &AddonECSqlBinder::BindInteger),
         InstanceMethod("bindPoint2d", &AddonECSqlBinder::BindPoint2d),
@@ -1427,6 +1544,18 @@ public:
         {
         REQUIRE_ARGUMENT_NUMBER(0, val);
         const ECSqlStatus stat = GetBinder().BindDouble(val.DoubleValue());
+        return Napi::Number::New(Env(), (int) ToDbResult(stat));
+        }
+
+    Napi::Value BindGuid(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, guidString);
+
+        BeGuid guid;
+        if (SUCCESS != guid.FromString(guidString.c_str()))
+            return Napi::Number::New(Env(), (int) BE_SQLITE_ERROR);
+
+        const ECSqlStatus stat = GetBinder().BindGuid(guid, IECSqlBinder::MakeCopy::Yes);
         return Napi::Number::New(Env(), (int) ToDbResult(stat));
         }
 
@@ -1579,7 +1708,8 @@ struct AddonECSqlColumnInfo : Napi::ObjectWrap<AddonECSqlColumnInfo>
             Navigation = 12,
             Struct = 13,
             PrimitiveArray = 14,
-            StructArray = 15
+            StructArray = 15,
+            Guid = 16
             };
 
         static Napi::FunctionReference s_constructor;
@@ -1667,8 +1797,22 @@ struct AddonECSqlColumnInfo : Napi::ObjectWrap<AddonECSqlColumnInfo>
                 switch (dataType.GetPrimitiveType())
                     {
                         case PRIMITIVETYPE_Binary:
-                            type = Type::Blob;
-                            break;
+                        {
+                        ECPropertyCP prop = GetColInfo().GetProperty();
+                        if (prop->HasExtendedType())
+                            {
+                            BeAssert(prop->GetIsPrimitive());
+                            Utf8StringCR extendedTypeName = prop->GetAsPrimitiveProperty()->GetExtendedTypeName();
+                            if (extendedTypeName.EqualsIAscii("Guid") || extendedTypeName.EqualsIAscii("BeGuid"))
+                                {
+                                type = Type::Guid;
+                                break;
+                                }
+                            }
+
+                        type = Type::Blob;
+                        break;
+                        }
                         case PRIMITIVETYPE_Boolean:
                             type = Type::Boolean;
                             break;
@@ -1859,6 +2003,7 @@ public:
         InstanceMethod("getDateTime", &AddonECSqlValue::GetDateTime),
         InstanceMethod("getDouble", &AddonECSqlValue::GetDouble),
         InstanceMethod("getGeometry", &AddonECSqlValue::GetGeometry),
+        InstanceMethod("getGuid", &AddonECSqlValue::GetGuid),
         InstanceMethod("getId", &AddonECSqlValue::GetId),
         InstanceMethod("getClassNameForClassId", &AddonECSqlValue::GetClassNameForClassId),
         InstanceMethod("getInt", &AddonECSqlValue::GetInt),
@@ -1960,6 +2105,15 @@ public:
             Napi::TypeError::New(info.Env(), "Could not convert IGeometry to JSON.").ThrowAsJavaScriptException();
 
         return Napi::String::New(Env(), json.ToString().c_str());
+        }
+
+    Napi::Value GetGuid(const Napi::CallbackInfo& info)
+        {
+        if (info.Length() != 0)
+            Napi::TypeError::New(info.Env(), "GetGuid must not have arguments").ThrowAsJavaScriptException();
+
+        BeGuid guid = GetECSqlValue().GetGuid();
+        return Napi::String::New(Env(), guid.ToString().c_str());
         }
 
     Napi::Value GetId(const Napi::CallbackInfo& info)
@@ -2683,6 +2837,7 @@ static Napi::Object iModelJsAddonRegisterModule(Napi::Env env, Napi::Object expo
     IModelJsAddon::AddonECSqlValueIterator::Init(env, exports);
     IModelJsAddon::AddonBriefcaseManagerResourcesRequest::Init(env, exports);
     IModelJsAddon::AddonECPresentationManager::Init(env, exports);
+    IModelJsAddon::AddonECSchemaXmlContext::Init(env, exports);
 
     exports.DefineProperties(
         {
@@ -2702,5 +2857,6 @@ Napi::FunctionReference IModelJsAddon::AddonECSqlValueIterator::s_constructor;
 Napi::FunctionReference IModelJsAddon::AddonDgnDb::s_constructor;
 Napi::FunctionReference IModelJsAddon::AddonECPresentationManager::s_constructor;
 Napi::FunctionReference IModelJsAddon::AddonECDb::s_constructor;
+Napi::FunctionReference IModelJsAddon::AddonECSchemaXmlContext::s_constructor;
 
 NODE_API_MODULE(at_bentley_imodeljs_nodeaddon, iModelJsAddonRegisterModule)

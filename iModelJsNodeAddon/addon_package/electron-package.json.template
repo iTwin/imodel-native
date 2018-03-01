@@ -14,8 +14,8 @@
     "name": "Bentley Systems, Inc.",
     "url": "http://www.bentley.com"
   },
-  "dependencies": {
-    "@bentley/imodeljs-nodeaddonapi": "~${PACKAGE_VERSION}"
+  "peerDependencies": {
+    "@bentley/imodeljs-nodeaddonapi": "${COMPATIBLE_API_PACKAGE_VERSIONS}"
   },
   "//optionalDependencies": [
     "These dependencies are optional because each one is specific to a single combination of version, platform, and CPU.",

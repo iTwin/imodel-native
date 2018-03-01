@@ -16,6 +16,10 @@ RulesDrivenECPresentationManager* ECPresentationUtils::CreatePresentationManager
     BeFileName tempDir = locations.GetLocalTempDirectoryBaseName();
     RulesDrivenECPresentationManager::Paths paths(assetsDir, tempDir);
     RulesDrivenECPresentationManager* manager = new RulesDrivenECPresentationManager(connections, paths);
+
+    BeFileName supplementalsDirectory = BeFileName(assetsDir).AppendToPath(L"PresentationRules");
+    manager->GetLocaters().RegisterLocater(*SupplementalRuleSetLocater::Create(*DirectoryRuleSetLocater::Create(supplementalsDirectory.GetNameUtf8().c_str())));
+
     return manager;
     }
 
@@ -60,7 +64,27 @@ static PageOptions GetPageOptions(JsonValueCR params)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static folly::Future<NavNodeCPtr> GetNode(IECPresentationManager& mgr, ECDbR ecdb, JsonValueCR params)
     {
-    return mgr.GetNode(ecdb, BeJsonUtilities::UInt64FromValue(params["nodeId"]));
+#ifdef wip_serialization
+    return mgr.GetNode(ecdb, *NavNodeKey::FromJson(params["nodeKey"]));
+#else
+    JsonValueCR json = params["nodeKey"];
+    Utf8CP type = json["type"].asCString();
+    bvector<Utf8String> path;
+    for (JsonValueCR pathElement : json["pathFromRoot"])
+        path.push_back(pathElement.asString());
+    NavNodeKeyCPtr key;
+    if (0 == strcmp(NAVNODE_TYPE_ECInstanceNode, type))
+        {
+        ECClassId classId = ECClassId(BeJsonUtilities::UInt64FromValue(json["classId"]));
+        ECInstanceId instanceId = ECInstanceId(BeJsonUtilities::UInt64FromValue(json["instanceId"]));
+        key = ECInstanceNodeKey::Create(classId, instanceId, path);
+        }
+    else
+        {
+        key = NavNodeKey::Create(type, path);
+        }
+    return mgr.GetNode(ecdb, *key);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -74,20 +98,27 @@ static Utf8CP GetDisplayType(JsonValueCR params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static INavNodeKeysContainerCPtr GetKeys(JsonValueCR params)
+static KeySetPtr GetKeys(JsonValueCR params)
     {
-    if (!params.isMember("keys") || !params["keys"].isArray())
-        return NavNodeKeyListContainer::Create();
+    if (!params.isMember("keys"))
+        return KeySet::Create();
 
     JsonValueCR keysJson = params["keys"];
-    NavNodeKeyList keys;
+#ifdef wip_serialization
+    if (!keysJson.isObject())
+        return KeySet::Create();
+    return KeySet::FromJson(keysJson);
+#else
+    if (!keysJson.isArray())
+        return KeySet::Create();
+    bvector<ECInstanceKey> instanceKeys;
     for (Json::ArrayIndex i = 0; i < keysJson.size(); ++i)
         {
-        ECClassId classId(BeJsonUtilities::UInt64FromValue(keysJson[i]["classId"]));
-        ECInstanceId instanceId(BeJsonUtilities::UInt64FromValue(keysJson[i]["instanceId"]));
-        keys.push_back(ECInstanceNodeKey::Create(classId, instanceId));
+        ECInstanceKey key(ECClassId(BeJsonUtilities::UInt64FromValue(keysJson[i]["classId"])), ECInstanceId(BeJsonUtilities::UInt64FromValue(keysJson[i]["instanceId"])));
+        instanceKeys.push_back(key);
         }
-    return NavNodeKeyListContainer::Create(keys);
+    return KeySet::Create(instanceKeys);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -140,6 +171,48 @@ void ECPresentationUtils::GetNodePaths(IECPresentationManagerR manager, ECDbR db
     BeAssert(false);
     }
 
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                02/2018
++===============+===============+===============+===============+===============+======*/
+struct DescriptorOverrideHelper
+{
+private:
+    JsonValueCR m_overridesJson;
+private:
+    Utf8CP GetSortingFieldName() const { return m_overridesJson["sortingFieldName"].asCString(); }
+    SortDirection GetSortDirection() const { return (SortDirection)m_overridesJson["sortDirection"].asInt(); }
+    int GetContentFlags() const { return m_overridesJson["contentFlags"].asInt(); }
+    Utf8CP GetFilterExpression() const { return m_overridesJson["filterExpression"].isNull() ? "" : m_overridesJson["filterExpression"].asCString(); }
+    bvector<Utf8String> GetHiddenFieldNames() const
+        {
+        bvector<Utf8String> names;
+        JsonValueCR arr = m_overridesJson["hiddenFieldNames"];
+        for (Json::ArrayIndex i = 0; i < arr.size(); ++i)
+            names.push_back(arr[i].asCString());
+        return names;
+        }
+public:
+    DescriptorOverrideHelper(JsonValueCR json) : m_overridesJson(json) {}
+    Utf8CP GetDisplayType() const { return m_overridesJson["displayType"].asCString(); }
+    ContentDescriptorCPtr GetOverridenDescriptor(ContentDescriptorCR defaultDescriptor) const
+        {
+        if (!defaultDescriptor.GetPreferredDisplayType().Equals(GetDisplayType()))
+            {
+            BeAssert(false);
+            return &defaultDescriptor;
+            }
+        ContentDescriptorPtr descriptorCopy = ContentDescriptor::Create(defaultDescriptor);
+        descriptorCopy->SetSortingField(GetSortingFieldName());
+        descriptorCopy->SetSortDirection(GetSortDirection());
+        descriptorCopy->SetContentFlags(GetContentFlags());
+        descriptorCopy->SetFilterExpression(GetFilterExpression());
+        bvector<Utf8String> hiddenFieldNames = GetHiddenFieldNames();
+        for (Utf8StringCR name : hiddenFieldNames)
+            descriptorCopy->RemoveField(name.c_str());
+        return descriptorCopy;
+        }
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -153,8 +226,7 @@ void ECPresentationUtils::GetFilteredNodesPaths(IECPresentationManagerR manager,
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECPresentationUtils::GetContentDescriptor(IECPresentationManagerR manager, ECDbR db, JsonValueCR params, rapidjson::Document& response)
     {
-    SelectionInfo selection("Undefined", false, *GetKeys(params));
-    ContentDescriptorCPtr descriptor = manager.GetContentDescriptor(db, GetDisplayType(params), selection, GetManagerOptions(params)).get();
+    ContentDescriptorCPtr descriptor = manager.GetContentDescriptor(db, GetDisplayType(params), *GetKeys(params), nullptr, GetManagerOptions(params)).get();
     if (descriptor.IsValid())
         response = descriptor->AsJson();
     }
@@ -164,12 +236,13 @@ void ECPresentationUtils::GetContentDescriptor(IECPresentationManagerR manager, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECPresentationUtils::GetContent(IECPresentationManagerR manager, ECDbR db, JsonValueCR params, rapidjson::Document& response)
     {
-    SelectionInfo selection("Undefined", false, *GetKeys(params));
-    ContentDescriptorCPtr descriptor = manager.GetContentDescriptor(db, GetDisplayType(params), selection, GetManagerOptions(params)).get();
+    DescriptorOverrideHelper helper(params["descriptorOverrides"]);
+    ContentDescriptorCPtr descriptor = manager.GetContentDescriptor(db, helper.GetDisplayType(), *GetKeys(params), nullptr, GetManagerOptions(params)).get();
     if (descriptor.IsNull())
         return;
 
-    ContentCPtr content = manager.GetContent(db, *descriptor, selection, GetPageOptions(params), GetManagerOptions(params)).get();
+    ContentDescriptorCPtr overridenDescriptor = helper.GetOverridenDescriptor(*descriptor);
+    ContentCPtr content = manager.GetContent(*overridenDescriptor, GetPageOptions(params)).get();
     response = content->AsJson();
     }
 
@@ -178,12 +251,13 @@ void ECPresentationUtils::GetContent(IECPresentationManagerR manager, ECDbR db, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECPresentationUtils::GetContentSetSize(IECPresentationManagerR manager, ECDbR db, JsonValueCR params, rapidjson::Document& response)
     {
-    SelectionInfo selection("Undefined", false, *GetKeys(params));
-    ContentDescriptorCPtr descriptor = manager.GetContentDescriptor(db, GetDisplayType(params), selection, GetManagerOptions(params)).get();
+    DescriptorOverrideHelper helper(params["descriptorOverrides"]);
+    ContentDescriptorCPtr descriptor = manager.GetContentDescriptor(db, helper.GetDisplayType(), *GetKeys(params), nullptr, GetManagerOptions(params)).get();
     if (descriptor.IsNull())
         return;
 
-    size_t size = manager.GetContentSetSize(db, *descriptor, selection, GetManagerOptions(params)).get();
+    ContentDescriptorCPtr overridenDescriptor = helper.GetOverridenDescriptor(*descriptor);
+    size_t size = manager.GetContentSetSize(*overridenDescriptor).get();
     response.SetUint64(size);
     }
 
