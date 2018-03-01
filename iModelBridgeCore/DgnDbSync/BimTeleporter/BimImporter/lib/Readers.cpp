@@ -2,7 +2,7 @@
 |
 |     $Source: BimTeleporter/BimImporter/lib/Readers.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1456,45 +1456,6 @@ BentleyStatus SchemaReader::_Read(Json::Value& jsonValue)
             return ERROR;
             }
         
-        if (ecSchema->GetName().EqualsIAscii("jclass"))
-            {
-            ECClassP acadProps = ecSchema->GetClassP("ACAD_PROPERTIES");
-            if (nullptr != acadProps)
-                {
-                acadProps->SetClassModifier(ECClassModifier::Abstract);
-
-                IECInstancePtr mixinInstance = CoreCustomAttributeHelper::CreateCustomAttributeInstance("IsMixin");
-                if (!mixinInstance.IsValid())
-                    {
-                    GetLogger().errorv("Unable to create mixin custom attribute for jclass:ACAD_PROPERTIES");
-                    return ERROR;
-                    }
-                auto& coreCA = mixinInstance->GetClass().GetSchema();
-                if (!ECSchema::IsSchemaReferenced(*ecSchema, coreCA))
-                    ecSchema->AddReferencedSchema(const_cast<ECSchemaR>(coreCA));
-
-                ECValue appliesToClass("jclass:JSPACE_OBJECT");
-                mixinInstance->SetValue("AppliesToEntityClass", appliesToClass);
-
-                if (ECObjectsStatus::Success != acadProps->SetCustomAttribute(*mixinInstance))
-                    {
-                    GetLogger().errorv("Unable to set mixin custom attribute on jclass:ACAD_PROPERTIES");
-                    return ERROR;
-                    }
-                }
-            for (ECClassCP ecClass : ecSchema->GetClasses())
-                {
-                for (ECClassCP base : ecClass->GetBaseClasses())
-                    {
-                    if (!base->GetName().EqualsIAscii("ACAD_PROPERTIES"))
-                        continue;
-                    // Need to ensure that the mixin baseclass is at the end of the list of baseclasses
-                    ECClassP nonConstClass = ecSchema->GetClassP(ecClass->GetName().c_str());
-                    nonConstClass->RemoveBaseClass(*base);
-                    nonConstClass->AddBaseClass(*base);
-                    }
-                }
-            }
         if (SUCCESS != ImportSchema(ecSchema.get()))
             {
             GetLogger().fatalv("Failed to import schema %s.  Unable to continue.", schemaName);

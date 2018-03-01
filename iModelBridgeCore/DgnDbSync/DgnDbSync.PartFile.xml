@@ -420,6 +420,15 @@
         </Bindings>
     </Part>
 
+    <Part Name="DgnDb0601ToBimConverter" BentleyBuildMakeFile="BimTeleporter/src/DgnDbToBimConverter.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubPart PartName="BisJson1Importer"/>
+        <SubPart PartName="BisJson1Exporter0601" PartFile="BimTeleporter" />
+        <Bindings>
+            <Libs ProductDirectoryName="BimTeleporterLibs" Required="false">Delivery/$(libprefix)DgnDbToBimConverter$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)DgnDbToBimConverter$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
     <ProductDirectoryList ListName="BimTeleporterDirList">
         <ProductDirectory Name="applicationroot" Path=""/>
         <ProductDirectory Name="BimTeleporterNativeAssemblies"          Path=""/>

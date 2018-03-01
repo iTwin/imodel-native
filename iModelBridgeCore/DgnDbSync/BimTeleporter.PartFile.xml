@@ -3,8 +3,7 @@
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
     <Part Name="DgnDb0601Assemblies" BentleyBuildMakeFile="BimTeleporter/DgnDb0601AssembliesPrewire.mke">
-        <SdkSource>DgnClientSdk-Minimal-Winx64-DgnDb</SdkSource>
-        <!-- <SubPart PartName="google_v8-Windows" PartFile="google_v8_5_7_wip" Repository="Thirdparty-google_v8_5_7_wip"/> -->
+        <NuGetPackage targetFramework="native">DgnDb_1_6_ForTeleporterNuget</NuGetPackage>
         <Bindings>
             <Assemblies ProductDirectoryName="DgnDbAssemblies" Required="false">
                 Delivery/*.dll,

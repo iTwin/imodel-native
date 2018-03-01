@@ -2,7 +2,7 @@
 #
 #     $Source: BimTeleporter/DgnDb0601AssembliesPrewire.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 PolicyFile=$(SrcRoot)bsicommon/sharedmki/AssertCommonCompileLinkPolicy.mki
@@ -58,13 +58,11 @@ $(Delivery)freetype2$(ApiNumber).dll : $(DgnDbDlls)freetype2$(ApiNumber).dll
 
 $(Delivery)BeOpenSSL$(ApiNumber).dll : $(DgnDbDlls)BeOpenSSL$(ApiNumber).dll
 
-$(Delivery)DgnView$(ApiNumber).dll : $(DgnDbDlls)DgnView$(ApiNumber).dll
+#$(Delivery)DgnView$(ApiNumber).dll : $(DgnDbDlls)DgnView$(ApiNumber).dll
 
 $(Delivery)libv8.dll : $(DgnDbDlls)libv8.dll
 
-$(Delivery)qvision$(ApiNumber).dll : $(DgnDbDlls)qvision$(ApiNumber).dll
-
-$(Delivery)System.Json.dll : $(DgnDbDlls)System.Json.dll
+#$(Delivery)qvision$(ApiNumber).dll : $(DgnDbDlls)qvision$(ApiNumber).dll
 
 $(Delivery)BeHttp$(ApiNumber).dll : $(DgnDbDlls)BeHttp$(ApiNumber).dll
 
@@ -72,7 +70,7 @@ $(Delivery)BeFolly$(ApiNumber).dll : $(DgnDbDlls)BeFolly$(ApiNumber).dll
 
 $(Delivery)bentleylog4cxx$(ApiNumber).dll : $(DgnDbDlls)bentleylog4cxx$(ApiNumber).dll
 
-$(Delivery)BeSecurity$(ApiNumber).dll : $(DgnDbDlls)BeSecurity$(ApiNumber).dll
+#$(Delivery)BeSecurity$(ApiNumber).dll : $(DgnDbDlls)BeSecurity$(ApiNumber).dll
 
 $(Delivery)Units$(ApiNumber).dll : $(DgnDbDlls)Units$(ApiNumber).dll
 
@@ -100,11 +98,11 @@ $(DeliveryDgnDbPlatformLibs)BeXml.lib : $(DgnDbDlls)BeXml.lib
 
 $(DeliveryDgnDbPlatformLibs)BeLibXml2.lib : $(DgnDbDlls)BeLibXml2.lib
 
-$(DeliveryDgnDbPlatformLibs)BeHttp.lib : $(DgnDbDlls)BeHttp.lib
+#$(DeliveryDgnDbPlatformLibs)BeHttp.lib : $(DgnDbDlls)BeHttp.lib
 
 $(DeliveryDgnDbPlatformLibs)BeJsonCpp.lib : $(DgnDbDlls)BeJsonCpp.lib
 
-$(DeliveryDgnDbPlatformLibs)BeFolly.lib : $(DgnDbDlls)BeFolly.lib
+#$(DeliveryDgnDbPlatformLibs)BeFolly.lib : $(DgnDbDlls)BeFolly.lib
 
 
 always:
