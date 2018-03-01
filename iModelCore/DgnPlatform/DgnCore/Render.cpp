@@ -298,13 +298,11 @@ Render::Plan::Plan(DgnViewportCR vp)
     if (style3d)
         {
         m_hline = style3d->GetHiddenLineParams();
-        auto spatial = controller._ToSpatialView();
-        if (spatial)
-            m_lights = spatial->GetLights();
+        auto view3d = controller._ToView3d();
+        if (view3d)
+            m_lights = view3d->GetLights();
         else
-            {
             BeAssert(false); // somehow we have a 3d style on a 2d controller???
-            }
         }
     }
 
