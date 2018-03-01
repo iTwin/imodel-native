@@ -28,6 +28,7 @@
     <ClCompile Include="Published\FSTest.cpp" />
     <ClCompile Include="Published\HttpBody\HttpBinaryBodyTests.cpp" />
     <ClCompile Include="Published\HttpBody\HttpCompressedBodyTests.cpp" />
+    <ClCompile Include="Published\HttpBody\HttpDummyBodyTests.cpp" />
     <ClCompile Include="Published\HttpBody\HttpFileBodyTests.cpp" />
     <ClCompile Include="Published\HttpBody\HttpMultipartBodyTests.cpp" />
     <ClCompile Include="Published\HttpBody\HttpRangeBodyTests.cpp" />

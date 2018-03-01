@@ -312,4 +312,28 @@ public:
     BEHTTP_EXPORT Utf8String AsString() const override;
 };
 
+/*--------------------------------------------------------------------------------------+
+* @bsiclass                                               julius.cepukenas    11/2016
+* @Note HttpBody which do not store any data
++---------------+---------------+---------------+---------------+---------------+------*/
+typedef RefCountedPtr<struct HttpDummyBody> HttpDummyBodyPtr;
+struct EXPORT_VTABLE_ATTRIBUTE HttpDummyBody : HttpBody
+    {
+    protected:
+        HttpDummyBody();
+        virtual ~HttpDummyBody() {}
+
+    public:
+        BEHTTP_EXPORT static HttpDummyBodyPtr Create();
+        BEHTTP_EXPORT void Open() override;
+        BEHTTP_EXPORT void Close() override;
+        BEHTTP_EXPORT BentleyStatus SetPosition(uint64_t position) override;
+        BEHTTP_EXPORT BentleyStatus GetPosition(uint64_t& position) override;
+        BEHTTP_EXPORT BentleyStatus Reset() override;
+        BEHTTP_EXPORT size_t Write(const char* buffer, size_t bufferSize) override;
+        BEHTTP_EXPORT size_t Read(char* bufferOut, size_t bufferSize) override;
+        BEHTTP_EXPORT uint64_t GetLength() override;
+        BEHTTP_EXPORT Utf8String AsString() const override;
+    };
+
 END_BENTLEY_HTTP_NAMESPACE

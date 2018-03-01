@@ -31,6 +31,7 @@
     <ClCompile Include="Published\HttpProxyTests.cpp" />
     <ClCompile Include="Published\HttpRequestTests.cpp" />
     <ClCompile Include="Published\BeUriTests.cpp" />
+    <ClCompile Include="Published\HttpBody\HttpDummyBodyTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\BaseMockHttpHandlerTest.h" />
