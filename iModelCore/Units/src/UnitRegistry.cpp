@@ -65,19 +65,6 @@ void UnitRegistry::InsertUnique (Utf8Vector &vec, Utf8String &str)
     vec.push_back(str);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-UnitCP UnitRegistry::AddDummyUnit(Utf8CP unitName)
-    {
-    auto dummy = LookupUnit(unitName);
-    if (nullptr == dummy)
-        dummy = AddUnit("ONE", "USCUSTOM", unitName, "ONE");
-
-    BeAssert(nullptr != dummy);
-    return dummy;
-    }
-
 //---------------------------------------------------------------------------------------//
 // @bsimethod                                              Colin.Kerr           03/16
 //+---------------+---------------+---------------+---------------+---------------+------//
@@ -92,6 +79,27 @@ bool UnitRegistry::TryGetConversion(uint64_t index, Conversion& conversion)
     return false;
     }
 
+//---------------------------------------------------------------------------------------//
+// @bsimethod                                              Colin.Kerr           11/17
+//+---------------+---------------+---------------+---------------+---------------+------//
+UnitCP UnitRegistry::CreateDummyUnit(Utf8CP unitName)
+    {
+    if (Utf8String::IsNullOrEmpty(unitName))
+        return nullptr;
+
+    if (NamedItemExists(unitName))
+        {
+        LOG.errorv("Could not create dummy unit '%s' because that name is already in use", unitName);
+        return nullptr;
+        }
+
+    LOG.warningv("Creating Dummy unit with name '%s'", unitName);
+    Utf8PrintfString dummyPhenName("%s_%s", "DUMMY", unitName);
+    AddPhenomenon(dummyPhenName.c_str(), "ONE");
+    auto dummy = AddUnit<Unit>(dummyPhenName.c_str(), DUMMY, unitName, "ONE", 1.0, 0.0);
+    dummy->m_dummyUnit = true;
+    return dummy;
+    }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                              Chris.Tartamella       02/16

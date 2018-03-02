@@ -40,9 +40,6 @@ friend struct Unit;
 private:
     static UnitRegistry * s_instance;
 
-
-
-
     uint32_t m_nextId = 0;
 
     bmap<Utf8CP, UnitSystemP, less_str> m_systems;

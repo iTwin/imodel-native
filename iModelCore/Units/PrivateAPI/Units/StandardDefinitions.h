@@ -27,6 +27,7 @@ public:
     static UnitSystemR GetStatistics();
     static UnitSystemR GetFinance();
     static UnitSystemR GetConstant();
+    static UnitSystemR GetDummy();
 };
 
 END_BENTLEY_UNITS_NAMESPACE

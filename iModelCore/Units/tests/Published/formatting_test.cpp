@@ -647,20 +647,20 @@ TEST(FormattingTest, PhysValues)
     // preparing pointers to various Unit definitions used in the following tests
     //  adding practically convenient aliases/synonyms to selected Units
 
-    BEU::UnitCP yrdUOM = BEU::UnitRegistry::Instance().LookupUnitCI("YRD");
+    BEU::UnitCP yrdUOM = BEU::UnitRegistry::Instance().LookupUnit("YRD");
     yrdUOM->AddSynonym("YARD");
     yrdUOM->AddSynonym("YRDS");
   
-    BEU::UnitCP ftUOM = BEU::UnitRegistry::Instance().LookupUnitCI("FT");
+    BEU::UnitCP ftUOM = BEU::UnitRegistry::Instance().LookupUnit("FT");
     ftUOM->AddSynonym("FOOT");
     
-    BEU::UnitCP inUOM = BEU::UnitRegistry::Instance().LookupUnitCI("IN");
+    BEU::UnitCP inUOM = BEU::UnitRegistry::Instance().LookupUnit("IN");
     inUOM->AddSynonym("INCH");
 
-    BEU::UnitCP degUOM = BEU::UnitRegistry::Instance().LookupUnitCI("ARC_DEG");
-    BEU::UnitCP minUOM = BEU::UnitRegistry::Instance().LookupUnitCI("ARC_MINUTE");
-    BEU::UnitCP secUOM = BEU::UnitRegistry::Instance().LookupUnitCI("ARC_SECOND");
-    BEU::UnitCP metrUOM = BEU::UnitRegistry::Instance().LookupUnitCI("M");
+    BEU::UnitCP degUOM = BEU::UnitRegistry::Instance().LookupUnit("ARC_DEG");
+    BEU::UnitCP minUOM = BEU::UnitRegistry::Instance().LookupUnit("ARC_MINUTE");
+    BEU::UnitCP secUOM = BEU::UnitRegistry::Instance().LookupUnit("ARC_SECOND");
+    BEU::UnitCP metrUOM = BEU::UnitRegistry::Instance().LookupUnit("M");
     // creating several quantites of various kinds using two different constructors:
     //  one with the Uint Name and another with the pointer to a Unit definition
     BEU::UnitCP defUom = BEU::UnitRegistry::Instance().GetPlatformLengthUnit();

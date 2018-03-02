@@ -236,10 +236,11 @@ TEST_F(UnitRegistryTests, TestAllBaseUnitSystemsAdded)
     EXPECT_TRUE(UnitRegistry::Instance().HasSystem("STATISTICS"));
     EXPECT_TRUE(UnitRegistry::Instance().HasSystem("FINANCE"));
     EXPECT_TRUE(UnitRegistry::Instance().HasSystem("CONSTANT"));
+    EXPECT_TRUE(UnitRegistry::Instance().HasSystem("DUMMY"));
 
     bvector<UnitSystemCP> unitSystems;
     UnitRegistry::Instance().AllSystems(unitSystems);
-    EXPECT_EQ(12, unitSystems.size());
+    EXPECT_EQ(13, unitSystems.size());
     }
 
 //--------------------------------------------------------------------------------------

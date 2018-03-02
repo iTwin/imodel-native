@@ -121,6 +121,15 @@ UnitSystemR StandardUnitSystems::GetConstant()
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    01/2018
 //--------------------------------------------------------------------------------------
+UnitSystemR StandardUnitSystems::GetDummy()
+    {
+    static UnitSystemP s_dummy = new UnitSystem(DUMMY);
+    return *s_dummy;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
 void UnitRegistry::AddBaseSystems()
     {
     AddSystem(StandardUnitSystems::GetSI());
@@ -135,6 +144,7 @@ void UnitRegistry::AddBaseSystems()
     AddSystem(StandardUnitSystems::GetStatistics());
     AddSystem(StandardUnitSystems::GetFinance());
     AddSystem(StandardUnitSystems::GetConstant());
+    AddSystem(StandardUnitSystems::GetDummy());
     }
 
 //--------------------------------------------------------------------------------------
