@@ -1439,6 +1439,31 @@ FormatUnitSet::FormatUnitSet(Utf8CP formatName, Utf8CP unitName,  bool cloneData
         }
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                  Kyle.Abramowitz 03/2018
+//----------------------------------------------------------------------------------------
+FormatUnitSet::FormatUnitSet(BEU::UnitCP unit, Utf8CP formatName)
+    {
+    m_problem = FormatProblemDetail();
+    m_unit = unit;
+    if (Utils::IsNameNullOrEmpty(formatName))
+        formatName = FormatConstant::DefaultFormatName();
+
+    m_formatSpec = StdFormatSet::FindFormatSpec(formatName);
+    if (nullptr == m_formatSpec)
+        m_problem.UpdateProblemCode(FormatProblemCode::UnknownStdFormatName);
+    else
+        {
+        if (nullptr == m_unit)
+            m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
+        else
+            {
+            m_unitName = m_unit->GetName();
+            m_problem.UpdateProblemCode(FormatProblemCode::NoProblems);
+            }
+        }
+    }
+
 FormatUnitSet& FormatUnitSet::operator=(const FormatUnitSet& other)
     {
     if (this != &other)
