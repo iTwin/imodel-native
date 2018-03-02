@@ -258,7 +258,7 @@ TEST(Spiral,MixedRadiusConstructionsB)
     }
 
 void testClothoidCosineApproximation (
-char *name,
+char const *name,
 double numSamples,
 double R,
 double L,
