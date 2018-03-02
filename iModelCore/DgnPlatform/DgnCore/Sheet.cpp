@@ -563,6 +563,7 @@ static void populateSheetTile(TTile* tile, uint32_t depth, SceneContextR context
     // Change frustum so it looks at only the visible (after clipping) portion of the scene.
     // Base this on polysRange calculated by _CreateSheetTilePolys().
     Frustum frust = viewport->GetFrustum(DgnCoordSystem::Npc);
+    Frustum frustCopy = viewport->GetFrustum(DgnCoordSystem::World); // save original frustum
     DPoint3dP frustPts = frust.GetPtsP();
     polysRange.Get8Corners(frustPts);
     DMap4dCP rootToNpc = viewport->GetWorldToNpcMap();
@@ -578,6 +579,8 @@ static void populateSheetTile(TTile* tile, uint32_t depth, SceneContextR context
     GraphicParams gfParams = GraphicParams::FromSymbology(tree.m_tileColor, tree.m_tileColor, 0);
     tile->m_graphics = renderSys->_CreateSheetTile(*viewport->m_texture, polys, *viewport->m_db, gfParams);
     tile->SetIsReady();
+
+    viewport->SetupFromFrustum(frustCopy); // restore original frustum
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -631,10 +634,10 @@ BentleyStatus Sheet::ViewController::_CreateScene(SceneContextR context)
 
     for (auto& attach : m_attachments)
         {
-         if (!attach.m_tree.IsValid())// || !attach.m_tree->GetRootTile()->IsReady())
-             continue;
+        if (!attach.m_tree.IsValid())// || !attach.m_tree->GetRootTile()->IsReady())
+            continue;
 
-         attach.m_tree->DrawInView(context);
+        attach.m_tree->DrawInView(context);
         }
 
     return SUCCESS;
