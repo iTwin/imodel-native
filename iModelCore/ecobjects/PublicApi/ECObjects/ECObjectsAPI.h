@@ -64,6 +64,7 @@ capture this information.
 #include <ECObjects/StandaloneECRelationshipInstance.h>
 #include <ECObjects/PresentationMetadataHelper.h>
 #include <ECObjects/StandardCustomAttributeHelper.h>
+#include <ECObjects/StandardUnitsHelper.h>
 #include <Bentley/ScopedArray.h>
 #include <ECObjects/AdHocJsonValue.h>
 #include <ECObjects/ECJsonUtilities.h>

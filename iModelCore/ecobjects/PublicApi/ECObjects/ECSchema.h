@@ -1490,6 +1490,7 @@ public:
     //! @param[in]  value  The new value to apply
     //! @returns true if the persistence FormatUnitSet is valid, false if not
     ECOBJECTS_EXPORT bool SetPersistenceUnit(Formatting::FormatUnitSet value);
+    ECOBJECTS_EXPORT bool SetPersistenceUnit(ECUnitCP unit, Utf8CP format = nullptr);
     //! Gets the Unit of measurement used for persisting the information
     Formatting::FormatUnitSetCR GetPersistenceUnit() const {return m_persistenceFUS;}
 

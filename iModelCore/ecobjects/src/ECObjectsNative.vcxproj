@@ -88,6 +88,7 @@
     <ClCompile Include="StandaloneECInstance.cpp" />
     <ClCompile Include="StandaloneECRelationshipInstance.cpp" />
     <ClCompile Include="StandardCustomAttributeHelper.cpp" />
+    <ClCompile Include="StandardUnitsHelper.cpp" />
     <ClCompile Include="SupplementalSchema.cpp" />
     <ClCompile Include="SystemSymbolProvider.cpp" />
     <ClCompile Include="ECUnit.cpp" />
@@ -124,6 +125,7 @@
     <ClInclude Include="..\PublicApi\ECObjects\SchemaResourceKeyHelper.h" />
     <ClInclude Include="..\PublicApi\ECObjects\StandaloneECRelationshipInstance.h" />
     <ClInclude Include="..\PublicApi\ECObjects\StandardCustomAttributeHelper.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\StandardUnitsHelper.h" />
     <ClInclude Include="..\PublicApi\ECObjects\SupplementalSchema.h" />
     <ClInclude Include="..\PublicApi\ECObjects\SystemSymbolProvider.h" />
     <ClInclude Include="..\PublicApi\ECObjects\VirtualCollectionIterator.h" />

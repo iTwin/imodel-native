@@ -162,6 +162,16 @@ bool KindOfQuantity::SetPersistenceUnit(Formatting::FormatUnitSet persistenceFUS
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                Kyle.Abramowitz                03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+bool KindOfQuantity::SetPersistenceUnit(ECUnitCP unit, Utf8CP format)
+    {
+    auto fus = Formatting::FormatUnitSet(unit, format);
+
+    return SetPersistenceUnit(fus);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                06/2017
 //---------------+---------------+---------------+---------------+---------------+-------
 bool KindOfQuantity::AddPresentationUnit(Formatting::FormatUnitSet presentationFUS)
