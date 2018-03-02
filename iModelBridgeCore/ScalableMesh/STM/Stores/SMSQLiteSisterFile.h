@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/Stores/SMSQLiteSisterFile.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -24,6 +24,7 @@ class SMSQLiteSisterFile
         SMSQLiteFilePtr m_smClipSQLiteFile;
         SMSQLiteFilePtr m_smClipDefinitionSQLiteFile;
         BeFileName      m_projectFilesPath;
+        bool            m_useTempPath;
 
         std::mutex m_defOpen;
         std::mutex m_featureOpen;
@@ -52,4 +53,7 @@ class SMSQLiteSisterFile
 
 		void CopyClipSisterFile(SMStoreDataType dataType) const;
 
+        bool IsUsingTempPath() const;
+
+        bool SetUseTempPath(bool useTempPath);
     };

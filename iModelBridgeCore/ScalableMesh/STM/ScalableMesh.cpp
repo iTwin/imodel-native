@@ -660,21 +660,23 @@ AccessMode GetAccessModeFor(bool                    openReadOnly,
 +----------------------------------------------------------------------------*/
 
 IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
-                                       const Utf8String&      baseEditsFilePath,
-    bool                    openReadOnly,
-    bool                    openShareable,
-    StatusInt&              status)
+                                       const Utf8String&     baseEditsFilePath,
+                                       bool                  useTempFolderForEditFiles,
+                                       bool                  openReadOnly,
+                                       bool                  openShareable,
+                                       StatusInt&            status)
 {
-    return GetFor(filePath, baseEditsFilePath, true, openReadOnly, openShareable, status);
+    return GetFor(filePath, baseEditsFilePath, useTempFolderForEditFiles, true, openReadOnly, openShareable, status);
 
 }
 
 IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
-                                       const Utf8String&      baseEditsFilePath,
+                                       const Utf8String&     baseEditsFilePath,
+                                       bool                  useTempFolderForEditFiles,
                                        bool                  needsNeighbors,
-    bool                    openReadOnly,
-    bool                    openShareable,
-    StatusInt&              status)
+                                       bool                  openReadOnly,
+                                       bool                  openShareable,
+                                       StatusInt&            status)
 {
     status = BSISUCCESS;
     bool isLocal = true;
@@ -725,7 +727,7 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
         return 0; // File not found
     }
 
-    return ScalableMesh<DPoint3d>::Open(smSQLiteFile, filePath, newBaseEditsFilePath, needsNeighbors, status);
+    return ScalableMesh<DPoint3d>::Open(smSQLiteFile, filePath, newBaseEditsFilePath, useTempFolderForEditFiles, needsNeighbors, status);
 
 }
 
@@ -734,7 +736,7 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
                                        bool                    openShareable,
                                        StatusInt&              status)
     {
-    return GetFor(filePath, Utf8String(filePath), openReadOnly, openShareable, status);
+    return GetFor(filePath, Utf8String(filePath), true, openReadOnly, openShareable, status);
     }
 
 IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
@@ -743,7 +745,7 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
                                        bool                    openShareable,
                                        StatusInt&              status)
     {
-    return GetFor(filePath, Utf8String(filePath), needsNeighbors, openReadOnly, openShareable, status);
+    return GetFor(filePath, Utf8String(filePath), true, needsNeighbors, openReadOnly, openShareable, status);
     }
 
 /*----------------------------------------------------------------------------+
@@ -754,22 +756,20 @@ IScalableMeshPtr IScalableMesh::GetFor   (const WChar*          filePath,
                             bool                    openShareable)
     {
     StatusInt status;
-    return GetFor(filePath, Utf8String(filePath), openReadOnly, openShareable, status);
+    return GetFor(filePath, Utf8String(filePath), true, openReadOnly, openShareable, status);
     }
 
 /*----------------------------------------------------------------------------+
 |IScalableMesh::GetFor
 +----------------------------------------------------------------------------*/
 IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
-                                       const Utf8String&      baseEditsFilePath,
-                                       bool                    openReadOnly,
-                                       bool                    openShareable)
+                                       const Utf8String&     baseEditsFilePath,
+                                       bool                  openReadOnly,
+                                       bool                  openShareable)
     {
     StatusInt status;
-    return GetFor(filePath, baseEditsFilePath, openReadOnly, openShareable, status);
+    return IScalableMesh::GetFor(filePath, baseEditsFilePath, true, openReadOnly, openShareable, status);
     }
-
-
 
 /*----------------------------------------------------------------------------+
 |IScalableMesh::GetCountInRange
@@ -790,14 +790,16 @@ ScalableMeshBase::ScalableMeshBase(SMSQLiteFilePtr& smSQliteFile,
     : m_workingLayer(DEFAULT_WORKING_LAYER),
     m_sourceGCS(GetDefaultGCS()),
     m_path(filePath),
-    m_baseExtraFilesPath(filePath),
+    m_baseExtraFilesPath(filePath),    
+    m_useTempPath(true), //Default is true, only legacy code should want not to use temporary folder.
     m_smSQLitePtr(smSQliteFile)
 {
     memset(&m_contentExtent, 0, sizeof(m_contentExtent));
 
     // NEEDS_WORK_SM_STREAMING : if sqlite file is null, check for streaming parameters
     //HPRECONDITION(smSQliteFile != 0);
-
+    
+        m_useTempPath = true;    
     SetDataSourceAccount(nullptr);
 }
 
@@ -1034,15 +1036,17 @@ template <class POINT> Count ScalableMesh<POINT>::_GetCountInRange (const DRange
 +----------------------------------------------------------------------------*/
 
 template <class POINT>
-IScalableMeshPtr ScalableMesh<POINT>::Open(SMSQLiteFilePtr& smSQLiteFile,
-                                    const WString&     filePath,
-                                    const Utf8String&     baseEditsFilePath,
-                                           bool         needsNeighbors,
-                                    StatusInt&              status)
+IScalableMeshPtr ScalableMesh<POINT>::Open(SMSQLiteFilePtr&  smSQLiteFile,
+                                           const WString&    filePath,
+                                           const Utf8String& baseEditsFilePath,                                           
+                                           bool              useTempFolderForEditFiles,
+                                           bool              needsNeighbors,
+                                           StatusInt&        status)
 {
     ScalableMesh<POINT>* scmPtr = new ScalableMesh<POINT>(smSQLiteFile, filePath);
     IScalableMeshPtr scmP(scmPtr);
-    scmP->SetEditFilesBasePath(baseEditsFilePath);
+    scmP->SetEditFilesBasePath(baseEditsFilePath);    
+    scmPtr->SetUseTempPath(useTempFolderForEditFiles);
     scmPtr->SetNeedsNeighbors(needsNeighbors);
     status = scmPtr->Open();
     if (status == BSISUCCESS)
@@ -1258,23 +1262,14 @@ template <class POINT> int ScalableMesh<POINT>::Open()
             bool result = dataStore->SetProjectFilesPath(projectFilesPath);
             assert(result == true);
 
+            result = dataStore->SetUseTempPath(m_useTempPath);            
+            assert(result == true);            
+
             ClipRegistry* registry = new ClipRegistry(dataStore);
             m_scmIndexPtr->SetClipRegistry(registry);
 
-            /*  if (!m_scmIndexPtr->IsTerrain())
-                  {
-                  WString newPath = m_baseExtraFilesPath + L"_terrain.3sm";
-                  Utf8String newBaseEditsFilePath = Utf8String(m_baseExtraFilesPath) + "_terrain";
-                  StatusInt openStatus;
-                  SMSQLiteFilePtr smSQLiteFile(SMSQLiteFile::Open(newPath, false, openStatus));
-                  if (openStatus && smSQLiteFile != nullptr)
-                      {
-                      m_terrainP = ScalableMesh<DPoint3d>::Open(smSQLiteFile, newPath, newBaseEditsFilePath, openStatus);
-                      m_terrainP->SetInvertClip(true);
-                      m_scmTerrainIndexPtr = dynamic_cast<ScalableMesh<DPoint3d>*>(m_terrainP.get())->GetMainIndexP();
-                      }
-                  }*/
-            //filterP.release();
+       
+            filterP.release();
 
 #ifdef INDEX_DUMPING_ACTIVATED
             if (s_dropNodes)
@@ -2780,16 +2775,15 @@ template <class POINT> void ScalableMesh<POINT>::_RemoveAllDisplayData()
     m_scmIndexPtr->TextureManager()->RemoveAllPoolIdForTextureVideo();
     }
 
-
 template <class POINT> void ScalableMesh<POINT>::_SetEditFilesBasePath(const Utf8String& path)
     {
     m_baseExtraFilesPath = WString(path.c_str(), BentleyCharEncoding::Utf8);
-
+    
 	if (m_scmIndexPtr == nullptr) return;
 	BeFileName projectFilesPath(m_baseExtraFilesPath.c_str());
 
 	bool result = m_scmIndexPtr->GetDataStore()->SetProjectFilesPath(projectFilesPath);
-	assert(result == true);
+	assert(result == true);                 
     }
 
 template <class POINT> Utf8String ScalableMesh<POINT>::_GetEditFilesBasePath()
