@@ -2417,6 +2417,7 @@ private:
     void SetupBlvSaveStmt(Statement& stmt, Utf8CP name);
     DbResult ExecBlvQueryStmt(Statement& stmt, Utf8CP name) const;
     DbResult AssignBriefcaseId(BeBriefcaseId);
+    BE_SQLITE_EXPORT DbResult DropTable(Utf8CP tableName, bool requireExists) const;
 
 public:
     BE_SQLITE_EXPORT Db();
@@ -2587,8 +2588,15 @@ public:
     //! @param[in] ddl The column definition sql for this table (should not include parentheses).
     BE_SQLITE_EXPORT DbResult CreateTable(Utf8CP tableName, Utf8CP ddl) const;
 
-    //! Drop a table from this Db.
-    BE_SQLITE_EXPORT DbResult DropTable(Utf8CP tableName) const;
+    //! Drop a table from this Db. Asserts that the table exists.
+    //! @param[in] tableName The name of the table to drop.
+    //! @return BE_SQLITE_OK if the table was dropped.
+    DbResult DropTable(Utf8CP tableName) const { return DropTable(tableName, true); }
+
+    //! Drop a table from this Db, if it exists.
+    //! @param[in] tableName The name of the table to try to drop.
+    //! @return BE_SQLITE_OK if the table was dropped or did not exist.
+    DbResult DropTableIfExists(Utf8CP tableName) const { return DropTable(tableName, false); }
 
     //! Determine whether a table exists in this Db.
     BE_SQLITE_EXPORT bool TableExists(Utf8CP tableName) const;
