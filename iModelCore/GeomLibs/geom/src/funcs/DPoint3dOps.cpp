@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/funcs/DPoint3dOps.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -1666,5 +1666,67 @@ bool DPoint3dOps::PrincipalAxes (bvector<DPoint4d> const &points, DVec3dR centro
     return stat;
     }
 
+void CompressByChordRec (bvector<DPoint3d>& result, bvector<DPoint3d> const& source, double chordTolerance)
+    {
+    //Note that loops are supported
+    if (source.size () <= 2 || chordTolerance <= 0.0)
+        {
+        result = source;
+        return;
+        }
+
+    DSegment3d segment = DSegment3d::From (source[0], source.back ());
+
+    double const quadraticTolerance = chordTolerance * chordTolerance;
+
+    DPoint3d closestPt;
+    double paramBuffer;
+    size_t indexMaxError = 0;
+    double maxQuadError = 0.0;
+    for (size_t i = 1; i < source.size () - 1; ++i)
+        {
+        segment.ProjectPointBounded (closestPt, paramBuffer, source[i]);
+        double curQuadError = closestPt.DistanceSquared (source[i]);
+        if (curQuadError > quadraticTolerance && curQuadError > maxQuadError)
+            {
+            maxQuadError = curQuadError;
+            indexMaxError = i;
+            }
+        }
+
+    if (maxQuadError > quadraticTolerance && indexMaxError != 0)
+        {
+        bvector<DPoint3d> leftPoints, rightPoints;
+        leftPoints.insert (leftPoints.end (), source.begin (), source.begin () + indexMaxError + 1);
+        CompressByChordRec (leftPoints, leftPoints, chordTolerance);
+
+        rightPoints.insert (rightPoints.end (), source.begin () + indexMaxError, source.end ());
+        CompressByChordRec (rightPoints, rightPoints, chordTolerance);
+
+        result = leftPoints;
+        if (rightPoints.size () >= 2)
+            result.insert (result.end (), rightPoints.begin () + 1, rightPoints.end ());
+        }
+    else
+        {
+        result = { source[0], source.back () };
+        }
+    }
+
+bool IsLoop (bvector<DPoint3d> const& points)
+    {
+    return points.size () >= 2 && points[0].AlmostEqual (points.back ());
+    }
+
+void DPoint3dOps::CompressByChordError (bvector<DPoint3d>& result, bvector<DPoint3d> const& source, double chordTolerance)
+    {
+    bool const isInitLoop = IsLoop (source);
+
+    CompressByChordRec (result, source, chordTolerance);
+    
+    //cleanup in case of loops
+    if (isInitLoop && result.size () >= 2 && !result[0].AlmostEqual (result.back ()))
+        result.push_back (result[0]);
+    }
 
 END_BENTLEY_GEOMETRY_NAMESPACE

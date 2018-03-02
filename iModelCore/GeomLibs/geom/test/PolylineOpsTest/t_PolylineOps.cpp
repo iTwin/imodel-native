@@ -982,3 +982,146 @@ TEST (Polyline, GreedyTriangleB)
         }
     Check::ClearGeometry ("Polyline.GreedyTriangleB");
     }
+
+TEST (Dpoint3dOps, CompressAll)
+    {
+    size_t const nPts = (size_t)1e2;
+    bvector<DPoint3d> input (nPts + 1);
+    for (size_t i = 0; i <= nPts; ++i)
+        input[i] = DPoint3d::From ((double) i / nPts, 0, 0);
+
+    //Add points to remove
+    input[30].y = 1.0e-3;
+    input[60].y = 5.0 * 1.0e-3;
+
+    Check::SaveTransformed (input);
+    Check::Shift (DVec3d::From (2, 0, 0));
+
+    bvector<DPoint3d> result;
+    DPoint3dOps::CompressByChordError (result, input, 1.0e-2);
+
+    //Check that only the 2 endpoints are remaining
+    Check::True (result.size () == 2);
+    if (result.size () == 2)
+        {
+        double const refTol = 1.0e-3;
+        Check::Near (result[0], DPoint3d::FromZero (), nullptr, refTol);
+        Check::Near (result[1], DPoint3d::From (1, 0, 0), nullptr, refTol);
+        }
+
+    Check::SaveTransformed (result);
+    Check::ClearGeometry ("Dpoint3dOps.CompressAll");
+    }
+
+TEST (Dpoint3dOps, CompressKeep)
+    {
+    size_t const nPts = (size_t)1e3;
+    bvector<DPoint3d> input (nPts + 1);
+    for (size_t i = 0; i <= nPts; ++i)
+        input[i] = DPoint3d::From ((double) i / nPts, 0, 0);
+
+    //Add a point to keep
+    input[70].y = 1.01e-2;
+
+    Check::SaveTransformed (input);
+    Check::Shift (DVec3d::From (2, 0, 0));
+
+    bvector<DPoint3d> result;
+    DPoint3dOps::CompressByChordError (result, input, 1.0e-2);
+
+    //Check that not everything has been compressed, and that at least 99% of points are removed
+    Check::True (3 < result.size () && result.size() < (nPts / 100));
+
+    //Check that the expected point to keep has been actually kept
+    Check::True (
+        std::find_if (
+            result.begin (),
+            result.end (),
+            [&input] (DPoint3dCR a) 
+                {
+                return 
+                    DVec3d::FromStartEnd (input[70], a)
+                    .MagnitudeSquared () 
+                    < 1.0e-16;
+                }) != result.end ()
+            );
+
+    Check::SaveTransformed (result);
+    Check::ClearGeometry ("Dpoint3dOps.CompressKeep");
+    }
+
+TEST (Dpoint3dOps, CompressBspline)
+    {
+    bvector<DPoint3d> pole0
+        {
+        DPoint3d::From (0,0,0),
+        DPoint3d::From (0,1,0),
+        DPoint3d::From (-1,1,0),
+        DPoint3d::From (-1,3,0),
+        DPoint3d::From (2,3, 0),
+        DPoint3d::From (1,0,0)
+        };
+
+    MSBsplineCurvePtr bcurve0 = MSBsplineCurve::CreateFromPolesAndOrder (pole0, nullptr, nullptr, 4, false, true);
+    Check::SaveTransformed (*ICurvePrimitive::CreateBsplineCurve (bcurve0));
+    Check::Shift (DVec3d::From (5, 0, 0));
+
+    size_t const nPts = (size_t)1e3;
+    bvector<DPoint3d> input (nPts + 1);
+    for (size_t i = 0; i <= nPts; ++i)
+        bcurve0->FractionToPoint (input[i], (double) i / nPts);
+
+    Check::SaveTransformed (*ICurvePrimitive::CreateLineString (input));
+    Check::Shift (DVec3d::From (5, 0, 0));
+
+    bvector<DPoint3d> result;
+    DPoint3dOps::CompressByChordError (result, input, 5e-3);
+
+    Check::True (result.size () < input.size () / 10);
+
+    ICurvePrimitivePtr lineStr = ICurvePrimitive::CreateLineString (result);
+
+    Check::SaveTransformed (*lineStr);
+    Check::ClearGeometry ("Dpoint3dOps.CompressBSpline");
+    }
+
+TEST (Dpoint3dOps, CompressLoop)
+    {
+    //This curve is a loop (endPt = startPt)
+    bvector<DPoint3d> pole0
+        {
+        DPoint3d::From (0,0,0),
+        DPoint3d::From (0,1,0),
+        DPoint3d::From (-1,1,0),
+        DPoint3d::From (-1,3,0),
+        DPoint3d::From (2,3, 0),
+        DPoint3d::From (1,0,0),
+        DPoint3d::From (0,0,0)
+        };
+
+    MSBsplineCurvePtr bcurve0 = MSBsplineCurve::CreateFromPolesAndOrder (pole0, nullptr, nullptr, 4, false, true);
+    Check::SaveTransformed (*ICurvePrimitive::CreateBsplineCurve (bcurve0));
+    Check::Shift (DVec3d::From (5, 0, 0));
+
+    size_t const nPts = (size_t)1e3;
+    bvector<DPoint3d> input (nPts + 1);
+    for (size_t i = 0; i <= nPts; ++i)
+        bcurve0->FractionToPoint (input[i], (double) i / nPts);
+
+    Check::SaveTransformed (*ICurvePrimitive::CreateLineString (input));
+    Check::Shift (DVec3d::From (5, 0, 0));
+
+    bvector<DPoint3d> result;
+    DPoint3dOps::CompressByChordError (result, input, 5e-3);
+
+    //We check that endPt == startPt
+    Check::True (result.size () < input.size () / 10);
+    Check::True (result.size () > 2);
+    if (result.size() > 2)
+        Check::Near (result[0], result.back ());
+
+    ICurvePrimitivePtr lineStr = ICurvePrimitive::CreateLineString (result);
+
+    Check::SaveTransformed (*lineStr);
+    Check::ClearGeometry ("Dpoint3dOps.CompressBSplineLoop");
+    }

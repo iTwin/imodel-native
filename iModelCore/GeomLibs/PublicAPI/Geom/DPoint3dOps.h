@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/DPoint3dOps.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -767,6 +767,13 @@ static GEOMDLLIMPEXP bool PrincipalAxes (bvector<DPoint4d> const &points, DVec3d
 //! @return true if 1 or more points supplied.
 //!
 static GEOMDLLIMPEXP bool PrincipalAxes (bvector<DPoint3d> const &pointsA, bvector<DPoint3d> const &pointsB, DVec3dR centroid, RotMatrixR axes, DVec3dR moments);
+
+//!
+//! @param [out] result Compressed points (subset of input points)
+//! @param [in] source Input points
+//! @param [in] chordTolerance tolerance.
+//!
+static GEOMDLLIMPEXP void CompressByChordError (bvector<DPoint3d>& result, bvector<DPoint3d> const& source, double chordTolerance);
 
 //! @param [in] points source array
 //! @param [out] originWithExtentVectors transform with
