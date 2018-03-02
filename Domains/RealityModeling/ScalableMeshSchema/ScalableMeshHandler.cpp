@@ -815,7 +815,7 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
     trimesh.m_numIndices = polyfaceQuery->GetPointIndexCount();
     int* vertIndex = new int[trimesh.m_numIndices];
 
-    for (size_t faceVerticeInd = 0; faceVerticeInd < polyfaceQuery->GetPointIndexCount(); faceVerticeInd++)
+    for (int faceVerticeInd = 0; faceVerticeInd < trimesh.m_numIndices; faceVerticeInd++)
         {
         vertIndex[faceVerticeInd] = faceVerticeInd;
         }
@@ -834,7 +834,7 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
 
             textureUv = new _fPoint2d[trimesh.m_numIndices];
 
-            for (size_t paramInd = 0; paramInd < polyfaceQuery->GetPointIndexCount(); paramInd++)
+            for (size_t paramInd = 0; paramInd < trimesh.m_numIndices; paramInd++)
                 {
                 const DPoint2d* uv = &polyfaceQuery->GetParamCP()[polyfaceQuery->GetParamIndexCP()[paramInd] - 1];
                 textureUv[paramInd].x = uv->x;
