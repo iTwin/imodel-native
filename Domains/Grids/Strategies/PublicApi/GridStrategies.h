@@ -17,6 +17,9 @@ GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS(GridPlanarSurfaceManipulationStrategy)
 GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS(LineGridSurfacePlacementStrategy)
 GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS(LineGridSurfaceManipulationStrategy)
 
+GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS(SplineGridSurfacePlacementStrategy)
+GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS(SplineGridSurfaceManipulationStrategy)
+
 GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS(ArcGridSurfaceManipulationStrategy)
 GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS(ArcGridSurfacePlacementStrategy)
 
@@ -27,6 +30,9 @@ GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS(ArcGridSurfacePlacementStrategy)
 
 #include "LineGridSurfaceManipulationStrategy.h"
 #include "LineGridSurfacePlacementStrategy.h"
+
+#include "SplineGridSurfaceManipulationStrategy.h"
+#include "SplineGridSurfacePlacementStrategy.h"
 
 #include "ArcGridSurfaceManipulationStrategy.h"
 #include "ArcGridSurfacePlacementStrategy.h"
