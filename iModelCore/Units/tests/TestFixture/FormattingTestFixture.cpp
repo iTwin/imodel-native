@@ -128,7 +128,9 @@ void FormattingTestFixture::ShowFUS(Utf8CP koq)
     LOG.infov("FUS JSON: >%s<   (aliased) >%s<", strN.c_str(), strA.c_str());
     }
 
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
+//----------------------------------------------------------------------------------------
 void FormattingTestFixture::RegisterFUS(Utf8CP descr, Utf8CP name)
     {
     FormatUnitSetCP fusP = StdFormatSet::AddFUS(descr, name);
@@ -199,7 +201,7 @@ void FormattingTestFixture::TestFUG(Utf8CP name, Utf8CP fusText, Utf8CP norm, Ut
 //----------------------------------------------------------------------------------------
 void FormattingTestFixture::ShowQuantity(double dval, Utf8CP uom, Utf8CP fusUnit, Utf8CP fusFormat, Utf8CP space)
     {
-    BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnit(uom);
+    BEU::UnitCP unit = BEU::UnitRegistry::Get().LookupUnit(uom);
     if (nullptr == unit)
         {
         LOG.infov("Invalid UOM: >%s<", uom);
@@ -221,6 +223,7 @@ void FormattingTestFixture::ShowQuantity(double dval, Utf8CP uom, Utf8CP fusUnit
     FormatUnitSet deFUS = StdFormatSet::DefaultFUS(q);
     LOG.infov("Default FUS JSON: %s", deFUS.ToJsonString(true).c_str());
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
@@ -244,9 +247,12 @@ void FormattingTestFixture::ShowQuantityS(Utf8CP descr)
         }
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
+//----------------------------------------------------------------------------------------
 void FormattingTestFixture::CustomFormatAnalyzer(double dval, Utf8CP uom, Utf8CP jsonCustomFormat)
-{
-    BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnit(uom);
+    {
+    BEU::UnitCP unit = BEU::UnitRegistry::Get().LookupUnit(uom);
     if (nullptr == unit)
         {
         LOG.infov("Invalid UOM: >%s<", uom);
@@ -265,7 +271,8 @@ void FormattingTestFixture::CustomFormatAnalyzer(double dval, Utf8CP uom, Utf8CP
     LOG.infov("Created custom format spec %s (%s)", nfs->GetName(), nfs->GetAlias());
     Utf8String str = NumericFormatSpec::StdFormatQuantity(*nfs, qty);
     LOG.infov("===CustomFormatAnalyzer: %f of %s = %s", dval, uom, str.c_str());
-}
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
@@ -281,16 +288,18 @@ NumericAccumulator* FormattingTestFixture::NumericAccState(NumericAccumulator* n
     nacc->SetComplete();
     return nacc;
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
 void FormattingTestFixture::TestFUSQuantity(double dval, Utf8CP uom, Utf8CP fusDesc, Utf8CP space)
     {
-    BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnit(uom);
+    BEU::UnitCP unit = BEU::UnitRegistry::Get().LookupUnit(uom);
     BEU::Quantity q = BEU::Quantity(dval, *unit);
     FormatUnitSet fus = FormatUnitSet(fusDesc);
     LOG.infov("Testing FUS->Q  %s", fus.FormatQuantity(q, space).c_str());
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
@@ -384,6 +393,7 @@ bool FormattingTestFixture::OpenTestData()
 #endif
     return false;
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
@@ -396,6 +406,7 @@ void FormattingTestFixture::CloseTestData()
         testFile = nullptr;
         }
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
@@ -408,6 +419,7 @@ bool FormattingTestFixture::IsDataAvailalbe()
         }
     return false;
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
@@ -434,6 +446,7 @@ bool FormattingTestFixture::GetNextLine(Utf8P buf, int bufLen)
 #endif
     return false;
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
@@ -451,6 +464,9 @@ void FormattingTestFixture::DecomposeString(Utf8CP str, bool revers)
         }
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
+//----------------------------------------------------------------------------------------
 Utf8String FormattingTestFixture::ExtractTokenValue(wchar_t* line, wchar_t* token, wchar_t* delim)
     {
 #define ETV_BUFLEN 256
@@ -472,6 +488,9 @@ Utf8String FormattingTestFixture::ExtractTokenValue(wchar_t* line, wchar_t* toke
     return tokVal8;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
+//----------------------------------------------------------------------------------------
 #ifdef _WIN32
 bool FormattingTestFixture::ValidateSchemaUnitNames(char* schemaPath, Utf8CP token, char* reportPath)
 {
@@ -509,10 +528,10 @@ bool FormattingTestFixture::ValidateSchemaUnitNames(char* schemaPath, Utf8CP tok
         tokVal8 = ExtractTokenValue(locW, tokW, tokSymb);
         if (!tokVal8.empty())
             {
-            unitP = BEU::UnitRegistry::Instance().LookupUnit(tokVal8.c_str());
+            unitP = BEU::UnitRegistry::Get().LookupUnit(tokVal8.c_str());
             oldP = nullptr;
             if (nullptr == unitP)
-                oldP = BEU::UnitRegistry::Instance().LookupUnitUsingOldName(tokVal8.c_str());
+                oldP = BEU::UnitRegistry::Get().LookupUnitUsingOldName(tokVal8.c_str());
             if (nullptr != reportPath)
                 {
                 if (nullptr == out)
@@ -629,6 +648,7 @@ void FormattingTestFixture::TestScanPointVector(Utf8CP str)
     LOG.infov("<-Pattern: |%s|", cont.GetPattern().c_str());
     LOG.info("============= Vector Scan complete =================\n");
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
@@ -679,6 +699,7 @@ Utf8CP FormattingTestFixture::TestGrabber(Utf8CP input, size_t start)
     input = ng.GetTail();
     return input;
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
@@ -719,7 +740,7 @@ void FormattingTestFixture::ParseToQuantity(Utf8CP input, size_t start, Utf8CP u
     else
         {
         LOG.infov("Unit: %s Magnitude %.6f", qty.GetUnitName(), qty.GetMagnitude());
-        BEU::UnitCP un1 = BEU::UnitRegistry::Instance().LookupUnit(unitName);
+        BEU::UnitCP un1 = BEU::UnitRegistry::Get().LookupUnit(unitName);
         BEU::Quantity q1 = qty.ConvertTo(un1);
         if (q1.IsNullQuantity())
             LOG.infov("Invalid alternative Unit: %s", unitName);
@@ -729,15 +750,20 @@ void FormattingTestFixture::ParseToQuantity(Utf8CP input, size_t start, Utf8CP u
     LOG.info("=========== Parsing To Quantity End =============");
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
+//----------------------------------------------------------------------------------------
 void FormattingTestFixture::ShowQuantifiedValue(Utf8CP input, Utf8CP formatName, Utf8CP fusUnit, Utf8CP spacer)
     {
     FormatUnitSet fus = FormatUnitSet(formatName, fusUnit);
-    FormatParsingSet fps = FormatParsingSet(input, 0, fusUnit);
     if (fus.HasProblem())
         {
         LOG.errorv("FUS-problem: %s", fus.GetProblemDescription().c_str());
         return;
         }
+
+    FormatParsingSet fps = FormatParsingSet(input, 0, fusUnit);
+
     FormatProblemCode probCode;
     BEU::Quantity qty = fps.GetQuantity(&probCode, &fus);
     Utf8String qtyT = fus.FormatQuantity(qty, spacer);
@@ -1060,11 +1086,15 @@ void FormattingTestFixture::UnitProxyJsonTest(Utf8CP unitName, Utf8CP labelName)
     EXPECT_TRUE(up1.IsIdentical(up2));
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
+//----------------------------------------------------------------------------------------
 void FormattingTestFixture::UnitSynonymMapTest(Utf8CP unitName, Utf8CP synonym)
     {
-    BEU::UnitSynonymMap map = BEU::UnitSynonymMap(unitName, synonym);
+    BEU::UnitCP unit = BEU::UnitRegistry::Get().LookupUnit(unitName);
+    BEU::UnitSynonymMap map = BEU::UnitSynonymMap(unit, synonym);
     Json::Value jval = map.ToJson();
-    BEU::UnitSynonymMap other = BEU::UnitSynonymMap(jval);
+    BEU::UnitSynonymMap other = BEU::UnitSynonymMap(&BEU::UnitRegistry::Get(), jval);
     bool ident = map.IsIdentical(other);
     EXPECT_TRUE(map.IsIdentical(other));
     if (Utf8String::IsNullOrEmpty(synonym))
@@ -1075,18 +1105,15 @@ void FormattingTestFixture::UnitSynonymMapTest(Utf8CP unitName, Utf8CP synonym)
     WString wSyn(synonym, true);
     WString wJson(jval.ToString().c_str(), true);
     WString wBool(FormatConstant::BoolText(ident), true);
-    //WChar outStr[258];
-    //memset(outStr, 0, sizeof(outStr));
-    //BeStringUtilities::Snwprintf(outStr, 256, L"UnitSynonymMap(%ls, %ls)", wName.c_str(), wSyn.c_str(), wJson.c_str(), wBool.c_str());
-    //LOG.infov(L"FormattedMapString: %ls", outStr);
     LOG.infov(L"UnitSynonymMap(%ls, %ls) => json: %ls (%ls)", wName.c_str(), wSyn.c_str(), wJson.c_str(), wBool.c_str());
-
-    //LOG.infov(L"UnitSynonymMap(%ls, %ls) => json: %ls (%ls)", unitName, synonym, jval.ToString().c_str(), FormatConstant::BoolText(ident));
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
+//----------------------------------------------------------------------------------------
 void FormattingTestFixture::RegistryLookupUnitCITest(Utf8CP unitName)
     {
-    BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnit(unitName);
+    BEU::UnitCP unit = BEU::UnitRegistry::Get().LookupUnit(unitName);
     if (nullptr == unit)
         {
         LOG.infov("Unit Name %s is not defined", unitName);
@@ -1098,6 +1125,9 @@ void FormattingTestFixture::RegistryLookupUnitCITest(Utf8CP unitName)
         LOG.infov("Unit Name %s is not canonical %s", unitName, unit->GetName().c_str());
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
+//----------------------------------------------------------------------------------------
 void FormattingTestFixture::StandaloneNamedFormatTest(Utf8CP jsonFormat, bool doPrint)
     {
     NamedFormatSpec nfs = NamedFormatSpec(jsonFormat);
@@ -1122,10 +1152,13 @@ void FormattingTestFixture::StandaloneNamedFormatTest(Utf8CP jsonFormat, bool do
         }
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
+//----------------------------------------------------------------------------------------
 void FormattingTestFixture::StandaloneFUSTest(double dval, Utf8CP unitName, Utf8CP fusUnitName, Utf8CP formatName, Utf8CP result)
     {
     LOG.info("\n=========== StandaloneFUSTest=============");
-    BEU::UnitCP uom = BEU::UnitRegistry::Instance().LookupUnit(unitName);
+    BEU::UnitCP uom = BEU::UnitRegistry::Get().LookupUnit(unitName);
     if (nullptr == uom)
         {
         LOG.infov("Invalid Unit Name %s", unitName);
@@ -1136,7 +1169,7 @@ void FormattingTestFixture::StandaloneFUSTest(double dval, Utf8CP unitName, Utf8
         LOG.infov("Missing FUS Unit Name");
         return;
         }
-    BEU::UnitCP fusUOM = BEU::UnitRegistry::Instance().LookupUnit(fusUnitName);
+    BEU::UnitCP fusUOM = BEU::UnitRegistry::Get().LookupUnit(fusUnitName);
     if (nullptr == uom)
         {
         LOG.infov("Invalid FUS Unit Name %s", fusUnitName);
@@ -1174,6 +1207,9 @@ void FormattingTestFixture::StandaloneFUSTest(double dval, Utf8CP unitName, Utf8
     LOG.info("=========== StandaloneFUSTest=============\n");
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
+//----------------------------------------------------------------------------------------
 void FormattingTestFixture::FormatDoubleTest(double dval, Utf8CP fmtName, int prec, double round, Utf8CP expect)
     {
     Utf8String txt = NumericFormatSpec::StdFormatDouble(fmtName, dval, prec, round);
@@ -1183,6 +1219,9 @@ void FormattingTestFixture::FormatDoubleTest(double dval, Utf8CP fmtName, int pr
         EXPECT_STREQ (expect, txt.c_str());
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
+//----------------------------------------------------------------------------------------
 void FormattingTestFixture::VerifyQuantity(Utf8CP input, Utf8CP unitName, Utf8CP formatName, double magnitude, Utf8CP qtyUnitName)
     {
     FormatUnitSet fus = FormatUnitSet(formatName, unitName);
@@ -1196,7 +1235,11 @@ void FormattingTestFixture::VerifyQuantity(Utf8CP input, Utf8CP unitName, Utf8CP
     else
         {
         BEU::PhenomenonCP pp = fus.GetPhenomenon();
-        BEU::UnitCP unit = (nullptr == pp) ? BEU::UnitRegistry::Instance().LookupUnit(qtyUnitName) : pp->LookupUnit(qtyUnitName);
+        BEU::UnitCP unit = (nullptr == pp) ? BEU::UnitRegistry::Get().LookupUnit(qtyUnitName) : pp->LookupUnit(qtyUnitName);
+        EXPECT_NE(nullptr, unit) << Utf8PrintfString("Unable to find the Unit %s in %s.", qtyUnitName, (nullptr == pp) ? "the UnitRegistry" : Utf8PrintfString("the phenomenon '%s'", pp->GetName().c_str()).c_str()).c_str();
+        if (nullptr == unit)
+            return;
+
         BEU::Quantity temp = BEU::Quantity(magnitude, *unit);
         bool eq = qty.IsClose(temp, 0.0001);
         EXPECT_TRUE(eq);
@@ -1208,6 +1251,9 @@ void FormattingTestFixture::VerifyQuantity(Utf8CP input, Utf8CP unitName, Utf8CP
         }
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
+//----------------------------------------------------------------------------------------
 void FormattingTestFixture::ShowPhenomenon(BEU::PhenomenonCP phenP, bvector<BEU::PhenomenonCP>& undefPhenomena)
     {
     if (nullptr == phenP)
@@ -1241,11 +1287,14 @@ void FormattingTestFixture::ShowPhenomenon(BEU::PhenomenonCP phenP, bvector<BEU:
     return;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
+//----------------------------------------------------------------------------------------
 void FormattingTestFixture::ShowKnownPhenomena()
     {
     bvector<BEU::PhenomenonCP> allPhenomena;
     bvector<BEU::PhenomenonCP> undefPhenomena;
-    BEU::UnitRegistry::Instance().AllPhenomena(allPhenomena);
+    BEU::UnitRegistry::Get().AllPhenomena(allPhenomena);
     for (const BEU::PhenomenonCP* ph = allPhenomena.begin(); ph != allPhenomena.end(); ph++)
         {
         ShowPhenomenon(*ph, undefPhenomena);
@@ -1260,12 +1309,15 @@ void FormattingTestFixture::ShowKnownPhenomena()
         }
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
+//----------------------------------------------------------------------------------------
 void FormattingTestFixture::ShowSynonyms()
     {
     bvector<BEU::UnitCP> allUnits;
     bvector<Utf8CP> synonyms;
     WString wsyn;
-    BEU::UnitRegistry::Instance().AllUnits(allUnits);
+    BEU::UnitRegistry::Get().AllUnits(allUnits);
     for (BEU::UnitCP* un = allUnits.begin(); un != allUnits.end();un++)
         {
         if ((*un)->GetSynonymList(synonyms) > 0)
@@ -1281,40 +1333,3 @@ void FormattingTestFixture::ShowSynonyms()
     }
 
 END_BENTLEY_FORMATTEST_NAMESPACE
-
-//WString wJson(jval.ToString().c_str(), true);
-//WString wBool(FormatConstant::BoolText(ident), true);
-////WChar outStr[258];
-////memset(outStr, 0, sizeof(outStr));
-////BeStringUtilities::Snwprintf(outStr, 256, L"UnitSynonymMap(%ls, %ls)", wName.c_str(), wSyn.c_str(), wJson.c_str(), wBool.c_str());
-////LOG.infov(L"FormattedMapString: %ls", outStr);
-//LOG.infov(L"UnitSynonymMap(%ls, %ls) => json: %ls (%ls)", wName.c_str(), wSyn.c_str(), wJson.c_str(), wBool.c_str());
-
-
-//FormattingTestFixture::
-//EXPECT_STREQ ("{\"TrailZeroes\":\"true\"}", val.ToString().c_str());
-//EXPECT_STREQ ("{\"TrailZeroes\":\"false\"}", val.ToString().c_str());
-//EXPECT_STREQ ("{\"LeadZeroes\":\"true\"}", val.ToString().c_str());
-//EXPECT_STREQ ("{\"LeadZeroes\":\"false\"}", val.ToString().c_str());
-//EXPECT_STREQ ("{\"KeepDecPnt\":\"true\"}", val.ToString().c_str());
-//EXPECT_STREQ ("{\"KeepDecPnt\":\"false\"}", val.ToString().c_str());
-//EXPECT_STREQ ("{\"KeepSingleZero\":\"true\"}", val.ToString().c_str());
-//EXPECT_STREQ ("{\"KeepSingleZero\":\"false\"}", val.ToString().c_str());
-//
-//EXPECT_STREQ ("{\"ExponentZero\":\"true\"}", val.ToString().c_str());
-//EXPECT_STREQ ("{\"ExponentZero\":\"false\"}", val.ToString().c_str());
-//EXPECT_STREQ ("{\"ZeroEmpty\":\"true\"}", val.ToString().c_str());
-//EXPECT_STREQ ("{\"ZeroEmpty\":\"false\"}", val.ToString().c_str());
-//EXPECT_STREQ ("{\"Use1000Separator\":\"true\"}", val.ToString().c_str());
-//EXPECT_STREQ ("{\"Use1000Separator\":\"false\"}", val.ToString().c_str());
-//EXPECT_STREQ ("{\"ApplyRounding\":\"true\"}", val.ToString().c_str());
-//EXPECT_STREQ ("{\"ApplyRounding\":\"false\"}", val.ToString().c_str());
-//EXPECT_STREQ ("{\"AppendUnitName\":\"true\"}", val.ToString().c_str());
-//EXPECT_STREQ ("{\"AppendUnitName\":\"false\"}", val.ToString().c_str());
-//EXPECT_STREQ ("{\"UseFractSymbol\":\"true\"}", val.ToString().c_str());
-//EXPECT_STREQ ("{\"UseFractSymbol\":\"false\"}", val.ToString().c_str());
-//EXPECT_STREQ ("{\"FractionDash\":\"true\"}", val.ToString().c_str());
-//EXPECT_STREQ ("{\"FractionDash\":\"false\"}", val.ToString().c_str());
-
-
-

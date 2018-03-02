@@ -194,7 +194,6 @@ struct FormatParsingSet
         size_t m_start;         // start index to the input string
         bvector<FormatParsingSegment> m_segs;
         BEU::UnitCP m_unit;     // optional reference to a "quantity" unit
-        //FormatProblemCode m_probCode;
         FormatProblemDetail m_problem;
 
         UNITS_EXPORT void Init(Utf8CP input, size_t start, BEU::UnitCP unit);
@@ -216,7 +215,6 @@ struct FormatParsingSet
         UNITS_EXPORT BEU::Quantity GetQuantity(FormatProblemCode* probCode = nullptr, FormatUnitSetCP fusP = nullptr);
         UNITS_EXPORT bool ValidateParsingFUS(int reqUnitCount, FormatUnitSetCP fusP);
         bool HasProblem() const { return m_problem.IsProblem(); }
-        //UNITS_EXPORT BEU::Quantity GetQuantity(FormatProblemCode* probCode = nullptr);
     };
 
 struct NumericAccumulator

@@ -32,7 +32,7 @@ TEST_F(UnitsPerformanceTests, InitUnitsHub)
     UnitRegistry::Clear();
     StopWatch timer("Init Units Hub", false);
     timer.Start();
-    UnitRegistry& hub = UnitRegistry::Instance();
+    UnitRegistry& hub = UnitRegistry::Get();
     timer.Stop();
     bvector<Utf8String> allUnitNames;
     hub.AllUnitNames(allUnitNames, false);
@@ -49,24 +49,24 @@ TEST_F(UnitsPerformanceTests, GetEveryUnitByName)
     UnitRegistry::Clear();
     bvector<Utf8String> allUnitNames;
     timer.Start();
-    UnitRegistry::Instance().AllUnitNames(allUnitNames, false);
+    UnitRegistry::Get().AllUnitNames(allUnitNames, false);
     timer.Stop();
     PERFORMANCELOG.errorv("Time to get all %lu primary unit names: %.17g", allUnitNames.size(), timer.GetElapsedSeconds());
     
     timer.Start();
-    GetUnitsByName(UnitRegistry::Instance(), allUnitNames);
+    GetUnitsByName(UnitRegistry::Get(), allUnitNames);
     timer.Stop();
     PERFORMANCELOG.errorv("Time to get %lu units by name: %.17g", allUnitNames.size(), timer.GetElapsedSeconds());
 
     UnitRegistry::Clear();
     allUnitNames.clear();
     timer.Start();
-    UnitRegistry::Instance().AllUnitNames(allUnitNames, true);
+    UnitRegistry::Get().AllUnitNames(allUnitNames, true);
     timer.Stop();
     PERFORMANCELOG.errorv("Time to get all %lu primary unit names and synonyms: %.17g", allUnitNames.size(), timer.GetElapsedSeconds());
 
     timer.Start();
-    GetUnitsByName(UnitRegistry::Instance(), allUnitNames);
+    GetUnitsByName(UnitRegistry::Get(), allUnitNames);
     timer.Stop();
     PERFORMANCELOG.errorv("Time to get %lu units by name including using synonyms: %.17g", allUnitNames.size(), timer.GetElapsedSeconds());
     }
@@ -78,7 +78,7 @@ TEST_F(UnitsPerformanceTests, GenerateEveryConversionValue)
     {
     StopWatch timer("Evaluate every unit", false);
     UnitRegistry::Clear();
-    UnitRegistry& hub = UnitRegistry::Instance();
+    UnitRegistry& hub = UnitRegistry::Get();
     bvector<PhenomenonCP> allPhenomena;
     hub.AllPhenomena(allPhenomena);
 
@@ -108,8 +108,8 @@ TEST_F(UnitsPerformanceTests, GenerateEveryConversionValue)
 //    {
 //    StopWatch timer("Do Many Conversions", false);
 //    UnitRegistry::Clear();
-//    UnitCP unitA = UnitRegistry::Instance().LookupUnit("CUB.M/(SQ.M*DAY)");
-//    UnitCP unitB = UnitRegistry::Instance().LookupUnit("CUB.FT/(ACRE*SEC)");
+//    UnitCP unitA = UnitRegistry::Get().LookupUnit("CUB.M/(SQ.M*DAY)");
+//    UnitCP unitB = UnitRegistry::Get().LookupUnit("CUB.FT/(ACRE*SEC)");
 //
 //    int numTimes = 1000000;
 //    timer.Start();

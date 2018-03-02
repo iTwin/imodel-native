@@ -503,7 +503,7 @@ struct UnitProxySet
 {
 private:
     bvector<UnitProxy> mutable m_proxys;
-    BEU::UnitRegistry* m_unitReg = &BEU::UnitRegistry::Instance();
+    BEU::UnitRegistry* m_unitReg = &BEU::UnitRegistry::Get();
     int mutable m_resetCount;
 
     UNITS_EXPORT int Validate() const;
@@ -546,7 +546,7 @@ public:
             {
             m_proxys[i].Clear();
             }
-        m_unitReg = &BEU::UnitRegistry::Instance(); 
+        m_unitReg = &BEU::UnitRegistry::Get(); 
         }
     BEU::UnitCP GetUnit(size_t indx) const { Validate();  return IsIndexCorrect(indx) ? m_proxys[indx].GetUnit() : nullptr; }
     Utf8CP GetUnitName(size_t indx, Utf8CP subst=nullptr) const { return  IsIndexCorrect(indx) ? m_proxys[indx].GetName() : subst; }

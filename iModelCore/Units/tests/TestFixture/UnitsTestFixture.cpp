@@ -111,9 +111,9 @@ Utf8String UnitsTestFixture::ParseUOM(Utf8CP unitName, bset<Utf8String>& notMapp
 UnitCP UnitsTestFixture::LocateUOM(Utf8CP unitName, bool useLegacyNames)
     {
     if (useLegacyNames)
-        return UnitRegistry::Instance().LookupUnitUsingOldName(unitName);
+        return UnitRegistry::Get().LookupUnitUsingOldName(unitName);
         
-    return UnitRegistry::Instance().LookupUnit(unitName);
+    return UnitRegistry::Get().LookupUnit(unitName);
     }
 
 //---------------------------------------------------------------------------------------

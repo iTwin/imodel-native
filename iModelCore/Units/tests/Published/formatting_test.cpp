@@ -28,12 +28,6 @@ TEST(FormattingTest, Preliminary)
     {
     FormattingTestFixture::SetUpL10N();
     LOG.infov("================  Formatting Log ===========================");
-    //FormattingDividers fdiv = FormattingDividers("()[]{}");
-    //const char *uni = u8"         ЯABГCDE   型号   sautéςερ   τcañón    ";
-
-    //BeFileName bfn = BeFileName("E:\\Bim0200Dev\\out\\Winx64\\Product\\Units - Gtest\\UnitTry.txt", false);
-    //Utf8String fnam = Utf8String("E:\\Bim0200Dev\\out\\Winx64\\Product\\Units - Gtest\\UnitTry.txt");
-    //FormattingTestData::FileHexDump(fnam);
 
     if (FormattingTestFixture::OpenTestData())
         {
@@ -245,8 +239,6 @@ TEST(FormattingTest, TestFUS)
     FormattingTestFixture::ShowFUS("{\"unitName\":\"IN\"}");
     FormattingTestFixture::ShowFUS("{\"unitName\":\"CM\"}");
 
-    //FormattingTestFixture::ShowFUS("MM|fract8");
-
     FormattingTestFixture::ShowFUS("MM|fract8|");
     FormattingTestFixture::ShowFUS("W/(M*C)|DefaultReal");
 
@@ -281,10 +273,6 @@ TEST(FormattingTest, TestFUS)
     LOG.infov("Named Qty: %s", nmq.ToText(3).c_str());
 
     LOG.infov("Named Qty: %s", NumericFormatSpec::StdFormatQuantity("fi32", *nmq.GetQuantity()).c_str());
-   
-    //BEU::UnitCP useUnit = nullptr, Utf8CP space = "", Utf8CP useLabel = nullptr, int prec = -1, double round = -1.0);
-
-
 
     FormattingTestFixture::TearDownL10N();
 
@@ -315,7 +303,6 @@ TEST(FormattingTest, FullySpecifiedFUS)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FormattingTest, Json)
     {
-   // StdFormatSetP stdSet = StdFormatSet::GetStdSet();
     UnitProxy prox = UnitProxy("FT", "Feet");
     Json::Value proxV = prox.ToJson();
     LOG.infov("UnitProxy  %s ", proxV.ToString().c_str());
@@ -330,7 +317,6 @@ TEST(FormattingTest, Json)
 
     Json::Value nfcJson = nfst100.ToJson(false);
     LOG.infov("JsonNFC %s", nfcJson.ToString().c_str());
-
 
     FormattingTestFixture::FormattingTraitsTest();
 
@@ -348,23 +334,6 @@ TEST(FormattingTest, Json)
     jP[json_degrees()] = 45.9876;
     Json::Value jR;
     jR[json_degrees()] = 65.786;
-
-  /*  Json::Value val;
-    val[json_yaw()] = jY;
-    val[json_pitch()] = jP;
-    val[json_roll()] = jR;
-    LOG.infov("JsonAstro %s", val.ToString().c_str());
-
-    Json::Value jPnt;
-    jPnt[0] = 12.0;
-    jPnt[1] = 23.0;
-    jPnt[2] = 34.0;
-    LOG.infov("Dpnt3D %s", jPnt.ToString().c_str());
-
-    double x = jPnt[0].asDouble();
-    double y = jPnt[1].asDouble();
-    double z = jPnt[2].asDouble();
-    LOG.infov("Dpnt3D restored %.2f %.2f %.2f", x, y, z);*/
 
     LOG.info("================  All Std formats to Json");
     bvector<Utf8CP> stdNames = StdFormatSet::StdFormatNames(true);
@@ -403,30 +372,12 @@ TEST(FormattingTest, Json)
     FormattingTestFixture::UnitSynonymMapTest(u8"FT,фут");
     FormattingTestFixture::UnitSynonymMapTest(u8"{\"synonym\":\"фут\", \"unitName\" : \"FT\"}");
     LOG.info("============ UnitSynonymMapTest(end) ==================\n");
-
-    /*bvector<BEU::UnitSynonymMap> mapV;
-    BEU::UnitSynonymMap::AugmentUnitSynonymVector(mapV, "FT", "feet");
-    BEU::UnitSynonymMap::AugmentUnitSynonymVector(mapV, "FT", "foot");
-    BEU::UnitSynonymMap::AugmentUnitSynonymVector(mapV, "FT", u8"фут");
-    BEU::UnitSynonymMap::AugmentUnitSynonymVector(mapV, "FT", "'");
-    BEU::UnitSynonymMap::AugmentUnitSynonymVector(mapV, "ARC_DEG", "^");
-    BEU::UnitSynonymMap::AugmentUnitSynonymVector(mapV, "ARC_DEG", u8"°");
-    BEU::UnitSynonymMap::AugmentUnitSynonymVector(mapV, "ARC_MINUTE", "'");
-    Json::Value mapJ = BEU::Phenomenon::SynonymMapVectorToJson(mapV);
-    Utf8String mapS = mapJ.ToString();
-    LOG.infov("mapVector %s", mapS.c_str());
-    bvector<BEU::UnitSynonymMap> mapV2 = BEU::UnitSynonymMap::UnitSynonymMap::MakeUnitSynonymVector(mapJ);
-    bool id = BEU::UnitSynonymMap::AreVectorsIdentical(mapV, mapV2);
-    LOG.infov("Vectors identical %s", FormatConstant::BoolText(id));
-    BEU::UnitRegistry::Instance().LoadSynonyms(mapJ);
-    Json::Value allSyn = BEU::UnitRegistry::Instance().SynonymsToJson();
-    Utf8String synS = allSyn.ToString();
-    LOG.infov("AllSynonyms %s", synS.c_str());*/
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            David.Fox-Rabinovitz                      08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(FormattingTest, Pasring)
+TEST(FormattingTest, Parsing)
     {
     LOG.infov("NUNFU = %d", FormatConstant::ParsingPatternCode("NUNFU"));
     LOG.infov("NUNU = %d", FormatConstant::ParsingPatternCode("NUNU"));
@@ -550,19 +501,6 @@ TEST(FormattingTest, Pasring)
     FormattingTestFixture::ParseToQuantity("5'-8\"", 0, "M");
     FormattingTestFixture::ParseToQuantity("5'-8\"", 0, "IN");
 
-    /* LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'2')).c_str());
-    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'3')).c_str());
-    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'.')).c_str());
-    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'4')).c_str());
-    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'5')).c_str());
-    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'E')).c_str());
-    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'-')).c_str());
-    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'0')).c_str());
-    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'3')).c_str());
-    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'_')).c_str());
-    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.SetComplete()).c_str());*/
-    //LOG.infov("NumAcc %d %s  (%s)", nacc.GetByteCount(), nacc.ToText(), nacc.GetProblemDescription());
-
     FormattingTestFixture::ShowSignature(u8"135°", 200);
     FormattingTestFixture::ShowSignature(u8"135°11'30-1/4\" S", 201);
 
@@ -587,27 +525,6 @@ TEST(FormattingTest, Pasring)
     FormattingTestFixture::ShowHexDump(u8"135°11'30-1/4\" S", 30);
 
     FormattingTestFixture::SignaturePattrenCollapsing(u8"         ЯABГCDE   型号   sautéςερ   τcañón    ", 1, true);
-    //FormattingTestFixture::SignaturePattrenCollapsing(u8"135°11'30-1/4\" S", 10, true);
-    //   012345678912345678901234567901234
-    /*FormattingTestFixture::SignaturePattrenCollapsing(u8"135° 11' 30¼\" S", 11, false);
-    FormattingTestFixture::SignaturePattrenCollapsing(u8"  135     °     11     ' 30¼\" S ", 12, false);
-    FormattingTestFixture::SignaturePattrenCollapsing(u8"  135     °     11     ' 30 ¼\" S ", 13, false);
-    FormattingTestFixture::SignaturePattrenCollapsing(u8"  135     °     11     ' 30-¼\" S ", 14, false);
-    FormattingTestFixture::SignaturePattrenCollapsing(u8"  135     °     11     ' 30 3/4\" S ", 15, false);
-    FormattingTestFixture::SignaturePattrenCollapsing(u8"  135     °     11     ' 30-3/4\" S ", 16, false);
-    FormattingTestFixture::SignaturePattrenCollapsing(u8"  -135     °     11     ' 30 3/4\" S ", 17, false);
-    FormattingTestFixture::SignaturePattrenCollapsing("   22' 3 1/2\"", 18, false);
-    FormattingTestFixture::SignaturePattrenCollapsing("  -22 FT 3 1/2 IN", 19, false);
-    FormattingTestFixture::SignaturePattrenCollapsing("  -22 FT 3-1/2 IN", 20, false);
-    FormattingTestFixture::SignaturePattrenCollapsing("  -22 FT 3.5IN", 21, false);
-    FormattingTestFixture::SignaturePattrenCollapsing("  15_mm", 22, false);
-    FormattingTestFixture::SignaturePattrenCollapsing("125.43 ARC_DEG", 23, false);
-    FormattingTestFixture::SignaturePattrenCollapsing("125.43ARC_DEG", 24, false);
-    FormattingTestFixture::SignaturePattrenCollapsing("1.3RAD", 24, false);*/
-   
-    //BEU::UnitCP thUOM = BEU::UnitRegistry::Instance().LookupUnitCI("TONNE/HR");
-    //Utf8CP sysN = (nullptr == thUOM) ? "Unknown System" : thUOM->GetUnitSystem();
-    //LOG.infov("TONNE_PER_HR-System  %s", sysN);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            David.Fox-Rabinovitz                      02/17
@@ -647,23 +564,23 @@ TEST(FormattingTest, PhysValues)
     // preparing pointers to various Unit definitions used in the following tests
     //  adding practically convenient aliases/synonyms to selected Units
 
-    BEU::UnitCP yrdUOM = BEU::UnitRegistry::Instance().LookupUnit("YRD");
+    BEU::UnitCP yrdUOM = BEU::UnitRegistry::Get().LookupUnit("YRD");
     yrdUOM->AddSynonym("YARD");
     yrdUOM->AddSynonym("YRDS");
   
-    BEU::UnitCP ftUOM = BEU::UnitRegistry::Instance().LookupUnit("FT");
+    BEU::UnitCP ftUOM = BEU::UnitRegistry::Get().LookupUnit("FT");
     ftUOM->AddSynonym("FOOT");
     
-    BEU::UnitCP inUOM = BEU::UnitRegistry::Instance().LookupUnit("IN");
+    BEU::UnitCP inUOM = BEU::UnitRegistry::Get().LookupUnit("IN");
     inUOM->AddSynonym("INCH");
 
-    BEU::UnitCP degUOM = BEU::UnitRegistry::Instance().LookupUnit("ARC_DEG");
-    BEU::UnitCP minUOM = BEU::UnitRegistry::Instance().LookupUnit("ARC_MINUTE");
-    BEU::UnitCP secUOM = BEU::UnitRegistry::Instance().LookupUnit("ARC_SECOND");
-    BEU::UnitCP metrUOM = BEU::UnitRegistry::Instance().LookupUnit("M");
+    BEU::UnitCP degUOM = BEU::UnitRegistry::Get().LookupUnit("ARC_DEG");
+    BEU::UnitCP minUOM = BEU::UnitRegistry::Get().LookupUnit("ARC_MINUTE");
+    BEU::UnitCP secUOM = BEU::UnitRegistry::Get().LookupUnit("ARC_SECOND");
+    BEU::UnitCP metrUOM = BEU::UnitRegistry::Get().LookupUnit("M");
     // creating several quantites of various kinds using two different constructors:
     //  one with the Uint Name and another with the pointer to a Unit definition
-    BEU::UnitCP defUom = BEU::UnitRegistry::Instance().GetPlatformLengthUnit();
+    BEU::UnitCP defUom = BEU::UnitRegistry::Get().GetPlatformLengthUnit();
 
     LOG.infov("Default Platform Units is %s", defUom->GetName().c_str());
 
@@ -675,7 +592,6 @@ TEST(FormattingTest, PhysValues)
 
     EXPECT_STREQ ("24 YRD 2 FT 5.7 IN", qtr.FormatQuantTriad(" ", 2).c_str());
     EXPECT_STREQ ("24_YRD 2_FT 5.7_IN", qtr.FormatQuantTriad("_", 2).c_str());
-    //StdFormatQuantity(Utf8P stdName, BEU::QuantityCR qty, BEU::UnitCP useUnit, int prec = -1, double round = -1.0);
     EXPECT_STREQ ("74 15/32 ft", NumericFormatSpec::StdFormatQuantity("fractu", len, ftUOM, " ").c_str());
     EXPECT_STREQ ("74 1/2 ft", NumericFormatSpec::StdFormatQuantity("fract16u", len, ftUOM, " ").c_str());
     EXPECT_STREQ ("74 15/32 ft", NumericFormatSpec::StdFormatQuantity("fract32u", len, ftUOM, " ").c_str());
@@ -683,7 +599,6 @@ TEST(FormattingTest, PhysValues)
     EXPECT_STREQ ("24 7/8-yd", NumericFormatSpec::StdFormatQuantity("fract8u", len, yrdUOM, "-").c_str());
 
     FormatUnitSet fusYF = FormatUnitSet("FT(fract32u)");
-    //LOG.infov("FUS->Q  %s", fusYF.FormatQuantity(len).c_str());
     EXPECT_STREQ ("74 15/32ft", fusYF.FormatQuantity(len, "").c_str());
 
     QuantityTriadSpec atr = QuantityTriadSpec(ang, degUOM, minUOM, secUOM);
@@ -787,7 +702,6 @@ TEST(FormattingTest, PhysValues)
     EXPECT_STREQ ("1.0 kg", NumericFormatSpec::StdFormatPhysValue("realu", 35.27396194958, "OZM", "KG", nullptr, " ").c_str());
     EXPECT_STREQ ("4068.7986 oz", NumericFormatSpec::StdFormatPhysValue("real4u", 115.3485, "KG", "OZM", nullptr, " ").c_str());
 
-    //CompositeValueSpec cvs = CompositeValueSpec("MILE", "YRD", "FOOT", "INCH");
     FormattingTestFixture::TearDownL10N();
     }
 
@@ -836,7 +750,6 @@ TEST(FormattingTest, Simple)
     EXPECT_STREQ ("2.82843e+3", NumericFormatSpec::StdFormatDouble("sci", 2.0*testV, 5).c_str());
     EXPECT_STREQ ("0.28284e+4", NumericFormatSpec::StdFormatDouble("sciN", 2.0*testV, 5).c_str());
 
-    //NumericFormatSpec fmtP = (NumericFormatSpecP)StdFormatSet::GetNumericFormat(FormatConstant::DefaultFormatAlias());
     NumericFormatSpec fmtP = NumericFormatSpec(NumericFormatSpec::DefaultFormat());
     fmtP.SetKeepTrailingZeroes(true);
     fmtP.SetUse1000Separator(true);

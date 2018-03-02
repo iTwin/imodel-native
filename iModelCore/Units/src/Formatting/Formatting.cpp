@@ -1182,16 +1182,9 @@ Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quan
         majT = fmtP->FormatDouble(temp.GetMagnitude(), prec, round);
         if(fmtP->IsAppendUnit())
            majT = Utils::AppendUnitName(majT.c_str(), uomLabel, Utils::SubstituteNull(space, fmtP->GetUomSeparator()));
-        /*if (nullptr != uomName)
-        {
-        if (!Utils::IsNameNullOrEmpty(space))
-        majT += Utf8String(space);
-        majT += Utf8String(uomName);
-        }*/
         }
     return majT;
     }
-
 
 //---------------------------------------------------------------------------------------
 //  arg 'space' contains a separator between value and the unit name It also is an indicator
@@ -1200,30 +1193,14 @@ Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quan
 //---------------------------------------------------------------------------------------
 Utf8String NumericFormatSpec::StdFormatPhysValue(Utf8CP stdName, double dval, Utf8CP fromUOM, Utf8CP toUOM, Utf8CP toLabel, Utf8CP space, int prec, double round)
     {
-    BEU::UnitCP fromUnit = BEU::UnitRegistry::Instance().LookupUnit(fromUOM);
+    BEU::UnitCP fromUnit = BEU::UnitRegistry::Get().LookupUnit(fromUOM);
     BEU::Quantity qty = BEU::Quantity(dval, *fromUnit);
-    BEU::UnitCP toUnit = BEU::UnitRegistry::Instance().LookupUnit(toUOM);
-     // UnitCP fromUnit = qty.GetUnit();
-    BEU::PhenomenonCP phTo = toUnit->GetPhenomenon();
-    BEU::PhenomenonCP phFrom = fromUnit->GetPhenomenon();
-    if (phTo != phFrom)
-        {
-        Utf8String txt = "Impossible conversion from ";
-        txt += fromUnit->GetName();
-        txt += " to ";
-        txt +=toUnit->GetName();
-        return txt;
-        }
-    Utf8String str = StdFormatQuantity(stdName, qty, toUnit, space, toLabel, prec, round);
-    /*if (nullptr != space)
-        {
-        str += space;
-        if (nullptr == toLabel)
-            str += toUnit->GetName();
-        }
-    if (nullptr != toLabel)
-        str += toLabel;*/
-    return str;
+    BEU::UnitCP toUnit = BEU::UnitRegistry::Get().LookupUnit(toUOM);
+
+    if (toUnit->GetPhenomenon() != fromUnit->GetPhenomenon())
+        return "Impossible conversion from " + fromUnit->GetName() + " to " + toUnit->GetName();
+
+    return StdFormatQuantity(stdName, qty, toUnit, space, toLabel, prec, round);
     }
 
 const NumericFormatSpecCP NumericFormatSpec::DefaultFormat()
@@ -1241,7 +1218,6 @@ Utf8String NumericFormatSpec::StdFormatQuantityTriad(Utf8CP stdName, QuantityTri
         return "";
     return qtr->FormatQuantTriad(space, prec, fmtP->IsFractional(), qtr->GetIncludeZero());
     }
-//ormatQuantTriad(Utf8CP space, int prec, bool fract=false, bool includeZero = false);
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
@@ -1253,48 +1229,47 @@ Utf8String NumericFormatSpec::StdFormatQuantityTriad(Utf8CP stdName, QuantityTri
         return Utf8String(buf);
     }
 
-
  //---------------------------------------------------------------------------------------
  // @bsimethod                                                   David Fox-Rabinovitz 11/16
  //---------------------------------------------------------------------------------------
  // the caller provided buffer must be at least 9 byte long with the 9th byte for the terminating 0
  // this function returns the number of bytes that was not populated - in case of success it will 0
  int NumericFormatSpec::FormatBinaryByte (unsigned char n, Utf8P bufOut, int bufLen)
- {
-     char binBuf[8];
-     unsigned char mask = 0x80;
-     int i = 0;
-     while (mask != 0)
-     {
-         binBuf[i++] = (n & mask) ? '1' : '0';
-         mask >>= 1;
-     }
+    {
+    char binBuf[8];
+    unsigned char mask = 0x80;
+    int i = 0;
+    while (mask != 0)
+        {
+        binBuf[i++] = (n & mask) ? '1' : '0';
+        mask >>= 1;
+        }
 
-     return RightAlignedCopy(bufOut, bufLen, true, binBuf, sizeof(binBuf));
- }
+    return RightAlignedCopy(bufOut, bufLen, true, binBuf, sizeof(binBuf));
+    }
 
  //---------------------------------------------------------------------------------------
  // @bsimethod                                                   David Fox-Rabinovitz 11/16
  //---------------------------------------------------------------------------------------
  int NumericFormatSpec::FormatBinaryShort (short int n, Utf8P bufOut, int bufLen, bool useSeparator)
- {
-     char binBuf[64];
+    {
+    char binBuf[64];
 
-     unsigned char c = (n & 0xFF00) >> 8;
-     FormatBinaryByte (c, binBuf, 9);
-     int ind = 8;
-     if (IsInsertSeparator(useSeparator))
-         binBuf[ind++] = m_thousandsSeparator;
-     c = n & 0xFF;
-     FormatBinaryByte (c, &binBuf[ind], 9);
-     return RightAlignedCopy(bufOut, bufLen, true, binBuf, -1);
- }
+    unsigned char c = (n & 0xFF00) >> 8;
+    FormatBinaryByte (c, binBuf, 9);
+    int ind = 8;
+    if (IsInsertSeparator(useSeparator))
+        binBuf[ind++] = m_thousandsSeparator;
+    c = n & 0xFF;
+    FormatBinaryByte (c, &binBuf[ind], 9);
+    return RightAlignedCopy(bufOut, bufLen, true, binBuf, -1);
+    }
 
  //---------------------------------------------------------------------------------------
  // @bsimethod                                                   David Fox-Rabinovitz 11/16
  //---------------------------------------------------------------------------------------
  int NumericFormatSpec::FormatBinaryInt (int n, Utf8P bufOut, int bufLen, bool useSeparator)
- {
+{
      char binBuf[80];
 
      memset(binBuf, 0, sizeof(binBuf));
