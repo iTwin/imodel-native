@@ -827,6 +827,7 @@ struct FormatUnitSet
         UNITS_EXPORT FormatUnitSet():m_formatSpec(nullptr), m_unit(nullptr), m_localCopy(false), m_problem(FormatProblemDetail(FormatProblemCode::NotInitialized)) {}
         UNITS_EXPORT FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, bool cloneData = false);
         UNITS_EXPORT FormatUnitSet(Utf8CP formatName, Utf8CP unitName, bool cloneData = false);
+        UNITS_EXPORT FormatUnitSet(BEU::UnitCP unit, Utf8CP formatName = nullptr);
         UNITS_EXPORT FormatUnitSet(FormatUnitSetCR other);
         UNITS_EXPORT FormatUnitSet(FormatUnitSetCP other);
         UNITS_EXPORT FormatUnitSet& operator=(const FormatUnitSet& other);
