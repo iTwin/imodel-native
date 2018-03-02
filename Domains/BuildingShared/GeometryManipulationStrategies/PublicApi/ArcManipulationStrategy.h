@@ -30,6 +30,12 @@ struct ArcManipulationStrategy : public EllipseManipulationStrategy
         static const size_t s_centerIndex = 2;
         static const size_t s_endIndex = 3;
 
+        bool m_useSweep;
+        double m_sweep;
+
+        bool m_useRadius;
+        double m_radius;
+
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ArcManipulationStrategy();
 
     protected:
@@ -51,7 +57,22 @@ struct ArcManipulationStrategy : public EllipseManipulationStrategy
 
         CurvePrimitiveManipulationStrategyPtr _Clone() const override;
 
+        virtual void _SetProperty(Utf8CP key, bool const& value) override;
+        virtual BentleyStatus _TryGetProperty(Utf8CP key, bool& value) const override;
+
+        virtual void _SetProperty(Utf8CP key, int const& value) override;
+        virtual void _SetProperty(Utf8CP key, double const& value) override;
+        virtual BentleyStatus _TryGetProperty(Utf8CP key, double& value) const override;
+
+        using T_Super::_SetProperty;
+        using T_Super::_TryGetProperty;
+
     public:
+        static constexpr Utf8CP prop_UseSweep() { return "UseSweep"; }
+        static constexpr Utf8CP prop_Sweep() { return "Sweep"; }
+        static constexpr Utf8CP prop_UseRadius() { return "UseRadius"; }
+        static constexpr Utf8CP prop_Radius() { return "Radius"; }
+
         static ArcManipulationStrategyPtr Create() { return new ArcManipulationStrategy(); }
 
         KEY_POINT_ACCESSOR_DECL(Start, s_startIndex)

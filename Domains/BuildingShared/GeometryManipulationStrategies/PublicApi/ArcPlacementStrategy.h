@@ -98,10 +98,10 @@ struct ArcPlacementStrategy : public CurvePrimitivePlacementStrategy, IArcPlacem
     public:
         static constexpr Utf8CP prop_Normal() { return EllipseManipulationStrategy::prop_Normal(); }
 
-        static constexpr Utf8CP prop_UseSweep() { return "UseSweep"; }
-        static constexpr Utf8CP prop_Sweep() { return "Sweep"; }
-        static constexpr Utf8CP prop_UseRadius() { return "UseRadius"; }
-        static constexpr Utf8CP prop_Radius() { return "Radius"; }
+        static constexpr Utf8CP prop_UseSweep() { return ArcManipulationStrategy::prop_UseSweep(); }
+        static constexpr Utf8CP prop_Sweep() { return ArcManipulationStrategy::prop_Sweep(); }
+        static constexpr Utf8CP prop_UseRadius() { return ArcManipulationStrategy::prop_UseRadius(); }
+        static constexpr Utf8CP prop_Radius() { return ArcManipulationStrategy::prop_Radius(); }
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ArcPlacementMethod GetPlacementMethod() const;
 
