@@ -37,3 +37,9 @@ DiskNodesCacheTests.DoesntClearCacheWhenCacheFileSizeAndLimitAreEqual
     # TFS#854549
     # Stream:Bim0200, build architecture: (iOSARM64), Device: iPadAir2
     # Failing
+
+SupplementalRuleSetLocater.FindsSupplementalRuleSetsAndSetsProvidedId 
+
+    # TFS#855344
+    # Stream:Bim0200, build architecture: (iOSARM64), Device: iPadPro
+    # Failing
